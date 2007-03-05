@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.39 2007/02/23 12:19:51 jvanheld Exp $
+# $Id: compare-classes,v 1.40 2007/03/05 00:46:35 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -35,8 +35,10 @@ local $score_column = 0; ## By default, the file is read without score
 local $inf = 999;
 local $base=exp(1); ## Base for the logarithms
 local $null = "NA";
+local $store_comparisons = 0;
 
-local $multi_cor = "nt"; ## Correction for multi-testing
+
+local $multi_cor = "nc"; ## Correction for multi-testing
 %supported_multi_cor = (
     nq=>1,
     nr=>1,
@@ -50,7 +52,7 @@ $supported_multi_cor = join (",", sort(keys (%supported_multi_cor)));
 %R_only = (); ### elements found in reference but not in query
 %Q_only = (); ### elements found in query but not in reference
 
-$sort_key = "name";
+#$sort_key = "name";
 
 ## Groups of calculation
 %calc_groups = (
@@ -221,7 +223,8 @@ if (($return_fields{dotprod}) && !($score_col)) {
 }
 
 ## Logarithm base
-$log_base = log($base); ## Calculate it only once
+local $log_base = log($base); ## Calculate it only once
+local $log10 = log(10);
 
 ## ##############################################################
 ## Fields to calculate
@@ -258,6 +261,17 @@ if ($calc_fields{freq}) {
 &RSAT::message::Info(join("\t", "Fields to calculate", 
 			  join("; ", sort(keys(%calc_fields)))
 			 )) if ($main::verbose >= 2);
+
+################################################################
+## Define whether the comparisons should be stored in memory until the
+## end of the comparisons.  Storing all comparisons can cause memory
+## overflow for large comparisons. preventing it increases the
+## efficiency, but in this case it is not possible to sort results
+## anymore.
+if (($sort_key) || 
+   (scalar(@matrix_keys) > 0)) {
+  $store_comparisons = 1;
+}
 
 
 ################################################################
@@ -342,17 +356,52 @@ if ($population_size == 0 ) {
 }
 &RSAT::message::Info((join("\t", "Population size", $population_size))) if ($main::verbose >= 2);
 
+################################################################
+## Number of possible comparisons
+local $nb_compa;
+local $nb_compa_formula;
+if ($infile{ref_classes} eq $infile{query_classes}) {
+  if ($distinct) {
+    $nb_compa = $nb_ref_classes * ($nb_query_classes-1)/2;
+    $nb_compa_formula = "nc=rn*(nq-1)/2";
+  } else {
+    $nb_compa = $nb_ref_classes * ($nb_query_classes+1)/2;
+    $nb_compa_formula = "nc=rn*(nq+1)/2";
+  }
+} else {
+  $nb_compa = $nb_ref_classes * $nb_query_classes;
+  $nb_compa_formula = "rn*nq";
+}
+
+################################################################
+## Calculate multi-testing correction
+if (($multi_cor eq "nc") || ($multi_cor eq "nt")) {
+  $correction = $nb_compa;
+} elsif ($multi_cor eq "nq") {
+  $correction = $nb_query_classes;
+  $correction_formula = "nq";
+} elsif ($multi_cor eq "nr") {
+  $correction = $nb_ref_classes;
+  $correction_formula = "nr";
+  #    } elsif ($multi_cor eq "nt") {
+  #		    $correction = $nb_tests;
+#  $correction = $nb_ref_classes*$nb_query_classes;
+}
 
 
-&CompareClasses();
 
 &Verbose() if ($verbose);
+&PrintHeader();
+&CompareClasses();
 &PrintResult();
 
 ################################################################
-###### finish verbose
+## Finish verbose
 if ($verbose) {
     my $done_time = &AlphaDate;
+    if ($return_fields{proba}) {
+	printf $out "; %-29s\t%d\n", "Significance tests actually performed (nt)", $nb_tests;
+    }
     print $out "; Job started $start_time\n";
     print $out "; Job done    $done_time\n";
 }
@@ -539,7 +588,7 @@ ${field_description_text}
     -null 
     	null string (default $null) displayed for undefined values.
 
-    -base 
+    -base
     	logarithm base (Default: $base)
 
     -dot dot_file
@@ -966,16 +1015,12 @@ sub Verbose {
 	}
     }
 
-    printf $out "; %-29s\t%d\n", "Comparisons (nq*nr)", $nb_ref_classes*$nb_query_classes;
-    if ($return_fields{proba}) {
-	printf $out "; %-29s\t%d\n", "Significance tests (nt)", $nb_tests;
-    }
-    printf $out "; %-24s (%s)\t%d\n", "Multi-testing correction", $multi_cor, $correction;
-
-    printf $out "; %-29s\t%d\n", "Elements  in ref classes", scalar (keys(%ref_member_index));
-    printf $out "; %-29s\t%d\n", "Elements in query classes", scalar (keys(%query_member_index));
+    printf $out "; %-29s\t%d\n", "Elements  in ref classes (nr)", scalar (keys(%ref_member_index));
+    printf $out "; %-29s\t%d\n", "Elements in query classes (nq)", scalar (keys(%query_member_index));
     printf $out "; %-29s\t%d\n", "Elements in query+ref classes", scalar (keys(%member_index));
     printf $out "; %-29s\t%d\n", "Population size", $population_size;
+    printf $out "; %-29s\t%d\n", "Comparisons (".$nb_compa_formula.")", $nb_compa;
+    printf $out "; %-24s (%s)\t%d\n", "Multi-testing correction", $multi_cor, $correction;
     printf $out "; %-29s\t%f\n", "Logarithm base for entropy", $base if ($return_fields{entropy});
     print $out "; Sampling with replacement (binommial proba)\n" if ($replacement);
     printf $out "; %-29s\t%s\n", "Sort key", $sort_key if ($sort_key);
@@ -1015,638 +1060,603 @@ sub Verbose {
 ################################################################
 #### compare reference and query classes
 sub CompareClasses {
-    my $reference_classes = scalar(keys(%ref_classes));
-    my $rn = 0;
+  my $reference_classes = scalar(keys(%ref_classes));
+  my $rn = 0;
     
-    &RSAT::message::TimeWarn("Comparing classes") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Comparing classes") if ($main::verbose >= 2);
 
-    if (($multi_cor eq "nc") || ($multi_cor eq "nt")){
-	if ($infile{ref_classes} eq $infile{query_classes}) {
-	    if ($distinct) {
-		$correction = $nb_ref_classes * ($nb_query_classes-1)/2;
-	    } else {
-		$correction = $nb_ref_classes * ($nb_query_classes+1)/2;
-	    }
-	} else {
-	    $correction = $nb_ref_classes * $nb_query_classes;
+  foreach my $r (keys %ref_classes) {
+    $rn++;
+    my %ref_member = ();
+    my %not_query = ();
+
+    if ($main::verbose >= 3) {
+      if ($rn % 10== 1) {
+	&RSAT::message::TimeWarn("Treating reference class" ,$rn, "of", $reference_classes , $r);
+	if ($rn % 100== 1) {
+	  &RSAT::message::psWarn("Treating reference class" ,$rn, "of", $reference_classes , $r);
 	}
-    } elsif ($multi_cor eq "nq") {
-	$correction = $nb_query_classes;
-    } elsif ($multi_cor eq "nr") {
-	$correction = $nb_ref_classes;
-#    } elsif ($multi_cor eq "nt") {
-#		    $correction = $nb_tests;
-	$correction = $nb_ref_classes*$nb_query_classes;
+      }
     }
 
-    foreach my $r (keys %ref_classes) {
-	$rn++;
-	
-	my %ref_member = ();
-	my %not_query = ();
+    ################################################################
+    #### number of common members 
 
+    #### collect members of the reference class
+    my @ref_members = $ref_classes{$r}->get_members();
+    my $R = scalar(@ref_members);
 
-	if ($main::verbose >= 3) {
-	  if ($rn % 10== 1) {
-	    &RSAT::message::TimeWarn(join ("\t", "Treating reference class" ,$rn, "of", $reference_classes , $r));
-	    if ($rn % 100== 1) {
-	      &RSAT::message::psWarn(join ("\t", "Treating reference class" ,$rn, "of", $reference_classes , $r));
-	    }
+    #### check if the number of ref members is above the threshold    
+    next if ((defined($lth{R})) && ($R < $lth{R}));
+    next if ((defined($lth{'QR'})) && ($R < $lth{'QR'}));
+
+    #### index members of the reference class
+    foreach $m (@ref_members) {
+      $ref_member{$m} = 1;
+    }
+
+    #### query classes
+    foreach my $q (keys %query_classes) {
+      &RSAT::message::TimeWarn("Treating query class $q") if ($main::verbose >= 4);
+      next if (($distinct) && ($r eq $q));
+      next if (($infile{ref_classes} eq $infile{query_classes} ) && ($r lt $q)) && $triangle;
+      my $compa_key = $r."__VERSUS__".$q;
+
+      #### initialize comparison structures
+      my %current_compa = ();
+      $current_compa{'r'} = $r;
+      $current_compa{'q'} = $q;
+#      $current_compa->{key} = $compa_key;
+      my @common = ();
+      my @R_only = ();
+      my @Q_only = ();
+
+      #### collect members of the query class
+      my @query_members = $query_classes{$q}->get_members();
+      my $Q = scalar(@query_members);
+
+      #### check if the number of ref members is above the threshold    
+      next if ((defined($lth{'Q'})) && ($Q < $lth{Q}));
+      next if ((defined($lth{'QR'})) && ($Q < $lth{'QR'}));
+
+      #### compare query and reference classes
+      foreach my $m (@query_members) {
+	if ($ref_member{$m}) {
+	  push @common, $m; ### elements common to reference and query class
+	  $matching_elements->{$compa_key}->{$m}++;
+	} else {
+	  push @Q_only, $m; ### elements found in the query fmily only
+	}
+      }
+
+      #### identify elements found in the reference class only
+      if ($calc_fields{members}) {
+	foreach $m (sort($ref_classes{$r}->get_members())) {
+	  unless ($matching_elements->{$compa_key}->{$m}) {
+	    push @R_only, $m;
 	  }
 	}
+      }
 
-	################################################################
-	#### number of common members 
+      ## QR : intersection between group R and group Q
+      my $QR = scalar(keys %{$matching_elements->{$compa_key}});
+      $current_compa{'R'} = $R;
+      $current_compa{'Q'} = $Q;
+      $current_compa{'QR'} = $QR;
 
-	#### collect members of the reference class
-	my @ref_members = $ref_classes{$r}->get_members();
-	my $R = scalar(@ref_members);
+      my $QvR = $Q + $R - $QR;
+      $current_compa{'QvR'} = $QvR;
+      $current_compa{'R!Q'} = $R - $QR;
+      $current_compa{'Q!R'} = $Q - $QR;
+      $current_compa{'!Q!R'} = $population_size - $QvR;
 
-	#### check if the number of ref members is above the threshold    
-	next if ((defined($lth{R})) && ($R < $lth{R}));
-	next if ((defined($lth{'QR'})) && ($R < $lth{'QR'}));
+      ## Calculate dot product (use only the matching elements -> thus
+      ## must be done here)
+      if ($calc_fields{dotprod}) {
+	local $dp = 0;
+	local @matching_elements = keys %{$matching_elements->{$compa_key}};
+	local %ref_scores = $ref_classes{$r}->get_attribute("scores");
+	local %query_scores =$query_classes{$q}->get_attribute("scores");
+	foreach my $element (@matching_elements) {
+	  my $r_score = $ref_scores{$element};
+	  my $q_score = $query_scores{$element};
+	  $dp += $r_score*$q_score; 
+	}
+	$current_compa{dotprod} = $dp;
+      }
 
-	#### index members of the reference class
-	foreach $m (@ref_members) {
-	    $ref_member{$m} = 1;
+      ## Suppress the lists of members to free memory if members are
+      ## not required
+      unless ($calc_fields{members}) {
+	undef $matching_elements->{$compa_key};
+      }
+
+      #### check thresholds for number of common members
+      if ((defined($lth{'QR'})) &&
+	  ($QR< $lth{'QR'})) {
+	next;
+      } 
+      if ((defined($uth{occ})) &&
+	  ($QR > $uth{occ})) {
+	next;
+      }
+
+      ## Calculate Jaccard's similarity
+      if ($calc_fields{jac_sim}) {
+	if ($QvR > 0) {
+	  $current_compa{jac_sim} = $QR/$QvR;
+	} else {
+	  $current_compa{jac_sim} = "NA";
+	}
+	if ((defined($lth{jac_sim})) &&
+	    ($current_compa{jac_sim}< $lth{jac_sim})) {
+	  next;
+	} 
+	if ((defined($uth{jac_sim})) &&
+	    ($current_compa{jac_sim} > $uth{jac_sim})) {
+	  next;
+	}
+      }
+
+      ## ##############################################################	
+      ## Calculate frequencies
+      if ($calc_fields{freq}) {
+	warn "; calculating frequencies for ", $compa_key, "\n" if ($verbose >= 5);
+	my $n_q = $query_classes{$q}->get_size(); ### number of elements in query class
+	my $n_r = $ref_classes{$r}->get_size();	### number of elements in the reference class
+	#		my $c = $QR; ### number of common elements
+
+		
+	$current_compa{'F(R)'} = $n_r/$population_size;
+	$current_compa{'F(Q)'} = $n_q/$population_size;
+
+	$current_compa{'F(QR)'} = $current_compa{'QR'}/$population_size;
+	$current_compa{'F(Q!R)'} = $current_compa{'Q!R'}/$population_size;
+	$current_compa{'F(R!Q)'} = $current_compa{'R!Q'}/$population_size;
+	$current_compa{'F(!Q!R)'} = $current_compa{'!Q!R'}/$population_size;
+
+	$current_compa{'P(Q|R)'} = $QR/$n_r;
+	$current_compa{'P(R|Q)'} = $QR/$n_q;
+
+	#### check thresholds for query freq
+	if ((defined($lth{'P(R|Q)'})) &&
+	    ($current_compa{'P(R|Q)'}< $lth{'P(R|Q)'})) {
+	  next;
+	} elsif ((defined($uth{'P(R|Q)'})) &&
+		 ($current_compa{'P(R|Q)'} > $uth{'P(R|Q)'})) {
+	  next;
 	}
 
-	#### query classes
-	foreach my $q (keys %query_classes) {
-	    &RSAT::message::TimeWarn("Treating query class $q") if ($main::verbose >= 4);
-	    next if (($distinct) && ($r eq $q));
-	    next if (($infile{ref_classes} eq $infile{query_classes} ) && ($r lt $q)) && $triangle;
-	    my $compa_key = $r."__VERSUS__".$q;
-
-	    #### initialize comparison structures
-	    @{$common{$compa_key}} = ();
-	    @{$R_only{$compa_key}} = ();
-	    @{$Q_only{$compa_key}} = ();
-
-	    #### collect members of the query class
-	    my @query_members = $query_classes{$q}->get_members();
-	    my $Q = scalar(@query_members);
-
-	    #### check if the number of ref members is above the threshold    
-	    next if ((defined($lth{'Q'})) && ($Q < $lth{Q}));
-	    next if ((defined($lth{'QR'})) && ($Q < $lth{'QR'}));
-
-	    #### compare query and reference classes
-	    foreach my $m (@query_members) {
-		if ($ref_member{$m}) {
-		    push @{$common{$compa_key}}, $m; ### elements common to reference and query class
-		    $matching_elements->{$compa_key}->{$m}++;
-		} else {
-		    push @{$Q_only{$compa_key}}, $m; ### elements found in the query fmily only
-		}
-	    }
-
-	    #### identify elements found in the reference class only
-	    if ($calc_fields{members}) {
-		foreach $m (sort($ref_classes{$r}->get_members())) {
-		    unless ($matching_elements->{$compa_key}->{$m}) {
-			push @{$R_only{$compa_key}}, $m;
-		    }
-		}
-	    }
-
-	    ## QR : intersection between group R and group Q
-	    my $QR = scalar(keys %{$matching_elements->{$compa_key}});
-	    $compa{$compa_key}->{'R'} = $R;
-	    $compa{$compa_key}->{'Q'} = $Q;
-	    $compa{$compa_key}->{'QR'} = $QR;
-
-	    my $QvR = $Q + $R - $QR;
-	    $compa{$compa_key}->{'QvR'} = $QvR;
-	    $compa{$compa_key}->{'R!Q'} = $R - $QR;
-	    $compa{$compa_key}->{'Q!R'} = $Q - $QR;
-	    $compa{$compa_key}->{'!Q!R'} = $population_size - $QvR;
-
-	    ## Calculate dot product (use only the matching elements -> thus
-	    ## must be done here)
-	    if ($calc_fields{dotprod}) {
-		local $dp = 0;
-		local @matching_elements = keys %{$matching_elements->{$compa_key}};
-		local %ref_scores = $ref_classes{$r}->get_attribute("scores");
-		local %query_scores =$query_classes{$q}->get_attribute("scores");
-		foreach my $element (@matching_elements) {
-		    my $r_score = $ref_scores{$element};
-		    my $q_score = $query_scores{$element};
-		    $dp += $r_score*$q_score; 
-		}
-		$compa{$compa_key}->{dotprod} = $dp;
-#		&RSAT::message::Debug("dot product", 
-#				      $r, $q, "matching", scalar(@matching_elements),
-#				      "dp", $dp) if ($main::verbose >= 0);
-	    }
-
-	    ## Suppress the lists of members to free memory if members are
-	    ## not required
-	    unless ($calc_fields{members}) {
-		undef @{$common{$compa_key}};
-		undef @{$R_only{$compa_key}};
-		undef @{$Q_only{$compa_key}};
-		undef $matching_elements->{$compa_key};
-	    }
-
-	    #### check thresholds for number of common members
-	    if ((defined($lth{'QR'})) &&
-		($QR< $lth{'QR'})) {
-		delete $compa{$compa_key};
-		undef @{$common{$compa_key}};
-		undef @{$R_only{$compa_key}};
-		undef @{$Q_only{$compa_key}};
-		next;
-	    } 
-	    if ((defined($uth{occ})) &&
-		($QR > $uth{occ})) {
-		delete $compa{$compa_key};
-		undef @{$common{$compa_key}};
-		undef @{$R_only{$compa_key}};
-		undef @{$Q_only{$compa_key}};
-		next;
-	    }
-	    
-	    ## Calculate Jaccard's similarity
-	    if ($calc_fields{jac_sim}) {
-		if ($QvR > 0) {
-		    $compa{$compa_key}->{jac_sim} = $QR/$QvR;
-		} else {
-		    $compa{$compa_key}->{jac_sim} = "NA";
-		}
-		if ((defined($lth{jac_sim})) &&
-		    ($compa{$compa_key}->{jac_sim}< $lth{jac_sim})) {
-		    delete $compa{$compa_key};
-		    undef @{$common{$compa_key}};
-		    undef @{$R_only{$compa_key}};
-		    undef @{$Q_only{$compa_key}};
-		    next;
-		} 
-		if ((defined($uth{jac_sim})) &&
-		    ($compa{$compa_key}->{jac_sim} > $uth{jac_sim})) {
-		    delete $compa{$compa_key};
-		    undef @{$common{$compa_key}};
-		    undef @{$R_only{$compa_key}};
-		    undef @{$Q_only{$compa_key}};
-		    next;
-		}
-	    }
-
-	    ## ##############################################################	
-	    ## Calculate frequencies
-	    if ($calc_fields{freq}) {
-		warn "; calculating frequencies for ", $compa_key, "\n" if ($verbose >= 5);
-		my $n_q = $query_classes{$q}->get_size(); ### number of elements in query class
-		my $n_r = $ref_classes{$r}->get_size(); ### number of elements in the reference class
-#		my $c = $QR; ### number of common elements
-
-		
-		$compa{$compa_key}->{'F(R)'} = $n_r/$population_size;
-		$compa{$compa_key}->{'F(Q)'} = $n_q/$population_size;
-
-		$compa{$compa_key}->{'F(QR)'} = $compa{$compa_key}->{'QR'}/$population_size;
-		$compa{$compa_key}->{'F(Q!R)'} = $compa{$compa_key}->{'Q!R'}/$population_size;
-		$compa{$compa_key}->{'F(R!Q)'} = $compa{$compa_key}->{'R!Q'}/$population_size;
-		$compa{$compa_key}->{'F(!Q!R)'} = $compa{$compa_key}->{'!Q!R'}/$population_size;
-
-		$compa{$compa_key}->{'P(Q|R)'} = $QR/$n_r;
-		$compa{$compa_key}->{'P(R|Q)'} = $QR/$n_q;
-
-		#### check thresholds for query freq
-		if ((defined($lth{'P(R|Q)'})) &&
-		    ($compa{$compa_key}->{'P(R|Q)'}< $lth{'P(R|Q)'})) {
-		    delete $compa{$compa_key};
-		    undef @{$common{$compa_key}};
-		    undef @{$R_only{$compa_key}};
-		    undef @{$Q_only{$compa_key}};
-		    next;
-		} elsif ((defined($uth{'P(R|Q)'})) &&
-			 ($compa{$compa_key}->{'P(R|Q)'} > $uth{'P(R|Q)'})) {
-		    delete $compa{$compa_key};
-		    undef @{$common{$compa_key}};
-		    undef @{$R_only{$compa_key}};
-		    undef @{$Q_only{$compa_key}};
-		    next;
-		}
-
-		#### check thresholds for reference freq
-		if ((defined($lth{'P(Q|R)'})) &&
-		    ($compa{$compa_key}->{'P(Q|R)'}< $lth{'P(Q|R)'})) {
-		    delete $compa{$compa_key};
-		    undef @{$common{$compa_key}};
-		    undef @{$R_only{$compa_key}};
-		    undef @{$Q_only{$compa_key}};
-		    next;
-		} elsif ((defined($uth{'P(Q|R)'})) &&
-			 ($compa{$compa_key}->{'P(Q|R)'} > $uth{'P(Q|R)'})) {
-		    delete $compa{$compa_key};
-		    undef @{$common{$compa_key}};
-		    undef @{$R_only{$compa_key}};
-		    undef @{$Q_only{$compa_key}};
-		    next;
-		}
-
-	    }
-
-
-	    ################################################################
-	    ## Entropy
-	    if ($calc_fields{entropy}) {
-		## Entropy of class Q
-		if (($compa{$compa_key}->{'F(Q)'} <= 0) || ($compa{$compa_key}->{'F(Q)'} >= 1)) {
-		    $compa{$compa_key}->{'H(Q)'} = 0;
-		} else {
-		    $compa{$compa_key}->{'H(Q)'} = - $compa{$compa_key}->{'F(Q)'}*log($compa{$compa_key}->{'F(Q)'})/$log_base
-			- (1-$compa{$compa_key}->{'F(Q)'})*log(1-$compa{$compa_key}->{'F(Q)'})/$log_base;
-		}
-
-		## Entropy of class R
-		if (($compa{$compa_key}->{'F(R)'} <= 0) || ($compa{$compa_key}->{'F(R)'} >= 1)) {
-		    $compa{$compa_key}->{'H(R)'} = 0;
-		} else {
-		    $compa{$compa_key}->{'H(R)'} = - $compa{$compa_key}->{'F(R)'}*log($compa{$compa_key}->{'F(R)'})/$log_base
-			- (1-$compa{$compa_key}->{'F(R)'})*log(1-$compa{$compa_key}->{'F(R)'})/$log_base;
-
-		}
-		
-		## Join entropy
-		if (($compa{$compa_key}->{'F(QR)'} <= 0) || ($compa{$compa_key}->{'F(QR)'} >= 1)) {
-		    $contrib{'F(QR)'} = 0;
-		} else {
-		    $contrib{'F(QR)'} = - $compa{$compa_key}->{'F(QR)'}*log($compa{$compa_key}->{'F(QR)'});
-		}
-
-		if (($compa{$compa_key}->{'F(Q!R)'} <= 0) || ($compa{$compa_key}->{'F(Q!R)'} >= 1)) {
-		    $contrib{'F(Q!R)'} = 0;
-		} else {
-		    $contrib{'F(Q!R)'} = - $compa{$compa_key}->{'F(Q!R)'}*log($compa{$compa_key}->{'F(Q!R)'});
-		}
-
-		if (($compa{$compa_key}->{'F(R!Q)'} <= 0) || ($compa{$compa_key}->{'F(R!Q)'} >= 1)) {
-		    $contrib{'F(R!Q)'} = 0;
-		} else {
-		    $contrib{'F(R!Q)'} = - $compa{$compa_key}->{'F(R!Q)'}*log($compa{$compa_key}->{'F(R!Q)'});
-		}
-
-		if (($compa{$compa_key}->{'F(!Q!R)'} <= 0) || ($compa{$compa_key}->{'F(!Q!R)'} >= 1)) {
-		    $contrib{'F(!Q!R)'} = 0;
-		} else {
-		    $contrib{'F(!Q!R)'} = - $compa{$compa_key}->{'F(!Q!R)'}*log($compa{$compa_key}->{'F(!Q!R)'});
-		}
-
-		$compa{$compa_key}->{'H(Q,R)'} = 
-		    ($contrib{'F(QR)'} + $contrib{'F(Q!R)'} + $contrib{'F(R!Q)'} + $contrib{'F(!Q!R)'})/$log_base;
-		
-		$compa{$compa_key}->{'dH(Q,R)'} = 
-		    $compa{$compa_key}->{'H(Q,R)'} - $compa{$compa_key}->{'H(Q)'}/2 - $compa{$compa_key}->{'H(R)'}/2;
-
-
-		## Conditional entropy
-		$compa{$compa_key}->{'H(Q|R)'} = $compa{$compa_key}->{'H(Q,R)'} - $compa{$compa_key}->{'H(R)'};
-		$compa{$compa_key}->{'H(R|Q)'} = $compa{$compa_key}->{'H(Q,R)'} - $compa{$compa_key}->{'H(Q)'};
-
-		## Mutual information
-		$compa{$compa_key}->{'I(Q,R)'} = $compa{$compa_key}->{'H(Q)'} + $compa{$compa_key}->{'H(R)'} - $compa{$compa_key}->{'H(Q,R)'};
-
-		## Information content
-		my $exp_freq = $compa{$compa_key}->{'F(Q)'}*$compa{$compa_key}->{'F(R)'};
-		if ($compa{$compa_key}->{'QR'} <= 0) {
-		    $compa{$compa_key}->{'IC'} = 0;
-		} else {
-		    $compa{$compa_key}->{'IC'} = $compa{$compa_key}->{'F(QR)'} * 
-			log(  $compa{$compa_key}->{'F(QR)'} / $exp_freq )/$log_base;
-		}
-	    }
-
-	    ################################################################
-	    #### calculate probabilities
-	    if ($calc_fields{proba}) {
-		$log_base = 10;
-		$ref_log = log($log_base);
-
-		#### check population size
-		my $n = $population_size;
-		if ($n <= 0) {
-		    &RSAT::error::FatalError("Cannot calculate probabilities if reference population is empty");
-		}
-
-		#### calculate probabilities of matches
-		warn "; calculating proba for ", $compa_key, "\n" if ($verbose >= 5);
-		my $n_q = $query_classes{$q}->get_size(); ### number of elements in query class
-		my $n_r = $ref_classes{$r}->get_size(); ### number of elements in the reference class
-#		my $c = $compa{$compa_key}->{'QR'}; ### number of common elements
-		
-		#### check number of elements in the reference class
-		if ($n_r > $n) {
-		    &RSAT::error::FatalError("Number of elements in the reference class ($n_r) cannot be higher than population size ($n)");
-		}
-		
-		#### check number of elements in the query class
-		if ($n_q > $n) {
-		    &RSAT::error::FatalError("Number of elements in the query class ($n_q) cannot be higher than population size ($n)");
-		}
-		
-		#### check number of common elements
-		if ($QR > $n_q) {
-		    &RSAT::error::FatalError("Number of common elements ($QR) cannot be higher than query size ($n_q)");
-		}
-		if ($QR > $n_r) {
-		    &RSAT::error::FatalError("Number of common elements ($QR) cannot be higher than reference size ($n_r)");
-		}
-		
-		my $p; ## Proba for a member to be found in common in the two classes
-		$nb_tests ++; ## Increment the counter for the number of tests
-		if ($replacement) {
-		    #### use binomial distribution of there are replacements
-		    
-		    if ($symmetric) {
-			#### test the joint probability to belong to both
-			#### query and reference classes, for each element of
-			#### the population
-			$p = $n_r/$n * $n_q/$n;
-			$compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n,$QR,$n);
-		    } else {
-			#### test the probability to belong to the
-			#### reference class, for each element of the
-			#### query class
-			$p = $n_r/$n;
-			$compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n_q,$QR,$n_q);
-		    }
-		    
-		} else{
-		    #### use hypergeometric distribution
-		    $p = $n_r/$n * $n_q/$n;
-		    $compa{$compa_key}->{P_val} = &sum_of_hypergeometrics($n_r, $n, $n_q, $QR, &min($n_r, $n_q));
-		    
-		}
-		$compa{$compa_key}->{'E(QR)'} = $p*$n;
-		
-		$compa{$compa_key}->{mtest} = $correction;
-		$compa{$compa_key}->{E_val} = $compa{$compa_key}->{P_val} * $compa{$compa_key}->{mtest};
-		if ($compa{$compa_key}->{E_val} > 0) {
-		    $compa{$compa_key}->{sig} = -log($compa{$compa_key}->{E_val})/$ref_log;
-		} else {
-		    $compa{$compa_key}->{sig} = $inf;
-		}
-		
-		#### check thresholds on probabilities
-		foreach my $key (qw(P_val E_val sig)) {
-		    if ((defined($lth{$key})) &&
-			($compa{$compa_key}->{$key}< $lth{$key})) {
-			delete $compa{$compa_key};
-			undef @{$common{$compa_key}};
-			undef @{$R_only{$compa_key}};
-			undef @{$Q_only{$compa_key}};
-		    } elsif ((defined($uth{$key})) &&
-			     ($compa{$compa_key}->{$key} > $uth{$key})) {
-			delete $compa{$compa_key};
-			undef @{$common{$compa_key}};
-			undef @{$R_only{$compa_key}};
-			undef @{$Q_only{$compa_key}};
-		    }
-		}
-	    }
+	#### check thresholds for reference freq
+	if ((defined($lth{'P(Q|R)'})) &&
+	    ($current_compa{'P(Q|R)'}< $lth{'P(Q|R)'})) {
+	  next;
+	} elsif ((defined($uth{'P(Q|R)'})) &&
+		 ($current_compa{'P(Q|R)'} > $uth{'P(Q|R)'})) {
+	  next;
 	}
+
+      }
+
+
+      ################################################################
+      ## Entropy
+      if ($calc_fields{entropy}) {
+	## Entropy of class Q
+	if (($current_compa{'F(Q)'} <= 0) || ($current_compa{'F(Q)'} >= 1)) {
+	  $current_compa{'H(Q)'} = 0;
+	} else {
+	  $current_compa{'H(Q)'} = - $current_compa{'F(Q)'}*log($current_compa{'F(Q)'})/$log_base
+	    - (1-$current_compa{'F(Q)'})*log(1-$current_compa{'F(Q)'})/$log_base;
+	}
+
+	## Entropy of class R
+	if (($current_compa{'F(R)'} <= 0) || ($current_compa{'F(R)'} >= 1)) {
+	  $current_compa{'H(R)'} = 0;
+	} else {
+	  $current_compa{'H(R)'} = - $current_compa{'F(R)'}*log($current_compa{'F(R)'})/$log_base
+	    - (1-$current_compa{'F(R)'})*log(1-$current_compa{'F(R)'})/$log_base;
+
+	}
+		
+	## Join entropy
+	if (($current_compa{'F(QR)'} <= 0) || ($current_compa{'F(QR)'} >= 1)) {
+	  $contrib{'F(QR)'} = 0;
+	} else {
+	  $contrib{'F(QR)'} = - $current_compa{'F(QR)'}*log($current_compa{'F(QR)'});
+	}
+
+	if (($current_compa{'F(Q!R)'} <= 0) || ($current_compa{'F(Q!R)'} >= 1)) {
+	  $contrib{'F(Q!R)'} = 0;
+	} else {
+	  $contrib{'F(Q!R)'} = - $current_compa{'F(Q!R)'}*log($current_compa{'F(Q!R)'});
+	}
+
+	if (($current_compa{'F(R!Q)'} <= 0) || ($current_compa{'F(R!Q)'} >= 1)) {
+	  $contrib{'F(R!Q)'} = 0;
+	} else {
+	  $contrib{'F(R!Q)'} = - $current_compa{'F(R!Q)'}*log($current_compa{'F(R!Q)'});
+	}
+
+	if (($current_compa{'F(!Q!R)'} <= 0) || ($current_compa{'F(!Q!R)'} >= 1)) {
+	  $contrib{'F(!Q!R)'} = 0;
+	} else {
+	  $contrib{'F(!Q!R)'} = - $current_compa{'F(!Q!R)'}*log($current_compa{'F(!Q!R)'});
+	}
+
+	$current_compa{'H(Q,R)'} = 
+	  ($contrib{'F(QR)'} + $contrib{'F(Q!R)'} + $contrib{'F(R!Q)'} + $contrib{'F(!Q!R)'})/$log_base;
+		
+	$current_compa{'dH(Q,R)'} = 
+	  $current_compa{'H(Q,R)'} - $current_compa{'H(Q)'}/2 - $current_compa{'H(R)'}/2;
+
+
+	## Conditional entropy
+	$current_compa{'H(Q|R)'} = $current_compa{'H(Q,R)'} - $current_compa{'H(R)'};
+	$current_compa{'H(R|Q)'} = $current_compa{'H(Q,R)'} - $current_compa{'H(Q)'};
+
+	## Mutual information
+	$current_compa{'I(Q,R)'} = $current_compa{'H(Q)'} + $current_compa{'H(R)'} - $current_compa{'H(Q,R)'};
+
+	## Information content
+	my $exp_freq = $current_compa{'F(Q)'}*$current_compa{'F(R)'};
+	if ($current_compa{'QR'} <= 0) {
+	  $current_compa{'IC'} = 0;
+	} else {
+	  $current_compa{'IC'} = $current_compa{'F(QR)'} * 
+	    log(  $current_compa{'F(QR)'} / $exp_freq )/$log_base;
+	}
+      }
+
+      ################################################################
+      #### Calculate probabilities
+      if ($calc_fields{proba}) {
+	#### check population size
+	my $n = $population_size;
+	if ($n <= 0) {
+	  &RSAT::error::FatalError("Cannot calculate probabilities if reference population is empty");
+	}
+
+	#### calculate probabilities of matches
+	&RSAT::message::Debug("Calculating proba for ", $compa_key) if ($verbose >= 5);
+	my $n_q = $query_classes{$q}->get_size(); ### number of elements in query class
+	my $n_r = $ref_classes{$r}->get_size();	### number of elements in the reference class
+	#		my $c = $current_compa{'QR'}; ### number of common elements
+
+	#### check number of elements in the reference class
+	if ($n_r > $n) {
+	  &RSAT::error::FatalError("Number of elements in the reference class ($n_r) cannot be higher than population size ($n)");
+	}
+
+	#### check number of elements in the query class
+	if ($n_q > $n) {
+	  &RSAT::error::FatalError("Number of elements in the query class ($n_q) cannot be higher than population size ($n)");
+	}
+
+	#### check number of common elements
+	if ($QR > $n_q) {
+	  &RSAT::error::FatalError("Number of common elements ($QR) cannot be higher than query size ($n_q)");
+	}
+	if ($QR > $n_r) {
+	  &RSAT::error::FatalError("Number of common elements ($QR) cannot be higher than reference size ($n_r)");
+	}
+
+	my $p; ## Proba for a member to be found in common in the two classes
+	$nb_tests ++; ## Increment the counter for the number of tests
+	if ($replacement) {
+	  #### use binomial distribution of there are replacements
+		    
+	  if ($symmetric) {
+	    #### test the joint probability to belong to both
+	    #### query and reference classes, for each element of
+	    #### the population
+	    $p = $n_r/$n * $n_q/$n;
+	    $current_compa{P_val} = &sum_of_binomials($p,$n,$QR,$n);
+	  } else {
+	    #### test the probability to belong to the
+	    #### reference class, for each element of the
+	    #### query class
+	    $p = $n_r/$n;
+	    $current_compa{P_val} = &sum_of_binomials($p,$n_q,$QR,$n_q);
+	  }
+		    
+	} else {
+	  #### use hypergeometric distribution
+	  $p = $n_r/$n * $n_q/$n;
+	  $current_compa{P_val} = &sum_of_hypergeometrics($n_r, $n, $n_q, $QR, &min($n_r, $n_q));
+		    
+	}
+	$current_compa{'E(QR)'} = $p*$n;
+		
+	$current_compa{mtest} = $correction;
+	$current_compa{E_val} = $current_compa{P_val} * $current_compa{mtest};
+	if ($current_compa{E_val} > 0) {
+	  $current_compa{sig} = -log($current_compa{E_val})/$log10;
+	} else {
+	  $current_compa{sig} = $inf;
+	}
+
+	#### check thresholds on probabilities
+	foreach my $key (qw(P_val E_val sig)) {
+	  if ((defined($lth{$key})) &&
+	      ($current_compa{$key}< $lth{$key})) {
+	  } elsif ((defined($uth{$key})) &&
+		   ($current_compa{$key} > $uth{$key})) {
+	  }
+	}
+      }
+
+      ## Print the comparison in order to free memory
+      if ($store_comparisons){
+	if ($return_fields{members}) {
+	  @{$common{$compa_key}} = @common;
+	  @{$R_only{$compa_key}} = @R_only;
+	  @{$Q_only{$compa_key}} = @Q_only;
+	}
+	%{$compa{$compa_key}} = %current_compa;
+      } else {
+	&PrintOneComparison(%current_compa);
+      }
     }
+  }
 }
 
+
+################################################################
+## Print the header
+sub PrintHeader {
+  if (scalar(keys(%return_fields)) >= 1) {
+    
+    #### header
+    my @header_fields = ();
+    if ($return_fields{rank}) {
+      push @header_fields, ("rank");
+    };
+    
+    push @header_fields, ("ref","query");
+    
+    ## Occurrence counts
+    if ($return_fields{occ}) {
+      push @header_fields, "R";
+      push @header_fields, "Q";
+      push @header_fields, "QR";
+      push @header_fields, "QvR";
+      push @header_fields, "R!Q";
+      push @header_fields, "Q!R";
+      push @header_fields, "!Q!R";
+    }
+    
+    ## Frequencies
+    if ($return_fields{freq}) {
+      push @header_fields, 'F(R)' ;
+      push @header_fields, 'F(Q)' ;
+      push @header_fields, "F(QR)";
+      push @header_fields, "F(Q!R)";
+      push @header_fields, "F(R!Q)";
+      push @header_fields, "F(!Q!R)";
+      push @header_fields, 'P(Q|R)' ;
+      push @header_fields, 'P(R|Q)' ;
+      push @header_fields, "E(QR)" ;
+    }
+    
+    ## Jaccard's similarity
+    if ($return_fields{jac_sim}) {
+      push @header_fields, "jac_sim" ;
+    }
+    
+    ## Dot product
+    if ($return_fields{dotprod}) {
+      push @header_fields, "dotprod" ;
+    }
+    
+    ## Probabilities
+    if ($return_fields{proba}) {
+      push @header_fields, "P_val" ;
+      #	    push @header_fields, "mtest";
+      push @header_fields, "E_val";
+      push @header_fields, "sig";
+    }
+    
+    ## Entropy and information 
+    if ($return_fields{entropy}) {
+      push @header_fields, "H(R)";
+      push @header_fields, "H(Q)";
+      push @header_fields, "H(Q,R)";
+      push @header_fields, "dH(Q,R)";
+      push @header_fields, "H(Q|R)";
+      push @header_fields, "H(R|Q)";
+      push @header_fields, "I(Q,R)";
+      push @header_fields, "IC";
+    }
+    
+    ## Members
+    if ($return_fields{members}) {
+      push @header_fields, "R_only";
+      push @header_fields, "Q_only";
+      push @header_fields, "common_members";
+    }
+    
+    ## ##############################################################
+    ## Print field descriptions
+    if ($main::verbose >= 1) {
+      print $out "; Column contents\n";
+      foreach my $f (0..$#header_fields) {
+	my $field = $header_fields[$f];
+	printf $out ";\t%d\t%-14s\t%s\n", $f+1, $field, $field_description{$field};
+      }
+    }
+    
+    ## Print the header row
+    print $out "#", join("\t", @header_fields), "\n";
+  }
+}
 
 ## ##############################################################
 ## Print the result
 sub PrintResult {
   &RSAT::message::TimeWarn("Printing the result") if ($main::verbose >= 2);
+  
+  ################################################################
+  ## Print one row per association between a reference and a query class
+  if (scalar(keys(%return_fields)) >= 1) {
+    #### Sort the result
+    if ($sort_key eq "name") {
+      ## alphabetical order
+      @sorted_keys = sort (keys %compa); 
 
-    ################################################################
-    ## Print one row per association between a reference and a query class
-    if (scalar(keys(%return_fields)) >= 1) {
+    } elsif (($sort_key eq 'E_val') ||
+	     ($sort_key eq 'P_val')) {
+      ## numerical ascendent
+      @sorted_keys = sort {$compa{$a}->{$sort_key} <=> $compa{$b}->{$sort_key}} (keys %compa); 
 
-	#### header
-	my @header_fields = ();
-	if ($return_fields{rank}) {
-	    push @header_fields, ("rank");
-	};
-	
-	push @header_fields, ("ref","query");
-
-	## Occurrence counts
-	if ($return_fields{occ}) {
-	    push @header_fields, "R";
-	    push @header_fields, "Q";
-	    push @header_fields, "QR";
-	    push @header_fields, "QvR";
-	    push @header_fields, "R!Q";
-	    push @header_fields, "Q!R";
-	    push @header_fields, "!Q!R";
-	}
-
-	## Frequencies
-	if ($return_fields{freq}) {
-	    push @header_fields, 'F(R)' ;
-	    push @header_fields, 'F(Q)' ;
-	    push @header_fields, "F(QR)";
-	    push @header_fields, "F(Q!R)";
-	    push @header_fields, "F(R!Q)";
-	    push @header_fields, "F(!Q!R)";
-	    push @header_fields, 'P(Q|R)' ;
-	    push @header_fields, 'P(R|Q)' ;
-	    push @header_fields, "E(QR)" ;
-	}
-
-	## Jaccard's similarity
-	if ($return_fields{jac_sim}) {
-	    push @header_fields, "jac_sim" ;
-	}
-
-	## Dot product
-	if ($return_fields{dotprod}) {
-	    push @header_fields, "dotprod" ;
-	}
-
-	## Probabilities
-	if ($return_fields{proba}) {
-	    push @header_fields, "P_val" ;
-#	    push @header_fields, "mtest";
-	    push @header_fields, "E_val";
-	    push @header_fields, "sig";
-	}
-
-	## Entropy and information 
-	if ($return_fields{entropy}) {
-	    push @header_fields, "H(R)";
-	    push @header_fields, "H(Q)";
-	    push @header_fields, "H(Q,R)";
-	    push @header_fields, "dH(Q,R)";
-	    push @header_fields, "H(Q|R)";
-	    push @header_fields, "H(R|Q)";
-	    push @header_fields, "I(Q,R)";
-	    push @header_fields, "IC";
-	}
-
-	    ## Members
-	if ($return_fields{members}) {
-	    push @header_fields, "R_only";
-	    push @header_fields, "Q_only";
-	    push @header_fields, "common_members";
-	}
-
-	## ##############################################################
-	## Print field descriptions
-	if ($main::verbose >= 1) {
-	    print $out "; Column contents\n";
-	    foreach my $f (0..$#header_fields) {
-		my $field = $header_fields[$f];
-		printf $out ";\t%d\t%-14s\t%s\n", $f+1, $field, $field_description{$field};
-	    }
-	}
-
-	## Print the header row
-	print $out "#", join("\t", @header_fields), "\n";
-
-	#### Sort the result
-	if ($sort_key eq "name") {
-	    ## alphabetical order
-	    @sorted_keys = sort (keys %compa); 
-
-	} elsif (($sort_key eq 'E_val') ||
-		 ($sort_key eq 'P_val')){
-	    ## numerical ascendent
-	    @sorted_keys = sort {$compa{$a}->{$sort_key} <=> $compa{$b}->{$sort_key}} (keys %compa); 
-
-	} elsif ($sort_key) {
-	    ## numerical descendent
-	    @sorted_keys = sort {$compa{$b}->{$sort_key} <=> $compa{$a}->{$sort_key}} (keys %compa); 
-	}
-
-	#### class combinations
-	my $rank = 0;
-	foreach my $compa_key (@sorted_keys) {
-	    my ($r, $q) = split "__VERSUS__", $compa_key;
-	    $rank++;
-	    
-	    ## Check thresholds on rank
-	    if ((defined($uth{rank})) && ($rank > $uth{rank})) {
-		last;
-	    }
-	    if ((defined($lth{rank})) && ($rank < $lth{rank})) {
-		next;
-	    }
-
-	    ## Print the rank of the association
-	    if ($return_fields{rank}) {
-		print $out $rank."\t";
-	    }
-
-	    #### reference family name
-	    my $r_text = $r;
-	    my $rname =  $ref_classes{$r}->get_attribute("name");
-	    if ($rname ne $r) {
-		## Add class name to class ID
-		$r_text .= ":".$rname; 
-	    }
-	    warn join( "\t", ";ref class", $r, $r_text), "\n" if ($main::verbose >= 10);
-
-	    #### query family name
-	    my $q_text = $q;
-	    my $qname =  $query_classes{$q}->get_attribute("name");
-	    if ($qname ne $q) {
-		## Replace class ID by class name
-		$q_text .= ";".$qname; 
-	    }
-	    warn join( "\t", ";query class", $q, $q_text), "\n" if ($main::verbose >= 10);
-	    
-	    print $out join "\t", ($r_text,
-				   $q_text);
-
-
-	    ## Occurrence counts
-	    if ($return_fields{occ}) {
-		printf $out "\t%d",  $compa{$compa_key}->{'R'};
-		printf $out "\t%d",  $compa{$compa_key}->{'Q'};
-		printf $out "\t%d",  $compa{$compa_key}->{'QR'};
-		printf $out "\t%d",  $compa{$compa_key}->{'QvR'};
-		printf $out "\t%d",  $compa{$compa_key}->{'R!Q'};
-		printf $out "\t%d",  $compa{$compa_key}->{'Q!R'};
-		printf $out "\t%d",  $compa{$compa_key}->{'!Q!R'};
-	    }
-
-	    ## Frequencies
-	    if ($return_fields{freq}) {
-		printf $out "\t%.5f", $compa{$compa_key}->{'F(R)'};
-		printf $out "\t%.5f", $compa{$compa_key}->{'F(Q)'};
-		printf $out ( "\t%.5f", $compa{$compa_key}->{'F(QR)'});
-		printf $out ( "\t%.5f", $compa{$compa_key}->{'F(Q!R)'});
-		printf $out ( "\t%.5f", $compa{$compa_key}->{'F(R!Q)'});
-		printf $out ( "\t%.5f", $compa{$compa_key}->{'F(!Q!R)'});
-		printf $out "\t%.5f", $compa{$compa_key}->{'P(Q|R)'};
-		printf $out "\t%.5f", $compa{$compa_key}->{'P(R|Q)'};
-		printf $out "\t%7.2f", $compa{$compa_key}->{'E(QR)'};
-	    }
-	    
-	    ## Jaccard's similarity
-	    if ($return_fields{jac_sim}) {
-		printf $out "\t%-.5f", $compa{$compa_key}->{jac_sim};
-	    }
-	    
-	    ## Dot product
-	    if ($return_fields{dotprod}) {
-		printf $out "\t%7g", $compa{$compa_key}->{dotprod};
-	    }
-
-	    ## Probabilities
-	    if ($return_fields{proba}) {
-
-		if ($compa{$compa_key}->{P_val} >= 0.0001) {
-		    printf $out "\t%.5f", $compa{$compa_key}->{P_val};
-		} else {
-		    printf $out "\t%.2g", $compa{$compa_key}->{P_val};
-		}
-
-#		printf $out "\t%d", $compa{$compa_key}->{mtest};
-		if ($compa{$compa_key}->{E_val} >= 1) {
-		    printf $out "\t%7.3f", $compa{$compa_key}->{E_val};
-		} elsif ($compa{$compa_key}->{E_val} >= 0.0001) {
-		    printf $out "\t%.5f", $compa{$compa_key}->{E_val};
-		} else {
-		    printf $out "\t%.2g", $compa{$compa_key}->{E_val};
-		}
-		printf $out ( "\t%.2f", $compa{$compa_key}->{sig});
-	    }
-
-
-	    ## Entropy and information 
-	    if ($return_fields{entropy}) {
-		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(R)'});
-		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(Q)'});
-		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(Q,R)'});
-		printf $out ( "\t%.5f", $compa{$compa_key}->{'dH(Q,R)'});
-		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(Q|R)'});
-		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(R|Q)'});
-		printf $out ( "\t%.5f", $compa{$compa_key}->{'I(Q,R)'});
-		printf $out ( "\t%.5f", $compa{$compa_key}->{'IC'});
-	    }
-
-	    ## Members
-	    if ($return_fields{members}) {
-		print $out "\t", join( " ", @{$R_only{$compa_key}}) ;
-		print $out "\t", join( " ", @{$Q_only{$compa_key}}) ;
-		print $out "\t", join( " ", @{$common{$compa_key}}) ;
-	    }
-
-	    print $out "\n";
-	}
+    } elsif ($sort_key) {
+      ## numerical descendent
+      @sorted_keys = sort {$compa{$b}->{$sort_key} <=> $compa{$a}->{$sort_key}} (keys %compa); 
+    } else {
+      ## alphabetical order
+      @sorted_keys = sort (keys %compa); 
     }
 
-    ## ##############################################################
-    ## Print the result in the form of a matrix
-    if (scalar(@matrix_keys >= 1)) {
-	foreach my $matrix_key (@matrix_keys) {
-	    &PrintOneMatrix($matrix_key);
-	}
+    #### class combinations
+    my $rank = 0;
+    foreach my $compa_key (@sorted_keys) {
+      &PrintOneComparison(%{$compa{$compa_key}});
     }
+  }
+
+  ## ##############################################################
+  ## Print the result in the form of a matrix
+  if (scalar(@matrix_keys >= 1)) {
+    foreach my $matrix_key (@matrix_keys) {
+      &PrintOneMatrix($matrix_key);
+    }
+  }
 	
 
 }
 
+## Print a single comparison on one row
+sub PrintOneComparison {
+  my (%current_compa) = @_;
+  my $r = $current_compa{r};
+  my $q = $current_compa{q};
+
+#  &RSAT::message::Debug($r, $q) if ($main::verbose >= 0);
+#  my ($r, $q) = split "__VERSUS__", $compa_key;
+  $rank++;
+	    
+  ## Check thresholds on rank
+  if ((defined($uth{rank})) && ($rank > $uth{rank})) {
+    last;
+  }
+  if ((defined($lth{rank})) && ($rank < $lth{rank})) {
+    next;
+  }
+
+  ## Print the rank of the association
+  if ($return_fields{rank}) {
+    print $out $rank."\t";
+  }
+
+  #### reference family name
+  my $r_text = $r;
+  my $rname =  $ref_classes{$r}->get_attribute("name");
+  if ($rname ne $r) {
+    ## Add class name to class ID
+    $r_text .= ":".$rname; 
+  }
+  warn join( "\t", ";ref class", $r, $r_text), "\n" if ($main::verbose >= 10);
+
+  #### query family name
+  my $q_text = $q;
+  my $qname =  $query_classes{$q}->get_attribute("name");
+  if ($qname ne $q) {
+    ## Replace class ID by class name
+    $q_text .= ";".$qname; 
+  }
+#  warn join( "\t", ";query class", $q, $q_text), "\n" if ($main::verbose >= 10);
+	    
+  print $out join "\t", ($r_text,
+			 $q_text);
+
+
+  ## Occurrence counts
+  if ($return_fields{occ}) {
+    printf $out "\t%d",  $current_compa{'R'};
+    printf $out "\t%d",  $current_compa{'Q'};
+    printf $out "\t%d",  $current_compa{'QR'};
+    printf $out "\t%d",  $current_compa{'QvR'};
+    printf $out "\t%d",  $current_compa{'R!Q'};
+    printf $out "\t%d",  $current_compa{'Q!R'};
+    printf $out "\t%d",  $current_compa{'!Q!R'};
+  }
+
+  ## Frequencies
+  if ($return_fields{freq}) {
+    printf $out "\t%.5f", $current_compa{'F(R)'};
+    printf $out "\t%.5f", $current_compa{'F(Q)'};
+    printf $out ( "\t%.5f", $current_compa{'F(QR)'});
+    printf $out ( "\t%.5f", $current_compa{'F(Q!R)'});
+    printf $out ( "\t%.5f", $current_compa{'F(R!Q)'});
+    printf $out ( "\t%.5f", $current_compa{'F(!Q!R)'});
+    printf $out "\t%.5f", $current_compa{'P(Q|R)'};
+    printf $out "\t%.5f", $current_compa{'P(R|Q)'};
+    printf $out "\t%7.2f", $current_compa{'E(QR)'};
+  }
+	    
+  ## Jaccard's similarity
+  if ($return_fields{jac_sim}) {
+    printf $out "\t%-.5f", $current_compa{jac_sim};
+  }
+	    
+  ## Dot product
+  if ($return_fields{dotprod}) {
+    printf $out "\t%7g", $current_compa{dotprod};
+  }
+
+  ## Probabilities
+  if ($return_fields{proba}) {
+
+    if ($current_compa{P_val} >= 0.0001) {
+      printf $out "\t%.5f", $current_compa{P_val};
+    } else {
+      printf $out "\t%.2g", $current_compa{P_val};
+    }
+
+    #		printf $out "\t%d", $current_compa{mtest};
+    if ($current_compa{E_val} >= 1) {
+      printf $out "\t%7.3f", $current_compa{E_val};
+    } elsif ($current_compa{E_val} >= 0.0001) {
+      printf $out "\t%.5f", $current_compa{E_val};
+    } else {
+      printf $out "\t%.2g", $current_compa{E_val};
+    }
+    printf $out ( "\t%.2f", $current_compa{sig});
+  }
+
+
+  ## Entropy and information 
+  if ($return_fields{entropy}) {
+    printf $out ( "\t%.5f", $current_compa{'H(R)'});
+    printf $out ( "\t%.5f", $current_compa{'H(Q)'});
+    printf $out ( "\t%.5f", $current_compa{'H(Q,R)'});
+    printf $out ( "\t%.5f", $current_compa{'dH(Q,R)'});
+    printf $out ( "\t%.5f", $current_compa{'H(Q|R)'});
+    printf $out ( "\t%.5f", $current_compa{'H(R|Q)'});
+    printf $out ( "\t%.5f", $current_compa{'I(Q,R)'});
+    printf $out ( "\t%.5f", $current_compa{'IC'});
+  }
+
+  ## Members
+  if ($return_fields{members}) {
+    print $out "\t", join( " ", @{$R_only{$compa_key}}) ;
+    print $out "\t", join( " ", @{$Q_only{$compa_key}}) ;
+    print $out "\t", join( " ", @{$common{$compa_key}}) ;
+  }
+
+  print $out "\n";
+
+}
 
 ################################################################
 #### Create a graph with the result
@@ -1748,10 +1758,10 @@ sub CreateGraph {
 	}
 
 	my $arc_label = ();
-	$arc_label .= $compa{$compa_key}->{'QR'};
+	$arc_label .= $current_compa{'QR'};
 	if ($return_fields{proba}) {
 	    $arc_label .= " (";
-	    $arc_label .= sprintf("%.1f", $compa{$compa_key}->{sig});
+	    $arc_label .= sprintf("%.1f", $current_compa{sig});
 	    $arc_label .= ")";
 	}
 	$graph->create_arc($source_node, $target_node, label=>$arc_label);
@@ -1765,7 +1775,6 @@ sub CreateGraph {
 ## Print one comparison matrix
 sub PrintOneMatrix {
     my ($matrix_key) = @_;
-
 
     ## Calculate marggins if required
     if ($margins) {
@@ -1821,8 +1830,8 @@ sub PrintOneMatrix {
 	}
 	foreach my $q (@query_classes ) {
 	    my $compa_key = $r."__VERSUS__".$q;
-	    if (defined($compa{$compa_key}->{$matrix_key})) {
-		print $out "\t", sprintf($field_format, $compa{$compa_key}->{$matrix_key});
+	    if (defined($current_compa{$matrix_key})) {
+		print $out "\t", sprintf($field_format, $current_compa{$matrix_key});
 	    } else {
 		print $out "\t", $null;
 	    }
@@ -1877,8 +1886,8 @@ sub CalcMargins {
     foreach my $q (@query_classes) {
 	foreach my $r (@ref_classes) {
 	    my $compa_key = $r."__VERSUS__".$q;
-	    if (defined($compa{$compa_key}->{$margin_key})) {
-		my $value = $compa{$compa_key}->{$margin_key};
+	    if (defined($current_compa{$margin_key})) {
+		my $value = $current_compa{$margin_key};
 		$count_per_Q{$margin_key}{$q} += 1;
 		$sum_per_Q{$margin_key}{$q} += $value;
 
