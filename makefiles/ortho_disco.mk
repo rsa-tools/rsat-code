@@ -498,7 +498,7 @@ dyad_classes: dyad_file_list
 ## results as a table with one row per pair of genes, and different
 ## significance statistics.
 GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_gene_pairs_dp${LTH_DOTPROD}
-GENE_PAIR_RETURN=occ,dotprod,jac_sim,proba,entropy,rank
+GENE_PAIR_RETURN=occ,dotprod,jac_sim,proba,rank
 #GENE_PAIR_RETURN=occ,dotprod,rank
 V2=3
 LTH_DOTPROD=2
