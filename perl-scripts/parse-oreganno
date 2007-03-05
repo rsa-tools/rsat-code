@@ -1,0 +1,265 @@
+#!/usr/bin/perl
+
+use strict;
+use XML::LibXML;
+use Getopt::Long;
+
+=pod
+
+=head1 NAME
+
+parse-oreganno
+
+=head1 DESCRIPTION
+
+Parse some fields of ORegAnno (http://www.oreganno.org) database from a dump XML file. 
+The output format is the standard ft format with 3 empty fields (strand, start and end) and some optional additinal fields 
+
+=head1 AUTHORS
+
+=item Jean Valery Turatsinze <jturatsi@scmbb.ulb.ac.be>
+
+=item Morgane Thomas-Chollier <mthomas@dbm.ulb.ac.be>
+
+=head1 CATEGORY
+
+=over
+
+=item parsers
+
+=back
+
+=head1 USAGE
+    
+parse-oreganno -i inputfile -org 'organism name' [-o outputfile] [-return optionalFields]
+
+=head1 OPTIONS
+
+=over
+
+=item B<-i>: Required option. The dump xml file from ORegAnno
+
+=item B<-org>: Required option. The organism name. It must be quoted.
+
+=item B<-o>: optional. Specifies output file. If the output file is not given, 
+the standard output is used, this allows to use the program within a pipe. 
+Default output contains these fields:
+
+=over
+
+=item -geneName: the target gene name
+
+=item -type: the feature type
+
+=item -ORegAnnoID: only stable IDs from ORegAnno are considered
+
+=item -strand: empty
+
+=item -start: empty
+
+=item -end: empty
+
+=item -sequence: the TFBS sequence
+
+=back
+
+=item B<-return>: optional. Additional fields to return, separated by commas
+Accepted values: organism,flank,tfname,genesource,tfsource.
+
+=over
+
+=item -organism
+
+=item -flank: the TFBS with its flanking sequences. This facilitates mappings to genome assemblies
+
+=item -tfname: Transcription factor name
+
+=item -genesource: The source database of the gene (Ensembl, NCBI...)
+
+=item -tfsource:The source database of the TF (Ensembl, NCBI...)
+
+=back
+ 
+=cut
+
+my $help;
+my $organism;
+my $xmlfilename;
+my $returnFields;
+my $outFile;
+
+###############################################
+GetOptions(
+	"help"          => \$help,
+	"i=s"           => \$xmlfilename,
+	"return:s"      => \$returnFields,
+	"org=s"         => \$organism,# The organism name must be quoted
+	"o:s"			=> \$outFile,
+	);
+
+printHelp() if $help;
+
+
+my @fields = split (",",$returnFields) if ($returnFields);	
+my $organismlc = lc($organism);
+
+###############################################
+## ORegAnno XML dump is several xml files concatenated
+## First need to extract each XML subfile
+open XML, "<$xmlfilename" or die "Cannot open XML file $xmlfilename:$!"; 
+my $xmlCount = 1;
+while (my $line = <XML>){
+	
+	#look for <?xml
+	 if ($line =~ /^<\?xml/) {
+	 	my $partFileName = $xmlfilename."_part_".$xmlCount;
+	 	open NEWXML, ">$partFileName" or die "Cannot write XML file $partFileName:$!";
+	 	print NEWXML $line;	
+	 # look for </oreganno>
+	 } elsif ($line =~ /^<\/oreganno>/) {
+	 	print NEWXML $line;	
+	 	close NEWXML;
+	 	$xmlCount++;
+	 } else {
+	 	print NEWXML $line;	
+	 }
+}
+close XML;
+
+###############################################
+## Each partial XML file is parsed individually
+
+## print header
+if ($outFile){open OUT, ">$outFile" or die "Cannot write output file $outFile:$!";}
+&printHeader();
+
+## parse XML files
+for (my $i=1; $i < $xmlCount; $i++){
+	my $parsedRecords = &XMLParse($xmlfilename."_part_".$i);
+	
+	## print records for current partial XML file
+	print2Feature($parsedRecords);
+	unlink($xmlfilename."_part_".$i);
+}
+
+
+
+close OUT;
+
+###############################################
+## SUBROUTINES
+###############################################
+
+sub printHelp{
+	system "pod2text -c $0";
+    exit()
+}
+
+sub XMLParse {
+	my $partialXMLFile = shift;
+
+	my %parsedRecords = ();
+		
+	## parse ORegAnno XML dump file
+	my $parser = XML::LibXML->new();
+	my $tree = $parser->parse_file($partialXMLFile);
+	$tree->indexElements();
+	my $root = $tree->getDocumentElement;
+	my @records = $root->getElementsByTagName('record');
+
+	foreach my $i (0..$#records) {
+
+		my @thisParsedRecord =();
+	
+		# get records with type TRANSCRIPTION FACTOR BINDING SITE
+		my $type  = $records[$i]->findvalue('type');
+		if ($type eq "TRANSCRIPTION FACTOR BINDING SITE") {	
+			# check wether the record id deprecated
+			my $deprecatedID  = $records[$i]->findvalue('deprecatedByStableId');
+			# if there is no deprecatedID => record is to be processed
+			if ($deprecatedID eq "") {
+				# get records of a given organism
+				my $speciesName  = $records[$i]->findvalue('speciesName');
+				$speciesName = lc ($speciesName);
+				if ($organismlc eq $speciesName) {			
+					## get fields of interest
+					my $stableID = $records[$i]->findvalue('stableId');
+					my $sequence = $records[$i]->findvalue('sequence');
+					my $seqWithFlank = $records[$i]->findvalue('sequenceWithFlank');
+					my $geneName = $records[$i]->findvalue('geneName');
+					my $TFName = $records[$i]->findvalue('tfName');
+					my $geneSource = $records[$i]->findvalue('geneSource');
+					my $TFSource = $records[$i]->findvalue('tfSource');
+				
+					@thisParsedRecord = ($stableID, $organism, $sequence, $seqWithFlank, $geneName,$TFName, $geneSource, $TFSource);
+					$parsedRecords{$stableID} = \@thisParsedRecord;
+				}			
+			}
+		}	
+	}
+	return (\%parsedRecords);
+}
+
+sub printHeader{
+	# header line
+	my $header = ";geneName\ttype\tORegAnnoID\tstrand\tstart\tend\tsequence";
+	my $addFields;
+
+	if (@fields){
+		$addFields .= "\t";
+		$addFields .= join("\t",@fields);	
+	}
+
+	$addFields.= "\n";
+	$header.= $addFields;
+	
+	if ($outFile){
+		print OUT $header
+	}else {
+		print $header;
+	}
+}
+
+## print result in feature format
+sub print2Feature{
+	my $parsedRecords_ref = shift;
+	my %parsedRecords = %$parsedRecords_ref;
+	
+	
+	# record lines
+foreach my $recordToPrint (keys(%parsedRecords)){
+	
+	my $record2print = join("\t",
+					$parsedRecords{$recordToPrint}->[4],
+					"TFBS",
+					$parsedRecords{$recordToPrint}->[0],
+					"\t\t",
+					$parsedRecords{$recordToPrint}->[2]
+					);
+	
+	
+	if (@fields){
+		foreach my $f (@fields){
+			$record2print .= "\t".$parsedRecords{$recordToPrint}->[1]  if ($f eq "organism");
+			$record2print .= "\t".$parsedRecords{$recordToPrint}->[3]  if ($f eq "flank");
+			$record2print .= "\t".$parsedRecords{$recordToPrint}->[5]  if ($f eq "tfname");
+			$record2print .= "\t".$parsedRecords{$recordToPrint}->[6]  if ($f eq "genesource");
+			$record2print .= "\t".$parsedRecords{$recordToPrint}->[7]  if ($f eq "tfsource");
+			}
+		}
+	if ($outFile){
+		print OUT $record2print."\n";
+	}else {
+		print "$record2print\n";
+	}
+	}
+}
+
+
+
+
+
+
+
+
+
