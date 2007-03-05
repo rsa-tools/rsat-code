@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.40 2007/03/05 00:46:35 jvanheld Exp $
+# $Id: compare-classes,v 1.41 2007/03/05 01:36:16 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -400,7 +400,7 @@ if (($multi_cor eq "nc") || ($multi_cor eq "nt")) {
 if ($verbose) {
     my $done_time = &AlphaDate;
     if ($return_fields{proba}) {
-	printf $out "; %-29s\t%d\n", "Significance tests actually performed (nt)", $nb_tests;
+      printf $out "; %-29s\t%d\n", "; Significance tests actually performed (nt)", $nb_tests;
     }
     print $out "; Job started $start_time\n";
     print $out "; Job done    $done_time\n";
@@ -1150,6 +1150,7 @@ sub CompareClasses {
       $current_compa{'Q!R'} = $Q - $QR;
       $current_compa{'!Q!R'} = $population_size - $QvR;
 
+      ################################################################
       ## Calculate dot product (use only the matching elements -> thus
       ## must be done here)
       if ($calc_fields{dotprod}) {
@@ -1163,6 +1164,15 @@ sub CompareClasses {
 	  $dp += $r_score*$q_score; 
 	}
 	$current_compa{dotprod} = $dp;
+	if ((defined($lth{'dotprod'})) &&
+	  ($dp< $lth{'dotprod'})) {
+	  next;
+	}
+	if ((defined($uth{dotprod})) &&
+	    ($dp > $uth{dotprod})) {
+	  next;
+	}
+
       }
 
       ## Suppress the lists of members to free memory if members are
@@ -1176,8 +1186,8 @@ sub CompareClasses {
 	  ($QR< $lth{'QR'})) {
 	next;
       } 
-      if ((defined($uth{occ})) &&
-	  ($QR > $uth{occ})) {
+      if ((defined($uth{QR})) &&
+	  ($QR > $uth{QR})) {
 	next;
       }
 
@@ -1345,7 +1355,6 @@ sub CompareClasses {
 	$nb_tests ++; ## Increment the counter for the number of tests
 	if ($replacement) {
 	  #### use binomial distribution of there are replacements
-		    
 	  if ($symmetric) {
 	    #### test the joint probability to belong to both
 	    #### query and reference classes, for each element of
@@ -1359,15 +1368,12 @@ sub CompareClasses {
 	    $p = $n_r/$n;
 	    $current_compa{P_val} = &sum_of_binomials($p,$n_q,$QR,$n_q);
 	  }
-		    
 	} else {
 	  #### use hypergeometric distribution
 	  $p = $n_r/$n * $n_q/$n;
 	  $current_compa{P_val} = &sum_of_hypergeometrics($n_r, $n, $n_q, $QR, &min($n_r, $n_q));
-		    
 	}
 	$current_compa{'E(QR)'} = $p*$n;
-		
 	$current_compa{mtest} = $correction;
 	$current_compa{E_val} = $current_compa{P_val} * $current_compa{mtest};
 	if ($current_compa{E_val} > 0) {
@@ -1376,14 +1382,22 @@ sub CompareClasses {
 	  $current_compa{sig} = $inf;
 	}
 
+
+
 	#### check thresholds on probabilities
+	my $proba_ok = 1;
 	foreach my $key (qw(P_val E_val sig)) {
 	  if ((defined($lth{$key})) &&
 	      ($current_compa{$key}< $lth{$key})) {
-	  } elsif ((defined($uth{$key})) &&
-		   ($current_compa{$key} > $uth{$key})) {
+#	    &RSAT::message::Debug("HELLO", $key, $compa_key, $current_compa{$key}, $lth{$key}) if ($main::verbose >= 0);
+	    $proba_ok = 0;;
+	  } 
+	  if ((defined($uth{$key})) &&
+	      ($current_compa{$key} > $uth{$key})) {
+	    $proba_ok = 0;;
 	  }
 	}
+	next unless $proba_ok;
       }
 
       ## Print the comparison in order to free memory
