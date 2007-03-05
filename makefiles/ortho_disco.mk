@@ -504,10 +504,9 @@ V2=3
 LTH_DOTPROD=2
 GENE_PAIR_CMD= \
 	compare-classes -v ${V2} -i ${DYAD_CLASSES} -distinct -triangle \
-		-return ${GENE_PAIR_RETURN} -sort dotprod \
-		-sc 3 -lth Q 1 -lth R 1 -lth QR 1 -lth dotprod ${LTH_DOTPROD} \
-		-o ${GENE_PAIRS}.tab ; \
-	text-to-html -chunk 200 -i ${GENE_PAIRS}.tab -o  ${GENE_PAIRS}.html -font variable 
+		-return ${GENE_PAIR_RETURN} \
+		-sc 3 -lth Q 2 -lth R 2 -lth QR 2 -lth dotprod ${LTH_DOTPROD} \
+		-o ${GENE_PAIRS}.tab 
 gene_pairs:
 	@echo
 	@echo "Calculating gene pairs	${REF_ORG}	${TAXON}"
@@ -515,6 +514,7 @@ gene_pairs:
 	echo ${GENE_PAIRS}.tab
 	@echo ${GENE_PAIRS}.html 
 	@echo "	`grep -v ';' ${GENE_PAIRS}.tab | grep -v '^#' |  wc -l`	gene pairs"
+#	text-to-html -chunk 200 -i ${GENE_PAIRS}.tab -o  ${GENE_PAIRS}.html -font variable 
 
 
 ################################################################
