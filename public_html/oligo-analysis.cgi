@@ -131,23 +131,24 @@ if ($query->param('freq_estimate') =~ /background/i) {
 	$freq_option = " -bg $background -org $organism";
 #    }
 
-} elsif ($query->param('freq_estimate') =~ /upload/i) {
+  } elsif ($query->param('freq_estimate') =~ /upload/i) {
     $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
     $upload_freq_file = $query->param('upload_freq_file');
     if ($upload_freq_file) {
-	if ($upload_file =~ /\.gz$/) {
-	    $exp_freq_file .= ".gz";
-	}
-	$type = $query->uploadInfo($upload_freq_file)->{'Content-Type'};
-	open FREQ, ">$exp_freq_file" ||
-	    &cgiError("Cannot store expected frequency file in temp dir.");
-	while (<$upload_freq_file>) {
-	    print FREQ;
-	}
-	close FREQ;
-	$freq_option = " -expfreq $exp_freq_file";
+      ## Support compressed .gz files
+      if ($upload_freq_file =~ /\.gz$/) {
+	$exp_freq_file .= ".gz";
+      }
+      $type = $query->uploadInfo($upload_freq_file)->{'Content-Type'};
+      open FREQ, ">$exp_freq_file" ||
+	&cgiError("Cannot store expected frequency file in temp dir.");
+      while (<$upload_freq_file>) {
+	print FREQ;
+      }
+      close FREQ;
+      $freq_option = " -expfreq $exp_freq_file";
     } else {
-	&FatalError ("If you want to upload an expected frequency file, you should specify the location of this file on your hard drive with the Browse button");
+      &FatalError ("If you want to upload an expected frequency file, you should specify the location of this file on your hard drive with the Browse button");
     }
 
 } elsif ($query->param('freq_estimate') =~ /residue frequenc/i) {
