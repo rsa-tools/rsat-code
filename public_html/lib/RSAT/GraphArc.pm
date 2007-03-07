@@ -45,7 +45,7 @@ sub new {
     if($args{source}) {
 	$source = $self->get_attribute("source");
 	unless ($source->isa("RSAT::GraphNode")) {
-	    &RSAT::error::FatalError("Source node does node belong to the class RSAT::GraphNode");
+	    &RSAT::error::FatalError("Source node does not belong to the class RSAT::GraphNode");
 	}
 	$source_id = $source->get_attribute("id");
     } else {
@@ -58,7 +58,7 @@ sub new {
     if($args{target}) {
 	$target = $self->get_attribute("target");
 	unless ($target->isa("RSAT::GraphNode")) {
-	    &RSAT::error::FatalError("Target node does node belong to the class RSAT::GraphNode");
+	    &RSAT::error::FatalError("Target node does not belong to the class RSAT::GraphNode");
 	}
 	$target_id = $target->get_attribute("id");
     } else {

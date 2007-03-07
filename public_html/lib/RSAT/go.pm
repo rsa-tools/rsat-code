@@ -286,8 +286,8 @@ sub get_namespace {
 
 sub get_goid {
   my ($self, $name) = @_;
-  my %namespace = $self->get_attribute("name_id");
-  my $rep = $namespace{$name};
+  my %name_id = $self->get_attribute("name_id");
+  my $rep = $name_id{$name};
   if (!defined($rep)) {
     &RSAT::message::Warning("Unable to find the id of class $name\n") if ($main::verbose >= 2);
   }
