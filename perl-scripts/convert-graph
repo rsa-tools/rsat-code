@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.4 2007/02/26 08:27:22 rsat Exp $
+# $Id: convert-graph,v 1.5 2007/03/07 14:54:31 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -51,7 +51,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
-require RSAT::Graph;
+require RSAT::Graph2;
 
 
 ################################################################
@@ -85,8 +85,8 @@ package main;
     local $output_format = "dot";
     %supported_output_format =(
 			       dot=>1,
-			       gml=>1,
-			       gdl=>1,
+			       gml=>1
+			       
     );
     $supported_output_formats = join (",", keys %supported_output_format);
 
@@ -98,7 +98,7 @@ package main;
 
     ################################################################
     ## Initialize the graph
-    my $graph = new RSAT::Graph();
+    my $graph = new RSAT::Graph2();
     $graph->set_attribute("label", "graph");
     
     ################################################################
