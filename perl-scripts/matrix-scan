@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.59 2007/03/04 09:54:18 jvanheld Exp $
+# $Id: matrix-scan,v 1.60 2007/03/07 10:42:29 morgane Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -2367,6 +2367,7 @@ sub runInBatch {
   			$matrix_scan_cmd .= " -bgfile ".File::Spec->rel2abs($main::infile{bg},$wd);
   		} elsif ($bg_method eq "input") {
   			$matrix_scan_cmd .= " -bginput ";
+  			$matrix_scan_cmd .= " -markov ".$main::markov;
   		} elsif ($bg_method eq "window") {
   			$matrix_scan_cmd .= " -markov ".$main::markov;
   			$matrix_scan_cmd .= " -window ".$main::window;
