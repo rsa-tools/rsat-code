@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.41 2007/03/05 01:36:16 jvanheld Exp $
+# $Id: compare-classes,v 1.42 2007/03/07 09:18:19 rsat Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -1829,9 +1829,9 @@ sub PrintOneMatrix {
     
     #### print the matrix
     my $field_format = $field_formats{$matrix_key};
-    foreach my $r (@ref_classes ) {
+    foreach my $r (@ref_classes) {
 	if ($infile{rnames}) {
-	    my $rname =  $ref_classes{$r}->get_attribute("name");
+	    my $rname = $ref_classes{$r}->get_attribute("name");
 	    if ($rname) {
 		## Replace class ID by class name
 		print $out $rname; 
@@ -1842,8 +1842,9 @@ sub PrintOneMatrix {
 	} else {
 	    print $out $r;
 	}
-	foreach my $q (@query_classes ) {
+	foreach my $q (@query_classes) {
 	    my $compa_key = $r."__VERSUS__".$q;
+	    %current_compa = %{$compa{$compa_key}};
 	    if (defined($current_compa{$matrix_key})) {
 		print $out "\t", sprintf($field_format, $current_compa{$matrix_key});
 	    } else {
