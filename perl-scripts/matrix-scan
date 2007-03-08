@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.60 2007/03/07 10:42:29 morgane Exp $
+# $Id: matrix-scan,v 1.61 2007/03/08 15:09:02 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -48,7 +48,7 @@ sites). This program supports a variety of background models
 
 =head1 CATEGORY
 
-= over
+=over
 
 =item sequences
 
@@ -546,11 +546,10 @@ package main;
       my ($in, $input_dir) = &OpenInputFile($main::infile{input});
       while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
 	     (($current_seq ne "") || ($seq_id ne ""))) {
-	      
+
 	## Sequence length
 	$current_seq = lc($current_seq);
 	$bg_model->calc_from_seq($current_seq, add=>1);
-		
       }
       close $in;
       $bg_model->check_missing_transitions();
@@ -559,8 +558,7 @@ package main;
   } else {
     &RSAT::error::FatalError("You should either define the Markov order (-markov) or specify a file (-bgfile) for the background model.");
   }
-    
-    
+
   ################################################################
   ## Read the position-specific scoring matrices
   ################################################################
