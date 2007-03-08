@@ -14,6 +14,7 @@ parse-oreganno
 
 Parse some fields of ORegAnno (http://www.oreganno.org) database from a dump XML file. 
 The output format is the standard ft format with 3 empty fields (strand, start and end) and some optional additinal fields 
+This parser makes use of the XML::LibXML library 
 
 =head1 AUTHORS
 
@@ -30,6 +31,8 @@ The output format is the standard ft format with 3 empty fields (strand, start a
 =back
 
 =head1 USAGE
+
+Download the ORegAnno XML dump file at http://www.oreganno.org/oregano/Dump.jsp
     
 parse-oreganno -i inputfile -org 'organism name' [-o outputfile] [-return optionalFields]
 
