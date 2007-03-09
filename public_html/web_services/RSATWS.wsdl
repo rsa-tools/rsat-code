@@ -25,7 +25,7 @@
 	    Parameters for the operation retrieve_seq.
 	  </xsd:documentation>
         </xsd:annotation>
-        <xsd:all>
+        <xsd:sequence>
 	  <xsd:element name="output" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>
@@ -145,11 +145,11 @@
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
-	</xsd:all>
+	</xsd:sequence>
       </xsd:complexType>
 
       <xsd:complexType name="PurgeSequenceRequest">
-       <xsd:all>
+       <xsd:sequence>
         <xsd:element name="output" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
@@ -217,11 +217,11 @@
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-       </xsd:all>
+       </xsd:sequence>
       </xsd:complexType>
 
       <xsd:complexType name="OligoAnalysisRequest">
-       	<xsd:all>
+       	<xsd:sequence>
         <xsd:element name="output" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
@@ -312,11 +312,11 @@
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-       </xsd:all>
+       </xsd:sequence>
       </xsd:complexType>
 
       <xsd:complexType name="DnaPatternRequest">
-       	<xsd:all>
+       	<xsd:sequence>
         <xsd:element name="output" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
@@ -406,7 +406,7 @@
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-       </xsd:all>
+       </xsd:sequence>
       </xsd:complexType>
 
       <!--xsd:complexType name="Binint"-->
@@ -422,7 +422,7 @@
       <!--/xsd:complexType-->
 
       <xsd:complexType name="GeneInfoRequest">
-       <xsd:all>
+       <xsd:sequence>
 	<xsd:element name="output" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
@@ -474,11 +474,11 @@
 	  </xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
-       </xsd:all>
+       </xsd:sequence>
       </xsd:complexType>
 
       <xsd:complexType name="SupportedOrganismsRequest">
-       <xsd:all>
+       <xsd:sequence>
 	<xsd:element name="output" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
@@ -500,11 +500,11 @@
 	  </xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
-       </xsd:all>
+       </xsd:sequence>
       </xsd:complexType>
 
       <xsd:complexType name="RetrieveSequenceResponse">
-	<xsd:all>
+	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
 	      <xsd:documentation>
@@ -526,11 +526,11 @@
 	  </xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
-	 </xsd:all>
+	 </xsd:sequence>
 	</xsd:complexType>
 
       <xsd:complexType name="PurgeSequenceResponse">
-	<xsd:all>
+	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
 	      <xsd:documentation>
@@ -552,11 +552,11 @@
 	  </xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
-	 </xsd:all>
+	 </xsd:sequence>
 	</xsd:complexType>
 
       <xsd:complexType name="OligoAnalysisResponse">
-	<xsd:all>
+	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
 	      <xsd:documentation>
@@ -578,11 +578,11 @@
 	  </xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
-	 </xsd:all>
+	 </xsd:sequence>
 	</xsd:complexType>
 
       <xsd:complexType name="DnaPatternResponse">
-	<xsd:all>
+	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
 	      <xsd:documentation>
@@ -604,11 +604,11 @@
 	  </xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
-	 </xsd:all>
+	 </xsd:sequence>
 	</xsd:complexType>
 
       <xsd:complexType name="GeneInfoResponse">
-	<xsd:all>
+	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
 	      <xsd:documentation>
@@ -630,11 +630,11 @@
 	  </xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
-	 </xsd:all>
+	 </xsd:sequence>
 	</xsd:complexType>
 
       <xsd:complexType name="SupportedOrganismsResponse">
-	<xsd:all>
+	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
 	      <xsd:documentation>
@@ -656,7 +656,7 @@
 	  </xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
-	 </xsd:all>
+	 </xsd:sequence>
 	</xsd:complexType>
 
     </xsd:schema>
@@ -820,7 +820,8 @@
       Olivier Sand (oly@scmbb.ulb.ac.be).
     </documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
-	<soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
+	<!--soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/-->
+        <soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/>
     </port>
   </service>
 </definitions>
