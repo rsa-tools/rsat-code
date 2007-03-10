@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.15 2007/02/22 15:36:36 jvanheld Exp $
+# $Id: matrix-quality,v 1.16 2007/03/10 06:12:39 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -105,12 +105,12 @@ package main;
     $batch = 0;
 
     ## Return fields
-    %supported_return_fields = (
-				roc=>1,
-				sites=>1,
-				);
-    $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
-    %return_fields = ();
+#    %supported_return_fields = (
+#				roc=>1,
+#				sites=>1,
+#				);
+#    $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
+#    %return_fields = ();
 
     ################################################################
     ## Read argument values
@@ -517,46 +517,42 @@ Scores of the positive sequence set.
 	} elsif ($arg eq "-o") {
 	    $main::outfile{prefix} = shift(@arguments);
 
-	    ## Return fields
-=pod
-
-=item B<-return return_fields>
-
-List of fields to return. 
-
-Supported fields: 
-
-=over
-
-=back
-
-=item B<ROC_table>
-
-Return a table containing the numeric values for the ROC curve. 
-
-=back
-
-=cut
-        } elsif ($arg eq "-return") {
-	    $arg = shift (@arguments);
-            chomp($arg);
-            my @fields_to_return = split ",", $arg;
-            foreach my $field (@fields_to_return) {
-		$field = lc($field);
-                if ($supported_return_fields{$field}) {
-                    $return_fields{$field} = 1;
-                } else {
-                    &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
-		}
-	    }
+#	    ## Return fields
+#=pod
+#
+#=item B<-return return_fields>
+#
+#List of fields to return. 
+#
+#Supported fields: 
+#
+#=over
+#
+#=item B<ROC_table>
+#
+#Return a table containing the numeric values for the ROC curve. 
+#
+#=back
+#
+#=cut
+#        } elsif ($arg eq "-return") {
+#	    $arg = shift (@arguments);
+#            chomp($arg);
+#            my @fields_to_return = split ",", $arg;
+#            foreach my $field (@fields_to_return) {
+#		$field = lc($field);
+#                if ($supported_return_fields{$field}) {
+#                    $return_fields{$field} = 1;
+#                } else {
+#                    &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+#		}
+#	    }
 
 
 	    ## Other options
 =pod
 
 =item B<Other options>
-
-=over
 
 All the other options are automatically passed to matrix-scan, in
 order to specify the scanning parameters (strands, background model,
@@ -565,8 +561,6 @@ order to specify the scanning parameters (strands, background model,
 Note that the option '-return' of matrix-scan cannot be used here,
 because matrix-quality specifies the return fields required for its
 statistics.
-
-=back
 
 =cut
 
@@ -1014,6 +1008,8 @@ __END__
 =over
 
 =item B<matrix-scan>
+
+=item B<convert-matrix>
 
 =back
 
