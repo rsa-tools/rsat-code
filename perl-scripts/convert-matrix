@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.27 2007/02/05 00:32:54 jvanheld Exp $
+# $Id: convert-matrix,v 1.28 2007/03/10 06:55:05 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -68,6 +68,14 @@ $supported_input_formats = join ",", sort keys %supported_input_format;
 %supported_output_format = ('patser'=>1,
 			    "MotifSampler"=>1);
 $supported_output_formats = join ",", sort keys %supported_output_format;
+
+## site formats
+%supported_site_format = ('fasta'=>1,
+			  "wc"=>1,
+			  "multi"=>1,
+			 );
+$supported_site_formats = join ",", sort keys %supported_site_format;
+$site_format="fasta";
 
 &ReadArguments();
 
@@ -561,6 +569,13 @@ sub ReadArguments {
 	  &RSAT::error::FatalError("$output_format\tInvalid format for output matrix\tSupported: $supported_output_formats");
       }
 
+      ### site format 
+    } elsif ($ARGV[$a] eq "-site_format") {
+      $site_format = $ARGV[$a+1];
+      unless ($supported_site_format{$site_format}) {
+	  &RSAT::error::FatalError("$site_format\tInvalid format for sites\tSupported: $supported_site_formats");
+      }
+
       ### pseudo-weight
     } elsif ($ARGV[$a] eq "-pseudo") {
       $pseudo_weight = $ARGV[$a+1];
@@ -676,11 +691,12 @@ sub ExportMatrix {
 
   ## Return sites
   if ($return_fields{sites}) {
-    print $out "; Sites\t",$current_matrix->get_attribute("sites"),"\n";
+    print $out "; Sites\t",$current_matrix->get_attribute("sites"),"\n" if ($main::verbose >= 1);
     my $s = 0;
     foreach my $site_seq ($current_matrix->get_attribute("sequences")) {
       $s++;
-      print $out join ("\t", ";", $s, $site_seq), "\n";
+      &PrintNextSequence($out, $site_format, 0, $site_seq, $s);
+#      print $out $s, "\t\\", $site_seq, "\\\n";
     }
   }
 
