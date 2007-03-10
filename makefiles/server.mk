@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.18 2006/12/09 22:06:10 rsat Exp $
+# $Id: server.mk,v 1.19 2007/03/10 12:15:55 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -31,7 +31,7 @@ RSAT_SERVER = rsat@rsat.scmbb.ulb.ac.be:rsa-tools
 MAMAZE = jvanheld@164.15.109.52:rsa-tools
 MERLIN = jvanheld@merlin.scmbb.ulb.ac.be:rsa-tools
 FLYCHIP = jvanheld@flychip.org.uk:rsa-tools
-CIFN = jvanheld@edzna.ccg.unam.mx:rsa-tools
+CIFN = jvanheld@itzamna.ccg.unam.mx:rsa-tools
 PORTPIN = rsat@portpin.univ-mrs.fr:rsa-tools
 LIV = jvanheld@liv.bmc.uu.se:rsa-tools
 TORONTO=jvanheld@ws03.ccb.sickkids.ca:rsa-tools
