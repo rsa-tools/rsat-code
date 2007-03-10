@@ -65,9 +65,11 @@ In summary, the configuration includes the following steps.
 \item Specify an alias for rsa-tools in the appropriate section.
 
 \begin{verbatim}
-Alias /rsa-tools "/home/myaccount/rsa-tools/public_html/"
+Alias /rsa-tools /home/myaccount/rsa-tools/public_html/
 \end{verbatim}
 
+  (you need of course to adapt this command according to your own
+  \RSAT directory)
 
 \item Associate .cgi extension to CGI scripts
 
@@ -82,13 +84,13 @@ AddHandler cgi-script .cgi
 \item Give authorization to execute CGI scripts in the rsa-tools directory
 
 \begin{verbatim}
-ScriptAlias /rsa-tools/ "/home/myaccount/rsa-tools/public_html/
+ScriptAlias /rsa-tools/ /home/myaccount/rsa-tools/public_html/
 \end{verbatim}
 
 \item Specify the access options for the rsa-tools directory.
 
 \begin{verbatim}
-<Directory "/home/myaccount/rsa-tools/public_html">
+<Directory "/home/myaccount/rsa-tools/public_html/">
    AllowOverride None
    Options ExecCGI Indexes
    Order allow,deny
