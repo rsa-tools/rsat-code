@@ -7,7 +7,7 @@ package RSAT::Graph2;
 use RSAT::GenericObject;
 use RSAT::error;
 use RSAT::util;
-use RSAT::index;
+
 
 ### class attributes
 @ISA = qw( RSAT::GenericObject );
@@ -418,10 +418,6 @@ sub get_nodes_clusters {
     my @node_clusters = @{$nodes_clusters[$numId]};
     return @node_clusters;
 }
-
-
-
-
 
 ################################################################
 =pod
@@ -881,7 +877,7 @@ sub load_classes {
         my $family_name = $fields[1];
         my $node_index = $self->node_by_name($node_name);
         if ($node) {
-          push $nodes_clusters[$node_index], $family_name;
+          push @{$nodes_clusters[$node_index]}, $family_name;
           $cluster_list{$family_name} = 1;
         } else {
           #&RSAT::message::TimeWarn("Node $node_id does not exist in the graph") if ($main::verbose >= 2);
