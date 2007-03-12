@@ -1,12 +1,13 @@
 ###############################################################
 #
-# Class Graph
+# Class Graph2
 #
 package RSAT::Graph2;
 
 use RSAT::GenericObject;
 use RSAT::error;
 use RSAT::util;
+use RSAT::index;
 
 ### class attributes
 @ISA = qw( RSAT::GenericObject );
@@ -50,7 +51,6 @@ sub new {
     my @arc_out_label = ();
     my @arc_in_color = ();
     my @arc_out_color = ();
-    my @arcs = ();
     
     my %nodes_color = ();
     my %nodes_label = ();
@@ -106,6 +106,154 @@ sub get_node_color {
     return $color;
 }
 
+################################################################
+=pod
+
+=item B<get_out_labels()>
+
+returns the labels of the out neighbours of a node
+
+=cut
+sub get_out_labels {
+    my ($self, $node_name) = @_;
+    my $numId = $self->node_by_name($node_name);
+    my @out_label = $self->get_attribute("out_label");
+    @node_out_label = ();
+    if (defined(@{$out_label[$numId]})) {
+      my @node_out_label = @{$out_label[$numId]};
+    } 
+    return @node_out_label;
+}
+
+################################################################
+=pod
+
+=item B<get_out_labels()>
+
+returns the labels of the out neighbours of a node given its internal id
+
+=cut
+sub get_out_labels_id {
+    my ($self, $numId) = @_;
+    my @out_label = $self->get_attribute("out_label");
+    @node_out_label = ();
+    if (defined(@{$out_label[$numId]})) {
+      my @node_out_label = @{$out_label[$numId]};
+    } 
+    return @node_out_label;
+}
+
+################################################################
+=pod
+
+=item B<get_out_color()>
+
+returns the color of the out arcs of a node
+
+=cut
+sub get_out_colors {
+    my ($self, $node_name) = @_;
+    my $numId = $self->node_by_name($node_name);
+    my @out_color = $self->get_attribute("out_color");
+    @out_color = ();
+    if (defined(@{$out_color[$numId]})) {
+      my @node_out_color = @{$out_color[$numId]};
+    }
+    return @node_out_color;
+}
+
+
+################################################################
+=pod
+
+=item B<get_out_color()>
+
+returns the color of the out arcs of a node given its id
+
+=cut
+sub get_out_colors_id {
+    my ($self, $numId) = @_;
+    my @out_color = $self->get_attribute("out_color");
+    @out_color = ();
+    if (defined(@{$out_color[$numId]})) {
+      my @node_out_color = @{$out_color[$numId]};
+    }
+    return @node_out_color;
+}
+
+
+################################################################
+=pod
+
+=item B<contains_node>
+
+returns 1 if the graph contains a node having name $node_name, returns 0 otherwise
+
+=cut
+sub contains_node {
+    my ($self, $node_name) = @_;
+    my $numId = $self->node_by_name($node_name);
+    my $contains = 0;
+    if (defined($numId)) {
+      $contains = 1;
+    }
+    return $contains;
+
+}
+
+
+################################################################
+=pod
+
+=item B<get_out_neighbours()>
+
+returns the out labels of a node
+
+=cut
+sub get_out_neighbours {
+    my ($self, $node_name) = @_;
+    my $numId = $self->node_by_name($node_name);
+    my @out_neighbours = $self->get_attribute("out_neighbours");
+    my @out_neighbours_names = ();
+    if (defined($out_neighbours[$numId])) {
+      my @out_neighbours_indices = @{$out_neighbours[$numId]};
+      foreach my $out_neighbour_id(@out_neighbours_indices) {
+        my $out_neighbour_name = $self->node_by_id($out_neighbour_id);
+        push @out_neighbours_names, $out_neighbour_name;
+      }
+    } else {
+      &RSAT::message::Warning("Node $node_name has no out neighbours");
+    }
+    return @out_neighbours_names;
+}
+
+
+################################################################
+=pod
+
+=item B<get_out_neighbours()>
+
+returns the out labels of a node given its internal id
+
+=cut
+sub get_out_neighbours_id {
+    my ($self, $numId) = @_;
+    my @out_neighbours = $self->get_attribute("out_neighbours");
+    my @out_neighbours_names = ();
+    if (defined($out_neighbours[$numId])) {
+      my @out_neighbours_indices = @{$out_neighbours[$numId]};
+      foreach my $out_neighbour_id(@out_neighbours_indices) {
+        my $out_neighbour_name = $self->node_by_id($out_neighbour_id);
+        push @out_neighbours_names, $out_neighbour_name;
+      }
+    } else {
+      my $node_name = $self->node_by_id($numId);
+      &RSAT::message::Warning("Node $node_name has no out neighbours");
+    }
+    return @out_neighbours_names;
+}
+
+
 
 ################################################################
 =pod
@@ -122,6 +270,100 @@ sub get_node_label {
     my $label = $nodes_label{$numId};
     return $label;
 }
+
+
+
+
+################################################################
+=pod
+
+=item B<create_node()>
+
+Create and add a node to the graph. 
+
+=cut
+sub create_node {
+    my ($self, $node_name, $label, $color) = @_;
+    my %nodes_name_id = $self->get_attribute("nodes_name_id");
+    my %nodes_id_name = $self->get_attribute("nodes_id_name");
+    my %nodes_color = $self->get_attribute("nodes_color");
+    my %nodes_label = $self->get_attribute("nodes_label");
+    my $numId = scalar (keys (%nodes_name_id)); 
+    if (!defined($label) || $label eq "") {
+      $label = $node_name;
+    }
+    if (!defined($color) || $color eq "") {
+      $color = "#000088";
+    }
+    $nodes_name_id{$node_name} = $numId;
+    $nodes_id_name{$numId} = $node_name;
+    $nodes_color{$numId} = $color;
+    $nodes_label{$numId} = $label;
+    $self->set_hash_attribute("nodes_name_id", %nodes_name_id);
+    $self->set_hash_attribute("nodes_id_name", %nodes_id_name);
+    $self->set_hash_attribute("nodes_color", %nodes_color);
+    $self->set_hash_attribute("nodes_label", %nodes_label);
+}
+
+################################################################
+=pod
+
+=item B<create_arc()>
+
+Create an arc between to nodes
+
+=cut
+sub create_arc {
+    my ($self, $source_node_name, $target_node_name, $label, $color) = @_;
+    my @out_neighbours = $self->get_attribute("out_neighbours");
+    my @in_neighbours = $self->get_attribute("in_neighbours");
+    my @arc_in_label = $self->get_attribute("in_label");
+    my @arc_out_label = $self->get_attribute("out_label");
+    my @arc_in_color = $self->get_attribute("in_color");
+    my @arc_out_color = $self->get_attribute("out_color");
+    my @arcs = $self->get_attribute("arcs");
+    my $numId = scalar (@arcs); 
+    if (!defined($label) || $label eq "") {
+      $label = $source_node_name."_".$target_node_name;
+    }
+    if (!defined($color) || $color eq "") {
+      $color = "#000044";
+    }
+    
+    my $source_node_index = $self->node_by_name($source_node_name);
+    my $target_node_index = $self->node_by_name($target_node_name);
+    my $error =  "Could not create an arc between $source_node_name and $target_node_name\n" ;
+    if (defined($source_node_index) && defined($target_node_index)) {
+      push @{$out_neighbours[$source_node_index]}, $target_node_index;
+      push @{$in_neighbours[$target_node_index]}, $source_node_index;
+      push @{$arc_out_label[$source_node_index]}, $label;
+      push @{$arc_in_label[$target_node_index]}, $label;
+      push @{$arc_out_color[$source_node_index]}, $color;
+      push @{$arc_in_color[$target_node_index]}, $color;    
+      $arcs[$numId][0] = $source_node_name;
+      $arcs[$numId][1] = $target_node_name;
+      $arcs[$numId][2] = $label;
+      $arcs[$numId][3] = $color;
+      $self->set_array_attribute("out_neighbours", @out_neighbours);
+      $self->set_array_attribute("in_neighbours", @in_neighbours);
+      $self->set_array_attribute("in_label", @arc_in_label);
+      $self->set_array_attribute("out_label", @arc_out_label);
+      $self->set_array_attribute("in_color", @arc_in_color);
+      $self->set_array_attribute("out_color", @arc_out_color);
+      $self->set_array_attribute("arcs", @arcs);
+    } 
+    if (!defined($source_node_index)) {
+      $error .= "\t$target_node_name not found in the graph\n";
+    }
+    if (!defined($target_node_index)) {
+      $error .= "\t$target_node_name not found in the graph\n";
+    }
+    if (!defined($target_node_index) || !defined($source_node_index)) {
+      &RSAT::message::Warning($error);
+    }
+}
+
+
 
 
 
@@ -159,6 +401,25 @@ sub get_size {
   my $arcs_nb = scalar(@arcs);
   return ($nodes_nb, $arcs_nb);
 }
+
+
+################################################################
+=pod
+
+=item B<get_nodes_clusters()>
+
+Return the clusters to which the node specified by its name belongs
+
+=cut
+sub get_nodes_clusters {
+    my ($self, $node_name) = @_;
+    my $numId = $self->node_by_name($node_name);
+    my @nodes_clusters = $self->get_attribute("nodes_clusters");
+    my @node_clusters = @{$nodes_clusters[$numId]};
+    return @node_clusters;
+}
+
+
 
 
 
@@ -203,6 +464,7 @@ sub node_by_id {
 	return();
     }
 }
+
 
 
 
@@ -328,6 +590,7 @@ sub read_from_table {
 	$arcs[$arccpt][0] = $source_name;
 	$arcs[$arccpt][1] = $target_name;
 	$arcs[$arccpt][2] = $arc_label;
+	$arcs[$arccpt][3] = $arc_default_color;
 	$arccpt++;
 	&RSAT::message::Info(join("\t", "Created arc", 
 				  $source_name, $target_name
@@ -586,8 +849,8 @@ sub to_node_table {
 
 =item B<load_classes($class_file)>
 
-Load the $class_file by adding to each node the cluster(s) to which it belongs 
-Clusters are stored within the attribute cluster_list of the graph object.
+Load the $class_file by adding an array containing having as coordinate the internal index of the nodes and as component the class_names.
+Class names are stored within the attribute cluster_list of the graph object.
 
 Parameters
 
@@ -606,6 +869,7 @@ sub load_classes {
   &RSAT::message::TimeWarn("Loading class information", $inputfile) if ($main::verbose >= 2);
   ($main::in) = &RSAT::util::OpenInputFile($inputfile);
   my %cluster_list;
+  my @nodes_clusters;
   while (<$main::in>) {
 	next if (/^--/); # Skip mysql-like comments
 	next if (/^;/); # Skip RSAT comments
@@ -613,11 +877,11 @@ sub load_classes {
 	next unless (/\S/); # Skip empty rows
 	chomp;
 	my @fields = split("\t");
-	my $node_id = $fields[0];
+	my $node_name = $fields[0];
         my $family_name = $fields[1];
-        my $node = $self->node_by_name($node_id);
+        my $node_index = $self->node_by_name($node_name);
         if ($node) {
-          $node->push_attribute("clusters", $family_name);
+          push $nodes_clusters[$node_index], $family_name;
           $cluster_list{$family_name} = 1;
         } else {
           #&RSAT::message::TimeWarn("Node $node_id does not exist in the graph") if ($main::verbose >= 2);
@@ -625,6 +889,7 @@ sub load_classes {
   }
   @cluster_list = sort(keys(%cluster_list));
   $self->set_array_attribute("cluster_list", @cluster_list);
+  $self->set_array_attribute("nodes_clusters", @nodes_clusters);
 
 }
 return 1;
