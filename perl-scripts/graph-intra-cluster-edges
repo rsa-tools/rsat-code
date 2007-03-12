@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-intra-cluster-edges,v 1.2 2007/01/24 12:31:40 rsat Exp $
+# $Id: graph-intra-cluster-edges,v 1.3 2007/03/12 13:08:17 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -107,16 +107,16 @@ package main;
     ## if the target node is located in the same cluster than 
     ## the source node
     
-    foreach my $arc ($graph->get_attribute("arcs")) {
-      my $source_node = $arc->get_attribute("source");
-      my $target_node = $arc->get_attribute("target");
-      my $source_id = $source_node->get_attribute("id");
-      my $target_id = $target_node->get_attribute("id");
-      my @source_clusters = $source_node->get_attribute("clusters");
-      my @target_clusters = $target_node->get_attribute("clusters");
+    my @arcs = $graph->get_attribute("arcs");
+    
+    for (my $i = 0; $i < @arcs; $i++) {
+      my $source_node = $arcs[$i][0];
+      my $target_node = $arcs[$i][1];
+      my @source_clusters = $graph->get_nodes_clusters($source_node);
+      my @target_clusters = $graph->get_nodes_clusters($target_node);
       my $add_value = 1;
       if ($weights) {
-        $add_value = $arc->get_attribute("weight");
+        $add_value = $arcs[$i][2]
         $add_value /= 2;
       }
       foreach my $scluster (@source_clusters) {
