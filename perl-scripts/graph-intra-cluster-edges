@@ -1,7 +1,7 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-intra-cluster-edges,v 1.4 2007/03/13 10:30:25 rsat Exp $
+# $Id: graph-intra-cluster-edges,v 1.5 2007/03/13 12:28:50 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -114,37 +114,33 @@ package main;
     my %nodes_id_name = $graph->get_attribute("nodes_id_name");
     my @cluster_list = $graph->get_attribute("cluster_list");
     my %clusters_name_id = ();
-    my %clusters_id_name = ();
+    my %clusters_edge_nb = ();
     for (my $i = 0; $i < scalar(@cluster_list); $i++) {
      $cluster_name_id{$cluster_list[$i]} = $i;
-     $cluster_id_name{$i} = $cluster_list[$i];
     }
     my @arcs = $graph->get_attribute("arcs");
     my @result = ();
     for (my $i = 0; $i < @arcs; $i++) {
       my $source_node = $arcs[$i][0];
       my $target_node = $arcs[$i][1];
-      #print "$source_node\t$target_node";
       my @source_clusters = $graph->get_nodes_clusters($source_node);
       my @target_clusters = $graph->get_nodes_clusters($target_node);
+      
       my $add_value = 1;
       if ($weights) {
         $add_value = $arcs[$i][2];
         $add_value /= 2;
       }
+      
       foreach my $scluster (@source_clusters) {
         foreach my $tcluster (@target_clusters) {
           if ($scluster eq $tcluster) {
-            if (!defined($result[$nodes_name_id{$source_node}][$clusters_name_id{$scluster}])) {
-              $result[$nodes_name_id{$source_node}][$clusters_name_id{$scluster}] = $add_value;
-            } else {
-              $result[$nodes_name_id{$source_node}][$clusters_name_id{$scluster}] += $add_value;
-            }
-            if (!defined($result[$nodes_name_id{$target_node}][$clusters_name_id{$tcluster}])) {
-              $result[$nodes_name_id{$target_node}][$clusters_name_id{$tcluster}] = $add_value;
-            } else {
-              $result[$nodes_name_id{$target_node}][$clusters_name_id{$tcluster}] += $add_value;
-            }
+            my $source_node_index = $nodes_name_id{$source_node};
+            my $target_node_index = $nodes_name_id{$target_node};
+            my $cluster_index = $cluster_name_id{$tcluster};
+            $result[$source_node_index][$cluster_index] += $add_value;
+            $result[$target_node_index][$cluster_index] += $add_value;
+            $clusters_edge_nb{$tcluster} += 1;
           }
         }
       }
@@ -177,6 +173,14 @@ package main;
       print $out "\t$sum";
     }
     print $out "\n";
+    print $out "#Arcs";
+    foreach my $cluster (@cluster_list) {
+      #my $val = ($clusters_edge_nb{$cluster}) / 2;
+      my $val = ($clusters_edge_nb{$cluster});
+      print $out "\t$val";
+    }
+    print $out "\n";
+    
     
     ################################################################
     ## Print verbose
