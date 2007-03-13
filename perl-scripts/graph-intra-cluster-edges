@@ -1,7 +1,7 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 ############################################################
 #
-# $Id: graph-intra-cluster-edges,v 1.3 2007/03/12 13:08:17 rsat Exp $
+# $Id: graph-intra-cluster-edges,v 1.4 2007/03/13 10:30:25 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -57,7 +57,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
-require RSAT::Graph;
+require RSAT::Graph2;
 require RSAT::Classification;
 
 ################################################################
@@ -71,7 +71,7 @@ package main;
 
     ################################################################
     ## Initialize the input graph
-    $graph = new RSAT::Graph();
+    $graph = new RSAT::Graph2();
     $graph->set_attribute("label", "input graph");
 
     ## Columns of the tab-delimited graph file
@@ -106,44 +106,44 @@ package main;
     ## Count the number of intra-cluster edge by looking for each arc
     ## if the target node is located in the same cluster than 
     ## the source node
+    ## The results are stored in an two dimensional array. Lines represent
+    ## the nodes and edges represent the clusters.
     
+    ## Indices of the two-dimensional array;
+    my %nodes_name_id = $graph->get_attribute("nodes_name_id");
+    my %nodes_id_name = $graph->get_attribute("nodes_id_name");
+    my @cluster_list = $graph->get_attribute("cluster_list");
+    my %clusters_name_id = ();
+    my %clusters_id_name = ();
+    for (my $i = 0; $i < scalar(@cluster_list); $i++) {
+     $cluster_name_id{$cluster_list[$i]} = $i;
+     $cluster_id_name{$i} = $cluster_list[$i];
+    }
     my @arcs = $graph->get_attribute("arcs");
-    
+    my @result = ();
     for (my $i = 0; $i < @arcs; $i++) {
       my $source_node = $arcs[$i][0];
       my $target_node = $arcs[$i][1];
+      #print "$source_node\t$target_node";
       my @source_clusters = $graph->get_nodes_clusters($source_node);
       my @target_clusters = $graph->get_nodes_clusters($target_node);
       my $add_value = 1;
       if ($weights) {
-        $add_value = $arcs[$i][2]
+        $add_value = $arcs[$i][2];
         $add_value /= 2;
       }
       foreach my $scluster (@source_clusters) {
         foreach my $tcluster (@target_clusters) {
           if ($scluster eq $tcluster) {
-            #print "$scluster $source_id $target_id\n";
-            if ($source_node->get_attribute("cluster_intra_edges")) {
-              my %source_intra_edge_number = $source_node->get_attribute("cluster_intra_edges");
-              my $intra_edge_number = $source_intra_edge_number{$scluster};
-              $intra_edge_number+=$add_value;
-              $source_node->add_hash_attribute("cluster_intra_edges",$scluster,$intra_edge_number);
+            if (!defined($result[$nodes_name_id{$source_node}][$clusters_name_id{$scluster}])) {
+              $result[$nodes_name_id{$source_node}][$clusters_name_id{$scluster}] = $add_value;
             } else {
-              my %source_intra_edge_number = ();
-              my $intra_edge_number = $add_value;
-              $source_intra_edge_number{$scluster} = $intra_edge_number;
-              $source_node->set_hash_attribute("cluster_intra_edges",%source_intra_edge_number);
+              $result[$nodes_name_id{$source_node}][$clusters_name_id{$scluster}] += $add_value;
             }
-            if ($target_node->get_attribute("cluster_intra_edges")) {
-              my %target_intra_edge_number = $target_node->get_attribute("cluster_intra_edges");
-              my $intra_edge_number = $target_intra_edge_number{$tcluster};
-              $intra_edge_number+=$add_value;
-              $target_node->add_hash_attribute("cluster_intra_edges",$tcluster,$intra_edge_number);
+            if (!defined($result[$nodes_name_id{$target_node}][$clusters_name_id{$tcluster}])) {
+              $result[$nodes_name_id{$target_node}][$clusters_name_id{$tcluster}] = $add_value;
             } else {
-              my %target_intra_edge_number = ();
-              my $intra_edge_number = $add_value;
-              $target_intra_edge_number{$tcluster} = $intra_edge_number;
-              $target_node->set_hash_attribute("cluster_intra_edges",%target_intra_edge_number);
+              $result[$nodes_name_id{$target_node}][$clusters_name_id{$tcluster}] += $add_value;
             }
           }
         }
@@ -152,7 +152,7 @@ package main;
     
     ################################################################
     ## Print the results
-    my @cluster_list = $graph->get_attribute("cluster_list");
+   
     ## Print cluster names
     foreach my $cluster (@cluster_list) {
       print $out "\t$cluster";
@@ -160,15 +160,16 @@ package main;
     print $out "\tsum";
     
     ## Print node name and the number of intra-edge cluster
-    foreach my $node ($graph->get_nodes()) {
+    for (my $i = 0; $i < scalar(@result); $i++) {
       print $out "\n";
-      print $out $node->get_attribute("label");
+      print $out "$nodes_id_name{$i}";
       my $sum = 0;
-      foreach my $cluster(@cluster_list) {
-        my %intra_edge_number = $node->get_attribute("cluster_intra_edges");
-        my $val = 0; 
-        if (exists($intra_edge_number{$cluster})) {
-           $val = $intra_edge_number{$cluster};
+      for (my $j = 0; $j < scalar(@cluster_list); $j++) {
+        my $cluster = $cluster_list[$j];
+        my $clusterIndex = $cluster_name_id{$cluster};
+        my $val = 0;
+        if (defined($result[$i][$j])) {
+          $val = $result[$i][$j];
         }
         $sum += $val;
         print $out "\t$val";
