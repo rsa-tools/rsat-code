@@ -438,8 +438,11 @@ sub get_nodes_clusters {
     my $numId = $self->node_by_name($node_name);
     #print "NODE $node_name $numId\n";
     my @nodes_clusters = $self->get_attribute("nodes_clusters");
-    if (defined($numId)) {
-      my @node_clusters = @{$nodes_clusters[$numId]};
+    my @node_clusters = ();
+    if (defined($numId) && defined(@{$nodes_clusters[$numId]})) {
+      @node_clusters = @{$nodes_clusters[$numId]};
+    } else {
+      &RSAT::message::Warning("\t","Node",$node_name,"does not belong to any cluster") if ($main::verbose >= 4);;
     }
     return @node_clusters;
 }
