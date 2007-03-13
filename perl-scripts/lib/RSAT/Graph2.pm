@@ -51,7 +51,11 @@ sub new {
     my @arc_out_label = ();
     my @arc_in_color = ();
     my @arc_out_color = ();
+    my @arcs = ();
     
+    my $max_arc = 1;
+    
+    my %arcs_name_id = ();
     my %nodes_color = ();
     my %nodes_label = ();
     my %node_name_id = ();
@@ -77,7 +81,12 @@ sub new {
     # $arcs[x][0] : sourcenode
     # $arcs[x][1] : targetnode
     # $arcs[x][2] : label
+    # $arcs[x][3] : color
     $self->set_array_attribute("arcs", @arcs);
+    # DOC
+    $self->set_hash_attribute("arcs_name_id", %arcs_name_id);
+    $self->set_attribute("nb_arc_bw_node", $max_arc);
+    
     # %nodes_name_id correspondance between name and id
     $self->set_hash_attribute("nodes_name_id", %nodes_name_id);
     # %nodes_name_id correspondance between id and name
@@ -381,7 +390,20 @@ sub get_nodes {
   return keys %nodes_name_id;
 }
 
+################################################################
+=pod
 
+=item B<get_nodes()>
+
+Return a reference to the list of arcs
+
+=cut
+sub get_arcs_ref {
+  my ($self) = @_;
+  my @arcs = $self->get_attribute("arcs");
+  my $arcsRef = \@arcs;
+  return $arcsRef
+}
 
 ################################################################
 =pod
@@ -414,8 +436,11 @@ Return the clusters to which the node specified by its name belongs
 sub get_nodes_clusters {
     my ($self, $node_name) = @_;
     my $numId = $self->node_by_name($node_name);
+    #print "NODE $node_name $numId\n";
     my @nodes_clusters = $self->get_attribute("nodes_clusters");
-    my @node_clusters = @{$nodes_clusters[$numId]};
+    if (defined($numId)) {
+      my @node_clusters = @{$nodes_clusters[$numId]};
+    }
     return @node_clusters;
 }
 
@@ -490,11 +515,16 @@ sub read_from_table {
     my @arc_in_color = $self->get_attribute("in_color");
     my @arc_out_color = $self->get_attribute("out_color");
     my @arcs = $self->get_attribute("arcs");
+    my %arcs_name_id = $self->get_attribute("arcs_name_id");
+ 
+    
     my %nodes_name_id = $self->get_attribute("nodes_names_id");
     my %nodes_id_name = $self->get_attribute("nodes_id_names");
     my %nodes_color = $self->get_attribute("nodes_color");
     my %nodes_label = $self->get_attribute("nodes_label");
     
+    my $max_arc_nb = $self->get_attribute("nb_arc_bw_node");
+   
     my $nodecpt = 0;
     my $arccpt = 0;
     &RSAT::message::TimeWarn("Loading graph from tab file", $inputfile) if ($main::verbose >= 2);
@@ -583,6 +613,20 @@ sub read_from_table {
 	push @{$arc_in_label[$target_node_index]}, $arc_label;
 	push @{$arc_out_color[$source_node_index]}, $arc_default_color;
 	push @{$arc_in_color[$target_node_index]}, $arc_default_color;
+        my $exist = 0;
+        my $arc_id = "";
+        my $i;
+	for ($i = 1; $i <= $max_arc_nb; $i++) {
+	  $arc_id = $source_name."_".$target_name."_".$i;
+	  $exist = exists($arcs_name_id{$arc_id});
+	}
+	if ($exist) {
+	  $arc_id = $source_name."_".$target_name."_".($i);
+	  $max_arc_nb++;
+	} else {
+	  $arc_id = $source_name."_".$target_name."_".($i-1);
+	}
+	$arcs_name_id{$arc_id} = $arccpt;
 	$arcs[$arccpt][0] = $source_name;
 	$arcs[$arccpt][1] = $target_name;
 	$arcs[$arccpt][2] = $arc_label;
@@ -602,10 +646,14 @@ sub read_from_table {
     $self->set_array_attribute("in_color", @arc_in_color);
     $self->set_array_attribute("out_color", @arc_out_color);
     $self->set_array_attribute("arcs", @arcs);
+    
     $self->set_hash_attribute("nodes_name_id", %nodes_name_id);
     $self->set_hash_attribute("nodes_id_name", %nodes_id_name);
     $self->set_hash_attribute("nodes_color", %nodes_color);
     $self->set_hash_attribute("nodes_label", %nodes_label);
+    $self->set_hash_attribute("arcs_name_id", %arcs_name_id);
+    
+    $max_arc_nb = $self->force_attribute("nb_arc_bw_node", $max_arc_nb);   
 }
 
 ################################################################
@@ -876,15 +924,15 @@ sub load_classes {
 	my $node_name = $fields[0];
         my $family_name = $fields[1];
         my $node_index = $self->node_by_name($node_name);
-        if ($node) {
+        if (defined($node_index)) {
           push @{$nodes_clusters[$node_index]}, $family_name;
           $cluster_list{$family_name} = 1;
         } else {
           #&RSAT::message::TimeWarn("Node $node_id does not exist in the graph") if ($main::verbose >= 2);
         }
   }
-  @cluster_list = sort(keys(%cluster_list));
-  $self->set_array_attribute("cluster_list", @cluster_list);
+  @cluster_list_array = sort(keys(%cluster_list));
+  $self->set_array_attribute("cluster_list", @cluster_list_array);
   $self->set_array_attribute("nodes_clusters", @nodes_clusters);
 
 }
