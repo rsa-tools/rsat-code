@@ -29,9 +29,9 @@ parse-oreganno
 Parse ORegAnno (http://www.oreganno.org) database from a dump XML file. 
 Only entries having non-deprecated ORegAnno StableID are returned.
 The parser returns one output file for each of the four OReganno record type.
-(TRANSCRIPTION FACTOR BINDING SITE, REGULATORY REGION, REGULATORY POLYMORPHISM, REGULATORY HAPLOTYPE)
-The output format is a tab-delimited. This parser makes use of the XML::LibXML, LWP and LWP::UserAgent
-libraries.
+(TRANSCRIPTION FACTOR BINDING SITE, REGULATORY REGION, REGULATORY POLYMORPHISM, REGULATORY HAPLOTYPE).
+The parser retrieves (optional) TFBS chromosomal positions from UCSC genome browser by using BLAT.
+This parser makes use of the XML::LibXML, LWP and LWP::UserAgent libraries.
 
 =head1 AUTHORS
 
@@ -51,7 +51,7 @@ libraries.
 
 Download the ORegAnno XML dump file at http://www.oreganno.org/oregano/Dump.jsp
     
-parse-oreganno -i inputfile
+parse-oreganno -i inputfile [-v # -get_pos]
 
 =head1 OPTIONS
 
@@ -66,7 +66,24 @@ parse-oreganno -i inputfile
 =item B<-get_pos>: Optional. Get genomic positions from UCSC genome browser 
 with BLAT (http://genome.ucsc.edu/cgi-bin/hgBlat). Requires internet connection.
 
-=head1 OUTPUT FIELDS
+=back
+
+=head1 OUTPUT FILES
+
+The parser returns 3 kinds of files: .tab, .gft and .log
+
+=over
+
+=item - B<.tab>: contains parsed data from the XML input file for each type of ORegAnno record
+
+=item - B<.gft>: genome feature format as described in convert-features (convert-features -h). Contains the chromosomal
+positions for the TFBS, calculated from a BLAT search at UCSC genome browser.
+
+=item - B<.log>: WARNINGS during execution are logged in this file.
+
+=back
+
+=head1 OUTPUT FIELDS FOR .tab
 
 =over
 
@@ -138,7 +155,7 @@ printHelp() if $help;
 open XML, "<$xmlfilename" or die "Cannot open XML file $xmlfilename:$!"; 
 my $xmlCount = 1;
 while (my $line = <XML>){
-	
+
 	#look for <?xml
 	 if ($line =~ /^<\?xml/) {
 	 	my $partFileName = $xmlfilename."_part_".$xmlCount;
@@ -174,22 +191,25 @@ my $TFBS_file = "ORegAnno_TFBS_annotations_".$oreg_version.".tab";
 my $polymorphism_file = "ORegAnno_regulatory_polymorphism_annotations_".$oreg_version.".tab";
 my $haplotype_file = "ORegAnno_regulatory_haplotype_annotations_".$oreg_version.".tab";
 my $region_file = "ORegAnno_regulatory_region_annotations_".$oreg_version.".tab";
+my $logFile = "ORegAnno_".$oreg_version.".log";
 
+open LOG, ">$logFile"
+	or die "Can't write to $logFile : $!";
 
 ## print headers
-#&printHeader($TFBS_file);
-#&printHeader($polymorphism_file);
-#&printHeader($haplotype_file);
-#&printHeader($region_file);
+&printHeader($TFBS_file);
+&printHeader($polymorphism_file);
+&printHeader($haplotype_file);
+&printHeader($region_file);
 
 ## parse XML files
 print "Parsing XML file\n" if ($verbose >=2 );
 
 for (my $i=1; $i < $xmlCount; $i++){
-#	my $parsedRecords = &XMLParse($xmlfilename."_part_".$i);
+	my $parsedRecords = &XMLParse($xmlfilename."_part_".$i);
 	
 	## print records for current partial XML file
-#	print2tab($parsedRecords);
+	&print2tab($parsedRecords);
 	unlink($xmlfilename."_part_".$i);
 }
 
@@ -201,7 +221,7 @@ if ($get_pos) {
 	print "Exporting sequence with flank to fasta file\n" if ($verbose >=2 );
 	
 	## export the sequence with flank to a fasta file
-	#&to_fasta($TFBS_file);
+	&to_fasta($TFBS_file);
 		
 	
 	## IMPORTANT:This hash must be regularly updated!!!
@@ -232,13 +252,17 @@ if ($get_pos) {
 	my $UCSC_genome_versions = &get_UCSC_databases(\%species_name_conversion);
 	
 	## get the seqWithFlank positions from UCSC
-	my $UCSC_pos = &get_UCSC_positions("test.fa",$UCSC_genome_versions,\%species_name_conversion);
+	my $fasta_file = $TFBS_file;
+	$fasta_file =~ s/\.tab/\.fa/;
+	my $UCSC_pos = &get_UCSC_positions($fasta_file,$UCSC_genome_versions,\%species_name_conversion);
+	unlink($fasta_file);
 	
 	## print in feature format
 	&print2feature($UCSC_pos,$UCSC_genome_versions);
-
+	
 }
 
+close LOG;
 
 ###############################################
 ## SUBROUTINES
@@ -262,9 +286,8 @@ sub XMLParse {
 	my @records = $root->getElementsByTagName('record');
 
 	foreach my $i (0..$#records) {
-
 		my @thisParsedRecord =();
-	
+
 			# check wether the record id deprecated
 			my $deprecatedID  = $records[$i]->findvalue('deprecatedByStableId');
 			# if there is no deprecatedID => record is to be processed
@@ -282,7 +305,7 @@ sub XMLParse {
 					my $geneVersion = $records[$i]->findvalue('geneVersion');
 					my $lociName = $records[$i]->findvalue('lociName');
 					my $speciesName  = $records[$i]->findvalue('speciesName');
-					
+								
 					# evidence
 					my @evidenceSet = $records[$i]->getElementsByTagName('evidenceSet');
 					my $evidences;				
@@ -306,7 +329,7 @@ sub XMLParse {
 									trim_string($geneID), trim_string($geneName), trim_string($geneSource), trim_string($geneVersion),trim_string($lociName), trim_string($speciesName), 
 									trim_string($evidences), trim_string($outcome), trim_string($pubmedID),   trim_string($sequence), trim_string($seqWithFlank));
 						$parsedRecords{$stableID} = \@thisParsedRecord;
-					
+						
 					} elsif (($type eq "REGULATORY POLYMORPHISM")||($type eq "REGULATORY HAPLOTYPE")) {	
 						
 						# variant sequences
@@ -466,7 +489,7 @@ sub print2feature{
 	my $UCSC_genome_versions = shift;
 
 	my $out_pos_file = $TFBS_file;
-	$out_pos_file =~ s/.tab$/.ft/;
+	$out_pos_file =~ s/.tab$/.gft/;
 	
 	## feat header
 	open OUT, ">$out_pos_file" or die "Cannot write to output file $out_pos_file:$!";
@@ -475,17 +498,18 @@ sub print2feature{
 				   ";\n".
 				   ";1 -  ORegAnnoID\n".
 				   ";2 -  recordType\n".
-				   ";3 -  chrom_name\n".
-				   ";4 -  start\n".
-				   ";5 -  end\n".
-				   ";6 -  strand\n".
-				   ";7 -  description\n".
-				   ";8 -  organism\n";
-	print OUT ";\n;\n;UCSC genome browser Database versions used:\n" if ($verbose >=2);
-	while (my ($species,$UCSC_db) = each %$UCSC_genome_versions) {
-	  print OUT ";",$species," :\t ",$UCSC_db,"\n" if ($verbose >=2);
-	}
-	print OUT "#ORegAnnoID\trecordType\tchrom_name\tstart\tend\tstrand\tdescription\torganism\n";
+				   ";3 -  name\n".				   
+				   ";4 -  chrom_name\n".
+				   ";5 -  start\n".				   
+				   ";6 -  end\n".
+				   ";7 -  strand\n".
+				   ";8 -  description\n".
+				   ";9 -  genomeDBversion\n".
+				   ";10-  organism\n".
+				   ";11-  TFname\n";
+
+				  
+	print OUT "#ORegAnnoID\trecordType\tname\tchrom_name\tstart\tend\tstrand\tdescription\tgenomeDBversion\torganism\tTFname\n";
 	
 	
 	## calculate positions of the actual site, without flanks	
@@ -493,17 +517,17 @@ sub print2feature{
 	my $oregId =`grep -v '^;' $TFBS_file | grep -v '^#' | cut -f 1`;
 	my $oregSeq =`grep -v '^;' $TFBS_file | grep -v '^#' | cut -f 16`;
 	my $oregSeqWithFlank =`grep -v '^;' $TFBS_file | grep -v '^#' | cut -f 17`;
-#	my $TFname = `grep -v '^;' $TFBS_file | grep -v '^#' | cut -f 4`;
+	my $TFname = `grep -v '^;' $TFBS_file | grep -v '^#' | cut -f 4`;
 	
 	my @oregIds = split (/\n/,$oregId);
 	my @oregSeqs = split (/\n/,$oregSeq);
 	my @oregSeqWithFlanks = split (/\n/,$oregSeqWithFlank);
-#	my @TFnames = split (/\n/,$TFname);
+	my @TFnames = split (/\n/,$TFname);
 	
 	# create an index to ease and accelerate access to sequences
-	my %seqWithIds = ();
+	my %invertedIDhash = ();
 	foreach my $i (0..$#oregIds) {
-		$seqWithIds{$oregIds[$i]} = $i;
+		$invertedIDhash{$oregIds[$i]} = $i;
 	}
 		
 	## get the positions of sequence of the site, without flanks	 
@@ -512,6 +536,7 @@ sub print2feature{
 		my @position_data = split(/\t/,$UCSC_pos->{$positionsToPrint});
 		
 		my $queryID = $position_data[0];
+		my $index_of_ID = $invertedIDhash{$queryID};
 		my $querySize = $position_data[1];
 		my $strand =$position_data[2];
 		if ($strand =~ /\+/) {
@@ -523,28 +548,30 @@ sub print2feature{
 		my $flankstart = $position_data[4];
 		my $flankend =$position_data[5];
 		my $species = $position_data[6];
+		my $db_version = $UCSC_genome_versions->{$species};
+		my $TF = $TFnames[$index_of_ID];
 		
 		## get sequence position relative to flanking sequences	
-		my $index = $seqWithIds{$queryID};
-		my $seq = $oregSeqs[$index];
-		my $seqWithFlank  = $oregSeqWithFlanks[$index];
+		my $seq = $oregSeqs[$index_of_ID];
+		my $seqWithFlank  = $oregSeqWithFlanks[$index_of_ID];
 		my $positionInFlank = index($seqWithFlank, $seq);
+		my $TFBS_found = substr($seqWithFlank,$positionInFlank,length($seq));
+		## check that the TFBS sequence is at this position (usually displayed as capital letters)
+		unless ($TFBS_found =~ /^[A-Z]+$/) {
+			print LOG "WARNING: ".$queryID. ": TFBS sequence found in flanking sequence is not in upper case\n"; 
+		}
+				
+		
 		my $seq_start;
 		my $seq_end;
 		
-
 		## calculate chromosomal positions
-		if ($strand eq "D"){
-			$seq_start = $flankstart + $positionInFlank+1;
-			$seq_end = $seq_start + length($seq)-1;
-		} else {
-			$seq_start = $flankstart + $positionInFlank;
-			$seq_end = $seq_start + length($seq)-1;
-		}
+		$seq_start = $flankstart + $positionInFlank;
+		$seq_end = $seq_start + length($seq)-1;
 		
 		## print results
-		print OUT $queryID."\tTFBS\t".$chromName."\t"
-		.$seq_start."\t".$seq_end."\t".$strand."\t".$seq."\t".$species."\n";	
+		print OUT $queryID."\tTFBS\t".$queryID."\t".$chromName."\t"
+		.$seq_start."\t".$seq_end."\t".$strand."\t".$seq."\t".$db_version."\t".$species."\t".$TF."\n";	
 	}
 	close OUT;
 }
@@ -640,13 +667,14 @@ sub get_UCSC_positions {
  	 	   		 	'db' => $UCSC_genome_versions->{$species}, 
   		    		'type' => 'DNA',
   	 	   			'sort' => 'query,score',
-  	 	   			'output' => 'psl',
+  	 	   			'output' => 'hyperlink',
   	 	   			'userSeq' => $query
   		 		 ]
  				 );
  
   			die "$url error: ", $response->status_line unless $response->is_success;
   			die "Weird content type at $url -- ", $response->content_type unless $response->content_type eq 'text/html';
+
 
  			## get the result table
  			my @splitted_response = split (/TT>/,$response->content );
@@ -658,31 +686,33 @@ sub get_UCSC_positions {
 
  			## each cell of the array contains 1 line of results
  			foreach my $i (0..$#table_to_parse) { 
- 				next if (($table_to_parse[$i] =~/^(\D+|\n)/)||($table_to_parse[$i] eq ""));
+ 				next unless ($table_to_parse[$i] =~/^<A\s+HREF/);
  				chomp($table_to_parse[$i]);
- 				my @lineContent = split (/\t/,$table_to_parse[$i]);
- 							
-				## get query name (col10)
-				my $queryName = $lineContent[9];
+ 				my $hitLine = $table_to_parse[$i];
+ 				$hitLine =~ s/^<.*details<\/A>\s*//;
+ 				my @lineContent = split (/\s+/,$hitLine);
+ 				
+				## get query name
+				my $queryName = $lineContent[0];
+		
+				## get query size
+				my $querySize = $lineContent[4];
 				
-				## get query size (col 11)
-				my $querySize = $lineContent[10];
-				
-				## get hit length (=blockSizes) 17
-				my $hitLength = $lineContent[18];
+				## get hit length (span field)
+				my $hitLength = $lineContent[10];
 				$hitLength =~ s/,.*//g;
 				
-				## get strand (col 9)
-				my $strand = $lineContent[8];
+				## get strand
+				my $strand = $lineContent[7];
 				
-				## get chromosome name (col 14)
-				my $chromName = $lineContent[13];
+				## get chromosome name
+				my $chromName = "chr".$lineContent[6];
 				
 				## get chromosomal start position
-				my $start = $lineContent[15];
+				my $start = $lineContent[8];
 				
 				## get chromosomal end position
-				my $end = $lineContent[16];
+				my $end = $lineContent[9];
 
 				## save current hit
 				if ($querySize == $hitLength) {
@@ -692,8 +722,8 @@ sub get_UCSC_positions {
 				## discard current hit if already assigned
 				elsif ($UCSC_pos{$queryName}){next;}
 				## if several hits, and none is of the same size as the query
-				elsif ($table_to_parse[$i] !~ /$queryName/) { ## next line is a different TFBS
-					print "$queryName exact match was not found on the UCSC genome\n";
+				elsif ($table_to_parse[$i+1] !~ /$queryName/) { ## next line is a different TFBS
+					print  LOG "WARNING: ".$queryName." exact match was not found on the UCSC genome\n";
 				}				
 			}			
 			$query ="";
