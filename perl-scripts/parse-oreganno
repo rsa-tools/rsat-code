@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+
+
 use strict;
 
 use LWP;
@@ -233,7 +235,7 @@ if ($get_pos) {
 	my $UCSC_pos = &get_UCSC_positions("test.fa",$UCSC_genome_versions,\%species_name_conversion);
 	
 	## print in feature format
-	&print2feature($UCSC_pos);
+	&print2feature($UCSC_pos,$UCSC_genome_versions);
 
 }
 
@@ -461,11 +463,12 @@ sub print2tab{
 ## print result in feature format
 sub print2feature{
 	my $UCSC_pos = shift;
+	my $UCSC_genome_versions = shift;
 
 	my $out_pos_file = $TFBS_file;
-	$out_pos_file =~ s/.tab$/.feat/;
+	$out_pos_file =~ s/.tab$/.ft/;
 	
-	## print header
+	## feat header
 	open OUT, ">$out_pos_file" or die "Cannot write to output file $out_pos_file:$!";
 	
 	print OUT "; Column names:\n".
@@ -478,18 +481,24 @@ sub print2feature{
 				   ";6 -  strand\n".
 				   ";7 -  description\n".
 				   ";8 -  organism\n";
+	print OUT ";\n;\n;UCSC genome browser Database versions used:\n" if ($verbose >=2);
+	while (my ($species,$UCSC_db) = each %$UCSC_genome_versions) {
+	  print OUT ";",$species," :\t ",$UCSC_db,"\n" if ($verbose >=2);
+	}
 	print OUT "#ORegAnnoID\trecordType\tchrom_name\tstart\tend\tstrand\tdescription\torganism\n";
 	
 	
 	## calculate positions of the actual site, without flanks	
-	## get ORegAnno IDs, sequence and seqWithFlank from the XML parsed file
+	## get ORegAnno IDs, sequence and seqWithFlank and TF names from the XML parsed file
 	my $oregId =`grep -v '^;' $TFBS_file | grep -v '^#' | cut -f 1`;
 	my $oregSeq =`grep -v '^;' $TFBS_file | grep -v '^#' | cut -f 16`;
 	my $oregSeqWithFlank =`grep -v '^;' $TFBS_file | grep -v '^#' | cut -f 17`;
+#	my $TFname = `grep -v '^;' $TFBS_file | grep -v '^#' | cut -f 4`;
 	
 	my @oregIds = split (/\n/,$oregId);
 	my @oregSeqs = split (/\n/,$oregSeq);
 	my @oregSeqWithFlanks = split (/\n/,$oregSeqWithFlank);
+#	my @TFnames = split (/\n/,$TFname);
 	
 	# create an index to ease and accelerate access to sequences
 	my %seqWithIds = ();
@@ -536,7 +545,8 @@ sub print2feature{
 		## print results
 		print OUT $queryID."\tTFBS\t".$chromName."\t"
 		.$seq_start."\t".$seq_end."\t".$strand."\t".$seq."\t".$species."\n";	
-	}	
+	}
+	close OUT;
 }
 
 # Perl trim_string function to remove whitespace from the start and end of the string
