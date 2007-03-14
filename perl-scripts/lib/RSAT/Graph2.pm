@@ -9,6 +9,7 @@ use RSAT::error;
 use RSAT::util;
 
 
+
 ### class attributes
 @ISA = qw( RSAT::GenericObject );
 #$node_color="#000088";
@@ -83,10 +84,12 @@ sub new {
     # $arcs[x][2] : label
     # $arcs[x][3] : color
     $self->set_array_attribute("arcs", @arcs);
-    # DOC
+    # $maxarc represents the number of time that an arc may be duplicated.
+    $self->force_attribute("nb_arc_bw_node", $max_arc);
+    # %nodes_name_id correspondance between the name of an arc and its internal id in the @arcs array.
+    # the key of the hash is source_target_x, with x an integer from 1 to $max_arc;
     $self->set_hash_attribute("arcs_name_id", %arcs_name_id);
-    $self->set_attribute("nb_arc_bw_node", $max_arc);
-    
+   
     # %nodes_name_id correspondance between name and id
     $self->set_hash_attribute("nodes_name_id", %nodes_name_id);
     # %nodes_name_id correspondance between id and name
@@ -129,15 +132,15 @@ sub get_out_labels {
     my @out_label = $self->get_attribute("out_label");
     @node_out_label = ();
     if (defined(@{$out_label[$numId]})) {
-      my @node_out_label = @{$out_label[$numId]};
-    } 
+      @node_out_label = @{$out_label[$numId]};
+    }
     return @node_out_label;
 }
 
 ################################################################
 =pod
 
-=item B<get_out_labels()>
+=item B<get_out_labels_id()>
 
 returns the labels of the out neighbours of a node given its internal id
 
@@ -147,8 +150,8 @@ sub get_out_labels_id {
     my @out_label = $self->get_attribute("out_label");
     @node_out_label = ();
     if (defined(@{$out_label[$numId]})) {
-      my @node_out_label = @{$out_label[$numId]};
-    } 
+      @node_out_label = @{$out_label[$numId]};
+    }
     return @node_out_label;
 }
 
@@ -164,9 +167,9 @@ sub get_out_colors {
     my ($self, $node_name) = @_;
     my $numId = $self->node_by_name($node_name);
     my @out_color = $self->get_attribute("out_color");
-    @out_color = ();
+    my @node_out_color = ();
     if (defined(@{$out_color[$numId]})) {
-      my @node_out_color = @{$out_color[$numId]};
+      @node_out_color = @{$out_color[$numId]};
     }
     return @node_out_color;
 }
@@ -183,9 +186,9 @@ returns the color of the out arcs of a node given its id
 sub get_out_colors_id {
     my ($self, $numId) = @_;
     my @out_color = $self->get_attribute("out_color");
-    @out_color = ();
+    my @node_out_color = ();
     if (defined(@{$out_color[$numId]})) {
-      my @node_out_color = @{$out_color[$numId]};
+      @node_out_color = @{$out_color[$numId]};
     }
     return @node_out_color;
 }
@@ -231,7 +234,7 @@ sub get_out_neighbours {
         push @out_neighbours_names, $out_neighbour_name;
       }
     } else {
-      &RSAT::message::Warning("Node $node_name has no out neighbours");
+      &RSAT::message::Warning("Node $node_name has no out neighbours") if $main::verbose >= 3;
     }
     return @out_neighbours_names;
 }
@@ -257,7 +260,7 @@ sub get_out_neighbours_id {
       }
     } else {
       my $node_name = $self->node_by_id($numId);
-      &RSAT::message::Warning("Node $node_name has no out neighbours");
+      &RSAT::message::Warning("Node $node_name has no out neighbours") if $main::verbose >= 3;;
     }
     return @out_neighbours_names;
 }
@@ -331,6 +334,9 @@ sub create_arc {
     my @arc_in_color = $self->get_attribute("in_color");
     my @arc_out_color = $self->get_attribute("out_color");
     my @arcs = $self->get_attribute("arcs");
+    my %arcs_name_id = $self->get_attribute("arcs_name_id");
+    my $max_arc_nb = $self->get_attribute("nb_arc_bw_node");
+    
     my $numId = scalar (@arcs); 
     if (!defined($label) || $label eq "") {
       $label = $source_node_name."_".$target_node_name;
@@ -338,11 +344,24 @@ sub create_arc {
     if (!defined($color) || $color eq "") {
       $color = "#000044";
     }
-    
     my $source_node_index = $self->node_by_name($source_node_name);
     my $target_node_index = $self->node_by_name($target_node_name);
     my $error =  "Could not create an arc between $source_node_name and $target_node_name\n" ;
     if (defined($source_node_index) && defined($target_node_index)) {
+      my $exist = 0;
+      my $arc_id = "";
+      my $i;
+      for ($i = 1; $i <= $max_arc_nb; $i++) {
+        $arc_id = $source_node_name."_".$target_node_name."_".$i;
+	$exist = exists($arcs_name_id{$arc_id});
+      }
+      if ($exist) {
+	$arc_id = $source_node_name."_".$target_node_name."_".($i);
+	$max_arc_nb++;
+      } else {
+	$arc_id = $source_node_name."_".$target_node_name."_".($i-1);
+      }
+      $arcs_name_id{$arc_id} = $numId;
       push @{$out_neighbours[$source_node_index]}, $target_node_index;
       push @{$in_neighbours[$target_node_index]}, $source_node_index;
       push @{$arc_out_label[$source_node_index]}, $label;
@@ -360,6 +379,8 @@ sub create_arc {
       $self->set_array_attribute("in_color", @arc_in_color);
       $self->set_array_attribute("out_color", @arc_out_color);
       $self->set_array_attribute("arcs", @arcs);
+      $self->set_hash_attribute("arcs_name_id", %arcs_name_id);
+      $self->force_attribute("nb_arc_bw_node", $max_arc_nb);  
     } 
     if (!defined($source_node_index)) {
       $error .= "\t$target_node_name not found in the graph\n";
@@ -436,7 +457,6 @@ Return the clusters to which the node specified by its name belongs
 sub get_nodes_clusters {
     my ($self, $node_name) = @_;
     my $numId = $self->node_by_name($node_name);
-    #print "NODE $node_name $numId\n";
     my @nodes_clusters = $self->get_attribute("nodes_clusters");
     my @node_clusters = ();
     if (defined($numId) && defined(@{$nodes_clusters[$numId]})) {
@@ -467,6 +487,28 @@ sub node_by_name {
     }
 }
 
+################################################################
+=pod
+
+=item B<arcs_by_name()>
+
+Returns the internal ids (in the @arcs array) of the arc having $source as source node and $target as target node
+
+=cut
+sub arcs_by_name {
+    my ($self, $source, $target) = @_;
+    my $max_arc = $self->get_attribute("nb_arc_bw_node");
+    my %arcs_name_id = $self->get_attribute("arcs_name_id");
+    my @arc_ids = ();
+    for (my $i = 1; $i <= $max_arc; $i++) {
+      my $arc_id = join ("_", $source, $target, $i);
+      my $id = $arcs_name_id{$arc_id};
+      if (defined($arcs_name_id{$arc_id})) {
+        push @arc_ids, $id;
+      }
+    }
+    return @arc_ids;
+}
 
 
 ################################################################
@@ -656,7 +698,7 @@ sub read_from_table {
     $self->set_hash_attribute("nodes_label", %nodes_label);
     $self->set_hash_attribute("arcs_name_id", %arcs_name_id);
     
-    $max_arc_nb = $self->force_attribute("nb_arc_bw_node", $max_arc_nb);   
+    $self->force_attribute("nb_arc_bw_node", $max_arc_nb);   
 }
 
 ################################################################
@@ -825,14 +867,59 @@ Return the graph in a tab-delimited format.
 sub to_tab {
     my ($self) = @_;    
     my @arcs = $self->get_attribute("arcs");
-    my $tab = "";
-    for (my $i = 0; $i < scalar(@arcs); $i++) {
-      $tab .= $arcs[$i][0]."\t";
-      $tab .= $arcs[$i][1]."\t";
-      $tab .= $arcs[$i][2]."\n";
+    my @arcs_attributes = $self->get_attribute("arcs_attribute");
+    my $tab = join("\t","#source","target","label","color");
+    $tab .= "\n";
+    if (@arcs_attributes) {
+      $tab = $self->to_tab_arcs_attribute();
+    } else {
+      for (my $i = 0; $i < scalar(@arcs); $i++) {
+        $tab .= $arcs[$i][0]."\t";
+        $tab .= $arcs[$i][1]."\t";
+        $tab .= $arcs[$i][2]."\t";
+        $tab .= $arcs[$i][3]."\n";
+      }
     }
     return $tab;
 }
+
+################################################################
+=pod
+
+=item B<to_tab_index($arcs_multiple_attribute)>
+
+Return the graph in a tab-delimited format. 
+$arcs_multiple_attribute is an Index object, having
+source_target_label_color as key
+
+=cut
+sub to_tab_arcs_attribute {
+    my ($self) = @_;    
+    my @arcs = $self->get_attribute("arcs");
+    my @arcs_attributes = $self->get_attribute("arcs_attribute");
+    my $tab = join("\t","#source", "target", "label", "attribute");
+    $tab .= "\n";
+    for (my $i = 0; $i < scalar(@arcs); $i++) {
+      my $source = $arcs[$i][0];
+      my $target = $arcs[$i][1];
+      my $label = $arcs[$i][2];
+      my $color =  $arcs[$i][3];
+      if (defined($arcs_attributes[$i])) {
+        my @clusters = @{$arcs_attributes[$i]};
+        foreach my $cluster (@clusters) {
+          $tab .= $source."\t";
+          $tab .= $target."\t";
+          $tab .= $label."\t";
+          $tab .= $cluster."\n";
+        }
+      }
+    }
+    return $tab;
+}
+
+
+
+
 ################################################################
 =pod
 
