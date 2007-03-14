@@ -129,17 +129,16 @@ sub get_all_nodes{
 
 =cut
 
-
- sub get_all_descendents {
-     my ($self, $order, $type, $max_depth, $max_leaves) = @_;
+sub get_all_descendents{
+    my ($self, $order, $type, $max_depth, $max_leaves) = @_;
 #     my $self = =shift;
 #     my $order=shift;
 #     my $type=shift; # all, leave, node
 #     my $max_depth=shift;
 #     my $max_leaves=shift;
-     my $root_node=$self->get_root_node();
-     my (@descendents) = $root_node->get_all_descendents($order,$type,$max_depth,$max_leaves);
-     return ($root_node,@descendents);
+    my $root_node=$self->get_root_node();
+    my (@descendents) = $root_node->get_all_descendents($order,$type,$max_depth,$max_leaves);
+    return ($root_node,@descendents);
 }
 
 =pod
