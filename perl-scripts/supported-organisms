@@ -29,8 +29,9 @@ if (($out_format eq "tree")||($out_format eq "html_tree")) {
     ## Create a tree with the taxonomy
     my $tree = new RSAT::Tree();
     $tree->LoadSupportedTaxonomy("Organisms", \%supported_organism);
+    print $out join("\n","--",$root_taxon,$out_format,"all",undef)."\n";
     print $out $tree->as_indented_text("--",$root_taxon,$out_format,"all",undef);
-    
+
 # list only organisms names with option -taxon alone
 
 } elsif ($root_taxon){
