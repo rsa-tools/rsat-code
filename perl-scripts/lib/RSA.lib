@@ -141,6 +141,9 @@ sub doit {
 	close JOB;
 	&RSAT::message::TimeWarn(join("\t", "Job queued", $wd."/".$job)) if ($main::verbose >= 0);
 
+	my $job_name = $job;
+	$job_name =~ s/\//_/g;
+	my $job_log = $wd."/".$job.".log";
 	## Send the command to a batch queue on a PC cluster The default
 	## values are for internal use in the SCMBB, but alternative values
 	## can be specified by specifying the environment variables
@@ -149,7 +152,10 @@ sub doit {
 #	my $cluster_master=$ENV{CLUSTER_MASTER} || "arthur.scmbb.ulb.ac.be"; # OBSOLETE
 	my $batch_mail=$ENV{BATCH_MAIL} || "a";
 	$selected_nodes = " -l nodes=1:k2.6 ";
-	&doit("qsub ".$selected_nodes." -m ".$batch_mail." -q ".$cluster_queue." -N ${job} -j y -o ${job}.log ${job}", $dry, $die_on_error,$verbose,0);
+	## qsub command functionning using Torque
+	#&doit("qsub ".$selected_nodes." -m ".$batch_mail." -q ".$cluster_queue." -N ${job} -j y -o ${job}.log ${job}", $dry, $die_on_error,$verbose,0);
+	## qsub command functionning using Sun Grid Engine (SCMBB)
+	&doit("qsub "."-q medium "."-j y "."-N $job_name "."-o $job_log $job", $dry, $die_on_error,$verbose,0)
     } else {
 	## Verbose
       if ($main::verbose >= 2) {
