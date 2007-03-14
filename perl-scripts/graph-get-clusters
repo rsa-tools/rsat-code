@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.5 2007/03/12 12:55:06 rsat Exp $
+# $Id: graph-get-clusters,v 1.6 2007/03/14 11:43:24 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -51,13 +51,14 @@ cluster formats.
 
 =head1 OUTPUT FORMAT
 
-The output file is a graph in GML format.
+The default output file is a graph in GML format. 
+However, other output formats are available using the -out_format option.
 
-See I<convert-graph> for a description of the supported input graph
-formats. Note that It is not recommended to use the tab-delimted
+See I<convert-graph> for a description of the supported output graph
+formats. Note that it is not recommended to use the tab-delimted
 format for the output graph, because orphan nodes (nodes without any
 arc) would not be displayed (the tab format is restricted to a
-description of the arcs).
+description of the arcs). 
 
 =cut
 
@@ -70,6 +71,7 @@ BEGIN {
 require "RSA.lib";
 require RSAT::Graph2;
 require RSAT::Classification;
+
 
 ################################################################
 ## Main package
@@ -130,7 +132,7 @@ package main;
     ################################################################
     ## Initialize the output graph (cluster graph)
     $cluster_graph = new RSAT::Graph2();
-    $cluster_graph->set_attribute("label", "cluster graph");
+    $cluster_graph->set_attribute("label", "cluster_graph");
 
     ## Output formats
     %supported_output_format =(
@@ -151,19 +153,20 @@ package main;
     $main::out = STDOUT;
     $distinct = 0;
     my %duplicated_nodes;
-
+    my @arcs_clusters;
+    
     ################################################################
     ## Read argument values
     &ReadArguments();
 
     ################################################################
     ## Check argument values
-  @cluster_colors = ();
-  if ($output_format eq "dot") {
-    @cluster_colors = @cluster_colors_dot;
-  } else {
-    @cluster_colors = @cluster_colors_gml;
-  }
+    @cluster_colors = ();
+    if ($output_format eq "dot") {
+      @cluster_colors = @cluster_colors_dot;
+    } else {
+      @cluster_colors = @cluster_colors_gml;
+    }
 
 
     ################################################################
@@ -182,10 +185,11 @@ package main;
     ## Extract the intra-cluster subgraphs
     &RSAT::message::TimeWarn("Identifying cluster nodes in the graph") if ($main::verbose >= 2);
     foreach my $cluster ($clusters->get_attribute("classes")) {
+      my $cluster_name = $cluster->get_attribute("name");
       $cluster_nb++;
       $current_color=$cluster_colors[($cluster_nb-1) % scalar(@cluster_colors)];
       my $cluster_total_nb = scalar $clusters->get_attribute("classes");
-      &RSAT::message::TimeWarn("Cluster $cluster_nb on $cluster_total_nb") if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Cluster $cluster_name : $cluster_nb on $cluster_total_nb") if ($main::verbose >= 2);
       ## Identify cluster nodes in the graph
       my @node_names = $cluster->get_members();
       my @nodes = ();
@@ -214,38 +218,39 @@ package main;
 	  &RSAT::message::Info("Identified node with name", $old_node_name) if ($main::verbose >= 3);
 	} else {
 	  $unknown_nodes{$node_name}++;
-	  &RSAT::message::Warning("The graph does not contain any node with name", $node_name) if ($main::verbose >= 2);
+	  &RSAT::message::Warning("The graph does not contain any node with name", $node_name) if ($main::verbose >= 3);
 	}
       }
 
       ## Collect the arcs
       foreach my $cluster_node1 (keys %cluster_nodes) {
-        #$cluster_node1 = 
 	&RSAT::message::Info("Collecting arcs for node", $cluster_node1) if ($main::verbose >= 3);
-	#my $cluster_node1 = $cluster_nodes{$node1};
 	my $node_1_internal_id = $graph->node_by_name($cluster_node1);
 	my @out_neighbours = $graph->get_out_neighbours_id($node_1_internal_id);
 	my @out_labels = $graph->get_out_labels_id($node_1_internal_id);
-	my @out_colors = $graph->get_out_colors_id($node_1_internal_id);
 	for (my $i = 0; $i < scalar(@out_neighbours); $i++) {
 	  my $cluster_node2 = $out_neighbours[$i];
 	  if (defined($cluster_nodes{$cluster_node2})) {
 	    my $label = $out_labels[$i];
-	    #my $color = $out_colors[$i];
 	    my $source_new_name = $cluster_nodes{$cluster_node1};
 	    my $target_new_name = $cluster_nodes{$cluster_node2};
-	    if (!$weight_col > 0) {
-	      $label =  $source_new_name."_".$target_new_name."_".$cluster_nb;
+	    if ($weight_col <= 0) {
+	      $label =  join("_",$source_new_name, $target_new_name, $cluster_name);
 	    } else {
-	      $label = $out_labels[$i]."_".$cluster_nb;
+	      #$label = $out_labels[$i]."_".$cluster_nb;
+	      $label = $out_labels[$i];
 	    }
 	    &RSAT::message::Info("Found arc from", $source_new_name, "to", $target_new_name) if ($main::verbose >= 4);
 	    $cluster_graph->create_arc($source_new_name, $target_new_name, $label, $current_color);
+	    my @arcs_ids = $cluster_graph->arcs_by_name($cluster_node1, $cluster_node2);
+	    foreach my $arc_id (@arcs_ids) {
+	      push @{$arcs_clusters[$arc_id]}, $cluster_name;
+	    }
 	  }
 	}
       }
     }
-
+    $cluster_graph->set_array_attribute("arcs_attribute", @arcs_clusters);
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
@@ -253,13 +258,7 @@ package main;
     ## Print the output graph
     print $out $cluster_graph->to_text($output_format);
 
-    ################################################################
-    ## Finish verbose
-    if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print STDOUT "; Job started $start_time\n";
-	print STDOUT "; Job done    $done_time\n";
-    }
+
 
     ################################################################
     ## Close output stream
@@ -352,7 +351,7 @@ allows to use the command within a pipe.
 =item B<-scol>
 
 Source column. Column containing the source nodes in the tab-delimited
-graph file.
+graph file.  
 
 =cut
 	} elsif ($arg eq "-scol") {
@@ -381,8 +380,13 @@ graph file.
 
 =item B<-wcol>
 
-Weight column. Column containing the weight nodes in the tab-delimited
-graph file.
+Weight column. Column containing the weight of the nodes in the tab-delimited
+graph file. 
+
+By specifying the weight of the node, the label of the arcs will not be 
+changed from arc_label to arc_label_cluster_name. As a consequence, if you don't use the -distinct option, arcs belonging to more than one
+cluster will be duplicated but will present the same label. Some visualization program like Cytoscape
+cannot deal with such arcs. You should maybe use yEd for a more exact visualization of the extracted clusters.
 
 =cut
 	} elsif ($arg eq "-wcol") {
@@ -414,17 +418,22 @@ of supported input formats.
 	} elsif ($arg eq "-cluster_format") {
 	    $main::cluster_format = shift(@arguments);
 
+=pod
+
 =item B<-distinct>
 
 As some nodes may belong to more than one group, using this option will duplicate the nodes belonging to more
 than one group.
+
 =cut
+	
 	} elsif ($arg eq "-distinct") {
 	    $distinct = 1;
 	    
 	    
 	    
-	    ## Output file
+## Output file
+
 =pod
 
 =item	B<-o outputfile>
@@ -469,36 +478,52 @@ See convert-graph for a list of supported output formats.
 ################################################################
 #### verbose message
 sub Verbose {
-    print STDOUT "; graph-neighbnours ";
-    &PrintArguments(STDOUT);
+    my $this_out = $out;
+    if ($output_format eq "gml") {
+      $this_out = STDOUT;
+    }
+    print $this_out "; graph-get-clusters ";
+    &PrintArguments($this_out);
     if (defined(%main::infile)) {
-	print STDOUT "; Input files\n";
+	print $this_out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
-	    print STDOUT ";\t$key\t$value\n";
+	    print $this_out ";\t$key\t$value\n";
 	}
     }
     if (defined(%main::outfile)) {
-	print STDOUT "; Output files\n";
+	print $this_out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
-	    print STDOUT ";\t$key\t$value\n";
+	    print $this_out ";\t$key\t$value\n";
 	}
     }
 
     ## Report graph size
     my ($nodes, $arcs) = $graph->get_size();
-    print STDOUT "; Graph size\n";
-    print STDOUT ";\tnodes\t",$nodes,"\n";
-    print STDOUT ";\tarcs\t",$arcs,"\n";
+    print $this_out "; Graph size\n";
+    print $this_out ";\tnodes\t",$nodes,"\n";
+    print $this_out ";\tarcs\t",$arcs,"\n";
 
     ## Report seed nodes
-    print STDOUT "; Clusters\t", $cluster_nb,"\n";
-    print STDOUT ";\tidentified nodes\t",scalar(keys(%found_nodes)),"\n";
+    print $this_out "; Clusters\t", $cluster_nb,"\n";
+    print $this_out ";\tidentified nodes\t",scalar(keys(%found_nodes)),"\n";
     my @unknown_nodes = keys(%unknown_nodes);
     my $unknown_node_nb = scalar(@unknown_nodes);
     if ($unknown_node_nb > 0) {
-      print STDOUT ";\tunknown nodes\t",,"\n";
+      print $this_out ";\tunknown nodes\t",,"\n";
       foreach my $name (@unknown_nodes) {
-	print STDOUT join ("\t", ";\t", "unknown", $name), "\n";
+	print $this_out join ("\t", ";\t", "unknown", $name), "\n";
+      }
+    }
+    if ($main::verbose >= 1) {
+      my $done_time = &AlphaDate();
+      print $this_out "; Job started $start_time";
+      print $this_out "; Job done    $done_time\n";
+    }
+    if ($this_out ne STDOUT) {
+      if ($main::verbose >= 1) {
+        my $done_time = &AlphaDate();
+        print STDOUT "; Job started\t$start_time";
+        print STDOUT "; Job done\t$done_time\n";
       }
     }
 }
