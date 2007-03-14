@@ -146,11 +146,10 @@ sub doit {
 	## can be specified by specifying the environment variables
 	## CLUSTER_QUEUE and CLUSTER_MASTER
 	my $cluster_queue = $ENV{CLUSTER_QUEUE} || "medium";
-	my $cluster_master=$ENV{CLUSTER_MASTER} || "arthur.scmbb.ulb.ac.be";
+#	my $cluster_master=$ENV{CLUSTER_MASTER} || "arthur.scmbb.ulb.ac.be"; # OBSOLETE
 	my $batch_mail=$ENV{BATCH_MAIL} || "a";
 	$selected_nodes = " -l nodes=1:k2.6 ";
-	&doit("qsub ".$selected_nodes." -m ".$batch_mail." -q ".$cluster_queue."\@".$cluster_master." -N ${job} -j oe -o ${job}.log ${job}", $dry, $die_on_error,$verbose,0);
-
+	&doit("qsub ".$selected_nodes." -m ".$batch_mail." -q ".$cluster_queue." -N ${job} -j y -o ${job}.log ${job}", $dry, $die_on_error,$verbose,0);
     } else {
 	## Verbose
       if ($main::verbose >= 2) {
