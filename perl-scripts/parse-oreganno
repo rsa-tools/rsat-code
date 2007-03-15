@@ -4,6 +4,7 @@
 
 use strict;
 
+use File::Basename;
 use LWP;
 use Getopt::Long;
 use XML::LibXML;
@@ -135,15 +136,15 @@ positions for the TFBS, calculated from a BLAT search at UCSC genome browser.
 =cut
 
 my $help;
-my $xmlfilename;
+my $xmlInputFile;
 my $get_pos;
 my $verbose = 1;
 
 ###############################################
 GetOptions(
 	"help"          => \$help,
-	"i=s"           => \$xmlfilename,
-	"v:s"			=> \$verbose,
+	"i=s"           => \$xmlInputFile,
+	"v:s"		=> \$verbose,
 	"get_pos"     	=> \$get_pos,
 	);
 
@@ -152,8 +153,12 @@ printHelp() if $help;
 ###############################################
 ## ORegAnno XML dump is several xml files concatenated
 ## First need to extract each XML subfile
-open XML, "<$xmlfilename" or die "Cannot open XML file $xmlfilename:$!"; 
+open XML, "<$xmlInputFile" or die "Cannot open XML file $xmlInputFile:$!"; 
 my $xmlCount = 1;
+
+## Here we get only the file name withou its full path
+## this name will be used for the output files nomenclature
+my $xmlfilename = basename $xmlInputFile;
 while (my $line = <XML>){
 
 	#look for <?xml
