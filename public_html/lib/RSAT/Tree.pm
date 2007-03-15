@@ -364,6 +364,8 @@ sub LoadSupportedTaxonomy_rj {
 		   keys (%supported_organism)) {
     $c++;
     my @taxons = split /\s*;\s*/, $supported_organism{$org}->{"taxonomy"};
+    @taxons = map {$_ =~ s/\s+/\_/g;$_} @taxons; # removing spaces in the top and bottom taxa names
+    @taxons = map {$_ =~ s/(\(|\))/\_/g;$_} @taxons; # removing spaces in the top and bottom taxa names
     &RSAT::message::Warning(join ("\t", $c, $org,scalar(@taxons),"taxons"), "\n")  if ($main::verbose >= 5);
     &RSAT::message::Warning(join ("\t","taxons",(@taxons)), "\n") if ($main::verbose >= 6);;
 
