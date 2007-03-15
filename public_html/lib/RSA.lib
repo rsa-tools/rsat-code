@@ -155,7 +155,7 @@ sub doit {
 	## qsub command functionning using Torque
 	#&doit("qsub ".$selected_nodes." -m ".$batch_mail." -q ".$cluster_queue." -N ${job} -j y -o ${job}.log ${job}", $dry, $die_on_error,$verbose,0);
 	## qsub command functionning using Sun Grid Engine (SCMBB)
-	&doit("qsub "."-q medium "."-j y "."-N $job_name "."-o $job_log $job", $dry, $die_on_error,$verbose,0)
+	&doit("qsub "."-q $cluster_queue"." -j y "."-N $job_name "."-o $job_log $job", $dry, $die_on_error,$verbose,0)
     } else {
 	## Verbose
       if ($main::verbose >= 2) {
