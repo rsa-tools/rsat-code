@@ -31,19 +31,39 @@ my_command:
 	${MAKE} command_${WHEN}
 
 DATE=`date +%Y%m%d`
-JOB_DIR=jobs
+JOB_DIR=`pwd`/jobs/${DATE}
 JOB_PREFIX=job
-JOB=`mktemp ${JOB_DIR}/${JOB_PREFIX}.XXXXXX`
+#JOB=`mktemp ${JOB_DIR}/${JOB_PREFIX}.XXXXXX`
+JOB=`mktemp ${JOB_PREFIX}.XXXXXX`
+## CCG configuration
+## server: kayab.ccg.unam.mx
+## QUEUE=default
+## QUEUE_MANAGER=torque
+QUEUE_MANAGER=sge
 QUEUE=medium
 MASTER=arthur.scmbb.ulb.ac.be
 CLUSTER_ADDRESS=${QUEUE}@${MASTER}
 command_queue:
+	${MAKE} command_queue_${QUEUE_MANAGER}
+
+## Send a jobs to a cluster using the torque quee management system
+command_queue_torque:
 	@mkdir -p ${JOB_DIR}
 	@for job in ${JOB} ; do							\
-		echo "Job $${job}" ;						\
-		echo "echo running on node "'$$HOST' > $${job}; 		\
-		echo "${MY_COMMAND}" >> $${job} ;				\
-		qsub -m e -q ${CLUSTER_ADDRESS} -N $${job} -j oe -o $${job}.log $${job} ;	\
+		echo "Job ${JOB_DIR}/$${job}" ;						\
+		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}; 		\
+		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job} ;				\
+		qsub -m a -q ${CLUSTER_ADDRESS} -N $${job} -j oe -o ${JOB_DIR}/$${job}.log ${JOB_DIR}/$${job} ;	\
+	done
+
+## Send a jobs to a cluster using the SGE queue management system
+command_queue_sge:
+	@mkdir -p ${JOB_DIR}
+	@for job in ${JOB} ; do							\
+		echo "Job ${JOB_DIR}/$${job}" ;						\
+		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}; 		\
+		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job} ;				\
+		qsub -m a -q ${QUEUE} -N $${job} -j y -o ${JOB_DIR}/$${job}.log ${JOB_DIR}/$${job} ;	\
 	done
 
 command_now:
