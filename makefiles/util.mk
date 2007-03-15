@@ -35,10 +35,7 @@ JOB_DIR=`pwd`/jobs/${DATE}
 JOB_PREFIX=job
 #JOB=`mktemp ${JOB_DIR}/${JOB_PREFIX}.XXXXXX`
 JOB=`mktemp ${JOB_PREFIX}.XXXXXX`
-## CCG configuration
-## server: kayab.ccg.unam.mx
-## QUEUE=default
-## QUEUE_MANAGER=torque
+## CCG configuration:  MASTER=kayab.ccg.unam.mx QUEUE=default QUEUE_MANAGER=torque
 QUEUE_MANAGER=sge
 QUEUE=medium
 MASTER=arthur.scmbb.ulb.ac.be
