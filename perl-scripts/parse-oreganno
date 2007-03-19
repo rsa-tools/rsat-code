@@ -67,6 +67,9 @@ parse-oreganno -i inputfile [-v # -get_pos]
 =item B<-get_pos>: Optional. Get genomic positions from UCSC genome browser 
 with BLAT (http://genome.ucsc.edu/cgi-bin/hgBlat). Requires internet connection.
 
+=item B<-wait #>:  Optional. The time between 2 BLAT requests must be greater than 15 seconds.
+Specify the waiting time in seconds  (e.g. 600 for 10 minutes). Default is  15 sec.
+
 =back
 
 =head1 OUTPUT FILES
@@ -138,6 +141,7 @@ positions for the TFBS, calculated from a BLAT search at UCSC genome browser.
 my $help;
 my $xmlInputFile;
 my $get_pos;
+my $wait = 15;
 my $verbose = 1;
 
 ###############################################
@@ -146,6 +150,7 @@ GetOptions(
 	"i=s"           => \$xmlInputFile,
 	"v:s"		=> \$verbose,
 	"get_pos"     	=> \$get_pos,
+	"wait:s"		=> \$wait
 	);
 
 printHelp() if $help;
@@ -644,12 +649,14 @@ sub get_UCSC_positions {
 	## we will send 24 sequences at a time on the server
 	## each organism is treated independently
 	print "Sending BLAT jobs to UCSC\n" if ($verbose >=2 );
+	print "The waiting time is $wait seconds\n" if ($verbose >=2 );
 	my $pack = 24;
 	foreach my $species (keys(%queryByOrganism)) {
 		print "\t for organism $species\n" if ($verbose >=2 );
 			my $count = 0;
 			my $query;
 			my @queriesToSend = split (/\n/, $queryByOrganism{$species});
+			print "\t @queriesToSend\n" if ($verbose >=3 );
 			
 			while (@queriesToSend) {
 				my $header = shift @queriesToSend;
@@ -665,7 +672,7 @@ sub get_UCSC_positions {
 					my $ua = LWP::UserAgent->new;	
 					my $url = 'http://genome.ucsc.edu/cgi-bin/hgBlat';
 					
-					sleep 15; #waiting time to prevent being banished from UCSC server
+					sleep $wait; #waiting time to prevent being banished from UCSC server
 					my $response = $ua->post( $url,
  	 			  [ 
  	 	   		 	'org' => $species, 
@@ -684,7 +691,7 @@ sub get_UCSC_positions {
  			## get the result table
  			my @splitted_response = split (/TT>/,$response->content );
  			my $table_result = $splitted_response[1];
- 			
+		
  			## parse the result table
  			my @table_to_parse = split (/\n/,$table_result);
  			my %result_fields = ();
@@ -695,6 +702,7 @@ sub get_UCSC_positions {
  				chomp($table_to_parse[$i]);
  				my $hitLine = $table_to_parse[$i];
  				$hitLine =~ s/^<.*details<\/A>\s*//;
+ 				print "$hitLine\n" if ($verbose >=3 );	
  				my @lineContent = split (/\s+/,$hitLine);
  				
 				## get query name
@@ -703,9 +711,13 @@ sub get_UCSC_positions {
 				## get query size
 				my $querySize = $lineContent[4];
 				
-				## get hit length (span field)
-				my $hitLength = $lineContent[10];
+				## get hit length (score field, equals hit length WARNING: span field looks weird)
+				my $hitLength = $lineContent[1];
 				$hitLength =~ s/,.*//g;
+				
+				## get hit percentage identity
+				my $identity = $lineContent[5];
+				$identity =~ s/\.\d{1}%//;
 				
 				## get strand
 				my $strand = $lineContent[7];
@@ -720,9 +732,10 @@ sub get_UCSC_positions {
 				my $end = $lineContent[9];
 
 				## save current hit
-				if ($querySize == $hitLength) {
+				if (($querySize == $hitLength)&&($identity == 100)&&(!$UCSC_pos{$queryName})) {
 					$UCSC_pos{$queryName} = $queryName."\t".
 					$querySize."\t".$strand."\t".$chromName."\t".$start."\t".$end."\t".$species;
+					print "=> UCSC flanking positions: $UCSC_pos{$queryName}\n" if ($verbose >=3 );	
 				}
 				## discard current hit if already assigned
 				elsif ($UCSC_pos{$queryName}){next;}
