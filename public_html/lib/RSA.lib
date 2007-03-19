@@ -149,13 +149,24 @@ sub doit {
 	## can be specified by specifying the environment variables
 	## CLUSTER_QUEUE and CLUSTER_MASTER
 	my $cluster_queue = $ENV{CLUSTER_QUEUE} || "medium";
-#	my $cluster_master=$ENV{CLUSTER_MASTER} || "arthur.scmbb.ulb.ac.be"; # OBSOLETE
 	my $batch_mail=$ENV{BATCH_MAIL} || "a";
+	my $qsub_manager=$ENV{QSUB_MANAGER} || "sge";
 	$selected_nodes = " -l nodes=1:k2.6 ";
-	## qsub command functionning using Torque
-	#&doit("qsub ".$selected_nodes." -m ".$batch_mail." -q ".$cluster_queue." -N ${job} -j y -o ${job}.log ${job}", $dry, $die_on_error,$verbose,0);
-	## qsub command functionning using Sun Grid Engine (SCMBB)
-	&doit("qsub "."-q $cluster_queue"." -j y "."-N $job_name "."-o $job_log $job", $dry, $die_on_error,$verbose,0)
+	my $qsub_cmd;
+	if ($qsub_manager eq "torque") {
+	    ## qsub command functionning using Torque
+	    my $cluster_master=$ENV{CLUSTER_MASTER} || "arthur.scmbb.ulb.ac.be"; ## for torque only
+	    $qsub_cmd = "qsub ".$selected_nodes." -m ".$batch_mail." -q ".$cluster_master." -N ${job} -j oe -o ${job}.log ${job}";
+	} else {
+	    ## qsub command functionning using Sun Grid Engine (SCMBB)
+	    my $qsub_cmd = join(" ", "qsub", 
+				"-m",$batch_mail,
+				"-q ", $cluster_queue, 
+				" -j y ",
+				"-N ", $job_name,
+				"-o ".$job_log, $job);
+	}
+	&doit($qsub_cmd, $dry, $die_on_error,$verbose,0)
     } else {
 	## Verbose
       if ($main::verbose >= 2) {
