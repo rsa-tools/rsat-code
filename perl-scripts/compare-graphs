@@ -1,0 +1,619 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: compare-graphs,v 1.1 2007/03/19 15:13:54 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+template
+
+=head1 DESCRIPTION
+
+Template or writing new perl scripts.
+
+=head1 AUTHORS
+
+jvanheld@scmbb.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+    
+template [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::Graph2;
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    my $start_time = &AlphaDate();
+
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+    
+    ## Input formats
+    local $input_format = "tab";
+    %supported_input_format =(
+	tab=>1,
+    );
+    $supported_input_formats = join (",", keys %supported_input_format);
+    local $source_col = 1;
+    local $target_col = 2;
+    local $weight_col = 0;
+
+    ## Output formats
+    local $output_format = "tab";
+    %supported_output_format =(
+			       dot=>1,
+			       gml=>1,
+			       tab=>1
+			       
+    );
+    
+    $supported_output_formats = join (",", keys %supported_output_format);
+    
+    ## Supported return options
+    local $return_format = "";
+    %supported_return_format =(
+      intersection=>1,
+      union=>1,
+      difference=>1
+    );
+    $supported_return_formats = join (",", keys %supported_return_format);
+    
+    $directed = 0;
+    
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    if (!exists($main::infile{graph1}) || !exists($main::infile{graph2})) {
+      &RSAT::error::FatalError("You must specify two graph file");
+    }
+    my $error = "0";
+    if (!-e ($main::infile{graph1}) || -z ($main::infile{graph1})) {
+      $error = ("The file $main::infile{graph1} does not exist or is not valid\n");
+    }
+    if (!-e ($main::infile{graph2}) || -z ($main::infile{graph2})) {
+      $error .= ("\tThe file $main::infile{graph2} does not exist or is not valid");
+    }
+    if ($error ne 0){
+      &RSAT::error::FatalError("$error");
+    }
+    if ($return_format eq "") {
+      &RSAT::error::FatalError("You must specify a return format : $supported_return_formats");
+    }
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Read input
+    my $graph1 = new RSAT::Graph2;
+    my $graph2 = new RSAT::Graph2;
+    
+    $graph1->read_from_table($main::infile{graph1},$source_col,$target_col,$weight_col);
+    $graph2->read_from_table($main::infile{graph2},$source_col,$target_col,$weight_col);
+    	
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+    
+    ################################################################
+    ## Execute the command
+    if ($main::verbose >= 1){
+    
+      my ($nodes_graph1, $arcs_graph1) = $graph1->properties;
+      my $message = (join("\t",$main::infile{graph1},$nodes_graph1,"node(s)",$arcs_graph1,"arc(s)\n"));
+      
+      my ($nodes_graph2, $arcs_graph2) = $graph2->properties;
+      $message .= "\t\t\t".(join("\t",$main::infile{graph2},$nodes_graph2,"node(s)",$arcs_graph2,"arc(s)\n"));
+      
+      $commun = &in_common($graph1, $graph2);
+      $message .= "\t\t\t"."$commun\t"."arcs in common\n";
+      
+      &RSAT::message::TimeWarn("$message");
+    }
+    
+    my $return_graph;
+    if ($return_format eq "intersection") {
+      $return_graph = &intersect($graph1, $graph2);
+    } elsif ($return_format eq "union") {
+      $return_graph = &union($graph1, $graph2);
+    } elsif ($return_format eq "difference") {
+      $return_graph = &difference($graph1, $graph2);
+    }
+    print $main::out $return_graph->to_text($output_format);
+    ################################################################
+    ## Print output
+    
+    
+    ################################################################
+    ## Finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $main::out "; Job started $start_time\n";
+	print $main::out "; Job done    $done_time\n";
+    }
+    
+     
+    ################################################################
+    ## Close output stream
+    close $main::out if ($main::outfile{output});
+    
+    
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help 
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file 1
+=pod
+
+=item B<-graph1 graph1_input_file>
+	    ## Input file 1
+=pod
+
+=item B<-graph1 graph1_input_file>
+
+First graph file
+
+=cut
+	} elsif ($arg eq "-graph1") {
+	    $main::infile{graph1} = shift(@arguments);
+
+	    	    ## Input file 2
+=pod
+
+=item B<-graph2 graph2_input_file>
+
+Second graph file
+
+=cut
+	} elsif ($arg eq "-graph2") {
+	    $main::infile{graph2} = shift(@arguments);
+	
+	    	    ## Directed option
+=pod
+
+=item B<-directed>
+
+boolean
+
+=cut
+	    	    
+	} elsif ($arg eq "-directed") {
+	    $directed = 1;
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+	    	    
+	    ### Input format  
+=pod
+
+=item B<-in_format input_format>
+
+Input format. Supported: tab
+
+=cut
+	} elsif ($arg eq "-in_format") {
+	    $input_format = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
+
+
+	    ### return  
+=pod
+
+=item B<-return return>
+
+return : intersection , union or difference
+
+=cut
+	} elsif ($arg eq "-return") {
+	    $return_format = shift(@arguments);
+	    &RSAT::error::FatalError("$return_format\tInvalid input format. Supported: $supported_return_formats")
+		unless ($supported_return_format{$return_format});
+
+
+		
+	    ### Output format  
+=pod
+
+=item B<-out_format format>
+
+Output format. Supported: tab, dot, gml
+
+=cut 
+	} elsif ($arg eq "-out_format") {
+	    $output_format = shift(@arguments);
+	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
+		unless ($supported_output_format{$output_format});
+
+
+	    ## Source column
+=pod
+
+=item B<-scol>
+
+Source column. Column containing the source nodes. 
+
+=cut
+	} elsif ($arg eq "-scol") {
+	    $source_col = shift (@arguments);
+	    unless (&IsNatural($source_col) && ($source_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_col, "Invalid value for the source column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Target column
+=pod
+
+=item B<-tcol>
+
+Target column. Column containing the target nodes. 
+
+=cut
+	} elsif ($arg eq "-tcol") {
+	    $target_col = shift (@arguments);
+	    unless (&IsNatural($target_col) && ($target_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_col, "Invalid value for the target column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Weight column
+=pod
+
+=item B<-wcol>
+
+Weight column. Column containing the weight nodes. 
+
+=cut
+	} elsif ($arg eq "-wcol") {
+	    $weight_col = shift (@arguments);
+	    unless (&IsNatural($weight_col) && ($weight_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $weight_col, "Invalid value for the weight column. Must be a strictly positive natural number"));
+	    }
+
+	    
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Intersection
+## This function takes two graphs as arguments and computes their
+## intersection in a third graph
+
+sub intersect {
+
+  my ($graph1, $graph2) = @_;
+    ## Amelioration possible : parcours du plus petit graphe et comparaison au plus grand
+  my $inter_graph = new RSAT::Graph2;
+  
+  my %seen_arcs = ();
+  
+  my @arcs_g1 = $graph1->get_attribute("arcs");
+  my %arcs_name_id_g1 = $graph1->get_attribute("arcs_name_id");
+  my @arcs_g2 = $graph2->get_attribute("arcs");
+  my %arcs_name_id_g2 = $graph2->get_attribute("arcs_name_id");
+  my $max_arc_nb = $graph2->get_attribute("nb_arc_bw_node");
+
+  for (my $i = 0; $i < scalar(@arcs_g1); $i++) { # charge le graph 1
+    my $source_name = $arcs_g1[$i][0]; 
+    my $target_name = $arcs_g1[$i][1];
+    my $arc_label = $arcs_g1[$i][2];
+    my $arc_color = $arcs_g1[$i][3];
+    for (my $j = 1; $j <= $max_arc_nb; $j++) { # Boucle sur le nombre d'arcs entre 2 noeuds du graph 2
+      my @arcs_id = ();
+      my $arc_id1 = $source_name."_".$target_name."_".($j);
+      push @arcs_id, $arc_id1; # arcs du graph 1, "dirigés"
+      if (!$directed) {
+        my $arc_id2 = $target_name."_".$source_name."_".($j);
+	push @arcs_id, $arc_id2; # ajouts des arcs du graph 1 "non dirigés"
+      }
+        foreach my $arc_id (@arcs_id){
+        my $arc_intern_id = $arcs_name_id_g2{$arc_id};
+        if (defined($arc_intern_id) && (!exists($seen_arcs{$arc_id}))) {
+          if (!$inter_graph->contains_node($source_name)) {
+	    my $source_node_color = $graph2->get_node_color($source_name) || "#000088";
+	    my $source_node_label = $graph2->get_node_label($source_name) || $source_name;
+	    $inter_graph->create_node($source_name,$source_node_label,$source_node_color);
+	  }
+	  if (!$inter_graph->contains_node($target_name)) {
+	    my $target_node_color = $graph2->get_node_color($target_name) || "#000088";
+	    my $target_node_label = $graph2->get_node_label($target_name) || $target_name;
+	    $inter_graph->create_node($target_name,$target_node_label,$target_node_color);
+	  }
+	  my $arc_label = $arcs_g2[$arc_intern_id][2];
+          my $arc_color = $arcs_g2[$arc_intern_id][3];
+	  $inter_graph->create_arc($source_name,$target_name,$arc_label,$arc_color);
+	  $seen_arcs{$arc_id}++;
+        }
+      }
+    }
+  }
+  return ($inter_graph);
+} 
+
+################################################################
+## Union of two graphs
+## This function creates in Graph $graph2 all the edges that are in Graph $graph1 but 
+## absent in $graph2
+
+sub union {
+
+  my ($graph1, $graph2) = @_;
+  
+  my @arcs_g1 = $graph1->get_attribute("arcs");
+  my %arcs_name_id_g1 = $graph1->get_attribute("arcs_name_id");
+  my @arcs_g2 = $graph2->get_attribute("arcs");
+  my %arcs_name_id_g2 = $graph2->get_attribute("arcs_name_id");
+  my $max_arc_nb = $graph2->get_attribute("nb_arc_bw_node");
+  my %seen_arcs = ();
+  
+  for (my $i = 0; $i < scalar(@arcs_g1); $i++) { # charge le graph 1
+    my $source_name = $arcs_g1[$i][0]; 
+    my $target_name = $arcs_g1[$i][1];
+    for (my $j = 1; $j <= $max_arc_nb; $j++) {
+      my $arc_id = join("_", $source_name, $target_name, $j);
+      
+      my $arc_id_rev = "arete inverse degueulasse";
+      if (!$directed) {
+        $arc_id_rev = join("_", $target_name, $source_name, $j);
+      }
+      if (!(defined($arcs_name_id_g2{$arc_id}) || defined($arcs_name_id_g2{$arc_id_rev}))) {
+        if (exists($arcs_name_id_g1{$arc_id}) || exists($arcs_name_id_g1{$arc_id_rev})) {
+	  if (!exists($seen_arcs{$arc_id})) {
+	    if (!$graph2->contains_node($source_name)) {
+	      my $source_node_color = $graph1->get_node_color($source_name) || "#000088";
+	      my $source_node_label = $graph1->get_node_label($source_name) || $source_name;
+	      $graph2->create_node($source_name,$source_node_label,$source_node_color);
+	    }
+	    if (!$graph2->contains_node($target_name)) {
+	      my $target_node_color = $graph1->get_node_color($target_name) || "#000088";
+	      my $target_node_label = $graph1->get_node_label($target_name) || $target_name;
+	      $graph2->create_node($target_name,$target_node_label,$target_node_color);
+	    }
+	    my $arc_label = $arcs_g1[$arcs_name_id_g1{$arc_id}][2] || $arcs_g1[$arcs_name_id_g1{$arc_id_rev}][2];
+            my $arc_color = $arcs_g1[$arcs_name_id_g1{$arc_id}][3] || $arcs_g1[$arcs_name_id_g1{$arc_id_rev}][3];
+	    $graph2->create_arc($source_name,$target_name,$arc_label,"#FF0000");
+	    $seen_arcs{$arc_id}++;
+	  }
+	}
+      }
+    }
+  }
+	  
+  return ($graph2);
+}
+
+################################################################
+## Difference of two graphs
+## 
+## 
+
+sub difference {
+
+  my ($graph1, $graph2) = @_;
+
+  my $diff_graph = new RSAT::Graph2;
+  
+  my %seen_arcs = ();
+  my @arcs_g1 = $graph1->get_attribute("arcs");
+  my %arcs_name_id_g1 = $graph1->get_attribute("arcs_name_id");
+  my @arcs_g2 = $graph2->get_attribute("arcs");
+  my %arcs_name_id_g2 = $graph2->get_attribute("arcs_name_id");
+  my $max_arc_nb = $graph2->get_attribute("nb_arc_bw_node");
+
+  for (my $i = 0; $i < scalar(@arcs_g1); $i++) { # charge le graph 1
+    my $source_name = $arcs_g1[$i][0]; 
+    my $target_name = $arcs_g1[$i][1];
+    for (my $j = 1; $j <= $max_arc_nb; $j++) {
+      my $arc_id = join("_", $source_name, $target_name, $j);
+      my $arc_id_rev = "arete inverse degueulasse";
+      if (!$directed) {
+        $arc_id_rev = join("_", $target_name, $source_name, $j);
+      }
+      if (!(defined($arcs_name_id_g2{$arc_id}) || defined($arcs_name_id_g2{$arc_id_rev}))) {
+        if (exists($arcs_name_id_g1{$arc_id}) || exists($arcs_name_id_g1{$arc_id_rev})) {
+	  if (!exists($seen_arcs{$arc_id})) {
+	    if (!$diff_graph->contains_node($source_name)) {
+              my $source_node_color = $graph1->get_node_color($source_name) || "#000088";
+	      my $source_node_label = $graph1->get_node_label($source_name) || $source_name;
+              $diff_graph->create_node($source_name,$source_node_label,$source_node_color);
+            }
+            if (!$diff_graph->contains_node($target_name)) {
+	      my $target_node_color = $graph1->get_node_color($target_name) || "#000088";
+	      my $target_node_label = $graph1->get_node_label($target_name) || $target_name;
+	      $diff_graph->create_node($target_name,$target_node_label,$target_node_color);
+            }
+	    my $arc_label = $arcs_g1[$arcs_name_id_g1{$arc_id}][2] || $arcs_g1[$arcs_name_id_g1{$arc_id_rev}][2];
+            my $arc_color = $arcs_g1[$arcs_name_id_g1{$arc_id}][3] || $arcs_g1[$arcs_name_id_g1{$arc_id_rev}][3];
+            $diff_graph->create_arc($source_name,$target_name,$arc_label,$arc_color);
+            $seen_arcs{$arc_id}++;
+	  }Difference of two graphs
+## 
+	}
+      }
+    }
+  }
+  return ($diff_graph);
+}
+
+
+################################################################
+## arcs in common between two graphs
+## 
+## 
+
+sub in_common {
+
+  my ($graph1, $graph2) = @_;
+  my $common = 0;
+  my @arcs_g1 = $graph1->get_attribute("arcs");
+  my %arcs_name_id_g1 = $graph1->get_attribute("arcs_name_id");
+  my @arcs_g2 = $graph2->get_attribute("arcs");
+  my %arcs_name_id_g2 = $graph2->get_attribute("arcs_name_id");
+  my $max_arc_nb = $graph2->get_attribute("nb_arc_bw_node");
+  for (my $i = 0; $i < scalar(@arcs_g1); $i++) { # charge le graph 1
+    my $source_name = $arcs_g1[$i][0];
+    my $target_name = $arcs_g1[$i][1];
+    for (my $j = 1; $j <= $max_arc_nb; $j++) { # Boucle sur le nombre d'arcs entre 2 noeuds du graph 2
+      my @arcs_id = ();
+      my $arc_id1 = $source_name."_".$target_name."_".($j);
+      my $arc_id2 = $target_name."_".$source_name."_".($j);
+      push @arcs_id, $arc_id1, $arc_id2; # ajouts des arcs du graph 1 "non dirigés"
+      foreach my $arc_id (@arcs_id){
+        my $arc_intern_id = $arcs_name_id_g2{$arc_id};
+        if (defined($arc_intern_id)) {
+          $common++
+        }     
+      }
+    }
+  }
+  return ($common);
+}
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; template ";
+    &PrintArguments($main::out);
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=cut
