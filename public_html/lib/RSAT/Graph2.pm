@@ -214,6 +214,9 @@ sub contains_node {
 }
 
 
+
+
+
 ################################################################
 =pod
 
@@ -240,6 +243,26 @@ sub get_out_neighbours {
 }
 
 
+
+################################################################
+=pod
+
+=item B<properties()>
+
+Return properties of the graph (edges, nodes).
+
+Supported formats: ???
+
+=cut
+sub properties {
+    my ($self) = @_;
+    my @arcs = $self->get_attribute("arcs");
+    my $nbarcs = scalar @arcs;
+    my %nodes_name_id = $self->get_attribute("nodes_name_id");
+    my $nbnodes = scalar (keys(%nodes_name_id));    
+    
+return ($nbnodes, $nbarcs);
+}
 ################################################################
 =pod
 
