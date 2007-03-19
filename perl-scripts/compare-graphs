@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.1 2007/03/19 15:13:54 rsat Exp $
+# $Id: compare-graphs,v 1.2 2007/03/19 15:54:03 rsat Exp $
 #
 ############################################################
 
@@ -11,7 +11,7 @@
 
 =head1 NAME
 
-template
+compare-graphs
 
 =head1 DESCRIPTION
 
@@ -27,7 +27,7 @@ util
 
 =head1 USAGE
     
-template [-i inputfile] [-o outputfile] [-v #] [...]
+compare-graphs [-i inputfile] [-o outputfile] [-v #] [...]
 
 =head1 INPUT FORMAT
 
@@ -140,12 +140,12 @@ package main;
       my $message = (join("\t",$main::infile{graph1},$nodes_graph1,"node(s)",$arcs_graph1,"arc(s)\n"));
       
       my ($nodes_graph2, $arcs_graph2) = $graph2->properties;
-      $message .= "\t\t\t".(join("\t",$main::infile{graph2},$nodes_graph2,"node(s)",$arcs_graph2,"arc(s)\n"));
+      $message .= "\t".(join("\t",$main::infile{graph2},$nodes_graph2,"node(s)",$arcs_graph2,"arc(s)\n"));
       
       $commun = &in_common($graph1, $graph2);
-      $message .= "\t\t\t"."$commun\t"."arcs in common\n";
+      $message .= "\t"."$commun\t"."arcs in common\n";
       
-      &RSAT::message::TimeWarn("$message");
+      &RSAT::message::Info("$message");
     }
     
     my $return_graph;
@@ -416,6 +416,9 @@ sub intersect {
   my $max_arc_nb = $graph2->get_attribute("nb_arc_bw_node");
 
   for (my $i = 0; $i < scalar(@arcs_g1); $i++) { # charge le graph 1
+    if ($i % 1000 == 0) {
+      &RSAT::message::Info(join("\t","$i","treated arcs"));
+    } 
     my $source_name = $arcs_g1[$i][0]; 
     my $target_name = $arcs_g1[$i][1];
     my $arc_label = $arcs_g1[$i][2];
@@ -593,7 +596,7 @@ sub in_common {
 ################################################################
 #### verbose message
 sub Verbose {
-    print $main::out "; template ";
+    print $main::out "; compare-graphs ";
     &PrintArguments($main::out);
     if (defined(%main::infile)) {
 	print $main::out "; Input files\n";
