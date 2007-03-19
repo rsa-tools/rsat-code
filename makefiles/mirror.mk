@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.37 2007/02/13 04:16:25 jvanheld Exp $
+# $Id: mirror.mk,v 1.38 2007/03/19 13:16:21 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -109,7 +109,7 @@ EXCLUDED_GENOMES=					\
 		--exclude Anopheles_gambiae*		\
 		--exclude Caenorhabditis_elegans*	\
 		--exclude Tetraodon_nigroviridis*	\
-		--exclue Oryzias_latipes*		\
+		--exclude Oryzias_latipes*		\
 		--exclude *_EnsEMBL*
 
 EXCLUDED_BLAST= \
