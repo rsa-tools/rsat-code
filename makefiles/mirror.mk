@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.38 2007/03/19 13:16:21 jvanheld Exp $
+# $Id: mirror.mk,v 1.39 2007/03/19 13:18:23 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -70,7 +70,7 @@ dir_to_server:
 ################################################################
 #### From server to local machine
 ################################################################
-all_from_server: scripts_from_server pub_from_server data_from_server logs_from_server
+all_from_server: scripts_from_server pub_from_server data_from_server supported_from_server logs_from_server
 
 DIR=doc
 TARGET_DIR=${RSA}/
@@ -136,6 +136,9 @@ data_from_server:
 		${RSA_SERVER_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html/data/*	\
 		${RSA}/public_html/data/
 
+## Synchronize the list of supported organisms from the server to the mirror
+supported_from_server:
+	rsync -ruptvl -e ssh rsat@rsat.scmbb.ulb.ac.be:rsa-tools/data/supported'*' data/
 
 ################################################################
 ## Use wget to synchronize this mirror from the main server
