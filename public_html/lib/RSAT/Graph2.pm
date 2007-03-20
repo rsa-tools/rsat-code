@@ -729,13 +729,24 @@ sub read_from_table2 {
 sub read_from_table {
     ################################"
     # Define variables
-    my ($self, $inputfile, $source_col, $target_col, $weight_col) = @_;
+    my ($self, $inputfile, $source_col, $target_col, $weight_col, $source_color_col, $target_color_col, $edge_color_col) = @_;
     &RSAT::message::TimeWarn("Loading graph from tab file", $inputfile) if ($main::verbose >= 2);
     ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
     my $weight = 0;
     my $default_weight = 1;
     my @array = ();
-    
+    my $default_node_color = "#000088";
+    my $default_node_color = "#000088";
+    my $default_edge_color = "#000044";
+    if (!defined($source_color_col)) {
+      $source_color_col = 4
+    }
+    if (!defined($target_color_col)) {
+      $target_color_col = 5
+    }
+    if (!defined($edge_color_col)) {
+      $edge_color_col = 6
+    }
     ## Check input parameters
     unless (&RSAT::util::IsNatural($source_col) && ($source_col > 0)) {
 	&RSAT::error::FatalError(join("\t", $source_col, "Invalid source column secification for graph loading. Should be a strictly positive natural number."));
@@ -743,7 +754,7 @@ sub read_from_table {
     unless (&RSAT::util::IsNatural($target_col) && ($target_col > 0)) {
 	&FatalError(join("\t", $target_col, "Invalid target column specification for graph loading. Should be a strictly positive natural number."));
     }
-    unless (&RSAT::util::IsNatural($weight_col) && ($weight_col > 0)) {
+    if (&RSAT::util::IsNatural($weight_col) && ($weight_col > 0)) {
 	$weigth = 1;
     }
 
@@ -757,6 +768,9 @@ sub read_from_table {
       if (!$weight){
         $array[$cpt][2] = $lignecp[$weight_col-1];
       }
+      $array[$cpt][3] = $lignecp[$source_color_col-1] || $default_node_color;
+      $array[$cpt][4] = $lignecp[$target_color_col-1] || $default_node_color;
+      $array[$cpt][5] = $lignecp[$edge_color_col-1] || $default_edge_color;
       $cpt++;
     }
     return $self->load_from_array(@array);
@@ -772,6 +786,9 @@ Read the graph from a array
   where col1 = source node
   	col2 = target node
 	col3 = weight.
+	col4 = source color
+	col5 = target color
+	col6 = arc color
 
 
  Title    : load_from_array
@@ -806,8 +823,6 @@ sub load_from_array {
     my $arccpt = 0;
     ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
     my $default_weight = 1;
-    my $node_default_color = $self->get_attribute("node_color") || "#000088";
-    my $arc_default_color = $self->get_attribute("arc_color") || "#000044";
 
     ## Load the graph
     for ($l = 0; $l < scalar(@array); $l++){
@@ -817,13 +832,16 @@ sub load_from_array {
 	my $source_name = $array[$l][0];
 	my $target_name = $array[$l][1];
 	my $weight = $array[$l][2] || $default_weight;
-
+	my $source_color = $array[$l][3];
+	my $target_color = $array[$l][4];
+	my $edge_color = $array[$l][5];
+	
 	## Source node
 	my $source_node_index = $nodes_name_id{$source_name};
 	if (!defined($source_node_index)) {
 	    my $node_label = $source_name;
 	    $source_node_index = $nodecpt;
-	    $nodes_color{$source_node_index} = $node_default_color;
+	    $nodes_color{$source_node_index} = $source_color;
 	    $nodes_label{$source_node_index} = $node_label;
 	    $nodes_name_id{$source_name} = $nodecpt;
 	    $nodes_id_name{$nodecpt} = $source_name;
@@ -840,7 +858,7 @@ sub load_from_array {
 	if (!defined($target_node_index)) {
 	    my $node_label = $target_name;
 	    $target_node_index = $nodecpt;
-	    $nodes_color{$target_node_index} = $node_default_color;
+	    $nodes_color{$target_node_index} = $target_color;
 	    $nodes_label{$target_node_index} = $node_label;
 	    $nodes_name_id{$target_name} = $nodecpt;
 	    $nodes_id_name{$nodecpt} = $target_name;
@@ -862,8 +880,8 @@ sub load_from_array {
 	push @{$in_neighbours[$target_node_index]}, $source_node_index;
 	push @{$arc_out_label[$source_node_index]}, $arc_label;
 	push @{$arc_in_label[$target_node_index]}, $arc_label;
-	push @{$arc_out_color[$source_node_index]}, $arc_default_color;
-	push @{$arc_in_color[$target_node_index]}, $arc_default_color;
+	push @{$arc_out_color[$source_node_index]}, $edge_color;
+	push @{$arc_in_color[$target_node_index]}, $edge_color;
         my $exist = 0;
         my $arc_id = "";
         my $i;
@@ -881,7 +899,7 @@ sub load_from_array {
 	$arcs[$arccpt][0] = $source_name;
 	$arcs[$arccpt][1] = $target_name;
 	$arcs[$arccpt][2] = $arc_label;
-	$arcs[$arccpt][3] = $arc_default_color;
+	$arcs[$arccpt][3] = $edge_color;
 	$arccpt++;
 	&RSAT::message::Info(join("\t", "Created arc", 
 				  $source_name, $target_name
