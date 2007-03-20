@@ -572,7 +572,7 @@ Read the graph from a tab-delimited text file.
 
 =cut
 
-sub read_from_table {
+sub read_from_table2 {
     ################################"
     # Define variables
     my ($self, $inputfile, $source_col, $target_col, $weight_col) = @_;
@@ -725,6 +725,189 @@ sub read_from_table {
 }
 
 ################################################################
+
+sub read_from_table {
+    ################################"
+    # Define variables
+    my ($self, $inputfile, $source_col, $target_col, $weight_col) = @_;
+    &RSAT::message::TimeWarn("Loading graph from tab file", $inputfile) if ($main::verbose >= 2);
+    ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
+    my $weight = 0;
+    my $default_weight = 1;
+    my @array = ();
+    
+    ## Check input parameters
+    unless (&RSAT::util::IsNatural($source_col) && ($source_col > 0)) {
+	&RSAT::error::FatalError(join("\t", $source_col, "Invalid source column secification for graph loading. Should be a strictly positive natural number."));
+    }
+    unless (&RSAT::util::IsNatural($target_col) && ($target_col > 0)) {
+	&FatalError(join("\t", $target_col, "Invalid target column specification for graph loading. Should be a strictly positive natural number."));
+    }
+    unless (&RSAT::util::IsNatural($weight_col) && ($weight_col > 0)) {
+	$weigth = 1;
+    }
+
+    ## Load the graph
+    $cpt = 0;
+    while (my $ligne = <$main::in>) {
+      chomp $ligne;
+      my @lignecp = split /\t/, $ligne;
+      $array[$cpt][0] = $lignecp[$source_col-1];
+      $array[$cpt][1] = $lignecp[$target_col-1];
+      if (!$weight){
+        $array[$cpt][2] = $lignecp[$weight_col-1];
+      }
+      $cpt++;
+    }
+    return $self->load_from_array(@array);
+}
+
+################################################################
+################################################################
+=pod
+
+=item B<load_from_array>
+
+Read the graph from a array
+  where col1 = source node
+  	col2 = target node
+	col3 = weight.
+
+
+ Title    : load_from_array
+ Usage    : $graph->load_from_array(@input_array)
+ Function : Read the graph from a array
+ Returns  : a graph
+
+=cut
+
+sub load_from_array {
+    ################################"
+    # Define variables
+    my ($self, @array) = @_;
+    my @out_neighbours = $self->get_attribute("out_neighbours");
+    my @in_neighbours = $self->get_attribute("in_neighbours");
+    my @arc_out_label = $self->get_attribute("out_label");
+    my @arc_in_label = $self->get_attribute("in_label");
+    my @arc_in_color = $self->get_attribute("in_color");
+    my @arc_out_color = $self->get_attribute("out_color");
+    my @arcs = $self->get_attribute("arcs");
+    my %arcs_name_id = $self->get_attribute("arcs_name_id");
+ 
+    
+    my %nodes_name_id = $self->get_attribute("nodes_names_id");
+    my %nodes_id_name = $self->get_attribute("nodes_id_names");
+    my %nodes_color = $self->get_attribute("nodes_color");
+    my %nodes_label = $self->get_attribute("nodes_label");
+    
+    my $max_arc_nb = $self->get_attribute("nb_arc_bw_node");
+   
+    my $nodecpt = 0;
+    my $arccpt = 0;
+    ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
+    my $default_weight = 1;
+    my $node_default_color = $self->get_attribute("node_color") || "#000088";
+    my $arc_default_color = $self->get_attribute("arc_color") || "#000044";
+
+    ## Load the graph
+    for ($l = 0; $l < scalar(@array); $l++){
+	if(($main::verbose >= 2) && ($l % 1000 == 0)) {
+	    &RSAT::message::TimeWarn("\tLoaded", $l, "lines");
+	}
+	my $source_name = $array[$l][0];
+	my $target_name = $array[$l][1];
+	my $weight = $array[$l][2] || $default_weight;
+
+	## Source node
+	my $source_node_index = $nodes_name_id{$source_name};
+	if (!defined($source_node_index)) {
+	    my $node_label = $source_name;
+	    $source_node_index = $nodecpt;
+	    $nodes_color{$source_node_index} = $node_default_color;
+	    $nodes_label{$source_node_index} = $node_label;
+	    $nodes_name_id{$source_name} = $nodecpt;
+	    $nodes_id_name{$nodecpt} = $source_name;
+	    $nodecpt++;
+	    &RSAT::message::Info(join("\t", "Created source node", 
+				      $source_name,
+				      $source_node_index, 
+				      $node_label)
+				     ) if ($main::verbose >= 3);
+	}
+
+	## Target node
+	my $target_node_index = $nodes_name_id{$target_name};
+	if (!defined($target_node_index)) {
+	    my $node_label = $target_name;
+	    $target_node_index = $nodecpt;
+	    $nodes_color{$target_node_index} = $node_default_color;
+	    $nodes_label{$target_node_index} = $node_label;
+	    $nodes_name_id{$target_name} = $nodecpt;
+	    $nodes_id_name{$nodecpt} = $target_name;
+	    $nodecpt++;
+	    &RSAT::message::Info(join("\t", "Created target node", 
+				      $target_name,
+				      $target_node_index, 
+				      $node_label)
+				     ) if ($main::verbose >= 3);
+	}
+	## Create the arc
+	my $arc_label = "";
+	if ($no_weight) {
+	    $arc_label = join ("_", $source_name, $target_name);
+	} else {
+	    $arc_label = $weight;
+	}
+	push @{$out_neighbours[$source_node_index]}, $target_node_index;
+	push @{$in_neighbours[$target_node_index]}, $source_node_index;
+	push @{$arc_out_label[$source_node_index]}, $arc_label;
+	push @{$arc_in_label[$target_node_index]}, $arc_label;
+	push @{$arc_out_color[$source_node_index]}, $arc_default_color;
+	push @{$arc_in_color[$target_node_index]}, $arc_default_color;
+        my $exist = 0;
+        my $arc_id = "";
+        my $i;
+	for ($i = 1; $i <= $max_arc_nb; $i++) {
+	  $arc_id = $source_name."_".$target_name."_".$i;
+	  $exist = exists($arcs_name_id{$arc_id});
+	}
+	if ($exist) {
+	  $arc_id = $source_name."_".$target_name."_".($i);
+	  $max_arc_nb++;
+	} else {
+	  $arc_id = $source_name."_".$target_name."_".($i-1);
+	}
+	$arcs_name_id{$arc_id} = $arccpt;
+	$arcs[$arccpt][0] = $source_name;
+	$arcs[$arccpt][1] = $target_name;
+	$arcs[$arccpt][2] = $arc_label;
+	$arcs[$arccpt][3] = $arc_default_color;
+	$arccpt++;
+	&RSAT::message::Info(join("\t", "Created arc", 
+				  $source_name, $target_name
+				 )) if ($main::verbose >= 4);
+    }
+    close $main::in if ($inputfile);
+    ################################"
+    # Save the tables
+    $self->set_array_attribute("out_neighbours", @out_neighbours);
+    $self->set_array_attribute("in_neighbours", @in_neighbours);
+    $self->set_array_attribute("in_label", @arc_in_label);
+    $self->set_array_attribute("out_label", @arc_out_label);
+    $self->set_array_attribute("in_color", @arc_in_color);
+    $self->set_array_attribute("out_color", @arc_out_color);
+    $self->set_array_attribute("arcs", @arcs);
+    
+    $self->set_hash_attribute("nodes_name_id", %nodes_name_id);
+    $self->set_hash_attribute("nodes_id_name", %nodes_id_name);
+    $self->set_hash_attribute("nodes_color", %nodes_color);
+    $self->set_hash_attribute("nodes_label", %nodes_label);
+    $self->set_hash_attribute("arcs_name_id", %arcs_name_id);
+    
+    $self->force_attribute("nb_arc_bw_node", $max_arc_nb);   
+}
+
+
 =pod
 
 =item B<to_text()>
