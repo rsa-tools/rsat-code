@@ -736,17 +736,7 @@ sub read_from_table {
     my $default_weight = 1;
     my @array = ();
     my $default_node_color = "#000088";
-    my $default_node_color = "#000088";
     my $default_edge_color = "#000044";
-    if (!defined($source_color_col)) {
-      $source_color_col = 4
-    }
-    if (!defined($target_color_col)) {
-      $target_color_col = 5
-    }
-    if (!defined($edge_color_col)) {
-      $edge_color_col = 6
-    }
     ## Check input parameters
     unless (&RSAT::util::IsNatural($source_col) && ($source_col > 0)) {
 	&RSAT::error::FatalError(join("\t", $source_col, "Invalid source column secification for graph loading. Should be a strictly positive natural number."));
@@ -755,28 +745,140 @@ sub read_from_table {
 	&FatalError(join("\t", $target_col, "Invalid target column specification for graph loading. Should be a strictly positive natural number."));
     }
     if (&RSAT::util::IsNatural($weight_col) && ($weight_col > 0)) {
-	$weigth = 1;
+	$weight = 1;
     }
 
     ## Load the graph
     $cpt = 0;
     while (my $ligne = <$main::in>) {
-      chomp $ligne;
-      my @lignecp = split /\t/, $ligne;
+#       next if (/^--/); # Skip mysql-like comments
+#       next if (/^;/); # Skip RSAT comments
+#       next if (/^#/); # Skip comments and header
+#       next unless (/\S/); # Skip empty rows
+      chomp ($ligne);
+      my @lignecp = split "\t", $ligne;
       $array[$cpt][0] = $lignecp[$source_col-1];
       $array[$cpt][1] = $lignecp[$target_col-1];
-      if (!$weight){
+      if ($weight) {
         $array[$cpt][2] = $lignecp[$weight_col-1];
+      } else {
+        $array[$cpt][2] = join("_",$lignecp[$source_col-1],$lignecp[$target_col-1]);
+        
       }
-      $array[$cpt][3] = $lignecp[$source_color_col-1] || $default_node_color;
-      $array[$cpt][4] = $lignecp[$target_color_col-1] || $default_node_color;
-      $array[$cpt][5] = $lignecp[$edge_color_col-1] || $default_edge_color;
+      if (defined($source_color_col)) {
+        $array[$cpt][3] = $lignecp[$source_color_col-1] || $default_node_color;
+      } else {
+        $array[$cpt][3] = $default_node_color;
+      }
+      if (defined($target_color_col)) {
+        $array[$cpt][4] = $lignecp[$target_color_col-1] || $default_node_color;
+      } else {
+        $array[$cpt][4] = $default_node_color;
+      }
+      if (defined($edge_color_col)) {
+        $array[$cpt][5] = $lignecp[$edge_color_col-1] || $default_edge_color;
+      } else {
+        $array[$cpt][5] = $default_edge_color;
+      }
       $cpt++;
     }
-    return $self->load_from_array(@array);
+    $self->load_from_array(@array);
+    return $self;
 }
 
 ################################################################
+
+=pod
+
+=item B<remove_duplicated_arcs>
+
+From a graph where arcs may be duplicated, create a graph with only unique arcs.
+Usage	:	$graph->remove_duplicated_arcs($directed)
+
+=cut
+
+sub remove_duplicated_arcs {
+  my ($self, $directed) = @_;
+  if ($main::verbose >= 2) {
+    &RSAT::message::TimeWarn("Remove duplicated edges");
+  }
+  my %seen;
+  my %nodes_name_id = $self->get_attribute("nodes_name_id");
+  my %nodes_color = $self->get_attribute("nodes_color");
+  my @unique_array = ();
+  my @arcs = $self->get_attribute("arcs");
+  my $arccpt = 0;
+  for (my $i = 0; $i < scalar(@arcs); $i++) {
+    my @nodes = ();
+    push @nodes, $arcs[$i][0], $arcs[$i][1];
+    if (!$directed) {
+      @nodes = sort(@nodes);
+    }
+    my $arc_id = $nodes[0]."_".$nodes[1];
+    if (!exists($seen{$arc_id})) {
+      my $source_id = $nodes_name_id{$arcs[$i][0]};
+      my $target_id = $nodes_name_id{$arcs[$i][1]};
+      $unique_array[$arccpt][0] = $arcs[$i][0];
+      $unique_array[$arccpt][1] = $arcs[$i][1];
+      $unique_array[$arccpt][2] = $arcs[$i][2];
+      $unique_array[$arccpt][3] = $nodes_color{$source_id};
+      $unique_array[$arccpt][4] = $nodes_color{$target_id};
+      $unique_array[$arccpt][5] = $arcs[$i][3];
+      $arccpt++;
+      $seen{$arc_id}++;
+    }
+  }
+  $self->reload_graph;
+  $self->load_from_array(@unique_array);
+  return $self;
+}
+
+
+################################################################
+
+=pod
+
+=item B<reload_graph>
+
+empty all tables composing the graph
+
+=cut
+
+sub reload_graph {
+  if ($main::verbose >= 2) {
+    &RSAT::message::TimeWarn("Reload graph");
+  }
+  my ($self) = @_;
+  my @out_neighbours =();
+  my @in_neighbours = ();
+  my @arc_in_label = ();
+  my @arc_out_label = ();
+  my @arc_in_color = ();
+  my @arc_out_color = ();
+  my @arcs = ();
+  my $max_arc = 1;
+  my %arcs_name_id = ();
+  my %nodes_color = ();
+  my %nodes_label = ();
+  my %node_name_id = ();
+  my %node_id_name = ();
+  $self->set_array_attribute("out_neighbours", @out_neighbours);
+  $self->set_array_attribute("in_neighbours", @in_neighbours);
+  $self->set_array_attribute("in_label", @arc_in_label);
+  $self->set_array_attribute("out_label", @arc_out_label);
+  $self->set_array_attribute("in_color", @arc_in_color);
+  $self->set_array_attribute("out_color", @arc_out_color);
+  $self->set_array_attribute("arcs", @arcs);
+  $self->force_attribute("nb_arc_bw_node", $max_arc);
+  $self->set_hash_attribute("arcs_name_id", %arcs_name_id);
+  $self->set_hash_attribute("nodes_name_id", %nodes_name_id);
+  $self->set_hash_attribute("nodes_id_name", %nodes_id_name);
+  $self->set_hash_attribute("nodes_color", %nodes_color);
+  $self->set_hash_attribute("nodes_label", %nodes_label);
+  return $self;
+}
+
+
 ################################################################
 =pod
 
@@ -785,7 +887,7 @@ sub read_from_table {
 Read the graph from a array
   where col1 = source node
   	col2 = target node
-	col3 = weight.
+	col3 = weight or edge label
 	col4 = source color
 	col5 = target color
 	col6 = arc color
@@ -812,8 +914,8 @@ sub load_from_array {
     my %arcs_name_id = $self->get_attribute("arcs_name_id");
  
     
-    my %nodes_name_id = $self->get_attribute("nodes_names_id");
-    my %nodes_id_name = $self->get_attribute("nodes_id_names");
+    my %nodes_name_id = $self->get_attribute("nodes_name_id");
+    my %nodes_id_name = $self->get_attribute("nodes_id_name");
     my %nodes_color = $self->get_attribute("nodes_color");
     my %nodes_label = $self->get_attribute("nodes_label");
     
@@ -822,16 +924,19 @@ sub load_from_array {
     my $nodecpt = 0;
     my $arccpt = 0;
     ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
-    my $default_weight = 1;
+    
 
     ## Load the graph
     for ($l = 0; $l < scalar(@array); $l++){
-	if(($main::verbose >= 2) && ($l % 1000 == 0)) {
-	    &RSAT::message::TimeWarn("\tLoaded", $l, "lines");
+	if(($main::verbose >= 3) && ($l % 1000 == 0)) {
+	    &RSAT::message::TimeWarn("\tLoaded", $l, "edges");
 	}
 	my $source_name = $array[$l][0];
 	my $target_name = $array[$l][1];
 	my $weight = $array[$l][2] || $default_weight;
+	if (!defined($array[$l][2])) {
+	  $no_weight = 0;
+	}
 	my $source_color = $array[$l][3];
 	my $target_color = $array[$l][4];
 	my $edge_color = $array[$l][5];
@@ -902,7 +1007,7 @@ sub load_from_array {
 	$arcs[$arccpt][3] = $edge_color;
 	$arccpt++;
 	&RSAT::message::Info(join("\t", "Created arc", 
-				  $source_name, $target_name
+				  $source_name, $target_name, $arc_label
 				 )) if ($main::verbose >= 4);
     }
     close $main::in if ($inputfile);
@@ -1063,7 +1168,7 @@ sub to_gml {
 	  $gml .= "\t"."[\n";
   	  $gml .= "\t\t"."source\t".$source_id."\n";
 	  $gml .= "\t\t"."target\t".$target_id."\n";
-	  $gml .= "\t\t"."label\t\"".$arc_label."\"\n" if ($arc_label);
+	  $gml .= "\t\t"."label\t\"".$arc_label."\"\n" if (defined($arc_label));
 	  $gml .= "\t\t"."graphics\n";
 	  $gml .= "\t\t"."[\n";
 	  $gml .= "\t\t\t"."width\t2\n";
