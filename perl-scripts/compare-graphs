@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.3 2007/03/21 13:37:15 rsat Exp $
+# $Id: compare-graphs,v 1.4 2007/03/23 11:14:51 rsat Exp $
 #
 ############################################################
 
@@ -11,15 +11,16 @@
 
 =head1 NAME
 
-template
+compare-graphs
 
 =head1 DESCRIPTION
 
-Template or writing new perl scripts.
+Computes the intersection, the union or the difference of two graphs
 
 =head1 AUTHORS
 
-jvanheld@scmbb.ulb.ac.be
+gvdstock@ulb.ac.be
+sylvain@scmbb.ulb.ac.be
 
 =head1 CATEGORY
 
@@ -27,7 +28,7 @@ util
 
 =head1 USAGE
     
-template [-i inputfile] [-o outputfile] [-v #] [...]
+compare-graphs -graph1 graph1 -graph2 graph2 -return intersection|difference|union [-out_format gml|dot|tab] [-scol #] [-tcol #] [-wcol #] [-o output_file] [-v #] [...]
 
 =head1 INPUT FORMAT
 
@@ -59,7 +60,6 @@ package main;
     %main::outfile = ();
 
     $main::verbose = 0;
-    $main::in = STDIN;
     $main::out = STDOUT;
     
     ## Input formats
@@ -134,6 +134,10 @@ package main;
     $graph1->remove_duplicated_arcs($directed);
     $graph2->remove_duplicated_arcs($directed);
     	
+    
+    open(FILE, ">test.tab");
+    print FILE $graph2->to_tab;
+    
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
@@ -431,23 +435,19 @@ sub intersect {
   my %arcs_name_id_g1 = $graph1->get_attribute("arcs_name_id");
   my @arcs_g2 = $graph2->get_attribute("arcs");
   my %arcs_name_id_g2 = $graph2->get_attribute("arcs_name_id");
-  my $max_arc_nb = $graph2->get_attribute("nb_arc_bw_node");
-  
-  %nodes_name_id = $graph2->get_attribute("nodes_name_id");
-  %nodes_color = $graph2->get_attribute("nodes_color");
-  %nodes_label = $graph2->get_attribute("nodes_label");
+  my %nodes_name_id = $graph2->get_attribute("nodes_name_id");
+  my %nodes_color = $graph2->get_attribute("nodes_color");
+  my %nodes_label = $graph2->get_attribute("nodes_label");
   
   my $arccpt = 0;
   my $j = 1;
   my @inter_graph_array;
   for (my $i = 0; $i < scalar(@arcs_g1); $i++) { # charge le graph 1
     if ($i % 1000 == 0) {
-        &RSAT::message::Info("$i lines treated") if ($verbose  >= 3);
+        &RSAT::message::TimeWarn("$i lines treated") if ($verbose  >= 4);
     }
     my $source_name = $arcs_g1[$i][0]; 
     my $target_name = $arcs_g1[$i][1];
-    my $arc_label = $arcs_g1[$i][2];
-    my $arc_color = $arcs_g1[$i][3];
     my @arcs_id = ();
     my $arc_id1 = $source_name."_".$target_name."_".($j);
     push @arcs_id, $arc_id1; # arcs du graph 1, "dirigés"
@@ -474,18 +474,13 @@ sub intersect {
           $inter_graph_array[$arccpt][4] = $target_node_color;
           $inter_graph_array[$arccpt][5] = $arc_color;
 	  $arccpt ++;
-	  foreach (my $j = 0; $j < scalar(@arcs_id); $j++) {
+	  for (my $j = 0; $j < scalar(@arcs_id); $j++) {
 	    $seen_arcs{$arcs_id[$j]}++;
 	  }
 	  if (!$directed) {
 	    last;
 	  }
 	} 
-      } else {
-	&RSAT::message::Warning("arc $source_name\t$target_name is a duplicated arc") if ($verbose  >= 2);
-	if (!$directed) {
-	    last;
-	}
       }
     }
   }
@@ -499,46 +494,97 @@ sub intersect {
 ## absent in $graph2
 
 sub union {
-  my ($graph1, $graph2) = @_;
+  my ($graph1, $graph2) = @_; 
+  
+  my $union_graph = new RSAT::Graph2;
+  
   my @arcs_g1 = $graph1->get_attribute("arcs");
   my %arcs_name_id_g1 = $graph1->get_attribute("arcs_name_id");
   my @arcs_g2 = $graph2->get_attribute("arcs");
   my %arcs_name_id_g2 = $graph2->get_attribute("arcs_name_id");
-  my $max_arc_nb = $graph2->get_attribute("nb_arc_bw_node");
+  my %nodes_name_id_g1 = $graph1->get_attribute("nodes_name_id");
+  my %nodes_name_id_g2 = $graph2->get_attribute("nodes_name_id");
+  my %nodes_color_g1 = $graph1->get_attribute("nodes_color");
+  my %nodes_color_g2 = $graph2->get_attribute("nodes_color");
+  my %nodes_label_g1 = $graph1->get_attribute("nodes_label");
+  my %nodes_label_g2 = $graph2->get_attribute("nodes_label");
+
+  my @union_graph_array = @arcs_g1;
+  
   my %seen_arcs = ();
-  for (my $i = 0; $i < scalar(@arcs_g1); $i++) { # charge le graph 1
-    my $source_name = $arcs_g1[$i][0]; 
-    my $target_name = $arcs_g1[$i][1];
-    for (my $j = 1; $j <= $max_arc_nb; $j++) {
-      my $arc_id = join("_", $source_name, $target_name, $j);
-      my $arc_id_rev = "arete inverse degueulasse";
-      if (!$directed) {
-        $arc_id_rev = join("_", $target_name, $source_name, $j);
+  
+#   filling union_graph_array with graph1
+
+  for (my $i = 0; $i < scalar(@union_graph_array); $i++) {
+  
+    my $source_name = $union_graph_array[$i][0]; 
+    my $target_name = $union_graph_array[$i][1];
+        
+    my @arcs_id = ();
+    my $arc_id1 = $source_name."_".$target_name."_".1;
+    push @arcs_id, $arc_id1; # arcs du graph 1, "dirigés"
+    if (!$directed) {
+      my $arc_id2 = $target_name."_".$source_name."_".1;
+      push @arcs_id, $arc_id2; # ajouts des arcs du graph 1 "non dirigés"
+    }
+    my $arc_color = "#00ff00"; # by default color of edges belongs to graph1 is green
+    foreach my $arc_id (@arcs_id) {
+      my $arc_intern_id = $arcs_name_id_g2{$arc_id};
+      if (defined($arc_intern_id)) {
+        $arc_color = "#ff0000";
       }
-      if (!(defined($arcs_name_id_g2{$arc_id}) || defined($arcs_name_id_g2{$arc_id_rev}))) {
-        if (exists($arcs_name_id_g1{$arc_id}) || exists($arcs_name_id_g1{$arc_id_rev})) {
-	  if (!exists($seen_arcs{$arc_id})) {
-	    if (!$graph2->contains_node($source_name)) {
-	      my $source_node_color = $graph1->get_node_color($source_name) || "#000088";
-	      my $source_node_label = $graph1->get_node_label($source_name) || $source_name;
-	      $graph2->create_node($source_name,$source_node_label,$source_node_color);
-	    }
-	    if (!$graph2->contains_node($target_name)) {
-	      my $target_node_color = $graph1->get_node_color($target_name) || "#000088";
-	      my $target_node_label = $graph1->get_node_label($target_name) || $target_name;
-	      $graph2->create_node($target_name,$target_node_label,$target_node_color);
-	    }
-	    my $arc_label = $arcs_g1[$arcs_name_id_g1{$arc_id}][2] || $arcs_g1[$arcs_name_id_g1{$arc_id_rev}][2];
-            my $arc_color = $arcs_g1[$arcs_name_id_g1{$arc_id}][3] || $arcs_g1[$arcs_name_id_g1{$arc_id_rev}][3];
-	    $graph2->create_arc($source_name,$target_name,$arc_label,"#FF0000");
-	    $seen_arcs{$arc_id}++;
-	  }
-	}
+    }
+    $union_graph_array[$i][5] = $arc_color;
+    my $source_name_id = $nodes_name_id_g1{$source_name};
+    my $target_name_id = $nodes_name_id_g1{$target_name};
+    my $source_node_color = $nodes_color_g1{$source_name_id};
+    my $target_node_color = $nodes_color_g1{$target_name_id};
+    $union_graph_array[$i][3] = $source_node_color;
+    $union_graph_array[$i][4] = $target_node_color;
+    for (my $j = 0; $j < scalar(@arcs_id); $j++) {
+      $seen_arcs{$arcs_id[$j]}++;
+    }
+  }    
+    
+#   filling union_graph_array with graph2 without intersection
+  my $j = scalar(@union_graph_array);
+  my $arc_color = "#0000ff";
+  for (my $i = 0; $i < scalar(@arcs_g2); $i++) {
+    my $source_name = $arcs_g2[$i][0]; 
+    my $target_name = $arcs_g2[$i][1];
+    my @arcs_id = ();
+    my $arc_id1 = $source_name."_".$target_name."_".1;
+    push @arcs_id, $arc_id1; # arcs du graph 1, "dirigés"
+    if (!$directed) {
+      my $arc_id2 = $target_name."_".$source_name."_".1;
+      push @arcs_id, $arc_id2; # ajouts des arcs du graph 1 "non dirigés"
+    }
+    foreach my $arc_id (@arcs_id) {
+      my $arc_intern_id_g1 = $arcs_name_id_g1{$arc_id};
+      my $arc_intern_id_g2 = $arcs_name_id_g2{$arc_id};
+      my $seen_arc = $seen_arcs{$arc_id};
+      if (!defined($seen_arc) && defined($arc_intern_id_g2)) {
+        my $arc_label = $arcs_g2[$i][2];
+        my $source_name_id = $nodes_name_id_g2{$source_name};
+        my $target_name_id = $nodes_name_id_g2{$target_name};
+        my $source_node_color = $nodes_color_g2{$source_name_id};
+        my $target_node_color = $nodes_color_g2{$target_name_id};
+        $union_graph_array[$j][0] = $source_name;
+        $union_graph_array[$j][1] = $target_name;
+        $union_graph_array[$j][2] = $arc_label;
+        $union_graph_array[$j][3] = $source_node_color;
+        $union_graph_array[$j][4] = $target_node_color;
+        $union_graph_array[$j][5] = $arc_color;
+        $j++;
+	for (my $j = 0; $j < scalar(@arcs_id); $j++) {
+          $seen_arcs{$arcs_id[$j]}++;
+        }
       }
     }
   }
-	  
-  return ($graph2);
+  $union_graph->load_from_array(@union_graph_array);
+  #$union_graph->remove_duplicated_arcs();
+  return ($union_graph);
 }
 
 ################################################################
@@ -548,48 +594,61 @@ sub union {
 
 sub difference {
 
-  my ($graph2, $graph1) = @_;
+  my ($graph1, $graph2) = @_;
 
   my $diff_graph = new RSAT::Graph2;
+    
+  my @arcs_g1 = $graph1->get_attribute("arcs");
+  my @arcs_g2 = $graph2->get_attribute("arcs");
+  my %arcs_name_id_g1 = $graph1->get_attribute("arcs_name_id");
+  my %arcs_name_id_g2 = $graph2->get_attribute("arcs_name_id");
+  my %nodes_name_id_g1 = $graph1->get_attribute("nodes_name_id");
+  my %nodes_name_id_g2 = $graph2->get_attribute("nodes_name_id");
+  my %nodes_color_g1 = $graph1->get_attribute("nodes_color");
+  my %nodes_color_g2 = $graph2->get_attribute("nodes_color");
+  my %nodes_label_g1 = $graph1->get_attribute("nodes_label");
+  my %nodes_label_g2 = $graph2->get_attribute("nodes_label");
+  
+  my @diff_graph_array = ();
+  
+  my $j = 0;
   
   my %seen_arcs = ();
-  my @arcs_g1 = $graph1->get_attribute("arcs");
-  my %arcs_name_id_g1 = $graph1->get_attribute("arcs_name_id");
-  my @arcs_g2 = $graph2->get_attribute("arcs");
-  my %arcs_name_id_g2 = $graph2->get_attribute("arcs_name_id");
 
   for (my $i = 0; $i < scalar(@arcs_g1); $i++) { # charge le graph 1
+  
     my $source_name = $arcs_g1[$i][0]; 
     my $target_name = $arcs_g1[$i][1];
-    my $arc_id = join("_", $source_name, $target_name, $j);
-    my $arc_id_rev = "arete inverse degueulasse";
+    
+    my @arcs_id = ();
+    my $arc_id1 = $source_name."_".$target_name."_".1;
+    my $arc_id_rev = $source_name."_".$target_name."_".1;
     if (!$directed) {
-      $arc_id_rev = join("_", $target_name, $source_name, $j);
+      $arc_id_rev = $target_name."_".$source_name."_".1;
     }
-    if (!(defined($arcs_name_id_g2{$arc_id}) || defined($arcs_name_id_g2{$arc_id_rev}))) {
-      if (exists($arcs_name_id_g1{$arc_id}) || exists($arcs_name_id_g1{$arc_id_rev})) {
-	if (!exists($seen_arcs{$arc_id})) {
-	  if (!$diff_graph->contains_node($source_name)) {
-            my $source_node_color = $graph1->get_node_color($source_name) || "#000088";
-	    my $source_node_label = $graph1->get_node_label($source_name) || $source_name;
-            $diff_graph->create_node($source_name,$source_node_label,$source_node_color);
-          }
-          if (!$diff_graph->contains_node($target_name)) {
-	    my $target_node_color = $graph1->get_node_color($target_name) || "#000088";
-	    my $target_node_label = $graph1->get_node_label($target_name) || $target_name;
-	    $diff_graph->create_node($target_name,$target_node_label,$target_node_color);
-          }
-	  my $arc_label = $arcs_g1[$arcs_name_id_g1{$arc_id}][2] || $arcs_g1[$arcs_name_id_g1{$arc_id_rev}][2];
-          my $arc_color = $arcs_g1[$arcs_name_id_g1{$arc_id}][3] || $arcs_g1[$arcs_name_id_g1{$arc_id_rev}][3];
-          $diff_graph->create_arc($source_name,$target_name,$arc_label,$arc_color);
-          $seen_arcs{$arc_id}++;
-        }
-      }
+    if (!exists($arcs_name_id_g2{$arc_id1}) && !exists($arcs_name_id_g2{$arc_id_rev})) {
+      if (!exists($seen_arcs{$arc_id1}) && !exists($seen_arcs{$arc_id_rev})) {
+	  
+	my $arc_label = $arcs_g1[$i][2];
+        my $source_name_id = $nodes_name_id_g1{$source_name};
+        my $target_name_id = $nodes_name_id_g1{$target_name};
+        my $source_node_color = $nodes_color_g1{$source_name_id};
+        my $target_node_color = $nodes_color_g1{$target_name_id};
+        $diff_graph_array[$j][0] = $source_name;
+        $diff_graph_array[$j][1] = $target_name;
+        $diff_graph_array[$j][2] = $arc_label;
+        $diff_graph_array[$j][3] = $source_node_color;
+        $diff_graph_array[$j][4] = $target_node_color;
+        $diff_graph_array[$j][5] = "#000088";
+        $j++;
+	$seen_arcs{$arc_id1}++;
+	$seen_arcs{$arc_id_rev}++;
+      }  
     }
   }
+  $diff_graph->load_from_array(@diff_graph_array);
   return ($diff_graph);
 }
-
 
 ################################################################
 ## arcs in common between two graphs
@@ -640,7 +699,7 @@ sub in_common {
 ################################################################
 #### verbose message
 sub Verbose {
-    print $main::out "; template ";
+    print $main::out "; compare-graphs ";
     &PrintArguments($main::out);
     if (defined(%main::infile)) {
 	print $main::out "; Input files\n";
