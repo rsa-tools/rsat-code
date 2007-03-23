@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.4 2007/03/23 11:14:51 rsat Exp $
+# $Id: compare-graphs,v 1.5 2007/03/23 11:18:38 rsat Exp $
 #
 ############################################################
 
@@ -266,10 +266,6 @@ Same as -h
 	} elsif ($arg eq "-help") {
 	    &PrintOptions();
 
-	    ## Input file 1
-=pod
-
-=item B<-graph1 graph1_input_file>
 	    ## Input file 1
 =pod
 
