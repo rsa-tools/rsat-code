@@ -825,7 +825,7 @@ sub remove_duplicated_arcs {
       $unique_array[$arccpt][4] = $nodes_color{$target_id};
       $unique_array[$arccpt][5] = $arcs[$i][3];
       $arccpt++;
-      $seen{$arc_id}++;
+      $seen{$arc_id}++;      
     }
   }
   $self->reload_graph;
