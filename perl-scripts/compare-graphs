@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.6 2007/03/27 09:27:05 rsat Exp $
+# $Id: compare-graphs,v 1.7 2007/03/27 11:27:42 rsat Exp $
 #
 ############################################################
 
@@ -15,12 +15,14 @@ compare-graphs
 
 =head1 DESCRIPTION
 
-Computes the intersection, the union or the difference of two graphs
+Computes the intersection, the union or the difference of two graphs.
+In case more than one edge exist between two nodes, the program removes one of those.
 
 =head1 AUTHORS
 
-gvdstock@ulb.ac.be
-sylvain@scmbb.ulb.ac.be
+Gilles Vanderstocken <gvdstock@ulb.ac.be>
+
+Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -28,7 +30,7 @@ util
 
 =head1 USAGE
     
-compare-graphs -graph1 graph1 -graph2 graph2 -return intersection|difference|union [-out_format gml|dot|tab] [-scol #] [-tcol #] [-wcol #] [-o output_file] [-v #] [...]
+compare-graphs -graph1 graph1_file -graph2 graph2_file -return intersection|difference|union [-out_format gml|dot|tab] [-scol_g1 #] [-tcol_g1 #] [-wcol_g1 #] [-in_format_g1 tab|gml] [-scol_g2 #] [-tcol_g2 #] [-wcol_g2 #] [-in_format_g2 tab|gml] [-o output_file] [-v #] 
 
 =head1 INPUT FORMAT
 
@@ -63,14 +65,22 @@ package main;
     $main::out = STDOUT;
     
     ## Input formats
-    local $input_format = "tab";
+    local $input_format_g1 = "tab";
+    local $input_format_g2 = "tab";
+    
     %supported_input_format =(
 	tab=>1,
+	gml=>1
     );
+    
     $supported_input_formats = join (",", keys %supported_input_format);
-    local $source_col = 1;
-    local $target_col = 2;
-    local $weight_col = 0;
+    
+    local $source_col_g1 = 1;
+    local $target_col_g1 = 2;
+    local $weight_col_g1 = 0;
+    local $source_col_g2 = 1;
+    local $target_col_g2 = 2;
+    local $weight_col_g2 = 0;
 
     ## Output formats
     local $output_format = "tab";
@@ -124,9 +134,8 @@ package main;
     ## Read and load input
     my $graph1 = new RSAT::Graph2;
     my $graph2 = new RSAT::Graph2;
-    
-    $graph1->read_from_table($main::infile{graph1}, $source_col,$target_col, $weight_col);
-    $graph2->read_from_table($main::infile{graph2}, $source_col,$target_col, $weight_col);
+    $graph1->graph_from_text($input_format_g1, $main::infile{graph1}, $source_col_g1, $target_col_g1, $weight_col_g1);
+    $graph2->graph_from_text($input_format_g2, $main::infile{graph2}, $source_col_g2, $target_col_g2, $weight_col_g2);
     
     ## As it appeared quite difficult to work with graphs having more than one edge between two
     ## nodes, we decided to remove any duplicated edges.
@@ -292,7 +301,8 @@ Second graph file
 
 =item B<-directed>
 
-boolean
+Indicates whether the graphs must be considered as directed, i.e., an edge 
+from node A to node B is different from an edge from B to A.
 
 =cut
 	    	    
@@ -315,15 +325,27 @@ allows to use the command within a pipe.
 	    ### Input format  
 =pod
 
-=item B<-in_format input_format>
+=item B<-in_format_g1 input_format>
 
-Input format. Supported: tab
+Input format of graph1. Supported: tab,gml
 
 =cut
-	} elsif ($arg eq "-in_format") {
-	    $input_format = shift(@arguments);
+	} elsif ($arg eq "-in_format_g1") {
+	    $input_format_g1 = shift(@arguments);
 	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
-		unless ($supported_input_format{$input_format});
+		unless ($supported_input_format{$input_format_g1});
+
+=pod
+
+=item B<-in_format_g2 input_format>
+
+Input format of graph2. Supported: tab,gml
+
+=cut
+	} elsif ($arg eq "-in_format_g2") {
+	    $input_format_g2 = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format_g2});		
 
 
 	    ### return  
@@ -358,45 +380,79 @@ Output format. Supported: tab, dot, gml
 	    ## Source column
 =pod
 
-=item B<-scol>
+=item B<-scol_g1>
 
-Source column. Column containing the source nodes. 
+Source column of graph1 for tab-delimited input, default = 1. Column containing the source nodes. 
 
 =cut
-	} elsif ($arg eq "-scol") {
-	    $source_col = shift (@arguments);
-	    unless (&IsNatural($source_col) && ($source_col > 0)) {
-		&RSAT::error::FatalError(join("\t", $source_col, "Invalid value for the source column. Must be a strictly positive natural number"));
+	} elsif ($arg eq "-scol_g1") {
+	    $source_col_g1 = shift (@arguments);
+	    unless (&IsNatural($source_col_g1) && ($source_col_g1 > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_col_g1, "Invalid value for the source column. Must be a strictly positive natural number"));
 	    }
+	    
+=item B<-scol_g2>
 
+Source column of graph2 for tab-delimited input, default = 1. Column containing the source nodes. 
+
+=cut
+	} elsif ($arg eq "-scol_g2") {
+	    $source_col_g2 = shift (@arguments);
+	    unless (&IsNatural($source_col_g2) && ($source_col_g2 > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_col_g2, "Invalid value for the source column. Must be a strictly positive natural number"));
+	    }
+	    
 	    ## Target column
 =pod
 
-=item B<-tcol>
+=item B<-tcol_g1>
 
-Target column. Column containing the target nodes. 
+Target column of graph1 for tab-delimited input, default = 2. Column containing the target nodes. 
 
 =cut
-	} elsif ($arg eq "-tcol") {
-	    $target_col = shift (@arguments);
-	    unless (&IsNatural($target_col) && ($target_col > 0)) {
-		&RSAT::error::FatalError(join("\t", $target_col, "Invalid value for the target column. Must be a strictly positive natural number"));
+	} elsif ($arg eq "-tcol_g1") {
+	    $target_col_g1 = shift (@arguments);
+	    unless (&IsNatural($target_col_g1) && ($target_col_g1 > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_col_g1, "Invalid value for the target column. Must be a strictly positive natural number"));
 	    }
+	    ## Target column
+=pod
 
+=item B<-tcol_g2>
+
+Target column of graph2 for tab-delimited input, default = 2. Column containing the target nodes. 
+
+=cut
+	} elsif ($arg eq "-tcol_g2") {
+	    $target_col_g2 = shift (@arguments);
+	    unless (&IsNatural($target_col_g2) && ($target_col_g2 > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_col_g2, "Invalid value for the target column. Must be a strictly positive natural number"));
+	    }
 	    ## Weight column
 =pod
 
-=item B<-wcol>
+=item B<-wcol_g1>
 
-Weight column. Column containing the weight nodes. 
+Weight column of graph1 for tab-delimited input. Column containing the weight nodes. 
 
 =cut
-	} elsif ($arg eq "-wcol") {
-	    $weight_col = shift (@arguments);
-	    unless (&IsNatural($weight_col) && ($weight_col > 0)) {
-		&RSAT::error::FatalError(join("\t", $weight_col, "Invalid value for the weight column. Must be a strictly positive natural number"));
+	} elsif ($arg eq "-wcol_g1") {
+	    $weight_col_g1 = shift (@arguments);
+	    unless (&IsNatural($weight_col_g1) && ($weight_col_g1 > 0)) {
+		&RSAT::error::FatalError(join("\t", $weight_col_g1, "Invalid value for the weight column. Must be a strictly positive natural number"));
 	    }
+=pod
 
+=item B<-wcol_g2>
+
+Weight column of graph2 for tab-delimited input. Column containing the weight nodes. 
+
+=cut
+	} elsif ($arg eq "-wcol_g2") {
+	    $weight_col_g2 = shift (@arguments);
+	    unless (&IsNatural($weight_col_g2) && ($weight_col_g2 > 0)) {
+		&RSAT::error::FatalError(join("\t", $weight_col_g2, "Invalid value for the weight column. Must be a strictly positive natural number"));
+	    }
 	    
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.6 2007/03/27 09:27:05 rsat Exp $
+# $Id: convert-graph,v 1.7 2007/03/27 11:27:42 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -105,11 +105,6 @@ package main;
     
     ################################################################
     ##### read input
-#     if ($input_format eq "tab") {
-#       $graph->read_from_table($main::infile{input}, $source_col, $target_col, $weight_col);
-#     } elsif ($input_format eq "gml") {
-#       $graph->load_from_gml($main::infile{input});
-#     }
     $graph->graph_from_text($input_format,$main::infile{input}, $source_col, $target_col, $weight_col);
     
     ################################################################
