@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.5 2007/03/07 14:54:31 rsat Exp $
+# $Id: convert-graph,v 1.6 2007/03/27 09:27:05 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -75,6 +75,7 @@ package main;
     local $input_format = "tab";
     %supported_input_format =(
 	tab=>1,
+	gml=>1
     );
     $supported_input_formats = join (",", keys %supported_input_format);
     local $source_col = 1;
@@ -85,7 +86,8 @@ package main;
     local $output_format = "dot";
     %supported_output_format =(
 			       dot=>1,
-			       gml=>1
+			       gml=>1,
+			       tab=>1
 			       
     );
     $supported_output_formats = join (",", keys %supported_output_format);
@@ -103,7 +105,12 @@ package main;
     
     ################################################################
     ##### read input
-    $graph->read_from_table($main::infile{input}, $source_col, $target_col, $weight_col);
+#     if ($input_format eq "tab") {
+#       $graph->read_from_table($main::infile{input}, $source_col, $target_col, $weight_col);
+#     } elsif ($input_format eq "gml") {
+#       $graph->load_from_gml($main::infile{input});
+#     }
+    $graph->graph_from_text($input_format,$main::infile{input}, $source_col, $target_col, $weight_col);
     
     ################################################################
     ### open output streams
@@ -240,7 +247,7 @@ allows to use the command within a pipe.
 
 =item B<-from input_format>
 
-Input format. Supported: tab
+Input format. Supported: tab, gml
 
 =cut
 	} elsif ($arg eq "-from") {
