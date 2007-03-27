@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.5 2007/03/23 11:18:38 rsat Exp $
+# $Id: compare-graphs,v 1.6 2007/03/27 09:27:05 rsat Exp $
 #
 ############################################################
 
@@ -133,7 +133,6 @@ package main;
     
     $graph1->remove_duplicated_arcs($directed);
     $graph2->remove_duplicated_arcs($directed);
-    	
     
     open(FILE, ">test.tab");
     print FILE $graph2->to_tab;
