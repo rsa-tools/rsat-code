@@ -751,10 +751,10 @@ sub read_from_table {
     ## Load the graph
     $cpt = 0;
     while (my $ligne = <$main::in>) {
-#       next if (/^--/); # Skip mysql-like comments
-#       next if (/^;/); # Skip RSAT comments
-#       next if (/^#/); # Skip comments and header
-#       next unless (/\S/); # Skip empty rows
+      next if ($ligne =~ /^--/); # Skip mysql-like comments
+      next if ($ligne =~ /^;/); # Skip RSAT comments
+      next if ($ligne =~ /^#/); # Skip comments and header
+      next unless ($ligne =~ /\S/); # Skip empty rows
       chomp ($ligne);
       my @lignecp = split "\t", $ligne;
       $array[$cpt][0] = $lignecp[$source_col-1];
@@ -880,6 +880,205 @@ sub reload_graph {
 
 
 ################################################################
+
+
+
+sub load_from_gml {
+    ################################
+    # Define variables
+    my ($self, $inputfile) = @_;
+    my @out_neighbours = $self->get_attribute("out_neighbours");
+    my @in_neighbours = $self->get_attribute("in_neighbours");
+    my @arc_out_label = $self->get_attribute("out_label");
+    my @arc_in_label = $self->get_attribute("in_label");
+    my @arc_in_color = $self->get_attribute("in_color");
+    my @arc_out_color = $self->get_attribute("out_color");
+    my @arcs = $self->get_attribute("arcs");
+    my %arcs_name_id = $self->get_attribute("arcs_name_id");
+ 
+    
+    my %nodes_name_id = $self->get_attribute("nodes_name_id");
+    my %nodes_id_name = $self->get_attribute("nodes_id_name");
+    my %nodes_color = $self->get_attribute("nodes_color");
+    my %nodes_label = $self->get_attribute("nodes_label");
+    my %gml_id = ();
+    
+    my $max_arc_nb = $self->get_attribute("nb_arc_bw_node");
+   
+    my $nodecpt = 0;
+    my $arccpt = 0;
+    &RSAT::message::TimeWarn("Loading graph from gml file", $inputfile) if ($main::verbose >= 2);
+    ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
+    
+    my $fichier;
+
+    while (my $ligne = <$main::in>) {
+      chomp($ligne);
+      $ligne =~ s/\t/ /g;
+      $fichier .= $ligne;
+      
+    }
+    
+    
+    my @fichier_node = split /node( |\t|)/, $fichier;
+    my @fichier_edge = split /edge( |\t|)/, $fichier;
+  
+    foreach my $node (@fichier_node) {
+      if ($node ne " ") {
+        $node =~ s/edge.*\[.*//;
+        my $node_id =  "NA";
+        my $node_label = "NA";
+        my $node_color  = "#000088";
+# NODE ID
+        if ($node =~ /id/) {
+          my @node_cp = split /.*id /, $node;
+          $node_id = $node_cp[1];
+          $node_id = substr($node_id,0, index($node_id, " "));
+        }
+# NODE LABEL
+        if ($node =~ /label/) {
+          my @label_cp = split /.*label /, $node;
+          $node_label = $label_cp[1];
+          $node_label = substr($node_label,1, index($node_label, "\" "));
+          $node_label =~ s/\"//;
+        }
+# NODE COLOR
+        if ($node =~ /outline/) {
+          my @color_cp = split /.*outline /, $node;
+          $node_color = $color_cp[1];
+          $node_color = substr($node_color,1, index($node_color, "\" "));
+          $node_color =~ s/\"//;
+        }
+	
+	
+        if ($node_id ne "NA") {
+          if ($node_label eq "NA") {
+            $node_label = $node_id;
+          }
+          my $node_index = $nodes_name_id{$node_label};
+          if (!defined($node_index)) {
+	    $node_index = $nodecpt;
+	    $gml_id{$node_id} = $node_index;
+	    $nodes_color{$node_index} = $node_color;
+	    $nodes_label{$node_index} = $node_label;
+	    $nodes_name_id{$node_label} = $nodecpt;
+	    $nodes_id_name{$nodecpt} = $node_label;
+	    $nodecpt++;
+	    &RSAT::message::Info(join("\t", "Created node", 
+	     $node_label,
+	     $node_index, 
+	     $node_label)
+	     ) if ($main::verbose >= 3);
+	  }
+        }
+      }
+    }
+
+    
+    
+
+    foreach my $edge (@fichier_edge) {
+      if ($edge ne " ") {
+        my $source_edge =  "NA";
+        my $target_edge = "NA";
+        my $label_edge  = "NA";
+        my $color_edge = "#000044";
+    
+# SOURCE EDGE
+        if ($edge =~ /source/) {
+          my @source_cp = split /.*source /, $edge;
+          $source_edge = $source_cp[1];
+          $source_edge = substr($source_edge,0, index($source_edge, " "));
+        }
+# TARGET EDGE
+        if ($edge =~ /source/) {
+          my @target_cp = split /.*target /, $edge;
+          $target_edge = $target_cp[1];
+          $target_edge = substr($target_edge,0, index($target_edge, " "));
+        }
+# LABEL EDGE
+        if ($edge =~ /label/) {
+          my @label_cp = split /.*label /, $edge;
+          $label_edge = $label_cp[1];
+          $label_edge = substr($label_edge,1, index($label_edge, "\" "));
+          $label_edge =~ s/\"//;
+        }
+# COLOR EDGE
+        if ($edge =~ /label/) {
+          my @color_cp = split /.*fill /, $edge;
+          $color_edge = $color_cp[1];
+          $color_edge = substr($color_edge,1, index($color_edge, "\" "));
+          $color_edge =~ s/\"//;
+        }
+	
+        if ($source_edge ne "NA" || $target_edge ne "NA") {
+          $source_node_id = $gml_id{$source_edge};
+	  $source_node = $source_edge;
+	  $target_node_id = $gml_id{$target_edge};
+	  $target_node = $target_edge;
+	  $source_name = $nodes_id_name{$source_node_id};
+	  $target_name = $nodes_id_name{$target_node_id}; 
+	  if ($label_edge eq "NA") {
+	    $label_edge = $node_id_name{$source_node_id}."_".$node_id_name{$target_node_id};
+	  }
+	    $nodes_label = $label_edge;
+	    $nodes_color = $color_edge;
+	    
+	  push @{$out_neighbours[$source_node_id]}, $target_node_id;
+	  push @{$in_neighbours[$target_node_id]}, $source_node_id;
+	  push @{$arc_out_label[$source_node_id]}, $label_edge;
+	  push @{$arc_in_label[$target_node_id]}, $label_edge;
+	  push @{$arc_out_color[$source_node_id]}, $color_edge;
+	  push @{$arc_in_color[$target_node_id]}, $color_edge;
+          my $exist = 0;
+          my $arc_id = "";
+          my $i;
+	  
+	  for ($i = 1; $i <= $max_arc_nb; $i++) {
+	    $arc_id = $source_node."_".$target_node."_".$i;
+	    $exist = exists($arcs_name_id{$arc_id});
+	  }
+	  if ($exist) {
+	    $arc_id = $source_node."_".$target_node."_".($i);
+	    $max_arc_nb++;
+	  } else {
+	    $arc_id = $source_node."_".$target_node."_".($i-1);
+	  }
+	  $arcs_name_id{$arc_id} = $arccpt;
+	  $arcs[$arccpt][0] = $source_name;
+	  $arcs[$arccpt][1] = $target_name;
+	  $arcs[$arccpt][2] = $label_edge;
+	  $arcs[$arccpt][3] = $color_edge;
+	  $arccpt++;
+	  
+	  &RSAT::message::Info(join("\t", "Created arc", 
+	  $label_edge,
+	  $arccpt)
+	  ) if ($main::verbose >= 3);
+        }
+      }
+    }
+    $self->set_array_attribute("out_neighbours", @out_neighbours);
+    $self->set_array_attribute("in_neighbours", @in_neighbours);
+    $self->set_array_attribute("in_label", @arc_in_label);
+    $self->set_array_attribute("out_label", @arc_out_label);
+    $self->set_array_attribute("in_color", @arc_in_color);
+    $self->set_array_attribute("out_color", @arc_out_color);
+    $self->set_array_attribute("arcs", @arcs);
+    $self->force_attribute("nb_arc_bw_node", $max_arc);
+    $self->set_hash_attribute("arcs_name_id", %arcs_name_id);
+    $self->set_hash_attribute("nodes_name_id", %nodes_name_id);
+    $self->set_hash_attribute("nodes_id_name", %nodes_id_name);
+    $self->set_hash_attribute("nodes_color", %nodes_color);
+    $self->set_hash_attribute("nodes_label", %nodes_label);
+    return $self;
+}
+    
+    
+
+
+################################################################
+
 =pod
 
 =item B<load_from_array>
@@ -1029,6 +1228,28 @@ sub load_from_array {
     
     $self->force_attribute("nb_arc_bw_node", $max_arc_nb);   
 }
+
+################################################################
+=pod
+
+=item B<graph_from_text()>
+
+Supported formats: gml, tab
+
+=cut
+sub graph_from_text {
+    my ($self, $in_format, @args) = @_;
+    if ($in_format eq "gml") {
+	return $self->load_from_gml(@args);
+    } elsif ($in_format eq "tab") {
+	return $self->read_from_table(@args);
+    } else {
+	&RSAT::error::FatalError(join ("\t", $in_format, "Invalid format"));
+    }
+}
+
+################################################################
+
 
 
 =pod
