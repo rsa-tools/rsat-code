@@ -198,6 +198,8 @@ OPTIONS
 	-help	display options
 
 	-v	verbose
+	
+	-col	orf column
 
 	-i inputfile
 		if not specified, the standard input is used.
@@ -211,7 +213,7 @@ OPTIONS
 
 	-info	information type (supported: $supported_info_types)
 
-	-before add the informaiton before the input line (by default,
+	-before add the information before the input line (by default,
          	the info is added at the end of each input line).
 	
 INPUT FORMAT
