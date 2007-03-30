@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.7 2007/03/27 11:27:42 rsat Exp $
+# $Id: compare-graphs,v 1.8 2007/03/30 11:10:39 rsat Exp $
 #
 ############################################################
 
@@ -104,6 +104,20 @@ package main;
     
     $directed = 0;
     
+    ## Supported outweight options
+    local $outweight ="";
+    %supported_outweight =(
+      "graph1"=>1,
+      "graph2"=>1,
+      "sum"=>1,
+      "mean"=>1,
+      "mean.g"=>1,
+      "min"=>1,
+      "max"=>1,
+      "graph1::graph2"=>1
+    );
+    $supported_outweight = join (",", keys %supported_outweight);
+    
     ################################################################
     ## Read argument values
     &ReadArguments();
@@ -125,6 +139,9 @@ package main;
     }
     if ($return_format eq "") {
       &RSAT::error::FatalError("You must specify a return format : $supported_return_formats");
+    }
+    if ($outweight eq "") {
+      &RSAT::error::FatalError("You must specify a outweight option : $supported_outweight");
     }
     ################################################################
     ## Open output stream
@@ -362,6 +379,19 @@ return : intersection , union or difference
 		unless ($supported_return_format{$return_format});
 
 
+			    
+	    ## Outweight option
+=pod
+
+=item B<-outweight>
+
+supported : graph1, graph2, sum, mean, mean.g, min, max, grap1:graph2 
+
+=cut
+	} elsif ($arg eq "-outweight") {
+	    $outweight = shift(@arguments);
+	    &RSAT::error::FatalError("$outweight\tInvalid outweight option. Supported: $supported_outweight")
+		unless ($supported_outweight{$outweight});
 		
 	    ### Output format  
 =pod
@@ -428,6 +458,7 @@ Target column of graph2 for tab-delimited input, default = 2. Column containing 
 	    unless (&IsNatural($target_col_g2) && ($target_col_g2 > 0)) {
 		&RSAT::error::FatalError(join("\t", $target_col_g2, "Invalid value for the target column. Must be a strictly positive natural number"));
 	    }
+
 	    ## Weight column
 =pod
 
@@ -516,7 +547,8 @@ sub intersect {
 	  my $source_node_label = $nodes_label{$source_intern_id} || $source_name;
 	  my $target_node_color = $nodes_color{$target_intern_id} || "#000088";
 	  my $target_node_label = $nodes_label{$target_intern_id} || $target_name;
-	  my $arc_label = $arcs_g2[$arc_intern_id][2];
+          my $weight = &calculate_weight($arcs_g1[$arc_intern_id][2], $arcs_g2[$arc_intern_id][2]);
+	  my $arc_label = $weight;
           my $arc_color = $arcs_g2[$arc_intern_id][3];
           $inter_graph_array[$arccpt][0] = $source_name;
           $inter_graph_array[$arccpt][1] = $target_name;
@@ -561,7 +593,7 @@ sub union {
   my %nodes_label_g2 = $graph2->get_attribute("nodes_label");
 
   my @union_graph_array = @arcs_g1;
-  
+  my @arcs_attributes = ();
   my %seen_arcs = ();
   
 #   filling union_graph_array with graph1
@@ -579,10 +611,12 @@ sub union {
       push @arcs_id, $arc_id2; # ajouts des arcs du graph 1 "non dirigés"
     }
     my $arc_color = "#00ff00"; # by default color of edges belongs to graph1 is green
+    my $arc_attribute = "Q.not.R";
     foreach my $arc_id (@arcs_id) {
       my $arc_intern_id = $arcs_name_id_g2{$arc_id};
       if (defined($arc_intern_id)) {
         $arc_color = "#ff0000";
+	$arc_attribute = "Q.and.R";
       }
     }
     $union_graph_array[$i][5] = $arc_color;
@@ -592,6 +626,13 @@ sub union {
     my $target_node_color = $nodes_color_g1{$target_name_id};
     $union_graph_array[$i][3] = $source_node_color;
     $union_graph_array[$i][4] = $target_node_color;
+    $arcs_attributes[$i] = $arc_attribute;
+    # si la couleur du noeud est #00ff00, l'arc n'appartient qu'à g1 et donc tu mets
+    # 1not2 dans graph attribute à la valeur $i
+    # si la couleur du noeud est #ff0000, l'arc appartient à l'intersection et donc tu mets
+    # 1and2 dans graphe attribute à la valeur $i
+    
+    
     for (my $j = 0; $j < scalar(@arcs_id); $j++) {
       $seen_arcs{$arcs_id[$j]}++;
     }
@@ -600,6 +641,7 @@ sub union {
 #   filling union_graph_array with graph2 without intersection
   my $j = scalar(@union_graph_array);
   my $arc_color = "#0000ff";
+  my $arc_attribute = "not.Q.R";
   for (my $i = 0; $i < scalar(@arcs_g2); $i++) {
     my $source_name = $arcs_g2[$i][0]; 
     my $target_name = $arcs_g2[$i][1];
@@ -626,6 +668,9 @@ sub union {
         $union_graph_array[$j][3] = $source_node_color;
         $union_graph_array[$j][4] = $target_node_color;
         $union_graph_array[$j][5] = $arc_color;
+	$arcs_attributes[$j] = $arc_attribute;
+	# il ne reste plus que les arcs qui n'appartiennent qu'à g2 donc tu mets not1,2 
+        # dans @graph_attribute à la valeur $j
         $j++;
 	for (my $j = 0; $j < scalar(@arcs_id); $j++) {
           $seen_arcs{$arcs_id[$j]}++;
@@ -634,7 +679,7 @@ sub union {
     }
   }
   $union_graph->load_from_array(@union_graph_array);
-  #$union_graph->remove_duplicated_arcs();
+  $union_graph->set_array_attribute("arcs_attribute", @arcs_attributes);
   return ($union_graph);
 }
 
@@ -765,6 +810,52 @@ sub Verbose {
 	}
     }
 }
+################################################################
+#### calculate_outweight
+sub calculate_weight {
+  my ($weight_g1, $weight_g2) = @_;
+  my $calculate_weight = 0;
+
+  if (defined($weight_g1) && defined($weight_g2)){  
+    if ($outweight eq "mean") {
+      $calculate_weight = ($weight_g1+$weight_g2)/2;
+    }
+    if ($outweight eq "mean.g") {
+      $calculate_weight = sqrt($weight_g1*$weight_g2);
+    }
+    if ($outweight eq "graph1") {
+      $calculate_weight = $weight_g1;
+    }
+    if ($outweight eq "graph2") {
+      $calculate_weight = $weight_g2;
+    }
+    if ($outweight eq "sum") {
+      $calculate_weight = ($weight_g1+$weight_g2);
+    }
+    if ($outweight eq "min") {
+      if ($weight_g1<$weight_g2) {
+        $calculate_weight = $weight_g1;
+      } else {
+        $calculate_weight = $weight_g2;
+      }
+    }
+    if ($outweight eq "max") {
+      if ($weight_g1<$weight_g2) {
+        $calculate_weight = $weight_g2;
+      } else {
+        $calculate_weight = $weight_g1;
+      }
+    }
+    if ($outweight eq "graph1::graph2") {
+      $calculate_weight = join("::",$weight_g1,$weight_g2);
+    }
+    } else {
+      $calculate_weight = "NULL";
+    }
+    
+  return ($calculate_weight);
+}
+ 
 
 
 __END__
