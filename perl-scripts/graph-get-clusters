@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.6 2007/03/14 11:43:24 rsat Exp $
+# $Id: graph-get-clusters,v 1.7 2007/03/30 13:08:23 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -133,7 +133,16 @@ package main;
     ## Initialize the output graph (cluster graph)
     $cluster_graph = new RSAT::Graph2();
     $cluster_graph->set_attribute("label", "cluster_graph");
-
+    ## Input formats
+    local $input_format = "tab";
+    %supported_input_format =(
+	tab=>1,
+	gml=>1
+    );
+    $supported_input_formats = join (",", keys %supported_input_format);
+    local $source_col = 1;
+    local $target_col = 2;
+    local $weight_col = 0;
     ## Output formats
     %supported_output_format =(
 			       dot=>1,
@@ -175,7 +184,7 @@ package main;
 
     ################################################################
     ## Read input graph
-    $graph->read_from_table($infile{graph}, $source_col, $target_col, $weight_col);
+    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col);
 
     ################################################################
     ## Read clusters
@@ -406,7 +415,17 @@ Cluster file. The seed file specifies a list of node clusters.
 =cut
 	} elsif ($arg eq "-clusters") {
 	    $main::infile{clusters} = shift(@arguments);
+=pod
 
+=item B<-in_format input_format>
+
+Input format. Supported: tab, gml
+
+=cut
+	} elsif ($arg eq "-in_format") {
+	    $input_format = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
 =pod
 
 =item B<-cluster_format cluster_format>
