@@ -1447,22 +1447,32 @@ sub to_tab_arcs_attribute {
     my ($self) = @_;    
     my @arcs = $self->get_attribute("arcs");
     my @arcs_attributes = $self->get_attribute("arcs_attribute");
-    my $tab = join("\t","#source", "target", "label", "attribute");
+    my $tab = join("\t","#source", "target", "label", "color", "attribute");
     $tab .= "\n";
     for (my $i = 0; $i < scalar(@arcs); $i++) {
       my $source = $arcs[$i][0];
       my $target = $arcs[$i][1];
       my $label = $arcs[$i][2];
       my $color =  $arcs[$i][3];
-      if (defined($arcs_attributes[$i])) {
-        my @clusters = @{$arcs_attributes[$i]};
-        foreach my $cluster (@clusters) {
-          $tab .= $source."\t";
-          $tab .= $target."\t";
-          $tab .= $label."\t";
-          $tab .= $cluster."\n";
-        }
-      }
+      my $attribute = $arcs_attributes[$i];
+      if (defined($attribute)) {
+        my @clusters = @{$attribute};
+	if (@clusters) {
+          foreach my $cluster (@clusters) {
+            $tab .= $source."\t";
+            $tab .= $target."\t";
+            $tab .= $label."\t";
+	    $tab .= $color."\t";
+            $tab .= $cluster."\n";
+	  }
+        } else {
+            $tab .= $source."\t";
+            $tab .= $target."\t";
+            $tab .= $label."\t";
+	    $tab .= $color."\t";
+            $tab .= $attribute."\n";	  
+	}
+      } 
     }
     return $tab;
 }
