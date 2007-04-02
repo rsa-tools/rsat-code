@@ -1420,7 +1420,7 @@ sub to_tab {
     my @arcs_attributes = $self->get_attribute("arcs_attribute");
     my $tab = join("\t","#source","target","label","color");
     $tab .= "\n";
-    if (@arcs_attributes) {
+    if (@arcs_attributes && scalar(@arcs_attributes) > 0) {
       $tab = $self->to_tab_arcs_attribute();
     } else {
       for (my $i = 0; $i < scalar(@arcs); $i++) {
@@ -1447,8 +1447,16 @@ sub to_tab_arcs_attribute {
     my ($self) = @_;    
     my @arcs = $self->get_attribute("arcs");
     my @arcs_attributes = $self->get_attribute("arcs_attribute");
-    my $tab = join("\t","#source", "target", "label", "color", "attribute");
+    my @arcs_attribute_header = $self->get_attribute("arcs_attribute_header");
+    my $tab = join("\t","#source", "target", "label", "color");
+    if (@arcs_attribute_header) { 
+      $tab .= "\t".join("\t",@arcs_attribute_header);
+    } else {
+      $tab .= "\tattribute";
+    }
     $tab .= "\n";
+    # if @arcs_attribute_header is not defined or has scalar = 1, then one attribute for each row 
+    # else one attribute by tab
     for (my $i = 0; $i < scalar(@arcs); $i++) {
       my $source = $arcs[$i][0];
       my $target = $arcs[$i][1];
@@ -1457,7 +1465,7 @@ sub to_tab_arcs_attribute {
       my $attribute = $arcs_attributes[$i];
       if (defined($attribute)) {
         my @clusters = @{$attribute};
-	if (@clusters) {
+	if (@clusters && (!@arcs_attribute_header || scalar(@arcs_attribute_header) == 1)) { 
           foreach my $cluster (@clusters) {
             $tab .= $source."\t";
             $tab .= $target."\t";
@@ -1465,6 +1473,15 @@ sub to_tab_arcs_attribute {
 	    $tab .= $color."\t";
             $tab .= $cluster."\n";
 	  }
+	} elsif (@clusters && scalar(@arcs_attribute_header) >= 1) {
+	  $tab .= $source."\t";
+          $tab .= $target."\t";
+          $tab .= $label."\t";
+	  $tab .= $color;
+	  foreach my $cluster (@clusters) {
+            $tab .= "\t".$cluster;
+          }
+          $tab .= "\n";
         } else {
             $tab .= $source."\t";
             $tab .= $target."\t";
