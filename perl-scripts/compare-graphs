@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.9 2007/04/02 08:18:23 rsat Exp $
+# $Id: compare-graphs,v 1.10 2007/04/02 14:07:13 rsat Exp $
 #
 ############################################################
 
@@ -30,7 +30,7 @@ util
 
 =head1 USAGE
     
-compare-graphs -Q query_graph_file -R reference_graph_file -return intersection|difference|union [-out_format gml|dot|tab] [-outweight Q|R|sum|mean|mean.g|min|max|Q::R] [-null value] [-scol_g1 #] [-tcol_g1 #] [-wcol_g1 #] [-in_format_g1 tab|gml] [-scol_g2 #] [-tcol_g2 #] [-wcol_g2 #] [-in_format_g2 tab|gml] [-o output_file] [-v #] 
+compare-graphs -Q query_graph_file -R reference_graph_file -return intersection|difference|union [-out_format gml|dot|tab] [-outweight Q|R|sum|mean|mean.g|min|max|Q::R] [-null value] [-scol_R #] [-tcol_R #] [-wcol_R #] [-in_format_R tab|gml] [-scol_Q #] [-tcol_Q #] [-wcol_Q #] [-in_format_g2 tab|gml] [-o output_file] [-v #] 
 
 =head1 INPUT FORMAT
 
@@ -159,9 +159,6 @@ package main;
     
     $graph1->remove_duplicated_arcs($directed);
     $graph2->remove_duplicated_arcs($directed);
-    
-#     open(FILE, ">test.tab");
-#     print FILE $graph2->to_tab;
     
     ################################################################
     ## Print verbose
@@ -347,7 +344,7 @@ allows to use the command within a pipe.
 Input format of graph1. Supported: tab,gml
 
 =cut
-	} elsif ($arg eq "-in_format_g1") {
+	} elsif ($arg eq "-in_format_Q") {
 	    $input_format_g1 = shift(@arguments);
 	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
 		unless ($supported_input_format{$input_format_g1});
@@ -359,7 +356,7 @@ Input format of graph1. Supported: tab,gml
 Input format of graph2. Supported: tab,gml
 
 =cut
-	} elsif ($arg eq "-in_format_g2") {
+	} elsif ($arg eq "-in_format_R") {
 	    $input_format_g2 = shift(@arguments);
 	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
 		unless ($supported_input_format{$input_format_g2});		
@@ -449,7 +446,7 @@ When the arc label between two nodes is non computable, the null value appears. 
 Source column of graph1 for tab-delimited input, default = 1. Column containing the source nodes. 
 
 =cut
-	} elsif ($arg eq "-scol_g1") {
+	} elsif ($arg eq "-scol_R") {
 	    $source_col_g1 = shift (@arguments);
 	    unless (&IsNatural($source_col_g1) && ($source_col_g1 > 0)) {
 		&RSAT::error::FatalError(join("\t", $source_col_g1, "Invalid value for the source column. Must be a strictly positive natural number"));
@@ -460,7 +457,7 @@ Source column of graph1 for tab-delimited input, default = 1. Column containing 
 Source column of graph2 for tab-delimited input, default = 1. Column containing the source nodes. 
 
 =cut
-	} elsif ($arg eq "-scol_g2") {
+	} elsif ($arg eq "-scol_Q") {
 	    $source_col_g2 = shift (@arguments);
 	    unless (&IsNatural($source_col_g2) && ($source_col_g2 > 0)) {
 		&RSAT::error::FatalError(join("\t", $source_col_g2, "Invalid value for the source column. Must be a strictly positive natural number"));
@@ -474,7 +471,7 @@ Source column of graph2 for tab-delimited input, default = 1. Column containing 
 Target column of graph1 for tab-delimited input, default = 2. Column containing the target nodes. 
 
 =cut
-	} elsif ($arg eq "-tcol_g1") {
+	} elsif ($arg eq "-tcol_R") {
 	    $target_col_g1 = shift (@arguments);
 	    unless (&IsNatural($target_col_g1) && ($target_col_g1 > 0)) {
 		&RSAT::error::FatalError(join("\t", $target_col_g1, "Invalid value for the target column. Must be a strictly positive natural number"));
@@ -487,7 +484,7 @@ Target column of graph1 for tab-delimited input, default = 2. Column containing 
 Target column of graph2 for tab-delimited input, default = 2. Column containing the target nodes. 
 
 =cut
-	} elsif ($arg eq "-tcol_g2") {
+	} elsif ($arg eq "-tcol_Q") {
 	    $target_col_g2 = shift (@arguments);
 	    unless (&IsNatural($target_col_g2) && ($target_col_g2 > 0)) {
 		&RSAT::error::FatalError(join("\t", $target_col_g2, "Invalid value for the target column. Must be a strictly positive natural number"));
@@ -501,7 +498,7 @@ Target column of graph2 for tab-delimited input, default = 2. Column containing 
 Weight column of graph1 for tab-delimited input. Column containing the weight nodes. 
 
 =cut
-	} elsif ($arg eq "-wcol_g1") {
+	} elsif ($arg eq "-wcol_R") {
 	    $weight_col_g1 = shift (@arguments);
 	    unless (&IsNatural($weight_col_g1) && ($weight_col_g1 > 0)) {
 		&RSAT::error::FatalError(join("\t", $weight_col_g1, "Invalid value for the weight column. Must be a strictly positive natural number"));
@@ -513,7 +510,7 @@ Weight column of graph1 for tab-delimited input. Column containing the weight no
 Weight column of graph2 for tab-delimited input. Column containing the weight nodes. 
 
 =cut
-	} elsif ($arg eq "-wcol_g2") {
+	} elsif ($arg eq "-wcol_Q") {
 	    $weight_col_g2 = shift (@arguments);
 	    unless (&IsNatural($weight_col_g2) && ($weight_col_g2 > 0)) {
 		&RSAT::error::FatalError(join("\t", $weight_col_g2, "Invalid value for the weight column. Must be a strictly positive natural number"));
@@ -542,11 +539,8 @@ Weight column of graph2 for tab-delimited input. Column containing the weight no
 sub intersect {
 
   my ($graph1, $graph2) = @_;
-     
   my $inter_graph = new RSAT::Graph2;
-  
   my %seen_arcs = ();
-  
   my @arcs_g1 = $graph1->get_attribute("arcs");
   my %arcs_name_id_g1 = $graph1->get_attribute("arcs_name_id");
   my @arcs_g2 = $graph2->get_attribute("arcs");
@@ -554,10 +548,10 @@ sub intersect {
   my %nodes_name_id = $graph2->get_attribute("nodes_name_id");
   my %nodes_color = $graph2->get_attribute("nodes_color");
   my %nodes_label = $graph2->get_attribute("nodes_label");
-  
+  my $val = scalar(@arcs_g1);
   my $arccpt = 0;
   my $j = 1;
-  my @inter_graph_array;
+  my @inter_graph_array  = ();
   for (my $i = 0; $i < scalar(@arcs_g1); $i++) { # charge le graph 1
     if ($i % 1000 == 0) {
         &RSAT::message::TimeWarn("$i lines treated") if ($verbose  >= 4);
@@ -572,18 +566,19 @@ sub intersect {
       push @arcs_id, $arc_id2; # ajouts des arcs du graph 1 "non dirigés"
     }
     foreach my $arc_id (@arcs_id){
-      my $arc_intern_id = $arcs_name_id_g2{$arc_id};
+      my $arc_intern_id_g2 = $arcs_name_id_g2{$arc_id};
+      
       if (!exists($seen_arcs{$arc_id})) {
         my $source_intern_id = $nodes_name_id{$source_name};
         my $target_intern_id = $nodes_name_id{$target_name};
-        if (defined($arc_intern_id)) {
+        if (defined($arc_intern_id_g2)) {
           my $source_node_color = $nodes_color{$source_intern_id} || "#000088";
 	  my $source_node_label = $nodes_label{$source_intern_id} || $source_name;
 	  my $target_node_color = $nodes_color{$target_intern_id} || "#000088";
 	  my $target_node_label = $nodes_label{$target_intern_id} || $target_name;
-          my $weight = &calculate_weight($arcs_g1[$arc_intern_id][2], $arcs_g2[$arc_intern_id][2]);
+          my $weight = &calculate_weight($arcs_g1[$i][2], $arcs_g2[$arc_intern_id_g2][2]);
 	  my $arc_label = $weight;
-          my $arc_color = $arcs_g2[$arc_intern_id][3];
+          my $arc_color = $arcs_g2[$arc_intern_id_g2][3];
           $inter_graph_array[$arccpt][0] = $source_name;
           $inter_graph_array[$arccpt][1] = $target_name;
           $inter_graph_array[$arccpt][2] = $arc_label;
@@ -718,7 +713,7 @@ sub union {
 }
 
 ################################################################
-## Difference of twoXYgraph graphs
+## Difference of two graphs
 ## 
 ## 
 
@@ -848,55 +843,43 @@ sub Verbose {
 #### calculate_outweight
 sub calculate_weight {
   my ($weight_g1, $weight_g2) = @_;
-  my $calculate_weight = "<NULL>";
-  
-  my $real = 0;
-  my $real2 = 0;
-  
-  $real = &IsReal($weight_g1);
-  $real2 = &IsReal($weight_g2);
+  my $result = "<NULL>";
+  my $real = &IsReal($weight_g1);
+  my $real2 = &IsReal($weight_g2);
   
   if (($real eq 1) && ($real2 eq 1)) {  
     if ($outweight eq "mean") {
-      $calculate_weight = ($weight_g1+$weight_g2)/2;
-    }
-    if ($outweight eq "mean.g") {
-      $calculate_weight = sqrt($weight_g1*$weight_g2);
-    }
-    if ($outweight eq "Q") {
-      $calculate_weight = $weight_g1;
-    }
-    if ($outweight eq "R") {
-      $calculate_weight = $weight_g2;
-    }
-    if ($outweight eq "sum") {
-      $calculate_weight = ($weight_g1+$weight_g2);
-    }
-    if ($outweight eq "min") {
+      $result = ($weight_g1+$weight_g2)/2;
+    } elsif ($outweight eq "mean.g") {
+      $result = sqrt($weight_g1*$weight_g2);
+    } elsif ($outweight eq "R") {
+      $result = $weight_g1;
+    } elsif ($outweight eq "Q") {
+      $result = $weight_g2;
+    } elsif ($outweight eq "sum") {
+      $result = ($weight_g1+$weight_g2);
+    } elsif ($outweight eq "min") {
       if ($weight_g1<$weight_g2) {
-        $calculate_weight = $weight_g1;
+        $result = $weight_g1;
       } else {
-        $calculate_weight = $weight_g2;
+        $result = $weight_g2;
       }
-    }
-    if ($outweight eq "max") {
+    } elsif ($outweight eq "max") {
       if ($weight_g1<$weight_g2) {
-        $calculate_weight = $weight_g2;
+        $result = $weight_g2;
       } else {
-        $calculate_weight = $weight_g1;
+        $result = $weight_g1;
       }
-    }
-    if ($outweight eq "Q::R") {
-      $calculate_weight = join("::",$weight_g1,$weight_g2);
+    } elsif ($outweight eq "Q::R") {
+      $result = join("::",$weight_g1,$weight_g2);
     }
   } else {
     if (defined($nullvalue)) {
-      $calculate_weight = $nullvalue;
+      $result = $nullvalue;
     }
   }
-  return ($calculate_weight);
+  return ($result);
 }
- 
 
 
 __END__
