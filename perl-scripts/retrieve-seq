@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.58 2007/02/19 09:56:01 rsat Exp $
+# $Id: retrieve-seq,v 1.59 2007/04/02 14:53:11 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -47,6 +47,8 @@ $supported_label_fields = join ",", @supported_label_fields;
 ################################################################################
 ############################### check parameters ###############################
 ################################################################################
+
+&RSAT::message::TimeWarn("Checking parameters") if ($main::verbose >= 2);
 
 ## Label fields
 if (scalar(@label_fields) <= 0) {
@@ -476,6 +478,8 @@ if ($verbose) {
     print $out "; Job started $start_time\n";
     print $out "; Job done    $done_time\n";
 }
+
+&RSAT::message::TimeWarn("retreive-seq done") if ($main::verbose >= 2);
 
 
 
