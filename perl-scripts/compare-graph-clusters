@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graph-clusters,v 1.1 2007/04/02 07:52:42 rsat Exp $
+# $Id: compare-graph-clusters,v 1.2 2007/04/02 08:20:20 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -489,6 +489,10 @@ sub Verbose {
     print $out "; Graph size\n";
     print $out ";\tnodes\t",$nodes,"\n";
     print $out ";\tarcs\t",$arcs,"\n";
+    ## Report clusters size
+    my @cluster_list = $graph->get_attribute("cluster_list");
+    print $out "; Cluster file\n";
+    print $out ";\t#Clusters\t",scalar(@cluster_list),"\n";
 
 }
 
@@ -524,6 +528,9 @@ __END__
 
 =item I<convert-graph>
 
+=item I<graph-get-clusters>
+
+=item I<compare-graphs>
 
 =item I<compare-classes>
 
