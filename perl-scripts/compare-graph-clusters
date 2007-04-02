@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graph-clusters,v 1.2 2007/04/02 08:20:20 rsat Exp $
+# $Id: compare-graph-clusters,v 1.3 2007/04/02 14:07:13 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -18,14 +18,14 @@ compare-graph-clusters
 =head1 DESCRIPTION
 
 Compares a graph with a classification file.
-Either by counting the number (or the sum of the weight) of intra cluster (or class edges) of a graph according to some classification file or by
+Either by counting the number (or the sum of the weight) of intra cluster (or class) arcs of a graph according to some classification file or by
 specifying for each arc of the graph, its inter or intra-cluster status.
 
 =head1 AUTHORS
 
 =over
 
-=item sylvain@scmbb.ulb.ac.be
+=item Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -152,7 +152,7 @@ package main;
       my %sclusters = ();
       my %tclusters = ();
       my %stclusters = ();
-      my $intracluster = "inter_cluster";
+      my $intra_cluster = "inter_cluster";
       foreach my $scluster (@source_clusters) {
         $sclusters{$scluster}++;
         foreach my $tcluster (@target_clusters) {
@@ -240,12 +240,12 @@ package main;
         print $out ";\t6\t#t\tnumber of clusters where target node is present\n";
         print $out ";\t7\t#st\tnumber of clusters where both source node and target node are present\n";
         print $out ";\t8\t#s!t\tnumber of clusters where only source node is present\n";
-        print $out ";\t9\t#!st\tnumber of clusters where target node is present\n";
+        print $out ";\t9\t#!st\tnumber of clusters where only target node is present\n";
         print $out ";\t10\tcl_s\tclusters where source node is present\n";
         print $out ";\t11\tcl_t\tclusters where target node is present\n";
         print $out ";\t12\tcl_st\tclusters where both source node and target node are present\n";
         print $out ";\t13\tcl_s!t\tclusters where only source node is present\n";
-        print $out ";\t14\tcl_!st\tclusters where target node is present\n";
+        print $out ";\t14\tcl_!st\tclusters where only target node is present\n";
       }
       print $out $graph->to_tab();
     }
@@ -492,7 +492,7 @@ sub Verbose {
     ## Report clusters size
     my @cluster_list = $graph->get_attribute("cluster_list");
     print $out "; Cluster file\n";
-    print $out ";\t#Clusters\t",scalar(@cluster_list),"\n";
+    print $out ";\tclusters\t",scalar(@cluster_list),"\n";
 
 }
 
