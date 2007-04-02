@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.8 2007/03/30 11:10:39 rsat Exp $
+# $Id: compare-graphs,v 1.9 2007/04/02 08:18:23 rsat Exp $
 #
 ############################################################
 
@@ -30,7 +30,7 @@ util
 
 =head1 USAGE
     
-compare-graphs -graph1 graph1_file -graph2 graph2_file -return intersection|difference|union [-out_format gml|dot|tab] [-scol_g1 #] [-tcol_g1 #] [-wcol_g1 #] [-in_format_g1 tab|gml] [-scol_g2 #] [-tcol_g2 #] [-wcol_g2 #] [-in_format_g2 tab|gml] [-o output_file] [-v #] 
+compare-graphs -Q query_graph_file -R reference_graph_file -return intersection|difference|union [-out_format gml|dot|tab] [-outweight Q|R|sum|mean|mean.g|min|max|Q::R] [-null value] [-scol_g1 #] [-tcol_g1 #] [-wcol_g1 #] [-in_format_g1 tab|gml] [-scol_g2 #] [-tcol_g2 #] [-wcol_g2 #] [-in_format_g2 tab|gml] [-o output_file] [-v #] 
 
 =head1 INPUT FORMAT
 
@@ -107,14 +107,14 @@ package main;
     ## Supported outweight options
     local $outweight ="";
     %supported_outweight =(
-      "graph1"=>1,
-      "graph2"=>1,
+      "Q"=>1,
+      "R"=>1,
       "sum"=>1,
       "mean"=>1,
       "mean.g"=>1,
       "min"=>1,
       "max"=>1,
-      "graph1::graph2"=>1
+      "Q::R"=>1
     );
     $supported_outweight = join (",", keys %supported_outweight);
     
@@ -160,8 +160,8 @@ package main;
     $graph1->remove_duplicated_arcs($directed);
     $graph2->remove_duplicated_arcs($directed);
     
-    open(FILE, ">test.tab");
-    print FILE $graph2->to_tab;
+#     open(FILE, ">test.tab");
+#     print FILE $graph2->to_tab;
     
     ################################################################
     ## Print verbose
@@ -294,23 +294,23 @@ Same as -h
 	    ## Input file 1
 =pod
 
-=item B<-graph1 graph1_input_file>
+=item B<-Q graph1_input_file>
 
 First graph file
 
 =cut
-	} elsif ($arg eq "-graph1") {
+	} elsif ($arg eq "-R") {
 	    $main::infile{graph1} = shift(@arguments);
 
 	    	    ## Input file 2
 =pod
 
-=item B<-graph2 graph2_input_file>
+=item B<-R graph2_input_file>
 
 Second graph file
 
 =cut
-	} elsif ($arg eq "-graph2") {
+	} elsif ($arg eq "-Q") {
 	    $main::infile{graph2} = shift(@arguments);
 	
 	    	    ## Directed option
@@ -385,7 +385,27 @@ return : intersection , union or difference
 
 =item B<-outweight>
 
-supported : graph1, graph2, sum, mean, mean.g, min, max, grap1:graph2 
+Label or weight of the arc
+
+supported : Q, R, sum, mean, mean.g, min, max, Q::R 
+
+=item I<Q> : weight of the query graph
+
+=item I<R> : weight of the reference graph
+
+=item I<sum> : sum between the weight of the two graphs
+
+=item I<mean> : mean between the weight of the two graphs
+
+=item I<mean.g> : geometrical mean between the weight of the two graphs
+
+=item I<min> : minimum weight
+
+=item I<max> : maximum weight
+
+=item I<Q::R> : weight of the two graphs
+
+
 
 =cut
 	} elsif ($arg eq "-outweight") {
@@ -406,7 +426,21 @@ Output format. Supported: tab, dot, gml
 	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
 		unless ($supported_output_format{$output_format});
 
+	    ### NULL Value
+=pod
 
+=item B<-null value>
+
+When the arc label between two nodes is non computable, the null value appears. Default value is <NULL> when is not specified.
+
+=cut 
+	} elsif ($arg eq "-null") {
+	    $nullvalue = shift(@arguments);
+# 	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
+# 		unless ($supported_output_format{$output_format});
+
+
+		
 	    ## Source column
 =pod
 
@@ -684,7 +718,7 @@ sub union {
 }
 
 ################################################################
-## Difference of two graphs
+## Difference of twoXYgraph graphs
 ## 
 ## 
 
@@ -814,19 +848,25 @@ sub Verbose {
 #### calculate_outweight
 sub calculate_weight {
   my ($weight_g1, $weight_g2) = @_;
-  my $calculate_weight = 0;
-
-  if (defined($weight_g1) && defined($weight_g2)){  
+  my $calculate_weight = "<NULL>";
+  
+  my $real = 0;
+  my $real2 = 0;
+  
+  $real = &IsReal($weight_g1);
+  $real2 = &IsReal($weight_g2);
+  
+  if (($real eq 1) && ($real2 eq 1)) {  
     if ($outweight eq "mean") {
       $calculate_weight = ($weight_g1+$weight_g2)/2;
     }
     if ($outweight eq "mean.g") {
       $calculate_weight = sqrt($weight_g1*$weight_g2);
     }
-    if ($outweight eq "graph1") {
+    if ($outweight eq "Q") {
       $calculate_weight = $weight_g1;
     }
-    if ($outweight eq "graph2") {
+    if ($outweight eq "R") {
       $calculate_weight = $weight_g2;
     }
     if ($outweight eq "sum") {
@@ -846,13 +886,14 @@ sub calculate_weight {
         $calculate_weight = $weight_g1;
       }
     }
-    if ($outweight eq "graph1::graph2") {
+    if ($outweight eq "Q::R") {
       $calculate_weight = join("::",$weight_g1,$weight_g2);
     }
-    } else {
-      $calculate_weight = "NULL";
+  } else {
+    if (defined($nullvalue)) {
+      $calculate_weight = $nullvalue;
     }
-    
+  }
   return ($calculate_weight);
 }
  
@@ -863,5 +904,23 @@ __END__
 =pod
 
 =head1 SEE ALSO
+
+=over
+
+=item I<compare-graphs>
+
+=item I<compare-graph-clusters>
+
+=item I<convert-graph>
+
+=item I<graph-get-clusters>
+
+=item I<graph-neighbours>
+
+=item I<graph-node-degree>
+
+=item I<graph-set-attributes>
+
+=back
 
 =cut
