@@ -176,7 +176,7 @@ sub OpenContigs {
     my $genome_file_format;
 
     if ($main::verbose >= 2) {
-	&RSAT::message::Info(join ("\t", "Opening contigs", @_));
+	&RSAT::message::TimeWarn(join ("\t", "Opening contigs", @_));
 	&RSAT::message::Info(join ("\t",
 		       "Manually specified input sequence file",
 		       $input_sequence_file,
@@ -568,19 +568,27 @@ sub LoadFeatures {
 	}
       }
 
+      ## Check if left position is lower than right position.
+      ## If this is not the case, swap the two values.
+      ## Left > right can occur if the genome has been exported with
+      ## start and end positions rather than lft and right.
       unless ($left < $right) {
 	&RSAT::message::Warning("left should be smaller than right position specification in in  feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
-	next;
+	my $tmp = $left;
+	$left = $right;
+	$right = $tmp;
+#	next;
       }
 
       ## Check strand
       unless ($strand) {
-	&RSAT::message::Warning("invalid strand specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	&RSAT::message::Warning("invalid strand specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 2);
 	next;
       }
 
       #### make sure the strand format is correct
       $strand = &RSAT::util::ConvertStrand($strand);
+#      &RSAT::message::Debug($id, "strand", $strand) if ($main::verbose >= 10);
 
       ### Create a new genomic feature
       my $feature = new RSAT::GenomeFeature();
