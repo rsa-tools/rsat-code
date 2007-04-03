@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.13 2007/04/03 10:08:06 rsat Exp $
+# $Id: compare-graphs,v 1.14 2007/04/03 10:18:40 rsat Exp $
 #
 ############################################################
 
@@ -193,11 +193,7 @@ package main;
     
     my $return_graph;
     if ($return_format eq "intersection") {
-      if ($arcs_graph2 < $arcs_graph1){
-        $return_graph = &intersect($graph2, $graph1);
-      } else {
-        $return_graph = &intersect($graph1, $graph2);
-      }
+      $return_graph = &intersect($graph1, $graph2);
     } elsif ($return_format eq "union") {
       $return_graph = &union($graph1, $graph2);
     } elsif ($return_format eq "difference") {
@@ -579,7 +575,9 @@ sub intersect {
 	  my $source_node_label = $nodes_label{$source_intern_id} || $source_name;
 	  my $target_node_color = $nodes_color{$target_intern_id} || "#000088";
 	  my $target_node_label = $nodes_label{$target_intern_id} || $target_name;
+	  print "$arcs_g1[$i][2] $arcs_g2[$arc_intern_id_g2][2]\n";
           my $weight = &calculate_weight($arcs_g1[$i][2], $arcs_g2[$arc_intern_id_g2][2]);
+	  print "$weight\n";
 	  my $arc_label = $weight;
           my $arc_color = $arcs_g2[$arc_intern_id_g2][3];
           $inter_graph_array[$arccpt][0] = $source_name;
