@@ -1,0 +1,10 @@
+organism='Saccharomyces_cerevisiae'
+query=MET8,MET32,MET18,MET30,MET28,MET6,MET10,MET13,MET3,ECM17,MET14,MET1,MET17,VPS33,MET2,ZWF1,MET4,MET22,MET7,MET31,MET12,MET16
+noorf=1
+from=-600
+to=-1
+feattype=CDS
+type=upstream
+format=fasta
+label='id,name'
+output_choice=both
