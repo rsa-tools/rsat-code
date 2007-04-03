@@ -242,7 +242,33 @@ sub get_out_neighbours {
     return @out_neighbours_names;
 }
 
+################################################################
+=pod
 
+=item B<get_neighbours_id()>
+
+returns an array contening the out neighbours of a node to a certain step self included or not
+1st col : neighbour
+2nd col : 
+
+
+=cut
+# sub get_neighbours {
+#     my ($self, $node_name) = @_;
+#     my $numId = $self->node_by_name($node_name);
+#     my @out_neighbours = $self->get_attribute("out_neighbours");
+#     my @out_neighbours_names = ();
+#     if (defined($out_neighbours[$numId])) {
+#       my @out_neighbours_indices = @{$out_neighbours[$numId]};
+#       foreach my $out_neighbour_id(@out_neighbours_indices) {
+#         my $out_neighbour_name = $self->node_by_id($out_neighbour_id);
+#         push @out_neighbours_names, $out_neighbour_name;
+#       }
+#     } else {
+#       &RSAT::message::Warning("Node $node_name has no out neighbours") if $main::verbose >= 3;
+#     }
+#     return @out_neighbours_names;
+# }
 
 ################################################################
 =pod
@@ -537,7 +563,7 @@ sub arcs_by_name {
 ################################################################
 =pod
 
-=item B<node_by_name()>
+=item B<node_by_id()>
 
 Returns the name of the node having name $id
 
