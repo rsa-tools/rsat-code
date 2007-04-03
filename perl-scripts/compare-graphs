@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.12 2007/04/03 09:35:28 rsat Exp $
+# $Id: compare-graphs,v 1.13 2007/04/03 10:08:06 rsat Exp $
 #
 ############################################################
 
@@ -853,20 +853,27 @@ sub Verbose {
 #### calculate_outweight
 sub calculate_weight {
   my ($weight_g1, $weight_g2) = @_;
-  my $result = "<NULL>";
+  my $result = $nullvalue;
   my $real = &IsReal($weight_g1);
   my $real2 = &IsReal($weight_g2);
-  $result = join("::",$weight_g1,$weight_g2);
+#   $result = join("::",$weight_g1,$weight_g2);
+
+
+  if ($outweight eq "R") {
+    $result = $weight_g1;
+  }
+  if ($outweight eq "Q") {
+    $result = $weight_g2;
+  }
+  if ($outweight eq "Q::R") {
+    $result = join("::",$weight_g1,$weight_g2);
+  } 
   
   if (($real eq 1) && ($real2 eq 1)) {
     if ($outweight eq "mean") {
       $result = ($weight_g1+$weight_g2)/2;
     } elsif ($outweight eq "mean.g") {
       $result = sqrt($weight_g1*$weight_g2);
-    } elsif ($outweight eq "R") {
-      $result = $weight_g1;
-    } elsif ($outweight eq "Q") {
-      $result = $weight_g2;
     } elsif ($outweight eq "sum") {
       $result = ($weight_g1+$weight_g2);
     } elsif ($outweight eq "min") {
@@ -882,11 +889,10 @@ sub calculate_weight {
         $result = $weight_g1;
       }
     }
-  } elsif ($outweight ne "Q::R") {
-    $result = $nullvalue;
-  }  
-  if ($result eq $nullvalue && $main::verbose >= 2) {
-    &RSAT::message::Warning("\t","Could not compute $outweight between $weight_g1 and $weight_g2");
+ 
+    if ($result eq $nullvalue && $main::verbose >= 2) {
+      &RSAT::message::Warning("\t","Could not compute $outweight between $weight_g1 and $weight_g2");
+    }
   }
   return ($result);
 }
