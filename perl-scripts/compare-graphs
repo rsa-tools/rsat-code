@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.10 2007/04/02 14:07:13 rsat Exp $
+# $Id: compare-graphs,v 1.11 2007/04/03 05:51:03 jvanheld Exp $
 #
 ############################################################
 
@@ -441,9 +441,11 @@ When the arc label between two nodes is non computable, the null value appears. 
 	    ## Source column
 =pod
 
-=item B<-scol_g1>
+=item B<-scol_R>
 
-Source column of graph1 for tab-delimited input, default = 1. Column containing the source nodes. 
+Number of the column containing the source nodes in the reference
+graph (tab-delimited format only).
+
 
 =cut
 	} elsif ($arg eq "-scol_R") {
@@ -451,10 +453,14 @@ Source column of graph1 for tab-delimited input, default = 1. Column containing 
 	    unless (&IsNatural($source_col_g1) && ($source_col_g1 > 0)) {
 		&RSAT::error::FatalError(join("\t", $source_col_g1, "Invalid value for the source column. Must be a strictly positive natural number"));
 	    }
-	    
-=item B<-scol_g2>
 
-Source column of graph2 for tab-delimited input, default = 1. Column containing the source nodes. 
+
+=pod
+
+=item B<-scol_Q>
+
+Number of the column containing the source nodes in the query
+graph (tab-delimited format only).
 
 =cut
 	} elsif ($arg eq "-scol_Q") {
@@ -463,12 +469,15 @@ Source column of graph2 for tab-delimited input, default = 1. Column containing 
 		&RSAT::error::FatalError(join("\t", $source_col_g2, "Invalid value for the source column. Must be a strictly positive natural number"));
 	    }
 	    
+
 	    ## Target column
 =pod
 
-=item B<-tcol_g1>
+=item B<-tcol_R>
 
-Target column of graph1 for tab-delimited input, default = 2. Column containing the target nodes. 
+Number of the column containing the target nodes in the reference
+graph (tab-delimited format only).
+
 
 =cut
 	} elsif ($arg eq "-tcol_R") {
@@ -479,9 +488,11 @@ Target column of graph1 for tab-delimited input, default = 2. Column containing 
 	    ## Target column
 =pod
 
-=item B<-tcol_g2>
+=item B<-tcol_Q>
 
-Target column of graph2 for tab-delimited input, default = 2. Column containing the target nodes. 
+Number of the column containing the target nodes in the query
+graph (tab-delimited format only).
+
 
 =cut
 	} elsif ($arg eq "-tcol_Q") {
@@ -493,9 +504,11 @@ Target column of graph2 for tab-delimited input, default = 2. Column containing 
 	    ## Weight column
 =pod
 
-=item B<-wcol_g1>
+=item B<-wcol_R>
 
-Weight column of graph1 for tab-delimited input. Column containing the weight nodes. 
+Number of the column containing arc weights in the reference graph
+(tab-delimited format only).
+
 
 =cut
 	} elsif ($arg eq "-wcol_R") {
@@ -505,9 +518,10 @@ Weight column of graph1 for tab-delimited input. Column containing the weight no
 	    }
 =pod
 
-=item B<-wcol_g2>
+=item B<-wcol_Q>
 
-Weight column of graph2 for tab-delimited input. Column containing the weight nodes. 
+Number of the column containing arc weights in the query graph
+(tab-delimited format only).
 
 =cut
 	} elsif ($arg eq "-wcol_Q") {
