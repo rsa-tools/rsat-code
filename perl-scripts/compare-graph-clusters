@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graph-clusters,v 1.4 2007/04/02 21:55:24 jvanheld Exp $
+# $Id: compare-graph-clusters,v 1.5 2007/04/03 05:51:24 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -160,7 +160,7 @@ package main;
     my @arcs = $graph->get_attribute("arcs");
     my @result = ();
     my $arc_nb = scalar(@arcs);
-    &RSAT::message::TimeWarn("Comparing graph with clusters");
+    &RSAT::message::TimeWarn("Comparing graph with clusters") if ($main::verbose >= 2);
     for (my $i = 0; $i < @arcs; $i++) {
       if (($main::verbose >= 2) && ($i%1000==0)) {
 	&RSAT::message::psWarn("treated", $i."/".$arc_nb, "arcs");
