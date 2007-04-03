@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-neighbours,v 1.5 2007/01/17 23:41:43 jvanheld Exp $
+# $Id: graph-neighbours,v 1.6 2007/04/03 13:12:18 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -54,7 +54,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
-require RSAT::Graph;
+require RSAT::Graph2;
 
 ################################################################
 ## Main package
@@ -65,16 +65,15 @@ package main;
     ## Initialise parameters
     my $start_time = &AlphaDate();
 
-    @seed_names = (); ## Names of the seed nodes
-    @seed_nodes = (); ## Seed node objects
-    @unknown_nodes = (); ## Names of the unidentified nodes
+    %seed_nodes = (); ## Seed node objects
+    %unknown_nodes = (); ## Names of the unidentified nodes
     $all_seeds = 0; ## Use all nodes as seeds
     $steps = 1;
     $self_included = 0;
 
     ################################################################
     ## Initialize the graph
-    $graph = new RSAT::Graph();
+    $graph = new RSAT::Graph2();
     $graph->set_attribute("label", "graph");
 
     ## Columns of the tab-delimited graph file
@@ -84,6 +83,15 @@ package main;
 
     local $out_format = "classes";
 
+    ## Input formats
+    local $input_format = "tab";
+    %supported_input_format =(
+	tab=>1,
+	gml=>1
+    );
+    $supported_input_formats = join (",", keys %supported_input_format);
+    
+    
     %main::infile = ();
     %main::outfile = ();
 
@@ -104,24 +112,20 @@ package main;
 
     ################################################################
     ## Read input graph
-    $graph->read_from_table($infile{graph}, $source_col, $target_col, $weight_col);
-
-
+    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col);
+    
     ################################################################
     ## Build the list of seed nodes
 
     ## Use all nodes as seeds
     if ($all_seeds) {
-      @seed_nodes = $graph->get_nodes();
+      my @seed_nodes = $graph->get_nodes();
+      foreach my $seed_node (@seed_nodes) {
+        $seed_names{$seed_node}++;
+      }
       &RSAT::message::TimeWarn("Using all",scalar(@seed_nodes), "nodes of the graph as seeds") if ($main::verbose >= 2);
       ## Put the name of each node in the list
-      @seed_names = ();
-      foreach my $node (@seed_nodes) {
-	my $name = $node->get_attribute("label");
-	push @seed_names, $name;
-      }
     } else {
-
       ## Read seed nodes from a file
       if ($infile{seeds}) {
 	my $l = 0;
@@ -137,7 +141,7 @@ package main;
 	  my @fields = split /\s+/, $line;
 	  my $name =  $fields[0];
 	  if ($name) {
-	    push @seed_names,$name;
+	    $seed_names{$name}++;
 	  } else {
 	    &RSAT::message::Warning("Line", $l, "starts with space. Skipped.");
 	  }
@@ -148,21 +152,21 @@ package main;
       ## Identify seed nodes in the graph
       &RSAT::message::TimeWarn("Identifying",scalar(@seed_names), "seed nodes in the graph") if ($main::verbose >= 2);
       foreach my $name (@seed_names) {
-	my $node = $graph->node_by_id($name);
-	if ($node) {
-	  push @seed_nodes, $node;
-	  &RSAT::message::Info("Identified node with name", $name, $node->get_attribute("id")) if ($main::verbose >= 3);
+	my $node_id = $graph->node_by_name($name);
+	if (defined($node_id)) {
+	  $seed_nodes_id{$node_id} = $name;
+	  &RSAT::message::Info("Identified node with name", $name, $node_id) if ($main::verbose >= 3);
 	} else {
-	  push @unknown_nodes, $name;
+	  $unknown_nodes{$name}++;
 	  &RSAT::message::Warning("The graph does not contain any node with name", $name);
 	}
       }
     }
-
+    
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
-
+    
     ################################################################
     ## Extract the neighborhood
     print $out '#',  join ("\t", 
@@ -172,7 +176,7 @@ package main;
 			   "steps",
 			   "dir"
 			  ), "\n";
-    foreach my $seed_node (@seed_nodes) {
+    foreach my $seed_node (keys %seed_nodes) {
       my @neighbours = $seed_node->get_neighbours_step($steps, $self_included);
       foreach my $neighbour (@neighbours) {
 	my $neighbour_node = $neighbour->get_attribute("node");
@@ -273,6 +277,20 @@ Same as -h
 	} elsif ($arg eq "-help") {
 	    &PrintOptions();
 
+
+	    ### Input format  
+=pod
+
+=item B<-in_format input_format>
+
+Input format. Supported: tab, gml
+
+=cut
+	} elsif ($arg eq "-in_format") {
+	    $input_format = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
+			    
 	    ## Graph file
 =pod
 
@@ -443,10 +461,10 @@ sub Verbose {
 
     ## Report seed nodes
     print $out "; Seed nodes\t",scalar(@seed_names),"\n";
-    if (@unknown_nodes) {
-      print $out ";\tidentified\t",scalar(@seed_nodes),"\n";
-      print $out ";\tunknown nodes\t",scalar(@seed_names) - scalar(@seed_nodes),"\n";
-      foreach my $name (@unknown_nodes) {
+    if (%unknown_nodes) {
+      print $out ";\tidentified\t",scalar(keys (%seed_nodes_id)),"\n";
+      print $out ";\tunknown nodes\t",scalar(keys (%unknown_nodes)),"\n";
+      foreach my $name (keys %unknown_nodes) {
 	print $out join ("\t", ";\t", "unknown", $name), "\n";
       }
     }
