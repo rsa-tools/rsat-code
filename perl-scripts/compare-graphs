@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.15 2007/04/03 10:19:57 rsat Exp $
+# $Id: compare-graphs,v 1.16 2007/04/03 10:43:14 rsat Exp $
 #
 ############################################################
 
@@ -385,15 +385,15 @@ Label or weight of the arc
 
 supported : Q, R, sum, mean, mean.g, min, max, Q::R 
 
-=item I<Q> : weight of the query graph
+=item I<Q> : weights of the query graph
 
-=item I<R> : weight of the reference graph
+=item I<R> : weights of the reference graph
 
-=item I<sum> : sum between the weight of the two graphs
+=item I<sum> : sum of the weights of the two graphs
 
-=item I<mean> : mean between the weight of the two graphs
+=item I<mean> : mean of the weights of the two graphs
 
-=item I<mean.g> : geometrical mean between the weight of the two graphs
+=item I<mean.g> : geometrical mean of the weights of the two graphs
 
 =item I<min> : minimum weight
 
@@ -427,15 +427,11 @@ Output format. Supported: tab, dot, gml
 
 =item B<-null value>
 
-When the arc label between two nodes is non computable, the null value appears. Default value is <NULL> when is not specified.
+Value to display in cases of undefined label values. Defaut : <NULL>
 
 =cut 
 	} elsif ($arg eq "-null") {
 	    $nullvalue = shift(@arguments);
-# 	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
-# 		unless ($supported_output_format{$output_format});
-
-
 		
 	    ## Source column
 =pod
