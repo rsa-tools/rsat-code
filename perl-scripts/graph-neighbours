@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-neighbours,v 1.6 2007/04/03 13:12:18 rsat Exp $
+# $Id: graph-neighbours,v 1.7 2007/04/04 07:44:46 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -65,7 +65,6 @@ package main;
     ## Initialise parameters
     my $start_time = &AlphaDate();
 
-    %seed_nodes = (); ## Seed node objects
     %unknown_nodes = (); ## Names of the unidentified nodes
     $all_seeds = 0; ## Use all nodes as seeds
     $steps = 1;
@@ -81,7 +80,7 @@ package main;
     local $target_col = 2;
     local $weight_col = 0;
 
-    local $out_format = "classes";
+    #local $out_format = "classes";
 
     ## Input formats
     local $input_format = "tab";
@@ -163,6 +162,9 @@ package main;
       }
     }
     
+    $graph->get_neighbours_id(0,3,0);
+
+    
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
@@ -176,21 +178,14 @@ package main;
 			   "steps",
 			   "dir"
 			  ), "\n";
-    foreach my $seed_node (keys %seed_nodes) {
-      my @neighbours = $seed_node->get_neighbours_step($steps, $self_included);
-      foreach my $neighbour (@neighbours) {
-	my $neighbour_node = $neighbour->get_attribute("node");
-	my @out_fields = ();
-	## Print the result in the input format for compare-classes
-	if ($out_format eq "classes") {
-	  push @out_fields, $neighbour_node->get_attribute("id");
-	  push @out_fields, $seed_node->get_attribute("id");
-#	  push @out_fields, $neighbour->get_attribute("weight");
-	  push @out_fields, $neighbour->get_attribute("steps");
-	  push @out_fields, $neighbour->get_attribute("direction");
-	  print $out join ("\t", @out_fields,
-			  ), "\n";
-	}
+			  
+    foreach my $seed_node_id (keys %seed_nodes_id) {
+      &RSAT::message::Info("\t","Looking for neighbours of node", $seed_node_id, $seed_nodes_id{$seed_node_id}) if $main::verbose >= 2;
+      my @neighbours = $graph->get_neighbours_id($seed_node_id, $steps, $self_included);
+      for (my $i = 0; $i < scalar(@neighbours); $i++) {
+        if (defined(@{$neighbours[$i]})) {
+          print $out join("\t",@{$neighbours[$i]})."\n";
+        }
       }
     }
 
