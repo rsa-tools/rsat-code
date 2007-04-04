@@ -247,28 +247,69 @@ sub get_out_neighbours {
 
 =item B<get_neighbours_id()>
 
-returns an array contening the out neighbours of a node to a certain step self included or not
-1st col : neighbour
-2nd col : 
+returns an array contening the out neighbours of a node to a certain step self, the node being included or not
+
+1st col : neighbour_node
+2nd col : seed_node
+3d col  : direction
+4d col  : steps
 
 
 =cut
-# sub get_neighbours {
-#     my ($self, $node_name) = @_;
-#     my $numId = $self->node_by_name($node_name);
-#     my @out_neighbours = $self->get_attribute("out_neighbours");
-#     my @out_neighbours_names = ();
-#     if (defined($out_neighbours[$numId])) {
-#       my @out_neighbours_indices = @{$out_neighbours[$numId]};
-#       foreach my $out_neighbour_id(@out_neighbours_indices) {
-#         my $out_neighbour_name = $self->node_by_id($out_neighbour_id);
-#         push @out_neighbours_names, $out_neighbour_name;
-#       }
-#     } else {
-#       &RSAT::message::Warning("Node $node_name has no out neighbours") if $main::verbose >= 3;
-#     }
-#     return @out_neighbours_names;
-# }
+sub get_neighbours_id {
+  my ($self, $node_id, $step, $included) = @_;
+  &RSAT::message::Info("\t","Looking for neighbours of node", $node_id) if $main::verbose > 2;
+  my %node_id_name = $self->get_attribute("nodes_id_name");
+  my @out_neighbours = $self->get_attribute("out_neighbours");
+  my @in_neighbours = $self->get_attribute("in_neighbours");
+  my %direction = ();
+  my %seen_nodes = ();
+  my @result = ();
+  if ($included) {
+    $result[0][0] = $node_id_name{$node_id};
+    $result[0][1] = $node_id_name{$node_id};
+    $result[0][2] = 0;
+    $result[0][3] = "self";
+
+  }
+  $seen_nodes{$node_id} = 0;
+  my $neighbours_cpt = scalar(@result);
+  for (my $i = 1; $i <= $step; $i++) {
+    my @to_find_nodes = keys (%seen_nodes);
+    my @to_add = ();
+    foreach my $to_find_id (@to_find_nodes) {
+      if (defined($out_neighbours[$to_find_id])) {
+        push @to_add, @{$out_neighbours[$to_find_id]};
+        if ($i == 1) {
+          foreach my $out_neighbour (@{$out_neighbours[$to_find_id]}) {
+            $direction{$out_neighbour} = "out";
+          }
+        }
+      }
+      if (defined($in_neighbours[$to_find_id])) {
+        push @to_add, @{$in_neighbours[$to_find_id]};
+        if ($i == 1) {
+          foreach my $in_neighbour (@{$in_neighbours[$to_find_id]}) {
+            $direction{$in_neighbour} = "in";
+          }
+        }
+      }
+    }
+    foreach my $node_to_add (@to_add) {
+      if (!exists($seen_nodes{$node_to_add})) {
+        $seen_nodes{$node_to_add} = $step;
+        $result[$neighbours_cpt][0] = $node_id_name{$node_to_add};
+        $result[$neighbours_cpt][1] = $node_id_name{$node_id};
+        $result[$neighbours_cpt][2] = $i;
+        $result[$neighbours_cpt][3] = $direction{$node_to_add} || "na";
+        $seen_nodes{$node_to_add}++;
+        $neighbours_cpt++;
+      }
+    }
+  }
+
+  return @result;
+}
 
 ################################################################
 =pod
