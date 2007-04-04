@@ -41,7 +41,7 @@ $args{query} = \@queries;
 
 my $output_choice = $args{output_choice} || 'both';
 
-warn "\nThis demo script retrieves the start codons for a set of query genes\n\n";
+warn "\nThis demo script retrieves upstream sequences for a set of query genes\n\n";
 
 ## Send the request to the server
 print "Sending request to the server $server\n";
