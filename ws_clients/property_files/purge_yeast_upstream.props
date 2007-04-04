@@ -1,0 +1,8 @@
+output=both
+sequence_file=/Users/jvanheld/rsa-tools/ws_clients/sequences/purge_test_sequences.fasta
+format=fasta
+match_length=30
+mismatch=0
+str=2
+delete=0
+mask_short=30
