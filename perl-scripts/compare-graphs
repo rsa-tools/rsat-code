@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.18 2007/04/05 13:40:59 rsat Exp $
+# $Id: compare-graphs,v 1.19 2007/04/05 13:50:50 rsat Exp $
 #
 ############################################################
 
@@ -867,12 +867,12 @@ sub calculate_weight {
   }
   if ($outweight eq "Q::R") {
     if (!defined($weight_g1)) {
-      $result = join("::",$NA,$weight_g2);
+      $result = join("::",$weight_g2,$NA);
     }
     elsif (!defined($weight_g2)) {
-      $result = join("::",$weight_g1,$NA);
+      $result = join("::",$NA,$weight_g1);
     } else { 
-      $result = join("::",$weight_g1,$weight_g2);
+      $result = join("::",$weight_g2,$weight_g1);
     }
   }
   
