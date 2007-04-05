@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.17 2007/04/03 13:12:18 rsat Exp $
+# $Id: compare-graphs,v 1.18 2007/04/05 13:40:59 rsat Exp $
 #
 ############################################################
 
@@ -857,8 +857,7 @@ sub calculate_weight {
   my $result = $nullvalue;
   my $real = &IsReal($weight_g1);
   my $real2 = &IsReal($weight_g2);
-#   $result = join("::",$weight_g1,$weight_g2);
-
+  my $NA = "NA";
 
   if ($outweight eq "R") {
     $result = $weight_g1;
@@ -867,8 +866,16 @@ sub calculate_weight {
     $result = $weight_g2;
   }
   if ($outweight eq "Q::R") {
-    $result = join("::",$weight_g1,$weight_g2);
-  } 
+    if (!defined($weight_g1)) {
+      $result = join("::",$NA,$weight_g2);
+    }
+    elsif (!defined($weight_g2)) {
+      $result = join("::",$weight_g1,$NA);
+    } else { 
+      $result = join("::",$weight_g1,$weight_g2);
+    }
+  }
+  
   
   if (($real eq 1) && ($real2 eq 1)) {
     if ($outweight eq "mean") {
