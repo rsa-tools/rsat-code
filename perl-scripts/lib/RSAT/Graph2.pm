@@ -651,8 +651,7 @@ sub read_from_table2 {
     my @arc_out_color = $self->get_attribute("out_color");
     my @arcs = $self->get_attribute("arcs");
     my %arcs_name_id = $self->get_attribute("arcs_name_id");
- 
-    
+
     my %nodes_name_id = $self->get_attribute("nodes_names_id");
     my %nodes_id_name = $self->get_attribute("nodes_id_names");
     my %nodes_color = $self->get_attribute("nodes_color");
@@ -830,7 +829,6 @@ sub read_from_table {
         $array[$cpt][2] = $lignecp[$weight_col-1];
       } else {
         $array[$cpt][2] = join("_",$lignecp[$source_col-1],$lignecp[$target_col-1]);
-        
       }
       if (defined($source_color_col)) {
         $array[$cpt][3] = $lignecp[$source_color_col-1] || $default_node_color;
