@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.19 2007/04/05 13:50:50 rsat Exp $
+# $Id: compare-graphs,v 1.20 2007/04/06 09:02:42 rsat Exp $
 #
 ############################################################
 
@@ -101,8 +101,12 @@ package main;
       difference=>1
     );
     $supported_return_formats = join (",", keys %supported_return_format);
-   
+    
+    ## directed option
     $directed = 0;
+    
+    ## arc_id_option
+    $arc_id_option = 0;
     
     ## Supported outweight options
     local $outweight ="";
@@ -177,7 +181,7 @@ package main;
     my $graph1_only_arc = $arcs_graph1 - $common;
     my $graph2_only_arc = $arcs_graph2 - $common;
     my $message = "Intersection info\n";
-    $message .= (join(";\t",$main::infile{graph_R},$nodes_graph1,"node(s) and",$arcs_graph1,"arc(s)\n"));
+    $message .= ";\t".(join("\t",$main::infile{graph_R},$nodes_graph1,"node(s) and",$arcs_graph1,"arc(s)\n"));
     $message .= ";\t".(join("\t",$main::infile{graph_Q},$nodes_graph2,"node(s) and",$arcs_graph2,"arc(s)\n"));
     $message .= ";\t"."$common\t"."unique arcs in common\n";
     $message .= ";\t".$graph1_only_arc."\tarcs of $main::infile{graph_R} are not in $main::infile{graph_Q}\n";
@@ -203,7 +207,7 @@ package main;
     
     ################################################################
     ## Print output
-    print $main::out $return_graph->to_text($output_format);
+    print $main::out $return_graph->to_text($output_format, $arc_id_option);
     
     ################################################################
     ## Finish verbose
@@ -326,6 +330,18 @@ from node A to node B is different from an edge from B to A.
 	    	    
 	} elsif ($arg eq "-directed") {
 	    $directed = 1;
+	    
+	    	    ## arc_id
+=pod
+
+=item B<-arc_id>
+
+Adds a unique id for each arc when using the tab-delimited output. 
+
+=cut
+	    	    
+	} elsif ($arg eq "-arc_id") {
+	    $arc_id_option = 1;
 
 	    ## Output file
 =pod
@@ -345,7 +361,7 @@ allows to use the command within a pipe.
 
 =item B<-in_format_R input_format>
 
-Input format of reference graph. Supported: tab,gml
+Input format of reference graph. Supported: tab,gml. Default tab
 
 =cut
 	} elsif ($arg eq "-in_format_R") {
@@ -357,7 +373,7 @@ Input format of reference graph. Supported: tab,gml
 
 =item B<-in_format_Q input_format>
 
-Input format of query graph. Supported: tab,gml
+Input format of query graph. Supported: tab,gml. Default tab
 
 =cut
 	} elsif ($arg eq "-in_format_Q") {
