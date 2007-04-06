@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.7 2007/03/27 11:27:42 rsat Exp $
+# $Id: convert-graph,v 1.8 2007/04/06 09:02:42 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -19,12 +19,15 @@ convert-graph
 
 Convert graphs between diffferent formats. 
 
-In the current state, the only supported input format is a
-tab-delimited file. Various output format are already supported (dot,
-gml).
+In the current state, the only supported input format are 
+tab-delimited file and gml file. Various output format are already supported (dot,
+gml, tab).
 
 In the future, there should be as many input as output formats (the
 program should perform interconversions between any supported format).
+
+The programs also allows to return a randomized graph with the same number of edges, and 
+each node keeping the same number of neighbours.
 
 =head1 AUTHORS
 
@@ -34,9 +37,11 @@ jvanheld@scmbb.ulb.ac.be
 
 util
 
+
+
 =head1 USAGE
     
-convert-graph [-i inputfile] [-o outputfile] [-v]
+convert-graph [-i inputfile] [-o outputfile] [-from tab|gml] [-to format tab|dot|gml] [-random] [-arc_id] [-v #]
 
 =head1 INPUT FORMAT
 
@@ -69,7 +74,9 @@ package main;
     $main::verbose = 0;
 #    $main::in = STDIN;
     $main::out = STDOUT;
-
+    
+    ## arc_id_option
+    $arc_id_option = 0;
 
     ## Input formats
     local $input_format = "tab";
@@ -92,6 +99,9 @@ package main;
     );
     $supported_output_formats = join (",", keys %supported_output_format);
 
+    # return a randomized graph
+    $random = 0;
+    
     &ReadArguments();
 
     ################################################################
@@ -123,7 +133,10 @@ package main;
     
     ################################################################
     ###### print output
-    print $out $graph->to_text($output_format);
+    if ($random) {
+      $graph = $graph->randomize();
+    }
+    print $out $graph->to_text($output_format, $arc_id_option);
     
     ################################################################
     ###### finish verbose
@@ -212,7 +225,19 @@ Same as -h
 =cut
 	} elsif ($arg eq "-help") {
 	    &PrintOptions();
+
 	    
+=pod
+
+=item B<-random>
+
+The program will return a randomized graph, shuffling the edges but keeping the node degree.
+
+=cut
+	} elsif ($arg eq "-random") {
+	  $random=1;
+
+		    	    
 	    ## Input file
 =pod
 
@@ -306,7 +331,16 @@ Weight column. Column containing the weight nodes.
 	    unless (&IsNatural($weight_col) && ($weight_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $weight_col, "Invalid value for the weight column. Must be a strictly positive natural number"));
 	    }
+=pod
 
+=item B<-arc_id>
+
+Adds a unique id for each arc when using the tab-delimited output. 
+
+=cut
+	    	    
+	} elsif ($arg eq "-arc_id") {
+	    $arc_id_option = 1;
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));

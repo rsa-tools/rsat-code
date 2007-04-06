@@ -7,7 +7,7 @@ package RSAT::Graph2;
 use RSAT::GenericObject;
 use RSAT::error;
 use RSAT::util;
-
+use List::Util 'shuffle';
 
 
 ### class attributes
@@ -100,6 +100,75 @@ sub new {
     $self->set_hash_attribute("nodes_label", %nodes_label);
     return $self;
 }
+
+################################################################
+=pod
+
+=item B<randomize()> 
+
+returns a randomized graph having the same number of edges, each node having the same number of neighbours
+
+=cut
+sub randomize {
+    
+    my ($self) = @_;
+    # get arcs and nodes of $graph
+    my @arcs = $self->get_attribute("arcs");
+    my %nodes_name_id = $self->get_attribute("nodes_name_id");
+    my %nodes_label = $self->get_attribute("nodes_label");
+    my %nodes_color = $self->get_attribute("nodes_color");
+    
+    # create a new graph object;
+    my $rdm_graph = new RSAT::Graph2;
+    my @rdm_graph_array = @arcs;
+    
+    # randomize an array having the same length as scalar (@arcs);
+    my @arcs_size = 0 .. (scalar(@arcs)-1);
+    my @shuffled_arcs_size = shuffle(@arcs_size);
+    
+    # create a randomized array
+    for (my $i = 0; $i < scalar(@arcs); $i++) {
+      my $source = $arcs[$i][0];
+      my $target = $arcs[$shuffled_arcs_size[$i]][1];
+      my $arc_color = $arcs[$i][3];
+      my $source_id = $nodes_name_id{$source};
+      my $target_id = $nodes_name_id{$target};
+      my $source_color = $nodes_color{$source};
+      my $target_color = $nodes_color{$target};
+      $rdm_graph_array[$i][1] = $target;
+      $rdm_graph_array[$i][3] = $source_color;
+      $rdm_graph_array[$i][4] = $target_color;
+      $rdm_graph_array[$i][5] = $arc_color;
+    }
+    
+    $rdm_graph->load_from_array(@rdm_graph_array);
+    my %rdm_nodes_name_id = $rdm_graph->get_attribute("nodes_name_id");
+    
+    if ((scalar(keys %nodes_name_id)) != scalar(keys(%rdm_nodes_name_id))) {
+      my %rdm_nodes_id_name = $rdm_graph->get_attribute("nodes_id_name");
+      my %rdm_nodes_label = $rdm_graph->get_attribute("nodes_label");
+      my %rdm_nodes_color = $rdm_graph->get_attribute("nodes_color");
+      my $node_id = scalar(keys(%rdm_nodes_name_id));
+      foreach my $node_name (keys %nodes_name_id) {
+        if (!exists($rdm_nodes_name_id{$node_name})) {
+          my $node_color = $nodes_color{$nodes_name_id{$node_name}};
+          my $node_label = $nodes_label{$nodes_name_id{$node_name}};
+          $rdm_nodes_name_id{$node_name} = $node_id;
+          $rdm_nodes_id_name{$node_id} = $node_name;
+          $rdm_nodes_label{$node_id} = $node_label;
+          $rdm_nodes_color{$node_id} = $node_color;
+          
+        }
+      }
+      $rdm_graph->set_hash_attribute("nodes_id_name", %rdm_nodes_id_name);
+      $rdm_graph->set_hash_attribute("nodes_name_id", %rdm_nodes_name_id);
+      $rdm_graph->set_hash_attribute("nodes_label", %rdm_nodes_label);
+      $rdm_graph->set_hash_attribute("nodes_color", %rdm_nodes_color);
+    }
+    return ($rdm_graph);
+}
+
+
 
 
 ################################################################
@@ -627,7 +696,7 @@ sub node_by_id {
 ################################################################
 =pod
 
-=item B<read_from_table>
+=item B<read_from_table2>
 
 Read the graph from a tab-delimited text file.
 
@@ -1117,9 +1186,9 @@ sub load_from_gml {
 	  $arccpt++;
 	  
 	  &RSAT::message::Info(join("\t", "Created arc", 
-	  $label_edge,
-	  $arccpt)
-	  ) if ($main::verbose >= 3);
+	  				$label_edge,
+	  				$arccpt)
+	  		      ) if ($main::verbose >= 3);
         }
       }
     }
@@ -1130,7 +1199,7 @@ sub load_from_gml {
     $self->set_array_attribute("in_color", @arc_in_color);
     $self->set_array_attribute("out_color", @arc_out_color);
     $self->set_array_attribute("arcs", @arcs);
-    $self->force_attribute("nb_arc_bw_node", $max_arc);
+    $self->force_attribute("nb_arc_bw_node", $max_arc_nb);
     $self->set_hash_attribute("arcs_name_id", %arcs_name_id);
     $self->set_hash_attribute("nodes_name_id", %nodes_name_id);
     $self->set_hash_attribute("nodes_id_name", %nodes_id_name);
@@ -1138,8 +1207,6 @@ sub load_from_gml {
     $self->set_hash_attribute("nodes_label", %nodes_label);
     return $self;
 }
-    
-    
 
 
 ################################################################
@@ -1474,25 +1541,43 @@ sub to_gml {
 ################################################################
 =pod
 
-=item B<to_tab()>
+=item B<to_tab($arc_id)>
 
 Return the graph in a tab-delimited format. 
 
 =cut
 sub to_tab {
-    my ($self) = @_;    
+    
+    my ($self, $arc_id) = @_;
     my @arcs = $self->get_attribute("arcs");
     my @arcs_attributes = $self->get_attribute("arcs_attribute");
-    my $tab = join("\t","#source","target","label","color");
-    $tab .= "\n";
+    my $tab = "";
     if (@arcs_attributes && scalar(@arcs_attributes) > 0) {
-      $tab = $self->to_tab_arcs_attribute();
+      $tab = $self->to_tab_arcs_attribute($arc_id);
     } else {
-      for (my $i = 0; $i < scalar(@arcs); $i++) {
-        $tab .= $arcs[$i][0]."\t";
-        $tab .= $arcs[$i][1]."\t";
-        $tab .= $arcs[$i][2]."\t";
-        $tab .= $arcs[$i][3]."\n";
+      if (!$arc_id) {
+        $tab = join("\t","#source","target","label","color");
+        $tab .= "\n";
+        for (my $i = 0; $i < scalar(@arcs); $i++) {
+          $tab .= $arcs[$i][0]."\t";
+          $tab .= $arcs[$i][1]."\t";
+          $tab .= $arcs[$i][2]."\t";
+          $tab .= $arcs[$i][3]."\n";
+        }
+      } else {
+        my %arcs_name_id = $self->get_attribute("arcs_name_id");
+        my $max_arc = $self->get_attribute("nb_arc_bw_node");
+        foreach my $arc_name (keys %arcs_name_id) {
+          my $id = $arcs_name_id{$arc_name};
+          if ($max_arc == 1) {
+            $arc_name =~ s/(_1)$//;
+          }
+          $tab .= $arcs[$id][0]."\t";
+          $tab .= $arcs[$id][1]."\t";
+          $tab .= $arcs[$id][2]."\t";
+          $tab .= $arcs[$id][3]."\t";
+          $tab .= $arc_name."\n";
+        }
       }
     }
     return $tab;
@@ -1509,52 +1594,109 @@ source_target_label_color as key
 
 =cut
 sub to_tab_arcs_attribute {
-    my ($self) = @_;    
+    my ($self, $arc_id) = @_;    
     my @arcs = $self->get_attribute("arcs");
     my @arcs_attributes = $self->get_attribute("arcs_attribute");
     my @arcs_attribute_header = $self->get_attribute("arcs_attribute_header");
-    my $tab = join("\t","#source", "target", "label", "color");
-    if (@arcs_attribute_header) { 
-      $tab .= "\t".join("\t",@arcs_attribute_header);
-    } else {
-      $tab .= "\tattribute";
-    }
-    $tab .= "\n";
-    # if @arcs_attribute_header is not defined or has scalar = 1, then one attribute for each row 
-    # else one attribute by tab
-    for (my $i = 0; $i < scalar(@arcs); $i++) {
-      my $source = $arcs[$i][0];
-      my $target = $arcs[$i][1];
-      my $label = $arcs[$i][2];
-      my $color =  $arcs[$i][3];
-      my $attribute = $arcs_attributes[$i];
-      if (defined($attribute)) {
-        my @clusters = @{$attribute};
-	if (@clusters && (!@arcs_attribute_header || scalar(@arcs_attribute_header) == 1)) { 
-          foreach my $cluster (@clusters) {
-            $tab .= $source."\t";
+    
+    my $tab = "";
+    if (!$arc_id) { 
+      $tab = join("\t","#source", "target", "label", "color");
+      if (@arcs_attribute_header) { 
+        $tab .= "\t".join("\t",@arcs_attribute_header);
+     } else {
+        $tab .= "\tattribute";
+      }
+      $tab .= "\n";
+      # if @arcs_attribute_header is not defined or has scalar = 1, then one attribute for each row 
+      # else one attribute by tab
+      for (my $i = 0; $i < scalar(@arcs); $i++) {
+        my $source = $arcs[$i][0];
+        my $target = $arcs[$i][1];
+        my $label = $arcs[$i][2];
+        my $color =  $arcs[$i][3];
+        my $attribute = $arcs_attributes[$i];
+        if (defined($attribute)) {
+          my @clusters = @{$attribute};
+	  if (@clusters && (!@arcs_attribute_header || scalar(@arcs_attribute_header) == 1)) { 
+            foreach my $cluster (@clusters) {
+              $tab .= $source."\t";
+              $tab .= $target."\t";
+              $tab .= $label."\t";
+	      $tab .= $color."\t";
+              $tab .= $cluster."\n";
+	    }
+	  } elsif (@clusters && scalar(@arcs_attribute_header) >= 1) {
+	    $tab .= $source."\t";
             $tab .= $target."\t";
             $tab .= $label."\t";
-	    $tab .= $color."\t";
-            $tab .= $cluster."\n";
+	    $tab .= $color;
+	    foreach my $cluster (@clusters) {
+              $tab .= "\t".$cluster;
+            }
+            $tab .= "\n";
+          } else {
+              $tab .= $source."\t";
+              $tab .= $target."\t";
+              $tab .= $label."\t";
+	      $tab .= $color."\t";
+              $tab .= $attribute."\n";	  
 	  }
-	} elsif (@clusters && scalar(@arcs_attribute_header) >= 1) {
-	  $tab .= $source."\t";
-          $tab .= $target."\t";
-          $tab .= $label."\t";
-	  $tab .= $color;
-	  foreach my $cluster (@clusters) {
-            $tab .= "\t".$cluster;
-          }
-          $tab .= "\n";
-        } else {
-            $tab .= $source."\t";
+        } 
+      }
+    } else {
+      $tab = join("\t","#source", "target", "label", "color", "arc_id");
+      if (@arcs_attribute_header) { 
+        $tab .= "\t".join("\t",@arcs_attribute_header);
+     } else {
+        $tab .= "\tattribute";
+      }
+      $tab .= "\n";
+      # if @arcs_attribute_header is not defined or has scalar = 1, then one attribute for each row 
+      # else one attribute by tab
+      my %arcs_name_id = $self->get_attribute("arcs_name_id");
+      my $max_arc = $self->get_attribute("nb_arc_bw_node");
+        foreach my $arc_name (keys %arcs_name_id) {
+        my $id = $arcs_name_id{$arc_name};
+        if ($max_arc == 1) {
+          $arc_name =~ s/(_1)$//;
+        }
+        my $source = $arcs[$id][0];
+        my $target = $arcs[$id][1];
+        my $label = $arcs[$id][2];
+        my $color =  $arcs[$id][3];
+        my $attribute = $arcs_attributes[$id];
+        if (defined($attribute)) {
+          my @clusters = @{$attribute};
+	  if (@clusters && (!@arcs_attribute_header || scalar(@arcs_attribute_header) == 1)) { 
+            foreach my $cluster (@clusters) {
+              $tab .= $source."\t";
+              $tab .= $target."\t";
+              $tab .= $label."\t";
+	      $tab .= $color."\t";
+	      $tab .= $arc_name."\t";
+              $tab .= $cluster."\n";
+	    }
+	  } elsif (@clusters && scalar(@arcs_attribute_header) >= 1) {
+	    $tab .= $source."\t";
             $tab .= $target."\t";
             $tab .= $label."\t";
 	    $tab .= $color."\t";
-            $tab .= $attribute."\n";	  
-	}
-      } 
+	    $tab .= $arc_name;
+	    foreach my $cluster (@clusters) {
+              $tab .= "\t".$cluster;
+            }
+            $tab .= "\n";
+          } else {
+              $tab .= $source."\t";
+              $tab .= $target."\t";
+              $tab .= $label."\t";
+	      $tab .= $color."\t";
+	      $tab .= $arc_name."\t";
+              $tab .= $attribute."\n";	  
+	  }
+        } 
+      }      
     }
     return $tab;
 }
@@ -1671,4 +1813,3 @@ sub load_classes {
 return 1;
 
 __END__
-
