@@ -17,6 +17,7 @@ use GD;
 %supported_format = ("jpg"=>1, 
 		     "gif"=>1,
 		     "png"=>1,
+		     "eps" =>1
 		     );
 
 $img_format = $IMG_FORMAT || "png";
@@ -38,8 +39,6 @@ $y_grids = 10;
 $border = 10;
 $x_scale_border = 40;
 $y_scale_border = 20;
-$x_axis_size = 400;
-$y_axis_size = 400;
 $point_size = 2;
 @y_col_list = (1);
 $x_col = -1;
@@ -61,6 +60,49 @@ $large_font_width = 8;
 $large_font_height = 16;
 
 &ReadArguments();
+
+## check arguments compatibility 
+if ($img_format eq "eps"){
+
+ if (($x_grid_step1) || ($y_grid_step1) || ($x_grid_step2) || ($y_grid_step2)) {
+   &RSAT::message::TimeWarn("grid options -gstep are not yet compatible with eps format => png format is used.") ;
+    $img_format = "png";
+    $outputfile .=".png";
+ }
+ if ($bg ne "white") {
+ 	&RSAT::message::TimeWarn("changing background color is not yet compatible with eps format => png format is used.") ;
+ 	 $img_format = "png";
+ 	 $outputfile .=".png";
+ }
+ 
+  if (($histogram)||($filled_histogram)) {
+ 	 &RSAT::message::TimeWarn("histogram plot  is not yet compatible with eps format => png format is used.") ;
+ 	  $img_format = "png";
+ 	  $outputfile .=".png";
+  }
+  
+ if (($hbox_bottom)||($tbox_low_x)) {
+ 	&RSAT::message::TimeWarn("hbox and tbox are not yet compatible with eps format => png format is used.") ;
+ 	 $img_format = "png";
+ 	 $outputfile .=".png";
+ }
+ 
+  if ($data_fields != "columns") {
+ 	&RSAT::message::TimeWarn("-rows is not yet compatible with eps format => png format is used.") ;
+ 	 $img_format = "png";
+ 	 $outputfile .=".png";
+ }
+}
+
+## use gnuplot if format is eps
+if ($img_format eq "eps"){	
+	&GnuPlotEPS(); 
+	exit 1;
+	}
+
+# GD default
+$x_axis_size = 400;
+$y_axis_size = 400;
 
 if ($x_log_base eq "e") {
     $x_ref_log = 1;
@@ -489,6 +531,201 @@ exit(0);
 ######################## SUBROUTINE DEFINITION #####################
 ####################################################################
 
+sub GnuPlotEPS {
+	
+	$gnuplot_cmd = "gnuplot << EOF\n";
+	## fonts
+	$gnuplot_cmd .= "small='Arial,9'\n";
+	$gnuplot_cmd .= "big='Arial,10'\n";
+	
+	## color
+	if ($monochrome) {
+		$color = "color";
+	}
+	else {
+		$color = "";
+	}
+	
+	## plot size ##
+	## if a size has been specified
+	if ($x_axis_size) {
+		if (!$y_axis_size) {
+			$y_axis_size = $x_axis_size;
+		}
+		$gnuplot_cmd .= "set term post landscape enh ".$color." font small size ".$x_axis_size.",".$y_axis_size."\n";
+	}
+	elsif ($y_axis_size) {
+		if (!$x_axis_size) {
+			$x_axis_size = $y_axis_size;
+		}
+		$gnuplot_cmd = "set term post landscape enh ".$color.". font small size ".$x_axis_size.",".$y_axis_size."\n";
+		}
+	else {
+		$gnuplot_cmd .= "set term post landscape enh color font small\n";
+	}
+	
+	## output file
+	$gnuplot_cmd .= "set output '".$outputfile."'\n";
+
+	
+	## title
+	if ($title1) {
+		$title = '';
+		if ($title2){
+			$title = '\n'.$title2;
+		}
+		$title = $title1.$title;
+		$gnuplot_cmd .= 'set title "'.$title.'" font big'."\n";
+	}
+	
+	## labels
+	if ($x_legend1) {
+		$x_legend = "";
+		if ($x_legend2){
+			$x_legend = '\n'.$x_legend2;
+		}
+		$x_legend = $x_legend1.$x_legend;
+		$gnuplot_cmd .= 'set xlabel "'.$x_legend.'" font big'."\n";
+	}
+	
+	if ($y_legend1) {
+		$y_legend = "";
+		if ($y_legend2){
+			$y_legend = '\n'.$y_legend2;
+		}
+		$y_legend = $y_legend1.$y_legend;
+		$gnuplot_cmd .= 'set ylabel "'.$y_legend.'" font big'."\n";
+	}
+	
+	## tics
+	$gnuplot_cmd .= "set tics font big\n";
+	## grid
+	$gnuplot_cmd .= "set grid\n";
+	## log
+	if ($xlog) {
+		$gnuplot_cmd .= "set logscale x ".$x_log_base."\n";
+	}
+	if ($ylog) {
+		$gnuplot_cmd .= "set logscale y ".$y_log_base."\n";
+	}
+	## x axis
+	if (($x_axis_min ne "ND") || ($x_axis_max ne "ND")) {
+		if ($x_axis_min eq "ND") {
+			$x_axis_min = "";
+		}
+		if ($x_axis_max eq "ND") {
+			$x_axis_max = "";
+		}
+		$gnuplot_cmd .= "set xrange [".$x_axis_min.":".$x_axis_max."]\n";	
+	}
+	## y axis
+	if (($y_axis_min ne "ND") || ($y_axis_max ne "ND")) {
+		if ($y_axis_min eq "ND") {
+			$y_axis_min = "";
+		}
+		if ($y_axis_max eq "ND") {
+			$y_axis_max = "";
+		}
+		$gnuplot_cmd .= "set yrange [".$y_axis_min.":".$y_axis_max."]\n";	
+	}
+	
+	## legend (key box)
+	$gnuplot_cmd .= "set key outside right top vertical Left reverse enhanced nobox\n";	
+	## get legend from columnheader
+	if (($header)||($legend)) {
+			## remove # from data file comments charaters
+			$gnuplot_cmd .= "set datafile commentschars '!;%'\n";
+			$gnuplot_cmd .= "set key autotitle columnheader samplen 1\n";	
+	}
+	
+	## default linewidth
+	$lw = 3;
+	## default pointsize
+	$gnuplot_cmd .= "set pointsize ".($point_size/2)."\n";
+	
+	## colors
+	&GnuplotPalette();
+
+    @color_list = ();
+	push @color_list, $blue;
+	push @color_list, $green_175;
+	push @color_list, $pink;
+	push @color_list, $cyan_200;
+	push @color_list, $orange;
+	push @color_list, $violet;
+	push @color_list, $gray_125;
+	push @color_list, $brown;
+	push @color_list, $black;
+	push @color_list, $red;
+	push @color_list, $yellow_225;
+	push @color_list, $cyan;
+	push @color_list, $pistache;
+	push @color_list, $magenta;
+	push @color_list, $green;
+	push @color_list, $green_128;
+	push @color_list, $gray_150;
+	push @color_list, $red_191;
+	push @color_list, $blue_128;
+	push @color_list, $cyan_096;
+	    
+	push @color_list, $blue_096;
+	push @color_list, $red_096;
+	push @color_list, $blue_064;
+	push @color_list, $gray_064;
+	
+	## monochrome
+	if ($monochrome) {
+		foreach my $i (0..$#color_list) {
+			$color_list[$i] = "black";
+		}
+	}
+	
+	
+	## symbols
+	if ($symbols){
+		foreach my $i (0..$#color_list) {
+			$gnuplot_cmd .= "set style line ".($i+1)." lw ".$lw." lt 1 pt ".($i+1)." lc rgb '".$color_list[$i]."'\n";
+		}
+	}
+	else {
+	## no symbols (only lines and circle points)		
+		foreach my $i (0..$#color_list) {
+			$gnuplot_cmd .= "set style line ".($i+1)." lw ".$lw." lt 1 pt 6 lc rgb '".$color_list[$i]."'\n";	
+		}
+	}
+	$gnuplot_cmd .= "set style increment user\n";	
+
+	## additional user-specified commands
+	if ($gp_supp_commands){
+		@gp = split(",",$gp_supp_commands);
+		foreach my $cmd (@gp) {
+			$gnuplot_cmd .= $cmd."\n";
+		}
+	}
+	
+	## plot 
+	$gnuplot_cmd .= "plot ";
+	foreach my $k (0..$#y_col_list){
+		$gnuplot_cmd .= " '".$inputfile."' using ".($x_col+1).":".($y_col_list[$k]+1)." with ";
+		## draw lines
+		if (($lines eq "1") || ($lines[$y_col_list[$k]])) {
+			$gnuplot_cmd .= "lines";
+		} else {
+			$gnuplot_cmd .= "points";
+		}
+		
+		## end line
+		if ($k == $#y_col_list) {
+			$gnuplot_cmd .= "\n";
+		} else {
+			$gnuplot_cmd .= ",";
+		}
+	}
+	$gnuplot_cmd .= "EOF\n";
+	print $gnuplot_cmd;
+	## Execute the command
+  	&doit($gnuplot_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+}
 
 #### calculation of pixel position
 sub XPixelPos {
@@ -1268,6 +1505,7 @@ XYgraph options
 -symbols	represent points by symbols
 -htmap		HTML map
 -lc		label column
+-gp		gnuplot additional commands
 End_of_options
     close SHORTHELP;
 }
@@ -1416,6 +1654,10 @@ OPTIONS
 	-lc	label column
 		this column contains the label associated to each point
 		(this info is used when the -htmap option is active).
+	-gp	gnuplot additional commands
+		Gnuplot (http://www.gnuplot.info/) is used to generate graphs in eps format.
+		Additional gnuplot commands can be specified, separated by commas.
+		e.g. -gp 'set size ratio 0.5'
 WEB VERSION
 	http://www.scmbb.ulb.ac.be/bioinformatics/rsa-tools/
 
@@ -1644,6 +1886,89 @@ sub ReadArguments {
 	} elsif (($ARGV[$a] eq "-lc") && (&IsNatural($ARGV[$a+1]))) {
 	    $label_col = $ARGV[$a+1];
 
+	} elsif ($ARGV[$a] eq "-gp") {
+	    $gp_supp_commands = $ARGV[$a+1];
+
 	}
     }
+    
+sub GnuplotPalette {
+    ### black and white
+    $white = "white";
+    $black = "black";
+
+    ### gray series
+    $gray_032 = "gray10";
+    $gray_064 = "gray30";
+    $gray_096 = "gray40";
+    $gray_125 = "gray50";
+    $gray_150 = "gray60";
+    $gray_175 = "gray70";
+    $gray_200 = "gray80";
+    $gray_225 = "gray90";
+
+    ### yellow series
+    $yellow = "yellow";
+    $yellow_225 = "dark-yellow ";
+    $yellow_200 = "dark-yellow ";
+    $yellow_128 = "dark-yellow ";
+    $yellow_light = "light-yellow";
+    $yellow_pale = "light-yellow";
+    $yellow_pale_064 = "light-yellow";
+    $yellow_pale_096 = "light-yellow";
+    $yellow_pale_128 = "light-yellow";
+
+
+    ### green series
+    $green = "green";
+    $green_200 = "light-green";
+    $green_175 = "dark-green";
+    $green_128 = "spring-green";
+    $green_096 = "forest-green";
+    $green_064 = "sea-green";
+
+    ### cyan series
+    $cyan = "cyan";
+    $cyan_200 = "skyblue";
+    $cyan_128 = "dark-cyan";
+    $cyan_096 = "cyan";
+    $cyan_pale_064 = "light-cyan";
+    $cyan_pale_096 = "light-cyan";
+    $cyan_pale_128 = "light-cyan";
+
+    ### blue series
+    $blue = "blue";
+    $blue_064 = "light-blue";
+    $blue_096 = "dark-blue";
+    $blue_128 = "midnight-blue";
+    $blue_175 = "navy";
+    $blue_191 = "medium-blue";
+    $blue_200 = "royalblue";
+
+    ### magenta
+    $magenta = "magenta";
+    $magenta_191 = "dark-magenta";
+    $magenta_pale_064 = "light-magenta";
+    $magenta_pale_096 = "light-magenta";
+    $magenta_pale_128 = "light-magenta";
+
+
+    ### red series
+    $red = "red";
+    $red_191 = "dark-red";
+    $red_128 = "dark-red";
+    $red_096 = "light-red";
+    $red_064 = "light-red";
+
+    ### miscellaneous
+    $pink = "pink";
+    $orange = "orange";
+    $violet = "violet";
+    $brown = "brown";
+    $pistache = "dark-khaki";
+    $violet_pale = "plum";
+    $pink_pale = "light-pink";
+    $champagne = "salmon";
+    $pistache_pale = "khaki";
+}
 }
