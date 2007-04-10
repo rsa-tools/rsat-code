@@ -1557,6 +1557,7 @@ OPTIONS
 	-format		output image format
 			Supported: $supported_formats
 			Default: $img_format
+			For eps format, Gnuplot needs to be installed (http://www.gnuplot.info/)
 	-v		verbose. Comments about data and graph parameters
 			are printed on the screen.
 	-title1 "t1"	first graph title. The title string should be 
