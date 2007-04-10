@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.20 2007/04/06 09:02:42 rsat Exp $
+# $Id: compare-graphs,v 1.21 2007/04/10 12:56:12 rsat Exp $
 #
 ############################################################
 
@@ -656,16 +656,16 @@ sub union {
       my $arc_id2 = $target_name."_".$source_name."_".1;
       push @arcs_id, $arc_id2; # ajouts des arcs du graph 1 "non dirigés"
     }
-    my $arc_label = "$arc_label_g1";
+    my $arc_label = &calculate_weight("undef", $arc_label_g1);
     my $arc_color = "#00ff00"; # by default color of edges belongs to graph1 is green
-    my $arc_attribute = "Q.not.R";
+    my $arc_attribute = "not.Q.R";
     foreach my $arc_id (@arcs_id) {
       my $arc_intern_id = $arcs_name_id_g2{$arc_id};
       if (defined($arc_intern_id)) {
         my $arc_label_g2 = $arcs_g2[$arc_intern_id][2]; 
 	$arc_color = "#ff0000";
 	$arc_attribute = "Q.and.R";
-	$arc_label = &calculate_weight($arc_label_g1, $arc_label_g2);
+	$arc_label = &calculate_weight($arc_label_g2, $arc_label_g1);
       }
     }
     my $source_name_id = $nodes_name_id_g1{$source_name};
@@ -691,7 +691,7 @@ sub union {
 #   filling union_graph_array with graph2 without intersection
   my $j = scalar(@union_graph_array);
   my $arc_color = "#0000ff";
-  my $arc_attribute = "not.Q.R";
+  my $arc_attribute = "Q.not.R";
   for (my $i = 0; $i < scalar(@arcs_g2); $i++) {
     my $source_name = $arcs_g2[$i][0]; 
     my $target_name = $arcs_g2[$i][1];
@@ -708,7 +708,7 @@ sub union {
       my $arc_intern_id_g2 = $arcs_name_id_g2{$arc_id};
       my $seen_arc = $seen_arcs{$arc_id};
       if (!defined($seen_arc) && defined($arc_intern_id_g2)) {
-        my $arc_label = $arc_label_g2;
+        my $arc_label = &calculate_weight($arc_label_g2, "undef");
 # 	my $arc_label = $arcs_g2[$i][2];
         my $source_name_id = $nodes_name_id_g2{$source_name};
         my $target_name_id = $nodes_name_id_g2{$target_name};
@@ -868,54 +868,55 @@ sub Verbose {
 }
 ################################################################
 #### calculate_outweight
+
+#1 first arguement : query graph label
+#2 second arguement : reference graph label
+
 sub calculate_weight {
-  my ($weight_g1, $weight_g2) = @_;
+  my ($query_weight, $reference_weight) = @_;
   my $result = $nullvalue;
-  my $real = &IsReal($weight_g1);
-  my $real2 = &IsReal($weight_g2);
+  my $real = &IsReal($query_weight);
+  my $real2 = &IsReal($reference_weight);
   my $NA = "NA";
 
   if ($outweight eq "R") {
-    $result = $weight_g1;
-  }
-  if ($outweight eq "Q") {
-    $result = $weight_g2;
-  }
-  if ($outweight eq "Q::R") {
-    if (!defined($weight_g1)) {
-      $result = join("::",$weight_g2,$NA);
-    }
-    elsif (!defined($weight_g2)) {
-      $result = join("::",$NA,$weight_g1);
+    $result = $reference_weight;
+  } elsif ($outweight eq "Q") {
+    $result = $query_weight;
+  } elsif ($outweight eq "Q::R") {
+    if (!defined($reference_weight) || $reference_weight eq 'undef') {
+      $result = join("::",$query_weight,$NA);
+#       print "QnotR  $result";
+    } elsif (!defined($query_weight) || $query_weight eq 'undef') {
+      $result = join("::",$NA,$reference_weight);
+      #print "notQR  $result";
     } else { 
-      $result = join("::",$weight_g2,$weight_g1);
+      $result = join("::",$query_weight,$reference_weight);
     }
-  }
-  
-  
-  if (($real eq 1) && ($real2 eq 1)) {
-    if ($outweight eq "mean") {
-      $result = ($weight_g1+$weight_g2)/2;
-    } elsif ($outweight eq "mean.g") {
-      $result = sqrt($weight_g1*$weight_g2);
-    } elsif ($outweight eq "sum") {
-      $result = ($weight_g1+$weight_g2);
-    } elsif ($outweight eq "min") {
-      if ($weight_g1<$weight_g2) {
-        $result = $weight_g1;
-      } else {
-        $result = $weight_g2;
-      }
-    } elsif ($outweight eq "max") {
-      if ($weight_g1<$weight_g2) {
-        $result = $weight_g2;
-      } else {
-        $result = $weight_g1;
+  } else {
+    if (($real eq 1) && ($real2 eq 1)) {
+      if ($outweight eq "mean") {
+        $result = ($query_weight+$reference_weight)/2;
+      } elsif ($outweight eq "mean.g") {
+        $result = sqrt($query_weight*$reference_weight);
+      } elsif ($outweight eq "sum") {
+        $result = ($query_weight+$reference_weight);
+      } elsif ($outweight eq "min") {
+        if ($query_weight<$reference_weight) {
+          $result = $query_weight;
+        } else {
+          $result = $reference_weight;
+        }
+      } elsif ($outweight eq "max") {
+        if ($query_weight<$reference_weight) {
+          $result = $reference_weight;
+        } else {
+          $result = $query_weight;
+        }
       }
     }
- 
     if ($result eq $nullvalue && $main::verbose >= 2) {
-      &RSAT::message::Warning("\t","Could not compute $outweight between $weight_g1 and $weight_g2");
+      &RSAT::message::Warning("\t","Could not compute $outweight between $query_weight and $reference_weight");
     }
   }
   return ($result);
