@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.22 2007/04/11 07:59:41 rsat Exp $
+# $Id: compare-graphs,v 1.23 2007/04/11 08:40:37 rsat Exp $
 #
 ############################################################
 
@@ -914,7 +914,14 @@ sub calculate_weight {
       }
     }
     if ($result eq $nullvalue && $main::verbose >= 2) {
-      &RSAT::message::Warning("\t","Could not compute $outweight between $query_weight and $reference_weight");
+      my $warning_message = "";
+      if ($query_weight eq "undef") {
+        $warning_message .= ";\tLabel of the edge of the query graph undefined\n";
+      }
+      if ($reference_weight eq "undef") {
+        $warning_message .= ";\tLabel of the edge of the reference graph undefined\n";
+      }
+      &RSAT::message::Warning("\t","\n;\tCould not compute $outweight\n".$warning_message.";\t$nullvalue used instead");
     }
   }
   return ($result);
