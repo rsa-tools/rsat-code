@@ -81,6 +81,11 @@ if ($img_format eq "eps"){
  	  $outputfile .=".png";
   }
   
+  if ($HTML_map) {
+ 	 &RSAT::message::TimeWarn("-htmap is not compatible with eps format => png format is used.") ;
+ 	  $img_format = "png";
+  }
+  
  if (($hbox_bottom)||($tbox_low_x)) {
  	&RSAT::message::TimeWarn("hbox and tbox are not yet compatible with eps format => png format is used.") ;
  	 $img_format = "png";
@@ -97,7 +102,7 @@ if ($img_format eq "eps"){
 ## use gnuplot if format is eps
 if ($img_format eq "eps"){	
 	&GnuPlotEPS(); 
-	exit 1;
+	exit();
 	}
 
 # GD default
@@ -722,7 +727,7 @@ sub GnuPlotEPS {
 		}
 	}
 	$gnuplot_cmd .= "EOF\n";
-	print $gnuplot_cmd;
+	#print $gnuplot_cmd;
 	## Execute the command
   	&doit($gnuplot_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 }
