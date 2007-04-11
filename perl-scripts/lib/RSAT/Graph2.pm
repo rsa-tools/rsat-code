@@ -1153,7 +1153,7 @@ sub load_from_gml {
 	  $source_name = $nodes_id_name{$source_node_id};
 	  $target_name = $nodes_id_name{$target_node_id}; 
 	  if ($label_edge eq "NA") {
-	    $label_edge = $node_id_name{$source_node_id}."_".$node_id_name{$target_node_id};
+	    $label_edge = $nodes_id_name{$source_node_id}."_".$nodes_id_name{$target_node_id};
 	  }
 	    $nodes_label = $label_edge;
 	    $nodes_color = $color_edge;
