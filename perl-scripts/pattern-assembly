@@ -639,7 +639,7 @@ sub AssemblePatterns {
 	my $origin = 0;
 
 	#### new seed for the next assembly
-	my $seed = $first_seed = $to_assemble[0];
+	$seed = $first_seed = $to_assemble[0];
 	$position{$first_seed} = 0;
 	delete $seed{$to_assemble[0]};
 
@@ -723,7 +723,9 @@ sub AssemblePatterns {
 	    }
 	}
 	
+ 	
 	@positions = keys %position;
+	
 	if ($#positions <=0) { 	### no pattern matches the initial seed
 	    push @singletons, $seed;
 	} else {
