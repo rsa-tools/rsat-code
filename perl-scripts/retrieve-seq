@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.59 2007/04/02 14:53:11 jvanheld Exp $
+# $Id: retrieve-seq,v 1.60 2007/04/13 08:46:18 rsat Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -233,6 +233,18 @@ if ($#queries <0) {
 
 #### output file ####
 $out = &OpenOutputFile($outputfile);
+if ($output_features) {
+    $out_ft_handle = &OpenOutputFile($output_features);
+    ## header of the output feature file
+    print $out_ft_handle "#", join ("\t", 
+				    "contig",
+				    "type",
+				    "id",
+				    "strand",
+				    "left",
+				    "right",
+				    ), "\n";
+}
 
 #### verbose
 &Verbose() if ($verbose);
@@ -373,34 +385,14 @@ foreach my  $query (@queries) {
 	push @current_id, $query;
     }
     
+    ## Generate the sequence IDs as a function of the selected labels
     foreach my $field (@label_fields) {
-#	&RSAT::message::Debug("label field", $field, $$field) if ($main::verbose >= 10);
 	push @current_id, $$field;
     }
     my $current_id = join $label_sep, @current_id;
-
-#     } elsif ($seq_label eq "ID") {
-# 	$current_id .= $id;
-#     } elsif ($seq_label eq "name") {
-# 	$current_id .= $name;
-#     } elsif ($seq_label eq "orf_gene") {
-# 	$current_id .= join "_", $id, $name;
-#     } else {
-# 	$current_id .= join("_", 
-# 			   $id,
-# 			   $name,
-# 			   $sequence_type,
-# 			   $current_from,
-# 			   $current_to,
-# 			   $ctg,
-# 			   $orf_strand,
-# 			   $reg_left,
-# 			   $reg_right
-# 			   );
-#     }
     
+    ## Comments to be added to the sequence
     unless ($no_comments) {
-
 	my $location = join (" ", $ctg, $reg_left, $reg_right, $orf_strand);
 	if ($sequence_type eq "random fragments") {
 	    @comments = (join("; ","random fragment", 
@@ -439,6 +431,30 @@ foreach my  $query (@queries) {
 	}
     }
 
+    ## Export the feature if requested
+    if ($output_features) {
+	if ($reg_left <= $reg_right) {
+	    print $out_ft_handle join ("\t", 
+				       $ctg,
+				       $sequence_type,
+				       $id,
+				       $orf_strand,
+				       $reg_left,
+				       $reg_right,
+				       ), "\n";
+	} else {
+	    push @ft_warnings, join ("\t", 
+				     ";".$ctg,
+				     $sequence_type,
+				     $id,
+				     $orf_strand,
+				     $reg_left,
+				     $reg_right,
+				     "left > right => skipped",
+				     );
+	}
+    }
+
     ### substring retrieval
     &RSAT::message::Debug(
 	  "query: ".$query, 
@@ -458,6 +474,7 @@ foreach my  $query (@queries) {
 	$current_seq = $contig{$ctg}->get_sequence($reg_left,$reg_right,$orf_strand);
 #	$current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
     } else {
+	
 	$current_seq = "";
     }
     $current_seq = uc($current_seq);
@@ -471,6 +488,12 @@ print $out (join "\n", @warnings), "\n"
     unless $no_warn;
 
 close $out;
+if ($output_features) {
+    print $out_ft_handle (join "\n", @ft_warnings), "\n" 
+	unless $no_warn;
+    close $out_ft_handle;
+}
+
 
 ###### verbose ######
 if ($verbose) {
@@ -479,7 +502,7 @@ if ($verbose) {
     print $out "; Job done    $done_time\n";
 }
 
-&RSAT::message::TimeWarn("retreive-seq done") if ($main::verbose >= 2);
+&RSAT::message::TimeWarn("retrieve-seq done") if ($main::verbose >= 2);
 
 
 
@@ -558,7 +581,12 @@ OPTIONS
 		of IDs. This avoids to load the table of synonyms, in
 		order tos ave time.
 	-all	return all genomic upstream regions
-	-o	followed by the name of the outputfile. 
+
+	-o	name of the output file
+
+	-oft	output features file
+		in addition to the sequences, export a feature file with the
+		chromosomal location of the retrieved sequences.
 
         -from #1 -to #2 
                 where #1 and #2 are numbers. #2 should be higher than #1.
@@ -703,6 +731,7 @@ retrieve-seq options
 -ids_only	queries are provideed as IDs, do not load synonyms
 -all		returns all genomic upstream regions
 -o		followed by the name of the outputfile. 
+-oft		output features file
 -from #1 -to #2	limits of the region to extract, relative to orf start 
 -format		output sequence format. accepted: $accepted_output_seq
 -lw ##		Line width. -lw 0 will prevent newline insertion.
@@ -720,13 +749,17 @@ End_short_help
 }
 
 ################################################################
-#### read arguments
+## Read arguments
 sub ReadArguments {
     foreach $a (0..$#ARGV) {
 	### output file name
 	if ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
 	    
+	    ### output feature file
+	} elsif ($ARGV[$a] eq "-oft") {
+	    $output_features = $ARGV[$a+1];
+
 	    ### help request
 	} elsif ($ARGV[$a] eq "-h") {
 	    &PrintHelp;
