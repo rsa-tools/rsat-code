@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.23 2007/04/11 08:40:37 rsat Exp $
+# $Id: compare-graphs,v 1.24 2007/04/13 09:54:18 rsat Exp $
 #
 ############################################################
 
@@ -299,9 +299,9 @@ Same as -h
 	    ## Input file 1
 =pod
 
-=item B<-Q reference_graph_input_file>
+=item B<-Q query_graph_input_file>
 
-First graph file
+Query graph file
 
 =cut
 	} elsif ($arg eq "-R") {
@@ -310,9 +310,9 @@ First graph file
 	    	    ## Input file 2
 =pod
 
-=item B<-R query_graph_input_file>
+=item B<-R reference_graph_input_file>
 
-Second graph file
+Reference graph file
 
 =cut
 	} elsif ($arg eq "-Q") {
