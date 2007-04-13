@@ -122,7 +122,7 @@ sub new {
 	  $strand,
 	  $sequence,
 	  "\n")
-	if ($verbose >= 3);
+	if ($main::verbose >= 3);
 
 
     ### treat out-of-bonds cases
@@ -214,7 +214,7 @@ sub new {
 	    $len,
 	    $offset,
 	    "\n")
-	  if ($verbose >= 3);
+	  if ($main::verbose >= 3);
 
     }
     
