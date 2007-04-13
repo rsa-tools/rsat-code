@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-seq-quick,v 1.1 2007/04/13 08:45:56 morgane Exp $
+# $Id: retrieve-seq-quick,v 1.2 2007/04/13 14:17:43 morgane Exp $
 #
 ############################################################
 
@@ -114,6 +114,9 @@ package main;
 	unless (-e $main::infile{features}) {
 	    &RSAT::error::FatalError("Feature file $main::infile{features} does not exist.");
 	}
+	
+	#### check output format ####
+	&CheckOutputSeqFormat($out_format);
     
     ## working directory
     our $wd = `pwd`;
@@ -146,7 +149,7 @@ package main;
     ($main::in) = &OpenInputFile($main::infile{contigs});
     while (my $line = <$in>) {
     	chomp($line);
-
+		
 	    my ($seq_file, $contig_id, $circular) = split (/\t/,$line);
 	    
 	    ## Contig ID
@@ -163,9 +166,11 @@ package main;
 		if ($main::verbose >= 2);
 		
 		## Open the contig as a SequenceOnDisk object
-		$contig_seq{$contig_id} = new RSAT::SequenceOnDisk(filename=>  $seq_dir.$seq_file,
+		$contig_seq{$contig_id} = new RSAT::SequenceOnDisk(
+								filename=>  $seq_dir.$seq_file,
 							       id=>        $contig_id,
-							       circular=>  $circular);
+							       circular=>  $circular,
+							      organism=>  "");
     }
     close $main::in if ($main::infile{input});   
     
@@ -177,35 +182,56 @@ package main;
     ## Open the feature file and extract all sequences
     
      &RSAT::message::Info("Retrieving features") if ($main::verbose >= 5);
+     
+     our @warnings = ();
     
     ## Open feature file
     ($ft_handle) = &OpenInputFile($main::infile{features});
     while (my $line = <$ft_handle>) {
-    	next if ($line =~/^[#|;]/);
     	chomp($line);
+    	next if (($line =~/^[#|;]/)||($line eq ""));
 
-		##contig	type	id	strand	left	right
-	    my ($contig_id, $ft_type, $ft_id, $strand, $left, $right) = split (/\t/,$line);
-    	&RSAT::message::Info(join ("\t", "Contig", $contig_id,"Feature type", $ft_type,	
-    									 "Feature ID", $ft_id, "strand",$strand, "left", $left, "right", $right))
+		##feature file => contig	type	id	strand	left	right
+	    my ($contig_id, $ft_type, $ft_id, $strand, $left, $right,@other_comments) = split (/\t/,$line);
+	    
+	    ## check that contig_id correspond to one of the opened contigs
+		unless ($contig_seq{$contig_id}) {
+			&RSAT::message::Warning(join (" ", "Feature ID", $ft_id, ": Contig $contig_id not found"));
+			push (@warnings,join (" ", "; Feature ID", $ft_id, ": Contig $contig_id not found"));
+			next;
+		}
+	    
+	    &RSAT::message::Info(join ("\t", "Contig", $contig_id,"Feature type", $ft_type,	
+    									 "Feature ID", $ft_id, "strand",$strand, 
+    									 "left", $left, "right", $right, "comments",join("\t",@other_comments)))
 		if ($main::verbose >= 2);
+	    
+	    ## prepare comments, depending on output format
+	    my @comments;
+	    if ($out_format eq "ft") {
+				@comments = ($contig_id, $ft_type, $strand, $left, $right, join("\t",@other_comments));
+    		} else {
+    			push @comments, join ("; ",$ft_id,
+				  $ft_type,
+				  "size: ".($right - $left + 1),
+				  "location: ".$contig_id." ".$left." ".$right." ".$strand);				 
+    		}
+	    		
 		
+		## retrieve the sequence
 		my $current_seq = $contig_seq{$contig_id}->get_sequence($left,$right,$strand);
 		
 		### print result sequence
     	&PrintNextSequence($out,$out_format,60,$current_seq,$ft_id,@comments);
-    }
-    
-    ################################################################
-    ## Print output
-    
+    }   
     
     ################################################################
     ## Finish verbose
     if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $main::out "; Job started $start_time\n";
-	print $main::out "; Job done    $done_time\n";
+    	print $main::out (join "\n", @warnings), "\n";
+		my $done_time = &AlphaDate();
+		print $main::out "; Job started $start_time\n";
+		print $main::out "; Job done    $done_time\n";
     }
     
      
@@ -304,6 +330,19 @@ Feature file (in .ft format).
 =cut
 	} elsif ($arg eq "-ft") {
 	    $main::infile{features} = shift(@arguments);
+	    
+	    ## output format 
+=pod
+
+=item B<-oformat output_format>
+
+Sequence output format. Default is fasta
+To have the list of supported output sequence formats, type the following
+command: I<convert-seq -h>
+
+=cut
+	} elsif ($arg eq "-oformat") {
+	    $main::out_format = shift(@arguments);
 
 	    ## Output file
 =pod
