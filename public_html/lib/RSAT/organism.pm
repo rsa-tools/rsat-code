@@ -216,9 +216,9 @@ sub OpenContigs {
 	$contig_id = $organism_name;
 	$genome_file =~ s/\.fna$/\.raw/;
 	$contig_seq{$contig_id} = new RSAT::SequenceOnDisk (filename=>  $genome_file,
-							 id=>        $contig_id,
-							 circular=>  1, ### for bacterial genomes
-							 organism=>  $organism_name);
+							    id=>        $contig_id,
+							    circular=>  1, ### for bacterial genomes
+							    organism=>  $organism_name);
 	$contig_obj = new RSAT::contig();
 	$contig_obj->push_attribute("names", $contig_id);
 	$contig_obj->set_sequence_object($contig_seq{$contig_id});
@@ -719,10 +719,12 @@ sub CalcNeighbourLimits {
 #    @gene_lefts = sort {$a <=> $b} @left{@genes};
 #    @gene_rights = sort {$a <=> $b} @right{@genes};
 
+    my @right_sorted_genes = sort { $right{$a} <=> $right{$b} } $contig{$ctg}->get_genes();
+    my @left_sorted_genes = sort { $left{$a} <=> $left{$b} } $contig{$ctg}->get_genes();
+
     ################################################################
     ## Identify the left neighbour of each feature
     ## TO CHECK: does it correctly treat the case of completely overlapping genes, embedded genes
-    my @right_sorted_genes = sort { $right{$a} <=> $right{$b} } $contig{$ctg}->get_genes();
     for my $g (0..$#right_sorted_genes) { ## $g is the index of the gene in the sorted list
       my $found = 0;
       my $gene = $right_sorted_genes[$g]; ## $gene is the object containing the attributes of gene $g
@@ -766,19 +768,42 @@ sub CalcNeighbourLimits {
 
 	if ($ln < 0) {
 	  ## Gene g is the leftmost gene of a contig
-	  &RSAT::message::Debug("No left neighbour for genomic feature",
-				"g=".$g,
-				"ID=".$gene->get_attribute("id"),
-				"GeneID=".$gene->get_attribute("geneid"),
-				"name=".$gene->get_attribute("name"),
-			       ) if ($main::verbose >= 5);
+	    &RSAT::message::Debug("Contig", $ctg,
+				  "leftmost feature",
+				  "g=".$g,
+				  "ID=".$gene->get_attribute("id"),
+				  "GeneID=".$gene->get_attribute("geneid"),
+				  "name=".$gene->get_attribute("name"),
+				  ) if ($main::verbose >= 5);
+	    
+	    ## Check if the contig is circular
+	    if ($contig_seq{$ctg}->get_attribute("circular")) {
+		$left_candidate = $right_sorted_genes[$#right_sorted_genes];
+		&RSAT::message::Warning("Circular contig", $ctg, 
+					"leftmost feature", $g, $gene->get_attribute("id"),
+					"left neighbour", $left_candidate->get_attribute("id")) if ($main::verbose >= 0);
+		$gene->set_attribute("left_neighbour", $left_candidate);
+		$gene->set_attribute("left_neighb_id", $left_candidate->get_attribute("id"));
+		$gene->set_attribute("left_neighb_name", $left_candidate->get_attribute("name"));
+		$gene->set_attribute("left_limit", $left_candidate->get_attribute("left"));
+		$gene->set_attribute("left_size", $left{$gene} -1 + $contig_length - $left_candidate->get_attribute("right"));
+		next;
+	    } else {
 
-	  $gene->set_attribute("left_neighbour", "<NULL>");
-	  $gene->set_attribute("left_neighb_id", "<NULL>");
-	  $gene->set_attribute("left_neighb_name", "<NULL>");
-	  $gene->set_attribute("left_limit", 1);
-	  $gene->set_attribute("left_size", $left{$gene}-1);
-	  next;
+		&RSAT::message::Debug("No left neighbour for genomic feature",
+				      "g=".$g,
+				      "ID=".$gene->get_attribute("id"),
+				      "GeneID=".$gene->get_attribute("geneid"),
+				      "name=".$gene->get_attribute("name"),
+				      ) if ($main::verbose >= 5);
+		
+		$gene->set_attribute("left_neighbour", "<NULL>");
+		$gene->set_attribute("left_neighb_id", "<NULL>");
+		$gene->set_attribute("left_neighb_name", "<NULL>");
+		$gene->set_attribute("left_limit", 1);
+		$gene->set_attribute("left_size", $left{$gene}-1);
+		next;
+	    }
 
 	} elsif (($right{$left_candidate} <= $right{$gene}) && ($left{$left_candidate} >= $left{$gene})) {
 	  ## candidate left neighour gene is completely embedded in current gene -> select the next left candidate
@@ -868,7 +893,6 @@ sub CalcNeighbourLimits {
     ################################################################
     ## Identify the right neighbour of each feature
     ## TO CHECK: does it correctly treat the case of completely overlapping genes, embedded genes
-    my @left_sorted_genes = sort { $left{$a} <=> $left{$b} } $contig{$ctg}->get_genes();
     for my $g (0..$#left_sorted_genes) { ## $g is the index of the gene in the sorted list
       my $found = 0;
       my $gene = $left_sorted_genes[$g]; ## $gene is the object containing the attributes of gene $g
@@ -912,19 +936,42 @@ sub CalcNeighbourLimits {
 
 	if ($rn > $#left_sorted_genes) {
 	  ## Gene g is the rightmost gene of a contig
-	  &RSAT::message::Debug("No right neighbour for genomic feature",
-				"g=".$g,
-				"ID=".$gene->get_attribute("id"),
-				"GeneID=".$gene->get_attribute("geneid"),
-				"name=".$gene->get_attribute("name"),
-			       ) if ($main::verbose >= 5);
+	    &RSAT::message::Debug("Contig", $ctg,
+				  "rightmost feature",
+				  "g=".$g,
+				  "ID=".$gene->get_attribute("id"),
+				  "GeneID=".$gene->get_attribute("geneid"),
+				  "name=".$gene->get_attribute("name"),
+				  ) if ($main::verbose >= 5);
+	    
+	    ## Check if the contig is circular
+	    if ($contig_seq{$ctg}->get_attribute("circular")) {
+		$right_candidate = $left_sorted_genes[0];
+		&RSAT::message::Warning("Circular contig", $ctg, 
+					"rightmost feature", $g, $gene->get_attribute("id"),
+					"right neighbour", $right_candidate->get_attribute("id")) if ($main::verbose >= 0);
+		$gene->set_attribute("right_neighbour", $right_candidate);
+		$gene->set_attribute("right_neighb_id", $right_candidate->get_attribute("id"));
+		$gene->set_attribute("right_neighb_name", $right_candidate->get_attribute("name"));
+		$gene->set_attribute("right_limit", $right_candidate->get_attribute("left"));
+		$gene->set_attribute("right_size", $contig_length - $right{$gene}+$right_candidate->get_attribute("left")-1);
+		next;
+	    } else {
 
-	  $gene->set_attribute("right_neighbour", "<NULL>");
-	  $gene->set_attribute("right_neighb_id", "<NULL>");
-	  $gene->set_attribute("right_neighb_name", "<NULL>");
-	  $gene->set_attribute("right_limit", $contig_size);
-	  $gene->set_attribute("right_size", $contig_size - $right{$gene});
-	  next;
+		&RSAT::message::Debug("No right neighbour for genomic feature",
+				      "g=".$g,
+				      "ID=".$gene->get_attribute("id"),
+				      "GeneID=".$gene->get_attribute("geneid"),
+				      "name=".$gene->get_attribute("name"),
+				      ) if ($main::verbose >= 5);
+		
+		$gene->set_attribute("right_neighbour", "<NULL>");
+		$gene->set_attribute("right_neighb_id", "<NULL>");
+		$gene->set_attribute("right_neighb_name", "<NULL>");
+		$gene->set_attribute("right_limit", $contig_length);
+		$gene->set_attribute("right_size", $contig_length - $right{$gene});
+		next;
+	    }
 
 	} elsif (($left{$right_candidate} >= $left{$gene}) && ($right{$right_candidate} <= $right{$gene})) {
 	  ## candidate right neighour gene is completely embedded in current gene -> select the next left candidate
@@ -970,7 +1017,6 @@ sub CalcNeighbourLimits {
 				   $left{$gene},
 				   $right{$gene},
 				  );
-	  ## TO DO: treat circular chromosomes
 	}
       } until (($rn > $#left_sorted_genes) || ($found));
 
@@ -978,7 +1024,7 @@ sub CalcNeighbourLimits {
       if ($found) {
 	$neighb_right_limit = $left{$right_candidate};
       } elsif ($rn < 0) {
-	$neighb_right_limit = $contig_size;
+	$neighb_right_limit = $contig_length;
       } else {
 	$neighb_right_limit = undef;
       }
@@ -1159,7 +1205,7 @@ sub LoadSynonyms {
   }
 
   foreach my $synonym_file ($self->get_attribute("synonym_files")) {
-      &RSAT::message::Info(join("\t","Loading synonyms from file", $synonym_file)) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn(join("\t","Loading synonyms from file", $synonym_file)) if ($main::verbose >= 2);
 
     #    my $synonym_file = $main::supported_organism{$organism_name}->{'synonyms'};
 #    unless ($synonym_file) {
