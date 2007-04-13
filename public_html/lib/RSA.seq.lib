@@ -1,6 +1,5 @@
 #!/usr/bin/perl
 
-
 require "RSA.stat.lib";
 require RSAT::pattern;
 
@@ -29,6 +28,7 @@ $accepted_output_seq{'ig'} = 1;
 $accepted_output_seq{'wconsensus'} = 1;
 $accepted_output_seq{'wc'} = 1;
 $accepted_output_seq{'fasta'} = 1;
+$accepted_output_seq{'ft'} = 1;
 $accepted_output_seq{'filelist'} = 1;
 $accepted_output_seq = join ",", sort keys %accepted_output_seq;
 
@@ -861,7 +861,7 @@ sub PrintNextSequence {
 
     ### insert the carriage returns
 #	if (($out_format eq "wc") || ($out_format eq "wconsensus") || ($out_format eq "multi")) {
-    if ($out_format eq "multi") {
+    if (($out_format eq "multi")  || ($out_format eq "ft")) {
 	$line_width = 0;
     }
     $sequence = &FoldSequence($sequence,$line_width);
@@ -873,7 +873,9 @@ sub PrintNextSequence {
 	print $OUTFILE "$seq_id\n";
 	print $OUTFILE $sequence;
 	print $OUTFILE "1\n";
-    } elsif ($out_format eq "fasta") {  #### fastA format
+
+	#### fastA format
+    } elsif ($out_format eq "fasta") {  
 	my $first_comment = $comments[0] || "";
 	print $OUTFILE  ">".$seq_id;
 	if ($first_comment) {
@@ -882,6 +884,30 @@ sub PrintNextSequence {
 	print $OUTFILE "\n";
 	print $OUTFILE $sequence;
 	print $OUTFILE "\n";
+
+	#### feature format
+    } elsif ($out_format eq "ft") {  
+
+	## Quick and dirty: the arguments specifically required for the ft
+	## cormat are passed as coments, in a specific order.
+	my $map_id= shift (@comments);
+	my $seq_type= shift (@comments);
+	my $strand = shift (@comments);
+	my $left_end = shift (@comments);
+	my $right_end = shift (@comments);
+	my $comment = join ("\t", @comments);
+
+	print $OUTFILE join ("\t", 
+			     $map_id, 
+			     $seq_type,
+			     $seq_id,
+			     $strand,
+			     $left_end,
+			     $right_end,
+			     $sequence,
+			     $comment,
+			     ), "\n";
+
     } elsif (($out_format eq "wc") || ($out_format eq "wconsensus")) {     #### wconsensus format
 	foreach $line (@comments) {
 	    print $OUTFILE ";$line\n";
