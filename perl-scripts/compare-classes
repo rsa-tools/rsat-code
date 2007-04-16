@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.42 2007/03/07 09:18:19 rsat Exp $
+# $Id: compare-classes,v 1.43 2007/04/16 13:09:28 rsat Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -47,10 +47,6 @@ local $multi_cor = "nc"; ## Correction for multi-testing
 );
 $supported_multi_cor = join (",", sort(keys (%supported_multi_cor)));
 
-
-%common = (); ### elements common to query and reference classes
-%R_only = (); ### elements found in reference but not in query
-%Q_only = (); ### elements found in query but not in reference
 
 #$sort_key = "name";
 
@@ -111,7 +107,7 @@ foreach my $group qw(rank occ freq proba  jac_sim dotprod entropy) {
 }
 
 
-## Define supported return, sort, matrix, and threshold fields
+## Define supported fields for the options return, sort, and matrix
 while (my ($key,$value) = each (%calc_groups)) {
     $supported_return_fields{$value} = 1;
     $supported_threshold_fields{$key} = 1;
@@ -258,10 +254,11 @@ if ($calc_fields{freq}) {
     $calc_fields{occ} = 1;
 }
 
-&RSAT::message::Info(join("\t", "Fields to calculate", 
-			  join("; ", sort(keys(%calc_fields)))
-			 )) if ($main::verbose >= 2);
-
+if ($main::verbose >= 2) {
+    &RSAT::message::Info(join("\t", "Fields to calculate", join("; ", sort(keys(%calc_fields))))); 
+    &RSAT::message::Info(join("\t", "Fields to return", join("; ", sort(keys(%return_fields)))));
+}
+    
 ################################################################
 ## Define whether the comparisons should be stored in memory until the
 ## end of the comparisons.  Storing all comparisons can cause memory
@@ -288,7 +285,11 @@ $nb_ref_classes = scalar(keys %ref_classes);
 &RSAT::message::Info((join("\t", "Reference classes", $nb_ref_classes))) if ($main::verbose >= 2);
 
 ## Query classes
-%query_classes = &ReadClasses($infile{query_classes},0,"",1,1,2,$score_col);
+if ($infile{input}) {
+    %query_classes = %ref_classes;
+} else {
+    %query_classes = &ReadClasses($infile{query_classes},0,"",1,1,2,$score_col);
+}
 $nb_query_classes = scalar(keys %query_classes);
 &RSAT::message::Info((join("\t", "Query classes", $nb_query_classes))) if ($main::verbose >= 2);
 
@@ -885,6 +886,7 @@ sub ReadArguments {
         } elsif ($ARGV[$a] eq "-i") {
             $infile{ref_classes} = $ARGV[$a+1];
             $infile{query_classes} = $ARGV[$a+1];
+            $infile{input} = $ARGV[$a+1];
 
             ### Score column
         } elsif ($ARGV[$a] eq "-sc") {
@@ -1091,12 +1093,13 @@ sub CompareClasses {
     next if ((defined($lth{'QR'})) && ($R < $lth{'QR'}));
 
     #### index members of the reference class
-    foreach $m (@ref_members) {
+    foreach my $m (@ref_members) {
       $ref_member{$m} = 1;
     }
 
     #### query classes
     foreach my $q (keys %query_classes) {
+
       &RSAT::message::TimeWarn("Treating query class $q") if ($main::verbose >= 4);
       next if (($distinct) && ($r eq $q));
       next if (($infile{ref_classes} eq $infile{query_classes} ) && ($r lt $q)) && $triangle;
@@ -1123,23 +1126,27 @@ sub CompareClasses {
       foreach my $m (@query_members) {
 	if ($ref_member{$m}) {
 	  push @common, $m; ### elements common to reference and query class
-	  $matching_elements->{$compa_key}->{$m}++;
 	} else {
-	  push @Q_only, $m; ### elements found in the query fmily only
+	  push @Q_only, $m; ### elements found in the query family only
 	}
       }
-
+ 
       #### identify elements found in the reference class only
       if ($calc_fields{members}) {
-	foreach $m (sort($ref_classes{$r}->get_members())) {
-	  unless ($matching_elements->{$compa_key}->{$m}) {
-	    push @R_only, $m;
+	  my %matching_elements = ();
+	  foreach my $m (@common) {
+	      $matching_elements->{$m}++;
 	  }
-	}
+	  foreach $m (sort($ref_classes{$r}->get_members())) {
+	      unless ($matching_elements->{$m}) {
+		  push @R_only, $m;
+	      }
+	  }
       }
 
+
       ## QR : intersection between group R and group Q
-      my $QR = scalar(keys %{$matching_elements->{$compa_key}});
+      my $QR = scalar(@common);
       $current_compa{'R'} = $R;
       $current_compa{'Q'} = $Q;
       $current_compa{'QR'} = $QR;
@@ -1150,36 +1157,7 @@ sub CompareClasses {
       $current_compa{'Q!R'} = $Q - $QR;
       $current_compa{'!Q!R'} = $population_size - $QvR;
 
-      ################################################################
-      ## Calculate dot product (use only the matching elements -> thus
-      ## must be done here)
-      if ($calc_fields{dotprod}) {
-	local $dp = 0;
-	local @matching_elements = keys %{$matching_elements->{$compa_key}};
-	local %ref_scores = $ref_classes{$r}->get_attribute("scores");
-	local %query_scores =$query_classes{$q}->get_attribute("scores");
-	foreach my $element (@matching_elements) {
-	  my $r_score = $ref_scores{$element};
-	  my $q_score = $query_scores{$element};
-	  $dp += $r_score*$q_score; 
-	}
-	$current_compa{dotprod} = $dp;
-	if ((defined($lth{'dotprod'})) &&
-	  ($dp< $lth{'dotprod'})) {
-	  next;
-	}
-	if ((defined($uth{dotprod})) &&
-	    ($dp > $uth{dotprod})) {
-	  next;
-	}
 
-      }
-
-      ## Suppress the lists of members to free memory if members are
-      ## not required
-      unless ($calc_fields{members}) {
-	undef $matching_elements->{$compa_key};
-      }
 
       #### check thresholds for number of common members
       if ((defined($lth{'QR'})) &&
@@ -1191,6 +1169,30 @@ sub CompareClasses {
 	next;
       }
 
+      ################################################################
+      ## Calculate dot product (use only the common  elements)
+      if ($calc_fields{dotprod}) {
+	  my $dp = 0;
+	  my %ref_scores = $ref_classes{$r}->get_attribute("scores");
+	  my %query_scores =$query_classes{$q}->get_attribute("scores");
+	  foreach my $element (@common) {
+	      my $r_score = $ref_scores{$element};
+	      my $q_score = $query_scores{$element};
+	      $dp += $r_score*$q_score; 
+	  }
+	  $current_compa{dotprod} = $dp;
+	  if ((defined($lth{'dotprod'})) &&
+	      ($dp< $lth{'dotprod'})) {
+	      next;
+	  }
+	  if ((defined($uth{dotprod})) &&
+	      ($dp > $uth{dotprod})) {
+	      next;
+	  }
+	  undef $dp;
+      }
+
+      ################################################################
       ## Calculate Jaccard's similarity
       if ($calc_fields{jac_sim}) {
 	if ($QvR > 0) {
@@ -1400,16 +1402,22 @@ sub CompareClasses {
 	next unless $proba_ok;
       }
 
+      ## Store members if required
+      if ($return_fields{members}) {
+	  @{$current_compa->{R_only}} = @R_only;
+	  @{$current_compa->{Q_only}} = @Q_only;
+	  @{$current_compa->{common}} = @common;
+#	  @{$R_only{$compa_key}} = @R_only;
+#	  @{$Q_only{$compa_key}} = @Q_only;
+#	  @{$common{$compa_key}} = @common;
+      }
+
+
       ## Print the comparison in order to free memory
       if ($store_comparisons){
-	if ($return_fields{members}) {
-	  @{$common{$compa_key}} = @common;
-	  @{$R_only{$compa_key}} = @R_only;
-	  @{$Q_only{$compa_key}} = @Q_only;
-	}
-	%{$compa{$compa_key}} = %current_compa;
+	  %{$compa{$compa_key}} = %current_compa;
       } else {
-	&PrintOneComparison(%current_compa);
+	  &PrintOneComparison(%current_compa);
       }
     }
   }
@@ -1549,6 +1557,7 @@ sub PrintResult {
 
 }
 
+################################################################
 ## Print a single comparison on one row
 sub PrintOneComparison {
   my (%current_compa) = @_;
@@ -1663,9 +1672,12 @@ sub PrintOneComparison {
 
   ## Members
   if ($return_fields{members}) {
-    print $out "\t", join( " ", @{$R_only{$compa_key}}) ;
-    print $out "\t", join( " ", @{$Q_only{$compa_key}}) ;
-    print $out "\t", join( " ", @{$common{$compa_key}}) ;
+    print $out "\t", join( " ", @{$current_compa->{R_only}}) ;
+    print $out "\t", join( " ", @{$current_compa->{Q_only}}) ;
+    print $out "\t", join( " ", @{$current_compa->{common}}) ;
+#    print $out "\t", join( " ", @{$R_only{$compa_key}}) ;
+#    print $out "\t", join( " ", @{$Q_only{$compa_key}}) ;
+#    print $out "\t", join( " ", @{$common{$compa_key}}) ;
   }
 
   print $out "\n";
