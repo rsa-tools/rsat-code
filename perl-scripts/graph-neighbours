@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-neighbours,v 1.9 2007/04/16 08:32:02 rsat Exp $
+# $Id: graph-neighbours,v 1.10 2007/04/16 08:40:52 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -140,7 +140,7 @@ package main;
 	  my @fields = split /\s+/, $line;
 	  my $name =  $fields[0];
 	  if ($name) {
-	    $seed_names{$name}++;
+	    push @seed_names, $name;
 	  } else {
 	    &RSAT::message::Warning("Line", $l, "starts with space. Skipped.");
 	  }
@@ -149,18 +149,18 @@ package main;
       }
     }
       
-      ## Identify seed nodes in the graph
-     RSAT::message::TimeWarn("Identifying",scalar(@seed_names), "seed nodes in the graph") if ($main::verbose >= 2);
-     foreach my $name (@seed_names) {
-       my $node_id = $graph->node_by_name($name);
-       if (defined($node_id)) {
-	 $seed_nodes_id{$node_id} = $name;
-	 &RSAT::message::Info("Identified node with name", $name, $node_id) if ($main::verbose >= 3);
-       } else {
-	 $unknown_nodes{$name}++;
-	 &RSAT::message::Warning("The graph does not contain any node with name", $name);
-       }
-     }
+    ## Identify seed nodes in the graph
+    RSAT::message::TimeWarn("Identifying",scalar(@seed_names), "seed nodes in the graph") if ($main::verbose >= 2);
+    foreach my $name (@seed_names) {
+      my $node_id = $graph->node_by_name($name);
+      if (defined($node_id)) {
+	$seed_nodes_id{$node_id} = $name;
+	&RSAT::message::Info("Identified node with name", $name, $node_id) if ($main::verbose >= 3);
+      } else {
+        $unknown_nodes{$name}++;
+	&RSAT::message::Warning("The graph does not contain any node with name", $name);
+      }
+    }
     
 
     
