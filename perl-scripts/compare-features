@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.14 2006/10/09 12:37:24 jvanheld Exp $
+# $Id: compare-features,v 1.15 2007/04/18 08:02:53 morgane Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -230,7 +230,7 @@ perl -pe 's/^;//' outfile
 	if (scalar(@query_files) < 1) {
 	    &RSAT::error::FatalError("You must specify at least one input file in addition to the reference file\n");
 	}
-    } elsif (scalar(@query_files) < 2) {
+    } elsif ((scalar(@query_files) < 2)&&(!$self_comparison)) {
 	&RSAT::error::FatalError("You must specify at least two input files\n");
     }
 
@@ -382,12 +382,26 @@ perl -pe 's/^;//' outfile
 
     ################################################################
     ## Print the comparison features
+    
+    ## also export the feature file with original feature types
+    if ($main::outfile{output_ft}) {
+    	 $out_ft = &OpenOutputFile($outfile{output_ft});
+    	 if (!$return{inter}) {
+    	 	&RSAT::message::Warning("-oft is only compatible with return format inter.") if ($main::verbose >= 2);
+    	 	print $out_ft ";WARNING\t -oft is only compatible with return format inter.";
+    	 }
+    }
 
     ## Print intersections
     if ($return{inter}) {
 	foreach my $feature (@inter_features) {
-	    print $out $feature->to_text($output_format, $null);
-	}
+		print $out $feature->to_text($output_format, $null);
+
+		## create the specific output for -oft option
+		if ($out_ft){
+			print $out_ft &PrintOFT($feature,\%feature_ids)->to_text($output_format, $null);
+			}
+		}
     }
 
     ## Print differences
@@ -409,6 +423,7 @@ perl -pe 's/^;//' outfile
     ################################################################
     ###### close output stream
     close $out if ($outfile{output});
+    close $out_ft if ($outfile{output_ft});
 
     exit(0);
     
@@ -573,6 +588,26 @@ sub CreateIntersection {
 
 }
 
+################################################################
+#### Prepare the output for -oft option
+sub PrintOFT {
+		my ($feature,$feature_ids) = @_;
+
+		my @ids =  $feature->get_attribute("feature_ids");
+		my $originalFeat = $feature_ids->{$ids[1]};
+		
+		my $ft_out = new RSAT::feature();
+		$ft_out->set_attribute("seq_name", $feature->get_attribute("seq_name"));
+		$ft_out->set_attribute("id", $originalFeat->get_attribute("id"));
+		$ft_out->set_attribute("ft_type", $originalFeat->get_attribute("ft_type"));
+		$ft_out->set_attribute("feature_name", $originalFeat->get_attribute("feature_name"));
+		$ft_out->set_attribute("start", $feature->get_attribute("start"));
+		$ft_out->set_attribute("end", $feature->get_attribute("end"));
+		$ft_out->set_attribute("strand", $feature->get_attribute("strand"));
+		$ft_out->set_attribute("description", $feature->get_attribute("description"));
+		
+		return ($ft_out);
+}
 
 
 ################################################################
@@ -691,6 +726,19 @@ allows to use the command within a pipe.
 =cut
 	} elsif ($ARGV[$a] eq "-o") {
 	    $main::outfile{output} = $ARGV[$a+1];
+
+		### output feature file 
+=pod
+
+=item	B<-oft outputfeaturefile>
+
+In addition to the output, export a feature file containing
+the type of the feature, and chromosomal location of each features.
+This option is compatible with -return inter.
+
+=cut
+	} elsif ($ARGV[$a] eq "-oft") {
+	    $main::outfile{output_ft} = $ARGV[$a+1];
 	    
 
 	    ### input format  
