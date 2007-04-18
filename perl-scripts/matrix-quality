@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.16 2007/03/10 06:12:39 jvanheld Exp $
+# $Id: matrix-quality,v 1.17 2007/04/18 13:47:47 morgane Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -27,11 +27,14 @@ sites) and negative sequences (e.g. intergenic sequences between
 An important bias can come from an over-fitting of the matrix to the
 positive set, in case one would use the same sites for building the
 PSSM and for evaluating it. To avoid this bias, the option -loo allows
-to perform a Leave-One-Out (LOO) evaluation o the positive set: one
+to perform a Leave-One-Out (LOO) evaluation of the positive set: one
 sequence (the "left out sequence") is temporarily discarded from the
-positive set, and th remaining sequences are used to build a matrix,
+positive set, and the remaining sequences are used to build a matrix,
 which is then used to score the left out sequence. The process
-iterates over all the sequences of the positive set.
+iterates over all the sequences of the positive set. 
+If the left out sequence has one or more "twin" (identical site) in the 
+positive set, they are also temporarily excluded from the positive set 
+and not included in the matrix used to score the left out sequence.
 
 =head1 AUTHORS
 
@@ -90,6 +93,7 @@ package main;
     $perm_nb_neg=1; ## Number of permutation tests for the negative set
     $perm_separate_distrib = 0; ## Calcualte the distribution for each permuted matrix separately
     $calc_loo_scores = 1; ## Calculate the Leave-one-out score distribution for the matrix sites
+    $loo_rm_twin = 1; ## Also exclude twin sites in the loo procedure.
     $pseudo_counts = 1;
 
     %main::infile = ();
@@ -632,6 +636,10 @@ sub ExportInputSites {
 ## procedure over all sites.
 sub LOO_scores {
   my ($matrix, @args) = @_;
+  
+  if ($main::verbose >= 1) {
+		print $main::out "; LOO partial matrices\n";
+    }
 
   $main::outfile{sites_loo} = $outfile{prefix}."_sites_loo.tab";
 #  push @distrib_files, $main::outfile{sites_loo};
@@ -641,11 +649,12 @@ sub LOO_scores {
   $loo_scores_handle = &OpenOutputFile($main::outfile{sites_loo});
 
   my @sites = $matrix->get_attribute("sequences");
+
+
   my @partial_matrices = ();
 #  my @lo_site_scores = ();
 
   for my $i (0..$#sites) {
-
     ## Select the left out site
     my $lo_site_nb = $i+1;
     my $lo_site = $sites[$i];
@@ -666,7 +675,10 @@ sub LOO_scores {
     $partial_matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
     push @partial_matrices, $partial_matrix;
     for my $j (0..$#sites) {
-      next if ($j == $i); ## Leave out the ith site
+      next if ($j == $i) ; ## Leave out the ith site
+ 	  if ($loo_rm_twin) {
+ 	  	next if ($sites[$j] eq $sites[$i]); ## exclude "twin" site : exclude sites identical to the ith leftout site
+ 	  }
       $partial_matrix->add_site(lc($sites[$j]));
     }
     $partial_matrix->treat_null_values();
@@ -674,6 +686,13 @@ sub LOO_scores {
     ## Save the partial matrix in a file
     my $partial_matrix_file = $outfile{prefix}."_partial_matrix_".$lo_site_nb.".tab";
     push @partial_matrix_files,  $partial_matrix_file;
+    
+    if ($main::verbose >= 1) {
+		my @partial_matrix_sites = $partial_matrix->get_attribute("sequences");
+		print $main::out "; \t$partial_matrix_name\t$partial_matrix_file\n";
+		print $main::out "; \tNumber of sites\t".($#partial_matrix_sites+1)."\n";
+    }
+    
 
     &RSAT::message::Info("Exporting partial matrix to file", $partial_matrix_file) if ($main::verbose >= 3);
     $partial_matrix_handle = &OpenOutputFile($partial_matrix_file);
@@ -817,6 +836,7 @@ sub ScoreDistrib {
 	  
   return ($outfile{$seq_type."_distrib"});
   }
+  
 
 ################################################################
 ## Export the matrix in tab-delimited format. This will be used
@@ -914,15 +934,15 @@ sub CompareDistrib {
   my $XYgraph_cmd = "XYgraph ";
   my $ycols = join ",", 2..(scalar(@distrib_files)+2);
   $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
-  $XYgraph_cmd .= " -format png -lines -pointsize 1 -xsize 1000 -legend";
+  $XYgraph_cmd .= " -format eps -lines -pointsize 1 -legend";
   $XYgraph_cmd .= " -title1 'matrix-quality ".$infile{matrix}."'";
   $XYgraph_cmd .= " -title2 ".$outfile{prefix};
   $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
   $XYgraph_cmd .= " -xleg1 'matrix score' ";
   $XYgraph_cmd .= " -yleg1 'Frequency (inverse cumulative) ' ";
   $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
-  $XYgraph_cmd .= " -lines ";
-  $XYgraph_cmd .= " -o ".$outfile{distrib_compa}.".png";
+  $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+  $XYgraph_cmd .= " -o ".$outfile{distrib_compa}.".eps";
 
   ## Execute the command
   &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -932,14 +952,15 @@ sub CompareDistrib {
   ## and a logarithmic Y axis
   $XYgraph_cmd = "XYgraph ";
   $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
-  $XYgraph_cmd .= " -format png -lines -pointsize 1 -xsize 1000 -legend";
+  $XYgraph_cmd .= " -format eps -lines -pointsize 1 -legend";
   $XYgraph_cmd .= " -title1 'matrix-quality ".$infile{matrix}."'";
   $XYgraph_cmd .= " -title2 ".$outfile{prefix};
   $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
   $XYgraph_cmd .= " -xleg1 'matrix score' ";
   $XYgraph_cmd .= " -yleg1 'Frequency (inverse cumulative) ' ";
   $XYgraph_cmd .= " -ymax 1 -ylog 10";
-  $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_logy.png";
+  $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+  $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_logy.eps";
 
   ## Execute the command
   &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -955,6 +976,24 @@ sub CompareDistrib {
   $XYgraph_cmd = "XYgraph ";
   $ycols = join ",", 2..(scalar(@distrib_files)+2);
   $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
+  $XYgraph_cmd .= " -format eps -lines -pointsize 1 -legend";
+  $XYgraph_cmd .= " -title1 'matrix-quality: ROC curve' ";
+#  $XYgraph_cmd .= " -title2 ".$outfile{prefix};
+  $XYgraph_cmd .= " -xcol ".$ref_column;
+  $XYgraph_cmd .= " -ycol ".$ycols;
+  $XYgraph_cmd .= " -xleg1 'negative set (estmation of FPR)' ";
+  $XYgraph_cmd .= " -yleg1 'other distributions' ";
+  $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+  $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
+  $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_roc.eps";
+
+  ## Execute the command
+  &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  
+  ## PNG format
+  $XYgraph_cmd = "XYgraph ";
+  $ycols = join ",", 2..(scalar(@distrib_files)+2);
+  $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
   $XYgraph_cmd .= " -format png -lines -pointsize 1 -size 600 -legend";
   $XYgraph_cmd .= " -title1 'matrix-quality: ROC curve' ";
 #  $XYgraph_cmd .= " -title2 ".$outfile{prefix};
@@ -967,7 +1006,6 @@ sub CompareDistrib {
   $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_roc.png";
 
   ## Execute the command
-#  die ("HERE");
   &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
 }
