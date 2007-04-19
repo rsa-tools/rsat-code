@@ -1783,7 +1783,7 @@ The class file
 =cut
 
 sub load_classes {
-  my ($self, $inputfile) = @_;
+  my ($self, $inputfile, $inducted) = @_;
   &RSAT::message::TimeWarn("Loading class information", $inputfile) if ($main::verbose >= 2);
   ($main::in) = &RSAT::util::OpenInputFile($inputfile);
   my %cluster_list;
@@ -1795,14 +1795,23 @@ sub load_classes {
 	next unless (/\S/); # Skip empty rows
 	chomp;
 	my @fields = split("\t");
-	my $node_name = $fields[0];
-        my $family_name = $fields[1];
+	my $node_name = $fields[0]; 
+	$family_name = "graph";
+	if (!$inducted) {
+          $family_name = $fields[1];
+        }
         my $node_index = $self->node_by_name($node_name);
+        my $line = $node_name."\t".$family_name;
         if (defined($node_index)) {
-          push @{$nodes_clusters[$node_index]}, $family_name;
-          $cluster_list{$family_name} = 1;
+          if (!exists($lines{$line})) {
+            push @{$nodes_clusters[$node_index]}, $family_name;
+            $cluster_list{$family_name} = 1;
+            $lines{$line}++;
+          } else {
+            &RSAT::message::Warning("Node\t$node_name\talready in class\t$family_name\t.Skipped") if ($main::verbose >= 3);
+          }
         } else {
-          #&RSAT::message::TimeWarn("Node $node_id does not exist in the graph") if ($main::verbose >= 2);
+          &RSAT::message::Warning("Node\t$node_name\tdoes not exist in the graph") if ($main::verbose >= 3);
         }
   }
   @cluster_list_array = sort(keys(%cluster_list));
