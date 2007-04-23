@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-no-objects.pl,v 1.3 2006/10/18 13:52:17 rsat Exp $
+# $Id: get-ensembl-genome-no-objects.pl,v 1.4 2007/04/23 13:44:15 rsat Exp $
 #
 # Time-stamp
 #
@@ -385,8 +385,11 @@ package main;
 #		    &RSAT::message::Info(join("\t", "Transcript size", size($trans), "Transcript total size", total_size($trans))) if ($main::verbose >= 1);
 
 		    $tr++;
-		    warn join("\t", "transcript", $trans), "\n" if ($main::verbose >= 5);
+		    warn join("\t", "; Collecting features for transcript", $trans), "\n" if ($main::verbose >= 5);
 		    my @feature = &collect_attributes($trans);
+		    
+		    warn join("\t", "; Attributes collected"), "\n" if ($main::verbose >= 5); ######
+
 		    my $transcript_id = $feature[0];
 		    push @feature, $gene_id;		
 		    $feature[3] = $slice_id;
@@ -455,14 +458,21 @@ package main;
 			    print $MISC_RNA_NAME join ("\t", $feature[0], $gene_name, "alternate"), "\n";
 			}
 		    }
+
+#		    sleep(60);
 		    
+		    warn join("\t", "; Collecting Translation"), "\n" if ($main::verbose >= 5); ######
+
 		    ## Get CDS ID and coordinates (relative to chromosome) - there is a strand trick (see API doc)
 		    ## Problem: coordinates are strange
 		    my $coding_region_start = $trans->coding_region_start();
 		    my $coding_region_end = $trans->coding_region_end();
 		    my $ensembl_translation = $trans->translation();
+
+		    warn join("\t", "; Translation collected", $ensembl_translation), "\n" if ($main::verbose >= 5); ######
+
 		    if($ensembl_translation) {
-			
+
 			## Print the translated sequence for the current CDS
 			&PrintNextSequence(PP,"fasta",60,$ensembl_translation->seq(),$ensembl_translation->stable_id());
 			
@@ -480,6 +490,7 @@ package main;
 			    $feature[7] = $gene_description;
 			}
 			$feature[8] = $transcript_id;
+			push @feature, $gene_id;
 			print $CDS join("\t", @feature), "\n";
 			print $CDS_NAME join("\t", $feature[0], $gene_name, "primary"), "\n";
 			unless ($gene_id eq $gene_name) {
@@ -495,18 +506,28 @@ package main;
 			    print $CDS_NAME join ("\t", $feature[0], $feature[0], "alternate"), "\n";
 			}
 		    }
+
+		    warn join("\t", "; Collecting Exons"), "\n" if ($main::verbose >= 5); ######
 		    
 		    unless ($no_ons) {
 			## Get all Exon objects
 			foreach my $exon (@{$trans->get_all_Exons()}) {
 			    my @exonfeature = &get_exonfeature($exon);
+			    push @exonfeature, $gene_id;
+
 			    print $EXON join("\t", @exonfeature), "\n";
+#			    if ($exon_feature[]) {
+#				
+#			    }
 			}
 			
+		    warn join("\t", "; Collecting Introns"), "\n" if ($main::verbose >= 5); ######
+
 			## Get all Intron objects
 			foreach my $intron (@{$trans->get_all_Introns()}) {
 			    my @intronfeature = &get_intronfeature($intron);
 			    $intronfeature[0] = "Trnscrpt - ".$transcript_id;
+			    push @intronfeature, $gene_id;
 			    print $INTRON join("\t", @intronfeature), "\n";
 			}
 		    }
@@ -942,6 +963,11 @@ sub get_exonfeature {
     ## Description
     push @exonfeature, "";
    
+    ## Coding region
+#    push @exonfeature, $exon->coding_region_start();
+#    push @exonfeature, $exon->coding_region_end();
+    
+
     return @exonfeature;
 }
 ################################################################
@@ -1013,12 +1039,19 @@ sub PrintFtHeader {
 	print $filehandle_name "-- id	type	name	contig	start_pos	end_pos	strand	description", "\n";
     } elsif ($feature_type eq "cds") {
 	print $filehandle_name "-- field 9	transcript", "\n";
+	print $filehandle_name "-- field 10	GeneID", "\n";
 	print $filehandle_name "-- header", "\n";
-	print $filehandle_name "-- id	type	name	contig	start_pos	end_pos	strand	description	transcript", "\n";
+	print $filehandle_name "-- id	type	name	contig	start_pos	end_pos	strand	description	transcript	GeneID", "\n";
+    } elsif ($feature_type eq "exon") {
+	print $filehandle_name "-- field 9	coding_start", "\n";
+	print $filehandle_name "-- field 10	coding_end", "\n";
+	print $filehandle_name "-- field 11	GeneID", "\n";
+	print $filehandle_name "-- header", "\n";
+	print $filehandle_name "-- id	type	name	contig	start_pos	end_pos	strand	description	transcript	coding_start	coding_end	GeneID", "\n";
     } else {
-	print $filehandle_name "-- field 9	gene", "\n";
+	print $filehandle_name "-- field 9	GeneID", "\n";
 	print $filehandle_name "-- header", "\n";
-	print $filehandle_name "-- id	type	name	contig	start_pos	end_pos	strand	description	gene", "\n";
+	print $filehandle_name "-- id	type	name	contig	start_pos	end_pos	strand	description	GeneID", "\n";
     }
 }
 
