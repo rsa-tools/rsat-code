@@ -449,7 +449,91 @@ sub setMatrix {
 ################################################################
 =pod
 
-=item toString(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_string)
+=item toString(format=>$matrix_format, %args)
+
+Return a string description of the matrix in the same format as Jerry
+Hertz programs. Additional parameters are also exported as comments,
+when the verbosity is > 0.
+
+=over
+
+=item format
+
+Output matrix format. Supported output formats: patser, MotifSampler, TRANSFAC. 
+
+=item all other arguments
+
+All other arguments are passed to the appropriate method (to_patser,
+to_MotifSampler, to_TRANSFAC), depending on the chosen output format.
+
+=back
+
+=cut
+
+
+sub toString {
+    my ($self, %args) = @_;
+    my $output_format = $args{format} || "patser";
+    if (lc($output_format) eq "patser") {
+      return $self->to_patser(%args);
+    } elsif (lc($output_format) eq "motifsampler") {
+      return $self->to_Motifsampler(%args);
+    } elsif (lc($output_format) eq "transfac") {
+      return $self->to_TRANSFAC(%args);
+    } else {
+      &RSAT::error::FatalError($output_format, "Invalid output format for a matrix");
+    }
+
+}
+
+################################################################
+=pod
+
+=item to_TRANSFAC();
+
+Converts the matrix into a string in TRANSFAC format.
+
+=cut
+sub to_TRANSFAC {
+    my ($self, %args) = @_;
+    my $to_print = "";
+
+    ## Accession number
+    my $accession = $self->get_attribute("accession");
+    if ($accession) {
+      $to_print .= "AC  ".$accession."\n";
+      $to_print .= "XX\n";
+    }
+
+    ## Header
+    my $header = "P0  ";
+    my @alphabet = $self->getAlphabet();
+    foreach my $letter (@alphabet) {
+      $header .= sprintf "%6s", uc($letter);
+    }
+    $to_print .= $header."\n";
+
+    ## count matrix
+    my @matrix = $self->getMatrix();
+    my $ncol = $self->ncol();
+    my $nrow = $self->nrow();
+    for my $c (1..$ncol) {
+      $to_print .= sprintf "%-4d",$c;
+      for my $r (1..$nrow) {
+	my $occ = $matrix[$c-1][$r-1];
+	$to_print .= sprintf "%6d",$occ;
+      }
+      $to_print .= "\n";
+    }
+
+    ## End of record
+    $to_print .= "//\n";
+}
+
+################################################################
+=pod
+
+=item to_patser(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_string)
 
 Return a string description of the matrix in the same format as Jerry
 Hertz programs. Additional parameters are also exported as comments,
@@ -463,10 +547,15 @@ Supported parameters:
 
 A character or string to print before each row of the matrix.
 
+
+=item format
+
+Output matrix format
+
 =back
 
 =cut
-sub toString {
+sub to_patser {
     my ($self, %args) = @_;
     my $to_print = "";
 
