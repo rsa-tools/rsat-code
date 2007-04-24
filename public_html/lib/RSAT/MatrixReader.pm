@@ -40,6 +40,8 @@ sub readFromFile {
 
     if ((lc($format) eq "consensus") || ($format =~ /^wc/i)) {
 	@matrices = _readFromConsensusFile($file);
+    } elsif (lc($format) eq "transfac") {
+	@matrices = _readFromTRANSFACFile($file);
     } elsif (lc($format) eq "assembly") {
 	@matrices = _readFromAssemblyFile($file);
     } elsif (lc($format) eq "gibbs") {
@@ -87,6 +89,109 @@ sub readFromFile {
     return @matrices;
 }
 
+################################################################
+=pod
+
+=item _readFromTRANSFACFile($file)
+
+Read a matrix from a TRANSFAC file. This method is called by the method 
+C<readFromFile($file, "TRANSFAC")>.
+
+=cut
+sub _readFromTRANSFACFile {
+  my ($file) = @_;
+  &RSAT::message::Info ("Reading matrix from consensus file", $file) if ($main::verbose >= 3);
+
+  ## open input stream
+  my $in = STDIN;
+  if ($file) {
+    open INPUT, $file;
+    $in = INPUT;
+  }
+  my $current_matrix_nb = 0;
+  my @matrices = ();
+  my $matrix;
+  my $command = "";
+  my $ncol = 0;
+  my $transfac_consensus = "";
+
+  my %prior = ();
+  my $l = 0;
+  while (<$in>) {
+    $l++;
+    next unless (/\S/);
+    s/\r//;
+    chomp();
+    my $version = "";
+
+    ## Read the command line
+    if (/^VV\s+/) {
+      $version = $';		# '
+      &RSAT::message::Warning("TRANSFAC file version", $version);
+
+      ## Start a new matrix (one TRANSFAC file contains several matrices)
+    } elsif (/^AC\s+(\S+)/) {
+      my $accession = $1;
+      $current_matrix_nb++;
+      $matrix = new RSAT::matrix();
+      push @matrices, $matrix;
+      $matrix->set_parameter("accession", $accession) if ($accession);
+      $matrix->set_attribute("number", $current_matrix_nb);
+      $matrix->set_parameter("version", $version);
+      $ncol = 0;
+      next;
+
+      ## Read prior alphabet from the matrix header (P0 line)
+      ## Equiprobable alphabet
+    } elsif (/^P0\s+/) {
+      my $header = $'; #'
+      my @alphabet = split /\s+/, $header;
+      foreach my $letter (@alphabet) {
+	$prior{lc($letter)} = 1/scalar(@alphabet);
+      }
+      $matrix->setPrior(%prior);
+      $matrix->setAlphabet_lc(@alphabet);
+
+      ## Sites used to build the matrix
+    } elsif (/^BS\s+(.*); *(\S+)/) {
+      my $site_sequence = $1;
+      my $site_id = $2;
+      $matrix->push_attribute("sequences", $site_sequence);
+      &RSAT::message::Debug("line", $l, "site", $site_sequence) if ($main::verbose >= 4);
+
+      ## Count column of the matrix file (row in transfac format)
+    } elsif (/^(\d+)\s+/) {
+
+      my $values = $'; #'
+      my @fields = split /\s+/, $values;
+      my $consensus_residue = pop @fields;
+      $transfac_consensus .= $consensus_residue;
+      $matrix->addColumn(@fields);
+      $ncol++;
+      $matrix->force_attribute("ncol", $ncol);
+
+      ## Other matrix parameters
+    } elsif (/^XX/) {
+
+    } elsif (/^\/\//) {
+      $matrix->set_parameter("transfac_consensus", $transfac_consensus);
+
+      ## Empty row
+    } elsif (/^(\S\S)\s+(.*)/) {
+      my $field = $1;
+      my $value = $2;
+      &RSAT::message::Warning("Not parsed", $field, $value) if ($main::verbose >= 3);
+
+    } else {
+      &RSAT::message::Warning("skipped invalid row", $_);
+    }
+
+  }
+  close $in if ($file);
+
+  return @matrices;
+
+}
 
 ################################################################
 =pod
@@ -122,7 +227,7 @@ sub _readFromGibbsFile {
 	next unless (/\S/);
 	s/\r//;
 	chomp();
-	if (/Information \(relative entropy\) contribution in tenth bits\:/) {
+	if (/AC\s+(\S+)/) {
 	    $in_matrix = 1;
 	    # default nucletodide alphabet
 	    $matrix->setAlphabet_lc("a","c","g","t");
