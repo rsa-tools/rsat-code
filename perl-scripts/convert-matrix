@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.28 2007/03/10 06:55:05 jvanheld Exp $
+# $Id: convert-matrix,v 1.29 2007/04/24 15:16:00 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -54,19 +54,22 @@ $supported_return_fields = join ",", sort keys %supported_return_type;
 
 ## input formats
 %supported_input_format = (
-    'tab'=>1,
-    'cb'=>1,
-    'feature'=>1,
-    'assembly'=>1,
-    'consensus'=>1,
-    'meme'=>1,
-    'gibbs'=> 1,
-    'clustal'=>1);
+			   'tab'=>1,
+			   'cb'=>1,
+			   'feature'=>1,
+			   'assembly'=>1,
+			   'consensus'=>1,
+			   'meme'=>1,
+			   'gibbs'=> 1,
+			   'clustal'=>1,
+			   'transfac'=>1,
+			  );
 $supported_input_formats = join ",", sort keys %supported_input_format;
 
 ## output formats
 %supported_output_format = ('patser'=>1,
-			    "MotifSampler"=>1);
+			    "MotifSampler"=>1,
+			    "transfac"=>1);
 $supported_output_formats = join ",", sort keys %supported_output_format;
 
 ## site formats
@@ -89,7 +92,13 @@ unless ($input_format) {
 
 ## return type(s)
 local %return_fields = ();
-&RSAT::error::FatalError("You should define at least one return type") unless (@return_fields);
+unless (scalar(@return_fields)) {
+  if (lc($output_format ) eq "transfac") {
+    push @return_fields, "counts";
+  } else {
+    &RSAT::error::FatalError("You should define at least one return type");
+  }
+}
 foreach my $format (@return_fields) {
     if ($supported_return_type{$format}) {
 	$return_fields{$format}++;
@@ -549,7 +558,7 @@ sub ReadArguments {
 
       ### input format 
     } elsif ($ARGV[$a] eq "-in_format") {
-      $input_format = $ARGV[$a+1];
+      $input_format = lc($ARGV[$a+1]);
       unless ($supported_input_format{$input_format}) {
 	  &RSAT::error::FatalError("$input_format\tInvalid format for input matrix\tSupported: $supported_input_formats");
       }
