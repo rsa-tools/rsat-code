@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: mask-features,v 1.1 2007/04/24 12:23:56 morgane Exp $
+# $Id: mask-features,v 1.2 2007/04/24 16:03:24 morgane Exp $
 #
 ############################################################
 
@@ -283,7 +283,7 @@ package main;
     ################################################################
     ###### Clean temporary files
     
-    unlink("tmp_seq_raw_format.txt");
+ 	unlink("tmp_seq_raw_format.txt");
     
     foreach my $i (0..$#main::ft_files) {	
     	my $comp_nb = "comp_".$i;  	
@@ -1005,7 +1005,7 @@ sub ConvertMaskedRegion{
 	
 	## Do it with slices of sequences to save memory
 	for (my $slice = 1; $slice < $length ; $slice+= $lw) {
-		my $end = $slice+$lw;
+		my $end = $slice+$lw - 1;
 		$end = $length if ($end >= $length);
 		my $current_seq = $region_seq->get_sequence($slice,$end,"D");
 		print $main::out $current_seq."\n";
