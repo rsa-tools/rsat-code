@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-neighbours,v 1.10 2007/04/16 08:40:52 rsat Exp $
+# $Id: graph-neighbours,v 1.11 2007/04/24 07:38:03 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -79,7 +79,7 @@ package main;
     local $source_col = 1;
     local $target_col = 2;
     local $weight_col = 0;
-
+ 
     #local $out_format = "classes";
 
     ## Input formats
@@ -97,14 +97,20 @@ package main;
     $main::verbose = 0;
 #    $main::in = STDIN;
     $main::out = STDOUT;
-
+    
+    $stats = 0;
     ################################################################
     ## Read argument values
     &ReadArguments();
 
     ################################################################
     ## Check argument values
-
+    if ($stats && $steps != 1) {
+      &RSAT::error::FatalError("-stats option cannot be used with number of step > 1")
+    }
+    if ($stats && $self_included == 1) {
+      &RSAT::error::FatalError("-stats option cannot be used with -self option")
+    }
     ################################################################
     ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
@@ -169,21 +175,65 @@ package main;
     &Verbose() if ($main::verbose);
     
     ################################################################
-    ## Extract the neighborhood
-    print $out '#',  join ("\t", 
-			   "neighb",
-			   "seed", 
-#			   "weight",
-			   "steps",
-			   "dir"
-			  ), "\n";
-			  
+    ## Extract the neighborhood and prints the result
+    if ($stats == 0) {
+      print $out '#',  join ("\t", "neighb", "seed", "steps", "dir");
+      if ($steps == 1 && $weight_col) {
+        print $out "\tlabel";
+      }
+      print $out "\n";
+    } else {
+      print $out '#'.join ("\t", "seed", "neighb", "n", "mean","median", "min", "max")."\n";
+    }
+   
     foreach my $seed_node_id (keys %seed_nodes_id) {
+      # Normal OUTPUT
       &RSAT::message::Info("\t","Looking for neighbours of node", $seed_node_id, $seed_nodes_id{$seed_node_id}) if $main::verbose >= 2;
-      my @neighbours = $graph->get_neighbours_id($seed_node_id, $steps, $self_included);
-      for (my $i = 0; $i < scalar(@neighbours); $i++) {
-        if (defined(@{$neighbours[$i]})) {
-          print $out join("\t",@{$neighbours[$i]})."\n";
+      my @neighbours = $graph->get_neighbours_id($seed_node_id, $steps, $self_included, $weight_col);
+      if (!$stats) {
+        for (my $i = 0; $i < scalar(@neighbours); $i++) {
+          if (defined(@{$neighbours[$i]})) {
+            print $out join("\t",@{$neighbours[$i]})."\n";
+          }
+        }
+      } else {
+        # STATS OUTPUT
+        my $seed = $neighbours[0][1];
+        if ($seed) {
+          print $out $seed."\t";
+          my @weights = ();
+          for (my $i = 0; $i < scalar(@neighbours); $i++) {
+            print $out $neighbours[$i][0];
+            unless ($i == (scalar(@neighbours)-1)) {
+              print $out ", ";
+            } else {
+              print $out "\t";
+            }
+            if ($weight_col >= 0 && &IsReal($neighbours[$i][4])) {
+              #print $neighbours[$i][0]. " " . $neighbours[$i][4]."\n";
+              push @weights, $neighbours[$i][4]; 
+              
+            }
+          }
+          #print join(" ",@weights)."\n";
+          my %weight_summary = ();
+          if (scalar((@neighbours)) == 1) {
+            $weight_summary{'n'} = 1;
+            $weight_summary{'mean'} = $weights[0];
+            $weight_summary{'median'} = $weights[0];
+            $weight_summary{'min'} = $weights[0];
+            $weight_summary{'max'} = $weights[0];
+          } else {
+            %weight_summary = &summary(@weights);
+          }
+          
+          
+          
+          print $out $weight_summary{'n'}."\t";
+          print $out $weight_summary{'mean'}."\t";
+          print $out $weight_summary{'median'}."\t";
+          print $out $weight_summary{'min'}."\t";
+          print $out $weight_summary{'max'}."\n";
         }
       }
     }
@@ -397,6 +447,7 @@ Include each node in its neighborhood, with a distance of 0, even if
 there is no self-loop at this node. This allows to extract the node
 together with its neighborhood, rather than the neighborhood only
 (default).
+This option cannot be used with the -stats option.
 
 =cut
 	} elsif ($arg eq "-self") {
@@ -412,12 +463,27 @@ allows to use the command within a pipe.
 
 =cut
 	} elsif ($arg eq "-o") {
-	    $main::outfile{output} = shift(@arguments);
+	  $main::outfile{output} = shift(@arguments);
+	    
+	   
+	   ### stats
+=pod
+
+=item	B<-stats>
+
+Only valid when the number of step is equal to 1. 
+The output file is presented differently, with one line for each seed node.
+
+
+=cut
+	} elsif ($arg eq "-stats") {
+	  $stats = 1;
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
 	}
+
     }
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.8 2007/04/19 10:52:27 rsat Exp $
+# $Id: graph-get-clusters,v 1.9 2007/04/24 07:38:03 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -203,7 +203,7 @@ package main;
     my $arc_nb = scalar(@arcs);
     
     for (my $i = 0; $i < scalar(@arcs); $i++) {
-      if (($main::verbose >= 2) && ($i%1000==0)) {
+      if (($main::verbose >= 2) && ($i%10000==0)) {
 	&RSAT::message::psWarn("Treated", $i."/".$arc_nb, "arcs");
       }
       my $source_node = $arcs[$i][0];
@@ -212,6 +212,7 @@ package main;
       my $target_node_id = $nodes_name_id{$target_node};
       my @source_clusters = $graph->get_nodes_clusters($source_node);
       my @target_clusters = $graph->get_nodes_clusters($target_node);
+      
       
       foreach my $scluster (@source_clusters) {
         foreach my $tcluster (@target_clusters) {
