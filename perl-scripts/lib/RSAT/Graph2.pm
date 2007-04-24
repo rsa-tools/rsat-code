@@ -322,16 +322,20 @@ returns an array contening the out neighbours of a node to a certain step self, 
 2nd col : seed_node
 3d col  : direction
 4d col  : steps
+5th col : weight (only if step == 1)
 
 
 =cut
 sub get_neighbours_id {
-  my ($self, $node_id, $step, $included) = @_;
+  my ($self, $node_id, $step, $included, $weight) = @_;
   &RSAT::message::Info("\t","Looking for neighbours of node", $node_id) if $main::verbose > 2;
   my %node_id_name = $self->get_attribute("nodes_id_name");
   my @out_neighbours = $self->get_attribute("out_neighbours");
   my @in_neighbours = $self->get_attribute("in_neighbours");
+  my @arc_out_label = $self->get_attribute("out_label");
+  my @arc_in_label = $self->get_attribute("in_label");
   my %direction = ();
+  my %weight = ();
   my %seen_nodes = ();
   my @result = ();
   if ($included) {
@@ -339,27 +343,35 @@ sub get_neighbours_id {
     $result[0][1] = $node_id_name{$node_id};
     $result[0][2] = 0;
     $result[0][3] = "self";
+    if ($weight) {
+      $result[0][4] = "NA";
+    }
 
   }
   $seen_nodes{$node_id} = 0;
   my $neighbours_cpt = scalar(@result);
+  
   for (my $i = 1; $i <= $step; $i++) {
     my @to_find_nodes = keys (%seen_nodes);
     my @to_add = ();
+    ## look for all out neighbours of the nodes that are in %seen_nodes and collect their weight if step = 1
     foreach my $to_find_id (@to_find_nodes) {
       if (defined($out_neighbours[$to_find_id])) {
         push @to_add, @{$out_neighbours[$to_find_id]};
         if ($i == 1) {
-          foreach my $out_neighbour (@{$out_neighbours[$to_find_id]}) {
-            $direction{$out_neighbour} = "out";
+          for (my $j = 0; $j < scalar(@{$out_neighbours[$to_find_id]}); $j ++) {
+            $direction{$out_neighbours[$to_find_id][$j]} = "out";
+            $weight{$out_neighbours[$to_find_id][$j]}  = $arc_out_label[$to_find_id][$j];
           }
         }
       }
+      ## look for all in neighbours of the nodes that are in %seen_nodes and collect their weight if step = 1
       if (defined($in_neighbours[$to_find_id])) {
         push @to_add, @{$in_neighbours[$to_find_id]};
         if ($i == 1) {
-          foreach my $in_neighbour (@{$in_neighbours[$to_find_id]}) {
-            $direction{$in_neighbour} = "in";
+          for (my $j = 0; $j < scalar(@{$in_neighbours[$to_find_id]}); $j ++) {
+            $direction{$in_neighbours[$to_find_id][$j]} = "out";
+            $weight{$in_neighbours[$to_find_id][$j]}  = $arc_in_label[$to_find_id][$j];
           }
         }
       }
@@ -370,7 +382,10 @@ sub get_neighbours_id {
         $result[$neighbours_cpt][0] = $node_id_name{$node_to_add};
         $result[$neighbours_cpt][1] = $node_id_name{$node_id};
         $result[$neighbours_cpt][2] = $i;
-        $result[$neighbours_cpt][3] = $direction{$node_to_add} || "na";
+        $result[$neighbours_cpt][3] = $direction{$node_to_add} || "NA";
+        if ($weight) {
+          $result[$neighbours_cpt][4] = $weight{$node_to_add};
+        }
         $seen_nodes{$node_to_add}++;
         $neighbours_cpt++;
       }
