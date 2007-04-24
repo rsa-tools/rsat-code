@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-no-objects.pl,v 1.4 2007/04/23 13:44:15 rsat Exp $
+# $Id: get-ensembl-genome-no-objects.pl,v 1.5 2007/04/24 08:13:45 oly Exp $
 #
 # Time-stamp
 #
@@ -189,7 +189,9 @@ package main;
 	$GENE = &OpenOutputFile($outfile{gene});
 	&PrintFtHeader("gene", *GENE);
 	$INTRON = &OpenOutputFile($outfile{intron});
+	&PrintFtHeader("intron", *INTRON);
 	$EXON = &OpenOutputFile($outfile{exon});
+	&PrintFtHeader("exon", *EXON);
 
 	$MRNA_NAME = &OpenOutputFile($outfile{mrna_name});
 	&PrintFtNameHeader("mrna", *MRNA_NAME);
@@ -320,7 +322,7 @@ package main;
 		$rep++;
 		if (($test) && ($rep > $test_number)) {
 		    &RSAT::message::Info(join ("\t","TEST", $test_number, "skipping next repeats for contig", 
-					       $rsat_contig->get_attribute("name"))) if ($main::verbose >= 1);
+					       $slice_name)) if ($main::verbose >= 1);
 		    last;
 		}
 		my $repeat_name = $ensembl_repeat->display_id();
@@ -352,8 +354,9 @@ package main;
 		$g++;
 		
 		if (($test) && ($g > $test_number)) {
+
 		    &RSAT::message::Info(join ("\t","TEST", $test_number, "skipping next genes for contig", 
-					       $rsat_contig->get_attribute("name"))) if ($main::verbose >= 1);
+					       $slice_name)) if ($main::verbose >= 1);
 		    last;
 		}
 		
@@ -366,7 +369,7 @@ package main;
 		my @feature = &collect_attributes($ensembl_gene);
 		my $gene_id = $feature[0];	    
 		$feature[1] = "gene";
-		$feature[3] = $slice_id; ## Introduced to remove potenetial circular reference (test)
+		$feature[3] = $slice_id; ## Introduced to remove potential circular reference (test)
 		my $gene_description = $feature[7];
 	    
 		print $GENE join("\t", @feature), "\n";
@@ -459,8 +462,6 @@ package main;
 			}
 		    }
 
-#		    sleep(60);
-		    
 		    warn join("\t", "; Collecting Translation"), "\n" if ($main::verbose >= 5); ######
 
 		    ## Get CDS ID and coordinates (relative to chromosome) - there is a strand trick (see API doc)
@@ -515,6 +516,10 @@ package main;
 			    my @exonfeature = &get_exonfeature($exon);
 			    push @exonfeature, $gene_id;
 
+			    ## Coding region (not working for the moment; these methods are under development @ ensembl)
+#			    push @exonfeature, $exon->coding_region_start($trans);
+#			    push @exonfeature, $exon->coding_region_end($trans);
+
 			    print $EXON join("\t", @exonfeature), "\n";
 #			    if ($exon_feature[]) {
 #				
@@ -524,9 +529,11 @@ package main;
 		    warn join("\t", "; Collecting Introns"), "\n" if ($main::verbose >= 5); ######
 
 			## Get all Intron objects
+			my $int = 0;
 			foreach my $intron (@{$trans->get_all_Introns()}) {
+			    $int++;
 			    my @intronfeature = &get_intronfeature($intron);
-			    $intronfeature[0] = "Trnscrpt - ".$transcript_id;
+			    $intronfeature[0] = "Intron".$int."-".$transcript_id;
 			    push @intronfeature, $gene_id;
 			    print $INTRON join("\t", @intronfeature), "\n";
 			}
@@ -898,9 +905,8 @@ sub collect_attributes {
     push @feature, $name;
 
     ## Contig
-#    my $contig = $ensembl_object->slice->id(); ## =CIRCULAR REFERENCE?
-#    push @feature, $contig;
-    push @feature, "contig";
+    my $contig = $ensembl_object->slice->id(); ## =CIRCULAR REFERENCE?
+    push @feature, $contig;
 
     ## Start position
     my $start_pos = $ensembl_object->start();
@@ -944,8 +950,8 @@ sub get_exonfeature {
     push @exonfeature, "";
         
     ## Chromosome name.
-#    push @exonfeature, $exon->slice->seq_region_name();
-    push @exonfeature, "contig";
+    push @exonfeature, $exon->slice->seq_region_name();
+#    push @exonfeature, "contig";
 
     ## Start position
     push @exonfeature, $exon->start();
@@ -962,11 +968,6 @@ sub get_exonfeature {
 
     ## Description
     push @exonfeature, "";
-   
-    ## Coding region
-#    push @exonfeature, $exon->coding_region_start();
-#    push @exonfeature, $exon->coding_region_end();
-    
 
     return @exonfeature;
 }
@@ -986,7 +987,7 @@ sub get_intronfeature {
     push @intronfeature, "";
 
     ## Chromosome name.
-#    push @intronfeature, $intron->slice->seq_region_name(); ## CIRCULAR REFERENCE?
+    push @intronfeature, $intron->slice->seq_region_name(); ## CIRCULAR REFERENCE?
     push @intronfeature, "contig";
 
     ## Start position
