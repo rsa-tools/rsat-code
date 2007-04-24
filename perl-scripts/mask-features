@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: mask-features,v 1.2 2007/04/24 16:03:24 morgane Exp $
+# $Id: mask-features,v 1.3 2007/04/24 17:01:15 morgane Exp $
 #
 ############################################################
 
@@ -59,8 +59,9 @@ following command: I<retrieve-seq-quick -h>
 =head2 Organism
 
 Alternatively, an organism name can be provided. The contig sequences and features
-are directly extracted from the organism data. To get the names of installed
-organism in RSAT, type I<supported-organism>
+are extracted from the organism data. The program will first search for a "feature.tab"
+file. Otherwise, it will use value of -feattype and -mask options to guess the feature files.
+To get the names of installed organism in RSAT, type I<supported-organism>
 
 =head2 Type of feature to mask
 
@@ -148,32 +149,40 @@ package main;
     	$organism->check_name($organism_name);
 
     	my %tmp_ft_types = ();
-    	## get feature files that need to be masked  	
-    	## depending on the feattype option
-    	if ($main::feat_types){
-    		foreach my $type (split(",",$main::feat_types)) {
-    			
-    		}
-    	}
-    	## depending on the mask option    	
-    	foreach my $type (@masks){
-    		$tmp_ft_types{$type} = 0;		
-    	}
     	
-    	@main::ft_types = keys(%tmp_ft_types); # prevent multiple times the same feature
-    	
-    	## check the features file actually exists  	
-    	foreach my $type (@ft_types) {
-      		$annotation_table = join("", $main::supported_organism{$organism_name}->{'data'}, "/genome/", $type, ".tab");
-      		if (-e $annotation_table) {
+    	## first check wether a "feature.tab" exists
+    	my $annotation_table = join("", $main::supported_organism{$organism_name}->{'data'}, "/genome/", "feature.tab");
+      	if (-e $annotation_table) {
 	  			$organism->push_attribute("annotation_tables", $annotation_table);
 	  			push @ft_files, $annotation_table;
-      		} else {
-	  			&RSAT::message::Warning("Annotation table not found, skipped", $annotation_table);
-      		}
-    	}
+      	} else {
+    		&RSAT::message::Warning("feature.tab not found, usind -feattype and -mask to find feature files") if ($main::verbose >=2);
+    		
+    		## get feature files that need to be masked  	
+    		## depending on the feattype option
+    		if ($main::feat_types){
+    			foreach my $type (split(",",$main::feat_types)) {	
+    			}
+    		}
     	
+    		## depending on the mask option    	
+    		foreach my $type (@masks){
+    			$tmp_ft_types{$type} = 0;		
+    		}
     	
+    		@main::ft_types = keys(%tmp_ft_types); # prevent multiple times the same feature
+    	
+    		## check the features file actually exists  	
+    		foreach my $type (@ft_types) {
+      			$annotation_table = join("", $main::supported_organism{$organism_name}->{'data'}, "/genome/", $type, ".tab");
+      			if (-e $annotation_table) {
+	  				$organism->push_attribute("annotation_tables", $annotation_table);
+	  				push @ft_files, $annotation_table;
+      			} else {
+	  				&RSAT::message::Warning("Annotation table not found, skipped", $annotation_table);
+      			}
+    		}
+      	}
     	
     ## Contig and feature files has been provided
     } else {
