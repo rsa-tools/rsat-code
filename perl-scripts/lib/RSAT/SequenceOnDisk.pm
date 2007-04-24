@@ -89,7 +89,10 @@ sub new {
     my ($self) = @_;
     my $filename = $self->get_attribute("filename");
     unless (defined($self->{length})) {
-      my $length = (-s $filename) -1;
+    ## here changed by Morgane : with -1, the last nucleotide is missed
+    #  my $length = (-s $filename) -1;
+    ##
+    my $length = (-s $filename);
       $self->set_attribute("length", $length);
     }
     return $self->get_attribute("length");
