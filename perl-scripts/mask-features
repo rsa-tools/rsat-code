@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: mask-features,v 1.3 2007/04/24 17:01:15 morgane Exp $
+# $Id: mask-features,v 1.4 2007/04/25 07:07:16 morgane Exp $
 #
 ############################################################
 
@@ -179,7 +179,8 @@ package main;
 	  				$organism->push_attribute("annotation_tables", $annotation_table);
 	  				push @ft_files, $annotation_table;
       			} else {
-	  				&RSAT::message::Warning("Annotation table not found, skipped", $annotation_table);
+	  				&RSAT::message::Warning("Annotation table not found, skipped", $annotation_table)
+	  				if ($main::verbose >=2);
       			}
     		}
       	}
@@ -291,8 +292,9 @@ package main;
     
     ################################################################
     ###### Clean temporary files
-    
- 	unlink("tmp_seq_raw_format.txt");
+    unless ($main::out_format eq "raw") {
+ 		unlink("tmp_seq_raw_format.txt");
+	}
     
     foreach my $i (0..$#main::ft_files) {	
     	my $comp_nb = "comp_".$i;  	
@@ -711,8 +713,11 @@ sub GetFeaturesOnRegion {
     	my $comp_nb = "comp_".$i; 
     	my $comp_nb_sort = "comp_".$i."_sort"; 
     	
-    	$main::outfile{$comp_nb} = "comp_feat_".$i.".ft";
-    	$main::outfile{$comp_nb_sort} = "comp_feat_".$i."_sort.ft";
+    	$main::outfile{$comp_nb} = $main::infile{input};
+    	$main::outfile{$comp_nb} =~ s/\.\w+$//;
+    	$main::outfile{$comp_nb} .= "_comp_ft_".$i.".ft";
+    	$main::outfile{$comp_nb_sort} = $main::outfile{$comp_nb};
+    	$main::outfile{$comp_nb_sort} =~ s/\.ft/\_sort.ft/;
     	
     	my $comp_feat_cmd = "compare-features ";
     	$comp_feat_cmd .= "-v  $main::verbose "; 
