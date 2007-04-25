@@ -153,11 +153,18 @@ sub _readFromTRANSFACFile {
       $matrix->setAlphabet_lc(@alphabet);
 
       ## Sites used to build the matrix
-    } elsif (/^BS\s+(.*); *(\S+)/) {
-      my $site_sequence = $1;
-      my $site_id = $2;
-      $matrix->push_attribute("sequences", $site_sequence);
-      &RSAT::message::Debug("line", $l, "site", $site_sequence) if ($main::verbose >= 4);
+    } elsif (/^BS\s+/) {
+      my $bs = $'; #'
+      my ($site_sequence, $site_id) = split(/\s*;\s*/, $bs);
+#      my $site_sequence = $1;
+#      my $site_id = $2;
+      if ($site_sequence) {
+	$matrix->push_attribute("sequences", $site_sequence);
+	if ($site_id) {
+	  $matrix->push_attribute("site_ids", $site_id);
+	}
+      }
+      &RSAT::message::Debug("line", $l, "site", $site_sequence, $site_id, $bs) if ($main::verbose >= 0);
 
       ## Count column of the matrix file (row in transfac format)
     } elsif (/^(\d+)\s+/) {
@@ -172,11 +179,27 @@ sub _readFromTRANSFACFile {
 
       ## Other matrix parameters
     } elsif (/^XX/) {
+      ## field separator
+
+    } elsif (/^ID\s+/) {
+      $matrix->set_parameter("identifier", $'); #'
+
+    } elsif (/^BF\s+/) {
+      $matrix->set_parameter("binding_factor", $'); #'
+
+    } elsif (/^SD\s+/) {
+      $matrix->set_parameter("short_foactor_description", $'); #'
+
+    } elsif (/^BA\s+/) {
+      $matrix->set_parameter("statistical_basis", $'); #'
+
+    } elsif (/^DE\s+/) {
+      $matrix->set_parameter("description", $'); #'
 
     } elsif (/^\/\//) {
       $matrix->set_parameter("transfac_consensus", $transfac_consensus);
 
-      ## Empty row
+      ## Empty rowb
     } elsif (/^(\S\S)\s+(.*)/) {
       my $field = $1;
       my $value = $2;
