@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.29 2007/04/24 15:16:00 jvanheld Exp $
+# $Id: convert-matrix,v 1.30 2007/04/25 04:49:08 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -702,9 +702,11 @@ sub ExportMatrix {
   if ($return_fields{sites}) {
     print $out "; Sites\t",$current_matrix->get_attribute("sites"),"\n" if ($main::verbose >= 1);
     my $s = 0;
+    my @site_ids = $current_matrix->get_attribute("site_ids");
     foreach my $site_seq ($current_matrix->get_attribute("sequences")) {
       $s++;
-      &PrintNextSequence($out, $site_format, 0, $site_seq, $s);
+      my $site_id =  $site_ids[$s-1] || $s;
+      &PrintNextSequence($out, $site_format, 0, $site_seq, $site_id);
 #      print $out $s, "\t\\", $site_seq, "\\\n";
     }
   }
