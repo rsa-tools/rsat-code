@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.30 2007/04/25 04:49:08 jvanheld Exp $
+# $Id: convert-matrix,v 1.31 2007/04/26 15:26:16 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -53,23 +53,12 @@ local $out = STDOUT;
 $supported_return_fields = join ",", sort keys %supported_return_type;
 
 ## input formats
-%supported_input_format = (
-			   'tab'=>1,
-			   'cb'=>1,
-			   'feature'=>1,
-			   'assembly'=>1,
-			   'consensus'=>1,
-			   'meme'=>1,
-			   'gibbs'=> 1,
-			   'clustal'=>1,
-			   'transfac'=>1,
-			  );
+%supported_input_format = %RSAT::MatrixReader::supported_input_format;
 $supported_input_formats = join ",", sort keys %supported_input_format;
 
+
 ## output formats
-%supported_output_format = ('patser'=>1,
-			    "MotifSampler"=>1,
-			    "transfac"=>1);
+%supported_output_format = %RSAT::matrix::supported_output_format;
 $supported_output_formats = join ",", sort keys %supported_output_format;
 
 ## site formats
