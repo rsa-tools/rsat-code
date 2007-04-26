@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.17 2007/04/18 13:47:47 morgane Exp $
+# $Id: matrix-quality,v 1.18 2007/04/26 13:36:30 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -82,7 +82,7 @@ package main;
     ################################################################
     #### initialise parameters
     my $start_time = &AlphaDate();
-
+    $image_format = "png";
     @distrib_files = ();
     @matrix_scan_options = ();
     @alphabet = ("a","c","g","t");
@@ -521,6 +521,17 @@ Scores of the positive sequence set.
 	} elsif ($arg eq "-o") {
 	    $main::outfile{prefix} = shift(@arguments);
 
+	    ## Image format
+=pod
+
+=item	B<-img_format>
+
+Image format for the plots (ROC curve, score profiels, ...).
+
+=cut
+	} elsif ($arg eq "-img_format") {
+	    $main::image_format = shift(@arguments);
+
 #	    ## Return fields
 #=pod
 #
@@ -934,7 +945,7 @@ sub CompareDistrib {
   my $XYgraph_cmd = "XYgraph ";
   my $ycols = join ",", 2..(scalar(@distrib_files)+2);
   $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
-  $XYgraph_cmd .= " -format eps -lines -pointsize 1 -legend";
+  $XYgraph_cmd .= " -format ".$image_format." -lines -pointsize 1 -legend";
   $XYgraph_cmd .= " -title1 'matrix-quality ".$infile{matrix}."'";
   $XYgraph_cmd .= " -title2 ".$outfile{prefix};
   $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
@@ -942,7 +953,7 @@ sub CompareDistrib {
   $XYgraph_cmd .= " -yleg1 'Frequency (inverse cumulative) ' ";
   $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
   $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-  $XYgraph_cmd .= " -o ".$outfile{distrib_compa}.".eps";
+  $XYgraph_cmd .= " -o ".$outfile{distrib_compa}.".".$image_format;
 
   ## Execute the command
   &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -952,7 +963,7 @@ sub CompareDistrib {
   ## and a logarithmic Y axis
   $XYgraph_cmd = "XYgraph ";
   $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
-  $XYgraph_cmd .= " -format eps -lines -pointsize 1 -legend";
+  $XYgraph_cmd .= " -format ".$image_format." -lines -pointsize 1 -legend";
   $XYgraph_cmd .= " -title1 'matrix-quality ".$infile{matrix}."'";
   $XYgraph_cmd .= " -title2 ".$outfile{prefix};
   $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
@@ -960,7 +971,7 @@ sub CompareDistrib {
   $XYgraph_cmd .= " -yleg1 'Frequency (inverse cumulative) ' ";
   $XYgraph_cmd .= " -ymax 1 -ylog 10";
   $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-  $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_logy.eps";
+  $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_logy.".$image_format;
 
   ## Execute the command
   &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -976,7 +987,7 @@ sub CompareDistrib {
   $XYgraph_cmd = "XYgraph ";
   $ycols = join ",", 2..(scalar(@distrib_files)+2);
   $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
-  $XYgraph_cmd .= " -format eps -lines -pointsize 1 -legend";
+  $XYgraph_cmd .= " -format ".$image_format." -lines -pointsize 1 -legend";
   $XYgraph_cmd .= " -title1 'matrix-quality: ROC curve' ";
 #  $XYgraph_cmd .= " -title2 ".$outfile{prefix};
   $XYgraph_cmd .= " -xcol ".$ref_column;
@@ -985,7 +996,7 @@ sub CompareDistrib {
   $XYgraph_cmd .= " -yleg1 'other distributions' ";
   $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
   $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
-  $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_roc.eps";
+  $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_roc.".$image_format;
 
   ## Execute the command
   &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
