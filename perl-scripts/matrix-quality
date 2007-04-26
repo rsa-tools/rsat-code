@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.20 2007/04/26 22:56:45 jvanheld Exp $
+# $Id: matrix-quality,v 1.21 2007/04/26 23:04:34 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -188,7 +188,7 @@ package main;
 
     ## Score positive sequences with the matrix
     if ($seqfile{pos}) {
-      &ScanSequences($seqfile{pos}, $matrix_file, $matrix_format, "positive", @matrix_scan_options) if ($tasks{scan});
+      &ScanSequences($seqfile{pos}, $matrix_file, $matrix_format, "positive", @matrix_scan_options);
       push @distrib_files, &ScoreDistrib('positive', $Wmin, $Wmax);
     }
 
@@ -200,7 +200,7 @@ package main;
 
     ## Score negative sequences with the matrix
     if ($seqfile{neg}) {
-      &ScanSequences($seqfile{neg}, $matrix_file, $matrix_format, "negative",  @matrix_scan_options)  if ($tasks{scan});
+      &ScanSequences($seqfile{neg}, $matrix_file, $matrix_format, "negative",  @matrix_scan_options) ;
       push @distrib_files, &ScoreDistrib('negative', $Wmin, $Wmax);
       $file_nb{neg} = scalar(@distrib_files);
     }
@@ -208,14 +208,14 @@ package main;
     ## Score negative sequences with the permuted matrices
     if (($seqfile{neg}) && ($perm_nb{neg} > 0)) {
       ## Calculate the merged distribution for permuted matrices
-      &ScanSequences($seqfile{neg}, $outfile{'negative_matrix_perm_col_all'}, "tab", "negative_perm_col_1-".$perm_nb{neg},  @matrix_scan_options)  if ($tasks{scan}); 
+      &ScanSequences($seqfile{neg}, $outfile{'negative_matrix_perm_col_all'}, "tab", "negative_perm_col_1-".$perm_nb{neg},  @matrix_scan_options) ; 
       push @distrib_files, &ScoreDistrib('negative_perm_col_1-'.$perm_nb{neg}, $Wmin, $Wmax);
 
       ## Calculate the separate distributions for each permuted matrix
       ## (this highlights the variability but the graph is noisy)
       if ($perm_separate_distrib) {
 	for my $i (1..$perm_nb{neg}) {
-	  &ScanSequences($seqfile{neg}, $outfile{'matrix_perm_col_'.$i}, "tab", "negative_perm_col_".$i, @matrix_scan_options)  if ($tasks{scan}); 
+	  &ScanSequences($seqfile{neg}, $outfile{'matrix_perm_col_'.$i}, "tab", "negative_perm_col_".$i, @matrix_scan_options) ; 
 	  push @distrib_files, &ScoreDistrib('negative_perm_col_'.$i, $Wmin, $Wmax);
 	}
       }
@@ -224,14 +224,14 @@ package main;
     ## Score positive sequences with the permuted matrices
     if (($seqfile{pos}) && ($perm_nb{pos} > 0)){
       ## Calculate the merged distribution for permuted matrices
-      &ScanSequences($seqfile{pos}, $outfile{'positive_matrix_perm_col_all'}, "tab", "positive_perm_col_1-".$perm_nb{pos}, @matrix_scan_options) if ($tasks{scan});
+      &ScanSequences($seqfile{pos}, $outfile{'positive_matrix_perm_col_all'}, "tab", "positive_perm_col_1-".$perm_nb{pos}, @matrix_scan_options);
       push @distrib_files, &ScoreDistrib('positive_perm_col_1-'.$perm_nb{pos}, $Wmin, $Wmax);
 
       ## Calculate the separate distributions for each permuted matrix
       ## (this highlights the variability but the graph is noisy)
       if ($perm_separate_distrib) {
  	for my $i (1..$perm_nb{pos}) {
- 	  &ScanSequences($seqfile{pos}, $outfile{'matrix_perm_col_'.$i}, "tab", "positive_perm_col_".$i , @matrix_scan_options) if ($tasks{scan});
+ 	  &ScanSequences($seqfile{pos}, $outfile{'matrix_perm_col_'.$i}, "tab", "positive_perm_col_".$i , @matrix_scan_options);
  	  push @distrib_files, &ScoreDistrib('positive_perm_col_'.$i,$Wmin, $Wmax);
  	}
       }
@@ -241,19 +241,19 @@ package main;
     ## Other sequence files
     foreach my $seq_type (keys(%seqfile)) {
       &RSAT::message::TimeWarn("Analyzing sequence type", $seq_type, $seqfile{$seq_type});
-      &ScanSequences($seqfile{$seq_type}, $matrix_file, $matrix_format, $seq_type,   @matrix_scan_options)  if ($tasks{scan});
+      &ScanSequences($seqfile{$seq_type}, $matrix_file, $matrix_format, $seq_type,   @matrix_scan_options) ;
       push @distrib_files, &ScoreDistrib($seq_type, $Wmin, $Wmax); $file_nb{$seq_type} = scalar(@distrib_files);
 
 #       ## Score sequences of other types with the permuted matrices
 #       if (($seqfile{$seq_type}) && ($perm_nb{$seq_type} > 0)) {
 # 	## Calculate the merged distribution for permuted matrices
-# 	&ScanSequences($seqfile{$seq_type}, $outfile{$seq_type.'_matrix_perm_col_all'}, "tab", $seq_type."_perm_col_1-".$perm_nb{$seq_type}, @matrix_scan_options); push @distrib_files, &ScoreDistrib($seq_type.'_perm_col_1-'.$perm_nb{$seq_type}, $Wmin, $Wmax) if ($tasks{scan});
+# 	&ScanSequences($seqfile{$seq_type}, $outfile{$seq_type.'_matrix_perm_col_all'}, "tab", $seq_type."_perm_col_1-".$perm_nb{$seq_type}, @matrix_scan_options); push @distrib_files, &ScoreDistrib($seq_type.'_perm_col_1-'.$perm_nb{$seq_type}, $Wmin, $Wmax);
 
 # 	## Calculate the separate distributions for each permuted matrix
 # 	## (this highlights the variability but the graph is noisy)
 # 	if ($perm_separate_distrib) {
 # 	  for my $i (1..$perm_nb{$seq_type}) {
-# 	    &ScanSequences($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $seq_type."_perm_col_".$i,   @matrix_scan_options); push @distrib_files, &ScoreDistrib($seq_type.'_perm_col_'.$i, $Wmin, $Wmax) if ($tasks{scan});
+# 	    &ScanSequences($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $seq_type."_perm_col_".$i,   @matrix_scan_options); push @distrib_files, &ScoreDistrib($seq_type.'_perm_col_'.$i, $Wmin, $Wmax);
 # 	  }
 # 	}
 #       }
@@ -823,10 +823,13 @@ sub LOO_scores {
 sub ScanSequences {
   my ($sequence_file, $matrix_file, $matrix_format, $seq_type, @args) = @_;
 
+  ## Define the output file fpor the current sequence type
   $main::outfile{$seq_type} = $outfile{prefix}."_scan_".$seq_type."_distrib_matrixscan.tab";  
+
+  ## Scan the sequences if requested
+  return unless  ($tasks{scan});
   &RSAT::message::TimeWarn("Scoring sequences of type", $seq_type,  $outfile{$seq_type}) 
     if ($main::verbose >= 1);
-
   my $matrix_scan_cmd = "matrix-scan -v 1 ";
   $matrix_scan_cmd .= " -i ".$sequence_file;
   $matrix_scan_cmd .= " -m ".$matrix_file;
