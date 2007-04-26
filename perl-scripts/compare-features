@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.15 2007/04/18 08:02:53 morgane Exp $
+# $Id: compare-features,v 1.16 2007/04/26 08:08:38 morgane Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -16,6 +16,7 @@ BEGIN {
 }
 use RSAT::feature;
 use RSAT::stats;
+use Data::Dumper;
 
 
 =pod
@@ -591,20 +592,32 @@ sub CreateIntersection {
 ################################################################
 #### Prepare the output for -oft option
 sub PrintOFT {
-		my ($feature,$feature_ids) = @_;
+		my ($inter_feat,$feature_ids) = @_;
 
-		my @ids =  $feature->get_attribute("feature_ids");
-		my $originalFeat = $feature_ids->{$ids[1]};
+		my @ids =  $inter_feat->get_attribute("feature_ids");
+		my $originalFeat;
+		my $originalFeat1 = $feature_ids->{$ids[0]};
+		my $originalFeat2 = $feature_ids->{$ids[1]};
 		
+		if ($ref_file) {
+			if (!$originalFeat1->get_attribute("ref")) {
+				$originalFeat = $originalFeat1;
+			} elsif (!$originalFeat2->get_attribute("ref")){
+				$originalFeat = $originalFeat2;
+			}
+		} else {
+			$originalFeat = $feature_ids->{$ids[1]};
+		}
+				
 		my $ft_out = new RSAT::feature();
-		$ft_out->set_attribute("seq_name", $feature->get_attribute("seq_name"));
+		$ft_out->set_attribute("seq_name", $inter_feat->get_attribute("seq_name"));
 		$ft_out->set_attribute("id", $originalFeat->get_attribute("id"));
 		$ft_out->set_attribute("ft_type", $originalFeat->get_attribute("ft_type"));
 		$ft_out->set_attribute("feature_name", $originalFeat->get_attribute("feature_name"));
-		$ft_out->set_attribute("start", $feature->get_attribute("start"));
-		$ft_out->set_attribute("end", $feature->get_attribute("end"));
-		$ft_out->set_attribute("strand", $feature->get_attribute("strand"));
-		$ft_out->set_attribute("description", $feature->get_attribute("description"));
+		$ft_out->set_attribute("start", $inter_feat->get_attribute("start"));
+		$ft_out->set_attribute("end", $inter_feat->get_attribute("end"));
+		$ft_out->set_attribute("strand", $inter_feat->get_attribute("strand"));
+		$ft_out->set_attribute("description", $inter_feat->get_attribute("description"));
 		
 		return ($ft_out);
 }
