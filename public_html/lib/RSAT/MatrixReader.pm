@@ -560,7 +560,6 @@ sub _readFromTabFile {
     my ($file, %args) = @_;
     &RSAT::message::Info(join("\t", "Reading matrix from tab file\t",$file)) if ($main::verbose >= 3);
 
-
     ## open input stream
     my ($in, $dir) = &main::OpenInputFile($file);
     if ($file) {
@@ -585,6 +584,10 @@ sub _readFromTabFile {
     my $matrix = new RSAT::matrix();
     push @matrices, $matrix;
     my $current_matrix_nb = 1;
+#    my $id = $file."_".$current_matrix_number;
+    my $id = $file."_".$current_matrix_nb;
+    $matrix->set_attribute("AC", $id);
+    $matrix->set_attribute("id", $id);
     my $l = 0;
     while ($line = <$in>) {
       $l++;
@@ -601,6 +604,9 @@ sub _readFromTabFile {
 	  $matrix = new RSAT::matrix();
 	  push @matrices, $matrix;
 	  $current_matrix_nb++;
+	  $id = $file."_".$current_matrix_number;;
+	  $matrix->set_attribute("AC", $id);
+	  $matrix->set_attribute("id", $id);
 	  &RSAT::message::Info("line", $l, "new matrix", $current_matrix_number) if ($main::verbose >= 5);
 	  next;
 	}
@@ -787,7 +793,7 @@ sub _readFromMEMEFile {
       push @matrices, $matrix;
 
       ## Parse alphabet
-    } elsif (/Letter frequencies in dataset/) {
+    } elsif (/Background letter frequencies/) {
       my $alphabet = <$in>;
       $alphabet = lc($alphabet);
       $alphabet = &main::trim($alphabet);
