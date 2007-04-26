@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.19 2007/04/26 20:37:15 jvanheld Exp $
+# $Id: matrix-quality,v 1.20 2007/04/26 22:56:45 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -80,7 +80,7 @@ package main;
 {
 
     ################################################################
-    #### initialise parameters
+    #### Initialise parameters
     my $start_time = &AlphaDate();
     $image_format = "png";
     @distrib_files = ();
@@ -93,7 +93,6 @@ package main;
     $perm_nb{pos}=20; ## Number of permutation tests for the positive set (sites)
     $perm_nb{neg}=5; ## Number of permutation tests for the negative set
     $perm_separate_distrib = 0; ## Calcualte the distribution for each permuted matrix separately
-    $calc_loo_scores = 1; ## Calculate the Leave-one-out score distribution for the matrix sites
     $loo_rm_twin = 1; ## Also exclude twin sites in the loo procedure.
     $pseudo_counts = 1;
 
@@ -110,13 +109,16 @@ package main;
     $job_prefix = "matrix-quality";
     $batch = 0;
 
-    ## Return fields
-#    %supported_return_fields = (
-#				roc=>1,
-#				sites=>1,
-#				);
-#    $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
-#    %return_fields = ();
+    ## Tasks
+    %supported_tasks = (
+			scan=>1, ## Scan sequences with matrix-scan
+			theor=>1, ## Calculate the theoretical distribution
+			loo=>1, ## Leave-one-out test on the positive sites
+			permute=>1, ## Scan sequences with permuted matrices
+			compare=>1, ## Compare distributions between the various input files
+		       );
+    $supported_tasks = join (",", sort(keys( %supported_tasks)));
+    %tasks = ();
 
     ################################################################
     ## Read argument values
@@ -124,6 +126,11 @@ package main;
 
     ################################################################
     ## Check argument values
+
+    ## If no tasks has been specified, execute them all
+    unless (scalar(keys(%tasks))>0) {
+      %tasks = %supported_tasks;
+    }
 
     ## Matrix+sites file is also matrix
     if ($infile{matrix_sites}) {
@@ -163,7 +170,6 @@ package main;
     $matrix_name =~ s/\.\S+$//; ## suppress the extensin from the file name
     $matrix->set_attribute("name", $matrix_name);
     local ($Wmin, $Wmax)  = $matrix->weight_range();
-    
 
     ## Export input sites with the matrix
     &ExportInputSites($matrix, $matrix_file);
@@ -173,63 +179,88 @@ package main;
 
     ## Shuffle the matrix
     local $perm_nb_max = &max($perm_nb{pos}, $perm_nb{neg});
-    &PermuteMatrixColumns();
+    &PermuteMatrixColumns() if ($tasks{permut});
 
     ## Calcualte theoretical distribution of probabilities
-    &PrintTheorScoreDistribution($matrix);
+    &PrintTheorScoreDistribution($matrix) if ($tasks{theor});
 
     ## Calculate score distributions in the different input sequence files
 
     ## Score positive sequences with the matrix
-    if ($seqfile{pos_sequences}) {
-      &ScanSequences($seqfile{pos_sequences}, $matrix_file, $matrix_format, "positive", @matrix_scan_options); 
+    if ($seqfile{pos}) {
+      &ScanSequences($seqfile{pos}, $matrix_file, $matrix_format, "positive", @matrix_scan_options) if ($tasks{scan});
       push @distrib_files, &ScoreDistrib('positive', $Wmin, $Wmax);
     }
 
-    ## LOO scoring of the sites 
-    if ($calc_loo_scores) {
+    ## Calculate the Leave-one-out score distribution for the matrix sites
+    if ($tasks{loo}) {
       &LOO_scores($matrix, @matrix_scan_options);
       push @distrib_files, &ScoreDistrib('sites_loo', $Wmin, $Wmax);
     }
 
     ## Score negative sequences with the matrix
-    if ($seqfile{neg_sequences}) {
-      &ScanSequences($seqfile{neg_sequences}, $matrix_file, $matrix_format, "negative",  "" , @matrix_scan_options); push @distrib_files, &ScoreDistrib('negative', $Wmin, $Wmax);
-      $file_nb{neg_sequences} = scalar(@distrib_files);
+    if ($seqfile{neg}) {
+      &ScanSequences($seqfile{neg}, $matrix_file, $matrix_format, "negative",  @matrix_scan_options)  if ($tasks{scan});
+      push @distrib_files, &ScoreDistrib('negative', $Wmin, $Wmax);
+      $file_nb{neg} = scalar(@distrib_files);
     }
 
     ## Score negative sequences with the permuted matrices
-    if (($seqfile{neg_sequences}) && ($perm_nb{neg} > 0)) {
+    if (($seqfile{neg}) && ($perm_nb{neg} > 0)) {
       ## Calculate the merged distribution for permuted matrices
-      &ScanSequences($seqfile{neg_sequences}, $outfile{'negative_matrix_perm_col_all'}, "tab", "negative_perm_col_1-".$perm_nb{neg},  "" ,  @matrix_scan_options); push @distrib_files, &ScoreDistrib('negative_perm_col_1-'.$perm_nb{neg}, $Wmin, $Wmax);
+      &ScanSequences($seqfile{neg}, $outfile{'negative_matrix_perm_col_all'}, "tab", "negative_perm_col_1-".$perm_nb{neg},  @matrix_scan_options)  if ($tasks{scan}); 
+      push @distrib_files, &ScoreDistrib('negative_perm_col_1-'.$perm_nb{neg}, $Wmin, $Wmax);
 
       ## Calculate the separate distributions for each permuted matrix
       ## (this highlights the variability but the graph is noisy)
       if ($perm_separate_distrib) {
 	for my $i (1..$perm_nb{neg}) {
-	  &ScanSequences($seqfile{neg_sequences}, $outfile{'matrix_perm_col_'.$i}, "tab", "negative_perm_col_".$i, "" ,  @matrix_scan_options); push @distrib_files, &ScoreDistrib('negative_perm_col_'.$i, $Wmin, $Wmax);
+	  &ScanSequences($seqfile{neg}, $outfile{'matrix_perm_col_'.$i}, "tab", "negative_perm_col_".$i, @matrix_scan_options)  if ($tasks{scan}); 
+	  push @distrib_files, &ScoreDistrib('negative_perm_col_'.$i, $Wmin, $Wmax);
 	}
       }
     }
 
-     ## Score positive sequences with the permuted matrices
-      if (($seqfile{pos_sequences}) && ($perm_nb{pos} > 0)){
-       ## Calculate the merged distribution for permuted matrices
-       &ScanSequences($seqfile{pos_sequences}, $outfile{'positive_matrix_perm_col_all'}, "tab", "positive_perm_col_1-".$perm_nb{pos}, @matrix_scan_options);
-       push @distrib_files, &ScoreDistrib('positive_perm_col_1-'.$perm_nb{pos}, $Wmin, $Wmax);
- 
-       ## Calculate the separate distributions for each permuted matrix
-       ## (this highlights the variability but the graph is noisy)
-       if ($perm_separate_distrib) {
+    ## Score positive sequences with the permuted matrices
+    if (($seqfile{pos}) && ($perm_nb{pos} > 0)){
+      ## Calculate the merged distribution for permuted matrices
+      &ScanSequences($seqfile{pos}, $outfile{'positive_matrix_perm_col_all'}, "tab", "positive_perm_col_1-".$perm_nb{pos}, @matrix_scan_options) if ($tasks{scan});
+      push @distrib_files, &ScoreDistrib('positive_perm_col_1-'.$perm_nb{pos}, $Wmin, $Wmax);
+
+      ## Calculate the separate distributions for each permuted matrix
+      ## (this highlights the variability but the graph is noisy)
+      if ($perm_separate_distrib) {
  	for my $i (1..$perm_nb{pos}) {
- 	  &ScanSequences($seqfile{pos_sequences}, $outfile{'matrix_perm_col_'.$i}, "tab", "positive_perm_col_".$i , @matrix_scan_options); 
+ 	  &ScanSequences($seqfile{pos}, $outfile{'matrix_perm_col_'.$i}, "tab", "positive_perm_col_".$i , @matrix_scan_options) if ($tasks{scan});
  	  push @distrib_files, &ScoreDistrib('positive_perm_col_'.$i,$Wmin, $Wmax);
  	}
-       }
-     }
+      }
+    }
+
+
+    ## Other sequence files
+    foreach my $seq_type (keys(%seqfile)) {
+      &RSAT::message::TimeWarn("Analyzing sequence type", $seq_type, $seqfile{$seq_type});
+      &ScanSequences($seqfile{$seq_type}, $matrix_file, $matrix_format, $seq_type,   @matrix_scan_options)  if ($tasks{scan});
+      push @distrib_files, &ScoreDistrib($seq_type, $Wmin, $Wmax); $file_nb{$seq_type} = scalar(@distrib_files);
+
+#       ## Score sequences of other types with the permuted matrices
+#       if (($seqfile{$seq_type}) && ($perm_nb{$seq_type} > 0)) {
+# 	## Calculate the merged distribution for permuted matrices
+# 	&ScanSequences($seqfile{$seq_type}, $outfile{$seq_type.'_matrix_perm_col_all'}, "tab", $seq_type."_perm_col_1-".$perm_nb{$seq_type}, @matrix_scan_options); push @distrib_files, &ScoreDistrib($seq_type.'_perm_col_1-'.$perm_nb{$seq_type}, $Wmin, $Wmax) if ($tasks{scan});
+
+# 	## Calculate the separate distributions for each permuted matrix
+# 	## (this highlights the variability but the graph is noisy)
+# 	if ($perm_separate_distrib) {
+# 	  for my $i (1..$perm_nb{$seq_type}) {
+# 	    &ScanSequences($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $seq_type."_perm_col_".$i,   @matrix_scan_options); push @distrib_files, &ScoreDistrib($seq_type.'_perm_col_'.$i, $Wmin, $Wmax) if ($tasks{scan});
+# 	  }
+# 	}
+#       }
+    }
 
     ## Compare the distributions
-    &CompareDistrib(9, @distrib_files); # the column of interest is rel_ic (inv_cum_freq)
+    &CompareDistrib(9, @distrib_files) if ($tasks{compare}); # the column of interest is rel_ic (inv_cum_freq)
 
 
     #### print verbosity
@@ -422,7 +453,7 @@ File containing the positive sequence set.
 	} elsif ($arg eq "-pos") {
 	  &RSAT::message::FatalError("Options -pos and -ms are mutually incompatible.") 
 	    if ($main::infile{matrix_sites});
-	  $main::seqfile{pos_sequences} = shift(@arguments);
+	  $main::seqfile{pos} = shift(@arguments);
 
 	    ## File containing the negative sequence set
 =pod
@@ -433,7 +464,7 @@ File containing the negative sequence set.
 
 =cut
 	} elsif ($arg eq "-neg") {
-	    $main::seqfile{neg_sequences} = shift(@arguments);
+	    $main::seqfile{neg} = shift(@arguments);
 
 	    ## File containing a sequence set of a specific type
 =pod
@@ -563,37 +594,40 @@ Image format for the plots (ROC curve, score profiels, ...).
 	} elsif ($arg eq "-img_format") {
 	    $main::image_format = shift(@arguments);
 
-#	    ## Return fields
-#=pod
-#
-#=item B<-return return_fields>
-#
-#List of fields to return. 
-#
-#Supported fields: 
-#
-#=over
-#
-#=item B<ROC_table>
-#
-#Return a table containing the numeric values for the ROC curve. 
-#
-#=back
-#
-#=cut
-#        } elsif ($arg eq "-return") {
-#	    $arg = shift (@arguments);
-#            chomp($arg);
-#            my @fields_to_return = split ",", $arg;
-#            foreach my $field (@fields_to_return) {
-#		$field = lc($field);
-#                if ($supported_return_fields{$field}) {
-#                    $return_fields{$field} = 1;
-#                } else {
-#                    &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
-#		}
-#	    }
+	    ## Tasks
+=pod
 
+=item B<-return tasks>
+
+List of tasks to perform. If this option is not specified, all the
+tasks are performed. 
+
+Note that some tasks depend on other ones. This option should thus be
+used with caution, by experimented users only.
+
+Supported fields:
+
+=over
+
+=item B<scan>
+
+Scan sequences with matrix-scan
+
+=back
+
+=cut
+       } elsif ($arg eq "-task") {
+	 $arg = shift (@arguments);
+	 chomp($arg);
+	 my @tasks = split ",", $arg;
+	 foreach my $task (@tasks) {
+	   $task = lc($task);
+	   if ($supported_tasks{$task}) {
+	     $tasks{$task} = 1;
+	   } else {
+	     &RSAT::error::FatalError(join("\t", $task, "Invalid tasks. Supported:", $supported_tasks));
+	   }
+	 }
 
 	    ## Other options
 =pod
@@ -660,7 +694,7 @@ sub ExportInputSites {
   my ($matrix, $matrix_file) = @_;
 
   $main::outfile{sites} = $outfile{prefix}."_sites.fasta";
-  $main::seqfile{pos_sequences} = $main::outfile{sites};
+  $main::seqfile{pos} = $main::outfile{sites};
   &RSAT::message::TimeWarn("Exporting input sites to file", $outfile{sites}) 
     if ($main::verbose >= 1);
 
@@ -686,10 +720,10 @@ sub ExportInputSites {
 ## procedure over all sites.
 sub LOO_scores {
   my ($matrix, @args) = @_;
-  
+
   if ($main::verbose >= 1) {
-		print $main::out "; LOO partial matrices\n";
-    }
+    print $main::out "; LOO partial matrices\n";
+  }
 
   $main::outfile{sites_loo} = $outfile{prefix}."_sites_loo.tab";
 #  push @distrib_files, $main::outfile{sites_loo};
@@ -767,7 +801,7 @@ sub LOO_scores {
       $matrix_scan_cmd .= " | grep -v '^#'";
     }
     #    die "HELLO\t", $matrix_scan_cmd;
-    &RSAT::message::Info("LOO command",  $matrix_scan_cmd) if ($main::verbose >= 2);
+    &RSAT::message::Info("LOO command",  ($i+1)."/".scalar(@sites), $matrix_scan_cmd) if ($main::verbose >= 2);
     my $score_result = `$matrix_scan_cmd`;
     print $loo_scores_handle $score_result;
 
@@ -808,18 +842,19 @@ sub ScanSequences {
 ################################################################
 ## Calculate the distribution of scores from a given matrix-scan result file
 sub ScoreDistrib {
-	  my ($seq_type, $Wmin, $Wmax) = @_;
-
+  my ($seq_type, $Wmin, $Wmax) = @_;
+  
   $main::outfile{$seq_type."_distrib_tmp"} = $outfile{prefix}."_scan_".$seq_type."_distrib_tmp.tab";
-	
+  
   my $classfreq_min = sprintf("%.${decimals}f", $Wmin);
-  &RSAT::message::TimeWarn("Calculating score distribution for sequences of type", $seq_type,  $outfile{$seq_type."_distrib_tmp"}, $Wmin, $classfreq_min)
-    if ($main::verbose >= 1);
-    my $reformat_cmd = "grep -v '^;' $outfile{$seq_type} | grep -v '^#' | cut -f 2,3 | sort -n > ".$outfile{$seq_type."_distrib_tmp"};
-
+  &RSAT::message::TimeWarn("Calculating score distribution for sequences of type", $seq_type,  $outfile{${seq_type}."_distrib_tmp"}, $Wmin, $classfreq_min)
+	    if ($main::verbose >= 1);
+  return unless ($outfile{$seq_type});
+  my $reformat_cmd = "grep -v '^;' $outfile{$seq_type} | grep -v '^#' | cut -f 2,3 | sort -n > ".$outfile{${seq_type}."_distrib_tmp"};
+  
   ## Execute the command
   &doit($reformat_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  
+
   ## From matrix-scan distribution : get occurence of each score, 
   ## recalculate the original list of scores and send it to classfreq
   ## to calculate the final distribution. This step enables to have the distribution
@@ -828,7 +863,7 @@ sub ScoreDistrib {
   
 
   ## put the temporary distrib file in memory in an array
-  my ($in_matrix_scan_distrib) = &OpenInputFile($outfile{$seq_type."_distrib_tmp"});
+  my ($in_matrix_scan_distrib) = &OpenInputFile($outfile{${seq_type}."_distrib_tmp"});
   my @matrix_distrib = <$in_matrix_scan_distrib> ;
   close $in_matrix_scan_distrib;
   
@@ -975,12 +1010,10 @@ sub CompareDistrib {
   $distrib_compa_cmd .= " -o ".$outfile{distrib_compa}.".tab";
   $distrib_compa_cmd .= " -files ";
   $distrib_compa_cmd .= join(" ", $main::outfile{'theoretical_distrib'}, @distrib_files);
-
-  ## Execute the command
   &doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
   ################################################################
-  ## draw a graph with all the inverse cumulative distributions
+  ## Draw a graph with all the inverse cumulative distributions
   my $XYgraph_cmd = "XYgraph ";
   my $ycols = join ",", 2..(scalar(@distrib_files)+2);
   $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
@@ -993,12 +1026,10 @@ sub CompareDistrib {
   $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
   $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
   $XYgraph_cmd .= " -o ".$outfile{distrib_compa}.".".$image_format;
-
-  ## Execute the command
   &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
   ################################################################
-  ## draw a graph with all the inverse cumulative distributions
+  ## Draw a graph with all the inverse cumulative distributions
   ## and a logarithmic Y axis
   $XYgraph_cmd = "XYgraph ";
   $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
@@ -1011,15 +1042,13 @@ sub CompareDistrib {
   $XYgraph_cmd .= " -ymax 1 -ylog 10";
   $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
   $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_logy.".$image_format;
-
-  ## Execute the command
   &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
   ################################################################
   ## Draw a ROC curve
   my $ref_column;
-  if (defined($file_nb{neg_sequences})) {
-    $ref_column = 2 + $file_nb{neg_sequences};
+  if (defined($file_nb{neg})) {
+    $ref_column = 2 + $file_nb{neg};
   } else {
     $ref_column = 2;
   }
@@ -1036,26 +1065,22 @@ sub CompareDistrib {
   $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
   $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
   $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_roc.".$image_format;
-
-  ## Execute the command
   &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  
-  ## PNG format
-  $XYgraph_cmd = "XYgraph ";
-  $ycols = join ",", 2..(scalar(@distrib_files)+2);
-  $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
-  $XYgraph_cmd .= " -format png -lines -pointsize 1 -size 600 -legend";
-  $XYgraph_cmd .= " -title1 'matrix-quality: ROC curve' ";
-#  $XYgraph_cmd .= " -title2 ".$outfile{prefix};
-  $XYgraph_cmd .= " -xcol ".$ref_column;
-  $XYgraph_cmd .= " -ycol ".$ycols;
-  $XYgraph_cmd .= " -xleg1 'negative set (estmation of FPR)' ";
-  $XYgraph_cmd .= " -yleg1 'other distributions' ";
-  $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
-  $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
-  $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_roc.png";
 
-  ## Execute the command
+#   ## PNG format
+#   $XYgraph_cmd = "XYgraph ";
+#   $ycols = join ",", 2..(scalar(@distrib_files)+2);
+#   $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
+#   $XYgraph_cmd .= " -format png -lines -pointsize 1 -size 600 -legend";
+#   $XYgraph_cmd .= " -title1 'matrix-quality: ROC curve' ";
+# #  $XYgraph_cmd .= " -title2 ".$outfile{prefix};
+#   $XYgraph_cmd .= " -xcol ".$ref_column;
+#   $XYgraph_cmd .= " -ycol ".$ycols;
+#   $XYgraph_cmd .= " -xleg1 'negative set (estmation of FPR)' ";
+#   $XYgraph_cmd .= " -yleg1 'other distributions' ";
+#   $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+#   $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
+#   $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_roc.png";
   &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
 }
