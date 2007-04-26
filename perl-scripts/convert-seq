@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.23 2006/12/02 04:37:50 jvanheld Exp $
+# $Id: convert-seq,v 1.24 2007/04/26 13:27:37 rsat Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -87,7 +87,16 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
     if ($skip_short) {
 	my $seq_len = length($current_seq);
 	if ($seq_len < $skip_short) {
-	    &RSAT::message::Warning(join("\t", "Skipping sequence", $current_id, "length", $seq_len)) if ($main::verbose >= 1);
+	    &RSAT::message::Warning(join("\t", "Skipping short sequence", $current_id, "length", $seq_len)) if ($main::verbose >= 1);
+	    next;
+	}
+    }
+
+    ## Skip long sequences
+    if ($skip_long) {
+	my $seq_len = length($current_seq);
+	if ($seq_len > $skip_long) {
+	    &RSAT::message::Warning(join("\t", "Skipping long sequence", $current_id, "length", $seq_len)) if ($main::verbose >= 1);
 	    next;
 	}
     }
@@ -253,6 +262,10 @@ OPTIONS
 		genomes, where short intergenic sequences generally correspond
 		to intra-operon segments.
 
+	-skip_long max_seq_len
+		Skip sequences longer than the specified length. These
+		sequences are not returned at all in the output. 
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
@@ -315,6 +328,7 @@ consvert-seq options
 -mask upper|lower	mask upper- or lowercases, respectively
 -mask_short min_seq_len	Mask sequences shorter than the specified length
 -skip_short min_seq_len	Skip sequences shorter than the specified length
+-skip_long max_seq_len	Skip sequences longer than the specified length
 -o			outputfile
 -from			input format (see below for accepted formats)
 -to			output format (see below for accepted formats)
@@ -375,7 +389,7 @@ sub ReadArguments {
 					  "Must be a strictly positive natural number"))
 		unless &IsNatural($mask_short) && ($mask_short > 0);
 	    
-	    ## mask short sequences
+	    ## skip short sequences
 	} elsif ($ARGV[$a] eq "-skip_short") {
 	    $skip_short = $ARGV[$a+1];
 	    &RSAT::error::FatalError(join("\t", 
@@ -383,6 +397,15 @@ sub ReadArguments {
 					  "Invalid value for the minimal skipping length. ". 
 					  "Must be a strictly positive natural number"))
 		unless &IsNatural($skip_short) && ($skip_short > 0);
+	    
+	    ## skip long sequences
+	} elsif ($ARGV[$a] eq "-skip_long") {
+	    $skip_long = $ARGV[$a+1];
+	    &RSAT::error::FatalError(join("\t", 
+					  $skip_long,
+					  "Invalid value for the maximal skipping length. ". 
+					  "Must be a strictly positive natural number"))
+		unless &IsNatural($skip_long) && ($skip_long > 0);
 	    
 
 	} elsif ($ARGV[$a] eq "-id") {
