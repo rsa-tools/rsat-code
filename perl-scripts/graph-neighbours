@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-neighbours,v 1.11 2007/04/24 07:38:03 rsat Exp $
+# $Id: graph-neighbours,v 1.12 2007/04/26 15:13:26 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -176,16 +176,17 @@ package main;
     
     ################################################################
     ## Extract the neighborhood and prints the result
+    my $range = 3;
     if ($stats == 0) {
       print $out '#',  join ("\t", "neighb", "seed", "steps", "dir");
       if ($steps == 1 && $weight_col) {
         print $out "\tlabel";
+        $range = 4;
       }
       print $out "\n";
     } else {
       print $out '#'.join ("\t", "seed", "neighb", "n", "mean","median", "min", "max")."\n";
-    }
-   
+    } 
     foreach my $seed_node_id (keys %seed_nodes_id) {
       # Normal OUTPUT
       &RSAT::message::Info("\t","Looking for neighbours of node", $seed_node_id, $seed_nodes_id{$seed_node_id}) if $main::verbose >= 2;
@@ -193,7 +194,8 @@ package main;
       if (!$stats) {
         for (my $i = 0; $i < scalar(@neighbours); $i++) {
           if (defined(@{$neighbours[$i]})) {
-            print $out join("\t",@{$neighbours[$i]})."\n";
+            my @neighbours_array = @{$neighbours[$i]};
+            print $out join("\t", @neighbours_array[0..$range])."\n";
           }
         }
       } else {
