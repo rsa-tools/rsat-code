@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.21 2007/04/26 23:04:34 jvanheld Exp $
+# $Id: matrix-quality,v 1.22 2007/04/26 23:40:02 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -179,7 +179,7 @@ package main;
 
     ## Shuffle the matrix
     local $perm_nb_max = &max($perm_nb{pos}, $perm_nb{neg});
-    &PermuteMatrixColumns() if ($tasks{permut});
+    &PermuteMatrixColumns() if ($tasks{permute});
 
     ## Calcualte theoretical distribution of probabilities
     &PrintTheorScoreDistribution($matrix) if ($tasks{theor});
