@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: mask-features,v 1.6 2007/04/26 09:24:26 morgane Exp $
+# $Id: mask-features,v 1.7 2007/04/26 09:54:25 morgane Exp $
 #
 ############################################################
 
@@ -983,9 +983,14 @@ sub MaskSequence {
 	my $last_print_length = 0;
 	if ($main::out_format eq "fasta"){
 	## fasta header
-		print $main::out ">".
-						$region_ft->get_attribute('ft_id').
-						"\tlocation: ".
+		print $main::out ">";
+		
+		if ($region_ft->get_attribute('ft_id') ne "") {
+			print $main::out $region_ft->get_attribute('ft_id');
+		} else {
+			print $main::out $region_ft->get_attribute('feature_name');
+		}
+		print $main::out "\tlocation: ".
 						$region_ft->get_attribute('seq_name')." ".
 						$region_ft->get_attribute('start')." ".
 						$region_ft->get_attribute('end')." ".
