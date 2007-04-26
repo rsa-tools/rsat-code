@@ -779,9 +779,9 @@ sub CalcNeighbourLimits {
 	    ## Check if the contig is circular
 	    if ($contig_seq{$ctg}->get_attribute("circular")) {
 		$left_candidate = $right_sorted_genes[$#right_sorted_genes];
-		&RSAT::message::Warning("Circular contig", $ctg, 
+		&RSAT::message::Info("Circular contig", $ctg, 
 					"leftmost feature", $g, $gene->get_attribute("id"),
-					"left neighbour", $left_candidate->get_attribute("id")) if ($main::verbose >= 0);
+					"left neighbour", $left_candidate->get_attribute("id")) if ($main::verbose >= 2);
 		$gene->set_attribute("left_neighbour", $left_candidate);
 		$gene->set_attribute("left_neighb_id", $left_candidate->get_attribute("id"));
 		$gene->set_attribute("left_neighb_name", $left_candidate->get_attribute("name"));
@@ -947,9 +947,9 @@ sub CalcNeighbourLimits {
 	    ## Check if the contig is circular
 	    if ($contig_seq{$ctg}->get_attribute("circular")) {
 		$right_candidate = $left_sorted_genes[0];
-		&RSAT::message::Warning("Circular contig", $ctg, 
+		&RSAT::message::Info("Circular contig", $ctg, 
 					"rightmost feature", $g, $gene->get_attribute("id"),
-					"right neighbour", $right_candidate->get_attribute("id")) if ($main::verbose >= 0);
+					"right neighbour", $right_candidate->get_attribute("id")) if ($main::verbose >= 2);
 		$gene->set_attribute("right_neighbour", $right_candidate);
 		$gene->set_attribute("right_neighb_id", $right_candidate->get_attribute("id"));
 		$gene->set_attribute("right_neighb_name", $right_candidate->get_attribute("name"));
