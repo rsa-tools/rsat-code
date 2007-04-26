@@ -208,6 +208,17 @@ the program consensus (Hertz), but not by other programs.
 
 
 ################################################################
+## Define class variables
+
+## output formats
+%supported_output_format = ('patser'=>1,
+			    "MotifSampler"=>1,
+			    "transfac"=>1,
+			    "tab"=>1,
+			   );
+
+
+################################################################
 =pod
 
 =item B<new()>
@@ -1379,20 +1390,21 @@ sub _printParameters {
     $to_print .= "; Matrix parameters\n";
     
     ## Matrix size
-    $to_print .= ";\t".$self->ncol()."\tcolumns\n";
-    $to_print .= ";\t".$self->nrow()."\trows\n";
+    $to_print .= sprintf ";\t%-29s\t%g\n", "Columns", $self->ncol();
+    $to_print .= sprintf ";\t%-29s\t%g\n", "Rows", $self->nrow();
     
     ## Alphabet
-    $to_print .= "; Alphabet\t";
-    $to_print .= join(" ", $self->getAlphabet());
-    $to_print .= "\n";
+    $to_print .= sprintf ";\t%-29s\t%s\n", "Alphabet", join(";", $self->getAlphabet());
     
     ## Prior probabilities
+    my @prior_tmp = ();
     my %prior = $self->getPrior();
     foreach my $letter (sort keys %prior) {
-	$to_print .= join ("\t", ";", $letter, $prior{$letter})."\n";
+      push @prior_tmp, $letter.":".$prior{$letter};
     }
-    
+    $to_print .= sprintf ";\t%-29s\t%s\n", "Prior", join(";", @prior_tmp);
+
+
     ## Matrix attributes
     my ($proba_min, $proba_max) = $self->proba_range();
     my ($Wmin, $Wmax) = $self->weight_range();
@@ -1406,9 +1418,9 @@ sub _printParameters {
 	
 	if ($self->get_attribute($param)) {
 	    if (&main::IsReal($self->get_attribute($param))) {
-		$to_print .= sprintf "; %-29s\t%g\n", $param, $self->get_attribute($param);
+		$to_print .= sprintf ";\t%-29s\t%g\n", $param, $self->get_attribute($param);
 		} else {
-		    $to_print .= sprintf "; %-29s\t%s\n", $param, $self->get_attribute($param);
+		    $to_print .= sprintf ";\t%-29s\t%s\n", $param, $self->get_attribute($param);
 		}
 	}
     }
