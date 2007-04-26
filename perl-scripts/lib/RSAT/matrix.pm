@@ -217,9 +217,9 @@ the program consensus (Hertz), but not by other programs.
 			    "tab"=>1,
 			   );
 
-#$log_base = exp(1);
-$log_base = 2;
-$log_denominator = log($log_base);
+$info_log_base = exp(1);
+#$info_log_base = 2;
+$info_log_denominator = log($info_log_base);
 
 ################################################################
 =pod
@@ -793,8 +793,8 @@ sub calcWeights {
 	    } elsif ($prior <= 0) {
 		$weights[$c][$r] = "NA";
 	    } else {
-		$weights[$c][$r] = log($freq/$prior)/$log_denominator;
-#		$weights[$c][$r] = sprintf("%.${decimals}f", log($freq/$prior))/$log_denominator;
+		$weights[$c][$r] = log($freq/$prior)/$info_log_denominator;
+#		$weights[$c][$r] = sprintf("%.${decimals}f", log($freq/$prior))/$info_log_denominator;
 	    }
 #	    &RSAT::message::Debug("weight", "r:".$r, "c:".$c, "l:".$letter, "f:".$freq, "pr:".$prior, "w:".$weights[$c][$r]) if ($main::verbose >= 10);
 	}
@@ -878,7 +878,8 @@ sub calcInformation {
     $self->set_parameter("max.bits", $max_bits);
 
     ## Maximal information per column
-    my $max_possible_info_per_col = -log($min_prior)/$log_denominator;
+    my $max_possible_info_per_col = -log($min_prior)/$info_log_denominator;
+    $self->set_parameter("info.log.base", $info_log_base);
     $self->set_parameter("max.possible.info.per.col", $max_possible_info_per_col);
 
     ## Matrix size
@@ -897,7 +898,7 @@ sub calcInformation {
 	    if ($freq == 0) {
 		$information[$c][$r] = 0;
 	    } else {
-		$information[$c][$r] = $freq * log($freq/$prior)/$log_denominator;
+		$information[$c][$r] = $freq * log($freq/$prior)/$info_log_denominator;
 	    }
 	    $column_information[$c] += $information[$c][$r];
 	    $total_information += $information[$c][$r];
@@ -1335,7 +1336,6 @@ sub _printProfile {
 	## Logo-type profile
 	my $column_info = $info_sum[$c];
 	my $column_info_bits = $column_info / $max_possible_info_per_col;
-
 	my $consensus_profile = "";
 	my $cum_len = 0;
 	my $prev_cum_len = 0;
