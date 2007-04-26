@@ -56,6 +56,7 @@ command_queue_torque:
 ## Send a jobs to a cluster using the SGE queue management system
 command_queue_sge:
 	@mkdir -p ${JOB_DIR}
+	@echo "job dir	${JOB_DIR}"
 	@for job in ${JOB} ; do							\
 		echo "Job ${JOB_DIR}/$${job}" ;						\
 		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}; 		\
