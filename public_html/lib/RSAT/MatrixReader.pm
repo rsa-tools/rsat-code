@@ -27,6 +27,21 @@ formats.
 
 
 ################################################################
+## Class variables
+%supported_input_format = (
+			   'tab'=>1,
+			   'cb'=>1,
+			   'feature'=>1,
+			   'assembly'=>1,
+			   'consensus'=>1,
+			   'meme'=>1,
+			   'gibbs'=> 1,
+			   'clustal'=>1,
+			   'transfac'=>1,
+			  );
+
+
+################################################################
 =pod
 
 =item readFromFile($file, $format)
@@ -346,7 +361,7 @@ sub _readFromConsensusFile {
     ## reason for this. I need to ask Jerry. In the mean time, I
     ## always use the same information (THE LIST OF TOP MATRICES
     ## FROM EACH CYCLE).
-    last if (/THE LIST OF MATRICES FROM FINAL CYCLE/);
+#    last if (/THE LIST OF MATRICES FROM FINAL CYCLE/);
     
     ## Read the command line
     if (/COMMAND LINE: /) {
