@@ -391,12 +391,10 @@ sub _readFromConsensusFile {
 	my @fields = split / +/, $_;
 	## residue associated to the row
 	my $residue = lc(shift @fields);
-	
 	## skip the | between residue and numbers
 	shift @fields unless &main::IsReal($fields[0]);	
-	
 	$matrix->addIndexedRow($residue, @fields);
-	
+
 	## Sites used to build the matrix
       } elsif (/(\d+)\|(\d+)\s*\:\s*(-){0,1}(\d+)\/(\d+)\s+(\S+)/) {
 	my $site_nb = $1;
@@ -407,10 +405,10 @@ sub _readFromConsensusFile {
 	my $site_sequence = $6;
 	$matrix->push_attribute("sequences", $site_sequence);
 	&RSAT::message::Debug("line", $l, "site", $site_sequence) if ($main::verbose >= 4);
-	
+
 	## Other matrix parameters
       } elsif (/number of sequences = (\d+)/) {
-	$matrix->set_parameter("nb.sequences", $1); 
+	$matrix->set_parameter("sites", $1); 
       } elsif (/unadjusted information = (\S+)/) {
 	$matrix->set_parameter("unadjusted.information", $1); 
       } elsif (/sample size adjusted information = (\S+)/) {
