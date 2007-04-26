@@ -417,7 +417,10 @@ sub _readFromConsensusFile {
 	$matrix->set_parameter("adjusted.information", $1); 
       } elsif (/ln\(p\-value\) = (\S+)   p\-value = (\S+)/) {
 	$matrix->set_parameter("ln.Pval", $1); 
-	$matrix->set_parameter("Pval", $2); 
+	$matrix->set_parameter("P-value", $2); 
+      } elsif (/ln\(e\-value\) = (\S+)   e\-value = (\S+)/) {
+	$matrix->set_parameter("ln.Eval", $1); 
+	$matrix->set_parameter("E-value", $2); 
       } elsif (/ln\(expected frequency\) = (\S+)   expected frequency = (\S+)/) {
 	$matrix->set_parameter("ln.exp", $1); 
 	$matrix->set_parameter("exp", $2); 
