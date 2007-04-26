@@ -474,7 +474,7 @@ to_MotifSampler, to_TRANSFAC), depending on the chosen output format.
 sub toString {
     my ($self, %args) = @_;
     my $output_format = $args{format} || "patser";
-    if (lc($output_format) eq "patser") {
+    if ((lc($output_format) eq "patser") || (lc($output_format) eq "tab")) {
       return $self->to_patser(%args);
     } elsif (lc($output_format) eq "motifsampler") {
       return $self->to_Motifsampler(%args);
@@ -499,9 +499,19 @@ sub to_TRANSFAC {
     my $to_print = "";
 
     ## Accession number
-    my $accession = $self->get_attribute("accession");
+    my $accession = $self->get_attribute("accession") ||  $self->get_attribute("AC");
     if ($accession) {
       $to_print .= "AC  ".$accession."\n";
+      $to_print .= "XX\n";
+    }
+
+    ## Identifier
+    my $id = $self->get_attribute("identifier");
+    unless ($id) {
+	$id = $self->get_attribute("id");
+    }
+    if ($id) {
+      $to_print .= "ID  ".$id."\n";
       $to_print .= "XX\n";
     }
 
@@ -525,6 +535,7 @@ sub to_TRANSFAC {
       }
       $to_print .= "\n";
     }
+    $to_print .= "XX\n";
 
     ## End of record
     $to_print .= "//\n";
