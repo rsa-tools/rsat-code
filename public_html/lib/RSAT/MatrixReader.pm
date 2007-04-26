@@ -783,6 +783,7 @@ sub _readFromMEMEFile {
   my @frequencies = ();
 #  my $parsed_width = 0;
   my $l = 0;
+  my $meme_command = "";
   while (<$in>) {
     $l++;
     next unless (/\S/);
@@ -798,6 +799,8 @@ sub _readFromMEMEFile {
       $matrix->init();
       $matrix->set_attribute("number", $current_matrix_nb);
       $matrix->set_attribute("ncol", $2);
+
+      $matrix->set_parameter("command", $meme_command);
       $matrix->set_parameter("sites", $3);
       $matrix->set_parameter("llr", $4);
       $matrix->set_parameter("E-value", $5);
@@ -807,7 +810,10 @@ sub _readFromMEMEFile {
       $matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
       push @matrices, $matrix;
 
-      ## Parse alphabet
+      ## Meme command
+    } elsif (/^command: /) {
+      $meme_command = $'; #'
+
     } elsif (/Background letter frequencies/) {
       my $alphabet = <$in>;
       $alphabet = lc($alphabet);
