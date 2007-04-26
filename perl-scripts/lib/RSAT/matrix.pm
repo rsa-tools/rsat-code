@@ -217,6 +217,9 @@ the program consensus (Hertz), but not by other programs.
 			    "tab"=>1,
 			   );
 
+#$log_base = exp(1);
+$log_base = 2;
+$log_denominator = log($log_base);
 
 ################################################################
 =pod
@@ -790,8 +793,8 @@ sub calcWeights {
 	    } elsif ($prior <= 0) {
 		$weights[$c][$r] = "NA";
 	    } else {
-		$weights[$c][$r] = log($freq/$prior);
-#		$weights[$c][$r] = sprintf("%.${decimals}f", log($freq/$prior));
+		$weights[$c][$r] = log($freq/$prior)/$log_denominator;
+#		$weights[$c][$r] = sprintf("%.${decimals}f", log($freq/$prior))/$log_denominator;
 	    }
 #	    &RSAT::message::Debug("weight", "r:".$r, "c:".$c, "l:".$letter, "f:".$freq, "pr:".$prior, "w:".$weights[$c][$r]) if ($main::verbose >= 10);
 	}
@@ -875,8 +878,8 @@ sub calcInformation {
     $self->set_parameter("max.bits", $max_bits);
 
     ## Maximal information per column
-    my $max_info_per_col = -log($min_prior);
-    $self->set_parameter("max.info.per.col", $max_info_per_col);
+    my $max_possible_info_per_col = -log($min_prior)/$log_denominator;
+    $self->set_parameter("max.possible.info.per.col", $max_possible_info_per_col);
 
     ## Matrix size
     my $nrow = $self->nrow();
@@ -894,7 +897,7 @@ sub calcInformation {
 	    if ($freq == 0) {
 		$information[$c][$r] = 0;
 	    } else {
-		$information[$c][$r] = $freq * log($freq/$prior);
+		$information[$c][$r] = $freq * log($freq/$prior)/$log_denominator;
 	    }
 	    $column_information[$c] += $information[$c][$r];
 	    $total_information += $information[$c][$r];
@@ -1290,7 +1293,7 @@ sub _printProfile {
 
     ## Maximal information content per column, for scaling the pseudo-logo profile
     my $max_bits = $self->get_attribute("max.bits");
-    my $max_info_per_col = $self->get_attribute("max.info.per.col");
+    my $max_possible_info_per_col = $self->get_attribute("max.possible.info.per.col");
 
     ## profile header
     my $profile_scale = "";
@@ -1331,15 +1334,15 @@ sub _printProfile {
 
 	## Logo-type profile
 	my $column_info = $info_sum[$c];
-	my $column_info_bits = $column_info / $max_info_per_col;
+	my $column_info_bits = $column_info / $max_possible_info_per_col;
 
 	my $consensus_profile = "";
 	my $cum_len = 0;
 	my $prev_cum_len = 0;
 	for my $i (0..$#row) {
 	  my $residue = $alphabet[$i];
-	  if (($max_info_per_col > 0) && ($sum > 0)) {
-	    $cum_len += $profile_length * ($row[$i]/$sum) * ($column_info/$max_info_per_col);
+	  if (($max_possible_info_per_col > 0) && ($sum > 0)) {
+	    $cum_len += $profile_length * ($row[$i]/$sum) * ($column_info/$max_possible_info_per_col);
 	  }
 	  for my $j (($prev_cum_len+1)..sprintf("%d",$cum_len)) {
 	    if ($row_weights[$i] >= 1) {
