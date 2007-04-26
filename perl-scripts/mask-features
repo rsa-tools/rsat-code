@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: mask-features,v 1.5 2007/04/26 08:19:30 morgane Exp $
+# $Id: mask-features,v 1.6 2007/04/26 09:24:26 morgane Exp $
 #
 ############################################################
 
@@ -288,7 +288,7 @@ package main;
     	}
 		&RSAT::message::Info(join("\t", "Masking Region  ",$region_nb."/".($#regions_ft_ids+1))) if ($main::verbose >= 1);
 	
-    	&MaskSequence($pos2mask_by_region->{$region_ft_id}, $region_ft);
+    	&MaskSequence($pos2mask_by_region->{$region_ft_id}, $region_ft,$region_nb);
   		
     	## increase the counters
     	$total_size_masked_ft{$region_ft_id} = $main::size_masked_ft;
@@ -961,6 +961,7 @@ sub IsMaskType {
 sub MaskSequence {
 	my $mask_regions = shift;
 	my $region_ft = shift;
+	my $region_nb = shift;
 	
 	####################################################
 	## Define a buffer length for each slice of sequence
@@ -994,12 +995,13 @@ sub MaskSequence {
 	}
 	## for raw output, 1 sequence in each file
 	my $raw;
-	if (($main::out_format eq "raw")&&($#$main::regions_ft_ids > 0)) {
+	if (($main::out_format eq "raw")&&($#main::regions_ft_ids > 0)) {
 		## make a new file for each sequence
 		if ($main::outfile{output}) {
-			my $seq_name = "output_region".$main::region_nb;
-			$main::outfile{$seq_name} = $main::outfile{output}.".region".$main::region_nb;
+			my $seq_name = "output_region".$region_nb;
+			$main::outfile{$seq_name} = $main::outfile{output}.".region".$region_nb.".raw";
 			($raw) = &OpenOutputFile($main::outfile{$seq_name});
+			&RSAT::message::Info("Raw output format: opening new file $main::outfile{$seq_name} ") if ($main::verbose >= 1);
 		}
 		
 	}
