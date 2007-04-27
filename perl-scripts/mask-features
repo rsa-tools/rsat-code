@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: mask-features,v 1.7 2007/04/26 09:54:25 morgane Exp $
+# $Id: mask-features,v 1.8 2007/04/27 13:08:17 morgane Exp $
 #
 ############################################################
 
@@ -90,7 +90,6 @@ require RSAT::organism;
 use RSAT::feature;
 use RSAT::stats;
 
-
 ################################################################
 ## Main package
 package main;
@@ -165,14 +164,15 @@ package main;
     		## depending on the feattype option
     		if ($main::feat_types){
     			foreach my $type (split(",",$main::feat_types)) {	
+    				$tmp_ft_types{lc($type)} = 0;
     			}
     		}
     	
     		## depending on the mask option    	
     		foreach my $type (@masks){
-    			$tmp_ft_types{$type} = 0;		
+    			$tmp_ft_types{lc($type)} = 0;		
     		}
-    	
+
     		@main::ft_types = keys(%tmp_ft_types); # prevent multiple times the same feature
     	
     		## check the features file actually exists  	
@@ -187,7 +187,7 @@ package main;
       			}
     		}
       	}
-    	
+
     ## Contig and feature files has been provided
     } else {
     	unless (-e $main::infile{contigs}) {
@@ -246,10 +246,12 @@ package main;
   	our $regions_ft = &ReadRegionOfInterest();
   	our @regions_ft_ids = sort keys(%$regions_ft);
   	
-  	foreach my $region_ft_id (@regions_ft_ids) {
-  		my $region_ft = $regions_ft->{$region_ft_id};
-    	&RSAT::message::Info(join("\t", "Input Region",$region_ft_id,$region_ft->to_text("ft", $null),
+  	if ($main::verbose >= 2) {
+ 	 	foreach my $region_ft_id (@regions_ft_ids) {
+ 	 		my $region_ft = $regions_ft->{$region_ft_id};
+  		  	&RSAT::message::Info(join("\t", "Input Region",$region_ft_id,$region_ft->to_text("ft", $null),
     						"length",$region_ft->get_attribute("len"))) if ($main::verbose >= 2);
+  		}
   	}
 
 	################################################################
@@ -313,9 +315,12 @@ package main;
     
     ################################################################
     ###### Clean temporary files    
-    foreach my $i (0..$#main::ft_files) {
+    foreach my $i (0..($#main::ft_files+1)) {
     	my $comp_nb = "comp_".$i;  	
-    	unlink($main::outfile{$comp_nb});
+    	my $comp_nb_sort = "comp_".$i."_sort"; 
+    	unlink($main::outfile{$comp_nb}) if($main::outfile{$comp_nb});
+    	unlink($main::outfile{$comp_nb_sort}) if (($main::outfile{$comp_nb_sort})&&($i>0));
+    	
      }    	  
     exit(0);
 }
@@ -777,20 +782,26 @@ sub OpenInputContigs{
 #### Use compare-features to locate the features 
 #### that span on the region of interest
 sub GetFeaturesOnRegion {
-    	   
+
     ## process each provided feature files
+    
     foreach my $i (0..$#main::ft_files) {
+    	my $j = $i;
     	
+    	## if several files have been provided 	
+    	if ($#main::ft_files > 0) {
+    		$j++;
+    	}	
     	&RSAT::message::Info(join("\t", "Compare-features: input file: $main::infile{input}")) if ($main::verbose >= 1);
-    	foreach my $file (@ft_files) {
-    			&RSAT::message::Info(join("\t", "\t feature file: $main::ft_files[$i]")) if ($main::verbose >= 1);
-    		}
-    	my $comp_nb = "comp_".$i; 
-    	my $comp_nb_sort = "comp_".$i."_sort"; 
+
+    	&RSAT::message::Info(join("\t", "\t feature file: $main::ft_files[$i]")) if ($main::verbose >= 1);
+
+    	my $comp_nb = "comp_".$j; 
+    	my $comp_nb_sort = "comp_".$j."_sort"; 
     	
     	$main::outfile{$comp_nb} = $main::infile{input};
     	$main::outfile{$comp_nb} =~ s/\.\w+$//;
-    	$main::outfile{$comp_nb} .= "comp_ft_".$i.".ft";
+    	$main::outfile{$comp_nb} .= "comp_ft_".$j.".ft";
     	$main::outfile{$comp_nb_sort} = $main::outfile{$comp_nb};
     	$main::outfile{$comp_nb_sort} =~ s/\.ft/\_sort.ft/;
     	
@@ -811,6 +822,24 @@ sub GetFeaturesOnRegion {
     	## Execute the command
   		&doit($comp_feat_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
     }
+    
+    	## merge if several feature files
+  		if ($#main::ft_files > 0) {
+    		my $comp_nb_sort = "comp_0_sort";
+    		$main::outfile{$comp_nb_sort} = $main::infile{input};
+    		$main::outfile{$comp_nb_sort} =~ s/\.\w+$//;
+    		$main::outfile{$comp_nb_sort} .= "comp_ft_0_sort.ft";
+
+			my $merge_cmd = "cat ";
+    		foreach my $j (1..($#main::ft_files+1)) {
+    			my $comp_nb_sort = "comp_".$j."_sort"; 		
+    			$merge_cmd .= "$main::outfile{$comp_nb_sort} "; 
+    		}
+    		$merge_cmd .= "| sort -n +4 ";
+    		$merge_cmd .= " > $main::outfile{$comp_nb_sort} "; 
+    		## Execute the command
+  			&doit($merge_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+    	}
 }
 
 ################################################################
@@ -820,11 +849,10 @@ sub ExtractFeaturesToMask {
     my $masks = shift;   
     my %pos2mask_by_region = ();
      
-    ## process each compare-feature output file
-    foreach my $i (0..$#main::ft_files) {
-    	
+    ## Only one output from compare-features (as merged if several ones)
+
     	## check that the file is not empty
-    	my $comp_nb_sort = "comp_".$i."_sort"; 
+    	my $comp_nb_sort = "comp_0_sort"; 
     	next if (-z $main::outfile{$comp_nb_sort});
     	
     	my %curr2mask_by_region = ();
@@ -931,8 +959,6 @@ sub ExtractFeaturesToMask {
 	    	}	
     	}
 		close $in; 	
-    	}
-    
  	return (\%pos2mask_by_region); 
 }
 
