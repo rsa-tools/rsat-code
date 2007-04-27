@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.23 2007/04/27 12:14:47 jvanheld Exp $
+# $Id: matrix-quality,v 1.24 2007/04/27 12:32:07 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -109,6 +109,9 @@ package main;
     $job_prefix = "matrix-quality";
     $batch = 0;
 
+    ## User-specified options for XYgraph
+    $graph_options = "";
+
     ## Tasks
     %supported_tasks = (
 			scan=>1, ## Scan sequences with matrix-scan
@@ -144,10 +147,11 @@ package main;
     ## Output prefix is mandatory
     &RSAT::error::FatalError("You must define a prefix for the output files with the option -o")
       unless ($outfile{prefix});
+    $outfile{log} = $main::outfile{prefix}."_log.txt";
 
     ################################################################
     ### open output stream
-    $main::out = &OpenOutputFile($main::outfile{prefix}."_log.txt");
+    $main::out = &OpenOutputFile($outfile{log});
 
     ################################################################
     ## Read input matrix.
@@ -310,8 +314,9 @@ package main;
       }
 
     ## Give the warning about the output prefix
-    &RSAT::message::Info($outfile{prefix}) if ($main::verbose >= 1);
-
+    if ($main::verbose >= 1) {
+      &RSAT::message::Info("Log file", $outfile{log});
+    }
 
     exit(0);
 }
@@ -602,6 +607,29 @@ Scores of the positive sequence set.
 	} elsif ($arg eq "-o") {
 	    $main::outfile{prefix} = shift(@arguments);
 
+	    ## Options for the graphs
+=pod
+
+=item B<-graph_option 'option1 options2 ...'>
+
+Specify options that will be passed to the program XYgraph for
+generating graphs. Beware: if an option requires to be followed by a
+value (ex -xsize 1000), you have to embrace the option and its value
+in quotes.
+
+  Example
+   -graph_option '-xsize 1000 -title "LexA matrix" -bg blue'
+
+This option can be used iteratively on a command line.
+
+  Example
+   -graph_option '-xsize 1000' -graph_option '-title "LexA matrix"'
+
+=cut
+	} elsif ($arg eq "-graph_option") {
+	  $graph_options .= shift @arguments;
+
+
 	    ## Image format
 =pod
 
@@ -690,7 +718,7 @@ sub Verbose {
 	}
     }
     if (defined(%main::seqfile)) {
-	print $main::out "; Input files\n";
+	print $main::out "; Sequence files\n";
 	foreach my $key (sort(keys %seqfile)) {
 	  my $value = $seqfile{$key};
 #	while (my ($key,$value) = each %main::seqfile) {
@@ -1061,6 +1089,7 @@ sub CompareDistrib {
   $XYgraph_cmd .= " -yleg1 'Frequency (inverse cumulative) ' ";
   $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
   $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+  $XYgraph_cmd .= " ".$graph_options;
   $XYgraph_cmd .= " -o ".$outfile{distrib_compa}.".".$image_format;
   &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
@@ -1077,6 +1106,7 @@ sub CompareDistrib {
   $XYgraph_cmd .= " -yleg1 'Frequency (inverse cumulative) ' ";
   $XYgraph_cmd .= " -ymax 1 -ylog 10";
   $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+  $XYgraph_cmd .= " ".$graph_options;
   $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_logy.".$image_format;
   &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
@@ -1100,6 +1130,7 @@ sub CompareDistrib {
   $XYgraph_cmd .= " -yleg1 'other distributions' ";
   $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
   $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
+  $XYgraph_cmd .= " ".$graph_options;
   $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_roc.".$image_format;
   &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
@@ -1116,8 +1147,9 @@ sub CompareDistrib {
 #   $XYgraph_cmd .= " -yleg1 'other distributions' ";
 #   $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
 #   $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
+#  $XYgraph_cmd .= " ".$graph_options;
 #   $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_roc.png";
-  &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+#  &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
 }
 
