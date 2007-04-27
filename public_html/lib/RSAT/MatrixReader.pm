@@ -600,8 +600,9 @@ sub _readFromTabFile {
     my $matrix = new RSAT::matrix();
     push @matrices, $matrix;
     my $current_matrix_nb = 1;
-#    my $id = $file."_".$current_matrix_number;
-    my $id = $file."_".$current_matrix_nb;
+#    my $id = $file."_".$current_matrix_nb;
+    my $id_prefix = $file || "matrix";
+    my $id = $id_prefix."_".$current_matrix_nb;
     $matrix->set_attribute("AC", $id);
     $matrix->set_attribute("id", $id);
     my $l = 0;
@@ -620,10 +621,10 @@ sub _readFromTabFile {
 	  $matrix = new RSAT::matrix();
 	  push @matrices, $matrix;
 	  $current_matrix_nb++;
-	  $id = $file."_".$current_matrix_number;;
+	  $id = $id_prefix."_".$current_matrix_nb;
 	  $matrix->set_attribute("AC", $id);
 	  $matrix->set_attribute("id", $id);
-	  &RSAT::message::Info("line", $l, "new matrix", $current_matrix_number) if ($main::verbose >= 5);
+	  &RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb) if ($main::verbose >= 5);
 	  next;
 	}
 
@@ -714,7 +715,7 @@ sub _readFromClusterBusterFile {
 	}
 	push @matrices, $matrix;
 	$current_matrix_nb++;
-	&RSAT::message::Info("line", $l, "new matrix", $current_matrix_number, $name) if ($main::verbose >= 5);
+	&RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb, $name) if ($main::verbose >= 5);
 	next;
       }
 
