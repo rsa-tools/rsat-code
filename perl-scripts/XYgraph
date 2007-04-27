@@ -1209,7 +1209,6 @@ sub StandardPalette {
 
 #### read data ####
 sub ReadData {
-	print $inputfile;
     ($in, $input_dir) = &OpenInputFile($inputfile);
 
     ################################################################
