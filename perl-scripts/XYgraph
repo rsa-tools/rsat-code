@@ -52,6 +52,9 @@ $y_axis_min = "ND";
 $x = 0;
 $y = 0;
 
+$x_axis_size = 400;
+$y_axis_size = 400;
+
 
 #### font sizes ####
 $small_font_width = 6;
@@ -104,10 +107,9 @@ if ($img_format eq "eps"){
 	&GnuPlotEPS(); 
 	exit();
 	}
-
-# GD default
-$x_axis_size = 400;
-$y_axis_size = 400;
+	
+	
+## Other Format
 
 if ($x_log_base eq "e") {
     $x_ref_log = 1;
@@ -538,6 +540,28 @@ exit(0);
 
 sub GnuPlotEPS {
 	
+	## check that an input file exists
+	if (!$inputfile) {
+	 	($in, $input_dir) = &OpenInputFile($inputfile);
+	 	our $tmp_file = "tmp_gnuplot_for_input.tab";
+	 	my ($out) = &OpenOutputFile($tmp_file);
+	 	while (<$in>){
+	 		print $out $_;
+	 	}
+	 	close $out;
+	 	close $in;
+	}
+	
+	my $input_data_file;
+	if ($inputfile){
+		$input_data_file = $inputfile;
+	} elsif ($tmp_file){
+		$input_data_file = $tmp_file;
+	}else {
+		die("No input data !!!");
+	}
+	
+	
 	$gnuplot_cmd = "gnuplot << EOF\n";
 	## fonts
 	$gnuplot_cmd .= "small='Arial,9'\n";
@@ -552,22 +576,17 @@ sub GnuPlotEPS {
 	}
 	
 	## plot size ##
-	## if a size has been specified
-	if ($x_axis_size) {
-		if (!$y_axis_size) {
-			$y_axis_size = $x_axis_size;
-		}
-		$gnuplot_cmd .= "set term post landscape enh ".$color." font small size ".$x_axis_size.",".$y_axis_size."\n";
-	}
-	elsif ($y_axis_size) {
-		if (!$x_axis_size) {
-			$x_axis_size = $y_axis_size;
-		}
-		$gnuplot_cmd = "set term post landscape enh ".$color.". font small size ".$x_axis_size.",".$y_axis_size."\n";
-		}
-	else {
-		$gnuplot_cmd .= "set term post landscape enh color font small\n";
-	}
+
+	## size in gnuplot eps format is not in pixel but in inches.
+	## the idea here is to get the ratio from the input x and y size
+	## and let gnuplot adapt automatically
+
+	$gnuplot_cmd .= "set term post landscape enh ".$color." font small\n";
+	
+	if (($x_axis_size)&&($y_axis_size)) {
+		my $ratio = $y_axis_size/$x_axis_size;
+		$gnuplot_cmd .= "set size ratio '".$ratio."'\n";
+	} 
 	
 	## output file
 	$gnuplot_cmd .= "set output '".$outputfile."'\n";
@@ -708,10 +727,11 @@ sub GnuPlotEPS {
 		}
 	}
 	
-	## plot 
+	## plot 	
 	$gnuplot_cmd .= "plot ";
 	foreach my $k (0..$#y_col_list){
-		$gnuplot_cmd .= " '".$inputfile."' using ".($x_col+1).":".($y_col_list[$k]+1)." with ";
+
+		$gnuplot_cmd .= " '".$input_data_file."' using ".($x_col+1).":".($y_col_list[$k]+1)." with ";
 		## draw lines
 		if (($lines eq "1") || ($lines[$y_col_list[$k]])) {
 			$gnuplot_cmd .= "lines";
@@ -730,6 +750,10 @@ sub GnuPlotEPS {
 	#print $gnuplot_cmd;
 	## Execute the command
   	&doit($gnuplot_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  	
+  	if ($tmp_file){
+  		unlink $tmp_file;
+  	}
 }
 
 #### calculation of pixel position
@@ -1185,6 +1209,7 @@ sub StandardPalette {
 
 #### read data ####
 sub ReadData {
+	print $inputfile;
     ($in, $input_dir) = &OpenInputFile($inputfile);
 
     ################################################################
