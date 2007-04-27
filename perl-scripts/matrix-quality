@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.22 2007/04/26 23:40:02 jvanheld Exp $
+# $Id: matrix-quality,v 1.23 2007/04/27 12:14:47 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -57,7 +57,7 @@ and not included in the matrix used to score the left out sequence.
 =back
 
 =head1 USAGE
-    
+
 matrix-quality [-i inputfile] [-o outputfile] [-v]
 
 =cut
@@ -90,8 +90,8 @@ package main;
     $matrix_format = "consensus";
     $decimals = 2;
     %perm_nb = (); ## Number of permutations per sequence set
-    $perm_nb{pos}=20; ## Number of permutation tests for the positive set (sites)
-    $perm_nb{neg}=5; ## Number of permutation tests for the negative set
+    $perm_nb{positive}=20; ## Number of permutation tests for the positive set (sites)
+    $perm_nb{negative}=5; ## Number of permutation tests for the negative set
     $perm_separate_distrib = 0; ## Calcualte the distribution for each permuted matrix separately
     $loo_rm_twin = 1; ## Also exclude twin sites in the loo procedure.
     $pseudo_counts = 1;
@@ -154,11 +154,11 @@ package main;
     my $matrix_file = $infile{matrix};
 
     my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
-    
+
     ## Check the number of parsed matrices
     if (scalar(@matrices) > 1) {
       &RSAT::message::Warning("File",  $matrix_file, 
-			      "contains ".scalar(@matrices)." matrices. ", 
+			      "contains ".scalar(@matrices)." matrices. ",
 			      "Only the first one will be evaluated.");
     }
 
@@ -177,9 +177,9 @@ package main;
     ## Export the matrix in tab-delimited format
     &ExportTabMatrix($matrix);
 
-    ## Shuffle the matrix
-    local $perm_nb_max = &max($perm_nb{pos}, $perm_nb{neg});
-    &PermuteMatrixColumns() if ($tasks{permute});
+    ## Shuffle the columns of the matrix (permutation test)
+    local $perm_nb_max = &RSAT::stats::checked_max(values %perm_nb);
+    &PermuteMatrixColumns() if ($tasks{permute} && $perm_nb_max);
 
     ## Calcualte theoretical distribution of probabilities
     &PrintTheorScoreDistribution($matrix) if ($tasks{theor});
@@ -187,8 +187,8 @@ package main;
     ## Calculate score distributions in the different input sequence files
 
     ## Score positive sequences with the matrix
-    if ($seqfile{pos}) {
-      &ScanSequences($seqfile{pos}, $matrix_file, $matrix_format, "positive", @matrix_scan_options);
+    if ($seqfile{positive}) {
+      &ScanSequences($seqfile{positive}, $matrix_file, $matrix_format, "positive", @matrix_scan_options);
       push @distrib_files, &ScoreDistrib('positive', $Wmin, $Wmax);
     }
 
@@ -199,39 +199,39 @@ package main;
     }
 
     ## Score negative sequences with the matrix
-    if ($seqfile{neg}) {
-      &ScanSequences($seqfile{neg}, $matrix_file, $matrix_format, "negative",  @matrix_scan_options) ;
+    if ($seqfile{negative}) {
+      &ScanSequences($seqfile{negative}, $matrix_file, $matrix_format, "negative",  @matrix_scan_options) ;
       push @distrib_files, &ScoreDistrib('negative', $Wmin, $Wmax);
-      $file_nb{neg} = scalar(@distrib_files);
+      $file_nb{negative} = scalar(@distrib_files);
     }
 
     ## Score negative sequences with the permuted matrices
-    if (($seqfile{neg}) && ($perm_nb{neg} > 0)) {
+    if (($seqfile{negative}) && ($perm_nb{negative} > 0)) {
       ## Calculate the merged distribution for permuted matrices
-      &ScanSequences($seqfile{neg}, $outfile{'negative_matrix_perm_col_all'}, "tab", "negative_perm_col_1-".$perm_nb{neg},  @matrix_scan_options) ; 
-      push @distrib_files, &ScoreDistrib('negative_perm_col_1-'.$perm_nb{neg}, $Wmin, $Wmax);
+      &ScanSequences($seqfile{negative}, $outfile{'negative_matrix_perm_col_all'}, "tab", "negative_perm_col_1-".$perm_nb{negative},  @matrix_scan_options) ; 
+      push @distrib_files, &ScoreDistrib('negative_perm_col_1-'.$perm_nb{negative}, $Wmin, $Wmax);
 
       ## Calculate the separate distributions for each permuted matrix
       ## (this highlights the variability but the graph is noisy)
       if ($perm_separate_distrib) {
-	for my $i (1..$perm_nb{neg}) {
-	  &ScanSequences($seqfile{neg}, $outfile{'matrix_perm_col_'.$i}, "tab", "negative_perm_col_".$i, @matrix_scan_options) ; 
+	for my $i (1..$perm_nb{negative}) {
+	  &ScanSequences($seqfile{negative}, $outfile{'matrix_perm_col_'.$i}, "tab", "negative_perm_col_".$i, @matrix_scan_options) ; 
 	  push @distrib_files, &ScoreDistrib('negative_perm_col_'.$i, $Wmin, $Wmax);
 	}
       }
     }
 
     ## Score positive sequences with the permuted matrices
-    if (($seqfile{pos}) && ($perm_nb{pos} > 0)){
+    if (($seqfile{positive}) && ($perm_nb{positive} > 0)){
       ## Calculate the merged distribution for permuted matrices
-      &ScanSequences($seqfile{pos}, $outfile{'positive_matrix_perm_col_all'}, "tab", "positive_perm_col_1-".$perm_nb{pos}, @matrix_scan_options);
-      push @distrib_files, &ScoreDistrib('positive_perm_col_1-'.$perm_nb{pos}, $Wmin, $Wmax);
+      &ScanSequences($seqfile{positive}, $outfile{'positive_matrix_perm_col_all'}, "tab", "positive_perm_col_1-".$perm_nb{positive}, @matrix_scan_options);
+      push @distrib_files, &ScoreDistrib('positive_perm_col_1-'.$perm_nb{positive}, $Wmin, $Wmax);
 
       ## Calculate the separate distributions for each permuted matrix
       ## (this highlights the variability but the graph is noisy)
       if ($perm_separate_distrib) {
- 	for my $i (1..$perm_nb{pos}) {
- 	  &ScanSequences($seqfile{pos}, $outfile{'matrix_perm_col_'.$i}, "tab", "positive_perm_col_".$i , @matrix_scan_options);
+ 	for my $i (1..$perm_nb{positive}) {
+ 	  &ScanSequences($seqfile{positive}, $outfile{'matrix_perm_col_'.$i}, "tab", "positive_perm_col_".$i , @matrix_scan_options);
  	  push @distrib_files, &ScoreDistrib('positive_perm_col_'.$i,$Wmin, $Wmax);
  	}
       }
@@ -244,19 +244,21 @@ package main;
       &ScanSequences($seqfile{$seq_type}, $matrix_file, $matrix_format, $seq_type,   @matrix_scan_options) ;
       push @distrib_files, &ScoreDistrib($seq_type, $Wmin, $Wmax); $file_nb{$seq_type} = scalar(@distrib_files);
 
-#       ## Score sequences of other types with the permuted matrices
-#       if (($seqfile{$seq_type}) && ($perm_nb{$seq_type} > 0)) {
-# 	## Calculate the merged distribution for permuted matrices
-# 	&ScanSequences($seqfile{$seq_type}, $outfile{$seq_type.'_matrix_perm_col_all'}, "tab", $seq_type."_perm_col_1-".$perm_nb{$seq_type}, @matrix_scan_options); push @distrib_files, &ScoreDistrib($seq_type.'_perm_col_1-'.$perm_nb{$seq_type}, $Wmin, $Wmax);
+      ## Score sequences of other types with the permuted matrices
+      if (($seqfile{$seq_type}) && ($perm_nb{$seq_type} > 0)) {
+	## Calculate the merged distribution for permuted matrices
+	&ScanSequences($seqfile{$seq_type}, $outfile{$seq_type.'_matrix_perm_col_all'}, "tab", $seq_type."_perm_col_1-".$perm_nb{$seq_type}, @matrix_scan_options); 
+	push @distrib_files, &ScoreDistrib($seq_type.'_perm_col_1-'.$perm_nb{$seq_type}, $Wmin, $Wmax);
 
-# 	## Calculate the separate distributions for each permuted matrix
-# 	## (this highlights the variability but the graph is noisy)
-# 	if ($perm_separate_distrib) {
-# 	  for my $i (1..$perm_nb{$seq_type}) {
-# 	    &ScanSequences($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $seq_type."_perm_col_".$i,   @matrix_scan_options); push @distrib_files, &ScoreDistrib($seq_type.'_perm_col_'.$i, $Wmin, $Wmax);
-# 	  }
-# 	}
-#       }
+	## Calculate the separate distributions for each permuted matrix
+	## (this highlights the variability but the graph is noisy)
+	if ($perm_separate_distrib) {
+	  for my $i (1..$perm_nb{$seq_type}) {
+	    &ScanSequences($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $seq_type."_perm_col_".$i,   @matrix_scan_options); 
+	    push @distrib_files, &ScoreDistrib($seq_type.'_perm_col_'.$i, $Wmin, $Wmax);
+	  }
+	}
+      }
     }
 
     ## Compare the distributions
@@ -283,8 +285,11 @@ package main;
 
     ## Remove the single permuted matrix files (all matrices are stored in another file)
     for my $i (1..$perm_nb_max) {
-      my $clean_cmd = "rm -f ".$outfile{'matrix_perm_col_'.$i};
-      &doit($clean_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      my $perm_file = $outfile{'matrix_perm_col_'.$i};
+      if ($perm_file) {
+	my $clean_cmd = "rm -f ".$perm_file;
+	&doit($clean_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      }
     }
 
     ## Remove the partial matrices
@@ -302,7 +307,10 @@ package main;
     	my $clean_partial_cmd = "rm -f ";
     	$clean_partial_cmd .= join (" ", @temporary_distrib_files);
     	&doit($clean_partial_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-    	}
+      }
+
+    ## Give the warning about the output prefix
+    &RSAT::message::Info($outfile{prefix}) if ($main::verbose >= 1);
 
 
     exit(0);
@@ -401,9 +409,9 @@ Matrix file.
 
 =cut
 	} elsif ($arg eq "-m") {
- 	  &RSAT::message::FatalError("Options -ms and -m are mutually incompatible.") 
+ 	  &RSAT::error::FatalError("Options -ms and -m are mutually incompatible.") 
 	    if ($main::infile{matrix_sites});
-	  &RSAT::message::FatalError("You are not allowed to specify several matrices.") 
+	  &RSAT::error::FatalError("You are not allowed to specify several matrices.") 
 	    if ($main::infile{matrix});
 	  $main::infile{matrix} = shift(@arguments);
 
@@ -425,9 +433,9 @@ The format of the matrix+site file can be specified with the option
 
 =cut
 	} elsif ($arg eq "-ms") {
- 	  &RSAT::message::FatalError("Options -ms and -m are mutually incompatible.") 
+ 	  &RSAT::error::FatalError("Options -ms and -m are mutually incompatible.") 
 	    if ($main::infile{matrix});
-	  &RSAT::message::FatalError("You are not allowed to specify several matrices.") 
+	  &RSAT::error::FatalError("You are not allowed to specify several matrices.") 
 	    if ($main::infile{matrix_sites});
 	  $main::infile{matrix_sites} = shift(@arguments);
 
@@ -445,15 +453,15 @@ Format of the matrix file.
 	    ## File containing the positive sequence set
 =pod
 
-=item B<-pos pos_seq_file>
+=item B<-pos positive_seq_file>
 
 File containing the positive sequence set.
 
 =cut
 	} elsif ($arg eq "-pos") {
-	  &RSAT::message::FatalError("Options -pos and -ms are mutually incompatible.") 
+	  &RSAT::error::FatalError("Options -pos and -ms are mutually incompatible.") 
 	    if ($main::infile{matrix_sites});
-	  $main::seqfile{pos} = shift(@arguments);
+	  $main::seqfile{positive} = shift(@arguments);
 
 	    ## File containing the negative sequence set
 =pod
@@ -463,8 +471,8 @@ File containing the positive sequence set.
 File containing the negative sequence set.
 
 =cut
-	} elsif ($arg eq "-neg") {
-	    $main::seqfile{neg} = shift(@arguments);
+	} elsif ($arg eq "-negative") {
+	    $main::seqfile{negative} = shift(@arguments);
 
 	    ## File containing a sequence set of a specific type
 =pod
@@ -481,6 +489,17 @@ leend of the plots), and the second next argument the file name.
 	 $main::seqfile{$seq_type} =
 	   shift(@arguments);
 
+	    ## Skip the Leave-one-out (LOO) test for the positive set
+=pod
+
+=item B<-noloo>
+
+Do not apply the leave-one-out (LOO) test on the positive sequences. 
+
+=cut
+	} elsif ($arg eq "-noloo") {
+	  $supported_tasks{loo} = 0;
+
 	    ## Number of permutations for the positive set
 =pod
 
@@ -490,9 +509,9 @@ Number of permutations for the positive set (default 100)
 
 =cut
 	} elsif ($arg eq "-perm_pos") {
-	    $main::perm_nb{pos} = shift(@arguments);
-	    &RSAT::error::FatalError($perm_nb{pos}, "Invalid value for optin -perm_pos. Should be a Natural number.") 
-	      unless (&IsNatural($main::perm_nb{pos}));
+	    $main::perm_nb{positive} = shift(@arguments);
+	    &RSAT::error::FatalError($perm_nb{positive}, "Invalid value for option -perm_pos. Should be a Natural number.") 
+	      unless (&IsNatural($main::perm_nb{positive}));
 
 	    ## Number of permutations for the negative set
 =pod
@@ -503,9 +522,9 @@ Number of permutations for the negative set (default 1)
 
 =cut
 	} elsif ($arg eq "-perm_neg") {
-	    $main::perm_nb{neg} = shift(@arguments);
-	    &RSAT::error::FatalError($perm_nb{neg}, "Invalid value for optin -perm_pos. Should be a Natural number.") 
-	      unless (&IsNatural($main::perm_nb{neg}));
+	    $main::perm_nb{negative} = shift(@arguments);
+	    &RSAT::error::FatalError($perm_nb{negative}, "Invalid value for option -perm_pos. Should be a Natural number.") 
+	      unless (&IsNatural($main::perm_nb{negative}));
 
 	    ## Number of permutations for a specific set
 =pod
@@ -518,7 +537,7 @@ Number of permutations for a specific set (default 0).
 	} elsif ($arg eq "-perm") {
 	  my $seq_type = shift(@arguments);
 	  $main::perm_nb{$seq_type} = shift(@arguments);
-	  &RSAT::error::FatalError($perm_nb{$seq_type}, "Invalid value for optin -perm. Should be a Natural number.") 
+	  &RSAT::error::FatalError($perm_nb{$seq_type}, "Invalid value for option -perm. Should be a Natural number.") 
 	    unless (&IsNatural($main::perm_nb{$seq_type}));
 	  
 	    ## perm_sep
@@ -694,7 +713,7 @@ sub ExportInputSites {
   my ($matrix, $matrix_file) = @_;
 
   $main::outfile{sites} = $outfile{prefix}."_sites.fasta";
-  $main::seqfile{pos} = $main::outfile{sites};
+  $main::seqfile{positive} = $main::outfile{sites} if ($infile{matrix_sites});
   &RSAT::message::TimeWarn("Exporting input sites to file", $outfile{sites}) 
     if ($main::verbose >= 1);
 
@@ -953,19 +972,26 @@ sub ExportTabMatrix {
 ## Export the matrix in tab-delimited format. This will be used
 ## for permuting the matrix.
 sub PermuteMatrixColumns {
-  &RSAT::message::TimeWarn("Permuting matrix columns") 
+  &RSAT::message::TimeWarn("Permuting matrix columns", $perm_nb_max, "permutations")
     if ($main::verbose >= 1);
 
-  ## Single file regrouping all the permuted matrices for the positive set
-  $outfile{'positive_matrix_perm_col_all'} = $outfile{prefix}."_positive_matrix_perm_col_all_".$perm_nb{pos}.".tab";
-  my $init_matrix_cmd = "rm -f ".$outfile{'positive_matrix_perm_col_all'};
-  &doit($init_matrix_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+#   ## Single file regrouping all the permuted matrices for the positive set
+#   $outfile{'positive_matrix_perm_col_all'} = $outfile{prefix}."_positive_matrix_perm_col_all_".$perm_nb{positive}.".tab";
+#   my $init_matrix_cmd = "rm -f ".$outfile{'positive_matrix_perm_col_all'};
+#   &doit($init_matrix_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
-  ## Single file regrouping all the permuted matrices for the negative set
-  ## (the number of permuted matrices is not always the same as for the positive set)
-  $outfile{'negative_matrix_perm_col_all'} = $outfile{prefix}."_negative_matrix_perm_col_all_".$perm_nb{neg}.".tab";
-  $init_matrix_cmd = "rm -f ".$outfile{'negative_matrix_perm_col_all'};
-  &doit($init_matrix_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+#   ## Single file regrouping all the permuted matrices for the negative set
+#   ## (the number of permuted matrices is not always the same as for the positive set)
+#   $outfile{'negative_matrix_perm_col_all'} = $outfile{prefix}."_negative_matrix_perm_col_all_".$perm_nb{negative}.".tab";
+#   $init_matrix_cmd = "rm -f ".$outfile{'negative_matrix_perm_col_all'};
+#   &doit($init_matrix_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+  ## Single file regrouping all the permuted matrices for each sequence type 
+  foreach my $seq_type (sort keys %seqfile) {
+   $outfile{$seq_type.'_matrix_perm_col_all'} = $outfile{prefix}."_".$seq_type."_matrix_perm_col_all_".$perm_nb{$seq_type}.".tab";
+    $init_matrix_cmd = "rm -f ".$outfile{$seq_type.'_matrix_perm_col_all'};
+    &doit($init_matrix_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  }
 
   for my $i (1..$perm_nb_max) {
     $outfile{'matrix_perm_col_'.$i} = $outfile{prefix}."_matrix_perm_col_".$i.".tab";
@@ -973,18 +999,25 @@ sub PermuteMatrixColumns {
     $permute_matrix_cmd .= " -i ".$outfile{matrix_tab};
     $permute_matrix_cmd .= " -o ".$outfile{'matrix_perm_col_'.$i};
 
-    ## Add the matrix to the list of permuted matrices for the positive set
-    if ($i <= $perm_nb{pos}) {
-      $permute_matrix_cmd .= "; cat ".$outfile{'matrix_perm_col_'.$i}." >> ".$outfile{'positive_matrix_perm_col_all'};
-      $permute_matrix_cmd .= "; echo '\/\/' >> ".$outfile{'positive_matrix_perm_col_all'} if ($i < $perm_nb{pos});
+    ## Add the matrix to the list of permuted matrices for the different sequence sets
+    foreach my $seq_type (sort keys %seqfile) {
+      if ($i <= $perm_nb{$seq_type}) {
+	$permute_matrix_cmd .= "; cat ".$outfile{'matrix_perm_col_'.$i}." >> ".$outfile{$seq_type.'_matrix_perm_col_all'};
+	$permute_matrix_cmd .= "; echo '\/\/' >> ".$outfile{$seq_type.'_matrix_perm_col_all'} if ($i < $perm_nb{$seq_type});
+      }
     }
 
-    ## Add the matrix to the list of permuted matrices for the negative set
-    if ($i <= $perm_nb{neg}) {
-      $permute_matrix_cmd .= "; cat ".$outfile{'matrix_perm_col_'.$i}." >> ".$outfile{'negative_matrix_perm_col_all'};
-      $permute_matrix_cmd .= "; echo '\/\/' >> ".$outfile{'negative_matrix_perm_col_all'} if ($i < $perm_nb{neg});
-    }
+#     ## Add the matrix to the list of permuted matrices for the positive set
+#     if ($i <= $perm_nb{positive}) {
+#       $permute_matrix_cmd .= "; cat ".$outfile{'matrix_perm_col_'.$i}." >> ".$outfile{'positive_matrix_perm_col_all'};
+#       $permute_matrix_cmd .= "; echo '\/\/' >> ".$outfile{'positive_matrix_perm_col_all'} if ($i < $perm_nb{positive});
+#     }
 
+#     ## Add the matrix to the list of permuted matrices for the negative set
+#     if ($i <= $perm_nb{negative}) {
+#       $permute_matrix_cmd .= "; cat ".$outfile{'matrix_perm_col_'.$i}." >> ".$outfile{'negative_matrix_perm_col_all'};
+#       $permute_matrix_cmd .= "; echo '\/\/' >> ".$outfile{'negative_matrix_perm_col_all'} if ($i < $perm_nb{negative});
+#     }
 
     ## Execute the command
     &doit($permute_matrix_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -1017,7 +1050,7 @@ sub CompareDistrib {
 
   ################################################################
   ## Draw a graph with all the inverse cumulative distributions
-  my $XYgraph_cmd = "XYgraph ";
+  my $XYgraph_cmd = "XYgraph -xsize 800 -ysize 400";
   my $ycols = join ",", 2..(scalar(@distrib_files)+2);
   $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
   $XYgraph_cmd .= " -format ".$image_format." -lines -pointsize 1 -legend";
@@ -1034,7 +1067,7 @@ sub CompareDistrib {
   ################################################################
   ## Draw a graph with all the inverse cumulative distributions
   ## and a logarithmic Y axis
-  $XYgraph_cmd = "XYgraph ";
+  $XYgraph_cmd = "XYgraph -xsize 800 -ysize 400";
   $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
   $XYgraph_cmd .= " -format ".$image_format." -lines -pointsize 1 -legend";
   $XYgraph_cmd .= " -title1 'matrix-quality ".$infile{matrix}."'";
@@ -1050,12 +1083,12 @@ sub CompareDistrib {
   ################################################################
   ## Draw a ROC curve
   my $ref_column;
-  if (defined($file_nb{neg})) {
-    $ref_column = 2 + $file_nb{neg};
+  if (defined($file_nb{negative})) {
+    $ref_column = 2 + $file_nb{negative};
   } else {
     $ref_column = 2;
   }
-  $XYgraph_cmd = "XYgraph ";
+  $XYgraph_cmd = "XYgraph -xsize 400 -ysize 400";
   $ycols = join ",", 2..(scalar(@distrib_files)+2);
   $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
   $XYgraph_cmd .= " -format ".$image_format." -lines -pointsize 1 -legend";
