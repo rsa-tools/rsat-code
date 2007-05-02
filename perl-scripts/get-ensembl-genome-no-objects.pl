@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-no-objects.pl,v 1.5 2007/04/24 08:13:45 oly Exp $
+# $Id: get-ensembl-genome-no-objects.pl,v 1.6 2007/05/02 14:46:26 oly Exp $
 #
 # Time-stamp
 #
@@ -79,6 +79,8 @@ package main;
     $outfile{xreference} = "xreference.tab";
     $outfile{intron} = "intron.tab";
     $outfile{exon} = "exon.tab";
+    $outfile{utr} = "utr.tab";
+    $outfile{coding_exon} = "coding_exon.tab";
     local $verbose = 0;
     
     ## Connection to the EnsEMBL MYSQL database
@@ -192,6 +194,10 @@ package main;
 	&PrintFtHeader("intron", *INTRON);
 	$EXON = &OpenOutputFile($outfile{exon});
 	&PrintFtHeader("exon", *EXON);
+	$UTR = &OpenOutputFile($outfile{utr});
+	&PrintFtHeader("utr", *UTR);
+	$CODING_EXON = &OpenOutputFile($outfile{coding_exon});
+	&PrintFtHeader("coding_exon", *CODING_EXON);
 
 	$MRNA_NAME = &OpenOutputFile($outfile{mrna_name});
 	&PrintFtNameHeader("mrna", *MRNA_NAME);
@@ -371,6 +377,13 @@ package main;
 		$feature[1] = "gene";
 		$feature[3] = $slice_id; ## Introduced to remove potential circular reference (test)
 		my $gene_description = $feature[7];
+
+		## Exchange start and stop coordinates if on R strand
+ #                   if ($feature[6] eq "R") {
+ #                       my $xchanger = $feature[4];
+ #                       $feature[4] = $feature[5];
+ #                       $feature[5] = $xchanger;
+ #                   }
 	    
 		print $GENE join("\t", @feature), "\n";
 		print $GENE_NAME join ("\t", $feature[0], $feature[2], "primary"), "\n";
@@ -396,6 +409,14 @@ package main;
 		    my $transcript_id = $feature[0];
 		    push @feature, $gene_id;		
 		    $feature[3] = $slice_id;
+
+		    ## Exchange start and stop coordinates if on R strand
+#		    if ($feature[6] eq "R") {
+#                        my $xchanger = $feature[4];
+#                        $feature[4] = $feature[5];
+#                        $feature[5] = $xchanger;
+#                    }
+
 		    if ($feature[7] eq "<no description>") {
 			$feature[7] = $gene_description;
 		    }
@@ -478,13 +499,13 @@ package main;
 			&PrintNextSequence(PP,"fasta",60,$ensembl_translation->seq(),$ensembl_translation->stable_id());
 			
 			## VERIFIER SI CECI EST TOUJOURS UTILE
-			if ($feature[6] eq 'D') {
+#			if ($feature[6] eq 'D') {
 			    $feature[4] = $coding_region_start;
 			    $feature[5] = $coding_region_end;
-			} else {
-			    $feature[4] = $coding_region_end;
-			    $feature[5] = $coding_region_start;
-			}
+#			} else {
+#			    $feature[4] = $coding_region_end;
+#			    $feature[5] = $coding_region_start;
+#			}
 			$feature[0] = $ensembl_translation->stable_id();
 			$feature[1] = "CDS";
 			if ($feature[7] eq "<no description>") {
@@ -508,33 +529,153 @@ package main;
 			}
 		    }
 
-		    warn join("\t", "; Collecting Exons"), "\n" if ($main::verbose >= 5); ######
-		    
+		    ## Getting UTRs
+		    my @utrfeature = ();
+		    if ($trans->start() < $coding_region_start) {
+		      if ($feature[6] eq "D") {
+			push @utrfeature, "5'UTR-".$transcript_id;
+			push @utrfeature, "5'UTR";
+                      } else {
+			push @utrfeature, "3'UTR-".$transcript_id;
+			push @utrfeature, "3'UTR";
+		      }
+		      push @utrfeature, "";
+                      push @utrfeature, $slice_id;
+		      push @utrfeature, $trans->start;
+                      push @utrfeature, $coding_region_start - 1;
+		      push @utrfeature, $feature[6];
+                      push @utrfeature, "";
+                      push @utrfeature, $transcript_id;
+                      push @utrfeature, $gene_id;
+		      print $UTR join ("\t", @utrfeature), "\n";
+		    }
+		    @utrfeature = ();
+		    if ($trans->end() > $coding_region_end) {
+                      if ($feature[6] eq "D") {
+                        push @utrfeature, "3'UTR-".$transcript_id;
+                        push @utrfeature, "3'UTR";
+                      } else {
+                        push @utrfeature, "5'UTR-".$transcript_id;
+                        push @utrfeature, "5'UTR";
+		      }
+		      push @utrfeature, "";
+                      push @utrfeature, $slice_id;
+                      push @utrfeature, $coding_region_end + 1;
+		      push @utrfeature, $trans->end;
+		      push @utrfeature, $feature[6];
+                      push @utrfeature, "";
+                      push @utrfeature, $transcript_id;
+                      push @utrfeature, $gene_id;
+		      print $UTR join ("\t", @utrfeature), "\n";
+                    }
+
 		    unless ($no_ons) {
 			## Get all Exon objects
+			warn join("\t", "; Collecting Exons"), "\n" if ($main::verbose >= 5);
 			foreach my $exon (@{$trans->get_all_Exons()}) {
 			    my @exonfeature = &get_exonfeature($exon);
-			    push @exonfeature, $gene_id;
+			    $exonfeature[3] = $slice_id;
+			    push @exonfeature, $transcript_id;
 
 			    ## Coding region (not working for the moment; these methods are under development @ ensembl)
-#			    push @exonfeature, $exon->coding_region_start($trans);
-#			    push @exonfeature, $exon->coding_region_end($trans);
+#                           push @exonfeature, $exon->coding_region_start($trans);
+#                           push @exonfeature, $exon->coding_region_end($trans);
+			    ## instead:
+			    push @exonfeature, "";
+			    push @exonfeature, "";
+
+			    push @exonfeature, $gene_id;
+
+#			    if ($feature[6] eq "R") {
+#				my $xchanger = $exonfeature[4];
+#				$exonfeature[4] = $exonfeature[5];
+#				$exonfeature[5] = $xchanger;
+#			    }
 
 			    print $EXON join("\t", @exonfeature), "\n";
-#			    if ($exon_feature[]) {
-#				
-#			    }
+
+			    ## Getting coding regions of exons
+			    my @codingexonfeature = ();
+
+			    warn join ("\t", "Coding region START=", $coding_region_start), "\n";
+			    warn join ("\t", "Coding region END=", $coding_region_end), "\n";
+			    warn join ("\t", "EXON START=", $exonfeature[4]), "\n";
+			    warn join ("\t", "EXON END=", $exonfeature[5]), "\n";
+
+			    if ($exonfeature[4] < $coding_region_start && $exonfeature[5] > $coding_region_start) {
+				push @codingexonfeature, "Coding-".$exonfeature[0];
+				push @codingexonfeature, "coding_exon";
+				push @codingexonfeature, "";
+				push @codingexonfeature, $slice_id;
+#				if ($feature[6] eq "D") {
+				  push @codingexonfeature, $coding_region_start;
+				  push @codingexonfeature, $exonfeature[5];
+#				} else {
+#				  push @codingexonfeature, $exonfeature[5];
+#				  push @codingexonfeature, $coding_region_start;
+#				}
+				push @codingfeature, $feature[6];
+				push @codingexonfeature, "";
+				push @codingexonfeature, $transcript_id;
+				push @codingexonfeature, $gene_id;
+				print $CODING_EXON join ("\t", @codingexonfeature), "\n";
+			    }
+			    @codingexonfeature = ();
+                            if ($exonfeature[4] > $coding_region_start && $exonfeature[5] < $coding_region_end) {
+				push @codingexonfeature, "Coding-".$exonfeature[0];
+                                push @codingexonfeature, "coding_exon";
+				push @codingexonfeature, "";
+                                push @codingexonfeature, $slice_id;
+#				if ($feature[6] eq "D") {
+                                  push @codingexonfeature, $exonfeature[4];
+                                  push @codingexonfeature, $exonfeature[5];
+#				} else {
+#				  push @codingexonfeature, $exonfeature[5];
+#				  push @codingexonfeature, $exonfeature[4];
+#				}
+                                push @codingfeature, $feature[6];
+				push @codingexonfeature, "";
+                                push @codingexonfeature, $transcript_id;
+                                push @codingexonfeature, $gene_id;
+				print $CODING_EXON join ("\t", @codingexonfeature), "\n";
+                            }
+			    @codingexonfeature = ();
+			    if ($exonfeature[4] < $coding_region_end && $exonfeature[5] > $coding_region_end) {
+				push @codingexonfeature, "Coding-".$exonfeature[0];
+                                push @codingexonfeature, "coding_exon";
+				push @codingexonfeature, "";
+                                push @codingexonfeature, $slice_id;
+#				if ($feature[6] eq "D") {
+                                  push @codingexonfeature, $exonfeature[4];
+                                  push @codingexonfeature, $coding_region_end;
+#				} else {
+#				  push @codingexonfeature, $coding_region_end;
+#				  push @codingexonfeature, $exonfeature[4];
+#				}
+                                push @codingfeature, $feature[6];
+				push @codingexonfeature, "";
+                                push @codingexonfeature, $transcript_id;
+                                push @codingexonfeature, $gene_id;
+				print $CODING_EXON join ("\t", @codingexonfeature), "\n";
+                            }
 			}
 			
-		    warn join("\t", "; Collecting Introns"), "\n" if ($main::verbose >= 5); ######
-
 			## Get all Intron objects
+			warn join("\t", "; Collecting Introns"), "\n" if ($main::verbose >= 5);
 			my $int = 0;
 			foreach my $intron (@{$trans->get_all_Introns()}) {
 			    $int++;
 			    my @intronfeature = &get_intronfeature($intron);
 			    $intronfeature[0] = "Intron".$int."-".$transcript_id;
+			    $intronfeature[3] = $slice_id;
 			    push @intronfeature, $gene_id;
+
+#			    if ($feature[6] eq "R") {
+#                                my $xchanger = $intronfeature[4];
+#                                $intronfeature[4] = $intronfeature[5];
+#                                $intronfeature[5] = $xchanger;
+#                            }
+
 			    print $INTRON join("\t", @intronfeature), "\n";
 			}
 		    }
@@ -619,9 +760,12 @@ package main;
 	close $GENE_NAME if ($outfile{gene_name});
 #	close $XREF_TABLE if ($outfile{xreference});
 	close PP;
+	close $UTR;
+
 	unless ($no_ons) {
 	    close $INTRON if ($outfile{intron});
 	    close $EXON if ($outfile{exon});
+	    close $CODING_EXON if ($outfile{coding_exon});
 	}
     }
     ################################################################
@@ -988,7 +1132,7 @@ sub get_intronfeature {
 
     ## Chromosome name.
     push @intronfeature, $intron->slice->seq_region_name(); ## CIRCULAR REFERENCE?
-    push @intronfeature, "contig";
+#    push @intronfeature, "contig";
 
     ## Start position
     push @intronfeature, $intron->start();
@@ -1038,7 +1182,7 @@ sub PrintFtHeader {
     if ($feature_type eq "gene" || $feature_type eq "repeat_region") {
 	print $filehandle_name "-- header", "\n";
 	print $filehandle_name "-- id	type	name	contig	start_pos	end_pos	strand	description", "\n";
-    } elsif ($feature_type eq "cds") {
+    } elsif ($feature_type eq "cds" || $feature_type eq "utr" || $feature_type eq "coding_exon") {
 	print $filehandle_name "-- field 9	transcript", "\n";
 	print $filehandle_name "-- field 10	GeneID", "\n";
 	print $filehandle_name "-- header", "\n";
