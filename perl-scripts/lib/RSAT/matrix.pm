@@ -215,7 +215,15 @@ the program consensus (Hertz), but not by other programs.
 			    "MotifSampler"=>1,
 			    "transfac"=>1,
 			    "tab"=>1,
+			    "consensus"=>1,
 			   );
+
+## Separator between matrices for multi-matrix files
+%matrix_separator = ("consensus"=>"\n",
+		     "tab"=>"//", 
+		     "patser"=>"//",
+		     "transfac"=>"//");
+
 
 $info_log_base = exp(1);
 #$info_log_base = 2;
@@ -494,6 +502,8 @@ sub toString {
       return $self->to_Motifsampler(%args);
     } elsif (lc($output_format) eq "transfac") {
       return $self->to_TRANSFAC(%args);
+    } elsif (lc($output_format) eq "consensus") {
+      return $self->to_consensus(%args);
     } else {
       &RSAT::error::FatalError($output_format, "Invalid output format for a matrix");
     }
@@ -554,6 +564,42 @@ sub to_TRANSFAC {
     ## End of record
     $to_print .= "//\n";
 }
+
+
+
+################################################################
+=pod
+
+=item to_patser(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_string)
+
+Return a string description of the matrix in the same format as Jerry
+Hertz program consensus. This includes the matrix (as the one used as input by in patser) plus the sites (if present). 
+
+=cut
+sub to_consensus {
+  my ($self, %args) = @_;
+
+  my $matrix_nb = $self->get_attribute("number") || 1;
+  my $string = "MATRIX ".$matrix_nb."\n";
+  $self->calcInformation();
+
+  my @site_sequences = $self->get_attribute("sequences");
+  $string .= join ("", "number of sequences = ", scalar(@site_sequences) || "NA", "\n");
+  $string .= join ("", "unadjusted information = ",  $self->get_attribute("unadjusted.information") || $self->get_attribute("total.information") || "NA", "\n");
+  $string .= join ("", "sample size adjusted information = ",  $self->get_attribute("adjusted.information") || "NA", "\n");
+  $string .= join ("", "ln(p-value) = ",  $self->get_attribute("ln.Pval") || "NA",
+		   "   ", "p-value = ",  $self->get_attribute("P-value") || "NA", "\n");
+  $string .= join ("", "ln(expected frequency) = ",  $self->get_attribute("ln.exp") || log($self->get_attribute("E-value")) || "NA",
+		   "   ", "expected frequency = ",  $self->get_attribute("exp") || $self->get_attribute("E-value") || "NA", "\n");
+  $string .= $self->to_patser(type=>"counts", col_width=>4);
+  foreach my $s (0..$#site_sequences) {
+    my $sequence = $site_sequences[$s];
+    $string .= sprintf "%4d|%-4d:%5d/%-6d%s\n", $s+1, $s+1, $s+1,1, $sequence;
+  }
+
+  return $string;
+}
+
 
 ################################################################
 =pod
@@ -633,15 +679,14 @@ sub to_patser {
     if ($type eq "parameters") {
       my @information = $self->getInformation();
       $to_print .= $self->_printParameters($to_print);
-      
+
       ################################################################
       ## Print a profile (vertical matrix with consensus on the right side)
     } elsif ($type eq "profile") {
-      
       $to_print .= $self->_printProfile($to_print);
-      
+
     } else {
-      
+
       ################################################################
       ## Print a matrix
       my @matrix = ();
