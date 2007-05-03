@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.61 2007/03/08 15:09:02 jvanheld Exp $
+# $Id: matrix-scan,v 1.62 2007/05/03 12:57:17 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1220,7 +1220,7 @@ Level of verbosity (detail in the warning messages during execution)
 	    } else {
 		$main::verbose = 1;
 	    }
-	    
+
 	    ## Help message
 =pod
 

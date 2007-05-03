@@ -171,7 +171,6 @@ sub doit {
 			     "-N ", $job_name,
 			     "-o ".$job_log, $job);
 	}
-    
 	&doit($qsub_cmd, $dry, $die_on_error,$verbose,0);
 
     } else {
@@ -181,7 +180,7 @@ sub doit {
 	    &RSAT::message::TimeWarn("Working dir", $wd) if ($main::verbose >= 3);
 	    &RSAT::message::TimeWarn($command);
 	}
-	
+
 	## Send the command to the queue
 	unless ($dry) {
 	    my $error = system $command;
