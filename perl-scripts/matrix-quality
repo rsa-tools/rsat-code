@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.25 2007/04/30 15:44:09 rsat Exp $
+# $Id: matrix-quality,v 1.26 2007/05/03 13:01:44 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -762,12 +762,15 @@ sub Verbose {
 	    printf $main::out ";\t%-21s\t%s\n", $seq_type , $value;
 	}
     }
-    foreach my $seq_type (@seq_types) {
+
+    if (scalar(@seq_types) > 0) {
 	print $main::out "; Matrix permutations per sequence type\n";
-	unless (defined($perm_nb{$seq_type})) {
-	    $perm_nb{$seq_type} = 0;
+	foreach my $seq_type (@seq_types) {
+	    unless (defined($perm_nb{$seq_type})) {
+		$perm_nb{$seq_type} = 0;
+	    }
+	    printf $main::out ";\t%-21s\t%d\n", $seq_type , $perm_nb{$seq_type};
 	}
-	printf $main::out ";\t%-21s\t%d\n", $seq_type , $perm_nb{$seq_type};
     }
 }
 
@@ -924,12 +927,17 @@ sub ScanSequences {
   $matrix_scan_cmd .= " -o ".$outfile{$seq_type};
   $matrix_scan_cmd .=  " -return distrib";
   $matrix_scan_cmd .= join(" ", "", @args);
-  $matrix_scan_cmd .= " ".$main::scanopt{$seq_type};;
+  if (defined($main::scanopt{$seq_type})) {
+      $matrix_scan_cmd .= " ".$main::scanopt{$seq_type};
+  }
 
   ## Print the complete command in the log file
-  print $main::out "\nmatrix-scan command\n";
+  print $main::out ";\n;matrix-scan command\n";
   printf $main::out ";\t%-22s\t%s\n", "Sequence type", $seq_type;
   printf $main::out ";\t%-22s\t%s\n", "Sequence file", $sequence_file;
+  if (defined($main::scanopt{$seq_type})) {
+      printf $main::out ";\t%-22s\t%s\n", "Type-specific options", $scanopt{$seq_type};
+  }
   printf $main::out ";\t%-22s\t%s\n", "Command", $matrix_scan_cmd;
   
 
