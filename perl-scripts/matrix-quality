@@ -1,13 +1,13 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.26 2007/05/03 13:01:44 rsat Exp $
+# $Id: matrix-quality,v 1.27 2007/05/03 15:13:10 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
 
-## use strict;
+#use strict;
 
 =pod
 
@@ -90,16 +90,17 @@ package main;
     $matrix_format = "consensus";
     $decimals = 2;
     %perm_nb = (); ## Number of permutations per sequence set
-    $perm_nb{positive}=20; ## Number of permutation tests for the positive set (sites)
-    $perm_nb{negative}=5; ## Number of permutation tests for the negative set
+#    $perm_nb{positive}=0; ## Number of permutation tests for the positive set (sites)
+#    $perm_nb{negative}=0; ## Number of permutation tests for the negative set
     $perm_separate_distrib = 0; ## Calcualte the distribution for each permuted matrix separately
     $loo_rm_twin = 1; ## Also exclude twin sites in the loo procedure.
     $pseudo_counts = 1;
 
-    @main::seq_types = (); ## Sequence types
-    %main::infile = ();
-    %main::seqfile = ();
-    %main::outfile = ();
+    %dir = ();
+    @seq_types = (); ## Sequence types
+    %infile = ();
+    %seqfile = ();
+    %outfile = ();
 
     $main::verbose = 0;
     $main::out = STDOUT;
@@ -150,6 +151,11 @@ package main;
       unless ($outfile{prefix});
     $outfile{log} = $main::outfile{prefix}."_log.txt";
 
+    ## Create output directory if required
+    $dir{output} = `dirname $outfile{prefix}`;
+    chomp($dir{output});
+    &RSAT::util::CheckOutDir($dir{output});
+
     ################################################################
     ### open output stream
     $main::out = &OpenOutputFile($outfile{log});
@@ -186,7 +192,7 @@ package main;
     local $perm_nb_max = &RSAT::stats::checked_max(values %perm_nb);
     print "; Number of permutations\n";
     foreach my $seq_type (@seq_types) {
-	print join("\t", $seq_type, $perm_nb{$seq_type}, $seqfile{$seq_type}), "\n";
+	print join("\t", $seq_type, $perm_nb{$seq_type} || 0, $seqfile{$seq_type}), "\n";
     }
     &PermuteMatrixColumns() if ($tasks{permute} && $perm_nb_max);
 
@@ -195,57 +201,11 @@ package main;
 
     ## Calculate score distributions in the different input sequence files
 
-#    ## Score positive sequences with the matrix
-#    if ($seqfile{positive}) {
-#      &ScanSequences($seqfile{positive}, $matrix_file, $matrix_format, "positive", @matrix_scan_options);
-#      push @distrib_files, &ScoreDistrib('positive', $Wmin, $Wmax);
-#    }
-
     ## Calculate the Leave-one-out score distribution for the matrix sites
     if ($tasks{loo}) {
       &LOO_scores($matrix, @matrix_scan_options);
-      push @distrib_files, &ScoreDistrib('sites_loo', $Wmin, $Wmax);
+      push @distrib_files, &ScoreDistrib('matrix_sites_loo', $Wmin, $Wmax);
     }
-
-#    ## Score negative sequences with the matrix
-#    if ($seqfile{negative}) {
-#      &ScanSequences($seqfile{negative}, $matrix_file, $matrix_format, "negative",  @matrix_scan_options) ;
-#      push @distrib_files, &ScoreDistrib('negative', $Wmin, $Wmax);
-#      $file_nb{negative} = scalar(@distrib_files);
-#    }
-
-    ## Score negative sequences with the permuted matrices
-#    if (($seqfile{negative}) && ($perm_nb{negative} > 0)) {
-#	## Calculate the merged distribution for permuted matrices
-#	my $perm_suffix = "negative_perm_col_1-".$perm_nb{negative};
-#	&ScanSequences($seqfile{negative}, $outfile{'negative_matrix_perm_col_all'}, "tab", $perm_suffix,  @matrix_scan_options) ; 
-#	push @distrib_files, &ScoreDistrib('negative_perm_col_1-'.$perm_nb{negative}, $Wmin, $Wmax);
-#	
-#      ## Calculate the separate distributions for each permuted matrix#
-#      ## (this highlights the variability but the graph is noisy)
-#      if ($perm_separate_distrib) {
-#	for my $i (1..$perm_nb{negative}) {
-#	  &ScanSequences($seqfile{negative}, $outfile{'matrix_perm_col_'.$i}, "tab", "negative_perm_col_".$i, @matrix_scan_options) ; 
-#	  push @distrib_files, &ScoreDistrib('negative_perm_col_'.$i, $Wmin, $Wmax);
-#	}
-#      }
-#    }
-
-#    ## Score positive sequences with the permuted matrices
-#    if (($seqfile{positive}) && ($perm_nb{positive} > 0)){
-#      ## Calculate the merged distribution for permuted matrices
-#      &ScanSequences($seqfile{positive}, $outfile{'positive_matrix_perm_col_all'}, "tab", "positive_perm_col_1-".$perm_nb{positive}, @matrix_scan_options);
-#      push @distrib_files, &ScoreDistrib('positive_perm_col_1-'.$perm_nb{positive}, $Wmin, $Wmax);
-#
-#      ## Calculate the separate distributions for each permuted matrix
-#      ## (this highlights the variability but the graph is noisy)
-#      if ($perm_separate_distrib) {
-# 	for my $i (1..$perm_nb{positive}) {
-# 	  &ScanSequences($seqfile{positive}, $outfile{'matrix_perm_col_'.$i}, "tab", "positive_perm_col_".$i , @matrix_scan_options);
-# 	  push @distrib_files, &ScoreDistrib('positive_perm_col_'.$i,$Wmin, $Wmax);
-# 	}
-#      }
-#    }
 
 
     ## Other sequence files
@@ -329,6 +289,7 @@ package main;
 
     ## Give the warning about the output prefix
     if ($main::verbose >= 1) {
+      &RSAT::message::Info("Output directory", $dir{output});
       &RSAT::message::Info("Log file", $outfile{log});
     }
 
@@ -418,11 +379,11 @@ Same as -h
 =cut
 	} elsif ($arg eq "-help") {
 	    &PrintOptions();
-	    
+
 	    ## Matrix file
 =pod
 
-=item B<-m matrixfile>
+=item B<-m matrix_file>
 
 Matrix file.
 
@@ -454,6 +415,8 @@ The format of the matrix+site file can be specified with the option
 	} elsif ($arg eq "-ms") {
  	  &RSAT::error::FatalError("Options -ms and -m are mutually incompatible.") 
 	    if ($main::infile{matrix});
+ 	  &RSAT::error::FatalError("Options -ms and -m are mutually incompatible.") 
+	    if ($main::infile{matrix});
 	  &RSAT::error::FatalError("You are not allowed to specify several matrices.") 
 	    if ($main::infile{matrix_sites});
 	  $main::infile{matrix_sites} = shift(@arguments);
@@ -481,7 +444,7 @@ File containing the positive sequence set.
 	  &RSAT::error::FatalError("Options -pos and -ms are mutually incompatible.") 
 	    if ($main::infile{matrix_sites});
 	  $main::seqfile{positive} = shift(@arguments);
-         push @seq_types, "positive";
+	  push @seq_types, "positive";
 
 	    ## File containing the negative sequence set
 =pod
@@ -745,21 +708,28 @@ sub Verbose {
 	foreach my $key (sort(keys %infile)) {
 	  my $value = $infile{$key};
 #	while (my ($key,$value) = each %main::infile) {
-	    printf $main::out ";\t%-21s\t%s\n", $key , $value;
+	    printf $main::out ";\t%-29s\t%s\n", $key , $value;
+	}
+    }
+    if (defined(%main::seqfile)) {
+	print $main::out "; Sequence files\n";
+	foreach my $key (sort(keys %seqfile)) {
+	  my $value = $seqfile{$key};
+	    printf $main::out ";\t%-29s\t%s\n", $key , $value;
 	}
     }
     if (defined(%main::outfile)) {
 	print $main::out "; Output files\n";
 	foreach my $key (sort(keys %outfile)) {
 	  my $value = $outfile{$key};
-	  printf $main::out ";\t%-21s\t%s\n", $key , $value;
+	  printf $main::out ";\t%-29s\t%s\n", $key , $value;
 	}
     }
-    if (defined(%main::seqfile)) {
-	print $main::out "; Sequence files\n";
-	foreach my $seq_type (sort(keys %seqfile)) {
-	    my $value = $seqfile{$seq_type};
-	    printf $main::out ";\t%-21s\t%s\n", $seq_type , $value;
+    if (defined(%main::dir)) {
+	print $main::out "; Directories\n";
+	foreach my $key (sort(keys %dir)) {
+	  my $value = $dir{$key};
+	  printf $main::out ";\t%-29s\t%s\n", $key , $value;
 	}
     }
 
@@ -780,13 +750,13 @@ sub Verbose {
 sub ExportInputSites {
   my ($matrix, $matrix_file) = @_;
 
-  $main::outfile{sites} = $outfile{prefix}."_sites.fasta";
-  $main::seqfile{positive} = $main::outfile{sites} if ($infile{matrix_sites});
-  push @seq_types, "positive";
-  &RSAT::message::TimeWarn("Exporting input sites to file", $outfile{sites}) 
+  $main::outfile{matrix_sites} = $outfile{prefix}."_matrix_sites.fasta";
+  $main::seqfile{matrix_sites} = $main::outfile{matrix_sites} if ($infile{matrix_sites});
+  push @seq_types, "matrix_sites";
+  &RSAT::message::TimeWarn("Exporting matrix sites to file", $outfile{matrix_sites}) 
     if ($main::verbose >= 1);
 
-  my $site_handler = &OpenOutputFile($outfile{sites});
+  my $site_handler = &OpenOutputFile($outfile{matrix_sites});
   my $site_nb = 0; 
   foreach my $site ($matrix->get_attribute("sequences")) {
     $site_nb++;
@@ -796,6 +766,7 @@ sub ExportInputSites {
   }
 
   my $matrix_scan_cmd = "matrix-scan -v 1 ";
+  $matrix_scan_cmd .= " -top_matrices 1";
   $matrix_scan_cmd .= " -decimals ".$decimals;
   $matrix_scan_cmd .= " -pseudo ".$pseudo_counts;
   $matrix_scan_cmd .= " -m ".$matrix_file;
@@ -813,18 +784,17 @@ sub LOO_scores {
     print $main::out "; LOO partial matrices\n";
   }
 
-  $main::outfile{sites_loo} = $outfile{prefix}."_sites_loo.tab";
-#  push @distrib_files, $main::outfile{sites_loo};
+  $main::outfile{matrix_sites_loo} = $outfile{prefix}."_matrix_sites_loo.tab";
+#  push @distrib_files, $main::outfile{matrix_sites_loo};
 
-  &RSAT::message::TimeWarn("LOO scoring of the matrix sites",  $outfile{sites_loo})
+  &RSAT::message::TimeWarn("LOO scoring of the matrix sites",  $outfile{matrix_sites_loo})
     if ($main::verbose >= 1);
-  $loo_scores_handle = &OpenOutputFile($main::outfile{sites_loo});
+  $loo_scores_handle = &OpenOutputFile($main::outfile{matrix_sites_loo});
 
   my @sites = $matrix->get_attribute("sequences");
 
 
   my @partial_matrices = ();
-#  my @lo_site_scores = ();
 
   for my $i (0..$#sites) {
     ## Select the left out site
@@ -858,7 +828,6 @@ sub LOO_scores {
     ## Save the partial matrix in a file
     my $partial_matrix_file = $outfile{prefix}."_partial_matrix_".$lo_site_nb.".tab";
     push @partial_matrix_files,  $partial_matrix_file;
-    
     if ($main::verbose >= 1) {
 		my @partial_matrix_sites = $partial_matrix->get_attribute("sequences");
 		printf $main::out (";\t%s\t%d sites\t%s\n", 
@@ -866,7 +835,6 @@ sub LOO_scores {
 				   scalar(@partial_matrix_sites), 
 				   $partial_matrix_file);
     }
-    
 
     &RSAT::message::Info("Exporting partial matrix to file", $partial_matrix_file) if ($main::verbose >= 3);
     $partial_matrix_handle = &OpenOutputFile($partial_matrix_file);
@@ -881,28 +849,20 @@ sub LOO_scores {
 
     ## Score the left out site with the partial matrix
     my $matrix_scan_cmd = "echo $lo_site | matrix-scan -v 1";
+    $matrix_scan_cmd .= " -top_matrices 1";
     $matrix_scan_cmd .= " -seq_format raw";
     $matrix_scan_cmd .= " -m ".$partial_matrix_file;
     $matrix_scan_cmd .= " -matrix_format tab";
-    $matrix_scan_cmd .=  " -return distrib -1str -uth rank 1";
+    $matrix_scan_cmd .= " -return distrib -1str -uth rank 1";
     $matrix_scan_cmd .= join(" ", "", @args);
     if ($i > 0) {
       $matrix_scan_cmd .= " | grep -v '^;'";
       $matrix_scan_cmd .= " | grep -v '^#'";
     }
-    #    die "HELLO\t", $matrix_scan_cmd;
     &RSAT::message::Info("LOO command",  ($i+1)."/".scalar(@sites), $matrix_scan_cmd) if ($main::verbose >= 2);
     my $score_result = `$matrix_scan_cmd`;
     print $loo_scores_handle $score_result;
 
-#    &RSAT::message::Info("LOO scoring",  $score_result) if ($main::verbose >= 0);
-
-#    chomp($score_result);
-#    my @fields = split '\t', $score_result;
-#    my $lo_site_score = $fields[7];
-#    &RSAT::message::Info("LOO scoring", $partial_matrix->get_attribute("name"), "site",
-#			 $lo_site_nb, $lo_site_id, $lo_site, $lo_site_score) if ($main::verbose >= 0);
-#    push @lo_site_scores, $lo_site_score;
   }
   close $loo_scores_handle;
 }
@@ -921,6 +881,7 @@ sub ScanSequences {
   &RSAT::message::TimeWarn("Scoring sequences of type", $seq_type,  $outfile{$seq_type}) 
     if ($main::verbose >= 1);
   my $matrix_scan_cmd = "matrix-scan -v 1 ";
+  $matrix_scan_cmd .= " -top_matrices 1";
   $matrix_scan_cmd .= " -i ".$sequence_file;
   $matrix_scan_cmd .= " -m ".$matrix_file;
   $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
@@ -939,7 +900,6 @@ sub ScanSequences {
       printf $main::out ";\t%-22s\t%s\n", "Type-specific options", $scanopt{$seq_type};
   }
   printf $main::out ";\t%-22s\t%s\n", "Command", $matrix_scan_cmd;
-  
 
   ## Execute the command
   &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -949,15 +909,14 @@ sub ScanSequences {
 ## Calculate the distribution of scores from a given matrix-scan result file
 sub ScoreDistrib {
   my ($seq_type, $Wmin, $Wmax) = @_;
-  
+
   $main::outfile{$seq_type."_distrib_tmp"} = $outfile{prefix}."_scan_".$seq_type."_distrib_tmp.tab";
-  
   my $classfreq_min = sprintf("%.${decimals}f", $Wmin);
   &RSAT::message::TimeWarn("Calculating score distribution for sequences of type", $seq_type,  $outfile{${seq_type}."_distrib_tmp"}, $Wmin, $classfreq_min)
-	    if ($main::verbose >= 1);
+    if ($main::verbose >= 1);
   return unless ($outfile{$seq_type});
   my $reformat_cmd = "grep -v '^;' $outfile{$seq_type} | grep -v '^#' | cut -f 2,3 | sort -n > ".$outfile{${seq_type}."_distrib_tmp"};
-  
+
   ## Execute the command
   &doit($reformat_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
@@ -966,51 +925,48 @@ sub ScoreDistrib {
   ## to calculate the final distribution. This step enables to have the distribution
   ## over the whole range of theorical weights (necessary for plot) and permits to merge
   ## the results in case of several matrices sent to matrix-scan (permuted matrices)
-  
 
   ## put the temporary distrib file in memory in an array
   my ($in_matrix_scan_distrib) = &OpenInputFile($outfile{${seq_type}."_distrib_tmp"});
   my @matrix_distrib = <$in_matrix_scan_distrib> ;
   close $in_matrix_scan_distrib;
+  ## prepare the temporary score output
+  $main::outfile{$seq_type."_distrib_score_tmp"} = $outfile{prefix}."_scan_".$seq_type."_distrib_score_tmp.tab";
+  $distrib_score_handle = &OpenOutputFile($main::outfile{$seq_type."_distrib_score_tmp"});
   
-  	## prepare the temporary score output
-	$main::outfile{$seq_type."_distrib_score_tmp"} = $outfile{prefix}."_scan_".$seq_type."_distrib_score_tmp.tab";
-	$distrib_score_handle = &OpenOutputFile($main::outfile{$seq_type."_distrib_score_tmp"});
-	
-	my @matrix_scan_scores = ();
-	my @matrix_scan_occ = ();
-	
-	foreach my $line (0..$#matrix_distrib) {		
-		chomp ($matrix_distrib[$line]);
-		my ($thisScore,$occ)  = split(/\s+/,$matrix_distrib[$line]);
-		push (@matrix_scan_scores, $thisScore );
-		push (@matrix_scan_occ, $occ);		
-		}
-		
-	undef @matrix_distrib;
-	
-	foreach my $scoreNb (1..$#matrix_scan_scores) {		
-		if ($matrix_scan_scores[$scoreNb] != $matrix_scan_scores[$scoreNb-1]) {		
-			for ($count = 1; $count <= $matrix_scan_occ[$scoreNb-1]; $count++) {
-				print $distrib_score_handle $matrix_scan_scores[$scoreNb -1]."\n";
-			}
-		}
-		else {
-			$matrix_scan_occ[$scoreNb] = $matrix_scan_occ[$scoreNb] + $matrix_scan_occ[$scoreNb-1];
-			}
+  my @matrix_scan_scores = ();
+  my @matrix_scan_occ = ();
+  
+  foreach my $line (0..$#matrix_distrib) {
+    chomp ($matrix_distrib[$line]);
+    my ($thisScore,$occ)  = split(/\s+/,$matrix_distrib[$line]);
+    push (@matrix_scan_scores, $thisScore );
+    push (@matrix_scan_occ, $occ);
+  }
+  
+  undef @matrix_distrib;
+  
+  foreach my $scoreNb (1..$#matrix_scan_scores) {		
+    if ($matrix_scan_scores[$scoreNb] != $matrix_scan_scores[$scoreNb-1]) {		
+      for ($count = 1; $count <= $matrix_scan_occ[$scoreNb-1]; $count++) {
+	print $distrib_score_handle $matrix_scan_scores[$scoreNb -1]."\n";
+      }
+    } else {
+      $matrix_scan_occ[$scoreNb] = $matrix_scan_occ[$scoreNb] + $matrix_scan_occ[$scoreNb-1];
+    }
 			
-		# last entry
-		if ($scoreNb == $#matrix_scan_scores) {	
-			for ($count = 1; $count <= $matrix_scan_occ[$scoreNb]; $count++) {
-				print $distrib_score_handle $matrix_scan_scores[$scoreNb]."\n";
-				}
-			}		
-		}
-	close $distrib_score_handle;
+    # last entry
+    if ($scoreNb == $#matrix_scan_scores) {	
+      for ($count = 1; $count <= $matrix_scan_occ[$scoreNb]; $count++) {
+	print $distrib_score_handle $matrix_scan_scores[$scoreNb]."\n";
+      }
+    }		
+  }
+  close $distrib_score_handle;
 	
-	## store temporary files for final removal
-	push (@temporary_distrib_files,  $main::outfile{$seq_type."_distrib_score_tmp"});
-	push (@temporary_distrib_files,  $main::outfile{$seq_type."_distrib_tmp"});
+  ## store temporary files for final removal
+  push (@temporary_distrib_files,  $main::outfile{$seq_type."_distrib_score_tmp"});
+  push (@temporary_distrib_files,  $main::outfile{$seq_type."_distrib_tmp"});
 	
   ## prepare the complete distribution output
   $main::outfile{$seq_type."_distrib"} = $outfile{prefix}."_scan_".$seq_type."_distrib.tab";	
@@ -1026,7 +982,7 @@ sub ScoreDistrib {
   &doit($classfreq_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 	  
   return ($outfile{$seq_type."_distrib"});
-  }
+}
   
 
 ################################################################
