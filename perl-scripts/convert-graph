@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.9 2007/05/03 08:01:23 rsat Exp $
+# $Id: convert-graph,v 1.10 2007/05/03 13:56:19 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -130,7 +130,7 @@ package main;
     ###### print output
     if ($random) {
       if ($random == 1) {
-        
+        &RSAT::message::Info("Randomizing graph") if ($main::verbose >= 2);
         $graph = $graph->randomize();
         $main::out = &OpenOutputFile($main::outfile{output});
         if ($output_format eq "tab") {
@@ -141,7 +141,7 @@ package main;
         print $out $graph->to_text($output_format, $arc_id_option);        
       } else {
         for (my $i = 1; $i <= $random; $i++) {
-          
+          &RSAT::message::Info("\t", "Randomizing graph",$i) if ($main::verbose >= 2);;
           $graph = $graph->randomize();
           my $outputfile = $main::outfile{output}."_".$i.".".$output_format;
           $main::out = &OpenOutputFile($outputfile);
