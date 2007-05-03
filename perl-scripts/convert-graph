@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.8 2007/04/06 09:02:42 rsat Exp $
+# $Id: convert-graph,v 1.9 2007/05/03 08:01:23 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -41,7 +41,7 @@ util
 
 =head1 USAGE
     
-convert-graph [-i inputfile] [-o outputfile] [-from tab|gml] [-to format tab|dot|gml] [-random] [-arc_id] [-v #]
+convert-graph [-i inputfile] [-o outputfile] [-from tab|gml] [-to format tab|dot|gml] [-random #] [-arc_id] [-v #]
 
 =head1 INPUT FORMAT
 
@@ -73,7 +73,7 @@ package main;
 
     $main::verbose = 0;
 #    $main::in = STDIN;
-    $main::out = STDOUT;
+    $main::out  = STDOUT;
     
     ## arc_id_option
     $arc_id_option = 0;
@@ -101,12 +101,13 @@ package main;
 
     # return a randomized graph
     $random = 0;
-    
     &ReadArguments();
 
     ################################################################
     #### check argument values
-
+    if ($random > 1 && !defined($main::outfile{output})) {
+       &RSAT::error::FatalError("You must specify an output file prefix when more than one random graph is required");
+    }
 
     ################################################################
     ## Initialize the graph
@@ -119,24 +120,52 @@ package main;
     
     ################################################################
     ### open output streams
-    $main::out = &OpenOutputFile($main::outfile{output});
-    if ($output_format eq "tab") {
-	$main::verbose_out = $main::out;
-    } else {
-	$main::verbose_out = STDOUT;
-    }
+
 
 
     ################################################################
     #### print verbose
-    &Verbose() if ($main::verbose);
     
     ################################################################
     ###### print output
     if ($random) {
-      $graph = $graph->randomize();
+      if ($random == 1) {
+        
+        $graph = $graph->randomize();
+        $main::out = &OpenOutputFile($main::outfile{output});
+        if ($output_format eq "tab") {
+	  $main::verbose_out = $main::out;
+        } else {
+	  $main::verbose_out = STDOUT;
+        }
+        print $out $graph->to_text($output_format, $arc_id_option);        
+      } else {
+        for (my $i = 1; $i <= $random; $i++) {
+          
+          $graph = $graph->randomize();
+          my $outputfile = $main::outfile{output}."_".$i.".".$output_format;
+          $main::out = &OpenOutputFile($outputfile);
+          if ($output_format eq "tab") {
+	    $main::verbose_out = $main::out;
+          } else {
+	    $main::verbose_out = STDOUT;
+          }
+          print $out $graph->to_text($output_format, $arc_id_option);
+        }
+      }
+    } else {
+      ### open output streams
+      $main::out = &OpenOutputFile($main::outfile{output});
+      if ($output_format eq "tab") {
+	$main::verbose_out = $main::out;
+      } else {
+	$main::verbose_out = STDOUT;
+      }
+      #### print verbose
+      &Verbose() if ($main::verbose);
+      print $out $graph->to_text($output_format, $arc_id_option);
     }
-    print $out $graph->to_text($output_format, $arc_id_option);
+    
     
     ################################################################
     ###### finish verbose
@@ -229,13 +258,17 @@ Same as -h
 	    
 =pod
 
-=item B<-random>
+=item B<-random [#]>
 
 The program will return a randomized graph, shuffling the edges but keeping the node degree.
+If more than one random graph is required, you may specify a number following this option. In that case, you must use the -o option (without any extension).
 
 =cut
 	} elsif ($arg eq "-random") {
 	  $random=1;
+	  if (defined($arguments[0]) && $arguments[0] !~ /^-/) {
+	    $random = shift(@arguments);
+	  } 
 
 		    	    
 	    ## Input file
