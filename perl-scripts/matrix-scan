@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.62 2007/05/03 12:57:17 jvanheld Exp $
+# $Id: matrix-scan,v 1.63 2007/05/03 14:08:10 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -232,6 +232,7 @@ package main;
 
   ################################################################
   #### initialise parameters
+  local $top_matrices = 0;
   local $start_time = &AlphaDate();
   local $decimals=2;
   local $base = exp(1);
@@ -568,6 +569,9 @@ package main;
   &RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 3);
   foreach my $matrix_file (@matrix_files) {
     my @new_matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
+    if ($top_matrices) {
+      @new_matrices = @new_matrices[0..($top_matrices-1)];
+    }
 
     foreach my $m (0..$#new_matrices) {
       my $matrix = $new_matrices[$m];
@@ -1323,6 +1327,29 @@ multiple matrices.
 	} elsif ($arg eq "-m") {
 	    push @matrix_files, shift(@arguments);
 #	    $main::infile{matrix} = shift(@arguments);
+
+	  
+	    ## Only scan with the top matrices
+=pod
+
+=item B<-top_matrices #>
+
+Only scan with the top # matrices per matrix file. This option is
+valid for some file formats containing multiple matrices
+(e.g. consensus, meme, MotifSampler), where the top matrix is
+generally the most informative.
+
+If several matrix files are specified, the # top matrices of each file
+are used for scanning the sequences.
+
+=cut
+	} elsif ($arg eq "-top_matrices") {
+	    $main::top_matrices = shift(@arguments);
+	    &RSAT::error::FatalError("$main::origin. Invalid origin, should be an Integer number.")
+		unless (($main::origin eq "-0") || (&RSAT::util::IsInteger($main::origin)));
+#	    $main::infile{matrix} = shift(@arguments);
+
+
 
 	    ## Use consensus as matrix name
 =pod
