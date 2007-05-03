@@ -361,7 +361,7 @@ sub getPrior() {
 }
 
 ################################################################
-=pod 
+=pod
 
 =item setPrior(%prior)
 
@@ -580,18 +580,60 @@ sub to_consensus {
   my ($self, %args) = @_;
 
   my $matrix_nb = $self->get_attribute("number") || 1;
-  my $string = "MATRIX ".$matrix_nb."\n";
-  $self->calcInformation();
+  my $string = "";
 
   my @site_sequences = $self->get_attribute("sequences");
-  $string .= join ("", "number of sequences = ", scalar(@site_sequences) || "NA", "\n");
+  my $nb_sites = scalar(@site_sequences);
+
+  ## Write the header of the consensus file
+  if ($matrix_nb == 1) {
+    $string .= "PRIOR FREQUENCIES DETERMINED BY OBSERVED FREQUENCIES.\n";
+    my %prior = $self->getPrior();
+    my @alphabet = $self->getAlphabet();
+    foreach my $l (1..scalar(@alphabet)) {
+      my $letter = $alphabet[$l-1];
+      my $prior = $prior{$letter} || $prior{uc($letter)};
+      $string .= "letter   ".$l.": ".uc($letter)."  prior frequency = ".$prior."\n";
+    }
+    $string .= "\n";
+
+    ## Header for the final cycle
+    $string .= "THE LIST OF MATRICES FROM FINAL CYCLE\n\n";
+  }
+
+  ## Header for the matrix
+  $string .= "MATRIX ".$matrix_nb."\n";
+  $self->calcInformation();
+  $string .= join ("", "number of sequences = ", $nb_sites || "NA", "\n");
   $string .= join ("", "unadjusted information = ",  $self->get_attribute("unadjusted.information") || $self->get_attribute("total.information") || "NA", "\n");
   $string .= join ("", "sample size adjusted information = ",  $self->get_attribute("adjusted.information") || "NA", "\n");
   $string .= join ("", "ln(p-value) = ",  $self->get_attribute("ln.Pval") || "NA",
 		   "   ", "p-value = ",  $self->get_attribute("P-value") || "NA", "\n");
-  $string .= join ("", "ln(expected frequency) = ",  $self->get_attribute("ln.exp") || log($self->get_attribute("E-value")) || "NA",
-		   "   ", "expected frequency = ",  $self->get_attribute("exp") || $self->get_attribute("E-value") || "NA", "\n");
-  $string .= $self->to_patser(type=>"counts", col_width=>4);
+
+  ## Extrazct the E-value from the matrix
+  my $E_value = $self->get_attribute("exp") || $self->get_attribute("E-value");
+  unless (defined($E_value)) {
+    $E_value = "NA";
+  }
+
+  ## Extract the ln(E-value) from the matrix or compute it from the E-value
+  my $ln_E_value = "NA";
+  if (defined($self->get_attribute("ln.exp"))) {
+    $ln_E_value = $self->get_attribute("ln.exp")
+  } elsif ($E_value eq "NA") {
+    $ln_E_Value  = "NA";
+  } elsif ($E_value > 0) {
+    $ln_E_Value  = log($E_value);
+  } else {
+    $ln_E_value = "-Inf";
+  }
+  $string .= join ("", "ln(expected frequency) = ", $ln_E_value,
+		   "   ", "expected frequency = ", $E_value , "\n");
+
+  my $counts = $self->to_patser(type=>"counts", col_width=>4);
+  $counts =~ tr/a-z/A-Z/;
+  $string .= $counts;
+
   foreach my $s (0..$#site_sequences) {
     my $sequence = $site_sequences[$s];
     $string .= sprintf "%4d|%-4d:%5d/%-6d%s\n", $s+1, $s+1, $s+1,1, $sequence;
@@ -1090,7 +1132,6 @@ sub calcFrequencies {
 	my $prior = $prior{$letter};
 	my $occ = $matrix[$c][$r];
 	$col_sum += $occ;
-	
 	if ($self->get_attribute("equi_pseudo")) {
 	  ## Equiprobable repartition of the pseudo-weight
 	  $frequencies[$c][$r] = $occ + $pseudo/$alphabet_size;
