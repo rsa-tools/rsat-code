@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.63 2007/05/03 14:08:10 jvanheld Exp $
+# $Id: matrix-scan,v 1.64 2007/05/03 14:38:18 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -569,71 +569,70 @@ package main;
   &RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 3);
   foreach my $matrix_file (@matrix_files) {
     my @new_matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
-    if ($top_matrices) {
-      @new_matrices = @new_matrices[0..($top_matrices-1)];
-    }
 
     foreach my $m (0..$#new_matrices) {
-      my $matrix = $new_matrices[$m];
-      $matrix->force_attribute("decimals", $decimals);
-      $matrix->set_attribute("scored", 0); ## Number of sequence segments for which the matrix calculated a score
-      $matrix->set_attribute("matches", 0); ## Initialize the match counter
-      $matrix->set_parameter("pseudo", $pseudo_counts);
-      #	$matrix->push_attribute("parameters", "pseudo");
-      $matrix->set_attribute("equi_pseudo", $main::equi_pseudo);
-      $matrix->set_attribute("file", $matrix_file);
-      $matrix->set_attribute("n_treatment", $n_treatment);
-      $matrix->index_alphabet();
-
-      ## Use the matrix consensus as name
-      if ($consensus_name) {
-	$matrix->calcConsensus();
-	my $consensus = $matrix->get_attribute("consensus.IUPAC");
-	if ($consensus) {
-	  &RSAT::message::Warning("Using consensus as name", $consensus) if ($main::verbose >= 3);
-	  $matrix->force_attribute("name", $consensus);
+      unless (($top_matrices > 0) && ($m >= $top_matrices)) {
+	my $matrix = $new_matrices[$m];
+	$matrix->force_attribute("decimals", $decimals);
+	$matrix->set_attribute("scored", 0); ## Number of sequence segments for which the matrix calculated a score
+	$matrix->set_attribute("matches", 0); ## Initialize the match counter
+	$matrix->set_parameter("pseudo", $pseudo_counts);
+	#	$matrix->push_attribute("parameters", "pseudo");
+	$matrix->set_attribute("equi_pseudo", $main::equi_pseudo);
+	$matrix->set_attribute("file", $matrix_file);
+	$matrix->set_attribute("n_treatment", $n_treatment);
+	$matrix->index_alphabet();
+	
+	## Use the matrix consensus as name
+	if ($consensus_name) {
+	  $matrix->calcConsensus();
+	  my $consensus = $matrix->get_attribute("consensus.IUPAC");
+	  if ($consensus) {
+	    &RSAT::message::Warning("Using consensus as name", $consensus) if ($main::verbose >= 3);
+	    $matrix->force_attribute("name", $consensus);
+	  }
+	} else {
+	  my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+	  $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
+	  if (scalar(@new_matrices) > 1) {
+	    $matrix_name .= ".".($m+1);
+	  }
+	  $matrix->force_attribute("name", $matrix_name);
 	}
-      } else {
-	my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
-	$matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
-	if (scalar(@new_matrices) > 1) {
-	  $matrix_name .= ".".($m+1);
+	
+	## Check that the matrix width is smaller than markov order + 1
+	my $matrix_width = $matrix->ncol();
+	my $markov_order = $bg_model->get_attribute("order");
+	if ($matrix_width < $markov_order + 1) {
+	  &RSAT::error::FatalError(join (" ", 
+					  "Markov order (".$markov_order.")",
+					  "is too large for matrix",
+					  $matrix->get_attribute("name"),
+					  "of width ".$matrix_width."."));
 	}
-	$matrix->force_attribute("name", $matrix_name);
+	
+	## Calculate min and max values for P(S|M)
+	$matrix->proba_range();
+	
+	## Set the matrix prior
+	$matrix->setPrior(%prior);
+	&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"), 
+				      %prior, join(" ", $matrix->getPrior()))) if ($main::verbose >= 3);
+	## Calculate min and max weight values
+	my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
+	&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
+				      $matrix->get_attribute("name"), 
+				      $Wmin, $Wmax, $Wrange,
+				     )) if ($main::verbose >= 3);
+	
+	push @matrices, $matrix;
+	
+	&RSAT::message::TimeWarn("Read matrix", 
+				 scalar(@matrices), 
+				 $matrix->get_attribute("name"),
+				 $matrix->get_attribute("file")
+				) if ($main::verbose >= 3);
       }
-
-      ## Check that the matrix width is smaller than markov order + 1
-      my $matrix_width = $matrix->ncol();
-      my $markov_order = $bg_model->get_attribute("order");
-      if ($matrix_width < $markov_order + 1) {
-	&RSAT::error::FatalError(join (" ", 
-				       "Markov order (".$markov_order.")",
-				       "is too large for matrix",
-				       $matrix->get_attribute("name"),
-				       "of width ".$matrix_width."."));
-      }
-	
-      ## Calculate min and max values for P(S|M)
-      $matrix->proba_range();
-	
-      ## Set the matrix prior
-      $matrix->setPrior(%prior);
-      &RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"), 
-				    %prior, join(" ", $matrix->getPrior()))) if ($main::verbose >= 3);
-      ## Calculate min and max weight values
-      my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
-      &RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
-				    $matrix->get_attribute("name"), 
-				    $Wmin, $Wmax, $Wrange,
-				   )) if ($main::verbose >= 3);
-	
-      push @matrices, $matrix;
-	
-      &RSAT::message::TimeWarn("Read matrix", 
-			       scalar(@matrices), 
-			       $matrix->get_attribute("name"),
-			       $matrix->get_attribute("file")
-			      ) if ($main::verbose >= 3);
     }
   }
 
