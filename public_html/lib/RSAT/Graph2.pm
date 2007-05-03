@@ -120,22 +120,34 @@ sub randomize {
     
     # create a new graph object;
     my $rdm_graph = new RSAT::Graph2;
-    my @rdm_graph_array = @arcs;
+    my @rdm_graph_array = ();
     
     # randomize an array having the same length as scalar (@arcs);
     my @arcs_size = 0 .. (scalar(@arcs)-1);
+    
+    #my $shufl = &shuffle(\@arcs_size);
+    #my @shuffled_arcs_size = @{$shufl};
+    #print join(" ",@shuffled_arcs_size)."\n";
+    
     my @shuffled_arcs_size = shuffle(@arcs_size);
     
     # create a randomized array
     for (my $i = 0; $i < scalar(@arcs); $i++) {
       my $source = $arcs[$i][0];
+      
+      #print $source." ";
       my $target = $arcs[$shuffled_arcs_size[$i]][1];
+      my $label = $arcs[$i][2];
+      #print $target."\n";
+      #print $shuffled_arcs_size[$i];
       my $arc_color = $arcs[$i][3];
       my $source_id = $nodes_name_id{$source};
       my $target_id = $nodes_name_id{$target};
       my $source_color = $nodes_color{$source};
       my $target_color = $nodes_color{$target};
+      $rdm_graph_array[$i][0] = $source;
       $rdm_graph_array[$i][1] = $target;
+      $rdm_graph_array[$i][2] = $label;
       $rdm_graph_array[$i][3] = $source_color;
       $rdm_graph_array[$i][4] = $target_color;
       $rdm_graph_array[$i][5] = $arc_color;
@@ -1834,6 +1846,21 @@ sub load_classes {
   $self->set_array_attribute("nodes_clusters", @nodes_clusters);
 
 }
+
+# sub shuffle {
+#   return @_ if !@_ || ref $_ [0] eq 'ARRAY' && !@{$_ [0]};
+#   my $array = @_ == 1 && ref $_ [0] eq 'ARRAY' ? shift : [@_];
+#   for (my $i = @$array; -- $i;) {
+#     my $r = int rand ($i + 1);
+#     ($array -> [$i], $array -> [$r]) = ($array -> [$r], $array -> [$i]);
+#    }
+#   wantarray ? @$array : $array;
+# }
+
+
 return 1;
+
+
+
 
 __END__
