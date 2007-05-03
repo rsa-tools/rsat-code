@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.31 2007/04/26 15:26:16 jvanheld Exp $
+# $Id: convert-matrix,v 1.32 2007/05/03 12:57:43 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -82,7 +82,8 @@ unless ($input_format) {
 ## return type(s)
 local %return_fields = ();
 unless (scalar(@return_fields)) {
-  if (lc($output_format ) eq "transfac") {
+  if ((lc($output_format ) eq "transfac") ||
+      (lc($output_format ) eq "consensus")) {
     push @return_fields, "counts";
   } else {
     &RSAT::error::FatalError("You should define at least one return type");
@@ -138,7 +139,7 @@ foreach my $matrix (@matrices) {
 	if ($main::verbose >= 3);
 
     if ($m > 1) {
-      print $out "//\n";
+      print $out $RSAT::matrix::matrix_separator{$output_format}, "\n";
     }
     if ($main::verbose >= 1) {
 	print $out  ";\n; MATRIX ", $m."/".scalar(@matrices), "\n;\n";
