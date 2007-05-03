@@ -361,7 +361,7 @@ sub _readFromConsensusFile {
     ## Read the command line
     if (/COMMAND LINE: /) {
       $command = $';		# '
-      
+
     } elsif (/THE LIST OF MATRICES FROM FINAL CYCLE/) {
       $final_cycle = 1;
 
@@ -376,21 +376,23 @@ sub _readFromConsensusFile {
       next;
 
       ## Read prior frequency for one residue in the consensus header
-    } elsif (/letter\s+\d:\s+(\S+).+prior frequency =\s+(\S+)/) {
+    } elsif (/letter\s+\d+:\s+(\S+).+prior frequency =\s+(\S+)/) {
       my $letter = lc($1);
       my $prior = $2;
       &RSAT::message::Info ("Prior from consensus file", $letter, $prior) if ($main::verbose >= 3);
       $prior{$letter} = $prior;
-      
+
     } elsif ($current_matrix_nb >= 1) {
-      
+
       ## Matrix content (counts) for one residue
       if (/^\s*(\S+)\s+\|/) {
-	my @fields = split / +/, $_;
+	my @fields = split /\s+/, $_;
 	## residue associated to the row
 	my $residue = lc(shift @fields);
+	$residue =~ s/\s*\|//;
+
 	## skip the | between residue and numbers
-	shift @fields unless &main::IsReal($fields[0]);	
+	shift @fields unless &main::IsReal($fields[0]);
 	$matrix->addIndexedRow($residue, @fields);
 
 	## Sites used to build the matrix
@@ -425,7 +427,10 @@ sub _readFromConsensusFile {
   }
 
   ##Check if there was at least one matrix obtained after final cycle
-  unless (($final_cycle) && (scalar(@matrices) > 0)) {
+  unless ($final_cycle) {
+    &RSAT::error::FatalError("This file does not contain the \"FINAL CYCLE\" header");
+  } 
+  unless (scalar(@matrices) > 0) {
     &RSAT::error::FatalError("This file does not contain any final cycle matrix");
   }
 
