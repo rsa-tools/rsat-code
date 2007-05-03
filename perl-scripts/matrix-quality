@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.27 2007/05/03 15:13:10 jvanheld Exp $
+# $Id: matrix-quality,v 1.28 2007/05/03 23:00:06 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -18,9 +18,12 @@ matrix-quality
 =head1 DESCRIPTION
 
 Evaluate the quality of a Position-Specific Scoring Matrix (PSSM), by
-anlyzing the score distribution in a set of positive (true binding
-sites) and negative sequences (e.g. intergenic sequences between
-"convergently transcribed' genes).
+comparing score distributions obtained with this matrix in varous sequence sets. 
+
+The most classical use of the program is to compare score
+distributions between "positive" sequences (e.g. true binding sites
+for the considered transcription factor) and "negative" sequences
+(e.g. intergenic sequences between convergently transcribed genes).
 
 =head2 Leave-One-Out test
 
@@ -35,6 +38,11 @@ iterates over all the sequences of the positive set.
 If the left out sequence has one or more "twin" (identical site) in the 
 positive set, they are also temporarily excluded from the positive set 
 and not included in the matrix used to score the left out sequence.
+
+This option is only valid when the matrix is specified in a format
+that includes both the matrix and the sites (sequences) that were used
+to build this matrix. This is the case for matrices in MEME or
+consensus formats.
 
 =head1 AUTHORS
 
@@ -90,8 +98,6 @@ package main;
     $matrix_format = "consensus";
     $decimals = 2;
     %perm_nb = (); ## Number of permutations per sequence set
-#    $perm_nb{positive}=0; ## Number of permutation tests for the positive set (sites)
-#    $perm_nb{negative}=0; ## Number of permutation tests for the negative set
     $perm_separate_distrib = 0; ## Calcualte the distribution for each permuted matrix separately
     $loo_rm_twin = 1; ## Also exclude twin sites in the loo procedure.
     $pseudo_counts = 1;
@@ -111,14 +117,17 @@ package main;
     $job_prefix = "matrix-quality";
     $batch = 0;
 
-    ## User-specified options for XYgraph
+    ## User-specified options added to XYgraph for the distribution curves
     $graph_options = " ";
+
+    ## User-specified options added to XYgraph for the ROC curves
+    $roc_options = " ";
 
     ## Tasks
     %supported_tasks = (
 			scan=>1, ## Scan sequences with matrix-scan
 			theor=>1, ## Calculate the theoretical distribution
-			loo=>1, ## Leave-one-out test on the positive sites
+			loo=>1, ## Leave-one-out test on the matrix sites
 			permute=>1, ## Scan sequences with permuted matrices
 			compare=>1, ## Compare distributions between the various input files
 		       );
@@ -178,7 +187,7 @@ package main;
     $matrix->set_attribute("decimals", $decimals);
     $matrix->set_attribute("file", $matrix_file);
     local ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
-    $matrix_name =~ s/\.\S+$//; ## suppress the extensin from the file name
+    $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
     $matrix->set_attribute("name", $matrix_name);
     local ($Wmin, $Wmax)  = $matrix->weight_range();
 
@@ -211,8 +220,9 @@ package main;
     ## Other sequence files
     foreach my $seq_type (@seq_types) {
       &RSAT::message::TimeWarn("Analyzing sequence type", $seq_type, $seqfile{$seq_type});
-      &ScanSequences($seqfile{$seq_type}, $matrix_file, $matrix_format, $seq_type,   @matrix_scan_options) ;
-      push @distrib_files, &ScoreDistrib($seq_type, $Wmin, $Wmax); $file_nb{$seq_type} = scalar(@distrib_files);
+#      &ScanSequences($seqfile{$seq_type}, $matrix_file, $matrix_format, $seq_type,   @matrix_scan_options) ;
+#      push @distrib_files, &ScoreDistrib($seq_type, $Wmin, $Wmax); $file_nb{$seq_type} = scalar(@distrib_files);
+      &CalcSequenceDistrib($seqfile{$seq_type}, $matrix_file, $matrix_format, $seq_type,   @matrix_scan_options) ;
 
       ## Score sequences with the permuted matrices
       if (($seqfile{$seq_type}) && ($perm_nb{$seq_type} > 0)) {
@@ -220,9 +230,11 @@ package main;
 	  my $perm_suffix = $seq_type."_perm_col_1-".$perm_nb{$seq_type};
 	  if (defined($scanopt{$seq_type})) {
 	      $scanopt{$perm_suffix} = $scanopt{$seq_type};
+	      $scanopt{$perm_suffix} .= " -top_matrices ".$perm_nb{$seq_type}; ## Select the type-specific number of permutations
 	  }
-	  &ScanSequences($seqfile{$seq_type}, $outfile{$seq_type.'_matrix_perm_col_all'}, "tab", $perm_suffix, @matrix_scan_options); 
-	  push @distrib_files, &ScoreDistrib($perm_suffix, $Wmin, $Wmax);
+#	  &ScanSequences($seqfile{$seq_type}, $outfile{$seq_type.'_matrix_perm_col_all'}, "tab", $perm_suffix, @matrix_scan_options); 
+#	  push @distrib_files, &ScoreDistrib($perm_suffix, $Wmin, $Wmax);
+	  &CalcSequenceDistrib($seqfile{$seq_type}, $outfile{$seq_type.'_matrix_perm_col_all'}, "tab", $perm_suffix,   @matrix_scan_options) ;
 	  
 	  ## Calculate the separate distributions for each permuted matrix
 	  ## (this highlights the variability but the graph is noisy)
@@ -231,9 +243,11 @@ package main;
 		  $perm_suffix = $seq_type."_perm_col_".$i;
 		  if (defined($scanopt{$seq_type})) {
 		      $scanopt{$perm_suffix} = $scanopt{$seq_type};
+		      $scanopt{$perm_suffix} .= " -top_matrices 1"; ## Select a single matrix
 		  }
-		  &ScanSequences($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $perm_suffix, @matrix_scan_options); 
-		  push @distrib_files, &ScoreDistrib($perm_suffix, $Wmin, $Wmax);
+#		  &ScanSequences($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $perm_suffix, @matrix_scan_options); 
+#		  push @distrib_files, &ScoreDistrib($perm_suffix, $Wmin, $Wmax);
+		  &CalcSequenceDistrib($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $perm_suffix,   @matrix_scan_options) ;
 	      }
 	  }
       }
@@ -401,15 +415,18 @@ Matrix file.
 
 =item B<-ms matrix_sites>
 
-File containing both a matrix and its sites. The sites are then used as
-positive sequence set.
+File containing both a matrix and its sites. The sites are then used
+as positive sequence set, and labelled as "matrix_sites" in the
+distribution tables and graphs.
 
-This is equivalent to combine the options "-m" and "-pos".  This
-option is only valid with the file formats which contain both the
-matrix and its sites (e.g. consensus, MotifSampler, meme).
+The option -ms is only valid with the file formats which contain both
+the matrix and its sites (e.g. consensus, MotifSampler, meme). The
+format of the matrix+site file can be specified with the
+option '-matrix_format'.
 
-The format of the matrix+site file can be specified with the option
--matrix_format. 
+If the matrix and its sites are only available in separate files, an
+equivalent effect can be obtained by combining the options "-m
+my_matrix.tab" and "-seq matrix_sites site_sequences.fasta".
 
 =cut
 	} elsif ($arg eq "-ms") {
@@ -432,31 +449,31 @@ Format of the matrix file.
 	} elsif ($arg eq "-matrix_format") {
 	    $matrix_format = shift(@arguments);
 
-	    ## File containing the positive sequence set
-=pod
+# 	    ## File containing the positive sequence set
+# =pod
 
-=item B<-pos positive_seq_file>
+# =item B<-pos positive_seq_file>
 
-File containing the positive sequence set.
+# File containing the positive sequence set.
 
-=cut
-	} elsif ($arg eq "-pos") {
-	  &RSAT::error::FatalError("Options -pos and -ms are mutually incompatible.") 
-	    if ($main::infile{matrix_sites});
-	  $main::seqfile{positive} = shift(@arguments);
-	  push @seq_types, "positive";
+# =cut
+# 	} elsif ($arg eq "-pos") {
+# 	  &RSAT::error::FatalError("Options -pos and -ms are mutually incompatible.") 
+# 	    if ($main::infile{matrix_sites});
+# 	  $main::seqfile{positive} = shift(@arguments);
+# 	  push @seq_types, "positive";
 
-	    ## File containing the negative sequence set
-=pod
+# 	    ## File containing the negative sequence set
+# =pod
 
-=item B<-neg neg_seq_file>
+# =item B<-neg neg_seq_file>
 
-File containing the negative sequence set.
+# File containing the negative sequence set.
 
-=cut
-	} elsif ($arg eq "-negative") {
-	    $main::seqfile{negative} = shift(@arguments);
-         push @seq_types, "negative";
+# =cut
+# 	} elsif ($arg eq "-negative") {
+# 	    $main::seqfile{negative} = shift(@arguments);
+#          push @seq_types, "negative";
 
 	    ## File containing a sequence set of a specific type
 =pod
@@ -499,31 +516,31 @@ Do not apply the leave-one-out (LOO) test on the positive sequences.
 	} elsif ($arg eq "-noloo") {
 	  $supported_tasks{loo} = 0;
 
-	    ## Number of permutations for the positive set
-=pod
-
-=item B<-perm_pos #>
-
-Number of permutations for the positive set (default 100)
-
-=cut
-	} elsif ($arg eq "-perm_pos") {
-	    $main::perm_nb{positive} = shift(@arguments);
-	    &RSAT::error::FatalError($perm_nb{positive}, "Invalid value for option -perm_pos. Should be a Natural number.") 
-	      unless (&IsNatural($main::perm_nb{positive}));
-
-	    ## Number of permutations for the negative set
-=pod
-
-=item B<-perm_neg #>
-
-Number of permutations for the negative set (default 1)
-
-=cut
-	} elsif ($arg eq "-perm_neg") {
-	    $main::perm_nb{negative} = shift(@arguments);
-	    &RSAT::error::FatalError($perm_nb{negative}, "Invalid value for option -perm_pos. Should be a Natural number.") 
-	      unless (&IsNatural($main::perm_nb{negative}));
+# 	    ## Number of permutations for the positive set
+# =pod
+#
+# =item B<-perm_pos #>
+#
+# Number of permutations for the positive set (default 100)
+#
+# =cut
+# 	} elsif ($arg eq "-perm_pos") {
+# 	    $main::perm_nb{positive} = shift(@arguments);
+# 	    &RSAT::error::FatalError($perm_nb{positive}, "Invalid value for option -perm_pos. Should be a Natural number.") 
+# 	      unless (&IsNatural($main::perm_nb{positive}));
+#
+# 	    ## Number of permutations for the negative set
+# =pod
+#
+# =item B<-perm_neg #>
+#
+# Number of permutations for the negative set (default 1)
+#
+# =cut
+# 	} elsif ($arg eq "-perm_neg") {
+# 	    $main::perm_nb{negative} = shift(@arguments);
+# 	    &RSAT::error::FatalError($perm_nb{negative}, "Invalid value for option -perm_pos. Should be a Natural number.") 
+# 	      unless (&IsNatural($main::perm_nb{negative}));
 
 	    ## Number of permutations for a specific set
 =pod
@@ -538,7 +555,7 @@ Number of permutations for a specific set (default 0).
 	  $main::perm_nb{$seq_type} = shift(@arguments);
 	  &RSAT::error::FatalError($perm_nb{$seq_type}, "Invalid value for option -perm. Should be a Natural number.") 
 	    unless (&IsNatural($main::perm_nb{$seq_type}));
-	  
+
 	    ## perm_sep
 =pod
 
@@ -563,8 +580,7 @@ Sequence format.
 =cut
 	} elsif ($arg eq "-seq_format") {
 	    $seq_format = shift(@arguments);
-	    
-	    
+
 	    ## Pseudo weight
 =pod
 
@@ -601,27 +617,49 @@ Scores of the positive sequence set.
 	} elsif ($arg eq "-o") {
 	    $main::outfile{prefix} = shift(@arguments);
 
-	    ## Options for the graphs
+	    ## Options for the distribution curves
 =pod
 
 =item B<-graph_option 'option1 options2 ...'>
 
 Specify options that will be passed to the program XYgraph for
-generating graphs. Beware: if an option requires to be followed by a
-value (ex -xsize 1000), you have to embrace the option and its value
-in quotes.
+generating the distribution curves. Beware: if an option requires to
+be followed by a value (ex -xsize 1000), you have to embrace the
+option and its value in quotes.
 
   Example
-   -graph_option '-xsize 1000 -title "LexA matrix" -bg blue'
+   -roc_option '-gstep1 0.1 -gstep2 0.02'
 
 This option can be used iteratively on a command line.
 
   Example
-   -graph_option '-xsize 1000' -graph_option '-title "LexA matrix"'
+   -roc_option '-gstep1 0.1' -roc_option '-gstep2 0.02'
 
 =cut
 	} elsif ($arg eq "-graph_option") {
 	  $graph_options .= " ".shift @arguments;
+
+	    ## Options for the ROC curves
+=pod
+
+=item B<-roc_option 'option1 options2 ...'>
+
+Specify options that will be passed to the program XYgraph for
+generating the ROC curves. Beware: if an option requires to
+be followed by a value (ex -xsize 1000), you have to embrace the
+option and its value in quotes.
+
+  Example
+   -roc_option '-size 800 -title "LexA matrix" -bg blue'
+
+This option can be used iteratively on a command line.
+
+  Example
+   -roc_option '-xsize 1000' -roc_option '-title "LexA matrix"'
+
+=cut
+	} elsif ($arg eq "-roc_option") {
+	  $roc_options .= " ".shift @arguments;
 
 
 	    ## Image format
@@ -755,7 +793,6 @@ sub ExportInputSites {
   push @seq_types, "matrix_sites";
   &RSAT::message::TimeWarn("Exporting matrix sites to file", $outfile{matrix_sites}) 
     if ($main::verbose >= 1);
-
   my $site_handler = &OpenOutputFile($outfile{matrix_sites});
   my $site_nb = 0; 
   foreach my $site ($matrix->get_attribute("sequences")) {
@@ -765,11 +802,16 @@ sub ExportInputSites {
     &PrintNextSequence($site_handler, "fasta", 0, $site, $site_id);
   }
 
-  my $matrix_scan_cmd = "matrix-scan -v 1 ";
-  $matrix_scan_cmd .= " -top_matrices 1";
-  $matrix_scan_cmd .= " -decimals ".$decimals;
-  $matrix_scan_cmd .= " -pseudo ".$pseudo_counts;
-  $matrix_scan_cmd .= " -m ".$matrix_file;
+  ## Specific options for scanning matrix sites
+  $scanopt{matrix_sites} = " -1str"; ## the sites from the matrix itself should be scanned only in the orientation where they were used to build the matrix
+  $scanopt{matrix_sites} .= " -uth rank_pm 1"; ## Only the top score has to be taken for the matrix sites
+
+#  ## This is apparently not used anymore ?
+#  my $matrix_scan_cmd = "matrix-scan -v 1 ";
+#  $matrix_scan_cmd .= " -top_matrices 1";
+#  $matrix_scan_cmd .= " -decimals ".$decimals;
+#  $matrix_scan_cmd .= " -pseudo ".$pseudo_counts;
+#  $matrix_scan_cmd .= " -m ".$matrix_file;
 }
 
 ################################################################
@@ -869,6 +911,60 @@ sub LOO_scores {
 
 
 ################################################################
+## Compute the score distribution in one sequence set
+sub CalcSequenceDistrib {
+  my ($sequence_file, $matrix_file, $matrix_format, $seq_type, @args) = @_;
+
+  ## Define the output file fpor the current sequence type
+  $main::outfile{$seq_type} = $outfile{prefix}."_scan_".$seq_type."_score_distrib.tab";  
+
+  ## Scan the sequences if requested
+  return unless  ($tasks{scan});
+
+  ## Prepare the matrix-scan command
+  &RSAT::message::TimeWarn("Scoring sequences of type", $seq_type,  $outfile{$seq_type}) 
+    if ($main::verbose >= 1);
+  my $matrix_scan_cmd = "matrix-scan -v 1 ";
+  $matrix_scan_cmd .= " -top_matrices 1";
+  $matrix_scan_cmd .= " -i ".$sequence_file;
+  $matrix_scan_cmd .= " -m ".$matrix_file;
+  $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
+  $matrix_scan_cmd .= " -return sites";
+  $matrix_scan_cmd .= join(" ", "", @args);
+  if (defined($main::scanopt{$seq_type})) {
+      $matrix_scan_cmd .= " ".$main::scanopt{$seq_type};
+  }
+
+  ## Prepare the classfreq command (to extract the distribution from the scores)
+  my $classfreq_min = sprintf("%.${decimals}f", $main::Wmin);
+  $matrix_scan_cmd .= " | grep -v '^;' | grep -v '^#'";
+  $matrix_scan_cmd .= " | cut -f 8";
+  $matrix_scan_cmd .= " | classfreq -v 1 -ci 0.01";
+  $matrix_scan_cmd .= " -min ".$classfreq_min;
+  $matrix_scan_cmd .= " -o ".$outfile{$seq_type};
+
+  ## Print the complete command in the log file
+  print $main::out "; Scanning parameters for sequence type\t", $seq_type, "\n";
+  print $main::out "; matrix-scan command\n";
+  printf $main::out ";\t%-22s\t%s\n", "Sequence type", $seq_type;
+  printf $main::out ";\t%-22s\t%s\n", "Sequence file", $sequence_file;
+  if (defined($main::scanopt{$seq_type})) {
+      printf $main::out ";\t%-22s\t%s\n", "Type-specific options", $scanopt{$seq_type};
+  }
+  printf $main::out ";%-22s\n%s\n", "Command:", $matrix_scan_cmd;
+  print $main::out ";\n";
+
+
+  ## Execute the command
+  &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+  ## Add the file to the list for the comparison of distributions
+  push @main::distrib_files, $outfile{$seq_type}; $file_nb{$seq_type} = scalar(@distrib_files);
+
+}
+
+
+################################################################
 ## Score the sites which were use to build the matrix.
 sub ScanSequences {
   my ($sequence_file, $matrix_file, $matrix_format, $seq_type, @args) = @_;
@@ -933,19 +1029,18 @@ sub ScoreDistrib {
   ## prepare the temporary score output
   $main::outfile{$seq_type."_distrib_score_tmp"} = $outfile{prefix}."_scan_".$seq_type."_distrib_score_tmp.tab";
   $distrib_score_handle = &OpenOutputFile($main::outfile{$seq_type."_distrib_score_tmp"});
-  
+
   my @matrix_scan_scores = ();
   my @matrix_scan_occ = ();
-  
+
   foreach my $line (0..$#matrix_distrib) {
     chomp ($matrix_distrib[$line]);
     my ($thisScore,$occ)  = split(/\s+/,$matrix_distrib[$line]);
     push (@matrix_scan_scores, $thisScore );
     push (@matrix_scan_occ, $occ);
   }
-  
   undef @matrix_distrib;
-  
+
   foreach my $scoreNb (1..$#matrix_scan_scores) {		
     if ($matrix_scan_scores[$scoreNb] != $matrix_scan_scores[$scoreNb-1]) {		
       for ($count = 1; $count <= $matrix_scan_occ[$scoreNb-1]; $count++) {
@@ -980,10 +1075,9 @@ sub ScoreDistrib {
 
   ## Execute the command
   &doit($classfreq_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	  
   return ($outfile{$seq_type."_distrib"});
 }
-  
+
 
 ################################################################
 ## Export the matrix in tab-delimited format. This will be used
@@ -1082,7 +1176,7 @@ sub CompareDistrib {
   $distrib_compa_cmd .= " -sc ".$score_column; # score column for the observed distributions
   $distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_scan_";
   $distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_";
-  $distrib_compa_cmd .= " -suppress _distrib.tab";
+  $distrib_compa_cmd .= " -suppress _score_distrib.tab";
   $distrib_compa_cmd .= " -o ".$outfile{distrib_compa}.".tab";
   $distrib_compa_cmd .= " -files ";
   $distrib_compa_cmd .= join(" ", $main::outfile{'theoretical_distrib'}, @distrib_files);
@@ -1142,7 +1236,7 @@ sub CompareDistrib {
   $XYgraph_cmd .= " -yleg1 'other distributions' ";
   $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
   $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
-  $XYgraph_cmd .= " ".$graph_options;
+  $XYgraph_cmd .= " ".$roc_options;
   $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_roc.".$image_format;
   &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
