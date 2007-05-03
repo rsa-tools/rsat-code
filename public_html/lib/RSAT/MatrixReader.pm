@@ -350,25 +350,23 @@ sub _readFromConsensusFile {
 
   my %prior = ();
   my $l = 0;
+  my $final_cycle = 0;
   while (<$in>) {
     $l++;
     next unless (/\S/);
     s/\r//;
     chomp();
-    
-    ## The following information (final cycle) is only exported when
-    ## the number of cycles is automatic. I don't understand the
-    ## reason for this. I need to ask Jerry. In the mean time, I
-    ## always use the same information (THE LIST OF TOP MATRICES
-    ## FROM EACH CYCLE).
-#    last if (/THE LIST OF MATRICES FROM FINAL CYCLE/);
-    
+
+
     ## Read the command line
     if (/COMMAND LINE: /) {
       $command = $';		# '
       
+    } elsif (/THE LIST OF MATRICES FROM FINAL CYCLE/) {
+      $final_cycle = 1;
+
       ## Start a new matrix (one consensus file contains several matrices)
-    } elsif (/MATRIX\s(\d+)/) {
+    } elsif ((/MATRIX\s(\d+)/) && ($final_cycle)) {
       $current_matrix_nb = $1;
       $matrix = new RSAT::matrix();
       push @matrices, $matrix;
@@ -425,6 +423,12 @@ sub _readFromConsensusFile {
       }
     }
   }
+
+  ##Check if there was at least one matrix obtained after final cycle
+  unless (($final_cycle) && (scalar(@matrices) > 0)) {
+    &RSAT::error::FatalError("This file does not contain any final cycle matrix");
+  }
+
   close $in if ($file);
   return @matrices;
 }
