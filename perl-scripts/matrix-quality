@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.28 2007/05/03 23:00:06 jvanheld Exp $
+# $Id: matrix-quality,v 1.29 2007/05/03 23:20:18 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -119,6 +119,9 @@ package main;
 
     ## User-specified options added to XYgraph for the distribution curves
     $graph_options = " ";
+
+    ## Reference distribution for the ROC curve
+    $roc_ref = "theor";
 
     ## User-specified options added to XYgraph for the ROC curves
     $roc_options = " ";
@@ -628,16 +631,29 @@ be followed by a value (ex -xsize 1000), you have to embrace the
 option and its value in quotes.
 
   Example
-   -roc_option '-gstep1 0.1 -gstep2 0.02'
+   -graph_option '-size 800 -title "LexA matrix" -bg blue'
 
 This option can be used iteratively on a command line.
 
   Example
-   -roc_option '-gstep1 0.1' -roc_option '-gstep2 0.02'
+   -graph_option '-xsize 1000' -graph_option '-title "LexA matrix"'
 
 =cut
 	} elsif ($arg eq "-graph_option") {
 	  $graph_options .= " ".shift @arguments;
+
+	  ## Reference distribution for the ROC curve
+=pod
+
+=item B<-roc_ref>
+
+Reference distribution for the ROC curve.
+
+=cut
+	} elsif ($arg eq "-roc_ref") {
+	  $main::roc_ref = shift(@arguments);
+
+
 
 	    ## Options for the ROC curves
 =pod
@@ -650,16 +666,16 @@ be followed by a value (ex -xsize 1000), you have to embrace the
 option and its value in quotes.
 
   Example
-   -roc_option '-size 800 -title "LexA matrix" -bg blue'
+   -roc_option '-gstep1 0.1 -gstep2 0.02'
 
 This option can be used iteratively on a command line.
 
   Example
-   -roc_option '-xsize 1000' -roc_option '-title "LexA matrix"'
+   -roc_option '-gstep1 0.1' -roc_option '-gstep2 0.02'
 
 =cut
 	} elsif ($arg eq "-roc_option") {
-	  $roc_options .= " ".shift @arguments;
+	  $main::roc_options .= " ".shift @arguments;
 
 
 	    ## Image format
@@ -1218,11 +1234,13 @@ sub CompareDistrib {
 
   ################################################################
   ## Draw a ROC curve
-  my $ref_column;
-  if (defined($file_nb{negative})) {
-    $ref_column = 2 + $file_nb{negative};
-  } else {
-    $ref_column = 2;
+  my $ref_column = 2;
+  if ($roc_ref) {
+    if (defined($file_nb{$roc_ref})) {
+      $ref_column = 2 + $file_nb{$roc_ref};
+    } else {
+      &RSAT::message::Warning($roc_ref, "Invalid reference distribution for the ROC curve: should be one of the input sequence types, or 'theor'");
+    }
   }
   $XYgraph_cmd = "XYgraph -xsize 400 -ysize 400";
   $ycols = join ",", 2..(scalar(@distrib_files)+2);
@@ -1232,30 +1250,13 @@ sub CompareDistrib {
 #  $XYgraph_cmd .= " -title2 ".$outfile{prefix};
   $XYgraph_cmd .= " -xcol ".$ref_column;
   $XYgraph_cmd .= " -ycol ".$ycols;
-  $XYgraph_cmd .= " -xleg1 'negative set (estmation of FPR)' ";
+  $XYgraph_cmd .= " -xleg1 'Reference set : ".$roc_ref."' ";
   $XYgraph_cmd .= " -yleg1 'other distributions' ";
   $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
   $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
   $XYgraph_cmd .= " ".$roc_options;
   $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_roc.".$image_format;
   &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-
-#   ## PNG format
-#   $XYgraph_cmd = "XYgraph ";
-#   $ycols = join ",", 2..(scalar(@distrib_files)+2);
-#   $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
-#   $XYgraph_cmd .= " -format png -lines -pointsize 1 -size 600 -legend";
-#   $XYgraph_cmd .= " -title1 'matrix-quality: ROC curve' ";
-# #  $XYgraph_cmd .= " -title2 ".$outfile{prefix};
-#   $XYgraph_cmd .= " -xcol ".$ref_column;
-#   $XYgraph_cmd .= " -ycol ".$ycols;
-#   $XYgraph_cmd .= " -xleg1 'negative set (estmation of FPR)' ";
-#   $XYgraph_cmd .= " -yleg1 'other distributions' ";
-#   $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
-#   $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
-#  $XYgraph_cmd .= " ".$graph_options;
-#   $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_roc.png";
-#  &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
 }
 
@@ -1265,7 +1266,7 @@ sub CompareDistrib {
 sub PrintTheorScoreDistribution {
   my ($matrix) = @_;
 
-  $main::outfile{'theoretical_distrib'} = $main::outfile{prefix}."_theor_weight_distrib.tab";
+  $main::outfile{'theoretical_distrib'} = $main::outfile{prefix}."_theor_score_distrib.tab";
   my $wd = &OpenOutputFile($main::outfile{'theoretical_distrib'});
 
 #  my %weight_proba = $matrix->getTheorScoreDistrib("weights");
