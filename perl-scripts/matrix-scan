@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.64 2007/05/03 14:38:18 jvanheld Exp $
+# $Id: matrix-scan,v 1.65 2007/05/03 22:51:59 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -286,6 +286,7 @@ package main;
 			      proba_m
 			      proba_b
 			      rank
+			      rank_pm
 			      occ
 			      occ_cum
 			      inv_cum
@@ -419,7 +420,8 @@ package main;
   if ((defined($uth{pval})) || (defined($lth{pval}))) {
     $return_fields{pval} = 1;
   }
-  if ((defined($uth{rank})) || (defined($lth{rank}))) {
+  if ((defined($uth{rank})) || (defined($lth{rank})) ||
+      (defined($uth{rank_pm})) || (defined($lth{rank_pm}))) {
     $return_fields{rank} = 1;
   }
 
@@ -669,6 +671,7 @@ package main;
     }
     print $out "\tnormw" if ($return_fields{normw});
     print $out "\trank" if ($return_fields{rank});
+    print $out "\trank_pm" if ($return_fields{rank});
     print $out "\n";
   }
 
@@ -808,8 +811,6 @@ package main;
 			    ) if ($main::verbose >= 3);
 	next;
       }
-
-     
       if ($calc_fields{rank}) {
       	 &RSAT::message::TimeWarn("Sorting matches for sequence", $seq_id) if ($main::verbose >= 3);
 	if ($calc_fields{pval}) {
@@ -824,13 +825,24 @@ package main;
 	      @ranked_matches;
 	}
       }
-      
+
       ################################################################
       ## Return the matches
       my $rank = 0;
+      my %rank_pm = ();
       foreach my $match (@ranked_matches) {
+
+	## Compute a matrix-specific rank (rank per matrix)
+	my $matrix_name = $match->get_attribute("feature_name");
+	$rank_pm{$matrix_name}++;
+	$match->force_attribute('rank_pm', $rank_pm{$matrix_name});
+	next if ((defined($lth{rank_pm})) && ($rank_pm{$matrix_name} < $lth{rank_pm}));
+	next if ((defined($uth{rank_pm})) && ($rank_pm{$matrix_name} > $uth{rank_pm}));
+
+	## Compute a sequence-specific rank
 	$rank++;
 	$match->force_attribute('rank', $rank);
+
 	next if ((defined($lth{rank})) && ($rank < $lth{rank}));
 	&print_match($match);
 	last if ((defined($uth{rank})) && ($rank >= $uth{rank}));
@@ -841,7 +853,7 @@ package main;
 
 
   ################################################################
-  ## Print sequence-zise statistics
+  ## Print sequence-size statistics
   if ($return_fields{seq_scores}) {
     &RSAT::message::TimeWarn("Printing scores per sequence") if ($main::verbose >= 0);
     print $out join("\t", "seq_id", "length", "scored", "matches", "w_sum", "sig_sum", "sig_rank"), "\n";
@@ -1622,7 +1634,7 @@ single-strand search for DNA sequences.
 
 List of fields to return. 
 
-Supported fields: sites,ranks,limits,normw,bg_model,matrix,freq_matrix,weight_matrix
+Supported fields: sites,rank,limits,normw,bg_model,matrix,freq_matrix,weight_matrix
 
 =over
 
@@ -1651,11 +1663,21 @@ of significances.
 =item B<rank:> Rank.
 
 Sort the sites per decreasing values of score (weight), and return the
-rank value. The rank is calculated independently for each sequence.
+rank value. 
+
+The rank is calculated independently for each sequence.  In addition,
+a matrix-specidic rank is calculated for each sequence (rank_pm). This
+allows to distinguish between multiple matches for a single matrix
+(homotypic modules), and separate matches for distinct matrices
+(heterotypic modules reflecting synergy between distinct transcription
+factors).
 
 A common usage of the rank is to select the top scoring site per
 sequence (-uth rank 1) or the 3 top scoring sites per sequence (-uth
 rank 3).
+
+Another possibility is to define a maximal number of matches per
+matrix in the same sequence (-uth rank_pm 3).
 
 =item B<normw:> normalized weights.
 
@@ -2065,6 +2087,7 @@ sub print_match {
     }
     print $out "\t", $match->get_attribute('normw') if ($return_fields{normw});
     print $out "\t", $match->get_attribute('rank') if ($return_fields{rank});
+    print $out "\t", $match->get_attribute('rank_pm') if ($return_fields{rank});
     print $out "\n";
 }
 
@@ -2447,6 +2470,7 @@ sub runInBatch {
     		$matrix_scan_cmd .= " $field $uth{$field} ";
   			}
   		}
+
   		## output
   		$matrix_scan_cmd .= " -o ".File::Spec->rel2abs($main::outfile{"seq".$sequence_number."tab"},$wd);
 		&RSAT::message::Warning("The batch option is intended to report the sites.") unless ($return_fields{sites});
