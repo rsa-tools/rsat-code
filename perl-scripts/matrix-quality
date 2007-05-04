@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.30 2007/05/04 09:02:44 rsat Exp $
+# $Id: matrix-quality,v 1.31 2007/05/04 09:12:56 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -192,7 +192,7 @@ package main;
     local ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
     $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
     $matrix->set_attribute("name", $matrix_name);
-    local ($Wmin, $Wmax)  = $matrix->weight_range();
+    ($Wmin, $Wmax)  = $matrix->weight_range();
 
     ## Export input sites with the matrix
     &ExportInputSites($matrix, $matrix_file);
