@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.29 2007/05/03 23:20:18 jvanheld Exp $
+# $Id: matrix-quality,v 1.30 2007/05/04 09:02:44 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -216,7 +216,6 @@ package main;
     ## Calculate the Leave-one-out score distribution for the matrix sites
     if ($tasks{loo}) {
       &LOO_scores($matrix, @matrix_scan_options);
-      push @distrib_files, &ScoreDistrib('matrix_sites_loo', $Wmin, $Wmax);
     }
 
 
@@ -911,7 +910,7 @@ sub LOO_scores {
     $matrix_scan_cmd .= " -seq_format raw";
     $matrix_scan_cmd .= " -m ".$partial_matrix_file;
     $matrix_scan_cmd .= " -matrix_format tab";
-    $matrix_scan_cmd .= " -return distrib -1str -uth rank 1";
+    $matrix_scan_cmd .= " -return sites -1str -uth rank 1";
     $matrix_scan_cmd .= join(" ", "", @args);
     if ($i > 0) {
       $matrix_scan_cmd .= " | grep -v '^;'";
@@ -923,6 +922,19 @@ sub LOO_scores {
 
   }
   close $loo_scores_handle;
+
+
+  ## Prepare the classfreq command (to extract the distribution from the scores)
+  my $classfreq_min = sprintf("%.${decimals}f", $main::Wmin);
+  $outfile{matrix_sites_loo_distrib} = $outfile{prefix}."_scan_matrix_sites_loo_score_distrib.tab";  
+  my $classfreq_cmd = "grep -v '^;' ".$main::outfile{matrix_sites_loo}." | grep -v '^#'";
+  $classfreq_cmd .= " | cut -f 8";
+  $classfreq_cmd .= " | classfreq -v 1 -ci 0.01";
+  $classfreq_cmd .= " -min ".$classfreq_min;
+  $classfreq_cmd .= " -o ".$outfile{matrix_sites_loo_distrib};
+  &doit($classfreq_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  push @distrib_files, $outfile{matrix_sites_loo_distrib};
+
 }
 
 
@@ -931,7 +943,7 @@ sub LOO_scores {
 sub CalcSequenceDistrib {
   my ($sequence_file, $matrix_file, $matrix_format, $seq_type, @args) = @_;
 
-  ## Define the output file fpor the current sequence type
+  ## Define the output file for the current sequence type
   $main::outfile{$seq_type} = $outfile{prefix}."_scan_".$seq_type."_score_distrib.tab";  
 
   ## Scan the sequences if requested
@@ -1091,7 +1103,7 @@ sub ScoreDistrib {
 
   ## Execute the command
   &doit($classfreq_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  return ($outfile{$seq_type."_distrib"});
+  return ($outfile{$seq_type."_score_distrib"});
 }
 
 
