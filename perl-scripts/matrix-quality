@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.31 2007/05/04 09:12:56 rsat Exp $
+# $Id: matrix-quality,v 1.32 2007/05/05 13:02:26 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -822,7 +822,7 @@ sub ExportInputSites {
   $scanopt{matrix_sites} .= " -uth rank_pm 1"; ## Only the top score has to be taken for the matrix sites
 
 #  ## This is apparently not used anymore ?
-#  my $matrix_scan_cmd = "matrix-scan -v 1 ";
+#  my $matrix_scan_cmd = "matrix-scan -v ".$main::verbose;
 #  $matrix_scan_cmd .= " -top_matrices 1";
 #  $matrix_scan_cmd .= " -decimals ".$decimals;
 #  $matrix_scan_cmd .= " -pseudo ".$pseudo_counts;
@@ -905,7 +905,7 @@ sub LOO_scores {
     close $partial_matrix_handle;
 
     ## Score the left out site with the partial matrix
-    my $matrix_scan_cmd = "echo $lo_site | matrix-scan -v 1";
+    my $matrix_scan_cmd = "echo $lo_site | matrix-scan -v ".$main::verbose;
     $matrix_scan_cmd .= " -top_matrices 1";
     $matrix_scan_cmd .= " -seq_format raw";
     $matrix_scan_cmd .= " -m ".$partial_matrix_file;
@@ -952,7 +952,7 @@ sub CalcSequenceDistrib {
   ## Prepare the matrix-scan command
   &RSAT::message::TimeWarn("Scoring sequences of type", $seq_type,  $outfile{$seq_type}) 
     if ($main::verbose >= 1);
-  my $matrix_scan_cmd = "matrix-scan -v 1 ";
+  my $matrix_scan_cmd = "matrix-scan -v ".$main::verbose;
   $matrix_scan_cmd .= " -top_matrices 1";
   $matrix_scan_cmd .= " -i ".$sequence_file;
   $matrix_scan_cmd .= " -m ".$matrix_file;
@@ -1004,7 +1004,7 @@ sub ScanSequences {
   return unless  ($tasks{scan});
   &RSAT::message::TimeWarn("Scoring sequences of type", $seq_type,  $outfile{$seq_type}) 
     if ($main::verbose >= 1);
-  my $matrix_scan_cmd = "matrix-scan -v 1 ";
+  my $matrix_scan_cmd = "matrix-scan -v ".$main::verbose;
   $matrix_scan_cmd .= " -top_matrices 1";
   $matrix_scan_cmd .= " -i ".$sequence_file;
   $matrix_scan_cmd .= " -m ".$matrix_file;
