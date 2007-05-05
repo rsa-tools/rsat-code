@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.65 2007/05/03 22:51:59 jvanheld Exp $
+# $Id: matrix-scan,v 1.66 2007/05/05 13:32:52 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -231,13 +231,14 @@ package main;
 {
 
   ################################################################
-  #### initialise parameters
+  #### initialize parameters
   local $top_matrices = 0;
   local $start_time = &AlphaDate();
   local $decimals=2;
   local $base = exp(1);
   local $sig_base = log(10);
   local %pval = (); ## This variable is defined as local to avoid passing the hash table for each match
+  local $match = new RSAT::feature(); ## I define a single "recyclable"  feature object to avoid creating one object per match when this is not required
 
   %main::infile = ();
   %main::outfile = ();
@@ -800,8 +801,9 @@ package main;
     }
 
     if (($return_fields{sites})  && (defined(@{$matches_per_seq{$seq_id}}))) {
-		&RSAT::message::TimeWarn( "Returning individual matches for sequence", $seq_id )
-		if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn( "Returning individual matches for sequence", $seq_id )
+	if ($main::verbose >= 2);
+
       ################################################################
       ## Sort the matches
       my @ranked_matches = @{$matches_per_seq{$seq_id}};
@@ -1917,129 +1919,135 @@ thresholds. Return value is 1 if the segment passed the thresholds.
 
 =cut
 sub score_segment {
-    my ($segment, $matrix, $seq_id, $pos, $strand) = @_;
-    my $ncol = $matrix->{ncol};
-    my $proba_M = 1;
-    my $proba_B = 1;
-    my $matrix_name = $matrix->get_attribute("name");
+  my ($segment, $matrix, $seq_id, $pos, $strand) = @_;
+  my $ncol = $matrix->{ncol};
+  my $proba_M = 1;
+  my $proba_B = 1;
+  my $matrix_name = $matrix->get_attribute("name");
 
-    $matrix->{scored}++;
-    $sequence_scores->{$seq_id}->{scored}++;
+  $matrix->{scored}++;
+  $sequence_scores->{$seq_id}->{scored}++;
 
-    $proba_M = $matrix->segment_proba($segment);
+  $proba_M = $matrix->segment_proba($segment);
 
-    $proba_B = $bg_model->segment_proba($segment);
+  $proba_B = $bg_model->segment_proba($segment);
 
-    ## Calculate segment weight and  normalized weight
-    my $score = $null;
-    my $normw = $null;
-    my $pval = $null;
-    my $ln_pval = $null;
-    if (($proba_M > 0) && ($proba_B > 0)) {
-      $score = log($proba_M/$proba_B)/$log_base;
-#      $score = $matrix->segment_weight_Bernoulli($segment);
-      $score = sprintf("%.${decimals}f", $score);
-      $score =~ s/^-(0.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
-	if ($calc_fields{normw}) {
-	  $normw = sprintf("%6.4f", ($score - $matrix->{Wmin})/($matrix->{Wrange}));
-	}
-	if ($calc_fields{pval}) {
-	  if (defined(${$main::pval{$matrix}}{$score})) {
-	    $pval_value = ${$main::pval{$matrix}}{$score};
-	    $pval = sprintf("%.1e", $pval_value);
-	    if ($pval_value > 0) {
-	      $ln_pval = sprintf("%.3f", log($pval_value));
-	      $sig = sprintf("%.3f", -log($pval_value)/$sig_base);
-	    } else {
-	      $ln_pval = "-Inf";
-	      $sig = "Inf";
-	    }
-	  }
-	}
-    } elsif ($proba_M == 0) {
-	if ($proba_B > 0) {
-	    $score = "-Inf";
-	    $normw = 0 if ($calc_fields{normw});
-	    if ($calc_fields{pval}) {
-	      $pval = 0;
-	      $ln_pval = "-Inf";
-	      $sig = "Inf";
-	    }
-	}
+  ## Calculate segment weight and  normalized weight
+  my $score = $null;
+  my $normw = $null;
+  my $pval = $null;
+  my $ln_pval = $null;
+  if (($proba_M > 0) && ($proba_B > 0)) {
+    $score = log($proba_M/$proba_B)/$log_base;
+    #      $score = $matrix->segment_weight_Bernoulli($segment);
+    $score = sprintf("%.${decimals}f", $score);
+    $score =~ s/^-(0.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
+    if ($calc_fields{normw}) {
+      $normw = sprintf("%6.4f", ($score - $matrix->{Wmin})/($matrix->{Wrange}));
     }
-
-    if ($return_fields{distrib}) {
-#      my $score = sprintf("%.${decimals}f", $score);
-      $score_distrib->{$matrix_name}->{$score}->{occ}++;
+    if ($calc_fields{pval}) {
+      if (defined(${$main::pval{$matrix}}{$score})) {
+	$pval_value = ${$main::pval{$matrix}}{$score};
+	$pval = sprintf("%.1e", $pval_value);
+	if ($pval_value > 0) {
+	  $ln_pval = sprintf("%.3f", log($pval_value));
+	  $sig = sprintf("%.3f", -log($pval_value)/$sig_base);
+	} else {
+	  $ln_pval = "-Inf";
+	  $sig = "Inf";
+	}
+      }
     }
-#    &RSAT::message::Debug("scoring segment", $segment, $seq_id, $pos, $strand, 
-#			  $proba_M , $proba_B, $score) if ($main::verbose >= 10);
-
-
-    ## Perform the threshold filtering only after having added the score to the disribution
-    return(0) unless (&check_thresholds("proba_m", $proba_M));
-    return(0) unless (&check_thresholds("proba_b", $proba_B));
-    return(0) unless (&check_thresholds("pval_value", $pval_value));
-    return(0) unless (&check_thresholds("pval", $pval));
-    return(0) unless (&check_thresholds("ln_pval", $ln_pval));
-    return(0) unless (&check_thresholds("sig", $sig));
-    return(0) unless (&check_thresholds("score", $score));
-    return(0) unless (&check_thresholds("normw", $normw));
-
-#    &RSAT::message::Debug("match", $seq_id, $score, $pval, $ln_pval, $sig_base, $sig) if ($main::verbose >= 10);
-
-    ## Calculate information
-#    my $info = $score * $proba_B;
-#    return(0) unless (&check_thresholds("info", $info));
-
-    $matrix->{matches}++;
-
-    ## Update sequence-wise scores
-    if ($return_fields{seq_scores}) {
-      $sequence_scores->{$seq_id}->{matches}++;
-      $sequence_scores->{$seq_id}->{weight_sum}+= $score;
-      $sequence_scores->{$seq_id}->{sig_sum}+= $sig;
+  } elsif ($proba_M == 0) {
+    if ($proba_B > 0) {
+      $score = "-Inf";
+      $normw = 0 if ($calc_fields{normw});
+      if ($calc_fields{pval}) {
+	$pval = 0;
+	$ln_pval = "-Inf";
+	$sig = "Inf";
+      }
     }
+  }
+
+  if ($return_fields{distrib}) {
+    #      my $score = sprintf("%.${decimals}f", $score);
+    $score_distrib->{$matrix_name}->{$score}->{occ}++;
+  }
+  #    &RSAT::message::Debug("scoring segment", $segment, $seq_id, $pos, $strand, 
+  #			  $proba_M , $proba_B, $score) if ($main::verbose >= 10);
+
+
+  ## Perform the threshold filtering only after having added the score to the disribution
+  return(0) unless (&check_thresholds("proba_m", $proba_M));
+  return(0) unless (&check_thresholds("proba_b", $proba_B));
+  return(0) unless (&check_thresholds("pval_value", $pval_value));
+  return(0) unless (&check_thresholds("pval", $pval));
+  return(0) unless (&check_thresholds("ln_pval", $ln_pval));
+  return(0) unless (&check_thresholds("sig", $sig));
+  return(0) unless (&check_thresholds("score", $score));
+  return(0) unless (&check_thresholds("normw", $normw));
+
+  #    &RSAT::message::Debug("match", $seq_id, $score, $pval, $ln_pval, $sig_base, $sig) if ($main::verbose >= 10);
+
+  ## Calculate information
+  #    my $info = $score * $proba_B;
+  #    return(0) unless (&check_thresholds("info", $info));
+
+  $matrix->{matches}++;
+
+  ## Update sequence-wise scores
+  if ($return_fields{seq_scores}) {
+    $sequence_scores->{$seq_id}->{matches}++;
+    $sequence_scores->{$seq_id}->{weight_sum}+= $score;
+    $sequence_scores->{$seq_id}->{sig_sum}+= $sig;
+  }
+
+  #    &RSAT::message::Debug("Creating a fteaure for new match") if ($main::verbose >= 10);
+  if ($return_fields{sites}) {
 
     ## ##############################################################
     ## Create a new object for the current match BEWARE: this can
     ## consume a lot of memory if the options are to return all the
     ## matches. A memory-saving possibility was to print the matches
     ## progressively and forget them, but this would prevent from
-    ## sorting the matches by score.
-#    &RSAT::message::Debug("Creating a fteaure for new match") if ($main::verbose >= 10);
-    if ($return_fields{sites}) {
-      ## Calculate start and end position
-      my $start_pos = $pos - $orig_pos;
-      my $end_pos = $start_pos + $ncol -1;
-      my $match = new RSAT::feature();
-      $match->set_attribute('seq_name', $seq_id);
-      $match->set_attribute('ft_type', 'site');
-      $match->set_attribute('feature_name', $matrix->get_attribute('name'));
-      $match->set_attribute('strand',$strand);
-      $match->set_attribute('start',$start_pos);
-      $match->set_attribute('end',$end_pos);
-      $match->set_attribute('description',uc($segment));
-      $match->set_attribute('score',$score);
-      $match->set_attribute('proba_M',$proba_M);
-      $match->set_attribute('proba_B',$proba_B);
-      if ($return_fields{pval}) {
-	$match->set_attribute('pval',$pval);
-	$match->set_attribute('ln_pval',$ln_pval);
-	$match->set_attribute('sig',$sig);
-      }
-      $match->set_attribute('normw',$normw) if ($return_fields{normw});
-      #    if (($calc_fields{rank}) || ($calc_fields{pval})){
-      # If the hits have to be ranked, store them rather than printing them immediately
-     # push @matches , $match;
-    #  push @{$matches_per_matrix{$matrix->get_attribute('name')}} , $match;
-      push @{$matches_per_seq{$seq_id}} , $match;
+    ## sorting the matches by score. For this reason, we create sites only if required for sorting or computing E-value
+    if (($calc_fields{rank}) || ($calc_fields{pval})) {
+      $match = new RSAT::feature();
     }
-#      push @{$sequence_scores->{$seq_id}->matches} , $match if ($return_fields{seq_scores});
-#    } else {
-#      &print_match($match) if ($main::return_fields{sites});
-#    }
-    return(1);
+
+    ## Calculate start and end position
+    my $start_pos = $pos - $orig_pos;
+    my $end_pos = $start_pos + $ncol -1;
+    $match->force_attribute('seq_name', $seq_id);
+    $match->force_attribute('ft_type', 'site');
+    $match->force_attribute('feature_name', $matrix->get_attribute('name'));
+    $match->force_attribute('strand',$strand);
+    $match->force_attribute('start',$start_pos);
+    $match->force_attribute('end',$end_pos);
+    $match->force_attribute('description',uc($segment));
+    $match->force_attribute('score',$score);
+    $match->force_attribute('proba_M',$proba_M);
+    $match->force_attribute('proba_B',$proba_B);
+    if ($return_fields{pval}) {
+      $match->force_attribute('pval',$pval);
+      $match->force_attribute('ln_pval',$ln_pval);
+      $match->force_attribute('sig',$sig);
+    }
+    $match->force_attribute('normw',$normw) if ($return_fields{normw});
+
+    # push @matches , $match;
+    if (($calc_fields{rank}) || ($calc_fields{pval})) {
+      # If the hits have to be ranked, store them rather than printing them immediately
+      #  push @{$matches_per_matrix{$matrix->get_attribute('name')}} , $match;
+      push @{$matches_per_seq{$seq_id}} , $match;
+      #      }
+      #      push @{$sequence_scores->{$seq_id}->matches} , $match if ($return_fields{seq_scores});
+    } else {
+      &print_match($match);
+    }
+  }
+  return(1);
 }
 
 
