@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.66 2007/05/05 13:32:52 jvanheld Exp $
+# $Id: matrix-scan,v 1.67 2007/05/05 13:44:01 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -238,7 +238,10 @@ package main;
   local $base = exp(1);
   local $sig_base = log(10);
   local %pval = (); ## This variable is defined as local to avoid passing the hash table for each match
-  local $match = new RSAT::feature(); ## I define a single "recyclable"  feature object to avoid creating one object per match when this is not required
+
+  ## By default, I use a single "recyclable"  feature object to avoid creating one object per match when this is not required
+  local $match = new RSAT::feature();
+  local $create_sites = 0;
 
   %main::infile = ();
   %main::outfile = ();
@@ -477,6 +480,23 @@ package main;
   ## Ensure that all the fields to return are calculated
   foreach my $field (keys(%return_fields)) {
     $calc_fields{$field} = 1;
+  }
+
+
+  ## ##############################################################
+  ## Create a new object for each match
+  ##
+  ## BEWARE: this can consume a lot of memory if the options are to
+  ## return all the matches. A memory-saving possibility was to print
+  ## the matches progressively and forget them, but this would prevent
+  ## from sorting the matches by score. For this reason, we create
+  ## sites only if required for sorting or computing E-value
+  ##
+  ## I SHOULD IMPLEMENT AN EFFICIENT DESTRUCTOR FOR RSAT::GenericObject
+  ##
+  ##  if (($calc_fields{rank}) || ($calc_fields{pval})) { ## I don't remember why I initially create sites when pval was required. Maybe for the perspective of computing eval. To be checked
+  if ($calc_fields{rank}) {
+    $create_sites = 1;
   }
 
   ################################################################
@@ -744,7 +764,7 @@ package main;
 
     ################################################################
     ## Detect sites
-    &RSAT::message::TimeWarn("Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id)
+    &RSAT::message::TimeWarn("Scanning sequence", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id,  "with ".scalar(@matrices)." PSSM")
       if ($main::verbose >= 3);
 
     &RSAT::message::psWarn("Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id) if (($main::verbose >= 3) && (($sequence_number % 50) == 0));
@@ -2005,14 +2025,7 @@ sub score_segment {
 
   #    &RSAT::message::Debug("Creating a fteaure for new match") if ($main::verbose >= 10);
   if ($return_fields{sites}) {
-
-    ## ##############################################################
-    ## Create a new object for the current match BEWARE: this can
-    ## consume a lot of memory if the options are to return all the
-    ## matches. A memory-saving possibility was to print the matches
-    ## progressively and forget them, but this would prevent from
-    ## sorting the matches by score. For this reason, we create sites only if required for sorting or computing E-value
-    if (($calc_fields{rank}) || ($calc_fields{pval})) {
+    if ($create_sites) {
       $match = new RSAT::feature();
     }
 
@@ -2037,7 +2050,7 @@ sub score_segment {
     $match->force_attribute('normw',$normw) if ($return_fields{normw});
 
     # push @matches , $match;
-    if (($calc_fields{rank}) || ($calc_fields{pval})) {
+    if ($create_sites) {
       # If the hits have to be ranked, store them rather than printing them immediately
       #  push @{$matches_per_matrix{$matrix->get_attribute('name')}} , $match;
       push @{$matches_per_seq{$seq_id}} , $match;
@@ -2097,6 +2110,8 @@ sub print_match {
     print $out "\t", $match->get_attribute('rank') if ($return_fields{rank});
     print $out "\t", $match->get_attribute('rank_pm') if ($return_fields{rank});
     print $out "\n";
+
+    undef $match;
 }
 
 # ################################################################
