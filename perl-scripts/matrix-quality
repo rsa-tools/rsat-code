@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.32 2007/05/05 13:02:26 rsat Exp $
+# $Id: matrix-quality,v 1.33 2007/05/06 06:16:42 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -78,7 +78,7 @@ BEGIN {
 }
 
 require "RSA.lib";
-
+use POSIX;
 use RSAT::matrix;
 use RSAT::MatrixReader;
 
@@ -192,7 +192,8 @@ package main;
     local ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
     $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
     $matrix->set_attribute("name", $matrix_name);
-    ($Wmin, $Wmax)  = $matrix->weight_range();
+    local ($Wmin, $Wmax)  = $matrix->weight_range();
+    &RSAT::message::Info("Matrix weight range", $Wmin, $Wmax) if ($main::verbose >= 2);
 
     ## Export input sites with the matrix
     &ExportInputSites($matrix, $matrix_file);
@@ -906,6 +907,7 @@ sub LOO_scores {
 
     ## Score the left out site with the partial matrix
     my $matrix_scan_cmd = "echo $lo_site | matrix-scan -v ".$main::verbose;
+    $matrix_scan_cmd .= " -decimals ".$decimals;
     $matrix_scan_cmd .= " -top_matrices 1";
     $matrix_scan_cmd .= " -seq_format raw";
     $matrix_scan_cmd .= " -m ".$partial_matrix_file;
@@ -926,6 +928,7 @@ sub LOO_scores {
 
   ## Prepare the classfreq command (to extract the distribution from the scores)
   my $classfreq_min = sprintf("%.${decimals}f", $main::Wmin);
+#  my $classfreq_min = POSIX::floor($Wmin*(10^$decimals))/(10^$decimals);
   $outfile{matrix_sites_loo_distrib} = $outfile{prefix}."_scan_matrix_sites_loo_score_distrib.tab";  
   my $classfreq_cmd = "grep -v '^;' ".$main::outfile{matrix_sites_loo}." | grep -v '^#'";
   $classfreq_cmd .= " | cut -f 8";
@@ -953,6 +956,7 @@ sub CalcSequenceDistrib {
   &RSAT::message::TimeWarn("Scoring sequences of type", $seq_type,  $outfile{$seq_type}) 
     if ($main::verbose >= 1);
   my $matrix_scan_cmd = "matrix-scan -v ".$main::verbose;
+  $matrix_scan_cmd .= " -decimals ".$decimals;
   $matrix_scan_cmd .= " -top_matrices 1";
   $matrix_scan_cmd .= " -i ".$sequence_file;
   $matrix_scan_cmd .= " -m ".$matrix_file;
@@ -1005,6 +1009,7 @@ sub ScanSequences {
   &RSAT::message::TimeWarn("Scoring sequences of type", $seq_type,  $outfile{$seq_type}) 
     if ($main::verbose >= 1);
   my $matrix_scan_cmd = "matrix-scan -v ".$main::verbose;
+  $matrix_scan_cmd .= " -decimals ".$decimals;
   $matrix_scan_cmd .= " -top_matrices 1";
   $matrix_scan_cmd .= " -i ".$sequence_file;
   $matrix_scan_cmd .= " -m ".$matrix_file;
