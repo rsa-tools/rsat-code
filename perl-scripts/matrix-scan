@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.67 2007/05/05 13:44:01 jvanheld Exp $
+# $Id: matrix-scan,v 1.68 2007/05/06 06:05:31 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1010,7 +1010,7 @@ package main;
 
     ################################################################
     ## Calculate inverse cumulative frequencies
-    &RSAT::message::TimeWarn("Calculating cumulative frequencies") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Calculating inverse cumulative frequencies") if ($main::verbose >= 2);
     foreach my $matrix (@matrices) {
       my $matrix_name = $matrix->get_attribute("name");
       my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
