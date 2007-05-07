@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.68 2007/05/06 06:05:31 jvanheld Exp $
+# $Id: matrix-scan,v 1.69 2007/05/07 02:17:55 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -767,7 +767,7 @@ package main;
     &RSAT::message::TimeWarn("Scanning sequence", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id,  "with ".scalar(@matrices)." PSSM")
       if ($main::verbose >= 3);
 
-    &RSAT::message::psWarn("Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id) if (($main::verbose >= 3) && (($sequence_number % 50) == 0));
+    &RSAT::message::psWarn("Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id) if (($main::verbose >= 2) && (($sequence_number % 50) == 0));
     if ($calc_fields{sites}) {
       #	  $n_containing_region = 0;
       for my $pos (1..$seq_len) {
@@ -1082,8 +1082,10 @@ package main;
 	my $matrix_name = $matrix->get_attribute("name");
 	my $n = $matrix->{scored};
 	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
-	&RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
+	&RSAT::message::TimeWarn("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
+	my $s = 0;
 	foreach my $score (@sorted_scores) {
+	  $s++;
 	  my $x = $score_distrib->{$matrix_name}->{$score}->{inv_cum};
 
 	  ## Check that the background file contains the required prior
@@ -1116,11 +1118,12 @@ package main;
 			       );
 	    $nb_of_tests++;
 	  }
-#	  &RSAT::message::Debug("Calculated significance", $matrix_name, $score, $x,
-#				$hit_p,
-#				$score_distrib->{$matrix_name}->{$score}->{occ_pval},
-#			       ) if ($main::verbose >= 10);
-#	    die;
+	  &RSAT::message::Debug("Calculated significance", $matrix_name, $score, 
+				$x, $hit_p, $score_distrib->{$matrix_name}->{$score}->{occ_pval})
+	    if ($main::verbose >= 3);
+	  if (($main::verbose >= 2) && (($s % 50) == 0)) {
+	    &RSAT::message::psWarn("Calculated significance for matrix", , $matrix_name, "score", $s) 
+	  }
 	}
       }
     }
