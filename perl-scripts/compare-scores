@@ -100,8 +100,9 @@ if ($verbose) {
     &PrintArguments($out);
 
     print $out ";Input files :\n";
+    print $out join( "\t", ";", "nb", "id_col", "sc_col", "file_name"), "\n";
     for $f (0..$#input_files) {
-	print $out ";\t$input_files[$f]\t$sc[$f]\n";
+	print $out join( "\t", ";", $f+1, $ic[$f], $sc[$f], $input_files[$f]), "\n";
     }
     if ($outputfile ne "") {
 	print $out ";Output file	$outputfile\n";
