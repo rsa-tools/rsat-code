@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.35 2007/05/07 11:41:32 jvanheld Exp $
+# $Id: matrix-quality,v 1.36 2007/05/07 11:47:13 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1310,14 +1310,8 @@ sub CompareDistrib {
 
   ################################################################
   ## Draw a ROC curve with xlog
-  $XYgraph_cmd = "XYgraph -xlog ".$all_graph_options;
-  $XYgraph_cmd .= " -xcol ".$ref_column;
-  $XYgraph_cmd .= " -ycol ".$ycols;
-  $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
-  $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
-  my $roc_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}."_roc_xlog.".$image_format;
-  $roc_file_opt .= " -xleg1 'Reference set : ".$roc_ref."' ";
-  $roc_file_opt .= " -yleg1 'other distributions' ";
+  $XYgraph_cmd =~ s/XYgraph/XYgraph -xlog 10/;
+  $roc_file_opt =~ s/_roc/_roc_xlog/;
   &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
   ## Generate the icon for the ROC curve
