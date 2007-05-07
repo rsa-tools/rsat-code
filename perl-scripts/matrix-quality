@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.34 2007/05/07 11:37:59 jvanheld Exp $
+# $Id: matrix-quality,v 1.35 2007/05/07 11:41:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1304,12 +1304,26 @@ sub CompareDistrib {
   $roc_file_opt .= " -yleg1 'other distributions' ";
   &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
-  ## Generate the icon
+  ## Generate the icon for the ROC curve
   $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_small.".$image_format;
   &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
+  ################################################################
+  ## Draw a ROC curve with xlog
+  $XYgraph_cmd = "XYgraph -xlog ".$all_graph_options;
+  $XYgraph_cmd .= " -xcol ".$ref_column;
+  $XYgraph_cmd .= " -ycol ".$ycols;
+  $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+  $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
+  my $roc_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}."_roc_xlog.".$image_format;
+  $roc_file_opt .= " -xleg1 'Reference set : ".$roc_ref."' ";
+  $roc_file_opt .= " -yleg1 'other distributions' ";
+  &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
   ## Generate the icon for the ROC curve
-  
+  $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xlog_small.".$image_format;
+  &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
 
 }
 
