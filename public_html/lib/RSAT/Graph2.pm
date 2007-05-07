@@ -9,6 +9,7 @@ use RSAT::error;
 use RSAT::util;
 use List::Util 'shuffle';
 
+require "RSA.lib";
 
 ### class attributes
 @ISA = qw( RSAT::GenericObject );
@@ -23,7 +24,7 @@ use List::Util 'shuffle';
 
 =head1 DESCRIPTION
 
-Implementation of basic graph functions. This class allows to create
+Implementation of basic graph functions. This class allows (among other things) to create
 directed graphs and export them in different formats.
 Graph class. 
 
@@ -124,22 +125,15 @@ sub randomize {
     
     # randomize an array having the same length as scalar (@arcs);
     my @arcs_size = 0 .. (scalar(@arcs)-1);
-    
-    #my $shufl = &shuffle(\@arcs_size);
-    #my @shuffled_arcs_size = @{$shufl};
-    #print join(" ",@shuffled_arcs_size)."\n";
-    
     my @shuffled_arcs_size = shuffle(@arcs_size);
-    
     # create a randomized array
     for (my $i = 0; $i < scalar(@arcs); $i++) {
       my $source = $arcs[$i][0];
-      
-      #print $source." ";
       my $target = $arcs[$shuffled_arcs_size[$i]][1];
-      my $label = $arcs[$i][2];
-      #print $target."\n";
-      #print $shuffled_arcs_size[$i];
+      my $label = join("_", $source, $target);
+      if (&RSAT::util::IsReal($arcs[$i][2])) {
+        $label = $arcs[$i][2];
+      }
       my $arc_color = $arcs[$i][3];
       my $source_id = $nodes_name_id{$source};
       my $target_id = $nodes_name_id{$target};
@@ -181,6 +175,231 @@ sub randomize {
 }
 
 
+################################################################
+=pod
+
+=item B<create_random_graph()> 
+Usage : $graph->create_random_graph(@nodes, $req_nodes, $req_edges, $self_loops, $duplicated, $directed, $max_degree);
+
+
+create a random graph from the nodes in @nodes having $req_nodes nodes of maxium degree $max_degree and $req_edges edges.
+It allows duplicated edges ($duplicated = 1) or not ($duplicated = 0) and self loops ($self_loops = 1) or not ($self_loops = 0)
+
+
+=cut
+sub create_random_graph {
+    my ($self, $nodes_ref, $req_nodes, $req_edges, $self_loops, $duplicated, $directed, $max_degree) = @_;
+    my $rdm_graph = new RSAT::Graph2();
+    my @rdm_graph_array = ();
+    my $max_arc_number = 10000000;
+    my @nodes = @{$nodes_ref};
+    ## creation the list of nodes
+    if (scalar(@nodes) > 0) {
+      if (scalar(@nodes) < $req_nodes) {
+        &RSAT::error::FatalError("\t","More requested nodes than available nodes", "requested", $req_nodes, "available", scalar @nodes);
+      } else {
+        my @indices = 0 .. (scalar(@nodes)-1);
+        my @shuffle_indices = &shuffle(@indices);
+        my @random_nodes = ();
+        for (my $i = 0; $i < $req_nodes; $i++) {
+          push @random_nodes, $nodes[$shuffle_indices[$i]];
+        }
+        @nodes = @random_nodes;
+      }
+    } else {
+      for (my $i = 1; $i <= $req_nodes; $i++) {
+        push @nodes, "n_".$i;
+      }
+    }
+    ## Computation of the maximum number of edges
+    if (!$duplicated) { 
+      if (!$directed && !$self_loops) {
+        $max_arc_number = ($req_nodes*($req_nodes-1))/2;
+      } elsif ($directed && $self_loops) {
+        $max_arc_number = ($req_nodes*$req_nodes);
+      } elsif ($directed && !$self_loops) {
+        $max_arc_number = ($req_nodes*($req_nodes-1));
+      } elsif (!$directed && $self_loops) {
+        $max_arc_number = ($req_nodes*($req_nodes+1))/2;
+      }
+    }
+    if ($max_arc_number < $req_edges) {
+      &RSAT::error::FatalError("\t","More requested edges than possible edges", "requested", $req_edges, "available", scalar $max_arc_number);
+    }
+    my @possible_source = ();
+    my @possible_target = ();
+    my %degree;
+    my %graph_node;
+    my %seen;
+    my $k = 0;
+    for (my $i = 0; $i < $req_nodes; $i++) {
+      for (my $j = 0; $j < $req_nodes; $j++) {
+        
+        my $source = $nodes[$i];
+        my $target = $nodes[$j];
+        my $label = join("_", $source, $target);
+        my $inv_label = join("_", $target, $source);
+        if (($source eq $target) && !$self_loops) {
+          next;
+        }
+        if (exists($seen{$label}) && !$duplicated) {
+          print "2";
+          next;
+        }
+        if ((exists($seen{$label}) || exists($seen{$inv_label})) && !$directed && !$duplicated) {
+          next;
+        }
+        if ((exists($seen{$label}) && exists($seen{$inv_label})) && !$duplicated) {
+          next;
+        }
+        if ($max_degree > 0 && exists($degree{$source}) && exists($degree{$target})) {
+          if ($degree{$source} > ($max_degree-1)) {
+            next;
+          }
+          if ($degree{$target} > ($max_degree-1)) {
+            next;
+          }
+        }
+        $degree{$source}++;
+        $degree{$target}++;
+        $seen{$label}++;        
+        push @possible_source, $source;
+        push @possible_target, $target;
+        $k++;
+        if ($k > $req_edges*10) {
+          last;
+          if (($k % 100000 == 0) && ($main::verbose >= 3)) {
+            &RSAT::message::psWarn("\t","$k" ,"potential edges created.");
+          }
+        }
+      }
+    }
+    if ($duplicated) {
+      @possible_target = &shuffle(@possible_target)
+    }
+    &RSAT::message::Info("\t",scalar(@possible_target) ,"potential edges created.") if ($main::verbose >= 3);
+    ## In case the maximum degree specification prevented to create enough edges : error.
+    if ((scalar(@possible_target)) < $req_edges) {
+      &RSAT::error::FatalError("\t","Maximal node degree specification is not compatible with the number of requested edges");
+    }
+    my @random_edges = 0 .. (scalar(@possible_target)-1);
+    @random_edges = &shuffle(@random_edges);
+    for (my $i = 0; $i < $req_edges; $i++) {
+      my $source = $possible_source[$random_edges[$i]];
+      my $target = $possible_target[$random_edges[$i]];
+      my $label = join("_", $source, $target);
+      $graph_node{$source}++;
+      $graph_node{$target}++;
+      $rdm_graph_array[$i][0] = $source;
+      $rdm_graph_array[$i][1] = $target;
+      $rdm_graph_array[$i][2] = $label;
+      $rdm_graph_array[$i][3] = "#000088";
+      $rdm_graph_array[$i][4] = "#000088";
+      $rdm_graph_array[$i][5] = "#000044";
+    }
+    $rdm_graph->load_from_array(@rdm_graph_array);
+    
+    ## Add nodes that have degree 0
+    if (scalar(keys(%graph_node)) != scalar(@nodes)) {
+      my %rdm_nodes_id_name = $rdm_graph->get_attribute("nodes_id_name");
+      my %rdm_nodes_name_id = $rdm_graph->get_attribute("nodes_name_id");
+      my %rdm_nodes_label = $rdm_graph->get_attribute("nodes_label");
+      my %rdm_nodes_color = $rdm_graph->get_attribute("nodes_color");
+      my $node_id = scalar(keys(%rdm_nodes_name_id));
+      foreach my $node (@nodes) {
+        if (!exists($graph_node{$node})) {
+          my $node_color = "#000088";
+          my $node_label = $node;
+          $rdm_nodes_name_id{$node} = $node_id;
+          $rdm_nodes_id_name{$node_id} = $node;
+          $rdm_nodes_label{$node_id} = $node_label;
+          $rdm_nodes_color{$node_id} = $node_color;
+          $node_id++;
+        }
+      }
+      $rdm_graph->set_hash_attribute("nodes_id_name", %rdm_nodes_id_name);
+      $rdm_graph->set_hash_attribute("nodes_name_id", %rdm_nodes_name_id);
+      $rdm_graph->set_hash_attribute("nodes_label", %rdm_nodes_label);
+      $rdm_graph->set_hash_attribute("nodes_color", %rdm_nodes_color);
+
+        
+    }
+    return ($rdm_graph);
+  }
+  
+
+################################################################
+=pod
+
+=item B<random_graph_degree_distrib()> 
+Usage : $graph->random_graph_degree_distrib();
+
+create a random graph from another graph. The global connectivity distribution being conserved.
+
+
+=cut
+sub random_graph_degree_distrib {
+    my ($self) = @_;
+    my $rdm_graph = new RSAT::Graph2();
+    my @rdm_graph_array = ();
+    my @arcs = $self->get_attribute("arcs");
+    my @new_arcs; 
+    my @nodes = $self->get_nodes;
+    my @new_nodes = &shuffle(@nodes);
+    my %nodes_new_nodes = ();
+    my %nodes_name_id = $self->get_attribute("nodes_name_id");
+    my %nodes_label = $self->get_attribute("nodes_label");
+    my %nodes_color = $self->get_attribute("nodes_color");
+    for (my $i = 0; $i < scalar(@nodes); $i++) {
+      $node_new_nodes{$nodes[$i]} = $new_nodes[$i]; 
+    }
+    my %graph_node = ();
+    for (my $i = 0; $i < scalar(@arcs); $i++) {
+      $rdm_graph_array[$i][0] = $node_new_nodes{$arcs[$i][0]};
+      $rdm_graph_array[$i][1] = $node_new_nodes{$arcs[$i][1]};
+      my $label = join("_", $rdm_graph_array[$i][0], $rdm_graph_array[$i][1]);
+      if (&RSAT::util::IsReal($arcs[2])) {
+        $label = $arcs[2];
+      }
+      my $source_id = $nodes_name_id{$rdm_graph_array[$i][0]};
+      my $target_id = $nodes_name_id{$rdm_graph_array[$i][1]};
+      my $source_color = $nodes_color{$source_id};
+      my $target_color = $nodes_color{$target_id};
+      $graph_node{$arcs[$i][0]}++;
+      $graph_node{$arcs[$i][1]}++;
+      $rdm_graph_array[$i][2] = $label;
+      $rdm_graph_array[$i][3] = $source_color;
+      $rdm_graph_array[$i][4] = $target_color;
+      $rdm_graph_array[$i][5] = "#000044";
+    }
+    $rdm_graph->load_from_array(@rdm_graph_array);
+    ## Add nodes that have degree 0
+    if (scalar(keys(%graph_node)) != scalar(keys(%nodes_name_id))) {
+      my %rdm_nodes_id_name = $rdm_graph->get_attribute("nodes_id_name");
+      my %rdm_nodes_name_id = $rdm_graph->get_attribute("nodes_name_id");
+      my %rdm_nodes_label = $rdm_graph->get_attribute("nodes_label");
+      my %rdm_nodes_color = $rdm_graph->get_attribute("nodes_color");
+      my $node_id = scalar(keys(%rdm_nodes_name_id));
+      foreach my $node (keys(%nodes_name_id)) {
+        if (!exists($graph_node{$node})) {
+          my $node_id = $nodes_name_id{$rdm_graph_array[$i][0]};
+          my $node_color = $nodes_color{$node_id};
+          my $node_label = $node;
+          $rdm_nodes_name_id{$node} = $node_id;
+          $rdm_nodes_id_name{$node_id} = $node;
+          $rdm_nodes_label{$node_id} = $node_label;
+          $rdm_nodes_color{$node_id} = $node_color;
+          $node_id++;
+        }
+      }
+      $rdm_graph->set_hash_attribute("nodes_id_name", %rdm_nodes_id_name);
+      $rdm_graph->set_hash_attribute("nodes_name_id", %rdm_nodes_name_id);
+      $rdm_graph->set_hash_attribute("nodes_label", %rdm_nodes_label);
+      $rdm_graph->set_hash_attribute("nodes_color", %rdm_nodes_color);
+    }
+    return ($rdm_graph);    
+    
+}
 
 
 ################################################################
