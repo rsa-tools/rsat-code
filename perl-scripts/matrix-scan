@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.69 2007/05/07 02:17:55 jvanheld Exp $
+# $Id: matrix-scan,v 1.70 2007/05/07 02:39:04 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -2352,26 +2352,30 @@ sub PrintScoreDistrib {
       if ($return_fields{occ_proba}) {
 	my $occ_prior = $null;
 	my $exp_occ = $null;
-	if (defined($score_distrib->{$matrix_name}->{$score}->{occ_prior})) {
+	if ((defined($score_distrib->{$matrix_name}->{$score}->{occ_prior})) && 
+	    ($score_distrib->{$matrix_name}->{$score}->{occ_prior} ne $null)) {
 	  $distrib_prior = sprintf("%.6e", $score_distrib->{$matrix_name}->{$score}->{occ_prior});
 	  $exp_occ = sprintf("%.2f", $score_distrib->{$matrix_name}->{$score}->{exp_occ});
 	}
 
 	## Format pval for printing
 	my $occ_pval = $null;
-	if (defined($score_distrib->{$matrix_name}->{$score}->{occ_pval})) {
+	if ((defined($score_distrib->{$matrix_name}->{$score}->{occ_pval})) &&
+	    ($score_distrib->{$matrix_name}->{$score}->{occ_pval} ne $null)) {
 	  $occ_pval = sprintf("%.6e", $score_distrib->{$matrix_name}->{$score}->{occ_pval});
 	}
 
 	## Format eval for printing
 	my $occ_eval = $null;
-	if (defined($score_distrib->{$matrix_name}->{$score}->{occ_eval})) {
+	if ((defined($score_distrib->{$matrix_name}->{$score}->{occ_eval})) &&
+	    ($score_distrib->{$matrix_name}->{$score}->{occ_eval} ne $null)) {
 	  $occ_eval = sprintf("%.6e", $score_distrib->{$matrix_name}->{$score}->{occ_eval});
 	}
 
 	## Format occ_sig for printing
 	my $occ_sig = $null;
-	if (defined($score_distrib->{$matrix_name}->{$score}->{occ_sig})) {
+	if ((defined($score_distrib->{$matrix_name}->{$score}->{occ_sig})) &&
+	    ($score_distrib->{$matrix_name}->{$score}->{occ_sig} ne $null)) {
 	  $occ_sig = sprintf("%.2f", $score_distrib->{$matrix_name}->{$score}->{occ_sig});
 	}
 
