@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: mask-features,v 1.8 2007/04/27 13:08:17 morgane Exp $
+# $Id: mask-features,v 1.9 2007/05/08 09:22:09 morgane Exp $
 #
 ############################################################
 
@@ -89,6 +89,7 @@ require "RSA.lib";
 require RSAT::organism;
 use RSAT::feature;
 use RSAT::stats;
+use Data::Dumper;
 
 ################################################################
 ## Main package
@@ -240,6 +241,9 @@ package main;
     ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
     
+    $main::out_oft = &OpenOutputFile($main::outfile{output_oft}) if ($main::outfile{output_oft});
+    
+    
     ################################################################
     ## Load information concerning the region of interest
     &RSAT::message::Info(join("\t", "--- Reading input regions ---")) if ($main::verbose >= 1);
@@ -312,6 +316,7 @@ package main;
     ################################################################
     ## Close output stream
     close $main::out if ($main::outfile{output});
+    close $main::out_oft if ($main::outfile{output_oft});
     
     ################################################################
     ###### Clean temporary files    
@@ -413,8 +418,11 @@ allows to use the command within a pipe.
 
 =item B<-informat inputfileformat>
 
-The file format for the region of interest.
-By default, gft format is used. 
+The file format for the region of interest.  By default, 
+gft format is used. The format of the input region (-i option) 
+and the feature file (-ft option) must be the same. To convert 
+gft and ft formatted files, you can type the following command: 
+I<convert-features -h>
 
 =cut
 	} elsif ($arg eq "-informat") {
@@ -546,6 +554,18 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-o") {
 	    $main::outfile{output} = shift(@arguments);
 
+	    
+=pod
+
+=item	B<-oft output_feature_file>
+
+In addition to the masked sequences, export a feature file with the
+chromosomal location of the masked regions.
+
+=cut
+	} elsif ($arg eq "-oft") {
+	    $main::outfile{output_oft} = shift(@arguments);
+
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
@@ -595,8 +615,9 @@ sub Verbose {
   		if (!$total_nb_masked_ft{$region_ft_id}){
   			$total_nb_masked_ft{$region_ft_id} = 0;
   		}
-  		print  ";\tNb of features masked\t".$total_nb_masked_ft{$region_ft_id}."\n";
-		print  ";\tsize of masked sequence\t".$total_size_masked_ft{$region_ft_id}."\n";
+  		
+  		print  ";\tNb of features masked\t".$total_nb_masked_ft{$region_ft_id}."\n";		
+ 		print  ";\tSize of masked sequence\t".$total_size_masked_ft{$region_ft_id}."\n";
 		$total_size += $total_size_masked_ft{$region_ft_id};
 		$total_nb += $total_nb_masked_ft{$region_ft_id};
 	}
@@ -989,16 +1010,34 @@ sub MaskSequence {
 	my $region_ft = shift;
 	my $region_nb = shift;
 	
-	####################################################
-	## Define a buffer length for each slice of sequence
-	my $buffer = 10000;
-	
+	## input region to process
 	my $length = $region_ft->get_attribute('len');
 	my $start = $region_ft->get_attribute('start');
 	my $end = $region_ft->get_attribute('end');
 	my $strand = $region_ft->get_attribute('strand');
 	my $contig_id = $region_ft->get_attribute('seq_name');
-		
+	
+	## for oft output
+	if ($main::outfile{output_oft}) {
+	foreach my $i (0..$#{$mask_regions}){	
+			next if (!${$mask_regions}[$i]);
+						
+			my $feat_left = ${$mask_regions}[$i]{left};
+			my $feat_right = ${$mask_regions}[$i]{right};
+				
+			print $main::out_oft "$contig_id\tmasked_region\tmasked_region\tDR\t$feat_left\t$feat_right\n";
+		}
+	}
+	
+	
+	####################################################
+	## Define a buffer length for each slice of sequence
+	my $buffer = 10000;
+	
+
+	
+	
+	
 	
 	## check that the buffer is at least as long as the region to retrieve
 	if ($buffer >= $length) {
