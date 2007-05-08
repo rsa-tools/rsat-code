@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.3 2007/05/08 07:57:23 rsat Exp $
+# $Id: random-graph,v 1.4 2007/05/08 14:07:51 rsat Exp $
 #
 ############################################################
 
@@ -19,7 +19,7 @@ Generate random graphs either from an existing graph or from scratch.
 
 =head1 AUTHORS
 
-<Sylvain Brohee> sylvain@scmbb.ulb.ac.be
+Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -27,7 +27,7 @@ util
 
 =head1 USAGE
     
-random-graph [-node #] [-edge #] [-o outputfile] [-n #] [-self] [-duplicated] [-nodefile] [-random_type scratch|node_degree|node_degree_distrib] [-i input_graph_file] [-scol #] [-tcol #] [-wcol #]
+random-graph [-node #] [-edge #] [-o outputfile] [-n #] [-self] [-duplicated] [-nodefile] [-n] [-random_type scratch|node_degree|node_degree_distrib] [-i input_graph_file] [-scol #] [-tcol #] [-wcol #]
 
 
 =head1 INPUT FORMAT
@@ -38,7 +38,7 @@ A list of nodes (-nodefile) may also be given as input file.
 
 =head1 OUTPUT FORMAT
 
-Graph in GML or in TAB format (to be specified by the -out_format option)
+Graph in GML, TAB or DOT format (to be specified by the -out_format option)
 
 =cut
 
@@ -49,6 +49,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
+require "RSA.stat.lib";
 require RSAT::Graph2;
 
 
@@ -79,7 +80,7 @@ package main;
     local $weight_col = 0;
 
     ## Output formats
-    local $output_format = "dot";
+    local $output_format = "tab";
     %supported_output_format =(
 			       dot=>1,
 			       gml=>1,
@@ -108,14 +109,24 @@ package main;
     
     # nodes
     @nodes = ();
+    
+    # number of random graphs to create (by default = 1)
+    $n = 1;
 
+    # mean value of the weight of the edges
+    $mean = "null";
+    
+    # sd deviation of the weight of the edges
+    $sd = "null";
+    
     # nodes
     $random_type = "";
     
     %supported_random_type =(
 			       scratch=>1,
 			       node_degree=>1, 
-			       node_degree_distrib=>1
+			       node_degree_distrib=>1,
+			       ER=>1
     );
     
     $supported_random_type = join (",", keys %supported_random_type);        
@@ -132,24 +143,29 @@ package main;
     if ($main::infile{input} && !-e $main::infile{input}) {
       &RSAT::error::FatalError("\t", "File", $main::infile{input}, "does not exist");
     }
+    if ($n > 1 && !$main::outfile{output}) {
+      &RSAT::error::FatalError("\t", "You must specify an prefix for the output files when requiring more than one output random graph");
+    }
     if ($main::infile{nodefile} && !-e $main::infile{nodefile}) {
       &RSAT::error::FatalError("\t", "File", $main::infile{nodefile}, "does not exist");
     }
     if ($main::infile{nodefile} && $main::infile{input}) {
       &RSAT::error::FatalError("\t", "Cannot specify both a file containing node names and a graph file");
     }
+    if ($sd ne 'null' && $mean ne 'null' && ($random_type eq "node_degree" || $random_type eq "node_degree_distrib")) {
+      &RSAT::error::FatalError("\t", "You must not specify randomization type", $random_type, "with -sd and -mean option");
+    }
+    if (($sd ne 'null' && $mean eq 'null') || ($sd eq 'null' && $mean ne 'null')) {
+      &RSAT::error::FatalError("\t", "You must specify both standard deviation and mean value for the edge weight");
+    }    
     if ($random_type eq "") {
       &RSAT::error::FatalError("\t", "You must specify a randomization type.");
-    } elsif (($random_type eq "node_degree" || $random_type eq "node_degree_distrib") && !exists($main::infile{input})) {
+    } elsif (($random_type eq "node_degree" || $random_type eq "node_degree_distrib" || $random_type eq "ER") && !exists($main::infile{input})) {
       &RSAT::error::FatalError("\t", "You must specify an input graph when using randomization type", $random_type);
     } elsif (($random_type eq "node_degree" || $random_type eq "node_degree_distrib") && ($duplicated || $self || $directed || $max_degree > 0)) {
       &RSAT::error::FatalError("\t", "Option -duplicate, -self, -max_degree and -directed are not compatible with randomization type", $random_type);
     }
-    if ($output_format eq "tab") {
-      $main::verbose_out = $main::out;
-    } else {
-      $main::verbose_out = STDOUT;
-    }
+
     ################################################################
     ## Read an input graph if available
     my $graph = new RSAT::Graph2();
@@ -159,7 +175,7 @@ package main;
     }
     
     ################################################################
-    ## Read the node of the node file
+    ## Read the nodes of the node file
     if ($infile{nodefile}) {
       my $l = 0;
       &RSAT::message::TimeWarn("Reading nodes from file", $infile{nodefile}) if ($main::verbose >= 2);
@@ -176,50 +192,71 @@ package main;
 	if ($node) {
 	  push @nodes, $node;
 	} else {
-	  &RSAT::message::Warning("Line", $l, "starts with space. Skipped.");
+	  &RSAT::message::Warning("Line", $l, "starts with a space. Skipped.");
 	}
       }
       close $node_handle;
     }
     
     ################################################################
-    ## Open output stream
-    $main::out = &OpenOutputFile($main::outfile{output});
+    ## Count the number of edges and nodes for an erdos-renyi randomization
+    if ($random_type eq 'ER') {
+      $req_edges = scalar ($graph->get_attribute("arcs"));
+      $req_nodes = scalar @nodes;
+      ## calculate the mean and the sd deviation of the weights
+      if ($weight_col > 0) {
+        my @arcs =  $graph->get_attribute("arcs");
+        my @weights = ();
+        for (my $i = 0; $i < scalar(@arcs); $i++) {
+          push @weights, $arcs[$i][2];
+        }
+        my %summary = &summary(@weights);
+        $mean = $summary{mean};
+        $sd = $summary{sd};
+        &RSAT::message::Info("Mean node degree of the edges",$mean,"with deviation",$sd);
+      }
+    }
+      
+    ################################################################
+    $out_file_name = $main::outfile{output};
 
     ################################################################
     ## Create the random graph
-    if ($random_type eq 'scratch') {
-      my $nodes_ref = \@nodes;
-      $graph = $graph->create_random_graph($nodes_ref, $req_nodes, $req_edges, $self, $duplicated , $directed, $max_degree);
-    } elsif ($random_type eq 'node_degree') {
-      $graph = $graph->randomize();
-    } elsif ($random_type eq 'node_degree_distrib') {
-      $graph = $graph->random_graph_degree_distrib();
+    for (my $i = 1; $i <= $n; $i++) {
+      &RSAT::message::Info("\t","Creating random graph",$i);
+      ## Create output file name if more than one random graph is requested
+      if ($n > 1) {
+        $out_file_name = $main::outfile{output};
+        $out_file_name.= "_".$i.".".$output_format;
+      }
+      ## Open output stream
+      $main::out = &OpenOutputFile($out_file_name);
+      if ($output_format eq "tab") {
+        $main::verbose_out = $main::out;
+      } else {
+        $main::verbose_out = STDOUT;
+      }
+      if ($random_type eq 'scratch' || $random_type eq 'ER') {
+        my $nodes_ref = \@nodes;
+        $rdm = $graph->create_random_graph($nodes_ref, $req_nodes, $req_edges, $self, $duplicated, $directed, $max_degree, $mean, $sd);
+      } elsif ($random_type eq 'node_degree') {
+        $rdm = $graph->randomize();
+      } elsif ($random_type eq 'node_degree_distrib') {
+        $rdm = $graph->random_graph_degree_distrib();
+      }
+      ## Print verbose
+      &Verbose() if ($main::verbose);
+      ## Print output
+      print $out $rdm->to_text($output_format);
+      ## Finish verbose
+      if (($main::verbose >= 1 && $main::verbose_out ne 'STDOUT') || $i == $n) {
+        my $done_time = &AlphaDate();
+        print $main::verbose_out "; Job started $start_time\n";
+        print $main::verbose_out "; Job done    $done_time\n";
+      }
+      ## Close output stream
+      close $main::out if ($main::outfile{output});
     }
-         
-    
-    ################################################################
-    ## Print verbose
-    &Verbose() if ($main::verbose);
-    
-
-    ################################################################
-    ## Print output
-    print $out $graph->to_text($output_format); 
-    
-    ################################################################
-    ###### finish verbose
-    if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $main::verbose_out "; Job started $start_time\n";
-	print $main::verbose_out "; Job done    $done_time\n";
-    }
-    
-     
-    ################################################################
-    ## Close output stream
-    close $main::out if ($main::outfile{output});
-    exit(0);
 }
 
 ################################################################
@@ -293,12 +330,25 @@ Same as -h
 
 =item B<-i inputfile>
 
-If no input file is specified, the standard input is used.  This
-allows to use the command within a pipe.
+Input graph file.
 
 =cut
 	} elsif ($arg eq "-i") {
 	    $main::infile{input} = shift(@arguments);
+
+	    ## number of random graphs to create, by default = 1
+=pod
+
+=item B<-n #>
+
+Number of random graphs to create. By default, n = 1. If n is > 1, then you must specify an output prefix for the output files (-o option). In this case, the name of the files will be prefix_graph_number.[tab|gml|dot] according to the output format.
+
+=cut
+	} elsif ($arg eq "-n") {
+	    $main::n = shift(@arguments);
+	    unless (&IsNatural($n) && ($n > 0)) {
+		&RSAT::error::FatalError(join("\t", $n, "Invalid value for the number of random-graphs. Must be a strictly positive natural number > 0"));
+	    }
 	    
 	    ## Output file
 =pod
@@ -317,7 +367,7 @@ allows to use the command within a pipe.
 
 =item B<-input_format input_format>
 
-Input format. Supported: tab, gml
+Input format. Supported: tab, gml. By default, the output format is tab.
 
 =cut
 	} elsif ($arg eq "-in_format") {
@@ -330,7 +380,9 @@ Input format. Supported: tab, gml
 
 Randomization type. Supported: scratch, node_degree, node_degree_distrib
 
-From scratch, builds a graph totally at random. You may specify the nodes names either by indicating an input graph file (-i option) or a file containing file names (-nodefile option).
+From scratch, builds a graph totally at random. You may specify the nodes names either by indicating an input graph file (-i option) or a file containing file names (-nodefile option). The edges are generated using the Erdos-Renyi distribution. You may compute edge weight values by specifying a mean and a standard deviation. Weight will the be attributed according to the normal distribution.
+
+ER (Erdos-Renyii randomization), corresponds to the randomization of a input graph, keeping the number of edges and of nodes but changing its characteristics (node degree, clustering coefficient, ...). If you specify a weight column for the input graph, the weights of the output graph will be computed according to these values following the normal distribution (considering the weight distribution of the original graph). If nor the weight column is specified nor the wished mean and standard deviation of the weight distribution of the edges of the output graph, no weight will be added.
 
 With the node_degree randomization type, each node will keep the same degree that in the input graph (edge randomization).
 
@@ -348,7 +400,7 @@ With the node_degree_distrib randomization type, the global distribution of node
 
 =item B<-output_format output_format>
 
-Output format. Supported: tab, dot, gml
+Output format. Supported: tab, dot, gml. By default, the output format is tab.
 
 =cut 
 	} elsif ($arg eq "-out_format") {
@@ -436,7 +488,34 @@ The first word of each line will be considered as a name.
 	    unless (&IsNatural($req_nodes) && ($req_nodes > 0)) {
 		&RSAT::error::FatalError(join("\t", $req_nodes, "Invalid value for the number of requested nodes. Must be a strictly positive natural number"));
 	    }
-	   
+	    ## File containing nodes name
+=pod
+
+=item B<-mean #>
+
+Mean value on the weight of the arcs.
+This argument can only be used with the scratch and ER randomization type and must be combined with the -sd option.
+
+=cut
+	} elsif ($arg eq "-mean") {
+	    $main::mean = shift (@arguments);
+	    unless (&IsReal($mean)) {
+		&RSAT::error::FatalError(join("\t", $mean, "Invalid value for mean weight of the edge"));
+	    }
+	    ## File containing nodes name
+=pod
+
+=item B<-nodefile #>
+
+Standard deviation value of the weight of the arcs.
+This argument can only be used with the scratch and ER randomization type and must be combined with the -mean option.
+
+=cut
+	} elsif ($arg eq "-sd") {
+	    $main::sd = shift (@arguments);
+	    unless (&IsReal($sd)) {
+		&RSAT::error::FatalError(join("\t", $sd, "Invalid value for mean standard deviation of the edge"));
+	    }   
 
 	    ##  maximal degree of the nodes
 =pod
