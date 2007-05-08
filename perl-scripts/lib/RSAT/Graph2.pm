@@ -358,8 +358,8 @@ sub random_graph_degree_distrib {
       $rdm_graph_array[$i][0] = $node_new_nodes{$arcs[$i][0]};
       $rdm_graph_array[$i][1] = $node_new_nodes{$arcs[$i][1]};
       my $label = join("_", $rdm_graph_array[$i][0], $rdm_graph_array[$i][1]);
-      if (&RSAT::util::IsReal($arcs[2])) {
-        $label = $arcs[2];
+      if (&RSAT::util::IsReal($arcs[$i][2])) {
+        $label = $arcs[$i][2];
       }
       my $source_id = $nodes_name_id{$rdm_graph_array[$i][0]};
       my $target_id = $nodes_name_id{$rdm_graph_array[$i][1]};
