@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.24 2007/04/13 09:54:18 rsat Exp $
+# $Id: compare-graphs,v 1.25 2007/05/08 14:30:12 rsat Exp $
 #
 ############################################################
 
@@ -177,13 +177,15 @@ package main;
 
     my ($nodes_graph1, $arcs_graph1) = $graph1->properties;
     my ($nodes_graph2, $arcs_graph2) = $graph2->properties;
-    my ($common) = &in_common($graph1, $graph2);
+    my ($common, $nodes_nb, $edges_tot) = &in_common($graph1, $graph2, $directed);
     my $graph1_only_arc = $arcs_graph1 - $common;
     my $graph2_only_arc = $arcs_graph2 - $common;
     my $message = "Intersection info\n";
     $message .= ";\t".(join("\t",$main::infile{graph_R},$nodes_graph1,"node(s) and",$arcs_graph1,"arc(s)\n"));
     $message .= ";\t".(join("\t",$main::infile{graph_Q},$nodes_graph2,"node(s) and",$arcs_graph2,"arc(s)\n"));
     $message .= ";\t"."$common\t"."unique arcs in common\n";
+    $message .= ";\t"."$nodes_nb\t"."total number of nodes in the union of both graphs\n";
+    $message .= ";\t"."$edges_tot\t"."total number of edges in the union of both graphs\n";
     $message .= ";\t".$graph1_only_arc."\tarcs of $main::infile{graph_R} are not in $main::infile{graph_Q}\n";
     $message .= ";\t".$graph2_only_arc."\tarcs of $main::infile{graph_Q} are not in $main::infile{graph_R}\n";
     
@@ -803,7 +805,7 @@ sub difference {
 ## 
 ## 
 sub in_common {
-  my ($graph1, $graph2) = @_;
+  my ($graph1, $graph2, $directed) = @_;
   my $common = 0;
   my $graph1_not_graph2 = 0;
   my $graph2_not_graph1 = 0; 
@@ -813,9 +815,13 @@ sub in_common {
   my @arcs_g2 = $graph2->get_attribute("arcs");
   my %arcs_name_id_g2 = $graph2->get_attribute("arcs_name_id");
   my $max_arc_nb = $graph2->get_attribute("nb_arc_bw_node");
+  my %nodes =();
+  my @nodes_g2 = $graph2->get_nodes();
   for (my $i = 0; $i < scalar(@arcs_g1); $i++) { # run through the arcs of graph1
     my $source_name = $arcs_g1[$i][0];
     my $target_name = $arcs_g1[$i][1];
+    $nodes{$source_name}++;
+    $nodes{$target_name}++;
     my @arcs_id = ();
     my $arc_id1 = $source_name."_".$target_name."_1";
     push @arcs_id, $arc_id1; 
@@ -842,7 +848,18 @@ sub in_common {
       }
     }
   }
-  return ($common);
+  foreach my $node (@nodes_g2) {
+    $nodes{$node}++;
+  }
+  $nodes_nb = scalar (keys %nodes);
+  
+  if ($directed){
+  $edges_tot = $nodes_nb*$nodes_nb;
+  } else {
+  $edges_tot = ($nodes_nb*$nodes_nb+$nodes_nb)/2;
+  }
+  
+  return ($common, $nodes_nb, $edges_tot);
 }
 ################################################################
 #### verbose message
