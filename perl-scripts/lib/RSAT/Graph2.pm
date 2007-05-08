@@ -337,6 +337,7 @@ sub create_random_graph {
 Usage : $graph->random_graph_degree_distrib();
 
 create a random graph from another graph. The global connectivity distribution being conserved.
+This function works by permuting node names.
 
 
 =cut
