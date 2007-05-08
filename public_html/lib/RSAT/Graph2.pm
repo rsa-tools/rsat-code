@@ -179,16 +179,17 @@ sub randomize {
 =pod
 
 =item B<create_random_graph()> 
-Usage : $graph->create_random_graph(@nodes, $req_nodes, $req_edges, $self_loops, $duplicated, $directed, $max_degree);
+Usage : $graph->create_random_graph(@nodes, $req_nodes, $req_edges, $self_loops, $duplicated, $directed, $max_degree, $mean, $sd);
 
 
 create a random graph from the nodes in @nodes having $req_nodes nodes of maxium degree $max_degree and $req_edges edges.
 It allows duplicated edges ($duplicated = 1) or not ($duplicated = 0) and self loops ($self_loops = 1) or not ($self_loops = 0)
+A weight is calculated according to the normal distribution and the $mean and $sd value given as argument.
 
 
 =cut
 sub create_random_graph {
-    my ($self, $nodes_ref, $req_nodes, $req_edges, $self_loops, $duplicated, $directed, $max_degree) = @_;
+    my ($self, $nodes_ref, $req_nodes, $req_edges, $self_loops, $duplicated, $directed, $max_degree, $mean, $sd) = @_;
     my $rdm_graph = new RSAT::Graph2();
     my @rdm_graph_array = ();
     my $max_arc_number = 10000000;
@@ -243,7 +244,6 @@ sub create_random_graph {
           next;
         }
         if (exists($seen{$label}) && !$duplicated) {
-          print "2";
           next;
         }
         if ((exists($seen{$label}) || exists($seen{$inv_label})) && !$directed && !$duplicated) {
@@ -288,6 +288,10 @@ sub create_random_graph {
       my $source = $possible_source[$random_edges[$i]];
       my $target = $possible_target[$random_edges[$i]];
       my $label = join("_", $source, $target);
+      if ($mean ne 'null' && $sd ne 'null') {
+        $label = &gaussian_rand();
+        $label = ($label * $sd) + $mean;
+      }
       $graph_node{$source}++;
       $graph_node{$target}++;
       $rdm_graph_array[$i][0] = $source;
@@ -321,8 +325,6 @@ sub create_random_graph {
       $rdm_graph->set_hash_attribute("nodes_name_id", %rdm_nodes_name_id);
       $rdm_graph->set_hash_attribute("nodes_label", %rdm_nodes_label);
       $rdm_graph->set_hash_attribute("nodes_color", %rdm_nodes_color);
-
-        
     }
     return ($rdm_graph);
   }
@@ -2066,16 +2068,29 @@ sub load_classes {
 
 }
 
-# sub shuffle {
-#   return @_ if !@_ || ref $_ [0] eq 'ARRAY' && !@{$_ [0]};
-#   my $array = @_ == 1 && ref $_ [0] eq 'ARRAY' ? shift : [@_];
-#   for (my $i = @$array; -- $i;) {
-#     my $r = int rand ($i + 1);
-#     ($array -> [$i], $array -> [$r]) = ($array -> [$r], $array -> [$i]);
-#    }
-#   wantarray ? @$array : $array;
-# }
+# Returns an array of random numbers normally distributed
+# The gaussian_rand function implements the polar Box Muller method for turning two independent uniformly distributed random numbers 
+# between 0 and 1 (such as rand returns) into two numbers with a mean of 0 and a standard deviation of 1 (i.e., a Gaussian 
+# distribution). To generate numbers with a different mean and standard deviation, multiply the output of gaussian_rand by the new
+# standard deviation, and then add the new mean
 
+sub gaussian_rand {
+    my ($u1, $u2);  # uniformly distributed random numbers
+    my $w;          # variance, then a weight
+    my ($g1, $g2);  # gaussian-distributed numbers
+
+    do {
+        $u1 = 2 * rand() - 1;
+        $u2 = 2 * rand() - 1;
+        $w = $u1*$u1 + $u2*$u2;
+    } while ( $w >= 1 );
+
+    $w = sqrt( (-2 * log($w))  / $w );
+    $g2 = $u1 * $w;
+    $g1 = $u2 * $w;
+    # return both if wanted, else just one
+    return wantarray ? ($g1, $g2) : $g1;
+}
 
 return 1;
 
