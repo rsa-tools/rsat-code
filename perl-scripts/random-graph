@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.1 2007/05/07 14:18:51 rsat Exp $
+# $Id: random-graph,v 1.2 2007/05/08 07:41:06 rsat Exp $
 #
 ############################################################
 
@@ -27,9 +27,7 @@ util
 
 =head1 USAGE
     
-random-graph [-i inputfile] [-o outputfile] [-v #] [...]
-
-random-graph [-node #] [-edge #] [-o outputfile] [-n #] [-self] [-duplicated] [-nodefile]
+random-graph [-node #] [-edge #] [-o outputfile] [-n #] [-self] [-duplicated] [-nodefile] [-random_type scratch|node_degree|node_degree_distrib] [-i input_graph_file] [-scol #] [-tcol #] [-wcol #]
 
 
 
@@ -216,8 +214,6 @@ package main;
     ################################################################
     ## Close output stream
     close $main::out if ($main::outfile{output});
-    
-    
     exit(0);
 }
 
@@ -328,6 +324,7 @@ Input format. Supported: tab, gml
 =item B<-random_type >
 
 Randomization type. Supported: scratch, node_degree, node_degree_distrib
+
 From scratch, builds a graph totally at random. You may specify the nodes names either by indicating an input graph file (-i option) or a file containing file names (-nodefile option).
 
 With the node_degree randomization type, each node will keep the same degree that in the input graph (edge randomization).
