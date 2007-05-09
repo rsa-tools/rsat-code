@@ -33,10 +33,10 @@ BEGIN {
 	push (@INC, "$`lib/");
     }
 }
+require "RSA.lib";
+require RSAT::auc;
 use Getopt::Long qw(:config bundling);
 use Pod::Text;
-require "RSA.lib";
-
  
 # use OPTOOLS::util;
 # use OPTOOLS::Valid;
@@ -954,8 +954,6 @@ sub getStatsByScore{
 	}
     }
         
-    &getAUC(\%sensitivity,\%fpr);
-
     return(\%scores,
 	   \%true_positives,
 	   \%false_positives,
@@ -1206,8 +1204,6 @@ sub getStatsByScore_bis{
 	}
     }
     
-    &getAUC(\%sensitivity,\%fpr);
-    
     return(\%scores,
 	   \%true_positives,
 	   \%false_positives,
@@ -1237,11 +1233,14 @@ sub getAUC{
     my @list_Sn=();
     my @list_FPR=();
     foreach my $sc (sort {$b<=>$a} keys %FPR){
+# 	&RSAT::message::Warning(join("\t",
+# 				     "Sn",$Sn{$sc},
+# 				     "FPR",$FPR{$sc}));
 	push @list_Sn,$Sn{$sc};
 	push @list_FPR,$FPR{$sc};
     }
-    my $AUC_g=&RSAT::auc::calc_geometric(\@list_Sn,@list_PPV);
-    my $AUC_n=&RSAT::auc::calc_normal(\@list_Sn,@list_PPV);
+    my $AUC_g=&RSAT::auc::calc_geometric(\@list_Sn,\@list_FPR);
+    my $AUC_n=&RSAT::auc::calc_normal(\@list_Sn,\@list_FPR);
     &RSAT::message::Warning(join("\t","AUCg",$AUC_g,"AUCn",$AUC_n));
     return ($AUC_g,$AUC_n);
 }
