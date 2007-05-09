@@ -177,7 +177,6 @@ if  ($score_format eq "Q::R"){ # use two scores (ROC 3D)
 }elsif ($col{score}==0){ 
     @datas = &getConfusionTable($id2score);
 }else{
-    &RSAT::message::Warning("Hello World");
     @datas = &ExportScores($output,\%param2return,undef,$score_format,&getStatsByScore($id2score,'score',$ci{score},$thr{score},\%param2return,$output));
 }
 
@@ -1241,8 +1240,8 @@ sub getAUC{
 	push @list_Sn,$Sn{$sc};
 	push @list_FPR,$FPR{$sc};
     }
-    my $AUC_g=&auc::calc_geometric(\@list_Sn,@list_PPV);
-    my $AUC_n=&auc::calc_normal(\@list_Sn,@list_PPV);
+    my $AUC_g=&RSAT::auc::calc_geometric(\@list_Sn,@list_PPV);
+    my $AUC_n=&RSAT::auc::calc_normal(\@list_Sn,@list_PPV);
     &RSAT::message::Warning(join("\t","AUCg",$AUC_g,"AUCn",$AUC_n));
     return ($AUC_g,$AUC_n);
 }
