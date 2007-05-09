@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.186 2007/05/09 13:14:26 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.187 2007/05/09 13:44:26 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -803,6 +803,9 @@ sub SetFileNames {
 	my $consensus_options = "";
 	my $consensus_suffix = "";
 	
+	## Number of matrices to print
+	$consensus_options .= " -pf 1 -pt 1";
+
 	## strands
 	if ($strands eq "-1str") {
 	    $consensus_options .= " -c0"; ## Single-strand search
@@ -2164,7 +2167,7 @@ sub DrawDyadFeatureMap {
 
    ## Delete the feature file to save disk space (the feature space
    ## occupy half od the result directory)
-   $command = "; rm -f ".$family{$family_name}->{dyad_ft_file};
+   $command .= "; rm -f ".$family{$family_name}->{dyad_ft_file};
 
    #  $command .= " ;  xv -o $family{$family_name}->{fmap_file} &";
    if ($batch) {
@@ -2352,10 +2355,10 @@ sub AnalyzeFamilies {
 
 	### dyad feature-maps
 	if ($task{dyad_maps}) {
-	  &DrawDyadFeatureMap() 
-	    ## scan sequences with the PSSM built from significant dyads
-	    &ScanSequences($family{$family_name}->{dyad_pssm_file}."_count_matrices.txt","tab",
-			   $family{$family_name}->{dyad_pssm_file}," -uth Pval 0.00025");
+	  &DrawDyadFeatureMap();
+	  ## scan sequences with the PSSM built from significant dyads
+	  &ScanSequences($family{$family_name}->{dyad_pssm_file}."_count_matrices.txt","tab",
+			 $family{$family_name}->{dyad_pssm_file}," -uth Pval 0.00025");
 	  &DrawFeatureMap($family{$family_name}->{dyad_pssm_file});
 	}
 
