@@ -6,7 +6,7 @@
 #### routine impemented by Alejandra Marina Rivera
 ################################################################
 
-package auc;
+package RSAT::auc;
 
 # require Exporter;
 # require AutoLoader;
