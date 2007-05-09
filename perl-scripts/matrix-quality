@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.37 2007/05/08 04:31:56 jvanheld Exp $
+# $Id: matrix-quality,v 1.38 2007/05/09 14:37:00 morgane Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -718,7 +718,7 @@ Image format for the plots (ROC curve, score profiels, ...).
 	    ## Tasks
 =pod
 
-=item B<-return tasks>
+=item B<-task tasks>
 
 List of tasks to perform. If this option is not specified, all the
 tasks are performed. 
@@ -845,7 +845,8 @@ sub ExportInputSites {
   }
 
   ## Specific options for scanning matrix sites
-  $scanopt{matrix_sites} = " -1str"; ## the sites from the matrix itself should be scanned only in the orientation where they were used to build the matrix
+  $scanopt{matrix_sites} = "" unless ($scanopt{matrix_sites});
+  $scanopt{matrix_sites} .= " -1str"; ## the sites from the matrix itself should be scanned only in the orientation where they were used to build the matrix
   $scanopt{matrix_sites} .= " -uth rank_pm 1"; ## Only the top score has to be taken for the matrix sites
 
 #  ## This is apparently not used anymore ?
@@ -867,6 +868,8 @@ sub LOO_scores {
   if ($main::verbose >= 1) {
     print $main::out "; LOO partial matrices\n";
   }
+  
+  my $seq_type = "matrix_sites_loo";
 
   $main::outfile{matrix_sites_loo} = $outfile{prefix}."_matrix_sites_loo.tab";
 #  push @distrib_files, $main::outfile{matrix_sites_loo};
@@ -930,6 +933,8 @@ sub LOO_scores {
 							  );
     $verbose = $tmp_verbose;
     close $partial_matrix_handle;
+    
+
 
     ## Score the left out site with the partial matrix
     my $matrix_scan_cmd = "echo $lo_site | matrix-scan -v ".$main::verbose;
@@ -940,6 +945,9 @@ sub LOO_scores {
     $matrix_scan_cmd .= " -matrix_format tab";
     $matrix_scan_cmd .= " -return sites -1str -uth rank 1";
     $matrix_scan_cmd .= join(" ", "", @args);
+    if (defined($main::scanopt{$seq_type})) {
+      $matrix_scan_cmd .= " ".$main::scanopt{$seq_type};
+  	}
     if ($i > 0) {
       $matrix_scan_cmd .= " | grep -v '^;'";
       $matrix_scan_cmd .= " | grep -v '^#'";
@@ -949,6 +957,15 @@ sub LOO_scores {
     print $loo_scores_handle $score_result;
 
   }
+ 
+  ## Print the LOO parameters in the log file
+  print $main::out "; Scanning parameters for sequence type\t", $seq_type, "\n";
+  print $main::out "; matrix-scan command\n";
+  printf $main::out ";\t%-22s\t%s\n", "Sequence type", $seq_type;
+  if (defined($main::scanopt{$seq_type})) {
+      printf $main::out ";\t%-22s\t%s\n", "Type-specific options", $scanopt{$seq_type};
+  }
+  print $main::out ";\n";
   close $loo_scores_handle;
 
 
@@ -1237,6 +1254,7 @@ sub CompareDistrib {
     $distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_scan_";
     $distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_";
     $distrib_compa_cmd .= " -suppress _score_distrib.tab";
+#    $distrib_compa_cmd .= " -null ''";
     $distrib_compa_cmd .= " -o ".$outfile{distrib_compa}.".tab";
     $distrib_compa_cmd .= " -files ";
     $distrib_compa_cmd .= join(" ", $main::outfile{'theoretical_distrib'}, @distrib_files);
@@ -1306,8 +1324,10 @@ sub CompareDistrib {
     $XYgraph_cmd = "XYgraph ".$all_graph_options;
     $XYgraph_cmd .= " -xcol ".$ref_column;
     $XYgraph_cmd .= " -ycol ".$ycols;
-    $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
-    $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
+   # $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+   # $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
+    $XYgraph_cmd .= " -ymax 1 ";
+    $XYgraph_cmd .= " -xmax 1 ";
     my $roc_file_opt = $large_graph_options.$roc_options." -o ".$outfile{distrib_compa}."_roc.".$image_format;
     $roc_file_opt .= " -xleg1 'Reference set : ".$roc_ref."' ";
     $roc_file_opt .= " -yleg1 'other distributions' ";
