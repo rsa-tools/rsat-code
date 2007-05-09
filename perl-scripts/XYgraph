@@ -654,7 +654,11 @@ sub GnuPlotEPS {
 	}
 	
 	## legend (key box)
-	$gnuplot_cmd .= "set key outside right top vertical Left reverse enhanced nobox\n";	
+	if (($header)||($legend)) {
+		$gnuplot_cmd .= "set key outside right top vertical Left reverse enhanced nobox\n";	
+		} else {
+			$gnuplot_cmd .= "set key off\n";	
+		}
 	## get legend from columnheader
 	if (($header)||($legend)) {
 			## remove # from data file comments charaters
