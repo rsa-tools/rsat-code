@@ -279,7 +279,8 @@ sub getId2score{
       if($col{status} != 0){
 	  my $status = $fields[$col{status}-1];
 	  if (!$supported_status{$status}){
-	      &RSAT::message::Warning(join(" ","Warning ! This status",$status," is not supported. Supported status :",join(",",keys %supported_status))) if ($main::verbose >= 10);
+	      print "prout\n";
+	      &RSAT::message::Warning(join(" ","Warning ! This status",$status," is not supported. Supported status :",join(",",keys %supported_status))) unless ($nodie);
 	      die unless ($nodie);	      
 	  }else {
 	      $id_score{$id}->{status} = $supported_status{$status};
@@ -1201,7 +1202,9 @@ sub getStatsByScore_bis{
 	    $optimal_score_4 = $score;
 	}
     }
-        
+    
+    &getAUC(\%sensitivity,\%fpr);
+    
     return(\%scores,
 	   \%true_positives,
 	   \%false_positives,
@@ -1219,6 +1222,24 @@ sub getStatsByScore_bis{
 	   \%Query_not_Ref,
 	   $NnotQR
 	 );
+}
+
+################################################################
+#### calculate the  Area Under the Curve (AUC)
+################################################################
+sub getAUC{
+    my ($Sn,$FPR)=@_;
+    my %Sn=%{$Sn};
+    my %FPR=%{$FPR};
+    my @list_Sn=();
+    my @list_FPR=();
+    foreach my $sc (sort {$b<=>$a} keys %FPR){
+	push @list_Sn,$Sn{$sc};
+	push @list_FPR,$FPR{$sc};
+    }
+    my $AUC_g=&auc::calc_geometric(\@list_Sn,@list_PPV);
+    my $AUC_n=&auc::calc_normal(\@list_Sn,@list_PPV);
+    return ($AUC_g,$AUC_n);
 }
 
 ################################################################
