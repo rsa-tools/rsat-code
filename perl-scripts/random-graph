@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.7 2007/05/09 07:08:03 rsat Exp $
+# $Id: random-graph,v 1.8 2007/05/09 12:01:52 rsat Exp $
 #
 ############################################################
 
@@ -258,6 +258,7 @@ package main;
       }
       ## Close output stream
       close $main::out if ($main::outfile{output});
+      $rdm->empty_graph();
     }
 }
 
