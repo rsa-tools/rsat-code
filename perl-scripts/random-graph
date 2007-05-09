@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.6 2007/05/08 14:39:02 rsat Exp $
+# $Id: random-graph,v 1.7 2007/05/09 07:08:03 rsat Exp $
 #
 ############################################################
 
@@ -107,8 +107,10 @@ package main;
     # directed edges
     $directed = 0;
     
-    # nodes
+    # nodes and weights
     @nodes = ();
+    @weights = ();
+    
     
     # number of random graphs to create (by default = 1)
     $n = 1;
@@ -121,6 +123,9 @@ package main;
     
     # nodes
     $random_type = "";
+    
+    # normal
+    $normal = 0;
     
     %supported_random_type =(
 			       scratch=>1,
@@ -204,17 +209,14 @@ package main;
       $req_edges = scalar ($graph->get_attribute("arcs"));
       $req_nodes = scalar @nodes;
       ## calculate the mean and the sd deviation of the weights
-      if ($weight_col > 0) {
-        my @arcs =  $graph->get_attribute("arcs");
-        my @weights = ();
-        for (my $i = 0; $i < scalar(@arcs); $i++) {
-          push @weights, $arcs[$i][2];
-        }
-        my %summary = &summary(@weights);
-        $mean = $summary{mean};
-        $sd = $summary{sd};
-        &RSAT::message::Info("Mean node degree of the edges",$mean,"with deviation",$sd) if ($main::verbose >= 2);
+      my @arcs =  $graph->get_attribute("arcs");
+      for (my $i = 0; $i < scalar(@arcs); $i++) {
+        push @weights, $arcs[$i][2];
       }
+      my %summary = &summary(@weights);
+      $mean = $summary{mean};
+      $sd = $summary{sd};
+      &RSAT::message::Info("Mean node degree of the edges",$mean,"with deviation",$sd) if ($main::verbose >= 2);
     }
       
     ################################################################
@@ -238,7 +240,7 @@ package main;
       }
       if ($random_type eq 'scratch' || $random_type eq 'ER') {
         my $nodes_ref = \@nodes;
-        $rdm = $graph->create_random_graph($nodes_ref, $req_nodes, $req_edges, $self, $duplicated, $directed, $max_degree, $mean, $sd);
+        $rdm = $graph->create_random_graph($nodes_ref, $req_nodes, $req_edges, $self, $duplicated, $directed, $max_degree, $mean, $sd, $normal, @weights);
       } elsif ($random_type eq 'node_degree') {
         $rdm = $graph->randomize();
       } elsif ($random_type eq 'node_degree_distrib') {
@@ -543,6 +545,21 @@ from node A to node B is different from an edge from B to A (by default, edges a
 	    	    
 	} elsif ($arg eq "-directed") {
 	    $directed = 1;
+	    	   ## Normal option
+	   
+=pod
+
+=item B<-normal>
+
+This option can only be used with ER randomization type and if the input graph is weighted.
+Using this option will generate randomly the weight of the output random graph according to a normal distribution of 
+weights. The mean and standard deviation can then be chosen (-mean and -sd option) or will be calculated according to the 
+weights the input graph. 
+
+=cut
+	    	    
+	} elsif ($arg eq "-normal") {
+	    $normal = 1;
 	    
 =pod
 
