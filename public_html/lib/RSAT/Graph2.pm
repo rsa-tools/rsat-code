@@ -295,8 +295,6 @@ sub create_random_graph {
         $label = ($label * $sd) + $mean;
       } elsif (!$normal) {
         my $weight = $labels[$random_weights[$i]];
-        print $weight."\n";
-        print $random_weights[$i]."\n";
         if (&RSAT::util::IsReal($weight)) {
           $label = $weight;
         } else {
