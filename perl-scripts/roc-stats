@@ -1243,7 +1243,7 @@ sub getAUC{
     }
     my $AUC_g=&auc::calc_geometric(\@list_Sn,@list_PPV);
     my $AUC_n=&auc::calc_normal(\@list_Sn,@list_PPV);
-    &RSAT::message::Warning(join("\t","AUCg",$AUC_g,"AUCn",$AUC_n);
+    &RSAT::message::Warning(join("\t","AUCg",$AUC_g,"AUCn",$AUC_n));
     return ($AUC_g,$AUC_n);
 }
 
