@@ -8,10 +8,10 @@
 
 package RSAT::auc;
 
-# require Exporter;
-# require AutoLoader;
-# @ISA = qw( Exporter AutoLoader );
-# @EXPORT = qw(test);
+use RSAT::GenericObject;
+use RSAT::message;
+use RSAT::error;
+@ISA = qw( RSAT::GenericObject );
 
 ################################################################
 #### Calculate geometrically the Area Under the Curves (AUC)
