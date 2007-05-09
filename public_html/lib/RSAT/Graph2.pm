@@ -105,6 +105,64 @@ sub new {
 ################################################################
 =pod
 
+=item B<empty_graph()>
+
+.
+
+=cut
+sub empty_graph {
+    my ($self, $inputfile) = @_;
+    my @out_neighbours = $self->get_attribute("out_neighbours");
+    my @in_neighbours = $self->get_attribute("in_neighbours");
+    my @arc_out_label = $self->get_attribute("out_label");
+    my @arc_in_label = $self->get_attribute("in_label");
+    my @arc_in_color = $self->get_attribute("in_color");
+    my @arc_out_color = $self->get_attribute("out_color");
+    my @arcs = $self->get_attribute("arcs");
+    my %arcs_name_id = $self->get_attribute("arcs_name_id");
+ 
+    
+    my %nodes_name_id = $self->get_attribute("nodes_name_id");
+    my %nodes_id_name = $self->get_attribute("nodes_id_name");
+    my %nodes_color = $self->get_attribute("nodes_color");
+    my %nodes_label = $self->get_attribute("nodes_label");
+    my %gml_id = ();
+    
+    my $max_arc_nb = $self->get_attribute("nb_arc_bw_node");
+    @out_neighbours = ();
+    @in_neighbours = ();
+    @arc_out_label = ();
+    @arc_in_label = ();
+    @arc_in_color = ();
+    @arc_out_color = ();
+    @arcs = ();
+    %arcs_name_id = ();
+    %nodes_name_id = ();
+    %nodes_id_name =  ();
+    %nodes_color = ();
+    %nodes_label =  ();
+    %gml_id = ();
+    $self->set_array_attribute("out_neighbours", @out_neighbours);
+    $self->set_array_attribute("in_neighbours", @in_neighbours);
+    $self->set_array_attribute("in_label", @arc_in_label);
+    $self->set_array_attribute("out_label", @arc_out_label);
+    $self->set_array_attribute("in_color", @arc_in_color);
+    $self->set_array_attribute("out_color", @arc_out_color);
+    $self->set_array_attribute("arcs", @arcs);
+    $self->force_attribute("nb_arc_bw_node", $max_arc_nb);
+    $self->set_hash_attribute("arcs_name_id", %arcs_name_id);
+    $self->set_hash_attribute("nodes_name_id", %nodes_name_id);
+    $self->set_hash_attribute("nodes_id_name", %nodes_id_name);
+    $self->set_hash_attribute("nodes_color", %nodes_color);
+    $self->set_hash_attribute("nodes_label", %nodes_label);
+    return $self;
+    
+}
+
+
+################################################################
+=pod
+
 =item B<randomize()> 
 
 returns a randomized graph having the same number of edges, each node having the same number of neighbours
