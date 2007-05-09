@@ -189,7 +189,7 @@ A weight is calculated according to the normal distribution and the $mean and $s
 
 =cut
 sub create_random_graph {
-    my ($self, $nodes_ref, $req_nodes, $req_edges, $self_loops, $duplicated, $directed, $max_degree, $mean, $sd) = @_;
+    my ($self, $nodes_ref, $req_nodes, $req_edges, $self_loops, $duplicated, $directed, $max_degree, $mean, $sd, $normal, @labels) = @_;
     my $rdm_graph = new RSAT::Graph2();
     my @rdm_graph_array = ();
     my $max_arc_number = 10000000;
@@ -283,14 +283,25 @@ sub create_random_graph {
       &RSAT::error::FatalError("\t","Maximal node degree specification is not compatible with the number of requested edges");
     }
     my @random_edges = 0 .. (scalar(@possible_target)-1);
+    my @random_weights = 0 .. $req_edges-1;
     @random_edges = &shuffle(@random_edges);
+    @random_weights = &shuffle(@random_weights);
     for (my $i = 0; $i < $req_edges; $i++) {
       my $source = $possible_source[$random_edges[$i]];
       my $target = $possible_target[$random_edges[$i]];
       my $label = join("_", $source, $target);
-      if ($mean ne 'null' && $sd ne 'null') {
+      if ($mean ne 'null' && $sd ne 'null' && $normal) {
         $label = &gaussian_rand();
         $label = ($label * $sd) + $mean;
+      } elsif (!$normal) {
+        my $weight = $labels[$random_weights[$i]];
+        print $weight."\n";
+        print $random_weights[$i]."\n";
+        if (&RSAT::util::IsReal($weight)) {
+          $label = $weight;
+        } else {
+          &RSAT::message::Warning($weight, "Not a numeric weight on edge between", $source, "and", $target) if ($main::verbose >= 3);
+        }
       }
       $graph_node{$source}++;
       $graph_node{$target}++;
@@ -300,6 +311,7 @@ sub create_random_graph {
       $rdm_graph_array[$i][3] = "#000088";
       $rdm_graph_array[$i][4] = "#000088";
       $rdm_graph_array[$i][5] = "#000044";
+      &RSAT::message::Info("\t", "Random edge created between", $source, "and", $target, "with label", $label) if ($main::verbose >= 3);
     }
     $rdm_graph->load_from_array(@rdm_graph_array);
     
