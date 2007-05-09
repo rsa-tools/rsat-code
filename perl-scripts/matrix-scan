@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.70 2007/05/07 02:39:04 jvanheld Exp $
+# $Id: matrix-scan,v 1.71 2007/05/09 13:15:03 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -821,8 +821,8 @@ package main;
     }
 
     if (($return_fields{sites})  && (defined(@{$matches_per_seq{$seq_id}}))) {
-      &RSAT::message::TimeWarn( "Returning individual matches for sequence", $seq_id )
-	if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn( "Returning individual matches for sequence", $seq_id)
+	if ($main::verbose >= 3);
 
       ################################################################
       ## Sort the matches
