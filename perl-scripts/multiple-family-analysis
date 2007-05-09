@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.185 2007/01/15 23:40:55 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.186 2007/05/09 13:14:26 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -35,6 +35,7 @@ use RSAT::MatrixReader;
 ## initialize global variables
 $toppat = 50;
 $organism = "";
+$org_fam = 0;
 $taxon = "";
 $force_calib=1;
 $null="NA"; ## Null character for the exports
@@ -276,29 +277,34 @@ if ($known_site_file) {
 if ($sequence_file_list) {
     $task{upstream} = 0; 
     &ReadSequenceList();
-
+    
 ## Family file
 } else {
-
+    
     ### read gene name and identifiers
     &RSAT::message::TimeWarn ("Reading ORF information") 
-      if ($verbose >= 1);
-    $organism = new RSAT::organism();
-    
+	if ($verbose >= 1);
     #### Check organism name
     if ($organism_name) {
+	$organism = new RSAT::organism();
 	$organism->check_name($organism_name);
+	$organism->set_attribute("name", $organism_name);
+	$organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
+	$organism->LoadFeatures($annotation_table);
+	$organism->LoadSynonyms();
+	
+    } elsif ($org_fam) {
+	&RSAT::message::Info("Organisms will be read from the second column of the family file") if ($main::verbose >= 1);
     } else {
 	&RSAT::error::FatalError("You must either specify an organism (-org), or an input sequence file (-seq)");
     }
-    $organism->set_attribute("name", $organism_name);
-
-    $organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
-    $organism->LoadFeatures($annotation_table);
-    $organism->LoadSynonyms();
-
+    
     ### Read family file
-    %family = &ReadClasses($family_file, 1, $organism);
+    if ($org_fam) {
+	%family = &ReadClasses($family_file, 0);
+    } else {
+	%family = &ReadClasses($family_file, 1, $organism);
+    }
 
     ## Check selected families
     if (scalar(@selected) > 0) {
@@ -442,11 +448,11 @@ sub SetFileNames {
 	$dyad_options .= " -expfreq $exp_freq_file{dyads}";
     } elsif ($background) {
 	$dyad_options .= " -bg $background ";
-	$dyad_options .= " -org $organism_name ";
+	$dyad_options .= " -org ".$organism_name if ($organism_name);
 #      $dyad_suffix .= "_ncf";
     } elsif ($background eq "mncf") {
 	$dyad_options .= " -mncf ";
-	$dyad_options .= " -org $organism_name ";
+	$dyad_options .= " -org ".$organism_name if ($organism_name);
 	$dyad_suffix .= "_mncf";
     }
 #  $dyad_suffix .= "_ncf" if ($background); ### TEMP
@@ -880,7 +886,7 @@ sub SetFileNames {
 ################################################################
 #### retrieve upstream sequences
 sub UpstreamSequences {
-    &RSAT::message::TimeWarn ("Retrieving upstream sequences for family $family_name") if ($verbose >= 1);
+    &RSAT::message::TimeWarn ("Retrieving upstream sequences for family ".$family_name, $organism_name) if ($verbose >= 1);
     my $command;
     if ($taxon) {
 	$command = "get-orthologs";
@@ -1004,9 +1010,8 @@ sub CalcOligoOptions {
 	
    } else {
 	### Pre-calculated expected frequency files
-	$oligo_options .= " -org ".$organism_name;
 	$oligo_options .= " -bg ".$background;
-	
+	$dyad_options .= " -org ".$organism_name if ($organism_name);
    }
    $oligo_options .= " -return occ,mseq,freq,proba,rank";
    $oligo_options .= " ".$noov;
@@ -1254,20 +1259,21 @@ sub DrawFeatureMap {
 ################################################################
 ### dyad analysis
 sub DyadAnalysis {
-  &RSAT::message::TimeWarn("Analyzing dyads for family $family_name",
-			   "monad length: $monad_length",
-			   "min_sp: $min_sp",
-			   "max_sp: $max_sp",
-			  ) if ($verbose >= 1);
-   $dir = "${family_name}/dyads_${family_name}";
-   chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
-   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{input_seq_file}));
-   $command = "dyad-analysis";
-   $command .= " -return occ,proba,rank";
-   $command .= " -i ".$family{$family_name}->{input_seq_file};
-   $command .= " -format ".$seq_format;
-   $command .= " -o ".$family{$family_name}->{dyad_file};
-   $command .= " ".$dyad_options;
+    &RSAT::message::TimeWarn("Analyzing dyads for family $family_name",
+			     "monad length: $monad_length",
+			     "min_sp: $min_sp",
+			     "max_sp: $max_sp",
+	) if ($verbose >= 1);
+    $dir = "${family_name}/dyads_${family_name}";
+    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
+    &RSAT::error::FatalError("Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{input_seq_file}));
+    $command = "dyad-analysis";
+    $command .= " -return occ,proba,rank";
+    $command .= " -i ".$family{$family_name}->{input_seq_file};
+    $command .= " -format ".$seq_format;
+    $command .= " -o ".$family{$family_name}->{dyad_file};
+    $command .= " ".$dyad_options;
+    $command .= " -org ".$organism_name if ($org_fam);
 
    if ($mask) {
        $command .= " -mask ".$mask;
@@ -1510,7 +1516,7 @@ sub ormbg {
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir{ormbg});
 
    #### retrieve upstream sequences
-   $ormbg_command = "retrieve-seq -all -imp_pos -type upstream -org $organism_name";
+   $ormbg_command = "retrieve-seq -all -imp_pos -type upstream -org ".$organism_name;
    $ormbg_command .= " -noorf " if ($noorf);
    $ormbg_command .= " -from $from" if (defined($from));
    $ormbg_command .= " -to $to " if (defined($to));
@@ -2226,11 +2232,13 @@ sub CheckParameters {
     }
 
     ### organism ###
-    unless ($organism_name) {
-	&RSAT::error::FatalError ("You must specify an organism"); 
-    }
-    unless ($supported_organism{$organism_name}) {
-      &RSAT::error::FatalError ("organism $organism_name is not supported");
+    if ($organism_name)  {
+	unless ($supported_organism{$organism_name}) {
+	    &RSAT::error::FatalError ("organism $organism_name is not supported");
+	}
+    } elsif ($org_fam) {
+    } else {
+	&RSAT::error::FatalError ("You must specify an organism (option -org) or indicate the organism in the second column of the family file (-org_fam)."); 
     }
     
     ## Upstream region limits
@@ -2303,8 +2311,16 @@ sub AnalyzeFamilies {
 	    next;
 	}
 
-	warn ";\n; Treating family ", $family_name," (",$fam_count," of ",$fam_nb, ")\t", $gene_nb, " genes\t",`date` if ($verbose >=1);
+       if ($org_fam) {
+	   $organism_name = $family_name;
+	   &RSAT::message::TimeWarn("Organism name", $organism_name);
+       }
+
+	&RSAT::message::TimeWarn("\n; Treating family ", $family_name," (".$fam_count."/".$fam_nb.")", 
+				 $gene_nb." genes", $organism_name)
+	    if ($verbose >=1);
 	
+
 	### retrieve upstream sequences of the family
 	&UpstreamSequences() if ($task{upstream});
 
@@ -2522,6 +2538,22 @@ OPTIONS
 
    Sequence retrieval options
 	-org	organism
+
+	-org_fam
+		When this option is used, the name of the family
+		(second column of the family file) is used as
+		organism. This allows to automatically perform a
+		genome-per-genome analysis of the orthologs of a
+		regulon from some model organism.
+
+		Typically, the input for this option is obtained from
+		the program get-orthologs: starting from a regulon
+		from some model organism (e.g. Saccharomyces
+		cerevisiae), one wants to discoer motifs in the
+		corresponding orthologous genes in other species
+		(e.g. each other species of Fungi).
+
+		This option is incompatible with -org. 
 
 	-taxon	taxon
 		If this option is specified, sequences are retrieved
@@ -2861,6 +2893,7 @@ multiple-family-analysis options
 
 ## Sequence options
 -org		organism
+-org_fam	each family corresponds to one organism
 -taxon		taxon (collect upstream sequences of orthologous genes)
 -purge		use purged sequences for pattern discovery (default)
 -nopurge	use non-purged sequences for pattern discovery
@@ -3075,6 +3108,10 @@ sub ReadArguments {
 	    ### organism
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name = $ARGV[$a+1];
+
+	    ### organisms are specified as family names
+	} elsif ($ARGV[$a] eq "-org_fam") {
+	    $org_fam = 1;
 
 	    ### taxon
 	} elsif ($ARGV[$a] eq "-taxon") {
