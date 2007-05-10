@@ -17,7 +17,8 @@ use GD;
 %supported_format = ("jpg"=>1, 
 		     "gif"=>1,
 		     "png"=>1,
-		     "eps" =>1
+		     "eps" =>1,
+		     "pdf" =>1
 		     );
 
 $img_format = $IMG_FORMAT || "png";
@@ -65,7 +66,7 @@ $large_font_height = 16;
 &ReadArguments();
 
 ## check arguments compatibility 
-if ($img_format eq "eps"){
+if (($img_format eq "eps")||($img_format eq "pdf")){
 
  if (($x_grid_step1) || ($y_grid_step1) || ($x_grid_step2) || ($y_grid_step2)) {
    &RSAT::message::TimeWarn("grid options -gstep are not yet compatible with eps format => png format is used.") ;
@@ -103,7 +104,7 @@ if ($img_format eq "eps"){
 }
 
 ## use gnuplot if format is eps
-if ($img_format eq "eps"){	
+if (($img_format eq "eps")||($img_format eq "pdf")){
 	&GnuPlotEPS(); 
 	exit();
 	}
@@ -561,6 +562,12 @@ sub GnuPlotEPS {
 		die("No input data !!!");
 	}
 	
+	## check if .pdf format
+	if ($img_format eq "pdf") {
+		## will first write a temporary eps file and then use ps2pdf to convert it into a pdf file
+		our $pdf_outputfile = $outputfile;
+		$outputfile = "tmp_gnuplot_eps_for_pdf.eps";
+	}
 	
 	$gnuplot_cmd = "gnuplot << EOF\n";
 	## fonts
@@ -582,6 +589,7 @@ sub GnuPlotEPS {
 	## and let gnuplot adapt automatically
 
 	$gnuplot_cmd .= "set term post landscape enh ".$color." font small\n";
+
 	
 	if (($x_axis_size)&&($y_axis_size)) {
 		my $ratio = $y_axis_size/$x_axis_size;
@@ -625,13 +633,7 @@ sub GnuPlotEPS {
 	$gnuplot_cmd .= "set tics font big\n";
 	## grid
 	$gnuplot_cmd .= "set grid\n";
-	## log
-	if ($xlog) {
-		$gnuplot_cmd .= "set logscale x ".$x_log_base."\n";
-	}
-	if ($ylog) {
-		$gnuplot_cmd .= "set logscale y ".$y_log_base."\n";
-	}
+	
 	## x axis
 	if (($x_axis_min ne "ND") || ($x_axis_max ne "ND")) {
 		if ($x_axis_min eq "ND") {
@@ -640,8 +642,18 @@ sub GnuPlotEPS {
 		if ($x_axis_max eq "ND") {
 			$x_axis_max = "";
 		}
-		$gnuplot_cmd .= "set xrange [".$x_axis_min.":".$x_axis_max."]\n";	
+		
+		if ($xlog) {
+			if (($x_axis_min ne "")&&($x_axis_min <=0)) {
+				$x_axis_min = "";
+			}
+			if (($x_axis_max ne "")&&($x_axis_max <=0)) {
+				$x_axis_max = "";
+			}	
+		}
+		$gnuplot_cmd .= "set xrange [".$x_axis_min.":".$x_axis_max."]\n";			
 	}
+	
 	## y axis
 	if (($y_axis_min ne "ND") || ($y_axis_max ne "ND")) {
 		if ($y_axis_min eq "ND") {
@@ -650,8 +662,27 @@ sub GnuPlotEPS {
 		if ($y_axis_max eq "ND") {
 			$y_axis_max = "";
 		}
+		
+		##log
+		if ($ylog) {
+			if (($y_axis_min ne "")&&($y_axis_min <=0)) {
+				$y_axis_min = "";
+			}
+			if (($y_axis_max ne "")&&($y_axis_max <=0)) {
+				$y_axis_max = "";
+			}	
+		}
 		$gnuplot_cmd .= "set yrange [".$y_axis_min.":".$y_axis_max."]\n";	
 	}
+	
+	## log
+	if ($xlog) {
+		$gnuplot_cmd .= "set logscale x ".$x_log_base."\n";
+	}
+	if ($ylog) {
+		$gnuplot_cmd .= "set logscale y ".$y_log_base."\n";
+	}
+
 	
 	## legend (key box)
 	if (($header)||($legend)) {
@@ -758,6 +789,14 @@ sub GnuPlotEPS {
   	if ($tmp_file){
   		unlink $tmp_file;
   	}
+  	
+  	##  use ps2pdf to convert it into a pdf file
+  	if ($img_format eq "pdf") {
+		my $ps2pdf_cmd = "ps2pdf $outputfile $pdf_outputfile";
+		## Execute the command
+  		&doit($ps2pdf_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+		unlink $outputfile;
+	}
 }
 
 #### calculation of pixel position
@@ -1590,7 +1629,8 @@ OPTIONS
 	-format		output image format
 			Supported: $supported_formats
 			Default: $img_format
-			For eps format, Gnuplot needs to be installed (http://www.gnuplot.info/)
+			For eps and pdf formats, Gnuplot (v4.2 or later) needs to be installed (http://www.gnuplot.info/)
+			For pdf format, ps2pdf must be installed.
 	-v		verbose. Comments about data and graph parameters
 			are printed on the screen.
 	-title1 "t1"	first graph title. The title string should be 
