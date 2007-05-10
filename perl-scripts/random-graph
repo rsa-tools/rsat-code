@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.8 2007/05/09 12:01:52 rsat Exp $
+# $Id: random-graph,v 1.9 2007/05/10 12:18:55 rsat Exp $
 #
 ############################################################
 
@@ -216,7 +216,7 @@ package main;
       my %summary = &summary(@weights);
       $mean = $summary{mean};
       $sd = $summary{sd};
-      &RSAT::message::Info("Mean node degree of the edges",$mean,"with deviation",$sd) if ($main::verbose >= 2);
+      &RSAT::message::Info("Mean weight of the edges",$mean,"with deviation",$sd) if ($main::verbose >= 2);
     }
       
     ################################################################
