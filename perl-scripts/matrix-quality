@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.38 2007/05/09 14:37:00 morgane Exp $
+# $Id: matrix-quality,v 1.39 2007/05/10 10:07:49 morgane Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -90,7 +90,7 @@ package main;
     ################################################################
     #### Initialise parameters
     my $start_time = &AlphaDate();
-    $image_format = "png";
+    @image_formats = ();
     @distrib_files = ();
     @matrix_scan_options = ();
     @alphabet = ("a","c","g","t");
@@ -137,6 +137,7 @@ package main;
 		       );
     $supported_tasks = join (",", sort(keys( %supported_tasks)));
     %tasks = ();
+    
 
     ################################################################
     ## Read argument values
@@ -168,6 +169,12 @@ package main;
     $dir{output} = `dirname $outfile{prefix}`;
     chomp($dir{output});
     &RSAT::util::CheckOutDir($dir{output});
+    
+    ## Graph image formats : png is default
+    unless (scalar(@image_formats)>0) {
+    	push (@image_formats,"png");
+    }
+    &RSAT::message::Info("Image formats for graphs: ".join (",", sort(@image_formats))) if ($main::verbose >= 2);
 
     ################################################################
     ### open output stream
@@ -709,11 +716,21 @@ This option can be used iteratively on a command line.
 
 =item	B<-img_format>
 
-Image format for the plots (ROC curve, score profiels, ...).
+Image format for the plots (ROC curve, score profiles, ...).
+To display the supported formats, type the following command:
+XYgraph -h.
 
 =cut
 	} elsif ($arg eq "-img_format") {
-	    $main::image_format = shift(@arguments);
+	    $image_format = shift(@arguments);
+	    my @tmp_img_formats = split(',',$image_format);
+	    if (scalar(@tmp_img_formats)>0) {
+	    	foreach my $f (@tmp_img_formats) {
+        		push (@main::image_formats, $f);
+	    	}
+	    } else {
+	    	push (@main::image_formats, $image_format);
+	    }
 
 	    ## Tasks
 =pod
@@ -1254,7 +1271,6 @@ sub CompareDistrib {
     $distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_scan_";
     $distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_";
     $distrib_compa_cmd .= " -suppress _score_distrib.tab";
-#    $distrib_compa_cmd .= " -null ''";
     $distrib_compa_cmd .= " -o ".$outfile{distrib_compa}.".tab";
     $distrib_compa_cmd .= " -files ";
     $distrib_compa_cmd .= join(" ", $main::outfile{'theoretical_distrib'}, @distrib_files);
@@ -1265,88 +1281,93 @@ sub CompareDistrib {
   if ($tasks{graphs}) {
     &RSAT::message::TimeWarn("Generating comparison graphs") 
       if ($main::verbose >= 1);
+      
+    ## Generate the graphs for each image format
+    foreach my $image_format (@image_formats) {
 
-    ## General options for all the graphs below
-    my $all_graph_options = " -i ".$outfile{distrib_compa}.".tab";
-    $all_graph_options .= " -format ".$image_format." -lines -pointsize 0";
+    	## General options for all the graphs below
+    	my $all_graph_options = " -i ".$outfile{distrib_compa}.".tab";
+    	$all_graph_options .= " -format ".$image_format." -lines -pointsize 0";
 
-    ## Alternative options for the large graphs and for the icons, respectively
-    my $large_graph_options = " -title1 'ROC curve ".$infile{matrix}."'";
-    $large_graph_options .= " -title2 ".$outfile{prefix};
-    $large_graph_options .= " -legend";
-    $large_graph_options .= " -xsize 800 -ysize 400";
-    $large_graph_options .= " -xleg1 'matrix score' ";
-    $large_graph_options .= " -yleg1 'Frequency (inverse cumulative) ' ";
+    	## Alternative options for the large graphs and for the icons, respectively
+    	my $large_graph_options = " -title1 'ROC curve ".$infile{matrix}."'";
+    	$large_graph_options .= " -title2 ".$outfile{prefix};
+    	$large_graph_options .= " -legend";
+    	$large_graph_options .= " -xsize 800 -ysize 400";
+    	$large_graph_options .= " -xleg1 'matrix score' ";
+    	$large_graph_options .= " -yleg1 'Frequency (inverse cumulative) ' ";
 
-    my $icon_options;
+    	my $icon_options;
 
-    ################################################################
-    ## Draw a graph with all the inverse cumulative distributions
-    my $XYgraph_cmd = "XYgraph ".$all_graph_options;
-    my $ycols = join ",", 2..(scalar(@distrib_files)+2);
-    $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
-    $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
-    $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-    $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}.".".$image_format;
-    &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+   		################################################################
+   		## Draw a graph with all the inverse cumulative distributions
+    	my $XYgraph_cmd = "XYgraph ".$all_graph_options;
+    	my $ycols = join ",", 2..(scalar(@distrib_files)+2);
+    	$XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
+    	$XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+ 	    $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+	    $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}.".".$image_format;
+	    &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
-    ## Generate the icon
-    $icon_options = " -xsize 170 -ysize 120 -o ".$outfile{distrib_compa}."_small.".$image_format;
-    &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	    ## Generate the icon
+ 	   $icon_options = " -xsize 170 -ysize 120 -o ".$outfile{distrib_compa}."_small.".$image_format;
+ 	   &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
-    ################################################################
-    ## Draw a graph with all the inverse cumulative distributions
-    ## and a logarithmic Y axis
-    $XYgraph_cmd = "XYgraph ".$all_graph_options;
-    $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
-    $XYgraph_cmd .= " -ymax 1 -ylog 10";
-    $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-    $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}."_logy.".$image_format;
-    &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+ 	   ################################################################
+ 	   ## Draw a graph with all the inverse cumulative distributions
+ 	   ## and a logarithmic Y axis
+ 	   $XYgraph_cmd = "XYgraph ".$all_graph_options;
+ 	   $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
+ 	   $XYgraph_cmd .= " -ymax 1 -ylog 10";
+ 	   $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+ 	   $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}."_logy.".$image_format;
+ 	   &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
-    ## Generate the icon
-    $icon_options = " -xsize 170 -ysize 120 -o ".$outfile{distrib_compa}."_logy_small.".$image_format;
-    &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+ 	   ## Generate the icon
+ 	   $icon_options = " -xsize 170 -ysize 120 -o ".$outfile{distrib_compa}."_logy_small.".$image_format;
+ 	   &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
-    ################################################################
-    ## Draw a ROC curve
-    my $ref_column = 2;
-    if ($roc_ref) {
-      if (defined($file_nb{$roc_ref})) {
-	$ref_column = 2 + $file_nb{$roc_ref};
-      } else {
-	&RSAT::message::Warning($roc_ref, "Invalid reference distribution for the ROC curve: should be one of the input sequence types, or 'theor'.");
-	$roc_ref = "Forced to use theoretical";
-      }
-    }
-    $ycols = join ",", 2..(scalar(@distrib_files)+2);
-    $large_graph_options =~ s/-xsize 800/-xsize 400/;
-    $XYgraph_cmd = "XYgraph ".$all_graph_options;
-    $XYgraph_cmd .= " -xcol ".$ref_column;
-    $XYgraph_cmd .= " -ycol ".$ycols;
-   # $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
-   # $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
-    $XYgraph_cmd .= " -ymax 1 ";
-    $XYgraph_cmd .= " -xmax 1 ";
-    my $roc_file_opt = $large_graph_options.$roc_options." -o ".$outfile{distrib_compa}."_roc.".$image_format;
-    $roc_file_opt .= " -xleg1 'Reference set : ".$roc_ref."' ";
-    $roc_file_opt .= " -yleg1 'other distributions' ";
-    &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+ 	   ################################################################
+ 	   ## Draw a ROC curve
+ 	   my $ref_column = 2;
+ 	   if ($roc_ref) {
+ 	     if (defined($file_nb{$roc_ref})) {
+		$ref_column = 2 + $file_nb{$roc_ref};
+ 	     } else {
+		&RSAT::message::Warning($roc_ref, "Invalid reference distribution for the ROC curve: should be one of the input sequence types, or 'theor'.");
+		$roc_ref = "Forced to use theoretical";
+  	    }
+ 	   }
+ 	   $ycols = join ",", 2..(scalar(@distrib_files)+2);
+ 	   $large_graph_options =~ s/-xsize 800/-xsize 400/;
+ 	   $XYgraph_cmd = "XYgraph ".$all_graph_options;
+ 	   $XYgraph_cmd .= " -xcol ".$ref_column;
+ 	   $XYgraph_cmd .= " -ycol ".$ycols;
+ 	  # $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+ 	  # $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
+ 	   $XYgraph_cmd .= " -ymax 1 ";
+ 	   $XYgraph_cmd .= " -xmax 1 ";
+ 	   my $roc_file_opt = $large_graph_options.$roc_options." -o ".$outfile{distrib_compa}."_roc.".$image_format;
+ 	   $roc_file_opt .= " -xleg1 'Reference set : ".$roc_ref."' ";
+ 	   $roc_file_opt .= " -yleg1 'other distributions' ";
+ 	   &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
-    ## Generate the icon for the ROC curve
-    $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_small.".$image_format;
-    &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+ 	   ## Generate the icon for the ROC curve
+ 	   $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_small.".$image_format;
+ 	   &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
-    ################################################################
-    ## Draw a ROC curve with xlog
-    $XYgraph_cmd =~ s/XYgraph/XYgraph -xlog 10/;
-    $roc_file_opt =~ s/_roc/_roc_xlog/;
-    &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+ 	   ################################################################
+ 	   ## Draw a ROC curve with xlog
+ 	   $XYgraph_cmd =~ s/XYgraph/XYgraph -xlog 10/;
+ 	   $roc_file_opt =~ s/_roc/_roc_xlog/;
+ 	   &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
-    ## Generate the icon for the ROC curve
-    $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xlog_small.".$image_format;
-    &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  }
+  	  ## Generate the icon for the ROC curve
+  	  $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xlog_small.".$image_format;
+  	  &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    	
+    	}
+  	}
 
 }
 
