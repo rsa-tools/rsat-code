@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.25 2007/05/08 14:30:12 rsat Exp $
+# $Id: compare-graphs,v 1.26 2007/05/11 11:42:42 rsat Exp $
 #
 ############################################################
 
@@ -39,6 +39,7 @@ compare-graphs -Q query_graph_file -R reference_graph_file -return intersection|
 =cut
 
 
+
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
@@ -46,7 +47,7 @@ BEGIN {
 }
 require "RSA.lib";
 require RSAT::Graph2;
-
+require "RSA.stat.lib";
 
 ################################################################
 ## Main package
@@ -175,15 +176,18 @@ package main;
     ########################################################################""
     ## Calculation of the number of common and not common arcs and nodes
 
+    
     my ($nodes_graph1, $arcs_graph1) = $graph1->properties;
     my ($nodes_graph2, $arcs_graph2) = $graph2->properties;
     my ($common, $nodes_nb, $edges_tot) = &in_common($graph1, $graph2, $directed);
     my $graph1_only_arc = $arcs_graph1 - $common;
     my $graph2_only_arc = $arcs_graph2 - $common;
+    my $pval = &sum_of_hypergeometrics ($arcs_graph1, $edges_tot, $arcs_graph2, $common, $arcs_graph2);
     my $message = "Intersection info\n";
     $message .= ";\t".(join("\t",$main::infile{graph_R},$nodes_graph1,"node(s) and",$arcs_graph1,"arc(s)\n"));
     $message .= ";\t".(join("\t",$main::infile{graph_Q},$nodes_graph2,"node(s) and",$arcs_graph2,"arc(s)\n"));
     $message .= ";\t"."$common\t"."unique arcs in common\n";
+    $message .= ";\t"."$pval\t"."P-value of intersection\n";
     $message .= ";\t"."$nodes_nb\t"."total number of nodes in the union of both graphs\n";
     $message .= ";\t"."$edges_tot\t"."total number of edges in the union of both graphs\n";
     $message .= ";\t".$graph1_only_arc."\tarcs of $main::infile{graph_R} are not in $main::infile{graph_Q}\n";
@@ -809,6 +813,7 @@ sub in_common {
   my $common = 0;
   my $graph1_not_graph2 = 0;
   my $graph2_not_graph1 = 0; 
+  my $paval = 0;
   my %seen_arcs = ();
   my @arcs_g1 = $graph1->get_attribute("arcs");
   my %arcs_name_id_g1 = $graph1->get_attribute("arcs_name_id");
@@ -817,6 +822,7 @@ sub in_common {
   my $max_arc_nb = $graph2->get_attribute("nb_arc_bw_node");
   my %nodes =();
   my @nodes_g2 = $graph2->get_nodes();
+  
   for (my $i = 0; $i < scalar(@arcs_g1); $i++) { # run through the arcs of graph1
     my $source_name = $arcs_g1[$i][0];
     my $target_name = $arcs_g1[$i][1];
@@ -848,6 +854,7 @@ sub in_common {
       }
     }
   }
+#   hypergeometric "variables"
   foreach my $node (@nodes_g2) {
     $nodes{$node}++;
   }
@@ -858,6 +865,8 @@ sub in_common {
   } else {
   $edges_tot = ($nodes_nb*$nodes_nb+$nodes_nb)/2;
   }
+  
+  
   
   return ($common, $nodes_nb, $edges_tot);
 }
