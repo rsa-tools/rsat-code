@@ -1203,7 +1203,7 @@ sub calcProbabilities {
 	my $alphabet_size = scalar(@alphabet);
 	foreach my $letter (@alphabet) {
 	    $prior{$letter} = 1/$alphabet_size;
-	    warn join "\t", ";", $letter, $prior{$letter}, "\n" if ($main::verbose >= 10);
+	    warn join "\t", "|", $letter, $prior{$letter}, "\n" if ($main::verbose >= 10);
 	}
     }
 
@@ -1483,7 +1483,7 @@ sub _printParameters {
     $to_print .= sprintf ";\t%-29s\t%g\n", "Rows", $self->nrow();
     
     ## Alphabet
-    $to_print .= sprintf ";\t%-29s\t%s\n", "Alphabet", join(";", $self->getAlphabet());
+    $to_print .= sprintf ";\t%-29s\t%s\n", "Alphabet", join("|", $self->getAlphabet());
     
     ## Prior probabilities
     my @prior_tmp = ();
@@ -1491,7 +1491,7 @@ sub _printParameters {
     foreach my $letter (sort keys %prior) {
       push @prior_tmp, $letter.":".$prior{$letter};
     }
-    $to_print .= sprintf ";\t%-29s\t%s\n", "Prior", join(";", @prior_tmp);
+    $to_print .= sprintf ";\t%-29s\t%s\n", "Prior", join("|", @prior_tmp);
 
 
     ## Matrix attributes
