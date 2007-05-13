@@ -18,7 +18,7 @@ $supported_output_formats = join (",", (sort keys %supported_output_format));
 
 $font{variable} = 1;
 
-$chunk = 50;
+$chunk = 1000;
 
 ################################################################
 ## Read arguments 
@@ -38,10 +38,10 @@ $out = &OpenOutputFile($outfile{output});
 ################################################################
 ## Print the header
 if ($out_format eq 'html') {
-  &print_header_html();
+  print $out &html_header();
   &print_verbose_html();
   print &PrintHtmlTable($in, "", "", $chunk, $out, $border);
-  &close_table_html();
+  print $out &close_table_html();
 } elsif ($out_format eq 'tex') {
   my  $tex_table = &read_table_tex();
   print $out $tex_table;
@@ -213,20 +213,6 @@ sub ReadArguments {
 }
 
 
-################################################################
-## Print HTML header
-sub print_header_html {
-  print $out "<HTML>";
-  print $out "<TITLE>$infile{input}</TITLE>";
-  print $out "<BODY BGCOLOR='#FFFFFF'>";
-}
-
-################################################################
-## Close HTML table
-sub close_table_html {
-  print $out "</BODY>";
-  print $out "</HTML>";
-}
 
 ################################################################
 ## Read the table and store it in a bidimensional array
@@ -322,6 +308,7 @@ sub table_end_tex {
   $string .= "\n";
   return($string);
 }
+
 
 ################################################################
 #### verbose
