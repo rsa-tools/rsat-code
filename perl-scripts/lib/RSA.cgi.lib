@@ -60,11 +60,13 @@ sub RSA_header {
   my ($title) = @_;
   $title =~ s/\"//g;
   $title =~ s/\'//g;
-  print $query->header;
+#  print &html_header();
+  print $query->header();
+  print sorttable_script();
   ### print the header of the result page
   print $query->start_html(-title=>"RSA-tools : $title",
-                         -author=>'jvanheld@ucmb.ulb.ac.be',
-                         -BGCOLOR=>'#FFFFFF');
+			   -author=>'jvanheld@ucmb.ulb.ac.be',
+			   -BGCOLOR=>'#FFFFFF');
   print "<H3 ALIGN='center'><A HREF='$WWW_RSA/RSAT_home.cgi'>RSA-tools</A> - $title</H3>";
 }
 
@@ -93,7 +95,7 @@ sub SelectOutput {
 }
 
 
-
+################################################################
 ### print a selection between diferent modes of sequence entry 
 ### in a HTML form
 ### - sequences copy-pasted in a textarea
@@ -364,6 +366,37 @@ sub TaxonomyPopUpString {
 
 
 ################################################################
+## Print HTML header
+sub html_header {
+  my $header = "";
+  $header .=  "<html>\n";
+  $header .=  "<header>\n";
+  $header .=  "<title>$infile{input}</title>\n";
+  $header .= &sorttable_script();
+  $header .=  "<header>\n";
+  $header .=  "<body bgcolor='#ffffff'>\n";
+  return $header;
+}
+
+################################################################
+## Close HTML table
+sub close_table_html {
+  my $string = "";
+  $string .=  "</BODY>";
+  $string .=  "</HTML>";
+  return $string;
+}
+
+
+################################################################
+## Print a little java script produce a sortable HTML table
+sub sorttable_script {
+  my $script = $RSA."/perl-scripts/lib/sorttable.js";
+  return `cat $script`;
+}
+
+
+################################################################
 #### Print a text table in html format
 ##
 ## usage
@@ -381,7 +414,7 @@ sub TaxonomyPopUpString {
 sub PrintHtmlTable {
     my ($FILE, $mirror_file, $mirror_verbose, $chunk, $out, $border) = @_;
     $out = STDOUT unless ($out);
-    $chunk = 100 unless (&IsNatural($chunk));
+    $chunk = 1000 unless (&IsNatural($chunk));
     my $line_count = 0;
     my $last_line = "";
     my $header_line = "";
@@ -389,7 +422,7 @@ sub PrintHtmlTable {
 	$border=1;
     }
     
-    $TABLE="<TABLE bgcolor='#EEEEFF' CELLSPACING=1 CELLPADDING=3 BORDER=$border>";
+    $TABLE="<TABLE  class=\"sortable\" bgcolor='#EEEEFF' CELLSPACING=1 CELLPADDING=3 BORDER=$border>";
     unless ($main::font{variable}) {
 	$font_spec_start = "<TT>";
 	$font_spec_end = "</TT>";
