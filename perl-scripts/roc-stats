@@ -1599,7 +1599,7 @@ particularly useful with --3D if you want to calculate the statistics only on
 
 Use XYgraph in order to draw the ROC curve (Options to be implemented in parenthesis):
 
-C<XYgraph -i ROC-table.tab -xcol 6 -ycol 5 (-labelcol 1)>
+C<XYgraph -i ROC-table.tab -xcol 7 -ycol 5 -o ROC-curves.jpeg -xmax 1 -xmin 0 -ymax 1 -ymin 0 -lines -xleg1 "FPR" -yleg1 "TPR" -title "ROC" (-labelcol 1)>
  
 C<XY(Z)graph -i ROC-cube.tab -xcol 6 -ycol 5 (-zcol 9 -labelcol 1)>
 
