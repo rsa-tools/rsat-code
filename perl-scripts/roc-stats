@@ -883,7 +883,7 @@ sub getStatsByScore{
 	$fpr{$score}="NA";
 	if ($total_query!=0){
 	    $fpr{$score} = sprintf "$number_format",(($false_positives{$score})/
-					   ($total_query));
+					   ($total_ref));
 	}
 	
 	&RSAT::message::Warning(join("\t",
