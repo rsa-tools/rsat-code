@@ -112,7 +112,7 @@ sub retrieve_seq_cmd {
     if ($all == 1) {
 	$command .= " -all";
     }
-    if (defined($lw)) {
+    if ($lw) {
 	$lw =~ s/\'//g;
 	$lw =~ s/\"//g;
 	$command .= " -lw '".$lw."'";
@@ -149,9 +149,9 @@ sub purge_seq {
     }
     my $command = $self->purge_seq_cmd(%args);
     my $stderr = `$command 2>&1 1>/dev/null`;
-#    if ($stderr) {
-#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#    }
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
     my $result = `$command`;
     my $tmp_outfile = `mktemp $TMP/purge-seq.XXXXXXXXXX`;
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
@@ -204,7 +204,7 @@ sub purge_seq_cmd {
 	if ($str == 1 || $str == 2) {
 	    $command .= " -".$str."str";
 	} else {
-	    die "str value must 1 or 2";
+	    die "str value must be 1 or 2";
 	}
     }
 
@@ -212,18 +212,19 @@ sub purge_seq_cmd {
       $command .= " -del";
     }
 
-    if (defined($mask_short)) {
+    if ($mask_short) {
       $mask_short =~ s/\'//g;
       $mask_short =~ s/\"//g;
       $command .= " -mask_short '".$mask_short."'";
     }
 
-    if (defined($match_length)) {
+    if ($match_length) {
 	$match_length =~ s/\'//g;
 	$match_length =~ s/\"//g;
 	$command .= " -ml '".$match_length."'";
     }
-    if (defined($mismatch)) {
+
+    if ($mismatch) {
 	$mismatch =~ s/\'//g;
 	$mismatch =~ s/\"//g;
 	$command .= " -mis '".$mismatch."'";
@@ -242,10 +243,10 @@ sub oligo_analysis {
 	$output_choice = 'both';
     }
     my $command = $self->oligo_analysis_cmd(%args);
-#    my $stderr = `$command 2>&1 1>/dev/null`;
-#    if ($stderr) {
-#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#    }
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
     my $result = `$command`;
     my $tmp_outfile = `mktemp $TMP/oligo.XXXXXXXXXX`;
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
@@ -321,7 +322,7 @@ sub oligo_analysis_cmd {
 	if ($str == 1 || $str == 2) {
 	    $command .= " -".$str."str";
 	} else {
-	    die "str value must 1 or 2";
+	    die "str value must be 1 or 2";
 	}
     }
 
@@ -336,7 +337,7 @@ sub oligo_analysis_cmd {
       $command .= " -lth '".$lth[0]."' '".$lth[1]."'";
     }
 
-    if (defined($length)) {
+    if ($length) {
 	$length =~ s/\'//g;
 	$length =~ s/\"//g;
 	$command .= " -l '".$length."'";
@@ -414,7 +415,7 @@ sub dna_pattern_cmd {
       $command .= " -p '".$pattern."'";
     }
 
-    if (defined($subst)) {
+    if ($subst) {
       $subst =~ s/\'//g;
       $subst =~ s/\"//g;
       $command .= " -subst '".$subst."'";
@@ -442,7 +443,7 @@ sub dna_pattern_cmd {
       $command .= " -sort";
     }
 
-    if (defined($th)) {
+    if ($th) {
       $th =~ s/\'//g;
       $th =~ s/\"//g;
       $command .= " -th '".$th."'";
