@@ -34,13 +34,11 @@ BEGIN {
     }
 }
 require "RSA.lib";
+require("RSA.stat.lib");
 require RSAT::auc;
 use Getopt::Long qw(:config bundling);
 use Pod::Text;
  
-# use OPTOOLS::util;
-# use OPTOOLS::Valid;
-
 #### package variables
 $verbose = 0;
 
@@ -504,8 +502,10 @@ sub ExportScores{
     &RSAT::message::Warning($data) if ($main::verbose >=10);
   }
 
-  &getAUC(\%sensitivity,\%fpr);
-  
+  my ($AUC_g,$AUC_n)= &getAUC(\%sensitivity,\%fpr);
+  push @datas, ";\t".join("\t","AUCg",$AUC_g) if ($main::verbose >=1);
+  push @datas, ";\t".join("\t","AUCn",$AUC_n) if ($main::verbose >=1);
+ 
   # put datas in output file
   # rewrite on the same file
   #  if ($output){
@@ -1241,7 +1241,8 @@ sub getAUC{
     }
     my $AUC_g=&RSAT::auc::calc_geometric(\@list_Sn,\@list_FPR);
     my $AUC_n=&RSAT::auc::calc_normal(\@list_Sn,\@list_FPR);
-    &RSAT::message::Warning(join("\t","AUCg",$AUC_g,"AUCn",$AUC_n));
+    &RSAT::message::Warning(join("\t","AUCg",$AUC_g));
+    &RSAT::message::Warning(join("\t","AUCn",$AUC_n));
     return ($AUC_g,$AUC_n);
 }
 
