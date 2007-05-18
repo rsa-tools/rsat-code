@@ -3,7 +3,7 @@
 #### informations.
 ####
 #### This has been implemented by Rekin's Janky taking inspiration from the
-#### routine impemented by Alejandra Marina Rivera
+#### routine implemented by Alejandra Marina Rivera
 ################################################################
 
 package RSAT::auc;
