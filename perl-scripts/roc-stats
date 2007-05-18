@@ -35,6 +35,7 @@ BEGIN {
 }
 require "RSA.lib";
 require("RSA.stat.lib");
+require RSAT::Graph2;
 require RSAT::auc;
 use Getopt::Long qw(:config bundling);
 use Pod::Text;
