@@ -30,19 +30,71 @@ use RSAT::error;
 ################################################################
 
 sub calc_geometric{
+    &RSAT::message::Warning(join("\t","Calculating the AUCg (using geometric method)")) if ($main::verbose >= 2);
+    my $AUC=&calc_geometric_in_total_area(@_);	
+    return($AUC);
+}
+
+sub calc_geometric_all{
+    &RSAT::message::Warning(join("\t","Calculating the AUCg (using geometric method)")) if ($main::verbose >= 2);
+    my $AUCg_local=&calc_geometric_in_local_area(@_);	
+    my $AUCg_total=&calc_geometric_in_total_area(@_);	
+    my $AUCg_total_extended=&calc_geometric_in_total_area_with_extremes(@_);	
+    return($AUCg_local,$AUCg_total,$AUCg_total_extended);
+}
+
+sub calc_geometric_in_total_area{
     my ($Sn, $FPR) = @_;
-
-
-    my ($base, # distance between 2 points in x axis
-	$x1, $x2, # x points
-	$y1, $y2, # y points
-	$height_t, # height of the triangle
-	$areaR, # area of rectangle
-	$areaT, # area of triangle
-	);
-
+    &RSAT::message::Warning(join("\t","Calculating the AUCgt : AUCg expressed as a ratio of the total area (the total area is estimated as the area between (0,0) and (1,1) )")) if ($main::verbose >= 2);
     my $AUC=0 ;	
-#    my $i=0;
+    my $total_area = 1;
+
+    for my $i (0..$#{$FPR}-1) { # foreach element of the x array (FPR)
+	$x1=$FPR->[$i]; 
+	$x2=$FPR->[$i+1];
+	$y1=$Sn->[$i];
+	$y2=$Sn->[$i+1];
+	$AUC += &area($x1,$x2,$y1,$y2);
+    }
+
+    $AUC = $AUC/$total_area;
+    return ($AUC);
+}
+
+sub calc_geometric_in_total_area_with_extremes{
+    my ($Sn, $FPR) = @_;
+    &RSAT::message::Warning(join("\t","Calculating the AUCgtx : AUCg expressed as a ratio of the total area (the total area is estimated as the area between (0,0) and (1,1), those points are added if not existing)")) if ($main::verbose >= 2);
+    my $AUC=0 ;	
+    my $total_area = 1;
+
+    unless (($FPR->[0]==0)&&($Sn->[0]==0)){
+	&RSAT::message::Warning(join("\t","\tAdding the point (FPR,TPR)=(0,0)")) if ($main::verbose >= 2);
+	$AUC += &area(O,$FPR->[0],0,$Sn->[0]);
+    }
+
+    for my $i (0..$#{$FPR}-1) { # foreach element of the x array (FPR)
+	$x1=$FPR->[$i]; 
+	$x2=$FPR->[$i+1];
+	$y1=$Sn->[$i];
+	$y2=$Sn->[$i+1];
+	$AUC += &area($x1,$x2,$y1,$y2);
+    }
+
+    # Add (TP,FP) = (1,1)
+    unless (($FPR->[$#{$FPR}-1]==1)&&($Sn->[$#{$FPR}-1]==1)){
+	&RSAT::message::Warning(join("\t","\tAdding the point (FPR,TPR)=(1,1)")) if ($main::verbose >= 2);
+	$AUC += &area($FPR->[$#{$FPR}],1,$Sn->[$#{$FPR}],1);
+    }
+
+    $AUC = $AUC/$total_area;
+    return ($AUC);
+}
+
+sub calc_geometric_in_local_area{
+    my ($Sn, $FPR) = @_;
+    &RSAT::message::Warning(join("\t","Calculating the AUCgl : AUCg expressed as a ratio of the local area (the total area is estimated as the area between the extremes values (min,max) of the FPR and Sn)")) if ($main::verbose >= 2);
+    my $AUC=0 ;	
+
     my $maxFPR=0;    
     my $minFPR=0;
     my $maxSn=0;    
@@ -51,23 +103,38 @@ sub calc_geometric{
 	
 	$x1=$FPR->[$i]; 
 	$x2=$FPR->[$i+1];
-	$base= $x2 - $x1;
 	$y1=$Sn->[$i];
 	$y2=$Sn->[$i+1];
-	$height_t=abs($y2-$y1);
-	$areaR= $base * $y2;
-	$areaT= ($base * $height_t) / 2 ;
-	$AUC += ($areaR + $areaT);
-
+	$AUC += &area($x1,$x2,$y1,$y2);
+#	&RSAT::message::Warning(join("\t",$AUC));
 	$maxFPR = $x2 if ($x2 > $maxFPR);
 	$maxSn = $y2 if ($y2 > $maxSn);
 	$minFPR = $x1 if ($x1 < $minFPR);
 	$minSn = $y1 if ($y1 < $minSn);
-
     }
-    my $i =$#{$FPR}-1;
-#    &RSAT::message::Warning(join("\t",$AUC,$maxFPR,$minFPR,$maxSn,$minSn));
-    $AUC = $AUC/(($maxFPR - $minFPR)*($maxSn - $minSn));
+
+    if  ($main::verbose >= 2){
+	&RSAT::message::Warning(join("\t","\tFPR","min",$minFPR,"max",$maxFPR));
+	&RSAT::message::Warning(join("\t","\tSn","min",$minSn,"max",$maxSn));
+    }
+
+    $total_area = ($maxFPR - $minFPR)*($maxSn - $minSn);
+    $AUC = $AUC/$total_area;
+    return ($AUC);
+}
+
+################################################################
+#### Calculate the trapezoidal area given the coordinates
+################################################################
+
+sub area{
+    my ($x1,$x2,$y1,$y2)=@_;
+    my $base= $x2 - $x1;  # distance between 2 points in x axis
+    my $height_t=abs($y2-$y1); # height of the triangle
+    my $areaR= $base * $y1; # area of rectangle
+    my $areaT= ($base * $height_t) / 2 ;# area of triangle
+    my $AUC = ($areaR + $areaT);
+#    &RSAT::message::Warning(join("\t",$x1,$y1,$x2,$y2,$AUC));
     return ($AUC);
 }
 
@@ -78,6 +145,7 @@ sub calc_geometric{
 
 sub calc_normal{
     my ($Sn, $FPR) = @_;
+    &RSAT::message::Warning(join("\t","Calculating the AUCn (using Normal distribution assumption)")) if ($main::verbose >= 2);
     my ($X_mean, $X_var) = mean_and_var($FPR);
     my ($Y_mean, $Y_var) = mean_and_var($Sn);
 		
