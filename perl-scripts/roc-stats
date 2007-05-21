@@ -73,7 +73,7 @@ my %opt = ('opt|?'=>\$options,
 	   'ci=i%'=> \%ci,
 	   'r|return=s'=>\$param2return,
 	   '3D'=>\$roc3D,
-	   'nodie'=>\$nodie
+	   'nodie'=>\$nodie,
 	   );
 &GetOptions(%opt);
 
@@ -137,19 +137,20 @@ unless ($supported_score_format{$score_format}){
 
 # check statistical parameters to return
 my %supported_param=(
-		"TP"=>"True Positive",
-		"TN"=>"True Negative",
-		"FP"=>"False Positive",
-		"FN"=>"False Negative",
-		"Sn"=>"TP/TP+FN",
-		"Sp"=>"TN/TN+FP",
-		"PPV"=>"TP/TP+FP",
-		"NPV"=>"TN/TN+FN",
-		"FPR"=>"FP/TP+FP",
-		"Acc"=>"sqrt(Sn*PPV)",
-		"QnotR"=>"QnotR",
-		"notQR"=>"RnotQ"
-		);
+		     "TP"=>"True Positive",
+		     "TN"=>"True Negative",
+		     "FP"=>"False Positive",
+		     "FN"=>"False Negative",
+		     "Sn"=>"TP/TP+FN",
+		     "Sp"=>"TN/TN+FP",
+		     "PPV"=>"TP/TP+FP",
+		     "NPV"=>"TN/TN+FN",
+		     "FPR"=>"FP/TP+FP",
+		     "Acc"=>"sqrt(Sn*PPV)",
+		     "QnotR"=>"QnotR",
+		     "notQR"=>"RnotQ",
+		     "AUC"=>"Area Under the Curve"
+		     );
 my %param2return=();
 foreach my $p (split /,/,$param2return){
     if ($supported_param{$p}){
@@ -481,32 +482,52 @@ sub ExportScores{
   my %ACP=%{$ACP};
   my %Query_not_Ref=%{$Query_not_Ref};
   my @datas =();
-  foreach my $Qscore (sort {$b<=>$a} keys %Qscores){
-    my $data = "";
-    $data .=$Rscore."\t" if ($score_format eq "Q::R");
-    $data .=$Qscore;
-    $data .="\t".$true_positives{$Qscore} if ($return_params{TP});
-    $data .="\t".$false_positives{$Qscore} if ($return_params{FP});
-    $data .="\t".$true_negatives{$Qscore} if ($return_params{TN});
-    $data .="\t".$false_negatives{$Qscore} if ($return_params{FN});
-    $data .="\t".$sensitivity{$Qscore} if ($return_params{Sn});
-    $data .="\t".$specificity{$Qscore} if ($return_params{Sp});
-    $data .="\t".$ppv{$Qscore} if ($return_params{PPV});
-    $data .="\t".$npv{$Qscore} if ($return_params{NPV});
-    $data .="\t".$fpr{$Qscore} if ($return_params{FPR});
-    $data .="\t".$accuracy_3{$Qscore} if ($return_params{Acc});
-    $data .="\t".$ACP{$Qscore} if ($return_params{ACP});
-    $data .="\t".$Query_not_Ref{$Qscore} if ($return_params{QnotR});
-    $data .="\t".$NnotQR if ($return_params{notQR});
-    #		$data .="\n" ;
-    push @datas, $data;
-    &RSAT::message::Warning($data) if ($main::verbose >=10);
+  
+  if ($return_params{TP}||
+      $return_params{FP}||
+      $return_params{FN}||
+      $return_params{TN}||
+      $return_params{Sn}||
+      $return_params{Sp}||
+      $return_params{FPR}||
+      $return_params{PPV}||
+      $return_params{NPV}||
+      $return_params{Acc}||
+      $return_params{ACP}||
+      $return_params{QnotR}||
+      $return_params{notQR}
+      ){
+      foreach my $Qscore (sort {$b<=>$a} keys %Qscores){
+	  my $data = "";
+	  $data .=$Rscore."\t" if ($score_format eq "Q::R");
+	  $data .=$Qscore;
+	  $data .="\t".$true_positives{$Qscore} if ($return_params{TP});
+	  $data .="\t".$false_positives{$Qscore} if ($return_params{FP});
+	  $data .="\t".$true_negatives{$Qscore} if ($return_params{TN});
+	  $data .="\t".$false_negatives{$Qscore} if ($return_params{FN});
+	  $data .="\t".$sensitivity{$Qscore} if ($return_params{Sn});
+	  $data .="\t".$specificity{$Qscore} if ($return_params{Sp});
+	  $data .="\t".$ppv{$Qscore} if ($return_params{PPV});
+	  $data .="\t".$npv{$Qscore} if ($return_params{NPV});
+	  $data .="\t".$fpr{$Qscore} if ($return_params{FPR});
+	  $data .="\t".$accuracy_3{$Qscore} if ($return_params{Acc});
+	  $data .="\t".$ACP{$Qscore} if ($return_params{ACP});
+	  $data .="\t".$Query_not_Ref{$Qscore} if ($return_params{QnotR});
+	  $data .="\t".$NnotQR if ($return_params{notQR});
+	  #		$data .="\n" ;
+	  push @datas, $data;
+	  &RSAT::message::Warning($data) if ($main::verbose >=10);
+      } 
   }
 
-  my ($AUC_g,$AUC_n)= &getAUC(\%sensitivity,\%fpr);
-  push @datas, ";\t".join("\t","AUCg",$AUC_g) if ($main::verbose >=1);
-  push @datas, ";\t".join("\t","AUCn",$AUC_n) if ($main::verbose >=1);
- 
+  if ($return_params{AUC}){
+      my ($AUC_g_local,$AUC_g_total,$AUC_g_total_extended,$AUC_n)= &getAUC(\%sensitivity,\%fpr);
+      push @datas, ";\t".join("\t","AUCgl",sprintf("$number_format",$AUC_g_local),"(using geometric in local area)");
+      push @datas, ";\t".join("\t","AUCgt",sprintf("$number_format",$AUC_g_total),"(using geometric in total area)");
+      push @datas, ";\t".join("\t","AUCgtx",sprintf("$number_format",$AUC_g_total_extended),"(using geometric in total area + added points (0,0) and (1,1))");
+      push @datas, ";\t".join("\t","AUCn",sprintf("$number_format",$AUC_n),"(using Normal distribution assumption)");
+  }
+
   # put datas in output file
   # rewrite on the same file
   #  if ($output){
@@ -1240,11 +1261,13 @@ sub getAUC{
 	push @list_Sn,$Sn{$sc};
 	push @list_FPR,$FPR{$sc};
     }
-    my $AUC_g=&RSAT::auc::calc_geometric(\@list_Sn,\@list_FPR);
+    my ($AUC_gl,$AUC_gt,$AUC_gtx)=&RSAT::auc::calc_geometric_all(\@list_Sn,\@list_FPR);
     my $AUC_n=&RSAT::auc::calc_normal(\@list_Sn,\@list_FPR);
-    &RSAT::message::Warning(join("\t","AUCg",$AUC_g));
-    &RSAT::message::Warning(join("\t","AUCn",$AUC_n));
-    return ($AUC_g,$AUC_n);
+    &RSAT::message::Warning(join("\t","AUCgl",sprintf("$number_format",$AUC_gl),"(geometric in local area)"));
+    &RSAT::message::Warning(join("\t","AUCgt",sprintf("$number_format",$AUC_gt),"(geometric in total area)"));
+    &RSAT::message::Warning(join("\t","AUCgtx",sprintf("$number_format",$AUC_gtx),"(geometric in total area + added points (0,0) and (1,1))"));
+    &RSAT::message::Warning(join("\t","AUCn",sprintf("$number_format",$AUC_n)));
+    return ($AUC_gl,$AUC_gt,$AUC_gtx,$AUC_n);
 }
 
 ################################################################
@@ -1321,6 +1344,8 @@ I<Acc>   Accuracy (geometric average between Sn and PPV)
 
 I<ACP>   Average Conditional Probability
 
+I<AUC>   Area Under the Curve
+
 =back
 
 =cut
@@ -1341,6 +1366,10 @@ my %desc_param=(
 		"accGeom2"=>"sqrt(PPV*NPV)",
 		"accArit3"=>"(Sn+PPV)/2",
 		"accGeom3"=>"sqrt(Sn*PPV)",
+		"AUCg"=>"AUC geometric",
+		"AUCgl"=>"AUC geometric in local area",
+		"AUCgt"=>"AUC geometric in total area",
+		"AUCn"=>"AUC (normal distribution)"
 		);
 
 my %param_fullname=(
@@ -1358,7 +1387,8 @@ my %param_fullname=(
 		    "accArit2"=>"Arithmetic Accuracy 2",
 		    "accGeom2"=>"Geometric Accuracy 2",
 		    "accArit3"=>"Arithmetic Accuracy 3",
-		    "accGeom3"=>"Geometric Accuracy 3"		  
+		    "accGeom3"=>"Geometric Accuracy 3",
+		    "AUC"=>"Area Under the Curve"
 		    );
 
 ################################################################
