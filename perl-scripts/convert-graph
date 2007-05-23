@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.15 2007/05/23 10:47:55 rsat Exp $
+# $Id: convert-graph,v 1.16 2007/05/23 13:26:01 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -325,7 +325,7 @@ Output format. Supported: tab, dot, gml
 
 =item B<-scol>
 
-Source column. Column containing the source nodes. 
+Source column. Column containing the source nodes. (default 1)
 
 =cut
 	} elsif ($arg eq "-scol") {
@@ -339,7 +339,7 @@ Source column. Column containing the source nodes.
 
 =item B<-tcol>
 
-Target column. Column containing the target nodes. 
+Target column. Column containing the target nodes. (default 2)
 
 =cut
 	} elsif ($arg eq "-tcol") {
@@ -353,7 +353,7 @@ Target column. Column containing the target nodes.
 
 =item B<-wcol>
 
-Weight column. Column containing the weight nodes. 
+Weight column. Column containing the weight nodes. (no default)
 
 =cut
 	} elsif ($arg eq "-wcol") {
@@ -365,7 +365,7 @@ Weight column. Column containing the weight nodes.
 
 =item B<-eccol>
 
-Edge color column. Column containing the color of the edges (RGB). 
+Edge color column. Column containing the color of the edges (RGB). (no default)
 
 =cut
 	} elsif ($arg eq "-eccol") {
@@ -377,7 +377,7 @@ Edge color column. Column containing the color of the edges (RGB).
 
 =item B<-sccol>
 
-Source node color colum. Column containing the color of the node (RGB).
+Source node color colum. Column containing the color of the node (RGB). (no default)
 
 A node can only have one color. If in the file, the color of the node changes, only the first defined color 
 will be taken into account.
@@ -392,7 +392,7 @@ will be taken into account.
 
 =item B<-tccol>
 
-Target node color colum. Column containing the color of the node (RGB). 
+Target node color colum. Column containing the color of the node (RGB). (no default)
 
 A node can only have one color. If in the file, the color of the node changes, only the first defined color 
 will be taken into account.
