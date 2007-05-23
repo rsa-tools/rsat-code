@@ -1181,6 +1181,7 @@ sub read_from_table2 {
 sub read_from_table {
     ################################"
     # Define variables
+    print "ARRAY : @_\n";
     my ($self, $inputfile, $source_col, $target_col, $weight_col, $source_color_col, $target_color_col, $edge_color_col) = @_;
     &RSAT::message::TimeWarn("Loading graph from tab file", $inputfile) if ($main::verbose >= 2);
     ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
@@ -1198,6 +1199,15 @@ sub read_from_table {
     }
     if (&RSAT::util::IsNatural($weight_col) && ($weight_col > 0)) {
 	$weight = 1;
+    }
+    unless (&RSAT::util::IsNatural($source_color_col) && ($source_color_col > 0)) {
+      undef $source_color_col; 
+    }
+    unless (&RSAT::util::IsNatural($target_color_col) && ($target_color_col > 0)) {
+      undef $target_color_col;
+    }
+    unless (&RSAT::util::IsNatural($edge_color_col) && ($edge_color_col > 0)) {
+      undef $edge_color_col;
     }
 
     ## Load the graph
