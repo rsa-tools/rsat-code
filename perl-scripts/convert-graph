@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.12 2007/05/08 07:57:23 rsat Exp $
+# $Id: convert-graph,v 1.13 2007/05/23 09:41:14 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -89,6 +89,7 @@ package main;
     local $source_col = 1;
     local $target_col = 2;
     local $weight_col = 0;
+    local $color_col = 0;
 
     ## Output formats
     local $output_format = "dot";
@@ -118,15 +119,7 @@ package main;
     
     ################################################################
     ##### read input
-    $graph->graph_from_text($input_format,$main::infile{input}, $source_col, $target_col, $weight_col);
-    
-    ################################################################
-    ### open output streams
-
-
-
-    ################################################################
-    #### print verbose
+    $graph->graph_from_text($input_format,$main::infile{input}, $source_col, $target_col, $weight_col, 0, 0,$color_col);
     
     ################################################################
     ###### print output
@@ -367,6 +360,19 @@ Weight column. Column containing the weight nodes.
 		&RSAT::error::FatalError(join("\t", $weight_col, "Invalid value for the weight column. Must be a strictly positive natural number"));
 	    }
 =pod
+
+=item B<-ccol>
+
+Edge color column. Column containing the color of the edges(RGB). 
+
+=cut
+	} elsif ($arg eq "-ccol") {
+	    $color_col = shift (@arguments);
+	    unless (&IsNatural($color_col) && ($color_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
+	    }
+=pod
+
 
 =item B<-arc_id>
 
