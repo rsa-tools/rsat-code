@@ -37,10 +37,11 @@ sub calc_geometric{
 
 sub calc_geometric_all{
     &RSAT::message::Warning(join("\t","Calculating the AUCg (using geometric method)")) if ($main::verbose >= 2);
-    my $AUCg_local=&calc_geometric_in_local_area(@_);	
+#    my $AUCg_local=&calc_geometric_in_local_area(@_);	
     my $AUCg_total=&calc_geometric_in_total_area(@_);	
     my $AUCg_total_extended=&calc_geometric_in_total_area_with_extremes(@_);	
-    return($AUCg_local,$AUCg_total,$AUCg_total_extended);
+#    return($AUCg_total,$AUCg_total_extended,$AUCg_local);
+    return($AUCg_total,$AUCg_total_extended);
 }
 
 sub calc_geometric_in_total_area{
