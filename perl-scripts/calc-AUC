@@ -8,7 +8,7 @@ calc-AUC
 
 =head1 DESCRIPTION
 
-This program calculates the Area Under the Curve from ROC curves.
+This program calculates the Area Under the Curve from a ROC table.
 
 =head1 AUTHOR
 
@@ -87,14 +87,13 @@ foreach my $sc (sort {$b<=>$a} keys %scores) {
 }
 
 # calc AUC
-my ($AUC_gl,$AUC_gt,$AUC_gtx)=&RSAT::auc::calc_geometric_all(\@Sn,\@FPR);
+my ($AUC_gt,$AUC_gtx)=&RSAT::auc::calc_geometric_all(\@Sn,\@FPR);
 my ($AUC_n)=&RSAT::auc::calc_normal(\@Sn,\@FPR);
 
 # Print the results
 my $out = &RSAT::util::OpenOutputFile($output);
-print $out join("\t","AUCgl",sprintf("$number_format",$AUC_gl),"(using geometric in local area)")."\n";
-print $out join("\t","AUCgt",sprintf("$number_format",$AUC_gt),"(using geometric in total area)")."\n";
-print $out join("\t","AUCgtx",sprintf("$number_format",$AUC_gtx),"(using geometric in total area + added points (0,0) and (1,1))")."\n";
+print $out join("\t","AUCg",sprintf("$number_format",$AUC_gt),"(using geometric)")."\n";
+print $out join("\t","AUCgx",sprintf("$number_format",$AUC_gtx),"(using geometric + added points (0,0) and (1,1))")."\n";
 print $out join("\t","AUCn",sprintf("$number_format",$AUC_n),"(using Normal distribution assumption)")."\n";
 
 if ($roc_graph){
@@ -163,6 +162,7 @@ sub getId2score{
 ################################################################
 #### MAke the graph representation
 ################################################################
+
 sub drawROC{
     my ($input,$output,$Sn_col,$FPR_col)=@_;
     my $command = "XYgraph -i $input -xcol $FPR_col -ycol $Sn_col -o $output -xmax 1 -xmin 0 -ymax 1 -ymin 0 -lines -xleg1 \"FPR\" -yleg1 \"TPR\" -title \"$output\" ";
@@ -225,6 +225,72 @@ sub displayOptions{
 
 =pod
 
+=head1 ESTIMATION OF THE AREA UNDER THE CURVE (AUC)
+
+Several methods can be used in order to estimate the area under the Receiver
+Operating Characteristic (ROC) curve in order to measure the effectiveness of
+a predictive method. The most popular methods are implemented here. However,
+any attempt to summarize the ROC curve into a single number loses information
+about the pattern of tradeoffs of the particular discriminator algorithm.
+
+=item B<Geometric or Trapezoïdal method>
+
+The total area is calculated by summing the area for each adjacent points
+of the curve, (x1,y1) and (x2,y2), and the base. This is done by
+calculating the area of the rectangle between (x1,0),(x2,0),(x1,y1) and
+(x2,y1), then the area of the triangle corresponding to (x1,y1),(x2,y1)
+and (x2,y2). This method is also called the trapezoïdal method.
+
+=item B<Normal method>
+
+This simple parametric method assumes that the rate of true positives (X)
+and the rate of false positives (Y) are independent normal variates:
+
+=begin text
+
+         X ~ N(mx,sx) and Y ~ N(my,sy)
+
+    where mx = mean of sensitivities
+          sx = variance of sensitivities
+          my = mean of FPR
+          sy = variance of FPR
+
+    Then the AUC is the results of the probability of being less than or equal to
+    the given value :
+
+                    /    mx - my    \
+         AUC= pnorm|  ------------- |  
+                   |            1/2 |
+                    \   (sx - sy)   /
+
+=end text
+
+=item B<Mann-Whitney method> (TO BE IMPLEMENTED)
+
+The Mann-Whitney (MW) approach estimates the AUC as a step-function based on
+empirical cumulative distribution functions. It can be shown that the area
+under the ROC curve is equivalent to the Mann-Whitney U which tests for the
+median difference between scores obtained in the two groups considered in the
+study.
+
+=head1 OUTPUT
+
+=over
+
+I<AUCg> Area calculated by using the geometric method
+
+I<AUCgx> like AUCg, but the extreme points (0,0) and (1,1) are added if missing.
+
+I<AUCn> Area calculated by using the Normal assumption
+
+=back
+
+=cut
+
+################################################################
+
+=pod
+
 =over
 
 =head1 OPTIONS
@@ -260,7 +326,7 @@ Specify the column for the score, sensitivity (Sn) or False Positive rate (FPR).
 
 Make the roc graph representation using XYgraph.
 
-C<XYgraph -i input -xcol FPR_col -ycol SN_col -o graph.jpeg -xmax 1 -xmin 0 -ymax 1 -ymin 0 -lines -xleg1 "FPR" -yleg1 "TPR" -title "ROC" >
+C<XYgraph -i input -xcol FPR_col -ycol SN_col -o graph.jpeg -xmax 1 -xmin 0 -ymax 1 -ymin 0 -lines -xleg1 "FPR" -yleg1 "TPR" >
 
 =head1 SEE ALSO
 
