@@ -1181,7 +1181,6 @@ sub read_from_table2 {
 sub read_from_table {
     ################################"
     # Define variables
-    print "ARRAY : @_\n";
     my ($self, $inputfile, $source_col, $target_col, $weight_col, $source_color_col, $target_color_col, $edge_color_col) = @_;
     &RSAT::message::TimeWarn("Loading graph from tab file", $inputfile) if ($main::verbose >= 2);
     ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
