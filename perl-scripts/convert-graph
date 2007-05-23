@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.14 2007/05/23 09:59:49 rsat Exp $
+# $Id: convert-graph,v 1.15 2007/05/23 10:47:55 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -89,6 +89,8 @@ package main;
     local $source_col = 1;
     local $target_col = 2;
     local $weight_col = 0;
+    local $source_color_col = 0;
+    local $target_color_col = 0;
     local $color_col = 0;
 
     ## Output formats
@@ -119,7 +121,7 @@ package main;
     
     ################################################################
     ##### read input
-    $graph->graph_from_text($input_format, $main::infile{input}, $source_col, $target_col, $weight_col, 0, 0,$color_col);
+    $graph->graph_from_text($input_format, $main::infile{input}, $source_col, $target_col, $weight_col, $source_color_col, $target_color_col,$color_col);
     
     ################################################################
     ###### print output
@@ -361,16 +363,48 @@ Weight column. Column containing the weight nodes.
 	    }
 =pod
 
-=item B<-ccol>
+=item B<-eccol>
 
-Edge color column. Column containing the color of the edges(RGB). 
+Edge color column. Column containing the color of the edges (RGB). 
 
 =cut
-	} elsif ($arg eq "-ccol") {
+	} elsif ($arg eq "-eccol") {
 	    $color_col = shift (@arguments);
 	    unless (&IsNatural($color_col) && ($color_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
 	    }
+=pod
+
+=item B<-sccol>
+
+Source node color colum. Column containing the color of the node (RGB).
+
+A node can only have one color. If in the file, the color of the node changes, only the first defined color 
+will be taken into account.
+
+=cut
+	} elsif ($arg eq "-sccol") {
+	    $source_color_col = shift (@arguments);
+	    unless (&IsNatural($source_color_col) && ($source_color_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
+	    }
+=pod
+
+=item B<-tccol>
+
+Target node color colum. Column containing the color of the node (RGB). 
+
+A node can only have one color. If in the file, the color of the node changes, only the first defined color 
+will be taken into account.
+
+=cut
+	} elsif ($arg eq "-tccol") {
+	    $target_color_col = shift (@arguments);
+	    unless (&IsNatural($target_color_col) && ($target_color_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
+	    }	    
+	    
+
 =pod
 
 
