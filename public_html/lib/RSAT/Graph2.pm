@@ -1700,7 +1700,14 @@ sub graph_from_text {
     if ($in_format eq "gml") {
 	return $self->load_from_gml(@args);
     } elsif ($in_format eq "tab") {
-	return $self->read_from_table(@args);
+        my $inputfile =  $args[0];
+        my $scol = $args[1];
+        my $tcol = $args[2];
+        my $wcol = $args[3] || 0;
+        my $sccol = $args[4] || 0;
+        my $tccol = $args[5] || 0;
+        my $ecol = $args[6] || 0;
+	return $self->read_from_table($inputfile, $scol, $tcol, $wcol, $sccol, $tccol, $ecol);
     } else {
 	&RSAT::error::FatalError(join ("\t", $in_format, "Invalid format"));
     }
