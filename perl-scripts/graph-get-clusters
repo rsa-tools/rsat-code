@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.9 2007/04/24 07:38:03 rsat Exp $
+# $Id: graph-get-clusters,v 1.10 2007/05/23 13:26:01 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -21,7 +21,7 @@ Extract from a graph a subgraph specified by a set of node
 clusters. Return the nodes belonging to the clusters + the
 intra-cluster arcs, and ignore the inter-cluster arcs.
 
-The program also allows to extract the inducted graph from a list of seed nodes.
+The program also allows to extract the induced graph from a list of seed nodes.
 
 =head1 AUTHORS
 
@@ -37,7 +37,7 @@ graph analysis
 
 =head1 USAGE
 
-graph-get-clusters [-i graph_file] -clusters cluster_file [-o outputfile] [-inducted] [-v #] [...]
+graph-get-clusters [-i graph_file] -clusters cluster_file [-o outputfile] [-induced] [-v #] [...]
 
 =head1 INPUT FORMAT
 
@@ -48,8 +48,8 @@ formats. Default format for the input graph: tab.
 
 =head2 Cluster format
 
-Without -inducted option (default) : a two-column file with column corresponding respectively to the node name and to the cluster name.
-With -inducted option : a one column file specifying to nodes from which the output graph will be inducted.
+Without -induced option (default) : a two-column file with column corresponding respectively to the node name and to the cluster name.
+With -induced option : a one column file specifying to nodes from which the output graph will be induced.
 
 =head1 OUTPUT FORMAT
 
@@ -159,7 +159,7 @@ package main;
     $main::verbose = 0;
     $main::out = STDOUT;
     $distinct = 0;
-    $inducted = 0;
+    $induced = 0;
     my %duplicated_nodes;
     my @arcs_clusters;
     
@@ -183,11 +183,11 @@ package main;
 
     ################################################################
     ## Read input graph
-    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col);
+    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, 0, 0, $weight_col);
 
     ################################################################
     ## Read and add the class specification to each node
-    $graph->load_classes($main::infile{clusters}, $inducted);
+    $graph->load_classes($main::infile{clusters}, $induced);
 
     ################################################################
     ## Extract the intra-cluster subgraphs
@@ -443,15 +443,15 @@ than one group.
 	    $distinct = 1;
 =pod
 
-=item B<-inducted>
+=item B<-induced>
 
 Using this option, only the first column of the cluster file will be taken into account. The output graph will
-thus consist in the graph inducted by all nodes of the first column.
+thus consist in the graph induced by all nodes of the first column.
 
 =cut
 	
-	} elsif ($arg eq "-inducted") {
-	    $inducted = 1;	    
+	} elsif ($arg eq "-induced") {
+	    $induced = 1;	    
 	    
 	    
 ## Output file
