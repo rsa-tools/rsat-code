@@ -229,9 +229,12 @@ sub displayOptions{
 
 Several methods can be used in order to estimate the area under the Receiver
 Operating Characteristic (ROC) curve in order to measure the effectiveness of
-a predictive method. The most popular methods are implemented here. However,
-any attempt to summarize the ROC curve into a single number loses information
-about the pattern of tradeoffs of the particular discriminator algorithm.
+a predictive method. The most popular methods are implemented here. 
+
+A perfect test would have AUC=1, whereas a completely random test with the ROC
+curve lying on the main diagonal would have AUC=0.5. However, any attempt to
+summarize the ROC curve into a single number loses information about the
+pattern of tradeoffs of the particular discriminator algorithm.
 
 =item B<Geometric or Trapezoïdal method>
 
