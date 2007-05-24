@@ -174,6 +174,9 @@ sub mean_and_var {
 	return ($mean,$var);
 }
 
+################################################################
+#### Calculate the Area Under the Curves (AUC) using Mann-Whitney U
+################################################################
 # to do in R :
 #    x1 = x[y==1]; n1 = length(x1); 
 #    x2 = x[y==0]; n2 = length(x2);
@@ -187,31 +190,35 @@ sub calc_MannWhitney{
     # Add (TP,FP)=(0,0)
     unless (($FPR->[0]==0)&&($Sn->[0]==0)){
 	&RSAT::message::Warning(join("\t","\tAdding the point (FPR,TPR)=(0,0)")) if ($main::verbose >= 2);
-	unshift(@$FPR,0);  
-	unshift(@$Sn,0);
+	unshift(@$FPR,0.000);  
+	unshift(@$Sn,0.000);
      }
     
     # Add (TP,FP) = (1,1)
     unless (($FPR->[$#{$FPR}-1]==1)&&($Sn->[$#{$FPR}-1]==1)){
 	&RSAT::message::Warning(join("\t","\tAdding the point (FPR,TPR)=(1,1)")) if ($main::verbose >= 2);
-	push(@$FPR,1);  
-	push(@$Sn,1);
+	push(@$FPR,1.000);  
+	push(@$Sn,1.000);
     }
 
     my $n1 = scalar(@{$Sn});  # number of elements in Sn
     my $n2 = scalar(@{$FPR}); # number of elements in FPR
 
+    ################################################################
+    #  Use the ranks to calculate the Mann-Whitney statistic 
 
     my %freq=();
     my %min_rank=();
     my %max_rank=();
     my $r=0;
-    foreach my $val (sort (((@{$FPR}),(@{$Sn})))) {
+    my $R = 0; # sum of the ranks of sensitivities
+
+    foreach my $val (sort {$a<=>$b} (((@{$FPR}),(@{$Sn})))) {
 	$r++;
 	$min_rank{$val}=$r unless ($freq{$val});
 	$max_rank{$val}=$r;
 	$freq{$val}++;
-	&RSAT::message::Warning(join("\t",$r,"value",$val,$freq{$val},"min",$min_rank{$val},"max",$max_rank{$val})) if ($main::verbose >= 0);
+#	&RSAT::message::Warning(join("\t",$r,"value",$val,$freq{$val},"min",$min_rank{$val},"max",$max_rank{$val})) if ($main::verbose >= 10);
     }
     
     my %rank=();
@@ -219,75 +226,18 @@ sub calc_MannWhitney{
 	my $min = $min_rank{$val};
 	my $max = $max_rank{$val};
 	my $fq = $freq{$val};
-	$rank{$val}=$min_rank{$val}+(($max-$min)/$fq);
+	$rank{$val}=$min +(($max-$min)/2);
+#	&RSAT::message::Warning(join("\t",$val,"rank",$rank{$val})) if ($main::verbose >= 10);
     }
 
-    #  Use the ranks to calculate the Mann-Whitney statistic 
-    #  U = Npos*Nneg + Nneg(Nneg+1)/2 - R
-    
-    my $R = 0; # sum of the ranks of sensitivities
     for my $i (0..$#{$Sn}) { # foreach element of the Sn array
 	$R+= $rank{$Sn->[$i]};
-	&RSAT::message::Warning(join("\t","Sn",$Sn->[$i],"rank",$rank{$Sn->[$i]},"R",$R)) if ($main::verbose >= 0);
+#	&RSAT::message::Warning(join("\t","Sn",$Sn->[$i],"rank",$rank{$Sn->[$i]},"R",$R)) if ($main::verbose >= 5);
     }
-
-    my $U1= ($n1*$n2) + ($n2*($n2+1)/2) - $R;
-    my $U2=($R - $n1*($n1+1)/2) / ($n1*$n2);
-    $AUC=$U1/($n1+$n2);    
-    &RSAT::message::Warning(join("\t","U1",$U1,"U2",$U2,"AUC",$AUC)) if ($main::verbose >= 0);
-    
-
-    return ($AUC);
+    my $U=($R - $n1*($n1+1)/2) / ($n1*$n2);
+    &RSAT::message::Warning(join("\t","AUC",$U)) if ($main::verbose >= 2);
+    return ($U);
 }
 
-# # https://list.scms.waikato.ac.nz/pipermail/wekalist/2004-January/002113.html
-# #
-# # 1. extract TP and FP rates (forming the ROC curve), keep them in threshold
-# # (= P) order
-
-# # 2. Use the nonparametric AUC (Area Under the Curve) approximation with the
-# # Mann-Whitney rank sum test as follows. Before that add the points (TP,FP) =
-# # (0,0) and (TP,FP) = (1,1) of the
-# # ROC (Weka leaves them out of the curve) and link them to the most extreme
-# # threshold values (mostly 0 and 1 if it
-# # scales between 0 and 1).
-
-# # a. The threshold order (0 to 1) determines the rank (assign an average rankorder
-# # over obeservations with the same threshold to correct for ties)
-
-# # b. Use the ranks to calculate the Mann-Whitney statistic 
-# # U = Npos*Nneg + Nneg(Nneg+1)/2 - R, 
-# # with 
-# #         R = the ranksum of the negative sample,
-# #         Npos= number of positives in the sample and
-# #         Nneg= the number of negatives in the sample
-
-# # c. AUC = U/(Npos + Nneg)
-# #    ---
-# # 3. The standard error for AUC can be approximated Using the Hanley MacNeil
-# # test following:
-# #        --------------
-# #         /* For clarity, the same symbols are used as in the Hanley-McNeil
-# # paper. */
-# #         n_A    = Npos;
-# #         n_N    = Nneg;
-# #         theta  = AUC;
-# #         //
-# #         theta2 = theta * theta;
-# #         Q1     = theta / (2 - theta);
-# #         Q2     = 2 * theta2 / (1 + theta);
-# #         se2    = (theta * (1 - theta) + (n_A - 1) * (Q1 - theta2) + (n_N -
-# # 1) * (Q2
-# #         - theta2)) / (n_A * n_N);
-# #         //
-# #         SE_auc = squareRoot (se2);
-# #         Assumption:
-# #         0.0 > AUC < 1.0 , Npos > 0 and Npos > 0
-	
-# # The threshold values for every observation can also be obtained from the
-# # classification function if made external (like for weka logistic regression), 
-# # and the TP and FP fraction from the cummulative frequency for negatives and 
-# # positives when sorted by the classification function values.
-# }
 
 1;

@@ -88,7 +88,6 @@ foreach my $sc (sort {$b<=>$a} keys %scores) {
 
 # calc AUC
 my ($AUC_mw)=&RSAT::auc::calc_MannWhitney(\@Sn,\@FPR);
-die;
 my ($AUC_gt,$AUC_gtx)=&RSAT::auc::calc_geometric_all(\@Sn,\@FPR);
 my ($AUC_n)=&RSAT::auc::calc_normal(\@Sn,\@FPR);
 
@@ -97,6 +96,7 @@ my $out = &RSAT::util::OpenOutputFile($output);
 print $out join("\t","AUCg",sprintf("$number_format",$AUC_gt),"(using geometric)")."\n";
 print $out join("\t","AUCgx",sprintf("$number_format",$AUC_gtx),"(using geometric + added points (0,0) and (1,1))")."\n";
 print $out join("\t","AUCn",sprintf("$number_format",$AUC_n),"(using Normal distribution assumption)")."\n";
+print $out join("\t","AUCmw",sprintf("$number_format",$AUC_mw),"(using Mann-Whitney)")."\n";
 
 if ($roc_graph){
     &drawROC($input,$roc_graph,$col{Sn},$col{FPR});
@@ -270,13 +270,23 @@ and the rate of false positives (Y) are independent normal variates:
 
 =end text
 
-=item B<Mann-Whitney method> (TO BE IMPLEMENTED)
+=item B<Mann-Whitney method>
 
 The Mann-Whitney (MW) approach estimates the AUC as a step-function based on
 empirical cumulative distribution functions. It can be shown that the area
 under the ROC curve is equivalent to the Mann-Whitney U which tests for the
 median difference between scores obtained in the two groups considered in the
 study.
+
+=begin text
+
+         AUC =( R - n1*(n1+1)/2) / (n1*n2)
+
+     where R  = sum of the rank in the sensitivities
+           n1 = number of Sn  values
+           n2 = number of FPR values
+
+=end text
 
 =head1 OUTPUT
 
