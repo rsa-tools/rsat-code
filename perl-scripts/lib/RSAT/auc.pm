@@ -174,43 +174,71 @@ sub mean_and_var {
 	return ($mean,$var);
 }
 
-# sub calc_MannWhitney{
-#     my ($Sn, $FPR) = @_;
+# to do in R :
+#    x1 = x[y==1]; n1 = length(x1); 
+#    x2 = x[y==0]; n2 = length(x2);
+#     r = rank(c(x1,x2))  
+#   auc = (sum(r[1:n1]) - n1*(n1+1)/2) / (n1*n2) 
 
+sub calc_MannWhitney{
+    my ($Sn, $FPR) = @_;
+    my $AUC=0 ;	    
 
-#     my ($base, # distance between 2 points in x axis
-# 	$x1, $x2, # x points
-# 	$y1, $y2, # y points
-# 	$height_t, # height of the triangle
-# 	$areaR, # area of rectangle
-# 	$areaT, # area of triangle
-# 	);
-
-#     my $AUC=0 ;
-
-#     #Before that add the points (TP,FP) =(0,0) and (TP,FP) = (1,1)
-#     unshift(@$FPR,0);  
-#     unshift(@$Sn,0);
-#     push(@$FPR,1);  
-#     push(@$Sn,1);
+    # Add (TP,FP)=(0,0)
+    unless (($FPR->[0]==0)&&($Sn->[0]==0)){
+	&RSAT::message::Warning(join("\t","\tAdding the point (FPR,TPR)=(0,0)")) if ($main::verbose >= 2);
+	unshift(@$FPR,0);  
+	unshift(@$Sn,0);
+     }
     
-#     #Use the ranks to calculate the Mann-Whitney statistic 
-# 	#U = Npos*Nneg + Nneg(Nneg+1)/2 - R, 
+    # Add (TP,FP) = (1,1)
+    unless (($FPR->[$#{$FPR}-1]==1)&&($Sn->[$#{$FPR}-1]==1)){
+	&RSAT::message::Warning(join("\t","\tAdding the point (FPR,TPR)=(1,1)")) if ($main::verbose >= 2);
+	push(@$FPR,1);  
+	push(@$Sn,1);
+    }
+
+    my $n1 = scalar(@{$Sn});  # number of elements in Sn
+    my $n2 = scalar(@{$FPR}); # number of elements in FPR
+
+
+    my %freq=();
+    my %min_rank=();
+    my %max_rank=();
+    my $r=0;
+    foreach my $val (sort (((@{$FPR}),(@{$Sn})))) {
+	$r++;
+	$min_rank{$val}=$r unless ($freq{$val});
+	$max_rank{$val}=$r;
+	$freq{$val}++;
+	&RSAT::message::Warning(join("\t",$r,"value",$val,$freq{$val},"min",$min_rank{$val},"max",$max_rank{$val})) if ($main::verbose >= 0);
+    }
     
-# for my $i (0..$#{$FPR}-1) { # foreach element of the x array (FPR)
-# 	my $U = $Npos*$Nneg + $Nneg($Nneg+1)/2 - $R, 
-# 	$x1=$FPR->[$i]; 
-# 	$x2=$FPR->[$i+1];
-# 	$base= $x2 - $x1;
-# 	$y1=$Sn->[$i];
-# 	$y2=$Sn->[$i+1];
-# 	$height_t=abs($y2-$y1);
-# 	$areaR= $base * $y2;
-# 	$areaT= ($base * $height_t) / 2 ;
-# 	$AUC += ($areaR + $areaT);
-# #	&OPTOOLS::util::Warning(1,join("\t", "x1",$x1,"x2",$x2,"AUC",$AUC));
-#     }
-#     return ($AUC);
+    my %rank=();
+    foreach my $val (sort keys %freq){
+	my $min = $min_rank{$val};
+	my $max = $max_rank{$val};
+	my $fq = $freq{$val};
+	$rank{$val}=$min_rank{$val}+(($max-$min)/$fq);
+    }
+
+    #  Use the ranks to calculate the Mann-Whitney statistic 
+    #  U = Npos*Nneg + Nneg(Nneg+1)/2 - R
+    
+    my $R = 0; # sum of the ranks of sensitivities
+    for my $i (0..$#{$Sn}) { # foreach element of the Sn array
+	$R+= $rank{$Sn->[$i]};
+	&RSAT::message::Warning(join("\t","Sn",$Sn->[$i],"rank",$rank{$Sn->[$i]},"R",$R)) if ($main::verbose >= 0);
+    }
+
+    my $U1= ($n1*$n2) + ($n2*($n2+1)/2) - $R;
+    my $U2=($R - $n1*($n1+1)/2) / ($n1*$n2);
+    $AUC=$U1/($n1+$n2);    
+    &RSAT::message::Warning(join("\t","U1",$U1,"U2",$U2,"AUC",$AUC)) if ($main::verbose >= 0);
+    
+
+    return ($AUC);
+}
 
 # # https://list.scms.waikato.ac.nz/pipermail/wekalist/2004-January/002113.html
 # #
