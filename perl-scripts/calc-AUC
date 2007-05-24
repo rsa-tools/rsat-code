@@ -87,6 +87,8 @@ foreach my $sc (sort {$b<=>$a} keys %scores) {
 }
 
 # calc AUC
+my ($AUC_mw)=&RSAT::auc::calc_MannWhitney(\@Sn,\@FPR);
+die;
 my ($AUC_gt,$AUC_gtx)=&RSAT::auc::calc_geometric_all(\@Sn,\@FPR);
 my ($AUC_n)=&RSAT::auc::calc_normal(\@Sn,\@FPR);
 
