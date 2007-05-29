@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.26 2007/05/11 11:42:42 rsat Exp $
+# $Id: compare-graphs,v 1.27 2007/05/29 08:20:37 jvanheld Exp $
 #
 ############################################################
 
@@ -24,17 +24,31 @@ Gilles Vanderstocken <gvdstock@ulb.ac.be>
 
 Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
 
+Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
+
 =head1 CATEGORY
 
 util
 
 =head1 USAGE
     
-compare-graphs -Q query_graph_file -R reference_graph_file -return intersection|difference|union [-out_format gml|dot|tab] [-outweight Q|R|sum|mean|mean.g|min|max|Q::R] [-null value] [-scol_R #] [-tcol_R #] [-wcol_R #] [-scol_Q #] [-tcol_Q #] [-wcol_Q #] [-in_format_R tab|gml] [-in_format_Q tab|gml] [-o output_file] [-v #] 
+ compare-graphs  [-v #] -Q query_graph_file -R reference_graph_file \
+   [-in_format_R tab|gml] [-in_format_Q tab|gml] \
+   [-scol_R #] [-tcol_R #] [-wcol_R #] \
+   [-scol_Q #] [-tcol_Q #] [-wcol_Q #] \
+   -return intersection|difference|union \
+   [-outweight Q|R|sum|mean|mean.g|min|max|Q::R] [-null value] \
+   [-out_format gml|dot|tab] [-o output_file]
 
 =head1 INPUT FORMAT
 
+Graphs can be entered in either gml or tab format. See
+<i>convert-graphs</i> for format descriptions and interconversions.
+
 =head1 OUTPUT FORMAT
+
+The result graph can be exported in either gml or tab format. See
+<i>convert-graphs</i> for format descriptions and interconversions.
 
 =cut
 
@@ -91,9 +105,8 @@ package main;
 			       tab=>1
 
     );
-    
     $supported_output_formats = join (",", keys %supported_output_format);
-    
+
     ## Supported return options
     local $return_format = "";
     %supported_return_format =(
@@ -102,13 +115,13 @@ package main;
       difference=>1
     );
     $supported_return_formats = join (",", keys %supported_return_format);
-    
+
     ## directed option
     $directed = 0;
-    
+
     ## arc_id_option
     $arc_id_option = 0;
-    
+
     ## Supported outweight options
     local $outweight ="";
     %supported_outweight =(
@@ -122,10 +135,10 @@ package main;
       "Q::R"=>1
     );
     $supported_outweight = join (",", keys %supported_outweight);
-    
+
     # Defaut undefined value
-    $nullvalue = "<NULL>";
-    
+    $null_value = "<NULL>";
+
     ################################################################
     ## Read argument values
     &ReadArguments();
@@ -157,43 +170,72 @@ package main;
 
     ################################################################
     ## Read and load input
-    my $graph1 = new RSAT::Graph2;
-    my $graph2 = new RSAT::Graph2;
-    $graph1->graph_from_text($input_format_R, $main::infile{graph_R}, $source_col_R, $target_col_R, $weight_col_R);
-    $graph2->graph_from_text($input_format_Q, $main::infile{graph_Q}, $source_col_Q, $target_col_Q, $weight_col_Q);
-    
+    my $R_graph = new RSAT::Graph2;
+    my $Q_graph = new RSAT::Graph2;
+    $R_graph->graph_from_text($input_format_R, $main::infile{graph_R}, $source_col_R, $target_col_R, $weight_col_R);
+    $Q_graph->graph_from_text($input_format_Q, $main::infile{graph_Q}, $source_col_Q, $target_col_Q, $weight_col_Q);
+
     ## As it appeared quite difficult to work with graphs having more than one edge between two
     ## nodes, we decided to remove any duplicated edges.
-    
-    $graph1->remove_duplicated_arcs($directed);
-    $graph2->remove_duplicated_arcs($directed);
-    
+    $R_graph->remove_duplicated_arcs($directed);
+    $Q_graph->remove_duplicated_arcs($directed);
+
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
 
-    
     ########################################################################""
     ## Calculation of the number of common and not common arcs and nodes
+    my ($nodes_R_graph, $arcs_R_graph) = $R_graph->properties();
+    my ($nodes_Q_graph, $arcs_Q_graph) = $Q_graph->properties();
+    my ($common_nodes, $union_nodes, $max_union_arcs) = &in_common($R_graph, $Q_graph, $directed);
+    my $ref_only_arcs = $arcs_R_graph - $common_nodes;
+    my $query_only_arcs = $arcs_Q_graph - $common_nodes;
+    my $pval = &sum_of_hypergeometrics ($arcs_R_graph, $max_union_arcs, $arcs_Q_graph, $common_nodes, $arcs_Q_graph);
+    my $message = "Comparison statistics\n";
 
-    
-    my ($nodes_graph1, $arcs_graph1) = $graph1->properties;
-    my ($nodes_graph2, $arcs_graph2) = $graph2->properties;
-    my ($common, $nodes_nb, $edges_tot) = &in_common($graph1, $graph2, $directed);
-    my $graph1_only_arc = $arcs_graph1 - $common;
-    my $graph2_only_arc = $arcs_graph2 - $common;
-    my $pval = &sum_of_hypergeometrics ($arcs_graph1, $edges_tot, $arcs_graph2, $common, $arcs_graph2);
-    my $message = "Intersection info\n";
-    $message .= ";\t".(join("\t",$main::infile{graph_R},$nodes_graph1,"node(s) and",$arcs_graph1,"arc(s)\n"));
-    $message .= ";\t".(join("\t",$main::infile{graph_Q},$nodes_graph2,"node(s) and",$arcs_graph2,"arc(s)\n"));
-    $message .= ";\t"."$common\t"."unique arcs in common\n";
-    $message .= ";\t"."$pval\t"."P-value of intersection\n";
-    $message .= ";\t"."$nodes_nb\t"."total number of nodes in the union of both graphs\n";
-    $message .= ";\t"."$edges_tot\t"."total number of edges in the union of both graphs\n";
-    $message .= ";\t".$graph1_only_arc."\tarcs of $main::infile{graph_R} are not in $main::infile{graph_Q}\n";
-    $message .= ";\t".$graph2_only_arc."\tarcs of $main::infile{graph_Q} are not in $main::infile{graph_R}\n";
-    
-    if ($main::verbose >= 1 && $output_format ne 'gml') {  
+    ## Reference graph properties
+    $message .= sprintf ";\t%-23s\t%s\n", "Reference graph", $main::infile{graph_R};
+    $message .= sprintf ";\t%-15s\t%s\n", "\tR nodes", $nodes_R_graph;
+    $message .= sprintf ";\t%-15s\t%s\n", "\tR arcs", $arcs_R_graph;
+
+    ## Query node graph properties
+    $message .= sprintf ";\t%-23s\t%s\n", "Query graph", $main::infile{graph_Q};
+    $message .= sprintf ";\t%-15s\t%s\n", "\tQ nodes", $nodes_Q_graph;
+    $message .= sprintf ";\t%-15s\t%s\n", "\tQ arcs", $arcs_Q_graph;
+
+    ## Intersection
+    $message .= sprintf ";\t%s\n", "Intersection";
+    $message .= sprintf ";\t%-15s\t%s\n", "\tinter nodes", "NA";
+    $message .= sprintf ";\t%-15s\t%g\n", "\tinter arcs", $common_nodes;
+    $message .= sprintf ";\t%-15s\t%g\n", "\tinter P-val", $pval;
+
+    ## Union
+    $message .= sprintf ";\t%s\n", "Union";
+    $message .= sprintf ";\t%-15s\t%g\n", "\tunion nodes", $union_nodes;
+    $message .= sprintf ";\t%-15s\t%s\n", "\tunion arcs", "NA";
+    $message .= sprintf ";\t%-15s\t%s\n", "\tunion max arcs", $max_union_arcs;
+
+    ## Elements found in reference but not in query
+    $message .= sprintf ";\t%s\n", "Reference not query";
+    $message .= sprintf ";\t%-15s\t%s\n", "\tR.not.Q nodes", "NA";
+    $message .= sprintf ";\t%-15s\t%g\n", "\tR.not.Q arcs", $ref_only_arcs;
+
+    ## Elements found in query but not in reference
+    $message .= sprintf ";\t%s\n", "Query not reference";
+    $message .= sprintf ";\t%-15s\t%s\n", "\tQ.not.R nodes", "NA";
+    $message .= sprintf ";\t%-15s\t%g\n", "\tQ.not.R arcs", $query_only_arcs;
+
+#    $message .= ";\t".(join("\t",$main::infile{graph_R},$nodes_R_graph,"node(s) and",$arcs_R_graph,"arc(s)\n"));
+#    $message .= ";\t".(join("\t",$main::infile{graph_Q},$nodes_Q_graph,"node(s) and",$arcs_Q_graph,"arc(s)\n"));
+#    $message .= ";\t"."$common_nodes\t"."unique arcs in common\n";
+#    $message .= ";\t"."$pval\t"."P-value of intersection\n";
+#    $message .= ";\t"."$union_nodes\t"."total number of nodes in the union of both graphs\n";
+#    $message .= ";\t"."$max_union_arcs\t"."maximal number of edges in the union of both graphs\n";
+#    $message .= ";\t".$ref_only_arcs."\tarcs of $main::infile{graph_R} are not in $main::infile{graph_Q}\n";
+#    $message .= ";\t".$query_only_arcs."\tarcs of $main::infile{graph_Q} are not in $main::infile{graph_R}\n";
+
+    if ($main::verbose >= 1 && $output_format ne 'gml') {
       print $main::out ";\t$message";
     }
     if ($main::verbose >= 1 && $main::out ne "STDOUT") {
@@ -204,11 +246,11 @@ package main;
     
     my $return_graph;
     if ($return_format eq "intersection") {
-      $return_graph = &intersect($graph1, $graph2);
+      $return_graph = &intersect($R_graph, $Q_graph);
     } elsif ($return_format eq "union") {
-      $return_graph = &union($graph1, $graph2);
+      $return_graph = &union($R_graph, $Q_graph);
     } elsif ($return_format eq "difference") {
-      $return_graph = &difference($graph1, $graph2);
+      $return_graph = &difference($R_graph, $Q_graph);
     }
     
     ################################################################
@@ -393,7 +435,11 @@ Input format of query graph. Supported: tab,gml. Default tab
 
 =item B<-return return>
 
-return : intersection , union or difference
+Return type : intersection , union or difference
+
+If the union is requested, each arc is labelled to indicate whether it
+belongs to the intersection (R.and.Q), to Q only (Q.not.R) or to R
+only (R.not.Q).
 
 =cut
 	} elsif ($arg eq "-return") {
@@ -458,7 +504,7 @@ Value to display in cases of undefined label values. Defaut : <NULL>
 
 =cut 
 	} elsif ($arg eq "-null") {
-	    $nullvalue = shift(@arguments);
+	    $null_value = shift(@arguments);
 		
 	    ## Source column
 =pod
@@ -560,16 +606,16 @@ Weight column of query graph for tab-delimited input. Column containing the weig
 
 sub intersect {
 
-  my ($graph1, $graph2) = @_;
+  my ($R_graph, $Q_graph) = @_;
   my $inter_graph = new RSAT::Graph2;
   my %seen_arcs = ();
-  my @arcs_g1 = $graph1->get_attribute("arcs");
-  my %arcs_name_id_g1 = $graph1->get_attribute("arcs_name_id");
-  my @arcs_g2 = $graph2->get_attribute("arcs");
-  my %arcs_name_id_g2 = $graph2->get_attribute("arcs_name_id");
-  my %nodes_name_id = $graph2->get_attribute("nodes_name_id");
-  my %nodes_color = $graph2->get_attribute("nodes_color");
-  my %nodes_label = $graph2->get_attribute("nodes_label");
+  my @arcs_g1 = $R_graph->get_attribute("arcs");
+  my %arcs_name_id_g1 = $R_graph->get_attribute("arcs_name_id");
+  my @arcs_g2 = $Q_graph->get_attribute("arcs");
+  my %arcs_name_id_g2 = $Q_graph->get_attribute("arcs_name_id");
+  my %nodes_name_id = $Q_graph->get_attribute("nodes_name_id");
+  my %nodes_color = $Q_graph->get_attribute("nodes_color");
+  my %nodes_label = $Q_graph->get_attribute("nodes_label");
   my $val = scalar(@arcs_g1);
   my $arccpt = 0;
   my $j = 1;
@@ -598,7 +644,12 @@ sub intersect {
 	  my $source_node_label = $nodes_label{$source_intern_id} || $source_name;
 	  my $target_node_color = $nodes_color{$target_intern_id} || "#000088";
 	  my $target_node_label = $nodes_label{$target_intern_id} || $target_name;
-          my $weight = &calculate_weight($arcs_g1[$i][2], $arcs_g2[$arc_intern_id_g2][2]);
+
+	  ## NOTE DE JACQUES: j'ai inversé les paramètres de la ligne
+	  ## suivante, car il retournait le poids du graphe R quand on
+	  ## lui demandait celui de Q. Veriifiez si c'est OK
+#          my $weight = &calculate_weight($arcs_g1[$i][2], $arcs_g2[$arc_intern_id_g2][2]);
+          my $weight = &calculate_weight($arcs_g2[$arc_intern_id_g2][2], $arcs_g1[$i][2]);
 	  my $arc_label = $weight;
           my $arc_color = $arcs_g2[$arc_intern_id_g2][3];
           $inter_graph_array[$arccpt][0] = $source_name;
@@ -624,30 +675,30 @@ sub intersect {
 
 ################################################################
 ## Union of two graphs
-## This function creates in Graph $graph2 all the edges that are in Graph $graph1 but 
-## absent in $graph2
+## This function creates in Graph $Q_graph all the edges that are in Graph $R_graph but 
+## absent in $Q_graph
 
 sub union {
-  my ($graph1, $graph2) = @_; 
+  my ($R_graph, $Q_graph) = @_; 
   
   my $union_graph = new RSAT::Graph2;
   
-  my @arcs_g1 = $graph1->get_attribute("arcs");
-  my %arcs_name_id_g1 = $graph1->get_attribute("arcs_name_id");
-  my @arcs_g2 = $graph2->get_attribute("arcs");
-  my %arcs_name_id_g2 = $graph2->get_attribute("arcs_name_id");
-  my %nodes_name_id_g1 = $graph1->get_attribute("nodes_name_id");
-  my %nodes_name_id_g2 = $graph2->get_attribute("nodes_name_id");
-  my %nodes_color_g1 = $graph1->get_attribute("nodes_color");
-  my %nodes_color_g2 = $graph2->get_attribute("nodes_color");
-  my %nodes_label_g1 = $graph1->get_attribute("nodes_label");
-  my %nodes_label_g2 = $graph2->get_attribute("nodes_label");
+  my @arcs_g1 = $R_graph->get_attribute("arcs");
+  my %arcs_name_id_g1 = $R_graph->get_attribute("arcs_name_id");
+  my @arcs_g2 = $Q_graph->get_attribute("arcs");
+  my %arcs_name_id_g2 = $Q_graph->get_attribute("arcs_name_id");
+  my %nodes_name_id_g1 = $R_graph->get_attribute("nodes_name_id");
+  my %nodes_name_id_g2 = $Q_graph->get_attribute("nodes_name_id");
+  my %nodes_color_g1 = $R_graph->get_attribute("nodes_color");
+  my %nodes_color_g2 = $Q_graph->get_attribute("nodes_color");
+  my %nodes_label_g1 = $R_graph->get_attribute("nodes_label");
+  my %nodes_label_g2 = $Q_graph->get_attribute("nodes_label");
 
   my @union_graph_array = @arcs_g1;
   my @arcs_attributes = ();
   my %seen_arcs = ();
   
-#   filling union_graph_array with graph1
+#   filling union_graph_array with R_graph
 
   for (my $i = 0; $i < scalar(@union_graph_array); $i++) {
   
@@ -663,14 +714,14 @@ sub union {
       push @arcs_id, $arc_id2; # ajouts des arcs du graph 1 "non dirigÃ©s"
     }
     my $arc_label = &calculate_weight("undef", $arc_label_g1);
-    my $arc_color = "#00ff00"; # by default color of edges belongs to graph1 is green
-    my $arc_attribute = "not.Q.R";
+    my $arc_color = "#00ff00"; # by default color of edges belongs to R_graph is green
+    my $arc_attribute = "R.not.Q";
     foreach my $arc_id (@arcs_id) {
       my $arc_intern_id = $arcs_name_id_g2{$arc_id};
       if (defined($arc_intern_id)) {
         my $arc_label_g2 = $arcs_g2[$arc_intern_id][2]; 
 	$arc_color = "#ff0000";
-	$arc_attribute = "Q.and.R";
+	$arc_attribute = "R.and.Q";
 	$arc_label = &calculate_weight($arc_label_g2, $arc_label_g1);
       }
     }
@@ -694,7 +745,7 @@ sub union {
     }
   }    
 
-#   filling union_graph_array with graph2 without intersection
+#   filling union_graph_array with Q_graph without intersection
   my $j = scalar(@union_graph_array);
   my $arc_color = "#0000ff";
   my $arc_attribute = "Q.not.R";
@@ -742,26 +793,22 @@ sub union {
 }
 
 ################################################################
-## Difference of two graphs
-## 
-## 
-
+## Compute the difference between two graphs
 sub difference {
 
-  my ($graph1, $graph2) = @_;
+  my ($R_graph, $Q_graph) = @_;
 
-  my $diff_graph = new RSAT::Graph2;
-    
-  my @arcs_g1 = $graph1->get_attribute("arcs");
-  my @arcs_g2 = $graph2->get_attribute("arcs");
-  my %arcs_name_id_g1 = $graph1->get_attribute("arcs_name_id");
-  my %arcs_name_id_g2 = $graph2->get_attribute("arcs_name_id");
-  my %nodes_name_id_g1 = $graph1->get_attribute("nodes_name_id");
-  my %nodes_name_id_g2 = $graph2->get_attribute("nodes_name_id");
-  my %nodes_color_g1 = $graph1->get_attribute("nodes_color");
-  my %nodes_color_g2 = $graph2->get_attribute("nodes_color");
-  my %nodes_label_g1 = $graph1->get_attribute("nodes_label");
-  my %nodes_label_g2 = $graph2->get_attribute("nodes_label");
+  my $diff_graph = new RSAT::Q_Graph;
+  my @arcs_g1 = $R_graph->get_attribute("arcs");
+  my @arcs_g2 = $Q_graph->get_attribute("arcs");
+  my %arcs_name_id_g1 = $R_graph->get_attribute("arcs_name_id");
+  my %arcs_name_id_g2 = $Q_graph->get_attribute("arcs_name_id");
+  my %nodes_name_id_g1 = $R_graph->get_attribute("nodes_name_id");
+  my %nodes_name_id_g2 = $Q_graph->get_attribute("nodes_name_id");
+  my %nodes_color_g1 = $R_graph->get_attribute("nodes_color");
+  my %nodes_color_g2 = $Q_graph->get_attribute("nodes_color");
+  my %nodes_label_g1 = $R_graph->get_attribute("nodes_label");
+  my %nodes_label_g2 = $Q_graph->get_attribute("nodes_label");
   
   my @diff_graph_array = ();
   
@@ -809,21 +856,21 @@ sub difference {
 ## 
 ## 
 sub in_common {
-  my ($graph1, $graph2, $directed) = @_;
-  my $common = 0;
-  my $graph1_not_graph2 = 0;
-  my $graph2_not_graph1 = 0; 
+  my ($R_graph, $Q_graph, $directed) = @_;
+  my $common_nodes = 0;
+  my $R_graph_not_Q_graph = 0;
+  my $Q_graph_not_R_graph = 0; 
   my $paval = 0;
   my %seen_arcs = ();
-  my @arcs_g1 = $graph1->get_attribute("arcs");
-  my %arcs_name_id_g1 = $graph1->get_attribute("arcs_name_id");
-  my @arcs_g2 = $graph2->get_attribute("arcs");
-  my %arcs_name_id_g2 = $graph2->get_attribute("arcs_name_id");
-  my $max_arc_nb = $graph2->get_attribute("nb_arc_bw_node");
+  my @arcs_g1 = $R_graph->get_attribute("arcs");
+  my %arcs_name_id_g1 = $R_graph->get_attribute("arcs_name_id");
+  my @arcs_g2 = $Q_graph->get_attribute("arcs");
+  my %arcs_name_id_g2 = $Q_graph->get_attribute("arcs_name_id");
+  my $max_arc_nb = $Q_graph->get_attribute("nb_arc_bw_node");
   my %nodes =();
-  my @nodes_g2 = $graph2->get_nodes();
+  my @nodes_g2 = $Q_graph->get_nodes();
   
-  for (my $i = 0; $i < scalar(@arcs_g1); $i++) { # run through the arcs of graph1
+  for (my $i = 0; $i < scalar(@arcs_g1); $i++) { # run through the arcs of R_graph
     my $source_name = $arcs_g1[$i][0];
     my $target_name = $arcs_g1[$i][1];
     $nodes{$source_name}++;
@@ -839,7 +886,7 @@ sub in_common {
       my $arc_intern_id = $arcs_name_id_g2{$arc_id};
       if (!exists($seen_arcs{$arc_id})) {
         if (defined($arc_intern_id)) {
-	  $common++;
+	  $common_nodes++;
 	  foreach (my $j = 0; $j < scalar(@arcs_id); $j++) {
 	    $seen_arcs{$arcs_id[$j]}++;
 	  }
@@ -858,17 +905,15 @@ sub in_common {
   foreach my $node (@nodes_g2) {
     $nodes{$node}++;
   }
-  $nodes_nb = scalar (keys %nodes);
-  
+  $union_nodes = scalar (keys %nodes);
+
+  ## Compute the maximal number of edges given the number of nodes in the graph
   if ($directed){
-  $edges_tot = $nodes_nb*$nodes_nb;
+    $max_union_arcs = $union_nodes*$union_nodes;
   } else {
-  $edges_tot = ($nodes_nb*$nodes_nb+$nodes_nb)/2;
+    $max_union_arcs = ($union_nodes*$union_nodes+$union_nodes)/2;
   }
-  
-  
-  
-  return ($common, $nodes_nb, $edges_tot);
+  return ($common_nodes, $union_nodes, $max_union_arcs);
 }
 ################################################################
 #### verbose message
@@ -893,17 +938,17 @@ sub Verbose {
     }
 }
 ################################################################
-#### calculate_outweight
-
+## Calculate_outweight
+#
 #1 first arguement : query graph label
 #2 second arguement : reference graph label
-
+##
 sub calculate_weight {
   my ($query_weight, $reference_weight) = @_;
-  my $result = $nullvalue;
+  my $result = $null_value;
   my $real = &IsReal($query_weight);
   my $real2 = &IsReal($reference_weight);
-  my $NA =  $nullvalue;
+  my $NA =  $null_value;
 
   if ($outweight eq "R" && $real2) {
     $result = $reference_weight;
@@ -939,15 +984,16 @@ sub calculate_weight {
         }
       }
     }
-    if ($result eq $nullvalue && $main::verbose >= 2) {
+    if ($result eq $null_value && $main::verbose >= 2) {
       my $warning_message = "";
       if ($query_weight eq "undef") {
-        $warning_message .= ";\tLabel of the edge of the query graph undefined\n";
+        $warning_message .= "\tLabel of the edge of the query graph undefined";
       }
       if ($reference_weight eq "undef") {
-        $warning_message .= ";\tLabel of the edge of the reference graph undefined\n";
+        $warning_message .= "wq\tLabel of the edge of the reference graph undefined";
       }
-      &RSAT::message::Warning("\t","\n;\tCould not compute $outweight\n".$warning_message.";\t$nullvalue used instead");
+      &RSAT::message::Warning("\tCould not compute outweight", $outweight, $warning_message, ${null_value}." used instead") 
+	if ($main::verbose >= 3);
     }
   }
   return ($result);
