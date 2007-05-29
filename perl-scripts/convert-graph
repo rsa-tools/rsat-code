@@ -1,11 +1,13 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.16 2007/05/23 13:26:01 rsat Exp $
+# $Id: convert-graph,v 1.17 2007/05/29 08:19:41 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
+
+## CVS: implemented the option -seed_nodes
 
 ## use strict;
 
@@ -118,16 +120,42 @@ package main;
     ## Initialize the graph
     my $graph = new RSAT::Graph2();
     $graph->set_attribute("label", "graph");
-    
+
+    ################################################################
+    ## Read the seed nodes
+    if ($infile{seed_nodes}) {
+      my @seed_nodes = ();
+      &RSAT::message::TimeWarn("Loading seed nodes from file", $main::infile{seed_nodes}) if ($main::verbose >= 2);
+      ($seed_handle) = &OpenInputFile($main::infile{seed_nodes});
+      my $l = 0;
+      while (<$seed_handle>) {
+	$l++;
+	next if (/^;/); ## Skip comment lines
+	next if (/^#/); ## Skip header lines
+	next unless (/\S/); ## Skip empty lines
+	chomp();
+	my ($id) = split /\s+/;
+	if ($id) {
+	  push @seed_nodes, $id;
+	} else {
+	  &RSAT::message::Warning("File", $infile{clusters}, "Line", $l, "starts with spaces. Skipped");
+	}
+      }
+      close $seed_handle;
+      &RSAT::message::TimeWarn("Seed nodes loaded", scalar(@seed_nodes)) if ($main::verbose >= 2);
+      $graph->set_seed_nodes(@seed_nodes);
+      &RSAT::message::Debug("SEED NODES", join " ", @seed_nodes) if ($main::verbose >= 4);
+    }
+
     ################################################################
     ##### read input
     $graph->graph_from_text($input_format, $main::infile{input}, $source_col, $target_col, $weight_col, $source_color_col, $target_color_col,$color_col);
-    
+
     ################################################################
     ###### print output
     if ($random) {
       if ($random == 1) {
-        &RSAT::message::Info("Randomizing graph") if ($main::verbose >= 2);
+        &RSAT::message::TimeWarn("Randomizing graph") if ($main::verbose >= 2);
         $graph = $graph->randomize();
         $main::out = &OpenOutputFile($main::outfile{output});
         if ($output_format eq "tab") {
@@ -138,7 +166,7 @@ package main;
         print $out $graph->to_text($output_format, $arc_id_option);        
       } else {
         for (my $i = 1; $i <= $random; $i++) {
-          &RSAT::message::Info("\t", "Randomizing graph",$i) if ($main::verbose >= 2);;
+          &RSAT::message::TimeWarn("\tRandomizing graph",$i) if ($main::verbose >= 2);;
           $graph = $graph->randomize();
           my $outputfile = $main::outfile{output}."_".$i.".".$output_format;
           $main::out = &OpenOutputFile($outputfile);
@@ -162,8 +190,7 @@ package main;
       &Verbose() if ($main::verbose);
       print $out $graph->to_text($output_format, $arc_id_option);
     }
-    
-    
+
     ################################################################
     ###### finish verbose
     if ($main::verbose >= 1) {
@@ -171,13 +198,11 @@ package main;
 	print $main::verbose_out "; Job started $start_time\n";
 	print $main::verbose_out "; Job done    $done_time\n";
     }
-    
-     
+
     ################################################################
     ###### close output stream
     close $main::out if ($main::outfile{output});
-    
-    
+
     exit(0);
 }
 
@@ -403,19 +428,35 @@ will be taken into account.
 	    unless (&IsNatural($target_color_col) && ($target_color_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $target_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
 	    }	    
-	    
 
 =pod
 
-
 =item B<-arc_id>
 
-Adds a unique id for each arc when using the tab-delimited output. 
+Add a unique ID for each arc when using the tab-delimited output.
 
 =cut
-	    	    
 	} elsif ($arg eq "-arc_id") {
 	    $arc_id_option = 1;
+
+=pod
+
+=item B<-seed_nodes seed_node_file>
+
+This option is currenyl implemented only for input format "tab".
+
+Select a subgraph induced by a set of seed nodes. When this option is
+used, the program only reads arcs whose ends (source and target) are
+both members of the seed node set.
+
+Seed nodes are specified in a text file. The first word of each row is
+considered as an indentifier for a seed node.
+
+=cut
+
+	} elsif ($arg eq "-seed_nodes") {
+	    $main::infile{seed_nodes} = shift(@arguments);
+
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
