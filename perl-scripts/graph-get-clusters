@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.10 2007/05/23 13:26:01 rsat Exp $
+# $Id: graph-get-clusters,v 1.11 2007/05/29 07:15:45 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -183,10 +183,11 @@ package main;
 
     ################################################################
     ## Read input graph
-    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, 0, 0, $weight_col);
+    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col);
 
     ################################################################
     ## Read and add the class specification to each node
+    &RSAT::message::TimeWarn("Load classes") if ($main::verbose >= 2);
     $graph->load_classes($main::infile{clusters}, $induced);
 
     ################################################################
@@ -198,22 +199,21 @@ package main;
     my %nodes_name_id = $graph->get_attribute("nodes_name_id");
     my %nodes_id_name = $graph->get_attribute("nodes_id_name");
     my %nodes_color = $graph->get_attribute("nodes_color");
+    my @nodes_clusters = $graph->get_attribute("nodes_clusters");
     my %edge_cluster = ();
     my %cluster_color = ();
     my $arc_nb = scalar(@arcs);
     
     for (my $i = 0; $i < scalar(@arcs); $i++) {
-      if (($main::verbose >= 2) && ($i%10000==0)) {
+      if (($main::verbose >= 2) && ($i%1000==0)) {
 	&RSAT::message::psWarn("Treated", $i."/".$arc_nb, "arcs");
       }
       my $source_node = $arcs[$i][0];
       my $target_node = $arcs[$i][1];
       my $source_node_id = $nodes_name_id{$source_node};
       my $target_node_id = $nodes_name_id{$target_node};
-      my @source_clusters = $graph->get_nodes_clusters($source_node);
-      my @target_clusters = $graph->get_nodes_clusters($target_node);
-      
-      
+      my @source_clusters = $graph->get_node_id_clusters($source_node_id, @nodes_clusters);
+      my @target_clusters = $graph->get_node_id_clusters($target_node_id, @nodes_clusters);
       foreach my $scluster (@source_clusters) {
         foreach my $tcluster (@target_clusters) {
           if ($scluster eq $tcluster) {
