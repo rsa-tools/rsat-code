@@ -1,4 +1,4 @@
-#!/usr/bin/perl 
+#!/usr/bin/perl
 
 =pod
 
@@ -8,10 +8,11 @@ roc-stats
 
 =head1 DESCRIPTION
 
-From a comparison (Predictions vs Annotations, or Query vs Reference), this
-program calculates statistical parameters using different score thresholds.
-The calculated False Positive Rate (X) and Sensitivity (Y) can be used in
-order to make ROC curves.
+This program takes azs input a set of scored results associated with
+validation labels (TP for true positive, FP for false positive, FN for
+false negatives), and computes, for each score value, the derived
+statistics (Sn, PPV, FPR), which can be further used to draw a ROC
+curve.
 
 =head1 AUTHOR
 
@@ -19,7 +20,7 @@ Rekin's Janky <rekins@scmbb.ulb.ac.be>
 
 =head1 CATEGORY
 
-evaluation statistics
+statistics
 
 =head1 USAGE
 
@@ -57,7 +58,7 @@ my $score_format="score";
 my %thr=();
 my $param2return="TP,FP,FN,Sn,PPV,FPR,Acc";#,QnotR,notQR";
 my $roc3D="";
-my $nodie=0;
+my $nodie=1;
 my $number_format = "%.3f";
 
 #### options
@@ -100,7 +101,8 @@ foreach my $st (keys %status){
 }
 %supported_status=(%supported_status,%status);
 
-# check class interval on scores
+################################################################
+## Check class interval on scores
 my %supported_scores=(score=>1, # class interval on all score
 		      Q=>1, # class interval on Q score
 		      R=>1, # class interval on R score
@@ -113,7 +115,9 @@ if (scalar (keys %ci) >=0){
 	die;
     }
 }
-# check threshold on scores
+
+################################################################
+## Check threshold on scores
 if(scalar (keys %thr) >=0){
     foreach my $t (keys %thr){
 	&RSAT::message::Warning(join(" ","score threshold",$t,"=>",$thr{$t})) if ($main::verbose >= 0);
@@ -123,7 +127,8 @@ if(scalar (keys %thr) >=0){
     }
 } 
 
-# check score format
+################################################################
+## Check score format
 my %supported_score_format=("score"=>1,
 			    "Q::R"=>1,
 #			    "Qscore"=>1,
@@ -135,7 +140,9 @@ unless ($supported_score_format{$score_format}){
     die;    
 }
 
-# check statistical parameters to return
+
+################################################################
+## Check statistical parameters to return
 my %supported_param=(
 		     "TP"=>"True Positive",
 		     "TN"=>"True Negative",
@@ -271,8 +278,10 @@ sub getId2score{
       # Careful of doublons
       my $id=$fields[$col{id}-1];
       if ($id_score{$id}){
+
+	## 
 	  &RSAT::message::Warning(join(" ","Warning ! This id", $id," is a doublon"))if ($main::verbose >= 0);;
-	  die ;#unless ($nodie);
+	  die unless ($nodie);
       }
 
       # get status
@@ -1085,7 +1094,7 @@ sub getStatsByScore_bis{
     my %Query_not_Ref=();
 
     foreach my $score (sort {$b<=>$a} keys %scores){ # decreasing scores
-	
+
 	#### true positives
 	$tp_cum += $tp{$score};
 	$true_positives{$score} = $tp_cum;
@@ -1246,9 +1255,8 @@ sub getStatsByScore_bis{
 }
 
 ################################################################
-#### calculate the  Area Under the Curve (AUC)
-################################################################
-sub getAUC{
+#### Calculate the  Area Under the Curve (AUC)
+sub getAUC {
     my ($Sn,$FPR)=@_;
     my %Sn=%{$Sn};
     my %FPR=%{$FPR};
@@ -1272,8 +1280,7 @@ sub getAUC{
 
 ################################################################
 #### Attribute type (TP,TN,FP,FN) to simple data (without score)
-################################################################
-sub getConfusionTable{
+sub getConfusionTable {
   my ($id2score,$return_params)=@_;
   my %id2score=%{$id2score};
   my (@ids) = sort keys (%id2score);
@@ -1313,8 +1320,7 @@ sub getConfusionTable{
 }
 
 ################################################################
-#### EVALUATION PARAMS
-################################################################
+## Evaluation statistics
 
 =pod
 
@@ -1449,7 +1455,7 @@ sub PrintOptions {
 }
 
 ################################################################
-####                 OPTOOLS FUNCTIONS                  ########
+#####             SUBROUTINE DEFINITIONS                  ######
 ################################################################
 
 ################################################################
@@ -1578,7 +1584,7 @@ Input file.
 
 Output file.
 
-=item --col [id|status|score]=<col_number> (default:id=1,status=2,score=3)
+=item --col [id|status|score]=<col_number> (default:id=3,status=5,score=0)
 
 Specify the column for the id, status or score.(e.g. --col id=3)
 
@@ -1603,7 +1609,7 @@ Use --ci Q <number> and --ci R <number> with --3D option.
 =item -r|--return [TN,FP,FN,Sn,PPV,FPR,Acc,...]
 
 Statistical parameters to return in the output file. See Previous section for
-description of these parameters. (By default: TN,FP,FN,Sn,PPV,FPR,Acc,QnotR,notQR)
+description of these parameters. (By default: TN,FP,FN,Sn,PPV,FPR,Acc)
 
 =item --3D
 
