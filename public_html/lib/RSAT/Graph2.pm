@@ -107,8 +107,6 @@ sub new {
 
 =item B<empty_graph()>
 
-.
-
 =cut
 sub empty_graph {
     my ($self, $inputfile) = @_;
@@ -156,9 +154,32 @@ sub empty_graph {
     $self->set_hash_attribute("nodes_color", %nodes_color);
     $self->set_hash_attribute("nodes_label", %nodes_label);
     return $self;
-    
 }
 
+################################################################
+=pod
+
+=item B<set_seed_nodes>
+
+Define node filter for the loading. When seed nodes are defined, the
+method load_from_table() only accepts loads the induced subgraph,
+i.e. arcs for which both source and target nodes belong to the set of
+seeds.
+
+Usage:
+$graph->set_seed_nodes(@seed_ids);
+
+=cut
+sub set_seed_nodes {
+  my ($self, @seed_ids) = @_;
+
+  ## Create an empty seed index
+  %{$self->{seed_index}} = ();
+  foreach my $seed (@seed_ids) {
+    $self->{seed_index}->{$seed}++;
+  }
+  $self->{seed_nodes} = 1;
+}
 
 ################################################################
 =pod
@@ -240,163 +261,166 @@ sub randomize {
 Usage : $graph->create_random_graph(@nodes, $req_nodes, $req_edges, $self_loops, $duplicated, $directed, $max_degree, $mean, $sd);
 
 
-create a random graph from the nodes in @nodes having $req_nodes nodes of maxium degree $max_degree and $req_edges edges.
-It allows duplicated edges ($duplicated = 1) or not ($duplicated = 0) and self loops ($self_loops = 1) or not ($self_loops = 0)
-A weight is calculated according to the normal distribution and the $mean and $sd value given as argument.
+Create a random graph from the nodes in @nodes having $req_nodes nodes
+of maxium degree $max_degree and $req_edges edges.
 
+This supports multi-edges ($duplicated = 1) or not ($duplicated = 0)
+and self loops ($self_loops = 1) or not ($self_loops = 0) A weight is
+calculated according to the normal distribution and the $mean and $sd
+value given as argument.
 
 =cut
 sub create_random_graph {
-    my ($self, $nodes_ref, $req_nodes, $req_edges, $self_loops, $duplicated, $directed, $max_degree, $mean, $sd, $normal, @labels) = @_;
-    my $rdm_graph = new RSAT::Graph2();
-    my @rdm_graph_array = ();
-    my $max_arc_number = 10000000;
-    my @nodes = @{$nodes_ref};
-    ## creation the list of nodes
-    if (scalar(@nodes) > 0) {
-      if (scalar(@nodes) < $req_nodes) {
-        &RSAT::error::FatalError("\t","More requested nodes than available nodes", "requested", $req_nodes, "available", scalar @nodes);
-      } else {
-        my @indices = 0 .. (scalar(@nodes)-1);
-        my @shuffle_indices = &shuffle(@indices);
-        my @random_nodes = ();
-        for (my $i = 0; $i < $req_nodes; $i++) {
-          push @random_nodes, $nodes[$shuffle_indices[$i]];
-        }
-        @nodes = @random_nodes;
-      }
+  my ($self, $nodes_ref, $req_nodes, $req_edges, $self_loops, $duplicated, $directed, $max_degree, $mean, $sd, $normal, @labels) = @_;
+  my $rdm_graph = new RSAT::Graph2();
+  my @rdm_graph_array = ();
+  my $max_arc_number = 10000000;
+  my @nodes = @{$nodes_ref};
+  ## creation the list of nodes
+  if (scalar(@nodes) > 0) {
+    if (scalar(@nodes) < $req_nodes) {
+      &RSAT::error::FatalError("\t","More requested nodes than available nodes", "requested", $req_nodes, "available", scalar @nodes);
     } else {
-      for (my $i = 1; $i <= $req_nodes; $i++) {
-        push @nodes, "n_".$i;
+      my @indices = 0 .. (scalar(@nodes)-1);
+      my @shuffle_indices = &shuffle(@indices);
+      my @random_nodes = ();
+      for (my $i = 0; $i < $req_nodes; $i++) {
+	push @random_nodes, $nodes[$shuffle_indices[$i]];
       }
+      @nodes = @random_nodes;
     }
-    ## Computation of the maximum number of edges
-    if (!$duplicated) { 
-      if (!$directed && !$self_loops) {
-        $max_arc_number = ($req_nodes*($req_nodes-1))/2;
-      } elsif ($directed && $self_loops) {
-        $max_arc_number = ($req_nodes*$req_nodes);
-      } elsif ($directed && !$self_loops) {
-        $max_arc_number = ($req_nodes*($req_nodes-1));
-      } elsif (!$directed && $self_loops) {
-        $max_arc_number = ($req_nodes*($req_nodes+1))/2;
-      }
+  } else {
+    for (my $i = 1; $i <= $req_nodes; $i++) {
+      push @nodes, "n_".$i;
     }
-    if ($max_arc_number < $req_edges) {
-      &RSAT::error::FatalError("\t","More requested edges than possible edges", "requested", $req_edges, "available", scalar $max_arc_number);
-    }
-    my @possible_source = ();
-    my @possible_target = ();
-    my %degree;
-    my %graph_node;
-    my %seen;
-    my $k = 0;
-    for (my $i = 0; $i < $req_nodes; $i++) {
-      for (my $j = 0; $j < $req_nodes; $j++) {
-        
-        my $source = $nodes[$i];
-        my $target = $nodes[$j];
-        my $label = join("_", $source, $target);
-        my $inv_label = join("_", $target, $source);
-        if (($source eq $target) && !$self_loops) {
-          next;
-        }
-        if (exists($seen{$label}) && !$duplicated) {
-          next;
-        }
-        if ((exists($seen{$label}) || exists($seen{$inv_label})) && !$directed && !$duplicated) {
-          next;
-        }
-        if ((exists($seen{$label}) && exists($seen{$inv_label})) && !$duplicated) {
-          next;
-        }
-        if ($max_degree > 0 && exists($degree{$source}) && exists($degree{$target})) {
-          if ($degree{$source} > ($max_degree-1)) {
-            next;
-          }
-          if ($degree{$target} > ($max_degree-1)) {
-            next;
-          }
-        }
-        $degree{$source}++;
-        $degree{$target}++;
-        $seen{$label}++;        
-        push @possible_source, $source;
-        push @possible_target, $target;
-        $k++;
-        if ($k > $req_edges*10) {
-          last;
-          if (($k % 100000 == 0) && ($main::verbose >= 3)) {
-            &RSAT::message::psWarn("\t","$k" ,"potential edges created.");
-          }
-        }
-      }
-    }
-    if ($duplicated) {
-      @possible_target = &shuffle(@possible_target)
-    }
-    &RSAT::message::Info("\t",scalar(@possible_target) ,"potential edges created.") if ($main::verbose >= 3);
-    ## In case the maximum degree specification prevented to create enough edges : error.
-    if ((scalar(@possible_target)) < $req_edges) {
-      &RSAT::error::FatalError("\t","Maximal node degree specification is not compatible with the number of requested edges");
-    }
-    my @random_edges = 0 .. (scalar(@possible_target)-1);
-    my @random_weights = 0 .. $req_edges-1;
-    @random_edges = &shuffle(@random_edges);
-    @random_weights = &shuffle(@random_weights);
-    for (my $i = 0; $i < $req_edges; $i++) {
-      my $source = $possible_source[$random_edges[$i]];
-      my $target = $possible_target[$random_edges[$i]];
-      my $label = join("_", $source, $target);
-      if ($mean ne 'null' && $sd ne 'null' && $normal) {
-        $label = &gaussian_rand();
-        $label = ($label * $sd) + $mean;
-      } elsif (!$normal) {
-        my $weight = $labels[$random_weights[$i]];
-        if (&RSAT::util::IsReal($weight)) {
-          $label = $weight;
-        } else {
-          &RSAT::message::Warning($weight, "Not a numeric weight on edge between", $source, "and", $target) if ($main::verbose >= 3);
-        }
-      }
-      $graph_node{$source}++;
-      $graph_node{$target}++;
-      $rdm_graph_array[$i][0] = $source;
-      $rdm_graph_array[$i][1] = $target;
-      $rdm_graph_array[$i][2] = $label;
-      $rdm_graph_array[$i][3] = "#000088";
-      $rdm_graph_array[$i][4] = "#000088";
-      $rdm_graph_array[$i][5] = "#000044";
-      &RSAT::message::Info("\t", "Random edge created between", $source, "and", $target, "with label", $label) if ($main::verbose >= 3);
-    }
-    $rdm_graph->load_from_array(@rdm_graph_array);
-    
-    ## Add nodes that have degree 0
-    if (scalar(keys(%graph_node)) != scalar(@nodes)) {
-      my %rdm_nodes_id_name = $rdm_graph->get_attribute("nodes_id_name");
-      my %rdm_nodes_name_id = $rdm_graph->get_attribute("nodes_name_id");
-      my %rdm_nodes_label = $rdm_graph->get_attribute("nodes_label");
-      my %rdm_nodes_color = $rdm_graph->get_attribute("nodes_color");
-      my $node_id = scalar(keys(%rdm_nodes_name_id));
-      foreach my $node (@nodes) {
-        if (!exists($graph_node{$node})) {
-          my $node_color = "#000088";
-          my $node_label = $node;
-          $rdm_nodes_name_id{$node} = $node_id;
-          $rdm_nodes_id_name{$node_id} = $node;
-          $rdm_nodes_label{$node_id} = $node_label;
-          $rdm_nodes_color{$node_id} = $node_color;
-          $node_id++;
-        }
-      }
-      $rdm_graph->set_hash_attribute("nodes_id_name", %rdm_nodes_id_name);
-      $rdm_graph->set_hash_attribute("nodes_name_id", %rdm_nodes_name_id);
-      $rdm_graph->set_hash_attribute("nodes_label", %rdm_nodes_label);
-      $rdm_graph->set_hash_attribute("nodes_color", %rdm_nodes_color);
-    }
-    return ($rdm_graph);
   }
-  
+  ## Computation of the maximum number of edges
+  if (!$duplicated) { 
+    if (!$directed && !$self_loops) {
+      $max_arc_number = ($req_nodes*($req_nodes-1))/2;
+    } elsif ($directed && $self_loops) {
+      $max_arc_number = ($req_nodes*$req_nodes);
+    } elsif ($directed && !$self_loops) {
+      $max_arc_number = ($req_nodes*($req_nodes-1));
+    } elsif (!$directed && $self_loops) {
+      $max_arc_number = ($req_nodes*($req_nodes+1))/2;
+    }
+  }
+  if ($max_arc_number < $req_edges) {
+    &RSAT::error::FatalError("\t","More requested edges than possible edges", "requested", $req_edges, "available", scalar $max_arc_number);
+  }
+  my @possible_source = ();
+  my @possible_target = ();
+  my %degree;
+  my %graph_node;
+  my %seen;
+  my $k = 0;
+  for (my $i = 0; $i < $req_nodes; $i++) {
+    for (my $j = 0; $j < $req_nodes; $j++) {
+        
+      my $source = $nodes[$i];
+      my $target = $nodes[$j];
+      my $label = join("_", $source, $target);
+      my $inv_label = join("_", $target, $source);
+      if (($source eq $target) && !$self_loops) {
+	next;
+      }
+      if (exists($seen{$label}) && !$duplicated) {
+	next;
+      }
+      if ((exists($seen{$label}) || exists($seen{$inv_label})) && !$directed && !$duplicated) {
+	next;
+      }
+      if ((exists($seen{$label}) && exists($seen{$inv_label})) && !$duplicated) {
+	next;
+      }
+      if ($max_degree > 0 && exists($degree{$source}) && exists($degree{$target})) {
+	if ($degree{$source} > ($max_degree-1)) {
+	  next;
+	}
+	if ($degree{$target} > ($max_degree-1)) {
+	  next;
+	}
+      }
+      $degree{$source}++;
+      $degree{$target}++;
+      $seen{$label}++;        
+      push @possible_source, $source;
+      push @possible_target, $target;
+      $k++;
+      if ($k > $req_edges*10) {
+	last;
+	if (($k % 100000 == 0) && ($main::verbose >= 3)) {
+	  &RSAT::message::psWarn("\t","$k" ,"potential edges created.");
+	}
+      }
+    }
+  }
+  if ($duplicated) {
+    @possible_target = &shuffle(@possible_target)
+  }
+  &RSAT::message::Info("\t",scalar(@possible_target) ,"potential edges created.") if ($main::verbose >= 3);
+  ## In case the maximum degree specification prevented to create enough edges : error.
+  if ((scalar(@possible_target)) < $req_edges) {
+    &RSAT::error::FatalError("\t","Maximal node degree specification is not compatible with the number of requested edges");
+  }
+  my @random_edges = 0 .. (scalar(@possible_target)-1);
+  my @random_weights = 0 .. $req_edges-1;
+  @random_edges = &shuffle(@random_edges);
+  @random_weights = &shuffle(@random_weights);
+  for (my $i = 0; $i < $req_edges; $i++) {
+    my $source = $possible_source[$random_edges[$i]];
+    my $target = $possible_target[$random_edges[$i]];
+    my $label = join("_", $source, $target);
+    if ($mean ne 'null' && $sd ne 'null' && $normal) {
+      $label = &gaussian_rand();
+      $label = ($label * $sd) + $mean;
+    } elsif (!$normal) {
+      my $weight = $labels[$random_weights[$i]];
+      if (&RSAT::util::IsReal($weight)) {
+	$label = $weight;
+      } else {
+	&RSAT::message::Warning($weight, "Not a numeric weight on edge between", $source, "and", $target) if ($main::verbose >= 3);
+      }
+    }
+    $graph_node{$source}++;
+    $graph_node{$target}++;
+    $rdm_graph_array[$i][0] = $source;
+    $rdm_graph_array[$i][1] = $target;
+    $rdm_graph_array[$i][2] = $label;
+    $rdm_graph_array[$i][3] = "#000088";
+    $rdm_graph_array[$i][4] = "#000088";
+    $rdm_graph_array[$i][5] = "#000044";
+    &RSAT::message::Info("\t", "Random edge created between", $source, "and", $target, "with label", $label) if ($main::verbose >= 3);
+  }
+  $rdm_graph->load_from_array(@rdm_graph_array);
+    
+  ## Add nodes that have degree 0
+  if (scalar(keys(%graph_node)) != scalar(@nodes)) {
+    my %rdm_nodes_id_name = $rdm_graph->get_attribute("nodes_id_name");
+    my %rdm_nodes_name_id = $rdm_graph->get_attribute("nodes_name_id");
+    my %rdm_nodes_label = $rdm_graph->get_attribute("nodes_label");
+    my %rdm_nodes_color = $rdm_graph->get_attribute("nodes_color");
+    my $node_id = scalar(keys(%rdm_nodes_name_id));
+    foreach my $node (@nodes) {
+      if (!exists($graph_node{$node})) {
+	my $node_color = "#000088";
+	my $node_label = $node;
+	$rdm_nodes_name_id{$node} = $node_id;
+	$rdm_nodes_id_name{$node_id} = $node;
+	$rdm_nodes_label{$node_id} = $node_label;
+	$rdm_nodes_color{$node_id} = $node_color;
+	$node_id++;
+      }
+    }
+    $rdm_graph->set_hash_attribute("nodes_id_name", %rdm_nodes_id_name);
+    $rdm_graph->set_hash_attribute("nodes_name_id", %rdm_nodes_name_id);
+    $rdm_graph->set_hash_attribute("nodes_label", %rdm_nodes_label);
+    $rdm_graph->set_hash_attribute("nodes_color", %rdm_nodes_color);
+  }
+  return ($rdm_graph);
+}
+
 
 ################################################################
 =pod
@@ -1196,11 +1220,11 @@ sub read_from_table2 {
 }
 
 ################################################################
-
+## Load a graph from a tab-delimted text file
 sub read_from_table {
-    ################################"
-    # Define variables
-    my ($self, $inputfile, $source_col, $target_col, $weight_col, $source_color_col, $target_color_col, $edge_color_col) = @_;
+
+    my ($self, $inputfile, $source_col, $target_col, $weight_col,$source_color_col, $target_color_col, $edge_color_col) = @_;
+
     &RSAT::message::TimeWarn("Loading graph from tab file", $inputfile) if ($main::verbose >= 2);
     ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
     my $weight = 0;
@@ -1208,6 +1232,7 @@ sub read_from_table {
     my @array = ();
     my $default_node_color = "#000088";
     my $default_edge_color = "#000044";
+
     ## Check input parameters
     unless (&RSAT::util::IsNatural($source_col) && ($source_col > 0)) {
 	&RSAT::error::FatalError(join("\t", $source_col, "Invalid source column secification for graph loading. Should be a strictly positive natural number."));
@@ -1230,32 +1255,41 @@ sub read_from_table {
 
     ## Load the graph
     $cpt = 0;
-    while (my $ligne = <$main::in>) {
-      next if ($ligne =~ /^--/); # Skip mysql-like comments
-      next if ($ligne =~ /^;/); # Skip RSAT comments
-      next if ($ligne =~ /^#/); # Skip comments and header
-      next unless ($ligne =~ /\S/); # Skip empty rows
-      chomp ($ligne);
-      my @lignecp = split "\t", $ligne;
-      $array[$cpt][0] = $lignecp[$source_col-1];
-      $array[$cpt][1] = $lignecp[$target_col-1];
+    while (my $line = <$main::in>) {
+      next if ($line =~ /^--/); # Skip mysql-like comments
+      next if ($line =~ /^;/); # Skip RSAT comments
+      next if ($line =~ /^#/); # Skip comments and header
+      next unless ($line =~ /\S/); # Skip empty rows
+      chomp ($line);
+      my @linecp = split "\t", $line;
+
+      ## Filter on node names (for induced graphs and graph-get-clusters)
+      my $source_id = $linecp[$source_col-1];
+      my $target_id = $linecp[$target_col-1];
+      if ($self->{seed_nodes}) {
+#	&RSAT::message::Debug("Checking seed nodes", $source_id, $target_id) if ($main::verbose >= 0);
+	next unless $self->{seed_index}->{$source_id};
+	next unless $self->{seed_index}->{$target_id};
+      }
+      $array[$cpt][0] = $linecp[$source_col-1];
+      $array[$cpt][1] = $linecp[$target_col-1];
       if ($weight) {
-        $array[$cpt][2] = $lignecp[$weight_col-1];
+        $array[$cpt][2] = $linecp[$weight_col-1];
       } else {
-        $array[$cpt][2] = join("_",$lignecp[$source_col-1],$lignecp[$target_col-1]);
+        $array[$cpt][2] = join("_",$linecp[$source_col-1],$linecp[$target_col-1]);
       }
       if (defined($source_color_col)) {
-        $array[$cpt][3] = $lignecp[$source_color_col-1] || $default_node_color;
+        $array[$cpt][3] = $linecp[$source_color_col-1] || $default_node_color;
       } else {
         $array[$cpt][3] = $default_node_color;
       }
       if (defined($target_color_col)) {
-        $array[$cpt][4] = $lignecp[$target_color_col-1] || $default_node_color;
+        $array[$cpt][4] = $linecp[$target_color_col-1] || $default_node_color;
       } else {
         $array[$cpt][4] = $default_node_color;
       }
       if (defined($edge_color_col)) {
-        $array[$cpt][5] = $lignecp[$edge_color_col-1] || $default_edge_color;
+        $array[$cpt][5] = $linecp[$edge_color_col-1] || $default_edge_color;
       } else {
         $array[$cpt][5] = $default_edge_color;
       }
@@ -1391,10 +1425,10 @@ sub load_from_gml {
     
     my $fichier;
 
-    while (my $ligne = <$main::in>) {
-      chomp($ligne);
-      $ligne =~ s/\t/ /g;
-      $fichier .= $ligne;
+    while (my $line = <$main::in>) {
+      chomp($line);
+      $line =~ s/\t/ /g;
+      $fichier .= $line;
       
     }
     
@@ -2119,8 +2153,10 @@ sub to_node_table {
 
 =item B<load_classes($class_file)>
 
-Load the $class_file by adding an array containing having as coordinate the internal index of the nodes and as component the class_names.
-Class names are stored within the attribute cluster_list of the graph object.
+Load the $class_file by adding an array containing having as
+coordinate the internal index of the nodes and as component the
+class_names. Class names are stored within the attribute cluster_list
+of the graph object.
 
 Parameters
 
@@ -2133,7 +2169,6 @@ The class file
 =back
 
 =cut
-
 sub load_classes {
   my ($self, $inputfile, $inducted) = @_;
   &RSAT::message::TimeWarn("Loading class information", $inputfile) if ($main::verbose >= 2);
@@ -2172,12 +2207,16 @@ sub load_classes {
 
 }
 
-# Returns an array of random numbers normally distributed
-# The gaussian_rand function implements the polar Box Muller method for turning two independent uniformly distributed random numbers 
-# between 0 and 1 (such as rand returns) into two numbers with a mean of 0 and a standard deviation of 1 (i.e., a Gaussian 
-# distribution). To generate numbers with a different mean and standard deviation, multiply the output of gaussian_rand by the new
+################################################################
+# Returns an array of  normally distributed random numbers
+#
+# The gaussian_rand function implements the polar Box Muller method
+# for turning two independent uniformly distributed random numbers
+# between 0 and 1 (such as rand returns) into two numbers with a mean
+# of 0 and a standard deviation of 1 (i.e., a Gaussian
+# distribution). To generate numbers with a different mean and
+# standard deviation, multiply the output of gaussian_rand by the new
 # standard deviation, and then add the new mean
-
 sub gaussian_rand {
     my ($u1, $u2);  # uniformly distributed random numbers
     my $w;          # variance, then a weight
