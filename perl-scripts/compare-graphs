@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.27 2007/05/29 08:20:37 jvanheld Exp $
+# $Id: compare-graphs,v 1.28 2007/05/29 12:03:01 rsat Exp $
 #
 ############################################################
 
@@ -16,9 +16,11 @@ compare-graphs
 =head1 DESCRIPTION
 
 Computes the intersection, the union or the difference of two graphs.
-In case more than one edge exist between two nodes, the program removes one of those.
+In case more than one arc exist between two nodes, the program removes one of those.
 
 =head1 AUTHORS
+
+Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
 
 Gilles Vanderstocken <gvdstock@ulb.ac.be>
 
@@ -170,6 +172,7 @@ package main;
 
     ################################################################
     ## Read and load input
+
     my $R_graph = new RSAT::Graph2;
     my $Q_graph = new RSAT::Graph2;
     $R_graph->graph_from_text($input_format_R, $main::infile{graph_R}, $source_col_R, $target_col_R, $weight_col_R);
@@ -180,6 +183,7 @@ package main;
     $R_graph->remove_duplicated_arcs($directed);
     $Q_graph->remove_duplicated_arcs($directed);
 
+
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
@@ -188,11 +192,14 @@ package main;
     ## Calculation of the number of common and not common arcs and nodes
     my ($nodes_R_graph, $arcs_R_graph) = $R_graph->properties();
     my ($nodes_Q_graph, $arcs_Q_graph) = $Q_graph->properties();
-    my ($common_nodes, $union_nodes, $max_union_arcs) = &in_common($R_graph, $Q_graph, $directed);
-    my $ref_only_arcs = $arcs_R_graph - $common_nodes;
-    my $query_only_arcs = $arcs_Q_graph - $common_nodes;
-    my $pval = &sum_of_hypergeometrics ($arcs_R_graph, $max_union_arcs, $arcs_Q_graph, $common_nodes, $arcs_Q_graph);
-    my $message = "Comparison statistics\n";
+    my ($common_arcs, $common_nodes, $union_nodes, $max_union_arcs) = &in_common($R_graph, $Q_graph, $directed);
+    my $ref_only_arcs = $arcs_R_graph - $common_arcs;
+    my $query_only_arcs = $arcs_Q_graph - $common_arcs;
+    my $ref_only_nodes = $nodes_R_graph-$common_nodes;
+    my $query_only_nodes = $nodes_Q_graph-$common_nodes;
+    my $union_arcs = $ref_only_arcs + $query_only_arcs + $common_arcs;
+    my $pval = &sum_of_hypergeometrics ($arcs_R_graph, $max_union_arcs, $arcs_Q_graph, $common_arcs, $arcs_Q_graph);
+    my $message = "Comparaison statistics\n";
 
     ## Reference graph properties
     $message .= sprintf ";\t%-23s\t%s\n", "Reference graph", $main::infile{graph_R};
@@ -206,35 +213,26 @@ package main;
 
     ## Intersection
     $message .= sprintf ";\t%s\n", "Intersection";
-    $message .= sprintf ";\t%-15s\t%s\n", "\tinter nodes", "NA";
-    $message .= sprintf ";\t%-15s\t%g\n", "\tinter arcs", $common_nodes;
-    $message .= sprintf ";\t%-15s\t%g\n", "\tinter P-val", $pval;
+    $message .= sprintf ";\t%-15s\t%s\n", "\tinter nodes", $common_nodes;
+    $message .= sprintf ";\t%-15s\t%g\n", "\tinter arcs", $common_arcs;
+    $message .= sprintf ";\t%-15s\t%g\n", "\tinter arcs P-val", $pval;
 
     ## Union
     $message .= sprintf ";\t%s\n", "Union";
     $message .= sprintf ";\t%-15s\t%g\n", "\tunion nodes", $union_nodes;
-    $message .= sprintf ";\t%-15s\t%s\n", "\tunion arcs", "NA";
+    $message .= sprintf ";\t%-15s\t%s\n", "\tunion arcs", $union_arcs;
     $message .= sprintf ";\t%-15s\t%s\n", "\tunion max arcs", $max_union_arcs;
 
     ## Elements found in reference but not in query
     $message .= sprintf ";\t%s\n", "Reference not query";
-    $message .= sprintf ";\t%-15s\t%s\n", "\tR.not.Q nodes", "NA";
+    $message .= sprintf ";\t%-15s\t%s\n", "\tR.not.Q nodes", "$ref_only_nodes";
     $message .= sprintf ";\t%-15s\t%g\n", "\tR.not.Q arcs", $ref_only_arcs;
 
     ## Elements found in query but not in reference
     $message .= sprintf ";\t%s\n", "Query not reference";
-    $message .= sprintf ";\t%-15s\t%s\n", "\tQ.not.R nodes", "NA";
+    $message .= sprintf ";\t%-15s\t%s\n", "\tQ.not.R nodes", "$query_only_nodes";
     $message .= sprintf ";\t%-15s\t%g\n", "\tQ.not.R arcs", $query_only_arcs;
-
-#    $message .= ";\t".(join("\t",$main::infile{graph_R},$nodes_R_graph,"node(s) and",$arcs_R_graph,"arc(s)\n"));
-#    $message .= ";\t".(join("\t",$main::infile{graph_Q},$nodes_Q_graph,"node(s) and",$arcs_Q_graph,"arc(s)\n"));
-#    $message .= ";\t"."$common_nodes\t"."unique arcs in common\n";
-#    $message .= ";\t"."$pval\t"."P-value of intersection\n";
-#    $message .= ";\t"."$union_nodes\t"."total number of nodes in the union of both graphs\n";
-#    $message .= ";\t"."$max_union_arcs\t"."maximal number of edges in the union of both graphs\n";
-#    $message .= ";\t".$ref_only_arcs."\tarcs of $main::infile{graph_R} are not in $main::infile{graph_Q}\n";
-#    $message .= ";\t".$query_only_arcs."\tarcs of $main::infile{graph_Q} are not in $main::infile{graph_R}\n";
-
+    
     if ($main::verbose >= 1 && $output_format ne 'gml') {
       print $main::out ";\t$message";
     }
@@ -371,8 +369,8 @@ Reference graph file
 
 =item B<-directed>
 
-Indicates whether the graphs must be considered as directed, i.e., an edge 
-from node A to node B is different from an edge from B to A.
+Indicates whether the graphs must be considered as directed, i.e., an arc 
+from node A to node B is different from an arc from B to A.
 
 =cut
 	    	    
@@ -645,7 +643,7 @@ sub intersect {
 	  my $target_node_color = $nodes_color{$target_intern_id} || "#000088";
 	  my $target_node_label = $nodes_label{$target_intern_id} || $target_name;
 
-	  ## NOTE DE JACQUES: j'ai inversé les paramètres de la ligne
+	  ## NOTE DE JACQUES: j'ai inversï¿½ les paramï¿½tres de la ligne
 	  ## suivante, car il retournait le poids du graphe R quand on
 	  ## lui demandait celui de Q. Veriifiez si c'est OK
 #          my $weight = &calculate_weight($arcs_g1[$i][2], $arcs_g2[$arc_intern_id_g2][2]);
@@ -853,11 +851,12 @@ sub difference {
 
 ################################################################
 ## arcs in common between two graphs
-## 
-## 
+
 sub in_common {
   my ($R_graph, $Q_graph, $directed) = @_;
+  my $common_arcs = 0;
   my $common_nodes = 0;
+  my $union_arcs = 0;
   my $R_graph_not_Q_graph = 0;
   my $Q_graph_not_R_graph = 0; 
   my $paval = 0;
@@ -886,7 +885,7 @@ sub in_common {
       my $arc_intern_id = $arcs_name_id_g2{$arc_id};
       if (!exists($seen_arcs{$arc_id})) {
         if (defined($arc_intern_id)) {
-	  $common_nodes++;
+	  $common_arcs++;
 	  foreach (my $j = 0; $j < scalar(@arcs_id); $j++) {
 	    $seen_arcs{$arcs_id[$j]}++;
 	  }
@@ -901,11 +900,15 @@ sub in_common {
       }
     }
   }
-#   hypergeometric "variables"
+  my %g1_nodes = %nodes;
   foreach my $node (@nodes_g2) {
     $nodes{$node}++;
+    if (exists($g1_nodes{$node})) {
+      $common_nodes++;
+    }
   }
   $union_nodes = scalar (keys %nodes);
+
 
   ## Compute the maximal number of edges given the number of nodes in the graph
   if ($directed){
@@ -913,8 +916,9 @@ sub in_common {
   } else {
     $max_union_arcs = ($union_nodes*$union_nodes+$union_nodes)/2;
   }
-  return ($common_nodes, $union_nodes, $max_union_arcs);
+  return ($common_arcs, $common_nodes, $union_nodes, $max_union_arcs);
 }
+
 ################################################################
 #### verbose message
 sub Verbose {
@@ -987,10 +991,10 @@ sub calculate_weight {
     if ($result eq $null_value && $main::verbose >= 2) {
       my $warning_message = "";
       if ($query_weight eq "undef") {
-        $warning_message .= "\tLabel of the edge of the query graph undefined";
+        $warning_message .= ";\tLabel of the arc of the query graph undefined\n";
       }
       if ($reference_weight eq "undef") {
-        $warning_message .= "wq\tLabel of the edge of the reference graph undefined";
+        $warning_message .= ";\tLabel of the arc of the reference graph undefined\n";
       }
       &RSAT::message::Warning("\tCould not compute outweight", $outweight, $warning_message, ${null_value}." used instead") 
 	if ($main::verbose >= 3);
@@ -1007,8 +1011,6 @@ __END__
 =head1 SEE ALSO
 
 =over
-
-=item I<compare-graphs>
 
 =item I<compare-graph-clusters>
 

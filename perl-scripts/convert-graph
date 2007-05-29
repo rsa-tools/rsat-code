@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.17 2007/05/29 08:19:41 jvanheld Exp $
+# $Id: convert-graph,v 1.18 2007/05/29 12:03:01 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -443,14 +443,14 @@ Add a unique ID for each arc when using the tab-delimited output.
 
 =item B<-seed_nodes seed_node_file>
 
-This option is currenyl implemented only for input format "tab".
+This option is currently implemented only for input format "tab".
 
 Select a subgraph induced by a set of seed nodes. When this option is
 used, the program only reads arcs whose ends (source and target) are
 both members of the seed node set.
 
 Seed nodes are specified in a text file. The first word of each row is
-considered as an indentifier for a seed node.
+considered as an identifier for a seed node.
 
 =cut
 
