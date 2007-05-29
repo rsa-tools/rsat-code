@@ -1,0 +1,545 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: roc-stats2,v 1.1 2007/05/29 08:17:41 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+roc-stats2
+
+=head1 DESCRIPTION
+
+This program takes azs input a set of scored results associated with
+validation labels (TP for true positive, FP for false positive, FN for
+false negatives), and computes, for each score value, the derived
+statistics (Sn, PPV, FPR), which can be further used to draw a ROC
+curve.
+
+=head1 AUTHOR
+
+Adapted from rekin's janky's program roc-stats by Jacques van Helden
+<jvanheld@scmbb.ulb.ac.be>
+
+(this is a cross-validation)
+
+=head1 CATEGORY
+
+statistics
+
+=head1 USAGE
+
+roc-stats2 [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    my $start_time = &AlphaDate();
+    %main::infile = ();
+    %main::outfile = ();
+
+    local $null = "NA";
+    local $verbose = 0;
+    local $in = STDIN;
+    local $out = STDOUT;
+    local $graphs = 0;
+    local $img_format = "png";
+
+    local %col = (score=>1, status=>2);
+
+    ## Status labels
+    local %status_label = (FP=>FP,
+			   TP=>TP,
+			   FN=>FN,
+			   TN=>TN,
+			  );
+
+    ## Counters
+    local %score_occ = ();
+    local %status_occ = ();
+    local %occ = ();
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Read input
+    ($main::in) = &OpenInputFile($main::infile{input});
+    my $l = 0;
+    while (<$main::in>) {
+      $l++;
+      next if (/^;/); ## Skip comment lines
+      next if (/^#/); ## Skip header lines
+      next unless (/\S/); ## Skip empty lines
+      chomp();
+      my @fields = split('\t');
+
+
+      ## Check the status
+      my $label = $fields[$col{status}-1];
+      my $status;
+      if (defined($status_label{$label})) {
+	$status = $status_label{$label};
+      } else {
+	&RSAT::message::Warning("Skipped line", $l, "invalid status label", $label);
+	next;
+      }
+
+      ## Check the score
+      my $score = &RSAT::util::trim($fields[$col{score}-1]);
+      unless ((&IsReal($score)) || ($score eq $null)){
+	&RSAT::message::Warning("Skipped line", $l, "score", $score, "is not a real nuber");
+	next;
+      }
+
+      ## Increase the score counters
+      $status_occ{$status}++; 
+      $score_occ{$score}++;
+      $occ{$score}{$status}++;
+    }
+    close $in if ($infile{input});
+
+    ## Compute the sum of occurrences
+    $status_occ{total} = 0;
+    for my $label (sort keys (%status_label)) {
+      my $status = $status_label{$label};
+      unless (defined($status_occ{$status})) {
+	$status_occ{$status} = 0;
+      }
+      $status_occ{total} += $status_occ{$status};
+      &RSAT::message::Info("Added", $status, $status_occ{$status}, "to total occurrences ->", $status_occ{total}) if ($main::verbose >= 2);
+    }
+    $status_occ{total_pred} = $status_occ{TP} + $status_occ{FP};
+    $status_occ{total_pos} = $status_occ{TP} + $status_occ{FN};
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($verbose);
+
+    ################################################################
+    ## Print the header
+    my @out_fields = qw (score TP_icum FP_icum FN_icum Sn PPV FPR Acc_g Acc_a TP FP FN);
+
+    my %descr = ();
+    $descr{score} = "Score (X)";
+    $descr{TP_icum} = "True Positive, inverse cumulative (number of FN observations with score >= X)";
+    $descr{FP_icum} = "False Positive, inverse cumulative (number of FN observations with score >= X)";
+    $descr{FN_icum} = "False Negative, inverse cumulative (number of FN observations with score >= X)";
+    $descr{TN_icum} = "True Negative, inverse cumulative (number of TN observations with score >= X)";
+    $descr{TP} = "True Positive (number of TP observations with score = X)";
+    $descr{FP} = "False Positive (number of FP observations with score = X)";
+    $descr{FN} = "False Negative (number of FN observations with score = X)";
+    $descr{TN} = "True Negative (number of TN observations with score = X)";
+    $descr{Sn} = "Sensitivity. Sn = TP/(TP + FN)";
+    $descr{PPV} = "Positive Predictive Value. PPV = TP/(TP + FP)";
+    $descr{FPR} = "False Positive Rate. FPR = 1 - PPV";
+    $descr{Acc_g} = "Accuracy (geometric mean). Acc_g = sqrt(Sn*PPV)";
+    $descr{Acc_a} = "Accuracy (arithmetic mean). Acc_a = (Sn + PPV)/2";
+
+    print $out "; Column contents\n";
+    for my $f (1..scalar(@out_fields)) {
+      my $field = $out_fields[$f-1];
+      print $out join("\t", ";", $f, $field, $descr{$field}), "\n";
+    }
+    print $out "#", join("\t", @out_fields), "\n";
+
+    ################################################################
+    ## Compute a sorted list of all the scores present in the data If
+    ## some labels have been attanched to the $null score, it has to
+    ## be treated first.
+    my %scores = %score_occ;
+    if (defined($score_occ{$null})) {
+      delete($scores{$null});
+    }
+    ## Scores sorted by descending values
+    my @sorted_scores_desc =  sort {$b <=> $a} keys %scores;
+    if (defined($score_occ{$null})) {
+      push @sorted_scores_desc, $null;
+    }
+    my @sorted_scores_asc =  sort {$b <=> $a} keys %scores;
+    if (defined($score_occ{$null})) {
+      push @sorted_scores_asc, $null;
+    }
+
+    ################################################################
+    ## Compute the derived statistics and print the output
+    my $TP_icum = 0;
+    my $FP_icum = 0;
+    my $FN_icum = $status_occ{total_pos};
+    my $pos = $status_occ{total_pos};
+
+    ## Compute cumulative distributions
+    foreach my $score (@sorted_scores_desc) {
+      local $TP =  $occ{$score}{TP} || 0;
+      $TP_icum += $TP;
+      local $FN =  $occ{$score}{FN} || 0;
+      $FN_icum -= $TP + $FN;
+      local $FP =  $occ{$score}{FP} || 0;
+      $FP_icum += $FP;
+
+      ## Sensitivity
+#      local $pos = $TP_icum+$FN_icum;
+      local $Sn = 0;
+      if ($pos > 0) {
+	$Sn = $TP_icum/($pos);
+      }
+
+      ## Positive Predictive Value
+      local $pred = $TP_icum + $FP_icum;
+      local $PPV = 0;
+      if ($pred > 0) {
+	$PPV = $TP_icum /($pred);
+      }
+
+      ## False positive rate
+      local $FPR = 1 - $PPV;
+
+      ## Accuracy
+      local $Acc_g = sqrt($Sn*$PPV);
+      local $Acc_a = ($Sn+$PPV)/2;
+
+      ## Print one result line
+      foreach $stat qw(Sn PPV FPR Acc_g Acc_a) {
+	if ($$stat < 1e-2) {
+	  $$stat = sprintf("%5.2g", $$stat);
+	} else {
+	  $$stat = sprintf("%.3f", $$stat);
+	}
+      }
+      print $out join("\t", $score,
+		      $TP_icum, $FP_icum, $FN_icum,
+		      $Sn,
+		      $PPV,
+		      $FPR,
+		      $Acc_g,
+		      $Acc_a,
+		      $TP, $FP, $FN,
+		     ), "\n";
+    }
+
+
+    ################################################################
+    ## Finish verbose
+    if ($verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $out "; Job started $start_time\n";
+	print $out "; Job done    $done_time\n";
+    }
+
+    ################################################################
+    ## Close output stream
+    close $out if ($outfile{output});
+
+    ################################################################
+    ## Print graphs
+    if ($graphs) {
+      ## Use same name fo graph as for the output file
+      my $output_table = $main::outfile{output};
+      ## Suppress the .tab or .txt extension before adding the graph suffixes.
+      $output_table =~ s/\.tab$//;
+      $output_table =~ s/\.txt$//;
+
+      ## Draw stats as a function of score
+      my $cmd = "XYgraph -i ".$output_table.".tab";
+      $cmd .= " -title1 'Score distributions'";
+      $cmd .= " -xcol 1 -ycol 5,6,7,8,9 -xleg1 'score' -lines -pointsize 0 -ymin 0 -ymax 1 -legend";
+      $cmd .= "  -ygstep1 0.1 -ygstep2 0.05";
+      $cmd .= " -format ".$img_format;
+      $cmd .= " -o ".$output_table."_scores.".$img_format;
+      &doit($cmd);
+
+      ## Draw stats as a function of score, with log scale on X axis
+      $cmd = "XYgraph -i ".$output_table.".tab";
+      $cmd .= " -title1 'Score distributions'";
+      $cmd .= " -xcol 1 -ycol 5,6,7,8,9 -xleg1 'score' -lines -pointsize 0 -ymin 0 -ymax 1 -legend";
+      $cmd .= "  -ygstep1 0.1 -ygstep2 0.05";
+      $cmd .= " -format ".$img_format;
+      $cmd .= " -xlog 2 -o ".$output_table."_scores_xlog2.".$img_format;
+      &doit($cmd);
+
+      ## Draw a graph with TP=f(FP)
+      $cmd = "XYgraph -i ".$output_table.".tab";
+      $cmd .= " -title1 'True verus false positives'";
+      $cmd .= " -xcol 3 -ycol 2 -xleg1 FP -yleg1 TP -lines -pointsize 0";
+      $cmd .= " -format ".$img_format;
+      $cmd .= " -o ".$output_table."_FP_TP.".$img_format;
+      &doit($cmd);
+
+      ## Draw a ROC curve
+      $cmd = "XYgraph -i ".$output_table.".tab";
+      $cmd .= " -title1 'ROC curve'";
+      $cmd .= " -xcol 7 -ycol 5 -xleg1 'FPR' -yleg1 'Sn' -lines -pointsize 0 -min 0 -max 1";
+      $cmd .= " -format ".$img_format;
+      $cmd .= " -o ".$output_table."_roc.".$img_format;
+      &doit($cmd);
+    }
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+	    ## Export graph files
+=pod
+
+=item	B<-graphs>
+
+Export graph files.  This requires to specify a name for the output
+file (the STOUT dannot be used), because the same name will be used,
+with various suffixes, for the graph files.
+
+=cut
+	} elsif ($arg eq "-graphs") {
+	    $main::graphs = 1;
+
+	    ## Image format
+=pod
+
+=item	B<-img_format>
+
+Image format fo the graph files.
+
+=cut
+	} elsif ($arg eq "-img_format") {
+	    $main::img_format = shift(@arguments);
+
+	    ## Score column
+=pod
+
+=item	B<-scol>
+
+Column of the input ile containing the score value (default 1).
+
+=cut
+	} elsif ($arg eq "-scol") {
+	    $main::col{score} = shift(@arguments);
+	    &RSAT::error::FatalError($main::col{score}, "Invalid score column. Should be a strictly positive Natural number.") 
+	      unless ((&IsInteger($main::col{score})) && ($main::col{score} > 0));
+
+	    ## Status column
+=pod
+
+=item	B<-lcol>
+
+Column of the input file containing the status label (default 2).
+
+=cut
+	} elsif ($arg eq "-lcol") {
+	    $main::col{status} = shift(@arguments);
+	    &RSAT::error::FatalError($main::col{score}, "Invalid score column. Should be a strictly positive Natural number.") 
+	      unless ((&IsInteger($main::col{score})) && ($main::col{score} > 0));
+
+	    ## Status renaming
+=pod
+
+=item	B<-status>
+
+This option allows to rename status labels. The next argument is taken
+as new status label, and the second next as old status label. For example, 
+
+  -status wrong FP
+
+indicates that the label "wrong" has to be understood as FP.
+
+By default, four labels are accepted in the status column. 
+
+=over
+
+=item I<TP> (true positive)
+
+=item I<FP> (false positive)
+
+=item I<FN> (false negative)
+
+=item I<TN> (true negative)
+
+=back
+
+It can be sueful to rename these labels, for compatibility with other
+programs. for example, I<roc-stats2> is typically used as
+post-analysis program after I<compare-graphs>. In this case, the
+labels should be renamed in the following way.
+
+  -status  -status R.and.Q TP -status Q.not.R FP -status R.not.Q FN
+
+=cut
+	} elsif ($arg eq "-status") {
+	  my $new_status = shift(@arguments);
+	  my $old_status = shift(@arguments);
+	  if (defined($status_label{$old_status})) {
+	    $status_label{$new_status} = $status_label{$old_status};
+	    delete($status_label{$old_status});
+	  } else {
+	    
+	    &RSAT::error::FatalError($old_status, "Invalid status label. Cannot be renamed.");
+	  }
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; roc-stats2 ";
+    &PrintArguments($main::out);
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+
+    ## Occurrences per status
+    print $out "; Occurrences per status\n";
+    for my $type (sort keys (%status_occ)) {
+      printf $main::out ";\t%-15s%d\n", $type, $main::status_occ{$type};
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=cut
