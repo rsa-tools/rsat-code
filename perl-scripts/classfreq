@@ -150,7 +150,8 @@ foreach $n (@values) {
 
 ##### print class frequencies #####
 if ($verbose) {
-  print $out ";[min\t";
+  &Verbose();
+  print $out "#[min\t";
   print $out "max[\t";
   print $out "center\t";
   print $out "freq\t";
@@ -395,3 +396,9 @@ sub PrintOptions {
   exit(0);
 }
 
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; classfreq ";
+    &PrintArguments($main::out);
+}
