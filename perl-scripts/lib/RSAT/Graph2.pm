@@ -1056,7 +1056,7 @@ sub node_by_id {
 ################################################################
 =pod
 
-=item B<read_from_table2>
+=item B<read_from_table2> (deprecated)
 
 Read the graph from a tab-delimited text file.
 
@@ -1267,7 +1267,6 @@ sub read_from_table {
       my $source_id = $linecp[$source_col-1];
       my $target_id = $linecp[$target_col-1];
       if ($self->{seed_nodes}) {
-#	&RSAT::message::Debug("Checking seed nodes", $source_id, $target_id) if ($main::verbose >= 0);
 	next unless $self->{seed_index}->{$source_id};
 	next unless $self->{seed_index}->{$target_id};
       }
@@ -1435,6 +1434,8 @@ sub load_from_gml {
     
     my @fichier_node = split /node( |\t|)/, $fichier;
     my @fichier_edge = split /edge( |\t|)/, $fichier;
+    
+    my %discarded_nodes = (); # if $self->{seed_nodes} is defined, this hash will be filled with the gml_id of the nodes that must no be taken into account when parsing the edges
   
     foreach my $node (@fichier_node) {
       if ($node ne " ") {
@@ -1448,12 +1449,17 @@ sub load_from_gml {
           $node_id = $node_cp[1];
           $node_id = substr($node_id,0, index($node_id, " "));
         }
+
 # NODE LABEL
         if ($node =~ /label/) {
           my @label_cp = split /.*label /, $node;
           $node_label = $label_cp[1];
           $node_label = substr($node_label,1, index($node_label, "\" "));
           $node_label =~ s/\"//;
+        }
+        if ($self->{seed_nodes} && !$self->{seed_index}->{$node_label}) {
+          $discarded_nodes{$node_id}++;
+	  next;
         }
 # NODE COLOR
         if ($node =~ /outline/) {
@@ -1504,7 +1510,7 @@ sub load_from_gml {
           $source_edge = substr($source_edge,0, index($source_edge, " "));
         }
 # TARGET EDGE
-        if ($edge =~ /source/) {
+        if ($edge =~ /target/) {
           my @target_cp = split /.*target /, $edge;
           $target_edge = $target_cp[1];
           $target_edge = substr($target_edge,0, index($target_edge, " "));
@@ -1517,7 +1523,7 @@ sub load_from_gml {
           $label_edge =~ s/\"//;
         }
 # COLOR EDGE
-        if ($edge =~ /label/) {
+        if ($edge =~ /fill/) {
           my @color_cp = split /.*fill /, $edge;
           $color_edge = $color_cp[1];
           $color_edge = substr($color_edge,1, index($color_edge, "\" "));
@@ -1525,6 +1531,8 @@ sub load_from_gml {
         }
 	
         if ($source_edge ne "NA" || $target_edge ne "NA") {
+          next if $discarded_nodes{$source_edge};
+          next if $discarded_nodes{$target_edge};
           $source_node_id = $gml_id{$source_edge};
 	  $source_node = $source_edge;
 	  $target_node_id = $gml_id{$target_edge};
@@ -1534,8 +1542,8 @@ sub load_from_gml {
 	  if ($label_edge eq "NA") {
 	    $label_edge = $nodes_id_name{$source_node_id}."_".$nodes_id_name{$target_node_id};
 	  }
-	    $nodes_label = $label_edge;
-	    $nodes_color = $color_edge;
+	  $nodes_label = $label_edge;
+	  $nodes_color = $color_edge;
 	    
 	  push @{$out_neighbours[$source_node_id]}, $target_node_id;
 	  push @{$in_neighbours[$target_node_id]}, $source_node_id;
@@ -2153,10 +2161,12 @@ sub to_node_table {
 
 =item B<load_classes($class_file)>
 
-Load the $class_file by adding an array containing having as
+Load the $class_file by adding an array having as
 coordinate the internal index of the nodes and as component the
 class_names. Class names are stored within the attribute cluster_list
 of the graph object.
+Nodes belonging to the clusters are placed within the attribute cluster_node_list of
+the graph object.
 
 Parameters
 
@@ -2174,6 +2184,7 @@ sub load_classes {
   &RSAT::message::TimeWarn("Loading class information", $inputfile) if ($main::verbose >= 2);
   ($main::in) = &RSAT::util::OpenInputFile($inputfile);
   my %cluster_list;
+#   my %cluster_node_list;
   my @nodes_clusters;
   while (<$main::in>) {
 	next if (/^--/); # Skip mysql-like comments
@@ -2200,11 +2211,13 @@ sub load_classes {
         } else {
           &RSAT::message::Warning("Node\t$node_name\tdoes not exist in the graph") if ($main::verbose >= 3);
         }
+#         $cluster_node_list{$node_name}++;
+        
   }
   @cluster_list_array = sort(keys(%cluster_list));
   $self->set_array_attribute("cluster_list", @cluster_list_array);
   $self->set_array_attribute("nodes_clusters", @nodes_clusters);
-
+#   $self->set_array_attribute("cluster_node_list", keys %cluster_node_list);
 }
 
 ################################################################
