@@ -931,10 +931,7 @@ Return the clusters to which the node specified by its name belongs
 
 =cut
 sub get_nodes_clusters {
-    my ($self, $node_name) = @_;
-    my $numId = $self->node_by_name($node_name);
     my @nodes_clusters = $self->get_attribute("nodes_clusters");
-    my @node_clusters = ();
     if (defined($numId) && defined(@{$nodes_clusters[$numId]})) {
       @node_clusters = @{$nodes_clusters[$numId]};
     } else {
@@ -942,6 +939,28 @@ sub get_nodes_clusters {
     }
     return @node_clusters;
 }
+
+
+################################################################
+=pod
+
+=item B<get_nodes_clusters()>
+
+Return the clusters to which the node specified by its name belongs
+
+=cut
+sub get_node_id_clusters {
+  my ($self, $numId, @nodes_clusters) = @_;
+  #my @nodes_clusters = $self->get_attribute("nodes_clusters");
+  #print "SCALAR ".scalar(@nodes_clusters)."\n";
+  if (defined(@{$nodes_clusters[$numId]})) {
+    @node_clusters = @{$nodes_clusters[$numId]};
+  } else {
+    &RSAT::message::Warning("\t","Node",$node_name,"does not belong to any cluster") if ($main::verbose >= 4);
+  }
+  return @node_clusters;
+}
+
 
 ################################################################
 =pod
