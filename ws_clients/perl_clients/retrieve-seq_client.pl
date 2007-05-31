@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
-# retrieve-seq_client_soap-wsdl.pl - Client retrieve-seq using the SOAP::WSDL module
-
+# retrieve-seq_client.pl - Client retrieve-seq using the SOAP::WSDL module
+# and a property file
 
 ################################################################
 ##
@@ -10,7 +10,7 @@
 ##
 ################################################################
 
-#use strict;
+use strict;
 use SOAP::WSDL;
 use Util::Properties;
 #import SOAP::Lite +trace;

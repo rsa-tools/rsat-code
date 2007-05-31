@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# purge-seq_client_wsdl.pl - Client purge-sequence using the SOAP::WSDL module
+# purge-seq_client_soap-wsdl.pl - Client purge-sequence using the SOAP::WSDL module
 
 ################################################################
 ##
@@ -12,9 +12,11 @@
 
 use strict;
 use SOAP::WSDL;
+#import SOAP::Lite+trace;
 
 ## WSDL location
 my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+#my $server = 'http://localhost/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
 
