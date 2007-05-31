@@ -1,5 +1,6 @@
 #!/usr/bin/perl -w
-# purge-seq_client_wsdl.pl - Client purge-sequence using the SOAP::WSDL module
+# purge-seq_client.pl - Client purge-sequence using the SOAP::WSDL module
+# and a property file
 
 ################################################################
 ##
@@ -13,7 +14,7 @@
 use strict;
 use SOAP::WSDL;
 use Util::Properties;
-#import SOAP::Lite;
+#import SOAP::Lite +trace;
 
 ## WSDL location
 my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
@@ -35,12 +36,16 @@ $prop->file_name($property_file);
 $prop->load();
 my %args = $prop->prop_list();
 
+#my $sequence = `cat $args{sequence}`;
+#chomp($sequence);
+
+#$args{sequence} = $sequence;
+
 ## TEMPORARY: replace sequence file by sequence
 $args{sequence} = `cat $args{sequence_file}`;
 #my $args{sequence} = `cat $args{sequence_file}`;
 chomp($args{sequence});
 delete($args{sequence_file});
-
 
 my $output_choice = $args{output_choice} || 'both';
 
@@ -57,19 +62,19 @@ if ($som->fault){  ## Report error if any
 
     ## Report the remote command
     my $command = $results{'command'};
-    print "Server command\n;\t".$command, "\n";
+    print "Command used on the server: ".$command, "\n";
 
     ## Report the result
     if ($output_choice eq 'server') {
 	my $server_file = $results{'server'};
-	print "; Result file on the server: ".$server_file;
+	print "Result file on the server: ".$server_file;
     } elsif ($output_choice eq 'client') {
 	my $result = $results{'client'};
-	print "; Purged sequence(s)\n".$result;
+	print "Purged sequence(s): \n".$result;
     } elsif ($output_choice eq 'both') {
 	my $server_file = $results{'server'};
 	my $result = $results{'client'};
-	print "; Result file on the server\n", ";\t", $server_file;
-	print "; Purged sequence(s)\n".$result;
+	print "Result file on the server: ".$server_file;
+	print "Purged sequence(s): \n".$result;
     }
 }
