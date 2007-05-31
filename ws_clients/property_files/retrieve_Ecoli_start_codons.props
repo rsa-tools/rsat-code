@@ -1,4 +1,4 @@
-output_choice=both
+output=both
 organism='Escherichia_coli_K12'
 query=metA,metB
 all=0
