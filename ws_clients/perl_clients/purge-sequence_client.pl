@@ -10,14 +10,14 @@
 ##
 ################################################################
 
-#use strict;
+use strict;
 use SOAP::WSDL;
 use Util::Properties;
-import SOAP::Lite;
+#import SOAP::Lite;
 
 ## WSDL location
-#my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
-my $server = 'http://localhost/rsat/web_services';
+my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+#my $server = 'http://localhost/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
 
