@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: mask-features,v 1.9 2007/05/08 09:22:09 morgane Exp $
+# $Id: mask-features,v 1.10 2007/06/04 12:13:34 morgane Exp $
 #
 ############################################################
 
@@ -1034,10 +1034,6 @@ sub MaskSequence {
 	## Define a buffer length for each slice of sequence
 	my $buffer = 10000;
 	
-
-	
-	
-	
 	
 	## check that the buffer is at least as long as the region to retrieve
 	if ($buffer >= $length) {
@@ -1068,8 +1064,14 @@ sub MaskSequence {
 	if (($main::out_format eq "raw")&&($#main::regions_ft_ids > 0)) {
 		## make a new file for each sequence
 		if ($main::outfile{output}) {
-			my $seq_name = "output_region".$region_nb;
-			$main::outfile{$seq_name} = $main::outfile{output}.".region".$region_nb.".raw";
+			## keep the original contig ID for naming the new files
+			my $masks = join ("_",@masks);
+			my $seq_name = $contig_id."_ft".$region_nb."_".$masks."_masked";
+			if ($rm){
+				$seq_name.="_repeat_masked";
+			}
+			$seq_name =~ s/\:/\_/g;
+			$main::outfile{$seq_name} = $seq_name.".raw";
 			($raw) = &OpenOutputFile($main::outfile{$seq_name});
 			&RSAT::message::Info("Raw output format: opening new file $main::outfile{$seq_name} ") if ($main::verbose >= 1);
 		}
