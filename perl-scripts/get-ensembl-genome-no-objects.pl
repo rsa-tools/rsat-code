@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-no-objects.pl,v 1.6 2007/05/02 14:46:26 oly Exp $
+# $Id: get-ensembl-genome-no-objects.pl,v 1.7 2007/06/04 10:21:35 rsat Exp $
 #
 # Time-stamp
 #
@@ -84,7 +84,8 @@ package main;
     local $verbose = 0;
     
     ## Connection to the EnsEMBL MYSQL database
-    $ensembl_host = 'ensembldb.ensembl.org';
+#    $ensembl_host = 'ensembldb.ensembl.org';
+    $ensembl_host = 'xserve2.scmbb.ulb.ac.be';
     $ensembl_user = "anonymous";
     $dbname = '';
     $org = '';
@@ -614,7 +615,7 @@ package main;
 #				  push @codingexonfeature, $exonfeature[5];
 #				  push @codingexonfeature, $coding_region_start;
 #				}
-				push @codingfeature, $feature[6];
+				push @codingexonfeature, $feature[6];
 				push @codingexonfeature, "";
 				push @codingexonfeature, $transcript_id;
 				push @codingexonfeature, $gene_id;
@@ -633,7 +634,8 @@ package main;
 #				  push @codingexonfeature, $exonfeature[5];
 #				  push @codingexonfeature, $exonfeature[4];
 #				}
-                                push @codingfeature, $feature[6];
+                                push @codingexonfeature, $feature[6];
+
 				push @codingexonfeature, "";
                                 push @codingexonfeature, $transcript_id;
                                 push @codingexonfeature, $gene_id;
@@ -652,7 +654,7 @@ package main;
 #				  push @codingexonfeature, $coding_region_end;
 #				  push @codingexonfeature, $exonfeature[4];
 #				}
-                                push @codingfeature, $feature[6];
+                                push @codingexonfeature, $feature[6];
 				push @codingexonfeature, "";
                                 push @codingexonfeature, $transcript_id;
                                 push @codingexonfeature, $gene_id;
