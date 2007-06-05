@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: mask-features,v 1.10 2007/06/04 12:13:34 morgane Exp $
+# $Id: mask-features,v 1.11 2007/06/05 20:41:45 morgane Exp $
 #
 ############################################################
 
@@ -272,8 +272,11 @@ package main;
 
     ################################################################
     ## Extract the features that need to be masked
-    &RSAT::message::Info(join("\t", "--- Extracting features to be masked ---")) if ($main::verbose >= 2);
-    our $pos2mask_by_region = &ExtractFeaturesToMask(\@main::masks);  
+    
+    unless (($#main::ft_files == -1)||(-z $main::outfile{'comp_0_sort'})){ ## check that compare-feature file not empty
+    	&RSAT::message::Info(join("\t", "--- Extracting features to be masked ---")) if ($main::verbose >= 2);
+    	our $pos2mask_by_region = &ExtractFeaturesToMask(\@main::masks);  
+    }
 
 	################################################################
     ## Retrieve the non-masked sequence of the region of interest
@@ -281,7 +284,7 @@ package main;
     
     ## Treat each region of interest, included in the input file
     my $region_nb = 0;
-    
+
     foreach my $region_ft_id (@regions_ft_ids) {
   		my $region_ft = $regions_ft->{$region_ft_id};
    		$region_nb ++;
@@ -726,11 +729,13 @@ sub OpenInputContigs{
 	    			## modify the contig_id for use in compare-features
 	    			&RSAT::message::Warning(join("\t", "Changing Region contig id from",
 	    									$ft_contig_id, "to",$contig_id)) if ($main::verbose >= 1);	
-	    			
+	    			  					
 	    			foreach my $region_ft_id (@main::regions_ft_ids) {
-  						my $region_ft = $regions_ft->{$region_ft_id};
+  						my $region_ft = $regions_ft->{$region_ft_id};  				
+  						next unless ($region_ft->{seq_name} eq $ft_contig_id);
     					$region_ft->force_attribute("seq_name", $contig_id);
   					}
+  					
 	    	} else{
 	    			next;	    		
 	    	}
@@ -805,7 +810,6 @@ sub OpenInputContigs{
 sub GetFeaturesOnRegion {
 
     ## process each provided feature files
-    
     foreach my $i (0..$#main::ft_files) {
     	my $j = $i;
     	
@@ -871,10 +875,7 @@ sub ExtractFeaturesToMask {
     my %pos2mask_by_region = ();
      
     ## Only one output from compare-features (as merged if several ones)
-
-    	## check that the file is not empty
     	my $comp_nb_sort = "comp_0_sort"; 
-    	next if (-z $main::outfile{$comp_nb_sort});
     	
     	my %curr2mask_by_region = ();
     	
