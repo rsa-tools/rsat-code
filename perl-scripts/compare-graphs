@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.28 2007/05/29 12:03:01 rsat Exp $
+# $Id: compare-graphs,v 1.29 2007/06/08 09:17:50 rsat Exp $
 #
 ############################################################
 
@@ -19,8 +19,6 @@ Computes the intersection, the union or the difference of two graphs.
 In case more than one arc exist between two nodes, the program removes one of those.
 
 =head1 AUTHORS
-
-Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
 
 Gilles Vanderstocken <gvdstock@ulb.ac.be>
 

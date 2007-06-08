@@ -955,7 +955,10 @@ Return the clusters to which the node specified by its name belongs
 
 =cut
 sub get_nodes_clusters {
+    my ($self, $node_name) = @_;
     my @nodes_clusters = $self->get_attribute("nodes_clusters");
+    my %node_names_id = $self->get_attribute("nodes_name_id");
+    my $numId = $node_names_id{$node_name};
     if (defined($numId) && defined(@{$nodes_clusters[$numId]})) {
       @node_clusters = @{$nodes_clusters[$numId]};
     } else {
@@ -975,8 +978,6 @@ Return the clusters to which the node specified by its name belongs
 =cut
 sub get_node_id_clusters {
   my ($self, $numId, @nodes_clusters) = @_;
-  #my @nodes_clusters = $self->get_attribute("nodes_clusters");
-  #print "SCALAR ".scalar(@nodes_clusters)."\n";
   if (defined(@{$nodes_clusters[$numId]})) {
     @node_clusters = @{$nodes_clusters[$numId]};
   } else {
