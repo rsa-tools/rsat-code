@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.44 2007/06/08 09:17:50 rsat Exp $
+# $Id: compare-classes,v 1.45 2007/06/08 09:36:32 rsat Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -401,7 +401,7 @@ if (($multi_cor eq "nc") || ($multi_cor eq "nt")) {
 if ($verbose) {
     my $done_time = &AlphaDate;
     if ($return_fields{proba}) {
-      printf $out "; %-29s\t%d\n", "; Significance tests actually performed (nt)", $nb_tests;
+      printf $out "; %-29s\t%d\n", "Significance tests actually performed (nt)", $nb_tests;
     }
     print $out "; Job started $start_time\n";
     print $out "; Job done    $done_time\n";
@@ -1407,15 +1407,6 @@ sub CompareClasses {
 	  @{$current_compa{R_only}} = @R_only;
 	  @{$current_compa{Q_only}} = @Q_only;
 	  @{$current_compa{common}} = @common;
-	  print "HASH\n";
-    	  print $compa_key."R_ONLY @{$current_compa{R_only}} SCALAR ".scalar(@{$current_compa->{R_only}})."\n";
-	  print $compa_key."Q_ONLY @{$current_compa{Q_only}} SCALAR ".scalar(@{$current_compa->{Q_only}})."\n";
-	  print $compa_key."COMMON @{$current_compa{common}} SCALAR ".scalar(@{$current_compa->{common}})."\n\n----\n";
-	  print "ARRAY\n";
-    	  print $compa_key."R_ONLY @R_only SCALAR ".scalar(@R_only)."\n";
-	  print $compa_key."Q_ONLY @Q_only SCALAR ".scalar(@Q_only)."\n";
-	  print $compa_key."COMMON @common SCALAR ".scalar(@common)."\n\n----\n";	  
-	  
 #	  @{$R_only{$compa_key}} = @R_only;
 #	  @{$Q_only{$compa_key}} = @Q_only;
 #	  @{$common{$compa_key}} = @common;
