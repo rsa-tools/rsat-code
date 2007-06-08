@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.43 2007/04/16 13:09:28 rsat Exp $
+# $Id: compare-classes,v 1.44 2007/06/08 09:17:50 rsat Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -1102,6 +1102,7 @@ sub CompareClasses {
 
       &RSAT::message::TimeWarn("Treating query class $q") if ($main::verbose >= 4);
       next if (($distinct) && ($r eq $q));
+
       next if (($infile{ref_classes} eq $infile{query_classes} ) && ($r lt $q)) && $triangle;
       my $compa_key = $r."__VERSUS__".$q;
 
@@ -1123,24 +1124,23 @@ sub CompareClasses {
       next if ((defined($lth{'QR'})) && ($Q < $lth{'QR'}));
 
       #### compare query and reference classes
+      my %matching_elements = ();
       foreach my $m (@query_members) {
 	if ($ref_member{$m}) {
 	  push @common, $m; ### elements common to reference and query class
+	  $matching_elements{$m}++;
 	} else {
 	  push @Q_only, $m; ### elements found in the query family only
 	}
       }
- 
+      my @keys = sort keys %matching_elements;
+      
       #### identify elements found in the reference class only
       if ($calc_fields{members}) {
-	  my %matching_elements = ();
-	  foreach my $m (@common) {
-	      $matching_elements->{$m}++;
-	  }
 	  foreach $m (sort($ref_classes{$r}->get_members())) {
-	      unless ($matching_elements->{$m}) {
+	      unless ($matching_elements{$m}) {
 		  push @R_only, $m;
-	      }
+	      } 
 	  }
       }
 
@@ -1404,9 +1404,18 @@ sub CompareClasses {
 
       ## Store members if required
       if ($return_fields{members}) {
-	  @{$current_compa->{R_only}} = @R_only;
-	  @{$current_compa->{Q_only}} = @Q_only;
-	  @{$current_compa->{common}} = @common;
+	  @{$current_compa{R_only}} = @R_only;
+	  @{$current_compa{Q_only}} = @Q_only;
+	  @{$current_compa{common}} = @common;
+	  print "HASH\n";
+    	  print $compa_key."R_ONLY @{$current_compa{R_only}} SCALAR ".scalar(@{$current_compa->{R_only}})."\n";
+	  print $compa_key."Q_ONLY @{$current_compa{Q_only}} SCALAR ".scalar(@{$current_compa->{Q_only}})."\n";
+	  print $compa_key."COMMON @{$current_compa{common}} SCALAR ".scalar(@{$current_compa->{common}})."\n\n----\n";
+	  print "ARRAY\n";
+    	  print $compa_key."R_ONLY @R_only SCALAR ".scalar(@R_only)."\n";
+	  print $compa_key."Q_ONLY @Q_only SCALAR ".scalar(@Q_only)."\n";
+	  print $compa_key."COMMON @common SCALAR ".scalar(@common)."\n\n----\n";	  
+	  
 #	  @{$R_only{$compa_key}} = @R_only;
 #	  @{$Q_only{$compa_key}} = @Q_only;
 #	  @{$common{$compa_key}} = @common;
@@ -1672,9 +1681,13 @@ sub PrintOneComparison {
 
   ## Members
   if ($return_fields{members}) {
-    print $out "\t", join( " ", @{$current_compa->{R_only}}) ;
-    print $out "\t", join( " ", @{$current_compa->{Q_only}}) ;
-    print $out "\t", join( " ", @{$current_compa->{common}}) ;
+    print $out "\t", join( " ", @{$current_compa{R_only}}) ;
+    print $out "\t", join( " ", @{$current_compa{Q_only}}) ;
+    print $out "\t", join( " ", @{$current_compa{common}}) ;
+
+        
+
+    
 #    print $out "\t", join( " ", @{$R_only{$compa_key}}) ;
 #    print $out "\t", join( " ", @{$Q_only{$compa_key}}) ;
 #    print $out "\t", join( " ", @{$common{$compa_key}}) ;
