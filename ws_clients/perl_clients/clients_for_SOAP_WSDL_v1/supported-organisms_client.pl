@@ -50,5 +50,5 @@ if ($som->fault){ ## Report error if any
 
     ## Report the result
     my $result = $results{'client'};
-    print "Gene(s) info(s): \n".$result;
+    print "Supported organisms: \n".$result;
 }
