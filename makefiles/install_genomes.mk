@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.29 2007/01/18 00:22:10 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.30 2007/06/08 19:54:02 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -53,7 +53,7 @@ calibrate_one_organism:
 
 install_one_organism:
 	@echo "Installing organism ${ORG}" 
-	@${MAKE}  one_install_command 
+	@${MAKE} one_install_command 
 
 one_install_command:
 	${MAKE} my_command MY_COMMAND="${INSTALL_CMD}" JOB_PREFIX=install_${ORG}
@@ -85,7 +85,7 @@ install_new_prokaryotes:
 install_one_prokaryote:
 	@echo
 	@echo "${DATE}	Installing prokaryote ${PRO}"
-	@${MAKE} install_one_organism <ORG=${PRO}		\
+	@${MAKE} install_one_organism ORG=${PRO}		\
 		NCBI_DIR=${NCBI_DIR}/Bacteria
 
 ### All the fungi in NCBI genome directory
