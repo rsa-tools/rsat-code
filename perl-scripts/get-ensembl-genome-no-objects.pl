@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-no-objects.pl,v 1.7 2007/06/04 10:21:35 rsat Exp $
+# $Id: get-ensembl-genome-no-objects.pl,v 1.8 2007/06/11 14:13:07 rsat Exp $
 #
 # Time-stamp
 #
@@ -536,11 +536,12 @@ package main;
 		      if ($feature[6] eq "D") {
 			push @utrfeature, "5'UTR-".$transcript_id;
 			push @utrfeature, "5'UTR";
+			push @utrfeature, "5'UTR-".$transcript_id;
                       } else {
 			push @utrfeature, "3'UTR-".$transcript_id;
 			push @utrfeature, "3'UTR";
+			push @utrfeature, "3'UTR-".$transcript_id;
 		      }
-		      push @utrfeature, "";
                       push @utrfeature, $slice_id;
 		      push @utrfeature, $trans->start;
                       push @utrfeature, $coding_region_start - 1;
@@ -555,11 +556,12 @@ package main;
                       if ($feature[6] eq "D") {
                         push @utrfeature, "3'UTR-".$transcript_id;
                         push @utrfeature, "3'UTR";
+                        push @utrfeature, "3'UTR-".$transcript_id;
                       } else {
                         push @utrfeature, "5'UTR-".$transcript_id;
                         push @utrfeature, "5'UTR";
+                        push @utrfeature, "5'UTR-".$transcript_id;
 		      }
-		      push @utrfeature, "";
                       push @utrfeature, $slice_id;
                       push @utrfeature, $coding_region_end + 1;
 		      push @utrfeature, $trans->end;
@@ -606,7 +608,7 @@ package main;
 			    if ($exonfeature[4] < $coding_region_start && $exonfeature[5] > $coding_region_start) {
 				push @codingexonfeature, "Coding-".$exonfeature[0];
 				push @codingexonfeature, "coding_exon";
-				push @codingexonfeature, "";
+				push @codingexonfeature, "Coding-".$exonfeature[0];
 				push @codingexonfeature, $slice_id;
 #				if ($feature[6] eq "D") {
 				  push @codingexonfeature, $coding_region_start;
@@ -625,7 +627,7 @@ package main;
                             if ($exonfeature[4] > $coding_region_start && $exonfeature[5] < $coding_region_end) {
 				push @codingexonfeature, "Coding-".$exonfeature[0];
                                 push @codingexonfeature, "coding_exon";
-				push @codingexonfeature, "";
+				push @codingexonfeature, "Coding-".$exonfeature[0];
                                 push @codingexonfeature, $slice_id;
 #				if ($feature[6] eq "D") {
                                   push @codingexonfeature, $exonfeature[4];
@@ -645,7 +647,7 @@ package main;
 			    if ($exonfeature[4] < $coding_region_end && $exonfeature[5] > $coding_region_end) {
 				push @codingexonfeature, "Coding-".$exonfeature[0];
                                 push @codingexonfeature, "coding_exon";
-				push @codingexonfeature, "";
+				push @codingexonfeature, "Coding-".$exonfeature[0];
                                 push @codingexonfeature, $slice_id;
 #				if ($feature[6] eq "D") {
                                   push @codingexonfeature, $exonfeature[4];
@@ -669,6 +671,7 @@ package main;
 			    $int++;
 			    my @intronfeature = &get_intronfeature($intron);
 			    $intronfeature[0] = "Intron".$int."-".$transcript_id;
+			    $intronfeature[2] = "Intron".$int."-".$transcript_id;
 			    $intronfeature[3] = $slice_id;
 			    push @intronfeature, $gene_id;
 
@@ -1093,7 +1096,7 @@ sub get_exonfeature {
     push @exonfeature, "exon";
     
     ## Exon name
-    push @exonfeature, "";
+    push @exonfeature, $id;
         
     ## Chromosome name.
     push @exonfeature, $exon->slice->seq_region_name();
