@@ -1,0 +1,421 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: random-genome-fragments,v 1.1 2007/06/11 12:09:20 morgane Exp $
+#
+############################################################
+
+use strict;
+
+=pod
+
+=head1 NAME
+
+random-genome-fragments
+
+=head1 DESCRIPTION
+
+Randomly extract genomic fragments from a given organism.
+
+=head1 AUTHORS
+
+morgane@scmbb.ulb.ac.be
+
+=head1 CATEGORY
+
+sequences
+
+=head1 USAGE
+    
+random-genome-fragments -org organism -l length -r repetitions [-o outputfile] [-v # -rm -lf length_file] [..]
+
+=head1 OUTPUT FORMAT
+
+Sequences are exported in any format supported by RSAT. 
+
+To have the list of supported output sequence formats, type the following
+command: I<convert-seq -h>
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::organism;
+use Data::Dumper;
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    my $start_time = &AlphaDate();
+
+    %main::outfile = ();
+    %main::infile = ();
+
+    $main::verbose = 0;
+    #$main::out = STDOUT;
+    $main::out_format = "fasta";
+    $main::rm = 0;
+    @main::lengths =();
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+    
+    ################################################################
+	## File with the specification of sequence lengths
+	if ($main::infile{length_file}) {
+    	my ($len_handle, $input_dir) = &OpenInputFile($main::infile{length_file});
+
+		 while (my $line = <$len_handle>) {
+    		chomp($line);
+			next if ($line =~ /^;/);
+			next if ($line =~ /^--/);
+			next if ($line =~ /^#/);
+			next unless ($line =~ /\S/);
+			my @fields = split ("\t",$line);
+			my $length = $fields[1];
+			if (&IsNatural($length)) {
+			  push @main::lengths, $length;
+			}
+    	}
+    	close $len_handle;
+    	$main::nb_fragment = $#main::lengths +1;
+	} else {
+
+    	#### check sequence lengths and repetitions
+    	unless (&IsNatural($main::length_fragment)) {
+		&RSAT::error::FatalError ("You should specify the sequence length");
+    	} 
+    
+    	unless ($main::nb_fragment >=1) {
+		&RSAT::error::FatalError( "Number of repetitions should be >=1");
+    	}
+	}
+
+    ################################################################
+    ## Check argument values
+    
+    ## Organism
+	unless ($main::organism_name) {
+    	&RSAT::error::FatalError("You should select an organism.");
+	}
+
+	our $organism = new RSAT::organism();
+	$organism->check_name($main::organism_name);
+	$organism->set_attribute("name", $main::organism_name);
+	
+	## Repeat masked version
+	if ($main::rm) {
+		my %args = ('rm' => 1);
+		$organism->OpenContigs($main::organism_name,"","","",%args);
+	
+	} else {
+		$organism->OpenContigs($main::organism_name);
+	}
+	
+	## get all contigs name 
+	our %contigs= $organism->get_contigs();
+	
+	our @contig_names = ();
+
+	foreach my $contig_name (keys(%contigs)) {
+	#	unless ($contig_name =~ /:MT:/) { #Do not take into account mitochondrial genome.
+			
+			## store contig name
+			push (@contig_names, $contig_name);
+	#	}
+	}
+	
+	################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+    
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+	################################################################	
+	## get random positions
+	
+	for (my $i=1; $i<=$main::nb_fragment; $i++) {
+		
+		## 1- get a random contig
+		my $rand_contig = int(rand ($#contig_names+1));
+		my $rand_contig_name = $contig_names[$rand_contig];
+		
+		## 2 - get contig length, and calculate last possible position to have
+		## a fragment of the desired length
+		my $contig_length = $contigs{$rand_contig_name}->get_length();
+		
+		my $rand_fragment_size;
+		if ($main::length_fragment) {
+			$rand_fragment_size = $main::length_fragment;
+		}	else {
+			$rand_fragment_size = $main::lengths[$i-1];
+		}
+		my $contig_last_rand_pos = $contig_length - $rand_fragment_size;
+		
+		## 3 - get a random start position
+		my $rand_start = int(rand ($contig_last_rand_pos));
+		## calculate end position
+		my $rand_end = $rand_start + $rand_fragment_size -1;
+		
+		## 4- rand strand
+		my @strands = ("D","R");
+		my $rand_strand = $strands[rand @strands];
+		
+		my $seq_id = "rand_".$i;
+		
+		&RSAT::message::Info(join ("\t", "Random fragment", $seq_id, $rand_contig_name,$rand_start,$rand_end,$rand_strand) )
+		if ($main::verbose >= 2);
+		
+		    
+    	################################################################
+   		## Print output
+		my $current_seq = $contigs{$rand_contig_name}->get_sequence($rand_start,$rand_end,$rand_strand);
+		my @comments = join("; ",
+							"random sequence $i of $main::nb_fragment",
+							"length: $rand_fragment_size",
+							"$rand_contig_name",
+							"$rand_start:$rand_end:$rand_strand"
+							);
+		
+		&PrintNextSequence($main::out, $main::out_format,0, $current_seq, $seq_id, @comments);
+	}
+
+
+
+    
+
+    
+
+    
+    
+    ################################################################
+    ## Finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $main::out "; Job started $start_time\n";
+	print $main::out "; Job done    $done_time\n";
+    }
+    
+     
+    ################################################################
+    ## Close output stream
+    close $main::out if ($main::outfile{output});
+    
+    
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+	    
+=pod
+
+=item B<-oformat output_format>
+
+Sequence output format. Default is fasta. To convert to another supported sequence 
+format, type the following command: I<convert-seq -h>
+
+=cut
+	} elsif ($arg eq "-oformat") {
+	    $main::out_format = shift(@arguments);
+
+	
+		    ### organism
+=pod
+
+=item B<-org organism_name>
+
+Specifies an organism, installed in RSAT.
+To have the list of supported organism in RSAT, type the following
+command: I<supported-organism>
+
+=cut
+	} elsif ($arg eq "-org") {
+	    $main::organism_name = shift(@arguments);
+
+		    ### repeat_masked
+=pod
+
+=item	B<-rm>
+
+Will use the version of genome with repeat masked
+
+
+=cut
+	} elsif ($arg eq "-rm") {
+	    $main::rm = 1;
+	    
+	    
+		    ### nb of fragments
+=pod
+
+=item	B<-r repetitions>
+
+Allows to generate a set r of sequences, each of length l.
+
+
+=cut
+	} elsif ($arg eq "-r") {
+	    $main::nb_fragment = shift(@arguments);
+
+		    ### length of fragments
+=pod
+
+=item	B<-l sequence_length>
+
+Sequence length of random genomic fragments.
+
+=cut
+	} elsif ($arg eq "-l") {
+	    $main::length_fragment = shift(@arguments);
+
+=pod
+
+=item	B<-lf length file>
+
+Allows to generate random sequences with the same
+lengths as a set of reference sequences. The sequence
+length file can be obtained with the command I<sequence-lengths>
+		
+The length file contains two columns : 
+
+=over
+
+=item -sequence ID (ignored)
+
+=item -sequence length
+
+=back
+
+=cut
+	} elsif ($arg eq "-lf") {
+	    $main::infile{length_file} = shift(@arguments);
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; random-genome-fragments ";
+    &PrintArguments($main::out);
+    print $main::out "; Number of random fragments $main::nb_fragment\n";
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=item random-genes
+
+
+=cut
