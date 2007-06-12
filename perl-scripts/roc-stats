@@ -49,7 +49,7 @@ my $options ="";
 my $help="";
 my $input="";
 my $output="";
-my %col=(id=>3, # column with id
+my %col=(id=>0, # column with id
 	 status=>5, # column with status
 	 score=>0); # column with score
 my %status=();
@@ -152,7 +152,7 @@ my %supported_param=(
 		     "Sp"=>"TN/TN+FP",
 		     "PPV"=>"TP/TP+FP",
 		     "NPV"=>"TN/TN+FN",
-		     "FPR"=>"FP/TP+FP",
+		     "FPR"=>"FP/TN+FP",
 		     "Acc"=>"sqrt(Sn*PPV)",
 		     "QnotR"=>"QnotR",
 		     "notQR"=>"RnotQ",
@@ -215,7 +215,7 @@ exit(0);
 
 =over
 
-=item B<id>
+=item B<id> (optional)
     
     Each item from this column must be unique. 
     This can specify a link between two nodes (in the case of comparison of Query and Reference graphs).
@@ -270,20 +270,24 @@ sub getId2score{
 			      );
       die;
   }
-  
+
+  my $i=0; # line counter
   foreach my $line (@lines){
       &RSAT::message::Warning("line : ",$line) if ($main::verbose >= 10);
       my @fields = split(/\t/,$line);
+      $i++;
 
-      # Careful of doublons
-      my $id=$fields[$col{id}-1];
-      if ($id_score{$id}){
-
-	## 
-	  &RSAT::message::Warning(join(" ","Warning ! This id", $id," is a doublon"))if ($main::verbose >= 0);;
-	  die unless ($nodie);
+      # Get id
+      my $id=$i;
+      if ($col{id}!=0){
+	  $id = $fields[$col{id}-1];
+	  if ($id_score{$id}){
+	      # Careful of doublons
+	      &RSAT::message::Warning(join(" ","Warning ! This id", $id," is a doublon"))if ($main::verbose >= 0);;
+	      die unless ($nodie);
+	  }
       }
-
+      
       # get status
       if($col{status} != 0){
 	  my $status = $fields[$col{status}-1];
@@ -517,6 +521,10 @@ sub ExportScores{
 	  $data .="\t".$sensitivity{$Qscore} if ($return_params{Sn});
 	  $data .="\t".$specificity{$Qscore} if ($return_params{Sp});
 	  $data .="\t".$ppv{$Qscore} if ($return_params{PPV});
+	  if ($return_params{PPV}){
+	      $data .="\t";
+	      $data .= 1-$ppv{$Qscore};
+	  }
 	  $data .="\t".$npv{$Qscore} if ($return_params{NPV});
 	  $data .="\t".$fpr{$Qscore} if ($return_params{FPR});
 	  $data .="\t".$accuracy_3{$Qscore} if ($return_params{Acc});
@@ -563,6 +571,7 @@ sub getHeader{
   $header .="\tSn" if ($return_params{Sn});
   $header .="\tSp" if ($return_params{Sp});
   $header .="\tPPV" if ($return_params{PPV});
+  $header .="\t1-PPV" if ($return_params{PPV});
   $header .="\tNPV" if ($return_params{NPV});
   $header .="\tFPR" if ($return_params{FPR});
   $header .="\tAcc" if ($return_params{Acc});
@@ -910,11 +919,12 @@ sub getStatsByScore{
 	}
 	
 	#### Calculate the False Positive Rate (FPR)
-	#### (FPR = FP /(TP+FP))
+	#### (FPR = FP /(TN+FP))
 	$fpr{$score}="NA";
 	if ($total_query!=0){
 	    $fpr{$score} = sprintf "$number_format",(($false_positives{$score})/
-					   ($total_ref));
+					   ($Nfp)); # ?
+#					   ($total_ref)); # ?
 	}
 	
 	&RSAT::message::Warning(join("\t",
@@ -925,7 +935,7 @@ sub getStatsByScore{
 				       "FPR",$fpr{$score},
 				       "NPV",$npv{$score},
 				       )) if ($main::verbose >= 3);
-	
+
 	################################################################
 	#### For each score , calculate the accuracies and ACP
 	$accuracy_1{$score}="NA";
@@ -1160,11 +1170,11 @@ sub getStatsByScore_bis{
 	}
 	
 	#### Calculate the False Positive Rate (FPR)
-	#### (FPR = FP /(TP+FP))
+	#### (FPR = FP /(TN+FP))
 	$fpr{$score}="NA";
 	if ($total_query!=0){
 	    $fpr{$score} = sprintf "$number_format",(($false_positives{$score})/
-					   ($total_query));
+					   ($total_query)); # ?
 	}
 	
 	&RSAT::message::Warning(join("\t",
@@ -1365,7 +1375,7 @@ my %desc_param=(
 		"Sp"=>"TN/TN+FP",
 		"PPV"=>"TP/TP+FP",
 		"NPV"=>"TN/TN+FN",
-		"FPR"=>"FP/TP+FP",
+		"FPR"=>"FP/TN+FP",
 		"accArit1"=>"(Sn+Sp)/2",
 		"accGeom1"=>"sqrt(Sn*Sp)",
 		"accArit2"=>"(PPV+NPV)/2",
@@ -1584,7 +1594,7 @@ Input file.
 
 Output file.
 
-=item --col [id|status|score]=<col_number> (default:id=3,status=5,score=0)
+=item --col [id|status|score]=<col_number> (default:id=0,status=5,score=0)
 
 Specify the column for the id, status or score.(e.g. --col id=3)
 
