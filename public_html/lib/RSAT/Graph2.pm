@@ -190,42 +190,133 @@ returns a randomized graph having the same number of edges, each node having the
 
 =cut
 sub randomize {
-    
-    my ($self) = @_;
+
+    my ($self, $self_loop, $duplicated, $directed) = @_;
     # get arcs and nodes of $graph
     my @arcs = $self->get_attribute("arcs");
     my %nodes_name_id = $self->get_attribute("nodes_name_id");
+    my $nodes_number = scalar keys %nodes_name_id;
+    my $req_edges = scalar @arcs;
     my %nodes_label = $self->get_attribute("nodes_label");
     my %nodes_color = $self->get_attribute("nodes_color");
+    my $max_arc_number;
+    
+    ## Computation of the maximum number of edges
+    if (!$duplicated) { 
+      if (!$directed && !$self_loop) {
+        $max_arc_number = ($nodes_number*($nodes_number-1))/2;
+      } elsif ($directed && $self_loop) {
+        $max_arc_number = ($nodes_number*$nodes_number);
+      } elsif ($directed && !$self_loop) {
+        $max_arc_number = ($nodes_number*($nodes_number-1));
+      } elsif (!$directed && $self_loop) {
+        $max_arc_number = ($nodes_number*($nodes_number+1))/2;
+      }
+      if ($max_arc_number < $req_edges) {
+        &RSAT::error::FatalError("\t","More requested edges than possible edges", "requested", $req_edges, "available", scalar $max_arc_number);
+      }
+    }
     
     # create a new graph object;
     my $rdm_graph = new RSAT::Graph2;
     my @rdm_graph_array = ();
-    
-    # randomize an array having the same length as scalar (@arcs);
-    my @arcs_size = 0 .. (scalar(@arcs)-1);
-    my @shuffled_arcs_size = shuffle(@arcs_size);
-    # create a randomized array
+    # graph containing the non relevant edges (self-loop, ...)
+    my @rdm_graph_array_err = (); # graph containing the non relevant edges (self-loop, ...)
+    my %seen = ();
+    my @arcs_to_shuffle = ();
     for (my $i = 0; $i < scalar(@arcs); $i++) {
-      my $source = $arcs[$i][0];
-      my $target = $arcs[$shuffled_arcs_size[$i]][1];
-      my $label = join("_", $source, $target);
-      if (&RSAT::util::IsReal($arcs[$i][2])) {
-        $label = $arcs[$i][2];
-      }
-      my $arc_color = $arcs[$i][3];
-      my $source_id = $nodes_name_id{$source};
-      my $target_id = $nodes_name_id{$target};
-      my $source_color = $nodes_color{$source};
-      my $target_color = $nodes_color{$target};
-      $rdm_graph_array[$i][0] = $source;
-      $rdm_graph_array[$i][1] = $target;
-      $rdm_graph_array[$i][2] = $label;
-      $rdm_graph_array[$i][3] = $source_color;
-      $rdm_graph_array[$i][4] = $target_color;
-      $rdm_graph_array[$i][5] = $arc_color;
+      $arcs_to_shuffle[$i][0] = $arcs[$i][0];
+      $arcs_to_shuffle[$i][1] = $arcs[$i][1];
+      $arcs_to_shuffle[$i][2] = $arcs[$i][2];
+      $arcs_to_shuffle[$i][3] = $arcs[$i][3];
     }
-    
+    my $invalid = 0;
+    my $invalid_old = 0;
+    my $non_decreasing_count = 0;
+    my $loopcount = 0;
+    while (scalar(@arcs) != scalar(@rdm_graph_array)) {
+      $loopcount++;
+      my @arcs_size = 0 .. (scalar(@arcs_to_shuffle)-1);
+      my @shuffled_arcs_size = shuffle(@arcs_size);
+      for (my $i = 0; $i < scalar(@arcs_to_shuffle); $i++) {
+        my $source = $arcs_to_shuffle[$i][0];
+        my $target = $arcs_to_shuffle[$shuffled_arcs_size[$i]][1];
+        my $label = join("_", $source, $target);
+        if (&RSAT::util::IsReal($arcs_to_shuffle[$i][2])) {
+          $label = $arcs[$i][2];
+        }
+        my $arc_color = $arcs[$i][3];
+        my $source_id = $nodes_name_id{$source};
+        my $target_id = $nodes_name_id{$target};
+        my $source_color = $nodes_color{$source};
+        my $target_color = $nodes_color{$target};
+        my $interaction1 = join("_",$source,$target);
+        my $interaction2 = $interaction1;
+        if (!$directed) {
+          $interaction2 = join("_",$target,$source);
+        }
+        if ((!$self_loop && ($source_id eq $target_id)) || (!$duplicated && ($seen{$interaction1} || $seen{$interaction2}))) {
+          $rdm_graph_array_err[$invalid][0] = $source;
+          $rdm_graph_array_err[$invalid][1] = $target;
+          $rdm_graph_array_err[$invalid][2] = $label;
+          $rdm_graph_array_err[$invalid][3] = $source_color;
+          $rdm_graph_array_err[$invalid][4] = $target_color;
+          $rdm_graph_array_err[$invalid][5] = $arc_color;
+          $invalid++;
+          next;
+        } 
+        $cpt = scalar(@rdm_graph_array);
+        $rdm_graph_array[$cpt][0] = $source;
+        $rdm_graph_array[$cpt][1] = $target;
+        $rdm_graph_array[$cpt][2] = $label;
+        $rdm_graph_array[$cpt][3] = $source_color;
+        $rdm_graph_array[$cpt][4] = $target_color;
+        $rdm_graph_array[$cpt][5] = $arc_color;
+        $seen{$interaction1}++;
+        $seen{$interaction2}++;
+      }
+      @arcs_to_shuffle = ();
+      for (my $j = 0; $j < $invalid; $j++) {
+        $arcs_to_shuffle[$j][0] = $rdm_graph_array_err[$j][0];
+        $arcs_to_shuffle[$j][1] = $rdm_graph_array_err[$j][1];
+        $arcs_to_shuffle[$j][2] = $rdm_graph_array_err[$j][2];
+        $arcs_to_shuffle[$j][3] = $rdm_graph_array_err[$j][3];
+      }
+      my $val = (int (scalar(@arcs_to_shuffle))/30)+1;
+      if ($invalid == $invalid_old) {
+        ## if the number of invalid edges did not decrease in the three 
+        ## last shuffling, a 30d of the number of the remaining arcs to shuffle ((scalar(@arcs_to_shuffle))/30))
+        ## are removed from the already shuffled arcs (@rdm_graph_array) and added to the 
+        ## arcs that need to be shuffled again 
+        ## the arcs are removed from the %seen hash
+        $non_decreasing_count++;
+        if ($non_decreasing_count >= 3) {
+          @to_remove = @rdm_graph_array[0..$val-1];
+          splice(@rdm_graph_array, 0, $val);
+          for (my $z = 0; $z < scalar(@to_remove); $z++) {
+            my $label1 = join("_", $to_remove[$z][0], $to_remove[$z][1]);
+            delete $seen{$label1};
+            if ($directed) {
+              my $label2 = join("_", $to_remove[$z][1], $to_remove[$z][0]);
+              delete $seen{$label2};
+            }
+            $arcs_to_shuffle[$z+$invalid][0] = $to_remove[$z][0];
+            $arcs_to_shuffle[$z+$invalid][1] = $to_remove[$z][1];
+            $arcs_to_shuffle[$z+$invalid][2] = $to_remove[$z][2];
+            $arcs_to_shuffle[$z+$invalid][3] = $to_remove[$z][3];
+          }
+          $invalid += $val;
+        }
+      } else {
+        $non_decreasing_count = 0;
+      }
+      if ($main::verbose >= 3) {
+        &RSAT::message::Info("\t",$invalid, "arcs invalid... Shuffling procedure starts again on those arcs", $loopcount, "iteration") if ($main::verbose >= 3);
+      }
+      $invalid_old = $invalid;
+      $invalid = 0;
+      @rdm_graph_array_err = ();
+    }
     $rdm_graph->load_from_array(@rdm_graph_array);
     my %rdm_nodes_name_id = $rdm_graph->get_attribute("nodes_name_id");
     
@@ -242,7 +333,6 @@ sub randomize {
           $rdm_nodes_id_name{$node_id} = $node_name;
           $rdm_nodes_label{$node_id} = $node_label;
           $rdm_nodes_color{$node_id} = $node_color;
-          
         }
       }
       $rdm_graph->set_hash_attribute("nodes_id_name", %rdm_nodes_id_name);
