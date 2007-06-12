@@ -607,6 +607,7 @@ sub GnuPlotEPS {
 			$title = '\n'.$title2;
 		}
 		$title = $title1.$title;
+		$title =~ s/_/-/g;
 		$gnuplot_cmd .= 'set title "'.$title.'" font big'."\n";
 	}
 	
@@ -617,6 +618,7 @@ sub GnuPlotEPS {
 			$x_legend = '\n'.$x_legend2;
 		}
 		$x_legend = $x_legend1.$x_legend;
+		$x_legend =~ s/_/-/g;
 		$gnuplot_cmd .= 'set xlabel "'.$x_legend.'" font big'."\n";
 	}
 	
@@ -626,13 +628,20 @@ sub GnuPlotEPS {
 			$y_legend = '\n'.$y_legend2;
 		}
 		$y_legend = $y_legend1.$y_legend;
+		$y_legend =~ s/_/-/g;
 		$gnuplot_cmd .= 'set ylabel "'.$y_legend.'" font big'."\n";
 	}
 	
+	## default linewidth
+	$lw = 4;
+	## default pointsize
+	$gnuplot_cmd .= "set pointsize ".($point_size/2)."\n";
+	
 	## tics
 	$gnuplot_cmd .= "set tics font big\n";
+	
 	## grid
-	$gnuplot_cmd .= "set grid\n";
+	$gnuplot_cmd .= "set grid ".($lw-1)."\n";
 	
 	## x axis
 	if (($x_axis_min ne "ND") || ($x_axis_max ne "ND")) {
@@ -697,10 +706,7 @@ sub GnuPlotEPS {
 			$gnuplot_cmd .= "set key autotitle columnheader samplen 1\n";	
 	}
 	
-	## default linewidth
-	$lw = 3;
-	## default pointsize
-	$gnuplot_cmd .= "set pointsize ".($point_size/2)."\n";
+
 	
 	## colors
 	&GnuplotPalette();
@@ -708,7 +714,7 @@ sub GnuPlotEPS {
     @color_list = ();
 	push @color_list, $blue;
 	push @color_list, $green_175;
-	push @color_list, $pink;
+	push @color_list, $champagne;
 	push @color_list, $cyan_200;
 	push @color_list, $orange;
 	push @color_list, $violet;
@@ -717,7 +723,7 @@ sub GnuPlotEPS {
 	push @color_list, $black;
 	push @color_list, $red;
 	push @color_list, $yellow_225;
-	push @color_list, $cyan;
+	push @color_list, $cyan_128;
 	push @color_list, $pistache;
 	push @color_list, $magenta;
 	push @color_list, $green;
