@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.9 2007/05/10 12:18:55 rsat Exp $
+# $Id: random-graph,v 1.10 2007/06/12 14:54:29 rsat Exp $
 #
 ############################################################
 
@@ -167,8 +167,8 @@ package main;
       &RSAT::error::FatalError("\t", "You must specify a randomization type.");
     } elsif (($random_type eq "node_degree" || $random_type eq "node_degree_distrib" || $random_type eq "ER") && !exists($main::infile{input})) {
       &RSAT::error::FatalError("\t", "You must specify an input graph when using randomization type", $random_type);
-    } elsif (($random_type eq "node_degree" || $random_type eq "node_degree_distrib") && ($duplicated || $self || $directed || $max_degree > 0)) {
-      &RSAT::error::FatalError("\t", "Option -duplicate, -self, -max_degree and -directed are not compatible with randomization type", $random_type);
+    } elsif (($random_type eq "node_degree" || $random_type eq "node_degree_distrib") && $max_degree > 1) {
+      &RSAT::error::FatalError("\t", "Option -max_degree are not compatible with randomization type", $random_type);
     }
 
     ################################################################
@@ -208,15 +208,17 @@ package main;
     if ($random_type eq 'ER') {
       $req_edges = scalar ($graph->get_attribute("arcs"));
       $req_nodes = scalar @nodes;
-      ## calculate the mean and the sd deviation of the weights
+      ## calculate the mean and the sd deviation of the weights if wcol is available
       my @arcs =  $graph->get_attribute("arcs");
       for (my $i = 0; $i < scalar(@arcs); $i++) {
         push @weights, $arcs[$i][2];
       }
-      my %summary = &summary(@weights);
-      $mean = $summary{mean};
-      $sd = $summary{sd};
-      &RSAT::message::Info("Mean weight of the edges",$mean,"with deviation",$sd) if ($main::verbose >= 2);
+      if ($weight_col > 0) {
+        my %summary = &summary(@weights);
+        $mean = $summary{mean};
+        $sd = $summary{sd};
+        &RSAT::message::Info("Mean weight of the edges",$mean,"with deviation",$sd) if ($main::verbose >= 2);
+      }
     }
       
     ################################################################
@@ -242,9 +244,12 @@ package main;
         my $nodes_ref = \@nodes;
         $rdm = $graph->create_random_graph($nodes_ref, $req_nodes, $req_edges, $self, $duplicated, $directed, $max_degree, $mean, $sd, $normal, @weights);
       } elsif ($random_type eq 'node_degree') {
-        $rdm = $graph->randomize();
+        $rdm = $graph->randomize($self, $duplicated, $directed);
       } elsif ($random_type eq 'node_degree_distrib') {
         $rdm = $graph->random_graph_degree_distrib();
+        if (!$self || !$duplicated) {
+          $rdm = $graph->randomize($self, $duplicated, $directed);
+        }
       }
       ## Print verbose
       &Verbose() if ($main::verbose);
@@ -566,7 +571,7 @@ weights the input graph.
 
 =item B<-duplicate>
 
-Specifies whether more than one edge may link two nodes.
+Specifies whether more than one edge may link two nodes. (by default, duplicated edges are not allowed)
 
 =cut
 	    	    
@@ -575,7 +580,7 @@ Specifies whether more than one edge may link two nodes.
 =pod
 =item B<-self>
 
-Allows self loops (by default, self loops are not permitted)
+Allows self loops (by default, self loops are not allowed)
 
 
 =cut	    
