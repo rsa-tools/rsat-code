@@ -56,7 +56,7 @@ my %status=();
 my %ci=();
 my $score_format="score";
 my %thr=();
-my $param2return="TP,FP,FN,Sn,PPV,FPR,Acc";#,QnotR,notQR";
+my $param2return="TP,FP,FN,Sn,PPV,1-PPV,FPR,Acc,F1";#,QnotR,notQR";
 my $roc3D="";
 my $nodie=1;
 my $number_format = "%.3f";
@@ -151,17 +151,23 @@ my %supported_param=(
 		     "Sn"=>"TP/TP+FN",
 		     "Sp"=>"TN/TN+FP",
 		     "PPV"=>"TP/TP+FP",
+		     "1-PPV"=>"FP/TP+FP",
 		     "NPV"=>"TN/TN+FN",
 		     "FPR"=>"FP/TN+FP",
 		     "Acc"=>"sqrt(Sn*PPV)",
 		     "QnotR"=>"QnotR",
 		     "notQR"=>"RnotQ",
-		     "AUC"=>"Area Under the Curve"
+		     "AUC"=>"Area Under the Curve",
+		     "F1"=>"2(Sn*PPV)/(PPV+Sn)"
 		     );
 my %param2return=();
+my $description="; Statistics parameters\n";
 foreach my $p (split /,/,$param2return){
     if ($supported_param{$p}){
 	$param2return{$p}=1;
+	if ($main::verbose >= 1){
+	    $description .= join("\t",";",$p,$supported_param{$p})."\n";
+	}
     } else {
 	&RSAT::message::Warning(join(" ","This output parameter",$p," is not supported. Supported parameters :",join(",",keys %supported_param))); 
 	die;
@@ -182,7 +188,10 @@ my @datas=();
 if  ($score_format eq "Q::R"){ # use two scores (ROC 3D)
     @datas = &getStatsByAllScores($id2score,\%ci,\%thr,\%param2return,$output);
 }elsif ($col{score}==0){ 
-    @datas = &getConfusionTable($id2score);
+    @datas = &getConfusionTable($id2score,\%param2return);
+    &write_file($output,@datas) if ($output);
+    &RSAT::message::Warning("Job done.");
+    exit(0);
 }else{
     @datas = &ExportScores($output,\%param2return,undef,$score_format,&getStatsByScore($id2score,'score',$ci{score},$thr{score},\%param2return,$output));
 }
@@ -190,6 +199,7 @@ if  ($score_format eq "Q::R"){ # use two scores (ROC 3D)
 #### Export results in output file
 if ($output){
     my $header = &getHeader(\%param2return,$score_format);
+    $header = $description."\n".$header if ($main::verbose>=1);
     &write_file($output,$header,@datas);
 }    
 
@@ -475,6 +485,7 @@ sub ExportScores{
   my $accuracy_2=shift;
   my $accuracy_3=shift;
   my $ACP=shift;
+  my $f1=shift;
   my $Query_not_Ref=shift;
   my $NnotQR=shift;
 
@@ -493,9 +504,10 @@ sub ExportScores{
   my %accuracy_2=%{$accuracy_2};
   my %accuracy_3=%{$accuracy_3};
   my %ACP=%{$ACP};
+  my %f1=%{$f1};
   my %Query_not_Ref=%{$Query_not_Ref};
   my @datas =();
-  
+
   if ($return_params{TP}||
       $return_params{FP}||
       $return_params{FN}||
@@ -504,8 +516,10 @@ sub ExportScores{
       $return_params{Sp}||
       $return_params{FPR}||
       $return_params{PPV}||
+      $return_params{1-PPV}||
       $return_params{NPV}||
       $return_params{Acc}||
+      $return_params{F1}||
       $return_params{ACP}||
       $return_params{QnotR}||
       $return_params{notQR}
@@ -521,13 +535,14 @@ sub ExportScores{
 	  $data .="\t".$sensitivity{$Qscore} if ($return_params{Sn});
 	  $data .="\t".$specificity{$Qscore} if ($return_params{Sp});
 	  $data .="\t".$ppv{$Qscore} if ($return_params{PPV});
-	  if ($return_params{PPV}){
+	  if ($return_params{"1-PPV"}){
 	      $data .="\t";
 	      $data .= 1-$ppv{$Qscore};
 	  }
 	  $data .="\t".$npv{$Qscore} if ($return_params{NPV});
 	  $data .="\t".$fpr{$Qscore} if ($return_params{FPR});
 	  $data .="\t".$accuracy_3{$Qscore} if ($return_params{Acc});
+	  $data .="\t".$f1{$Qscore} if ($return_params{F1});
 	  $data .="\t".$ACP{$Qscore} if ($return_params{ACP});
 	  $data .="\t".$Query_not_Ref{$Qscore} if ($return_params{QnotR});
 	  $data .="\t".$NnotQR if ($return_params{notQR});
@@ -564,10 +579,10 @@ sub getHeader{
     @score_names=("Rscore","Qscore");
   }
   my $header = "#".join("\t",@score_names);
-  $header .="\tTP" if ($return_params{TP});
-  $header .="\tFP" if ($return_params{FP});
-  $header .="\tTN" if ($return_params{TN});
-  $header .="\tFN" if ($return_params{FN});
+  $header .="\tTPcum" if ($return_params{TP});
+  $header .="\tFPcum" if ($return_params{FP});
+  $header .="\tTNcum" if ($return_params{TN});
+  $header .="\tFNcum" if ($return_params{FN});
   $header .="\tSn" if ($return_params{Sn});
   $header .="\tSp" if ($return_params{Sp});
   $header .="\tPPV" if ($return_params{PPV});
@@ -576,6 +591,7 @@ sub getHeader{
   $header .="\tFPR" if ($return_params{FPR});
   $header .="\tAcc" if ($return_params{Acc});
   $header .="\tACP" if ($return_params{ACP});
+  $header .="\tF1" if ($return_params{F1});
   $header .="\tQnotR" if ($return_params{QnotR});
   $header .="\tnotQR" if ($return_params{notQR});
   &RSAT::message::Warning($header) if ($main::verbose >= 5);
@@ -842,6 +858,11 @@ sub getStatsByScore{
     my %true_negatives=();
     my %false_positives=();
     my %Query_not_Ref=();
+    my %accuracy_1=();
+    my %accuracy_2=();
+    my %accuracy_3=();
+    my %f1=();
+    my %ACP=();
 
     #### total references and total query
     my $total_ref = 0;
@@ -891,14 +912,14 @@ sub getStatsByScore{
 	#### (Sn = TP / (TP+FN))
 	$sensitivity{$score} = "NA";
 	if ($total_ref!=0){
-	    $sensitivity{$score} = sprintf "$number_format",($true_positives{$score}/$total_ref);
+	    $sensitivity{$score} = ($true_positives{$score}/$total_ref);
 	}
 	
 	#### Calculate Specificity 
 	#### (Sp = TN / (TN+FP))
 	$specificity{$score} = "NA";
 	if ($true_negatives{$score}+$false_positives{$score}!=0){
-	    $specificity{$score} = sprintf "$number_format",(($true_negatives{$score})/
+	    $specificity{$score} = (($true_negatives{$score})/
 						   ($true_negatives{$score}+$false_positives{$score}));
 	}
 	
@@ -906,7 +927,7 @@ sub getStatsByScore{
 	#### (PPV = TP /(TP+FP))
 	$ppv{$score}="NA";
 	if ($total_query!=0){
-	    $ppv{$score} = sprintf "$number_format",(($true_positives{$score})/
+	    $ppv{$score} = (($true_positives{$score})/
 					   ($total_query));
 	}
 	
@@ -914,7 +935,7 @@ sub getStatsByScore{
 	#### (NPV = TN /(TN+FN))
 	$npv{$score} = "NA";
 	if ($true_negatives{$score} + $false_negatives{$score}!=0){
-	    $npv{$score} = sprintf "$number_format",(($true_negatives{$score})/
+	    $npv{$score} = (($true_negatives{$score})/
 					   ($true_negatives{$score} + $false_negatives{$score}));
 	}
 	
@@ -922,7 +943,7 @@ sub getStatsByScore{
 	#### (FPR = FP /(TN+FP))
 	$fpr{$score}="NA";
 	if ($total_query!=0){
-	    $fpr{$score} = sprintf "$number_format",(($false_positives{$score})/
+	    $fpr{$score} = (($false_positives{$score})/
 					   ($Nfp)); # ?
 #					   ($total_ref)); # ?
 	}
@@ -941,6 +962,7 @@ sub getStatsByScore{
 	$accuracy_1{$score}="NA";
 	$accuracy_2{$score}="NA";
 	$accuracy_3{$score}="NA";
+	$f1{$score}="NA";
 	$ACP{$score}="NA";
 	
 	if ($sensitivity{$score} ne "NA"){
@@ -951,6 +973,8 @@ sub getStatsByScore{
 	    if ($ppv{$score} ne "NA"){
 		#### Calculate Accuracy (average of PPV and Sn)
 		$accuracy_3{$score}= sprintf "$number_format",(sqrt($ppv{$score}*$sensitivity{$score}));
+		# calculate F1 measure (Harmonique mean)
+		$f1{$score}=sprintf "$number_format", ((2*$ppv{$score}*$sensitivity{$score})/($ppv{$score}+$sensitivity{$score}));
 	    }
 	}
 	if (($ppv{$score} ne "NA")&&($npv{$score} ne "NA")){
@@ -965,6 +989,14 @@ sub getStatsByScore{
 	    }
 	}
 	
+	################################################################	
+	#### Round values
+	$sensitivity{$score} = sprintf "$number_format",$sensitivity{$score} if ($sensitivity{$score} ne "NA");
+	$specificity{$score} = sprintf "$number_format",$specificity{$score} if ($specificity{$score} ne "NA");
+	$fpr{$score} = sprintf "$number_format",$fpr{$score} if ($fpr{$score} ne "NA");
+	$ppv{$score} = sprintf "$number_format",$ppv{$score} if ($ppv{$score} ne "NA");
+	$npv{$score} = sprintf "$number_format",$npv{$score} if ($npv{$score} ne "NA");
+
 	################################################################
 	#### OPTIMAL SCORES
 	
@@ -1009,6 +1041,7 @@ sub getStatsByScore{
 	   \%accuracy_2,
 	   \%accuracy_3,
 	   \%ACP,
+	   \%f1,
 	   \%Query_not_Ref,
 	   $NnotQR
 	 );
@@ -1358,6 +1391,8 @@ I<FPR>   False Positive Rate
 
 I<Acc>   Accuracy (geometric average between Sn and PPV)
 
+I<F1>    F1 measure (harmonic average between Sn and PPV)
+
 I<ACP>   Average Conditional Probability
 
 I<AUC>   Area Under the Curve
@@ -1365,28 +1400,8 @@ I<AUC>   Area Under the Curve
 =back
 
 =cut
-
-my %desc_param=(
-		"TP"=>"True Positive",
-		"TN"=>"True Negative",
-		"FP"=>"False Positive",
-		"FN"=>"False Negative",
-		"Sn"=>"TP/TP+FN",
-		"Sp"=>"TN/TN+FP",
-		"PPV"=>"TP/TP+FP",
-		"NPV"=>"TN/TN+FN",
-		"FPR"=>"FP/TN+FP",
-		"accArit1"=>"(Sn+Sp)/2",
-		"accGeom1"=>"sqrt(Sn*Sp)",
-		"accArit2"=>"(PPV+NPV)/2",
-		"accGeom2"=>"sqrt(PPV*NPV)",
-		"accArit3"=>"(Sn+PPV)/2",
-		"accGeom3"=>"sqrt(Sn*PPV)",
-		"AUCg"=>"AUC geometric",
-		"AUCgl"=>"AUC geometric in local area",
-		"AUCgt"=>"AUC geometric in total area",
-		"AUCn"=>"AUC (normal distribution)"
-		);
+    
+    
 
 my %param_fullname=(
 		    "TP"=>"True Positive",
@@ -1404,6 +1419,7 @@ my %param_fullname=(
 		    "accGeom2"=>"Geometric Accuracy 2",
 		    "accArit3"=>"Arithmetic Accuracy 3",
 		    "accGeom3"=>"Geometric Accuracy 3",
+		    "F1"=>"F1 measure",
 		    "AUC"=>"Area Under the Curve"
 		    );
 
@@ -1427,28 +1443,77 @@ sub confusionTable{
 sub stats{
   my ($Ntp,$Ntn,$Nfp,$Nfn,$number_format,$return_params)=@_;
   my %return_params=%{$return_params};
-  if (!$Ntn){
-    &RSAT::message::Warning(join("\t","Warning ! No value for true negative (TN).")) if ($main::verbose >= 1);
-  }
-  my %param=();
-  $param{Sn}=sprintf("$number_format",$Ntp/($Nfn+$Ntp));
-  $param{PPV}=sprintf("$number_format",$Ntp/($Nfp+$Ntp));
-  $param{Sp}=sprintf("$number_format",$Ntn/($Nfp+$Ntn));
-  $param{NPV}=sprintf("$number_format",$Ntn/($Nfn+$Ntn));
-  $param{accArit1}=sprintf("$number_format",($param{Sn}+$param{Sp})/2);
-  $param{accGeom1}=sprintf("$number_format",sqrt($param{Sp}*$param{Sn}));
-  $param{accArit2}=sprintf("$number_format",($param{PPV}+$param{NPV})/2);
-  $param{accGeom2}=sprintf("$number_format",sqrt($param{PPV}*$param{NPV}));
-  $param{accArit3}=sprintf("$number_format",($param{PPV}+$param{Sn})/2);
-  $param{accGeom3}=sprintf("$number_format",sqrt($param{PPV}*$param{Sn}));
-  
-  my $data="";
-  foreach my $p (keys %return_params){#"Sn","Sp","PPV","NPV","accArit1","accArit2","accArit3","accGeom1","accGeom2","accGeom3"){
-      $data .= join("\t",$param{$p},$p,$desc_param{$p});
-      &RSAT::message::Warning($data) if ($main::verbose >= 5);
-      $data .= "\n";
-  }
+#   if (!$Ntn){
+#     &RSAT::message::Warning(join("\t","Warning ! No value for true negative (TN).")) if ($main::verbose >= 1);
+#   }
+  my $Sn ="NA";
+  my $PPV ="NA";
+  my $NPV="NA";
+  my $FPR="NA";
+  my $Sp="NA";
+  my $data="; Statistics\n";
+  $data .= $Ntp."\tTP\t".&desc_param("TP")."\n" if ($return_params{TP});
+  $data .= $Nfp."\tFP\t".&desc_param("FP")."\n" if ($return_params{FP});
+  $data .= $Nfn."\tFN\t".&desc_param("FN")."\n" if ($return_params{FN});
+  $data .= $Ntn."\tTN\t".&desc_param("TN")."\n" if ($return_params{TN});
+
+  $Sn=sprintf("$number_format",$Ntp/($Nfn+$Ntp))unless ($Nfn+$Ntp == 0);
+  $PPV=sprintf("$number_format",$Ntp/($Nfp+$Ntp))unless ($Nfp+$Ntp == 0);
+  $FPR=sprintf("$number_format",$Nfp/($Nfp+$Ntn))unless ($Nfp+$Ntp == 0);
+  $Sp=sprintf("$number_format",$Ntn/($Nfp+$Ntn)) unless ($Nfp+$Ntn == 0);
+  $NPV=sprintf("$number_format",$Ntn/($Nfn+$Ntn)) unless ($Nfn+$Ntn == 0);
+  $data .= $Sn."\tSn\t".&desc_param("Sn")."\n" if ($return_params{Sn});
+  $data .= $Sp."\tSp\t".&desc_param("Sp")."\n" if ($return_params{Sp});
+  $data .= $PPV."\tPPV\t".&desc_param("PPV")."\n" if ($return_params{PPV});
+  $data .= 1-$PPV."\t1-PPV\t".&desc_param("1-PPV")."\n" if ($return_params{"1-PPV"});
+  $data .= $NPV."\tNPV\t".&desc_param("NPV")."\n" if ($return_params{NPV});
+  $data .= $FPR."\tFPR\t".&desc_param("FPR")."\n" if ($return_params{FPR});
+
+  $Acc=sprintf("$number_format",sqrt($PPV*$Sn));
+  $ACP=sprintf "$number_format",(($Sn+$Sp+$PPV+$NPV)/4);
+  $F1=sprintf("$number_format",(2*($PPV*$Sn)/($PPV+$Sn)));
+  $data .= $Acc."\tAcc\t".&desc_param("Acc")."\n" if ($return_params{Acc});
+  $data .= $ACP."\tACP\t".&desc_param("ACP")."\n" if ($return_params{ACP});
+  $data .= $F1."\tF1\t".&desc_param("F1")."\n" if ($return_params{F1});
+
   return($data);
+}
+
+################################################################
+#### Get description of parmaetesr
+sub desc_param{    
+    my $param = shift;
+    my %desc_param=(
+		    "TP"=>"True Positive",
+		    "TN"=>"True Negative",
+		    "FP"=>"False Positive",
+		    "FN"=>"False Negative",
+		    "TPcum"=>"True Positive cumulative",
+		    "TNcum"=>"True Negative cumulative",
+		    "FPcum"=>"False Positive cumulative",
+		    "FNcum"=>"False Negative cumulative",
+		    "Sn"=>"TP/TP+FN",
+		    "Sp"=>"TN/TN+FP",
+		    "PPV"=>"TP/TP+FP",
+		    "1-PPV"=>"FP/TP+FP",
+		    "NPV"=>"TN/TN+FN",
+		    "FPR"=>"FP/TN+FP",
+		    "accArit1"=>"(Sn+Sp)/2",
+		    "accGeom1"=>"sqrt(Sn*Sp)",
+		    "accArit2"=>"(PPV+NPV)/2",
+		    "accGeom2"=>"sqrt(PPV*NPV)",
+		    "accArit3"=>"(Sn+PPV)/2",
+		    "accGeom3"=>"sqrt(Sn*PPV)",
+		    "Acc"=>"sqrt(Sn*PPV)",
+		    "F1"=>"2(Sn*PPV)/(Sn+PPV)",
+		    "AUCg"=>"AUC geometric",
+		    "AUCgl"=>"AUC geometric in local area",
+		    "AUCgt"=>"AUC geometric in total area",
+		    "AUCn"=>"AUC (normal distribution)"
+		    );
+    my $desc = "NA";
+    $desc = $desc_param{$param} if ($desc_param{$param});
+    return($desc);
 }
 
 ################################################################
