@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.19 2007/06/12 14:54:29 rsat Exp $
+# $Id: convert-graph,v 1.20 2007/06/13 11:48:32 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -149,7 +149,7 @@ package main;
     ### open output streams
     $main::out = &OpenOutputFile($main::outfile{output});
     if ($output_format eq "tab") {
-      main::verbose_out = $main::out;
+      $main::verbose_out = $main::out;
     } else {
       $main::verbose_out = STDOUT;
     }
