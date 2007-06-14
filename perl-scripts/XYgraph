@@ -589,6 +589,9 @@ sub GnuPlotEPS {
 	## size is given in inches for gnuplot
 	my $x_inch = ($x_axis_size/$dpi);
 	my $y_inch = ($y_axis_size/$dpi);
+		if (($header)||($legend)) {
+			$x_inch = $x_inch + 3.3 ;
+		}
 	$gnuplot_cmd .= "set term post landscape enh ".$color." font small size ".$x_inch.",".$y_inch." \n";
 
 	
@@ -691,7 +694,7 @@ sub GnuPlotEPS {
 	
 	## legend (key box)
 	if (($header)||($legend)) {
-		$gnuplot_cmd .= "set key outside right top vertical Left reverse enhanced nobox\n";	
+		$gnuplot_cmd .= "set key outside right top vertical Left reverse enhanced nobox width 25\n";	
 		} else {
 			$gnuplot_cmd .= "set key off\n";	
 		}
