@@ -226,9 +226,13 @@ sub read_tab {
 				     $member_name,
 				     $name{$id}) ) if ($main::verbose >= 5);
 	
-	if ($line % 10000 == 0) {
-	  &RSAT::message::TimeWarn( "Reading classes from file", $input_file, "lines read",  $line)
-	    if ($main::verbose >= 2);
+	if (($line % 10000 == 0) &&
+	    ($main::verbose >= 2)) {
+	  if (defined($input_file)) {
+	    &RSAT::message::TimeWarn( "Reading classes from file", $input_file, "lines read",  $line);
+	  } else {
+	    &RSAT::message::TimeWarn( "Reading classes from", "STDIN", "lines read",  $line);
+	  }
 	}
 #	&RSAT::message::Debug("Scores", $class_name, $class{$class_name}->get_attribute("scores")) if ($main::verbose >= 0);
 	
