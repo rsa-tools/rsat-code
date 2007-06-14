@@ -95,7 +95,11 @@ my %supported_status=("TP"=>"TP",
 		      "true"=>"TP",
 		      "false"=>"FP",
 		      "T"=>"TP",
-		      "F"=>"FP"
+		      "F"=>"FP",
+#		      "TP"=>"T",
+#		      "FP"=>"F",
+#		      "T"=>"TP",
+#		      "F"=>"FP"
 		      );
 foreach my $st (keys %status){
     &RSAT::message::Warning(join(" ","status",$st,"=>",$status{$st})) if ($main::verbose >= 0) ;
@@ -313,7 +317,8 @@ sub getId2score{
 	      &RSAT::message::Warning(join(" ","Warning ! This status",$status," is not supported. Supported status :",join(",",keys %supported_status))) unless ($nodie);
 	      die unless ($nodie);	      
 	  }else {
-	      $id_score{$id}->{status} = $supported_status{$status};
+	      $id_score{$id}->{status} = $supported_status{$supported_status{$status}};
+#	      &RSAT::message::Warning(join(" ","id",$id,"status",$supported_status{$supported_status{$status}}));
 	      $count_status{$status}++;
 	  }
       }
