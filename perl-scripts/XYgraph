@@ -55,7 +55,6 @@ $y = 0;
 
 $x_axis_size = 400;
 $y_axis_size = 400;
-$dpi = 72; ## number of pixels per inch or gnuplot 
 
 
 #### font sizes ####
@@ -573,7 +572,7 @@ sub GnuPlotEPS {
 	$gnuplot_cmd = "gnuplot << EOF\n";
 	## fonts
 	$gnuplot_cmd .= "small='Arial,9'\n";
-	$gnuplot_cmd .= "big='Arial,10'\n";
+	$gnuplot_cmd .= "big='Arial,11'\n";
 	
 	## color
 	if ($monochrome) {
@@ -586,13 +585,16 @@ sub GnuPlotEPS {
 	## plot size ##
 
 	## size in gnuplot eps format is not in pixel but in inches.
-	## size is given in inches for gnuplot
-	my $x_inch = ($x_axis_size/$dpi);
-	my $y_inch = ($y_axis_size/$dpi);
-		if (($header)||($legend)) {
-			$x_inch = $x_inch + 3.3 ;
-		}
-	$gnuplot_cmd .= "set term post landscape enh ".$color." font small size ".$x_inch.",".$y_inch." \n";
+	## the idea here is to get the ratio from the input x and y size
+	## and let gnuplot adapt automatically
+
+	$gnuplot_cmd .= "set term post landscape enh ".$color." font small\n";
+
+	
+	if (($x_axis_size)&&($y_axis_size)) {
+		my $ratio = $y_axis_size/$x_axis_size;
+		$gnuplot_cmd .= "set size ratio '".$ratio."'\n";
+	} 
 
 	
 	## output file
@@ -694,7 +696,7 @@ sub GnuPlotEPS {
 	
 	## legend (key box)
 	if (($header)||($legend)) {
-		$gnuplot_cmd .= "set key outside right top vertical Left reverse enhanced nobox width 25\n";	
+		$gnuplot_cmd .= "set key outside right top vertical Left reverse enhanced nobox\n";	
 		} else {
 			$gnuplot_cmd .= "set key off\n";	
 		}
@@ -1600,7 +1602,6 @@ XYgraph options
 -htmap		HTML map
 -lc		label column
 -gp		gnuplot additional commands
--ppi	pixel per inch
 End_of_options
     close SHORTHELP;
 }
@@ -1755,10 +1756,6 @@ OPTIONS
 		Gnuplot (http://www.gnuplot.info/) is used to generate graphs in eps format.
 		Additional gnuplot commands can be specified, separated by commas.
 		e.g. -gp 'set size ratio 0.5'
-	-ppi pixel per inch
-		Gnuplot specifies size in inches. Size provided by -size, -xsize and -ysize
-		options are thus converted into inches, using by default 72 pixels per inch.
-		
 WEB VERSION
 	http://www.scmbb.ulb.ac.be/bioinformatics/rsa-tools/
 
@@ -1990,11 +1987,7 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-gp") {
 	    $gp_supp_commands = $ARGV[$a+1];
 
-	} elsif ($ARGV[$a] eq "-dpi") {
-	    $dpi = $ARGV[$a+1];
-
 	}
-	
     }
     
 sub GnuplotPalette {
