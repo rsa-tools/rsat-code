@@ -2,10 +2,15 @@
 ## Calculate phylogenetic profiles for a selected organism and taxon
 
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=makefiles/phylo_profiles.mk
+MAKEFILE=${RSAT}/makefiles/phylo_profiles.mk
 
-TAXON=Fungi
-ORG=Saccharomyces_cerevisiae
+#TAXON=Fungi
+#ORG=Saccharomyces_cerevisiae
+
+TAXON=Bacteria
+ORG=Escherichia_coli_K12
+
+
 CDS=${RSAT}/data/genomes/${ORG}/genome/cds.tab
 CDS_NAMES=${RSAT}/data/genomes/${ORG}/genome/cds_names.tab
 TH_ID=30
@@ -20,7 +25,8 @@ all_taxa:
 	${MAKE} merged_ortho
 	${MAKE} merged_profiles
 
-one_taxon:  genus_species profiles profiles_sig profile_pairs sig_vs_MI
+#one_taxon: ortho genus_species profiles profiles_sig profile_pairs sig_vs_MI
+one_taxon: genus_species profiles profiles_sig profile_pairs sig_vs_MI
 
 ################################################################
 ## Identify all the putative orthologs (BBH) 
