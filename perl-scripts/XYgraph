@@ -55,6 +55,7 @@ $y = 0;
 
 $x_axis_size = 400;
 $y_axis_size = 400;
+$dpi = 72; ## number of pixels per inch or gnuplot 
 
 
 #### font sizes ####
@@ -585,16 +586,11 @@ sub GnuPlotEPS {
 	## plot size ##
 
 	## size in gnuplot eps format is not in pixel but in inches.
-	## the idea here is to get the ratio from the input x and y size
-	## and let gnuplot adapt automatically
+	## size is given in inches for gnuplot
+	my $x_inch = ($x_axis_size/$dpi);
+	my $y_inch = ($y_axis_size/$dpi);
+	$gnuplot_cmd .= "set term post landscape enh ".$color." font small size ".$x_inch.",".$y_inch." \n";
 
-	$gnuplot_cmd .= "set term post landscape enh ".$color." font small\n";
-
-	
-	if (($x_axis_size)&&($y_axis_size)) {
-		my $ratio = $y_axis_size/$x_axis_size;
-		$gnuplot_cmd .= "set size ratio '".$ratio."'\n";
-	} 
 	
 	## output file
 	$gnuplot_cmd .= "set output '".$outputfile."'\n";
@@ -791,6 +787,23 @@ sub GnuPlotEPS {
 	#print $gnuplot_cmd;
 	## Execute the command
   	&doit($gnuplot_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  	
+  	if ($verbose) {
+  		print "; XYgraph";
+    	foreach $a (@ARGV) {
+		if (($a =~ /\S+\s+\S+/) || ($a !~ /\S/)){
+	    	print " '$a'";
+		} else {
+	    	print " $a";
+        }
+    	}
+    print "\n";
+    print "; gnuplot command:\n";
+    $gnuplot_cmd =~ s/\n/\n; /g;
+    print "; $gnuplot_cmd\n";
+  	print ";Job started $start_time";
+    print ";Job done    ", `date`;
+  	}
   	
   	if ($tmp_file){
   		unlink $tmp_file;
@@ -1584,6 +1597,7 @@ XYgraph options
 -htmap		HTML map
 -lc		label column
 -gp		gnuplot additional commands
+-ppi	pixel per inch
 End_of_options
     close SHORTHELP;
 }
@@ -1738,6 +1752,10 @@ OPTIONS
 		Gnuplot (http://www.gnuplot.info/) is used to generate graphs in eps format.
 		Additional gnuplot commands can be specified, separated by commas.
 		e.g. -gp 'set size ratio 0.5'
+	-ppi pixel per inch
+		Gnuplot specifies size in inches. Size provided by -size, -xsize and -ysize
+		options are thus converted into inches, using by default 72 pixels per inch.
+		
 WEB VERSION
 	http://www.scmbb.ulb.ac.be/bioinformatics/rsa-tools/
 
@@ -1969,7 +1987,11 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-gp") {
 	    $gp_supp_commands = $ARGV[$a+1];
 
+	} elsif ($ARGV[$a] eq "-dpi") {
+	    $dpi = $ARGV[$a+1];
+
 	}
+	
     }
     
 sub GnuplotPalette {
