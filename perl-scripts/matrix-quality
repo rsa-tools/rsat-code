@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.39 2007/05/10 10:07:49 morgane Exp $
+# $Id: matrix-quality,v 1.40 2007/06/14 09:09:08 morgane Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -299,7 +299,7 @@ package main;
     if (scalar(@partial_matrix_files) > 0) {
       my $clean_partial_cmd = "rm -f ";
       $clean_partial_cmd .= join (" ", @partial_matrix_files);
-      &doit($clean_partial_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+   #   &doit($clean_partial_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     }
     
     ################################################################
@@ -572,11 +572,22 @@ steps.
 
 =item B<-nograph>
 
-Skip the step of frawing comparison graphs. 
+Skip the step of drawing comparison graphs. 
 
 =cut
 	} elsif ($arg eq "-nograph") {
 	  $supported_tasks{nographs} = 0;
+
+	    ## keep matrix-scan scores
+=pod
+
+=item B<-obs_scores>
+
+Return matrix-scan scores in addition to the distribution of scores.
+
+=cut
+	} elsif ($arg eq "-obs_scores") {
+	  $main::obs_scores = 1;
 
 	    ## Number of permutations for a specific set
 =pod
@@ -1027,7 +1038,20 @@ sub CalcSequenceDistrib {
 
   ## Prepare the classfreq command (to extract the distribution from the scores)
   my $classfreq_min = sprintf("%.${decimals}f", $main::Wmin);
-  $matrix_scan_cmd .= " | grep -v '^;' | grep -v '^#'";
+  
+  ## in case matrix-scan scores need to be kept
+  if ($main::obs_scores) {
+  	## store matrix-scan result in a file
+  	my $seq_type_scores = $outfile{prefix}."_scan_".$seq_type."_scores.tab";
+  	$main::outfile{$seq_type_scores} = $seq_type_scores;
+  	$matrix_scan_cmd .= " -o ".$main::outfile{$seq_type_scores};
+  	
+  	## launch classfreq on this input file
+  	$matrix_scan_cmd .= " ; grep -v '^;' ".$main::outfile{$seq_type_scores}." | grep -v '^#'";
+  } else {
+  	$matrix_scan_cmd .= " | grep -v '^;' | grep -v '^#'";
+  }
+  
   $matrix_scan_cmd .= " | cut -f 8";
   $matrix_scan_cmd .= " | classfreq -v 1 -ci 0.01";
   $matrix_scan_cmd .= " -min ".$classfreq_min;
