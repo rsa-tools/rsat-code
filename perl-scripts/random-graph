@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.10 2007/06/12 14:54:29 rsat Exp $
+# $Id: random-graph,v 1.11 2007/06/14 12:48:31 rsat Exp $
 #
 ############################################################
 
@@ -247,9 +247,9 @@ package main;
         $rdm = $graph->randomize($self, $duplicated, $directed);
       } elsif ($random_type eq 'node_degree_distrib') {
         $rdm = $graph->random_graph_degree_distrib();
-        if (!$self || !$duplicated) {
-          $rdm = $graph->randomize($self, $duplicated, $directed);
-        }
+#         if (!$self || !$duplicated) {
+#           $rdm = $graph->randomize($self, $duplicated, $directed);
+#         }
       }
       ## Print verbose
       &Verbose() if ($main::verbose);

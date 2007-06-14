@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.29 2007/06/08 09:17:50 rsat Exp $
+# $Id: compare-graphs,v 1.30 2007/06/14 12:48:31 rsat Exp $
 #
 ############################################################
 
@@ -161,7 +161,7 @@ package main;
     if ($return_format eq "") {
       &RSAT::error::FatalError("You must specify a return format : $supported_return_formats");
     }
-    if ($outweight eq "") {
+    if ($outweight eq "" && ($return_format eq 'intersection' || $return_format eq 'union')) {
       &RSAT::error::FatalError("You must specify a outweight option : $supported_outweight");
     }
     ################################################################
@@ -794,7 +794,7 @@ sub difference {
 
   my ($R_graph, $Q_graph) = @_;
 
-  my $diff_graph = new RSAT::Q_Graph;
+  my $diff_graph = new RSAT::Graph2;
   my @arcs_g1 = $R_graph->get_attribute("arcs");
   my @arcs_g2 = $Q_graph->get_attribute("arcs");
   my %arcs_name_id_g1 = $R_graph->get_attribute("arcs_name_id");
