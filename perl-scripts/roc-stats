@@ -91,7 +91,11 @@ my %opt = ('opt|?'=>\$options,
 my %supported_status=("TP"=>"TP",
 		      "FP"=>"FP",
 		      "FN"=>"FN",
-		      "TN"=>"TN"
+		      "TN"=>"TN",
+		      "true"=>"TP",
+		      "false"=>"FP",
+		      "T"=>"TP",
+		      "F"=>"FP"
 		      );
 foreach my $st (keys %status){
     &RSAT::message::Warning(join(" ","status",$st,"=>",$status{$st})) if ($main::verbose >= 0) ;
@@ -245,6 +249,10 @@ exit(0);
 =item I<TN> for True Negative  
 
 =item I<FN> for False Negative 
+
+=item I<T> or I<true> for True values
+
+=item I<F> or I<false> for False values
 
 =back
 
@@ -1671,7 +1679,7 @@ Specify the score format: "score" when using one score and "Q::R" with 3D.
 
 Put a threshold on one score.
 
-=item -s|--status <status>=[TP|FP|FN|TN]
+=item -s|--status <status>=[TP|FP|FN|TN|T|F|true|false]
 
 You can specify here other terms to assign to supported status.
 (e.g. --status R.and.Q=TP --status not.Q.R=FN --status Q.not.R=FP)
