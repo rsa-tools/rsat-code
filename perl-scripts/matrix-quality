@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.40 2007/06/14 09:09:08 morgane Exp $
+# $Id: matrix-quality,v 1.41 2007/06/15 09:58:38 morgane Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -131,6 +131,7 @@ package main;
 			scan=>1, ## Scan sequences with matrix-scan
 			theor=>1, ## Calculate the theoretical distribution
 			loo=>1, ## Leave-one-out test on the matrix sites
+			theor_loo=>1, ## Calculate the theoretical distribution of loo partial matrices
 			permute=>1, ## Scan sequences with permuted matrices
 			compare=>1, ## Compare distributions between the various input files
 			graphs=>1, ## Draw the graphs with distrib comparisons
@@ -218,13 +219,25 @@ package main;
     &PermuteMatrixColumns() if ($perm_nb_max > 0);
 
     ## Calcualte theoretical distribution of probabilities
-    &PrintTheorScoreDistribution($matrix) if ($tasks{theor});
+    $main::outfile{'theoretical_distrib'} = $main::outfile{prefix}."_theor_score_distrib.tab";
+    &PrintTheorScoreDistribution($outfile{matrix_tab},$main::outfile{'theoretical_distrib'}) if ($tasks{theor});
 
     ## Calculate score distributions in the different input sequence files
 
     ## Calculate the Leave-one-out score distribution for the matrix sites
     if ($tasks{loo}) {
       &LOO_scores($matrix, @matrix_scan_options);
+    }
+    
+    ## Calculate the theorical distribution of LOO partial matrices
+    if ($tasks{theor_loo}) {
+    	our @th_distrib_files =();
+    	foreach my $partial_matrix (@partial_matrix_files) {
+    		my $distrib_outfile = $partial_matrix;
+    		$distrib_outfile =~ s/\.tab/\_theor_score_distrib\.tab/;
+    		&PrintTheorScoreDistribution($partial_matrix,$distrib_outfile);
+    		push (@th_distrib_files, $distrib_outfile);
+    	}
     }
 
 
@@ -294,12 +307,19 @@ package main;
 	&doit($clean_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       }
     }
-
-    ## Remove the partial matrices
+    
+    ## Remove theorical distribution of partial matrices
     if (scalar(@partial_matrix_files) > 0) {
       my $clean_partial_cmd = "rm -f ";
       $clean_partial_cmd .= join (" ", @partial_matrix_files);
-   #   &doit($clean_partial_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &doit($clean_partial_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    }
+
+    ## Remove the partial matrices
+    if (scalar(@th_distrib_files) > 0) {
+      my $clean_partial_cmd = "rm -f ";
+      $clean_partial_cmd .= join (" ", @th_distrib_files);
+      &doit($clean_partial_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     }
     
     ################################################################
@@ -584,10 +604,12 @@ Skip the step of drawing comparison graphs.
 =item B<-obs_scores>
 
 Return matrix-scan scores in addition to the distribution of scores.
+Beware ! This option can produce very large files and use lots of
+disk space.
 
 =cut
-	} elsif ($arg eq "-obs_scores") {
-	  $main::obs_scores = 1;
+	} elsif ($arg eq "-export_hits") {
+	  $main::export_hits = 1;
 
 	    ## Number of permutations for a specific set
 =pod
@@ -643,6 +665,18 @@ Pseudo-weight.
 		unless ((&RSAT::util::IsReal($main::pseudo_counts) )
 			&& ($main::pseudo_counts >= 0));
 
+=pod
+
+=item B<-th_prior background_file>
+
+Background model to use to calculate the matrix theorical distribution.
+The matrix theorical distribution is calculated with I<convert-matrix>,
+over a Bernouilli assumption.
+If no background file is provided, equal priors are assumed.
+
+=cut
+	} elsif ($arg eq "-th_prior") {
+		$main::infile{th_prior} = shift(@arguments);
 
 	    ## Output file
 =pod
@@ -1040,7 +1074,7 @@ sub CalcSequenceDistrib {
   my $classfreq_min = sprintf("%.${decimals}f", $main::Wmin);
   
   ## in case matrix-scan scores need to be kept
-  if ($main::obs_scores) {
+  if ($main::export_hits) {
   	## store matrix-scan result in a file
   	my $seq_type_scores = $outfile{prefix}."_scan_".$seq_type."_scores.tab";
   	$main::outfile{$seq_type_scores} = $seq_type_scores;
@@ -1290,7 +1324,7 @@ sub CompareDistrib {
     ## Compare the distributions
     my $distrib_compa_cmd = "compare-scores ";
     $distrib_compa_cmd .= " -numeric";
-    $distrib_compa_cmd .= " -sc1 2"; # score column for the theoretical distribution
+    $distrib_compa_cmd .= " -sc1 4"; # score column for the theoretical distribution
     $distrib_compa_cmd .= " -sc ".$score_column; # score column for the observed distributions
     $distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_scan_";
     $distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_";
@@ -1389,7 +1423,48 @@ sub CompareDistrib {
   	  ## Generate the icon for the ROC curve
   	  $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xlog_small.".$image_format;
   	  &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  	  
+  	   if ($tasks{theor_loo}) {
+  	   	
+  	   	$outfile{th_distrib_compa} = $outfile{prefix}."_theorical_score_distrib_compa";
+  	   	
+  	   	################################################################
+    	## Compare the theorical distributions
+    	my $distrib_compa_cmd = "compare-scores ";
+    	$distrib_compa_cmd .= " -numeric";
+    	$distrib_compa_cmd .= " -sc 4"; # score column for the theoretical distribution
+    	$distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_";
+    	$distrib_compa_cmd .= " -suppress .tab";
+    	$distrib_compa_cmd .= " -o ".$outfile{th_distrib_compa}.".tab";
+    	$distrib_compa_cmd .= " -files ";
+    	$distrib_compa_cmd .= join(" ", $main::outfile{'theoretical_distrib'}, @th_distrib_files);
+    	&doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  	   	  	   
+  	  	################################################################
+  	  	## draw a graph with the theorical distributions of partial and complete matrix
+  	   	## General options for all the graphs below
+    	$all_graph_options =~ s/$outfile{distrib_compa}/$outfile{th_distrib_compa}/g; 
     	
+    	################################################################
+   		## Draw a graph with all the inverse cumulative distributions
+    	my $XYgraph_cmd = "XYgraph ".$all_graph_options;
+    	my $ycols = join ",", 2..(scalar(@th_distrib_files)+2);
+    	$XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
+    	$XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+ 	    $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+	    $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{th_distrib_compa}.".".$image_format;
+	    &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	    
+	   ################################################################
+ 	   ## Draw a graph with all the inverse cumulative distributions
+ 	   ## and a logarithmic Y axis
+ 	   $XYgraph_cmd = "XYgraph ".$all_graph_options;
+ 	   $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
+ 	   $XYgraph_cmd .= " -ymax 1 -ylog 10";
+ 	   $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+ 	   $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{th_distrib_compa}."_logy.".$image_format;
+ 	   &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  	   }
     	}
   	}
 
@@ -1399,25 +1474,28 @@ sub CompareDistrib {
 ################################################################
 ## Calculate score distribution
 sub PrintTheorScoreDistribution {
-  my ($matrix) = @_;
-
-  $main::outfile{'theoretical_distrib'} = $main::outfile{prefix}."_theor_score_distrib.tab";
-  my $wd = &OpenOutputFile($main::outfile{'theoretical_distrib'});
-
-#  my %weight_proba = $matrix->getTheorScoreDistrib("weights");
-#  my %weight_proba_cum = $matrix->getTheorScoreDistrib("weights", "cum");
-  my %weight_proba_inv_cum = $matrix->getTheorScoreDistrib("weights", "inv_cum");
-
-  foreach my $weight (sort {$a <=> $b} keys (%weight_proba_inv_cum)) {
-    print $wd join("\t", $weight, 
-#		   $weight_proba{$weight},
-#		   $weight_proba_cum{$weight},
-		   $weight_proba_inv_cum{$weight},
-		  ), "\n";
+	
+  my $matrix_tab_file = shift;
+  my $out_file = shift;
+  
+  &RSAT::message::TimeWarn("Calculating matrix theorical distribution") 
+    if ($main::verbose >= 2);
+  
+  my $conv_matrix_cmd = "convert-matrix ";
+  $conv_matrix_cmd .= " -i ".$matrix_tab_file;
+  $conv_matrix_cmd .= " -in_format tab";
+  $conv_matrix_cmd .= " -out_format tab ";
+  $conv_matrix_cmd .= " -return wdistrib  ";
+  if ($main::infile{th_prior}){
+  	$conv_matrix_cmd .= " -prior ".$main::infile{th_prior};
   }
-  close $wd;
-
-#  push @distrib_files, ;
+  $conv_matrix_cmd .= " -decimals 2 ";
+  $conv_matrix_cmd .= " -o ".$out_file;
+  
+  ## Execute the command
+  &doit($conv_matrix_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &RSAT::message::TimeWarn("Convert-matrix command: ", $conv_matrix_cmd) 
+  	 if ($main::verbose >= 2);
 
 }
 
