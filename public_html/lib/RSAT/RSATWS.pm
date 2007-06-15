@@ -183,8 +183,8 @@ sub purge_seq_cmd {
 	$tmp_infile = $args{"tmp_infile"};
 	$tmp_infile =~ s/\'//g;
 	$tmp_infile =~ s/\"//g;
-	chomp $tmp_infile;
     }
+    chomp $tmp_infile;
     my $format = $args{"format"};
     my $match_length = $args{"match_length"};
     my $mismatch = $args{"mismatch"};
@@ -581,6 +581,69 @@ sub supported_organisms_cmd {
       $args{taxon} =~ s/\"//g;
       $command .= " -taxon '".$args{taxon}."'";
   }
+
+  return $command;
+}
+
+sub convert_seq {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->convert_seq_cmd(%args);
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/convert-seq.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return {'command' => $command, 
+		'server' => $tmp_outfile};
+    } elsif ($output_choice eq 'client') {
+	return {'command' => $command,
+		'client' => $result};
+    } elsif ($output_choice eq 'both') {
+	return {'server' => $tmp_outfile,
+		'command' => $command, 
+		'client' => $result};
+    }
+}
+
+sub convert_seq_cmd {
+  my ($self, %args) =@_;
+  if ($args{"sequence"}) {
+    my $sequence = $args{"sequence"};
+    chomp $sequence;
+    $tmp_infile = `mktemp $TMP/convert-seq.XXXXXXXXXX`;
+    open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
+    print TMP_IN $sequence;
+    close TMP_IN;
+  } elsif ($args{"tmp_infile"}) {
+    $tmp_infile = $args{"tmp_infile"};
+    $tmp_infile =~ s/\'//g;
+    $tmp_infile =~ s/\"//g;
+  }
+  chomp $tmp_infile;
+  my $command = "$SCRIPTS/convert-seq";
+
+  if ($args{from}) {
+      $args{from} =~ s/\'//g;
+      $args{from} =~ s/\"//g;
+      $command .= " -from '".$args{from}."'";
+  }
+  if ($args{to}) {
+      $args{to} =~ s/\'//g;
+      $args{to} =~ s/\"//g;
+      $command .= " -to '".$args{to}."'";
+  }
+
+  $command .= " -i '".$tmp_infile."'";
 
   return $command;
 }
