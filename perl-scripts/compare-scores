@@ -15,6 +15,8 @@ $default_ic = 1;
 $supported_export_formats = join ",", sort keys %supported_export_format;
 $export_format = "profiles";
 
+%subst_header = ();
+
 &ReadArguments();
 
 ## read file list
@@ -139,6 +141,12 @@ foreach $f (0..$#input_files) {
 	## Suppress substrings
 	for my $sub (@suppress) {
 	    $column_name =~ s/$sub//g;
+	}
+	
+	## Substitute substrings
+	for my $old_string (keys(%subst_header)) {
+		my $new_string = $subst_header{$old_string};
+	    $column_name =~ s/$old_string/$new_string/g;
 	}
 	
 	## Add column number
@@ -299,6 +307,18 @@ OPTIONS
 
 		Example:
 			-suppress '.tab' -suppress 'oligos_'
+			
+		The substring may contain a regular expression.
+		
+		Example:
+			-suppress '\w+_'
+	-subst
+		Substitute a given substring from file names in the header
+		by a specified substring.
+		
+		Example:
+			-subst 'oligo_' 'ol'
+		
 
 INPUT FORMAT
 	each line of the input file provides the score for a single key. 
@@ -341,6 +361,7 @@ compare-scores options
 -decreasing	sort IDs numerically in a decreasing order
 -basename	remove path (directory) from file names in the header
 -suppress	suppress a given substring from file names in the header
+-subst		substitute a given substring from file names in the header by a specified substring.
 End_short_help
   close HELP;
   exit;
@@ -432,6 +453,9 @@ sub ReadArguments {
 
 	} elsif ($ARGV[$a] eq '-suppress') {
 	    push @suppress, $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq '-subst') {
+	    $subst_header{$ARGV[$a+1]} = $ARGV[$a+2];
 
 	}
     }
