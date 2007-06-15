@@ -242,7 +242,7 @@ sub randomize {
         my $source = $arcs_to_shuffle[$i][0];
         my $target = $arcs_to_shuffle[$shuffled_arcs_size[$i]][1];
         my $label = join("_", $source, $target);
-        if (&RSAT::util::IsReal($arcs_to_shuffle[$i][2])) {
+        if (&RSAT::util::IsReal($arcs_to_shuffle[$i][2]) || $main::weight_col) {
           $label = $arcs[$i][2];
         }
         my $arc_color = $arcs[$i][3];
@@ -543,7 +543,7 @@ sub random_graph_degree_distrib {
       $rdm_graph_array[$i][0] = $node_new_nodes{$arcs[$i][0]};
       $rdm_graph_array[$i][1] = $node_new_nodes{$arcs[$i][1]};
       my $label = join("_", $rdm_graph_array[$i][0], $rdm_graph_array[$i][1]);
-      if (&RSAT::util::IsReal($arcs[$i][2])) {
+      if (&RSAT::util::IsReal($arcs[$i][2]) || $main::weight_col) {
         $label = $arcs[$i][2];
       }
       my $source_id = $nodes_name_id{$rdm_graph_array[$i][0]};
