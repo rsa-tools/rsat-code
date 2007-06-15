@@ -503,6 +503,71 @@
        </xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="ConvertSeqRequest">
+        <xsd:annotation>
+	  <xsd:documentation>
+	    Parameters for the operation convert_seq.
+	  </xsd:documentation>
+        </xsd:annotation>
+       <xsd:sequence>
+	<xsd:element name="output" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>
+	        Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. Default is 'both'.
+	    </xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+        <xsd:element name="sequence" type="xsd:string" minOccurs="0">
+	 <xsd:annotation>
+	  <xsd:documentation>
+	    Sequence to convert.
+	  </xsd:documentation>
+	 </xsd:annotation>
+	</xsd:element>
+        <xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
+	 <xsd:annotation>
+	  <xsd:documentation>
+	    Name of the file with input sequence on the server. You need to supply either this parameter or the previous one (sequence).
+	  </xsd:documentation>
+	 </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="from" type="xsd:string" minOccurs="1">
+	 <xsd:annotation>
+	  <xsd:documentation>
+	   Format of input sequence (embl,
+                        fasta,
+                        filelist,
+                        gcg,
+                        genbank,
+                        ig,
+                        maf,
+                        multi,
+                        ncbi,
+                        raw,
+                        tab,
+                        wc,
+                        wconsensus).
+	  </xsd:documentation>
+	 </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="to" type="xsd:string" minOccurs="1">
+	 <xsd:annotation>
+	  <xsd:documentation>
+	   Format of output sequence (fasta,
+                        filelist,
+                        ft,
+                        ig,
+                        multi,
+                        raw,
+                        tab,
+                        wc,
+                        wconsensus).
+	  </xsd:documentation>
+	 </xsd:annotation>
+	</xsd:element>
+       </xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="RetrieveSequenceResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -659,6 +724,32 @@
 	 </xsd:sequence>
 	</xsd:complexType>
 
+      <xsd:complexType name="ConvertSeqResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>
+	        Location of the result file on the server. This can be used as input for a further request.
+	      </xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>
+	        The stand alone command executed on the server.
+	      </xsd:documentation>
+	    </xsd:annotation>
+	</xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	 <xsd:annotation>
+	  <xsd:documentation>
+	   The results.
+	  </xsd:documentation>
+	 </xsd:annotation>
+	</xsd:element>
+	 </xsd:sequence>
+	</xsd:complexType>
+
     </xsd:schema>
   </types>
 
@@ -711,6 +802,14 @@
       <part name="response" type="tns:SupportedOrganismsResponse"/>
   </message>
 
+  <message name="ConvertSeqInput">
+      <part name="request" type="tns:ConvertSeqRequest"/>
+  </message>
+
+  <message name="ConvertSeqOutput">
+      <part name="response" type="tns:ConvertSeqResponse"/>
+  </message>
+
   <portType name="RSATWSPortType">
       <operation name="retrieve_seq">
          <!-- Name of input/output must be specified here -->
@@ -750,6 +849,12 @@
          <input name="SupportedOrganismsRequest" message="tns:SupportedOrganismsInput"/>
          <output name="SupportedOrganismsResponse" message="tns:SupportedOrganismsOutput"/>
          <documentation>Get a list of supported organisms.
+         </documentation>
+      </operation>
+      <operation name="convert_seq">
+         <input name="ConvertSeqRequest" message="tns:ConvertSeqInput"/>
+         <output name="ConvertSeqResponse" message="tns:ConvertSeqOutput"/>
+         <documentation>Converts a sequence between two formats (e.g. fasta -> raw).
          </documentation>
       </operation>
   </portType>
@@ -803,6 +908,15 @@
       </operation>
       <operation name="supported_organisms">
          <soap:operation soapAction="urn:RSATWS#supported_organisms"/>
+         <input>
+             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+         </input>
+         <output>
+             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+         </output>
+      </operation>
+      <operation name="convert_seq">
+         <soap:operation soapAction="urn:RSATWS#convert_seq"/>
          <input>
              <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
          </input>
