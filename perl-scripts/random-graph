@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.11 2007/06/14 12:48:31 rsat Exp $
+# $Id: random-graph,v 1.12 2007/06/15 07:39:26 rsat Exp $
 #
 ############################################################
 
@@ -208,12 +208,17 @@ package main;
     if ($random_type eq 'ER') {
       $req_edges = scalar ($graph->get_attribute("arcs"));
       $req_nodes = scalar @nodes;
-      ## calculate the mean and the sd deviation of the weights if wcol is available
+      my $real = 1;
+      ## calculate the mean and the sd deviation of the weights if wcol is available and the columns are real values
       my @arcs =  $graph->get_attribute("arcs");
       for (my $i = 0; $i < scalar(@arcs); $i++) {
         push @weights, $arcs[$i][2];
+        if (!&RSAT::util::IsReal($arcs[$i][2])) {
+          $real = 0;
+          last;
+        }
       }
-      if ($weight_col > 0) {
+      if ($weight_col > 0 && $real) {
         my %summary = &summary(@weights);
         $mean = $summary{mean};
         $sd = $summary{sd};
