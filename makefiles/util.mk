@@ -63,7 +63,7 @@ command_queue_sge:
 		echo "echo Job started" >> ${JOB_DIR}/$${job}; 		\
 		echo "date" >> ${JOB_DIR}/$${job}; 		\
 		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job} ;				\
-		echo "echo Job done" >> ${JOB_DIR}/$${job}; 		\
+		echo "echo Job done `date`" >> ${JOB_DIR}/$${job}; 		\
 		echo "date" >> ${JOB_DIR}/$${job}; 		\
 		qsub -m a -q ${QUEUE} -N $${job} -j y -o ${JOB_DIR}/$${job}.log ${JOB_DIR}/$${job} ;	\
 		rm $${job} ;\
