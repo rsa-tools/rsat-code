@@ -157,6 +157,7 @@ upstream:
 ## Discover over-represented dyads in the promoters of the set of
 ## orthologous genes
 BG=monads
+#BG=expfreq
 STR=-2str
 NOOV=-noov
 RETURN=occ,freq,proba,rank
