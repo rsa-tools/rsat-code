@@ -217,17 +217,22 @@ sub checked_avg {
 }
 
 ################################################################
-### usage:
+### Usage:
 ###     &RSAT::stats::binomial($proba,$trials,$successes)
-### this routine uses the recursive formula for the calculation of binomial:
+###
+### This routine uses the recursive formula for the calculation of the
+### binomial density function.
 ###
 ###           P(x) * p(r-x)
 ###  P(x+1) = -------------
 ###              q(x+1)
 ###
-### We calculate everything in logarithms, and make a custom exp conversion
-### to overcome the limitation of the Perl exp(x) function
-###
+### We calculate everything in logarithms, and make a custom exp
+### conversion to overcome the limitation of the Perl exp(x)
+### function. This allows to compute small numbers as low as ~1e-300,
+### instead of the classical 1e-15 limit of computation for floating
+### point numbers.
+### 
 sub binomial {
     my($proba, $trials, $succ) = @_;
     my($q) = 1 - $proba;
@@ -245,16 +250,6 @@ sub binomial {
     for $x (0..$succ-1) {
         $logbin += $logproba + log($trials - $x) - $logq - log($x+1);
     }
-
-#     $logbin /= log(10);
-#     $bin = 10**(1+$logbin - int($logbin));
-#     $bin .= "e";
-#     if (int($logbin)-1 > 0) {
-#         $bin .= "+";
-#     }
-#     $bin .= int($logbin)-1;
-#     return($bin);
-
 
     my $bin = &LogToEng($logbin);
     return ($bin);
@@ -779,7 +774,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: stats.pm,v 1.6 2006/10/26 05:42:26 jvanheld Exp $	
+# 	$Id: stats.pm,v 1.7 2007/06/17 21:46:16 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
