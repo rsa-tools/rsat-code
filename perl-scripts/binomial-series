@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: binomial-series,v 1.8 2004/05/17 15:35:48 jvanheld Exp $
+# $Id: binomial-series,v 1.9 2007/06/17 21:45:44 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:46:41 jvanheld>
 #
@@ -40,7 +40,7 @@ $out = &OpenOutputFile($outfile{output});
 &Verbose if ($verbose);
 
 #### header
-print $out (join("\t", "; s", 
+print $out (join("\t", "#s", 
 		 "binomial    ",
 		 "binomial_soe",
 		 "binomial_boe",
