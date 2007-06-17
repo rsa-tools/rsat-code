@@ -43,7 +43,7 @@ regulondb_gf: regulondb_genes regulondb_factors
 	cat ${REGULONDB_GENES} ${REGULONDB_FACTORS} | tr 'a-z' 'A-Z'  | sort -u > ${REGULONDB_GF}
 	@echo "${REGULONDB_GF}"
 
-## Run all the tasks for reuglonDB analysis
+## Run all the tasks for regulonDB analysis
 REGULONDB=`cat ${REGULONDB_GF}| grep -v '^;' | xargs`
 REGULON_TAXON=
 regulondb_analysis:
