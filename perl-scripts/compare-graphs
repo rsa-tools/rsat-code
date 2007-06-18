@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.31 2007/06/18 09:51:13 rsat Exp $
+# $Id: compare-graphs,v 1.32 2007/06/18 15:59:45 jvanheld Exp $
 #
 ############################################################
 
@@ -116,8 +116,9 @@ package main;
     );
     $supported_return_formats = join (",", keys %supported_return_format);
 
-    ## directed option
-    $directed = 0;
+    ## Graph type
+    $directed = 0; ## Boolean variable indicating whether the graph is directed (1) or undirected (0)
+    $self = 0; ## Boolean variable indicating whether the graph admits self-loops (1) or not (0)
 
     ## arc_id_option
     $arc_id_option = 0;
@@ -374,6 +375,24 @@ from node A to node B is different from an arc from B to A.
 	    	    
 	} elsif ($arg eq "-directed") {
 	    $directed = 1;
+	    
+	    	    ## Self-loops
+=pod
+
+=item B<-selfloops>
+
+Indicates whether the graphs can admit self-loops, i.e., an arc from a
+node to itself. Note that the graphs do not specially need to contain
+actual self-loops, the question is whether it would or not be
+acceptable for the considered input graphs to contain self-loops.
+
+This parameter affects the computation of the maximal number of arcs
+in the graph, and, thereby, the estimated probability of the
+intersection.
+
+=cut
+	} elsif ($arg eq "-self") {
+	    $self = 1;
 	    
 	    	    ## arc_id
 =pod
@@ -848,7 +867,7 @@ sub difference {
 }
 
 ################################################################
-## arcs in common between two graphs
+## Arcs in common between two graphs
 
 sub in_common {
   my ($R_graph, $Q_graph, $directed) = @_;
@@ -911,8 +930,15 @@ sub in_common {
   ## Compute the maximal number of edges given the number of nodes in the graph
   if ($directed){
     $max_union_arcs = $union_nodes*$union_nodes;
+    unless ($self) {
+      $max_union_arcs -= $union_nodes;
+    }
   } else {
-    $max_union_arcs = ($union_nodes*$union_nodes+$union_nodes)/2;
+    if ($self) {
+      $max_union_arcs = ($union_nodes*$union_nodes+$union_nodes)/2;
+    } else {
+      $max_union_arcs = ($union_nodes*$union_nodes-$union_nodes)/2;
+    }
   }
   return ($common_arcs, $common_nodes, $union_nodes, $max_union_arcs);
 }
