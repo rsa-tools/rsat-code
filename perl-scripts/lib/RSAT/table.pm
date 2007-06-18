@@ -892,7 +892,7 @@ sub _readFromTabFile {
 
 	    ## skip the | between residue and numbers
 	    shift @fields unless &main::IsReal($fields[0]);	
-
+            
 	    $self->addIndexedRow($residue, @fields);
 	}
     }
