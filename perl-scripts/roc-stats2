@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: roc-stats2,v 1.1 2007/05/29 08:17:41 jvanheld Exp $
+# $Id: roc-stats2,v 1.2 2007/06/18 06:33:21 jvanheld Exp $
 #
 ############################################################
 
@@ -16,10 +16,22 @@ roc-stats2
 =head1 DESCRIPTION
 
 This program takes azs input a set of scored results associated with
-validation labels (TP for true positive, FP for false positive, FN for
-false negatives), and computes, for each score value, the derived
-statistics (Sn, PPV, FPR), which can be further used to draw a ROC
-curve.
+validation labels (pos for positive, neg for negative) and computes,
+for each score value, the derived statistics (Sn, PPV, FPR), which can
+be further used to draw a ROC curve.
+
+
+For the sake of compatibility, other labels are also supported, for
+example
+ - TP for true positive
+ - FP for false positive 
+ - FN for false negatives
+ - TN for true negatives
+However, these will be converted into pos/neg labels, since the true
+or false quality depends on the score threshold. Thus, TP and FN will
+be converted to positives, whereas FP and TN will be converted to
+negatives.
+
 
 =head1 AUTHOR
 
@@ -38,7 +50,60 @@ roc-stats2 [-i inputfile] [-o outputfile] [-v #] [...]
 
 =head1 INPUT FORMAT
 
+The input file is a tab-delimited text file including at least two
+columns with the following information.
+- score
+- status (pos or neg)
+
+Each row represents one prediction. Pos or neg indicate the status
+(positive or negative) of the element, and the score column indicates
+the score assigned to this element.
+
 =head1 OUTPUT FORMAT
+
+The program returns a text-delimited tab file with one row per score
+value, and one column per statistics. The column content is commented
+in the header of the output file.
+
+When the option -graph is activated, the program returns a series of graphs :
+
+=over
+=item B<[output]_roc.[ift]>
+
+ROC curve.
+
+=item B<[output]_precision_recall.[ift]>
+
+Precision-recall curve.
+
+=item B<[output]_scores.[ift]>
+
+Distribution of various statistics (Sn, PPV, Acc, FPR, ...) as a
+function of the score.
+
+
+=item B<[output]_scores_xlog.[ift]>
+
+Distribution of various statistics (Sn, PPV, Acc, FPR, ...) as a
+function of the score, with a logarithmic scale on the X axis. This is
+convenient to highlight the differences between small scores. 
+
+=back
+
+where [output] is the prefix of the output file (specified with the
+option -o) and [ift] is the image format (secified with the option
+-img_format)
+
+=head2 REFERENCES
+
+There are plenty of references about ROC curves. I found this article
+quite clear.
+
+- Jesse Davis and Mark Goadrich (2006). The Relationship Between
+  Precision-Recall and ROC Curves. In the Proceedings of the 23rd
+  International Conference on Machine Learning (ICML). 
+  http://pages.cs.wisc.edu/~jdavis/davisgoadrichcamera2.pdf
+
 
 =cut
 
@@ -73,10 +138,14 @@ package main;
     local %col = (score=>1, status=>2);
 
     ## Status labels
-    local %status_label = (FP=>FP,
-			   TP=>TP,
-			   FN=>FN,
-			   TN=>TN,
+    local %status_label = (neg=>'neg',
+			   pos=>'pos',
+			   negative=>'neg',
+			   positive=>'pos',
+			   fp=>'neg',
+			   tp=>'pos',
+			   fn=>'pos',
+			   tn=>'neg',
 			  );
 
     ## Counters
@@ -109,7 +178,7 @@ package main;
 
 
       ## Check the status
-      my $label = $fields[$col{status}-1];
+      my $label = lc($fields[$col{status}-1]);
       my $status;
       if (defined($status_label{$label})) {
 	$status = $status_label{$label};
@@ -134,16 +203,17 @@ package main;
 
     ## Compute the sum of occurrences
     $status_occ{total} = 0;
-    for my $label (sort keys (%status_label)) {
-      my $status = $status_label{$label};
+    for my $status qw(pos neg) {
+#      my $status = $status_label{$label};
       unless (defined($status_occ{$status})) {
 	$status_occ{$status} = 0;
       }
       $status_occ{total} += $status_occ{$status};
       &RSAT::message::Info("Added", $status, $status_occ{$status}, "to total occurrences ->", $status_occ{total}) if ($main::verbose >= 2);
     }
-    $status_occ{total_pred} = $status_occ{TP} + $status_occ{FP};
-    $status_occ{total_pos} = $status_occ{TP} + $status_occ{FN};
+#    $total_pred = $status_occ{pos} + $status_occ{neg};
+    $total_pos = $status_occ{pos};
+    $total_neg = $status_occ{neg};
 
     ################################################################
     ## Print verbose
@@ -151,21 +221,21 @@ package main;
 
     ################################################################
     ## Print the header
-    my @out_fields = qw (score TP_icum FP_icum FN_icum Sn PPV FPR Acc_g Acc_a TP FP FN);
+    my @out_fields = qw (score TP_icum FP_icum FN_icum Sn PPV FPR Acc_g Acc_a TP FP);
 
     my %descr = ();
     $descr{score} = "Score (X)";
-    $descr{TP_icum} = "True Positive, inverse cumulative (number of FN observations with score >= X)";
-    $descr{FP_icum} = "False Positive, inverse cumulative (number of FN observations with score >= X)";
+    $descr{TP_icum} = "True Positive, inverse cumulative (number of TP observations with score >= X)";
+    $descr{FP_icum} = "False Positive, inverse cumulative (number of FP observations with score >= X)";
     $descr{FN_icum} = "False Negative, inverse cumulative (number of FN observations with score >= X)";
     $descr{TN_icum} = "True Negative, inverse cumulative (number of TN observations with score >= X)";
     $descr{TP} = "True Positive (number of TP observations with score = X)";
     $descr{FP} = "False Positive (number of FP observations with score = X)";
     $descr{FN} = "False Negative (number of FN observations with score = X)";
     $descr{TN} = "True Negative (number of TN observations with score = X)";
-    $descr{Sn} = "Sensitivity. Sn = TP/(TP + FN)";
-    $descr{PPV} = "Positive Predictive Value. PPV = TP/(TP + FP)";
-    $descr{FPR} = "False Positive Rate. FPR = 1 - PPV";
+    $descr{Sn} = "Sensitivity (also called TPR, or Recall). Sn = TP_icum/(Total positives) =TP_icum/(TP_icum + FN_icum)";
+    $descr{PPV} = "Positive Predictive Value (also called Precision). PPV = TP_icum/(TP_icum + FP_icum)";
+    $descr{FPR} = "False Positive Rate. FPR = FP_icum/(Total negatives)";
     $descr{Acc_g} = "Accuracy (geometric mean). Acc_g = sqrt(Sn*PPV)";
     $descr{Acc_a} = "Accuracy (arithmetic mean). Acc_a = (Sn + PPV)/2";
 
@@ -196,25 +266,27 @@ package main;
 
     ################################################################
     ## Compute the derived statistics and print the output
+
+     ## Initialization
     my $TP_icum = 0;
     my $FP_icum = 0;
-    my $FN_icum = $status_occ{total_pos};
-    my $pos = $status_occ{total_pos};
+    my $FN_icum = $total_pos;
 
     ## Compute cumulative distributions
     foreach my $score (@sorted_scores_desc) {
-      local $TP =  $occ{$score}{TP} || 0;
+      ## True positives
+      local $TP =  $occ{$score}{pos} || 0;
       $TP_icum += $TP;
-      local $FN =  $occ{$score}{FN} || 0;
-      $FN_icum -= $TP + $FN;
-      local $FP =  $occ{$score}{FP} || 0;
+      $FN_icum -= $TP;
+
+      ## False positives
+      local $FP =  $occ{$score}{neg} || 0;
       $FP_icum += $FP;
 
       ## Sensitivity
-#      local $pos = $TP_icum+$FN_icum;
       local $Sn = 0;
-      if ($pos > 0) {
-	$Sn = $TP_icum/($pos);
+      if ($total_pos > 0) {
+	$Sn = $TP_icum/$total_pos;
       }
 
       ## Positive Predictive Value
@@ -224,8 +296,9 @@ package main;
 	$PPV = $TP_icum /($pred);
       }
 
+
       ## False positive rate
-      local $FPR = 1 - $PPV;
+      local $FPR = $FP_icum/$total_neg;
 
       ## Accuracy
       local $Acc_g = sqrt($Sn*$PPV);
@@ -240,13 +313,16 @@ package main;
 	}
       }
       print $out join("\t", $score,
-		      $TP_icum, $FP_icum, $FN_icum,
+		      $TP_icum,
+		      $FP_icum,
+		      $FN_icum,
 		      $Sn,
 		      $PPV,
 		      $FPR,
 		      $Acc_g,
 		      $Acc_a,
-		      $TP, $FP, $FN,
+		      $TP,
+		      $FP,
 		     ), "\n";
     }
 
@@ -301,9 +377,17 @@ package main;
       ## Draw a ROC curve
       $cmd = "XYgraph -i ".$output_table.".tab";
       $cmd .= " -title1 'ROC curve'";
-      $cmd .= " -xcol 7 -ycol 5 -xleg1 'FPR' -yleg1 'Sn' -lines -pointsize 0 -min 0 -max 1";
+      $cmd .= " -xcol 7 -ycol 5 -xleg1 'FPR' -yleg1 'Sn (=TPR)' -lines -pointsize 0 -min 0 -max 1";
       $cmd .= " -format ".$img_format;
       $cmd .= " -o ".$output_table."_roc.".$img_format;
+      &doit($cmd);
+
+      ## Draw a Precision-recall curve
+      $cmd = "XYgraph -i ".$output_table.".tab";
+      $cmd .= " -title1 'Precision-recall curve'";
+      $cmd .= " -xcol 5 -ycol 6 -xleg1 'Sn (Recall)' -yleg1 'PPV (Precision)' -lines -pointsize 0 -min 0 -max 1";
+      $cmd .= " -format ".$img_format;
+      $cmd .= " -o ".$output_table."_precision_recall.".$img_format;
       &doit($cmd);
     }
 
@@ -487,11 +571,10 @@ labels should be renamed in the following way.
 	} elsif ($arg eq "-status") {
 	  my $new_status = shift(@arguments);
 	  my $old_status = shift(@arguments);
-	  if (defined($status_label{$old_status})) {
-	    $status_label{$new_status} = $status_label{$old_status};
-	    delete($status_label{$old_status});
+	  if (defined($status_label{lc($old_status)})) {
+	    $status_label{lc($new_status)} = $status_label{lc($old_status)};
+#	    delete($status_label{$old_status});
 	  } else {
-	    
 	    &RSAT::error::FatalError($old_status, "Invalid status label. Cannot be renamed.");
 	  }
 
