@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.12 2007/06/15 07:39:26 rsat Exp $
+# $Id: random-graph,v 1.13 2007/06/18 10:58:51 rsat Exp $
 #
 ############################################################
 
@@ -606,7 +606,7 @@ Allows self loops (by default, self loops are not allowed)
 ################################################################
 #### verbose message
 sub Verbose {
-    print $main::verbose_out "; convert-graph ";
+    print $main::verbose_out "; random-graph ";
     &PrintArguments($main::verbose_out);
     if (defined(%main::infile)) {
 	print $main::verbose_out "; Input files\n";
