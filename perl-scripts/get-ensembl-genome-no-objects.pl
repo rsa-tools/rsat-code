@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-no-objects.pl,v 1.8 2007/06/11 14:13:07 rsat Exp $
+# $Id: get-ensembl-genome-no-objects.pl,v 1.9 2007/06/19 10:33:50 rsat Exp $
 #
 # Time-stamp
 #
@@ -890,7 +890,12 @@ SUBSEQUENT STEPS
 	5) Calculate oligo and dyad frequencies (this takes several hours)
 
 	   install-organism -org Genus_species \
-	       -task allup,clean,upstream_freq,oligos,dyads
+	       -task allup,upstream_freq,oligos,dyads
+
+	6) Clean unnecessary sequence files
+
+	   install-organism -org Genus_species \
+	       -task clean
 
 End_of_help
   close HELP;
