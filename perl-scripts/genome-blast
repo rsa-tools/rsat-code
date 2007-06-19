@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast,v 1.5 2006/10/10 17:43:12 jvanheld Exp $
+# $Id: genome-blast,v 1.6 2007/06/19 07:28:26 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -160,7 +160,10 @@ foreach $query_organism (@query_organisms) {
 #### print verbose
 $out = &OpenOutputFile($outfile{output});
 &Verbose() if ($verbose);
+my $d = 0;
 foreach $db_organism (@db_organisms) {
+    $d++;
+#    &RSAT::message::TimeWarn("DB organism" $db_organims, $d."/".scalar(@db_organisms)) if ($main::verbose >= 1);
 
     ## DB organism
     $dir{db_org_dir} = $supported_organism{$db_organism}->{'data'};
@@ -176,7 +179,13 @@ foreach $db_organism (@db_organisms) {
     &FormatDB() if ($task{formatdb});
 
     ## Query organism(s)
+    my $q = 0;
     foreach $query_organism (@query_organisms) {
+	$q++;
+	&RSAT::message::TimeWarn("DB", $d."/".scalar(@db_organisms), $db_organism, 
+				 "Query", $q."/".scalar(@query_organisms), $query_organism, 
+				 ) if ($main::verbose >= 1);
+
 	################################################################
 	## Directories and files
 	
@@ -491,10 +500,6 @@ but could be adapted for other configurations by adapting the method
 sub Verbose {
     print $out "; genome-blast ";
     &PrintArguments($out);
-    print $out "; Query organisms\t",scalar(@query_organisms),"\n;\t", join ("\n;\t", @query_organisms), "\n";
-    print $out "; Db organisms\t",scalar(@db_organisms),"\n;\t", join ("\n;\t", @db_organisms), "\n";
-    print $out "; Tasks\n;\t", join ("\n;\t", sort (keys(%task))), "\n";
-
     if (defined(%dir)) {
 	print $out "; Directories\n";
 	while (($key,$value) = each %dir) {
@@ -513,6 +518,22 @@ sub Verbose {
 	    print $out ";\t$key\t$value\n";
 	}
     }
+#    print $out "; Query organisms\t",scalar(@query_organisms),"\n;\t", join ("\n;\t", @query_organisms), "\n";
+    print $out "; Query organisms\n";
+    my $q = 0;
+    foreach my $org (@query_organisms) {
+	$q++;
+	print $out join("\t", ";", $q, $org), "\n";
+    }
+#    print $out "; Db organisms\t",scalar(@db_organisms),"\n;\t", join ("\n;\t", @db_organisms), "\n";
+    print $out "; DB organisms\n";
+    my $d = 0;
+    foreach my $org (@db_organisms) {
+	$d++;
+	print $out join("\t", ";", $d, $org), "\n";
+    }
+    print $out "; Tasks\n;\t", join ("\n;\t", sort (keys(%task))), "\n";
+
 }
 
 
@@ -523,7 +544,7 @@ sub FormatDB {
     &RSAT::util::CheckOutDir($dir{blast_db}); 
     my $command = "formatdb -i ".$infile{db_org_fasta}." -p t -o t -n ".$outfile{blast_db};
     &doit($command, $dry, $die_on_error, $verbose);
-    &RSAT::message::Info(join("\t", "DB formatted", $outfile{blast_db}.".*"));
+    &RSAT::message::Info(join("\t", "DB formatted", $outfile{blast_db}.".*")) if ($main::verbose >= 2);
 }
 
 
