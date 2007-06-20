@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.61 2007/04/13 09:06:23 rsat Exp $
+# $Id: retrieve-seq,v 1.62 2007/06/20 14:01:32 rsat Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -420,7 +420,7 @@ foreach my  $query (@queries) {
 		} elsif ($sequence_type eq "downstream") {
 		    my $downstr_neighbour = $current_feature->get_attribute("downstr_neighbour");
 		    $downstr_neighbour_id = "<NULL>";
-		    if ($downstr_neighbour) { 
+		    if (($downstr_neighbour) && ($downstr_neighbour ne "<NULL>")) { 
 			$downstr_neighbour_id = $downstr_neighbour->get_attribute("id");
 		    }
 		    $first_comment_line .= "; downstream neighbour: ".$downstr_neighbour_id;
