@@ -818,7 +818,13 @@ sub GnuPlotEPS {
   	if ($img_format eq "pdf") {
 		my $ps2pdf_cmd = "ps2pdf $outputfile $pdf_outputfile";
 		## Execute the command
-  		&doit($ps2pdf_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+				
+		## if ps2pdf not found, will try to use use pstopdf
+    	my $stderr = `$ps2pdf_cmd 2>&1 1>/dev/null`;
+    	if ($stderr) {
+    		$ps2pdf_cmd = "pstopdf $outputfile -o $pdf_outputfile >/dev/null";
+    		&doit($ps2pdf_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    	}
 		unlink $outputfile;
 	}
 }
