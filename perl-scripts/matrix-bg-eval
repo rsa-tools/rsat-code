@@ -1628,6 +1628,8 @@ sub compareBgMethods {
     		for my $window_size (@main::window_sizes) {
     			my $graph_dir = $main::dirproject{$main::matrix_name}."/".$bg_method."/window_".$window_size."bp/graphs/";
     			for my $neg_set (keys(%bg_window_neg_sets)){
+    				## no rand_gen for bg_window
+    				next if ($neg_set eq "rand_gen");
     				my $optimal_accuracy_file = $graph_dir.$main::outfile{prefix}."_".$neg_set."_best_acc_compa.tab";
     				push(@optimal_accuracy_files,$optimal_accuracy_file);
     			}
