@@ -424,7 +424,6 @@ package main;
     			
     			if ($main::rand_gen) {
     				my $rand_seq_name =  basename($input_bg_file);
-    				print  " $main::rand_r $main::rand_l";
     				$rand_seq_name =~ s/\.freq/\_r\_$main::rand_r\_l\_$main::rand_l\.fa/;
     				my $rand_seq_file = File::Spec->rel2abs($rand_seq_name,$seq_dir);
     				$main::seq_neg_sets{rand_gen}->{$bg_method}->{$input_bg_file} = $rand_seq_file;
@@ -1584,7 +1583,7 @@ sub compareBgModels {
     		
 
     		## print 1 line per markov order
-    		for my $markov_order (@markov_orders){
+    		for my $markov_order (sort(@markov_orders)){
     			
     			## first column
     			my $markov_order_number = $markov_order;
