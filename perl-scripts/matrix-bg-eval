@@ -1779,7 +1779,7 @@ sub getOptimalAccuracy{
     print $fh `grep '^#' $roc_stat_filenames[0]`; 
     foreach my $roc_stat_filename (@roc_stat_filenames) {
     	print $fh "#".basename($roc_stat_filename)."\n";
-    	my $line = `grep -v '^;' $roc_stat_filename | grep -v '^#' | sort -rn +8 | head -1`; 
+    	my $line = `grep -v '^;' $roc_stat_filename | grep -v '^#' | sort -k 8nr | head -1`; 
     	print $fh $line;
     	my @fields = split("\t",$line);
     	my $optimal_score = $fields[0];
