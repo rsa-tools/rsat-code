@@ -1288,10 +1288,13 @@ sub ProcessRocStat {
     my %tmp_seq_neg_sets = %main::seq_neg_sets;
     
     ## change name of neagative set input_TFBS_masked for bg_window if the sequence does not have TFBS masked.
-    if ((!$main::bg_TFBS_mask)&&($bg_method eq "bg_window")) { ## input sequences NOT with TFBS masked
-    	delete($tmp_seq_neg_sets{"input_TFBS_masked"});
-    	$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
+    if ($bg_method eq "bg_window") {
+    	delete($tmp_seq_neg_sets{"rand_gen"});
+    	if (!$main::bg_TFBS_mask) {  ## input sequences NOT with TFBS masked
+    		delete($tmp_seq_neg_sets{"input_TFBS_masked"});
+    		$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
  		}
+    }
 
     foreach my $set (keys(%tmp_seq_neg_sets)){
     	my $ms_score_file_name = $main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_scores.tab";
@@ -1462,16 +1465,19 @@ sub compareBgModels {
   
   	## create a directory to collect the graphs
   	my $bg_global_graphs_dir = File::Spec->rel2abs("graphs",$root_dir);
-   	mkdir($bg_global_graphs_dir) or warn ";WARNING: Directory $bg_global_graphs_dir already exists $!" ;
+   	mkdir($bg_global_graphs_dir);
    	
    	
    	 my %tmp_seq_neg_sets = %main::seq_neg_sets;
     
     ## change name of neagative set input_TFBS_masked for bg_window if the sequence does not have TFBS masked.
-    if ((!$main::bg_TFBS_mask)&&($bg_method eq "bg_window")) { ## input sequences NOT with TFBS masked
-    	delete($tmp_seq_neg_sets{"input_TFBS_masked"});
-    	$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
+    if ($bg_method eq "bg_window") {
+    	delete($tmp_seq_neg_sets{"rand_gen"});
+    	if (!$main::bg_TFBS_mask) {  ## input sequences NOT with TFBS masked
+    		delete($tmp_seq_neg_sets{"input_TFBS_masked"});
+    		$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
  		}
+    }
    	
    	## process each negative sets
    	foreach my $neg_set (keys(%tmp_seq_neg_sets)){
@@ -1643,6 +1649,7 @@ sub compareBgMethods {
 		my $bg_method = "bg_".$method;
     	if ($bg_method eq "bg_window") {
     		my %bg_window_neg_sets = %main::seq_neg_sets;
+    		delete($bg_window_neg_sets{"rand_gen"});    	
     		unless ($main::bg_TFBS_mask){
     			delete($bg_window_neg_sets{"input_TFBS_masked"});
     			$bg_window_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
@@ -1802,7 +1809,7 @@ sub getOptimalAccuracy{
     		
     		## print in a file
     		print $fh "# corresponding inverse cumulative frequency for negative set (p-value): ".basename($matrix_quality_file)."\n";
-    		print $fh $freq_inv_cum."\n\n";
+    		print $fh $freq_inv_cum."\n\n" if ($freq_inv_cum);
     		}	
     	}
     close($fh);
