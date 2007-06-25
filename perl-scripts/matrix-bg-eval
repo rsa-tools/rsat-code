@@ -238,23 +238,24 @@ package main;
     
     ## Parameters for the &doit() command
     our $die_on_error = 1;
-    our $job_prefix = "matrix-bg-comparator"; ## find a better name !!!
+    our $job_prefix = "matrix-bg-eval"; 
     our $cluster = 0; 
     
     ###############################################################
     ## Graphs options
     
     our %graph_optimal_acc = () ;
-    our @image_formats = ();
+    our @image_formats =  ('eps','pdf');
     
-	my @tmp_img_formats = split(',',$img_formats);
-	if (scalar(@tmp_img_formats)>0) {
-	   foreach my $f (@tmp_img_formats) {
-        	push (@main::image_formats, $f);
-	    }
-	} else {
-	    	@image_formats = ('eps','pdf');
-	    }
+    if ($img_formats){
+		my @tmp_img_formats = split(',',$img_formats);
+		if (scalar(@tmp_img_formats)>0) {
+			@image_formats =  ();
+	   		foreach my $f (@tmp_img_formats) {
+        		push (@main::image_formats, $f);
+	    	}
+		}
+	} 
 
    	
    	## General options for all the graphs 
@@ -291,24 +292,24 @@ package main;
     chomp($main::dirproject{wd});
     
     ## 1 - prefix dir
-    mkdir($main::outfile{prefix}) or warn ";WARNING: Directory $main::outfile{prefix} already exist $!";
+    mkdir($main::outfile{prefix});
     $main::dirproject{prefix} = File::Spec->rel2abs($main::outfile{prefix},$main::dirproject{wd});
 
     ## 2 - matrix name
     $main::dirproject{$matrix_name} = File::Spec->rel2abs($matrix_name,$main::dirproject{prefix});
-    mkdir($main::dirproject{$matrix_name}) or warn ";WARNING: Directory $matrix_name already exists $!" ;
+    mkdir($main::dirproject{$matrix_name});
 
     ## 3 - matrix directory
     $main::dirproject{matrices} = File::Spec->rel2abs("matrices",$main::dirproject{$matrix_name});
-    mkdir($main::dirproject{matrices}) or warn ";WARNING: Directory matrices already exists $!" ;
+    mkdir($main::dirproject{matrices});
     
     ## 4 - sequences directory
     $main::dirproject{sequences} = File::Spec->rel2abs("sequences",$main::dirproject{$matrix_name});
-    mkdir($main::dirproject{sequences}) or warn ";WARNING: Directory sequences already exists $!" ;
+    mkdir($main::dirproject{sequences}) ;
     
     ## 4 - Features files directory
     $main::dirproject{features} = File::Spec->rel2abs("features",$main::dirproject{$matrix_name});
-    mkdir($main::dirproject{features}) or warn ";WARNING: Directory features already exists $!" ;
+    mkdir($main::dirproject{features});
 
     ## copy input matrix file to this directory
     copy(File::Spec->rel2abs($main::infile{matrix},$main::dirproject{wd}),File::Spec->rel2abs($matrix_name.".txt",$main::dirproject{matrices})) or die "File cannot be copied.";
@@ -370,7 +371,7 @@ package main;
 
    		## directory architecture
     	$main::dirproject{$bg_method} = File::Spec->rel2abs($bg_method,$main::dirproject{$matrix_name});
-    	mkdir($main::dirproject{$bg_method}) or warn ";WARNING: Directory $bg_method already exists $!" ;
+    	mkdir($main::dirproject{$bg_method}) ;
    		
    		###########################################################
    		## get background model files
@@ -402,11 +403,11 @@ package main;
    			## directory architecture
    			my $bg_dir = $bg_method."bg_model";
     		$main::dirproject{$bg_dir} = File::Spec->rel2abs("bg_model",$main::dirproject{$bg_method});
-    		mkdir($main::dirproject{$bg_dir}) or warn ";WARNING: Directory $main::dirproject{$bg_dir} already exists $!" ;
+    		mkdir($main::dirproject{$bg_dir}) ;
    			my $seq_dir;
    			if ($main::rand_gen) {
     			$seq_dir = File::Spec->rel2abs("sequences",$main::dirproject{$bg_method});
-   				mkdir($seq_dir) or warn ";WARNING: Directory $seq_dir already exists $!" ;
+   				mkdir($seq_dir);
    			}
    			
    			## process each specified markov order	
@@ -448,11 +449,11 @@ package main;
 				## directory architecture
 				my $window_dir = "window_".$w."bp";
     			$main::dirproject{$window_dir} = File::Spec->rel2abs($window_dir,$main::dirproject{$bg_method});
-    			mkdir($main::dirproject{$window_dir}) or warn ";WARNING: Directory $window_dir already exists $!" ;
+    			mkdir($main::dirproject{$window_dir}) ;
 				
    				my $bg_dir = $bg_method."bg_model";
     			$main::dirproject{$bg_dir} = File::Spec->rel2abs("bg_model",$main::dirproject{$window_dir});
-    			mkdir($main::dirproject{$bg_dir}) or warn ";WARNING: Directory $main::dirproject{$bg_dir} already exists $!" ;
+    			mkdir($main::dirproject{$bg_dir}) ;
 				
 			
 				## process each specified markov order	
@@ -499,11 +500,11 @@ package main;
 					## directory architecture
     				my $bg_file_name = basename($bg_file);
     				$main::dirproject{$bg_file_name} = File::Spec->rel2abs($bg_file_name,$main::dirproject{$window_dir});
-    				mkdir($main::dirproject{$bg_file_name}) or warn ";WARNING: Directory $bg_file_name already exists $!" ;
+    				mkdir($main::dirproject{$bg_file_name}) ;
     				push (@main::dir_to_remove,$main::dirproject{$bg_file_name}); 
     				
     				my $matrix_quality_dir = File::Spec->rel2abs("matrix-quality",$main::dirproject{$bg_file_name});
-    				mkdir($matrix_quality_dir) or warn ";WARNING: Directory $matrix_quality_dir already exists $!" ;
+    				mkdir($matrix_quality_dir);
 				
 					################################################################
     				## run matrix-quality for positive set
@@ -571,17 +572,17 @@ package main;
     				my $bg_window = ($order+1)."nt_sliding_window";
     				push (@oligo_length_list, $bg_window);
     				$main::dirproject{$bg_window} = File::Spec->rel2abs($bg_window,$main::dirproject{$window_dir});
-    				mkdir($main::dirproject{$bg_window}) or warn ";WARNING: Directory $bg_window already exists $!" ;
+    				mkdir($main::dirproject{$bg_window}) ;
     				my $matrix_quality_dir = File::Spec->rel2abs("matrix-quality",$main::dirproject{$bg_window});
-    				mkdir($matrix_quality_dir) or warn ";WARNING: Directory $matrix_quality_dir already exists $!" ;
+    				mkdir($matrix_quality_dir) ;
     				my $roc_stat_dir = File::Spec->rel2abs("roc-stat",$main::dirproject{$bg_window});
-    				mkdir($roc_stat_dir) or warn ";WARNING: Directory $roc_stat_dir already exists $!" ;
+    				mkdir($roc_stat_dir) ;
 				
     				if ($tasks2run{matrix_quality}){
     					chdir($matrix_quality_dir);
     					## run matrix-quality on negative set with bg sliding window
     					## negative set is the input sequences with TFBS masked or not
-    					&runMatrixQualitySlidingWindows($bg_method,$order,$w);
+    					&runMatrixQualitySlidingWindows($bg_method,$order,$w,$matrix_quality_dir);
     					chdir($main::dirproject{wd});
     				
 		
@@ -634,19 +635,15 @@ package main;
 			## directory architecture
     		my $bg_file_name = basename($bg_file);
     		$main::dirproject{$bg_file_name} = File::Spec->rel2abs($bg_file_name,$main::dirproject{$bg_method});
-    		mkdir($main::dirproject{$bg_file_name}) or warn ";WARNING: Directory $bg_file_name already exists $!" ;
+    		mkdir($main::dirproject{$bg_file_name}) ;
     		my $matrix_quality_dir = File::Spec->rel2abs("matrix-quality",$main::dirproject{$bg_file_name});
-    		mkdir($matrix_quality_dir) or warn ";WARNING: Directory $matrix_quality_dir already exists $!" ;
+    		mkdir($matrix_quality_dir) ;
     		my $matrix_scan_dir = File::Spec->rel2abs("matrix-scan",$main::dirproject{$bg_file_name});
-    		mkdir($matrix_scan_dir) or warn ";WARNING: Directory $matrix_scan_dir already exists $!" ;
+    		mkdir($matrix_scan_dir) ;
     		my $compare_feat_dir = File::Spec->rel2abs("compare-feat",$main::dirproject{$bg_file_name});
-    		mkdir($compare_feat_dir) or warn ";WARNING: Directory $compare_feat_dir already exists $!" ;
+    		mkdir($compare_feat_dir) ;
     		my $roc_stat_dir = File::Spec->rel2abs("roc-stat",$main::dirproject{$bg_file_name});
-    		mkdir($roc_stat_dir) or warn ";WARNING: Directory $roc_stat_dir already exists $!" ;
-    		  		
-    		################################################################
-    		## Generate random sequences
-    		
+    		mkdir($roc_stat_dir) ;
 
     		  		
     		################################################################
@@ -656,7 +653,7 @@ package main;
     		if ($tasks2run{matrix_quality}){
     			chdir($matrix_quality_dir);
     			&RSAT::message::TimeWarn("Running matrix-quality") if ($main::verbose >=1);	
-	   			&runMatrixQuality($bg_method,$bg_file,"","");
+	   			&runMatrixQuality($bg_method,$bg_file,$matrix_quality_dir);
     			chdir($main::dirproject{wd});
     			}
 
@@ -1098,7 +1095,7 @@ sub Replace_underscores {
 ################################################################
 ## Run matrix-quality command.
 sub runMatrixQuality {
-	my ($bg_method, $bg_file, $order,$window_size) = @_;
+	my ($bg_method, $bg_file, $matrix_quality_dir) = @_;
 
 	my $quality_prefix = $main::outfile{prefix}."_pseudo".$main::pseudo_counts;
    	
@@ -1148,6 +1145,18 @@ sub runMatrixQuality {
   print $main::out "; matrix-quality command:\n" if ($main::verbose >= 1);
   print $main::out "; $matrix_quality_cmd\n" if ($main::verbose >= 1);
   &doit($matrix_quality_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+  
+  ## clean score files (save disk space)
+  opendir(DIR, $matrix_quality_dir) || die "can't opendir $matrix_quality_dir: $!";
+  my @matrix_quality_files = readdir(DIR);
+  closedir DIR;
+  
+  foreach my $i (2..$#matrix_quality_files){
+  	if ($matrix_quality_files[$i] =~ /scores\.tab/){
+  		chomp($matrix_quality_files[$i]);
+  		push (@main::file_to_remove, File::Spec->rel2abs($matrix_quality_files[$i], $matrix_quality_dir));
+  	}
+  }
  }
  
 ################################################################
@@ -1157,7 +1166,7 @@ sub runMatrixQualityWindows {
 
 	my $quality_prefix = $main::outfile{prefix}."_pseudo".$main::pseudo_counts;
    	
-	&RSAT::message::TimeWarn("Matrix-quality : Scoring sequences of with background method ".$bg_method." file:".$bg_file.", matrix ".$main::matrix_name) 
+	&RSAT::message::TimeWarn("Matrix-quality : Scoring matrix sites of with background method ".$bg_method." file:".$bg_file.", matrix ".$main::matrix_name) 
 	  if ($main::verbose >= 2);
 	
 		
@@ -1165,7 +1174,7 @@ sub runMatrixQualityWindows {
   	$matrix_quality_cmd .= " -ms ".File::Spec->rel2abs($main::infile{matrix},$main::dirproject{wd});
   	$matrix_quality_cmd .= " -matrix_format ".$main::matrix_format;
   	$matrix_quality_cmd .= " -pseudo ".$main::pseudo_counts;
-  	$matrix_quality_cmd .= " -task scan,loo -noperm";
+  	$matrix_quality_cmd .= " -task 'scan,loo' -noperm -nocompa -nograph";
   	$matrix_quality_cmd .= " -o ".$quality_prefix;
   	$matrix_quality_cmd .= " -export_hits ";
   	$matrix_quality_cmd .= " -bgfile ".$bg_file;
@@ -1181,7 +1190,7 @@ sub runMatrixQualityWindows {
 ################################################################
 ## Run matrix-quality command with sliding windows option for matrix-scan
 sub runMatrixQualitySlidingWindows {
-	my ($bg_method, $order,$window_size) = @_;
+	my ($bg_method, $order,$window_size,$matrix_quality_dir) = @_;
 
 	my $quality_prefix = $main::outfile{prefix}."_pseudo".$main::pseudo_counts;
    	
@@ -1223,6 +1232,19 @@ sub runMatrixQualitySlidingWindows {
   print $main::out "; matrix-quality command:\n" if ($main::verbose >= 1);
   print $main::out "; $matrix_quality_cmd\n" if ($main::verbose >= 1);
   &doit($matrix_quality_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+  
+   ## clean score files (save disk space)
+  opendir(DIR, $matrix_quality_dir) || die "can't opendir $matrix_quality_dir: $!";
+  my @matrix_quality_files = readdir(DIR);
+  closedir DIR;
+  
+  foreach my $i (2..$#matrix_quality_files){
+  	if ($matrix_quality_files[$i] =~ /scores\.tab/){
+  		chomp($matrix_quality_files[$i]);
+  		push (@main::file_to_remove, File::Spec->rel2abs($matrix_quality_files[$i], $matrix_quality_dir));
+  	}
+  }
+  
  }
 
 #################################################################
@@ -1481,7 +1503,8 @@ sub compareBgModels {
    			$distrib_compa_cmd .= " -suppress /roc-stat/".$main::outfile{prefix}."_".$neg_set."_loo_roc_stat.tab";
    			$distrib_compa_cmd .= " -subst 'nt.*' 'nt_oligo'";	
     		$distrib_compa_cmd .= " -files ";
-    		$distrib_compa_cmd .= join(" ", @roc_stat_files);   		
+    		$distrib_compa_cmd .= join(" ", @roc_stat_files);   
+    		$distrib_compa_cmd .= " |sort ";		
     		## Execute the command
     		&doit($distrib_compa_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
 
@@ -1611,7 +1634,7 @@ sub compareBgMethods {
 
 	##  directory architecture
     $main::dirproject{compare_method_graphs} = File::Spec->rel2abs("graphs",$main::dirproject{$main::matrix_name});
-    mkdir($main::dirproject{compare_method_graphs}) or warn ";WARNING: Directory $main::dirproject{compare_method_graphs} already exists $!" ;
+    mkdir($main::dirproject{compare_method_graphs});
     
 	my @optimal_accuracy_files =();
 
@@ -1662,6 +1685,8 @@ sub compareBgMethods {
     	$distrib_compa_cmd .= " -subst '\/graphs\/' ':'";
     	$distrib_compa_cmd .= " -files ";
     	$distrib_compa_cmd .= join(" ", @optimal_accuracy_files);
+    	$distrib_compa_cmd .= " |sort ";	
+
     	## Execute the command
     	&doit($distrib_compa_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
     	
@@ -1698,10 +1723,13 @@ sub getOptimalAccuracy{
    my %tmp_seq_neg_sets = %main::seq_neg_sets;
     
     ## change name of neagative set input_TFBS_masked for bg_window if the sequence does not have TFBS masked.
-    if ((!$main::bg_TFBS_mask)&&($bg_method eq "bg_window")) { ## input sequences NOT with TFBS masked
-    	delete($tmp_seq_neg_sets{"input_TFBS_masked"});
-    	$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
+    if ($bg_method eq "bg_window") {
+    	delete($tmp_seq_neg_sets{"rand_gen"});
+    	if (!$main::bg_TFBS_mask) { ## input sequences NOT with TFBS masked
+    		delete($tmp_seq_neg_sets{"input_TFBS_masked"});
+    		$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
  		}
+    }
 	
     my @roc_stat_input_files = ();
     foreach my $set (keys(%tmp_seq_neg_sets)){
@@ -2056,7 +2084,7 @@ sub extractAnnotatedSitesAndFlanks {
 	my %sub_seqs =();
 	
 	
-	RSAT::message::Info("Extracting annotated TFBS centered in windows of".$window_size." bp") if ($main::verbose >= 1); 
+	RSAT::message::Info("Extracting annotated TFBS centered in windows of ".$window_size." bp") if ($main::verbose >= 1); 
 	
 	## fragment file for subsequence
 	$main::outfile{fragmentfile} = File::Spec->rel2abs($main::outfile{prefix}."_subseq_pos.tab",$main::dirproject{features});  
