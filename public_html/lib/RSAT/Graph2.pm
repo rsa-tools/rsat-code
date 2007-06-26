@@ -282,7 +282,7 @@ sub randomize {
         $arcs_to_shuffle[$j][2] = $rdm_graph_array_err[$j][2];
         $arcs_to_shuffle[$j][3] = $rdm_graph_array_err[$j][3];
       }
-      my $val = (int (scalar(@arcs_to_shuffle))/30)+1;
+      my $val = (int (scalar(@arcs_to_shuffle))/15)+1;
       if ($invalid == $invalid_old) {
         ## if the number of invalid edges did not decrease in the three 
         ## last shuffling, a 30d of the number of the remaining arcs to shuffle ((scalar(@arcs_to_shuffle))/30))
@@ -290,7 +290,7 @@ sub randomize {
         ## arcs that need to be shuffled again 
         ## the arcs are removed from the %seen hash
         $non_decreasing_count++;
-        if ($non_decreasing_count >= 3) {
+        if ($non_decreasing_count >= 10) {
           @to_remove = @rdm_graph_array[0..$val-1];
           splice(@rdm_graph_array, 0, $val);
           for (my $z = 0; $z < scalar(@to_remove); $z++) {
@@ -358,31 +358,52 @@ This supports multi-edges ($duplicated = 1) or not ($duplicated = 0)
 and self loops ($self_loops = 1) or not ($self_loops = 0) A weight is
 calculated according to the normal distribution and the $mean and $sd
 value given as argument.
+@source_nodes and @target_nodes contain the  source nodes and the target nodes of the original
+graph respectively (if exists), if the $column boolean is set to 1, then source node will remain
+source node and target node will remain target nodes (useful for bipartite graphs).
+
+
+
 
 =cut
 sub create_random_graph {
-  my ($self, $nodes_ref, $req_nodes, $req_edges, $self_loops, $duplicated, $directed, $max_degree, $mean, $sd, $normal, @labels) = @_;
+  my ($self, $nodes_ref, $req_nodes, $req_edges, $self_loops, $duplicated, $directed, $max_degree, $mean, $sd, $normal, $column, $weights_ref, $source_nodes_ref, $target_nodes_ref) = @_;
   my $rdm_graph = new RSAT::Graph2();
   my @rdm_graph_array = ();
   my $max_arc_number = 10000000;
   my @nodes = @{$nodes_ref};
+  my @source_nodes = @{$source_nodes_ref};
+  my @target_nodes = @{$target_nodes_ref};
+  my $req_source_nodes = $req_nodes;
+  my $req_target_nodes = $req_nodes;
+  my @labels = @{$weights_ref}; 
+
   ## creation the list of nodes
   if (scalar(@nodes) > 0) {
     if (scalar(@nodes) < $req_nodes) {
       &RSAT::error::FatalError("\t","More requested nodes than available nodes", "requested", $req_nodes, "available", scalar @nodes);
-    } else {
+    } elsif (!$column) {
       my @indices = 0 .. (scalar(@nodes)-1);
       my @shuffle_indices = &shuffle(@indices);
       my @random_nodes = ();
+  
       for (my $i = 0; $i < $req_nodes; $i++) {
 	push @random_nodes, $nodes[$shuffle_indices[$i]];
       }
-      @nodes = @random_nodes;
+      @source_nodes = @random_nodes;
+      @target_nodes = @random_nodes;
+      
     }
   } else {
     for (my $i = 1; $i <= $req_nodes; $i++) {
+      push @source_nodes, "n_".$i;
+      push @target_nodes, "n_".$i;
       push @nodes, "n_".$i;
     }
+  }
+  if ($column) {
+    $req_source_nodes = scalar(@source_nodes);
+    $req_target_nodes = scalar(@target_nodes);
   }
   ## Computation of the maximum number of edges
   if (!$duplicated) { 
@@ -405,11 +426,10 @@ sub create_random_graph {
   my %graph_node;
   my %seen;
   my $k = 0;
-  for (my $i = 0; $i < $req_nodes; $i++) {
-    for (my $j = 0; $j < $req_nodes; $j++) {
-        
-      my $source = $nodes[$i];
-      my $target = $nodes[$j];
+  for (my $i = 0; $i < $req_source_nodes; $i++) {
+    for (my $j = 0; $j < $req_target_nodes; $j++) {
+      my $source = $source_nodes[$i];
+      my $target = $target_nodes[$j];
       my $label = join("_", $source, $target);
       my $inv_label = join("_", $target, $source);
       if (($source eq $target) && !$self_loops) {
@@ -467,10 +487,10 @@ sub create_random_graph {
       $label = ($label * $sd) + $mean;
     } elsif (!$normal) {
       my $weight = $labels[$random_weights[$i]];
-      if (&RSAT::util::IsReal($weight)) {
+      if (&RSAT::util::IsReal($arcs_to_shuffle[$i][2]) || $main::weight_col) {
 	$label = $weight;
       } else {
-	&RSAT::message::Warning($weight, "Not a numeric weight on edge between", $source, "and", $target) if ($main::verbose >= 3);
+	&RSAT::message::Warning("Not a numeric weight on edge between", $source, "and", $target) if ($main::verbose >= 3);
       }
     }
     $graph_node{$source}++;
