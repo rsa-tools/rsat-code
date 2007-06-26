@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: roc-stats2,v 1.4 2007/06/18 15:59:01 jvanheld Exp $
+# $Id: roc-stats2,v 1.5 2007/06/26 11:27:17 jvanheld Exp $
 #
 ############################################################
 
@@ -46,6 +46,93 @@ Each row represents one prediction. Pos or neg indicate the status
 (positive or negative) of the element, and the score column indicates
 the score assigned to this element.
 
+
+=head1 OUTPUT STATISTICS
+
+The program calculates the number of true positives (TP) and false
+positives (FP) for each score provided in the input file. The inverse
+cumulative distributions are then computed, in order to indicate, for
+each possible score, the number of TP above the score (TP_icum), or
+the number of FP above the score (FP_icum).
+
+=over
+
+
+=item B<score>
+
+Score (X)
+
+=item B<N_icum>
+
+Inverse cumulated occurreces i.e. number of observations with score >=
+X
+
+=item B<F_icum>
+
+Inverse cumulated frequencies, i.e. fraction of observations with
+score >= X
+
+=item B<TP_icum>
+
+True Positive, inverse cumulative (number of TP observations with
+score >= X)
+
+=item B<FP_icum>
+
+False Positive, inverse cumulative (number of FP observations with
+score >= X)
+
+=item B<FN_icum>
+
+False Negative, inverse cumulative (number of FN observations with
+score >= X)
+
+=item B<TN_icum>
+
+True Negative, inverse cumulative (number of TN observations with
+score >= X)
+
+=item B<TP>
+
+True Positive (number of TP observations with score = X)
+
+=item B<FP>
+
+False Positive (number of FP observations with score = X)
+
+=item B<FN>
+
+False Negative (number of FN observations with score = X)
+
+=item B<TN>
+
+True Negative (number of TN observations with score = X)
+
+=item B<Sn>
+
+Sensitivity (also called TPR, or Recall). Sn = TP_icum/(Total
+positives) =TP_icum/(TP_icum + FN_icum)
+
+=item B<PPV>
+
+Positive Predictive Value (also called Precision). PPV =
+TP_icum/(TP_icum + FP_icum)
+
+=item B<FPR>
+
+False Positive Rate. FPR = FP_icum/(Total negatives) =
+FP_icum/(FP_icum + TN_icum)
+
+=item B<Acc_g>
+
+Accuracy (geometric mean). Acc_g = sqrt(Sn*PPV)
+
+=item B<Acc_a>
+
+Accuracy (arithmetic mean). Acc_a = (Sn + PPV)/2";
+
+=back
+
 =head1 OUTPUT FORMAT
 
 The program returns a text-delimited tab file with one row per score
@@ -55,6 +142,7 @@ in the header of the output file.
 When the option -graph is activated, the program returns a series of graphs :
 
 =over
+
 =item B<[output]_roc.[ift]>
 
 ROC curve.
@@ -81,7 +169,7 @@ where [output] is the prefix of the output file (specified with the
 option -o) and [ift] is the image format (secified with the option
 -img_format)
 
-=head2 REFERENCES
+=head1 REFERENCES
 
 There are plenty of references about ROC curves. I found this article
 quite clear.
@@ -224,10 +312,12 @@ package main;
 
     ################################################################
     ## Print the header
-    my @out_fields = qw (score TP_icum FP_icum FN_icum Sn PPV FPR Acc_g Acc_a TP FP);
+    my @out_fields = qw (score N_icum F_icum TP_icum FP_icum FN_icum Sn PPV FPR Acc_g Acc_a TP FP);
 
     my %descr = ();
     $descr{score} = "Score (X)";
+    $descr{N_icum} = "Inverse cumulated occurreces i.e. number of observations with score >= X";
+    $descr{F_icum} = "Inverse cumulated frequencies, i.e. fraction of observations with score >= X";
     $descr{TP_icum} = "True Positive, inverse cumulative (number of TP observations with score >= X)";
     $descr{FP_icum} = "False Positive, inverse cumulative (number of FP observations with score >= X)";
     $descr{FN_icum} = "False Negative, inverse cumulative (number of FN observations with score >= X)";
@@ -238,7 +328,7 @@ package main;
     $descr{TN} = "True Negative (number of TN observations with score = X)";
     $descr{Sn} = "Sensitivity (also called TPR, or Recall). Sn = TP_icum/(Total positives) =TP_icum/(TP_icum + FN_icum)";
     $descr{PPV} = "Positive Predictive Value (also called Precision). PPV = TP_icum/(TP_icum + FP_icum)";
-    $descr{FPR} = "False Positive Rate. FPR = FP_icum/(Total negatives)";
+    $descr{FPR} = "False Positive Rate. FPR = FP_icum/(Total negatives) = FP_icum/(FP_icum + TN_icum)";
     $descr{Acc_g} = "Accuracy (geometric mean). Acc_g = sqrt(Sn*PPV)";
     $descr{Acc_a} = "Accuracy (arithmetic mean). Acc_a = (Sn + PPV)/2";
 
@@ -307,15 +397,22 @@ package main;
       local $Acc_g = sqrt($Sn*$PPV);
       local $Acc_a = ($Sn+$PPV)/2;
 
+      ## Cumulative frequencies
+      local $N_icum = $TP_icum + $FP_icum;
+      local $F_icum = $N_icum/$status_occ{total};
+
       ## Print one result line
-      foreach $stat qw(Sn PPV FPR Acc_g Acc_a) {
+      foreach $stat qw(Sn PPV FPR Acc_g Acc_a F_icum) {
 	if ($$stat < 1e-2) {
 	  $$stat = sprintf("%5.2g", $$stat);
 	} else {
 	  $$stat = sprintf("%.3f", $$stat);
 	}
       }
-      print $out join("\t", $score,
+      print $out join("\t",
+		      $score,
+		      $N_icum,
+		      $F_icum,
 		      $TP_icum,
 		      $FP_icum,
 		      $FN_icum,
@@ -328,7 +425,6 @@ package main;
 		      $FP,
 		     ), "\n";
     }
-
 
     ################################################################
     ## Finish verbose
@@ -354,7 +450,7 @@ package main;
       ## Draw stats as a function of score
       my $cmd = "XYgraph -i ".$output_table.".tab";
       $cmd .= " -title1 'Score distributions'";
-      $cmd .= " -xcol 1 -ycol 5,6,7,8,9 -xleg1 'score' -lines -pointsize 0 -ymin 0 -ymax 1 -legend";
+      $cmd .= " -xcol 1 -ycol 7,8,9,1à,11 -xleg1 'score' -lines -pointsize 0 -ymin 0 -ymax 1 -legend";
       $cmd .= "  -ygstep1 0.1 -ygstep2 0.05";
       $cmd .= " -format ".$img_format;
       $cmd .= " -o ".$output_table."_scores.".$img_format;
@@ -363,7 +459,7 @@ package main;
       ## Draw stats as a function of score, with log scale on X axis
       $cmd = "XYgraph -i ".$output_table.".tab";
       $cmd .= " -title1 'Score distributions'";
-      $cmd .= " -xcol 1 -ycol 5,6,7,8,9 -xleg1 'score' -lines -pointsize 0 -ymin 0 -ymax 1 -legend";
+      $cmd .= " -xcol 1 -ycol 7,8,9,10,11 -xleg1 'score' -lines -pointsize 0 -ymin 0 -ymax 1 -legend";
       $cmd .= "  -ygstep1 0.1 -ygstep2 0.05";
       $cmd .= " -format ".$img_format;
       $cmd .= " -xlog 2 -o ".$output_table."_scores_xlog2.".$img_format;
@@ -372,7 +468,7 @@ package main;
       ## Draw a graph with TP=f(FP)
       $cmd = "XYgraph -i ".$output_table.".tab";
       $cmd .= " -title1 'True verus false positives'";
-      $cmd .= " -xcol 3 -ycol 2 -xleg1 FP -yleg1 TP -lines -pointsize 0";
+      $cmd .= " -xcol 5 -ycol 4 -xleg1 FP -yleg1 TP -lines -pointsize 0";
       $cmd .= " -format ".$img_format;
       $cmd .= " -o ".$output_table."_FP_TP.".$img_format;
       &doit($cmd);
@@ -380,7 +476,7 @@ package main;
       ## Draw a ROC curve
       $cmd = "XYgraph -i ".$output_table.".tab";
       $cmd .= " -title1 'ROC curve'";
-      $cmd .= " -xcol 7 -ycol 5 -xleg1 'FPR' -yleg1 'Sn (=TPR)' -lines -pointsize 0 -min 0 -max 1";
+      $cmd .= " -xcol 9 -ycol 7 -xleg1 'FPR' -yleg1 'Sn (=TPR)' -lines -pointsize 0 -min 0 -max 1";
       $cmd .= " -format ".$img_format;
       $cmd .= " -o ".$output_table."_roc.".$img_format;
       &doit($cmd);
@@ -388,7 +484,7 @@ package main;
       ## Draw a Precision-recall curve
       $cmd = "XYgraph -i ".$output_table.".tab";
       $cmd .= " -title1 'Precision-recall curve'";
-      $cmd .= " -xcol 5 -ycol 6 -xleg1 'Sn (Recall)' -yleg1 'PPV (Precision)' -lines -pointsize 0 -min 0 -max 1";
+      $cmd .= " -xcol 7 -ycol 8 -xleg1 'Sn (Recall)' -yleg1 'PPV (Precision)' -lines -pointsize 0 -min 0 -max 1";
       $cmd .= " -format ".$img_format;
       $cmd .= " -o ".$output_table."_precision_recall.".$img_format;
       &doit($cmd);
@@ -397,7 +493,7 @@ package main;
       ## (like in von Mering, 2002, but beware: this is over-emphasizing the poor results)
       $cmd = "XYgraph -i ".$output_table.".tab";
       $cmd .= " -title1 'Precision-recall curve'";
-      $cmd .= " -xcol 5 -ycol 6 -xleg1 'Sn (Recall)' -yleg1 'PPV (Precision)' -lines -pointsize 0 -min 0 -max 1 -xlog -ylog";
+      $cmd .= " -xcol 7 -ycol 8 -xleg1 'Sn (Recall)' -yleg1 'PPV (Precision)' -lines -pointsize 0 -min 0 -max 1 -xlog -ylog";
       $cmd .= " -format ".$img_format;
       $cmd .= " -o ".$output_table."_precision_recall_log.".$img_format;
       &doit($cmd);
@@ -406,10 +502,11 @@ package main;
       ## (like in von Mering, 2002, but beware: this is over-emphasizing the poor results)
       $cmd = "XYgraph -i ".$output_table.".tab";
       $cmd .= " -title1 'Precision-recall curve'";
-      $cmd .= " -xcol 5 -ycol 6 -xleg1 'Sn (Recall)' -yleg1 'PPV (Precision)' -lines -pointsize 0 -min 0 -max 1 -xlog";
+      $cmd .= " -xcol 7 -ycol 8 -xleg1 'Sn (Recall)' -yleg1 'PPV (Precision)' -lines -pointsize 0 -min 0 -max 1 -xlog";
       $cmd .= " -format ".$img_format;
       $cmd .= " -o ".$output_table."_precision_recall_xlog.".$img_format;
       &doit($cmd);
+
     }
 
     exit(0);
@@ -726,5 +823,27 @@ __END__
 =pod
 
 =head1 SEE ALSO
+
+=item B<roc-stats>>
+
+I<roc-stats> and I<roc-stats2> are doing more or less the same
+analysis, there are two versions for historical reasons, but these two
+programs will be merged soon, in order to combine their
+functionalities.
+
+=item B<compare-graphs>
+
+The output of compare-graphs (with the option -return union) can be
+used as input by roc-stats2.
+
+=item B<compare-features>
+
+The output of I<compare-features> can be used as input for roc-stats2
+(but the labels have to be adapted with the option -status).
+
+=item B<matrix-quality>
+
+I<matrixquality> uses I<roc-stats2> to compute matching statistics for
+position-specific scoring matrices (PSSM).
 
 =cut
