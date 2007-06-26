@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.13 2007/06/18 10:58:51 rsat Exp $
+# $Id: random-graph,v 1.14 2007/06/26 14:46:55 rsat Exp $
 #
 ############################################################
 
@@ -107,8 +107,13 @@ package main;
     # directed edges
     $directed = 0;
     
+    # source and target nodes stay connected in the random graph
+    $col_conservation = 0;
+    
     # nodes and weights
     @nodes = ();
+    @source_nodes = ();
+    @target_nodes = ();
     @weights = ();
     
     
@@ -162,7 +167,11 @@ package main;
     }
     if (($sd ne 'null' && $mean eq 'null') || ($sd eq 'null' && $mean ne 'null')) {
       &RSAT::error::FatalError("\t", "You must specify both standard deviation and mean value for the edge weight");
-    }    
+    }
+    if ($col_conservation && !$main::infile{input}) {
+      &RSAT::error::FatalError("\t", "Option -col_conservation cannot be used without specifying an input random graph");
+    }
+
     if ($random_type eq "") {
       &RSAT::error::FatalError("\t", "You must specify a randomization type.");
     } elsif (($random_type eq "node_degree" || $random_type eq "node_degree_distrib" || $random_type eq "ER") && !exists($main::infile{input})) {
@@ -170,13 +179,29 @@ package main;
     } elsif (($random_type eq "node_degree" || $random_type eq "node_degree_distrib") && $max_degree > 1) {
       &RSAT::error::FatalError("\t", "Option -max_degree are not compatible with randomization type", $random_type);
     }
-
+    if ($random_type ne "ER" && $col_conservation) {
+      &RSAT::error::FatalError("\t", "Option -col_conservation must be used with randomization ER (-random_type ER option)");
+    }
     ################################################################
     ## Read an input graph if available
     my $graph = new RSAT::Graph2();
     if ($main::infile{input}) {
       $graph->graph_from_text($input_format,$main::infile{input}, $source_col, $target_col, $weight_col);
-      @nodes =  $graph->get_nodes();
+      @arcs =  $graph->get_attribute("arcs");
+      my %node_set = ();
+      my %target_node_set = ();
+      my %source_node_set = ();
+      # si on prend l'option avec tous les noeuds
+      # si on prend l'option avec les noeuds source restent source et target restent target
+      for (my $i = 0; $i < scalar(@arcs); $i++) {
+        $node_set{$arcs[$i][0]}++;
+        $node_set{$arcs[$i][1]}++;
+        $source_node_set{$arcs[$i][0]}++;
+        $target_node_set{$arcs[$i][1]}++;
+        @nodes = keys %node_set;
+        @source_nodes = keys %source_node_set;
+        @target_nodes = keys %target_node_set;
+      }
     }
     
     ################################################################
@@ -215,9 +240,14 @@ package main;
         push @weights, $arcs[$i][2];
         if (!&RSAT::util::IsReal($arcs[$i][2])) {
           $real = 0;
-          last;
         }
       }
+      if ($normal && $mean eq "null" && $sd eq "null" && !$real) {
+        my $error_message =  "Cannot compute the mean and standard deviation of the edges : edge weights contain\n\tat least one non real value"."\n";
+        $error_message .=  "\t"."Please check the edges value or enter a mean or sd value manually (-mean # -sd # options)"."\n";
+        &RSAT::error::FatalError($error_message);
+      }
+
       if ($weight_col > 0 && $real) {
         my %summary = &summary(@weights);
         $mean = $summary{mean};
@@ -247,7 +277,10 @@ package main;
       }
       if ($random_type eq 'scratch' || $random_type eq 'ER') {
         my $nodes_ref = \@nodes;
-        $rdm = $graph->create_random_graph($nodes_ref, $req_nodes, $req_edges, $self, $duplicated, $directed, $max_degree, $mean, $sd, $normal, @weights);
+        my $source_nodes_ref = \@source_nodes;
+        my $target_nodes_ref = \@target_nodes;
+        my $weights_ref = \@weights;
+        $rdm = $graph->create_random_graph($nodes_ref, $req_nodes, $req_edges, $self, $duplicated, $directed, $max_degree, $mean, $sd, $normal, $col_conservation, $weights_ref, $source_nodes_ref, $target_nodes_ref);
       } elsif ($random_type eq 'node_degree') {
         $rdm = $graph->randomize($self, $duplicated, $directed);
       } elsif ($random_type eq 'node_degree_distrib') {
@@ -519,7 +552,7 @@ This argument can only be used with the scratch and ER randomization type and mu
 	    ## File containing nodes name
 =pod
 
-=item B<-nodefile #>
+=item B<-sd #>
 
 Standard deviation value of the weight of the arcs.
 This argument can only be used with the scratch and ER randomization type and must be combined with the -mean option.
@@ -583,6 +616,16 @@ Specifies whether more than one edge may link two nodes. (by default, duplicated
 	} elsif ($arg eq "-duplicate") {
 	    $duplicated = 1;
 =pod
+
+=item B<-col_conservation>
+
+Only compatible with ER randomization of a graph. Source and target nodes stay source and target nodes in the randomized graph.
+
+=cut
+	    	    
+	} elsif ($arg eq "-col_conservation") {
+	    $col_conservation = 1;
+=pod
 =item B<-self>
 
 Allows self loops (by default, self loops are not allowed)
@@ -643,3 +686,4 @@ __END__
 =item I<graph-set-attributes>
 
 =cut
+
