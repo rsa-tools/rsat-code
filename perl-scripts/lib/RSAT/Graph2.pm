@@ -20,7 +20,7 @@ require "RSA.lib";
 
 =head1 NAME
 
-    RSAT::Graph
+    RSAT::Graph2
 
 =head1 DESCRIPTION
 
