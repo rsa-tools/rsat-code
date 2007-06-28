@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.15 2007/06/28 13:47:33 rsat Exp $
+# $Id: random-graph,v 1.16 2007/06/28 14:04:34 rsat Exp $
 #
 ############################################################
 
@@ -127,7 +127,7 @@ package main;
     $sd = "null";
     
     #number of iteration
-    $iter = "-1";
+    $iter = 300;
     
     # randomization type
     $random_type = "";
