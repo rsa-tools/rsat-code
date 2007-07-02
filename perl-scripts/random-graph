@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.16 2007/06/28 14:04:34 rsat Exp $
+# $Id: random-graph,v 1.17 2007/07/02 15:22:54 rsat Exp $
 #
 ############################################################
 
@@ -15,7 +15,7 @@ random-graph
 
 =head1 DESCRIPTION
 
-Generate random graphs either from an existing graph or from scratch.
+Generate random graphs either from an existing graph or from scratch according to different randomization procedure.
 
 =head1 AUTHORS
 
@@ -23,7 +23,7 @@ Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
 
 =head1 CATEGORY
 
-util
+Graph utilities
 
 =head1 USAGE
     
@@ -135,6 +135,9 @@ package main;
     # normal
     $normal = 0;
     
+    # single
+    $single = 0;
+    
     %supported_random_type =(
 			       scratch=>1,
 			       node_degree=>1, 
@@ -171,11 +174,9 @@ package main;
     if (($sd ne 'null' && $mean eq 'null') || ($sd eq 'null' && $mean ne 'null')) {
       &RSAT::error::FatalError("\t", "You must specify both standard deviation and mean value for the edge weight");
     }
-    if ($col_conservation && !$main::infile{input}) {
-      &RSAT::error::FatalError("\t", "Option -col_conservation cannot be used without specifying an input random graph");
-    }
-    if (($iter != -1) && ($random_type ne "node_degree")) {
-      &RSAT::error::FatalError("\t", "You must not specify randomization type", $random_type, "with -iter option");
+
+    if (($iter != 300) && ($random_type ne "node_degree")) {
+      &RSAT::error::Warning("\t", "Option -iter is only useful with node_degree randomization type", $random_type, "with -iter option");
     }
 
     if ($random_type eq "") {
@@ -184,6 +185,8 @@ package main;
       &RSAT::error::FatalError("\t", "You must specify an input graph when using randomization type", $random_type);
     } elsif (($random_type eq "node_degree" || $random_type eq "node_degree_distrib") && $max_degree > 1) {
       &RSAT::error::FatalError("\t", "Option -max_degree are not compatible with randomization type", $random_type);
+    } elsif ($random_type ne "ER" && $single != 0) {
+      &RSAT::error::FatalError("\t", "Option -single cannot be use with randomization type ", $random_type);
     }
     if ($random_type ne "ER" && $col_conservation) {
       &RSAT::error::FatalError("\t", "Option -col_conservation must be used with randomization ER (-random_type ER option)");
@@ -234,14 +237,14 @@ package main;
       close $node_handle;
     }
     
-    ################################################################
+    ############################################################################
     ## Count the number of edges and nodes for an erdos-renyi randomization
     if ($random_type eq 'ER') {
-      $req_edges = scalar ($graph->get_attribute("arcs"));
+      my @arcs =  $graph->get_attribute("arcs");
+      $req_edges = scalar @arcs;
       $req_nodes = scalar @nodes;
       my $real = 1;
       ## calculate the mean and the sd deviation of the weights if wcol is available and the columns are real values
-      my @arcs =  $graph->get_attribute("arcs");
       for (my $i = 0; $i < scalar(@arcs); $i++) {
         push @weights, $arcs[$i][2];
         if (!&RSAT::util::IsReal($arcs[$i][2])) {
@@ -286,14 +289,11 @@ package main;
         my $source_nodes_ref = \@source_nodes;
         my $target_nodes_ref = \@target_nodes;
         my $weights_ref = \@weights;
-        $rdm = $graph->create_random_graph($nodes_ref, $req_nodes, $req_edges, $self, $duplicated, $directed, $max_degree, $mean, $sd, $normal, $col_conservation, $weights_ref, $source_nodes_ref, $target_nodes_ref);
+        $rdm = $graph->create_random_graph($nodes_ref, $req_nodes, $req_edges, $self, $duplicated, $directed, $max_degree, $single, $mean, $sd, $normal, $col_conservation, $weights_ref, $source_nodes_ref, $target_nodes_ref);
       } elsif ($random_type eq 'node_degree') {
         $rdm = $graph->randomize($self, $duplicated, $directed,$iter);
       } elsif ($random_type eq 'node_degree_distrib') {
         $rdm = $graph->random_graph_degree_distrib();
-#         if (!$self || !$duplicated) {
-#           $rdm = $graph->randomize($self, $duplicated, $directed);
-#         }
       }
       ## Print verbose
       &Verbose() if ($main::verbose);
@@ -571,14 +571,14 @@ This argument can only be used with the scratch and ER randomization type and mu
 	    }   
 =item B<-sd #>
 
-Number of iteration for the randomization procedure.
-This option can only be used with the node degree randomisation type
+Number of iteration for the randomization procedure (default = 300).
+This option can only be used with the node degree randomisation type.
 
 =cut
 	} elsif ($arg eq "-iter") {
 	    $main::iter = shift (@arguments);
 	    unless (&IsInteger($iter)) {
-		&RSAT::error::FatalError(join("\t", $sd, "Invalid value for the number of iteration of the randomization procedure"));
+		&RSAT::error::FatalError(join("\t", $sd, "Invalid value for the number of iterations of the node_degree randomization procedure"));
 	    } 
 	    ##  maximal degree of the nodes
 =pod
@@ -593,8 +593,20 @@ Maximal degree of the nodes in the random graph
 	    unless (&IsNatural($max_degree) && ($max_degree > 0)) {
 		&RSAT::error::FatalError(join("\t", $max_degree, "Invalid value for the number of requested nodes. Must be a strictly positive natural number"));
 	    }	
+	    	   ## single option
+=pod
+
+=item B<-no_single #>
+
+Prevent the ER graph from cotaining nodes with no neighbour
+
+=cut
+	} elsif ($arg eq "-no_single") {
+	    $single = 1;
+
 	    	   ## Directed option
 =pod
+
 
 =item B<-directed>
 

@@ -388,7 +388,7 @@ source node and target node will remain target nodes (useful for bipartite graph
 
 =cut
 sub create_random_graph {
-  my ($self, $nodes_ref, $req_nodes, $req_edges, $self_loops, $duplicated, $directed, $max_degree, $mean, $sd, $normal, $column, $weights_ref, $source_nodes_ref, $target_nodes_ref) = @_;
+  my ($self, $nodes_ref, $req_nodes, $req_edges, $self_loops, $duplicated, $directed, $max_degree, $single, $mean, $sd, $normal, $column, $weights_ref, $source_nodes_ref, $target_nodes_ref) = @_;
   my $rdm_graph = new RSAT::Graph2();
   my @rdm_graph_array = ();
   my $max_arc_number = 10000000;
@@ -399,7 +399,7 @@ sub create_random_graph {
   my $req_target_nodes = $req_nodes;
   my @labels = @{$weights_ref}; 
 
-  ## creation the list of nodes
+  ## creation of the list of nodes
   if (scalar(@nodes) > 0) {
     if (scalar(@nodes) < $req_nodes) {
       &RSAT::error::FatalError("\t","More requested nodes than available nodes", "requested", $req_nodes, "available", scalar @nodes);
@@ -413,7 +413,8 @@ sub create_random_graph {
       }
       @source_nodes = @random_nodes;
       @target_nodes = @random_nodes;
-      
+      print "CHOICE";
+
     }
   } else {
     for (my $i = 1; $i <= $req_nodes; $i++) {
@@ -423,9 +424,14 @@ sub create_random_graph {
     }
   }
   if ($column) {
+    
     $req_source_nodes = scalar(@source_nodes);
     $req_target_nodes = scalar(@target_nodes);
   }
+      print "SOURCENODES".scalar @source_nodes."\n";
+      print "TARGETNODES".scalar @target_nodes."\n";
+      print "REQ_SOURCE_NODES".$req_source_nodes."\n";
+      print "REQ_TARGET_NODES".$req_target_nodes."\n";
   ## Computation of the maximum number of edges
   if (!$duplicated) { 
     if (!$directed && !$self_loops) {
@@ -453,6 +459,7 @@ sub create_random_graph {
       my $target = $target_nodes[$j];
       my $label = join("_", $source, $target);
       my $inv_label = join("_", $target, $source);
+
       if (($source eq $target) && !$self_loops) {
 	next;
       }
@@ -461,7 +468,9 @@ sub create_random_graph {
       }
       if ((exists($seen{$label}) || exists($seen{$inv_label})) && !$directed && !$duplicated) {
 	next;
-      }
+      } 
+      
+      
       if ((exists($seen{$label}) && exists($seen{$inv_label})) && !$duplicated) {
 	next;
       }
@@ -475,15 +484,13 @@ sub create_random_graph {
       }
       $degree{$source}++;
       $degree{$target}++;
-      $seen{$label}++;        
+      $seen{$label}++;
+      
       push @possible_source, $source;
       push @possible_target, $target;
       $k++;
-      if ($k > $req_edges*10) {
-	last;
-	if (($k % 100000 == 0) && ($main::verbose >= 3)) {
-	  &RSAT::message::psWarn("\t","$k" ,"potential edges created.");
-	}
+      if (($k % 100000 == 0) && ($main::verbose >= 3)) {
+	&RSAT::message::psWarn("\t","$k" ,"potential edges created.");
       }
     }
   }
@@ -495,34 +502,49 @@ sub create_random_graph {
   if ((scalar(@possible_target)) < $req_edges) {
     &RSAT::error::FatalError("\t","Maximal node degree specification is not compatible with the number of requested edges");
   }
-  my @random_edges = 0 .. (scalar(@possible_target)-1);
+  my @random_edges = 0 .. (scalar(@possible_source)-1);
   my @random_weights = 0 .. $req_edges-1;
   @random_edges = &shuffle(@random_edges);
   @random_weights = &shuffle(@random_weights);
-  for (my $i = 0; $i < $req_edges; $i++) {
-    my $source = $possible_source[$random_edges[$i]];
-    my $target = $possible_target[$random_edges[$i]];
-    my $label = join("_", $source, $target);
-    if ($mean ne 'null' && $sd ne 'null' && $normal) {
-      $label = &gaussian_rand();
-      $label = ($label * $sd) + $mean;
-    } elsif (!$normal) {
-      my $weight = $labels[$random_weights[$i]];
-      if (&RSAT::util::IsReal($arcs_to_shuffle[$i][2]) || $main::weight_col) {
-	$label = $weight;
-      } else {
-	&RSAT::message::Warning("Not a numeric weight on edge between", $source, "and", $target) if ($main::verbose >= 3);
+  my $weightcpt = 0;
+  my $count = 0;
+  while (scalar(@rdm_graph_array) < $req_edges) {
+    
+    for (my $i = 0; $i < scalar(@random_edges); $i++) {
+      my $source = $possible_source[$random_edges[$i]];
+      my $target = $possible_target[$random_edges[$i]];
+      
+      my $label = join("_", $source, $target);
+      my $cpt = scalar(@rdm_graph_array); ## nombre d'arcs dans le tableau
+      if ($mean ne 'null' && $sd ne 'null' && $normal) {
+        $label = &gaussian_rand();
+        $label = ($label * $sd) + $mean;
+      } elsif (!$normal) {
+        my $weight = $labels[$random_weights[$cpt]];
+        if (&RSAT::util::IsReal($arcs_to_shuffle[$i][2]) || $main::weight_col) {
+	  $label = $weight;
+        } else {
+# 	  &RSAT::message::Warning("Not a numeric weight on edge between", $source, "and", $target) if ($main::verbose >= 3);
+        }
       }
+
+      if (scalar(@rdm_graph_array) == $req_edges) {
+        last;
+      }
+      if (($single && $count == 0) && (exists($graph_node{$source}) && exists($graph_node{$target}))) {
+        next;
+      }
+      $graph_node{$source}++;
+      $graph_node{$target}++;
+      $rdm_graph_array[$cpt][0] = $source;
+      $rdm_graph_array[$cpt][1] = $target;
+      $rdm_graph_array[$cpt][2] = $label;
+      $rdm_graph_array[$cpt][3] = "#000088";
+      $rdm_graph_array[$cpt][4] = "#000088";
+      $rdm_graph_array[$cpt][5] = "#000044";
+      &RSAT::message::Info("\t", "Random edge created between", $source, "and", $target, "with label", $label) if ($main::verbose >= 3);
     }
-    $graph_node{$source}++;
-    $graph_node{$target}++;
-    $rdm_graph_array[$i][0] = $source;
-    $rdm_graph_array[$i][1] = $target;
-    $rdm_graph_array[$i][2] = $label;
-    $rdm_graph_array[$i][3] = "#000088";
-    $rdm_graph_array[$i][4] = "#000088";
-    $rdm_graph_array[$i][5] = "#000044";
-    &RSAT::message::Info("\t", "Random edge created between", $source, "and", $target, "with label", $label) if ($main::verbose >= 3);
+    $count++;
   }
   $rdm_graph->load_from_array(@rdm_graph_array);
     
