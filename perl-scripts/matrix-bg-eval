@@ -675,7 +675,23 @@ package main;
 ############## COMPARE ALL BG METHODS ##########################
 ################################################################ 
 
+	################################################################
+    ###### clean temporary files
+
+    if (scalar(@main::file_to_remove) > 0) {
+    	unlink($_) for @file_to_remove;
+    }
+    
+    if (scalar(@main::dir_to_remove) > 0) {
+    	for my $dir (@main::dir_to_remove){
+    		unlink glob $dir."/matrix-quality/*";
+    		rmdir $dir."/matrix-quality/";
+    		rmdir $dir;
+    	}
+    }
+
     &compareBgMethods() if ($tasks2run{compare_method});
+    
 
 ################################################################
 ############## PREPARE END OF PROGRAM ##########################
@@ -696,20 +712,6 @@ package main;
     ###### close output stream
     close $main::out if ($main::outfile{prefix});
 
-	################################################################
-    ###### clean temporary files
-
-    if (scalar(@main::file_to_remove) > 0) {
-    	unlink($_) for @file_to_remove;
-    }
-    
-    if (scalar(@main::dir_to_remove) > 0) {
-    	for my $dir (@main::dir_to_remove){
-    		unlink glob $dir."/matrix-quality/*";
-    		rmdir $dir."/matrix-quality/";
-    		rmdir $dir;
-    	}
-    }
  
 }
 
@@ -1065,7 +1067,7 @@ Dispatch matrix-quality jobs on a cluster.
 ################################################################
 #### verbose message
 sub Verbose {
-    print $main::out "; matrix-bg-comparator "; ## find a better name !!!
+    print $main::out "; matrix-bg-eval "; 
     &PrintArguments($main::out);
     if (defined(%main::infile)) {
 		print $main::out "; Input files\n";
@@ -1509,7 +1511,7 @@ sub compareBgModels {
    			$distrib_compa_cmd .= " -subst 'nt.*' 'nt_oligo'";	
     		$distrib_compa_cmd .= " -files ";
     		$distrib_compa_cmd .= join(" ", @roc_stat_files);   
-    		$distrib_compa_cmd .= " |sort ";		
+    		$distrib_compa_cmd .= " |sort";		
     		## Execute the command
     		&doit($distrib_compa_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
 
@@ -1600,7 +1602,7 @@ sub compareBgModels {
     	}  	
     	
     	###################################################################################	
-    	## Draw graph with markov orders in x axis
+    	## Draw graph with markov orders in x axis 
     	
     	foreach my $file (@optimal_accuracy_files) {	
     	
@@ -1674,11 +1676,10 @@ sub compareBgMethods {
     }
 
 	################################################################
-    ## Compare the best accuracies distributions (LOO only)
+    ## Compare the best accuracies distributions (LOO only) 
      			
-    	my $bg_method_compa = File::Spec->rel2abs($main::outfile{prefix}."_bg_methods_compa.tab",$main::dirproject{compare_method_graphs});
-
-    			
+    	my $bg_method_compa = File::Spec->rel2abs($main::outfile{prefix}."_bg_methods_loo_compa.tab",$main::dirproject{compare_method_graphs});
+		
     	my $distrib_compa_cmd = "compare-scores ";
     	$distrib_compa_cmd .= " -numeric";
     	$distrib_compa_cmd .= " -ic 1"; 
@@ -1696,9 +1697,11 @@ sub compareBgMethods {
     	## Execute the command
     	&doit($distrib_compa_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
     	
-    ## Generate the graphs for each image format
+    #####################################################################################
+    ## Generate the graphs for each image format => all in one graph
+    
    	 foreach my $image_format (@main::image_formats) {
-		my $outfile = $bg_method_compa;
+   	 	my $outfile = $bg_method_compa;
     	$outfile =~ s/\.tab/\.$image_format/;	
     	$main::all_graph_options =~ s/matrix score/markov order/;
     			
@@ -1715,7 +1718,234 @@ sub compareBgMethods {
  	  	## Execute the command
     	&doit($XYgraph_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);	
     	}
+    
+    #####################################################################################
+    ## Generate one graph per sequence set 
+    
+    ## get each sequence set from compare-scores file eg : #key	bg_window_500bp:input_seq	bg_window_500bp:rand	bg_window_1000bp:input_seq	bg_window_1000bp:rand
+    my $compare_score_header = `grep -v '^;' $bg_method_compa | head -1 `;
+    chomp($compare_score_header);
+    my @compare_scores_headers = split('\t', $compare_score_header);
+    my %compare_score_seq_sets = ();
+    foreach my $i (1..$#compare_scores_headers){
+    	my @tmp = split(/:/,$compare_scores_headers[$i]);
+    	my $seq_set = $tmp[1];
+    	$compare_score_seq_sets{$seq_set}->{($i+1)} = 1;
+    }
 
+    ## one graph per sequence set
+    foreach my $seq_set (keys(%compare_score_seq_sets)){
+   	 foreach my $image_format (@main::image_formats) {
+   	 	 my $outfile = $bg_method_compa;
+		$outfile =~ s/compa/compa_$seq_set/;	
+    	$outfile =~ s/\.tab/\.$image_format/;	
+    	$main::all_graph_options =~ s/matrix score/markov order/;
+    	my $XYgraph_cmd = " XYgraph ".$main::all_graph_options;
+    	$XYgraph_cmd .= " -format ".$image_format;
+    	my @ycols = keys(%{$compare_score_seq_sets{$seq_set}});
+    	$XYgraph_cmd .= " -xcol 1 -ycol ".join(",",@ycols);
+    	$XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+    	$XYgraph_cmd .= " -i ".$bg_method_compa;
+    	$XYgraph_cmd .= " -yleg1 'Best accuracy_g' ";
+    	$XYgraph_cmd .= " -title2 'Comparison of background model calculation methods in LOO : $seq_set'";
+    	$XYgraph_cmd .= " -gp 'set xrange [0:9]'";
+ 	  	$XYgraph_cmd .= " -o ".$outfile;
+ 	  	## Execute the command
+    	&doit($XYgraph_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);	
+    	}
+    }
+    
+    #####################################################################################
+    ## Generate one graph per markov order, with in x-axis the matrix scores
+    
+    ## get all markov model tested
+    my %markov_orders_to_compare = ();
+	foreach my $bg_method (keys(%main::graph_optimal_acc)) {
+		foreach my $window_size (keys(%{$main::graph_optimal_acc{$bg_method}})){
+			foreach my $neg_set (keys(%{$main::graph_optimal_acc{$bg_method}->{$window_size}})){
+				foreach my $pos_set (keys(%{$main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}})){
+					foreach my $markov_order (keys(%{$main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}->{$pos_set}})){
+						$markov_orders_to_compare{$markov_order} -> {$bg_method} -> {$window_size}->{$neg_set} = 1;
+					}
+				}
+			}
+		}
+	}
+
+    ## get the bgfile directory for each markov order, and each bg method
+    foreach my $bg_method (@main::bg_methods) {
+    	$bg_method = "bg_".$bg_method;  	
+    	 my %bg_dirs = (); 	
+    	 if ($bg_method eq "bg_window") {
+    	 	foreach my $window_size (@main::window_sizes){
+    	 		my $window_dir_name = "window_".$window_size."bp";
+    	 		my @tmp = glob($main::dirproject{$window_dir_name}."/*");
+    	 		$bg_dirs{$window_size} = \@tmp;
+    	 	}
+    	 } else {
+    	 	my @tmp = glob($main::dirproject{$bg_method}."/*");
+    	 	$bg_dirs{no_window} = \@tmp;
+    	 }
+
+    	 foreach my $window_size (keys(%bg_dirs)) {
+    	 	foreach my $dir_name (@{$bg_dirs{$window_size}}){
+    	 		if (basename($dir_name) =~ /^(\d+)nt/){
+    	 			my $oligo = $1;
+    	 			my $markov_order = "markov_".($oligo-1);
+    	 			$markov_orders_to_compare{$markov_order} -> {$bg_method} -> {$window_size} -> {bg_dir} = $dir_name;
+    	 		}
+    	 	}
+    	 }
+    }    	 	
+
+    ## treat each markov order
+    foreach my $markov_order (keys(%markov_orders_to_compare)) {
+    	 ## directory architecture
+    	 my $markov_order_dir = File::Spec->rel2abs($markov_order,$main::dirproject{compare_method_graphs});
+    	 mkdir($markov_order_dir);
+    	 
+    	 my %roc_stat_files = ();
+    	 
+    	 ## get the roc-stat files to compare for this markov order
+    	 foreach my $bg_method (keys(%{$markov_orders_to_compare{$markov_order}})) {	 	
+    	 	
+    	 	 my %tmp_seq_neg_sets = %main::seq_neg_sets;
+    
+   			 ## change name of neagative set input_TFBS_masked for bg_window if the sequence does not have TFBS masked.
+    			if ($bg_method eq "bg_window") {
+    				delete($tmp_seq_neg_sets{"rand_gen"});
+    				if (!$main::bg_TFBS_mask) {  ## input sequences NOT with TFBS masked
+    					delete($tmp_seq_neg_sets{"input_TFBS_masked"});
+    					$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
+ 						}
+   				 }
+   			   		
+   			## process each negative sets
+   			foreach my $neg_set (keys(%tmp_seq_neg_sets)){
+    			my @neg_set_roc_stat_files =();
+    			## get roc-stat files for each bg model
+    			foreach my $window_size (keys(%{$markov_orders_to_compare{$markov_order}->{$bg_method}})) {
+    				my $bg_file_dir = $markov_orders_to_compare{$markov_order} -> {$bg_method} -> {$window_size} -> {bg_dir};
+    				my $roc_stat_file = $bg_file_dir."/roc-stat/".$main::outfile{prefix}."_".$neg_set."_loo_roc_stat.tab";
+    				push (@neg_set_roc_stat_files,$roc_stat_file);
+    			}
+    			$roc_stat_files{$neg_set}->{$bg_method} = \@neg_set_roc_stat_files;
+   			}
+    	 }	
+    	
+    	## run compare-scores for each markov model
+    	foreach my $neg_set (keys(%roc_stat_files)) {		
+    			## run compare-scores
+    			my $outfile = File::Spec->rel2abs($main::outfile{prefix}."_Acc_g_".$neg_set."_compa.tab",$markov_order_dir);
+    			my @input_files =();
+    			while (my ($bg_method, $file_array) = each(%{$roc_stat_files{$neg_set}})){
+    				foreach my $file (@{$file_array}){
+    					push(@input_files,$file);
+    				}
+    			}
+    			my $distrib_compa_cmd = "compare-scores ";
+    			$distrib_compa_cmd .= " -numeric";
+    			$distrib_compa_cmd .= " -ic 1"; 
+    			$distrib_compa_cmd .= " -sc 8";# score column for the observed distributions
+  				$distrib_compa_cmd .= " -o ".$outfile;
+   				$distrib_compa_cmd .= " -suppress ".$main::dirproject{$main::matrix_name}."/";
+    			$distrib_compa_cmd .= " -suppress '\/window'";
+    			$distrib_compa_cmd .= " -suppress '\/.*\.tab'";	
+    			$distrib_compa_cmd .= " -files ";
+    			$distrib_compa_cmd .= join(" ", @input_files);   
+    			$distrib_compa_cmd .= " | sort";		
+    			## Execute the command
+    			&doit($distrib_compa_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);
+    			
+    			## Draw the graph for this markov model
+    			## Generate the graphs for each image format
+    			my $roc_stat_file = $outfile;
+    			foreach my $image_format (@main::image_formats) {
+    				my $neg_set = $neg_set;			
+    				my $outfile = $roc_stat_file;
+    				$outfile =~ s/\.tab/\.$image_format/;
+					$main::all_graph_options =~ s/markov order/matrix score/;
+    				my $XYgraph_cmd = " XYgraph ".$main::all_graph_options;
+    				$XYgraph_cmd .= " -format ".$image_format;
+    				my @ycols = 2..($#input_files+2);
+    				$XYgraph_cmd .= " -xcol 1 -ycol ".join(",",@ycols);
+    				$XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+    				$XYgraph_cmd .= " -i ".$roc_stat_file;
+    				$XYgraph_cmd .= " -yleg1 'Best accuracy_g' ";
+    				my $markov_order_number = $markov_order;
+    				$markov_order_number  =~ s/markov_//;
+  	 				$XYgraph_cmd .= " -title2 'Comparison of background model calculation methods in LOO : $neg_set , markov order : $markov_order_number'";
+ 	  	    		$XYgraph_cmd .= " -o ".$outfile;
+ 	  	    		## Execute the command
+    				&doit($XYgraph_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batch, $main::job_prefix);	
+    			}
+    		}
+		} 
+    
+    	#####################################################
+    	## print best accuracies values : 1 file for matrix-site, 1 file for loo
+		my @loo_best_acc =();
+		my @matrix_sites_best_acc = ();
+		
+    	## parse hash containing best accuracies for each sequence set
+    	foreach my $bg_method (keys(%main::graph_optimal_acc)) {
+    		foreach my $window_size (keys(%{$main::graph_optimal_acc{$bg_method}})){
+    			foreach my $neg_set (keys(%{$main::graph_optimal_acc{$bg_method}->{$window_size}})){
+    				foreach my $pos_set (keys(%{$main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}})){
+    					foreach my $markov_order (keys(%{$main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}->{$pos_set}})){
+    						my %value =();
+    						$value{key} =  "$bg_method:$window_size:$neg_set:$pos_set:$markov_order";
+    						$value{opt_acc} = $main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}->{$pos_set}->{$markov_order}->{opt_acc};
+    						$value{opt_score} = $main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}->{$pos_set}->{$markov_order}->{opt_score};
+    						if($main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}->{$pos_set}->{$markov_order}->{p_value}) {
+    							$value{p_value} = $main::graph_optimal_acc{$bg_method}->{$window_size}->{$neg_set}->{$pos_set}->{$markov_order}->{p_value};
+     						} 
+    						if ($pos_set eq "matrix_sites"){
+    							push(@matrix_sites_best_acc,\%value);
+    						} else {
+								push(@loo_best_acc,\%value);
+    						}
+    					}
+    				}
+    			}
+    		}
+    	}
+    	
+    	## sort the best accuracies hash by decreasing accuracies.
+    	my @ranked_loo_best_acc =  sort {$b->{opt_acc} <=> $a->{opt_acc}}
+	      @loo_best_acc;	    
+	    my @ranked_matrix_sites_best_acc =  sort {$b->{opt_acc} <=> $a->{opt_acc}}
+	      @matrix_sites_best_acc;
+		
+		## print to file
+		my $matrix_sites_best_acc_file = File::Spec->rel2abs($main::outfile{prefix}."_best_acc_matrix_sites_compa.tab",$main::dirproject{compare_method_graphs});
+    	my $loo_best_acc_file = File::Spec->rel2abs($main::outfile{prefix}."_best_acc_loo_compa.tab",$main::dirproject{compare_method_graphs});
+ 		my ($matrix_file) = &OpenOutputFile($matrix_sites_best_acc_file);
+    	my ($loo_file) = &OpenOutputFile($loo_best_acc_file);
+    	
+    	print $matrix_file "#seq_set\topt_acc\topt_score\tp-value\n";
+    	print $loo_file "#seq_set\topt_acc\topt_score\tp-value\n";
+    	
+    	foreach my $values_ref (@ranked_loo_best_acc) {
+    		   	 print $loo_file join("\t",
+    		   	 $values_ref -> {key},
+   		 		 $values_ref->{opt_acc},
+   		 		 $values_ref->{opt_score}
+   		 		 );
+   		 		 print $loo_file "\t".$values_ref->{p_value} if($values_ref->{p_value});
+ 				 print $loo_file "\n";		
+    	}
+    	foreach my $values_ref (@ranked_matrix_sites_best_acc) {
+    		   	 print $matrix_file join("\t",
+    		   	 $values_ref -> {key},
+   		 		 $values_ref->{opt_acc},
+   		 		 $values_ref->{opt_score}
+   		 		 );
+   		 		 print $matrix_file "\t".$values_ref->{p_value} if($values_ref->{p_value});
+ 				 print $matrix_file "\n";		
+    	}
+    	close $matrix_file;
+    	close $loo_file;
 }
 
 #################################################################
@@ -1795,6 +2025,7 @@ sub getOptimalAccuracy{
 
     		## get p-value associated to this score
     		my $matrix_quality_line =  `grep "^$optimal_score" $matrix_quality_file`;
+    		chomp($matrix_quality_line);
     		my @fields = split("\t",$matrix_quality_line);
     		my $freq_inv_cum = pop(@fields);
     		
@@ -1808,7 +2039,8 @@ sub getOptimalAccuracy{
     		
     		## print in a file
     		print $fh "# corresponding inverse cumulative frequency for negative set (p-value): ".basename($matrix_quality_file)."\n";
-    		print $fh $freq_inv_cum."\n\n" if ($freq_inv_cum);
+    		print $fh $freq_inv_cum if ($freq_inv_cum);
+    		print $fh "\n\n";
     		}	
     	}
     close($fh);
