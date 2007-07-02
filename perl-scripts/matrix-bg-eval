@@ -105,7 +105,8 @@ package main;
    			bg_input_rand_seq => 1, ## generate random sequence with nucleotide frequencies for bg_input
 			matrix_quality=>1, ## launch matrix-quality
 			roc_stat=>1, ## Launch roc-stat
-			p_matching_eval=>1, ## process data with pMatchingEval approach (matrix-scan + compare-features)
+			perm => 1, ## also run roc-stat on permuted dataset
+#			p_matching_eval=>1, ## process data with pMatchingEval approach (matrix-scan + compare-features)
 			optimal_acc => 1, ## get best accuracy for roc-stat
 			compare_bg =>1, ## compare results of roc-stat among a given bg method
 			compare_method => 1, ##draw graphs to compare bg methods
@@ -1259,7 +1260,7 @@ sub runRocStat {
     $roc_stat_cmd .= " -i ".$file;
     $roc_stat_cmd .= " -scol 2 -lcol 1 ";
     $roc_stat_cmd .= " -status site pos -status non-site neg "; 
-    $roc_stat_cmd .= " -graphs "; 
+ #   $roc_stat_cmd .= " -graphs "; ## uncomment to add the graphs produced by roc-stat
     $roc_stat_cmd .= " -o ".$roc_stat_filename;
     			
     ## Execute the command
@@ -1288,7 +1289,7 @@ sub ProcessRocStat {
     
     my %tmp_seq_neg_sets = %main::seq_neg_sets;
     
-    ## change name of neagative set input_TFBS_masked for bg_window if the sequence does not have TFBS masked.
+    ## change name of negative set input_TFBS_masked for bg_window if the sequence does not have TFBS masked.
     if ($bg_method eq "bg_window") {
     	delete($tmp_seq_neg_sets{"rand_gen"});
     	if (!$main::bg_TFBS_mask) {  ## input sequences NOT with TFBS masked
@@ -1302,6 +1303,14 @@ sub ProcessRocStat {
     	my $ms_score_file= File::Spec->rel2abs($ms_score_file_name,$matrix_quality_dir);
     	my $result = `grep -v '^;' $ms_score_file | grep -v '^#' | cut -f 2,8 | awk '{print "non-"\$1"\\t"\$2}'`;   				
     	$roc_stat_input{$set} = $result;
+    	
+    	if ($main::tasks2run{perm}){
+    		my $ms_score_file_name = $main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_perm_col_1-".$main::perm_neg."_scores.tab";
+    		my $ms_score_file= File::Spec->rel2abs($ms_score_file_name,$matrix_quality_dir);
+    		my $result = `grep -v '^;' $ms_score_file | grep -v '^#' | cut -f 2,8 | awk '{print "non-"\$1"\\t"\$2}'`;  
+    		my $key = $set."_perm"; 				
+    		$roc_stat_input{$key} = $result;
+    		}
     	}
     		
     foreach my $set (@main::seq_pos_sets){
@@ -1309,6 +1318,15 @@ sub ProcessRocStat {
     	my $ms_score_file= File::Spec->rel2abs($ms_score_file_name,$matrix_quality_dir);
     	my $result = `grep -v '^;' $ms_score_file | grep -v '^#' | cut -f 2,8`;   				
     	$roc_stat_input{$set} = $result;
+    	
+    	 if ($main::tasks2run{perm}){
+    		my $ms_score_file_name = $main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_perm_col_1-".$main::perm_pos."_scores.tab";
+    		my $ms_score_file= File::Spec->rel2abs($ms_score_file_name,$matrix_quality_dir);
+    		my $result = `grep -v '^;' $ms_score_file | grep -v '^#' | cut -f 2,8 `; 
+    		my $key = $set."_perm"; 				
+    		$roc_stat_input{$key} = $result;
+    		}
+    	
     	}
     		
     ## add LOO file
@@ -1341,7 +1359,20 @@ sub ProcessRocStat {
     	print $fh $roc_stat_input{'matrix_sites'};
     	print $fh $roc_stat_input{$set};
     	close($fh);
-    		}
+    	
+    	## merge permuted matrices on matrix_sites and negative set
+    	if ($main::tasks2run{perm}){
+    		$filename = $main::outfile{prefix}."_".$set."_matrix_sites_perm_score_label.tab";
+    		$name = $set."_matrix_sites_perm";
+    		$main::outfile{$name}= File::Spec->rel2abs($filename,$roc_stat_dir);
+    		push (@roc_stat_input_files, $main::outfile{$name} );
+    			
+    		($fh) = &OpenOutputFile($main::outfile{$name});
+    		print $fh $roc_stat_input{'matrix_sites_perm'};
+    		print $fh $roc_stat_input{$set};
+    		close($fh);
+    	}
+    }
 		
     #######################################
     ## Run Roc-stat
