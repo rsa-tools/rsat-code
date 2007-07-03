@@ -235,7 +235,6 @@ sub randomize {
     my $non_decreasing_count = 0;
     my $loopcount = 0;
     while (scalar(@arcs) != scalar(@rdm_graph_array)) {
-      print "RDM_GRAPH_ARRAY ".scalar(@rdm_graph_array)."\n";
       $loopcount++;
       my @arcs_size = 0 .. (scalar(@arcs_to_shuffle)-1);
       my @shuffled_arcs_size = shuffle(@arcs_size);
@@ -305,15 +304,12 @@ sub randomize {
           splice(@rdm_graph_array, 0, $val);
           for (my $z = 0; $z < scalar(@to_remove); $z++) {
             my $label1 = join("_", $to_remove[$z][0], $to_remove[$z][1]);
-            if (!exists($seen{$label1})) {
-              print "LABEL 1 ".$label1."\n";
-            }
+
             delete $seen{$label1};
             if (!$directed) {
               my $label2 = join("_", $to_remove[$z][1], $to_remove[$z][0]);
               delete $seen{$label2};
               if (!exists($seen{$label2})) {
-                print "LABEL 2 ".$label2."\n";
               }
             }
             $arcs_to_shuffle[$z+$invalid][0] = $to_remove[$z][0];
@@ -328,7 +324,6 @@ sub randomize {
       }
       if ($main::verbose >= 3) {
         &RSAT::message::Info("\t",$invalid, "arcs invalid... Shuffling procedure starts again on those arcs", $loopcount, "iteration") if ($main::verbose >= 3);
-        print "LABELSIZE ".(scalar keys %seen)."\n";
       }
 
       
@@ -407,14 +402,11 @@ sub create_random_graph {
       my @indices = 0 .. (scalar(@nodes)-1);
       my @shuffle_indices = &shuffle(@indices);
       my @random_nodes = ();
-  
       for (my $i = 0; $i < $req_nodes; $i++) {
 	push @random_nodes, $nodes[$shuffle_indices[$i]];
       }
       @source_nodes = @random_nodes;
       @target_nodes = @random_nodes;
-      print "CHOICE";
-
     }
   } else {
     for (my $i = 1; $i <= $req_nodes; $i++) {
@@ -424,14 +416,9 @@ sub create_random_graph {
     }
   }
   if ($column) {
-    
     $req_source_nodes = scalar(@source_nodes);
     $req_target_nodes = scalar(@target_nodes);
   }
-      print "SOURCENODES".scalar @source_nodes."\n";
-      print "TARGETNODES".scalar @target_nodes."\n";
-      print "REQ_SOURCE_NODES".$req_source_nodes."\n";
-      print "REQ_TARGET_NODES".$req_target_nodes."\n";
   ## Computation of the maximum number of edges
   if (!$duplicated) { 
     if (!$directed && !$self_loops) {
@@ -453,10 +440,17 @@ sub create_random_graph {
   my %graph_node;
   my %seen;
   my $k = 0;
+  my @random_source = 0 .. ($req_source_nodes-1);
+  my @random_target = 0 .. ($req_target_nodes-1);
+  @random_source = &shuffle(@random_source);
+  
   for (my $i = 0; $i < $req_source_nodes; $i++) {
+    @random_target = &shuffle(@random_target);
     for (my $j = 0; $j < $req_target_nodes; $j++) {
-      my $source = $source_nodes[$i];
-      my $target = $target_nodes[$j];
+      my $source_index = $random_source[$j%($req_source_nodes)];
+      my $target_index = $random_target[$j%($req_target_nodes)];
+      my $source = $source_nodes[$source_index];
+      my $target = $target_nodes[$target_index];
       my $label = join("_", $source, $target);
       my $inv_label = join("_", $target, $source);
 
@@ -469,8 +463,6 @@ sub create_random_graph {
       if ((exists($seen{$label}) || exists($seen{$inv_label})) && !$directed && !$duplicated) {
 	next;
       } 
-      
-      
       if ((exists($seen{$label}) && exists($seen{$inv_label})) && !$duplicated) {
 	next;
       }
@@ -485,13 +477,15 @@ sub create_random_graph {
       $degree{$source}++;
       $degree{$target}++;
       $seen{$label}++;
-      
       push @possible_source, $source;
       push @possible_target, $target;
       $k++;
       if (($k % 100000 == 0) && ($main::verbose >= 3)) {
 	&RSAT::message::psWarn("\t","$k" ,"potential edges created.");
       }
+    }
+    if ($k > (50*$req_edges)) {
+      last;
     }
   }
   if ($duplicated) {
@@ -509,11 +503,9 @@ sub create_random_graph {
   my $weightcpt = 0;
   my $count = 0;
   while (scalar(@rdm_graph_array) < $req_edges) {
-    
     for (my $i = 0; $i < scalar(@random_edges); $i++) {
       my $source = $possible_source[$random_edges[$i]];
       my $target = $possible_target[$random_edges[$i]];
-      
       my $label = join("_", $source, $target);
       my $cpt = scalar(@rdm_graph_array); ## nombre d'arcs dans le tableau
       if ($mean ne 'null' && $sd ne 'null' && $normal) {
@@ -873,6 +865,48 @@ sub get_neighbours_id {
 
   return @result;
 }
+################################################################
+=pod
+
+=item B<get_clust_coef($directed, $self_loop)>
+
+Return the clustering coefficient of a group of nodes.
+The clustering coefficient consist in the number of edges among the nodes of the
+group divided by the maximum number of edges.
+If the graph is directed of may contain self-loop the maximum number of edges is different.
+Duplicated edges will be counted only once.
+
+=cut
+# sub get_clust_coef {
+#   my ($self, @nodes, $directed, $self_loops) = @_;
+#   &RSAT::message::Info("\t","Looking for neighbours of node", $node_id) if $main::verbose > 2;
+#   my %arcs_name_id = $self->get_attribute("arcs_name_id");
+#   my $max_arc = $self->get_attribute("nb_arc_bw_node");
+#   my $max_arc_number;
+#   my $group_size = scalar(@nodes);
+#   if ($max_arc == 1) { 
+#     if (!$directed) {
+#       $max_arc_number = ($group_size*($group_size-1))/2;
+#     } elsif ($directed) {
+#       $max_arc_number = ($group_size*($group_size-1));
+#     } 
+#   } 
+#   for (my $i = 0; $i < scalar(@nodes); $i++) {
+#     for (my $j = $i; $j < scalar(@nodes); $j++) {
+#       next if (!$self_loops && ($i == $j));
+#       my $label = $nodes[$i]."_".$nodes[$j]."_1";
+#       if (exists($arcs_name_id{$label})) {
+#       }
+#     }
+#   }
+# 
+#   return @result;
+# }
+
+
+
+
+
 
 ################################################################
 =pod
