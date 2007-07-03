@@ -1219,6 +1219,7 @@ sub runMatrixQualitySlidingWindows {
   	$matrix_quality_cmd .= " -pseudo ".$main::pseudo_counts;
   	while (my ($id,$neg_seq) = each (%main::seq_neg_sets) ) {
   		next if ($id eq 'input_TFBS_masked');
+  		next if ($id eq 'rand_gen');
   		$matrix_quality_cmd .= " -seq ".$id." ".File::Spec->rel2abs($neg_seq,$main::dirproject{wd});
   	}	
   	$matrix_quality_cmd .= " -seq ".$input_seq_name." ".$input_file;   	
