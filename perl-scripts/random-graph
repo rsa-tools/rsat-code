@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.18 2007/07/03 14:39:07 rsat Exp $
+# $Id: random-graph,v 1.19 2007/07/04 08:14:57 rsat Exp $
 #
 ############################################################
 
@@ -207,10 +207,11 @@ package main;
         $node_set{$arcs[$i][1]}++;
         $source_node_set{$arcs[$i][0]}++;
         $target_node_set{$arcs[$i][1]}++;
-        @nodes = keys %node_set;
-        @source_nodes = keys %source_node_set;
-        @target_nodes = keys %target_node_set;
+        
       }
+      @nodes = keys %node_set;
+      @source_nodes = keys %source_node_set;
+      @target_nodes = keys %target_node_set;
     }
     
     ################################################################
