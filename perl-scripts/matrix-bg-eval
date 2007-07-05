@@ -513,7 +513,7 @@ package main;
     				if ($tasks2run{matrix_quality}){
     					chdir($matrix_quality_dir);
     					&RSAT::message::TimeWarn("Running matrix-quality") if ($main::verbose >=1);	
-	  			#		&runMatrixQualityWindows($bg_method,$bg_file);
+	  					&runMatrixQualityWindows($bg_method,$bg_file);
     					chdir($main::dirproject{wd});
     							
     				################################################################
