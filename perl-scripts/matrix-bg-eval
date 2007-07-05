@@ -513,7 +513,7 @@ package main;
     				if ($tasks2run{matrix_quality}){
     					chdir($matrix_quality_dir);
     					&RSAT::message::TimeWarn("Running matrix-quality") if ($main::verbose >=1);	
-	  					&runMatrixQualityWindows($bg_method,$bg_file);
+	  			#		&runMatrixQualityWindows($bg_method,$bg_file);
     					chdir($main::dirproject{wd});
     							
     				################################################################
@@ -551,6 +551,21 @@ package main;
 										$bg_order_oligo =~ s/nt.*//;
 										$pos_scores{$bg_order_oligo}->{$TFBS_id}->{matrix_sites} = $line;
 										last;
+									}
+								}
+								close ($in);
+								
+								## read features from permuted matrix-site file  
+								($in, $input_dir) = &OpenInputFile(File::Spec->rel2abs($main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_matrix_sites_perm_col_1-".$main::perm_pos."_scores.tab",$matrix_quality_dir));
+								my $count = 0;
+								while ( my $line = <$in>){					
+									next if ($line=~ /^[#|;]/);								
+									if ($line =~ /$site/i) {	
+										$count ++;	
+										my $bg_order_oligo = $bg_file_name;
+										$bg_order_oligo =~ s/nt.*//;
+										$pos_scores{$bg_order_oligo}->{$TFBS_id}->{matrix_sites_perm} .= $line;
+										last if ($count == $main::perm_pos);
 									}
 								}
 								close ($in);
@@ -607,9 +622,24 @@ package main;
     						print $out $pos_scores{$bg_order_oligo}->{$TFBS_id}->{$set};
     					}
     					close ($out);
-    				
-    					## remove unnecessary files and directories
+    					
+    					## remove unnecessary files and directories test_pseudo1_scan_matrix_sites_perm_col_1-5_score_distrib.tab
        					push (@main::file_to_remove,File::Spec->rel2abs($main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_score_distrib.tab",$matrix_quality_dir)); 
+       					
+    					
+    					## merge results of matrix_sites_perm on positive set
+    					$set = "matrix_sites_perm";
+    					$matrix_site_merged_file_name = $main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_col_1-".$main::perm_pos."_scores.tab";
+    					$matrix_site_merged_file = File::Spec->rel2abs($matrix_site_merged_file_name,$matrix_quality_dir);
+    				
+    					my ($out_perm) = &OpenOutputFile($matrix_site_merged_file);
+    					foreach my $TFBS_id (keys(%{$pos_scores{$bg_order_oligo}})) {
+    						print $out_perm $pos_scores{$bg_order_oligo}->{$TFBS_id}->{$set};
+    					}
+    					close ($out_perm);
+    				
+    					## remove unnecessary files and directories test_pseudo1_scan_matrix_sites_perm_col_1-5_score_distrib.tab
+       					push (@main::file_to_remove,File::Spec->rel2abs($main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_col_1-".$main::perm_pos."_score_distrib.tab",$matrix_quality_dir)); 
     					}
     				
     				## run ROC stat
@@ -679,17 +709,17 @@ package main;
 	################################################################
     ###### clean temporary files
 
-    if (scalar(@main::file_to_remove) > 0) {
-    	unlink($_) for @file_to_remove;
-    }
-    
-    if (scalar(@main::dir_to_remove) > 0) {
-    	for my $dir (@main::dir_to_remove){
-    		unlink glob $dir."/matrix-quality/*";
-    		rmdir $dir."/matrix-quality/";
-    		rmdir $dir;
-    	}
-    }
+#    if (scalar(@main::file_to_remove) > 0) {
+#    	unlink($_) for @file_to_remove;
+#    }
+#    
+#    if (scalar(@main::dir_to_remove) > 0) {
+#    	for my $dir (@main::dir_to_remove){
+#    		unlink glob $dir."/matrix-quality/*";
+#    		rmdir $dir."/matrix-quality/";
+#    		rmdir $dir;
+#    	}
+#    }
 
     &compareBgMethods() if ($tasks2run{compare_method});
     
@@ -1176,7 +1206,8 @@ sub runMatrixQualityWindows {
   	$matrix_quality_cmd .= " -ms ".File::Spec->rel2abs($main::infile{matrix},$main::dirproject{wd});
   	$matrix_quality_cmd .= " -matrix_format ".$main::matrix_format;
   	$matrix_quality_cmd .= " -pseudo ".$main::pseudo_counts;
-  	$matrix_quality_cmd .= " -task 'scan,loo' -noperm -nocompa -nograph";
+  	$matrix_quality_cmd .= " -perm matrix_sites ".$main::perm_pos if ($main::perm_pos);	
+  	$matrix_quality_cmd .= " -task 'scan,loo,permute' -nocompa -nograph";
   	$matrix_quality_cmd .= " -o ".$quality_prefix;
   	$matrix_quality_cmd .= " -export_hits ";
   	$matrix_quality_cmd .= " -bgfile ".$bg_file;
@@ -1203,6 +1234,7 @@ sub runMatrixQualitySlidingWindows {
     my $input_sequences;
     my $input_seq_name;
     my $input_file;
+    
  	if ($main::bg_TFBS_mask) { ## from input sequences with TFBS masked
  		$input_sequences = $main::outfile{ref_sequences_masked};
  		$input_seq_name = "input_TFBS_masked";
@@ -1218,12 +1250,14 @@ sub runMatrixQualitySlidingWindows {
   	$matrix_quality_cmd .= " -matrix_format ".$main::matrix_format;
   	$matrix_quality_cmd .= " -pseudo ".$main::pseudo_counts;
   	while (my ($id,$neg_seq) = each (%main::seq_neg_sets) ) {
-  		next if ($id eq 'input_TFBS_masked');
+  		next if ($id eq $input_seq_name);
   		next if ($id eq 'rand_gen');
   		$matrix_quality_cmd .= " -seq ".$id." ".File::Spec->rel2abs($neg_seq,$main::dirproject{wd});
+  		$matrix_quality_cmd .= " -perm ".$id." ".$main::perm_neg if ($main::perm_neg);
   	}	
-  	$matrix_quality_cmd .= " -seq ".$input_seq_name." ".$input_file;   	
-  	$matrix_quality_cmd .= " -task scan";
+  	$matrix_quality_cmd .= " -seq ".$input_seq_name." ".$input_file;  
+  	$matrix_quality_cmd .= " -perm ".$input_seq_name." ".$main::perm_neg if ($main::perm_neg); 	
+  	$matrix_quality_cmd .= " -task 'scan,permute'";
   	$matrix_quality_cmd .= " -o ".$quality_prefix;
   	$matrix_quality_cmd .= " -export_hits ";
   	$matrix_quality_cmd .= " -markov ".$order;
