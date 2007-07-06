@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.71 2007/05/09 13:15:03 jvanheld Exp $
+# $Id: matrix-scan,v 1.72 2007/07/06 16:07:56 rsat Exp $
 #
-# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+# Time-stamp: <2007-07-06 17:58:12 jturatsi>
 #
 ############################################################
 ## TO DO: add an option to sort hits either by position or by score
@@ -269,6 +269,7 @@ package main;
   local $origin = 0;
   local $pseudo_counts = 1;
   local $equi_pseudo = 0;
+  local $bg_pseudo = 0.1;
   local $matrix_format = "tab";
   local $seq_format = "fasta";
   local $verbose = 0;
@@ -538,6 +539,8 @@ package main;
     $bg_model->set_attribute("strand", "sensitive");
   }
   $bg_model->set_attribute("n_treatment", $n_treatment);
+  $bg_model->set_attribute("bg_pseudo", $bg_pseudo);
+
 
   if ($infile{bg}) {
     ## Read background model from a file
@@ -1542,6 +1545,21 @@ By default, the pseudo-weight is distributed proportionally to residue priors.
 	    $main::equi_pseudo = 1;
 
 	## Origin
+=pod
+
+
+=item B<-bg_pseudo #>
+
+Pseudo frequency for the background models. Value must be a real between 0 and 1 (default: 0.1)
+If the training sequence length (L) is known, the value can be set to
+square-root of L divided by L+squareroot of L
+
+=cut
+	} elsif ($arg eq "-bg_pseudo") {
+	    $main::bg_pseudo = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::bg_pseudo,
+					  "Invalid format for bg_pseudo, should be a Real number between 0 and 1."))
+		unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
 =pod
 
 =item B<-origin pos>
