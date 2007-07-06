@@ -101,6 +101,7 @@ sub load_from_file {
 	&RSAT::error::FatalError(join("\t", "MarkovModel::load_from_file", 
 				      "the format of the backgroun model must be specified"));
     } else {
+
 	&RSAT::error::FatalError(join("\t", "MarkovModel::load_from_file", 
 				      $format, "invalid format. Supported:",
 				      join(",", @supported_input_formats)));
@@ -130,6 +131,11 @@ converted to lowercases.
 =cut
 sub load_from_file_oligos {
     my ($self, $bg_file) = @_;
+#    my $pseudo_freq = 0.5;
+
+    my $pseudo_freq = $self->get_attribute("bg_pseudo");
+
+
 
     &RSAT::message::TimeWarn("Loading Markov model from file $bg_file") if ($main::verbose >= 2);
 
@@ -153,17 +159,17 @@ sub load_from_file_oligos {
 	$pattern_seq = lc($pattern_seq);
 	my $pattern_len = length($pattern_seq);
 	my $pattern_freq =  $patterns{$pattern_seq}->{exp_freq};
-
+	my $pattern_pseudo_freq = ((1 - $pseudo_freq)*$pattern_freq) + $pseudo_freq/4;
 #	&RSAT::message::Debug($pattern_seq, $pattern_len, $pattern_freq, 
 #			      join(";", keys %{$patterns{$pattern_seq}})) if ($main::verbose >= 0);
 	&RSAT::error::FatalError("All patterns should have the same length in a Markov model file.") 
 	    unless $pattern_len = $order+1;
 	my $prefix = substr($pattern_seq,0,$order);
 	my $suffix = substr($pattern_seq,$order, 1);
-	$self->{transition_count}->{$prefix}->{$suffix} = $pattern_freq;
+	$self->{transition_count}->{$prefix}->{$suffix} = $pattern_pseudo_freq;
 #	&RSAT::message::Debug("transition count", $prefix.".".$suffix, $pattern_freq, $self->{transition_count}->{$prefix}->{$suffix}) if ($main::verbose >= 10);
     }
-    
+
 #    &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', @patterns)) if ($main::verbose >= 5);
 }
 
