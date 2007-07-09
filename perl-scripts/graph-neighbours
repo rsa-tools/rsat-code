@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-neighbours,v 1.12 2007/04/26 15:13:26 rsat Exp $
+# $Id: graph-neighbours,v 1.13 2007/07/09 14:28:47 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -185,7 +185,7 @@ package main;
       }
       print $out "\n";
     } else {
-      print $out '#'.join ("\t", "seed", "neighb", "n", "mean","median", "min", "max")."\n";
+      print $out '#'.join ("\t", "seed", "n", "mean","median", "min", "max","cluscoef","neighb")."\n";
     } 
     foreach my $seed_node_id (keys %seed_nodes_id) {
       # Normal OUTPUT
@@ -204,20 +204,18 @@ package main;
         if ($seed) {
           print $out $seed."\t";
           my @weights = ();
+          my @neighbours_list = ();
           for (my $i = 0; $i < scalar(@neighbours); $i++) {
-            print $out $neighbours[$i][0];
-            unless ($i == (scalar(@neighbours)-1)) {
-              print $out ", ";
-            } else {
-              print $out "\t";
-            }
+            push @neighbours_list, $neighbours[$i][0];
             if ($weight_col >= 0 && &IsReal($neighbours[$i][4])) {
               #print $neighbours[$i][0]. " " . $neighbours[$i][4]."\n";
               push @weights, $neighbours[$i][4]; 
-              
             }
           }
           #print join(" ",@weights)."\n";
+          push @neighbours_list, $seed;
+          my $clustering_coef = $graph->get_clust_coef(@neighbours_list);
+          pop @neighbours_list;
           my %weight_summary = ();
           if (scalar((@neighbours)) == 1) {
             $weight_summary{'n'} = 1;
@@ -228,14 +226,13 @@ package main;
           } else {
             %weight_summary = &summary(@weights);
           }
-          
-          
-          
           print $out $weight_summary{'n'}."\t";
           print $out $weight_summary{'mean'}."\t";
           print $out $weight_summary{'median'}."\t";
           print $out $weight_summary{'min'}."\t";
-          print $out $weight_summary{'max'}."\n";
+          print $out $weight_summary{'max'}."\t";
+          printf $out "%.4f",$clustering_coef;
+          print $out "\t".join(", ", @neighbours_list)."\n";
         }
       }
     }
