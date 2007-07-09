@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.12 2007/05/29 14:43:17 rsat Exp $
+# $Id: graph-get-clusters,v 1.13 2007/07/09 14:28:47 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -553,18 +553,6 @@ sub Verbose {
     print $this_out "; Graph size\n";
     print $this_out ";\tnodes\t",$nodes,"\n";
     print $this_out ";\tarcs\t",$arcs,"\n";
-
-    ## Report seed nodes
-    print $this_out "; Clusters\t", $cluster_nb,"\n";
-    print $this_out ";\tidentified nodes\t",scalar(keys(%found_nodes)),"\n";
-    my @unknown_nodes = keys(%unknown_nodes);
-    my $unknown_node_nb = scalar(@unknown_nodes);
-    if ($unknown_node_nb > 0) {
-      print $this_out ";\tunknown nodes\t",,"\n";
-      foreach my $name (@unknown_nodes) {
-	print $this_out join ("\t", ";\t", "unknown", $name), "\n";
-      }
-    }
     if ($main::verbose >= 1) {
       my $done_time = &AlphaDate();
       print $this_out "; Job started $start_time";

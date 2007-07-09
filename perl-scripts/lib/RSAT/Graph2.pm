@@ -432,7 +432,7 @@ sub create_random_graph {
     }
   }
   if ($max_arc_number < $req_edges) {
-    &RSAT::error::FatalError("\t","More requested edges than possible edges", "requested", $req_edges, "available", scalar $max_arc_number);
+    &RSAT::error::FatalError("\t","More requested edges than possible edges", "requested", $req_edges, "available", $max_arc_number);
   }
   my @possible_source = ();
   my @possible_target = ();
@@ -484,7 +484,7 @@ sub create_random_graph {
 	&RSAT::message::psWarn("\t","$k" ,"potential edges created.");
       }
     }
-    if ($k > (50*$req_edges)) {
+    if ($k > (50*$req_edges) || $k > $max_arc_number) {
       last;
     }
   }
@@ -868,7 +868,7 @@ sub get_neighbours_id {
 ################################################################
 =pod
 
-=item B<get_clust_coef($directed, $self_loop)>
+=item B<get_clust_coef(@nodes)>
 
 Return the clustering coefficient of a group of nodes.
 The clustering coefficient consist in the number of edges among the nodes of the
@@ -877,31 +877,27 @@ If the graph is directed of may contain self-loop the maximum number of edges is
 Duplicated edges will be counted only once.
 
 =cut
-# sub get_clust_coef {
-#   my ($self, @nodes, $directed, $self_loops) = @_;
-#   &RSAT::message::Info("\t","Looking for neighbours of node", $node_id) if $main::verbose > 2;
-#   my %arcs_name_id = $self->get_attribute("arcs_name_id");
-#   my $max_arc = $self->get_attribute("nb_arc_bw_node");
-#   my $max_arc_number;
-#   my $group_size = scalar(@nodes);
-#   if ($max_arc == 1) { 
-#     if (!$directed) {
-#       $max_arc_number = ($group_size*($group_size-1))/2;
-#     } elsif ($directed) {
-#       $max_arc_number = ($group_size*($group_size-1));
-#     } 
-#   } 
-#   for (my $i = 0; $i < scalar(@nodes); $i++) {
-#     for (my $j = $i; $j < scalar(@nodes); $j++) {
-#       next if (!$self_loops && ($i == $j));
-#       my $label = $nodes[$i]."_".$nodes[$j]."_1";
-#       if (exists($arcs_name_id{$label})) {
-#       }
-#     }
-#   }
-# 
-#   return @result;
-# }
+
+sub get_clust_coef {
+  my ($self, @nodes) = @_;
+  my %arcs_name_id = $self->get_attribute("arcs_name_id");
+  my $max_arc = $self->get_attribute("nb_arc_bw_node");
+  my $group_size = scalar(@nodes);
+  my $max_arc_number = (scalar(@nodes)*(scalar(@nodes)-1))/2;
+  my $arc_cpt = 0;
+  for (my $i = 0; $i < scalar(@nodes); $i++) {
+    for (my $j = $i+1; $j < scalar(@nodes); $j++) {
+      next if (!$self_loops && ($i == $j));
+      my $label = $nodes[$i]."_".$nodes[$j]."_1";
+      my $invlabel = $nodes[$j]."_".$nodes[$i]."_1";
+      if (exists($arcs_name_id{$label}) || exists($arcs_name_id{$invlabel})) {
+        $arc_cpt++;
+      }
+    }
+  }
+  my $result = $arc_cpt / $max_arc_number;
+  return $result;
+}
 
 
 
