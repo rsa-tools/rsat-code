@@ -648,4 +648,334 @@ sub convert_seq_cmd {
   return $command;
 }
 
+sub compare_classes {
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+  my $command = $self->compare_classes_cmd(%args);
+  my $stderr = `$command 2>&1 1>/dev/null`;
+  if ($stderr) {
+    die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+  }
+  my $result = `$command`;
+  my $tmp_outfile = `mktemp $TMP/compare-classes.XXXXXXXXXX`;
+  open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+  print TMP $result;
+  close TMP;
+  if ($output_choice eq 'server') {
+    return {'command' => $command, 
+	    'server' => $tmp_outfile};
+  } elsif ($output_choice eq 'client') {
+    return {'command' => $command,
+	    'client' => $result};
+  } elsif ($output_choice eq 'both') {
+    return {'server' => $tmp_outfile,
+	    'command' => $command, 
+	    'client' => $result};
+    }
+}
+
+sub compare_classes_cmd {
+  my ($self,%args) = @_;
+  #creation d'un fichier temporaire qui sera intégré dans la commande
+  if ($args{"ref_classes"}) {
+    my $reference = $args{"ref_classes"};
+    chomp $reference;
+    $tmp_ref = `mktemp $TMP/compare-ref-classes.XXXXXXXXXX`;
+    open TMP_IN, ">".$tmp_ref or die "cannot open temp file ".$tmp_ref."\n";
+    print TMP_IN $reference;
+    close TMP_IN;
+  }
+  #idem
+  if ($args{"query_classes"}) {
+    my $query = $args{"query_classes"};
+    chomp $query;
+    $tmp_query = `mktemp $TMP/compare-query-classes.XXXXXXXXXX`;
+    open TMP_IN, ">".$tmp_query or die "cannot open temp file ".$tmp_query."\n";
+    print TMP_IN $query;
+    close TMP_IN;
+  }
+  if ($args{"input_classes"}) {
+    my $input = $args{"input_classes"};
+    chomp $input;
+    $tmp_input = `mktemp $TMP/compare-input-classes.XXXXXXXXXX`;
+    open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
+    print TMP_IN $input;
+    close TMP_IN;
+  }
+
+  # my $ref_classes = $args{"ref_classes"};
+  # my $query_classes = $args{"query_classes"};
+  my $return_fields = $args{"return_fields"};
+  my $score_column = $args{"score_column"};
+  my $upper_threshold_field = $args{"upper_threshold_field"};
+  my $upper_threshold_value = $args{"upper_threshold_value"};
+  my $lower_threshold_field = $args{"lower_threshold_field"};
+  my $lower_threshold_value = $args{"lower_threshold_value"};
+  my $sort = $args{"sort"};
+  my $distinct = $args{"distinct"};
+  my $triangle = $args{"triangle"};
+  my $matrix = $args{"matrix"};
+
+  my $command = "$SCRIPTS/compare-classes";
+
+  #pas d'utilité directe de "nettoyage" de la commande sauf si l'on rajoute un elsif...  
+  if ($tmp_ref) {
+    $tmp_ref =~ s/\'//g;
+    $tmp_ref =~ s/\"//g;
+    chomp $tmp_ref;
+    $command .= " -r '".$tmp_ref."'";
+  }
+
+  if ($tmp_query) {
+    $tmp_query =~ s/\'//g;
+    $tmp_query =~ s/\"//g;
+    chomp $tmp_query;
+    $command .= " -q '".$tmp_query."'";
+  }
+
+  if ($tmp_input) {
+    $tmp_input =~ s/\'//g;
+    $tmp_input =~ s/\"//g;
+    chomp $tmp_input;
+    $command .= " -i '".$tmp_input."'";
+  }
+
+  if ($return_fields) {
+    $return_fields =~ s/\'//g;
+    $return_fields =~ s/\"//g;
+    $command .= " -return '".$return_fields."'";
+  }
+
+  if ($score_column) {
+    $score_column =~ s/\'//g;
+    $score_column =~ s/\"//g;
+    $command .= " -sc '".$score_column."'";
+  }
+
+  if ($upper_threshold_field && $upper_threshold_value =~ /\d/)  {
+    $upper_threshold_field =~ s/\'//g;
+    $upper_threshold_field =~ s/\"//g;
+    $upper_threshold_value =~ s/\'//g;
+    $upper_threshold_value =~ s/\"//g;
+    $command .= " -uth '".$upper_threshold_field."' '".$upper_threshold_value."'";
+  }
+
+  if ($lower_threshold_field && $lower_threshold_value =~ /\d/) {
+    $lower_threshold_field =~ s/\'//g;
+    $lower_threshold_field =~ s/\"//g;
+    $lower_threshold_value =~ s/\'//g;
+    $lower_threshold_value =~ s/\"//g;
+    $command .= " -lth '".$lower_threshold_field."' '".$lower_threshold_value."'";
+  }
+
+  if ($sort) {
+    $sort =~ s/\'//g;
+    $sort =~ s/\"//g;
+    $command .= " -sort '".$sort."'";
+  }
+
+  if ($distinct == 1) {
+    $command .= " -distinct";
+  }
+
+  if ($triangle == 1) {
+    $command .= " -triangle";
+  }
+
+  if ($matrix) {
+    $matrix =~ s/\'//g;
+    $matrix =~ s/\"//g;
+    $command .= " -matrix '".$matrix."'";
+  }
+
+  return $command;
+}
+
+sub matrix_scan {
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+  my $command = $self->matrix_scan_cmd(%args);
+#  my $stderr = `$command 2>&1 1>/dev/null`;  ####cette gestion des erreurs est incompatible avec le fonctionnement de matrix-scan dans RSAT #######
+  if ($stderr) {
+    die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+  }
+  my $result = `$command`;
+  my $tmp_outfile = `mktemp $TMP/matrix-scan.XXXXXXXXXX`;
+  open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+  print TMP $result;
+  close TMP;
+  if ($output_choice eq 'server') {
+    return {'command' => $command, 
+	    'server' => $tmp_outfile};
+  } elsif ($output_choice eq 'client') {
+    return {'command' => $command,
+	    'client' => $result};
+  } elsif ($output_choice eq 'both') {
+    return {'server' => $tmp_outfile,
+	    'command' => $command, 
+	    'client' => $result};
+  }
+}
+
+sub matrix_scan_cmd {
+  my ($self,%args) = @_;
+  #creation d'un fichier temporaire qui sera intégré dans la commande
+  if ($args{"sequence_file"}) {
+    my $sequence = $args{"sequence_file"};
+    chomp $sequence;
+    $tmp_sequence_file = `mktemp $TMP/matscan-sequence_file.XXXXXXXXXX`;
+    open TMP_IN, ">".$tmp_sequence_file or die "cannot open temp file ".$tmp_seqence_file."\n";
+    print TMP_IN $sequence;
+    close TMP_IN;
+  }
+
+    #idem
+    if ($args{"matrix_file"}) {
+      my $input_matrix = $args{"matrix_file"};
+      chomp $input_matrix;
+      $tmp_input_matrix = `mktemp $TMP/matscan-matrix_file.XXXXXXXXXX`;
+      open TMP_IN, ">".$tmp_input_matrix or die "cannot open temp file ".$tmp_input_matrix."\n";
+      print TMP_IN $input_matrix;
+      close TMP_IN;
+    }
+
+    if ($args{"matrix_list"}) {
+      my $input_list = $args{"matrix_list"};
+      chomp $input_list;
+      $tmp_input_list = `mktemp $TMP/matscan-matrix_list.XXXXXXXXXX`;
+      open TMP_IN, ">".$tmp_input_list or die "cannot open temp file ".$tmp_input_list."\n";
+      print TMP_IN $input_list;
+      close TMP_IN;
+    }
+
+    if ($args{"background"}) {
+      my $background = $args{"background"};
+      chomp $background;
+      $tmp_background = `mktemp $TMP/matscan-background.XXXXXXXXXX`;
+      open TMP_IN, ">".$tmp_background or die "cannot open temp file ".$tmp_background ."\n";
+      print TMP_IN $background;
+      close TMP_IN; 
+    }
+
+    my $matrix_format = $args{"matrix_format"}; 
+    my $top_matrices = $args{"top_matrices"};
+    my $background_input = $args{"background_input"};
+    my $background_window = $args{"background_window"};
+    my $markov = $args{"markov"};
+    my $background_pseudo = $args{"background_pseudo"};
+    my $return_fields = $args{"return_fields"};
+    my $upper_threshold_field = $args{"upper_threshold_field"};
+    my $upper_threshold_value = $args{"upper_threshold_value"};
+    my $lower_threshold_field = $args{"lower_threshold_field"};
+    my $lower_threshold_value = $args{"lower_threshold_value"};
+    my $both_strand = $args{"both_strand"};
+    my $single_strand = $args{"single_strand"};
+
+    my $command = "$SCRIPTS/matrix-scan";
+
+ #pas d'utilite directe de "nettoyage" de la commande sauf si l'on rajoute un elsif...
+    if ($tmp_sequence_file) {
+      $tmp_sequence_file =~ s/\'//g;
+      $tmp_sequence_file =~ s/\"//g;
+      chomp $tmp_sequence_file;
+      $command .= " -i '".$tmp_sequence_file."'";
+    }
+
+    if ($tmp_input_matrix) {
+      $tmp_input_matrix =~ s/\'//g;
+      $tmp_input_matrix =~ s/\"//g;
+      chomp $tmp_input_matrix;
+      $command .= " -m '".$tmp_input_matrix."'";
+    }
+
+    if ($matrix_format) {
+      $matrix_format =~ s/\'//g;
+      $matrix_format=~ s/\"//g;
+      chomp $matrix_format;
+      $command .= " -matrix_format '".$matrix_format."'";
+    }
+
+    if ($tmp_input_list) {
+      $tmp_input_list =~ s/\'//g;
+      $tmp_input_list =~ s/\"//g;
+      $command .= " -mlist '".$tmp_input_list."'";
+    }
+
+    if ($top_matrices ) {
+      $top_matrices  =~ s/\'//g;
+      $top_matrices  =~ s/\"//g;
+      $command .= " -top_matrices '".$top_matrices."'";
+    }
+
+    if ($tmp_background) {
+      $tmp_background  =~ s/\'//g;
+      $tmp_background  =~ s/\"//g;
+      chomp $tmp_background;
+      $command .= " -bgfile '".$tmp_background."'";
+    }
+
+     if ($background_input == 1 ) {
+      $command .= " -bginput";
+    }
+
+     if ($background_window) {
+      $background_window  =~ s/\'//g;
+      $background_window=~ s/\"//g;
+      $command .= " -window '".$background_window."'";
+    }
+
+     if ($markov =~ /\d/) {
+      $markov  =~ s/\'//g;
+      $markov =~ s/\"//g;
+      $command .= " -markov '".$markov."'";
+    }
+
+     if ($background_pseudo) {
+      $background_pseudo =~ s/\'//g;
+      $background_pseudo =~ s/\"//g;
+      $command .= " -bg_pseudo '".$background_pseudo."'";
+    }
+
+     if ($return_fields) {
+      $return_fields =~ s/\'//g;
+      $return_fields =~ s/\"//g;
+      $command .= " -return '".$return_fields."'";
+    }
+
+    if ($upper_threshold_field && $upper_threshold_value =~ /\d/)  {
+      $upper_threshold_field =~ s/\'//g;
+      $upper_threshold_field =~ s/\"//g;
+      $upper_threshold_value =~ s/\'//g;
+      $upper_threshold_value =~ s/\"//g;
+      $command .= " -uth '".$upper_threshold_field."' '".$upper_threshold_value."'";
+    }
+
+    if ($lower_threshold_field && $lower_threshold_value =~ /\d/) {
+      $lower_threshold_field =~ s/\'//g;
+      $lower_threshold_field =~ s/\"//g;
+      $lower_threshold_value =~ s/\'//g;
+      $lower_threshold_value =~ s/\"//g;
+
+      $command .= " -lth '".$lower_threshold_field."' '".$lower_threshold_value."'";
+    }
+
+    if ($both_strand  == 1) {
+      $command .= " -2str";
+    }
+
+    if ($single_strand == 1) {
+       $command .= " -1str";
+    }
+
+    return $command;
+}
+
 1;
