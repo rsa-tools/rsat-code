@@ -568,6 +568,89 @@
        </xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="CompareClassesRequest">
+        <xsd:annotation>
+	  <xsd:documentation>Parameters for the operation compare_classes.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>
+	        Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. Default is 'both'.
+	      </xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="ref_classes" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+            <xsd:annotation>
+              <xsd:documentation>A tab-delimited text file containing the description of reference classes</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="query_classes" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>A tab-delimited text file containing the description of query classes</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="return_fields" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>List of fields to return. Supported field: dotprod,entropy,freq,jac_sim,members,occ,proba,rank</xsd:documentation>
+            </xsd:annotation>
+         </xsd:element> 
+      <xsd:element name="score_column" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Specify a column of the input file containing a score associated to each member</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+      <xsd:element name="input_classes" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>This file will be used as both reference and query.This is equivalent to -q input_file -r input_file.</xsd:documentation>
+            </xsd:annotation>
+         </xsd:element> 
+      <xsd:element name="upper_threshold_field" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation> Supported  fields : E(QR),E_val,F(!Q!R),F(Q!R),F(Q),F(QR),F(R!Q),F(R),H(Q)
+,H(Q,R),H(Q|R),H(R),H(R|Q),I(Q,R),IC,P(QR),P(Q|R),P(R|Q),P_val,Q,QR,QvR,R,U(Q|R)
+,U(R|Q),dH(Q,R),dotprod,jac_sim,rank,sig</xsd:documentation>
+            </xsd:annotation>
+         </xsd:element> 
+       <xsd:element name="upper_threshold_value" type="xsd:float" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>upper threshold value for a supported field</xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>  
+      <xsd:element name="lower_threshold_field" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation> Supported fields: same fields as  upper_threshold_field.</xsd:documentation>
+            </xsd:annotation>
+         </xsd:element> 
+         <xsd:element name="lower_threshold_value" type="xsd:float" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>lower threshold value for a given fields. </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element> 
+      <xsd:element name="sort" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>sort on the basis of the specified key.</xsd:documentation>
+            </xsd:annotation>
+         </xsd:element> 
+      <xsd:element name="distinct" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Prevent to compare each class with itself (when the reference and query files contain the same classes)</xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>  
+      <xsd:element name="triangle" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>(only valid if query file and reference file are the same) Do not perform the reciprocal comparisons.</xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>  
+      <xsd:element name="matrix" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Return a pairwise matrix, where each row corresponds to a reference class, each column to a query class, and each cell contains a comparison between the two classes. The next argument indicates which statistics has to be return in the matrix (default=sig)Supported: E(QR),E_val,F(!Q!R),F(Q!R),F(Q),F(QR),F(R!Q),F(R),H(Q),H(Q,R),H(Q|R),H(R),H(R|Q),I(Q,R),IC,P(QR),P
+(Q|R),P(R|Q),P_val,Q,QR,QvR,R,U(Q|R),U(R|Q),dH(Q,R),dotprod,jac_sim,rank,sig</xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>                 
+	       </xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="RetrieveSequenceResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -672,6 +755,106 @@
 	 </xsd:sequence>
 	</xsd:complexType>
 
+  <xsd:complexType name="MatrixScanRequest">
+        <xsd:annotation>
+	  <xsd:documentation>Parameters for the operation matrix scan</xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>
+	        Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. Default is 'both'.
+	      </xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="sequence_file" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+            <xsd:annotation>
+              <xsd:documentation>Sequence file - all the formats supported in RSAT can be used as input (default: fasta)</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="matrix_file" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>The matrix file is specified with the option "matrix_format" (see below) Default format: tab .</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="matrix_format" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Supported field: tab, cb, consensus, gibbs, meme, assembly.</xsd:documentation>
+            </xsd:annotation>
+         </xsd:element> 
+      <xsd:element name="matrix_list" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Indicate a file containing a list of matrices to be used for scanning the region. This facilitates the scanning of a sequence with a library of matrices (e.g. all the matrices from RegulonDB or TRANSFAC) Format: the matrix list file is a text file. The first word of each row is suppose to indicate a file name. Any further information on the same row is ignored.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+      <xsd:element name="top_matrices" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Only scan with the top # matrices per matrix file. This option is valid for some file formats containing multiple matrices where  top matrices are generally more informative.</xsd:documentation>
+            </xsd:annotation>
+         </xsd:element> 
+      <xsd:element name="background" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Background model file is a tab-delimited file containing the specification of oligonucleootide frequencies.</xsd:documentation>
+            </xsd:annotation>
+         </xsd:element> 
+       <xsd:element name="background_input" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Calculate background model from the input sequence set. This option requires to specify the order of the background model with the option   markov .</xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>  
+      <xsd:element name="background_window" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Size of the sliding window for the background model calculation.This option requires to specify the order of the background model with the option  markov (suitable for short order model only markov 0 or 1)</xsd:documentation>
+            </xsd:annotation>
+         </xsd:element> 
+      <xsd:element name="markov" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Order of the markov chain for the background model. This option is incompatible with the option background .</xsd:documentation>
+            </xsd:annotation>
+         </xsd:element> 
+       <xsd:element name="background_pseudo" type="xsd:float" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Pseudo frequency for the background models. Value must be a real between 0 and 1 (default: 0.1)</xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+      <xsd:element name="return_fields" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>List of fields to return. Supported fields: sites, rank, limits, normw, bg_model, matrix, freq_matrix, weight_matrix, distrib .</xsd:documentation>
+            </xsd:annotation>
+         </xsd:element> 
+      <xsd:element name="upper_threshold_field" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation></xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>  
+      <xsd:element name="upper_threshold_value" type="xsd:float" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation></xsd:documentation>
+            </xsd:annotation>
+      </xsd:element>  
+          <xsd:element name="lower_threshold_field" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation></xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>  
+      <xsd:element name="lower_threshold_value" type="xsd:float" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation></xsd:documentation>
+            </xsd:annotation>
+         </xsd:element> 
+      <xsd:element name="both_strand" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation></xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>  
+      <xsd:element name="single_strand" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation></xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>                
+	      </xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="GeneInfoResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -725,6 +908,58 @@
 	</xsd:complexType>
 
       <xsd:complexType name="ConvertSeqResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>
+	        Location of the result file on the server. This can be used as input for a further request.
+	      </xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>
+	        The stand alone command executed on the server.
+	      </xsd:documentation>
+	    </xsd:annotation>
+	</xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	 <xsd:annotation>
+	  <xsd:documentation>
+	   The results.
+	  </xsd:documentation>
+	 </xsd:annotation>
+	</xsd:element>
+	 </xsd:sequence>
+	</xsd:complexType>
+ 
+ <xsd:complexType name="CompareClassesResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>
+	        Location of the result file on the server. This can be used as input for a further request.
+	      </xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>
+	        The stand alone command executed on the server.
+	      </xsd:documentation>
+	    </xsd:annotation>
+	</xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	 <xsd:annotation>
+	  <xsd:documentation>
+	   The results.
+	  </xsd:documentation>
+	 </xsd:annotation>
+	</xsd:element>
+	 </xsd:sequence>
+	</xsd:complexType>
+
+   <xsd:complexType name="MatrixScanResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
@@ -810,6 +1045,24 @@
       <part name="response" type="tns:ConvertSeqResponse"/>
   </message>
 
+  <message name="CompareClassesInput">
+      <part name="request" type="tns:CompareClassesRequest"/>
+  </message>
+    
+  <message name="CompareClassesOutput">
+      <part name="response" type="tns:CompareClassesResponse"/>
+      
+  </message>
+
+  <message name="MatrixScanInput">
+      <part name="request" type="tns:MatrixScanRequest"></part>
+  </message>
+    
+  <message name="MatrixScanOutput">
+      <part name="response" type="tns:MatrixScanResponse"></part>
+      
+  </message>
+
   <portType name="RSATWSPortType">
       <operation name="retrieve_seq">
          <!-- Name of input/output must be specified here -->
@@ -857,8 +1110,22 @@
          <documentation>Converts a sequence between two formats (e.g. fasta -> raw).
          </documentation>
       </operation>
+      <operation name="compare_classes">
+        <!-- Name of input/output must be specified here -->
+        <input name="CompareClassesRequest" message="tns:CompareClassesInput"/>
+        <output name="CompareClassesResponse" message="tns:CompareClassesOutput"/>         
+	<documentation>Compare two class files(the query file and the reference file).Each class of the query file is compared to each class of the reference file.The number of common elements is reperted, as well as the probability to observe at least this number of common elements by chance alone.
+        </documentation>
+      </operation>
+      <operation name="matrix_scan">
+        <!-- Name of input/output must be specified here -->
+        <input name="MatrixScanRequest" message="tns:MatrixScanInput"/>
+        <output name="MatrixScanResponse" message="tns:MatrixScanOutput"/>         
+	<documentation>Scan sequences with one or several position-specific scoring matrices (PSSM) to identify instances of the corresponding motifs(putative sites). This program supports a variety of background models (Bernoulli, Markov chains of any order).
+	</documentation>
+      </operation>
   </portType>
-
+  
   <binding name="RSATWSBinding" type="tns:RSATWSPortType">
       <soap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
       <operation name="retrieve_seq">
@@ -917,6 +1184,24 @@
       </operation>
       <operation name="convert_seq">
          <soap:operation soapAction="urn:RSATWS#convert_seq"/>
+         <input>
+             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+         </input>
+         <output>
+             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+         </output>
+      </operation>
+      <operation name="compare_classes">
+         <soap:operation soapAction="urn:RSATWS#compare_classes"/>
+         <input>
+             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+         </input>
+         <output>
+             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+         </output>
+      </operation> 
+      <operation name="matrix_scan">
+         <soap:operation soapAction="urn:RSATWS#matrix_scan"/>
          <input>
              <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
          </input>
