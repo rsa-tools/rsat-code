@@ -91,6 +91,7 @@ xmlns:xsd='http://www.w3.org/2001/XMLSchema'>
 	      <xsl:if test='@type = "xsd:string"'>Type = String</xsl:if>
 	      <xsl:if test='@type = "xsd:int"'>Type = Integer</xsl:if>
       	      <xsl:if test='@type = "xsd:boolean"'>Type = Boolean</xsl:if>
+      	      <xsl:if test='@type = "xsd:float"'>Type = Float</xsl:if>
             </td>
         </tr>
     </xsl:template>
