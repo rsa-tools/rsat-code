@@ -193,7 +193,7 @@ sub normalize_transition_frequencies {
     my $p=0;
     my $s=0;
 
-    $self->add_pseudo_freq() if $self->get_attribute("bg_pseudo"); ### adding the pseudo-freq
+    $self->add_pseudo_freq(); ### adding the pseudo-freq
 #    foreach my $prefix (keys(%prefix_sum)) {
     foreach my $prefix (sort keys(%{$self->{transition_count}})) {
 	$p++;
@@ -283,22 +283,28 @@ sub add_pseudo_freq {
 
     my ($self) = @_;
 
-    my %prefix_sum = ();
-    my %suffix_sum = ();
-    
-    foreach my $prefix (sort keys(%{$self->{transition_count}})) {
- 	    foreach my $suffix (sort keys (%{$self->{transition_count}->{$prefix}})) {
-		    $prefix_sum{$prefix} = 1;
-		    $suffix_sum{$suffix} = 1;
-	}
+    ### Calclute all possible oligonucletides for prefixes, even those
+    ### which are not observed in oligo-analysis counts
+    my @dna_alphabet =  qw (a c g t);
+    my @possible_oligos;
+    if ($self->{order} > 0) {
+	    @possible_oligos  = &RSAT::SeqUtil::all_possible_oligos($self->{order}, @dna_alphabet);
+    }elsif ($self->{order} == 0) {
+	    my %prefix_sum = ();
+	    
+	    foreach my $prefix (sort keys(%{$self->{transition_count}})) {
+		    foreach my $suffix (sort keys (%{$self->{transition_count}->{$prefix}})) {
+			    $prefix_sum{$prefix} = 1;
+		    }
+	    }
+	    @possible_oligos = sort keys(%prefix_sum);
     }
-
-
     ## The pseudo-freq
     my $pseudo_freq = $self->get_attribute("bg_pseudo");
-
-    foreach my $prefix (sort(keys(%prefix_sum))) {
-	    foreach my $suffix (sort(keys(%suffix_sum))) {
+    foreach my $prefix (@possible_oligos) {
+	   print "Prefix: ", $prefix,"\n";
+	    foreach my $suffix (@dna_alphabet) {
+		    print "Suffix: ", $suffix, "\t prefix:", $prefix,"\n";
 		    if (defined($self->{transition_count}->{$prefix}->{$suffix})) {
 			    ## Adding the pseudo-freq on the background model.
 			    my $pattern_pseudo_freq = 
@@ -306,7 +312,7 @@ sub add_pseudo_freq {
 			    $self->{transition_count}->{$prefix}->{$suffix} = $pattern_pseudo_freq;
 			    
 		    } else {  ## missing transitions
-			    $self->{transition_count}->{$prefix}->{$suffix} = $pseudo_freq/4;
+			    $self->{transition_count}->{$prefix}->{$suffix} = $pseudo_freq/scalar(@dna_alphabet);
 		    }
 	    }
 	    
