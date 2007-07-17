@@ -60,7 +60,23 @@ sub get_accepted_residues {
 }
 
 
+sub all_possible_oligos {
+  my ($len, @alphabet) = @_;
+  my @oligos = ();
+  if  ($len == 1) {
+    @oligos = @alphabet;
+  } elsif ($len > 1) {
+    my @sub_oligos = &RSAT::SeqUtil::all_possible_oligos($len-1, @alphabet);
+    foreach my $letter (@alphabet) {
+      foreach my $oligo (@sub_oligos) {
+	push @oligos, $letter.$oligo;
+      }
+    }
+  }
+  &RSAT::message::Info("&all_possible_oligos()", "len", $len, "alphabet", scalar(@alphabet), "oligos", scalar(@oligos)) if ($main::verbose >= 3);
+  return @oligos;
+}
+
 return 1;
 
 __END__
-
