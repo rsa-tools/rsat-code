@@ -14,6 +14,8 @@ package RSAT::MarkovModel;
 use RSAT::GenericObject;
 use RSAT::SeqUtil;
 use RSAT::error;
+use Data::Dumper;
+
 @ISA = qw( RSAT::GenericObject );
 
 ### class attributes
@@ -131,17 +133,11 @@ converted to lowercases.
 =cut
 sub load_from_file_oligos {
     my ($self, $bg_file) = @_;
-#    my $pseudo_freq = 0.5;
-
-    my $pseudo_freq = $self->get_attribute("bg_pseudo");
-
-
 
     &RSAT::message::TimeWarn("Loading Markov model from file $bg_file") if ($main::verbose >= 2);
 
     my ($file_type, %patterns) = &main::ReadPatternFrequencies($bg_file) ;
     my @patterns = keys(%patterns);
-
 
     ## This is a bit tricky: ReadExpectedFrequencies sets a global variable
     ## $file_type to "2str" if the model is strand-insensitive/
@@ -159,18 +155,18 @@ sub load_from_file_oligos {
 	$pattern_seq = lc($pattern_seq);
 	my $pattern_len = length($pattern_seq);
 	my $pattern_freq =  $patterns{$pattern_seq}->{exp_freq};
-	my $pattern_pseudo_freq = ((1 - $pseudo_freq)*$pattern_freq) + $pseudo_freq/4;
 #	&RSAT::message::Debug($pattern_seq, $pattern_len, $pattern_freq, 
 #			      join(";", keys %{$patterns{$pattern_seq}})) if ($main::verbose >= 0);
 	&RSAT::error::FatalError("All patterns should have the same length in a Markov model file.") 
 	    unless $pattern_len = $order+1;
 	my $prefix = substr($pattern_seq,0,$order);
 	my $suffix = substr($pattern_seq,$order, 1);
-	$self->{transition_count}->{$prefix}->{$suffix} = $pattern_pseudo_freq;
+	$self->{transition_count}->{$prefix}->{$suffix} = $pattern_freq;
 #	&RSAT::message::Debug("transition count", $prefix.".".$suffix, $pattern_freq, $self->{transition_count}->{$prefix}->{$suffix}) if ($main::verbose >= 10);
-    }
 
+    }
 #    &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', @patterns)) if ($main::verbose >= 5);
+ 
 }
 
 
@@ -179,8 +175,8 @@ sub load_from_file_oligos {
 
 =item B<normalize_transition_frequencies>
 
-Normalize transition frequencies, i.e. make sure that, for each prfix, the sum
-of transition frequencies (frequency of all possible siffuxed given the
+Normalize transition frequencies, i.e. make sure that, for each prefix, the sum
+of transition frequencies (frequency of all possible suffixes given the
 prefix) is 1.
 
 =cut
@@ -189,7 +185,7 @@ sub normalize_transition_frequencies {
     my ($self) = @_;
     
     &RSAT::message::TimeWarn(join("\t", "MarkovModel", "Normalizing transition frequencies")) if ($main::verbose >= 3);
-
+    
     ## Calculate sum of counts (frequencies) per prefix and suffix
     my %prefix_sum = ();
     my %suffix_sum = ();
@@ -197,7 +193,7 @@ sub normalize_transition_frequencies {
     my $p=0;
     my $s=0;
 
-
+    $self->add_pseudo_freq() if $self->get_attribute("bg_pseudo"); ### adding the pseudo-freq
 #    foreach my $prefix (keys(%prefix_sum)) {
     foreach my $prefix (sort keys(%{$self->{transition_count}})) {
 	$p++;
@@ -207,26 +203,29 @@ sub normalize_transition_frequencies {
 	    my $pattern_count = $self->{transition_count}->{$prefix}->{$suffix};	    
 	    $prefix_sum{$prefix} += $pattern_count;
 	    $freq_sum += $pattern_count;
-	    $suffix_sum{$suffix} += $pattern_count;
+ 	    $suffix_sum{$suffix} += $pattern_count;
 #	    &RSAT::message::Debug("Count sum", $p, $prefix.".".$suffix, $pattern_count, $freq_sum) if ($main::verbose >= 0);
 	}
     }
+ 
     $self->set_hash_attribute("prefix_sum", %prefix_sum);
     $self->set_hash_attribute("suffix_sum", %suffix_sum);
 
     ## Store prefixes and suffixes in arrays for quick access
     $self->set_array_attribute("prefixes", sort(keys(%prefix_sum)));
     $self->set_array_attribute("suffixes", sort(keys(%suffix_sum)));
-    
-    ## Calculate transition frequencies
+
+    ## Calculate transition frequencies == Transition table with
+    ## conditional probabilities
+
     my $missing_transitions = 0;
     foreach my $prefix ($self->get_attribute("prefixes")) {
 	foreach my $suffix ($self->get_attribute("suffixes")) {
 #	foreach my $suffix (keys (%suffix_sum)) {
-	    if (defined($self->{transition_count}->{$prefix}->{$suffix})) {	
+	    if (defined($self->{transition_count}->{$prefix}->{$suffix})) {
 		if ($prefix_sum{$prefix} > 0) {
-		    $self->{transition_freq}->{$prefix}->{$suffix} =  
-			$self->{transition_count}->{$prefix}->{$suffix}/$prefix_sum{$prefix};
+		    $self->{transition_freq}->{$prefix}->{$suffix} = 
+		      $self->{transition_count}->{$prefix}->{$suffix}/$prefix_sum{$prefix};
 		} else {
 		    $self->{transition_freq}->{$prefix}->{$suffix} =  0;
 		}
@@ -239,6 +238,7 @@ sub normalize_transition_frequencies {
 	    };
 	}
     }
+
     $self->force_attribute("missing_transitions", $missing_transitions);
 
 
@@ -261,19 +261,58 @@ sub normalize_transition_frequencies {
 
 #    &RSAT::message::Debug("SUFFIX PROBA", $self->set_hash_attribute("suffix_proba", %suffix_proba)) if ($main::verbose >= 5);
 
-    ## Average counts and frequencies on both strands if required
-    my $strand = $self->get_attribute("strand") || "sensitive";
-    if ($strand eq "insensitive") {
-	$self->average_strands();
-    }
+
+
+   #  ## Average counts and frequencies on both strands if required
+#     my $strand = $self->get_attribute("strand") || "sensitive";
+#     if ($strand eq "insensitive") {
+# 	$self->average_strands();
+#     }
+
 
     &RSAT::message::TimeWarn(join("\t", 
 				  "Normalized background model", 
 				  "prefixes: ".$p,
+
 				  "transitions: ".$s)) if ($main::verbose >= 3);
 }
 
+############################################################
+### Add pseudo-freq on count transitions
+sub add_pseudo_freq {
 
+    my ($self) = @_;
+
+    my %prefix_sum = ();
+    my %suffix_sum = ();
+    
+    foreach my $prefix (sort keys(%{$self->{transition_count}})) {
+ 	    foreach my $suffix (sort keys (%{$self->{transition_count}->{$prefix}})) {
+		    $prefix_sum{$prefix} = 1;
+		    $suffix_sum{$suffix} = 1;
+	}
+    }
+
+
+    ## The pseudo-freq
+    my $pseudo_freq = $self->get_attribute("bg_pseudo");
+
+    foreach my $prefix (sort(keys(%prefix_sum))) {
+	    foreach my $suffix (sort(keys(%suffix_sum))) {
+		    if (defined($self->{transition_count}->{$prefix}->{$suffix})) {
+			    ## Adding the pseudo-freq on the background model.
+			    my $pattern_pseudo_freq = 
+			      ((1 - $pseudo_freq)*$self->{transition_count}->{$prefix}->{$suffix}) + $pseudo_freq/4;
+			    $self->{transition_count}->{$prefix}->{$suffix} = $pattern_pseudo_freq;
+			    
+		    } else {  ## missing transitions
+			    $self->{transition_count}->{$prefix}->{$suffix} = $pseudo_freq/4;
+		    }
+	    }
+	    
+    }
+} 
+   
 ################################################################
 =pod
 
