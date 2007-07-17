@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.72 2007/07/06 16:07:56 rsat Exp $
+# $Id: matrix-scan,v 1.73 2007/07/17 14:41:34 rsat Exp $
 #
-# Time-stamp: <2007-07-06 17:58:12 jturatsi>
+# Time-stamp: <2007-07-17 16:36:54 jturatsi>
 #
 ############################################################
 ## TO DO: add an option to sort hits either by position or by score
@@ -639,18 +639,20 @@ package main;
 	
 	## Calculate min and max values for P(S|M)
 	$matrix->proba_range();
-	
-	## Set the matrix prior
-	$matrix->setPrior(%prior);
-	&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"), 
-				      %prior, join(" ", $matrix->getPrior()))) if ($main::verbose >= 3);
-	## Calculate min and max weight values
-	my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
-	&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
-				      $matrix->get_attribute("name"), 
-				      $Wmin, $Wmax, $Wrange,
-				     )) if ($main::verbose >= 3);
-	
+
+	unless ($bg_method eq "window") {
+		## Set the matrix prior
+		$matrix->setPrior(%prior);
+		&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"), 
+					      %prior, join(" ", $matrix->getPrior()))) if ($main::verbose >= 3);
+		## Calculate min and max weight values
+		my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
+		&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
+					      $matrix->get_attribute("name"), 
+					      $Wmin, $Wmax, $Wrange,
+					     )) if ($main::verbose >= 3);
+		
+	}
 	push @matrices, $matrix;
 	
 	&RSAT::message::TimeWarn("Read matrix", 
@@ -1340,7 +1342,7 @@ This option is incompatible with the option -bgfile.
 =item B<-window>
 
 Size of the sliding window for the background model calculation. 
-
+When this option is specified, the matrix pseudo-count is equally distributed.
 =cut
 	} elsif ($arg eq "-window") {
 	  &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if ($main::bg_method);
@@ -1537,7 +1539,8 @@ Pseudo-weight.
 If this option is called, the pseudo-weight is distributed in an equiprobable
 way between residues.
 
-By default, the pseudo-weight is distributed proportionally to residue priors.
+By default, the pseudo-weight is distributed proportionally to residue priors, except for 
+the -window option where equipseudo is default.
 
 =cut
 
