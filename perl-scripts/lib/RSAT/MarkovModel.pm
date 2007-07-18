@@ -300,13 +300,11 @@ sub add_pseudo_freq {
     ## The pseudo-freq
     my $pseudo_freq = $self->get_attribute("bg_pseudo");
     foreach my $prefix (@possible_oligos) {
-##      print "Prefix: ", $prefix,"\n";
       foreach my $suffix (@dna_alphabet) {
-##	print "Suffix: ", $suffix, "\t prefix:", $prefix,"\n";
 	if (defined($self->{transition_count}->{$prefix}->{$suffix})) {
 	  ## Adding the pseudo-freq on the background model.
 	  my $pattern_pseudo_freq = 
-	    ((1 - $pseudo_freq)*$self->{transition_count}->{$prefix}->{$suffix}) + $pseudo_freq/4;
+	    ((1 - $pseudo_freq)*$self->{transition_count}->{$prefix}->{$suffix}) + $pseudo_freq/scalar(@dna_alphabet);
 	  $self->{transition_count}->{$prefix}->{$suffix} = $pattern_pseudo_freq;
 	} else {  ## missing transitions
 	  $self->{transition_count}->{$prefix}->{$suffix} = $pseudo_freq/scalar(@dna_alphabet);
