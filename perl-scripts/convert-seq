@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.24 2007/04/26 13:27:37 rsat Exp $
+# $Id: convert-seq,v 1.25 2007/07/18 22:13:40 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -120,6 +120,9 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
     #### DNA only
     if ($dna) {
         $current_seq = &CleanDNA($current_seq, "n");
+	if ($out_format eq "wc") {
+	  $current_seq =~ s/n/./gi; ## consensus does not recognize the N character
+	}
     }
 
     if ($seq_identifier) {
