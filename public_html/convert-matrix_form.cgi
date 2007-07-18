@@ -22,7 +22,7 @@ $default{matrix_format} = "tab";
 $default{counts}="checked";
 $default{consensus}="checked";
 $default{frequencies}="";
-$default{information}="";
+$default{info}="";
 $default{parameters}="";
 $default{profile}="";
 $default{weights}="";
@@ -51,7 +51,7 @@ foreach $key (keys %default) {
 &RSA_header("convert-matrix");
 print "<CENTER>";
 print "Convert different types of position-specific scoring matrices (PSSM), and calculate statistical parameters.<P>\n";
-print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
+#print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
@@ -88,7 +88,7 @@ print $query->textarea(-name=>'matrix',
 #### Return fields
 print "<p><B><A HREF='help.convert-matrix.html#return'>Return fields</A></B>&nbsp;<br>\n";
 my $i = 0;
-foreach my $stat qw(counts frequencies weights information margins consensus parameters profile) {
+foreach my $stat qw(counts frequencies weights info margins consensus parameters profile) {
     print $query->checkbox(-name=>$stat,
 			   -checked=>$default{$stat},
 			   -label=>'');
@@ -130,7 +130,7 @@ $demo_matrix=`cat convert-matrix_demo_data.txt`;
 print "<TD><B>";
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'matrix_format',-default=>'tab');
-print $query->hidden(-name=>'information',-default=>"on");
+print $query->hidden(-name=>'info',-default=>"on");
 print $query->hidden(-name=>'weights',-default=>"on");
 print $query->hidden(-name=>'parameters',-default=>"on");
 print $query->submit(-label=>"DEMO");
