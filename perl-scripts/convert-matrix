@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.32 2007/05/03 12:57:43 jvanheld Exp $
+# $Id: convert-matrix,v 1.33 2007/07/18 08:10:24 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -184,10 +184,11 @@ DESCRIPTION
 	formats, and exports it in a format that can be used by the
 	matrix matching program patser (Hertz et al, 1999).
 
-	The program also converts the original matrix to provide
-	different position-specific scores (weight, frequencies,
-	information contents), general statistics (E-value, total
-	information content), and synthetic descriptions (consensus).
+	The program also performs a statistical analysis of the
+	original matrix to provide different position-specific scores
+	(weight, frequencies, information contents), general
+	statistics (E-value, total information content), and synthetic
+	descriptions (consensus).
 
 	PSSM can be used to represent the binding specificity of a
 	transcription factor or the conserved residues of a protein
