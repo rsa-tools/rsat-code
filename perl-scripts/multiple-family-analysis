@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.189 2007/07/18 23:22:29 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.190 2007/07/18 23:46:50 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -168,7 +168,7 @@ $min_sp = 0;
 $max_sp = 20;
 
 ## Default matrix-based pattern discovery options
-$matrix_width = 10;
+$matrix_width = 12;
 $expected_sites_per_gene = 2;
 $seed = undef;
 
