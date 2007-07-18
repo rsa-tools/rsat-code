@@ -317,7 +317,8 @@ sub NextMatch {
     return(-1);
 } ### NetxMatch
 
-### DNA sequence substitutions ####
+################################################################
+### DNA sequence substitutions 
 ### usage 
 ### %subst_hash = Substitute($pattern, $allowed_subst, $IUPAC_output);
 ###
