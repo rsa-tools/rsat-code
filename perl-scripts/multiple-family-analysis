@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.187 2007/05/09 13:44:26 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.188 2007/07/18 21:59:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1014,7 +1014,7 @@ sub CalcOligoOptions {
    } else {
 	### Pre-calculated expected frequency files
 	$oligo_options .= " -bg ".$background;
-	$dyad_options .= " -org ".$organism_name if ($organism_name);
+	$oligo_options .= " -org ".$organism_name if ($organism_name);
    }
    $oligo_options .= " -return occ,mseq,freq,proba,rank";
    $oligo_options .= " ".$noov;
