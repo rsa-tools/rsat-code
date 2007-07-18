@@ -193,6 +193,7 @@ sub normalize_transition_frequencies {
     my $s=0;
 
     $self->add_pseudo_freq(); ### adding the pseudo-freq
+   
 #    foreach my $prefix (keys(%prefix_sum)) {
     foreach my $prefix (sort keys(%{$self->{transition_count}})) {
 	$p++;
@@ -262,8 +263,8 @@ sub normalize_transition_frequencies {
 
 
 
-   #  ## Average counts and frequencies on both strands if required
-#     my $strand = $self->get_attribute("strand") || "sensitive";
+  ## Average counts and frequencies on both strands if required
+#       my $strand = $self->get_attribute("strand") || "sensitive";
 #     if ($strand eq "insensitive") {
 # 	$self->average_strands();
 #     }
@@ -443,7 +444,7 @@ sub calc_from_seq {
 				      "by adding sequence of length", $seq_len)) if ($main::verbose >= 2);
 
     } else {
-	$self->set_hash_attribute("transition_count",());
+	$self->set_hash_attribute("transition_absolute_count",()); ## contains the words occurences, not frequencies
 	if ($main::verbose >= 2) {
 	  &RSAT::message::TimeWarn(join(" ", 
 					"Calculating markov model (order ".$order.")",
@@ -455,17 +456,28 @@ sub calc_from_seq {
       }
 
     
-    ## Transition counts
+    ## Transition counts : count the occurences of the words on 1 strand
     my $last_pos = $seq_len - $order;
     for my $offset (0..($last_pos-1)) {
-	my $prefix = substr($sequence, $offset, $order);
-	my $suffix = substr($sequence, $offset + $order,1);
-	$self->{transition_count}->{$prefix}->{$suffix}++;
+		my $prefix = substr($sequence, $offset, $order);
+		my $suffix = substr($sequence, $offset + $order,1);
+		$self->{transition_absolute_count}->{$prefix}->{$suffix}++;
     }
     $self->force_attribute("training_words", $last_pos + $previous_words);
-
+    
     ## Delete transitions between letters which do not belong to the accepted alphabet
     $self->check_transition_alphabet();
+    
+    ## Convert occurences (word count) into relative frequencies in order to add the pseudo-frequencies
+    ## as done when the bg model is read from a bg file, where relative frequencies (not word count) are
+    ## read from the file and used to calculate transition matrix.
+	foreach my $prefix (sort keys(%{$self->{transition_absolute_count}})) {
+		foreach my $suffix (sort keys(%{$self->{transition_absolute_count}->{$prefix}})) {
+			my $pattern_count = $self->{transition_absolute_count}->{$prefix}->{$suffix};	    
+			my $pattern_rel_freq = $pattern_count / $self->{training_words};
+			$self->{transition_count}->{$prefix}->{$suffix} = $pattern_rel_freq;
+		}
+	}
 
     ## Initialize transition frequencies
     $self->set_hash_attribute("transition_freq", %transition_count);
@@ -490,40 +502,74 @@ the prefix of the added and deleted words.
 sub two_words_update {
     my ($self, $added_word, $deleted_word, $window_offset) = @_;
 
+	my $pseudo_freq = $self->get_attribute("bg_pseudo");
+	my @dna_alphabet =  qw (a c g t);
+	
     ## No need to update if added word equald deleted word
-    return(0) if ($added_word eq $deleted_word) ;
+    return(0) if ($added_word eq $deleted_word);
     
     ## Update transition count for the added word
     my $added_prefix = substr($added_word, 0, $self->{order});
     my $added_suffix = substr($added_word, $self->{order}, 1);
-    $self->{transition_count}->{$added_prefix}->{$added_suffix}++;
-    $self->{prefix_sum}->{$added_prefix}++;
-    if (($self->{transition_count}->{$added_prefix}->{$added_suffix} == 1) 
+    $self->{transition_absolute_count}->{$added_prefix}->{$added_suffix}++;
+     if (($self->{transition_absolute_count}->{$added_prefix}->{$added_suffix} == 1) 
 	&&($main::verbose >= 4)){
 	&RSAT::message::Warning(join (" ", "Model update:", $added_word, 
 				      "appeared in updated window starting at", $window_offset));
     }
+   
 
     ## Update transition count for the deleted word
     my $deleted_prefix = substr($deleted_word, 0, $self->{order});
     my $deleted_suffix = substr($deleted_word, $self->{order}, 1);
-    $self->{transition_count}->{$deleted_prefix}->{$deleted_suffix}--;
-    if (($self->{transition_count}->{$deleted_prefix}->{$deleted_suffix} == 0) 
+    $self->{transition_absolute_count}->{$deleted_prefix}->{$deleted_suffix}--;
+     if (($self->{transition_absolute_count}->{$deleted_prefix}->{$deleted_suffix} == 0) 
 	&&($main::verbose >= 4)){
 	&RSAT::message::Warning(join (" ", "Model update:", $deleted_word, 
 				      "disappeared from updated window starting at", $window_offset));
     }
-    $self->{prefix_sum}->{$deleted_prefix}--;
 
-    ## Update transition frequencies for the added and deleted prefix
-    foreach my $suffix ($self->{suffixes}) {
-	$self->{transition_freq}->{$added_prefix}->{$suffix} = 
-	    $self->{transition_count}->{$added_prefix}->{$added_suffix}/$self->{prefix_sum}->{$added_prefix}++;
-	$self->{transition_freq}->{$deleted_prefix}->{$suffix} = 
-	    $self->{transition_count}->{$deleted_prefix}->{$deleted_suffix}/$self->{prefix_sum}->{$deleted_prefix}++;
-    }
 
-    
+	## Update relative frequencies for the added and deleted prefix
+	## added prefix
+	my $added_pattern_count = $self->{transition_absolute_count}->{$added_prefix}->{$added_suffix};	
+	my $added_pattern_rel_freq = $added_pattern_count / $self->{training_words};
+	$self->{transition_count}->{$added_prefix}->{$added_suffix} = $added_pattern_rel_freq;
+	##pseudo-count
+	my $added_pattern_pseudo_freq = 
+	    ((1 - $pseudo_freq)*$self->{transition_count}->{$added_prefix}->{$added_suffix}) + $pseudo_freq/scalar(@dna_alphabet);
+	$self->{transition_count}->{$added_prefix}->{$added_suffix} = $added_pattern_pseudo_freq;
+	## prefix sum
+	$self->{prefix_sum}->{$added_prefix} = 0;
+	foreach my $suffix (sort keys (%{$self->{transition_count}->{$added_prefix}})) {
+	    my $pattern_count = $self->{transition_count}->{$added_prefix}->{$suffix};	  
+	    $self->{prefix_sum}->{$added_prefix} += $pattern_count;
+	}
+	
+	## deleted prefix
+	my $deleted_pattern_count = $self->{transition_absolute_count}->{$deleted_prefix}->{$deleted_suffix};	    
+	my $deleted_pattern_rel_freq = $deleted_pattern_count / $self->{training_words};
+	$self->{transition_count}->{$deleted_prefix}->{$deleted_suffix} = $deleted_pattern_rel_freq;
+	##pseudo-count
+	my $deleted_pattern_pseudo_freq = 
+	    ((1 - $pseudo_freq)*$self->{transition_count}->{$deleted_prefix}->{$deleted_suffix}) + $pseudo_freq/scalar(@dna_alphabet);
+	$self->{transition_count}->{$deleted_prefix}->{$deleted_suffix} = $deleted_pattern_pseudo_freq;
+	## prefix sum
+	$self->{prefix_sum}->{$deleted_prefix} = 0;
+	foreach my $suffix (sort keys (%{$self->{transition_count}->{$deleted_prefix}})) {
+	    my $pattern_count = $self->{transition_count}->{$deleted_prefix}->{$suffix};	    
+	    $self->{prefix_sum}->{$deleted_prefix} += $pattern_count;
+	}
+
+    ## Update transition frequencies for the added and deleted prefix 
+    foreach my $suffix (sort keys (%{$self->{transition_count}->{$added_prefix}})) {
+    	$self->{transition_freq}->{$added_prefix}->{$suffix} = 
+			$self->{transition_count}->{$added_prefix}->{$suffix}/$self->{prefix_sum}->{$added_prefix};	  
+	}
+	foreach my $suffix (sort keys (%{$self->{transition_count}->{$deleted_prefix}})) {
+    	$self->{transition_freq}->{$deleted_prefix}->{$suffix} = 
+			$self->{transition_count}->{$deleted_prefix}->{$suffix}/$self->{prefix_sum}->{$deleted_prefix};	  
+	}
     
 #     &RSAT::message::Debug("Updated model", 
 # 			  "added",$added_word,
@@ -536,7 +582,7 @@ sub two_words_update {
 # 			  $self->{prefix_sum}->{$deleted_prefix},
 # 			  $deleted_suffix,
 # 			  $self->{transition_freq}->{$deleted_prefix}->{$deleted_suffix},
-# 			  ) if ($main::verbose >= 10);
+# 			  ) if ($main::verbose >= 0);
 }
 
 
