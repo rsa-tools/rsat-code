@@ -79,7 +79,7 @@ sub readFromFile {
 
     ## Check that there was at least one matrix in the file
     if (scalar(@matrices) == 0) {
-      &RSAT::message::Warning("File",  $file, "does not contain any matrix in format", $format);
+      &RSAT::message::Warning("File",  $file, "does not contain any matrix in", $format , "format");
     }  else {
       &RSAT::message::Info("Read ".scalar(@matrices)." matrices from file ", $file) if ($main::verbose >= 3);
     }
@@ -242,7 +242,7 @@ C<readFromFile($file, "gibbs")>.
 =cut
 sub _readFromGibbsFile {
     my ($file) = @_;
-    
+
     ## open input stream
     my $in = STDIN;
     if ($file) {
@@ -251,9 +251,10 @@ sub _readFromGibbsFile {
     }
     $in_matrix = 0;
 
+    my $matrix;
     my @matrices = ();
-    my $matrix = new RSAT::matrix();
-    push @matrices, $matrix;
+#    my $matrix = new RSAT::matrix();
+#    push @matrices, $matrix;
 
     my @matrix = ();
     my @alphabet = ();
@@ -261,63 +262,100 @@ sub _readFromGibbsFile {
     my $nrow = 0;
     my $last_ncol = 0;
     my $last_nrow = 0;
+    my $m = 0;
+    my $gibbs_command = "";
+    my $seed;
+
     while (<$in>) {
-	next unless (/\S/);
-	s/\r//;
-	chomp();
-	if (/AC\s+(\S+)/) {
-	    $in_matrix = 1;
-	    # default nucletodide alphabet
-	    $matrix->setAlphabet_lc("a","c","g","t");
-	    next;
+      $l++;
+      next unless (/\S/);
+      s/\r//;
+      chomp();
+#      warn join("\t",$l, $_), "\n";
+      if (/^Motif model/) {
+#      if (/^\s*MOTIF\s+(\S+)/) {
+	$matrix = new RSAT::matrix();
+	$matrix->set_parameter("command", $gibbs_command);
+	$matrix->set_parameter("seed", $seed);
+
+	push @matrices, $matrix;
+	&RSAT::message::Debug("Starting to read a matrix") if ($main::verbose >= 0);
+	$in_matrix = 1;
+	# default nucletodide alphabet
+	$matrix->setAlphabet_lc("a","c","g","t");
+	next;
+
+      } elsif (/^gibbs /) {
+	$gibbs_command = $_;
+
+      } elsif (/seed: (\S+)/) {
+	$seed = $1;
+
+      } elsif (/model map = (\S+); betaprior map = (\S+)/) {
+	$matrix->set_parameter("model.map", $1);
+	$matrix->set_parameter("betaprior.map", $2);
+
+      } elsif (/MAP = (\S+)/) {
+	$matrix->set_parameter("MAP", $1);
+
+      } elsif ($in_matrix) {
+	if (/^\s*POS/) {
+	  ## Header line, indicating the alphabet
+	  s/\r//;
+	  chomp;
+	  @header = split " +";
+	  @alphabet = @header[1..$#header-1];
+	  $matrix->setAlphabet_lc(@alphabet);
+	  &RSAT::message::Debug("Alphabet", join(":", @alphabet)) if ($main::verbose >= 0);
+
+
+	} elsif (/^\s*\d+\s+/) {
+	  ## Add a column to the matrix (gibbs rows correspond to our columns)
+	  s/\r//;
+	  chomp;
+	  s/^\s+//;
+	  @fields = split " +";
+	  &RSAT::message::Debug("col", $ncol, "fields", scalar(@fields), @fields) if ($main::verbose >= 0);
+	  @values = @fields[1..$#header-1];
+	  $nrow = scalar(@values);
+	  foreach my $v (0..$#values) {
+	    $values[$v] =~ s/^\.$/0/;
+	    $matrix[$ncol][$v] = $values[$v];
+	  }
+	  &RSAT::message::Debug("col", $ncol, "values", scalar(@values), @values) if ($main::verbose >= 0);
+	  $ncol++;
 
 	} elsif (/site/) {
-	    ### Empty the previous matrix because it was not the definitive result
-	    $in_matrix = 0;
-	    @last_matrix = @matrix;
-	    $last_nrow = $nrow;
-	    $last_ncol = $ncol;
-	    @matrix = ();
-	    $nrow = 0;
-	    $ncol = 0;
-
-	    next;
-	} elsif ((/^\s*POS/) && ($in_matrix)) {
-	    s/\r//;
-	    chomp;
-	    @header = split " +";
-	    @alphabet = @header[1..$#header-1];
-#		$matrix->setAlphabet_lc(@alphabet);
-	} elsif (/model map = (\S+); betaprior map = (\S+)/) {
-	    $matrix->set_parameter("model.map", $1);
-	    $matrix->set_parameter("betaprior.map", $2);
-	} elsif (/MAP = (\S+)/) {
-	    $matrix->set_parameter("MAP", $1);
-	} elsif (/seed: (\S+)/) {
-	    $matrix->set_parameter("seed", $1);
-	} elsif (/^gibbs /) {
-	    $matrix->set_parameter("command", $_);
-	} elsif ($in_matrix) {
-	    ## Add a column to the matrix (gibbs rows correspond to our columns)
-	    s/\r//;
-	    chomp;
-	    s/^\s+//;
-	    @fields = split " +";
-	    @values = @fields[1..$#header-1];
-	    $nrow = scalar(@values);
-	    foreach my $v (0..$#values) {
-		$values[$v] =~ s/^\.$/0/;
-		$matrix[$ncol][$v] = $values[$v];
-	    }
-	    $ncol++;
+	  $in_matrix = 0;
+	  #	### Empty the previous matrix because it was not the definitive result
+	  #	@last_matrix = @matrix;
+	  #	$last_nrow = $nrow;
+	  #	$last_ncol = $ncol;
+#	  $matrix->setAlphabet_lc (@alphabet);
+#	  $matrix->force_attribute("nrow", $last_nrow);
+#	  $matrix->force_attribute("ncol", $last_ncol);
+#	  $matrix->setMatrix ($last_nrow, $last_ncol, @last_matrix);
+	  $matrix->force_attribute("nrow", $nrow);
+	  $matrix->force_attribute("ncol", $ncol);
+	  $matrix->setMatrix ($nrow, $ncol, @matrix);
+	  @matrix = ();
+	  $nrow = 0;
+	  $ncol = 0;
+	  next;
 	}
+      }
     }
     close $in if ($file);
 
-    $matrix->setAlphabet_lc (@alphabet);
-    $matrix->force_attribute("nrow", $last_nrow);
-    $matrix->force_attribute("ncol", $last_ncol);
-    $matrix->setMatrix ($last_nrow, $last_ncol, @last_matrix);
+#    $matrix->setAlphabet_lc (@alphabet);
+#    $matrix->force_attribute("nrow", $last_nrow);
+#    $matrix->force_attribute("ncol", $last_ncol);
+#    $matrix->setMatrix ($last_nrow, $last_ncol, @last_matrix);
+
+    ## Delete the pre-matrices (first half of the matrices)
+    for my $m (1..(scalar(@matrices)/2)) {
+      pop @matrices;
+    }
     return @matrices;
 }
 
