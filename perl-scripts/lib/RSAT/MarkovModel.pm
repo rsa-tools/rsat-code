@@ -108,7 +108,6 @@ sub load_from_file {
 				      $format, "invalid format. Supported:",
 				      join(",", @supported_input_formats)));
     }
-    
     $self->normalize_transition_frequencies();
 }
 
@@ -280,7 +279,6 @@ sub normalize_transition_frequencies {
 ############################################################
 ### Add pseudo-freq on count transitions
 sub add_pseudo_freq {
-
     my ($self) = @_;
 
     ### Calclute all possible oligonucletides for prefixes, even those
@@ -302,20 +300,18 @@ sub add_pseudo_freq {
     ## The pseudo-freq
     my $pseudo_freq = $self->get_attribute("bg_pseudo");
     foreach my $prefix (@possible_oligos) {
-	   print "Prefix: ", $prefix,"\n";
-	    foreach my $suffix (@dna_alphabet) {
-		    print "Suffix: ", $suffix, "\t prefix:", $prefix,"\n";
-		    if (defined($self->{transition_count}->{$prefix}->{$suffix})) {
-			    ## Adding the pseudo-freq on the background model.
-			    my $pattern_pseudo_freq = 
-			      ((1 - $pseudo_freq)*$self->{transition_count}->{$prefix}->{$suffix}) + $pseudo_freq/4;
-			    $self->{transition_count}->{$prefix}->{$suffix} = $pattern_pseudo_freq;
-			    
-		    } else {  ## missing transitions
-			    $self->{transition_count}->{$prefix}->{$suffix} = $pseudo_freq/scalar(@dna_alphabet);
-		    }
-	    }
-	    
+##      print "Prefix: ", $prefix,"\n";
+      foreach my $suffix (@dna_alphabet) {
+##	print "Suffix: ", $suffix, "\t prefix:", $prefix,"\n";
+	if (defined($self->{transition_count}->{$prefix}->{$suffix})) {
+	  ## Adding the pseudo-freq on the background model.
+	  my $pattern_pseudo_freq = 
+	    ((1 - $pseudo_freq)*$self->{transition_count}->{$prefix}->{$suffix}) + $pseudo_freq/4;
+	  $self->{transition_count}->{$prefix}->{$suffix} = $pattern_pseudo_freq;
+	} else {  ## missing transitions
+	  $self->{transition_count}->{$prefix}->{$suffix} = $pseudo_freq/scalar(@dna_alphabet);
+	}
+      }
     }
 } 
    
