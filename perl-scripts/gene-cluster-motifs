@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.188 2007/07/18 21:59:32 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.189 2007/07/18 23:22:29 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1552,6 +1552,7 @@ sub Consensus {
    $consensus_command = "convert-seq -dna -from fasta -to wc -i ".$family{$family_name}->{input_seq_file};
 
    ## run the command
+#   $consensus_command .= " | tr n ."; ## Transpose N residues in . because N is not recognized by consensus
    $consensus_command .= " | consensus ".$family{$family_name}->{consensus_options};
    $consensus_command .= " > ".$family{$family_name}->{consensus_file};
    if ($batch) {
@@ -1923,30 +1924,31 @@ sub ReadMatrix {
       ## matrices.
 #      eval {
 	## Read matrices from the input file
-      my @new_matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $format);
-      &RSAT::message::Info("Read",scalar(@new_matrices),"matrices from file",$matrix_file, $format) if ($main::verbose >= 0);
-      
-      my $matrix = $new_matrices[0];
-      if ($matrix) {
-	$matrix->force_attribute("id", id=>join("_",$run_prefix,$family_name,$format));
-	$matrix->set_attribute("input_file", $matrix_file);
-	$matrix_by_file{$matrix_file} = $matrix;
-	#	       &RSAT::message::Debug(join("\t", "Reading  matrix from file", $matrix_file, $matrix->get_attribute("id"))) if ($main::verbose >= 10);
-	#	  $matrix->readFromFile($matrix_file, $format);
-	#	       &RSAT::message::Debug(join("\n", "Read matrix", $matrix_file, $matrix->toString(), $matrix_result)), if ($main::verbose >= 10);
-	$matrix->calcConsensus();
-	$matrix->calcInformation();
-	$matrix_factory->add_object($matrix);
+	my @new_matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $format);
+	&RSAT::message::Info("Read",scalar(@new_matrices),"matrices from file",$matrix_file, $format) if ($main::verbose >= 0);
 	
-#	&RSAT::message::Debug($matrix->toString("patser")) if ($main::verbose >= 10);
-	
-	## &RSAT::message::Debug(join("\t", "New matrix added", $matrix, $matrix->get_attribute("id"))) if ($main::verbose >= 0) if ($main::verbose >= 10);
-#	if ($@) {
-#	  &RSAT::message::Warning("Matrix file does no contain a valid matrix. Skipped.", $format, $matrix_file) if ($main::verbose >= 1);
-#	  &RSAT::message::Debug(join "\n", $@) if ($main::verbose >= 0);
-#	  return(undef);
-#	} else {
-	  return($matrix);
+	my $matrix = $new_matrices[0];
+	if ($matrix) {
+	  $matrix->force_attribute("id", id=>join("_",$run_prefix,$family_name,$format));
+	  $matrix->set_attribute("input_file", $matrix_file);
+	  $matrix_by_file{$matrix_file} = $matrix;
+	  #	       &RSAT::message::Debug(join("\t", "Reading  matrix from file", $matrix_file, $matrix->get_attribute("id"))) if ($main::verbose >= 10);
+	  #	  $matrix->readFromFile($matrix_file, $format);
+	  #	       &RSAT::message::Debug(join("\n", "Read matrix", $matrix_file, $matrix->toString(), $matrix_result)), if ($main::verbose >= 10);
+	  $matrix->calcConsensus();
+	  $matrix->calcInformation();
+	  $matrix_factory->add_object($matrix);
+	  
+	  #	&RSAT::message::Debug($matrix->toString("patser")) if ($main::verbose >= 10);
+	  
+	  ## &RSAT::message::Debug(join("\t", "New matrix added", $matrix, $matrix->get_attribute("id"))) if ($main::verbose >= 0) if ($main::verbose >= 10);
+#	  if ($@) {
+#	    &RSAT::message::Warning("Matrix file does no contain a valid matrix. Skipped.", $format, $matrix_file) if ($main::verbose >= 1);
+#	    &RSAT::message::Debug(join "\n", $@) if ($main::verbose >= 0);
+#	    return(undef);
+#	  } else {
+#	    return($matrix);
+#	  }
 #	}
       } else {
 	&RSAT::message::Warning("Matrix file does no contain a valid matrix. Skipped.", $format, $matrix_file) if ($main::verbose >= 1);
