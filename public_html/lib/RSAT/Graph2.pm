@@ -1433,7 +1433,7 @@ sub read_from_table {
     unless (&RSAT::util::IsNatural($edge_color_col) && ($edge_color_col > 0)) {
       undef $edge_color_col;
     }
-    print "";
+    
     ## Load the graph
     $cpt = 0;
     while (my $line = <$main::in>) {
