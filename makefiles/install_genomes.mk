@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.30 2007/06/08 19:54:02 rsat Exp $
+# $Id: install_genomes.mk,v 1.31 2007/07/19 09:47:15 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -56,7 +56,8 @@ install_one_organism:
 	@${MAKE} one_install_command 
 
 one_install_command:
-	${MAKE} my_command MY_COMMAND="${INSTALL_CMD}" JOB_PREFIX=install_${ORG}
+	${MAKE} my_command MY_COMMAND="${INSTALL_CMD}" JOB_PREFIX=${ORG}_install
+#	${MAKE} my_command MY_COMMAND="${INSTALL_CMD}" 
 
 ### Prokaryote with a small genome for quick testing
 PRO=Mycoplasma_genitalium
