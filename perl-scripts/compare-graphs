@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.32 2007/06/18 15:59:45 jvanheld Exp $
+# $Id: compare-graphs,v 1.33 2007/07/19 08:56:14 rsat Exp $
 #
 ############################################################
 
@@ -884,13 +884,12 @@ sub in_common {
   my %arcs_name_id_g2 = $Q_graph->get_attribute("arcs_name_id");
   my $max_arc_nb = $Q_graph->get_attribute("nb_arc_bw_node");
   my %nodes =();
-  my @nodes_g2 = $Q_graph->get_nodes();
+  my %nodes_name_id_g1 = $R_graph->get_attribute("nodes_name_id");
+  my %nodes_name_id_g2 = $Q_graph->get_attribute("nodes_name_id");
   
   for (my $i = 0; $i < scalar(@arcs_g1); $i++) { # run through the arcs of R_graph
     my $source_name = $arcs_g1[$i][0];
     my $target_name = $arcs_g1[$i][1];
-    $nodes{$source_name}++;
-    $nodes{$target_name}++;
     my @arcs_id = ();
     my $arc_id1 = $source_name."_".$target_name."_1";
     push @arcs_id, $arc_id1; 
@@ -917,16 +916,17 @@ sub in_common {
       }
     }
   }
-  my %g1_nodes = %nodes;
-  foreach my $node (@nodes_g2) {
+  foreach my $node (keys %nodes_name_id_g1) {
     $nodes{$node}++;
-    if (exists($g1_nodes{$node})) {
+    if (exists($nodes_name_id_g2{$node})) {
       $common_nodes++;
     }
   }
+  foreach my $node (keys %nodes_name_id_g2) {
+    $nodes{$node}++;
+  }  
   $union_nodes = scalar (keys %nodes);
-
-
+  
   ## Compute the maximal number of edges given the number of nodes in the graph
   if ($directed){
     $max_union_arcs = $union_nodes*$union_nodes;
