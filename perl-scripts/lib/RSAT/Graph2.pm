@@ -93,11 +93,11 @@ sub new {
    
     # %nodes_name_id correspondance between name and id
     $self->set_hash_attribute("nodes_name_id", %nodes_name_id);
-    # %nodes_name_id correspondance between id and name
+    # %nodes_id_name correspondance between id and name
     $self->set_hash_attribute("nodes_id_name", %nodes_id_name);
-    # %nodes_name_id correspondance between node_name and color
+    # %nodes_color correspondance between node_name and color
     $self->set_hash_attribute("nodes_color", %nodes_color);
-    # %nodes_name_id correspondance between node_name and label
+    # %nodes_label correspondance between node_name and label
     $self->set_hash_attribute("nodes_label", %nodes_label);
     return $self;
 }
@@ -909,19 +909,16 @@ sub get_clust_coef {
 
 =item B<properties()>
 
-Return properties of the graph (edges, nodes).
-
-Supported formats: ???
+Return properties of the graph (nodes, edges).
 
 =cut
 sub properties {
     my ($self) = @_;
     my @arcs = $self->get_attribute("arcs");
     my $nbarcs = scalar @arcs;
-    my %nodes_name_id = $self->get_attribute("nodes_name_id");
-    my $nbnodes = scalar (keys(%nodes_name_id));    
-    
-return ($nbnodes, $nbarcs);
+    my %nodes_id_name = $self->get_attribute("nodes_id_name");
+    my $nbnodes = scalar (keys(%nodes_id_name));
+    return ($nbnodes, $nbarcs);
 }
 ################################################################
 =pod
@@ -1500,7 +1497,10 @@ sub remove_duplicated_arcs {
   }
   my %seen;
   my %nodes_name_id = $self->get_attribute("nodes_name_id");
+  my %nodes_id_name = $self->get_attribute("nodes_id_name");
   my %nodes_color = $self->get_attribute("nodes_color");
+  my %old_nodes_label = $self->get_attribute("nodes_label");
+  my %degree_0_nodes_name_id = $self->get_attribute("nodes_name_id");
   my @unique_array = ();
   my @arcs = $self->get_attribute("arcs");
   my $arccpt = 0;
@@ -1521,11 +1521,35 @@ sub remove_duplicated_arcs {
       $unique_array[$arccpt][4] = $nodes_color{$target_id};
       $unique_array[$arccpt][5] = $arcs[$i][3];
       $arccpt++;
-      $seen{$arc_id}++;      
+      $seen{$arc_id}++;
+      delete $degree_0_nodes_name_id{$arcs[$i][0]};
+      delete $degree_0_nodes_name_id{$arcs[$i][1]};
     }
   }
   $self->reload_graph;
   $self->load_from_array(@unique_array);
+  ## Add nodes that have degree 0
+  if (scalar(keys (%degree_0_nodes_name_id)) > 0) {
+    my %old_nodes_id_name = %nodes_id_name;
+    my %old_nodes_color = %nodes_color;
+    my %nodes_id_name = $self->get_attribute("nodes_id_name");
+    my %nodes_name_id = $self->get_attribute("nodes_name_id");
+    my %nodes_label = $self->get_attribute("nodes_label");
+    my %nodes_color = $self->get_attribute("nodes_color");
+    my $node_cpt = scalar keys %nodes_id_name;
+    while (my ($name, $id) = each (%degree_0_nodes_name_id)) {
+      $nodes_name_id{$name} = $node_cpt;
+      $nodes_id_name{$node_cpt} = $name;
+      $nodes_color{$node_cpt} = $old_nodes_color{$id};
+      $nodes_label{$node_cpt} = $old_nodes_label{$id};
+      $node_cpt++;
+    }
+  }
+
+  $self->set_hash_attribute("nodes_id_name", %nodes_id_name);
+  $self->set_hash_attribute("nodes_name_id", %nodes_name_id);
+  $self->set_hash_attribute("nodes_label", %nodes_label);
+  $self->set_hash_attribute("nodes_color", %nodes_color);
   return $self;
 }
 

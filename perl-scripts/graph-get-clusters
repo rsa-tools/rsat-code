@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.14 2007/07/11 13:38:58 rsat Exp $
+# $Id: graph-get-clusters,v 1.15 2007/07/19 08:56:14 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -33,9 +33,9 @@ be associated to multiple GO classes.
 
 =over
 
-=item jvanheld@scmbb.ulb.ac.be
+=item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
 
-=item sylvain@scmbb.ulb.ac.be
+=item Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -43,7 +43,7 @@ graph analysis
 
 =head1 USAGE
 
-graph-get-clusters [-i graph_file] -clusters cluster_file [-o outputfile] [-induced] [-v #] [...]
+graph-get-clusters [-i graph_file] -clusters cluster_file [-o outputfile] [-induced] [-return table|clusters|graph] [-distinct] [-v #] [...]
 
 =head1 INPUT FORMAT
 
@@ -626,7 +626,7 @@ thus consist in the graph induced by all nodes of the first column.
 	    
 =item B<-return>
 
-Return format. table or graph
+Return format. cluster, table or graph
 
 =cut
 	} elsif ($arg eq "-return") {

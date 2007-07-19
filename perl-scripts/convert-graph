@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.20 2007/06/13 11:48:32 rsat Exp $
+# $Id: convert-graph,v 1.21 2007/07/19 08:56:14 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -19,7 +19,7 @@ convert-graph
 
 =head1 DESCRIPTION
 
-Convert graphs between diffferent formats. 
+Convert graphs between different formats. 
 
 In the current state, the only supported input format are 
 tab-delimited file and gml file. Various output format are already supported (dot,
@@ -31,8 +31,9 @@ program should perform interconversions between any supported format).
 
 =head1 AUTHORS
 
-jvanheld@scmbb.ulb.ac.be
-sylvain@scmbb.ulb.ac.be
+Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
+
+Sylvain Brohée <sylvain@scmbb.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -452,10 +453,6 @@ __END__
 =head1 SEE ALSO
 
 =item I<compare-graphs>
-
-=item I<compare-graph-clusters>
-
-=item I<convert-graph>
 
 =item I<graph-get-clusters>
 
