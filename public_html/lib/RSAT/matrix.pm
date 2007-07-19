@@ -948,6 +948,12 @@ sub calcInformation {
     my @frequencies = $self->getFrequencies();
 #    my @frequencies = $self->getCrudeFrequencies();
 
+
+    ## Get or calculate prior residue probabilities
+    my %prior = $self->getPrior();
+    my $min_prior = &RSAT::stats::min(values %prior);
+    $self->set_parameter("min.prior", $min_prior);
+
     ## Get alphabet
     my @alphabet = $self->get_attribute("alphabet");
     if (scalar(@alphabet) <= 0) {
@@ -955,19 +961,13 @@ sub calcInformation {
     }
     $self->set_parameter("alphabet.size", scalar(@alphabet));
 
-    ## Get or calculate prior residue probabilities
-    my %prior = $self->getPrior();
-    my $min_prior = &RSAT::stats::min(values %prior);
-    $self->set_parameter("min.prior", $min_prior);
-
     ## Maximal number of bits per column
     my $max_bits = log(scalar(@alphabet))/log(2);
     $self->set_parameter("max.bits", $max_bits);
 
-    ## Maximal information per column
-    my $max_possible_info_per_col = -log($min_prior)/$info_log_denominator;
+    ## Logarithmic base for the information content
     $self->set_parameter("info.log.base", $info_log_base);
-    $self->set_parameter("max.possible.info.per.col", $max_possible_info_per_col);
+
 
     ## Matrix size
     my $nrow = $self->nrow();
@@ -1001,6 +1001,10 @@ sub calcInformation {
     ## Total information for the matrix
     $self->set_parameter("total.information", $total_information);
     $self->set_parameter("information.per.column", $total_information/$self->ncol());
+
+    ## Maximal information per column
+    my $max_possible_info_per_col = -log($min_prior)/$info_log_denominator;
+    $self->set_parameter("max.possible.info.per.col", $max_possible_info_per_col);
 
     ## Remember that info was calculated once
     $self->force_attribute("information_calculated", 1);
@@ -2038,7 +2042,6 @@ sub add_site() {
   ## update the number of columns
   my $ncol = &RSAT::stats::max($self->ncol(), scalar(@letters));
   $self->force_attribute("ncol",  $ncol);
-
 }
 
 ################################################################
