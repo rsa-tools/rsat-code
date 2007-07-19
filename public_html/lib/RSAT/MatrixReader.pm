@@ -179,7 +179,7 @@ sub _readFromTRANSFACFile {
 	  $matrix->push_attribute("site_ids", $site_id);
 	}
       }
-      &RSAT::message::Debug("line", $l, "site", $site_sequence, $site_id, $bs) if ($main::verbose >= 0);
+#      &RSAT::message::Debug("line", $l, "site", $site_sequence, $site_id, $bs) if ($main::verbose >= 0);
 
       ## Count column of the matrix file (row in transfac format)
     } elsif (/^(\d+)\s+/) {
@@ -239,9 +239,19 @@ sub _readFromTRANSFACFile {
 Read a matrix from a gibbs file. This method is called by the method 
 C<readFromFile($file, "gibbs")>.
 
+By default, the matrix is parsed from the sites. 
+
+The variable $parse_model allows to parse the matrix model exported by
+the gibbs sampler. I prefer to avoid this because this model is
+exported in percentages, and with some fuzzy rounding.
+
 =cut
 sub _readFromGibbsFile {
     my ($file) = @_;
+
+    my $parse_model = 0; ## boolean: indicates whether or not to parse matrices from motif models
+    my $initial_matrices = 1;  ## boolean: indicates whether or not to export the initial matrices resulting from the optimization
+    my $final_matrices = 0; ## boolean: indicates whether or not to export the final matrices
 
     ## open input stream
     my $in = STDIN;
@@ -268,22 +278,62 @@ sub _readFromGibbsFile {
 
     while (<$in>) {
       $l++;
-      next unless (/\S/);
+      unless (/\S/) {
+	if ($in_matrix) {
+	  $in_matrix = 0;
+	}
+	next;
+      }
       s/\r//;
       chomp();
 #      warn join("\t",$l, $_), "\n";
-      if (/^Motif model/) {
+      if (/^\s*(\d+)\-(\d+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s*(\S*)/) {
+
+	unless ($in_matrix) {
+	  $matrix = new RSAT::matrix();
+	  $matrix->set_parameter("command", $gibbs_command);
+	  $matrix->set_parameter("seed", $seed);
+	  push @matrices, $matrix;
+	  &RSAT::message::Debug("Starting to read a matrix") if ($main::verbose >= 3);
+	  $in_matrix = 1;
+	  # default nucletodide alphabet
+	  $matrix->setAlphabet_lc("a","c","g","t");
+	  $matrix->set_attribute("nrow",4);
+	}
+
+	my $seq_nb = $1;
+	my $site_nb=$2;
+	my $start=$3;
+	my $left_flank=$4;
+	my $site_seq=$5;
+	my $right_flank=$4;
+	my $end=$7;
+	my $score=$8; $score =~ s/\(//; $score =~ s/\)//;
+	my $site_id;
+	if ($score eq "") {
+	  $matrix->set_parameter("type", "initial");
+	  $site_id = join ("_", $seq_nb, $site_nb, $start, $end);
+	} else {
+	  $matrix->set_parameter("type", "final");
+	  $site_id = join ("_", $seq_nb, $site_nb, $start, $end, $score);
+	}
+
+	$matrix->add_site(lc($site_seq), id=>$site_id);
+#	$matrix->force_attribute("ncol",10);
+#	&RSAT::message::Debug($l, "matrix", scalar(@matrices), "site", $site_id, $site_seq) if ($main::verbose >= 0);
+
+      } elsif ((/^Motif model/) && ($parse_model)) {
 #      if (/^\s*MOTIF\s+(\S+)/) {
 	$matrix = new RSAT::matrix();
 	$matrix->set_parameter("command", $gibbs_command);
 	$matrix->set_parameter("seed", $seed);
-
 	push @matrices, $matrix;
-	&RSAT::message::Debug("Starting to read a matrix") if ($main::verbose >= 0);
+	&RSAT::message::Debug("Starting to read a matrix") if ($main::verbose >= 3);
 	$in_matrix = 1;
 	# default nucletodide alphabet
 	$matrix->setAlphabet_lc("a","c","g","t");
 	next;
+
 
       } elsif (/^gibbs /) {
 	$gibbs_command = $_;
@@ -298,7 +348,7 @@ sub _readFromGibbsFile {
       } elsif (/MAP = (\S+)/) {
 	$matrix->set_parameter("MAP", $1);
 
-      } elsif ($in_matrix) {
+      } elsif (($in_matrix) && ($parse_model)) {
 	if (/^\s*POS/) {
 	  ## Header line, indicating the alphabet
 	  s/\r//;
@@ -306,8 +356,7 @@ sub _readFromGibbsFile {
 	  @header = split " +";
 	  @alphabet = @header[1..$#header-1];
 	  $matrix->setAlphabet_lc(@alphabet);
-	  &RSAT::message::Debug("Alphabet", join(":", @alphabet)) if ($main::verbose >= 0);
-
+	  &RSAT::message::Debug("Alphabet", join(":", @alphabet)) if ($main::verbose >= 5);
 
 	} elsif (/^\s*\d+\s+/) {
 	  ## Add a column to the matrix (gibbs rows correspond to our columns)
@@ -315,26 +364,18 @@ sub _readFromGibbsFile {
 	  chomp;
 	  s/^\s+//;
 	  @fields = split " +";
-	  &RSAT::message::Debug("col", $ncol, "fields", scalar(@fields), @fields) if ($main::verbose >= 0);
+#	  &RSAT::message::Debug("col", $ncol, "fields", scalar(@fields), @fields) if ($main::verbose >= 10);
 	  @values = @fields[1..$#header-1];
 	  $nrow = scalar(@values);
 	  foreach my $v (0..$#values) {
 	    $values[$v] =~ s/^\.$/0/;
 	    $matrix[$ncol][$v] = $values[$v];
 	  }
-	  &RSAT::message::Debug("col", $ncol, "values", scalar(@values), @values) if ($main::verbose >= 0);
+#	  &RSAT::message::Debug("col", $ncol, "values", scalar(@values), @values) if ($main::verbose >= 10);
 	  $ncol++;
 
 	} elsif (/site/) {
 	  $in_matrix = 0;
-	  #	### Empty the previous matrix because it was not the definitive result
-	  #	@last_matrix = @matrix;
-	  #	$last_nrow = $nrow;
-	  #	$last_ncol = $ncol;
-#	  $matrix->setAlphabet_lc (@alphabet);
-#	  $matrix->force_attribute("nrow", $last_nrow);
-#	  $matrix->force_attribute("ncol", $last_ncol);
-#	  $matrix->setMatrix ($last_nrow, $last_ncol, @last_matrix);
 	  $matrix->force_attribute("nrow", $nrow);
 	  $matrix->force_attribute("ncol", $ncol);
 	  $matrix->setMatrix ($nrow, $ncol, @matrix);
@@ -353,8 +394,15 @@ sub _readFromGibbsFile {
 #    $matrix->setMatrix ($last_nrow, $last_ncol, @last_matrix);
 
     ## Delete the pre-matrices (first half of the matrices)
-    for my $m (1..(scalar(@matrices)/2)) {
-      pop @matrices;
+    unless ($initial_matrices) {
+      for my $m (1..(scalar(@matrices)/2)) {
+	shift @matrices;
+      }
+    }
+    unless ($final_matrices) {
+      for my $m (1..(scalar(@matrices)/2)) {
+	pop @matrices;
+      }
     }
     return @matrices;
 }
@@ -466,10 +514,10 @@ sub _readFromConsensusFile {
 
   ##Check if there was at least one matrix obtained after final cycle
   unless ($final_cycle) {
-    &RSAT::error::FatalError("This file does not contain the \"FINAL CYCLE\" header");
+    &RSAT::message::Warning("This file does not contain the \"FINAL CYCLE\" header");
   } 
   unless (scalar(@matrices) > 0) {
-    &RSAT::error::FatalError("This file does not contain any final cycle matrix");
+    &RSAT::message::Warning("This file does not contain any final cycle matrix");
   }
 
   close $in if ($file);
