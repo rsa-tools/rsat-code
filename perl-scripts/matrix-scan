@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.73 2007/07/17 14:41:34 rsat Exp $
+# $Id: matrix-scan,v 1.74 2007/07/19 09:47:51 jvanheld Exp $
 #
 # Time-stamp: <2007-07-17 16:36:54 jturatsi>
 #
@@ -264,7 +264,7 @@ package main;
   $n_residues = 0;
 
 #  $base=exp(1);		## Base for the logarithms
-  local $both_strands = 0;
+  local $both_strands = 1;
   local $sum_seq_len = 0;
   local $origin = 0;
   local $pseudo_counts = 1;
