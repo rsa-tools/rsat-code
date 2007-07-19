@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.190 2007/07/18 23:46:50 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.191 2007/07/19 15:19:56 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -154,6 +154,10 @@ $repeat_masked = 0;
 $seq_format = "fasta";
 $seq_dir = "";
 $seq_ext = "fasta";
+
+## purge-seq options
+$purge_ml = 40;
+$purge_mis = 3;
 
 ## pattern discovery options
 $background = "upstream-noorf";
@@ -929,7 +933,7 @@ sub PurgeSequences {
    ## Remove sequences of length 0
    $command = "convert-seq -dna -from fasta -to fasta -lw 0 -noempty";
    $command .= " -i ".$family{$family_name}->{seq_file};
-   $command .= " | purge-sequence -format fasta -ml 40 -mis 3 -noempty";
+   $command .= " | purge-sequence -format fasta -ml ".$purge_ml." -mis ".$purge_mis." -noempty";
    $command .= " -o ".$family{$family_name}->{seq_file_purged};
    if ($batch) {
        push @main::batch_commands, $command;
@@ -2582,11 +2586,36 @@ OPTIONS
        -feattype
 		feature type (e.g. CDS, mRNA)
 
+   Sequence purging option
+
+   	For pattern discovery, it is essential to purge sequences
+   	i.e. to mask redundant fragments. Such redundant fragments can
+   	come from genomic repeats (e.g. in duplicated genes in
+   	telomeric regions), or from neighbour genes sharing the same
+   	promoter, or , when working with multi-taxa sequences, the
+   	fact that several promoters were retrieved from closely
+   	related species (e.g. various strains of E.coli). These
+   	repeats give a strong bia on the statistical estimation of
+   	motif over-representation, and lead thus to a large number
+   	of false positive motif.
+
+	The approach followed here is to mask repeats (replace them
+	with N characters) during the pattern discovery step, but use
+	the unmasked sequences for pattern matching, in order to
+	locate all the putative instances of the discovered motifs. 
+
 	-purge	use purged sequences for pattern discovery
 		(default)
 
 	-nopurge	
 		use non-purged sequences for pattern discovery
+
+        -purge_ml #
+		matching length above which repeats have to be masked   	
+
+        -purge_mis #
+		number of accetped mismatches to consider two sequence
+		segments as repats to be masked.
 
    oligo-analysis and dyad-analysis options
 
@@ -2783,7 +2812,7 @@ OPTIONS
 	-batch (advanced users)
 		Send time-consuming jobs on a batch queue which will
 		be executed on a PC cluster. This option only works on
-		our lab's cluster, but could be adapted for other
+		our lab cluster, but could be adapted for other
 		configurations by adapting the method &doit() in the
 		utilities ($RSAT/lib/RSA.lib).
 
@@ -2873,114 +2902,6 @@ End_of_help
 }
 
 ################################################################
-#### display short help message
-sub PrintOptions {
- open HELP, "| more";
- print HELP <<End_short_help;
-multiple-family-analysis options
---------------------------------
-## General options
--h		(must be first argument) display full help message
--help		(must be first argument) display options
--v		verbose
--i		family file (incompatible with -seq)
--mask upper|lower	mask upper- or lowercases, respectively
--seq		sequence file (incompatible with -i)
--maindir	main directory (by default, the working directory is used
--outdir		output directory
--skip #		skip the # first data sets
--last #		stop after the # first data sets
--select		fam1[,fam2,fam3,...]. Perform the analysis of selected families only.
--task		selected task (supported: $supported_tasks)
--htmaps		draw html maps (dynamic map with pointers to the features)
--n      	dry run: print commands without executing them
--batch	send time-consuming jobs to a batch queue for a PC cluster
-
-## Sequence options
--org		organism
--org_fam	each family corresponds to one organism
--taxon		taxon (collect upstream sequences of orthologous genes)
--purge		use purged sequences for pattern discovery (default)
--nopurge	use non-purged sequences for pattern discovery
--mingenes	minimal number of genes per family
--from		upstream region left limit
--to		upstream region right limit
--noorf		exclude upstream ORFs from upstream sequences
--rm		use repeat masked version of the genome
--orfov		do not exclude upstream ORFs from upstream sequences
--feattype	feature type for sequence retrieval (e.g. CDS, mRNA)
-
-## Parameters for oligo-analysis and dyad-analysis
--1str   	strand-sensitive analysis
--2str   	strand-insensitive analysis
--noov		prevent overlapping matches for self-overlapping patterms
--ovlp		allow overlapping matches for self-overlapping patterms
--pseudo		pseudo-weight (see oligo-analysis manual)
--nomap		do not draw feature maps (for saving time and hard disk space)
--lth param \#	lower threshold on parameter. Supported: $supported_thresholds
--uth param \#	upwer threshold on parameter. Supported: $supported_thresholds
--thosig		threshold on occurrence significance (obsolete)
--toppat # 	Maximal number of patterns to assemble (default $toppat).
-		
-## oligo-analysis specific parameters
--maxol		maximum oligonucleotide length
--minol		minimum oligonucleotide length
--exp		expected frequency file (obsolete)
--oligo_exp_freq	expected frequencies for oligo-analysis
--bg		background frequency model
--calib_dir	calibration directory
--calibN_repet #	Number of repetitions for the calibration. 
--markov #	exp. freq. calcualted with Markov chain model of order #
--thmsf		threshold on frequency of matching sequences (obsolete)
--thmssig	threshold on the significance of matching sequences (obsolete)
-
-## dyad-analysis specific parameters
--monad		monad length for dyad-analysis
--minsp		maximum spacing for dyad-analysis
--maxsp		maximum spacing for dyad-analysis
--transp		transpose synthetic result table (columns become rows)
--sort		sort key (supported: $supported_sort_keys)
--dyad_exp_freq	expected frequencies for dyad-analysis
-
-## Options for matrix-based pattern discovery
--width		matrix width (default $matrix_width)
--sps		expected number of sites per sequence (default $expected_sites_per_gene)
-
-## Gibbs sampler
--seed		seed number for the random generator
-
-## MotifSampler 
--MS_b		backgound file
--MS_p		prior probability of 1 motif copy (default $MS_p)
--MS_M   	Maximal number of motif instances per sequence. (default $MS_M; unset=0)
--MS_n		number of different motifs to search for (default $MS_n).
--MS_x		allowed overlap between different motifs. (default $MS_x)
--MS_r		number of times the MotifSampler should be repeated (default = $MS_r).
-
-## MEME options (Bailey)
--MEME_minw	minimum motif width (default $MEME_minw)
--MEME_maxw	maximum motif width (default $MEME_maxw)
--MEME_bfile     name of background Markov model file
-
-## Validation
--known		file containing a list of known sites/motifs
--known_max_len 	maximal length for using known sites (default: $known_site_max_len)
-
-## Database comparison
--db             file containing a list of known sites (from a database)
-
-## Database
--schema		database schema (default: $schema)
--host		database host (default: $host)
--user		database user (default: $user)
--password	database password (default: $password)
-
-End_short_help
- close HELP;
- exit;
-}
-
-################################################################
 #### Read arguments
 sub ReadArguments {
    foreach my $a (0..$#ARGV) {
@@ -2995,11 +2916,18 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-n") {
 	    $dry_run = 1;
 	    
-	    #### analyze purged or non-purged sequences
+	    #### Sequence puring options
 	} elsif ($ARGV[$a] eq "-nopurge") {
 	    $analyze_purged_sequences = 0;
+
 	} elsif ($ARGV[$a] eq "-purge") {
 	    $analyze_purged_sequences = 1;
+	    
+	} elsif ($ARGV[$a] eq "-purge_ml") {
+	    $purge_ml = 1;
+
+	} elsif ($ARGV[$a] eq "-purge_mis") {
+	    $purge_mis = 1;
 	    
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
@@ -3438,7 +3366,8 @@ sub ExportSQL {
 		    }
 		    next;
 		}
-		next unless (/\S/);
+		next unless (/\S/); ## Skip empty lines
+		next if (/^#/); ## Skip header line
 		my @fields = split;
 		my $sequence = uc($fields[0]);
 #		my %export_columns = ();
@@ -3486,6 +3415,7 @@ sub ExportSQL {
 		    next;
 		}
 		next unless (/\S/);
+		next if (/^#/); ## Skip header line
 		my @fields = split;
 		my $sequence = uc($fields[0]);
 		$sequence =~ s/N/n/g;
@@ -4645,3 +4575,114 @@ sub CalibrateOligosN {
   chdir($dir{output});
 }
 
+
+################################################################
+#### display short help message
+sub PrintOptions {
+ open HELP, "| more";
+ print HELP <<End_short_help;
+multiple-family-analysis options
+--------------------------------
+## General options
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-v		verbose
+-i		family file (incompatible with -seq)
+-mask upper|lower	mask upper- or lowercases, respectively
+-seq		sequence file (incompatible with -i)
+-maindir	main directory (by default, the working directory is used
+-outdir		output directory
+-skip #		skip the # first data sets
+-last #		stop after the # first data sets
+-select		fam1[,fam2,fam3,...]. Perform the analysis of selected families only.
+-task		selected task (supported: $supported_tasks)
+-htmaps		draw html maps (dynamic map with pointers to the features)
+-n      	dry run: print commands without executing them
+-batch	send time-consuming jobs to a batch queue for a PC cluster
+
+## Sequence options
+-org		organism
+-org_fam	each family corresponds to one organism
+-taxon		taxon (collect upstream sequences of orthologous genes)
+-purge		use purged sequences for pattern discovery (default)
+-nopurge	use non-purged sequences for pattern discovery
+-purge_ml	min matching length for purge-sequence
+-purge_mis	max number of mismatches for purge-sequence
+-mingenes	minimal number of genes per family
+-from		upstream region left limit
+-to		upstream region right limit
+-noorf		exclude upstream ORFs from upstream sequences
+-rm		use repeat masked version of the genome
+-orfov		do not exclude upstream ORFs from upstream sequences
+-feattype	feature type for sequence retrieval (e.g. CDS, mRNA)
+
+## Parameters for oligo-analysis and dyad-analysis
+-1str   	strand-sensitive analysis
+-2str   	strand-insensitive analysis
+-noov		prevent overlapping matches for self-overlapping patterms
+-ovlp		allow overlapping matches for self-overlapping patterms
+-pseudo		pseudo-weight (see oligo-analysis manual)
+-nomap		do not draw feature maps (for saving time and hard disk space)
+-lth param \#	lower threshold on parameter. Supported: $supported_thresholds
+-uth param \#	upwer threshold on parameter. Supported: $supported_thresholds
+-thosig		threshold on occurrence significance (obsolete)
+-toppat # 	Maximal number of patterns to assemble (default $toppat).
+		
+## oligo-analysis specific parameters
+-maxol		maximum oligonucleotide length
+-minol		minimum oligonucleotide length
+-exp		expected frequency file (obsolete)
+-oligo_exp_freq	expected frequencies for oligo-analysis
+-bg		background frequency model
+-calib_dir	calibration directory
+-calibN_repet #	Number of repetitions for the calibration. 
+-markov #	exp. freq. calcualted with Markov chain model of order #
+-thmsf		threshold on frequency of matching sequences (obsolete)
+-thmssig	threshold on the significance of matching sequences (obsolete)
+
+## dyad-analysis specific parameters
+-monad		monad length for dyad-analysis
+-minsp		maximum spacing for dyad-analysis
+-maxsp		maximum spacing for dyad-analysis
+-transp		transpose synthetic result table (columns become rows)
+-sort		sort key (supported: $supported_sort_keys)
+-dyad_exp_freq	expected frequencies for dyad-analysis
+
+## Options for matrix-based pattern discovery
+-width		matrix width (default $matrix_width)
+-sps		expected number of sites per sequence (default $expected_sites_per_gene)
+
+## Gibbs sampler
+-seed		seed number for the random generator
+
+## MotifSampler 
+-MS_b		backgound file
+-MS_p		prior probability of 1 motif copy (default $MS_p)
+-MS_M   	Maximal number of motif instances per sequence. (default $MS_M; unset=0)
+-MS_n		number of different motifs to search for (default $MS_n).
+-MS_x		allowed overlap between different motifs. (default $MS_x)
+-MS_r		number of times the MotifSampler should be repeated (default = $MS_r).
+
+## MEME options (Bailey)
+-MEME_minw	minimum motif width (default $MEME_minw)
+-MEME_maxw	maximum motif width (default $MEME_maxw)
+-MEME_bfile     name of background Markov model file
+
+## Validation
+-known		file containing a list of known sites/motifs
+-known_max_len 	maximal length for using known sites (default: $known_site_max_len)
+
+## Database comparison
+-db             file containing a list of known sites (from a database)
+
+## Database
+-schema		database schema (default: $schema)
+-host		database host (default: $host)
+-user		database user (default: $user)
+-password	database password (default: $password)
+
+End_short_help
+
+ close HELP;
+ exit;
+}
