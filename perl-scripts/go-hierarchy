@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: go-hierarchy,v 1.13 2007/04/26 15:13:26 rsat Exp $
+# $Id: go-hierarchy,v 1.14 2007/07/19 10:04:08 rsat Exp $
 #
 ############################################################
 
@@ -119,12 +119,13 @@ package main;
     ## Read argument values
     &ReadArguments();
     
+    
     ################################################################
     ## Check argument values
     if ($query_by_gene && $query_by_class) {
       &FatalError(join("\t", "You cannot specify both a list of genes to annotate and a query go-class."));
     }
-    
+
     my $goafile;
     if (defined($organism_name)) {
       my $organism = new RSAT::organism();
