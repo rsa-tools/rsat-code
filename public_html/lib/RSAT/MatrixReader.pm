@@ -287,7 +287,15 @@ sub _readFromGibbsFile {
       s/\r//;
       chomp();
 #      warn join("\t",$l, $_), "\n";
-      if (/^\s*(\d+)\-(\d+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s*(\S*)/) {
+
+
+      if (/^gibbs /) {
+	$gibbs_command = $_;
+
+      } elsif (/seed: (\S+)/) {
+	$seed = $1;
+
+      } elsif (/^\s*(\d+)\-(\d+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s*(\S*)/) {
 
 	unless ($in_matrix) {
 	  $matrix = new RSAT::matrix();
@@ -333,13 +341,6 @@ sub _readFromGibbsFile {
 	# default nucletodide alphabet
 	$matrix->setAlphabet_lc("a","c","g","t");
 	next;
-
-
-      } elsif (/^gibbs /) {
-	$gibbs_command = $_;
-
-      } elsif (/seed: (\S+)/) {
-	$seed = $1;
 
       } elsif (/model map = (\S+); betaprior map = (\S+)/) {
 	$matrix->set_parameter("model.map", $1);
