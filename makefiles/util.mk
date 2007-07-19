@@ -30,8 +30,8 @@ my_command:
 	@echo "${WHEN} command ${MY_COMMAND}"
 	${MAKE} command_${WHEN}
 
-DATE=`date +%Y%m%d`
-JOB_DIR=`pwd`/jobs/${DATE}
+HOUR=`date +%Y%m%d_%Hh`
+JOB_DIR=`pwd`/jobs/${HOUR}
 JOB_PREFIX=job
 #JOB=`mktemp ${JOB_DIR}/${JOB_PREFIX}.XXXXXX`
 JOB=`mktemp ${JOB_PREFIX}.XXXXXX`
@@ -50,6 +50,7 @@ command_queue_torque:
 		echo "Job ${JOB_DIR}/$${job}" ;						\
 		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}; 		\
 		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job} ;				\
+		chmod u+x ${JOB_DIR}/$${job} ;				\
 		qsub -m a -q ${CLUSTER_ADDRESS} -N $${job} -j oe -o ${JOB_DIR}/$${job}.log ${JOB_DIR}/$${job} ;	\
 	done
 
@@ -65,6 +66,7 @@ command_queue_sge:
 		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job} ;				\
 		echo "echo Job done `date`" >> ${JOB_DIR}/$${job}; 		\
 		echo "date" >> ${JOB_DIR}/$${job}; 		\
+		chmod u+x ${JOB_DIR}/$${job} ;				\
 		qsub -m a -q ${QUEUE} -N $${job} -j y -o ${JOB_DIR}/$${job}.log ${JOB_DIR}/$${job} ;	\
 		rm $${job} ;\
 	done
