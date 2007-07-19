@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.69 2007/01/06 03:55:25 rsat Exp $
+# $Id: install-organism,v 1.70 2007/07/19 12:14:07 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -515,6 +515,13 @@ sub PurgeSequences {
 sub CalcFrequencies { 
 #    my ($seq_file, $seq_format, $seq_type) = ();
 
+    unless (($task{upstream_freq}) ||
+	    ($task{intergenic_freq}) ||
+	    ($task{genome_freq})) {
+
+	&RSAT::error::FatalError("The tasks 'oligos' and 'dyads' require to specify at least one sequence type for computing oligo or dyad frequencies. ", "\n\tYou should add one or several of the following tasks: upstream_freq, intergenic_freq, genome_freq");
+
+    }
 
     chdir $dir{oligos};
 
@@ -809,18 +816,38 @@ OPTIONS
 
 		oligos	     calculate oligonucleotide frequencies
 
+			     This task requires to specify, in
+			     addition, the type(s) of sequences for
+			     which oligo frequencies have to be
+			     calculated (upstream_freq,
+			     intergenic_freq, genome_freq).
+
 		dyads	     calculate dyad frequencies
+
+			     This task requires to specify, in
+			     addition, the type(s) of sequences for
+			     which dyad frequencies have to be
+			     calculated (upstream_freq,
+			     intergenic_freq, genome_freq).
 
 		ncf	     calculate oligo and dyad frequencies in
 			     intergenic segments
 
-		genome_freq  
-			     calculate oligo and dyad frequencies from
-			     genome sequences
+		upstream_freq
+			     calculate oligo and dyad frequencies for
+			     all upstream sequences
 
 		intergenic_freq
-			     calculate oligo and dyad frequencies from
-			     intergenic sequences
+			     calculate oligo and dyad frequencies for
+			     all intergenic sequences
+
+		genome_freq  
+			     calculate oligo and dyad frequencies for
+			     the whole genome sequence. This is not
+			     recommended for higher organisms, where
+			     the genome represents several Gigabases,
+			     and the computation of all oligo and dyad
+			     frequencies might take ages.
 
 		clean	     remove unnecessary sequence files
 
