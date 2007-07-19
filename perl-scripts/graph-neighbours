@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-neighbours,v 1.13 2007/07/09 14:28:47 rsat Exp $
+# $Id: graph-neighbours,v 1.14 2007/07/19 08:56:14 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -44,6 +44,12 @@ graph-neighbours [-i graph_file]  -steps # -all [-o outputfile] [-v #] [...]
 See convert-graph for a description of the supported input formats.
 
 =head1 OUTPUT FORMAT
+
+Two kinds of output are available. 
+
+Without any specification, the program will return a four column file "neighbour", "seed", "number of steps" and "direction". 
+
+Using the -stats option, the program will return one line for each seed node and display some information about the nodes. For the moment, it only works with weighted graphs.
 
 =cut
 
