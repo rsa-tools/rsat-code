@@ -504,6 +504,9 @@ sub create_random_graph {
   my $count = 0;
   while (scalar(@rdm_graph_array) < $req_edges) {
     for (my $i = 0; $i < scalar(@random_edges); $i++) {
+      if (scalar(@rdm_graph_array) == $req_edges) {
+        last;
+      }
       my $source = $possible_source[$random_edges[$i]];
       my $target = $possible_target[$random_edges[$i]];
       my $label = join("_", $source, $target);
@@ -520,9 +523,6 @@ sub create_random_graph {
         }
       }
 
-      if (scalar(@rdm_graph_array) == $req_edges) {
-        last;
-      }
       if (($single && $count == 0) && (exists($graph_node{$source}) && exists($graph_node{$target}))) {
         next;
       }
@@ -565,6 +565,7 @@ sub create_random_graph {
   }
   return ($rdm_graph);
 }
+
 
 
 ################################################################
