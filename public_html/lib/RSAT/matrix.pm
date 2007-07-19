@@ -1505,17 +1505,19 @@ sub _printParameters {
     my @params = $self->get_attribute("parameters");
     my %printed = ();
     for my $param (@params) {
-	## Print only once if the param was entered several times
-	next if $printed{$param};
-	$printed{$param}++;
-	
-	if ($self->get_attribute($param)) {
-	    if (&main::IsReal($self->get_attribute($param))) {
-		$to_print .= sprintf ";\t%-29s\t%g\n", $param, $self->get_attribute($param);
-		} else {
-		    $to_print .= sprintf ";\t%-29s\t%s\n", $param, $self->get_attribute($param);
-		}
+      ## Print only once if the param was entered several times
+      next if $printed{$param};
+      $printed{$param}++;
+      
+      if ($self->get_attribute($param)) {
+	if (&main::IsInteger($self->get_attribute($param))) {
+	  $to_print .= sprintf ";\t%-29s\t%g\n", $param, $self->get_attribute($param);
+	} if (&main::IsReal($self->get_attribute($param))) {
+	  $to_print .= sprintf ";\t%-29s\t%g\n", $param, $self->get_attribute($param);
+	} else {
+	  $to_print .= sprintf ";\t%-29s\t%s\n", $param, $self->get_attribute($param);
 	}
+      }
     }
     return ($to_print);
 }
