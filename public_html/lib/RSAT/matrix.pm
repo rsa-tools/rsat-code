@@ -1511,8 +1511,8 @@ sub _printParameters {
       
       if ($self->get_attribute($param)) {
 	if (&main::IsInteger($self->get_attribute($param))) {
-	  $to_print .= sprintf ";\t%-29s\t%g\n", $param, $self->get_attribute($param);
-	} if (&main::IsReal($self->get_attribute($param))) {
+	  $to_print .= sprintf ";\t%-29s\t%d\n", $param, $self->get_attribute($param);
+	} elsif (&main::IsReal($self->get_attribute($param))) {
 	  $to_print .= sprintf ";\t%-29s\t%g\n", $param, $self->get_attribute($param);
 	} else {
 	  $to_print .= sprintf ";\t%-29s\t%s\n", $param, $self->get_attribute($param);
