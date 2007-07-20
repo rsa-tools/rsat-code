@@ -814,7 +814,11 @@
          </xsd:element> 
        <xsd:element name="background_pseudo" type="xsd:float" minOccurs="0">
             <xsd:annotation>
-              <xsd:documentation>Pseudo frequency for the background models. Value must be a real between 0 and 1 (default: 0.1)</xsd:documentation>
+              <xsd:documentation>Pseudo frequency for the background models. Value must be a real between 0 and 1. If this option is not specified, the pseudo-frequency value depends on the background calculation. 
+			For -bginput and -window, the pseudo frequency is automatically calculated with the length (L) of the sequence following this formula : 
+square-root of L divided by L+squareroot of L. For -bgfile, default value is 0.01. If the training sequence length (L) is known, the value can be set by -bg_pseudo option to
+square-root of L divided by L+squareroot of L.   
+              </xsd:documentation>
             </xsd:annotation>
          </xsd:element>
       <xsd:element name="return_fields" type="xsd:string" minOccurs="0">
