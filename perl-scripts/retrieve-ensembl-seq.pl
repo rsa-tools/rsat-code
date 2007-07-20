@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.4 2007/07/20 15:41:10 oly Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.5 2007/07/20 17:00:17 oly Exp $
 #
 # Time-stamp
 #
@@ -728,7 +728,8 @@ sub GetLimits {
       &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 1);
 
     }
-    if (($nogene || $noorf) && $closest_neighbour_limit > $start + $from) {
+#    if (($nogene || $noorf) && $closest_neighbour_limit > $start + $from) {
+    if (($nogene || $noorf) && $closest_neighbour_limit > $start + $from && $closest_neighbour_limit < $start) {
       $left = $closest_neighbour_limit + 1;
     }else {
       $left = $start + $from;
@@ -760,7 +761,8 @@ sub GetLimits {
       &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 1);
 
     }
-    if (($nogene || $noorf) && $closest_neighbour_limit < $end - $from) {
+#    if (($nogene || $noorf) && $closest_neighbour_limit < $end - $from) {
+    if (($nogene || $noorf) && $closest_neighbour_limit < $end - $from && $closest_neighbour_limit > $end) {
       $right = $closest_neighbour_limit - 1;
     } else {
       $right = $end - $from;
@@ -791,7 +793,8 @@ sub GetLimits {
       &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 1);
 
     }
-    if (($nogene || $noorf) && $closest_neighbour_limit < $end + $to) {
+#    if (($nogene || $noorf) && $closest_neighbour_limit < $end + $to) {
+    if (($nogene || $noorf) && $closest_neighbour_limit < $end + $to && $closest_neighbour_limit > $end) {
       $right = $closest_neighbour_limit - 1;
     } else {
       $right = $end + $to;
@@ -821,7 +824,8 @@ sub GetLimits {
       &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 1);
 
     }
-    if (($nogene || $noorf) && $closest_neighbour_limit > $start - $to) {
+#    if (($nogene || $noorf) && $closest_neighbour_limit > $start - $to) {
+    if (($nogene || $noorf) && $closest_neighbour_limit > $start - $to && $closest_neighbour_limit < $start) {
       $left = $closest_neighbour_limit + 1;
     } else {
       $left = $start - $to;
