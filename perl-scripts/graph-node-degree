@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-node-degree,v 1.5 2007/07/20 07:00:57 rsat Exp $
+# $Id: graph-node-degree,v 1.6 2007/07/20 07:28:39 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -120,7 +120,7 @@ package main;
 
     ## Use all nodes as seeds
     if ($all_seeds) {
-      my @seed_names = $graph->get_nodes();
+      @seed_names = $graph->get_nodes();
       &RSAT::message::TimeWarn("Using all",scalar(@seed_names), "nodes of the graph as seeds") if ($main::verbose >= 2);
       ## Put the name of each node in the list
     } else {
