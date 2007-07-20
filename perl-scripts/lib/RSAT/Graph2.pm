@@ -1143,6 +1143,7 @@ sub get_nodes_clusters {
       @node_clusters = @{$nodes_clusters[$numId]};
     } else {
       &RSAT::message::Warning("\t","Node",$node_name,"does not belong to any cluster") if ($main::verbose >= 4);;
+      @node_clusters = ();
     }
     return @node_clusters;
 }
@@ -1158,10 +1159,11 @@ Return the clusters to which the node specified by its name belongs
 =cut
 sub get_node_id_clusters {
   my ($self, $numId, @nodes_clusters) = @_;
+  @node_clusters = ();
   if (defined(@{$nodes_clusters[$numId]})) {
     @node_clusters = @{$nodes_clusters[$numId]};
   } else {
-    &RSAT::message::Warning("\t","Node",$node_name,"does not belong to any cluster") if ($main::verbose >= 4);
+    &RSAT::message::Warning("\t","Node",$numId,"does not belong to any cluster") if ($main::verbose >= 4);
   }
   return @node_clusters;
 }
@@ -1231,175 +1233,6 @@ sub node_by_id {
     }
 }
 
-
-
-
-################################################################
-=pod
-
-=item B<read_from_table2> (deprecated)
-
-Read the graph from a tab-delimited text file.
-
-
- Title    : from_table
- Usage    : $graph->->read_from_table($input_file)
- Function : Read the graph from a tab-delimited text file.
- Returns  : void
-
-=cut
-
-sub read_from_table2 {
-    ################################"
-    # Define variables
-    my ($self, $inputfile, $source_col, $target_col, $weight_col) = @_;
-    my @out_neighbours = $self->get_attribute("out_neighbours");
-    my @in_neighbours = $self->get_attribute("in_neighbours");
-    my @arc_out_label = $self->get_attribute("out_label");
-    my @arc_in_label = $self->get_attribute("in_label");
-    my @arc_in_color = $self->get_attribute("in_color");
-    my @arc_out_color = $self->get_attribute("out_color");
-    my @arcs = $self->get_attribute("arcs");
-    my %arcs_name_id = $self->get_attribute("arcs_name_id");
-
-    my %nodes_name_id = $self->get_attribute("nodes_names_id");
-    my %nodes_id_name = $self->get_attribute("nodes_id_names");
-    my %nodes_color = $self->get_attribute("nodes_color");
-    my %nodes_label = $self->get_attribute("nodes_label");
-    
-    my $max_arc_nb = $self->get_attribute("nb_arc_bw_node");
-   
-    my $nodecpt = 0;
-    my $arccpt = 0;
-    &RSAT::message::TimeWarn("Loading graph from tab file", $inputfile) if ($main::verbose >= 2);
-    ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
-    my $no_weight = 0;
-    my $default_weight = 1;
-    my $node_default_color = $self->get_attribute("node_color") || "#000088";
-    my $arc_default_color = $self->get_attribute("arc_color") || "#000044";
-
-    ## Check input parameters
-    unless (&RSAT::util::IsNatural($source_col) && ($source_col > 0)) {
-	&RSAT::error::FatalError(join("\t", $source_col, "Invalid source column secification for graph loading. Should be a strictly positive natural number."));
-    }
-    unless (&RSAT::util::IsNatural($target_col) && ($target_col > 0)) {
-	&FatalError(join("\t", $target_col, "Invalid target column specification for graph loading. Should be a strictly positive natural number."));
-    }
-    unless (&RSAT::util::IsNatural($weight_col) && ($weight_col > 0)) {
-	$no_weigth = 1;
-    }
-
-    ## Load the graph
-    my $l = 0;
-    while (<$main::in>) {
-	$l++;
-	if(($main::verbose >= 2) && ($l % 1000 == 0)) {
-	    &RSAT::message::TimeWarn("\tLoaded", $l, "lines from file", $inputfile);
-	}
-	next if (/^--/); # Skip mysql-like comments
-	next if (/^;/); # Skip RSAT comments
-	next if (/^#/); # Skip comments and header
-	next unless (/\S/); # Skip empty rows
-	chomp;
-	my @fields = split("\t");
-	my $source_name = $fields[$source_col-1];
-	my $target_name = $fields[$target_col-1];
-	my $weight = $default_weight;
-	unless ($no_weight) {
-	  if ($weight_col > 0) {
-	    $weight = $fields[$weight_col-1];
-	  }
-	}
-
-	## Source node
-	my $source_node_index = $nodes_name_id{$source_name};
-	if (!defined($source_node_index)) {
-	    my $node_label = $source_name;
-	    $source_node_index = $nodecpt;
-	    $nodes_color{$source_node_index} = $node_default_color;
-	    $nodes_label{$source_node_index} = $node_label;
-	    $nodes_name_id{$source_name} = $nodecpt;
-	    $nodes_id_name{$nodecpt} = $source_name;
-	    $nodecpt++;
-	    &RSAT::message::Info(join("\t", "Created source node", 
-				      $source_name,
-				      $source_node_index, 
-				      $node_label)
-				     ) if ($main::verbose >= 3);
-	}
-
-	## Target node
-	my $target_node_index = $nodes_name_id{$target_name};
-	if (!defined($target_node_index)) {
-	    my $node_label = $target_name;
-	    $target_node_index = $nodecpt;
-	    $nodes_color{$target_node_index} = $node_default_color;
-	    $nodes_label{$target_node_index} = $node_label;
-	    $nodes_name_id{$target_name} = $nodecpt;
-	    $nodes_id_name{$nodecpt} = $target_name;
-	    $nodecpt++;
-	    &RSAT::message::Info(join("\t", "Created target node", 
-				      $target_name,
-				      $target_node_index, 
-				      $node_label)
-				     ) if ($main::verbose >= 3);
-	}
-	## Create the arc
-	my $arc_label = "";
-	if ($no_weight) {
-	    $arc_label = join ("_", $source_name, $target_name);
-	} else {
-	    $arc_label = $weight;
-	}
-	push @{$out_neighbours[$source_node_index]}, $target_node_index;
-	push @{$in_neighbours[$target_node_index]}, $source_node_index;
-	push @{$arc_out_label[$source_node_index]}, $arc_label;
-	push @{$arc_in_label[$target_node_index]}, $arc_label;
-	push @{$arc_out_color[$source_node_index]}, $arc_default_color;
-	push @{$arc_in_color[$target_node_index]}, $arc_default_color;
-        my $exist = 0;
-        my $arc_id = "";
-        my $i;
-	for ($i = 1; $i <= $max_arc_nb; $i++) {
-	  $arc_id = $source_name."_".$target_name."_".$i;
-	  $exist = exists($arcs_name_id{$arc_id});
-	}
-	if ($exist) {
-	  $arc_id = $source_name."_".$target_name."_".($i);
-	  $max_arc_nb++;
-	} else {
-	  $arc_id = $source_name."_".$target_name."_".($i-1);
-	}
-	$arcs_name_id{$arc_id} = $arccpt;
-	$arcs[$arccpt][0] = $source_name;
-	$arcs[$arccpt][1] = $target_name;
-	$arcs[$arccpt][2] = $arc_label;
-	$arcs[$arccpt][3] = $arc_default_color;
-	$arccpt++;
-	&RSAT::message::Info(join("\t", "Created arc", 
-				  $source_name, $target_name
-				 )) if ($main::verbose >= 4);
-    }
-    close $main::in if ($inputfile);
-    ################################"
-    # Save the tables
-    $self->set_array_attribute("out_neighbours", @out_neighbours);
-    $self->set_array_attribute("in_neighbours", @in_neighbours);
-    $self->set_array_attribute("in_label", @arc_in_label);
-    $self->set_array_attribute("out_label", @arc_out_label);
-    $self->set_array_attribute("in_color", @arc_in_color);
-    $self->set_array_attribute("out_color", @arc_out_color);
-    $self->set_array_attribute("arcs", @arcs);
-    
-    $self->set_hash_attribute("nodes_name_id", %nodes_name_id);
-    $self->set_hash_attribute("nodes_id_name", %nodes_id_name);
-    $self->set_hash_attribute("nodes_color", %nodes_color);
-    $self->set_hash_attribute("nodes_label", %nodes_label);
-    $self->set_hash_attribute("arcs_name_id", %arcs_name_id);
-    
-    $self->force_attribute("nb_arc_bw_node", $max_arc_nb);   
-}
-
 ################################################################
 ## Load a graph from a tab-delimted text file
 sub read_from_table {
@@ -1453,10 +1286,16 @@ sub read_from_table {
       }
       $array[$cpt][0] = $linecp[$source_col-1];
       $array[$cpt][1] = $linecp[$target_col-1];
+      ## If there is only a source node, the target node is called ###NANODE###
+      ## This term will be recognized by the function load_from_array in order no to create an edge
+      ## for this node
+      if ((!defined ($array[$cpt][1]) || $array[$cpt][1] eq "")  && $array[$cpt][0] ne "") {
+        $array[$cpt][1] = "###NANODE###";
+      }
       if ($weight) {
         $array[$cpt][2] = $linecp[$weight_col-1];
       } else {
-        $array[$cpt][2] = join("_",$linecp[$source_col-1],$linecp[$target_col-1]);
+        $array[$cpt][2] = join("_",$array[$cpt][0],$array[$cpt][1]);
       }
       if (defined($source_color_col)) {
         $array[$cpt][3] = $linecp[$source_color_col-1] || $default_node_color;
@@ -1881,12 +1720,14 @@ sub load_from_array {
 				      $source_name,
 				      $source_node_index, 
 				      $node_label)
-				     ) if ($main::verbose >= 3);
+	 			     ) if ($main::verbose >= 3);
+	
 	}
 
 	## Target node
 	my $target_node_index = $nodes_name_id{$target_name};
 	if (!defined($target_node_index)) {
+	    next if ($target_name eq "###NANODE###");
 	    my $node_label = $target_name;
 	    $target_node_index = $nodecpt;
 	    $nodes_color{$target_node_index} = $target_color;
@@ -2153,6 +1994,7 @@ sub to_tab {
     my ($self, $arc_id) = @_;
     my @arcs = $self->get_attribute("arcs");
     my @arcs_attributes = $self->get_attribute("arcs_attribute");
+    my %nodes_name_id = $self->get_attribute("nodes_name_id");
     my $tab = "";
     if (@arcs_attributes && scalar(@arcs_attributes) > 0) {
       $tab = $self->to_tab_arcs_attribute($arc_id);
@@ -2165,6 +2007,9 @@ sub to_tab {
           $tab .= $arcs[$i][1]."\t";
           $tab .= $arcs[$i][2]."\t";
           $tab .= $arcs[$i][3]."\n";
+          delete $nodes_name_id{$arcs[$i][0]};
+          delete $nodes_name_id{$arcs[$i][1]};
+          $tab .= join("\n", keys %nodes_name_id)."\n";
         }
       } else {
         my %arcs_name_id = $self->get_attribute("arcs_name_id");
@@ -2179,6 +2024,9 @@ sub to_tab {
           $tab .= $arcs[$id][2]."\t";
           $tab .= $arcs[$id][3]."\t";
           $tab .= $arc_name."\n";
+          delete $nodes_name_id{$arcs[$i][0]};
+          delete $nodes_name_id{$arcs[$i][1]};
+          $tab .= join("\n", keys %nodes_name_id)."\n";
         }
       }
     }
@@ -2200,7 +2048,7 @@ sub to_tab_arcs_attribute {
     my @arcs = $self->get_attribute("arcs");
     my @arcs_attributes = $self->get_attribute("arcs_attribute");
     my @arcs_attribute_header = $self->get_attribute("arcs_attribute_header");
-    
+    my %nodes_name_id = $self->get_attribute("nodes_name_id");
     my $tab = "";
     if (!$arc_id) { 
       $tab = join("\t","#source", "target", "label", "color");
@@ -2244,7 +2092,9 @@ sub to_tab_arcs_attribute {
 	      $tab .= $color."\t";
               $tab .= $attribute."\n";	  
 	  }
-        } 
+        }
+        delete $nodes_name_id{$source};
+        delete $nodes_name_id{$target};
       }
     } else {
       $tab = join("\t","#source", "target", "label", "color", "arc_id");
@@ -2297,9 +2147,12 @@ sub to_tab_arcs_attribute {
 	      $tab .= $arc_name."\t";
               $tab .= $attribute."\n";	  
 	  }
-        } 
-      }      
+        }
+        delete $nodes_name_id{$source};
+        delete $nodes_name_id{$target};         
+      }
     }
+    $tab .= join("\n", keys %nodes_name_id)."\n";
     return $tab;
 }
 
