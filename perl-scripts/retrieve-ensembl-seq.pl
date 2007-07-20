@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.2 2007/07/20 15:12:09 oly Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.3 2007/07/20 15:25:48 oly Exp $
 #
 # Time-stamp
 #
@@ -349,8 +349,13 @@ sub Main {
       $sequence = &GetSequence($left, $right);
       &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3);
     }
-#    my $size = abs(abs($new_from) - abs($new_to)) + 1;
-    my $size = $new_to - $new_from + 1;
+
+    my $size;
+    if (($new_to > 0 && $new_from > 0) || ($new_to < 0 && $new_from < 0)) {
+      $size = $new_to - $new_from + 1;
+    } else {
+      $size = $new_to - $new_from;
+    }
 
     &RSAT::message::Debug(">$gene_id\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
     &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
@@ -407,8 +412,12 @@ sub Main {
 	  &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3);
 	}
 
-#	my $size = abs(abs($new_from) - abs($new_to)) + 1;
-	my $size = $new_to - $new_from + 1;
+	my $size;
+	if (($new_to > 0 && $new_from > 0) || ($new_to < 0 && $new_from < 0)) {
+	  $size = $new_to - $new_from + 1;
+	} else {
+	  $size = $new_to - $new_from;
+	}
 
 	&RSAT::message::Debug(">$gene_id-$transcript_id\t$gene_id-$transcript_id; upstream from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
 	&RSAT::message::Debug($sequence) if ($main::verbose >= 3);
@@ -668,7 +677,13 @@ sub Main {
 	  &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3);
 	}
 
-	my $size = $new_to - $new_from + 1;
+	my $size;
+	if (($new_to > 0 && $new_from > 0) || ($new_to < 0 && $new_from < 0)) {
+	  $size = $new_to - $new_from + 1;
+	} else {
+	  $size = $new_to - $new_from;
+	}
+
 	my $cds_id = $transcript -> translation() -> stable_id();
 
 	&RSAT::message::Debug(">$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; upstream from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
@@ -701,7 +716,12 @@ sub Main {
 	&RSAT::message::Debug("Sequence:") if ($main::verbose >= 3);
       }
 
-      my $size = $new_to - $new_from + 1;
+      my $size;
+      if (($new_to > 0 && $new_from > 0) || ($new_to < 0 && $new_from < 0)) {
+	$size = $new_to - $new_from + 1;
+      } else {
+	$size = $new_to - $new_from;
+      }
 
       &RSAT::message::Debug(">$gene_id\t$gene_id; upstream from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
       &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
