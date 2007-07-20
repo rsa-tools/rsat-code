@@ -2009,8 +2009,8 @@ sub to_tab {
           $tab .= $arcs[$i][3]."\n";
           delete $nodes_name_id{$arcs[$i][0]};
           delete $nodes_name_id{$arcs[$i][1]};
-          $tab .= join("\n", keys %nodes_name_id)."\n";
         }
+        $tab .= join("\n", keys %nodes_name_id)."\n";
       } else {
         my %arcs_name_id = $self->get_attribute("arcs_name_id");
         my $max_arc = $self->get_attribute("nb_arc_bw_node");
@@ -2026,8 +2026,8 @@ sub to_tab {
           $tab .= $arc_name."\n";
           delete $nodes_name_id{$arcs[$i][0]};
           delete $nodes_name_id{$arcs[$i][1]};
-          $tab .= join("\n", keys %nodes_name_id)."\n";
         }
+        $tab .= join("\n", keys %nodes_name_id)."\n";
       }
     }
     return $tab;
