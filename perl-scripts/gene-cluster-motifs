@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.192 2007/07/20 10:09:13 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.193 2007/07/20 10:46:48 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -628,7 +628,8 @@ sub SetFileNames {
 	## Assign gibbs options to the family
 	$family{$family_name}->{gibbs_suffix} = $gibbs_suffix;
 	$family{$family_name}->{gibbs_options} = $gibbs_options;
-	$family{$family_name}->{gibbs_dir} = $dir{output}."/"."${family_name}/gibbs_${family_name}";
+#	$family{$family_name}->{gibbs_dir} = $dir{output}."/"."${family_name}/gibbs_${family_name}";
+	$family{$family_name}->{gibbs_dir} = "${family_name}/gibbs_${family_name}";
 	$family{$family_name}->{gibbs_file} = $family{$family_name}->{gibbs_dir}."/".$family{$family_name}->{file_prefix}.$gibbs_suffix;
 
 	################################################################
