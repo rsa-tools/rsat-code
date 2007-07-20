@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.74 2007/07/19 09:47:51 jvanheld Exp $
+# $Id: matrix-scan,v 1.75 2007/07/20 12:12:07 morgane Exp $
 #
 # Time-stamp: <2007-07-17 16:36:54 jturatsi>
 #
@@ -24,6 +24,8 @@ use RSAT::matrix;
 use RSAT::MatrixReader;
 use RSAT::MarkovModel;
 use File::Spec;
+use POSIX qw(ceil floor);
+use Data::Dumper;
 
 =pod
 
@@ -40,11 +42,11 @@ sites). This program supports a variety of background models
 
 =head1 AUTHORS
 
-=item Jacques van Helden jvanheld@scmbb.ulb.ac.be
+=item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
 
-=item Jean Valery Turatsinze jturatsi@scmbb.ulb.ac.be
+=item Jean Valery Turatsinze <jturatsi@scmbb.ulb.ac.be>
 
-=item Morgane Thomas-Chollier <mthomas@dbm.ulb.ac.be>
+=item Morgane Thomas-Chollier <morgane@scmbb.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -269,7 +271,9 @@ package main;
   local $origin = 0;
   local $pseudo_counts = 1;
   local $equi_pseudo = 0;
-  local $bg_pseudo = 0.1;
+  local $bg_pseudo = 0.01;
+  local $bg_pseudo_user_specified = 0;
+  local $bg_include_seg = 0; #includes the segment that is score by the matrix into bg calculation (-window option)
   local $matrix_format = "tab";
   local $seq_format = "fasta";
   local $verbose = 0;
@@ -559,6 +563,14 @@ package main;
 				    ") must be larger than Markov order + 1 (",
 				    $main::markov."+1)."));
     }
+    
+    	## bg window : calculate bg pseudo frequency
+    	if ($bg_method ne "input") {
+    		unless ($bg_pseudo_user_specified) {
+     			$main::bg_pseudo = sqrt($main::window)/(sqrt($main::window) + $main::window);
+     			&RSAT::message::Debug("window length: ", $main::window,"bg pseudo-frequency calculated:",$main::bg_pseudo) if ($main::verbose >= 3);
+      		}
+    	}
 
     ## TO DO: read the sequences once to determine prior frequencies, in
     ## order to set the pseudo-weight distribution
@@ -570,17 +582,25 @@ package main;
       unless ($main::infile{input}) {
 	&RSAT::error::FatalError("The option -bg_input requires to specify an input file (STDIN is not supported with this option.");
       }
+      
+      my $input_seq_length = 0;
       my ($in, $input_dir) = &OpenInputFile($main::infile{input});
       while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
 	     (($current_seq ne "") || ($seq_id ne ""))) {
-
-	## Sequence length
-	$current_seq = lc($current_seq);
-	$bg_model->calc_from_seq($current_seq, add=>1);
+		
+			## Sequence length
+			$input_seq_length += length($current_seq);
+			$current_seq = lc($current_seq);
+			$bg_model->calc_from_seq($current_seq, add=>1);
       }
       close $in;
       $bg_model->check_missing_transitions();
-      $bg_model->normalize_transition_frequencies();
+      
+      #calculate pseudo
+      unless ($bg_pseudo_user_specified) {
+     	$main::bg_pseudo = sqrt($input_seq_length)/(sqrt($input_seq_length) + $input_seq_length);
+     	&RSAT::message::Debug("sequence length: ", $input_seq_length,"bg pseudo-frequency calculated:",$main::bg_pseudo) if ($main::verbose >= 3);
+      	}
     }
   } else {
     &RSAT::error::FatalError("You should either define the Markov order (-markov) or specify a file (-bgfile) for the background model.");
@@ -745,53 +765,114 @@ package main;
 
     ################################################################
     ## Calculate background model from the current sequence
+    ## BG adpatative 
+    ## method 1 : include scored segment in bg model calculation : initialisation step
     my $window_offset = 0;
-    if (($main::markov >= 0) && ($bg_method ne "input")) {
-      if ($main::window >= $main::markov + 1) {
-	if ($main::window > $seq_len) {
-	  &RSAT::message::Warning(join("\t",
-				       $seq_id,
-				       "sequence length",
-				       $seq_len,
-				       "smaller than sliding window size",
-				       $main::window,
-				      )) if ($main::verbose >= 2);
-	  $bg_model->calc_from_seq($current_seq);
-	} else {
-	  ## initialize the model with the first window
-	  $bg_model->calc_from_seq(substr($current_seq,0,$main::window));
-	}
-      } else {
-	## calculate the model from the entire current sequence
-	$bg_model->calc_from_seq($current_seq);
-      }
-    }
-
+    if (($main::markov >= 0) && ($bg_method ne "input")) {  
+   		if ($bg_include_seg) {
+    	  if ($main::window >= $main::markov + 1) {
+			if ($main::window > $seq_len) {
+		  &RSAT::message::Warning(join("\t",
+					       $seq_id,
+					       "sequence length",
+					       $seq_len,
+					       "smaller than sliding window size",
+					       $main::window,
+					      )) if ($main::verbose >= 2);
+			  $bg_model->calc_from_seq($current_seq);
+			} else {
+			  ## initialize the model with the first window
+			  $bg_model->calc_from_seq(substr($current_seq,0,$main::window));
+			}
+    		  } else {
+			## calculate the model from the entire current sequence
+			$bg_model->calc_from_seq($current_seq);
+    	  }
+    	  }
+   		}
+ 
     ################################################################
     ## Detect sites
     &RSAT::message::TimeWarn("Scanning sequence", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id,  "with ".scalar(@matrices)." PSSM")
       if ($main::verbose >= 3);
-
     &RSAT::message::psWarn("Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id) if (($main::verbose >= 2) && (($sequence_number % 50) == 0));
+    
     if ($calc_fields{sites}) {
       #	  $n_containing_region = 0;
       for my $pos (1..$seq_len) {
+      	
+      	## bg window : method 1 :update model if required, model does include the scores segment.
+   		  if (($main::markov >= 0) && 
+   		  ($bg_method ne "input") &&
+   		  ($bg_include_seg) &&
+		   ($pos > $main::window/2) && ## condition where matrix is not exactly centered on the window, as same bg for all matrices
+		    ## ($pos + $main::window <= $seq_len)) { ## old condition which seems incorrect 
+		    ##  => miss window/2 last nucleotides in the calculation of bg model, replaced with following line
+		    (($window_offset + 1) + $main::window <= $seq_len)) { ## continue updating until the window covers the last portion of the sequence		  	 
 
-	## Update background model if required
-	if (($main::window > 0) &&
-	    ($pos > $main::window/2) &&
-	    ($pos + $main::window <= $seq_len)) {
-	  my $added_word = substr($current_seq, $window_offset + $main::window - $main::markov, $markov+1);
-	  my $deleted_word = substr($current_seq, $window_offset, $markov+1);
-	  $bg_model->two_words_update($added_word, $deleted_word, $window_offset);
-	  $window_offset++;
-	}
+		  my $added_word = substr($current_seq, $window_offset + $main::window - $main::markov, $markov+1);
+		  my $deleted_word = substr($current_seq, $window_offset, $markov+1);
+		#  $bg_model->two_words_update($added_word, $deleted_word, $window_offset);
+ 			unless ($added_word eq $deleted_word){ ## No need to update if added word equald deleted word
+		   		$bg_model->one_word_update($added_word, "add",$window_offset);
+		   		$bg_model->one_word_update($deleted_word, "delete",$window_offset);
+ 			}
+	 	 $window_offset++;
+		}
+
 
 	## Detect sites
 	foreach my $matrix (@matrices) {
 	  my $ncol = $matrix->{ncol};
 	  next if ($seq_len - $pos +1 < $ncol);
 	  my $segment = substr($current_seq, $pos-1, $ncol);
+	  
+	  ## window bg model : method 2: excluding scored segment in bg model calculation
+	   if (($main::markov >= 0) && 
+   		  ($bg_method ne "input") &&
+	  		(!$bg_include_seg)){
+	  	## initial bg model is calculated starting after the first segment
+	  	if ($pos == 1){
+    		$bg_model->calc_from_seq(substr($current_seq,$ncol,($main::window - $ncol))); 
+    		 &RSAT::message::Debug("bg initialisation : ", Dumper($bg_model->{transition_absolute_count})) if ($main::verbose >= 5);
+    
+    	## update bg model
+    	} else { 
+    		## left side of the scored segment
+    		## here words are added
+    		if ($pos >= $markov+2) {	## do not add words on the left side, if the word is not as long as markov+1
+    			my $added_word = substr($current_seq, $pos - ($markov + 2), $markov+1);
+    			 &RSAT::message::Debug("added word", $added_word,"begins at" ,$pos - ($markov + 2) ) if ($main::verbose >= 3);
+    			$bg_model->one_word_update($added_word, "add",$pos - ($markov + 2));
+    		}                                                                                                                             
+    		&RSAT::message::Debug( "pos", $pos,"> window/2", $main::window/2,  "condition",$pos + $main::window, "<=","seq_len", $seq_len ) if ($main::verbose >= 10);	 
+   		
+    		## make the window slides
+    		if (($main::window > 0) &&
+		    (floor($pos + $ncol/2) > floor($main::window/2) + 1) && ##  condition where matrix is exactly centered on the window
+		      (($window_offset + 1) + $main::window <= $seq_len)) { ## continue updating until the window covers the last portion of the sequence		  	 
+		    	 
+		    	&RSAT::message::Debug("Sliding the window, offset is ", $window_offset) if ($main::verbose >= 5);	    	
+		    	my $added_word = substr($current_seq, $window_offset + $main::window - $main::markov, $markov+1);
+		  		my $deleted_word = substr($current_seq, $window_offset, $markov+1);
+ 				unless ($added_word eq $deleted_word){ ## No need to update if added word equald deleted word
+ 					## add right of window (= end of window)
+		   			$bg_model->one_word_update($added_word, "add",$window_offset);
+		   			## del left of window (= start of window)
+		   			$bg_model->one_word_update($deleted_word, "delete",$window_offset);
+ 				}
+	 		 $window_offset++;
+		    }
+    		
+    		## right side of the scored segment
+    		## here words are deleted
+    		if ($seq_len - ($pos + $ncol -1 ) >= $markov ) {	## end of sequence : do not delete words on the right side, if the word is not as long as markov +1
+    			my $deleted_word = substr($current_seq, ($pos + $ncol -1) -1 , $markov+1);
+    			  &RSAT::message::Debug("deleted word", $deleted_word,"begins at" ,($pos + $ncol -1) -1) if ($main::verbose >= 3);
+    			$bg_model->one_word_update($deleted_word, "delete",($pos + $ncol -1) -1);
+    		}
+    	}
+	  }
 
 	  ## Skip N-containing segments
 	  if (($n_treatment eq "skip") &&
@@ -1172,7 +1253,7 @@ package main;
   ################################################################
   ###### Finish verbose
   if ($main::verbose >= 1) {
-
+	 
     ## Sequence statistics
     printf $main::out "; %-21s\t%s\n", "Number of sequences scanned", $sequence_number;
     printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
@@ -1343,7 +1424,9 @@ This option is incompatible with the option -bgfile.
 
 Size of the sliding window for the background model calculation. 
 When this option is specified, the matrix pseudo-count is equally distributed.
+
 =cut
+
 	} elsif ($arg eq "-window") {
 	  &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if ($main::bg_method);
 	  $main::bg_method = "window";
@@ -1553,9 +1636,20 @@ the -window option where equipseudo is default.
 
 =item B<-bg_pseudo #>
 
-Pseudo frequency for the background models. Value must be a real between 0 and 1 (default: 0.1)
-If the training sequence length (L) is known, the value can be set to
+Pseudo frequency for the background models. Value must be a real between 0 and 1.
+
+If this option is not specified, the pseudo-frequency value depends on the background calculation. 
+
+=over
+
+=item - For -bginput and -window, the pseudo frequency is automatically calculated with the length (L) of the sequence following this formula : 
 square-root of L divided by L+squareroot of L
+
+
+=item - For -bgfile, default value is 0.01. If the training sequence length (L) is known, the value can be set by -bg_pseudo option to
+square-root of L divided by L+squareroot of L.
+
+=back
 
 =cut
 	} elsif ($arg eq "-bg_pseudo") {
@@ -1563,6 +1657,7 @@ square-root of L divided by L+squareroot of L
 	    &RSAT::error::FatalError(join("\t", $main::bg_pseudo,
 					  "Invalid format for bg_pseudo, should be a Real number between 0 and 1."))
 		unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
+		$main::bg_pseudo_user_specified = 1;
 =pod
 
 =item B<-origin pos>
@@ -1908,6 +2003,7 @@ sub Verbose {
 	printf $main::out ";\t%-14s\t%d\n", "Markov order", $order;
     }
     printf $main::out ";\t%-14s\t%s\n", "Strand", $bg_model->get_attribute("strand");
+    printf $main::out ";\t%-14s\t%s\n", "Background pseudo-frequency", $main::bg_pseudo;
     if ($window > 0) {
 	printf $main::out ";\t%-14s\t%d\n", "Background window", $window;
     }
@@ -1918,7 +2014,7 @@ sub Verbose {
     }
 
     my $missing_transitions = $bg_model->get_attribute("missing_transitions");
-    if ($missing_transitions > 0) {
+    if (($missing_transitions) && ($missing_transitions > 0)) {
       printf $main::out ";\t%-14s\t%d %s\n", "WARNING", , $missing_transitions, "missing transitions. You should reduce the Markov order";
     }
     }
