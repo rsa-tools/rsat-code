@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-node-degree,v 1.4 2007/05/29 08:22:40 jvanheld Exp $
+# $Id: graph-node-degree,v 1.5 2007/07/20 07:00:57 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -23,9 +23,9 @@ Calculate the node degree of each node and specifies if this node is a seed or a
 
 =over
 
-=item jvanheld@scmbb.ulb.ac.be
+=item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
 
-=item sylvain@scmbb.ulb.ac.be
+=item Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -54,7 +54,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
-require RSAT::Graph;
+require RSAT::Graph2;
 
 ################################################################
 ## Main package
@@ -65,16 +65,14 @@ package main;
     ## Initialise parameters
     my $start_time = &AlphaDate();
 
-    @node_names = (); ## Names of the nodes for which the degree is searched
-    @found_nodes = (); ## Node objects
-    @unknown_nodes = (); ## Names of the unidentified nodes
-    $all_nodes = 0; ## Search the degree of all nodes
+    %unknown_nodes = (); ## Names of the unidentified nodes
+    $all_seeds = 0; ## Use all nodes as seeds 
 
     @out_fields = qw(id in_deg out_deg degree ktype);
 
     ################################################################
     ## Initialize the graph
-    $graph = new RSAT::Graph();
+    $graph = new RSAT::Graph2();
     $graph->set_attribute("label", "graph");
 
     ## Columns of the tab-delimited graph file
@@ -82,6 +80,15 @@ package main;
     local $target_col = 2;
     local $weight_col = 0;
 
+    ## Input formats
+    local $input_format = "tab";
+    %supported_input_format =(
+	tab=>1,
+	gml=>1
+    );
+    $supported_input_formats = join (",", keys %supported_input_format);    
+    
+    
     %main::infile = ();
     %main::outfile = ();
 
@@ -95,37 +102,34 @@ package main;
 
     ################################################################
     ## Check argument values
-
+    if (scalar(@seed_names) == 0 && ($all_seeds == 0)) {
+      $all_seeds = 1;
+      &RSAT::message::Warning("You did not specify any seed nodes. Degree of all nodes will be computed.");
+    }
+    print "";
     ################################################################
     ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
 
     ################################################################
     ## Read input graph
-    $graph->read_from_table($infile{graph}, $source_col, $target_col, $weight_col);
-
+    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col);
 
     ################################################################
     ## Build the list of seed nodes
 
     ## Use all nodes as seeds
-    if ($all_nodes) {
-      @found_nodes = $graph->get_nodes();
-      &RSAT::message::TimeWarn("Describle all",scalar(@found_nodes), "nodes of the graph") if ($main::verbose >= 2);
+    if ($all_seeds) {
+      my @seed_names = $graph->get_nodes();
+      &RSAT::message::TimeWarn("Using all",scalar(@seed_names), "nodes of the graph as seeds") if ($main::verbose >= 2);
       ## Put the name of each node in the list
-      @node_names = ();
-      foreach my $node (@found_nodes) {
-	my $name = $node->get_attribute("label");
-	push @node_names, $name;
-      }
     } else {
-
-      ## Read nodes from a file
-      if ($infile{nodes}) {
+      ## Read seed nodes from a file
+      if ($infile{seeds}) {
 	my $l = 0;
-	&RSAT::message::TimeWarn("Reading nodes from file", $infile{nodes}) if ($main::verbose >= 2);
-	my ($nodes_handle) = &OpenInputFile($infile{nodes});
-	while (my $line = <$nodes_handle>) {
+	&RSAT::message::TimeWarn("Reading seed nodes from file", $infile{seeds}) if ($main::verbose >= 2);
+	my ($seed_handle) = &OpenInputFile($infile{seeds});
+	while (my $line = <$seed_handle>) {
 	  $l++;
 	  next if ($line =~ /^\#/); ## Skip header lines
 	  next if ($line =~ /^--/); ## Skip comment lines
@@ -135,31 +139,28 @@ package main;
 	  my @fields = split /\s+/, $line;
 	  my $name =  $fields[0];
 	  if ($name) {
-	    push @node_names,$name;
+	    push @seed_names, $name;
 	  } else {
 	    &RSAT::message::Warning("Line", $l, "starts with space. Skipped.");
 	  }
 	}
-	close $nodes_handle;
-      }
-
-      ## Identify seed nodes in the graph
-      if (scalar(@node_names) == 0) {
-	&RSAT::message::Warning("The list of input nodes is empty. see the options -all, -node and -nodef fo specify the nodes.");
-      }
-      &RSAT::message::TimeWarn("Identifying",scalar(@node_names), "nodes in the graph") if ($main::verbose >= 2);
-      foreach my $name (@node_names) {
-	my $node = $graph->node_by_id($name);
-	if ($node) {
-	  push @found_nodes, $node;
-	  &RSAT::message::Info("Identified node with name", $name, $node->get_attribute("id")) if ($main::verbose >= 3);
-	} else {
-	  push @unknown_nodes, $name;
-	  &RSAT::message::Warning("The graph does not contain any node with name", $name);
-	}
+	close $seed_handle;
       }
     }
-
+      
+    ## Identify seed nodes in the graph
+    %seed_names_list = ();
+    RSAT::message::TimeWarn("Identifying",scalar(@seed_names), "seed nodes in the graph") if ($main::verbose >= 2);
+    foreach my $name (@seed_names) {
+      my $node_id = $graph->node_by_name($name);
+      if (defined($node_id)) {
+	&RSAT::message::Info("Identified node with name", $name, $node_id) if ($main::verbose >= 3);
+	$seed_names_list{$name}++;
+      } else {
+        $unknown_nodes{$name}++;
+	&RSAT::message::Warning("The graph does not contain any node with name", $name);
+      }
+    }
 
     ################################################################
     ## Print verbose
@@ -176,41 +177,34 @@ package main;
      foreach my $field (@out_fields) {
        printf $out ";\t%-15s\t%s\n", $field, $field_descr{$field};
      }
-#     print $out '#',  join ("\t", @out_fields), "\n";
-
+     print $out join("\t", "#id", "in_deg", "out_deg", "degree", "ktype")."\n";
     ################################################################
     ## Calculate the degree
-    foreach my $node (@found_nodes) {
-      my $in_deg = scalar($node->get_attribute("in_nodes")) || 0;
-      my $out_deg = scalar($node->get_attribute("out_nodes")) || 0;
-      $node->force_attribute("in_deg", $in_deg);
-      $node->force_attribute("out_deg", $out_deg);
-      $node->force_attribute("degree", $in_deg + $out_deg);
-
+    my @out_neighbours = $graph->get_attribute("out_neighbours");
+    my @in_neighbours = $graph->get_attribute("in_neighbours");
+    my %nodes_name_id = $graph->get_attribute("nodes_name_id");
+    foreach my $node (keys %seed_names_list) {
+      my $id = $nodes_name_id{$node};
+      my $in_deg = 0;
+      my $out_deg = 0;
+      if (defined(@{$in_neighbours[$id]})) {
+        $in_deg = scalar(@{$in_neighbours[$id]});
+      }
+      if (defined(@{$out_neighbours[$id]})) {
+        $out_deg = scalar(@{$out_neighbours[$id]});
+      }      
+      my $degree = $in_deg + $out_deg;
+      my $ktype = "interm";
       ## Specify th connectivity type
       if (($in_deg == 0) && ($out_deg == 0)) {
-	$node->force_attribute("ktype", "orphan");
+	$ktype = "orphan";
       } elsif ($in_deg == 0) {
-	$node->force_attribute("ktype", "source");
+	$ktype = "source";
       } elsif ($out_deg == 0) {
-	$node->force_attribute("ktype", "target");
-      } else {
-	$node->force_attribute("ktype", "interm");
+	$ktype = "target";
       }
-
-#       ################################################################
-#       ## Print the results
-#       my @out_values = ();
-#       foreach my $field (@out_fields) {
-# 	push @out_values, $node->get_attribute($field);
-#       }
-#       print $out join ("\t", @out_values), "\n";
+      print $out join("\t", $node, $in_deg, $out_deg, $degree, $ktype)."\n";
     }
-
-
-    $graph->push_attribute("nodes_to_export", @found_nodes);
-    print $out $graph->to_text("node_table", @out_fields);
-
     ################################################################
     ## Finish verbose
     if ($main::verbose >= 1) {
@@ -372,7 +366,7 @@ Look for the degree of all nodes.
 
 =cut
 	} elsif ($arg eq "-all") {
-	    $all_nodes = 1;
+	    $all_seeds = 1;
 
 =pod
 
@@ -383,8 +377,17 @@ several nodes.
 
 =cut
 	} elsif ($arg eq "-node") {
-	    push @node_names, shift(@arguments);
+	    push @seed_names, shift(@arguments);
 
+=item B<-in_format input_format>
+
+Input format. Supported: tab, gml
+
+=cut
+	} elsif ($arg eq "-in_format") {
+	    $input_format = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
 =pod
 
 =item	B<-o outputfile>
@@ -414,7 +417,7 @@ allows to use the command within a pipe.
 ################################################################
 #### verbose message
 sub Verbose {
-    print $main::out "; graph-node-degree ";
+    print $main::out "; graph-neighbnours ";
     &PrintArguments($main::out);
     if (defined(%main::infile)) {
 	print $main::out "; Input files\n";
@@ -436,14 +439,14 @@ sub Verbose {
     print $out ";\tarcs\t",$arcs,"\n";
 
     ## Report seed nodes
-    if ($all_nodes) {
-      print $out "; All nodes\t",scalar(@node_names),"\n";
+    if ($all_seeds) {
+      print $out "; All nodes\t",scalar(@seed_names),"\n";
     } else {
-      print $out "; Selected nodes\t",scalar(@node_names),"\n";
+      print $out "; Selected nodes\t",scalar(@seed_names),"\n";
     }
-    if (@unknown_nodes) {
-      print $out ";\tidentified\t",scalar(@found_nodes),"\n";
-      print $out ";\tunknown nodes\t",scalar(@node_names) - scalar(@found_nodes),"\n";
+    if (scalar (keys %unknown_nodes) > 0) {
+      print $out ";\tidentified\t",scalar(keys %seed_names_list),"\n";
+      print $out ";\tunknown nodes\t",scalar (keys %unknown_nodes),"\n";
       foreach my $name (@unknown_nodes) {
 	print $out join ("\t", ";\t", "unknown", $name), "\n";
       }
