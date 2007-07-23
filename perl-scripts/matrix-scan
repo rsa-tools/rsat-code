@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.75 2007/07/20 12:12:07 morgane Exp $
+# $Id: matrix-scan,v 1.76 2007/07/23 16:34:14 jvanheld Exp $
 #
 # Time-stamp: <2007-07-17 16:36:54 jturatsi>
 #
@@ -582,20 +582,19 @@ package main;
       unless ($main::infile{input}) {
 	&RSAT::error::FatalError("The option -bg_input requires to specify an input file (STDIN is not supported with this option.");
       }
-      
+
       my $input_seq_length = 0;
       my ($in, $input_dir) = &OpenInputFile($main::infile{input});
       while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
 	     (($current_seq ne "") || ($seq_id ne ""))) {
-		
-			## Sequence length
-			$input_seq_length += length($current_seq);
-			$current_seq = lc($current_seq);
-			$bg_model->calc_from_seq($current_seq, add=>1);
+	## Sequence length
+	$input_seq_length += length($current_seq);
+	$current_seq = lc($current_seq);
+	$bg_model->calc_from_seq($current_seq, add=>1);
       }
       close $in;
       $bg_model->check_missing_transitions();
-      
+
       #calculate pseudo
       unless ($bg_pseudo_user_specified) {
      	$main::bg_pseudo = sqrt($input_seq_length)/(sqrt($input_seq_length) + $input_seq_length);
