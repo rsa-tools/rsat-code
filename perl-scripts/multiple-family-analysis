@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.193 2007/07/20 10:46:48 rsat Exp $
+# $Id: multiple-family-analysis,v 1.194 2007/07/23 09:27:29 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1310,7 +1310,6 @@ sub DyadAnalysis {
    } else {
        &doit($command, $dry_run, $die_on_error, $verbose);
    }
-   
 }
 
 
@@ -2817,9 +2816,22 @@ OPTIONS
 		configurations by adapting the method &doit() in the
 		utilities ($RSAT/lib/RSA.lib).
 
+	-nodie	
+		Continue the analysis even if errors are raised by
+		sub-processes. By default, multiple-family-analysis
+		stops if an error has occurred in one of the
+		sub-programs. However, in some particular the user
+		might want to ignore such errors. 
+
+		In particular, this option is useful to circumvent a
+		problem encountered with the gibbbs sampler under some
+		operating systems (Linux but not Maax OSX): the gibbs
+		program returns an error code to the system even when
+		the pattern discovery was successful.
 
 FILE FORMAT
    $HELP_FAMILY_FILE
+
 QUICK START
    1) create a directory for the set of families
 
@@ -3230,6 +3242,9 @@ sub ReadArguments {
 
 	} elsif ($ARGV[$a] eq "-batch") {
 	    $batch = 1;
+
+	} elsif ($ARGV[$a] eq "-nodie") {
+	    $die_on_error = 0;
 
 	}
    }
@@ -4600,6 +4615,7 @@ multiple-family-analysis options
 -htmaps		draw html maps (dynamic map with pointers to the features)
 -n      	dry run: print commands without executing them
 -batch	send time-consuming jobs to a batch queue for a PC cluster
+-nodie	        continue the analysis even if errors are raised by sub-processes
 
 ## Sequence options
 -org		organism
