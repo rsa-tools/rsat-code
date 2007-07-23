@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: roc-stats2,v 1.5 2007/06/26 11:27:17 jvanheld Exp $
+# $Id: roc-stats2,v 1.6 2007/07/23 10:31:53 jvanheld Exp $
 #
 ############################################################
 
@@ -443,12 +443,13 @@ package main;
     if ($graphs) {
       ## Use same name fo graph as for the output file
       my $output_table = $main::outfile{output};
+
       ## Suppress the .tab or .txt extension before adding the graph suffixes.
       $output_table =~ s/\.tab$//;
       $output_table =~ s/\.txt$//;
 
       ## Draw stats as a function of score
-      my $cmd = "XYgraph -i ".$output_table.".tab";
+      my $cmd = "XYgraph -i ".$main::outfile{output};
       $cmd .= " -title1 'Score distributions'";
       $cmd .= " -xcol 1 -ycol 7,8,9,1à,11 -xleg1 'score' -lines -pointsize 0 -ymin 0 -ymax 1 -legend";
       $cmd .= "  -ygstep1 0.1 -ygstep2 0.05";
@@ -457,7 +458,7 @@ package main;
       &doit($cmd);
 
       ## Draw stats as a function of score, with log scale on X axis
-      $cmd = "XYgraph -i ".$output_table.".tab";
+      $cmd = "XYgraph -i ".$main::outfile{output};
       $cmd .= " -title1 'Score distributions'";
       $cmd .= " -xcol 1 -ycol 7,8,9,10,11 -xleg1 'score' -lines -pointsize 0 -ymin 0 -ymax 1 -legend";
       $cmd .= "  -ygstep1 0.1 -ygstep2 0.05";
@@ -466,7 +467,7 @@ package main;
       &doit($cmd);
 
       ## Draw a graph with TP=f(FP)
-      $cmd = "XYgraph -i ".$output_table.".tab";
+      $cmd = "XYgraph -i ".$main::outfile{output};
       $cmd .= " -title1 'True verus false positives'";
       $cmd .= " -xcol 5 -ycol 4 -xleg1 FP -yleg1 TP -lines -pointsize 0";
       $cmd .= " -format ".$img_format;
@@ -474,7 +475,7 @@ package main;
       &doit($cmd);
 
       ## Draw a ROC curve
-      $cmd = "XYgraph -i ".$output_table.".tab";
+      $cmd = "XYgraph -i ".$main::outfile{output};
       $cmd .= " -title1 'ROC curve'";
       $cmd .= " -xcol 9 -ycol 7 -xleg1 'FPR' -yleg1 'Sn (=TPR)' -lines -pointsize 0 -min 0 -max 1";
       $cmd .= " -format ".$img_format;
@@ -482,7 +483,7 @@ package main;
       &doit($cmd);
 
       ## Draw a Precision-recall curve
-      $cmd = "XYgraph -i ".$output_table.".tab";
+      $cmd = "XYgraph -i ".$main::outfile{output};
       $cmd .= " -title1 'Precision-recall curve'";
       $cmd .= " -xcol 7 -ycol 8 -xleg1 'Sn (Recall)' -yleg1 'PPV (Precision)' -lines -pointsize 0 -min 0 -max 1";
       $cmd .= " -format ".$img_format;
@@ -491,7 +492,7 @@ package main;
 
       ## Draw a Precision-recall curve with logarithmic axes
       ## (like in von Mering, 2002, but beware: this is over-emphasizing the poor results)
-      $cmd = "XYgraph -i ".$output_table.".tab";
+      $cmd = "XYgraph -i ".$main::outfile{output};
       $cmd .= " -title1 'Precision-recall curve'";
       $cmd .= " -xcol 7 -ycol 8 -xleg1 'Sn (Recall)' -yleg1 'PPV (Precision)' -lines -pointsize 0 -min 0 -max 1 -xlog -ylog";
       $cmd .= " -format ".$img_format;
@@ -500,7 +501,7 @@ package main;
 
       ## Draw a Precision-recall curve with logarithmic axis X
       ## (like in von Mering, 2002, but beware: this is over-emphasizing the poor results)
-      $cmd = "XYgraph -i ".$output_table.".tab";
+      $cmd = "XYgraph -i ".$main::outfile{output};
       $cmd .= " -title1 'Precision-recall curve'";
       $cmd .= " -xcol 7 -ycol 8 -xleg1 'Sn (Recall)' -yleg1 'PPV (Precision)' -lines -pointsize 0 -min 0 -max 1 -xlog";
       $cmd .= " -format ".$img_format;
