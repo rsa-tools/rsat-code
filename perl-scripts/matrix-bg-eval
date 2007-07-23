@@ -716,8 +716,10 @@ package main;
 
     	}
     	  	###### zip calculated background models to gain space
-    		my $command = "tar -pczf $main::dirproject{$bg_method}/bg_model.tar.gz $main::dirproject{$bg_method}/bg_model/";
-			&doit($command, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+    	  	if ($bg_method eq "bg_input") {
+    			my $command = "tar -pczf $main::dirproject{$bg_method}/bg_model.tar.gz $main::dirproject{$bg_method}/bg_model/";
+				&doit($command, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+    	  	}
     	
     	## Draw graphs for comparing the bg_models, for the current bg_method
     	&compareBgModels($main::dirproject{$bg_method},\@bg_file_list, $bg_method,"no_window") if ($tasks2run{compare_bg});
