@@ -346,18 +346,18 @@ sub ReadPatternFrequencies {
     next if (/^;/); ## Skip comment line
     next if (/^\#/); ## Skip header line
     next unless (/\S/); ## Skip comment line
-    
+
     my @fields =  split /\s+/;
     my $pattern_seq = lc($fields[0]);
     next unless $pattern_seq;
-    
-#    &RSAT::message::Debug( "fields", join ("\t", @fields)) if ($main::verbose >= 10);
-    
+
+#    &RSAT::message::Debug( "fields", join ("\t", @fields)) if ($main::verbose >= 0);
+
     #### check the format and extract expected frequency
     if (&IsReal($fields[1])) {
       ### second field contains the expected frequency (old format)
       $patterns{$pattern_seq}->{exp_freq} = $fields[1];
-      
+
     } elsif (($fields[1] =~ /(\S+)\|(\S+)/) && (&IsReal($fields[2]))) {
       #### second field contains the ID as a pair of reverse complements
       $file_type = "2str";
@@ -365,40 +365,44 @@ sub ReadPatternFrequencies {
       my $rc = lc($2);
       $patterns{$rc}->{exp_freq} = $fields[2];
       $patterns{$fw}->{exp_freq} = $fields[2];
-      
+
     } elsif	(($fields[1] eq $fields[0]) && (&IsReal($fields[2]))) {
       #### second field contains the ID which is identical to the pattern (single strand pattern)
       $file_type = "1str";
       $patterns{$fields[0]}->{exp_freq} = $fields[2];
-      
+
     } else {
       ### unrecognized format
       &RSAT::error::FatalError("Invalid expected frequency in file $pattern_freq_file at line $l\n$line\n");
     }
-    
+
     if ($patterns{$pattern_seq}->{exp_freq} < 0) {
       &RSAT::error::FatalError("Expected frequency cannot be negative\t$pattern_seq\t".$patterns{$pattern_seq}->{exp_freq});
     }
   }
   close $exp if ($pattern_freq_file);
-  
+
+  ################################################################
   #### Check if reverse complements were included in the fequency file;
   #### if not, infer them from the direct strand 
-  foreach my $pattern_seq (sort keys %patterns) {
-    my $rc = lc(&SmartRC($pattern_seq));
-    if ((!defined($patterns{$rc}->{exp_freq})) &&
-	($patterns{$pattern_seq}->{exp_freq})) {
-      $patterns{$rc}->{exp_freq} = $patterns{$pattern_seq}->{exp_freq};
-      #	    &RSAT::message::Debug("Checking reverse complement", $pattern_seq,  $patterns{$pattern_seq}->{exp_freq}, $rc, $patterns{$rc}->{exp_freq}, "\n" if ($main::verbose >= 10);
+  if ($file_type eq "2str") {
+    foreach my $pattern_seq (sort keys %patterns) {
+      my $rc = lc(&SmartRC($pattern_seq));
+      if ((!defined($patterns{$rc}->{exp_freq})) &&
+	  ($patterns{$pattern_seq}->{exp_freq})) {
+	$patterns{$rc}->{exp_freq} = $patterns{$pattern_seq}->{exp_freq};
+	#	    &RSAT::message::Debug("Checking reverse complement", $pattern_seq,  $patterns{$pattern_seq}->{exp_freq}, $rc, $patterns{$rc}->{exp_freq}, "\n" if ($main::verbose >= 10);
+      }
     }
   }
-  
-  
-  #### sum expected frequencies by reverse complements
+
+  ################################################################
+  ## sum expected frequencies by reverse complements
+  ## unless the input file already contained 2str counts
   if (($sum_rc) && ($file_type eq "1str")) {
     &SumExpectedFrequencies(%patterns);
   }
-  
+
   #### make sure that the sum of frequencies is positive
   my $freq_sum = 0;
   foreach my $pattern_seq (keys %patterns) {
