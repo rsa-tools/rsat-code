@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.5 2007/07/20 17:00:17 oly Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.6 2007/07/23 15:33:38 oly Exp $
 #
 # Time-stamp
 #
@@ -46,13 +46,11 @@ package main;
   local $query_file;
   local @queries;
 
-  local %outfile = ();
-  $outfile{log} = "ensembl-retrieve-seq_log.txt";
-  $outfile{err} = "ensembl-retrieve-seq_err.txt";
+  local $output_file;
 
   ## Connection to the EnsEMBL MYSQL database
-#  local $ensembl_host = 'ensembldb.ensembl.org';  # db at EBI (use outside SCMBB)
-  local $ensembl_host = 'xserve2.scmbb.ulb.ac.be';  # Local db (use inside SCMBB)
+  local $ensembl_host = 'ensembldb.ensembl.org';  # db at EBI (use outside SCMBB)
+#  local $ensembl_host = 'xserve2.scmbb.ulb.ac.be';  # Local db (use inside SCMBB)
   local $ensembl_user = "anonymous";
   local $dbname = '';
   local $org = '';
@@ -61,7 +59,6 @@ package main;
   ## Read arguments
   &ReadArguments();
 
-  $outfile{output} = $output_file;
   ################################################################
   ## Check argument values
 
@@ -82,8 +79,9 @@ package main;
 
   ### verbose ###
   if ($verbose >= 1) {
-    print "; ensembl-retrieve-seq ";
-    &PrintArguments();
+    print "; retrieve-ensembl-seq ";
+#    &PrintArguments;
+    print "\n";
   }
 
   ################################################################
@@ -118,16 +116,8 @@ package main;
     &RSAT::message::Debug("Db", $db) if ($main::verbose >= 3);
 
   ################################################################
-  ### open output streams
-
-  ## log file
-  open $log, ">".$outfile{log} || die "cannot open error log file".$outfile{log}."\n";
-
-  ## error file
-  open ERR, ">".$outfile{err} || die "cannot open error log file".$outfile{err}."\n";
-
-  ## output file
-  open OUT, ">".$outfile{output} || die "cannot open error log file".$outfile{output}."\n";
+  ### Open output stream
+  open OUT, ">".$output_file || die "cannot open error log file ".$output_file."\n";
 
   #### print verbose
   &Verbose() if ($verbose);
@@ -174,14 +164,12 @@ package main;
   ###### finish verbose
     if ($verbose >= 1) {
 	my $done_time = &AlphaDate();
-	print $log "; Job started $start_time\n";
-	print $log "; Job done    $done_time\n";
+	print "; Job started $start_time\n";
+	print "; Job done    $done_time\n";
     }
   ################################################################
   ###### Close output stream
-  close $log if ($outfile{log});
-  close ERR if ($outfile{err});
-  close OUT if ($outfile{output});
+  close OUT if ($output_file);
 
   exit(0);
 }
@@ -246,7 +234,7 @@ sub ReadArguments {
 
       ### Feature type
     } elsif ($ARGV[$a] eq "-feattype") {
-      $feattype = $ARGV[$a+1];
+      $feattype = lc($ARGV[$a+1]);
 
       ### Noorf
     } elsif ($ARGV[$a] eq "-noorf") {
@@ -293,20 +281,8 @@ sub ReadArguments {
 ################################################################
 #### verbose message
 sub Verbose {
-  print $log "; ensembl-retrieve-seq.pl ";
-  &PrintArguments($log);
-  if (defined(%dir)) {
-    print $log "; Directories\n";
-    while (($key,$value) = each %dir) {
-      print $log ";\t$key\t$value\n";
-    }
-  }
-  if (defined(%outfile)) {
-    print $log "; Output files\n";
-    while (($key,$value) = each %outfile) {
-      print $log ";\t$key\t$value\n";
-    }
-  }
+#  print "; retrieve-ensembl-seq.pl ";
+#  &PrintArguments();
 }
 ################################################################
 ### Get sequence(s) relative to a feature
@@ -338,7 +314,7 @@ sub Main {
   &RSAT::message::Info (join("\t", "# ID", "Name", "Contig", "Start", "End", "Strand", "Description")) if ($main::verbose >= 1);
   &RSAT::message::Info (join("\t", $gene_id, $gene_name, $chromosome_name, $gene_start, $gene_end, $rsat_strand, $description)) if ($main::verbose >= 1);
 
-  if ($feattype eq "Gene") {
+  if ($feattype eq "gene") {
     my ($left, $right) = &GetLimits($gene_id, $gene_start, $gene_end);
 
     # Get sequence (repeat masked or not)
@@ -359,11 +335,13 @@ sub Main {
     print OUT ">$gene_id\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
     print OUT "$sequence\n";
 
-  } else { # feattype = mRNA, CDS, Introns...
+  } else { # feattype = mrna, cds, introns...
     # Get transcripts
     @transcripts = @{$gene->get_all_Transcripts};
 
     # Initialize transcripts limits
+    my $three_primest_id = $transcripts[0] -> display_id();
+    my $five_primest_id = $transcripts[0] -> display_id();
     my $three_primest_start;
     my $five_primest_end;
     if ($strand == 1) {
@@ -375,7 +353,7 @@ sub Main {
     }
 
     foreach my $transcript(@transcripts) {
-      my $transcript_id = $transcript->display_id();
+      my $transcript_id = $transcript -> display_id();
       my $transcript_start = $transcript -> start();
       my $transcript_end = $transcript -> end();
 
@@ -385,17 +363,21 @@ sub Main {
 
       # Find all transcripts minimal limits
       if ($strand == 1 && $transcript_start > $three_primest_start) {
+	$three_primest_id = $transcript_id;
 	$three_primest_start = $transcript_start;
       } elsif ($strand == -1 && $transcript_end < $three_primest_start) {
+	$three_primest_id = $transcript_id;
 	$three_primest_start = $transcript_end;
       }
       if ($strand == 1 && $transcript_end < $five_primest_end) {
+	$five_primest_id = $transcript_id;
 	$five_primest_end = $transcript_end;
       } elsif ($strand == -1 && $transcript_start > $five_primest_end) {
+	$five_primest_id = $transcript_id;
 	$five_primest_end = $transcript_start;
       }
 
-      if ($feattype eq 'mRNA' && $all_transcripts) {
+      if ($feattype eq 'mrna' && $all_transcripts) {
 	my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $transcript_start, $transcript_end);
 
 	# Output sequence
@@ -409,16 +391,16 @@ sub Main {
 
 	my $size = $new_to - $new_from + 1;
 
-	&RSAT::message::Debug(">$gene_id-$transcript_id\t$gene_id-$transcript_id; upstream from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
+	&RSAT::message::Debug(">$gene_id-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
 	&RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	# Export sequence to file
-	print OUT ">$gene_id-$transcript_id\t$gene_id-$transcript_id; upstream from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+	print OUT ">$gene_id-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
 	print OUT "$sequence\n";
       }
 
       # Introns
-      if ($feattype eq "Intron") {
+      if ($feattype eq "intron") {
 	my $i = 0; # index for introns since they don't have an id in ensembl
 	my $intron1;
 	my $intron1_id;
@@ -509,7 +491,7 @@ sub Main {
       &RSAT::message::Info ("Coding region end: $coding_region_end") if ($main::verbose >= 1);
 
       # Exons
-      if ($feattype eq "Exon") {
+      if ($feattype eq "exon") {
 	foreach my $exon (@{$transcript -> get_all_Exons()}) {
 	  my $exon_id = $exon -> stable_id();
 	  my $exon_start = $exon -> start();
@@ -613,7 +595,7 @@ sub Main {
       }
 
       # UTR
-      if ($feattype eq "UTR") {
+      if ($feattype eq "utr") {
 	my $utr5_start;
 	my $utr5_end;
 	my $utr3_start;
@@ -642,20 +624,20 @@ sub Main {
 	my $utr5_size = $utr5_end - $utr5_start + 1;
 	my $utr3_size = $utr3_end - $utr3_start + 1;
 
-	&RSAT::message::Debug(">$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; upstream from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_end $rsat_strand") if ($main::verbose >= 3);
+	&RSAT::message::Debug(">$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_end $rsat_strand") if ($main::verbose >= 3);
 	&RSAT::message::Debug($utr5_sequence) if ($main::verbose >= 3);
-	&RSAT::message::Debug(">$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; upstream from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_end $rsat_strand") if ($main::verbose >= 3);
+	&RSAT::message::Debug(">$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_end $rsat_strand") if ($main::verbose >= 3);
 	&RSAT::message::Debug($utr3_sequence) if ($main::verbose >= 3);
 
 	# Export sequence to file
-	print OUT ">$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; upstream from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_start $rsat_strand\n";
+	print OUT ">$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_start $rsat_strand\n";
 	print OUT "$utr5_sequence\n";
-	print OUT ">$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; upstream from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_start $rsat_strand\n";
+	print OUT ">$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_start $rsat_strand\n";
 	print OUT "$utr3_sequence\n";
       }
 
       # CDS
-      if ($feattype eq 'CDS') {
+      if ($feattype eq 'cds') {
 	my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $coding_region_start, $coding_region_end);
 
 	# Output sequence
@@ -671,20 +653,22 @@ sub Main {
 
 	my $cds_id = $transcript -> translation() -> stable_id();
 
-	&RSAT::message::Debug(">$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; upstream from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
+	&RSAT::message::Debug(">$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
 	&RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	# Export sequence to file
-	print OUT ">$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; upstream from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+	print OUT ">$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
 	print OUT "$sequence\n";
       }
 
     }
 
-    if ($feattype eq 'mRNA' && !$all_transcripts) {
+    if ($feattype eq 'mrna' && !$all_transcripts) {
 
       &RSAT::message::Info ("Three_primest transcript start: $three_primest_start") if ($main::verbose >= 1);
       &RSAT::message::Info ("Five_primest transcript end: $five_primest_end") if ($main::verbose >= 1);
+
+      my $ref_transcript;
 
       if ($strand == 1) {
 	my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $three_primest_start, $five_primest_end);
@@ -703,11 +687,17 @@ sub Main {
 
       my $size = $new_to - $new_from + 1;
 
-      &RSAT::message::Debug(">$gene_id\t$gene_id; upstream from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
+      if ($type eq "upstream") {
+	$ref_transcript = $three_primest_id;
+      } else {
+	$ref_transcript = $five_primest_id;
+      }
+
+      &RSAT::message::Debug(">$gene_id-$ref_transcript\t$gene_id-$ref_transcript; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
       &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
       # Export sequence to file
-      print OUT ">$gene_id\t$gene_id; upstream from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+      print OUT ">$gene_id-$ref_transcript\t$gene_id-$ref_transcript; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
       print OUT "$sequence\n";
     }
   }
@@ -1006,7 +996,7 @@ OPTIONS
 
 	-feattype
 		Feature type.
-		Supported: Gene, mRNA (default), CDS, Intron, Exon, UTR
+		Supported: gene, mrna (default), CDS, intron, exon, utr
 
 	-type	sequence type
 		Currently supported sequence types
@@ -1014,7 +1004,7 @@ OPTIONS
 			downstream
 
 	-q query
-		The query should be an EnsEMBL identifier (eg 'ENSG00000177799').
+		The query should be an EnsEMBL gene identifier (eg 'ENSG00000177799').
 		Multiple queries can be entered by reiteratively using the -q
 		option.
 
@@ -1050,9 +1040,9 @@ OPTIONS
                          Use purge-sequence if you do pattern discovery
                          afterwards
 
-        -firstintron  with feattype Intron, get only first intron sequence
+        -firstintron  with feattype intron, get only first intron sequence
 
-        -noncoding  with feattype Exon, get only non-coding (part of) exons
+        -noncoding  with feattype exon, get only non-coding (part of) exons
 
 End_help
     close HELP;
@@ -1068,9 +1058,10 @@ retrieve-seq options
 --------------------
 -org		organism
 -dbname         name of ensembl db
--feattype	accepted feature types. Supported: Gene, mRNA, CDS, Intron, Exon, UTR
+-feattype	accepted feature types. Supported: gene, mrna, cds, intron, exon, utr
 -type		upstream | downstream | orf | random
 -q		query
+-i              query file
 -all		returns all genomic upstream regions
 -o		followed by the name of the outputfile.
 -from #1 -to #2	limits of the region to extract, relative to feattype start (upstream) or end (downstream)
@@ -1078,8 +1069,8 @@ retrieve-seq options
 -nogene         the upstream/downstream sequence can only contain non-transcribed sequence.
 -rm		Use the repeat masked version of the genome.
 -alltranscripts get sequences for all transcript of genes
--firstintron    with feattype Intron, get only first intron sequence
--noncoding      with feattype Exon, get only non-coding (part of) exons
+-firstintron    with feattype intron, get only first intron sequence
+-noncoding      with feattype exon, get only non-coding (part of) exons
 End_short_help
   close HELP;
   exit;
