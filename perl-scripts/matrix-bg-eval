@@ -124,6 +124,7 @@ package main;
   &printHelp() if $main::help;
   
   ## tasks
+  if ($tasks) {
 	chomp($tasks);
 	my @tasks = split ",", $tasks;
 	foreach my $task (@tasks) {
@@ -134,6 +135,7 @@ package main;
 	   	  &RSAT::error::FatalError(join("\t", $task, "Invalid tasks. Supported:", $supported_tasks));
 	   	}
 	 }
+  }
 	## if no tasks is specified, run default tasks
   	unless (scalar(keys(%tasks2run))>0) {
       %tasks2run = %supported_tasks;
@@ -233,6 +235,7 @@ package main;
     our $decimals = 2;
     our $loo_rm_twin = 1;
     our @alphabet = ("a","c","g","t");
+    our $input_seq_length;
     
     our @dir_to_remove = ();
     our @file_to_remove = ();
@@ -411,6 +414,18 @@ package main;
    				mkdir($seq_dir);
    			}
    			
+   			## calculate input sequences total length
+   			$main::input_seq_length = 0;
+   			my ($in, $input_dir) = &OpenInputFile($main::infile{ref_sequences});
+ 			while ((our($current_seq, $seq_id) = &ReadNextSequence($in, $main::seq_format, $input_dir, "","")) &&
+			(($current_seq ne "") || ($seq_id ne ""))) {
+		
+				## Sequence length
+				$main::input_seq_length += length($current_seq);
+      			}
+      		close $in;
+   			&RSAT::message::Info("Input sequences total length: $main::input_seq_length ") if ($main::verbose >= 3);
+   			
    			## process each specified markov order	
     		for my $order (@main::bg_input_orders) {
     			## here calculate the ""input factor-specific" background model
@@ -513,7 +528,7 @@ package main;
     				if ($tasks2run{matrix_quality}){
     					chdir($matrix_quality_dir);
     					&RSAT::message::TimeWarn("Running matrix-quality") if ($main::verbose >=1);	
-	  					&runMatrixQualityWindows($bg_method,$bg_file);
+	  					&runMatrixQualityWindows($bg_method,$bg_file,$w);
     					chdir($main::dirproject{wd});
     							
     				################################################################
@@ -648,9 +663,13 @@ package main;
     			}	
     		
     		## Draw graphs for comparing the bg_models, for the current bg_method
-    		&compareBgModels($main::dirproject{$window_dir},\@oligo_length_list, $bg_method,$w) if ($tasks2run{compare_bg});			
-			
-			}	
+    		&compareBgModels($main::dirproject{$window_dir},\@oligo_length_list, $bg_method,$w) if ($tasks2run{compare_bg});	
+    		
+    		###### zip calculated background models to gain space
+    		my $command = "tar -pczf $main::dirproject{$window_dir}/bg_model.tar.gz $main::dirproject{$window_dir}/bg_model/";
+			&doit($command, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+			}
+    
 		} else {
 		
 		
@@ -696,6 +715,9 @@ package main;
    	#		&pMatchingEval($matrix_scan_dir,$bg_method,$bg_file,$compare_feat_dir,$main::subsequences) if ($tasks2run{p_matching_eval});
 
     	}
+    	  	###### zip calculated background models to gain space
+    		my $command = "tar -pczf $main::dirproject{$bg_method}/bg_model.tar.gz $main::dirproject{$bg_method}/bg_model/";
+			&doit($command, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
     	
     	## Draw graphs for comparing the bg_models, for the current bg_method
     	&compareBgModels($main::dirproject{$bg_method},\@bg_file_list, $bg_method,"no_window") if ($tasks2run{compare_bg});
@@ -709,17 +731,19 @@ package main;
 	################################################################
     ###### clean temporary files
 
-#    if (scalar(@main::file_to_remove) > 0) {
-#    	unlink($_) for @file_to_remove;
-#    }
-#    
-#    if (scalar(@main::dir_to_remove) > 0) {
-#    	for my $dir (@main::dir_to_remove){
-#    		unlink glob $dir."/matrix-quality/*";
-#    		rmdir $dir."/matrix-quality/";
-#    		rmdir $dir;
-#    	}
-#    }
+    if (scalar(@main::file_to_remove) > 0) {
+    	unlink($_) for @file_to_remove;
+    }
+    
+    if (scalar(@main::dir_to_remove) > 0) {
+    	for my $dir (@main::dir_to_remove){
+    		unlink glob $dir."/matrix-quality/*";
+    		rmdir $dir."/matrix-quality/";
+    		rmdir $dir;
+    	}
+    }
+	
+
 
     &compareBgMethods() if ($tasks2run{compare_method});
     
@@ -1168,6 +1192,10 @@ sub runMatrixQuality {
   		$matrix_quality_cmd .= " -bgfile ".File::Spec->rel2abs($bg_file,$main::dirproject{wd}); 		
   	}  elsif ($bg_method eq "bg_input") {
   		$matrix_quality_cmd .= " -bgfile ".$bg_file;
+  		if (($main::input_seq_length) && ($main::input_seq_length > 0)) {
+  			my $k = sqrt($main::input_seq_length)/(sqrt($main::input_seq_length) + $main::input_seq_length);
+  			$matrix_quality_cmd .= " -bg_pseudo ".$k;
+  		}
   	} elsif ($bg_method eq "bg_window") {
   		$matrix_quality_cmd .= " -bgfile ".$bg_file;
   		}
@@ -1194,7 +1222,7 @@ sub runMatrixQuality {
 ################################################################
 ## Run matrix-quality command for bg-window option
 sub runMatrixQualityWindows {
-	my ($bg_method, $bg_file) = @_;
+	my ($bg_method, $bg_file,$window) = @_;
 
 	my $quality_prefix = $main::outfile{prefix}."_pseudo".$main::pseudo_counts;
    	
@@ -1205,7 +1233,12 @@ sub runMatrixQualityWindows {
   	my $matrix_quality_cmd = "matrix-quality -v ".$main::verbose;
   	$matrix_quality_cmd .= " -ms ".File::Spec->rel2abs($main::infile{matrix},$main::dirproject{wd});
   	$matrix_quality_cmd .= " -matrix_format ".$main::matrix_format;
+  	## pseudo count is equi-pseudo with bg_window, here, force equi-pseudo to remain consistent with results of negative set
+  	$matrix_quality_cmd .= " -equi_pseudo ";
   	$matrix_quality_cmd .= " -pseudo ".$main::pseudo_counts;
+  	## calculate bg_pseudo 
+  	my $k = sqrt($window)/(sqrt($window) + $window);
+  	$matrix_quality_cmd .= " -bg_pseudo ".$k;
   	$matrix_quality_cmd .= " -perm matrix_sites ".$main::perm_pos if ($main::perm_pos);	
   	$matrix_quality_cmd .= " -task 'scan,loo,permute' -nocompa -nograph";
   	$matrix_quality_cmd .= " -o ".$quality_prefix;
@@ -1249,6 +1282,8 @@ sub runMatrixQualitySlidingWindows {
   	$matrix_quality_cmd .= " -ms ".File::Spec->rel2abs($main::infile{matrix},$main::dirproject{wd});
   	$matrix_quality_cmd .= " -matrix_format ".$main::matrix_format;
   	$matrix_quality_cmd .= " -pseudo ".$main::pseudo_counts;
+  	$matrix_quality_cmd .= " -equi_pseudo ";
+  	
   	while (my ($id,$neg_seq) = each (%main::seq_neg_sets) ) {
   		next if ($id eq $input_seq_name);
   		next if ($id eq 'rand_gen');
