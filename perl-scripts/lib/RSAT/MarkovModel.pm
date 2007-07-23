@@ -8,8 +8,6 @@ package RSAT::MarkovModel;
 
 ## TO DO : 
 ## - for the model update, take into account the strand-insensitive models
-## - Would it be appropriate to have a pseudo-count for the estimation
-##  of markov chain models from input sequenes ?
 
 use RSAT::GenericObject;
 use RSAT::SeqUtil;
@@ -278,42 +276,68 @@ sub normalize_transition_frequencies {
 }
 
 ############################################################
-### Add pseudo-freq on count transitions
+=pod
+
+=item B<add_pseudo_freq>
+
+Add pseudo-frequencies to transition frequencies. This ensures that
+each possible transition will have a non-null probability, even though
+this transition might be absent from the sequence on which the Markov
+model was trained.
+
+=cut
 sub add_pseudo_freq {
     my ($self) = @_;
 
-    ### Calclute all possible oligonucletides for prefixes, even those
-    ### which are not observed in oligo-analysis counts
+    ################################################################
+    ## Calculate all possible prefix oligonucleotides, even those
+    ## which are not observed in the input background model
     my @dna_alphabet =  qw (a c g t);
     my @possible_oligos;
     if ($self->{order} > 0) {
-	    @possible_oligos  = &RSAT::SeqUtil::all_possible_oligos($self->{order}, @dna_alphabet);
+      @possible_oligos  = &RSAT::SeqUtil::all_possible_oligos($self->{order}, @dna_alphabet);
     }elsif ($self->{order} == 0) {
-	    my %prefix_sum = ();
-	    
-	    foreach my $prefix (sort keys(%{$self->{transition_count}})) {
-		    foreach my $suffix (sort keys (%{$self->{transition_count}->{$prefix}})) {
-			    $prefix_sum{$prefix} = 1;
-		    }
-	    }
-	    @possible_oligos = sort keys(%prefix_sum);
+      my %prefix_sum = ();
+      foreach my $prefix (sort keys(%{$self->{transition_count}})) {
+	foreach my $suffix (sort keys (%{$self->{transition_count}->{$prefix}})) {
+	  $prefix_sum{$prefix} = 1;
+	}
+      }
+      @possible_oligos = sort keys(%prefix_sum);
     }
-    ## The pseudo-freq
+
+    ################################################################
+    ## Add pseudo-frequencies
     my $pseudo_freq = $self->get_attribute("bg_pseudo");
+    my $alpha_size = scalar(@dna_alphabet);
     foreach my $prefix (@possible_oligos) {
+
+      ## Compute the sum of transition counts for the current prefix
+      my $current_count_sum = 0;
+      foreach my $suffix (@dna_alphabet) {
+	$current_count_sum = $self->{transition_count}->{$prefix}->{$suffix}
+	  if (defined($self->{transition_count}->{$prefix}->{$suffix}));
+      }
+      my $pseudo_count = $pseudo_freq*$current_count_sum;
+      if ($current_count_sum == 0) {
+	$pseudo_count = $pseudo_freq;
+      }
+#      &RSAT::message::Debug("Prefix", $prefix, $current_count_sum, "Pseudo count=".$pseudo_count) if ($main::verbose >= 10);
+
       foreach my $suffix (@dna_alphabet) {
 	if (defined($self->{transition_count}->{$prefix}->{$suffix})) {
+
 	  ## Adding the pseudo-freq on the background model.
-	  my $pattern_pseudo_freq = 
-	    ((1 - $pseudo_freq)*$self->{transition_count}->{$prefix}->{$suffix}) + $pseudo_freq/scalar(@dna_alphabet);
-	  $self->{transition_count}->{$prefix}->{$suffix} = $pattern_pseudo_freq;
+	  my $pattern_pseudo_count = 
+	    (1-$pseudo_freq)*$self->{transition_count}->{$prefix}->{$suffix} + $pseudo_count/$alpha_size;
+	  $self->{transition_count}->{$prefix}->{$suffix} = $pattern_pseudo_count;
 	} else {  ## missing transitions
-	  $self->{transition_count}->{$prefix}->{$suffix} = $pseudo_freq/scalar(@dna_alphabet);
+	  $self->{transition_count}->{$prefix}->{$suffix} = $pseudo_count/$alpha_size;
 	}
       }
     }
 } 
-   
+
 ################################################################
 =pod
 
