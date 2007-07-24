@@ -666,8 +666,11 @@ package main;
     		&compareBgModels($main::dirproject{$window_dir},\@oligo_length_list, $bg_method,$w) if ($tasks2run{compare_bg});	
     		
     		###### zip calculated background models to gain space
-    		my $command = "tar -pczf $main::dirproject{$window_dir}/bg_model.tar.gz $main::dirproject{$window_dir}/bg_model/";
+    		chdir($main::dirproject{$window_dir});
+    		my $command = "tar -pczf bg_model.tar.gz bg_model/";
 			&doit($command, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+			chdir($main::dirproject{wd});
+			push (@main::dir_to_remove,"$main::dirproject{$window_dir}/bg_model"); 
 			}
     
 		} else {
@@ -717,8 +720,11 @@ package main;
     	}
     	  	###### zip calculated background models to gain space
     	  	if ($bg_method eq "bg_input") {
-    			my $command = "tar -pczf $main::dirproject{$bg_method}/bg_model.tar.gz $main::dirproject{$bg_method}/bg_model/";
+    	  		chdir($main::dirproject{$bg_method});
+    			my $command = "tar -pczf bg_model.tar.gz bg_model/";
 				&doit($command, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+				chdir($main::dirproject{wd});
+				push (@main::dir_to_remove,"$main::dirproject{$bg_method}/bg_model"); 
     	  	}
     	
     	## Draw graphs for comparing the bg_models, for the current bg_method
@@ -1742,6 +1748,8 @@ sub compareBgModels {
 ## Draw graphs comparing results of roc-stat for the different background methods
 sub compareBgMethods {
 
+	&RSAT::message::TimeWarn("Comparing bg methods") if ($main::verbose >=1);	 
+	
 	##  directory architecture
     $main::dirproject{compare_method_graphs} = File::Spec->rel2abs("graphs",$main::dirproject{$main::matrix_name});
     mkdir($main::dirproject{compare_method_graphs});
