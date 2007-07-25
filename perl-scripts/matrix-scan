@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.77 2007/07/25 16:15:32 jvanheld Exp $
+# $Id: matrix-scan,v 1.78 2007/07/25 21:46:15 jvanheld Exp $
 #
 # Time-stamp: <2007-07-17 16:36:54 jturatsi>
 #
@@ -1395,7 +1395,7 @@ convert-background-model.
 
 =cut
 	} elsif ($arg eq "-bg_format") {
-	    $main::bg_in_format = shift(@arguments);
+	    $main::bg_in_format = lc(shift(@arguments));
 
 	    ## Check background input format
 	    &RSAT::error::FatalError($main::bg_in_format,

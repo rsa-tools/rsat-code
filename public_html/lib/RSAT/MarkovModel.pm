@@ -18,11 +18,11 @@ use Data::Dumper;
 
 ### class attributes
 %supported_input_formats = ("oligo-analysis"=>1,
-			    "MotifSampler"=>1,
+			    "motifsampler"=>1,
 			   );
 %supported_output_formats = ("tab"=>1, 
 			     "patser"=>1,
-			     "MotifSampler"=>1);
+			     "motifsampler"=>1);
 @supported_input_formats = sort keys %supported_input_formats;
 @supported_output_formats = sort keys %supported_output_formats;
 $supported_input_formats = join(",", @supported_input_formats);
@@ -103,7 +103,7 @@ sub load_from_file {
     my ($self, $bg_file, $format) = @_;
     if ($format eq "oligo-analysis") {
 	$self->load_from_file_oligos($bg_file);
-    } elsif ($format eq "MotifSampler") {
+    } elsif ($format eq "motifsampler") {
 	$self->load_from_file_MotifSampler($bg_file);
     } elsif ($format eq "") {
 	&RSAT::error::FatalError(join("\t", "MarkovModel::load_from_file", 
@@ -406,7 +406,7 @@ sub add_pseudo_freq {
 
     ################################################################
     ## Add pseudo-frequencies
-    my $pseudo_freq = $self->get_attribute("bg_pseudo");
+    my $pseudo_freq = $self->get_attribute("bg_pseudo") || 0;
     my $alpha_size = scalar(@dna_alphabet);
     foreach my $prefix (@possible_oligos) {
 
@@ -416,7 +416,7 @@ sub add_pseudo_freq {
 		$current_count_sum += $self->{transition_count}->{$prefix}->{$suffix}
 	  if (defined($self->{transition_count}->{$prefix}->{$suffix}));
       }
-      
+
       # pseudo count varies depending on the prefix sum (=> $current_count_sum)
       my $pseudo_count = $pseudo_freq*$current_count_sum;
       if ($current_count_sum == 0) {
@@ -816,7 +816,7 @@ sub to_string {
     my ($self, $format, %args) = @_;
     if ($format eq ("tab")) {
 	$self->to_string_tab(%args);
-    } elsif ($format eq ("MotifSampler")) {
+    } elsif ($format eq ("motifsampler")) {
 	$self->to_string_MotifSampler(%args); 
     } elsif ($format eq ("patser")) {
 	$self->to_string_patser(%args); 
@@ -956,9 +956,16 @@ sub to_string_MotifSampler {
 
 
 ################################################################
-## Export the Markov model in patser format
-## Beware:  patser only supports Bernoulli models !
-## If the Markov order is superior to 0, this function issues a fatal error.
+=pod
+
+=item B<to_string_patser>
+
+Export the Markov model in patser format.  
+
+WARNING: patser only supports Bernoulli models ! If the Markov order is
+superior to 0, this function issues a fatal error.
+
+=cut
 sub to_string_patser {
     my ($self, %args) = @_;
     my $string = "";

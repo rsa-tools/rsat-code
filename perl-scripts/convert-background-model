@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.6 2007/07/25 16:52:24 jvanheld Exp $
+# $Id: convert-background-model,v 1.7 2007/07/25 21:46:15 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -21,7 +21,7 @@ Interconversions between formats of background models supported by
 different programs (oligo-analysis, matrix-scan, patser, consensus,
 MotifLocator, MotifSampler, MEME, ...).
 
-This is a beta version, with only some formats supported. Additional
+This is a temporary version, with only some formats supported. Additional
 formats will be progressively added.
 
 =head1 AUTHORS
@@ -40,10 +40,45 @@ util
 
 convert-backgound-model [-i inputfile] [-o outputfile] [-v]
 
-=head1 INPUT FORMAT
+=head1 BACKGROUND MODEL FORMATS
+
+B<Note>: some formats are supported for both input and outpu, but some
+formats are supported only for input or for output.
 
 
-=head1 OUTPUT FORMAT
+=over
+
+=head2 oligo-analysis (input)
+
+Oligonucleotide frequency table, as exported by the RSAT program
+I<oligo-analysis>. The simplest format is a two-column file with the
+oligonucleotide in the first column, and the frequency in the second
+one.
+
+An oligo file containinf frequencies of k-mers will be converted into
+a Markov model of order I<m=k-1>. Frequencies are converted to
+transition probabilities by calculating the relative frequencies of
+all oligomers of size k having the same suffix (last letter). .
+
+=head2 MotifSampler (input/output)
+
+This format can be used by the various programs of the software suite
+INCLUSive developed by Gert Thijs
+(http://homes.esat.kuleuven.be/~thijs/download.html).
+
+These files can be generated with the program I<CreateBackgroundModel>,
+which creates a Markov model from a background sequence.
+
+=head2 patser (output)
+
+Export the Markov model in patser format. I<patser> isa pattern
+matching program developed by Jerry Hertz.
+
+WARNING: patser only supports Bernoulli models ! If the Markov order is
+superior to 0, this function issues a fatal error.
+
+
+=back
 
 =cut
 
@@ -242,7 +277,7 @@ Input format. Supported: oligo-analysis, MotifSampler.
 
 =cut
 	} elsif ($arg eq "-from") {
-	    $main::input_format = shift(@arguments);
+	    $main::input_format = lc(shift(@arguments));
 	    &RSAT::error::FatalError(join("\t", $main::input_format,
 					  "Invalid input format.",
 					  "Supported: ", $main::supported_input_formats))
@@ -258,7 +293,7 @@ Output format. Supported: tab (default), patser, MotifSampler.
 
 =cut
 	} elsif ($arg eq "-to") {
-	    $main::output_format = shift(@arguments);
+	    $main::output_format = lc(shift(@arguments));
 	    &RSAT::error::FatalError(join("\t", $main::output_format,
 					  "Invalid output format.",
 					  "Supported: ", $main::supported_output_formats))

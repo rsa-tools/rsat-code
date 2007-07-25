@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: seq-proba,v 1.4 2006/11/30 07:37:09 jvanheld Exp $
+# $Id: seq-proba,v 1.5 2007/07/25 21:46:15 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -117,7 +117,7 @@ package main;
     foreach my $file (@bg_files) {
       my $bg_model = new RSAT::MarkovModel();
       $bg_model->set_attribute("strand", "sensitive");
-      $bg_format = "oligo-analysis";
+#      $bg_format = "oligo-analysis";
       $bg_model->load_from_file($file, $bg_format);
       push @bg_models, $bg_model;
     }
@@ -310,7 +310,7 @@ Sequence format.
 
 Background model file. 
 
-This argument cn b used iteratively to speciy alternative backgound
+This argument can be used iteratively to speciy alternative backgound
 models. In this case, the program returns the probabilities
 corresponding to each model in separate columns.
 
@@ -323,11 +323,12 @@ corresponding to each model in separate columns.
 
 =item B<-bg_format bg_format>
 
-Format of the background model. Supported: oligo-analysis. 
+Format of the background model. Supported: all input formats supported
+in convert-background-model.
 
 =cut
 	} elsif ($arg eq "-bg_format") {
-	    $main::bg_format = shift(@arguments);
+	    $main::bg_format = lc(shift(@arguments));
 	    &RSAT::error::FatalError(join("\t", $main::bg_format,
 					  "Invalid format for a background model.",
 					  "Supported: ", $main::supported_bg_formats))
