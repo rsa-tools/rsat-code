@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.5 2007/07/25 15:59:36 jvanheld Exp $
+# $Id: convert-background-model,v 1.6 2007/07/25 16:52:24 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -238,7 +238,7 @@ allows to use the command within a pipe.
 
 =item B<-from input_format>
 
-Input format. Supported: oligo-analysis. 
+Input format. Supported: oligo-analysis, MotifSampler.
 
 =cut
 	} elsif ($arg eq "-from") {
@@ -254,7 +254,7 @@ Input format. Supported: oligo-analysis.
 
 =item B<-to output_format>
 
-Output format. Supported: tab (default), patser.
+Output format. Supported: tab (default), patser, MotifSampler.
 
 =cut
 	} elsif ($arg eq "-to") {
