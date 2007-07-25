@@ -7,7 +7,7 @@ require "RSA.lib";
 
 #### initialise parameters ####
 $out_format = "fasta";
-$repetitions = 1;
+$seq_nb = 1;
 $line_width = 70;
 $sequence_type = "dna";
 
@@ -38,7 +38,7 @@ if ($sequence_type eq "dna") {
 		"n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", 
 		" ", ".", ",", ":", ";");
 } else {
-    die "Error: unknown sequence type $sequence_type\n";
+    &RSAT::error::FatalError($sequence_type, "is not a valid sequence type. Supported: dna,protein,other");
 }
 
 if (defined(%alphabet)) {
@@ -51,11 +51,10 @@ if (defined(%alphabet)) {
 
 
 ################################################################
-#### check argument values ####
+## Check argument values
 
 ## Output formaat
 &CheckOutputSeqFormat($out_format);
-    
 
 ################################################################
 ## File with the specification of sequence lengths
@@ -75,7 +74,7 @@ if ($length_file) {
 	}
     }
     close $len_handle;
-    $repetitions = $#lengths +1;
+    $seq_nb = $#lengths +1;
 } else {
 
     #### check sequence lengths and repetitions
@@ -83,7 +82,7 @@ if ($length_file) {
 	&RSAT::error::FatalError ("You should specify the sequence length");
     } 
     
-    unless ($repetitions >=1) {
+    unless ($seq_nb >=1) {
 	&RSAT::error::FatalError( "Number of repetitions should be >=1");
     }
 }
@@ -103,10 +102,12 @@ if ($background_model eq "equi") {
 
 
 ################################################################
-## Calculate residue probabilities (conditional or Bernoulli
+## Calculate residue probabilities (Markov or Bernoulli model)
 if ($exp_freq_file) {
-    ## Load expected frequency file
+
+    ## Load Markov model from an oligonucleotide frequency file
     &CalcConditionalProbabilities($exp_freq_file);
+
 } else {
 
     ## Calculate cumulated frequencies for individual residues
@@ -129,105 +130,78 @@ if ($exp_freq_file) {
 ## open output stream
 $out = &OpenOutputFile($outputfile);
 
-
 ################################################################
-## verbose
-if ($verbose) {
-    print $out "; random sequence\n";
-    print $out "; sequence length	$seq_length\n";
-    print $out "; repetitions		$repetitions\n";
-    print $out "; format			$out_format\n";
-    if ($outputfile ne "") {
-	print $out "; Output file	$outputfile\n";
-    }
-    print $out "; residue frequencies: $method\n";
-    if ($exp_freq_file) {
-	print $out "; Calibrated oligomer frequencies\n";
-	print $out "; 	oligomer length:         $oligo_length\n";
-	print $out "; 	expected frequency file: $exp_freq_file\n";
+## Verbose
+&Verbose() if ($verbose);
 
-	if ($main::verbose >= 3) {
-	    print $out "; oligomer frequencies\n";
-	    print $out "; subword frequencies\n";
-	    
-	    foreach $subword (sort keys %subword_freq) {
-		printf $out ";\t%s\t%f\t", $subword, $subword_freq{$subword};
-		for $l (0..$#letters) {
-		    printf $out (" %s:%g",
-				 $letters[$l],
-				 $cum_letter_freq{$subword}[$l] - ($l>0)*$cum_letter_freq{$subword}[$l-1]
-				);
-		}
-		print $out "\n";
-	    }
-	}
-    } else {
-	for $l (0..$#letters) {
-	    print $out "; \t";
-	    print $out "; $letters[$l]\t";
-	    print $out "; $freq{$letters[$l]}\n";    
-	}
-    }
-}
-
-
-################################################################
-## Generate the random sequence
+## Initialize the random seed
 if (defined($seed)) {
     srand($seed);
 } else {
     srand (time);
 }
 
-for $r (1..$repetitions) {
-    ### initialization
-    my $current_seq_length = $lengths[$r-1] || $seq_length;
 
-    $sequence = "";
-    $seq_id = "rand_$r";
-    my @comments = ();
-    my $comment = join ("; ", "random sequence $r of $repetitions",
-			"length: $current_seq_length",
-			);
-    push @comments, $comment;
-    
-    if ($exp_freq_file) {
-	$rand = int (rand $#subword_keys);
-	#### first work selection should be improved
-	$subword = $subword_keys[$rand];
-	$sequence .= uc($subword);
-	
+################################################################
+## Generate the random sequence
+for $r (1..$seq_nb) {
+  ### initialization
+  my $current_seq_length = $lengths[$r-1] || $seq_length;
 
-	for $i ((length($sequence)+1)..$current_seq_length) {
-#	    @cum_letter_freq = @{$cum_letter_freq{$subword}};
-	    $rand = rand;
-	    $l = 0;
-	    while ($l <= $#letters) {
-		if ($cum_letter_freq{$subword}[$l] >= $rand) {
-		    last;
-		}
-		else {
-		    $l++;
-		}
-	    }
-	    $next_letter = $letters[$l];
-#	    warn join "\t", $subword, $rand, $l, $next_letter, $cum_letter_freq{$subword}[$l] , "\n";
-	    $sequence .= $next_letter;
-	    $subword = lc(substr($subword.$next_letter,1));
+  $sequence = "";
+  $seq_id = "rand_$r";
+  my @comments = ();
+  my $comment = join ("; ", "random sequence $r of $seq_nb",
+		      "length: $current_seq_length",
+		     );
+  push @comments, $comment;
+
+  if ($exp_freq_file) {
+    $rand = int (rand $#subword_keys);
+
+
+    ## Note: the selection of the first word of a sequence should
+    ## be improved. Currently, the first prefix (corresponding to
+    ## the markov order) is chosen in an equiprobable way. this
+    ## does not really matter as far as the sequences are larger
+    ## much larger than the markov order, which is usually the
+    ## case
+    $subword = $subword_keys[$rand]; ## Subword
+    $sequence .= uc($subword); ## First subword is printed in uppercases
+
+    for $i ((length($sequence)+1)..$current_seq_length) {
+      #	    @cum_letter_freq = @{$cum_letter_freq{$subword}};
+      $rand = rand;
+      $l = 0;
+      #      do {
+      #	$l++;
+      #      } until (($l > $#letters) || ($cum_letter_freq{$subword}[$l] >= $rand));
+
+      while ($l <= $#letters) {
+	if ($cum_letter_freq{$subword}[$l] >= $rand) {
+	  last;
+	} else {
+	  $l++;
 	}
-    } else {
-	for $i (1..$current_seq_length) {
-	    $rand = rand;
-	    $l = -1;
-	    do {
-		$l++;
-	    } until (($l > $#letters) || ($cum_letter_freq[$l] >= $rand));
-	    $next_letter = $letters[$l];
-	    $sequence .= $next_letter;
-	}
+      }
+      $next_letter = $letters[$l];
+      $sequence .= $next_letter;
+      $subword = lc(substr($subword.$next_letter,1));
     }
-    &PrintNextSequence($out, $out_format, $line_width, $sequence, $seq_id, @comments);
-}  
+    
+  } else {
+    for $i (1..$current_seq_length) {
+      $rand = rand();
+      $l = -1;
+      do {
+	$l++;
+      } until (($l > $#letters) || ($cum_letter_freq[$l] >= $rand));
+      $next_letter = $letters[$l];
+      $sequence .= $next_letter;
+    }
+  }
+  &PrintNextSequence($out, $out_format, $line_width, $sequence, $seq_id, @comments);
+}
 
 ###### close output file ######
 close $out if ($outputfile);
@@ -236,86 +210,86 @@ close $out if ($outputfile);
 exit(0);
 
 
-
-
 ################################################################
 ## Read arguments
 sub ReadArguments {
-    foreach $a (0..$#ARGV) {
-	
-	if ($ARGV[$a] eq "-v") {
-	    $verbose = 1;
-	    
-	} elsif ($ARGV[$a] eq "-l") {
-	    $seq_length = $ARGV[$a+1];
+  foreach $a (0..$#ARGV) {
+    if ($ARGV[$a] eq "-v") {
+      $verbose = 1;
 
-	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp();
-	    
-	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions();
-	    
-	} elsif ($ARGV[$a] eq "-o") {
-	    $outputfile = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-l") {
+      $seq_length = $ARGV[$a+1];
 
-	} elsif ($ARGV[$a] eq "-format") {
-	    $out_format = lc($ARGV[$a+1]);
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp();
 
-	} elsif ($ARGV[$a] eq "-type") {
-	    $sequence_type = lc($ARGV[$a+1]);
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions();
 
-	} elsif ($ARGV[$a] eq "-r") {
-	    $repetitions = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-o") {
+      $outputfile = $ARGV[$a+1];
 
-	} elsif ($ARGV[$a] eq "-expfreq") {
-	    $exp_freq_file = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-format") {
+      $out_format = lc($ARGV[$a+1]);
 
-	} elsif ($ARGV[$a] eq "-lw") {
-	    $line_width = $ARGV[$a+1];
+      ## Sequence type (supported=dna,protein)
+    } elsif ($ARGV[$a] eq "-type") {
+      $sequence_type = lc($ARGV[$a+1]);
 
-	} elsif ($ARGV[$a] eq "-seed") {
-	    $seed = $ARGV[$a+1];
+      ## Number of sequences
+    } elsif ($ARGV[$a] eq "-n") {
+      $seq_nb = $ARGV[$a+1];
 
-	} elsif ($ARGV[$a] eq "-a") {
-	    if ($ARGV[$a+1] eq "yeast") {
-		$alphabet{'A'} = $alphabet{'T'} = 0.308512197555054;
-		$alphabet{'C'} = $alphabet{'G'} = 0.191487802444946;
-	    }
-	    elsif (("$ARGV[$a+1] $ARGV[$a+2]" =~ /a:t (\S+)/i) && ($1 <=1) && ($1 >=0)){
-		$alphabet{'A'} = $alphabet{'T'} = $1;
-		if (("$ARGV[$a+3] $ARGV[$a+4]" =~ /c:g (\S+)/i) && ($1 <=1) && ($1 >=0)){
-		    $alphabet{'C'} = $alphabet{'G'} = $1;
-		}
-	    } else {
-		&RSAT::error::FatalError("Invalid alphabet specification");
-	    }
-	    
+    } elsif ($ARGV[$a] eq "-r") {
+      $seq_nb = $ARGV[$a+1];
+      &RSAT::message::Warning ("option -r is deprecated, you should use -n instead.");
 
-	    ### use oligo intergenic frequencies as expected frequencies
-	} elsif ($ARGV[$a] =~ /^-ncf/i) {
-	    &Warning ("option -ncf is deprecated, use '-bg intergenic' instead");
-	    $background_model = "intergenic";
+    } elsif ($ARGV[$a] eq "-expfreq") {
+      $exp_freq_file = $ARGV[$a+1];
 
-	    ### specify a background model for estimating expected frequencies
-	} elsif ($ARGV[$a] =~ /^-bg/i) {
-	    $background_model = $ARGV[$a+1];
-	    $background_model =~ s/ncf/intergenic/;
+    } elsif ($ARGV[$a] eq "-lw") {
+      $line_width = $ARGV[$a+1];
 
-	    ### organism (for selecting the appropriate expected frequencies)
-	} elsif ($ARGV[$a] =~ /^-org/i) {
-	    $organism_name = $ARGV[$a+1];
-	    
-	    #### oligonucleotide length
-	} elsif ($ARGV[$a] eq "-ol") {
-	    $oligo_length = $ARGV[$a+1];
-	    
-	    #### file containing a list of the desired lengths of random sequences 
-	} elsif ($ARGV[$a] eq "-lf") {
-	    $length_file =$ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-seed") {
+      $seed = $ARGV[$a+1];
 
+    } elsif ($ARGV[$a] eq "-a") {
+      if ($ARGV[$a+1] eq "yeast") {
+	$alphabet{'A'} = $alphabet{'T'} = 0.308512197555054;
+	$alphabet{'C'} = $alphabet{'G'} = 0.191487802444946;
+      } elsif (("$ARGV[$a+1] $ARGV[$a+2]" =~ /a:t (\S+)/i) && ($1 <=1) && ($1 >=0)) {
+	$alphabet{'A'} = $alphabet{'T'} = $1;
+	if (("$ARGV[$a+3] $ARGV[$a+4]" =~ /c:g (\S+)/i) && ($1 <=1) && ($1 >=0)) {
+	  $alphabet{'C'} = $alphabet{'G'} = $1;
 	}
-	    
+      } else {
+	&RSAT::error::FatalError("Invalid alphabet specification");
+      }
+
+      ### use oligo intergenic frequencies as expected frequencies
+    } elsif ($ARGV[$a] =~ /^-ncf/i) {
+      &Warning ("option -ncf is deprecated, use '-bg intergenic' instead");
+      $background_model = "intergenic";
+
+      ### specify a background model for estimating expected frequencies
+    } elsif ($ARGV[$a] =~ /^-bg/i) {
+      $background_model = $ARGV[$a+1];
+      $background_model =~ s/ncf/intergenic/;
+
+      ### organism (for selecting the appropriate expected frequencies)
+    } elsif ($ARGV[$a] =~ /^-org/i) {
+      $organism_name = $ARGV[$a+1];
+
+      #### oligonucleotide length
+    } elsif ($ARGV[$a] eq "-ol") {
+      $oligo_length = $ARGV[$a+1];
+
+      #### file containing a list of the desired lengths of random sequences 
+    } elsif ($ARGV[$a] eq "-lf") {
+      $length_file =$ARGV[$a+1];
+
     }
+  }
 }
 
 
@@ -467,4 +441,44 @@ random-seq options
 End_short_help
     close HELP;
     exit(0);
+}
+
+################################################################
+## Verbosity
+sub Verbose {
+  print $out "; random-seq ";
+  &PrintArguments($out);
+  print $out "; sequence length	        $seq_length\n";
+  print $out "; number of sequences     $seq_nb\n";
+  print $out "; format			$out_format\n";
+  if ($outputfile) {
+    print $out "; Output file	$outputfile\n";
+  }
+  print $out "; residue frequencies: $method\n";
+  if ($exp_freq_file) {
+    print $out "; Calibrated oligomer frequencies\n";
+    print $out "; 	oligomer length:         $oligo_length\n";
+    print $out "; 	expected frequency file: $exp_freq_file\n";
+
+    if ($main::verbose >= 3) {
+      print $out "; oligomer frequencies\n";
+      print $out "; subword frequencies\n";
+      foreach $subword (sort keys %subword_freq) {
+	printf $out ";\t%s\t%f\t", $subword, $subword_freq{$subword};
+	for $l (0..$#letters) {
+	  printf $out (" %s:%g",
+				 $letters[$l],
+				 $cum_letter_freq{$subword}[$l] - ($l>0)*$cum_letter_freq{$subword}[$l-1]
+				);
+		}
+		print $out "\n";
+	    }
+	}
+    } else {
+	for $l (0..$#letters) {
+	    print $out "; \t";
+	    print $out "; $letters[$l]\t";
+	    print $out "; $freq{$letters[$l]}\n";    
+	}
+    }
 }
