@@ -59,9 +59,31 @@ sub get_accepted_residues {
   return(%accepted_residues);
 }
 
+################################################################
+=pod
 
+=item B<all_possible_oligos>
+
+Generate all possible oligomers for a given alphabet. 
+
+The default alphabet is DNA (a,c,g,t), but alternative alphabet can be
+specified by entering the array of letters as second argument.
+
+ Usage: 
+
+    ## All possible oligonucleotides of a given length
+    my @oligos = &RSAT::SeqUtil::all_possible_oligos($oligo_length);
+
+    ## All possible oligomers of a given lenth, with a given alphabet
+    my @oligos = &RSAT::SeqUtil::all_possible_oligos($oligo_length, @alphabet);
+
+=cut
 sub all_possible_oligos {
   my ($len, @alphabet) = @_;
+  if (scalar(@alphabet) == 0) {
+    @alphabet = qw (a c g t);
+  }
+
   my @oligos = ();
   if  ($len == 1) {
     @oligos = @alphabet;
