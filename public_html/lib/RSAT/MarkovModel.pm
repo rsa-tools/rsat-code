@@ -17,7 +17,9 @@ use Data::Dumper;
 @ISA = qw( RSAT::GenericObject );
 
 ### class attributes
-%supported_input_formats = ("oligo-analysis"=>1);
+%supported_input_formats = ("oligo-analysis"=>1,
+			    "MotifSampler"=>1,
+			   );
 %supported_output_formats = ("tab"=>1, 
 			     "patser"=>1);
 @supported_input_formats = sort keys %supported_input_formats;
@@ -97,6 +99,8 @@ sub load_from_file {
     my ($self, $bg_file, $format) = @_;
     if ($format eq "oligo-analysis") {
 	$self->load_from_file_oligos($bg_file);
+    } elsif ($format eq "MotifSampler") {
+	$self->load_from_file_MotifSampler($bg_file);
     } elsif ($format eq "") {
 	&RSAT::error::FatalError(join("\t", "MarkovModel::load_from_file", 
 				      "the format of the backgroun model must be specified"));
@@ -131,7 +135,7 @@ converted to lowercases.
 sub load_from_file_oligos {
     my ($self, $bg_file) = @_;
 
-    &RSAT::message::TimeWarn("Loading Markov model from file $bg_file") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Loading Markov model from oligo file $bg_file") if ($main::verbose >= 2);
 
     my ($file_type, %patterns) = &main::ReadPatternFrequencies($bg_file) ;
     my @patterns = keys(%patterns);
@@ -166,6 +170,96 @@ sub load_from_file_oligos {
  
 }
 
+################################################################
+=pod
+
+=item B<load_from_file_MotifSampler($bg_file)>
+
+Load the markov model from a result file from MotifSampler.
+
+These files are used by the various programs of the software suite
+INCLUSive (http://homes.esat.kuleuven.be/~thijs/download.html),
+developed by Gert Thijs.
+
+This suite includes the program CreateBackgroundModel, which creates a
+Markov model from a background sequence.
+
+=cut
+
+sub load_from_file_MotifSampler {
+  my ($self, $bg_file) = @_;
+
+  &RSAT::message::TimeWarn("Loading Markov model from MotifSampler file $bg_file") if ($main::verbose >= 2);
+
+  my @prefixes = ();
+  my @suffixes = qw(a c g t);
+  my %prefix_proba = ();
+  my %suffix_proba = ();
+
+  my ($in, $dir) = &main::OpenInputFile($bg_file);
+  while (<$in>) {
+    next unless /\S/;		## Skip empty lines
+
+    if (/^#Order\s*=\s*(\d+)/i) {
+      ## Markov order
+      my $order = $1;
+      $self->force_attribute("order", $order);
+      if ($order == 0) {
+	@prefixes = ("");
+      } else {
+	@prefixes = &RSAT::SeqUtil::all_possible_oligos($order);
+      }
+      &RSAT::message::Info("Markov order", $order, scalar(@prefixes)." prefixes")
+	if ($main::verbose >= 2);
+
+    } elsif (/^#snf/i) {
+      ## Single nucleotide frequencies
+      &RSAT::message::Info("Reading single nucleotide probabilities") if ($main::verbose >= 3);
+      my $line = (<$in>);
+      chomp($line);
+      my @probas = split (/\s+/, $line);
+      foreach my $i (0..$#suffixes) {
+	my $suffix= $suffixes[$i];
+	my $proba= $probas[$i];
+	$suffix_proba{$suffix} = $proba;
+	&RSAT::message::Debug("letter proba", $suffix, $proba) if ($main::verbose >= 5);
+      }
+      $self->set_hash_attribute("suffix_count", %suffix_proba);
+      $self->set_hash_attribute("suffix_proba", %suffix_proba);
+
+    } elsif (/^#oligo frequency/i) {
+      ## Prefix probabilities
+      &RSAT::message::Info("Reading prefix probabilities") if ($main::verbose >= 3);
+      foreach my $prefix (@prefixes) {
+	my $proba = (<$in>);
+	chomp($proba);
+	$proba = &RSAT::util::trim($proba); ## Remove leading and trailing spaces
+	$prefix_proba{$prefix} = $proba;
+	&RSAT::message::Debug("prefix proba", $prefix, $proba) if ($main::verbose >= 5);
+      }
+      $self->set_hash_attribute("prefix_count", %prefix_proba);
+      $self->set_hash_attribute("prefix_proba", %prefix_proba);
+
+
+    } elsif (/^#transition matrix/i) {
+      ## transition probabilities
+#      &RSAT::message::Debug("Reading transition matrix") if ($main::verbose >= 5);
+      foreach my $prefix (@prefixes) {
+	my $line = (<$in>);
+	chomp($line);
+	@transition_proba = split(/\s+/, $line);
+	foreach my $i (0..$#suffixes) {
+	  my $suffix= $suffixes[$i];
+	  my $proba= $transition_proba[$i];
+	  $self->{transition_count}->{$prefix}->{$suffix} = $proba*$prefix_proba{$prefix};
+	  $self->{transition_freq}->{$prefix}->{$suffix} = $proba*$prefix_proba{$prefix};
+	  &RSAT::message::Debug("transition", $prefix, $prefix_proba{$prefix}, $suffix, $suffix_proba{$suffix}, $proba, ) if ($main::verbose >= 5);
+	}
+      }
+    }
+  }
+  close $in if ($bg_file);
+}
 
 ################################################################
 =pod
@@ -245,7 +339,7 @@ sub normalize_transition_frequencies {
     foreach my $prefix ($self->get_attribute("prefixes")) {
 #    foreach my $prefix (keys(%prefix_sum)) {
 	$prefix_proba{$prefix} = $prefix_sum{$prefix}/$freq_sum;
-    }    
+    }
 
     ## Calculate suffix probabilities
     my %suffix_proba = ();
