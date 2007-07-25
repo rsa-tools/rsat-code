@@ -274,9 +274,9 @@ package main;
 	## roc-stat columns
 	our %roc_stat_columns =();
 	
-	$roc_stat_columns{5}= 'Sn';
-	$roc_stat_columns{6}= 'PPV';
-	$roc_stat_columns{8}= 'Acc_g';
+	$roc_stat_columns{7}= 'Sn';
+	$roc_stat_columns{8}= 'PPV';
+	$roc_stat_columns{10}= 'Acc_g';
     
     
     ################################################################
@@ -690,10 +690,10 @@ package main;
     		mkdir($main::dirproject{$bg_file_name}) ;
     		my $matrix_quality_dir = File::Spec->rel2abs("matrix-quality",$main::dirproject{$bg_file_name});
     		mkdir($matrix_quality_dir) ;
-    		my $matrix_scan_dir = File::Spec->rel2abs("matrix-scan",$main::dirproject{$bg_file_name});
-    		mkdir($matrix_scan_dir) ;
-    		my $compare_feat_dir = File::Spec->rel2abs("compare-feat",$main::dirproject{$bg_file_name});
-    		mkdir($compare_feat_dir) ;
+    	#	my $matrix_scan_dir = File::Spec->rel2abs("matrix-scan",$main::dirproject{$bg_file_name});
+    	#	mkdir($matrix_scan_dir) ;
+    	#	my $compare_feat_dir = File::Spec->rel2abs("compare-feat",$main::dirproject{$bg_file_name});
+    	#	mkdir($compare_feat_dir) ;
     		my $roc_stat_dir = File::Spec->rel2abs("roc-stat",$main::dirproject{$bg_file_name});
     		mkdir($roc_stat_dir) ;
 
@@ -747,6 +747,7 @@ package main;
     	for my $dir (@main::dir_to_remove){
     		unlink glob $dir."/matrix-quality/*";
     		rmdir $dir."/matrix-quality/";
+    		unlink glob $dir."/*";
     		rmdir $dir;
     	}
     }
@@ -1157,7 +1158,7 @@ sub Replace_underscores {
 }
 
 ################################################################
-## Run matrix-quality command.
+## Run matrix-quality command. (bg_global and bg_input)
 sub runMatrixQuality {
 	my ($bg_method, $bg_file, $matrix_quality_dir) = @_;
 
@@ -1228,7 +1229,7 @@ sub runMatrixQuality {
  }
  
 ################################################################
-## Run matrix-quality command for bg-window option
+## Run matrix-quality command for bg-window option (positive set)
 sub runMatrixQualityWindows {
 	my ($bg_method, $bg_file,$window) = @_;
 
@@ -1263,6 +1264,7 @@ sub runMatrixQualityWindows {
  
 ################################################################
 ## Run matrix-quality command with sliding windows option for matrix-scan
+## bg_window (negative set)
 sub runMatrixQualitySlidingWindows {
 	my ($bg_method, $order,$window_size,$matrix_quality_dir) = @_;
 
