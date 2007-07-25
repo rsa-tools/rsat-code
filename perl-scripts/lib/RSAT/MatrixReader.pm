@@ -268,8 +268,6 @@ sub _readFromGibbsFile {
     my @alphabet = ();
     my $ncol = 0;
     my $nrow = 0;
-    my $last_ncol = 0;
-    my $last_nrow = 0;
     my $m = 0;
     my $gibbs_command = "";
     my $seed;
@@ -322,9 +320,7 @@ sub _readFromGibbsFile {
 	  $site_id = join ("_", $seq_nb, $site_nb, $start, $end, $score);
 	}
 
-	$matrix->add_site(lc($site_seq), id=>$site_id);
-#	$matrix->force_attribute("ncol",10);
-#	&RSAT::message::Debug($l, "matrix", scalar(@matrices), "site", $site_id, $site_seq) if ($main::verbose >= 0);
+	$matrix->add_site(lc($site_seq), id=>$site_id, score=>1);
 
       } elsif ((/^Motif model/) && ($parse_model)) {
 #      if (/^\s*MOTIF\s+(\S+)/) {
@@ -385,10 +381,6 @@ sub _readFromGibbsFile {
     }
     close $in if ($file);
 
-#    $matrix->setAlphabet_lc (@alphabet);
-#    $matrix->force_attribute("nrow", $last_nrow);
-#    $matrix->force_attribute("ncol", $last_ncol);
-#    $matrix->setMatrix ($last_nrow, $last_ncol, @last_matrix);
 
     ## Delete the pre-matrices (first half of the matrices)
     unless ($initial_matrices) {
@@ -1023,9 +1015,7 @@ sub _readFromFeatureFile {
       $matrices{$matrix_name} = $matrix;
       push @matrices, $matrix;
     }
-    $matrix->add_site(lc($site_sequence),
-		      id=>$site_id,
-		      max_score=>0,
+    $matrix->add_site(lc($site_sequence), id=>$site_id,max_score=>0,
 		      "score"=>1, ## Here we don't want to add up the scores, because we want to count the residue occurrences
 		    );
   }
@@ -1033,23 +1023,123 @@ sub _readFromFeatureFile {
   return @matrices;
 }
 
+
 ################################################################
 =pod
 
 =item _readFromMotifSamplerFile($file)
 
-Read a matrix from a MotifSampler file, which is part of the software
-suite INCLUSive (http://homes.esat.kuleuven.be/~thijs/download.html),
-developed by Gert Thijs.
+Read a matrix from a I<MotifSampler> B<site> file (i.e. the file
+specified with the option -o of MotifSampler).
+
+MotifSampler is part of the software suite INCLUSive
+(http://homes.esat.kuleuven.be/~thijs/download.html), developed by
+Gert Thijs.
+
+MotifSampler export two files: a description of the sites (option -o)
+and of the matrices (option -m). We prefer to parse the file with
+sites, because it is more informatiive for the following reasons: (1)
+it contains the site sequences; (2) the matrix descriptin is in
+relative frequencies rather than residue occurrences, which biases the
+pseudo; (3) the site file contains additional statistics (IC, CS).
+
+This method is called by the method C<readFromFile($file,
+"MotifSampler")>.
+
+=cut
+sub _readFromMotifSamplerFile {
+  my ($file, %args) = @_;
+  &RSAT::message::Info(join("\t", "Reading matrix from MotifSampler output file\t",$file)) 
+    if ($main::verbose >= 3);
+
+  ## open input stream
+  my ($in, $dir) = &main::OpenInputFile($file);
+
+  ## Initialize the matrix list
+  my @matrices = ();
+  my @alphabet = qw(a c g t);
+  my %prior;
+  foreach my $letter (@alphabet) {
+    $prior{lc($letter)} = 1/scalar(@alphabet);
+  }
+  my $ncol = 0;
+  my $matrix;			## the amtrix object
+  while (<$in>) {
+    next unless /\S/;		## Skip empty lines
+    next if /^#*$/;		## Skip empty lines
+    if (/^#id:\s*(.*)/i) {
+      
+      ## The ID row also contains the matrix parameters
+      my $motif_desc = $1;
+      chomp($motif_desc);
+      my @fields = split(/\s+/, $motif_desc);
+      my $id = shift (@fields);
+
+      $matrix = new RSAT::matrix();
+      $matrix->set_attribute("AC", $id);
+      $matrix->set_parameter("id", $id);
+      while (my $field = shift @fields) {
+	$field =~ s/:$//;
+	$value = shift @fields;
+	$matrix->set_parameter($field, $value);
+      }
+      $matrix->setAlphabet_lc(@alphabet);
+      $matrix->setPrior(%prior);
+      $matrix->set_attribute("nrow", 4);
+
+      push @matrices, $matrix;
+    } elsif (/^#/) {
+      ## Skip comment line
+      next;
+    } else {
+      my ($seq_id, $program, $site_type, $start, $end, $score, $strand, $frame, @the_rest) = split (/\s+/, $_);
+      my $desc = join(" ", @the_rest);
+      $strand =~ s/\+/D/;
+      $strand =~ s/\-/R/;
+      my $site_seq;
+      my $site_id = join ("_", $seq_id, $start, $end, $strand, $score);
+      if ($desc =~ /site\s+"(\S+)"/i) {
+#	die;
+	$site_seq = lc($1);
+	$matrix->add_site($site_seq, id=>$site_id, score=>1, max_score=>0);
+#	$ncol = &RSAT::stats::max($ncol, length($site_seq));
+#	$matrix->force_attribute("ncol", $ncol);
+#	$matrix->treat_null_values();
+      }
+#      &RSAT::message::Debug($seq_id,$site_seq, $site_id) if ($main::verbose >= 0);
+    }
+  }
+  return (@matrices);
+}
+
+################################################################
+=pod
+
+=item _readFromMotifSamplerMatrixFile($file)
+
+Read a matrix from a I<MotifSampler> B<matrix> file (i.e. the file
+specified with the option -o of MotifSampler).
+
+MotifSampler is part of the software suite INCLUSive
+(http://homes.esat.kuleuven.be/~thijs/download.html), developed by
+Gert Thijs.
+
+MotifSampler export two files: a description of the sites (option -o)
+and of the matrices (option -m). We prefer to parse the file with
+sites, because it is more informatiive for the following reasons: (1)
+it contains the site sequences; (2) the matrix descriptin is in
+relative frequencies rather than residue occurrences, which biases the
+pseudo; (3) the site file contains additional statistics (IC, CS).
 
 This method is called by the method C<readFromFile($file,
 "MotifSampler")>.
 
 =cut
 
-sub _readFromMotifSamplerFile {
+sub _readFromMotifSamplerMatrixFile {
     my ($file, %args) = @_;
-    &RSAT::message::Info(join("\t", "Reading matrix from tab file\t",$file)) if ($main::verbose >= 3);
+    &RSAT::message::Info(join("\t", "Reading matrix from MotifSampler matrix file\t",$file)) 
+      if ($main::verbose >= 3);
 
     ## open input stream
     my ($in, $dir) = &main::OpenInputFile($file);
@@ -1058,7 +1148,6 @@ sub _readFromMotifSamplerFile {
     my @matrices = ();
     my @alphabet = qw(a c g t);
     my $ncol = 0;
-    my $nrow = 0;
     my $matrix; ## the amtrix object
     while (<$in>) {
       next unless /\S/; ## Skip empty lines
