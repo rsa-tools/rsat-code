@@ -1098,9 +1098,12 @@ sub calcFrequencies {
 
     ## Matrix size
     my ($nrow, $ncol) = $self->size();
-    if (($nrow <= 0) ||
-	($ncol <= 0)) {
-	&main::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate frequencies for an empty matrix.");
+#    my $ncol = $self->ncol();
+    if ($ncol <= 0) {
+	&main::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate frequencies for an empty matrix (not a single column).");
+    }
+    if ($nrow <= 0) {
+	&main::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate frequencies for an empty matrix (not a single row).");
     }
 
     ## Get or calculate prior residue probabilities
