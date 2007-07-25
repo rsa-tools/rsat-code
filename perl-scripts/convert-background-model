@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.4 2007/07/20 12:12:45 morgane Exp $
+# $Id: convert-background-model,v 1.5 2007/07/25 15:59:36 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -17,18 +17,16 @@ convert-backgound-model
 
 =head1 DESCRIPTION
 
-Interconversions between formats of background models supported by different
-programs (oligo-analysis, matrix-scan, patser, consensus, MotifLocator, MEME,
-...).
+Interconversions between formats of background models supported by
+different programs (oligo-analysis, matrix-scan, patser, consensus,
+MotifLocator, MotifSampler, MEME, ...).
 
-This is a beta version, with only some formats supported. Additional formats
-will be progressively added. 
+This is a beta version, with only some formats supported. Additional
+formats will be progressively added.
 
 =head1 AUTHORS
 
 =item Jacques van Helden jvanheld@scmbb.ulb.ac.be
-
-=item With the help of
 
 =item Jean Valery Turatsinze jturatsi@scmbb.ulb.ac.be
 
@@ -39,7 +37,7 @@ will be progressively added.
 util
 
 =head1 USAGE
-    
+
 convert-backgound-model [-i inputfile] [-o outputfile] [-v]
 
 =head1 INPUT FORMAT
@@ -279,7 +277,7 @@ square-root of L divided by L+squareroot of L
 	} elsif ($arg eq "-bg_pseudo") {
 	    $main::bg_pseudo = shift(@arguments);
 	    &RSAT::error::FatalError(join("\t", $main::bg_pseudo,
-					  "Invalid format for bg_pseudo, should be a Real number between 0 and 1."))
+					  "Invalid value for bg_pseudo, should be a Real number between 0 and 1."))
 		unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
 
 	    ## Number of decimals
@@ -329,7 +327,8 @@ sub Verbose {
 	while (my ($key,$value) = each %main::outfile) {
 	    print $main::out ";\t$key\t$value\n";
 	}
-    }
+      }
+    print $main::out "; Markov order\t", $bg_model->get_attribute("order"), "\n";
 }
 
 
