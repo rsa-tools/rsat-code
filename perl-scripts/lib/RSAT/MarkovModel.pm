@@ -21,9 +21,13 @@ use Data::Dumper;
 			    "MotifSampler"=>1,
 			   );
 %supported_output_formats = ("tab"=>1, 
-			     "patser"=>1);
+			     "patser"=>1,
+			     "MotifSampler"=>1);
 @supported_input_formats = sort keys %supported_input_formats;
 @supported_output_formats = sort keys %supported_output_formats;
+$supported_input_formats = join(",", @supported_input_formats);
+$supported_output_formats = join(",", @supported_output_formats);
+
 
 =pod
 
@@ -812,6 +816,8 @@ sub to_string {
     my ($self, $format, %args) = @_;
     if ($format eq ("tab")) {
 	$self->to_string_tab(%args);
+    } elsif ($format eq ("MotifSampler")) {
+	$self->to_string_MotifSampler(%args); 
     } elsif ($format eq ("patser")) {
 	$self->to_string_patser(%args); 
     } elsif ($format eq "") {
@@ -883,6 +889,67 @@ sub to_string_tab {
     }
     $string .= "\n";
 
+
+    return $string;
+}
+
+
+################################################################
+=pod
+
+=item B<to_string_MotifSampler(%args)>
+
+Export the Markov model in  MotifSampler format.
+
+Supported arguments: comment_string, decimals
+
+=cut
+sub to_string_MotifSampler {
+    my ($self, %args) = @_;
+    my $decimals = $args{decimals} || "5";
+    my $string = "";
+    my %prefix_proba = $self->get_attribute("prefix_proba");
+    my @prefix = sort($self->get_attribute("prefixes"));
+    my %suffix_sum = $self->get_attribute("suffix_sum");
+    my @suffix = sort($self->get_attribute("suffixes"));
+
+    ## Print header
+    $string .= join ("\n", 
+		     "#INCLUSive Background Model v1.0",
+		     "#",
+		     "#Order = ".$self->get_attribute("order"),
+		     "#Organism = unknown",
+		     "#Sequences = ",
+		     "#Path = ",
+		     "#");
+    $string .= "\n";
+
+    ## Single nucleotide frequencies
+    $string .= "\n#snf\n";
+    foreach my $suffix (@suffix) {
+      push @suffix_proba, sprintf "%.${decimals}f",  $self->{suffix_proba}->{$suffix};
+    }
+    $string .= join ("\t", @suffix_proba);
+    $string .= "\n";
+
+    ## Prefix probabilities
+    $string .= "\n#oligo frequency\n";
+    foreach my $prefix (@prefix) {
+      push @prefix_proba, sprintf "%.${decimals}f",  $self->{prefix_proba}->{$prefix};
+    }
+    $string .= join ("\n", @prefix_proba);
+    $string .= "\n";
+
+    ## Print transition frequencies and sum and proba per prefix
+    $string .= "\n#transition matrix\n";
+    foreach my $prefix (@prefix) {
+      my @transitions = ();
+      foreach my $suffix (@suffix) {
+	push @transitions, sprintf "%.${decimals}f",  $self->{transition_freq}->{$prefix}->{$suffix};
+      }
+      $string .= join ("\t", @transitions);
+      $string .= "\n";
+    }
 
     return $string;
 }
