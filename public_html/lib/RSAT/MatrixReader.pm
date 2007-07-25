@@ -38,6 +38,7 @@ formats.
 			   'gibbs'=> 1,
 			   'clustal'=>1,
 			   'transfac'=>1,
+			   'motifsampler'=>1,
 			  );
 
 
@@ -65,7 +66,7 @@ sub readFromFile {
 	@matrices = _readFromTabFile($file, %args);
     } elsif (lc($format) eq "cb") {
 	@matrices = _readFromClusterBusterFile($file, %args);
-    } elsif (lc($format) eq "MotifSampler") {
+    } elsif (lc($format) eq "motifsampler") {
 	@matrices = _readFromMotifSamplerFile($file);
     } elsif (lc($format) eq "meme") {
 	@matrices = _readFromMEMEFile($file);
@@ -239,7 +240,7 @@ sub _readFromTRANSFACFile {
 Read a matrix from a gibbs file. This method is called by the method 
 C<readFromFile($file, "gibbs")>.
 
-By default, the matrix is parsed from the sites. 
+By default, the matrix is parsed from the sites.
 
 The variable $parse_model allows to parse the matrix model exported by
 the gibbs sampler. I prefer to avoid this because this model is
@@ -263,9 +264,6 @@ sub _readFromGibbsFile {
 
     my $matrix;
     my @matrices = ();
-#    my $matrix = new RSAT::matrix();
-#    push @matrices, $matrix;
-
     my @matrix = ();
     my @alphabet = ();
     my $ncol = 0;
@@ -286,8 +284,6 @@ sub _readFromGibbsFile {
       }
       s/\r//;
       chomp();
-#      warn join("\t",$l, $_), "\n";
-
 
       if (/^gibbs /) {
 	$gibbs_command = $_;
@@ -1042,16 +1038,55 @@ sub _readFromFeatureFile {
 
 =item _readFromMotifSamplerFile($file)
 
-Read a matrix from a MotifSampler file. This method is called by the
-method C<readFromFile($file, "MotifSampler")>.
+Read a matrix from a MotifSampler file, which is part of the software
+suite INCLUSive (http://homes.esat.kuleuven.be/~thijs/download.html),
+developed by Gert Thijs.
 
-TO BE IMPLEMENTED
+This method is called by the method C<readFromFile($file,
+"MotifSampler")>.
 
 =cut
 
 sub _readFromMotifSamplerFile {
-    &RSAT::error::FatalError("The MotifSampler format is not yet supported in this version of the program.");
+    my ($file, %args) = @_;
+    &RSAT::message::Info(join("\t", "Reading matrix from tab file\t",$file)) if ($main::verbose >= 3);
 
+    ## open input stream
+    my ($in, $dir) = &main::OpenInputFile($file);
+
+    ## Initialize the matrix list
+    my @matrices = ();
+    my @alphabet = qw(a c g t);
+    my $ncol = 0;
+    my $nrow = 0;
+    my $matrix; ## the amtrix object
+    while (<$in>) {
+      next unless /\S/; ## Skip empty lines
+      next if /^#*$/; ## Skip empty lines
+      if(/^#ID\s*=\s*(\S+)/) {
+	my $id = $1;
+	$matrix = new RSAT::matrix();
+	$matrix->set_attribute("AC", $id);
+	$matrix->set_attribute("id", $id);
+	$matrix->set_attribute("nrow", 4);
+	$matrix->setAlphabet_lc("a","c","g","t");
+	push @matrices, $matrix;
+      } elsif (/^#Score = (\S+)/i) {
+	$matrix->set_parameter("score", $1);
+      } elsif (/^#Consensus = (\S+)/i) {
+	$matrix->set_parameter("consensus", $1);
+	for my $i (1..$ncol) {
+	  my $line = (<$in>);
+	  my @values = split (/\s+/, $line);
+	  $matrix->addColumn(@values);
+	  $matrix->force_attribute('ncol', $i);
+	}
+#	$matrix->force_attribute("ncol", $ncol);
+      } elsif (/^#W = (\S+)/i) {
+	$ncol = $1;
+      }
+    }
+    return (@matrices);
 }
 
 
