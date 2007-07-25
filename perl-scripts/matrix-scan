@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.76 2007/07/23 16:34:14 jvanheld Exp $
+# $Id: matrix-scan,v 1.77 2007/07/25 16:15:32 jvanheld Exp $
 #
 # Time-stamp: <2007-07-17 16:36:54 jturatsi>
 #
@@ -1383,6 +1383,26 @@ Background model file.
 	  &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
 	    if ($main::markov >= 0);
 	  
+	    ## Background model format
+=pod
+
+=item B<-bg_format format>
+
+Format for the background model file.
+
+Supported formats: all the input formats supported by
+convert-background-model.
+
+=cut
+	} elsif ($arg eq "-bg_format") {
+	    $main::bg_in_format = shift(@arguments);
+
+	    ## Check background input format
+	    &RSAT::error::FatalError($main::bg_in_format,
+				     "Invalid input format.",
+				     "Supported: ", $RSAT::MarkovModel::supported_input_formats)
+	      unless ($RSAT::MarkovModel::supported_input_formats{$main::bg_in_format});
+
 	  ## Background calculated from the input sequence set
 =pod
 
