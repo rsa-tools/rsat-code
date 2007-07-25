@@ -315,14 +315,16 @@ sub add_pseudo_freq {
       ## Compute the sum of transition counts for the current prefix
       my $current_count_sum = 0;
       foreach my $suffix (@dna_alphabet) {
-	$current_count_sum = $self->{transition_count}->{$prefix}->{$suffix}
+		$current_count_sum += $self->{transition_count}->{$prefix}->{$suffix}
 	  if (defined($self->{transition_count}->{$prefix}->{$suffix}));
       }
+      
+      # pseudo count varies depending on the prefix sum (=> $current_count_sum)
       my $pseudo_count = $pseudo_freq*$current_count_sum;
       if ($current_count_sum == 0) {
 	$pseudo_count = $pseudo_freq;
       }
-#      &RSAT::message::Debug("Prefix", $prefix, $current_count_sum, "Pseudo count=".$pseudo_count) if ($main::verbose >= 10);
+   #  &RSAT::message::Debug("Prefix", $prefix, $current_count_sum, "Pseudo count=".$pseudo_count) if ($main::verbose >= 10);
 
       foreach my $suffix (@dna_alphabet) {
 	if (defined($self->{transition_count}->{$prefix}->{$suffix})) {
