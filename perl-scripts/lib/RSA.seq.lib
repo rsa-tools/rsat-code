@@ -606,7 +606,7 @@ sub compress_pattern {
 ## Result : a hash table with a nucleotide as key and the list of
 ## matching ambiguous codes as value
 ## Usage:
-##     my %revIUPAC = &ReverseIUPAC();
+##     my %revIUPAC = &ReverseIUPAC($iupac_seq);
 sub ReverseIUPAC {
     my %revIUPAC = ();
     my %IUPAC = &IUPAC();
