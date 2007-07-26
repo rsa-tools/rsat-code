@@ -910,6 +910,7 @@ sub to_string_MotifSampler {
     my $string = "";
     my %prefix_proba = $self->get_attribute("prefix_proba");
     my @prefix = sort($self->get_attribute("prefixes"));
+
     my %suffix_sum = $self->get_attribute("suffix_sum");
     my @suffix = sort($self->get_attribute("suffixes"));
 
@@ -933,14 +934,28 @@ sub to_string_MotifSampler {
     $string .= "\n";
 
     ## Prefix probabilities
+
+    ## Particularity of MotifSampler format for oder 0: all oligos are exported as prefix
     $string .= "\n#oligo frequency\n";
-    foreach my $prefix (@prefix) {
-      push @prefix_proba, sprintf "%.${decimals}f",  $self->{prefix_proba}->{$prefix};
+    if ($self->{order}==0) {
+      foreach my $suffix (@suffix) {
+	push @prefix_proba, sprintf "%.${decimals}f",  $self->{suffix_proba}->{$suffix};
+      }
+    } else {
+      foreach my $prefix (@prefix) {
+	push @prefix_proba, sprintf "%.${decimals}f",  $self->{prefix_proba}->{$prefix};
+      }
     }
     $string .= join ("\n", @prefix_proba);
     $string .= "\n";
 
     ## Print transition frequencies and sum and proba per prefix
+
+    ## Particularity of MotifSampler format for oder 0: the oligo frequencies are repeated 4 times
+    if ($self->{order}==0) {
+      @prefix = ("","","","");
+    }
+
     $string .= "\n#transition matrix\n";
     foreach my $prefix (@prefix) {
       my @transitions = ();
