@@ -1328,12 +1328,15 @@ sub calcConsensus {
 
     ## Strict consensus 
     $self->set_parameter("consensus.strict", $consensus_strict);
+    $self->set_parameter("consensus.strict.rc", &main::ReverseComplement($consensus_strict));
 
     ## Degenerate consensus in IUPAC format
     $self->set_parameter("consensus.IUPAC", $consensus_IUPAC);
+    $self->set_parameter("consensus.IUPAC.rc", &main::ReverseIUPAC($consensus_IUPAC));
 
     ## Degenerate consensus in regexp format
     $self->set_parameter("consensus.regexp", $consensus);
+    $self->set_parameter("consensus.regexp.rc", &main::ReverseComplement($consensus));
 
     ## Remember that the consensus has been calculated
     $self->force_attribute("consensus_calculated", 1);
