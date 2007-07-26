@@ -1332,7 +1332,7 @@ sub calcConsensus {
 
     ## Degenerate consensus in IUPAC format
     $self->set_parameter("consensus.IUPAC", $consensus_IUPAC);
-    $self->set_parameter("consensus.IUPAC.rc", &main::ReverseIUPAC($consensus_IUPAC));
+    $self->set_parameter("consensus.IUPAC.rc", &main::ReverseComplement($consensus_IUPAC));
 
     ## Degenerate consensus in regexp format
     $self->set_parameter("consensus.regexp", $consensus);
