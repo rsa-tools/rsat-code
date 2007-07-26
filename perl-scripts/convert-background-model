@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.7 2007/07/25 21:46:15 jvanheld Exp $
+# $Id: convert-background-model,v 1.8 2007/07/26 09:53:11 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -104,7 +104,7 @@ package main;
     my $start_time = &AlphaDate();
     local $bg_model = new RSAT::MarkovModel();
     local $decimals = 5;
-    local $bg_pseudo = 0.01;
+    local $bg_pseudo = 0;
     
     $input_format = "oligo-analysis";
     %supported_input_format = $bg_model->get_supported_input_formats();
