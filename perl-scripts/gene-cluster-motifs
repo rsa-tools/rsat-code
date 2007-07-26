@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.194 2007/07/23 09:27:29 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.195 2007/07/26 00:24:07 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -178,10 +178,12 @@ $seed = undef;
 
 ## Default MotifSampler options
 $MS_bg_order = 0;
-$MS_b =$ENV{MOTIF_SAMPLER_DIR}."/background_models/yeast_up800_nomit_noorf_o3.bg"; ### TEMPORARY
+if (defined($ENV{MOTIF_SAMPLER_DIR})) {
+  $MS_b =$ENV{MOTIF_SAMPLER_DIR}."/background_models/yeast_up800_nomit_noorf_o3.bg"; ### TEMPORARY
+}
 $MS_p = 0.2;
 $MS_M = 0;
-$MS_n = 4;
+$MS_n = 1;
 $MS_w = $matrix_width;
 $MS_x = 1;
 $MS_r = 5;
@@ -637,8 +639,6 @@ sub SetFileNames {
 	my $MS_options = "";
 	my $MS_suffix = "";
 
-	$family{$family_name}->{MotifSampler_dir} = "${family_name}/MotifSampler_${family_name}";
-
 	## input file
 	$MS_options = " -f ".$family{$family_name}->{input_seq_file};
 
@@ -658,7 +658,7 @@ sub SetFileNames {
 	    $MS_options .= " -s 1";
 	    $MS_suffix .= "-s1";
 	}
-	
+
 	## prior
 	$MS_options .= " -p ".$MS_p;
 	$MS_suffix .= "-p".$MS_p;	 
@@ -666,10 +666,10 @@ sub SetFileNames {
 	## Maximal number of motif instances per sequence. (default unset = 0)
 	$MS_options .= " -M ".$MS_M;
 	$MS_suffix .= "-M".$MS_M;	 
-	
-	## Sets number of different motifs to search for (default 4).
+
+	## Sets number of different motifs to search for (default 1).
 	$MS_options .= " -n ".$MS_n;
-	$MS_suffix .= "-n".$MS_n;	 
+	$MS_suffix .= "-n".$MS_n;
 
 	## Sets length of the motif (default 8).
 	$MS_options .= " -w ".$matrix_width;
@@ -677,16 +677,20 @@ sub SetFileNames {
 
 	## Sets allowed overlap between different motifs. (default 1)
 	$MS_options .= " -x ".$MS_x;
-	$MS_suffix .= "-x".$MS_x;	 
+	$MS_suffix .= "-x".$MS_x; 
 
 	## Set number of times the MotifSampler should be repeated
 	$MS_options .= " -r ".$MS_r;
 	$MS_suffix .= "-r".$MS_r;	 
 
 	## output file
-	$family{$family_name}->{MotifSampler_file} = $family{$family_name}->{MotifSampler_dir}."/".$family{$family_name}->{file_prefix}.$MS_suffix;
-	$MS_options .= " -o ".$family{$family_name}->{MotifSampler_file}.".sites";
-	$MS_options .= " -M ".$family{$family_name}->{MotifSampler_file}.".matrix";
+
+	$family{$family_name}->{MotifSampler_dir} = "${family_name}/MotifSampler_${family_name}";
+	$family{$family_name}->{MotifSampler_file} = $family{$family_name}->{MotifSampler_dir}."/".$family{$family_name}->{file_prefix}.$MS_suffix.".sites";
+	$MS_options .= " -o ".$family{$family_name}->{MotifSampler_file};
+
+	$family{$family_name}->{MotifSampler_matrix} = $family{$family_name}->{MotifSampler_dir}."/".$family{$family_name}->{file_prefix}.$MS_suffix.".matrix";
+	$MS_options .= " -m ".$family{$family_name}->{MotifSampler_matrix};
 
 	## Assign MotifSampler options to the family
 	$family{$family_name}->{MotifSampler_suffix} = $MS_suffix;
@@ -1402,7 +1406,7 @@ sub MotifSampler {
    my $dir = $family{$family_name}->{MotifSampler_dir};
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
 
-#   ## Create ackground model if required
+#   ## Create background model if required
 #   unless ($MS_b) {
 #	warn "; Creating background model for the input sequence\torder ".$MS_bg_order."\n" 
 #	    if ($main::verbose >= 1);
@@ -1415,10 +1419,11 @@ sub MotifSampler {
 
 
    my $MotifSampler_cmd = "MotifSampler";
-   if (defined ($ENV{MOTIF_SAMPLER_DIR})) {
-       $ENV{MOTIF_SAMPLER_DIR}."MotifSampler";
-   }
-   
+
+#    if (defined ($ENV{MOTIF_SAMPLER_DIR})) {
+#        $ENV{MOTIF_SAMPLER_DIR}."MotifSampler";
+#    }
+
    ## run the command
    my $MS_command = $MotifSampler_cmd." ".$family{$family_name}->{MotifSampler_options};
    if ($batch) {
@@ -1631,6 +1636,7 @@ sub SyntheticTable {
    $row{consensus} = $row++;
    $row{gibbs} = $row++;
    $row{meme} = $row++;
+   $row{MotifSampler} = $row++;
    $row_num = $row-1;
    while (($header,$row) = each %row) {
 	$table[$row][0] = "<B>$header</B>";
@@ -1765,8 +1771,11 @@ sub SyntheticTable {
 	################################################################
 	#### Index results of meme
 	&IndexMEME($family_name, $row{meme}, $col, matrix_file=>$family{$family_name}->{meme_file});
+
+	################################################################
+	#### Index results of meme
+	&IndexMotifSampler($family_name, $row{MotifSampler}, $col, matrix_file=>$family{$family_name}->{MotifSampler_file});
    }
-   
 
    ###############################################################
    ## Print the header of the  synthetic table
@@ -1920,7 +1929,6 @@ sub ReadMatrix {
     return ($matrix_by_file{$matrix_file});
   } else {
     if (-e $matrix_file) {
-      
       ## This piece of code has to be evaluated because it can raise
       ## an error, if the output file does not contain any
       ## matrix. This is the case for some output files of consensus,
@@ -1933,7 +1941,9 @@ sub ReadMatrix {
 	
 	my $matrix = $new_matrices[0];
 	if ($matrix) {
-	  $matrix->force_attribute("id", id=>join("_",$run_prefix,$family_name,$format));
+	  $matrix->force_attribute("id", join("_",$run_prefix,$family_name,$format));
+	  $matrix->force_attribute("family", $family_name);
+	  $matrix->force_attribute("format", $format);
 	  $matrix->set_attribute("input_file", $matrix_file);
 	  $matrix_by_file{$matrix_file} = $matrix;
 	  #	       &RSAT::message::Debug(join("\t", "Reading  matrix from file", $matrix_file, $matrix->get_attribute("id"))) if ($main::verbose >= 10);
@@ -1970,28 +1980,18 @@ sub ReadMatrix {
 ## Index the matrix from a gibbs file
 sub IndexGibbs {
    &IndexMatrix(@_, format=>"gibbs");
-#      my ($family_name, $gibbs_file, $map_link, $row, $col, %args) = @_;
-#      warn join ("\t", "; Indexing gibbs matrix for family", $family_name, $gibbs_file, $row, $col), "\n" if ($verbose >= 2);
-#      my $matrix = new RSAT::matrix();
-#      $matrix->readFromFile($gibbs_file, "gibbs");
-#      $table[$row][$col] = "<table cellpadding=3>\n";
-#      $table[$row][$col] .= "<TR>\n";
-#      $table[$row][$col] .= "<td colspan=2><pre>".$matrix->toString(" ", 4)."</pre></td>\n";
-#      $table[$row][$col] .= "</TR>\n";
-
-#      $table[$row][$col] .= "<tr><td align=right>unadjusted.information</td><td>".$matrix->get_attribute("unadjusted.information")."</td></tr>\n";
-#      $table[$row][$col] .= "<tr><td align=right>adjusted.information</td><td>".$matrix->get_attribute("adjusted.information")."</td></tr>\n";
-#      $table[$row][$col] .= "<tr><td align=right>Pval</td><td>".$matrix->get_attribute("Pval")."</td></tr>\n";
-#      $table[$row][$col] .= "<tr><td align=right>ln.Pval</td><td>".$matrix->get_attribute("ln.Pval")."</td></tr>\n";
-#      $table[$row][$col] .= "<tr><td align=right>exp</td><td>".$matrix->get_attribute("exp")."</td></tr>\n";
-#      $table[$row][$col] .= "<tr><td align=right>ln.exp</td><td>".$matrix->get_attribute("ln.exp")."</td></tr>\n";
-#      $table[$row][$col] .= "</table>\n";
 }
 
 ################################################################
 ## Index the matrix from a meme file
 sub IndexMEME {
    &IndexMatrix(@_, format=>"meme");
+}
+
+################################################################
+## Index the matrix from a MotifSampler file
+sub IndexMotifSampler {
+   &IndexMatrix(@_, format=>"MotifSampler");
 }
 
 
@@ -3347,9 +3347,8 @@ sub ExportSQL {
    $current_analysis->set_attribute("suffix", $table_suffix);
 
    my %export_columns = ();
-   
    foreach my $family_name (@families) {
-	
+
 	#### general family attributes
 	my $family_object = $family_factory->new_object(id=>$run_prefix."_".$family_name);
 	my $family_id = $family_object->get_attribute("id");
@@ -3360,15 +3359,14 @@ sub ExportSQL {
 	$family_object->set_attribute("name", $family_name);
 	$family_object->set_attribute("size", scalar(@{$family{$family_name}->{members}}));
 	$family_object->set_attribute("organism", $organism_name);
-	
 	warn join ("\t", ";\tSQL export for family", $family_name, $organism_name), "\n" if ($main::verbose >= 2);
-	
+
 	#### family members
 	my @members = @{$family{$family_name}->{members}};
 	foreach my $m (@members) {
 	    $family_object->push_attribute("genes", $m);
 	}
-	
+
 	#### discovered oligos
 	my $oligo_file = $family{$family_name}->{oligo_file};
 	if (-e $oligo_file) {
@@ -3461,34 +3459,33 @@ sub ExportSQL {
 	} else {
 	    &RSAT::message::Warning(join ("\t", "SQL export", $family_name, $pwd, "dyad file does not exist",  $dyad_file , "SKIPPED"));
 	}
-	
-	
+
 	#### Matrices
 	for my $program qw (consensus gibbs meme MotifSampler) {
-	    my $matrix_file = $family{$family_name}->{$program."_file"};
-	    if (-e $matrix_file) {
-		&ReadMatrix($family_name, $matrix_file, format=>$program);
-	    } else {
-		&RSAT::message::Warning(join ("\t", "SQL export", $family_name, $pwd, "matrix file does not exist",  $matrix_file , "SKIPPED"));
-	    }
+	  my $matrix_file = $family{$family_name}->{$program."_file"};
+	  if (-e $matrix_file) {
+	    &ReadMatrix($family_name, $matrix_file, format=>$program);
+	  } else {
+	    &RSAT::message::Warning(join ("\t", "SQL export", $family_name, $pwd, "matrix file does not exist",  $matrix_file , "SKIPPED"));
+	  }
 	}
    }
 
    ## Specify output fields
    $family_factory->set_out_fields(qw(id analysis organism size name  genes));
    @pattern_out_fields = qw(id
-			     family_id
-			     family 
-			     type 
-			     sequence 
-			     rev_compl
-			     occ 
-			     exp_occ
-			     occ_P
-			     occ_E
-			     occ_sig
-			     rank
-			     );
+			    family_id
+			    family 
+			    type 
+			    sequence 
+			    rev_compl
+			    occ 
+			    exp_occ
+			    occ_P
+			    occ_E
+			    occ_sig
+			    rank
+			   );
    $pattern_factory->set_out_fields(@pattern_out_fields);
 
    #### export directory
@@ -3559,7 +3556,7 @@ sub ReadSequenceList {
 	$family{$family_name}->{seq_file_purged} = $family{$family_name}->{seq_file};
 	$family{$family_name}->{seq_file_purged} =~ s/\.${seq_ext}$//;
 	$family{$family_name}->{seq_file_purged} .= "_purged.".${seq_ext};
-        
+
        #### Comment
        $family{$family_name}->{comment} = $comment;
 
@@ -3574,7 +3571,6 @@ sub ReadSequenceList {
 #		   "\n", $family{$family_name}->{seq_file},
 #		   "\n", $family{$family_name}->{seq_file_purged}
 				   )) if ($verbose >= 3); 
-	
 	push @comments, $comment;
    }
    close $files;
