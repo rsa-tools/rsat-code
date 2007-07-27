@@ -19,19 +19,14 @@ TAR_CREATE =tar ${TAR_EXCLUDE} -cpvf ${ARCHIVE}.tar rsa-tools/RSA.config.default
 TAR =tar ${TAR_EXCLUDE} -rpvf ${ARCHIVE}.tar 
 
 
-## Manuals
-
+## Generate the Manuals and tutorials
 manuals:
 	(cd doc/manuals; make fullclean; make ig; make ug; make tex_clean)
 
-## Archive with zip
-ZIP_EXCLUDE=-x CVS '*~' 
-ZIP =zip -ry ${ARCHIVE}.zip 
-
+################################################################
+## Create tar and zip archives of the whole distribution
 POST_CMD=
-
 TAR_ROOT=..
-
 DISTRIB_FILES= rsa-tools/perl-scripts					\
 	rsa-tools/RSA.config.default					\
 	rsa-tools/public_html/data/supported_organisms_template.txt	\
@@ -58,9 +53,24 @@ tar_archive:
 	${MAKE} fill_archive ARCHIVE_CMD='${TAR}' POST_CMD=''
 	(cd ${TAR_ROOT}; gzip -f ${ARCHIVE}.tar)
 
+
+## Archive with zip
+ZIP_EXCLUDE=-x CVS '*~' 
+ZIP =zip -ry ${ARCHIVE}.zip 
 zip_archive:
 	${MAKE} fill_archive ARCHIVE_CMD='${ZIP}' POST_CMD='${ZIP_EXCLUDE}'
 
+
+################################################################
+## make a tar archive of the ws clients
+TAR_WSCLIENTS=public_html/RSATWS_clients.tar.gz
+tar_wsclients:
+	@rm -f ${TAR_WSCLIENTS}
+	tar --exclude CVS  --exclude '*~' --exclude '*.DS_Store'  -cvpzf ${TAR_WSCLIENTS} ws_clients
+	@echo ${TAR_WSCLIENTS}
+
+################################################################
+## Publish the tar archive of the whole distribution
 PUB_LOGIN=jvanheld
 PUB_SERVER=rsat.scmbb.ulb.ac.be
 PUB_DIR=/home/jvanheld/public_html/rsat_distrib/
