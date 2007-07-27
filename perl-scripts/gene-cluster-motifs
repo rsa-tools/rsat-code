@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.196 2007/07/27 09:31:01 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.197 2007/07/27 09:41:23 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -287,6 +287,8 @@ local $matrix_factory = classes::ClassFactory->new_class(object_type=>"RSAT::mat
 							 prefix=>$run_prefix."_");
 @matrix_out_fields = qw(id
 
+			matrix.nb
+
 			alphabet.size
 			ncol
 			nrow
@@ -303,24 +305,28 @@ local $matrix_factory = classes::ClassFactory->new_class(object_type=>"RSAT::mat
 			max.possible.info.per.col
 			min.prior
 
-			P-value
-			ln.Pval
-			E-value
-			ln.Eval
-			adjusted.information
-			unadjusted.information
+			cons.sites
+			cons.P-value
+			cons.ln.Pval
+			cons.E-value
+			cons.ln.Eval
+			cons.adjusted.information
+			cons.unadjusted.information
 
-			MAP
-			betaprior.map
-			model.map
-			seed
-
-			number
+			gibbs.MAP
+			gibbs.betaprior.map
+			gibbs.model.map
+			gibbs.seed
 
 			input_file
 			command
 
-			sites
+			site_ids
+			sequences
+			alphabet
+			prior
+			parameters
+			column.information
 		       );
 $matrix_factory->set_out_fields(@matrix_out_fields);
 
