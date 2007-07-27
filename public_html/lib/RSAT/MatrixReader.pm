@@ -152,7 +152,7 @@ sub _readFromTRANSFACFile {
       $matrix = new RSAT::matrix();
       push @matrices, $matrix;
       $matrix->set_parameter("accession", $accession) if ($accession);
-      $matrix->set_attribute("number", $current_matrix_nb);
+      $matrix->set_attribute("matrix.nb", $current_matrix_nb);
       $matrix->set_parameter("version", $version);
       $ncol = 0;
       next;
@@ -326,7 +326,7 @@ sub _readFromGibbsFile {
 #      if (/^\s*MOTIF\s+(\S+)/) {
 	$matrix = new RSAT::matrix();
 	$matrix->set_parameter("command", $gibbs_command);
-	$matrix->set_parameter("seed", $seed);
+	$matrix->set_parameter("gibbs.seed", $seed);
 	push @matrices, $matrix;
 	&RSAT::message::Debug("Starting to read a matrix") if ($main::verbose >= 3);
 	$in_matrix = 1;
@@ -335,11 +335,11 @@ sub _readFromGibbsFile {
 	next;
 
       } elsif (/model map = (\S+); betaprior map = (\S+)/) {
-	$matrix->set_parameter("model.map", $1);
-	$matrix->set_parameter("betaprior.map", $2);
+	$matrix->set_parameter("gibbs.model.map", $1);
+	$matrix->set_parameter("gibbs.betaprior.map", $2);
 
       } elsif (/MAP = (\S+)/) {
-	$matrix->set_parameter("MAP", $1);
+	$matrix->set_parameter("gibbs.MAP", $1);
 
       } elsif (($in_matrix) && ($parse_model)) {
 	if (/^\s*POS/) {
@@ -445,7 +445,7 @@ sub _readFromConsensusFile {
       $current_matrix_nb = $1;
       $matrix = new RSAT::matrix();
       push @matrices, $matrix;
-      $matrix->set_attribute("number", $current_matrix_nb);
+      $matrix->set_attribute("matrix.nb", $current_matrix_nb);
       $matrix->set_parameter("command", $command);
       $matrix->setPrior(%prior);
       next;
@@ -483,20 +483,20 @@ sub _readFromConsensusFile {
 
 	## Other matrix parameters
       } elsif (/number of sequences = (\d+)/) {
-	$matrix->set_parameter("sites", $1); 
+	$matrix->set_parameter("cons.sites", $1); 
       } elsif (/unadjusted information = (\S+)/) {
-	$matrix->set_parameter("unadjusted.information", $1); 
+	$matrix->set_parameter("cons.unadjusted.information", $1); 
       } elsif (/sample size adjusted information = (\S+)/) {
-	$matrix->set_parameter("adjusted.information", $1); 
+	$matrix->set_parameter("cons.adjusted.information", $1); 
       } elsif (/ln\(p\-value\) = (\S+)   p\-value = (\S+)/) {
-	$matrix->set_parameter("ln.Pval", $1); 
-	$matrix->set_parameter("P-value", $2); 
+	$matrix->set_parameter("cons.ln.Pval", $1); 
+	$matrix->set_parameter("cons.P-value", $2); 
       } elsif (/ln\(e\-value\) = (\S+)   e\-value = (\S+)/) {
-	$matrix->set_parameter("ln.Eval", $1); 
-	$matrix->set_parameter("E-value", $2); 
+	$matrix->set_parameter("cons.ln.Eval", $1); 
+	$matrix->set_parameter("cons.E-value", $2); 
       } elsif (/ln\(expected frequency\) = (\S+)   expected frequency = (\S+)/) {
-	$matrix->set_parameter("ln.exp", $1); 
-	$matrix->set_parameter("exp", $2); 
+	$matrix->set_parameter("cons.ln.exp", $1); 
+	$matrix->set_parameter("cons.exp", $2); 
       }
     }
   }
@@ -554,7 +554,7 @@ sub _readFromAssemblyFile {
       push @matrices, $matrix;
       $matrix->setAlphabet_lc("A","C","G","T");
       $matrix->set_attribute("nrow", 4);
-      $matrix->set_attribute("number", $current_matrix_nb);
+      $matrix->set_attribute("matrix.nb", $current_matrix_nb);
       $matrix->set_parameter("seed", $seed);
       &RSAT::message::Debug("New matrix from assembly", $current_matrix_nb."/".scalar(@matrices), "seed", $seed) if ($main::verbose >= 4);
 
@@ -637,7 +637,7 @@ sub _from_isolated {
   $matrix = new RSAT::matrix();
   $matrix->setAlphabet_lc("A","C","G","T");
   $matrix->set_attribute("nrow", 4);
-  $matrix->set_attribute("number", $current_matrix_nb);
+  $matrix->set_attribute("matrix.nb", $current_matrix_nb);
   $matrix->set_parameter("seed", $pattern);
   $matrix->set_attribute("consensus.assembly", $pattern);
   $matrix->set_attribute("consensus.assembly.rc", $pattern_rc);
@@ -883,7 +883,7 @@ sub _readFromMEMEFile {
       $width_to_parse = $2;
       $matrix = new RSAT::matrix();
       $matrix->init();
-      $matrix->set_attribute("number", $current_matrix_nb);
+      $matrix->set_attribute("matrix.nb", $current_matrix_nb);
       $matrix->set_attribute("ncol", $2);
 
       $matrix->set_parameter("command", $meme_command);
@@ -1005,7 +1005,7 @@ sub _readFromFeatureFile {
       $matrix = new RSAT::matrix();
       $matrix->init();
       $matrix->set_attribute("name", $matrix_name);
-      $matrix->set_attribute("number", $current_matrix_nb);
+      $matrix->set_attribute("matrix.nb", $current_matrix_nb);
       $matrix->set_attribute("ncol", length($site_sequence));
 #      $matrix->set_parameter("sites", $3);
 #      $matrix->setPrior(%residue_frequencies);
