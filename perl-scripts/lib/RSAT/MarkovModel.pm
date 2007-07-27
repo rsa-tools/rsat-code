@@ -17,13 +17,17 @@ use Data::Dumper;
 @ISA = qw( RSAT::GenericObject );
 
 ### class attributes
-%supported_input_formats = ("oligo-analysis"=>1,
+%supported_input_formats = ("oligos"=>1,
+			    "oligo-analysis"=>1,
 			    "motifsampler"=>1,
 			    "meme"=>1,
 			   );
 %supported_output_formats = ("tab"=>1, 
 			     "patser"=>1,
-			     "motifsampler"=>1);
+			     "motifsampler"=>1,
+			     "oligo-analysis"=>1,
+			     "oligos"=>1,
+			    );
 @supported_input_formats = sort keys %supported_input_formats;
 @supported_output_formats = sort keys %supported_output_formats;
 $supported_input_formats = join(",", @supported_input_formats);
@@ -101,23 +105,26 @@ converted to lowercases.
 
 =cut
 sub load_from_file {
-    my ($self, $bg_file, $format) = @_;
-    if ($format eq "oligo-analysis") {
-	$self->load_from_file_oligos($bg_file);
-    } elsif ($format eq "meme") {
-	$self->load_from_file_meme($bg_file);
-    } elsif ($format eq "motifsampler") {
-	$self->load_from_file_MotifSampler($bg_file);
-    } elsif ($format eq "") {
-	&RSAT::error::FatalError(join("\t", "MarkovModel::load_from_file", 
-				      "the format of the backgroun model must be specified"));
-    } else {
+  my ($self, $bg_file, $format) = @_;
 
-	&RSAT::error::FatalError(join("\t", "MarkovModel::load_from_file", 
-				      $format, "invalid format. Supported:",
-				      join(",", @supported_input_formats)));
-    }
-    $self->normalize_transition_frequencies();
+  $format =~ s/oligo-analysis/oligos/;
+    
+  if ($format eq "oligos") {
+    $self->load_from_file_oligos($bg_file);
+  } elsif ($format eq "meme") {
+    $self->load_from_file_meme($bg_file);
+  } elsif ($format eq "motifsampler") {
+    $self->load_from_file_MotifSampler($bg_file);
+  } elsif ($format eq "") {
+    &RSAT::error::FatalError(join("\t", "MarkovModel::load_from_file", 
+				  "the format of the backgroun model must be specified"));
+  } else {
+
+    &RSAT::error::FatalError(join("\t", "MarkovModel::load_from_file", 
+				  $format, "invalid format. Supported:",
+				  join(",", @supported_input_formats)));
+  }
+  $self->normalize_transition_frequencies();
 }
 
 
@@ -129,50 +136,51 @@ sub load_from_file {
 
 Load the markov model from a result file from oligo-analysis. 
 
-The model file is a tab-delimited text file indicating the expected frequency
-of each word of length m+1, for a model of order m. These files can be
-produced with the ccmmand oligo-analysis. When new genomes are installed,
-background files are automatically calculated for upstream sequences, and
-stored in $RSAT/data/genomes/[Organism_name]/oligo-frequencies.
+The model file is a tab-delimited text file indicating the expected
+frequency of each word of length m+1, for a model of order m. These
+files can be produced with the ccmmand oligo-analysis. When new
+genomes are installed, background files are automatically calculated
+for upstream sequences, and stored in
+$RSAT/data/genomes/[Organism_name]/oligo-frequencies.
 
 In order to ensure case-insensivity, Markov models are automatically
 converted to lowercases.
 
 =cut
 sub load_from_file_oligos {
-    my ($self, $bg_file) = @_;
+  my ($self, $bg_file) = @_;
 
-    &RSAT::message::TimeWarn("Loading Markov model from oligo file $bg_file") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Loading Markov model from oligo file $bg_file") if ($main::verbose >= 2);
 
-    my ($file_type, %patterns) = &main::ReadPatternFrequencies($bg_file) ;
-    my @patterns = keys(%patterns);
+  my ($file_type, %patterns) = &main::ReadPatternFrequencies($bg_file) ;
+  my @patterns = keys(%patterns);
 
-    ## This is a bit tricky: ReadExpectedFrequencies sets a global variable
-    ## $file_type to "2str" if the model is strand-insensitive/
-    if ($file_type eq "2str") {
-	$self->force_attribute("strand", "insensitive");
-    }
+  ## This is a bit tricky: ReadExpectedFrequencies sets a global variable
+  ## $file_type to "2str" if the model is strand-insensitive/
+  if ($file_type eq "2str") {
+    $self->force_attribute("strand", "insensitive");
+  }
 
-    my $order = length($patterns[0]) -1 ; ## Use the first pattern to calculate model order
-    $self->force_attribute("order", $order);
+  my $order = length($patterns[0]) -1 ;	## Use the first pattern to calculate model order
+  $self->force_attribute("order", $order);
 
-    ## Calculate alphabet from expected frequency keys
-    foreach my $pattern_seq (keys %patterns) {
-	my $pattern_freq =  $patterns{$pattern_seq}->{exp_freq};
-	## Check pattern length
-	$pattern_seq = lc($pattern_seq); ## Ensure case-insensitivity
-	my $pattern_len = length($pattern_seq);
-#	&RSAT::message::Debug($pattern_seq, $pattern_len, $pattern_freq, 
-#			      join(";", keys %{$patterns{$pattern_seq}})) if ($main::verbose >= 0);
-	&RSAT::error::FatalError("All patterns should have the same length in a Markov model file.") 
-	    unless $pattern_len = $order+1;
-	my $prefix = substr($pattern_seq,0,$order);
-	my $suffix = substr($pattern_seq,$order, 1);
-	$self->{transition_count}->{$prefix}->{$suffix} = $pattern_freq;
-#	&RSAT::message::Debug("transition count", $prefix.".".$suffix, $pattern_freq, $self->{transition_count}->{$prefix}->{$suffix}) if ($main::verbose >= 10);
+  ## Calculate alphabet from expected frequency keys
+  foreach my $pattern_seq (keys %patterns) {
+    my $pattern_freq =  $patterns{$pattern_seq}->{exp_freq};
+    ## Check pattern length
+    $pattern_seq = lc($pattern_seq); ## Ensure case-insensitivity
+    my $pattern_len = length($pattern_seq);
+    #	&RSAT::message::Debug($pattern_seq, $pattern_len, $pattern_freq, 
+    #			      join(";", keys %{$patterns{$pattern_seq}})) if ($main::verbose >= 0);
+    &RSAT::error::FatalError("All patterns should have the same length in a Markov model file.") 
+      unless $pattern_len = $order+1;
+    my $prefix = substr($pattern_seq,0,$order);
+    my $suffix = substr($pattern_seq,$order, 1);
+    $self->{transition_count}->{$prefix}->{$suffix} = $pattern_freq;
+    #	&RSAT::message::Debug("transition count", $prefix.".".$suffix, $pattern_freq, $self->{transition_count}->{$prefix}->{$suffix}) if ($main::verbose >= 10);
 
-    }
-#    &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', @patterns)) if ($main::verbose >= 5);
+  }
+  #    &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', @patterns)) if ($main::verbose >= 5);
  
 }
 
@@ -204,58 +212,58 @@ converted to lowercases.
 
 =cut
 sub load_from_file_meme {
-    my ($self, $bg_file) = @_;
+  my ($self, $bg_file) = @_;
 
-    &RSAT::message::TimeWarn("Loading Markov model from MEME background file $bg_file") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Loading Markov model from MEME background file $bg_file") if ($main::verbose >= 2);
 
-#    my ($file_type, %patterns) = &main::ReadPatternFrequencies($bg_file) ;
+  #    my ($file_type, %patterns) = &main::ReadPatternFrequencies($bg_file) ;
 
-    my ($in, $dir) = &main::OpenInputFile($bg_file);
-    my $max_order = 0;
-    my $order  =0;
-    my %freq = ();
-    while (<$in>) {
-      if (/^# order (\d+)/) {
-	$order = $1;
-	if ($order > $max_order) {
-	  ## Meme bg files contain frequencies for all oligo lengths
-	  ## from 0 to k=m+1 (where m the order of the Markov
-	  ## chain). We only need the largest patterns, so we
-	  ## reinitialize the frequency table after smaller words.
-	  %freq = ();
-	}
-	$max_order = &RSAT::stats::max($max_order, $order);
-      } elsif (/^(\S+)\s+(\S+)/) {
-	my $pattern_seq = $1;
-	my $freq = $2;
-	$freq{$pattern_seq} = $freq;
+  my ($in, $dir) = &main::OpenInputFile($bg_file);
+  my $max_order = 0;
+  my $order  =0;
+  my %freq = ();
+  while (<$in>) {
+    if (/^# order (\d+)/) {
+      $order = $1;
+      if ($order > $max_order) {
+	## Meme bg files contain frequencies for all oligo lengths
+	## from 0 to k=m+1 (where m the order of the Markov
+	## chain). We only need the largest patterns, so we
+	## reinitialize the frequency table after smaller words.
+	%freq = ();
       }
+      $max_order = &RSAT::stats::max($max_order, $order);
+    } elsif (/^(\S+)\s+(\S+)/) {
+      my $pattern_seq = $1;
+      my $freq = $2;
+      $freq{$pattern_seq} = $freq;
     }
-    close $in if ($bg_file);
+  }
+  close $in if ($bg_file);
 
-    $order = $max_order;
-    $self->force_attribute("order", $order);
-    &RSAT::message::Info("Markov order", $order) if ($main::verbose >= 0);
+  $order = $max_order;
+  $self->force_attribute("order", $order);
+  &RSAT::message::Info("Markov order", $order) if ($main::verbose >= 0);
 
-    ## Calculate alphabet from expected frequency keys
-    foreach my $pattern_seq (keys %freq) {
-	## Check pattern length
-	my $pattern_freq =  $freq{$pattern_seq};
-	$pattern_seq = lc($pattern_seq);
-	my $pattern_len = length($pattern_seq);
-#	&RSAT::message::Debug($pattern_seq, $pattern_len, $pattern_freq, 
-#			      join(";", keys %{$patterns{$pattern_seq}})) if ($main::verbose >= 0);
-	&RSAT::error::FatalError("All patterns should have the same length in a Markov model file.") 
-	    unless $pattern_len = $order+1;
-	my $prefix = substr($pattern_seq,0,$order);
-	my $suffix = substr($pattern_seq,$order, 1);
-	$self->{transition_count}->{$prefix}->{$suffix} = $pattern_freq;
-#	&RSAT::message::Debug("transition count", $prefix.".".$suffix, $pattern_freq, $self->{transition_count}->{$prefix}->{$suffix}) if ($main::verbose >= 10);
+  ## Calculate alphabet from expected frequency keys
+  foreach my $pattern_seq (keys %freq) {
+    ## Check pattern length
+    my $pattern_freq =  $freq{$pattern_seq};
+    $pattern_seq = lc($pattern_seq);
+    my $pattern_len = length($pattern_seq);
+    #	&RSAT::message::Debug($pattern_seq, $pattern_len, $pattern_freq, 
+    #			      join(";", keys %{$patterns{$pattern_seq}})) if ($main::verbose >= 0);
+    &RSAT::error::FatalError("All patterns should have the same length in a Markov model file.") 
+      unless $pattern_len = $order+1;
+    my $prefix = substr($pattern_seq,0,$order);
+    my $suffix = substr($pattern_seq,$order, 1);
+    $self->{transition_count}->{$prefix}->{$suffix} = $pattern_freq;
+    #	&RSAT::message::Debug("transition count", $prefix.".".$suffix, $pattern_freq, $self->{transition_count}->{$prefix}->{$suffix}) if ($main::verbose >= 10);
 
-    }
-#    &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', @patterns)) if ($main::verbose >= 5);
- 
+  }
+  #    &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', @patterns)) if ($main::verbose >= 5);
 }
+
 
 ################################################################
 =pod
@@ -896,14 +904,27 @@ tab-delimited format
 Format supported by the programs patser and consensus, developed by
 Gerald Z. Hertz.
 
+=item MotifSampler
+
+See input formats for description. 
+
+=item oligos
+
+See input formats for description. 
+
 =back
 
 =cut
 
 sub to_string {
     my ($self, $format, %args) = @_;
+
+    $format =~ s/oligo-analysis/oligos/;
+
     if ($format eq ("tab")) {
 	$self->to_string_tab(%args);
+    } elsif ($format eq ("oligos")) {
+	$self->to_string_oligos(%args); 
     } elsif ($format eq ("motifsampler")) {
 	$self->to_string_MotifSampler(%args); 
     } elsif ($format eq ("patser")) {
@@ -979,6 +1000,51 @@ sub to_string_tab {
 
 
     return $string;
+}
+
+################################################################
+=pod
+
+=item B<to_string_oligos(%args)>
+
+Convert the Markov model into oligomer frequencies.
+
+A Markov model of order m will generate a frequency table for
+oligomers of length k=m+1.
+
+=cut
+sub to_string_oligos {
+  my ($self, %args) = @_;
+  my $decimals = $args{decimals} || "5";
+  my $string = "";
+  my %prefix_proba = $self->get_attribute("prefix_proba");
+  my @prefix = sort($self->get_attribute("prefixes"));
+  my %suffix_sum = $self->get_attribute("suffix_sum");
+  my @suffix = sort($self->get_attribute("suffixes"));
+
+  my $strand = $self->get_attribute("strand");
+
+  if ($strand eq "insensitive") {
+    $string .= join("\t", "#seq", "seq|revcpl", "freq");
+  } else {
+    $string .= join("\t", "#seq", "id", "freq");
+  }
+  $string .= "\n";
+
+  ## Print transition frequencies and sum and proba per prefix
+  foreach my $prefix (sort (@prefix)) {
+    foreach my $suffix (sort(@suffix)) {
+      $string .= $prefix.$suffix;
+      $string .= "\t".$prefix.$suffix;
+      if ($strand eq "insensitive") {
+	$string .= "|";
+	$string .= lc(&RSAT::SeqUtil::ReverseComplement($prefix.$suffix));
+      }
+      $string .= sprintf "\t%.${decimals}f",  $self->{transition_freq}->{$prefix}->{$suffix};
+      $string .= "\n";
+    }
+  }
+  return $string;
 }
 
 
