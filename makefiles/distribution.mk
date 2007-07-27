@@ -63,10 +63,10 @@ zip_archive:
 
 ################################################################
 ## make a tar archive of the ws clients
-TAR_WSCLIENTS=public_html/RSATWS_clients.tar.gz
+TAR_WSCLIENTS=public_html/web_services/RSATWS_clients.tar.gz
 tar_wsclients:
 	@rm -f ${TAR_WSCLIENTS}
-	tar --exclude CVS  --exclude '*~' --exclude '*.DS_Store'  -cvpzf ${TAR_WSCLIENTS} ws_clients
+	tar --exclude CVS  --exclude '*~' --exclude '*.DS_Store' -cvpzf ${TAR_WSCLIENTS} ws_clients
 	@echo ${TAR_WSCLIENTS}
 
 ################################################################
