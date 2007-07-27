@@ -99,6 +99,57 @@ sub all_possible_oligos {
   return @oligos;
 }
 
+
+################################################################
+=pod
+
+=item B<ReverseComplement>
+
+Return the reverse complement of a DNA sequence.
+
+Usage: my $rc = &RSAT::SeqUtil::ReverseComplement($seq);
+
+=cut
+sub ReverseComplement {
+    local($orig_seq) = $_[0];
+    $complement = reverse $orig_seq;
+    $complement =~ tr/a-z/A-Z/;
+    ### simple nucleotides
+    $complement =~ s/A/t/g;
+    $complement =~ s/T/a/g;
+    $complement =~ s/C/g/g;
+    $complement =~ s/G/c/g;
+    ### degenerate code
+    $complement =~ s/R/y/g;
+    $complement =~ s/Y/r/g;
+    $complement =~ s/M/k/g;
+    $complement =~ s/K/m/g;
+    $complement =~ s/B/v/g;
+    $complement =~ s/V/b/g;
+    $complement =~ s/H/d/g;
+    $complement =~ s/D/h/g;
+    #  $complement =~ s/S/s/g;
+    #  $complement =~ s/W/w/g;
+    #  $complement =~ s/N/n/g;
+    ###  brackets
+    $complement =~ s/\[/temp/g;
+    $complement =~ s/\]/\[/g;
+    $complement =~ s/temp/\]/g;
+    $complement =~ tr/a-z/A-Z/;
+    ### multiplier
+    while (($complement =~ /(\}\d+\{)/) 
+	   || ($complement =~ /(\}\d+,\d+\{)/) ) {
+	$rev_mul = reverse $1;
+	$complement =~ s/$1/$rev_mul/g;
+    }
+    $complement =~ s/(\{\d+\})(\w)/$2$1/g;
+    $complement =~ s/(\{\d+,\d+\})(\w)/$2$1/g;
+    $complement =~ s/(\{\d+\})(\[\w+\])/$2$1/g;
+    $complement =~ s/(\{\d+,\d+\})(\[\w+\])/$2$1/g;
+    return $complement;
+}# ReverseComplement
+
+
 return 1;
 
 __END__
