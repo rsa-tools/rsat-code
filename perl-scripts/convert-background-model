@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.9 2007/07/27 23:23:05 jvanheld Exp $
+# $Id: convert-background-model,v 1.10 2007/07/27 23:47:22 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -48,17 +48,17 @@ formats are supported only for input or for output.
 
 =over
 
-=head2 oligo-analysis (input)
+=head2 oligos (input/output)
 
 Oligonucleotide frequency table, as exported by the RSAT program
 I<oligo-analysis>. The simplest format is a two-column file with the
 oligonucleotide in the first column, and the frequency in the second
 one.
 
-An oligo file containinf frequencies of k-mers will be converted into
-a Markov model of order I<m=k-1>. Frequencies are converted to
-transition probabilities by calculating the relative frequencies of
-all oligomers of size k having the same suffix (last letter). .
+An oligo file containing k-mers frequencies corresponds to a Markov
+model of order I<m=k-1>. Frequencies are converted to transition
+probabilities by calculating the relative frequencies of all oligomers
+of size k having the same prefix (first m letters).
 
 =head2 MotifSampler (input/output)
 
