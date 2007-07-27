@@ -19,6 +19,7 @@ use Data::Dumper;
 ### class attributes
 %supported_input_formats = ("oligo-analysis"=>1,
 			    "motifsampler"=>1,
+			    "meme"=>1,
 			   );
 %supported_output_formats = ("tab"=>1, 
 			     "patser"=>1,
@@ -103,6 +104,8 @@ sub load_from_file {
     my ($self, $bg_file, $format) = @_;
     if ($format eq "oligo-analysis") {
 	$self->load_from_file_oligos($bg_file);
+    } elsif ($format eq "meme") {
+	$self->load_from_file_meme($bg_file);
     } elsif ($format eq "motifsampler") {
 	$self->load_from_file_MotifSampler($bg_file);
     } elsif ($format eq "") {
@@ -153,13 +156,93 @@ sub load_from_file_oligos {
     my $order = length($patterns[0]) -1 ; ## Use the first pattern to calculate model order
     $self->force_attribute("order", $order);
 
-
     ## Calculate alphabet from expected frequency keys
     foreach my $pattern_seq (keys %patterns) {
+	my $pattern_freq =  $patterns{$pattern_seq}->{exp_freq};
 	## Check pattern length
+	$pattern_seq = lc($pattern_seq); ## Ensure case-insensitivity
+	my $pattern_len = length($pattern_seq);
+#	&RSAT::message::Debug($pattern_seq, $pattern_len, $pattern_freq, 
+#			      join(";", keys %{$patterns{$pattern_seq}})) if ($main::verbose >= 0);
+	&RSAT::error::FatalError("All patterns should have the same length in a Markov model file.") 
+	    unless $pattern_len = $order+1;
+	my $prefix = substr($pattern_seq,0,$order);
+	my $suffix = substr($pattern_seq,$order, 1);
+	$self->{transition_count}->{$prefix}->{$suffix} = $pattern_freq;
+#	&RSAT::message::Debug("transition count", $prefix.".".$suffix, $pattern_freq, $self->{transition_count}->{$prefix}->{$suffix}) if ($main::verbose >= 10);
+
+    }
+#    &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', @patterns)) if ($main::verbose >= 5);
+ 
+}
+
+
+################################################################
+=pod
+
+=item B<load_from_file_meme($bg_file)>
+
+Load the Markov model from a MEME background file.
+
+MEME (http://meme.sdsc.edu/meme/) is a matrix-based pattern discovery
+program developed by Tim Bailey, and supporting Marckov chain
+background models. 
+
+The MEME suite includes
+
+ - I<fasta-get-markov>, which esimtates a background model
+   from a sequence file.
+
+ - I<meme>, for discovering new motifs from a sequence set.
+
+ - I<mast>, for localizing known motifs in a sequence set.
+
+ - a set of other utilities described in MEME documentation.
+
+In order to ensure case-insensivity, Markov models are automatically
+converted to lowercases.
+
+=cut
+sub load_from_file_meme {
+    my ($self, $bg_file) = @_;
+
+    &RSAT::message::TimeWarn("Loading Markov model from MEME background file $bg_file") if ($main::verbose >= 2);
+
+#    my ($file_type, %patterns) = &main::ReadPatternFrequencies($bg_file) ;
+
+    my ($in, $dir) = &main::OpenInputFile($bg_file);
+    my $max_order = 0;
+    my $order  =0;
+    my %freq = ();
+    while (<$in>) {
+      if (/^# order (\d+)/) {
+	$order = $1;
+	if ($order > $max_order) {
+	  ## Meme bg files contain frequencies for all oligo lengths
+	  ## from 0 to k=m+1 (where m the order of the Markov
+	  ## chain). We only need the largest patterns, so we
+	  ## reinitialize the frequency table after smaller words.
+	  %freq = ();
+	}
+	$max_order = &RSAT::stats::max($max_order, $order);
+      } elsif (/^(\S+)\s+(\S+)/) {
+	my $pattern_seq = $1;
+	my $freq = $2;
+	$freq{$pattern_seq} = $freq;
+      }
+    }
+    close $in if ($bg_file);
+
+    $order = $max_order;
+    $self->force_attribute("order", $order);
+    &RSAT::message::Info("Markov order", $order) if ($main::verbose >= 0);
+
+    ## Calculate alphabet from expected frequency keys
+    foreach my $pattern_seq (keys %freq) {
+	## Check pattern length
+	my $pattern_freq =  $freq{$pattern_seq};
 	$pattern_seq = lc($pattern_seq);
 	my $pattern_len = length($pattern_seq);
-	my $pattern_freq =  $patterns{$pattern_seq}->{exp_freq};
 #	&RSAT::message::Debug($pattern_seq, $pattern_len, $pattern_freq, 
 #			      join(";", keys %{$patterns{$pattern_seq}})) if ($main::verbose >= 0);
 	&RSAT::error::FatalError("All patterns should have the same length in a Markov model file.") 
@@ -385,58 +468,63 @@ model was trained.
 
 =cut
 sub add_pseudo_freq {
-    my ($self) = @_;
+  my ($self) = @_;
 
-    ################################################################
-    ## Calculate all possible prefix oligonucleotides, even those
-    ## which are not observed in the input background model
-    my @dna_alphabet =  qw (a c g t);
-    my @possible_oligos;
-    if ($self->{order} > 0) {
-      @possible_oligos  = &RSAT::SeqUtil::all_possible_oligos($self->{order}, @dna_alphabet);
-    }elsif ($self->{order} == 0) {
-      my %prefix_sum = ();
-      foreach my $prefix (sort keys(%{$self->{transition_count}})) {
-	foreach my $suffix (sort keys (%{$self->{transition_count}->{$prefix}})) {
-	  $prefix_sum{$prefix} = 1;
-	}
-      }
-      @possible_oligos = sort keys(%prefix_sum);
-    }
-
-    ################################################################
-    ## Add pseudo-frequencies
-    my $pseudo_freq = $self->get_attribute("bg_pseudo") || 0;
-    my $alpha_size = scalar(@dna_alphabet);
-    foreach my $prefix (@possible_oligos) {
-
-      ## Compute the sum of transition counts for the current prefix
-      my $current_count_sum = 0;
-      foreach my $suffix (@dna_alphabet) {
-		$current_count_sum += $self->{transition_count}->{$prefix}->{$suffix}
-	  if (defined($self->{transition_count}->{$prefix}->{$suffix}));
-      }
-
-      # pseudo count varies depending on the prefix sum (=> $current_count_sum)
-      my $pseudo_count = $pseudo_freq*$current_count_sum;
-      if ($current_count_sum == 0) {
-	$pseudo_count = $pseudo_freq;
-      }
-   #  &RSAT::message::Debug("Prefix", $prefix, $current_count_sum, "Pseudo count=".$pseudo_count) if ($main::verbose >= 10);
-
-      foreach my $suffix (@dna_alphabet) {
-	if (defined($self->{transition_count}->{$prefix}->{$suffix})) {
-
-	  ## Adding the pseudo-freq on the background model.
-	  my $pattern_pseudo_count = 
-	    (1-$pseudo_freq)*$self->{transition_count}->{$prefix}->{$suffix} + $pseudo_count/$alpha_size;
-	  $self->{transition_count}->{$prefix}->{$suffix} = $pattern_pseudo_count;
-	} else {  ## missing transitions
-	  $self->{transition_count}->{$prefix}->{$suffix} = $pseudo_count/$alpha_size;
-	}
+  ################################################################
+  ## Calculate all possible prefix oligonucleotides, even those
+  ## which are not observed in the input background model
+  my @dna_alphabet =  qw (a c g t);
+  my @possible_oligos;
+  if ($self->{order} > 0) {
+    @possible_oligos  = &RSAT::SeqUtil::all_possible_oligos($self->{order}, @dna_alphabet);
+  } elsif ($self->{order} == 0) {
+    my %prefix_sum = ();
+    foreach my $prefix (sort keys(%{$self->{transition_count}})) {
+      foreach my $suffix (sort keys (%{$self->{transition_count}->{$prefix}})) {
+	$prefix_sum{$prefix} = 1;
       }
     }
-} 
+    @possible_oligos = sort keys(%prefix_sum);
+  }
+
+  ################################################################
+  ## Add pseudo-frequencies
+  my $pseudo_freq = $self->get_attribute("bg_pseudo") || 0;
+  my $alpha_size = scalar(@dna_alphabet);
+  foreach my $prefix (@possible_oligos) {
+
+    ## Update the prior probablity of the prefixes
+
+    ## Compute the sum of transition counts for the current prefix
+    my $current_count_sum = 0;
+    foreach my $suffix (@dna_alphabet) {
+      $current_count_sum += $self->{transition_count}->{$prefix}->{$suffix}
+	if (defined($self->{transition_count}->{$prefix}->{$suffix}));
+    }
+
+    # pseudo count varies depending on the prefix sum (=> $current_count_sum)
+    my $pseudo_count = $pseudo_freq*$current_count_sum;
+    if ($current_count_sum == 0) {
+      $pseudo_count = $pseudo_freq;
+    }
+    #  &RSAT::message::Debug("Prefix", $prefix, $current_count_sum, "Pseudo count=".$pseudo_count) if ($main::verbose >= 10);
+
+    foreach my $suffix (@dna_alphabet) {
+      if (defined($self->{transition_count}->{$prefix}->{$suffix})) {
+
+	## Adding the pseudo-freq on the background model.
+	my $pattern_pseudo_count = 
+	  (1-$pseudo_freq)*$self->{transition_count}->{$prefix}->{$suffix} + $pseudo_count/$alpha_size;
+	$self->{transition_count}->{$prefix}->{$suffix} = $pattern_pseudo_count;
+      } else {			## missing transitions
+	$self->{transition_count}->{$prefix}->{$suffix} = $pseudo_count/$alpha_size;
+      }
+    }
+  }
+
+  ################################################################
+  ##
+}
 
 ################################################################
 =pod
