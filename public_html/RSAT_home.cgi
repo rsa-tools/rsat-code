@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.14 2007/04/03 10:20:25 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.15 2007/07/27 15:06:42 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -96,18 +96,23 @@ print <<EndText;
     <tr  valign=top>
     <td>
     <P>
-    Welcome to Regulatory Sequence Analysis Tools (<B>RSAT</B>). This
-    site provides a series of modular computer programs specifically
-    designed for the detection of regulatory signals in non-coding
-    sequences.  <P>
-    
+    Welcome to <b>Regulatory Sequence Analysis Tools</b>
+    (<B>RSAT</B>). This web site provides a series of modular computer
+    programs specifically designed for the detection of regulatory
+    signals in non-coding sequences.
+
     <P>
-    This web site is freely available for academic users. For users from
-    commercial companies, please read our <A
-    HREF="disclaimer.html">disclaimer</A>.
+      <font color='red'>New !</font> For bioinformaticians, RSAT tools
+      are now also available as <a href=web_services.html><b>web services</b></a>. 
+    </p>
+
+    <P>
+    This web site and the web services are freely available for
+    academic users. For users from commercial companies, please read
+    our <A HREF="disclaimer.html">disclaimer</A>.
     </font>
     </td>
-    
+
     
     <td>
     <table  border=1 bgcolor='#ffcccc' cellpadding=5 cellspacing=5 border=3><tr><td>
@@ -217,11 +222,6 @@ print &ListSupportedOrganisms("html_list");
 
 &UpdateLogFile();
 $count = &UpdateCounterFile();
-
-# print ("This page has been visited\n<B>", $count,
-#        "</B>\ntimes since May 1998.\n",
-#        "Enjoy your visit !");
-
 
 print <<EndAddress;
 <P>
