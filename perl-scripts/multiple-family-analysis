@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.195 2007/07/26 00:24:07 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.196 2007/07/27 09:31:01 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -262,13 +262,68 @@ $current_analysis = $analysis_factory->new_object(id=>$run_prefix);
 ## Class holder for families
 local $family_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Family",
 						      prefix=>$run_prefix."_");
+$family_factory->set_out_fields(qw(id analysis organism size name  genes));
+
 ## Class holder for patterns (oligos and dyads)
 local $pattern_factory = classes::ClassFactory->new_class(object_type=>"RSAT::pattern",
-						       prefix=>$run_prefix."_");
+							  prefix=>$run_prefix."_");
+@pattern_out_fields = qw(id
+			 family_id
+			 family 
+			 type 
+			 sequence 
+			 rev_compl
+			 occ 
+			 exp_occ
+			 occ_P
+			 occ_E
+			 occ_sig
+			 rank
+			);
+$pattern_factory->set_out_fields(@pattern_out_fields);
 
 ## Class holder for the matrices (gibbs, meme, consensus, MotifSampler)
 local $matrix_factory = classes::ClassFactory->new_class(object_type=>"RSAT::matrix",
 							 prefix=>$run_prefix."_");
+@matrix_out_fields = qw(id
+
+			alphabet.size
+			ncol
+			nrow
+			type
+
+			consensus.strict
+			consensus.IUPAC
+			consensus.regexp
+
+			total.information
+			info.log.base
+			information.per.column
+			max.bits
+			max.possible.info.per.col
+			min.prior
+
+			P-value
+			ln.Pval
+			E-value
+			ln.Eval
+			adjusted.information
+			unadjusted.information
+
+			MAP
+			betaprior.map
+			model.map
+			seed
+
+			number
+
+			input_file
+			command
+
+			sites
+		       );
+$matrix_factory->set_out_fields(@matrix_out_fields);
+
 local %matrix_by_file = (); ## index for the matrices already treated
 
 ################################################################
@@ -673,15 +728,15 @@ sub SetFileNames {
 
 	## Sets length of the motif (default 8).
 	$MS_options .= " -w ".$matrix_width;
-	$MS_suffix .= "-w".$matrix_width;	 
+	$MS_suffix .= "-w".$matrix_width;
 
 	## Sets allowed overlap between different motifs. (default 1)
 	$MS_options .= " -x ".$MS_x;
-	$MS_suffix .= "-x".$MS_x; 
+	$MS_suffix .= "-x".$MS_x;
 
 	## Set number of times the MotifSampler should be repeated
 	$MS_options .= " -r ".$MS_r;
-	$MS_suffix .= "-r".$MS_r;	 
+	$MS_suffix .= "-r".$MS_r;
 
 	## output file
 
@@ -2744,6 +2799,7 @@ OPTIONS
 	-MS_n	number of different motifs to search for (default $MS_n).
 	-MS_x	allowed overlap between different motifs. (default $MS_x)
 	-MS_r	number of times the MotifSampler should be repeated (default = $MS_r).
+	Note	-MS_w is replaced by -width
 
    MEME options (Bailey)
 	Any option starting with -MEME_ will be passed to MEME. 
@@ -3472,21 +3528,6 @@ sub ExportSQL {
    }
 
    ## Specify output fields
-   $family_factory->set_out_fields(qw(id analysis organism size name  genes));
-   @pattern_out_fields = qw(id
-			    family_id
-			    family 
-			    type 
-			    sequence 
-			    rev_compl
-			    occ 
-			    exp_occ
-			    occ_P
-			    occ_E
-			    occ_sig
-			    rank
-			   );
-   $pattern_factory->set_out_fields(@pattern_out_fields);
 
    #### export directory
    $dir{sql} = "sql_export";
