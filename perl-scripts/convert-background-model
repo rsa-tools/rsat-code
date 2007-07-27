@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.8 2007/07/26 09:53:11 jvanheld Exp $
+# $Id: convert-background-model,v 1.9 2007/07/27 23:23:05 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -66,8 +66,19 @@ This format can be used by the various programs of the software suite
 INCLUSive developed by Gert Thijs
 (http://homes.esat.kuleuven.be/~thijs/download.html).
 
-These files can be generated with the program I<CreateBackgroundModel>,
-which creates a Markov model from a background sequence.
+MotifSampler background files can be generated with the program
+I<CreateBackgroundModel>, which creates a Markov model from a
+background sequence.
+
+=head2 MEME (input)
+
+MEME (http://meme.sdsc.edu/meme/) is a matrix-based pattern discovery
+program developed by Tim Bailey, and supporting Marckov chain
+background models. 
+
+MEME background files can be generated with the program
+I<fasta-get-markov>, which creates a Markov model from a background
+sequence.
 
 =head2 patser (output)
 
@@ -273,7 +284,7 @@ allows to use the command within a pipe.
 
 =item B<-from input_format>
 
-Input format. Supported: oligo-analysis, MotifSampler.
+Input format. Supported: oligo-analysis, MotifSampler, meme.
 
 =cut
 	} elsif ($arg eq "-from") {
