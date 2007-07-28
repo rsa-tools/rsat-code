@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.10 2007/07/27 23:47:22 jvanheld Exp $
+# $Id: convert-background-model,v 1.11 2007/07/28 23:28:39 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -70,7 +70,7 @@ MotifSampler background files can be generated with the program
 I<CreateBackgroundModel>, which creates a Markov model from a
 background sequence.
 
-=head2 MEME (input)
+=head2 MEME (input/output)
 
 MEME (http://meme.sdsc.edu/meme/) is a matrix-based pattern discovery
 program developed by Tim Bailey, and supporting Marckov chain
@@ -310,14 +310,15 @@ Output format. Supported: tab (default), patser, MotifSampler.
 					  "Supported: ", $main::supported_output_formats))
 		unless ($main::supported_output_format{$main::output_format});
 
-	    ## Number of decimals
+	    ## Pseudo-frequency 
 =pod
 
 =item B<-bg_pseudo #>
 
-Pseudo frequency for the background models. Value must be a real between 0 and 1 (default: 0.01)
-If the training sequence length (L) is known, the value can be set to
-square-root of L divided by L+squareroot of L
+Pseudo frequency for the background models. Value must be a real
+between 0 and 1 (default: 0.01) If the training sequence length (L) is
+known, the value can be set to square-root of L divided by
+L+squareroot of L
 
 =cut
 	} elsif ($arg eq "-bg_pseudo") {
@@ -334,14 +335,12 @@ square-root of L divided by L+squareroot of L
 Number of decimals to print or the transition probabilities. 
 
 =cut
-	    
 	} elsif ($arg eq "-decimals") {
 	    $main::decimals = shift(@arguments);
 	    &RSAT::error::FatalError(join("\t", $main::decimals,
 					  "Invalid format for decimals, should be a Natural number."))
 		unless (&IsNatural($main::decimals));
 
-	    
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
