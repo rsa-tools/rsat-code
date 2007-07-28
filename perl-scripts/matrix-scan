@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.78 2007/07/25 21:46:15 jvanheld Exp $
+# $Id: matrix-scan,v 1.79 2007/07/28 23:28:39 jvanheld Exp $
 #
 # Time-stamp: <2007-07-17 16:36:54 jturatsi>
 #
@@ -1655,9 +1655,11 @@ the -window option where equipseudo is default.
 
 =item B<-bg_pseudo #>
 
-Pseudo frequency for the background models. Value must be a real between 0 and 1.
+Pseudo frequency for the background models. Value must be a real
+between 0 and 1.
 
-If this option is not specified, the pseudo-frequency value depends on the background calculation. 
+If this option is not specified, the pseudo-frequency value depends on
+the background calculation.
 
 =over
 
