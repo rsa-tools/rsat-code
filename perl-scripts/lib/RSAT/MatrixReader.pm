@@ -151,9 +151,9 @@ sub _readFromTRANSFACFile {
       $current_matrix_nb++;
       $matrix = new RSAT::matrix();
       push @matrices, $matrix;
-      $matrix->set_parameter("accession", $accession) if ($accession);
+      $matrix->set_parameter("TF_accession", $accession) if ($accession);
       $matrix->set_attribute("matrix.nb", $current_matrix_nb);
-      $matrix->set_parameter("version", $version);
+      $matrix->set_parameter("TF_version", $version);
       $ncol = 0;
       next;
 
@@ -294,7 +294,7 @@ sub _readFromGibbsFile {
 	unless ($in_matrix) {
 	  $matrix = new RSAT::matrix();
 	  $matrix->set_parameter("command", $gibbs_command);
-	  $matrix->set_parameter("seed", $seed);
+	  $matrix->set_parameter("gibbs.seed", $seed);
 	  push @matrices, $matrix;
 	  &RSAT::message::Debug("Starting to read a matrix") if ($main::verbose >= 3);
 	  $in_matrix = 1;
@@ -313,10 +313,10 @@ sub _readFromGibbsFile {
 	my $score=$8; $score =~ s/\(//; $score =~ s/\)//;
 	my $site_id;
 	if ($score eq "") {
-	  $matrix->set_parameter("type", "initial");
+	  $matrix->set_parameter("gibbs.type", "initial");
 	  $site_id = join ("_", $seq_nb, $site_nb, $start, $end);
 	} else {
-	  $matrix->set_parameter("type", "final");
+	  $matrix->set_parameter("gibbs.type", "final");
 	  $site_id = join ("_", $seq_nb, $site_nb, $start, $end, $score);
 	}
 
@@ -493,7 +493,7 @@ sub _readFromConsensusFile {
 	$matrix->set_parameter("cons.P-value", $2); 
       } elsif (/ln\(e\-value\) = (\S+)   e\-value = (\S+)/) {
 	$matrix->set_parameter("cons.ln.Eval", $1); 
-	$matrix->set_parameter("cons.E-value", $2); 
+	$matrix->set_parameter("E-value", $2); 
       } elsif (/ln\(expected frequency\) = (\S+)   expected frequency = (\S+)/) {
 	$matrix->set_parameter("cons.ln.exp", $1); 
 	$matrix->set_parameter("cons.exp", $2); 
@@ -555,7 +555,7 @@ sub _readFromAssemblyFile {
       $matrix->setAlphabet_lc("A","C","G","T");
       $matrix->set_attribute("nrow", 4);
       $matrix->set_attribute("matrix.nb", $current_matrix_nb);
-      $matrix->set_parameter("seed", $seed);
+      $matrix->set_parameter("asmb.seed", $seed);
       &RSAT::message::Debug("New matrix from assembly", $current_matrix_nb."/".scalar(@matrices), "seed", $seed) if ($main::verbose >= 4);
 
     } elsif ($line =~ /^(\S+)\t(\S+)\s+(\S+)\s+isol/) {
@@ -638,10 +638,10 @@ sub _from_isolated {
   $matrix->setAlphabet_lc("A","C","G","T");
   $matrix->set_attribute("nrow", 4);
   $matrix->set_attribute("matrix.nb", $current_matrix_nb);
-  $matrix->set_parameter("seed", $pattern);
-  $matrix->set_attribute("consensus.assembly", $pattern);
-  $matrix->set_attribute("consensus.assembly.rc", $pattern_rc);
-  $matrix->set_attribute("assembly.top.score", $score);
+  $matrix->set_parameter("asmb.seed", $pattern);
+  $matrix->set_attribute("asmb.consensus", $pattern);
+  $matrix->set_attribute("asmb.consensus.rc", $pattern_rc);
+  $matrix->set_attribute("asmb..top.score", $score);
   $matrix->add_site(lc($pattern), score=>$score, id=>$pattern_id,, max_score=>1);
   &RSAT::message::Debug("New matrix from isolated pattern", $current_matrix_nb."/".scalar(@matrices), "seed", $seed) if ($main::verbose >= 4);
   return $matrix;
@@ -888,7 +888,7 @@ sub _readFromMEMEFile {
 
       $matrix->set_parameter("command", $meme_command);
       $matrix->set_parameter("sites", $3);
-      $matrix->set_parameter("llr", $4);
+      $matrix->set_parameter("meme.llr", $4);
       $matrix->set_parameter("E-value", $5);
       $matrix->setPrior(%residue_frequencies);
 #      &RSAT::message::Debug("line", $l, "Read letter frequencies", %residue_frequencies) if ($main::verbose >= 10);
@@ -1076,12 +1076,11 @@ sub _readFromMotifSamplerFile {
       my $id = shift (@fields);
 
       $matrix = new RSAT::matrix();
-      $matrix->set_attribute("AC", $id);
       $matrix->set_parameter("id", $id);
       while (my $field = shift @fields) {
 	$field =~ s/:$//;
 	$value = shift @fields;
-	$matrix->set_parameter($field, $value);
+	$matrix->set_parameter("MS.".$field, $value);
       }
       $matrix->setAlphabet_lc(@alphabet);
       $matrix->setPrior(%prior);
@@ -1161,9 +1160,9 @@ sub _readFromMotifSamplerMatrixFile {
 	$matrix->setAlphabet_lc("a","c","g","t");
 	push @matrices, $matrix;
       } elsif (/^#Score = (\S+)/i) {
-	$matrix->set_parameter("score", $1);
+	$matrix->set_parameter("MS.score", $1);
       } elsif (/^#Consensus = (\S+)/i) {
-	$matrix->set_parameter("consensus", $1);
+	$matrix->set_parameter("MS.consensus", $1);
 	for my $i (1..$ncol) {
 	  my $line = (<$in>);
 	  my @values = split (/\s+/, $line);
