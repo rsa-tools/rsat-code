@@ -17,16 +17,19 @@ use Data::Dumper;
 @ISA = qw( RSAT::GenericObject );
 
 ### class attributes
-%supported_input_formats = ("oligos"=>1,
-			    "oligo-analysis"=>1,
-			    "motifsampler"=>1,
+%supported_input_formats = ("oligo-analysis"=>1, 
+			    "oligos"=>1, ## Abbreviation for oligo-analysis
+			    "motifsampler"=>1, 
+			    "ms"=>1, ## Abbreviation for MotifSampler
 			    "meme"=>1,
 			   );
 %supported_output_formats = ("tab"=>1, 
 			     "patser"=>1,
-			     "motifsampler"=>1,
 			     "oligo-analysis"=>1,
-			     "oligos"=>1,
+			     "oligos"=>1, ## Abbreviation for oligo-analysis
+			     "meme"=>1,
+			     "motifsampler"=>1,
+			     "ms"=>1, ## Abbreviation for MotifSampler
 			    );
 @supported_input_formats = sort keys %supported_input_formats;
 @supported_output_formats = sort keys %supported_output_formats;
@@ -108,7 +111,8 @@ sub load_from_file {
   my ($self, $bg_file, $format) = @_;
 
   $format =~ s/oligo-analysis/oligos/;
-    
+  $format =~ s/^ms$/motifsampler/;
+
   if ($format eq "oligos") {
     $self->load_from_file_oligos($bg_file);
   } elsif ($format eq "meme") {
@@ -920,11 +924,14 @@ sub to_string {
     my ($self, $format, %args) = @_;
 
     $format =~ s/oligo-analysis/oligos/;
+    $format =~ s/^ms$/motifsampler/;
 
     if ($format eq ("tab")) {
 	$self->to_string_tab(%args);
     } elsif ($format eq ("oligos")) {
 	$self->to_string_oligos(%args); 
+    } elsif ($format eq ("meme")) {
+	$self->to_string_meme(%args); 
     } elsif ($format eq ("motifsampler")) {
 	$self->to_string_MotifSampler(%args); 
     } elsif ($format eq ("patser")) {
@@ -1022,7 +1029,12 @@ sub to_string_oligos {
   my %suffix_sum = $self->get_attribute("suffix_sum");
   my @suffix = sort($self->get_attribute("suffixes"));
 
-  my $strand = $self->get_attribute("strand");
+  my $strand = $self->get_attribute("strand") || "sensitive";
+  my $order = $self->get_attribute("order");
+
+
+  &RSAT::message::Info("Exporting Markov model", "order", $order, "strand", $strand) 
+    if ($main::verbose >= 0);
 
   if ($strand eq "insensitive") {
     $string .= join("\t", "#seq", "seq|revcpl", "freq");
@@ -1031,17 +1043,81 @@ sub to_string_oligos {
   }
   $string .= "\n";
 
-  ## Print transition frequencies and sum and proba per prefix
+  ## Compute oligomer frequencies from the prefix prior proba + transition proba
   foreach my $prefix (sort (@prefix)) {
     foreach my $suffix (sort(@suffix)) {
+      my $oligo_freq = $self->{prefix_proba}->{$prefix}*$self->{transition_freq}->{$prefix}->{$suffix};
       $string .= $prefix.$suffix;
       $string .= "\t".$prefix.$suffix;
       if ($strand eq "insensitive") {
 	$string .= "|";
 	$string .= lc(&RSAT::SeqUtil::ReverseComplement($prefix.$suffix));
       }
-      $string .= sprintf "\t%.${decimals}f",  $self->{transition_freq}->{$prefix}->{$suffix};
+      $string .= sprintf "\t%.${decimals}f",  $oligo_freq;
       $string .= "\n";
+    }
+  }
+  return $string;
+}
+
+
+################################################################
+=pod
+
+=item B<to_string_meme(%args)>
+
+Convert the Markov model into oligomer frequencies in the MEME
+format. 
+
+A Markov model of order m corresponds a frequency table for oligomers
+of length k=m+1. The MEME format includes oligomer frequency tables
+for all k-mers from k=1 to k=m+1.
+
+=cut
+sub to_string_meme {
+  my ($self, %args) = @_;
+  my $decimals = $args{decimals} || "3";
+  my $string = "";
+  my %prefix_proba = $self->get_attribute("prefix_proba");
+  my @prefix = sort($self->get_attribute("prefixes"));
+  my %suffix_sum = $self->get_attribute("suffix_sum");
+  my @suffix = sort($self->get_attribute("suffixes"));
+
+  my $order = $self->get_attribute("order");
+
+  ## Print residue frequencies
+  $string .= "# order 1\n";
+  foreach my $suffix (sort @suffix) {
+    $string .= sprintf "%s %.${decimals}e\n", uc($suffix),  $self->{suffix_proba}->{$suffix};
+  }
+
+  if ($order > 0) {
+    ## Estimate subword frequencies from prefix frequencies
+    foreach my $i (2..$order) {
+      $string .= "# order ".$i."\n";
+      my %freq = ();
+      foreach my $prefix (@prefix) {
+	my $prefix_proba = $self->{prefix_proba}->{$prefix};
+	my $subword = substr($prefix,0, $i);
+	$freq{$subword} += $prefix_proba;
+      }
+      foreach my $oligo (sort keys %freq) {
+	$string .= uc($oligo);
+	$string .= sprintf " %.${decimals}e",  $freq{$oligo};
+	$string .= "\n";
+      }
+    }
+
+    ## Calculate oligomer frequencies from prefix+suffix frequencies
+    $string .= "# order ".($order+1)."\n";
+    foreach my $prefix (sort (@prefix)) {
+      foreach my $suffix (sort(@suffix)) {
+	my $oligo = $prefix.$suffix;
+	my $oligo_freq = $self->{prefix_proba}->{$prefix}*$self->{transition_freq}->{$prefix}->{$suffix};
+	$string .= uc($oligo);
+	$string .= sprintf " %.${decimals}e",  $oligo_freq;
+	$string .= "\n";
+      }
     }
   }
   return $string;
