@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: random-seq-select,v 1.2 2006/02/07 21:50:00 jvanheld Exp $
+# $Id: random-seq-select,v 1.3 2007/07/29 10:04:41 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -48,7 +48,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
-
+use POSIX;
 
 
 ################################################################
@@ -82,8 +82,35 @@ package main;
 
     ################################################################
     #### check argument values
-    unless ((&IsNatural($n)) && ($n > 0)) {
+
+    ## Group size file
+    if ($group_size_file) {
+      my ($in, $dir) = &OpenInputFile($group_size_file);
+      my $l = 0;
+      while (<$in>) {
+	$l++;
+	next if (/^;/);
+	next if (/^#/);
+	next if (/^--/);
+	next unless (/\S/);
+	my ($size) = split /\s/;
+	unless (&IsNatural($size)) {
+	  &RSAT::error::FatalError($group_size_file, "line",$l, $size, "is not a valid value for group size. Should be Natural number.");
+	}
+	push @group_sizes, $size;
+      }
+      close $in;
+      $groups = scalar(@group_sizes);
+      &RSAT::message::Info("Selecting", $groups, "groups", "Sizes", join( ",", @group_sizes)) 
+	if ($main::verbose >= 1);
+    } else {
+      ## Chek that a group size has been entered
+      unless ((&IsNatural($n)) && ($n > 0)) {
 	&RSAT::error::FatalError("The number of sequences must be a strictly positive natural number.");
+      }
+      for my $g (1..$groups) {
+	push @group_sizes, $n;
+      }
     }
 
 
@@ -116,19 +143,28 @@ package main;
     }
 
 
-    foreach my $g (1..$groups) {
-	my $outputfile = $main::outfile{output};
+    ## number of digits for group suffix
+    my $digits = POSIX::ceil(log($groups+1)/log(10));
 
-	## Add a suffix for the group number
+    ################################################################
+    ## Select the groups of random sequences
+    foreach my $g (1..$groups) {
+      $n = $group_sizes[$g-1];
+      my $outputfile = $main::outfile{output};
+      ## Add a suffix for the group number
+	my $group_suffix = sprintf "%${digits}d", $g;
+	$group_suffix =~s/ /0/g;
 	if (($main::outfile{output})
 	    && ($groups > 1)) {
-	    $outputfile .= ".rep".$g;
+	    $outputfile .= "_rep_".$group_suffix;
+	    $outputfile .= ".".$sequence_format;
 	}
-	
+
 	################################################################
 	### open output stream
 	$main::out = &OpenOutputFile($outputfile);
-	&RSAT::message::TimeWarn(join("\t", "Random sequence selection",$g."/".$groups, $outputfile)) if ($main::verbose >= 1);
+	&RSAT::message::TimeWarn(join("\t", "Random sequence selection",$g."/".$groups, "n=".$n, $outputfile)) 
+	  if ($main::verbose >= 1);
 
 	################################################################
 	###### Select random set of sequences
@@ -138,7 +174,8 @@ package main;
 	    my $nb_remaining_ids = scalar(@remaining_ids);
 	    my $selected = int(rand($nb_remaining_ids));
 	    my $selected_id = $remaining_ids[$selected];
-	    &RSAT::message::Info(join ("\t", "Selected sequence", $selected, $selected_id)), if ($main::verbose >= 2);
+	    &RSAT::message::Info(join ("\t", "Selected sequence", $selected, $selected_id))
+	      if ($main::verbose >= 2);
 	    if ($replace) {
 		push @random_ids, $remaining_ids[$selected];
 	    } else {
@@ -286,6 +323,8 @@ allows to use the command within a pipe.
 	    $main::outfile{output} = shift(@arguments);
 	    
 
+	    ## Number of sequences
+	    ## (or number of sequences per group, if option -g is used)
 =pod
 
 =item    B<-n seq_number>
@@ -293,14 +332,14 @@ allows to use the command within a pipe.
 Number of sequences to return in the random selection.
 
 =cut
-
-	    ### number of genes
 	} elsif ($arg eq "-n") {
 	    $n = shift(@arguments);
 	    unless (&IsNatural($n)) {
 		&RSAT::error::FatalError("$n\tInvalid number of genes. Should be a natural number.");
 	    }
 	    
+
+	    ## Number of groups
 =pod
 
 =item    B<-g groups>
@@ -308,14 +347,29 @@ Number of sequences to return in the random selection.
 Number of repetitions (groups of sequences) of the random sampling.
 
 =cut
-
-	    ### number of groups
 	} elsif ($arg eq "-g") {
 	    $groups = shift(@arguments);
 	    unless (&IsNatural($groups)) {
 		&RSAT::error::FatalError("$groups\tInvalid number of genes. Should be a natural number.");
 	    }
-	    
+
+
+	    ## File containing group sizes
+=pod
+
+=item    B<-sizes group_size_file>
+
+Specify a file containing group sizes.
+
+The frist word of each row of this file must be a Natural number. The
+rest of the line is ignored.
+
+This option is incompatible with the option -n and -g. 
+
+=cut
+	} elsif ($arg eq "-sizes") {
+	    $group_size_file = shift(@arguments);
+
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
