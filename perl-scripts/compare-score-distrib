@@ -1,0 +1,425 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: compare-score-distrib,v 1.1 2007/07/30 07:40:19 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+compare-score-distrib
+
+=head1 DESCRIPTION
+
+Compare score distributions between two or more input files.
+
+=head1 AUTHORS
+
+jvanheld@scmbb.ulb.ac.be
+
+=head1 CATEGORY
+
+stats
+
+=head1 USAGE
+    
+compare-score-distrib -i file_1 -i file_2 [... -i file_n] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+Input files are tab-delimited text files. One column of each file
+contains the scores for which the distibution has to be computed By
+default, the first column is taken as score column.
+
+=head1 OUTPUT FORMAT
+
+A tab-delimted text file where 
+
+ - the first column give the sorted scores
+   (all scores found in any of the input files) 
+
+ - the following columns indicate the file-specific score
+   distributions (one column per input file).
+
+=head2 Output fields
+
+For each input file, the program computes the distribution of score
+occurrences and the
+
+=over
+
+=item B<N.i>
+
+absolute frequencies (occurrences) of scores in the I<ith> file.
+
+N(x) = N(X = x)
+
+=item B<Ncum.i>
+
+Cumulative occurrences of score i in the ith file
+
+Ncum(x) = N(X <= x)
+
+=item B<Nicum.i>
+
+Inverse cumulative occurrences of score i in the ith file
+
+Nicum(x) = N(X >= x)
+
+
+=back
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  my $start_time = &AlphaDate();
+
+  %outfile = ();
+
+  local $main::verbose = 0;
+  #    local $in = STDIN;
+  local $out = STDOUT;
+
+  local @input_files = (); ## List of input files
+  local $default_sc = 1;   ## Default value for the score column
+  local @sc = (); ## File-specific score columns
+  my %N_per_file = ();
+  my %Ncum_per_file = ();
+  my %Nicum_per_file = ();
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  if (scalar(@input_files) < 1) {
+    &RSAT::error::FatalError("You must specify at least one input file (option -i).");
+  }
+
+
+  ################################################################
+  ## Open output stream
+  $out = &OpenOutputFile($outfile{output});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose);
+
+  ################################################################
+  ## Read input files
+  foreach $f (1..scalar(@input_files)) {
+
+    #### select the input file
+    $inputfile = $input_files[$f-1];
+
+    #### score column for the current file
+    if ((defined($default_sc)) && !(defined ($sc[$f]))) {
+      $sc[$f] = $default_sc;
+    }
+
+    ## Read current input file
+    my ($in) = &OpenInputFile($inputfile);
+    my $l = 0;
+    while (<$in>) {
+      $l++;
+      next unless (/\S/);	## Skip empty lines
+      next if (/^\#/);		## Skip header or comment lines
+      next if (/^;/);		## Skip comment lines
+      next if (/^--/);		## Skip comment lines
+      chomp;
+      @fields = split "\t";
+      my $col = $sc[$f] - 1;
+      my $score = $fields[$col];
+      &RSAT::message::FatalError("File", $f, $inputfile,
+				 "line", $l,
+				 "column", $sc[$f],
+				 $score, "Invalid score value, should be a Real number") 
+	unless (&IsReal($score));
+      $N_per_file{$score}{$f}++;
+    }
+    close $in;
+  }
+
+  ################################################################
+  ## Compute  cumulative distributions
+  my @sorted_scores_asc =  sort {$a <=> $b} keys %N_per_file;
+  foreach my $f (1..scalar(@input_files)) {
+    my $Ncum = 0;
+    foreach my $score  (@sorted_scores_asc) {
+      my $occ = $N_per_file{$score}{$f} || 0;
+      $Ncum += $occ;
+      $Ncum_per_file{$score}{$f} += $Ncum;
+    }
+  }
+
+  ################################################################
+  ## Compute inverse cumulative distributions
+  my @sorted_scores_desc =  sort {$b <=> $a} keys %N_per_file;
+  foreach my $f (1..scalar(@input_files)) {
+    my $Nicum = 0;
+    foreach my $score  (@sorted_scores_desc) {
+      my $occ = $N_per_file{$score}{$f} || 0;
+      $Nicum += $occ;
+      $Nicum_per_file{$score}{$f} += $Nicum;
+    }
+  }
+
+  ################################################################
+  ## Print output
+
+  ## Print column headers
+  @out_fields = ("score");
+  foreach my $f (1..scalar(@input_files)) {
+    push @out_fields, "N.".$f;
+  }
+  foreach my $f (1..scalar(@input_files)) {
+    push @out_fields, "Ncum.".$f;
+  }
+  foreach my $f (1..scalar(@input_files)) {
+    push @out_fields, "Nicum.".$f;
+  }
+
+  if ($main::verbose >= 0) {
+    print $out "; Column content\n";
+    foreach my $i (1..scalar(@out_fields)) {
+      print $out join ("\t", ";", $i, $out_fields[$i-1]), "\n";
+    }
+    print $out ";\n";
+  }
+  print $out "#", join ("\t", @out_fields), "\n";
+
+  ## Print score distributions
+  my @sorted_scores = sort {$a <=> $b} keys %N_per_file;
+  foreach my $score (@sorted_scores) {
+    print $out $score;
+
+    ## Occurrences
+    foreach my $f (1..scalar(@input_files)) {
+      my $occ = $N_per_file{$score}{$f} || 0;
+      print $out "\t", $occ;
+    }
+
+    ## Cumulative distribution
+    foreach my $f (1..scalar(@input_files)) {
+      my $occ = $Ncum_per_file{$score}{$f} || 0;
+      print $out "\t", $occ;
+    }
+
+    ## Inverse cumulative distribution
+    foreach my $f (1..scalar(@input_files)) {
+      my $occ = $Nicum_per_file{$score}{$f} || 0;
+      print $out "\t", $occ;
+    }
+
+    print $out "\n";
+  }
+
+  ################################################################
+  ## Finish verbose
+  if ($main::verbose >= 1) {
+    my $done_time = &AlphaDate();
+    print $out "; Job started $start_time\n";
+    print $out "; Job done    $done_time\n";
+  }
+
+  ################################################################
+  ## Close output stream
+  close $out if ($outfile{output});
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+    ## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+      if ($arg eq "-v") {
+	if (&IsNatural($arguments[0])) {
+	  $main::verbose = shift(@arguments);
+	} else {
+	  $main::verbose = 1;
+	}
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+
+       } elsif ($arg eq "-h") {
+          &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+Input file. This option can be used iteratively on the command line to
+specify multiple input files. 
+
+Example: -i file_1 -i file_2 [... -i file_n]
+
+=cut
+    } elsif ($arg eq "-i") {
+      push @main::input_files, shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $outfile{output} = shift(@arguments);
+
+      ### score column
+=pod
+
+=item B<-sc score_column>
+
+Specify the score column (by a natural number). Default: 1.
+
+=cut
+    } elsif ($arg eq "-sc") {
+      $default_sc = shift(@arguments);
+      unless ((&IsNatural($default_sc)) && ($default_sc >= 1)) {
+	&RSAT::error::FatalError("Score column must be an integer >= 1");
+      }
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; compare-score-distrib ";
+    &PrintArguments($out);
+    print $out "; Input files\n";
+    foreach my $f (1..scalar(@input_files)) {
+      print $out join ("\t", ";", $f, $input_files[$f-1]), "\n";
+    }
+
+    if (defined(%outfile)) {
+	print $out "; Output files\n";
+	while (my ($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    printf $out "; %-13s\t%d\n", "Score column", $default_sc;
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item I<classfreq>
+
+Computes the score distributions for a single input file, and with
+fixed-width class intervals.
+
+=item I<compare-scores>
+
+Compare scores assigned to specific objects (e.g. genes) in different
+input files. In I<compare-scores>, scores are assigned to objects
+(defined by an identifier), whereas in I<compare-score-distrib>, the
+comparison between files concerns the whole score distribution.
+
+=item I<roc-stats> and I<roc-stats2>
+
+These programs take as input a single file, where each row is labelled
+as I<positive> or I<negative>, and compare score distribution between the
+positive and negative objects.
+
+=back
+
+=cut
