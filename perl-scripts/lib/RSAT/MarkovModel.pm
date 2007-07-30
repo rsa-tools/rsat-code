@@ -247,7 +247,7 @@ sub load_from_file_meme {
 
   $order = $max_order;
   $self->force_attribute("order", $order);
-  &RSAT::message::Info("Markov order", $order) if ($main::verbose >= 0);
+  &RSAT::message::Info("Loading Markov model of order", $order) if ($main::verbose >= 3);
 
   ## Calculate alphabet from expected frequency keys
   foreach my $pattern_seq (keys %freq) {
@@ -1086,7 +1086,7 @@ sub to_string_meme {
   my $order = $self->get_attribute("order");
 
   ## Print residue frequencies
-  $string .= "# order 1\n";
+  $string .= "# order 0\n";
   foreach my $suffix (sort @suffix) {
     $string .= sprintf "%s %.${decimals}e\n", uc($suffix),  $self->{suffix_proba}->{$suffix};
   }
@@ -1094,7 +1094,7 @@ sub to_string_meme {
   if ($order > 0) {
     ## Estimate subword frequencies from prefix frequencies
     foreach my $i (2..$order) {
-      $string .= "# order ".$i."\n";
+      $string .= "# order ".($i-1)."\n";
       my %freq = ();
       foreach my $prefix (@prefix) {
 	my $prefix_proba = $self->{prefix_proba}->{$prefix};
@@ -1109,7 +1109,7 @@ sub to_string_meme {
     }
 
     ## Calculate oligomer frequencies from prefix+suffix frequencies
-    $string .= "# order ".($order+1)."\n";
+    $string .= "# order ".$order."\n";
     foreach my $prefix (sort (@prefix)) {
       foreach my $suffix (sort(@suffix)) {
 	my $oligo = $prefix.$suffix;
