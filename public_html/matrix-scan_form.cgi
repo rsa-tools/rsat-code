@@ -98,6 +98,7 @@ print $query->popup_menu(-name=>'matrix_format',
 			 -Values=>[
 				   'tab',
 				   'meme',
+				   'MotifSampler',
 				   'consensus',
 				   'gibbs',
 				   'transfac'
