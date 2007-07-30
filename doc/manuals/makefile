@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: makefile,v 1.7 2006/11/07 06:57:11 jvanheld Exp $
+# $Id: makefile,v 1.8 2007/07/30 10:51:35 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 15:13:34 jvanheld>
 #
@@ -133,5 +133,5 @@ SPLIT=4
 DOC_SITE=rsat@rsat.scmbb.ulb.ac.be:rsa-tools/public_html/distrib/
 DOC_SITE2=jvanheld@itzamna.ccg.unam.mx:rsa-tools/public_html/distrib/
 publish:
-	rsync -ruptvl -e ssh *.pdf ${DOC_SITE2}
 	rsync -ruptvl -e ssh *.pdf ${DOC_SITE}
+#	rsync -ruptvl -e ssh *.pdf ${DOC_SITE2}
