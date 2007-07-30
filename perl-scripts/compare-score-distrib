@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-score-distrib,v 1.4 2007/07/30 10:49:25 jvanheld Exp $
+# $Id: compare-score-distrib,v 1.5 2007/07/30 16:02:33 jvanheld Exp $
 #
 ############################################################
 
@@ -118,6 +118,13 @@ package main;
   my %N_per_file = (); ## Distribution of occurrences
   my %Ncum_per_file = (); ## Cumulative distribution of occurrences
   my %Nicum_per_file = (); ## Inverse cumulative distribution of occurrences
+  local @N_cols = (); ## Columns of the output file containint occurrences
+  local @Ncum_cols = (); ## Columns of the output file containint cumulative occurrences
+  local @Nicum_cols = (); ## Columns of the output file containint inverse cumulative occurrences
+
+  ## Distribution graph
+  local $export_graph = 0;
+  local $img_format = "png";
 
   ################################################################
   ## Read argument values
@@ -191,6 +198,14 @@ package main;
       ## Score
       my $col = $sc[$f] - 1;
       my $score = $fields[$col];
+      if ($score eq "") {
+	&RSAT::message::Warning("File", $f, $inputfile,
+				"skipping line", $l,
+				"column", $sc[$f],
+				$score, "null score value") ;
+	next;
+      }
+
       &RSAT::error::FatalError("File", $f, $inputfile,
 				 "line", $l,
 				 "column", $sc[$f],
@@ -198,7 +213,7 @@ package main;
 	unless (&IsReal($score));
 
       ## Increment score count
-      $N_per_file{$score}{$f} += $increment[$f];
+      $N_per_file{$score}[$f] += $increment[$f];
     }
     close $in;
   }
@@ -209,9 +224,9 @@ package main;
   foreach my $f (1..scalar(@input_files)) {
     my $Ncum = 0;
     foreach my $score  (@sorted_scores_asc) {
-      my $occ = $N_per_file{$score}{$f} || 0;
+      my $occ = $N_per_file{$score}[$f] || 0;
       $Ncum += $occ;
-      $Ncum_per_file{$score}{$f} += $Ncum;
+      $Ncum_per_file{$score}[$f] += $Ncum;
     }
   }
 
@@ -221,9 +236,10 @@ package main;
   foreach my $f (1..scalar(@input_files)) {
     my $Nicum = 0;
     foreach my $score  (@sorted_scores_desc) {
-      my $occ = $N_per_file{$score}{$f} || 0;
+      my $occ = $N_per_file{$score}[$f] || 0;
       $Nicum += $occ;
-      $Nicum_per_file{$score}{$f} += $Nicum;
+      $Nicum_per_file{$score}[$f] += $Nicum;
+#      &RSAT::message::Debug("Computing Nicum", $f, $score, $occ, $Nicum, $Nicum_per_file{$score}[$f]);
     }
   }
 
@@ -234,12 +250,15 @@ package main;
   @out_fields = ("score");
   foreach my $f (1..scalar(@input_files)) {
     push @out_fields, "N.".$f;
+    push @N_cols, scalar(@out_fields);
   }
   foreach my $f (1..scalar(@input_files)) {
     push @out_fields, "Ncum.".$f;
+    push @Ncum_cols, scalar(@out_fields);
   }
   foreach my $f (1..scalar(@input_files)) {
     push @out_fields, "Nicum.".$f;
+    push @Nicum_cols, scalar(@out_fields);
   }
 
   if ($main::verbose >= 1) {
@@ -258,19 +277,19 @@ package main;
 
     ## Occurrences
     foreach my $f (1..scalar(@input_files)) {
-      my $occ = $N_per_file{$score}{$f} || 0;
+      my $occ = $N_per_file{$score}[$f] || 0;
       print $out "\t", &FormatFreq($occ);
     }
 
     ## Cumulative distribution
     foreach my $f (1..scalar(@input_files)) {
-      my $occ = $Ncum_per_file{$score}{$f} || 0;
+      my $occ = $Ncum_per_file{$score}[$f];
       print $out "\t", &FormatFreq($occ);
     }
 
     ## Inverse cumulative distribution
     foreach my $f (1..scalar(@input_files)) {
-      my $occ = $Nicum_per_file{$score}{$f} || 0;
+      my $occ = $Nicum_per_file{$score}[$f];
       print $out "\t", &FormatFreq($occ);
     }
 
@@ -289,6 +308,10 @@ package main;
   ## Close output stream
   close $out if ($outfile{output});
 
+  ################################################################
+  ## Export distribution graph
+  &ExportGraph if ($export_graph);
+
   exit(0);
 }
 
@@ -301,9 +324,10 @@ package main;
 ## Format frequencies
 sub FormatFreq {
   my ($freq) = @_;
-  if (&IsNatural($freq)) {
-    $freq = sprintf "%d", $freq;
-  } elsif ($freq < 0.001) {
+
+  if ((&IsNatural($freq)) && ($main::default_factor == 1)) {
+    return($freq);
+  } elsif (($freq < 0.001) && ($freq != 0)){
     $freq = sprintf "%.1e", $freq;
   } else {
     $freq = sprintf "%.5f", $freq;
@@ -399,6 +423,17 @@ allows to use the command within a pipe.
 =cut
 	} elsif ($arg eq "-o") {
 	    $outfile{output} = shift(@arguments);
+
+      ### Export distribution graph
+=pod
+
+=item B<-graphs>
+
+Export distribution graph.
+
+=cut
+    } elsif ($arg eq "-graph") {
+      $export_graph = 1;
 
       ### score column
 =pod
@@ -552,6 +587,44 @@ sub Verbose {
     }
   }
 }
+
+################################################################
+## Generate distribution graph
+sub ExportGraph {
+  my $graph_prefix = $outfile{output};
+  $graph_prefix =~ s/\.tab$//;
+  $graph_prefix =~ s/\.txt$//;
+
+  ## Graph comparing inverse cumulative distributions (Y) as a function of the sig score (X)
+  my $command = "XYgraph -i ".$outfile{output};
+  $command .= " -xcol 1 -ycol ";
+  $command .= join ",", @Nicum_cols;
+  $command .= " -lines ";
+  $command .= " -title1 'Inverse cumulative distributions' ";
+  $command .= " -xsize 800 -ysize 500 ";
+  $command .= " -xleg1 'score' -yleg1 'Frequency'";
+  $command .= " -legend ";
+#  $command .= " -xgstep1 5 -xgstep2 1 ";
+#  $command .= " -ygstep1 0.1 -ygstep2 0.05 ";
+  $command .= " -format ".$img_format;
+  $command .= " -o ".$graph_prefix."_Nicum_distrib.".$img_format;
+  &doit($command);
+
+#   ## Graph comparing inverse cumulative score distributions between regulons (Y) and random selections (X)
+#   $command = "XYgraph -i oligo_rank1_sig_distrib.tab ";
+#   $command .= " -xcol 7 -ycol 6 -lines ";
+#   $command .= " -xsize 500 -ysize 500 ";
+#   $command .= " -title1 'oligos rank 1' ";
+#   $command .= " -title2 'fraction of famililes with at least one motif' ";
+#   $command .= " -xleg1 'random selections' -yleg1 'regulons' ";
+#   $command .= " -legend ";
+#   $command .= " -xgstep1 0.1 -xgstep2 0.05 ";
+#   $command .= " -ygstep1 0.1 -ygstep2 0.05 ";
+#   $command .= " -o ".$outfile{output}."_Nicum_roc.png";
+
+}
+
+
 
 
 __END__
