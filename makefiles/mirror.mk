@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.39 2007/03/19 13:18:23 jvanheld Exp $
+# $Id: mirror.mk,v 1.40 2007/07/30 10:51:14 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -132,7 +132,7 @@ EXCLUDED_DIRS=					\
 
 EXCLUDED=${EXCLUDED_GENOMES} ${EXCLUDED_DIRS} ${EXCLUDED_FILES} ${EXCLUDED_BLAST}
 data_from_server:
-	${RSYNC} ${EXCLUDED}							\
+	${RSYNC} ${EXCLUDED} ${OPT}							\
 		${RSA_SERVER_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html/data/*	\
 		${RSA}/public_html/data/
 
