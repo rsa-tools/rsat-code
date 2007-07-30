@@ -222,8 +222,10 @@ exit(0);
 
 ########################## subroutine definition ############################
 
+
+################################################################
+## Display full help message
 sub PrintHelp {
-#### display full help message #####
   open HELP, "| more";
   print HELP <<End_of_help;
 NAME
@@ -338,8 +340,9 @@ End_of_help
   exit;
 }
 
+################################################################
+## Display short help message
 sub PrintOptions {
-#### display short help message #####
   open HELP, "| more";
   print HELP <<End_short_help;
 compare-scores options
@@ -367,96 +370,96 @@ End_short_help
   exit;
 }
 
+################################################################
+## Read arguments
 sub ReadArguments {
-#### read arguments ####
-    foreach $a (0..$#ARGV) {
-	### verbose ###
-	if ($ARGV[$a] eq "-v") {
-	    $verbose = 1;
-	    
-	    ### detailed help
-	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp;
-	    
-	    ### list of options
-	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions;
-	    
-	    ### input file ###
-	} elsif ($ARGV[$a] eq "-i") {
-	    push @input_files, $ARGV[$a+1];
-	    
-	    ### multiple input files
-	} elsif ($ARGV[$a] eq "-files") {
-	    push @input_files, @ARGV[$a+1..$#ARGV];
-	    last;
-	    
-	    ### file containing the list of files
-	} elsif ($ARGV[$a] eq "-filelist") {
-	    $filelist = $ARGV[$a+1];
+  foreach $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      $verbose = 1;
 
-	    ### output file ###
-	} elsif ($ARGV[$a] eq "-o") {
-	    $outputfile = $ARGV[$a+1];
-	    
-	    ### Export format
-	} elsif ($ARGV[$a] eq "-format") {
-	    $export_format = $ARGV[$a+1];
-	    &RSAT::error::FatalError($export_format." Invalid export format. Supported: ".$supported_export_formats)
-		unless $supported_export_format{$export_format};
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp;
 
-	    ### null string ###
-	} elsif ($ARGV[$a] eq "-null") {
-	    $null = $ARGV[$a+1];
-	    
-	    ### null string ###
-	} elsif ($ARGV[$a] eq "-numeric") {
-	    $numeric_IDs = 1;
-	    
-	    ### null string ###
-	} elsif ($ARGV[$a] eq "-decreasing") {
-	    $numeric_IDs = 1;
-	    $decreasing = 1;
-	    
-	    ### score column
-	} elsif ($ARGV[$a] eq "-sc") {
-	    $default_sc = $ARGV[$a+1];
-	    unless ((&IsNatural($default_sc)) && ($default_sc >= 1)) {
-		&RSAT::error::FatalError("Score column must be an integer >= 1");
-	    }
-	    
-	} elsif ($ARGV[$a] =~ /^-sc(\d+)/)  {
-	    $sc[$1-1] = $ARGV[$a+1]; ### substract 1 from the index
-	    unless ((&IsNatural($sc[$1-1])) && ($sc[$1-1] >= 1)) {
-		&RSAT::error::FatalError("Score column must be an integer >= 1");
-	    }
-	    
-	    ### identifier column
-	} elsif ($ARGV[$a] eq "-ic") {
-	    $default_ic = $ARGV[$a+1];
-	    unless ((&IsNatural($default_ic)) && ($default_ic >= 1)) {
-		&RSAT::error::Fatalerror("Identifier column must be an integer >= 1");
-	    }
-	} elsif ($ARGV[$a] =~ /^-ic(\d+)/)  {
-	    $ic[$1-1] = $ARGV[$a+1]; ### substract 1 from the index
-	    unless ((&IsNatural($ic[$1-1])) && ($ic[$1-1] >= 1)) {
-		&Fatalerror("Identifier column must be an integer >= 1");
-	    }
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions;
 
-	    ## Specify that the scores are numbers
-	} elsif ($ARGV[$a] eq "-numbers") {
-	    $scores_are_numbers = 1;
-	    
+      ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+      push @input_files, $ARGV[$a+1];
 
-	} elsif ($ARGV[$a] eq '-basename') {
-	    $basename = 1;
+      ### multiple input files
+    } elsif ($ARGV[$a] eq "-files") {
+      push @input_files, @ARGV[$a+1..$#ARGV];
+      last;
 
-	} elsif ($ARGV[$a] eq '-suppress') {
-	    push @suppress, $ARGV[$a+1];
+      ### file containing the list of files
+    } elsif ($ARGV[$a] eq "-filelist") {
+      $filelist = $ARGV[$a+1];
 
-	} elsif ($ARGV[$a] eq '-subst') {
-	    $subst_header{$ARGV[$a+1]} = $ARGV[$a+2];
+      ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+      $outputfile = $ARGV[$a+1];
 
-	}
+      ### Export format
+    } elsif ($ARGV[$a] eq "-format") {
+      $export_format = $ARGV[$a+1];
+      &RSAT::error::FatalError($export_format." Invalid export format. Supported: ".$supported_export_formats)
+	unless $supported_export_format{$export_format};
+
+      ### null string ###
+    } elsif ($ARGV[$a] eq "-null") {
+      $null = $ARGV[$a+1];
+
+      ### null string ###
+    } elsif ($ARGV[$a] eq "-numeric") {
+      $numeric_IDs = 1;
+
+      ### null string ###
+    } elsif ($ARGV[$a] eq "-decreasing") {
+      $numeric_IDs = 1;
+      $decreasing = 1;
+
+      ### score column
+    } elsif ($ARGV[$a] eq "-sc") {
+      $default_sc = $ARGV[$a+1];
+      unless ((&IsNatural($default_sc)) && ($default_sc >= 1)) {
+	&RSAT::error::FatalError("Score column must be an integer >= 1");
+      }
+
+    } elsif ($ARGV[$a] =~ /^-sc(\d+)/) {
+      $sc[$1-1] = $ARGV[$a+1];	### substract 1 from the index
+      unless ((&IsNatural($sc[$1-1])) && ($sc[$1-1] >= 1)) {
+	&RSAT::error::FatalError("Score column must be an integer >= 1");
+      }
+
+      ### identifier column
+    } elsif ($ARGV[$a] eq "-ic") {
+      $default_ic = $ARGV[$a+1];
+      unless ((&IsNatural($default_ic)) && ($default_ic >= 1)) {
+	&RSAT::error::Fatalerror("Identifier column must be an integer >= 1");
+      }
+    } elsif ($ARGV[$a] =~ /^-ic(\d+)/) {
+      $ic[$1-1] = $ARGV[$a+1];	### substract 1 from the index
+      unless ((&IsNatural($ic[$1-1])) && ($ic[$1-1] >= 1)) {
+	&Fatalerror("Identifier column must be an integer >= 1");
+      }
+
+      ## Specify that the scores are numbers
+    } elsif ($ARGV[$a] eq "-numbers") {
+      $scores_are_numbers = 1;
+
+    } elsif ($ARGV[$a] eq '-basename') {
+      $basename = 1;
+
+    } elsif ($ARGV[$a] eq '-suppress') {
+      push @suppress, $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq '-subst') {
+      $subst_header{$ARGV[$a+1]} = $ARGV[$a+2];
+
     }
+  }
 }
