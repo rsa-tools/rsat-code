@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-score-distrib,v 1.2 2007/07/30 08:16:09 jvanheld Exp $
+# $Id: compare-score-distrib,v 1.3 2007/07/30 10:24:52 jvanheld Exp $
 #
 ############################################################
 
@@ -107,6 +107,10 @@ package main;
   local $default_sc = 1;   ## Default value for the score column
   local @sc = (); ## File-specific score columns
 
+  ## Relativization factor
+  local $default_factor = 1; ## Default value for the factor per file
+  local @file_factor = (); ## File-specific factor
+
   ## Column restrictions
   %restrict = ();
 
@@ -122,10 +126,25 @@ package main;
   ################################################################
   ## Check argument values
 
+  ## Check that at least one input file has been specified
   if (scalar(@input_files) < 1) {
     &RSAT::error::FatalError("You must specify at least one input file (option -i).");
   }
 
+  ## Define score column for each file
+  foreach $f (1..scalar(@input_files)) {
+    unless (defined ($sc[$f])) {
+      $sc[$f] = $default_sc;
+    }
+  }
+
+  ## Define file-specific increment (for the option -file_factor)
+  foreach $f (1..scalar(@input_files)) {
+    unless (defined ($file_factor[$f])) {
+      $file_factor[$f] = $default_factor;
+    }
+    $increment[$f] = 1/$file_factor[$f];
+  }
 
   ################################################################
   ## Open output stream
@@ -141,11 +160,6 @@ package main;
 
     #### select the input file
     $inputfile = $input_files[$f-1];
-
-    #### score column for the current file
-    if ((defined($default_sc)) && !(defined ($sc[$f]))) {
-      $sc[$f] = $default_sc;
-    }
 
     ## Read current input file
     my ($in) = &OpenInputFile($inputfile);
@@ -166,7 +180,7 @@ package main;
 	my $value = $fields[$col-1];
 	unless ($value eq $keyword) {
 	  &RSAT::message::Info($inputfile, "restrict", $col, $keyword, "skipping row", $l, $value) 
-	    if ($main::verbose >= 0);
+	    if ($main::verbose >= 2);
 	  $skip = 1;
 	  last;
 	}
@@ -184,7 +198,7 @@ package main;
 	unless (&IsReal($score));
 
       ## Increment score count
-      $N_per_file{$score}{$f}++;
+      $N_per_file{$score}{$f} += $increment[$f];
     }
     close $in;
   }
@@ -228,7 +242,7 @@ package main;
     push @out_fields, "Nicum.".$f;
   }
 
-  if ($main::verbose >= 0) {
+  if ($main::verbose >= 1) {
     print $out "; Column content\n";
     foreach my $i (1..scalar(@out_fields)) {
       print $out join ("\t", ";", $i, $out_fields[$i-1]), "\n";
@@ -245,19 +259,19 @@ package main;
     ## Occurrences
     foreach my $f (1..scalar(@input_files)) {
       my $occ = $N_per_file{$score}{$f} || 0;
-      print $out "\t", $occ;
+      print $out "\t", &FormatFreq($occ);
     }
 
     ## Cumulative distribution
     foreach my $f (1..scalar(@input_files)) {
       my $occ = $Ncum_per_file{$score}{$f} || 0;
-      print $out "\t", $occ;
+      print $out "\t", &FormatFreq($occ);
     }
 
     ## Inverse cumulative distribution
     foreach my $f (1..scalar(@input_files)) {
       my $occ = $Nicum_per_file{$score}{$f} || 0;
-      print $out "\t", $occ;
+      print $out "\t", &FormatFreq($occ);
     }
 
     print $out "\n";
@@ -282,6 +296,20 @@ package main;
 ################### SUBROUTINE DEFINITION ######################
 ################################################################
 
+
+################################################################
+## Format frequencies
+sub FormatFreq {
+  my ($freq) = @_;
+  if (&IsNatural($freq)) {
+    $freq = sprintf "%d", $freq;
+  } elsif ($freq < 0.001) {
+    $freq = sprintf "%.1e", $freq;
+  } else {
+    $freq = sprintf "%.5f", $freq;
+  }
+  return ($freq);
+}
 
 ################################################################
 ## Display full help message 
@@ -386,6 +414,72 @@ Specify the score column (by a natural number). Default: 1.
 	&RSAT::error::FatalError("Score column must be an integer >= 1");
       }
 
+
+      ### File-specific score column
+=pod
+
+=item B<-sc# score_column>
+
+Specify the score column (by a natural number) for a specific file
+(file number #).
+
+=cut
+    } elsif ($arg =~ /-sc(\d+)/) {
+      my $f = $1;
+      $sc[$f] = shift(@arguments);
+      unless ((&IsNatural($sc[$f])) && ($sc[$f] >= 1)) {
+	&RSAT::error::FatalError("Score column must be an integer >= 1");
+      }
+
+      ### Relativization factor
+=pod
+
+=item B<-factor #>
+
+Specify a relativization factor. All occurrences are divided by this
+factor. Default: 1.
+
+=cut
+    } elsif ($arg eq "-factor") {
+      $default_factor = shift(@arguments);
+      unless ((&IsNatural($default_factor)) && ($default_factor >= 1)) {
+	&RSAT::error::FatalError("Relativization factor must be an integer >= 1");
+      }
+
+      ### File-specific factor
+=pod
+
+=item B<-file_factor filenb factor>
+
+Specify a file-specific relatibization factor (default 1). Occurrences
+will be divised by the file-specific factor, in order to compute
+relative occurrences.
+
+This option is convenient to obtain relative distributions when the
+input tables contain results from experiments performed with data sets
+of different sizes. 
+
+For example, if one wants to compare score distributions of the motifs
+obtained in regulons and in random gene selections, respectively,one
+might dispose of a set of 80 regulons and 1000 random selections. In
+this case one can apply file-specific relativization factors in order
+to compute the number of scores per sequence set in each data set.
+
+ -file_factor 1 80 -file_factor 2 1000
+
+=cut
+    } elsif ($arg eq "-file_factor") {
+      my $f = shift(@arguments);
+      unless ((&IsNatural($f)) && ($f >= 1)) {
+	&RSAT::error::FatalError("File number must be a Natural number >= 1 for the option -file_factor");
+      }
+
+      $file_factor[$f] = shift(@arguments);
+      unless ((&IsNatural($file_factor[$f])) && ($file_factor[$f] >= 1)) {
+	&RSAT::error::FatalError($f, $file_factor[$f], 
+				 "File-specific relativization factor must be a Natural number >= 1");
+      }
+
       ### Filter column
 =pod
 
@@ -431,13 +525,17 @@ constraints on each row.
 }
 
 ################################################################
-#### verbose message
+## Verbose message
 sub Verbose {
   print $out "; compare-score-distrib ";
   &PrintArguments($out);
+  printf $out "; %-13s\t%d\n", "Default score column", $default_sc;
+
   print $out "; Input files\n";
+  print $out join ("\t", ";", "number", "sc.col", "factor", "incr","file name"), "\n";
   foreach my $f (1..scalar(@input_files)) {
-    print $out join ("\t", ";", $f, $input_files[$f-1]), "\n";
+    print $out join ("\t", ";", $f, $sc[$f],$file_factor[$f],$increment[$f],
+		     $input_files[$f-1]), "\n";
   }
 
   if (defined(%outfile)) {
@@ -446,8 +544,6 @@ sub Verbose {
       print $out ";\t$key\t$value\n";
     }
   }
-
-  printf $out "; %-13s\t%d\n", "Score column", $default_sc;
 
   if (scalar(keys(%restrict)) >= 1) {
     print $out "; Restrictions on columns\n";
