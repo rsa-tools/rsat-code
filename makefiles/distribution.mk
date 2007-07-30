@@ -69,6 +69,9 @@ tar_wsclients:
 	tar --exclude CVS  --exclude '*~' --exclude '*.DS_Store' -cvpzf ${TAR_WSCLIENTS} ws_clients
 	@echo ${TAR_WSCLIENTS}
 
+publish_tar_wsclients:
+	 rsync -ruptvl -e ssh ${TAR_WSCLIENTS} rsat@rsat.scmbb.ulb.ac.be:rsa-tools/public_html/web_services/
+
 ################################################################
 ## Publish the tar archive of the whole distribution
 PUB_LOGIN=jvanheld
