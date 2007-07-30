@@ -292,7 +292,7 @@ sub get_all_descendents_by_DFS{
     }
   }
   $depth++;
-  foreach my $child (sort {$a->get_name cmp $b->get_name} $self->get_children()) {
+  foreach my $child (sort {$a->get_name() cmp $b->get_name()} $self->get_children()) {
     if ($type eq "all"){
       push @descendents,$child,($child->get_all_descendents_by_DFS($type,$max_depth,$max_leaves,$depth));
     }elsif ($child->get_type() eq "$type"){
@@ -362,7 +362,7 @@ sub get_leaves  {
 sub get_leaves_names {
   my $self = shift;
   my @leaves_labels=();
-  foreach my $leaf ($self->get_leaves()){
+  foreach my $leaf ( $self->get_leaves()){
     push @leaves_labels, $leaf->get_name();
   }
   return (@leaves_labels);
