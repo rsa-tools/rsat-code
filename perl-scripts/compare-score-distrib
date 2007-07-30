@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-score-distrib,v 1.3 2007/07/30 10:24:52 jvanheld Exp $
+# $Id: compare-score-distrib,v 1.4 2007/07/30 10:49:25 jvanheld Exp $
 #
 ############################################################
 
@@ -191,7 +191,7 @@ package main;
       ## Score
       my $col = $sc[$f] - 1;
       my $score = $fields[$col];
-      &RSAT::message::FatalError("File", $f, $inputfile,
+      &RSAT::error::FatalError("File", $f, $inputfile,
 				 "line", $l,
 				 "column", $sc[$f],
 				 $score, "Invalid score value, should be a Real number") 
