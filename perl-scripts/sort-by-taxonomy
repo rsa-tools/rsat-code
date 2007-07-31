@@ -64,7 +64,7 @@ if ($input_file){
      my @ref_organisms = ();
      if ($taxon){
 #	 &RSAT::message::Info(join("\t","Found ",$tree->get_node_by_id($taxon)));
-	 @ref_organisms = $tree->get_node_by_id("$taxon")->get_leaves_names();
+	 @ref_organisms = $tree->RSAT::Tree::get_node_by_id("$taxon")->get_leaves_names();
 	 &RSAT::message::Info(join("\t","Found ",scalar(@ref_organisms),"organisms")) if ($main::verbose >= 5);
      }else{
 	 @ref_organisms = $tree->get_leaves_names();
