@@ -3,6 +3,7 @@
 ### include generic accessor methods
 package RSAT::GenericObject;
 $_count = 0;
+$_prefix = "";
 # use Data::Dumper
 
 ################################################################
@@ -30,10 +31,10 @@ sub fast_new {
     my ($class,%args) = @_;
     ### bless the new object
     my $self = bless {}, $class;
-    
+
     ### add the new object to the class list
     push @{$class."::_objects"}, $self;
-    
+
     return $self;
 }
 
@@ -48,11 +49,21 @@ Automatically assign a unique identifier to the object
 =cut
 
 sub auto_id {
-    my ($class) = @_;
-    my $id = $class->{_prefix} || $class;
-    $id .= sprintf "_%6s", $class->{_count}++;
-    $id =~ s/ /0/g;
-    return $id;
+  my ($self, $new_prefix) = @_;
+  my $class = ref($self) || $self;
+  my $id;
+  if ($new_prefix) {
+    $id = $new_prefix;
+  } else {
+    $id = $class->{_prefix} || $class;
+  }
+
+  ## Add a counter
+  my $id_nb = sprintf "%6s", $class->{_count}++;
+  $id_nb =~ s/ /0/g;
+  $id .= $id_nb;
+
+  return $id;
 }
 
 ################################################################
