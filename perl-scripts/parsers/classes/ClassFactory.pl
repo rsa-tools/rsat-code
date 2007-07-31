@@ -17,7 +17,7 @@ use Data::Dumper;
     ###    $myclass = classes::ClassFactory->new_class(object_type=>$object_type,prefix=>$prefix);
     ### example:
     ###    $compounds = classes::ClassFactory->new_class(object_type=>"classes::Compound",prefix=>"comp_");
-    
+
     my ($class,%args) = @_;
     my $object_type = "";
 
@@ -34,7 +34,7 @@ use Data::Dumper;
 
     my $input_index = new classes::Index;
     my $output_index = new classes::Index;
-    
+
     ### instantiate the new class holder
     my $class_holder = bless {
 			      _object_type =>  $object_type,
@@ -51,6 +51,7 @@ use Data::Dumper;
 			      _out_fields => []
 			     }, $class;
     $class_holder->init();
+
     return $class_holder;
   }
 
@@ -59,14 +60,14 @@ use Data::Dumper;
       my ($class_holder) = @_;
       $class_holder->set_attribute_header("xrefs", join("\t", "external_db", "external_id"));
   }
-  
-  
-  ### create a new object and store its references in the class holder
+
+  ################################################################
+  ### Create a new object and store its references in the class holder
   ### usage : $object = $class_holder->new_object(id=>$id,%other_args);
   sub new_object {
     my ($class_holder, %args) = @_;
     my $object_type = $class_holder->get_object_type();
-    
+
     ### make sure the new object has an ID
     unless ($args{id}) {
 	my $auto_id = sprintf "%s%6d", $class_holder->get_prefix(), $class_holder->get_count + 1;
@@ -86,12 +87,13 @@ use Data::Dumper;
     return $object;
   }
 
+  ################################################################
   ### Add a previously created  object and store its references in the class holder
   ### usage : $object = $class_holder->add_object(id=>$id,%other_args);
   sub add_object {
     my ($class_holder, $object, %args) = @_;
     my $object_type = $class_holder->get_object_type();
-    
+
     ### make sure the new object has an ID
     unless ($object->get_attribute("id")) {
       my $auto_id = sprintf "%s%6d", $class_holder->get_prefix(), $class_holder->get_count + 1;
@@ -111,17 +113,17 @@ use Data::Dumper;
     my ($class_holder) = @_;
     return $class_holder->{_object_type};
   }
-  
+
   sub get_prefix {
     my ($class_holder) = @_;
     return $class_holder->{_prefix};
   }
-  
+
   sub set_prefix {
     my ($class_holder, $new_prefix) = @_;
     $class_holder->{_prefix} = $new_prefix;
   }
-  
+
   sub get_count {
     my ($class_holder) = @_;
     return $class_holder->{_count};
