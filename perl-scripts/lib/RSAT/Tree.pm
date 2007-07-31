@@ -206,10 +206,11 @@ sub get_node_descendents_names{
 
 =cut
 
-sub get_node_by_id  {
+sub get_node_by_id{
   my $self = shift;
   my $id = shift;
   my $rootnode = $self->get_root_node();
+  
   if ( ($rootnode->getid) && ($rootnode->getid eq $id) ) {
     return $rootnode;
   }
