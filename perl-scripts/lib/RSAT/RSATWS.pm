@@ -333,8 +333,8 @@ sub oligo_analysis_cmd {
     if ($lth) {
       $lth =~ s/\'//g;
       $lth =~ s/\"//g;
-      @lth = split / /, $lth;
-      $command .= " -lth '".$lth[0]."' '".$lth[1]."'";
+      @_lth = split / /, $lth;
+      $command .= " -lth '".$_lth[0]."' '".$_lth[1]."'";
     }
 
     if ($length) {
@@ -347,6 +347,158 @@ sub oligo_analysis_cmd {
 
     return $command;
 }
+
+
+sub dyad_analysis {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->dyad_analysis_cmd(%args);
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $result = `$command`;
+    my $tmp_outfile = `mktemp $TMP/dyad.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return {'command' => $command, 
+		'server' => $tmp_outfile};
+    } elsif ($output_choice eq 'client') {
+	return {'command' => $command,
+		'client' => $result};
+    } elsif ($output_choice eq 'both') {
+	return {'server' => $tmp_outfile,
+		'command' => $command, 
+		'client' => $result};
+    }
+}
+
+sub dyad_analysis_cmd {
+    my ($self, %args) =@_;
+    if ($args{"sequence"}) {
+	my $sequence = $args{"sequence"};
+	chomp $sequence;
+	$tmp_infile = `mktemp $TMP/dyad.XXXXXXXXXX`;
+	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
+	print TMP_IN $sequence;
+	close TMP_IN;
+    } elsif ($args{"tmp_infile"}) {
+	$tmp_infile = $args{"tmp_infile"};
+    }
+    chomp $tmp_infile;
+    my $format = $args{"format"};
+    my $length = $args{"length"};
+    my $spacing = $args{"spacing"};
+    my $type = $args{"type"};
+    my $organism = $args{"organism"};
+    my $background = $args{"background"};
+    my $stats = $args{"stats"};
+    my $noov = $args{"noov"};
+    my $str = $args{"str"};
+    my $sort = $args{"sort"};
+    my $lth = $args{"lth"};
+    my $uth = $args{"uth"};
+    my $under = $args{"under"};
+    my $two_tails = $args{"two_tails"};
+    my $zeroocc = $args{"zeroocc"};
+
+    my $command = "$SCRIPTS/dyad-analysis";
+
+    if ($format) {
+      $format =~ s/\'//g;
+      $format =~ s/\"//g;
+      $command .= " -format '".$format."'";
+    }
+
+    if ($organism) {
+      $organism =~ s/\'//g;
+      $organism =~ s/\"//g;
+      $command .= " -org '".$organism."'";
+    }
+
+    if ($background) {
+      $background =~ s/\'//g;
+      $background =~ s/\"//g;
+      $command .= " -bg '".$background."'";
+    }
+
+    if ($stats) {
+      $stats =~ s/\'//g;
+      $stats =~ s/\"//g;
+      $command .= " -return '".$stats."'";
+    }
+
+    if ($noov == 1) {
+      $command .= " -noov";
+    }
+
+    if ($str) {
+	if ($str == 1 || $str == 2) {
+	    $command .= " -".$str."str";
+	} else {
+	    die "str value must be 1 or 2";
+	}
+    }
+
+    if ($sort == 1) {
+      $command .= " -sort";
+    }
+
+    if ($lth) {
+      $lth =~ s/\'//g;
+      $lth =~ s/\"//g;
+      @_lth = split / /, $lth;
+      $command .= " -lth '".$_lth[0]."' '".$_lth[1]."'";
+    }
+
+    if ($uth) {
+      $uth =~ s/\'//g;
+      $uth =~ s/\"//g;
+      @_uth = split / /, $uth;
+      $command .= " -uth '".$_uth[0]."' '".$_uth[1]."'";
+    }
+
+    if ($length) {
+	$length =~ s/\'//g;
+	$length =~ s/\"//g;
+	$command .= " -l '".$length."'";
+    }
+
+    if ($spacing) {
+	$spacing =~ s/\'//g;
+	$spacing =~ s/\"//g;
+	$command .= " -sp '".$spacing."'";
+    }
+
+    if ($type) {
+	$type =~ s/\'//g;
+	$type =~ s/\"//g;
+	$command .= " -type '".$type."'";
+    }
+
+    if ($under == 1) {
+      $command .= " -under";
+    }
+
+    if ($two_tails == 1) {
+      $command .= " -two_tails";
+    }
+
+    if ($zeroocc == 1) {
+      $command .= " -zeroocc";
+    }
+
+    $command .= " -i '".$tmp_infile."'";
+
+    return $command;
+}
+
 
 sub dna_pattern {
     my ($self, $args_ref) = @_;
