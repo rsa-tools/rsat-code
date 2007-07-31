@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-score-distrib,v 1.5 2007/07/30 16:02:33 jvanheld Exp $
+# $Id: compare-score-distrib,v 1.6 2007/07/31 15:39:49 jvanheld Exp $
 #
 ############################################################
 
@@ -126,6 +126,9 @@ package main;
   local $export_graph = 0;
   local $img_format = "png";
 
+  ## Values considered as NULL for the score column
+  local %null_score = ();
+
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -198,6 +201,8 @@ package main;
       ## Score
       my $col = $sc[$f] - 1;
       my $score = $fields[$col];
+
+      ## Skip rows with empty cell for the score column
       if ($score eq "") {
 	&RSAT::message::Warning("File", $f, $inputfile,
 				"skipping line", $l,
@@ -206,6 +211,16 @@ package main;
 	next;
       }
 
+      ## Skip rows with infinite or NA values
+      if ($null_score{lc($score)}) {
+	&RSAT::message::Warning("File", $f, $inputfile,
+				"skipping line", $l,
+				"column", $sc[$f],
+				$score, "null score value") ;
+	next;
+      }
+
+      ## Die if an invalid score value is found
       &RSAT::error::FatalError("File", $f, $inputfile,
 				 "line", $l,
 				 "column", $sc[$f],
@@ -465,6 +480,25 @@ Specify the score column (by a natural number) for a specific file
       unless ((&IsNatural($sc[$f])) && ($sc[$f] >= 1)) {
 	&RSAT::error::FatalError("Score column must be an integer >= 1");
       }
+
+      ## Null score values
+=pod
+
+=item B<-null>
+
+Null score value. Rows with a null score will be skipped. Null values
+are case-insensitive.
+
+This option can be used iteratively to specify several null values. 
+
+Example:
+  -null NA -null -Inf -null Inf
+
+=cut
+    } elsif ($arg eq "-null") {
+      my $value = shift (@arguments);
+      $main::null_score{lc($value)} = 1;
+
 
       ### Relativization factor
 =pod
