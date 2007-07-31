@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.201 2007/07/31 15:43:26 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.202 2007/07/31 16:21:19 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1191,7 +1191,7 @@ sub MergeOligoLengths {
    ### extract PSSM from pattern assembly
 #   my $pssm_command = "convert-matrix -v 1 ";
 #   $pssm_command .= " -i ".$family{$family_name}->{oligo_assembly_file};
-#   $pssm_command .= " -in_format assembly -out_format patser -return counts,profile,parameters";
+#   $pssm_command .= " -from assembly -out_format patser -return counts,profile,parameters";
 #   $pssm_command .= " -o ".$family{$family_name}->{oligo_pssm_file};
 #   push @merge_commands, $pssm_command;
 
@@ -2026,8 +2026,8 @@ sub ConvertMatrixCommand {
 
   ## Convert matrix in tab-delimited file
   my $command = "convert-matrix -v 1";
-  $command .= " -in_format ".$format;
-  $command .= " -out_format tab";
+  $command .= " -from ".$format;
+  $command .= " -to tab";
   $command .= " -return counts,parameters";
   $command .= " -i ".$matrix_file;
   $command .= " -o ".$matrix_file.".tab";

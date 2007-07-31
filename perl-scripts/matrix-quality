@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.41 2007/06/15 09:58:38 morgane Exp $
+# $Id: matrix-quality,v 1.42 2007/07/31 16:21:19 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1483,8 +1483,8 @@ sub PrintTheorScoreDistribution {
   
   my $conv_matrix_cmd = "convert-matrix ";
   $conv_matrix_cmd .= " -i ".$matrix_tab_file;
-  $conv_matrix_cmd .= " -in_format tab";
-  $conv_matrix_cmd .= " -out_format tab ";
+  $conv_matrix_cmd .= " -from tab";
+  $conv_matrix_cmd .= " -to tab ";
   $conv_matrix_cmd .= " -return wdistrib  ";
   if ($main::infile{th_prior}){
   	$conv_matrix_cmd .= " -prior ".$main::infile{th_prior};

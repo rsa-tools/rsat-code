@@ -2341,16 +2341,15 @@ sub ReadAnnotatedSites {
 #### Write in a new file the reference sequence regions,
 #### with annotated sites masked
 sub MaskAnnotatedSites {
-	
 	my $sites2mask = shift;
 	my $input_seq_file = shift;
 	my $output_seq_file = shift;
-	
+
 	&RSAT::message::TimeWarn("Masking annotated TFBS") if ($main::verbose >=1);
-	
+
 	our %sequences = ();
 	our %sequences_length = ();
-   	
+
    	## read sequences
    	my ($in, $input_dir) = &OpenInputFile($input_seq_file);
  	while ((our($current_seq, $seq_id) = &ReadNextSequence($in, $main::seq_format, $input_dir, "","")) &&
@@ -2394,32 +2393,32 @@ sub MaskAnnotatedSites {
 ################################################################
 #### Get matrix sites 
 sub getMatrixSites{
- 		my $matrix =shift;
- 		my $matrix_format = shift;
- 		
- 		my %matrix_sites = ();
- 		
- 		$main::outfile{matrix_sites} = File::Spec->rel2abs($main::outfile{prefix}."_matrix_sites.fa",$main::dirproject{sequences});
-		
-		## run convert-matrix to extract the ID of each site and its sequence, as contained in the matrix
- 		my $conv_matrix_cmd = "convert-matrix ";
- 		$conv_matrix_cmd .= " -i ".$matrix; 
- 		$conv_matrix_cmd .= " -return sites ";
- 		$conv_matrix_cmd .= " -in_format ".$matrix_format;
- 		$conv_matrix_cmd .= " -o ".$main::outfile{matrix_sites};
- 		
- 		&doit($conv_matrix_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
- 		
- 		## parse the resulting fasta file and store in memory each matrix site
-		my ($in, $input_dir) = &OpenInputFile($main::outfile{matrix_sites});
-		while ((our($current_seq, $seq_id) = &ReadNextSequence($in, $main::seq_format, $input_dir, "","")) &&
-			(($current_seq ne "") || ($seq_id ne ""))) {
-				$matrix_sites{$seq_id} = $current_seq ;
-			}
-		close($in);
-		
-		return(\%matrix_sites);
- 	}
+  my $matrix =shift;
+  my $matrix_format = shift;
+
+  my %matrix_sites = ();
+
+  $main::outfile{matrix_sites} = File::Spec->rel2abs($main::outfile{prefix}."_matrix_sites.fa",$main::dirproject{sequences});
+
+  ## run convert-matrix to extract the ID of each site and its sequence, as contained in the matrix
+  my $conv_matrix_cmd = "convert-matrix";
+  $conv_matrix_cmd .= " -i ".$matrix;
+  $conv_matrix_cmd .= " -return sites";
+  $conv_matrix_cmd .= " -from ".$matrix_format;
+  $conv_matrix_cmd .= " -o ".$main::outfile{matrix_sites};
+
+  &doit($conv_matrix_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
+
+  ## parse the resulting fasta file and store in memory each matrix site
+  my ($in, $input_dir) = &OpenInputFile($main::outfile{matrix_sites});
+  while ((our($current_seq, $seq_id) = &ReadNextSequence($in, $main::seq_format, $input_dir, "","")) &&
+	 (($current_seq ne "") || ($seq_id ne ""))) {
+    $matrix_sites{$seq_id} = $current_seq ;
+  }
+  close($in);
+
+  return(\%matrix_sites);
+}
 
 ################################################################
 #### Extract with subsequence each annotated sites
