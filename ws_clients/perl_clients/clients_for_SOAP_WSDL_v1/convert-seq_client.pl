@@ -16,8 +16,8 @@ use Util::Properties;
 #import SOAP::Lite +trace;
 
 ## WSDL location
-#my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
-my $server = 'http://localhost/rsat/web_services';
+my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+#my $server = 'http://localhost/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
 
@@ -35,15 +35,8 @@ $prop->file_name($property_file);
 $prop->load();
 my %args = $prop->prop_list();
 
-#my $sequence = `cat $args{sequence}`;
-#chomp($sequence);
-
-#$args{sequence} = $sequence;
-
 ## TEMPORARY: replace sequence file by sequence
 $args{sequence} = `cat $args{sequence_file}`;
-print $args{sequence}, "\n";
-#my $args{sequence} = `cat $args{sequence_file}`;
 chomp($args{sequence});
 delete($args{sequence_file});
 
