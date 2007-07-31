@@ -14,12 +14,12 @@ use Util::Properties;
 #import SOAP::Lite+trace;
 
 ## Service location
-#my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
-my $server = 'http://localhost/rsat/web_services';
+my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+#my $server = 'http://localhost/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
 
-## Property file is firste argument
+## Property file is first argument
 my $property_file = shift @ARGV;
 die "\tYou must specify the property file as first argument\n"
   unless $property_file;
