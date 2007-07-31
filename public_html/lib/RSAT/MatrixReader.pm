@@ -150,9 +150,10 @@ sub _readFromTRANSFACFile {
       my $accession = $1;
       $current_matrix_nb++;
       $matrix = new RSAT::matrix();
+      $matrix->set_parameter("program", "transfac");
+      $matrix->set_parameter("matrix.nb", $current_matrix_nb);
       push @matrices, $matrix;
       $matrix->set_parameter("TF_accession", $accession) if ($accession);
-      $matrix->set_attribute("matrix.nb", $current_matrix_nb);
       $matrix->set_parameter("TF_version", $version);
       $ncol = 0;
       next;
@@ -251,8 +252,8 @@ sub _readFromGibbsFile {
     my ($file) = @_;
 
     my $parse_model = 0; ## boolean: indicates whether or not to parse matrices from motif models
-    my $initial_matrices = 1;  ## boolean: indicates whether or not to export the initial matrices resulting from the optimization
-    my $final_matrices = 0; ## boolean: indicates whether or not to export the final matrices
+    my $initial_matrices = 0;  ## boolean: indicates whether or not to export the initial matrices resulting from the optimization
+    my $final_matrices = 1; ## boolean: indicates whether or not to export the final matrices
 
     ## open input stream
     my $in = STDIN;
@@ -293,6 +294,7 @@ sub _readFromGibbsFile {
 
 	unless ($in_matrix) {
 	  $matrix = new RSAT::matrix();
+	  $matrix->set_parameter("program", "gibbs");
 	  $matrix->set_parameter("command", $gibbs_command);
 	  $matrix->set_parameter("gibbs.seed", $seed);
 	  push @matrices, $matrix;
@@ -325,6 +327,7 @@ sub _readFromGibbsFile {
       } elsif ((/^Motif model/) && ($parse_model)) {
 #      if (/^\s*MOTIF\s+(\S+)/) {
 	$matrix = new RSAT::matrix();
+	$matrix->set_parameter("program", "gibbs");
 	$matrix->set_parameter("command", $gibbs_command);
 	$matrix->set_parameter("gibbs.seed", $seed);
 	push @matrices, $matrix;
@@ -337,6 +340,9 @@ sub _readFromGibbsFile {
       } elsif (/model map = (\S+); betaprior map = (\S+)/) {
 	$matrix->set_parameter("gibbs.model.map", $1);
 	$matrix->set_parameter("gibbs.betaprior.map", $2);
+#	&RSAT::message::Warning("gibbs matrix", $matrix,
+#				"model map", $matrix->get_attribute("gibbs.model.map"),
+#				"betaprior map", $matrix->get_attribute("gibbs.betaprior.map"));
 
       } elsif (/MAP = (\S+)/) {
 	$matrix->set_parameter("gibbs.MAP", $1);
@@ -445,7 +451,8 @@ sub _readFromConsensusFile {
       $current_matrix_nb = $1;
       $matrix = new RSAT::matrix();
       push @matrices, $matrix;
-      $matrix->set_attribute("matrix.nb", $current_matrix_nb);
+      $matrix->set_parameter("program", "consensus");
+      $matrix->set_parameter("matrix.nb", $current_matrix_nb);
       $matrix->set_parameter("command", $command);
       $matrix->setPrior(%prior);
       next;
@@ -551,10 +558,11 @@ sub _readFromAssemblyFile {
       $current_matrix_nb = $1;
       my $seed = $2;
       $matrix = new RSAT::matrix();
+      $matrix->set_parameter("program", "pattern-assembly");
+      $matrix->set_parameter("matrix.nb", $current_matrix_nb);
       push @matrices, $matrix;
       $matrix->setAlphabet_lc("A","C","G","T");
       $matrix->set_attribute("nrow", 4);
-      $matrix->set_attribute("matrix.nb", $current_matrix_nb);
       $matrix->set_parameter("asmb.seed", $seed);
       &RSAT::message::Debug("New matrix from assembly", $current_matrix_nb."/".scalar(@matrices), "seed", $seed) if ($main::verbose >= 4);
 
@@ -635,9 +643,10 @@ sub _from_isolated {
     $pattern_id = $pattern."|".$pattern_rc;
   }
   $matrix = new RSAT::matrix();
+  $matrix->set_parameter("program", "pattern-assembly");
+  $matrix->set_parameter("matrix.nb", $current_matrix_nb);
   $matrix->setAlphabet_lc("A","C","G","T");
   $matrix->set_attribute("nrow", 4);
-  $matrix->set_attribute("matrix.nb", $current_matrix_nb);
   $matrix->set_parameter("asmb.seed", $pattern);
   $matrix->set_attribute("asmb.consensus", $pattern);
   $matrix->set_attribute("asmb.consensus.rc", $pattern_rc);
@@ -681,8 +690,10 @@ sub _readFromTabFile {
 
     ## Initialize the matrix list
     my @matrices = ();
-    my $matrix = new RSAT::matrix();
-    push @matrices, $matrix;
+    my $matrix = new RSAT::matrix(); 
+    $matrix->set_parameter("program", "tab");
+    $matrix->set_parameter("matrix.nb", $current_matrix_nb);
+   push @matrices, $matrix;
     my $current_matrix_nb = 1;
 #    my $id = $file."_".$current_matrix_nb;
     my $id_prefix = $file || "matrix";
@@ -703,6 +714,7 @@ sub _readFromTabFile {
 	## Create a new matrix if required
 	if  ($line =~ /\/\//) {
 	  $matrix = new RSAT::matrix();
+	  $matrix->set_parameter("program", "tab");
 	  push @matrices, $matrix;
 	  $current_matrix_nb++;
 	  $id = $id_prefix."_".$current_matrix_nb;
@@ -776,8 +788,7 @@ sub _readFromClusterBusterFile {
 
     ## Initialize the matrix list
     my @matrices = ();
-    my $matrix;# = new RSAT::matrix();
-#    push @matrices, $matrix;
+    my $matrix;
     my $current_matrix_nb = 1;
     my $l = 0;
     my $ncol = 0;
@@ -793,6 +804,7 @@ sub _readFromClusterBusterFile {
       if  ($line =~ /^\>(\S*)/) {
 	my $name = $1;
 	$matrix = new RSAT::matrix();
+	$matrix->set_parameter("program", "clusterbuster");
 	$ncol = 0;
 	if ($name) {
 	  $matrix->set_attribute("name", $name);
@@ -883,7 +895,8 @@ sub _readFromMEMEFile {
       $width_to_parse = $2;
       $matrix = new RSAT::matrix();
       $matrix->init();
-      $matrix->set_attribute("matrix.nb", $current_matrix_nb);
+      $matrix->set_parameter("program", "meme");
+      $matrix->set_parameter("matrix.nb", $current_matrix_nb);
       $matrix->set_attribute("ncol", $2);
 
       $matrix->set_parameter("command", $meme_command);
@@ -1004,8 +1017,9 @@ sub _readFromFeatureFile {
       $current_matrix_nb++;
       $matrix = new RSAT::matrix();
       $matrix->init();
+      $matrix->set_parameter("program", "feature");
+      $matrix->set_parameter("matrix.nb", $current_matrix_nb);
       $matrix->set_attribute("name", $matrix_name);
-      $matrix->set_attribute("matrix.nb", $current_matrix_nb);
       $matrix->set_attribute("ncol", length($site_sequence));
 #      $matrix->set_parameter("sites", $3);
 #      $matrix->setPrior(%residue_frequencies);
@@ -1076,6 +1090,7 @@ sub _readFromMotifSamplerFile {
       my $id = shift (@fields);
 
       $matrix = new RSAT::matrix();
+      $matrix->set_parameter("program", "MotifSampler");
       $matrix->set_parameter("id", $id);
       while (my $field = shift @fields) {
 	$field =~ s/:$//;
@@ -1154,6 +1169,7 @@ sub _readFromMotifSamplerMatrixFile {
       if(/^#ID\s*=\s*(\S+)/) {
 	my $id = $1;
 	$matrix = new RSAT::matrix();
+	$matrix->set_parameter("program", "MotifSampler");
 	$matrix->set_attribute("AC", $id);
 	$matrix->set_attribute("id", $id);
 	$matrix->set_attribute("nrow", 4);
@@ -1195,6 +1211,7 @@ sub _readFromClustalFile {
 
     my @matrices = ();
     my $matrix = new RSAT::matrix();
+    $matrix->set_parameter("program", "clustal");
     push @matrices, $matrix;
     
     ## open input stream
