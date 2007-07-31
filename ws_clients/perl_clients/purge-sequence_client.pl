@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# purge-seq_client.pl - Client purge-sequence using the SOAP::WSDL module
+# purge-sequence_client.pl - Client purge-sequence using the SOAP::WSDL module
 # and a property file
 
 ################################################################
@@ -36,14 +36,8 @@ $prop->file_name($property_file);
 $prop->load();
 my %args = $prop->prop_list();
 
-#my $sequence = `cat $args{sequence}`;
-#chomp($sequence);
-
-#$args{sequence} = $sequence;
-
 ## TEMPORARY: replace sequence file by sequence
 $args{sequence} = `cat $args{sequence_file}`;
-#my $args{sequence} = `cat $args{sequence_file}`;
 chomp($args{sequence});
 delete($args{sequence_file});
 
