@@ -10,10 +10,10 @@
 ##
 ################################################################
 
-#use strict;
+use strict;
 use SOAP::WSDL;
 use Util::Properties;
-import SOAP::Lite + trace;
+#import SOAP::Lite + trace;
 
 ## WSDL location
 my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
@@ -38,13 +38,11 @@ my %args = $prop->prop_list();
 if ($args{ref_classes}) {
 $args{ref_classes} = `cat $args{ref_classes}`;
 chomp($args{ref_classes});
-#delete($args{ref_classes});
 }
 
 if ($args{query_classes}) {
 $args{query_classes} = `cat $args{query_classes}`;
 chomp($args{query_classes});
-#delete($args{query_classes});
 }
 
 if ($args{input_classes}) {
