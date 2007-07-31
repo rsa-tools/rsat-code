@@ -384,16 +384,16 @@
 	<xsd:element name="type" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
-	    dyad_type (dr|ir|any)
+	    dyad_type (dr | ir | rep | any)
 	        In order to fasten execution, the program can be asked 
                 to restrict its analysis to symmetric dyads. 
-                Three types are accepted
-                   dr   direct repeats: the second element is the same as the 
-                        first one 
-                   ir   inverted repeats: the second element is the reverse
-                        complement of the first one. 
-                   rep  repeats: direct and inverted repeats are evaluated
-                   any  (default)
+                Four types are accepted:
+                   dr - direct repeats: the second element is the same as the 
+                        first one;
+                   ir - inverted repeats: the second element is the reverse
+                        complement of the first one; 
+                   rep - repeats: direct and inverted repeats are evaluated.
+                   any - (default)
                         When selecting the option any, the analysis is 
                         performed on all non-symmetric dyads as well.
 	    </xsd:documentation>
@@ -1427,9 +1427,10 @@ square-root of L divided by L+squareroot of L.
       Tools developed by Jacques van Helden
       (jvanheld@scmbb.ulb.ac.be), SOAP/WSDL interface developed by
       Olivier Sand (oly@scmbb.ulb.ac.be).
-    </documentation>
+   </documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
 	<soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
+        <!--soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/-->
     </port>
   </service>
 </definitions>
