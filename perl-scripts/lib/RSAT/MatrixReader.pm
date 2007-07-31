@@ -85,6 +85,44 @@ sub readFromFile {
       &RSAT::message::Info("Read ".scalar(@matrices)." matrices from file ", $file) if ($main::verbose >= 3);
     }
 
+    ################################################################
+    ## Sort matrices if requested
+    if ($args{sort}) {
+      my $sort_key = $args{sort};
+      my $sort_order = $args{order} || "desc";
+
+      ## Check if the first matrix has the sort key as attribute
+      if (scalar(@matrices) > 0) {
+	my $matrix = $matrices[0];
+	if ($matrix->get_attribute($sort_key)) {
+
+	  ## Sort matrices
+	  if ($sort_order eq "desc") {
+	    &RSAT::message::Warning("Sorting matrices by descending values of", $sort_key) if ($main::verbose >= 2);
+	    @matrices = sort {$b->{$sort_key} <=> $a->{$sort_key}} @matrices;
+	  } elsif  ($sort_order eq "asc") {
+	    &RSAT::message::Warning("Sorting matrices by ascending values of", $sort_key) if ($main::verbose >= 2);
+	    @matrices = sort {$a->{$sort_key} <=> $b->{$sort_key}} @matrices;
+	  } elsif  ($sort_order eq "alpha") {
+	    &RSAT::message::Warning("Sorting matrices by alphabetic values of", $sort_key) if ($main::verbose >= 2);
+	    @matrices = sort {$a->{$sort_key} ge $b->{$sort_key}} @matrices;
+	  } else {
+	    &RSAT::error::FatalError($sort_order, "is not a valid sorting order. Supported: desc,asc.");
+	  }
+	} else {
+	  &RSAT::message::Warning("Cannot sort matrices by", $sort_key, "because this parameter is not defined for these matrices.")
+	    if ($main::verbose >= 0);
+	}
+      }
+    }
+
+    ################################################################
+    ## Assign or re-assign general parameters.
+    ##
+    ## Depending on the input format, some of these have already been
+    ## assigned from the input file but we prefer to reassign them for
+    ## the sake of consistency.
+
     my $matrix_nb = 0;
     foreach my $matrix (@matrices) {
       ## Reassign matrix numbers
