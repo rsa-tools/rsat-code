@@ -1,0 +1,39 @@
+; oligo-analysis  -v 1 -2str -i /bio/rsa-tools/data/genomes/Mus_musculus_EnsEMBL/genome/Mus_musculus_EnsEMBL_upstream-noorf-rm.fasta -format fasta -2str -noov -l 1 -type dna -return freq,occ -o /bio/rsa-tools/data/genomes/Mus_musculus_EnsEMBL/oligo-frequencies/1nt_upstream-noorf-rm_Mus_musculus_EnsEMBL-noov-2str.freq
+; Citation: van Helden et al. (1998). J Mol Biol 281(5), 827-42. 
+; Oligomer length              	1
+; Input file                   	/bio/rsa-tools/data/genomes/Mus_musculus_EnsEMBL/genome/Mus_musculus_EnsEMBL_upstream-noorf-rm.fasta
+; Input format                 	fasta
+; Output file                  	/bio/rsa-tools/data/genomes/Mus_musculus_EnsEMBL/oligo-frequencies/1nt_upstream-noorf-rm_Mus_musculus_EnsEMBL-noov-2str.freq
+; Discard overlapping matches
+; Counted on both strands
+; 	grouped by pairs of reverse complements
+; Method                       	
+; Sequence type                	DNA
+; Nb of sequences              	15666
+; Sum of sequence lengths      	44000
+; discarded residues           	18218	 (other letters than ACGT)
+; discarded occurrences        	18218	 (contain discarded residues)
+; nb possible positions        	25782
+; total oligo occurrences      	25782
+; total overlapping occurrences	0
+; total non overlapping occ    	25782
+; alphabet size                	4
+; nb possible oligomers        	2
+; oligomers tested for significance	0
+; Threshold values
+;	Parameter      	Lower	Upper
+;	occ_P          	none	1
+;
+; column headers
+;	1	seq            	oligomer sequence
+;	2	id             	oligomer identifier
+;	3	observed_freq  	observed relative frequency
+;	4	occ            	observed occurrences
+;	5	ovl_occ        	number of overlapping occurrences (discarded from the count)
+;	6	forbocc        	forbidden positions (to avoid self-overlap)
+;	7	test           	over- or under-representation test
+;seq	id	observed_freq	occ	ovl_occ	forbocc	test
+a	a|t	0.5609727717012	14463	0	0	
+c	c|g	0.4390272282988	11319	0	0	
+; Job started 2006_10_12.223152
+; Job done    2006_10_12.223154
