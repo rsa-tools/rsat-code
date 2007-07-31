@@ -4,20 +4,20 @@
 ##
 ## This script runs a simple demo of the web service inerface to the
 ## RSAT tool retrieve-seq. It sends a request to the server for
-## obtaining the start codons of 3 E.coli genes.
+## obtaining the upstream sequences of 2 E.coli genes.
 ##
 ################################################################
 
 use strict;
 use SOAP::WSDL;
-use SOAP::LITE;
-# import SOAP::Lite +trace;
+use SOAP::Lite;
+#import SOAP::Lite +trace;
 
 warn "\nThis demo script retrieves the upstream sequences for a set of query genes\n\n";
 
 ## WSDL location
-#my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/';
-my $server = 'http://localhost/rsat/web_services/';
+my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/';
+#my $server = 'http://localhost/rsat/web_services/';
 my $WSDL = $server.'RSATWS.wsdl';
 my $proxy = $server.'RSATWS.cgi';
 my $soap = SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
@@ -25,7 +25,7 @@ $soap->wsdlinit();
 # $soap->wsdl_checkoccurs(0);
 
 my %args = ('return' => 'both', ## Store the result of the server + return it directly
-	    'organism' => '-org Escherichia_coli_K12',
+	    'organism' => 'Escherichia_coli_K12',
 	    'from' => -200,
 	    'to' => -1,
 	    'query' => ['CRP', 'FruR'], 
@@ -45,6 +45,6 @@ if ($som->fault){ ## Report error if any
     ## Report the remote command
     my $command = $results{'command'};
     print "Command used on the server:\n\t", $command, "\n";
-    print "Result file on the server:\n\t",  $results{'file'};
-    print "Retrieved sequence(s):\n\n", $results{'result'};
+    print "Result file on the server:\n\t",  $results{'server'};
+    print "Retrieved sequence(s):\n\n", $results{'client'};
 }
