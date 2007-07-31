@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# purge-seq_client_soap-wsdl.pl - Client purge-sequence using the SOAP::WSDL module
+# purge_client_soap-wsdl.pl - Client purge-sequence using the SOAP::WSDL module
 
 ################################################################
 ##
