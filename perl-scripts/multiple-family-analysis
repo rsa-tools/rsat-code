@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.200 2007/07/31 08:51:35 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.201 2007/07/31 15:43:26 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -125,6 +125,8 @@ $supported_tasks = join ",", @supported_tasks;
 			 );
 $supported_sort_keys  = join ",", sort keys %supported_sort_key;
 
+## Maximum number of matrices per family in the synthetic table
+$max_matrices = 1;
 
 ## Background models for string-based pattern discovery
 %supported_background = (
@@ -666,16 +668,16 @@ sub SetFileNames {
 	## oligos + dyads
 	$family{$family_name}->{merged_file} =  "${family_name}/merged_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix.$dyad_suffix;
 	$family{$family_name}->{merged_ft_file} = $family{$family_name}->{merged_file}.".ft";
-	
+
 	################################################################
 	## Andrew Neuwald's Gibbs options and files
 	my $gibbs_options = "";
 	my $gibbs_suffix = "";
-	
+
 	## input file
 	$family{$family_name}->{gibbs_input_seq_file} = $family{$family_name}->{input_seq_file}.".gibbs";
 	$gibbs_options .= " ".$family{$family_name}->{gibbs_input_seq_file};
-	
+
 	## Matrix width
 	$gibbs_options .= " ".$matrix_width;
 	$gibbs_suffix .= "-L".$matrix_width;
@@ -1502,8 +1504,11 @@ sub MotifSampler {
      ## Suppress verbosity
      $MS_command = "(".$MS_command.") >& MS_log.txt";
    }
+   $MS_command .= "; MotifRanking -m 2";
+   $MS_command .= " -i ".$family{$family_name}->{MotifSampler_file};
+   $MS_command .= " -o ".$family{$family_name}->{MotifSampler_file}."_ICsorted";
    $MS_command .= "; ";
-   $MS_command .= &ConvertMatrixCommand($family{$family_name}->{MotifSampler_file}, "MotifSampler");
+   $MS_command .= &ConvertMatrixCommand($family{$family_name}->{MotifSampler_file}."_ICsorted", "MotifSampler");
    if ($batch) {
        push @main::batch_commands, $MS_command;
    } else {
@@ -1965,8 +1970,8 @@ sub IndexMatrix {
    ## error, if the output file does not contain any matrix. This is
    ## the case for some output files of consensus, due to a bug.
    if (-e $matrix_file) {
-       &ConvertMatrix($matrix_file, $format);
-       my $matrix = &ReadMatrix($family_name, $matrix_file, %args);
+#       &ConvertMatrix($matrix_file, $format);
+       my @matrices = &ReadMatrix($family_name, $matrix_file, %args);
        $table[$row][$col] .= "<a href=".$base.$family_dir.">".$family_name."</a>\n";
        $table[$row][$col] .= "<a href=".$base.$matrix_file.">[".$format."]</a>\n";
        $table[$row][$col] .= "<a href=".$base.$matrix_file.".tab>[tab]</a>\n";
@@ -1975,23 +1980,37 @@ sub IndexMatrix {
 #       if ($htmaps) {
 #	   $table[$row][$col] .= "<a href=".$base.$pattern_file.".html>[html]</a>\n";
 #       }
-       if ($matrix) {
+#       if ($matrix) {
 #	   &RSAT::message::Debug("IndexMatrix", $matrix, 
 #				 $matrix->get_attribute("id"),
 #				 $matrix->get_attribute("input_file"),
 #				) if ($main::verbose >= 10);
-
-	   $matrix_result = $matrix->toString(sep=>" ", col_width=>4, type=>"counts");
+       $matrix_result = "";
+       if (scalar(@matrices) > 0) {
+	 my $m = 0;
+	 foreach my $matrix (@matrices) {
+	   $m++;
+	   if ($m > $max_matrices) {
+	     my $remaining = scalar(@matrices) - $m + 1;
+	     $matrix_result .= ";\n; ... and ".$remaining." more matrices in the file.\n";
+	     last;
+	   }
+	   &RSAT::message::Debug($family_name, "Indexing matrix", $m."/".scalar(@matrices),$format) 
+	     if ($main::verbose >= 0);
+#	   next;
+#	   die "HELLO";
+	   $matrix_result .= $matrix->toString(sep=>" ", col_width=>4, type=>"counts");
 	   $matrix_result .= $matrix->toString(type=>"parameters");
-	   $table[$row][$col] .= "<table cellpadding=3>\n";
-	   $table[$row][$col] .= "<TR>\n";
-	   $table[$row][$col] .= "<td colspan=2><pre>";
-	   $table[$row][$col] .= $matrix_result;
-	   $table[$row][$col] .= "</pre></td>\n";
-	   $table[$row][$col] .= "</TR>\n";
-	   $table[$row][$col] .= "</table>\n";
+	 }
+	 $table[$row][$col] .= "<table cellpadding=3>\n";
+	 $table[$row][$col] .= "<TR>\n";
+	 $table[$row][$col] .= "<td colspan=2><pre>";
+	 $table[$row][$col] .= $matrix_result;
+	 $table[$row][$col] .= "</pre></td>\n";
+	 $table[$row][$col] .= "</TR>\n";
+	 $table[$row][$col] .= "</table>\n";
        } else {
-	   $table[$row][$col] .= "<br><font color=red>No matrix could be found in the result file</font>\n";
+	 $table[$row][$col] .= "<br><font color=red>No matrix could be found in the result file</font>\n";
        }
    } else {
        $table[$row][$col] =  "<a href=".$matrix_file."><font color=red>File not found</font></a><br>\n";
@@ -2044,41 +2063,44 @@ sub ReadMatrix {
       ## matrix. This is the case for some output files of consensus,
       ## due to a bug. There are also gibbs file which contain empty
       ## matrices.
-#      eval {
-	## Read matrices from the input file
-	my @new_matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $format);
-	&RSAT::message::Info("Read",scalar(@new_matrices),"matrices from file",$matrix_file, $format) if ($main::verbose >= 0);
-	my $matrix = $new_matrices[0];
-	if ($matrix) {
-	  $matrix->force_attribute("family_id",$family_id);
-	  $matrix->force_attribute("family", $family_name);
-	  $matrix->force_attribute("format", $format);
-	  $matrix->set_attribute("input_file", $matrix_file);
-	  $matrix_by_file{$matrix_file} = $matrix;
-	  $matrix->calcConsensus();
-	  $matrix->calcInformation();
-	  $matrix_factory->add_object($matrix);
-#	  if ($@) {
-#	    &RSAT::message::Warning("Matrix file does no contain a valid matrix. Skipped.", $format, $matrix_file) if ($main::verbose >= 1);
-#	    &RSAT::message::Debug(join "\n", $@) if ($main::verbose >= 0);
-#	    return(undef);
-#	  } else {
-#	    return($matrix);
-#	  }
-#	}
-	  my $id = RSAT::matrix->auto_id($run_prefix."_mat");
-	  $matrix->force_attribute("id", $id);
-	  $matrix->set_attribute("analysis", $run_prefix);
-	  return($matrix);
-
-      } else {
-	&RSAT::message::Warning("Matrix file does no contain a valid matrix. Skipped.", $format, $matrix_file) if ($main::verbose >= 1);
-	return(undef)
+      #      eval {
+      
+      ## Read matrices from the input file
+      my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $format);
+      &RSAT::message::Info("Read",scalar(@matrices),"matrices from file",$matrix_file, $format) if ($main::verbose >= 0);
+      foreach my $matrix (@matrices) {
+	$matrix->force_attribute("family_id",$family_id);
+	$matrix->force_attribute("family", $family_name);
+	$matrix->force_attribute("format", $format);
+	$matrix->set_attribute("input_file", $matrix_file);
+	$matrix_by_file{$matrix_file} = $matrix;
+	$matrix->calcConsensus();
+	$matrix->calcInformation();
+	$matrix_factory->add_object($matrix);
+	#	  if ($@) {
+	#	    &RSAT::message::Warning("Matrix file does no contain a valid matrix. Skipped.", $format, $matrix_file) if ($main::verbose >= 1);
+	#	    &RSAT::message::Debug(join "\n", $@) if ($main::verbose >= 0);
+	#	    return(undef);
+	#	  } else {
+	#	    return($matrix);
+	#	  }
+	#	}
+	my $id = RSAT::matrix->auto_id($run_prefix."_mat");
+	$matrix->force_attribute("id", $id);
+	$matrix->set_attribute("analysis", $run_prefix);
       }
- #     }
+
+      ## Check that the result file contains at least one matrix
+      if (scalar(@matrices) > 0) {
+	return(@matrices);
+      } else {
+	&RSAT::message::Warning("Matrix file does no contain any valid matrix. Skipped.", $format, $matrix_file) if ($main::verbose >= 1);
+	return()
+      }
+
     } else {
       &RSAT::message::Warning("File not found. Skipped.", $format, $matrix_file) if ($main::verbose >= 1);
-      return(undef);
+      return();
     }
   }
 }
