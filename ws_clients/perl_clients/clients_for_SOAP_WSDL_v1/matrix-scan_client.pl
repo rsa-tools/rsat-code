@@ -10,10 +10,10 @@
 ##
 ################################################################
 
-#use strict;
+use strict;
 use SOAP::WSDL;
 use Util::Properties;
-import SOAP::Lite + trace;
+#import SOAP::Lite + trace;
 
 ## WSDL location
 my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
@@ -38,13 +38,11 @@ my %args = $prop->prop_list();
 if ($args{sequence_file}) {
 $args{sequence_file} = `cat $args{sequence_file}`;
 chomp($args{sequence_file});
-#delete($args{sequence_file});
 }
 
 if ($args{matrix_file}) {
 $args{matrix_file} = `cat $args{matrix_file}`;
 chomp($args{matrix_file});
-#delete($args{matrix_file});
 }
 
 if ($args{matrix_list}) {
