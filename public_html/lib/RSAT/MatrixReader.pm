@@ -85,7 +85,12 @@ sub readFromFile {
       &RSAT::message::Info("Read ".scalar(@matrices)." matrices from file ", $file) if ($main::verbose >= 3);
     }
 
+    my $matrix_nb = 0;
     foreach my $matrix (@matrices) {
+      ## Reassign matrix numbers
+      $matrix_nb++;
+      $matrix->set_parameter("matrix.nb", $matrix_nb);
+
       ## Check that each matrix contains at least one row and one col
       if (($matrix->nrow() > 0) && ($matrix->ncol() > 0)) {
 	&RSAT::message::Info("Matrix read", 
@@ -93,6 +98,13 @@ sub readFromFile {
 			     "ncol = ".$matrix->ncol(),
 			     "prior : ".join (" ", $matrix->getPrior()),
 			    ) if ($main::verbose >= 3);
+
+	## Count number of sites per matrix
+	my $site_nb = scalar($matrix->get_attribute("sequences"));
+	if ($site_nb) {
+	  $matrix->set_parameter("sites", $site_nb);
+	}
+
       } else {
 	&RSAT::message::Warning("The file $file does not seem to contain a matrix in format $format. Please check the file format and contents.");
       }
@@ -399,6 +411,8 @@ sub _readFromGibbsFile {
 	pop @matrices;
       }
     }
+
+
     return @matrices;
 }
 
@@ -490,7 +504,7 @@ sub _readFromConsensusFile {
 
 	## Other matrix parameters
       } elsif (/number of sequences = (\d+)/) {
-	$matrix->set_parameter("cons.sites", $1); 
+	$matrix->set_parameter("sites", $1); 
       } elsif (/unadjusted information = (\S+)/) {
 	$matrix->set_parameter("cons.unadjusted.information", $1); 
       } elsif (/sample size adjusted information = (\S+)/) {
@@ -902,7 +916,7 @@ sub _readFromMEMEFile {
       $matrix->set_parameter("command", $meme_command);
       $matrix->set_parameter("sites", $3);
       $matrix->set_parameter("meme.llr", $4);
-      $matrix->set_parameter("E-value", $5);
+      $matrix->set_parameter("meme.E-value", $5);
       $matrix->setPrior(%residue_frequencies);
 #      &RSAT::message::Debug("line", $l, "Read letter frequencies", %residue_frequencies) if ($main::verbose >= 10);
       $matrix->setAlphabet_lc(@alphabet);
@@ -950,6 +964,7 @@ sub _readFromMEMEFile {
     }
   }
   close $in if ($file);
+
   return @matrices;
 #  return $matrices[0];
 }
@@ -1095,7 +1110,11 @@ sub _readFromMotifSamplerFile {
       while (my $field = shift @fields) {
 	$field =~ s/:$//;
 	$value = shift @fields;
-	$matrix->set_parameter("MS.".$field, $value);
+	if ($field eq "instances") {
+	  $matrix->set_parameter("sites", $value);
+	} else {
+	  $matrix->set_parameter("MS.".$field, $value);
+	}
       }
       $matrix->setAlphabet_lc(@alphabet);
       $matrix->setPrior(%prior);
