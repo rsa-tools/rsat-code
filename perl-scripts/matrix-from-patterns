@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.3 2007/01/14 15:08:01 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.4 2007/07/31 16:21:19 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -181,7 +181,7 @@ package main;
     ## Convert assembled patterns into matrices
     &RSAT::message::TimeWarn("Converting assemblies to significance matrices") if ($main::verbose >= 2);
     my $convert_cmd = "${SCRIPTS}/convert-matrix -v 1 -i ".$outfile{assembly};
-    $convert_cmd .= " -in_format assembly";
+    $convert_cmd .= " -from assembly";
     $convert_cmd .= " -return counts,parameters";
     $convert_cmd .= " -o ".$outfile{sig_matrices};
     print $log "; assemblies -> significance matrices\n", $convert_cmd, "\n";

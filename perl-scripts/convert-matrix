@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.33 2007/07/18 08:10:24 jvanheld Exp $
+# $Id: convert-matrix,v 1.34 2007/07/31 16:21:19 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -225,27 +225,11 @@ OPTIONS
 		file does not contain any indication of prior
 		frequencies, equal priors are assumed.
 
-	-in_format	
+	-from
 		input matrix format
 		Supported: $supported_input_formats
 
-	-top 
-	        Maximal number of matrices to return. 
-		Some of the input formats can contain several matrices
-		in a single file (e.g. consensus, meme,
-		MotifSampler). By default, all the matrices are parsed
-		and exported. The option -top allows to restrict the
-		number of matrices to be exported.
-
-	-return	return type
-		Supported: $supported_return_fields
-
-		convert-matrix allows to perform various conversions, starting
-		from an input occurrence matrix, in order to obtain various
-		statistics such as frequencies, weights, information contents,
-		.... The supported return types are described in detail below.
-
-	-out_format	
+	-to
 		output matrix format. 
 		Supported: $supported_output_formats
 
@@ -260,18 +244,34 @@ OPTIONS
 		type of information in the matrix. For instance, patser uses a
 		matrix of counts (or optionnally weights), whereas
 		MotifScanner uses a frequency matrix. 
-		
+
 		In order to use a matrix as input for another program, the
 		verbosity should be set to 0, in order to avoid comment lines
 		(which would be misinterpreted by other programs).
-		
+
 		Recommended combinations of parameters
-		
+
 		Input for patser
 		      -return counts -out_format patser -v 0
-		
+
 		Input for MotifScanner
 		      -return frequencies -out_format MotifScanner -v 0
+
+	-return	return type
+		Supported: $supported_return_fields
+
+		convert-matrix allows to perform various conversions, starting
+		from an input occurrence matrix, in order to obtain various
+		statistics such as frequencies, weights, information contents,
+		.... The supported return types are described in detail below.
+
+	-top 
+	        Maximal number of matrices to return. 
+		Some of the input formats can contain several matrices
+		in a single file (e.g. consensus, meme,
+		MotifSampler). By default, all the matrices are parsed
+		and exported. The option -top allows to restrict the
+		number of matrices to be exported.
 
 	-pseudo	
 		pseudo-weight used for the calculation of the weight
@@ -488,11 +488,11 @@ convert-matrix options
 -i		input file
 -o		output file
 -v		verbose
--in_format	input matrix format. Supported: $supported_input_formats
--top		maximal number of matrices to return. 
--out_format	output matrix format. Supported: $supported_output_formats
+-from		input matrix format. Supported: $supported_input_formats
+-to		output matrix format. Supported: $supported_output_formats
 -return		return type(s). Supported: $supported_return_fields
 -prior 		prior frequency file
+-top		maximal number of matrices to return. 
 -pseudo		pseudo-weight (default: $pseudo_weight)
 -equi_pseudo	equiprobable distribution of pseudo-weights between residues
 -decimals	number of decimals digits to print for real matrices
@@ -548,8 +548,14 @@ sub ReadArguments {
 
 
       ### input format 
-    } elsif ($ARGV[$a] eq "-in_format") {
+    } elsif ($ARGV[$a] eq "-from") {
       $input_format = lc($ARGV[$a+1]);
+      unless ($supported_input_format{$input_format}) {
+	  &RSAT::error::FatalError("$input_format\tInvalid format for input matrix\tSupported: $supported_input_formats");
+      }
+    } elsif ($ARGV[$a] eq "-in_format") {
+	&RSAT::message::Warning("The option -in_format is obsolete, please use -from instead.");
+	$input_format = lc($ARGV[$a+1]);
       unless ($supported_input_format{$input_format}) {
 	  &RSAT::error::FatalError("$input_format\tInvalid format for input matrix\tSupported: $supported_input_formats");
       }
@@ -564,6 +570,12 @@ sub ReadArguments {
 
       ### output format 
     } elsif ($ARGV[$a] eq "-out_format") {
+      $output_format = $ARGV[$a+1];
+      unless ($supported_output_format{$output_format}) {
+	  &RSAT::error::FatalError("$output_format\tInvalid format for output matrix\tSupported: $supported_output_formats");
+      }
+    } elsif ($ARGV[$a] eq "-to") {
+	&RSAT::message::Warning("The option -out_format is obsolete, please use -to instead.");
       $output_format = $ARGV[$a+1];
       unless ($supported_output_format{$output_format}) {
 	  &RSAT::error::FatalError("$output_format\tInvalid format for output matrix\tSupported: $supported_output_formats");
