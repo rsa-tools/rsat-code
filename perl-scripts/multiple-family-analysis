@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.198 2007/07/31 06:43:02 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.199 2007/07/31 08:14:19 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -261,12 +261,12 @@ $current_analysis = $analysis_factory->new_object(id=>$run_prefix);
 
 ## Class holder for families
 local $family_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Family",
-						      prefix=>$run_prefix."_");
+						      prefix=>$run_prefix."_fam");
 $family_factory->set_out_fields(qw(id analysis organism size name  genes));
 
 ## Class holder for patterns (oligos and dyads)
 local $pattern_factory = classes::ClassFactory->new_class(object_type=>"RSAT::pattern",
-							  prefix=>$run_prefix."_");
+							  prefix=>$run_prefix."_pat");
 @pattern_out_fields = qw(id
 			 family_id
 			 family 
@@ -284,19 +284,24 @@ $pattern_factory->set_out_fields(@pattern_out_fields);
 
 ## Class holder for the matrices (gibbs, meme, consensus, MotifSampler)
 local $matrix_factory = classes::ClassFactory->new_class(object_type=>"RSAT::matrix",
-							 prefix=>$run_prefix."_");
+							 prefix=>$run_prefix."_mat");
 @matrix_out_fields = qw(id
+			family_id
+			family
 			program
+			sites
 			matrix.nb
-
-			alphabet.size
 			ncol
 			nrow
 			type
+			alphabet.size
 
-			consensus.strict
 			consensus.IUPAC
+			consensus.IUPAC.rc
+			consensus.strict
+			consensus.strict.rc
 			consensus.regexp
+			consensus.regexp.rc
 
 			total.information
 			info.log.base
@@ -305,7 +310,6 @@ local $matrix_factory = classes::ClassFactory->new_class(object_type=>"RSAT::mat
 			max.possible.info.per.col
 			min.prior
 
-			cons.sites
 			cons.P-value
 			cons.ln.Pval
 			cons.E-value
@@ -317,6 +321,15 @@ local $matrix_factory = classes::ClassFactory->new_class(object_type=>"RSAT::mat
 			gibbs.betaprior.map
 			gibbs.model.map
 			gibbs.seed
+
+			meme.llr
+			meme.E-value
+
+			MS.ic
+			MS.ll
+			MS.cs
+			MS.consensus
+			MS.sequences
 
 			input_file
 			command
@@ -2035,10 +2048,8 @@ sub ReadMatrix {
 	## Read matrices from the input file
 	my @new_matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $format);
 	&RSAT::message::Info("Read",scalar(@new_matrices),"matrices from file",$matrix_file, $format) if ($main::verbose >= 0);
-	
 	my $matrix = $new_matrices[0];
 	if ($matrix) {
-	  $matrix->force_attribute("id", join("_",$run_prefix,$family_name,$format));
 	  $matrix->force_attribute("family", $family_name);
 	  $matrix->force_attribute("format", $format);
 	  $matrix->set_attribute("input_file", $matrix_file);
@@ -2054,7 +2065,10 @@ sub ReadMatrix {
 #	    return($matrix);
 #	  }
 #	}
-
+	  my $id = RSAT::matrix->auto_id($run_prefix."_mat");
+	  $matrix->force_attribute("id", $id);
+	  $matrix->set_attribute("analysis", $run_prefix);
+	  return($matrix);
 
       } else {
 	&RSAT::message::Warning("Matrix file does no contain a valid matrix. Skipped.", $format, $matrix_file) if ($main::verbose >= 1);
@@ -3422,171 +3436,161 @@ sub MakeDirectories {
 ### Generate tab files and SQL scripts for storing the results in a
 ### relational database
 sub ExportSQL {
-   &RSAT::message::TimeWarn ("Generating SQL") if ($verbose >= 1);
-#   my $test = new RSAT::Family;
+  &RSAT::message::TimeWarn ("Generating SQL") if ($verbose >= 1);
 
-   &RSAT::message::debug($current_analysis, $current_analysis->get_attribute("id")) if ($main::verbose >= 10);
+  &RSAT::message::debug($current_analysis, $current_analysis->get_attribute("id")) if ($main::verbose >= 10);
 
-   $current_analysis->set_attribute("date", $run_date);
-   $current_analysis->set_attribute("family_file", $family_file);
-   $current_analysis->set_attribute("organism", $organism_name);
-   $current_analysis->set_attribute("background", $background);
-   $current_analysis->set_attribute("up_from", $from);
-   $current_analysis->set_attribute("up_to", $to);
-   $current_analysis->set_attribute("orf_ovlp", $noorf);
-   $current_analysis->set_attribute("pattern_ovlp", $noov);
-   $current_analysis->set_attribute("strands", $strands);
-   $current_analysis->set_attribute("thosig", $lth{occ_sig});
-   $current_analysis->set_attribute("suffix", $table_suffix);
+  ## Set the parameters for the analysis as a whole
+  $current_analysis->set_attribute("date", $run_date);
+  $current_analysis->set_attribute("family_file", $family_file);
+  $current_analysis->set_attribute("organism", $organism_name);
+  $current_analysis->set_attribute("background", $background);
+  $current_analysis->set_attribute("up_from", $from);
+  $current_analysis->set_attribute("up_to", $to);
+  $current_analysis->set_attribute("orf_ovlp", $noorf);
+  $current_analysis->set_attribute("pattern_ovlp", $noov);
+  $current_analysis->set_attribute("strands", $strands);
+  $current_analysis->set_attribute("thosig", $lth{occ_sig});
+  $current_analysis->set_attribute("suffix", $table_suffix);
 
-   my %export_columns = ();
-   foreach my $family_name (@families) {
+  my %export_columns = ();
+  foreach my $family_name (@families) {
 
-	#### general family attributes
-	my $family_object = $family_factory->new_object(id=>$run_prefix."_".$family_name);
-	my $family_id = $family_object->get_attribute("id");
+    #### general family attributes
+    my $family_object = $family_factory->new_object(id=>$run_prefix."_".$family_name);
+    local $family_id = $family_object->get_attribute("id");
+    $current_analysis->push_attribute("families",$family_id);
+    $family_object->set_attribute("analysis", $run_prefix);
+    $family_object->set_attribute("name", $family_name);
+    $family_object->set_attribute("size", scalar(@{$family{$family_name}->{members}}));
+    $family_object->set_attribute("organism", $organism_name);
+    &RSAT::message::Warning ("", "SQL export for family", $family_name, $organism_name) if ($main::verbose >= 2);
 
-	$current_analysis->push_attribute("families",$family_id);
+    #### family members
+    my @members = @{$family{$family_name}->{members}};
+    foreach my $m (@members) {
+      $family_object->push_attribute("genes", $m);
+    }
 
-	$family_object->set_attribute("analysis", $run_prefix);
-	$family_object->set_attribute("name", $family_name);
-	$family_object->set_attribute("size", scalar(@{$family{$family_name}->{members}}));
-	$family_object->set_attribute("organism", $organism_name);
-	warn join ("\t", ";\tSQL export for family", $family_name, $organism_name), "\n" if ($main::verbose >= 2);
-
-	#### family members
-	my @members = @{$family{$family_name}->{members}};
-	foreach my $m (@members) {
-	    $family_object->push_attribute("genes", $m);
-	}
-
-	#### discovered oligos
-	my $oligo_file = $family{$family_name}->{oligo_file};
-	if (-e $oligo_file) {
-	    my %export_columns = ();
-	    ($oligo_handle, $dir) = &OpenInputFile($oligo_file);
-	    while (<$oligo_handle>) {
-		chomp;
-		if (/^;/) {
-		    if ((/;\s+(\d+)\t(\S+)/) && ($2 ne "id")){
-			$export_columns{$2} = $1 - 1;
-		    }
-		    next;
-		}
-		next unless (/\S/); ## Skip empty lines
-		next if (/^#/); ## Skip header line
-		my @fields = split;
-		my $sequence = uc($fields[0]);
-#		my %export_columns = ();
-		my $oligo_object = $pattern_factory->new_object();
-		warn join ("\t", "; Created object", $sequence, $oligo_object), "\n" if ($main::verbose >= 3);
-		foreach $k (sort keys %export_columns) {
-		    warn join ("\t", ";", "specifying attribute", 
-			       $k, 
-			       $export_columns{$k},
-			       $fields[$export_columns{$k}],
-			       ), "\n" if ($main::verbose >= 5);
-		    $oligo_object->set_attribute($k, $fields[$export_columns{$k}]);
-		}
-		warn join ("\t", ";", "specifying sequence", $sequence), "\n" if ($main::verbose >= 5);
-		$oligo_object->force_attribute("sequence", $sequence);
-		$oligo_object->force_attribute("type", "oligo");
-		$oligo_object->set_attribute("family_id", $family_id);
-		$oligo_object->set_attribute("family", $family_name);
-		if ($strands eq "-2str") {
-		    $oligo_object->force_attribute("rev_compl", &ReverseComplement($oligo_object->get_attribute("sequence")));
-		}
-	    }
-	    close $oligo_handle;
-	} else {
-	    my $pwd = `pwd`;
-	    chomp $pwd;
-	    &RSAT::message::Warning(join ("\t", "SQL export", $family_name, $pwd, "oligo file does not exist",  $oligo_file , "SKIPPED"));
-	}
-
-	#### discovered dyads
-	my $dyad_file = $family{$family_name}->{dyad_file};
-	if (-e $dyad_file) {
-	    my %export_columns = ();
-	    open DYADS, $dyad_file;
-	    while (<DYADS>) {
-		chomp;
-		if (/^;/) {
-		    ## Temporary patch for dyad obs_occ -> occ (to be compatile with oligo-analysis
-		    s/obs_occ/occ/;
-
-		    ## Output fields
-		    if ((/;\s+(\d+)\t(\S+)/) && ($2 ne "id")){
-			$export_columns{$2} = $1 - 1;
-		    }
-		    next;
-		}
-		next unless (/\S/);
-		next if (/^#/); ## Skip header line
-		my @fields = split;
-		my $sequence = uc($fields[0]);
-		$sequence =~ s/N/n/g;
-#		$sequence =~ s/n\{0\}//g;
-		my $dyad_object = $pattern_factory->new_object();
-		warn join ("\t", "; Created object", $sequence, $dyad_object), "\n" if ($main::verbose >= 3);
-		foreach $k (sort keys %export_columns) {
-		    warn join ("\t", ";", "specifying attribute", 
-			       $k, 
-			       $export_columns{$k},
-			       $fields[$export_columns{$k}],
-			       ), "\n" if ($main::verbose >= 5);
-		    $dyad_object->set_attribute($k, $fields[$export_columns{$k}]);
-		}
-		warn join ("\t", ";", "specifying sequence", $sequence), "\n" if ($main::verbose >= 5);
-		$dyad_object->force_attribute("sequence", $sequence);
-		$dyad_object->force_attribute("type", "dyad");
-		$dyad_object->set_attribute("family_id", $family_id);
-		$dyad_object->set_attribute("family", $family_name);
-		if ($strands eq "-2str") {
-		    my $rc_sequence = uc( &ReverseComplement($dyad_object->get_attribute("sequence")));
-		    $rc_sequence =~ s/N/n/g;
-		    $dyad_object->force_attribute("rev_compl",$rc_sequence);
-		}
-	    }
-	    close DYADS;
-	} else {
-	    &RSAT::message::Warning(join ("\t", "SQL export", $family_name, $pwd, "dyad file does not exist",  $dyad_file , "SKIPPED"));
-	}
-
-	#### Matrices
-	for my $program qw (consensus gibbs meme MotifSampler) {
-	  my $matrix_file = $family{$family_name}->{$program."_file"};
-	  if (-e $matrix_file) {
-	    &ReadMatrix($family_name, $matrix_file, format=>$program);
-	  } else {
-	    &RSAT::message::Warning(join ("\t", "SQL export", $family_name, $pwd, "matrix file does not exist",  $matrix_file , "SKIPPED"));
+    #### discovered oligos
+    my $oligo_file = $family{$family_name}->{oligo_file};
+    if (-e $oligo_file) {
+      my %export_columns = ();
+      ($oligo_handle, $dir) = &OpenInputFile($oligo_file);
+      while (<$oligo_handle>) {
+	chomp;
+	if (/^;/) {
+	  if ((/;\s+(\d+)\t(\S+)/) && ($2 ne "id")) {
+	    $export_columns{$2} = $1 - 1;
 	  }
+	  next;
 	}
-   }
+	next unless (/\S/);	## Skip empty lines
+	next if (/^#/);		## Skip header line
+	my @fields = split;
+	my $sequence = uc($fields[0]);
+	my $oligo_object = $pattern_factory->new_object();
+	warn join ("\t", "; Created object", $sequence, $oligo_object), "\n" if ($main::verbose >= 3);
+	foreach $k (sort keys %export_columns) {
+	  &RSAT::message::Debug ( "specifying attribute", 
+				  $k, 
+				  $export_columns{$k},
+				  $fields[$export_columns{$k}],
+				) if ($main::verbose >= 5);
+	  $oligo_object->set_attribute($k, $fields[$export_columns{$k}]);
+	}
+	&RSAT::message::Debug ("specifying sequence", $sequence) if ($main::verbose >= 5);
+	$oligo_object->force_attribute("sequence", $sequence);
+	$oligo_object->force_attribute("type", "oligo");
+	$oligo_object->set_attribute("family_id", $family_id);
+	$oligo_object->set_attribute("family", $family_name);
+	if ($strands eq "-2str") {
+	  $oligo_object->force_attribute("rev_compl", &ReverseComplement($oligo_object->get_attribute("sequence")));
+	}
+      }
+      close $oligo_handle;
+    } else {
+      my $pwd = `pwd`;
+      chomp $pwd;
+      &RSAT::message::Warning(join ("\t", "SQL export", $family_name, $pwd, "oligo file does not exist",  $oligo_file , "SKIPPED"));
+    }
 
-   ## Specify output fields
+    #### discovered dyads
+    my $dyad_file = $family{$family_name}->{dyad_file};
+    if (-e $dyad_file) {
+      my %export_columns = ();
+      open DYADS, $dyad_file;
+      while (<DYADS>) {
+	chomp;
+	if (/^;/) {
+	  ## Temporary patch for dyad obs_occ -> occ (to be compatile with oligo-analysis
+	  s/obs_occ/occ/;
 
-   #### export directory
-   $dir{sql} = "sql_export";
-   chdir($dir{output}); &RSAT::util::CheckOutDir($dir{sql});
+	  ## Output fields
+	  if ((/;\s+(\d+)\t(\S+)/) && ($2 ne "id")) {
+	    $export_columns{$2} = $1 - 1;
+	  }
+	  next;
+	}
+	next unless (/\S/);
+	next if (/^#/);		## Skip header line
+	my @fields = split;
+	my $sequence = uc($fields[0]);
+	$sequence =~ s/N/n/g;
+	my $dyad_object = $pattern_factory->new_object();
+	warn join ("\t", "; Created object", $sequence, $dyad_object), "\n" if ($main::verbose >= 3);
+	foreach $k (sort keys %export_columns) {
+	  &RSAT::message::Debug("specifying attribute", $k, $export_columns{$k},$fields[$export_columns{$k}])
+	    if ($main::verbose >= 5);
+	  $dyad_object->set_attribute($k, $fields[$export_columns{$k}]);
+	}
+	&RSAT::message::Debug ("specifying sequence", $sequence) if ($main::verbose >= 5);
+	$dyad_object->force_attribute("sequence", $sequence);
+	$dyad_object->force_attribute("type", "dyad");
+	$dyad_object->set_attribute("family_id", $family_id);
+	$dyad_object->set_attribute("family", $family_name);
+	if ($strands eq "-2str") {
+	  my $rc_sequence = uc( &ReverseComplement($dyad_object->get_attribute("sequence")));
+	  $rc_sequence =~ s/N/n/g;
+	  $dyad_object->force_attribute("rev_compl",$rc_sequence);
+	}
+      }
+      close DYADS;
+    } else {
+      &RSAT::message::Warning(join ("\t", "SQL export", $family_name, $pwd, "dyad file does not exist",  $dyad_file , "SKIPPED"));
+    }
 
-   ### temporary output directory
-   $dir{output_bk} = $dir{output};
-   $dir{output} = $dir{sql};
-   my $pwd = `pwd`;
-   chomp $pwd;
-   warn join ("\t", $pwd , $dir{output}, $dir{output_bk}), "\n";
-   #### export the result tables
-   foreach my $factory ($analysis_factory, $family_factory, $pattern_factory, $matrix_factory) {
-	$factory->dump_tables();
-	$factory->generate_sql(schema=>$schema, 
-			       host=>$host, 
-			       password=>$password, 
-			       user=>$user);
-   }
-   &ExportMakefile("analysis", "family", "pattern");
-#    $dir{output} = $dir{output_bk};
-#    chdir($dir{output});
+    #### Matrices
+    for my $program qw (consensus gibbs meme MotifSampler) {
+      my $matrix_file = $family{$family_name}->{$program."_file"};
+      if (-e $matrix_file) {
+	my $matrix = &ReadMatrix($family_name, $matrix_file, format=>$program);
+	$matrix->set_attribute("family_id",$family_id);
+      } else {
+	&RSAT::message::Warning(join ("\t", "SQL export", $family_name, $pwd, "matrix file does not exist",  $matrix_file , "SKIPPED"));
+      }
+    }
+  }
+
+  ## Export directory
+  $dir{sql} = "sql_export";
+  chdir($dir{output}); &RSAT::util::CheckOutDir($dir{sql});
+
+  ### temporary output directory
+  $dir{output_bk} = $dir{output};
+  $dir{output} = $dir{sql};
+  my $pwd = `pwd`;
+  chomp $pwd;
+  warn join ("\t", $pwd , $dir{output}, $dir{output_bk}), "\n";
+  #### export the result tables
+  foreach my $factory ($analysis_factory, $family_factory, $pattern_factory, $matrix_factory) {
+    $factory->dump_tables();
+    $factory->generate_sql(schema=>$schema, 
+			   host=>$host, 
+			   password=>$password, 
+			   user=>$user);
+  }
+  &ExportMakefile("analysis", "family", "pattern");
 }
 
 ## ##############################################################
@@ -4476,59 +4480,56 @@ sub MDCreport {
 ## Extract contigs and isolated patterns from an assembly file for the
 ## synthetic table
 sub ReadAssemblyFile {
-   my ($family_name, $assembly_file, $pattern_type) = @_;
-   my ($pattern_handle, $input_dir) = &OpenInputFile($assembly_file);
-   my @assembled_patterns = ();
-   my $error = "";
-   my %score = ();
+  my ($family_name, $assembly_file, $pattern_type) = @_;
+  my ($pattern_handle, $input_dir) = &OpenInputFile($assembly_file);
+  my @assembled_patterns = ();
+  my $error = "";
+  my %score = ();
 
-   while (<$pattern_handle>) {
-	chomp;
-	if (/Too many patterns to assemble/i) {
-	    $error = $_;
-	    while (<$pattern_handle>) {
-		$error .= "\n", $_;
-	    } 
-	    return($error);
-	}
-	next if (/^;/);
-	next if (/^\#/);
-	next unless (/\S/);
-	
-	if ((/contig/) || (/consensus/) || (/isol/)) {
-	    @fields = split "\t";
-	    my $pattern_seq = &RSAT::util::trim(shift (@fields));
-	    $pattern_seq =~ s/^\.+//g;
-	    $pattern_seq =~ s/\.+$//g;
-	    $pattern = new RSAT::pattern();
-	    $pattern->set_attribute("sequence", $pattern_seq);
-	    push @assembled_patterns, $pattern;
-	    if ($strands eq "-2str") {
-#		my $rc = &SmartRC($pattern_seq);
-		my $rc = &RSAT::util::trim(shift @fields);
-		$pattern->set_attribute("rc", $rc);
-#			$rc{$pattern} = uc(&ReverseComplement($pattern->get_attribute("sequence")));
-	    }
-	    $score{$pattern} = shift @fields;
-	    $pattern->set_attribute("score", $score{$pattern});
-#	    $score{$pattern} = $score; ## index pattern scores for sorting
-	    
-	    my $type = shift @fields;
-	    $pattern->force_attribute("type", $type);
-	    $max_score{$family_name} = &max($max_score{$family_name}, $score{$pattern});
-	    $max_score{$pattern_type}{$family_name} = &max($max_score{$pattern_type}{$family_name}, $score{$pattern});
-	    warn "Pattern\t", $_, "\n", join("\t", $family_name, 
-					     $pattern->get_attribute('sequence'),
-					     $pattern->get_attribute('rc'),
-					     $pattern->get_attribute('score'),
-					     $pattern->get_attribute('type'),
-					     $score{$pattern},
-					     $max_score{$family_name},
-					     ), "\n" if ($main::verbose >= 10);
-	}
-   }
-   close $pattern_handle;
-   return ($error, @assembled_patterns);
+  while (<$pattern_handle>) {
+    chomp;
+    if (/Too many patterns to assemble/i) {
+      $error = $_;
+      while (<$pattern_handle>) {
+	$error .= "\n", $_;
+      } 
+      return($error);
+    }
+    next if (/^;/);
+    next if (/^\#/);
+    next unless (/\S/);
+
+    if ((/contig/) || (/consensus/) || (/isol/)) {
+      @fields = split "\t";
+      my $pattern_seq = &RSAT::util::trim(shift (@fields));
+      $pattern_seq =~ s/^\.+//g;
+      $pattern_seq =~ s/\.+$//g;
+      $pattern = new RSAT::pattern();
+      $pattern->set_attribute("sequence", $pattern_seq);
+      push @assembled_patterns, $pattern;
+      if ($strands eq "-2str") {
+	my $rc = &RSAT::util::trim(shift @fields);
+	$pattern->set_attribute("rc", $rc);
+      }
+      $score{$pattern} = shift @fields;
+      $pattern->set_attribute("score", $score{$pattern});
+
+      my $type = shift @fields;
+      $pattern->force_attribute("type", $type);
+      $max_score{$family_name} = &max($max_score{$family_name}, $score{$pattern});
+      $max_score{$pattern_type}{$family_name} = &max($max_score{$pattern_type}{$family_name}, $score{$pattern});
+      warn "Pattern\t", $_, "\n", join("\t", $family_name, 
+				       $pattern->get_attribute('sequence'),
+				       $pattern->get_attribute('rc'),
+				       $pattern->get_attribute('score'),
+				       $pattern->get_attribute('type'),
+				       $score{$pattern},
+				       $max_score{$family_name},
+				      ), "\n" if ($main::verbose >= 10);
+    }
+  }
+  close $pattern_handle;
+  return ($error, @assembled_patterns);
 }
 
 
