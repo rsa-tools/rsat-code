@@ -76,10 +76,9 @@ sub init {
 	$auto_id =~ s/ /0/g;
 	$self->set_attribute("id",$auto_id);
     }
-    
+
     ### add the new object to the class list
     push @{$class."::_objects"}, $self;
-    
 }
 
 
