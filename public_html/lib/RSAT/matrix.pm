@@ -1084,7 +1084,8 @@ sub setCrudeFrequencies {
 
 =item calcFrequencies()
 
-Calculate frequencies from the count matrix (corrected with pseudo-weights).
+Calculate frequencies from the count matrix (corrected with
+pseudo-weights).
 
 =cut
 sub calcFrequencies {
@@ -1284,7 +1285,7 @@ sub calcConsensus {
     my @weights = $self->getWeights();
 
     my @alphabet = $self->getAlphabet();
-    
+
     ## Calculate consensus
     my $nrow = $self->nrow();
     my $ncol = $self->ncol();
@@ -1306,7 +1307,7 @@ sub calcConsensus {
 		}
 	    }
 	}
-	
+
 	## Calculate degenerate code
 	my  $regular = $col_consensus;
 	if (scalar(keys %positive_score) >= 2) {
@@ -1314,7 +1315,7 @@ sub calcConsensus {
 	    $regular .= join "", sort keys %positive_score;
 	    $regular .= "]";
 	}
-	
+
 	## Use uppercase for scores >= 1
 	if ($col_max >= 1) {
 	    $consensus_strict .= uc($col_consensus);
@@ -1487,14 +1488,14 @@ sub _printParameters {
     my ($self, $to_print) = @_;
     $to_print .= ";\n";
     $to_print .= "; Matrix parameters\n";
-    
+
     ## Matrix size
     $to_print .= sprintf ";\t%-29s\t%g\n", "Columns", $self->ncol();
     $to_print .= sprintf ";\t%-29s\t%g\n", "Rows", $self->nrow();
-    
+
     ## Alphabet
     $to_print .= sprintf ";\t%-29s\t%s\n", "Alphabet", join("|", $self->getAlphabet());
-    
+
     ## Prior probabilities
     my @prior_tmp = ();
     my %prior = $self->getPrior();
@@ -1502,7 +1503,6 @@ sub _printParameters {
       push @prior_tmp, $letter.":".$prior{$letter};
     }
     $to_print .= sprintf ";\t%-29s\t%s\n", "Prior", join("|", @prior_tmp);
-
 
     ## Matrix attributes
     my ($proba_min, $proba_max) = $self->proba_range();
@@ -1514,7 +1514,7 @@ sub _printParameters {
       ## Print only once if the param was entered several times
       next if $printed{$param};
       $printed{$param}++;
-      
+
       if ($self->get_attribute($param)) {
 	if (&main::IsInteger($self->get_attribute($param))) {
 	  $to_print .= sprintf ";\t%-29s\t%d\n", $param, $self->get_attribute($param);
