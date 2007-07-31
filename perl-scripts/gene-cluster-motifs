@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.199 2007/07/31 08:14:19 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.200 2007/07/31 08:51:35 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -2050,6 +2050,7 @@ sub ReadMatrix {
 	&RSAT::message::Info("Read",scalar(@new_matrices),"matrices from file",$matrix_file, $format) if ($main::verbose >= 0);
 	my $matrix = $new_matrices[0];
 	if ($matrix) {
+	  $matrix->force_attribute("family_id",$family_id);
 	  $matrix->force_attribute("family", $family_name);
 	  $matrix->force_attribute("format", $format);
 	  $matrix->set_attribute("input_file", $matrix_file);
@@ -3565,7 +3566,6 @@ sub ExportSQL {
       my $matrix_file = $family{$family_name}->{$program."_file"};
       if (-e $matrix_file) {
 	my $matrix = &ReadMatrix($family_name, $matrix_file, format=>$program);
-	$matrix->set_attribute("family_id",$family_id);
       } else {
 	&RSAT::message::Warning(join ("\t", "SQL export", $family_name, $pwd, "matrix file does not exist",  $matrix_file , "SKIPPED"));
       }
