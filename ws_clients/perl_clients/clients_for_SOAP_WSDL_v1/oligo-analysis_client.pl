@@ -16,8 +16,8 @@ use Util::Properties;
 warn "\nINFO: This demo script sends a set of sequences to the RSAT web service, and runs oligo-analysis to detect over-represented oligonuclotides\n\n";
 
 ## WSDL location
-#my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
-my $server = 'http://localhost/rsat/web_services';
+my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+#my $server = 'http://localhost/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
 
