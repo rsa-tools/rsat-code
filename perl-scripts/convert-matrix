@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.34 2007/07/31 16:21:19 jvanheld Exp $
+# $Id: convert-matrix,v 1.35 2007/07/31 19:51:59 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -34,6 +34,9 @@ local $input_format = "";
 local $output_format = "patser";
 local $verbose = 0;
 local $out = STDOUT;
+
+local $sort_key = "";
+local $sort_order = "";
 
 ## Return type(s)
 @return_fields = ();
@@ -127,6 +130,21 @@ $out = &OpenOutputFile($outfile{output});
 ## Read the input matrices
 my @matrices = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format);
 
+## Calculate parameters before sorting because sorting can be done on
+## a computed parameter rather than defined in the input file.
+if ($return_fields{parameters}) {
+    foreach my $matrix (@matrices) {
+	$matrix->calcWeights();
+	$matrix->calcInformation();
+	$matrix->calcConsensus();
+    }
+}
+
+## Sort the matrices if requested
+if ($sort_key) {
+    &SortMatrices($sort_key, $sort_order);
+}
+
 #### export the matrices
 my $m = 0;
 foreach my $matrix (@matrices) {
@@ -148,9 +166,9 @@ foreach my $matrix (@matrices) {
 }
 
 
-##### closing verbose
+## closing verbose
 if ($verbose) {
-    my $done_time = &AlphaDate;
+    my $done_time = &AlphaDate();
     print $out "; Job started $start_time\n";
     print $out "; Job done    $done_time\n";
 }
@@ -264,6 +282,22 @@ OPTIONS
 		from an input occurrence matrix, in order to obtain various
 		statistics such as frequencies, weights, information contents,
 		.... The supported return types are described in detail below.
+
+	-sort desc|asc|alpha key
+
+		Sort matrices according to the specified attribute
+		(sort_key). The sorting can be done on numerical
+		values, either in descending (desc) or ascending (asc)
+		order. It can also be done in alphabetical order
+		(alpha).
+
+		The key mst be one of the numeric parameters of the
+		matrices (e.g. information.content, E-value, ...).
+
+		This option is convenient, for example, to sort
+		matrices from MotifSampler according to their
+		information content:
+			-sort desc MS.ic
 
 	-top 
 	        Maximal number of matrices to return. 
@@ -491,8 +525,9 @@ convert-matrix options
 -from		input matrix format. Supported: $supported_input_formats
 -to		output matrix format. Supported: $supported_output_formats
 -return		return type(s). Supported: $supported_return_fields
--prior 		prior frequency file
+-sort desc|asc|alpha key     Sort matrices according to the specified key.
 -top		maximal number of matrices to return. 
+-prior 		prior frequency file
 -pseudo		pseudo-weight (default: $pseudo_weight)
 -equi_pseudo	equiprobable distribution of pseudo-weights between residues
 -decimals	number of decimals digits to print for real matrices
@@ -533,6 +568,17 @@ sub ReadArguments {
 	&FatalError(join("\t", $top_matrices, "Invlaid value for the option -top. Should be a strictly positive Natural number.")) 
 	    unless ((&IsNatural($top_matrices)) && ($top_matrices >= 1));
 
+	## Sort matrices
+    } elsif ($ARGV[$a] eq "-sort") {
+	$sort_order = lc($ARGV[$a+1]);
+	unless (($sort_order eq "desc") 
+		|| ($sort_order eq "asc")
+		|| ($sort_order eq "alpha")
+	    ) {
+	    &RSAT::error::FatalError($sort_order, "is not a valid sorting order. Supported: desc,asc.");
+	}
+	$sort_key = $ARGV[$a+2];
+
       ### prior frequency file
     } elsif ($ARGV[$a] eq "-prior") {
 	$infile{prior} = $ARGV[$a+1];
@@ -569,12 +615,12 @@ sub ReadArguments {
 	}
 
       ### output format 
-    } elsif ($ARGV[$a] eq "-out_format") {
+    } elsif ($ARGV[$a] eq "-to") {
       $output_format = $ARGV[$a+1];
       unless ($supported_output_format{$output_format}) {
 	  &RSAT::error::FatalError("$output_format\tInvalid format for output matrix\tSupported: $supported_output_formats");
       }
-    } elsif ($ARGV[$a] eq "-to") {
+    } elsif ($ARGV[$a] eq "-out_format") {
 	&RSAT::message::Warning("The option -out_format is obsolete, please use -to instead.");
       $output_format = $ARGV[$a+1];
       unless ($supported_output_format{$output_format}) {
@@ -795,4 +841,36 @@ sub ExportMatrix {
     }
   }
 
+}
+
+
+################################################################
+## Sort matrices according to the value of some parameter
+sub SortMatrices {
+    
+    ## Check if there is at least one matrix
+    if (scalar(@matrices) > 0) {
+	## Check if the first matrix has the sort key as attribute
+	my $first_matrix = $matrices[0];
+	if ($first_matrix->get_attribute($sort_key)) {
+
+	    ## Sort matrices
+	    if ($sort_order eq "desc") {
+		&RSAT::message::Warning("Sorting matrices by descending values of", $sort_key) if ($main::verbose >= 2);
+		@matrices = sort {$b->{$sort_key} <=> $a->{$sort_key}} @matrices;
+	    } elsif  ($sort_order eq "asc") {
+		&RSAT::message::Warning("Sorting matrices by ascending values of", $sort_key) if ($main::verbose >= 2);
+		@matrices = sort {$a->{$sort_key} <=> $b->{$sort_key}} @matrices;
+	    } elsif  ($sort_order eq "alpha") {
+		&RSAT::message::Warning("Sorting matrices by alphabetic values of", $sort_key) if ($main::verbose >= 2);
+		@matrices = sort {$a->{$sort_key} ge $b->{$sort_key}} @matrices;
+	    } else {
+		&RSAT::error::FatalError($sort_order, "is not a valid sorting order. Supported: desc,asc.");
+	    }
+	} else {
+	    &RSAT::message::Warning("Cannot sort matrices by", $sort_key, "because this parameter is not defined for these matrices.")
+		if ($main::verbose >= 0);
+	}
+    }
+#    return @matrices;
 }
