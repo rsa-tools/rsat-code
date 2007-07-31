@@ -413,7 +413,7 @@ sub dna_pattern_cmd {
       chomp $pattern;
       $pattern =~ s/\'//g;
       $pattern =~ s/\"//g;
-      $command .= " -pl '".$pattern."'";
+      $command .= " -p '".$pattern."'";
     }
 
     if ($subst) {
