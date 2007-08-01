@@ -25,7 +25,8 @@ administrator to install them for you.
 
 \section{Examples of WS client in Perl}
 
-We show hereafter some simple examples of clients written in perl.
+We show hereafter some simple examples of clients written in perl. The presented code
+as well as other can be downloaded from \url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services.html}
 
 \subsection{Getting gene-info from RSATWS}
 
@@ -151,7 +152,7 @@ in the documentation of the RSATWS web services at the following URL.
 The following example is a script to retrieve the start codons of
 three Escherichia coli genes. It uses \program{retrieve-seq} to do
 so. The various parameters are passed as a hash table to the
-method. If there is an error ,it will be displayed, otherwise the
+method. If there is an error, it will be displayed, otherwise the
 result is displayed, toghether with the full command generated on the
 server and the name of the temporary file created on the server to
 hold the result localy. This file is useful when one wants to feed
@@ -256,7 +257,7 @@ transported from the server to the client.
 \begin{footnotesize}
 \begin{verbatim}
 #!/usr/bin/perl -w
-# retrieve_purge_oligos_client_wsdl.pl - Client retrieve-seq + oligo-analysis
+# retrieve_purge_oligos_client_soap-wsdl.pl - Client retrieve-seq + oligo-analysis
 
 ################################################################
 ##
@@ -428,7 +429,7 @@ You can, of course, use directly the program \program{oligo-analysis}, providing
 \begin{footnotesize}
 \begin{verbatim}
 #!/usr/bin/perl -w
-# oligos_client_wsdl.pl - Client oligo-analysis using the SOAP::WSDL module
+# oligos_client_soap-wsdl.pl - Client oligo-analysis using the SOAP::WSDL module
 
 ################################################################
 ##
@@ -440,7 +441,6 @@ You can, of course, use directly the program \program{oligo-analysis}, providing
 
 use strict;
 use SOAP::WSDL;
-
 
 warn "\nINFO: This demo script sends a set of sequences to the RSAT web service, and runs oligo-analysis to detect over-represented oligonuclotides\n\n";
 
@@ -521,6 +521,123 @@ if ($call->fault){  ## Report error if any
 }
 \end{verbatim}
 \end{footnotesize}
+
+\subsection{Example of clients using property files}
+We have also made clients using an alternative approach. Instead of writing
+the parameters values in the client code itself, these are read from a
+property file. Here is the client for retrieve-seq:
+
+\begin{footnotesize}
+\begin{verbatim}
+#!/usr/bin/perl -w
+# retrieve-seq_client.pl - Client retrieve-seq using the SOAP::WSDL module
+# and a property file
+
+################################################################
+##
+## This script runs a simple demo of the web service inerface to the
+## RSAT tool retrieve-seq. It sends a request to the server for
+## obtaining the start codons of 3 E.coli genes.
+##
+################################################################
+
+use strict;
+use SOAP::WSDL;
+use Util::Properties;
+
+## WSDL location
+my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $WSDL = $server.'/RSATWS.wsdl';
+my $proxy = $server.'/RSATWS.cgi';
+my $property_file = shift @ARGV;
+die "\tYou must specify the property file as first argument\n"
+  unless $property_file;
+
+## Service call
+my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
+$soap->wsdlinit;
+
+my $prop =  Util::Properties->new();
+$prop->file_name($property_file);
+$prop->load();
+my %args = $prop->prop_list();
+
+## Convert the query string into a list
+my @queries = split(",", $args{query});
+$args{query} = \@queries;
+
+my $output_choice = $args{output_choice} || 'both';
+
+warn "\nThis demo script retrieves upstream sequences for a set of query genes\n\n";
+
+## Send the request to the server
+print "Sending request to the server $server\n";
+my $som = $soap->call('retrieve_seq' => 'request' => \%args);
+
+## Get the result
+if ($som->fault){ ## Report error if any
+    printf "A fault (%s) occured: %s\n", $som->faultcode, $som->faultstring;
+} else {
+    my $results_ref = $som->result;  ## A reference to the result hash table
+    my %results = %$results_ref;  ## Dereference the result hash table
+
+    ## Report the remote command
+    my $command = $results{'command'};
+    print "Command used on the server: ".$command, "\n";
+
+    ## Report the result
+    if ($output_choice eq 'server') {
+	my $server_file = $results{'server'};
+	print "Result file on the server: ".$server_file;
+    } elsif ($output_choice eq 'client') {
+	my $result = $results{'client'};
+	print "Retrieved sequence(s): \n".$result;
+    } elsif ($output_choice eq 'both') {
+	my $server_file = $results{'server'};
+	my $result = $results{'client'};
+	print "Result file on the server: ".$server_file;
+	print "Retrieved sequence(s): \n".$result;
+    }
+}
+\end{verbatim}
+\end{footnotesize}
+
+The property file looks like this:
+\begin{footnotesize}
+\begin{verbatim}
+output=both
+organism=Escherichia_coli_K12
+query=metA,metB
+all=0
+noorf=1
+from=0
+to=2
+feattype=CDS
+type=upstream
+format=fasta
+lw=0
+label=id,name
+label_sep=
+nocom=0
+repeat= 0
+imp_pos=0
+\end{verbatim}
+\end{footnotesize}
+
+To run the client, give the path of the property file as argument.
+
+In the downloadable clients, the ones with a name like *_client.pl use a
+property file. Examples of property files are in the sub-directory
+'property_files'. When the property file contains the path to a file, make
+sure you edit it according to your system.
+
+\subsection{Other tools in RSATWS}
+Following the examples above or using the code that is avilable for download
+from \url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services.html},
+you can easily access the other RSA Tools for which Web Services have been
+implemented. You will find all you need to know about the tools (parameters,
+etc.) in the documentation
+(\url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services/RSATWS\_documentation.pdf}).
 
 \section{Examples of WS client in java}
 First, you need to generate the libraries. There are tools, like Axis, which do it from the WSDL document. These usually take the URL of that document as one of their parameters. In our case, it is there:
