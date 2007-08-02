@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.15 2007/07/27 15:06:42 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.16 2007/08/02 13:23:53 rsat Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -103,11 +103,11 @@ print <<EndText;
 
     <P>
       <font color='red'>New !</font> For bioinformaticians, RSAT tools
-      are now also available as <a href=web_services.html><b>web services</b></a>. 
+      are now also available as <a href=web_services.html><b>Web Services</b></a>. 
     </p>
 
     <P>
-    This web site and the web services are freely available for
+    This web site and the Web Services are freely available for
     academic users. For users from commercial companies, please read
     our <A HREF="disclaimer.html">disclaimer</A>.
     </font>
