@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.35 2007/07/31 19:51:59 jvanheld Exp $
+# $Id: convert-matrix,v 1.36 2007/08/02 06:56:27 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -142,7 +142,7 @@ if ($return_fields{parameters}) {
 
 ## Sort the matrices if requested
 if ($sort_key) {
-    &SortMatrices($sort_key, $sort_order);
+  @matrices = &RSAT::MatrixReader::SortMatrices($sort_key, $sort_order, @matrices);
 }
 
 #### export the matrices
@@ -571,11 +571,11 @@ sub ReadArguments {
 	## Sort matrices
     } elsif ($ARGV[$a] eq "-sort") {
 	$sort_order = lc($ARGV[$a+1]);
-	unless (($sort_order eq "desc") 
+	unless (($sort_order eq "desc")
 		|| ($sort_order eq "asc")
 		|| ($sort_order eq "alpha")
 	    ) {
-	    &RSAT::error::FatalError($sort_order, "is not a valid sorting order. Supported: desc,asc.");
+	    &RSAT::error::FatalError($sort_order, "is not a valid sorting order. Supported: desc,asc,alpha.");
 	}
 	$sort_key = $ARGV[$a+2];
 
@@ -586,7 +586,7 @@ sub ReadArguments {
       ### output file 
     } elsif ($ARGV[$a] eq "-o") {
       $outfile{output} = $ARGV[$a+1];
-      
+
       ### return type(s)
     } elsif ($ARGV[$a] eq "-return") {
       my $return_fields = $ARGV[$a+1];
@@ -843,34 +843,3 @@ sub ExportMatrix {
 
 }
 
-
-################################################################
-## Sort matrices according to the value of some parameter
-sub SortMatrices {
-    
-    ## Check if there is at least one matrix
-    if (scalar(@matrices) > 0) {
-	## Check if the first matrix has the sort key as attribute
-	my $first_matrix = $matrices[0];
-	if ($first_matrix->get_attribute($sort_key)) {
-
-	    ## Sort matrices
-	    if ($sort_order eq "desc") {
-		&RSAT::message::Warning("Sorting matrices by descending values of", $sort_key) if ($main::verbose >= 2);
-		@matrices = sort {$b->{$sort_key} <=> $a->{$sort_key}} @matrices;
-	    } elsif  ($sort_order eq "asc") {
-		&RSAT::message::Warning("Sorting matrices by ascending values of", $sort_key) if ($main::verbose >= 2);
-		@matrices = sort {$a->{$sort_key} <=> $b->{$sort_key}} @matrices;
-	    } elsif  ($sort_order eq "alpha") {
-		&RSAT::message::Warning("Sorting matrices by alphabetic values of", $sort_key) if ($main::verbose >= 2);
-		@matrices = sort {$a->{$sort_key} ge $b->{$sort_key}} @matrices;
-	    } else {
-		&RSAT::error::FatalError($sort_order, "is not a valid sorting order. Supported: desc,asc.");
-	    }
-	} else {
-	    &RSAT::message::Warning("Cannot sort matrices by", $sort_key, "because this parameter is not defined for these matrices.")
-		if ($main::verbose >= 0);
-	}
-    }
-#    return @matrices;
-}
