@@ -78,6 +78,7 @@ sub readFromFile {
 	&main::FatalError("&RSAT::matrix::readFromFile", "Invalid format for reading matrix\t$format");
     }
 
+    ################################################################
     ## Check that there was at least one matrix in the file
     if (scalar(@matrices) == 0) {
       &RSAT::message::Warning("File",  $file, "does not contain any matrix in", $format , "format");
@@ -85,36 +86,6 @@ sub readFromFile {
       &RSAT::message::Info("Read ".scalar(@matrices)." matrices from file ", $file) if ($main::verbose >= 3);
     }
 
-    ################################################################
-    ## Sort matrices if requested
-    if ($args{sort}) {
-      my $sort_key = $args{sort};
-      my $sort_order = $args{order} || "desc";
-
-      ## Check if the first matrix has the sort key as attribute
-      if (scalar(@matrices) > 0) {
-	my $matrix = $matrices[0];
-	if ($matrix->get_attribute($sort_key)) {
-
-	  ## Sort matrices
-	  if ($sort_order eq "desc") {
-	    &RSAT::message::Warning("Sorting matrices by descending values of", $sort_key) if ($main::verbose >= 2);
-	    @matrices = sort {$b->{$sort_key} <=> $a->{$sort_key}} @matrices;
-	  } elsif  ($sort_order eq "asc") {
-	    &RSAT::message::Warning("Sorting matrices by ascending values of", $sort_key) if ($main::verbose >= 2);
-	    @matrices = sort {$a->{$sort_key} <=> $b->{$sort_key}} @matrices;
-	  } elsif  ($sort_order eq "alpha") {
-	    &RSAT::message::Warning("Sorting matrices by alphabetic values of", $sort_key) if ($main::verbose >= 2);
-	    @matrices = sort {$a->{$sort_key} ge $b->{$sort_key}} @matrices;
-	  } else {
-	    &RSAT::error::FatalError($sort_order, "is not a valid sorting order. Supported: desc,asc.");
-	  }
-	} else {
-	  &RSAT::message::Warning("Cannot sort matrices by", $sort_key, "because this parameter is not defined for these matrices.")
-	    if ($main::verbose >= 0);
-	}
-      }
-    }
 
     ################################################################
     ## Assign or re-assign general parameters.
@@ -1391,6 +1362,65 @@ sub _readFromClustalFile {
 }
 
 
+
+################################################################
+=pod
+
+=item B<SortMatrices>
+
+Sort matrices according to the value of some parameter.
+
+Usage:
+  my @sorted_matrices = &RSAT::MatrixReader::SortMatrices ($sort_key, $sort_order, @matrices);
+
+Parameters
+  $sort_key   a parameter whose value will determine the sorting
+  $sort_order desc (descending), asc (ascending) or alpha (alphabetical)
+  @matrices    a list of matrices (objects belonging to the class RSAT::matrix)
+
+=cut
+sub SortMatrices {
+  my ($sort_key, $sort_order, @matrices) = @_;
+
+  ## Check if there is at least one matrix
+  if (scalar(@matrices) > 0) {
+    ## Check if the first matrix has the sort key as attribute
+    my $first_matrix = $matrices[0];
+    if ($first_matrix->get_attribute($sort_key)) {
+      &RSAT::message::Info("Sorting", scalar(@matrices), "matrices by", $sort_order, $sort_key) if ($main::verbose >= 2);
+
+      ## Sort matrices
+      if ($sort_order eq "desc") {
+	&RSAT::message::Warning("Sorting matrices by descending values of", $sort_key) if ($main::verbose >= 2);
+	@matrices = sort {$b->{$sort_key} <=> $a->{$sort_key}} @matrices;
+      } elsif ($sort_order eq "asc") {
+	&RSAT::message::Warning("Sorting matrices by ascending values of", $sort_key) if ($main::verbose >= 2);
+	@matrices = sort {$a->{$sort_key} <=> $b->{$sort_key}} @matrices;
+      } elsif ($sort_order eq "alpha") {
+	&RSAT::message::Warning("Sorting matrices by alphabetic values of", $sort_key) if ($main::verbose >= 2);
+	@matrices = sort {lc($a->{$sort_key}) cmp lc($b->{$sort_key})} @matrices;
+      } else {
+	&RSAT::error::FatalError($sort_order, "is not a valid sorting order. Supported: desc,asc,alpha.");
+      }
+    } else {
+      &RSAT::message::Warning("Cannot sort matrices by", $sort_key, "because this parameter is not defined for these matrices.")
+	if ($main::verbose >= 0);
+    }
+  }
+
+  ## Check sorting (dbugging)
+  if ($main::verbose >= 4) {
+    &RSAT::message::Info("Sorted", scalar(@matrices), "matrices by", $sort_order, $sort_key) if ($main::verbose >= 0);
+    my $m = 0;
+    foreach my $matrix (@matrices) {
+      $m++;
+      &RSAT::message::Debug("sorted matrix", $m, $matrix->get_attribute("id"), $sort_key, $matrix->get_attribute($sort_key));
+    }
+  }
+
+  return @matrices;
+
+}
 
 return 1;
 
