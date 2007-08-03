@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.6 2007/07/23 15:33:38 oly Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.7 2007/08/03 15:36:48 oly Exp $
 #
 # Time-stamp
 #
@@ -31,7 +31,7 @@ package main;
   my $start_time = &AlphaDate();
 
   local $verbose = 0;
-  local $feattype = "mRNA";    # other values: Gene, Intron, Exon, CDS and UTR
+  local $feattype = "mrna";    # other values: Gene, Intron, Exon, CDS and UTR
   local $type = "upstream";
   local $from = -800;
   local $to = -1;
@@ -45,6 +45,10 @@ package main;
   local $all = 0;
   local $query_file;
   local @queries;
+  local $left_limit;
+  local $right_limit;
+  local $chrom;
+  local $mask_coding = 0;
 
   local $output_file;
 
@@ -73,8 +77,8 @@ package main;
   }
 
   # A query must be provided
-  unless (@queries || $query_file || $all) {
-    die "; You must either provide an EnsEMBL gene ID (-q), a query file (-i) or use the '-all' option\n";
+  unless (@queries || $query_file || $all || $ft_file || ($left_limit && $right_limit)) {
+    die "; You must either provide an EnsEMBL gene ID (-q), a query file (-i), left and right limits or use the '-all' option\n";
   }
 
   ### verbose ###
@@ -127,16 +131,54 @@ package main;
 
   local $slice_adaptor = $db->get_sliceAdaptor();
 
-  # All genes
-  if ($all) {
+  # Left and right limits
+  if ($left_limit && $right_limit && $chrom) {
+    local $chromosome = $slice_adaptor -> fetch_by_region('chromosome', $chrom);
+    # Get sequence (repeat masked or not)
+    $sequence = &GetSequence($left_limit, $right_limit);
+    my $size = $right_limit - $left_limit + 1;
+
+    &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+    &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
+    &RSAT::message::Debug(">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit D") if ($main::verbose >= 3);
+    &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
+
+    # Export sequence to file
+    print OUT ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit D\n";
+    print OUT "$sequence\n";
+
+  # Feature file
+  } elsif ($ft_file) {
+    open FEAT, $ft_file;
+    while ($line = <FEAT>) {
+      chomp($line);
+      next if (($line =~/^[#|;]/)||($line eq ""));
+      my ($chrom, $ft_type, $ft_id, $strand, $left_limit, $right_limit,@other_comments) = split (/\t/,$line);
+      local $chromosome = $slice_adaptor -> fetch_by_region('chromosome', $chrom);
+      # Get sequence (repeat masked or not)
+      $sequence = &GetSequence($left_limit, $right_limit);
+      my $size = $right_limit - $left_limit + 1;
+
+      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
+      &RSAT::message::Debug(">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit D") if ($main::verbose >= 3);
+      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
+
+      # Export sequence to file
+      print OUT ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit D\n";
+      print OUT "$sequence\n";
+    }
+
+    # All genes
+  } elsif ($all) {
     my @slices = @{$slice_adaptor->fetch_all("chromosome")};
-      foreach my $slice (@slices) {
-	my @genes = @{$slice->get_all_Genes()};
-	foreach my $gene (@genes) {
-	  &Main($gene);
-	}
+    foreach my $slice (@slices) {
+      my @genes = @{$slice->get_all_Genes()};
+      foreach my $gene (@genes) {
+	&Main($gene);
       }
-  # Query
+    }
+    # Query
   } else {
 #    my $gene_id = "CG40293"; #gene on D strand
 #    my $gene_id = "CG18001"; #gene on R strand
@@ -217,16 +259,20 @@ sub ReadArguments {
       $to = $ARGV[$a+1];
 
       ### chromosome name
-#    } elsif ($ARGV[$a] eq "-chrom") {
-#      push @chromnames,  split(",", $ARGV[$a+1]);
+    } elsif ($ARGV[$a] eq "-chrom") {
+      $chrom = $ARGV[$a+1];
 
       ### Left limit
-#    } elsif ($ARGV[$a] eq "-left") {
-#      $left = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-left") {
+      $left_limit = $ARGV[$a+1];
 
       ### Right limit
-#    } elsif ($ARGV[$a] eq "-right") {
-#      $right = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-right") {
+      $right_limit = $ARGV[$a+1];
+
+      ### Feature file
+    } elsif ($ARGV[$a] eq "-ftfile") {
+      $ft_file = $ARGV[$a+1];
 
       ### Sequence type
     } elsif ($ARGV[$a] eq "-type") {
@@ -239,6 +285,10 @@ sub ReadArguments {
       ### Noorf
     } elsif ($ARGV[$a] eq "-noorf") {
       $noorf = 1;
+
+      ### Mask coding
+    } elsif ($ARGV[$a] eq "-maskcoding") {
+      $mask_coding = 1;
 
       ### Nogene
     } elsif ($ARGV[$a] eq "-nogene") {
@@ -318,16 +368,11 @@ sub Main {
     my ($left, $right) = &GetLimits($gene_id, $gene_start, $gene_end);
 
     # Get sequence (repeat masked or not)
-    if ($rm) {
-      $sequence = &GetRepeatMaskedSequence($chromosome -> seq_region_name(), $left, $right);
-      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3);
-    } else {
-      $sequence = &GetSequence($left, $right);
-      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3);
-    }
-
+    $sequence = &GetSequence($left, $right);
     my $size = $new_to - $new_from + 1;
 
+    &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+    &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
     &RSAT::message::Debug(">$gene_id\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
     &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
@@ -381,16 +426,12 @@ sub Main {
 	my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $transcript_start, $transcript_end);
 
 	# Output sequence
-	if ($rm) {
-	  $sequence = &GetRepeatMaskedSequence($chromosome -> seq_region_name(), $left, $right);
-	  &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3);
-	} else {
-	  $sequence = &GetSequence($left, $right);
-	  &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3);
-	}
-
+	$sequence = &GetSequence($left, $right);
 	my $size = $new_to - $new_from + 1;
 
+
+	&RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+	&RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
 	&RSAT::message::Debug(">$gene_id-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
 	&RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
@@ -440,16 +481,11 @@ sub Main {
 	  }
 
 	  unless ($first_intron) {
-	    if ($rm) {
-	      $sequence = &GetRepeatMaskedSequence($chromosome -> seq_region_name(), $intron -> start(), $intron -> end());
-	      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3);
-	    } else {
-	      $sequence = &GetSequence($intron -> start(), $intron -> end());
-	      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3);
-	    }
-
+	    $sequence = &GetSequence($intron -> start(), $intron -> end());
 	    my $size = ($intron -> end() - $intron -> start()) + 1;
 
+	    &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+	    &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
 	    &RSAT::message::Debug(">$gene_id-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand") if ($main::verbose >= 3);
 	    &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
@@ -465,16 +501,12 @@ sub Main {
 	  &RSAT::message::Info (join("\t", "# ID", "Start", "End")) if ($main::verbose >= 1);
 	  &RSAT::message::Info (join("\t", $intron1_id, $start1, $end1)) if ($main::verbose >= 1);
 
-	  if ($rm) {
-	    $sequence = &GetRepeatMaskedSequence($chromosome -> seq_region_name(), $start1, $end1);
-	    &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3);
-	  } else {
-	    $sequence = &GetSequence($start1, $end1);
-	    &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3);
-	  }
-
+	  $sequence = &GetSequence($start1, $end1);
 	  my $size = ($end1 - $start1) + 1;
 
+
+	  &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+	  &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
 	  &RSAT::message::Debug(">$gene_id-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand") if ($main::verbose >= 3);
 	  &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
@@ -503,17 +535,12 @@ sub Main {
 
 	  if ($non_coding) {
 	    if ($coding_region_start > $exon_start && $coding_region_start < $exon_end) {
-	      if ($rm) {
-		$sequence = &GetRepeatMaskedSequence($chromosome -> seq_region_name(), $exon -> start(), $coding_region_start - 1);
-		&RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3);
-	      } else {
-		$sequence = &GetSequence($exon -> start(), $coding_region_start - 1);
-		&RSAT::message::Debug("Sequence:") if ($main::verbose >= 3);
-	      }
-
+	      $sequence = &GetSequence($exon -> start(), $coding_region_start - 1);
 	      my $non_coding_exon_right = $coding_region_start - 1;
 	      my $size = $coding_region_start - $exon -> start();
 
+	      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+	      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
 	      &RSAT::message::Debug(">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand") if ($main::verbose >= 3);
 	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
@@ -521,17 +548,12 @@ sub Main {
 	      print OUT ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand\n";
 	      print OUT "$sequence\n";
 	    } elsif ($coding_region_end < $exon_end && $coding_region_end > $exon_start) {
-	      if ($rm) {
-		$sequence = &GetRepeatMaskedSequence($chromosome -> seq_region_name(), $coding_region_end + 1, $exon_end);
-		&RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3);
-	      } else {
-		$sequence = &GetSequence($coding_region_end + 1, $exon_end);
-		&RSAT::message::Debug("Sequence:") if ($main::verbose >= 3);
-	      }
-
+	      $sequence = &GetSequence($coding_region_end + 1, $exon_end);
 	      my $non_coding_exon_left = $coding_region_end + 1;
 	      my $size = $exon -> end() - $coding_region_end;
 
+	      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+	      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
 	      &RSAT::message::Debug(">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand") if ($main::verbose >= 3);
 	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
@@ -539,16 +561,11 @@ sub Main {
 	      print OUT ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand\n";
 	      print OUT "$sequence\n";
 	    } elsif ($coding_region_start > $exon_end) {
-	      if ($rm) {
-		$sequence = &GetRepeatMaskedSequence($chromosome -> seq_region_name(), $exon -> start(), $exon -> end());
-		&RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3);
-	      } else {
-		$sequence = &GetSequence($exon -> start(), $exon -> end());
-		&RSAT::message::Debug("Sequence:") if ($main::verbose >= 3);
-	      }
-
+	      $sequence = &GetSequence($exon -> start(), $exon -> end());
 	      my $size = ($exon -> end() - $exon -> start()) + 1;
 
+	      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+	      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
 	      &RSAT::message::Debug(">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand") if ($main::verbose >= 3);
 	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
@@ -556,16 +573,11 @@ sub Main {
 	      print OUT ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
 	      print OUT "$sequence\n";
 	    } elsif ($coding_region_end < $exon_start) {
-	      if ($rm) {
-		$sequence = &GetRepeatMaskedSequence($chromosome -> seq_region_name(), $exon -> start(), $exon -> end());
-		&RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3);
-	      } else {
-		$sequence = &GetSequence($exon -> start(), $exon -> end());
-		&RSAT::message::Debug("Sequence:") if ($main::verbose >= 3);
-	      }
-
+	      $sequence = &GetSequence($exon -> start(), $exon -> end());
 	      my $size = ($exon -> end() - $exon -> start()) + 1;
 
+	      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+	      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
 	      &RSAT::message::Debug(">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand") if ($main::verbose >= 3);
 	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
@@ -574,16 +586,11 @@ sub Main {
 	      print OUT "$sequence\n";
 	    }
 	  } else {
-	    if ($rm) {
-	      $sequence = &GetRepeatMaskedSequence($chromosome -> seq_region_name(), $exon -> start(), $exon -> end());
-	      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3);
-	    } else {
-	      $sequence = &GetSequence($exon -> start(), $exon -> end());
-	      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3);
-	    }
-
+	    $sequence = &GetSequence($exon -> start(), $exon -> end());
 	    my $size = ($exon -> end() - $exon -> start()) + 1;
 
+	    &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+	    &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
 	    &RSAT::message::Debug(">$gene_id-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand") if ($main::verbose >= 3);
 	    &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
@@ -611,19 +618,13 @@ sub Main {
 	  $utr5_start = $coding_region_end + 1;
 	  $utr5_end = $transcript_end;
 	}
-	if ($rm) {
-	  $utr5_sequence = &GetRepeatMaskedSequence($chromosome -> seq_region_name(), $utr5_start, $utr5_end);
-	  $utr3_sequence = &GetRepeatMaskedSequence($chromosome -> seq_region_name(), $utr3_start, $utr3_end);
-	  &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3);
-	} else {
-	  $utr5_sequence = &GetSequence($utr5_start, $utr5_end);
-	  $utr3_sequence = &GetSequence($utr3_start, $utr3_end);
-	  &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3);
-	}
-
+	$utr5_sequence = &GetSequence($utr5_start, $utr5_end);
+	$utr3_sequence = &GetSequence($utr3_start, $utr3_end);
 	my $utr5_size = $utr5_end - $utr5_start + 1;
 	my $utr3_size = $utr3_end - $utr3_start + 1;
 
+	&RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+	&RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
 	&RSAT::message::Debug(">$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_end $rsat_strand") if ($main::verbose >= 3);
 	&RSAT::message::Debug($utr5_sequence) if ($main::verbose >= 3);
 	&RSAT::message::Debug(">$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_end $rsat_strand") if ($main::verbose >= 3);
@@ -641,18 +642,12 @@ sub Main {
 	my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $coding_region_start, $coding_region_end);
 
 	# Output sequence
-	if ($rm) {
-	  $sequence = &GetRepeatMaskedSequence($chromosome -> seq_region_name(), $left, $right);
-	  &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3);
-	} else {
-	  $sequence = &GetSequence($left, $right);
-	  &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3);
-	}
-
+	$sequence = &GetSequence($left, $right);
 	my $size = $new_to - $new_from + 1;
-
 	my $cds_id = $transcript -> translation() -> stable_id();
 
+	&RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+	&RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
 	&RSAT::message::Debug(">$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
 	&RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
@@ -660,7 +655,6 @@ sub Main {
 	print OUT ">$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
 	print OUT "$sequence\n";
       }
-
     }
 
     if ($feattype eq 'mrna' && !$all_transcripts) {
@@ -677,22 +671,16 @@ sub Main {
       }
 
       # Output sequence
-      if ($rm) {
-	$sequence = &GetRepeatMaskedSequence($chromosome -> seq_region_name(), $left, $right);
-	&RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3);
-      } else {
-	$sequence = &GetSequence($left, $right);
-	&RSAT::message::Debug("Sequence:") if ($main::verbose >= 3);
-      }
-
+      $sequence = &GetSequence($left, $right);
       my $size = $new_to - $new_from + 1;
-
       if ($type eq "upstream") {
 	$ref_transcript = $three_primest_id;
       } else {
 	$ref_transcript = $five_primest_id;
       }
 
+      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
       &RSAT::message::Debug(">$gene_id-$ref_transcript\t$gene_id-$ref_transcript; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
       &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
@@ -706,8 +694,6 @@ sub Main {
 #### Calculate left and right limits
 sub GetLimits {
   my ($gene_id, $start, $end) = @_;
-
-#  my $slice_adaptor = $db -> get_SliceAdaptor();
 
   if ($type eq "upstream" && $strand == 1) {
     if ($nogene || $noorf) {
@@ -860,7 +846,6 @@ sub GetNeighbours {
   # Get neighbour genes
   my @neighbour_genes = @{$expanded_slice->get_all_Genes()};
 
-
   &RSAT::message::Info ("Neighbour gene(s):") if ($main::verbose >= 1);
   &RSAT::message::Info (join("\t", "# ID", "Name", "Contig", "Start", "End", "Strand", "Description")) if ($main::verbose >= 1);
 
@@ -882,7 +867,6 @@ sub GetNeighbours {
     }
     my $neighbour_start = $neighbour_gene -> seq_region_start();
     my $neighbour_end = $neighbour_gene -> seq_region_end();
-
 
     &RSAT::message::Info (join("\t", $neighbour_gene->stable_id(), $neighbour_name, $chromosome -> name(), $neighbour_start, $neighbour_end, $neighbour_strand, $neighbour_gene->description())) if ($main::verbose >= 1);
 
@@ -934,33 +918,65 @@ sub GetNeighbours {
 #### Get sequence
 sub GetSequence {
   my ($left, $right) = @_;
-  my $sequence = $chromosome->subseq($left, $right);
+  my $sequence;
+  unless ($rm) {
+    $sequence = $chromosome->subseq($left, $right);
+  }
+  if ($rm) {
+#    my @repeat_features = @{$chromosome->get_all_RepeatFeatures()};
+#    foreach my $repeat_feature(@repeat_features) {
+#      my $repeat_consensus = $repeat_feature->repeat_consensus;
+#      my $repeat_type = $repeat_consensus->repeat_type();
+#      my $repeat_class = $repeat_consensus->repeat_class();
+#      print $repeat_type, "\t", $repeat_class, "\n";
+#    }
+    my $mini_slice = $slice_adaptor->fetch_by_region('chromosome', $chromosome -> seq_region_name(), $left, $right);
+    my $masked_slice = $mini_slice->get_repeatmasked_seq();
+#    my $masked_slice = $mini_slice->get_repeatmasked_seq([],0,{"repeat_class_Dust" => 0});
+#    my $masked_slice = $mini_slice->get_repeatmasked_seq(['TRF']);
+    $sequence = $masked_slice->seq();
+#    my $unmasked_seq = $slice->seq();
+#    my $hardmasked_seq = $slice->get_repeatmasked_seq();
+#    my $softmasked_seq = $slice->get_repeatmasked_seq(undef, 1);
+  }
+  if ($mask_coding) {
+    my $retrieved_slice = $slice_adaptor->fetch_by_region('chromosome', $chromosome -> seq_region_name(), $left, $right);
+    my $transcript_adaptor = $db->get_TranscriptAdaptor();
+    my @retrieved_transcripts = @{$transcript_adaptor->fetch_all_by_Slice($retrieved_slice)};
+    foreach $retrieved_transcript (@retrieved_transcripts) {
+      my @retrieved_exons = @{$retrieved_transcript->get_all_translateable_Exons};
+      foreach my $retrieved_exon (@retrieved_exons) {
+	&RSAT::message::Info ("Translateable exon start: ".$retrieved_exon->start()."\tTranslateable exon end: ".$retrieved_exon->end()."\tTranslateable exon strand: ".$retrieved_exon->strand()) if ($main::verbose >= 1);
+	my $coding_length = $retrieved_exon->end() - $retrieved_exon->start() + 1;
+	my $masking;
+	if ($retrieved_exon->seq_region_start() >= $left && $retrieved_exon->seq_region_end() <= $right) {
+	  foreach (1..$coding_length) {
+	    $masking .= "N";
+	  }
+	  substr($sequence, $retrieved_exon->start() - 1, $coding_length) = $masking;
+	} elsif ($retrieved_exon->seq_region_start() < $left && $retrieved_exon->seq_region_end() >= $left && $retrieved_exon->seq_region_end() <= $right) {
+	  $coding_length = $retrieved_exon->end();
+	  foreach (1..$coding_length) {
+	    $masking .= "N";
+	  }
+	  substr($sequence, 0, $coding_length) = $masking;
+	} elsif ($retrieved_exon->seq_region_start() >= $left && $retrieved_exon->seq_region_start() <= $right && $retrieved_exon->seq_region_end() > $right) {
+	  $coding_length = $right - $retrieved_exon->seq_region_start() + 1;
+	  foreach (1..$coding_length) {
+	    $masking .= "N";
+	  }
+	  substr($sequence, $retrieved_exon->start() - 1, $coding_length) = $masking;
+	} elsif ($retrieved_exon->seq_region_start() < $left && $retrieved_exon->seq_region_end() > $right) {
+	  $coding_length = $right - $left + 1;
+	  foreach (1..$coding_length) {
+	    $masking .= "N";
+	  }
+	  substr($sequence, 0, $coding_length) = $masking;
+	}
+      }
+    }
+  }
   return $sequence;
-}
-################################################################
-#### Get repeat masked sequence
-sub GetRepeatMaskedSequence {
-  my ($chromosome_number, $left, $right) = @_;
-  #    my @repeat_features = @{$chromosome->get_all_RepeatFeatures()};
-  #    foreach my $repeat_feature(@repeat_features) {
-  #      my $repeat_consensus = $repeat_feature->repeat_consensus;
-  #      my $repeat_type = $repeat_consensus->repeat_type();
-  #      my $repeat_class = $repeat_consensus->repeat_class();
-  #      print $repeat_type, "\t", $repeat_class, "\n";
-  #    }
-
-  my $slice_adaptor = $db->get_sliceAdaptor();
-  my $mini_slice = $slice_adaptor->fetch_by_region('chromosome', $chromosome_number, $left, $right);
-  #    my $masked_slice = $mini_slice->get_repeatmasked_seq([],0,{"repeat_class_Dust" => 0});
-  #    my $masked_slice = $mini_slice->get_repeatmasked_seq(['TRF']);
-  my $masked_slice = $mini_slice->get_repeatmasked_seq();
-  my $masked_seq = $masked_slice->seq();
-  return $masked_seq;
-
-  #    my $unmasked_seq = $slice->seq(); 
-  #    my $hardmasked_seq = $slice->get_repeatmasked_seq(); 
-  #    my $softmasked_seq = $slice->get_repeatmasked_seq(undef, 1);
-
 }
 ################################################################
 #### detailed help message
@@ -983,13 +999,13 @@ CATEGORY
 
 OPTIONS
 	-org organism
-	     No caps, underscore between words (eg 'homo_sapiens')
+	        No caps, underscore between words (eg 'homo_sapiens')
 
-	     If this option is not used, the option -dbname must be used
-	     instead.
+	        If this option is not used, the option -dbname must be used
+	         instead.
 
-	     (type 'supported-organism | grep EnsEMBL' to obtain the list of supported
-	     organisms)
+	        (type 'supported-organism | grep EnsEMBL' to obtain the list of supported
+	         organisms)
 
 	-dbname	name of EnsEMBL database
 		(alternative to organism)
@@ -1033,16 +1049,27 @@ OPTIONS
 
         -nogene the upstream/downstream sequence can only contain non-transcribed sequence.
 
+        -maskcoding
+                all coding sequence is replaced by N in the retrieved sequence
+
 	-rm     Use the repeat masked version of the genome.  Attention :
 		repeated regions are annotated for some genomes only.
 
-        -alltranscripts  get sequences for all transcript of genes.
-                         Use purge-sequence if you do pattern discovery
-                         afterwards
+        -alltranscripts
+                Get sequences for all transcript of genes.
+                Use purge-sequence if you do pattern discovery afterwards
 
-        -firstintron  with feattype intron, get only first intron sequence
+        -firstintron
+                With feattype intron, get only first intron sequence
 
-        -noncoding  with feattype exon, get only non-coding (part of) exons
+        -noncoding
+                With feattype exon, get only non-coding (part of) exons
+
+        -chrom  Chromosome name or number (to use with -left and -right)
+
+        -left   Left limit of sequence to retrieve
+
+        -right  Right limit of sequence to retrieve
 
 End_help
     close HELP;
@@ -1067,10 +1094,14 @@ retrieve-seq options
 -from #1 -to #2	limits of the region to extract, relative to feattype start (upstream) or end (downstream)
 -noorf		the upstream/downstream sequence can only contain non-coding sequence.
 -nogene         the upstream/downstream sequence can only contain non-transcribed sequence.
+-maskcoding     all coding sequence is replaced by Ns in the retrieved sequence
 -rm		Use the repeat masked version of the genome.
 -alltranscripts get sequences for all transcript of genes
 -firstintron    with feattype intron, get only first intron sequence
 -noncoding      with feattype exon, get only non-coding (part of) exons
+-chrom          chromosome name or number (to use with -left and -right)
+-left           left limit of sequence to retrieve
+-right          right limit of sequence to retrieve
 End_short_help
   close HELP;
   exit;
