@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.4 2007/07/31 16:21:19 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.5 2007/08/03 08:35:49 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -207,7 +207,7 @@ package main;
     &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 2);
     my $convert2_cmd = " | ${SCRIPTS}/convert-matrix -v 1";
 #    $convert2_cmd .= " -i ".$outfile{sig_sites};
-    $convert2_cmd .= " -in_format feature";
+    $convert2_cmd .= " -from feature -to tab";
     $convert2_cmd .= " -return counts,parameters";
     $convert2_cmd .= " -o ".$outfile{count_matrices};
     print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
