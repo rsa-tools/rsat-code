@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.16 2007/08/02 13:23:53 rsat Exp $
+# $Id: RSAT_home.cgi,v 1.17 2007/08/03 18:26:52 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -20,7 +20,6 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 print $query->header;
 print $query->start_html(-title=>'Regulatory Sequence Analysis Tools',
-			 -author=>'jvanheld@scmbb.ulb.ac.be',
 			 -BGCOLOR=>'#FFEEDD');
 
 print "<blockquote>";
