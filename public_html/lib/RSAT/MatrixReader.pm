@@ -1410,7 +1410,7 @@ sub SortMatrices {
 
   ## Check sorting (dbugging)
   if ($main::verbose >= 4) {
-    &RSAT::message::Info("Sorted", scalar(@matrices), "matrices by", $sort_order, $sort_key) if ($main::verbose >= 0);
+    &RSAT::message::Info("Sorted", scalar(@matrices), "matrices by", $sort_order, $sort_key);
     my $m = 0;
     foreach my $matrix (@matrices) {
       $m++;
