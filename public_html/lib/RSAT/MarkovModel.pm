@@ -19,6 +19,7 @@ use Data::Dumper;
 ### class attributes
 %supported_input_formats = ("oligo-analysis"=>1, 
 			    "oligos"=>1, ## Abbreviation for oligo-analysis
+			    "dyads"=>1, ## Abbreviation for dyad-analysis
 			    "motifsampler"=>1, 
 			    "ms"=>1, ## Abbreviation for MotifSampler
 			    "meme"=>1,
@@ -111,10 +112,13 @@ sub load_from_file {
   my ($self, $bg_file, $format) = @_;
 
   $format =~ s/oligo-analysis/oligos/;
+  $format =~ s/dyad-analysis/dyads/;
   $format =~ s/^ms$/motifsampler/;
 
   if ($format eq "oligos") {
     $self->load_from_file_oligos($bg_file);
+  } elsif ($format eq "dyads") {
+    $self->load_from_file_oligos($bg_file, 1); ## Dyads with spacing 0 are converted into oligos
   } elsif ($format eq "meme") {
     $self->load_from_file_meme($bg_file);
   } elsif ($format eq "motifsampler") {
@@ -152,11 +156,26 @@ converted to lowercases.
 
 =cut
 sub load_from_file_oligos {
-  my ($self, $bg_file) = @_;
+  my ($self, $bg_file, $dyad_conversion) = @_;
 
   &RSAT::message::TimeWarn("Loading Markov model from oligo file $bg_file") if ($main::verbose >= 2);
 
   my ($file_type, %patterns) = &main::ReadPatternFrequencies($bg_file) ;
+
+  ## Convert dyads into oligos
+  if ($dyad_conversion) {
+    my %oligo_patterns;
+    foreach my $dyad_seq (keys %patterns) {
+      ## Dyads with spacing 0 are converted into oligos
+      if ($dyad_seq =~ /n\{0\}/) {
+	my $oligo_seq = $dyad_seq;
+	$oligo_seq =~ s/n\{0\}//;
+	$patterns{$oligo_seq} = $patterns{$dyad_seq};
+      }
+      delete $patterns{$dyad_seq};
+    }
+  }
+
   my @patterns = keys(%patterns);
 
   ## This is a bit tricky: ReadExpectedFrequencies sets a global variable
@@ -174,15 +193,14 @@ sub load_from_file_oligos {
     ## Check pattern length
     $pattern_seq = lc($pattern_seq); ## Ensure case-insensitivity
     my $pattern_len = length($pattern_seq);
-    #	&RSAT::message::Debug($pattern_seq, $pattern_len, $pattern_freq, 
-    #			      join(";", keys %{$patterns{$pattern_seq}})) if ($main::verbose >= 0);
+#    &RSAT::message::Debug($pattern_seq, $pattern_len, $pattern_freq, 
+#    			      join(";", keys %{$patterns{$pattern_seq}})) if ($main::verbose >= 0);
     &RSAT::error::FatalError("All patterns should have the same length in a Markov model file.") 
       unless $pattern_len = $order+1;
     my $prefix = substr($pattern_seq,0,$order);
     my $suffix = substr($pattern_seq,$order, 1);
     $self->{transition_count}->{$prefix}->{$suffix} = $pattern_freq;
     #	&RSAT::message::Debug("transition count", $prefix.".".$suffix, $pattern_freq, $self->{transition_count}->{$prefix}->{$suffix}) if ($main::verbose >= 10);
-
   }
   #    &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', @patterns)) if ($main::verbose >= 5);
  
@@ -1022,7 +1040,7 @@ oligomers of length k=m+1.
 =cut
 sub to_string_oligos {
   my ($self, %args) = @_;
-  my $decimals = $args{decimals} || "5";
+  my $decimals = $args{decimals} || "8";
   my $string = "";
   my %prefix_proba = $self->get_attribute("prefix_proba");
   my @prefix = sort($self->get_attribute("prefixes"));
