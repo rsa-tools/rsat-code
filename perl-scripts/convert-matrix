@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.36 2007/08/02 06:56:27 jvanheld Exp $
+# $Id: convert-matrix,v 1.37 2007/08/05 08:03:03 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -340,25 +340,38 @@ PRIOR FREQUENCY FILE
 
       Prior frequency files can be generated with the program
       oligo-analysis.
-      
+
       oligo-analysis -i reference-seq.fasta -l 1 -return freq -1str -v 1
 
 INPUT/OUTPUT FORMATS
 
-    tab
+    Some formats are supported only for input, others for
+    output. There are more formats accepted for input, because the
+    general use of this program is to convert a PSSM obtained from a
+    database (e.g. TRANSFAC) or a pattern-discovery program
+    (e.g. consensus, gibbs, meme, MotifSampler, ...) and obtain a
+    matrix either for scanning (with matrix-scan) or for computing
+    statistical parameters (see the return fields below).
+
+    tab (input/output)
 	tab-delimited file. One row per residue, one column per
 	position. The first column of each row indicates the residue,
 	the following columns give the frequency of that residue
 	at the corresponding position of the matrix.
 
-    cb
-	Cluster-Buster output file (usual extention .cb). The header
-	line starts with a > (like in fasta format). The matrix is
-	then printed "vertically" on the following lines: each column
-	corresponds to one residue, and each row to a position in the
-	alignment.
+        The tab format accepts a user-specific set of return fields
+        (option -return), provigind different statistics on the matrix
+        (counts, frequencies, weights, information, other parameters:
+        see description below).
 
-    assembly
+    patser (output)
+        This format can be used as input to scan sequences with
+        patser, the pattern-matching program developed by Jerry Hertz.
+
+        This is actually the same format as tab (described above), but
+        the only return filed is the count matrix.
+
+    assembly (input)
 	Output file from the program pattern-assembly. One assembly
 	file can contain zero, one or several assemblies. Each
 	assembly is converted to a position-specific scoring matrix by
@@ -366,33 +379,63 @@ INPUT/OUTPUT FORMATS
 	most significant pattern (oligonucleotide) containing that
 	residue in this position of the assembly.
 
-    consensus
+    consensus (input/output)
 	Output file from consensus, the pattern-discovery program
 	developed by Jerry Hertz (Hertz et al., Comput Appl Biosci,
 	1990:6, 81-92). This file contains one or several matrices, +
 	additional information on the parameters used for pattern
 	discovery (e.g. prior residue frequencies).
 
-    gibbs
+    gibbs (input)
 	Output file from gibbs, the pattern-discovery program
 	developed by Andrew Neuwald (Lawrence et al. Science, 1993:
 	262, 208-214; Neuwald, et al. Protein Sci, 1995: 4, 1618-1632)
 
-    meme
+    meme (input)
 	Output file from MEME, the pattern-discovery program developed by
 	tim Bailey.This file contains one or several matrices, +
 	additional information on the parameters used for pattern
 	discovery (e.g. prior residue frequencies).
-    
-    MotifSampler
+
+    MotifSampler (input/output)
 	Output file from MotifSampler, the pattern-discovery program
 	developed by Gert Thijs (Thijs et al. Bioinformatics, 2001:17,
 	1113-1122).
 
-    clustal
+    TRANSFAC (input/output)
+        Format used in the TRANSFAC database;
+        (http://www.gene-regulation.com/pub/databases.html)
+
+    cb (input)
+	Cluster-Buster output file (usual extention .cb). The header
+	line starts with a > (like in fasta format). The matrix is
+	then printed "vertically" on the following lines: each column
+	corresponds to one residue, and each row to a position in the
+	alignment.
+
+    feature (input)
+        Output file from convert-features. 
+
+        This format allows to obtain a PSSM from a list of (supposedly
+        pre-aligned) sites. These sites can themselves have been
+        collected by scanning sequences with a matrix (matrix-scan) or
+        by searching string-based patterns in a sequence
+        (dna-pattern). 
+
+        Converting features to matrices can for example be useful for
+        iterative refinment of a matrix (colecting sites from a
+        matrix, and building a matrix from those sites).
+
+        Another application is to detect oligomers or dyads in a
+        sequence set, and build a matrix from these.
+
+    clustal (input)
 	The popular multiple alignemnt program clustalw. 
 
-OUTPUT FORMATS
+RETURN FIELDS FOR THE TAB-DELIMITED OUTPUT FORMAT
+
+   The tab output format supports user-specified return fields.
+
     counts
         Each cell of the matrix indicates the number of occurrences of the
         residue at a given position of the alignment.
