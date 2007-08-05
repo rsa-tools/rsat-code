@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.11 2007/07/28 23:28:39 jvanheld Exp $
+# $Id: convert-background-model,v 1.12 2007/08/05 07:27:45 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -18,8 +18,8 @@ convert-backgound-model
 =head1 DESCRIPTION
 
 Interconversions between formats of background models supported by
-different programs (oligo-analysis, matrix-scan, patser, consensus,
-MotifLocator, MotifSampler, MEME, ...).
+different programs (oligo-analysis, dyad-analysis, matrix-scan,
+patser, consensus, MotifLocator, MotifSampler, MEME, ...).
 
 This is a temporary version, with only some formats supported. Additional
 formats will be progressively added.
@@ -59,6 +59,14 @@ An oligo file containing k-mers frequencies corresponds to a Markov
 model of order I<m=k-1>. Frequencies are converted to transition
 probabilities by calculating the relative frequencies of all oligomers
 of size k having the same prefix (first m letters).
+
+
+=head2 dyads (input)
+
+Oligonucleotide frequency table, as exported by the RSAT program
+I<dyad-analysis>. Dyads with spacing 0 are converted to oligos, and
+frequencies are converted into transition probabilities as for the
+format "oligos".
 
 =head2 MotifSampler (input/output)
 
@@ -114,9 +122,11 @@ package main;
     #### initialise parameters
     my $start_time = &AlphaDate();
     local $bg_model = new RSAT::MarkovModel();
-    local $decimals = 5;
+    local $decimals;
+    local $default_transition_decimals = 5;
+    local $default_oligo_decimals = 8;
     local $bg_pseudo = 0;
-    
+
     $input_format = "oligo-analysis";
     %supported_input_format = $bg_model->get_supported_input_formats();
     $supported_input_formats = join (",", keys %supported_input_format);
@@ -125,7 +135,6 @@ package main;
     $output_format = "tab";
     %supported_output_format = $bg_model->get_supported_output_formats();
     $supported_output_formats = join (",", keys %supported_output_format);
-    
 
     %main::infile = ();
     %main::outfile = ();
@@ -146,6 +155,13 @@ package main;
 	&RSAT::error::FatalError("You should define the output format");
     }
 
+    unless ($decimals) {
+      if ($output_format eq "oligos") {
+	$decimals = $default_oligo_decimals;
+      } else {
+	$decimals = $default_transition_decimals;
+      }
+    }
     $bg_model->set_attribute("bg_pseudo" => $bg_pseudo);
 
 
@@ -191,8 +207,8 @@ package main;
 ################################################################
 #### display full help message 
 sub PrintHelp {
-    system "pod2text -c $0";
-    exit()
+  system "pod2text -c $0";
+  exit()
 }
 
 ################################################################
