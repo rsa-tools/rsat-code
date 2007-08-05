@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-score-distrib,v 1.6 2007/07/31 15:39:49 jvanheld Exp $
+# $Id: compare-score-distrib,v 1.7 2007/08/05 08:02:15 jvanheld Exp $
 #
 ############################################################
 
@@ -203,11 +203,11 @@ package main;
       my $score = $fields[$col];
 
       ## Skip rows with empty cell for the score column
-      if ($score eq "") {
+      unless ($score) {
 	&RSAT::message::Warning("File", $f, $inputfile,
 				"skipping line", $l,
 				"column", $sc[$f],
-				$score, "null score value") ;
+				"null score value") ;
 	next;
       }
 
