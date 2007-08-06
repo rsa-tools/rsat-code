@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.1 2007/08/06 17:15:52 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.2 2007/08/06 22:52:14 jvanheld Exp $
 #
 ############################################################
 
@@ -37,7 +37,41 @@ directories.
 =head1 OUTPUT FORMAT
 
 The output format is a tab-delimited file with one row per pattern
-(oligo or dyad). The output columns depend on the other options.
+(oligo or dyad).
+
+By default, the output file contains 4 columns:
+
+=over
+
+=item pattern sequence
+
+=item pattern ID
+
+For single-strand frequencies, the ID is simply the pattern
+sequence. For two-strand frequencies, the pattern ID includes the
+direct sequence + its reverse complement, separated by a pipe
+character.
+
+=item frequency
+
+Taxon-wide frequency of the pattern.
+
+=item occurrences
+
+Taxon-wide occurrences of the pattern in the considered sequence type
+(upstream, upstream-noorf, intergenic).
+
+=item organism-specific occurrences
+
+When the option -occ_per_org is active, the program exports one
+additional column per organism, indicating the organism-specific
+number of occurrences of each pattern.
+
+=item organism-specific frequencies
+
+When the option -freq_per_org is active, the program exports one
+additional column per organism, indicating the organism-specific
+frequency of each pattern.
 
 =cut
 
@@ -60,7 +94,6 @@ package main;
     ## Initialise parameters
     my $start_time = &AlphaDate();
 
-
     local $taxon = "";
     local %outfile = ();
     local %infile = ();
@@ -69,19 +102,27 @@ package main;
     local $out = STDOUT;
 
     local $pattern_type = "oligo";
-    local $oligo_length = 6;
+    local $oligo_length = 0;
+    local $monad_length = 3;
+    local $dyad_spacing = "0-20";
     local $background_model = "upstream-noorf";
     local $str = "-1str";
     local $sum_rc = 0;
-    local $noov="-noov";
+    local $noov="-noov"; ## Supported= -noov, -ovlp
     local $occ_col = 4; ## Column containing pattern occurrences in the frequency files
 
     local %sum_per_pattern = ();
-    local %sum_per_organism = ();
+    local %occ_sum_per_organism = ();
+    local %freq_sum_per_organism = ();
+    local %pattern_freq;
+    local $pattern_freq_sum = 0;
+    local $total_occ = 0;
 
-    local $org_len = 20; ## Length of the string or printing organism names
+    local $occ_per_org = 0;
+    local $freq_per_org = 0;
+    local @organisms = ();
 
-    local $freq_per_org = 1;
+    local $decimals = 13; ## Decimals for printing frequencies
 
     #### background models
     %supported_bg = ('upstream'=>1,
@@ -99,7 +140,7 @@ package main;
     ## Check argument values
 
     ## Check taxon and collect organisms
-    my @organisms = &CheckTaxon($taxon);
+    @organisms = &CheckTaxon($taxon);
 
     ## Strands
     if ($str eq "-1str") {
@@ -143,7 +184,7 @@ package main;
 
 	$pattern_occ{$pattern_seq}{$org} = $occ;
 	$sum_per_pattern{$pattern_seq} += $occ;
-	$sum_per_organism{$org} += $occ;
+	$occ_sum_per_organism{$org} += $occ;
 	if (defined($pattern_id{$pattern_seq})) {
 	  if ($pattern_id{$pattern_seq} ne $pattern_id) {
 	    &RSAT::error::FatalError("Inconsistency betwen pattern identifiers", $infile{$org}, $pattern_id, $pattern_id{$pattern_seq});
@@ -157,11 +198,13 @@ package main;
 
     ################################################################
     ## Compute total pattern occurrences
-    my $total_occ = 0;
     foreach my $pattern_seq (keys %sum_per_pattern) {
-      $total_occ += $pattern_occ{$pattern_seq};
+      $total_occ += $sum_per_pattern{$pattern_seq};
     }
-
+    foreach my $pattern_seq (sort keys %pattern_id) {
+      $pattern_freq{$pattern_seq} = $sum_per_pattern{$pattern_seq}/$total_occ;
+      $pattern_freq_sum += $pattern_freq{$pattern_seq};
+    }
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
@@ -170,47 +213,92 @@ package main;
     ################################################################
     ## Print output
 
-    ## Compute the length of the largest organism name
-    foreach my $org (@organisms) {
-      if (length($org) > $org_len) {
-	$org_len = length($org);
+
+    ## Define output fields
+    my @out_fields =  ("seq", "pattern_id", "frequency", "occ");
+    $field_descr{seq} = "pattern sequence";
+    $field_descr{pattern_id} = "pattern identifier";
+    $field_descr{frequency} = "taxon-wide patter, frequency";
+    $field_descr{occ} = "taxon-wide occurrences";
+
+    if ($main::occ_per_org) {
+      foreach my $org (@organisms) {
+	my $field = "N.".$org;
+	push @out_fields, $field;
+	$field_descr{$field} = "occurrences\t".$org;
+      }
+    }
+    if ($main::freq_per_org) {
+      foreach my $org (@organisms) {
+	my $field = "F.".$org;
+	push @out_fields, $field;
+	$field_descr{$field} = "frequencies\t".$org;
       }
     }
 
+    ## Print column content
     if ($main::verbose >= 1) {
-      print $out "; Organisms\n";
-      my $i = 0;
-      foreach my $org (@organisms) {
-	$i++;
-	print $out join ("\t", ";", $i, 
-			 $sum_per_organism{$org}, 
-			 sprintf("%-${org_len}s", $org),
-			 $infile{$org},
-			), "\n";
+      print $out "; Column content\n";
+      my $c = 0;
+      foreach my $field (@out_fields) {
+	$c++;
+	print $out join ("\t", ";", $c, $field, $field_descr{$field}), "\n";
       }
     }
 
     ## Print header
-    my @header = ("seq", "pattern_id", "frequency", "occ");
-    if ($main::freq_per_org) {
-      push @header, @organisms;
-    }
-    print $out "#", join( "\t", @header), "\n";
+    print $out "#", join( "\t", @out_fields), "\n";
 
     ## Print pattern occurrences
     foreach my $pattern_seq (sort keys %pattern_id) {
       print $out join( "\t", 
 		       $pattern_seq,
 		       $pattern_id{$pattern_seq},
-		       sprintf("%.13f", $sum_per_pattern{$pattern_seq}/$total_occ),
+		       sprintf("%.${decimals}f", $pattern_freq{$pattern_seq}),
 		       $sum_per_pattern{$pattern_seq},
 		     );
-      if ($main::freq_per_org) {
+
+      ## Print organism-specific occurrences
+      if ($occ_per_org) {
 	foreach my $org (@organisms) {
 	  print $out "\t", $pattern_occ{$pattern_seq}{$org} || 0;
 	}
       }
+
+      ## Print organism-specific frequencies
+      if ($freq_per_org) {
+	foreach my $org (@organisms) {
+	  my $freq = 0;
+	  if ((defined($pattern_occ{$pattern_seq}{$org})) 
+	      && (defined($occ_sum_per_organism{$org}))
+	      && ($occ_sum_per_organism{$org} > 0)
+	     ) {
+	    $freq = $pattern_occ{$pattern_seq}{$org}/$occ_sum_per_organism{$org}
+	  } else {
+	    $freq = 0;
+	  }
+	  $freq_sum_per_organism{$org} += $freq;
+	  printf $out "\t%.${decimals}f", $freq;
+	}
+      }
       print $out "\n";
+    }
+
+    ################################################################
+    ## print totals per column
+    if ($main::verbose >= 1) {
+      my @totals = ("total","total",sprintf("%.${decimals}f", $pattern_freq_sum),$total_occ);
+      if ($occ_per_org) {
+	foreach my $org (@organisms) {
+	  push @totals, $occ_sum_per_organism{$org} || 0;
+	}
+      }
+      if ($freq_per_org) {
+	foreach my $org (@organisms) {
+	  push @totals, sprintf("%.${decimals}f", $freq_sum_per_organism{$org});
+	}
+      }
+      print $out ";", join( "\t", @totals), "\n";
     }
 
     ################################################################
@@ -349,9 +437,92 @@ Collect frequenies computed on a single strand.
 
 =cut
 	} elsif ($arg eq "-1str") {
-	    $str = "-1str";
+	  $str = "-1str";
 	} elsif ($arg eq "-2str") {
-	    $str = "-2str";
+	  $str = "-2str";
+
+	  ## Overlap
+=pod
+
+=item B<-ovlp>
+
+Do not allow mutual overlap between successive occurrences of
+self-overlaping patterns (e.g. TATATA).
+
+=item B<-ovlp>
+
+Allow mutual overlap between successive occurrences of self-overlaping
+patterns (e.g. TATATA).
+
+=cut
+	} elsif ($arg eq "-ovlp") {
+	  $noov = "-ovlp";
+	} elsif ($arg eq "-noov") {
+	  $noov = "-noov";
+
+
+	  ## Oligonucleotide length
+=pod
+
+=item B<-ol #>
+
+Oligonucleotide length.
+
+This option is only valid when pattern type is set to 'oligo'.
+
+=cut
+
+	  ## Monad length
+=pod
+
+=item B<-ml #>
+
+Monad length for the dyads.
+
+This option is only valid when pattern type is set to 'dyad'.
+
+=cut
+
+	  ### oligo-analysis parameters
+	} elsif ($arg eq "-ol") {
+	  $oligo_length = shift @arguments;
+
+	  ## Return occurrences per organism
+=pod
+
+=item B<-occ_per_org>
+
+Return additional columns with the organism-specific pattern
+occurrences (one column per organism).
+
+=cut
+        } elsif ($arg eq "-occ_per_org") {
+	  $main::occ_per_org = 1;
+
+	  ## Return frequencies per organism
+=pod
+
+=item B<-freq_per_org>
+
+Retun additional columns with the organism-specific pattern
+frequencies (one column per organism).
+
+=cut
+        } elsif ($arg eq "-freq_per_org") {
+	  $main::freq_per_org = 1;
+
+	  ## Decimals for printing frequencies
+=pod
+
+=item B<-decimals #>
+
+Number of decimal for printing frequencies (default 13)
+
+=cut
+        } elsif ($arg eq "-decimals") {
+	  $main::decimals = shift(@arguments);
+	  &RSAT::error::FatalError($main::decimals, "Invalid value for decimals. Must be a Natural number") 
+	    unless (&IsNatural($main::decimals));
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
@@ -373,12 +544,26 @@ Collect frequenies computed on a single strand.
 sub Verbose {
     print $main::out "; taxon-frequencies ";
     &PrintArguments($main::out);
-#    if (defined(%main::infile)) {
-#	print $main::out "; Input files\n";
-#	while (my ($key,$value) = each %main::infile) {
-#	    print $main::out ";\t$key\t$value\n";
-#	}
-#    }
+
+    ## Compute the length of the largest organism name
+    my $org_len = 20; ## Length of the string or printing organism names
+    foreach my $org (@organisms) {
+      if (length($org) > $org_len) {
+	$org_len = length($org);
+      }
+    }
+
+    ## Print the list of input files
+    print $out "; Input files\n";
+    my $i = 0;
+    foreach my $org (@organisms) {
+      $i++;
+      print $out join ("\t", ";",
+		       sprintf("%-${org_len}s", $org),
+		       $infile{$org},
+		      ), "\n";
+    }
+
     if (defined(%main::outfile)) {
 	print $main::out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
