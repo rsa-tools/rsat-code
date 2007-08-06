@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.123 2007/07/18 05:48:02 jvanheld Exp $
+# $Id: oligo-analysis,v 1.124 2007/08/06 06:28:24 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -2157,32 +2157,31 @@ sub ReadArguments {
 	    }
 	    $return{'distrib'} = 1;
 	    push(@output_fields, "occ");
-	    
-	    
+
 	    ################################################################
 	    #### sorting
 	} elsif ($ARGV[$a] eq "-sort") {
 	    $sort_result = 1;
-	    
+
 	    ################################################################
 	    #### Left-tail or two-tail significance test  
 	} elsif ($ARGV[$a] eq "-under") {
 	    $tail = "left";
-	    
+
 	} elsif ($ARGV[$a] =~ /^\-two_tail/) {
 	    $tail = "two";
-	    
+
 	    ################################################################
 	    ## Also count patterns not observed
 	} elsif ($ARGV[$a] eq "-zeroocc") {
 	    $zeroocc = 1;
-	    
+
 	}
 
 
 	$a++;
     }
-    
+
     if ($verbose >= 2) {
 	&RSAT::message::TimeWarn("Starting");
     }
