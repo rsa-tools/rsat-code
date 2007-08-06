@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.125 2007/08/06 13:54:55 jvanheld Exp $
+# $Id: oligo-analysis,v 1.126 2007/08/06 23:33:43 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -172,7 +172,7 @@ if ($background_model eq "equi") {
 
 } elsif (($background_model) && 
     ($background_model ne "bernoulli")) {
-    
+
     ### localize dyad non-coding frequency file
     $method = "Frequency file";
     if ($sum_rc) {
@@ -180,11 +180,8 @@ if ($background_model eq "equi") {
     } else {
 	$str="-1str";
     }
-	
     $infile{exp_freq} = &ExpectedFreqFile($organism_name, $oligo_length, $background_model,
 					  noov=>$noov, str=>$str);
-
-    
 
 #### read alphabet from a file
 } elsif ($infile{alphabet}) {
@@ -1845,7 +1842,6 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
 
-	    
 	    ### organism (for selecting the appropriate expected frequencies)
 	} elsif ($ARGV[$a] =~ /^-org/i) {
 	    $organism_name = $ARGV[$a+1];
