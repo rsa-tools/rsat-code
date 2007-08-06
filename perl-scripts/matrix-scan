@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.79 2007/07/28 23:28:39 jvanheld Exp $
+# $Id: matrix-scan,v 1.80 2007/08/06 06:06:51 jvanheld Exp $
 #
 # Time-stamp: <2007-07-17 16:36:54 jturatsi>
 #
@@ -1525,17 +1525,6 @@ same row is ignored.
 	    $main::infile{matrix_list} = shift(@arguments);
 
 
-	    ## Sequence format
-=pod
-
-=item B<-seq_format sequence_format>
-
-Sequence format. 
-
-=cut
-	} elsif ($arg eq "-seq_format") {
-	    $seq_format = shift(@arguments);
-	    
 	    ## Matrix format
 =pod
 
@@ -1552,6 +1541,8 @@ Matrix format.
 
 =item B<-i inputfile>
 
+File containing the sequences to scan.
+
 If no input file is specified, the standard input is used.  This
 allows to use the command within a pipe.
 
@@ -1559,6 +1550,17 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-i") {
 	    $main::infile{input} = shift(@arguments);
 
+	    ## Sequence format
+=pod
+
+=item B<-seq_format sequence_format>
+
+Sequence format.
+
+=cut
+	} elsif ($arg eq "-seq_format") {
+	    $seq_format = shift(@arguments);
+	    
 	    ## mask
 =pod
 
@@ -1796,7 +1798,8 @@ single-strand search for DNA sequences.
 
 List of fields to return. 
 
-Supported fields: sites,rank,limits,normw,bg_model,matrix,freq_matrix,weight_matrix
+Supported fields:
+sites,pval,seq_scores,rank,normw,limits,disrib,occ_proba,bg_model,matrix,freq_matrix,weight_matrix
 
 =over
 
@@ -1881,6 +1884,21 @@ Report the transition matrix of the background model. Note that this
 option only makes sense for fixed background models (-bgfile or
 -bginput), since when the background model is adaptive (-mindow), the
 transition matrix changes along he sequence.
+
+=item B<matrix>
+
+Return as comments the count matrix (or matrices) which were used for
+scanning.
+
+=item B<freq_matrix>
+
+Return as comments the frequency matrix (or matrices) which were used
+for scanning.
+
+=item B<weight_matrix>
+
+Return as comments the weight matrix (or matrices) which were used
+for scanning.
 
 =back
 
