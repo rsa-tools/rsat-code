@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.2 2007/08/06 22:52:14 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.3 2007/08/06 23:19:33 jvanheld Exp $
 #
 ############################################################
 
@@ -101,10 +101,9 @@ package main;
     local $verbose = 0;
     local $out = STDOUT;
 
-    local $pattern_type = "oligo";
+    local $pattern_type = ""; ## Supported= oligo, dyad
     local $oligo_length = 0;
-    local $monad_length = 3;
-    local $dyad_spacing = "0-20";
+    local $monad_length = 0;
     local $background_model = "upstream-noorf";
     local $str = "-1str";
     local $sum_rc = 0;
@@ -139,8 +138,17 @@ package main;
     ################################################################
     ## Check argument values
 
-    ## Check taxon and collect organisms
-    @organisms = &CheckTaxon($taxon);
+    ## Check pattern type and type-specific parameters
+    if ($pattern_type eq "oligo") {
+      &RSAT::error::FatalError("You must define the oligo length (option -ol)") 
+	unless ($oligo_length);
+    } elsif ($pattern_type eq "dyad") {
+      &RSAT::error::FatalError("You must define the oligomonad length (option -ml)") 
+	unless ($monad_length);
+    } else {
+      &RSAT::error::FatalError("You must define pattern type (option -type dyad|oligo)")
+	unless ($pattern_type);
+    }
 
     ## Strands
     if ($str eq "-1str") {
@@ -151,6 +159,10 @@ package main;
       &RSAT::error::FatalError($str, "Invalid value for the strands. Supported= -1str, -2str.");
     }
 
+    ## Check taxon and collect organisms
+    @organisms = &CheckTaxon($taxon);
+
+
     ################################################################
     ## Open output stream
     $out = &OpenOutputFile($outfile{output});
@@ -160,8 +172,12 @@ package main;
     foreach my $org (@organisms) {
       if ($pattern_type eq "oligo") {
 	$infile{$org} = &ExpectedFreqFile($org, $oligo_length, $background_model,
-						    noov=>$noov, str=>$str);
+					  type=>'oligo',
+					  noov=>$noov, str=>$str);
       } elsif  ($pattern_type eq "dyad") {
+	$infile{$org} = &ExpectedFreqFile($org, $monad_length, $background_model,
+					  type=>'dyad',
+					  noov=>$noov, str=>$str);
       } else {
 	&RSAT::error::FatalError($pattern_type, "is not a valid pattern type. Supported: oligo,dyad");
       }
@@ -180,7 +196,15 @@ package main;
 	my $pattern_seq = $fields[0];
 	my $pattern_id = $fields[1];
 	my $occ = $fields[$occ_col -1];
-	&RSAT::error::FatalError($occ, "Invalid value for occurrences. Should be a Natural number", $infile{$org}, "line", $l) unless (&IsNatural($occ));
+	unless (&IsNatural($occ)) {
+	  ## Temporary fix for dyad, because the frequency files contain occurrences in the 5th column
+	  if ($pattern_type eq "dyad") {
+	    $occ = $fields[$occ_col];
+	  }
+	  unless (&IsNatural($occ)) {
+	    &RSAT::error::FatalError($occ, "Invalid value for occurrences. Should be a Natural number", $infile{$org}, "line", $l);
+	  }
+	}
 
 	$pattern_occ{$pattern_seq}{$org} = $occ;
 	$sum_per_pattern{$pattern_seq} += $occ;
@@ -461,6 +485,17 @@ patterns (e.g. TATATA).
 	  $noov = "-noov";
 
 
+	  ## Pattern type
+=pod
+
+=item B<-type oligo|dyad>
+
+Pattern type. Supported: oligo, dyad. 
+
+=cut
+	} elsif ($arg eq "-type") {
+	  $pattern_type = shift @arguments;
+
 	  ## Oligonucleotide length
 =pod
 
@@ -471,6 +506,11 @@ Oligonucleotide length.
 This option is only valid when pattern type is set to 'oligo'.
 
 =cut
+	} elsif ($arg eq "-ol") {
+	  $oligo_length = shift @arguments;
+	  &RSAT::error::FatalError($oligo_length, 
+				   "Invalid oligo length. Must be a strictly positive Natural number") 
+	    unless ((&IsNatural($oligo_length)) && ($oligo_length > 0));
 
 	  ## Monad length
 =pod
@@ -482,10 +522,11 @@ Monad length for the dyads.
 This option is only valid when pattern type is set to 'dyad'.
 
 =cut
-
-	  ### oligo-analysis parameters
-	} elsif ($arg eq "-ol") {
-	  $oligo_length = shift @arguments;
+	} elsif ($arg eq "-ml") {
+	  $monad_length = shift @arguments;
+	  &RSAT::error::FatalError($monad_length, 
+				   "Invalid monad length. Must be a strictly positive Natural number") 
+	    unless ((&IsNatural($monad_length)) && ($monad_length > 0));
 
 	  ## Return occurrences per organism
 =pod
