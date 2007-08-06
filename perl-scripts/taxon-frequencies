@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.4 2007/08/06 23:30:07 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.5 2007/08/06 23:45:54 jvanheld Exp $
 #
 ############################################################
 
@@ -175,17 +175,27 @@ package main;
     ################################################################
     ## Read background pattern frequencies
     foreach my $org (@organisms) {
+      my $exp_freq_file;
       if ($pattern_type eq "oligo") {
-	$infile{$org} = &ExpectedFreqFile($org, $oligo_length, $background_model,
+	$exp_freq_file = &ExpectedFreqFile($org, $oligo_length, $background_model,
 					  type=>'oligo',
-					  noov=>$noov, str=>$str);
+					  noov=>$noov, str=>$str,
+					  warn=>1);
       } elsif  ($pattern_type eq "dyad") {
-	$infile{$org} = &ExpectedFreqFile($org, $monad_length, $background_model,
+	$exp_freq_file = &ExpectedFreqFile($org, $monad_length, $background_model,
 					  type=>'dyad',
-					  noov=>$noov, str=>$str);
+					  warn=>1);
       } else {
 	&RSAT::error::FatalError($pattern_type, "is not a valid pattern type. Supported: oligo,dyad");
       }
+
+      ## Include a warning for missing files in the output file
+      unless ((-e $exp_freq_file) ||
+	      (-e $exp_freq_file.".gz")) {
+	print $out join ("\t", "; WARNING", "Skipped missing fole for org", $org, $exp_freq_file), "\n";
+	next;
+      }
+      $infile{$org} = $exp_freq_file;
 
       ## Count occurrences for each frequency file
       &RSAT::message::TimeWarn("Loading pattern occurrences for organism", $org, $infile{$org}) if ($main::verbose >= 2);
@@ -605,6 +615,7 @@ sub Verbose {
     foreach my $org (@organisms) {
       $i++;
       print $out join ("\t", ";",
+		       $i,
 		       sprintf("%-${org_len}s", $org),
 		       $infile{$org},
 		      ), "\n";

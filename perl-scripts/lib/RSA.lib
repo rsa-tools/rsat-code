@@ -267,11 +267,14 @@ sub ExpectedFreqFile {
     }
 
     ## Check the existence of the exp freq file
-    unless ((-e $exp_freq_file) || 
+    unless ((-e $exp_freq_file) ||
 	    (-e $exp_freq_file.".gz")) {
+      if ($args{warn}) {
+	&RSAT::message::Warning("Cannot find expected frequency file $exp_freq_file");
+      } else {
 	&RSAT::error::FatalError("Cannot find expected frequency file $exp_freq_file");
+      }
     }
-
     &RSAT::message::Info("Expected frequency file", $exp_freq_file) if ($main::verbose >= 2);
     return $exp_freq_file;
 }
