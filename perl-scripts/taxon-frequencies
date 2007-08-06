@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.3 2007/08/06 23:19:33 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.4 2007/08/06 23:30:07 jvanheld Exp $
 #
 ############################################################
 
@@ -43,35 +43,40 @@ By default, the output file contains 4 columns:
 
 =over
 
-=item pattern sequence
+=head2 pattern sequence
 
-=item pattern ID
+Pattern sequence is always a single-strand pattern description, even
+though it can be used to scan sequences on both strands.
+
+=head2 pattern ID
 
 For single-strand frequencies, the ID is simply the pattern
 sequence. For two-strand frequencies, the pattern ID includes the
 direct sequence + its reverse complement, separated by a pipe
 character.
 
-=item frequency
+=head2 frequency
 
 Taxon-wide frequency of the pattern.
 
-=item occurrences
+=head2 occurrences
 
 Taxon-wide occurrences of the pattern in the considered sequence type
 (upstream, upstream-noorf, intergenic).
 
-=item organism-specific occurrences
+=head2 organism-specific occurrences (optional)
 
 When the option -occ_per_org is active, the program exports one
 additional column per organism, indicating the organism-specific
 number of occurrences of each pattern.
 
-=item organism-specific frequencies
+=head2 organism-specific frequencies (optional)
 
 When the option -freq_per_org is active, the program exports one
 additional column per organism, indicating the organism-specific
 frequency of each pattern.
+
+=back
 
 =cut
 
@@ -619,5 +624,25 @@ __END__
 =pod
 
 =head1 SEE ALSO
+
+=head2 supported-organisms
+
+To get a list of supported organisms + their respective taxa, type
+I<supported-organisms -format full>.
+
+=head2 oligo-analysis
+
+Taxon-wide oligo frequency files can be used as expected frequencies
+for pattern discovery with I<oligo-analysis>.
+
+=head2 dyad-analysis
+
+Taxon-wide dyad frequency files can be used as expected frequencies
+for pattern discovery with I<dyad-analysis>.
+
+=head2 convert-background-model
+
+Oligo and dyad frequencies can be converted into background model for
+third parties pattern detection programs (MEME, MotifSampler).
 
 =cut
