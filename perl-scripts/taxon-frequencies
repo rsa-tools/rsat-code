@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.6 2007/08/06 23:49:07 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.7 2007/08/06 23:57:09 jvanheld Exp $
 #
 ############################################################
 
@@ -115,8 +115,9 @@ package main;
     local $noov="-noov"; ## Supported= -noov, -ovlp
     local $occ_col = 4; ## Column containing pattern occurrences in the frequency files
 
-    local %sum_per_pattern = ();
+    local %occ_sum_per_pattern = ();
     local %occ_sum_per_organism = ();
+    local %occ_sum_per_spacing = ();
     local %freq_sum_per_organism = ();
     local %pattern_freq;
     local $pattern_freq_sum = 0;
@@ -222,7 +223,7 @@ package main;
 	}
 
 	$pattern_occ{$pattern_seq}{$org} = $occ;
-	$sum_per_pattern{$pattern_seq} += $occ;
+	$occ_sum_per_pattern{$pattern_seq} += $occ;
 	$occ_sum_per_organism{$org} += $occ;
 	if (defined($pattern_id{$pattern_seq})) {
 	  if ($pattern_id{$pattern_seq} ne $pattern_id) {
@@ -237,11 +238,30 @@ package main;
 
     ################################################################
     ## Compute total pattern occurrences
-    foreach my $pattern_seq (keys %sum_per_pattern) {
-      $total_occ += $sum_per_pattern{$pattern_seq};
+    foreach my $pattern_seq (keys %occ_sum_per_pattern) {
+      $total_occ += $occ_sum_per_pattern{$pattern_seq};
+
+      ## Specific treatment for dyads: there is a specific total for
+      ## each spacing value, and th sum of frequencies is 1 for each
+      ## spacing value
+      if ($pattern_type eq "dyad") {
+	if ($pattern_seq =~ /n{(\d+)}/i) {
+	  my $spacing = $1;
+	  $occ_sum_per_spacing{$spacing} += $occ_sum_per_pattern{$pattern_seq};
+	} else {
+	  &RSAT::error::FatalError($pattern_seq, "Invalid sequence for a dyad");
+	}
+      }
     }
     foreach my $pattern_seq (sort keys %pattern_id) {
-      $pattern_freq{$pattern_seq} = $sum_per_pattern{$pattern_seq}/$total_occ;
+      if ($pattern_type eq "dyad") {
+	if ($pattern_seq =~ /n{(\d+)}/i) {
+	  my $spacing = $1;
+	  $pattern_freq{$pattern_seq} = $occ_sum_per_pattern{$pattern_seq}/$occ_sum_per_spacing{$spacing};
+	}
+      } else {
+	$pattern_freq{$pattern_seq} = $occ_sum_per_pattern{$pattern_seq}/$total_occ;
+      }
       $pattern_freq_sum += $pattern_freq{$pattern_seq};
     }
     ################################################################
@@ -294,7 +314,7 @@ package main;
 		       $pattern_seq,
 		       $pattern_id{$pattern_seq},
 		       sprintf("%.${decimals}f", $pattern_freq{$pattern_seq}),
-		       $sum_per_pattern{$pattern_seq},
+		       $occ_sum_per_pattern{$pattern_seq},
 		     );
 
       ## Print organism-specific occurrences
