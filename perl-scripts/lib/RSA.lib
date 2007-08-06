@@ -200,7 +200,7 @@ sub doit {
 
 
 ################################################################
-## Name of the expected frequency file, 
+## Name of the expected oligo frequency file, 
 ## given the organism, oligo length and background model
 ##
 sub ExpectedFreqFile {
@@ -208,10 +208,17 @@ sub ExpectedFreqFile {
     my $exp_freq_file = "";
     my $str = $args{str} || "-2str";
     my $noov = $args{noov} || "-noov";
-    
+    my $noov_suffix;
+    if ($noov eq "-noov") {
+      $noov_suffix = "-noov";
+    } else { 
+      $noov_suffix = "-ovlp";
+    }
+    my $type = $args{type} || "oligo";
+
     #### organism
     &CheckOrganism($organism_name);
-    
+
     #### check oligo length
     unless ($oligo_length) {
 	&FatalError("You must specify the oligonucleotide length for the background model (expected frequency file)");
@@ -219,7 +226,7 @@ sub ExpectedFreqFile {
 
     unless (&IsNatural($oligo_length)) {
 	&RSAT::error::FatalError("Invalid oligonucleotide length : must be a natural number");
-    }    
+    }
     if ($oligo_length < 1) {
 	&RSAT::error::FatalError("Invalid oligonucleotide length : must be >= 1");
     }
@@ -229,27 +236,34 @@ sub ExpectedFreqFile {
 
     my $data_dir = $supported_organism{$organism_name}->{'data'};
     $exp_freq_file = $data_dir."/oligo-frequencies/";
-    if ($background eq "upstreamL") {
-	$exp_freq_file .= "_".$organism_name;
-	$exp_freq_file .= "_allup500";
-	$exp_freq_file .= $oligo_length."nt";
-	$exp_freq_file .= $str;
-	$exp_freq_file .= $noov;
-	$exp_freq_file .= "_freq.tab";
+    if ($type eq "dyad") {
+      ## Dyad frequencies
+      $exp_freq_file = join("",
+			    $data_dir,
+			    "/oligo-frequencies/dyads_",$oligo_length,"nt_sp0-20_",
+			    $background_model,
+			    "_",
+			    $organism_name,
+			    $noov_suffix.$str,
+			    ".freq");
+
+    } elsif ($background eq "upstreamL") {
+      ## ???
+      $exp_freq_file .= "_".$organism_name;
+      $exp_freq_file .= "_allup500";
+      $exp_freq_file .= $oligo_length."nt";
+      $exp_freq_file .= $str;
+      $exp_freq_file .= $noov_suffix;
+      $exp_freq_file .= "_freq.tab";
 
     } else {
-	$exp_freq_file .= $oligo_length."nt";
-	$exp_freq_file .= "_".$background;
-	$exp_freq_file .= "_".$organism_name;
-	#### build the name of the expected frequency file 
-	if ($noov eq "-noov") {
-	    $noov_suffix = "-noov";
-	} else { 
-	    $noov_suffix = "-ovlp";
-	}
-	$exp_freq_file .= $noov_suffix;
-	$exp_freq_file .= $str;
-	$exp_freq_file .= ".freq";
+      ## Oligonucleotide frequencies
+      $exp_freq_file .= $oligo_length."nt";
+      $exp_freq_file .= "_".$background;
+      $exp_freq_file .= "_".$organism_name;
+      $exp_freq_file .= $noov_suffix;
+      $exp_freq_file .= $str;
+      $exp_freq_file .= ".freq";
     }
 
     ## Check the existence of the exp freq file
@@ -258,7 +272,7 @@ sub ExpectedFreqFile {
 	&RSAT::error::FatalError("Cannot find expected frequency file $exp_freq_file");
     }
 
-    warn "; Expected frequency file\t", $exp_freq_file, "\n" if ($main::verbose >= 2);
+    &RSAT::message::Info("Expected frequency file", $exp_freq_file) if ($main::verbose >= 2);
     return $exp_freq_file;
 }
 
@@ -761,6 +775,39 @@ sub CheckOrganismName {
 }
 
 ################################################################
+## Collect all organisms belonging to a given taxon
+sub GetOrganismsForTaxon {
+  my ($query_taxon) = @_;
+  my @organisms = ();
+  foreach my $org (sort keys %supported_organism) {
+    my $taxonomy = $supported_organism{$org}->{'taxonomy'};
+    my @org_taxa = split /\s*;\s*/, $taxonomy;
+    &RSAT::message::Debug("GetOrganismsForTaxon", $query_taxon, "checking", $org) if ($main::verbose >= 5);
+    foreach my $orf_taxon (@org_taxa) {
+      if (lc($orf_taxon) eq lc($query_taxon)) {
+	push @organisms, $org;
+	&RSAT::message::Debug("GetOrganismsForTaxon", $query_taxon, "collected", $org) if ($main::verbose >= 3);
+      }
+    }
+  }
+  return @organisms;
+}
+
+################################################################
+## Check if there is at least one supported organism belonging to the
+## specified taxon on this RSAT server.
+sub CheckTaxon {
+  my ($query_taxon) = @_;
+  my @organisms = &GetOrganismsForTaxon($query_taxon);
+  if (scalar(@organisms) > 0) {
+    return @organisms;
+  } else {
+    &RSAT::error::FatalError("There is no supported organism for taxon", $taxon, 
+			     "\nType supported-organisms -format full for a list of supported taxa");
+  }
+}
+
+################################################################
 #### Check if an organism is supported on the current installation,
 #### and open streams to read its genome sequence.
 ####
@@ -1143,6 +1190,7 @@ sub ReadClasses {
 
     return %family;
 }
+
 
 
 #### end of the library #####
