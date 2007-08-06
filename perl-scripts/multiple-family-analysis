@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.203 2007/08/02 08:21:21 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.204 2007/08/06 14:11:29 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -117,6 +117,7 @@ foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
 }
 $supported_tasks = join ",", @supported_tasks;
+
 
 ## Keys for sorting the results in the summary table
 %supported_sort_key = (
@@ -305,63 +306,64 @@ $pattern_factory->set_out_fields(@pattern_out_fields);
 ## Class holder for the matrices (gibbs, meme, consensus, MotifSampler)
 local $matrix_factory = classes::ClassFactory->new_class(object_type=>"RSAT::matrix",
 							 prefix=>$run_prefix."_mat");
-@matrix_out_fields = qw(id
-			family_id
-			family
-			program
-			sites
-			matrix.nb
-			ncol
-			nrow
-			type
-			alphabet.size
+@matrix_scalar_out_fields = qw(id
+			       family_id
+			       family
+			       program
+			       sites
+			       matrix.nb
+			       ncol
+			       nrow
+			       type
+			       alphabet.size
 
-			consensus.IUPAC
-			consensus.IUPAC.rc
-			consensus.strict
-			consensus.strict.rc
-			consensus.regexp
-			consensus.regexp.rc
+			       consensus.IUPAC
+			       consensus.IUPAC.rc
+			       consensus.strict
+			       consensus.strict.rc
+			       consensus.regexp
+			       consensus.regexp.rc
 
-			total.information
-			info.log.base
-			information.per.column
-			max.bits
-			max.possible.info.per.col
-			min.prior
+			       total.information
+			       info.log.base
+			       information.per.column
+			       max.bits
+			       max.possible.info.per.col
+			       min.prior
 
-			cons.P-value
-			cons.ln.Pval
-			cons.E-value
-			cons.ln.Eval
-			cons.adjusted.information
-			cons.unadjusted.information
+			       cons.P-value
+			       cons.ln.Pval
+			       cons.E-value
+			       cons.ln.Eval
+			       cons.adjusted.information
+			       cons.unadjusted.information
 
-			gibbs.MAP
-			gibbs.betaprior.map
-			gibbs.model.map
-			gibbs.seed
+			       gibbs.MAP
+			       gibbs.betaprior.map
+			       gibbs.model.map
+			       gibbs.seed
 
-			meme.llr
-			meme.E-value
+			       meme.llr
+			       meme.E-value
 
-			MS.ic
-			MS.ll
-			MS.cs
-			MS.consensus
-			MS.sequences
+			       MS.ic
+			       MS.ll
+			       MS.cs
+			       MS.consensus
+			       MS.sequences
 
-			input_file
-			command
+			       input_file
+			       command
+			       );
 
-			site_ids
-			sequences
-			alphabet
-			prior
-			parameters
-			column.information
-		       );
-$matrix_factory->set_out_fields(@matrix_out_fields);
+@matrix_array_out_fields = qw(site_ids
+			      sequences
+			      alphabet
+			      prior
+			      parameters
+			      column.information
+			     );
+$matrix_factory->set_out_fields(@matrix_scalar_out_fields, @matrix_array_out_fields);
 
 local %matrix_by_file = (); ## index for the matrices already treated
 
@@ -813,7 +815,9 @@ sub SetFileNames {
 
 	foreach my $option (@MEME_options) {
 	    $meme_options .= " -".$option." ".$MEME_options{$option};
-	    $meme_suffix .= $option.$MEME_options{$option};
+	    unless ($option eq "bfile") {
+	      $meme_suffix .= "_".$option.$MEME_options{$option};
+	    }
 	}
 
 	## Output file
@@ -2110,6 +2114,13 @@ sub ReadMatrices {
 	@matrices = &RSAT::MatrixReader::SortMatrices($sort_key, $sort_order, @matrices);
       }
 
+      ## Export matrices to an SQL databases
+      my $first_matrix = $matrices[0];
+      if ($first_matrix) {
+	foreach my $attr (@matrix_scalar_out_fields) {
+	  $first_matrix->_set_attribute_cardinality($attr, "SCALAR");
+	}
+      }
       foreach my $matrix (@matrices) {
 	$matrix_factory->add_object($matrix);
       }
@@ -3126,7 +3137,7 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-select") {
 	    &FatalError("The option -delete is incompatible with the option -last") if ($last > 0);
 	    &FatalError("The option -delete is incompatible with the option -skip") if ($skip > 0);
-	    @selected = split ",", $ARGV[$a+1];
+	    push (@selected, (split ",", $ARGV[$a+1]));
 	    
 	    ### sequence file list
 	} elsif ($ARGV[$a] eq "-seq") {
