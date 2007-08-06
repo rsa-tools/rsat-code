@@ -176,13 +176,12 @@ sub OpenContigs {
     my $genome_file_format;
 
     if ($main::verbose >= 2) {
-	&RSAT::message::TimeWarn(join ("\t", "Opening contigs", @_));
-	&RSAT::message::Info(join ("\t",
-		       "Manually specified input sequence file",
-		       $input_sequence_file,
-		       $input_sequence_format))
-	    if ($input_sequence_file);
-
+      &RSAT::message::TimeWarn(join ("\t", "Opening contigs", @_));
+      &RSAT::message::Info(join ("\t",
+				 "Manually specified input sequence file",
+				 $input_sequence_file,
+				 $input_sequence_format))
+	if ($input_sequence_file);
     }
 
     ################################################################
