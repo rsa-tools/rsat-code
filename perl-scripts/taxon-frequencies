@@ -1,0 +1,397 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: taxon-frequencies,v 1.1 2007/08/06 17:15:52 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+taxon-frequencies
+
+=head1 DESCRIPTION
+
+Calculate taxon-wide oligo and dyad frequencies.
+
+=head1 AUTHORS
+
+jvanheld@scmbb.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+
+taxon-frequencies -taxon my_taxon [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+Oligo and dyad frequency files are loaded from $RSAT genome
+directories.
+
+=head1 OUTPUT FORMAT
+
+The output format is a tab-delimited file with one row per pattern
+(oligo or dyad). The output columns depend on the other options.
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    my $start_time = &AlphaDate();
+
+
+    local $taxon = "";
+    local %outfile = ();
+    local %infile = ();
+
+    local $verbose = 0;
+    local $out = STDOUT;
+
+    local $pattern_type = "oligo";
+    local $oligo_length = 6;
+    local $background_model = "upstream-noorf";
+    local $str = "-1str";
+    local $sum_rc = 0;
+    local $noov="-noov";
+    local $occ_col = 4; ## Column containing pattern occurrences in the frequency files
+
+    local %sum_per_pattern = ();
+    local %sum_per_organism = ();
+
+    local $org_len = 20; ## Length of the string or printing organism names
+
+    local $freq_per_org = 1;
+
+    #### background models
+    %supported_bg = ('upstream'=>1,
+		     'upstream-noorf'=>1,
+		     'intergenic'=>1,
+		     'upstream-rm'=>1,
+		     'upstream-noorf-rm'=>1
+		    );
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+
+    ## Check taxon and collect organisms
+    my @organisms = &CheckTaxon($taxon);
+
+    ## Strands
+    if ($str eq "-1str") {
+      $sum_rc = 0;
+    } elsif ($str eq "-2str") {
+      $sum_rc = 1;
+    } else {
+      &RSAT::error::FatalError($str, "Invalid value for the strands. Supported= -1str, -2str.");
+    }
+
+    ################################################################
+    ## Open output stream
+    $out = &OpenOutputFile($outfile{output});
+
+    ################################################################
+    ## Read background pattern frequencies
+    foreach my $org (@organisms) {
+      if ($pattern_type eq "oligo") {
+	$infile{$org} = &ExpectedFreqFile($org, $oligo_length, $background_model,
+						    noov=>$noov, str=>$str);
+      } elsif  ($pattern_type eq "dyad") {
+      } else {
+	&RSAT::error::FatalError($pattern_type, "is not a valid pattern type. Supported: oligo,dyad");
+      }
+
+      ## Count occurrences for each frequency file
+      &RSAT::message::TimeWarn("Loading pattern occurrences for organism", $org, $infile{$org}) if ($main::verbose >= 2);
+      my ($in) = &OpenInputFile($infile{$org});
+      my $l = 0;
+      while (<$in>) {
+	$l++;
+	next if (/^--/); ## Skip comment lines
+	next if (/^;/); ## Skip comment lines
+	next if (/^#/); ## Skip header line
+	next unless (/\S/); ## Skip empty lines
+	my @fields = split /\s+/;
+	my $pattern_seq = $fields[0];
+	my $pattern_id = $fields[1];
+	my $occ = $fields[$occ_col -1];
+	&RSAT::error::FatalError($occ, "Invalid value for occurrences. Should be a Natural number", $infile{$org}, "line", $l) unless (&IsNatural($occ));
+
+	$pattern_occ{$pattern_seq}{$org} = $occ;
+	$sum_per_pattern{$pattern_seq} += $occ;
+	$sum_per_organism{$org} += $occ;
+	if (defined($pattern_id{$pattern_seq})) {
+	  if ($pattern_id{$pattern_seq} ne $pattern_id) {
+	    &RSAT::error::FatalError("Inconsistency betwen pattern identifiers", $infile{$org}, $pattern_id, $pattern_id{$pattern_seq});
+	  }
+	} else {
+	  $pattern_id{$pattern_seq} = $pattern_id;
+	}
+      }
+      close $in if ($infile{input});
+    }
+
+    ################################################################
+    ## Compute total pattern occurrences
+    my $total_occ = 0;
+    foreach my $pattern_seq (keys %sum_per_pattern) {
+      $total_occ += $pattern_occ{$pattern_seq};
+    }
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+
+    ################################################################
+    ## Print output
+
+    ## Compute the length of the largest organism name
+    foreach my $org (@organisms) {
+      if (length($org) > $org_len) {
+	$org_len = length($org);
+      }
+    }
+
+    if ($main::verbose >= 1) {
+      print $out "; Organisms\n";
+      my $i = 0;
+      foreach my $org (@organisms) {
+	$i++;
+	print $out join ("\t", ";", $i, 
+			 $sum_per_organism{$org}, 
+			 sprintf("%-${org_len}s", $org),
+			 $infile{$org},
+			), "\n";
+      }
+    }
+
+    ## Print header
+    my @header = ("seq", "pattern_id", "frequency", "occ");
+    if ($main::freq_per_org) {
+      push @header, @organisms;
+    }
+    print $out "#", join( "\t", @header), "\n";
+
+    ## Print pattern occurrences
+    foreach my $pattern_seq (sort keys %pattern_id) {
+      print $out join( "\t", 
+		       $pattern_seq,
+		       $pattern_id{$pattern_seq},
+		       sprintf("%.13f", $sum_per_pattern{$pattern_seq}/$total_occ),
+		       $sum_per_pattern{$pattern_seq},
+		     );
+      if ($main::freq_per_org) {
+	foreach my $org (@organisms) {
+	  print $out "\t", $pattern_occ{$pattern_seq}{$org} || 0;
+	}
+      }
+      print $out "\n";
+    }
+
+    ################################################################
+    ## Finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $out "; Job started $start_time\n";
+	print $out "; Job done    $done_time\n";
+    }
+
+    ################################################################
+    ## Close output stream
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Taxon
+=pod
+
+=item B<-taxon taxon>
+
+Specify the taxon for which frequencies have to be computed.
+
+=cut
+	} elsif ($arg eq "-taxon") {
+	    $main::taxon = shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+	    ### Background model
+=pod
+
+=item B<-bg background_model>
+
+Specify a background model for expected frequencies.
+
+  Supported: upstream-noord, upstream, intergenic
+  Default: upstream-noorf
+
+=cut
+	} elsif ($arg eq "-bg") {
+	    $background_model = shift (@arguments);
+	    $background_model =~ s/ncf/intergenic/;
+	    $background_model =~ s/input/bernoulli/;
+	    unless ($supported_bg{$background_model}) {
+		&RSAT::error::FatalError("Invalid background model\t$background_model\tsupported: $supported_bg");
+	    }
+
+	    #### strands
+=pod
+
+=item B<-2str>
+
+Collect frequenies computed on both strands.
+
+=item B<-1str>
+
+Collect frequenies computed on a single strand.
+
+=cut
+	} elsif ($arg eq "-1str") {
+	    $str = "-1str";
+	} elsif ($arg eq "-2str") {
+	    $str = "-2str";
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; taxon-frequencies ";
+    &PrintArguments($main::out);
+#    if (defined(%main::infile)) {
+#	print $main::out "; Input files\n";
+#	while (my ($key,$value) = each %main::infile) {
+#	    print $main::out ";\t$key\t$value\n";
+#	}
+#    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=cut
