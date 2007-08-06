@@ -426,7 +426,7 @@ sub ReadPatternFrequencies {
 # Read pattern expected frequencies from a file This does the same as
 # ReadOligoFrequencies, but it modifies a global variable
 # %patterns. This is not very elegant, I just maintain it temporarily,
-# until I find a more elegant solution.
+# until I find time to implement and test a more appropriate procedure.
 sub ReadExpectedFrequencies {
     my ($exp_freq_file, $sum_rc, $rescale_freq) = @_;
     &RSAT::message::TimeWarn ("Reading expected frequency file", $exp_freq_file) if ($main::verbose >= 2);
@@ -470,13 +470,12 @@ sub ReadExpectedFrequencies {
 	    ### unrecognized format
 	    &RSAT::error::FatalError("Invalid expected frequency in file $exp_freq_file at line $l\n$line\n");
 	}
-	
+
 	if ($patterns{$pattern_seq}->{exp_freq} < 0) {
 	    &RSAT::error::FatalError("Expected frequency cannot be negative\t$pattern_seq\t".$patterns{$pattern_seq}->{exp_freq});
 	}
     }
     close $exp if ($exp_freq_file);
-    
 
     #### check if reverse complements were included in the expected freq file;
     #### if not, infer them from the direct strand 
@@ -488,7 +487,6 @@ sub ReadExpectedFrequencies {
 #	    warn join "\t", $pattern_seq,  $patterns{$pattern_seq}->{exp_freq}, $rc, $patterns{$rc}->{exp_freq}, "\n" if ($main::verbose >= 10);
   	}
     }
-
 
     #### sum expected frequencies by reverse complements
     if (($sum_rc) && ($file_type eq "1str")) {
@@ -503,17 +501,23 @@ sub ReadExpectedFrequencies {
     if ($freq_sum <= 0) {
 	&RSAT::error::FatalError("Error with the expected frequency file : the sum must be strictly positive\t$freq_sum");
     }
-    
+
     #### rescale expected frequencies to have a sum of 1
     if ($rescale_freq) {
-	warn "; Rescaling expected frequencies\n" if ($main::verbose >=2);
+	&RSAT::message::Info("Rescaling expected frequencies") if ($main::verbose >=2);
 	foreach my $pattern_seq (keys %patterns) {
 	    $patterns{$pattern_seq}->{exp_freq} /= $freq_sum;
 	}
     }
 
+    &RSAT::message::TimeWarn("Expected frequencies loaded from file",$exp_freq_file,
+			     "file_type=".$file_type,
+			     "sum_rc=".$sum_rc,
+			     "rescale_freq=".$rescale_freq,
+			    ) if ($main::verbose >=2);
+
+
     return %patterns;
-    
 }
 
 
@@ -521,32 +525,27 @@ sub ReadExpectedFrequencies {
 ## Sum expected frequencies
 ##
 sub SumExpectedFrequencies {
-    my (%patterns) = @_;
-    my %freq_2str = ();
-    foreach my $pattern_seq (sort keys %patterns) {
-	my $rc = lc(&SmartRC($pattern_seq));
-	if ($rc eq $pattern_seq) {
-	    #### palindromic sequence
-	    $freq_2str{$pattern_seq} =   $patterns{$pattern_seq}->{exp_freq};
-	} else {
-	    #### non-palindromic sequence : the expected frequency is the sum of the sequence + its reverse complement 
-	    $freq_2str{$pattern_seq} =  $freq_2str{$rc} = $patterns{$rc}->{exp_freq} + $patterns{$pattern_seq}->{exp_freq};
-	}
-	warn join ("\t", 
-		   $pattern_seq,  
-		   $patterns{$pattern_seq}->{exp_freq}, 
-		   $freq_2str{$pattern_seq},
-		   $rc, 
-		   $patterns{$rc}->{exp_freq}, 
-		   $freq_2str{$rc},
-		   ), "\n" if ($main::verbose >= 5);
+  my (%patterns) = @_;
+  my %freq_2str = ();
+  &RSAT::message::TimeWarn("Summing expected frequencies") if ($main::verbose >=2);
+  foreach my $pattern_seq (sort keys %patterns) {
+    my $rc = lc(&SmartRC($pattern_seq));
+    if ($rc eq $pattern_seq) {
+      #### palindromic sequence
+      $freq_2str{$pattern_seq} =   $patterns{$pattern_seq}->{exp_freq};
+    } else {
+      #### non-palindromic sequence : the expected frequency is the sum of the sequence + its reverse complement 
+      $freq_2str{$pattern_seq} =  $freq_2str{$rc} = $patterns{$rc}->{exp_freq} + $patterns{$pattern_seq}->{exp_freq};
     }
+    &RSAT::message::Debug($pattern_seq, $patterns{$pattern_seq}->{exp_freq}, $freq_2str{$pattern_seq},
+			  $rc, $patterns{$rc}->{exp_freq}, $freq_2str{$rc}) if ($main::verbose >= 5);
+  }
 
-    foreach my $pattern_seq (sort keys %patterns) {
-	my $rc = &SmartRC($pattern_seq);
-	$patterns{$pattern_seq}->{exp_freq} = $freq_2str{$pattern_seq};
-	$patterns{$rc}->{exp_freq} = $freq_2str{$pattern_seq};
-    }
+  foreach my $pattern_seq (sort keys %patterns) {
+    my $rc = &SmartRC($pattern_seq);
+    $patterns{$pattern_seq}->{exp_freq} = $freq_2str{$pattern_seq};
+    $patterns{$rc}->{exp_freq} = $freq_2str{$pattern_seq};
+  }
 
 }
 
