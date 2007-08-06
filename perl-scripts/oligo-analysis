@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.124 2007/08/06 06:28:24 jvanheld Exp $
+# $Id: oligo-analysis,v 1.125 2007/08/06 13:54:55 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -354,18 +354,20 @@ sub CountOligos {
 
     while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, $seq_type, $mask)) &&
 	   (($current_seq) || ($current_id))) {
-	
+
 	### remove tabs and blank spaces ###    
 	$current_seq = &FoldSequence($current_seq,0);
-	
+
 	### statistics about sequences ###
 	$sequence_number++;  
 	$id_list[$sequence_number] = $current_id;
 	$seq_length[$sequence_number] = length($current_seq);
-	
-	&RSAT::message::TimeWarn(join "\t", $sequence_number,  $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 3);
-	
 	$sum_seq_length += $seq_length[$sequence_number];
+
+	&RSAT::message::TimeWarn($sequence_number,  $seq_length[$sequence_number], $sum_seq_length, $current_id)
+	  if (($main::verbose >= 3) || (($main::verbose >= 2) && ($sequence_number%500==0)));
+
+
 	if ($seq_length[$sequence_number] < $oligo_length) {
 	    next;
 	} else {
