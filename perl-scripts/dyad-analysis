@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.56 2007/08/06 06:25:11 jvanheld Exp $
+# $Id: dyad-analysis,v 1.57 2007/08/06 13:48:14 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -420,7 +420,7 @@ sub CalcExpectedDyadFreq {
 	################################################################
 	# Read expected dyad frequencies from a user-specified file
 	&ReadExpectedFrequencies($infile{exp_freq}, $sum_rc);
-	
+
 	################################################################
 	## Calculate expected dyad freq on basis of monad frequencies 
 	## observed in the input sequence.
@@ -971,20 +971,19 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-return/i) {
 	    @return_fields = split ",", $ARGV[$a+1];
 	    foreach $field (@return_fields) {
-		if ($field =~ /^proba/i) {
+		if ($field eq "proba") {
 		    $return_fields{proba} = 1;
 		} elsif  ($field =~ /^zsc/i) {
 		    $return_fields{zscore} = 1;
-		} elsif  ($field =~ /^freq/i) {
+		} elsif  ($field eq "freq") {
 		    $return_fields{freq} = 1;
-		    $return_fields{exp_freq} = 1;
-		} elsif  ($field =~ /^exp_freq/i) {
+		} elsif  ($field eq "exp_freq") {
 		    $return_fields{exp_freq} = 1;
 		} elsif  ($field =~ /^observed_freq/i) {
 		    $return_fields{freq} = 1;
-		} elsif  ($field =~ /^occ/i) {
+		} elsif  ($field eq "occ") {
 		    $return_fields{occ} = 1;
-		} elsif  ($field =~ /^exp_occ/i) {
+		} elsif  ($field eq "exp_occ") {
 		    $return_fields{exp_occ} = 1;
 		} elsif  ($field eq "ratio") {
 		    $return_fields{ratio} = 1;
@@ -1128,7 +1127,7 @@ sub CountDyads {
 				   "len=".$seq_length[$sequence_number],
 				   "last_pos=".$last_pos,
 				   "sum_len=".$sum_seq_length,
-				  )) if ($main::verbose >= 2);
+				  )) if (($main::verbose >= 3) || ($main::verbose >= 2 && $sequence_number%100==0));
 
     ################################################################
     ## Iteration to get teh first monad of the dyad
@@ -1405,7 +1404,7 @@ sub PrintVerbose {
 	printf $out "; \t%-29s\t%d%s\n", "    discarded", $discarded_monad_positions, " (contain other letters than ACGT)";
     }
     printf $out "; \t%-29s%d\n", "distinct monads", $nb_possible_oligo;
-    
+
     if ($return_fields{monad_freq}) {
 	print $out ";\tMonad frequencies\n";
 	print $out join("\t", ";\t\t", "monad", "occ_1s", "occ_sum", "freq", "frq_sum");
