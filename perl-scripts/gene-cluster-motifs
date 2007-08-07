@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.205 2007/08/07 08:48:15 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.206 2007/08/07 22:19:58 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -102,6 +102,9 @@ $dir{calib1} = "calibrations_1gene";
 		       gibbs
 		       gibbs_maps
 
+		       AlignACE
+		       AlignACE_maps
+
 		       MotifSampler
 
 		       meme
@@ -175,7 +178,7 @@ $min_sp = 0;
 $max_sp = 20;
 
 ## Default matrix-based pattern discovery options
-$matrix_width = 12;
+$matrix_width = 16;
 $expected_sites_per_gene = 2;
 $seed = undef;
 
@@ -231,6 +234,11 @@ $pssm_sort_order{consensus} = 'asc';
 ## Default gibbs options
 $pssm_sort_key{gibbs} = 'gibbs.MAP';
 $pssm_sort_order{gibbs} = 'desc';
+
+## Default AlignACE options
+$AlignACE_gcback=0.4332384392880;
+$pssm_sort_key{AlignACE} = 'MAP.per.site';
+$pssm_sort_order{AlignACE} = 'desc';
 
 ## Comparison between discovered and known motifs
 $known_site_file = "";
@@ -303,7 +311,7 @@ local $pattern_factory = classes::ClassFactory->new_class(object_type=>"RSAT::pa
 			);
 $pattern_factory->set_out_fields(@pattern_out_fields);
 
-## Class holder for the matrices (gibbs, meme, consensus, MotifSampler)
+## Class holder for the matrices (gibbs, AlignACE, meme, consensus, MotifSampler)
 local $matrix_factory = classes::ClassFactory->new_class(object_type=>"RSAT::matrix",
 							 prefix=>$run_prefix."_mat");
 @matrix_scalar_out_fields = qw(id
@@ -338,10 +346,11 @@ local $matrix_factory = classes::ClassFactory->new_class(object_type=>"RSAT::mat
 			       cons.adjusted.information
 			       cons.unadjusted.information
 
-			       gibbs.MAP
+			       MAP
+			       MAP.per.site
 			       gibbs.betaprior.map
 			       gibbs.model.map
-			       gibbs.seed
+			       seed
 
 			       meme.llr
 			       meme.E-value
@@ -377,52 +386,50 @@ if ($known_site_file) {
 
 ## List of sequence files
 if ($sequence_file_list) {
-    $task{upstream} = 0; 
-    &ReadSequenceList();
-    
-## Family file
+  $task{upstream} = 0; 
+  &ReadSequenceList();
+  ## Family file
 } else {
-    
-    ### read gene name and identifiers
-    &RSAT::message::TimeWarn ("Reading ORF information") 
-	if ($verbose >= 1);
-    #### Check organism name
-    if ($organism_name) {
-	$organism = new RSAT::organism();
-	$organism->check_name($organism_name);
-	$organism->set_attribute("name", $organism_name);
-	$organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
-	$organism->LoadFeatures($annotation_table);
-	$organism->LoadSynonyms();
-	
-    } elsif ($org_fam) {
-	&RSAT::message::Info("Organisms will be read from the second column of the family file") if ($main::verbose >= 1);
-    } else {
-	&RSAT::error::FatalError("You must either specify an organism (-org), or an input sequence file (-seq)");
-    }
-    
-    ### Read family file
-    if ($org_fam) {
-	%family = &ReadClasses($family_file, 0);
-    } else {
-	%family = &ReadClasses($family_file, 1, $organism);
+  ### read gene name and identifiers
+  &RSAT::message::TimeWarn ("Reading ORF information") 
+    if ($verbose >= 1);
+  #### Check organism name
+  if ($organism_name) {
+    $organism = new RSAT::organism();
+    $organism->check_name($organism_name);
+    $organism->set_attribute("name", $organism_name);
+    $organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
+    $organism->LoadFeatures($annotation_table);
+    $organism->LoadSynonyms();
+
+  } elsif ($org_fam) {
+    &RSAT::message::Info("Organisms will be read from the second column of the family file") if ($main::verbose >= 1);
+  } else {
+    &RSAT::error::FatalError("You must either specify an organism (-org), or an input sequence file (-seq)");
+  }
+
+  ### Read family file
+  if ($org_fam) {
+    %family = &ReadClasses($family_file, 0);
+  } else {
+    %family = &ReadClasses($family_file, 1, $organism);
+  }
+
+  ## Check selected families
+  if (scalar(@selected) > 0) {
+    my %selected = ();
+    foreach my $family_name (@selected) {
+      $selected{$family_name}++;
+      &FatalError(join ("\t", "Selected family", $family_name, "is not found in the family file", $family_file)) unless ($family{$family_name});
     }
 
-    ## Check selected families
-    if (scalar(@selected) > 0) {
-	my %selected = ();
-	foreach my $family_name (@selected) {
-	    $selected{$family_name}++;
-	    &FatalError(join ("\t", "Selected family", $family_name, "is not found in the family file", $family_file)) unless ($family{$family_name});
-	}
-
-	## Delete non-selected families
-	foreach my $family_name (keys (%family)) {
-	    delete $family{$family_name} unless ($selected{$family_name});
-	}
-    } else {
-	@families = sort keys %family;
+    ## Delete non-selected families
+    foreach my $family_name (keys (%family)) {
+      delete $family{$family_name} unless ($selected{$family_name});
     }
+  } else {
+    @families = sort keys %family;
+  }
 
 }
 
@@ -690,7 +697,7 @@ sub SetFileNames {
 	$family{$family_name}->{merged_ft_file} = $family{$family_name}->{merged_file}.".ft";
 
 	################################################################
-	## Andrew Neuwald's Gibbs options and files
+	## Andrew Neuwald's Gibbs 95 options and files
 	my $gibbs_options = "";
 	my $gibbs_suffix = "";
 
@@ -729,6 +736,44 @@ sub SetFileNames {
 #	$family{$family_name}->{gibbs_dir} = $dir{output}."/"."${family_name}/gibbs_${family_name}";
 	$family{$family_name}->{gibbs_dir} = "${family_name}/gibbs_${family_name}";
 	$family{$family_name}->{gibbs_file} = $family{$family_name}->{gibbs_dir}."/".$family{$family_name}->{file_prefix}.$gibbs_suffix;
+
+	################################################################
+	## Roth's AlignACE
+	my $AlignACE_options = "";
+	my $AlignACE_suffix = "";
+
+	$family{$family_name}->{AlignACE_input_seq_file} = $family{$family_name}->{input_seq_file}.".AlignACE";
+
+	## input file
+	$AlignACE_options .= " -i ".$family{$family_name}->{AlignACE_input_seq_file};
+
+	## Matrix width
+	$AlignACE_options .= " -numcols ".$matrix_width;
+	$AlignACE_suffix .= "-L".$matrix_width;
+
+	## Expected number of sites
+	my $gene_nb = scalar(@{$family{$family_name}->{members}});
+#	warn join ("\t", "Number of genes", $family_name, $gene_nb), "\n";
+	$expected_sites = $gene_nb*$expected_sites_per_gene;
+	$AlignACE_options .= " -expect ".$expected_sites;
+	$AlignACE_suffix .= "-n".$expected_sites;
+
+	## background fractional GC content of input sequence (0.38)
+	$AlignACE_options .= " -gcback ".$AlignACE_gcback;
+	$AlignACE_suffix .= "-gcback".sprintf("%.2f",$AlignACE_gcback);
+
+	## Random seed
+	if (defined($seed)) {
+	    $AlignACE_options .= " -s".$seed;
+	    $AlignACE_suffix .= "-s".$seed;
+	}
+
+	## Assign AlignACE options to the family
+	$family{$family_name}->{AlignACE_suffix} = $AlignACE_suffix;
+	$family{$family_name}->{AlignACE_options} = $AlignACE_options;
+#	$family{$family_name}->{AlignACE_dir} = $dir{output}."/"."${family_name}/AlignACE_${family_name}";
+	$family{$family_name}->{AlignACE_dir} = "${family_name}/AlignACE_${family_name}";
+	$family{$family_name}->{AlignACE_file} = $family{$family_name}->{AlignACE_dir}."/".$family{$family_name}->{file_prefix}.$AlignACE_suffix;
 
 	################################################################
 	## Gert Thijs' MoifSampler options and files
@@ -1558,6 +1603,36 @@ sub Gibbs {
 
 
 ################################################################
+## Run Roth's AlignACE program
+sub AlignACE {
+   chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{AlignACE_dir});
+
+
+   if ($strand = "-2str") {
+	$addrc = " -addrc";
+   }
+
+   ## This can be useful in case the file is compressed, and to covert
+   ## n characters (masked nucleotide) into dots
+   my $AlignACE_command = "convert-seq ";
+   $AlignACE_command .= " -from fasta -to fasta -dotmask";
+   $AlignACE_command .= " -i ".$family{$family_name}->{input_seq_file};
+   $AlignACE_command .= " -o ".$family{$family_name}->{AlignACE_input_seq_file};
+   $AlignACE_command .= " ; AlignACE ".$family{$family_name}->{AlignACE_options};
+   $AlignACE_command .= " > ".$family{$family_name}->{AlignACE_file};
+
+   $AlignACE_command .= "; ";
+   $AlignACE_command .= &ConvertMatrixCommand($family{$family_name}->{AlignACE_file}, "AlignACE");
+
+   if ($batch) {
+       push @main::batch_commands, $AlignACE_command;
+   } else {
+       &doit($AlignACE_command, $dry_run, $die_on_error, $verbose);
+   }
+}
+
+
+################################################################
 ## Run MEME program 
 sub MEME {
    chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{meme_dir});
@@ -1731,6 +1806,7 @@ sub SyntheticTable {
    $row{selection} = $row++ if ($task{report});
    $row{consensus} = $row++;
    $row{gibbs} = $row++;
+   $row{AlignACE} = $row++;
    $row{meme} = $row++;
    $row{MotifSampler} = $row++;
    $row_num = $row-1;
@@ -1863,6 +1939,9 @@ sub SyntheticTable {
 	################################################################
 	#### Index results of gibbs
 	&IndexGibbs($family_name, $row{gibbs}, $col, matrix_file=>$family{$family_name}->{gibbs_file});
+
+	#### Index results of gibbs
+	&IndexAlignACE($family_name, $row{AlignACE}, $col, matrix_file=>$family{$family_name}->{AlignACE_file});
 
 	################################################################
 	#### Index results of meme
@@ -2144,6 +2223,12 @@ sub ReadMatrices {
 ## Index the matrix from a gibbs file
 sub IndexGibbs {
    &IndexMatrix(@_, program=>"gibbs");
+}
+
+################################################################
+## Index the matrix from a gibbs file
+sub IndexAlignACE {
+   &IndexMatrix(@_, program=>"AlignACE");
 }
 
 ################################################################
@@ -2550,6 +2635,14 @@ sub AnalyzeFamilies {
 	  &DrawFeatureMap($family{$family_name}->{gibbs_file});
 	}
 
+	### Roth's AlignACE
+	&AlignACE() if ($task{AlignACE});
+	if ($task{AlignACE_maps}) {
+	  &ScanSequences($family{$family_name}->{AlignACE_file}."_count_matrices.txt","AlignACE",
+		       $family{$family_name}->{AlignACE_file}," -uth Pval 0.00025");
+	  &DrawFeatureMap($family{$family_name}->{AlignACE_file});
+	}
+
 	### Gert Thijs' MotifSampler
 	&MotifSampler() if ($task{MotifSampler});
 
@@ -2893,12 +2986,15 @@ OPTIONS
 	Alternative versions of orm.py and ormbg.py can be specified with
 	environment variables ORM and ORMBG, respectively.
 
-   Matrix-based pattern discovery options (consensus, gibbs, meme)
+   Matrix-based pattern discovery options (consensus, gibbs, AlignACE, meme, MotifSampler)
        -width  matrix width (default $matrix_width)
        -sps	expected number of sites per sequence
 		(default $expected_sites_per_gene)
 
    Gibbs sampler (Neuwald, 1995)
+	-seed	 seed number for the random generator
+
+   AlignACE (Roth, 1998)
 	-seed	 seed number for the random generator
 
    MotifSampler (Thijs, 200X)
@@ -2981,7 +3077,7 @@ OPTIONS
 		configurations by adapting the method &doit() in the
 		utilities ($RSAT/lib/RSA.lib).
 
-	-nodie	
+	-nodie
 		Continue the analysis even if errors are raised by
 		sub-processes. By default, multiple-family-analysis
 		stops if an error has occurred in one of the
@@ -3197,8 +3293,8 @@ sub ReadArguments {
 	    $matrix_width = $ARGV[$a+1];
 	} elsif ($ARGV[$a] eq "-sps") {
 	    $expected_sites_per_gene = $ARGV[$a+1];
-	    
-	    ### Gibbs sampler options
+
+	    ### Gibbs sampler + AlignACE seed option
 	} elsif ($ARGV[$a] eq "-seed") {
 	    $seed = $ARGV[$a+1];
 
@@ -3425,8 +3521,10 @@ sub Verbose {
    $verbose_message .= "; multiple-family-analysis ";
    $verbose_message .= &PrintArguments()."\n";
    printf "; families     \t%d\n", $#families + 1;
+   my $f = 0;
    foreach my $family_name (@families) {
-	printf ";\t%s\t%d elements\n", $family_name, $family{$family_name}->get_size();
+     $f++;
+     printf ";\tfamily\t%d\t%s\t%d elements\n", $f, $family_name, $family{$family_name}->get_size();
    }
    if ($family_file) {
 	$verbose_message .= sprintf "; Family file\t%s\n", $family_file ;
@@ -3619,7 +3717,7 @@ sub ExportSQL {
     }
 
     #### Matrices
-    for my $program qw (consensus gibbs meme MotifSampler) {
+    for my $program qw (consensus gibbs AlignACE meme MotifSampler) {
       my $matrix_file = $family{$family_name}->{$program."_file"};
       if (-e $matrix_file) {
 	&ReadMatrices($family_name, $matrix_file, program=>$program);
@@ -3633,12 +3731,13 @@ sub ExportSQL {
   $dir{sql} = "sql_export";
   chdir($dir{output}); &RSAT::util::CheckOutDir($dir{sql});
 
-  ### temporary output directory
+  ## Temporarily motify  output directory
+  ## for table dumping
   $dir{output_bk} = $dir{output};
   $dir{output} = $dir{sql};
   my $pwd = `pwd`;
   chomp $pwd;
-  warn join ("\t", $pwd , $dir{output}, $dir{output_bk}), "\n";
+  &RSAT::message::Info ($pwd , $dir{output}, $dir{output_bk});
   #### export the result tables
   foreach my $factory ($analysis_factory, $family_factory, $pattern_factory, $matrix_factory) {
     $factory->dump_tables();
@@ -3648,6 +3747,7 @@ sub ExportSQL {
 			   user=>$user);
   }
   &ExportMakefile("analysis", "family", "pattern");
+  $dir{output} = $dir{output_bk};
 }
 
 ## ##############################################################
@@ -4797,14 +4897,17 @@ multiple-family-analysis options
 -sort		sort key (supported: $supported_sort_keys)
 -dyad_exp_freq	expected frequencies for dyad-analysis
 
-## Options for matrix-based pattern discovery
+## General options for matrix-based pattern discovery
 -width		matrix width (default $matrix_width)
 -sps		expected number of sites per sequence (default $expected_sites_per_gene)
 
-## Gibbs sampler
+## Gibbs sampler (Neuwald, 1995)
 -seed		seed number for the random generator
 
-## MotifSampler 
+## AlignACE (Roth, 1998)
+-seed		seed number for the random generator
+
+## MotifSampler (Thijs, 2000)
 -MS_b		backgound file
 -MS_p		prior probability of 1 motif copy (default $MS_p)
 -MS_M   	Maximal number of motif instances per sequence. (default $MS_M; unset=0)
