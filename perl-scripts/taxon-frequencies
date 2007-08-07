@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.7 2007/08/06 23:57:09 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.8 2007/08/07 00:06:24 jvanheld Exp $
 #
 ############################################################
 
@@ -291,7 +291,7 @@ package main;
       foreach my $org (@organisms) {
 	my $field = "F.".$org;
 	push @out_fields, $field;
-	$field_descr{$field} = "frequencies\t".$org;
+	$field_descr{$field} = "pattern frequencies in ".$org;
       }
     }
 
@@ -301,7 +301,7 @@ package main;
       my $c = 0;
       foreach my $field (@out_fields) {
 	$c++;
-	print $out join ("\t", ";", $c, $field, $field_descr{$field}), "\n";
+	print $out join ("\t", ";", $c, sprintf("%-29s", $field), $field_descr{$field}), "\n";
       }
     }
 
