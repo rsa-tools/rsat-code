@@ -1,9 +1,13 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.8 2007/08/07 00:06:24 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.9 2007/08/07 08:44:48 jvanheld Exp $
 #
 ############################################################
+
+## TO DO: add the option -all, to automatically compute all the pattern frequencies for a giv en taxon (with the option -outdir)
+## TO DO: add the option -install, to automatically store pattern frequencies in RSAT data directory $RSAT/data/taxon_frequencies/${TAXON}
+
 
 ## use strict;
 
@@ -222,7 +226,11 @@ package main;
 	  }
 	}
 
-	$pattern_occ{$pattern_seq}{$org} = $occ;
+	## store the organism-specific occurrences for the full table (can be memory costly)
+	if (($occ_per_org) || ($freq_per_org)) {
+	  $pattern_occ{$pattern_seq}{$org} = $occ;
+	}
+
 	$occ_sum_per_pattern{$pattern_seq} += $occ;
 	$occ_sum_per_organism{$org} += $occ;
 	if (defined($pattern_id{$pattern_seq})) {
