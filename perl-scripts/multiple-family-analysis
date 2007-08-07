@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.204 2007/08/06 14:11:29 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.205 2007/08/07 08:48:15 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -331,9 +331,9 @@ local $matrix_factory = classes::ClassFactory->new_class(object_type=>"RSAT::mat
 			       max.possible.info.per.col
 			       min.prior
 
-			       cons.P-value
+			       cons.Pval
 			       cons.ln.Pval
-			       cons.E-value
+			       cons.Eval
 			       cons.ln.Eval
 			       cons.adjusted.information
 			       cons.unadjusted.information
@@ -3183,7 +3183,7 @@ sub ReadArguments {
 	    $min_oligo_len = $ARGV[$a+1];;
 	} elsif ($ARGV[$a] eq "-maxol") {
 	    $max_oligo_len = $ARGV[$a+1];;
-	    
+
 	    ### dyad-analysis parameters
 	} elsif ($ARGV[$a] eq "-monad") {
 	    $monad_length = $ARGV[$a+1];;
