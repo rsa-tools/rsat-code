@@ -36,6 +36,7 @@ formats.
 			   'consensus'=>1,
 			   'meme'=>1,
 			   'gibbs'=> 1,
+			   'alignace'=> 1,
 			   'clustal'=>1,
 			   'transfac'=>1,
 			   'motifsampler'=>1,
@@ -62,6 +63,8 @@ sub readFromFile {
 	@matrices = _readFromAssemblyFile($file);
     } elsif (lc($format) eq "gibbs") {
 	@matrices = _readFromGibbsFile($file);
+    } elsif (lc($format) eq "alignace") {
+	@matrices = _readFromAlignACEFile($file);
     } elsif (lc($format) eq "tab") {
 	@matrices = _readFromTabFile($file, %args);
     } elsif (lc($format) eq "cb") {
@@ -120,6 +123,11 @@ sub readFromFile {
 
       ## Replace undefined values by 0
       $matrix->treat_null_values();
+
+      ## Compute MAP per sites
+      if ((my $map = $matrix->get_attribute("MAP")) && (my $sites = $matrix->get_attribute("sites"))) {
+	$matrix->set_parameter("MAP.per.site", $map/$sites);
+      }
 
     }
 
@@ -257,6 +265,99 @@ sub _readFromTRANSFACFile {
 ################################################################
 =pod
 
+=item _readFromAlignACEFile($file)
+
+Read a matrix from an AlignACE file. This method is called by the method 
+C<readFromFile($file, "AlignACE")>.
+
+=cut
+sub _readFromAlignACEFile {
+  my ($file) = @_;
+  my @matrices = ();
+
+  &RSAT::message::Warning("AlignACE format is not yet supported as input");
+
+  my ($in, $dir) = &main::OpenInputFile($file);
+  my $l = 0;
+  my $matrix;
+  my $matrix_nb;
+  my $site_nb;
+  my $expect = "";
+  my $gcback = 0.5;
+  my $minpass = "";
+  my $seed = "";
+  my $numcols = "";
+  my $undersample = "";
+  my $oversample = "";
+  my %seq_id = ();
+  while (<$in>) {
+    $l++;
+    chomp();
+    next unless (/\S/); ## Skip empty lines
+    if (/^Motif (\d+)/) {
+      $matrix_nb = $1;
+      $site_nb = 0;
+      $matrix = new RSAT::matrix();
+      $matrix->set_parameter("matrix.nb", $matrix_nb);
+      $matrix->set_parameter("program", "AlignACE");
+      $matrix->set_parameter("command", $AlignACE_command);
+      $matrix->set_parameter("program.version", $AlignACE_version);
+      $matrix->set_parameter("program.release", $AlignACE_date);
+      $matrix->set_parameter("seed", $seed);
+      $matrix->set_parameter("alignace.minpass", $minpass);
+      $matrix->set_parameter("alignace.expect", $expect);
+      $matrix->set_parameter("alignace.undersample", $undersample);
+      $matrix->set_parameter("alignace.oversample", $oversample);
+      &RSAT::message::Info("Starting to read matrix", $matrix_nb) if ($main::verbose >= 3);
+      # default nucletodide alphabet
+      $matrix->setAlphabet_lc("a","c","g","t");
+      my $atback = 1-$gcback;
+      $matrix->setPrior(a=>$atback/2, c=>$gcback/2,t=>$atback/2, g=>$gcback/2);
+      $matrix->set_attribute("nrow",4);
+      push @matrices, $matrix;
+      $in_matrix = 1;
+    } elsif (/^AlignACE (\d+\.\d+)\s+(\S+)/) {
+      $AlignACE_version = $1;
+      $AlignACE_date = $2;
+    } elsif (/gcback = \s+(\S+)/) {
+      $gcback = $1;
+    } elsif (/seed\s+=\s+(\S+)/) {
+      $seed = $1;
+    } elsif (/expect\s+=\s+(\S+)/) {
+      $expect = $1;
+    } elsif (/minpass\s+=\s+(\S+)/) {
+      $minpass = $1;
+    } elsif (/oversample\s+=\s+(\S+)/) {
+      $oversample = $1;
+    } elsif (/undersample\s+=\s+(\S+)/) {
+      $undersample = $1;
+    } elsif (/^AlignACE/) {
+      $AlignACE_command = $_;
+    } elsif (/#(\d+)\s+(\S+)/) {
+      $seq_id[$1] = $2;
+    } elsif ($in_matrix) {
+      if (/MAP Score:\s(\S+)/i) {
+	$matrix->set_parameter("MAP", $1);
+      } elsif (/(\S+)\s+(\d+)\s+(\d+)\s+(\d+)/) {
+	$site_nb++;
+	my $site_seq = $1;
+	my $seq_nb = $2;
+	my $site_pos = $3;
+	my $site_strand = $4;
+	my $site_id = join ("_", "mtx".$matrix_nb, "site".$site_nb, "seq".$seq_nb, $seq_id[$seq_nb], $site_pos, $site_strand);
+	$matrix->add_site(lc($site_seq), id=>$site_id, score=>1);
+      }
+    }
+  }
+  close $in if ($file);
+
+  return @matrices;
+}
+
+
+################################################################
+=pod
+
 =item _readFromGibbsFile($file)
 
 Read a matrix from a gibbs file. This method is called by the method 
@@ -317,7 +418,7 @@ sub _readFromGibbsFile {
 	  $matrix = new RSAT::matrix();
 	  $matrix->set_parameter("program", "gibbs");
 	  $matrix->set_parameter("command", $gibbs_command);
-	  $matrix->set_parameter("gibbs.seed", $seed);
+	  $matrix->set_parameter("seed", $seed);
 	  push @matrices, $matrix;
 	  &RSAT::message::Debug("Starting to read a matrix") if ($main::verbose >= 3);
 	  $in_matrix = 1;
@@ -350,9 +451,9 @@ sub _readFromGibbsFile {
 	$matrix = new RSAT::matrix();
 	$matrix->set_parameter("program", "gibbs");
 	$matrix->set_parameter("command", $gibbs_command);
-	$matrix->set_parameter("gibbs.seed", $seed);
+	$matrix->set_parameter("seed", $seed);
 	push @matrices, $matrix;
-	&RSAT::message::Debug("Starting to read a matrix") if ($main::verbose >= 3);
+	&RSAT::message::Debug("Starting to read a motif") if ($main::verbose >= 3);
 	$in_matrix = 1;
 	# default nucletodide alphabet
 	$matrix->setAlphabet_lc("a","c","g","t");
@@ -366,7 +467,7 @@ sub _readFromGibbsFile {
 #				"betaprior map", $matrix->get_attribute("gibbs.betaprior.map"));
 
       } elsif (/MAP = (\S+)/) {
-	$matrix->set_parameter("gibbs.MAP", $1);
+	$matrix->set_parameter("MAP", $1);
 
       } elsif (($in_matrix) && ($parse_model)) {
 	if (/^\s*POS/) {
@@ -420,7 +521,6 @@ sub _readFromGibbsFile {
 	pop @matrices;
       }
     }
-
 
     return @matrices;
 }
