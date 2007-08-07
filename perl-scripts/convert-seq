@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.25 2007/07/18 22:13:40 jvanheld Exp $
+# $Id: convert-seq,v 1.26 2007/08/07 22:20:39 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -19,6 +19,7 @@ require "RSA.lib";
 $start_time = `date`;
 $line_width = 60;
 $check_id = 1;
+$dotmask = 0;
 
 $accepted_input_string = join "\n\t\t\t", "", sort(keys %accepted_input_seq);
 $accepted_output_string = join "\n\t\t\t", "", sort(keys %accepted_output_seq); 
@@ -121,8 +122,13 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
     if ($dna) {
         $current_seq = &CleanDNA($current_seq, "n");
 	if ($out_format eq "wc") {
-	  $current_seq =~ s/n/./gi; ## consensus does not recognize the N character
+	  $dotmask = 1;
 	}
+    }
+
+    ## Replace N by dots
+    if ($dotmask) {
+      $current_seq =~ s/n/./gi; ## consensus does not recognize the N character
     }
 
     if ($seq_identifier) {
@@ -295,6 +301,12 @@ OPTIONS
 	-dna	convert any non-acgt character into "n" 
 		This is to filter out partly speciied nucleotides.
 
+ 	-dotmask
+		convert masked characters into dots. 
+		This is useful for programs like consensus, or
+		AlignACE, which do not support N characters in the
+		sequences.
+
 	-id identifier
 		sequence identifier (useful for converting a raw
 		sequence from the STDIN)
@@ -340,6 +352,7 @@ consvert-seq options
 -lc			convert all letters to lowercase
 -uc			convert all letters to uppercase
 -dna			convert any non-acgt character into "n" 
+-dotmask		convert masked characters into dots. 
 -id			sequence identifier
 -prefix			sequence prefix
 -nocheckid		Prevent to check sequence IDs for conversion to the format filelist.
@@ -474,6 +487,9 @@ sub ReadArguments {
 
 	} elsif ($ARGV[$a] eq "-dna") {
 	    $dna = 1;
+
+	} elsif ($ARGV[$a] eq "-dotmask") {
+	    $dotmask = 1;
 	    
 	    ## Remove empty sequences from the set
 	} elsif ($ARGV[$a] eq "-noempty") {
