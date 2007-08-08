@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.207 2007/08/08 09:05:48 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.208 2007/08/08 09:36:28 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -180,6 +180,7 @@ $max_sp = 20;
 ## Default matrix-based pattern discovery options
 $matrix_width = 16;
 $expected_sites_per_gene = 2;
+$nmotifs = 5;
 $seed = undef;
 
 ## Program-specific keys for sorting matrices (PSSM)
@@ -194,7 +195,7 @@ if (defined($ENV{MOTIF_SAMPLER_DIR})) {
 }
 $MS_p = 0.2;
 $MS_M = 0;
-$MS_n = 1;
+$MS_n = $nmotifs;
 $MS_w = $matrix_width;
 $MS_x = 1;
 $MS_r = 5;
@@ -207,7 +208,7 @@ $MEME_optiont{dna} = ""; push @MEME_options, "dna";
 $MEME_options{mod} = "anr"; push @MEME_options, "mod";
 $MEME_options{minw} = 6; push @MEME_options, "minw";
 $MEME_options{maxw}=25; push @MEME_options, "maxw";
-$MEME_options{nmotifs}=5; push @MEME_options, "nmotifs";
+$MEME_options{nmotifs}=$nmotifs; push @MEME_options, "nmotifs";
 $pssm_sort_key{meme} = 'meme.E-value';
 $pssm_sort_order{meme} = 'asc';
 
@@ -706,17 +707,28 @@ sub SetFileNames {
 	$gibbs_options .= " ".$family{$family_name}->{gibbs_input_seq_file};
 
 	## Matrix width
-	$gibbs_options .= " ".$matrix_width;
+	my @gibbs_widths = ();
+	my @gibbs_expected_sites = ();
+	my $gene_nb = scalar(@{$family{$family_name}->{members}});
+	my $expected_sites = $gene_nb*$expected_sites_per_gene;
+	for my $i (1..$nmotifs) {
+	  push @gibbs_width, $matrix_width;
+	  push @gibbs_expected_sites, $expected_sites;
+	}
+	$gibbs_options .= " ".join(",",  @gibbs_width);
+	$gibbs_suffix .= "-nmotifs".$nmotifs;
 	$gibbs_suffix .= "-L".$matrix_width;
 
 	## Expected number of sites
-	my $gene_nb = scalar(@{$family{$family_name}->{members}});
 #	warn join ("\t", "Number of genes", $family_name, $gene_nb), "\n";
-	$expected_sites = $gene_nb*$expected_sites_per_gene;	
-	$gibbs_options .= " ".$expected_sites;
-	$gibbs_suffix .= "-n".$expected_sites; 
+	$gibbs_options .= " ".join(",", @gibbs_expected_sites);
+#	$gibbs_options .= " ".$expected_sites;
+	$gibbs_suffix .= "-n".$expected_sites;
 
-	## DON'T use fragmentation (i.e., column sampler)	
+#	die "HELLO\t", $gibbs_options, "\n";
+
+
+	## DON'T use fragmentation (i.e., column sampler)
 	$gibbs_options .= " -d";
 	$gibbs_suffix .= "-d";
 
@@ -2990,6 +3002,7 @@ OPTIONS
        -width  matrix width (default $matrix_width)
        -sps	expected number of sites per sequence
 		(default $expected_sites_per_gene)
+       -nmotifs number of motifs to discover per sequence set (family)
 
    Gibbs sampler (Neuwald, 1995)
 	-seed	 seed number for the random generator
@@ -3293,6 +3306,10 @@ sub ReadArguments {
 	    $matrix_width = $ARGV[$a+1];
 	} elsif ($ARGV[$a] eq "-sps") {
 	    $expected_sites_per_gene = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-nmotifs") {
+	    $nmotifs = $ARGV[$a+1];
+	    $MEME_options{nmotifs} = $nmotifs;
+	    $MS_n = $nmotifs;
 
 	    ### Gibbs sampler + AlignACE seed option
 	} elsif ($ARGV[$a] eq "-seed") {
@@ -4900,6 +4917,7 @@ multiple-family-analysis options
 ## General options for matrix-based pattern discovery
 -width		matrix width (default $matrix_width)
 -sps		expected number of sites per sequence (default $expected_sites_per_gene)
+-nmotifs	number of motifs to discover per sequence set (family)
 
 ## Gibbs sampler (Neuwald, 1995)
 -seed		seed number for the random generator
