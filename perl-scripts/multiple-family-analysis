@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.209 2007/08/08 12:09:13 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.210 2007/08/08 12:14:20 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1542,503 +1542,487 @@ sub DrawMergedFeatureMap {
 ################################################################
 ## Run Gert Thijs' MotifSampler
 sub MotifSampler {
-   &RSAT::message::TimeWarn ("Running MotifSampler for family $family_name") if ($main::verbose >= 1);
-   ## Check output directory
-   my $dir = $family{$family_name}->{MotifSampler_dir};
-   chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
+  &RSAT::message::TimeWarn ("Running MotifSampler for family $family_name") if ($main::verbose >= 1);
+  ## Check output directory
+  my $dir = $family{$family_name}->{MotifSampler_dir};
+  chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
 
-#   ## Create background model if required
-#   unless ($MS_b) {
-#	warn "; Creating background model for the input sequence\torder ".$MS_bg_order."\n" 
-#	    if ($main::verbose >= 1);
-#	## create bacakground model
-#	my $command = " CreateBackgroundModel -f ".$family{$family_name}->{input_seq_file};
-#	$command .= " -b ".$family{$family_name}->{MotifSamplerBackground};
-#	$command .= " -o ".$MS_bg_order;
-#	&doit($command, $dry_run, $die_on_error, $verbose);
-#   }
-
-
-#    if (defined ($ENV{MOTIF_SAMPLER_DIR})) {
-#        $ENV{MOTIF_SAMPLER_DIR}."MotifSampler";
-#    }
-
-   ## run the command
-   my $MS_command = "MotifSampler ".$family{$family_name}->{MotifSampler_options};
-   unless (($batch) || ($main::verbose >= 3)) {
-     ## Suppress verbosity
-     $MS_command = "(".$MS_command.") >& MS_log.txt";
-   }
-   $MS_command .= "; MotifRanking -m 2";
-   $MS_command .= " -i ".$family{$family_name}->{MotifSampler_file};
-   $MS_command .= " -o ".$family{$family_name}->{MotifSampler_file}."_ICsorted";
-   $MS_command .= "; ";
-   $MS_command .= &ConvertMatrixCommand($family{$family_name}->{MotifSampler_file}."_ICsorted", "MotifSampler");
-   if ($batch) {
-       push @main::batch_commands, $MS_command;
-   } else {
-       &doit($MS_command, $dry_run, $die_on_error, $verbose);
-   }
+  ## run the command
+  my $MS_command = "MotifSampler ".$family{$family_name}->{MotifSampler_options};
+  unless (($batch) || ($main::verbose >= 3)) {
+    ## Suppress verbosity
+    $MS_command = "(".$MS_command.") >& MS_log.txt";
+  }
+  $MS_command .= "; MotifRanking -m 2";
+  $MS_command .= " -i ".$family{$family_name}->{MotifSampler_file};
+  $MS_command .= " -o ".$family{$family_name}->{MotifSampler_file}."_ICsorted";
+  $MS_command .= "; ";
+  $MS_command .= &ConvertMatrixCommand($family{$family_name}->{MotifSampler_file}."_ICsorted", "MotifSampler");
+  if ($batch) {
+    push @main::batch_commands, $MS_command;
+  } else {
+    &doit($MS_command, $dry_run, $die_on_error, $verbose);
+  }
 }
 
 
 ################################################################
 ## Run Andrew Neuwald's gibbs program 
 sub Gibbs {
-   chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{gibbs_dir});
+  chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{gibbs_dir});
 
 
-   if ($strand = "-2str") {
-	$addrc = " -addrc";
-   }
-   ## This can be useful in case the file is compressed
-   my $gibbs_command = "convert-seq ".$addrc;
-   $gibbs_command .= " -from fasta -to fasta ";
-   $gibbs_command .= " -i ".$family{$family_name}->{input_seq_file};
-   $gibbs_command .= " -o ".$family{$family_name}->{gibbs_input_seq_file};
-   $gibbs_command .= " ; gibbs ".$family{$family_name}->{gibbs_options};
-   $gibbs_command .= " > ".$family{$family_name}->{gibbs_file}; 
-#   unless (($batch) || ($main::verbose >= 3)) {
-#     ## Suppress verbosity
-#     $gibbs_command = "(".$gibbs_command.") >& gibbs_log.txt";
-#   }
+  if ($strand = "-2str") {
+    $addrc = " -addrc";
+  }
+  ## This can be useful in case the file is compressed
+  my $gibbs_command = "convert-seq ".$addrc;
+  $gibbs_command .= " -from fasta -to fasta ";
+  $gibbs_command .= " -i ".$family{$family_name}->{input_seq_file};
+  $gibbs_command .= " -o ".$family{$family_name}->{gibbs_input_seq_file};
+  $gibbs_command .= " ; gibbs ".$family{$family_name}->{gibbs_options};
+  $gibbs_command .= " > ".$family{$family_name}->{gibbs_file}; 
+  unless (($batch) || ($main::verbose >= 3)) {
+    ## Suppress verbosity
+    $gibbs_command = "(".$gibbs_command.") >& gibbs_log.txt";
+  }
 
-   $gibbs_command .= "; ";
-   $gibbs_command .= &ConvertMatrixCommand($family{$family_name}->{gibbs_file}, "gibbs");
+  $gibbs_command .= "; ";
+  $gibbs_command .= &ConvertMatrixCommand($family{$family_name}->{gibbs_file}, "gibbs");
 
-   if ($batch) {
-       push @main::batch_commands, $gibbs_command;
-   } else {
-       &doit($gibbs_command, $dry_run, $die_on_error, $verbose);
-   }
+  if ($batch) {
+    push @main::batch_commands, $gibbs_command;
+  } else {
+    &doit($gibbs_command, $dry_run, $die_on_error, $verbose);
+  }
 }
 
 
 ################################################################
 ## Run Roth's AlignACE program
 sub AlignACE {
-   chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{AlignACE_dir});
+  chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{AlignACE_dir});
 
 
-   if ($strand = "-2str") {
-	$addrc = " -addrc";
-   }
+  if ($strand = "-2str") {
+    $addrc = " -addrc";
+  }
 
-   ## This can be useful in case the file is compressed, and to covert
-   ## n characters (masked nucleotide) into dots
-   my $AlignACE_command = "convert-seq ";
-   $AlignACE_command .= " -from fasta -to fasta -dotmask";
-   $AlignACE_command .= " -i ".$family{$family_name}->{input_seq_file};
-   $AlignACE_command .= " -o ".$family{$family_name}->{AlignACE_input_seq_file};
-   $AlignACE_command .= " ; AlignACE ".$family{$family_name}->{AlignACE_options};
-   $AlignACE_command .= " > ".$family{$family_name}->{AlignACE_file};
+  ## This can be useful in case the file is compressed, and to covert
+  ## n characters (masked nucleotide) into dots
+  my $AlignACE_command = "convert-seq ";
+  $AlignACE_command .= " -from fasta -to fasta -dotmask";
+  $AlignACE_command .= " -i ".$family{$family_name}->{input_seq_file};
+  $AlignACE_command .= " -o ".$family{$family_name}->{AlignACE_input_seq_file};
+  $AlignACE_command .= " ; AlignACE ".$family{$family_name}->{AlignACE_options};
+  $AlignACE_command .= " > ".$family{$family_name}->{AlignACE_file};
 
-   $AlignACE_command .= "; ";
-   $AlignACE_command .= &ConvertMatrixCommand($family{$family_name}->{AlignACE_file}, "AlignACE");
+  $AlignACE_command .= "; ";
+  $AlignACE_command .= &ConvertMatrixCommand($family{$family_name}->{AlignACE_file}, "AlignACE");
 
-   if ($batch) {
-       push @main::batch_commands, $AlignACE_command;
-   } else {
-       &doit($AlignACE_command, $dry_run, $die_on_error, $verbose);
-   }
+  if ($batch) {
+    push @main::batch_commands, $AlignACE_command;
+  } else {
+    &doit($AlignACE_command, $dry_run, $die_on_error, $verbose);
+  }
 }
 
 
 ################################################################
 ## Run MEME program 
 sub MEME {
-   chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{meme_dir});
+  chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{meme_dir});
 
-   ## run the command
-   $meme_command = "meme ".$family{$family_name}->{meme_options};
-   unless (($batch) || ($main::verbose >= 3)) {
-     ## Suppress verbosity
-     $meme_command = "(".$meme_command.") >& meme_log.txt";
-   }
-   $meme_command .= "; ";
-   $meme_command .= &ConvertMatrixCommand($family{$family_name}->{meme_file}, "meme");
-   if ($batch) {
-       push @main::batch_commands, $meme_command;
-   } else {
-       &doit($meme_command, $dry_run, 0, $verbose);
-   }
+  ## run the command
+  $meme_command = "meme ".$family{$family_name}->{meme_options};
+  unless (($batch) || ($main::verbose >= 3)) {
+    ## Suppress verbosity
+    $meme_command = "(".$meme_command.") >& meme_log.txt";
+  }
+  $meme_command .= "; ";
+  $meme_command .= &ConvertMatrixCommand($family{$family_name}->{meme_file}, "meme");
+  if ($batch) {
+    push @main::batch_commands, $meme_command;
+  } else {
+    &doit($meme_command, $dry_run, 0, $verbose);
+  }
 }
 
 
 ################################################################
 ## Run orm program 
 sub orm {
-   chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{orm_dir});
+  chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{orm_dir});
 
-   ## run the command
-   my $orm_command = ""; 
-   if ($ENV{ORM}) {
-       $orm_command = $ENV{ORM};
-   } else {
-       $orm_command = "orm.py";
-   }
-   $orm_command .= " -v1 ".$family{$family_name}->{orm_options};
-   if ($task{assemble_orm}) {
-       &RSAT::message::TimeWarn("Assembling orm patterns", $family{$family_name}->{orm_assembly_file}) 
-	   if ($main::verbose >= 2);
-       $orm_command .= "; pattern-assembly -v 1";
-       $orm_command .= " -maxfl 1 -subst 1 -toppat ".$toppat." ".$strands;
-       $orm_command .= " -i ".$family{$family_name}->{orm_file};
-       $orm_command .= " -o ".$family{$family_name}->{orm_assembly_file};
+  ## run the command
+  my $orm_command = ""; 
+  if ($ENV{ORM}) {
+    $orm_command = $ENV{ORM};
+  } else {
+    $orm_command = "orm.py";
+  }
+  $orm_command .= " -v1 ".$family{$family_name}->{orm_options};
+  if ($task{assemble_orm}) {
+    &RSAT::message::TimeWarn("Assembling orm patterns", $family{$family_name}->{orm_assembly_file}) 
+      if ($main::verbose >= 2);
+    $orm_command .= "; pattern-assembly -v 1";
+    $orm_command .= " -maxfl 1 -subst 1 -toppat ".$toppat." ".$strands;
+    $orm_command .= " -i ".$family{$family_name}->{orm_file};
+    $orm_command .= " -o ".$family{$family_name}->{orm_assembly_file};
 
-       ### extract PSSM from pattern assembly
-       &RSAT::message::TimeWarn("Matrix from orm patterns", $family{$family_name}->{orm_pssm_file}) 
-	   if ($main::verbose >= 2);
-       $orm_command = "matrix-from-patterns -v 1 ";
-       $orm_command .= " -seq ".$family{$family_name}->{seq_file};
-       $orm_command .= " -asmb ".$family{$family_name}->{orm_assembly_file};
-       $orm_command .= " -bginput -markov 0 ";
-       $orm_command .= " -o ".$family{$family_name}->{orm_pssm_file};
-   }
+    ### extract PSSM from pattern assembly
+    &RSAT::message::TimeWarn("Matrix from orm patterns", $family{$family_name}->{orm_pssm_file}) 
+      if ($main::verbose >= 2);
+    $orm_command = "matrix-from-patterns -v 1 ";
+    $orm_command .= " -seq ".$family{$family_name}->{seq_file};
+    $orm_command .= " -asmb ".$family{$family_name}->{orm_assembly_file};
+    $orm_command .= " -bginput -markov 0 ";
+    $orm_command .= " -o ".$family{$family_name}->{orm_pssm_file};
+  }
 
-   if ($batch) {
-       push @main::batch_commands, $orm_command;
-   } else {
-       &doit($orm_command, $dry_run, 0, $verbose);
-   }
+  if ($batch) {
+    push @main::batch_commands, $orm_command;
+  } else {
+    &doit($orm_command, $dry_run, 0, $verbose);
+  }
 }
 
 ################################################################
 ## Run ormbg program 
 sub ormbg {
-   chdir($dir{output}); &RSAT::util::CheckOutDir($dir{ormbg});
+  chdir($dir{output}); &RSAT::util::CheckOutDir($dir{ormbg});
 
-   #### retrieve upstream sequences
-   $ormbg_command = "retrieve-seq -all -imp_pos -type upstream -org ".$organism_name;
-   $ormbg_command .= " -noorf " if ($noorf);
-   $ormbg_command .= " -from $from" if (defined($from));
-   $ormbg_command .= " -to $to " if (defined($to));
-   $ormbg_command .= " -label id,name ";
-   $ormbg_command .= " -feattype $feature_types " if ($feature_types);
-   $ormbg_command .= " -format fasta";
+  #### retrieve upstream sequences
+  $ormbg_command = "retrieve-seq -all -imp_pos -type upstream -org ".$organism_name;
+  $ormbg_command .= " -noorf " if ($noorf);
+  $ormbg_command .= " -from $from" if (defined($from));
+  $ormbg_command .= " -to $to " if (defined($to));
+  $ormbg_command .= " -label id,name ";
+  $ormbg_command .= " -feattype $feature_types " if ($feature_types);
+  $ormbg_command .= " -format fasta";
 
-   ## ormbg command
-   if ($ENV{ORMBG}) {
-       $ormbg_command .= " | " .$ENV{ORMBG};
-   } else {
-       $ormbg_command .= " | ormbg.py";
-   }
-   $ormbg_command .= " -v 1 ".$ormbg_options;
+  ## ormbg command
+  if ($ENV{ORMBG}) {
+    $ormbg_command .= " | " .$ENV{ORMBG};
+  } else {
+    $ormbg_command .= " | ormbg.py";
+  }
+  $ormbg_command .= " -v 1 ".$ormbg_options;
 
-#   if ($batch) {
-#       push @main::batch_commands, $ormbg_command;
-#   } else {
-       &doit($ormbg_command, $dry_run, $die_on_error, $verbose);
-#   }
+  #   if ($batch) {
+  #       push @main::batch_commands, $ormbg_command;
+  #   } else {
+  &doit($ormbg_command, $dry_run, $die_on_error, $verbose);
+  #   }
 }
 
 
 ################################################################
 ## Run Jerry Hertz' consensus program 
 sub Consensus {
-   chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{consensus_dir});
+  chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{consensus_dir});
 
-   ## input file has to be converted to consensus format
-   $consensus_command = "convert-seq -dna -from fasta -to wc -i ".$family{$family_name}->{input_seq_file};
+  ## input file has to be converted to consensus format
+  $consensus_command = "convert-seq -dna -from fasta -to wc -i ".$family{$family_name}->{input_seq_file};
 
-   ## run the command
-#   $consensus_command .= " | tr n ."; ## Transpose N residues in . because N is not recognized by consensus
-   $consensus_command .= " | consensus ".$family{$family_name}->{consensus_options};
-   $consensus_command .= " > ".$family{$family_name}->{consensus_file};
-   $consensus_command .= "; ";
-   $consensus_command .= &ConvertMatrixCommand($family{$family_name}->{consensus_file}, "consensus");
-   if ($batch) {
-       push @main::batch_commands, $consensus_command;
-   } else {
-       &doit($consensus_command, $dry_run, 0, $verbose);
-   }
+  ## run the command
+  #   $consensus_command .= " | tr n ."; ## Transpose N residues in . because N is not recognized by consensus
+  $consensus_command .= " | consensus ".$family{$family_name}->{consensus_options};
+  $consensus_command .= " > ".$family{$family_name}->{consensus_file};
+  $consensus_command .= "; ";
+  $consensus_command .= &ConvertMatrixCommand($family{$family_name}->{consensus_file}, "consensus");
+  if ($batch) {
+    push @main::batch_commands, $consensus_command;
+  } else {
+    &doit($consensus_command, $dry_run, 0, $verbose);
+  }
 }
 
 ################################################################
 ### Read known known_site for each family
 sub ReadKnownSites {
-   my ($known_site_file) = @_;
-   %known_site = ();
-   %known_site_source = ();
-   if (-e $known_site_file) {
-	$known_sites_provided = 1;
-	open KNOWN_SITE, $known_site_file;
-	while (<KNOWN_SITE>) {
-	    next if (/^;/);
-	    next if (/^\#/);
-	    next unless (/\S/);
-	    chomp;
-	    my @fields = split "\t";
-	    my $site_sequence = &RSAT::util::trim(shift(@fields));
-	    $site_sequence =~ s/N/n/g;
-	    #$site_sequence = &compress_pattern($site_sequence,"n");
-	    my $family_name = &RSAT::util::trim(shift(@fields));
-	    next if (length($site_sequence) > $known_site_max_len);
-	    my $source =  &RSAT::util::trim(shift(@fields));
-	    push @{$known_site{$family_name}}, $site_sequence;
-	    push @{$known_site_source{$family_name}}, $source;
-#	    &RSAT::message::Debug(join ("\t", "; known site", "family:".$family_name, "site:".$site_sequence, $source)) if ($main::verbose >= 10);
-	}
-	close KNOWN_SITE;
-   }
+  my ($known_site_file) = @_;
+  %known_site = ();
+  %known_site_source = ();
+  if (-e $known_site_file) {
+    $known_sites_provided = 1;
+    open KNOWN_SITE, $known_site_file;
+    while (<KNOWN_SITE>) {
+      next if (/^;/);
+      next if (/^\#/);
+      next unless (/\S/);
+      chomp;
+      my @fields = split "\t";
+      my $site_sequence = &RSAT::util::trim(shift(@fields));
+      $site_sequence =~ s/N/n/g;
+      #$site_sequence = &compress_pattern($site_sequence,"n");
+      my $family_name = &RSAT::util::trim(shift(@fields));
+      next if (length($site_sequence) > $known_site_max_len);
+      my $source =  &RSAT::util::trim(shift(@fields));
+      push @{$known_site{$family_name}}, $site_sequence;
+      push @{$known_site_source{$family_name}}, $source;
+      #	    &RSAT::message::Debug(join ("\t", "; known site", "family:".$family_name, "site:".$site_sequence, $source)) if ($main::verbose >= 10);
+    }
+    close KNOWN_SITE;
+  }
 }
 
 
 ################################################################
 ### Generate a synthetic table
 sub SyntheticTable {
-   my $dir = "synthetic_tables";
-   
-   $outfile{table} = $dir."/".$table_suffix;
-   $outfile{table} .= "_tr" if ($transpose);
-   $outfile{table} .= ".html";
+  my $dir = "synthetic_tables";
 
-   &RSAT::message::TimeWarn ("Generating synthetic table ", $outfile{table}) if ($verbose >= 1);
-   
-   unless (-d $dir) {
-	mkdir $dir, 0755 || &RSAT::error::FatalError("Cannot create directory", $dir);
-   }
-   
-   ### synthesize the results of all families into a single file
-   
-   ### headers
-   $row = 0;
-   $row{f} = $row++;
-   $row{family} = $row++;
-   $row{size} = $row++;
-   $row{genes} = $row++;
-   if ($seq_length_calculated) {
-       $row{total_length} = $row++;
-       $row{avg_length} = $row++;
-   }
-   $row{known} = $row++ if ($known_sites_provided);
-   $row{oligos} = $row++;
-   $row{dyads} = $row++;
-   $row{orm} = $row++;
-   $row{selection} = $row++ if ($task{report});
-   $row{consensus} = $row++;
-   $row{gibbs} = $row++;
-   $row{AlignACE} = $row++;
-   $row{meme} = $row++;
-   $row{MotifSampler} = $row++;
-   $row_num = $row-1;
-   while (($header,$row) = each %row) {
-	$table[$row][0] = "<B>$header</B>";
-   }
-   my $col = 0;
-   
-   foreach my $family_name (@families) {
-	my @members = @{$family{$family_name}->{members}};
-	$gene_nb = scalar(@members);
+  $outfile{table} = $dir."/".$table_suffix;
+  $outfile{table} .= "_tr" if ($transpose);
+  $outfile{table} .= ".html";
 
-	## Check minimum number of genes
-	if ($gene_nb < $min_genes) {
-	    &RSAT::message::Warning("Skipping family", 
-				    $fam_count, $family_name,
-				    $gene_nb." genes",
-				    "< min = ".$min_genes), "\n" if ($main::verbose >= 1);
-	    next;
-	}
+  &RSAT::message::TimeWarn ("Generating synthetic table ", $outfile{table}) if ($verbose >= 1);
 
-	$col++;
+  unless (-d $dir) {
+    mkdir $dir, 0755 || &RSAT::error::FatalError("Cannot create directory", $dir);
+  }
+   
+  ### synthesize the results of all families into a single file
+   
+  ### headers
+  $row = 0;
+  $row{f} = $row++;
+  $row{family} = $row++;
+  $row{size} = $row++;
+  $row{genes} = $row++;
+  if ($seq_length_calculated) {
+    $row{total_length} = $row++;
+    $row{avg_length} = $row++;
+  }
+  $row{known} = $row++ if ($known_sites_provided);
+  $row{oligos} = $row++;
+  $row{dyads} = $row++;
+  $row{orm} = $row++;
+  $row{selection} = $row++ if ($task{report});
+  $row{consensus} = $row++;
+  $row{gibbs} = $row++;
+  $row{AlignACE} = $row++;
+  $row{meme} = $row++;
+  $row{MotifSampler} = $row++;
+  $row_num = $row-1;
+  while (($header,$row) = each %row) {
+    $table[$row][0] = "<B>$header</B>";
+  }
+  my $col = 0;
+   
+  foreach my $family_name (@families) {
+    my @members = @{$family{$family_name}->{members}};
+    $gene_nb = scalar(@members);
 
-	#### Index columns associated to each family
-	$column{$family_name} = $col;
+    ## Check minimum number of genes
+    if ($gene_nb < $min_genes) {
+      &RSAT::message::Warning("Skipping family", 
+			      $fam_count, $family_name,
+			      $gene_nb." genes",
+			      "< min = ".$min_genes), "\n" if ($main::verbose >= 1);
+      next;
+    }
 
-	### check directory
-	$dir = "${family_name}/dyads_${family_name}";
-	unless (-d $dir) {
-	    &RSAT::message::Warning ("Cannot find directory $dir\n");
-	}
+    $col++;
+
+    #### Index columns associated to each family
+    $column{$family_name} = $col;
+
+    ### check directory
+    $dir = "${family_name}/dyads_${family_name}";
+    unless (-d $dir) {
+      &RSAT::message::Warning ("Cannot find directory $dir\n");
+    }
 	
-	### family number
-	$table[$row{f}][$col] = "<B>$col</B>";
+    ### family number
+    $table[$row{f}][$col] = "<B>$col</B>";
 	
-	### family name
-	$table[$row{family}][$col] = "<B><a href='../".$family_name."'>".$family_name."</a></B>";
+    ### family name
+    $table[$row{family}][$col] = "<B><a href='../".$family_name."'>".$family_name."</a></B>";
 	
-	#### number of genes
-	$table[$row{size}][$col] = scalar(@{$family{$family_name}->{members}});
+    #### number of genes
+    $table[$row{size}][$col] = scalar(@{$family{$family_name}->{members}});
 	
-	#### sequence length
-	if ($seq_length_calculated) {
-	    my $members = scalar(@{$family{$family_name}->{members}});
-	    if ($members > 0) {
-		$family{$family_name}->{avg_length} = $family{$family_name}->{total_length}/$members;
-	    } else {
-		$family{$family_name}->{avg_length} = "NA";
-	    }
-	    $table[$row{total_length}][$col] = $family{$family_name}->{total_length};
-	    $table[$row{avg_length}][$col] = sprintf("%.1f", $family{$family_name}->{avg_length});
-	}
+    #### sequence length
+    if ($seq_length_calculated) {
+      my $members = scalar(@{$family{$family_name}->{members}});
+      if ($members > 0) {
+	$family{$family_name}->{avg_length} = $family{$family_name}->{total_length}/$members;
+      } else {
+	$family{$family_name}->{avg_length} = "NA";
+      }
+      $table[$row{total_length}][$col] = $family{$family_name}->{total_length};
+      $table[$row{avg_length}][$col] = sprintf("%.1f", $family{$family_name}->{avg_length});
+    }
 
-	### list of genes
-	$table[$row{genes}][$col] = "<a href='../".$family{$family_name}->{family_file}."'>";
-	$table[$row{genes}][$col] .= join " ", @{$family{$family_name}->{members}};
-	$table[$row{genes}][$col] .= "</a>";
+    ### list of genes
+    $table[$row{genes}][$col] = "<a href='../".$family{$family_name}->{family_file}."'>";
+    $table[$row{genes}][$col] .= join " ", @{$family{$family_name}->{members}};
+    $table[$row{genes}][$col] .= "</a>";
 	
-	### known patterns
-	if ($known_sites_provided) {
-	    $table[$row{known}][$col] = "";
-	    my @fam_known_site = @{$known_site{$family_name}};
-	    my @fam_known_site_source = @{$known_site_source{$family_name}};
-	    for $c (0..$#fam_known_site) {
-#		$table[$row{known}][$col] .= ${known_site{$family_name}}[$c];
-		$table[$row{known}][$col] .= $fam_known_site[$c];
-		$table[$row{known}][$col] .= "<BR>(".$fam_known_site_source[$c].")" if ($fam_known_site_source[$c]);
-		$table[$row{known}][$col] .= "<P>";
-	    }
-	} 
+    ### known patterns
+    if ($known_sites_provided) {
+      $table[$row{known}][$col] = "";
+      my @fam_known_site = @{$known_site{$family_name}};
+      my @fam_known_site_source = @{$known_site_source{$family_name}};
+      for $c (0..$#fam_known_site) {
+	#		$table[$row{known}][$col] .= ${known_site{$family_name}}[$c];
+	$table[$row{known}][$col] .= $fam_known_site[$c];
+	$table[$row{known}][$col] .= "<BR>(".$fam_known_site_source[$c].")" if ($fam_known_site_source[$c]);
+	$table[$row{known}][$col] .= "<P>";
+      }
+    } 
 
-	################################################################
-	#### Index results from oligo-analysis
-	&IndexPatterns($family_name, 
-		       $row{oligos}, 
-		       $col, 
-		       patterns=>$family{$family_name}->{oligo_file}, 
-		       assembly=>$family{$family_name}->{oligo_assembly_file}, 
-		       pssm=>$family{$family_name}->{oligo_pssm_file}, 
-		       validation=>$family{$family_name}->{oligo_vs_known}, 
-		       validation_table_relw=>$family{$family_name}->{oligo_vs_known_relw_table}, 
-		       validation_table_weight=>$family{$family_name}->{oligo_vs_known_weight_table}, 
-		       type=>"oligos", 
-		      );
+    ################################################################
+    #### Index results from oligo-analysis
+    &IndexPatterns($family_name, 
+		   $row{oligos}, 
+		   $col, 
+		   patterns=>$family{$family_name}->{oligo_file}, 
+		   assembly=>$family{$family_name}->{oligo_assembly_file}, 
+		   pssm=>$family{$family_name}->{oligo_pssm_file}, 
+		   validation=>$family{$family_name}->{oligo_vs_known}, 
+		   validation_table_relw=>$family{$family_name}->{oligo_vs_known_relw_table}, 
+		   validation_table_weight=>$family{$family_name}->{oligo_vs_known_weight_table}, 
+		   type=>"oligos", 
+		  );
 
-       ################################################################
-	#### Index results from dyad-analysis
-	&IndexPatterns($family_name, 
-		       $row{dyads}, 
-		       $col, 
-		       patterns=>$family{$family_name}->{dyad_file}, 
-		       assembly=>$family{$family_name}->{dyad_assembly_file}, 
-		       pssm=>$family{$family_name}->{dyad_pssm_file}, 
-		       validation=>$family{$family_name}->{dyad_vs_known}, 
-		       validation_table_relw=>$family{$family_name}->{dyad_vs_known_relw_table}, 
-		       validation_table_weight=>$family{$family_name}->{dyad_vs_known_weight_table}, 
-		       type=>"dyads", 
-		      );
+    ################################################################
+    #### Index results from dyad-analysis
+    &IndexPatterns($family_name, 
+		   $row{dyads}, 
+		   $col, 
+		   patterns=>$family{$family_name}->{dyad_file}, 
+		   assembly=>$family{$family_name}->{dyad_assembly_file}, 
+		   pssm=>$family{$family_name}->{dyad_pssm_file}, 
+		   validation=>$family{$family_name}->{dyad_vs_known}, 
+		   validation_table_relw=>$family{$family_name}->{dyad_vs_known_relw_table}, 
+		   validation_table_weight=>$family{$family_name}->{dyad_vs_known_weight_table}, 
+		   type=>"dyads", 
+		  );
 	
-	################################################################
-	#### Index results from oligo-analysis
-	&IndexPatterns($family_name, 
-		       $row{orm}, 
-		       $col, 
-		       patterns=>$family{$family_name}->{orm_file}, 
-		       assembly=>$family{$family_name}->{orm_assembly_file}, 
-		       pssm=>$family{$family_name}->{orm_pssm_file}, 
-		       validation=>$family{$family_name}->{orm_vs_known}, 
-		       validation_table_relw=>$family{$family_name}->{orm_vs_known_relw_table}, 
-		       validation_table_weight=>$family{$family_name}->{orm_vs_known_weight_table}, 
-		       type=>"orm", 
-		      );
+    ################################################################
+    #### Index results from oligo-analysis
+    &IndexPatterns($family_name, 
+		   $row{orm}, 
+		   $col, 
+		   patterns=>$family{$family_name}->{orm_file}, 
+		   assembly=>$family{$family_name}->{orm_assembly_file}, 
+		   pssm=>$family{$family_name}->{orm_pssm_file}, 
+		   validation=>$family{$family_name}->{orm_vs_known}, 
+		   validation_table_relw=>$family{$family_name}->{orm_vs_known_relw_table}, 
+		   validation_table_weight=>$family{$family_name}->{orm_vs_known_weight_table}, 
+		   type=>"orm", 
+		  );
 
-	################################################################
-	### index results of manual pattern selection
-	if ($task{report}) {
-	    &IndexPatterns($family_name, 
-			   $row{selection}, 
-			   $col, 
-			   patterns=>$family{$family_name}->{oligo_selection},
-			   type=>"manual"
-			  );
-	}
-
-
-	################################################################
-	#### Index results of consensus
-	&IndexConsensus($family_name, $row{consensus}, $col, matrix_file=>$family{$family_name}->{consensus_file});
-
-	################################################################
-	#### Index results of gibbs
-	&IndexGibbs($family_name, $row{gibbs}, $col, matrix_file=>$family{$family_name}->{gibbs_file});
-
-	#### Index results of gibbs
-	&IndexAlignACE($family_name, $row{AlignACE}, $col, matrix_file=>$family{$family_name}->{AlignACE_file});
-
-	################################################################
-	#### Index results of meme
-	&IndexMEME($family_name, $row{meme}, $col, matrix_file=>$family{$family_name}->{meme_file});
-
-	################################################################
-	#### Index results of meme
-	&IndexMotifSampler($family_name, $row{MotifSampler}, $col, matrix_file=>$family{$family_name}->{MotifSampler_file});
-   }
-
-   ###############################################################
-   ## Print the header of the  synthetic table
-   $syn = &OpenOutputFile($outfile{table});
-   print $syn "<html>\n";
-   print $syn "<title>",$table_suffix, "</title>","\n";
-   print $syn "<body>\n";
-   print $syn "<h1>".$table_suffix."</h1>\n";
-   
-   print $syn join( "\n",
-		      "<pre>",
-		      $verbose_message,
-		      "</pre>"
-		      ), "\n";
-   
-   
-   print $syn "<table border=1>\n";
-
-   ################################################################
-   ## Add a link to the MDC report files
+    ################################################################
+    ### index results of manual pattern selection
     if ($task{report}) {
-	print $syn "<h4>Reports for the motif discovery competition</h4>";
-	print $syn "<ul>";
-	print $syn "<li><a href=../".$outfile{results}.">Results</a></li>";
-	print $syn "<li><a href=../".$outfile{parameters}.">Parameters</a></li>";
-	print $syn "</ul>";
+      &IndexPatterns($family_name, 
+		     $row{selection}, 
+		     $col, 
+		     patterns=>$family{$family_name}->{oligo_selection},
+		     type=>"manual"
+		    );
     }
 
 
-   ################################################################
-   ## Sort families according to the selected criterion
-   if ($sort_key eq "score") {
-	#### sort families by score
-	#### decreasing order
-	@sorted_families = sort {$max_score{$b} <=> $max_score{$a}} @families; 
+    ################################################################
+    #### Index results of consensus
+    &IndexConsensus($family_name, $row{consensus}, $col, matrix_file=>$family{$family_name}->{consensus_file});
 
-   } else {
-	#### sort families by family name
-	@sorted_families = sort @families;
-   }
+    ################################################################
+    #### Index results of gibbs
+    &IndexGibbs($family_name, $row{gibbs}, $col, matrix_file=>$family{$family_name}->{gibbs_file});
 
+    #### Index results of gibbs
+    &IndexAlignACE($family_name, $row{AlignACE}, $col, matrix_file=>$family{$family_name}->{AlignACE_file});
 
-   ################################################################
-   ## Transpose the result table
-   if ($transpose) {
-	foreach $r (0..$row_num) {
-	    print $syn "<tr valign=top>\n";
-	    foreach $f (@sorted_families) {
-		my $c = $column{$f};
-		print $syn "<td>", $table[$r][$c], "</td>\n";
-	    }
-	    print $syn "</tr>\n";
-	}
-   } else {
-	#### print table header
-	foreach $r (0..$row_num) {
-	    print $syn "<th>", $table[$r][0], "</th>\n";
-	}
-	#### print table content
-	foreach $f (@sorted_families) {
-	    my $c = $column{$f};
-	    print $syn "<tr valign=top>\n";
-	    foreach $r (0..$row_num) {
-		print $syn "<td>", $table[$r][$c], "</td>\n";
-	    }
-	    print $syn "</tr>\n";
-	}
-   }
+    ################################################################
+    #### Index results of meme
+    &IndexMEME($family_name, $row{meme}, $col, matrix_file=>$family{$family_name}->{meme_file});
+
+    ################################################################
+    #### Index results of meme
+    &IndexMotifSampler($family_name, $row{MotifSampler}, $col, matrix_file=>$family{$family_name}->{MotifSampler_file});
+  }
+
+  ###############################################################
+  ## Print the header of the  synthetic table
+  $syn = &OpenOutputFile($outfile{table});
+  print $syn "<html>\n";
+  print $syn "<title>",$table_suffix, "</title>","\n";
+  print $syn "<body>\n";
+  print $syn "<h1>".$table_suffix."</h1>\n";
    
-   print $syn "</table>\n";
-   print $syn "<hr>", &AlphaDate;
-   print $syn "</body>\n";
-   print $syn "</html>\n";
-   close $syn;
-#    chdir "synthetic_tables";
-#    chdir "../";
+  print $syn join( "\n",
+		   "<pre>",
+		   $verbose_message,
+		   "</pre>"
+		 ), "\n";
+   
+   
+  print $syn "<table border=1>\n";
+
+  ################################################################
+  ## Add a link to the MDC report files
+  if ($task{report}) {
+    print $syn "<h4>Reports for the motif discovery competition</h4>";
+    print $syn "<ul>";
+    print $syn "<li><a href=../".$outfile{results}.">Results</a></li>";
+    print $syn "<li><a href=../".$outfile{parameters}.">Parameters</a></li>";
+    print $syn "</ul>";
+  }
+
+
+  ################################################################
+  ## Sort families according to the selected criterion
+  if ($sort_key eq "score") {
+    #### sort families by score
+    #### decreasing order
+    @sorted_families = sort {$max_score{$b} <=> $max_score{$a}} @families; 
+
+  } else {
+    #### sort families by family name
+    @sorted_families = sort @families;
+  }
+
+
+  ################################################################
+  ## Transpose the result table
+  if ($transpose) {
+    foreach $r (0..$row_num) {
+      print $syn "<tr valign=top>\n";
+      foreach $f (@sorted_families) {
+	my $c = $column{$f};
+	print $syn "<td>", $table[$r][$c], "</td>\n";
+      }
+      print $syn "</tr>\n";
+    }
+  } else {
+    #### print table header
+    foreach $r (0..$row_num) {
+      print $syn "<th>", $table[$r][0], "</th>\n";
+    }
+    #### print table content
+    foreach $f (@sorted_families) {
+      my $c = $column{$f};
+      print $syn "<tr valign=top>\n";
+      foreach $r (0..$row_num) {
+	print $syn "<td>", $table[$r][$c], "</td>\n";
+      }
+      print $syn "</tr>\n";
+    }
+  }
+   
+  print $syn "</table>\n";
+  print $syn "<hr>", &AlphaDate;
+  print $syn "</body>\n";
+  print $syn "</html>\n";
+  close $syn;
+  #    chdir "synthetic_tables";
+  #    chdir "../";
 }
 
 
