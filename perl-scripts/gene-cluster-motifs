@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.206 2007/08/07 22:19:58 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.207 2007/08/08 09:05:48 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -232,7 +232,7 @@ $pssm_sort_key{consensus} = 'cons.ln.exp';
 $pssm_sort_order{consensus} = 'asc';
 
 ## Default gibbs options
-$pssm_sort_key{gibbs} = 'gibbs.MAP';
+$pssm_sort_key{gibbs} = 'MAP.per.site';
 $pssm_sort_order{gibbs} = 'desc';
 
 ## Default AlignACE options
