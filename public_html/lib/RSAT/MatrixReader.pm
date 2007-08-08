@@ -217,8 +217,10 @@ sub _readFromTRANSFACFile {
 
       my $values = $'; #'
       my @fields = split /\s+/, $values;
-      my $consensus_residue = pop @fields;
-      $transfac_consensus .= $consensus_residue;
+      if ($fields[$#fields] =~ /A-Z/i) {
+	my $consensus_residue = pop @fields;
+	$transfac_consensus .= $consensus_residue;
+      }
       $matrix->addColumn(@fields);
       $ncol++;
       $matrix->force_attribute("ncol", $ncol);
@@ -397,30 +399,39 @@ sub _readFromGibbsFile {
 
     while (<$in>) {
       $l++;
+
+      chomp();
+
+      ## Suppress DOS-type newline characters
+      s/\r//;
+
+      ## Empty rows indicate the end of a matrix
       unless (/\S/) {
 	if ($in_matrix) {
 	  $in_matrix = 0;
 	}
 	next;
       }
-      s/\r//;
-      chomp();
 
       if (/^gibbs /) {
 	$gibbs_command = $_;
+#	&RSAT::message::Debug("line ".$l, "gibbs command", $gibbs_command) if ($main::verbose >= 0);
 
       } elsif (/seed: (\S+)/) {
 	$seed = $1;
+#	&RSAT::message::Debug("line ".$l, "seed", $seed) if ($main::verbose >= 0);
 
-      } elsif (/^\s*(\d+)\-(\d+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s*(\S*)/) {
+      } elsif (/^\s*(\d+)\-(\d+)\s+(\d+)\s+([a-z]*)\s+([A-Z]+)\s+([a-z]+)\s+(\d+)\s*(\S*)/) {
 
-	unless ($in_matrix) {
+	if ($in_matrix) {
+#	  &RSAT::message::Debug("line ".$l, "Parsing one matrix row") if ($main::verbose >= 0);
+	} else {
+#	  &RSAT::message::Debug("line ".$l, "Starting to read a matrix") if ($main::verbose >= 0);
 	  $matrix = new RSAT::matrix();
 	  $matrix->set_parameter("program", "gibbs");
 	  $matrix->set_parameter("command", $gibbs_command);
 	  $matrix->set_parameter("seed", $seed);
 	  push @matrices, $matrix;
-	  &RSAT::message::Debug("Starting to read a matrix") if ($main::verbose >= 3);
 	  $in_matrix = 1;
 	  # default nucletodide alphabet
 	  $matrix->setAlphabet_lc("a","c","g","t");
@@ -447,6 +458,7 @@ sub _readFromGibbsFile {
 	$matrix->add_site(lc($site_seq), id=>$site_id, score=>1);
 
       } elsif ((/^Motif model/) && ($parse_model)) {
+	&RSAT::message::Debug("line ".$l, "Creating a new model matrix") if ($main::verbose >= 3);
 #      if (/^\s*MOTIF\s+(\S+)/) {
 	$matrix = new RSAT::matrix();
 	$matrix->set_parameter("program", "gibbs");
@@ -459,15 +471,24 @@ sub _readFromGibbsFile {
 	$matrix->setAlphabet_lc("a","c","g","t");
 	next;
 
-      } elsif (/model map = (\S+); betaprior map = (\S+)/) {
+      } elsif ((/model map = (\S+); betaprior map = (\S+)/) && ($in_matrix)) {
 	$matrix->set_parameter("gibbs.model.map", $1);
 	$matrix->set_parameter("gibbs.betaprior.map", $2);
 #	&RSAT::message::Warning("gibbs matrix", $matrix,
 #				"model map", $matrix->get_attribute("gibbs.model.map"),
 #				"betaprior map", $matrix->get_attribute("gibbs.betaprior.map"));
 
-      } elsif (/MAP = (\S+)/) {
+      } elsif ((/^\s*MAP = (\S+)/) && ($matrix)) {
 	$matrix->set_parameter("MAP", $1);
+
+      } elsif ((/^\s*NetMAP = (\S+)/) && ($matrix)) {
+	$matrix->set_parameter("NetMAP", $1);
+
+      } elsif ((/^\s*sites: MAP = (\S+)/) && ($matrix)) {
+	$matrix->set_parameter("sites.MAP", $1);
+
+      } elsif ((/^\s*Initial MAP = (\S+)/) && ($matrix)) {
+	$matrix->set_parameter("initial.MAP", $1);
 
       } elsif (($in_matrix) && ($parse_model)) {
 	if (/^\s*POS/) {
