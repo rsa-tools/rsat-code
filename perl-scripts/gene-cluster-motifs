@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.208 2007/08/08 09:36:28 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.209 2007/08/08 12:09:13 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -712,10 +712,10 @@ sub SetFileNames {
 	my $gene_nb = scalar(@{$family{$family_name}->{members}});
 	my $expected_sites = $gene_nb*$expected_sites_per_gene;
 	for my $i (1..$nmotifs) {
-	  push @gibbs_width, $matrix_width;
+	  push @gibbs_widths, $matrix_width;
 	  push @gibbs_expected_sites, $expected_sites;
 	}
-	$gibbs_options .= " ".join(",",  @gibbs_width);
+	$gibbs_options .= " ".join(",",  @gibbs_widths);
 	$gibbs_suffix .= "-nmotifs".$nmotifs;
 	$gibbs_suffix .= "-L".$matrix_width;
 
@@ -1598,10 +1598,10 @@ sub Gibbs {
    $gibbs_command .= " -o ".$family{$family_name}->{gibbs_input_seq_file};
    $gibbs_command .= " ; gibbs ".$family{$family_name}->{gibbs_options};
    $gibbs_command .= " > ".$family{$family_name}->{gibbs_file}; 
-   unless (($batch) || ($main::verbose >= 3)) {
-     ## Suppress verbosity
-     $gibbs_command = "(".$gibbs_command.") >& gibbs_log.txt";
-   }
+#   unless (($batch) || ($main::verbose >= 3)) {
+#     ## Suppress verbosity
+#     $gibbs_command = "(".$gibbs_command.") >& gibbs_log.txt";
+#   }
 
    $gibbs_command .= "; ";
    $gibbs_command .= &ConvertMatrixCommand($family{$family_name}->{gibbs_file}, "gibbs");
