@@ -11,6 +11,7 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/compare_multi.mk
 V=1
+IMG_FORMAT=png
 
 
 ################################################################
@@ -21,23 +22,22 @@ RESTRICT_COL=4
 PATTERN_TYPE=oligo
 SCORE_COL=11
 SCORE_NAME=sig
-#ORTHO_FAM_NB=80
-#RAND_NB=400
-ORTHO_FAM_NB=`grep -v '^\-\-' ${ORTHO_FAM} | sort -u | wc -l`
-RAND_NB=${ORTHO_FAM_NB}
-COMPA_DIR=results/program_comparison/${TAXON}/taxfreq/comparisons
+POS_FAM_NB=`grep -v '^\-\-' ${POS_FAM} | sort -u | wc -l`
+NEG_FAM_NB=`grep -v '^\-\-' ${NEG_FAM} | sort -u | wc -l`
+COMPA_DIR=results/comparisons
 COMPA=${COMPA_DIR}/${PATTERN_TYPE}_${SCORE_NAME}_distrib
 DISTRIB_COL_REG=6
-DISTRIB_COL_RAND=7
+DISTRIB_COL_NEG=7
 _compare_distrib:
-	@echo ${ORTHO_FAM}
-	@echo ${ORTHO_FAM_NB}
+	@echo 
+	@echo "${POS_FAM_NB}	Positive families	${POS_FAM}"
+	@echo "${NEG_FAM_NB}	Negative families	${POS_FAM}"
 	@mkdir -p ${COMPA_DIR}
 	compare-score-distrib -v 1 \
 		-restrict ${RESTRICT_COL} ${PATTERN_TYPE} \
 		-sc ${SCORE_COL} \
-		-i ${MULTI_DIR}/sql_export/${SQL_FILE}.tab -file_factor 1 ${ORTHO_FAM_NB} \
-		-i ${RAND_MULTI_DIR}/sql_export/${SQL_FILE}.tab  -file_factor 2 ${RAND_NB} \
+		-i ${MULTI_DIR}/sql_export/${SQL_FILE}.tab -file_factor 1 ${POS_FAM_NB} \
+		-i ${NEG_MULTI_DIR}/sql_export/${SQL_FILE}.tab  -file_factor 2 ${NEG_FAM_NB} \
 		-null -inf -null inf -null na -null nan \
 		-o ${COMPA}.tab
 	@echo ${COMPA}.tab
@@ -45,39 +45,36 @@ _compare_distrib:
 ## Graph with (inverse or direct) cumulative distributions (Y) as a
 ## function of the ${SCORE_NAME} score (X)
 	XYgraph -i ${COMPA}.tab \
-		-xcol 1 -ycol ${DISTRIB_COL_REG},${DISTRIB_COL_RAND} -lines \
+		-xcol 1 -ycol ${DISTRIB_COL_REG},${DISTRIB_COL_NEG} -lines \
 		-title1 '${PATTERN_TYPE} ${SCORE_NAME}' \
 		-title2 'Motifs per family' \
 		-xsize 800 -ysize 500 \
 		-xleg1 '${SCORE_NAME}' -yleg1 'Motifs per family' \
-		-legend -ymin 0 \
-		${DISTRIB_GRAPH_OPT} \
+		-legend -ymin 0 ${DISTRIB_GRAPH_OPT} \
 		-format ${IMG_FORMAT} -o ${COMPA}_Nicum.${IMG_FORMAT}
 	@echo  ${COMPA}_Nicum.${IMG_FORMAT}
 
 ## Graph with inverse cumulative distributions (Y) as a function of
 ## the sig score (X) Logarithmic Y axis
 	XYgraph -i ${COMPA}.tab \
-		-xcol 1 -ycol  ${DISTRIB_COL_REG},${DISTRIB_COL_RAND} -lines \
+		-xcol 1 -ycol  ${DISTRIB_COL_REG},${DISTRIB_COL_NEG} -lines \
 		-title1 '${PATTERN_TYPE} ${SCORE_NAME}' \
 		-title2 'Number of motifs per family' \
 		-xsize 800 -ysize 500 \
 		-xleg1 '${SCORE_NAME}' -yleg1 'Motifs per family' \
-		-legend \
-		-ylog 2 \
-		${DISTRIB_GRAPH_OPT} \
+		-legend -ylog 2 ${DISTRIB_GRAPH_OPT} \
 		-format ${IMG_FORMAT} -o ${COMPA}_Nicum_log.${IMG_FORMAT}
 	@echo  ${COMPA}_Nicum_log.${IMG_FORMAT}
 
 ## ROC-like Graph comparing inverse cumulative score distributions between regulons (Y) and random selections (X)
 	XYgraph -i ${COMPA}.tab  -same_limits \
-		-xcol ${DISTRIB_COL_RAND} -ycol  ${DISTRIB_COL_REG},${DISTRIB_COL_RAND} -lines \
+		-xcol ${DISTRIB_COL_NEG} -ycol  ${DISTRIB_COL_REG},${DISTRIB_COL_NEG} -lines \
 		-pointsize 0 \
 		-xsize 500 -ysize 500 \
 		-title1 '${PATTERN_TYPE} ${SCORE_NAME}' \
 		-title2 'Motifs per family' \
-		-xleg1 "${RAND_NB} random selections" -yleg1 "${ORTHO_FAM_NB} regulons" \
-		${ROC_GRAPH_OPT} \
+		-xleg1 "${NEG_FAM_NB} random selections" \
+		-yleg1 "${POS_FAM_NB} regulons" ${ROC_GRAPH_OPT} \
 		-format ${IMG_FORMAT} -o ${COMPA}_Nicum_roc.${IMG_FORMAT}
 	@echo ${COMPA}_Nicum_roc.${IMG_FORMAT}
 
@@ -86,51 +83,48 @@ _compare_distrib_rank1:
 	compare-score-distrib -v 1 \
 		-restrict ${RESTRICT_COL} ${PATTERN_TYPE} \
 		-restrict ${RANK_COL} 1 -sc ${SCORE_COL} \
-		-i ${MULTI_DIR}/sql_export/${SQL_FILE}.tab -file_factor 1 ${ORTHO_FAM_NB} \
-		-i ${RAND_MULTI_DIR}/sql_export/${SQL_FILE}.tab  -file_factor 2 ${RAND_NB} \
+		-i ${MULTI_DIR}/sql_export/${SQL_FILE}.tab -file_factor 1 ${POS_FAM_NB} \
+		-i ${NEG_MULTI_DIR}/sql_export/${SQL_FILE}.tab  -file_factor 2 ${NEG_FAM_NB} \
 		-null -inf -null inf -null na -null nan\
 		-o ${COMPA}_rank1.tab
 	@echo ${COMPA}_rank1.tab
 
 ## Graph comparing inverse cumulative distributions (Y) as a function of the sig score (X)
 	XYgraph -i ${COMPA}_rank1.tab \
-		-xcol 1 -ycol  ${DISTRIB_COL_REG},${DISTRIB_COL_RAND} -lines \
+		-xcol 1 -ycol  ${DISTRIB_COL_REG},${DISTRIB_COL_NEG} -lines \
 		-title1 '${PATTERN_TYPE} ${SCORE_NAME}' \
 		-title2 'fraction of families with at least one motif' \
 		-xsize 800 -ysize 500 \
 		-xleg1 '${SCORE_NAME}' -yleg1 'fraction of families' \
-		-legend \
 		-ygstep1 0.1 -ygstep2 0.05 -ymin 0 -ymax 1 \
-		${DISTRIB_GRAPH_OPT} \
+		-legend ${DISTRIB_GRAPH_OPT} \
 		-format ${IMG_FORMAT} -o ${COMPA}_rank1_Nicum.${IMG_FORMAT}
 	@echo  ${COMPA}_rank1_Nicum.${IMG_FORMAT}
 
 ## Graph comparing inverse cumulative distributions (Y) as a function of the sig score (X)
 ## Logarithmic Y axis
 	XYgraph -i ${COMPA}_rank1.tab \
-		-xcol 1 -ycol  ${DISTRIB_COL_REG},${DISTRIB_COL_RAND} -lines \
+		-xcol 1 -ycol  ${DISTRIB_COL_REG},${DISTRIB_COL_NEG} -lines \
 		-title1 '${PATTERN_TYPE} ${SCORE_NAME}' \
 		-title2 'fraction of families with at least one motif' \
 		-xsize 800 -ysize 500 \
 		-xleg1 '${SCORE_NAME}' -yleg1 'fraction of families' \
-		-legend \
 		-ylog 2 -ymax 1 \
-		${DISTRIB_GRAPH_OPT} \
+		-legend ${DISTRIB_GRAPH_OPT} \
 		-format ${IMG_FORMAT} -o ${COMPA}_rank1_Nicum_log.${IMG_FORMAT}
 	@echo  ${COMPA}_rank1_Nicum_log.${IMG_FORMAT}
 
 
 ## Graph comparing inverse cumulative score distributions between regulons (Y) and random selections (X)
 	XYgraph -i ${COMPA}_rank1.tab \
-		-xcol ${DISTRIB_COL_RAND} -ycol  ${DISTRIB_COL_REG},${DISTRIB_COL_RAND} -lines \
+		-xcol ${DISTRIB_COL_NEG} -ycol  ${DISTRIB_COL_REG},${DISTRIB_COL_NEG} -lines \
 		-pointsize 0 \
 		-xsize 500 -ysize 500 \
 		-title1 '${PATTERN_TYPE} ${SCORE_NAME}' \
 		-title2 'fraction of families with at least one motif' \
-		-xleg1 "${RAND_NB} random selections" -yleg1 "${ORTHO_FAM_NB} ortholog groups" \
+		-xleg1 "${NEG_FAM_NB} random selections" -yleg1 "${POS_FAM_NB} ortholog groups" \
 		-gstep1 0.1 -gstep2 0.05 \
-		-min 0 -max 1 \
-		${ROC_GRAPH_OPT} \
+		-min 0 -max 1 ${ROC_GRAPH_OPT} \
 		-format ${IMG_FORMAT} -o ${COMPA}_rank1_Nicum_roc.${IMG_FORMAT}
 	@echo ${COMPA}_rank1_Nicum_roc.${IMG_FORMAT}
 
@@ -188,14 +182,14 @@ compare_meme_llr:
 	${MAKE} _compare_meme_one_score \
 		SCORE_COL=34 \
 		SCORE_NAME=llr \
-		DISTRIB_COL_REG=4 DISTRIB_COL_RAND=5
+		DISTRIB_COL_REG=4 DISTRIB_COL_NEG=5
 
 compare_meme_Evalue:
 	${MAKE} _compare_meme_one_score \
 		SCORE_COL=35 \
 		SCORE_NAME=E-value \
 		DISTRIB_GRAPH_OPT=-xlog \
-		DISTRIB_COL_REG=4 DISTRIB_COL_RAND=5
+		DISTRIB_COL_REG=4 DISTRIB_COL_NEG=5
 
 compare_meme_info:
 	${MAKE} _compare_meme_one_score \
@@ -221,12 +215,12 @@ _compare_consensus_one_score:
 compare_consensus_lnEvalue:
 	${MAKE} _compare_consensus_one_score \
 		SCORE_COL=26 SCORE_NAME=lnE-value \
-		DISTRIB_COL_REG=4 DISTRIB_COL_RAND=5
+		DISTRIB_COL_REG=4 DISTRIB_COL_NEG=5
 
 compare_consensus_lnPvalue:
 	${MAKE} _compare_consensus_one_score \
 		SCORE_COL=24 SCORE_NAME=lnP-value \
-		DISTRIB_COL_REG=4 DISTRIB_COL_RAND=5
+		DISTRIB_COL_REG=4 DISTRIB_COL_NEG=5
 
 compare_consensus_UI:
 	${MAKE} _compare_consensus_one_score \
