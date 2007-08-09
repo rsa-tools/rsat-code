@@ -50,6 +50,7 @@ $x_axis_max = "ND";
 $y_axis_max = "ND";
 $x_axis_min = "ND";
 $y_axis_min = "ND";
+$same_limits = 0;
 $x = 0;
 $y = 0;
 
@@ -590,7 +591,6 @@ sub GnuPlotEPS {
 
 	$gnuplot_cmd .= "set term post landscape enh ".$color." font small\n";
 
-	
 	if (($x_axis_size)&&($y_axis_size)) {
 		my $ratio = $y_axis_size/$x_axis_size;
 		$gnuplot_cmd .= "set size ratio '".$ratio."'\n";
@@ -1440,6 +1440,7 @@ sub ReadData {
 ################################################################
 #### Calculate limits for X and Y axes
 sub CalcLimits {
+
     $max_x_value = "ND";
     $min_x_value = "ND";
     $max_y_value = "ND";
@@ -1482,10 +1483,6 @@ sub CalcLimits {
     if ($x_axis_max eq "ND") {
 	$x_axis_max = $tmp_xmax;
     }
-    if ($x_grid_step1 eq "") {
-	($x_grid_min, $x_grid_step1,$x_grid_max) = &AutoGrid($x_axis_min,$x_axis_max);
-    }
-    
     ($tmp_ymin,$tmp_ygrid,$tmp_ymax) = &AutoGrid($min_y_value,$max_y_value);
     if ($y_axis_min eq "ND") {
 	$y_axis_min = $tmp_ymin;
@@ -1493,11 +1490,25 @@ sub CalcLimits {
     if ($y_axis_max eq "ND") {
 	$y_axis_max = $tmp_ymax;
     }
+
+    ## If specified, use same limits for X and Y axes
+    if ($same_limits) {
+      $x_axis_max = &max($x_axis_max, $y_axis_max);
+      $y_axis_max = &max($x_axis_max, $y_axis_max);
+      $x_axis_min = &min($x_axis_min, $y_axis_min);
+      $y_axis_min = &min($x_axis_min, $y_axis_max);
+    }
+    
+    ## Automatic grid size
+    if ($x_grid_step1 eq "") {
+	($x_grid_min, $x_grid_step1,$x_grid_max) = &AutoGrid($x_axis_min,$x_axis_max);
+    }
     if ($y_grid_step1 eq "") {
 	($y_grid_min, $y_grid_step1,$y_grid_max) = &AutoGrid($y_axis_min,$y_axis_max);
     }
     
-    
+
+
     #### graph dimensions
     $top = $border;
     $left = $border + 2*$small_font_height + 6 + $x_scale_border;
@@ -1575,6 +1586,7 @@ XYgraph options
 -ymax #	        maximal value represented on Y axis.	
 -xmin #	        minimal value represented on X axis.
 -ymin #	        minimal value represented on Y axis.
+-same_limits	use same limits (min, max) for the X and Y axis
 -min #	        minimal value represented on both X and Y axis
 -max #	        maximal value represented on both X and Y axis.
 -xgstep1 #      1st step value for the grid across X axis.
@@ -1675,6 +1687,7 @@ OPTIONS
 	-ymax #	        maximal value represented on Y axis.	
 	-xmin #	        minimal value represented on X axis.
 	-ymin #	        minimal value represented on Y axis.
+	-same_limits	use same limits (max, min) for the X and Y axes.
 	-min #	        minimal value represented on both X and Y axis
 			(combinates the effects of -xmin and -ymin).
 	-max #	        maximal value represented on both X and Y axis.
@@ -1845,6 +1858,8 @@ sub ReadArguments {
 	    $x_axis_min = $ARGV[$a+1];
 	} elsif (($ARGV[$a] eq "-ymin") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
 	    $y_axis_min = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-same_limits") {
+	    $same_limits = 1;
 
 	    ### axis size (in pixels) ###
 	} elsif (($ARGV[$a] eq "-xsize") && ($ARGV[$a+1] =~ /^\d+$/)){
