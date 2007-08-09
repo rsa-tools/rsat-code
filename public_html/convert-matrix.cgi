@@ -33,8 +33,7 @@ $query = new CGI;
 &ListParameters() if ($ECHO >= 2);
 
 #### read parameters ####
-$parameters = " -v 1 ";
-
+my $parameters;
 
 ################################################################
 #### Matrix specification
@@ -67,12 +66,17 @@ if (&IsInteger($decimals)) {
 
 
 ################################################################
-#### Matrix format
-my $matrix_format = lc($query->param('matrix_format'));
-($matrix_format) = split (/\s+/, $matrix_format);
-$matrix_format =~ s/cluster\-buster/cb/i;
-#$matrix_format =~ s/(\S+)/$1/; ## Only retain the first word
-$parameters .= " -in_format $matrix_format";
+## Matrix input format
+my $input_format = lc($query->param('input_format'));
+($input_format) = split (/\s+/, $input_format);
+#$input_format =~ s/cluster\-buster/cb/i;
+#$input_format =~ s/(\S+)/$1/; ## Only retain the first word
+$parameters .= " -from ".$input_format;
+
+################################################################
+## Matrix output format
+my $output_format = lc($query->param('output_format'));
+$parameters .= " -to ".$output_format;
 
 ## Return fields
 my @return_fields = ();
@@ -81,9 +85,13 @@ foreach my $stat qw (counts frequencies weights info consensus parameters profil
 	push @return_fields, $stat;
     }
 }
-$parameters .= " -return ";
-$parameters .= join ",", @return_fields;
-
+if ($output_format eq 'tab') {
+  $parameters .= " -v 1 ";
+  $parameters .= " -return ";
+  $parameters .= join ",", @return_fields;
+} else {
+  $parameters .= " -return counts";
+}
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ECHO >= 1);
 
 ### execute the command ###
