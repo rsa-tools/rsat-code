@@ -212,7 +212,7 @@ the program consensus (Hertz), but not by other programs.
 
 ## output formats
 %supported_output_format = ('patser'=>1,
-			    "MotifSampler"=>1,
+#			    "motifsampler"=>1,
 			    "transfac"=>1,
 			    "tab"=>1,
 			    "consensus"=>1,
@@ -353,10 +353,9 @@ sub getPrior() {
     }
     if ($main::verbose >= 10) {
 	foreach my $letter (sort keys %prior) {
-	    warn join("\t", "; getPrior", $letter, $prior{$letter}), "\n";
+	    &RSAT::message::Debug("getPrior", $letter, $prior{$letter});
 	}
     }
-#g    warn "CHECK getPrior\t", join " ", %prior if ($main::verbose >= 10);
     return %prior;
 }
 
@@ -385,7 +384,7 @@ sub setPrior {
 
     ## Report the new prior
     if ($main::verbose >= 10) {
-	%check = $self->get_attribute("prior");
+	%check = $self->getPrior();
 	&RSAT::message::Info (join("\t", "&RSAT::matrix::setPrior", join(" ", %prior))) if ($main::verbose >= 4);
 	foreach my $letter (sort keys %check) {
 	    warn join("\t", "; setPrior", $letter, $prior{$letter}), "\n";
@@ -393,6 +392,56 @@ sub setPrior {
     }
 }
 
+# ################################################################
+# =pod
+
+# =item B<CheckPrior()>
+
+# Check if prior probabilities have neen defined, and it this is not the
+# case, set it to equiprobable residues.
+
+# Usage:
+#   my %prior = $matrix->CheckPrior();
+
+# =cut
+# sub CheckPrior {
+#     my ($self) = @_;
+#     my %prior = $self->getPrior();
+#     my @alphabet = $self->getAlphabet();
+
+#     ## Check that the alphabet is defined
+#     unless (scalar(@alphabet) > 0) {
+#       &RSAT::error::FatalError("RSAT::matrix::CheckPrior()", "Cannot check prior because the alphabet is not defined");
+#     }
+
+
+#     ## Check that all residues have some prior
+#     my $some_defined = 0;
+#     my $some_undefined = 0;
+#     foreach my $residue (@alphabet) {
+#       if (defined($prior{$residue})) {
+# 	$some_defined = 1;
+#       } else {
+# 	$some_undefined = 1;
+#       }
+#     }
+
+#     ## Treat the result
+#     if (($some_defined) && ($some_undefined)) {
+#       ## Prior proba not properly defined -> simply give a warning
+#       &RSAT::message::Warning("Prior frequencies are defined only for a subset of the alphabet");
+
+#     } elsif ($some_defined == 0) {
+#       ## Prior proba not defined -> set to equiprobable
+#       &RSAT::message::Warning("Setting prior probabilities to equiprobable") if ($main::verbose >= 3);
+#       my $equi_prior = 1/scalar(@alphabet);
+#       foreach my $residue (@alphabet) {
+# 	$prior{$residue} = $equi_prior;
+#       }
+#       $self->setPrior(%prior);
+#     }
+#     return $self->getPrior();
+# }
 
 
 ################################################################
@@ -481,7 +530,7 @@ when the verbosity is > 0.
 
 =item format
 
-Output matrix format. Supported output formats: patser, MotifSampler, TRANSFAC. 
+Output matrix format. Supported output formats: tab, patser, consensus, TRANSFAC.
 
 =item all other arguments
 
@@ -491,23 +540,21 @@ to_MotifSampler, to_TRANSFAC), depending on the chosen output format.
 =back
 
 =cut
-
-
 sub toString {
     my ($self, %args) = @_;
     my $output_format = $args{format} || "patser";
-    if ((lc($output_format) eq "patser") || (lc($output_format) eq "tab")) {
+    $output_format = lc($output_format);
+    if (($output_format eq "patser") || ($output_format eq "tab")) {
       return $self->to_patser(%args);
-    } elsif (lc($output_format) eq "motifsampler") {
-      return $self->to_Motifsampler(%args);
-    } elsif (lc($output_format) eq "transfac") {
+#    } elsif (lc($output_format) eq "motifsampler") {
+#      return $self->to_Motifsampler(%args);
+    } elsif ($output_format eq "transfac") {
       return $self->to_TRANSFAC(%args);
-    } elsif (lc($output_format) eq "consensus") {
+    } elsif ($output_format eq "consensus") {
       return $self->to_consensus(%args);
     } else {
       &RSAT::error::FatalError($output_format, "Invalid output format for a matrix");
     }
-
 }
 
 ################################################################
@@ -1108,7 +1155,7 @@ sub calcFrequencies {
     }
 
     ## Get or calculate prior residue probabilities
-    my %prior = $self->get_attribute("prior");
+    my %prior = $self->getPrior();
     if (scalar(keys %prior) <= 0) {
 	&main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 3);
 	my $alphabet_size = scalar(@alphabet);
@@ -1143,7 +1190,7 @@ sub calcFrequencies {
 	if ($self->get_attribute("equi_pseudo")) {
 	  ## Equiprobable repartition of the pseudo-weight
 	  $frequencies[$c][$r] = $occ + $pseudo/$alphabet_size;
-	  #		&RSAT::message::Info("Equiprobable distribution of the pseudo-weight") if ($main::verbose >= 10);
+	  #	&RSAT::message::Info("Equiprobable distribution of the pseudo-weight") if ($main::verbose >= 10);
 	} else {
 	  ## Distribute pseudo-weight according to prior
 	  $frequencies[$c][$r] = $occ + $pseudo*$prior{$letter};
@@ -1205,7 +1252,7 @@ sub calcProbabilities {
 
     
     ## Get or calculate prior residue probabilities
-    my %prior = $self->get_attribute("prior");
+    my %prior = $self->getPrior();
     if (scalar(keys %prior) <= 0) {
 	&main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 3);
 	my $alphabet_size = scalar(@alphabet);
