@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: random-genes,v 1.16 2007/08/02 06:57:09 jvanheld Exp $
+# $Id: random-genes,v 1.17 2007/08/10 08:02:07 jvanheld Exp $
 #
 # Time-stamp: <2003-09-10 23:21:27 jvanheld>
 #
@@ -98,20 +98,26 @@ if ($seed) { ### defined seed
 
 ###### print output ##
 ## number of digits for group suffix
-my $digits = POSIX::ceil(log(scalar(@families)+1)/log(10));
+my $fam_digits = POSIX::ceil(log(scalar(@families)+1)/log(10));
+
+## number of digits for repeat suffix
+my $rep_digits = POSIX::ceil(log($repeat+1)/log(10));
 if ($#families > -1) {
   for my $f (0..$#families) {
     for my $r (1..$repeat) {
       my $fam = $families[$f];
       my $count = $family_count{$fam};
 
-      $rand_family_name = "RAND_";
-      my $group_suffix = sprintf "%${digits}d", $f+1;
+      $rand_family_name = "rand";
+      my $group_suffix = sprintf "%${fam_digits}d", $f+1;
       $group_suffix =~s/ /0/g;
       $rand_family_name .= $group_suffix;
 #      $rand_family_name .= $f+1;
       if ($repeat > 1) {
-	$rand_family_name .= ".".$r;
+	my $rep_suffix = sprintf "%${rep_digits}d", $r;
+	$rep_suffix =~s/ /0/g;
+	$rand_family_name .= "_rep".$rep_suffix;
+#	$rand_family_name .= ".".$r;
       }
       @random_orfs = $organism->SelectRandomGenes($count, $replace);
       foreach $orf (@random_orfs) {
