@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.210 2007/08/08 12:14:20 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.211 2007/08/10 07:44:32 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -2689,8 +2689,8 @@ sub AnalyzeFamilies {
 
        ## Send the batch script to the queue
 	if (($batch) && (scalar(@batch_commands) > 0)) {
-	   my $batch_script = join "\n\n", @main::batch_commands;
-	   &doit($batch_script, $dry_run, $die_on_error, $verbose, $batch, "multi");
+	   my $batch_script = join ";", @main::batch_commands;
+	   &doit($batch_script, $dry_run, $die_on_error, $verbose, $batch, $family_name);
 	   @main::batch_commands = ();
        }
    }
