@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.37 2007/08/05 08:03:03 jvanheld Exp $
+# $Id: convert-matrix,v 1.38 2007/08/11 06:52:04 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -640,13 +640,13 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-from") {
       $input_format = lc($ARGV[$a+1]);
       unless ($supported_input_format{$input_format}) {
-	  &RSAT::error::FatalError("$input_format\tInvalid format for input matrix\tSupported: $supported_input_formats");
+	  &RSAT::error::FatalError("$input_format\tInvalid input format for matrix\tSupported: $supported_input_formats");
       }
     } elsif ($ARGV[$a] eq "-in_format") {
 	&RSAT::message::Warning("The option -in_format is obsolete, please use -from instead.");
 	$input_format = lc($ARGV[$a+1]);
       unless ($supported_input_format{$input_format}) {
-	  &RSAT::error::FatalError("$input_format\tInvalid format for input matrix\tSupported: $supported_input_formats");
+	  &RSAT::error::FatalError("$input_format\tInvalid output format for matrix\tSupported: $supported_input_formats");
       }
 
       ### Obsolete option for the input format 
@@ -736,7 +736,7 @@ sub ExportMatrix {
   if ($infile{prior}) {
     $current_matrix->setPrior(%prior);
   }
-  $current_matrix->set_attribute("pseudo", $pseudo_weight);
+  $current_matrix->set_parameter("pseudo", $pseudo_weight);
   $current_matrix->set_attribute("equi_pseudo", $equi_pseudo);
   $current_matrix->push_attribute("parameters", "pseudo");
   $current_matrix->force_attribute("decimals", $decimals);
