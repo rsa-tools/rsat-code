@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.211 2007/08/10 07:44:32 rsat Exp $
+# $Id: multiple-family-analysis,v 1.212 2007/08/11 06:49:04 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -203,12 +203,13 @@ $pssm_sort_key{MotifSampler} = 'MS.ic';
 $pssm_sort_order{MotifSampler} = 'desc';
 
 ## Default MEME options
-$MEME_optiont{text} = ""; push @MEME_options, "text";
-$MEME_optiont{dna} = ""; push @MEME_options, "dna";
-$MEME_options{mod} = "anr"; push @MEME_options, "mod";
-$MEME_options{minw} = 6; push @MEME_options, "minw";
-$MEME_options{maxw}=25; push @MEME_options, "maxw";
-$MEME_options{nmotifs}=$nmotifs; push @MEME_options, "nmotifs";
+$MEME_optiont{text} = ""; push @MEME_options, "text"; ## Ouptut format = text
+$MEME_optiont{dna} = ""; push @MEME_options, "dna"; ## Sequence type == dna
+$MEME_options{mod} = "anr"; push @MEME_options, "mod"; ## Accept any number of occurrences per sequence
+$MEME_options{minw} = 6; push @MEME_options, "minw"; ## Minimal motif width
+$MEME_options{maxw}=25; push @MEME_options, "maxw"; ## Maximal motif width
+$MEME_options{nmotifs}=$nmotifs; push @MEME_options, "nmotifs"; ## Number of motifs
+$MEME_options{evt}=1; push @MEME_options, "evt"; ## upper threshold on E-value
 $pssm_sort_key{meme} = 'meme.E-value';
 $pssm_sort_order{meme} = 'asc';
 
@@ -720,13 +721,8 @@ sub SetFileNames {
 	$gibbs_suffix .= "-L".$matrix_width;
 
 	## Expected number of sites
-#	warn join ("\t", "Number of genes", $family_name, $gene_nb), "\n";
 	$gibbs_options .= " ".join(",", @gibbs_expected_sites);
-#	$gibbs_options .= " ".$expected_sites;
 	$gibbs_suffix .= "-n".$expected_sites;
-
-#	die "HELLO\t", $gibbs_options, "\n";
-
 
 	## DON'T use fragmentation (i.e., column sampler)
 	$gibbs_options .= " -d";
@@ -745,8 +741,7 @@ sub SetFileNames {
 	## Assign gibbs options to the family
 	$family{$family_name}->{gibbs_suffix} = $gibbs_suffix;
 	$family{$family_name}->{gibbs_options} = $gibbs_options;
-#	$family{$family_name}->{gibbs_dir} = $dir{output}."/"."${family_name}/gibbs_${family_name}";
-	$family{$family_name}->{gibbs_dir} = "${family_name}/gibbs_${family_name}";
+	$family{$family_name}->{gibbs_dir} = ${family_name}."/gibbs_".${family_name};
 	$family{$family_name}->{gibbs_file} = $family{$family_name}->{gibbs_dir}."/".$family{$family_name}->{file_prefix}.$gibbs_suffix;
 
 	################################################################
@@ -765,7 +760,6 @@ sub SetFileNames {
 
 	## Expected number of sites
 	my $gene_nb = scalar(@{$family{$family_name}->{members}});
-#	warn join ("\t", "Number of genes", $family_name, $gene_nb), "\n";
 	$expected_sites = $gene_nb*$expected_sites_per_gene;
 	$AlignACE_options .= " -expect ".$expected_sites;
 	$AlignACE_suffix .= "-n".$expected_sites;
@@ -783,8 +777,7 @@ sub SetFileNames {
 	## Assign AlignACE options to the family
 	$family{$family_name}->{AlignACE_suffix} = $AlignACE_suffix;
 	$family{$family_name}->{AlignACE_options} = $AlignACE_options;
-#	$family{$family_name}->{AlignACE_dir} = $dir{output}."/"."${family_name}/AlignACE_${family_name}";
-	$family{$family_name}->{AlignACE_dir} = "${family_name}/AlignACE_${family_name}";
+	$family{$family_name}->{AlignACE_dir} = ${family_name}."/.AlignACE_".${family_name};
 	$family{$family_name}->{AlignACE_file} = $family{$family_name}->{AlignACE_dir}."/".$family{$family_name}->{file_prefix}.$AlignACE_suffix;
 
 	################################################################
@@ -933,7 +926,6 @@ sub SetFileNames {
 	$family{$family_name}->{orm_dir} = ${family_name}."/"."orm_".${family_name};
 	$family{$family_name}->{orm_file} = $family{$family_name}->{orm_dir}."/".$family{$family_name}->{file_prefix}."_".$orm_suffix;
 	$orm_options .= " --output=".$family{$family_name}->{orm_file};
-	
 	$family{$family_name}->{orm_options} = $orm_options;
 	$family{$family_name}->{orm_suffix} = $orm_suffix;
 
@@ -947,7 +939,6 @@ sub SetFileNames {
 	$family{$family_name}->{orm_vs_known_weight_table} = $family{$family_name}->{orm_file}."__vs__known_weigth_table.tab";
 	$family{$family_name}->{orm_vs_known_relw_table} = $family{$family_name}->{orm_file}."__vs__known_relw_table.tab";
 
-	
 	################################################################
 	## Consensus options and files
 	my $consensus_options = "";
@@ -974,18 +965,15 @@ sub SetFileNames {
 	
 	## Use designated prior frequencies
 #    $consensus_options .= " -d"; 
-	
+
 	## Expected number of sites
 	$consensus_options .= " -n ".$expected_sites;
 	$consensus_suffix .= "-n".$expected_sites; 
-	
 	$family{$family_name}->{consensus_suffix} = $consensus_suffix;
 	$family{$family_name}->{consensus_options} = $consensus_options;
 	$family{$family_name}->{consensus_dir} = "${family_name}/consensus_${family_name}";
 	$family{$family_name}->{consensus_file} = $family{$family_name}->{consensus_dir}."/".$family{$family_name}->{file_prefix}.$consensus_suffix;
-	
-	
-    }  
+    }
 
 
     ################################################################
@@ -3175,341 +3163,342 @@ End_of_help
 ################################################################
 #### Read arguments
 sub ReadArguments {
-   foreach my $a (0..$#ARGV) {
-	### verbose ###
-	if ($ARGV[$a] eq "-v") {
-	    $verbose = $ARGV[$a+1];
-	    unless (&IsNatural($verbose)) {
-		$verbose = 1;
-	    }
-	    
-	    #### dry run
-	} elsif ($ARGV[$a] eq "-n") {
-	    $dry_run = 1;
-	    
-	    #### Sequence puring options
-	} elsif ($ARGV[$a] eq "-nopurge") {
-	    $analyze_purged_sequences = 0;
+  foreach my $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      $verbose = $ARGV[$a+1];
+      unless (&IsNatural($verbose)) {
+	$verbose = 1;
+      }
 
-	} elsif ($ARGV[$a] eq "-purge") {
-	    $analyze_purged_sequences = 1;
-	    
-	} elsif ($ARGV[$a] eq "-purge_ml") {
-	    $purge_ml = 1;
+      #### dry run
+    } elsif ($ARGV[$a] eq "-n") {
+      $dry_run = 1;
 
-	} elsif ($ARGV[$a] eq "-purge_mis") {
-	    $purge_mis = 1;
-	    
-	    ### detailed help
-	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp();
-	    
-	    ### list of options
-	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions();
-	    
-	    ### family file
-	} elsif (($ARGV[$a] eq "-i") ||
-		 ($ARGV[$a] eq "-fam") # for compatibility with previous versions
-		 ) {
-	    $family_file = $ARGV[$a+1];
+      #### Sequence puring options
+    } elsif ($ARGV[$a] eq "-nopurge") {
+      $analyze_purged_sequences = 0;
 
-	    ### skip some data sets
-	} elsif ($ARGV[$a] eq "-skip") {
-	    &FatalError("The option -skip is incompatible with the option -select") if (scalar(@selected) > 0);
-	    $skip = $ARGV[$a+1];
-	    &RSAT::error::FatalError("Invalid number with option -skip\t$skip") unless &IsNatural($skip);
-	    
-	    ### stop after some data sets
-	} elsif ($ARGV[$a] eq "-last") {
-	    &FatalError("The option -last is incompatible with the option -select") if (scalar(@selected) > 0);
-	    $last = $ARGV[$a+1];
-	    &RSAT::error::FatalError("Invalid number with option -last\t$last") unless &IsNatural($last);
-	    
-	    ### stop after some data sets
-	} elsif ($ARGV[$a] eq "-select") {
-	    &FatalError("The option -delete is incompatible with the option -last") if ($last > 0);
-	    &FatalError("The option -delete is incompatible with the option -skip") if ($skip > 0);
-	    push (@selected, (split ",", $ARGV[$a+1]));
-	    
-	    ### sequence file list
-	} elsif ($ARGV[$a] eq "-seq") {
-	    $sequence_file_list = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-purge") {
+      $analyze_purged_sequences = 1;
 
-	    ## mask
-	} elsif ($ARGV[$a] eq "-mask") {
-	    $mask = $ARGV[$a+1];
-	    &CheckMask($mask);	    
+    } elsif ($ARGV[$a] eq "-purge_ml") {
+      $purge_ml = 1;
 
-	    ### main directory
-	} elsif ($ARGV[$a] eq "-maindir") {
-	    $dir{main} = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-purge_mis") {
+      $purge_mis = 1;
 
-	    ### output directory
-	} elsif ($ARGV[$a] eq "-outdir") {
-	    $dir{output} = $ARGV[$a+1];
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp();
 
-	    ### min number of genes
-	} elsif ($ARGV[$a] eq "-mingenes") {
-	    $min_genes = $ARGV[$a+1];
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions();
 
-	    ### max number of patterns to assemble
-	} elsif ($ARGV[$a] eq "-toppat") {
-	    $toppat = $ARGV[$a+1];
+      ### family file
+    } elsif (($ARGV[$a] eq "-i") ||
+	     ($ARGV[$a] eq "-fam") # for compatibility with previous versions
+	    ) {
+      $family_file = $ARGV[$a+1];
 
-	    ### upstream sequence lmits
-	} elsif (($ARGV[$a] eq "-from") &&
-		 (&IsInteger($ARGV[$a+1]))) {
-	    $from = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-to") &&
-		 (&IsInteger($ARGV[$a+1]))){
-	    $to = $ARGV[$a+1];
+      ### skip some data sets
+    } elsif ($ARGV[$a] eq "-skip") {
+      &FatalError("The option -skip is incompatible with the option -select") if (scalar(@selected) > 0);
+      $skip = $ARGV[$a+1];
+      &RSAT::error::FatalError("Invalid number with option -skip\t$skip") unless &IsNatural($skip);
 
-	    ### strands 
-	} elsif ($ARGV[$a] eq "-1str") {
-	    $force{strands} = "-1str";
-	} elsif ($ARGV[$a] eq "-2str") {
-	    $force{strands} = "-2str";
+      ### stop after some data sets
+    } elsif ($ARGV[$a] eq "-last") {
+      &FatalError("The option -last is incompatible with the option -select") if (scalar(@selected) > 0);
+      $last = $ARGV[$a+1];
+      &RSAT::error::FatalError("Invalid number with option -last\t$last") unless &IsNatural($last);
 
-	    ### oligo-analysis parameters
-	} elsif ($ARGV[$a] eq "-minol") {
-	    $min_oligo_len = $ARGV[$a+1];;
-	} elsif ($ARGV[$a] eq "-maxol") {
-	    $max_oligo_len = $ARGV[$a+1];;
+      ### stop after some data sets
+    } elsif ($ARGV[$a] eq "-select") {
+      &FatalError("The option -delete is incompatible with the option -last") if ($last > 0);
+      &FatalError("The option -delete is incompatible with the option -skip") if ($skip > 0);
+      push (@selected, (split ",", $ARGV[$a+1]));
 
-	    ### dyad-analysis parameters
-	} elsif ($ARGV[$a] eq "-monad") {
-	    $monad_length = $ARGV[$a+1];;
-	} elsif ($ARGV[$a] eq "-minsp") {
-	    $min_sp = $ARGV[$a+1];;
-	} elsif ($ARGV[$a] eq "-maxsp") {
-	    $max_sp = $ARGV[$a+1];;
+      ### sequence file list
+    } elsif ($ARGV[$a] eq "-seq") {
+      $sequence_file_list = $ARGV[$a+1];
 
-	    ### matrix-based pattern discovery
-	} elsif ($ARGV[$a] eq "-width") {
-	    $matrix_width = $ARGV[$a+1];
-	} elsif ($ARGV[$a] eq "-sps") {
-	    $expected_sites_per_gene = $ARGV[$a+1];
-	} elsif ($ARGV[$a] eq "-nmotifs") {
-	    $nmotifs = $ARGV[$a+1];
-	    $MEME_options{nmotifs} = $nmotifs;
-	    $MS_n = $nmotifs;
+      ## mask
+    } elsif ($ARGV[$a] eq "-mask") {
+      $mask = $ARGV[$a+1];
+      &CheckMask($mask);	    
 
-	    ### Gibbs sampler + AlignACE seed option
-	} elsif ($ARGV[$a] eq "-seed") {
-	    $seed = $ARGV[$a+1];
+      ### main directory
+    } elsif ($ARGV[$a] eq "-maindir") {
+      $dir{main} = $ARGV[$a+1];
 
-	    ### MotifSampler options
-	} elsif ($ARGV[$a] =~ /-(MS_\S+)/) {
-	    $$1 =  $ARGV[$a+1];
+      ### output directory
+    } elsif ($ARGV[$a] eq "-outdir") {
+      $dir{output} = $ARGV[$a+1];
 
-	    ### MEME options
-	} elsif ($ARGV[$a] =~ /-MEME_(\S+)/) {
-	    $$1 =  $ARGV[$a+1];
-	    $MEME_options{$1} = $$1;
-	    push @MEME_options, $1;
+      ### min number of genes
+    } elsif ($ARGV[$a] eq "-mingenes") {
+      $min_genes = $ARGV[$a+1];
 
-	    ### ORM options
-	} elsif ($ARGV[$a] =~ /-(ORM_\S+)/) {
-	    $$1 =  $ARGV[$a+1];
+      ### max number of patterns to assemble
+    } elsif ($ARGV[$a] eq "-toppat") {
+      $toppat = $ARGV[$a+1];
 
-	    ### organism
-	} elsif ($ARGV[$a] eq "-org") {
-	    $organism_name = $ARGV[$a+1];
+      ### upstream sequence lmits
+    } elsif (($ARGV[$a] eq "-from") &&
+	     (&IsInteger($ARGV[$a+1]))) {
+      $from = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-to") &&
+	     (&IsInteger($ARGV[$a+1]))) {
+      $to = $ARGV[$a+1];
 
-	    ### organisms are specified as family names
-	} elsif ($ARGV[$a] eq "-org_fam") {
-	    $org_fam = 1;
+      ### strands 
+    } elsif ($ARGV[$a] eq "-1str") {
+      $force{strands} = "-1str";
+    } elsif ($ARGV[$a] eq "-2str") {
+      $force{strands} = "-2str";
 
-	    ### taxon
-	} elsif ($ARGV[$a] eq "-taxon") {
-	    $taxon = $ARGV[$a+1];
+      ### oligo-analysis parameters
+    } elsif ($ARGV[$a] eq "-minol") {
+      $min_oligo_len = $ARGV[$a+1];;
+    } elsif ($ARGV[$a] eq "-maxol") {
+      $max_oligo_len = $ARGV[$a+1];;
 
-	    ### file with a collection of known motifs, for comparison between discovered and known motifs
-	} elsif ($ARGV[$a] eq "-known") {
-	    $known_site_file = $ARGV[$a+1];
-	} elsif ($ARGV[$a] eq "-known_max_len") {
-	    $known_site_max_len = $ARGV[$a+1];
+      ### dyad-analysis parameters
+    } elsif ($ARGV[$a] eq "-monad") {
+      $monad_length = $ARGV[$a+1];;
+    } elsif ($ARGV[$a] eq "-minsp") {
+      $min_sp = $ARGV[$a+1];;
+    } elsif ($ARGV[$a] eq "-maxsp") {
+      $max_sp = $ARGV[$a+1];;
 
-	    ### file with a collection of known motifs, for comparison between discovered and known motifs
-	} elsif ($ARGV[$a] eq "-db") {
-	    $db_site_file = $ARGV[$a+1];
+      ### matrix-based pattern discovery
+    } elsif ($ARGV[$a] eq "-width") {
+      $matrix_width = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-sps") {
+      $expected_sites_per_gene = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-nmotifs") {
+      $nmotifs = $ARGV[$a+1];
+      $MEME_options{nmotifs} = $nmotifs;
+      $MS_n = $nmotifs;
 
-	    ### file with a collection of known motifs, for comparison between discovered and known motifs
-	} elsif ($ARGV[$a] eq "-dbname") {
-	    $db_site_name = $ARGV[$a+1];
+      ### Gibbs sampler + AlignACE seed option
+    } elsif ($ARGV[$a] eq "-seed") {
+      $seed = $ARGV[$a+1];
 
-	    #### task selection
-	} elsif ($ARGV[$a] eq "-task") {
-	    my @requested_tasks = split ",", $ARGV[$a+1];
-	    foreach my $task (@requested_tasks) {
-		next unless $task;
-#	    $task = $ARGV[$a+1];
-		if ($supported_task{$task}) {
-		    $task{$task} = 1;
-		} else {
-		    &RSAT::error::FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
-		}
-	    }
+      ### MotifSampler options
+    } elsif ($ARGV[$a] =~ /-(MS_\S+)/) {
+      $$1 =  $ARGV[$a+1];
 
-	    #### transpose synthetic table
-	} elsif ($ARGV[$a] =~ /^-transp/) {
-	    $transpose = 1;
+      ### MEME options
+    } elsif ($ARGV[$a] =~ /-MEME_(\S+)/) {
+      my $option = $1;
+      my $value =  $ARGV[$a+1];
+      push @MEME_options, $option unless (defined($MEME_options{$option}));
+      $MEME_options{$option} = $value;
 
-	    #### sort key
-	} elsif ($ARGV[$a] =~ /^-sort/) {
-	    $sort_key = $ARGV[$a+1];
-	    unless ($supported_sort_key{$sort_key}) {
-		&RSAT::error::FatalError("$sort_key is not supported as sort key");
-	    }
+      ### ORM options
+    } elsif ($ARGV[$a] =~ /-(ORM_\S+)/) {
+      $$1 =  $ARGV[$a+1];
 
-	    #### clip upstream ORFs fom upstream regions
-	} elsif ($ARGV[$a] =~ /^-noorf/) {
-	    $noorf = "-noorf";
+      ### organism
+    } elsif ($ARGV[$a] eq "-org") {
+      $organism_name = $ARGV[$a+1];
 
-	    #### use repeat masked version of the genome
-	} elsif ($ARGV[$a] eq "-rm") {
-	    $repeat_masked = 1;
+      ### organisms are specified as family names
+    } elsif ($ARGV[$a] eq "-org_fam") {
+      $org_fam = 1;
 
-	    #### do not clip upstream ORFs fom upstream regions
-	} elsif ($ARGV[$a] =~ /^-orfov/) {
-	    $noorf = "";
+      ### taxon
+    } elsif ($ARGV[$a] eq "-taxon") {
+      $taxon = $ARGV[$a+1];
 
-	    #### Threshold on relative weight for compare-patterns
-	} elsif ($ARGV[$a] eq '-rel_w') {
-	    $rel_w = $ARGV[$a+1];
-	    &FatalError("Relative weight should be a real value comprised between 0 and 1") unless ((&IsReal($rel_w)) && ($rel_w >= 0) && ($rel_w <= 1));
-	    
-	    ### Upper threshold
-	} elsif ($ARGV[$a] eq "-lth") {
-	    my $thr_field = $ARGV[$a+1];
-	    my $thr_value =  $ARGV[$a+2];
-	    unless ($supported_threshold{$thr_field}) {
-		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
-	    }
-	    $lth{$thr_field} = $thr_value;
-#	    &RSAT::message::Debug("Lower threshold", $thr_field, $thr_value, $lth{$thr_field});
+      ### file with a collection of known motifs, for comparison between discovered and known motifs
+    } elsif ($ARGV[$a] eq "-known") {
+      $known_site_file = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-known_max_len") {
+      $known_site_max_len = $ARGV[$a+1];
 
-	    ### Lower threshold
-	} elsif ($ARGV[$a] eq "-uth") {
-	    my $thr_field = $ARGV[$a+1];
-	    my $thr_value =  $ARGV[$a+2];
-	    unless ($supported_threshold{$thr_field}) {
-		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
-	    }
-	    $uth{$thr_field} = $thr_value;
+      ### file with a collection of known motifs, for comparison between discovered and known motifs
+    } elsif ($ARGV[$a] eq "-db") {
+      $db_site_file = $ARGV[$a+1];
 
-	    #### threshold
-	} elsif ($ARGV[$a] =~ /^-thosig/) {
-	    &Warning("Option -thosig is deprecated. Please use '-lth occ_sig' instead.");
-	    $force{th} = $ARGV[$a+1];
+      ### file with a collection of known motifs, for comparison between discovered and known motifs
+    } elsif ($ARGV[$a] eq "-dbname") {
+      $db_site_name = $ARGV[$a+1];
 
-	    #### threshold on mseq frequency
-	} elsif ($ARGV[$a] =~ /^-thmsf/) {
-	    &Warning("Option -thmsf is deprecated. Please use '-lth ms_freq' instead.");
-	    $lth{ms_freq} = $ARGV[$a+1];
-
-	    #### threshold on mseq significance
-	} elsif ($ARGV[$a] =~ /^-thmssig/) {
-	    &Warning("Option -thmssig is deprecated. Please use '-lth ms_sig' instead.");
-	    $lth{ms_sig} = $ARGV[$a+1];
-
-	    #### dyad type
-	} elsif ($ARGV[$a] =~ /^-type/) {
-	    $force{type} = $ARGV[$a+1];
-
-	    #### feature types
-	} elsif ($ARGV[$a] eq "-feattype") {
-	    my @types = split ",", $ARGV[$a+1];
-	    foreach my $type (@types) {
-		if ($supported_feature_types{lc($type)}) {
-		    $accepted_feature_types{lc($type)}++;
-		} else {
-		    &RSAT::error::FatalError("$type invalid feature type. Supported: $supported_feature_types");
-		}
-	    }
-
-	    #### expected frequency file for dyad-analysis 
-	} elsif ($ARGV[$a] =~ /^-dyad_exp_freq/) {
-	    $exp_freq_file{dyads} = $ARGV[$a+1];
-
-	    #### expected frequency file for oligo-analysis 
-	} elsif ($ARGV[$a] =~ /^-oligo_exp_freq/) {
-	    $exp_freq_file{oligos} = $ARGV[$a+1];
-
-	    #### Calibration directory
-	} elsif ($ARGV[$a] =~ /^-calib_dir/) {
-	    $dir{calib1} = $ARGV[$a+1];
-	    $dir{calibN} = $ARGV[$a+1];
-
-	    #### Number of repetitions for the calibration
-	} elsif ($ARGV[$a] =~ /^-calibN_repet/) {
-	    $calibN_repet = $ARGV[$a+1];
-	    &FatalError("Invalid number of repetitions for the calibrations: should be at least 2, and a much larger value (e.g.100) is highly recommended.") 
-		unless ((&IsNatural($calibN_repet)) && ($calibN_repet >= 2));
-
-	    #### background model for expected frequency. 
-	    #### Supported: "upstream", "upstream-noorf", "intergenic", "mncf", "upstream-rm", "upstream-noorf-rm"
-	} elsif (($ARGV[$a] =~ /^-exp/) 
-		 || ($ARGV[$a] =~ /^-bg/)) {
-	    $background = $ARGV[$a+1];
-	    $background =~ s/^ncf$/intergenic/;
-
-	    unless ($supported_background{$background}) {
-		&RSAT::error::FatalError("$background\tInvalid value for background. Supported : $supported_background");
-	    }
-
-	    #### Markov chain estimation of expected oligo frequencies
-	} elsif ($ARGV[$a] =~ /^-markov/) {
-	    $markov_order = $ARGV[$a+1];
-	    $markov=1;
-	    
-	    #### prevent self-overlap
-	} elsif ($ARGV[$a] eq "-noov") {
-	    $noov = "-noov";
-
-	    #### allow self-overlap
-	} elsif ($ARGV[$a] eq "-ovlp") {
-	    $noov = "-ovlp";
-
-	    #### prevent feature-map drawing
-	} elsif ($ARGV[$a] eq "-nomap") {
-	    $draw_maps = 0;
-
-	    #### draw htmaps
-	} elsif ($ARGV[$a] =~ /^-htmap/) {
-	    $draw_maps = 1;
-	    $htmaps = 1;
-
-	    #### pseudo-weight
-	} elsif ($ARGV[$a] =~ /^-pseudo/) {
-	    $pseudo = $ARGV[$a+1];
-	    unless ((&IsReal($pseudo)) && ($pseudo > 0)) {
-		&RSAT::error::FatalError("pseudo-weight must be a positive real number");
-	    }
-
-	    #### Options for the SQL scripts
-	} elsif ($ARGV[$a] eq "-schema") {
-	    $schema = $ARGV[$a+1];
-	} elsif ($ARGV[$a] eq "-host") {
-	    $host = $ARGV[$a+1];
-	} elsif ($ARGV[$a] eq "-user") {
-	    $user = $ARGV[$a+1];
-	} elsif ($ARGV[$a] eq "-password") {
-	    $password = $ARGV[$a+1];
-
-	} elsif ($ARGV[$a] eq "-pc_cluster") {
-	    &RSAT::message::Warning("Option -pc_cluster is obsolete, use option -batch instead.");
-	    $batch = 1;
-
-	} elsif ($ARGV[$a] eq "-batch") {
-	    $batch = 1;
-
-	} elsif ($ARGV[$a] eq "-nodie") {
-	    $die_on_error = 0;
-
+      #### task selection
+    } elsif ($ARGV[$a] eq "-task") {
+      my @requested_tasks = split ",", $ARGV[$a+1];
+      foreach my $task (@requested_tasks) {
+	next unless $task;
+	#	    $task = $ARGV[$a+1];
+	if ($supported_task{$task}) {
+	  $task{$task} = 1;
+	} else {
+	  &RSAT::error::FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
 	}
-   }
+      }
+
+      #### transpose synthetic table
+    } elsif ($ARGV[$a] =~ /^-transp/) {
+      $transpose = 1;
+
+      #### sort key
+    } elsif ($ARGV[$a] =~ /^-sort/) {
+      $sort_key = $ARGV[$a+1];
+      unless ($supported_sort_key{$sort_key}) {
+	&RSAT::error::FatalError("$sort_key is not supported as sort key");
+      }
+
+      #### clip upstream ORFs fom upstream regions
+    } elsif ($ARGV[$a] =~ /^-noorf/) {
+      $noorf = "-noorf";
+
+      #### use repeat masked version of the genome
+    } elsif ($ARGV[$a] eq "-rm") {
+      $repeat_masked = 1;
+
+      #### do not clip upstream ORFs fom upstream regions
+    } elsif ($ARGV[$a] =~ /^-orfov/) {
+      $noorf = "";
+
+      #### Threshold on relative weight for compare-patterns
+    } elsif ($ARGV[$a] eq '-rel_w') {
+      $rel_w = $ARGV[$a+1];
+      &FatalError("Relative weight should be a real value comprised between 0 and 1") unless ((&IsReal($rel_w)) && ($rel_w >= 0) && ($rel_w <= 1));
+
+      ### Upper threshold
+    } elsif ($ARGV[$a] eq "-lth") {
+      my $thr_field = $ARGV[$a+1];
+      my $thr_value =  $ARGV[$a+2];
+      unless ($supported_threshold{$thr_field}) {
+	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+      }
+      $lth{$thr_field} = $thr_value;
+      #	    &RSAT::message::Debug("Lower threshold", $thr_field, $thr_value, $lth{$thr_field});
+
+      ### Lower threshold
+    } elsif ($ARGV[$a] eq "-uth") {
+      my $thr_field = $ARGV[$a+1];
+      my $thr_value =  $ARGV[$a+2];
+      unless ($supported_threshold{$thr_field}) {
+	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+      }
+      $uth{$thr_field} = $thr_value;
+
+      #### threshold
+    } elsif ($ARGV[$a] =~ /^-thosig/) {
+      &Warning("Option -thosig is deprecated. Please use '-lth occ_sig' instead.");
+      $force{th} = $ARGV[$a+1];
+
+      #### threshold on mseq frequency
+    } elsif ($ARGV[$a] =~ /^-thmsf/) {
+      &Warning("Option -thmsf is deprecated. Please use '-lth ms_freq' instead.");
+      $lth{ms_freq} = $ARGV[$a+1];
+
+      #### threshold on mseq significance
+    } elsif ($ARGV[$a] =~ /^-thmssig/) {
+      &Warning("Option -thmssig is deprecated. Please use '-lth ms_sig' instead.");
+      $lth{ms_sig} = $ARGV[$a+1];
+
+      #### dyad type
+    } elsif ($ARGV[$a] =~ /^-type/) {
+      $force{type} = $ARGV[$a+1];
+
+      #### feature types
+    } elsif ($ARGV[$a] eq "-feattype") {
+      my @types = split ",", $ARGV[$a+1];
+      foreach my $type (@types) {
+	if ($supported_feature_types{lc($type)}) {
+	  $accepted_feature_types{lc($type)}++;
+	} else {
+	  &RSAT::error::FatalError("$type invalid feature type. Supported: $supported_feature_types");
+	}
+      }
+
+      #### expected frequency file for dyad-analysis 
+    } elsif ($ARGV[$a] =~ /^-dyad_exp_freq/) {
+      $exp_freq_file{dyads} = $ARGV[$a+1];
+
+      #### expected frequency file for oligo-analysis 
+    } elsif ($ARGV[$a] =~ /^-oligo_exp_freq/) {
+      $exp_freq_file{oligos} = $ARGV[$a+1];
+
+      #### Calibration directory
+    } elsif ($ARGV[$a] =~ /^-calib_dir/) {
+      $dir{calib1} = $ARGV[$a+1];
+      $dir{calibN} = $ARGV[$a+1];
+
+      #### Number of repetitions for the calibration
+    } elsif ($ARGV[$a] =~ /^-calibN_repet/) {
+      $calibN_repet = $ARGV[$a+1];
+      &FatalError("Invalid number of repetitions for the calibrations: should be at least 2, and a much larger value (e.g.100) is highly recommended.") 
+	unless ((&IsNatural($calibN_repet)) && ($calibN_repet >= 2));
+
+      #### background model for expected frequency. 
+      #### Supported: "upstream", "upstream-noorf", "intergenic", "mncf", "upstream-rm", "upstream-noorf-rm"
+    } elsif (($ARGV[$a] =~ /^-exp/) 
+	     || ($ARGV[$a] =~ /^-bg/)) {
+      $background = $ARGV[$a+1];
+      $background =~ s/^ncf$/intergenic/;
+
+      unless ($supported_background{$background}) {
+	&RSAT::error::FatalError("$background\tInvalid value for background. Supported : $supported_background");
+      }
+
+      #### Markov chain estimation of expected oligo frequencies
+    } elsif ($ARGV[$a] =~ /^-markov/) {
+      $markov_order = $ARGV[$a+1];
+      $markov=1;
+
+      #### prevent self-overlap
+    } elsif ($ARGV[$a] eq "-noov") {
+      $noov = "-noov";
+
+      #### allow self-overlap
+    } elsif ($ARGV[$a] eq "-ovlp") {
+      $noov = "-ovlp";
+
+      #### prevent feature-map drawing
+    } elsif ($ARGV[$a] eq "-nomap") {
+      $draw_maps = 0;
+
+      #### draw htmaps
+    } elsif ($ARGV[$a] =~ /^-htmap/) {
+      $draw_maps = 1;
+      $htmaps = 1;
+
+      #### pseudo-weight
+    } elsif ($ARGV[$a] =~ /^-pseudo/) {
+      $pseudo = $ARGV[$a+1];
+      unless ((&IsReal($pseudo)) && ($pseudo > 0)) {
+	&RSAT::error::FatalError("pseudo-weight must be a positive real number");
+      }
+
+      #### Options for the SQL scripts
+    } elsif ($ARGV[$a] eq "-schema") {
+      $schema = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-host") {
+      $host = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-user") {
+      $user = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-password") {
+      $password = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-pc_cluster") {
+      &RSAT::message::Warning("Option -pc_cluster is obsolete, use option -batch instead.");
+      $batch = 1;
+
+    } elsif ($ARGV[$a] eq "-batch") {
+      $batch = 1;
+
+    } elsif ($ARGV[$a] eq "-nodie") {
+      $die_on_error = 0;
+
+    }
+  }
 }
 
 
