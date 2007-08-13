@@ -11,7 +11,15 @@ matrix-bg-eval
 
 =head1 DESCRIPTION
 
+This program is a task manager which runs matrix-quality 
+in order to evaluate the quality of matrices and various Makrov chains-based 
+background models.
 
+This program is a way to automitize the systematic analysis of the quality 
+of a matrix using different negative sequence sets and different background models.
+
+The program perfoms different tasks for each matrix and generates results in 
+different dirctories created on the fly.
 
 =head1 AUTHORS
 
