@@ -39,6 +39,7 @@ formats.
 			   'alignace'=> 1,
 			   'clustal'=>1,
 			   'transfac'=>1,
+			   'infogibbs'=>1,
 			   'motifsampler'=>1,
 			  );
 
@@ -59,6 +60,8 @@ sub readFromFile {
 	@matrices = _readFromConsensusFile($file);
     } elsif (lc($format) eq "transfac") {
 	@matrices = _readFromTRANSFACFile($file);
+    } elsif (lc($format) eq "infogibbs") {
+	@matrices = _readFromInfoGibbsFile($file);
     } elsif (lc($format) eq "assembly") {
 	@matrices = _readFromAssemblyFile($file);
     } elsif (lc($format) eq "gibbs") {
@@ -145,7 +148,7 @@ C<readFromFile($file, "TRANSFAC")>.
 =cut
 sub _readFromTRANSFACFile {
   my ($file) = @_;
-  &RSAT::message::Info ("Reading matrix from consensus file", $file) if ($main::verbose >= 3);
+  &RSAT::message::Info ("Reading matrix from TRANSFAC file", $file) if ($main::verbose >= 3);
 
   ## open input stream
   my $in = STDIN;
@@ -174,6 +177,9 @@ sub _readFromTRANSFACFile {
       $version = $';		# '
       &RSAT::message::Warning("TRANSFAC file version", $version);
 
+      ## field separator
+    } elsif (/^XX/) {
+
       ## Start a new matrix (one TRANSFAC file contains several matrices)
     } elsif (/^AC\s+(\S+)/) {
       my $accession = $1;
@@ -191,70 +197,288 @@ sub _readFromTRANSFACFile {
       ## Equiprobable alphabet
     } elsif (/^P0\s+/) {
       my $header = $'; #'
+      $header = RSAT::util::trim($header);
+
+      ## Alphabet is parsed from the TRANSFAC matrix header (P0 row)
       my @alphabet = split /\s+/, $header;
-      foreach my $letter (@alphabet) {
-	$prior{lc($letter)} = 1/scalar(@alphabet);
-      }
-      $matrix->setPrior(%prior);
       $matrix->setAlphabet_lc(@alphabet);
 
-      ## Sites used to build the matrix
-    } elsif (/^BS\s+/) {
-      my $bs = $'; #'
-      my ($site_sequence, $site_id) = split(/\s*;\s*/, $bs);
-#      my $site_sequence = $1;
-#      my $site_id = $2;
-      if ($site_sequence) {
-	$matrix->push_attribute("sequences", $site_sequence);
-	if ($site_id) {
-	  $matrix->push_attribute("site_ids", $site_id);
+      ## Check that prior has been specified
+      unless ($matrix->get_attribute("prior_specified")) {
+	foreach my $letter (@alphabet) {
+	  $prior{lc($letter)} = 1/scalar(@alphabet) 
+	    unless (defined($prior{$letter}));;
 	}
+	$matrix->setPrior(%prior);
       }
-#      &RSAT::message::Debug("line", $l, "site", $site_sequence, $site_id, $bs) if ($main::verbose >= 0);
-
-      ## Count column of the matrix file (row in transfac format)
-    } elsif (/^(\d+)\s+/) {
-
-      my $values = $'; #'
-      my @fields = split /\s+/, $values;
-      if ($fields[$#fields] =~ /A-Z/i) {
-	my $consensus_residue = pop @fields;
-	$transfac_consensus .= $consensus_residue;
-      }
-      $matrix->addColumn(@fields);
-      $ncol++;
-      $matrix->force_attribute("ncol", $ncol);
 
       ## Other matrix parameters
-    } elsif (/^XX/) {
-      ## field separator
 
-    } elsif (/^ID\s+/) {
-      $matrix->set_parameter("identifier", $'); #'
+    } elsif ($matrix) {
+      ## Sites used to build the matrix
+      if (/^BS\s+/) {
+	my $bs = $'; #'
+	my ($site_sequence, $site_id) = split(/\s*;\s*/, $bs);
+	#      my $site_sequence = $1;
+	#      my $site_id = $2;
+	if ($site_sequence) {
+	  $matrix->push_attribute("sequences", $site_sequence);
+	  if ($site_id) {
+	    $matrix->push_attribute("site_ids", $site_id);
+	  }
+	}
+#      &RSAT::message::Debug("line", $l, "site", $site_sequence, $site_id, $bs) if ($main::verbose >= 10);
 
-    } elsif (/^BF\s+/) {
-      $matrix->set_parameter("binding_factor", $'); #'
+      ## Count column of the matrix file (row in TRANSFAC format)
+      } elsif (/^(\d+)\s+/) {
+	my $values = $'; #'
+	$values = &RSAT::util::trim($values);
+	my @fields = split /\s+/, $values;
+	my $consensus_residue= "";
+	if ($fields[$#fields] =~ /[A-Z]/i) {
+	  $consensus_residue = pop @fields;
+	  $transfac_consensus .= $consensus_residue;
+	}
+	#      &RSAT::message::Debug("line ".$l, "adding column", join (":", @fields)) if ($main::verbose >= 10);
+	$matrix->addColumn(@fields);
+	$ncol++;
+	$matrix->force_attribute("ncol", $ncol);
 
-    } elsif (/^SD\s+/) {
-      $matrix->set_parameter("short_foactor_description", $'); #'
+	## Matrix identifier
+      } elsif (/^ID\s+/) {
+	$matrix->set_parameter("identifier", $'); #'
 
-    } elsif (/^BA\s+/) {
-      $matrix->set_parameter("statistical_basis", $'); #'
+	## Bound factor
+      } elsif (/^BF\s+/) {
+	$matrix->set_parameter("binding_factor", $'); #'
 
-    } elsif (/^DE\s+/) {
-      $matrix->set_parameter("description", $'); #'
+	## Short factor description
+      } elsif (/^SD\s+/) {
+	$matrix->set_parameter("short_foactor_description", $'); #'
 
-    } elsif (/^\/\//) {
-      $matrix->set_parameter("transfac_consensus", $transfac_consensus);
+	## Statistical basis
+      } elsif (/^BA\s+/) {
+	$matrix->set_parameter("statistical_basis", $'); #'
 
-      ## Empty rowb
-    } elsif (/^(\S\S)\s+(.*)/) {
-      my $field = $1;
-      my $value = $2;
-      &RSAT::message::Warning("Not parsed", $field, $value) if ($main::verbose >= 3);
+	## Matrix description
+      } elsif (/^DE\s+/) {
+	$matrix->set_parameter("description", $'); #'
 
-    } else {
-      &RSAT::message::Warning("skipped invalid row", $_);
+	## Store the consensus at the end of the matrix
+      } elsif (/^\/\//) {
+	$matrix->set_parameter("transfac_consensus", $transfac_consensus);
+
+	## Empty rowb
+      } elsif (/^(\S\S)\s+(.*)/) {
+	my $field = $1;
+	my $value = $2;
+	&RSAT::message::Warning("Not parsed", $field, $value) if ($main::verbose >= 3);
+      } else {
+	&RSAT::message::Warning("skipped invalid row", $_);
+      }
+    }
+  }
+  close $in if ($file);
+
+  return @matrices;
+
+}
+
+################################################################
+=pod
+
+=item _readFromInfoGibbsFile($file)
+
+Read a matrix from a result file from InfoGibbs. This method is called
+by the method C<readFromFile($file, "InfoGibbs")>.
+
+=cut
+sub _readFromInfoGibbsFile {
+  my ($file) = @_;
+  &RSAT::message::Info ("Reading matrices from InfoGibbs file", $file) if ($main::verbose >= 3);
+
+  ## open input stream
+  my ($in, $dir) = &main::OpenInputFile($file);
+#  my ($in) = STDIN;
+#  if ($file) {
+#    open INPUT, $file;
+#    $in = INPUT;
+#  }
+  my $current_matrix_nb = 0;
+  my @matrices = ();
+  my $matrix;
+  my $version = "";
+  my $command = "";
+  my $ncol = 0;
+  my $infogibbs_consensus = "";
+
+  my %prior = ();
+  my $l = 0;
+  while (<$in>) {
+    $l++;
+    chomp();
+
+#    &RSAT::message::Debug($l, $_) if ($main::verbose >= 10);
+    next unless (/\S/);
+    s/\r//;
+    my $version = "";
+
+    ## Read the command line
+    if (/^VV\s+/) {
+      ## InfoGibbs version
+      $version = $';		# '
+      &RSAT::message::Info("InfoGibbs version", $version) if ($main::verbose >= 3);
+
+    } elsif (/^CM\s+/) {
+      ## InfoGibbs command
+      $command = $';		# '
+      &RSAT::message::Info("InfoGibbs command", $command) if ($main::verbose >= 3);
+
+    } elsif (/^PR\s+/) {
+      my $prior_error = 0;
+      ## InfoGibbs command
+      my $prior_line = $';		# '
+      my @fields = split /;\s*/, $prior_line;
+      my %new_prior = ();
+      foreach my $field (@fields) {
+	if ($field =~ /([A-Z]):(\S+)/i) {
+	  my $residue = lc($1);
+	  my $prior = $2;
+	  if (&RSAT::util::IsReal($prior)) {
+	    $new_prior{$residue} = $prior;
+	  } else {
+	    &RSAT::message::Warning("InfoGibbs file", "line ".$l, "Invalid prior specification", $prior_line);
+	    $prior_error = 1;
+	  }
+	} else {
+	  &RSAT::message::Warning("InfoGibbs file", "line ".$l, "Invalid prior specification", $prior_line);
+	    $prior_error = 1;
+	}
+      }
+      unless ($prior_error) {
+	%prior = %new_prior;
+#	&RSAT::message::Debug("New prior", join (" ", %prior)) if ($main::verbose >= 10);
+      }
+
+      ## Start a new matrix (an InfoGibbs file contains several matrices)
+    } elsif (/^AC\s+(\S+)/) {
+      my $accession = $1;
+      $current_matrix_nb++;
+      $matrix = new RSAT::matrix();
+      $matrix->set_parameter("program", "InfoGibbs");
+      $matrix->set_parameter("version", $version);
+      $matrix->set_parameter("command", $command);
+      $matrix->set_parameter("matrix.nb", $current_matrix_nb);
+      if (scalar(keys(%prior)) > 0) {
+	$matrix->setPrior(%prior);
+#	&RSAT::message::Debug("Prior", join (" ", %prior)) if ($main::verbose >= 5);
+      }
+      push @matrices, $matrix;
+      $matrix->set_parameter("accession", $accession) if ($accession);
+      $ncol = 0;
+
+      &RSAT::message::Info("Parsing matrix",  $current_matrix_nb, $matrix->get_attribute("accession")) 
+	if ($main::verbose >= 3);
+      next;
+
+      ## Parameters for the current matrix
+    } elsif ($matrix) {
+
+      ## Read prior alphabet from the matrix header (P0 line)
+      ## Equiprobable alphabet
+      if (/^P0\s+/) {
+	my $header = $'; #'
+	$header = &RSAT::util::trim($header);
+
+	## Alphabet is parsed from the InfoGibbs matrix header (P0 row)
+	my @alphabet = split /\s+/, $header;
+	$matrix->setAlphabet_lc(@alphabet);
+	## Check that prior has been specified
+	unless ($matrix->get_attribute("prior_specified")) {
+	  foreach my $letter (@alphabet) {
+	    $prior{lc($letter)} = 1/scalar(@alphabet) 
+	      unless (defined($prior{$letter}));;
+	  }
+	  $matrix->setPrior(%prior);
+#	  &RSAT::message::Debug("Prior", join (" ", %prior)) if ($main::verbose >= 5);
+	}
+
+	## Count column of the matrix file (row in transfac format)
+      } elsif (/^(\d+)\s+/) {
+	my $values = $'; #'
+	$values = &RSAT::util::trim($values);
+	my @fields = split /\s+/, $values;
+	my $consensus_residue= "";
+	if ($fields[$#fields] =~ /[A-Z]/i) {
+	  $consensus_residue = pop @fields;
+	  $transfac_consensus .= $consensus_residue;
+	}
+	$matrix->addColumn(@fields);
+	$ncol++;
+	$matrix->force_attribute("ncol", $ncol);
+#	&RSAT::message::Debug("line ".$l, "adding column", $ncol, "counts", join (":", @fields))
+#	  if ($main::verbose >= 0);
+
+	## Sites used to build the matrix
+      } elsif (/^BS\s+/)  {
+	my $bs = $'; #'
+	my ($site_sequence, $site_id) = split(/\s*;\s*/, $bs);
+	#      my $site_sequence = $1;
+	#      my $site_id = $2;
+	if ($site_sequence) {
+	  $matrix->push_attribute("sequences", $site_sequence);
+	  if ($site_id) {
+	    $matrix->push_attribute("site_ids", $site_id);
+	  }
+	}
+#	&RSAT::message::Debug("line", $l, "site", $site_sequence, $site_id, $bs) if ($main::verbose >= 0);
+
+	## Information content computed by InfoGibbs
+      } elsif (/^IC\s+/) {
+	$matrix->set_parameter("IC", $'); #'
+
+	## Consensus score computed by InfoGibbs
+      } elsif (/^CS\s+/) {
+	$matrix->set_parameter("CS", $'); #'
+
+	## Log-Likelihood computed by InfoGibbs
+      } elsif (/^LL\s+/) {
+	$matrix->set_parameter("LL", $'); #'
+
+	## TRANSFAC matrix parameters (not used by InfoGibbs, but maintained for compatibility)
+      } elsif (/^XX/) {
+	## field separator
+	next;
+
+      } elsif (/^ID\s+/) {
+	$matrix->set_parameter("identifier", $'); #'
+
+      } elsif (/^BF\s+/) {
+	$matrix->set_parameter("binding_factor", $'); #'
+
+	#    } elsif (/^SD\s+/) {
+	#      $matrix->set_parameter("short_foactor_description", $'); #'
+
+      } elsif ((/^BA\s+/)   && ($matrix)){
+	$matrix->set_parameter("statistical_basis", $'); #'
+
+      } elsif ((/^DE\s+/)   && ($matrix)){
+	$matrix->set_parameter("description", $'); #'
+
+      } elsif (/^\/\//) {
+	if ($matrix) {
+	  $matrix->set_parameter("transfac_consensus", $transfac_consensus);
+	}
+
+	## Unknown field
+      } elsif (/^(\S\S)\s+(.*)/) {
+	my $field = $1;
+	my $value = $2;
+	&RSAT::message::Warning("Unknown field, not parsed", "line ".$l, $field, $value) if ($main::verbose >= 3);
+
+      } else {
+	&RSAT::message::Warning("skipped invalid row", "line ".$l, $_);
+      }
     }
 
   }
@@ -276,8 +500,6 @@ C<readFromFile($file, "AlignACE")>.
 sub _readFromAlignACEFile {
   my ($file) = @_;
   my @matrices = ();
-
-  &RSAT::message::Warning("AlignACE format is not yet supported as input");
 
   my ($in, $dir) = &main::OpenInputFile($file);
   my $l = 0;
