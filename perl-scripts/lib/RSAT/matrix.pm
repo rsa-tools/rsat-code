@@ -392,6 +392,32 @@ sub setPrior {
     }
 }
 
+
+
+################################################################
+=pod
+
+=item setInfoLogBase($base)
+
+Specify the base used for computing logarithms in the information
+content.
+
+=cut
+sub setInfoLogBase {
+    my ($self, $info_log_base) = @_;
+    unless ((&RSAT::util::IsReal($info_log_base))  && ($info_log_base >= 1)) {
+      &RSAT::error::FatalError("RSAT::matrix->setInfoLogBase()", $info_log_base, 
+			       "iInvalid specification for the info log base", 
+			       "Must be a strictly real number >= 1");
+    }
+    $info_log_denominator = log($info_log_base);
+    $self->set_parameter("info.log.base", $info_log_base);
+    &RSAT::message::Info("Info log base", $self->get_attribute("info.log.base")) if ($main::verbose >= 0);
+}
+
+
+
+
 # ################################################################
 # =pod
 
@@ -984,7 +1010,7 @@ sub calcInformation {
 
     ## Caching
     if (($self->get_attribute("information_calculated")) && !($force)) {
-	warn "Information already calculated before\n" if ($main::verbose >= 3);
+	&RSAT::message::Warning("Information already calculated before") if ($main::verbose >= 3);
 	return;
     }
 
@@ -1013,8 +1039,9 @@ sub calcInformation {
     $self->set_parameter("max.bits", $max_bits);
 
     ## Logarithmic base for the information content
-    $self->set_parameter("info.log.base", $info_log_base);
-
+    unless ($self->get_attribute("info.log.base")) {
+      $self->set_parameter("info.log.base", $info_log_base);
+    }
 
     ## Matrix size
     my $nrow = $self->nrow();

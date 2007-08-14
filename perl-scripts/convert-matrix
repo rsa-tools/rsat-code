@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.38 2007/08/11 06:52:04 jvanheld Exp $
+# $Id: convert-matrix,v 1.39 2007/08/14 11:15:35 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -34,6 +34,7 @@ local $input_format = "";
 local $output_format = "patser";
 local $verbose = 0;
 local $out = STDOUT;
+local $info_log_base = exp(1);
 
 local $sort_key = "";
 local $sort_order = "";
@@ -129,6 +130,18 @@ $out = &OpenOutputFile($outfile{output});
 
 ## Read the input matrices
 my @matrices = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format);
+
+foreach my $matrix (@matrices) {
+  $matrix->set_parameter("pseudo", $pseudo_weight);
+  $matrix->set_attribute("equi_pseudo", $equi_pseudo);
+#  $matrix->push_attribute("parameters", "pseudo");
+  $matrix->force_attribute("decimals", $decimals);
+  $matrix->force_attribute("max_profile", $max_profile);
+  $matrix->force_attribute("sep", $sep);
+  # $matrix->force_attribute("col_width", $col_width);
+  $matrix->force_attribute("margins", $return_fields{margins});
+  $matrix->setInfoLogBase($info_log_base);
+}
 
 ## Calculate parameters before sorting because sorting can be done on
 ## a computed parameter rather than defined in the input file.
@@ -317,6 +330,15 @@ OPTIONS
 		By default, the pseudo-weight is distributed
 		proportionally to residue priors.
 
+	-base #
+	      Base for the logarithms used in the scores involving a
+ 	      log-likelihood (weight and information
+ 	      content). Default: exp(1) (natural logarithms).
+
+	      A common alternative to natural logarithms is to use
+	      logarithms in base 2, in which case the information
+	      content is computed in bits.
+
 	-decimals
 		Number of decimals to print for real matrices
 		(frequencies, weights, information) or to compute
@@ -405,6 +427,14 @@ INPUT/OUTPUT FORMATS
     TRANSFAC (input/output)
         Format used in the TRANSFAC database;
         (http://www.gene-regulation.com/pub/databases.html)
+
+    InfoGibbs (input)
+        Output file from InfoGiibbs.
+
+        InfoGibbs is a gibbs sampler based on the optimization of the
+        information content of the matrix (rather than the weight of
+        the sampled segments). InfoGibbs is currently under
+        development in the RSAT team (Grégory Gathy, unpublished).
 
     cb (input)
 	Cluster-Buster output file (usual extention .cb). The header
@@ -573,6 +603,7 @@ convert-matrix options
 -prior 		prior frequency file
 -pseudo		pseudo-weight (default: $pseudo_weight)
 -equi_pseudo	equiprobable distribution of pseudo-weights between residues
+-base		base for the logarithms used to compute the weight and info content
 -decimals	number of decimals digits to print for real matrices
 -max_profile	Maximal width of the profile histogram 
 End_short_help
@@ -592,7 +623,7 @@ sub ReadArguments {
       } else {
 	$verbose = 1;
       }
-      
+
       ### detailed help
     } elsif ($ARGV[$a] eq "-h") {
       &PrintHelp();
@@ -688,6 +719,13 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-equi_pseudo") {
 	    $equi_pseudo = 1;
 
+
+	    ## base for the logarihtms in the weight and info content
+	} elsif ($ARGV[$a] eq "-base") {
+	    $info_log_base = $ARGV[$a+1];
+	    &RSAT::error::FatalError("base should be a real number") unless (&IsReal($info_log_base));
+	    &RSAT::error::FatalError("base should be larger than 1") if ($info_log_base <= 1);
+
       ### decimals
     } elsif ($ARGV[$a] eq "-decimals") {
       $decimals = $ARGV[$a+1];
@@ -731,23 +769,15 @@ sub Verbose {
 ################################################################
 ## Export one matrix
 sub ExportMatrix {
-  my ($current_matrix) = @_;
-#  $current_matrix->readFromFile($infile{input}, $input_format);
+  my ($matrix) = @_;
+#  $matrix->readFromFile($infile{input}, $input_format);
   if ($infile{prior}) {
-    $current_matrix->setPrior(%prior);
+    $matrix->setPrior(%prior);
   }
-  $current_matrix->set_parameter("pseudo", $pseudo_weight);
-  $current_matrix->set_attribute("equi_pseudo", $equi_pseudo);
-  $current_matrix->push_attribute("parameters", "pseudo");
-  $current_matrix->force_attribute("decimals", $decimals);
-  $current_matrix->force_attribute("max_profile", $max_profile);
-  $current_matrix->force_attribute("sep", $sep);
-  # $current_matrix->force_attribute("col_width", $col_width);
-  $current_matrix->force_attribute("margins", $return_fields{margins});
 
   ## Print the profile matrix
   if ($return_fields{profile}) {
-    print $out $current_matrix->toString(sep=>"\t",
+    print $out $matrix->toString(sep=>"\t",
 					 type=>"profile",
 					 format=>$output_format,
 					);
@@ -756,7 +786,7 @@ sub ExportMatrix {
 
   ## Print the counts matrix
   if ($return_fields{counts}) {
-    print $out $current_matrix->toString(sep=>"\t",
+    print $out $matrix->toString(sep=>"\t",
 					 type=>"counts",
 					 format=>$output_format,
 					);
@@ -764,8 +794,8 @@ sub ExportMatrix {
 
   ## Calculate frequency matrix
   if ($return_fields{frequencies}) {
-    $current_matrix->calcFrequencies();
-    print $out $current_matrix->toString(col_width=>($decimals+4), 
+    $matrix->calcFrequencies();
+    print $out $matrix->toString(col_width=>($decimals+4), 
 					 decimals=>$decimals, 
 					 type=>"frequencies",
 					 format=>$output_format);
@@ -773,8 +803,8 @@ sub ExportMatrix {
 
   ## Calculate weight matrix
   if ($return_fields{weights}) {
-    $current_matrix->calcWeights();
-    print $out $current_matrix->toString(col_width=>($decimals+4), 
+    $matrix->calcWeights();
+    print $out $matrix->toString(col_width=>($decimals+4), 
 					 decimals=>$decimals, 
 					 type=>"weights",
 					 format=>$output_format);
@@ -782,8 +812,8 @@ sub ExportMatrix {
 
   ## Calculate information content matrix
   if ($return_fields{info}) {
-    $current_matrix->calcInformation();
-    print $out $current_matrix->toString(col_width=>($decimals+4), 
+    $matrix->calcInformation();
+    print $out $matrix->toString(col_width=>($decimals+4), 
 					 decimals=>$decimals, 
 					 type=>"information",
 					 format=>$output_format);
@@ -792,10 +822,10 @@ sub ExportMatrix {
 
   ## Return sites
   if ($return_fields{sites}) {
-    print $out "; Sites\t",$current_matrix->get_attribute("sites"),"\n" if ($main::verbose >= 1);
+    print $out "; Sites\t",$matrix->get_attribute("sites"),"\n" if ($main::verbose >= 1);
     my $s = 0;
-    my @site_ids = $current_matrix->get_attribute("site_ids");
-    foreach my $site_seq ($current_matrix->get_attribute("sequences")) {
+    my @site_ids = $matrix->get_attribute("site_ids");
+    foreach my $site_seq ($matrix->get_attribute("sequences")) {
       $s++;
       my $site_id =  $site_ids[$s-1] || $s;
       &PrintNextSequence($out, $site_format, 0, $site_seq, $site_id);
@@ -805,22 +835,22 @@ sub ExportMatrix {
 
   ## Calculate consensus
   if ($return_fields{consensus}) {
-    $current_matrix->calcConsensus();
-    print $out "; consensus\t", $current_matrix->get_attribute("consensus.IUPAC"), "\n";
+    $matrix->calcConsensus();
+    print $out "; consensus\t", $matrix->get_attribute("consensus.IUPAC"), "\n";
   }
 
   ## Return parameters
   if ($return_fields{parameters}) {
-    $current_matrix->calcConsensus();
-    print $out $current_matrix->toString(type=>"parameters");
+    $matrix->calcConsensus();
+    print $out $matrix->toString(type=>"parameters");
   }
 
   ## Return weight distribution
   if ($return_fields{wdistrib}) {
-    $current_matrix->calcTheorScoreDistrib("weights", decimals=>$decimals);
-    my %weight_proba = $current_matrix->getTheorScoreDistrib("weights");
-    my %weight_proba_cum = $current_matrix->getTheorScoreDistrib("weights", "cum");
-    my %weight_proba_inv_cum = $current_matrix->getTheorScoreDistrib("weights", "inv_cum");
+    $matrix->calcTheorScoreDistrib("weights", decimals=>$decimals);
+    my %weight_proba = $matrix->getTheorScoreDistrib("weights");
+    my %weight_proba_cum = $matrix->getTheorScoreDistrib("weights", "cum");
+    my %weight_proba_inv_cum = $matrix->getTheorScoreDistrib("weights", "inv_cum");
 
     ## Print the description of column contents
     my @columns = ("weight", "proba", "cum", "Pval", "ln_Pval", "log_P", "sig");
