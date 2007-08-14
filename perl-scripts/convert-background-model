@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.12 2007/08/05 07:27:45 jvanheld Exp $
+# $Id: convert-background-model,v 1.13 2007/08/14 15:52:55 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -126,6 +126,7 @@ package main;
     local $default_transition_decimals = 5;
     local $default_oligo_decimals = 8;
     local $bg_pseudo = 0;
+    local $to2str = 0;
 
     $input_format = "oligo-analysis";
     %supported_input_format = $bg_model->get_supported_input_formats();
@@ -146,7 +147,7 @@ package main;
     &ReadArguments();
 
     ################################################################
-    #### check argument values
+    ## Check argument values
     unless ($input_format) {
 	&RSAT::error::FatalError("You should define the input format");
     }
@@ -172,16 +173,21 @@ package main;
     ################################################################
     ##### Read input
     $bg_model->load_from_file($main::infile{input}, $input_format);
-    
+
+    ################################################################
+    ## Convert to strand-insensitive backgroun model
+    if ($to2str) {
+      $bg_model->average_strands();
+    }
+
     ################################################################
     #### print verbose
     &Verbose() if ($main::verbose);
-    
+
     ################################################################
     ###### print output
     print $out $bg_model->to_string($output_format, decimals=>$decimals);
-    
-    
+
     ################################################################
     ###### finish verbose
     if ($main::verbose >= 1) {
@@ -189,13 +195,11 @@ package main;
 	print $main::out "; Job started $start_time\n";
 	print $main::out "; Job done    $done_time\n";
     }
-    
-     
+
     ################################################################
     ###### close output stream
     close $main::out if ($main::outfile{output});
-    
-    
+
     exit(0);
 }
 
@@ -357,6 +361,18 @@ Number of decimals to print or the transition probabilities.
 					  "Invalid format for decimals, should be a Natural number."))
 		unless (&IsNatural($main::decimals));
 
+	    ## Convert the bg model to 2 strands
+=pod
+
+=item B<-to2str>
+
+Convert to a strand-insensitive background model, by averaging
+transition frequencies on each pair of reverse complements.
+
+=cut
+	} elsif ($arg eq "-to2str") {
+	    $main::to2str = 1;
+
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
@@ -390,6 +406,7 @@ sub Verbose {
 	}
       }
     print $main::out "; Markov order\t", $bg_model->get_attribute("order"), "\n";
+    print $main::out "; Strand\t", $bg_model->get_attribute("strand"), "\n";
 }
 
 
