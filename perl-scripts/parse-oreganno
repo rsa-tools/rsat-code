@@ -9,6 +9,7 @@ use LWP;
 use Getopt::Long;
 use XML::LibXML;
 use LWP::UserAgent;
+use Data::Dumper;
 
 ## use strict;
 BEGIN {
@@ -98,7 +99,7 @@ Specify the waiting time in seconds  (e.g. 600 for 10 minutes). Default is  15 s
 
 =item B<-add_length #>:  Optional. To be used with target_region task. 
 Length of sequence to be added at the left and right side of the region defined with target_region task.
-Default is 200pb.
+eg. -add_length 200.
 
 =back
 
@@ -172,8 +173,8 @@ my $help;
 my $xmlInputFile;
 my $get_pos;
 my $wait = 15;
-my $verbose = 1;
-my $add_length = 200;
+my $verbose = 0;
+my $add_length = 0;
 
 ## tasks
 my $tasks;
@@ -181,7 +182,7 @@ my %supported_tasks = (
    			parse_xml => 1, ## parse XML file
 			get_pos=>1, ## use BLAT to get the chromosomal positions of the TFBS
 			target_region=>1, ## for each organism, return the target gene region between the 2 extreme TFBS
-			TFBS_fasta=>1, ## return the binding sequences of a given TF in fasta format
+			tfbs_fasta=>1, ## return the binding sequences of a given TF in fasta format
 		       );
 my $supported_tasks = join (",", sort(keys( %supported_tasks)));
 my %tasks2run = ();
@@ -258,6 +259,8 @@ $tasks2run{parse_xml}=1 unless (-e $TFBS_file);
 ## First need to extract each XML subfile
 if  ($tasks2run{parse_xml}) {
 
+&RSAT::message::TimeWarn("Task: parse_xml") if ($verbose >= 1);
+
 open XML, "<$xmlInputFile" or die "Cannot open XML file $xmlInputFile:$!"; 
 my $xmlCount = 1;
 
@@ -306,7 +309,7 @@ for (my $i=1; $i < $xmlCount; $i++){
 ## genome browser
 
 if  ($tasks2run{get_pos}) {
-	print "Exporting sequence with flank to fasta file\n" if ($verbose >=2 );
+	&RSAT::message::TimeWarn("Task: get_pos: ") if ($verbose >= 1);
 	
 	## export the sequence with flank to a fasta file
 	&to_fasta($TFBS_file);
@@ -356,8 +359,15 @@ if  ($tasks2run{get_pos}) {
 ## a region of interest for future analyses :
 ## region between the left most and right most region
 
-if  ($tasks2run{target_region}) {
-
+if  (($tasks2run{target_region})||($tasks2run{tfbs_fasta})) {
+	my $gft_file = $TFBS_file;
+	$gft_file =~ s/.tab$/.gft/;
+	my $feat = ParseFeatures->new($gft_file,$TFBS_file);
+	my $entries = $feat->split_features;
+	
+	$feat->TFBS_fasta($entries) if  ($tasks2run{tfbs_fasta});
+	my $target_regions = $feat->target_regions($entries) if  ($tasks2run{target_region});
+	
 }
 
 close LOG;
@@ -873,7 +883,341 @@ sub get_UCSC_databases{
   	return (\%UCSC_genome_versions);
 } 
 
+#########################################
+## CLASSES
+#########################################
+
+package ParseFeatures;
+{
+ 
+ sub new {
+  my $class = shift;
+  my $TFBS_gft = shift;
+  my $TFBS_tab = shift;
+  my $species = shift;
+  my $self = {
+	      gft => $TFBS_gft,
+	      oreg_file => $TFBS_tab,
+	     };
+  bless $self, $class;
+}
+
+sub get_gft {
+  my $self = shift;
+  $self->{gft};
+
+}
+
+sub get_oreg_file {
+  my $self = shift;
+  $self->{oreg_file};
+}
+
+
+sub split_features{
+  my $self = shift;
+  my $gft = $self->get_gft;
+  my $tab = $self->get_oreg_file;
+  
+  ###this hash will receive the splited entries from the .gft file
+  ### the keys are OREG_IDS and values an array ref  with the remaining fields.
+
+  my %gft_entries;
+  my @oreg_IDs;   ### OREGANNO IDs for which we have UCSC genome coordinates
+  open GFT, "< $gft"
+    or die "Cann't read from file $gft : $!";
+  while (my $gft_entry = <GFT>) {
+    chomp $gft_entry;
+	
+    ### skip comments (begin by ;) and header (#)
+    next if $gft_entry =~ /^;/;
+    next if $gft_entry =~ /^#/;
+    
+    ### get gft_entries 
+      my @one_line = split ("\t", $gft_entry);
+      my $oreg_ID = shift @one_line;
+      push @oreg_IDs, $oreg_ID;
+      $gft_entries{$oreg_ID} = \@one_line;
+      
+      &RSAT::message::Debug("GFT parsing ID:", $oreg_ID ,join (' ', @one_line)) if ($verbose >= 7);
+  }
+  close GFT;
+  
+  ###this hash will receive the splited entries from the .tab file
+  ### the keys are OREG_IDS and values an array ref with the remaining fields.
+
+  open TAB, "< $tab"
+    or die "Cann't read from file $tab : $!";
+  
+  my %whole_tab;
+  while (my $tab_entry = <TAB>) {
+    chomp $tab_entry;
+    next if $tab_entry =~ /^;/;
+    next if $tab_entry =~ /^#/;
+    my @whole_line = split ("\t", $tab_entry);
+    my $ID = shift @whole_line;
+    $whole_tab{$ID} = \@whole_line;
+    
+    &RSAT::message::Debug("TAB parsing ID:", $ID ,join (' ', @whole_line)) if ($verbose >= 7);
+  }
+  close TAB;
+
+ ## merge data from GFT and TAB files
+  while (my ($oreg_ID, $fields) = each %gft_entries) {
+    push (@{$fields},  ${$whole_tab{$oreg_ID}}[1],${$whole_tab{$oreg_ID}}[5],${$whole_tab{$oreg_ID}}[6]);
+    &RSAT::message::Debug("Merged INFO ID:", $oreg_ID,join (' ', @{$fields})  ) if ($verbose >= 5);
+  }
+  return \%gft_entries;
+}
+
+sub TFBS_fasta {
+  my $self = shift;
+  my $gft_entries = shift;
+  my %gft_extended = %$gft_entries;
+	
+	&RSAT::message::TimeWarn("Task: tfbs_fasta") if ($verbose >= 1);
+	
+	## output directory
+	my $seq_dir = "TFBS_sequences";
+  if ($seq_dir) {
+    unlink glob "$seq_dir/*";
+    rmdir $seq_dir;
+  }
+  mkdir $seq_dir;
+   
+	## get data for FASTA format
+  while (my ($ID,$fields) = each %gft_extended) {
+    my @gft_fields = @$fields;
+
+    my ($type, $oregID, $chromosome, $start, $end, $strand, $sequence, 
+	$genomeVersion, $species, $factor_name, $factor_id, $gene_id, $gene_name) = @gft_fields;
+	 
+    ### file for the target BS sequence in fasta these sequence will be used to build
+    ### matrices by the program MEME --> that's why we only keep sequences with size >= 6
+    my $modifiedTF = &modif_name($gft_fields[9]);
+    my $regulon_BS_file = $seq_dir."/".$modifiedTF."_factor_binding_sites.fa";
+    open BS_SEQ, ">> $regulon_BS_file"
+      or die "Can't write to file $regulon_BS_file : $!";
+    
+    my $fasta_seq;
+    if (length($sequence) >= 6) {
+      my $fasta_ID = ">".$oregID." ".$factor_name."_".$chromosome."_".
+	$start."_".$end."_".$strand."\n";
+      $fasta_seq = $fasta_ID.$sequence."\n";
+      &RSAT::message::Debug("Fasta ID:", $fasta_ID ,"SEQ:",$sequence) if ($verbose >= 5);
+      print BS_SEQ $fasta_seq;
+    }
+    close BS_SEQ;
+  }
+}
+
+ 
+sub target_regions {
+  my $self = shift;
+  my $gft_entries = shift;
+  my %gft_extended = %$gft_entries;
+	
+  &RSAT::message::TimeWarn("Task: target_region") if ($verbose >= 1);
+
+  ###################
+  ## directories
+  my $target_regions_dir = "target_regions";
+  if ($target_regions_dir) {
+    unlink glob "$target_regions_dir/*";
+    rmdir $target_regions_dir;
+  }
+  mkdir $target_regions_dir;
+  
+  ## one dir per organism
+  ## get the complete list of species
+  ## get a hash architecture to ease data manipulation
+   my %one_factor_one_gene = ();
+   
+   while (my ($ID,$fields) = each %gft_extended) {
+    my @gft_fields = @$fields;
+    my ($type, $oregID, $chromosome, $start, $end, $strand, $sequence, 
+	$genomeVersion, $species, $factor_name, $factor_id, $gene_id, $gene_name) = @gft_fields;
+	$one_factor_one_gene{$species}{$factor_name}{$gene_name}{$oregID}= \@gft_fields;
+   }
+   &RSAT::message::Debug("List of species:", join (' ', keys(%one_factor_one_gene))) if ($verbose >= 10);
+   
+   ## species directories
+   foreach my $species_name (keys(%one_factor_one_gene)){
+   	my $species_name_dir = $target_regions_dir."/".$species_name;
+  	if ($species_name_dir) {
+    	unlink glob "$species_name_dir/*";
+    	rmdir $species_name_dir;
+  	}
+  	mkdir $species_name_dir;
+   }
+   
+   ##########################################################################
+   ## get region of interest => for 1 organism, 1 target gene and one factor
+   ## (TO DO : extend to multiple factors)
+   
+   ## for each organism, get the target region of each factor
+   ## Export in gft format
+   foreach my $species_name (keys(%one_factor_one_gene)){
+   	my @species_gft_lines = ();
+   	my @species_ft_rel_pos_lines = ();
+   	
+   	## calculate target region position
+   	foreach my $factor_name (keys(%{$one_factor_one_gene{$species_name}})){
+   		foreach my $gene_name (keys(%{$one_factor_one_gene{$species_name}{$factor_name}})){
+   			my @oregIDs = keys(%{$one_factor_one_gene{$species_name}{$factor_name}{$gene_name}});
+   			&RSAT::message::Debug($species_name,$factor_name,$gene_name) if ($verbose >= 3);
+   			&RSAT::message::Debug("\t","TFBS", join(' ',@oregIDs)) if ($verbose >= 5);
+   			
+   			my @starts;
+ 			my @ends;
+ 			my $type;
+ 			my $chromosome;
+ 			for my $oregID (@oregIDs) {
+ 				my @gft_fields = @{$one_factor_one_gene{$species_name}{$factor_name}{$gene_name}{$oregID}};
+ 				$chromosome = $gft_fields[2];
+ 				my $feat_start = $gft_fields[3];
+ 				my $feat_end = $gft_fields[4];
+ 				
+ 				## reorder if necessary
+				if ($feat_start > $feat_end) {
+					my $tmp = $feat_start;
+					$feat_start = $feat_end;
+					$feat_end = $tmp;
+				}
+
+		    	push @starts, $feat_start;
+				push @ends, $feat_end ;
+    		}
+   			#&RSAT::message::Debug("starts",join(' ',@starts), "ends",join(' ',@ends)) if ($verbose >= 10);
+  
+		    ### retrieving min and maximum position in the region 
+			### covered by the binding sites
+			my $min_start = &minimum(@starts);
+			my $max_end = &maximum(@ends);
+			my $size = 1+($max_end - $min_start);
+			&RSAT::message::Debug("\t","target region: start",$min_start, "end",$max_end) if ($verbose >= 5);
+			
+			## Add sequence length of both extremities if necessary
+			if ($add_length) {
+				$min_start -= $add_length;
+				$max_end += $add_length; 
+				$size = 1+($max_end - $min_start);
+				&RSAT::message::Debug("\t","+/- $add_length bp","\n\t\t", "target region: start",$min_start, "end",$max_end) if ($verbose >= 3);
+			}
+			
+			### generate the gft file with absolute chromosomal region
+			### the target region is considered by default on the Direct strand.
+		    my $gft_line = join ("\t",$gene_name,"seq_region",$factor_name,$chromosome,
+		    	$min_start,$max_end,"D",$size,$add_length)."\n";
+			push @species_gft_lines, $gft_line;
+		    
+		    
+		    ##########################################################################
+   			## Relative position of TFBS on the target region    
+		    for my $oregID (sort(@oregIDs)) {
+ 				my @gft_fields = @{$one_factor_one_gene{$species_name}{$factor_name}{$gene_name}{$oregID}};
+				
+				 my ($type, $oregID, $chromosome, $start, $end, $strand, $sequence, 
+						$genomeVersion, $species, $factor_name, $factor_id, $gene_id, $gene_name) = @gft_fields;
+				
+				## 1_ get old abs positions
+ 				my $feat_start_abs = $start;
+ 				my $feat_end_abs = $end;
+ 				
+ 				## reorder if necessary
+				if ($feat_start_abs > $feat_end_abs) {
+					my $tmp = $feat_start_abs;
+					$feat_start_abs = $feat_end_abs;
+					$feat_end_abs = $tmp;
+				}
+				
+				## 2- new relative postisions
+				my $feat_start_rel = ($feat_start_abs - $min_start) + 1 ;
+				my $feat_end_rel = ($feat_end_abs - $min_start) + 1; 
+							
+				&RSAT::message::Debug("Feature",$oregID,"start_abs",$feat_start_abs, "start_rel",$feat_start_rel) if ($verbose >= 5);
+				&RSAT::message::Debug("Feature",$oregID,"end_abs",$feat_end_abs, "end_rel",$feat_end_rel) if ($verbose >= 5);
+				
+				### generate the .ft file with TFBS relative positions on target region
+				my $ft_line = join ("\t",$gene_name,$factor_name,$oregID,$strand,
+		    	$feat_start_rel,$feat_end_rel,$sequence,$species)."\n";
+				push @species_ft_rel_pos_lines, $ft_line;
+		    }
+	
+	
+   		}
+   	}
+   	
+   	## output GFT file for target region
+   	my $target_region_file = $target_regions_dir."/".$species_name."/".$species_name."_target_regions_".$add_length."bp.gft";
+    open GFT_TARGET, ">> $target_region_file"
+      or die "Can't write to file $target_region_file : $!";
+    ## header
+    my $target_region_file_header = "#GeneName\tType\tTFname\tchrom_name\tstart\tend\tstrand\tregion_length\tadditional_seq\n";
+    print GFT_TARGET $target_region_file_header;
+    foreach my $gft_line (@species_gft_lines) {
+    	print GFT_TARGET $gft_line;
+    }
+  	close GFT_TARGET;
+  	
+  	## output FT file for relative position of TFBS on target region
+   	my $rel_pos_file = $target_regions_dir."/".$species_name."/".$species_name."_TFBS_relative_positions_".$add_length."bp.ft";
+    open FT_POS, ">> $rel_pos_file"
+      or die "Can't write to file $rel_pos_file : $!";
+    ## header #seq_name	TFname	ORegAnnoID	strand	start	end	description	speciesName
+    my $rel_pos_file_header = "#seq_name\tTFname\tID\tstrand\tstart\tend\tdescription\tspeciesName\n";
+    print FT_POS $rel_pos_file_header;
+    foreach my $ft_line (@species_ft_rel_pos_lines) {
+    	print FT_POS $ft_line;
+    }
+  	close FT_POS;
+   	
+   }
+   
+   		    
+   
 
 
 
+
+} 
+
+sub maximum {
+  my @array = @_;
+  my $max_so_far = shift @array;
+  for my $next_nb (@array) {
+    if ($next_nb > $max_so_far) {
+      $max_so_far = $next_nb;
+    }
+  }
+  return $max_so_far;
+}
+
+sub minimum {
+  my @array = @_;
+  my $min_so_far = shift @array;
+  for my $next_nb (@array) {
+    if ($next_nb < $min_so_far) {
+      $min_so_far = $next_nb;
+    }
+  }
+  return $min_so_far;
+}
+
+sub modif_name{
+  ### this routine removes from the TFname 
+  ### sapces and brackets
+
+  my $name = shift;
+  $name =~ s/\(//g;
+  $name =~ s/\)//g;
+  $name =~ s/\\/_/g;
+  $name =~ s/\//_/g;
+  $name =~ s/\,/_/g;
+  $name =~ s/\'/_/g;
+  $name =~ s/\s+/_/g if ($name =~ m/\w+\s+\w+/);
+  return $name; 
+}
+ 
+ }
 
