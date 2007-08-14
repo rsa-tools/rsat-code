@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.9 2007/08/07 08:44:48 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.10 2007/08/14 14:58:47 rsat Exp $
 #
 ############################################################
 
@@ -189,6 +189,7 @@ package main;
       } elsif  ($pattern_type eq "dyad") {
 	$exp_freq_file = &ExpectedFreqFile($org, $monad_length, $background_model,
 					  type=>'dyad',
+					  noov=>$noov, str=>$str, # added
 					  warn=>1);
       } else {
 	&RSAT::error::FatalError($pattern_type, "is not a valid pattern type. Supported: oligo,dyad");
@@ -197,7 +198,7 @@ package main;
       ## Include a warning for missing files in the output file
       unless ((-e $exp_freq_file) ||
 	      (-e $exp_freq_file.".gz")) {
-	print $out join ("\t", "; WARNING", "Skipped missing fole for org", $org, $exp_freq_file), "\n";
+	print $out join ("\t", "; WARNING", "Skipped missing file for org", $org, $exp_freq_file), "\n";
 	next;
       }
       $infile{$org} = $exp_freq_file;
@@ -479,7 +480,7 @@ allows to use the command within a pipe.
 
 Specify a background model for expected frequencies.
 
-  Supported: upstream-noord, upstream, intergenic
+  Supported: upstream-noorf, upstream, intergenic
   Default: upstream-noorf
 
 =cut
@@ -496,11 +497,11 @@ Specify a background model for expected frequencies.
 
 =item B<-2str>
 
-Collect frequenies computed on both strands.
+Collect frequencies computed on both strands.
 
 =item B<-1str>
 
-Collect frequenies computed on a single strand.
+Collect frequencies computed on a single strand.
 
 =cut
 	} elsif ($arg eq "-1str") {
@@ -518,7 +519,7 @@ self-overlaping patterns (e.g. TATATA).
 
 =item B<-ovlp>
 
-Allow mutual overlap between successive occurrences of self-overlaping
+Allow mutual overlap between successive occurrences of self-overlapping
 patterns (e.g. TATATA).
 
 =cut
