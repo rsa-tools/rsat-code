@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.80 2007/08/06 06:06:51 jvanheld Exp $
+# $Id: matrix-scan,v 1.81 2007/08/14 15:53:30 jvanheld Exp $
 #
 # Time-stamp: <2007-07-17 16:36:54 jturatsi>
 #
@@ -1704,7 +1704,11 @@ and the end of the sequence.
 
 =item	B<-base #>
 
-Base for the logarithms used in the log likelihood score (weight). Default: e.
+Base for the logarithms used in the scores involving a log-likelihood
+(weight and information content). Default: exp(1) (natural logarithms). 
+
+A common alternative to natural logarithms is to use logarithms in
+base 2, in which case the information content is computed in bits.
 
 =cut
 	} elsif ($arg eq "-base") {
@@ -2630,9 +2634,10 @@ sub runInBatch {
   		if ($main::mask){
   			$matrix_scan_cmd .= " -mask ".$main::mask;
   		}
-  		
+
   		$matrix_scan_cmd .= " -n ".$main::n_treatment;
   		$matrix_scan_cmd .= " -origin ".$main::origin;
+
   		## scoring
   		if ($base != exp(1)){
   			$matrix_scan_cmd .= " -base ".$base;
