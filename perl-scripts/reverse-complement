@@ -1,72 +1,352 @@
-#!/usr/bin/perl
-if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: reverse-complement,v 1.3 2007/08/15 04:01:41 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+reverse-complement
+
+=head1 DESCRIPTION
+
+Returns the reverse complement of input DNA sequences or patterns. The
+IUPAC code for ambiguous nucleotides is supported, as well as
+dyad-type spacings.
+
+=head1 CATEGORY
+
+sequences
+
+=head1 AUTHORS
+
+jvanheld@scmbb.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+
+reverse-complement [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+Each row of the input file is considered to contained one input
+sequence or a pattern.
+
+The standard degenerate nucleotide code of the IUPAC-IUB commission
+is supported. The pattern sequence should thus only contain the
+following characters:
+	A, T, G, C	single nucleotide codes
+	R	= A or G
+	Y	= C or T
+	M	= A or C
+	K	= G or T
+	S	= G or C
+	W	= A or T
+	B	= all except A
+	D	= all except C
+	H	= all except G
+	V	= all except T
+	N	= any nucleotide
+
+Upper and lower case are considered equivalent.
+The multiplier (ex: A{5} = AAAAA,  T{5,10} = any combination of 5 to 10 
+Ts) can be used, but in this case the input sequence must be embraced 
+in single quotes (ex: 'CCCN{8}GGG'). 
+
+Alternatively to the degenerate code, brackets can be used 
+(ex: [AG] means A or G).
+
+=head1 EXAMPLES
+
+ echo GATAAG | reverse-complement
+    Returns GTTATC
+
+ echo TTTRTT  | reverse-complement 
+    returns AAYAAA
+
+ echo 'GAT[TA]A' | reverse-complement 
+    returns T[TA]ATC
+
+ echo 'cccn{8,10}aaa' | reverse-complement -lc
+    Returns tttn{8,10}ggg";
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
 }
 require "RSA.lib";
 
 
 
-if (($ARGV[0] eq "-h") || ($ARGV[0] eq "-help")) {
-  open HELP, "| more";
-  print HELP "
-NAME
-	reverse-complement
-	by Jacques van Helden, 26 June 1997
+################################################################
+## Main package
+package main;
+{
 
-DESCRIPTION
-	Returns the reverse complement of an input DNA sequence.
+    ################################################################
+    ## Initialise parameters
+    my $start_time = &AlphaDate();
 
-CATEGORY
-	sequences
 
-USAGE
-	reverse-complement 'input_sequence'
-	
-INPUT
-	The standard degenerate nucleotide code of the IUPAC-IUB commission 
-	is supported. The pattern sequence should thus only contain the 
-	following characters:
-		A, T, G, C	single nucleotide codes
-		R	= A or G
-		Y	= C or T
-		M	= A or C
-		K	= G or T
-		S	= G or C
-		W	= A or T
-		B	= all except A
-		D	= all except C
-		H	= all except G
-		V	= all except T
-		N	= any nucleotide
-	Upper and lower case are considered equivalent.
-	
-	The multiplier (ex: A{5} = AAAAA,  T{5,10} = any combination of 5 to 10 
-	Ts) can be used, but in this case the input sequence must be embraced 
-	in single quotes (ex: 'CCCN{8}GGG'). 
-	
-	Alternatively to the degenerate code, brackets can be used 
-	(ex: [AG] means A or G).
-	
-EXAMPLES
-	reverse-complement GATAAC	returns GTTATC
-	reverse-complement TTTRTT	returns AAYAAA
-	reverse-complement 'GAT[TA]A'	returns T[TA]ATC
-	reverse-complement 'CCCN{8,10}AAA' returns TTTN{8,10}GGG";
-  close HELP;
-  exit(0);
-}
+    %infile = ();
+    %outfile = ();
 
-if ($#ARGV < 0) {
-    while (<STDIN>) {
-	$direct .= $_;
+    $main::verbose = 0;
+    $in = STDIN;
+    $out = STDOUT;
+
+    local $add = 0;
+    local $to_lower = 0;
+    local $to_upper = 0;
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+
+    ################################################################
+    ## Open output stream
+    $out = &OpenOutputFile($outfile{output});
+
+    ################################################################
+    ## Read input
+    ($in) = &OpenInputFile($infile{input});
+    while (my $direct = <$in>) {
+      chomp($direct);
+      my $rc = &ReverseComplement($direct);
+      if ($to_lower) {
+	$rc =~ tr/A-Z/a-z/;
+      } elsif ($to_upper) {
+	$rc =~ tr/a-z/A-Z/;
+      }
+      if ($add) {
+	  print $out $direct, "\t";
+      }
+      print $out $rc, "\n";
     }
-} else {
-    $direct = $ARGV[$#ARGV];
+    close $in if ($infile{input});
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the command
+
+    ################################################################
+    ## Print output
+
+
+    ################################################################
+    ## Finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $out "; Job started $start_time\n";
+	print $out "; Job done    $done_time\n";
+    }
+
+
+    ################################################################
+    ## Close output stream
+    close $out if ($outfile{output});
+
+
+    exit(0);
 }
 
-$rev_compl =  &ReverseComplement($direct);
-print "$rev_compl\n";
-exit(0);
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
 
 
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
 
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $infile{input} = shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $outfile{output} = shift(@arguments);
+
+	    ## Convert to lowercases
+=pod
+
+=item	B<-lc>
+
+Export sequences in lowercases.
+
+=cut
+	} elsif ($arg eq "-lc") {
+	    $to_lower = 1;
+
+	    ## Convert to lowercases
+=pod
+
+=item	B<-uc>
+
+Export sequences in uppercases.
+
+=cut
+	} elsif ($arg eq "-uc") {
+	    $to_upper = 1;
+
+	    ## Add the reverse complement besides the direct sequence
+=pod
+
+=item	B<-add>
+
+Add the reverse complement besides the direct sequences of the
+input. The result is a tab-delimited file with 2 columns: 
+ 1) input sequence
+ 2) reverse complement
+
+=cut
+	} elsif ($arg eq "-add") {
+	    $add = 1;
+
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; reverse-complement ";
+    &PrintArguments($out);
+    if (defined(%infile)) {
+	print $out "; Input files\n";
+	while (my ($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%outfile)) {
+	print $out "; Output files\n";
+	while (my ($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+################################################################
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=head2 convert-seq
+
+The curent version of I<reverse-complement> does not support the fasta
+format, but a fasta file can be converted to the format 'multi', in
+order to obtain 1 row per sequence, which is the input format for
+I<reverse-complement>.
+
+This solution is not perfect though, since the IDs are lost. In a
+future version, all the RSAT sequence formats will be supported.
+
+=cut
