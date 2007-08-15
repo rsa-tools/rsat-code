@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.10 2007/08/14 14:58:47 rsat Exp $
+# $Id: taxon-frequencies,v 1.11 2007/08/15 22:36:32 jvanheld Exp $
 #
 ############################################################
 
@@ -100,7 +100,7 @@ package main;
 {
 
     ################################################################
-    ## Initialise parameters
+    ## Initialize parameters
     my $start_time = &AlphaDate();
 
     local $taxon = "";
@@ -126,6 +126,8 @@ package main;
     local %pattern_freq;
     local $pattern_freq_sum = 0;
     local $total_occ = 0;
+
+    local %patterns_per_organism = 0;
 
     local $occ_per_org = 0;
     local $freq_per_org = 0;
@@ -153,7 +155,7 @@ package main;
       &RSAT::error::FatalError("You must define the oligo length (option -ol)") 
 	unless ($oligo_length);
     } elsif ($pattern_type eq "dyad") {
-      &RSAT::error::FatalError("You must define the oligomonad length (option -ml)") 
+      &RSAT::error::FatalError("You must define the monad length (option -ml)") 
 	unless ($monad_length);
     } else {
       &RSAT::error::FatalError("You must define pattern type (option -type dyad|oligo)")
@@ -227,13 +229,16 @@ package main;
 	  }
 	}
 
+	## Statistics per organism
+	$patterns_per_organism{$org}++; ## Increment pattern counter
+	$occ_sum_per_organism{$org} += $occ;
+
 	## store the organism-specific occurrences for the full table (can be memory costly)
 	if (($occ_per_org) || ($freq_per_org)) {
 	  $pattern_occ{$pattern_seq}{$org} = $occ;
 	}
 
 	$occ_sum_per_pattern{$pattern_seq} += $occ;
-	$occ_sum_per_organism{$org} += $occ;
 	if (defined($pattern_id{$pattern_seq})) {
 	  if ($pattern_id{$pattern_seq} ne $pattern_id) {
 	    &RSAT::error::FatalError("Inconsistency betwen pattern identifiers", $infile{$org}, $pattern_id, $pattern_id{$pattern_seq});
@@ -280,7 +285,6 @@ package main;
 
     ################################################################
     ## Print output
-
 
     ## Define output fields
     my @out_fields =  ("seq", "pattern_id", "frequency", "occ");
@@ -512,15 +516,17 @@ Collect frequencies computed on a single strand.
 	  ## Overlap
 =pod
 
-=item B<-ovlp>
+=item B<-noov>
 
 Do not allow mutual overlap between successive occurrences of
-self-overlaping patterns (e.g. TATATA).
+self-overlaping patterns (e.g. TATATATATA contains a signel occurrence
+of TATATA).
 
 =item B<-ovlp>
 
-Allow mutual overlap between successive occurrences of self-overlapping
-patterns (e.g. TATATA).
+Allow mutual overlap between successive occurrences of
+self-overlapping patterns (e.g. TATATATATA contains three occurrences
+of TATATA).
 
 =cut
 	} elsif ($arg eq "-ovlp") {
@@ -639,14 +645,17 @@ sub Verbose {
     }
 
     ## Print the list of input files
-    print $out "; Input files\n";
+    print $out "; Organisms\n";
     my $i = 0;
+    print $out join ("\t", ";", "org_nb", "organism name", "nb_patt", "occ_sum", "Input file"), "\n";
     foreach my $org (@organisms) {
       if ($infile{$org}) {
 	$i++;
 	print $out join ("\t", ";",
 			 $i,
 			 sprintf("%-${org_len}s", $org),
+			 $patterns_per_organism{$org} || 0,
+			 $occ_sum_per_organism{$org} || 0,
 			 $infile{$org},
 			), "\n";
       }
