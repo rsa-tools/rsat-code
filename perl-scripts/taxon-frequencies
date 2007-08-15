@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.11 2007/08/15 22:36:32 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.12 2007/08/15 22:43:41 jvanheld Exp $
 #
 ############################################################
 
@@ -127,7 +127,7 @@ package main;
     local $pattern_freq_sum = 0;
     local $total_occ = 0;
 
-    local %patterns_per_organism = 0;
+    local %patterns_per_organism = ();
 
     local $occ_per_org = 0;
     local $freq_per_org = 0;
