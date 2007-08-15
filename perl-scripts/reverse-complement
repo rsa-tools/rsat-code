@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: reverse-complement,v 1.3 2007/08/15 04:01:41 jvanheld Exp $
+# $Id: reverse-complement,v 1.4 2007/08/15 04:06:11 jvanheld Exp $
 #
 ############################################################
 
@@ -107,6 +107,7 @@ package main;
     $in = STDIN;
     $out = STDOUT;
 
+    local $sep = "\t";
     local $add = 0;
     local $to_lower = 0;
     local $to_upper = 0;
@@ -134,7 +135,7 @@ package main;
 	$rc =~ tr/a-z/A-Z/;
       }
       if ($add) {
-	  print $out $direct, "\t";
+	  print $out $direct, $sep;
       }
       print $out $rc, "\n";
     }
@@ -293,6 +294,21 @@ input. The result is a tab-delimited file with 2 columns:
 =cut
 	} elsif ($arg eq "-add") {
 	    $add = 1;
+
+	    ## Separator
+=pod
+
+=item	B<-sep>
+
+Output separator between direct and reverse complementary sequence.
+
+Default: \t (tab character)
+
+This option is only valid when the option -add is active.
+
+=cut
+	} elsif ($arg eq "-sep") {
+	    $sep = shift @arguments;
 
 
 	} else {
