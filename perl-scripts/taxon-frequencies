@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.13 2007/08/16 16:23:16 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.14 2007/08/16 18:19:05 jvanheld Exp $
 #
 ############################################################
 
@@ -175,6 +175,33 @@ package main;
     ## Check taxon and collect organisms
     @organisms = &CheckTaxon($taxon);
 
+    ## Automatic specification of the output file for the installatin
+    ## in the RSAT data folder
+    if ($install) {
+
+      ## Output directory
+      if (defined($RSA)) {
+	$dir{$taxon} = ${RSA}."/public_html/data";
+      }
+      $dir{$taxon} .= "/taxon_frequencies/".$taxon;
+      &RSAT::util::CheckOutDir($dir{$taxon});
+      &RSAT::message::Info("Installation directory", $install) if ($main::verbose >= 2);
+
+      ## Output file name
+      $outfile{output} = $dir{$taxon}."/";
+      $outfile{output} .= $pattern_type."s";
+      $outfile{output} .= "_".$taxon;
+      if ($pattern_type eq "oligo") {
+	$outfile{output} .= "_".$oligo_length."nt";
+      } elsif ($pattern_type eq "dyad") {
+	$outfile{output} .= "_".$monad_length."nt";
+	$outfile{output} .= "_sp0-20";
+      }
+      $outfile{output} .= $noov;
+      $outfile{output} .= $str;
+      $outfile{output} .= ".tab";
+      &RSAT::message::Info("Installation file", $outfile{output}) if ($main::verbose >= 1);
+    }
 
     ################################################################
     ## Open output stream
@@ -508,9 +535,34 @@ Specify the taxon for which frequencies have to be computed.
 If no output file is specified, the standard output is used.  This
 allows to use the command within a pipe.
 
+Alternatively, the option -install can be used to automatically
+specify the name of the output file (options -o and -install are
+mutually exclusive).
+
 =cut
 	} elsif ($arg eq "-o") {
 	    $main::outfile{output} = shift(@arguments);
+	    if ($install) {
+	      &RSAT::error::FatalError("Options -o and -install are mutually exclusive");
+	    }
+
+	    ## Automatic installation 
+=pod
+
+=item	B<-install>
+
+Automatically specify the name of the output file and save the result
+in the $RSAT directory. This requires to have write permissions on the
+$RSAT/data directory.
+
+Incompatible with the option -o.
+
+=cut
+	} elsif ($arg eq "-install") {
+	  $install = 1;
+	  if ($main::outfile{output}) {
+	    &RSAT::error::FatalError("Options -o and -install are mutually exclusive");
+	  }
 
 	    ### Background model
 =pod
