@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.16 2007/08/16 21:00:05 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.17 2007/08/16 21:01:31 jvanheld Exp $
 #
 ############################################################
 
@@ -185,7 +185,7 @@ package main;
       $dir{$taxon} .= "/taxon_frequencies/".$taxon;
       $dir{$taxon} =~ s/\s/_/g;
       &RSAT::util::CheckOutDir($dir{$taxon});
-      &RSAT::message::Info("Installation directory", $install) if ($main::verbose >= 2);
+      &RSAT::message::Info("Installation directory", $dir{$taxon}) if ($main::verbose >= 2);
 
       ## Output file name
       $outfile{output} = $dir{$taxon}."/";
@@ -200,6 +200,7 @@ package main;
       $outfile{output} .= $noov;
       $outfile{output} .= $str;
       $outfile{output} .= ".tab";
+      $outfile{output} =~ s/\s/_/g;
       &RSAT::message::Info("Installation file", $outfile{output}) if ($main::verbose >= 1);
     }
 
