@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.17 2007/08/16 21:01:31 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.18 2007/08/16 21:04:03 jvanheld Exp $
 #
 ############################################################
 
@@ -751,7 +751,9 @@ sub Verbose {
     ## Print the list of input files
     print $out "; Organisms\n";
     my $i = 0;
-    print $out join ("\t", ";", "org_nb", "organism name", "nb_patt", "occ_sum", "invalid", "Input file"), "\n";
+    print $out join ("\t", ";", "org_nb",
+		     sprintf("%-${org_len}s", "organism name"), 
+		     "nb_patt", "occ_sum", "invalid", "Input file"), "\n";
     foreach my $org (@organisms) {
       if ($infile{$org}) {
 	$i++;
