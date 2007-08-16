@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.12 2007/08/15 22:43:41 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.13 2007/08/16 16:23:16 jvanheld Exp $
 #
 ############################################################
 
@@ -128,6 +128,7 @@ package main;
     local $total_occ = 0;
 
     local %patterns_per_organism = ();
+    local %invalid_patterns_per_organism = ();
 
     local $occ_per_org = 0;
     local $freq_per_org = 0;
@@ -229,6 +230,25 @@ package main;
 	  }
 	}
 
+	## Check validity of the pattern
+	if ($pattern_type eq "oligo") {
+	  unless (length($pattern_seq) == $oligo_length) {
+	    &RSAT::message::Warning("Skipped", $pattern, $org, "Invalid pattern for ".$oligo_length."nucleotide", $infile{$org});
+	    $invalid_patterns_per_organism{$org}++; ## Increment pattern counter
+	  }
+	}
+
+	if ($sum_rc) {
+	  ## For strand-insensitive frequencies, the frequency files
+	  ## should in principle contain only one pattern for each
+	  ## pair of reverse complementary patterns.
+	  my $rc =  lc(&SmartRC($pattern));
+	  if (lc($pattern) gt $rc) {
+	    &RSAT::message::Warning("Skipped", $pattern, $org, "Invalid pattern for 2str file", $infile{$org});
+	    $invalid_patterns_per_organism{$org}++; ## Increment pattern counter
+	  }
+	}
+
 	## Statistics per organism
 	$patterns_per_organism{$org}++; ## Increment pattern counter
 	$occ_sum_per_organism{$org} += $occ;
@@ -278,6 +298,21 @@ package main;
       }
       $pattern_freq_sum += $pattern_freq{$pattern_seq};
     }
+
+    ################################################################
+    ## Suppress RC patterns if option -2str has been activated
+    if ($sum_rc) {
+      &RSAT::message::TimeWarn("Suppressing redundant patterns (reverse complements)\n") if ($main::verbose >= 2);
+      foreach $pattern_seq (sort keys %pattern_id) {
+	$rc_pattern_seq = &SmartRC($pattern_seq);
+	#	&RSAT::message::Debug("Grouping reverse complements", $pattern_seq, $rc_pattern_seq) if ($main::verbose >= 4);
+	if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the pair
+	  delete $pattern_id{$rc_pattern_seq};
+	}
+      }
+    }
+
+
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
@@ -407,7 +442,7 @@ sub PrintOptions {
 }
 
 ################################################################
-## Read arguments 
+## Read arguments
 sub ReadArguments {
     my $arg;
     my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
@@ -647,7 +682,7 @@ sub Verbose {
     ## Print the list of input files
     print $out "; Organisms\n";
     my $i = 0;
-    print $out join ("\t", ";", "org_nb", "organism name", "nb_patt", "occ_sum", "Input file"), "\n";
+    print $out join ("\t", ";", "org_nb", "organism name", "nb_patt", "occ_sum", "invalid", "Input file"), "\n";
     foreach my $org (@organisms) {
       if ($infile{$org}) {
 	$i++;
@@ -656,6 +691,7 @@ sub Verbose {
 			 sprintf("%-${org_len}s", $org),
 			 $patterns_per_organism{$org} || 0,
 			 $occ_sum_per_organism{$org} || 0,
+			 $invalid_patterns_per_organism{$org} || 0,
 			 $infile{$org},
 			), "\n";
       }
