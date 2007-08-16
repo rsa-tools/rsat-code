@@ -86,7 +86,10 @@ Supported fields:
 the chromosomal positions of the left most and right most TFBS.
 This helps in defining a region of interest for the further analysis of each target gene.
 Left and right positions may be modified by adding a given length at each end of the region.
-See -add_length option.
+See -add_flank option.
+
+=item - B<tfbs_fasta>:  return the binding sequences of a given TF in fasta format.
+Can be subsequently used by meme to build a PSSM for this TF.
 
 =back
 
@@ -97,24 +100,43 @@ with BLAT (http://genome.ucsc.edu/cgi-bin/hgBlat). Requires internet connection.
 =item B<-wait #>:  Optional. To be used with get_pos task. The time between 2 BLAT requests must be greater than 15 seconds.
 Specify the waiting time in seconds  (e.g. 600 for 10 minutes). Default is  15 sec.
 
-=item B<-add_length #>:  Optional. To be used with target_region task. 
+=item B<-add_flank #>:  Optional. To be used with target_region task. 
 Length of sequence to be added at the left and right side of the region defined with target_region task.
 eg. -add_length 200.
+
 
 =back
 
 =head1 OUTPUT FILES
 
-The parser returns 3 kinds of files: .tab, .gft and .log
-
 =over
 
-=item - B<.tab>: contains parsed data from the XML input file for each type of ORegAnno record
+=item - B<parse_xml> task: 
 
-=item - B<.gft>: genome feature format as described in convert-features (convert-features -h). Contains the chromosomal
+=item I<.tab> file: contains parsed data from the XML input file for each type of ORegAnno record
+
+=item - B<get_pos> task:
+
+=item I<.gft> file: genome feature format as described in convert-features (convert-features -h). Contains the chromosomal
 positions for the TFBS, calculated from a BLAT search at UCSC genome browser.
 
-=item - B<.log>: WARNINGS during execution are logged in this file.
+=item - B<tfbs_fasta> task:  
+
+=item TFBS_sequence directory containing I<.fa> files
+
+=item - B<target_region> task: 
+
+=item One directory per organism, each containing : 
+
+=item I<.gft> file: genome feature format as described in convert-features (convert-features -h). Contains the chromosomal
+positions for the calculated target region.
+
+=item I<.ft> file: feature format as described in convert-features (convert-features -h). Contains the positions
+of TFBS located on the target region. These positions are relative to the target region fragment, starting at position 1.
+
+=item - B<all tasks>:
+
+=item I<.log>: WARNINGS during execution are logged in this file.
 
 =back
 
@@ -252,7 +274,10 @@ open LOG, ">$logFile"
 	or die "Can't write to $logFile : $!";
 
 ## check task dependencies
-$tasks2run{parse_xml}=1 unless (-e $TFBS_file);
+unless (-e $TFBS_file){
+	$tasks2run{parse_xml}=1 ;
+	&RSAT::message::Warning("Output of task xml_task (.tab file) not found. parse_xml task will be run first.");
+}
 
 ###############################################
 ## ORegAnno XML dump is several xml files concatenated
@@ -1097,7 +1122,7 @@ sub target_regions {
 			my $size = 1+($max_end - $min_start);
 			&RSAT::message::Debug("\t","target region: start",$min_start, "end",$max_end) if ($verbose >= 5);
 			
-			## Add sequence length of both extremities if necessary
+			## Add sequence flank of both extremities if necessary
 			if ($add_length) {
 				$min_start -= $add_length;
 				$max_end += $add_length; 
@@ -1153,7 +1178,7 @@ sub target_regions {
     open GFT_TARGET, ">> $target_region_file"
       or die "Can't write to file $target_region_file : $!";
     ## header
-    my $target_region_file_header = "#GeneName\tType\tTFname\tchrom_name\tstart\tend\tstrand\tregion_length\tadditional_seq\n";
+    my $target_region_file_header = "#GeneName\tType\tTFname\tchrom_name\tstart\tend\tstrand\tregion_length\tflank_length\n";
     print GFT_TARGET $target_region_file_header;
     foreach my $gft_line (@species_gft_lines) {
     	print GFT_TARGET $gft_line;
