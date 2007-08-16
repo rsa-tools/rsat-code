@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.14 2007/08/16 18:19:05 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.15 2007/08/16 20:55:28 jvanheld Exp $
 #
 ############################################################
 
@@ -211,6 +211,12 @@ package main;
     ## Read background pattern frequencies
     foreach my $org (@organisms) {
       my $exp_freq_file;
+
+      ## Initialize pattern counters
+      $invalid_patterns_per_organism{$org} = 0;
+      $patterns_per_organism{$org} = 0;
+      $occ_sum_per_organism{$org} = 0;
+
       if ($pattern_type eq "oligo") {
 	$exp_freq_file = &ExpectedFreqFile($org, $oligo_length, $background_model,
 					  type=>'oligo',
@@ -257,22 +263,27 @@ package main;
 	  }
 	}
 
+	################################################################
 	## Check validity of the pattern
+
+	## Check oligonucleotide length
 	if ($pattern_type eq "oligo") {
 	  unless (length($pattern_seq) == $oligo_length) {
-	    &RSAT::message::Warning("Skipped", $pattern, $org, "Invalid pattern for ".$oligo_length."nucleotide", $infile{$org});
+	    &RSAT::message::Warning($org, "Skipped", $pattern_seq, "Invalid pattern for ".$oligo_length."nucleotide");
 	    $invalid_patterns_per_organism{$org}++; ## Increment pattern counter
+	    next;
 	  }
 	}
 
+	## For strand-insensitive frequencies, the frequency files
+	## should in principle contain only one pattern for each
+	## pair of reverse complementary patterns.
 	if ($sum_rc) {
-	  ## For strand-insensitive frequencies, the frequency files
-	  ## should in principle contain only one pattern for each
-	  ## pair of reverse complementary patterns.
-	  my $rc =  lc(&SmartRC($pattern));
-	  if (lc($pattern) gt $rc) {
-	    &RSAT::message::Warning("Skipped", $pattern, $org, "Invalid pattern for 2str file", $infile{$org});
+	  my $rc =  lc(&SmartRC($pattern_seq));
+	  if (lc($pattern_seq) gt $rc) {
+	    &RSAT::message::Warning($org, "Skipped", $pattern_seq, "Invalid pattern for 2str file");
 	    $invalid_patterns_per_organism{$org}++; ## Increment pattern counter
+	    next;
 	  }
 	}
 
@@ -295,6 +306,11 @@ package main;
 	}
       }
       close $in if ($infile{input});
+      if ($invalid_patterns_per_organism{$org} > 0) {
+	print $out join ("\t", "; WARNING","skipped", 
+			 $invalid_patterns_per_organism{$org}, 
+			 "invalid patterns for organism", $org, $exp_freq_file), "\n";
+      }
     }
 
     ################################################################
