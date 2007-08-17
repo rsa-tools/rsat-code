@@ -132,11 +132,12 @@ def main():
 	if len(sys.argv) == 1 :
 		usage(0)
 		sys.exit()
-		
-    	mot = motif.motif(width,len(s.sequences),s, matrixSeed)
-			
+	
 	back = freq2background.Background(ordre,alph, freqFile)
 	back.freq2Background()
+		
+    	mot = motif.motif(width,len(s.sequences),s, matrixSeed, back)
+		
 	
 	fileResult = ''
 	
