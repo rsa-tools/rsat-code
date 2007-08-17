@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.18 2007/08/16 21:04:03 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.19 2007/08/17 09:35:03 jvanheld Exp $
 #
 ############################################################
 
@@ -189,14 +189,15 @@ package main;
 
       ## Output file name
       $outfile{output} = $dir{$taxon}."/";
-      $outfile{output} .= $pattern_type."s";
-      $outfile{output} .= "_".$taxon;
       if ($pattern_type eq "oligo") {
 	$outfile{output} .= "_".$oligo_length."nt";
       } elsif ($pattern_type eq "dyad") {
+	$outfile{output} .= "dyads";
 	$outfile{output} .= "_".$monad_length."nt";
 	$outfile{output} .= "_sp0-20";
       }
+      $outfile{output} .= "_".$background_model;
+      $outfile{output} .= "_".$taxon;
       $outfile{output} .= $noov;
       $outfile{output} .= $str;
       $outfile{output} .= ".tab";
