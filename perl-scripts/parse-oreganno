@@ -458,9 +458,10 @@ sub XMLParse {
 						my $sequence = $records[$i]->findvalue('sequence');
 						my $seqWithFlank  = $records[$i]->findvalue('sequenceWithFlank');	
 						
-						@thisParsedRecord = (trim_string($stableID), trim_string($type), trim_string($TFID), trim_string($TFName), trim_string($TFSource), trim_string($TFVersion),
-									trim_string($geneID), trim_string($geneName), trim_string($geneSource), trim_string($geneVersion),trim_string($lociName), trim_string($speciesName), 
+						@thisParsedRecord = (&trim_string($stableID), trim_string($type), modif_name(trim_string($TFID)), modif_name(trim_string($TFName)), trim_string($TFSource), trim_string($TFVersion),
+									modif_name(trim_string($geneID)), modif_name(trim_string($geneName)), trim_string($geneSource), trim_string($geneVersion),trim_string($lociName), trim_string($speciesName), 
 									trim_string($evidences), trim_string($outcome), trim_string($pubmedID),   trim_string($sequence), trim_string($seqWithFlank));
+						
 						$parsedRecords{$stableID} = \@thisParsedRecord;
 						
 					} elsif (($type eq "REGULATORY POLYMORPHISM")||($type eq "REGULATORY HAPLOTYPE")) {	
@@ -486,8 +487,8 @@ sub XMLParse {
 						chop($varsequences);
 						
 						# trim_string whitespaces: strip blank space from the beginning/end of each string		
-						@thisParsedRecord = (trim_string($stableID), trim_string($type), trim_string($TFID), trim_string($TFName), trim_string($TFSource), trim_string($TFVersion),
-									trim_string($geneID), trim_string($geneName), trim_string($geneSource), trim_string($geneVersion),trim_string($lociName), trim_string($speciesName), 
+						@thisParsedRecord = (trim_string($stableID), trim_string($type), modif_name(trim_string($TFID)), modif_name(trim_string($TFName)), trim_string($TFSource), trim_string($TFVersion),
+									modif_name(trim_string($geneID)), modif_name(trim_string($geneName)), trim_string($geneSource), trim_string($geneVersion),trim_string($lociName), trim_string($speciesName), 
 									trim_string($evidences), trim_string($outcome), trim_string($pubmedID),  trim_string($refsequences), trim_string($varsequences));
 						}	
 						$parsedRecords{$stableID} = \@thisParsedRecord;
@@ -716,6 +717,21 @@ sub trim_string()
 	$string =~ s/^\s+//;
 	$string =~ s/\s+$//;
 	return $string;
+}
+
+sub modif_name{
+  ### this routine removes from the TFname 
+  ### sapces and brackets
+
+  my $name = shift;
+  $name =~ s/\(//g;
+  $name =~ s/\)//g;
+  $name =~ s/\\/_/g;
+  $name =~ s/\//_/g;
+  $name =~ s/\,/_/g;
+  $name =~ s/\'/_/g;
+  $name =~ s/\s+/_/g if ($name =~ m/\w+\s+\w+/);
+  return $name; 
 }
 
 # retrive fasta sequences from the parsed oreganno file
@@ -1228,21 +1244,6 @@ sub minimum {
   }
   return $min_so_far;
 }
-
-sub modif_name{
-  ### this routine removes from the TFname 
-  ### sapces and brackets
-
-  my $name = shift;
-  $name =~ s/\(//g;
-  $name =~ s/\)//g;
-  $name =~ s/\\/_/g;
-  $name =~ s/\//_/g;
-  $name =~ s/\,/_/g;
-  $name =~ s/\'/_/g;
-  $name =~ s/\s+/_/g if ($name =~ m/\w+\s+\w+/);
-  return $name; 
-}
- 
+ 1;
  }
 
