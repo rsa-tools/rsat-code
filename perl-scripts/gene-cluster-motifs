@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.212 2007/08/11 06:49:04 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.213 2007/08/17 06:51:59 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -104,6 +104,9 @@ $dir{calib1} = "calibrations_1gene";
 
 		       AlignACE
 		       AlignACE_maps
+
+		       InfoGibbs
+		       InfoGibbs_maps
 
 		       MotifSampler
 
@@ -242,6 +245,12 @@ $AlignACE_gcback=0.4332384392880;
 $pssm_sort_key{AlignACE} = 'MAP.per.site';
 $pssm_sort_order{AlignACE} = 'desc';
 
+## Default InfoGibbs options
+$pssm_sort_key{InfoGibbs} = 'total.information';
+$pssm_sort_order{InfoGibbs} = 'desc';
+$InfoGibbs_e = 20;
+$InfoGibbs_g = 1;
+
 ## Comparison between discovered and known motifs
 $known_site_file = "";
 $known_sites_provided = 0;
@@ -313,7 +322,7 @@ local $pattern_factory = classes::ClassFactory->new_class(object_type=>"RSAT::pa
 			);
 $pattern_factory->set_out_fields(@pattern_out_fields);
 
-## Class holder for the matrices (gibbs, AlignACE, meme, consensus, MotifSampler)
+## Class holder for the matrices (gibbs, AlignACE, meme, consensus, MotifSampler, InfoGibbs)
 local $matrix_factory = classes::ClassFactory->new_class(object_type=>"RSAT::matrix",
 							 prefix=>$run_prefix."_mat");
 @matrix_scalar_out_fields = qw(id
@@ -734,7 +743,7 @@ sub SetFileNames {
 
 	## Random seed
 	if (defined($seed)) {
-	    $gibbs_options .= " -s".$seed;
+	    $gibbs_options .= " -s ".$seed;
 	    $gibbs_suffix .= "-s".$seed;
 	}
 
@@ -770,15 +779,52 @@ sub SetFileNames {
 
 	## Random seed
 	if (defined($seed)) {
-	    $AlignACE_options .= " -s".$seed;
+	    $AlignACE_options .= " -s ".$seed;
 	    $AlignACE_suffix .= "-s".$seed;
 	}
 
 	## Assign AlignACE options to the family
 	$family{$family_name}->{AlignACE_suffix} = $AlignACE_suffix;
 	$family{$family_name}->{AlignACE_options} = $AlignACE_options;
-	$family{$family_name}->{AlignACE_dir} = ${family_name}."/.AlignACE_".${family_name};
+	$family{$family_name}->{AlignACE_dir} = ${family_name}."/AlignACE_".${family_name};
 	$family{$family_name}->{AlignACE_file} = $family{$family_name}->{AlignACE_dir}."/".$family{$family_name}->{file_prefix}.$AlignACE_suffix;
+
+	################################################################
+	## InfoGibbs (beta version of a Gibbs sampler, developed by
+	## Gregory Gathy
+	my $InfoGibbs_options = "";
+	my $InfoGibbs_suffix = "";
+
+	## input file
+	$InfoGibbs_options .= " -i ".$family{$family_name}->{input_seq_file};
+
+	## Matrix width
+	$InfoGibbs_options .= " -w ".$matrix_width;
+	$InfoGibbs_suffix .= "-w".$matrix_width;
+
+	## Gibbs optimization criterion
+	$InfoGibbs_options .= " -g ".$InfoGibbs_g;
+	$InfoGibbs_suffix .= "-g".$InfoGibbs_g;
+
+	## Amplification factor
+#	$InfoGibbs_options .= " -e ".$InfoGibbs_e;
+#	$InfoGibbs_suffix .= "-e".$InfoGibbs_e;
+
+	## estimate prior frequencies from input sequences
+	$InfoGibbs_options .= " -c ";
+	$InfoGibbs_suffix .= "-c";
+
+	## Random seed
+	if (defined($seed)) {
+	    $InfoGibbs_options .= " -s ".$seed;
+	    $InfoGibbs_suffix .= "-s".$seed;
+	}
+
+	## Assign InfoGibbs options to the family
+	$family{$family_name}->{InfoGibbs_suffix} = $InfoGibbs_suffix;
+	$family{$family_name}->{InfoGibbs_options} = $InfoGibbs_options;
+	$family{$family_name}->{InfoGibbs_dir} = ${family_name}."/InfoGibbs_".${family_name};
+	$family{$family_name}->{InfoGibbs_file} = $family{$family_name}->{InfoGibbs_dir}."/".$family{$family_name}->{file_prefix}.$InfoGibbs_suffix;
 
 	################################################################
 	## Gert Thijs' MoifSampler options and files
@@ -1010,6 +1056,7 @@ sub SetFileNames {
     $table_suffix .= $strands;
     $table_suffix .= &ThresholdSuffix();
 #    $table_suffix .= "_sig".$lth{occ_sig};
+    $table_suffix .= "_mtx_width".$matrix_width;
     $table_suffix = `basename $table_suffix`;
     chomp $table_suffix;
 
@@ -1615,6 +1662,36 @@ sub AlignACE {
   }
 }
 
+################################################################
+## InfoGibbs (developed by Gregory Gathy) 
+sub InfoGibbs {
+  chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{InfoGibbs_dir});
+
+
+  if ($strand = "-2str") {
+    $addrc = " -addrc";
+  }
+
+  ## This can be useful in case the file is compressed, and to covert
+  ## n characters (masked nucleotide) into dots
+  my $InfoGibbs_command = "";
+#  $InfoGibbs_command .= "convert-seq ";
+#  $InfoGibbs_command .= " -from fasta -to fasta -dotmask";
+#  $InfoGibbs_command .= " -i ".$family{$family_name}->{input_seq_file};
+#  $InfoGibbs_command .= " -o ".$family{$family_name}->{InfoGibbs_input_seq_file}." ; ";
+  $InfoGibbs_command .= "InfoGibbs ".$family{$family_name}->{InfoGibbs_options};
+  $InfoGibbs_command .= " -o ".$family{$family_name}->{InfoGibbs_file};
+
+  $InfoGibbs_command .= "; ";
+  $InfoGibbs_command .= &ConvertMatrixCommand($family{$family_name}->{InfoGibbs_file}, "InfoGibbs");
+
+  if ($batch) {
+    push @main::batch_commands, $InfoGibbs_command;
+  } else {
+    &doit($InfoGibbs_command, $dry_run, $die_on_error, $verbose);
+  }
+}
+
 
 ################################################################
 ## Run MEME program 
@@ -1791,6 +1868,7 @@ sub SyntheticTable {
   $row{consensus} = $row++;
   $row{gibbs} = $row++;
   $row{AlignACE} = $row++;
+  $row{InfoGibbs} = $row++;
   $row{meme} = $row++;
   $row{MotifSampler} = $row++;
   $row_num = $row-1;
@@ -1924,8 +2002,13 @@ sub SyntheticTable {
     #### Index results of gibbs
     &IndexGibbs($family_name, $row{gibbs}, $col, matrix_file=>$family{$family_name}->{gibbs_file});
 
-    #### Index results of gibbs
+    ################################################################
+    #### Index results of AlignACE
     &IndexAlignACE($family_name, $row{AlignACE}, $col, matrix_file=>$family{$family_name}->{AlignACE_file});
+
+    ################################################################
+    #### Index results of InfoGibbs
+    &IndexInfoGibbs($family_name, $row{InfoGibbs}, $col, matrix_file=>$family{$family_name}->{InfoGibbs_file});
 
     ################################################################
     #### Index results of meme
@@ -2204,25 +2287,31 @@ sub ReadMatrices {
 }
 
 ################################################################
-## Index the matrix from a gibbs file
+## Index the matrix from gibbs file
 sub IndexGibbs {
    &IndexMatrix(@_, program=>"gibbs");
 }
 
 ################################################################
-## Index the matrix from a gibbs file
+## Index the matrix from AlignACE file
 sub IndexAlignACE {
    &IndexMatrix(@_, program=>"AlignACE");
 }
 
 ################################################################
-## Index the matrix from a meme file
+## Index the matrix from InfoGibbs file
+sub IndexInfoGibbs {
+   &IndexMatrix(@_, program=>"InfoGibbs");
+}
+
+################################################################
+## Index the matrix from meme file
 sub IndexMEME {
    &IndexMatrix(@_, program=>"meme");
 }
 
 ################################################################
-## Index the matrix from a MotifSampler file
+## Index the matrix from MotifSampler file
 sub IndexMotifSampler {
    &IndexMatrix(@_, program=>"MotifSampler");
 }
@@ -2627,6 +2716,14 @@ sub AnalyzeFamilies {
 	  &DrawFeatureMap($family{$family_name}->{AlignACE_file});
 	}
 
+	### InfoGibbs (Gregory Gathy)
+	&InfoGibbs() if ($task{InfoGibbs});
+	if ($task{InfoGibbs_maps}) {
+	  &ScanSequences($family{$family_name}->{InfoGibbs_file}."_count_matrices.txt","InfoGibbs",
+		       $family{$family_name}->{InfoGibbs_file}," -uth Pval 0.00025");
+	  &DrawFeatureMap($family{$family_name}->{InfoGibbs_file});
+	}
+
 	### Gert Thijs' MotifSampler
 	&MotifSampler() if ($task{MotifSampler});
 
@@ -2970,7 +3067,7 @@ OPTIONS
 	Alternative versions of orm.py and ormbg.py can be specified with
 	environment variables ORM and ORMBG, respectively.
 
-   Matrix-based pattern discovery options (consensus, gibbs, AlignACE, meme, MotifSampler)
+   Matrix-based pattern discovery options (consensus, gibbs, AlignACE, meme, MotifSampler, InfoGibbs)
        -width  matrix width (default $matrix_width)
        -sps	expected number of sites per sequence
 		(default $expected_sites_per_gene)
@@ -2981,6 +3078,8 @@ OPTIONS
 
    AlignACE (Roth, 1998)
 	-seed	 seed number for the random generator
+
+   InfoGibbs (Gathy, 2007)
 
    MotifSampler (Thijs, 200X)
 	-MS_b	backgound file
@@ -3283,7 +3382,7 @@ sub ReadArguments {
       $MEME_options{nmotifs} = $nmotifs;
       $MS_n = $nmotifs;
 
-      ### Gibbs sampler + AlignACE seed option
+      ### Gibbs sampler + AlignACE + InfoGibbs seed option
     } elsif ($ARGV[$a] eq "-seed") {
       $seed = $ARGV[$a+1];
 
@@ -3300,6 +3399,10 @@ sub ReadArguments {
 
       ### ORM options
     } elsif ($ARGV[$a] =~ /-(ORM_\S+)/) {
+      $$1 =  $ARGV[$a+1];
+
+      ### InfoGibbs options
+    } elsif ($ARGV[$a] =~ /-(InfoGibbs_\S+)/) {
       $$1 =  $ARGV[$a+1];
 
       ### organism
@@ -3707,7 +3810,7 @@ sub ExportSQL {
     }
 
     #### Matrices
-    for my $program qw (consensus gibbs AlignACE meme MotifSampler) {
+    for my $program qw (consensus gibbs AlignACE InfoGibbs meme MotifSampler) {
       my $matrix_file = $family{$family_name}->{$program."_file"};
       if (-e $matrix_file) {
 	&ReadMatrices($family_name, $matrix_file, program=>$program);
@@ -4896,6 +4999,9 @@ multiple-family-analysis options
 -seed		seed number for the random generator
 
 ## AlignACE (Roth, 1998)
+-seed		seed number for the random generator
+
+## InfoGibbs (Gathy, 2007)
 -seed		seed number for the random generator
 
 ## MotifSampler (Thijs, 2000)
