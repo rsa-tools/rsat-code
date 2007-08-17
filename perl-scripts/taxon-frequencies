@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.19 2007/08/17 09:35:03 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.20 2007/08/17 09:57:18 jvanheld Exp $
 #
 ############################################################
 
@@ -464,6 +464,7 @@ package main;
     ################################################################
     ## Close output stream
     close $main::out if ($main::outfile{output});
+    &RSAT::message::Info("Taxon frequency file", $outfile{output}) if (($main::verbose >= 1) && ($outfile{output}));
 
     exit(0);
 }
