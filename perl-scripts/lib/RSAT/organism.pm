@@ -175,7 +175,7 @@ sub OpenContigs {
     my $genome_file;
     my $genome_file_format;
 
-    if ($main::verbose >= 2) {
+    if ($main::verbose >= 3) {
       &RSAT::message::TimeWarn(join ("\t", "Opening contigs", @_));
       &RSAT::message::Info(join ("\t",
 				 "Manually specified input sequence file",
@@ -277,7 +277,7 @@ sub OpenContigs {
 	    }
 
 	    &RSAT::message::Info(join ("\t", "Contig sequence file", $seq_file, "Contig", $contig_id, "circular: $circular") )
-		if ($main::verbose >= 2);
+		if ($main::verbose >= 3);
 
 	    $contig_seq{$contig_id} = new RSAT::SequenceOnDisk(filename=>  $seq_dir.$seq_file,
 							       id=>        $contig_id,
@@ -436,7 +436,7 @@ sub LoadFeatures {
   }
   &RSAT::message::Info (join("\t", "Accepted feature types",
 			     join( ",", keys %accepted_feature_types)))
-    if ($main::verbose >= 2);
+    if ($main::verbose >= 3);
 
   ## Annotation table
   if ($annotation_table) {
@@ -459,7 +459,7 @@ sub LoadFeatures {
 			       "Loading annotation table",
 			       $self->get_attribute("name"),
 			       $annotation_table)
-			) if ($main::verbose >= 2);
+			) if ($main::verbose >= 3);
     
     ## Default column order for genomic features
     ## Note that this order can be redefined by the header of the
@@ -542,7 +542,7 @@ sub LoadFeatures {
       }
       unless (&RSAT::util::IsNatural($left) ) {
 	if ($imp_pos) {
-	  &RSAT::message::Warning("imprecise specification of the left position for gene $id\n;\t",join "\t", @fields) if ($main::verbose >= 2);
+	  &RSAT::message::Warning("imprecise specification of the left position for gene $id\n;\t",join "\t", @fields) if ($main::verbose >= 3);
 	  $left =~ s/\>//;
 	  $left =~ s/\<//;
 	} else {
@@ -558,7 +558,7 @@ sub LoadFeatures {
       }
       unless (&RSAT::util::IsNatural($right) ) {
 	if ($imp_pos) {
-	  &RSAT::message::Warning("imprecise specification of the right position for gene $id\n;\t",join "\t", @fields) if ($main::verbose >= 2);
+	  &RSAT::message::Warning("imprecise specification of the right position for gene $id\n;\t",join "\t", @fields) if ($main::verbose >= 3);
 	  $right =~ s/\>//;
 	  $right =~ s/\<//;
 	} else {
