@@ -776,22 +776,22 @@ class GibbsInform :
 		#if self.verbose == 1 :
 		#	print >> sys.stdout, self.finalCycle(seq, back, m, resFile) 
 			
-		if self.verbose == 5 :
-			for elem in range(0,self.height) :
-				print seq.sequences[elem][m.indice[elem] : m.indice[elem]+self.width]
-			
-			print ("----------------\nLe motif trouve :")	
-			self.printMotif (m, back)
-			print ("----------------\nLa matrice de score du motif trouve:")
-			self.printScore (back)
-			print ("----------------\nInformation Content Value : %s")%(self.calculeMatrixInfoContent(seq, m.indice, back))
-			self.printToFile(seq, m)
-			
-			if str(type(fileResult)).count('file') :
-				self.printToResFile(seq, m, back, fileResult)
-			
-			print ("----------------\nFinal Cycle :")
-			tmp = self.finalCycle(seq, back, m, fileResult)
+		#if self.verbose == 5 :
+		for elem in range(0,self.height) :
+			print seq.sequences[elem][m.indice[elem] : m.indice[elem]+self.width]
+		
+		print ("----------------\nLe motif trouve :")	
+		self.printMotif (m, back)
+		print ("----------------\nLa matrice de score du motif trouve:")
+		self.printScore (back)
+		print ("----------------\nInformation Content Value : %s")%(self.calculeMatrixInfoContent(seq, m.indice, back))
+		self.printToFile(seq, m)
+		
+		if str(type(fileResult)).count('file') :
+			self.printToResFile(seq, m, back, fileResult)
+		
+		print ("----------------\nFinal Cycle :")
+		tmp = self.finalCycle(seq, back, m, fileResult)
 
 #Usage Function From Class GibbsInform
 	def printMotif (self, m, back):
