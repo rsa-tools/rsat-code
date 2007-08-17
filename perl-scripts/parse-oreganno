@@ -334,7 +334,7 @@ for (my $i=1; $i < $xmlCount; $i++){
 ## genome browser
 
 if  ($tasks2run{get_pos}) {
-	&RSAT::message::TimeWarn("Task: get_pos: ") if ($verbose >= 1);
+	&RSAT::message::TimeWarn("Task: get_pos ") if ($verbose >= 1);
 	
 	## export the sequence with flank to a fasta file
 	&to_fasta($TFBS_file);
@@ -1035,7 +1035,7 @@ sub TFBS_fasta {
 	 
     ### file for the target BS sequence in fasta these sequence will be used to build
     ### matrices by the program MEME --> that's why we only keep sequences with size >= 6
-    my $modifiedTF = &modif_name($gft_fields[9]);
+    my $modifiedTF = $gft_fields[9];
     my $regulon_BS_file = $seq_dir."/".$modifiedTF."_factor_binding_sites.fa";
     open BS_SEQ, ">> $regulon_BS_file"
       or die "Can't write to file $regulon_BS_file : $!";
