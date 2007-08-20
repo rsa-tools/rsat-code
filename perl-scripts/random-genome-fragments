@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.1 2007/06/11 12:09:20 morgane Exp $
+# $Id: random-genome-fragments,v 1.2 2007/08/20 17:51:53 morgane Exp $
 #
 ############################################################
 
@@ -16,6 +16,7 @@ random-genome-fragments
 =head1 DESCRIPTION
 
 Randomly extract genomic fragments from a given organism.
+Makes use of EnsEMBL API (www.ensembl.org) for EnsEMBL genomes.
 
 =head1 AUTHORS
 
@@ -66,6 +67,8 @@ package main;
     $main::out_format = "fasta";
     $main::rm = 0;
     @main::lengths =();
+    @main::contig_names = ();
+    @main::files2remove =();
 
     ################################################################
     ## Read argument values
@@ -104,36 +107,58 @@ package main;
 
     ################################################################
     ## Check argument values
-    
-    ## Organism
-	unless ($main::organism_name) {
-    	&RSAT::error::FatalError("You should select an organism.");
-	}
+   our $organism_ens = "mus_musculus"; 
 
-	our $organism = new RSAT::organism();
-	$organism->check_name($main::organism_name);
-	$organism->set_attribute("name", $main::organism_name);
+	#################################################################
+	## RSAT organism
+	if ($main::organism_name) {
+		our $organism = new RSAT::organism();
+		$organism->check_name($main::organism_name);
+		$organism->set_attribute("name", $main::organism_name);
 	
-	## Repeat masked version
-	if ($main::rm) {
-		my %args = ('rm' => 1);
-		$organism->OpenContigs($main::organism_name,"","","",%args);
+		## Repeat masked version
+		if ($main::rm) {
+			my %args = ('rm' => 1);
+			$organism->OpenContigs($main::organism_name,"","","",%args);
 	
-	} else {
-		$organism->OpenContigs($main::organism_name);
+		} else {
+			$organism->OpenContigs($main::organism_name);
+		}
+	
+		## get all contigs name 
+		%main::contigs= $organism->get_contigs();
+
+		foreach my $contig_name (keys(%main::contigs)) {
+			unless ($contig_name =~ /:MT:/) { #Do not take into account mitochondrial genome.		
+				## store contig name
+				push (@main::contig_names, $contig_name);
+			}
+		}
 	}
 	
-	## get all contigs name 
-	our %contigs= $organism->get_contigs();
-	
-	our @contig_names = ();
-
-	foreach my $contig_name (keys(%contigs)) {
-	#	unless ($contig_name =~ /:MT:/) { #Do not take into account mitochondrial genome.
+	#################################################################
+	## Ensembl organism
+	elsif ($main::organism_ens) {
+		
+		my $ensembl = Ensembl_genome->new($main::organism_ens);
+		$ensembl->get_connect_param;
+		$ensembl->get_db_name;
+		my $db =$ensembl->ens_connect;
+		%main::ens_chroms =();
 			
-			## store contig name
-			push (@contig_names, $contig_name);
-	#	}
+		my $slice_adaptor = $db->get_sliceAdaptor();
+		$main::slices_ref = $slice_adaptor->fetch_all('chromosome');
+		foreach my $slice (@{$main::slices_ref}) {
+			my $slice_name = $slice->name();
+			unless ($slice_name =~ /:MT:/) { #Do not take into account mitochondrial genome.	
+				&RSAT::message::Info(join ("\t", "Chromosome name", $slice_name) )
+				if ($main::verbose >= 2);
+					push (@main::contig_names, $slice_name);
+					$main::ens_chroms{$slice_name} = $slice;
+				}
+			}
+	} else {
+    	&RSAT::error::FatalError("You should select an organism.");
 	}
 	
 	################################################################
@@ -150,12 +175,19 @@ package main;
 	for (my $i=1; $i<=$main::nb_fragment; $i++) {
 		
 		## 1- get a random contig
-		my $rand_contig = int(rand ($#contig_names+1));
-		my $rand_contig_name = $contig_names[$rand_contig];
+		my $rand_contig = int(rand ($#main::contig_names+1));
+		my $rand_contig_name = $main::contig_names[$rand_contig];
 		
 		## 2 - get contig length, and calculate last possible position to have
 		## a fragment of the desired length
-		my $contig_length = $contigs{$rand_contig_name}->get_length();
+		my $contig_length;
+		if ($main::organism_name) {
+			$contig_length = $main::contigs{$rand_contig_name}->get_length();
+		} elsif ($main::organism_ens) {
+			$contig_length = $main::ens_chroms{$rand_contig_name}->length();
+		}
+		&RSAT::message::Info(join ("\t", "Random chrom", $rand_contig_name, "length",$contig_length) )
+				if ($main::verbose >= 2);
 		
 		my $rand_fragment_size;
 		if ($main::length_fragment) {
@@ -178,29 +210,69 @@ package main;
 		
 		&RSAT::message::Info(join ("\t", "Random fragment", $seq_id, $rand_contig_name,$rand_start,$rand_end,$rand_strand) )
 		if ($main::verbose >= 2);
-		
-		    
+  
     	################################################################
    		## Print output
-		my $current_seq = $contigs{$rand_contig_name}->get_sequence($rand_start,$rand_end,$rand_strand);
-		my @comments = join("; ",
-							"random sequence $i of $main::nb_fragment",
-							"length: $rand_fragment_size",
-							"$rand_contig_name",
-							"$rand_start:$rand_end:$rand_strand"
-							);
+   		if ($main::organism_name) {
+			my $current_seq = $main::contigs{$rand_contig_name}->get_sequence($rand_start,$rand_end,$rand_strand);
+			my @comments = join("; ",
+								"random sequence $i of $main::nb_fragment",
+								"length: $rand_fragment_size",
+								"$rand_contig_name",
+								"$rand_start:$rand_end:$rand_strand"
+								);
 		
-		&PrintNextSequence($main::out, $main::out_format,0, $current_seq, $seq_id, @comments);
+			&PrintNextSequence($main::out, $main::out_format,0, $current_seq, $seq_id, @comments);
+			
+   		} elsif ($main::organism_ens) {
+   			##use retrieve-ensembl-seq to get the sequence
+   			
+   			my $tmp_out_file =`mktemp retrieve_seq_ensembl.XXXXXX`;
+   			chomp($tmp_out_file);
+   			
+   			my $retrieve_seq_cmd = " retrieve-ensembl-seq.pl ";
+   			$retrieve_seq_cmd .= " -org ".$main::organism_ens;
+   			$retrieve_seq_cmd .= " -chrom ".$main::ens_chroms{$rand_contig_name}->seq_region_name();;
+   			$retrieve_seq_cmd .= " -left ".$rand_start;
+   			$retrieve_seq_cmd .= " -right ".$rand_end;
+   			if ($main::rm) {
+   				$retrieve_seq_cmd .= " -rm ";
+   			}
+   			if ($main::mask_coding) {
+   				$retrieve_seq_cmd .= " -maskcoding ";
+   			}
+   			## TO DO: add strand BEWARE : The strand is not currently taken into account !!! Always return D even if write R
+   			##$retrieve_seq_cmd .= "-strand ";
+   			$retrieve_seq_cmd .= " -o ".$tmp_out_file;
+
+   			## run command
+   			system("$retrieve_seq_cmd");
+   			push @main::files2remove, $tmp_out_file;
+   			
+ 
+   		}
+	}
+	################################################################
+	## print ensembl sequences
+	
+	if ($main::organism_ens) {
+		if ($main::outfile{output}) {
+			my $seq_files = join (" ",@main::files2remove);
+			close $main::out;
+			system("cat $seq_files >> $main::outfile{output}");
+			open($main::out, ">> $main::outfile{output}"); #open for write, append
+		} else {
+			foreach my $file (@main::files2remove){
+				open TMP, "<$file"
+					or die "Can't read $file : $!";
+				while (<TMP>){
+					print $main::out $_;
+				}
+				close TMP;
+			}
+		}
 	}
 
-
-
-    
-
-    
-
-    
-    
     ################################################################
     ## Finish verbose
     if ($main::verbose >= 1) {
@@ -209,6 +281,13 @@ package main;
 	print $main::out "; Job done    $done_time\n";
     }
     
+    ################################################################
+	## clean
+	if (scalar(@main::files2remove)>0) {
+		foreach my $file (@main::files2remove){
+			system("rm -f $file");
+		}
+	}
      
     ################################################################
     ## Close output stream
@@ -321,6 +400,30 @@ command: I<supported-organism>
 	} elsif ($arg eq "-org") {
 	    $main::organism_name = shift(@arguments);
 
+		    ### organism_ensembl
+=pod
+
+=item B<-org_ens ensembl_organism_name>
+
+Specifies an organism, from EnsEMBL database.
+No caps, underscore between words (eg 'homo_sapiens')
+
+=cut
+	} elsif ($arg eq "-org_ens") {
+	    $main::organism_ens = shift(@arguments);
+
+		    ### masking coding sequence
+=pod
+
+=item B<-maskcoding>
+
+All coding sequence is replaced by N in the retrieved sequence
+(only in combination of -org_ens)
+
+=cut
+	} elsif ($arg eq "-maskcoding") {
+	    $main::mask_coding = 1;
+
 		    ### repeat_masked
 =pod
 
@@ -408,6 +511,60 @@ sub Verbose {
     }
 }
 
+#########################################
+## CLASSES
+#########################################
+
+package Ensembl_genome;
+{
+	use DBI();
+	## EnsEMBL libraries
+	use Bio::EnsEMBL::DBSQL::DBAdaptor;
+	use Bio::EnsEMBL::DBSQL::SliceAdaptor;
+ 
+ sub new {
+  my $class = shift;
+  my $species = shift;
+  my $self = {
+	      org => $species,
+	     };
+  bless $self, $class;
+}
+
+sub get_connect_param {
+	my $self = shift;
+	## Connection to the EnsEMBL MYSQL database
+  	#$self->{ensembl_host} = 'ensembldb.ensembl.org';  # db at EBI (use outside SCMBB)
+  	$self->{ensembl_host} = 'xserve2.scmbb.ulb.ac.be';  # Local db (use inside SCMBB)
+	$self->{ensembl_user} = "anonymous";
+}
+
+sub get_db_name {
+	my $self = shift;
+	my $dbname;
+    my $dbh = DBI->connect("DBI:mysql:host=".$self->{ensembl_host}, "$self->{ensembl_user}", "", {'RaiseError' => 1});
+    my $sth = $dbh->prepare("SHOW DATABASES");
+    $sth->execute();
+    while (my $ref = $sth->fetchrow_hashref()) {
+      if ($ref->{'Database'} =~ /($self->{org})_core_\d+/) {
+		$dbname = $ref->{'Database'};
+      }
+    }
+    &RSAT::message::Info (join("\t", "dbname = ", $dbname)) if ($main::verbose >= 2);
+    $self->{dbname} = $dbname;
+    $sth->finish();
+    $dbh->disconnect();
+}
+
+sub ens_connect {
+	my $self = shift;
+	my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => $self->{ensembl_host}, -user => $self->{ensembl_user}, -dbname => $self->{dbname});
+	return $db;
+}
+
+ 1;
+ }
+
 
 __END__
 
@@ -419,3 +576,5 @@ __END__
 
 
 =cut
+
+
