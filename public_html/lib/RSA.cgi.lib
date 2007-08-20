@@ -171,105 +171,115 @@ sub SequenceChoice {
 
 
 ################################################################
-#### Treat input sequence for the web server
-#### The seqence can be specified in 3 ways :
-#### - as a file to upload from the client to the server $query->param('uploaded_file')
-#### - as a text in the textarea $query->param('sequence')
-#### - as a sequence file already on the server $query->param('sequence_file')
-#### usage : 
-####    ($sequence_file,$sequence_format) = &GetSequenceFile();
-####    ($sequence_file,$sequence_format) = &GetSequenceFile($required_format, $add_rc);
+## Treat input sequence for the RSAT web server
+## The seqence can be specified in 3 ways :
+## - as a file to upload from the client to the server $query->param('uploaded_file')
+## - as a text in the textarea $query->param('sequence')
+## - as a sequence file already on the server $query->param('sequence_file')
+##
+## Usage:
+##    ($sequence_file,$sequence_format) = &GetSequenceFile();
+##    ($sequence_file,$sequence_format) = &GetSequenceFile($required_format,
+##                                                         add_rc=>1,
+##                                                         skip_short=>30);
 sub GetSequenceFile {
-    my ($required_format, $no_format, $add_rc) = @_;
-    
-    ### sequence file format
-    my $sequence_format = lc($query->param("sequence_format"));
-    unless ($accepted_input_seq{$sequence_format}) {
-	&cgiError("Invalid sequence format : '$sequence_format'.");
-    }
-    
-    unless ($sequence_file = $query->param('sequence_file')) { 
-	### sequence file already on the server side
-	### create a new temporary sequence file
-	$sequence_file = "$TMP/$tmp_file_name.seq"; 
-    
-	### upload sequence file from the client side
-	$upload_file = $query->param('uploaded_file');
-	if ($upload_file) {
-	    if ($upload_file =~ /\.gz$/) {
-		$sequence_file .= ".gz";
-	    }
-	    $type = $query->uploadInfo($upload_file)->{'Content-Type'};
-	    open SEQ, ">$sequence_file" ||
-		&cgiError("Cannot store sequence file in temp dir.");
-	    while (<$upload_file>) {
-		print SEQ;
-	    }
-	    close SEQ;
-	    
-	    ### read sequence from the textarea "sequence"
-	} elsif ($query->param('sequence') =~ /\S/) {
-	    if (open SEQ, ">$sequence_file") {
-		print SEQ $query->param('sequence');
-		close SEQ;
-	    }
-	} else {
-	    &cgiError("The sequence box should not be empty.");
-	}
-    
-	#### sequence file will be deleted
-	&DelayedRemoval($sequence_file);
-    }
+  my ($required_format, %args) = @_;
+  my $add_rc = $args{add_rc} || 0;
+  my $no_format = $args{no_format} || 0;
+  my $skip_short = $args{skip_short} || 0;
 
-    ## Mask option
-    my $mask = "";
-    if ($query->param('mask')) {
-	unless ($query->param('mask') eq "none") {
-	    $mask = $query->param('mask');
-	    &CheckMask($mask);
-	}
+  ### sequence file format
+  my $sequence_format = lc($query->param("sequence_format"));
+  unless ($accepted_input_seq{$sequence_format}) {
+    &cgiError("Invalid sequence format : '$sequence_format'.");
+  }
+
+  unless ($sequence_file = $query->param('sequence_file')) { 
+    ### sequence file already on the server side
+    ### create a new temporary sequence file
+    $sequence_file = "$TMP/$tmp_file_name.seq"; 
+
+    ### upload sequence file from the client side
+    $upload_file = $query->param('uploaded_file');
+    if ($upload_file) {
+      if ($upload_file =~ /\.gz$/) {
+	$sequence_file .= ".gz";
+      }
+      $type = $query->uploadInfo($upload_file)->{'Content-Type'};
+      open SEQ, ">$sequence_file" ||
+	&cgiError("Cannot store sequence file in temp dir.");
+      while (<$upload_file>) {
+	print SEQ;
+      }
+      close SEQ;
+
+      ### read sequence from the textarea "sequence"
+    } elsif ($query->param('sequence') =~ /\S/) {
+      if (open SEQ, ">$sequence_file") {
+	print SEQ $query->param('sequence');
+	close SEQ;
+      }
+    } else {
+      &cgiError("The sequence box should not be empty.");
     }
 
-    #### convert-seq
-    if (($add_rc) ||
-	($mask) ||
-	((defined($required_format)) && (lc($sequence_format) ne lc($required_format)))
-       ) {
+    #### sequence file will be deleted
+    &DelayedRemoval($sequence_file);
+  }
 
-	## Check required format
-	unless ($required_format) {
-	    $required_format = $sequence_format;
-	}
-	unless ($accepted_output_seq{$required_format}) { 
-	    &cgiError("Invalid sequence format : ${required_format}.");
-	}
-	my $converted_seq_file = $sequence_file.".".$required_format;
-	my $convert_seq_command = "$SCRIPTS/convert-seq ";
-	$convert_seq_command .= " -i $sequence_file -o $converted_seq_file ";
-	$convert_seq_command .= " -from  $sequence_format -to $required_format ";
-
-
-	## Add reverse complement
-	if ($add_rc) {
-	    $convert_seq_command .= " -addrc ";
-	}
-
-
-	## Mask
-	if ($mask) {
-	    $convert_seq_command .= " -mask ".$mask;
-	}
-
-	## Execute the sequence conversion
-	system($convert_seq_command);
-	
-	#print "<PRE>$convert_seq_command</PRE>\n";
-	&DelayedRemoval($converted_seq_file);
-	$sequence_file = $converted_seq_file;
-	$sequence_format = $required_format;
+  ## Mask option
+  my $mask = "";
+  if ($query->param('mask')) {
+    unless ($query->param('mask') eq "none") {
+      $mask = $query->param('mask');
+      &CheckMask($mask);
     }
-    
-    return($sequence_file, $sequence_format);
+  }
+
+  #### convert-seq
+  if (($add_rc) ||
+      ($mask) ||
+      ($skip_short) ||
+      ((defined($required_format)) && (lc($sequence_format) ne lc($required_format)))
+     ) {
+
+    ## Check required format
+    unless ($required_format) {
+      $required_format = $sequence_format;
+    }
+    unless ($accepted_output_seq{$required_format}) { 
+      &cgiError("Invalid sequence format : ${required_format}.");
+    }
+    my $converted_seq_file = $sequence_file.".".$required_format;
+    my $convert_seq_command = "$SCRIPTS/convert-seq ";
+    $convert_seq_command .= " -i $sequence_file -o $converted_seq_file ";
+    $convert_seq_command .= " -from  $sequence_format -to $required_format ";
+
+    ## Add reverse complement
+    if ($add_rc) {
+      $convert_seq_command .= " -addrc ";
+    }
+
+    ## Mask
+    if ($mask) {
+      $convert_seq_command .= " -mask ".$mask;
+    }
+
+    ## Skip short sequences
+    if ($skip_short) {
+      $convert_seq_command .= " -skip_short ".$skip_short;
+    }
+
+    ## Execute the sequence conversion
+    system($convert_seq_command);
+
+    #print "<PRE>$convert_seq_command</PRE>\n";
+    &DelayedRemoval($converted_seq_file);
+    $sequence_file = $converted_seq_file;
+    $sequence_format = $required_format;
+  }
+
+  return($sequence_file, $sequence_format);
 }
 
 
