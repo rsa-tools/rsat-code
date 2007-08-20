@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.7 2007/03/04 15:24:15 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.8 2007/08/20 21:52:43 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -81,7 +81,7 @@ if ($query->param('output') eq "display") {
     }
 
     print "<HR SIZE = 3>";
-    
+
 } elsif ($query->param('output') =~ /server/i) {
     &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
@@ -234,7 +234,7 @@ sub ReadMatrixScanParameters {
 
     ################################################################
     ## thresholds 
-    @threshold_fields = qw(score rank proba_M proba_B normw);
+    @threshold_fields = qw(score pval rank proba_M proba_B normw);
     foreach my $field (@threshold_fields) {
       if ($query->param("lth_".$field) ne "none") {
 	my $lth = $query->param("lth_".$field);
