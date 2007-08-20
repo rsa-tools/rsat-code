@@ -314,7 +314,7 @@ CATEGORY
 OPTIONS
     OUTPUT OPTIONS
 	-l	sequence length
-	-r	repetitions. Allows to generate a set r of sequences,
+	-n	repetitions. Allows to generate a set r of sequences,
 		each of length l.
 	-v	verbose.
 	-o outputfile
@@ -424,7 +424,7 @@ sub PrintOptions {
 random-seq options
 ==================
 -l		sequence length
--r		repetitions (number of sequences)
+-n		repetitions (number of sequences)
 -v		verbose
 -o		outputfile
 -format		output format. 
