@@ -412,7 +412,7 @@ sub setInfoLogBase {
     }
     $info_log_denominator = log($info_log_base);
     $self->set_parameter("info.log.base", $info_log_base);
-    &RSAT::message::Info("Info log base", $self->get_attribute("info.log.base")) if ($main::verbose >= 0);
+    &RSAT::message::Info("Info log base", $self->get_attribute("info.log.base")) if ($main::verbose >= 5);
 }
 
 
