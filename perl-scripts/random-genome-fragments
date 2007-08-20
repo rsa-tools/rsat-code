@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.5 2007/08/20 18:07:51 morgane Exp $
+# $Id: random-genome-fragments,v 1.6 2007/08/20 18:09:29 morgane Exp $
 #
 ############################################################
 
@@ -229,7 +229,7 @@ package main;
    			my $tmp_out_file =`mktemp retrieve_seq_ensembl.XXXXXX`;
    			chomp($tmp_out_file);
    			
-   			my $retrieve_seq_cmd = " retrieve-ensembl-seq.pl -v 10";
+   			my $retrieve_seq_cmd = " retrieve-ensembl-seq.pl ";
    			$retrieve_seq_cmd .= " -org ".$main::organism_ens;
    			$retrieve_seq_cmd .= " -chrom ".$main::ens_chroms{$rand_contig_name}->seq_region_name();;
    			$retrieve_seq_cmd .= " -left ".$rand_start;
