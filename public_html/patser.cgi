@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.24 2006/11/10 07:28:09 jvanheld Exp $
+# $Id: patser.cgi,v 1.25 2007/08/20 21:19:25 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -26,12 +26,12 @@ require "RSA.cgi.lib";
 require "patser.lib.pl";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$command = "$BIN/patser";
-$matrix_from_transfac_command = "$SCRIPTS/matrix-from-transfac";
-$matrix_from_gibbs_command = "$SCRIPTS/matrix-from-gibbs";
-$convert_seq_command = "$SCRIPTS/convert-seq";
-$features_from_patser_cmd = "$SCRIPTS/features-from-patser -v 1";
-$add_yeast_link_command = "$SCRIPTS/add-yeast-link";
+$command = $BIN."/patser";
+$matrix_from_transfac_command = $SCRIPTS."/matrix-from-transfac";
+$matrix_from_gibbs_command = $SCRIPTS."/matrix-from-gibbs";
+#$convert_seq_command = $SCRIPTS."/convert-seq";
+$features_from_patser_cmd = $SCRIPTS."/features-from-patser -v 1";
+$add_yeast_link_command = $SCRIPTS."/add-yeast-link";
 $tmp_file_name = sprintf "patser.%s", &AlphaDate();
 
 ### Read the CGI query
@@ -49,7 +49,7 @@ $query = new CGI;
 
 ################################################################
 #### sequence file
-($sequence_file,$sequence_format) = &GetSequenceFile("wconsensus", 1);
+($sequence_file,$sequence_format) = &GetSequenceFile("wconsensus", no_format=>1,add_rc=>0, skip_short=>30);
 
 #### patser parameters
 &ReadPatserParameters();
