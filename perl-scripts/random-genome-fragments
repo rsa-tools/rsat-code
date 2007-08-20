@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.4 2007/08/20 17:56:54 morgane Exp $
+# $Id: random-genome-fragments,v 1.5 2007/08/20 18:07:51 morgane Exp $
 #
 ############################################################
 
@@ -229,7 +229,7 @@ package main;
    			my $tmp_out_file =`mktemp retrieve_seq_ensembl.XXXXXX`;
    			chomp($tmp_out_file);
    			
-   			my $retrieve_seq_cmd = " retrieve-ensembl-seq.pl ";
+   			my $retrieve_seq_cmd = " retrieve-ensembl-seq.pl -v 10";
    			$retrieve_seq_cmd .= " -org ".$main::organism_ens;
    			$retrieve_seq_cmd .= " -chrom ".$main::ens_chroms{$rand_contig_name}->seq_region_name();;
    			$retrieve_seq_cmd .= " -left ".$rand_start;
@@ -411,6 +411,17 @@ No caps, underscore between words (eg 'homo_sapiens')
 	} elsif ($arg eq "-org_ens") {
 	    $main::organism_ens = shift(@arguments);
 
+		    ### ensembl server
+=pod
+
+=item B<-local_ens_server mysql_server_name>
+
+Uses a local EnsEMBL server. (Advanced users)
+
+=cut
+	} elsif ($arg eq "-local_ens_server") {
+	    $main::local_server = shift(@arguments);
+
 		    ### masking coding sequence
 =pod
 
@@ -527,8 +538,11 @@ package Ensembl_genome;
 sub get_connect_param {
 	my $self = shift;
 	## Connection to the EnsEMBL MYSQL database
-  	#$self->{ensembl_host} = 'ensembldb.ensembl.org';  # db at EBI (use outside SCMBB)
-  	$self->{ensembl_host} = 'xserve2.scmbb.ulb.ac.be';  # Local db (use inside SCMBB)
+	if ($main::local_server){
+  		$self->{ensembl_host} = $main::local_server; # ie 'xserve2.scmbb.ulb.ac.be'  # Local db (use inside SCMBB)
+	} else {
+  		$self->{ensembl_host} = 'ensembldb.ensembl.org';  # db at EBI (use outside SCMBB) 
+	}
 	$self->{ensembl_user} = "anonymous";
 }
 
