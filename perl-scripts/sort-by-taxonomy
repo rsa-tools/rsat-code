@@ -132,7 +132,7 @@ sub readInput{
 	chomp;
 	my (@data_line)=split "\t";
 	my $org=$data_line[0];
-	&RSAT::message::Info("Organism from input : $org") if ($main::verbose >= 5);
+	&RSAT::message::Info("Organism from input : $org") if ($main::verbose >= 2);
 	$selected_organisms{$org}.=$_;
     }
     close(FILE);
