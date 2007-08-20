@@ -47,6 +47,9 @@ $default{lth_proba_B} = "none";
 $default{uth_proba_B} = "none";
 $default{lth_normw} = "none";
 $default{uth_normw} = "none";
+$default{lth_pval} = "none";
+$default{uth_pval} = "1e-5";
+
 
 ################################################################
 #### STILL TO BE TREATED
@@ -466,6 +469,16 @@ sub ReturnTable {
 								-size=>5),
 					      $query->textfield(-name=>'uth_score',
 								-default=>$default{uth_score},
+								-size=>5)
+					     ]),
+
+				  ### Threshold on P-value of the score
+				  $query->td(['P-value',
+					      $query->textfield(-name=>'lth_pval',
+								-default=>$default{lth_pval},
+								-size=>5),
+					      $query->textfield(-name=>'uth_pval',
+								-default=>$default{uth_pval},
 								-size=>5)
 					     ]),
 
