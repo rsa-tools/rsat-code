@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-no-objects.pl,v 1.9 2007/06/19 10:33:50 rsat Exp $
+# $Id: get-ensembl-genome-no-objects.pl,v 1.10 2007/08/21 13:18:25 oly Exp $
 #
 # Time-stamp
 #
@@ -84,8 +84,8 @@ package main;
     local $verbose = 0;
     
     ## Connection to the EnsEMBL MYSQL database
-#    $ensembl_host = 'ensembldb.ensembl.org';
-    $ensembl_host = 'xserve2.scmbb.ulb.ac.be';
+    $ensembl_host = 'ensembldb.ensembl.org';
+#    $ensembl_host = 'xserve2.scmbb.ulb.ac.be';
     $ensembl_user = "anonymous";
     $dbname = '';
     $org = '';
@@ -345,7 +345,7 @@ package main;
 					  $s."/".$slices_number, 
 					  "repeat", $rep."/".$repeats_number, $repeat_name))  if ($main::verbose >= 3);
 	    }
-	}
+	  }
 
 	## Get all Gene objects
 	unless ($seq_only) {
@@ -359,22 +359,22 @@ package main;
 #		&RSAT::message::Info(join("\t", "Gene size", size($ensembl_gene), "Gene total size", total_size($ensembl_gene))) if ($main::verbose >= 1);
 
 		$g++;
-		
+
 		if (($test) && ($g > $test_number)) {
 
 		    &RSAT::message::Info(join ("\t","TEST", $test_number, "skipping next genes for contig", 
 					       $slice_name)) if ($main::verbose >= 1);
 		    last;
 		}
-		
+
 		## Create a new gene object
 		my $gene_name = $ensembl_gene->external_name() || $ensembl_gene->stable_id();
-		
+
 		warn join("\t", ";", $slice_type, $slice->seq_region_name(),  $s."/".$slices_number, "gene", 
 			  $g."/".$genes_number, $gene_name), "\n" if ($main::verbose >= 3);
-	    
+
 		my @feature = &collect_attributes($ensembl_gene);
-		my $gene_id = $feature[0];	    
+		my $gene_id = $feature[0];
 		$feature[1] = "gene";
 		$feature[3] = $slice_id; ## Introduced to remove potential circular reference (test)
 		my $gene_description = $feature[7];
@@ -385,7 +385,7 @@ package main;
  #                       $feature[4] = $feature[5];
  #                       $feature[5] = $xchanger;
  #                   }
-	    
+
 		print $GENE join("\t", @feature), "\n";
 		print $GENE_NAME join ("\t", $feature[0], $feature[2], "primary"), "\n";
 		unless ($feature[0] eq $feature[2]) {
@@ -396,7 +396,7 @@ package main;
 		## Get all Transcript objects for the current gene
 		my $tr = 0;
 		my @ensembl_transcript = @{$ensembl_gene->get_all_Transcripts()};
-		
+
 		while (my $trans = shift(@ensembl_transcript)) {
 
 #		    &RSAT::message::Info(join("\t", "Transcript size", size($trans), "Transcript total size", total_size($trans))) if ($main::verbose >= 1);
@@ -404,11 +404,11 @@ package main;
 		    $tr++;
 		    warn join("\t", "; Collecting features for transcript", $trans), "\n" if ($main::verbose >= 5);
 		    my @feature = &collect_attributes($trans);
-		    
+
 		    warn join("\t", "; Attributes collected"), "\n" if ($main::verbose >= 5); ######
 
 		    my $transcript_id = $feature[0];
-		    push @feature, $gene_id;		
+		    push @feature, $gene_id;
 		    $feature[3] = $slice_id;
 
 		    ## Exchange start and stop coordinates if on R strand
@@ -487,18 +487,21 @@ package main;
 		    warn join("\t", "; Collecting Translation"), "\n" if ($main::verbose >= 5); ######
 
 		    ## Get CDS ID and coordinates (relative to chromosome) - there is a strand trick (see API doc)
-		    ## Problem: coordinates are strange
-		    my $coding_region_start = $trans->coding_region_start();
-		    my $coding_region_end = $trans->coding_region_end();
+		    ## Problem: coordinates are strange (really?)
 		    my $ensembl_translation = $trans->translation();
+		    my $coding_region_start;
+		    my $coding_region_end;
 
 		    warn join("\t", "; Translation collected", $ensembl_translation), "\n" if ($main::verbose >= 5); ######
 
 		    if($ensembl_translation) {
 
+		      $coding_region_start = $trans->coding_region_start();
+		      $coding_region_end = $trans->coding_region_end();
+
 			## Print the translated sequence for the current CDS
 			&PrintNextSequence(PP,"fasta",60,$ensembl_translation->seq(),$ensembl_translation->stable_id());
-			
+
 			## VERIFIER SI CECI EST TOUJOURS UTILE
 #			if ($feature[6] eq 'D') {
 			    $feature[4] = $coding_region_start;
@@ -528,7 +531,7 @@ package main;
 			unless ($feature[0] eq $feature[2]) {
 			    print $CDS_NAME join ("\t", $feature[0], $feature[0], "alternate"), "\n";
 			}
-		    }
+#		    }
 
 		    ## Getting UTRs
 		    my @utrfeature = ();
@@ -589,12 +592,6 @@ package main;
 
 			    push @exonfeature, $gene_id;
 
-#			    if ($feature[6] eq "R") {
-#				my $xchanger = $exonfeature[4];
-#				$exonfeature[4] = $exonfeature[5];
-#				$exonfeature[5] = $xchanger;
-#			    }
-
 			    print $EXON join("\t", @exonfeature), "\n";
 
 			    ## Getting coding regions of exons
@@ -605,65 +602,57 @@ package main;
 			    warn join ("\t", "EXON START=", $exonfeature[4]), "\n";
 			    warn join ("\t", "EXON END=", $exonfeature[5]), "\n";
 
-			    if ($exonfeature[4] < $coding_region_start && $exonfeature[5] > $coding_region_start) {
+			    if ($exonfeature[4] < $coding_region_start && $exonfeature[5] > $coding_region_end) {
 				push @codingexonfeature, "Coding-".$exonfeature[0];
 				push @codingexonfeature, "coding_exon";
 				push @codingexonfeature, "Coding-".$exonfeature[0];
 				push @codingexonfeature, $slice_id;
-#				if ($feature[6] eq "D") {
-				  push @codingexonfeature, $coding_region_start;
-				  push @codingexonfeature, $exonfeature[5];
-#				} else {
-#				  push @codingexonfeature, $exonfeature[5];
-#				  push @codingexonfeature, $coding_region_start;
-#				}
+				push @codingexonfeature, $coding_region_start;
+				push @codingexonfeature, $coding_region_end;
 				push @codingexonfeature, $feature[6];
 				push @codingexonfeature, "";
 				push @codingexonfeature, $transcript_id;
 				push @codingexonfeature, $gene_id;
 				print $CODING_EXON join ("\t", @codingexonfeature), "\n";
-			    }
-			    @codingexonfeature = ();
-                            if ($exonfeature[4] > $coding_region_start && $exonfeature[5] < $coding_region_end) {
+			    } elsif ($exonfeature[4] >= $coding_region_start && $exonfeature[5] <= $coding_region_end) {
 				push @codingexonfeature, "Coding-".$exonfeature[0];
                                 push @codingexonfeature, "coding_exon";
 				push @codingexonfeature, "Coding-".$exonfeature[0];
                                 push @codingexonfeature, $slice_id;
-#				if ($feature[6] eq "D") {
-                                  push @codingexonfeature, $exonfeature[4];
-                                  push @codingexonfeature, $exonfeature[5];
-#				} else {
-#				  push @codingexonfeature, $exonfeature[5];
-#				  push @codingexonfeature, $exonfeature[4];
-#				}
+				push @codingexonfeature, $exonfeature[4];
+				push @codingexonfeature, $exonfeature[5];
                                 push @codingexonfeature, $feature[6];
+				push @codingexonfeature, "";
+                                push @codingexonfeature, $transcript_id;
+                                push @codingexonfeature, $gene_id;
+				print $CODING_EXON join ("\t", @codingexonfeature), "\n";
+                            } elsif ($exonfeature[4] < $coding_region_start && $exonfeature[5] <= $coding_region_end && $exonfeature[5] >= $coding_region_start) {
+				push @codingexonfeature, "Coding-".$exonfeature[0];
+                                push @codingexonfeature, "coding_exon";
+				push @codingexonfeature, "Coding-".$exonfeature[0];
+                                push @codingexonfeature, $slice_id;
+				push @codingexonfeature, $coding_region_start;
+				push @codingexonfeature, $exonfeature[5];
+                                push @codingexonfeature, $feature[6];
+				push @codingexonfeature, "";
+                                push @codingexonfeature, $transcript_id;
+                                push @codingexonfeature, $gene_id;
+				print $CODING_EXON join ("\t", @codingexonfeature), "\n";
+                            } elsif ($exonfeature[4] >= $coding_region_start && $exonfeature[4] <= $coding_region_end && $exonfeature[5] > $coding_region_end) {
+				push @codingexonfeature, "Coding-".$exonfeature[0];
+                                push @codingexonfeature, "coding_exon";
+				push @codingexonfeature, "Coding-".$exonfeature[0];
+                                push @codingexonfeature, $slice_id;
+				push @codingexonfeature, $exonfeature[4];
+				push @codingexonfeature, $coding_region_end;
+                                push @codingexonfeature, $feature[6];
+				push @codingexonfeature, "";
+                                push @codingexonfeature, $transcript_id;
+                                push @codingexonfeature, $gene_id;
+				print $CODING_EXON join ("\t", @codingexonfeature), "\n";
+                            }
+			  }
 
-				push @codingexonfeature, "";
-                                push @codingexonfeature, $transcript_id;
-                                push @codingexonfeature, $gene_id;
-				print $CODING_EXON join ("\t", @codingexonfeature), "\n";
-                            }
-			    @codingexonfeature = ();
-			    if ($exonfeature[4] < $coding_region_end && $exonfeature[5] > $coding_region_end) {
-				push @codingexonfeature, "Coding-".$exonfeature[0];
-                                push @codingexonfeature, "coding_exon";
-				push @codingexonfeature, "Coding-".$exonfeature[0];
-                                push @codingexonfeature, $slice_id;
-#				if ($feature[6] eq "D") {
-                                  push @codingexonfeature, $exonfeature[4];
-                                  push @codingexonfeature, $coding_region_end;
-#				} else {
-#				  push @codingexonfeature, $coding_region_end;
-#				  push @codingexonfeature, $exonfeature[4];
-#				}
-                                push @codingexonfeature, $feature[6];
-				push @codingexonfeature, "";
-                                push @codingexonfeature, $transcript_id;
-                                push @codingexonfeature, $gene_id;
-				print $CODING_EXON join ("\t", @codingexonfeature), "\n";
-                            }
-			}
-			
 			## Get all Intron objects
 			warn join("\t", "; Collecting Introns"), "\n" if ($main::verbose >= 5);
 			my $int = 0;
@@ -682,13 +671,39 @@ package main;
 #                            }
 
 			    print $INTRON join("\t", @intronfeature), "\n";
-			}
+			  }
+		      }
 		    }
-		}
-	    }
+		  }
+	      }
 	    &RSAT::message::psWarn("After collecting genes for slice", $s, $slice_name) if ($main::verbose >= 0);
-	}
-	
+
+	    ## Get encode features
+#	    my $enc_regions = $slice->get_all_MiscFeatures('encode');
+#	    foreach my $enc_region (@$enc_regions) {
+#	      foreach my $attr (@{$enc_region->get_all_Attributes()}) {
+#		print $attr->name(), ':', $attr->value(), "\n";
+#	      }
+#	      print "Analysis: ",$enc_region -> analysis, "\n";
+#	      print "Start: ",$enc_region -> start, "\n";
+#	      print "End: ",$enc_region -> end, "\n";
+#	      print "Strand: ",$enc_region -> strand, "\n";
+#	    }
+
+#	    my $misc_features = $slice->get_all_MiscFeatures();
+#	    foreach my $misc_feature (@$misc_features) {
+#	      foreach my $set (@{$misc_feature->get_all_MiscSets()}) {
+#		print $attr->name(), ':', $attr->value(), "\n";
+#	      print "Code: ", $set->code(), "\n";
+#	      print "Name: ", $set->name(), "\n";
+#	      print "Description: ", $set->description(), "\n";
+#	      print "\n";
+#	      }
+#	    }
+
+
+	  }
+
 	################################################################
 	## Export sequence unless otherwise specified
 	my $seq_file = $slice_id;
@@ -729,7 +744,7 @@ package main;
 	    }
 	}
 	&RSAT::message::psWarn("AFTER COLLECTING INFO FOR SLICE: ".$s."/".$slices_number) if ($main::verbose >= 0);
-    }
+      }
     ################################################################
     ###### finish verbose
     if ($verbose >= 1) {
