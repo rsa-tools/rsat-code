@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.7 2007/08/03 15:36:48 oly Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.8 2007/08/21 13:17:41 oly Exp $
 #
 # Time-stamp
 #
@@ -985,8 +985,8 @@ sub PrintHelp {
     open(HELP, "| less");
     print HELP<<End_help;
 USAGE
-	retrieve-ensembl-seq [-type type] -org organism
-			[-from] [-to] [-format seqformat] [-lw line_width]
+	retrieve-ensembl-seq [-type type] -org organism | -dbname database
+			[-from] [-to] [-noorf] [-rm] [-maskcoding]
 			[-o outpufile] -q query_orf | -i query file | -all
 
 DESCRIPTION
@@ -996,6 +996,8 @@ DESCRIPTION
 CATEGORY
 	genomics
 	sequences
+
+REMARK  Requires local instal of the EnsEMBL Perl API (see http://www.ensembl.org/info/software/api_installation.html)
 
 OPTIONS
 	-org organism
