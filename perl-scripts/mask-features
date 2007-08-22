@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: mask-features,v 1.11 2007/06/05 20:41:45 morgane Exp $
+# $Id: mask-features,v 1.12 2007/08/22 16:14:34 morgane Exp $
 #
 ############################################################
 
@@ -249,7 +249,7 @@ package main;
     &RSAT::message::Info(join("\t", "--- Reading input regions ---")) if ($main::verbose >= 1);
   	our $regions_ft = &ReadRegionOfInterest();
   	our @regions_ft_ids = sort keys(%$regions_ft);
-  	
+
   	if ($main::verbose >= 2) {
  	 	foreach my $region_ft_id (@regions_ft_ids) {
  	 		my $region_ft = $regions_ft->{$region_ft_id};
@@ -285,7 +285,7 @@ package main;
     ## Treat each region of interest, included in the input file
     my $region_nb = 0;
 
-    foreach my $region_ft_id (@regions_ft_ids) {
+    foreach my $region_ft_id (@regions_ft_ids) {	
   		my $region_ft = $regions_ft->{$region_ft_id};
    		$region_nb ++;
    		$main::size_masked_ft = 0;
@@ -323,11 +323,11 @@ package main;
     
     ################################################################
     ###### Clean temporary files    
-    foreach my $i (0..($#main::ft_files+1)) {
+   	foreach my $i (0..$#main::ft_files) {
     	my $comp_nb = "comp_".$i;  	
     	my $comp_nb_sort = "comp_".$i."_sort"; 
     	unlink($main::outfile{$comp_nb}) if($main::outfile{$comp_nb});
-    	unlink($main::outfile{$comp_nb_sort}) if (($main::outfile{$comp_nb_sort})&&($i>0));
+    	unlink($main::outfile{$comp_nb_sort}) if ($main::outfile{$comp_nb_sort});
     	
      }    	  
     exit(0);
@@ -550,6 +550,8 @@ format, type the following command: I<convert-seq -h>
 
 =item	B<-o outputfile>
 
+In fasta format, this file contains the sequence.
+In raw format, this file is a filelist of the sequences produced (each sequence is in a separate file)
 If no output file is specified, the standard output is used.  This
 allows to use the command within a pipe.
 
@@ -1007,6 +1009,7 @@ sub IsMaskType {
 #### A buffering system is thus applied, that process iteratively
 #### slices of the complete sequence.
 sub MaskSequence {
+
 	my $mask_regions = shift;
 	my $region_ft = shift;
 	my $region_nb = shift;
@@ -1040,7 +1043,7 @@ sub MaskSequence {
 	if ($buffer >= $length) {
 		$buffer = $length;
 	}
-		
+
 	## for fasta output
 	my $last_print_length = 0;
 	if ($main::out_format eq "fasta"){
@@ -1062,12 +1065,12 @@ sub MaskSequence {
 	}
 	## for raw output, 1 sequence in each file
 	my $raw;
-	if (($main::out_format eq "raw")&&($#main::regions_ft_ids > 0)) {
+	if (($main::out_format eq "raw")&&(length(scalar($#main::regions_ft_ids)) > 0)) {
 		## make a new file for each sequence
 		if ($main::outfile{output}) {
 			## keep the original contig ID for naming the new files
 			my $masks = join ("_",@masks);
-			my $seq_name = $contig_id."_ft".$region_nb."_".$masks."_masked";
+			my $seq_name = $contig_id."_ft".$region_nb."_".$start."_".$end."_".$masks."_masked";
 			if ($rm){
 				$seq_name.="_repeat_masked";
 			}
@@ -1075,6 +1078,10 @@ sub MaskSequence {
 			$main::outfile{$seq_name} = $seq_name.".raw";
 			($raw) = &OpenOutputFile($main::outfile{$seq_name});
 			&RSAT::message::Info("Raw output format: opening new file $main::outfile{$seq_name} ") if ($main::verbose >= 1);
+			
+			## write in the output file the name of the sequence and the ID if the contig
+			## this file can then be used as contig list file
+			print $main::out $seq_name.".raw"."\t".$contig_id."\n";
 		}
 		
 	}
@@ -1130,8 +1137,13 @@ sub MaskSequence {
 			}	
    		}				
 	## write the sequence in raw format (do not use PrintNextSequence to avoid chariage return between each slice)
-	if ($main::out_format eq "raw"){
-		print $raw $current_seq;
+	if ($main::out_format eq "raw") {
+		if ($main::outfile{output}){
+			print $raw $current_seq;
+		}else{
+			print $main::out $current_seq;
+		}
+		
 	} elsif ($main::out_format eq "fasta"){
 	
 		#####################################
