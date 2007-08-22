@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.8 2007/08/21 13:17:41 oly Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.9 2007/08/22 14:57:49 oly Exp $
 #
 # Time-stamp
 #
@@ -15,6 +15,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
+require "RSA.seq.lib";
 require RSAT::util;
 
 ## EnsEMBL libraries
@@ -975,6 +976,9 @@ sub GetSequence {
 	}
       }
     }
+  }
+  if ($strand == -1) {
+    $sequence = &ReverseComplement($sequence);
   }
   return $sequence;
 }
