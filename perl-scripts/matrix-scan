@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.81 2007/08/14 15:53:30 jvanheld Exp $
+# $Id: matrix-scan,v 1.82 2007/08/23 16:34:06 jvanheld Exp $
 #
 # Time-stamp: <2007-07-17 16:36:54 jturatsi>
 #
@@ -9,6 +9,14 @@
 ## TO DO: add an option to sort hits either by position or by score
 ## TO DO: add a pseudo-weight to the bg model (for the time being, it only affects the matrix)
 ## TO DO: improve the rank output: calcualte a rank per sequence + a total rank + a rank per matrix+sequence
+
+## TO DO: REGION SCORE
+## - report scores for regions of width W
+## - first step: table with W columns x  M rows 
+## - compute at each position a region score for a fixed width
+## - report the region score profile in a tab-delimited file (multi-score feature-map format)
+##        - contig, start, end, strand, scores: nhits, Pval product, weight sum, score de Helge Roider, .... (see other scores in module finding programs)
+## - report enlarged regions
 
 ## use strict;
 BEGIN {
@@ -259,7 +267,8 @@ package main;
   $infinite = "999"; ## String to print for infinite values (e.g. when the eval < e-300, it i rounded to 0, thus the significance is infinite)
 
   $bg_in_format = "oligo-analysis";
-  $bg_out_format = "tab";
+  $bg_out_format = "tables";
+#  $bg_out_format = "transitions";
   local $sequence_number = 0;
   $sum_seq_len = 0;
   #    $n_containing_regions = 0;
@@ -795,29 +804,29 @@ package main;
     &RSAT::message::TimeWarn("Scanning sequence", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id,  "with ".scalar(@matrices)." PSSM")
       if ($main::verbose >= 3);
     &RSAT::message::psWarn("Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id) if (($main::verbose >= 2) && (($sequence_number % 50) == 0));
-    
+
     if ($calc_fields{sites}) {
       #	  $n_containing_region = 0;
       for my $pos (1..$seq_len) {
-      	
-      	## bg window : method 1 :update model if required, model does include the scores segment.
-   		  if (($main::markov >= 0) && 
-   		  ($bg_method ne "input") &&
-   		  ($bg_include_seg) &&
-		   ($pos > $main::window/2) && ## condition where matrix is not exactly centered on the window, as same bg for all matrices
-		    ## ($pos + $main::window <= $seq_len)) { ## old condition which seems incorrect 
-		    ##  => miss window/2 last nucleotides in the calculation of bg model, replaced with following line
-		    (($window_offset + 1) + $main::window <= $seq_len)) { ## continue updating until the window covers the last portion of the sequence		  	 
 
-		  my $added_word = substr($current_seq, $window_offset + $main::window - $main::markov, $markov+1);
-		  my $deleted_word = substr($current_seq, $window_offset, $markov+1);
-		#  $bg_model->two_words_update($added_word, $deleted_word, $window_offset);
- 			unless ($added_word eq $deleted_word){ ## No need to update if added word equald deleted word
-		   		$bg_model->one_word_update($added_word, "add",$window_offset);
-		   		$bg_model->one_word_update($deleted_word, "delete",$window_offset);
- 			}
-	 	 $window_offset++;
-		}
+      	## bg window : method 1 :update model if required, model does include the scores segment.
+	if (($main::markov >= 0) && 
+	    ($bg_method ne "input") &&
+	    ($bg_include_seg) &&
+	    ($pos > $main::window/2) &&	## condition where matrix is not exactly centered on the window, as same bg for all matrices
+	    ## ($pos + $main::window <= $seq_len)) { ## old condition which seems incorrect 
+	    ##  => miss window/2 last nucleotides in the calculation of bg model, replaced with following line
+	    (($window_offset + 1) + $main::window <= $seq_len)) { ## continue updating until the window covers the last portion of the sequence		  	 
+
+	  my $added_word = substr($current_seq, $window_offset + $main::window - $main::markov, $markov+1);
+	  my $deleted_word = substr($current_seq, $window_offset, $markov+1);
+	  #  $bg_model->two_words_update($added_word, $deleted_word, $window_offset);
+	  unless ($added_word eq $deleted_word){ ## No need to update if added word equald deleted word
+	    $bg_model->one_word_update($added_word, "add",$window_offset);
+	    $bg_model->one_word_update($deleted_word, "delete",$window_offset);
+	  }
+	  $window_offset++;
+	}
 
 
 	## Detect sites
@@ -827,50 +836,50 @@ package main;
 	  my $segment = substr($current_seq, $pos-1, $ncol);
 	  
 	  ## window bg model : method 2: excluding scored segment in bg model calculation
-	   if (($main::markov >= 0) && 
-   		  ($bg_method ne "input") &&
-	  		(!$bg_include_seg)){
-	  	## initial bg model is calculated starting after the first segment
-	  	if ($pos == 1){
-    		$bg_model->calc_from_seq(substr($current_seq,$ncol,($main::window - $ncol))); 
-    		 &RSAT::message::Debug("bg initialisation : ", Dumper($bg_model->{transition_absolute_count})) if ($main::verbose >= 5);
+	  if (($main::markov >= 0) && 
+	      ($bg_method ne "input") &&
+	      (!$bg_include_seg)) {
+	    ## initial bg model is calculated starting after the first segment
+	    if ($pos == 1) {
+	      $bg_model->calc_from_seq(substr($current_seq,$ncol,($main::window - $ncol))); 
+	      &RSAT::message::Debug("bg initialisation : ", Dumper($bg_model->{transition_absolute_count})) if ($main::verbose >= 5);
     
-    	## update bg model
-    	} else { 
-    		## left side of the scored segment
-    		## here words are added
-    		if ($pos >= $markov+2) {	## do not add words on the left side, if the word is not as long as markov+1
-    			my $added_word = substr($current_seq, $pos - ($markov + 2), $markov+1);
-    			 &RSAT::message::Debug("added word", $added_word,"begins at" ,$pos - ($markov + 2) ) if ($main::verbose >= 3);
-    			$bg_model->one_word_update($added_word, "add",$pos - ($markov + 2));
-    		}                                                                                                                             
-    		&RSAT::message::Debug( "pos", $pos,"> window/2", $main::window/2,  "condition",$pos + $main::window, "<=","seq_len", $seq_len ) if ($main::verbose >= 10);	 
+	      ## update bg model
+	    } else { 
+	      ## left side of the scored segment
+	      ## here words are added
+	      if ($pos >= $markov+2) { ## do not add words on the left side, if the word is not as long as markov+1
+		my $added_word = substr($current_seq, $pos - ($markov + 2), $markov+1);
+		&RSAT::message::Debug("added word", $added_word,"begins at" ,$pos - ($markov + 2) ) if ($main::verbose >= 3);
+		$bg_model->one_word_update($added_word, "add",$pos - ($markov + 2));
+	      }                                                                                                                             
+	      &RSAT::message::Debug( "pos", $pos,"> window/2", $main::window/2,  "condition",$pos + $main::window, "<=","seq_len", $seq_len ) if ($main::verbose >= 10);	 
    		
-    		## make the window slides
-    		if (($main::window > 0) &&
-		    (floor($pos + $ncol/2) > floor($main::window/2) + 1) && ##  condition where matrix is exactly centered on the window
-		      (($window_offset + 1) + $main::window <= $seq_len)) { ## continue updating until the window covers the last portion of the sequence		  	 
+	      ## make the window slides
+	      if (($main::window > 0) &&
+		  (floor($pos + $ncol/2) > floor($main::window/2) + 1) && ##  condition where matrix is exactly centered on the window
+		  (($window_offset + 1) + $main::window <= $seq_len)) {	## continue updating until the window covers the last portion of the sequence		  	 
 		    	 
-		    	&RSAT::message::Debug("Sliding the window, offset is ", $window_offset) if ($main::verbose >= 5);	    	
-		    	my $added_word = substr($current_seq, $window_offset + $main::window - $main::markov, $markov+1);
-		  		my $deleted_word = substr($current_seq, $window_offset, $markov+1);
- 				unless ($added_word eq $deleted_word){ ## No need to update if added word equald deleted word
- 					## add right of window (= end of window)
-		   			$bg_model->one_word_update($added_word, "add",$window_offset);
-		   			## del left of window (= start of window)
-		   			$bg_model->one_word_update($deleted_word, "delete",$window_offset);
- 				}
-	 		 $window_offset++;
-		    }
+		&RSAT::message::Debug("Sliding the window, offset is ", $window_offset) if ($main::verbose >= 5);	    	
+		my $added_word = substr($current_seq, $window_offset + $main::window - $main::markov, $markov+1);
+		my $deleted_word = substr($current_seq, $window_offset, $markov+1);
+		unless ($added_word eq $deleted_word){ ## No need to update if added word equald deleted word
+		  ## add right of window (= end of window)
+		  $bg_model->one_word_update($added_word, "add",$window_offset);
+		  ## del left of window (= start of window)
+		  $bg_model->one_word_update($deleted_word, "delete",$window_offset);
+		}
+		$window_offset++;
+	      }
     		
-    		## right side of the scored segment
-    		## here words are deleted
-    		if ($seq_len - ($pos + $ncol -1 ) >= $markov ) {	## end of sequence : do not delete words on the right side, if the word is not as long as markov +1
-    			my $deleted_word = substr($current_seq, ($pos + $ncol -1) -1 , $markov+1);
-    			  &RSAT::message::Debug("deleted word", $deleted_word,"begins at" ,($pos + $ncol -1) -1) if ($main::verbose >= 3);
-    			$bg_model->one_word_update($deleted_word, "delete",($pos + $ncol -1) -1);
-    		}
-    	}
+	      ## right side of the scored segment
+	      ## here words are deleted
+	      if ($seq_len - ($pos + $ncol -1 ) >= $markov ) { ## end of sequence : do not delete words on the right side, if the word is not as long as markov +1
+		my $deleted_word = substr($current_seq, ($pos + $ncol -1) -1 , $markov+1);
+		&RSAT::message::Debug("deleted word", $deleted_word,"begins at" ,($pos + $ncol -1) -1) if ($main::verbose >= 3);
+		$bg_model->one_word_update($deleted_word, "delete",($pos + $ncol -1) -1);
+	      }
+	    }
 	  }
 
 	  ## Skip N-containing segments
@@ -919,7 +928,7 @@ package main;
 	next;
       }
       if ($calc_fields{rank}) {
-      	 &RSAT::message::TimeWarn("Sorting matches for sequence", $seq_id) if ($main::verbose >= 3);
+	&RSAT::message::TimeWarn("Sorting matches for sequence", $seq_id) if ($main::verbose >= 3);
 	if ($calc_fields{pval}) {
 	  ## Sort matches by significance
 	  @ranked_matches =
