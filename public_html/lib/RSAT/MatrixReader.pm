@@ -188,8 +188,8 @@ sub _readFromTRANSFACFile {
       $matrix->set_parameter("program", "transfac");
       $matrix->set_parameter("matrix.nb", $current_matrix_nb);
       push @matrices, $matrix;
-      $matrix->set_parameter("TF_accession", $accession) if ($accession);
-      $matrix->set_parameter("TF_version", $version);
+      $matrix->set_parameter("accession", $accession) if ($accession);
+      $matrix->set_parameter("version", $version);
       $ncol = 0;
       next;
 
@@ -311,6 +311,7 @@ sub _readFromInfoGibbsFile {
   my $command = "";
   my $ncol = 0;
   my $infogibbs_consensus = "";
+  my %select_type = ("final"=>1);
 
   my %prior = ();
   my $l = 0;
@@ -363,8 +364,10 @@ sub _readFromInfoGibbsFile {
       ## Start a new matrix (an InfoGibbs file contains several matrices)
     } elsif (/^AC\s+(\S+)/) {
       my $accession = $1;
+      &RSAT::message::Info("New matrix", $accession) if ($main::verbose >= 0);
       $current_matrix_nb++;
       $matrix = new RSAT::matrix();
+      $matrix->set_parameter("accession", "IG.".$accession);
       $matrix->set_parameter("program", "InfoGibbs");
       $matrix->set_parameter("version", $version);
       $matrix->set_parameter("command", $command);
@@ -374,11 +377,11 @@ sub _readFromInfoGibbsFile {
 #	&RSAT::message::Debug("Prior", join (" ", %prior)) if ($main::verbose >= 5);
       }
       push @matrices, $matrix;
-      $matrix->set_parameter("accession", $accession) if ($accession);
       $ncol = 0;
+      $infogibbs_consensus = "";
 
       &RSAT::message::Info("Parsing matrix",  $current_matrix_nb, $matrix->get_attribute("accession")) 
-	if ($main::verbose >= 3);
+	if ($main::verbose >= 0);
       next;
 
       ## Parameters for the current matrix
@@ -403,7 +406,7 @@ sub _readFromInfoGibbsFile {
 #	  &RSAT::message::Debug("Prior", join (" ", %prior)) if ($main::verbose >= 5);
 	}
 
-	## Count column of the matrix file (row in transfac format)
+	## Count column of the matrix file (row in TRANSFAC/InfoGibbs format)
       } elsif (/^(\d+)\s+/) {
 	my $values = $'; #'
 	$values = &RSAT::util::trim($values);
@@ -411,7 +414,7 @@ sub _readFromInfoGibbsFile {
 	my $consensus_residue= "";
 	if ($fields[$#fields] =~ /[A-Z]/i) {
 	  $consensus_residue = pop @fields;
-	  $transfac_consensus .= $consensus_residue;
+	  $infogibbs_consensus .= $consensus_residue;
 	}
 	$matrix->addColumn(@fields);
 	$ncol++;
@@ -465,9 +468,13 @@ sub _readFromInfoGibbsFile {
       } elsif ((/^DE\s+/)   && ($matrix)){
 	$matrix->set_parameter("description", $'); #'
 
+	## Matrix type
+      } elsif ((/^TY\s+/)   && ($matrix)){
+	$matrix->set_parameter("type", $'); #'
+
       } elsif (/^\/\//) {
 	if ($matrix) {
-	  $matrix->set_parameter("transfac_consensus", $transfac_consensus);
+	  $matrix->set_parameter("infogibbs_consensus", $infogibbs_consensus);
 	}
 
 	## Unknown field
@@ -484,7 +491,15 @@ sub _readFromInfoGibbsFile {
   }
   close $in if ($file);
 
-  return @matrices;
+  my @selected_matrices = ();
+  foreach my $matrix (@matrices) {
+    my $type = $matrix->get_attribute("type");
+    if (($type) && ($select_type{$type})) {
+      push @selected_matrices, $matrix;
+    }
+  }
+
+  return @selected_matrices;
 
 }
 
