@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.20 2007/08/17 09:57:18 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.21 2007/08/23 16:34:54 jvanheld Exp $
 #
 ############################################################
 
@@ -200,7 +200,7 @@ package main;
       $outfile{output} .= "_".$taxon;
       $outfile{output} .= $noov;
       $outfile{output} .= $str;
-      $outfile{output} .= ".tab";
+      $outfile{output} .= ".tab.gz";
       $outfile{output} =~ s/\s/_/g;
       &RSAT::message::Info("Installation file", $outfile{output}) if ($main::verbose >= 1);
     }
