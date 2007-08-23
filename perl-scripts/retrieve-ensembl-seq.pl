@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.9 2007/08/22 14:57:49 oly Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.10 2007/08/23 14:39:05 oly Exp $
 #
 # Time-stamp
 #
@@ -48,7 +48,10 @@ package main;
   local @queries;
   local $left_limit;
   local $right_limit;
+  local $strand = 1;
   local $chrom;
+  local $ft_file;
+  local $ft_file_format = "ft";
   local $mask_coding = 0;
 
   local $output_file;
@@ -139,13 +142,20 @@ package main;
     $sequence = &GetSequence($left_limit, $right_limit);
     my $size = $right_limit - $left_limit + 1;
 
+    my $rsat_strand;
+    if ($strand == 1) {
+      $rsat_strand = "D";
+    } else {
+      $rsat_strand = "R";
+    }
+
     &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
     &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
-    &RSAT::message::Debug(">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit D") if ($main::verbose >= 3);
+    &RSAT::message::Debug(">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand") if ($main::verbose >= 3);
     &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
     # Export sequence to file
-    print OUT ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit D\n";
+    print OUT ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
     print OUT "$sequence\n";
 
   # Feature file
@@ -154,19 +164,40 @@ package main;
     while ($line = <FEAT>) {
       chomp($line);
       next if (($line =~/^[#|;]/)||($line eq ""));
-      my ($chrom, $ft_type, $ft_id, $strand, $left_limit, $right_limit,@other_comments) = split (/\t/,$line);
+      if ($ft_file_format eq "ft") {
+	($chrom, $ft_type, $ft_id, $strand, $left_limit, $right_limit,@other_comments) = split (/\t/,$line);
+#      } elsif ($ft_file_format eq 'gff') {
+#	($seq_name, $source, $ft_type, $left_limit, $right_limit, $score, $strand, $frame, @other_comments) = split (/\t/,$line);
+      }
+
+      # Tranforms strand in ensembl format
+      $strand =~ s/F/1/;
+      $strand =~ s/R/-1/;
+      $strand =~ s/D/1/;
+      $strand =~ s/W/1/;
+      $strand =~ s/C/-1/;
+      $strand =~ s/>/1/;
+      $strand =~ s/</-1/;
+
       local $chromosome = $slice_adaptor -> fetch_by_region('chromosome', $chrom);
       # Get sequence (repeat masked or not)
       $sequence = &GetSequence($left_limit, $right_limit);
       my $size = $right_limit - $left_limit + 1;
 
+      my $rsat_strand;
+      if ($strand == 1) {
+	$rsat_strand = "D";
+      } elsif ($strand == -1) {
+	$rsat_strand = "R";
+      }
+
       &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
       &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
-      &RSAT::message::Debug(">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit D") if ($main::verbose >= 3);
+      &RSAT::message::Debug(">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand") if ($main::verbose >= 3);
       &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
       # Export sequence to file
-      print OUT ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit D\n";
+      print OUT ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
       print OUT "$sequence\n";
     }
 
@@ -244,6 +275,10 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-o") {
       $output_file = $ARGV[$a+1];
 
+      ### EnsEMBL database server (host)
+    } elsif ($ARGV[$a] eq "-ensemblhost") {
+      $ensembl_host = $ARGV[$a+1];
+
       ### EnsEMBL database name
     } elsif ($ARGV[$a] eq "-dbname") {
       $dbname = $ARGV[$a+1];
@@ -271,9 +306,17 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-right") {
       $right_limit = $ARGV[$a+1];
 
+      ### Strand
+    } elsif ($ARGV[$a] eq "-strand") {
+      $strand = $ARGV[$a+1];
+
       ### Feature file
     } elsif ($ARGV[$a] eq "-ftfile") {
       $ft_file = $ARGV[$a+1];
+
+      ### Feature file format
+    } elsif ($ARGV[$a] eq "-ftfileformat") {
+      $ft_file_format = $ARGV[$a+1];
 
       ### Sequence type
     } elsif ($ARGV[$a] eq "-type") {
@@ -350,7 +393,7 @@ sub Main {
 
   my $gene_start = $gene -> start();
   my $gene_end = $gene -> end();
-  local $strand = $gene -> strand();
+  $strand = $gene -> strand();
 
   my $description = $gene -> description();
 
@@ -1013,6 +1056,9 @@ OPTIONS
 	        (type 'supported-organism | grep EnsEMBL' to obtain the list of supported
 	         organisms)
 
+        -ensemblhost
+                address of ensembl database server (default is EBI server)
+
 	-dbname	name of EnsEMBL database
 		(alternative to organism)
 
@@ -1077,6 +1123,13 @@ OPTIONS
 
         -right  Right limit of sequence to retrieve
 
+        -strand Strand of seauence to retrieve when using -left and -right. Values: 1, -1
+
+        -ftfile Feature file
+
+        -ftfileformat
+                Feature file format. Supported: ft, gft
+
 End_help
     close HELP;
     exit;
@@ -1090,6 +1143,7 @@ sub PrintShortHelp {
 retrieve-seq options
 --------------------
 -org		organism
+-ensemblhost    address of ensembl database server (default is EBI server)
 -dbname         name of ensembl db
 -feattype	accepted feature types. Supported: gene, mrna, cds, intron, exon, utr
 -type		upstream | downstream | orf | random
@@ -1108,6 +1162,9 @@ retrieve-seq options
 -chrom          chromosome name or number (to use with -left and -right)
 -left           left limit of sequence to retrieve
 -right          right limit of sequence to retrieve
+-strand         strand of seauence to retrieve when using -left and -right. Values: 1, -1
+-ftfile         feature file
+-ftfileformat   feature file format. Supported: ft, gft
 End_short_help
   close HELP;
   exit;
