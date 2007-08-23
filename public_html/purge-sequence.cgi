@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence.cgi,v 1.5 2006/12/08 15:10:24 jvanheld Exp $
+# $Id: purge-sequence.cgi,v 1.6 2007/08/23 16:32:42 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 00:38:45 jvanheld>
 #
@@ -45,7 +45,7 @@ $query = new CGI;
 #
 
 ### sequence file ####
-($sequence_file,$sequence_format) = &GetSequenceFile("fasta", 1, $add_rc);
+($sequence_file,$sequence_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>0);
 $parameters = " -i $sequence_file ";
 
 $result_file = "$TMP/$tmp_file_name.res";
