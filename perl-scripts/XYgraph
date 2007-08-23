@@ -2010,7 +2010,9 @@ sub ReadArguments {
 
 	}
     }
-    
+
+################################################################
+## Define a color palette for gnuplot (used to generate pdf and ps files)
 sub GnuplotPalette {
     ### black and white
     $white = "white";
