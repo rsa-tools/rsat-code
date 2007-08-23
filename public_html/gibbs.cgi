@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs.cgi,v 1.15 2006/12/08 15:10:24 jvanheld Exp $
+# $Id: gibbs.cgi,v 1.16 2007/08/23 16:32:42 jvanheld Exp $
 #
 # Time-stamp: <2003-05-13 11:30:48 jvanheld>
 #
@@ -55,7 +55,7 @@ if (lc($query->param("add_rc")) eq "on") {
 }
 
 ### sequence file ####
-($sequence_file,$sequence_format) = &GetSequenceFile("fasta", 1, $add_rc);
+($sequence_file,$sequence_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>1);
 $parameters = " $sequence_file ";
 
 ### matrix length

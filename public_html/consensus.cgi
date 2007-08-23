@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.13 2006/12/08 15:10:24 jvanheld Exp $
+# $Id: consensus.cgi,v 1.14 2007/08/23 16:32:42 jvanheld Exp $
 #
 # Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
@@ -47,7 +47,7 @@ $query = new CGI;
 #
 
 ### sequence file ####
-($sequence_file,$sequence_format) = &GetSequenceFile("wconsensus", 1, 0);
+($sequence_file,$sequence_format) = &GetSequenceFile("wconsensus", no_format=>1, add_rc=>0);
 $parameters .= " -f $sequence_file ";
 
 ## Number of matrices to save

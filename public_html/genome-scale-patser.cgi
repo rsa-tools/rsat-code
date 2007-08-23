@@ -13,7 +13,7 @@ require "patser.lib.pl";
 $patser_command = "$BIN/patser";
 $matrix_from_transfac_command = "$SCRIPTS/matrix-from-transfac";
 $matrix_from_gibbs_command = "$SCRIPTS/matrix-from-gibbs";
-$convert_seq_command = "$SCRIPTS/convert-seq";
+#$convert_seq_command = "$SCRIPTS/convert-seq";
 $features_from_patser_cmd = "$SCRIPTS/features-from-patser -v 1";
 $add_orf_function_command = "$SCRIPTS/add-gene-info -info descr";
 $link_command = "$SCRIPTS/add-yeast-link";
