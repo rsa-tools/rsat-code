@@ -4,9 +4,8 @@
 #
 package RSAT::MarkovModel;
 
-## CVS: fixed bugs with the method average_strands()
-
 ## TO DO : 
+## - fix bugs with the method average_strands()
 ## - for the model update, take into account the strand-insensitive models
 
 use RSAT::GenericObject;
@@ -24,7 +23,9 @@ use Data::Dumper;
 			    "ms"=>1, ## Abbreviation for MotifSampler
 			    "meme"=>1,
 			   );
-%supported_output_formats = ("tab"=>1, 
+%supported_output_formats = ("tab"=>1, ## transition_freq
+			     "transitions"=>1, ## transition table
+			     "tables"=>1, ## frequency + transition tables
 			     "patser"=>1,
 			     "oligo-analysis"=>1,
 			     "oligos"=>1, ## Abbreviation for oligo-analysis
@@ -164,7 +165,9 @@ sub load_from_file_oligos {
 
   my ($file_type, %patterns) = &main::ReadPatternFrequencies($bg_file) ;
 
-  ## Convert dyads into oligos
+  ################################################################
+  ## For ydad input format, convert dyads into oligos: only retain
+  ## dyads with spacing 0
   if ($dyad_conversion) {
     my %oligo_patterns;
     foreach my $dyad_seq (keys %patterns) {
@@ -177,9 +180,6 @@ sub load_from_file_oligos {
       delete $patterns{$dyad_seq};
     }
   }
-
-  my @patterns = keys(%patterns);
-
   ## This is a bit tricky: ReadExpectedFrequencies sets a global variable
   ## $file_type to "2str" if the model is strand-insensitive/
   if ($file_type eq "2str") {
@@ -190,26 +190,81 @@ sub load_from_file_oligos {
     $self->force_attribute("strand", "undef");
   }
 
-  my $order = length($patterns[0]) -1 ;	## Use the first pattern to calculate model order
-  $self->force_attribute("order", $order);
+#   if ($main::verbose >= 10) {
+#     foreach my $oligo_seq (sort(keys(%patterns))) {
+#       &RSAT::message::Debug("Loaded oligo frequency", $oligo_seq,  $patterns{$oligo_seq}->{exp_freq});
+#     }
+#   }
 
-  ## Calculate alphabet from expected frequency keys
-  foreach my $pattern_seq (keys %patterns) {
+  $self->oligos_to_frequency_table(%patterns);
+  #    &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', @patterns)) if ($main::verbose >= 5);
+}
+
+################################################################
+
+=pod
+
+=item B<oligos_to_frequency_table>
+
+Convert oligomer frequencies into a prefix/suffix table (one row per
+prefix, one column per suffix, each cell indicates the absolute
+frequency of the prefix->suffix transition).
+
+=cut
+sub oligos_to_frequency_table {
+  my ($self, %patterns) = @_;
+  my @patterns = sort(keys(%patterns));
+  my $pattern_len = length($patterns[0]);
+  my $pattern_nb = scalar(keys(%patterns));
+  my $order =  $pattern_len -1 ;	## Use the first pattern to calculate model order
+  $self->force_attribute("order", $order);
+  &RSAT::message::Info("Converting oligos into frequency tables", $pattern_nb." patterns", "length", $pattern_len, "order", $order) 
+    if ($main::verbose >= 3);
+
+  foreach my $pattern_seq (@patterns) {
     my $pattern_freq =  $patterns{$pattern_seq}->{exp_freq};
     ## Check pattern length
     $pattern_seq = lc($pattern_seq); ## Ensure case-insensitivity
-    my $pattern_len = length($pattern_seq);
-#    &RSAT::message::Debug($pattern_seq, $pattern_len, $pattern_freq, 
-#    			      join(";", keys %{$patterns{$pattern_seq}})) if ($main::verbose >= 0);
+    $pattern_len = length($pattern_seq);
+    #    &RSAT::message::Debug($pattern_seq, $pattern_len, $pattern_freq, 
+    #    			      join(";", keys %{$patterns{$pattern_seq}})) if ($main::verbose >= 0);
     &RSAT::error::FatalError("All patterns should have the same length in a Markov model file.") 
       unless $pattern_len = $order+1;
     my $prefix = substr($pattern_seq,0,$order);
     my $suffix = substr($pattern_seq,$order, 1);
-    $self->{transition_count}->{$prefix}->{$suffix} = $pattern_freq;
-    #	&RSAT::message::Debug("transition count", $prefix.".".$suffix, $pattern_freq, $self->{transition_count}->{$prefix}->{$suffix}) if ($main::verbose >= 10);
+    $self->{oligo_freq}->{$prefix}->{$suffix} = $pattern_freq;
+    #	&RSAT::message::Debug("transition count", $prefix.".".$suffix, $pattern_freq, $self->{oligo_freq}->{$prefix}->{$suffix}) if ($main::verbose >= 10);
   }
-  #    &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', @patterns)) if ($main::verbose >= 5);
- 
+}
+
+################################################################
+=pod 
+
+=item B<transitions_to_oligo_frequencies>
+
+
+Convert a prefix/suffix table into oligo frequencies.
+
+The frequency table has one row per prefix, one column per suffix,
+each cell indicates the absolute frequency of the prefix->suffix
+transition. Oligos are obtained by concatenating each prefix with each suffix
+
+=cut
+sub transitions_to_oligo_frequencies {
+  my ($self) = @_;
+  &RSAT::message::Info("Converting transitions into oligo frequencies") if ($main::verbose >= 3);
+  my %patterns = ();
+  my @prefix = sort($self->get_attribute("prefixes"));
+  my @suffix = sort($self->get_attribute("suffixes"));
+  foreach my $prefix (sort (@prefix)) {
+    foreach my $suffix (sort(@suffix)) {
+      my $oligo_seq = $prefix.$suffix;
+      my $oligo_freq = $self->{prefix_proba}->{$prefix}*$self->{transitions}->{$prefix}->{$suffix};
+      $patterns{$oligo_seq}->{exp_freq} = $oligo_freq;
+#      &RSAT::message::Debug($prefix, $suffix, $oligo_seq, $oligo_freq) if ($main::verbose >= 10);
+    }
+  }
+  return %patterns;
 }
 
 
@@ -285,8 +340,8 @@ sub load_from_file_meme {
       unless $pattern_len = $order+1;
     my $prefix = substr($pattern_seq,0,$order);
     my $suffix = substr($pattern_seq,$order, 1);
-    $self->{transition_count}->{$prefix}->{$suffix} = $pattern_freq;
-    #	&RSAT::message::Debug("transition count", $prefix.".".$suffix, $pattern_freq, $self->{transition_count}->{$prefix}->{$suffix}) if ($main::verbose >= 10);
+    $self->{oligo_freq}->{$prefix}->{$suffix} = $pattern_freq;
+    #	&RSAT::message::Debug("transition count", $prefix.".".$suffix, $pattern_freq, $self->{oligo_freq}->{$prefix}->{$suffix}) if ($main::verbose >= 10);
 
   }
   #    &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', @patterns)) if ($main::verbose >= 5);
@@ -374,8 +429,8 @@ sub load_from_file_MotifSampler {
 	foreach my $i (0..$#suffixes) {
 	  my $suffix= $suffixes[$i];
 	  my $proba= $transition_proba[$i];
-	  $self->{transition_count}->{$prefix}->{$suffix} = $proba*$prefix_proba{$prefix};
-	  $self->{transition_freq}->{$prefix}->{$suffix} = $proba*$prefix_proba{$prefix};
+	  $self->{oligo_freq}->{$prefix}->{$suffix} = $proba*$prefix_proba{$prefix};
+	  $self->{transitions}->{$prefix}->{$suffix} = $proba*$prefix_proba{$prefix};
 	  &RSAT::message::Debug("transition", $prefix, $prefix_proba{$prefix}, $suffix, $suffix_proba{$suffix}, $proba, ) if ($main::verbose >= 5);
 	}
       }
@@ -404,10 +459,15 @@ sub add_pseudo_freq {
 
   ## get alphabet
   my @dna_alphabet =  qw (a c g t);
-  my $alpha_size = scalar(@dna_alphabet);
 
   ################################################################
-  ## Calculate all possible prefix oligonucleotides, even those
+  ## Ensure that all possible suffixes are taken into consideration
+  my @possible_suffixes = @dna_alphabet;
+  $self->set_array_attribute("suffixes", @possible_suffixes);
+  my $alpha_size = scalar(@possible_suffixes);
+
+  ################################################################
+  ## Calculate all possible prefix oligomers, even those
   ## which are not observed in the input background model
   my @possible_prefixes;
   if ($self->{order} > 0) {
@@ -415,6 +475,7 @@ sub add_pseudo_freq {
   } elsif ($self->{order} == 0) {
     @possible_prefixes  = ("");
   }
+  $self->set_array_attribute("prefixes", @possible_prefixes);
 
   ################################################################
   ## Update prefix sum
@@ -423,21 +484,22 @@ sub add_pseudo_freq {
     $total_prefix_sum += $self->{prefix_sum}->{$prefix};
   }
 #  &RSAT::message::Debug("Total prefix sum", $total_prefix_sum) if ($main::verbose >= 0);
+
   my $prefix_pseudo_count = $total_prefix_sum*$pseudo_freq/scalar(@possible_prefixes);
   foreach my $prefix (@possible_prefixes) {
     $self->{prefix_sum}->{$prefix} = $self->{prefix_sum}->{$prefix}*(1-$pseudo_freq) + $prefix_pseudo_count;
-#    &RSAT::message::Debug("Corrected prefix sum", $prefix, $self->{prefix_sum}->{$prefix}) if ($main::verbose >= 10);
+    #    &RSAT::message::Debug("Corrected prefix sum", $prefix, $self->{prefix_sum}->{$prefix}) if ($main::verbose >= 10);
   }
 
   ################################################################
   ## Update suffix sum
   my $total_suffix_sum = 0;
-  foreach my $suffix (@dna_alphabet) {
+  foreach my $suffix (@possible_suffixes) {
     $total_suffix_sum += $self->{suffix_sum}->{$suffix};
   }
 #  &RSAT::message::Debug("Total suffix sum", $total_suffix_sum) if ($main::verbose >= 0);
-  my $suffix_pseudo_count = $total_suffix_sum*$pseudo_freq/scalar(@dna_alphabet);
-  foreach my $suffix (@dna_alphabet) {
+  my $suffix_pseudo_count = $total_suffix_sum*$pseudo_freq/scalar(@possible_suffixes);
+  foreach my $suffix (@possible_suffixes) {
     $self->{suffix_sum}->{$suffix} = $self->{suffix_sum}->{$suffix}*(1-$pseudo_freq) + $suffix_pseudo_count;
     #    &RSAT::message::Debug("Corrected suffix sum", $suffix, $self->{suffix_sum}->{$suffix}) if ($main::verbose >= 10);
   }
@@ -448,35 +510,38 @@ sub add_pseudo_freq {
   foreach my $prefix (@possible_prefixes) {
 
     ## Compute the sum of transition counts for the current prefix
-    my $current_count_sum = 0;
-    foreach my $suffix (@dna_alphabet) {
-      $current_count_sum += $self->{transition_count}->{$prefix}->{$suffix}
-	if (defined($self->{transition_count}->{$prefix}->{$suffix}));
-    }
+#    my $current_prefix_sum = 0;
+#    foreach my $suffix (@possible_suffixes) {
+#      $current_prefix_sum += $self->{oligo_freq}->{$prefix}->{$suffix}
+#	if (defined($self->{oligo_freq}->{$prefix}->{$suffix}));
+#    }
+    my $current_prefix_sum = $self->{prefix_sum}->{$prefix};
 
-
-    ####
-    # pseudo count varies depending on the prefix sum (=> $current_count_sum)
-    my $pseudo_count = $pseudo_freq*$current_count_sum;
-    if ($current_count_sum == 0) {
+    ## pseudo count varies depending on the prefix sum
+    my $pseudo_count = $pseudo_freq*$current_prefix_sum;
+    if ($current_prefix_sum == 0) {
       $pseudo_count = $pseudo_freq;
     }
-    #  &RSAT::message::Debug("Prefix", $prefix, $current_count_sum, "Pseudo count=".$pseudo_count) if ($main::verbose >= 10);
+    &RSAT::message::Debug("Prefix", $prefix, $current_prefix_sum, "Pseudo count=".$pseudo_count) if ($main::verbose >= 0);
 
-    foreach my $suffix (@dna_alphabet) {
-      if (defined($self->{transition_count}->{$prefix}->{$suffix})) {
-
+    foreach my $suffix (@possible_suffixes) {
+      if (defined($self->{oligo_freq}->{$prefix}->{$suffix})) {
 	## Adding the pseudo-freq on the background model.
-	my $pattern_pseudo_count = 
-	  (1-$pseudo_freq)*$self->{transition_count}->{$prefix}->{$suffix} + $pseudo_count/$alpha_size;
-	$self->{transition_count}->{$prefix}->{$suffix} = $pattern_pseudo_count;
+	my $oligo_freq_corrected = 
+	  (1-$pseudo_freq)*$self->{oligo_freq}->{$prefix}->{$suffix} + $pseudo_freq/$alpha_size;
+	$self->{oligo_freq}->{$prefix}->{$suffix} = $oligo_freq_corrected;
       } else {			## missing transitions
-	$self->{transition_count}->{$prefix}->{$suffix} = $pseudo_count/$alpha_size;
+	$self->{oligo_freq}->{$prefix}->{$suffix} = $pseudo_freq/$alpha_size;
       }
-#      &RSAT::message::Debug("Corrected transition count", $prefix.".".$suffix, $self->{transition_count}->{$prefix}->{$suffix}) if ($main::verbose >= 0);
+      &RSAT::message::Debug("Corrected transition count", $prefix.".".$suffix, 
+			    "pseudo_freq=".$pseudo_freq, 
+			    "prefix_sum=".$current_prefix_sum,
+			    "pseudo_count=".$pseudo_count,
+			    $self->{oligo_freq}->{$prefix}->{$suffix}) if ($main::verbose >= 0);
 
     }
   }
+
 }
 
 ################################################################
@@ -490,7 +555,7 @@ prefix) is 1.
 
 =cut
 sub normalize_transition_frequencies {
-  my ($self) = @_;
+  my ($self, %args) = @_;
 
   &RSAT::message::TimeWarn(join("\t", "MarkovModel", "Normalizing transition frequencies")) if ($main::verbose >= 3);
 
@@ -503,18 +568,39 @@ sub normalize_transition_frequencies {
   my $freq_sum = 0;
   my $p=0;			## Number of prefixes
   my $s=0;			## Number of suffixes
-  foreach my $prefix (sort keys(%{$self->{transition_count}})) {
+  my $strand = $self->get_attribute("strand") || "undef";
+
+  foreach my $prefix (sort keys(%{$self->{oligo_freq}})) {
     $p++;
     #	foreach my $suffix (keys (%suffix_sum)) {
-    foreach my $suffix (sort keys (%{$self->{transition_count}->{$prefix}})) {
+    foreach my $suffix (sort keys (%{$self->{oligo_freq}->{$prefix}})) {
       $s++;
-      my $pattern_count = $self->{transition_count}->{$prefix}->{$suffix};
-      $prefix_sum{$prefix} += $pattern_count;
-      $freq_sum += $pattern_count;
-      $suffix_sum{$suffix} += $pattern_count;
-      #	    &RSAT::message::Debug("Count sum", $p, $prefix.".".$suffix, $pattern_count, $freq_sum) if ($main::verbose >= 0);
+      my $pattern_count = $self->{oligo_freq}->{$prefix}->{$suffix};
+
+      ## Particular treatment for case-insensitive models: the
+      ## oligo_freq of each non-rc-palindromic pattern is tken into
+      ## account in two entries of the hash table (direct + rc
+      ## pattern) -> to compute the sum of frequencies, on has to count it once only
+      my $to_sum = 1;
+      if ($strand eq "insensitive") {
+	my $oligo_seq = $prefix.$suffix;
+	my $oligo_rc = lc(&main::SmartRC($oligo_seq));
+	if ($oligo_rc lt $oligo_seq) {
+	  $to_sum = 0;
+	}
+      }
+
+      ## Increment frequencies
+      if ($to_sum) {
+	$freq_sum += $pattern_count;
+	$suffix_sum{$suffix} += $pattern_count;
+	$prefix_sum{$prefix} += $pattern_count;
+      }
+
+#      &RSAT::message::Debug("Count sum", $p, $prefix.".".$suffix, $pattern_count, $to_sum, $freq_sum) if ($main::verbose >= 0);
     }
   }
+
   $self->set_hash_attribute("prefix_sum", %prefix_sum);
   $self->set_hash_attribute("suffix_sum", %suffix_sum);
 
@@ -523,7 +609,10 @@ sub normalize_transition_frequencies {
   $self->set_array_attribute("suffixes", sort(keys(%suffix_sum)));
 
   ## Add pseudo-counts to transition counts. This has to be done after the computation of prefix counts
-  $self->add_pseudo_freq();	### adding the pseudo-freq
+  unless ($args{no_pseudo}) {
+    $self->add_pseudo_freq();	### adding the pseudo-freq
+  }
+
   ## Retrieved the updated prefix and suffix sums
   %prefix_sum = $self->get_attribute("prefix_sum");
   %suffix_sum = $self->get_attribute("suffix_sum");
@@ -534,16 +623,16 @@ sub normalize_transition_frequencies {
   foreach my $prefix ($self->get_attribute("prefixes")) {
     foreach my $suffix ($self->get_attribute("suffixes")) {
       #	foreach my $suffix (keys (%suffix_sum)) {
-      if (defined($self->{transition_count}->{$prefix}->{$suffix})) {
+      if (defined($self->{oligo_freq}->{$prefix}->{$suffix})) {
 	if ($prefix_sum{$prefix} > 0) {
-	  $self->{transition_freq}->{$prefix}->{$suffix} = 
-	    $self->{transition_count}->{$prefix}->{$suffix}/$prefix_sum{$prefix};
+	  $self->{transitions}->{$prefix}->{$suffix} = 
+	    $self->{oligo_freq}->{$prefix}->{$suffix}/$prefix_sum{$prefix};
 	} else {
-	  $self->{transition_freq}->{$prefix}->{$suffix} =  0;
+	  $self->{transitions}->{$prefix}->{$suffix} =  0;
 	}
       } else {
 	$missing_transitions++;
-	$self->{transition_freq}->{$prefix}->{$suffix} = 0;
+	$self->{transitions}->{$prefix}->{$suffix} = 0;
 	#		&RSAT::message::Warning(join(" ",
 	#					     "No transition between prefix",$prefix, 
 	#					     "and suffix", $suffix)) if ($main::verbose >= 3);
@@ -551,7 +640,6 @@ sub normalize_transition_frequencies {
       ;
     }
   }
-
   $self->force_attribute("missing_transitions", $missing_transitions);
 
 
@@ -566,27 +654,29 @@ sub normalize_transition_frequencies {
   my %suffix_proba = ();
   foreach my $suffix ($self->get_attribute("suffixes")) {
     $suffix_proba{$suffix} = $suffix_sum{$suffix}/$freq_sum;
-  }    
+  }
 
   ## store prefix sums and suffix sums
   $self->set_hash_attribute("prefix_proba", %prefix_proba);
   $self->set_hash_attribute("suffix_proba", %suffix_proba);
 
+  ## Calculate relative frequencies
+  foreach my $prefix ($self->get_attribute("prefixes")) {
+    foreach my $suffix ($self->get_attribute("suffixes")) {
+      $self->{oligo_freq_rel}->{$prefix}->{$suffix} = $self->{oligo_freq}->{$prefix}->{$suffix}/$freq_sum;
+    }
+  }
+
   #    &RSAT::message::Debug("SUFFIX PROBA", $self->set_hash_attribute("suffix_proba", %suffix_proba)) if ($main::verbose >= 5);
-
-
-
   ## Average counts and frequencies on both strands if required
   #       my $strand = $self->get_attribute("strand") || "sensitive";
   #     if ($strand eq "insensitive") {
   # 	$self->average_strands();
   #     }
 
-
   &RSAT::message::TimeWarn(join("\t", 
 				"Normalized background model", 
 				"prefixes: ".$p,
-
 				"transitions: ".$s)) if ($main::verbose >= 3);
 }
 
@@ -605,8 +695,8 @@ sub check_missing_transitions {
     my $missing_transitions = 0;
     foreach my $prefix ($self->get_attribute("prefixes")) {
 	foreach my $suffix ($self->get_attribute("suffixes")) {
-	    unless ((defined($self->{transition_freq}->{$prefix}->{$suffix})) 
-		    && ($self->{transition_freq}->{$prefix}->{$suffix} > 0)) {
+	    unless ((defined($self->{transitions}->{$prefix}->{$suffix})) 
+		    && ($self->{transitions}->{$prefix}->{$suffix} > 0)) {
 		$missing_transitions++;
 		&RSAT::message::Warning(join(" ",
 					     "No transition between prefix",$prefix, 
@@ -647,27 +737,27 @@ sub check_transition_alphabet {
     my %suppressed_suffixes = ();
     my %checked_prefixes = ();
     my %checked_suffixes = ();
-    foreach my $prefix (keys(%{$self->{transition_count}})) {
+    foreach my $prefix (keys(%{$self->{oligo_freq}})) {
 #    foreach my $prefix ($self->get_attribute("prefixes")) {
       if ($prefix =~ /${accepted_expression}/) {
 	$checked_prefixes{$prefix} = 1;
       } else {
 	$suppressed_prefixes{$prefix}++;
-#	delete $self->{transition_freq}->{$prefix};
-	delete $self->{transition_count}->{$prefix};
+#	delete $self->{transitions}->{$prefix};
+	delete $self->{oligo_freq}->{$prefix};
 	&RSAT::message::Info(join(" ",
 				     "Supressing prefix",$prefix, 
 				     "from transition matrix")) if ($main::verbose >= 5);
 	next;
       }
-      foreach my $suffix (keys(%{$self->{transition_count}->{$prefix}})) {
+      foreach my $suffix (keys(%{$self->{oligo_freq}->{$prefix}})) {
 #      foreach my $suffix ($self->get_attribute("suffixes")) {
 	$suppressed_suffixes{$suffix}++;
 	if ($suffix =~ /${accepted_expression}/) {
 	  $checked_suffixes{$suffix} = 1;
 	} else {
-	  delete $self->{transition_freq}->{$prefix}->{$suffix};
-	  delete $self->{transition_count}->{$prefix}->{$suffix};
+	  delete $self->{transitions}->{$prefix}->{$suffix};
+	  delete $self->{oligo_freq}->{$prefix}->{$suffix};
 	  &RSAT::message::Info(join(" ",
 				    "Supressing transition from",$prefix, "to", $suffix, 
 				    "from transition matrix")) if ($main::verbose >= 5);
@@ -697,65 +787,63 @@ sub check_transition_alphabet {
 
 Calculate background model from a sequence.
 
-If the argument add=>1 is specified, the new sequence is added to the background model.
+If the argument add=>1 is specified, the new sequence is added to the
+background model.
 
 =cut
 sub calc_from_seq {
-	
-    my ($self, $sequence, %args) = @_;
-    my $seq_len = length($sequence);
-    my $order = $self->get_attribute("order");
-    $sequence = lc($sequence);
-    my $previous_words = $self->get_attribute("training_words") || 0;
+  my ($self, $sequence, %args) = @_;
+  my $seq_len = length($sequence);
+  my $order = $self->get_attribute("order");
+  $sequence = lc($sequence);
+  my $previous_words = $self->get_attribute("training_words") || 0;
 
-    if ($args{add}) {
-	&RSAT::message::TimeWarn(join(" ", 
-				      "Updating markov model (order ".$order.")",
-				      "by adding sequence of length", $seq_len)) if ($main::verbose >= 2);
+  if ($args{add}) {
+    &RSAT::message::TimeWarn(join(" ", 
+				  "Updating markov model (order ".$order.")",
+				  "by adding sequence of length", $seq_len)) if ($main::verbose >= 2);
 
-    } else {
-		$self->set_hash_attribute("transition_absolute_count",()); ## contains the words occurences, not frequencies
-		if ($main::verbose >= 2) {
-	 		 &RSAT::message::TimeWarn(join(" ", 
-					"Calculating markov model (order ".$order.")",
-					"from sequence of length", $seq_len));
-	  		&RSAT::message::Warning(join("", "RSAT::MarkovModel->calc_from_seq: sequence is too short (len=",$seq_len,
-				       "). It must be larger than Markov order + 1 = ", $order+1))
-	    	unless ($seq_len > $order + 1);
-		}
-      }
-
-    
-    ## Transition counts : count the occurences of the words on 1 strand
-    my $last_pos = $seq_len - $order;
-    for my $offset (0..($last_pos-1)) {
-		my $prefix = substr($sequence, $offset, $order);
-		my $suffix = substr($sequence, $offset + $order,1);
-		$self->{transition_absolute_count}->{$prefix}->{$suffix}++;
+  } else {
+    $self->set_hash_attribute("oligo_counts",()); ## contains the words occurences, not frequencies
+    $self->force_attributes("oligo_counts_defined", 1);
+    if ($main::verbose >= 2) {
+      &RSAT::message::TimeWarn(join(" ", 
+				    "Calculating markov model (order ".$order.")",
+				    "from sequence of length", $seq_len));
+      &RSAT::message::Warning(join("", "RSAT::MarkovModel->calc_from_seq: sequence is too short (len=",$seq_len,
+				   "). It must be larger than Markov order + 1 = ", $order+1))
+	unless ($seq_len > $order + 1);
     }
-    $self->force_attribute("training_words", $last_pos + $previous_words);
-    
-    ## Delete transitions between letters which do not belong to the accepted alphabet
-    $self->check_transition_alphabet();
-    
-    ## Convert occurences (word count) into relative frequencies in order to add the pseudo-frequencies
-    ## as done when the bg model is read from a bg file, where relative frequencies (not word count) are
-    ## read from the file and used to calculate transition matrix.
-	foreach my $prefix (sort keys(%{$self->{transition_absolute_count}})) {
-		foreach my $suffix (sort keys(%{$self->{transition_absolute_count}->{$prefix}})) {
-			my $pattern_count = $self->{transition_absolute_count}->{$prefix}->{$suffix};	    
-			my $pattern_rel_freq = $pattern_count / $self->{training_words};
-			$self->{transition_count}->{$prefix}->{$suffix} = $pattern_rel_freq;
-		}
-	}
+  }
 
-    ## Initialize transition frequencies
-    $self->set_hash_attribute("transition_freq", %transition_count);
+  ## Transition counts : count the occurences of the words on 1 strand
+  my $last_pos = $seq_len - $order;
+  for my $offset (0..($last_pos-1)) {
+    my $prefix = substr($sequence, $offset, $order);
+    my $suffix = substr($sequence, $offset + $order,1);
+    $self->{oligo_counts}->{$prefix}->{$suffix}++;
+  }
+  $self->force_attribute("training_words", $last_pos + $previous_words);
 
-    ## Convert counts to transition frequencies
-    $self->normalize_transition_frequencies();
+  ## Delete transitions between letters which do not belong to the accepted alphabet
+  $self->check_transition_alphabet();
 
+  ## Convert occurences (word count) into relative frequencies in order to add the pseudo-frequencies
+  ## as done when the bg model is read from a bg file, where relative frequencies (not word count) are
+  ## read from the file and used to calculate transition matrix.
+  foreach my $prefix (sort keys(%{$self->{oligo_counts}})) {
+    foreach my $suffix (sort keys(%{$self->{oligo_counts}->{$prefix}})) {
+      my $pattern_count = $self->{oligo_counts}->{$prefix}->{$suffix};
+      my $pattern_rel_freq = $pattern_count / $self->{training_words};
+      $self->{oligo_freq}->{$prefix}->{$suffix} = $pattern_rel_freq;
+    }
+  }
 
+  ## Initialize transition frequencies
+  $self->set_hash_attribute("transition_freq", %transition_count);
+
+  ## Convert counts to transition frequencies
+  $self->normalize_transition_frequencies();
 }
 
 ################################################################
@@ -781,8 +869,8 @@ sub two_words_update {
     ## Update transition count for the added word
     my $added_prefix = substr($added_word, 0, $self->{order});
     my $added_suffix = substr($added_word, $self->{order}, 1);
-    $self->{transition_absolute_count}->{$added_prefix}->{$added_suffix}++;
-     if (($self->{transition_absolute_count}->{$added_prefix}->{$added_suffix} == 1) 
+    $self->{oligo_counts}->{$added_prefix}->{$added_suffix}++;
+     if (($self->{oligo_counts}->{$added_prefix}->{$added_suffix} == 1) 
 	&&($main::verbose >= 4)){
 	&RSAT::message::Warning(join (" ", "Model update:", $added_word, 
 				      "appeared in updated window starting at", $window_offset));
@@ -792,8 +880,8 @@ sub two_words_update {
     ## Update transition count for the deleted word
     my $deleted_prefix = substr($deleted_word, 0, $self->{order});
     my $deleted_suffix = substr($deleted_word, $self->{order}, 1);
-    $self->{transition_absolute_count}->{$deleted_prefix}->{$deleted_suffix}--;
-     if (($self->{transition_absolute_count}->{$deleted_prefix}->{$deleted_suffix} == 0) 
+    $self->{oligo_counts}->{$deleted_prefix}->{$deleted_suffix}--;
+     if (($self->{oligo_counts}->{$deleted_prefix}->{$deleted_suffix} == 0) 
 	&&($main::verbose >= 4)){
 	&RSAT::message::Warning(join (" ", "Model update:", $deleted_word, 
 				      "disappeared from updated window starting at", $window_offset));
@@ -802,43 +890,43 @@ sub two_words_update {
 
 	## Update relative frequencies for the added and deleted prefix
 	## added prefix
-	my $added_pattern_count = $self->{transition_absolute_count}->{$added_prefix}->{$added_suffix};	
+	my $added_pattern_count = $self->{oligo_counts}->{$added_prefix}->{$added_suffix};	
 	my $added_pattern_rel_freq = $added_pattern_count / $self->{training_words};
-	$self->{transition_count}->{$added_prefix}->{$added_suffix} = $added_pattern_rel_freq;
+	$self->{oligo_freq}->{$added_prefix}->{$added_suffix} = $added_pattern_rel_freq;
 	##pseudo-count
 	my $added_pattern_pseudo_freq = 
-	    ((1 - $pseudo_freq)*$self->{transition_count}->{$added_prefix}->{$added_suffix}) + $pseudo_freq/scalar(@dna_alphabet);
-	$self->{transition_count}->{$added_prefix}->{$added_suffix} = $added_pattern_pseudo_freq;
+	    ((1 - $pseudo_freq)*$self->{oligo_freq}->{$added_prefix}->{$added_suffix}) + $pseudo_freq/scalar(@dna_alphabet);
+	$self->{oligo_freq}->{$added_prefix}->{$added_suffix} = $added_pattern_pseudo_freq;
 	## prefix sum
 	$self->{prefix_sum}->{$added_prefix} = 0;
-	foreach my $suffix (sort keys (%{$self->{transition_count}->{$added_prefix}})) {
-	    my $pattern_count = $self->{transition_count}->{$added_prefix}->{$suffix};	  
+	foreach my $suffix (sort keys (%{$self->{oligo_freq}->{$added_prefix}})) {
+	    my $pattern_count = $self->{oligo_freq}->{$added_prefix}->{$suffix};	  
 	    $self->{prefix_sum}->{$added_prefix} += $pattern_count;
 	}
 	
 	## deleted prefix
-	my $deleted_pattern_count = $self->{transition_absolute_count}->{$deleted_prefix}->{$deleted_suffix};	    
+	my $deleted_pattern_count = $self->{oligo_counts}->{$deleted_prefix}->{$deleted_suffix};	    
 	my $deleted_pattern_rel_freq = $deleted_pattern_count / $self->{training_words};
-	$self->{transition_count}->{$deleted_prefix}->{$deleted_suffix} = $deleted_pattern_rel_freq;
+	$self->{oligo_freq}->{$deleted_prefix}->{$deleted_suffix} = $deleted_pattern_rel_freq;
 	##pseudo-count
 	my $deleted_pattern_pseudo_freq = 
-	    ((1 - $pseudo_freq)*$self->{transition_count}->{$deleted_prefix}->{$deleted_suffix}) + $pseudo_freq/scalar(@dna_alphabet);
-	$self->{transition_count}->{$deleted_prefix}->{$deleted_suffix} = $deleted_pattern_pseudo_freq;
+	    ((1 - $pseudo_freq)*$self->{oligo_freq}->{$deleted_prefix}->{$deleted_suffix}) + $pseudo_freq/scalar(@dna_alphabet);
+	$self->{oligo_freq}->{$deleted_prefix}->{$deleted_suffix} = $deleted_pattern_pseudo_freq;
 	## prefix sum
 	$self->{prefix_sum}->{$deleted_prefix} = 0;
-	foreach my $suffix (sort keys (%{$self->{transition_count}->{$deleted_prefix}})) {
-	    my $pattern_count = $self->{transition_count}->{$deleted_prefix}->{$suffix};	    
+	foreach my $suffix (sort keys (%{$self->{oligo_freq}->{$deleted_prefix}})) {
+	    my $pattern_count = $self->{oligo_freq}->{$deleted_prefix}->{$suffix};	    
 	    $self->{prefix_sum}->{$deleted_prefix} += $pattern_count;
 	}
 
     ## Update transition frequencies for the added and deleted prefix 
-    foreach my $suffix (sort keys (%{$self->{transition_count}->{$added_prefix}})) {
-    	$self->{transition_freq}->{$added_prefix}->{$suffix} = 
-			$self->{transition_count}->{$added_prefix}->{$suffix}/$self->{prefix_sum}->{$added_prefix};	  
+    foreach my $suffix (sort keys (%{$self->{oligo_freq}->{$added_prefix}})) {
+    	$self->{transitions}->{$added_prefix}->{$suffix} = 
+			$self->{oligo_freq}->{$added_prefix}->{$suffix}/$self->{prefix_sum}->{$added_prefix};	  
 	}
-	foreach my $suffix (sort keys (%{$self->{transition_count}->{$deleted_prefix}})) {
-    	$self->{transition_freq}->{$deleted_prefix}->{$suffix} = 
-			$self->{transition_count}->{$deleted_prefix}->{$suffix}/$self->{prefix_sum}->{$deleted_prefix};	  
+	foreach my $suffix (sort keys (%{$self->{oligo_freq}->{$deleted_prefix}})) {
+    	$self->{transitions}->{$deleted_prefix}->{$suffix} = 
+			$self->{oligo_freq}->{$deleted_prefix}->{$suffix}/$self->{prefix_sum}->{$deleted_prefix};	  
 	}
     
 #     &RSAT::message::Debug("Updated model", 
@@ -846,12 +934,12 @@ sub two_words_update {
 # 			  $added_prefix, 
 # 			  $self->{prefix_sum}->{$added_prefix},
 # 			  $added_suffix,
-# 			  $self->{transition_freq}->{$added_prefix}->{$added_suffix},
+# 			  $self->{transitions}->{$added_prefix}->{$added_suffix},
 # 			  "deleted", $deleted_word,
 # 			  $deleted_prefix, 
 # 			  $self->{prefix_sum}->{$deleted_prefix},
 # 			  $deleted_suffix,
-# 			  $self->{transition_freq}->{$deleted_prefix}->{$deleted_suffix},
+# 			  $self->{transitions}->{$deleted_prefix}->{$deleted_suffix},
 # 			  ) if ($main::verbose >= 0);
 }
 
@@ -878,44 +966,44 @@ sub one_word_update {
     my $curr_suffix = substr($word, $self->{order}, 1);
   
     if ($mode eq "add"){
-    	$self->{transition_absolute_count}->{$curr_prefix}->{$curr_suffix}++;
-     if (($self->{transition_absolute_count}->{$curr_prefix}->{$curr_suffix} == 1) 
+    	$self->{oligo_counts}->{$curr_prefix}->{$curr_suffix}++;
+     if (($self->{oligo_counts}->{$curr_prefix}->{$curr_suffix} == 1) 
 		&&($main::verbose >= 4)){
 		&RSAT::message::Warning(join (" ", "Model update: add", $word, 
 				      "appeared in updated window starting at", $window_offset));
     }
     } elsif ($mode eq "delete"){
-    	$self->{transition_absolute_count}->{$curr_prefix}->{$curr_suffix}--;
-     if (($self->{transition_absolute_count}->{$curr_prefix}->{$curr_suffix} == 0) 
+    	$self->{oligo_counts}->{$curr_prefix}->{$curr_suffix}--;
+     if (($self->{oligo_counts}->{$curr_prefix}->{$curr_suffix} == 0) 
 	&&($main::verbose >= 4)){
 	&RSAT::message::Warning(join (" ", "Model update: delete", $word, 
 				      "disappeared from updated window starting at", $window_offset));
     }
     }
     
-    &RSAT::message::Debug("updated absolute count",Dumper($self->{transition_absolute_count})) if ($main::verbose >= 5);
+    &RSAT::message::Debug("updated absolute count",Dumper($self->{oligo_counts})) if ($main::verbose >= 5);
 	
 	## Update relative frequencies for the added and deleted prefix
 	## added prefix
-	my $curr_pattern_count = $self->{transition_absolute_count}->{$curr_prefix}->{$curr_suffix};	
+	my $curr_pattern_count = $self->{oligo_counts}->{$curr_prefix}->{$curr_suffix};	
 	my $curr_pattern_rel_freq = $curr_pattern_count / $self->{training_words};
-	$self->{transition_count}->{$curr_prefix}->{$curr_suffix} = $curr_pattern_rel_freq;
+	$self->{oligo_freq}->{$curr_prefix}->{$curr_suffix} = $curr_pattern_rel_freq;
 	##pseudo-count
 	my $curr_pattern_pseudo_freq = 
-	    ((1 - $pseudo_freq)*$self->{transition_count}->{$curr_prefix}->{$curr_suffix}) + $pseudo_freq/scalar(@dna_alphabet);
-	$self->{transition_count}->{$curr_prefix}->{$curr_suffix} = $curr_pattern_pseudo_freq;
+	    ((1 - $pseudo_freq)*$self->{oligo_freq}->{$curr_prefix}->{$curr_suffix}) + $pseudo_freq/scalar(@dna_alphabet);
+	$self->{oligo_freq}->{$curr_prefix}->{$curr_suffix} = $curr_pattern_pseudo_freq;
 	## prefix sum
 	$self->{prefix_sum}->{$curr_prefix} = 0;
-	foreach my $suffix (sort keys (%{$self->{transition_count}->{$curr_prefix}})) {
-	    my $pattern_count = $self->{transition_count}->{$curr_prefix}->{$suffix};	  
+	foreach my $suffix (sort keys (%{$self->{oligo_freq}->{$curr_prefix}})) {
+	    my $pattern_count = $self->{oligo_freq}->{$curr_prefix}->{$suffix};	  
 	    $self->{prefix_sum}->{$curr_prefix} += $pattern_count;
 	}
 
 
     ## Update transition frequencies for the added and deleted prefix 
-    foreach my $suffix (sort keys (%{$self->{transition_count}->{$curr_prefix}})) {
-    	$self->{transition_freq}->{$curr_prefix}->{$suffix} = 
-			$self->{transition_count}->{$curr_prefix}->{$suffix}/$self->{prefix_sum}->{$curr_prefix};	  
+    foreach my $suffix (sort keys (%{$self->{oligo_freq}->{$curr_prefix}})) {
+    	$self->{transitions}->{$curr_prefix}->{$suffix} = 
+			$self->{oligo_freq}->{$curr_prefix}->{$suffix}/$self->{prefix_sum}->{$curr_prefix};	  
 	}
     
 #     &RSAT::message::Debug("Updated model", 
@@ -923,12 +1011,12 @@ sub one_word_update {
 # 			  $added_prefix, 
 # 			  $self->{prefix_sum}->{$added_prefix},
 # 			  $added_suffix,
-# 			  $self->{transition_freq}->{$added_prefix}->{$added_suffix},
+# 			  $self->{transitions}->{$added_prefix}->{$added_suffix},
 # 			  "deleted", $deleted_word,
 # 			  $deleted_prefix, 
 # 			  $self->{prefix_sum}->{$deleted_prefix},
 # 			  $deleted_suffix,
-# 			  $self->{transition_freq}->{$deleted_prefix}->{$deleted_suffix},
+# 			  $self->{transitions}->{$deleted_prefix}->{$deleted_suffix},
 # 			  ) if ($main::verbose >= 0);
 }
 
@@ -972,7 +1060,35 @@ sub to_string {
     $format =~ s/^ms$/motifsampler/;
 
     if ($format eq ("tab")) {
-	$self->to_string_tab(%args);
+      &RSAT::message::Warning("Output format tab is deprecated, please use format transitions instead.");
+      $self->to_prefix_suffix_table(%args, type=>"transitions");
+    } elsif ($format eq ("transitions")) {
+      $self->to_prefix_suffix_table(%args, type=>"transitions");
+    } elsif ($format eq ("tables")) {
+      my $string = "";
+
+      ## Original frequencies
+      $string .= ";\n; Original oligomer frequencies\n";
+      $string .= $self->to_prefix_suffix_table(%args, type=>"oligo_freq");
+
+      ## Relative frequencies
+      $string .= ";\n; Relative oligmer frequencies\n";
+      $string .= $self->to_prefix_suffix_table(%args, type=>"oligo_freq_rel");
+
+      ## Oligo counts
+      if ($self->get_attribute("oligo_counts_defined")) {
+	$string .= ";\n; Oligo counts\n";
+	$string .= $self->to_prefix_suffix_table(%args, type=>"oligo_counts");
+      }
+
+      ## Transition table
+      $string .= ";\n; Transition frequencies\n";
+      $string .= $self->to_prefix_suffix_table(%args, type=>"transitions");
+
+      ## Oligo frequencies derived from transitions
+#      $string .= ";\n; Oligomer frequencies derived from transitions\n";
+#      $string .= $self->to_string_oligos(%args);
+
     } elsif ($format eq ("oligos")) {
 	$self->to_string_oligos(%args); 
     } elsif ($format eq ("meme")) {
@@ -995,17 +1111,24 @@ sub to_string {
 ################################################################
 =pod
 
-=item B<to_string_tab(%args)>
+=item B<to_prefix_suffix_table(%args)>
 
 Export the Markov model in a tab-delimited format.
 
 Supported arguments: comment_string, decimals
 
+Usage:
+  my $transition_table = $bg_model->to_prefix_suffix_table();
+  my $transition_table = $bg_model->to_prefix_suffix_table(decimals=>3,comment_string="#");
+  my $transition_table = $bg_model->to_prefix_suffix_table(type=>"transitions");
+  my $transition_table = $bg_model->to_prefix_suffix_table(type=>"frequencies");
+
 =cut
-sub to_string_tab {
+sub to_prefix_suffix_table{
     my ($self, %args) = @_;
     my $decimals = $args{decimals} || "5";
     my $string = "";
+    my $type = $args{type} || "transitions";
     my %prefix_proba = $self->get_attribute("prefix_proba");
     my @prefix = sort($self->get_attribute("prefixes"));
     my %suffix_sum = $self->get_attribute("suffix_sum");
@@ -1026,7 +1149,12 @@ sub to_string_tab {
 	}
 	$string .= $prefix;
 	foreach my $suffix (@suffix) {
-	    $string .= sprintf "\t%.${decimals}f",  $self->{transition_freq}->{$prefix}->{$suffix};
+	  my $value =  $self->{$type}->{$prefix}->{$suffix};
+	  if (&RSAT::util::IsInteger($value)) {
+	    $string .= sprintf "\t%d", $value;
+	  } else {
+	    $string .= sprintf "\t%.${decimals}f", $value;
+	  }
 	}
 	$string .= sprintf "\t%.${decimals}f", $self->{prefix_proba}->{$prefix};
 	my $count = $self->{prefix_sum}->{$prefix};;
@@ -1064,6 +1192,7 @@ sub to_string_tab {
     return $string;
 }
 
+
 ################################################################
 =pod
 
@@ -1079,18 +1208,11 @@ sub to_string_oligos {
   my ($self, %args) = @_;
   my $decimals = $args{decimals} || "8";
   my $string = "";
-  my %prefix_proba = $self->get_attribute("prefix_proba");
-  my @prefix = sort($self->get_attribute("prefixes"));
-  my %suffix_sum = $self->get_attribute("suffix_sum");
-  my @suffix = sort($self->get_attribute("suffixes"));
+#  my %prefix_proba = $self->get_attribute("prefix_proba");
+#  my %suffix_sum = $self->get_attribute("suffix_sum");
 
-  my $strand = $self->get_attribute("strand") || "sensitive";
   my $order = $self->get_attribute("order");
-
-
-  &RSAT::message::Info("Exporting Markov model", "order", $order, "strand", $strand) 
-    if ($main::verbose >= 0);
-
+  my $strand = $self->get_attribute("strand") || "sensitive";
   if ($strand eq "insensitive") {
     $string .= join("\t", "#seq", "seq|revcpl", "freq");
   } else {
@@ -1098,19 +1220,31 @@ sub to_string_oligos {
   }
   $string .= "\n";
 
+
+  &RSAT::message::Info("Exporting Markov model", "order", $order, "strand", $strand) 
+    if ($main::verbose >= 2);
+
   ## Compute oligomer frequencies from the prefix prior proba + transition proba
-  foreach my $prefix (sort (@prefix)) {
-    foreach my $suffix (sort(@suffix)) {
-      my $oligo_freq = $self->{prefix_proba}->{$prefix}*$self->{transition_freq}->{$prefix}->{$suffix};
-      $string .= $prefix.$suffix;
-      $string .= "\t".$prefix.$suffix;
-      if ($strand eq "insensitive") {
-	$string .= "|";
-	$string .= lc(&RSAT::SeqUtil::ReverseComplement($prefix.$suffix));
-      }
-      $string .= sprintf "\t%.${decimals}f",  $oligo_freq;
-      $string .= "\n";
+#  my @prefix = sort($self->get_attribute("prefixes"));
+#  my @suffix = sort($self->get_attribute("suffixes"));
+#  foreach my $prefix (sort (@prefix)) {
+#    foreach my $suffix (sort(@suffix)) {
+#      my $oligo_freq = $self->{prefix_proba}->{$prefix}*$self->{transitions}->{$prefix}->{$suffix};
+  my %patterns = $self->transitions_to_oligo_frequencies();
+  foreach my $oligo_seq (sort (keys(%patterns))) {
+    if ($strand eq "insensitive") {
+      my $oligo_rc = lc(&RSAT::SeqUtil::ReverseComplement($oligo_seq));;
+#      next if ($oligo_rc lt $oligo_seq);
+      $string .= $oligo_seq;
+      $string .= "\t".$oligo_seq;
+      $string .= "|";
+      $string .= $oligo_rc;
+    } else {
+      $string .= $oligo_seq;
+      $string .= "\t".$oligo_seq;
     }
+    $string .= sprintf "\t%.${decimals}f",  $patterns{$oligo_seq}->{exp_freq};
+    $string .= "\n";
   }
   return $string;
 }
@@ -1168,7 +1302,7 @@ sub to_string_meme {
     foreach my $prefix (sort (@prefix)) {
       foreach my $suffix (sort(@suffix)) {
 	my $oligo = $prefix.$suffix;
-	my $oligo_freq = $self->{prefix_proba}->{$prefix}*$self->{transition_freq}->{$prefix}->{$suffix};
+	my $oligo_freq = $self->{prefix_proba}->{$prefix}*$self->{transitions}->{$prefix}->{$suffix};
 	$string .= uc($oligo);
 	$string .= sprintf " %.${decimals}e",  $oligo_freq;
 	$string .= "\n";
@@ -1245,7 +1379,7 @@ sub to_string_MotifSampler {
     foreach my $prefix (@prefix) {
       my @transitions = ();
       foreach my $suffix (@suffix) {
-	push @transitions, sprintf "%.${decimals}f",  $self->{transition_freq}->{$prefix}->{$suffix};
+	push @transitions, sprintf "%.${decimals}f",  $self->{transitions}->{$prefix}->{$suffix};
       }
       $string .= join ("\t", @transitions);
       $string .= "\n";
@@ -1292,7 +1426,7 @@ sub to_string_patser {
 		    $string .= $args{comment_string};
 		}
 		$string .= $suffix.":".$suffix_rc;
-		$string .= sprintf ("\t%.${decimals}f\n",$self->{transition_freq}->{$prefix}->{$suffix});
+		$string .= sprintf ("\t%.${decimals}f\n",$self->{transitions}->{$prefix}->{$suffix});
 	    }
 	}
 	
@@ -1303,7 +1437,7 @@ sub to_string_patser {
 		    $string .= $args{comment_string};
 		}
 		$string .= $suffix;
-		$string .= sprintf ("\t%.${decimals}f\n",$self->{transition_freq}->{$prefix}->{$suffix});
+		$string .= sprintf ("\t%.${decimals}f\n",$self->{transitions}->{$prefix}->{$suffix});
 	    }
 	}
 	
@@ -1321,104 +1455,148 @@ sub to_string_patser {
 Average transition frequencies between pairs of reverse complements,
 in order to obtain a strand-insensitive model.
 
+The averaging is performed in 3 steps
+
+ - convert the transition matrix (order m) into oligo frequencies
+   (k=m+1).
+ - average oligo frequencies
+ - convert averaged oligo frequencies into transition matrix
+
 =cut
 sub average_strands {
-    my ($self) = @_;
-
+  my ($self) = @_;
     &RSAT::message::Info(join("\t", "MarkovModel", "Averaging transition frequencies on both strands."))
 	if ($main::verbose >= 0);
 
-    ## Sum per prefix
-    my %prefixes_2str = ();
-    foreach my $prefix ($self->get_attribute("prefixes")) {
-	next if (defined($prefixes_2str{$prefix}));
-	my $prefix_rc = lc(&main::SmartRC($prefix));
+  ## Get (supposedly strand-sensitive) oligo frequencies from the
+  ## transition matrix
+  my %patterns_1str = $self->transitions_to_oligo_frequencies();
 
-	## Make sure that both the prefix and its reverse complement are indexed
-	$prefixes_2str{$prefix} = 1;
-	$prefixes_2str{$prefix_rc} = 1;
-#	&RSAT::message::Debug("average_strands sum for prefix", $prefix, $prefix_rc) if ($main::verbose >= 0);
-
-	unless (defined($self->{prefix_sum}->{$prefix} )) {
-	    $self->{prefix_sum}->{$prefix}  = 0;
-	}
-	unless (defined($self->{prefix_sum}->{$prefix_rc} )) {
-	    $self->{prefix_sum}->{$prefix_rc}  = 0;
-	}
-	$self->{prefix_sum}->{$prefix} 
-	= $self->{prefix_sum}->{$prefix_rc}
-	= ($self->{prefix_sum}->{$prefix} +$self->{prefix_sum}->{$prefix_rc})/2 ;
-
-	unless (defined($self->{prefix_proba}->{$prefix} )) {
-	    $self->{prefix_proba}->{$prefix}  = 0;
-	}
-	unless (defined($self->{prefix_proba}->{$prefix_rc} )) {
-	    $self->{prefix_proba}->{$prefix_rc}  = 0;
-	}
-	$self->{prefix_proba}->{$prefix} 
-	= $self->{prefix_proba}->{$prefix_rc}
-	= ($self->{prefix_proba}->{$prefix} + $self->{prefix_proba}->{$prefix_rc})/2 ;
+  ## Compute strand-insensitive oligo frequencies
+  my %patterns_2str = ();
+  foreach my $pattern (keys(%patterns_1str)) {
+    my $pattern_rc = lc(&main::SmartRC($pattern));
+    if ($pattern lt $pattern_rc) {
+      $patterns_2str{$pattern}->{exp_freq} =
+	$patterns_2str{$pattern_rc}->{exp_freq} =
+	($patterns_1str{$pattern}->{exp_freq} +
+	  $patterns_1str{$pattern_rc}->{exp_freq})/2;
+    } elsif ($pattern eq $pattern_rc) {
+      $patterns_2str{$pattern}->{exp_freq} = $patterns_1str{$pattern}->{exp_freq};
     }
-    $self->set_array_attribute("prefixes", sort keys %prefixes_2str);
-
-    ## Sum per suffix
-    my %suffixes_2str = ();
-    foreach my $suffix ($self->get_attribute("suffixes")) {
-	next if (defined($suffixes_2str{$suffix}));
-	my $suffix_rc = lc(&main::SmartRC($suffix));
-
-	## Make sure that both the suffix and its reverse complement are indexed
-	$suffixes_2str{$suffix} = 1;
-	$suffixes_2str{$suffix_rc} = 1;
-#	&RSAT::message::Debug("average_strands sum for suffix", $suffix, $suffix_rc) if ($main::verbose >= 0);
-
-	$self->{suffix_sum}->{$suffix} 
-	= $self->{suffix_sum}->{$suffix_rc}
-	= ($self->{suffix_sum}->{$suffix} +$self->{suffix_sum}->{$suffix_rc})/2 ;
-
-	$self->{suffix_proba}->{$suffix} 
-	= $self->{suffix_proba}->{$suffix_rc}
-	= ($self->{suffix_proba}->{$suffix} +$self->{suffix_proba}->{$suffix_rc})/2 ;
-    }
-    $self->set_array_attribute("suffixes", sort keys %suffixes_2str);
-
-    ## Transition matrix
-    foreach my $prefix ($self->get_attribute("prefixes")) {
-#	my $prefix_rc = lc(&main::SmartRC($prefix));
-#	next if ($prefix_rc ge $prefix);
-	foreach my $suffix ($self->get_attribute("suffixes")) {
-	    my $word = $prefix.$suffix;
-	    my $rc_word = lc(&main::SmartRC($word));
-	    next if ($rc_word ge $word);
-	    my $rc_prefix = substr($rc_word, 0, $self->{order});
-	    my $rc_suffix = substr($rc_word, $self->{order}, 1);
-	    unless (defined($self->{transition_freq}->{$prefix}->{$suffix})) {
-		$self->{transition_freq}->{$prefix}->{$suffix} = 0;
-	    }
-	    unless (defined($self->{transition_freq}->{$rc_prefix}->{$rc_suffix})) {
-		$self->{transition_freq}->{$rc_prefix}->{$rc_suffix} = 0;
-	    }
-	    $self->{transition_freq}->{$prefix}->{$suffix} 
-	    = $self->{transition_freq}->{$rc_prefix}->{$rc_suffix} 
-	    = ($self->{transition_freq}->{$prefix}->{$suffix} +
-	       $self->{transition_freq}->{$rc_prefix}->{$rc_suffix})/2;
-	    
-	    unless (defined($self->{transition_count}->{$prefix}->{$suffix})) {
-		$self->{transition_count}->{$prefix}->{$suffix} = 0;
-	    }
-	    unless (defined($self->{transition_count}->{$rc_prefix}->{$rc_suffix})) {
-		$self->{transition_count}->{$rc_prefix}->{$rc_suffix} = 0;
-	    }
-	    $self->{transition_count}->{$prefix}->{$suffix} 
-	    = $self->{transition_count}->{$rc_prefix}->{$rc_suffix} 
-	    = ($self->{transition_count}->{$prefix}->{$suffix} +
-	       $self->{transition_count}->{$rc_prefix}->{$rc_suffix})/2;
-
-#	    &RSAT::message::Debug("average_strands transitions", $prefix, $suffix, $rc_word, $rc_prefix, $rc_suffix) if ($main::verbose >= 0);
-	}
-    }
-#    die "HELLO";
+  }
+  $self->oligos_to_frequency_table(%patterns_2str);
+  $self->force_attribute("strand", "insensitive");
+  $self->normalize_transition_frequencies(no_pseudo=>1);
 }
+
+################################################################
+=pod
+
+=item B<average_strands>
+
+Average transition frequencies between pairs of reverse complements,
+in order to obtain a strand-insensitive model.
+
+=cut
+# sub average_strands_bof {
+#     my ($self) = @_;
+
+#     &RSAT::message::Info(join("\t", "MarkovModel", "Averaging transition frequencies on both strands."))
+# 	if ($main::verbose >= 0);
+
+#     ## Sum per prefix
+#     my %prefixes_2str = ();
+#     foreach my $prefix ($self->get_attribute("prefixes")) {
+# 	next if (defined($prefixes_2str{$prefix}));
+# 	my $prefix_rc = lc(&main::SmartRC($prefix));
+
+# 	## Make sure that both the prefix and its reverse complement are indexed
+# 	$prefixes_2str{$prefix} = 1;
+# 	$prefixes_2str{$prefix_rc} = 1;
+# #	&RSAT::message::Debug("average_strands sum for prefix", $prefix, $prefix_rc) if ($main::verbose >= 0);
+
+# 	unless (defined($self->{prefix_sum}->{$prefix} )) {
+# 	    $self->{prefix_sum}->{$prefix}  = 0;
+# 	}
+# 	unless (defined($self->{prefix_sum}->{$prefix_rc} )) {
+# 	    $self->{prefix_sum}->{$prefix_rc}  = 0;
+# 	}
+# 	$self->{prefix_sum}->{$prefix} 
+# 	= $self->{prefix_sum}->{$prefix_rc}
+# 	= ($self->{prefix_sum}->{$prefix} +$self->{prefix_sum}->{$prefix_rc})/2 ;
+
+# 	unless (defined($self->{prefix_proba}->{$prefix} )) {
+# 	    $self->{prefix_proba}->{$prefix}  = 0;
+# 	}
+# 	unless (defined($self->{prefix_proba}->{$prefix_rc} )) {
+# 	    $self->{prefix_proba}->{$prefix_rc}  = 0;
+# 	}
+# 	$self->{prefix_proba}->{$prefix} 
+# 	= $self->{prefix_proba}->{$prefix_rc}
+# 	= ($self->{prefix_proba}->{$prefix} + $self->{prefix_proba}->{$prefix_rc})/2 ;
+#     }
+#     $self->set_array_attribute("prefixes", sort keys %prefixes_2str);
+
+#     ## Sum per suffix
+#     my %suffixes_2str = ();
+#     foreach my $suffix ($self->get_attribute("suffixes")) {
+# 	next if (defined($suffixes_2str{$suffix}));
+# 	my $suffix_rc = lc(&main::SmartRC($suffix));
+
+# 	## Make sure that both the suffix and its reverse complement are indexed
+# 	$suffixes_2str{$suffix} = 1;
+# 	$suffixes_2str{$suffix_rc} = 1;
+# #	&RSAT::message::Debug("average_strands sum for suffix", $suffix, $suffix_rc) if ($main::verbose >= 0);
+
+# 	$self->{suffix_sum}->{$suffix} 
+# 	= $self->{suffix_sum}->{$suffix_rc}
+# 	= ($self->{suffix_sum}->{$suffix} +$self->{suffix_sum}->{$suffix_rc})/2 ;
+
+# 	$self->{suffix_proba}->{$suffix} 
+# 	= $self->{suffix_proba}->{$suffix_rc}
+# 	= ($self->{suffix_proba}->{$suffix} +$self->{suffix_proba}->{$suffix_rc})/2 ;
+#     }
+#     $self->set_array_attribute("suffixes", sort keys %suffixes_2str);
+
+#     ## Transition matrix
+#     foreach my $prefix ($self->get_attribute("prefixes")) {
+# #	my $prefix_rc = lc(&main::SmartRC($prefix));
+# #	next if ($prefix_rc ge $prefix);
+# 	foreach my $suffix ($self->get_attribute("suffixes")) {
+# 	    my $word = $prefix.$suffix;
+# 	    my $rc_word = lc(&main::SmartRC($word));
+# 	    next if ($rc_word ge $word);
+# 	    my $rc_prefix = substr($rc_word, 0, $self->{order});
+# 	    my $rc_suffix = substr($rc_word, $self->{order}, 1);
+# 	    unless (defined($self->{transitions}->{$prefix}->{$suffix})) {
+# 		$self->{transitions}->{$prefix}->{$suffix} = 0;
+# 	    }
+# 	    unless (defined($self->{transitions}->{$rc_prefix}->{$rc_suffix})) {
+# 		$self->{transitions}->{$rc_prefix}->{$rc_suffix} = 0;
+# 	    }
+# 	    $self->{transitions}->{$prefix}->{$suffix} 
+# 	    = $self->{transitions}->{$rc_prefix}->{$rc_suffix} 
+# 	    = ($self->{transitions}->{$prefix}->{$suffix} +
+# 	       $self->{transitions}->{$rc_prefix}->{$rc_suffix})/2;
+	    
+# 	    unless (defined($self->{oligo_freq}->{$prefix}->{$suffix})) {
+# 		$self->{oligo_freq}->{$prefix}->{$suffix} = 0;
+# 	    }
+# 	    unless (defined($self->{oligo_freq}->{$rc_prefix}->{$rc_suffix})) {
+# 		$self->{oligo_freq}->{$rc_prefix}->{$rc_suffix} = 0;
+# 	    }
+# 	    $self->{oligo_freq}->{$prefix}->{$suffix} 
+# 	    = $self->{oligo_freq}->{$rc_prefix}->{$rc_suffix} 
+# 	    = ($self->{oligo_freq}->{$prefix}->{$suffix} +
+# 	       $self->{oligo_freq}->{$rc_prefix}->{$rc_suffix})/2;
+
+# #	    &RSAT::message::Debug("average_strands transitions", $prefix, $suffix, $rc_word, $rc_prefix, $rc_suffix) if ($main::verbose >= 0);
+# 	}
+#     }
+#     $self->force_attribute("strand", "insensitive");
+# #    die "HELLO";
+# }
 
 
 ################################################################
@@ -1476,8 +1654,8 @@ sub segment_proba {
 	
 	my $suffix = substr($segment, $c, 1);
 	my $prefix = substr($segment,($c-$order),$order);
-	if (defined($self->{transition_freq}->{$prefix}->{$suffix})) {
-	  $residue_proba = $self->{transition_freq}->{$prefix}->{$suffix};
+	if (defined($self->{transitions}->{$prefix}->{$suffix})) {
+	  $residue_proba = $self->{transitions}->{$prefix}->{$suffix};
 	  if ($residue_proba <= 0) {
 	    &RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
 					  "null transition between prefix ", $prefix, " and suffix", $suffix)) if ($main::verbose >= 0);

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.13 2007/08/14 15:52:55 jvanheld Exp $
+# $Id: convert-background-model,v 1.14 2007/08/23 16:31:29 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -47,6 +47,7 @@ formats are supported only for input or for output.
 
 
 =over
+
 
 =head2 oligos (input/output)
 
@@ -96,6 +97,29 @@ matching program developed by Jerry Hertz.
 WARNING: patser only supports Bernoulli models ! If the Markov order is
 superior to 0, this function issues a fatal error.
 
+=head2 transitions (output)
+
+Transition table with one row per prefix, one column per suffix, each
+cell indicating the transition frequency.
+
+=head2 tables (output)
+
+Export tables with various statistics:
+ - oligo frequencies
+
+ - frequencies: oligomer frequencies, presented in a
+   prefix/suffix table
+
+  - relative frequencies: relative oligomer frequencies. These differ
+    from the raw frequencies only i the input file contained
+    non-normalized frequencies (e.g. pattern occurrences).
+
+  - transition frequencies: see the format "transitions" above.
+
+This output is convenient for understanding the different steps for
+the conversion between oligomer frequencies (oligomer length k=m+1)
+and transition tables.
+
 
 =back
 
@@ -132,8 +156,7 @@ package main;
     %supported_input_format = $bg_model->get_supported_input_formats();
     $supported_input_formats = join (",", keys %supported_input_format);
 
-
-    $output_format = "tab";
+    $output_format = "transitions";
     %supported_output_format = $bg_model->get_supported_output_formats();
     $supported_output_formats = join (",", keys %supported_output_format);
 
