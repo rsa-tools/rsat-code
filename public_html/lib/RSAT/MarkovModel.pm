@@ -171,7 +171,7 @@ sub load_from_file_oligos {
   my ($file_type, %patterns) = &main::ReadPatternFrequencies($bg_file) ;
 
   ################################################################
-  ## For ydad input format, convert dyads into oligos: only retain
+  ## For dyad input format, convert dyads into oligos: only retain
   ## dyads with spacing 0
   if ($dyad_conversion) {
     my %oligo_patterns;
@@ -195,11 +195,11 @@ sub load_from_file_oligos {
     $self->force_attribute("strand", "undef");
   }
 
-#   if ($main::verbose >= 10) {
-#     foreach my $oligo_seq (sort(keys(%patterns))) {
-#       &RSAT::message::Debug("Loaded oligo frequency", $oligo_seq,  $patterns{$oligo_seq}->{exp_freq});
-#     }
-#   }
+   if ($main::verbose >= 0) {
+     foreach my $oligo_seq (sort(keys(%patterns))) {
+       &RSAT::message::Debug("Loaded oligo frequency", $oligo_seq,  $patterns{$oligo_seq}->{exp_freq});
+     }
+   }
 
   $self->oligos_to_frequency_table(%patterns);
   #    &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', @patterns)) if ($main::verbose >= 5);
@@ -608,9 +608,9 @@ sub calc_prefix_suffix_sums {
       if ($strand eq "insensitive") {
 	my $oligo_seq = $prefix.$suffix;
 	my $oligo_rc = lc(&main::SmartRC($oligo_seq));
-	if ($oligo_rc lt $oligo_seq) {
-	  $to_sum = 0;
-	}
+#	if ($oligo_rc lt $oligo_seq) {
+#	  $to_sum = 0;
+#	}
       }
 
       ## Increment frequencies
@@ -660,7 +660,7 @@ sub add_pseudo_freq {
   &RSAT::message::Debug("Adding pseudo frequencies",
 			scalar(@suffixes), "suffixes",
 			scalar(@prefixes), "prefixes",
-		       ) if (main::verbose >= 0);
+		       ) if ($main::verbose >= 0);
 
   ## Calculate sums of prefixes and suffixes for uncorrected oligo frequencies
   $self->calc_prefix_suffix_sums();
@@ -727,15 +727,15 @@ sub add_pseudo_freq {
       }
       $self->{oligo_freq_pseudo}->{$prefix}->{$suffix} = $oligo_freq_pseudo;
       $freq_sum_pseudo += $oligo_freq_pseudo;
-      &RSAT::message::Debug("Corrected transition count", $prefix.".".$suffix,
-			    "pseudo_freq=".$pseudo_freq,
-			    "prefix_sum=".$prefix_sum,
-			    "prefix_sum_pseudo=".$prefix_sum_pseudo,
-			    "(1-${pseudo_freq})*${oligo_freq}=".((1-$pseudo_freq)*$oligo_freq),
-			    "pseudo_count=".$pseudo_count,
-			    "oligo_freq=".$oligo_freq,
-			    "oligo_freq_pseudo=".$oligo_freq_pseudo,
-			   ) if ($main::verbose >= 0);
+#      &RSAT::message::Debug("Corrected transition count", $prefix.".".$suffix,
+#			    "pseudo_freq=".$pseudo_freq,
+#			    "prefix_sum=".$prefix_sum,
+#			    "prefix_sum_pseudo=".$prefix_sum_pseudo,
+#			    "(1-${pseudo_freq})*${oligo_freq}=".((1-$pseudo_freq)*$oligo_freq),
+#			    "pseudo_count=".$pseudo_count,
+#			    "oligo_freq=".$oligo_freq,
+#			    "oligo_freq_pseudo=".$oligo_freq_pseudo,
+#			   ) if ($main::verbose >= 10);
 
     }
   }
@@ -1711,7 +1711,7 @@ sub average_strands {
 
   ## Add pseudo frequencies
 #  $self->add_pseudo_freq();
-  $self->normalize_transition_frequencies(no_pseudo=>1);
+#  $self->normalize_transition_frequencies(no_pseudo=>1);
 }
 
 ################################################################
