@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.10 2007/08/23 14:39:05 oly Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.11 2007/08/24 11:54:44 oly Exp $
 #
 # Time-stamp
 #
@@ -51,7 +51,7 @@ package main;
   local $strand = 1;
   local $chrom;
   local $ft_file;
-  local $ft_file_format = "ft";
+  local $ft_file_format = "gft";
   local $mask_coding = 0;
 
   local $output_file;
@@ -166,9 +166,13 @@ package main;
       next if (($line =~/^[#|;]/)||($line eq ""));
       if ($ft_file_format eq "ft") {
 	($chrom, $ft_type, $ft_id, $strand, $left_limit, $right_limit,@other_comments) = split (/\t/,$line);
-#      } elsif ($ft_file_format eq 'gff') {
-#	($seq_name, $source, $ft_type, $left_limit, $right_limit, $score, $strand, $frame, @other_comments) = split (/\t/,$line);
+      } elsif ($ft_file_format eq 'gft') {
+	($ft_id, $ft_type, $ft_name, $chrom, $left_limit, $right_limit, $strand, @other_comments) = split (/\t/,$line);
       }
+
+      # Extract only chromosome number if necessary
+      $chrom =~ s/chromosome:[\w\.]*?://;
+      $chrom =~ s/:.*//;
 
       # Tranforms strand in ensembl format
       $strand =~ s/F/1/;
@@ -193,11 +197,19 @@ package main;
 
       &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
       &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
-      &RSAT::message::Debug(">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand") if ($main::verbose >= 3);
+      if ($ft_id) {
+	&RSAT::message::Debug(">$ft_id\t$ft_id; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand") if ($main::verbose >= 3);
+      } else {
+	&RSAT::message::Debug(">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand") if ($main::verbose >= 3);
+      }
       &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
       # Export sequence to file
-      print OUT ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
+      if ($ft_id) {
+	print OUT ">$ft_id\t$ft_id; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
+      } else {
+	print OUT ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
+      }
       print OUT "$sequence\n";
     }
 
