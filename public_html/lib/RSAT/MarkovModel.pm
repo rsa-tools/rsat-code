@@ -656,10 +656,10 @@ sub add_pseudo_freq {
 
   ## If the pseudo frequency is null, avoid to compute and store a
   ## table of corrected oligo frequencies
-  unless ($pseudo_freq) {
-    $self->set_attribute("pseudo_freq_added", 0);
-    return();
-  }
+#  unless ($pseudo_freq) {
+#    $self->set_attribute("pseudo_freq_added", 0);
+#    return();
+#  }
 
   ## Make sure that all prefixes and suffixes are in the iterators
   my @prefixes = $self->get_prefixes();
