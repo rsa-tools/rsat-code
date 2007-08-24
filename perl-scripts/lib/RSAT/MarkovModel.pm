@@ -195,11 +195,11 @@ sub load_from_file_oligos {
     $self->force_attribute("strand", "undef");
   }
 
-   if ($main::verbose >= 0) {
-     foreach my $oligo_seq (sort(keys(%patterns))) {
-       &RSAT::message::Debug("Loaded oligo frequency", $oligo_seq,  $patterns{$oligo_seq}->{exp_freq});
-     }
-   }
+#   if ($main::verbose >= 5) {
+#     foreach my $oligo_seq (sort(keys(%patterns))) {
+#       &RSAT::message::Debug("Loaded oligo frequency", $oligo_seq,  $patterns{$oligo_seq}->{exp_freq});
+#     }
+#   }
 
   $self->oligos_to_frequency_table(%patterns);
   #    &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', @patterns)) if ($main::verbose >= 5);
@@ -222,23 +222,23 @@ sub oligos_to_frequency_table {
   my $pattern_len = length($patterns[0]);
   my $pattern_nb = scalar(keys(%patterns));
   my $order =  $pattern_len -1 ;	## Use the first pattern to calculate model order
-  $self->force_attribute("order", $order);
+  $self->force_attribute("order", $order); 
   &RSAT::message::Info("Converting oligos into frequency tables", $pattern_nb." patterns", "length", $pattern_len, "order", $order) 
-    if ($main::verbose >= 3);
+   if ($main::verbose >= 3);
 
   foreach my $pattern_seq (@patterns) {
     my $pattern_freq =  $patterns{$pattern_seq}->{exp_freq};
     ## Check pattern length
     $pattern_seq = lc($pattern_seq); ## Ensure case-insensitivity
     $pattern_len = length($pattern_seq);
-    #    &RSAT::message::Debug($pattern_seq, $pattern_len, $pattern_freq, 
-    #    			      join(";", keys %{$patterns{$pattern_seq}})) if ($main::verbose >= 0);
+#    &RSAT::message::Debug("oligos_to_frequency_table", $pattern_seq, $pattern_len, $pattern_freq,
+#			  join(";", keys %{$patterns{$pattern_seq}})) if ($main::verbose >= 10);
     &RSAT::error::FatalError("All patterns should have the same length in a Markov model file.") 
       unless $pattern_len = $order+1;
     my $prefix = substr($pattern_seq,0,$order);
     my $suffix = substr($pattern_seq,$order, 1);
     $self->{oligo_freq}->{$prefix}->{$suffix} = $pattern_freq;
-    #	&RSAT::message::Debug("transition count", $prefix.".".$suffix, $pattern_freq, $self->{oligo_freq}->{$prefix}->{$suffix}) if ($main::verbose >= 10);
+#    &RSAT::message::Debug("transition count", $prefix.".".$suffix, $pattern_freq, $self->{oligo_freq}->{$prefix}->{$suffix}) if ($main::verbose >= 10);
   }
 }
 
@@ -264,9 +264,18 @@ sub transitions_to_oligo_frequencies {
   foreach my $prefix (sort (@prefix)) {
     foreach my $suffix (sort(@suffix)) {
       my $oligo_seq = $prefix.$suffix;
-      my $oligo_freq = $self->{prefix_proba}->{$prefix}*$self->{transitions}->{$prefix}->{$suffix};
+      my $oligo_freq = $self->{prefix_proba}->{$prefix}*$self->{transitions_no_pseudo}->{$prefix}->{$suffix};
+      $self->{oligo_freq}->{$prefix}->{$suffix} = $oligo_freq;
       $patterns{$oligo_seq}->{exp_freq} = $oligo_freq;
-#      &RSAT::message::Debug($prefix, $suffix, $oligo_seq, $oligo_freq) if ($main::verbose >= 10);
+#      &RSAT::message::Debug("transitions_to_oligo_frequencies", 
+#			    $oligo_seq, $prefix."->".$suffix, $oligo_freq) if ($main::verbose >= 10);
+      if ($self->get_attribute("pseudo_added")) {
+	my $oligo_freq_pseudo = $self->{prefix_proba}->{$prefix}*$self->{transitions}->{$prefix}->{$suffix};
+	$self->{oligo_freq_pseudo}->{$prefix}->{$suffix} = $oligo_freq_pseudo;
+	$patterns{$oligo_seq}->{exp_freq_pseudo} = $oligo_freq_pseudo;
+#	&RSAT::message::Debug("transitions_to_oligo_frequencies", 
+#			      $oligo_seq, $prefix."->".$suffix, $oligo_freq) if ($main::verbose >= 10);
+      }
     }
   }
   return %patterns;
@@ -340,7 +349,7 @@ sub load_from_file_meme {
     $pattern_seq = lc($pattern_seq);
     my $pattern_len = length($pattern_seq);
     #	&RSAT::message::Debug($pattern_seq, $pattern_len, $pattern_freq, 
-    #			      join(";", keys %{$patterns{$pattern_seq}})) if ($main::verbose >= 0);
+    #			      join(";", keys %{$patterns{$pattern_seq}})) if ($main::verbose >= 10);
     &RSAT::error::FatalError("All patterns should have the same length in a Markov model file.") 
       unless $pattern_len = $order+1;
     my $prefix = substr($pattern_seq,0,$order);
@@ -599,34 +608,34 @@ sub calc_prefix_suffix_sums {
     foreach my $suffix (@suffixes) {
       $s++;
       my $pattern_count = $oligo_freq{$prefix}->{$suffix} || 0;
-
-      ## Particular treatment for case-insensitive models: the
-      ## oligo_freq of each non-rc-palindromic pattern is tken into
-      ## account in two entries of the hash table (direct + rc
-      ## pattern) -> to compute the sum of frequencies, on has to count it once only
-      my $to_sum = 1;
-      if ($strand eq "insensitive") {
-	my $oligo_seq = $prefix.$suffix;
-	my $oligo_rc = lc(&main::SmartRC($oligo_seq));
-#	if ($oligo_rc lt $oligo_seq) {
-#	  $to_sum = 0;
-#	}
-      }
-
       ## Increment frequencies
-      if ($to_sum) {
-	$freq_sum += $pattern_count;
-	$suffix_sum{$suffix} += $pattern_count;
-	$prefix_sum{$prefix} += $pattern_count;
-      }
+      $freq_sum += $pattern_count;
+      $suffix_sum{$suffix} += $pattern_count;
+      $prefix_sum{$prefix} += $pattern_count;
 
-#      &RSAT::message::Debug("Count sum", $p, $prefix.".".$suffix, $pattern_count, $to_sum, $freq_sum) if ($main::verbose >= 10);
     }
   }
 
   $self->force_attribute("freq_sum", $freq_sum);
   $self->set_hash_attribute("prefix_sum", %prefix_sum);
   $self->set_hash_attribute("suffix_sum", %suffix_sum);
+
+  ## Compute prefix probabilities
+  my %prefix_proba = ();
+  my $prefix_nb = scalar(@prefixes);
+  foreach my $prefix (@prefixes) {
+    $prefix_proba{$prefix} = $prefix_sum{$prefix}/$prefix_nb;
+  }
+  $self->set_hash_attribute("prefix_proba", %prefix_proba);
+
+  ## Compute suffix probabilities
+  my %suffix_proba = ();
+  my $suffix_nb = scalar(@suffixes);
+  foreach my $suffix (@suffixes) {
+    $suffix_proba{$suffix} = $suffix_sum{$suffix}/$suffix_nb;
+  }
+  $self->set_hash_attribute("suffix_proba", %suffix_proba);
+
 }
 
 ############################################################
@@ -657,10 +666,10 @@ sub add_pseudo_freq {
   my @suffixes = $self->get_suffixes();
   my $alpha_size = scalar(@suffixes);
 
-  &RSAT::message::Debug("Adding pseudo frequencies",
-			scalar(@suffixes), "suffixes",
-			scalar(@prefixes), "prefixes",
-		       ) if ($main::verbose >= 0);
+  &RSAT::message::Info("Adding pseudo frequencies",
+		       scalar(@suffixes), "suffixes",
+		       scalar(@prefixes), "prefixes",
+		       ) if ($main::verbose >= 3);
 
   ## Calculate sums of prefixes and suffixes for uncorrected oligo frequencies
   $self->calc_prefix_suffix_sums();
@@ -673,9 +682,9 @@ sub add_pseudo_freq {
   my $prefix_pseudo_count = $freq_sum*$pseudo_freq/scalar(@prefixes);
   foreach my $prefix (@prefixes) {
     $prefix_sum_pseudo{$prefix} = $self->{prefix_sum}->{$prefix}*(1-$pseudo_freq) + $prefix_pseudo_count;
-    &RSAT::message::Debug("prefix sum", $prefix, $self->{prefix_sum}->{$prefix},
-			  "corrected prefix sum", $prefix_sum_pseudo{$prefix})
-      if ($main::verbose >= 0);
+#    &RSAT::message::Debug("prefix sum", $prefix, $self->{prefix_sum}->{$prefix},
+#			  "corrected prefix sum", $prefix_sum_pseudo{$prefix})
+#      if ($main::verbose >= 5);
   }
   $self->set_hash_attribute("prefix_sum_pseudo", %prefix_sum_pseudo);
 
@@ -785,9 +794,9 @@ sub normalize_transition_frequencies {
       #	foreach my $suffix (keys (%suffix_sum)) {
       my $oligo_freq = $self->{oligo_freq}->{$prefix}->{$suffix}||0;
 
-      ## The uncorrected transitions (transitions_no_pseudo) are not
-      ## used for further computation, they are only use for writing
-      ## the Markov model in format tables.
+      ## The uncorrected transitions (transitions_no_pseudo) can be
+      ## used later for converting transitions to uncorrected oligo
+      ## frequencies.
       if ($prefix_sum > 0) {
 	$self->{transitions_no_pseudo}->{$prefix}->{$suffix} = $oligo_freq/$prefix_sum;
       } else {
@@ -1119,7 +1128,7 @@ sub two_words_update {
 # 			  $self->{prefix_sum}->{$deleted_prefix},
 # 			  $deleted_suffix,
 # 			  $self->{transitions}->{$deleted_prefix}->{$deleted_suffix},
-# 			  ) if ($main::verbose >= 0);
+# 			  ) if ($main::verbose >= 10);
 }
 
 ################################################################
@@ -1196,7 +1205,7 @@ sub one_word_update {
   # 			  $self->{prefix_sum}->{$deleted_prefix},
   # 			  $deleted_suffix,
   # 			  $self->{transitions}->{$deleted_prefix}->{$deleted_suffix},
-  # 			  ) if ($main::verbose >= 0);
+  # 			  ) if ($main::verbose >= 10);
 }
 
 
@@ -1465,7 +1474,13 @@ sub to_string_oligos {
       $string .= $oligo_seq;
       $string .= "\t".$oligo_seq;
     }
-    $string .= sprintf "\t%.${decimals}f",  $patterns{$oligo_seq}->{exp_freq};
+    my $oligo_freq = 0;
+    if ($self->get_attribute("pseudo_added")) {
+      $oligo_freq = $patterns{$oligo_seq}->{exp_freq_pseudo};
+    } else {
+      $oligo_freq = $patterns{$oligo_seq}->{exp_freq};
+    }
+    $string .= sprintf "\t%.${decimals}f",  $oligo_freq;
     $string .= "\n";
   }
   return $string;
@@ -1686,8 +1701,12 @@ The averaging is performed in 3 steps
 =cut
 sub average_strands {
   my ($self) = @_;
-    &RSAT::message::Info(join("\t", "MarkovModel", "Averaging transition frequencies on both strands."))
-	if ($main::verbose >= 0);
+
+  ## The transition table first needs to be filled up
+  $self->normalize_transition_frequencies(no_pseudo=>1);
+
+  &RSAT::message::Info(join("\t", "MarkovModel", "Averaging transition frequencies on both strands."))
+    if ($main::verbose >= 3);
 
   ## Get (supposedly strand-sensitive) oligo frequencies from the
   ## transition matrix
@@ -1706,121 +1725,26 @@ sub average_strands {
       $patterns_2str{$pattern}->{exp_freq} = $patterns_1str{$pattern}->{exp_freq};
     }
   }
+
+#   if ($main::verbose >= 10) {
+#     foreach my $pattern (sort (keys(%patterns_2str))) {
+#       &RSAT::message::Debug("oligo frequency", $pattern,  
+# 			    $patterns_1str{$pattern}->{exp_freq}, 
+# 			    "strand-insensitive", $patterns_2str{$pattern}->{exp_freq}
+# 			   );
+#     }
+#   }
+
   $self->oligos_to_frequency_table(%patterns_2str);
   $self->force_attribute("strand", "insensitive");
 
+#  print $self->to_prefix_suffix_table(%args, type=>"oligo_freq");
+
   ## Add pseudo frequencies
 #  $self->add_pseudo_freq();
-#  $self->normalize_transition_frequencies(no_pseudo=>1);
+  ## normalize the motified transition frequencies
+  $self->normalize_transition_frequencies(no_pseudo=>1);
 }
-
-################################################################
-=pod
-
-=item B<average_strands>
-
-Average transition frequencies between pairs of reverse complements,
-in order to obtain a strand-insensitive model.
-
-=cut
-# sub average_strands_bof {
-#     my ($self) = @_;
-
-#     &RSAT::message::Info(join("\t", "MarkovModel", "Averaging transition frequencies on both strands."))
-# 	if ($main::verbose >= 0);
-
-#     ## Sum per prefix
-#     my %prefixes_2str = ();
-#     foreach my $prefix ($self->get_prefixes()) {
-# 	next if (defined($prefixes_2str{$prefix}));
-# 	my $prefix_rc = lc(&main::SmartRC($prefix));
-
-# 	## Make sure that both the prefix and its reverse complement are indexed
-# 	$prefixes_2str{$prefix} = 1;
-# 	$prefixes_2str{$prefix_rc} = 1;
-# #	&RSAT::message::Debug("average_strands sum for prefix", $prefix, $prefix_rc) if ($main::verbose >= 0);
-
-# 	unless (defined($self->{prefix_sum}->{$prefix} )) {
-# 	    $self->{prefix_sum}->{$prefix}  = 0;
-# 	}
-# 	unless (defined($self->{prefix_sum}->{$prefix_rc} )) {
-# 	    $self->{prefix_sum}->{$prefix_rc}  = 0;
-# 	}
-# 	$self->{prefix_sum}->{$prefix} 
-# 	= $self->{prefix_sum}->{$prefix_rc}
-# 	= ($self->{prefix_sum}->{$prefix} +$self->{prefix_sum}->{$prefix_rc})/2 ;
-
-# 	unless (defined($self->{prefix_proba}->{$prefix} )) {
-# 	    $self->{prefix_proba}->{$prefix}  = 0;
-# 	}
-# 	unless (defined($self->{prefix_proba}->{$prefix_rc} )) {
-# 	    $self->{prefix_proba}->{$prefix_rc}  = 0;
-# 	}
-# 	$self->{prefix_proba}->{$prefix} 
-# 	= $self->{prefix_proba}->{$prefix_rc}
-# 	= ($self->{prefix_proba}->{$prefix} + $self->{prefix_proba}->{$prefix_rc})/2 ;
-#     }
-#     $self->set_array_attribute("prefixes", sort keys %prefixes_2str);
-
-#     ## Sum per suffix
-#     my %suffixes_2str = ();
-#     foreach my $suffix ($self->get_suffixes()) {
-# 	next if (defined($suffixes_2str{$suffix}));
-# 	my $suffix_rc = lc(&main::SmartRC($suffix));
-
-# 	## Make sure that both the suffix and its reverse complement are indexed
-# 	$suffixes_2str{$suffix} = 1;
-# 	$suffixes_2str{$suffix_rc} = 1;
-# #	&RSAT::message::Debug("average_strands sum for suffix", $suffix, $suffix_rc) if ($main::verbose >= 0);
-
-# 	$self->{suffix_sum}->{$suffix} 
-# 	= $self->{suffix_sum}->{$suffix_rc}
-# 	= ($self->{suffix_sum}->{$suffix} +$self->{suffix_sum}->{$suffix_rc})/2 ;
-
-# 	$self->{suffix_proba}->{$suffix} 
-# 	= $self->{suffix_proba}->{$suffix_rc}
-# 	= ($self->{suffix_proba}->{$suffix} +$self->{suffix_proba}->{$suffix_rc})/2 ;
-#     }
-#     $self->set_array_attribute("suffixes", sort keys %suffixes_2str);
-
-#     ## Transition matrix
-#     foreach my $prefix ($self->get_prefixes()) {
-# #	my $prefix_rc = lc(&main::SmartRC($prefix));
-# #	next if ($prefix_rc ge $prefix);
-# 	foreach my $suffix ($self->get_suffixes()) {
-# 	    my $word = $prefix.$suffix;
-# 	    my $rc_word = lc(&main::SmartRC($word));
-# 	    next if ($rc_word ge $word);
-# 	    my $rc_prefix = substr($rc_word, 0, $self->{order});
-# 	    my $rc_suffix = substr($rc_word, $self->{order}, 1);
-# 	    unless (defined($self->{transitions}->{$prefix}->{$suffix})) {
-# 		$self->{transitions}->{$prefix}->{$suffix} = 0;
-# 	    }
-# 	    unless (defined($self->{transitions}->{$rc_prefix}->{$rc_suffix})) {
-# 		$self->{transitions}->{$rc_prefix}->{$rc_suffix} = 0;
-# 	    }
-# 	    $self->{transitions}->{$prefix}->{$suffix} 
-# 	    = $self->{transitions}->{$rc_prefix}->{$rc_suffix} 
-# 	    = ($self->{transitions}->{$prefix}->{$suffix} +
-# 	       $self->{transitions}->{$rc_prefix}->{$rc_suffix})/2;
-	    
-# 	    unless (defined($self->{oligo_freq}->{$prefix}->{$suffix})) {
-# 		$self->{oligo_freq}->{$prefix}->{$suffix} = 0;
-# 	    }
-# 	    unless (defined($self->{oligo_freq}->{$rc_prefix}->{$rc_suffix})) {
-# 		$self->{oligo_freq}->{$rc_prefix}->{$rc_suffix} = 0;
-# 	    }
-# 	    $self->{oligo_freq}->{$prefix}->{$suffix} 
-# 	    = $self->{oligo_freq}->{$rc_prefix}->{$rc_suffix} 
-# 	    = ($self->{oligo_freq}->{$prefix}->{$suffix} +
-# 	       $self->{oligo_freq}->{$rc_prefix}->{$rc_suffix})/2;
-
-# #	    &RSAT::message::Debug("average_strands transitions", $prefix, $suffix, $rc_word, $rc_prefix, $rc_suffix) if ($main::verbose >= 0);
-# 	}
-#     }
-#     $self->force_attribute("strand", "insensitive");
-# #    die "HELLO";
-# }
 
 
 ################################################################
@@ -1834,91 +1758,91 @@ by larger than the Markov order + 1.
 =cut
 
 sub segment_proba {
-    my ($self, $segment) = @_;
+  my ($self, $segment) = @_;
 
-#    return(1);
+  #    return(1);
 
-    my $seq_len = length($segment);
-    my $order = $self->get_attribute("order");
-    $segment =  lc($segment);
+  my $seq_len = length($segment);
+  my $order = $self->get_attribute("order");
+  $segment =  lc($segment);
 
-    &RSAT::error::FatalError("&RSAT::MarkovModel->segment_proba. The segment ($segment) length ($seq_len) must be larger than the markov order ($order) + 1.") 
-	if ($seq_len < $order + 1);
+  &RSAT::error::FatalError("&RSAT::MarkovModel->segment_proba. The segment ($segment) length ($seq_len) must be larger than the markov order ($order) + 1.") 
+    if ($seq_len < $order + 1);
 
-    my $prefix = substr($segment,0,$order);
-    my $segment_proba = 0;
-    my $c = 0;
-    if (defined($self->{prefix_proba}->{$prefix})) {
-      $segment_proba = $self->{prefix_proba}->{$prefix};
-      &RSAT::message::Info(#"MarkovModel::segment_proba()",
-			   "offset:".$c,
-			   "i=".($c+1),
-			   "P(".$prefix.")", $self->{prefix_proba}->{$prefix},
-			   "P(S)", $segment_proba,
-			   $prefix.uc($suffix),
-			   $prefix.uc($suffix),
-			  ) if ($main::verbose >= 4);
-    } elsif ($self->get_attribute("n_treatment") eq "score") {
-      $segment_proba = 1;
-      foreach my $i (1..length($prefix)) {
-	my $residue = substr($prefix,$i-1,1);
-	if (defined($self->{suffix_proba}->{$residue})) {
-	  $segment_proba *= $self->{suffix_proba}->{$residue};
-	}
+  my $prefix = substr($segment,0,$order);
+  my $segment_proba = 0;
+  my $c = 0;
+  if (defined($self->{prefix_proba}->{$prefix})) {
+    $segment_proba = $self->{prefix_proba}->{$prefix};
+    &RSAT::message::Info(	#"MarkovModel::segment_proba()",
+			 "offset:".$c,
+			 "i=".($c+1),
+			 "P(".$prefix.")", $self->{prefix_proba}->{$prefix},
+			 "P(S)", $segment_proba,
+			 $prefix.uc($suffix),
+			 $prefix.uc($suffix),
+			) if ($main::verbose >= 4);
+  } elsif ($self->get_attribute("n_treatment") eq "score") {
+    $segment_proba = 1;
+    foreach my $i (1..length($prefix)) {
+      my $residue = substr($prefix,$i-1,1);
+      if (defined($self->{suffix_proba}->{$residue})) {
+	$segment_proba *= $self->{suffix_proba}->{$residue};
       }
+    }
 
-      #	&RSAT::message::Debug("Ignoring undefined prefix", $prefix,  "proba set to 1") if ($main::verbose >= #0);
-    } else {
-      &RSAT::error::FatalError("\t", "MarkovModel::segment_proba",
-			       "Invalid prefix for the selected sequence type", $prefix);
-    }
+    #	&RSAT::message::Debug("Ignoring undefined prefix", $prefix,  "proba set to 1") if ($main::verbose >= #0);
+  } else {
+    &RSAT::error::FatalError("\t", "MarkovModel::segment_proba",
+			     "Invalid prefix for the selected sequence type", $prefix);
+  }
     
-    for $c ($order..($seq_len-1)) {
-	my $residue_proba = 0;
+  for $c ($order..($seq_len-1)) {
+    my $residue_proba = 0;
 	
-	my $suffix = substr($segment, $c, 1);
-	my $prefix = substr($segment,($c-$order),$order);
-	if (defined($self->{transitions}->{$prefix}->{$suffix})) {
-	  $residue_proba = $self->{transitions}->{$prefix}->{$suffix};
-	  if ($residue_proba <= 0) {
-	    &RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
-					  "null transition between prefix ", $prefix, " and suffix", $suffix)) if ($main::verbose >= 0);
-	  }
-	} elsif ($self->get_attribute("n_treatment") eq "score") {
-	  if (defined($self->{suffix_proba}->{$suffix})) {
-	    $residue_proba = $self->{suffix_proba}->{$suffix};
-	  } else {
-	    $residue_proba = 1;
-	  }
-	  #	    &RSAT::message::Debug("Ignoring undefined transition", $prefix, $suffix, "proba set to 1") if ($main::verbose >= 10);
-	} else { 
-	  &RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
-					"undefined transition between prefix ", 
-					$prefix, "and suffix", 
-					$suffix));
-	}
-	$segment_proba *= $residue_proba;
-	
-	&RSAT::message::Info(#"MarkovModel::segment_proba()",
-			     "offset:".$c,
-			     "i=".($c+1),
-			     "P(".$suffix."|".$prefix.")", $residue_proba,
-			     "P(S)", $segment_proba,
-			     $prefix.uc($suffix),
-			     substr($segment,0,$c+1),
-			    ) if ($main::verbose >= 4);
-#	&RSAT::message::Info("segment_proba", 
-#			      "prefix=".$word, 
-#			      "prefix=".$prefix, 
-#			      "suffix:".$suffix, 
-#			      "offset:".$c, 
-#			      "P(letter)=".$residue_proba, 
-#			      "P(S)=".$segment_proba) if ($main::verbose >= 4);
+    my $suffix = substr($segment, $c, 1);
+    my $prefix = substr($segment,($c-$order),$order);
+    if (defined($self->{transitions}->{$prefix}->{$suffix})) {
+      $residue_proba = $self->{transitions}->{$prefix}->{$suffix};
+      if ($residue_proba <= 0) {
+	&RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
+				      "null transition between prefix ", $prefix, " and suffix", $suffix));
+      }
+    } elsif ($self->get_attribute("n_treatment") eq "score") {
+      if (defined($self->{suffix_proba}->{$suffix})) {
+	$residue_proba = $self->{suffix_proba}->{$suffix};
+      } else {
+	$residue_proba = 1;
+      }
+      #	    &RSAT::message::Debug("Ignoring undefined transition", $prefix, $suffix, "proba set to 1") if ($main::verbose >= 10);
+    } else { 
+      &RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
+				    "undefined transition between prefix ", 
+				    $prefix, "and suffix", 
+				    $suffix));
     }
+    $segment_proba *= $residue_proba;
+	
+    &RSAT::message::Info(	#"MarkovModel::segment_proba()",
+			 "offset:".$c,
+			 "i=".($c+1),
+			 "P(".$suffix."|".$prefix.")", $residue_proba,
+			 "P(S)", $segment_proba,
+			 $prefix.uc($suffix),
+			 substr($segment,0,$c+1),
+			) if ($main::verbose >= 4);
+    #	&RSAT::message::Info("segment_proba", 
+    #			      "prefix=".$word, 
+    #			      "prefix=".$prefix, 
+    #			      "suffix:".$suffix, 
+    #			      "offset:".$c, 
+    #			      "P(letter)=".$residue_proba, 
+    #			      "P(S)=".$segment_proba) if ($main::verbose >= 4);
+  }
     
-#    &RSAT::message::Debug("segment_proba", $segment, "P(segm)=".$segment_proba) if ($main::verbose >= 0);
-#    die;
-    return $segment_proba;
+  #    &RSAT::message::Debug("segment_proba", $segment, "P(segm)=".$segment_proba) if ($main::verbose >= 0);
+  #    die;
+  return $segment_proba;
 }
 
 
