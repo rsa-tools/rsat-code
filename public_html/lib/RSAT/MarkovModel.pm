@@ -202,7 +202,7 @@ sub load_from_file_oligos {
 #   }
 
   $self->oligos_to_frequency_table(%patterns);
-  #    &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', @patterns)) if ($main::verbose >= 5);
+    #  &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', keys(%patterns))) if ($main::verbose >= 5);
 }
 
 ################################################################
@@ -682,9 +682,9 @@ sub add_pseudo_freq {
   my $prefix_pseudo_count = $freq_sum*$pseudo_freq/scalar(@prefixes);
   foreach my $prefix (@prefixes) {
     $prefix_sum_pseudo{$prefix} = $self->{prefix_sum}->{$prefix}*(1-$pseudo_freq) + $prefix_pseudo_count;
-#    &RSAT::message::Debug("prefix sum", $prefix, $self->{prefix_sum}->{$prefix},
+  #  &RSAT::message::Debug("prefix sum", $prefix, $self->{prefix_sum}->{$prefix},
 #			  "corrected prefix sum", $prefix_sum_pseudo{$prefix})
-#      if ($main::verbose >= 5);
+  #    if ($main::verbose >= 5);
   }
   $self->set_hash_attribute("prefix_sum_pseudo", %prefix_sum_pseudo);
 
@@ -768,11 +768,12 @@ sub normalize_transition_frequencies {
 
   &RSAT::message::TimeWarn(join("\t", "MarkovModel", "Normalizing transition frequencies")) if ($main::verbose >= 3);
 
-  ## Add pseudo-counts to transition counts. This has to be done after the computation of prefix counts
+  ## Add pseudo-counts to oligo-frequencies counts. This has to be done after the computation of prefix counts
   unless ($args{no_pseudo}) {
     $self->add_pseudo_freq();	### adding the pseudo-freq
   }
   $self->calc_prefix_suffix_sums();
+  
 
   ## Store prefixes and suffixes in arrays for quick access
 #  $self->set_array_attribute("prefixes", sort(keys(%prefix_sum)));
@@ -859,10 +860,10 @@ sub normalize_transition_frequencies {
   # 	$self->average_strands();
   #     }
 
-  &RSAT::message::TimeWarn(join("\t", 
-				"Normalized background model", 
-				"prefixes: ".$p,
-				"transitions: ".$s)) if ($main::verbose >= 3);
+#  &RSAT::message::TimeWarn(join("\t", 
+#				"Normalized background model", 
+#				"prefixes: ".$p,
+#				"transitions: ".$s)) if ($main::verbose >= 3);
 }
 
 ################################################################
@@ -1334,6 +1335,9 @@ sub to_prefix_suffix_table{
     my @prefix = sort($self->get_prefixes());
     my @suffix = sort($self->get_suffixes());
     my $row_name_len = &RSAT::stats::max(5,$self->get_attribute("order"));
+    
+    &RSAT::message::Debug("prefix/suffix table","type", 
+			    $type) if ($main::verbose >= 3);
 
     ## Print header
     $string .= join ("\t", ";pr\\suf",
@@ -1365,6 +1369,8 @@ sub to_prefix_suffix_table{
 	  }
 	}
 	$table_prefix_sum += $prefix_sum;
+	
+
 
 	if (&RSAT::util::IsNatural($prefix_sum)) {
 	  $string .= sprintf "\t%d", $prefix_sum;
@@ -1385,7 +1391,7 @@ sub to_prefix_suffix_table{
 	$string .= "\n";
 
     }
-
+	
     ## Print suffix probabilities
 #    $string .= sprintf("; %${row_name_len}s", "P(su)");
 ##    $string .= "; P(su)";
@@ -1396,6 +1402,7 @@ sub to_prefix_suffix_table{
 
     ## Print suffix sums
     $string .= sprintf("; %${row_name_len}s", "Suf");
+     
     my $table_suffix_sum = 0;
     foreach my $suffix (@suffix) {
       my  $suffix_sum =   $suffix_sum{$suffix} || 0;
@@ -1410,16 +1417,22 @@ sub to_prefix_suffix_table{
     }
 
     if (&RSAT::util::IsNatural($table_suffix_sum)) {
-      $string .= sprintf "\t%d",  $table_suffix_sum;
+      my $print_suffix_sum = sprintf("%.0f",$table_suffix_sum);  #   $string .= sprintf "\t%d",  $table_suffix_sum;
+#      &RSAT::message::Debug("table suffix sum","calculated:", $table_suffix_sum,
+ #						"printed: ",$print_suffix_sum ) if ($main::verbose >= 5);     
+      $string .= "\t".$print_suffix_sum;
     } elsif (&RSAT::util::IsReal($table_suffix_sum)) {
       $string .= sprintf "\t%.${decimals}f",  $table_suffix_sum;
     } else {
       $string .= "\t".$table_suffix_sum;
     }
-
+    
+  
+   
     $string .= " \\ ";
     if (&RSAT::util::IsNatural($table_prefix_sum)) {
-      $string .= sprintf "%d",  $table_prefix_sum;
+      my $print_pref_sum = sprintf("%.0f",$table_prefix_sum);   #$string .= sprintf "%d",  $table_prefix_sum;  
+      $string .= $print_pref_sum;
     } elsif (&RSAT::util::IsReal($table_prefix_sum)) {
       $string .= sprintf "%.${decimals}f",  $table_prefix_sum;
     } else {
@@ -1463,13 +1476,14 @@ sub to_string_oligos {
   ## Compute oligomer frequencies from the prefix prior proba + transition proba
   my %patterns = $self->transitions_to_oligo_frequencies();
   foreach my $oligo_seq (sort (keys(%patterns))) {
+  		my $oligo_rc = "";
     if ($strand eq "insensitive") {
-      my $oligo_rc = lc(&RSAT::SeqUtil::ReverseComplement($oligo_seq));;
+      $oligo_rc = lc(&RSAT::SeqUtil::ReverseComplement($oligo_seq));
       next if ($oligo_rc lt $oligo_seq);
       $string .= $oligo_seq;
       $string .= "\t".$oligo_seq;
       $string .= "|";
-      $string .= $oligo_rc;
+      $string .= $oligo_rc; 
     } else {
       $string .= $oligo_seq;
       $string .= "\t".$oligo_seq;
@@ -1477,10 +1491,18 @@ sub to_string_oligos {
     my $oligo_freq = 0;
     if ($self->get_attribute("pseudo_added")) {
       $oligo_freq = $patterns{$oligo_seq}->{exp_freq_pseudo};
+      if ($strand eq "insensitive"){
+      	$oligo_freq += $patterns{$oligo_rc}->{exp_freq_pseudo};	
+      } 
+      #&RSAT::message::Debug("word",$oligo_seq, "rc",$oligo_rc, "oligo_freq",$oligo_freq) if ($main::verbose >= 5);    
     } else {
       $oligo_freq = $patterns{$oligo_seq}->{exp_freq};
+      if ($strand eq "insensitive"){
+      	$oligo_freq += $patterns{$oligo_rc}->{exp_freq};	
+      } 
     }
     $string .= sprintf "\t%.${decimals}f",  $oligo_freq;
+&RSAT::message::Debug("string",sprintf "\t%.${decimals}f",  $oligo_freq ) if ($main::verbose >= 5);      
     $string .= "\n";
   }
   return $string;
