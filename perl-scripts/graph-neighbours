@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-neighbours,v 1.14 2007/07/19 08:56:14 rsat Exp $
+# $Id: graph-neighbours,v 1.15 2007/08/28 09:54:54 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -45,7 +45,7 @@ See convert-graph for a description of the supported input formats.
 
 =head1 OUTPUT FORMAT
 
-Two kinds of output are available. 
+Two types of output are available. 
 
 Without any specification, the program will return a four column file "neighbour", "seed", "number of steps" and "direction". 
 
@@ -162,16 +162,20 @@ package main;
     }
       
     ## Identify seed nodes in the graph
-    RSAT::message::TimeWarn("Identifying",scalar(@seed_names), "seed nodes in the graph") if ($main::verbose >= 2);
-    foreach my $name (@seed_names) {
-      my $node_id = $graph->node_by_name($name);
-      if (defined($node_id)) {
-	$seed_nodes_id{$node_id} = $name;
-	&RSAT::message::Info("Identified node with name", $name, $node_id) if ($main::verbose >= 3);
-      } else {
-        $unknown_nodes{$name}++;
-	&RSAT::message::Warning("The graph does not contain any node with name", $name);
+    if (!$all_seeds) {
+      RSAT::message::TimeWarn("Identifying",scalar(@seed_names), "seed nodes in the graph") if ($main::verbose >= 2);
+      foreach my $name (@seed_names) {
+        my $node_id = $graph->node_by_name($name);
+        if (defined($node_id)) {
+  	  $seed_nodes_id{$node_id} = $name;
+	  &RSAT::message::Info("Identified node with name", $name, $node_id) if ($main::verbose >= 3);
+        } else {
+          $unknown_nodes{$name}++;
+   	  &RSAT::message::Warning("The graph does not contain any node with name", $name);
+        }
       }
+    } else {
+      %seed_nodes_id = $graph->get_attribute("nodes_id_name");
     }
     
 
