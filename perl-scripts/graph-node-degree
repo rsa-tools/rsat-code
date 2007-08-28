@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-node-degree,v 1.7 2007/08/20 23:00:37 jvanheld Exp $
+# $Id: graph-node-degree,v 1.8 2007/08/28 09:54:54 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -149,19 +149,22 @@ package main;
     }
       
     ## Identify seed nodes in the graph
-    %seed_names_list = ();
-    RSAT::message::TimeWarn("Identifying",scalar(@seed_names), "seed nodes in the graph") if ($main::verbose >= 2);
-    foreach my $name (@seed_names) {
-      my $node_id = $graph->node_by_name($name);
-      if (defined($node_id)) {
-	&RSAT::message::Info("Identified node with name", $name, $node_id) if ($main::verbose >= 3);
-	$seed_names_list{$name}++;
-      } else {
-        $unknown_nodes{$name}++;
-	&RSAT::message::Warning("The graph does not contain any node with name", $name);
+    if (!$all_seeds) {
+      %seed_names_list = ();
+      RSAT::message::TimeWarn("Identifying",scalar(@seed_names), "seed nodes in the graph") if ($main::verbose >= 2);
+      foreach my $name (@seed_names) {
+        my $node_id = $graph->node_by_name($name);
+        if (defined($node_id)) {
+	  &RSAT::message::Info("Identified node with name", $name, $node_id) if ($main::verbose >= 3);
+	  $seed_names_list{$name}++;
+        } else {
+          $unknown_nodes{$name}++;
+	  &RSAT::message::Warning("The graph does not contain any node with name", $name);
+        }
       }
+    } else {
+      %seed_names_list = $graph->get_attribute("nodes_name_id");
     }
-
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
