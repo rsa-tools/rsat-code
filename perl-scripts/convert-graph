@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.24 2007/08/28 13:18:26 rsat Exp $
+# $Id: convert-graph,v 1.25 2007/08/28 13:27:36 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -271,7 +271,6 @@ Same as -h
 	    
 =pod
 	    ## Input file
-=pod
 
 =item B<-i inputfile>
 
@@ -309,7 +308,6 @@ Input format. Supported: tab, gml
 
 
 	    ### Output format  
-=cut
 
 =item B<-to output_format>
 
