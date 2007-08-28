@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.22 2007/07/20 11:46:36 rsat Exp $
+# $Id: convert-graph,v 1.23 2007/08/28 09:54:54 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -23,7 +23,7 @@ Convert graphs between different formats.
 
 In the current state, the only supported input format are 
 tab-delimited file and gml file. Various output format are already supported (dot,
-gml, tab).
+gml, tab, adjacency table).
 
 In the future, there should be as many input as output formats (the
 program should perform interconversions between any supported format).
@@ -41,7 +41,7 @@ Graph utilities
 
 =head1 USAGE
     
-convert-graph [-i inputfile] [-o outputfile] [-from tab|gml] [-to format tab|dot|gml]  [-arc_id] [-v #]
+convert-graph [-i inputfile] [-o outputfile] [-from tab|gml] [-to format tab|dot|gml|adj_matrix_dir|adj_matrix_undir]  [-arc_id] [-v #]
 
 =head1 FORMATS
 
@@ -49,6 +49,9 @@ Tab format is the more intuitive way to encode a graph. It consists in the list 
 between the nodes. The names of the nodes are separated using the tabulation. 
 Some attributes of the edges can be placed in the following columns (weight, label, color).
 Orphan nodes can be specified using this format simply by not specifying the target node.
+
+Adjacency matrix is a n x n table (with n the number of nodes). In cell A[i,j], you find the 
+weight (or 1 if the graph is unweighted) on the edge between nodes i and j. 
 
 GML format allows to specify the location, the color, the label and
 the width of the nodes and of the edges. A GML file is made up of pairs of a key
@@ -108,13 +111,14 @@ package main;
     local $color_col = 0;
 
     ## Output formats
-    local $output_format = "dot";
+    local $output_format = "gml";
     %supported_output_format =(
 			       dot=>1,
 			       gml=>1,
-			       tab=>1
+			       tab=>1,
+			       adj_matrix_dir=>1,
+			       adj_matrix_undir=>1);
 			       
-    );
     $supported_output_formats = join (",", keys %supported_output_format);
 
     
