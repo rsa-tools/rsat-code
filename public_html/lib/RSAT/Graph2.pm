@@ -1319,6 +1319,88 @@ sub read_from_table {
 }
 
 ################################################################
+## Load a graph from a tab delimited adjacency matrix
+
+#   where col1 = source node
+#   	col2 = target node
+# 	col3 = weight or edge label
+# 	col4 = source color
+# 	col5 = target color
+# 	col6 = arc color
+
+
+sub read_from_adj_matrix {
+    my ($self, $inputfile, $directed) = @_;
+    &RSAT::message::TimeWarn("Loading graph from tab delimited adjacency matrix file", $inputfile) if ($main::verbose >= 2);
+    ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
+    my $weight = 0;
+    my $default_weight = 1;
+    my @array = ();
+    my $default_node_color = "#000088";
+    my $default_edge_color = "#000044";
+    my %edge_list = ();
+    my %nodes_id_name = ();
+    my %nodes_name_id = ();
+    print "DIRECTED $directed\n";
+
+    ## Load the graph
+    # find the first line containing the nodes names (starting with a <TAB>)
+    my $line = "";
+    while ($line = <$main::in> ) {
+#       next if ($line !~ /^\t/);
+      last if $line =~ /^\t/;
+      
+    }
+    ## if no header -> ERROR
+    chomp $line;
+    if ($line !~ /^\t/) {
+      &RSAT::error::FatalError("\t","Missing header line in input adjacency table",$inputfile);
+    }
+    my @linecp = split "\t", $line;
+    for (my $i = 1; $i < scalar @linecp; $i++) {
+      $nodes_id_name{$i-1} = $linecp[$i];
+      $nodes_name_id{$linecp[$i]} = $i-1;
+    }
+    my $cptarray = 0;
+    my $cpt = 0;
+    while ($line = <$main::in>) {
+      next if ($line =~ /^--/); # Skip mysql-like comments
+      next if ($line =~ /^;/); # Skip RSAT comments
+      next if ($line =~ /^#/); # Skip comments and header
+      next unless ($line =~ /\S/); # Skip empty rows
+      chomp ($line);
+      my @linecp = split "\t", $line;
+      if ($nodes_id_name{$cpt} ne $linecp[0]) {
+        &RSAT::error::FatalError("\t", "Rows and columns are not in the same order");
+      }
+      $cpt++;
+      for (my $i = 1; $i < scalar (@linecp); $i++) {
+        if ($linecp[$i] ne '0') {
+          my $direct_edge_name = join("_", $linecp[0], $nodes_id_name{$i-1});
+          my $reverse_edge_name = join("_", $nodes_id_name{$i-1}, $linecp[0]);
+          if (!exists($edge_list{$direct_edge_name}) && !exists($edge_list{$reverse_edge_name})) {
+            $array[$cptarray][0] = $linecp[0];
+            $array[$cptarray][1] = $nodes_id_name{$i-1}; 
+            $array[$cptarray][2] = $linecp[$i];
+            $array[$cptarray][3] = $default_node_color;
+            $array[$cptarray][4] = $default_node_color;
+            $array[$cptarray][5] = $default_edge_color;
+            if (!$directed) {
+              $edge_list{$direct_edge_name}++;
+              $edge_list{$reverse_edge_name}++;
+            }
+            $cptarray++;
+          }
+        }
+      }
+    }
+    $self->load_from_array(@array);
+    return $self;
+}
+
+
+
+################################################################
 
 =pod
 
@@ -1794,7 +1876,7 @@ sub load_from_array {
     $self->set_hash_attribute("nodes_label", %nodes_label);
     $self->set_hash_attribute("arcs_name_id", %arcs_name_id);
     
-    $self->force_attribute("nb_arc_bw_node", $max_arc_nb);   
+    $self->force_attribute("nb_arc_bw_node", $max_arc_nb);
 }
 
 ################################################################
@@ -1802,7 +1884,7 @@ sub load_from_array {
 
 =item B<graph_from_text()>
 
-Supported formats: gml, tab
+Supported formats: gml, tab, adj_matrix
 
 =cut
 sub graph_from_text {
@@ -1818,6 +1900,8 @@ sub graph_from_text {
         my $tccol = $args[5] || 0;
         my $ecol = $args[6] || 0;
 	return $self->read_from_table($inputfile, $scol, $tcol, $wcol, $sccol, $tccol, $ecol);
+    } elsif ($in_format eq "adj_matrix") {
+	return $self->read_from_adj_matrix($args[0], $args[7]);
     } else {
 	&RSAT::error::FatalError(join ("\t", $in_format, "Invalid format"));
     }
@@ -1844,10 +1928,9 @@ sub to_text {
 	return $self->to_gml(@args);
     } elsif ($out_format eq "tab") {
 	return $self->to_tab(@args);
-    } elsif ($out_format eq "adj_matrix_dir") {
-	return $self->to_adj_matrix("dir", @args);
-    } elsif ($out_format eq "adj_matrix_undir") {
-	return $self->to_adj_matrix("undir", @args);
+    } elsif ($out_format eq "adj_matrix") {
+        shift @args;
+	return $self->to_adj_matrix(@args);
     } elsif ($out_format eq "node_table") {
 	return $self->to_node_table(@args);
     } else {
@@ -1909,8 +1992,7 @@ Return the graph as an adjacency matrix.
 =cut
 sub to_adj_matrix {
     my ($self) = shift;
-    my $dir = shift;
-    $dir = $dir eq "dir";
+    my $directed = shift;
     my $max_arc = $self->get_attribute("nb_arc_bw_node");
     ## Graph having more than one edge between cannot be
     ## exported in the adjacency matrix format
@@ -1948,7 +2030,7 @@ sub to_adj_matrix {
         }
       }
       ## in_neighbours
-      if (defined @{$in_neighbours[$i]} && !$dir) {
+      if (defined @{$in_neighbours[$i]} && !$directed) {
         for (my $j = 0; $j < scalar @{$in_neighbours[$i]}; $j++) {
           my $in_id = $in_neighbours[$i][$j];
           my $in_label = $arc_in_label[$i][$j];
