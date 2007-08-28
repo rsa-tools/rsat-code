@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.23 2007/08/28 09:54:54 rsat Exp $
+# $Id: convert-graph,v 1.24 2007/08/28 13:18:26 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -50,8 +50,11 @@ between the nodes. The names of the nodes are separated using the tabulation.
 Some attributes of the edges can be placed in the following columns (weight, label, color).
 Orphan nodes can be specified using this format simply by not specifying the target node.
 
-Adjacency matrix is a n x n table (with n the number of nodes). In cell A[i,j], you find the 
-weight (or 1 if the graph is unweighted) on the edge between nodes i and j. 
+Adjacency matrix is a n x n table (with n the number of nodes). In cell A[i,j], 
+you find the weight (or 1 if the graph is unweighted) on the edge between nodes i 
+and j. An undirected adjacency matrix is symmetrical : indeed, if an edge exists 
+from node A to node B, it also exists from node B to node A. A directed matrix is 
+asymmetrical. By default, convert-graph considers the graphs as undirected but if the graph you use is undirected, you can use the -undirected option.
 
 GML format allows to specify the location, the color, the label and
 the width of the nodes and of the edges. A GML file is made up of pairs of a key
@@ -93,6 +96,9 @@ package main;
 #    $main::in = STDIN;
     $main::out  = STDOUT;
     
+    ## directed
+    $directed = 1;
+    
     ## arc_id_option
     $arc_id_option = 0;
 
@@ -100,7 +106,8 @@ package main;
     local $input_format = "tab";
     %supported_input_format =(
 	tab=>1,
-	gml=>1
+	gml=>1,
+	adj_matrix=>1
     );
     $supported_input_formats = join (",", keys %supported_input_format);
     local $source_col = 1;
@@ -116,8 +123,8 @@ package main;
 			       dot=>1,
 			       gml=>1,
 			       tab=>1,
-			       adj_matrix_dir=>1,
-			       adj_matrix_undir=>1);
+			       adj_matrix=>1);
+			      
 			       
     $supported_output_formats = join (",", keys %supported_output_format);
 
@@ -160,7 +167,7 @@ package main;
 
     ################################################################
     ##### read input
-    $graph->graph_from_text($input_format, $main::infile{input}, $source_col, $target_col, $weight_col, $source_color_col, $target_color_col,$color_col);
+    $graph->graph_from_text($input_format, $main::infile{input}, $source_col, $target_col, $weight_col, $source_color_col, $target_color_col,$color_col, $directed);
 
     ################################################################
     ###### print output
@@ -173,7 +180,7 @@ package main;
     }
     #### print verbose
     &Verbose() if ($main::verbose);
-    print $out $graph->to_text($output_format, $arc_id_option);
+    print $out $graph->to_text($output_format, $arc_id_option, $directed);
 
     ################################################################
     ###### finish verbose
@@ -383,6 +390,19 @@ will be taken into account.
 	    unless (&IsNatural($source_color_col) && ($source_color_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $source_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
 	    }
+  ## Directed option
+=pod
+
+
+=item B<-undirected>
+
+Specifies whether the edges must be considered as undirected, i.e., an edge 
+from node A to node B corresponds to an edge from B to A (by default, edges are directed). Useful for the output as an adjacency table.
+
+=cut
+	    	    
+	} elsif ($arg eq "-undirected") {
+	    $directed = 0;
 =pod
 
 =item B<-tccol>
