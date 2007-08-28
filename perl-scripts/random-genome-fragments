@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.6 2007/08/20 18:09:29 morgane Exp $
+# $Id: random-genome-fragments,v 1.7 2007/08/28 09:13:06 morgane Exp $
 #
 ############################################################
 
@@ -234,15 +234,23 @@ package main;
    			$retrieve_seq_cmd .= " -chrom ".$main::ens_chroms{$rand_contig_name}->seq_region_name();;
    			$retrieve_seq_cmd .= " -left ".$rand_start;
    			$retrieve_seq_cmd .= " -right ".$rand_end;
+   			if ($rand_strand eq "D") {
+   				$retrieve_seq_cmd .= " -strand 1 ";
+   			} elsif ($rand_strand eq "R") {
+   				$retrieve_seq_cmd .= " -strand -1 ";
+   			} else {
+   				&RSAT::message::Warn("No strand specified. Fetching direct strand.") if ($main::verbose >= 0);
+   			}
    			if ($main::rm) {
    				$retrieve_seq_cmd .= " -rm ";
    			}
    			if ($main::mask_coding) {
    				$retrieve_seq_cmd .= " -maskcoding ";
    			}
-   			## TO DO: add strand BEWARE : The strand is not currently taken into account !!! Always return D even if write R
-   			##$retrieve_seq_cmd .= "-strand ";
    			$retrieve_seq_cmd .= " -o ".$tmp_out_file;
+   			if ($main::local_server){
+   				$retrieve_seq_cmd .= " -ensemblhost ".$main::local_server;
+   			}
 
    			## run command
    			system("$retrieve_seq_cmd");
@@ -419,7 +427,7 @@ No caps, underscore between words (eg 'homo_sapiens')
 Uses a local EnsEMBL server. (Advanced users)
 
 =cut
-	} elsif ($arg eq "-local_ens_server") {
+	} elsif ($arg eq "-ensemblhost") {
 	    $main::local_server = shift(@arguments);
 
 		    ### masking coding sequence
