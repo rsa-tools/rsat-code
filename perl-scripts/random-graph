@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.19 2007/07/04 08:14:57 rsat Exp $
+# $Id: random-graph,v 1.20 2007/08/28 09:54:54 rsat Exp $
 #
 ############################################################
 
@@ -186,7 +186,7 @@ package main;
     } elsif (($random_type eq "node_degree" || $random_type eq "node_degree_distrib") && $max_degree > 1) {
       &RSAT::error::FatalError("\t", "Option -max_degree are not compatible with randomization type", $random_type);
     } elsif ($random_type ne "ER" && $single != 0) {
-      &RSAT::error::FatalError("\t", "Option -single cannot be use with randomization type ", $random_type);
+      &RSAT::error::FatalError("\t", "Option -no_single cannot be used with randomization type ", $random_type);
     }
     if ($random_type ne "ER" && $col_conservation) {
       &RSAT::error::FatalError("\t", "Option -col_conservation must be used with randomization ER (-random_type ER option)");

@@ -842,7 +842,7 @@ sub get_neighbours_id {
         push @to_add, @{$in_neighbours[$to_find_id]};
         if ($i == 1) {
           for (my $j = 0; $j < scalar(@{$in_neighbours[$to_find_id]}); $j ++) {
-            $direction{$in_neighbours[$to_find_id][$j]} = "out";
+            $direction{$in_neighbours[$to_find_id][$j]} = "in";
             $weight{$in_neighbours[$to_find_id][$j]}  = $arc_in_label[$to_find_id][$j];
           }
         }
@@ -1844,6 +1844,10 @@ sub to_text {
 	return $self->to_gml(@args);
     } elsif ($out_format eq "tab") {
 	return $self->to_tab(@args);
+    } elsif ($out_format eq "adj_matrix_dir") {
+	return $self->to_adj_matrix("dir", @args);
+    } elsif ($out_format eq "adj_matrix_undir") {
+	return $self->to_adj_matrix("undir", @args);
     } elsif ($out_format eq "node_table") {
 	return $self->to_node_table(@args);
     } else {
@@ -1895,6 +1899,70 @@ sub to_dot {
     return $dot;
 }
 
+################################################################
+=pod
+
+=item B<to_adj_matrix()>
+
+Return the graph as an adjacency matrix.
+
+=cut
+sub to_adj_matrix {
+    my ($self) = shift;
+    my $dir = shift;
+    $dir = $dir eq "dir";
+    my $max_arc = $self->get_attribute("nb_arc_bw_node");
+    ## Graph having more than one edge between cannot be
+    ## exported in the adjacency matrix format
+    if ($max_arc > 1) {
+      &RSAT::error::FatalError("\t","This graph is not a simple graph");
+    }
+    my %nodes_id_name = $self->get_attribute("nodes_id_name");
+    my @out_neighbours = $self->get_attribute("out_neighbours");
+    my @in_neighbours = $self->get_attribute("in_neighbours");
+    my @arc_in_label = $self->get_attribute("in_label");
+    my @arc_out_label = $self->get_attribute("out_label");
+    my @nodes = $self->get_nodes();
+    my $adj_matrix = "";
+    my @empty_row = ();
+    ## print the header 
+    for (my $i = 0; $i < scalar @nodes; $i++) {
+      $adj_matrix .= "\t";
+      $adj_matrix .= $nodes_id_name{$i};
+      push @empty_row, 0;
+    }
+    $adj_matrix .= "\n";
+    ## print the rows
+    for (my $i = 0; $i < scalar @nodes; $i++) {
+      my @row = @empty_row;
+      ## out_neighbours
+      if (defined @{$out_neighbours[$i]}) {
+        for (my $j = 0; $j < scalar @{$out_neighbours[$i]}; $j++) {
+          my $out_id = $out_neighbours[$i][$j];
+          my $out_label = $arc_out_label[$i][$j];
+          if (&RSAT::util::IsReal($out_label)) {
+            $row[$out_id] = $out_label;
+          } else {
+            $row[$out_id] = 1;
+          }
+        }
+      }
+      ## in_neighbours
+      if (defined @{$in_neighbours[$i]} && !$dir) {
+        for (my $j = 0; $j < scalar @{$in_neighbours[$i]}; $j++) {
+          my $in_id = $in_neighbours[$i][$j];
+          my $in_label = $arc_in_label[$i][$j];
+          if (&RSAT::util::IsReal($in_label)) {
+            $row[$in_id] = $in_label;
+          } else {
+            $row[$in_id] = 1;
+          }
+        }
+      }      
+      $adj_matrix .= $nodes_id_name{$i}."\t".join("\t", @row)."\n";
+    }
+    return $adj_matrix;
+}
 
 
 
