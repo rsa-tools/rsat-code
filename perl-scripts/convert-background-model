@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.14 2007/08/23 16:31:29 jvanheld Exp $
+# $Id: convert-background-model,v 1.15 2007/08/29 08:05:28 morgane Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -30,7 +30,7 @@ formats will be progressively added.
 
 =item Jean Valery Turatsinze jturatsi@scmbb.ulb.ac.be
 
-=item Morgane Thomas-Chollier <morgane@scmbb.ulb.ac.be>
+=item Morgane Thomas-Chollier morgane@scmbb.ulb.ac.be
 
 =head1 CATEGORY
 
@@ -42,7 +42,7 @@ convert-backgound-model [-i inputfile] [-o outputfile] [-v]
 
 =head1 BACKGROUND MODEL FORMATS
 
-B<Note>: some formats are supported for both input and outpu, but some
+B<Note>: some formats are supported for both input and output, but some
 formats are supported only for input or for output.
 
 
@@ -343,7 +343,7 @@ Input format. Supported: oligo-analysis, MotifSampler, meme.
 
 =item B<-to output_format>
 
-Output format. Supported: tab (default), patser, MotifSampler.
+Output format. Supported: transitions (default), tables, oligo-analysis, patser, MotifSampler.
 
 =cut
 	} elsif ($arg eq "-to") {
