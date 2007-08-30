@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.20 2007/08/28 09:54:54 rsat Exp $
+# $Id: random-graph,v 1.21 2007/08/30 09:02:10 rsat Exp $
 #
 ############################################################
 
@@ -700,19 +700,18 @@ __END__
 
 =head1 SEE ALSO
 
-=item I<compare-graphs>
-
-=item I<compare-graph-clusters>
+=over
 
 =item I<convert-graph>
 
 =item I<graph-get-clusters>
 
-=item I<graph-neighbours>
-
 =item I<graph-node-degree>
 
-=item I<graph-set-attributes>
+=item I<compare-graphs>
+
+=item I<graph-neighbours>
+
+=back
 
 =cut
-
