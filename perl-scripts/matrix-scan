@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.82 2007/08/23 16:34:06 jvanheld Exp $
+# $Id: matrix-scan,v 1.83 2007/08/30 14:54:32 morgane Exp $
 #
 # Time-stamp: <2007-07-17 16:36:54 jturatsi>
 #
@@ -280,8 +280,8 @@ package main;
   local $origin = 0;
   local $pseudo_counts = 1;
   local $equi_pseudo = 0;
-  local $bg_pseudo = 0.01;
-  local $bg_pseudo_user_specified = 0;
+  local $bg_pseudo = 0; #Morgane : put 0 as long as not discussed with Jacques/JV
+  local $bg_pseudo_user_specified = 1; #Morgane : put 0 as default for the moment
   local $bg_include_seg = 0; #includes the segment that is score by the matrix into bg calculation (-window option)
   local $matrix_format = "tab";
   local $seq_format = "fasta";
@@ -824,6 +824,7 @@ package main;
 	  unless ($added_word eq $deleted_word){ ## No need to update if added word equald deleted word
 	    $bg_model->one_word_update($added_word, "add",$window_offset);
 	    $bg_model->one_word_update($deleted_word, "delete",$window_offset);
+	    $bg_model->counts_to_transitions();
 	  }
 	  $window_offset++;
 	}
@@ -879,6 +880,7 @@ package main;
 		&RSAT::message::Debug("deleted word", $deleted_word,"begins at" ,($pos + $ncol -1) -1) if ($main::verbose >= 3);
 		$bg_model->one_word_update($deleted_word, "delete",($pos + $ncol -1) -1);
 	      }
+	     $bg_model->counts_to_transitions();
 	    }
 	  }
 
