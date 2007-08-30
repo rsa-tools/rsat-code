@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-neighbours,v 1.15 2007/08/28 09:54:54 rsat Exp $
+# $Id: graph-neighbours,v 1.16 2007/08/30 09:02:10 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -546,4 +546,19 @@ __END__
 
 =head1 SEE ALSO
 
+=over
+
+=item I<convert-graph>
+
+=item I<graph-get-clusters>
+
+=item I<graph-node-degree>
+
+=item I<compare-graphs>
+
+=item I<random-graph>
+
+=back
+
 =cut
+

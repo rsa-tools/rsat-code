@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.25 2007/08/28 13:27:36 rsat Exp $
+# $Id: convert-graph,v 1.26 2007/08/30 09:02:10 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -41,7 +41,7 @@ Graph utilities
 
 =head1 USAGE
     
-convert-graph [-i inputfile] [-o outputfile] [-from tab|gml] [-to format tab|dot|gml|adj_matrix_dir|adj_matrix_undir]  [-arc_id] [-v #]
+convert-graph [-i inputfile] [-o outputfile] [-from tab|gml|adj_matrix] [-to format tab|dot|gml|adj_matrix]  [-arc_id] [-v #]
 
 =head1 FORMATS
 

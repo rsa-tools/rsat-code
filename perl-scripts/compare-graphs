@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.33 2007/07/19 08:56:14 rsat Exp $
+# $Id: compare-graphs,v 1.34 2007/08/30 09:02:10 rsat Exp $
 #
 ############################################################
 
@@ -43,12 +43,12 @@ util
 =head1 INPUT FORMAT
 
 Graphs can be entered in either gml or tab format. See
-<i>convert-graphs</i> for format descriptions and interconversions.
+I<convert-graph> for format descriptions and interconversions.
 
 =head1 OUTPUT FORMAT
 
 The result graph can be exported in either gml or tab format. See
-<i>convert-graphs</i> for format descriptions and interconversions.
+I<convert-graph> for format descriptions and interconversions.
 
 =cut
 
@@ -1036,17 +1036,15 @@ __END__
 
 =over
 
-=item I<compare-graph-clusters>
-
 =item I<convert-graph>
 
 =item I<graph-get-clusters>
 
-=item I<graph-neighbours>
-
 =item I<graph-node-degree>
 
-=item I<graph-set-attributes>
+=item I<graph-neighbours>
+
+=item I<random-graph>
 
 =back
 
