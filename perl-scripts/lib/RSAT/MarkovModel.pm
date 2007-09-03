@@ -199,8 +199,7 @@ sub load_from_file_oligos {
 #     }
 #   }
 
-  ## For insensitive strand, double the reverse palindrome frequencies 
-  ## calculated from oligo-analysis
+  ## Specific treatment for insensitive-strand oligo-analysis files
   my $strand = $self->get_attribute("strand") || "undef";
   if ($strand eq "insensitive") {
     &RSAT::message::Info("Processing reverse palindrome frequencies", "strand", $strand) 
@@ -220,7 +219,7 @@ sub load_from_file_oligos {
       next if ($oligo_rc eq $oligo_seq);
       $patterns{$oligo_seq}->{exp_freq} = $pattern_freq/2;
       &RSAT::message::Debug("non reverse palindrome",$oligo_seq,"freq from file", $pattern_freq,
-			    "freq divided by 2", $patterns{$oligo_seq}->{exp_freq}) if ($main::verbose >= 0);
+			    "freq divided by 2", $patterns{$oligo_seq}->{exp_freq}) if ($main::verbose >= 3);
     }
   }
 
