@@ -143,8 +143,6 @@ sub load_from_file {
   $self->normalize_transition_frequencies();
 }
 
-
-
 ################################################################
 =pod
 
@@ -200,27 +198,34 @@ sub load_from_file_oligos {
 #       &RSAT::message::Debug("Loaded oligo frequency", $oligo_seq,  $patterns{$oligo_seq}->{exp_freq});
 #     }
 #   }
-	
-	## Morgane
-	## For insensitive strand, double the reverse palindrome frequencies 
-	## calculated from oligo-analysis
-	my $strand = $self->get_attribute("strand") || "undef";
-	if ($strand eq "insensitive") {
-		&RSAT::message::Info("Processing reverse palindrome frequencies", "strand", $strand) 
-    	if ($main::verbose >= 2);
-  		foreach my $oligo_seq (sort (keys(%patterns))) {
-    		my $pattern_freq =  $patterns{$oligo_seq}->{exp_freq};
-    		my $oligo_rc  = lc(&RSAT::SeqUtil::ReverseComplement($oligo_seq));
-    		next if ($oligo_rc ne $oligo_seq);
-    		$pattern_freq_dble = $pattern_freq * 2;
-    		$patterns{$oligo_seq}->{exp_freq} = $pattern_freq_dble;
-   	 		&RSAT::message::Debug("reverse palindrome",$oligo_seq,"freq from file", $pattern_freq, 
-   	 				"freq doubled", $patterns{$oligo_seq}->{exp_freq}) if ($main::verbose >= 5);
-  		}
-	}
+
+  ## For insensitive strand, double the reverse palindrome frequencies 
+  ## calculated from oligo-analysis
+  my $strand = $self->get_attribute("strand") || "undef";
+  if ($strand eq "insensitive") {
+    &RSAT::message::Info("Processing reverse palindrome frequencies", "strand", $strand) 
+      if ($main::verbose >= 2);
+    foreach my $oligo_seq (sort (keys(%patterns))) {
+      my $pattern_freq =  $patterns{$oligo_seq}->{exp_freq};
+      my $oligo_rc  = lc(&RSAT::SeqUtil::ReverseComplement($oligo_seq));
+
+      ## Transition matrices do not really support the concept of
+      ## strand-insensitivity, they reflect transition probabilities
+      ## in a given orientation.  To fix this, when frequencies are
+      ## loaded from strand-insensitive files, estimate single-strand
+      ## frequencies from double-strand frequencies.
+      ##
+      ## In practice, we recommend to avoir loading frequency tables
+      ## from strand-insensitive oligo files.
+      next if ($oligo_rc eq $oligo_seq);
+      $patterns{$oligo_seq}->{exp_freq} = $pattern_freq/2;
+      &RSAT::message::Debug("non reverse palindrome",$oligo_seq,"freq from file", $pattern_freq,
+			    "freq divided by 2", $patterns{$oligo_seq}->{exp_freq}) if ($main::verbose >= 0);
+    }
+  }
 
   $self->oligos_to_frequency_table(%patterns);
-    #  &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', keys(%patterns))) if ($main::verbose >= 5);
+  #  &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', keys(%patterns))) if ($main::verbose >= 5);
 }
 
 ################################################################
@@ -1411,7 +1416,7 @@ Usage:
   my $transition_table = $bg_model->to_prefix_suffix_table(type=>"frequencies");
 
 =cut
-sub to_prefix_suffix_table{
+sub to_prefix_suffix_table {
     my ($self, %args) = @_;
     my $decimals = $args{decimals} || "5";
     my $string = "";
@@ -1419,9 +1424,9 @@ sub to_prefix_suffix_table{
     my @prefix = sort($self->get_prefixes());
     my @suffix = sort($self->get_suffixes());
     my $row_name_len = &RSAT::stats::max(5,$self->get_attribute("order"));
-    
-#    &RSAT::message::Debug("prefix/suffix table","type", 
-#			    $type) if ($main::verbose >= 3);
+
+    &RSAT::message::Debug("prefix/suffix table","type", 
+			    $type) if ($main::verbose >= 3);
 
     ## Print header
     $string .= join ("\t", ";pr\\suf",
@@ -1453,18 +1458,16 @@ sub to_prefix_suffix_table{
 	  }
 	}
 	$table_prefix_sum += $prefix_sum;
-	
-
 
 	if (&RSAT::util::IsNatural($prefix_sum)) {
-		my $print_prefix_sum = sprintf("%.0f",$prefix_sum);  #    $string .= sprintf "\t%d", $prefix_sum;  
-      	$string .= "\t".$print_prefix_sum;     
+	  my $print_prefix_sum = sprintf("%.0f",$prefix_sum);  #    $string .= sprintf "\t%d", $prefix_sum;
+	  $string .= "\t".$print_prefix_sum;
 	} elsif (&RSAT::util::IsReal($prefix_sum)) {
 	  $string .= sprintf "\t%.${decimals}f", $prefix_sum;
 	} else {
 	  $string .= "\t".$prefix_sum;
 	}
-     
+
 # 	if($type eq "oligo_freq") {
 # 	  $string .= "\t".$self->{prefix_sum}->{$prefix};
 # 	} elsif($type eq "oligo_freq_pseudo") {
@@ -1476,7 +1479,7 @@ sub to_prefix_suffix_table{
 	$string .= "\n";
 
     }
-	
+
     ## Print suffix probabilities
 #    $string .= sprintf("; %${row_name_len}s", "P(su)");
 ##    $string .= "; P(su)";
@@ -1487,7 +1490,7 @@ sub to_prefix_suffix_table{
 
     ## Print suffix sums
     $string .= sprintf("; %${row_name_len}s", "Suf");
-     
+
     my $table_suffix_sum = 0;
     foreach my $suffix (@suffix) {
       my  $suffix_sum =   $suffix_sum{$suffix} || 0;
@@ -1512,9 +1515,7 @@ sub to_prefix_suffix_table{
     } else {
       $string .= "\t".$table_suffix_sum;
     }
-    
-  
-   
+
     $string .= " \\ ";
     if (&RSAT::util::IsNatural($table_prefix_sum)) {
       my $print_pref_sum = sprintf("%.0f",$table_prefix_sum);   #$string .= sprintf "%d",  $table_prefix_sum; 
