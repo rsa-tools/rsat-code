@@ -67,52 +67,55 @@ $large_font_height = 16;
 &ReadArguments();
 
 ## check arguments compatibility 
-if (($img_format eq "eps")||($img_format eq "pdf")){
+if (($img_format eq "eps")||($img_format eq "pdf")) {
 
- if (($x_grid_step1) || ($y_grid_step1) || ($x_grid_step2) || ($y_grid_step2)) {
-   &RSAT::message::TimeWarn("grid options -gstep are not yet compatible with eps format => png format is used.") ;
-    $img_format = "png";
-    $outputfile .=".png";
- }
- if ($bg ne "white") {
- 	&RSAT::message::TimeWarn("changing background color is not yet compatible with eps format => png format is used.") ;
- 	 $img_format = "png";
- 	 $outputfile .=".png";
- }
+  if (($x_grid_step1) || ($y_grid_step1) || ($x_grid_step2) || ($y_grid_step2)) {
+    &RSAT::message::TimeWarn("grid options -gstep are not yet compatible with eps format => no grid.") ;
+    #     &RSAT::message::TimeWarn("grid options -gstep are not yet compatible with eps format => png format is used.") ;
+    #     $img_format = "png";
+    #     $outputfile .=".png";
+  }
+  if ($bg ne "white") {
+    &RSAT::message::TimeWarn("changing background color is not yet compatible with eps format => ignored.") ;
+    # 	&RSAT::message::TimeWarn("changing background color is not yet compatible with eps format => png format is used.") ;
+    # 	 $img_format = "png";
+    # 	 $outputfile .=".png";
+  }
  
   if (($histogram)||($filled_histogram)) {
- 	 &RSAT::message::TimeWarn("histogram plot  is not yet compatible with eps format => png format is used.") ;
- 	  $img_format = "png";
- 	  $outputfile .=".png";
+    &RSAT::message::TimeWarn("histogram plot  is not yet compatible with eps format => this option will be ignored.") ;
+    # 	 &RSAT::message::TimeWarn("histogram plot  is not yet compatible with eps format => png format is used.") ;
+    # 	  $img_format = "png";
+    # 	  $outputfile .=".png";
   }
-  
+
   if ($HTML_map) {
- 	 &RSAT::message::TimeWarn("-htmap is not compatible with eps format => png format is used.") ;
- 	  $img_format = "png";
+    &RSAT::message::TimeWarn("-htmap is not compatible with eps format..") ;
+    # 	 &RSAT::message::TimeWarn("-htmap is not compatible with eps format => png format is used.") ;
+    # 	  $img_format = "png";
   }
-  
- if (($hbox_bottom)||($tbox_low_x)) {
- 	&RSAT::message::TimeWarn("hbox and tbox are not yet compatible with eps format => png format is used.") ;
- 	 $img_format = "png";
- 	 $outputfile .=".png";
- }
- 
+
+  if (($hbox_bottom)||($tbox_low_x)) {
+    &RSAT::message::TimeWarn("hbox and tbox are not yet compatible with eps format.") ;
+    # 	&RSAT::message::TimeWarn("hbox and tbox are not yet compatible with eps format => png format is used.") ;
+    # 	 $img_format = "png";
+    # 	 $outputfile .=".png";
+  }
+
   if ($data_fields != "columns") {
- 	&RSAT::message::TimeWarn("-rows is not yet compatible with eps format => png format is used.") ;
- 	 $img_format = "png";
- 	 $outputfile .=".png";
- }
+    &RSAT::message::TimeWarn("-rows is not yet compatible with eps format => png format is used.") ;
+    $img_format = "png";
+    $outputfile .=".png";
+  }
 }
 
 ## use gnuplot if format is eps
 if (($img_format eq "eps")||($img_format eq "pdf")){
-	&GnuPlotEPS(); 
-	exit();
-	}
-	
-	
-## Other Format
+  &GnuPlotEPS();
+  exit();
+}
 
+## Other Format
 if ($x_log_base eq "e") {
     $x_ref_log = 1;
 } else {
@@ -128,41 +131,41 @@ if ($y_log_base eq "e") {
 #### check parameter values ####
 if ($HTML_map) {
     $verbose = 0;
-}		 
+}
 
 #### if log representation, check user-entered axis values  ###
 if ($xlog) {
-    if (x_axis_max ne "ND") {
-	if ($x_axis_max > 0) {
-	    $x_axis_max = log($x_axis_max)/$x_ref_log;
-	} else {
-	    $x_axis_max = "ND";
-	}
+  if (x_axis_max ne "ND") {
+    if ($x_axis_max > 0) {
+      $x_axis_max = log($x_axis_max)/$x_ref_log;
+    } else {
+      $x_axis_max = "ND";
     }
-    if (x_axis_min ne "ND") {
-	if ($x_axis_min > 0) {
-	    $x_axis_min = log($x_axis_min)/$x_ref_log;
-	} else {
-	    $x_axis_min = "ND";
-	}
+  }
+  if (x_axis_min ne "ND") {
+    if ($x_axis_min > 0) {
+      $x_axis_min = log($x_axis_min)/$x_ref_log;
+    } else {
+      $x_axis_min = "ND";
     }
+  }
 }
 
 if ($ylog) {
-    if (y_axis_max ne "ND") {
-	if ($y_axis_max > 0) {
-	    $y_axis_max = log($y_axis_max)/$y_ref_log;
-	} else {
-	    $y_axis_max = "ND";
-	}
+  if (y_axis_max ne "ND") {
+    if ($y_axis_max > 0) {
+      $y_axis_max = log($y_axis_max)/$y_ref_log;
+    } else {
+      $y_axis_max = "ND";
     }
-    if (y_axis_min ne "ND") {
-	if ($y_axis_min > 0) {
-	    $y_axis_min = log($y_axis_min)/$y_ref_log;
-	} else {
-	    $y_axis_min = "ND";
-	}
+  }
+  if (y_axis_min ne "ND") {
+    if ($y_axis_min > 0) {
+      $y_axis_min = log($y_axis_min)/$y_ref_log;
+    } else {
+      $y_axis_min = "ND";
     }
+  }
 }
 
 #### open output file ####
@@ -182,126 +185,126 @@ if ($tbox_low_x ne "") {
 
 ### check hbox dimensions ###
 if ($hbox_left ne "") {
-    if ($hbox_left < $left) {
-	$hbox_left = $left
-	} elsif ($hbox_left > $right) {
-	    $hbox_left = $right;
-	}
-    if ($hbox_right < $left) {
-	$hbox_right = $left
-	} elsif ($hbox_right > $right) {
-	    $hbox_right = $right;
-	}
-    if ($hbox_top < $top) {
-	$hbox_top = $top
-	} elsif ($hbox_top > $bottom) {
-	    $hbox_top = $bottom;
-	}
-    if ($hbox_bottom < $top) {
-	$hbox_bottom = $top
-	} elsif ($hbox_bottom > $bottom) {
-	    $hbox_bottom = $bottom;
-	}
-    #### convert hbox into a tbox ###
-    $tbox_low_x = ($hbox_left - $border)/$x_scale + $x_axis_min;
-    $tbox_high_x = ($hbox_right - $border)/$x_scale + $x_axis_min;
-    $tbox_high_y = ($hbox_top - $graph_y_size + $border)/$y_scale + $y_axis_min; 
-    $tbox_low_y = ($hbox_bottom - $graph_y_size + $border)/$y_scale + $y_axis_min; 
+  if ($hbox_left < $left) {
+    $hbox_left = $left
+  } elsif ($hbox_left > $right) {
+    $hbox_left = $right;
+  }
+  if ($hbox_right < $left) {
+    $hbox_right = $left
+  } elsif ($hbox_right > $right) {
+    $hbox_right = $right;
+  }
+  if ($hbox_top < $top) {
+    $hbox_top = $top
+  } elsif ($hbox_top > $bottom) {
+    $hbox_top = $bottom;
+  }
+  if ($hbox_bottom < $top) {
+    $hbox_bottom = $top
+  } elsif ($hbox_bottom > $bottom) {
+    $hbox_bottom = $bottom;
+  }
+  #### convert hbox into a tbox ###
+  $tbox_low_x = ($hbox_left - $border)/$x_scale + $x_axis_min;
+  $tbox_high_x = ($hbox_right - $border)/$x_scale + $x_axis_min;
+  $tbox_high_y = ($hbox_top - $graph_y_size + $border)/$y_scale + $y_axis_min; 
+  $tbox_low_y = ($hbox_bottom - $graph_y_size + $border)/$y_scale + $y_axis_min; 
 }
 
 #### report graph parameters ####
 if ($verbose) {
-    print "; XYgraph";
-    foreach $a (@ARGV) {
-	if (($a =~ /\S+\s+\S+/) || ($a !~ /\S/)){
-	    print " '$a'";
-	} else {
-	    print " $a";
-        }
+  print "; XYgraph";
+  foreach $a (@ARGV) {
+    if (($a =~ /\S+\s+\S+/) || ($a !~ /\S/)) {
+      print " '$a'";
+    } else {
+      print " $a";
     }
-    print "\n";
-    print ";Files\n";
-    print ";	input file 	$inputfile\n";
-    print ";	output file 	$outputfile\n";
-    print ";General options\n";
-    print ";	1st title	$title1\n";
-    print ";	2nd title	$title2\n";
-    print ";	border		$border\n";
-    print ";	point size	$point_size\n";
-    if ($hbox_left ne "") {
-	print ";	highlight box	left: $hbox_left, top: $hbox_top, right: $hbox_right, bottom: $hbox_bottom\n";
-    }
-    if ($tbox_low_x ne "") {
-	print ";	threshold box	X data between $tbox_low_x and $tbox_high_x\n";
-	print ";			Y data between $tbox_low_y and $tbox_high_y\n";
-    }
-    print ";X data\n";
-    print ";	first X legend  ", $x_legend1, "\n";
-    print ";	second X legend ", $x_legend2, "\n";
-    print ";	X data column	", $x_col+1, "\n";
-    print ";	nb of x values  ", $#X_values+1, "\n";
-    print ";	min x value	$min_x_value\n";
-    print ";	max x value	$max_x_value\n";
-    print ";	X axis min	$x_axis_min\n";
-    print ";	X axis max	$x_axis_max\n";
-    print ";	X axis size	$x_axis_size\n";
-    print ";	X scale		$x_scale\n";
-    print ";	graph X size	$graph_x_size\n";
-    print ";	left		$left\n";
-    print ";	right		$right\n";
-    print ";	1st X grid step	$x_grid_step1\n";
-    print ";	2nd X grid step	$x_grid_step2\n";
-    print ";Y data\n";
-    print ";	first Y legend  ", $y_legend1, "\n";
-    print ";	second Y legend ", $y_legend2, "\n";
-    print ";	Y data colum(s)\t";
-    foreach $c (0..$#y_col_list -1) {
-	print $y_col_list[$c] +1, ", ";
-    }
-    print $y_col_list[$#y_col_list]+1, "\n";
-    print ";	Y data legend(s) ";
-    for $series (0..$#y_col_list-1) {
-	print "$legend_fields[$y_col_list[$series]], ";
-    }
-    print "$legend_fields[$y_col_list[$#y_col_list]]\n";
+  }
+  print "\n";
+  print ";Files\n";
+  print ";	input file 	$inputfile\n";
+  print ";	output file 	$outputfile\n";
+  print ";General options\n";
+  print ";	1st title	$title1\n";
+  print ";	2nd title	$title2\n";
+  print ";	border		$border\n";
+  print ";	point size	$point_size\n";
+  if ($hbox_left ne "") {
+    print ";	highlight box	left: $hbox_left, top: $hbox_top, right: $hbox_right, bottom: $hbox_bottom\n";
+  }
+  if ($tbox_low_x ne "") {
+    print ";	threshold box	X data between $tbox_low_x and $tbox_high_x\n";
+    print ";			Y data between $tbox_low_y and $tbox_high_y\n";
+  }
+  print ";X data\n";
+  print ";	first X legend  ", $x_legend1, "\n";
+  print ";	second X legend ", $x_legend2, "\n";
+  print ";	X data column	", $x_col+1, "\n";
+  print ";	nb of x values  ", $#X_values+1, "\n";
+  print ";	min x value	$min_x_value\n";
+  print ";	max x value	$max_x_value\n";
+  print ";	X axis min	$x_axis_min\n";
+  print ";	X axis max	$x_axis_max\n";
+  print ";	X axis size	$x_axis_size\n";
+  print ";	X scale		$x_scale\n";
+  print ";	graph X size	$graph_x_size\n";
+  print ";	left		$left\n";
+  print ";	right		$right\n";
+  print ";	1st X grid step	$x_grid_step1\n";
+  print ";	2nd X grid step	$x_grid_step2\n";
+  print ";Y data\n";
+  print ";	first Y legend  ", $y_legend1, "\n";
+  print ";	second Y legend ", $y_legend2, "\n";
+  print ";	Y data colum(s)\t";
+  foreach $c (0..$#y_col_list -1) {
+    print $y_col_list[$c] +1, ", ";
+  }
+  print $y_col_list[$#y_col_list]+1, "\n";
+  print ";	Y data legend(s) ";
+  for $series (0..$#y_col_list-1) {
+    print "$legend_fields[$y_col_list[$series]], ";
+  }
+  print "$legend_fields[$y_col_list[$#y_col_list]]\n";
 
-    print ";	min y value	$min_y_value\n";
-    print ";	max y value	$max_y_value\n";
-    print ";	Y axis min	$y_axis_min\n";
-    print ";	Y axis max	$y_axis_max\n";
-    print ";	Y axis size	$y_axis_size\n";
-    print ";	Y scale		$y_scale\n";
-    print ";	graph Y size	$graph_y_size\n";
-    print ";	1st Y grid step	$y_grid_step1\n";
-    print ";	2nd Y grid step	$y_grid_step2\n";
+  print ";	min y value	$min_y_value\n";
+  print ";	max y value	$max_y_value\n";
+  print ";	Y axis min	$y_axis_min\n";
+  print ";	Y axis max	$y_axis_max\n";
+  print ";	Y axis size	$y_axis_size\n";
+  print ";	Y scale		$y_scale\n";
+  print ";	graph Y size	$graph_y_size\n";
+  print ";	1st Y grid step	$y_grid_step1\n";
+  print ";	2nd Y grid step	$y_grid_step2\n";
 }
 
 ### create new image ####
 $image = new GD::Image($graph_x_size, $graph_y_size);
-&AssignColors;
+&AssignColors();
 $image->filledRectangle(0,0,$graph_x_size, $graph_y_size, $bg_color);  
 
 #### draw grid and limits ####
 
 #### second grid (only when the axis is not in log
 unless ($xlog) {
-    ### second X grid
-    if ($x_grid_step2 > 0) {
-	for ($g = $x_axis_min; $g <= $x_axis_max; $g += $x_grid_step2) {
-	    $grid_pos = $left + ($g-$x_axis_min)*$x_scale;
-	    $image->line($grid_pos, $bottom, $grid_pos, $top, $grid2_color);
-	}
+  ### second X grid
+  if ($x_grid_step2 > 0) {
+    for ($g = $x_axis_min; $g <= $x_axis_max; $g += $x_grid_step2) {
+      $grid_pos = $left + ($g-$x_axis_min)*$x_scale;
+      $image->line($grid_pos, $bottom, $grid_pos, $top, $grid2_color);
     }
+  }
 }
 
 unless ($ylog) {
-    ### second Y grid
-    if ($y_grid_step2 > 0) {
-	for ($g = $y_axis_min; $g <= $y_axis_max; $g += $y_grid_step2) {
-	    $grid_pos = &YPixelPos($g);
-	    $image->line($left, $grid_pos, $right, $grid_pos, $grid2_color);
-	}
+  ### second Y grid
+  if ($y_grid_step2 > 0) {
+    for ($g = $y_axis_min; $g <= $y_axis_max; $g += $y_grid_step2) {
+      $grid_pos = &YPixelPos($g);
+      $image->line($left, $grid_pos, $right, $grid_pos, $grid2_color);
     }
+  }
 }
 
 ### first X grid
