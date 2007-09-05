@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.15 2007/08/29 08:05:28 morgane Exp $
+# $Id: convert-background-model,v 1.16 2007/09/05 22:42:24 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -212,7 +212,7 @@ package main;
     print $out $bg_model->to_string($output_format, decimals=>$decimals);
 
     ################################################################
-    ###### finish verbose
+    ## finish verbose
     if ($main::verbose >= 1) {
 	my $done_time = &AlphaDate();
 	print $main::out "; Job started $start_time\n";
