@@ -219,7 +219,7 @@ sub load_from_file_oligos {
       next if ($oligo_rc eq $oligo_seq);
       $patterns{$oligo_seq}->{exp_freq} = $pattern_freq/2;
       &RSAT::message::Debug("non reverse palindrome",$oligo_seq,"freq from file", $pattern_freq,
-			    "freq divided by 2", $patterns{$oligo_seq}->{exp_freq}) if ($main::verbose >= 3);
+			    "freq divided by 2", $patterns{$oligo_seq}->{exp_freq}) if ($main::verbose >= 4);
     }
   }
 
