@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.213 2007/08/17 06:51:59 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.214 2007/09/05 22:43:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -196,12 +196,12 @@ $MS_bg_order = 0;
 if (defined($ENV{MOTIF_SAMPLER_DIR})) {
   $MS_b =$ENV{MOTIF_SAMPLER_DIR}."/background_models/yeast_up800_nomit_noorf_o3.bg"; ### TEMPORARY
 }
-$MS_p = 0.2;
-$MS_M = 0;
-$MS_n = $nmotifs;
+$MS_p = 0.2; ## Sets prior probability of 1 motif copy. (default 0.5).
+$MS_M = 0; ## Maximal number of motif instances per sequence. (default unset = 0)
+$MS_n = $nmotifs; ## Number of different motifs per sequence set
 $MS_w = $matrix_width;
-$MS_x = 1;
-$MS_r = 5;
+$MS_x = 1; ## allowed overlap between motifs
+$MS_r = 1; ## Number of repetitions of the gibbs per motif
 $pssm_sort_key{MotifSampler} = 'MS.ic';
 $pssm_sort_order{MotifSampler} = 'desc';
 
