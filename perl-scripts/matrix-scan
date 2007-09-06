@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.84 2007/09/06 12:51:34 rsat Exp $
+# $Id: matrix-scan,v 1.85 2007/09/06 14:55:13 morgane Exp $
 #
 # Time-stamp: <2007-09-06 14:34:45 jturatsi>
 #
@@ -280,7 +280,7 @@ package main;
   local $origin = 0;
   local $pseudo_counts = 1;
   local $equi_pseudo = 0;
-  local $bg_pseudo = 0; #Morgane : put 0 as long as not discussed with Jacques/JV
+  local $bg_pseudo = 0.01; 
   local $bg_pseudo_user_specified = 1; #Morgane : put 0 as default for the moment
   local $bg_include_seg = 0; #includes the segment that is score by the matrix into bg calculation (-window option)
   local $matrix_format = "tab";
