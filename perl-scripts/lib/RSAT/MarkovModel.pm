@@ -1964,6 +1964,50 @@ sub segment_proba {
 }
 
 
+################################################################
+=pod
+
+=item B<reverse_bg>
+
+Converts the background model calculated on one strand
+to a a model corresponding to the complentary strand
+
+This method take a MarkovModel object as input and 
+return another MarkovModel object.
+
+=cut
+
+sub reverse_bg {
+	$self = shift;
+	my $bg_D = $self;
+
+	### Create a new bg_model object for the reverse complement
+	### Has the sme attribute than the bg model of the direct strand
+	my $bg_R =  new RSAT::MarkovModel();
+	$bg_R->set_attribute("strand", "sensitive");
+	$bg_R->set_attribute("n_treatment", $bg_D->get_attribute("n_treatment"));
+	$bg_R->set_attribute("bg_pseudo", $bg_D->get_attribute("bg_pseudo"));
+	$bg_R->set_attribute("order", $bg_D->get_attribute("order"));
+	$bg_R->set_hash_attribute("oligo_freq",());
+
+	### Get the counts from the direct bg_model
+	foreach my $prefix_D (sort keys(%{$bg_D->{oligo_freq}})) {
+		foreach my $suffix_D (sort keys(%{$bg_D->{oligo_freq}->{$prefix_D}})) {
+			my $pattern_D = lc($prefix_D.$suffix_D);
+			my $pattern_R = lc(&RSAT::SeqUtil::ReverseComplement($pattern_D));
+			my $pattern_count_D = $bg_D->{oligo_freq}->{$prefix_D}->{$suffix_D};
+			my $suffix_R = substr($pattern_R, -1);
+			my $prefix_len = length $prefix_D;
+			my $prefix_R = substr($pattern_R,0,$prefix_len);
+			
+			$bg_R->{oligo_freq}->{$prefix_R}->{$suffix_R} = $pattern_count_D;
+		}
+	}
+	$bg_R->counts_to_transitions();
+	return $bg_R;
+}
+
+
 return 1;
 
 __END__
