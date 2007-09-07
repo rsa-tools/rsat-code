@@ -698,7 +698,7 @@ sub OpenFeatureMap {
 	$small_font = gdSmallFont;
 	$large_font = gdLargeFont;
     }
-	
+
     #### define colors ####
     if ($monochrome) {
 	&GrayScalePalette();
