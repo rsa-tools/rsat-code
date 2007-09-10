@@ -103,7 +103,6 @@ package main;
   our $negative_sets;
   our $roc_ref;
   our $img_formats;
-  our $bg_TFBS_mask;
   our $rand_gen;
   our $rand_r = 1000;
   our $rand_l = 100;
@@ -194,7 +193,7 @@ package main;
 	 	push @bg_methods,"window";
 	 }	 
 	&RSAT::error::FatalError("At least one background model method must be provided with -bgfilelist, -bginput or -window") if ($#bg_methods == -1);
-	&RSAT::error::FatalError("Options -window must be specified along with -window_size") if (($window)&&(!$window_size));
+	&RSAT::error::FatalError("Options -window must be specified along with -window_size") if (($window ne "-1")&&(!$window_size));
 
 	
 	## markov orders for the bg models	
@@ -432,13 +431,12 @@ package main;
    			
    			## process each specified markov order	
     		for my $order (@main::bg_input_orders) {
-    			## here calculate the ""input factor-specific" background model
-				my $input_bg_file;
- 				if ($main::bg_TFBS_mask) { ## from input sequences with TFBS masked
- 					$input_bg_file = &BackgroundModels($main::outfile{ref_sequences_masked},"",$order,$main::dirproject{$bg_dir},"","2str","ref_sequences_masked");
- 				} else {
- 					$input_bg_file = &BackgroundModels($main::infile{ref_sequences},"",$order,$main::dirproject{$bg_dir},"","2str","ref_sequences");
- 				}
+    			## here calculate the ""input factor-specific" background model, on non-masked input sequences
+ 	#			if ($main::bg_TFBS_mask) { ## from input sequences with TFBS masked
+ 	#				$input_bg_file = &BackgroundModels($main::outfile{ref_sequences_masked},"",$order,$main::dirproject{$bg_dir},"","2str","ref_sequences_masked");
+ 	#			} else {
+ 				my	$input_bg_file = &BackgroundModels($main::infile{ref_sequences},"",$order,$main::dirproject{$bg_dir},"","2str","ref_sequences");
+ 	#			}
     			push (@bg_file_list,$input_bg_file);
     			
     			if ($main::rand_gen) {
@@ -820,7 +818,6 @@ sub ReadArguments {
 					"bginput:s"  		=> \$main::bg_input,## Background calculated from the input sequence set
 					"window:s"  		=> \$main::window, # adpatative bg model with sliding windows
 					"window_size:s"  	=> \$main::window_size, # size for the sliding windows
-					"bg_TFBS_mask"		=> \$main::bg_TFBS_mask, # mask TFBS with N characters for calculation of bg models
 					"rand_gen"			=> \$main::rand_gen, ## use random generated sequences for each bg_model
 					"rand_r:s"			=> \$main::rand_r, ## nb of repetions for generated random sequences
   					"rand_l:s"			=> \$main::rand_l, ## length of generated random sequences
@@ -1083,20 +1080,6 @@ Multiple window sizes can be specified by separating them with commas.
 
 =cut
 
-
-=pod
-
-=item B<-bg_TFBS_mask>
-
-For background model computation, use sequences where annotated TFBS
-are masked by N characters.
-
-Only for bg-input and -window options, where background models are calculated by
-the program. 
-
-=cut
-
-
 	    ## Tasks
 =pod
 
@@ -1287,21 +1270,7 @@ sub runMatrixQualitySlidingWindows {
    	
 	&RSAT::message::TimeWarn("Matrix-quality : Scoring sequences of with background method ".$bg_method." , matrix ".$main::matrix_name) 
 	  if ($main::verbose >= 2);
-	
-	
-    my $input_sequences;
-    my $input_seq_name;
-    my $input_file;
-    
- 	if ($main::bg_TFBS_mask) { ## from input sequences with TFBS masked
- 		$input_sequences = $main::outfile{ref_sequences_masked};
- 		$input_seq_name = "input_TFBS_masked";
- 		$input_file = File::Spec->rel2abs($input_sequences,$main::dirproject{sequences})
- 	} else {
- 		$input_sequences = $main::infile{ref_sequences};
- 		$input_seq_name = "input_seq";
- 		$input_file = File::Spec->rel2abs($input_sequences,$main::dirproject{wd})
- 		}
+
 	
   	my $matrix_quality_cmd = "matrix-quality -v ".$main::verbose;
   	$matrix_quality_cmd .= " -ms ".File::Spec->rel2abs($main::infile{matrix},$main::dirproject{wd});
@@ -1309,14 +1278,13 @@ sub runMatrixQualitySlidingWindows {
   	$matrix_quality_cmd .= " -pseudo ".$main::pseudo_counts;
   	$matrix_quality_cmd .= " -equi_pseudo ";
   	
-  	while (my ($id,$neg_seq) = each (%main::seq_neg_sets) ) {
-  		next if ($id eq $input_seq_name);
+ foreach my $id (keys(%main::seq_neg_sets)){
   		next if ($id eq 'rand_gen');
-  		$matrix_quality_cmd .= " -seq ".$id." ".File::Spec->rel2abs($neg_seq,$main::dirproject{wd});
+  		$matrix_quality_cmd .= " -seq ".$id." ".File::Spec->rel2abs($main::seq_neg_sets{$id},$main::dirproject{wd});
+  		&RSAT::message::Debug("neg sets",$id, "-seq", File::Spec->rel2abs($main::seq_neg_sets{$id},$main::dirproject{wd})) if ($main::verbose >= 0); 
   		$matrix_quality_cmd .= " -perm ".$id." ".$main::perm_neg if ($main::perm_neg);
-  	}	
-  	$matrix_quality_cmd .= " -seq ".$input_seq_name." ".$input_file;  
-  	$matrix_quality_cmd .= " -perm ".$input_seq_name." ".$main::perm_neg if ($main::perm_neg); 	
+  	}	 	
+  	
   	$matrix_quality_cmd .= " -task 'scan,permute'";
   	$matrix_quality_cmd .= " -o ".$quality_prefix;
   	$matrix_quality_cmd .= " -export_hits ";
@@ -1387,10 +1355,10 @@ sub ProcessRocStat {
     ## change name of negative set input_TFBS_masked for bg_window if the sequence does not have TFBS masked.
     if ($bg_method eq "bg_window") {
     	delete($tmp_seq_neg_sets{"rand_gen"});
-    	if (!$main::bg_TFBS_mask) {  ## input sequences NOT with TFBS masked
-    		delete($tmp_seq_neg_sets{"input_TFBS_masked"});
-    		$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
- 		}
+    	#if (!$main::bg_TFBS_mask) {  ## input sequences NOT with TFBS masked
+    	#	delete($tmp_seq_neg_sets{"input_TFBS_masked"});
+    	#	$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
+ 		#}
     }
 
     foreach my $set (keys(%tmp_seq_neg_sets)){
@@ -1600,10 +1568,10 @@ sub compareBgModels {
     ## change name of neagative set input_TFBS_masked for bg_window if the sequence does not have TFBS masked.
     if ($bg_method eq "bg_window") {
     	delete($tmp_seq_neg_sets{"rand_gen"});
-    	if (!$main::bg_TFBS_mask) {  ## input sequences NOT with TFBS masked
-    		delete($tmp_seq_neg_sets{"input_TFBS_masked"});
-    		$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
- 		}
+    	#if (!$main::bg_TFBS_mask) {  ## input sequences NOT with TFBS masked
+    	#	delete($tmp_seq_neg_sets{"input_TFBS_masked"});
+    	#	$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
+ 		#}
     }
    	
    	## process each negative sets
@@ -1779,10 +1747,10 @@ sub compareBgMethods {
     	if ($bg_method eq "bg_window") {
     		my %bg_window_neg_sets = %main::seq_neg_sets;
     		delete($bg_window_neg_sets{"rand_gen"});    	
-    		unless ($main::bg_TFBS_mask){
-    			delete($bg_window_neg_sets{"input_TFBS_masked"});
-    			$bg_window_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
-    		}
+    		#unless ($main::bg_TFBS_mask){
+    		#	delete($bg_window_neg_sets{"input_TFBS_masked"});
+    		#	$bg_window_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
+    		#}
     		## iterate over each window size
     		for my $window_size (@main::window_sizes) {
     			my $graph_dir = $main::dirproject{$main::matrix_name}."/".$bg_method."/window_".$window_size."bp/graphs/";
@@ -1942,10 +1910,10 @@ sub compareBgMethods {
    			 ## change name of neagative set input_TFBS_masked for bg_window if the sequence does not have TFBS masked.
     			if ($bg_method eq "bg_window") {
     				delete($tmp_seq_neg_sets{"rand_gen"});
-    				if (!$main::bg_TFBS_mask) {  ## input sequences NOT with TFBS masked
-    					delete($tmp_seq_neg_sets{"input_TFBS_masked"});
-    					$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
- 						}
+    				#if (!$main::bg_TFBS_mask) {  ## input sequences NOT with TFBS masked
+    				#	delete($tmp_seq_neg_sets{"input_TFBS_masked"});
+    				#	$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
+ 					#	}
    				 }
    			   		
    			## process each negative sets
@@ -2089,10 +2057,10 @@ sub getOptimalAccuracy{
     ## change name of neagative set input_TFBS_masked for bg_window if the sequence does not have TFBS masked.
     if ($bg_method eq "bg_window") {
     	delete($tmp_seq_neg_sets{"rand_gen"});
-    	if (!$main::bg_TFBS_mask) { ## input sequences NOT with TFBS masked
-    		delete($tmp_seq_neg_sets{"input_TFBS_masked"});
-    		$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
- 		}
+    	#if (!$main::bg_TFBS_mask) { ## input sequences NOT with TFBS masked
+    	#	delete($tmp_seq_neg_sets{"input_TFBS_masked"});
+    	#	$tmp_seq_neg_sets{"input_seq"}= File::Spec->rel2abs($main::infile{ref_sequences},$main::dirproject{wd})
+ 		#}
     }
 	
     my @roc_stat_input_files = ();
