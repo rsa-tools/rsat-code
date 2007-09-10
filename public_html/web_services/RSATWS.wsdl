@@ -1562,7 +1562,7 @@ square-root of L divided by L+squareroot of L.
       <part name="parameters" element="tns:random_seq"/>
   </message>
 
-  <message name="random_sequenceResponse">
+  <message name="random_seqResponse">
       <part name="output" element="tns:random_seqResponse"/>
   </message>
 
