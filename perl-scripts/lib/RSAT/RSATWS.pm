@@ -3,6 +3,10 @@
 package RSATWS;
 
 use SOAP::Lite;
+use SOAP::WSDL;
+
+use vars qw(@ISA);
+@ISA = qw(SOAP::Server::Parameters);
 
 my $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||;
 my $SCRIPTS = $RSAT.'/perl-scripts';
@@ -26,15 +30,15 @@ sub retrieve_seq {
     print TMP $result;
     close TMP;
     if ($output_choice eq 'server') {
-	return {'command' => $command, 
-		'server' => $tmp_outfile};
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
     } elsif ($output_choice eq 'client') {
-	return {'command' => $command,
-		'client' => $result};
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
     } elsif ($output_choice eq 'both') {
-	return {'server' => $tmp_outfile,
-		'command' => $command, 
-		'client' => $result};
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
     }
 }
 
@@ -158,15 +162,15 @@ sub purge_seq {
     print TMP_OUT $result;
     close TMP_OUT;
     if ($output_choice eq 'server') {
-	return {'command' => $command, 
-		'server' => $tmp_outfile};
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
     } elsif ($output_choice eq 'client') {
-	return {'command' => $command,
-		'client' => $result};
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
     } elsif ($output_choice eq 'both') {
-	return {'server' => $tmp_outfile,
-		'command' => $command,
-		'client' => $result};
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command,
+					       'client' => $result});
     }
 }
 
@@ -253,15 +257,15 @@ sub oligo_analysis {
     print TMP_OUT $result;
     close TMP_OUT;
     if ($output_choice eq 'server') {
-	return {'command' => $command, 
-		'server' => $tmp_outfile};
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
     } elsif ($output_choice eq 'client') {
-	return {'command' => $command,
-		'client' => $result};
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
     } elsif ($output_choice eq 'both') {
-	return {'server' => $tmp_outfile,
-		'command' => $command, 
-		'client' => $result};
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
     }
 }
 
@@ -367,15 +371,15 @@ sub dyad_analysis {
     print TMP_OUT $result;
     close TMP_OUT;
     if ($output_choice eq 'server') {
-	return {'command' => $command, 
-		'server' => $tmp_outfile};
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
     } elsif ($output_choice eq 'client') {
-	return {'command' => $command,
-		'client' => $result};
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
     } elsif ($output_choice eq 'both') {
-	return {'server' => $tmp_outfile,
-		'command' => $command, 
-		'client' => $result};
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
     }
 }
 
@@ -518,15 +522,15 @@ sub dna_pattern {
     print TMP_OUT $result;
     close TMP_OUT;
     if ($output_choice eq 'server') {
-	return {'command' => $command, 
-		'server' => $tmp_outfile};
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
     } elsif ($output_choice eq 'client') {
-	return {'command' => $command,
-		'client' => $result};
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
     } elsif ($output_choice eq 'both') {
-	return {'server' => $tmp_outfile,
-		'command' => $command, 
-		'client' => $result};
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
     }
 }
 
@@ -615,6 +619,7 @@ sub dna_pattern_cmd {
 
 sub gene_info {
     my ($self, $args_ref) = @_;
+
     my %args = %$args_ref;
     my $output_choice = $args{"output"};
     unless ($output_choice) {
@@ -630,16 +635,17 @@ sub gene_info {
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     print TMP_OUT $result;
     close TMP_OUT;
+    chomp $tmp_outfile;
     if ($output_choice eq 'server') {
-	return {'command' => $command, 
-		'server' => $tmp_outfile};
+	return SOAP::Data->name('response'=>{'command' => $command, 
+					     'server' => $tmp_outfile});
     } elsif ($output_choice eq 'client') {
-	return {'command' => $command,
-		'client' => $result};
+	return SOAP::Data->name('response'=>{'command' => $command,
+					     'client' => $result});
     } elsif ($output_choice eq 'both') {
-	return {'server' => $tmp_outfile,
-		'command' => $command, 
-		'client' => $result};
+	return SOAP::Data->name('response'=>{'server' => $tmp_outfile,
+					     'command' => $command, 
+					     'client' => $result});
     }
 }
 
@@ -706,15 +712,15 @@ sub supported_organisms {
     print TMP_OUT $result;
     close TMP_OUT;
     if ($output_choice eq 'server') {
-	return {'command' => $command, 
-		'server' => $tmp_outfile};
+      return SOAP::Data->name('response' => {'command' => $command, 
+					     'server' => $tmp_outfile});
     } elsif ($output_choice eq 'client') {
-	return {'command' => $command,
-		'client' => $result};
+      return SOAP::Data->name('response' => {'command' => $command,
+					     'client' => $result});
     } elsif ($output_choice eq 'both') {
-	return {'server' => $tmp_outfile,
-		'command' => $command, 
-		'client' => $result};
+      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					     'command' => $command, 
+					     'client' => $result});
     }
 }
 
@@ -755,15 +761,15 @@ sub convert_seq {
     print TMP_OUT $result;
     close TMP_OUT;
     if ($output_choice eq 'server') {
-	return {'command' => $command, 
-		'server' => $tmp_outfile};
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
     } elsif ($output_choice eq 'client') {
-	return {'command' => $command,
-		'client' => $result};
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
     } elsif ($output_choice eq 'both') {
-	return {'server' => $tmp_outfile,
-		'command' => $command, 
-		'client' => $result};
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
     }
 }
 
@@ -818,21 +824,21 @@ sub compare_classes {
   print TMP $result;
   close TMP;
   if ($output_choice eq 'server') {
-    return {'command' => $command, 
-	    'server' => $tmp_outfile};
+    return SOAP::Data->name('response' => {'command' => $command, 
+					   'server' => $tmp_outfile});
   } elsif ($output_choice eq 'client') {
-    return {'command' => $command,
-	    'client' => $result};
+    return SOAP::Data->name('response' => {'command' => $command,
+					   'client' => $result});
   } elsif ($output_choice eq 'both') {
-    return {'server' => $tmp_outfile,
-	    'command' => $command, 
-	    'client' => $result};
+    return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					   'command' => $command, 
+					   'client' => $result});
     }
 }
 
 sub compare_classes_cmd {
   my ($self,%args) = @_;
-  #creation d'un fichier temporaire qui sera intégré dans la commande
+  #creation d'un fichier temporaire qui sera integre dans la commande
   if ($args{"ref_classes"}) {
     my $reference = $args{"ref_classes"};
     chomp $reference;
@@ -874,7 +880,7 @@ sub compare_classes_cmd {
 
   my $command = "$SCRIPTS/compare-classes";
 
-  #pas d'utilité directe de "nettoyage" de la commande sauf si l'on rajoute un elsif...  
+  #pas d'utilite directe de "nettoyage" de la commande sauf si l'on rajoute un elsif...  
   if ($tmp_ref) {
     $tmp_ref =~ s/\'//g;
     $tmp_ref =~ s/\"//g;
@@ -965,15 +971,15 @@ sub matrix_scan {
   print TMP $result;
   close TMP;
   if ($output_choice eq 'server') {
-    return {'command' => $command, 
-	    'server' => $tmp_outfile};
+    return SOAP::Data->name('response' => {'command' => $command, 
+					   'server' => $tmp_outfile});
   } elsif ($output_choice eq 'client') {
-    return {'command' => $command,
-	    'client' => $result};
+    return SOAP::Data->name('response' => {'command' => $command,
+					   'client' => $result});
   } elsif ($output_choice eq 'both') {
-    return {'server' => $tmp_outfile,
-	    'command' => $command, 
-	    'client' => $result};
+    return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					   'command' => $command, 
+					   'client' => $result});
   }
 }
 
@@ -1128,6 +1134,127 @@ sub matrix_scan_cmd {
     }
 
     return $command;
+}
+
+sub random_seq {
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+  my $command = $self->random_seq_cmd(%args);
+  my $stderr = `$command 2>&1 1>/dev/null`;
+  if ($stderr) {
+    die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+  }
+  my $result = `$command`;
+  my $tmp_outfile = `mktemp $TMP/random_seq.XXXXXXXXXX`;
+  open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+  print TMP $result;
+  close TMP;
+  if ($output_choice eq 'server') {
+    return SOAP::Data->name('response' => {'command' => $command, 
+					   'server' => $tmp_outfile});
+  } elsif ($output_choice eq 'client') {
+    return SOAP::Data->name('response' => {'command' => $command,
+					   'client' => $result});
+  } elsif ($output_choice eq 'both') {
+    return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					   'command' => $command, 
+					   'client' => $result});
+    }
+}
+
+sub random_seq_cmd {
+  my ($self, %args) =@_;
+
+  my $command = "$SCRIPTS/random-seq";
+
+  if ($args{seq_length}) {
+      $args{seq_length} =~ s/\'//g;
+      $args{seq_length} =~ s/\"//g;
+      $command .= " -l '".$args{seq_length}."'";
+  }
+  if ($args{repetition}) {
+      $args{repetition} =~ s/\'//g;
+      $args{repetition} =~ s/\"//g;
+      $command .= " -n '".$args{repetition}."'";
+  }
+  if ($args{format}) {
+      $args{format} =~ s/\'//g;
+      $args{format} =~ s/\"//g;
+      $command .= " -format '".$args{format}."'";
+  }
+  if ($args{line_width} =~ /\d/) {
+      $args{line_width} =~ s/\'//g;
+      $args{line_width} =~ s/\"//g;
+      $command .= " -lw '".$args{line_width}."'";
+  }
+  if ($args{type}) {
+      $args{type} =~ s/\'//g;
+      $args{type} =~ s/\"//g;
+      $command .= " -type '".$args{type}."'";
+  }
+  if ($args{seed}) {
+      $args{seed} =~ s/\'//g;
+      $args{seed} =~ s/\"//g;
+      $command .= " -seed '".$args{seed}."'";
+  }
+  if ($args{alphabet}) {
+      $args{alphabet} =~ s/\'//g;
+      $args{alphabet} =~ s/\"//g;
+      $command .= " -a '".$args{alphabet}."'";
+  }
+  if ($args{bg_model}) {
+      $args{bg_model} =~ s/\'//g;
+      $args{bg_model} =~ s/\"//g;
+      $command .= " -bg '".$args{bg_model}."'";
+  }
+  if ($args{organism}) {
+      $args{organism} =~ s/\'//g;
+      $args{aorganism} =~ s/\"//g;
+      $command .= " -org '".$args{organism}."'";
+  }
+  if ($args{oligo_length}) {
+      $args{oligo_length} =~ s/\'//g;
+      $args{oligo_length} =~ s/\"//g;
+      $command .= " -ol '".$args{oligo_length}."'";
+  }
+  if ($args{"expfreq"}) {
+    my $expfreq = $args{"expfreq"};
+    chomp $expfreq;
+    $tmp_expfreq = `mktemp $TMP/expfreq.XXXXXXXXXX`;
+    open TMP_IN, ">".$tmp_expfreq or die "cannot open temp file ".$tmp_expfreq."\n";
+    print TMP_IN $expfreq;
+    close TMP_IN;
+    chomp $tmp_expfreq;
+    $command .= " -expfreq '".$tmp_expfreq."'";
+  } elsif ($args{"tmp_expfreq_file"}) {
+    $tmp_expfreq = $args{"tmp_expfreq_file"};
+    $tmp_expfreq =~ s/\'//g;
+    $tmp_expfreq =~ s/\"//g;
+    chomp $tmp_expfreq;
+    $command .= " -expfreq '".$tmp_expfreq."'";
+  }
+  if ($args{length_file}) {
+    my $length_file = $args{length_file};
+    chomp $length_file;
+    $tmp_length = `mktemp $TMP/length.XXXXXXXXXX`;
+    open TMP_IN, ">".$tmp_length or die "cannot open temp file ".$tmp_length."\n";
+    print TMP_IN $length_file;
+    close TMP_IN;
+    chomp $tmp_length;
+    $command .= " -lf '".$tmp_length."'";
+  } elsif ($args{tmp_length_file}) {
+    $tmp_length  = $args{tmp_length_file};
+    $tmp_length =~ s/\'//g;
+    $tmp_length =~ s/\"//g;
+    chomp $tmp_length;
+    $command .= " -lf '".$tmp_length."'";
+  }
+
+  return $command;
 }
 
 1;
