@@ -15,7 +15,7 @@ This program is a task manager which runs matrix-quality
 in order to evaluate the quality of matrices and various Makrov chains-based 
 background models.
 
-This program is a way to automitize the systematic analysis of the quality 
+This program is a way to automatize the systematic analysis of the quality 
 of a matrix using different negative sequence sets and different background models.
 
 The program perfoms different tasks for each matrix and generates results in 
@@ -58,6 +58,7 @@ require "RSA.lib";
 
 use RSAT::matrix;
 use RSAT::MatrixReader;
+use RSAT::SeqUtil;
 use Getopt::Long;
 use File::Spec;
 use File::Basename;
@@ -95,7 +96,7 @@ package main;
   our $bg_input = "-1";
   our $bg_file;
   our $window_size;
-  our $window;   
+  our $window = "-1";   
   our $batch;
   our $perm_neg;
   our $perm_pos;
@@ -170,7 +171,7 @@ package main;
   ## column of the bgfile list
   ## for bg_input, the sequences are computed by this program
   ## for bg_window, no random sequences as bg model is variable
-	
+
 
   ## matrix name
   our $matrix_name = &RSAT::util::ShortFileName($main::infile{matrix});
@@ -189,7 +190,7 @@ package main;
 	 if ($bg_input ne "-1") {
 	 	push @bg_methods,"input";
 	 } 
-	 if ($window) {
+	 if ($window ne "-1") {
 	 	push @bg_methods,"window";
 	 }	 
 	&RSAT::error::FatalError("At least one background model method must be provided with -bgfilelist, -bginput or -window") if ($#bg_methods == -1);
@@ -210,7 +211,7 @@ package main;
 			unless &RSAT::util::IsNatural($m);
 		}
 	}
-	if ($window) {
+	if ($window ne "-1") {
 		if ($window =~ /(\d+):(\d+)/){
 			@main::bg_window_orders = ($1 .. $2);
 		}
@@ -332,28 +333,23 @@ package main;
     ################################################################
     ## Mask annotated sites from the sequence regions
     our $annotated_sites = ReadAnnotatedSites();
-    
-    $main::outfile{ref_sequences_masked} = File::Spec->rel2abs($main::outfile{prefix}."_annotated_sites_masked.fa",$main::dirproject{sequences});
-    # here we have 2 set of sequence regions => TFBS masked / not masked	
- 	our $sequences_length = &MaskAnnotatedSites($annotated_sites,$main::infile{ref_sequences},$main::outfile{ref_sequences_masked}); 
-	$seq_neg_sets{input_TFBS_masked} = $main::outfile{ref_sequences_masked};
 
+    $main::outfile{ref_sequences_masked} = File::Spec->rel2abs($main::outfile{prefix}."_annotated_sites_masked.fa",$main::dirproject{sequences});
+    # here we have 2 sets of sequence regions => TFBS masked / not masked	
+ 	our $sequences_length = &MaskAnnotatedSites($annotated_sites,$main::infile{ref_sequences},$main::outfile{ref_sequences_masked}); 
+	## add input_TFBS_masked as sequences to scan by default
+	$seq_neg_sets{input_TFBS_masked} = $main::outfile{ref_sequences_masked};
 
 	#####################################################################
  	## For bg_window option
  	our %window_seqs = ();
- 	if ($window) {
+ 	if ($window ne "-1") {
  		foreach my $window_size (@main::window_sizes){
  			################################################################
  			## Extract TFBS in subsequences of defined size
  			my $TFBS_with_flank_seq_filename = "TFBS_with_flank".$window_size;
     		$main::outfile{$TFBS_with_flank_seq_filename} = File::Spec->rel2abs($main::outfile{prefix}."_subseq_with_TFBS_".$window_size."bp.fa",$main::dirproject{sequences});
- 			my $input_sequences;
- 			if ($main::bg_TFBS_mask) { # use masked version of the sequence if specified by user.
- 				$input_sequences = $main::outfile{ref_sequences_masked};
- 			} else {
- 				$input_sequences = $main::infile{ref_sequences};
- 			}
+ 			my $input_sequences = $main::infile{ref_sequences};
  			my $sub_seqs = &extractAnnotatedSitesAndFlanks($annotated_sites,$window_size,$input_sequences,$main::outfile{$TFBS_with_flank_seq_filename},$sequences_length); 	
 
  			#######################################################################
@@ -437,13 +433,12 @@ package main;
    			## process each specified markov order	
     		for my $order (@main::bg_input_orders) {
     			## here calculate the ""input factor-specific" background model
-				my $input_sequences;
+				my $input_bg_file;
  				if ($main::bg_TFBS_mask) { ## from input sequences with TFBS masked
- 					$input_sequences = $main::outfile{ref_sequences_masked};
+ 					$input_bg_file = &BackgroundModels($main::outfile{ref_sequences_masked},"",$order,$main::dirproject{$bg_dir},"","2str","ref_sequences_masked");
  				} else {
- 					$input_sequences = $main::infile{ref_sequences};
+ 					$input_bg_file = &BackgroundModels($main::infile{ref_sequences},"",$order,$main::dirproject{$bg_dir},"","2str","ref_sequences");
  				}
-    			my $input_bg_file = &BackgroundModels($input_sequences,"",$order,$main::dirproject{$bg_dir},"");
     			push (@bg_file_list,$input_bg_file);
     			
     			if ($main::rand_gen) {
@@ -488,7 +483,7 @@ package main;
     					foreach my $i (0..$#TFBS_ids_on_subseq) {
 							my $TFBS_id = $TFBS_ids_on_subseq[$i];
  							my $seq2scan = $main::window_seqs{$w}->{sub_seqs}->{$seq_id} -> {'byTFBS'} -> {$TFBS_id}->{'seq_with_flank'};
- 							my $input_bg_file = &BackgroundModels("",\$seq2scan,$order,$main::dirproject{$bg_dir},$TFBS_id);
+ 							my $input_bg_file = &BackgroundModels("",\$seq2scan,$order,$main::dirproject{$bg_dir},$TFBS_id, "1str","ref_sequences_masked");
     						push (@window_bg_file,$input_bg_file);
     					}
     				}
@@ -496,7 +491,7 @@ package main;
     		$bg_file_table{$w} = \@window_bg_file;
     		}
 		}
-
+		
 ################################################################
 ########################### RUN ################################
 ### matrix-quality + roc-stat
@@ -747,18 +742,18 @@ package main;
 	################################################################
     ###### clean temporary files
 
-    if (scalar(@main::file_to_remove) > 0) {
-    	unlink($_) for @file_to_remove;
-    }
-    
-    if (scalar(@main::dir_to_remove) > 0) {
-    	for my $dir (@main::dir_to_remove){
-    		unlink glob $dir."/matrix-quality/*";
-    		rmdir $dir."/matrix-quality/";
-    		unlink glob $dir."/*";
-    		rmdir $dir;
-    	}
-    }
+#    if (scalar(@main::file_to_remove) > 0) {
+#    	unlink($_) for @file_to_remove;
+#    }
+#    
+#    if (scalar(@main::dir_to_remove) > 0) {
+#    	for my $dir (@main::dir_to_remove){
+#    		unlink glob $dir."/matrix-quality/*";
+#    		rmdir $dir."/matrix-quality/";
+#    		unlink glob $dir."/*";
+#    		rmdir $dir;
+#    	}
+#    }
 	
 
 
@@ -1119,7 +1114,19 @@ Supported fields:
 
 =over
 
-=item C<$supported_tasks>
+=item bg_input_rand_seq 
+
+=item matrix_quality
+
+=item roc_stat
+
+=item perm
+
+=item optimal_acc
+
+=item compare_bg
+
+=item compare_method
 
 =back
 
@@ -1179,9 +1186,9 @@ sub runMatrixQuality {
   	$matrix_quality_cmd .= " -ms ".File::Spec->rel2abs($main::infile{matrix},$main::dirproject{wd});
   	$matrix_quality_cmd .= " -matrix_format ".$main::matrix_format;
   	$matrix_quality_cmd .= " -pseudo ".$main::pseudo_counts;
-
+ 
   	foreach my $id (keys(%main::seq_neg_sets)){
-  		next if ($id eq 'input_TFBS_masked');
+
   		if ($id eq 'rand_gen'){ ## random sequences
   			foreach my $bg (keys(%{$main::seq_neg_sets{$id}->{$bg_method}})){
   					my $rand_seq = $main::seq_neg_sets{$id}->{$bg_method}->{$bg};
@@ -1195,12 +1202,12 @@ sub runMatrixQuality {
   		} else {
   			$matrix_quality_cmd .= " -seq ".$id." ".File::Spec->rel2abs($main::seq_neg_sets{$id},$main::dirproject{wd});
   		}
+  		&RSAT::message::Debug("neg sets",$id, "-seq", File::Spec->rel2abs($main::seq_neg_sets{$id},$main::dirproject{wd})) if ($main::verbose >= 0); 
   		$matrix_quality_cmd .= " -perm ".$id." ".$main::perm_neg if ($main::perm_neg);
   	}	
-  	$matrix_quality_cmd .= " -seq input_TFBS_masked ".File::Spec->rel2abs($main::outfile{ref_sequences_masked},$main::dirproject{sequences}); 
-  	$matrix_quality_cmd .= " -perm input_TFBS_masked ".$main::perm_neg if ($main::perm_neg);	
+	
   	$matrix_quality_cmd .= " -perm matrix_sites ".$main::perm_pos if ($main::perm_pos);	
-  	$matrix_quality_cmd .= " -roc_ref ".$main::roc_ref;
+  	$matrix_quality_cmd .= " -roc_ref ".$main::roc_ref if($main::roc_ref);
   	$matrix_quality_cmd .= " -img_format ".join(",",@main::image_formats);
   	$matrix_quality_cmd .= " -o ".$quality_prefix;
   	$matrix_quality_cmd .= " -export_hits ";
@@ -2382,9 +2389,20 @@ sub MaskAnnotatedSites {
 				$feat_masked .= "N";
 			}
 	
+#			## Debug
+#			if ($this_seq_sites[$i]->{'strand'} eq "D") {
+#				&RSAT::message::Debug("Masking TFBS", $seq_id, $feat_start, $feat_end,
+#			      "length", $feat_length, substr($sequences{$seq_id}, $feat_start-1, $feat_length)) 
+#	 		 	if ($main::verbose >= 10);
+#			} else {
+#				&RSAT::message::Debug("Masking TFBS", $seq_id, $feat_start, $feat_end,
+#			      "length", $feat_length, &RSAT::SeqUtil::ReverseComplement(substr($sequences{$seq_id}, $feat_start-1, $feat_length))) 
+#	 		 	if ($main::verbose >= 10);
+#			}
+
 			# mask the feature
-			substr($sequences{$seq_id}, $feat_start, $feat_length) = $feat_masked;
-		
+			substr($sequences{$seq_id}, $feat_start-1, $feat_length) = $feat_masked;
+			
 		}
 	}
 		
@@ -2442,7 +2460,7 @@ sub extractAnnotatedSitesAndFlanks {
 	my %sub_seqs =();
 	
 	
-	RSAT::message::Info("Extracting annotated TFBS centered in windows of ".$window_size." bp") if ($main::verbose >= 1); 
+	RSAT::message::Info("Extracting and masking annotated TFBS centered in windows of ".$window_size." bp") if ($main::verbose >= 1); 
 	
 	## fragment file for subsequence
 	$main::outfile{fragmentfile} = File::Spec->rel2abs($main::outfile{prefix}."_subseq_pos.tab",$main::dirproject{features});  
@@ -2457,19 +2475,22 @@ sub extractAnnotatedSitesAndFlanks {
 		## treat each TFBS on this sequence
 		foreach my $i (0..$#this_seq_sites) { 
 			my $TFBS_id = ($this_seq_sites[$i]->{'Id'});
-			RSAT::message::Info("Sequence ".$seq_id." TFBS id ".$TFBS_id) if ($main::verbose >= 2);
+			
 			
 			# get positions of the subsequence to extract, centered on the TFBS
-			my $left = ($this_seq_sites[$i]->{'start'})-1;
-			my $right = ($this_seq_sites[$i]->{'end'})+1;
+			#my $left = ($this_seq_sites[$i]->{'start'})-1;
+			#my $right = ($this_seq_sites[$i]->{'end'})+1;
+			my $left = ($this_seq_sites[$i]->{'start'});
+			my $right = ($this_seq_sites[$i]->{'end'});
+			RSAT::message::Debug("Sequence ".$seq_id." TFBS id ".$TFBS_id,"pos relative to input seq","start",$left,"end",$right) if ($main::verbose >= 10);
 			my ($sub_seq_start,$sub_seq_end) = &CalcCenterSubseqPos($left, $right,$seq_end,$window_size);
 			$subseq_pos{$TFBS_id} -> {'start'} = $sub_seq_start;
 			$subseq_pos{$TFBS_id} -> {'end'} = $sub_seq_end;
+			$subseq_pos{$TFBS_id} -> {'strand'} = $this_seq_sites[$i]->{'strand'};
 			
 			$sub_seqs{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'start'} = $sub_seq_start;
     		$sub_seqs{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'end'} = $sub_seq_end;
-			
-			
+    		
 			my $sub_seq_length = $sub_seq_end - $sub_seq_start +1 ;
 			
 			## adapt the positions into positions relative to sub-seq, to use compare-features with matrix-scan predictions
@@ -2477,6 +2498,10 @@ sub extractAnnotatedSitesAndFlanks {
 				my $rel_subseq_end = $sub_seq_length;
 				my $rel_TFBS_end = $rel_subseq_end - ($sub_seq_end - $this_seq_sites[$i]->{'end'});
 				my $rel_TFBS_start = $rel_subseq_end - ($sub_seq_end - $this_seq_sites[$i]->{'start'});
+				if ($subseq_pos{$TFBS_id} -> {'strand'} eq "R") { ## quick fix, not sure why TFBS on the reverse strand miss 1 nucleotide !
+					$rel_TFBS_end++;
+					$rel_TFBS_start++;
+				}
 				
 				$sub_seqs{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'rel_pos'} -> {$TFBS_id} -> {'start'}= $rel_TFBS_start;
     			$sub_seqs{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'rel_pos'} -> {$TFBS_id} -> {'end'}= $rel_TFBS_end ;
@@ -2485,7 +2510,6 @@ sub extractAnnotatedSitesAndFlanks {
 		}
  			
  		$sub_seqs{$seq_id} -> {'pos'} = \%subseq_pos;	
-
 			
 			# create a fragment file for subsequence program
  			## subsequence fragment file specifications:
@@ -2493,16 +2517,17 @@ sub extractAnnotatedSitesAndFlanks {
     		# 2) sequence ID (must be the same as in the sequence file)
     		# 3) fragment start
     		# 4) fragment end
-    		# 5) strand (optional). If not specified, all
+    		# 5) strand 
 			
 			foreach my $TFBS_id (keys(%subseq_pos)){
 				my $start = $subseq_pos{$TFBS_id} -> {'start'};
 				my $end = $subseq_pos{$TFBS_id} -> {'end'};
+				my $strand = $subseq_pos{$TFBS_id} -> {'strand'};
 				
 				## check that each sub-sequence is of the correct length
 				RSAT::message::Warning("Subseq size (".($end-$start+1).") is not desired window size:".$window_size) if (($end-$start+1) != $window_size);
 			
-				print $out join("\t",$TFBS_id,$seq_id,$start,$end,"D");    # fragments are taken on the direct strand.
+				print $out join("\t",$TFBS_id,$seq_id,$start,$end,$strand);    # fragments are taken on the strand where the TFBS lies
     			print $out "\n";
     			
  			}	
@@ -2512,38 +2537,88 @@ sub extractAnnotatedSitesAndFlanks {
 	
 	## run sub-sequence to extract the sequences from the input sequence set, with annotated TFBS masked
 	my $sequences = `sub-sequence -i $infile -frag $main::outfile{fragmentfile} -iformat fasta -oformat fasta`;
-
-	## change the fasta header to keep the fragment file as the sequence id.
-	foreach my $seq_id (keys(%sub_seqs)){
-		my @TFBS_ids_on_subseq = keys(%{$sub_seqs{$seq_id}->{'byTFBS'}});
-		
-		foreach my $i (0..$#TFBS_ids_on_subseq) {
-			my $TFBS_id = $TFBS_ids_on_subseq[$i];
-			$sequences =~ s/>$TFBS_id/>$seq_id\_$TFBS_id\t$TFBS_id/;
-		}
-	}
 	
-	($out) = &OpenOutputFile($outfile);
-   	print $out $sequences;
-   	close $out;
-	
-	## store subsequences in a hash for future reuse
-	my @seqs = split(">",$sequences);
-	foreach my $seq_id (keys(%sub_seqs)){
-		my @TFBS_ids_on_subseq = keys(%{$sub_seqs{$seq_id}->{'byTFBS'}});
-				
-		foreach my $i (0..$#TFBS_ids_on_subseq) {
-			my $TFBS_id = $TFBS_ids_on_subseq[$i];
-			
-			foreach my $seq (@seqs) {
-				if ($seq =~ /^\w+\s+(\w+)\s+/){
-					if ($1 eq $TFBS_id){
-						$sub_seqs{$seq_id} -> {'byTFBS'} -> {$TFBS_id}->{'seq_with_flank'} = ">".$seq;
-					}
-				}
+	## keep those sequence in a temporary hash
+	my %seq_split = split (/\n/,$sequences);
+	my %seq_with_flanks =();
+	foreach my $key (keys(%seq_split)) {	
+			if ($key =~ /^>(\w+)/){
+				$seq_with_flanks{$1}->{$key} = $seq_split{$key};
 			}
 		}
+	undef(%seq_split);
+
+	## Process the sequences
+	($out) = &OpenOutputFile($outfile);
+	foreach my $seq_id (keys(%sub_seqs)){
+		my @TFBS_ids_on_subseq = keys(%{$sub_seqs{$seq_id}->{'byTFBS'}});
+			
+		## change the fasta header to keep the fragment file as the sequence id.
+		foreach my $i (0..$#TFBS_ids_on_subseq) {
+			my $TFBS_id = $TFBS_ids_on_subseq[$i];
+			my @header = keys(%{$seq_with_flanks{$TFBS_id}});
+			my $fasta_header = $header[0];
+			$fasta_header =~ s/>$TFBS_id/>$seq_id\_$TFBS_id\t$TFBS_id/;
+			RSAT::message::Debug($seq_id, "$TFBS_id",$fasta_header) if ($main::verbose >= 5);
+			
+			## Mask with NN the TFBS on each sequence
+			## necessary to mimic the behavior of 
+ 			## matrix-scan that excludes the scored segment from the bg model
+			my $rel_TFBS_start = $sub_seqs{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'rel_pos'} -> {$TFBS_id} -> {'start'};
+			my $rel_TFBS_end = $sub_seqs{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'rel_pos'} -> {$TFBS_id} -> {'end'};
+			my $feat_length = $rel_TFBS_end - $rel_TFBS_start +1;
+			my $feat_masked;
+			foreach (1..$feat_length) {
+				$feat_masked .= "N";
+			}
+			#RSAT::message::Debug("site to mask",	substr($seq_with_flanks{$TFBS_id}->{$header[0]}, $rel_TFBS_start-1, $feat_length)) 
+			#if ($main::verbose >= 0);
+			substr($seq_with_flanks{$TFBS_id}->{$header[0]}, $rel_TFBS_start-1, $feat_length) = $feat_masked;
+			
+			## print to file
+			print $out $fasta_header,"\n",$seq_with_flanks{$TFBS_id}->{$header[0]},"\n";
+			
+			## keep in hash for future use
+			$sub_seqs{$seq_id} -> {'byTFBS'} -> {$TFBS_id}->{'seq_with_flank'} = $fasta_header."\n".$seq_with_flanks{$TFBS_id}->{$header[0]}."\n";
 	}
+		
+ 	}
+
+close $out;		
+
+   	
+#   		## Debug
+#	foreach my $seq_id (keys(%$annotated_sites)){
+#		my @this_seq_sites = @{$annotated_sites->{$seq_id}};
+#		foreach my $i (0..$#this_seq_sites) { 
+#			my $TFBS_id = ($this_seq_sites[$i]->{'Id'});
+#			my $site = ($this_seq_sites[$i]->{'site'});
+#			my $rel_TFBS_start = $sub_seqs{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'rel_pos'} -> {$TFBS_id} -> {'start'};
+#    		my $rel_TFBS_end = $sub_seqs{$seq_id}-> {'byTFBS'} -> {$TFBS_id} -> {'rel_pos'} -> {$TFBS_id} -> {'end'};
+#			RSAT::message::Debug($seq_id, "$TFBS_id", "start",$rel_TFBS_start,"end",$rel_TFBS_end,$site) if ($main::verbose >= 2);
+#			my $TFBS_seq = `sub-sequence -i $outfile -from $rel_TFBS_start -to $rel_TFBS_end -iformat fasta -oformat fasta`;
+#			RSAT::message::Debug("\n".$TFBS_seq) if ($main::verbose >= 2);
+#		}
+#	}
+   	
+	
+	## store subsequences in a hash for future reuse
+#	my @seqs = split(">",$sequences);
+#	foreach my $seq_id (keys(%sub_seqs)){
+#		my @TFBS_ids_on_subseq = keys(%{$sub_seqs{$seq_id}->{'byTFBS'}});
+#				
+#		foreach my $i (0..$#TFBS_ids_on_subseq) {
+#			my $TFBS_id = $TFBS_ids_on_subseq[$i];
+#			
+#			foreach my $seq (@seqs) {
+#				if ($seq =~ /^\w+\s+(\w+)\s+/){
+#					if ($1 eq $TFBS_id){
+#						$sub_seqs{$seq_id} -> {'byTFBS'} -> {$TFBS_id}->{'seq_with_flank'} = ">".$seq;
+#					}
+#				}
+#			}
+#		}
+#	}
 	return (\%sub_seqs);
 }
 
@@ -2647,11 +2722,13 @@ sub BackgroundModels{
   my $ord = shift;
   my $bg_dir = shift;
   my $TFBS_id = shift;
+  my $strand_sensitivity = shift;
+  my $seq_type =shift;
 
   my $order = $ord+1;
-  my $model_file_key = "markov_".$ord;
+  my $model_file_key = "markov_".$ord."_".$seq_type;
   
-  my $output_name = $order."nt_noov_2str";
+  my $output_name = $order."nt_".$seq_type."_".$strand_sensitivity;
   if ($TFBS_id ne "") {
   	$output_name .= "_".$TFBS_id;
   }
@@ -2669,12 +2746,10 @@ sub BackgroundModels{
   	if ($seq ne "") {
   		$bg_model_cmd .= " -i ".$seq;
   	 } 
-  	$bg_model_cmd .= " -2str "; 
-  	$bg_model_cmd .= " -noov ";
+  	$bg_model_cmd .= " -$strand_sensitivity "; 
   	$bg_model_cmd .= " -l ".$order;
   	$bg_model_cmd .= " -type dna ";
   	$bg_model_cmd .= " -return freq,occ ";
-  	$bg_model_cmd .= " -nogrouprc ";
   	$bg_model_cmd .= " -o ".$outputFile;
 
   &doit($bg_model_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
