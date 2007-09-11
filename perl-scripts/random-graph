@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.21 2007/08/30 09:02:10 rsat Exp $
+# $Id: random-graph,v 1.22 2007/09/11 10:24:27 rsat Exp $
 #
 ############################################################
 
@@ -570,7 +570,9 @@ This argument can only be used with the scratch and ER randomization type and mu
 	    unless (&IsReal($sd)) {
 		&RSAT::error::FatalError(join("\t", $sd, "Invalid value for mean standard deviation of the edge"));
 	    }   
-=item B<-sd #>
+
+=pod
+=item B<-iter #>
 
 Number of iteration for the randomization procedure (default = 300).
 This option can only be used with the node degree randomisation type.
@@ -586,7 +588,7 @@ This option can only be used with the node degree randomisation type.
 
 =item B<-degree #>
 
-Maximal degree of the nodes in the random graph
+Maximal degree of the nodes random graph (ER and scratch randomization type only)
 
 =cut
 	} elsif ($arg eq "-degree") {
@@ -599,7 +601,7 @@ Maximal degree of the nodes in the random graph
 
 =item B<-no_single #>
 
-Prevent the ER graph from cotaining nodes with no neighbour
+Prevent the ER graph from containing nodes with no neighbour
 
 =cut
 	} elsif ($arg eq "-no_single") {
