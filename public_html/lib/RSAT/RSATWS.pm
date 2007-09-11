@@ -1171,10 +1171,10 @@ sub random_seq_cmd {
 
   my $command = "$SCRIPTS/random-seq";
 
-  if ($args{seq_length}) {
-      $args{seq_length} =~ s/\'//g;
-      $args{seq_length} =~ s/\"//g;
-      $command .= " -l '".$args{seq_length}."'";
+  if ($args{sequence_length}) {
+      $args{sequence_length} =~ s/\'//g;
+      $args{sequence_length} =~ s/\"//g;
+      $command .= " -l '".$args{sequence_length}."'";
   }
   if ($args{repetition}) {
       $args{repetition} =~ s/\'//g;
