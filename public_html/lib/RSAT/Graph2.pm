@@ -62,6 +62,8 @@ sub new {
     my %nodes_label = ();
     my %node_name_id = ();
     my %node_id_name = ();
+    my %node_id_xpos = ();
+    my %node_id_ypos = ();
     # @out_neighbours is a multidimensional array : the index corresponds to the id of the node 
     # @{$out_neighbours[x]} contains a list of the id of the out neighbours of the nodes having id x
     $self->set_array_attribute("out_neighbours", @out_neighbours);
@@ -99,6 +101,9 @@ sub new {
     $self->set_hash_attribute("nodes_color", %nodes_color);
     # %nodes_label correspondance between node_name and label
     $self->set_hash_attribute("nodes_label", %nodes_label);
+    # node x and y positions
+    $self->set_hash_attribute("nodes_id_xpos", %nodes_id_xpos);    
+    $self->set_hash_attribute("nodes_id_ypos", %nodes_id_ypos);
     return $self;
 }
 
@@ -1536,16 +1541,14 @@ sub load_from_gml {
     my @arc_out_color = $self->get_attribute("out_color");
     my @arcs = $self->get_attribute("arcs");
     my %arcs_name_id = $self->get_attribute("arcs_name_id");
- 
-    
     my %nodes_name_id = $self->get_attribute("nodes_name_id");
     my %nodes_id_name = $self->get_attribute("nodes_id_name");
     my %nodes_color = $self->get_attribute("nodes_color");
     my %nodes_label = $self->get_attribute("nodes_label");
+    my %nodes_id_xpos = $self->get_attribute("nodes_id_xpos");
+    my %nodes_id_ypos = $self->get_attribute("nodes_id_ypos");
     my %gml_id = ();
-    
     my $max_arc_nb = $self->get_attribute("nb_arc_bw_node");
-   
     my $nodecpt = 0;
     my $arccpt = 0;
     &RSAT::message::TimeWarn("Loading graph from gml file", $inputfile) if ($main::verbose >= 2);
@@ -1572,6 +1575,8 @@ sub load_from_gml {
         my $node_id =  "NA";
         my $node_label = "NA";
         my $node_color  = "#000088";
+        my $node_xpos = "NA";
+        my $node_ypos = "NA";
 # NODE ID
         if ($node =~ /id/) {
           my @node_cp = split /.*id /, $node;
@@ -1597,7 +1602,20 @@ sub load_from_gml {
           $node_color = substr($node_color,1, index($node_color, "\" "));
           $node_color =~ s/\"//;
         }
-	
+# NODE X POSITION
+        if ($node =~ /x /) {
+          my @xpos_cp = split /.*x /, $node;
+          $node_xpos = $xpos_cp[1];
+          $node_xpos = substr($node_xpos,0, index($node_xpos, " "));
+          $node_xpos =~ s/\"//;
+         }
+# NODE Y POSITION
+        if ($node =~ /y /) {
+          my @ypos_cp = split /.*y /, $node;
+          $node_ypos = $ypos_cp[1];
+          $node_ypos = substr($node_ypos,0, index($node_ypos, " "));
+          $node_ypos =~ s/\"//;
+         }
 	
         if ($node_id ne "NA") {
           if ($node_label eq "NA") {
@@ -1611,6 +1629,12 @@ sub load_from_gml {
 	    $nodes_label{$node_index} = $node_label;
 	    $nodes_name_id{$node_label} = $nodecpt;
 	    $nodes_id_name{$nodecpt} = $node_label;
+	    if ($node_xpos ne "NA") {
+	      $nodes_id_xpos{$node_id} = $node_xpos;
+	    }
+	    if ($node_ypos ne "NA") {
+	      $nodes_id_ypos{$node_id} = $node_ypos;
+	    }	    
 	    $nodecpt++;
 	    &RSAT::message::Info(join("\t", "Created node", 
 	     $node_label,
@@ -1721,6 +1745,8 @@ sub load_from_gml {
     $self->set_hash_attribute("nodes_id_name", %nodes_id_name);
     $self->set_hash_attribute("nodes_color", %nodes_color);
     $self->set_hash_attribute("nodes_label", %nodes_label);
+    $self->set_hash_attribute("nodes_id_xpos", %nodes_id_xpos);    
+    $self->set_hash_attribute("nodes_id_ypos", %nodes_id_ypos);
     return $self;
 }
 
@@ -2046,6 +2072,73 @@ sub to_adj_matrix {
     return $adj_matrix;
 }
 
+################################################################
+=pod
+
+=item B<fr_layout()>
+
+Fill the hashes %node_id_xpos and %node_id_ypos using the program
+$RSAT/bin/fr_layout. This program based on the boost graph library, computes
+the node position using the Fruchterman and Reingold algorithm.
+If the program is not available, no changes are brought to the hashes
+
+
+
+=cut
+
+sub get_position {
+  my ($self) = @_;
+  my %nodes_id_xpos = $self->get_attribute("nodes_id_xpos");
+  my %nodes_id_ypos = $self->get_attribute("nodes_id_ypos");
+  my %nodes_name_id = $self->get_attribute("nodes_name_id");
+  my @arcs = $self->get_attribute("arcs");
+  my $fr_layout = $ENV{RSAT}."/bin/fr_layout";
+  my $nodes_nb = scalar keys %nodes_name_id;
+  my $layout_size = 1000;
+  if ($nodes_nb > 6000) {
+    $layout_size = 3000;
+  } elsif ($nodes_nb < 30) {
+    $layout_size = 1000;
+  } else {
+    $layout_size = int(1000+($nodes_nb/(2.5)))
+  }
+  if (!-e $fr_layout) {
+    &RSAT::message::Warning("Layout calculator program $fr_layout missing\nLayout will not be computed");
+  } else {
+    ## The string $arcs_list will be submitted to fr_layout
+    ## This C++ script must be located in $RSAT/bin
+    ## It takes as argument a list of edges under the form 
+    ## source_node1 target_node1
+    ## source_node2 target_node2
+    ## ... ...
+    ## As we may work with large graphs, this function creates a temporary file
+    ## where the edges are stored.
+    ## This file is then removed.
+    my $arcs_list = "";
+    my $tempfile = `mktemp graph_fr.XXXXXXXXXX`; 
+    chomp $tempfile;
+    open (TMP, ">$tempfile");
+    for (my $i = 0; $i < scalar(@arcs); $i++) {
+      $arcs_list .= join(" ",$arcs[$i][0], $arcs[$i][1], "\n");
+    }
+    print TMP $arcs_list;
+    my $command = "cat $tempfile | $fr_layout $layout_size $layout_size";
+    &RSAT::message::TimeWarn("Calculating the layout with $fr_layout") if ($main::verbose >= 2);
+    my $coordinates = `$command`;
+    my @lignes = split /\n/, $coordinates;
+    system ("rm $tempfile");
+    foreach my $ligne (@lignes) {
+      my @lignecp = split "\t", "$ligne";
+      my $node = $lignecp[0];
+      my $id = $nodes_name_id{$node};
+      $nodes_id_xpos{$id} = int($lignecp[1]+($layout_size/2));
+      $nodes_id_ypos{$id} = int($lignecp[2]+($layout_size/2));
+    }
+  }
+  $self->set_hash_attribute("nodes_id_xpos", %nodes_id_xpos);    
+  $self->set_hash_attribute("nodes_id_ypos", %nodes_id_ypos);
+}
+
 
 
 ################################################################
@@ -2057,12 +2150,15 @@ Return the graph in gml format.
 
 =cut
 sub to_gml {
-    my ($self) = @_;    
+    my ($self) = @_;
     my $gml = "";
+    my %nodes_id_xpos = $self->get_attribute("nodes_id_xpos");
+    my %nodes_id_ypos = $self->get_attribute("nodes_id_ypos");
     my %nodes_id_name = $self->get_attribute("nodes_id_name");
     my @out_neighbours = $self->get_attribute("out_neighbours");
     my @out_label = $self->get_attribute("out_label");
     my @out_color = $self->get_attribute("out_color");
+
     ## Graph description
     my $graph_label = $self->get_attribute("label") || "graph";
     $gml .= "Creator \"RSAT\"\n";
@@ -2077,8 +2173,8 @@ sub to_gml {
 	my $label = $self->get_node_label($node_name); ## node label
 	my $w = length($label)*10; ## label width
 	my $h = 16; ## label height
-	my $x = $id*10;
-	my $y = $id*20;
+	my $x = $nodes_id_xpos{$id} || $id*10;
+	my $y = $nodes_id_ypos{$id} || $id*10;
 	my $box_color = $self->get_node_color($node_name) || "#0000EE"; ## color for the box around the node
 	$gml .= "\t"."node\n";
 	$gml .= "\t"."[\n";
