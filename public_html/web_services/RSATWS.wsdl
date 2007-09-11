@@ -934,7 +934,7 @@ square-root of L divided by L+squareroot of L.
 	    alphabet
                 must be followed by residue frequencies expressed precisely 
                 this way:
-                -a a:t # c:g #
+                a:t # c:g #
 	  </xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
