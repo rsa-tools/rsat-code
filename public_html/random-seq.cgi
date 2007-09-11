@@ -53,7 +53,7 @@ if (&IsNatural($length)) {
 #### number of repetitions
 $repet = $query->param('repet');
 if (&IsNatural($repet)) {
-    $parameters .= " -r $repet";
+    $parameters .= " -n $repet";
 } else {
     &FatalError("Repetitions must be a natural number");
 }
