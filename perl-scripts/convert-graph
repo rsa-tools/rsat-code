@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.27 2007/09/11 10:24:27 rsat Exp $
+# $Id: convert-graph,v 1.28 2007/09/12 10:38:51 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -99,7 +99,7 @@ package main;
     ## directed
     $directed = 1;
     
-    ## directed
+    ## layout
     $layout = 0;
     
     ## arc_id_option
@@ -399,9 +399,6 @@ will be taken into account.
 	    unless (&IsNatural($source_color_col) && ($source_color_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $source_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
 	    }
-  ## Directed option
-=pod
-
 
 =item B<-undirected>
 
@@ -409,9 +406,10 @@ Specifies whether the edges must be considered as undirected, i.e., an edge
 from node A to node B corresponds to an edge from B to A (by default, edges are directed). Useful for the output as an adjacency table.
 
 =cut
-	    	    
-	} elsif ($arg eq "-layout") {
-	    $layout = 1;
+	 	    	    
+	} elsif ($arg eq "-undirected") {
+	    $directed = 0;   	    
+
 =item B<-layout>
 
 Calculates the layout (provided you have the fr_layout progrom in $RSAT/bin) according to the Fruchterman and Reingold algorithm.
@@ -419,9 +417,8 @@ This option is only useful for the gml output as the other formats do not specif
 position.
 
 =cut
-	    	    
-	} elsif ($arg eq "-undirected") {
-	    $directed = 0;
+	} elsif ($arg eq "-layout") {
+	    $layout = 1;
 
 =pod
 
