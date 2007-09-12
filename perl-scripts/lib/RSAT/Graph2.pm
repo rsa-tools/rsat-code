@@ -1346,7 +1346,7 @@ sub read_from_adj_matrix {
     my %edge_list = ();
     my %nodes_id_name = ();
     my %nodes_name_id = ();
-    print "DIRECTED $directed\n";
+
 
     ## Load the graph
     # find the first line containing the nodes names (starting with a <TAB>)
@@ -2100,7 +2100,7 @@ sub get_position {
   } elsif ($nodes_nb < 30) {
     $layout_size = 1000;
   } else {
-    $layout_size = int(1000+($nodes_nb/(2.5)))
+    $layout_size = int(1000+($nodes_nb/(2)))
   }
   if (!-e $fr_layout) {
     &RSAT::message::Warning("Layout calculator program $fr_layout missing\nLayout will not be computed");
@@ -2125,6 +2125,8 @@ sub get_position {
     my $command = "cat $tempfile | $fr_layout $layout_size $layout_size";
     &RSAT::message::TimeWarn("Calculating the layout with $fr_layout") if ($main::verbose >= 2);
     my $coordinates = `$command`;
+#     print $coordinates;
+#     print $command;
     my @lignes = split /\n/, $coordinates;
     system ("rm $tempfile");
     foreach my $ligne (@lignes) {

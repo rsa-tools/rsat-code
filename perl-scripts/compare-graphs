@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.34 2007/08/30 09:02:10 rsat Exp $
+# $Id: compare-graphs,v 1.35 2007/09/12 10:38:51 rsat Exp $
 #
 ############################################################
 
@@ -110,9 +110,20 @@ package main;
     ## Supported return options
     local $return_format = "";
     %supported_return_format =(
-      intersection=>1,
-      union=>1,
-      difference=>1
+      'intersection'=>1,
+      'union'=>1,
+      'difference'=>1,
+      'R.and.Q'=>1, 
+      'Q.and.R'=>1, 
+      'Q.or.R'=>1, 
+      'Q.not.R'=>1, 
+      'R.not.Q'=>1, 
+      'Q.and.R+Q'=>1, 
+      'Q.and.R+R'=>1, 
+      'R.and.Q+Q'=>1, 
+      'R.and.Q+R'=>1,
+      'intersection+R'=>1,
+      'intersection+Q'=>1
     );
     $supported_return_formats = join (",", keys %supported_return_format);
 
@@ -124,7 +135,7 @@ package main;
     $arc_id_option = 0;
 
     ## Supported outweight options
-    local $outweight ="";
+    local $outweight ="Q::R";
     %supported_outweight =(
       "Q"=>1,
       "R"=>1,
@@ -162,9 +173,7 @@ package main;
     if ($return_format eq "") {
       &RSAT::error::FatalError("You must specify a return format : $supported_return_formats");
     }
-    if ($outweight eq "" && ($return_format eq 'intersection' || $return_format eq 'union')) {
-      &RSAT::error::FatalError("You must specify a outweight option : $supported_outweight");
-    }
+
     ################################################################
     ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
@@ -242,14 +251,19 @@ package main;
     ## Execute the command
     
     my $return_graph;
-    if ($return_format eq "intersection") {
+    if ($return_format eq "intersection" || $return_format eq "R.and.Q" || $return_format eq "Q.and.R") {
       $return_graph = &intersect($R_graph, $Q_graph);
-    } elsif ($return_format eq "union") {
-      $return_graph = &union($R_graph, $Q_graph);
-    } elsif ($return_format eq "difference") {
+    } elsif ($return_format eq "union" || $return_format eq "R.or.Q" || $return_format eq "Q.or.R") {
+      $return_graph = &union($R_graph, $Q_graph, "");
+    } elsif ($return_format eq "difference" || $return_format eq "R.not.Q") {
       $return_graph = &difference($R_graph, $Q_graph);
+    } elsif ($return_format eq "Q.not.R") {
+      $return_graph = &difference($Q_graph, $R_graph);
+    } elsif ($return_format eq "Q.and.R+R" || $return_format eq "R.and.Q+R" || $return_format eq "intersection+R" ) {
+      $return_graph = &union($R_graph, $Q_graph, "-q");
+    } elsif ($return_format eq "Q.and.R+Q" || $return_format eq "R.and.Q+Q" || $return_format eq "intersection+Q" ) {
+      $return_graph = &union($R_graph, $Q_graph, "-r");
     }
-    
     ################################################################
     ## Print output
     print $main::out $return_graph->to_text($output_format, $arc_id_option);
@@ -448,13 +462,27 @@ Input format of query graph. Supported: tab,gml. Default tab
 	    ### return  
 =pod
 
-=item B<-return return>
+=item B<-return return_type>
 
-Return type : intersection , union or difference
+return type : I<intersection>, I<union>, I<difference>, I<R.and.Q>, I<Q.and.R>, I<Q.or.R>, I<Q.not.R>, I<R.not.Q>, I<Q.and.R+Q>, I<Q.and.R+R>, I<R.and.Q+Q>, I<R.and.Q+R>, I<intersection+Q>, I<intersection+R>
+
+I<intersection>, I<R.and.Q> and I<Q.and.R> are synonyms.
+
+I<union>, I<R.or.Q> and I<Q.or.R> are synonyms.
+
+I<difference> corresponds to I<R.not.Q>
 
 If the union is requested, each arc is labelled to indicate whether it
 belongs to the intersection (R.and.Q), to Q only (Q.not.R) or to R
-only (R.not.Q).
+only (R.not.Q). 
+
+I<intersection+R> and I<Q.and.R+R> or I<R.and.Q+R> corresponds only to the edges of the 
+reference graph. However, each edge is labelled and colored differently to indicate
+wether it belongs to the intersection or to the reference graph only. 
+
+Inversely, I<intersection+Q> and I<Q.and.R+Q> or I<R.and.Q+Q>  corresponds only to the edges of the 
+query graph. However, each edge is labelled and colored differently to indicate
+wether it belongs to the intersection or to the query graph only. 
 
 =cut
 	} elsif ($arg eq "-return") {
@@ -662,7 +690,7 @@ sub intersect {
 
 	  ## NOTE DE JACQUES: j'ai invers� les param�tres de la ligne
 	  ## suivante, car il retournait le poids du graphe R quand on
-	  ## lui demandait celui de Q. Veriifiez si c'est OK
+	  ## lui demandait celui de Q. Verifiez si c'est OK
 #          my $weight = &calculate_weight($arcs_g1[$i][2], $arcs_g2[$arc_intern_id_g2][2]);
           my $weight = &calculate_weight($arcs_g2[$arc_intern_id_g2][2], $arcs_g1[$i][2]);
 	  my $arc_label = $weight;
@@ -694,7 +722,7 @@ sub intersect {
 ## absent in $Q_graph
 
 sub union {
-  my ($R_graph, $Q_graph) = @_; 
+  my ($R_graph, $Q_graph, $removal) = @_; 
   
   my $union_graph = new RSAT::Graph2;
   
@@ -740,64 +768,68 @@ sub union {
 	$arc_label = &calculate_weight($arc_label_g2, $arc_label_g1);
       }
     }
-    my $source_name_id = $nodes_name_id_g1{$source_name};
-    my $target_name_id = $nodes_name_id_g1{$target_name};
-    my $source_node_color = $nodes_color_g1{$source_name_id};
-    my $target_node_color = $nodes_color_g1{$target_name_id};
-    $union_graph_array[$i][2] = $arc_label;
-    $union_graph_array[$i][3] = $source_node_color;
-    $union_graph_array[$i][4] = $target_node_color;
-    $union_graph_array[$i][5] = $arc_color;
-    $arcs_attributes[$i] = $arc_attribute;
-    # si la couleur du noeud est #00ff00, l'arc n'appartient qu'à g1 et donc tu mets
-    # 1not2 dans graph attribute à la valeur $i
-    # si la couleur du noeud est #ff0000, l'arc appartient à l'intersection et donc tu mets
-    # 1and2 dans graphe attribute à la valeur $i
+    if ($removal ne "-r" || ($removal eq "-r" && $arc_attribute eq "R.and.Q")) {
+      my $source_name_id = $nodes_name_id_g1{$source_name};
+      my $target_name_id = $nodes_name_id_g1{$target_name};
+      my $source_node_color = $nodes_color_g1{$source_name_id};
+      my $target_node_color = $nodes_color_g1{$target_name_id};
+      $union_graph_array[$i][2] = $arc_label;
+      $union_graph_array[$i][3] = $source_node_color;
+      $union_graph_array[$i][4] = $target_node_color;
+      $union_graph_array[$i][5] = $arc_color;
+      $arcs_attributes[$i] = $arc_attribute;
+      # si la couleur du noeud est #00ff00, l'arc n'appartient qu'à g1 et donc tu mets
+      # 1not2 dans graph attribute à la valeur $i
+      # si la couleur du noeud est #ff0000, l'arc appartient à l'intersection et donc tu mets
+      # 1and2 dans graphe attribute à la valeur $i
+    }
     
     
     for (my $j = 0; $j < scalar(@arcs_id); $j++) {
       $seen_arcs{$arcs_id[$j]}++;
     }
   }    
-
+ 
 #   filling union_graph_array with Q_graph without intersection
-  my $j = scalar(@union_graph_array);
-  my $arc_color = "#ff0000";
-  my $arc_attribute = "Q.not.R";
-  for (my $i = 0; $i < scalar(@arcs_g2); $i++) {
-    my $source_name = $arcs_g2[$i][0]; 
-    my $target_name = $arcs_g2[$i][1];
-    my $arc_label_g2 = $arcs_g2[$i][2];
-    my @arcs_id = ();
-    my $arc_id1 = $source_name."_".$target_name."_".1;
-    push @arcs_id, $arc_id1; # arcs du graph 1, "dirigés"
-    if (!$directed) {
-      my $arc_id2 = $target_name."_".$source_name."_".1;
-      push @arcs_id, $arc_id2; # ajouts des arcs du graph 1 "non dirigés"
-    }
-    foreach my $arc_id (@arcs_id) {
-      my $arc_intern_id_g1 = $arcs_name_id_g1{$arc_id};
-      my $arc_intern_id_g2 = $arcs_name_id_g2{$arc_id};
-      my $seen_arc = $seen_arcs{$arc_id};
-      if (!defined($seen_arc) && defined($arc_intern_id_g2)) {
-        my $arc_label = &calculate_weight($arc_label_g2, "undef");
-# 	my $arc_label = $arcs_g2[$i][2];
-        my $source_name_id = $nodes_name_id_g2{$source_name};
-        my $target_name_id = $nodes_name_id_g2{$target_name};
-        my $source_node_color = $nodes_color_g2{$source_name_id};
-        my $target_node_color = $nodes_color_g2{$target_name_id};
-        $union_graph_array[$j][0] = $source_name;
-        $union_graph_array[$j][1] = $target_name;
-        $union_graph_array[$j][2] = $arc_label;
-        $union_graph_array[$j][3] = $source_node_color;
-        $union_graph_array[$j][4] = $target_node_color;
-        $union_graph_array[$j][5] = $arc_color;
-	$arcs_attributes[$j] = $arc_attribute;
-	# il ne reste plus que les arcs qui n'appartiennent qu'à g2 donc tu mets not1,2 
-        # dans @graph_attribute à la valeur $j
-        $j++;
-	for (my $j = 0; $j < scalar(@arcs_id); $j++) {
-          $seen_arcs{$arcs_id[$j]}++;
+  if ($removal ne "-q") {
+    my $j = scalar(@union_graph_array);
+    my $arc_color = "#ff0000";
+    my $arc_attribute = "Q.not.R";
+    for (my $i = 0; $i < scalar(@arcs_g2); $i++) {
+      my $source_name = $arcs_g2[$i][0]; 
+      my $target_name = $arcs_g2[$i][1];
+      my $arc_label_g2 = $arcs_g2[$i][2];
+      my @arcs_id = ();
+      my $arc_id1 = $source_name."_".$target_name."_".1;
+      push @arcs_id, $arc_id1; # arcs du graph 1, "dirigés"
+      if (!$directed) {
+        my $arc_id2 = $target_name."_".$source_name."_".1;
+        push @arcs_id, $arc_id2; # ajouts des arcs du graph 1 "non dirigés"
+      }
+      foreach my $arc_id (@arcs_id) {
+        my $arc_intern_id_g1 = $arcs_name_id_g1{$arc_id};
+        my $arc_intern_id_g2 = $arcs_name_id_g2{$arc_id};
+        my $seen_arc = $seen_arcs{$arc_id};
+        if (!defined($seen_arc) && defined($arc_intern_id_g2)) {
+          my $arc_label = &calculate_weight($arc_label_g2, "undef");
+# 	  my $arc_label = $arcs_g2[$i][2];
+          my $source_name_id = $nodes_name_id_g2{$source_name};
+          my $target_name_id = $nodes_name_id_g2{$target_name};
+          my $source_node_color = $nodes_color_g2{$source_name_id};
+          my $target_node_color = $nodes_color_g2{$target_name_id};
+          $union_graph_array[$j][0] = $source_name;
+          $union_graph_array[$j][1] = $target_name;
+          $union_graph_array[$j][2] = $arc_label;
+          $union_graph_array[$j][3] = $source_node_color;
+          $union_graph_array[$j][4] = $target_node_color;
+          $union_graph_array[$j][5] = $arc_color;
+	  $arcs_attributes[$j] = $arc_attribute;
+	  # il ne reste plus que les arcs qui n'appartiennent qu'à g2 donc tu mets not1,2 
+          # dans @graph_attribute à la valeur $j
+          $j++;
+	  for (my $j = 0; $j < scalar(@arcs_id); $j++) {
+            $seen_arcs{$arcs_id[$j]}++;
+          }
         }
       }
     }
@@ -1045,6 +1077,8 @@ __END__
 =item I<graph-neighbours>
 
 =item I<random-graph>
+
+=item I<display-graph>
 
 =back
 
