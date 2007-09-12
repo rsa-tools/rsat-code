@@ -1,0 +1,442 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: display-graph,v 1.1 2007/09/12 10:38:51 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+display-graph
+
+=head1 DESCRIPTION
+
+Produce the figure of a graph 
+
+=head1 AUTHORS
+
+sylvain@scmbb.ulb.ac.be
+
+=head1 CATEGORY
+
+Graph util
+
+=head1 USAGE
+
+display-graph -i graph_input_file -o picture_output_file [-v #] [-layout] [-in_format tab/gml/adj_matrix]
+
+=head1 INPUT FORMAT
+
+See convert-graph for a description of the allowed input graph formats. 
+
+=head1 OUTPUT FORMAT
+
+A graphical representation of the graph as a postscript file (PS). In the future,
+more output format will be allowed (PNG, JPG, BMP).
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::Graph2;
+require PostScript::Simple;
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    my $start_time = &AlphaDate();
+
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+
+    ## Input formats
+    local $input_format = "tab";
+    %supported_input_format =(
+	tab=>1,
+	gml=>1,
+	adj_matrix=>1
+    );
+    $supported_input_formats = join (",", keys %supported_input_format);
+    local $source_col = 1;
+    local $target_col = 2;
+    local $weight_col = 0;
+    local $source_color_col = 0;
+    local $target_color_col = 0;
+    local $color_col = 0;
+    ## Output formats
+    local $output_format = "ps";
+    %supported_output_format =(ps=>1);			      
+			       
+    $supported_output_formats = join (",", keys %supported_output_format);
+    ## layout
+    $layout = 0;
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    if (!$layout && $input_format ne 'gml') {
+      &RSAT::error::FatalError("You must specify use the -layout option with this format", $input_format);
+    }
+    if (!$main::outfile{output}) {
+      &RSAT::error::FatalError("You must specify and output file with the -o option");
+    }
+    if (!$main::infile{input}) {
+      &RSAT::error::FatalError("You must specify and output file with the -i option");
+    }
+
+
+    ################################################################
+    ## Initialize the graph
+    my $graph = new RSAT::Graph2();
+    $graph->set_attribute("label", "graph");
+    
+    ################################################################
+    ##### read input
+    $graph->graph_from_text($input_format, $main::infile{input}, $source_col, $target_col, $weight_col, $source_color_col, $target_color_col,$color_col, 1);
+    ## Calculates the layout 
+    if ($layout) {
+      $graph->get_position();
+    }
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+    ################################################################
+    ## Execute the command
+    ## get nodes id
+    my %nodes_id_name = $graph->get_attribute("nodes_id_name");
+    ## get nodes color
+    my %nodes_color = $graph->get_attribute("nodes_color");
+    ## get edges color
+    my @out_colors = $graph->get_attribute("out_color");
+    ## get nodes neighbours
+    my @out_neighbours = $graph->get_attribute("out_neighbours");
+    ## get the nodes position
+    my %nodes_id_xpos = $graph->get_attribute("nodes_id_xpos");
+    my %nodes_id_ypos = $graph->get_attribute("nodes_id_ypos");
+    ## get the total size of the picture
+    my $max = 0;
+    while (my ($node, $pos) = each (%nodes_id_xpos)) {
+      if ($pos > $max) {
+        $max = $pos;
+      }
+    }
+    while (my ($node, $pos) = each (%nodes_id_ypos)) {
+      if ($pos > $max) {
+        $max = $pos;
+      }
+    } 
+    $max += 50;
+    ## for postscript figures : use of postscript simple library
+    if ($output_format eq "ps" || $output_format eq "eps") {
+      # computes the maximal coordinates of x and y
+      # create the picture
+      $p = new PostScript::Simple(xsize=>$max, ysize=>$max, colour => 1, eps => 0, units => "pt");
+      # create a new page
+      $p->newpage;
+      # display the edges
+      for (my $i = 0; $i < scalar(@out_neighbours); $i++) {
+        if (defined $out_neighbours[$i]) {
+          my @neighbours = @{$out_neighbours[$i]};
+          my @colors = @{$out_colors[$i]};
+          my $source_xpos = $nodes_id_xpos{$i};
+          my $source_ypos = $nodes_id_ypos{$i};
+          for (my $j = 0; $j < scalar(@neighbours); $j++) {
+            if (defined $neighbours[$j]) {
+              my $target_xpos = $nodes_id_xpos{$neighbours[$j]};
+              my $target_ypos = $nodes_id_ypos{$neighbours[$j]};
+              my $edge_color = $colors[$j];
+              # get the color of the edge
+              my $r = hex(substr($edge_color, 1,2));
+              my $g = hex(substr($edge_color, 3,2));
+              my $b = hex(substr($edge_color, 5,2));
+              $p->line($source_xpos,$source_ypos, $target_xpos, $target_ypos, $r, $g, $b);
+            }
+          }
+        }
+      }
+      # display the nodes
+      $p->setfont("Arial", 12);
+      while (my ($id, $name) = each (%nodes_id_name)) {
+        my $length_name = length($name)*10;
+        my $xpos = $nodes_id_xpos{$id};
+        my $ypos = $nodes_id_ypos{$id};
+        # get the color of the node
+        my $node_color = $nodes_color{$id};
+        my $r = hex(substr($node_color, 1, 2));
+        my $g = hex(substr($node_color, 3, 2));
+        my $b = hex(substr($node_color, 5, 2));
+        $p->setcolour($r,$g,$b);
+        $p->box({filled=>1},$xpos-($length_name/2), $ypos-5, $xpos-($length_name/2) +length($name)*10, $ypos+12);
+        $p->setcolour("white");
+        $p->box({filled=>1},($xpos-($length_name/2)+2), $ypos-5+1, $xpos-($length_name/2)-1 +length($name)*10-1, $ypos+12-1);
+        $p->setcolour("black");
+        $p->text($xpos-($length_name/2)+3,$ypos-3, $name);
+      }
+      $p->output($main::outfile{output});
+    } 
+
+    ################################################################
+    ## Print output
+
+
+    ################################################################
+    ## Finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print STDOUT "; Job started $start_time\n";
+	print STDOUT "; Job done    $done_time\n";
+    }
+
+
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+Specification of the input graph file
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+=pod
+
+=item B<-in_format input_format>
+
+Input format. Supported: tab, gml, adj_matrix
+
+=cut
+	} elsif ($arg eq "-in_format") {
+	    $input_format = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
+=item B<-layout>
+
+Calculates the layout (provided you have the fr_layout program in $RSAT/bin) according to the Fruchterman and Reingold algorithm.
+This option must be provided if the input graph is not GML.
+
+=cut
+	} elsif ($arg eq "-layout") {
+	    $layout = 1;
+	    
+	    ## Source column
+=pod
+
+=item B<-scol>
+
+Source column. Column containing the source nodes for the tab-delimited format. (default 1)
+
+=cut
+	} elsif ($arg eq "-scol") {
+	    $source_col = shift (@arguments);
+	    unless (&IsNatural($source_col) && ($source_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_col, "Invalid value for the source column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Target column
+=pod
+
+=item B<-tcol>
+
+Target column. Column containing the target nodes for the tab-delimited format.(default 2)
+
+=cut
+	} elsif ($arg eq "-tcol") {
+	    $target_col = shift (@arguments);
+	    unless (&IsNatural($target_col) && ($target_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_col, "Invalid value for the target column. Must be a strictly positive natural number"));
+	    }
+=pod
+
+=item B<-eccol>
+
+Edge color column. Column containing the color of the edges (RGB) for the tab-delimited format. (no default)
+
+=cut
+	} elsif ($arg eq "-eccol") {
+	    $color_col = shift (@arguments);
+	    unless (&IsNatural($color_col) && ($color_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
+	    }
+=pod
+
+=item B<-sccol>
+
+Source node color colum. Column containing the color of the node (RGB) for the tab-delimited format. (no default)
+
+A node can only have one color. If in the file, the color of the node changes, only the first defined color 
+will be taken into account.
+
+=cut
+	} elsif ($arg eq "-sccol") {
+	    $source_color_col = shift (@arguments);
+	    unless (&IsNatural($source_color_col) && ($source_color_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
+	    }
+	    
+	    ### Output format  
+
+=item B<-to output_format>
+
+Output format. Supported: ps
+
+=cut 
+	} elsif ($arg eq "-out_format") {
+	    $output_format = shift(@arguments);
+	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
+		unless ($supported_output_format{$output_format});
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+Specification of the graphic output file
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print STDOUT "; display-graph ";
+    &PrintArguments(STDOUT);
+    if (defined(%main::infile)) {
+	print STDOUT "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print STDOUT ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%main::outfile)) {
+	print STDOUT "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print STDOUT ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item I<convert-graph>
+
+=item I<graph-get-clusters>
+
+=item I<graph-node-degree>
+
+=item I<graph-neighbours>
+
+=item I<random-graph>
+
+=back
+
+=cut
