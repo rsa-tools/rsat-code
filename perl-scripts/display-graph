@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.1 2007/09/12 10:38:51 rsat Exp $
+# $Id: display-graph,v 1.2 2007/09/13 11:21:31 rsat Exp $
 #
 ############################################################
 
@@ -49,6 +49,7 @@ BEGIN {
 require "RSA.lib";
 require RSAT::Graph2;
 require PostScript::Simple;
+require GD;
 
 
 ################################################################
@@ -82,7 +83,10 @@ package main;
     local $color_col = 0;
     ## Output formats
     local $output_format = "ps";
-    %supported_output_format =(ps=>1);			      
+    %supported_output_format =(
+    				ps=>1,
+    				png=>1
+    			      );			      
 			       
     $supported_output_formats = join (",", keys %supported_output_format);
     ## layout
@@ -144,7 +148,7 @@ package main;
         $max = $pos;
       }
     } 
-    $max += 50;
+    $max += 100;
     ## for postscript figures : use of postscript simple library
     if ($output_format eq "ps" || $output_format eq "eps") {
       # computes the maximal coordinates of x and y
@@ -192,8 +196,57 @@ package main;
         $p->text($xpos-($length_name/2)+3,$ypos-3, $name);
       }
       $p->output($main::outfile{output});
-    } 
-
+      ## for jpg / bmp / png output : use of gd library
+    } elsif ($output_format eq "jpg" || $output_format eq "jpeg" || $output_format eq "png" || $output_format eq "bmp") {
+      # create the picture
+      my $p  = new GD::Image ( $max , $max ) ;
+      my $white = $p->colorAllocate(255,255,255);
+      my $black = $p->colorAllocate(0,0,0);
+      $p->transparent($white);
+      $p->interlaced('false');
+      # display the edges
+      for (my $i = 0; $i < scalar(@out_neighbours); $i++) {
+        if (defined $out_neighbours[$i]) {
+          my @neighbours = @{$out_neighbours[$i]};
+          my @colors = @{$out_colors[$i]};
+          my $source_xpos = $nodes_id_xpos{$i};
+          my $source_ypos = $nodes_id_ypos{$i};
+          for (my $j = 0; $j < scalar(@neighbours); $j++) {
+            if (defined $neighbours[$j]) {
+              my $target_xpos = $nodes_id_xpos{$neighbours[$j]};
+              my $target_ypos = $nodes_id_ypos{$neighbours[$j]};
+              my $edge_color = $colors[$j];
+              # get the color of the edge
+              my $r = hex(substr($edge_color, 1,2));
+              my $g = hex(substr($edge_color, 3,2));
+              my $b = hex(substr($edge_color, 5,2));
+              my $current_col = $p->colorAllocate($r, $g, $b);
+              $p->line($source_xpos,$source_ypos, $target_xpos, $target_ypos, $current_col);
+              
+            }
+          }
+        }
+      }
+      my $small_font = gdSmallFont;
+      while (my ($id, $name) = each (%nodes_id_name)) {
+        my $length_name = length($name)*10;
+        my $xpos = $nodes_id_xpos{$id};
+        my $ypos = $nodes_id_ypos{$id};
+        # get the color of the node
+        my $node_color = $nodes_color{$id};
+        my $r = hex(substr($node_color, 1, 2));
+        my $g = hex(substr($node_color, 3, 2));
+        my $b = hex(substr($node_color, 5, 2));
+        my $current_col = $p->colorAllocate($r, $g, $b);
+        $p->filledRectangle($xpos-($length_name/2), $ypos-5, $xpos-($length_name/2) +length($name)*10, $ypos+12, $white);
+        $p->rectangle($xpos-($length_name/2), $ypos-5, $xpos-($length_name/2) + length($name)*10, $ypos+12, $current_col);
+        $p->string(gdTinyFont, $xpos-($length_name/2)+3, $ypos-3, $name, $black)
+      }      
+      open TEST, ">test.jpg";
+      print TEST $p->jpeg();
+      close TEST;
+    }
+    
     ################################################################
     ## Print output
 
