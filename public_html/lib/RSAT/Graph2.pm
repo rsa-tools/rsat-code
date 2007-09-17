@@ -1903,6 +1903,7 @@ sub load_from_array {
     $self->set_hash_attribute("arcs_name_id", %arcs_name_id);
     
     $self->force_attribute("nb_arc_bw_node", $max_arc_nb);
+    
 }
 
 ################################################################
@@ -2241,11 +2242,12 @@ sub to_tab {
     
     my ($self, $arc_id) = @_;
     my @arcs = $self->get_attribute("arcs");
+    print "ARCS ".scalar @arcs;
     my @arcs_attributes = $self->get_attribute("arcs_attribute");
     my %nodes_name_id = $self->get_attribute("nodes_name_id");
     my $tab = "";
     if (@arcs_attributes && scalar(@arcs_attributes) > 0) {
-      $tab = $self->to_tab_arcs_attribute($arc_id);
+     $tab = $self->to_tab_arcs_attribute($arc_id);
     } else {
       if (!$arc_id) {
         $tab = join("\t","#source","target","label","color");
@@ -2324,7 +2326,7 @@ sub to_tab_arcs_attribute {
 	      $tab .= $color."\t";
               $tab .= $cluster."\n";
 	    }
-	  } elsif (@clusters && scalar(@arcs_attribute_header) >= 1) {
+	  } elsif (@clusters && (scalar(@arcs_attribute_header) > 1)) {
 	    $tab .= $source."\t";
             $tab .= $target."\t";
             $tab .= $label."\t";
@@ -2338,7 +2340,7 @@ sub to_tab_arcs_attribute {
               $tab .= $target."\t";
               $tab .= $label."\t";
 	      $tab .= $color."\t";
-              $tab .= $attribute."\n";	  
+              $tab .= $attribute."\n";
 	  }
         }
         delete $nodes_name_id{$source};
@@ -2397,7 +2399,7 @@ sub to_tab_arcs_attribute {
 	  }
         }
         delete $nodes_name_id{$source};
-        delete $nodes_name_id{$target};         
+        delete $nodes_name_id{$target};
       }
     }
     $tab .= join("\n", keys %nodes_name_id)."\n";
