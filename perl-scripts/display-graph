@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.2 2007/09/13 11:21:31 rsat Exp $
+# $Id: display-graph,v 1.3 2007/09/17 13:07:27 rsat Exp $
 #
 ############################################################
 
@@ -15,15 +15,17 @@ display-graph
 
 =head1 DESCRIPTION
 
-Produce the figure of a graph 
+Produces the figure of a graph 
 
 =head1 AUTHORS
 
-sylvain@scmbb.ulb.ac.be
+Sylvain Brohée <sylvain@scmbb.ulb.ac.be>
+
+Jacques van Helden <jvanheld@smcbb.ulb.ac.be>
 
 =head1 CATEGORY
 
-Graph util
+Graph utils
 
 =head1 USAGE
 
@@ -35,8 +37,7 @@ See convert-graph for a description of the allowed input graph formats.
 
 =head1 OUTPUT FORMAT
 
-A graphical representation of the graph as a postscript file (PS). In the future,
-more output format will be allowed (PNG, JPG, BMP).
+A graphical representation of the graph in the required output format.
 
 =cut
 
@@ -49,7 +50,7 @@ BEGIN {
 require "RSA.lib";
 require RSAT::Graph2;
 require PostScript::Simple;
-require GD;
+use GD;
 
 
 ################################################################
@@ -85,7 +86,9 @@ package main;
     local $output_format = "ps";
     %supported_output_format =(
     				ps=>1,
-    				png=>1
+    				png=>1,
+    				jpg=>1,
+    				jpeg=>1
     			      );			      
 			       
     $supported_output_formats = join (",", keys %supported_output_format);
@@ -196,12 +199,13 @@ package main;
         $p->text($xpos-($length_name/2)+3,$ypos-3, $name);
       }
       $p->output($main::outfile{output});
-      ## for jpg / bmp / png output : use of gd library
-    } elsif ($output_format eq "jpg" || $output_format eq "jpeg" || $output_format eq "png" || $output_format eq "bmp") {
+      ## for jpg / png output : use of gd library
+    } elsif ($output_format eq "jpg" || $output_format eq "jpeg" || $output_format eq "png") {
       # create the picture
       my $p  = new GD::Image ( $max , $max ) ;
       my $white = $p->colorAllocate(255,255,255);
       my $black = $p->colorAllocate(0,0,0);
+      # make the background transparent and interlaced
       $p->transparent($white);
       $p->interlaced('false');
       # display the edges
@@ -240,17 +244,19 @@ package main;
         my $current_col = $p->colorAllocate($r, $g, $b);
         $p->filledRectangle($xpos-($length_name/2), $ypos-5, $xpos-($length_name/2) +length($name)*10, $ypos+12, $white);
         $p->rectangle($xpos-($length_name/2), $ypos-5, $xpos-($length_name/2) + length($name)*10, $ypos+12, $current_col);
-        $p->string(gdTinyFont, $xpos-($length_name/2)+3, $ypos-3, $name, $black)
+        $p->string(gdSmallFont, $xpos-($length_name/2)+3,$ypos-3, $name, $black);
+        
       }      
-      open TEST, ">test.jpg";
-      print TEST $p->jpeg();
-      close TEST;
+      binmode STDOUT;
+      my $output_fhandle = &OpenOutputFile($main::outfile{output});
+      if ($output_format eq "jpg" || $output_format eq "jpeg") {
+        print $output_fhandle $p->jpeg();
+      } elsif ($output_format eq "png") {
+        print $output_fhandle $p->png();
+      } 
+      close $output_fhandle;
     }
     
-    ################################################################
-    ## Print output
-
-
     ################################################################
     ## Finish verbose
     if ($main::verbose >= 1) {
@@ -419,7 +425,7 @@ will be taken into account.
 
 =item B<-to output_format>
 
-Output format. Supported: ps
+Output format. Supported: ps, png, jpeg
 
 =cut 
 	} elsif ($arg eq "-out_format") {
