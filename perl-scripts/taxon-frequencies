@@ -1,11 +1,11 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.21 2007/08/23 16:34:54 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.22 2007/09/17 13:07:27 rsat Exp $
 #
 ############################################################
 
-## TO DO: add the option -all, to automatically compute all the pattern frequencies for a giv en taxon (with the option -outdir)
+## TO DO: add the option -all, to automatically compute all the pattern frequencies for a given taxon (with the option -outdir)
 
 
 ## use strict;
