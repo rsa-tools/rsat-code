@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.35 2007/09/12 10:38:51 rsat Exp $
+# $Id: compare-graphs,v 1.36 2007/09/17 13:07:27 rsat Exp $
 #
 ############################################################
 
@@ -737,17 +737,18 @@ sub union {
   my %nodes_label_g1 = $R_graph->get_attribute("nodes_label");
   my %nodes_label_g2 = $Q_graph->get_attribute("nodes_label");
 
-  my @union_graph_array = @arcs_g1;
+  my @union_graph_array = ();
   my @arcs_attributes = ();
   my %seen_arcs = ();
+  my $k = 0;# iterator in the array @union_graph_array
   
 #   filling union_graph_array with R_graph
-
-  for (my $i = 0; $i < scalar(@union_graph_array); $i++) {
+ 
+  for (my $i = 0; $i < scalar(@arcs_g1); $i++) {
   
-    my $source_name = $union_graph_array[$i][0]; 
-    my $target_name = $union_graph_array[$i][1];
-    my $arc_label_g1 = $union_graph_array[$i][2];
+    my $source_name = $arcs_g1[$i][0]; 
+    my $target_name = $arcs_g1[$i][1];
+    my $arc_label_g1 = $arcs_g1[$i][2];
         
     my @arcs_id = ();
     my $arc_id1 = $source_name."_".$target_name."_".1;
@@ -768,31 +769,35 @@ sub union {
 	$arc_label = &calculate_weight($arc_label_g2, $arc_label_g1);
       }
     }
-    if ($removal ne "-r" || ($removal eq "-r" && $arc_attribute eq "R.and.Q")) {
+    if ($arc_attribute eq 'R.and.Q' || $arc_attribute eq 'R.not.Q' && $removal ne '-r') {
       my $source_name_id = $nodes_name_id_g1{$source_name};
       my $target_name_id = $nodes_name_id_g1{$target_name};
       my $source_node_color = $nodes_color_g1{$source_name_id};
       my $target_node_color = $nodes_color_g1{$target_name_id};
-      $union_graph_array[$i][2] = $arc_label;
-      $union_graph_array[$i][3] = $source_node_color;
-      $union_graph_array[$i][4] = $target_node_color;
-      $union_graph_array[$i][5] = $arc_color;
-      $arcs_attributes[$i] = $arc_attribute;
+      $union_graph_array[$k][0] = $source_name;
+      $union_graph_array[$k][1] = $target_name;
+      $union_graph_array[$k][2] = $arc_label;
+      $union_graph_array[$k][3] = $source_node_color;
+      $union_graph_array[$k][4] = $target_node_color;
+      $union_graph_array[$k][5] = $arc_color;
+      $arcs_attributes[$k] = $arc_attribute;
       # si la couleur du noeud est #00ff00, l'arc n'appartient qu'à g1 et donc tu mets
       # 1not2 dans graph attribute à la valeur $i
-      # si la couleur du noeud est #ff0000, l'arc appartient à l'intersection et donc tu mets
-      # 1and2 dans graphe attribute à la valeur $i
-    }
+    # si la couleur du noeud est #ff0000, l'arc appartient à l'intersection et donc tu mets
+    # 1and2 dans graphe attribute à la valeur $i
     
-    
-    for (my $j = 0; $j < scalar(@arcs_id); $j++) {
-      $seen_arcs{$arcs_id[$j]}++;
+      $k++;
+      for (my $j = 0; $j < scalar(@arcs_id); $j++) {
+        $seen_arcs{$arcs_id[$j]}++;
+      }
     }
   }    
  
 #   filling union_graph_array with Q_graph without intersection
   if ($removal ne "-q") {
+    
     my $j = scalar(@union_graph_array);
+#     exit(0);
     my $arc_color = "#ff0000";
     my $arc_attribute = "Q.not.R";
     for (my $i = 0; $i < scalar(@arcs_g2); $i++) {
