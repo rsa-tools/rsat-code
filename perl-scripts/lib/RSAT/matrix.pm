@@ -58,13 +58,13 @@ indicated besides each position, and a histogram is drawed.
 Relative frequencies are calculated as the counts of residues divided
 by the total count of the column.
 
-S<Fij=Cij/SUMi(Cij)>
+S<Fij=Nij/SUMi(Nij)>
 
 where 
 
 =over
 
-=item Cij 
+=item Nij
 
 is the absolute frequency (counts) of residue i at position j of the
 alignment
@@ -75,35 +75,44 @@ is the relative frequency of residue i at position j of the alignment
 
 =back
 
-=item frequencies corrected with pseudo-weights
+=item Pseudo-count corrected frequencies
 
-Relative frequencies can be corrected by a pseudo-weight (b) to reduce
+Relative frequencies can be corrected by a pseudo-count (b) to reduce
 the bias due to the small number of observations.
 
-S<F''ij=Cij+b*Pi/[SUMi(Cij)+b]>
+The pseudo-count an be shared either in an equiprobable way,
+
+  S<F''ij=(Nij + b/A)/[SUMi(Nij)+b]>
+
+or according to residue prior frequencies.
+
+  S<F''ij=(Nij + b*Pi)/[SUMi(Nij)+b]>
+
 
 where 
 
 =over
 
-=item Pi 
+=item Pi
 
 is the prior frequency for residue i
 
+=item A
+
+is the size of the alphabet (A=4 for DNA).
+
 =item b
 
-is the pseudo-weight, which is "shared" between residues according to
+is the pseudo-count, which is "shared" between residues according to
 their prior frequencies.
 
 =back
-
-
 
 =item weights
 
 Weights are calculated according to the formula from Hertz (1999), as
 the natural logarithm of the ratio between the relative frequency
-(corrected for pseudo-weights) and the prior residue probability.
+(corrected for pseudo-counts) and the prior residue probability.
 
 S<Wij=ln(F''ij/Pi)>
 
@@ -115,31 +124,31 @@ from Hertz (1999).
 S<Iij = Fij*ln(Fij/Pi)>
 
 In addition, we calculate a "corrected" information content which
-takes pseudo-weights into account.
+takes pseudo-counts into account.
 
 
 S<I''ij = F''ij*ln(F''ij/Pi)>
 
 =item P-value
 
-The P-value indicates the probability to observe at least Cij
+The P-value indicates the probability to observe at least Nij
 occurrences of a residue at a given position of the matrix. It is
 calculated with the binomial formula:
 
-    k=C.j    C.j!      k      Cij-k
+    k=N.j    N.j!      k      Nij-k
 Pij= SUM  ---------- Pi (1-Pi)
-    k=Cij k!(C.j-k)!
+    k=Nij k!(N.j-k)!
 
 where
 
 =over
 
-=item Cij 
+=item Nij
 
 is the number of occurrences of residue i at position j of
 the matrix.
 
-=item C.j 
+=item N.j 
 
 is the sum of all residue occurrences at position j of the
 matrix.
@@ -781,14 +790,14 @@ sub to_patser {
     ## Calculate number width
     my $number_width = 0;
     if ($col_width) {
-	$number_width = $col_width - 1;
+      $number_width = $col_width - 1;
     }
     if ($type eq "counts") {
-	$decimals = 0;
+      $decimals = 0;
     } else {
-	unless ($decimals) {
-	    $decimals = $number_width - 2;
-	}
+      unless ($decimals) {
+	$decimals = $number_width - 2;
+      }
     }
 
     ################################################################
@@ -940,7 +949,7 @@ sub calcWeights {
     if (defined($self->{decimals})) {
       $decimals = $self->get_attribute("decimals");
     } else {
-      $decimals = 3;
+      $decimals = 1;
     }
 
     ## Calculate the weights
@@ -1131,7 +1140,7 @@ Return the RSAT::MarkovModel object associated to the matrix
 =cut
 sub getMarkovModel {
     my ($self) = @_;
-    return $self->{markov_model};
+    return $self->{bg_markov_model};
 }
 
 
@@ -1141,7 +1150,7 @@ sub getMarkovModel {
 =item getCrudeFrequencies()
 
 Return the matrix of crude frequencies, i.e. NOT corrected by
-pseudo-weights.
+pseudo-counts.
 
 =cut
 sub getCrudeFrequencies {
@@ -1161,8 +1170,13 @@ Link the matrix to a specified RSAT::MarkovModel object
 
 =cut
 sub setMarkovModel {
-    my ($self,$bg_model) = @_;
-    $self->set_attribute("markov_model", $bg_model);
+  my ($self,$bg_model) = @_;
+  $self->set_attribute("bg_markov_model", $bg_model);
+  $self->set_parameter("bg_markov_order", $bg_model->get_attribute("order"));
+
+  ## TO DO: specify priors from the sufix probabilities of the Markov model
+  my %bg_suffix_proba = $bg_model->get_attribute("suffix_proba");
+  $self->setPrior(%bg_suffix_proba);
 }
 
 
@@ -1172,15 +1186,15 @@ sub setMarkovModel {
 =item setCrudeFrequencies($nrow, $ncol, @crudeFrequencies)
 
 Specify the matrix of crude frequencies, i.e; NOT corrected by
-pseudo-weights.
+pseudo-counts.
 
 =cut
 sub setCrudeFrequencies {
-    my ($self,$nrow, $ncol, @crudeFrequencies) = @_;
-    $self->force_attribute("nrow", $nrow);
-    $self->force_attribute("ncol", $ncol);
-    @{$self->{crudeFrequencies}} = @crudeFrequencies;
-    $self->force_attribute("crudeFrequencies_specified", 1);
+  my ($self,$nrow, $ncol, @crudeFrequencies) = @_;
+  $self->force_attribute("nrow", $nrow);
+  $self->force_attribute("ncol", $ncol);
+  @{$self->{crudeFrequencies}} = @crudeFrequencies;
+  $self->force_attribute("crudeFrequencies_specified", 1);
 }
 
 ################################################################
@@ -1189,7 +1203,7 @@ sub setCrudeFrequencies {
 =item calcFrequencies()
 
 Calculate frequencies from the count matrix (corrected with
-pseudo-weights).
+pseudo-counts).
 
 =cut
 sub calcFrequencies {
@@ -1225,7 +1239,7 @@ sub calcFrequencies {
     &RSAT::message::Debug("&RSAT::matrix::calcFrequencies()", "residue priors", join(" ", %prior)) 
       if ($main::verbose >= 4);
 
-    ## pseudo-weight
+    ## pseudo-count
     my $pseudo = $self->get_attribute("pseudo") || 0;
 
     ## count matrix
@@ -1245,13 +1259,13 @@ sub calcFrequencies {
 	my $occ = $matrix[$c][$r];
 	$col_sum += $occ;
 	if ($self->get_attribute("equi_pseudo")) {
-	  ## Equiprobable repartition of the pseudo-weight
+	  ## Equiprobable repartition of the pseudo-count
 	  $frequencies[$c][$r] = $occ + $pseudo/$alphabet_size;
-	  #	&RSAT::message::Info("Equiprobable distribution of the pseudo-weight") if ($main::verbose >= 10);
+	  #	&RSAT::message::Info("Equiprobable distribution of the pseudo-count") if ($main::verbose >= 10);
 	} else {
-	  ## Distribute pseudo-weight according to prior
+	  ## Distribute pseudo-count according to prior
 	  $frequencies[$c][$r] = $occ + $pseudo*$prior{$letter};
-	  #		&RSAT::message::Info("Pseudo-weight distributed according to prior") if ($main::verbose >= 10);
+	  #		&RSAT::message::Info("pseudo-count distributed according to prior") if ($main::verbose >= 10);
 	}
 	#	    &RSAT::message::Debug("freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum) unless ($letter);
 	#	    &RSAT::message::Debug("freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum) if ($main::verbose >= 10);
@@ -1319,7 +1333,7 @@ sub calcProbabilities {
 	}
     }
 
-    ## pseudo-weight
+    ## pseudo-count
     my $pseudo = $self->get_attribute("pseudo");
     
     ## count matrix
@@ -2196,6 +2210,17 @@ distributions with 3 decimals than with 2 decimals.
 =cut
 sub calcTheorScoreDistrib {
   my ($self, $score_type) = @_;
+
+  ## Bg model defined as Markov model
+  if ($self->get_attribute('bg_markov_order') > 0) {
+    return $self->calcTheorScoreDistribMarkov();
+  } else {
+    return $self->calcTheorScoreDistribBernoulli();
+  }
+}
+
+sub calcTheorScoreDistribBernoulli {
+  my ($self, $score_type) = @_;
   $score_type = $score_type || "weights";
 
   ################################################################
@@ -2218,7 +2243,8 @@ sub calcTheorScoreDistrib {
     @scores = $self->getFrequencies();
   }
 
-  &RSAT::message::TimeWarn("Calculating theoretical distribution of", $score_type, 
+  &RSAT::message::TimeWarn("Calculating theoretical distribution of ", $score_type,
+			   "Bernoulli model",
 			   "matrix", $self->get_attribute("name"),
 			   "Precision: ".$decimals." decimals",
 			  ) if ($main::verbose >= 2);
@@ -2346,12 +2372,12 @@ sub calcTheorScoreDistrib {
 
 =item B<calcTheorScoreDistribMarkov>
 
-By Jean-ValŽry and Morgane, still draft
+By Jean-Valery and Morgane, still draft
 
 =cut
 sub calcTheorScoreDistribMarkov {
-  my ($self, $score_type) = @_;
-  $score_type = $score_type || "frequencies";
+  my ($self) = @_;
+  my $score_type = "weights";
 
   ################################################################
   ## This parameter drastically affects the speed of computation By
@@ -2362,125 +2388,140 @@ sub calcTheorScoreDistribMarkov {
   my $decimals = $self->get_attribute("decimals");
   my $score_format = "%.${decimals}f";
 
-  my @scores;
-  if (lc($score_type) eq "crudefrequencies") {
-    @scores = $self->getCrudeFrequencies();
-  } elsif (lc($score_type) eq "frequencies") {
-    @scores = $self->getFrequencies();
-  }
-  
+  ################################################################
+  ## For Markov models, we don't work with a weight matirx, but we
+  ## treat separately the PSSM frequencies, and the transition
+  ## frequencies of the bg model.
+
+  my @scores = $self->getFrequencies();
+
   ## Markov Model
   my $bg_model = $self->getMarkovModel();
   my $order = $bg_model->get_attribute("order");
 
-  &RSAT::message::TimeWarn("Calculating theoretical distribution of", $score_type, 
+  &RSAT::message::TimeWarn("Calculating theoretical distribution of", $score_type,
+			   "Background Markov Model order:".$order,
 			   "matrix", $self->get_attribute("name"),
 			   "Precision: ".$decimals." decimals",
-			   "Background Markov Model order:".$order,
 			  ) if ($main::verbose >= 2);
 
   my $nrow = $self->nrow();
   my $ncol = $self->ncol();
   my @alphabet = $self->getAlphabet();
-  
+
   my %alphabetNb =();
   foreach my $i (0..$#alphabet){
   	$alphabetNb{$alphabet[$i]} = $i;
   }
 
-  
-  ## Initialize the score probabilities with the first word of markov order size
+  ################################################################
+  ## Initialize the score probabilities with the first word of Markov
+  ## order size
   my %distrib_proba =();
   my $initial_col = $order-1;
-	
-	foreach my $initial_prefix ($bg_model->get_prefixes()){
-		$prefixes{$initial_prefix} = 1;
-		
-		## get frequency of the prefix, under matrix model
-		## treat separately each letter of the prefix
-		my $prefix_freq_M = 1;
-		foreach my $c (0..$initial_col) {			
-			my $letter = substr($initial_prefix, $c,1);
-			my $r = $alphabetNb{$letter};
-			$prefix_freq_M *= $scores[$c][$r];
-			&RSAT::message::Debug("prefix:",$initial_prefix,"c",$c,"letter",$letter,"nb",$r,"score",$scores[$c][$r]) if ($main::verbose >= 10);
-		}
+  my $p = 0;
+  my @prefixes = $bg_model->get_prefixes();
+  my $prefix_nb = scalar(@prefixes);
+  &RSAT::message::TimeWarn("Computing weight probabilities for all prefixes")
+      if ($main::verbose >= 3);
+  foreach my $initial_prefix (@prefixes) {
+    $p++;
+    &RSAT::message::Debug("Computing weight probabilities for prefix", $initial_prefix, $p."/".$prefix_nb) 
+      if ($main::verbose >= 4);
+    $prefixes{$initial_prefix} = 1;
+    ## get frequency of the prefix, under matrix model
+    ## treat separately each letter of the prefix
+    my $prefix_freq_M = 1;
+    foreach my $c (0..$initial_col) {			
+      my $letter = substr($initial_prefix, $c,1);
+      my $r = $alphabetNb{$letter};
+      $prefix_freq_M *= $scores[$c][$r];
+      &RSAT::message::Debug("prefix:",$initial_prefix,"c",$c,"letter",$letter,"nb",$r,"score",$scores[$c][$r]) if ($main::verbose >= 10);
+    }
 
-		## get frequency of the prefix, under bg model
-		my $prefix_freq_B = $bg_model->{prefix_proba}->{$initial_prefix};
-			
-		## score
-		my $score_init = log($prefix_freq_M/$prefix_freq_B); # Beware here, log is ln !!!
-		## discretisation of the scores
-		$score_init = sprintf($score_format, $score_init);
-		
-		## proba
-		if($distrib_proba{$score_init}->{$initial_prefix}){
-			$distrib_proba{$score_init}->{$initial_prefix} += $prefix_freq_B;
-			} else {
-				$distrib_proba{$score_init}->{$initial_prefix} = $prefix_freq_B;
-			}		
-	&RSAT::message::Debug($initial_prefix,"\tscore_init = log( $prefix_freq_M / $prefix_freq_B)\t= $score_init\n",
-	"\tproba\t = $prefix_freq_B\n") if ($main::verbose >= 10);
+    ## get frequency of the prefix, under bg model
+    my $prefix_freq_B = $bg_model->{prefix_proba}->{$initial_prefix};
+
+    ## score
+
+    my $score_init;
+    if (($prefix_freq_M == 0) || ($prefix_freq_B == 0)){
+      $score_init = 0;
+    } else {
+      $score_init = log($prefix_freq_M/$prefix_freq_B); # Beware here, log is ln !!!
+    }
+
+    ## discretisation of the scores
+    $score_init = sprintf($score_format, $score_init);
+
+    ## proba
+    if ($distrib_proba{$score_init}->{$initial_prefix}) {
+      $distrib_proba{$score_init}->{$initial_prefix} += $prefix_freq_B;
+    } else {
+      $distrib_proba{$score_init}->{$initial_prefix} = $prefix_freq_B;
+    }
+    &RSAT::message::Debug($initial_prefix,"\tscore_init = log( $prefix_freq_M / $prefix_freq_B)\t= $score_init\n",
+			  "\tproba\t = $prefix_freq_B\n") if ($main::verbose >= 10);
+  }
+
+  ################################################################
+  ## Iteration on remaining columns of the matrix
+  foreach my $c ($order..($ncol-1)) {
+    &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 3);
+
+    my @curr_prefix = sort(keys(%prefixes));
+    my @previous_scores = (keys(%distrib_proba));
+
+    %prefixes =();
+    my %current_distrib_proba =();
+
+    ## iterate on all possible prefixes
+    foreach my $prefix (@curr_prefix) {
+      &RSAT::message::Debug("col",$c,"prefix",$prefix) if ($main::verbose >= 10);
+      foreach my $suffix (@alphabet) {
+
+	## get frequency of the suffix, under matrix model
+	my $r = $alphabetNb{$suffix};
+	my $suffix_freq_M = $scores[$c][$r];
+
+	## get transition frequency, from prefix to suffix (bg model)
+	my $suffix_transition_B = $bg_model->{transitions}->{$prefix}->{$suffix};
+
+	## score
+	my $curr_score = log($suffix_freq_M/$suffix_transition_B); # Beware here, log is ln !!!
+	## discretisation of the scores
+	$curr_score = sprintf($score_format, $curr_score);
+
+	&RSAT::message::Debug("$prefix->$suffix","curr_score = log( $suffix_freq_M / $suffix_transition_B ) = $curr_score") 
+	  if ($main::verbose >= 10);
+	foreach my $prev_score (@previous_scores) {
+
+	  if ($distrib_proba{$prev_score}->{$prefix}) {
+
+	    ## new scores for this position
+	    my $sum_score = $curr_score + $prev_score;
+	    $sum_score = sprintf($score_format, $sum_score);
+
+	    ## proba
+	    ## summing (in fact, multiplying) with proba of previous state (AND)
+	    my $curr_proba = $distrib_proba{$prev_score}->{$prefix} * $suffix_transition_B;
+
+	    ## prefix for next iteration
+	    my $current_word = $prefix.$suffix;
+	    my $prefix_tag = substr($current_word, -$order);
+	    $prefixes{$prefix_tag} = 1;
+
+	    if ($current_distrib_proba{$sum_score}->{$prefix_tag}) {
+	      $current_distrib_proba{$sum_score}->{$prefix_tag} += $curr_proba;
+	    } else {
+	      $current_distrib_proba{$sum_score}->{$prefix_tag} = $curr_proba;
+	    }
+	    &RSAT::message::Debug("\tprefix", $prefix,"prev_score",$prev_score ,"sum_score", $sum_score ,
+				  "proba",$curr_proba) if ($main::verbose >= 10);
+	  }
 	}
-	
-	## iteration on remaining columns of the matrix
-	foreach my $c ($order..($ncol-1)){
-
-		my @curr_prefix = sort(keys(%prefixes));
-		my @previous_scores = (keys(%distrib_proba));
-	
-		%prefixes =();
-		my %current_distrib_proba =();
-	
-		## iterate on all possible prefixes
-		foreach my $prefix (@curr_prefix){
-		&RSAT::message::Debug("col",$c,"prefix",$prefix) if ($main::verbose >= 10);
-		foreach my $suffix (@alphabet) {
-		
-			## get frequency of the suffix, under matrix model
-			my $r = $alphabetNb{$suffix};
-			my $suffix_freq_M = $scores[$c][$r];
-		
-			## get transition frequency, from prefix to suffix (bg model)
-			my $suffix_transition_B = $bg_model->{transitions}->{$prefix}->{$suffix};
-			
-			## score
-			my $curr_score = log($suffix_freq_M/$suffix_transition_B); # Beware here, log is ln !!!
-			## discretisation of the scores
-			$curr_score = sprintf($score_format, $curr_score);
-			
-		&RSAT::message::Debug("$prefix->$suffix","curr_score = log( $suffix_freq_M / $suffix_transition_B ) = $curr_score") 
-		if ($main::verbose >= 10);
- 			foreach my $prev_score (@previous_scores){	
- 							
- 				if($distrib_proba{$prev_score}->{$prefix}){
-
- 					## new scores for this position
- 					my $sum_score = $curr_score + $prev_score;
- 					$sum_score = sprintf($score_format, $sum_score);
- 					
- 					## proba
- 					## summing (in fact, multiplying) with proba of previous state (AND)
- 					my $curr_proba = $distrib_proba{$prev_score}->{$prefix} * $suffix_transition_B;
- 					
- 					## prefix for next iteration
- 					my $current_word = $prefix.$suffix;
- 					my $prefix_tag = substr($current_word, -$order);
-					$prefixes{$prefix_tag} = 1;
- 								
- 					if($current_distrib_proba{$sum_score}->{$prefix_tag}){
-						$current_distrib_proba{$sum_score}->{$prefix_tag} += $curr_proba;
-					} else {
-						$current_distrib_proba{$sum_score}->{$prefix_tag} = $curr_proba;
-					}
-
-					&RSAT::message::Debug("\tprefix", $prefix,"prev_score",$prev_score ,"sum_score", $sum_score ,
-					"proba",$curr_proba) if ($main::verbose >= 10);
- 				}		
- 			}	
-		}
-	}
+      }
+    }
 
 	%distrib_proba = ();
 	%distrib_proba = %current_distrib_proba;

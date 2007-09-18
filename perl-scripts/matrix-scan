@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.85 2007/09/06 14:55:13 morgane Exp $
+# $Id: matrix-scan,v 1.86 2007/09/18 15:47:32 jvanheld Exp $
 #
 # Time-stamp: <2007-09-06 14:34:45 jturatsi>
 #
@@ -99,16 +99,17 @@ can directly be used as input for the program I<feature-map>.
 
 =head1 SCORING SCHEME
 
+=head2 WEIGHT SCORE
+
 The program scans the input sequences with a position-specific scoring
 matrix (PSSM) by selecting, at each position, a sequence segment (S)
 of the same length as the matrix, and assigning a score to this
 segment.
 
-The secgment score (weight) is calculated according to the theory
-developed by Jerry Hertz and Gary Stormo, but with the capability to
-use Markov chain-based background models, as prposed by Thijs et
-al. (2001).
-
+The segment score (weight) is calculated according to the theory
+developed by Jerry Hertz and Gary Stormo (1999), but with the
+capability to use Markov chain-based background models, as prposed by
+Thijs et al. (2001).
 
 The weight of a sequence segment (Ws) is calculated as the log-ratio
 between two probabilities:
@@ -133,10 +134,49 @@ model.
 By default, the program uses natural logarithms, but the option -base
 allows to specify any alternative base (e.g. 2 to obtain bit units);
 
+=head2 MOTIF MODEL
 
-=head1 BACKGROUND MODELS
+The position-specific scoring matrix is generally built from an
+alignment of transcription factor binding sites. The matrix indicates
+the absolute frequency (Nij = number of occurrences) of each residue
+(i = row) at each position (j = column) of the alignment.
+
+Note: some programs use "vertical" matrices, where rows represents
+positions and columns residues. See I<convert-matrix> for a
+description of PSSM formats.
+
+=head3 Pseudo-counts
+
+Relative frequencies can be corrected by a pseudo-count (b) to reduce
+the bias due to the small number of observations.
+
+The pseudo-count an be shared either in an equiprobable way,
+
+  S<F''ij=(Nij + b/A)/[SUMi(Nij)+b]>
+
+or according to residue prior frequencies.
+
+  S<F''ij=(Nij + b*Pi)/[SUMi(Nij)+b]>
+
+where
 
 =over
+
+=item Pi
+
+is the prior frequency for residue i
+
+=item A
+
+is the size of the alphabet (A=4 for DNA).
+
+=item b
+
+is the pseudo-count, which is "shared" between residues according to
+their prior frequencies.
+
+
+=head2 BACKGROUND MODELS
 
 An essential parameter of any pattern detection approach is the choice
 of an appropriate background model. This model is used to estimate the
@@ -144,13 +184,20 @@ probability for each site to occur by chance, rather than as an
 instance of the motif.
 
 The program matrix-scan supports Markov models of arbitrary order as
-background models. A Markov model of order m means that the
-probability of each residue depends on the m preceding residues in the
-sequence. Note that a Markov model of order 0 corresponds to a
-Bernoulli model, since eahc residue is independent from the preceding
-ones.
+background models. A Markov model of I<order m> means that the
+probability of each residue depends on the I<m> preceding residues in
+the sequence. Note that a Markov model of order 0 corresponds to a
+Bernoulli model (each residue is independent from the preceding ones).
 
-A variety of options for specifying the background model.
+Markov models are represented as transition matrices, where each row
+represents a prefix and each column a residue (suffix), and each cell
+represents the conditional probability I<P(r|prefix)> of observing
+residue I<r> at a given position, given the prefix (the I<m> preceding
+letters).
+
+=head3 Background model specification
+
+The background model can be specified in different ways.
 
 =over
 
@@ -185,8 +232,23 @@ model. The required sequence length increases exponentially with the
 Markov order. This option is thus usually suitable for short order
 models only (-markov 0 to 1).
 
-=back
+=head3 Pseudo-frequencies for the background model
 
+The concept of pseuo-count can be extended to B<pseudo-frequencies> for
+the background model, in order to increase the robustness of BG models
+when the training sequence set is too small. This is particularly
+important for the adaptie models, which are trained on relatively
+short sliding windows (a few hundreds of bases).
+
+The reason for using pseudo-frequencies rather than pseudo-counts is
+that background models are usually defined in terms of relative
+frequencies, considered as estimates of prior frequencies. Since the
+absolute counts used for estimating those probabilities are not always
+available, we introduce the correction in terms of pseudo-frequencies.
+
+## Jean Valery & Morgane continuent l'explication
+
+S<P'(r|prefix)=((P(r|prefix) + b/A)/(SUMi[P(i|prefix)]+b)>
 
 =back
 
@@ -208,7 +270,7 @@ genes. Nucleic Acids Res 31, 1753-64.
 Combining evidence using p-values: application to sequence homology
 searches. Bioinformatics 14, 48-54.
 
-=item Hertz, G.Z., G.W. Hartzell, 3rd, and G.D. Stormo (1990). 
+=item Hertz, G.Z., G.W. Hartzell, 3rd, and G.D. Stormo (1990).
 
 Identification of consensus patterns in unaligned DNA sequences known
 to be functionally related. Comput Appl Biosci, 6(2): p. 81-92.
@@ -1641,13 +1703,19 @@ allows to use the command within a pipe.
 =cut
 	} elsif ($arg eq "-o") {
 	    $main::outfile{output} = shift(@arguments);
-	    
+
 	    ## Pseudo weight
 =pod
 
 =item B<-pseudo pseudo_counts>
 
-Pseudo-weight.
+
+Pseudo-count for the matrix (default: 1). 
+
+The pseudo-count reflects the possibility that residues that were not
+(yet) observed in the model might however be valid for future
+observations. The pseudo-count is used to compute the corrected
+residue frequencies.
 
 =cut
 	} elsif ($arg eq "-pseudo") {
@@ -1663,11 +1731,11 @@ Pseudo-weight.
 
 =item B<-equi_pseudo>
 
-If this option is called, the pseudo-weight is distributed in an equiprobable
-way between residues.
+If this option is called, the pseudo-weight is distributed in an
+equiprobable way between residues.
 
-By default, the pseudo-weight is distributed proportionally to residue priors, except for 
-the -window option where equipseudo is default.
+By default, the pseudo-weight is distributed proportionally to residue
+priors, except for the -window option where equipseudo is default.
 
 =cut
 
