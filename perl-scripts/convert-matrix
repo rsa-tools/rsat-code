@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.39 2007/08/14 11:15:35 jvanheld Exp $
+# $Id: convert-matrix,v 1.40 2007/09/18 15:48:58 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -21,7 +21,7 @@ use RSAT::MatrixReader;
 
 #### initialise parameters ####
 my $start_time = &AlphaDate();
-$decimals = 2;
+$decimals = 1;
 $pseudo_weight = 1;
 $equi_pseudo = 0;
 $max_profile = 24;
