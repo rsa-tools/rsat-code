@@ -47,7 +47,7 @@ $supported_output_formats = join(",", @supported_output_formats);
 
 =head1 DESCRIPTION
 
-Class for handling a Markov model. 
+Class for handling a Markov model.
 
 =cut
 
@@ -701,25 +701,18 @@ sub add_pseudo_freq {
   ## Compute pseudo-corrected sums per prefix
   &RSAT::message::Debug("Total prefix sum", $total_prefix_sum, $freq_sum) if ($main::verbose >= 5);
   my %prefix_sum_pseudo = ();
-  my $prefix_pseudo_count = $freq_sum*$pseudo_freq/scalar(@prefixes);
+  my $prefix_pseudo_correction = $freq_sum*$pseudo_freq/scalar(@prefixes);
   foreach my $prefix (@prefixes) {
-    $prefix_sum_pseudo{$prefix} = $self->{prefix_sum}->{$prefix}*(1-$pseudo_freq) + $prefix_pseudo_count;
-  #  &RSAT::message::Debug("prefix sum", $prefix, $self->{prefix_sum}->{$prefix},
-#			  "corrected prefix sum", $prefix_sum_pseudo{$prefix})
-  #    if ($main::verbose >= 5);
+    $prefix_sum_pseudo{$prefix} = $self->{prefix_sum}->{$prefix}*(1-$pseudo_freq) + $prefix_pseudo_correction;
   }
   $self->set_hash_attribute("prefix_sum_pseudo", %prefix_sum_pseudo);
 
   ################################################################
   ## Compute pseudo-corrected sums per suffix
   my %suffix_sum_pseudo = ();
-  my $suffix_pseudo_count = $freq_sum*$pseudo_freq/scalar(@suffixes);
+  my $suffix_pseudo_correction = $freq_sum*$pseudo_freq/scalar(@suffixes);
   foreach my $suffix (@suffixes) {
-    $suffix_sum_pseudo{$suffix} = $self->{suffix_sum}->{$suffix}*(1-$pseudo_freq) + $suffix_pseudo_count;
-#    &RSAT::message::Debug("suffix sum", $suffix, $self->{suffix_sum}->{$suffix},
-#			  "corrected suffix sum", $suffix_sum_pseudo{$suffix})
-#      if ($main::verbose >= 10);
-#    $self->{suffix_sum_pseudo}->{$suffix} = $self->{suffix_sum}->{$suffix}*(1-$pseudo_freq) + $suffix_pseudo_count;
+    $suffix_sum_pseudo{$suffix} = $self->{suffix_sum}->{$suffix}*(1-$pseudo_freq) + $suffix_pseudo_correction;
   }
   $self->set_hash_attribute("suffix_sum_pseudo", %suffix_sum_pseudo);
 
@@ -733,41 +726,26 @@ sub add_pseudo_freq {
     my $prefix_sum_pseudo = $self->{prefix_sum_pseudo}->{$prefix};
 
     ## pseudo count varies depending on the prefix sum
-#    my $diff = ($prefix_sum_pseudo - $prefix_sum);
-#    my $diff = ($prefix_sum_pseudo - $prefix_sum);
-#    my $pseudo_count = abs($diff)/$alpha_size;
-    my $pseudo_count = $pseudo_freq*$prefix_sum_pseudo/$alpha_size;
+    my $pseudo_correction = $pseudo_freq*$prefix_sum_pseudo/$alpha_size;
+#    my $pseudo_correction = $prefix_sum_pseudo/$alpha_size;
 
     ## Treat the cases where a prefix was absent from uncorrected
     ## frequencies
-#    if ($prefix_sum_pseudo == 0) {
-#      $pseudo_count = $pseudo_freq;
-#    }
-#    &RSAT::message::Debug("Prefix", $prefix, $prefix_sum_pseudo, "Pseudo count=".$pseudo_count) if ($main::verbose >= 5);
-
     foreach my $suffix (@suffixes) {
       my $oligo_freq =  $self->{oligo_freq}->{$prefix}->{$suffix}||0;
-#      if (defined($self->{oligo_freq}->{$prefix}->{$suffix})) {
-#	## Adding the pseudo-freq on the background model.
 
+      ## Adding the pseudo-freq on the background model
       my $oligo_freq_pseudo;
       if ($prefix_sum > 0) {
-	$oligo_freq_pseudo = (1-$pseudo_freq)*$oligo_freq*$prefix_sum_pseudo/$prefix_sum + $pseudo_count;
-      } else {			## missing transitions
+	$oligo_freq_pseudo = (1-$pseudo_freq)*$oligo_freq*$prefix_sum_pseudo/$prefix_sum + $pseudo_correction;
+#	$oligo_freq_pseudo = (1-$pseudo_freq)*$oligo_freq*$prefix_sum_pseudo/$prefix_sum + $pseudo_freq*$pseudo_correction;
+      } else {
+	## missing transitions
       	$oligo_freq_pseudo = $prefix_sum_pseudo/$alpha_size;
+#      	$oligo_freq_pseudo = $pseudo_correction;
       }
       $self->{oligo_freq_pseudo}->{$prefix}->{$suffix} = $oligo_freq_pseudo;
       $freq_sum_pseudo += $oligo_freq_pseudo;
-#      &RSAT::message::Debug("Corrected transition count", $prefix.".".$suffix,
-#			    "pseudo_freq=".$pseudo_freq,
-#			    "prefix_sum=".$prefix_sum,
-#			    "prefix_sum_pseudo=".$prefix_sum_pseudo,
-#			    "(1-${pseudo_freq})*${oligo_freq}=".((1-$pseudo_freq)*$oligo_freq),
-#			    "pseudo_count=".$pseudo_count,
-#			    "oligo_freq=".$oligo_freq,
-#			    "oligo_freq_pseudo=".$oligo_freq_pseudo,
-#			   ) if ($main::verbose >= 10);
-
     }
   }
 
