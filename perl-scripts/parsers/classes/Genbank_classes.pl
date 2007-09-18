@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: Genbank_classes.pl,v 1.11 2007/04/26 13:36:59 rsat Exp $
+# $Id: Genbank_classes.pl,v 1.12 2007/09/18 22:43:21 jvanheld Exp $
 #
 # Time-stamp: <2003-08-09 00:37:11 jvanheld>
 #
@@ -166,9 +166,14 @@ package Genbank::Feature;
     my $id;
     do {
       $attr = $attributes[$i];
-      my @values = $self->get_attribute($attr); 
+      my @values = $self->get_attribute($attr);
       $id = shift(@values);
       $i++;
+      if ($id eq $main::null) {
+	$id = "";
+	&RSAT::message::Debug("&Genbank::Feature::UseAttributeAsID()",
+			      "Skipping attribute", $attr, "because has a null value", $main::null) if ($main::verbose >= 5);
+      }
     } until (($id) || ($i > $#attributes));
     if ($id) {
       $self->force_attribute("id", $id);
