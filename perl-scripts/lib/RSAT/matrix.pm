@@ -9,6 +9,8 @@ package RSAT::matrix;
 require "RSA.seq.lib";
 use RSAT::table;
 use RSAT::stats;
+use RSAT::MarkovModel;
+use Data::Dumper;
 
 @ISA = qw( RSAT::GenericObject RSAT::table);
 
@@ -1122,6 +1124,20 @@ sub setFrequencies {
 ################################################################
 =pod
 
+=item getMarkovModel()
+
+Return the RSAT::MarkovModel object associated to the matrix
+
+=cut
+sub getMarkovModel {
+    my ($self) = @_;
+    return $self->{markov_model};
+}
+
+
+################################################################
+=pod
+
 =item getCrudeFrequencies()
 
 Return the matrix of crude frequencies, i.e. NOT corrected by
@@ -1135,6 +1151,20 @@ sub getCrudeFrequencies {
     }
     return @{$self->{crudeFrequencies}};
 }
+
+################################################################
+=pod
+
+=item setMarkovModel($bg_model)
+
+Link the matrix to a specified RSAT::MarkovModel object
+
+=cut
+sub setMarkovModel {
+    my ($self,$bg_model) = @_;
+    $self->set_attribute("markov_model", $bg_model);
+}
+
 
 ################################################################
 =pod
@@ -2310,6 +2340,250 @@ sub calcTheorScoreDistrib {
   $self->set_hash_attribute($score_type."_inv_cum_proba", %score_inv_cum_proba);
   $self->force_attribute($score_type."_inv_cum_proba_specified", 1);
 }
+
+################################################################
+=pod
+
+=item B<calcTheorScoreDistribMarkov>
+
+By Jean-ValŽry and Morgane, still draft
+
+=cut
+sub calcTheorScoreDistribMarkov {
+  my ($self, $score_type) = @_;
+  $score_type = $score_type || "frequencies";
+
+  ################################################################
+  ## This parameter drastically affects the speed of computation By
+  ## reducing the score to 2 decimals, the nmber of possible scors is
+  ## reduced to ~5000 for a typical weight matrix
+  ## This prevents the comptation time to increase exponentially with
+  ## the matrix width.
+  my $decimals = $self->get_attribute("decimals");
+  my $score_format = "%.${decimals}f";
+
+  my @scores;
+  if (lc($score_type) eq "crudefrequencies") {
+    @scores = $self->getCrudeFrequencies();
+  } elsif (lc($score_type) eq "frequencies") {
+    @scores = $self->getFrequencies();
+  }
+  
+  ## Markov Model
+  my $bg_model = $self->getMarkovModel();
+  my $order = $bg_model->get_attribute("order");
+
+  &RSAT::message::TimeWarn("Calculating theoretical distribution of", $score_type, 
+			   "matrix", $self->get_attribute("name"),
+			   "Precision: ".$decimals." decimals",
+			   "Background Markov Model order:".$order,
+			  ) if ($main::verbose >= 2);
+
+  my $nrow = $self->nrow();
+  my $ncol = $self->ncol();
+  my @alphabet = $self->getAlphabet();
+  
+  my %alphabetNb =();
+  foreach my $i (0..$#alphabet){
+  	$alphabetNb{$alphabet[$i]} = $i;
+  }
+
+  
+  ## Initialize the score probabilities with the first word of markov order size
+  my %distrib_proba =();
+  my $initial_col = $order-1;
+	
+	foreach my $initial_prefix ($bg_model->get_prefixes()){
+		$prefixes{$initial_prefix} = 1;
+		
+		## get frequency of the prefix, under matrix model
+		## treat separately each letter of the prefix
+		my $prefix_freq_M = 1;
+		foreach my $c (0..$initial_col) {			
+			my $letter = substr($initial_prefix, $c,1);
+			my $r = $alphabetNb{$letter};
+			$prefix_freq_M *= $scores[$c][$r];
+			&RSAT::message::Debug("prefix:",$initial_prefix,"c",$c,"letter",$letter,"nb",$r,"score",$scores[$c][$r]) if ($main::verbose >= 10);
+		}
+
+		## get frequency of the prefix, under bg model
+		my $prefix_freq_B = $bg_model->{prefix_proba}->{$initial_prefix};
+			
+		## score
+		my $score_init = log($prefix_freq_M/$prefix_freq_B); # Beware here, log is ln !!!
+		## discretisation of the scores
+		$score_init = sprintf($score_format, $score_init);
+		
+		## proba
+		if($distrib_proba{$score_init}->{$initial_prefix}){
+			$distrib_proba{$score_init}->{$initial_prefix} += $prefix_freq_B;
+			} else {
+				$distrib_proba{$score_init}->{$initial_prefix} = $prefix_freq_B;
+			}		
+	&RSAT::message::Debug($initial_prefix,"\tscore_init = log( $prefix_freq_M / $prefix_freq_B)\t= $score_init\n",
+	"\tproba\t = $prefix_freq_B\n") if ($main::verbose >= 10);
+	}
+	
+	## iteration on remaining columns of the matrix
+	foreach my $c ($order..($ncol-1)){
+
+		my @curr_prefix = sort(keys(%prefixes));
+		my @previous_scores = (keys(%distrib_proba));
+	
+		%prefixes =();
+		my %current_distrib_proba =();
+	
+		## iterate on all possible prefixes
+		foreach my $prefix (@curr_prefix){
+		&RSAT::message::Debug("col",$c,"prefix",$prefix) if ($main::verbose >= 10);
+		foreach my $suffix (@alphabet) {
+		
+			## get frequency of the suffix, under matrix model
+			my $r = $alphabetNb{$suffix};
+			my $suffix_freq_M = $scores[$c][$r];
+		
+			## get transition frequency, from prefix to suffix (bg model)
+			my $suffix_transition_B = $bg_model->{transitions}->{$prefix}->{$suffix};
+			
+			## score
+			my $curr_score = log($suffix_freq_M/$suffix_transition_B); # Beware here, log is ln !!!
+			## discretisation of the scores
+			$curr_score = sprintf($score_format, $curr_score);
+			
+		&RSAT::message::Debug("$prefix->$suffix","curr_score = log( $suffix_freq_M / $suffix_transition_B ) = $curr_score") 
+		if ($main::verbose >= 10);
+ 			foreach my $prev_score (@previous_scores){	
+ 							
+ 				if($distrib_proba{$prev_score}->{$prefix}){
+
+ 					## new scores for this position
+ 					my $sum_score = $curr_score + $prev_score;
+ 					$sum_score = sprintf($score_format, $sum_score);
+ 					
+ 					## proba
+ 					## summing (in fact, multiplying) with proba of previous state (AND)
+ 					my $curr_proba = $distrib_proba{$prev_score}->{$prefix} * $suffix_transition_B;
+ 					
+ 					## prefix for next iteration
+ 					my $current_word = $prefix.$suffix;
+ 					my $prefix_tag = substr($current_word, -$order);
+					$prefixes{$prefix_tag} = 1;
+ 								
+ 					if($current_distrib_proba{$sum_score}->{$prefix_tag}){
+						$current_distrib_proba{$sum_score}->{$prefix_tag} += $curr_proba;
+					} else {
+						$current_distrib_proba{$sum_score}->{$prefix_tag} = $curr_proba;
+					}
+
+					&RSAT::message::Debug("\tprefix", $prefix,"prev_score",$prev_score ,"sum_score", $sum_score ,
+					"proba",$curr_proba) if ($main::verbose >= 10);
+ 				}		
+ 			}	
+		}
+	}
+
+	%distrib_proba = ();
+	%distrib_proba = %current_distrib_proba;
+	}
+	
+
+
+## finalisation phase
+my %score_proba =();
+ $proba_sum = 0;
+foreach my $score (keys (%distrib_proba)) {
+	foreach my $prefix (keys(%{$distrib_proba{$score}})) {
+		if ($score_proba{$score}){
+				$score_proba{$score} += $distrib_proba{$score}->{$prefix};
+			} else {
+				$score_proba{$score} = $distrib_proba{$score}->{$prefix};
+			}			
+			$proba_sum += $distrib_proba{$score}->{$prefix};
+	}
+}
+
+&RSAT::message::Debug("proba sum", $proba_sum) if ($main::verbose >= 10);
+
+  ## Calculate the sorted list of score values
+  my $score_proba_cum = 0;
+  my %score_proba_cum = ();
+  my @sorted_scores;
+  my @sorted_scores_inv;
+  if ($score_type eq "weights") {
+    ## take all possible weights between the min and max values
+    my $min_score = &RSAT::stats::min(keys(%score_proba));
+    my $max_score = &RSAT::stats::max(keys(%score_proba));
+  #####  my ($Wmin, $Wmax) = $self->weight_range();
+    ## Round the min and max scores
+    $Wmin = &RSAT::util::trim(sprintf("${score_format}", $Wmin));
+    $Wmax = &RSAT::util::trim(sprintf("${score_format}", $Wmax));
+    my $distrib_min = &RSAT::stats::min($Wmin, $min_score);
+    my $distrib_max = &RSAT::stats::max($Wmax, $max_score);
+    my $break_amplif=(10**$decimals);
+    my $break_min = sprintf("%d", $break_amplif*$distrib_min)-1;
+    my $break_max = sprintf("%d", $break_amplif*$distrib_max)+1;
+    foreach my $break ($break_min..$break_max) {
+      my $score = sprintf($score_format, $break/$break_amplif);
+      push @sorted_scores, $score;
+      unshift @sorted_scores_inv, $score;
+#      &RSAT::message::Debug("BREAKS", $break_min, $break_max, $break_amplif, $break, $score) if ($main::verbose >= 10);
+    }
+  } else {
+    @sorted_scores = sort {$a <=> $b} (keys (%score_proba));
+    @sorted_scores_inv = sort {$b <=> $a} (keys (%score_proba));
+  }
+
+  ## Compute the cumulative distribution
+  foreach my $score (@sorted_scores) {
+    if (defined($score_proba{$score})) {
+      $score_proba_cum += $score_proba{$score};
+    }
+    $score_proba_cum{$score} = $score_proba_cum;
+  }
+
+  ## Compute the inverse cumulative distribution
+  my $score_inv_cum_proba = 0;
+  my %score_inv_cum_proba = ();
+  foreach my $score (@sorted_scores_inv) {
+    if (defined($score_proba{$score})) {
+      $score_inv_cum_proba += $score_proba{$score};
+    }
+    $score_inv_cum_proba{$score} = $score_inv_cum_proba;
+  }
+
+  ## Tricky way to circumvent a problem of numerical approximation: in
+  ## some cases, the computed distrib proba does not contain the
+  ## highest weight value, but its maximum is close to it. To
+  ## circumvent this, we assign the highest non-null proba value.
+  my $proba = 0;
+  my $inv_cum_proba = 0;
+  my $s = -1;
+  do {
+    $s++;
+    my $score = $sorted_scores_inv[$s];
+    $proba = $score_inv_cum_proba{$score};
+    $inv_cum_proba = $score_inv_cum_proba{$score};
+  } until (($proba > 0) || ($s >= $#sorted_scores_inv));
+  if ($s < 5){
+    for my $i (0..($s-1)) {
+      my $score = $sorted_scores_inv[$i];
+      $score_proba{$score} = $proba;
+      $score_inv_cum_proba{$score} = $inv_cum_proba;
+      &RSAT::message::Debug("Fixing the tail of", $score_type,"distribution for score", 
+			    $i."/".$s, $score, $score_proba{$score}, $score_inv_cum_proba{$score}) if ($main::verbose >= 3);
+    }
+  }
+
+  ## Assign the score distributions to the matrix
+  $self->set_hash_attribute($score_type."_proba", %score_proba);
+  $self->force_attribute($score_type."_proba_specified", 1);
+  $self->set_hash_attribute($score_type."_cum_proba", %score_proba_cum);
+  $self->force_attribute($score_type."_cum_proba_specified", 1);
+  $self->set_hash_attribute($score_type."_inv_cum_proba", %score_inv_cum_proba);
+  $self->force_attribute($score_type."_inv_cum_proba_specified", 1);
+}
+
+
 
 
 ################################################################
