@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.36 2007/01/17 23:33:35 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.37 2007/09/18 22:43:21 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -139,10 +139,9 @@ sub ParseAllGenbankFiles {
     my @preferred_ids_cds;
     if (defined($main::preferred_id{cds})) {
       @preferred_ids_cds = $main::preferred_id{cds};
-    } else {
-      @preferred_ids_cds = qw (locus_tag protein_id GI);
     }
-#    die join ("\t", @preferred_ids_cds), "\n";
+    push @preferred_ids_cds, qw (locus_tag protein_id GI GeneID gene); ## These IDs will be used if the preferred ID is not found
+
     &RSAT::message::TimeWarn("Finding preferred IDs for CDS", join(",", @preferred_ids_cds)) if ($main::verbose >= 1);
     foreach my $object ($CDSs->get_objects()) {
       $object->UseAttributesAsID(@preferred_ids_cds);
