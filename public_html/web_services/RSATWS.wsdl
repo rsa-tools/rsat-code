@@ -2250,6 +2250,9 @@ square-root of L divided by L+squareroot of L.
   </message>
 
   <!-- RSAT GRAPH TOOLS MESSAGE -->
+  <message name="convert_graphRequest">
+	   <part name="parameters" element="tns:convert_graphRequest"/>
+  </message>
   <message name="convert_graphResponse">
 	  <part name="output" element="tns:convert_graphResponse"/>
   </message>
