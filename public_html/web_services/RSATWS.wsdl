@@ -1180,31 +1180,6 @@ square-root of L divided by L+squareroot of L.
 		</xsd:element>
 	</xsd:sequence>
 </xsd:complexType>
-<xsd:complexType name="ConvertGraphResponse">
-	<xsd:sequence>
-		<xsd:element name="server" type="xsd:string">
-			<xsd:annotation>
-				<xsd:documentation>
-					Location of the result file on the server. This can be used as input for a further request.
-				</xsd:documentation>
-			</xsd:annotation>
-		</xsd:element>
-		<xsd:element name="command" type="xsd:string">
-			<xsd:annotation>
-				<xsd:documentation>
-					The stand alone command executed on the server.
-				</xsd:documentation>
-			</xsd:annotation>
-		</xsd:element>
-		<xsd:element name="client" type="xsd:string">
-			<xsd:annotation>
-				<xsd:documentation>
-					The results.
-				</xsd:documentation>
-			</xsd:annotation>
-		</xsd:element>
-	</xsd:sequence>
-</xsd:complexType>
 <xsd:complexType name="GraphNodeDegreeRequest">
 	<xsd:sequence>
 		<xsd:element name="informat" type="xsd:string" minOccurs="0">
@@ -2256,7 +2231,6 @@ square-root of L divided by L+squareroot of L.
     
   <message name="compare_classesResponse">
       <part name="output" element="tns:compare_classesResponse"/>
-      
   </message>
 
   <message name="matrix_scanRequest">
@@ -2274,11 +2248,11 @@ square-root of L divided by L+squareroot of L.
   <message name="random_seqResponse">
       <part name="output" element="tns:random_seqResponse"/>
   </message>
+
   <!-- RSAT GRAPH TOOLS MESSAGE -->
   <message name="convert_graphResponse">
 	  <part name="output" element="tns:convert_graphResponse"/>
   </message>
-  
   
   <message name="compare_graphsRequest">
 	  <part name="parameters" element="tns:compare_graphs"/>
@@ -2287,6 +2261,7 @@ square-root of L divided by L+squareroot of L.
   <message name="compare_graphsResponse">
 	  <part name="output" element="tns:compare_graphsResponse"/>
   </message>
+
   <message name="graph_node_degreeRequest">
 	  <part name="parameters" element="tns:graph_node_degree"/>
   </message>
@@ -2294,6 +2269,7 @@ square-root of L divided by L+squareroot of L.
   <message name="graph_node_degreeResponse">
 	  <part name="output" element="tns:graph_node_degreeResponse"/>
   </message>
+
   <message name="random_graphRequest">
 	  <part name="parameters" element="tns:random_graph"/>
   </message>
@@ -2301,6 +2277,7 @@ square-root of L divided by L+squareroot of L.
   <message name="random_graphResponse">
 	  <part name="output" element="tns:random_graphResponse"/>
   </message>
+
   <message name="graph_get_clustersRequest">
 	  <part name="parameters" element="tns:graph_get_clusters"/>
   </message>
@@ -2308,6 +2285,7 @@ square-root of L divided by L+squareroot of L.
   <message name="graph_get_clustersResponse">
 	  <part name="output" element="tns:graph_get_clustersResponse"/>
   </message>
+
   <message name="graph_neighboursRequest">
 	  <part name="parameters" element="tns:graph_neighbours"/>
   </message>
@@ -2391,6 +2369,7 @@ square-root of L divided by L+squareroot of L.
          <documentation>Generates random sequences.
          </documentation>
       </operation>
+
       <!-- 	  RSAT GRAPH TOOLS Porttype -->
       <operation name="convert_graph">
 	      <input name="ConvertGraphRequest" message="tns:convert_graphRequest"/>
