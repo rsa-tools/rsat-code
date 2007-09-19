@@ -12,7 +12,7 @@
 #use strict;
 use SOAP::WSDL;
 use Util::Properties;
-import SOAP::Lite + trace;
+# import SOAP::Lite + trace;
 
 ## Service location
 my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';

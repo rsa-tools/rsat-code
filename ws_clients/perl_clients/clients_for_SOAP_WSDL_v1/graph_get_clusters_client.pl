@@ -1,18 +1,18 @@
 #!/usr/bin/perl -w
-# compare-graphs-client.pl is a perl example of a RSAT convert-graph using the SOAP::WSDL module
+# graph_get_clusters_client.pl is a simple perl example of a RSAT convert-graph using the SOAP::WSDL module
 
 ################################################################
 ##
 ## This script runs a simple demo of the web service interface to the
-## RSAT tool compare-graphs. It sends a request to the server for
-## comparing two graphs
+## RSAT tool convert-graph. It sends a request to the server for
+## converting a file from a format to another one
 ##
 ################################################################
 
 #use strict;
 use SOAP::WSDL;
 use Util::Properties;
-# import SOAP::Lite + trace;
+#import SOAP::Lite + trace;
 
 ## Service location
 my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
@@ -34,17 +34,18 @@ $prop->file_name($property_file);
 $prop->load();
 my %args = $prop->prop_list();
 
-#ARGUMENTS
-$args{Rinputgraph} = `cat $args{Rinputgraph}`;
-$args{Qinputgraph} = `cat $args{Qinputgraph}`;
+$args{inputgraph} = `cat $args{inputgraph}`;
+$args{clusters} = `cat $args{clusters}`;
+
+
 
 my $output_choice = $args{output_choice} || 'both';
 
-warn "\nThis demo script returns the intersection of two graphs \n\n";
+warn "\nThis demo script convert a graph from a format (tab/gml) into another one (tab/gml/dot) \n\n";
 
 ## Send the request to the server
 print "Sending request to the server $server\n";
-my $som = $soap->call('compare_graphs' => 'request' => \%args);
+my $som = $soap->call('graph_get_clusters' => 'request' => \%args);
 
 ## Get the result
 if ($som->fault){ ## Report error if any
