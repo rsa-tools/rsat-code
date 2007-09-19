@@ -9,7 +9,7 @@
 
   <types>
     <xsd:schema targetNamespace="urn:RSATWS" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-
+<!-- RSAT CLASSICAL TOOLS REQUESTS -->
       <xsd:complexType name="RetrieveSequenceRequest">
         <xsd:annotation>
 	  <xsd:documentation>
@@ -1011,7 +1011,500 @@ square-root of L divided by L+squareroot of L.
 	</xsd:element>
        </xsd:sequence>
       </xsd:complexType>
-
+<!-- RSAT GRAPH TOOLS REQUESTS -->
+<xsd:complexType name="ConvertGraphRequest">
+	<xsd:sequence>
+		<xsd:element name="informat" type="xsd:string" minOccurs="1">
+			<xsd:annotation>
+				<xsd:documentation>
+					tab, gml, adj_matrix
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="outformat" type="xsd:string" minOccurs="1">
+			<xsd:annotation>
+				<xsd:documentation>
+					tab, gml, dot, adj_matrix
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="inputgraph" type="xsd:string" minOccurs="1">
+			<xsd:annotation>
+				<xsd:documentation>
+					A graph in the format specified by the informat tag
+				</xsd:documentation>	
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="wcol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that contains an edge weight or an edge label (default none) for the tab-delimited format</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="scol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that contains the source nodes for the tab-delimited format (default = 1)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="tcol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that contains the target nodes for the tab-delimited format (default = 2)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="eccol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that containsthe color of the edge (no default)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="sccol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that contains the color of the source node (no default)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="tccol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that contains the color of the target node (no default)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="undirected" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					The graph is considered as being undirected (useful for the adjacency matrix input and output)
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="layout" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					Specify whether the disposition of each node has to be calculated using the $RSAT/bin/fr_layout program.
+					This option is only useful for GML output.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+	</xsd:sequence>
+</xsd:complexType>
+<xsd:complexType name="CompareGraphsRequest">
+	<xsd:sequence>
+		<xsd:element name="Qinformat" type="xsd:string" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					tab, gml
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="Rinformat" type="xsd:string" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					tab, gml
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="outformat" type="xsd:string" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					tab, gml, dot
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="outweight" type="xsd:string" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					Q (weights of the query graph), R (weights of the reference graph), sum (sum of the weights of the two graphs), mean (mean of the weights of the two graphs), mean.g (geometrical mean of the weights of the two graphs), min (minimum weight), max (maximum weight), Q::R (weight of the two graphs) (default)
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="Rinputgraph" type="xsd:string" minOccurs="1">
+			<xsd:annotation>
+				<xsd:documentation>
+					The reference graph in the format specified by the informat tag
+				</xsd:documentation>	
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="Qinputgraph" type="xsd:string" minOccurs="1">
+			<xsd:annotation>
+				<xsd:documentation>
+					The query graph in the format specified by the informat tag
+				</xsd:documentation>	
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="Qwcol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the query input graph that contains an edge weight or an edge label (default none) for the tab-delimited format</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="Qscol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the query input graph that contains the source nodes for the tab-delimited format (default = 1)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="Qtcol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the query input graph that contains the target nodes for the tab-delimited format (default = 2)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="Rwcol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the reference input graph that contains an edge weight or an edge label (default none) for the tab-delimited format</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="Rscol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the reference input graph that contains the source nodes for the tab-delimited format (default = 1)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="Rtcol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the reference input graph that contains the target nodes for the tab-delimited format (default = 2)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="return" type="xsd:string" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					intersection, union, difference,
+					R.and.Q, Q.and.R, Q.or.R, Q.not.R, R.not.Q, 
+					Q.and.R+Q, Q.and.R+R, R.and.Q+Q,
+					R.and.Q+R, intersection+Q, intersection+R
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="directed" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Indicates whether the graphs must be considered as directed, i.e., an arc from node A to node B is different from an arc from B to A. </xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="self" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					Indicates whether the graphs can admit self-loops, i.e., an arc from a node to itself. Note that the graphs do not specially need to contain actual self-loops, the question is whether it would or not be acceptable for the considered input graphs to contain self-loops.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+	</xsd:sequence>
+</xsd:complexType>
+<xsd:complexType name="ConvertGraphResponse">
+	<xsd:sequence>
+		<xsd:element name="server" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					Location of the result file on the server. This can be used as input for a further request.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="command" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					The stand alone command executed on the server.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="client" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					The results.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+	</xsd:sequence>
+</xsd:complexType>
+<xsd:complexType name="GraphNodeDegreeRequest">
+	<xsd:sequence>
+		<xsd:element name="informat" type="xsd:string" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					tab, gml
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="all" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					The degree of all nodes will be computed
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="inputgraph" type="xsd:string" minOccurs="1">
+			<xsd:annotation>
+				<xsd:documentation>
+					A graph in the format specified by the informat tag
+				</xsd:documentation>	
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="nodefile" type="xsd:string" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					A file containing the nodes for which you want to know the degree
+				</xsd:documentation>	
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="wcol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that contains an edge weight or an edge label (default none) for the tab-delimited format</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="scol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that contains the source nodes for the tab-delimited format (default = 1)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="tcol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that contains the target nodes for the tab-delimited format (default = 2)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+	</xsd:sequence>
+</xsd:complexType>
+<xsd:complexType name="RandomGraphRequest">
+	<xsd:sequence>
+		<xsd:element name="informat" type="xsd:string" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					tab, gml
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="inputgraph" type="xsd:string" minOccurs="1">
+			<xsd:annotation>
+				<xsd:documentation>
+					A graph in the format specified by the informat tag
+				</xsd:documentation>	
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="random_type" type="xsd:string" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					scratch (de novo graph) : don't forget to specify the number of nodes and of edges
+					ER (Erdos-Renyii randomization) : corresponds to the randomization of a input graph, keeping the nodes and the number of edges but       changing its characteristics changing its characteristics
+					node_degree : each node will keep the same degree that in the input graph (edge randomization)
+					node_degree_distrib : the global distribution of node degree will remain the same as in the input graph
+				</xsd:documentation>	
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="wcol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that contains an edge weight or an edge label (default none) for the tab-delimited format</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="scol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that contains the source nodes for the tab-delimited format (default = 1)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="tcol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that contains the target nodes for the tab-delimited format (default = 2)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="edges" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Number of requested edges (for scratch randomization type)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="degree" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Maximal degree of the nodes in the ER random graph</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="nodes" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Number of requested nodes (for scratch randomization type)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="mean" type="xsd:float" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					Mean value on the weight of the arcs. This argument can only be used
+					with the scratch and ER randomization type and must be combined with the -sd option.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="sd" type="xsd:float" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					Standard deviation value of the weight of the arcs. This argument
+					can only be used with the scratch and ER randomization type and must
+					be combined with the -mean option.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="directed" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Indicates whether the graphs must be considered as directed, i.e., an arc from node A to node B is different from an arc from B to A. </xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="no_single" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Prevent the ER / scratch graph from containing nodes with no neighbour.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="duplicate" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					Specifies whether more than one edge may link two nodes. 
+					(by default, duplicated edges are not allowed)
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="col_conservation" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					Only compatible with ER randomization of a graph. Source and target
+					nodes stay source and target nodes in the randomized graph
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="normal" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					This option can only be used with ER randomization type and if the
+					input graph is weighted. Using this option will generate randomly
+					the weight of the output random graph according to a normal
+					distribution of weights. The mean and standard deviation can then be
+					chosen (-mean and -sd option) or will be calculated according to the
+					weights the input graph.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+	</xsd:sequence>
+</xsd:complexType>
+<xsd:complexType name="GraphNeighboursRequest">
+	<xsd:sequence>
+		<xsd:element name="informat" type="xsd:string" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					tab, gml
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="all" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					The neighbours of all nodes will be searched
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="stats" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					Only valid when the number of step is equal to 1. The output
+					file is presented differently, with one line for each seed node.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="self" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					Include each node in its neighborhood, with a distance of 0,
+					even if there is no self-loop at this node. This allows to
+					extract the node together with its neighborhood, rather than the
+					neighborhood only (default). This option cannot be used with the
+					stats option.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="inputgraph" type="xsd:string" minOccurs="1">
+			<xsd:annotation>
+				<xsd:documentation>
+					A graph in the format specified by the informat tag
+				</xsd:documentation>	
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="seedfile" type="xsd:string" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					A file containing the nodes for which you want to know the neighbours
+				</xsd:documentation>	
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="wcol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that contains an edge weight or an edge label (default none) for the tab-delimited format</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="scol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that contains the source nodes for the tab-delimited format (default = 1)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="tcol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that contains the target nodes for the tab-delimited format (default = 2)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="steps" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Maximal number of steps between a seed node and its neighbours. Default: 1.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+	</xsd:sequence>
+</xsd:complexType>
+<xsd:complexType name="GraphGetClustersRequest">
+	<xsd:sequence>
+		<xsd:element name="informat" type="xsd:string" minOccurs="1">
+			<xsd:annotation>
+				<xsd:documentation>
+					tab, gml
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="return" type="xsd:string" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					table, cluster, graph
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="outformat" type="xsd:string" minOccurs="1">
+			<xsd:annotation>
+				<xsd:documentation>
+					tab, gml, dot
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="inputgraph" type="xsd:string" minOccurs="1">
+			<xsd:annotation>
+				<xsd:documentation>
+					A graph in the format specified by the informat tag
+				</xsd:documentation>	
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="clusters" type="xsd:string" minOccurs="1">
+			<xsd:annotation>
+				<xsd:documentation>
+					Specification of the clusters to which belong the nodes. 
+				</xsd:documentation>	
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="wcol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that contains an edge weight or an edge label (default none) for the tab-delimited format</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="scol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that contains the source nodes for the tab-delimited format (default = 1)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="tcol" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>Specify a column of the input graph that contains the target nodes for the tab-delimited format (default = 2)</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="distinct" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					As some nodes may belong to more than one group, using this option will duplicate the nodes belonging to more than one group.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="induced" type="xsd:int" minOccurs="0">
+			<xsd:annotation>
+				<xsd:documentation>
+					Using this option, only the first column of the cluster file will be taken into account. The output graph will thus consist in the graph induced by all nodes of the first column.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+<!-- RSAT CLASSICAL TOOLS Response -->
       <xsd:complexType name="RetrieveSequenceResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -1297,7 +1790,133 @@ square-root of L divided by L+squareroot of L.
 	</xsd:element>
 	 </xsd:sequence>
 	</xsd:complexType>
-
+<!-- RSAT GRAPH TOOL RESPONSE -->
+<xsd:complexType name="ConvertGraphResponse">
+	<xsd:sequence>
+		<xsd:element name="server" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					Location of the result file on the server. This can be used as input for a further request.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="command" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					The stand alone command executed on the server.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="client" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					The results.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+	</xsd:sequence>
+</xsd:complexType>
+<xsd:complexType name="GraphNodeDegreeResponse">
+	<xsd:sequence>
+		<xsd:element name="server" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					Location of the result file on the server. This can be used as input for a further request.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="command" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					The stand alone command executed on the server.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="client" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					The results.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+	</xsd:sequence>
+</xsd:complexType>
+<xsd:complexType name="CompareGraphsResponse">
+	<xsd:sequence>
+		<xsd:element name="server" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					Location of the result file on the server. This can be used as input for a further request.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="command" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					The stand alone command executed on the server.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="client" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					The results.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+	</xsd:sequence>
+</xsd:complexType>
+<xsd:complexType name="GraphNeighboursResponse">
+	<xsd:sequence>
+		<xsd:element name="server" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					Location of the result file on the server. This can be used as input for a further request.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="command" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					The stand alone command executed on the server.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="client" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					The results.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+	</xsd:sequence>
+</xsd:complexType>
+<xsd:complexType name="GraphGetClustersResponse">
+	<xsd:sequence>
+		<xsd:element name="server" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					Location of the result file on the server. This can be used as input for a further request.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="command" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					The stand alone command executed on the server.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="client" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					The results.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+	</xsd:sequence>
+		</xsd:complexType>
+<!-- RSA CLASSICAL TOOLS -->
       <xsd:element name="retrieve_seq">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -1473,10 +2092,100 @@ square-root of L divided by L+squareroot of L.
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
-
+      <!-- RSAT GRAPH TOOLS -->
+      <xsd:element name="convert_graph">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="request" type="tns:ConvertGraphRequest" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
+      
+      <xsd:element name="convert_graphResponse">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="response" type="tns:ConvertGraphResponse" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="compare_graphs">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="request" type="tns:CompareGraphsRequest" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
+      
+      <xsd:element name="compare_graphsResponse">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="response" type="tns:CompareGraphsResponse" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="graph_node_degree">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="request" type="tns:GraphNodeDegreeRequest" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
+      
+      <xsd:element name="graph_node_degreeResponse">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="response" type="tns:GraphNodeDegreeResponse" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="graph_neighbours">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="request" type="tns:GraphNeighboursRequest" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
+      
+      <xsd:element name="graph_neigboursResponse">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="response" type="tns:GraphNeighboursResponse" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="random_graph">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="request" type="tns:RandomGraphRequest" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
+      
+      <xsd:element name="random_graphResponse">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="response" type="tns:RandomGraphResponse" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="graph_get_clusters">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="request" type="tns:GraphGetClustersRequest" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
+      
+      <xsd:element name="graph_get_clustersResponse">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="response" type="tns:GraphGetClustersResponse" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element> 
     </xsd:schema>
   </types>
-
+<!-- RSAT CLASSICAL TOOLS MESSAGE -->
   <message name="retrieve_seqRequest">
       <part name="parameters" element="tns:retrieve_seq"/>
   </message>
@@ -1565,8 +2274,50 @@ square-root of L divided by L+squareroot of L.
   <message name="random_seqResponse">
       <part name="output" element="tns:random_seqResponse"/>
   </message>
-
+  <!-- RSAT GRAPH TOOLS MESSAGE -->
+  <message name="convert_graphResponse">
+	  <part name="output" element="tns:convert_graphResponse"/>
+  </message>
+  
+  
+  <message name="compare_graphsRequest">
+	  <part name="parameters" element="tns:compare_graphs"/>
+  </message>
+  
+  <message name="compare_graphsResponse">
+	  <part name="output" element="tns:compare_graphsResponse"/>
+  </message>
+  <message name="graph_node_degreeRequest">
+	  <part name="parameters" element="tns:graph_node_degree"/>
+  </message>
+  
+  <message name="graph_node_degreeResponse">
+	  <part name="output" element="tns:graph_node_degreeResponse"/>
+  </message>
+  <message name="random_graphRequest">
+	  <part name="parameters" element="tns:random_graph"/>
+  </message>
+  
+  <message name="random_graphResponse">
+	  <part name="output" element="tns:random_graphResponse"/>
+  </message>
+  <message name="graph_get_clustersRequest">
+	  <part name="parameters" element="tns:graph_get_clusters"/>
+  </message>
+  
+  <message name="graph_get_clustersResponse">
+	  <part name="output" element="tns:graph_get_clustersResponse"/>
+  </message>
+  <message name="graph_neighboursRequest">
+	  <part name="parameters" element="tns:graph_neighbours"/>
+  </message>
+  
+  <message name="graph_neighboursResponse">
+	  <part name="output" element="tns:graph_neighboursResponse"/>
+  </message>
+  
   <portType name="RSATWSPortType">
+<!-- 	  RSAT CLASSICAL TOOLS Porttype -->
       <operation name="retrieve_seq">
          <input name="RetrieveSequenceRequest" message="tns:retrieve_seqRequest"/>
          <output name="RetrieveSequenceResponse" message="tns:retrieve_seqResponse"/>         
@@ -1640,9 +2391,47 @@ square-root of L divided by L+squareroot of L.
          <documentation>Generates random sequences.
          </documentation>
       </operation>
+      <!-- 	  RSAT GRAPH TOOLS Porttype -->
+      <operation name="convert_graph">
+	      <input name="ConvertGraphRequest" message="tns:convert_graphRequest"/>
+	      <output name="ConvertGraphResponse" message="tns:convert_graphResponse"/>         
+	      <documentation>Convert graphs between different formats
+	      </documentation>
+      </operation>
+      <operation name="compare_graphs">
+	      <input name="CompareGraphsRequest" message="tns:compare_graphsRequest"/>
+	      <output name="CompareGraphsResponse" message="tns:compare_graphsResponse"/>         
+	      <documentation>Computes the union / difference or intersection of two graphs
+	      </documentation>
+      </operation>
+      <operation name="graph_node_degree">
+	      <input name="GraphNodeDegreeRequest" message="tns:graph_node_degreeRequest"/>
+	      <output name="GraphNodeDegreeResponse" message="tns:graph_node_degreeResponse"/>         
+	      <documentation>Calculates the in / out / global degree for a selection of seed nodes</documentation>
+      </operation>
+      <operation name="random_graph">
+	      <input name="RandomGraphRequest" message="tns:random_graphRequest"/>
+	      <output name="RandomGraphResponse" message="tns:random_graphResponse"/>         
+	      <documentation>Generate random graphs either from scratch of from an existing graph using
+		      different randomization models
+	      </documentation>
+      </operation>	
+      <operation name="graph_get_clusters">
+	      <input name="GraphGetClustersRequest" message="tns:graph_get_clustersRequest"/>
+	      <output name="GraphGetClustersResponse" message="tns:graph_get_clustersResponse"/>         
+	      <documentation>Compares a graph with a classification/clustering file.
+	      </documentation>
+      </operation>
+      <operation name="graph_neighbours">
+	      <input name="GraphGetClustersRequest" message="tns:graph_neighboursRequest"/>
+	      <output name="GraphGetClustersResponse" message="tns:graph_neighboursResponse"/>         
+	      <documentation>Find the neihbours up to a certain distance of a collection of seed nodes
+	      </documentation>
+      	   </operation>	       
   </portType>
   
   <binding name="RSATWSBinding" type="tns:RSATWSPortType">
+<!-- 	  RSAT CLASSICAL TOOLS BINDING -->
       <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
       <operation name="retrieve_seq">
          <soap:operation soapAction=""/>
@@ -1743,6 +2532,61 @@ square-root of L divided by L+squareroot of L.
              <soap:body use="literal" />
          </output>
       </operation>
+      <!-- 	  RSAT GRAPH TOOLS BINDING -->
+      <operation name="convert_graph">
+	      <soap:operation soapAction=""/>
+	      <input>
+		      <soap:body use="literal" />
+	      </input>
+	      <output>
+		      <soap:body use="literal" />
+	      </output>
+      </operation>
+      <operation name="compare_graphs">
+	      <soap:operation soapAction=""/>
+	      <input>
+		      <soap:body use="literal" />
+	      </input>
+	      <output>
+		      <soap:body use="literal" />
+	      </output>
+      </operation>
+      <operation name="graph_neighbours">
+	      <soap:operation soapAction=""/>
+	      <input>
+		      <soap:body use="literal" />
+	      </input>
+	      <output>
+		      <soap:body use="literal" />
+	      </output>
+      </operation>
+      <operation name="graph_node_degree">
+	      <soap:operation soapAction=""/>
+	      <input>
+		      <soap:body use="literal" />
+	      </input>
+	      <output>
+		      <soap:body use="literal" />
+	      </output>
+      </operation>
+      <operation name="graph_get_clusters">
+	      <soap:operation soapAction=""/>
+	      <input>
+		      <soap:body use="literal" />
+	      </input>
+	      <output>
+		      <soap:body use="literal" />
+	      </output>
+      </operation>
+      <operation name="random_graph">
+	      <soap:operation soapAction=""/>
+	      <input>
+		      <soap:body use="literal" />
+	      </input>
+	      <output>
+		      <soap:body use="literal" />
+	      </output>
+      </operation>
   </binding>
 
   <service name="RSATWebServices">
@@ -1754,6 +2598,7 @@ square-root of L divided by L+squareroot of L.
    </documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
 	<soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
+
     </port>
   </service>
 </definitions>
