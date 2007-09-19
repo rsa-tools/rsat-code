@@ -2242,7 +2242,6 @@ sub to_tab {
     
     my ($self, $arc_id) = @_;
     my @arcs = $self->get_attribute("arcs");
-    print "ARCS ".scalar @arcs;
     my @arcs_attributes = $self->get_attribute("arcs_attribute");
     my %nodes_name_id = $self->get_attribute("nodes_name_id");
     my $tab = "";
