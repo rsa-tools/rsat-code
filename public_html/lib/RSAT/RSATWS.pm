@@ -1256,5 +1256,679 @@ sub random_seq_cmd {
 
   return $command;
 }
+# RSA GRAPH TOOLS
+sub convert_graph {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->convert_graph_cmd(%args);
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/convert-graph.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+sub convert_graph_cmd {
+  my ($self, %args) =@_;
+  
+  my $command = "$SCRIPTS/convert-graph";
+  
+  if ($args{informat}) {
+   my $in_format = $args{informat};
+   $in_format =~ s/\'//g;
+   $in_format =~ s/\'//g;
+   $command .= " -from $in_format";
+  }
+  if ($args{undirected}) {
+   $command .= " -undirected";
+  }
+  if ($args{layout}) {
+   $command .= " -layout";
+  }
+  if ($args{outformat}) {
+   my $out_format = $args{outformat};
+   $out_format =~ s/\'//g;
+   $out_format =~ s/\'//g;
+   $command .= " -to $out_format";
+  }
+  if ($args{wcol}) {
+   my $wcol = $args{wcol};
+   $wcol =~ s/\'//g;
+   $wcol =~ s/\'//g;
+   $command .= " -wcol $wcol";
+  }
+  if ($args{scol}) {
+   my $scol = $args{scol};
+   $scol =~ s/\'//g;
+   $scol =~ s/\'//g;
+   $command .= " -scol $scol";
+  }
+  if ($args{tcol}) {
+   my $tcol = $args{tcol};
+   $tcol =~ s/\'//g;
+   $tcol =~ s/\'//g;
+   $command .= " -tcol $tcol";
+  }
+  if ($args{eccol}) {
+   my $eccol = $args{eccol};
+   $eccol =~ s/\'//g;
+   $eccol =~ s/\'//g;
+   $command .= " -eccol $eccol";
+  }
+  if ($args{tccol}) {
+   my $tccol = $args{tccol};
+   $tccol =~ s/\'//g;
+   $tccol =~ s/\'//g;
+   $command .= " -tccol $tccol";
+  }
+  if ($args{sccol}) {
+   my $sccol = $args{sccol};
+   $sccol =~ s/\'//g;
+   $sccol =~ s/\'//g;
+   $command .= " -sccol $sccol";
+  }
+  if ($args{inputgraph}) {
+   my $input_graph = $args{inputgraph};
+   chomp $input_graph;
+   my $tmp_input = `mktemp $TMP/convert-graph-input.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
+   print TMP_IN $input_graph;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  return $command;
+}
+
+sub graph_get_clusters {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->graph_get_clusters_cmd(%args);
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/graph-get-clusters-out.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+sub graph_get_clusters_cmd {
+  my ($self, %args) =@_;
+  
+  my $command = "$SCRIPTS/graph-get-clusters";
+  
+  if ($args{informat}) {
+   my $in_format = $args{informat};
+   $in_format =~ s/\'//g;
+   $in_format =~ s/\'//g;
+   $command .= " -in_format $in_format";
+  }
+  if ($args{outformat}) {
+   my $out_format = $args{outformat};
+   $out_format =~ s/\'//g;
+   $out_format =~ s/\'//g;
+   $command .= " -out_format $out_format";
+  }
+  if ($args{wcol}) {
+   my $wcol = $args{wcol};
+   $wcol =~ s/\'//g;
+   $wcol =~ s/\'//g;
+   $command .= " -wcol $wcol";
+  }
+  if ($args{scol}) {
+   my $scol = $args{scol};
+   $scol =~ s/\'//g;
+   $scol =~ s/\'//g;
+   $command .= " -scol $scol";
+  }
+  if ($args{tcol}) {
+   my $tcol = $args{tcol};
+   $tcol =~ s/\'//g;
+   $tcol =~ s/\'//g;
+   $command .= " -tcol $tcol";
+  }
+  if ($args{return}) {
+   my $return = $args{return};
+   $return =~ s/\'//g;
+   $return =~ s/\'//g;
+   $command .= " -return $return";
+  }
+  if ($args{induced}) {
+   my $tcol = $args{tcol};
+   $command .= " -induced";
+  }
+  if ($args{distinct}) {
+   my $tcol = $args{tcol};
+   $command .= " -distinct";
+  }
+  if ($args{inputgraph}) {
+   my $input_graph = $args{inputgraph};
+   chomp $input_graph;
+   my $tmp_input = `mktemp $TMP/graph-get-clusters-input-graph.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
+   print TMP_IN $input_graph;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  if ($args{clusters}) {
+   my $input_graph = $args{clusters};
+   chomp $input_graph;
+   my $tmp_input = `mktemp $TMP/graph-get-clusters-input-clusters.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open clusters temp file ".$tmp_input."\n";
+   print TMP_IN $input_graph;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -clusters '".$tmp_input."'";
+  }
+  return $command;
+}
+
+sub graph_node_degree_cmd {
+  my ($self, %args) =@_;
+  
+  my $command = "$SCRIPTS/graph-node-degree";
+  
+  if ($args{informat}) {
+   my $in_format = $args{informat};
+   $in_format =~ s/\'//g;
+   $in_format =~ s/\'//g;
+   $command .= " -in_format $in_format";
+  }
+  if ($args{wcol}) {
+   my $wcol = $args{wcol};
+   $wcol =~ s/\'//g;
+   $wcol =~ s/\'//g;
+   $command .= " -wcol $wcol";
+  }
+  if ($args{scol}) {
+   my $scol = $args{scol};
+   $scol =~ s/\'//g;
+   $scol =~ s/\'//g;
+   $command .= " -scol $scol";
+  }
+  if ($args{tcol}) {
+   my $tcol = $args{tcol};
+   $tcol =~ s/\'//g;
+   $tcol =~ s/\'//g;
+   $command .= " -tcol $tcol";
+  }
+  if ($args{all}) {
+   my $tcol = $args{tcol};
+   $command .= " -all";
+  }
+  if ($args{inputgraph}) {
+   my $input_graph = $args{inputgraph};
+   chomp $input_graph;
+   my $tmp_input = `mktemp $TMP/graph-node-degree-input-graph.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
+   print TMP_IN $input_graph;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  if ($args{nodefile}) {
+   my $nodefile = $args{nodefile};
+   chomp $nodefile;
+   my $tmp_input = `mktemp $TMP/graph-node-degree-input-nodes.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open clusters temp file ".$tmp_input."\n";
+   print TMP_IN $nodefile;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -nodef '".$tmp_input."'";
+  }
+  return $command;
+}
+
+sub graph_node_degree {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->graph_node_degree_cmd(%args);
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/graph-node-degree-out.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+
+sub compare_graphs_cmd {
+  my ($self, %args) =@_;
+  
+  my $command = "$SCRIPTS/compare-graphs";
+  
+  if ($args{informat}) {
+   my $Qin_format = $args{Qinformat};
+   $Qin_format =~ s/\'//g;
+   $Qin_format =~ s/\'//g;
+   $command .= " -in_format_Q $Qin_format";
+  }
+  if ($args{Rinformat}) {
+   my $Rin_format = $args{Rinformat};
+   $Rin_format =~ s/\'//g;
+   $Rin_format =~ s/\'//g;
+   $command .= " -in_format_R $Rin_format";
+  }
+  if ($args{outformat}) {
+   my $out_format = $args{outformat};
+   $out_format =~ s/\'//g;
+   $out_format =~ s/\'//g;
+   $command .= " -out_format $out_format";
+  }
+  if ($args{outweight}) {
+   my $outweight = $args{outweight};
+   $outweight =~ s/\'//g;
+   $outweight =~ s/\'//g;
+   $command .= " -outweight $outweight";
+  }
+  if ($args{return}) {
+   my $return = $args{return};
+   $return =~ s/\'//g;
+   $return =~ s/\'//g;
+   $command .= " -return $return";
+  }
+  if ($args{Qwcol}) {
+   my $wcol_q = $args{Qwcol};
+   $wcol_q =~ s/\'//g;
+   $wcol_q =~ s/\'//g;
+   $command .= " -wcol_Q $wcol_q";
+  }
+  if ($args{Qscol}) {
+   my $scol_q = $args{Qscol};
+   $scol_q =~ s/\'//g;
+   $scol_q =~ s/\'//g;
+   $command .= " -scol_Q $scol_q";
+  }
+  if ($args{Qtcol}) {
+   my $tcol_q = $args{Qtcol};
+   $tcol_q =~ s/\'//g;
+   $tcol_q =~ s/\'//g;
+   $command .= " -tcol_Q $tcol_q";
+  }
+  if ($args{Rwcol}) {
+   my $wcol_r = $args{Rwcol};
+   $wcol_r =~ s/\'//g;
+   $wcol_r =~ s/\'//g;
+   $command .= " -wcol_R $wcol_r";
+  }
+  if ($args{Rscol}) {
+   my $scol_r = $args{Rscol};
+   $scol_r =~ s/\'//g;
+   $scol_r =~ s/\'//g;
+   $command .= " -scol_R $scol_r";
+  }
+  if ($args{Rtcol}) {
+   my $tcol_r = $args{Rtcol};
+   $tcol_r =~ s/\'//g;
+   $tcol_r =~ s/\'//g;
+   $command .= " -tcol_R $tcol_r";
+  }
+  if ($args{Qinputgraph}) {
+   my $input_graph = $args{Qinputgraph};
+   chomp $input_graph;
+   my $tmp_input = `mktemp $TMP/compare-graphs-query-input-graph.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
+   print TMP_IN $input_graph;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -Q '".$tmp_input."'";
+  }
+  if ($args{Rinputgraph}) {
+   my $input_graph = $args{Rinputgraph};
+   chomp $input_graph;
+   my $tmp_input = `mktemp $TMP/compare-graphs-reference-input-graph.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
+   print TMP_IN $input_graph;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -R '".$tmp_input."'";
+  }
+  return $command;
+}
+
+sub compare_graphs {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->compare_graphs_cmd(%args);
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/compare-graphs-out.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+sub graph_neighbours_cmd {
+  my ($self, %args) =@_;
+  
+  my $command = "$SCRIPTS/graph-neighbours";
+  
+  if ($args{informat}) {
+   my $in_format = $args{informat};
+   $in_format =~ s/\'//g;
+   $in_format =~ s/\'//g;
+   $command .= " -in_format $in_format";
+  }
+  if ($args{wcol}) {
+   my $wcol = $args{wcol};
+   $wcol =~ s/\'//g;
+   $wcol =~ s/\'//g;
+   $command .= " -wcol $wcol";
+  }
+  if ($args{scol}) {
+   my $scol = $args{scol};
+   $scol =~ s/\'//g;
+   $scol =~ s/\'//g;
+   $command .= " -scol $scol";
+  }
+  if ($args{tcol}) {
+   my $tcol = $args{tcol};
+   $tcol =~ s/\'//g;
+   $tcol =~ s/\'//g;
+   $command .= " -tcol $tcol";
+  }
+  if ($args{all}) {
+   my $tcol = $args{tcol};
+   $command .= " -all";
+  }
+  if ($args{stats}) {
+   my $stats = $args{stats};
+   $command .= " -stats";
+  }
+  if ($args{self}) {
+   my $self = $args{self};
+   $command .= " -self";
+  }
+  if ($args{inputgraph}) {
+   my $input_graph = $args{inputgraph};
+   chomp $input_graph;
+   my $tmp_input = `mktemp $TMP/graph_neighbours-input-graph.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
+   print TMP_IN $input_graph;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  if ($args{seedfile}) {
+   my $seedfile = $args{seedfile};
+   chomp $seedfile;
+   my $tmp_input = `mktemp $TMP/graph_neighbours-seed-nodes.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open clusters temp file ".$tmp_input."\n";
+   print TMP_IN $nodefile;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -seedf '".$tmp_input."'";
+  }
+  return $command;
+}
+
+sub graph_neighbours {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->graph_neighbours_cmd(%args);
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/graph-neighbours.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+sub random_graph_cmd {
+  my ($self, %args) =@_;
+  
+  my $command = "$SCRIPTS/graph-neighbours";
+  
+  if ($args{informat}) {
+   my $in_format = $args{informat};
+   $in_format =~ s/\'//g;
+   $in_format =~ s/\'//g;
+   $command .= " -in_format $in_format";
+  }
+  if ($args{random_type}) {
+   my $random_type = $args{random_type};
+   $random_type =~ s/\'//g;
+   $random_type =~ s/\'//g;
+   $command .= " -random_type $random_type";
+  }
+  if ($args{edges}) {
+   my $edges = $args{edges};
+   $edges =~ s/\'//g;
+   $edges =~ s/\'//g;
+   $command .= " -edges $edges";
+  }
+  if ($args{nodes}) {
+   my $nodes = $args{nodes};
+   $nodes =~ s/\'//g;
+   $nodes =~ s/\'//g;
+   $command .= " -nodes $nodes";
+  }
+  if ($args{mean}) {
+   my $mean = $args{mean};
+   $mean =~ s/\'//g;
+   $mean =~ s/\'//g;
+   $command .= " -mean $mean";
+  }
+  if ($args{sd}) {
+   my $sd = $args{sd};
+   $sd =~ s/\'//g;
+   $sd =~ s/\'//g;
+   $command .= " -sd $sd";
+  }
+  if ($args{degree}) {
+   my $degree = $args{degree};
+   $degree =~ s/\'//g;
+   $degree =~ s/\'//g;
+   $command .= " -degree $edges";
+  }
+  if ($args{wcol}) {
+   my $wcol = $args{wcol};
+   $wcol =~ s/\'//g;
+   $wcol =~ s/\'//g;
+   $command .= " -wcol $wcol";
+  }
+  if ($args{scol}) {
+   my $scol = $args{scol};
+   $scol =~ s/\'//g;
+   $scol =~ s/\'//g;
+   $command .= " -scol $scol";
+  }
+  if ($args{tcol}) {
+   my $tcol = $args{tcol};
+   $tcol =~ s/\'//g;
+   $tcol =~ s/\'//g;
+   $command .= " -tcol $tcol";
+  }
+  if ($args{directed}) {
+   my $directed = $args{directed};
+   $command .= " -directed";
+  }
+  if ($args{no_single}) {
+   my $no_single = $args{no_single};
+   $command .= " -no_single";
+  }
+  if ($args{duplicate}) {
+   my $duplicate = $args{duplicate};
+   $command .= " -duplicate";
+  }
+  if ($args{col_conservation}) {
+   my $col_conservation = $args{col_conservation};
+   $command .= " -col_conservation";
+  }
+  if ($args{normal}) {
+   my $normal = $args{normal};
+   $command .= " -normal";
+  }
+  if ($args{inputgraph}) {
+   my $input_graph = $args{inputgraph};
+   chomp $input_graph;
+   my $tmp_input = `mktemp $TMP/graph_neighbours-input-graph.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
+   print TMP_IN $input_graph;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  if ($args{nodefile}) {
+   my $nodefile = $args{nodefile};
+   chomp $nodefile;
+   my $tmp_input = `mktemp $TMP/random-graph-nodes.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open nodes temp file ".$tmp_input."\n";
+   print TMP_IN $nodefile;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -nodefile '".$tmp_input."'";
+  }
+  return $command;
+}
+
+sub random_graph {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->random_graph_cmd(%args);
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/random-graph.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
 
 1;
