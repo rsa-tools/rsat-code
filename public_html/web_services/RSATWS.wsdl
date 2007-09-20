@@ -1866,6 +1866,33 @@ square-root of L divided by L+squareroot of L.
 		</xsd:element>
 	</xsd:sequence>
 </xsd:complexType>
+
+<xsd:complexType name="RandomGraphResponse">
+	<xsd:sequence>
+		<xsd:element name="server" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					Location of the result file on the server. This can be used as input for a further request.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="command" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					The stand alone command executed on the server.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+		<xsd:element name="client" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>
+					The results.
+				</xsd:documentation>
+			</xsd:annotation>
+		</xsd:element>
+	</xsd:sequence>
+</xsd:complexType>
+
 <xsd:complexType name="GraphGetClustersResponse">
 	<xsd:sequence>
 		<xsd:element name="server" type="xsd:string">
@@ -2113,6 +2140,7 @@ square-root of L divided by L+squareroot of L.
 		      </xsd:sequence>
 	      </xsd:complexType>
       </xsd:element>
+
       <xsd:element name="graph_neighbours">
 	      <xsd:complexType>
 		      <xsd:sequence>
@@ -2121,13 +2149,14 @@ square-root of L divided by L+squareroot of L.
 	      </xsd:complexType>
       </xsd:element>
       
-      <xsd:element name="graph_neigboursResponse">
+      <xsd:element name="graph_neighboursResponse">
 	      <xsd:complexType>
 		      <xsd:sequence>
 			      <xsd:element name="response" type="tns:GraphNeighboursResponse" />
 		      </xsd:sequence>
 	      </xsd:complexType>
       </xsd:element>
+
       <xsd:element name="random_graph">
 	      <xsd:complexType>
 		      <xsd:sequence>
@@ -2251,7 +2280,7 @@ square-root of L divided by L+squareroot of L.
 
   <!-- RSAT GRAPH TOOLS MESSAGE -->
   <message name="convert_graphRequest">
-	   <part name="parameters" element="tns:convert_graphRequest"/>
+	   <part name="parameters" element="tns:convert_graph"/>
   </message>
   <message name="convert_graphResponse">
 	  <part name="output" element="tns:convert_graphResponse"/>
