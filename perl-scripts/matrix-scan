@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.86 2007/09/18 15:47:32 jvanheld Exp $
+# $Id: matrix-scan,v 1.87 2007/09/21 13:06:49 rsat Exp $
 #
-# Time-stamp: <2007-09-06 14:34:45 jturatsi>
+# Time-stamp: <2007-09-21 15:05:11 jturatsi>
 #
 ############################################################
 ## TO DO: add an option to sort hits either by position or by score
@@ -1396,10 +1396,68 @@ sub PrintHelp {
 }
 
 ################################################################
-#### display short help message
+## Print a summary of available options
 sub PrintOptions {
-    &PrintHelp();
+    open HELP, "| more";
+    print HELP <<End_short_help;
+matrix-scan options
+==================
+-h		display detailed help
+-help		display only options
+-v #		verbose
+-i		sequence file
+-seq_format     sequence format (default: fasta). Supported format: all format supported by convert-seq
+-n [skip|score]	Treatment of N characters.
+		skip: N-containing regions are skipped
+		score: N-containing rgions are scored. 
+-mask [upper|lower] Mask lower or uppercases, respectively, i.e replace selected case by N characters.
+-o		outputfile
+-m		matrix file
+-matrix_format  format of the matrix (supported: tab(default), meme, consensus,MotifSampler)
+-mlist		list of matrices
+-pseudo	#	pseudo-count for the matrix (default value: 1). By default the pseudo is
+                distributed proportinally to residue prior
+-equi-pseudo #	the pseudo count is equally distributed
+-bgfile		background model description file
+-bginput	the background model is calculated on the input sequence
+-window	#	size of the sliding window on which the background model is be calculated
+-markov #	Markov order (required when -window or -bginput options are specified)
+-bg_format	background format (default: oligo-analysis). Supported: oligo-analysis, meme, MotifSampler
+-bg_pseudo #	pseudo frequency for background model (must be a real between 0 and 1)
+-2str		scan both strands for DNA sequences.
+-1str		single-strand search for DNA sequences.
+-return		lists of fields to return. Supported fields: sites, pval, seq_scores, rank, normw,
+                limits, distrib, occ_proba, bg_model, matrix, freq_matrix, weight_matrix 
+-lth/uth param # : lower/upper threshold on some parameters
+
+		Supported thresholds fields for the matches: score, pval, eval, 
+		sig, normw, proba_M, proba_B, rank
+
+		Supported thresholds fields for score distributions: occ, occ_sum, 
+		inv_cum, exp_occ, occ_pval, occ_eval, occ_sig, occ_sig_rank
+
+-sort_distrib	sort score distributions by decreasing values of significance. 
+                (Default: score distibutions are sorted by score (weight)) 
+-bg_distrib	File specifying the background score distribution used to estimate prior
+                probabilities with the option -return occ_proba.
+-decimals #	Number of decimals displayed for the weight score
+-base #		Base for the logarithms used in the score involving a log-likelihood (Default: exp(1))
+-position pos	Define pos as the origin for the calculatin of positions
+
+For details about all these options and return fields 
+see full help (matrix-scan -h)
+
+End_short_help
+    close HELP;
+    exit(0);
 }
+
+
+################################################################
+#### display short help message
+# sub PrintOptions {
+#     &PrintHelp();
+# }
 
 ################################################################
 #### Read arguments 
@@ -1447,7 +1505,7 @@ Display full help message
 
 =item B<-help>
 
-Same as -h
+Display only program options
 
 =cut
 	} elsif ($arg eq "-help") {
@@ -3057,4 +3115,5 @@ __END__
 #       #    }
 #     }
 # }
+
 
