@@ -2076,7 +2076,7 @@ sub to_adj_matrix {
 ################################################################
 =pod
 
-=item B<fr_layout()>
+=item B<get_position()>
 
 Fill the hashes %node_id_xpos and %node_id_ypos using the program
 $RSAT/bin/fr_layout. This program based on the boost graph library, computes
@@ -2096,6 +2096,14 @@ sub get_position {
   my $fr_layout = $ENV{RSAT}."/bin/fr_layout";
   my $nodes_nb = scalar keys %nodes_name_id;
   my $layout_size = 1000;
+  my $outfile = $main::outfile{output};
+  my $dir = ".";
+  if ($outfile) {
+    my ($outdir, $outfile) = &RSAT::util::SplitFileName($outfile);
+    $dir = $outdir;
+    $dir = "." if ($dir eq "");
+  }
+  $dir .= "/";
   if ($nodes_nb > 6000) {
     $layout_size = 3000;
   } elsif ($nodes_nb < 30) {
@@ -2116,7 +2124,8 @@ sub get_position {
     ## where the edges are stored.
     ## This file is then removed.
     my $arcs_list = "";
-    my $tempfile = `mktemp graph_fr.XXXXXXXXXX`; 
+    my $tempfilecmd = "mktemp $dir"."graph_fr.XXXXXXXXXX";
+    my $tempfile = `$tempfilecmd`; 
     chomp $tempfile;
     open (TMP, ">$tempfile");
     for (my $i = 0; $i < scalar(@arcs); $i++) {
@@ -2131,6 +2140,10 @@ sub get_position {
     my @lignes = split /\n/, $coordinates;
     system ("rm $tempfile");
     foreach my $ligne (@lignes) {
+      next unless ($ligne =~  /\S/);
+      next if ($ligne =~ /^0\%\ /); # Skip mysql-like comments
+      next if ($ligne =~ /^\|\-/); # Skip RSAT comments
+      next if ($ligne =~ /^\*\*/); # Skip comments and header
       my @lignecp = split "\t", "$ligne";
       my $node = $lignecp[0];
       my $id = $nodes_name_id{$node};
