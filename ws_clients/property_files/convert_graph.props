@@ -1,0 +1,7 @@
+informat=tab
+outformat=gml
+inputgraph=test_1.tab
+layout=
+eccol=4
+scol=1
+tcol=2
