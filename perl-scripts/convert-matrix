@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.40 2007/09/18 15:48:58 jvanheld Exp $
+# $Id: convert-matrix,v 1.41 2007/10/01 15:24:16 rsat Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -18,6 +18,7 @@ BEGIN {
 }
 use RSAT::matrix;
 use RSAT::MatrixReader;
+use Data::Dumper;
 
 #### initialise parameters ####
 my $start_time = &AlphaDate();
@@ -110,11 +111,11 @@ if ($return_fields{information}) {
 ## Prior residue frequencies
 if ($infile{prior}) {
     %prior = ();
-    &ReadExpectedFrequencies($infile{prior}, 1, 1);    
+    my %patterns = &ReadExpectedFrequencies($infile{prior});
     foreach my $key (sort keys %patterns) {
 	my $residue = lc($key);
 	$prior{$residue} = $patterns{$key}->{exp_freq};
-#	&RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 10);
+	&RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 5);
     }
 }
 
@@ -134,13 +135,14 @@ my @matrices = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format);
 foreach my $matrix (@matrices) {
   $matrix->set_parameter("pseudo", $pseudo_weight);
   $matrix->set_attribute("equi_pseudo", $equi_pseudo);
-#  $matrix->push_attribute("parameters", "pseudo");
+  #  $matrix->push_attribute("parameters", "pseudo");
   $matrix->force_attribute("decimals", $decimals);
   $matrix->force_attribute("max_profile", $max_profile);
   $matrix->force_attribute("sep", $sep);
   # $matrix->force_attribute("col_width", $col_width);
   $matrix->force_attribute("margins", $return_fields{margins});
   $matrix->setInfoLogBase($info_log_base);
+  $matrix->set_parameter("bg_markov_order", 0);
 }
 
 ## Calculate parameters before sorting because sorting can be done on
@@ -219,7 +221,7 @@ DESCRIPTION
 	original matrix to provide different position-specific scores
 	(weight, frequencies, information contents), general
 	statistics (E-value, total information content), and synthetic
-	descriptions (consensus).
+	descriptions (consensus). All statistical analysis assume a BERNOUILLI background model. 
 
 	PSSM can be used to represent the binding specificity of a
 	transcription factor or the conserved residues of a protein
@@ -574,9 +576,10 @@ RETURN FIELDS FOR THE TAB-DELIMITED OUTPUT FORMAT
             parameters is already returned by the program consensus
             (Hertz), but not by other programs.
 
-	wdistrib
+	wdistrib (deprecated!)
 	    Theoretical distribution of weight probabilities (computed
 	    as in Bailey, Bioinformatics, 1999).
+            WARNING: use matrix-distrib instead
 
 End_of_help
   close HELP;
@@ -639,7 +642,7 @@ sub ReadArguments {
       ### Maximal number of matrices to return
     } elsif ($ARGV[$a] eq "-top") {
 	$top_matrices = $ARGV[$a+1];
-	&FatalError(join("\t", $top_matrices, "Invlaid value for the option -top. Should be a strictly positive Natural number.")) 
+	&FatalError(join("\t", $top_matrices, "Invalid value for the option -top. Should be a strictly positive Natural number.")) 
 	    unless ((&IsNatural($top_matrices)) && ($top_matrices >= 1));
 
 	## Sort matrices
@@ -847,6 +850,7 @@ sub ExportMatrix {
 
   ## Return weight distribution
   if ($return_fields{wdistrib}) {
+    print ";WARNING: return wdistrib is deprecated in convert-matrix! Use matrix-dsitrib instead\n";
     $matrix->calcTheorScoreDistrib("weights", decimals=>$decimals);
     my %weight_proba = $matrix->getTheorScoreDistrib("weights");
     my %weight_proba_cum = $matrix->getTheorScoreDistrib("weights", "cum");
