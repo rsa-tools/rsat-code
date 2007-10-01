@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.87 2007/09/21 13:06:49 rsat Exp $
+# $Id: matrix-scan,v 1.88 2007/10/01 10:33:13 rsat Exp $
 #
-# Time-stamp: <2007-09-21 15:05:11 jturatsi>
+# Time-stamp: <2007-10-01 12:10:22 jturatsi>
 #
 ############################################################
 ## TO DO: add an option to sort hits either by position or by score
@@ -306,7 +306,7 @@ package main;
   #### initialize parameters
   local $top_matrices = 0;
   local $start_time = &AlphaDate();
-  local $decimals=2;
+  local $decimals=1;
   local $base = exp(1);
   local $sig_base = log(10);
   local %pval = (); ## This variable is defined as local to avoid passing the hash table for each match
@@ -733,11 +733,25 @@ package main;
 	}
 	
 	## Calculate min and max values for P(S|M)
-	$matrix->proba_range();
+ 	$matrix->proba_range();
+
+# 	unless ($bg_method eq "window") {
+# 		## Set the matrix prior
+# 		$matrix->setPrior(%prior);
+# 		&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"), 
+# 					      %prior, join(" ", $matrix->getPrior()))) if ($main::verbose >= 3);
+# 		## Calculate min and max weight values
+# 		my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
+# 		&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
+# 					      $matrix->get_attribute("name"), 
+# 					      $Wmin, $Wmax, $Wrange,
+# 					     )) if ($main::verbose >= 3);
+		
+# 	}
 
 	unless ($bg_method eq "window") {
 		## Set the matrix prior
-		$matrix->setPrior(%prior);
+		$matrix->setMarkovModel($bg_model);
 		&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"), 
 					      %prior, join(" ", $matrix->getPrior()))) if ($main::verbose >= 3);
 		## Calculate min and max weight values
@@ -748,6 +762,9 @@ package main;
 					     )) if ($main::verbose >= 3);
 		
 	}
+
+
+
 	push @matrices, $matrix;
 	
 	&RSAT::message::TimeWarn("Read matrix", 
