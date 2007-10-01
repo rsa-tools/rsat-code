@@ -2034,48 +2034,73 @@ Usage: my ($Wmin, $Wmax, $Wrange)  = $matrix->weight_range();
 
 sub weight_range {
     my ($self) = @_;
-    my $tmp_Wmin = 0;
-    my $tmp_Wmax = 0;
-    my ($nrow, $ncol) = $self->size();
-    my @weights = $self->getWeights();    
+    my $Wmin = 0;
+    my $Wmax = 0;
+    my %score_proba = $self->getTheorScoreDistrib("weights");
+    my @weights = sort {$a <=> $b} (keys (%score_proba));
 
-    foreach my $c (0..($ncol-1)) {
-	my $col_min="NA";
-	my $col_max="NA";
-	foreach my $r (0..($nrow-1)) {
-	    my $weight = "NA";
-	    if (defined($weights[$c][$r])) {
-		$weight = $weights[$c][$r];
-		if ($col_min eq "NA") {
-		    $col_min = $weight;
-		} else {
-		    $col_min = &RSAT::stats::min($col_min, $weight);
-		}
-		if ($col_max eq "NA") {
-		    $col_max = $weight;
-		} else {
-		    $col_max = &RSAT::stats::max($col_max, $weight);
-		}
-	    }
-	    &RSAT::message::Debug("weight_range", "weight", $c, $r, $weight) if ($main::verbose >= 5);
-	}
-	$tmp_Wmin += $col_min;
-	$tmp_Wmax += $col_max;
-	&RSAT::message::Debug("Weights", "column:".$c, "min:".$tmp_Wmin, "max:".$tmp_Wmax, "range:", $tmp_Wmax - $tmp_Wmin) if ($main::verbose >= 5);
-    }
+    $Wmin = $weights[0];
+    $Wmax = $weights[$#weights];
+    my $Wrange = $Wmax-$Wmin;
 
-    my $tmp_Wrange = $tmp_Wmax-$tmp_Wmin;
-    $self->set_parameter("Wmin", $tmp_Wmin);
-    $self->set_parameter("Wmax", $tmp_Wmax);
-    $self->set_parameter("Wrange", $tmp_Wrange);
+    &RSAT::message::Debug("Weights",$c, "min:".$Wmin, "max:".$Wmax, "range:", $Wrange) if ($main::verbose >= 5);
+
+    $self->set_parameter("Wmin", $Wmin);
+    $self->set_parameter("Wmax", $Wmax);
+    $self->set_parameter("Wrange", $Wrange);
     if ($main::verbose >= 3) {
-	&RSAT::message::Info(join("\t", "Wmin", $self->get_attribute("Wmin"))) ;
-	&RSAT::message::Info(join("\t", "Wmax", $self->get_attribute("Wmax"))) ;
-	&RSAT::message::Info(join("\t", "Wrange", $self->get_attribute("Wrange"))) ;
+	    &RSAT::message::Info(join("\t", "Wmin", $self->get_attribute("Wmin"))) ;
+	    &RSAT::message::Info(join("\t", "Wmax", $self->get_attribute("Wmax"))) ;
+	    &RSAT::message::Info(join("\t", "Wrange", $self->get_attribute("Wrange"))) ;
     }
-
-    return ($tmp_Wmin, $tmp_Wmax, $tmp_Wrange);
+    
+    return ($Wmin, $Wmax, $Wrange);
 }
+
+# sub weight_range {
+#     my ($self) = @_;
+#     my $tmp_Wmin = 0;
+#     my $tmp_Wmax = 0;
+#     my ($nrow, $ncol) = $self->size();
+#     my @weights = $self->getWeights();    
+
+#     foreach my $c (0..($ncol-1)) {
+# 	my $col_min="NA";
+# 	my $col_max="NA";
+# 	foreach my $r (0..($nrow-1)) {
+# 	    my $weight = "NA";
+# 	    if (defined($weights[$c][$r])) {
+# 		$weight = $weights[$c][$r];
+# 		if ($col_min eq "NA") {
+# 		    $col_min = $weight;
+# 		} else {
+# 		    $col_min = &RSAT::stats::min($col_min, $weight);
+# 		}
+# 		if ($col_max eq "NA") {
+# 		    $col_max = $weight;
+# 		} else {
+# 		    $col_max = &RSAT::stats::max($col_max, $weight);
+# 		}
+# 	    }
+# 	    &RSAT::message::Debug("weight_range", "weight", $c, $r, $weight) if ($main::verbose >= 5);
+# 	}
+# 	$tmp_Wmin += $col_min;
+# 	$tmp_Wmax += $col_max;
+# 	&RSAT::message::Debug("Weights", "column:".$c, "min:".$tmp_Wmin, "max:".$tmp_Wmax, "range:", $tmp_Wmax - $tmp_Wmin) if ($main::verbose >= 5);
+#     }
+
+#     my $tmp_Wrange = $tmp_Wmax-$tmp_Wmin;
+#     $self->set_parameter("Wmin", $tmp_Wmin);
+#     $self->set_parameter("Wmax", $tmp_Wmax);
+#     $self->set_parameter("Wrange", $tmp_Wrange);
+#     if ($main::verbose >= 3) {
+# 	&RSAT::message::Info(join("\t", "Wmin", $self->get_attribute("Wmin"))) ;
+# 	&RSAT::message::Info(join("\t", "Wmax", $self->get_attribute("Wmax"))) ;
+# 	&RSAT::message::Info(join("\t", "Wrange", $self->get_attribute("Wrange"))) ;
+#     }
+
+#     return ($tmp_Wmin, $tmp_Wmax, $tmp_Wrange);
+# }
 
 
 ################################################################
@@ -2294,37 +2319,42 @@ sub calcTheorScoreDistribBernoulli {
   my @sorted_scores;
   my @sorted_scores_inv;
   if ($score_type eq "weights") {
-    ## take all possible weights between the min and max values
-    my $min_score = &RSAT::stats::min(keys(%score_proba));
-    my $max_score = &RSAT::stats::max(keys(%score_proba));
-    my ($Wmin, $Wmax) = $self->weight_range();
-    ## Round the min and max scores
-    $Wmin = &RSAT::util::trim(sprintf("${score_format}", $Wmin));
-    $Wmax = &RSAT::util::trim(sprintf("${score_format}", $Wmax));
-    my $distrib_min = &RSAT::stats::min($Wmin, $min_score);
-    my $distrib_max = &RSAT::stats::max($Wmax, $max_score);
-    my $break_amplif=(10**$decimals);
-    my $break_min = sprintf("%d", $break_amplif*$distrib_min)-1;
-    my $break_max = sprintf("%d", $break_amplif*$distrib_max)+1;
-    foreach my $break ($break_min..$break_max) {
-      my $score = sprintf($score_format, $break/$break_amplif);
-      push @sorted_scores, $score;
-      unshift @sorted_scores_inv, $score;
-#      &RSAT::message::Debug("BREAKS", $break_min, $break_max, $break_amplif, $break, $score) if ($main::verbose >= 10);
-    }
-  } else {
-    @sorted_scores = sort {$a <=> $b} (keys (%score_proba));
-    @sorted_scores_inv = sort {$b <=> $a} (keys (%score_proba));
-  }
+	  ## take all possible weights between the min and max values
+	  #     my $min_score = &RSAT::stats::min(keys(%score_proba));
+	  #     my $max_score = &RSAT::stats::max(keys(%score_proba));
+	  #     my ($Wmin, $Wmax) = $self->weight_range();
+	  #     ## Round the min and max scores
+	  #     $Wmin = &RSAT::util::trim(sprintf("${score_format}", $Wmin));
+	  #     $Wmax = &RSAT::util::trim(sprintf("${score_format}", $Wmax));
+	  #     my $distrib_min = &RSAT::stats::min($Wmin, $min_score);
+	  #     my $distrib_max = &RSAT::stats::max($Wmax, $max_score);
 
+	  my $distrib_min= &RSAT::stats::min(keys(%score_proba));
+	  my $distrib_max= &RSAT::stats::max(keys(%score_proba));
+	  
+	  
+	  my $break_amplif=(10**$decimals);
+	  my $break_min = sprintf("%d", $break_amplif*$distrib_min)-1;
+	  my $break_max = sprintf("%d", $break_amplif*$distrib_max)+1;
+	  foreach my $break ($break_min..$break_max) {
+		  my $score = sprintf($score_format, $break/$break_amplif);
+		  push @sorted_scores, $score;
+		  unshift @sorted_scores_inv, $score;
+		  #      &RSAT::message::Debug("BREAKS", $break_min, $break_max, $break_amplif, $break, $score) if ($main::verbose >= 10);
+	  }
+  } else {
+	  @sorted_scores = sort {$a <=> $b} (keys (%score_proba));
+	  @sorted_scores_inv = sort {$b <=> $a} (keys (%score_proba));
+  }
+  
   ## Compute the cumulative distribution
   foreach my $score (@sorted_scores) {
-    if (defined($score_proba{$score})) {
-      $score_proba_cum += $score_proba{$score};
-    }
-    $score_proba_cum{$score} = $score_proba_cum;
+	  if (defined($score_proba{$score})) {
+		  $score_proba_cum += $score_proba{$score};
+	  }
+	  $score_proba_cum{$score} = $score_proba_cum;
   }
-
+  
   ## Compute the inverse cumulative distribution
   my $score_inv_cum_proba = 0;
   my %score_inv_cum_proba = ();
@@ -2552,14 +2582,19 @@ foreach my $score (keys (%distrib_proba)) {
   my @sorted_scores_inv;
   if ($score_type eq "weights") {
     ## take all possible weights between the min and max values
-    my $min_score = &RSAT::stats::min(keys(%score_proba));
-    my $max_score = &RSAT::stats::max(keys(%score_proba));
-  #####  my ($Wmin, $Wmax) = $self->weight_range();
-    ## Round the min and max scores
-    $Wmin = &RSAT::util::trim(sprintf("${score_format}", $Wmin));
-    $Wmax = &RSAT::util::trim(sprintf("${score_format}", $Wmax));
-    my $distrib_min = &RSAT::stats::min($Wmin, $min_score);
-    my $distrib_max = &RSAT::stats::max($Wmax, $max_score);
+#     my $min_score = &RSAT::stats::min(keys(%score_proba));
+#     my $max_score = &RSAT::stats::max(keys(%score_proba));
+#   #####  my ($Wmin, $Wmax) = $self->weight_range();
+#     ## Round the min and max scores
+#     $Wmin = &RSAT::util::trim(sprintf("${score_format}", $Wmin));
+#     $Wmax = &RSAT::util::trim(sprintf("${score_format}", $Wmax));
+#     my $distrib_min = &RSAT::stats::min($Wmin, $min_score);
+#     my $distrib_max = &RSAT::stats::max($Wmax, $max_score);
+
+	  my $distrib_min = &RSAT::stats::min(keys(%score_proba));
+	  my $distrib_max = &RSAT::stats::max(keys(%score_proba));
+	  
+
     my $break_amplif=(10**$decimals);
     my $break_min = sprintf("%d", $break_amplif*$distrib_min)-1;
     my $break_max = sprintf("%d", $break_amplif*$distrib_max)+1;
