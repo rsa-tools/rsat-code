@@ -2135,11 +2135,11 @@ sub get_position {
     my $command = "cat $tempfile | $fr_layout $layout_size $layout_size";
     &RSAT::message::TimeWarn("Calculating the layout with $fr_layout") if ($main::verbose >= 2);
     my $coordinates = `$command`;
-#     print $coordinates;
-#     print $command;
     my @lignes = split /\n/, $coordinates;
     system ("rm $tempfile");
     foreach my $ligne (@lignes) {
+      ## The four first line of the output of fr_layout displays the iterations
+      ## of the program and so must no be parsed, so we skip them.
       next unless ($ligne =~  /\S/);
       next if ($ligne =~ /^0\%\ /); # Skip mysql-like comments
       next if ($ligne =~ /^\|\-/); # Skip RSAT comments
