@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.41 2007/10/01 15:24:16 rsat Exp $
+# $Id: convert-matrix,v 1.42 2007/10/02 12:29:16 morgane Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -108,16 +108,17 @@ if ($return_fields{information}) {
   &RSAT::message::Warning("Option -return information is obsolete. Please use -return info.");
 }
 
+local %prior = ();
 ## Prior residue frequencies
 if ($infile{prior}) {
-    %prior = ();
     my %patterns = &ReadExpectedFrequencies($infile{prior});
     foreach my $key (sort keys %patterns) {
 	my $residue = lc($key);
 	$prior{$residue} = $patterns{$key}->{exp_freq};
-	&RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 5);
+	&RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 3);
     }
 }
+
 
 ################################################################
 #### Perform the conversion
