@@ -2257,16 +2257,18 @@ sub calcTheorScoreDistribBernoulli {
   my $decimals = $self->get_attribute("decimals");
   my $score_format = "%.${decimals}f";
 
-  my @scores;
-  if (lc($score_type) eq "counts") {
-    @scores = $self->getMatrix();
-  } elsif (lc($score_type) eq "weights") {
-    @scores = $self->getWeights();
-  } elsif (lc($score_type) eq "crudefrequencies") {
-    @scores = $self->getCrudeFrequencies();
-  } elsif (lc($score_type) eq "frequencies") {
-    @scores = $self->getFrequencies();
-  }
+	my @scores = $self->getFrequencies();
+	
+ # my @scores;
+ # if (lc($score_type) eq "counts") {
+ #   @scores = $self->getMatrix();
+ # } elsif (lc($score_type) eq "weights") {
+ #   @scores = $self->getWeights();
+ # } elsif (lc($score_type) eq "crudefrequencies") {
+  #  @scores = $self->getCrudeFrequencies();
+ # } elsif (lc($score_type) eq "frequencies") {
+ #   @scores = $self->getFrequencies();
+ # }
 
   &RSAT::message::TimeWarn("Calculating theoretical distribution of ", $score_type,
 			   "Bernoulli model",
@@ -2277,40 +2279,77 @@ sub calcTheorScoreDistribBernoulli {
   my $nrow = $self->nrow();
   my $ncol = $self->ncol();
   my @alphabet = $self->getAlphabet();
-  my %prior = $self->getPrior();
+  
+  ## Bernouilli Model
+  my %bg_suffix_proba = $self->getPrior();
+
+ my %alphabetNb =();
+  foreach my $i (0..$#alphabet){
+  	$alphabetNb{$alphabet[$i]} = $i;
+  }
 
   my %score_proba = ();
   $score_proba{0} = 1; ## Initialize the score probabilities
+  
 
   ################################################################
   ## Compute the distribution of scores
   for my $c (0..($ncol-1)) {
-    my @row = &RSAT::matrix::get_column($c+1, $nrow, @matrix);
-    my @row_scores = &RSAT::matrix::get_column($c+1, $nrow, @scores);
-    my %current_score_proba = ();
-    for my $r (0..($nrow-1)) {
-      my $letter = $alphabet[$r];
-      my $prior = $prior{$letter};
-      my $residue_score = $scores[$c][$r];
-#      $residue_score_round = sprintf($score_format, $residue_score);
-      for my $prev_score (keys %score_proba) {
-	my $current_score = sprintf($score_format, $prev_score + $residue_score);
-	$current_score_proba{$current_score} +=
-	  $score_proba{$prev_score}*$prior;
-#	&RSAT::message::Debug("col=".$c, "row=".$r, $letter, $prior, $residue_score,
+  	 &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 3);
+  	my %current_score_proba = ();
+  	
+  	foreach my $suffix (@alphabet) {
+  	
+  	## get frequency of the suffix, under matrix model
+	my $r = $alphabetNb{$suffix};
+	my $suffix_freq_M = $scores[$c][$r];
+	
+	## get prior frequencies (bg model)
+	my $suffix_proba_B = $bg_suffix_proba{$suffix};
+	
+	## score
+	my $curr_score = log($suffix_freq_M/$suffix_proba_B)/$info_log_denominator; # Beware here, log is ln !!!
+	## discretisation of the scores
+	$curr_score = sprintf($score_format, $curr_score);
+	
+	&RSAT::message::Debug("letter",$suffix,"score",$curr_score) if ($main::verbose >= 5);
+	
+	for my $prev_score (keys %score_proba) {
+		my $current_score = sprintf($score_format, $prev_score + $curr_score);
+		$current_score_proba{$current_score} += $score_proba{$prev_score}*$bg_suffix_proba{$suffix};
+		}
+  	}
+	
+    %score_proba = %current_score_proba;
+  }
+  
+  	
+#    my @row = &RSAT::matrix::get_column($c+1, $nrow, @matrix);
+#    my @row_scores = &RSAT::matrix::get_column($c+1, $nrow, @scores);
+#    my %current_score_proba = ();
+#    for my $r (0..($nrow-1)) {
+#      my $letter = $alphabet[$r];
+#      my $prior = $prior{$letter};
+#      my $residue_score = $scores[$c][$r];
+##      $residue_score_round = sprintf($score_format, $residue_score);
+#      for my $prev_score (keys %score_proba) {
+#	my $current_score = sprintf($score_format, $prev_score + $residue_score);
+#	$current_score_proba{$current_score} +=
+#	  $score_proba{$prev_score}*$prior;
+##	&RSAT::message::Debug("col=".$c, "row=".$r, $letter, $prior, $residue_score,
 #			      "prev_score",$prev_score,
 #			      "current_score", $current_score,
 #			     ) if ($main::verbose >= 10);
 
-      }
-    }
+ #     }
+ #   }
 
-    &RSAT::message::TimeWarn("calcTheorDistrib()", "column", ($c+1)."/".$ncol, 
-			     "prev scores: ", scalar(keys(%score_proba)), 
-			     "current scores:", scalar(keys(%current_score_proba)), 
-			    ) if (($main::verbose >= 3) || ($decimals >= 3));
-    %score_proba = %current_score_proba;
-  }
+#    &RSAT::message::TimeWarn("calcTheorDistrib()", "column", ($c+1)."/".$ncol, 
+#			     "prev scores: ", scalar(keys(%score_proba)), 
+#			     "current scores:", scalar(keys(%current_score_proba)), 
+#			    ) if (($main::verbose >= 3) || ($decimals >= 3));
+ #   %score_proba = %current_score_proba;
+ # }
 
 
   ## Calculate the sorted list of score values
@@ -2332,6 +2371,7 @@ sub calcTheorScoreDistribBernoulli {
 	  my $distrib_min= &RSAT::stats::min(keys(%score_proba));
 	  my $distrib_max= &RSAT::stats::max(keys(%score_proba));
 	  
+	  &RSAT::message::Debug("theor distrib min",$distrib_min,"theor distrib max",$distrib_max) if ($main::verbose >= 5);
 	  
 	  my $break_amplif=(10**$decimals);
 	  my $break_min = sprintf("%d", $break_amplif*$distrib_min)-1;
@@ -2473,12 +2513,11 @@ sub calcTheorScoreDistribMarkov {
     my $prefix_freq_B = $bg_model->{prefix_proba}->{$initial_prefix};
 
     ## score
-
     my $score_init;
     if (($prefix_freq_M == 0) || ($prefix_freq_B == 0)){
       $score_init = 0;
     } else {
-      $score_init = log($prefix_freq_M/$prefix_freq_B); # Beware here, log is ln !!!
+      $score_init = log($prefix_freq_M/$prefix_freq_B)/$info_log_denominator; # Beware here, log is ln !!!
     }
 
     ## discretisation of the scores
@@ -2518,7 +2557,7 @@ sub calcTheorScoreDistribMarkov {
 	my $suffix_transition_B = $bg_model->{transitions}->{$prefix}->{$suffix};
 
 	## score
-	my $curr_score = log($suffix_freq_M/$suffix_transition_B); # Beware here, log is ln !!!
+	my $curr_score = log($suffix_freq_M/$suffix_transition_B)/$info_log_denominator; # Beware here, log is ln !!!
 	## discretisation of the scores
 	$curr_score = sprintf($score_format, $curr_score);
 
@@ -2594,6 +2633,7 @@ foreach my $score (keys (%distrib_proba)) {
 	  my $distrib_min = &RSAT::stats::min(keys(%score_proba));
 	  my $distrib_max = &RSAT::stats::max(keys(%score_proba));
 	  
+	   &RSAT::message::Debug("theor distrib min",$distrib_min,"theor distrib max",$distrib_max) if ($main::verbose >= 10);
 
     my $break_amplif=(10**$decimals);
     my $break_min = sprintf("%d", $break_amplif*$distrib_min)-1;
@@ -2602,7 +2642,7 @@ foreach my $score (keys (%distrib_proba)) {
       my $score = sprintf($score_format, $break/$break_amplif);
       push @sorted_scores, $score;
       unshift @sorted_scores_inv, $score;
-#      &RSAT::message::Debug("BREAKS", $break_min, $break_max, $break_amplif, $break, $score) if ($main::verbose >= 10);
+      &RSAT::message::Debug("BREAKS", $break_min, $break_max, $break_amplif, $break, $score) if ($main::verbose >= 10);
     }
   } else {
     @sorted_scores = sort {$a <=> $b} (keys (%score_proba));
