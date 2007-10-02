@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.214 2007/09/05 22:43:32 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.215 2007/10/02 00:17:32 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -83,6 +83,8 @@ $dir{calib1} = "calibrations_1gene";
 		       db_match_dyads
 		       sig_distrib_dyads
 		       validate_dyads
+
+		       pssm
 
 		       ormbg
 		       orm
@@ -1302,7 +1304,7 @@ sub MergeOligoLengths {
    $pssm_command .= " -asmb ".$family{$family_name}->{oligo_assembly_file};
    $pssm_command .= " -bginput -markov 0 ";
    $pssm_command .= " -o ".$family{$family_name}->{oligo_pssm_file};
-   push @merge_commands, $pssm_command;
+   push @merge_commands, $pssm_command if ($task{pssm});
 
    my $merge_command = join "; \\\n", @merge_commands;
    if ($task{oligos}) {
@@ -1477,13 +1479,15 @@ sub DyadAnalysis {
    $command .= " -o ".$family{$family_name}->{dyad_assembly_file};
 
    ### extract PSSM from pattern assembly
-   &RSAT::message::TimeWarn("Matrix from dyad patterns", $family{$family_name}->{dyad_pssm_file}) 
-       if ($main::verbose >= 2);
-   $command .= "; matrix-from-patterns -v 1 ";
-   $command .= " -seq ".$family{$family_name}->{seq_file};
-   $command .= " -asmb ".$family{$family_name}->{dyad_assembly_file};
-   $command .= " -bginput -markov 0 ";
-   $command .= " -o ".$family{$family_name}->{dyad_pssm_file};
+    if ($task{pssm}) {
+	&RSAT::message::TimeWarn("Matrix from dyad patterns", $family{$family_name}->{dyad_pssm_file}) 
+	    if ($main::verbose >= 2);
+	$command .= "; matrix-from-patterns -v 1 ";
+	$command .= " -seq ".$family{$family_name}->{seq_file};
+	$command .= " -asmb ".$family{$family_name}->{dyad_assembly_file};
+	$command .= " -bginput -markov 0 ";
+	$command .= " -o ".$family{$family_name}->{dyad_pssm_file};
+    }
 
    if ($batch) {
        push @main::batch_commands, $command;
