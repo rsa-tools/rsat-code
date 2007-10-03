@@ -1855,8 +1855,6 @@ by larger than the Markov order + 1.
 sub segment_proba {
     my ($self, $segment) = @_;
 
-    #    return(1);
-
     my $seq_len = length($segment);
     my $order = $self->get_attribute("order");
     $segment =  lc($segment);
@@ -1868,39 +1866,39 @@ sub segment_proba {
     
 
     my $prefix = substr($segment,0,$order);
-    my $segment_proba = 0;
+    my $segment_proba = 1;
     my $c = 0;
-    
-    if (defined($self->{prefix_proba}->{$prefix})) {
-	$segment_proba = $self->{prefix_proba}->{$prefix};
-	push @residue_proba, $self->{prefix_proba}->{$prefix};
-	&RSAT::message::Info(	#"MarkovModel::segment_proba()",
-			     "offset:".$c,
-			     "i=".($c+1),
-			     "P(".$prefix.")", $self->{prefix_proba}->{$prefix},
-			     "P(S)", $self->{prefix_proba}->{$prefix},
-			     $prefix.uc($suffix),
-			     $prefix.uc($suffix),
-			    ) if ($main::verbose >= 4);
-	## prefix contains n
-    } elsif ($self->get_attribute("n_treatment") eq "score") {
-	my $prefix_proba = 1;
-	## treat each letter of the prefix separately
-	foreach my $i (1..length($prefix)) {
-	    my $residue = substr($prefix,$i-1,1);
-	    ## non-N residues
-	    if (defined($self->{suffix_proba}->{$residue})) {
-		$prefix_proba *= $self->{suffix_proba}->{$residue};
-	    } ## for N residues proba value is 1 =>doesn't affect $prefix_proba
+    if ($order > 0) { ## treatment of prefix for higher Markov order only
+	if (defined($self->{prefix_proba}->{$prefix})) {
+	    $segment_proba = $self->{prefix_proba}->{$prefix};
+	    push @residue_proba, $self->{prefix_proba}->{$prefix};
+	    &RSAT::message::Info(	#"MarkovModel::segment_proba()",
+				 "offset:".$c,
+				 "i=".($c+1),
+				 "P(".$prefix.")", $self->{prefix_proba}->{$prefix},
+				 "P(S)", $self->{prefix_proba}->{$prefix},
+				 $prefix.uc($suffix),
+				 $prefix.uc($suffix),
+				) if ($main::verbose >= 4);
+	    ## prefix contains n
+	} elsif ($self->get_attribute("n_treatment") eq "score") {
+	    my $prefix_proba = 1;
+	    ## treat each letter of the prefix separately
+	    foreach my $i (1..length($prefix)) {
+		my $residue = substr($prefix,$i-1,1);
+		## non-N residues
+		if (defined($self->{suffix_proba}->{$residue})) {
+		    $prefix_proba *= $self->{suffix_proba}->{$residue};
+		} ## for N residues proba value is 1 =>doesn't affect $prefix_proba
+	    }
+	    $segment_proba = $prefix_proba;
+	    push @residue_proba, $prefix_proba;
+	    #	&RSAT::message::Debug("Ignoring undefined prefix", $prefix,  "proba set to 1") if ($main::verbose >= #0);
+	} else {
+	    &RSAT::error::FatalError("\t", "MarkovModel::segment_proba",
+				     "Invalid prefix for the selected sequence type", $prefix);
 	}
-	$segment_proba = $prefix_proba;
-	push @residue_proba, $prefix_proba;
-	#	&RSAT::message::Debug("Ignoring undefined prefix", $prefix,  "proba set to 1") if ($main::verbose >= #0);
-    } else {
-	&RSAT::error::FatalError("\t", "MarkovModel::segment_proba",
-				 "Invalid prefix for the selected sequence type", $prefix);
     }
-
     for $c ($order..($seq_len-1)) {
 	my $residue_proba = 0;
 	my $suffix = substr($segment, $c, 1);
@@ -1910,7 +1908,7 @@ sub segment_proba {
 	    push @residue_proba, $residue_proba;
 	    if ($residue_proba <= 0) {
 		&RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
-				      "null transition between prefix ", $prefix, " and suffix", $suffix));
+					      "null transition between prefix ", $prefix, " and suffix", $suffix));
 	    }
 	} elsif ($self->get_attribute("n_treatment") eq "score") {
 	    if (defined($self->{suffix_proba}->{$suffix})) {
