@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.88 2007/10/01 10:33:13 rsat Exp $
+# $Id: matrix-scan,v 1.89 2007/10/03 13:24:14 rsat Exp $
 #
-# Time-stamp: <2007-10-01 12:10:22 jturatsi>
+# Time-stamp: <2007-10-03 15:22:43 jturatsi>
 #
 ############################################################
 ## TO DO: add an option to sort hits either by position or by score
@@ -2270,63 +2270,79 @@ thresholds. Return value is 1 if the segment passed the thresholds.
 sub score_segment {
   my ($segment, $matrix, $seq_id, $pos,$bg_model, $strand) = @_;
   my $ncol = $matrix->{ncol};
-  my $proba_M = 1;
-  my $proba_B = 1;
   my $matrix_name = $matrix->get_attribute("name");
 
   $matrix->{scored}++;
   $sequence_scores->{$seq_id}->{scored}++;
 
-  $proba_M = $matrix->segment_proba($segment);
-
-  $proba_B = $bg_model->segment_proba($segment);
+#  $proba_M = $matrix->segment_proba($segment);
+#  $proba_B = $bg_model->segment_proba($segment);
 
   ## Calculate segment weight and  normalized weight
-  my $score = $null;
+  my $score;
   my $normw = $null;
   my $pval = $null;
   my $ln_pval = $null;
-  if (($proba_M > 0) && ($proba_B > 0)) {
-    $score = log($proba_M/$proba_B)/$log_base;
-    #      $score = $matrix->segment_weight_Bernoulli($segment);
-    $score = sprintf("%.${decimals}f", $score);
-    $score =~ s/^-(0.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
-    if ($calc_fields{normw}) {
-      $normw = sprintf("%6.4f", ($score - $matrix->{Wmin})/($matrix->{Wrange}));
-    }
-    if ($calc_fields{pval}) {
-      if (defined(${$main::pval{$matrix}}{$score})) {
-	$pval_value = ${$main::pval{$matrix}}{$score};
-	$pval = sprintf("%.1e", $pval_value);
-	if ($pval_value > 0) {
-	  $ln_pval = sprintf("%.3f", log($pval_value));
-	  $sig = sprintf("%.3f", -log($pval_value)/$sig_base);
-	} else {
-	  $ln_pval = "-Inf";
-	  $sig = "Inf";
-	}
-      }
-    }
-  } elsif ($proba_M == 0) {
-    if ($proba_B > 0) {
-      $score = "-Inf";
-      $normw = 0 if ($calc_fields{normw});
-      if ($calc_fields{pval}) {
-	$pval = 0;
-	$ln_pval = "-Inf";
-	$sig = "Inf";
-      }
-    }
-  }
+  
+  my ($ref_residue_proba_M, $proba_M) = $matrix->segment_proba($segment);
+  my ($ref_residue_proba_B, $proba_B)= $bg_model->segment_proba($segment);
+  my @residue_proba_M = @$ref_residue_proba_M;
+  my @residue_proba_B = @$ref_residue_proba_B;
 
+  &RSAT::error::FatalError(join("\t", "matrix-scan::score_segment",
+				"Error in residue proba calculation ", $segment))  if (scalar(@residue_proba_M) != scalar(@residue_proba_B)); 
+
+
+  for my $i (0..$#residue_proba_M) {
+      $proba_R_M = $residue_proba_M[$i]; ## residue proba under the matrix
+      $proba_R_B = $residue_proba_B[$i]; ##residue proba under background
+
+      my $residue_weight = log($proba_R_M/$proba_R_B)/$log_base;
+      $residue_weight = sprintf("%.${decimals}f", $residue_weight);
+      
+      $score += $residue_weight;
+      $score =~ s/^-(0\.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
+      $score = sprintf("%.${decimals}f",$score);
+
+  }
+  
+  if (($proba_M > 0) && ($proba_B > 0)) {
+      if ($calc_fields{normw}) {
+	  $normw = sprintf("%6.4f", ($score - $matrix->{Wmin})/($matrix->{Wrange}));
+      }
+      if ($calc_fields{pval}) {
+	  if (defined(${$main::pval{$matrix}}{$score})) {
+	      $pval_value = ${$main::pval{$matrix}}{$score};
+	      $pval = sprintf("%.1e", $pval_value);
+	      if ($pval_value > 0) {
+		  $ln_pval = sprintf("%.3f", log($pval_value));
+		  $sig = sprintf("%.3f", -log($pval_value)/$sig_base);
+	      } else {
+		  $ln_pval = "-Inf";
+		  $sig = "Inf";
+	      }
+	  }
+      }
+  } elsif ($proba_M == 0) {
+      if ($proba_B > 0) {
+	  $score = "-Inf";
+	  $normw = 0 if ($calc_fields{normw});
+	  if ($calc_fields{pval}) {
+	      $pval = 0;
+	      $ln_pval = "-Inf";
+	      $sig = "Inf";
+	  }
+      }
+  }
+  
   if ($return_fields{distrib}) {
-    #      my $score = sprintf("%.${decimals}f", $score);
-    $score_distrib->{$matrix_name}->{$score}->{occ}++;
+      #      my $score = sprintf("%.${decimals}f", $score);
+      $score_distrib->{$matrix_name}->{$score}->{occ}++;
   }
   #    &RSAT::message::Debug("scoring segment", $segment, $seq_id, $pos, $strand, 
   #			  $proba_M , $proba_B, $score) if ($main::verbose >= 10);
-
-
+  
+  
   ## Perform the threshold filtering only after having added the score to the disribution
   return(0) unless (&check_thresholds("proba_m", $proba_M));
   return(0) unless (&check_thresholds("proba_b", $proba_B));
@@ -2414,7 +2430,8 @@ sub print_match {
 		     $match->get_attribute('end'),
 		     $match->get_attribute('description'),
 		     $match->get_attribute('score'),
-		     sprintf("%5.2g\t%5.2g",
+#		     sprintf("%5.2g\t%5.2g",
+		     sprintf("%.1e\t%.1e",
 			     $match->get_attribute('proba_M'),
 			     $match->get_attribute('proba_B')
 			     )
@@ -2868,18 +2885,18 @@ sub runInBatch {
   			&doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);	
   			}
 	 	}
-	 	
+
 	 	close $in;
-	 	
+
 	 	## check that all jobs are finished on the cluster
 	 	if ($cluster != 0) {
 	 		&areJobsDone($wd);
 	 	}
-	 	
+
 	 	## Merge results
 	 	&RSAT::message::TimeWarn("Merge matrix-scan results of each separate sequence") 
  		if ($main::verbose >= 2);
- 		
+
 	 	## Put all individual results in one file 
 	 	$main::outfile{output_raw} = $main::outfile{output}.".raw";
     	if (scalar(@temp_output_files) > 0) {
@@ -2888,13 +2905,13 @@ sub runInBatch {
     		$merge_cmd .= " > $main::outfile{output_raw}";
     		&doit($merge_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);
     	}
-    		
+
     	## Extract the names of the fields returned
     	open (SYSTEM, "grep -m 1 '^#' $main::outfile{output_raw} |");	
  		my $header = <SYSTEM>;
 		close (SYSTEM);
 		print $main::out $header;
-		
+
     	## Extract the sites from the merged file    
     	## could add a sort in the command 
 		open (SYSTEM, "grep -v '^;' $main::outfile{output_raw} | grep -v '^#' | ");
@@ -2907,11 +2924,11 @@ sub runInBatch {
 		$main::outfile{output_log} = $main::outfile{output}.".log";
 		my $log_cmd = "grep '^;' $main::outfile{output_raw} > $main::outfile{output_log} ";
 		&doit($log_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);
-	 	
+
 	 	## Sequence statistics
     	printf $main::out "; %-21s\t%s\n", "Number of sequences scanned", $sequence_number;
     	printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
-	 	
+
 	 	my $done_time = &AlphaDate();
  	    print $main::out "; Job started $start_time\n";
  	    print $main::out "; Job done    $done_time\n";
