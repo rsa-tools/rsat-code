@@ -1237,7 +1237,7 @@ sub calcFrequencies {
     }
 
     &RSAT::message::Debug("&RSAT::matrix::calcFrequencies()", "residue priors", join(" ", %prior)) 
-      if ($main::verbose >= 4);
+      if ($main::verbose >= 10);
 
     ## pseudo-count
     my $pseudo = $self->get_attribute("pseudo") || 0;
@@ -1900,30 +1900,84 @@ corrected frequencies.
 
 sub segment_proba {
     my ($self, $segment) = @_;
-
+    
     $segment = lc($segment);
-
-    my $segment_proba = 1;
     my $seq_len = length($segment);
-    my $r;
-    for my $c (0..($seq_len-1)) {
-	my $letter = substr($segment, $c, 1);
-	my  $letter_proba = 0;
-	if (defined($self->{"alphabet_index"}->{$letter})) {
-	    $r = $self->{"alphabet_index"}->{$letter};
-	    $letter_proba = $self->{"frequencies"}[$c][$r];
-	} else {
-	  if ((lc($letter) eq "n") &&
-	      ($self->get_attribute("n_treatment") eq "score")) {
-	    $letter_proba = 1;
-	  }
-	}
-	$segment_proba *= $letter_proba;
-#	&RSAT::message::Debug("segment_proba", "letter:".$letter, "col:".$c, "row:".$r, "P(letter)=".$letter_proba, "P(segm)=".$segment_proba) if ($main::verbose >= 10);
-    }
+    my @residue_proba = ();
+    
+    my $order = $self->get_attribute("bg_markov_order");
+    $segment =  lc($segment);
+    my $segment_proba = 1;
 
-#    &RSAT::message::Debug("segment_proba", $segment, "P(segm)=".$segment_proba) if ($main::verbose >= 10);
-    return $segment_proba;
+
+    &RSAT::message::Debug("Segment:", $segment, "Markov:".$order) 
+	if ($main::verbose >= 5);    
+
+    ## for Bernouiili model
+    if ($order == 0) { 
+	for my $c (0..($seq_len-1)) {
+	    my $letter = substr($segment, $c, 1);
+	    if (defined($self->{"alphabet_index"}->{$letter})) {
+		$r = $self->{"alphabet_index"}->{$letter};
+		$letter_proba = $self->{"frequencies"}[$c][$r];
+		push @residue_proba, $letter_proba;
+	    } else {
+		if ((lc($letter) eq "n") &&
+		    ($self->get_attribute("n_treatment") eq "score")) {
+		    $letter_proba = 1;
+		    push @residue_proba, $letter_proba;
+		}
+	    }
+	    $segment_proba *= $letter_proba;
+	}
+	### for higher Mrkov order
+    } else {
+	##prefix treatment
+	my $prefix = substr($segment,0,$order);
+	my @prefix_residues = split //,$prefix;
+	my $prefix_proba = 1;
+	
+	## calculation of the prefix probability
+	for my $c (0..$#prefix_residues) {
+	    my $letter =  $prefix_residues[$c];
+	    if (defined($self->{"alphabet_index"}->{$letter})) {
+		$r = $self->{"alphabet_index"}->{$letter};
+		$prefix_proba *=  $self->{"frequencies"}[$c][$r];
+	    } else {
+		if ((lc($pr) eq "n") &&
+		    ($self->get_attribute("n_treatment") eq "score")) {
+		    $prefix_proba *= 1;
+		}
+	    }
+	}
+	$segment_proba *= $prefix_proba;
+	push @residue_proba, $prefix_proba;
+
+	### for the remaining residue of $segment
+	for $c ($order..($seq_len-1)) {
+	    my $letter_proba = 0;
+	    $letter = substr($segment, $c, 1);
+	    if (defined($self->{"alphabet_index"}->{$letter})) {
+		$r = $self->{"alphabet_index"}->{$letter};
+		$letter_proba = $self->{"frequencies"}[$c][$r];
+		push @residue_proba, $letter_proba;
+	    } else {
+		if ((lc($letter) eq "n") &&
+		    ($self->get_attribute("n_treatment") eq "score")) {
+		    $letter_proba = 1;
+		    push @residue_proba, $letter_proba;
+		}
+	    }
+	    $segment_proba *= $letter_proba;
+	}
+	
+    }
+    
+    for my $col (0..$#residue_proba){
+	&RSAT::message::Debug("Proba_residue_M",$col,sprintf("%.6f",$residue_proba[$col])) 
+	    if ($main::verbose >= 5);
+    }
+    return \@residue_proba,$segment_proba;
 }
 
 
