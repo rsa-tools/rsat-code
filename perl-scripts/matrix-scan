@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.90 2007/10/03 13:43:36 rsat Exp $
+# $Id: matrix-scan,v 1.91 2007/10/03 16:39:21 rsat Exp $
 #
-# Time-stamp: <2007-10-03 15:35:36 jturatsi>
+# Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
 ############################################################
 ## TO DO: add an option to sort hits either by position or by score
@@ -746,7 +746,6 @@ package main;
 # 					      $matrix->get_attribute("name"), 
 # 					      $Wmin, $Wmax, $Wrange,
 # 					     )) if ($main::verbose >= 3);
-		
 # 	}
 
 	unless ($bg_method eq "window") {
@@ -760,7 +759,7 @@ package main;
 					      $matrix->get_attribute("name"), 
 					      $Wmin, $Wmax, $Wrange,
 					     )) if ($main::verbose >= 3);
-		
+
 	}
 
 
@@ -778,7 +777,7 @@ package main;
 
   ################################################################
   ## Calculate th pval distribution
-  if ($calc_fields{pval}) {
+  if (($calc_fields{pval})&&($bg_method ne "window")) {
     foreach my $matrix (@matrices) {
       %{$pval{$matrix}} = $matrix->getTheorScoreDistrib("weights", "inv_cum");
     }
@@ -860,29 +859,29 @@ package main;
     ## BG adpatative 
     ## method 1 : include scored segment in bg model calculation : initialisation step
     my $window_offset = 0;
-    if (($main::markov >= 0) && ($bg_method ne "input")) {  
-   		if ($bg_include_seg) {
-    	  if ($main::window >= $main::markov + 1) {
-			if ($main::window > $seq_len) {
-		  &RSAT::message::Warning(join("\t",
-					       $seq_id,
-					       "sequence length",
-					       $seq_len,
-					       "smaller than sliding window size",
-					       $main::window,
-					      )) if ($main::verbose >= 2);
-			  $bg_model->calc_from_seq($current_seq);
-			} else {
-			  ## initialize the model with the first window
-			  $bg_model->calc_from_seq(substr($current_seq,0,$main::window));
-			}
-    		  } else {
-			## calculate the model from the entire current sequence
-			$bg_model->calc_from_seq($current_seq);
-    	  }
-    	  }
-   		}
- 
+    if (($main::markov >= 0) && ($bg_method ne "input")) {
+	if ($bg_include_seg) {
+	    if ($main::window >= $main::markov + 1) {
+		if ($main::window > $seq_len) {
+		    &RSAT::message::Warning(join("\t",
+						 $seq_id,
+						 "sequence length",
+						 $seq_len,
+						 "smaller than sliding window size",
+						 $main::window,
+						)) if ($main::verbose >= 2);
+		    $bg_model->calc_from_seq($current_seq);
+		} else {
+		    ## initialize the model with the first window
+		    $bg_model->calc_from_seq(substr($current_seq,0,$main::window));
+		}
+	    } else {
+		## calculate the model from the entire current sequence
+		$bg_model->calc_from_seq($current_seq);
+	    }
+	}
+    }
+    
     ################################################################
     ## Detect sites
     &RSAT::message::TimeWarn("Scanning sequence", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id,  "with ".scalar(@matrices)." PSSM")
@@ -991,15 +990,20 @@ package main;
 	  ## TO DO: test if this piece of code can be
 	  ## optimized by passing the pointer rather than the
 	  ## whole matrix
+	  if ($bg_method eq "window") {
+	      $matrix->setMarkovModel($bg_model);
+	  }
 	  &score_segment($segment, $matrix, $seq_id, $pos, $bg_model,"D");
 	  if ($main::both_strands) {
-		  if ($bg_method eq "window") {
-			 ### If bg_method is "window"  the bg is calculated on the reverse complement 
-			  &score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, $bg_model->reverse_bg(), "R");
-		  }else {
-			  
-			  &score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, $bg_model, "R");				    
-		  }
+	      if ($bg_method eq "window") {
+		  ### If bg_method is "window"  the bg is calculated on the reverse complement 
+		  my $bg_reverse = $bg_model->reverse_bg();
+		  $matrix->setMarkovModel($bg_reverse);
+		  &score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos,$bg_reverse,"R");
+	      }else {
+		  
+		  &score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, $bg_model, "R");				    
+	      }
 		  
 	  }
 	  ;
@@ -2361,6 +2365,44 @@ sub score_segment {
   ## Calculate information
   #    my $info = $score * $proba_B;
   #    return(0) unless (&check_thresholds("info", $info));
+
+
+  ############################################################
+  ### computing p-val distribution for sliding windows only for
+  ### those matches above the minimal defined threshold
+  ############################################################ 
+  if (($bg_method eq "window")&&($score >= 0)&&($return_fields{pval})) { ## the p-val distrib only for hits whose score >=0
+      $matrix->calcTheorScoreDistrib("weights");
+      my %current_pval_distrib = $matrix->getTheorScoreDistrib("weights", "inv_cum");
+      
+      if (($proba_M > 0) && ($proba_B > 0)) {
+	  if ($calc_fields{pval}) {
+	      if (defined($current_pval_distrib{$score})) {
+		  $pval_value = $current_pval_distrib{$score};
+		  $pval = sprintf("%.1e", $pval_value);
+		  if ($pval_value > 0) {
+		      $ln_pval = sprintf("%.3f", log($pval_value));
+		      $sig = sprintf("%.3f", -log($pval_value)/$sig_base);
+		  } else {
+		      $ln_pval = "-Inf";
+		      $sig = "Inf";
+		  }
+	      }
+	  }
+      } elsif ($proba_M == 0) {
+	  if ($proba_B > 0) {
+	      $score = "-Inf";
+	      if ($calc_fields{pval}) {
+		  $pval = 0;
+		  $ln_pval = "-Inf";
+		  $sig = "Inf";
+	      }
+	  }
+      }
+      
+  }
+
+
 
   $matrix->{matches}++;
 

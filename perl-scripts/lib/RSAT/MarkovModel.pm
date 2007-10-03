@@ -1863,8 +1863,6 @@ sub segment_proba {
     &RSAT::error::FatalError("&RSAT::MarkovModel->segment_proba. The segment ($segment) length ($seq_len) must be larger than the markov order ($order) + 1.") 
 	if ($seq_len < $order + 1);
 
-    
-
     my $prefix = substr($segment,0,$order);
     my $segment_proba = 1;
     my $c = 0;
