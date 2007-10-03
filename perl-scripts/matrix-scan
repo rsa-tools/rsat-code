@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.89 2007/10/03 13:24:14 rsat Exp $
+# $Id: matrix-scan,v 1.90 2007/10/03 13:43:36 rsat Exp $
 #
-# Time-stamp: <2007-10-03 15:22:43 jturatsi>
+# Time-stamp: <2007-10-03 15:35:36 jturatsi>
 #
 ############################################################
 ## TO DO: add an option to sort hits either by position or by score
@@ -2290,7 +2290,10 @@ sub score_segment {
   my @residue_proba_B = @$ref_residue_proba_B;
 
   &RSAT::error::FatalError(join("\t", "matrix-scan::score_segment",
-				"Error in residue proba calculation ", $segment))  if (scalar(@residue_proba_M) != scalar(@residue_proba_B)); 
+				"Error in residue proba calculation ", $segment,
+				"\nsize of background array:", scalar(@residue_proba_B),
+			       "\nsize of matrix array:", scalar(@residue_proba_M)))  
+      if (scalar(@residue_proba_M) != scalar(@residue_proba_B)); 
 
 
   for my $i (0..$#residue_proba_M) {
