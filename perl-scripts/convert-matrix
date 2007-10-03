@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.42 2007/10/02 12:29:16 morgane Exp $
+# $Id: convert-matrix,v 1.43 2007/10/03 09:09:31 rsat Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -16,6 +16,7 @@ BEGIN {
     }
     require "RSA.lib";
 }
+use RSAT::MarkovModel;
 use RSAT::matrix;
 use RSAT::MatrixReader;
 use Data::Dumper;
@@ -74,6 +75,7 @@ $supported_output_formats = join ",", sort keys %supported_output_format;
 $supported_site_formats = join ",", sort keys %supported_site_format;
 $site_format="fasta";
 
+
 &ReadArguments();
 
 ################################################################
@@ -111,11 +113,14 @@ if ($return_fields{information}) {
 local %prior = ();
 ## Prior residue frequencies
 if ($infile{prior}) {
-    my %patterns = &ReadExpectedFrequencies($infile{prior});
-    foreach my $key (sort keys %patterns) {
+    ## bg formats
+    my $bg_model = new RSAT::MarkovModel();
+    my $bg_format = "oligo-analysis";
+    $bg_model->load_from_file($infile{prior}, $bg_format);
+    %prior = $bg_model->get_attribute("suffix_proba");
+    foreach my $key (sort keys %prior) {
 	my $residue = lc($key);
-	$prior{$residue} = $patterns{$key}->{exp_freq};
-	&RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 3);
+	&RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 1);
     }
 }
 
