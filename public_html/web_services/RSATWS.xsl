@@ -4,8 +4,9 @@ xmlns:soap='http://schemas.xmlsoap.org/wsdl/soap/'
 xmlns:wsdl='http://schemas.xmlsoap.org/wsdl/'
 xmlns:xsl='http://www.w3.org/1999/XSL/Transform'
 xmlns:fo='http://www.w3.org/1999/XSL/Format' 
-xmlns:xsd='http://www.w3.org/2001/XMLSchema'>
-    
+xmlns:xsd='http://www.w3.org/2001/XMLSchema'
+xmlns:html='http://www.w3.org/1999/xhtml'>
+
     <xsl:template match='/'>
         <xsl:apply-templates/>
     </xsl:template>
@@ -87,11 +88,13 @@ xmlns:xsd='http://www.w3.org/2001/XMLSchema'>
 		<xsl:if test='@minOccurs >= 1'>(required)</xsl:if>
 	    </td>
 	    <td>
-	      <xsl:value-of select='xsd:annotation/xsd:documentation'/><br/>
+	      <pre><!-- font face='Times' size='+1' --><span style="font-family:Times; font-size:12pt;color:black"><xsl:value-of select='xsd:annotation/xsd:documentation'/><!-- /font --></span></pre><!-- br/ -->
+	      <i>
 	      <xsl:if test='@type = "xsd:string"'>Type = String</xsl:if>
 	      <xsl:if test='@type = "xsd:int"'>Type = Integer</xsl:if>
       	      <xsl:if test='@type = "xsd:boolean"'>Type = Boolean</xsl:if>
       	      <xsl:if test='@type = "xsd:float"'>Type = Float</xsl:if>
+	      </i>
             </td>
         </tr>
     </xsl:template>
