@@ -2254,36 +2254,28 @@ sub add_site() {
 
 =item B<calcTheorScoreDistrib>
 
-Calculate the theoretial score distribution.  The computation is
-performed using the algorithm described by Bailey (Bioinformatics,
-1999).
+Calculate the theoretial score distribution for Markov background model
+of any order. The score distribution is computed for the weight
+(log-likelihood).
 
-By default, the score distribution is computed for the weight
-(log-likelihood), but the methods can also be used to calculate the
-distribution of other scores (e.g. counts, crude frequencies,
-frequencies, ...).
+For Bernoulli (Markov order 0), the computation is
+performed using the algorithm described by Bailey (Bioinformatics,
+1999). 
+
+For Markov models of higher orders, we extended the algorithm of Bailey and
+the calculation of the theorical distribution is coherent with matrix-scan 
+scoring system.
 
 Usage:
 
 =over
 
-
 =item T<$self->calcTheorScoreDistrib();>
 
-Calculate proba distribution of weight scores (this is the default).
+Calculate proba distribution of weight scores.
 
-=item T<$self->calcTheorScoreDistrib("weights");>
-
-Explicitly specify to calculate proba distribution of weight scores.
-
-=item T<$self->calcTheorScoreDistrib("frequencies");>
-
-Calculate proba distribution of frequencies.
-
-=item T<$self->calcTheorScoreDistrib("weights", "inv_cum");>
-
-Calculate proba distribution of weights, with a precision of 3
-decimals. WARNING: it can take up to 10x more time to compute
+Calculate proba distribution of weights, with a precision of user-defined
+number of decimals. WARNING: for example, it can take up to 10x more time to compute
 distributions with 3 decimals than with 2 decimals.
 
 =cut
@@ -2298,6 +2290,15 @@ sub calcTheorScoreDistrib {
   }
 }
 
+################################################################
+=pod
+
+=item B<calcTheorScoreDistribBernoulli>
+
+Calculates the theorical distribution of weights probabilities based on 
+a Bernoulli background model.
+
+=cut
 sub calcTheorScoreDistribBernoulli {
   my ($self, $score_type) = @_;
   $score_type = $score_type || "weights";
@@ -2496,7 +2497,8 @@ sub calcTheorScoreDistribBernoulli {
 
 =item B<calcTheorScoreDistribMarkov>
 
-By Jean-Valery and Morgane, still draft
+Calculates the theorical distribution of weights probabilities based on 
+a background model with Markov order > 0 .
 
 =cut
 sub calcTheorScoreDistribMarkov {
