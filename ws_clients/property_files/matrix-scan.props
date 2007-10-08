@@ -1,6 +1,6 @@
 output=both
-sequence_file=/Users/oly/rsa-tools/ws_clients/sequences/essais.fasta
-matrix_file=/Users/oly/rsa-tools/ws_clients/other_files/essais.tab
+sequence_file=/home/rsat/rsa-tools/ws_clients/sequences/essais.fasta
+matrix_file=/home/rsat/rsa-tools/ws_clients/other_files/essais.tab
 matrix_format=
 matrix_list=
 top_matrices=
