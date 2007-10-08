@@ -1,5 +1,5 @@
 output=both
-sequence=/Users/oly/rsa-tools/ws_clients/sequences/dyads_test_sequences.fasta
+sequence=/home/rsat/rsa-tools/ws_clients/sequences/dyads_test_sequences.fasta
 format = fasta
 length = 3
 spacing = '8-12'

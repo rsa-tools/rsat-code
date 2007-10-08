@@ -1,4 +1,4 @@
 output=both
-sequence_file=/Users/oly/rsa-tools/ws_clients/sequences/convert_test_sequence.fasta
+sequence_file=/home/rsat/rsa-tools/ws_clients/sequences/convert_test_sequence.fasta
 from=fasta
 to=raw
