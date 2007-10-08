@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-only-objects.pl,v 1.5 2007/06/19 10:35:27 rsat Exp $
+# $Id: get-ensembl-genome-only-objects.pl,v 1.6 2007/10/08 12:26:17 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -753,7 +753,7 @@ package main;
     my $organism_name = $species->binomial();
     my $common_name = $species->common_name();
     my @classification = $species->classification();
-    &RSAT::message::Info (join (":", "; Classification ", @classification))  if ($main::verbose >= 1);
+    &RSAT::message::Info (join (":", "; Classification ", reverse(@classification)))  if ($main::verbose >= 1);
     &RSAT::message::Info(join ("\t", "; Organism = ", $organism_name, 
 			       "common name = ", $common_name, 
 			       "NCBI taxid = ", $tax_id))
@@ -762,6 +762,7 @@ package main;
     ## Instantiate an object for the organism
     my $rsat_organism = $organisms->new_object(name=>$organism_name);
     $rsat_organism->push_attribute("names", $organism_name);
+    $rsat_organism->set_attribute("taxonomy", join (";", reverse(@classification)));
     &RSAT::message::Debug("Db", $db) if ($main::verbose >= 3);
 
     my $slice_adaptor = $db->get_SliceAdaptor();
