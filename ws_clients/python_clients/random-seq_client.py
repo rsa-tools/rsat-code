@@ -27,7 +27,7 @@ if __name__ == '__main__':
     server.config.debug = 1
         
     organism = "Mus_musculus_EnsEMBL"
-    sequence_length = 1247000
+    sequence_length = 2000
     repetition = 4
     bg_model = "upstream-noorf"
     oligo_length = 3
