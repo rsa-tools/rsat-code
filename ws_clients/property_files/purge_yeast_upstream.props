@@ -1,5 +1,5 @@
 output=both
-sequence=/Users/oly/rsa-tools/ws_clients/sequences/purge_test_sequences.fasta
+sequence_file=/home/rsat/rsa-tools/ws_clients/sequences/purge_test_sequences.fasta
 format=
 match_length=
 mismatch=

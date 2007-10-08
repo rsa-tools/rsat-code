@@ -1,6 +1,6 @@
 output=both
-ref_classes=/Users/oly/rsa-tools/ws_clients/other_files/seed_list.tab
-query_classes=/Users/oly/rsa-tools/ws_clients/other_files/seed_list.tab
+ref_classes=/home/rsat/rsa-tools/ws_clients/other_files/seed_list.tab
+query_classes=/home/rsat/rsa-tools/ws_clients/other_files/seed_list.tab
 return_fields=occ,proba
 score_column=
 input_classes=
