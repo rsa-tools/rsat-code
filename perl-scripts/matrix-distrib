@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-distrib,v 1.2 2007/09/18 15:47:32 jvanheld Exp $
+# $Id: matrix-distrib,v 1.3 2007/10/08 14:49:04 morgane Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -17,7 +17,9 @@ matrix-distrib
 
 =head1 DESCRIPTION
 
-
+Computes the theoretical distribtuion of score probabilities of a given PSSM.
+It is not limited to a Bernoulli assumption and takes into account background 
+models of any Markov order. 
 
 =head1 AUTHORS
 
@@ -27,14 +29,77 @@ matrix-distrib
 
 =item Morgane Thomas-Chollier morgane@scmbb.ulb.ac.be
 
+=item With the help of Matthieu de France defrance@scmbb.ulb.ac.be
+
 =head1 CATEGORY
 
-util
+=item util
+
+=item PSSM
 
 =head1 USAGE
 
 matrix-distrib [-i matrixfile] [-bgfile bgfile][-o outputfile] [-v]
 
+=head1 INPUT FORMATS
+
+=over
+
+=head2 Matrix file
+
+The matrix format is specified with the option -matrix_format.  Supported :
+tab,cb,consensus,gibbs,meme,assembly. Default : tab.
+
+For a description of these format, see I<convert-matrix -h>
+
+=head2 Background model file
+
+The background model format is specified with the option -bg_format.Supported :
+oligo-analysis, MotifSampler, meme. Default is: oligo-analysis.
+
+For a description of available format, see I<convert-backgound-model -h>
+
+=back
+
+=head1 OUTPUT FORMAT
+
+The output is a tab-delimited file with the following columns:
+
+=over 
+
+=item 1	weight:      	log-likelihood score: w=P(S|M)/P(S|B)
+
+=item 2	proba:       	probability density function: P(W=w)
+
+=item 3	cum:         	cumulative density function: P(W <= w)
+
+=item 4	Pval:        	P-value = inverse cumulative density function: Pval = P(W >= w)
+
+=item 5	ln_Pval:     	natural logarithm of the P-value
+
+=item 6	log_P:       	base 10 logarithm of the P-value
+
+=item 7	sig:        	significance: sig = -log10(Pval)
+
+=back
+
+=head1 THEORICAL DISTRIBUTION COMPUTATION
+
+=over
+
+The scoring scheme is the weight (see I<matrix-scan -h> for more details).
+We calculate in an exaustive way the probabilities that are associated to each score (weight) that can be obtained from a given PSSM.
+
+For Bernoulli (Markov order 0) background models, the distribution of scores is computed with the algorithm described by Bailey (Bioinformatics,
+1999). 
+
+For Markov background models with higher orders, we have extended this algorithm to take into account the dependencies between
+residues. For each iteration of the algorithm, weigths associated to all possible transitions are tagged with a prefix. Each residue weight 
+is calculated according to the prefix tag. The prefix corresponds to a word of Markov order size that preceeds the position of 
+the iteration.
+
+
+=back
 
 =cut
 
@@ -78,13 +143,15 @@ package main;
   #   $supported_bg_formats = join (",", keys %supported_bg_format);
     
   ## matrix formats
-  $matrix_format = "";
+  $matrix_format = "tab";
   %supported_matrix_format = %RSAT::MatrixReader::supported_input_format;
   #	$supported_matrix_formats = join ",", sort keys %supported_matrix_format;
   
 
   %main::infile = ();
   %main::outfile = ();
+  local @matrix_files = ();
+  local @matrices =();
 
   $main::verbose = 0;
   #    $main::in = STDIN;
@@ -111,7 +178,30 @@ package main;
   }
 
   $bg_model->set_attribute("bg_pseudo" => $bg_pseudo);
+  
+  ################################################################
+  ## Load the matrix list if specified
+  if ($infile{matrix_list}) {
+    my ($mlist, $input_dir) = &OpenInputFile($main::infile{matrix_list});
+    while (<$mlist>) {
+      next if (/'^;'/);		# skip comment lines
+      next if (/'^#'/);		# skip header lines
+      next if (/'^--'/);	# skip mysql-type comment lines
+      next unless (/\S/);	# skip empty lines
 
+      my @fields = split /\s+/;
+      my $matrix_file = $fields[0];
+      push @matrix_files, $matrix_file;
+    }
+    close $mlist;
+    &RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
+  }
+
+  ################################################################
+  ## Check that there is at least one input matrix
+  unless (scalar(@matrix_files >= 1)) {
+    &RSAT::error::FatalError("You must specify at least one matrix file.(option -m or -mlist)");
+  }
 
   ################################################################
   ### open output stream
@@ -122,37 +212,49 @@ package main;
     
   ## bg markov model
   $bg_model->load_from_file($main::infile{bgfile}, $bg_format);
-    
-  # print Dumper($bg_model);
-    
+       
   ## Read the input matrices
-  my @matrices = &RSAT::MatrixReader::readFromFile($infile{input}, $matrix_format);
-
-  foreach my $matrix (@matrices) {
-    $matrix->set_parameter("pseudo", $pseudo);
-    $matrix->set_attribute("equi_pseudo", $equi_pseudo);
-    $matrix->force_attribute("decimals", $decimals);
-    $matrix->force_attribute("max_profile", $max_profile);
-    $matrix->force_attribute("sep", $sep);
-    $matrix->setInfoLogBase($info_log_base);
-    $matrix->setMarkovModel($bg_model);
+  foreach my $matrix_file (@matrix_files) {	
+  	 my @new_matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
+  	
+  	foreach my $m (0..$#new_matrices) { 
+  		my $matrix = $new_matrices[$m];
+    	$matrix->set_parameter("pseudo", $pseudo);
+    	$matrix->set_attribute("file", $matrix_file);
+    	local ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+    	$matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
+    	$matrix->set_attribute("name", $matrix_name);
+    	$matrix->set_attribute("equi_pseudo", $equi_pseudo);
+    	$matrix->force_attribute("decimals", $decimals);
+    	$matrix->force_attribute("max_profile", $max_profile);
+    	$matrix->force_attribute("sep", $sep);
+    	$matrix->setInfoLogBase($info_log_base);
+    	$matrix->setMarkovModel($bg_model);
+    	
+    	push @matrices, $matrix;
+  	}
   }
+  
+  ################################################################
+  #### print verbose
+  &Verbose() if ($main::verbose);
 
   ################################################################
   ## Calculate theorical distribution of scores
-  #foreach my $matrix (@matrices) {
-  #	$matrix->calcTheorScoreDistribMarkov();
-  # }
-  my $matrix = shift(@matrices);
+  foreach my $matrix (@matrices) {
+  	 &RSAT::message::Info("Calculating theorical distribution from matrix", $matrix) if ($main::verbose >= 2);
+  	
   ## Return weight distribution
   $matrix->calcTheorScoreDistrib("weights", decimals=>$decimals);
   my %weight_proba = $matrix->getTheorScoreDistrib("weights");
   my %weight_proba_cum = $matrix->getTheorScoreDistrib("weights", "cum");
   my %weight_proba_inv_cum = $matrix->getTheorScoreDistrib("weights", "inv_cum");
 
+	
   ## Print the description of column contents
   my @columns = ("weight", "proba", "cum", "Pval", "ln_Pval", "log_P", "sig");
-  if ($main::verbose >= 1) {
+  if (($main::verbose >= 1)||($infile{matrix_list})) {
+  	print $out ";\n; Matrix:".$matrix->get_attribute("name")."\n";
     print $out ";\n; Theoretical distribution of weight probabilities\n";
     my %descr = ();
     $descr{"weight"} = "log-likelihood score: w=P(S|M)/P(S|B)";
@@ -210,14 +312,9 @@ package main;
 		    $sig,
 		   ), "\n";
   }
+  }
 
-  ################################################################
-  #### print verbose
-  &Verbose() if ($main::verbose);
 
-  ################################################################
-  ###### print output
-  #print $out $bg_model->to_string($output_format, decimals=>$decimals);
 
   ################################################################
   ## finish verbose
@@ -309,14 +406,34 @@ Same as -h
 	    ## Input file
 =pod
 
-=item B<-i inputfile>
+=item B<-m matrixfile>
 
-If no input file is specified, the standard input is used.  This
-allows to use the command within a pipe.
+Matrix file. 
+
+This argument can be used iteratively to scan the sequence with
+multiple matrices.
 
 =cut
-	} elsif ($arg eq "-i") {
-	    $main::infile{input} = shift(@arguments);
+	} elsif ($arg eq "-m") {
+	    push @matrix_files, shift(@arguments);
+
+=pod
+
+=item B<-mlist matrix_list>
+
+Matrix list. 
+
+Indicate a file containing a list of matrices to be used for scanning
+the region. This facilitates the scanning of a sequence with a library
+of matrices (e.g. all the matrices from RegulonDB, or TRANSFAC). 
+
+Format: the matrix list file is a text file. The first word of each
+row is suppose to indicate a file name. Any further information on the
+same row is ignored.
+
+=cut
+	} elsif ($arg eq "-mlist") {
+	    $main::infile{matrix_list} = shift(@arguments);
 	    
 	    ## Output file
 =pod
@@ -335,7 +452,7 @@ allows to use the command within a pipe.
 
 =item B<-matrix_format matrix_format>
 
-Matrix format.
+Matrix format. Default is tab.
 
 =cut
 	} elsif ($arg eq "-matrix_format") {
@@ -441,7 +558,7 @@ Number of decimals to print or the transition probabilities.
 ################################################################
 #### verbose message
 sub Verbose {
-    print $main::out "; convert-backgound-model ";
+    print $main::out "; matrix-distrib ";
     &PrintArguments($main::out);
     if (defined(%main::infile)) {
 	print $main::out "; Input files\n";
@@ -455,8 +572,28 @@ sub Verbose {
 	    print $main::out ";\t$key\t$value\n";
 	}
       }
-    print $main::out "; Markov order\t", $bg_model->get_attribute("order"), "\n";
-    print $main::out "; Strand\t", $bg_model->get_attribute("strand"), "\n";
+    
+    ## Pseudo counts
+    
+      
+    ## Background model
+    if (defined($bg_model)) {
+   	printf $main::out "; Background model\n";
+	my $order = $bg_model->get_attribute("order");
+    if ($order == 0) {
+	printf $main::out ";\t%-14s\n", "Bernoulli model (order=0)";
+    } else {
+	printf $main::out ";\t%-14s\t%d\n", "Markov order", $order;
+    }
+    printf $main::out ";\t%-14s\t%s\n", "Strand", $bg_model->get_attribute("strand");
+    printf $main::out ";\t%-14s\t%s\n", "Background pseudo-frequency", $main::bg_pseudo;
+
+    my %bg_prior = $bg_model->get_attribute("suffix_proba");
+    print $main::out ";\tResidue probabilities\n";
+    foreach my $residue (sort keys %bg_prior) {
+	printf $main::out ";\t\t%s\t%.5f\n", $residue, $bg_prior{$residue};
+    }
+    }
 }
 
 
