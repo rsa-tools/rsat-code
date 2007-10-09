@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-distrib,v 1.3 2007/10/08 14:49:04 morgane Exp $
+# $Id: matrix-distrib,v 1.4 2007/10/09 07:49:31 morgane Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -509,7 +509,7 @@ Pseudo-count for the matrix (default: 1). See matrix-scan for details.
 =item B<-bg_pseudo #>
 
 Pseudo frequency for the background models. Value must be a real
-between 0 and 1 (default: 0.01) If the training sequence length (L) is
+between 0 and 1 (default: 0) If the training sequence length (L) is
 known, the value can be set to square-root of L divided by
 L+squareroot of L
 
