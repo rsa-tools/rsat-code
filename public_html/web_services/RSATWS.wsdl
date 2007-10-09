@@ -360,9 +360,19 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:documentation>Number of substitutions allowed.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="pattern" type="xsd:string" minOccurs="1">
+	<xsd:element name="pattern" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
-	    <xsd:documentation>Pattern to match.</xsd:documentation>
+	    <xsd:documentation>Pattern to match. Use this option or the 'pattern_file' option</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="pattern_file" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>File with patterns to match. Use this option or the 'pattern' option</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="tmp_pattern_file" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>File located on the server with patterns to match (workflow usage).</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
 	<xsd:element name="id" type="xsd:string" minOccurs="0">
@@ -397,6 +407,154 @@ Default is 'both'.</xsd:documentation>
 	</xsd:element>
        </xsd:sequence>
       </xsd:complexType>
+
+<xsd:complexType name="FeatureMapRequest">
+       	<xsd:sequence>
+        <xsd:element name="output" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
+Default is 'both'.</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="features" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>a list of features (ORFs, regulatory sites). Each feature is represented by a single line, which should	provide the following information:
+Input file columns:
+  1. map label (eg gene name)
+  2. feature type
+  3. feature identifier (ex: GATAbox, Abf1_site)
+  4. strand (D for Direct, R for Reverse),
+  5. feature start position
+  6. feature end position
+  7. (optional) description 
+  8. (optional) score
+The standard input format assumes that these topics are provided in this order, separated by tabs. Start and end positions can be positive or negative.</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>Name of the file with input sequence on the server. You need to supply either this parameter or the previous one (features).</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="format" type="xsd:string" minOccurs="0">
+	<xsd:annotation>
+	<xsd:documentation>Output image format. Supported: png,jpg,ps,gif (default = jpg)</xsd:documentation>
+	</xsd:annotation>
+	</xsd:element>
+	<xsd:element name="from" type="xsd:int" minOccurs="0">
+	<xsd:annotation>
+	<xsd:documentation>Lower limit of the positions represented on the graph.</xsd:documentation>
+	</xsd:annotation>
+	</xsd:element>
+	<xsd:element name="to" type="xsd:int" minOccurs="0">
+	<xsd:annotation>
+	<xsd:documentation>Upper limit of the positions represented on the graph.</xsd:documentation>
+	</xsd:annotation>
+	</xsd:element>
+	<xsd:element name="title" type="xsd:string" minOccurs="0">
+	<xsd:annotation>
+	<xsd:documentation>Generic Title for the feature map.</xsd:documentation>
+	</xsd:annotation>
+	</xsd:element>
+	<xsd:element name="label" type="xsd:string" minOccurs="0">
+	<xsd:annotation>
+	<xsd:documentation>Define the info to display for each feature. Valid keys are: id, strand, descr (feature descritption), pos (feature start and end positions).
+Several keys can be entered separated by commas without space. ex: -label pos,id. (default = id).</xsd:documentation>
+	</xsd:annotation>
+	</xsd:element>
+	<xsd:element name="symbol" type="xsd:int" minOccurs="0">
+	<xsd:annotation>
+	<xsd:documentation>Associates a graphical symbol (i.e. rectangle, circle, buterfly, ...) to each feature. This is convenient to distinguish the features on black and white printings.
+Mutually exclusive with the -dot option.</xsd:documentation>
+	</xsd:annotation>
+	</xsd:element>
+	<xsd:element name="dot" type="xsd:int" minOccurs="0">
+	<xsd:annotation>
+	<xsd:documentation>A color dot is associated to each feature. This allows to distinguish overlapping structures on a color screen. Mutually exclusive with the -symbol option.</xsd:documentation>
+	</xsd:annotation>
+	</xsd:element>
+	<xsd:element name="mlen" type="xsd:int" minOccurs="0">
+	<xsd:annotation>
+	<xsd:documentation>map length (in pixels).</xsd:documentation>
+	</xsd:annotation>
+	</xsd:element>
+        <xsd:element name="mapthick" type="xsd:int" minOccurs="0">
+        <xsd:annotation>
+        <xsd:documentation></xsd:documentation>
+        </xsd:annotation>
+        </xsd:element>
+	<xsd:element name="mspacing" type="xsd:int" minOccurs="0">
+        <xsd:annotation>
+        <xsd:documentation></xsd:documentation>
+        </xsd:annotation>
+        </xsd:element>
+	<xsd:element name="origin" type="xsd:int" minOccurs="0">
+        <xsd:annotation>
+        <xsd:documentation></xsd:documentation>
+        </xsd:annotation>
+        </xsd:element>
+	<xsd:element name="legend" type="xsd:int" minOccurs="0">
+        <xsd:annotation>
+        <xsd:documentation></xsd:documentation>
+        </xsd:annotation>
+        </xsd:element>
+	<xsd:element name="scalebar" type="xsd:int" minOccurs="0">
+        <xsd:annotation>
+        <xsd:documentation></xsd:documentation>
+        </xsd:annotation>
+        </xsd:element>
+	<xsd:element name="scalestep" type="xsd:int" minOccurs="0">
+        <xsd:annotation>
+        <xsd:documentation></xsd:documentation>
+        </xsd:annotation>
+        </xsd:element>
+	<xsd:element name="scorethick" type="xsd:int" minOccurs="0">
+        <xsd:annotation>
+        <xsd:documentation></xsd:documentation>
+        </xsd:annotation>
+        </xsd:element>
+	<xsd:element name="maxscore" type="xsd:int" minOccurs="0">
+        <xsd:annotation>
+        <xsd:documentation></xsd:documentation>
+        </xsd:annotation>
+        </xsd:element>
+	<xsd:element name="minscore" type="xsd:int" minOccurs="0">
+        <xsd:annotation>
+        <xsd:documentation></xsd:documentation>
+        </xsd:annotation>
+        </xsd:element>
+	<xsd:element name="maxfthick" type="xsd:int" minOccurs="0">
+        <xsd:annotation>
+        <xsd:documentation></xsd:documentation>
+        </xsd:annotation>
+        </xsd:element>
+	<xsd:element name="minfthick" type="xsd:int" minOccurs="0">
+        <xsd:annotation>
+        <xsd:documentation></xsd:documentation>
+        </xsd:annotation>
+        </xsd:element>
+	<xsd:element name="htmap" type="xsd:int" minOccurs="0">
+        <xsd:annotation>
+        <xsd:documentation></xsd:documentation>
+        </xsd:annotation>
+        </xsd:element>
+	<xsd:element name="mono" type="xsd:int" minOccurs="0">
+        <xsd:annotation>
+        <xsd:documentation></xsd:documentation>
+        </xsd:annotation>
+        </xsd:element>
+	<xsd:element name="orientation" type="xsd:string" minOccurs="0">
+        <xsd:annotation>
+        <xsd:documentation></xsd:documentation>
+        </xsd:annotation>
+        </xsd:element>
+	<xsd:element name="select" type="xsd:string" minOccurs="0">
+        <xsd:annotation>
+        <xsd:documentation></xsd:documentation>
+        </xsd:annotation>
+        </xsd:element>
+	</xsd:sequence>
+	</xsd:complexType>
 
       <xsd:complexType name="GeneInfoRequest">
        <xsd:sequence>
@@ -1258,6 +1416,26 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:sequence>
       </xsd:complexType>
 
+<xsd:complexType name="FeatureMapResponse">
+        <xsd:sequence>
+          <xsd:element name="server" type="xsd:string">
+            <xsd:annotation>
+              <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+          <xsd:element name="command" type="xsd:string">
+            <xsd:annotation>
+              <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+          <xsd:element name="client" type="xsd:string">
+            <xsd:annotation>
+              <xsd:documentation>The results.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="GeneInfoResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -1580,6 +1758,22 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
+      <xsd:element name="feature_map">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="request" type="tns:FeatureMapRequest" />
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="feature_mapResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="response" type="tns:FeatureMapResponse" />
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
       <xsd:element name="gene_info">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -1815,6 +2009,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:dna_patternResponse"/>
   </message>
 
+  <message name="feature_mapRequest">
+    <part name="parameters" element="tns:feature_map"/>
+  </message>
+
+  <message name="feature_mapResponse">
+    <part name="output" element="tns:feature_mapResponse"/>
+  </message>
+
   <message name="gene_infoRequest">
     <part name="parameters" element="tns:gene_info"/>
   </message>
@@ -1951,6 +2153,12 @@ The output graph will thus consist in the graph induced by all nodes of the firs
          <documentation>Searches all occurrences of a pattern within DNA sequences.
          </documentation>
       </operation>
+      <operation name="feature_map">
+         <input name="FeatureMapRequest" message="tns:feature_mapRequest"/>
+         <output name="FeatureMapResponse" message="tns:feature_mapResponse"/>
+         <documentation>
+         </documentation>
+      </operation>
       <operation name="gene_info">
          <input name="GeneInfoRequest" message="tns:gene_infoRequest"/>
          <output name="GeneInfoResponse" message="tns:gene_infoResponse"/>
@@ -2069,6 +2277,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
          </output>
       </operation>
       <operation name="dna_pattern">
+         <soap:operation soapAction=""/>
+         <input>
+             <soap:body use="literal" />
+         </input>
+         <output>
+             <soap:body use="literal" />
+         </output>
+      </operation>
+      <operation name="feature_map">
          <soap:operation soapAction=""/>
          <input>
              <soap:body use="literal" />
