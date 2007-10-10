@@ -547,6 +547,19 @@ sub dna_pattern_cmd {
 	$tmp_infile = $args{"tmp_infile"};
     }
     chomp $tmp_infile;
+
+    my $tmp_pattern_file;
+    if ($args{"pattern_file"}) {
+	my $patterns = $args{"pattern_file"};
+	chomp $patterns;
+	$tmp_pattern_file = `mktemp $TMP/dnapatt-pattern_file.XXXXXXXXXX`;
+	open TMP_IN, ">".$tmp_pattern_file or die "cannot open temp file ".$tmp_pattern_file."\n";
+	print TMP_IN $patterns;
+	close TMP_IN;
+    } elsif ($args{"tmp_pattern_file"}){
+	$tmp_pattern_file = $args{"tmp_pattern_file"};
+    }
+
     my $format = $args{"format"};
     my $pattern = $args{"pattern"};
     my $subst = $args{"subst"};
@@ -570,6 +583,13 @@ sub dna_pattern_cmd {
       $pattern =~ s/\'//g;
       $pattern =~ s/\"//g;
       $command .= " -p '".$pattern."'";
+    }
+
+    if ($tmp_pattern_file) {
+      chomp $tmp_pattern_file;
+      $tmp_pattern_file =~ s/\'//g;
+      $tmp_pattern_file =~ s/\"//g;
+      $command .= " -pl '".$tmp_pattern_file."'";
     }
 
     if ($subst) {
@@ -610,6 +630,208 @@ sub dna_pattern_cmd {
 	$origin =~ s/\'//g;
 	$origin =~ s/\"//g;
 	$command .= " -origin '".$origin."'";
+    }
+
+    $command .= " -i '".$tmp_infile."'";
+
+    return $command;
+}
+
+sub feature_map {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->feature_map_cmd(%args);
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $result = `$command`;
+    my $tmp_outfile = `mktemp $TMP/feature_map.XXXXXXXXXX`;
+    $tmp_outfile .= ".jpg";
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+sub feature_map_cmd {
+    my ($self, %args) =@_;
+    if ($args{"features"}) {
+	my $features = $args{"features"};
+	chomp $features;
+	$tmp_infile = `mktemp $TMP/feature_map.XXXXXXXXXX`;
+	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
+	print TMP_IN $features;
+	close TMP_IN;
+    } elsif ($args{"tmp_infile"}) {
+	$tmp_infile = $args{"tmp_infile"};
+    }
+    chomp $tmp_infile;
+
+    my $format = $args{"format"};
+    my $from = $args{"from"};
+    my $to = $args{"to"};
+    my $title = $args{"title"};
+    my $label = $args{"label"};
+    my $symbol = $args{"symbol"};
+    my $dot = $args{"dot"};
+    my $mlen = $args{"mlen"};
+    my $mapthick = $args{"mapthick"};
+    my $mspacing = $args{"mspacing"};
+    my $origin = $args{"origin"};
+    my $legend = $args{"legend"};
+    my $scalebar = $args{"scalebar"};
+    my $scalestep = $args{"scalestep"};
+    my $scorethick = $args{"scorethick"};
+    my $maxscore = $args{"maxscore"};
+    my $minscore = $args{"minscore"};
+    my $maxfthick = $args{"maxfthick"};
+    my $minfthick = $args{"minfthick"};
+    my $htmap = $args{"htmap"};
+    my $mono = $args{"mono"};
+    my $orientation = $args{"orientation"};
+    my $select = $args{"select"};
+
+    my $command = "$SCRIPTS/feature-map";
+
+    if ($format) {
+      $format =~ s/\'//g;
+      $format =~ s/\"//g;
+      $command .= " -format '".$format."'";
+    }
+
+    if ($from) {
+      $from =~ s/\'//g;
+      $from =~ s/\"//g;
+      $command .= " -from '".$from."'";
+    }
+
+    if ($to) {
+      $to =~ s/\'//g;
+      $to =~ s/\"//g;
+      $command .= " -to '".$to."'";
+    }
+
+    if ($title) {
+      $title =~ s/\'//g;
+      $title =~ s/\"//g;
+      $command .= " -title '".$title."'";
+    }
+
+    if ($label) {
+      $label =~ s/\'//g;
+      $label =~ s/\"//g;
+      $command .= " -label '".$label."'";
+    }
+
+    if ($symbol == 1) {
+      $command .= " -symbol";
+    }
+
+    if ($dot == 1) {
+      $command .= " -dot";
+    }
+
+    if ($htmap == 1) {
+      $command .= " -htmap";
+    }
+
+    if ($legend == 1) {
+      $command .= " -legend";
+    }
+
+    if ($scalebar == 1) {
+      $command .= " -scalebar";
+    }
+
+    if ($scorethick == 1) {
+      $command .= " -scorethick";
+    }
+
+    if ($orientation) {
+	if ($orientation eq "horiz" || $orientation eq "vertic") {
+	    $command .= " -".$orientation;
+	} else {
+	    die "Orientation must be equal to either 'horiz' or 'vertic'";
+	}
+    }
+
+    if ($mono == 1) {
+      $command .= " -mono";
+    }
+
+    if ($mlen) {
+      $mlen =~ s/\'//g;
+      $mlen =~ s/\"//g;
+      $command .= " -mlen '".$mlen."'";
+    }
+
+    if ($mapthick) {
+      $mapthick =~ s/\'//g;
+      $mapthick =~ s/\"//g;
+      $command .= " -mapthick '".$mapthick."'";
+    }
+
+    if ($mspacing) {
+      $mspacing =~ s/\'//g;
+      $mspacing =~ s/\"//g;
+      $command .= " -mspacing '".$mspacing."'";
+    }
+
+    if ($origin) {
+      $origin =~ s/\'//g;
+      $origin =~ s/\"//g;
+      $command .= " -origin '".$origin."'";
+    }
+
+    if ($scalestep) {
+      $scalestep =~ s/\'//g;
+      $scalestep =~ s/\"//g;
+      $command .= " -scalestep '".$scalestep."'";
+    }
+
+    if ($maxscore) {
+      $maxscore =~ s/\'//g;
+      $maxscore =~ s/\"//g;
+      $command .= " -maxscore '".$maxscore."'";
+    }
+
+    if ($minscore) {
+      $minscore =~ s/\'//g;
+      $minscore =~ s/\"//g;
+      $command .= " -minscore '".$minscore."'";
+    }
+
+    if ($maxfthick) {
+      $maxfthick =~ s/\'//g;
+      $maxfthick =~ s/\"//g;
+      $command .= " -maxfthick '".$maxfthick."'";
+    }
+
+    if ($minfthick) {
+      $minfthick =~ s/\'//g;
+      $minfthick =~ s/\"//g;
+      $command .= " -minfthick '".$minfthick."'";
+    }
+
+    if ($select) {
+	$select =~ s/\'//g;
+	$select =~ s/\"//g;
+	$command .= " -select '".$select."'";
     }
 
     $command .= " -i '".$tmp_infile."'";
@@ -990,7 +1212,7 @@ sub matrix_scan_cmd {
     my $sequence = $args{"sequence_file"};
     chomp $sequence;
     $tmp_sequence_file = `mktemp $TMP/matscan-sequence_file.XXXXXXXXXX`;
-    open TMP_IN, ">".$tmp_sequence_file or die "cannot open temp file ".$tmp_seqence_file."\n";
+    open TMP_IN, ">".$tmp_sequence_file or die "cannot open temp file ".$tmp_sequence_file."\n";
     print TMP_IN $sequence;
     close TMP_IN;
   }
