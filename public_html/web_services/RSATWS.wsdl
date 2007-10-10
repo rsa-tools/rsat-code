@@ -390,6 +390,11 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:documentation>No overlapping of oligos allowed if value = 1. Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
+	<xsd:element name="score" type="xsd:int" minOccurs="0">
+	<xsd:annotation>
+	<xsd:documentation>Score column. Column of the pattern file which contains the score</xsd:documentation>
+	</xsd:annotation>
+	</xsd:element>
 	<xsd:element name="str" type="xsd:int" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>Oligonucleotide occurrences found on both stands are summed (2) or not (1). Default is 2.</xsd:documentation>
@@ -554,6 +559,16 @@ In other words,this document displays a figure with sensitive areas. Each time t
         <xsd:documentation> Only display the features whose ID is in the provided id_list.
 The id_list contains one or several IDs, separated by commas.IDs may be embraced in single quotes to allow multiple words within the IDs. Commas and single quotes are not allowed within an ID.
 Example:-select 'gataag','gattag' only displays features identified by gataag or gattag.</xsd:documentation>
+        </xsd:annotation>
+        </xsd:element>
+	<xsd:element name="tmp_sequence_file" type="xsd:string" minOccurs="0">
+        <xsd:annotation>
+        <xsd:documentation>Reference sequence file on the server (workflow usage)</xsd:documentation>
+        </xsd:annotation>
+        </xsd:element>
+	<xsd:element name="sequence_format" type="xsd:string" minOccurs="0">
+        <xsd:annotation>
+        <xsd:documentation>Format of reference sequence file on the server (workflow usage)</xsd:documentation>
         </xsd:annotation>
         </xsd:element>
 	</xsd:sequence>

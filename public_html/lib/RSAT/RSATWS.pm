@@ -8,6 +8,8 @@ use SOAP::WSDL;
 use vars qw(@ISA);
 @ISA = qw(SOAP::Server::Parameters);
 
+use File::Temp qw/ tempfile tempdir /;
+
 my $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||;
 my $SCRIPTS = $RSAT.'/perl-scripts';
 my $TMP = $RSAT.'/public_html/tmp';
@@ -569,6 +571,7 @@ sub dna_pattern_cmd {
     my $str = $args{"str"};
     my $sort = $args{"sort"};
     my $th = $args{"th"};
+    my $score = $args{'score'};
 
     my $command = "$SCRIPTS/dna-pattern";
 
@@ -632,6 +635,12 @@ sub dna_pattern_cmd {
 	$command .= " -origin '".$origin."'";
     }
 
+    if ($score) {
+	$score =~ s/\'//g;
+	$score =~ s/\"//g;
+	$command .= " -sc '".$score."'";
+    }
+
     $command .= " -i '".$tmp_infile."'";
 
     return $command;
@@ -650,11 +659,15 @@ sub feature_map {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
     my $result = `$command`;
-    my $tmp_outfile = `mktemp $TMP/feature_map.XXXXXXXXXX`;
-    $tmp_outfile .= ".jpg";
-    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-    print TMP_OUT $result;
-    close TMP_OUT;
+    my $suffix;
+    if ($args{'format'}) {
+	$suffix = ".".$args{'format'};
+    } else {
+	$suffix = ".jpg";
+    }
+    my ($TMP_OUT, $tmp_outfile) = tempfile(feature_map.XXXXXXXXXX, SUFFIX => $suffix, DIR => $TMP);
+    print $TMP_OUT $result;
+    close $TMP_OUT;
     if ($output_choice eq 'server') {
 	return SOAP::Data->name('response' => {'command' => $command, 
 					       'server' => $tmp_outfile});
@@ -705,6 +718,8 @@ sub feature_map_cmd {
     my $mono = $args{"mono"};
     my $orientation = $args{"orientation"};
     my $select = $args{"select"};
+    my $tmp_sequence_file = $args{'tmp_sequence_file'};
+    my $sequence_format = $args{'sequence_format'};
 
     my $command = "$SCRIPTS/feature-map";
 
@@ -714,13 +729,13 @@ sub feature_map_cmd {
       $command .= " -format '".$format."'";
     }
 
-    if ($from) {
+    if ($from =~ /\d/) {
       $from =~ s/\'//g;
       $from =~ s/\"//g;
       $command .= " -from '".$from."'";
     }
 
-    if ($to) {
+    if ($to =~ /\d/) {
       $to =~ s/\'//g;
       $to =~ s/\"//g;
       $command .= " -to '".$to."'";
@@ -774,55 +789,55 @@ sub feature_map_cmd {
       $command .= " -mono";
     }
 
-    if ($mlen) {
+    if ($mlen =~ /\d/) {
       $mlen =~ s/\'//g;
       $mlen =~ s/\"//g;
       $command .= " -mlen '".$mlen."'";
     }
 
-    if ($mapthick) {
+    if ($mapthick =~ /\d/) {
       $mapthick =~ s/\'//g;
       $mapthick =~ s/\"//g;
       $command .= " -mapthick '".$mapthick."'";
     }
 
-    if ($mspacing) {
+    if ($mspacing =~ /\d/) {
       $mspacing =~ s/\'//g;
       $mspacing =~ s/\"//g;
       $command .= " -mspacing '".$mspacing."'";
     }
 
-    if ($origin) {
+    if ($origin =~ /\d/) {
       $origin =~ s/\'//g;
       $origin =~ s/\"//g;
       $command .= " -origin '".$origin."'";
     }
 
-    if ($scalestep) {
+    if ($scalestep =~ /\d/) {
       $scalestep =~ s/\'//g;
       $scalestep =~ s/\"//g;
       $command .= " -scalestep '".$scalestep."'";
     }
 
-    if ($maxscore) {
+    if ($maxscore =~ /\d/) {
       $maxscore =~ s/\'//g;
       $maxscore =~ s/\"//g;
       $command .= " -maxscore '".$maxscore."'";
     }
 
-    if ($minscore) {
+    if ($minscore =~ /\d/) {
       $minscore =~ s/\'//g;
       $minscore =~ s/\"//g;
       $command .= " -minscore '".$minscore."'";
     }
 
-    if ($maxfthick) {
+    if ($maxfthick =~ /\d/) {
       $maxfthick =~ s/\'//g;
       $maxfthick =~ s/\"//g;
       $command .= " -maxfthick '".$maxfthick."'";
     }
 
-    if ($minfthick) {
+    if ($minfthick =~ /\d/) {
       $minfthick =~ s/\'//g;
       $minfthick =~ s/\"//g;
       $command .= " -minfthick '".$minfthick."'";
@@ -832,6 +847,18 @@ sub feature_map_cmd {
 	$select =~ s/\'//g;
 	$select =~ s/\"//g;
 	$command .= " -select '".$select."'";
+    }
+
+    if ($tmp_sequence_file) {
+	$tmp_sequence_file =~ s/\'//g;
+	$tmp_sequence_file =~ s/\"//g;
+	$command .= " -seq '".$tmp_sequence_file."'";
+    }
+
+    if ($sequence_format) {
+      $sequence_format =~ s/\'//g;
+      $sequence_format =~ s/\"//g;
+      $command .= " -seqformat '".$sequence_format."'";
     }
 
     $command .= " -i '".$tmp_infile."'";
