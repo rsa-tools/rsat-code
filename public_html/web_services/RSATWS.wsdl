@@ -475,82 +475,85 @@ Mutually exclusive with the -dot option.</xsd:documentation>
 	</xsd:element>
 	<xsd:element name="mlen" type="xsd:int" minOccurs="0">
 	<xsd:annotation>
-	<xsd:documentation>map length (in pixels).</xsd:documentation>
+	<xsd:documentation>map length (in pixels).Default is 600.Length refers to either height (for vertical maps) of width (for horizontal maps).</xsd:documentation>
 	</xsd:annotation>
 	</xsd:element>
         <xsd:element name="mapthick" type="xsd:int" minOccurs="0">
         <xsd:annotation>
-        <xsd:documentation></xsd:documentation>
+        <xsd:documentation>Map thickness.Thickness refers to either width (for vertical maps) or height (horizintal maps). This parameter allows to change the thickness allocated to each map. This is useful when labels are too large. Default is 150.</xsd:documentation>
         </xsd:annotation>
         </xsd:element>
 	<xsd:element name="mspacing" type="xsd:int" minOccurs="0">
         <xsd:annotation>
-        <xsd:documentation></xsd:documentation>
+        <xsd:documentation>Map spacing.The size of the border between maps (in pixel).</xsd:documentation>
         </xsd:annotation>
         </xsd:element>
 	<xsd:element name="origin" type="xsd:int" minOccurs="0">
         <xsd:annotation>
-        <xsd:documentation></xsd:documentation>
+        <xsd:documentation>All coordinates are recalculated relative to this origin.This allows to display all coordinates with respect to the ORF start or transcription start site.</xsd:documentation>
         </xsd:annotation>
         </xsd:element>
 	<xsd:element name="legend" type="xsd:int" minOccurs="0">
         <xsd:annotation>
-        <xsd:documentation></xsd:documentation>
+        <xsd:documentation>Draws a legend on the graph, showing the symbol associated to each distinct feature.</xsd:documentation>
         </xsd:annotation>
         </xsd:element>
 	<xsd:element name="scalebar" type="xsd:int" minOccurs="0">
         <xsd:annotation>
-        <xsd:documentation></xsd:documentation>
+        <xsd:documentation>Draws a scale bar on the left of the graph.</xsd:documentation>
         </xsd:annotation>
         </xsd:element>
 	<xsd:element name="scalestep" type="xsd:int" minOccurs="0">
         <xsd:annotation>
-        <xsd:documentation></xsd:documentation>
+        <xsd:documentation>Step between annotations of the scale bar. If not specified, a reasonable step is calculated on basis of the scale bar range.</xsd:documentation>
         </xsd:annotation>
         </xsd:element>
 	<xsd:element name="scorethick" type="xsd:int" minOccurs="0">
         <xsd:annotation>
-        <xsd:documentation></xsd:documentation>
+        <xsd:documentation>Each feature is displayed with a thickness proportional to its score. Only positive scores are represented.</xsd:documentation>
         </xsd:annotation>
         </xsd:element>
 	<xsd:element name="maxscore" type="xsd:int" minOccurs="0">
         <xsd:annotation>
-        <xsd:documentation></xsd:documentation>
+        <xsd:documentation>(only valid when -scorethick is active) Maximal allowed score value. Higher score values are clipped for the drawing.</xsd:documentation>
         </xsd:annotation>
         </xsd:element>
 	<xsd:element name="minscore" type="xsd:int" minOccurs="0">
         <xsd:annotation>
-        <xsd:documentation></xsd:documentation>
+        <xsd:documentation>(only valid when -scorethick is active) Minimal allowed score value. Features with smaller score are not displayed.</xsd:documentation>
         </xsd:annotation>
         </xsd:element>
 	<xsd:element name="maxfthick" type="xsd:int" minOccurs="0">
         <xsd:annotation>
-        <xsd:documentation></xsd:documentation>
+        <xsd:documentation>Max feature thickness</xsd:documentation>
         </xsd:annotation>
         </xsd:element>
 	<xsd:element name="minfthick" type="xsd:int" minOccurs="0">
         <xsd:annotation>
-        <xsd:documentation></xsd:documentation>
+        <xsd:documentation>Min feature thickness</xsd:documentation>
         </xsd:annotation>
         </xsd:element>
 	<xsd:element name="htmap" type="xsd:int" minOccurs="0">
         <xsd:annotation>
-        <xsd:documentation></xsd:documentation>
+       <xsd:documentation>HTML map.An HTML document is automatically generated, which includes the feature map GIF file as an HTML map.
+In other words,this document displays a figure with sensitive areas. Each time the mouse is positioned above a feature, information about this particuliar feature is displayed at the bottom of the browser window.</xsd:documentation>
         </xsd:annotation>
         </xsd:element>
 	<xsd:element name="mono" type="xsd:int" minOccurs="0">
         <xsd:annotation>
-        <xsd:documentation></xsd:documentation>
+        <xsd:documentation>Monochrome palette (for printing on black/white printer).</xsd:documentation>
         </xsd:annotation>
         </xsd:element>
 	<xsd:element name="orientation" type="xsd:string" minOccurs="0">
         <xsd:annotation>
-        <xsd:documentation></xsd:documentation>
+        <xsd:documentation>Orientation of the map. Valid values are "horiz" for an horizontal map (default) and "vertic" for a vertical map.</xsd:documentation>
         </xsd:annotation>
         </xsd:element>
 	<xsd:element name="select" type="xsd:string" minOccurs="0">
         <xsd:annotation>
-        <xsd:documentation></xsd:documentation>
+        <xsd:documentation> Only display the features whose ID is in the provided id_list.
+The id_list contains one or several IDs, separated by commas.IDs may be embraced in single quotes to allow multiple words within the IDs. Commas and single quotes are not allowed within an ID.
+Example:-select 'gataag','gattag' only displays features identified by gataag or gattag.</xsd:documentation>
         </xsd:annotation>
         </xsd:element>
 	</xsd:sequence>
