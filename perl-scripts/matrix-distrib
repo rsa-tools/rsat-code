@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-distrib,v 1.4 2007/10/09 07:49:31 morgane Exp $
+# $Id: matrix-distrib,v 1.5 2007/10/10 09:34:44 morgane Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -130,7 +130,7 @@ package main;
   local $pseudo = 1;
   local $bg_pseudo = 0;
 
-  local $equi_pseudo = 0;
+
   local $max_profile = 24;
   local $sep="\t";
   local $null = "NA";
@@ -174,10 +174,9 @@ package main;
 
   ## Background file
   unless ($main::infile{bgfile}) {
-    &RSAT::error::FatalError("You should define the background file (option -bgfile)");
+    #&RSAT::error::FatalError("You should define the background file (option -bgfile)");
+     &RSAT::message::Warning("Option -bgfile not specified. Assume Bernouilli model with equiprobable residue probabilities.");
   }
-
-  $bg_model->set_attribute("bg_pseudo" => $bg_pseudo);
   
   ################################################################
   ## Load the matrix list if specified
@@ -211,7 +210,20 @@ package main;
   ##### Read input
     
   ## bg markov model
-  $bg_model->load_from_file($main::infile{bgfile}, $bg_format);
+  if ($main::infile{bgfile}) {
+  	$bg_model->load_from_file($main::infile{bgfile}, $bg_format);
+  	$bg_model->set_attribute("bg_pseudo" => $bg_pseudo);
+   } else {
+   	my %prior = ( 
+    				'a' => 0.25,
+    				'c'=> 0.25,
+    				'g'=> 0.25,
+    				't'=> 0.25);
+    	$bg_model->set_attribute('order', 0);
+    	$bg_model->set_hash_attribute("suffix_proba", %prior);
+    	$bg_model->set_attribute("strand","sensitive");
+   
+   }
        
   ## Read the input matrices
   foreach my $matrix_file (@matrix_files) {	
@@ -224,7 +236,6 @@ package main;
     	local ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
     	$matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
     	$matrix->set_attribute("name", $matrix_name);
-    	$matrix->set_attribute("equi_pseudo", $equi_pseudo);
     	$matrix->force_attribute("decimals", $decimals);
     	$matrix->force_attribute("max_profile", $max_profile);
     	$matrix->force_attribute("sep", $sep);
@@ -254,7 +265,7 @@ package main;
   ## Print the description of column contents
   my @columns = ("weight", "proba", "cum", "Pval", "ln_Pval", "log_P", "sig");
   if (($main::verbose >= 1)||($infile{matrix_list})) {
-  	print $out ";\n; Matrix:".$matrix->get_attribute("name")."\n";
+  	print $out ";\n; Matrix: ".$matrix->get_attribute("name")."\n";
     print $out ";\n; Theoretical distribution of weight probabilities\n";
     my %descr = ();
     $descr{"weight"} = "log-likelihood score: w=P(S|M)/P(S|B)";
