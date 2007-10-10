@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-distrib,v 1.5 2007/10/10 09:34:44 morgane Exp $
+# $Id: matrix-distrib,v 1.6 2007/10/10 09:49:28 morgane Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -214,11 +214,11 @@ package main;
   	$bg_model->load_from_file($main::infile{bgfile}, $bg_format);
   	$bg_model->set_attribute("bg_pseudo" => $bg_pseudo);
    } else {
-   	my %prior = ( 
-    				'a' => 0.25,
-    				'c'=> 0.25,
-    				'g'=> 0.25,
-    				't'=> 0.25);
+   		my @alphabet =  qw (a c g t);
+   		my %prior = ();
+   		foreach my $residue (@alphabet){
+   			$prior{$residue} = 0.25;
+   		}
     	$bg_model->set_attribute('order', 0);
     	$bg_model->set_hash_attribute("suffix_proba", %prior);
     	$bg_model->set_attribute("strand","sensitive");
