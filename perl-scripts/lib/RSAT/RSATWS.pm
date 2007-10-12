@@ -653,6 +653,71 @@ sub dna_pattern_cmd {
     return $command;
 }
 
+sub convert_features {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+      $output_choice = 'both';
+    }
+    my $command = $self->feature_map_cmd(%args);
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+      die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $result = `$command`;
+    my ($TMP_OUT, $tmp_outfile) = tempfile(convert-features.XXXXXXXXXX, DIR => $TMP);
+    print $TMP_OUT $result;
+    close $TMP_OUT;
+    if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => {'command' => $command, 
+					     'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => {'command' => $command,
+					     'client' => $result});
+    } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					     'command' => $command, 
+					     'client' => $result});
+    }
+}
+
+sub convert_features_cmd {
+my ($self, %args) =@_;
+    if ($args{"input"}) {
+	my $input = $args{"input"};
+	chomp $input;
+	$tmp_infile = `mktemp $TMP/convert-features.XXXXXXXXXX`;
+	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
+	print TMP_IN $input;
+	close TMP_IN;
+    } elsif ($args{"tmp_infile"}) {
+	$tmp_infile = $args{"tmp_infile"};
+    }
+    chomp $tmp_infile;
+
+    my $from = $args{"from"};
+    my $to = $args{"to"};
+
+    my $command = "$SCRIPTS/convert-features";
+
+    if ($from) {
+      $from =~ s/\'//g;
+      $from =~ s/\"//g;
+      $command .= " -from '".$from."'";
+    }
+
+    if ($to) {
+      $to =~ s/\'//g;
+      $to =~ s/\"//g;
+      $command .= " -to '".$to."'";
+    }
+
+    $command .= " -i '".$tmp_infile."'";
+
+    return $command;
+}
+
 sub feature_map {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
