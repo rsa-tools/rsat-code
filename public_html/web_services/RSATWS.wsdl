@@ -431,6 +431,37 @@ Supported fields: colsum,counts,ct,limits,profiles,rank,rowsum,scores,sites,stat
        </xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="ConvertFeaturesRequest">
+       <xsd:sequence>
+	<xsd:element name="output" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
+Default is 'both'.</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+        <xsd:element name="input" type="xsd:string" minOccurs="1">
+	 <xsd:annotation>
+	  <xsd:documentation></xsd:documentation>
+	 </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="tmp_infile" type="xsd:string" minOccurs="1" maxOccurs="unbounded">
+	 <xsd:annotation>
+	  <xsd:documentation></xsd:documentation>
+	 </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="from" type="xsd:string" minOccurs="0">
+	 <xsd:annotation>
+	  <xsd:documentation>Input format. Supported: dnapat,ft,gft,gff3,gff.</xsd:documentation>
+	 </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="to" type="xsd:string" minOccurs="0">
+	 <xsd:annotation>
+	  <xsd:documentation>Output format. Supported: dnapat,ft,gft,gff3,gff.</xsd:documentation>
+	 </xsd:annotation>
+	</xsd:element>
+       </xsd:sequence>
+      </xsd:complexType>
+
 <xsd:complexType name="FeatureMapRequest">
        	<xsd:sequence>
         <xsd:element name="output" type="xsd:string" minOccurs="0">
@@ -1452,6 +1483,26 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:sequence>
       </xsd:complexType>
 
+<xsd:complexType name="ConvertFeaturesResponse">
+        <xsd:sequence>
+          <xsd:element name="server" type="xsd:string">
+            <xsd:annotation>
+              <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+          <xsd:element name="command" type="xsd:string">
+            <xsd:annotation>
+              <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+          <xsd:element name="client" type="xsd:string">
+            <xsd:annotation>
+              <xsd:documentation>The results.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
+      </xsd:complexType>
+
 <xsd:complexType name="FeatureMapResponse">
         <xsd:sequence>
           <xsd:element name="server" type="xsd:string">
@@ -1794,6 +1845,22 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
+      <xsd:element name="convert_features">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="request" type="tns:ConvertFeaturesRequest" />
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="convert_featuresResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="response" type="tns:ConvertFeaturesResponse" />
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
       <xsd:element name="feature_map">
         <xsd:complexType>
           <xsd:sequence>
@@ -2045,6 +2112,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:dna_patternResponse"/>
   </message>
 
+  <message name="convert_featuresRequest">
+    <part name="parameters" element="tns:convert_features"/>
+  </message>
+
+  <message name="convert_featuresResponse">
+    <part name="output" element="tns:convert_featuresResponse"/>
+  </message>
+
   <message name="feature_mapRequest">
     <part name="parameters" element="tns:feature_map"/>
   </message>
@@ -2189,6 +2264,12 @@ The output graph will thus consist in the graph induced by all nodes of the firs
          <documentation>Searches all occurrences of a pattern within DNA sequences.
          </documentation>
       </operation>
+      <operation name="convet_features">
+         <input name="ConvertFeaturesRequest" message="tns:convert_featuresRequest"/>
+         <output name="ConvertFeaturesResponse" message="tns:convert_featuresResponse"/>
+         <documentation>
+         </documentation>
+      </operation>
       <operation name="feature_map">
          <input name="FeatureMapRequest" message="tns:feature_mapRequest"/>
          <output name="FeatureMapResponse" message="tns:feature_mapResponse"/>
@@ -2313,6 +2394,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
          </output>
       </operation>
       <operation name="dna_pattern">
+         <soap:operation soapAction=""/>
+         <input>
+             <soap:body use="literal" />
+         </input>
+         <output>
+             <soap:body use="literal" />
+         </output>
+      </operation>
+      <operation name="convert_features">
          <soap:operation soapAction=""/>
          <input>
              <soap:body use="literal" />
