@@ -150,6 +150,7 @@ print "<br/><b>Purged sequence(s):</b> <a href='".$file_link."'>".$file_link."</
 #$output_choice = 'both'; ## We want to get the result on the client side, as well as the server file name
 
 ## Parameters
+$verbosity = '1';
 $format = 'fasta';  ## The format of input sequences
 my $length = 6;  ## Length of patterns to be discovered
 my $background = 'upstream-noorf';  ## Type of background used
@@ -161,6 +162,7 @@ my $lth = 'occ_sig 0';  ## Lower limit to score is 0, less significant patterns 
 
 %args = ('output' => $output_choice, 
 	 'tmp_infile' => $server_file, 
+	 'verbosity' => $verbosity,
 	 'format' => $format,
 	 'length' => $length,
 	 'organism' => $organism, 
@@ -239,7 +241,7 @@ if ($som->fault){  ## Report error if any
 #    print "Pattern_ID    Strand    Pattern_sequence    Gene    Start    End    Match_sequence    Score<br/>";
 #    print $result;
 #    print "</PRE>";
-    print "<b>Command:</b> ".$results{'command'}."<br/>";
+#    print "<b>Command:</b> ".$results{'command'}."<br/>";
     $file_link = "http://rsat.scmbb.ulb.ac.be/rsat/tmp/".basename($server_file);
     print "<br/><b>Feature(s):</b> <a href='".$file_link."'>".$file_link."</a><br/>";    
 }
@@ -267,7 +269,7 @@ if ($som->fault){  ## Report error if any
     ## Report the result
     $server_file = $results{'server'};
     my $result = $results{'client'};
-    print "<b>Command:</b> ".$results{'command'}."<br/>";
+#    print "<b>Command:</b> ".$results{'command'}."<br/>";
     $file_link = "http://rsat.scmbb.ulb.ac.be/rsat/tmp/".basename($server_file);
     print "<br/><b>Converted features:</b> <a href='".$file_link."'>".$file_link."</a><br/>";    
 }
@@ -317,8 +319,8 @@ if ($som->fault){  ## Report error if any
     ## Report the result
     $server_file = $results{'server'};
     my $result = $results{'client'};
-    print "<b>Command:</b> ".$results{'command'}."<br/>";
-    print "<b>Feature map:</b><br/>";
+#    print "<b>Command:</b> ".$results{'command'}."<br/>";
+    print "<br/><b>Feature map:</b><br/>";
     $file_link = "http://rsat.scmbb.ulb.ac.be/rsat/tmp/".basename($server_file);
     print "<img src='".$file_link."'/>";
 #    print "<br/><b>Feature map:</b> <a href='".$file_link."'>".$file_link."</a><br/>";    
