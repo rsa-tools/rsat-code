@@ -572,6 +572,7 @@ sub dna_pattern_cmd {
     my $sort = $args{"sort"};
     my $th = $args{"th"};
     my $score = $args{'score'};
+    my $return = $args{'return'};
 
     my $command = "$SCRIPTS/dna-pattern";
 
@@ -639,6 +640,12 @@ sub dna_pattern_cmd {
 	$score =~ s/\'//g;
 	$score =~ s/\"//g;
 	$command .= " -sc '".$score."'";
+    }
+
+    if ($return) {
+        $return =~ s/\'//g;
+        $return =~ s/\"//g;
+        $command .= " -return '".$return."'";
     }
 
     $command .= " -i '".$tmp_infile."'";
