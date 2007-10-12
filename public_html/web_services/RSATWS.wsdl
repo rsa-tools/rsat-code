@@ -410,6 +410,24 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:documentation>Threshold on match count.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
+	 <xsd:element name="return" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>List of fields to return. Multiple fields can be entered separated by commas.
+Supported fields: colsum,counts,ct,limits,profiles,rank,rowsum,scores,sites,stats,table,total.
+  -return sites:   return match positions (default)
+  -return limits: return start and end positions for each input sequence
+  -return counts: return the count of matches per sequence.  
+  -return rank: return the rank of the sequence (this is especially useful in combination with the option -sort).
+  -return score: return a score per sequence, computed by summing the scores of the matching patterns.
+  -return ct:    same as '-return counts', except that it returns the sum of matches in all the files of the sequence file list, instead of the count within each separate file.
+  -return table: return the count of pattern matches per sequence in the form of a table.  (one line per sequence, one column per pattern)
+  -return colsum (together with -return table) prints an extra column with the total occurrences per sequence
+  -return rowsum (together with -return table) prints an extra row with total occurrences per pattern
+  -return total (together with -return table) prints an extra column with the total occurrences per sequence and an extra row with total occurrences per pattern.  (amounts to combine -colsum and -rowsum)
+  -return stats return matching statistics
+  -return profiles return matching profiles with sliding windows.</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
        </xsd:sequence>
       </xsd:complexType>
 
