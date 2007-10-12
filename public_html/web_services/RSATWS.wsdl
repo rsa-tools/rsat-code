@@ -163,6 +163,11 @@ Default is 'both'.</xsd:documentation>
 Default is 'both'.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
+	<xsd:element name="verbosity" type="xsd:int" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>Verbosity.</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
 	<xsd:element name="sequence" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>Input sequence. You need to supply either this parameter or the next one (tmp_infile).</xsd:documentation>
