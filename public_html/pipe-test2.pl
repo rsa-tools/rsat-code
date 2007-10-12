@@ -205,6 +205,7 @@ my $str = 2;  ## Search on both strands
 my $sort = 0;  ## Sort the result according to score when value = 1 (0 otherwise)
 #my $th = 1;  ## Lower limit to score (matches count) is 1.
 my $score = 8; ## Score column
+my $return_field = 'sites,limits';
 
 my %args = ('output' => $output_choice, 
 	    'tmp_infile' => $sequence_file, 
@@ -215,7 +216,8 @@ my %args = ('output' => $output_choice,
 	    'origin' => $origin,
 	    'score' => $score,
 	    'str' => $str,
-	    'sort' => $sort
+	    'sort' => $sort,
+	    'return' => $return_field
 #	    'th' => $th
 	);
 
@@ -242,6 +244,34 @@ if ($som->fault){  ## Report error if any
     print "<br/><b>Feature(s):</b> <a href='".$file_link."'>".$file_link."</a><br/>";    
 }
 
+###############################                                                                                                      ## Convert-features                                                                                                                   
+
+my $from = 'dnapat';
+my $to = 'ft';
+
+my %args = ('tmp_infile' => $server_file,
+	    'from' => $from,
+	    'to' => $to
+	    );
+
+## Send request to the server
+my $som = $soap->call('convert_features' => 'request' => \%args);
+
+## Get the result
+if ($som->fault){  ## Report error if any
+    printf "A fault (%s) occured: %s<br/>", $som->faultcode, $som->faultstring;
+} else {
+    my $results_ref = $som->result;  ## A reference to the result hash table
+    my %results = %$results_ref;  ## Dereference the result hash table
+
+    ## Report the result
+    $server_file = $results{'server'};
+    my $result = $results{'client'};
+    print "<b>Command:</b> ".$results{'command'}."<br/>";
+    $file_link = "http://rsat.scmbb.ulb.ac.be/rsat/tmp/".basename($server_file);
+    print "<br/><b>Converted features:</b> <a href='".$file_link."'>".$file_link."</a><br/>";    
+}
+
 ###############################
 ## Feature map
 
@@ -266,7 +296,7 @@ my %args = ('output' => $output_choice,
 	    'legend' => $legend, 
 	    'scorethick' => $scorethick, 
 #	    'tmp_sequence_file' => $sequence_file, 
-#	    'sequence_format' => $sequence_format
+#	    'sequence_format' => $sequence_format,
 	    'scalebar' => $scalebar
 #	    'origin' => $origin,
 #	    'from' => $from,
