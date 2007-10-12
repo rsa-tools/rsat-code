@@ -284,6 +284,7 @@ sub oligo_analysis_cmd {
 	$tmp_infile = $args{"tmp_infile"};
     }
     chomp $tmp_infile;
+    my $verbosity = $args{'verbosity'};
     my $format = $args{"format"};
     my $length = $args{"length"};
     my $organism = $args{"organism"};
@@ -295,6 +296,12 @@ sub oligo_analysis_cmd {
     my $lth = $args{"lth"};
 
     my $command = "$SCRIPTS/oligo-analysis";
+
+    if ($verbosity) {
+      $verbosity =~ s/\'//g;
+      $verbosity =~ s/\"//g;
+      $command .= " -v '".$verbosity."'";
+    }
 
     if ($format) {
       $format =~ s/\'//g;
