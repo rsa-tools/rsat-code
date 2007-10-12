@@ -439,14 +439,14 @@ Supported fields: colsum,counts,ct,limits,profiles,rank,rowsum,scores,sites,stat
 Default is 'both'.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-        <xsd:element name="input" type="xsd:string" minOccurs="1">
+        <xsd:element name="input" type="xsd:string" minOccurs="0">
 	 <xsd:annotation>
-	  <xsd:documentation></xsd:documentation>
+	  <xsd:documentation>Input data</xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="tmp_infile" type="xsd:string" minOccurs="1" maxOccurs="unbounded">
+	<xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
 	 <xsd:annotation>
-	  <xsd:documentation></xsd:documentation>
+	  <xsd:documentation>Input file on the server (workflow usage)</xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
 	<xsd:element name="from" type="xsd:string" minOccurs="0">
@@ -2264,7 +2264,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
          <documentation>Searches all occurrences of a pattern within DNA sequences.
          </documentation>
       </operation>
-      <operation name="convet_features">
+      <operation name="convert_features">
          <input name="ConvertFeaturesRequest" message="tns:convert_featuresRequest"/>
          <output name="ConvertFeaturesResponse" message="tns:convert_featuresResponse"/>
          <documentation>
