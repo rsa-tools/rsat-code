@@ -660,7 +660,7 @@ sub convert_features {
     unless ($output_choice) {
       $output_choice = 'both';
     }
-    my $command = $self->feature_map_cmd(%args);
+    my $command = $self->convert_features_cmd(%args);
     my $stderr = `$command 2>&1 1>/dev/null`;
     if ($stderr) {
       die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
