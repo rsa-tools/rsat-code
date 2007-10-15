@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-distrib,v 1.6 2007/10/10 09:49:28 morgane Exp $
+# $Id: matrix-distrib,v 1.7 2007/10/15 14:27:13 morgane Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -128,7 +128,6 @@ package main;
   local $bg_model = new RSAT::MarkovModel();
   local $decimals = 1;
   local $pseudo = 1;
-  local $bg_pseudo = 0;
 
 
   local $max_profile = 24;
@@ -212,7 +211,9 @@ package main;
   ## bg markov model
   if ($main::infile{bgfile}) {
   	$bg_model->load_from_file($main::infile{bgfile}, $bg_format);
-  	$bg_model->set_attribute("bg_pseudo" => $bg_pseudo);
+  	if (defined($bg_pseudo)) {
+  		$bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
+  	}
    } else {
    		my @alphabet =  qw (a c g t);
    		my %prior = ();
@@ -484,7 +485,7 @@ Pseudo-count for the matrix (default: 1). See matrix-scan for details.
 =cut
 	} elsif ($arg eq "-pseudo") {
 	    $main::pseudo = shift(@arguments);
-	    &RSAT::error::FatalError(join("\t", $main::bg_pseudo,
+	    &RSAT::error::FatalError(join("\t", $main::pseudo,
 					  "Invalid value for pseudo count. Must be a real value."))
 		unless (&IsReal($main::pseudo));
 
@@ -597,7 +598,7 @@ sub Verbose {
 	printf $main::out ";\t%-14s\t%d\n", "Markov order", $order;
     }
     printf $main::out ";\t%-14s\t%s\n", "Strand", $bg_model->get_attribute("strand");
-    printf $main::out ";\t%-14s\t%s\n", "Background pseudo-frequency", $main::bg_pseudo;
+    printf $main::out ";\t%-14s\t%s\n", "Background pseudo-frequency", $bg_model->get_attribute("bg_pseudo");
 
     my %bg_prior = $bg_model->get_attribute("suffix_proba");
     print $main::out ";\tResidue probabilities\n";
