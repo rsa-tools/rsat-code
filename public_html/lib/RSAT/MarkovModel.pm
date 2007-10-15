@@ -63,6 +63,7 @@ Create a new MarkovModel.
 sub new {
     my ($class, %args) = @_;
     my $object = bless {
+    	bg_pseudo=>0.01,
 	}, $class;
     return $object;
 }
