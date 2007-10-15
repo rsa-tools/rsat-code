@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.91 2007/10/03 16:39:21 rsat Exp $
+# $Id: matrix-scan,v 1.92 2007/10/15 14:38:16 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -342,8 +342,7 @@ package main;
   local $origin = 0;
   local $pseudo_counts = 1;
   local $equi_pseudo = 0;
-  local $bg_pseudo = 0.01; 
-  local $bg_pseudo_user_specified = 1; #Morgane : put 0 as default for the moment
+  local $bg_pseudo_user_specified = 0; #Morgane : put 0 as default for the moment
   local $bg_include_seg = 0; #includes the segment that is score by the matrix into bg calculation (-window option)
   local $matrix_format = "tab";
   local $seq_format = "fasta";
@@ -619,7 +618,9 @@ package main;
     $bg_model->force_attribute("strand", "sensitive");
   }
   $bg_model->set_attribute("n_treatment", $n_treatment);
-  $bg_model->set_attribute("bg_pseudo", $bg_pseudo);
+  if (defined($bg_pseudo)){
+  	$bg_model->force_attribute("bg_pseudo", $bg_pseudo);
+  }
 
 
   if ($infile{bg}) {
@@ -2216,7 +2217,7 @@ sub Verbose {
 	printf $main::out ";\t%-14s\t%d\n", "Markov order", $order;
     }
     printf $main::out ";\t%-14s\t%s\n", "Strand", $bg_model->get_attribute("strand");
-    printf $main::out ";\t%-14s\t%s\n", "Background pseudo-frequency", $main::bg_pseudo;
+    printf $main::out ";\t%-14s\t%s\n", "Background pseudo-frequency", $bg_model->get_attribute("bg_pseudo");
     if ($window > 0) {
 	printf $main::out ";\t%-14s\t%d\n", "Background window", $window;
     }
