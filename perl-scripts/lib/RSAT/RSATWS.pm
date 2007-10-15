@@ -146,6 +146,245 @@ sub retrieve_seq_cmd {
     return $command;
 }
 
+sub retrieve_ensembl_seq {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->retrieve_ensembl_seq_cmd(%args);
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $result = `$command`;
+    my $tmp_outfile = `mktemp $TMP/retrieve-ensembl-seq.XXXXXXXXXX`;
+    open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP $result;
+    close TMP;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+sub retrieve_ensembl_seq_cmd {
+    my ($self,%args) = @_;
+    my $organism = $args{"organism"};
+    my $ensembl_host = $args{"ensembl_host"};
+    my $dbname = $args{"db_name"};
+    my $noorf = $args{"noorf"};
+    my $nogene = $args{"nogene"};
+    my $from = $args{"from"};
+    my $to = $args{"to"};
+
+    ## List of query genes
+    my $query_ref = $args{"query"};
+    my $query = "";
+    if ($query_ref) {
+	my @query = @{$query_ref};
+	foreach $q (@query) {
+	    $q =~s/\'//g;
+	    $q =~s/\"//g;
+	}
+	$query = " -q '";
+	$query .= join "' -q '", @query;
+	$query .= "'";
+    }
+
+    my $feattype = $args{"feattype"};
+    my $type = $args{"type"};
+#    my $format = $args{"format"};
+    my $all = $args{"all"};
+#    my $lw = $args{"lw"};
+#    my $label = $args{"label"};
+#    my $label_sep = $args{"label_sep"};
+#    my $nocom = $args{"nocom"};
+    my $repeat = $args{'repeat'};
+    my $mask_coding = $args{"mask_coding"};
+    my $all_transcripts = $args{"all_transcripts"};
+    my $first_intron = $args{"first_intron"};
+    my $non_coding = $args{"non_coding"};
+    my $chrom = $args{"chromosome"};
+    my $left = $args{"left"};
+    my $right =$args{"right"};
+    my $strand = $args{"strand"};
+
+    if ($args{"features"}) {
+      my $features = $args{"features"};
+      chomp $features;
+      $tmp_ft_file = `mktemp $TMP/retrieve-ensembl-seq.XXXXXXXXXX`;
+      open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
+      print TMP_IN $feature;
+      close TMP_IN;
+    } elsif ($args{"tmp_ft_file"}) {
+      $tmp_ft_file = $args{"tmp_ft_file"};
+      $tmp_ft_file =~ s/\'//g;
+      $tmp_ft_file =~ s/\"//g;
+    }
+
+    my $feat_format = $args{"feat_format"};
+#    my $imp_pos = $args{'imp_pos'};
+
+    my $command = "$SCRIPTS/retrieve-ensembl-seq.pl";
+
+    if ($organism) {
+      $organism =~ s/\'//g;
+      $organism =~ s/\"//g;
+      $command .= " -org '".$organism."'";
+    }
+
+    if ($ensembl_host) {
+      $ensembl_host =~ s/\'//g;
+      $ensembl_host =~ s/\"//g;
+      $command .= " -ensemblhost '".$ensembl_host."'";
+    }
+
+    if ($dbname) {
+      $dbname =~ s/\'//g;
+      $dbname =~ s/\"//g;
+      $command .= " -dbname '".$dbname."'";
+    }
+
+    if ($query) {
+	$command .= $query;
+    }
+
+    if ($noorf == 1) {
+	$command .= " -noorf";
+    }
+
+    if ($nogene == 1) {
+	$command .= " -nogene";
+    }
+
+    if ($from =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+	$from =~ s/\'//g;
+	$from =~ s/\"//g;
+	$command .= " -from '".$from."'";
+    }
+
+    if ($to =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+	$to =~ s/\'//g;
+	$to =~ s/\"//g;
+	$command .= " -to '".$to."'";
+    }
+
+    if ($feattype) {
+	$feattype =~ s/\'//g;
+	$feattype =~ s/\"//g;
+	$command .= " -feattype '".$feattype."'";
+    }
+
+    if ($type) {
+	$type =~ s/\'//g;
+	$type =~ s/\"//g;
+	$command .= " -type '".$type."'";
+    }
+
+    if ($format) {
+	$format =~ s/\'//g;
+	$format =~ s/\"//g;
+	$command .= " -format '".$format."'";
+    }
+
+    if ($all == 1) {
+	$command .= " -all";
+    }
+
+#    if ($lw) {
+#	$lw =~ s/\'//g;
+#	$lw =~ s/\"//g;
+#	$command .= " -lw '".$lw."'";
+#    }
+
+#    if ($label) {
+#	$label =~ s/\'//g;
+#	$label =~ s/\"//g;
+#	$command .= " -label '".$label."'";
+#    }
+
+#    if ($label_sep) {
+#	$label_sep =~ s/\'//g;
+#	$label_sep =~ s/\"//g;
+#	$command .= " -labelsep '".$label_sep."'";
+#    }
+
+#    if ($nocom == 1) {
+#	$command .= " -nocom";
+#    }
+
+    if ($repeat == 1) {
+	$command .= " -rm";
+    }
+
+   if ($mask_coding == 1) {
+	$command .= " -maskcoding";
+    }
+
+   if ($all_transcriptd == 1) {
+	$command .= " -alltranscripts";
+    }
+
+   if ($first_intron == 1) {
+	$command .= " -firstintron";
+    }
+
+   if ($non_coding == 1) {
+	$command .= " -noncoding";
+    }
+
+    if ($chrom) {
+	$chrom =~ s/\'//g;
+	$chrom =~ s/\"//g;
+	$command .= " -chrom '".$chrom."'";
+    }
+
+    if ($left) {
+	$left =~ s/\'//g;
+	$left =~ s/\"//g;
+	$command .= " -left '".$left."'";
+    }
+
+    if ($right) {
+	$right =~ s/\'//g;
+	$right =~ s/\"//g;
+	$command .= " -right '".$right."'";
+    }
+
+    if ($strand) {
+	$strand =~ s/\'//g;
+	$strand =~ s/\"//g;
+	$command .= " -strand '".$strand."'";
+    }
+
+    if ($features) {
+	$features =~ s/\'//g;
+	$features =~ s/\"//g;
+	$command .= " -ftfile '".$tmp_ft_file."'";
+    }
+
+    if ($feat_format) {
+	$feat_format =~ s/\'//g;
+	$feat_format =~ s/\"//g;
+	$command .= " -ftfileformat '".$feat_format."'";
+    }
+
+#    if ($imp_pos == 1) {
+#	$command .= " -imp_pos";
+#    }
+
+    return $command;
+}
+
 sub purge_seq {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
