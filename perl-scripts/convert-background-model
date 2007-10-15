@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.16 2007/09/05 22:42:24 jvanheld Exp $
+# $Id: convert-background-model,v 1.17 2007/10/15 14:24:46 morgane Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -149,7 +149,6 @@ package main;
     local $decimals;
     local $default_transition_decimals = 5;
     local $default_oligo_decimals = 8;
-    local $bg_pseudo = 0;
     local $to2str = 0;
 
     $input_format = "oligo-analysis";
@@ -186,7 +185,10 @@ package main;
 	$decimals = $default_transition_decimals;
       }
     }
-    $bg_model->set_attribute("bg_pseudo" => $bg_pseudo);
+    
+    if (defined ($bg_pseudo)) {
+    	$bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
+    	}
 
 
     ################################################################
@@ -429,6 +431,7 @@ sub Verbose {
 	}
       }
     print $main::out "; Markov order\t", $bg_model->get_attribute("order"), "\n";
+    print $main::out "; Background pseudo-frequency\t", $bg_model->get_attribute("bg_pseudo"),"\n";
     print $main::out "; Strand\t", $bg_model->get_attribute("strand"), "\n";
 }
 
