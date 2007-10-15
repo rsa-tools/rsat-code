@@ -104,6 +104,130 @@ By default, the comment indicates the ORF and upstream sequence coordinates.</xs
 	</xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="RetrieveEnsemblSequenceRequest">
+        <xsd:annotation>
+	  <xsd:documentation>Parameters for the operation retrieve_ensembl_seq.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
+Default is 'both'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="organism" type="xsd:string" minOccurs="1">
+            <xsd:annotation>
+              <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="ensembl_host" type="xsd:string" minOccurs="1">
+            <xsd:annotation>
+              <xsd:documentation>Address of ensembl database server (default is EBI server).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="db_name" type="xsd:string" minOccurs="1">
+            <xsd:annotation>
+              <xsd:documentation>Name of EnsEMBL database (alternative to organism).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="query" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+            <xsd:annotation>
+              <xsd:documentation>A list of query genes.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="all" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Return sequences for all the genes of the organism if value = 1. Incompatible with query.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="noorf" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Prevent overlap with upstream open reading frames (ORF) if value = 1.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="nogene" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Prevent overlap with upstream gene (extreme transcripts limits) if value = 1.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="from" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Inferior limit of the region to retrieve. Default is organism dependant (example: Saccharomyces cerevisiae = -800).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="to" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Superior limit of the region to retrieve. Default is '-1'.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="feattype" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Type of genome features to load. Supported: CDS, mRNA, tRNA, rRNA. </xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="type" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation> Sequence type. Supported: upstream, downstream, ORF (unspliced open reading frame).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="chromosome" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Chromosome name or number (to use with -left and -right).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="left" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Left limit of sequence to retrieve.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="right" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Right limit of sequence to retrieve.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="strand" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Strand of sequence to retrieve when using -left and -right. Values: 1, -1</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="features" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Features.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="feat_format" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Features format. Supported: ft, gft</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="mask_coding" type="xsd:int" minOccurs="0">
+           <xsd:annotation>
+              <xsd:documentation>All coding sequence is replaced by N in the retrieved sequence if value = 1.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="repeat" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Use the repeat masked version of the genome if value = 1. Attention: repeated regions are annotated for some genomes only.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="all_transcripts" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Get sequences for all transcript of genes. Use purge-sequence if you do pattern discovery afterwards if value = 1.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="first_intron" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>With feattype intron, get only first intron sequence if value = 1.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="non_coding" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>With feattype exon, get only non-coding (part of) exons if value = 1.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="PurgeSequenceRequest">
        <xsd:sequence>
         <xsd:element name="output" type="xsd:string" minOccurs="0">
@@ -1407,6 +1531,26 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
+
+      <xsd:complexType name="RetrieveEnsemblSequenceResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
       
       <xsd:complexType name="PurgeSequenceResponse">
 	<xsd:sequence>
@@ -1786,6 +1930,22 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
+      <xsd:element name="retrieve_ensembl_seq">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:RetrieveEnsemblSequenceRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="retrieve_ensembl_seqResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:RetrieveEnsemblSequenceResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
       <xsd:element name="purge_seq">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -2085,6 +2245,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:retrieve_seqResponse"/>
   </message>
 
+  <message name="retrieve_ensembl_seqRequest">
+    <part name="parameters" element="tns:retrieve_ensembl_seq"/>
+  </message>
+
+  <message name="retrieve_ensembl_seqResponse">
+    <part name="output" element="tns:retrieve_ensembl_seqResponse"/>
+  </message>
+
   <message name="purge_seqRequest">
     <part name="parameters" element="tns:purge_seq"/>
   </message>
@@ -2239,6 +2407,13 @@ The output graph will thus consist in the graph induced by all nodes of the firs
            for list of query genes.
          </documentation>
       </operation>
+      <operation name="retrieve_ensembl_seq">
+         <input name="RetrieveEnsemblSequenceRequest" message="tns:retrieve_ensembl_seqRequest"/>
+         <output name="RetrieveEnsemblSequenceResponse" message="tns:retrieve_ensembl_seqResponse"/>         
+	 <documentation>Returns upstream, downstream or coding DNA sequences
+           for list of query genes (in EnsEMBL database).
+         </documentation>
+      </operation>
       <operation name="purge_seq">
          <input name="PurgeSequenceRequest" message="tns:purge_seqRequest"/>
          <output name="PurgeSequenceResponse" message="tns:purge_seqResponse"/>
@@ -2363,6 +2538,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 <!-- 	  RSAT CLASSICAL TOOLS BINDING -->
       <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
       <operation name="retrieve_seq">
+         <soap:operation soapAction=""/>
+         <input>
+             <soap:body use="literal" />
+         </input>
+         <output>
+             <soap:body use="literal" />
+         </output>
+      </operation>
+      <operation name="retrieve_ensembl_seq">
          <soap:operation soapAction=""/>
          <input>
              <soap:body use="literal" />
