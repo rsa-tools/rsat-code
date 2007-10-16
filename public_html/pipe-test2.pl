@@ -1,15 +1,18 @@
 #!/usr/bin/perl -w
-# retrieve_purge_oligos_client_wsdl.pl - Client retrieve-seq + oligo-analysis
+# pipe-test2.pl - Client retrieve-seq -> oligo-analysis -> feature-âp
 
 ################################################################
 ##
 ## This script runs a simple demo of the web service interface to the
-## RSAT tools retrieve-seq, purge-sequence and oligo-analysis linked in a workflow.
+## RSAT tools retrieve-ensembl-seq, purge-sequence and oligo-analysis linked in a workflow.
 ##  It sends a request to the server for discovering 6 letter words
-## in upstream sequences of 5 yeast genes. The sequences are first
+## in upstream sequences of some genes. The sequences are first
 ## retrieved and purged for repeated segments
 ##
 ################################################################
+
+## http://rsat.scmbb.ulb.ac.be/rsat/pipe-test2.pl/q?taxonomy_id=83333&ensembl_gene_id=YKR034W,YJR152W,YKR039W,YGR121C,YNL142W,YPR138C,YOR348C
+## http://rsat.scmbb.ulb.ac.be/rsat/pipe-test2.pl/q?taxonomy_id=9606&ensembl_gene_id=ENSG00000067646
 
 #use strict;
 use SOAP::WSDL;
@@ -24,9 +27,6 @@ if ($0 =~ /([^(\/)]+)$/) {
 
 require "RSA.lib";
 require "RSA.cgi.lib";
-
-#warn "\nThis demo script illustrates a work flow combining three requests to the RSAT web services:\n\tretrieve-seq | purge-sequence | oligo-analysis\n\n";
-
 
 ## Service location
 #my $server = 'http://localhost/rsat/web_services';
@@ -58,14 +58,17 @@ foreach my $param(@request){
 
 # Construct the command
 my $org = "";
+my $organism = "";
+
+# this is a trick just for tests
 if ($params{taxonomy_id} eq '9606'){
-#    $org = 'Homo_sapiens_EnsEMBL';
-    $org = 'homo_sapiens';
+    $organism = 'Homo_sapiens_EnsEMBL';
+    $org = 'Homo_sapiens';
 } elsif ($params{taxonomy_id} eq '83333'){
 #    $org = 'Escherichia_coli_K12';
-    $org = 'Saccharomyces_cerevisiae'; # this is a trick just for tests
+    $organism = 'Saccharomyces_cerevisiae';
+    $org = 'Saccharomyces_cerevisiae';
 }
-
 
 my @ensembl_gene_ids = split (/,/, $params{ensembl_gene_id});
 
@@ -73,7 +76,6 @@ my @ensembl_gene_ids = split (/,/, $params{ensembl_gene_id});
 my $output_choice = 'server'; ## The result will stay in a file on the server
 
 ## Parameters
-my $organism = $org;  ## Name of the query organism
 my @gene = @ensembl_gene_ids;  ## List of query genes
 my $all = 0;  ## -all option. This option is incompatible with the query list @gene (above)
 my $noorf = 1;  ## Clip sequences to avoid upstream ORFs
@@ -88,7 +90,7 @@ my $nocom = 0;  ## Other possible value = 1.
 my $ensembl_host = 'xserve2.scmbb.ulb.ac.be';
 
 my %args = ('output' => $output_choice,
-    'organism' => $organism,
+    'organism' => $org,
     'query' => \@gene,  ## An array in a hash has to be referenced
     'noorf' => $noorf,
     'from' => $from,
@@ -250,7 +252,7 @@ if ($som->fault){  ## Report error if any
     print "<br/><b>Feature(s):</b> <a href='".$file_link."'>".$file_link."</a><br/>";    
 }
 
-###############################                                                                                                      ## Convert-features                                                                                                                   
+###############################                                                                         ## Convert-features
 
 my $from = 'dnapat';
 my $to = 'ft';
