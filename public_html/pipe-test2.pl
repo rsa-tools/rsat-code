@@ -59,7 +59,8 @@ foreach my $param(@request){
 # Construct the command
 my $org = "";
 if ($params{taxonomy_id} eq '9606'){
-    $org = 'Homo_sapiens_EnsEMBL';
+#    $org = 'Homo_sapiens_EnsEMBL';
+    $org = 'homo_sapiens';
 } elsif ($params{taxonomy_id} eq '83333'){
 #    $org = 'Escherichia_coli_K12';
     $org = 'Saccharomyces_cerevisiae'; # this is a trick just for tests
@@ -84,6 +85,7 @@ my $format = 'fasta';  ## the format of the retrieved sequence(s)
 my $label = '';  ## Choice of label for the retrieved sequence(s). Default is used.
 my $label_sep = '';  ## Choice of separator for the label(s) of the retrieved sequence(s). Default is used.
 my $nocom = 0;  ## Other possible value = 1.
+my $ensembl_host = 'xserve2.scmbb.ulb.ac.be';
 
 my %args = ('output' => $output_choice,
     'organism' => $organism,
@@ -95,12 +97,14 @@ my %args = ('output' => $output_choice,
     'type' => $type,
     'format' => $format,
     'all' => $all,
-    'label' => $label,
-    'label_sep' => $label_sep,
-    'nocom' => $nocom);
+#    'ensembl_host' => $ensembl_host
+#    'label' => $label,
+#    'label_sep' => $label_sep,
+#    'nocom' => $nocom
+);
 
 ## Send request to the server
-my $som = $soap->call('retrieve_seq' => 'request' => \%args);
+my $som = $soap->call('retrieve_ensembl_seq' => 'request' => \%args);
 
 ## Get the result
 my $server_file;  ## That variable needs to be declared outside the if..else block to be useable in the next part
