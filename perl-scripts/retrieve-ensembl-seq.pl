@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.12 2007/10/16 06:56:33 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.13 2007/10/16 17:09:49 oly Exp $
 #
 # Time-stamp
 #
@@ -12,8 +12,10 @@ use DBI();
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
-	push (@INC, "/home/rsat/src/ensembl/modules/");
-	push (@INC, "/home/rsat/src/bioperl-live/");
+#	push (@INC, "/home/rsat/src/ensembl/modules/");
+	push (@INC, "/Users/oly/Downloads/ensembl/modules");
+#	push (@INC, "/home/rsat/src/bioperl-live/");
+	push (@INC, "/Users/oly/workspace/bioperl-live");
     }
 }
 require "RSA.lib";
@@ -21,9 +23,9 @@ require "RSA.seq.lib";
 require RSAT::util;
 
 ## EnsEMBL libraries
+use Bio::EnsEMBL::Registry;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::DBSQL::SliceAdaptor;
-
 ################################################################
 #### main package
 package main;
@@ -121,14 +123,28 @@ package main;
 			     "user=".$ensembl_user,
 			     "dbname=".$dbname,
 			     ) if ($main::verbose >= 1);
-    local $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => $ensembl_host, -user => $ensembl_user, -dbname => $dbname);
+
+  my $registry = "Bio::EnsEMBL::Registry";
+
+  $registry->load_registry_from_db(
+				   -host => $ensembl_host,
+				   -user => $ensembl_user,
+				   -verbose => "0" );
+
+  local $db = Bio::EnsEMBL::Registry->get_DBAdaptor($org, "core");
+
+#    local $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => $ensembl_host, -user => $ensembl_user, -dbname => $dbname);
 
     &RSAT::message::Debug("Db", $db) if ($main::verbose >= 3);
 
   ################################################################
   ### Open output stream
-  open OUT, ">".$output_file || die "cannot open error log file ".$output_file."\n";
-
+  if ($output_file) {
+    $fh = 'OUT';
+    open $fh, ">".$output_file || die "cannot open file ".$output_file."\n";
+  } else {
+    $fh = *STDOUT;
+  }
   #### print verbose
   &Verbose() if ($verbose);
 
@@ -157,12 +173,13 @@ package main;
     &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
     # Export sequence to file
-    print OUT ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
-    print OUT "$sequence\n";
+    print $fh ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
+    print $fh "$sequence\n";
 
   # Feature file
   } elsif ($ft_file) {
     open FEAT, $ft_file;
+    my $ft_name;
     while ($line = <FEAT>) {
       chomp($line);
       next if (($line =~/^[#|;]/)||($line eq ""));
@@ -208,11 +225,11 @@ package main;
 
       # Export sequence to file
       if ($ft_id) {
-	print OUT ">$ft_id\t$ft_id; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
+	print $fh ">$ft_id\t$ft_id; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
       } else {
-	print OUT ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
+	print $fh ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
       }
-      print OUT "$sequence\n";
+      print $fh  "$sequence\n";
     }
 
     # All genes
@@ -257,7 +274,7 @@ package main;
     }
   ################################################################
   ###### Close output stream
-  close OUT if ($output_file);
+  close $fh if ($output_file);
 
   exit(0);
 }
@@ -435,8 +452,8 @@ sub Main {
     &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
     # Export sequence to file
-    print OUT ">$gene_id\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
-    print OUT "$sequence\n";
+    print $fh ">$gene_id\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+    print $fh "$sequence\n";
 
   } else { # feattype = mrna, cds, introns...
     # Get transcripts
@@ -494,8 +511,8 @@ sub Main {
 	&RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	# Export sequence to file
-	print OUT ">$gene_id-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
-	print OUT "$sequence\n";
+	print $fh ">$gene_id-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+	print $fh "$sequence\n";
       }
 
       # Introns
@@ -548,8 +565,8 @@ sub Main {
 	    &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	    # Export sequence to file
-	    print OUT ">$gene_id-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand\n";
-	    print OUT "$sequence\n";
+	    print $fh ">$gene_id-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand\n";
+	    print $fh "$sequence\n";
 	  }
 	}
 
@@ -569,8 +586,8 @@ sub Main {
 	  &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	  # Export sequence to file
-	  print OUT ">$gene_id-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand\n";
-	  print OUT "$sequence\n";
+	  print $fh ">$gene_id-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand\n";
+	  print $fh "$sequence\n";
 	}
       }
 
@@ -603,8 +620,8 @@ sub Main {
 	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	      # Export sequence to file
-	      print OUT ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand\n";
-	      print OUT "$sequence\n";
+	      print $fh ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand\n";
+	      print $fh "$sequence\n";
 	    } elsif ($coding_region_end < $exon_end && $coding_region_end > $exon_start) {
 	      $sequence = &GetSequence($coding_region_end + 1, $exon_end);
 	      my $non_coding_exon_left = $coding_region_end + 1;
@@ -616,8 +633,8 @@ sub Main {
 	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	      # Export sequence to file
-	      print OUT ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand\n";
-	      print OUT "$sequence\n";
+	      print $fh ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand\n";
+	      print $fh "$sequence\n";
 	    } elsif ($coding_region_start > $exon_end) {
 	      $sequence = &GetSequence($exon -> start(), $exon -> end());
 	      my $size = ($exon -> end() - $exon -> start()) + 1;
@@ -628,8 +645,8 @@ sub Main {
 	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	      # Export sequence to file
-	      print OUT ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
-	      print OUT "$sequence\n";
+	      print $fh ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
+	      print $fh "$sequence\n";
 	    } elsif ($coding_region_end < $exon_start) {
 	      $sequence = &GetSequence($exon -> start(), $exon -> end());
 	      my $size = ($exon -> end() - $exon -> start()) + 1;
@@ -640,8 +657,8 @@ sub Main {
 	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	      # Export sequence to file
-	      print OUT ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
-	      print OUT "$sequence\n";
+	      print $fh ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
+	      print $fh "$sequence\n";
 	    }
 	  } else {
 	    $sequence = &GetSequence($exon -> start(), $exon -> end());
@@ -653,8 +670,8 @@ sub Main {
 	    &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	    # Export sequence to file
-	    print OUT ">$gene_id-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
-	    print OUT "$sequence\n";
+	    print $fh ">$gene_id-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
+	    print $fh "$sequence\n";
 	  }
 	}
       }
@@ -689,10 +706,10 @@ sub Main {
 	&RSAT::message::Debug($utr3_sequence) if ($main::verbose >= 3);
 
 	# Export sequence to file
-	print OUT ">$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_start $rsat_strand\n";
-	print OUT "$utr5_sequence\n";
-	print OUT ">$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_start $rsat_strand\n";
-	print OUT "$utr3_sequence\n";
+	print $fh ">$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_start $rsat_strand\n";
+	print $fh "$utr5_sequence\n";
+	print $fh ">$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_start $rsat_strand\n";
+	print $fh "$utr3_sequence\n";
       }
 
       # CDS
@@ -710,8 +727,8 @@ sub Main {
 	&RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	# Export sequence to file
-	print OUT ">$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
-	print OUT "$sequence\n";
+	print $fh ">$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+	print $fh "$sequence\n";
       }
     }
 
@@ -743,8 +760,8 @@ sub Main {
       &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
       # Export sequence to file
-      print OUT ">$gene_id-$ref_transcript\t$gene_id-$ref_transcript; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
-      print OUT "$sequence\n";
+      print $fh ">$gene_id-$ref_transcript\t$gene_id-$ref_transcript; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+      print $fh "$sequence\n";
     }
   }
 }
