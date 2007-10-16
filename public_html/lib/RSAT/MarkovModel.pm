@@ -38,6 +38,14 @@ use Data::Dumper;
 $supported_input_formats = join(",", @supported_input_formats);
 $supported_output_formats = join(",", @supported_output_formats);
 
+%supported_bg = ('upstream'=>1,
+		 'upstream-noorf'=>1,
+		 'upstream-rm'=>1,
+		 'upstream-noorf-rm'=>1,
+		 'intergenic'=>1,		 
+		 );
+@supported_bg = sort keys %supported_bg;
+$supported_bg = join(",", @supported_bg);
 
 =pod
 
@@ -96,6 +104,18 @@ sub get_supported_output_formats {
     return %{$class."::supported_output_formats"}; 
 }
 
+################################################################
+=pod
+
+=item B<get_supported_bg()>
+
+Return the types of background models supported in pre-calculated RSAT background models.
+
+=cut
+sub get_supported_bg { 
+    my $class = ref($_[0]) || $_[0];
+    return %{$class."::supported_bg"}; 
+}
 
 
 
