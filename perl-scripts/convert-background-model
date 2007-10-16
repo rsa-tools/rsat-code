@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.17 2007/10/15 14:24:46 morgane Exp $
+# $Id: convert-background-model,v 1.18 2007/10/16 15:21:37 morgane Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -150,6 +150,9 @@ package main;
     local $default_transition_decimals = 5;
     local $default_oligo_decimals = 8;
     local $to2str = 0;
+    
+    local $noov="-ovlp";
+    local $str = "-1str"; 
 
     $input_format = "oligo-analysis";
     %supported_input_format = $bg_model->get_supported_input_formats();
@@ -158,6 +161,10 @@ package main;
     $output_format = "transitions";
     %supported_output_format = $bg_model->get_supported_output_formats();
     $supported_output_formats = join (",", keys %supported_output_format);
+    
+    #### background models
+    %supported_bg = $bg_model->get_supported_bg();
+    $supported_bg = join (",", keys %supported_bg);
 
     %main::infile = ();
     %main::outfile = ();
@@ -189,7 +196,46 @@ package main;
     if (defined ($bg_pseudo)) {
     	$bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
     	}
-
+    	
+    ## RSAT Background models
+    ## Automatic identification of the background file
+	## An organism name has been provided
+    if ($organism_name) {
+    	my $organism = new RSAT::organism();
+    	$organism->check_name($organism_name);
+    	
+    	## bg provided
+    	unless (defined($main::background_model)) {
+    		&RSAT::error::FatalError("You should provide the background model with -bg option");	
+    	}
+    	
+    	## check the format    	
+    	&RSAT::error::FatalError("For automatic loading of RSAT background model, -from option should be set to 'oligos' or 'dyads'")
+    	unless (($input_format eq "oligo-analysis")||($input_format eq "oligos")||($input_format eq "dyads"));
+    	my $input_type = "";
+    	$input_type = "oligo-analysis" if ($input_format =~ /oligo/);
+    	$input_type = "dyad" if ($input_format eq "dyads");
+    	
+    	
+    	## markov order provided
+    	my $oligo_length;
+    	if (defined($main::markov_order)) {
+    		$oligo_length = $main::markov_order + 1;
+    	} else {
+    		&RSAT::error::FatalError("You should provide the markov order with -markov option");	
+    	}
+    	
+    	## RSAT automatic loading of Background model and -i are mutally exclusive
+    	if ($main::infile{input}){
+    		&RSAT::error::FatalError("-i option is incompatible with automatic loading of RSAT precalculated background models.");
+    	}
+    	
+    	## identify the background model file
+    	 $main::infile{input} = &ExpectedFreqFile($organism_name, $oligo_length, $background_model,
+					    type=>$input_type,
+					    noov=>$noov, str=>$str);	
+    }
+    
 
     ################################################################
     ### open output stream
@@ -303,6 +349,12 @@ Same as -h
 	    ## Input file
 =pod
 
+=head2 BACKGROUND MODEL FILE
+
+There are two ways to specify a background model file:
+
+=head3 B<By giving the path of the file:>
+
 =item B<-i inputfile>
 
 If no input file is specified, the standard input is used.  This
@@ -311,7 +363,112 @@ allows to use the command within a pipe.
 =cut
 	} elsif ($arg eq "-i") {
 	    $main::infile{input} = shift(@arguments);
-	    
+
+	    ## Organism
+=pod
+
+=head3 B<By loading a precalculated background model from the RSAT collection>
+
+B<Note:> Specify the format of the background model with '-from' option. Accepted values
+are oligos and dyad.
+
+=item B<-org organism_name>
+
+Specifies an organism, installed in RSAT. To have the list of supported organism in RSAT, type the following
+command: I<supported-organism>
+
+=cut
+	} elsif ($arg eq "-org") {
+	    $main::organism_name = shift(@arguments);
+
+	    ## Background model
+=pod
+
+=item B<-bg background model>
+
+Type of sequences used as background model for estimating expected oligonucleotide frequencies.
+
+Supported models: 
+
+		-bg upstream 
+			 all upstream sequences, allowing overlap with
+		     upstream ORFs.
+
+		-bg upstream-noorf
+			 all upstream sequences, preventing overlap
+			 with upstream ORFs
+		
+		-bg upstream-rm
+			all upstream sequences, allowing overlap with
+		    upstream ORFs, repeated elements are masked by
+		    N characters
+
+		-bg upstream-noorf
+			all upstream sequences, preventing overlap
+			with upstream ORFs, repeated elements are masked by
+		    N characters
+
+		-bg intergenic
+		     intergenic frequencies 
+			 Whole set of intergenic regions, including
+			 upstream and downstream sequences
+
+=cut
+	} elsif ($arg eq "-bg") {
+	    $main::background_model = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::background_model,
+					  "Invalid background model.",
+					  "Supported: ", $main::supported_bg))
+		unless ($main::supported_bg{$main::background_model});
+		
+		 ## Markov order
+
+=pod
+
+=item B<-markov #>
+
+Markov chain order for the background model.
+
+=cut
+	} elsif ($arg eq "-markov") {
+	    $main::markov_order = shift(@arguments);
+	     &RSAT::error::FatalError(join("\t", $main::markov_order,
+					  "Invalid value for -markov, should be an integer."))
+		unless ((&IsInteger($main::markov_order))&& ($main::markov_order >= 0));
+
+		 ## Overlapping order
+=pod
+
+=item B<-noov>
+
+No overlapping.
+
+=cut
+	} elsif ($arg eq "-noov") {
+	    $main::noov = "-noov";
+  
+		 ## 1str
+=pod
+
+=item B<-1str>
+
+Strand-sensitive background model (default)
+
+=cut
+	} elsif ($arg eq "-1str") {
+	    $main::str = "-1str"; 
+
+		 ## 1str
+=pod
+
+=item B<-2str>
+
+Strand-insensitive background model
+
+=cut
+	} elsif ($arg eq "-2str") {
+	    $main::str = "-2str"; 
+   
 	    ## Output file
 =pod
 
@@ -329,7 +486,7 @@ allows to use the command within a pipe.
 
 =item B<-from input_format>
 
-Input format. Supported: oligo-analysis, MotifSampler, meme.
+Input format. Supported: oligo-analysis, MotifSampler, meme,dyads.
 
 =cut
 	} elsif ($arg eq "-from") {
@@ -354,6 +511,8 @@ Output format. Supported: transitions (default), tables, oligo-analysis, patser,
 					  "Invalid output format.",
 					  "Supported: ", $main::supported_output_formats))
 		unless ($main::supported_output_format{$main::output_format});
+		
+
 
 	    ## Pseudo-frequency 
 =pod
