@@ -115,17 +115,17 @@ By default, the comment indicates the ORF and upstream sequence coordinates.</xs
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="organism" type="xsd:string" minOccurs="1">
+	  <xsd:element name="organism" type="xsd:string" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
-	  <xsd:element name="ensembl_host" type="xsd:string" minOccurs="1">
+	  <xsd:element name="ensembl_host" type="xsd:string" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>Address of ensembl database server (default is EBI server).</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
-	  <xsd:element name="db_name" type="xsd:string" minOccurs="1">
+	  <xsd:element name="db_name" type="xsd:string" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>Name of EnsEMBL database (alternative to organism).</xsd:documentation>
             </xsd:annotation>
