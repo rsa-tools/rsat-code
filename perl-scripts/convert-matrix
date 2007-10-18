@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.44 2007/10/18 16:17:21 morgane Exp $
+# $Id: convert-matrix,v 1.45 2007/10/18 16:58:50 morgane Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -150,10 +150,9 @@ if ($infile{prior}) {
     %prior = $bg_model->get_attribute("suffix_proba");
     foreach my $key (sort keys %prior) {
 	my $residue = lc($key);
-	&RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 1);
+	&RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 2);
     }
 }
-
 
 ################################################################
 #### Perform the conversion
@@ -193,6 +192,9 @@ foreach my $matrix (@matrices) {
   	$matrix->force_attribute("margins", $return_fields{margins});
   	$matrix->setInfoLogBase($info_log_base);
   	$matrix->set_parameter("bg_markov_order", 0);	
+  	if ($infile{prior}) {
+  		$matrix->setPrior(%prior);
+  	}
 
 
 ## Calculate parameters before sorting because sorting can be done on
