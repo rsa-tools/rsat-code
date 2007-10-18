@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs.cgi,v 1.16 2007/08/23 16:32:42 jvanheld Exp $
+# $Id: gibbs.cgi,v 1.17 2007/10/18 22:28:48 jvanheld Exp $
 #
 # Time-stamp: <2003-05-13 11:30:48 jvanheld>
 #
@@ -27,9 +27,9 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = "$BIN/gibbs";
 #$convert_matrix_command = "$SCRIPTS/matrix-from-gibbs";
-$convert_matrix_command = "$SCRIPTS/convert-matrix -in_format gibbs -return counts";
+$convert_matrix_command = "$SCRIPTS/convert-matrix -from gibbs -return counts";
 $convert_seq_command = "$SCRIPTS/convert-seq";
-$tmp_file_name = sprintf "gibbs.%s", &AlphaDate;
+$tmp_file_name = sprintf "gibbs.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
