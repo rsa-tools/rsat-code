@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.43 2007/10/03 09:09:31 rsat Exp $
+# $Id: convert-matrix,v 1.44 2007/10/18 16:17:21 morgane Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -32,6 +32,8 @@ $null = "NA";
 
 local %infile = ();
 local %outfile = ();
+local @matrix_files = ();
+local @matrices = ();
 local $input_format = "";
 local $output_format = "patser";
 local $verbose = 0;
@@ -86,6 +88,34 @@ unless ($input_format) {
     &RSAT::error::FatalError("You should specify the input matrix format.");
 }
 
+## Matrix provided with -i option
+if ($infile{input}) {
+	push @matrix_files, $infile{input};
+}
+
+
+## Matrix list has been provided
+ if ($infile{matrix_list}) {
+    my ($mlist, $input_dir) = &OpenInputFile($infile{matrix_list});
+    while (<$mlist>) {
+      next if (/'^;'/);		# skip comment lines
+      next if (/'^#'/);		# skip header lines
+      next if (/'^--'/);	# skip mysql-type comment lines
+      next unless (/\S/);	# skip empty lines
+
+      my @fields = split /\s+/;
+      my $matrix_file = $fields[0];
+      push @matrix_files, $matrix_file;
+    }
+    close $mlist;
+    &RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
+  }
+
+  ## Check that there is at least one input matrix
+  unless (scalar(@matrix_files >= 1)) {
+   # &RSAT::error::FatalError("You must specify at least one matrix file.(option -i or -mlist)");
+  }
+
 ## return type(s)
 local %return_fields = ();
 unless (scalar(@return_fields)) {
@@ -135,35 +165,48 @@ $out = &OpenOutputFile($outfile{output});
 ##### print output ######
 &Verbose if ($verbose);
 
-## Read the input matrices
-my @matrices = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format);
-
-foreach my $matrix (@matrices) {
-  $matrix->set_parameter("pseudo", $pseudo_weight);
-  $matrix->set_attribute("equi_pseudo", $equi_pseudo);
-  #  $matrix->push_attribute("parameters", "pseudo");
-  $matrix->force_attribute("decimals", $decimals);
-  $matrix->force_attribute("max_profile", $max_profile);
-  $matrix->force_attribute("sep", $sep);
-  # $matrix->force_attribute("col_width", $col_width);
-  $matrix->force_attribute("margins", $return_fields{margins});
-  $matrix->setInfoLogBase($info_log_base);
-  $matrix->set_parameter("bg_markov_order", 0);
+## Read the input matrices and collect all matrices
+if (scalar(@matrix_files >= 1)) {	
+	foreach my $matrix_file (@matrix_files) {	
+		my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format);
+		foreach my $matrix (@matrices_from_file) {
+			push @matrices, $matrix;
+		}
+	}
+} else {
+	my @matrices_from_file = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format);
+	foreach my $matrix (@matrices_from_file) {
+			push @matrices, $matrix;
+		}
 }
+
+
+## process each matrix
+foreach my $matrix (@matrices) {
+  	$matrix->set_parameter("pseudo", $pseudo_weight);
+  	$matrix->set_attribute("equi_pseudo", $equi_pseudo);
+  	#  $matrix->push_attribute("parameters", "pseudo");
+  	$matrix->force_attribute("decimals", $decimals);
+  	$matrix->force_attribute("max_profile", $max_profile);
+  	$matrix->force_attribute("sep", $sep);
+  	# $matrix->force_attribute("col_width", $col_width);
+  	$matrix->force_attribute("margins", $return_fields{margins});
+  	$matrix->setInfoLogBase($info_log_base);
+  	$matrix->set_parameter("bg_markov_order", 0);	
+
 
 ## Calculate parameters before sorting because sorting can be done on
 ## a computed parameter rather than defined in the input file.
-if ($return_fields{parameters}) {
-    foreach my $matrix (@matrices) {
-	$matrix->calcWeights();
-	$matrix->calcInformation();
-	$matrix->calcConsensus();
-    }
+	if ($return_fields{parameters}) {
+			$matrix->calcWeights();
+			$matrix->calcInformation();
+			$matrix->calcConsensus();
+ 	   }
 }
 
 ## Sort the matrices if requested
 if ($sort_key) {
-  @matrices = &RSAT::MatrixReader::SortMatrices($sort_key, $sort_order, @matrices);
+  	@matrices = &RSAT::MatrixReader::SortMatrices($sort_key, $sort_order, @matrices);
 }
 
 #### export the matrices
@@ -252,7 +295,16 @@ OPTIONS
 	-i inputfile
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
+		
+	-mlist matrix_list
+		Indicate a file containing a list of matrices to be used 
+		for scanning the region. This facilitates the scanning of 
+		a sequence with a library of matrices (e.g. all the matrices from RegulonDB, or TRANSFAC). 
 
+		Format: the matrix list file is a text file. The first word of each
+		row is suppose to indicate a file name. Any further information on the
+		same row is ignored.
+		
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
@@ -602,6 +654,7 @@ convert-matrix options
 -h		(must be first argument) display full help message
 -help		(must be first argument) display options
 -i		input file
+-mlist 	matrix_list
 -o		output file
 -v		verbose
 -from		input matrix format. Supported: $supported_input_formats
@@ -644,6 +697,10 @@ sub ReadArguments {
       ### input file 
     } elsif ($ARGV[$a] eq "-i") {
       $infile{input} = $ARGV[$a+1];
+      
+      ### list of input file 
+	} elsif ($ARGV[$a] eq "-mlist") {
+	  $infile{matrix_list} = $ARGV[$a+1];;
       
       ### Maximal number of matrices to return
     } elsif ($ARGV[$a] eq "-top") {
