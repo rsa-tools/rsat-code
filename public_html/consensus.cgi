@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.14 2007/08/23 16:32:42 jvanheld Exp $
+# $Id: consensus.cgi,v 1.15 2007/10/18 17:55:10 jvanheld Exp $
 #
 # Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
@@ -27,7 +27,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = "$BIN/consensus";
 #$convert_matrix_command = "$SCRIPTS/matrix-from-consensus -v 1";
-$convert_matrix_command = "$SCRIPTS/convert-matrix -in_format consensus -return counts";
+$convert_matrix_command = "$SCRIPTS/convert-matrix -from consensus -return counts";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $tmp_file_name = sprintf "consensus.%s", &AlphaDate();
 
@@ -197,7 +197,7 @@ sub PipingForm {
 <FORM METHOD="POST" ACTION="convert-matrix_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
 <INPUT type="hidden" NAME="matrix_file" VALUE="$result_file">
-<INPUT type="hidden" NAME="matrix_format" VALUE="consensus">
+<INPUT type="hidden" NAME="input_format" VALUE="consensus">
 <INPUT type="submit" value="convert-matrix">
 </FORM>
 </TD>
