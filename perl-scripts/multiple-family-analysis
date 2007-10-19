@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.215 2007/10/02 00:17:32 rsat Exp $
+# $Id: multiple-family-analysis,v 1.216 2007/10/19 10:29:47 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -187,6 +187,7 @@ $matrix_width = 16;
 $expected_sites_per_gene = 2;
 $nmotifs = 5;
 $seed = undef;
+$matrix_pseudo = 1;
 
 ## Program-specific keys for sorting matrices (PSSM)
 ## Values are defined below for each matrix-based pattern discovery program
@@ -235,7 +236,7 @@ $ORM_window=100; ## Window size for the background model
 $ORM_markov_order=-1; ## markov order for the background model
 
 ## Default consensus options
-$pssm_sort_key{consensus} = 'cons.ln.exp';
+$pssm_sort_key{consensus} = 'cons.ln.Eval';
 $pssm_sort_order{consensus} = 'asc';
 
 ## Default gibbs options
@@ -1133,7 +1134,7 @@ sub CalcOligoOptions {
    my ($oligo_len) = @_;
    $oligo_options = "-v";
 #   $oligo_options .= " -lth occ 1 "; ## This is to avoid calculating P-value for patterns not rpesent in the dataset, and for having a correct correction for multi-testing. 
-   $oligo_options .= " -pseudo ".$pseudo if ($pseudo);
+   $oligo_options .= " -pseudo ".$oligo_pseudo if ($oligo_pseudo);
    $oligo_options .= " -sort ";
    $oligo_options .= " ".$strands;
    $oligo_options .= " -l ".$oligo_len;
@@ -2130,6 +2131,7 @@ sub IndexMatrix {
    if (-e $matrix_file) {
 #       &ConvertMatrix($matrix_file, $program);
        my @matrices = &ReadMatrices($family_name, $matrix_file, %args);
+
        $table[$row][$col] .= "<a href=".$base.$family_dir.">".$family_name."</a>\n";
        $table[$row][$col] .= "<a href=".$base.$matrix_file.">[".$program."]</a>\n";
        $table[$row][$col] .= "<a href=".$base.$matrix_file.".tab>[tab]</a>\n";
@@ -2153,10 +2155,8 @@ sub IndexMatrix {
 	     $matrix_result .= ";\n; ... and ".$remaining." more matrices in the file.\n";
 	     last;
 	   }
-	   &RSAT::message::Debug($family_name, "Indexing matrix", $m."/".scalar(@matrices),$program) 
-	     if ($main::verbose >= 0);
-#	   next;
-#	   die "HELLO";
+	   &RSAT::message::Debug($family_name, "Indexing matrix", $m."/".scalar(@matrices),$program)
+	     if ($main::verbose >= 3);
 	   $matrix_result .= $matrix->toString(sep=>" ", col_width=>4, type=>"counts");
 	   $matrix_result .= $matrix->toString(type=>"parameters");
 	 }
@@ -2186,6 +2186,7 @@ sub ConvertMatrixCommand {
 
   ## Convert matrix in tab-delimited file
   my $command = "convert-matrix -v 1";
+  $command .= " -pseudo ".$matrix_pseudo;
   $command .= " -from ".$program;
   $command .= " -to tab";
   $command .= " -return counts,parameters";
@@ -2196,6 +2197,8 @@ sub ConvertMatrixCommand {
     $command .= " -sort ".$sort_order." ".$sort_key;
   }
   $command .= " -o ".$matrix_file.".tab";
+
+  &RSAT::message::Warning("Converting matrix", $command) if ($main::verbose >= 2);
   return $command;
 }
 
@@ -2217,7 +2220,7 @@ sub ReadMatrices {
   my ($family_name, $matrix_file, %args) = @_;
 
   my $program = $args{program};
-  &RSAT::message::TimeWarn("Indexing $program matrix for family", $family_name, $matrix_file, $row, $col) if ($verbose >= 2);
+  &RSAT::message::TimeWarn("Indexing matrix from", $program, "family", $family_name, $matrix_file, $row, $col) if ($verbose >= 2);
 
   ## If the matrix has already been loaded, return the indexed matrix
   if ($matrix_by_file{$matrix_file}) {
@@ -2234,8 +2237,9 @@ sub ReadMatrices {
       ################################################################
       ## Read matrices from the input file
       my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $program);
-      &RSAT::message::Info("Read",scalar(@matrices),"matrices from file",$matrix_file, $program) if ($main::verbose >= 0);
+      &RSAT::message::Info("Read",scalar(@matrices),"matrices from file",$matrix_file, $program) if ($main::verbose >= 3);
       foreach my $matrix (@matrices) {
+	$matrix->force_attribute("pseudo",$matrix_pseudo);
 	$matrix->force_attribute("family_id",$family_id);
 	$matrix->force_attribute("family", $family_name);
 	$matrix->force_attribute("format", $program);
@@ -2254,6 +2258,10 @@ sub ReadMatrices {
 	my $id = RSAT::matrix->auto_id($run_prefix."_mat");
 	$matrix->force_attribute("id", $id);
 	$matrix->set_attribute("analysis", $run_prefix);
+
+	&RSAT::message::Debug($family, $program, "Matrix", $matrix->get_attribute("id"),
+			      $matrix->get_attribute("consensus.IUPAC"),
+			     ) if ($main::verbose >= 3);
       }
 
       ################################################################
@@ -2274,6 +2282,7 @@ sub ReadMatrices {
       foreach my $matrix (@matrices) {
 	$matrix_factory->add_object($matrix);
       }
+
 
       ## Check that the result file contains at least one matrix
       if (scalar(@matrices) > 0) {
@@ -3577,10 +3586,17 @@ sub ReadArguments {
       $draw_maps = 1;
       $htmaps = 1;
 
-      #### pseudo-weight
-    } elsif ($ARGV[$a] =~ /^-pseudo/) {
-      $pseudo = $ARGV[$a+1];
-      unless ((&IsReal($pseudo)) && ($pseudo > 0)) {
+      #### pseudo-frequency for oligoanalysis
+    } elsif ($ARGV[$a] =~ /^-oligo_pseudo/) {
+      $oligo_pseudo = $ARGV[$a+1];
+      unless ((&IsReal($oligo_pseudo)) && ($oligo_pseudo > 0)) {
+	&RSAT::error::FatalError("pseudo-weight must be a positive real number");
+      }
+
+      #### pseudo-weight for matrix conversion
+    } elsif ($ARGV[$a] =~ /^-matrix_pseudo/) {
+      $matrix_pseudo = $ARGV[$a+1];
+      unless ((&IsReal($matrix_pseudo)) && ($matrix_pseudo > 0)) {
 	&RSAT::error::FatalError("pseudo-weight must be a positive real number");
       }
 
@@ -4385,7 +4401,6 @@ sub SigDistrib {
 	while (<$pattern_handle>) {
 	    next if (/^;/); # Skip comment lines
 	    next unless (/\S/); # Skip empty lines
-#	    print "HELLO\t", $_;
 	    chomp();
 	    my @fields = split "\t", $_;
 	    my $pattern = $fields[0];
@@ -4627,7 +4642,6 @@ sub MDCreport {
 	my $selection_file = $family{$family_name}->{oligo_selection};
 	unless (-e $selection_file) {
 #	    $selection_file = $family{$family_name}->{oligo_file};
-#	    &RSAT::message::Warning("No manual selection: using default file $selection_file") if ($main::verbose >= 0);
 	    &RSAT::message::Warning("No manual selection: file does not exist $selection_file") if ($main::verbose >= 0);
 	    next;
 	}
