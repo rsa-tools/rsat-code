@@ -654,7 +654,7 @@ sub to_TRANSFAC {
 ################################################################
 =pod
 
-=item to_patser(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_string)
+=item to_consensus(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_string)
 
 Return a string description of the matrix in the same format as Jerry
 Hertz program consensus. This includes the matrix (as the one used as input by in patser) plus the sites (if present). 
@@ -2312,8 +2312,8 @@ sub calcTheorScoreDistribBernoulli {
   my $decimals = $self->get_attribute("decimals");
   my $score_format = "%.${decimals}f";
 
-	my @scores = $self->getFrequencies();
-	
+  my @scores = $self->getFrequencies();
+
  # my @scores;
  # if (lc($score_type) eq "counts") {
  #   @scores = $self->getMatrix();
@@ -2334,51 +2334,59 @@ sub calcTheorScoreDistribBernoulli {
   my $nrow = $self->nrow();
   my $ncol = $self->ncol();
   my @alphabet = $self->getAlphabet();
-  
+
   ## Bernouilli Model
   my %bg_suffix_proba = $self->getPrior();
 
- my %alphabetNb =();
+  my %alphabetNb =();
   foreach my $i (0..$#alphabet){
-  	$alphabetNb{$alphabet[$i]} = $i;
+    $alphabetNb{$alphabet[$i]} = $i;
   }
 
   my %score_proba = ();
   $score_proba{0} = 1; ## Initialize the score probabilities
-  
 
   ################################################################
   ## Compute the distribution of scores
   for my $c (0..($ncol-1)) {
-  	 &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 3);
-  	my %current_score_proba = ();
-  	
-  	foreach my $suffix (@alphabet) {
-  	
-  	## get frequency of the suffix, under matrix model
-	my $r = $alphabetNb{$suffix};
-	my $suffix_freq_M = $scores[$c][$r];
-	
-	## get prior frequencies (bg model)
-	my $suffix_proba_B = $bg_suffix_proba{$suffix};
-	
-	## score
-	my $curr_score = log($suffix_freq_M/$suffix_proba_B)/$info_log_denominator; # Beware here, log is ln !!!
-	## discretisation of the scores
-	$curr_score = sprintf($score_format, $curr_score);
-	
-	&RSAT::message::Debug("letter",$suffix,"score",$curr_score) if ($main::verbose >= 5);
-	
-	for my $prev_score (keys %score_proba) {
-		my $current_score = sprintf($score_format, $prev_score + $curr_score);
-		$current_score_proba{$current_score} += $score_proba{$prev_score}*$bg_suffix_proba{$suffix};
-		}
-  	}
-	
+    &RSAT::message::TimeWarn("Computing weight probabilities for column", $c."/".($ncol-1)) if ($main::verbose >= 3);
+    my %current_score_proba = ();
+
+    foreach my $suffix (@alphabet) {
+      ## get frequency of the suffix, under matrix model
+      my $r = $alphabetNb{$suffix};
+      my $suffix_freq_M = $scores[$c][$r];
+
+      if ($suffix_freq_M <= 0) {
+	&RSAT::error::FatalError("The matrix contains cells with null values, which induces infinite values for the weight score. To compute score distribution, you need to specify a pseudo-weight.");
+      }
+
+      ## get prior frequencies (bg model)
+      my $suffix_proba_B = $bg_suffix_proba{$suffix};
+#
+#      &RSAT::message::Debug("suffix_freq_M", $suffix_freq_M, 
+#			    "suffix_proba_B", $suffix_proba_B, 
+#			    "info_log_base", $info_log_base,
+#			    "info_log_denominator", $info_log_denominator) if ($main::verbose >= 5);
+
+      ## score
+      my $curr_score = log($suffix_freq_M/$suffix_proba_B)/$info_log_denominator; # Beware here, log is ln !!!
+
+      ## discretisation of the scores
+      $curr_score = sprintf($score_format, $curr_score);
+
+#      &RSAT::message::Debug("letter",$suffix,"score",$curr_score) if ($main::verbose >= 5);
+
+      for my $prev_score (keys %score_proba) {
+	my $current_score = sprintf($score_format, $prev_score + $curr_score);
+	$current_score_proba{$current_score} += $score_proba{$prev_score}*$bg_suffix_proba{$suffix};
+      }
+    }
+
     %score_proba = %current_score_proba;
   }
-  
-  	
+
+
 #    my @row = &RSAT::matrix::get_column($c+1, $nrow, @matrix);
 #    my @row_scores = &RSAT::matrix::get_column($c+1, $nrow, @scores);
 #    my %current_score_proba = ();
