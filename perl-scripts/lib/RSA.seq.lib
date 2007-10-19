@@ -779,8 +779,13 @@ sub OverlapCoeff {
 
 ################################################################
 ## Return the reverse complement of a DNA sequence
+##
+## Note: the option $case_insensitive performs a quicker conversion,
+## but case information is lost (all letters are converted to
+## uppercases).
+##
 sub ReverseComplement {
-    local($orig_seq) = $_[0];
+    local($orig_seq, $case_insensitive) = $_[0];
     $complement = reverse $orig_seq;
     $complement =~ tr/a-z/A-Z/;
     ### simple nucleotides
@@ -815,6 +820,22 @@ sub ReverseComplement {
     $complement =~ s/(\{\d+,\d+\})(\w)/$2$1/g;
     $complement =~ s/(\{\d+\})(\[\w+\])/$2$1/g;
     $complement =~ s/(\{\d+,\d+\})(\[\w+\])/$2$1/g;
+
+
+    ## Restore the same lower/uppercases in the reverse complement as
+    ## in the original sequence
+    unless ($case_insensitive) {
+      my $complement_cs = "";
+      for my $offset  (1..length($orig_seq)) {
+	if (substr($orig_seq, -$offset, 1) =~ /[a-z]/) {
+	  $complement_cs .= lc(substr($complement, $offset -1, 1));
+	} else {
+	  $complement_cs .= substr($complement, $offset -1, 1);
+	}
+      }
+      $complement = $complement_cs;
+    }
+
     return $complement;
 }# ReverseComplement
 
