@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.7 2007/08/28 09:13:06 morgane Exp $
+# $Id: random-genome-fragments,v 1.8 2007/10/19 15:02:57 morgane Exp $
 #
 ############################################################
 
@@ -422,7 +422,7 @@ No caps, underscore between words (eg 'homo_sapiens')
 		    ### ensembl server
 =pod
 
-=item B<-local_ens_server mysql_server_name>
+=item B<-ensemblhost mysql_server_name>
 
 Uses a local EnsEMBL server. (Advanced users)
 
