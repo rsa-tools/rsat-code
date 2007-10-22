@@ -881,7 +881,7 @@ sub _readFromConsensusFile {
 	$matrix->set_parameter("cons.Pval", $2); 
       } elsif (/ln\(e\-value\) = (\S+)   e\-value = (\S+)/) {
 	$matrix->set_parameter("cons.ln.Eval", $1);
-	$matrix->set_parameter("cons.Pval", $2); 
+	$matrix->set_parameter("cons.Eval", $2); 
       } elsif (/ln\(expected frequency\) = (\S+)   expected frequency = (\S+)/) {
 	$matrix->set_parameter("cons.ln.exp", $1); 
 	$matrix->set_parameter("cons.exp", $2); 
