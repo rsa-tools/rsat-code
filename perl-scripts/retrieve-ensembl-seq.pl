@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.13 2007/10/16 17:09:49 oly Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.14 2007/10/22 13:40:37 oly Exp $
 #
 # Time-stamp
 #
@@ -66,6 +66,7 @@ package main;
   local $ensembl_user = "anonymous";
   local $dbname = '';
   local $org = '';
+  local $dbversion = '';
 
   ################################################################
   ## Read arguments
@@ -109,8 +110,12 @@ package main;
     while (my $ref = $sth->fetchrow_hashref()) {
       if ($ref->{'Database'} =~ /($org)_core_\d+/) {
 	$dbname = $ref->{'Database'};
+	$dbversion = $dbname;
+	$dbversion =~ s/($org)_core_//;
+	$dbversion =~ s/_.+//;
       }
     }
+    &RSAT::message::Debug("Db_version", $dbversion) if ($main::verbose >= 3);
     &RSAT::message::Info (join("\t", "dbname = ", $dbname)) if ($main::verbose >= 1);
     $sth->finish();
     $dbh->disconnect();
@@ -129,6 +134,7 @@ package main;
   $registry->load_registry_from_db(
 				   -host => $ensembl_host,
 				   -user => $ensembl_user,
+				   -db_version => $dbversion,
 				   -verbose => "0" );
 
   local $db = Bio::EnsEMBL::Registry->get_DBAdaptor($org, "core");
