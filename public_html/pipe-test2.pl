@@ -165,6 +165,7 @@ my $noov = 1;  ## Do not allow overlapping patterns
 my $str = 2;  ## Search on both strands
 my $sort = 1;  ## Sort the result according to score
 my $lth = 'occ_sig 0';  ## Lower limit to score is 0, less significant patterns are not displayed
+my $pseudo = '0.05'; ## Pseudo-weight
 
 %args = ('output' => $output_choice, 
 	 'tmp_infile' => $server_file, 
@@ -177,7 +178,8 @@ my $lth = 'occ_sig 0';  ## Lower limit to score is 0, less significant patterns 
 	 'noov' => $noov,
 	 'str' => $str,
 	 'sort' => $sort,
-	 'lth' => $lth);
+	 'lth' => $lth,
+	 'pseudo' => $pseudo);
 
 ## Send request to the server
 $som = $soap->call('oligo_analysis' => 'request' => \%args);

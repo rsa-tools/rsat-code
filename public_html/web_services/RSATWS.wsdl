@@ -348,6 +348,11 @@ Supported: upstream, upstreamL, upstream-noorf, intergenic, input.</xsd:document
 	    <xsd:documentation>Lower threshold on some parameter. Format='param value'.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
+	<xsd:element name="pseudo" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>Pseudo-weight. Must be a real value between 0 and 1.</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
        </xsd:sequence>
       </xsd:complexType>
 
