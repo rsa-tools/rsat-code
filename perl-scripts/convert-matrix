@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.47 2007/10/22 15:44:42 morgane Exp $
+# $Id: convert-matrix,v 1.48 2007/10/22 15:51:49 morgane Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -178,7 +178,7 @@ if (scalar(@matrix_files >= 1)) {
 } else {
 	my @matrices_from_file = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format);
 	foreach my $matrix (@matrices_from_file) {
-			my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+			my ($matrix_name) = &RSAT::util::ShortFileName($infile{input});
     		$matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
     		$matrix->set_attribute("name", $matrix_name);
 			push @matrices, $matrix;
