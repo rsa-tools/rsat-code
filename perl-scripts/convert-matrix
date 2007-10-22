@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.45 2007/10/18 16:58:50 morgane Exp $
+# $Id: convert-matrix,v 1.46 2007/10/22 15:08:36 morgane Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -203,6 +203,7 @@ foreach my $matrix (@matrices) {
 			$matrix->calcWeights();
 			$matrix->calcInformation();
 			$matrix->calcConsensus();
+			$matrix->calcGCcontent();
  	   }
 }
 
