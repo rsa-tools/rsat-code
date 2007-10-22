@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.18 2007/10/16 15:21:37 morgane Exp $
+# $Id: convert-background-model,v 1.19 2007/10/22 07:49:49 morgane Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -20,6 +20,9 @@ convert-backgound-model
 Interconversions between formats of background models supported by
 different programs (oligo-analysis, dyad-analysis, matrix-scan,
 patser, consensus, MotifLocator, MotifSampler, MEME, ...).
+
+Background models can be automatically loaded from the RSAT collection
+of pre-calculated background models.
 
 This is a temporary version, with only some formats supported. Additional
 formats will be progressively added.
@@ -152,7 +155,7 @@ package main;
     local $to2str = 0;
     
     local $noov="-ovlp";
-    local $str = "-1str"; 
+    local $str = ""; 
 
     $input_format = "oligo-analysis";
     %supported_input_format = $bg_model->get_supported_input_formats();
@@ -229,6 +232,10 @@ package main;
     	if ($main::infile{input}){
     		&RSAT::error::FatalError("-i option is incompatible with automatic loading of RSAT precalculated background models.");
     	}
+    	
+    	## strand provided
+    	&RSAT::error::FatalError("You should specify the strand counting option with -1str or -2str")
+    	unless ($str ne "");	
     	
     	## identify the background model file
     	 $main::infile{input} = &ExpectedFreqFile($organism_name, $oligo_length, $background_model,
@@ -441,7 +448,7 @@ Markov chain order for the background model.
 
 =item B<-noov>
 
-No overlapping.
+No overlapping. See I<oligo-analysis> for more details on this option
 
 =cut
 	} elsif ($arg eq "-noov") {
@@ -452,7 +459,7 @@ No overlapping.
 
 =item B<-1str>
 
-Strand-sensitive background model (default)
+Strand-sensitive background model
 
 =cut
 	} elsif ($arg eq "-1str") {
