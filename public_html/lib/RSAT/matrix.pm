@@ -1465,6 +1465,63 @@ sub calcConsensus {
 ################################################################
 =pod
 
+=item &calcConsensus($force)
+
+Calculate the GC content of a matrix. 
+
+
+=cut
+sub calcGCcontent {
+	my ($self) = @_;
+	
+	&RSAT::message::Info(join("\t", "Calculating GC content"))
+	if ($main::verbose >= 5);
+    
+    my @matrix_types = ("crude.freq","corrected.freq");
+    
+    foreach my $matrix_type (@matrix_types){
+    	my @matrix = ();
+    	
+    	if ($matrix_type eq "crude.freq"){
+    		@matrix = $self->getCrudeFrequencies();
+    	} elsif ($matrix_type eq "corrected.freq"){
+    		@matrix = $self->getFrequencies();
+    	} else {
+    		&RSAT::message::Warning("No Frequency matrix found. GC content calculation skipped.");
+    		last;
+    	}
+    	
+    	my @alphabet = $self->getAlphabet();
+      	my $ncol = $self->ncol();
+      	my $nrow = $self->nrow();
+      	
+      	## calculate the sum of each row
+	  	my %row_sums =();
+      	foreach my $r (0..($nrow-1)) {
+			my @row = &RSAT::matrix::get_row($r, $ncol, @matrix);
+			my $row_sum = 0;
+			for my $c (0..($ncol-1)) {
+				$row_sum += $matrix[$c][$r];
+			}
+			my $letter = $alphabet[$r];
+			$row_sums{$letter} = ($row_sum/$ncol);
+      	}
+      	
+      	my $residues_content ="";
+      	foreach my $residue (sort(keys(%row_sums))){
+      		$residues_content .= $residue.":".sprintf("%.4f",$row_sums{$residue})."|";
+      	}
+      	chop($residues_content);
+     	 
+     	 ## Store as parameter
+    	$self->set_parameter("residues.content.".$matrix_type, $residues_content);  	
+    	$self->set_parameter("G+C.content.".$matrix_type, ($row_sums{g}+$row_sums{c}));
+    }  
+}
+
+################################################################
+=pod
+
 =item _printProfile()
 
 Print the matrix in profile format (one column per residue, one row
