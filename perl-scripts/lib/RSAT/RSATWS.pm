@@ -533,6 +533,7 @@ sub oligo_analysis_cmd {
     my $str = $args{"str"};
     my $sort = $args{"sort"};
     my $lth = $args{"lth"};
+    my $pseudo = $args{'pseudo'};
 
     my $command = "$SCRIPTS/oligo-analysis";
 
@@ -587,6 +588,12 @@ sub oligo_analysis_cmd {
       $lth =~ s/\"//g;
       @_lth = split / /, $lth;
       $command .= " -lth '".$_lth[0]."' '".$_lth[1]."'";
+    }
+
+    if ($pseudo =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+	$pseudo =~ s/\'//g;
+	$pseudo =~ s/\"//g;
+	$command .= " -pseudo '".$pseudo."'";
     }
 
     if ($length) {
