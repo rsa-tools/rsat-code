@@ -896,7 +896,7 @@ sub ListSupportedOrganisms {
       #### collect the default limits for each organism
       my $result = join ("\t", 
 			 "; organism",
-			 "taxid", 
+# 			 "taxid", 
 			 "taxonomy", 
 			 "last update", 
 			 "upstream from", 
@@ -905,7 +905,7 @@ sub ListSupportedOrganisms {
 	  $result .= join ("\t", 
 			   $key,  
 			   $supported_organism{$key}->{'taxid'},
-			   $supported_organism{$key}->{'taxonomy'},
+# 			   $supported_organism{$key}->{'taxonomy'},
 			   $supported_organism{$key}->{'last_update'},
 			   $supported_organism{$key}->{'up_from'},
 			   $supported_organism{$key}->{'up_to'}
