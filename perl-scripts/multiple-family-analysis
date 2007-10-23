@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.216 2007/10/19 10:29:47 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.217 2007/10/23 07:52:18 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -429,54 +429,56 @@ if ($sequence_file_list) {
     %family = &ReadClasses($family_file, 1, $organism);
   }
 
-  ## Check selected families
-  if (scalar(@selected) > 0) {
-    my %selected = ();
-    foreach my $family_name (@selected) {
-      $selected{$family_name}++;
-      &FatalError(join ("\t", "Selected family", $family_name, "is not found in the family file", $family_file)) unless ($family{$family_name});
-    }
-
-    ## Delete non-selected families
-    foreach my $family_name (keys (%family)) {
-      delete $family{$family_name} unless ($selected{$family_name});
-    }
-  } else {
-    @families = sort keys %family;
-  }
-
 }
+
 
 ## Apply the options -skip (suppress first families) and -last (suppress last families)
 if ($skip > 0) {
-    for my $f (1..$skip) {
-	$family_name = $families[$f-1];
-	delete $family{$family_name};
-    }
+  for my $f (1..$skip) {
+    $family_name = $families[$f-1];
+    delete $family{$family_name};
+  }
 }
 if ($last > 0) {
-    for my $f (($last+1)..scalar(@families)) {
-	$family_name = $families[$f-1];
-	delete $family{$family_name};
-    }
+  for my $f (($last+1)..scalar(@families)) {
+    $family_name = $families[$f-1];
+    delete $family{$family_name};
+  }
 }
-@families = sort keys %family;
 
 ## Check minimum number of genes
 foreach my $family_name (@families) {    
-    my $gene_nb = scalar(@{$family{$family_name}->{members}});
-    if ($gene_nb < $min_genes) {
-      &RSAT::message::Warning("Removing family", 
-			      $fam_count, $family_name,
-			      $gene_nb." genes",
-			      "< min = ".$min_genes), "\n" if ($main::verbose >= 1);
-      delete $family{$family_name};
-    }
+  my $gene_nb = scalar(@{$family{$family_name}->{members}});
+  if ($gene_nb < $min_genes) {
+    &RSAT::message::Warning("Removing family", 
+			    $fam_count, $family_name,
+			    $gene_nb." genes",
+			    "< min = ".$min_genes), "\n" if ($main::verbose >= 1);
+    delete $family{$family_name};
+  }
+}
+
+## Check selected families
+if (scalar(@selected) > 0) {
+  my %selected = ();
+  foreach my $family_name (@selected) {
+    $selected{$family_name}++;
+    &FatalError(join ("\t", "Selected family", $family_name, "is not found in the family file", $family_file)) unless ($family{$family_name});
+    &RSAT::message::Warning("Selected family", $family_name) if ($main::verbose >= 3);
+  }
+
+  ## Delete non-selected families
+  foreach my $family_name (keys (%family)) {
+    delete $family{$family_name} unless ($selected{$family_name});
+    &RSAT::message::Warning("Deleted family", $family_name) if ($main::verbose >= 3);
+  }
 }
 
 ## Update the list of families
 @families = sort keys %family;
+
 &RSAT::message::Info(join("\t", "Remaining families after filtering", scalar(@families))) if ($main::verbose >= 1);
+
 
 ## Set all the file names
 &SetFileNames();
@@ -898,7 +900,8 @@ sub SetFileNames {
 	my $meme_suffix = "";
 
 	## input file
-	$meme_options .= " ".$family{$family_name}->{input_seq_file};
+	$family{$family_name}->{meme_input_seq_file} = $family{$family_name}->{input_seq_file}.".meme";
+	$meme_options .= " ".$family{$family_name}->{meme_input_seq_file};
 
 	## strands
 	$meme_suffix .= $strands;
@@ -1594,10 +1597,10 @@ sub MotifSampler {
     $MS_command = "(".$MS_command.") >& MS_log.txt";
   }
   $MS_command .= "; MotifRanking -m 2";
-  $MS_command .= " -i ".$family{$family_name}->{MotifSampler_file};
-  $MS_command .= " -o ".$family{$family_name}->{MotifSampler_file}."_ICsorted";
+  $MS_command .= " -i ".$family{$family_name}->{MotifSampler_matrix};
+  $MS_command .= " -o ".$family{$family_name}->{MotifSampler_matrix}."_ICsorted";
   $MS_command .= "; ";
-  $MS_command .= &ConvertMatrixCommand($family{$family_name}->{MotifSampler_file}."_ICsorted", "MotifSampler");
+  $MS_command .= &ConvertMatrixCommand($family{$family_name}->{MotifSampler_file}, "MotifSampler");
   if ($batch) {
     push @main::batch_commands, $MS_command;
   } else {
@@ -1699,18 +1702,23 @@ sub InfoGibbs {
 
 
 ################################################################
-## Run MEME program 
+## Run MEME program
 sub MEME {
   chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{meme_dir});
 
-  ## run the command
-  $meme_command = "meme ".$family{$family_name}->{meme_options};
+  ## Run the command
+  $meme_command = "convert-seq ";
+  $meme_command .= " -from fasta -to fasta -skip_short ".$MEME_options{minw};
+  $meme_command .= " -i ".$family{$family_name}->{input_seq_file};
+  $meme_command .= " -o ".$family{$family_name}->{meme_input_seq_file}." ; ";
+  $meme_command .= "meme ".$family{$family_name}->{meme_options};
   unless (($batch) || ($main::verbose >= 3)) {
-    ## Suppress verbosity
+    ## Redirect verbosity to a log file
     $meme_command = "(".$meme_command.") >& meme_log.txt";
   }
   $meme_command .= "; ";
   $meme_command .= &ConvertMatrixCommand($family{$family_name}->{meme_file}, "meme");
+
   if ($batch) {
     push @main::batch_commands, $meme_command;
   } else {
