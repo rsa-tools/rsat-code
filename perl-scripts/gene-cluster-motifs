@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.218 2007/10/24 12:46:29 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.219 2007/10/24 18:31:13 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -33,7 +33,7 @@ use RSAT::MatrixReader;
 
 ################################################################
 ## initialize global variables
-$program_version = do { my @r = (q$Revision: 1.218 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+$program_version = do { my @r = (q$Revision: 1.219 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 $toppat = 50;
 $organism = "";
 $org_fam = 0;
@@ -3647,7 +3647,7 @@ sub Verbose {
    my $verbose_message = "";
    $verbose_message .= "; multiple-family-analysis ";
    $verbose_message .= &PrintArguments()."\n";
-    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+   printf "; %-22s\t%s\n", "Program version", $program_version;
    printf "; families     \t%d\n", $#families + 1;
    my $f = 0;
    foreach my $family_name (@families) {
