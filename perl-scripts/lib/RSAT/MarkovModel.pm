@@ -1994,7 +1994,7 @@ sub reverse_bg {
 	my $bg_R =  new RSAT::MarkovModel();
 	$bg_R->set_attribute("strand", "sensitive");
 	$bg_R->set_attribute("n_treatment", $bg_D->get_attribute("n_treatment"));
-	$bg_R->set_attribute("bg_pseudo", $bg_D->get_attribute("bg_pseudo"));
+	$bg_R->force_attribute("bg_pseudo", $bg_D->get_attribute("bg_pseudo"));
 	$bg_R->set_attribute("order", $bg_D->get_attribute("order"));
 	$bg_R->set_hash_attribute("oligo_freq",());
 
