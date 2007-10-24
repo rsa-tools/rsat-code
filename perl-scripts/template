@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.30 2007/08/06 23:33:21 jvanheld Exp $
+# $Id: template,v 1.31 2007/10/24 11:55:12 jvanheld Exp $
 #
 ############################################################
 
@@ -13,9 +13,13 @@
 
 template
 
+=head1 VERSION
+
+$program_version
+
 =head1 DESCRIPTION
 
-Template or writing new perl scripts.
+Template for writing new perl scripts.
 
 =head1 AUTHORS
 
@@ -53,7 +57,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-
+    $program_version = "0.00";
 
     %main::infile = ();
     %main::outfile = ();
@@ -215,10 +219,11 @@ allows to use the command within a pipe.
 }
 
 ################################################################
-#### verbose message
+## Verbose message
 sub Verbose {
     print $main::out "; template ";
     &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
     if (defined(%main::infile)) {
 	print $main::out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
