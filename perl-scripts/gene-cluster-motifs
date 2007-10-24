@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.217 2007/10/23 07:52:18 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.218 2007/10/24 12:46:29 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -33,6 +33,7 @@ use RSAT::MatrixReader;
 
 ################################################################
 ## initialize global variables
+$program_version = do { my @r = (q$Revision: 1.218 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 $toppat = 50;
 $organism = "";
 $org_fam = 0;
@@ -2842,8 +2843,13 @@ sub PrintHelp {
 NAME
 	multiple-family-analysis
 
-       1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
-	
+VERSION
+       $program_version
+
+AUTHOR
+       1999-2007 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+       2004-2007 Olivier Sand (oly\@scmbb.ulb.ac.be)
+
 USAGE
        multiple-family-analysis [-i inputfile] [-v]
 
@@ -3641,6 +3647,7 @@ sub Verbose {
    my $verbose_message = "";
    $verbose_message .= "; multiple-family-analysis ";
    $verbose_message .= &PrintArguments()."\n";
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
    printf "; families     \t%d\n", $#families + 1;
    my $f = 0;
    foreach my $family_name (@families) {
@@ -3949,7 +3956,7 @@ sub ReadSequenceList {
            &RSAT::message::Info (join ("\t", 
 				       "", "File", $family{$family_name}->{seq_file}, 
 				       "Family", $family_name, 
-				       "member", $current_id)) if ($main::verbose >= 3);
+				       "member", $current_id)) if ($main::verbose >= 4);
        }
        close $in;
        my $gene_nb = scalar(@{$family{$family_name}->{members}});
