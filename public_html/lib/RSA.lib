@@ -135,8 +135,10 @@ sub doit {
 	open JOB, ">$job";
 	print JOB "( cd ", $wd;
 	print JOB "; date > ", $job, ".started"; ## Write a file called [job].started indicating the time when the job was started
+        print JOB "; hostname >> ", $job,".started"; 
 	print JOB "; ", $command;
 	print JOB "; date > ", $job, ".done"; ## Write a file called [job].done indicating the time when the job was done
+	print JOB "; hostname >> ", $job, ".done"; ## Write a file called [job].done indicating the time when the job was done
 	print JOB " )", "\n";
 	close JOB;
 	&RSAT::message::TimeWarn(join("\t", "Job queued", $wd."/".$job)) if ($main::verbose >= 0);
