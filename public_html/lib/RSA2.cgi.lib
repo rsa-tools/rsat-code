@@ -73,10 +73,10 @@ sub RSA_header {
   print $query->start_html(-title=>"RSA-tools : $title",
 			   -class => "$css_body_class",
 			   -author=>'jvanheld@scmbb.ulb.ac.be',
-			   -style => { 	-src => "$WWW_RSA2/main.css",
+			   -style => { 	-src => "$WWW_RSA/main.css",
                              	       	-type => 'text/css',
                              		-media => 'screen' });
-  print "<H3 ALIGN='center'><A HREF='$WWW_RSA2/RSAT_home.cgi'>RSA-tools</A> - $title</H3>";
+  print "<H3 ALIGN='center'><A HREF='$WWW_RSA/RSAT_home.cgi'>RSA-tools</A> - $title</H3>";
 }
 
 ## ##############################################################
