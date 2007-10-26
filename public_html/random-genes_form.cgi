@@ -6,7 +6,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
@@ -28,7 +28,7 @@ foreach $key (keys %default) {
 } 
 
 ### print the form ###
-&RSA_header("random gene selection");
+&RSA_header("random gene selection", "form");
 
 ### head
 print "<CENTER>";
@@ -79,7 +79,7 @@ print "<P>\n";
 &SelectOutput();
 
 ### action buttons
-print "<UL><UL><TABLE>\n";
+print "<UL><UL><TABLE class = 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";

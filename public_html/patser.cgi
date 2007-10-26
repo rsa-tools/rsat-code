@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.25 2007/08/20 21:19:25 jvanheld Exp $
+# $Id: patser.cgi,v 1.26 2007/10/26 11:45:23 rsat Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -22,7 +22,7 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 require "patser.lib.pl";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
@@ -40,7 +40,7 @@ $query = new CGI;
 #$ECHO=2;
 
 ### print the result page
-&RSA_header("patser result");
+&RSA_header("patser result", "results");
 &ListParameters() if ($ECHO >=2);
 
 #### update log file ####
@@ -122,11 +122,13 @@ exit(0);
 sub PipingForm {
     print <<End_of_form;
 <CENTER>
-<TABLE>
+<TABLE class = 'nextstep'>
 <TR>
   <TD>
     <H3>Next step</H3>
   </TD>
+  </tr>
+  <tr>
   <TD>
     <FORM METHOD="POST" ACTION="feature-map_form.cgi">
     <INPUT type="hidden" NAME="feature_file" VALUE="$result_file">

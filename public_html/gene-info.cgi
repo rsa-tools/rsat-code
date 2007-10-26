@@ -14,7 +14,7 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/gene-info";
 $tmp_file_name = sprintf "gene-info.%s", &AlphaDate();
@@ -27,7 +27,7 @@ $query = new CGI;
 &UpdateLogFile();
 
 ### Print the header
-&RSA_header("gene-info result");
+&RSA_header("gene-info result", "results");
 
 #### read parameters ####
 $parameters .= "";
@@ -97,7 +97,7 @@ print $query->end_html();
 exit(0);
 
 
-################################################################
+##############f##################################################
 #
 # Pipe the result to other commands
 #
@@ -106,11 +106,13 @@ sub PipingForm {
     ### prepare data for piping
     print <<End_of_form;
 <HR SIZE = 3>
-<TABLE>
+<TABLE class='nextstep'>
 <TR>
 <TD>
 <H3>Next step</H3>
 </TD>
+</tr>
+<tr>
 <TD>
 <FORM METHOD="POST" ACTION="retrieve-seq_form.cgi">
 <INPUT type="hidden" NAME="organism" VALUE="$organism">

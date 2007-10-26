@@ -6,7 +6,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
@@ -18,6 +18,7 @@ $default{sequence_format} = "fasta";
 $default{seq_label} = "gene name";
 $default{organism} = "Saccharomyces cerevisiae";
 $default{noorf} = "checked";
+$default{imp_pos} = "checked";
 $default{from} = "default";
 $default{to} = "default";
 $default{genes} = "selection";
@@ -37,7 +38,7 @@ foreach $key (keys %default) {
 } 
 
 ### print the form ###
-&RSA_header("retrieve sequence");
+&RSA_header("retrieve sequence", 'form');
 
 ### head
 print "<CENTER>";
@@ -155,6 +156,12 @@ print $query->checkbox(-name=>'noorf',
 print "&nbsp;<A HREF='help.retrieve-seq.html#noorf'><B>Prevent overlap with upstream ORFs</B></A>";
 print "<BR>\n";
 
+### allows for imprecise postions
+print $query->checkbox(-name=>'imp_pos',
+  		       -checked=>$default{imp_pos},
+  		       -label=>'');
+print "&nbsp;<A HREF='help.retrieve-seq.html#imp_pos'><B>Admit imprecise positions</A></B>";
+print "<BR>\n";
 
 ### sequence format 
 print "<B><A HREF='help.retrieve-seq.html#formats'>Sequence format</A></B>&nbsp;";
@@ -190,7 +197,7 @@ $demo_genes = join "\n", @demo_genes;
 
 
 ### action buttons
-print "<UL><UL><TABLE>\n";
+print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
@@ -202,6 +209,7 @@ print $query->hidden(-name=>'gene_selection',-default=>$demo_genes);
 print $query->hidden(-name=>'organism',-default=>"Saccharomyces cerevisiae");
 print $query->hidden(-name=>'from',-default=>"-800");
 print $query->hidden(-name=>'to',-default=>"-1");
+# $WWW_RSA = 	'http://rsat.scmbb.ulb.ac.be/rsat/';
 print $query->hidden(-name=>'noorf',-default=>"");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";

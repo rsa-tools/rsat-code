@@ -3,10 +3,15 @@
 <HEAD>
    <TITLE>RSA-tools: position-analysis manual</TITLE>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-</HEAD>
-<BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
 
-<H3 ALIGN=CENTER><A HREF="RSAT_home.cgi">RSA-tools</A> - position-analysis manual</H3>
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - position-analysis manual</h2>
+</center>
+
 <blockquote>
 
 <H4>Name</H4>
@@ -57,16 +62,16 @@ HREF="http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&db=PubMed&li
 
 
 <P>
-<A NAME="class_grouping">
-<B>Class grouping:</B></A><BR>
+<A NAME="class_grouping"></A>
+<B>Class grouping:</B><BR>
 
 Positions are grouped by class interval. 
 <ul>
 
 
 <P>
-<A NAME="class_interval">
-<B>Class interval:</B></A> number of bases to group together. To avoid
+<A NAME="class_interval"></A>
+<B>Class interval:</B> number of bases to group together. To avoid
 class grouping, specify 1. The choice of the appropriate class
 interval depends on several considerations.
 <ul>
@@ -86,9 +91,9 @@ occurrences per word thus increases.
 <BR>
 
 <P>
-<A NAME="origin">
+<A NAME="origin"></A>
 
-<B>Origin:</B></A> reference position for class grouping. Positive
+<B>Origin:</B> reference position for class grouping. Positive
 values specify a position relative to the sequence start, negative
 values a position relative to sequence end. The default is to consider
 sequence end, which is more relevant for upstream sequences. <b>Beware
@@ -115,7 +120,7 @@ letter of the sequence is the position -1.
 
 
 <P>
-<A NAME="applicability">
+<A NAME="applicability"></A>
 <B>Condition of applicability for the chi2 test:</B></A><BR> A
 condition of applicability for the chi2 test is that the expected
 frequency shuld be >= 5 for each class. By default, this condition is
@@ -124,12 +129,12 @@ the test, the observed chi2 is displayed between curly brackets.
 
 <ul>
 <li>
-<a name='Check'>The test for the condition of applicability can be
+<a name='Check'></A>The test for the condition of applicability can be
 inactivated, in order to obtain real values in this column. It is not
 recommended to inactivate it, since this may lead to false positives.
 
 <li>
-<a name=Filter'>This option filters out the oligonucleotides which do
+<a name=Filter'></A>This option filters out the oligonucleotides which do
 not fulfil the condition of applicability for the chi2 test. The
 output is lighter and easier to read.
 
@@ -138,8 +143,8 @@ output is lighter and easier to read.
 </ul>
 
 <P>
-<A NAME="oligo_length">
-<B>Oligonucleotide size:</B></A><BR> The analysis can be performed
+<A NAME="oligo_length"></A>
+<B>Oligonucleotide size:</B><BR> The analysis can be performed
 with oligonuleotides of any size between 1 and 8. Selecting size 1
 amounts to counting the alphabet utilization within the input
 sequeces. For the detection of regulatory sites, w recommend starting
@@ -148,8 +153,8 @@ between 4 and 8. When a pattern is significantly overrepresented, it
 generaly appears from the analyses with various sizes.
 
 <P>
-<A NAME="count_strands">
-<B>Count on:</B></A> (single or both strands)<BR> 
+<A NAME="count_strands"></A>
+<B>Count on:</B> (single or both strands)<BR> 
 
 By selecting "both strands", the occurrences of each oligonucleotide
 are summed on both strands. This allows to detect elements which act
@@ -157,8 +162,8 @@ in an orientation-insensitive way (as is generally the case for yeast
 upstream elements). 
 
 <P>
-<A NAME="grouprc">
-<B>Group reverse complement together in the output</B></A><BR> (only
+<A NAME="grouprc"></A>
+<B>Group reverse complement together in the output</B><BR> (only
 valid for two strand analysis). This parameter does not affect the
 counting itself, but only the format of output. If this option is NOT
 checked, two separate lines are used to show a word and its reverse
@@ -166,8 +171,8 @@ complement. This is redundant but might be useful for compatibility
 with other programs.
 
 <P>
-<A NAME="noov">
-<B>Prevent overlapping matches</B></A><BR> Periodic pattern
+<A NAME="noov"></A>
+<B>Prevent overlapping matches</B><BR> Periodic pattern
 (e.g. AAAAAA, ATATAT) have an aggregative tendency, i.e. each
 occurrence of such a pattern strongly favours additional occurrences
 in its immediate vicinity. This introduces a bias to most statistics

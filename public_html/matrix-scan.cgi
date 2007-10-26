@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.8 2007/08/20 21:52:43 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.9 2007/10/26 11:45:23 rsat Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -22,7 +22,7 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = "$SCRIPTS/matrix-scan -v 1 ";
@@ -34,7 +34,7 @@ $query = new CGI;
 #$ECHO=2;
 
 ### print the result page
-&RSA_header("matrix-scan result");
+&RSA_header("matrix-scan result", "results");
 &ListParameters() if ($ECHO >=2);
 
 #### update log file ####
@@ -256,12 +256,13 @@ sub ReadMatrixScanParameters {
 ## Prepare data for piping
 sub PipingForm {
     print <<End_of_form;
-<CENTER>
-<TABLE>
+<TABLE class='nextstep'>
 <TR>
   <TD>
     <H3>Next step</H3>
   </TD>
+  </tr>
+  <tr>
   <TD>
     <FORM METHOD="POST" ACTION="feature-map_form.cgi">
     <INPUT type="hidden" NAME="feature_file" VALUE="$result_file">
@@ -272,7 +273,6 @@ sub PipingForm {
     </FORM>
   </TD>
 </TR>
-</TABLE>
 </CENTER>
 End_of_form
 }

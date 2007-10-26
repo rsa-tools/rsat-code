@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs.cgi,v 1.17 2007/10/18 22:28:48 jvanheld Exp $
+# $Id: gibbs.cgi,v 1.18 2007/10/26 11:45:23 rsat Exp $
 #
 # Time-stamp: <2003-05-13 11:30:48 jvanheld>
 #
@@ -22,20 +22,20 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = "$BIN/gibbs";
 #$convert_matrix_command = "$SCRIPTS/matrix-from-gibbs";
 $convert_matrix_command = "$SCRIPTS/convert-matrix -from gibbs -return counts";
 $convert_seq_command = "$SCRIPTS/convert-seq";
-$tmp_file_name = sprintf "gibbs.%s", &AlphaDate();
+$tmp_file_name = sprintf "gibbs.%s", &AlphaDate;
 
 ### Read the CGI query
 $query = new CGI;
 
 ### print the result page
-&RSA_header("gibbs result");
+&RSA_header("gibbs result", "results");
 #&ListParameters;
 
 #### update log file ####
@@ -123,12 +123,12 @@ sub PipingForm {
   $title =~ s/\"/\'/g;
     print <<End_of_form;
 <HR SIZE = 3>
-<TABLE>
+<TABLE class = 'nextstep'>
 <TR>
-<TD VALIGN=BOTTOM ALIGN=CENTER>
+<TD colspan = 3>
 <H3>Next step</H3>
 </TD>
-
+</tr><tr>
 <TD VALIGN=BOTTOM ALIGN=CENTER>
 <FORM METHOD="POST" ACTION="patser_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">

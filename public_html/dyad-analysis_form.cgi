@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.13 2007/02/22 09:40:51 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.14 2007/10/26 11:45:23 rsat Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -13,7 +13,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
@@ -80,7 +80,7 @@ foreach $key (keys %default) {
 $checked{$default{freq_estimate}} = "CHECKED";
 
 ### print the form ###
-&RSA_header("dyad-analysis");
+&RSA_header("dyad-analysis", "form");
 
 ### head
 print "<CENTER>";
@@ -222,7 +222,7 @@ print "<HR width=550 align=left>\n";
 print "<font color=red><B>Warning !</B> dyad-analysis is time-consuming, especially if you select a wide spacing range. If you don't obtain any result after 5 minutes, we recommend email output.</font><BR>\n";
 
 ### action buttons
-print "<UL><UL><TABLE>\n";
+print "<UL><UL><TABLE class = 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
@@ -349,10 +349,10 @@ exit(0);
 ## Table with all the supported statistics and thresholds
 sub ReturnTable {
 
-    print "<h3>Return</h3>\n";
+    print "<h4>Return</h4>\n";
 
     print "<BLOCKQUOTE>\n";
-    print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
+    print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 			$query->Tr({-align=>left,-valign=>TOP},
 				   [
 				    $query->th([" <A HREF='help.oligo-analysis.html#return_fields'>Fields</A> ",
