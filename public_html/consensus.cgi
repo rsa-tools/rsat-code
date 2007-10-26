@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.15 2007/10/18 17:55:10 jvanheld Exp $
+# $Id: consensus.cgi,v 1.16 2007/10/26 11:45:23 rsat Exp $
 #
 # Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
@@ -22,7 +22,7 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = "$BIN/consensus";
@@ -35,7 +35,7 @@ $tmp_file_name = sprintf "consensus.%s", &AlphaDate();
 $query = new CGI;
 
 ### print the result page
-&RSA_header("consensus result");
+&RSA_header("consensus result", "results");
 &ListParameters() if ($ECHO >= 2);
 
 #### update log file ####
@@ -126,7 +126,7 @@ if ($query->param('output') eq "display") {
     &PipingWarning();
     
     ### Print result on the web page
-    print '<H3>Result</H3>';
+    print '<H4>Result</H4>';
     print "<PRE>";
     while (<RESULT>) {
 	print $_;
@@ -140,7 +140,6 @@ if ($query->param('output') eq "display") {
     
     system "$convert_matrix_command -i $result_file -o $matrix_file";
 
-    print "<HR SIZE = 3>";
     
     &DelayedRemoval($result_file);
     &DelayedRemoval($matrix_file);
@@ -163,12 +162,14 @@ exit(0);
 
 sub PipingForm {
     print <<End_of_form;
-<TABLE>
+<TABLE class = 'nextstep'  CELLSPACING=0 CELLPADDING=10 BORDER=0 NOWRAP>
 
-<TR>
-<TD VALIGN=BOTTOM ALIGN=CENTER>
-<H3>Next step</H3>
-</TD>
+<TR VALIGN="top" ALIGN="center">
+    <Th VALIGN=BOTTOM ALIGN=CENTER COLSPAN=3>
+	Next step
+    </Th>
+
+</TR>
 
 <TD VALIGN=BOTTOM ALIGN=CENTER>
 <FORM METHOD="POST" ACTION="patser_form.cgi">
@@ -197,7 +198,7 @@ sub PipingForm {
 <FORM METHOD="POST" ACTION="convert-matrix_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
 <INPUT type="hidden" NAME="matrix_file" VALUE="$result_file">
-<INPUT type="hidden" NAME="input_format" VALUE="consensus">
+<INPUT type="hidden" NAME="matrix_format" VALUE="consensus">
 <INPUT type="submit" value="convert-matrix">
 </FORM>
 </TD>

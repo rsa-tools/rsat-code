@@ -6,7 +6,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
@@ -79,7 +79,7 @@ foreach $key (keys %default) {
 $checked{$default{freq_estimate}} = "CHECKED";
 
 ### print the form ###
-&RSA_header("oligo-analysis");
+&RSA_header("oligo-analysis", "form");
 print "<CENTER>";
 print "Analysis of oligonucleotide representation in a set of DNA sequences<P>\n";
 print "</CENTER>";
@@ -235,7 +235,7 @@ print "<HR width=550 align=left>\n";
 
 
 ### action buttons
-print "<UL><UL><TABLE>\n";
+print "<UL><UL><TABLE class = 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
@@ -460,13 +460,13 @@ exit(0);
 ## Table with all the supported statistics and thresholds
 sub ReturnTable {
 
-print "<h3>Return</h3>\n";
+print "<h4>Return</h4>\n";
 
 print ("<INPUT TYPE='radio' NAME='return' VALUE='fields' checked>", 
        "One row per pattern");
 
 print "<BLOCKQUOTE>\n";
-print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
+print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 		    $query->Tr({-align=>left,-valign=>TOP},
 			 [
 			  $query->th([" <A HREF='help.oligo-analysis.html#return_fields'>Fields</A> ",

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.25 2007/02/05 00:30:51 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.26 2007/10/26 11:45:23 rsat Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -22,7 +22,7 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 require "RSA.disco.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
@@ -35,7 +35,7 @@ $tmp_file_name = sprintf "dyad-analysis.%s", &AlphaDate;
 $query = new CGI;
 
 ### print the result page
-&RSA_header("dyad-analysis result");
+&RSA_header("dyad-analysis result", "results");
 &ListParameters if ($ECHO >=2);
 
 #### update log file ####
@@ -303,13 +303,13 @@ sub PipingForm {
 	$strand_opt .= " insensitive";
     }
     print <<End_of_form;
-<TABLE>
-<TR>
+<TABLE class='nextstep'>
+<Tr>
 
-<TD VALIGN=BOTTOM ALIGN=CENTER>
+<TD colspan = 3>
 <H3>Next step</H3>
-</TD>
-
+</Tr>
+<tr>
 <TD VALIGN=BOTTOM ALIGN=CENTER>
 <FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence.cgi,v 1.6 2007/08/23 16:32:42 jvanheld Exp $
+# $Id: purge-sequence.cgi,v 1.7 2007/10/26 11:45:23 rsat Exp $
 #
 # Time-stamp: <2003-10-01 00:38:45 jvanheld>
 #
@@ -22,7 +22,7 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = "$SCRIPTS/purge-sequence";
@@ -33,7 +33,7 @@ $out_format = "fasta";
 $query = new CGI;
 
 ### print the result page
-&RSA_header("purge-sequence result");
+&RSA_header("purge-sequence result", "results");
 &ListParameters() if ($ECHO >= 2);
 
 #### update log file ####
@@ -139,10 +139,10 @@ exit(0);
 sub PipingForm {
   print <<End_of_form;
 <HR SIZE = 3>
-<TABLE CELLSPACING=0 CELLPADDING=10 BORDER=0 NOWRAP BGCOLOR= #FFEEDD>
+<TABLE class='nextstep'>
 
 <TR VALIGN="top" ALIGN="center">
-    <TD COLSPAN=5 BGCOLOR=	#FFEEDD>
+    <TD COLSPAN=5>
 	<H3>Next step</H3>
     </TD>
 
@@ -150,7 +150,7 @@ sub PipingForm {
 
 <TR VALIGN="top" ALIGN="center">
 
-    <TD BGCOLOR=		#FFEEDD>
+    <TD>
 	<B>Pattern discovery</B><BR>
 	(unknown patterns)
     </TD>

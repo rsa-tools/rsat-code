@@ -6,7 +6,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 require "patser.lib.pl";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
@@ -455,7 +455,7 @@ sub ReturnTable {
   print "<p><b>Thresholds</b>\n";
   print "<blockquote>\n";
 
-  print $query->table({-border=>1,-cellpadding=>3,-cellspacing=>0},
+  print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 		      $query->Tr({-align=>left,-valign=>TOP},
 				 [
 				  $query->th([" <A HREF='help.matrix-scan.html#return_fields'>Fields</A> ",

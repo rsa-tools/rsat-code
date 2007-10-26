@@ -3,10 +3,14 @@
 <HEAD>
    <TITLE>RSA-tools: oligonucleotide analysis manual</TITLE>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-</HEAD>
-<BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
 
-<H3 ALIGN=CENTER><A HREF="RSAT_home.cgi">RSA-tools</A> - <a href=oligo-analysis_form.cgi>oligonucleotide analysis</a> manual</H3>
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - <a href=oligo-analysis_form.cgi>oligonucleotide analysis</a> manual</h2>
+</center>
 
 <H4>Name</H4>
 <UL>
@@ -28,23 +32,23 @@ Calculates oligonucleotide occurrences in a set of sequences, and detects overre
 <UL>
 
 <P>
-<A NAME="sequence">
-<B>Input sequence:</B></A><BR>
+<A NAME="sequence"></A>
+<B>Input sequence:</B><BR>
 
 The sequence that will be analyzed. Multiple sequences can be entered
 at once with several <a href=help.formats.html>sequence formats</a>.
 
 <P>
-<A NAME="sequence_format">
-<B>Format:</B></A><BR>
+<A NAME="sequence_format"></A>
+<B>Format:</B><BR>
 
 Input sequence format. <a href=help.formats.html>Various standards</a>
 are supported.
 
 
 <P>
-<A NAME="sequence_type">
-<B>Sequence type:</B></A><BR>
+<A NAME="sequence_type"></A>
+<B>Sequence type:</B><BR>
 
 Input sequence type
 <UL>
@@ -66,8 +70,8 @@ valid. This allows to analyze texts in human language.
 </UL>
 
 <P>
-<A NAME="purge">
-<B>Purge sequences (highly recommended)</B></A><BR> When checked,
+<A NAME="purge"></A>
+<B>Purge sequences (highly recommended)</B><BR> When checked,
 large duplicated regions (>= 40 bp alignment with less than 3
 mismatches)) are filtered out before analysis. Purging is essential
 for any pattern discovery process, to avoid a bias due to
@@ -77,8 +81,8 @@ href=http://www.zbh.uni-hamburg.de/kurtz>Stefan Kurtz</a> (<a
 href="mailto:kurtz@zbh.uni-hamburg.de">kurtz@zbh.uni-hamburg.de</a>).
 
 <P>
-<A NAME="oligo_length">
-<B>Oligonucleotide size:</B></A><BR>
+<A NAME="oligo_length"></A>
+<B>Oligonucleotide size:</B><BR>
 
 The analysis can be performed with oligonuleotides of any size between
 1 and 8. Selecting size 1 amounts to counting the alphabet utilization
@@ -89,8 +93,8 @@ overrepresented, it generaly appears from the analyses with various
 sizes.
 
 <P>
-<A NAME="count_strands">
-<B>Count on:</B></A> (single or both strands)<BR> 
+<A NAME="count_strands"></A>
+<B>Count on:</B> (single or both strands)<BR> 
 
 By selecting "both strands", the occurrences of each oligonucleotide
 are summed on both strands. This allows to detect elements which act
@@ -98,8 +102,8 @@ in an orientation-insensitive way (as is generally the case for yeast
 upstream elements). 
 
 <P>
-<A NAME="grouprc">
-<B>Group reverse complement together in the output</B></A><BR> (only
+<A NAME="grouprc"></A>
+<B>Group reverse complement together in the output</B><BR> (only
 valid for two strand analysis). This parameter does not affect the
 counting itself, but only the format of output. If this option is NOT
 checked, two separate lines are used to show a word and its reverse
@@ -107,8 +111,8 @@ complement. This is redundant but might be useful for compatibility
 with other programs.
 
 <P>
-<A NAME="noov">
-<B>Prevent overlapping matches</B></A><BR> 
+<A NAME="noov"></A>
+<B>Prevent overlapping matches</B><BR> 
 
 Periodic patterns (e.g. AAAAAA, ATATAT) have an aggregative tendency,
 i.e. each occurrence of such a pattern strongly favours additional
@@ -130,8 +134,8 @@ are not appropriate for small gene clusters such as those extracted
 from DNA chip experiment.
 
 <P>
-<A NAME="exp_freq">
-<B>Expected frequency:</B></A><BR>
+<A NAME="exp_freq"></A>
+<B>Expected frequency:</B><BR>
 
 Various probabilistic models can be used to estimate the expected
 frequency of each oligonucleotide. <BR>
@@ -153,7 +157,7 @@ frequencies from input sequence" works poorly.
 
 
 <P>
-<A NAME="background">
+<A NAME="background"></A>
 
 <p><li><B>Predefined background frequencies :</B>
 
@@ -233,12 +237,12 @@ optimal for hexanucleotides.
 <p><li><B>Residue frequencies from input sequence :</B> (Note: this is
 equivalent to a markov chain with order 0).
 
-<a name='equiprobable'>
+<a name='equiprobable'></A>
 <p><li><B>Equiprobable residues:</B> This option gives very poor
 results and should never be used in practice. I leave it there only
 for didactic purposes (to allow anyone to test how bad it performs).
 
-<a name='upload_freq_file'>
+<a name='upload_freq_file'></A>
 <p><li><B>Upload your own expected frequency file:</B> 
 
 
@@ -306,8 +310,8 @@ the analysis of other sequences.
 <P>
 
 </ul>
-<A NAME="pseudo">
-<B>Pseudo-weight</B></A><BR>
+<A NAME="pseudo"></A>
+<B>Pseudo-weight</B><BR>
 <ul>
 
 <P>
@@ -324,8 +328,8 @@ possible patterns.</P>
 
 
 </UL>
-<A NAME="return_fields">
-<B>Return:</B></A><BR>
+<A NAME="return_fields"></A>
+<B>Return:</B><BR>
 Various measures of oligonucleotide distribution can be returned/
 <UL>
 
@@ -351,7 +355,7 @@ ratio is only 2!
 
 
 <LI><B>Proba:</B> probabilities. Different statistics are calculated
-(see below for <A HREF="#proba">details of calculation</A>).
+(see below for <A HREF="#proba"></A>details of calculation).
 
 <UL>
 	
@@ -384,8 +388,8 @@ overrepresentation.
 
 
 <P>
-<A NAME="thresholds">
-<B>Thresholds:</B></A><BR>
+<A NAME="thresholds"></A>
+<B>Thresholds:</B><BR>
 <ul>
 
 Thresholds can be imposed to select the most significantly
@@ -403,8 +407,8 @@ in the input set.
 <P>
 </UL>
 
-<A NAME="proba">
-<H4>Probabilities</H4></A>
+<A NAME="proba"></A>
+<H4>Probabilities</H4>
 <UL>
 
 Various calibration models can be used to estimate the probability of
@@ -637,7 +641,7 @@ calculated with the binomial formulae.
 </PRE>
 </UL>
 
-<HR SIZE=3></P></CENTER>
+<HR SIZE=3></P>
 
 
 </BODY>

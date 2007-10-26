@@ -14,7 +14,7 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $pattern_assembly_command = "$SCRIPTS/pattern-assembly";
 $tmp_file_name = sprintf "pattern-assembly.%s", &AlphaDate;
@@ -27,7 +27,7 @@ $query = new CGI;
 &UpdateLogFile();
 
 ### Print the header
-&RSA_header("pattern-assembly result");
+&RSA_header("pattern-assembly result", "results");
 &ListParameters if ($ECHO >=2);
 
 #### read parameters ####

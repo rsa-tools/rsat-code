@@ -61,16 +61,32 @@ my $org = "";
 my $organism = "";
 
 # this is a trick just for tests
-if ($params{taxonomy_id} eq '9606'){
-    $organism = 'Homo_sapiens_EnsEMBL';
-    $org = 'Homo_sapiens';
-} elsif ($params{taxonomy_id} eq '83333'){
-#    $org = 'Escherichia_coli_K12';
-    $organism = 'Saccharomyces_cerevisiae';
-    $org = 'Saccharomyces_cerevisiae';
-}
+#if ($params{taxonomy_id} eq '9606'){
+#    $organism = 'Homo_sapiens_EnsEMBL';
+#    $org = 'Homo_sapiens';
+#} elsif ($params{taxonomy_id} eq '83333'){
+#    $organism = 'Saccharomyces_cerevisiae';
+#    $org = 'Saccharomyces_cerevisiae';
+#}
 
 my @ensembl_gene_ids = split (/,/, $params{ensembl_gene_id});
+
+if ($params{ensembl_gene_id} =~ /ENSG/) {
+    $organism = 'Homo_sapiens_EnsEMBL'; ## Organism name in RSAT
+    $org = 'Homo_sapiens';
+} elsif ($params{ensembl_gene_id} =~ /Y/) {
+    $organism = 'Saccharomyces_cerevisiae';
+    $org = 'Saccharomyces_cerevisiae';
+} elsif ($params{ensembl_gene_id} =~ /ENSMUSG/) {
+    $organism = 'Mus_musculus_EnsEMBL';
+    $org = 'Mus_musculus';
+} elsif ($params{ensembl_gene_id} =~ /CG/) {
+    $organism = 'Drosophila_melanogaster_EnsEMBL';
+    $org = 'Drosophila_melanogaster';
+} elsif ($params{ensembl_gene_id} =~ /ENSRNOG/) {
+    $organism = 'Rattus_norvegicus_EnsEMBL';
+    $org = 'Rattus_norvegicus';
+}
 
 ## Output option
 my $output_choice = 'server'; ## The result will stay in a file on the server

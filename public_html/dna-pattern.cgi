@@ -14,7 +14,7 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = "$SCRIPTS/dna-pattern";
@@ -24,7 +24,7 @@ $tmp_file_name = sprintf "dna-pattern.%s", &AlphaDate();
 $query = new CGI;
 
 ### print the header of the result page
-&RSA_header("dna-pattern result ".$query->param("title"));
+&RSA_header("dna-pattern result ".$query->param("title"), "results");
 
 &ListParameters if ($ECHO >= 2);
 
@@ -151,7 +151,7 @@ if ($query->param("output") =~ /display/i) {
     print "<PRE>$command $parameters </b>" if ($ECHO);
   
     ### Print the result on Web page
-    print "<H3>Result</H3>";
+    print "<H4>Result</H4>";
     &PrintHtmlTable(RESULT, $result_file, true);
     close RESULT;
     &PipingForm if ($query->param('match_positions'));
@@ -175,10 +175,12 @@ sub PipingForm {
     $title =~ s/\"/\'/g;
     print <<End_of_form;
 <HR SIZE = 3>
+<H4>Next step</H4>
 <CENTER>
+
 <TABLE>
 <TR><TD>
-<H3>Next step</H3>
+
 </TD>
 <TD>
 <FORM METHOD="POST" ACTION="feature-map_form.cgi">
