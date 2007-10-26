@@ -13,7 +13,7 @@ $default{sequence_type} = "upstream";
 # retrieve-seq options
 #
 sub DisplayRetrieveSeqOptions {
-    print $query->h3("Sequence retrieval options");
+    print $query->h4("Sequence retrieval options");
 
     print $query->hidden(-name=>'genes',-default=>"all");
     print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});

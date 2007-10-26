@@ -19,7 +19,7 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/random-seq";
 $tmp_file_name = sprintf "random-seq.%s", &AlphaDate();
@@ -30,7 +30,7 @@ $size_limit = 5e+6;
 $query = new CGI;
 
 ### print the header
-&RSA_header("Random sequence result");
+&RSA_header("Random sequence result", "results");
 
 #### update log file ####
 &UpdateLogFile();
@@ -142,7 +142,7 @@ if ($query->param('output') eq "display") {
     
     ### print the result ### 
     &PipingWarning();
-    print '<H3>Result</H3>';
+    print '<H4>Result</H4>';
     print "<PRE>";
     while (<RESULT>) {
 	print "$_";
@@ -173,24 +173,18 @@ exit(0);
 #
 sub PipingForm {
   print <<End_of_form;
-<HR SIZE = 3>
-<TABLE CELLSPACING=0 CELLPADDING=10 BORDER=0 NOWRAP BGCOLOR= #FFEEDD>
+<TABLE class = 'nextstep'>
+<tr><td colspan = 6><h3>Next step</h3></td></tr>
 
-<TR VALIGN="top" ALIGN="center">
-    <TD VALIGN=BOTTOM ALIGN=CENTER COLSPAN=5 BGCOLOR=	#FFEEDD>
-	<H3>Next step</H3>
-    </TD>
 
-</TR>
+<TR>
 
-<TR VALIGN="top" ALIGN="center">
-
-    <TD VALIGN=BOTTOM ALIGN=CENTER BGCOLOR=		#FFEEDD>
+    <TD>
 	<B>Pattern discovery</B><BR>
 	(unknown patterns)
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD >
 	<FORM METHOD="POST" ACTION="oligo-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
@@ -199,7 +193,7 @@ sub PipingForm {
 	</FORM>
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD>
 	<FORM METHOD="POST" ACTION="dyad-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
@@ -208,7 +202,7 @@ sub PipingForm {
 	</FORM>
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD>
 	<FORM METHOD="POST" ACTION="position-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
@@ -217,7 +211,7 @@ sub PipingForm {
 	</FORM>
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD >
 	<FORM METHOD="POST" ACTION="consensus_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
@@ -226,7 +220,7 @@ sub PipingForm {
 	</FORM>
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD >
 	<FORM METHOD="POST" ACTION="gibbs_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
@@ -237,14 +231,14 @@ sub PipingForm {
 
 </TR>
 
-<TR VALIGN="top" ALIGN="center">
+<TR>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER BGCOLOR=#FFEEDD>
+    <TD >
 	<B>Pattern matching</B><BR>
 	(known patterns)
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD >
 	<FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
@@ -253,7 +247,7 @@ sub PipingForm {
 	</FORM>
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD >
 	<b><font color=red>New</a></b>
 	<FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
@@ -263,7 +257,7 @@ sub PipingForm {
 	</FORM>
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD >
 	<FORM METHOD="POST" ACTION="patser_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
@@ -272,11 +266,11 @@ sub PipingForm {
 	</FORM>
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD>
     &nbsp;
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD>
     &nbsp;
     </TD>
 
@@ -284,13 +278,13 @@ sub PipingForm {
 
 
 
-<TR VALIGN="top" ALIGN="center">
+<TR>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER BGCOLOR=		#FFEEDD>
+    <TD>
 	<B>Utilities</B>
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD>
 	<FORM METHOD="POST" ACTION="purge-sequence_form.cgi">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
@@ -298,15 +292,15 @@ sub PipingForm {
 	</FORM>
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD>
     &nbsp;
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD>
     &nbsp;
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD>
     &nbsp;
     </TD>
 
@@ -315,11 +309,11 @@ sub PipingForm {
 <!--
 <TR VALIGN="top" ALIGN="center">
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER BGCOLOR=		#FFEEDD>
+    <TD>
 	<B>Utilities</B>
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD>
 	<FORM METHOD="POST" ACTION="purge-sequence_form.cgi">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
@@ -327,15 +321,15 @@ sub PipingForm {
 	</FORM>
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD>
     &nbsp;
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD>
     &nbsp;
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD>
     &nbsp;
     </TD>
 

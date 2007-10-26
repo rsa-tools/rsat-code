@@ -2,10 +2,13 @@
 <HEAD>
    <TITLE>RSA-tools: gibbs sampler manual</TITLE>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-</HEAD>
-<BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
 
-<H3 ALIGN=CENTER><A HREF="RSAT_home.cgi">RSA-tools</A> - gibbs sampler manual</H3>
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - gibbs sampler manual</h2>
+</center>
 
 <H4>Name</H4>
 <UL>
@@ -28,39 +31,39 @@ The gibbs sampler detects motifs shared by a set of functionally related sequenc
 <UL>
 
 
-<A NAME="sequence">
-<B>Input sequence:</B></A><BR>
+<A NAME="sequence"></A>
+<B>Input sequence:</B><BR>
 The sequence that will be analyzed. Multiple sequences can be entered at once with most sequence formats (see below).<P>
 
 <A NAME="format">
 <B>Format:</B></A><BR>
 Input sequence format. Various standards are supported (click on the links for more details):
 <UL>
-<LI><A HREF="help.formats.html#raw"><B>raw</B></A>: the raw sequence without any identifier or comment.
-<LI><A HREF="help.formats.html#multi"><B>multi</B></A>: several raw sequences concatenated.
-<LI><A HREF="help.formats.html#ig"><B>IG</B></A>: IntelliGenetics format.
-<LI><A HREF="help.formats.html#fasta"><B>FastA</B></A>: the sequence format used by FastA, BLAST, Gibbs sampler and a lot of other bioinformatic programs.
-<LI><A HREF="help.formats.html#wconsensus"><B>Wconsensus</B></A>: the format defined by Jerry Hertz for his programs (patser, consensus, wconsensus).
+<LI><A HREF="help.formats.html#raw"></A><B>raw</B>: the raw sequence without any identifier or comment.
+<LI><A HREF="help.formats.html#multi"></A><B>multi</B>: several raw sequences concatenated.
+<LI><A HREF="help.formats.html#ig"></A><B>IG</B>: IntelliGenetics format.
+<LI><A HREF="help.formats.html#fasta"></A><B>FastA</B>: the sequence format used by FastA, BLAST, Gibbs sampler and a lot of other bioinformatic programs.
+<LI><A HREF="help.formats.html#wconsensus"></A><B>Wconsensus</B>: the format defined by Jerry Hertz for his programs (patser, consensus, wconsensus).
 </UL>
 <P>
 
-<A NAME="seq_type">
-<B>Sequence type</B></A><BR>
+<A NAME="seq_type"></A>
+<B>Sequence type</B><BR>
 The program can analyse either proteic or DNA sequences.
 <P>
 
-<A NAME="add_rc"> 
-<B> Add reverse complement strand</B></A><BR>
+<A NAME="add_rc"> </A>
+<B> Add reverse complement strand</B><BR>
 For DNA sequences only, this option allows to detect motifs irrespective of the strand. The gibbs sampler does not include this option, we replace it by a trick consisting in analysing a modified sequence file including all the input sequences plus thir reverse complement.
 <P>
 
-<A NAME="length">
-<B>Pattern length</B></A><BR>
+<A NAME="length"></A>
+<B>Pattern length</B><BR>
 This option determines the expected length for the motif. It is anessential parameter of the algorithm. Some patterns can be found with a specific length and missed with a different one. 
 <P>
 
-<A NAME="expected">
-<B>Expected number of matches</B></A><BR>
+<A NAME="expected"></A>
+<B>Expected number of matches</B><BR>
 This is the second essential parameter for the gibbs sampler. Fiddling around with this parameter will allow to detect different patterns.
 <P>
 
@@ -96,7 +99,7 @@ PubMed ID 8520488
 
 </ul>
 
-<HR SIZE=3></P></CENTER>
+<HR SIZE=3></P>
 
 
 

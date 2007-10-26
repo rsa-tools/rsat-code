@@ -5,7 +5,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 require "genome-scale.lib.pl";
 require "patser.lib.pl";
@@ -23,7 +23,7 @@ $tmp_file_name = sprintf "genome-scale-patser.%s", &AlphaDate;
 $query = new CGI;
 
 ### print the header of the result page
-&RSA_header("patser result ".$query->param("title"));
+&RSA_header("patser result ".$query->param("title"), "results");
 
 &ListParameters() if ($ECHO >= 2);
 
@@ -104,13 +104,15 @@ sub PipingForm {
   $title =~ s/\"/'/g;
   print <<End_of_form;
 <HR SIZE = 3>
-<CENTER>
-<TABLE>
+
+<TABLE class='nextstep'>
 <TR>
 <TD>
 <H3>Next step</H3>
 </TD>
+<tr></tr>
 <TD>
+
 <FORM METHOD="POST" ACTION="feature-map_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
 <INPUT type="hidden" NAME="feature_file" VALUE="$result_file">
@@ -121,6 +123,6 @@ sub PipingForm {
 </TD>
 </TR>
 </TABLE>
-</CENTER>
+
 End_of_form
 }

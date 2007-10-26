@@ -15,7 +15,7 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/convert-matrix";
 $tmp_file_name = sprintf "convert-matrix.%s", &AlphaDate();
@@ -101,7 +101,7 @@ if ($query->param('output') eq "display") {
     ### prepare data for piping
     open RESULT, "$command $parameters |";
 
-    print '<H2>Result</H2>';
+    print '<H4>Result</H4>';
     print '<PRE>';
     while (<RESULT>) {
 	s|${TMP}/||g;

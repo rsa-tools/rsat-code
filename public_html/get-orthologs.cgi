@@ -5,7 +5,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/get-orthologs";
@@ -18,7 +18,7 @@ $result_file = "$TMP/$tmp_file_name.res";
 $query = new CGI;
 
 ### Print the header
-&RSA_header("get-orthologs result");
+&RSA_header("get-orthologs result", "results");
 
 #### update log file ####
 &UpdateLogFile();
@@ -122,11 +122,15 @@ sub PipingForm {
     ### prepare data for piping
     print <<End_of_form;
 <HR SIZE = 3>
-<TABLE>
+<TABLE class = 'nextstep'>
 <TR>
+
 <TD>
 <H3>Next step</H3>
 </TD>
+
+</tr>
+<tr>
 <TD>
 <FORM METHOD="POST" ACTION="retrieve-seq_form.cgi">
 <INPUT type="hidden" NAME="organism" VALUE="$organism">

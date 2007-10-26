@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence_form.cgi,v 1.3 2004/05/07 07:14:23 jvanheld Exp $
+# $Id: purge-sequence_form.cgi,v 1.4 2007/10/26 11:45:23 rsat Exp $
 #
 # Time-stamp: <2003-10-01 12:17:22 jvanheld>
 #
@@ -13,7 +13,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
@@ -38,7 +38,7 @@ foreach $key (keys %default) {
 } 
 
 ### print the form ###
-&RSA_header("purge-sequence");
+&RSA_header("purge-sequence", "form");
 
 print "<CENTER>\n";
 print "Discards duplicated segments from a sequence set<BR>\n";
@@ -94,7 +94,7 @@ print "<BR>\n";
 &SelectOutput("server");
 
 ### action buttons
-print "<UL><UL><TABLE>\n";
+print "<UL><UL><TABLE class= 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";

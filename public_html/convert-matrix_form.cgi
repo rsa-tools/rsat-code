@@ -14,7 +14,7 @@ use RSAT::MatrixReader;
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 require "patser.lib.pl";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 use RSAT::MatrixReader;
@@ -61,7 +61,7 @@ foreach $key (keys %default) {
 
 ################################################################
 ### header
-&RSA_header("convert-matrix");
+&RSA_header("convert-matrix", "form");
 print "<CENTER>";
 print "Convert different types of position-specific scoring matrices (PSSM), and calculate statistical parameters.<P>\n";
 #print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
@@ -129,7 +129,7 @@ print "<p>\n";
 
 ################################################################
 ### action buttons
-print "<UL><UL><TABLE>\n";
+print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";

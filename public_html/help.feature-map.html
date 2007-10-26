@@ -4,10 +4,14 @@
    <TITLE>RSA-tools - feature map manual</TITLE>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
    <META NAME="GENERATOR" CONTENT="Mozilla/3.01Gold (X11; I; SunOS 5.5.1 sun4u) [Netscape]">
-</HEAD>
-<BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
 
-<H3 ALIGN=CENTER><A HREF="RSAT_home.cgi">RSA-tools</A> - feature map manual</H3>
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - feature map manual</h2>
+</center>
+
 
 
 <H4>Name</H4>
@@ -34,7 +38,7 @@ Several maps can be drawn in parallel, allowing to detect conserved positions ac
 
 <UL>
 
-<A NAME="formats">
+<A NAME="formats"></A>
 <B>Feature map format</B><BR>
 In the standard input format, each feature is represented by a single line,
 which must contain the following information: </P>
@@ -67,45 +71,45 @@ These files are converted into the custom feature-map format before
 the map is drawn.
 </P>
 
-<A NAME="title">
+<A NAME="title"></A>
 <B>Title</B><BR> The title appears in large fonts at the top of the
 image. A single line of title is allowed. Its maximal length depends
 on the image width.
 <P>
 
 
-<A NAME="legend">
+<A NAME="legend"></A>
 <B>Legend</B><BR> The legend is drawn at the left top of the image. It
 indicates the color (and optionally symbol) associated to each feature
 identifier.
 <P>
 
-<A NAME="scalebar">
+<A NAME="scalebar"></A>
 <B>Scale bar</B><BR> The scale bar appears either under the title
 (horizontal map) or at the left side of the image (vertical map). It
 indicates the coordinates. The step is calculated automatically but
 can also be specified manually.
 <P>
 
-<A NAME="orientation">
+<A NAME="orientation"></A>
 <B>Orientation</B><BR> The maps can either be drawn horizontally or
 vertically.
 <P>
 
 
-<A NAME="limits">
+<A NAME="limits"></A>
 <B>Display limits</B><BR> The options <B>from</B> and <B>to</B> define
 the maximum and minimum coordinated displayed in the map. This allows
 to zoom on a given part of the graph. If no value are entered, the min
 and max feature positions are used as limits.
 <P>
 
-<A NAME="origin">
+<A NAME="origin"></A>
 <B>Origin</B><BR> All coordinates are recalculated relative to this
 value).
 <P>
 
-<A NAME="dimensions">
+<A NAME="dimensions"></A>
 <B>Map dimensions</B><BR> All dimensions are in pixels. <BR>
 <UL>
 <LI>Map <B>length</B> refers to either width (horizontal map) or
@@ -127,7 +131,7 @@ required for its transfer to your client browser.
 
 
 
-<A NAME="handle">
+<A NAME="handle"></A>
 <B>Feature handle</B><BR> A color dot or a symbol can be associated to
 each feature. This is particularly convenient to discernate
 overlapping features, because the handle are shifted in order to avoid
@@ -135,7 +139,7 @@ overlap. Black symbols are conveninent to distinguish features on a
 black and white printing.
 <P>
 
-<A NAME="htmap">
+<A NAME="htmap"></A>
 <B>Dynamic map</B><BR> This option requires a recent browser (Netscape
 3 or later). When the mous is placed for a second on a given feature,
 a specific message appears at the bottom of the window, providing all
@@ -144,7 +148,7 @@ description).
 <P>
 
 
-<A NAME="keys">
+<A NAME="keys"></A>
 <P><B>Label keys</B><BR> A label can be written nearby each feature,
 providing one or several of the following data:
 <UL>
@@ -157,12 +161,12 @@ Note that this option gives a better effect with vertical maps, where
 the labels have less tendency to overlap with each other.
 </P>
 
-<A NAME="scorethick">
+<A NAME="scorethick"></A>
 <P><B>Proportional to score</B><BR> Feature box thickness reflects the
 score given in the eight column of the input.
 
 
-<A NAME="img_format">
+<A NAME="img_format"></A>
 <P><B>Image format</B><BR> output format for the image. Supported :
 png, jpg, ps. The formats jpg and png are bitmap formats, i.e. they
 are convenient for displaying on a computer screen, but their
@@ -222,8 +226,17 @@ Boutell)">(boutell@boutell.com)</A>.
 </UL>
 
 
-<CENTER><P>
-<HR SIZE=3></P></CENTER>
+<P/>
+<hr size=3></p></center>
+
+<h4 class="footer">
+<address>
+For information, contact
+<script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
+</address>
+</h4>
 
 
 </BODY>

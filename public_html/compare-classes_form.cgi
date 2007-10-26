@@ -6,7 +6,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
@@ -22,21 +22,22 @@ $default{upload_ref_classes} = "";
 $default{occ} = "checked";
 $default{lth_occ} = 1;
 $default{uth_occ} = "none";
-$default{percent} = "checked";
-$default{lth_percent} = "none";
-$default{uth_percent} = "none";
+$default{freq} = "checked";
 $default{sig} = "checked";
 $default{lth_sig} = 0;
 $default{uth_sig} = "none";
 $default{proba} = "checked";
-$default{lth_proba} = "none";
-$default{uth_proba} = "none";
+$default{freq} = "checked";
+$default{jac} = "checked";
+$default{entropy} = "checked";
 $default{members} = "";
-$default{sort_key} = "occ";
+$default{sort_key} = "sig";
 $default{pop_size} = "auto";
+$default{entropy} = "checked";
+$default{jac} = "checked";
 
 ### print the form ###
-&RSA_header("compare-classes");
+&RSA_header("compare-classes", 'form');
 print "<CENTER>";
 print "Compare two classifications (clustering results, functional classes, ...), and assess the statistical significance of common members between each pair of classes.<P>\n";
 print "Program developed by <A HREF='mailto:jtran\@scmbb.ulb.ac.be (Joseph Tran)'>Joseph Tran</A>\n";
@@ -72,10 +73,58 @@ print $query->filefield(-name=>'upload_ref_classes',
 print "<p>";
 
 #### table with all the statistics and thresholds
-print "<h3>Return</h3>\n";
+print "<h4>Return</h4>\n";
 
 print "<BLOCKQUOTE>\n";
-print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
+print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
+		    $query->Tr({-align=>left,-valign=>TOP},
+			       [
+				$query->th([" <A HREF='help.compare-classes.html#return_fields'>Fields</A> "]),
+				
+				### occurrences
+				$query->td([$query->checkbox(-name=>'occ',
+							     -checked=>$default{occ},
+							     -label=>' Occurrences ')
+					    ]),
+
+				### Frequencies
+				$query->td([$query->checkbox(-name=>'freq',
+							     -checked=>$default{freq},
+							     -label=>' Frequencies ')
+					    ]),
+
+				### Probabilities
+				$query->td([$query->checkbox(-name=>'proba',
+							     -checked=>$default{proba},
+							     -label=>' Probabilities ')
+					    ]),
+
+
+				### Jaccard index
+				$query->td([$query->checkbox(-name=>'jac',
+							     -checked=>$default{jac},
+							     -label=>' Jaccard index ')
+					    ]),
+				### Entropy
+				$query->td([$query->checkbox(-name=>'entropy',
+							     -checked=>$default{entropy},
+							     -label=>' Entropy ')
+					    ]),
+
+				### Members
+				$query->td([$query->checkbox(-name=>'members',
+							     -checked=>$default{members},
+							     -label=>' Members '),
+					    ]),
+
+			 ]
+			)
+		);
+print "</BLOCKQUOTE>\n";
+
+print "<h4>Thresholds</h4>\n";
+print "<BLOCKQUOTE>\n";
+print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 		    $query->Tr({-align=>left,-valign=>TOP},
 			       [
 				$query->th([" <A HREF='help.compare-classes.html#return_fields'>Fields</A> ",
@@ -83,46 +132,35 @@ print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
 					    " <A HREF='help.compare-classes.html#thresholds'>Upper<BR>Threshold</A> ",
 					    ]),
 				
-				### occurrences
-				$query->td([$query->checkbox(-name=>'occ',
-							     -checked=>$default{occ},
-							     -label=>' Occurrences '),
-					    $query->textfield(-name=>'lth_occ',
-							      -default=>$default{lth_occ},
+				### Query class size
+				$query->td([' Query size ',
+					    $query->textfield(-name=>'lth_q',
+							      -default=>$default{lth_q},
 							      -size=>5),
-					    $query->textfield(-name=>'uth_occ',
-							      -default=>$default{uth_occ},
+					    $query->textfield(-name=>'uth_q',
+							      -default=>$default{uth_q},
 							      -size=>5),
 					    ]),
-
-				### percentages
-				$query->td([$query->checkbox(-name=>'percent',
-							     -checked=>$default{percent},
-							     -label=>' Percentages '),
-					    $query->textfield(-name=>'lth_percent',
-							      -default=>$default{lth_percent},
+				### Reference class size
+				$query->td([' Reference size ',
+					    $query->textfield(-name=>'lth_r',
+							      -default=>$default{lth_r},
 							      -size=>5),
-					    $query->textfield(-name=>'uth_percent',
-							      -default=>$default{uth_percent},
+					    $query->textfield(-name=>'uth_r',
+							      -default=>$default{uth_r},
 							      -size=>5),
 					    ]),
-
-				### Probabilities
-				$query->td([$query->checkbox(-name=>'proba',
-							     -checked=>$default{proba},
-							     -label=>' Probabilities '),
-					    $query->textfield(-name=>'lth_proba',
-							      -default=>$default{lth_proba},
+				### Intersection size
+				$query->td([' Intersection size ',
+					    $query->textfield(-name=>'lth_qr',
+							      -default=>$default{lth_qr},
 							      -size=>5),
-					    $query->textfield(-name=>'uth_proba',
-							      -default=>$default{uth_proba},
+					    $query->textfield(-name=>'uth_qr',
+							      -default=>$default{uth_qr},
 							      -size=>5),
 					    ]),
-
-				### Significance
-				$query->td([$query->checkbox(-name=>'Significance',
-							     -checked=>$default{sig},
-							     -label=>' Significance '),
+				### Significance 
+				$query->td([' Significance ',
 					    $query->textfield(-name=>'lth_sig',
 							      -default=>$default{lth_sig},
 							      -size=>5),
@@ -131,12 +169,41 @@ print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
 							      -size=>5),
 					    ]),
 
-				### Members
-				$query->td([$query->checkbox(-name=>'members',
-							     -checked=>$default{members},
-							     -label=>' Members '),
-					    '',
-					    '',
+				### P-value 
+				$query->td([' P-value ',
+					    $query->textfield(-name=>'lth_pval',
+							      -default=>$default{lth_pval},
+							      -size=>5),
+					    $query->textfield(-name=>'uth_pval',
+							      -default=>$default{uth_pval},
+							      -size=>5),
+					    ]),
+
+				### E-value 
+				$query->td([' E-value ',
+					    $query->textfield(-name=>'lth_eval',
+							      -default=>$default{lth_eval},
+							      -size=>5),
+					    $query->textfield(-name=>'uth_eval',
+							      -default=>$default{uth_eval},
+							      -size=>5),
+					    ]),
+				### Jaccard index
+				$query->td([' Jaccard index ',
+					    $query->textfield(-name=>'lth_jac',
+							      -default=>$default{lth_jac},
+							      -size=>5),
+					    $query->textfield(-name=>'uth_jac',
+							      -default=>$default{uth_jac},
+							      -size=>5),
+					    ]),
+				$query->td([' Mutual information ',
+					    $query->textfield(-name=>'lth_mi',
+							      -default=>$default{lth_mi},
+							      -size=>5),
+					    $query->textfield(-name=>'uth_mi',
+							      -default=>$default{uth_mi},
+							      -size=>5),
 					    ]),
 
 			 ]
@@ -145,18 +212,20 @@ print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
 print "</BLOCKQUOTE>\n";
 
 
+
+
+
+
 ################################################################
 ## sort key
 print "<b><a href='help.compare-classes.html#sort_key'>Sort key </a></b>";
 print  $query->popup_menu(-name=>'sort_key',
-			  -Values=>[
-				    'occ',
+			  -Values=>['sig',
 				    'E_val', 
 				    'P_val',
-				    'sig',
-				    'name',
-				    'query_percent',
-				    'ref_percent',
+				    'Jaccard index',
+				    'Mutual information',
+				    'names'
 				    ],
 			  -default=>$sequence_format);
 
@@ -172,7 +241,7 @@ print "<HR width=550 align=left>\n";
 &SelectOutput();
 
 ### action buttons
-print "<UL><UL><TABLE>\n";
+print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";

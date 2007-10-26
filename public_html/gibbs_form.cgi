@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs_form.cgi,v 1.4 2004/05/07 07:14:23 jvanheld Exp $
+# $Id: gibbs_form.cgi,v 1.5 2007/10/26 11:45:23 rsat Exp $
 #
 # Time-stamp: <2003-07-11 15:08:18 jvanheld>
 #
@@ -13,7 +13,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
@@ -37,7 +37,7 @@ foreach $key (keys %default) {
 } 
 
 ### print the form ###
-&RSA_header("gibbs");
+&RSA_header("gibbs", "form");
 
 print "<CENTER>\n";
 print "Matrix-based pattern discovery using GIBBS<BR>\n";
@@ -93,7 +93,7 @@ print "<BR>\n";
 &SelectOutput;
 
 ### action buttons
-print "<UL><UL><TABLE>\n";
+print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";

@@ -6,7 +6,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
@@ -23,7 +23,7 @@ $default{strand} = "insensitive";
 $default{sc} = "none";
 
 ### print the form ###
-&RSA_header("pattern-assembly");
+&RSA_header("pattern-assembly", "form");
 print "<CENTER>";
 print "Assembly of patterns (oligos or dyads).<P>\n";
 print "</CENTER>";
@@ -117,7 +117,7 @@ print "<HR width=550 align=left>\n";
 
 
 ### action buttons
-print "<UL><UL><TABLE>\n";
+print "<UL><UL><TABLE class = 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";

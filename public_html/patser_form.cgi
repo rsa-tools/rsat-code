@@ -6,7 +6,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 require "patser.lib.pl";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
@@ -41,7 +41,7 @@ foreach $key (keys %default) {
 &ReadMatrixFromFile();
 
 ### print the form ###
-&RSA_header("patser");
+&RSA_header("patser", "form");
 #&ListParameters;
 
 ### head
@@ -89,7 +89,7 @@ print "<BR>\n";
 
 ################################################################
 ### action buttons
-print "<UL><UL><TABLE>\n";
+print "<UL><UL><TABLE class = 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";

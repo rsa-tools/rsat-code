@@ -14,7 +14,7 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 require "$RSA/public_html/genome-scale.lib.pl";
 
@@ -28,7 +28,7 @@ $tmp_file_name = sprintf "genome-scale-dna-pattern.%s", &AlphaDate;
 $query = new CGI;
 
 ### print the header of the result page
-&RSA_header("dna-pattern result ".$query->param("title"));
+&RSA_header("dna-pattern result ".$query->param("title"), "results");
 
 &ListParameters() if ($ECHO >= 2);
 
@@ -105,7 +105,7 @@ if ($query->param('return') =~ /count/i) {
   
 ### return matching positions
 } elsif ($query->param('return') =~ /positions/) { 
-    $parameters_dna_pattern .= " -pos";
+    $parameters_dna_pattern .= " -return sites";
     
     ### origin ###
     if ($query->param('origin') =~ /end/i) {
@@ -223,8 +223,7 @@ sub PipingForm {
 
   print <<part1;
 <HR SIZE = 3>
-<CENTER>
-<TABLE>
+<TABLE class = 'nextstep'>
 part1
 
 
@@ -235,6 +234,8 @@ if ($query->param('return') =~ /positions/) {
 <TD>
 <H3>Next step</H3>
 </TD>
+</tr>
+<tr>
 <TD>
 <FORM METHOD="POST" ACTION="feature-map_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
@@ -243,8 +244,6 @@ if ($query->param('return') =~ /positions/) {
 <INPUT type="hidden" NAME="fill_form" VALUE="on">
 <INPUT type="submit" VALUE="feature map">
 </FORM>
-</TD>
-<TD>
 </TD>
 </TR>
 part2
@@ -258,15 +257,15 @@ part2
 #### pipe to external servers
       print <<part3
 
-<tr valign=top>
-<td colpsan=2><h3>External servers</h3></td>
+<tr>
+<td><h3>External servers</h3></td>
 </tr>
 
 <!--
-<tr valign=top>
+<tr>
 <TD>
 <a href="http://www.biologie.ens.fr/fr/genetiqu/puces/publications/ymgv_NARdb2002/index.html" target=_blank>yMGV transcription profiles</a>
-</TD><td>
+</TD></tr><tr><td align = 'left'>
 <FORM METHOD="POST" ACTION="http://www.transcriptome.ens.fr/ymgv/list_signatures.php3" target=_blank>
 <INPUT type="hidden" NAME="generequest" VALUE="$export_genes">
 <INPUT type="submit" VALUE="Send">
@@ -275,11 +274,11 @@ part2
 </tr>
 -->
 
-<tr valign=top>
+<tr>
 <TD>
 <a href="http://www.genome.ad.jp/kegg/kegg2.html#pathway" target=_blank>KEGG pathway coloring</a>
 </TD>
-<td>
+</tr><tr><td>
 <FORM METHOD="GET" target=_blank ACTION='http://www.genome.ad.jp/kegg-bin/search_pathway_multi_www'>
 <INPUT type="hidden" NAME=org_name VALUE=sce>
 <INPUT type="hidden" NAME=unclassified VALUE="$export_genes">
@@ -293,7 +292,6 @@ part3
   
   print <<End_of_form;
 </TABLE>
-</CENTER>
 End_of_form
 
 

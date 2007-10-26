@@ -5,7 +5,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### intialization
@@ -258,7 +258,7 @@ print $query->textfield(-name=>'ygstep2',
 
 print "<hr>\n";
 
-print "<UL><UL><TABLE><TR>";
+print "<UL><UL><TABLE class = 'formbutton'><TR>";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print"<TD>", $query->reset, "</TD>\n";
 print $query->end_form;

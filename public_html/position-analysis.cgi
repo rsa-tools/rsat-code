@@ -15,7 +15,7 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 #### TEMPORARY
@@ -30,7 +30,7 @@ $tmp_file_name = sprintf "position-analysis.%s", &AlphaDate;
 $query = new CGI;
 
 ### print the result page
-&RSA_header("position-analysis result");
+&RSA_header("position-analysis result", "results");
 &ListParameters() if ($ECHO >=2);
 
 #### update log file ####
@@ -205,12 +205,13 @@ sub PipingForm {
     }
   print <<End_of_form;
 <HR SIZE = 3>
-<TABLE>
+<TABLE class = 'nextstep'>
 <TR>
 
-<TD>
+<TD colspan = 2>
 <H3>Next step</H3>
 </TD>
+</tr><tr>
 <TD>
 <FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">

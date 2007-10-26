@@ -14,7 +14,7 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $tmp_file_name = sprintf "retrieve-seq.%s", &AlphaDate();
@@ -27,7 +27,7 @@ $query = new CGI;
 
 
 ### print the header
-&RSA_header("retrieve-seq result");
+&RSA_header("retrieve-seq result", 'results');
 
 
 #### update log file ####
@@ -131,6 +131,13 @@ if (lc($query->param('noorf')) eq "on") {
     $parameters .= " -noorf ";
 }
 
+### prevent orf overlap ###
+if (lc($query->param('imp_pos')) eq "on") {
+    $imp_pos = 1;
+    $parameters .= " -imp_pos ";
+}
+
+
 #### queries ####
 if ($query->param('genes') eq "all") {
     ### take all genes as query
@@ -183,7 +190,7 @@ if (($query->param('output') =~ /display/i) ||
 	&Info("The result will appear below ...");
     }
 
-    print '<H3>Result</H3>';
+    print '<H4>Result</H4>';
 
     ### open the mirror file
     $mirror_file = "$TMP/$tmp_file_name.res";
@@ -250,18 +257,18 @@ sub PipingForm {
 
   print <<End_of_form;
 <HR SIZE = 3>
-<TABLE CELLSPACING=0 CELLPADDING=10 BORDER=0 NOWRAP BGCOLOR= #FFEEDD>
+<TABLE CLASS = "nextstep" CELLSPACING=0 CELLPADDING=10 BORDER=0 NOWRAP>
 
 <TR VALIGN="top" ALIGN="center">
-    <TD VALIGN=BOTTOM ALIGN=CENTER COLSPAN=5 BGCOLOR=	#FFEEDD>
-	<H3>Next step</H3>
-    </TD>
+    <Th VALIGN=BOTTOM ALIGN=CENTER COLSPAN=6>
+	Next step
+    </Th>
 
 </TR>
 
 <TR VALIGN="top" ALIGN="center">
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER BGCOLOR=		#FFEEDD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
 	<B>Pattern discovery</B><BR>
 	(unknown patterns)
     </TD>
@@ -318,7 +325,7 @@ sub PipingForm {
 
 <TR VALIGN="top" ALIGN="center">
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER BGCOLOR=#FFEEDD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
 	<B>Pattern matching</B><BR>
 	(known patterns)
     </TD>
@@ -366,7 +373,7 @@ sub PipingForm {
 
 <TR VALIGN="top" ALIGN="center">
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER BGCOLOR=		#FFEEDD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
 	<B>Utilities</B>
     </TD>
 
