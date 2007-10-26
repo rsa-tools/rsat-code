@@ -15,7 +15,7 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 #### TEMPORARY
@@ -27,7 +27,7 @@ $tmp_file_name = sprintf "compare-classes.%s", &AlphaDate;
 $query = new CGI;
 
 ### print the result page
-&RSA_header("compare-classes result");
+&RSA_header("compare-classes result", "results");
 &ListParameters() if ($ECHO >=2);
 
 #### update log file ####
@@ -37,9 +37,9 @@ $query = new CGI;
 $parameters = " -v 1";
 
 #### return a confusion table
-if ($query->param('return') eq "matrix") {
-    $parameters .= " -matrix"; 
-} 
+# if ($query->param('return') eq "matrix") {
+#     $parameters .= " -matrix"; 
+# } 
 
 ### fields to return
 $return_fields = "";
@@ -47,105 +47,149 @@ $return_fields = "";
 ### occurrences
 if ($query->param('occ')) {
     $return_fields .= "occ,";
-
-    ### lower threshold on occurrences
-    if ($query->param('lth_occ') =~ /^\d+$/) {
-	$parameters .= " -lth occ ".$query->param('lth_occ');
-    }
-
-    ### upper threshold on occurrences
-    if ($query->param('uth_occ') =~ /^\d+$/) {
-	$parameters .= " -uth occ ".$query->param('uth_occ');
-    }
+    
 } 
 
-
-### percentages
-if ($query->param('percent')) {
-    $return_fields .= "percent,";
-
-    ### lower threshold on percentages
-    if ($query->param('lth_percent') =~ /^\d+$/) {
-	$lth_percent = $query->param('lth_percent');
-	if ((&IsReal($lth_percent)) &&
-	     ($lth_percent <= 100) &&
-	     ($lth_percent >= 0)) {
-	    $parameters .= " -lth percent ".$lth_percent;
-	} else {
-	    &FatalError("Lower threshold on percentages: $lth_percent invalid value.");
-	}
-    }
-
-    ### upper threshold on percentages
-    if ($query->param('uth_percent') =~ /^\d+$/) {
-	$uth_percent = $query->param('uth_percent');
-	if ((&IsReal($uth_percent)) &&
-	     ($uth_percent <= 100) &&
-	     ($uth_percent >= 0)) {
-	    $parameters .= " -uth percent ".$uth_percent;
-	} else {
-	    &FatalError("Upper threshold on percentages: $uth_percent invalid value.");
-	}
-    }
-} 
-
+### frequencies
+if ($query->param('freq')) {
+    $return_fields .= "freq,";
+}
 
 ### probabilities
 if ($query->param('proba')) {
-    $return_fields .= "proba,";
+	$return_fields .= "proba,";
+}
 
-    ### lower threshold on probabilities
-    if ($query->param('lth_proba') =~ /^\d+$/) {
-	$lth_proba = $query->param('lth_proba');
-	if ((&IsReal($lth_proba)) &&
-	     ($lth_proba <= 100) &&
-	     ($lth_proba >= 0)) {
-	    $parameters .= " -lth proba ".$lth_proba;
-	} else {
-	    &FatalError("Lower threshold on probabilities: $lth_proba invalid value.");
-	}
-    }
-
-    ### upper threshold on probabilities
-    if ($query->param('uth_proba') =~ /^\d+$/) {
-	$uth_proba = $uth_proba;
-	if ((&IsReal($uth_proba)) &&
-	     ($uth_proba <= 100) &&
-	     ($uth_proba >= 0)) {
-	    $parameters .= " -uth proba ".$uth_proba;
-	} else {
-	    &FatalError("Upper threshold on probabilities: $uth_proba invalid value.");
-	}
-    }
-
-
-    ### lower threshold on significance
-    if ($query->param('lth_sig') =~ /^\d+$/) {
-	$lth_sig = $query->param('lth_sig');
-	if (&IsReal($lth_sig)) {
-	    $parameters .= " -lth sig ".$lth_sig;
-	} else {
-	    &FatalError("Lower threshold on significance: $lth_sig invalid value.");
-	}
-    }
-
-    ### upper threshold on significance
-    if ($query->param('uth_sig') =~ /^\d+$/) {
-	$uth_sig = $query->param('uth_sig');
-	if (&IsReal($uth_sig)) {
-	    $parameters .= " -uth sig ".$uth_sig;
-	} else {
-	    &FatalError("Upper threshold on significance: $uth_sig invalid value.");
-	}
-    }
-
-} 
-
-### members
+### Members
 if ($query->param('members')) {
     $return_fields .= "members,";
 }
 
+### Jaccard similarity
+if ($query->param('jac')) {
+    $return_fields .= "jac_sim,";
+}
+
+### Entropy
+if ($query->param('entropy')) {
+    $return_fields .= "entropy";
+}
+# Thresolds
+### lower threshold on occurrences in the query class
+if ($query->param('lth_q') =~ /^\d+$/) {
+  $parameters .= " -lth Q ".$query->param('lth_q');
+}
+### upper threshold on occurrences in the query class
+if ($query->param('uth_q') =~ /^\d+$/) {
+  $parameters .= " -uth Q ".$query->param('lth_q');
+}
+### lower threshold on occurrences in the reference class
+if ($query->param('lth_r') =~ /^\d+$/) {
+  $parameters .= " -lth R ".$query->param('lth_r');
+}
+### upper threshold on occurrences in the reference class
+if ($query->param('uth_r') =~ /^\d+$/) {
+  $parameters .= " -uth R ".$query->param('lth_r');
+}
+### lower threshold on occurrences in the intersection
+if ($query->param('lth_qr') =~ /^\d+$/) {
+  $parameters .= " -lth QR ".$query->param('lth_qr');
+}
+### upper threshold on occurrences in the intersection
+if ($query->param('uth_qr') =~ /^\d+$/) {
+  $parameters .= " -uth QR ".$query->param('lth_qr');
+}
+### lower threshold on significance
+if ($query->param('lth_sig') =~ /^\d+$/) {
+  $lth_sig = $query->param('lth_sig');
+  if (&IsReal($lth_sig)) {
+    $parameters .= " -lth sig ".$lth_sig;
+  } else {
+    &FatalError("Lower threshold on significance: $lth_sig invalid value.");
+  }
+}
+### upper threshold on significance
+if ($query->param('uth_sig') =~ /^\d+$/) {
+  $uth_sig = $query->param('uth_sig');
+  if (&IsReal($uth_sig)) {
+    $parameters .= " -uth sig ".$uth_sig;
+  } else {
+    &FatalError("Upper threshold on significance: $uth_sig invalid value.");
+  }
+}
+### lowe threshold on p-value
+if ($query->param('lth_pval') =~ /^\d+$/) {
+  $lth_pval = $query->param('lth_pval');
+  if (&IsReal($lth_pval)) {
+    $parameters .= " -lth P_val ".$lth_pval;
+  } else {
+    &FatalError("Lower threshold on P-value: $lth_pval invalid value.");
+  }
+}
+### upper threshold on p-value
+if ($query->param('uth_pval') =~ /^\d+$/) {
+  $uth_pval = $query->param('uth_pval');
+  if (&IsReal($uth_pval)) {
+    $parameters .= " -uth P_val ".$uth_pval;
+  } else {
+    &FatalError("Upper threshold on P-value: $uth_pval invalid value.");
+  }
+}
+### lowe threshold on e-value
+if ($query->param('lth_eval') =~ /^\d+$/) {
+  $lth_eval = $query->param('lth_eval');
+  if (&IsReal($lth_eval)) {
+    $parameters .= " -lth E_val ".$lth_eval;
+  } else {
+    &FatalError("Lower threshold on e-value: $lth_eval invalid value.");
+  }
+}
+### upper threshold on e-value
+if ($query->param('uth_eval') =~ /^\d+$/) {
+  $uth_eval = $query->param('uth_eval');
+  if (&IsReal($uth_eval)) {
+    $parameters .= " -uth E_val ".$uth_eval;
+  } else {
+    &FatalError("Upper threshold on e-value: $uth_eval invalid value.");
+  }
+}
+
+### lowe threshold on Jaccard Index
+if ($query->param('lth_jac') =~ /^\d+$/) {
+  $lth_jac = $query->param('lth_jac');
+  if ((&IsReal($lth_jac)) && ($lth_jac < 1)) {
+    $parameters .= " -lth jac ".$lth_jac;
+  } else {
+    &FatalError("Lower threshold on Jaccard Index: $lth_jac invalid value.<br> Must be comprised between 0 and 1");
+  }
+}
+### upper threshold on Jaccard Index
+if ($query->param('uth_jac') =~ /^\d+$/) {
+  $uth_jac = $query->param('uth_jac');
+  if ((&IsReal($lth_jac)) && ($lth_jac < 1)) {
+    $parameters .= " -uth jac ".$uth_jac;
+  } else {
+    &FatalError("Upper threshold on Jaccard Index : $uth_jac invalid value.<br> Must be comprised between 0 and 1");
+  }
+}
+### lower threshold on Mutual information Index
+if ($query->param('lth_mi') =~ /^\d+$/) {
+  $lth_mi = $query->param('lth_mi');
+  if (&IsReal($lth_mi)) {
+    $parameters .= " -lth mi ".$lth_mi;
+  } else {
+    &FatalError("Lower threshold on Mutual information: $lth_mi invalid value.");
+  }
+}
+### upper threshold on Mutual information Index
+if ($query->param('uth_mi') =~ /^\d+$/) {
+  $uth_mi = $query->param('uth_mi');
+  if (&IsReal($uth_mi)) {
+    $parameters .= " -uth mi ".$uth_mi;
+  } else {
+    &FatalError("Upper threshold on Mutual information : $uth_mi invalid value.");
+  }
+}
 $return_fields =~ s/,$//;
 
 
@@ -157,11 +201,17 @@ $parameters .= " -return $return_fields";
 ################################################################
 ## sort keys
 if ($query->param('sort_key')) {
-    $parameters .= " -sort ".$query->param('sort_key');
+    $sort_key = $query->param("sort_key");
+    if ($sort_key eq "Mutual information") {
+       $sort_key = "'I(Q,R)'";
+    } elsif ($sort_key eq "Jaccard index") {
+       $sort_key = 'jac_sim';
+    }
+    $parameters .= " -sort ".$sort_key;
 }
 
 ################################################################
-## sort keys
+## Population size
 if (&IsNatural($query->param('pop_size'))) {
     $parameters .= " -pop ".$query->param('pop_size');
 }

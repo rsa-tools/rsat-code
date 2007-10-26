@@ -4,10 +4,16 @@
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
    <META NAME="GENERATOR" CONTENT="Mozilla/4.5b1 [en] (X11; I; Linux 2.0.33 i586) [Netscape]">
    <TITLE>PATSER manual</TITLE>
-</HEAD>
-<BODY bgcolor = '#FFFFFF'>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
 
 <blockquote>
+
+<center>
+<h2><a href="RSAT_home.cgi">RSA-tools</a> - Help about patser
+</h2>
+</center>
 
 <PRE>
 Copyright 1990, 1994, 1995, 1996, 2000, 2001 Gerald Z. Hertz
@@ -152,11 +158,11 @@ The following options can be determined on the command line.
 
   5) Options for adjusting or restricting which scores are printed.
      The "-ls", "-li", and "-lp" options are mutually exclusive.
-<a name=strands>
+<a name=strands></a>
      -c: also score the complementary sequences.  The complements are
         determined by the program and are not explicitly stated in the
         sequence files.
-<a name=lthreshold>
+<a name=lthreshold></a>
      -ls number: lower threshold for printing scores, inclusive
                  (formerly the -l option).
      -li: assume that the maximum ln(p-value) for printing scores equals
@@ -164,10 +170,10 @@ The following options can be determined on the command line.
           indirectly determines the lower threshold for printing scores.
      -lp number: the maximum ln(p-value) for printing scores; indirectly
                  determines the lower threshold for printing scores.
-<a name=uthreshold>
+<a name=uthreshold></a>
      -u number: upper threshold for printing scores, exclusive.
 
-<a name=return>
+<a name=return></a>
      -t: just print the top score for each sequence.
      -t number: print the indicated number of top scores for each sequence.
      -ds: if the "-t number" option is used, print the top scores for each

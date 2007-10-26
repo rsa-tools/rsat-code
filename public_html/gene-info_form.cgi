@@ -6,7 +6,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
@@ -120,7 +120,7 @@ print $query->end_form;
 print "<TD><B><A HREF='help.gene-info.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_gene-info.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
-print "</TR></TABLE></UL></UL>\n";
+print "</TR></TABLE class='formbutton'></UL></UL>\n";
 
 print "</BLOCKQUOTE>\n";
 print "</FONT>\n";

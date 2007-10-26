@@ -3,7 +3,7 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 #### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";

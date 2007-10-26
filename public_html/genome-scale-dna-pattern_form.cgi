@@ -6,9 +6,9 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-require "$RSA/public_html/genome-scale.lib.pl";
+require "$RSA/public_html2/genome-scale.lib.pl";
 
 ### Read the CGI query
 $query = new CGI;
@@ -45,7 +45,7 @@ if (($pattern_file = $query->param("pattern_file")) &&
 }
 
 ### print the form ###
-&RSA_header("genome-scale dna-pattern");
+&RSA_header("genome-scale dna-pattern", "form");
 
 ### head
 print "<CENTER>";
@@ -69,7 +69,7 @@ print $query->start_multipart_form(-action=>"genome-scale-dna-pattern.cgi");
 # dna-pattern options
 #
 
-print $query->h3("Pattern matching options");
+print $query->h4("Pattern matching options");
 
 ### text area to enter the patterns
 print "<A HREF='help.dna-pattern.html#patterns'><B>\n";
@@ -174,7 +174,7 @@ print "<font color=red><B>Warning ! genome-scale searches can be time-consuming.
 
 
 ### action buttons
-print "<UL><UL><TABLE>\n";
+print "<UL><UL><TABLE class = 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";

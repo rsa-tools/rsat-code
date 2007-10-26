@@ -1,11 +1,18 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>/no_backup/rsa-tools/perl-scripts/matrix-scan</title>
+<title>matrix-scan help</title>
 <link rev="made" href="mailto:root@b01.apple.com" />
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
 </head>
+<body class="info">
 
-<body style="background-color: white">
+
+<center>
+<h2><a href="RSAT_home.cgi">RSA-tools</a> - Help about matrix-scan
+</h2>
+</center>
+
 
 <p><a name="__index__"></a></p>
 <!-- INDEX BEGIN -->
@@ -38,12 +45,12 @@
 <p>
 </p>
 <hr />
-<h1><a name="name">NAME</a></h1>
+<h1><a name="name"></a>NAME</h1>
 <p>matrix-scan</p>
 <p>
 </p>
 <hr />
-<h1><a name="description">DESCRIPTION</a></h1>
+<h1><a name="description"></a>DESCRIPTION</h1>
 <p>Scan sequences with one or several position-specific scoring matrices
 (PSSM) to identify instances of the corresponding motifs (putative
 sites). This program supports a variety of background models
@@ -51,7 +58,7 @@ sites). This program supports a variety of background models
 <p>
 </p>
 <hr />
-<h1><a name="authors">AUTHORS</a></h1>
+<h1><a name="authors"></a>AUTHORS</h1>
 <dl>
 <dt><strong><a name="item_jean_valery_turatsinze_jturatsi_40scmbb_2eulb_2eac">Jean Valery Turatsinze <a href="mailto:jturatsi@scmbb.ulb.ac.be">jturatsi@scmbb.ulb.ac.be</a></a></strong><br />
 </dt>
@@ -61,32 +68,32 @@ sites). This program supports a variety of background models
 <p>
 </p>
 <hr />
-<h1><a name="category">CATEGORY</a></h1>
+<h1><a name="category"></a>CATEGORY</h1>
 <dl>
-<dt><strong><a name="item_sequences">sequences</a></strong><br />
+<dt><strong><a name="item_sequences"></a>sequences</strong><br />
 </dt>
-<dt><strong><a name="item_pattern_matching">pattern matching</a></strong><br />
+<dt><strong><a name="item_pattern_matching"></a>pattern matching</strong><br />
 </dt>
-<dt><strong><a name="item_pssm">PSSM</a></strong><br />
+<dt><strong><a name="item_pssm"></a>PSSM</strong><br />
 </dt>
 </dl>
 <p>
 </p>
 <hr />
-<h1><a name="usage">USAGE</a></h1>
+<h1><a name="usage"></a>USAGE</h1>
 <p>matrix-scan -m matrixfile [-i inputfile] [-o outputfile] [-v]
     [-bgfile backgroundfile|-bgorder #]</p>
 <p>
 </p>
 <hr />
-<h1><a name="input_formats">INPUT FORMATS</a></h1>
+<h1><a name="input_formats"></a>INPUT FORMATS</h1>
 <p>
 </p>
-<h2><a name="sequence_file">Sequence file</a></h2>
+<h2><a name="sequence_file"></a>Sequence file</h2>
 <p>All the formats supported in RSAT can be used as input (default: fasta).</p>
 <p>
 </p>
-<h2><a name="matrix_file">Matrix file</a></h2>
+<h2><a name="matrix_file"></a>Matrix file</h2>
 <p>The matrix format is specified with the option -matrix_format.  Supported :
 consensus,gibbs,meme,tab. Default : tab.</p>
 <p>
@@ -98,7 +105,7 @@ can directly be used as input for the program <em>feature-map</em>.</p>
 <p>
 </p>
 <hr />
-<h1><a name="scoring_scheme">SCORING SCHEME</a></h1>
+<h1><a name="scoring_scheme"></a>SCORING SCHEME</h1>
 <p>The program scans the input sequences with a position-specific scoring
 matrix (PSSM) by selecting, at each position, a sequence segment (S)
 of the same length as the matrix, and assigning a score to this
@@ -110,7 +117,7 @@ al. (2001).</p>
 <p>The weight of a sequence segment (Ws) is calculated as the log-ratio
 between two probabilities:</p>
 <dl>
-<dt><strong><a name="item_p"><em>Ws = log[P(S|M)/P(S|B)]</em></a></strong><br />
+<dt><strong><a name="item_p"></a><em>Ws = log[P(S|M)/P(S|B)]</em></strong><br />
 </dt>
 <dd>
 where
@@ -135,7 +142,7 @@ allows to specify any alternative base (e.g. 2 to obtain bit units);</p>
 <p>
 </p>
 <hr />
-<h1><a name="background_models">BACKGROUND MODELS</a></h1>
+<h1><a name="background_models"></a>BACKGROUND MODELS</h1>
 <p>An essential parameter of any pattern detection approach is the choice
 of an appropriate background model. This model is used to estimate the
 probability for each site to occur by chance, rather than as an
@@ -148,7 +155,7 @@ Bernoulli model, since eahc residue is independent from the preceding
 ones.</p>
 <p>A variety of options for specifying the background model.</p>
 <dl>
-<dt><strong><a name="item__2dbgfile"><em>-bgfile</em></a></strong><br />
+<dt><strong><a name="item__2dbgfile"></a><em>-bgfile</em></strong><br />
 </dt>
 <dd>
 This option allows to enter the background model from a background
@@ -166,7 +173,7 @@ for all the supported organisms.</p>
 <p>$RSAT/data/genomes/My_organism/oligo-frequencies/</p>
 </dd>
 <p></p>
-<dt><strong><a name="item__2dbginput"><em>-bginput</em></a></strong><br />
+<dt><strong><a name="item__2dbginput"></a><em>-bginput</em></strong><br />
 </dt>
 <dd>
 The backgound model is calculated from the whole set of input
@@ -174,7 +181,7 @@ sequences. This option requires to specify the order of the background
 model with the option -markov.
 </dd>
 <p></p>
-<dt><strong><a name="item__2dwindow"><em>-window</em></a></strong><br />
+<dt><strong><a name="item__2dwindow"></a><em>-window</em></strong><br />
 </dt>
 <dd>
 The background model is calculated locally at each step of the scan,
@@ -190,7 +197,7 @@ models only (-markov 0 to 1).
 <p>
 </p>
 <hr />
-<h1><a name="references">REFERENCES</a></h1>
+<h1><a name="references"></a>REFERENCES</h1>
 <p>1. Hertz, G.Z. and G.D. Stormo, Identifying DNA and protein patterns
    with statistically significant alignments of multiple
    sequences. Bioinformatics, 1999. 15(7-8): p. 563-77.</p>
@@ -203,27 +210,27 @@ models only (-markov 0 to 1).
 <p>
 </p>
 <hr />
-<h1><a name="options">OPTIONS</a></h1>
+<h1><a name="options"></a>OPTIONS</h1>
 <dl>
-<dt><strong><a name="item__2dv__23"><strong>-v #</strong></a></strong><br />
+<dt><strong><a name="item__2dv__23"></a><strong>-v #</strong></strong><br />
 </dt>
 <dd>
 Level of verbosity (detail in the warning messages during execution)
 </dd>
 <p></p>
-<dt><strong><a name="item__2dh"><strong>-h</strong></a></strong><br />
+<dt><strong><a name="item__2dh"></a><strong>-h</strong></strong><br />
 </dt>
 <dd>
 Display full help message
 </dd>
 <p></p>
-<dt><strong><a name="item__2dhelp"><strong>-help</strong></a></strong><br />
+<dt><strong><a name="item__2dhelp"></a><strong>-help</strong></strong><br />
 </dt>
 <dd>
 Same as -h
 </dd>
 <p></p>
-<dt><strong><a name="item__2dbgfile_background_file"><strong>-bgfile background_file</strong></a></strong><br />
+<dt><strong><a name="item__2dbgfile_background_file"></a><strong>-bgfile background_file</strong></strong><br />
 </dt>
 <dd>
 Background model file.
@@ -235,7 +242,7 @@ Background model file.
 Calculate background model from the input sequence set.
 </dd>
 <p></p>
-<dt><strong><a name="item__2dmarkov"><strong>-markov</strong></a></strong><br />
+<dt><strong><a name="item__2dmarkov"></a><strong>-markov</strong></strong><br />
 </dt>
 <dd>
 Order of the markov chain for the background model.
@@ -250,7 +257,7 @@ Order of the markov chain for the background model.
 Size of the sliding window for the background model calculation.
 </dd>
 <p></p>
-<dt><strong><a name="item__2dm_matrixfile"><strong>-m matrixfile</strong></a></strong><br />
+<dt><strong><a name="item__2dm_matrixfile"></a><strong>-m matrixfile</strong></strong><br />
 </dt>
 <dd>
 Matrix file.
@@ -260,46 +267,46 @@ Matrix file.
 multiple matrices.</p>
 </dd>
 <p></p>
-<dt><strong><a name="item__2dseq_format_sequence_format"><strong>-seq_format sequence_format</strong></a></strong><br />
+<dt><strong><a name="item__2dseq_format_sequence_format"></a><strong>-seq_format sequence_format</strong></strong><br />
 </dt>
 <dd>
 Sequence format.
 </dd>
 <p></p>
-<dt><strong><a name="item__2dmatrix_format_matrix_format"><strong>-matrix_format matrix_format</strong></a></strong><br />
+<dt><strong><a name="item__2dmatrix_format_matrix_format"></a><strong>-matrix_format matrix_format</strong></strong><br />
 </dt>
 <dd>
 Matrix format.
 </dd>
 <p></p>
-<dt><strong><a name="item__2di_inputfile"><strong>-i inputfile</strong></a></strong><br />
+<dt><strong><a name="item__2di_inputfile"></a><strong>-i inputfile</strong></strong><br />
 </dt>
 <dd>
 If no input file is specified, the standard input is used.  This
 allows to use the command within a pipe.
 </dd>
 <p></p>
-<dt><strong><a name="item__2dmask_upper_7clower"><strong>-mask upper|lower</strong></a></strong><br />
+<dt><strong><a name="item__2dmask_upper_7clower"></a><strong>-mask upper|lower</strong></strong><br />
 </dt>
 <dd>
 Mask lower or uppercases, respecively, i.e. replace selected case by N
 characters.
 </dd>
 <p></p>
-<dt><strong><a name="item__2dn__5bskip_7cscore_5d"><strong>-n [skip|score]</strong></a></strong><br />
+<dt><strong><a name="item__2dn__5bskip_7cscore_5d"></a><<strong>-n [skip|score]</strong>/strong><br />
 </dt>
 <dd>
 Treatment of N characters. These characters are often used in DNA
 sequences to represent undefined or masked nucleotides.
 </dd>
 <dl>
-<dt><strong><a name="item_skip"><em>skip</em></a></strong><br />
+<dt><strong><a name="item_skip"></a><em>skip</em></strong><br />
 </dt>
 <dd>
 N-containing regions are skipped.
 </dd>
 <p></p>
-<dt><strong><a name="item_score"><em>score</em></a></strong><br />
+<dt><strong><a name="item_score"></a><em>score</em></strong><br />
 </dt>
 <dd>
 N-containing regions are scored. The probability of an N is 1 for both
@@ -310,20 +317,20 @@ which are at the border of N-containing regions, or in cases there are
 isolated N in the sequences.
 </dd>
 <p></p></dl>
-<dt><strong><a name="item__2do_outputfile"><strong>-o outputfile</strong></a></strong><br />
+<dt><strong><a name="item__2do_outputfile"></a><strong>-o outputfile</strong></strong><br />
 </dt>
 <dd>
 If no output file is specified, the standard output is used.  This
 allows to use the command within a pipe.
 </dd>
 <p></p>
-<dt><strong><a name="item__2dpseudo_pseudo_counts"><strong>-pseudo pseudo_counts</strong></a></strong><br />
+<dt><strong><a name="item__2dpseudo_pseudo_counts"></a><strong>-pseudo pseudo_counts</strong></strong><br />
 </dt>
 <dd>
 Pseudo-weight.
 </dd>
 <p></p>
-<dt><strong><a name="item__2dequi_pseudo"><strong>-equi_pseudo</strong></a></strong><br />
+<dt><strong><a name="item__2dequi_pseudo"></a><strong>-equi_pseudo</strong></strong><br />
 </dt>
 <dd>
 If this option is called, the pseudo-weight is distributed in an equiprobable
@@ -333,7 +340,7 @@ way between residues.
 <p>By default, the pseudo-weight is distributed proportionally to residue priors.</p>
 </dd>
 <p></p>
-<dt><strong><a name="item__2dorigin_pos"><strong>-origin pos</strong></a></strong><br />
+<dt><strong><a name="item__2dorigin_pos"></a><strong>-origin pos</strong></strong><br />
 </dt>
 <dd>
 Define pos as the origin for the calculation of positions.
@@ -344,19 +351,19 @@ positions are then negative values, providing the distance between the match
 and the end of the sequence.</p>
 </dd>
 <p></p>
-<dt><strong><a name="item__2dbase__23"><strong>-base #</strong></a></strong><br />
+<dt><strong><a name="item__2dbase__23"></a><strong>-base #</strong></strong><br />
 </dt>
 <dd>
 Base for the logarithms (default: $base)
 </dd>
 <p></p>
-<dt><strong><a name="item__2ddecimals__23"><strong>-decimals #</strong></a></strong><br />
+<dt><strong><a name="item__2ddecimals__23"></a><strong>-decimals #</strong></strong><br />
 </dt>
 <dd>
 Number of decimals displayed for the score.
 </dd>
 <p></p>
-<dt><strong><a name="item__2duth_param_upper_threshold"><strong>-uth param upper_threshold</strong></a></strong><br />
+<dt><strong><a name="item__2duth_param_upper_threshold"></a><strong>-uth param upper_threshold</strong></strong><br />
 </dt>
 <dd>
 Threshold on some parameter (-lth: lower, -uth: upper threshold).
@@ -365,19 +372,19 @@ Threshold on some parameter (-lth: lower, -uth: upper threshold).
 <p>Supported threshold fields : score normw proba_M proba_B rank</p>
 </dd>
 <p></p>
-<dt><strong><a name="item__2d2str"><strong>-2str</strong></a></strong><br />
+<dt><strong><a name="item__2d2str"></a><strong>-2str</strong></strong><br />
 </dt>
 <dd>
 Scan both strands for DNA sequences.
 </dd>
 <p></p>
-<dt><strong><a name="item__2d1str"><strong>-1str</strong></a></strong><br />
+<dt><strong><a name="item__2d1str"></a><strong>-1str</strong></strong><br />
 </dt>
 <dd>
 single-strand search for DNA sequences.
 </dd>
 <p></p>
-<dt><strong><a name="item__2dreturn_return_fields"><strong>-return return_fields</strong></a></strong><br />
+<dt><strong><a name="item__2dreturn_return_fields"></a><strong>-return return_fields</strong></strong><br />
 </dt>
 <dd>
 List of fields to return.
@@ -386,14 +393,14 @@ List of fields to return.
 <p>Supported fields: sites,ranks,limits,normw,bg_model,matrix,freq_matrix,weight_matrix</p>
 </dd>
 <dl>
-<dt><strong><a name="item_sites_3a_matching_sites_2e"><strong>sites:</strong> Matching sites.</a></strong><br />
+<dt><strong><a name="item_sites_3a_matching_sites_2e"></a><strong>sites:</strong> Matching sites.</strong><br />
 </dt>
 <dd>
 Return the osition of matching sites in aformat which can be sed as
 input by <em>feature-map</em>.
 </dd>
 <p></p>
-<dt><strong><a name="item_rank_3a_rank_2e"><strong>rank:</strong> Rank.</a></strong><br />
+<dt><strong><a name="item_rank_3a_rank_2e"></a><strong>rank:</strong> Rank.</strong><br />
 </dt>
 <dd>
 Sort the sites per decreasing values of score (weight), and return the
@@ -406,14 +413,14 @@ matrix and per sequence (-th rank 1) or the 3 top scoring sites per
 matrix and per sequence (-uth rank 3).</p>
 </dd>
 <p></p>
-<dt><strong><a name="item_limits"><strong>limits:</strong> limits (start, end) of the input sequences.</a></strong><br />
+<dt><strong><a name="item_limits"></a><strong>limits:</strong> limits (start, end) of the input sequences.</strong><br />
 </dt>
 <dd>
 This is useful for drawing feature maps with sequences of different
 lengths.
 </dd>
 <p></p>
-<dt><strong><a name="item_normw_3a_normalized_weights_2e"><strong>normw:</strong> normalized weights.</a></strong><br />
+<dt><strong><a name="item_normw_3a_normalized_weights_2e"></a><strong>normw:</strong> normalized weights.</strong><br />
 </dt>
 <dd>
 Normailzed weights are calculated according to Thijs' formula : normw
@@ -421,7 +428,7 @@ Normailzed weights are calculated according to Thijs' formula : normw
 using a Bernoulli model, for reasons of commputational efficiency.
 </dd>
 <p></p>
-<dt><strong><a name="item_bg_model_3a_background_model_2e"><strong>bg_model:</strong> Background model.</a></strong><br />
+<dt><strong><a name="item_bg_model_3a_background_model_2e"></a><strong>bg_model:</strong> Background model.</strong><br />
 </dt>
 <dd>
 Transition matrix of the background model. Note that this option only
@@ -434,22 +441,22 @@ changes along he sequence.
 <p>
 </p>
 <hr />
-<h1><a name="internal_procedures">INTERNAL PROCEDURES</a></h1>
+<h1><a name="internal_procedures"></a>INTERNAL PROCEDURES</h1>
 <dl>
-<dt><strong><a name="item_score_segment"><strong>score_segment</strong></a></strong><br />
+<dt><strong><a name="item_score_segment"></a><strong>score_segment</strong></strong><br />
 </dt>
 <dd>
 Assign a score to a sequence segment and print it if it passes the
 thresholds. Return value is 1 if the segment passed the thresholds.
 </dd>
 <p></p>
-<dt><strong><a name="item_print_match"><strong>print_match</strong></a></strong><br />
+<dt><strong><a name="item_print_match"></a><strong>print_match</strong></strong><br />
 </dt>
 <dd>
 Print the matching site.
 </dd>
 <p></p>
-<dt><strong><a name="item_check_thresholds"><strong>check_thresholds</strong></a></strong><br />
+<dt><strong><a name="item_check_thresholds"></a><strong>check_thresholds</strong></strong><br />
 </dt>
 <dd>
 Check the lower and upper threshold for a given score. 
@@ -460,7 +467,7 @@ Check the lower and upper threshold for a given score.
 <p>
 </p>
 <hr />
-<h1><a name="see_also">SEE ALSO</a></h1>
+<h1><a name="see_also"></a>SEE ALSO</h1>
 <dl>
 <dt><strong><a name="item_convert_2dmatrix"><em>convert-matrix</em></a></strong><br />
 </dt>

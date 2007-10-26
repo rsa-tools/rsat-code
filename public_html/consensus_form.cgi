@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus_form.cgi,v 1.8 2006/12/08 15:10:24 jvanheld Exp $
+# $Id: consensus_form.cgi,v 1.9 2007/10/26 11:45:23 rsat Exp $
 #
 # Time-stamp: <2003-07-11 15:07:43 jvanheld>
 #
@@ -13,7 +13,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
@@ -41,7 +41,7 @@ foreach $key (keys %default) {
 } 
 
 ### print the form ###
-&RSA_header("consensus");
+&RSA_header("consensus", "form");
 
 print "<CENTER>\n";
 print "Matrix-based pattern discovery using CONSENSUS<BR>\n";
@@ -144,7 +144,7 @@ print "<BR>\n";
 &SelectOutput;
 
 ### action buttons
-print "<UL><UL><TABLE>\n";
+print "<UL><UL><TABLE class='formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";

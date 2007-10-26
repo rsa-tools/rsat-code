@@ -10,7 +10,7 @@ BEGIN {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 use RSAT::Tree;
 
 
@@ -89,7 +89,7 @@ foreach $key (keys %default) {
 
 ################################################################
 ### header
-&RSA_header("get-orthologs");
+&RSA_header("get-orthologs", "form");
 print "<CENTER>";
 print "Given a list of genes from a query organism and a taxon of interest, <br>return genes coding for similar proteins in each genome of the taxon.<br>\n";
 print "Program developed by <A HREF='mailto:rekins\@scmbb.ulb.ac.be'>Rekin's Janky</A>\n";
@@ -129,7 +129,7 @@ print "<p>\n";
 
 print "<B><A HREF='help.get-organisms.html#return'>Return fields</A>&nbsp;</B>\n";
 print "<ul>\n";
-print "<table cellpadding=3 border=1>\n";
+print "<table cellpadding=3>\n";
 print ("<tr>",
        "<th>Field</th>",
        "<th>Lower<br>Threshold</th>",
@@ -172,7 +172,7 @@ print "<p>\n";
 
 ################################################################
 ### action buttons
-print "<UL><UL><TABLE>\n";
+print "<UL><UL><TABLE class = 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";

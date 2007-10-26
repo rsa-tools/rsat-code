@@ -46,7 +46,7 @@ $default{flanking} = "4";
 #
 sub DisplayPatserOptions {
     
-    print $query->h3('Patser options');
+    print $query->h4('Patser options');
     
     ################################################################
     #### Matrix specification

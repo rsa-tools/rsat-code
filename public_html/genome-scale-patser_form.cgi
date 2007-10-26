@@ -6,10 +6,10 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 require "patser.lib.pl";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-require "$RSA/public_html/genome-scale.lib.pl";
+require "$RSA/public_html2/genome-scale.lib.pl";
 
 ### Read the CGI query
 $query = new CGI;
@@ -36,7 +36,7 @@ if (($matrix_file = $query->param("matrix_file")) &&
 }
 
 ### print the form ###
-&RSA_header("genome-scale patser");
+&RSA_header("genome-scale patser", "form");
 
 ### head
 print "<CENTER>";
@@ -64,7 +64,7 @@ print $query->start_multipart_form(-action=>"genome-scale-patser.cgi");
 &SelectOutput();
 
 ### action buttons
-print "<UL><UL><TABLE>\n";
+print "<UL><UL><TABLE class = 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";

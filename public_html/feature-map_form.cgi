@@ -5,7 +5,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### intialization
@@ -62,7 +62,7 @@ $default{title} =~ s/\"//g;
 
 
 ### print the form ###
-&RSA_header("feature map");
+&RSA_header("feature map", "form");
 
 print "<CENTER>";
 print "Generates a graphical map of features localized on one or several sequences.<P>\n";
@@ -259,7 +259,7 @@ print $query->popup_menu(-name=>'img_format',
 print "<P>";
 
 
-print "<UL><UL><TABLE><TR>";
+print "<UL><UL><TABLE class = 'formbutton'><TR>";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print"<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
