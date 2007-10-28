@@ -11,7 +11,6 @@ use GD;
 
 %supported_format = ();
 
-
 ################################################################
 #### select output format depending on the site configuration
 %supported_format = ("jpg"=>1, 
@@ -361,108 +360,107 @@ $image->line($left, $bottom, $right, $bottom, $axis_color);
 
 #### draw highlight box ####
 unless ($hbox_left eq ""){
-    $image->filledRectangle($hbox_left, $hbox_top, $hbox_right, $hbox_bottom, $highlight_box_color);
+  $image->filledRectangle($hbox_left, $hbox_top, $hbox_right, $hbox_bottom, $highlight_box_color);
 }
 
 
 #### draw dots ####
 for $series (0..$#y_col_list) {
-    $prev_x = "ND";
-    $prev_y = "ND";
-    $current_color = $color_list[$series%($#color_list+1)];
-    $current_symbol =  $symbol_list[$series%($#symbol_list+1)];
+  $prev_x = "ND";
+  $prev_y = "ND";
+  $current_color = $color_list[$series%($#color_list+1)];
+  $current_symbol =  $symbol_list[$series%($#symbol_list+1)];
 
-    for $p (0..$#X_values) {
-	if (($X_values[$p] eq "ND") || ($Y_values[$series][$p] eq "ND")) {
-	    $bar_left = "ND";
-	    $bar_right = "ND";
-	    $x = "ND";
-	    $y = "ND";
+  for $p (0..$#X_values) {
+    if (($X_values[$p] eq "ND") || ($Y_values[$series][$p] eq "ND")) {
+      $bar_left = "ND";
+      $bar_right = "ND";
+      $x = "ND";
+      $y = "ND";
+    } else {
+      ### position of the next point ###
+      if (($histogram) || ($filled_histogram)) {
+	if ($p == 0) {
+	  $bar_left = &XPixelPos($X_values[$p]);
 	} else {
-	    
-	    ### position of the next point ###
-	    if (($histogram) || ($filled_histogram)) {
-		if ($p == 0) {
-		    $bar_left = &XPixelPos($X_values[$p]);
-		} else {
-		    $bar_left = &XPixelPos(($X_values[$p] + $X_values[$p-1])/2);
-		}
-		if ($p == $#X_values) {
-		    $bar_right = $right;
-		} else {
-		    $bar_right = &XPixelPos(($X_values[$p] + $X_values[$p+1])/2);
-		}
-	    } else {
-		$x = &XPixelPos($X_values[$p]);
-	    }
-	    $y = &YPixelPos($Y_values[$series][$p]);
-
-	    ### check whether next point lies in the highlight box ###
-	    if (($hbox_left ne "") && 
-		($x >= $hbox_left) &&
-		($x <= $hbox_right) &&
-		($y >= $hbox_top) &&
-		($y <= $hbox_bottom))  {
-		$current_color = $hilight_color;
-		print "$data_lines[$p]";
-	    }
-	    
-	    ### draw the point (and the line if required) ###
-	    if ($histogram) {
-		if (($bar_left ne "ND") && ($bar_right ne "ND")) {
-		    $image->line($bar_left, $y, $bar_right, $y, $current_color);
-		    if (($prev_bar_right ne "ND") && ($prev_y ne "ND")) {
-			$image->line($prev_bar_right, $prev_y, $bar_left, $y, $current_color);
-		    }
-		}
-	    } elsif ($filled_histogram) {
-		if (($bar_left ne "ND") && ($bar_right ne "ND")) {
-		    $image->filledRectangle($bar_left, $y, $bar_right, $bottom, $current_color);
-		}
-	    } else {
-		if (($x ne "ND") && ($y ne "ND")) {
-		    DrawSymbol($current_symbol,
-			       $x-$point_size/2,
-			       $y-$point_size/2,
-			       $x+$point_size/2,
-			       $y+$point_size/2,
-			       $current_color);
-#          $image->arc($x,$y,$point_size,$point_size,0,360,$current_color);
-		    if (($HTML_map) && ($p < $max_map_elements)) {
-			my $series_legend = $legend_fields[$y_col_list[$series]];
-			
-			my $point_label = $data_lines[$p];
-			$point_label =~ s/\'/prime/g;	      
-			$point_label =~ s/\t/    /g;	      
-			$point_label =~ s/\n/ /g;	      
-			
-			my $coord = sprintf "($X_values[$p],$Y_values[$series][$p])";
-			
-			my $map_message = "$series_legend\t$p\t$coord\t$point_label";
-			
-			#### area over the point
-			print "\t<area ";
-			print "href=\"$href\" ";
-			print "onMouseOver=\"window.status=\'$map_message\' ;return true\" ";
-			print "shape=rect ";
-			print "coords=\"",int($x-$point_size/2) , ",", int($y-$point_size/2), ",",int($x+$point_size/2), ",",int($y+$point_size/2), "\">\n";
-		    }
-		    if ((($lines) || ($lines[$y_col_list[$series]])) 
-			&& ($prev_x ne "ND") && ($prev_y ne "ND")) {
-			$image->line($prev_x, $prev_y, $x, $y, $current_color);
-		    }
-		} 
-	    } #if historgram
-	} # values are determined
-	
-	if (($histogram) || ($filled_histogram)) {
-	    $prev_bar_right = $bar_right;
-	} else {
-	    $prev_x = $x;
+	  $bar_left = &XPixelPos(($X_values[$p] + $X_values[$p-1])/2);
 	}
-	$prev_y = $y;
-    } # for p
-} # for series
+	if ($p == $#X_values) {
+	  $bar_right = $right;
+	} else {
+	  $bar_right = &XPixelPos(($X_values[$p] + $X_values[$p+1])/2);
+	}
+      } else {
+	$x = &XPixelPos($X_values[$p]);
+      }
+      $y = &YPixelPos($Y_values[$series][$p]);
+
+      ### check whether next point lies in the highlight box ###
+      if (($hbox_left ne "") && 
+	  ($x >= $hbox_left) &&
+	  ($x <= $hbox_right) &&
+	  ($y >= $hbox_top) &&
+	  ($y <= $hbox_bottom)) {
+	$current_color = $hilight_color;
+	print "$data_lines[$p]";
+      }
+
+      ### draw the point (and the line if required) ###
+      if ($histogram) {
+	if (($bar_left ne "ND") && ($bar_right ne "ND")) {
+	  $image->line($bar_left, $y, $bar_right, $y, $current_color);
+	  if (($prev_bar_right ne "ND") && ($prev_y ne "ND")) {
+	    $image->line($prev_bar_right, $prev_y, $bar_left, $y, $current_color);
+	  }
+	}
+      } elsif ($filled_histogram) {
+	if (($bar_left ne "ND") && ($bar_right ne "ND")) {
+	  $image->filledRectangle($bar_left, $y, $bar_right, $bottom, $current_color);
+	}
+      } else {
+	if (($x ne "ND") && ($y ne "ND")) {
+	  DrawSymbol($current_symbol,
+		     $x-$point_size/2,
+		     $y-$point_size/2,
+		     $x+$point_size/2,
+		     $y+$point_size/2,
+		     $current_color);
+	  #          $image->arc($x,$y,$point_size,$point_size,0,360,$current_color);
+	  if (($HTML_map) && ($p < $max_map_elements)) {
+	    my $series_legend = $legend_fields[$y_col_list[$series]];
+
+	    my $point_label = $data_lines[$p];
+	    $point_label =~ s/\'/prime/g;
+	    $point_label =~ s/\t/    /g;
+	    $point_label =~ s/\n/ /g;
+
+	    my $coord = sprintf "($X_values[$p],$Y_values[$series][$p])";
+
+	    my $map_message = "$series_legend\t$p\t$coord\t$point_label";
+
+	    #### area over the point
+	    print "\t<area ";
+	    print "href=\"$href\" ";
+	    print "onMouseOver=\"window.status=\'$map_message\' ;return true\" ";
+	    print "shape=rect ";
+	    print "coords=\"",int($x-$point_size/2) , ",", int($y-$point_size/2), ",",int($x+$point_size/2), ",",int($y+$point_size/2), "\">\n";
+	  }
+	  if ((($lines) || ($lines[$y_col_list[$series]])) 
+	      && ($prev_x ne "ND") && ($prev_y ne "ND")) {
+	    $image->line($prev_x, $prev_y, $x, $y, $current_color);
+	  }
+	}
+      }				#if historgram
+    }				# values are determined
+
+    if (($histogram) || ($filled_histogram)) {
+      $prev_bar_right = $bar_right;
+    } else {
+      $prev_x = $x;
+    }
+    $prev_y = $y;
+  }				# for p
+}				# for series
 
 #### draw graph legends and titles ####
 $title1_x_pos = ($graph_x_size - $large_font_width * length($title1))/2;
@@ -491,31 +489,32 @@ $image->stringUp(gdSmallFont, $y_legend1_x_pos, $y_legend1_y_pos, $y_legend1, $t
 $image->stringUp(gdSmallFont, $y_legend2_x_pos, $y_legend2_y_pos, $y_legend2, $text_color);
 
 
-#### draw the legend ####
+################################################################
+## Draw the legend ####
 if ($legend) {
-    $legend_point_size = &checked_max(5,$point_size);
-    $legend_x_pos = $right + $legend_point_size + 20;
-    $point_x_pos = $right + 10;
-    $line_spacing = &checked_max($small_font_height, $legend_point_size) + 6;
-    
-    $series = 0; 
-    $legend_y_pos = 0;
-    while ($series <= $#y_col_list) {
-	$current_color = $color_list[$series%($#color_list+1)];
-	$current_symbol =  $symbol_list[$series%($#symbol_list+1)];
-	if ($legend_fields[$y_col_list[$series]] ne "") {
-	    $legend_y_pos = $top + $series*$line_spacing;
-	    last if ($legend_y_pos >= $graph_y_size - $small_font_height);
-	    $point_y_pos = $legend_y_pos + $small_font_height/2 + 3 - $legend_point_size/2;
-	    DrawSymbol($current_symbol,$point_x_pos,$point_y_pos,$point_x_pos+$legend_point_size,$point_y_pos+$legend_point_size,$current_color);
-	    $image->string(gdSmallFont, $legend_x_pos, $legend_y_pos, $legend_fields[$y_col_list[$series]], $text_color);
-	}
-	$series++;
+  $legend_point_size = &checked_max(5,$point_size);
+  $legend_x_pos = $right + $legend_point_size + 20;
+  $point_x_pos = $right + 10;
+  $line_spacing = &checked_max($small_font_height, $legend_point_size) + 6;
+  $series = 0; 
+  $legend_y_pos = 0;
+  while ($series <= $#y_col_list) {
+    $current_color = $color_list[$series%($#color_list+1)];
+    $current_symbol =  $symbol_list[$series%($#symbol_list+1)];
+    if ($legend_fields[$y_col_list[$series]] ne "") {
+      $legend_y_pos = $top + $series*$line_spacing;
+      last if ($legend_y_pos >= $graph_y_size - $small_font_height);
+      $point_y_pos = $legend_y_pos + $small_font_height/2 + 3 - $legend_point_size/2;
+      DrawSymbol($current_symbol,$point_x_pos,$point_y_pos,$point_x_pos+$legend_point_size,$point_y_pos+$legend_point_size,$current_color);
+      $image->string(gdSmallFont, $legend_x_pos, $legend_y_pos, $legend_fields[$y_col_list[$series]], $text_color);
     }
+    $series++;
+  }
 }
 
 
-#### write the image file
+################################################################
+## Save the image file
 if ($img_format eq "gif") {
     print $out $image->gif;
 } elsif (($img_format eq "jpeg") ||
@@ -530,9 +529,8 @@ if ($img_format eq "gif") {
 &CloseHTMLmap if ($HTML_map);
 
 if ($verbose) {
-    print ";Job started $start_time";
-    print ";Job done    ", `date`;
-
+  print ";Job started $start_time";
+  print ";Job done    ", `date`;
 }
 
 exit(0);
@@ -543,182 +541,378 @@ exit(0);
 ######################## SUBROUTINE DEFINITION #####################
 ####################################################################
 
+################################################################
+## Generate the graph with GnuPlot and export it in eps format
 sub GnuPlotEPS {
 	
-	## check that an input file exists
-	if (!$inputfile) {
-	 	($in, $input_dir) = &OpenInputFile($inputfile);
-	 	our $tmp_file = "tmp_gnuplot_for_input.tab";
-	 	my ($out) = &OpenOutputFile($tmp_file);
-	 	while (<$in>){
-	 		print $out $_;
-	 	}
-	 	close $out;
-	 	close $in;
-	}
+  ## check that an input file exists
+  if (!$inputfile) {
+    ($in, $input_dir) = &OpenInputFile($inputfile);
+    our $tmp_file = "tmp_gnuplot_for_input.tab";
+    my ($out) = &OpenOutputFile($tmp_file);
+    while (<$in>) {
+      print $out $_;
+    }
+    close $out;
+    close $in;
+  }
 	
-	my $input_data_file;
-	if ($inputfile){
-		$input_data_file = $inputfile;
-	} elsif ($tmp_file){
-		$input_data_file = $tmp_file;
-	}else {
-		die("No input data !!!");
-	}
+  my $input_data_file;
+  if ($inputfile) {
+    $input_data_file = $inputfile;
+  } elsif ($tmp_file) {
+    $input_data_file = $tmp_file;
+  } else {
+    die("No input data !!!");
+  }
 	
-	## check if .pdf format
-	if ($img_format eq "pdf") {
-		## will first write a temporary eps file and then use ps2pdf to convert it into a pdf file
-		our $pdf_outputfile = $outputfile;
-		$outputfile = "tmp_gnuplot_eps_for_pdf.eps";
-	}
+  ## check if .pdf format
+  if ($img_format eq "pdf") {
+    ## will first write a temporary eps file and then use ps2pdf to convert it into a pdf file
+    our $pdf_outputfile = $outputfile;
+    $outputfile = "tmp_gnuplot_eps_for_pdf.eps";
+  }
 	
-	$gnuplot_cmd = "gnuplot << EOF\n";
-	## fonts
-	$gnuplot_cmd .= "small='Arial,9'\n";
-	$gnuplot_cmd .= "big='Arial,11'\n";
+  $gnuplot_cmd = "gnuplot << EOF\n";
+  ## fonts
+  $gnuplot_cmd .= "small='Arial,9'\n";
+  $gnuplot_cmd .= "big='Arial,11'\n";
 	
-	## color
-	if ($monochrome) {
-		$color = "color";
-	}
-	else {
-		$color = "";
-	}
+  ## color
+  if ($monochrome) {
+    $color = "color";
+  } else {
+    $color = "";
+  }
 	
-	## plot size ##
+  ## plot size ##
 
-	## size in gnuplot eps format is not in pixel but in inches.
-	## the idea here is to get the ratio from the input x and y size
-	## and let gnuplot adapt automatically
+  ## size in gnuplot eps format is not in pixel but in inches.
+  ## the idea here is to get the ratio from the input x and y size
+  ## and let gnuplot adapt automatically
 
-	$gnuplot_cmd .= "set term post landscape enh ".$color." font small\n";
+  $gnuplot_cmd .= "set term post landscape enh ".$color." font small\n";
 
-	if (($x_axis_size)&&($y_axis_size)) {
-		my $ratio = $y_axis_size/$x_axis_size;
-		$gnuplot_cmd .= "set size ratio '".$ratio."'\n";
-	} 
-
-	
-	## output file
-	$gnuplot_cmd .= "set output '".$outputfile."'\n";
+  if (($x_axis_size)&&($y_axis_size)) {
+    my $ratio = $y_axis_size/$x_axis_size;
+    $gnuplot_cmd .= "set size ratio '".$ratio."'\n";
+  } 
 
 	
-	## title
-	if ($title1) {
-		$title = '';
-		if ($title2){
-			$title = '\n'.$title2;
-		}
-		$title = $title1.$title;
-		$title =~ s/_/-/g;
-		$gnuplot_cmd .= 'set title "'.$title.'" font big'."\n";
-	}
+  ## output file
+  $gnuplot_cmd .= "set output '".$outputfile."'\n";
+
 	
-	## labels
-	if ($x_legend1) {
-		$x_legend = "";
-		if ($x_legend2){
-			$x_legend = '\n'.$x_legend2;
-		}
-		$x_legend = $x_legend1.$x_legend;
-		$x_legend =~ s/_/-/g;
-		$gnuplot_cmd .= 'set xlabel "'.$x_legend.'" font big'."\n";
-	}
+  ## title
+  if ($title1) {
+    $title = '';
+    if ($title2) {
+      $title = '\n'.$title2;
+    }
+    $title = $title1.$title;
+    $title =~ s/_/-/g;
+    $gnuplot_cmd .= 'set title "'.$title.'" font big'."\n";
+  }
 	
-	if ($y_legend1) {
-		$y_legend = "";
-		if ($y_legend2){
-			$y_legend = '\n'.$y_legend2;
-		}
-		$y_legend = $y_legend1.$y_legend;
-		$y_legend =~ s/_/-/g;
-		$gnuplot_cmd .= 'set ylabel "'.$y_legend.'" font big'."\n";
-	}
+  ## labels
+  if ($x_legend1) {
+    $x_legend = "";
+    if ($x_legend2) {
+      $x_legend = '\n'.$x_legend2;
+    }
+    $x_legend = $x_legend1.$x_legend;
+    $x_legend =~ s/_/-/g;
+    $gnuplot_cmd .= 'set xlabel "'.$x_legend.'" font big'."\n";
+  }
 	
-	## default linewidth
-	$lw = 4;
-	## default pointsize
-	$gnuplot_cmd .= "set pointsize ".($point_size/2)."\n";
+  if ($y_legend1) {
+    $y_legend = "";
+    if ($y_legend2) {
+      $y_legend = '\n'.$y_legend2;
+    }
+    $y_legend = $y_legend1.$y_legend;
+    $y_legend =~ s/_/-/g;
+    $gnuplot_cmd .= 'set ylabel "'.$y_legend.'" font big'."\n";
+  }
 	
-	## tics
-	$gnuplot_cmd .= "set tics font big\n";
+  ## default linewidth
+  $lw = 4;
+  ## default pointsize
+  $gnuplot_cmd .= "set pointsize ".($point_size/2)."\n";
 	
-	## grid
-	$gnuplot_cmd .= "set grid ".($lw-1)."\n";
+  ## tics
+  $gnuplot_cmd .= "set tics font big\n";
 	
-	## x axis
-	if (($x_axis_min ne "ND") || ($x_axis_max ne "ND")) {
-		if ($x_axis_min eq "ND") {
-			$x_axis_min = "";
-		}
-		if ($x_axis_max eq "ND") {
-			$x_axis_max = "";
-		}
+  ## grid
+  $gnuplot_cmd .= "set grid ".($lw-1)."\n";
+	
+  ## x axis
+  if (($x_axis_min ne "ND") || ($x_axis_max ne "ND")) {
+    if ($x_axis_min eq "ND") {
+      $x_axis_min = "";
+    }
+    if ($x_axis_max eq "ND") {
+      $x_axis_max = "";
+    }
 		
-		if ($xlog) {
-			if (($x_axis_min ne "")&&($x_axis_min <=0)) {
-				$x_axis_min = "";
-			}
-			if (($x_axis_max ne "")&&($x_axis_max <=0)) {
-				$x_axis_max = "";
-			}	
-		}
-		$gnuplot_cmd .= "set xrange [".$x_axis_min.":".$x_axis_max."]\n";			
-	}
+    if ($xlog) {
+      if (($x_axis_min ne "")&&($x_axis_min <=0)) {
+	$x_axis_min = "";
+      }
+      if (($x_axis_max ne "")&&($x_axis_max <=0)) {
+	$x_axis_max = "";
+      }	
+    }
+    $gnuplot_cmd .= "set xrange [".$x_axis_min.":".$x_axis_max."]\n";			
+  }
 	
-	## y axis
-	if (($y_axis_min ne "ND") || ($y_axis_max ne "ND")) {
-		if ($y_axis_min eq "ND") {
-			$y_axis_min = "";
-		}
-		if ($y_axis_max eq "ND") {
-			$y_axis_max = "";
-		}
+  ## y axis
+  if (($y_axis_min ne "ND") || ($y_axis_max ne "ND")) {
+    if ($y_axis_min eq "ND") {
+      $y_axis_min = "";
+    }
+    if ($y_axis_max eq "ND") {
+      $y_axis_max = "";
+    }
 		
-		##log
-		if ($ylog) {
-			if (($y_axis_min ne "")&&($y_axis_min <=0)) {
-				$y_axis_min = "";
-			}
-			if (($y_axis_max ne "")&&($y_axis_max <=0)) {
-				$y_axis_max = "";
-			}	
-		}
-		$gnuplot_cmd .= "set yrange [".$y_axis_min.":".$y_axis_max."]\n";	
-	}
+    ##log
+    if ($ylog) {
+      if (($y_axis_min ne "")&&($y_axis_min <=0)) {
+	$y_axis_min = "";
+      }
+      if (($y_axis_max ne "")&&($y_axis_max <=0)) {
+	$y_axis_max = "";
+      }	
+    }
+    $gnuplot_cmd .= "set yrange [".$y_axis_min.":".$y_axis_max."]\n";	
+  }
 	
-	## log
-	if ($xlog) {
-		$gnuplot_cmd .= "set logscale x ".$x_log_base."\n";
-	}
-	if ($ylog) {
-		$gnuplot_cmd .= "set logscale y ".$y_log_base."\n";
-	}
+  ## log
+  if ($xlog) {
+    $gnuplot_cmd .= "set logscale x ".$x_log_base."\n";
+  }
+  if ($ylog) {
+    $gnuplot_cmd .= "set logscale y ".$y_log_base."\n";
+  }
 
 	
-	## legend (key box)
-	if (($header)||($legend)) {
-		$gnuplot_cmd .= "set key outside right top vertical Left reverse enhanced nobox\n";	
-		} else {
-			$gnuplot_cmd .= "set key off\n";	
-		}
-	## get legend from columnheader
-	if (($header)||($legend)) {
-			## remove # from data file comments charaters
-			$gnuplot_cmd .= "set datafile commentschars '!;%'\n";
-			$gnuplot_cmd .= "set key autotitle columnheader samplen 1\n";	
-	}
+  ## legend (key box)
+  if (($header)||($legend)) {
+    $gnuplot_cmd .= "set key outside right top vertical Left reverse enhanced nobox\n";	
+  } else {
+    $gnuplot_cmd .= "set key off\n";	
+  }
+  ## get legend from columnheader
+  if (($header)||($legend)) {
+    ## remove # from data file comments charaters
+    $gnuplot_cmd .= "set datafile commentschars '!;%'\n";
+    $gnuplot_cmd .= "set key autotitle columnheader samplen 1\n";	
+  }
 	
 
 	
-	## colors
-	&GnuplotPalette();
+  ## colors
+  &GnuplotPalette();
+
+  @color_list = ();
+  push @color_list, $blue;
+  push @color_list, $green_175;
+  push @color_list, $champagne;
+  push @color_list, $cyan_200;
+  push @color_list, $orange;
+  push @color_list, $violet;
+  push @color_list, $gray_125;
+  push @color_list, $brown;
+  push @color_list, $black;
+  push @color_list, $red;
+  push @color_list, $yellow_225;
+  push @color_list, $cyan_128;
+  push @color_list, $pistache;
+  push @color_list, $magenta;
+  push @color_list, $green;
+  push @color_list, $green_128;
+  push @color_list, $gray_150;
+  push @color_list, $red_191;
+  push @color_list, $blue_128;
+  push @color_list, $cyan_096;
+	    
+  push @color_list, $blue_096;
+  push @color_list, $red_096;
+  push @color_list, $blue_064;
+  push @color_list, $gray_064;
+	
+  ## monochrome
+  if ($monochrome) {
+    foreach my $i (0..$#color_list) {
+      $color_list[$i] = "black";
+    }
+  }
+	
+	
+  ## symbols
+  if ($symbols) {
+    foreach my $i (0..$#color_list) {
+      $gnuplot_cmd .= "set style line ".($i+1)." lw ".$lw." lt 1 pt ".($i+1)." lc rgb '".$color_list[$i]."'\n";
+    }
+  } else {
+    ## no symbols (only lines and circle points)		
+    foreach my $i (0..$#color_list) {
+      $gnuplot_cmd .= "set style line ".($i+1)." lw ".$lw." lt 1 pt 6 lc rgb '".$color_list[$i]."'\n";	
+    }
+  }
+  $gnuplot_cmd .= "set style increment user\n";	
+
+  ## additional user-specified commands
+  if ($gp_supp_commands) {
+    @gp = split(",",$gp_supp_commands);
+    foreach my $cmd (@gp) {
+      $gnuplot_cmd .= $cmd."\n";
+    }
+  }
+	
+  ## plot 	
+  $gnuplot_cmd .= "plot ";
+  foreach my $k (0..$#y_col_list) {
+
+    $gnuplot_cmd .= " '".$input_data_file."' using ".($x_col+1).":".($y_col_list[$k]+1)." with ";
+    ## draw lines
+    if (($lines eq "1") || ($lines[$y_col_list[$k]])) {
+      $gnuplot_cmd .= "lines";
+    } else {
+      $gnuplot_cmd .= "points";
+    }
+		
+    ## end line
+    if ($k == $#y_col_list) {
+      $gnuplot_cmd .= "\n";
+    } else {
+      $gnuplot_cmd .= ",";
+    }
+  }
+  $gnuplot_cmd .= "EOF\n";
+  #print $gnuplot_cmd;
+  ## Execute the command
+  &doit($gnuplot_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  	
+  if ($verbose) {
+    print "; XYgraph";
+    foreach $a (@ARGV) {
+      if (($a =~ /\S+\s+\S+/) || ($a !~ /\S/)) {
+	print " '$a'";
+      } else {
+	print " $a";
+      }
+    }
+    print "\n";
+    print "; gnuplot command:\n";
+    $gnuplot_cmd =~ s/\n/\n; /g;
+    print "; $gnuplot_cmd\n";
+    print ";Job started $start_time";
+    print ";Job done    ", `date`;
+  }
+  	
+  if ($tmp_file) {
+    unlink $tmp_file;
+  }
+  	
+  ##  use ps2pdf to convert it into a pdf file
+  if ($img_format eq "pdf") {
+    my $ps2pdf_cmd = "ps2pdf $outputfile $pdf_outputfile";
+    ## Execute the command
+				
+    ## if ps2pdf not found, will try to use use pstopdf
+    my $stderr = `$ps2pdf_cmd 2>&1 1>/dev/null`;
+    if ($stderr) {
+      $ps2pdf_cmd = "pstopdf $outputfile -o $pdf_outputfile >/dev/null";
+      &doit($ps2pdf_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    }
+    unlink $outputfile;
+  }
+}
+
+################################################################
+## Computation of pixel position
+sub XPixelPos {
+  local($x_pos) = $_[0];
+  local($x_pixel_pos);
+  if (($x_pos < $x_axis_min) or ($x_pos > $x_axis_max)) {
+    $x_pixel_pos = "ND";
+  } else {
+    $x_pixel_pos = $left + ($x_pos - $x_axis_min)*$x_scale;
+  }
+  return $x_pixel_pos;
+}
+
+sub YPixelPos {
+  local($y_pos) = $_[0];
+  local($y_pixel_pos);
+  if (($y_pos < $y_axis_min) or ($y_pos > $y_axis_max)) {
+    $y_pixel_pos = "ND";
+  } else {
+    $y_pixel_pos = $bottom - ($y_pos - $y_axis_min)*$y_scale;
+  }
+  return $y_pixel_pos;
+}
+
+#### color allocation ####
+sub AssignColors {
+
+    &StandardPalette();
 
     @color_list = ();
+    if ($bg eq "black") {
+      $bg_color = $black;
+      $grid1_color = $gray_150;
+      $grid2_color = $gray_064;
+      $text_color = $white;
+      $axis_color = $white;
+      if ($monochrome) {
+	push(@color_list, $white);
+      } else {
+	push(@color_list, $cyan_pale_064);
+	push(@color_list, $magenta_pale_096);
+	push(@color_list, $yellow_pale_096);
+	push(@color_list, $white);
+	push(@color_list, $champagne);
+	push(@color_list, $magenta);
+	push(@color_list, $green);
+	push(@color_list, $red);
+	push(@color_list, $yellow_light);
+      }
+    } elsif ($bg eq "blue") {
+      $bg_color = $blue_128;
+      $grid1_color = $blue;
+      $grid2_color = $blue_175;
+      $text_color = $white;
+      $axis_color = $blue;
+      push(@color_list, $yellow_pale_096);
+      push(@color_list, $cyan_pale_064);
+      push(@color_list, $magenta_pale_064);
+      push(@color_list, $yellow_light);
+      push(@color_list, $champagne);
+      push(@color_list, $white);
+      push(@color_list, $magenta);
+      push(@color_list, $green);
+      push(@color_list, $red);
+    } else {			#### light background, dark foreground
+      $text_color = $black;
+      $axis_color = $black;
+      if ($bg eq "gray") {
+	$bg_color = $gray_200;
+	$grid1_color = $white;
+	$grid2_color = $gray_225;
+      } else {
+	$bg_color = $white;
+	$grid1_color = $gray_175;
+	$grid2_color = $gray_225;
+      }
+      if ($monochrome) {
+	push(@color_list, $black);
+      } else {
+	### here
 	push @color_list, $blue;
 	push @color_list, $green_175;
-	push @color_list, $champagne;
+	push @color_list, $pink;
 	push @color_list, $cyan_200;
 	push @color_list, $orange;
 	push @color_list, $violet;
@@ -727,7 +921,7 @@ sub GnuPlotEPS {
 	push @color_list, $black;
 	push @color_list, $red;
 	push @color_list, $yellow_225;
-	push @color_list, $cyan_128;
+	push @color_list, $cyan;
 	push @color_list, $pistache;
 	push @color_list, $magenta;
 	push @color_list, $green;
@@ -741,835 +935,581 @@ sub GnuPlotEPS {
 	push @color_list, $red_096;
 	push @color_list, $blue_064;
 	push @color_list, $gray_064;
-	
-	## monochrome
-	if ($monochrome) {
-		foreach my $i (0..$#color_list) {
-			$color_list[$i] = "black";
-		}
-	}
-	
-	
-	## symbols
-	if ($symbols){
-		foreach my $i (0..$#color_list) {
-			$gnuplot_cmd .= "set style line ".($i+1)." lw ".$lw." lt 1 pt ".($i+1)." lc rgb '".$color_list[$i]."'\n";
-		}
-	}
-	else {
-	## no symbols (only lines and circle points)		
-		foreach my $i (0..$#color_list) {
-			$gnuplot_cmd .= "set style line ".($i+1)." lw ".$lw." lt 1 pt 6 lc rgb '".$color_list[$i]."'\n";	
-		}
-	}
-	$gnuplot_cmd .= "set style increment user\n";	
+      }
+    }
 
-	## additional user-specified commands
-	if ($gp_supp_commands){
-		@gp = split(",",$gp_supp_commands);
-		foreach my $cmd (@gp) {
-			$gnuplot_cmd .= $cmd."\n";
-		}
-	}
-	
-	## plot 	
-	$gnuplot_cmd .= "plot ";
-	foreach my $k (0..$#y_col_list){
-
-		$gnuplot_cmd .= " '".$input_data_file."' using ".($x_col+1).":".($y_col_list[$k]+1)." with ";
-		## draw lines
-		if (($lines eq "1") || ($lines[$y_col_list[$k]])) {
-			$gnuplot_cmd .= "lines";
-		} else {
-			$gnuplot_cmd .= "points";
-		}
-		
-		## end line
-		if ($k == $#y_col_list) {
-			$gnuplot_cmd .= "\n";
-		} else {
-			$gnuplot_cmd .= ",";
-		}
-	}
-	$gnuplot_cmd .= "EOF\n";
-	#print $gnuplot_cmd;
-	## Execute the command
-  	&doit($gnuplot_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  	
-  	if ($verbose) {
-  		print "; XYgraph";
-    	foreach $a (@ARGV) {
-		if (($a =~ /\S+\s+\S+/) || ($a !~ /\S/)){
-	    	print " '$a'";
-		} else {
-	    	print " $a";
-        }
-    	}
-    print "\n";
-    print "; gnuplot command:\n";
-    $gnuplot_cmd =~ s/\n/\n; /g;
-    print "; $gnuplot_cmd\n";
-  	print ";Job started $start_time";
-    print ";Job done    ", `date`;
-  	}
-  	
-  	if ($tmp_file){
-  		unlink $tmp_file;
-  	}
-  	
-  	##  use ps2pdf to convert it into a pdf file
-  	if ($img_format eq "pdf") {
-		my $ps2pdf_cmd = "ps2pdf $outputfile $pdf_outputfile";
-		## Execute the command
-				
-		## if ps2pdf not found, will try to use use pstopdf
-    	my $stderr = `$ps2pdf_cmd 2>&1 1>/dev/null`;
-    	if ($stderr) {
-    		$ps2pdf_cmd = "pstopdf $outputfile -o $pdf_outputfile >/dev/null";
-    		&doit($ps2pdf_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-    	}
-		unlink $outputfile;
-	}
-}
-
-#### calculation of pixel position
-sub XPixelPos {
-    local($x_pos) = $_[0];
-    local($x_pixel_pos);
-    if (($x_pos < $x_axis_min) or ($x_pos > $x_axis_max)) {
-	$x_pixel_pos = "ND";
+    if (($monochrome) || ($symbols)) {
+      #### define symbol list ####
+      push(@symbol_list, "filled_circle");
+      push(@symbol_list, "filled_rectangle");
+      push(@symbol_list, "filled_butterfly");
+      push(@symbol_list, "filled_triangle1");
+      push(@symbol_list, "rectangle");
+      push(@symbol_list, "circle");
+      push(@symbol_list, "cross1");
+      push(@symbol_list, "cross2");
+      push(@symbol_list, "filled_triangle2");
+      push(@symbol_list, "filled_triangle3");
+      push(@symbol_list, "filled_triangle4");
+      push(@symbol_list, "vbars");
+      push(@symbol_list, "hbars");
+      push(@symbol_list, "triangle1");
+      push(@symbol_list, "triangle2");
+      push(@symbol_list, "triangle3");
+      push(@symbol_list, "triangle4");
+      push(@symbol_list, "butterfly");
+      push(@symbol_list, "crossrect1");
+      push(@symbol_list, "crossrect2");
+      push(@symbol_list, "crosscircle1");
+      push(@symbol_list, "crosscircle2");
     } else {
-	$x_pixel_pos = $left + ($x_pos - $x_axis_min)*$x_scale;
+      push(@symbol_list, "filled_circle");
     }
-    return $x_pixel_pos;
-}
+  }
 
-sub YPixelPos {
-    local($y_pos) = $_[0];
-    local($y_pixel_pos);
-    if (($y_pos < $y_axis_min) or ($y_pos > $y_axis_max)) {
-	$y_pixel_pos = "ND";
-    } else {
-	$y_pixel_pos = $bottom - ($y_pos - $y_axis_min)*$y_scale;
-    }
-    return $y_pixel_pos;
-}
-
-#### color allocation ####
-sub AssignColors {
-    ### gray scale
-#    $black = $image->colorAllocate(0,0,0);
-#    $white = $image->colorAllocate(255,255,255);
-#
-#    $gray_032 = $image->colorAllocate(32,32,32);
-#    $gray_064 = $image->colorAllocate(64,64,64);
-#    $gray_096 = $image->colorAllocate(96,96,96);
-#    $gray_125 = $image->colorAllocate(128,128,128);
-#    $gray_150 = $image->colorAllocate(150,150,150);
-#    $gray_175 = $image->colorAllocate(175,175,175);
-#    $gray_200 = $image->colorAllocate(200,200,200);
-#    $gray_225 = $image->colorAllocate(225,225,225);
-#
-#    $green = $image->colorAllocate(0,255,0);
-#    $green_175 = $image->colorAllocate(0,175,0);
-#    $green_128 = $image->colorAllocate(0,128,0);
-#
-#    $red = $image->colorAllocate(255,0,0);
-#    $red_128 = $image->colorAllocate(128,0,0);
-#
-#    $blue_064 =  $image->colorAllocate(0,0,64);
-#    $blue_096 =  $image->colorAllocate(0,0,96);
-#    $blue_128 = $image->colorAllocate(0,0,128);
-#    $blue_175 = $image->colorAllocate(0,0,175);
-#    $blue_200 =  $image->colorAllocate(0,0,200);
-#    $blue_225 =  $image->colorAllocate(0,0,225);
-#    $blue = $blue = $image->colorAllocate(0,0,255);
-#
-#    $cyan = $image->colorAllocate(0,255,255);
-#    $cyan_pale_064 = $image->colorAllocate(64,255,255);
-#    $cyan_pale_096 = $image->colorAllocate(96,255,255);
-#    $cyan_pale_128 = $image->colorAllocate(128,255,255);
-#    $cyan_dark = $image->colorAllocate(0,128,128);
-#
-#    $magenta = $image->colorAllocate(255,0,255);
-#    $magenta_pale_064 = $image->colorAllocate(255,64,255);
-#    $magenta_pale_096 = $image->colorAllocate(255,96,255);
-#    $magenta_pale_128 = $image->colorAllocate(255,128,255);
-#    $magenta_dark = $image->colorAllocate(128,0,128);
-#
-#    $yellow_pale_064 = $image->colorAllocate(255,255,64);
-#    $yellow_pale_096 = $image->colorAllocate(255,255,96);
-#    $yellow_pale_128 = $image->colorAllocate(255,255,128);
-#    $yellow_pale = $image->colorAllocate(255,255,200);
-#    $yellow_light = $image->colorAllocate(255,255,150);
-#   $yellow = $image->colorAllocate(255,255,0);
-#    $yellow_dark = $image->colorAllocate(191,191,0);
-#
-#    $brown = $image->colorAllocate(128,128,0);
-#    $pink = $image->colorAllocate(255,150,180);
-#    $champagne = $image->colorAllocate(255,240,200);
-#
-#    $hilight_color = $red;
-#    $highlight_box_color = $yellow;
-
-    &StandardPalette();
-
-    @color_list = ();
-    if ($bg eq "black") {
-	$bg_color = $black;
-	$grid1_color = $gray_150;
-	$grid2_color = $gray_064;
-	$text_color = $white;
-	$axis_color = $white;
-	if ($monochrome) {
-	    push(@color_list, $white);
-	} else {
-	    push(@color_list, $cyan_pale_064);
-	    push(@color_list, $magenta_pale_096);
-	    push(@color_list, $yellow_pale_096);
-	    push(@color_list, $white);
-	    push(@color_list, $champagne);
-	    push(@color_list, $magenta);
-	    push(@color_list, $green);
-	    push(@color_list, $red);
-	    push(@color_list, $yellow_light);
-	}
-    } elsif ($bg eq "blue") {
-	$bg_color = $blue_128;
-	$grid1_color = $blue;
-	$grid2_color = $blue_175;
-	$text_color = $white;
-	$axis_color = $blue;
-	push(@color_list, $yellow_pale_096);
-	push(@color_list, $cyan_pale_064);
-	push(@color_list, $magenta_pale_064);
-	push(@color_list, $yellow_light);
-	push(@color_list, $champagne);
-	push(@color_list, $white);
-	push(@color_list, $magenta);
-	push(@color_list, $green);
-	push(@color_list, $red);
-    } else { #### light background, dark foreground
-	$text_color = $black;
-	$axis_color = $black;
-	if ($bg eq "gray") {
-	    $bg_color = $gray_200;
-	    $grid1_color = $white;
-	    $grid2_color = $gray_225;
-	} else {
-	    $bg_color = $white;
-	    $grid1_color = $gray_175;
-	    $grid2_color = $gray_225;
-	}
-	if ($monochrome) {
-	    push(@color_list, $black);
-	} else {
-### here
-	    push @color_list, $blue;
-	    push @color_list, $green_175;
-	    push @color_list, $pink;
-	    push @color_list, $cyan_200;
-	    push @color_list, $orange;
-	    push @color_list, $violet;
-	    push @color_list, $gray_125;
-	    push @color_list, $brown;
-	    push @color_list, $black;
-	    push @color_list, $red;
-	    push @color_list, $yellow_225;
-	    push @color_list, $cyan;
-	    push @color_list, $pistache;
-	    push @color_list, $magenta;
-	    push @color_list, $green;
-	    push @color_list, $green_128;
-	    push @color_list, $gray_150;
-	    push @color_list, $red_191;
-	    push @color_list, $blue_128;
-	    push @color_list, $cyan_096;
-	    
-	    push @color_list, $blue_096;
-	    push @color_list, $red_096;
-	    push @color_list, $blue_064;
-	    push @color_list, $gray_064;
-
-#	    push(@color_list, $blue);
-#	    push(@color_list, $red);
-#	    push(@color_list, $magenta);
-#	    push(@color_list, $green_175);
-#	    push(@color_list, $brown);
-#	    push(@color_list, $black);
-#	    push(@color_list, $cyan_dark);
-#	    push(@color_list, $magenta_dark);
-#	    push(@color_list, $gray_064);
-#	    push(@color_list, $blue_175);
-#	    push(@color_list, $green_128);
-#	    push(@color_list, $gray_125);
-#	    push(@color_list, $cyan);
-	}
-    }
-
-    if (($monochrome) || ($symbols)){
-	#### define symbol list ####
-	push(@symbol_list, "filled_circle");
-	push(@symbol_list, "filled_rectangle");
-	push(@symbol_list, "filled_butterfly");
-	push(@symbol_list, "filled_triangle1");
-	push(@symbol_list, "rectangle");
-	push(@symbol_list, "circle");
-	push(@symbol_list, "cross1");
-	push(@symbol_list, "cross2");
-	push(@symbol_list, "filled_triangle2");
-	push(@symbol_list, "filled_triangle3");
-	push(@symbol_list, "filled_triangle4");
-	push(@symbol_list, "vbars");
-	push(@symbol_list, "hbars");
-	push(@symbol_list, "triangle1");
-	push(@symbol_list, "triangle2");
-	push(@symbol_list, "triangle3");
-	push(@symbol_list, "triangle4");
-	push(@symbol_list, "butterfly");
-	push(@symbol_list, "crossrect1");
-	push(@symbol_list, "crossrect2");
-	push(@symbol_list, "crosscircle1");
-	push(@symbol_list, "crosscircle2");
-    } else {
-	push(@symbol_list, "filled_circle");
-    }
-}
-
-
-#### Draw symbol ####
-sub DrawSymbol {
-### usage
-### DrawSymbol($symbol_type,$symbol_left,$symbol_top,$symbol_right,$symbol_bottom,$symbol_color);
-    local($s_type) = $_[0];
-    local($s_left) = $_[1];
-    local($s_top) = $_[2];
-    local($s_right) = $_[3];
-    local($s_bottom) = $_[4];
-    local($s_color) = $_[5];
-    local($s_x_center) = ($s_left + $s_right)/2;
-    local($s_y_center) = ($s_top + $s_bottom)/2;
-    local($s_width) = abs($s_right - $s_left) + 1;
-    local($s_height) = abs($s_top - $s_bottom) + 1;
-
-    if ($s_type eq "rectangle") {
-	$image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
-
-    } elsif ($s_type eq "filled_rectangle") {
-	$image->filledRectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
-
-    } elsif ($s_type eq "filled_butterfly") {
-	$image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
-	$image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
-	$image->line($s_right, $s_top, $s_right, $s_bottom, $s_color);
-	$image->line($s_left, $s_top, $s_left, $s_bottom, $s_color);
-	$image->fillToBorder($s_left+1,$s_y_center,$s_color,$s_color);
-	$image->fillToBorder($s_right-1,$s_y_center,$s_color,$s_color);
-
-    } elsif ($s_type eq "butterfly") {
-	$image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
-	$image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
-	$image->line($s_right, $s_top, $s_right, $s_bottom, $s_color);
-	$image->line($s_left, $s_top, $s_left, $s_bottom, $s_color);
-
-    } elsif ($s_type eq "triangle2") {
-	$image->line($s_left, $s_y_center, $s_right, $s_bottom, $s_color);
-	$image->line($s_right, $s_bottom, $s_right, $s_top, $s_color);
-	$image->line($s_left, $s_y_center, $s_right, $s_top, $s_color);
-
-    } elsif ($s_type eq "filled_triangle2") {
-	$image->line($s_left, $s_y_center, $s_right, $s_bottom, $s_color);
-	$image->line($s_right, $s_bottom, $s_right, $s_top, $s_color);
-	$image->line($s_left, $s_y_center, $s_right, $s_top, $s_color);
-	$image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
-
-    } elsif ($s_type eq "triangle1") {
-	$image->line($s_left, $s_bottom, $s_right, $s_y_center, $s_color);
-	$image->line($s_left, $s_bottom, $s_left, $s_top, $s_color);
-	$image->line($s_right, $s_y_center, $s_left, $s_top, $s_color);
-
-    } elsif ($s_type eq "filled_triangle1") {
-	$image->line($s_left, $s_bottom, $s_right, $s_y_center, $s_color);
-	$image->line($s_left, $s_bottom, $s_left, $s_top, $s_color);
-	$image->line($s_right, $s_y_center, $s_left, $s_top, $s_color);
-	$image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
-
-    } elsif ($s_type eq "triangle3") {
-	$image->line($s_left, $s_bottom, $s_right, $s_bottom, $s_color);
-	$image->line($s_left, $s_bottom, $s_x_center, $s_top, $s_color);
-	$image->line($s_x_center, $s_top, $s_right, $s_bottom, $s_color);
-
-    } elsif ($s_type eq "filled_triangle3") {
-	$image->line($s_left, $s_bottom, $s_right, $s_bottom, $s_color);
-	$image->line($s_left, $s_bottom, $s_x_center, $s_top, $s_color);
-	$image->line($s_x_center, $s_top, $s_right, $s_bottom, $s_color);
-	$image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
-
-    } elsif ($s_type eq "triangle4") {
-	$image->line($s_left, $s_top, $s_right, $s_top, $s_color);
-	$image->line($s_left, $s_top, $s_x_center, $s_bottom, $s_color);
-	$image->line($s_x_center, $s_bottom, $s_right, $s_top, $s_color);
-
-    } elsif ($s_type eq "filled_triangle4") {
-	$image->line($s_left, $s_top, $s_right, $s_top, $s_color);
-	$image->line($s_left, $s_top, $s_x_center, $s_bottom, $s_color);
-	$image->line($s_x_center, $s_bottom, $s_right, $s_top, $s_color);
-	$image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
-
-    } elsif ($s_type eq "circle") {
-	$image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
-
-    } elsif ($s_type eq "filled_circle") {
-	$image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
-	$image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
-
-    } elsif ($s_type eq "crossrect1") {
-	$image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
-	$image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
-	$image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
-
-    } elsif ($s_type eq "crossrect2") {
-	$image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
-	$image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
-	$image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
-
-    } elsif ($s_type eq "crosscircle2") {
-	$image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
-	$image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
-	$image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
-
-    } elsif ($s_type eq "crosscircle1") {
-	$image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
-	$image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
-	$image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
-
-    } elsif ($s_type eq "cross1") {
-	$image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
-	$image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
-
-    } elsif ($s_type eq "cross2") {
-	$image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
-	$image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
-
-    } elsif ($s_type eq "vbars") {
-	for ($h = $s_left; $h <= $s_right; $h += 2) {
-	    $image->line($h, $s_top, $h, $s_bottom, $s_color);
-	}
-
-    } elsif ($s_type eq "hbars") {
-	for ($h = $s_top; $h <= $s_bottom; $h += 2) {
-	    $image->line($s_left, $h, $s_right, $h, $s_color);
-	}
-    }
-}
-
-
-
-sub AutoGrid {
-### usage
-### ($grid_min, $grid_step, $grid_max) = &AutoGrid($min_value, $max_value);
-    local($min_value) = $_[0];
-    local($max_value) = $_[1];
-
-    local($range);
-    local($range_order);
-    local($grid_step);
-    local($grid_min);
-    local($grid_max);
-
-    $range = abs($min_value -$max_value);
-    $range_order = int(log($range)/$x_ref_log);
-    if ($range_order < 0) {
-	$range_order -= 1;
-    }
-    $grid_step = 10**$range_order;
-    while ($range < 5*$grid_step) {
-	$grid_step /=2;
-	$grid_step =~ s/25/20/;
-	$grid_step =~ s/2\.5/2\.0/;
-    }
-
-    if ($min_value >= 0) {
-	$grid_min = int($min_value/$grid_step) * $grid_step;
-    } else {
-	$grid_min = (int($min_value/$grid_step) -1)* $grid_step;
-    }
-    
-    $grid_max = (int($max_value/$grid_step)+1)*$grid_step;
-    
-    return($grid_min, $grid_step, $grid_max);
-}
-
-
-sub StandardPalette {
-    ### black and white
-    $white = $image->colorAllocate(255,255,255);
-    $black = $image->colorAllocate(0,0,0);
-
-    ### gray series
-    $gray_032 = $image->colorAllocate(32,32,32);
-    $gray_064 = $image->colorAllocate(64,64,64);
-    $gray_096 = $image->colorAllocate(96,96,96);
-    $gray_125 = $image->colorAllocate(125,125,125);
-    $gray_150 = $image->colorAllocate(150,150,150);
-    $gray_175 = $image->colorAllocate(175,175,175);
-    $gray_200 = $image->colorAllocate(200,200,200);
-    $gray_225 = $image->colorAllocate(225,225,225);
-
-    ### yellow series
-    $yellow = $image->colorAllocate(255,255,0);
-    $yellow_225 = $image->colorAllocate(225,225,0);
-    $yellow_200 = $image->colorAllocate(200,200,0);
-    $yellow_128 = $image->colorAllocate(128,128,0);
-    $yellow_light = $image->colorAllocate(255,255,150);
-    $yellow_pale = $image->colorAllocate(255,255,200);
-    $yellow_pale_064 = $image->colorAllocate(255,255,64);
-    $yellow_pale_096 = $image->colorAllocate(255,255,96);
-    $yellow_pale_128 = $image->colorAllocate(255,255,128);
-
-
-    ### green series
-    $green = $image->colorAllocate(0,255,0);
-    $green_200 = $image->colorAllocate(0,200,0);
-    $green_175 = $image->colorAllocate(0,175,0);
-    $green_128 = $image->colorAllocate(0,128,0);
-    $green_096 = $image->colorAllocate(0,96,0);
-    $green_064 = $image->colorAllocate(0,64,0);
-
-    ### cyan series
-    $cyan = $image->colorAllocate(0,255,255);
-    $cyan_200 = $image->colorAllocate(0,200,200);
-    $cyan_128 = $image->colorAllocate(0,128,128);
-    $cyan_096 = $image->colorAllocate(0,96,96);
-    $cyan_pale_064 = $image->colorAllocate(64,255,255);
-    $cyan_pale_096 = $image->colorAllocate(96,255,255);
-    $cyan_pale_128 = $image->colorAllocate(128,255,255);
-
-    ### blue series
-    $blue = $image->colorAllocate(0,0,250);
-    $blue_064 = $image->colorAllocate(0,0,64);
-    $blue_096 = $image->colorAllocate(0,0,96);
-    $blue_128 = $image->colorAllocate(0,0,128);
-    $blue_175 = $image->colorAllocate(0,0,175);
-    $blue_191 = $image->colorAllocate(0,0,191);
-    $blue_200 = $image->colorAllocate(0,0,200);
-
-    ### magenta
-    $magenta = $image->colorAllocate(255,0,255);
-    $magenta_191 = $image->colorAllocate(191,0,191);
-    $magenta_pale_064 = $image->colorAllocate(255,64,255);
-    $magenta_pale_096 = $image->colorAllocate(255,96,255);
-    $magenta_pale_128 = $image->colorAllocate(255,128,255);
-
-
-    ### red series
-    $red = $image->colorAllocate(255,0,0);
-    $red_191 = $image->colorAllocate(191,0,0);
-    $red_128 = $image->colorAllocate(128,0,0);
-    $red_096 = $image->colorAllocate(96,0,0);
-    $red_064 = $image->colorAllocate(64,0,0);
-
-    ### mscellaneous
-    $pink = $image->colorAllocate(255,70,120);
-    $orange = $image->colorAllocate(255,100,0);
-    $violet = $image->colorAllocate(120,0,200);
-    $brown = $image->colorAllocate(100,31,31);
-    $pistache = $image->colorAllocate(100,225,150);
-    $violet_pale = $image->colorAllocate(230, 215, 255);
-    $pink_pale = $image->colorAllocate(255,230,210);
-    $champagne = $image->colorAllocate(255,240,200);
-    $pistache_pale = $image->colorAllocate(200,255,200);
-}
-
-
-
-#### read data ####
-sub ReadData {
-    ($in, $input_dir) = &OpenInputFile($inputfile);
-
-    ################################################################
-    #### point series correspond to columns
-    if ($data_fields eq "columns") {
-	
-	### read X and Y values ###
-	$l = 0; ## Counter for non-comment and non-empty lines
-	while ($new_data_line = <$in>) {
-	    next unless ($new_data_line =~ /\S/);
-	    $l++; 
-	    if (($header) && ($l == 1)|| ($new_data_line =~ /^#/)) {
-		#### read legend ####
-		$legend_line = $new_data_line;
-		$legend_line =~ s/^;//; ## Suppress leading comment char
-		unless ($legend_line =~ /\t/) {   # if there are no tabs,
-		    $legend_line =~ s/ {1,}/\t/g; # single or multiple spaces are considered as a singlew tab
-					      }
-		@legend_fields = split(/[\t\n\r]/, $legend_line);
-		&RSAT::message::Info(join("\t", "Header fields\t", join (";", @legend_fields))) if ($main::verbose >= 2);
-		
-		### calculate legend width ###
-		$legend_length = 0;
-		for $series (0..$#y_col_list) {
-		    $new_length = length($legend_fields[$y_col_list[$series]]);
-		    $legend_length = &checked_max($legend_length,$new_length);
-		}
-		$legend_size = $legend_length * $small_font_width + $point_size + 20;
-	    }
-	    next if ($new_data_line =~ /^;/); ## Comment line
-	    if ($new_data_line =~ /\t/) {  # if column delimiter is the tab character
-		$new_data_line =~ s/ //g; # remove all blank spaces
-	    } else { # if there are no tabs,
-		$new_data_line =~ s/ +/\t/g; # single or multiple spaces are considered as a single tab
-	    }
-	    
-	    $new_data_line =~ s/\,//g; # remove all commas
-	    @data_fields = split(/[\t\n\r]/, $new_data_line);
-
-	    if ($x_col == -1) {
-		push @X_values, $#X_values +2;
-	    } elsif (&IsReal($data_fields[$x_col])) {
-		if ($xlog)  {
-		    if ($data_fields[$x_col] > 0) {
-			$new_x = log($data_fields[$x_col])/$x_ref_log;
-		    } else {
-			$new_x = "ND";
-		    }
-		} else {
-		    $new_x = $data_fields[$x_col];
-		}
-		push (@X_values, $new_x);
-	    } else {
-		next;
-	    }
-	    if ($label_col > 0) {
-		push @data_lines, @data_fields[$label_col -1];
-	    } else {
-		push @data_lines, $new_data_line;
-	    }
-	    
-	    #### read Y values
-	    for $series (0..$#y_col_list) {
-		if ((IsReal($data_fields[$y_col_list[$series]]))) {
-		    if ($ylog) {
-			if ($data_fields[$y_col_list[$series]] > 0) {
-			    $Y_values[$series][$#X_values] = log($data_fields[$y_col_list[$series]])/$y_ref_log; 
-			} else {
-			    $Y_values[$series][$#X_values] = "ND";
-			}
-		    } else {
-			$Y_values[$series][$#X_values] = $data_fields[$y_col_list[$series]]; 
-		    }    
-		} else {
-		    $Y_values[$series][$#X_values] = "ND";
-		} 
-	    }
-	}    
-
-	################################################################
-	#### point series correspond to rows
-    } else {
-	$line_nb = -1;
-	$xline = $x_col;	foreach $c (0..$#y_col_list) {
-	    $yline{$y_col_list[$c]} = $c;
-	}
-	
-	while ($new_data_line = <$in>) {
-	    next if ($new_data_line =~ /^;/);
-	    next unless ($new_data_line =~ /\S/);
-	    $line_nb++;
-	    
-	    next unless (($line_nb == $xline) || (defined($yline{$line_nb})));
-	    
-	    ### split data line
-	    if ($new_data_line =~ /\t/) {  # if column delimiter is the tab character
-		$new_data_line =~ s/ //g; # remove all blank spaces
-	    } else { # if there are no tabs,
-		$new_data_line =~ s/ +/\t/g; # single or multiple spaces are considered as a single tab
-	    }
-	    $new_data_line =~ s/\,//g; # remove all commas
-	    @data_fields = split(/[\t\n\r]/, $new_data_line);
-	    
-	    ### read legend ###
-	    if ($header) {
-		$line_legend = shift @data_fields;    ### take first word as legend
-		$legend_fields[$line_nb] =  $line_legend;
-		$legend_length = &checked_max($legend_length,length($line_legend));
-		$legend_size = $legend_length * $small_font_width + $point_size + 20;
-	    }
-	    
-	    ### read X values
-	    if ($x_col == -1) {
-		$max_col = &checked_max($max_col, $#data_fields+1);
-	    } elsif ($line_nb == $x_col) {
-		for $c (0..$#data_fields) {
-		    if ($xlog)  {
-			if ($data_fields[$c] > 0) {
-			    $new_x = log($data_fields[$c])/$x_ref_log;
-			} else {
-			    $new_x = "ND";
-			}
-		    } else {
-			$new_x = $data_fields[$c];
-		    }
-		    push (@X_values, $new_x);
-		}
-	    }
-	    
-	    ### read Y values
-	    if (defined($yline{$line_nb})) {
-		for $c (0..$#data_fields) {
-		    $new_y = "ND";
-		    if ($ylog)  {
-			if ($data_fields[$c] > 0) {
-			    $new_y = log($data_fields[$c])/$y_ref_log;
-			}
-		    } elsif (&IsReal($data_fields[$c])) {
-			$new_y = $data_fields[$c];
-		    }
-		    $Y_values[$yline{$line_nb}][$c] = $new_y;
-		}
-	    }
-	}
-	if ($x_col == -1) {
-	    for $x (1..$max_col) {
-		push @X_values, $x;
-	    }
-	}
-    }
-    
-    close $in unless ($inputfile eq "");
-
-} #### ReadData
 
 ################################################################
-#### Calculate limits for X and Y axes
+## Draw symbol ####
+##
+## Usage:
+##    DrawSymbol($symbol_type,$symbol_left,$symbol_top,$symbol_right,$symbol_bottom,$symbol_color);
+sub DrawSymbol {
+  local($s_type) = $_[0];
+  local($s_left) = $_[1];
+  local($s_top) = $_[2];
+  local($s_right) = $_[3];
+  local($s_bottom) = $_[4];
+  local($s_color) = $_[5];
+  local($s_x_center) = ($s_left + $s_right)/2;
+  local($s_y_center) = ($s_top + $s_bottom)/2;
+  local($s_width) = abs($s_right - $s_left) + 1;
+  local($s_height) = abs($s_top - $s_bottom) + 1;
+
+  if ($s_type eq "rectangle") {
+    $image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "filled_rectangle") {
+    $image->filledRectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "filled_butterfly") {
+    $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+    $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+    $image->line($s_right, $s_top, $s_right, $s_bottom, $s_color);
+    $image->line($s_left, $s_top, $s_left, $s_bottom, $s_color);
+    $image->fillToBorder($s_left+1,$s_y_center,$s_color,$s_color);
+    $image->fillToBorder($s_right-1,$s_y_center,$s_color,$s_color);
+
+  } elsif ($s_type eq "butterfly") {
+    $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+    $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+    $image->line($s_right, $s_top, $s_right, $s_bottom, $s_color);
+    $image->line($s_left, $s_top, $s_left, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "triangle2") {
+    $image->line($s_left, $s_y_center, $s_right, $s_bottom, $s_color);
+    $image->line($s_right, $s_bottom, $s_right, $s_top, $s_color);
+    $image->line($s_left, $s_y_center, $s_right, $s_top, $s_color);
+
+  } elsif ($s_type eq "filled_triangle2") {
+    $image->line($s_left, $s_y_center, $s_right, $s_bottom, $s_color);
+    $image->line($s_right, $s_bottom, $s_right, $s_top, $s_color);
+    $image->line($s_left, $s_y_center, $s_right, $s_top, $s_color);
+    $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+
+  } elsif ($s_type eq "triangle1") {
+    $image->line($s_left, $s_bottom, $s_right, $s_y_center, $s_color);
+    $image->line($s_left, $s_bottom, $s_left, $s_top, $s_color);
+    $image->line($s_right, $s_y_center, $s_left, $s_top, $s_color);
+
+  } elsif ($s_type eq "filled_triangle1") {
+    $image->line($s_left, $s_bottom, $s_right, $s_y_center, $s_color);
+    $image->line($s_left, $s_bottom, $s_left, $s_top, $s_color);
+    $image->line($s_right, $s_y_center, $s_left, $s_top, $s_color);
+    $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+
+  } elsif ($s_type eq "triangle3") {
+    $image->line($s_left, $s_bottom, $s_right, $s_bottom, $s_color);
+    $image->line($s_left, $s_bottom, $s_x_center, $s_top, $s_color);
+    $image->line($s_x_center, $s_top, $s_right, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "filled_triangle3") {
+    $image->line($s_left, $s_bottom, $s_right, $s_bottom, $s_color);
+    $image->line($s_left, $s_bottom, $s_x_center, $s_top, $s_color);
+    $image->line($s_x_center, $s_top, $s_right, $s_bottom, $s_color);
+    $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+
+  } elsif ($s_type eq "triangle4") {
+    $image->line($s_left, $s_top, $s_right, $s_top, $s_color);
+    $image->line($s_left, $s_top, $s_x_center, $s_bottom, $s_color);
+    $image->line($s_x_center, $s_bottom, $s_right, $s_top, $s_color);
+
+  } elsif ($s_type eq "filled_triangle4") {
+    $image->line($s_left, $s_top, $s_right, $s_top, $s_color);
+    $image->line($s_left, $s_top, $s_x_center, $s_bottom, $s_color);
+    $image->line($s_x_center, $s_bottom, $s_right, $s_top, $s_color);
+    $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+
+  } elsif ($s_type eq "circle") {
+    $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+
+  } elsif ($s_type eq "filled_circle") {
+    $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+    $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+
+  } elsif ($s_type eq "crossrect1") {
+    $image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
+    $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+    $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "crossrect2") {
+    $image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
+    $image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
+    $image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "crosscircle2") {
+    $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+    $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+    $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "crosscircle1") {
+    $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+    $image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
+    $image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "cross1") {
+    $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+    $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "cross2") {
+    $image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
+    $image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
+
+  } elsif ($s_type eq "vbars") {
+    for ($h = $s_left; $h <= $s_right; $h += 2) {
+      $image->line($h, $s_top, $h, $s_bottom, $s_color);
+    }
+
+  } elsif ($s_type eq "hbars") {
+    for ($h = $s_top; $h <= $s_bottom; $h += 2) {
+      $image->line($s_left, $h, $s_right, $h, $s_color);
+    }
+  }
+}
+
+
+
+################################################################
+## Compute te size of the grid
+##
+## Usage
+##   ($grid_min, $grid_step, $grid_max) = &AutoGrid($min_value, $max_value);
+sub AutoGrid {
+  local($min_value) = $_[0];
+  local($max_value) = $_[1];
+
+  local($range);
+  local($range_order);
+  local($grid_step);
+  local($grid_min);
+  local($grid_max);
+
+  $range = abs($min_value -$max_value);
+  $range_order = int(log($range)/$x_ref_log);
+  if ($range_order < 0) {
+    $range_order -= 1;
+  }
+  $grid_step = 10**$range_order;
+  while ($range < 5*$grid_step) {
+    $grid_step /=2;
+    $grid_step =~ s/25/20/;
+    $grid_step =~ s/2\.5/2\.0/;
+  }
+
+  if ($min_value >= 0) {
+    $grid_min = int($min_value/$grid_step) * $grid_step;
+  } else {
+    $grid_min = (int($min_value/$grid_step) -1)* $grid_step;
+  }
+    
+  $grid_max = (int($max_value/$grid_step)+1)*$grid_step;
+    
+  return($grid_min, $grid_step, $grid_max);
+}
+
+
+################################################################
+## Define a standard palette
+sub StandardPalette {
+  ### black and white
+  $white = $image->colorAllocate(255,255,255);
+  $black = $image->colorAllocate(0,0,0);
+
+  ### gray series
+  $gray_032 = $image->colorAllocate(32,32,32);
+  $gray_064 = $image->colorAllocate(64,64,64);
+  $gray_096 = $image->colorAllocate(96,96,96);
+  $gray_125 = $image->colorAllocate(125,125,125);
+  $gray_150 = $image->colorAllocate(150,150,150);
+  $gray_175 = $image->colorAllocate(175,175,175);
+  $gray_200 = $image->colorAllocate(200,200,200);
+  $gray_225 = $image->colorAllocate(225,225,225);
+
+  ### yellow series
+  $yellow = $image->colorAllocate(255,255,0);
+  $yellow_225 = $image->colorAllocate(225,225,0);
+  $yellow_200 = $image->colorAllocate(200,200,0);
+  $yellow_128 = $image->colorAllocate(128,128,0);
+  $yellow_light = $image->colorAllocate(255,255,150);
+  $yellow_pale = $image->colorAllocate(255,255,200);
+  $yellow_pale_064 = $image->colorAllocate(255,255,64);
+  $yellow_pale_096 = $image->colorAllocate(255,255,96);
+  $yellow_pale_128 = $image->colorAllocate(255,255,128);
+
+
+  ### green series
+  $green = $image->colorAllocate(0,255,0);
+  $green_200 = $image->colorAllocate(0,200,0);
+  $green_175 = $image->colorAllocate(0,175,0);
+  $green_128 = $image->colorAllocate(0,128,0);
+  $green_096 = $image->colorAllocate(0,96,0);
+  $green_064 = $image->colorAllocate(0,64,0);
+
+  ### cyan series
+  $cyan = $image->colorAllocate(0,255,255);
+  $cyan_200 = $image->colorAllocate(0,200,200);
+  $cyan_128 = $image->colorAllocate(0,128,128);
+  $cyan_096 = $image->colorAllocate(0,96,96);
+  $cyan_pale_064 = $image->colorAllocate(64,255,255);
+  $cyan_pale_096 = $image->colorAllocate(96,255,255);
+  $cyan_pale_128 = $image->colorAllocate(128,255,255);
+
+  ### blue series
+  $blue = $image->colorAllocate(0,0,250);
+  $blue_064 = $image->colorAllocate(0,0,64);
+  $blue_096 = $image->colorAllocate(0,0,96);
+  $blue_128 = $image->colorAllocate(0,0,128);
+  $blue_175 = $image->colorAllocate(0,0,175);
+  $blue_191 = $image->colorAllocate(0,0,191);
+  $blue_200 = $image->colorAllocate(0,0,200);
+
+  ### magenta
+  $magenta = $image->colorAllocate(255,0,255);
+  $magenta_191 = $image->colorAllocate(191,0,191);
+  $magenta_pale_064 = $image->colorAllocate(255,64,255);
+  $magenta_pale_096 = $image->colorAllocate(255,96,255);
+  $magenta_pale_128 = $image->colorAllocate(255,128,255);
+
+
+  ### red series
+  $red = $image->colorAllocate(255,0,0);
+  $red_191 = $image->colorAllocate(191,0,0);
+  $red_128 = $image->colorAllocate(128,0,0);
+  $red_096 = $image->colorAllocate(96,0,0);
+  $red_064 = $image->colorAllocate(64,0,0);
+
+  ### mscellaneous
+  $pink = $image->colorAllocate(255,70,120);
+  $orange = $image->colorAllocate(255,100,0);
+  $violet = $image->colorAllocate(120,0,200);
+  $brown = $image->colorAllocate(100,31,31);
+  $pistache = $image->colorAllocate(100,225,150);
+  $violet_pale = $image->colorAllocate(230, 215, 255);
+  $pink_pale = $image->colorAllocate(255,230,210);
+  $champagne = $image->colorAllocate(255,240,200);
+  $pistache_pale = $image->colorAllocate(200,255,200);
+}
+
+
+
+################################################################
+## Read data ####
+sub ReadData {
+  ($in, $input_dir) = &OpenInputFile($inputfile);
+
+  ################################################################
+  #### point series correspond to columns
+  if ($data_fields eq "columns") {
+	
+    ### read X and Y values ###
+    $l = 0;		## Counter for non-comment and non-empty lines
+    while ($new_data_line = <$in>) {
+      next unless ($new_data_line =~ /\S/);
+      $l++; 
+      if (($header) && ($l == 1)|| ($new_data_line =~ /^#/)) {
+	#### read legend ####
+	$legend_line = $new_data_line;
+	$legend_line =~ s/^;//; ## Suppress leading comment char
+	unless ($legend_line =~ /\t/) {	# if there are no tabs,
+	  $legend_line =~ s/ {1,}/\t/g;	# single or multiple spaces are considered as a singlew tab
+	}
+	@legend_fields = split(/[\t\n\r]/, $legend_line);
+	&RSAT::message::Info(join("\t", "Header fields\t", join (";", @legend_fields))) if ($main::verbose >= 2);
+		
+	### calculate legend width ###
+	$legend_length = 0;
+	for $series (0..$#y_col_list) {
+	  $new_length = length($legend_fields[$y_col_list[$series]]);
+	  $legend_length = &checked_max($legend_length,$new_length);
+	}
+	$legend_size = $legend_length * $small_font_width + $point_size + 20;
+      }
+      next if ($new_data_line =~ /^;/);	   ## Comment line
+      if ($new_data_line =~ /\t/) { # if column delimiter is the tab character
+	$new_data_line =~ s/ //g;   # remove all blank spaces
+      } else {			    # if there are no tabs,
+	$new_data_line =~ s/ +/\t/g; # single or multiple spaces are considered as a single tab
+      }
+	    
+      $new_data_line =~ s/\,//g; # remove all commas
+      @data_fields = split(/[\t\n\r]/, $new_data_line);
+
+      if ($x_col == -1) {
+	push @X_values, $#X_values +2;
+      } elsif (&IsReal($data_fields[$x_col])) {
+	if ($xlog) {
+	  if ($data_fields[$x_col] > 0) {
+	    $new_x = log($data_fields[$x_col])/$x_ref_log;
+	  } else {
+	    $new_x = "ND";
+	  }
+	} else {
+	  $new_x = $data_fields[$x_col];
+	}
+	push (@X_values, $new_x);
+      } else {
+	next;
+      }
+      if ($label_col > 0) {
+	push @data_lines, @data_fields[$label_col -1];
+      } else {
+	push @data_lines, $new_data_line;
+      }
+	    
+      #### read Y values
+      for $series (0..$#y_col_list) {
+	if ((IsReal($data_fields[$y_col_list[$series]]))) {
+	  if ($ylog) {
+	    if ($data_fields[$y_col_list[$series]] > 0) {
+	      $Y_values[$series][$#X_values] = log($data_fields[$y_col_list[$series]])/$y_ref_log; 
+	    } else {
+	      $Y_values[$series][$#X_values] = "ND";
+	    }
+	  } else {
+	    $Y_values[$series][$#X_values] = $data_fields[$y_col_list[$series]]; 
+	  }    
+	} else {
+	  $Y_values[$series][$#X_values] = "ND";
+	} 
+      }
+    }    
+
+    ################################################################
+    #### point series correspond to rows
+  } else {
+    $line_nb = -1;
+    $xline = $x_col;	foreach $c (0..$#y_col_list) {
+      $yline{$y_col_list[$c]} = $c;
+    }
+	
+    while ($new_data_line = <$in>) {
+      next if ($new_data_line =~ /^;/);
+      next unless ($new_data_line =~ /\S/);
+      $line_nb++;
+	    
+      next unless (($line_nb == $xline) || (defined($yline{$line_nb})));
+	    
+      ### split data line
+      if ($new_data_line =~ /\t/) { # if column delimiter is the tab character
+	$new_data_line =~ s/ //g;   # remove all blank spaces
+      } else {			    # if there are no tabs,
+	$new_data_line =~ s/ +/\t/g; # single or multiple spaces are considered as a single tab
+      }
+      $new_data_line =~ s/\,//g; # remove all commas
+      @data_fields = split(/[\t\n\r]/, $new_data_line);
+	    
+      ### read legend ###
+      if ($header) {
+	$line_legend = shift @data_fields; ### take first word as legend
+	$legend_fields[$line_nb] =  $line_legend;
+	$legend_length = &checked_max($legend_length,length($line_legend));
+	$legend_size = $legend_length * $small_font_width + $point_size + 20;
+      }
+	    
+      ### read X values
+      if ($x_col == -1) {
+	$max_col = &checked_max($max_col, $#data_fields+1);
+      } elsif ($line_nb == $x_col) {
+	for $c (0..$#data_fields) {
+	  if ($xlog) {
+	    if ($data_fields[$c] > 0) {
+	      $new_x = log($data_fields[$c])/$x_ref_log;
+	    } else {
+	      $new_x = "ND";
+	    }
+	  } else {
+	    $new_x = $data_fields[$c];
+	  }
+	  push (@X_values, $new_x);
+	}
+      }
+	    
+      ### read Y values
+      if (defined($yline{$line_nb})) {
+	for $c (0..$#data_fields) {
+	  $new_y = "ND";
+	  if ($ylog) {
+	    if ($data_fields[$c] > 0) {
+	      $new_y = log($data_fields[$c])/$y_ref_log;
+	    }
+	  } elsif (&IsReal($data_fields[$c])) {
+	    $new_y = $data_fields[$c];
+	  }
+	  $Y_values[$yline{$line_nb}][$c] = $new_y;
+	}
+      }
+    }
+    if ($x_col == -1) {
+      for $x (1..$max_col) {
+	push @X_values, $x;
+      }
+    }
+  }
+
+  close $in unless ($inputfile eq "");
+
+}				#### ReadData
+
+################################################################
+## Calculate limits for X and Y axes
 sub CalcLimits {
 
-    $max_x_value = "ND";
-    $min_x_value = "ND";
-    $max_y_value = "ND";
-    $min_y_value = "ND";
+  $max_x_value = "ND";
+  $min_x_value = "ND";
+  $max_y_value = "ND";
+  $min_y_value = "ND";
     
-    ## Calculate max and min X values
-    $min_x_value = &checked_min(@X_values);
-    $max_x_value = &checked_max(@X_values);
-    unless ((&IsReal($max_x_value)) && 
-	    (&IsReal($min_x_value))) {
-	&RSAT::error::FatalError("X axis data (column ", $x_col+1, ") are not numeric.");
-    }
-    if ($max_x_value == $min_x_value) {
-	$max_x_value *= 2;
-	$min_x_value /= 2;
-    }
+  ## Calculate max and min X values
+  $min_x_value = &checked_min(@X_values);
+  $max_x_value = &checked_max(@X_values);
+  unless ((&IsReal($max_x_value)) && 
+	  (&IsReal($min_x_value))) {
+    &RSAT::error::FatalError("X axis data (column ", $x_col+1, ") are not numeric.");
+  }
+  if ($max_x_value == $min_x_value) {
+    $max_x_value *= 2;
+    $min_x_value /= 2;
+  }
     
-    ## Calculate max and min Y values
-    for $series (0..$#y_col_list) {
-	$min_y_value = &checked_min($min_y_value,@{$Y_values[$series]});
-	$max_y_value = &checked_max($max_y_value,@{$Y_values[$series]});
+  ## Calculate max and min Y values
+  for $series (0..$#y_col_list) {
+    $min_y_value = &checked_min($min_y_value,@{$Y_values[$series]});
+    $max_y_value = &checked_max($max_y_value,@{$Y_values[$series]});
 	
-    }
-    if ($max_y_value == $min_y_value) {
-	$max_y_value *= 2;
-	$min_y_value /= 2;
-    }
+  }
+  if ($max_y_value == $min_y_value) {
+    $max_y_value *= 2;
+    $min_y_value /= 2;
+  }
     
-    unless ((&IsReal($max_y_value)) &&
-	    (&IsReal($min_y_value))) {
-	&RSAT::error::FatalError("\tError: Y axis data (column ", join(",", @y_col_list),
-		    ") are not numeric.");
-    }
+  unless ((&IsReal($max_y_value)) &&
+	  (&IsReal($min_y_value))) {
+    &RSAT::error::FatalError("\tError: Y axis data (column ", join(",", @y_col_list),
+			     ") are not numeric.");
+  }
 
-    #### min and max axis values ####
-    ($tmp_xmin,$tmp_xgrid,$tmp_xmax) = &AutoGrid($min_x_value,$max_x_value);
-    if ($x_axis_min eq "ND") {
-	$x_axis_min = $tmp_xmin;
-    }
-    if ($x_axis_max eq "ND") {
-	$x_axis_max = $tmp_xmax;
-    }
-    ($tmp_ymin,$tmp_ygrid,$tmp_ymax) = &AutoGrid($min_y_value,$max_y_value);
-    if ($y_axis_min eq "ND") {
-	$y_axis_min = $tmp_ymin;
-    }
-    if ($y_axis_max eq "ND") {
-	$y_axis_max = $tmp_ymax;
-    }
+  #### min and max axis values ####
+  ($tmp_xmin,$tmp_xgrid,$tmp_xmax) = &AutoGrid($min_x_value,$max_x_value);
+  if ($x_axis_min eq "ND") {
+    $x_axis_min = $tmp_xmin;
+  }
+  if ($x_axis_max eq "ND") {
+    $x_axis_max = $tmp_xmax;
+  }
+  ($tmp_ymin,$tmp_ygrid,$tmp_ymax) = &AutoGrid($min_y_value,$max_y_value);
+  if ($y_axis_min eq "ND") {
+    $y_axis_min = $tmp_ymin;
+  }
+  if ($y_axis_max eq "ND") {
+    $y_axis_max = $tmp_ymax;
+  }
 
-    ## If specified, use same limits for X and Y axes
-    if ($same_limits) {
-      $x_axis_max = &max($x_axis_max, $y_axis_max);
-      $y_axis_max = &max($x_axis_max, $y_axis_max);
-      $x_axis_min = &min($x_axis_min, $y_axis_min);
-      $y_axis_min = &min($x_axis_min, $y_axis_max);
-    }
+  ## If specified, use same limits for X and Y axes
+  if ($same_limits) {
+    $x_axis_max = &max($x_axis_max, $y_axis_max);
+    $y_axis_max = &max($x_axis_max, $y_axis_max);
+    $x_axis_min = &min($x_axis_min, $y_axis_min);
+    $y_axis_min = &min($x_axis_min, $y_axis_max);
+  }
     
-    ## Automatic grid size
-    if ($x_grid_step1 eq "") {
-	($x_grid_min, $x_grid_step1,$x_grid_max) = &AutoGrid($x_axis_min,$x_axis_max);
-    }
-    if ($y_grid_step1 eq "") {
-	($y_grid_min, $y_grid_step1,$y_grid_max) = &AutoGrid($y_axis_min,$y_axis_max);
-    }
+  ## Automatic grid size
+  if ($x_grid_step1 eq "") {
+    ($x_grid_min, $x_grid_step1,$x_grid_max) = &AutoGrid($x_axis_min,$x_axis_max);
+  }
+  if ($y_grid_step1 eq "") {
+    ($y_grid_min, $y_grid_step1,$y_grid_max) = &AutoGrid($y_axis_min,$y_axis_max);
+  }
     
 
 
-    #### graph dimensions
-    $top = $border;
-    $left = $border + 2*$small_font_height + 6 + $x_scale_border;
-    $right = $left + $x_axis_size;
-    if ($title1 ne "") {
-	$top += $large_font_height;
-    }
-    if ($title2 ne "") {
-	$top += $large_font_height + 4;
-    }
-    $bottom = $top + $y_axis_size;
-    $graph_x_size = $right + $border + $legend_size + $point_size + 20;
-    $graph_y_size = $bottom + $border + $y_scale_border + 2*$small_font_height + 6;
+  #### graph dimensions
+  $top = $border;
+  $left = $border + 2*$small_font_height + 6 + $x_scale_border;
+  $right = $left + $x_axis_size;
+  if ($title1 ne "") {
+    $top += $large_font_height;
+  }
+  if ($title2 ne "") {
+    $top += $large_font_height + 4;
+  }
+  $bottom = $top + $y_axis_size;
+  $graph_x_size = $right + $border + $legend_size + $point_size + 20;
+  $graph_y_size = $bottom + $border + $y_scale_border + 2*$small_font_height + 6;
     
-    ### scale ###
-    if ($x_axis_max > $x_axis_min) {
-	$x_scale = $x_axis_size/($x_axis_max - $x_axis_min);
-    } else {
-	$x_scale = $x_axis_size;
-    }
-    if ($y_axis_max > $y_axis_min) {
-	$y_scale = $y_axis_size/($y_axis_max - $y_axis_min);
-    } else {
-	$y_scale = $y_axis_size;
-    }
+  ### scale ###
+  if ($x_axis_max > $x_axis_min) {
+    $x_scale = $x_axis_size/($x_axis_max - $x_axis_min);
+  } else {
+    $x_scale = $x_axis_size;
+  }
+  if ($y_axis_max > $y_axis_min) {
+    $y_scale = $y_axis_size/($y_axis_max - $y_axis_min);
+  } else {
+    $y_scale = $y_axis_size;
+  }
 }  
 
 
-##### Initialize HTML map #####
+################################################################
+## Initialize HTML map 
 sub InitHTMLmap {
-    $max_map_elements = 5000;
-    $href = ShortFileName($inputfile);
+  $max_map_elements = 5000;
+  $href = ShortFileName($inputfile);
     
-    ###### header of the HTML file #####
-    print "<HTML>\n";
-    print "<HEAD>\n";
-    print "<TITLE>XYgraph ";
-    print ShortFileName($inputfile);
-    print "</TITLE>\n";
-    print "</HEAD>\n";
-    print "<BODY>\n";
-    print "<img src=\"";
-    print ShortFileName($outputfile);
-    print "\" border=0 usemap=\"#map1\">\n";
-    print "<map name=\"map1\">\n";
+  ###### header of the HTML file #####
+  print "<HTML>\n";
+  print "<HEAD>\n";
+  print "<TITLE>XYgraph ";
+  print ShortFileName($inputfile);
+  print "</TITLE>\n";
+  print "</HEAD>\n";
+  print "<BODY>\n";
+  print "<img src=\"";
+  print ShortFileName($outputfile);
+  print "\" border=0 usemap=\"#map1\">\n";
+  print "<map name=\"map1\">\n";
 }
 
 ##### terminate the HTML map #####
 sub CloseHTMLmap {
-    print "</map>";
-    print "</BODY>\n";
-    print "</HTML>\n";
+  print "</map>";
+  print "</BODY>\n";
+  print "</HTML>\n";
 }
 
 
 
 ################################################################
-#### display short help message
+## Display short help message
 sub PrintOptions {
     open SHORTHELP, "| more";
     print SHORTHELP <<End_of_options;
@@ -1629,7 +1569,7 @@ End_of_options
 
 
 ################################################################
-#### display full help message 
+## Display full help message 
 sub PrintHelp {
     open HELP, "| more";
     print HELP <<End_of_Help;
@@ -1786,313 +1726,314 @@ End_of_Help
 }
 
 ################################################################
-#### Read arguments
+## Read arguments
 sub ReadArguments {
 
-    for $a (0..$#ARGV) {
-	
-	#### help messages
-	if ($ARGV[$a] eq "-h") {
-	    &PrintHelp();
-	    exit(0);
-	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions();
-	    exit(0);
-	    
-	    ### input, output files ###
-	} elsif ($ARGV[$a] eq "-i") {
-	    $inputfile = $ARGV[$a+1];
-	} elsif ($ARGV[$a] eq "-o") {
-	    $outputfile = $ARGV[$a+1];
+  for $a (0..$#ARGV) {
 
-	    ### image format
-	} elsif ($ARGV[$a] eq "-format") {
-	    $img_format = lc($ARGV[$a+1]);
-	    unless ($supported_format{$img_format}) {
-		&RSAT::error::FatalError("Format $img_format is not supported (supported: $supported_formats)");
-	    }
-	    
-	    ### verbose ###
-	} elsif ($ARGV[$a] eq "-v") {
-	    $verbose = 1;
+    #### help messages
+    if ($ARGV[$a] eq "-h") {
+      &PrintHelp();
+      exit(0);
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions();
+      exit(0);
 
-	    ### legends and titles ###
-	} elsif (($ARGV[$a] eq "-title") || ($ARGV[$a] eq "-title1")) {
-	    $title1 = $ARGV[$a+1];
-	} elsif ($ARGV[$a] eq "-title2") {
-	    $title2 = $ARGV[$a+1];
-	} elsif ($ARGV[$a] eq "-xleg1") {
-	    $x_legend1 = $ARGV[$a+1];
-	} elsif ($ARGV[$a] eq "-xleg2") {
-	    $x_legend2 = $ARGV[$a+1];
-	} elsif ($ARGV[$a] eq "-yleg1") {
-	    $y_legend1 = $ARGV[$a+1];
-	} elsif ($ARGV[$a] eq "-yleg2") {
-	    $y_legend2 = $ARGV[$a+1];
+      ### input, output files ###
+    } elsif ($ARGV[$a] eq "-i") {
+      $inputfile = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-o") {
+      $outputfile = $ARGV[$a+1];
 
-	    ### grid steps ###
-	} elsif (($ARGV[$a] eq "-gstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
-	    $y_grid_step1 = $ARGV[$a+1];
-	    $x_grid_step1 = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-xgstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
-	    $x_grid_step1 = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-ygstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
-	    $y_grid_step1 = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-gstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
-	    $y_grid_step2 = $ARGV[$a+1];
-	    $x_grid_step2 = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-xgstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
-	    $x_grid_step2 = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-ygstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
-	    $y_grid_step2 = $ARGV[$a+1];
+      ### image format
+    } elsif ($ARGV[$a] eq "-format") {
+      $img_format = lc($ARGV[$a+1]);
+      unless ($supported_format{$img_format}) {
+	&RSAT::error::FatalError("Format $img_format is not supported (supported: $supported_formats)");
+      }
 
-	    ### min and max values to represent ###
-	} elsif (($ARGV[$a] eq "-max") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
-	    $x_axis_max = $ARGV[$a+1];
-	    $y_axis_max = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-xmax") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
-	    $x_axis_max = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-ymax") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
-	    $y_axis_max = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-min") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
-	    $x_axis_min = $ARGV[$a+1];
-	    $y_axis_min = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-xmin") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
-	    $x_axis_min = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-ymin") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
-	    $y_axis_min = $ARGV[$a+1];
-	} elsif ($ARGV[$a] eq "-same_limits") {
-	    $same_limits = 1;
+      ### verbose ###
+    } elsif ($ARGV[$a] eq "-v") {
+      $verbose = 1;
 
-	    ### axis size (in pixels) ###
-	} elsif (($ARGV[$a] eq "-xsize") && ($ARGV[$a+1] =~ /^\d+$/)){
-	    $x_axis_size = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-ysize") && ($ARGV[$a+1] =~ /^\d+$/)){
-	    $y_axis_size = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-size") && ($ARGV[$a+1] =~ /^\d+$/)){
-	    $x_axis_size = $ARGV[$a+1];
-	    $y_axis_size = $ARGV[$a+1];
+      ### legends and titles ###
+    } elsif (($ARGV[$a] eq "-title") || ($ARGV[$a] eq "-title1")) {
+      $title1 = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-title2") {
+      $title2 = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-xleg1") {
+      $x_legend1 = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-xleg2") {
+      $x_legend2 = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-yleg1") {
+      $y_legend1 = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-yleg2") {
+      $y_legend2 = $ARGV[$a+1];
 
-	    ### backgreound color ####
-	} elsif ($ARGV[$a] eq "-bg") {
-	    $bg = $ARGV[$a+1];
+      ### grid steps ###
+    } elsif (($ARGV[$a] eq "-gstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+      $y_grid_step1 = $ARGV[$a+1];
+      $x_grid_step1 = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-xgstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+      $x_grid_step1 = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-ygstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+      $y_grid_step1 = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-gstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+      $y_grid_step2 = $ARGV[$a+1];
+      $x_grid_step2 = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-xgstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+      $x_grid_step2 = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-ygstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)) {
+      $y_grid_step2 = $ARGV[$a+1];
 
-	    ### monochrome output
-	} elsif ($ARGV[$a] =~ /-mono/i) {
-	    $monochrome = 1;
+      ### min and max values to represent ###
+    } elsif (($ARGV[$a] eq "-max") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+      $x_axis_max = $ARGV[$a+1];
+      $y_axis_max = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-xmax") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+      $x_axis_max = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-ymax") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+      $y_axis_max = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-min") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+      $x_axis_min = $ARGV[$a+1];
+      $y_axis_min = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-xmin") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+      $x_axis_min = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-ymin") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)) {
+      $y_axis_min = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-same_limits") {
+      $same_limits = 1;
 
-	    ### monochrome output
-	} elsif ($ARGV[$a] =~ /-symb/i) {
-	    $symbols = 1;
+      ### axis size (in pixels) ###
+    } elsif (($ARGV[$a] eq "-xsize") && ($ARGV[$a+1] =~ /^\d+$/)) {
+      $x_axis_size = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-ysize") && ($ARGV[$a+1] =~ /^\d+$/)) {
+      $y_axis_size = $ARGV[$a+1];
+    } elsif (($ARGV[$a] eq "-size") && ($ARGV[$a+1] =~ /^\d+$/)) {
+      $x_axis_size = $ARGV[$a+1];
+      $y_axis_size = $ARGV[$a+1];
 
-	    ### logarithmic representation
-	} elsif ($ARGV[$a] eq "-log") {
-	    $xlog= 1;
-	    $ylog= 1;
-	    if (($ARGV[$a+1] eq "e") 
-		|| (&IsReal($ARGV[$a+1]))) {
-		$x_log_base = $ARGV[$a+1];
-		$y_log_base = $ARGV[$a+1];
-		&RSAT::error::FatalError("Log base should be strictly higher than 1.") 
-		    unless (($x_log_base > 1) || ($x_log_base eq "e"));
-	    }
-	} elsif ($ARGV[$a] eq "-xlog") {
-	    $xlog= 1;
-	    if (($ARGV[$a+1] eq "e") 
-		|| (&IsReal($ARGV[$a+1]))) {
-		$x_log_base = $ARGV[$a+1];
-		&RSAT::error::FatalError("Log base should be strictly higher than 1.") 
-		    unless (($x_log_base > 1) || ($x_log_base eq "e"));
-	    }
-	} elsif ($ARGV[$a] eq "-ylog") {
-	    $ylog= 1;
-	    if (($ARGV[$a+1] eq "e") 
-		|| (&IsReal($ARGV[$a+1]))) {
-		$y_log_base = $ARGV[$a+1];
-		&RSAT::error::FatalError("Log base should be strictly higher than 1.") 
-		    unless (($y_log_base > 1) || ($y_log_base eq "e"));
-	    }
+      ### backgreound color ####
+    } elsif ($ARGV[$a] eq "-bg") {
+      $bg = $ARGV[$a+1];
 
-	    ### histogram ###
-	} elsif ($ARGV[$a] eq "-histo") {
-	    $histogram = 1;
+      ### monochrome output
+    } elsif ($ARGV[$a] =~ /-mono/i) {
+      $monochrome = 1;
 
-	    ### filled histogram ###
-	} elsif ($ARGV[$a] eq "-fhisto") {
-	    $filled_histogram = 1;
+      ### monochrome output
+    } elsif ($ARGV[$a] =~ /-symb/i) {
+      $symbols = 1;
 
-	    ### join points by lines ###
-	} elsif ($ARGV[$a] eq "-lines") {
-	    $lines = 1;
+      ### logarithmic representation
+    } elsif ($ARGV[$a] eq "-log") {
+      $xlog= 1;
+      $ylog= 1;
+      if (($ARGV[$a+1] eq "e") 
+	  || (&IsReal($ARGV[$a+1]))) {
+	$x_log_base = $ARGV[$a+1];
+	$y_log_base = $ARGV[$a+1];
+	&RSAT::error::FatalError("Log base should be strictly higher than 1.") 
+	  unless (($x_log_base > 1) || ($x_log_base eq "e"));
+      }
+    } elsif ($ARGV[$a] eq "-xlog") {
+      $xlog= 1;
+      if (($ARGV[$a+1] eq "e") 
+	  || (&IsReal($ARGV[$a+1]))) {
+	$x_log_base = $ARGV[$a+1];
+	&RSAT::error::FatalError("Log base should be strictly higher than 1.") 
+	  unless (($x_log_base > 1) || ($x_log_base eq "e"));
+      }
+    } elsif ($ARGV[$a] eq "-ylog") {
+      $ylog= 1;
+      if (($ARGV[$a+1] eq "e") 
+	  || (&IsReal($ARGV[$a+1]))) {
+	$y_log_base = $ARGV[$a+1];
+	&RSAT::error::FatalError("Log base should be strictly higher than 1.") 
+	  unless (($y_log_base > 1) || ($y_log_base eq "e"));
+      }
 
-	    ### join points of a specific column by lines ###
-	} elsif (($ARGV[$a] eq "-line") && (&IsNatural($ARGV[$a+1]))) {
-	    $lines[$ARGV[$a+1]-1] = 1;
+      ### histogram ###
+    } elsif ($ARGV[$a] eq "-histo") {
+      $histogram = 1;
 
-	    ### first input line contains Y data legends ###
-	} elsif ($ARGV[$a] eq "-header") {
-	    $header = 1;
+      ### filled histogram ###
+    } elsif ($ARGV[$a] eq "-fhisto") {
+      $filled_histogram = 1;
 
-	} elsif ($ARGV[$a] eq "-legend") {
-	    $legend = 1;
+      ### join points by lines ###
+    } elsif ($ARGV[$a] eq "-lines") {
+      $lines = 1;
 
-	    ### point size ###
-	} elsif (($ARGV[$a] eq "-pointsize") && ($ARGV[$a+1] =~ /^\d+$/)){
-	    $point_size = $ARGV[$a+1];
+      ### join points of a specific column by lines ###
+    } elsif (($ARGV[$a] eq "-line") && (&IsNatural($ARGV[$a+1]))) {
+      $lines[$ARGV[$a+1]-1] = 1;
 
-	    ### data columns ###  
-	} elsif ($ARGV[$a] eq "-xcol") {
-	    $x_col = $ARGV[$a+1] -1; #indexes begin at 0
+      ### first input line contains Y data legends ###
+    } elsif ($ARGV[$a] eq "-header") {
+      $header = 1;
 
-	} elsif ($ARGV[$a] eq "-ycol") {
-	    $y_col_string = $ARGV[$a+1];
-	    ### single column
-	    if (&IsNatural($ARGV[$a+1])) {
-		@y_col_list = ();
-		push @y_col_list, $ARGV[$a+1]-1;
+    } elsif ($ARGV[$a] eq "-legend") {
+      $legend = 1;
 
-		### range of column
-	    } elsif (($ARGV[$a+1] =~ /(.*)\-(.*)/) &&
-		     (&IsNatural($1)) &&
-		     (&IsNatural($2)) && 
-		     ($2 >= $1)) {
-		@y_col_list = ();
-		for $col ($1-1..$2-1) {
-		    push  @y_col_list, $col;
-		}
+      ### point size ###
+    } elsif (($ARGV[$a] eq "-pointsize") && ($ARGV[$a+1] =~ /^\d+$/)) {
+      $point_size = $ARGV[$a+1];
 
-		### comma-separated list of columns
-	    } elsif ($ARGV[$a+1] =~ /\,/) {
-		@y_col_list = split(/,/,$y_col_string);
-		foreach $col (0..$#y_col_list) {
-		    if ($y_col_list[$col] =~ /\d+/) {
-			$y_col_list[$col]--; #indexes begin at 0
-		    } else {
-			print "	Invalid Y column specification.\n";
-			print "	Type XYgraph -h for help.\n";
-			exit;
-		    }
-		}
+      ### data columns ###  
+    } elsif ($ARGV[$a] eq "-xcol") {
+      $x_col = $ARGV[$a+1] -1;	#indexes begin at 0
 
-	    } else {
-		print "	Invalid Y column specification.\n";
-		print "	Type XYgraph -h for help.\n";
-		exit;
-	    }
+    } elsif ($ARGV[$a] eq "-ycol") {
+      $y_col_string = $ARGV[$a+1];
+      ### single column
+      if (&IsNatural($ARGV[$a+1])) {
+	@y_col_list = ();
+	push @y_col_list, $ARGV[$a+1]-1;
 
-	    ### highlight box ###
-	} elsif (($ARGV[$a] eq "-hbox") && ($ARGV[$a+1] =~ /^(\d+),(\d+),(\d+),(\d+)$/)){
-	    $hbox_left = $1;
-	    $hbox_top = $2;
-	    $hbox_right = $3;
-	    $hbox_bottom = $4;
-
-	    ### threshold box ###
-	} elsif (($ARGV[$a] eq "-tbox") && ($ARGV[$a+1] =~ /^(\d+),(\d+),(\d+),(\d+)$/)){
-	    $tbox_low_x = $1;
-	    $tbox_high_x = $2;
-	    $tbox_low_y = $3;
-	    $tbox_high_y = $4;
-
-	    ### data fields ####
-	} elsif ($ARGV[$a] eq "-rows") {
-	    $data_fields = "rows";
-	} elsif ($ARGV[$a] eq "-columns")  {
-	    $data_fields = "columns";
-
-	    ### HTML map ###
-	} elsif ($ARGV[$a] eq "-htmap") {
-	    $HTML_map = 1;
-
-	    ### label column
-	} elsif (($ARGV[$a] eq "-lc") && (&IsNatural($ARGV[$a+1]))) {
-	    $label_col = $ARGV[$a+1];
-
-	} elsif ($ARGV[$a] eq "-gp") {
-	    $gp_supp_commands = $ARGV[$a+1];
-
+	### range of column
+      } elsif (($ARGV[$a+1] =~ /(.*)\-(.*)/) &&
+	       (&IsNatural($1)) &&
+	       (&IsNatural($2)) && 
+	       ($2 >= $1)) {
+	@y_col_list = ();
+	for $col ($1-1..$2-1) {
+	  push  @y_col_list, $col;
 	}
+
+	### comma-separated list of columns
+      } elsif ($ARGV[$a+1] =~ /\,/) {
+	@y_col_list = split(/,/,$y_col_string);
+	foreach $col (0..$#y_col_list) {
+	  if ($y_col_list[$col] =~ /\d+/) {
+	    $y_col_list[$col]--; #indexes begin at 0
+	  } else {
+	    print "	Invalid Y column specification.\n";
+	    print "	Type XYgraph -h for help.\n";
+	    exit;
+	  }
+	}
+
+      } else {
+	print "	Invalid Y column specification.\n";
+	print "	Type XYgraph -h for help.\n";
+	exit;
+      }
+
+      ### highlight box ###
+    } elsif (($ARGV[$a] eq "-hbox") && ($ARGV[$a+1] =~ /^(\d+),(\d+),(\d+),(\d+)$/)) {
+      $hbox_left = $1;
+      $hbox_top = $2;
+      $hbox_right = $3;
+      $hbox_bottom = $4;
+
+      ### threshold box ###
+    } elsif (($ARGV[$a] eq "-tbox") && ($ARGV[$a+1] =~ /^(\d+),(\d+),(\d+),(\d+)$/)) {
+      $tbox_low_x = $1;
+      $tbox_high_x = $2;
+      $tbox_low_y = $3;
+      $tbox_high_y = $4;
+
+      ### data fields ####
+    } elsif ($ARGV[$a] eq "-rows") {
+      $data_fields = "rows";
+    } elsif ($ARGV[$a] eq "-columns") {
+      $data_fields = "columns";
+
+      ### HTML map ###
+    } elsif ($ARGV[$a] eq "-htmap") {
+      $HTML_map = 1;
+
+      ### label column
+    } elsif (($ARGV[$a] eq "-lc") && (&IsNatural($ARGV[$a+1]))) {
+      $label_col = $ARGV[$a+1];
+
+    } elsif ($ARGV[$a] eq "-gp") {
+      $gp_supp_commands = $ARGV[$a+1];
+
     }
+  }
+}
+
 
 ################################################################
 ## Define a color palette for gnuplot (used to generate pdf and ps files)
 sub GnuplotPalette {
-    ### black and white
-    $white = "white";
-    $black = "black";
+  ### black and white
+  $white = "white";
+  $black = "black";
 
-    ### gray series
-    $gray_032 = "gray10";
-    $gray_064 = "gray30";
-    $gray_096 = "gray40";
-    $gray_125 = "gray50";
-    $gray_150 = "gray60";
-    $gray_175 = "gray70";
-    $gray_200 = "gray80";
-    $gray_225 = "gray90";
+  ### gray series
+  $gray_032 = "gray10";
+  $gray_064 = "gray30";
+  $gray_096 = "gray40";
+  $gray_125 = "gray50";
+  $gray_150 = "gray60";
+  $gray_175 = "gray70";
+  $gray_200 = "gray80";
+  $gray_225 = "gray90";
 
-    ### yellow series
-    $yellow = "yellow";
-    $yellow_225 = "dark-yellow ";
-    $yellow_200 = "dark-yellow ";
-    $yellow_128 = "dark-yellow ";
-    $yellow_light = "light-yellow";
-    $yellow_pale = "light-yellow";
-    $yellow_pale_064 = "light-yellow";
-    $yellow_pale_096 = "light-yellow";
-    $yellow_pale_128 = "light-yellow";
-
-
-    ### green series
-    $green = "green";
-    $green_200 = "light-green";
-    $green_175 = "dark-green";
-    $green_128 = "spring-green";
-    $green_096 = "forest-green";
-    $green_064 = "sea-green";
-
-    ### cyan series
-    $cyan = "cyan";
-    $cyan_200 = "skyblue";
-    $cyan_128 = "dark-cyan";
-    $cyan_096 = "cyan";
-    $cyan_pale_064 = "light-cyan";
-    $cyan_pale_096 = "light-cyan";
-    $cyan_pale_128 = "light-cyan";
-
-    ### blue series
-    $blue = "blue";
-    $blue_064 = "light-blue";
-    $blue_096 = "dark-blue";
-    $blue_128 = "midnight-blue";
-    $blue_175 = "navy";
-    $blue_191 = "medium-blue";
-    $blue_200 = "royalblue";
-
-    ### magenta
-    $magenta = "magenta";
-    $magenta_191 = "dark-magenta";
-    $magenta_pale_064 = "light-magenta";
-    $magenta_pale_096 = "light-magenta";
-    $magenta_pale_128 = "light-magenta";
+  ### yellow series
+  $yellow = "yellow";
+  $yellow_225 = "dark-yellow ";
+  $yellow_200 = "dark-yellow ";
+  $yellow_128 = "dark-yellow ";
+  $yellow_light = "light-yellow";
+  $yellow_pale = "light-yellow";
+  $yellow_pale_064 = "light-yellow";
+  $yellow_pale_096 = "light-yellow";
+  $yellow_pale_128 = "light-yellow";
 
 
-    ### red series
-    $red = "red";
-    $red_191 = "dark-red";
-    $red_128 = "dark-red";
-    $red_096 = "light-red";
-    $red_064 = "light-red";
+  ### green series
+  $green = "green";
+  $green_200 = "light-green";
+  $green_175 = "dark-green";
+  $green_128 = "spring-green";
+  $green_096 = "forest-green";
+  $green_064 = "sea-green";
 
-    ### miscellaneous
-    $pink = "pink";
-    $orange = "orange";
-    $violet = "violet";
-    $brown = "brown";
-    $pistache = "dark-khaki";
-    $violet_pale = "plum";
-    $pink_pale = "light-pink";
-    $champagne = "salmon";
-    $pistache_pale = "khaki";
-}
+  ### cyan series
+  $cyan = "cyan";
+  $cyan_200 = "skyblue";
+  $cyan_128 = "dark-cyan";
+  $cyan_096 = "cyan";
+  $cyan_pale_064 = "light-cyan";
+  $cyan_pale_096 = "light-cyan";
+  $cyan_pale_128 = "light-cyan";
+
+  ### blue series
+  $blue = "blue";
+  $blue_064 = "light-blue";
+  $blue_096 = "dark-blue";
+  $blue_128 = "midnight-blue";
+  $blue_175 = "navy";
+  $blue_191 = "medium-blue";
+  $blue_200 = "royalblue";
+
+  ### magenta
+  $magenta = "magenta";
+  $magenta_191 = "dark-magenta";
+  $magenta_pale_064 = "light-magenta";
+  $magenta_pale_096 = "light-magenta";
+  $magenta_pale_128 = "light-magenta";
+
+
+  ### red series
+  $red = "red";
+  $red_191 = "dark-red";
+  $red_128 = "dark-red";
+  $red_096 = "light-red";
+  $red_064 = "light-red";
+
+  ### miscellaneous
+  $pink = "pink";
+  $orange = "orange";
+  $violet = "violet";
+  $brown = "brown";
+  $pistache = "dark-khaki";
+  $violet_pale = "plum";
+  $pink_pale = "light-pink";
+  $champagne = "salmon";
+  $pistache_pale = "khaki";
 }
