@@ -21,10 +21,10 @@ img {
 /* CONTENT   */
 #content {
 	width: 160px;
-	#background: #FAF5D1;
-	padding-top: 5px;
+	/*background: #FAF5D1;*/
+	padding-top: 10px;
 	border-top: none;
-	z-index: 2;
+	/*z-index: 2;*/
 }
 
 #content.rsat {
@@ -43,7 +43,7 @@ img {
 
 /* CONTENT TEXT   */
 #content h4 { 
-	paddind-left: 5px;
+	padding-left: 5px;
 	margin-top: -5px;
 	font-size: 9px;
 	text-align: center;
@@ -60,7 +60,7 @@ img {
 }
 
 #content h3 { 
-	padding-left: 5px; #
+	padding-left: 5px;
 	padding-right: 5px;
 	font-size: 11px;
 	text-align: center;
@@ -146,7 +146,7 @@ img {
 
 .menu_heading_closed {
 	background: #2D282E url(images/arrow.gif) no-repeat 5px 7px;
-	text-decoration: none; #
+	text-decoration: none; 
 	display: block;
 	padding: 4px 5px 4px 20px;
 	margin: 0;
@@ -163,7 +163,7 @@ img {
 .menu_item {
 	display: block;
 	background: #0D73A7 url(images/bullet2-normal.gif) no-repeat 7px 7px;
-	text-decoration: none; #
+	text-decoration: none; 
 	padding: 4px 5px 4px 30px;
 	padding: 4px 5px 4px 20px;
 	border-bottom:1px dashed #444;
@@ -184,21 +184,21 @@ img {
 	text-indent: 30px
 }
 
- ul {
+ul {
 	width: 162px;
 	color: #000000;
 	background-color: #ffffff;
 	border-bottom: 1px solid #000000;
-	z-index: 1;
+	/*z-index: 1;*/
 	padding-left: 0px;
 	padding-top: 10px;
 	margin-bottom: 0px;
+	margin-left:0px;
 	font-size: 12px;
-	text-align:left;
 	list-style-type: none;
 }
 
- li {
+li {
 	display: inline;
 	overflow: hidden;
 	font-size: 13px;
@@ -212,11 +212,13 @@ img {
 	margin: 0;
 	font-weight: bold;
 	text-decoration: none;
+	position: relative;
 }
 
 #tabmenu a.rsat , tabmenu a.rsat:visited {
 	background: #ffffff;
-	#border-bottom: 2px solid #ffffff;
+	border-bottom: 1px solid #ffffff;
+	border-left: 1px solid #000000;
 	color: #2D282E;
 	text-decoration: none;
 }
