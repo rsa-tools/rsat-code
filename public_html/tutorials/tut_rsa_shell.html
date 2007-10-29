@@ -2,17 +2,18 @@
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
    <TITLE>RSA-Tools - tutorials - analyzing regulatory sequences in a unix shell</TITLE>
-</HEAD>
-<BODY TEXT="#000000" BGCOLOR="#FFFFFF" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+<link rel="stylesheet" type="text/css" href = "../main.css" media="screen">
+</head>
+<body class="info">
 <blockquote>
 
-<HR SIZE=6 WIDTH="100%">
+
 <H1 align=center><A HREF="../RSAT_home.cgi">RSA-Tools</A> - 
 <a href="tutorials.html">Tutorials</a> -
 analyzing regulatory sequences in a unix shell
 </H1>
 
-<HR SIZE=6 WIDTH="100%">
+
 
 
 
@@ -60,7 +61,7 @@ analyzing regulatory sequences in a unix shell
 </ul>
 
 </ul>
-<a name=introduction>
+<a name=introduction></a>
 <h2>Introduction</h2>
 <ul>
 
@@ -101,7 +102,7 @@ by Jacques van Helden.
 
 
 </ul>
-<a name=accessing>
+<a name=accessing></a>
 <h2>Accessing the programs</h2>
 <ul>
 
@@ -147,7 +148,7 @@ If you don't know how to modify this file, see the system
 adiministrator.
 
 </UL>
-<a name=getting_help>
+<a name=getting_help></a>
 <h2>Getting help</H2> 
 <UL>
 
@@ -173,7 +174,7 @@ which is convenient to remind the precise formulation of arguments for
 a given progam.
 
 </ul>
-<a name=retrieve_seq>
+<a name=retrieve_seq></a>
 <h2>Retrieving sequences</h2>
 <ul>
 
@@ -315,7 +316,7 @@ retrieve-seq -type upstream -org ecoli -from -2 -to 0 \
 returns all the stop codong for <I>E.coli</I>.
 
 </ul>
-<a name=pattern_discovery>
+<a name=pattern_discovery></a>
 <h2>Pattern discovery</h2>
 <UL>
 
@@ -376,7 +377,7 @@ ecoli_start_codons.wc
 ecoli_stop_codons.wc
 </pre></ul>
 
-<a name=oligo_analysis>
+<a name=oligo_analysis></a>
 <h3>oligo-analysis</h3>
 
 The program <tt>oligo-analysis</tt> is the simplest pattern discovery
@@ -639,18 +640,18 @@ patterns, and higher orders don't return any single significant word.
 
 </ul>
 
-<a name=dyad_analysis>
+<a name=dyad_analysis></a>
 <h3>dyad-analysis</h3>
 
 
 
-<a name=gibbs>
+<a name=gibbs></a>
 <h3>gibbs motif sampler (program developed by Andrew Neuwald)</h3>
 
 
 
 
-<a name=consensus>
+<a name=consensus></a>
 <h3>consensus (program developed by Jerry Hertz)</h3>
 
 An alternative approach for matrix-based pattern discovery is
@@ -731,7 +732,7 @@ more PHO_consensus
 
 
 </ul>
-<a name=pattern_matching>
+<a name=pattern_matching></a>
 <h2>Pattern matching</h2>
 <UL>
 
@@ -743,7 +744,7 @@ i.e. you locate all occurrences of this pattern in the sequences.
 Patterns can be represented as strings (with <i>dna-pattern</i>) or
 position-weight matrices (with <i>patser</i>). 
 
-<a name=dna_pattern>
+<a name=dna_pattern></a>
 <h3>dna-pattern</h3>
 
 <P>
@@ -1059,7 +1060,7 @@ dna-pattern -i PHO_up800.fasta -format fasta -2str \
 
 
 
-<a name=patser>
+<a name=patser></a>
 <h3>patser (program developed by by Jerry Hertz)</h3>
 
 We will now see how to match a profile matrix against a sequence
@@ -1125,26 +1126,26 @@ retrieve-seq -type upstream -from -1 -to -800  -org yeast \
 </pre></ul>
 
 </ul>
-<a name=drawing_graphs>
+<a name=drawing_graphs></a>
 <h2>Drawing graphs</h2>
 <UL>
 
-<a name=accessing_graphs>
+<a name=accessing_graphs></a>
 <h3>Accessing graphs in your account from the web</h3>
 
-<a name=feature_map>
+<a name=feature_map></a>
 <h3>feature-map</h3>
 
-<a name=xygraph>
+<a name=xygraph></a>
 <h3>XYgraph</h3>
 
 
 </ul>
-<a name=utilities>
+<a name=utilities></a>
 <h2>Utilities</h2>
 <UL>
 
-<a name=orf_info>
+<a name=orf_info></a>
 <h3>orf-info</h3>
 
 <b>orf-info</b> allows you to get information on ORFs, given a series of
@@ -1178,11 +1179,11 @@ orf-info -org ecoli -q 'met.*' -q 'thr.*' -q 'lys.*'
 
 
 </ul>
-<a name=advanced>
+<a name=advanced></a>
 <h2>Advanced use of RSA-Tools</h2>
 <UL>
 
-<a name=install_organism>
+<a name=install_organism></a>
 <h3>Installing additional organisms</h3>
 
 In this chapter, we explain how to add support for an organism on your
@@ -1277,7 +1278,7 @@ retrieve-seq -org myorganism -all -from 0 -to 2 -format multi  | oligo-analysis 
 
 
 </ul>
-<a name=references>
+<a name=references></a>
 <h2>References</h2>
 <UL>
 
