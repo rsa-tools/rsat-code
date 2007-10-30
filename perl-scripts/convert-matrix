@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.49 2007/10/23 14:41:29 morgane Exp $
+# $Id: convert-matrix,v 1.50 2007/10/30 17:58:08 morgane Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -29,6 +29,7 @@ $equi_pseudo = 0;
 $max_profile = 24;
 $sep="\t";
 $null = "NA";
+$perm = 0;
 
 local %infile = ();
 local %outfile = ();
@@ -231,7 +232,7 @@ foreach my $matrix (@matrices) {
     }
 
     &RSAT::message::Info("Exporting matrix", $m."/".scalar(@matrices))
-	if ($main::verbose >= 3);
+	if ($main::verbose >= 3);	
 
     if ($m > 1) {
       print $out $RSAT::matrix::matrix_separator{$output_format}, "\n";
@@ -422,6 +423,11 @@ OPTIONS
 		number of decimals. We recommend to restrict the
 		precision to 2 decimals for the weight, this is
 		generally more than sufficient.
+	
+	-perm #
+		Number of permuted matrices to return. Matrix columns are permuted
+		so that the total information content remains identical to the original
+		matrix. Note that the output format for permuted matrix is tab.
 
 	-max_profile
 		Maximal width of the profile histogram (units = number
@@ -680,6 +686,7 @@ convert-matrix options
 -equi_pseudo	equiprobable distribution of pseudo-weights between residues
 -base		base for the logarithms used to compute the weight and info content
 -decimals	number of decimals digits to print for real matrices
+-perm		number of permuted matrices to return.
 -max_profile	Maximal width of the profile histogram 
 End_short_help
   close HELP;
@@ -811,6 +818,13 @@ sub ReadArguments {
       unless (&IsNatural($decimals)) {
 	  &RSAT::error::FatalError("Invalid decimals $decimals. Must be a natural value");
       }
+    
+     ### decimals
+    } elsif ($ARGV[$a] eq "-perm") {
+      $perm = $ARGV[$a+1];
+      unless (&IsNatural($perm)) {
+	  &RSAT::error::FatalError("Invalid permutation number $perm. Must be a natural value");
+      }
 
       ### max_profile
     } elsif ($ARGV[$a] eq "-max_profile") {
@@ -853,14 +867,55 @@ sub ExportMatrix {
   if ($infile{prior}) {
     $matrix->setPrior(%prior);
   }
+  
+  
+   ## Return parameters
+  if ($perm) {
+    	my $m = 0;
+    	my $tab_matrix;
 
-  ## Print the profile matrix
-  if ($return_fields{profile}) {
-    print $out $matrix->toString(sep=>"\t",
-					 type=>"profile",
-					 format=>$output_format,
+    	&RSAT::message::Info("permutating matrix")
+		if ($main::verbose >= 3);	
+
+		## Calculate count matrix
+		if ($return_fields{counts}) {
+			$tab_matrix = $matrix->toString(sep=>"\t",
+					 type=>"counts",
+					 format=>"tab",
+					 pipe=>"" ## We suppress the pipe for permute-table
 					);
-  }
+		## Calculate frequency matrix
+		} elsif ($return_fields{frequencies}) {
+    		$matrix->calcFrequencies();
+    		$tab_matrix = $matrix->toString(col_width=>($decimals+4), 
+					 decimals=>$decimals, 
+					 type=>"frequencies",
+					 format=>'tab',
+					 pipe=>"" ## We suppress the pipe for permute-table
+					 );
+		} elsif ($return_fields{weights}) {
+    		$matrix->calcWeights();
+    		$tab_matrix = $matrix->toString(col_width=>($decimals+4), 
+					 decimals=>$decimals, 
+					 type=>"weights",
+					 format=>'tab',
+					 pipe=>"" ## We suppress the pipe for permute-table
+					 );
+  		} else {
+  			&RSAT::error::FatalError("Specify the type of matrix to permute with -return option. Specify counts, frequencies or weights");
+  		}
+
+    	## export matrix in tab format, then permute
+  		for my $i (1..$perm) {
+
+			if ($i > 1) {
+      			print $out $RSAT::matrix::matrix_separator{$output_format}, "\n";
+    		}
+    		print $out "; permutation $i/$perm\n" if ($verbose >=1);
+    		print $out `echo '$tab_matrix'| perl -ple 's/ /\t/g if !/^;/' | perl -ple 's/\t+/\t/g if !/^;/' | permute-table -rownames -entire_col`;
+  			}
+  		print $out "; original matrix\n" if ($verbose >=1);
+  } else {
 
 
   ## Print the counts matrix
@@ -887,6 +942,16 @@ sub ExportMatrix {
 					 decimals=>$decimals, 
 					 type=>"weights",
 					 format=>$output_format);
+  }
+  
+  }
+  
+  ## Print the profile matrix
+  if ($return_fields{profile}) {
+    print $out $matrix->toString(sep=>"\t",
+					 type=>"profile",
+					 format=>$output_format,
+					);
   }
 
   ## Calculate information content matrix
@@ -923,6 +988,9 @@ sub ExportMatrix {
     $matrix->calcConsensus();
     print $out $matrix->toString(type=>"parameters");
   }
+  
+  
+ 
 
   ## Return weight distribution
   if ($return_fields{wdistrib}) {
