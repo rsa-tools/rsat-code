@@ -138,6 +138,18 @@ compare_dyads:
 
 ################################################################
 ## Compare score distributions of MotifSampler
+
+## Check MotifSampler files
+MS_SUFFIX=-s1-p0.2-M0-n5-w16-x1-r1.sites
+#MS_SUFFIX=-s1-p0.2-M0-n5-w16-x1-r5.sites
+check_MotifSampler:
+	wc -l ${MULTI_DIR}/*/MotifSampler_*/*${MS_SUFFIX} | sort -nr  > MotifSampler_files.txt
+	wc -l ${MULTI_DIR}/*/MotifSampler_*/*${MS_SUFFIX} | sort -nr | awk '$$1==1' > MotifSampler_problems.txt
+	@echo "MotifSampler	regulons	`wc -l MotifSampler_files.txt | awk '{print $$1}'` output files	`wc -l MotifSampler_problems.txt | awk '{print $$1}'` problems	MotifSampler_problems.txt"
+	wc -l ${RAND_MULTI_DIR}/*/MotifSampler_*/*_cds_noorf${MS_SUFFIX} | sort -nr > rand_MotifSampler_files.txt
+	wc -l ${RAND_MULTI_DIR}/*/MotifSampler_*/*_cds_noorf${MS_SUFFIX} | sort -nr | awk '$$1==1' > rand_MotifSampler_problems.txt
+	@echo "MotifSampler	random sets	`wc -l rand_MotifSampler_files.txt | awk '{print $$1}'` output files	`wc -l rand_MotifSampler_problems.txt | awk '{print $$1}'` problems	rand_MotifSampler_problems.txt"
+
 _compare_MS_one_score:
 	${MAKE} _compare_distrib SQL_FILE=matrix \
 		RESTRICT_COL=4 PATTERN_TYPE=MotifSampler 
@@ -171,6 +183,28 @@ compare_MS: compare_MS_IC compare_MS_LL compare_MS_CS compare_MS_info compare_MS
 
 ################################################################
 ## Compare score distributions of MEME
+
+## Check meme output files
+MEME_SUFFIX=-2str_text_dna_modanr_minw6_maxw25_nmotifs5_evt1
+check_meme:
+	@wc ${MULTI_DIR}/*/meme*/*${MEME_SUFFIX} | sort -nr  >meme_files.txt
+	@wc ${MULTI_DIR}/*/meme*/*${MEME_SUFFIX} | sort -nr | awk '$$1==0 {print $$4}' >meme_problems.txt
+	@echo "MEME	regulons	`wc -l meme_files.txt | awk '{print $$1}'` output files	`wc -l meme_problems.txt | awk '{print $$1}'` problems	meme_problems.txt"
+	@grep 'E-value' ${MULTI_DIR}/*/meme*/*${MEME_SUFFIX}  >meme_Evalues.txt
+	@echo meme_Evalues.txt
+	@grep 'Stopped because motif E-value' meme_Evalues.txt > meme_Evalue_above_threshold.txt
+	@echo meme_Evalue_above_threshold.txt
+	@wc ${RAND_MULTI_DIR}/*/meme*/*${MEME_SUFFIX} | sort -nr > rand_meme_files.txt
+	@wc ${RAND_MULTI_DIR}/*/meme*/*${MEME_SUFFIX} | sort -nr | awk '$$1==0 {print $$4}' > rand_meme_problems.txt
+	@echo "MEME	random sets	`wc -l rand_meme_files.txt | awk '{print $$1}'` output files	`wc -l rand_meme_problems.txt | awk '{print $$1}'` problems	rand_meme_problems.txt"
+	@grep 'E-value' ${RAND_MULTI_DIR}/*/meme*/*${MEME_SUFFIX}  > rand_meme_Evalues.txt
+	@echo rand_meme_Evalues.txt
+	@grep 'Stopped because motif E-value' meme_Evalues.txt > rand_meme_Evalue_above_threshold.txt
+	@echo rand_meme_Evalue_above_threshold.txt
+	grep  '^; MATRIX 1/' ${MULTI_DIR}/*/meme*/*${MEME_SUFFIX}.tab | wc -l > meme_at_least_one_matrix.txt
+	grep  '^; MATRIX 1/' ${RAND_MULTI_DIR}/*/meme*/*${MEME_SUFFIX}.tab | wc -l > rand_meme_at_least_one_matrix.txt
+
+
 _compare_meme_one_score:
 	${MAKE} _compare_distrib SQL_FILE=matrix \
 		RESTRICT_COL=4 PATTERN_TYPE=meme
@@ -205,6 +239,17 @@ compare_meme: compare_meme_Evalue compare_meme_llr compare_meme_info compare_mem
 
 ################################################################
 ## Compare score distributions of consensus
+
+## Check consensus files
+CONSENSUS_SUFFIX=-c2-L16*
+check_consensus:
+	wc -l ${MULTI_DIR}/*/consensus_*/*${CONSENSUS_SUFFIX} | grep -v '.tab' | sort -nr  > consensus_files.txt
+	wc -l ${MULTI_DIR}/*/consensus_*/*${CONSENSUS_SUFFIX} | grep -v '.tab' | sort -nr | awk '$$1==0' > consensus_problems.txt
+	@echo "consensus	regulons	`wc -l consensus_files.txt | awk '{print $$1}'` output files	`wc -l consensus_problems.txt | awk '{print $$1}'` problems	consensus_problems.txt"
+	wc -l ${RAND_MULTI_DIR}/*/consensus_*/*${CONSENSUS_SUFFIX} | grep -v '.tab' | sort -nr > rand_consensus_files.txt
+	wc -l ${RAND_MULTI_DIR}/*/consensus_*/*${CONSENSUS_SUFFIX} | grep -v '.tab' | sort -nr | awk '$$1==0' > rand_consensus_problems.txt
+	@echo "consensus	random sets	`wc -l rand_consensus_files.txt | awk '{print $$1}'` output files	`wc -l rand_consensus_problems.txt | awk '{print $$1}'` problems	rand_consensus_problems.txt"
+
 _compare_consensus_one_score:
 	${MAKE} _compare_distrib SQL_FILE=matrix \
 		RESTRICT_COL=4 PATTERN_TYPE=consensus
