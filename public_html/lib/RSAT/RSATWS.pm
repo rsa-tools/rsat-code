@@ -993,6 +993,8 @@ sub feature_map {
     my ($TMP_OUT, $tmp_outfile) = tempfile(feature_map.XXXXXXXXXX, SUFFIX => $suffix, DIR => $TMP);
     print $TMP_OUT $result;
     close $TMP_OUT;
+    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.scmbb\.ulb\.ac\.be\/rsat/g;
+#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$WWW_RSA/g;
     if ($output_choice eq 'server') {
 	return SOAP::Data->name('response' => {'command' => $command, 
 					       'server' => $tmp_outfile});
