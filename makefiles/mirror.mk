@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.41 2007/10/30 08:40:03 jvanheld Exp $
+# $Id: mirror.mk,v 1.42 2007/10/30 10:35:53 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -115,9 +115,9 @@ EXCLUDED_GENOMES=					\
 		--exclude Apis_mellifera		\
 		--exclude *_EnsEMBL*
 
-EXCLUDED_BLAST= \
-		--exclude 'blastdb'		\
-		--exclude 'blast_hits'		
+#EXCLUDED_BLAST= \
+#		--exclude 'blastdb'		\
+#		--exclude 'blast_hits'		
 
 EXCLUDED_FILES=					\
 		--exclude '*.wc'		\
