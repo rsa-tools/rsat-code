@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.40 2007/07/30 10:51:14 jvanheld Exp $
+# $Id: mirror.mk,v 1.41 2007/10/30 08:40:03 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -96,6 +96,7 @@ pub_from_server:
 		${RSA_SERVER_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html ${RSA}/
 
 EXCLUDED_GENOMES=					\
+		--exclude phages 			\
 		--exclude Bos_*				\
 		--exclude Danio_rerio*			\
 		--exclude Mus_musculus*			\
@@ -110,6 +111,8 @@ EXCLUDED_GENOMES=					\
 		--exclude Caenorhabditis_elegans*	\
 		--exclude Tetraodon_nigroviridis*	\
 		--exclude Oryzias_latipes*		\
+		--exclude Arabidopsis_thaliana		\
+		--exclude Apis_mellifera		\
 		--exclude *_EnsEMBL*
 
 EXCLUDED_BLAST= \
