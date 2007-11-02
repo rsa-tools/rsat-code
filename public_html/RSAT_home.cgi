@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.20 2007/11/02 15:09:19 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.21 2007/11/02 15:10:44 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -98,11 +98,11 @@ print <<EndText;
     programs specifically designed for the detection of regulatory
     signals in non-coding sequences.
 
-    <P>
-      <font color='red'>New !</font> The <b>RSAT lookup</b> has been
-      designed by <a target=_blank
+    <P> <font color='red'>New !</font> The <b>RSAT lookup</b> has been
+      reshaped by <a target=_blank
       href=http://www.scmbb.ulb.ac.be/Users/morgane/>Morgane
-      Thomas-Chollier</a> and <a target=_blank href=http://www.scmbb.ulb.ac.be/Users/sylvain/>Sylvain
+      Thomas-Chollier</a> and <a target=_blank
+      href=http://www.scmbb.ulb.ac.be/Users/sylvain/>Sylvain
       Broh&eacute;e</a>.
 
     </p>
