@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.19 2007/10/26 12:00:06 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.20 2007/11/02 15:09:19 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -97,6 +97,15 @@ print <<EndText;
     (<B>RSAT</B>). This web site provides a series of modular computer
     programs specifically designed for the detection of regulatory
     signals in non-coding sequences.
+
+    <P>
+      <font color='red'>New !</font> The <b>RSAT lookup</b> has been
+      designed by <a target=_blank
+      href=http://www.scmbb.ulb.ac.be/Users/morgane/>Morgane
+      Thomas-Chollier</a> and <a target=_blank href=http://www.scmbb.ulb.ac.be/Users/sylvain/>Sylvain
+      Broh&eacute;e</a>.
+
+    </p>
 
     <P>
       <font color='red'>New !</font> For bioinformaticians, RSAT tools
@@ -198,7 +207,6 @@ print <<EndText;
 EndText
 
 @orgs =  &ListSupportedOrganisms("keys");
-
 print "<H4 align ='center'>", scalar(@orgs) ," organisms supported on <A HREF='$WWW_RSA' target=_top>",$WWW_RSA,"</A></H4>\n";
 # print &ListSupportedOrganisms("html_list");
 
