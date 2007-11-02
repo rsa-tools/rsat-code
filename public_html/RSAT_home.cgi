@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.21 2007/11/02 15:10:44 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.22 2007/11/02 15:14:36 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -144,15 +144,12 @@ print <<EndText;
 </tr>
 <tr align=center valign=bottom>
 
-  <td colspan=3>
+  <td>
   <A HREF="http://rsat.scmbb.ulb.ac.be/rsat/" target="_top">
   <B>Brussels - Belgium</B><BR>
   <IMG SRC="images/manneken_pis.jpg" HEIGHT=80 BORDER=0><BR>
   http://rsat.scmbb.ulb.ac.be/rsat/</A>
   </TD>
-
-</tr>
-<tr>
 
   <TD ALIGN=CENTER>
   <A HREF="http://embnet.ccg.unam.mx/rsa-tools/" target="_top">
@@ -168,22 +165,15 @@ print <<EndText;
   http://liv.bmc.uu.se/rsa-tools/</A>
   </TD>
 
+</tr>
+<tr>
+
   <td align=center>
   <A HREF="http://crfb.univ-mrs.fr/rsaTools/" target="_top">
   <B>Marseille - France</B><BR>
   <IMG SRC="images/calanques.jpg" HEIGHT=80 BORDER=0><BR>
   http://crfb.univ-mrs.fr/rsaTools/</a>
 <br><font size=-2>(photo by <a target=_blank href=http://www.lim.univ-mrs.fr/~guenoche/Walk1.html>Alain Gu&eacute;noche</a>)</font>
-  </TD>
-
-</tr><tr>
-
-
-  <TD ALIGN=CENTER>
-  <A HREF="http://www.flychip.org.uk/rsa-tools/" target="_top">
-  <B>Cambridge - UK</B><BR>
-  <IMG SRC="images/cambridge.jpg" HEIGHT=80 BORDER=0><BR>
-  http://www.flychip.org.uk/rsa-tools/</A>
   </TD>
 
   <td align=center>
@@ -200,6 +190,17 @@ print <<EndText;
   http://www.bi.up.ac.za/rsa-tools/</a>
   </td>
 
+
+<!--
+</tr><tr>
+
+  <TD ALIGN=CENTER>
+  <A HREF="http://www.flychip.org.uk/rsa-tools/" target="_top">
+  <B>Cambridge - UK</B><BR>
+  <IMG SRC="images/cambridge.jpg" HEIGHT=80 BORDER=0><BR>
+  http://www.flychip.org.uk/rsa-tools/</A>
+  </TD>
+-->
 
     </tr>
     </TABLE>
