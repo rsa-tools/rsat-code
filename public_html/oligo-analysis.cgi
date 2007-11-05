@@ -35,7 +35,7 @@ $query = new CGI;
 &ListParameters() if ($ECHO >=2);
 
 #### update log file ####
-&UpdateLogFile;
+&UpdateLogFile();
 
 #### read parameters ####
 $parameters = "";
