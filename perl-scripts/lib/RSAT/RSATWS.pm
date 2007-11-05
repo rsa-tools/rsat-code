@@ -1941,6 +1941,111 @@ sub convert_graph_cmd {
   }
   return $command;
 }
+sub display_graph {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $tmp_outfile = `mktemp $TMP/display_graph.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+#     print TMP_OUT $result;
+#     print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    my $command = $self->display_graph_cmd(%args);
+    $command .= " -o $tmp_outfile";
+    system $command;
+    my $result = `cat $tmp_outfile`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+
+
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+sub display_graph_cmd {
+  my ($self, %args) =@_;
+  
+  my $command = "$SCRIPTS/display-graph";
+  
+  if ($args{informat}) {
+   my $in_format = $args{informat};
+   $in_format =~ s/\'//g;
+   $in_format =~ s/\'//g;
+   $command .= " -in_format $in_format";
+  }
+  if ($args{layout}) {
+   $command .= " -layout";
+  }
+  if ($args{outformat}) {
+   my $out_format = $args{outformat};
+   $out_format =~ s/\'//g;
+   $out_format =~ s/\'//g;
+   $command .= " -out_format $out_format";
+  }
+  if ($args{wcol}) {
+   my $wcol = $args{wcol};
+   $wcol =~ s/\'//g;
+   $wcol =~ s/\'//g;
+   $command .= " -wcol $wcol";
+  }
+  if ($args{scol}) {
+   my $scol = $args{scol};
+   $scol =~ s/\'//g;
+   $scol =~ s/\'//g;
+   $command .= " -scol $scol";
+  }
+  if ($args{tcol}) {
+   my $tcol = $args{tcol};
+   $tcol =~ s/\'//g;
+   $tcol =~ s/\'//g;
+   $command .= " -tcol $tcol";
+  }
+  if ($args{eccol}) {
+   my $eccol = $args{eccol};
+   $eccol =~ s/\'//g;
+   $eccol =~ s/\'//g;
+   $command .= " -eccol $eccol";
+  }
+  if ($args{tccol}) {
+   my $tccol = $args{tccol};
+   $tccol =~ s/\'//g;
+   $tccol =~ s/\'//g;
+   $command .= " -tccol $tccol";
+  }
+  if ($args{sccol}) {
+   my $sccol = $args{sccol};
+   $sccol =~ s/\'//g;
+   $sccol =~ s/\'//g;
+   $command .= " -sccol $sccol";
+  }
+  if ($args{inputgraph}) {
+   my $input_graph = $args{inputgraph};
+   chomp $input_graph;
+   my $tmp_input = `mktemp $TMP/display-graph-input.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
+   print TMP_IN $input_graph;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  return $command;
+}
 
 sub graph_get_clusters {
     my ($self, $args_ref) = @_;

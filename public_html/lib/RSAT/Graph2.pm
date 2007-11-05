@@ -1284,7 +1284,9 @@ sub read_from_table {
 
       ## Filter on node names (for induced graphs and graph-get-clusters)
       my $source_id = $linecp[$source_col-1];
+      chomp $source_id;
       my $target_id = $linecp[$target_col-1];
+      chomp $target_id;
       if ($self->{seed_nodes}) {
 	next unless $self->{seed_index}->{$source_id};
 	next unless $self->{seed_index}->{$target_id};
