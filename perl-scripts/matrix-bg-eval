@@ -159,11 +159,13 @@ package main;
   our @seq_pos_sets = ('matrix_sites');
   our %seq_neg_sets = ();
   
-  our @tmp_neg_sets = split(',',$negative_sets);
-  foreach my $neg_set (@tmp_neg_sets){
-  	my @tmp = split("=", $neg_set);
-  	$seq_neg_sets{$tmp[0]} = $tmp[1];
-  	}
+  if ($negative_sets){
+ 	 our @tmp_neg_sets = split(',',$negative_sets);
+  	foreach my $neg_set (@tmp_neg_sets){
+  		my @tmp = split("=", $neg_set);
+  		$seq_neg_sets{$tmp[0]} = $tmp[1];
+  		}
+  }
   ## to use generated sequences based on each bg_model
   ## name of this negative set is : rand_gen
   ## for bg_global, the path to the random sequences are given in the second
@@ -435,7 +437,7 @@ package main;
  	#			if ($main::bg_TFBS_mask) { ## from input sequences with TFBS masked
  	#				$input_bg_file = &BackgroundModels($main::outfile{ref_sequences_masked},"",$order,$main::dirproject{$bg_dir},"","2str","ref_sequences_masked");
  	#			} else {
- 				my	$input_bg_file = &BackgroundModels($main::infile{ref_sequences},"",$order,$main::dirproject{$bg_dir},"","2str","ref_sequences");
+ 				my	$input_bg_file = &BackgroundModels($main::infile{ref_sequences},"",$order,$main::dirproject{$bg_dir},"","1str","ref_sequences");
  	#			}
     			push (@bg_file_list,$input_bg_file);
     			
