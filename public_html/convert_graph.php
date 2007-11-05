@@ -7,6 +7,8 @@
 <?php 
   require ('functions.php');
   title('convert-graph - results');
+  # Error status
+  $error = 0;
   # Get parameters
   $in_format = $_REQUEST['in_format'];
   $out_format = $_REQUEST['out_format'];
@@ -30,6 +32,7 @@
   
   ## If a file and a graph are submitted -> error
   if ($graph != "" && $graph_file != "") {
+    $error = 1;
     error("You must not submit both a graph and a graph file");
   }
 
@@ -43,55 +46,56 @@
   }
   ## If no graph are submitted -> error
   if ($graph == "" && $graph_file == "") {
+    $error = 1;
     error("You must submit an input graph");
-  }  
-  $graph = trim_text($graph);
-  ## Load the parameters of the program in to an array
-  $parameters = array( 
-    "request" => array(
-    "informat"=>$in_format,
-      "outformat"=>$out_format,
-      "inputgraph"=>$graph,
-      "scol"=>$s_col,
-      "tcol"=>$t_col,
-      "layout"=>$layout,
-      "tccol"=>$tc_col,
-      "sccol"=>$sc_col,
-      "eccol"=>$ec_col,
-      "undirected"=>$undirected
-    )
-  );
-  # Info message
-  info("Results will appear below");
-  echo"<hr>\n";
+  }
   
-  # Open the SOAP client
-  $client = new SoapClient(
-                     'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl',
-                         array(
-                               'trace' => 1,
-                               'soap_version' => SOAP_1_1,
-                               'style' => SOAP_DOCUMENT,
-                               'encoding' => SOAP_LITERAL
-                               )
-                         );
-  # Execute the command
-  $echoed = $client->convert_graph($parameters);
-    echo "<pre>";
-//     echo $client->__getLastRequest();
-  echo "</pre>";
-  # Get the results
+  if (!$error) { 
   
-  $response =  $echoed->response;
-  $command = $response->command;
-  $server = $response->server;
-  $client = $response->client;
-  $temp_file = explode('/',$server);
-  $temp_file = end($temp_file);
-  $resultURL = $WWW_RSA."/tmp/".$temp_file;
+    $graph = trim_text($graph);
+    ## Load the parameters of the program in to an array
+    $parameters = array( 
+      "request" => array(
+      "informat"=>$in_format,
+        "outformat"=>$out_format,
+        "inputgraph"=>$graph,
+        "scol"=>$s_col,
+        "tcol"=>$t_col,
+        "layout"=>$layout,
+        "tccol"=>$tc_col,
+        "sccol"=>$sc_col,
+        "eccol"=>$ec_col,
+        "undirected"=>$undirected
+      )
+    );
+    # Info message
+    info("Results will appear below");
+    echo"<hr>\n";
+  
+    # Open the SOAP client
+    $client = new SoapClient(
+                       'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl',
+                           array(
+                                 'trace' => 1,
+                                 'soap_version' => SOAP_1_1,
+                                 'style' => SOAP_DOCUMENT,
+                                 'encoding' => SOAP_LITERAL
+                                 )
+                           );
+    # Execute the command
+    $echoed = $client->convert_graph($parameters);
 
-  # Display the results
-  echo "The results is available at the following URL ";
-  echo "<a href = '$resultURL'>$resultURL</a>";
+    $response =  $echoed->response;
+    $command = $response->command;
+    $server = $response->server;
+    $client = $response->client;
+    $temp_file = explode('/',$server);
+    $temp_file = end($temp_file);
+    $resultURL = $WWW_RSA."/tmp/".$temp_file;
+
+    # Display the results
+    echo "The results is available at the following URL ";
+    echo "<a href = '$resultURL'>$resultURL</a>";
+ }
 
 ?>
