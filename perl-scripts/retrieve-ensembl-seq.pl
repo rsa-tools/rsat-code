@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.14 2007/10/22 13:40:37 oly Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.15 2007/11/05 09:34:35 rsat Exp $
 #
 # Time-stamp
 #
@@ -12,10 +12,10 @@ use DBI();
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
-#	push (@INC, "/home/rsat/src/ensembl/modules/");
-	push (@INC, "/Users/oly/Downloads/ensembl/modules");
-#	push (@INC, "/home/rsat/src/bioperl-live/");
-	push (@INC, "/Users/oly/workspace/bioperl-live");
+	push (@INC, "/home/rsat/src/ensembl/modules/");
+#	push (@INC, "/Users/oly/Downloads/ensembl/modules");
+	push (@INC, "/home/rsat/src/bioperl-live/");
+#	push (@INC, "/Users/oly/workspace/bioperl-live");
     }
 }
 require "RSA.lib";
@@ -66,7 +66,7 @@ package main;
   local $ensembl_user = "anonymous";
   local $dbname = '';
   local $org = '';
-  local $dbversion = '';
+  local $dbversion = '46';
 
   ################################################################
   ## Read arguments
@@ -110,9 +110,9 @@ package main;
     while (my $ref = $sth->fetchrow_hashref()) {
       if ($ref->{'Database'} =~ /($org)_core_\d+/) {
 	$dbname = $ref->{'Database'};
-	$dbversion = $dbname;
-	$dbversion =~ s/($org)_core_//;
-	$dbversion =~ s/_.+//;
+#	$dbversion = $dbname;
+#	$dbversion =~ s/($org)_core_//;
+#	$dbversion =~ s/_.+//;
       }
     }
     &RSAT::message::Debug("Db_version", $dbversion) if ($main::verbose >= 3);

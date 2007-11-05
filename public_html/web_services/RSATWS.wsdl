@@ -1190,7 +1190,63 @@ This option is only useful for GML output.</xsd:documentation>
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-
+      <xsd:complexType name="DisplayGraphRequest">
+	      <xsd:sequence>
+		      <xsd:element name="informat" type="xsd:string" minOccurs="1">
+			      <xsd:annotation>
+				      <xsd:documentation>Input format. Supported: tab, gml, adj_matrix.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="outformat" type="xsd:string" minOccurs="1">
+			      <xsd:annotation>
+				      <xsd:documentation>Output format. Supported: ps, png, jpeg.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="inputgraph" type="xsd:string" minOccurs="1">
+			      <xsd:annotation>
+				      <xsd:documentation>A graph in the format specified by the informat tag.</xsd:documentation>	
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="wcol" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>Specify a column of the input graph that contains an edge weight or an edge label for the tab-delimited format (no default).</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="scol" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>Specify a column of the input graph that contains the source nodes for the tab-delimited format (default = 1).</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="tcol" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>Specify a column of the input graph that contains the target nodes for the tab-delimited format (default = 2).</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="eccol" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>Specify a column of the input graph that containsthe color of the edge (no default).</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="sccol" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>Specify a column of the input graph that contains the color of the source node (no default).</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="tccol" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>Specify a column of the input graph that contains the color of the target node (no default).</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="layout" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>
+					      		Calculates the layout according to the Fruchterman and Reingold algorithm.
+							This option must be provided if the input graph is not GML.
+				      </xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+	      </xsd:sequence>
+      </xsd:complexType>
       <xsd:complexType name="CompareGraphsRequest">
 	<xsd:sequence>
 	  <xsd:element name="Qinformat" type="xsd:string" minOccurs="0">
@@ -1817,7 +1873,25 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-
+      <xsd:complexType name="DisplayGraphResponse">
+	      <xsd:sequence>
+		      <xsd:element name="server" type="xsd:string">
+			      <xsd:annotation>
+				      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="command" type="xsd:string">
+			      <xsd:annotation>
+				      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="client" type="xsd:string">
+			      <xsd:annotation>
+				      <xsd:documentation>The results.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+	      </xsd:sequence>
+      </xsd:complexType>
       <xsd:complexType name="GraphNodeDegreeResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -2159,6 +2233,20 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
+      <xsd:element name="display_graph">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="request" type="tns:DisplayGraphRequest" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="display_graphResponse">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="response" type="tns:DisplayGraphResponse" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
       <xsd:element name="compare_graphs">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -2362,7 +2450,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="convert_graphResponse">
     <part name="output" element="tns:convert_graphResponse"/>
   </message>
-
+  
+  <message name="display_graphRequest">
+	  <part name="parameters" element="tns:convert_graph"/>
+  </message>
+  
+  <message name="display_graphResponse">
+	  <part name="output" element="tns:convert_graphResponse"/>
+  </message>
   <message name="compare_graphsRequest">
     <part name="parameters" element="tns:compare_graphs"/>
   </message>
@@ -2505,6 +2600,12 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 	      <input name="ConvertGraphRequest" message="tns:convert_graphRequest"/>
 	      <output name="ConvertGraphResponse" message="tns:convert_graphResponse"/>         
 	      <documentation>Convert graphs between different formats
+	      </documentation>
+      </operation>
+      <operation name="display_graph">
+	      <input name="DisplayGraphRequest" message="tns:display_graphRequest"/>
+	      <output name="DisplayGraphResponse" message="tns:display_graphResponse"/>         
+	      <documentation>Produces the figure of a graph
 	      </documentation>
       </operation>
       <operation name="compare_graphs">
@@ -2678,6 +2779,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 		      <soap:body use="literal" />
 	      </output>
       </operation>
+      <operation name="display_graph">
+	      <soap:operation soapAction=""/>
+	      <input>
+		      <soap:body use="literal" />
+	      </input>
+	      <output>
+		      <soap:body use="literal" />
+	      </output>
+      </operation>
       <operation name="compare_graphs">
 	      <soap:operation soapAction=""/>
 	      <input>
@@ -2733,7 +2843,7 @@ This program supports a variety of background models (Bernoulli, Markov chains o
       Olivier Sand (oly@scmbb.ulb.ac.be).
    </documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
-	<soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
+   <soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
 
     </port>
   </service>
