@@ -102,7 +102,7 @@ sub new {
     # %nodes_label correspondance between node_name and label
     $self->set_hash_attribute("nodes_label", %nodes_label);
     # node x and y positions
-    $self->set_hash_attribute("nodes_id_xpos", %nodes_id_xpos);    
+    $self->set_hash_attribute("nodes_id_xpos", %nodes_id_xpos);
     $self->set_hash_attribute("nodes_id_ypos", %nodes_id_ypos);
     return $self;
 }
@@ -1285,8 +1285,10 @@ sub read_from_table {
       ## Filter on node names (for induced graphs and graph-get-clusters)
       my $source_id = $linecp[$source_col-1];
       chomp $source_id;
-      my $target_id = $linecp[$target_col-1];
-      chomp $target_id;
+      if ($linecp[$target_col-1]) {
+        my $target_id = $linecp[$target_col-1];
+        chomp $target_id;
+      }
       if ($self->{seed_nodes}) {
 	next unless $self->{seed_index}->{$source_id};
 	next unless $self->{seed_index}->{$target_id};
@@ -2154,7 +2156,7 @@ sub get_position {
       $nodes_id_ypos{$id} = int($lignecp[2]+($layout_size/2));
     }
   }
-  $self->set_hash_attribute("nodes_id_xpos", %nodes_id_xpos);    
+  $self->set_hash_attribute("nodes_id_xpos", %nodes_id_xpos);
   $self->set_hash_attribute("nodes_id_ypos", %nodes_id_ypos);
 }
 
