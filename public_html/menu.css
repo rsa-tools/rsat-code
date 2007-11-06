@@ -35,7 +35,7 @@ img {
 }
 
 #content.graph {
-	background: #B42600;
+	background: #ffffff; 
 	border-right: 1px solid #000000;
 	border-bottom: 1px solid #000000;
 	border-left: 1px solid #000000;
@@ -123,15 +123,15 @@ img {
 	text-decoration: none;
 }
 
-#content.graph .menu a:link,content.graph .menu a:visited {
+/*#content.graph .menu a:link,content.graph .menu a:visited {
 	color: #D98875;
-}
+}*/
 
-#content.graph .menu a:hover {
+/*#content.graph .menu a:hover {
 	background-color: #D98875;
 	color: #2D282E;
 	text-decoration: none;
-}
+}*/
 
 .menu_heading_open {
 	background: #2D282E url(images/arrow_down.gif) no-repeat 5px 7px;
@@ -174,10 +174,10 @@ img {
 	
 }
 
-#content.graph .menu_item {
+/*#content.graph .menu_item {
 	background: #D98875 url(images/bullet2-normal.gif) no-repeat 7px 7px;
 	color: #ffffff;
-}
+}*/
 
 /* TOP TABS */
 #pre {
