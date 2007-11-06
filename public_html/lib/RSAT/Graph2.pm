@@ -1560,6 +1560,7 @@ sub load_from_gml {
 
     while (my $line = <$main::in>) {
       chomp($line);
+      $line .= " ";
       $line =~ s/\t/ /g;
       $fichier .= $line;
       
@@ -1568,7 +1569,7 @@ sub load_from_gml {
     
     my @fichier_node = split /node( |\t|)/, $fichier;
     my @fichier_edge = split /edge( |\t|)/, $fichier;
-    
+
     my %discarded_nodes = (); # if $self->{seed_nodes} is defined, this hash will be filled with the gml_id of the nodes that must no be taken into account when parsing the edges
   
     foreach my $node (@fichier_node) {
@@ -1583,14 +1584,14 @@ sub load_from_gml {
         if ($node =~ /id/) {
           my @node_cp = split /.*id /, $node;
           $node_id = $node_cp[1];
-          $node_id = substr($node_id,0, index($node_id, " "));
+          $node_id = substr($node_id, 0, index($node_id, " "));
         }
 
 # NODE LABEL
         if ($node =~ /label/) {
           my @label_cp = split /.*label /, $node;
           $node_label = $label_cp[1];
-          $node_label = substr($node_label,1, index($node_label, "\" "));
+          $node_label = substr($node_label, 1, index($node_label, "\" "));
           $node_label =~ s/\"//;
         }
         if ($self->{seed_nodes} && !$self->{seed_index}->{$node_label}) {
