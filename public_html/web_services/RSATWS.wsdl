@@ -2452,11 +2452,11 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   </message>
   
   <message name="display_graphRequest">
-	  <part name="parameters" element="tns:convert_graph"/>
+	  <part name="parameters" element="tns:display_graph"/>
   </message>
   
   <message name="display_graphResponse">
-	  <part name="output" element="tns:convert_graphResponse"/>
+	  <part name="output" element="tns:display_graphResponse"/>
   </message>
   <message name="compare_graphsRequest">
     <part name="parameters" element="tns:compare_graphs"/>
