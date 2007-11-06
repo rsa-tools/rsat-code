@@ -1944,16 +1944,22 @@ sub convert_graph_cmd {
 sub display_graph {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
+
     my $output_choice = $args{"output"};
     unless ($output_choice) {
 	$output_choice = 'both';
     }
-    my $tmp_outfile = `mktemp $TMP/display_graph.XXXXXXXXXX`;
-    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#     print TMP_OUT $result;
-#     print TMP_OUT "KEYS ".keys(%args);
-    close TMP_OUT;
     my $command = $self->display_graph_cmd(%args);
+    ## IMAGE OUTPUT FORMAT RECUPERATION
+    my $out_format = $args{outformat};
+    $out_format =~ s/\'//g;
+    $out_format =~ s/\'//g;
+    my $tmp_outfile = `mktemp $TMP/display_graph.XXXXXXXXXX`;
+    chop $tmp_outfile;
+    system("rm $tmp_outfile");
+    $tmp_outfile .= ".$out_format";
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    close TMP_OUT;
     $command .= " -o $tmp_outfile";
     system $command;
     my $result = `cat $tmp_outfile`;
