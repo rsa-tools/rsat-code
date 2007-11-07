@@ -13,7 +13,7 @@
   $default_wcol = "";
   $default_layout = "checked";
   # demo graph
-  $demo = $_REQUEST[demo];
+  $demo = $_REQUEST['demo'];
   if ($demo == 1) {
     $demo_graph = $uetz;
   }
