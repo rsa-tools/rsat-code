@@ -1,12 +1,12 @@
 <html>
 <head>
-   <title>GrA-tools - convert-graph</title>
+   <title>GrA-tools - display-graph</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="results">
 <?php 
   require ('functions.php');
-  title('convert-graph - results');
+  title('display-graph - results');
   # Error status
   $error = 0;
   # Get parameters
@@ -14,15 +14,15 @@
   $out_format = $_REQUEST['out_format'];
   if ($_FILES['graph_file']['name'] != "") {
     $graph_file = uploadFile('graph_file');
-  } 
+  } else if ($_REQUEST['pipe_graph_file'] != "")  {
+    $graph_file = $_REQUEST['pipe_graph_file'];
+  }
   $now = date("Ymd_His");
   $graph = $_REQUEST['graph'];
-  
   $layout = $_REQUEST['layout'];
   if ($layout == 'on') {
     $layout = 1;
   }
-  $undirected = $_REQUEST['undirected'];
   $s_col = $_REQUEST['s_col'];
   $t_col = $_REQUEST['t_col'];
   $w_col = $_REQUEST['w_col'];
@@ -64,8 +64,7 @@
         "layout"=>$layout,
         "tccol"=>$tc_col,
         "sccol"=>$sc_col,
-        "eccol"=>$ec_col,
-        "undirected"=>$undirected
+        "eccol"=>$ec_col
       )
     );
     # Info message
@@ -74,7 +73,7 @@
   
     # Open the SOAP client
     $client = new SoapClient(
-                       'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl',
+                       'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWStest.wsdl',
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
@@ -83,46 +82,20 @@
                                  )
                            );
     # Execute the command
-    $echoed = $client->convert_graph($parameters);
+    $echoed = $client->display_graph($parameters);
 
     $response =  $echoed->response;
     $command = $response->command;
     $server = $response->server;
     $client = $response->client;
-    $server = rtrim ($server);
     $temp_file = explode('/',$server);
     $temp_file = end($temp_file);
     $resultURL = $WWW_RSA."/tmp/".$temp_file;
+
+
     # Display the results
     echo "The results is available at the following URL ";
-    echo "<a href = '$resultURL'>$resultURL</a>"; 
-    echo "<hr>\n";
-    echo "
-  <TABLE CLASS = 'nextstep'>
-    <TR>
-      <Th colspan = 2>
-        Next step
-      </Th>
-    </TR>
-    <TR>
-      <td>
-      </td>
-      <TD>
-        <FORM METHOD='POST' ACTION='display_graph_form.php'>
-          <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-          if ($out_format = 'tab') {
-            echo "
-            <input type='hidden' NAME='scol' VALUE='1'>
-            <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>";
-          }
-          echo "
-          <INPUT type='submit' value='Display the graph'>
-        </form>
-      </td>
-    </tr>
-  </table>";
-  }
+    echo "<a href = '$resultURL'>$resultURL</a>";
+ }
+
 ?>
