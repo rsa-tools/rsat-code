@@ -97,10 +97,10 @@ if ($query->param('return') =~ /count/i) {
 
 ### return match count table
 } elsif ($query->param('return') =~ /table/i) {
-  $parameters_dna_pattern .= " -table";
+  $parameters_dna_pattern .= " -return table";
   ### add a rwo and a column with the totals
   if (lc($query->param('total')) eq "on") {
-    $parameters_dna_pattern .= " -total";
+    $parameters_dna_pattern .= " -return total";
   }
   
 ### return matching positions
