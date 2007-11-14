@@ -287,6 +287,7 @@ package main;
 	$roc_stat_columns{7}= 'Sn';
 	$roc_stat_columns{8}= 'PPV';
 	$roc_stat_columns{10}= 'Acc_g';
+	our $acc_g_col=10;
     
     
     ################################################################
@@ -610,7 +611,7 @@ package main;
     				mkdir($matrix_quality_dir) ;
     				my $roc_stat_dir = File::Spec->rel2abs("roc-stat",$main::dirproject{$bg_window});
     				mkdir($roc_stat_dir) ;
-				
+
     				if ($tasks2run{matrix_quality}){
     					chdir($matrix_quality_dir);
     					## run matrix-quality on negative set with bg sliding window
@@ -1253,6 +1254,7 @@ sub runMatrixQualityWindows {
   	$matrix_quality_cmd .= " -o ".$quality_prefix;
   	$matrix_quality_cmd .= " -export_hits ";
   	$matrix_quality_cmd .= " -bgfile ".$bg_file;
+  	#$matrix_quality_cmd .= " -return sites,pval ";
 
 
   ## Execute the command 
@@ -1269,13 +1271,13 @@ sub runMatrixQualitySlidingWindows {
 	my ($bg_method, $order,$window_size,$matrix_quality_dir) = @_;
 
 	my $quality_prefix = $main::outfile{prefix}."_pseudo".$main::pseudo_counts;
-   	
+	 	
 	&RSAT::message::TimeWarn("Matrix-quality : Scoring sequences of with background method ".$bg_method." , matrix ".$main::matrix_name) 
 	  if ($main::verbose >= 2);
 
 	
   	my $matrix_quality_cmd = "matrix-quality -v ".$main::verbose;
-  	$matrix_quality_cmd .= " -ms ".File::Spec->rel2abs($main::infile{matrix},$main::dirproject{wd});
+  	$matrix_quality_cmd .= " -m ".File::Spec->rel2abs($main::infile{matrix},$main::dirproject{wd});
   	$matrix_quality_cmd .= " -matrix_format ".$main::matrix_format;
   	$matrix_quality_cmd .= " -pseudo ".$main::pseudo_counts;
   	$matrix_quality_cmd .= " -equi_pseudo ";
@@ -1292,10 +1294,11 @@ sub runMatrixQualitySlidingWindows {
   	$matrix_quality_cmd .= " -export_hits ";
   	$matrix_quality_cmd .= " -markov ".$order;
   	$matrix_quality_cmd .= " -window ".$window_size;
+  	#$matrix_quality_cmd .= " -return sites,pval ";
 
 
   ## Execute the command 
-  &RSAT::message::Info("matrix-quality command\n",  $matrix_quality_cmd) if ($main::verbose >= 2);
+  &RSAT::message::Info("matrix-quality command\n",  $matrix_quality_cmd) if ($main::verbose >= 5);
   print $main::out "; matrix-quality command:\n" if ($main::verbose >= 1);
   print $main::out "; $matrix_quality_cmd\n" if ($main::verbose >= 1);
   &doit($matrix_quality_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::cluster, $main::job_prefix);
@@ -2107,11 +2110,12 @@ sub getOptimalAccuracy{
     print $fh `grep '^#' $roc_stat_filenames[0]`; 
     foreach my $roc_stat_filename (@roc_stat_filenames) {
     	print $fh "#".basename($roc_stat_filename)."\n";
-    	my $line = `grep -v '^;' $roc_stat_filename | grep -v '^#' | sort -k 8nr | head -1`; 
+    	my $cmd="grep -v '^;' $roc_stat_filename | grep -v '^#' | sort -k ".$main::acc_g_col."nr | head -1";
+    	my $line = `$cmd`; 
     	print $fh $line;
     	my @fields = split("\t",$line);
     	my $optimal_score = $fields[0];
-    	my $optimal_acc = $fields[7];
+    	my $optimal_acc = $fields[$main::acc_g_col-1];
     			 
     	## find in matrix_quality directory the corresponding file 
     	#test_input_TFBS_masked_loo_roc_stat.tab
