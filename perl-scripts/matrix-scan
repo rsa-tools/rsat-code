@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.92 2007/10/15 14:38:16 morgane Exp $
+# $Id: matrix-scan,v 1.93 2007/11/14 13:26:47 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -2288,6 +2288,7 @@ sub score_segment {
   my $normw = $null;
   my $pval = $null;
   my $ln_pval = $null;
+  my $sig = $null;
   
   my ($ref_residue_proba_M, $proba_M) = $matrix->segment_proba($segment);
   my ($ref_residue_proba_B, $proba_B)= $bg_model->segment_proba($segment);
