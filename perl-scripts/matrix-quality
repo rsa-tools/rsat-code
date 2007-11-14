@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.45 2007/11/06 09:09:32 morgane Exp $
+# $Id: matrix-quality,v 1.46 2007/11/14 13:19:08 morgane Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -203,8 +203,10 @@ package main;
     
     ################################################################
     ### Read background model to use for theorical distribution
-
-  	$bg_model->load_from_file($main::infile{th_prior},$bg_format);
+	
+	if ($main::infile{th_prior}){
+  		$bg_model->load_from_file($main::infile{th_prior},$bg_format);
+	}
   	if (defined($main::bg_pseudo)){
   		$bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
   	}
@@ -229,12 +231,12 @@ package main;
     local ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
     $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
     $matrix->set_attribute("name", $matrix_name);
-    $matrix->setMarkovModel($bg_model);
+    $matrix->setMarkovModel($bg_model) if ($main::infile{th_prior}) ;
     local ($Wmin, $Wmax)  = $matrix->weight_range();
     &RSAT::message::Info("Matrix weight range", $Wmin, $Wmax) if ($main::verbose >= 2);
 
     ## Export input sites with the matrix
-    &ExportInputSites($matrix, $matrix_file);
+    &ExportInputSites($matrix, $matrix_file) if $main::infile{matrix_sites};
 
     ## Export the matrix in tab-delimited format
     &ExportTabMatrix($matrix);
