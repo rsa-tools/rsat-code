@@ -2176,6 +2176,10 @@ sub to_gml {
     my %nodes_id_xpos = $self->get_attribute("nodes_id_xpos");
     my %nodes_id_ypos = $self->get_attribute("nodes_id_ypos");
     my %nodes_id_name = $self->get_attribute("nodes_id_name");
+    my %nodes_color = $self->get_attribute("nodes_color");
+    my %nodes_label = $self->get_attribute("nodes_label");
+    
+    
     my @out_neighbours = $self->get_attribute("out_neighbours");
     my @out_label = $self->get_attribute("out_label");
     my @out_color = $self->get_attribute("out_color");
@@ -2188,15 +2192,18 @@ sub to_gml {
     $gml .= "[\n";
     $gml .= "	label	\"".$graph_label."\"\n";
     $gml .= "	directed	1\n";
-
+    
     ## Export nodes
+    &RSAT::message::Info("Exporting nodes") if $main::verbose >= 3;
     while (($id, $node_name) = each %nodes_id_name) {
-	my $label = $self->get_node_label($node_name); ## node label
+        my $label = $nodes_label{$id};
 	my $w = length($label)*10; ## label width
 	my $h = 16; ## label height
 	my $x = $nodes_id_xpos{$id} || $id*10;
 	my $y = $nodes_id_ypos{$id} || $id*10;
-	my $box_color = $self->get_node_color($node_name) || "#0000EE"; ## color for the box around the node
+	my $box_color = $nodes_color{$id} || "#0000EE"; ## color for the box around the node
+	
+	
 	$gml .= "\t"."node\n";
 	$gml .= "\t"."[\n";
 	$gml .= "\t\t"."id	".$id."\n";
@@ -2213,9 +2220,12 @@ sub to_gml {
 	$gml .= "\t\t\t"."type	\"rectangle\"\n";
 	$gml .= "\t\t"."]\n";
 	$gml .= "\t"."]\n";
+# 	print "noeud $label\n";
     }
     ## Export arcs
+    &RSAT::Message::Info("Exporting edges") if $main::verbose >= 3;
     for (my $i = 0; $i < scalar(@out_neighbours); $i++) {
+      
       if (defined (@{$out_neighbours[$i]})) {
         my $source_id = $i;
         my $nodename = $nodes_id_name{$source_id};
