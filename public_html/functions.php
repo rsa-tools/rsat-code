@@ -14,7 +14,7 @@
 <?php
   // Grat ERROR
   Function error($error) {
-    echo "<H4>Error : </H4><blockquote class='error'>$error<blockquote><br>";
+    echo "<H4>Error : </H4><blockquote class='error'>$error<blockquote></h4><br>";
   } 
 ?>
 

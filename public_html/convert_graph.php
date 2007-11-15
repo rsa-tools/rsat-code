@@ -14,10 +14,9 @@
   $out_format = $_REQUEST['out_format'];
   if ($_FILES['graph_file']['name'] != "") {
     $graph_file = uploadFile('graph_file');
-  } 
+  }
   $now = date("Ymd_His");
   $graph = $_REQUEST['graph'];
-  
   $layout = $_REQUEST['layout'];
   if ($layout == 'on') {
     $layout = 1;
@@ -38,7 +37,7 @@
 
   ## No specification of the source and target columns
   if ($in_format == "tab" && $s_col == "" && $t_col == "") {
-    warning("Default value for source and target columns for tab-delimited input format are 1 and 2");
+    warning("Default value for source and target columns for tab-delimited input format are 1 and 2 respectively");
   }
   ## put the content of the file $graph_file in $graph
   if ($graph_file != "" && $graph == "") {
@@ -56,7 +55,7 @@
     ## Load the parameters of the program in to an array
     $parameters = array( 
       "request" => array(
-      "informat"=>$in_format,
+        "informat"=>$in_format,
         "outformat"=>$out_format,
         "inputgraph"=>$graph,
         "scol"=>$s_col,
@@ -100,7 +99,7 @@
     echo "
   <TABLE CLASS = 'nextstep'>
     <TR>
-      <Th colspan = 2>
+      <Th colspan = 3>
         Next step
       </Th>
     </TR>
@@ -120,6 +119,21 @@
           }
           echo "
           <INPUT type='submit' value='Display the graph'>
+        </form>
+      </td>
+      <TD>
+        <FORM METHOD='POST' ACTION='compare_graphs_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$server'>
+          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
+          if ($out_format = 'tab') {
+            echo "
+            <input type='hidden' NAME='scol' VALUE='1'>
+            <input type='hidden' NAME='tcol' VALUE='2'>
+            <input type='hidden' NAME='wcol' VALUE='3'>";
+          }
+          echo "
+          <INPUT type='submit' value='Compare this graph to another one'>
         </form>
       </td>
     </tr>

@@ -19,6 +19,7 @@
   $scol = $_REQUEST['scol'];
   $tcol = $_REQUEST['tcol'];
   $wcol = $_REQUEST['wcol'];
+  $eccol = $_REQUEST['eccol'];
   
   # demo graph
   $demo = $_REQUEST['demo'];
@@ -65,9 +66,10 @@
     echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$graph_file'>";
   }
   if ($graph_format == 'tab') {
-    echo "<input type='hidden' NAME='s_col' VALUE='$scol'>";
-    echo "<input type='hidden' NAME='t_col' VALUE='$tcol'>";
-    echo "<input type='hidden' NAME='w_col' VALUE='$wcol'>";
+    echo "<input type='hidden' NAME='s_col' VALUE='$scol'/>\n";
+    echo "<input type='hidden' NAME='t_col' VALUE='$tcol'/>\n";
+    echo "<input type='hidden' NAME='w_col' VALUE='$wcol'/>\n";
+    echo "<input type='hidden' NAME='ec_col' VALUE='$eccol'/>\n";
   }
   echo ("
   <input type='checkbox' name='layout' value='on' $default_layout/>&nbsp;<B><a href = 'help.display_graph.html#layout'>Calculate the layout of the nodes (mandatory for all input format except GML)</a></B><br>
