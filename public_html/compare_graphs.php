@@ -12,14 +12,13 @@
   # Get parameters
   $in_formatQ = $_REQUEST['in_formatQ'];
   $in_formatR = $_REQUEST['in_formatR'];
+  
+  
   $out_format = $_REQUEST['out_format'];
   if ($_FILES['graph_fileQ']['name'] != "") {
     $graph_fileQ = uploadFile('graph_fileQ');
-    echo "MERDE";
   } else if ($_REQUEST['pipe_query_graph_file'] != "") {
-    echo "GRAPH FILE $graph_fileQ";
     $graph_fileQ = $_REQUEST['pipe_query_graph_file'];
-    echo ".Qdfq dfq df qdf";
   }
   if ($_FILES['graph_fileR']['name'] != "") {
     $graph_fileR = uploadFile('graph_fileR');
@@ -79,7 +78,6 @@
     $error = 1;
     error("You must submit a reference input graph");
   }
-  
   
    if (!$error) { 
      $graphQ = trim_text($graphQ);
