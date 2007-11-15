@@ -2267,7 +2267,7 @@ sub compare_graphs {
     my $tmp_outfile = `mktemp $TMP/compare-graphs-out.XXXXXXXXXX`;
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     print TMP_OUT $result;
-    print TMP_OUT "KEYS ".keys(%args);
+#     print TMP_OUT "KEYS ".keys(%args);
     close TMP_OUT;
     if ($output_choice eq 'server') {
 	return SOAP::Data->name('response' => {'command' => $command, 
@@ -2285,9 +2285,9 @@ sub compare_graphs {
 sub compare_graphs_cmd {
   my ($self, %args) =@_;
   
-  my $command = "$SCRIPTS/compare-graphs";
+  my $command = "$SCRIPTS/compare-graphs ";
   
-  if ($args{informat}) {
+  if ($args{Qinformat}) {
    my $Qin_format = $args{Qinformat};
    $Qin_format =~ s/\'//g;
    $Qin_format =~ s/\'//g;
