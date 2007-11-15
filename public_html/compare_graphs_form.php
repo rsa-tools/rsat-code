@@ -16,6 +16,7 @@
   $pipe = $_REQUEST['pipe'];
   $query_graph_file = $_REQUEST['graph_file'];
   $query_graph_format = $_REQUEST['graph_format'];
+  
   $query_scol = $_REQUEST['scol'];
   $query_tcol = $_REQUEST['tcol'];
   $query_wcol = $_REQUEST['wcol'];
@@ -35,16 +36,17 @@
   echo ("<tr><th>Query graph</th><th>Reference graph</th></tr>\n");
   ## QUERY INPUT FORMAT
   echo "<tr><td>";
+  echo "<B>Input format</B></a>&nbsp;";
   if (!$pipe) {
     echo ("
-    <B>Input format</B></a>&nbsp;<select name='in_formatQ'>
+    <select name='in_formatQ'>
     <option selected value = 'tab'> tab-delimited format
     <option value = 'adj_matrix'> Adjacency matrix
     <option value = 'gml'> GML format
     </select><br>");
   } else {
-    echo ": $graph_format<br>";
-    echo "<input type='hidden' NAME='in_formatQ' VALUE='$graph_format'>";
+    echo ": $query_graph_format<br>";
+    echo "<input type='hidden' NAME='in_formatQ' VALUE='$query_graph_format'>";
   } 
   echo "</td>";
   ## REFERENCE INPUT FORMAT

@@ -1377,7 +1377,7 @@ Note that the graphs do not specially need to contain actual self-loops, the que
 	      <xsd:documentation>Input format. Supported: tab, gml.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="inputgraph" type="xsd:string" minOccurs="1">
+	  <xsd:element name="inputgraph" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>A graph in the format specified by the informat tag.</xsd:documentation>	
 	    </xsd:annotation>
@@ -1524,12 +1524,12 @@ This allows to extract the node together with its neighborhood, rather than the 
 	      <xsd:documentation>Input format. Supported: tab, gml.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="return" type="xsd:string" minOccurs="0">
+	  <xsd:element name="return" type="xsd:string" minOccurs="1">
 	    <xsd:annotation>
 	      <xsd:documentation>Return format. Supported: table, cluster, graph.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="outformat" type="xsd:string" minOccurs="1">
+	  <xsd:element name="outformat" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Output format. Supported: tab, gml, dot.</xsd:documentation>
 	    </xsd:annotation>
