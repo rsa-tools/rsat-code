@@ -49,6 +49,11 @@
     $error = 1;
     error("You must submit an input graph");
   }
+  ## If display is not selected and the format is not GML -> error
+  if ($in_format != "gml" && $layout != "1") {
+    $error = 1;
+    error("You must calculate the layout for graphs in format $in_format");
+  }
   
   if (!$error) { 
   
