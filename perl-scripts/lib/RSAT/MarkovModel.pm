@@ -1063,16 +1063,16 @@ sub calc_from_seq {
   ## Delete transitions between letters which do not belong to the accepted alphabet
   $self->check_transition_alphabet();
 
-  ## Convert occurences (word count) into relative frequencies in order to add the pseudo-frequencies
-  ## as done when the bg model is read from a bg file, where relative frequencies (not word count) are
-  ## read from the file and used to calculate transition matrix.
-  foreach my $prefix (sort keys(%{$self->{oligo_counts}})) {
-    foreach my $suffix (sort keys(%{$self->{oligo_counts}->{$prefix}})) {
-      my $pattern_count = $self->{oligo_counts}->{$prefix}->{$suffix};
-      my $pattern_rel_freq = $pattern_count / $self->{training_words};
-      $self->{oligo_freq}->{$prefix}->{$suffix} = $pattern_rel_freq;
-    }
-  }
+#  ## Convert occurences (word count) into relative frequencies in order to add the pseudo-frequencies
+#  ## as done when the bg model is read from a bg file, where relative frequencies (not word count) are
+#  ## read from the file and used to calculate transition matrix.
+#  foreach my $prefix (sort keys(%{$self->{oligo_counts}})) {
+#    foreach my $suffix (sort keys(%{$self->{oligo_counts}->{$prefix}})) {
+#      my $pattern_count = $self->{oligo_counts}->{$prefix}->{$suffix};
+#      my $pattern_rel_freq = $pattern_count / $self->{training_words};
+#      $self->{oligo_freq}->{$prefix}->{$suffix} = $pattern_rel_freq;
+#    }
+#  }
 
   ## Initialize transition frequencies
   $self->set_hash_attribute("transition_freq", %transition_count);
@@ -1284,6 +1284,18 @@ and upadet the transition matrix only one time.
 =cut
 sub counts_to_transitions {
   my ($self) = @_;
+  
+  ## Convert occurences (word count) into relative frequencies in order to add the pseudo-frequencies
+  ## as done when the bg model is read from a bg file, where relative frequencies (not word count) are
+  ## read from the file and used to calculate transition matrix.
+  foreach my $prefix (sort keys(%{$self->{oligo_counts}})) {
+    foreach my $suffix (sort keys(%{$self->{oligo_counts}->{$prefix}})) {
+      my $pattern_count = $self->{oligo_counts}->{$prefix}->{$suffix};
+      my $pattern_rel_freq = $pattern_count / $self->{training_words};
+      $self->{oligo_freq}->{$prefix}->{$suffix} = $pattern_rel_freq;
+    }
+  }
+  
 
   ## Convert counts to transition frequencies
   $self->normalize_transition_frequencies();
@@ -2011,7 +2023,7 @@ sub reverse_bg {
 			$bg_R->{oligo_freq}->{$prefix_R}->{$suffix_R} = $pattern_count_D;
 		}
 	}
-	$bg_R->counts_to_transitions();
+	$bg_R->normalize_transition_frequencies();
 	return $bg_R;
 }
 
