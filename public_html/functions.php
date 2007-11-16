@@ -25,6 +25,14 @@
   } 
 ?>
 
+
+<?php
+  // Grat WARNING
+  Function demo($demo) {
+    echo "<H4>Remark : </H4><blockquote class ='demo'>$demo</blockquote><br>";
+  } 
+?>
+
 <?php
   // Grat INFO
   Function info($info) {
@@ -46,7 +54,7 @@
             echo "Could not move $_FILES[$file]['tmp_name']"." check that $repertoireDestination exists<br>";
         }          
     } else {
-       echo "File could not be uploaded<br>";
+       echo "File ".$_FILES[$file]['tmp_name']." could not be uploaded<br>";
     }
     return $repertoireDestination.$nomDestination;
   }

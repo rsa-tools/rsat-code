@@ -1377,6 +1377,11 @@ Note that the graphs do not specially need to contain actual self-loops, the que
 	      <xsd:documentation>Input format. Supported: tab, gml.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="outformat" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Output format. Supported: tab, gml, dot.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
 	  <xsd:element name="inputgraph" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>A graph in the format specified by the informat tag.</xsd:documentation>	
