@@ -28,9 +28,11 @@
   if ($demo == 1) {
     $demo_graphQ = $uetz;
     $demo_graphR = $ito;
+    $demo_remark = "This demonstration consists in the comparaison between the two first genome scale two hybrid data sets. <a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?db=pubmed&uid=10688190&cmd=showdetailview&indexed=google'>Uetz et al (2000)</a> consisting of 865 interactions between 926 proteins and <a href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=11283351&ordinalpos=3&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum' target = 'top'>Ito et al (2001)</a> consisting of 4038 interactions between 2937 interactions.";
   }
   title('compare-graphs');
   echo ("<center>Computes the intersection, the union or the difference of two graphs</center>\n");
+  demo($demo_remark);
   echo ("<form method='post' action='compare_graphs.php' enctype='multipart/form-data'>");
   echo ("<table>\n");
   echo ("<tr><th>Query graph</th><th>Reference graph</th></tr>\n");
@@ -59,17 +61,16 @@
   ## QUERY INPUT GRAPH TEXTAREA
   echo "<td>";
   if (!$pipe) {
-    echo ("<textarea name='graphQ' rows='6' cols='65'>$demo_graphQ</textarea></td>");
+    echo ("<textarea name='graphQ' rows='6' cols='40'>$demo_graphQ</textarea></td>");
   }
   echo "</td>";
   ## REFERENCE INPUT GRAPH TEXTAREA
-  echo ("<td><textarea name='graphR' rows='6' cols='65'>$demo_graphR</textarea></td>");
+  echo ("<td><textarea name='graphR' rows='6' cols='40'>$demo_graphR</textarea></td>");
   echo ("<tr><td>");
   ## QUERY INPUT GRAPH FILE
   if (!$pipe) {
     echo ("Upload query graph from file : <br>
-    <input type='hidden' name='MAX_FILE_SIZE' value='30000' />
-    <input type='file' name='graph_fileQ' size='45' />");
+    <input type='file' name='graph_fileQ' size='40' />");
   } else {
     info("Query graph uploaded from the previous treatment");
     echo "<input type='hidden' NAME='pipe_query_graph_file' VALUE='$query_graph_file'/>";
@@ -77,8 +78,7 @@
   echo "</td>";
   ## REFERENCE INPUT GRAPH FILE
   echo ("<td>Upload reference graph from file : <br>
-  <input type='hidden' name='MAX_FILE_SIZE' value='30000' />
-  <input type='file' name='graph_fileR' size='45' /></td>");
+  <input type='file' name='graph_fileR' size='40' /></td>");
   echo ("</tr>");
   ## QUERY INPUT GRAPH PARAMETERS
   echo ("<tr>");

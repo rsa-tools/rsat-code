@@ -28,7 +28,7 @@
   }
 
   title('display-graph');
-  echo ("<center>Draws a graphical representation of a graph</center>\n");
+  echo ("<center>Generate a figure for a graph</center>\n");
   echo ("<form method='post' action='display_graph.php' enctype='multipart/form-data'>");
   echo ("&nbsp;&nbsp;&nbsp;<a href = 'help.display_graph.html#formats'><B>Input format</B></a>");
   if (!$pipe) {
@@ -48,9 +48,11 @@
   <option selected value = 'jpeg'> JPEG
   </select><br><br>");
   if (!$pipe) {
+    if ($demo) {
+      demo("This demonstration graph is the yeast two-hybrid dataset produced by <a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?db=pubmed&uid=10688190&cmd=showdetailview&indexed=google'>Uetz et al (2001)</a>. It consists in 865 interactions between 926 proteins.");
+    }
     echo ("<textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>
     <br>Upload graph from file : <br>
-    <input type='hidden' name='MAX_FILE_SIZE' value='30000' />
     <input type='file' name='graph_file' size='45' /><br>
     <br><a href = 'help.display_graph.html#columns'>Column specification (only relevant for tab-delimited input)</a><br>
     <table>

@@ -29,7 +29,6 @@
   </select><br><br><b>Graph</b><br>
   <textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>
   <br>Upload graph from file : <br>
-  <input type='hidden' name='MAX_FILE_SIZE' value='30000' />
   <input type='file' name='graph_file' size='45' /><br>
   &nbsp;&nbsp;&nbsp;
   
@@ -43,7 +42,6 @@
   </select><br><br><b>Clusters</b><br>
   <textarea name='clusters' rows='6' cols='65'>$demo_clusters</textarea>
   <br>Upload clusters from file : <br>
-  <input type='hidden' name='MAX_FILE_SIZE' value='30000' />
   <input type='file' name='clusters_file' size='45' /><br>
   <B><a href = 'help.graph_get_clusters.html#formats'>Output format (only useful for clusters output)</a></B>&nbsp;<select name='out_format'>
   <option value = 'tab'> tab-delimited format
