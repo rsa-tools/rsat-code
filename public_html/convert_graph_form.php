@@ -30,10 +30,13 @@
   <option value = 'tab'> tab-delimited format
   <option selected value = 'gml'> GML format
   <option value = 'adj_matrix'> Adjacency matrix
-  </select><br><br>
+  </select><br>");
+  if ($demo) {
+    demo("This demonstration graph is the yeast two-hybrid dataset produced by <a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?db=pubmed&uid=10688190&cmd=showdetailview&indexed=google'>Uetz et al (2001)</a>. It consists in 865 interactions between 926 proteins.");
+  }
+  echo("<br>
   <textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>
   <br>Upload graph from file : <br>
-  <input type='hidden' name='MAX_FILE_SIZE' value='30000' />
   <input type='file' name='graph_file' size='45' /><br>
   &nbsp;&nbsp;&nbsp;
   

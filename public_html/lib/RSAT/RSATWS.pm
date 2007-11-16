@@ -2069,7 +2069,7 @@ sub graph_get_clusters {
     my $tmp_outfile = `mktemp $TMP/graph-get-clusters-out.XXXXXXXXXX`;
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     print TMP_OUT $result;
-    print TMP_OUT "KEYS ".keys(%args);
+#     print TMP_OUT "KEYS ".keys(%args);
     close TMP_OUT;
     if ($output_choice eq 'server') {
 	return SOAP::Data->name('response' => {'command' => $command, 
@@ -2513,13 +2513,19 @@ sub random_graph {
 sub random_graph_cmd {
   my ($self, %args) =@_;
   
-  my $command = "$SCRIPTS/graph-neighbours";
+  my $command = "$SCRIPTS/random-graph";
   
   if ($args{informat}) {
    my $in_format = $args{informat};
    $in_format =~ s/\'//g;
    $in_format =~ s/\'//g;
    $command .= " -in_format $in_format";
+  }
+  if ($args{outformat}) {
+   my $in_format = $args{outformat};
+   $in_format =~ s/\'//g;
+   $in_format =~ s/\'//g;
+   $command .= " -out_format $out_format";
   }
   if ($args{random_type}) {
    my $random_type = $args{random_type};
@@ -2598,7 +2604,7 @@ sub random_graph_cmd {
   if ($args{inputgraph}) {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/graph_neighbours-input-graph.XXXXXXXXXX`;
+   my $tmp_input = `mktemp $TMP/random_graph-input-graph.XXXXXXXXXX`;
    open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
    print TMP_IN $input_graph;
    close TMP_IN;
