@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.46 2007/10/18 18:00:15 jvanheld Exp $
+# $Id: compare-classes,v 1.47 2007/11/17 21:15:37 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -74,6 +74,10 @@ $supported_multi_cor = join (",", sort(keys (%supported_multi_cor)));
     'jac_sim'=>'jac_sim',
 
     'dotprod'=>'dotprod',
+    'dp_bits'=>'dotprod',
+    'log2_dp'=>'dotprod',
+    'sqrt_dp'=>'dotprod',
+    'prodrts'=>'dotprod',
 
     'P_val'=>'proba',
     'E_val'=>'proba',
@@ -220,7 +224,8 @@ if (($return_fields{dotprod}) && !($score_col)) {
 
 ## Logarithm base
 local $log_base = log($base); ## Calculate it only once
-local $log10 = log(10);
+local $log10 = log(10); ## Calculate it only once
+local $log2 = log(2); ## Calculate it only once
 
 ## ##############################################################
 ## Fields to calculate
@@ -510,7 +515,7 @@ OPTIONS
         catalogs associate each gene of a genome to one or
         several classes.  The organism must be specified
         (option -org).
-        
+
         Supported catalogs:
         $supported_catalogs
 
@@ -1173,14 +1178,23 @@ sub CompareClasses {
       ## Calculate dot product (use only the common  elements)
       if ($calc_fields{dotprod}) {
 	  my $dp = 0;
+	  my $prodrts = 0;
 	  my %ref_scores = $ref_classes{$r}->get_attribute("scores");
 	  my %query_scores =$query_classes{$q}->get_attribute("scores");
+
 	  foreach my $element (@common) {
 	      my $r_score = $ref_scores{$element};
 	      my $q_score = $query_scores{$element};
-	      $dp += $r_score*$q_score; 
+	      my $dp_element = $r_score*$q_score;
+	      $dp += $dp_element;
+	      $prodrts += sqrt($dp_element);
 	  }
+
+#	  &RSAT::message::Debug($dp, $prodrts) if ($main::verbose >= 10);
 	  $current_compa{dotprod} = $dp;
+	  $current_compa{prodrts} = $prodrts;
+
+	  ## Check threshold on dot product
 	  if ((defined($lth{'dotprod'})) &&
 	      ($dp< $lth{'dotprod'})) {
 	      next;
@@ -1190,6 +1204,7 @@ sub CompareClasses {
 	      next;
 	  }
 	  undef $dp;
+	  undef $prodrts;
       }
 
       ################################################################
@@ -1460,17 +1475,21 @@ sub PrintHeader {
       push @header_fields, 'P(R|Q)' ;
       push @header_fields, "E(QR)" ;
     }
-    
+
     ## Jaccard's similarity
     if ($return_fields{jac_sim}) {
       push @header_fields, "jac_sim" ;
     }
-    
+
     ## Dot product
     if ($return_fields{dotprod}) {
       push @header_fields, "dotprod" ;
+      push @header_fields, "log2_dp" ;
+      push @header_fields, "dp_bits" ;
+      push @header_fields, "sqrt_dp" ;
+      push @header_fields, "prodrts" ;
     }
-    
+
     ## Probabilities
     if ($return_fields{proba}) {
       push @header_fields, "P_val" ;
@@ -1478,7 +1497,7 @@ sub PrintHeader {
       push @header_fields, "E_val";
       push @header_fields, "sig";
     }
-    
+
     ## Entropy and information 
     if ($return_fields{entropy}) {
       push @header_fields, "H(R)";
@@ -1626,15 +1645,19 @@ sub PrintOneComparison {
     printf $out "\t%.5f", $current_compa{'P(R|Q)'};
     printf $out "\t%7.2f", $current_compa{'E(QR)'};
   }
-	    
+
   ## Jaccard's similarity
   if ($return_fields{jac_sim}) {
     printf $out "\t%-.5f", $current_compa{jac_sim};
   }
-	    
+
   ## Dot product
   if ($return_fields{dotprod}) {
     printf $out "\t%7g", $current_compa{dotprod};
+    printf $out "\t%7g", log($current_compa{dotprod})/$log2;
+    printf $out "\t%d", log($current_compa{dotprod})/$log2;
+    printf $out "\t%7g", sqrt($current_compa{dotprod});
+    printf $out "\t%7g", $current_compa{prodrts};
   }
 
   ## Probabilities
@@ -1991,6 +2014,10 @@ sub DescribeFields {
     $field_description{'P(R|Q)'} = "Probability of R given Q. P(R|Q) = F(QR)/F(Q)";
     $field_description{'jac_sim'}  = "Jaccard' similarity. jac_sim = intersection/union = (Q and R)/(Q or R)";
     $field_description{'dotprod'}  = "Dot product (using the score column)";
+    $field_description{'log2_dp'}  = "Log2 of the dot product";
+    $field_description{'dp_bits'}  = "dp_bits = round(log2_dp). The log2 of the dot product is rounded to obtain an integer value";
+    $field_description{'sqrt_dp'}  = "Square root of the dot product";
+    $field_description{'prodrts'}  = "Sum of the sqrt of products. This is a sort of dot product but the sqrt of each pairwise product is taken before summing.";
     $field_description{'E(QR)'}  = "Expected number of elements in the intersection";
     $field_description{'P_val'}  = "P-value of the intersection, calculated witht he hypergeometric function. Pval = P(X >= QR). ";
 #	$field_description{'mtest'}  = "Correction for the multi-testing.";
