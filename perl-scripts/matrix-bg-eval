@@ -106,6 +106,7 @@ package main;
   our $rand_gen;
   our $rand_r = 1000;
   our $rand_l = 100;
+  our $roc_stat_base ="sig";
  
   
    ## tasks
@@ -255,7 +256,37 @@ package main;
     our $job_prefix = "matrix-bg-eval"; 
     our $cluster = 0; 
     
+    
     ###############################################################
+    ## Roc-stat options
+    
+    ## roc-stat columns
+	our %roc_stat_columns =();
+	
+	$roc_stat_columns{7}= 'Sn';
+	$roc_stat_columns{8}= 'PPV';
+	$roc_stat_columns{10}= 'Acc_g';
+	our $acc_g_col=10;
+	
+	## roc stat 
+	my $score_col=8;
+	my $pval_col=11;
+	my $sig_col=13;
+	our $roc_stat_base_col;
+	our $x_leg;
+	
+	if ($roc_stat_base eq "scores"){
+		$roc_stat_base_col = $score_col;
+		$x_leg = "'matrix scores'";
+	}elsif ($roc_stat_base eq "p_val"){
+		$roc_stat_base_col = $pval_col;
+		$x_leg = "'segment P-value'";
+	}elsif ($roc_stat_base eq "sig"){
+		$roc_stat_base_col = $sig_col;
+		$x_leg = "'segment significance: -log(Pval)'";
+	}
+	
+	###############################################################
     ## Graphs options
     
     our %graph_optimal_acc = () ;
@@ -279,15 +310,9 @@ package main;
     $all_graph_options .= " -legend";
     $all_graph_options .= " -xsize 800 -ysize 400";
     $all_graph_options .= " -gp 'set size ratio 0.5' ";
-    $all_graph_options .= " -xleg1 'matrix score' ";
+    $all_graph_options .= " -xleg1  $x_leg";
 	
-	## roc-stat columns
-	our %roc_stat_columns =();
 	
-	$roc_stat_columns{7}= 'Sn';
-	$roc_stat_columns{8}= 'PPV';
-	$roc_stat_columns{10}= 'Acc_g';
-	our $acc_g_col=10;
     
     
     ################################################################
@@ -328,46 +353,46 @@ package main;
 
     ## copy input matrix file to this directory
     copy(File::Spec->rel2abs($main::infile{matrix},$main::dirproject{wd}),File::Spec->rel2abs($matrix_name.".txt",$main::dirproject{matrices})) or die "File cannot be copied.";
-    copy(File::Spec->rel2abs($main::infile{ref_feat},$main::dirproject{wd}),File::Spec->rel2abs("input_reference_features.tab",$main::dirproject{features})) or die "File cannot be copied.";
-    
-
-    
-    ################################################################
-    ## Mask annotated sites from the sequence regions
-    our $annotated_sites = ReadAnnotatedSites();
-
-    $main::outfile{ref_sequences_masked} = File::Spec->rel2abs($main::outfile{prefix}."_annotated_sites_masked.fa",$main::dirproject{sequences});
-    # here we have 2 sets of sequence regions => TFBS masked / not masked	
- 	our $sequences_length = &MaskAnnotatedSites($annotated_sites,$main::infile{ref_sequences},$main::outfile{ref_sequences_masked}); 
-	## add input_TFBS_masked as sequences to scan by default
-	$seq_neg_sets{input_TFBS_masked} = $main::outfile{ref_sequences_masked};
-
-	#####################################################################
- 	## For bg_window option
- 	our %window_seqs = ();
- 	if ($window ne "-1") {
- 		foreach my $window_size (@main::window_sizes){
- 			################################################################
- 			## Extract TFBS in subsequences of defined size
- 			my $TFBS_with_flank_seq_filename = "TFBS_with_flank".$window_size;
-    		$main::outfile{$TFBS_with_flank_seq_filename} = File::Spec->rel2abs($main::outfile{prefix}."_subseq_with_TFBS_".$window_size."bp.fa",$main::dirproject{sequences});
- 			my $input_sequences = $main::infile{ref_sequences};
- 			my $sub_seqs = &extractAnnotatedSitesAndFlanks($annotated_sites,$window_size,$input_sequences,$main::outfile{$TFBS_with_flank_seq_filename},$sequences_length); 	
-
- 			#######################################################################
- 			## prepare prepare TFBS feature file for use with compare-feature
- 			## positions are relative to each sub-sequence
- 			my $subsequences = &getRelativeTFBSPositions($sub_seqs,$annotated_sites,$window_size);
- 			
- 			## store in a hash
- 			$window_seqs{$window_size}->{sub_seqs} = $sub_seqs;
- 			$window_seqs{$window_size}->{sub_sequences} = \$subsequences;
- 		}
- 		
- 		#######################################################################
- 		## Get sequence of sites from the matrix file
- 		$main::matrix_sites_ref =  &getMatrixSites($main::infile{matrix}, $main::matrix_format);
- 	}
+#    copy(File::Spec->rel2abs($main::infile{ref_feat},$main::dirproject{wd}),File::Spec->rel2abs("input_reference_features.tab",$main::dirproject{features})) or die "File cannot be copied.";
+#    
+#
+#    
+#    ################################################################
+#    ## Mask annotated sites from the sequence regions
+#    our $annotated_sites = ReadAnnotatedSites();
+#
+#    $main::outfile{ref_sequences_masked} = File::Spec->rel2abs($main::outfile{prefix}."_annotated_sites_masked.fa",$main::dirproject{sequences});
+#    # here we have 2 sets of sequence regions => TFBS masked / not masked	
+# 	our $sequences_length = &MaskAnnotatedSites($annotated_sites,$main::infile{ref_sequences},$main::outfile{ref_sequences_masked}); 
+#	## add input_TFBS_masked as sequences to scan by default
+#	$seq_neg_sets{input_TFBS_masked} = $main::outfile{ref_sequences_masked};
+#
+#	#####################################################################
+# 	## For bg_window option
+# 	our %window_seqs = ();
+# 	if ($window ne "-1") {
+# 		foreach my $window_size (@main::window_sizes){
+# 			################################################################
+# 			## Extract TFBS in subsequences of defined size
+# 			my $TFBS_with_flank_seq_filename = "TFBS_with_flank".$window_size;
+#    		$main::outfile{$TFBS_with_flank_seq_filename} = File::Spec->rel2abs($main::outfile{prefix}."_subseq_with_TFBS_".$window_size."bp.fa",$main::dirproject{sequences});
+# 			my $input_sequences = $main::infile{ref_sequences};
+# 			my $sub_seqs = &extractAnnotatedSitesAndFlanks($annotated_sites,$window_size,$input_sequences,$main::outfile{$TFBS_with_flank_seq_filename},$sequences_length); 	
+#
+# 			#######################################################################
+# 			## prepare prepare TFBS feature file for use with compare-feature
+# 			## positions are relative to each sub-sequence
+# 			my $subsequences = &getRelativeTFBSPositions($sub_seqs,$annotated_sites,$window_size);
+# 			
+# 			## store in a hash
+# 			$window_seqs{$window_size}->{sub_seqs} = $sub_seqs;
+# 			$window_seqs{$window_size}->{sub_sequences} = \$subsequences;
+# 		}
+# 		
+# 		#######################################################################
+# 		## Get sequence of sites from the matrix file
+# 		$main::matrix_sites_ref =  &getMatrixSites($main::infile{matrix}, $main::matrix_format);
+# 	}
 
 ################################################################
 ########## GET OR CALCULATE BACKGROUND MODELS ##################
@@ -821,6 +846,7 @@ sub ReadArguments {
 					"bginput:s"  		=> \$main::bg_input,## Background calculated from the input sequence set
 					"window:s"  		=> \$main::window, # adpatative bg model with sliding windows
 					"window_size:s"  	=> \$main::window_size, # size for the sliding windows
+					"roc_abs:s"			=> \$main::roc_stat_base, ## roc_stat_base
 					"rand_gen"			=> \$main::rand_gen, ## use random generated sequences for each bg_model
 					"rand_r:s"			=> \$main::rand_r, ## nb of repetions for generated random sequences
   					"rand_l:s"			=> \$main::rand_l, ## length of generated random sequences
@@ -974,6 +1000,14 @@ Length of sequences for rand_gen sequence set, fo bg_input background models.
 
 Reference distribution for the ROC curve. This should be one of
 the specified negative set.
+
+=cut
+
+=pod
+
+=item B<-roc_abs name>
+
+Abscisse for graphs arising from roc-stat results. Values are scores,p_val,sig. Default: sig.
 
 =cut
 	
@@ -1197,6 +1231,7 @@ sub runMatrixQuality {
   	$matrix_quality_cmd .= " -img_format ".join(",",@main::image_formats);
   	$matrix_quality_cmd .= " -o ".$quality_prefix;
   	$matrix_quality_cmd .= " -export_hits ";
+  	$matrix_quality_cmd .= " -return pval ";
   	
   	if ($bg_method eq "bg_global") {
   		$matrix_quality_cmd .= " -bgfile ".File::Spec->rel2abs($bg_file,$main::dirproject{wd}); 		
@@ -1254,7 +1289,7 @@ sub runMatrixQualityWindows {
   	$matrix_quality_cmd .= " -o ".$quality_prefix;
   	$matrix_quality_cmd .= " -export_hits ";
   	$matrix_quality_cmd .= " -bgfile ".$bg_file;
-  	#$matrix_quality_cmd .= " -return sites,pval ";
+  	$matrix_quality_cmd .= " -return sites,pval,bg_residues ";
 
 
   ## Execute the command 
@@ -1294,7 +1329,7 @@ sub runMatrixQualitySlidingWindows {
   	$matrix_quality_cmd .= " -export_hits ";
   	$matrix_quality_cmd .= " -markov ".$order;
   	$matrix_quality_cmd .= " -window ".$window_size;
-  	#$matrix_quality_cmd .= " -return sites,pval ";
+  	$matrix_quality_cmd .= " -return sites,pval,bg_residues ";
 
 
   ## Execute the command 
@@ -1369,13 +1404,13 @@ sub ProcessRocStat {
     foreach my $set (keys(%tmp_seq_neg_sets)){
     	my $ms_score_file_name = $main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_scores.tab";
     	my $ms_score_file= File::Spec->rel2abs($ms_score_file_name,$matrix_quality_dir);
-    	my $result = `grep -v '^;' $ms_score_file | grep -v '^#' | cut -f 2,8 | awk '{print "non-"\$1"\\t"\$2}'`;   				
+    	my $result = `grep -v '^;' $ms_score_file | grep -v '^#' | cut -f 2,$main::roc_stat_base_col | awk ' {if (\$2 !~ /NA/) print "non-"\$1"\\t"\$2}'`;   				
     	$roc_stat_input{$set} = $result;
     	
     	if ($main::tasks2run{perm}){
     		my $ms_score_file_name = $main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_perm_col_1-".$main::perm_neg."_scores.tab";
     		my $ms_score_file= File::Spec->rel2abs($ms_score_file_name,$matrix_quality_dir);
-    		my $result = `grep -v '^;' $ms_score_file | grep -v '^#' | cut -f 2,8 | awk '{print "non-"\$1"\\t"\$2}'`;  
+    		my $result = `grep -v '^;' $ms_score_file | grep -v '^#' | cut -f 2,$main::roc_stat_base_col | awk '{print "non-"\$1"\\t"\$2}'`;  
     		my $key = $set."_perm"; 				
     		$roc_stat_input{$key} = $result;
     		}
@@ -1384,13 +1419,13 @@ sub ProcessRocStat {
     foreach my $set (@main::seq_pos_sets){
     	my $ms_score_file_name = $main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_scores.tab";
     	my $ms_score_file= File::Spec->rel2abs($ms_score_file_name,$matrix_quality_dir);
-    	my $result = `grep -v '^;' $ms_score_file | grep -v '^#' | cut -f 2,8`;   				
+    	my $result = `grep -v '^;' $ms_score_file | grep -v '^#' | cut -f 2,$main::roc_stat_base_col`;   				
     	$roc_stat_input{$set} = $result;
     	
     	 if ($main::tasks2run{perm}){
     		my $ms_score_file_name = $main::outfile{prefix}."_pseudo".$main::pseudo_counts."_scan_".$set."_perm_col_1-".$main::perm_pos."_scores.tab";
     		my $ms_score_file= File::Spec->rel2abs($ms_score_file_name,$matrix_quality_dir);
-    		my $result = `grep -v '^;' $ms_score_file | grep -v '^#' | cut -f 2,8 `; 
+    		my $result = `grep -v '^;' $ms_score_file | grep -v '^#' | cut -f 2,$main::roc_stat_base_col `; 
     		my $key = $set."_perm"; 				
     		$roc_stat_input{$key} = $result;
     		}
@@ -1399,7 +1434,7 @@ sub ProcessRocStat {
     		
     ## add LOO file
     my $loo_file = File::Spec->rel2abs($main::outfile{prefix}."_pseudo".$main::pseudo_counts."_matrix_sites_loo.tab",$matrix_quality_dir);
-    my $result = `grep -v '^;' $loo_file | grep -v '^#' | cut -f 2,8`;   				
+    my $result = `grep -v '^;' $loo_file | grep -v '^#' | cut -f 2,$main::roc_stat_base_col`;   				
     $roc_stat_input{'loo'} = $result;
     		
     ## merge 'site ' to 'not-sites'	
@@ -1472,6 +1507,8 @@ sub ProcessRocStat {
    		$distrib_compa_cmd .= " -suppress ".$roc_stat_dir."/";
    		$distrib_compa_cmd .= " -suppress ".$main::outfile{prefix}."_";
     	$distrib_compa_cmd .= " -suppress _roc_stat.tab";
+    	$distrib_compa_cmd .= " -subst '_matrix_sites' '|complete_matrix'" ;
+    	$distrib_compa_cmd .= " -subst '_loo' '|loo_matrix'" ;
     	$distrib_compa_cmd .= " -files ";
     	$distrib_compa_cmd .= join(" ", @roc_stat_filenames);
     	## Execute the command
@@ -1608,6 +1645,8 @@ sub compareBgModels {
    			$distrib_compa_cmd .= " -suppress ".$root_dir."/";   				
    			$distrib_compa_cmd .= " -suppress /roc-stat/".$main::outfile{prefix}."_".$neg_set."_loo_roc_stat.tab";
    			$distrib_compa_cmd .= " -subst 'nt.*' 'nt_oligo'";	
+   			$distrib_compa_cmd .= " -subst '_matrix_sites' '|complete_matrix'" ;
+    		$distrib_compa_cmd .= " -subst '_loo' '|loo_matrix'" ;
     		$distrib_compa_cmd .= " -files ";
     		$distrib_compa_cmd .= join(" ", @roc_stat_files);   
     		$distrib_compa_cmd .= " |sort";		
