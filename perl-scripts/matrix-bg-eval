@@ -353,46 +353,46 @@ package main;
 
     ## copy input matrix file to this directory
     copy(File::Spec->rel2abs($main::infile{matrix},$main::dirproject{wd}),File::Spec->rel2abs($matrix_name.".txt",$main::dirproject{matrices})) or die "File cannot be copied.";
-#    copy(File::Spec->rel2abs($main::infile{ref_feat},$main::dirproject{wd}),File::Spec->rel2abs("input_reference_features.tab",$main::dirproject{features})) or die "File cannot be copied.";
-#    
-#
-#    
-#    ################################################################
-#    ## Mask annotated sites from the sequence regions
-#    our $annotated_sites = ReadAnnotatedSites();
-#
-#    $main::outfile{ref_sequences_masked} = File::Spec->rel2abs($main::outfile{prefix}."_annotated_sites_masked.fa",$main::dirproject{sequences});
-#    # here we have 2 sets of sequence regions => TFBS masked / not masked	
-# 	our $sequences_length = &MaskAnnotatedSites($annotated_sites,$main::infile{ref_sequences},$main::outfile{ref_sequences_masked}); 
-#	## add input_TFBS_masked as sequences to scan by default
-#	$seq_neg_sets{input_TFBS_masked} = $main::outfile{ref_sequences_masked};
-#
-#	#####################################################################
-# 	## For bg_window option
-# 	our %window_seqs = ();
-# 	if ($window ne "-1") {
-# 		foreach my $window_size (@main::window_sizes){
-# 			################################################################
-# 			## Extract TFBS in subsequences of defined size
-# 			my $TFBS_with_flank_seq_filename = "TFBS_with_flank".$window_size;
-#    		$main::outfile{$TFBS_with_flank_seq_filename} = File::Spec->rel2abs($main::outfile{prefix}."_subseq_with_TFBS_".$window_size."bp.fa",$main::dirproject{sequences});
-# 			my $input_sequences = $main::infile{ref_sequences};
-# 			my $sub_seqs = &extractAnnotatedSitesAndFlanks($annotated_sites,$window_size,$input_sequences,$main::outfile{$TFBS_with_flank_seq_filename},$sequences_length); 	
-#
-# 			#######################################################################
-# 			## prepare prepare TFBS feature file for use with compare-feature
-# 			## positions are relative to each sub-sequence
-# 			my $subsequences = &getRelativeTFBSPositions($sub_seqs,$annotated_sites,$window_size);
-# 			
-# 			## store in a hash
-# 			$window_seqs{$window_size}->{sub_seqs} = $sub_seqs;
-# 			$window_seqs{$window_size}->{sub_sequences} = \$subsequences;
-# 		}
-# 		
-# 		#######################################################################
-# 		## Get sequence of sites from the matrix file
-# 		$main::matrix_sites_ref =  &getMatrixSites($main::infile{matrix}, $main::matrix_format);
-# 	}
+    copy(File::Spec->rel2abs($main::infile{ref_feat},$main::dirproject{wd}),File::Spec->rel2abs("input_reference_features.tab",$main::dirproject{features})) or die "File cannot be copied.";
+    
+
+    
+    ################################################################
+    ## Mask annotated sites from the sequence regions
+    our $annotated_sites = ReadAnnotatedSites();
+
+    $main::outfile{ref_sequences_masked} = File::Spec->rel2abs($main::outfile{prefix}."_annotated_sites_masked.fa",$main::dirproject{sequences});
+    # here we have 2 sets of sequence regions => TFBS masked / not masked	
+ 	our $sequences_length = &MaskAnnotatedSites($annotated_sites,$main::infile{ref_sequences},$main::outfile{ref_sequences_masked}); 
+	## add input_TFBS_masked as sequences to scan by default
+	$seq_neg_sets{input_TFBS_masked} = $main::outfile{ref_sequences_masked};
+
+	#####################################################################
+ 	## For bg_window option
+ 	our %window_seqs = ();
+ 	if ($window ne "-1") {
+ 		foreach my $window_size (@main::window_sizes){
+ 			################################################################
+ 			## Extract TFBS in subsequences of defined size
+ 			my $TFBS_with_flank_seq_filename = "TFBS_with_flank".$window_size;
+    		$main::outfile{$TFBS_with_flank_seq_filename} = File::Spec->rel2abs($main::outfile{prefix}."_subseq_with_TFBS_".$window_size."bp.fa",$main::dirproject{sequences});
+ 			my $input_sequences = $main::infile{ref_sequences};
+ 			my $sub_seqs = &extractAnnotatedSitesAndFlanks($annotated_sites,$window_size,$input_sequences,$main::outfile{$TFBS_with_flank_seq_filename},$sequences_length); 	
+
+ 			#######################################################################
+ 			## prepare prepare TFBS feature file for use with compare-feature
+ 			## positions are relative to each sub-sequence
+ 			my $subsequences = &getRelativeTFBSPositions($sub_seqs,$annotated_sites,$window_size);
+ 			
+ 			## store in a hash
+ 			$window_seqs{$window_size}->{sub_seqs} = $sub_seqs;
+ 			$window_seqs{$window_size}->{sub_sequences} = \$subsequences;
+ 		}
+ 		
+ 		#######################################################################
+ 		## Get sequence of sites from the matrix file
+ 		$main::matrix_sites_ref =  &getMatrixSites($main::infile{matrix}, $main::matrix_format);
+ 	}
 
 ################################################################
 ########## GET OR CALCULATE BACKGROUND MODELS ##################
