@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.5 2007/11/06 13:58:10 rsat Exp $
+# $Id: display-graph,v 1.6 2007/11/19 16:07:28 rsat Exp $
 #
 ############################################################
 
@@ -82,6 +82,7 @@ package main;
     local $source_color_col = 0;
     local $target_color_col = 0;
     local $color_col = 0;
+    local $edge_width = 1;
     ## Output formats
     local $output_format = "ps";
     %supported_output_format =(
@@ -123,6 +124,20 @@ package main;
     if ($layout) {
       $graph->get_position();
     }
+    ## Calculate the minimum and maximum values of the weight on the edges
+    my ($edge_mean, $edge_sd, $edge_min, $edge_max);
+    if ($edge_width) {
+      my $real = $graph->get_attribute("real");
+      if ($real eq "null") {
+         ($edge_mean, $edge_sd, $edge_min, $edge_max) = $graph->weight_properties();
+         ## If one weight at least is not a real number, the weights cannot be computed
+      }
+      if (!$real) {
+        (&RSAT::message::Warning("Cannot compute the mean and standard deviation of the edges : edge weights contain\n\tat least one non real value"."\n")) if ($main::verbose >= 5);
+        $edge_width = 0;
+      }
+      
+    }
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
@@ -139,6 +154,9 @@ package main;
     ## get the nodes position
     my %nodes_id_xpos = $graph->get_attribute("nodes_id_xpos");
     my %nodes_id_ypos = $graph->get_attribute("nodes_id_ypos");
+    ## get the labels
+    my @out_labels = $graph->get_attribute("out_label");
+    
     ## get the total size of the picture
     my $max = 0;
     while (my ($node, $pos) = each (%nodes_id_xpos)) {
@@ -164,6 +182,7 @@ package main;
         if (defined $out_neighbours[$i]) {
           my @neighbours = @{$out_neighbours[$i]};
           my @colors = @{$out_colors[$i]};
+          my @weights = @{$out_labels[$i]};
           my $source_xpos = $nodes_id_xpos{$i};
           my $source_ypos = $nodes_id_ypos{$i};
           for (my $j = 0; $j < scalar(@neighbours); $j++) {
@@ -171,10 +190,16 @@ package main;
               my $target_xpos = $nodes_id_xpos{$neighbours[$j]};
               my $target_ypos = $nodes_id_ypos{$neighbours[$j]};
               my $edge_color = $colors[$j];
+              my $weight = $weights[$j];
               # get the color of the edge
               my $r = hex(substr($edge_color, 1,2));
               my $g = hex(substr($edge_color, 3,2));
               my $b = hex(substr($edge_color, 5,2));
+              $p->setlinewidth(2);
+              if ($edge_width) {
+                $width = ((($weight-$edge_min)/($edge_max-$edge_min))*6.5)+0.5;
+                $p->setlinewidth($width);
+              }
               $p->line($source_xpos,$source_ypos, $target_xpos, $target_ypos, $r, $g, $b);
             }
           }
@@ -226,22 +251,30 @@ package main;
           my @colors = @{$out_colors[$i]};
           my $source_xpos = $nodes_id_xpos{$i};
           my $source_ypos = $nodes_id_ypos{$i};
+          my @weights = @{$out_labels[$i]};
+          
           for (my $j = 0; $j < scalar(@neighbours); $j++) {
             if (defined $neighbours[$j]) {
               my $target_xpos = $nodes_id_xpos{$neighbours[$j]};
               my $target_ypos = $nodes_id_ypos{$neighbours[$j]};
               my $edge_color = $colors[$j];
+              my $weight = $weights[$j];
               # get the color of the edge
               my $r = hex(substr($edge_color, 1,2));
               my $g = hex(substr($edge_color, 3,2));
               my $b = hex(substr($edge_color, 5,2));
               my $current_col = $p->colorAllocate($r, $g, $b);
-              $p->line($source_xpos,$source_ypos, $target_xpos, $target_ypos, $current_col);
-              
+              $p->setThickness(1);
+              if ($edge_width) {
+                $width = ((($weight-$edge_min)/($edge_max-$edge_min))*6.5)+0.5;
+                $p->setThickness($width);
+              }
+              $p->line($source_xpos, $source_ypos, $target_xpos, $target_ypos, $current_col);
             }
           }
         }
       }
+      $p->setThickness(1);
       my $small_font = gdSmallFont;
       my $not_connected_nodes = 30;
       while (my ($id, $name) = each (%nodes_id_name)) {
@@ -412,6 +445,17 @@ Target column. Column containing the target nodes for the tab-delimited format.(
 	    unless (&IsNatural($target_col) && ($target_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $target_col, "Invalid value for the target column. Must be a strictly positive natural number"));
 	    }
+	    
+=item B<-wcol>
+
+Weight column. Column containing the weight nodes. (no default)
+
+=cut
+	} elsif ($arg eq "-wcol") {
+	    $weight_col = shift (@arguments);
+	    unless (&IsNatural($weight_col) && ($weight_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $weight_col, "Invalid value for the weight column. Must be a strictly positive natural number"));
+	    }
 =pod
 
 =item B<-eccol>
@@ -439,7 +483,18 @@ will be taken into account.
 	    unless (&IsNatural($source_color_col) && ($source_color_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $source_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
 	    }
-	    
+=pod
+
+=item B<-ewidth>
+
+Calculate the edge width for the GML output. The width is proportional to the 
+weight of the edge. This value can only be computed for the GML output. 
+All weights in the column indicated by the -wcol argument must thus be real values.
+
+=cut
+	} elsif ($arg eq "-ewidth") {
+	    $edge_width = 1;
+	    	    
 	    ### Output format  
 
 =item B<-out_format output_format>
