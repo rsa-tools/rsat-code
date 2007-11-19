@@ -64,6 +64,7 @@ compare_distrib:
 	@echo  distrib_comparison.tab
 	XYgraph -i distrib_comparison.tab -title '${ORG} ${FACTOR} matrix' \
 		-xcol 1 -ycol 2-10 -pointsize 0 \
-		-xleg1 'score' -yleg2 'P-value' \
-		-legend -lines -xsize 800 -ysize 600 -o distrib_comparison.${IMG_FORMAT}
+		-xleg1 'score' -yleg1 'P-value' \
+		-legend -lines -xsize 600 -ysize 400 \
+		-format ${IMG_FORMAT} -o distrib_comparison.${IMG_FORMAT}
 	@echo  distrib_comparison.${IMG_FORMAT}
