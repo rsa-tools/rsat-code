@@ -402,6 +402,86 @@ sub PrintArguments {
     return $argument_string;
 }
 
+
+################################################################
+### get Background Color from a score value
+###  this subroutine was created by Rekin's and adapted to the RSA-tools
+###  by Sylvain
+###  It converts a score value into a color (in RGB) according to 5 different
+###  color gradients
+### -blue, red, green, grey and fire (from yellow to red)
+
+
+sub getBgColorFromOneScore{
+    my($score,$min,$max,$log,$gradient)=@_;
+    my $rval=0;
+    my $gval=0;
+    my $bval=0;
+    my $new_score = "";
+    if ($log) {
+      $new_score = (log ($score-$min+1))/(log($max-$min+1)); # + pseudo weight (1) to avoid log(0)
+    } else {
+      $new_score = ($score-$min) /($max-$min);
+    }
+    if ($gradient eq "green"){ # white-green
+      $gval=255;
+      $bval=(1-$new_score)*255;
+      $rval=(sqrt($gval*$bval));
+    }
+    if ($gradient eq "red"){ # white-red
+      $rval=255;
+      $gval=(1-$new_score)*255;
+      $bval=(1-$new_score)*255;
+    }
+    if ($gradient eq "blue"){# white-blue
+      $bval=255;
+      $gval=(1-$new_score)*255;
+      $rval=(1-$new_score)*255;
+    }
+    if ($gradient eq "fire"){ # yellow-red
+      $rval=255;
+      $gval=(1-$new_score)*255;
+      $bval=(sqrt($gval*$bval));
+    }
+    if ($gradient eq "grey"){ # grey
+      $rval=(1-$new_score)*255;
+      $gval=(1-$new_score)*255;
+      $bval=(1-$new_score)*255;
+    }
+
+    &RSAT::message::Info(join(" ","Score: ",$new_score,"Red:",$rval,"Green:",$gval,"Blue:",$bval)) if ($main::verbose >= 4);
+    my $hex = &rgb2hex($rval,$gval,$bval );
+    
+    &RSAT::message::Info(join(" ","Hexcolor :",$hex))  if ($main::verbose >= 4);
+    return($hex);
+}
+
+######################################################
+## Convert RGB code to hexadecimal
+
+
+
+sub rgb2hex{
+  my(@rgb)=@_;
+  my $hex = "#";
+  my $i=0;
+  for($i=0; $i<3; $i++) { 
+    if( ($rgb[$i] > 255) || ($rgb[$i] < 0) ) { 
+      return(0);
+    }
+    $tmp = sprintf("%x", $rgb[$i]);
+    if(length($tmp) < 2){
+      $hex .= "0". $tmp;
+    }
+    else{
+      $hex .= $tmp;
+    }
+  }
+  return $hex;
+}
+
+
+
 return 1;
 
 

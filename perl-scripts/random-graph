@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.22 2007/09/11 10:24:27 rsat Exp $
+# $Id: random-graph,v 1.23 2007/11/19 16:07:28 rsat Exp $
 #
 ############################################################
 
@@ -239,31 +239,18 @@ package main;
     }
     
     ############################################################################
-    ## Count the number of edges and nodes for an erdos-renyi randomization
+    ## 
     if ($random_type eq 'ER') {
-      my @arcs =  $graph->get_attribute("arcs");
-      $req_edges = scalar @arcs;
-      $req_nodes = scalar @nodes;
-      my $real = 1;
-      ## calculate the mean and the sd deviation of the weights if wcol is available and the columns are real values
-      for (my $i = 0; $i < scalar(@arcs); $i++) {
-        push @weights, $arcs[$i][2];
-        if (!&RSAT::util::IsReal($arcs[$i][2])) {
-          $real = 0;
-        }
-      }
+      ## Count the number of edges and nodes for an erdos-renyi randomization
+      ($req_nodes, $req_edges) = $graph->properties();
+      ## Calculate the properties of the weights distribution
+      my ($real, $mean, $sd, $min, $max) = $graph->weight_properties();
       if ($normal && $mean eq "null" && $sd eq "null" && !$real) {
         my $error_message =  "Cannot compute the mean and standard deviation of the edges : edge weights contain\n\tat least one non real value"."\n";
         $error_message .=  "\t"."Please check the edges value or enter a mean or sd value manually (-mean # -sd # options)"."\n";
         &RSAT::error::FatalError($error_message);
       }
-
-      if ($weight_col > 0 && $real) {
-        my %summary = &summary(@weights);
-        $mean = $summary{mean};
-        $sd = $summary{sd};
-        &RSAT::message::Info("Mean weight of the edges",$mean,"with deviation",$sd) if ($main::verbose >= 2);
-      }
+      &RSAT::message::Info("Mean weight of the edges",$mean,"with deviation",$sd) if ($main::verbose >= 2);
     }
       
     ################################################################
