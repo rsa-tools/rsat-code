@@ -54,28 +54,27 @@ if ($verbose) {
     }
 }
 
-###### execute the command #########
+################################################################
+## Read input + write output
 $line_counter = 0;
 while (<$in>) {
-      if (/^;/) {
-	  print $out $_;
-      } else {
-	  $line_counter++;
-	  if ($before) {
-	      print $out "$line_counter\t$_";
-	  } else {
-	      chomp;
-	      print $out "$_\t$line_counter\n";
-	  }
-      }
+  if ((/^;/)			## Comment line
+      || (/^#/)			## Header line
+     ) { 
+    print $out $_;
+  } else {
+    $line_counter++;
+    if ($before) {
+      print $out $line_counter, "\t", $_;
+    } else {
+      chomp;
+      print $out $_, "\t", $line_counter, "\n";
+    }
+  }
 }
 
-###### print output ######
 
-
-
-
-###### verbose ######
+## verbose
 if ($verbose) {
     $done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
     print $out ";Job started $start_time";
@@ -83,10 +82,10 @@ if ($verbose) {
 }
 
 
-###### close input file ######
+## close input file
 close $in unless ($inputfile eq "");
 
-###### close output file ######
+## close output file
 close $out unless ($outputfile eq "");
 
 
@@ -94,7 +93,7 @@ exit(0);
 
 
 ################################################################
-#################### subroutine definition #####################
+#################### Subroutine definition #####################
 ################################################################
 
 ################################################################
