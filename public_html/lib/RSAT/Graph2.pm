@@ -7,9 +7,11 @@ package RSAT::Graph2;
 use RSAT::GenericObject;
 use RSAT::error;
 use RSAT::util;
+use RSAT::stats;
 use List::Util 'shuffle';
 
 require "RSA.lib";
+
 
 ### class attributes
 @ISA = qw( RSAT::GenericObject );
@@ -57,6 +59,13 @@ sub new {
     
     my $max_arc = 1;
     
+    
+    my $mean_weight = "null";
+    my $sd_weight = "null";
+    my $max_weight = "null";
+    my $min_weight = "null";
+    my $real = "null";
+    
     my %arcs_name_id = ();
     my %nodes_color = ();
     my %nodes_label = ();
@@ -87,6 +96,12 @@ sub new {
     # $arcs[x][2] : label
     # $arcs[x][3] : color
     $self->set_array_attribute("arcs", @arcs);
+    # Properties of the weight (may be calculated only if all weights are real)
+    $self->force_attribute("mean_weight", $mean_weight);
+    $self->force_attribute("mean_sd", $mean_sd);
+    $self->force_attribute("max_weight", $max_weight);
+    $self->force_attribute("min_weight", $min_weight);
+    $self->force_attribute("real", $real);
     # $maxarc represents the number of time that an arc may be duplicated.
     $self->force_attribute("nb_arc_bw_node", $max_arc);
     # %nodes_name_id correspondance between the name of an arc and its internal id in the @arcs array.
@@ -328,7 +343,7 @@ sub randomize {
         $non_decreasing_count = 0;
       }
       if ($main::verbose >= 3) {
-        &RSAT::message::Info("\t",$invalid, "arcs invalid... Shuffling procedure starts again on those arcs", $loopcount, "iteration") if ($main::verbose >= 3);
+        &RSAT::message::TimeWarn("\t",$invalid, "arcs invalid... Shuffling procedure starts again on those arcs", $loopcount, "iteration") if ($main::verbose >= 3);
       }
 
       
@@ -925,6 +940,65 @@ sub properties {
     my %nodes_id_name = $self->get_attribute("nodes_id_name");
     my $nbnodes = scalar (keys(%nodes_id_name));
     return ($nbnodes, $nbarcs);
+}
+################################################################
+=pod
+
+=item B<get_weights()>
+
+Return a vector containing the weights
+=cut
+sub get_weights() {
+  my ($self) = @_;
+  my @weights = ();
+  my $real = 1;
+  for (my $i = 0; $i < scalar(@arcs); $i++) {
+    push @weights, $arcs[$i][2];
+    if (!&RSAT::util::IsReal($arcs[$i][2])) {
+      $real = 0;
+    }
+  }
+  $self->force_attribute("real", $real);
+  return $real;
+}
+
+
+################################################################
+=pod
+
+=item B<weight_properties()>
+
+Return the properties of the weight distribution
+
+=cut
+sub weight_properties {
+    my ($self, @weights) = @_;
+    my $mean = "null";
+    my $sd = "null";
+    my $min = "null";
+    my $max = "null";
+    my $real = $self->get_attribute("real");
+    my @arcs = $self->get_attribute("arcs");
+    if ($real eq "null") {
+      $real = $self->get_weights()
+    }
+    if (!@weights) {
+      @weights = map $_->[ 2 ], @arcs;
+    }
+    if ($real) {
+      my %summary = &RSAT::stats::summary(@weights);
+      $mean = $summary{mean};
+      $sd = $summary{sd};
+      $min = $summary{min};
+      $max = $summary{max};
+    } else {
+      &RSAT::message::Warning("Cannot compute the mean and standard deviation of the edges : edge weights contain\n\tat least one non real value"."\n") if ($main::verbose >= 5);
+    }
+    $self->force_attribute("mean_weight", $mean);
+    $self->force_attribute("mean_sd", $sd);
+    $self->force_attribute("max_weight", $max);
+    $self->force_attribute("min_weight", $min);
+    return ($mean, $sd, $min, $max);
 }
 ################################################################
 =pod
@@ -1790,7 +1864,6 @@ sub load_from_array {
     my @arc_out_color = $self->get_attribute("out_color");
     my @arcs = $self->get_attribute("arcs");
     my %arcs_name_id = $self->get_attribute("arcs_name_id");
- 
     
     my %nodes_name_id = $self->get_attribute("nodes_name_id");
     my %nodes_id_name = $self->get_attribute("nodes_id_name");
@@ -1798,9 +1871,27 @@ sub load_from_array {
     my %nodes_label = $self->get_attribute("nodes_label");
     
     my $max_arc_nb = $self->get_attribute("nb_arc_bw_node");
-   
+    my ($mean, $sd, $min, $max);
+     
     my $nodecpt = 0;
     my $arccpt = 0;
+    
+    # if $main::edge_colors is defined in convert-graph
+    # then, extract the third column of the array of edges 
+    # that contains the weight and 
+    # that it does not contain not real values
+    if ($main::edge_colors) {
+      $edge_weight_colors = $main::edge_colors;
+      my $real = $self->get_weights();
+      if ($real) {
+        my @weights = map $_->[ 2 ], @array;
+        ($mean, $sd, $min, $max) = $self->weight_properties(@weights);
+      }
+    }
+    
+
+    
+    
     ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
     
 
@@ -1861,6 +1952,10 @@ sub load_from_array {
 	} else {
 	    $arc_label = $weight;
 	}
+	if ($edge_weight_colors) {
+	  $edge_color = &RSAT::util::getBgColorFromOneScore($arc_label, $min, $max, 0, $edge_weight_colors);
+	}
+	
 	push @{$out_neighbours[$source_node_index]}, $target_node_index;
 	push @{$in_neighbours[$target_node_index]}, $source_node_index;
 	push @{$arc_out_label[$source_node_index]}, $arc_label;
@@ -1957,6 +2052,8 @@ sub to_text {
     if ($out_format eq "dot") {
 	return $self->to_dot(@args);
     } elsif ($out_format eq "gml") {
+        shift @args;
+        shift @args;
 	return $self->to_gml(@args);
     } elsif ($out_format eq "tab") {
 	return $self->to_tab(@args);
@@ -2178,11 +2275,17 @@ sub to_gml {
     my %nodes_id_name = $self->get_attribute("nodes_id_name");
     my %nodes_color = $self->get_attribute("nodes_color");
     my %nodes_label = $self->get_attribute("nodes_label");
-    
-    
     my @out_neighbours = $self->get_attribute("out_neighbours");
     my @out_label = $self->get_attribute("out_label");
     my @out_color = $self->get_attribute("out_color");
+    my $min = $self->get_attribute("min_weight");
+    my $max = $self->get_attribute("max_weight");
+    my $edge_width_calc = 0;
+    if ($min ne "null" && $max ne "null" && $main::edge_width) {
+      $edge_width_calc = 1;
+    } 
+    
+    
 
     ## Graph description
     my $graph_label = $self->get_attribute("label") || "graph";
@@ -2223,7 +2326,7 @@ sub to_gml {
 # 	print "noeud $label\n";
     }
     ## Export arcs
-    &RSAT::Message::Info("Exporting edges") if $main::verbose >= 3;
+    &RSAT::message::Info("Exporting edges") if ($main::verbose >= 3);
     for (my $i = 0; $i < scalar(@out_neighbours); $i++) {
       
       if (defined (@{$out_neighbours[$i]})) {
@@ -2237,6 +2340,10 @@ sub to_gml {
           my $target_id = $source_out_neighbours[$j];
           my $arc_color = $source_out_color[$j];
           my $arc_label = $source_out_label[$j];
+          my $edge_width= 2;
+          if ($edge_width_calc) {
+            $edge_width = ((($arc_label-$min)/($max-$min))*6.5)+0.5;
+          }
           $gml .= "\tedge\n";
 	  $gml .= "\t"."[\n";
   	  $gml .= "\t\t"."source\t".$source_id."\n";
@@ -2244,7 +2351,7 @@ sub to_gml {
 	  $gml .= "\t\t"."label\t\"".$arc_label."\"\n" if (defined($arc_label));
 	  $gml .= "\t\t"."graphics\n";
 	  $gml .= "\t\t"."[\n";
-	  $gml .= "\t\t\t"."width\t2\n";
+	  $gml .= "\t\t\t"."width\t$edge_width\n";
 	  $gml .= "\t\t\t"."type\t\"line\"\n";
 	  $gml .= "\t\t\t"."fill\t\"".$arc_color."\"\n";
 	  $gml .= "\t\t]\n";
