@@ -200,6 +200,11 @@ body.results blockquote {
 	font-size: 12px;
 }
 
+body.results blockquote.message {
+	color : #009900;
+	font-size: 12px;
+}
+
 
 body.results center {
 	margin-top: 5px;
