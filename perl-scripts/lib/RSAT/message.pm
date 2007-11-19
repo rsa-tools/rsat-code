@@ -123,8 +123,9 @@ Print a message in HTML format (STDOUT)
 sub cgiMessage {
     my ($message, $message_type, $color) = @_;
     $color = "#00BB00" unless ($color);
+    $message_type = "information" unless ($message_type);
     print  "<h4 >$message_type</h4>",
-	    "<blockquote class='message'>",
+	    "<blockquote class='",lc($message_type),"'>",
 	    "\n",
 	    $message,
 	    "\n",

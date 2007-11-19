@@ -200,9 +200,12 @@ body.results blockquote {
 	font-size: 12px;
 }
 
-body.results blockquote.message {
+body.results blockquote.information {
 	color : #009900;
-	font-size: 12px;
+}
+
+body.results blockquote.warning {
+	color : #aa0000;
 }
 
 
