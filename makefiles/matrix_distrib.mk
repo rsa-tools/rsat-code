@@ -7,7 +7,7 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/matrix_distrib.mk
 
-all: list_params iid_model iid_distrib all_bgol 
+all: list_param iid_model iid_distrib all_bgol 
 
 ################################################################
 ## List the parameters
@@ -51,7 +51,7 @@ iid_model:
 	@echo "C	0.25" >> iid_model.tab
 	@echo "G	0.25" >> iid_model.tab
 	@echo "T	0.25" >> iid_model.tab
-	@echo iid_model.tab
+	@ecoh iid_model.tab
 
 ################################################################
 ## Compute theoretical distribution with an IID model
