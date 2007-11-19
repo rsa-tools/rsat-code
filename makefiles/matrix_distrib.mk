@@ -7,7 +7,7 @@
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/matrix_distrib.mk
 
-all: list_param iid_model iid_distrib all_bgol 
+all: list_params iid_model iid_distrib all_bgol 
 
 ################################################################
 ## List the parameters
