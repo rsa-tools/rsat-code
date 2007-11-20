@@ -376,4 +376,54 @@ sub CGI_return_fields {
 
 }
 
+
+################################################################
+## Specify a selection of accepted patterns
+sub ReadAcceptedPatterns {
+  my ($accepted_pattern_file, $pattern_type) = @_;
+  ($acc) = &OpenInputFile($accepted_pattern_file);
+
+  &RSAT::message::TimeWarn("Reading accepted patterns from file", $accepted_pattern_file) if ($main::verbose >= 2);
+
+  ## Read a file containing a selection of accepted patterns
+  my $l = 0;
+  while (<$acc>) {
+    $l++;
+    next if (/^;/);
+    next if (/^--/);
+    next if (/^#/);
+    next unless (/\S/);
+    chomp;
+    my @fields = split /\s+/;
+    my $accepted_pattern = lc($fields[0]);
+
+    ## Check dyad syntax
+    if ($pattern_type eq "dyads") {
+      unless ($accepted_pattern =~ /[a-z]+n\{\d+}[a-z]/) {
+	&RSAT::message::Warning($accepted_pattern, "Invalid pattern specitifcation in the accepted pattern files line", $l);
+	next;
+      }
+    }
+    $accepted_patterns{$accepted_pattern} = 1;
+
+  }
+  close $acc;
+
+  ## Also accept reverse complementary patterns if patterns are counted on both strands
+  if ($sum_rc) {
+    foreach my $pattern (keys %accepted_patterns) {
+      my $pattern_rc = lc(&SmartRC($pattern));
+      $accepted_patterns{$pattern_rc} = 1;
+    }
+  }
+
+  ## Report the number of accepted patterns
+  if ($main::verbose >= 2) {
+    &RSAT::message::TimeWarn(scalar(keys %accepted_patterns), "accepted patterns specified in file", $accepted_pattern_file);
+    ## Report the list of accepted patterns
+    &RSAT::message::Info("Accepted patterns", join(" ", "", sort keys %accepted_patterns))
+      if ($main::verbose >= 5);
+  }
+}
+
 return 1;
