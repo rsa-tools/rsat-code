@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.58 2007/08/06 23:12:19 jvanheld Exp $
+# $Id: dyad-analysis,v 1.59 2007/11/20 22:16:45 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -43,9 +43,9 @@ $accepted_dyad_type{ir} = 1;  #inverted repeats
 $accepted_dyad_type{any} = 1; #any dyad, repeat or not
 $dyad_type = "any";
 
-## Accepted dyad provided in an external file
-$infile{accepted_dyads} = ""; ## File containing a restricted list of dyads to be analyzed. 
-%accepted_dyads = ();
+## File containing a restricted list of accepted patterns
+$infile{accepted_patterns} = ""; 
+%accepted_patterns = ();
 
 ## Count dyads on single or boths strand
 $strands = "-2str";
@@ -105,46 +105,15 @@ eval {
     ## Check argument values 
 
     ## Special cases where we need to ccount patterns with zero occurrences
-    if (($tail eq "left") || 
+    if (($tail eq "left") ||
 	($tail eq "two")) {
 	$zeroocc = 1;
     }
 
     ################################################################
-    ## File containing a selection of accepted dyads
-    if ($infile{accepted_dyads}) {
-	($acc) = &OpenInputFile($infile{accepted_dyads});
-	while (<$acc>) {
-	    next if (/^;/);
-	    next if (/^--/);
-	    next if (/^#/);
-	    next unless (/\S/);
-	    chomp;
-	    my @fields = split /\s+/;
-	    my $accepted_dyad = lc($fields[0]);
-	    if ($accepted_dyad =~ /[a-z]+n\{\d+}[a-z]/) {
-		$accepted_dyads{$accepted_dyad} = 1;
-	    } else {
-		&RSAT::message::Warning($accepted_dyad, "Invalid dyad specitifcation in the accepted dyad files line", $l);
-	    }
-	}
-	close $acc;
-
-	## Also accept reverse complementary dyads if dyads are counted on both strands
-	if ($sum_rc) {
-	    foreach my $dyad (keys %accepted_dyads) {
-		my $dyad_rc = lc(&SmartRC($dyad));
-		$accepted_dyads{$dyad_rc} = 1;
-	    }
-	}
-
-	if ($main::verbose >= 2) {
-	    ## Report the number of accepted dyads
-	    &RSAT::message::Info(join("\n\t", "Accepted dyads specified in dyad file", scalar(keys %accepted_dyads)));
-	    ## Report the list of accepted dyads
-	    &RSAT::message::Info(join(";\n\t", "", sort keys %accepted_dyads))
-		if ($main::verbose >= 5);
-	}
+    ## Read a file containing a selection of accepted patterns
+    if ($infile{accepted_patterns}) {
+      &ReadAcceptedPatterns($infile{accepted_patterns}, "dyads");
     }
 
     ################################################################
@@ -207,10 +176,10 @@ eval {
     }
     &CalcMonadFrequencies() if ($calc_fields{freq}); ### Calculate observed monad frequencies
     &CalcDyadFrequencies() if ($calc_fields{freq}); ### Calculate observed dyad frequencies
-    
+
     ## Open output stream
     $out = &OpenOutputFile($outputfile); 
-    
+
     &CalcExpectedMonadFreq(); ## Calculate expected monad frequencies
     &CalcExpectedDyadFreq() if ($calc_fields{exp_freq}); ### Calculate expected dyad frequencies
     &CalcExpectedOcc() if ($calc_fields{exp_occ}); ### Calculate expected dyad occurrences
@@ -589,23 +558,27 @@ sub SumReverseComplements {
 ################################################################
 ### Sum occurrences for each spacing value
 sub CalcOccSum {
-    &RSAT::message::TimeWarn("Calculating sums of occurrences per spacing") if ($main::verbose >= 2);
-    foreach $spacing (@spacing_list) {
-	foreach $oligo1 (keys %oligo) {
-	    foreach $oligo2 (&SecondElement($oligo1)) {
-		if ($group_sp) {
-		    $pattern_seq = "${oligo1}n\{$min_spacing,$max_spacing\}${oligo2}";
-		} else {
-		    $pattern_seq = "${oligo1}n\{$spacing\}${oligo2}";
-		}
-		next unless ((defined($patterns{$pattern_seq}->{occ})) ||
-			      (defined($patterns{$pattern_seq}->{overlaps}))
-			      );
-		$dyad_occ_sum{$spacing} += $patterns{$pattern_seq}->{occ};
-		$dyad_ovl_sum{$spacing} += $patterns{$pattern_seq}->{overlaps};
-	    }
+  &RSAT::message::TimeWarn("Calculating sums of occurrences per spacing") if ($main::verbose >= 2);
+  foreach $spacing (@spacing_list) {
+    foreach $oligo1 (keys %oligo) {
+      foreach $oligo2 (&SecondElement($oligo1)) {
+	my $pattern_seq;
+	if ($group_sp) {
+	  $pattern_seq = "${oligo1}n\{$min_spacing,$max_spacing\}${oligo2}";
+	} else {
+	  $pattern_seq = "${oligo1}n\{$spacing\}${oligo2}";
 	}
+
+	next if (($infile{accepted_patterns}) && (!($accepted_patterns{$pattern_seq})));
+	next unless ((defined($patterns{$pattern_seq}->{occ})) ||
+		     (defined($patterns{$pattern_seq}->{overlaps}))
+		    );
+	$dyad_occ_sum{$spacing} += $patterns{$pattern_seq}->{occ};
+	$dyad_ovl_sum{$spacing} += $patterns{$pattern_seq}->{overlaps};
+      }
     }
+  }
+  &RSAT::message::TimeWarn(scalar(keys(%patterns)), "distinct dyads") if ($main::verbose >= 2);
 }
 
 
@@ -848,7 +821,7 @@ sub ReadArguments {
 
 	    ### analyze only selected dyads
 	} elsif ($ARGV[$a] =~ /^-accept/i) {
-	    $infile{accepted_dyads} = $ARGV[$a+1];
+	    $infile{accepted_patterns} = $ARGV[$a+1];
 
 	    ### sort results ###
 	} elsif ($ARGV[$a] =~ /^-sort/i) {
@@ -1242,13 +1215,8 @@ sub CountDyads {
 	  }
 
 	  ################################################################
-	  ## Check accepted dyads
-	  if ($infile{accepted_dyads}) {
-	    unless ($accepted_dyads{$pattern_seq}) {
-	      ##&RSAT::message::Debug("Discarded dyad", $pattern_seq) if ($main::verbose >= 5);
-	      next;
-	    }
-	  }
+	  ## Check accepted patterns
+	  next if (($infile{accepted_patterns}) && (!($accepted_patterns{$pattern_seq})));
 
 	  ################################################################
 	  ## Treatment of self-overlapping occurrences
@@ -1298,6 +1266,7 @@ sub CountDyads {
     $valid_dyad_positions{$spacing} = $nb_possible_pos{$spacing} - $discarded_dyad_positions{$spacing};
   }
 
+  &RSAT::message::TimeWarn("Counted occurrences", scalar(keys(%patterns)), "distinct dyads") if ($main::verbose >= 2);
 }
 
 
@@ -1349,9 +1318,9 @@ sub PrintVerbose {
     &PrintArguments($out);
     print $out "; Citation: van Helden et al. (2000). Nucleic Acids Res. 28(8):1808-18.\n";
     printf $out "; %-29s\t%s\n", "Input file", $infile{input} if ($infile{input});
-    if ($infile{accepted_dyads}) {
-	printf $out "; %-29s\t%s\n", "Accepted dyad file", $infile{accepted_dyads}; 
-	printf $out "; %-29s\t%s\n", "Accepted dyads", scalar(keys(%accepted_dyads)); 
+    if ($infile{accepted_patterns}) {
+	printf $out "; %-29s\t%s\n", "Accepted dyad file", $infile{accepted_patterns}; 
+	printf $out "; %-29s\t%s\n", "Accepted dyads", scalar(keys(%accepted_patterns)); 
     }
     printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
     printf $out "; %-29s\t%s\n", "Nb of sequences", $sequence_number;
@@ -1360,17 +1329,17 @@ sub PrintVerbose {
     printf $out "; %-29s\t%s\n", "Output file", $outputfile if ($outputfile);
     printf $out "; %-29s\t%s\n", "default return values", join(",", keys(%default_return_fields));
     printf $out "; %-29s\t%s\n", "return values", join(",", keys(%return_fields));
-    
+
     ################################################################
     ## Counting mode
-    
+
     ## overlaps
     if ($noov eq "-noov") {
 	print $out "; Discard overlapping matches\n";
     } else {
 	print $out "; Count overlapping matches\n";
     }
-    
+
     ## Strands
     if ($sum_rc) {
 	print $out "; Counted on both strands\n";
@@ -1380,9 +1349,9 @@ sub PrintVerbose {
     } else {
 	print $out "; Counted on a single strand\n";
     }
-    
+
     ################################################################
-    #### monads
+    ## Monads
     printf $out "; %-29s\n", "Monad parameters";
     printf $out "; %-29s\t%d\n", "\tmonad size", $oligo_length;
     if ($verbose >= 3) {
@@ -1797,7 +1766,7 @@ OPTIONS
 		the accepted dyads, compared to the default situation
 		where all dyads are analyzed.
 
-		File format: the first word of each row indicates a
+		File format: the first word of each row specifies a
 		dyad. Subsequent words are ignored.
 
 	-groupsp
