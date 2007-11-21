@@ -946,17 +946,17 @@ sub properties {
 
 =item B<get_weights()>
 
-Return a vector containing the weights
+Check if the weights are real numbers (or labels)
 =cut
 sub get_weights() {
   my ($self) = @_;
-  my @weights = ();
+  my @arcs = $self->get_attribute("arcs");
   my $real = 1;
   for (my $i = 0; $i < scalar(@arcs); $i++) {
-    push @weights, $arcs[$i][2];
     if (!&RSAT::util::IsReal($arcs[$i][2])) {
       $real = 0;
-    }
+      last;
+    } 
   }
   $self->force_attribute("real", $real);
   return $real;
@@ -980,8 +980,8 @@ sub weight_properties {
     my $real = $self->get_attribute("real");
     my @arcs = $self->get_attribute("arcs");
     if ($real eq "null") {
-      $real = $self->get_weights()
-    }
+      $real = $self->get_weights();
+    } 
     if (!@weights) {
       @weights = map $_->[ 2 ], @arcs;
     }
@@ -1651,11 +1651,11 @@ sub load_from_gml {
     foreach my $node (@fichier_node) {
       if ($node ne " ") {
         $node =~ s/edge.*\[.*//;
-        my $node_id =  "NA";
-        my $node_label = "NA";
+        my $node_id =  "NA#";
+        my $node_label = "NA#";
         my $node_color  = "#000088";
-        my $node_xpos = "NA";
-        my $node_ypos = "NA";
+        my $node_xpos = "NA#";
+        my $node_ypos = "NA#";
 # NODE ID
         if ($node =~ /id/) {
           my @node_cp = split /.*id /, $node;
@@ -1696,8 +1696,8 @@ sub load_from_gml {
           $node_ypos =~ s/\"//;
          }
 	
-        if ($node_id ne "NA") {
-          if ($node_label eq "NA") {
+        if ($node_id ne "NA#") {
+          if ($node_label eq "NA#") {
             $node_label = $node_id;
           }
           my $node_index = $nodes_name_id{$node_label};
@@ -1708,10 +1708,10 @@ sub load_from_gml {
 	    $nodes_label{$node_index} = $node_label;
 	    $nodes_name_id{$node_label} = $nodecpt;
 	    $nodes_id_name{$nodecpt} = $node_label;
-	    if ($node_xpos ne "NA") {
+	    if ($node_xpos ne "NA#") {
 	      $nodes_id_xpos{$node_id} = $node_xpos;
 	    }
-	    if ($node_ypos ne "NA") {
+	    if ($node_ypos ne "NA#") {
 	      $nodes_id_ypos{$node_id} = $node_ypos;
 	    }	    
 	    $nodecpt++;
@@ -1730,9 +1730,9 @@ sub load_from_gml {
 
     foreach my $edge (@fichier_edge) {
       if ($edge ne " ") {
-        my $source_edge =  "NA";
-        my $target_edge = "NA";
-        my $label_edge  = "NA";
+        my $source_edge =  "NA#";
+        my $target_edge = "NA#";
+        my $label_edge  = "NA#";
         my $color_edge = "#000044";
     
 # SOURCE EDGE
@@ -1762,7 +1762,7 @@ sub load_from_gml {
           $color_edge =~ s/\"//;
         }
 	
-        if ($source_edge ne "NA" || $target_edge ne "NA") {
+        if ($source_edge ne "NA#" || $target_edge ne "NA#") {
           next if $discarded_nodes{$source_edge};
           next if $discarded_nodes{$target_edge};
           $source_node_id = $gml_id{$source_edge};
@@ -1771,7 +1771,7 @@ sub load_from_gml {
 	  $target_node = $target_edge;
 	  $source_name = $nodes_id_name{$source_node_id};
 	  $target_name = $nodes_id_name{$target_node_id}; 
-	  if ($label_edge eq "NA") {
+	  if ($label_edge eq "NA#") {
 	    $label_edge = $nodes_id_name{$source_node_id}."_".$nodes_id_name{$target_node_id};
 	  }
 	  $nodes_label = $label_edge;
