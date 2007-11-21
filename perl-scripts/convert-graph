@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.29 2007/11/19 16:07:28 rsat Exp $
+# $Id: convert-graph,v 1.30 2007/11/21 13:08:55 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -487,7 +487,7 @@ All weights in the column indicated by the -wcol argument must thus be real valu
 	} elsif ($arg eq "-ewidth") {
 	    $edge_width = 1;
 
-=item B<-ecolor>
+=item B<-ecolors>
 
 Compute an edge color for the GML output. The color intensity is proportional to the weight
 of the edge. All weights in the column indicated by the -wcol argument must thus be real values.
