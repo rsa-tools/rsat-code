@@ -140,7 +140,7 @@ compare_dyads:
 ## Compare score distributions of MotifSampler
 
 ## Check MotifSampler files
-MS_SUFFIX=-s1-p0.2-M0-n5-w16-x1-r1.sites
+MS_SUFFIX=-s1-p0.2-M0-n${NMOTIFS}-w${MATRIX_WIDTH}-x1-r1.sites
 #MS_SUFFIX=-s1-p0.2-M0-n5-w16-x1-r5.sites
 check_MotifSampler:
 	wc -l ${MULTI_DIR}/*/MotifSampler_*/*${MS_SUFFIX} | sort -nr  > MotifSampler_files.txt
