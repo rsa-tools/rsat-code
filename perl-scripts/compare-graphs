@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.37 2007/11/22 08:49:05 rsat Exp $
+# $Id: compare-graphs,v 1.38 2007/11/22 13:57:47 rsat Exp $
 #
 ############################################################
 
@@ -36,7 +36,7 @@ util
    [-in_format_R tab|gml] [-in_format_Q tab|gml] \
    [-scol_R #] [-tcol_R #] [-wcol_R #] \
    [-scol_Q #] [-tcol_Q #] [-wcol_Q #] \
-   -return intersection|difference|union \
+   -return intersection|difference|union|intersection+Q|intersection+R \
    [-outweight Q|R|sum|mean|mean.g|min|max|Q::R] [-null value] \
    [-out_format gml|dot|tab] [-o output_file]
 
