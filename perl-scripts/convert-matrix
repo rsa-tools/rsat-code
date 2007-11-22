@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.50 2007/10/30 17:58:08 morgane Exp $
+# $Id: convert-matrix,v 1.51 2007/11/22 12:28:34 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -193,29 +193,29 @@ if (scalar(@matrix_files >= 1)) {
 
 ## process each matrix
 foreach my $matrix (@matrices) {
-  	$matrix->set_parameter("pseudo", $pseudo_weight);
-  	$matrix->set_attribute("equi_pseudo", $equi_pseudo);
-  	#  $matrix->push_attribute("parameters", "pseudo");
-  	$matrix->force_attribute("decimals", $decimals);
-  	$matrix->force_attribute("max_profile", $max_profile);
-  	$matrix->force_attribute("sep", $sep);
-  	# $matrix->force_attribute("col_width", $col_width);
-  	$matrix->force_attribute("margins", $return_fields{margins});
-  	$matrix->setInfoLogBase($info_log_base);
-  	$matrix->set_parameter("bg_markov_order", 0);	
-  	if ($infile{prior}) {
-  		$matrix->setPrior(%prior);
-  	}
+  $matrix->set_parameter("pseudo", $pseudo_weight);
+  $matrix->set_attribute("equi_pseudo", $equi_pseudo);
+  #  $matrix->push_attribute("parameters", "pseudo");
+  $matrix->force_attribute("decimals", $decimals);
+  $matrix->force_attribute("max_profile", $max_profile);
+  $matrix->force_attribute("sep", $sep);
+  # $matrix->force_attribute("col_width", $col_width);
+  $matrix->force_attribute("margins", $return_fields{margins});
+  $matrix->setInfoLogBase($info_log_base);
+  $matrix->set_parameter("bg_markov_order", 0);	
+  if ($infile{prior}) {
+    $matrix->setPrior(%prior);
+  }
 
 
-## Calculate parameters before sorting because sorting can be done on
-## a computed parameter rather than defined in the input file.
-	if ($return_fields{parameters}) {
-			$matrix->calcWeights();
-			$matrix->calcInformation();
-			$matrix->calcConsensus();
-			$matrix->calcGCcontent();
- 	   }
+  ## Calculate parameters before sorting because sorting can be done on
+  ## a computed parameter rather than defined in the input file.
+  if ($return_fields{parameters}) {
+    $matrix->calcWeights();
+    $matrix->calcInformation();
+    $matrix->calcConsensus();
+    $matrix->calcGCcontent();
+  }
 }
 
 ## Sort the matrices if requested
