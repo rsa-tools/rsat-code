@@ -12,6 +12,7 @@
   $default_tcol = 2;
   $default_wcol = "";
   $default_layout = "checked";
+  $default_ewidth = "";
   # PIPE VALUES
   $pipe = $_REQUEST['pipe'];
   $graph_file = $_REQUEST['graph_file'];
@@ -75,6 +76,8 @@
   }
   echo ("
   <input type='checkbox' name='layout' value='on' $default_layout/>&nbsp;<B><a href = 'help.display_graph.html#layout'>Calculate the layout of the nodes (mandatory for all input format except GML)</a></B><br>
+    <input type='checkbox' $demo_ewidth name='ewidth' value='on' />&nbsp;<B><a href = 'help.convert_graph.html#ewidth'>Edge width proportional to the weight of the edges</a></B><br>
+
   <ul><ul><table class='formbutton'>
   <TD><input type='submit' name='.submit' value='GO' /></TD>
   <TD><B><A HREF='display_graph_form.php?demo=0'>RESET</A></B></TD>

@@ -20,7 +20,22 @@
   $layout = $_REQUEST['layout'];
   if ($layout == 'on') {
     $layout = 1;
+  } else {
+    $layout = 1;
   }
+  $ewidth = $_REQUEST['ewidth'];
+  $ecolors = $_REQUEST['ecolors'];
+
+  if ($ewidth == 'on') {
+    $ewidth = 1;
+  } else {
+    $ewidth = 0;
+  }
+  
+  if ($ecolors == 'none') {
+    $ecolors = 0;
+  } 
+
   $undirected = $_REQUEST['undirected'];
   $s_col = $_REQUEST['s_col'];
   $t_col = $_REQUEST['t_col'];
@@ -60,11 +75,14 @@
         "inputgraph"=>$graph,
         "scol"=>$s_col,
         "tcol"=>$t_col,
+        "wcol"=>$w_col,
+        "ecolors"=>$ecolors,
         "layout"=>$layout,
         "tccol"=>$tc_col,
         "sccol"=>$sc_col,
         "eccol"=>$ec_col,
-        "undirected"=>$undirected
+        "undirected"=>$undirected,
+        "ewidth"=>$ewidth
       )
     );
     # Info message

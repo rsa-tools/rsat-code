@@ -29,7 +29,12 @@
   $ec_col = $_REQUEST['ec_col'];
   $sc_col = $_REQUEST['sc_col'];
   $tc_col = $_REQUEST['tc_col'];
-  
+  $ewidth = $_REQUEST['ewidth'];
+  if ($ewidth == 'on') {
+    $ewidth = 1;
+  } else {
+    $ewidth = 0;
+  }  
   ## If a file and a graph are submitted -> error
   if ($graph != "" && $graph_file != "") {
     $error = 1;
@@ -64,12 +69,14 @@
       "informat"=>$in_format,
         "outformat"=>$out_format,
         "inputgraph"=>$graph,
+        "ewidth"=>$ewidth,
         "scol"=>$s_col,
         "tcol"=>$t_col,
         "layout"=>$layout,
         "tccol"=>$tc_col,
         "sccol"=>$sc_col,
         "eccol"=>$ec_col
+        
       )
     );
     # Info message
@@ -78,7 +85,7 @@
   
     # Open the SOAP client
     $client = new SoapClient(
-                       'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWStest.wsdl',
+                       'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl',
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,

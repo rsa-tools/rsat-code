@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.36 2007/09/17 13:07:27 rsat Exp $
+# $Id: compare-graphs,v 1.37 2007/11/22 08:49:05 rsat Exp $
 #
 ############################################################
 
@@ -274,7 +274,7 @@ package main;
 	my $done_time = &AlphaDate();
 	my $this_out = $main::out;
 	if ($output_format ne 'tab') {
-          $this_out = "STDOUT";
+          $this_out = "STDERR";
         }
 	print $this_out "; Job started $start_time\n";
 	print $this_out "; Job done    $done_time\n";
@@ -985,7 +985,7 @@ sub in_common {
 sub Verbose {
     my $this_out = $main::out;
     if ($output_format ne 'tab') {
-      $this_out = "STDOUT";
+      $this_out = "STDERR";
     }
     print $this_out "; compare-graphs ";
     &PrintArguments($this_out);
