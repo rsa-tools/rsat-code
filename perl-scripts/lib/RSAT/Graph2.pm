@@ -1377,6 +1377,7 @@ sub read_from_table {
       }
       if ($weight) {
         $array[$cpt][2] = $linecp[$weight_col-1];
+        $array[$cpt][2] =~ s/^\s*//;
       } else {
         $array[$cpt][2] = join("_",$array[$cpt][0],$array[$cpt][1]);
       }
@@ -2340,6 +2341,7 @@ sub to_gml {
           my $target_id = $source_out_neighbours[$j];
           my $arc_color = $source_out_color[$j];
           my $arc_label = $source_out_label[$j];
+          $arc_label =~ s/^\s*//;
           my $edge_width= 2;
           if ($edge_width_calc) {
             $edge_width = ((($arc_label-$min)/($max-$min))*6.5)+0.5;
