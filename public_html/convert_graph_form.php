@@ -12,10 +12,16 @@
   $default_tcol = 2;
   $default_wcol = "";
   $default_layout = "checked";
+  $default_ecolors = "";
+  $default_ewidth = "";
   # demo graph
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
-    $demo_graph = $uetz;
+    $demo_graph = $string_yeast_coex_550;
+    $demo_ecolors = "selected";
+    $demo_ewidth = "checked";
+    $default_ecolors = "";
+    $default_wcol = 3;
   }
 
   title('convert-graph');
@@ -32,7 +38,7 @@
   <option value = 'adj_matrix'> Adjacency matrix
   </select><br>");
   if ($demo) {
-    demo("This demonstration graph is the yeast two-hybrid dataset produced by <a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?db=pubmed&uid=10688190&cmd=showdetailview&indexed=google'>Uetz et al (2001)</a>. It consists in 865 interactions between 926 proteins.");
+    demo("This demonstration graph is a dataset containing the co-expression annotation for the yeast extracted from <a href = 'http://string.embl.de/' target = 'top'> the String Database</a> (<a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?cmd=Retrieve&db=PubMed&list_uids=17098935&dopt=AbstractPlus'>Von Mering, 2007</a>). We only considered the top scoring (score > 550) coexpression interactions.");
   }
   echo("<br>
   <textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>
@@ -44,13 +50,23 @@
   <table>
   <tr><td><B><a href = 'help.convert_graph.html#scol'>Source node</a></B></td><td><input type = 'text' name='s_col' value = '$default_scol' size = 1></input></td></tr>
   <tr><td><B><a href = 'help.convert_graph.html#scol'>Target node</a></B></td><td><input type = 'text' name='t_col' value = '$default_tcol' size = 1></input></td></tr>
-  <tr><td><B><a href = 'help.convert_graph.html#wcol'>Weight or label column</a></B></td><td><input type = 'text' name='w_col' size = 1></input></td></tr>
+  <tr><td><B><a href = 'help.convert_graph.html#wcol'>Weight or label column</a></B></td><td><input type = 'text' name='w_col' size = 1 value = '$default_wcol'></input></td></tr>
   <tr><td><B><a href = 'help.convert_graph.html#eccol'>Edge color column</a></B></td><td><input type = 'text' name='ec_col' size = 1></input></td></tr>
   <tr><td><B><a href = 'help.convert_graph.html#sccol'>Source node color column</a></B></td><td><input type = 'text' name='sc_col' size = 1></input></td></tr>
   <tr><td><B><a href = 'help.convert_graph.html#sccol'>Target node color column</a></B></td><td><input type = 'text' name='tc_col' size = 1></input></td></tr>
   </table>
   <input type='checkbox' name='layout' value='on' $default_layout/>&nbsp;<B><a href = 'help.convert_graph.html#layout'>Calculate the layout of the nodes (only relevant for GML output)</a></B><br>
   <input type='checkbox' name='undirected' value='on' />&nbsp;<B><a href = 'help.convert_graph.html#undirected'>Undirected graph (only relevant for adjacency matrix input and output)</a></B><br>
+  <B><a href = 'help.convert_graph.html#ecolors'>Edge color intensity proportional to the weight</a></B>
+  <select name='ecolors'>
+  <option $default_ecolors value = 'none'> None
+  <option value = 'red'> Red gradient
+  <option value = 'green'> Green gradient
+  <option value = 'blue'> Blue gradient
+  <option value = 'grey'> Grey gradient
+  <option $demo_ecolors value = 'fire'> Yellow to red
+  </select><br>
+  <input type='checkbox' $demo_ewidth name='ewidth' value='on' />&nbsp;<B><a href = 'help.convert_graph.html#ewidth'>Edge width proportional to the weight of the edge</a></B><br>
   <ul><ul><table class='formbutton'>
   <TD><input type='submit' name='.submit' value='GO' /></TD>
   <TD><B><A HREF='convert_graph_form.php?demo=0'>RESET</A></B></TD>
