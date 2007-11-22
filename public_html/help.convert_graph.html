@@ -77,9 +77,17 @@ option is only useful for the gml output as the other formats do not
 specify the node position.
 </ul>
 
+<h4><A NAME="ewidth"></A>Edge width computation</h4><ul>
+Calculate the edge width for the GML output. The width is proportional to the weight of the edge. This value can only be
+computed for the GML output. All weights in the column indicated by
+the -wcol argument must thus be real values.
+</ul>
 
-
-
+<h4><A NAME="ecolors"></A>Edge color intensity computation</h4>
+<ul>Compute an edge color. The color intensity is proportional to the weight
+of the edge. All weights in the column indicated by the -wcol argument must thus be real values.
+Supported : green, blue, red, fire, grey.
+</ul>
 
 <h4 class="footer">
 <address>

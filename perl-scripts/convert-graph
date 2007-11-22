@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.30 2007/11/21 13:08:55 rsat Exp $
+# $Id: convert-graph,v 1.31 2007/11/22 09:40:04 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -481,7 +481,7 @@ Add a unique ID for each arc when using the tab-delimited output.
 
 Calculate the edge width for the GML output. The width is proportional to the 
 weight of the edge. This value can only be computed for the GML output. 
-All weights in the column indicated by the -wcol argument must thus be real values.
+All weights in the column indicated by the -wcol argument or in the label fiel of the GML file must thus be real values.
 
 =cut
 	} elsif ($arg eq "-ewidth") {
@@ -489,7 +489,7 @@ All weights in the column indicated by the -wcol argument must thus be real valu
 
 =item B<-ecolors>
 
-Compute an edge color for the GML output. The color intensity is proportional to the weight
+Compute an edge color. The color intensity is proportional to the weight
 of the edge. All weights in the column indicated by the -wcol argument must thus be real values.
 Supported : green, blue, red, fire, grey.
 
