@@ -2265,6 +2265,10 @@ sub graph_node_degree_cmd {
 }
 
 sub compare_graphs {
+    ## In order to recuperate the statistics calculated
+    ## by compare-graphs, I place all the standard error
+    ## in a separate file but. However the computation is
+    ## blocked if the standard error contains the word "Error" 
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
     my $output_choice = $args{"output"};
@@ -2283,7 +2287,6 @@ sub compare_graphs {
     # Print the results
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     print TMP_OUT $result;
-#     print TMP_OUT "KEYS ".keys(%args);
     close TMP_OUT;
     # Print the comments
     open COMMENTS_OUT, ">".$tmp_comments or die "cannot open temp file ".$tmp_comments."\n";
