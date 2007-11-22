@@ -1,0 +1,102 @@
+mm <html>
+<head>
+   <title>convert-graph help</title>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+<center>
+<h2><a href="GRAT_home.cgi">GrA-tools</a> - Help about random-graph
+</h2>
+</center>
+
+<h4>Description</h4>
+<ul>
+
+Generate random graphs either from an existing graph or from scratch according to different randomization procedure.
+
+</ul>
+
+<h4>Options</h4><ul>
+<A NAME="formats"></A>
+<h4>Input and output formats</h4>
+  The accepted input formats are GML, tab-delimited and adjacency matrix. 
+  For more explanations about these, refer to the <a href = 'help.convert_graph.html'>manual of convert-graph</a>.
+</ul>
+
+
+<h4><A NAME="columns"></A>Column specifications (only for tab-delimited format)</h4>
+<ul><A NAME="scol"></A><b>Source and target column</b>. Columns containing the source and target nodes. </ul>
+<ul><A NAME="wcol"></A><b>Weight or label column</b> Column containing the weight or the label on the edge. </ul>
+
+</ul>
+<h4><A NAME="directed"></A>Directed graph</h4>
+<ul>Specifies whether the edges must be considered as directed, i.e., an
+        edge from node A to node B is different from an edge from B to A (by
+        default, edges are not directed).</ul>
+
+</ul>
+<h4><A NAME="random_type"></A>Randomization type</h4>
+<ul><b>From scratch</b>, builds a graph totally at random. You may specify the
+        nodes names either by indicating an input graph file. The edges are
+        generated using the Erdos-Renyi distribution. You may compute edge
+        weight values by specifying a mean and a standard deviation. Weight
+        will be attributed according to the normal distribution.</ul>
+
+       <ul><b>ER (Erdos-Renyii randomization)</b>, corresponds to the randomization of
+        a input graph, keeping the nodes and the number of edges but
+        changing its characteristics (node degree, clustering coefficient,
+        ...). If you specify a weight column for the input graph, the
+        weights of the output graph will be randomly distributed to the edges. By using the <i>normal distribution option</i>, the edge weights will be computed following the normal distribution (considering the weight
+        distribution of the original graph). If nor the weight column is
+        specified nor the wished mean and standard deviation of the weights
+        of the edges of the output graph, no weight will be added.</ul>
+
+        <ul>With the <b>node degree conservation</b> randomization type, each node will keep the same degree that in the input graph (edge randomization).</ul>
+
+        <ul>With the <b>node degree distribution conservation</b> randomization type, the global
+        distribution of node degree will remain the same as in the input
+        graph but the deree of each individual will be changed.</ul>
+        
+<h4><A NAME="directed"></A>Directed graph</h4>
+<ul>Specifies whether the edges must be considered as directed, i.e., an
+        edge from node A to node B is different from an edge from B to A (by
+        default, edges are not directed).</ul>
+
+<h4><A NAME="duplicate"></A>Duplicated edges allowed</h4>
+<ul>Specifies whether more than one edge may link two nodes. (by
+        default, duplicated edges are not allowed.</ul>
+<h4><A NAME="no_single"></A>No single node (only for ER randomization type)</h4>
+<ul>Prevent the ER graph from containing nodes with no neighbour</ul>
+<h4><A NAME="col_conservation"></A>Column conservation (only for tab-delimited input and ER randomization type)</h4>
+<ul>Only compatible with ER randomization of a graph. Source and target
+        nodes stay source and target nodes in the randomized graph.</ul>
+<h4><A NAME="normal"></A>Normal</h4>
+<ul>This option can only be used with ER and from scratch randomization types and if the
+        input graph is weighted. Using this option will generate randomly
+        the weight of the output random graph according to a normal
+        distribution of weights. The mean and standard deviation can then be
+        chosen (-mean and -sd option) or will be calculated according to the
+        weights the input graph.
+</ul><h4><A NAME="mean"></A>Mean</h4>
+<ul>Mean value on the weight of the arcs. This argument can only be used
+        with the scratch and ER randomization type and must be combined with
+        the <i>standard deviation</i> option
+</ul>
+</ul><h4><A NAME="sd"></A>Standard deviation</h4>
+<ul>Standard deviation value of the weight of the arcs. This argument
+        can only be used with the scratch and ER randomization type and must
+        be combined with the <i>mean</i> option.
+</ul>    
+<h4 class="footer">
+<address>
+For information, contact
+<script type='text/javascript'><!--
+var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
+</address>
+</h4>
+
+</blockquote>
+</body>
+</html>
