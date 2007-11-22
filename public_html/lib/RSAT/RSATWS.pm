@@ -2189,7 +2189,7 @@ sub graph_node_degree {
     my $tmp_outfile = `mktemp $TMP/graph-node-degree-out.XXXXXXXXXX`;
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     print TMP_OUT $result;
-    print TMP_OUT "KEYS ".keys(%args);
+#     print TMP_OUT "KEYS ".keys(%args);
     close TMP_OUT;
     if ($output_choice eq 'server') {
 	return SOAP::Data->name('response' => {'command' => $command, 
@@ -2518,7 +2518,7 @@ sub random_graph {
     my $tmp_outfile = `mktemp $TMP/random-graph.XXXXXXXXXX`;
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     print TMP_OUT $result;
-    print TMP_OUT "KEYS ".keys(%args);
+#     print TMP_OUT "KEYS ".keys(%args);
     close TMP_OUT;
     if ($output_choice eq 'server') {
 	return SOAP::Data->name('response' => {'command' => $command, 
@@ -2545,9 +2545,9 @@ sub random_graph_cmd {
    $command .= " -in_format $in_format";
   }
   if ($args{outformat}) {
-   my $in_format = $args{outformat};
-   $in_format =~ s/\'//g;
-   $in_format =~ s/\'//g;
+   my $out_format = $args{outformat};
+   $out_format =~ s/\'//g;
+   $out_format =~ s/\'//g;
    $command .= " -out_format $out_format";
   }
   if ($args{random_type}) {
