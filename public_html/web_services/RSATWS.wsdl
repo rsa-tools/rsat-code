@@ -1137,6 +1137,16 @@ The length file contains two columns : sequence ID (ignored) and sequence length
 	      <xsd:documentation>Input format. Supported: tab, gml, adj_matrix.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="ecolors" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>
+	        Compute an edge color for the GML output. The color intensity is
+        	proportional to the weight of the edge. All weights in the column
+                indicated by the -wcol argument must thus be real values. Supported
+                : green, blue, red, fire, grey.
+              </xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
 	  <xsd:element name="outformat" type="xsd:string" minOccurs="1">
 	    <xsd:annotation>
 	      <xsd:documentation>Output format. Supported: tab, gml, dot, adj_matrix.</xsd:documentation>
@@ -1188,6 +1198,15 @@ The length file contains two columns : sequence ID (ignored) and sequence length
 This option is only useful for GML output.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="ewidth" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>
+	        Calculate the edge width for the GML output. The width is
+                proportional to the weight of the edge. This value can only be
+                computed for the GML output. All weights in the column indicated by
+                the -wcol argument must thus be real values.</xsd:documentation>
+	      </xsd:annotation>
+	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
       <xsd:complexType name="DisplayGraphRequest">
@@ -1202,6 +1221,15 @@ This option is only useful for GML output.</xsd:documentation>
 				      <xsd:documentation>Output format. Supported: ps, png, jpeg.</xsd:documentation>
 			      </xsd:annotation>
 		      </xsd:element>
+	              <xsd:element name="ewidth" type="xsd:int" minOccurs="0">
+	                <xsd:annotation>
+	                  <xsd:documentation>
+	                    Calculate the edge width for the GML output. The width is
+                            proportional to the weight of the edge. This value can only be
+                            computed for the GML output. All weights in the column indicated by
+                            the -wcol argument must thus be real values.</xsd:documentation>
+	                  </xsd:annotation>
+	                </xsd:element>
 		      <xsd:element name="inputgraph" type="xsd:string" minOccurs="1">
 			      <xsd:annotation>
 				      <xsd:documentation>A graph in the format specified by the informat tag.</xsd:documentation>	

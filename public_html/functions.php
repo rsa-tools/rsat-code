@@ -1,6 +1,7 @@
 <?php
   $tmp = 'tmp/';
-  $WWW_RSA = 'http://rsat.scmbb.ulb.ac.be/rsat/'
+  $WWW_RSA = 'http://rsat.scmbb.ulb.ac.be/rsat/';
+  ini_set('soap.wsdl_cache_enabled', 0);
 ?>
 
 
