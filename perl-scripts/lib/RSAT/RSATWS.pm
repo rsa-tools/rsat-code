@@ -1876,11 +1876,21 @@ sub convert_graph_cmd {
   if ($args{informat}) {
    my $in_format = $args{informat};
    $in_format =~ s/\'//g;
-   $in_format =~ s/\'//g;
+   $in_format =~ s/\"//g;
    $command .= " -from $in_format";
   }
+  if ($args{ecolors}) {
+   my $col_scale = $args{ecolors};
+   $col_scale =~ s/\'//g;
+   $col_scale =~ s/\"//g;
+   $command .= " -ecolors $col_scale";
+  }
+
   if ($args{undirected}) {
    $command .= " -undirected";
+  }
+  if ($args{ewidth}) {
+   $command .= " -ewidth";
   }
   if ($args{layout}) {
    $command .= " -layout";
@@ -1995,6 +2005,9 @@ sub display_graph_cmd {
   }
   if ($args{layout}) {
    $command .= " -layout";
+  }
+  if ($args{ewidth}) {
+   $command .= " -ewidth";
   }
   if ($args{outformat}) {
    my $out_format = $args{outformat};
@@ -2261,14 +2274,21 @@ sub compare_graphs {
     my $command = $self->compare_graphs_cmd(%args);
     my $result = `$command`;
     my $stderr = `$command 2>&1 1>/dev/null`;
-    if ($stderr) {
+    if ($stderr =~ /Warning/) {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
     my $tmp_outfile = `mktemp $TMP/compare-graphs-out.XXXXXXXXXX`;
+    chomp($tmp_outfile);
+    my $tmp_comments = $tmp_outfile.".comments";
+    # Print the results
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     print TMP_OUT $result;
 #     print TMP_OUT "KEYS ".keys(%args);
     close TMP_OUT;
+    # Print the comments
+    open COMMENTS_OUT, ">".$tmp_comments or die "cannot open temp file ".$tmp_comments."\n";
+    print COMMENTS_OUT $stderr;
+    close COMMENTS_OUT;
     if ($output_choice eq 'server') {
 	return SOAP::Data->name('response' => {'command' => $command, 
 					       'server' => $tmp_outfile});
@@ -2285,7 +2305,7 @@ sub compare_graphs {
 sub compare_graphs_cmd {
   my ($self, %args) =@_;
   
-  my $command = "$SCRIPTS/compare-graphs ";
+  my $command = "$SCRIPTS/compare-graphs -v 1 ";
   
   if ($args{Qinformat}) {
    my $Qin_format = $args{Qinformat};
