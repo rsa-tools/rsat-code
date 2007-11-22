@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.7 2007/11/21 08:46:15 rsat Exp $
+# $Id: display-graph,v 1.8 2007/11/22 09:40:04 rsat Exp $
 #
 ############################################################
 
@@ -490,8 +490,8 @@ will be taken into account.
 =item B<-ewidth>
 
 Calculate the edge width for the GML output. The width is proportional to the 
-weight of the edge. This value can only be computed for the GML output. 
-All weights in the column indicated by the -wcol argument must thus be real values.
+weight of the edge.
+All weights in the column indicated by the -wcol argument (or in the label field of the GML file) must thus be real values.
 
 =cut
 	} elsif ($arg eq "-ewidth") {

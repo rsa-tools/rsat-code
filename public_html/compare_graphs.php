@@ -117,8 +117,9 @@
                                  )
                            );
     # Execute the command
+    echo "<pre>";
     $echoed = $client->compare_graphs($parameters);
-
+    echo "</pre>"; 
     $response =  $echoed->response;
     $command = $response->command;
     $server = $response->server;
@@ -127,6 +128,14 @@
     $temp_file = explode('/',$server);
     $temp_file = end($temp_file);
     $resultURL = $WWW_RSA."/tmp/".$temp_file;
+    # The comment file has the same name as the
+    # result file with ".comments" at the end of the string.
+    $comments_temp_file = $server.".comments";
+    $comments = storeFile($comments_temp_file);
+    # Comments
+    echo "<pre>";
+    echo "$comments";
+    echo "</pre><hr>";
     # Display the results
     echo "The results is available at the following URL ";
     echo "<a href = '$resultURL'>$resultURL</a>"; 
