@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.16 2007/07/20 11:46:36 rsat Exp $
+# $Id: graph-get-clusters,v 1.17 2007/11/23 09:59:24 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -145,6 +145,7 @@ package main;
     local $source_col = 1;
     local $target_col = 2;
     local $weight_col = 0;
+    local $color_col = 0;
 
 
 
@@ -218,7 +219,7 @@ package main;
 
     ################################################################
     ## Read input graph
-    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col);
+    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col,0, 0,$color_col, 1);
     $graph->load_classes($main::infile{clusters}, $induced);
 
     
@@ -264,10 +265,13 @@ package main;
 	      }
 	      my $scolor = $nodes_color{$source_node_id};
 	      my $tcolor = $nodes_color{$target_node_id};
-	      my $arc_color = $cluster_color{$scluster};
-	      if (!defined($arc_color)) {
-	        $arc_color = $cluster_colors[scalar(keys(%cluster_color)) % scalar(@cluster_colors)];
-	        $cluster_color{$scluster} = $arc_color;
+	      $arc_color = $arcs[$i][3];
+	      if (!$induced) {
+	        $arc_color = $cluster_color{$scluster};
+	        if (!defined($arc_color)) {
+	          $arc_color = $cluster_colors[scalar(keys(%cluster_color)) % scalar(@cluster_colors)];
+	          $cluster_color{$scluster} = $arc_color;
+	        }
 	      } 
 	      if ($distinct) {
 	        my $arc_key = $source_node."_arc_".$target_node;
@@ -583,7 +587,18 @@ cannot deal with such arcs. You should maybe use yEd for a more exact visualizat
 		&RSAT::error::FatalError(join("\t", $weight_col, "Invalid value for the weight column. Must be a strictly positive natural number"));
 	    }
 
+=pod
 
+=item B<-eccol>
+
+Edge color column. Column containing the color of the edges (RGB). (no default)
+
+=cut
+	} elsif ($arg eq "-eccol") {
+	    $color_col = shift (@arguments);
+	    unless (&IsNatural($color_col) && ($color_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
+	    }
 
 =pod
 
