@@ -39,10 +39,10 @@ foreach $a (0..$#ARGV) {
   } elsif (($ARGV[$a] eq "-to") && (&IsReal($ARGV[$a+1]))) {
     $display_to = $ARGV[$a+1];  
 
-  } elsif (($ARGV[$a] eq "-thr") && (&IsNatural($ARGV[$a+1]))) {
-    $threshold = $ARGV[$a+1];  
-
+  } elsif (($ARGV[$a] eq "-col") && (&IsNatural($ARGV[$a+1]))) {
+    push @cols, $ARGV[$a+1];
   }
+  
 }  
 
 
@@ -59,6 +59,13 @@ $sumofsquares = 0;
 while($current_line = <$in>) {   
     next if ($current_line =~ /^;/); ### skip comment lines 
     while($current_line =~ /(\S+)(.*)/) {
+        if (scalar(@cols) >= 1) {
+          @current_linecp = split("\t", $current_linecp);
+          $current_line = $current_linecp[$cols[0]];
+          for ($i = 1; $i < scalar(@cols); $i++) {
+            $current_line .= "\t".$current_linecp[$cols[$i]];
+          }
+        }
 	$word = $1;
 	$current_line = $2;
 	if ((IsReal($word)) 
@@ -330,7 +337,9 @@ ARGUMENTS
 	-ci	class interval. If not specified, takes the value
 			(max - min)/20
 		so that 21 classes are specified. 
-	-min #	numbers strictly smaller than # are not taken into account. 
+	-col	column to which apply the program. This option can
+		be used iteratively.
+	-min #	nusmbers strictly smaller than # are not taken into account. 
 		# also determines the lower limit of the first class.
 	-max #	numbers strictly greater than # are not taken into account.
 	-from #	inferior limit for the classes to display
@@ -384,7 +393,8 @@ sub PrintOptions {
 -i      input file
 -o      output file
 -v      verbose
--ci	class interval. 
+-ci	class interval.
+-col	column 
 -min #	minimum value
 -max #	maximum value
 -from	inferior limit of classes to display
