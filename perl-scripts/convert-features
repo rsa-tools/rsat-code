@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.8 2006/12/11 03:51:28 jvanheld Exp $
+# $Id: convert-features,v 1.9 2007/11/23 07:33:03 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -39,6 +39,7 @@ $supported_input_formats = join (",", keys %supported_input_format);
 local $output_format = "ft";
 %supported_output_format =(
     ft=>1,
+    fasta=>1,
     gft=>1,
     gff=>1,
     gff3=>1,
@@ -59,8 +60,8 @@ unless ($input_format) {
 ################################################################
 ### open output stream
 $out = &OpenOutputFile($outfile{output});
-$header = RSAT::feature->header($output_format);
-print $out $header;
+$header = &RSAT::feature::header($output_format);
+print $out $header if ($header);
 
 ################################################################
 ##### read input
