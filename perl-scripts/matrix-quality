@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.46 2007/11/14 13:19:08 morgane Exp $
+# $Id: matrix-quality,v 1.47 2007/11/23 07:42:47 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -695,7 +695,7 @@ Pseudo-weight.
 					  "Invalid value for a pseudo-weight. Must be a positive real number."))
 		unless ((&RSAT::util::IsReal($main::pseudo_counts) )
 			&& ($main::pseudo_counts >= 0));
-			
+
 			## Background model for theorical score distribution
 
 =pod
@@ -711,6 +711,19 @@ This option is to be specified if the option -bgfile has not been specified.
 	} elsif ($arg eq "-th_prior") {
 		$main::infile{th_prior} = shift(@arguments);
 
+
+		## Number of decimals for computing scores
+=pod
+
+=item B<-decimals #>
+
+Number of decimals for computing weight scores (default 2).
+This arguments is passed to matrix-scan and matrix-distrib.
+
+=cut
+	} elsif ($arg eq "-decimals") {
+	  $main::decimals = shift(@arguments);
+	  &RSAT::error::FatalError("The number of decimals must be a natural number") unless &IsNatural($main::decimals);
 
 	    ## Output file
 =pod
