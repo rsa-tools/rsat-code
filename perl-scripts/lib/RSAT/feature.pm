@@ -317,11 +317,39 @@ Converts the feature in a single-row string for exporting it in the
 specified format.
 
 =cut
+
+sub to_fasta {
+  my ($self) = @_;
+  my $feature_id = join( ":", 
+			 $self->get_attribute("seq_name"),
+			 $self->get_attribute("start"),
+			 $self->get_attribute("end"),
+			 $self->get_attribute("strand"),
+		       );
+  my $fasta_string = ">".$feature_id."\n";
+  $fasta_string .= $self->get_attribute("description");
+  $fasta_string .= "\n";
+#  &RSAT::message::Debug($fasta_string);
+  return($fasta_string);
+}
+
+################################################################
+=pod
+
+=item to_text($format)
+
+Converts the feature in a single-row string for exporting it in the
+specified format.
+
+=cut
 sub to_text {
     my ($self, $format, $null) = @_;
-    $null = ""
-	unless (defined($null));
-    
+    $null = "" unless (defined($null));
+
+    if ($format eq "fasta") {
+      return $self->to_fasta();
+    }
+
     my @cols = @{$columns{$format}};
 
 
@@ -390,10 +418,11 @@ Print the header in the specified format.
 =cut
 
 sub header {
-    my ($self, $format) = @_;
-
+    my ($format) = @_;
+    if ($format eq "fasta") {
+      return();
+    }
     my @cols = @{$columns{$format}};
-
     my $header = $comment_char{$format};
     $header .= join ("\t", @cols);
     $header .= "\n";
