@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.6 2007/11/23 07:39:48 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.7 2007/11/23 07:41:20 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -411,6 +411,8 @@ output prefix, followed by an extension.
 
 Export the sites used to build the count matrix. These sites can be
 used for example to draw a sequence logo.
+
+The sites are exported in fasta format, after each count matrix.
 
 =cut
 	} elsif ($arg eq "-sites") {
