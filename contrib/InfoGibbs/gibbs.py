@@ -1,4 +1,3 @@
-#! /Library/Frameworks/Python.framework/Versions/Current/bin/python2.4
 #!/usr/bin/env python
 
 '''
