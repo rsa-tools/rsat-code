@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.5 2007/08/03 08:35:49 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.6 2007/11/23 07:39:48 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -194,24 +194,40 @@ package main;
     $scan_cmd .= " -i ".$infile{sequence};
     $scan_cmd .= " -seq_format ".$seq_format;
     $scan_cmd .= " -m ".$outfile{sig_matrices};
+    $scan_cmd .= " -n skip";
     $scan_cmd .= " -matrix_format tab";
     $scan_cmd .= " ".$strands;
     $scan_cmd .= " -return sites,pval";
     $scan_cmd .= " ".$scan_parameters;
-#    $scan_cmd .= " -o ".$outfile{sig_sites};
+    $scan_cmd .= " -o ".$outfile{sig_sites};
     print $log "; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
-#    &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
     ################################################################
-    ## Convert the collecte sites to count matrices
+    ## Convert the collected sites to count matrices
     &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 2);
-    my $convert2_cmd = " | ${SCRIPTS}/convert-matrix -v 1";
-#    $convert2_cmd .= " -i ".$outfile{sig_sites};
+    my $convert2_cmd = "; ${SCRIPTS}/convert-matrix -v 1";
+    $convert2_cmd .= " -i ".$outfile{sig_sites};
     $convert2_cmd .= " -from feature -to tab";
     $convert2_cmd .= " -return counts,parameters";
+    $convert2_cmd .= " -return sites" if ($return_fields{sites});
     $convert2_cmd .= " -o ".$outfile{count_matrices};
     print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
     &doit($scan_cmd.$convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+#     ################################################################
+#     ## convert sites to fasta format
+#     ## THIS DOES NOT WORK BECAUSE ALL THE SITES FOR ALL MATRICES ARE IN THE SAME FILE
+#     my $site_cmd = "";
+#     if ($return_fields{sites}) {
+#       &RSAT::message::TimeWarn("Converting sites to fasta") if ($main::verbose >= 2);
+#       $site_cmd = "convert-features -i ".$outfile{sig_sites};
+#       $site_cmd .= " -from ft -to fasta";
+#       $site_cmd .= " -o ".$outfile{sig_sites}.".fasta";
+#     } else {
+#       &RSAT::message::TimeWarn("Deleting site file") if ($main::verbose >= 2);
+#       $site_cmd = "rm -f ".$outfile{sig_sites};
+#     }
+#     &doit($site_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
     ################################################################
     ## Finish verbose
@@ -387,6 +403,18 @@ output prefix, followed by an extension.
 =cut
 	} elsif ($arg eq "-o") {
 	    $outfile{output} = shift(@arguments);
+
+	    ## Return sites
+=pod
+
+=item	B<-sites>
+
+Export the sites used to build the count matrix. These sites can be
+used for example to draw a sequence logo.
+
+=cut
+	} elsif ($arg eq "-sites") {
+	    $return_fields{sites} = 1;
 
 =pod
 
