@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.219 2007/10/24 18:31:13 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.220 2007/11/24 21:25:08 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -33,7 +33,7 @@ use RSAT::MatrixReader;
 
 ################################################################
 ## initialize global variables
-$program_version = do { my @r = (q$Revision: 1.219 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+$program_version = do { my @r = (q$Revision: 1.220 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 $toppat = 50;
 $organism = "";
 $org_fam = 0;
@@ -323,6 +323,8 @@ local $pattern_factory = classes::ClassFactory->new_class(object_type=>"RSAT::pa
 			 occ_E
 			 occ_sig
 			 rank
+			 zscore
+			 ratio
 			);
 $pattern_factory->set_out_fields(@pattern_out_fields);
 
@@ -1208,7 +1210,7 @@ sub CalcOligoOptions {
 	$oligo_options .= " -bg ".$background;
 	$oligo_options .= " -org ".$organism_name if ($organism_name);
    }
-   $oligo_options .= " -return occ,mseq,freq,proba,rank";
+   $oligo_options .= " -return occ,mseq,freq,proba,rank,zscore,ratio";
    $oligo_options .= " ".$noov;
    
    my $oligo_suffix = "_oligos";
@@ -1463,7 +1465,7 @@ sub DyadAnalysis {
     chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
     &RSAT::error::FatalError("Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{input_seq_file}));
     $command = "dyad-analysis";
-    $command .= " -return occ,proba,rank";
+    $command .= " -return occ,proba,rank,zscore,ratio";
     $command .= " -i ".$family{$family_name}->{input_seq_file};
     $command .= " -format ".$seq_format;
     $command .= " -o ".$family{$family_name}->{dyad_file};
@@ -3520,18 +3522,17 @@ sub ReadArguments {
 
       #### threshold
     } elsif ($ARGV[$a] =~ /^-thosig/) {
-      &Warning("Option -thosig is deprecated. Please use '-lth occ_sig' instead.");
-      $force{th} = $ARGV[$a+1];
+      &RSAT::error::FatalError("Option -thosig is deprecated. Please use '-lth occ_sig' instead.");
 
       #### threshold on mseq frequency
     } elsif ($ARGV[$a] =~ /^-thmsf/) {
-      &Warning("Option -thmsf is deprecated. Please use '-lth ms_freq' instead.");
-      $lth{ms_freq} = $ARGV[$a+1];
+      &RSAT::error::FatalError("Option -thmsf is deprecated. Please use '-lth ms_freq' instead.");
+#      $lth{ms_freq} = $ARGV[$a+1];
 
       #### threshold on mseq significance
     } elsif ($ARGV[$a] =~ /^-thmssig/) {
-      &Warning("Option -thmssig is deprecated. Please use '-lth ms_sig' instead.");
-      $lth{ms_sig} = $ARGV[$a+1];
+      &RSAT::error::FatalError("Option -thmssig is deprecated. Please use '-lth ms_sig' instead.");
+#      $lth{ms_sig} = $ARGV[$a+1];
 
       #### dyad type
     } elsif ($ARGV[$a] =~ /^-type/) {
