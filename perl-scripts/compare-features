@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.16 2007/04/26 08:08:38 morgane Exp $
+# $Id: compare-features,v 1.17 2007/11/24 21:24:23 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -977,7 +977,7 @@ sub Validation {
     $field_description{'matched'} = "Reference features with at least one intersection in the query features";
     $field_description{'missed'} = "Reference features with no intersection in the query features";
     $field_description{'PPV'} = "Positive predictive value. PPV=prT/q_ft=prT/(prT+prF)";
-    $field_description{'Sn'} = "Sensitivity. Sn = matched/r_ft=matched(prT+missed)";
+    $field_description{'Sn'} = "Sensitivity. Sn = matched/r_ft=matched(matched+missed)";
     $field_description{'Acc_a'} = "Accuracy (artihmetic). Acc_a = (PPV + Sn)/2";
     $field_description{'Acc_g'} = "Accuracy (geometric). Acc_g = sqrt(PPV * Sn)";
 
