@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.220 2007/11/24 21:25:08 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.221 2007/11/25 11:06:09 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -33,7 +33,7 @@ use RSAT::MatrixReader;
 
 ################################################################
 ## initialize global variables
-$program_version = do { my @r = (q$Revision: 1.220 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+$program_version = do { my @r = (q$Revision: 1.221 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 $toppat = 50;
 $organism = "";
 $org_fam = 0;
@@ -434,20 +434,31 @@ if ($sequence_file_list) {
 
 }
 
+################################################################
+## Delete some families depending on the options
 
-## Apply the options -skip (suppress first families) and -last (suppress last families)
+my %family_to_delete = ();
+@families = sort (keys (%family));
+
+## Apply the options -skip (suppress first families) 
 if ($skip > 0) {
   for my $f (1..$skip) {
     $family_name = $families[$f-1];
-    delete $family{$family_name};
+    $family_to_delete{$family_name}++;
+    &RSAT::message::Debug("Skipping first family", $f, $family_name) if ($main::verbose >= 2);
   }
 }
+## Apply the options -last (suppress last families)
 if ($last > 0) {
-  for my $f (($last+1)..scalar(@families)) {
+  &RSAT::message::Debug("Skipping families after", $last, scalar(@families)) if ($main::verbose >= 2);
+  for my $f ($last..$#families) {
     $family_name = $families[$f-1];
-    delete $family{$family_name};
+    $family_to_delete{$family_name}++;
+#    delete $family{$family_name};
+    &RSAT::message::Debug("Skipping last family", $f, $family_name) if ($main::verbose >= 2);
   }
 }
+
 
 ## Check minimum number of genes
 foreach my $family_name (@families) {    
@@ -457,7 +468,8 @@ foreach my $family_name (@families) {
 			    $fam_count, $family_name,
 			    $gene_nb." genes",
 			    "< min = ".$min_genes), "\n" if ($main::verbose >= 1);
-    delete $family{$family_name};
+    $family_to_delete{$family_name}++;
+#    delete $family{$family_name};
   }
 }
 
@@ -466,22 +478,28 @@ if (scalar(@selected) > 0) {
   my %selected = ();
   foreach my $family_name (@selected) {
     $selected{$family_name}++;
-    &FatalError(join ("\t", "Selected family", $family_name, "is not found in the family file", $family_file)) unless ($family{$family_name});
+    &FatalError(join ("\t", "Selected family", $family_name, "is not found in the family file", $family_file)) 
+      unless defined(($family{$family_name}));
     &RSAT::message::Warning("Selected family", $family_name) if ($main::verbose >= 3);
   }
 
   ## Delete non-selected families
   foreach my $family_name (keys (%family)) {
-    delete $family{$family_name} unless ($selected{$family_name});
-    &RSAT::message::Warning("Deleted family", $family_name) if ($main::verbose >= 3);
+    unless ($selected{$family_name}) {
+      $family_to_delete{$family_name}++;
+    }
+#    delete $family{$family_name} unless ($selected{$family_name});
   }
 }
 
 ## Update the list of families
+foreach my $family_name (keys(%family_to_delete)) {
+     delete $family{$family_name};
+    &RSAT::message::Warning("Deleted family", $family_name) if ($main::verbose >= 2);
+}
 @families = sort keys %family;
 
 &RSAT::message::Info(join("\t", "Remaining families after filtering", scalar(@families))) if ($main::verbose >= 1);
-
 
 ## Set all the file names
 &SetFileNames();
