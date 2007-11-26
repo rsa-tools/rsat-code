@@ -122,8 +122,6 @@
       </Th>
     </TR>
     <TR>
-      <td>
-      </td>
       <TD>
         <FORM METHOD='POST' ACTION='display_graph_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
@@ -154,6 +152,68 @@
           <INPUT type='submit' value='Compare this graph to another one'>
         </form>
       </td>
+      <TD>
+        <FORM METHOD='POST' ACTION='random_graph_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$server'>
+          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
+          if ($out_format == 'tab') {
+            echo "
+            <input type='hidden' NAME='scol' VALUE='1'>
+            <input type='hidden' NAME='tcol' VALUE='2'>
+            <input type='hidden' NAME='wcol' VALUE='3'>";
+          }
+          echo "
+          <INPUT type='submit' value='Randomize this graph'>
+        </form>
+      </td>
+    </tr>
+    <tr>
+      <TD>
+        <FORM METHOD='POST' ACTION='graph_get_clusters_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$server'>
+          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
+          if ($out_format == 'tab') {
+            echo "
+            <input type='hidden' NAME='scol' VALUE='1'>
+            <input type='hidden' NAME='tcol' VALUE='2'>
+            <input type='hidden' NAME='wcol' VALUE='3'>";
+          }
+          echo "
+          <INPUT type='submit' value='Map clusters or extract a subnetwork'>
+        </form>
+      </td>
+      <TD>
+        <FORM METHOD='POST' ACTION='graph_node_degree_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$server'>
+          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
+          if ($out_format == 'tab') {
+            echo "
+            <input type='hidden' NAME='scol' VALUE='1'>
+            <input type='hidden' NAME='tcol' VALUE='2'>
+            <input type='hidden' NAME='wcol' VALUE='3'>";
+          }
+          echo "
+          <INPUT type='submit' value='Nodes degrees computation'>
+        </form>
+      </td>
+      <TD>
+        <FORM METHOD='POST' ACTION='graph_neighbours_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$server'>
+          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
+          if ($out_format == 'tab') {
+            echo "
+            <input type='hidden' NAME='scol' VALUE='1'>
+            <input type='hidden' NAME='tcol' VALUE='2'>
+            <input type='hidden' NAME='wcol' VALUE='3'>";
+          }
+          echo "
+          <INPUT type='submit' value='Neighbourhood analysis'>
+        </form>
+      </td>    
     </tr>
   </table>";
   }
