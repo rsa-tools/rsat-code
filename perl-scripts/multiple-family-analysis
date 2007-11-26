@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.221 2007/11/25 11:06:09 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.222 2007/11/26 13:38:29 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -33,7 +33,7 @@ use RSAT::MatrixReader;
 
 ################################################################
 ## initialize global variables
-$program_version = do { my @r = (q$Revision: 1.221 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+$program_version = do { my @r = (q$Revision: 1.222 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 $toppat = 50;
 $organism = "";
 $org_fam = 0;
@@ -3789,7 +3789,7 @@ sub ExportSQL {
 	  next;
 	}
 	next unless (/\S/);	## Skip empty lines
-	next if (/^#/);		## Skip header line
+	next if (/^\#/);		## Skip header line
 	my @fields = split;
 	my $sequence = uc($fields[0]);
 	my $oligo_object = $pattern_factory->new_object();
@@ -3836,7 +3836,7 @@ sub ExportSQL {
 	  next;
 	}
 	next unless (/\S/);
-	next if (/^#/);		## Skip header line
+	next if (/^\#/);		## Skip header line
 	my @fields = split;
 	my $sequence = uc($fields[0]);
 	$sequence =~ s/N/n/g;
@@ -4090,6 +4090,21 @@ sub Validate {
    my $f = 0;
    foreach my $family_name (@families) {
        $f++;
+
+
+       my @members = @{$family{$family_name}->{members}};
+       $gene_nb = scalar(@members);
+       
+       ## Check minimum number of genes
+       if ($gene_nb < $min_genes) {
+	   &RSAT::message::Warning("Skipping family", 
+				   $f, $family_name,
+				   $gene_nb." genes",
+				   "< min = ".$min_genes), "\n" if ($main::verbose >= 1);
+	   next;
+       }
+
+
        ## Create a separate file for compare-patterns with the current family
        my @sites = @{$known_site{$family_name}};
        my @sources = @{$known_site_source{$family_name}};
@@ -4180,6 +4195,7 @@ sub ValidateOneResult {
 
     while (<$pattern_handle>) {
         next if (/^;/); # Skip comment lines
+        next if (/^\#/); # Skip column header lines
         next unless (/\S/); # Skip empty lines
         chomp();
 	$nb_patterns ++;
@@ -4418,7 +4434,25 @@ sub SigDistrib {
     my %max_score = ();
     my %pps = ();
     my %fps = ();
+
+    $fc=0;
     foreach my $family_name (@families) {
+	$fc++;
+
+
+	my @members = @{$family{$family_name}->{members}};
+	$gene_nb = scalar(@members);
+
+	## Check minimum number of genes
+	if ($gene_nb < $min_genes) {
+	    &RSAT::message::Warning("Skipping family", 
+				    $fc, $family_name,
+				    $gene_nb." genes",
+				    "< min = ".$min_genes), "\n" if ($main::verbose >= 1);
+	    next;
+	}
+
+
 	my $pattern_file = $family{$family_name}->{$pattern_type."_file"};
 	my ($pattern_handle) = &OpenInputFile($pattern_file);
 	my $score_col;
@@ -4434,6 +4468,7 @@ sub SigDistrib {
 	$max_score{$family_name} = "NA";
 	while (<$pattern_handle>) {
 	    next if (/^;/); # Skip comment lines
+	    next if (/^\#/); # Skip column header lines
 	    next unless (/\S/); # Skip empty lines
 	    chomp();
 	    my @fields = split "\t", $_;
