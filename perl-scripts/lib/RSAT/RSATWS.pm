@@ -1318,6 +1318,261 @@ sub supported_organisms_cmd {
 
   return $command;
 }
+sub classfreq {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->classfreq_cmd(%args);
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/classfreq-output.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+#     print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+sub classfreq_cmd {
+  my ($self, %args) =@_;
+  
+  my $command = "$SCRIPTS/classfreq -v 1";
+  
+  if ($args{col}) {
+   my $col = $args{col};
+   $col =~ s/\'//g;
+   $col =~ s/\'//g;
+   $command .= " -col $col";
+  }
+  if ($args{from}) {
+   my $from = $args{from};
+   $from =~ s/\'//g;
+   $from =~ s/\'//g;
+   $command .= " -from $from";
+  }
+  if ($args{to}) {
+   my $to = $args{to};
+   $to =~ s/\'//g;
+   $to =~ s/\'//g;
+   $command .= " -to $to";
+  }
+  if ($args{min}) {
+   my $min = $args{min};
+   $min =~ s/\'//g;
+   $min =~ s/\'//g;
+   $command .= " -min $min";
+  }
+  if ($args{max}) {
+   my $max = $args{max};
+   $max =~ s/\'//g;
+   $max =~ s/\'//g;
+   $command .= " -to $max";
+  }
+  if ($args{classinterval}) {
+   my $ci = $args{classinterval};
+   $ci =~ s/\'//g;
+   $ci =~ s/\'//g;
+   $command .= " -ci $ci";
+  }
+  if ($args{inputFile}) {
+   my $input_file = $args{inputFile};
+   chomp $input_file;
+   my $tmp_input = `mktemp $TMP/classfreq-input.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
+   print TMP_IN $input_file;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  return $command;
+}
+
+
+sub xygraph {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->xygraph_cmd(%args);
+    ## IMAGE OUTPUT FORMAT RECUPERATION
+    my $out_format = $args{format};
+    $out_format =~ s/\'//g;
+    $out_format =~ s/\'//g;
+    my $tmp_outfile = `mktemp $TMP/xygraph.XXXXXXXXXX`;
+    chop $tmp_outfile;
+    system("rm $tmp_outfile");
+    $tmp_outfile .= ".$out_format";
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    close TMP_OUT;
+    $command .= " -o $tmp_outfile";
+    system $command;
+    my $result = `cat $tmp_outfile`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+
+
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+
+sub xygraph_cmd {
+  my ($self, %args) =@_;
+  
+  my $command = "$SCRIPTS/XYgraph";
+  
+  if ($args{format}) {
+   my $format = $args{format};
+   $format =~ s/\'//g;
+   $format =~ s/\'//g;
+   $command .= " -format $format";
+  }
+  if ($args{title1}) {
+   my $title1 = $args{title1};
+   $title1 =~ s/\'//g;
+   $title1 =~ s/\'//g;
+   $command .= " -title1 '$title1'";
+  }
+  if ($args{lines}) {
+   my $lines = $args{lines};
+   $command .= " -lines";
+  }
+  if ($args{legend}) {
+   my $legend = $args{legend};
+   $command .= " -legend";
+  }
+  if ($args{header}) {
+   my $header = $args{header};
+   $command .= " -header";
+  }
+  if ($args{title2}) {
+   my $title2 = $args{title2};
+   $title2 =~ s/\'//g;
+   $title2 =~ s/\'//g;
+   $command .= " -title2 '$title2'";
+  }
+  if ($args{xleg1}) {
+   my $xleg1 = $args{xleg1};
+   $xleg1 =~ s/\'//g;
+   $xleg1 =~ s/\'//g;
+   $command .= " -xleg1 '$xleg1'";
+  }
+  if ($args{xleg2}) {
+   my $xleg2 = $args{xleg2};
+   $xleg2 =~ s/\'//g;
+   $xleg2 =~ s/\'//g;
+   $command .= " -xleg2 '$xleg2'";
+  }
+  if ($args{yleg1}) {
+   my $yleg1 = $args{yleg1};
+   $yleg1 =~ s/\'//g;
+   $yleg1 =~ s/\'//g;
+   $command .= " -yleg1 '$yleg1'";
+  }
+  if ($args{yleg2}) {
+   my $yleg2 = $args{yleg2};
+   $yleg2 =~ s/\'//g;
+   $yleg2 =~ s/\'//g;
+   $command .= " -yleg2 '$yleg2'";
+  }
+  if ($args{xmax}) {
+   my $xmax = $args{xmax};
+   $xmax =~ s/\'//g;
+   $xmax =~ s/\'//g;
+   $command .= " -xmax $xmax";
+  }
+  if ($args{ymax}) {
+   my $ymax = $args{ymax};
+   $ymax =~ s/\'//g;
+   $ymax =~ s/\'//g;
+   $command .= " -ymax $ymax";
+  }
+  if ($args{xmin}) {
+   my $xmin = $args{xmin};
+   $xmin =~ s/\'//g;
+   $xmin =~ s/\'//g;
+   $command .= " -xmin $xmin";
+  }
+  if ($args{ymin}) {
+   my $ymin = $args{ymin};
+   $ymin =~ s/\'//g;
+   $ymin =~ s/\'//g;
+   $command .= " -ymin $ymin";
+  }
+  if ($args{xlog}) {
+   my $xlog = $args{xlog};
+   $xlog =~ s/\'//g;
+   $xlog =~ s/\'//g;
+   $command .= " -xlog $xlog";
+  }
+  if ($args{ylog}) {
+   my $ylog = $args{ylog};
+   $ylog =~ s/\'//g;
+   $ylog =~ s/\'//g;
+   $command .= " -ylog $ylog";
+  }
+  if ($args{xcol}) {
+   my $xcol = $args{xcol};
+   $xcol =~ s/\'//g;
+   $xcol =~ s/\'//g;
+   $command .= " -xcol $xcol";
+  }
+  if ($args{ycol}) {
+   my $ycol = $args{ycol};
+   $ycol =~ s/\'//g;
+   $ycol =~ s/\'//g;
+   $command .= " -ycol $ycol";
+  }
+  if ($args{inputFile}) {
+   my $input_file = $args{inputFile};
+   chomp $input_file;
+   my $tmp_input = `mktemp $TMP/xygraph-input.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
+   print TMP_IN $input_file;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  return $command;
+}
+
+
+
+
 
 sub convert_seq {
     my ($self, $args_ref) = @_;
@@ -2159,11 +2414,11 @@ sub graph_get_clusters_cmd {
    $command .= " -i '".$tmp_input."'";
   }
   if ($args{clusters}) {
-   my $input_graph = $args{clusters};
-   chomp $input_graph;
+   my $input_clusters = $args{clusters};
+   chomp $input_clusters;
    my $tmp_input = `mktemp $TMP/graph-get-clusters-input-clusters.XXXXXXXXXX`;
    open TMP_IN, ">".$tmp_input or die "cannot open clusters temp file ".$tmp_input."\n";
-   print TMP_IN $input_graph;
+   print TMP_IN $input_clusters;
    close TMP_IN;
    $tmp_input =~ s/\'//g;
    $tmp_input =~ s/\"//g;
@@ -2463,8 +2718,13 @@ sub graph_neighbours_cmd {
    $tcol =~ s/\'//g;
    $command .= " -tcol $tcol";
   }
+  if ($args{steps}) {
+   my $steps = $args{steps};
+   $steps =~ s/\'//g;
+   $steps =~ s/\'//g;
+   $command .= " -steps $steps";
+  }
   if ($args{all}) {
-   my $tcol = $args{tcol};
    $command .= " -all";
   }
   if ($args{stats}) {
@@ -2492,7 +2752,7 @@ sub graph_neighbours_cmd {
    chomp $seedfile;
    my $tmp_input = `mktemp $TMP/graph_neighbours-seed-nodes.XXXXXXXXXX`;
    open TMP_IN, ">".$tmp_input or die "cannot open clusters temp file ".$tmp_input."\n";
-   print TMP_IN $nodefile;
+   print TMP_IN $seedfile;
    close TMP_IN;
    $tmp_input =~ s/\'//g;
    $tmp_input =~ s/\"//g;
