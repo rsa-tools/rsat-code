@@ -18,32 +18,56 @@
     $demo_graph = $gavin2006;
     $demo_clusters = $gavin_clusters_mcl_2_1;
   }
-
+  # PIPE VALUES
+  $pipe = $_REQUEST['pipe'];
+  $graph_file = $_REQUEST['graph_file'];
+  $graph_format = $_REQUEST['graph_format'];
+  $scol = $_REQUEST['scol'];
+  $tcol = $_REQUEST['tcol'];
+  $wcol = $_REQUEST['wcol'];
   title('graph-get-clusters');
   echo ("<center>Compares a graph with a classification/clustering file.</center>\n");
   echo ("<form method='post' action='graph_get_clusters.php' enctype='multipart/form-data'>
-  &nbsp;&nbsp;&nbsp;<a href = 'help.graph_get_clusters.html#formats'><B>Input format</B></a>&nbsp;<select name='in_format'>
-  <option selected value = 'tab'> tab-delimited format
-  <option value = 'adj_matrix'> Adjacency matrix
-  <option value = 'gml'> GML format
-  </select><br><br><b>Graph</b><br>
-  <textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>
-  <br>Upload graph from file : <br>
-  <input type='file' name='graph_file' size='45' /><br>
-  &nbsp;&nbsp;&nbsp;
-  
-  <br><a href = 'help.graph_get_clusters.html#columns'>Column specification (only relevant for tab-delimited input)</a><br>
-  <table>
-  <tr><td><B><a href = 'help.graph_get_clusters.html#scol'>Source node</a></B></td><td><input type = 'text' name='s_col' value = '$default_scol' size = 1></input></td></tr>
-  <tr><td><B><a href = 'help.graph_get_clusters.html#scol'>Target node</a></B></td><td><input type = 'text' name='t_col' value = '$default_tcol' size = 1></input></td></tr>
-  <tr><td><B><a href = 'help.graph_get_clusters.html#wcol'>Weight or label column</a></B></td><td><input type = 'text' name='w_col' size = 1></input></td></tr>
-  </table>
-  <br>
+  &nbsp;&nbsp;&nbsp;<a href = 'help.graph_get_clusters.html#formats'><B>Input format</B></a>&nbsp;");
+  if (!$pipe) {
+    echo ("  
+    <select name='in_format'>
+    <option selected value = 'tab'> tab-delimited format
+    <option value = 'adj_matrix'> Adjacency matrix
+    <option value = 'gml'> GML format
+    </select> <br><br>");
+  } else {
+    echo ": $graph_format<br>";
+    echo "<input type='hidden' NAME='in_format' VALUE='$graph_format'>";
+  }
+  if (!$pipe) {
+    if ($demo) {
+      demo("This demonstration graph is the yeast two-hybrid dataset produced by <a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?db=pubmed&uid=10688190&cmd=showdetailview&indexed=google'>Uetz et al (2001)</a>. It consists in 865 interactions between 926 proteins.");
+    }
+    echo("
+      <b>Graph</b><br>
+      <textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>
+      <br>Upload graph from file : <br>
+      <input type='file' name='graph_file' size='45' /><br>
+      &nbsp;&nbsp;&nbsp;
+      <br><a href = 'help.graph_get_clusters.html#columns'>Column specification (only relevant for tab-delimited input)</a><br>
+      <table>
+      <tr><td><B><a href = 'help.graph_get_clusters.html#scol'>Source node</a></B></td><td><input type = 'text' name='s_col' value = '$default_scol' size = 1></input></td></tr>
+      <tr><td><B><a href = 'help.graph_get_clusters.html#scol'>Target node</a></B></td><td><input type = 'text' name='t_col' value = '$default_tcol' size = 1></input></td></tr>
+      <tr><td><B><a href = 'help.graph_get_clusters.html#wcol'>Weight or label column</a></B></td><td><input type = 'text' name='w_col' size = 1></input></td></tr>
+      </table>"
+    );
+  } else {
+    info("Graph uploaded from the previous treatment");
+    echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$graph_file'>";
+  }
+      
+  echo("<br>
   </select><br><br><b>Clusters</b><br>
   <textarea name='clusters' rows='6' cols='65'>$demo_clusters</textarea>
   <br>Upload clusters from file : <br>
   <input type='file' name='clusters_file' size='45' /><br>
-  <B><a href = 'help.graph_get_clusters.html#formats'>Output format (only useful for clusters output)</a></B>&nbsp;<select name='out_format'>
+  <B><a href = 'help.graph_get_clusters.html#formats'>Output format (only useful for intra-cluster edges output)</a></B>&nbsp;<select name='out_format'>
   <option value = 'tab'> tab-delimited format
   <option selected value = 'gml'> GML format
   <option value = 'adj_matrix'> Adjacency matrix

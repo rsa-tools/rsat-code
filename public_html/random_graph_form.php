@@ -17,33 +17,57 @@
   if ($demo == 1) {
     $demo_graph = $uetz;
   }
-
+  # PIPE VALUES
+  $pipe = $_REQUEST['pipe'];
+  $graph_file = $_REQUEST['graph_file'];
+  $graph_format = $_REQUEST['graph_format'];
+  $scol = $_REQUEST['scol'];
+  $tcol = $_REQUEST['tcol'];
+  $wcol = $_REQUEST['wcol'];
+  $eccol = $_REQUEST['eccol'];
+  
   title('random-graph');
   echo ("<center>Generate random graphs either from an existing graph or from scratch 
     according to different randomization procedure.</center>\n");
-  echo ("<form method='post' action='random_graph.php' enctype='multipart/form-data'>
-  &nbsp;&nbsp;&nbsp;<a href = 'help.random_graph.html#formats'><B>Input format</B></a>&nbsp;<select name='in_format'>
-  <option selected value = 'tab'> tab-delimited format
-  <option value = 'adj_matrix'> Adjacency matrix
-  <option value = 'gml'> GML format
-  </select><br><br>
-  &nbsp;&nbsp;&nbsp;<B><a href = 'help.random_graph.html#formats'>Output format</a></B>&nbsp;<select name='out_format'>
+  echo ("<form method='post' action='random_graph.php' enctype='multipart/form-data'>");
+  echo ("&nbsp;&nbsp;&nbsp;<B><a href = 'help.random_graph.html#formats'>Input format</a></B>&nbsp;");
+
+  if (!$pipe) {
+  echo("
+    &nbsp;<select name='in_format'>
+    <option selected value = 'tab'> tab-delimited format
+    <option value = 'adj_matrix'> Adjacency matrix
+    <option value = 'gml'> GML format
+    </select><br><br>");
+  } else {
+    echo ": $graph_format<br>";
+    echo "<input type='hidden' NAME='in_format' VALUE='$graph_format'>";
+  }
+  echo ("&nbsp;&nbsp;&nbsp;<B><a href = 'help.random_graph.html#formats'>Output format</a></B>&nbsp;<select name='out_format'>
   <option value = 'tab'> tab-delimited format
   <option selected value = 'gml'> GML format
   <option value = 'adj_matrix'> Adjacency matrix
-  </select><br><br><b>Graph</b><br>
-  <textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>
-  <br>Upload graph from file : <br>
-  <input type='file' name='graph_file' size='45' /><br>
-  &nbsp;&nbsp;&nbsp;
-  
-  <br><a href = 'help.random_graph.html#columns'>Column specification (only relevant for tab-delimited input)</a><br>
-  <table>
-  <tr><td><B><a href = 'help.random_graph.html#scol'>Source node</a></B></td><td><input type = 'text' name='s_col' value = '$default_scol' size = 1></input></td></tr>
-  <tr><td><B><a href = 'help.random_graph.html#scol'>Target node</a></B></td><td><input type = 'text' name='t_col' value = '$default_tcol' size = 1></input></td></tr>
-  <tr><td><B><a href = 'help.random_graph.html#wcol'>Weight or label column</a></B></td><td><input type = 'text' name='w_col' size = 1></input></td></tr>
-  </table>
-  <br>
+  </select><br><br>");
+  if (!$pipe) {
+    if ($demo) {
+      demo("This demonstration graph is the yeast two-hybrid dataset produced by <a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?db=pubmed&uid=10688190&cmd=showdetailview&indexed=google'>Uetz et al (2001)</a>. It consists in 865 interactions between 926 proteins.");
+    }
+    echo ("<b>Graph</b><br>
+    <textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>
+    <br>Upload graph from file : <br>
+    <input type='file' name='graph_file' size='45' /><br>
+    &nbsp;&nbsp;&nbsp;
+    <br><a href = 'help.random_graph.html#columns'>Column specification (only relevant for tab-delimited input)</a><br>
+    <table>
+    <tr><td><B><a href = 'help.random_graph.html#scol'>Source node</a></B></td><td><input type = 'text' name='s_col' value = '$default_scol' size = 1></input></td></tr>
+    <tr><td><B><a href = 'help.random_graph.html#scol'>Target node</a></B></td><td><input type = 'text' name='t_col' value = '$default_tcol' size = 1></input></td></tr>
+    <tr><td><B><a href = 'help.random_graph.html#wcol'>Weight or label column</a></B></td><td><input type = 'text' name='w_col' size = 1></input></td></tr>
+    </table>");
+  } else {
+    info("Graph uploaded from the previous treatment");
+    echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$graph_file'>";
+  }
+  echo ("<br>
   <input type='checkbox' name='directed' value='on' />&nbsp;<B><a href = 'help.random_graph.html#directed'>Directed graph</a></B><br>
   <table><tr>
   <B><td><a href = 'help.random_graph.html#random_type'>Randomization type</a></B>&nbsp;<select name='random_type'>

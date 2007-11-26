@@ -14,6 +14,8 @@
   $out_format = $_REQUEST['out_format'];
   if ($_FILES['graph_file']['name'] != "") {
     $graph_file = uploadFile('graph_file');
+  } else if ($_REQUEST['pipe_graph_file'] != "")  {
+    $graph_file = $_REQUEST['pipe_graph_file'];
   }
   if ($_FILES['clusters_file']['name'] != "") {
     $clusters_file = uploadFile('clusters_file');
@@ -23,16 +25,15 @@
   $return =  $_REQUEST['return'];
   $clusters = $_REQUEST['clusters'];
   $distinct = $_REQUEST['distinct'];
-  if ($layout == 'on') {
-    $layout = 1;
-  }
   $induced = $_REQUEST['induced'];
-  if ($layout == 'on') {
+  if ($induced == 'on') {
     $induced = 1;
   }
   $s_col = $_REQUEST['s_col'];
   $t_col = $_REQUEST['t_col'];
   $w_col = $_REQUEST['w_col'];
+  
+  
   
   ## If a file and a graph are submitted -> error
   if ($graph != "" && $graph_file != "") {
@@ -80,8 +81,8 @@
         "inputgraph"=>$graph,
         "scol"=>$s_col,
         "tcol"=>$t_col,
-        "distinct"=>$layout,
-        "induced"=>$undirected
+        "distinct"=>$distinct,
+        "induced"=>$induced
       )
     );
     # Info message
@@ -105,6 +106,7 @@
     $command = $response->command;
     $server = $response->server;
     $client = $response->client;
+    echo("<pre>$command</pre>");
     $server = rtrim ($server);
     $temp_file = explode('/',$server);
     $temp_file = end($temp_file);

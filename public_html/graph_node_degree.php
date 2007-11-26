@@ -13,6 +13,8 @@
   $in_format = $_REQUEST['in_format'];
   if ($_FILES['graph_file']['name'] != "") {
     $graph_file = uploadFile('graph_file');
+  } else if ($_REQUEST['pipe_graph_file'] != "")  {
+    $graph_file = $_REQUEST['pipe_graph_file'];
   }
   if ($_FILES['nodes_file']['name'] != "") {
     $nodes_file = uploadFile('nodes_file');
@@ -22,7 +24,14 @@
   $nodes = $_REQUEST['nodes'];
   $s_col = $_REQUEST['s_col'];
   $t_col = $_REQUEST['t_col'];
-  $all = 0;
+  
+  $all = $_REQUEST['allnodes'];
+  if ($all == 'all') {
+    $all = 1;
+  } else {
+    $all = 0;
+  }
+  
   ## If a file and a graph are submitted -> error
   if ($graph != "" && $graph_file != "") {
     $error = 1;
@@ -50,12 +59,7 @@
     $error = 1;
     error("You must submit an input graph");
   }
-  ## If no nodes are submitted -> info : all nodes will be computed
-  if ($nodes == "") {
-   info("You did not submit any nodes. The degree of all nodes will be computed");
-   $all = 1;
-  }  
-  
+
   if (!$error) { 
     $graph = trim_text($graph);
     $nodes = trim_text($nodes);
@@ -75,7 +79,7 @@
     echo"<hr>\n";
   
     # Open the SOAP client
-    $client = new SoapClient(
+    $soap_client = new SoapClient(
                        'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl',
                            array(
                                  'trace' => 1,
@@ -86,7 +90,7 @@
                            );
     # Execute the command
     echo "<pre>";
-    $echoed = $client->graph_node_degree($parameters);
+    $echoed = $soap_client->graph_node_degree($parameters);
 
     $response =  $echoed->response;
     $command = $response->command;
@@ -101,6 +105,181 @@
     echo "The results is available at the following URL ";
     echo "<a href = '$resultURL'>$resultURL</a>"; 
     echo "<hr>\n";
+     
+   $graph_node_degree_result = storeFile($server);
+   ### CLASSFREQ + XY-GRAPH (all nodes)
+   # classfreq
+   $cf_all_parameters = array( 
+      "request" => array(
+        "inputFile"=>$graph_node_degree_result,
+        "col"=>4,
+        "classinterval"=>1
+      )
+    );
+    echo "<pre>";
+    $cf_all_echoed = $soap_client->classfreq($cf_all_parameters);
+
+    $cf_all_response =  $cf_all_echoed->response;
+    $cf_all_command = $cf_all_response->command;
+    $cf_all_server = $cf_all_response->server;
+    $cf_all_client = $cf_all_response->client;
+    $cf_all_server = rtrim ($cf_all_server);
+    $cf_all_temp_file = explode('/',$cf_all_server);
+    $cf_all_temp_file = end($cf_all_temp_file);
+    $cf_all_resultURL = "tmp/".$cf_all_temp_file;
+    echo "</pre>";
+    $cf_all_server = rtrim ($cf_all_server);
+    
+    # xy graph
+    $cf_all_results = storeFile($cf_all_server);
+    $xy_all_parameters = array( 
+       "request" => array(
+         "inputFile"=>$cf_all_results,
+         "xcol"=>"2",
+         "ycol"=>"4,6",
+         "format"=>"png",
+         "lines"=>1,
+         "xleg1"=>"Degree",
+         "yleg1"=>"Number of nodes",
+         "title1"=>"Degree distribution",
+         "legend"=>1,
+         "header"=>1
+       )
+     );
+     echo "<pre>";
+     $xy_all_echoed = $soap_client->xygraph($xy_all_parameters);
+     $xy_all_response =  $xy_all_echoed->response;
+     $xy_all_command = $xy_all_response->command;
+     $xy_all_server = $xy_all_response->server;
+     $xy_all_client = $xy_all_response->client;
+
+     echo "</pre>";
+     $xy_all_server = rtrim ($xy_all_server);
+         $xy_all_temp_file = explode('/',$xy_all_server);
+    $xy_all_temp_file = end($xy_all_temp_file);
+    $xy_all_resultURL = "tmp/".$xy_all_temp_file;
+//      echo "<img src='$xy_all_resultURL'>";
+     
+   ### CLASSFREQ + XY-GRAPH (intra nodes degree)
+   # classfreq
+   $cf_in_parameters = array( 
+      "request" => array(
+        "inputFile"=>$graph_node_degree_result,
+        "col"=>2,
+        "classinterval"=>1
+      )
+    );
+    echo "<pre>";
+    $cf_in_echoed = $soap_client->classfreq($cf_in_parameters);
+
+    $cf_in_response =  $cf_in_echoed->response;
+    $cf_in_command = $cf_in_response->command;
+    $cf_in_server = $cf_in_response->server;
+    $cf_in_client = $cf_in_response->client;
+    $cf_in_server = rtrim ($cf_in_server);
+    $cf_in_temp_file = explode('/',$cf_in_server);
+    $cf_in_temp_file = end($cf_in_temp_file);
+    $cf_in_resultURL = "tmp/".$cf_in_temp_file;
+    echo "</pre>";
+    $cf_in_server = rtrim ($cf_in_server);
+    
+    # xy graph
+    $cf_in_results = storeFile($cf_in_server);
+    $xy_in_parameters = array( 
+       "request" => array(
+         "inputFile"=>$cf_in_results,
+         "xcol"=>"2",
+         "ycol"=>"4,6",
+         "format"=>"png",
+         "lines"=>1,
+         "title1"=>"In-Degree distribution",
+         "xleg1"=>"Degree",
+         "yleg1"=>"Number of nodes",
+         "legend"=>1,
+         "header"=>1
+       )
+     );
+     echo "<pre>";
+     $xy_in_echoed = $soap_client->xygraph($xy_in_parameters);
+     $xy_in_response =  $xy_in_echoed->response;
+     $xy_in_command = $xy_in_response->command;
+     $xy_in_server = $xy_in_response->server;
+     $xy_in_client = $xy_in_response->client;
+
+     echo "</pre>";
+     $xy_in_server = rtrim ($xy_in_server);
+         $xy_in_temp_file = explode('/',$xy_in_server);
+    $xy_in_temp_file = end($xy_in_temp_file);
+    $xy_in_resultURL = "tmp/".$xy_in_temp_file;
+//      echo "<img src='$xy_in_resultURL'>";
    
+   ### CLASSFREQ + XY-GRAPH (extra nodes degree)
+   # classfreq
+   $cf_out_parameters = array( 
+      "request" => array(
+        "inputFile"=>$graph_node_degree_result,
+        "col"=>3,
+        "classinterval"=>1
+      )
+    );
+    echo "<pre>";
+    $cf_out_echoed = $soap_client->classfreq($cf_out_parameters);
+
+    $cf_out_response =  $cf_out_echoed->response;
+    $cf_out_command = $cf_out_response->command;
+    $cf_out_server = $cf_out_response->server;
+    $cf_out_client = $cf_out_response->client;
+    $cf_out_server = rtrim ($cf_out_server);
+    $cf_out_temp_file = explode('/',$cf_out_server);
+    $cf_out_temp_file = end($cf_out_temp_file);
+    $cf_out_resultURL = "tmp/".$cf_out_temp_file;
+    echo "</pre>";
+    $cf_out_server = rtrim ($cf_out_server);
+    
+    # xy graph
+    $cf_out_results = storeFile($cf_out_server);
+    $xy_out_parameters = array( 
+       "request" => array(
+         "inputFile"=>$cf_out_results,
+         "xcol"=>"2",
+         "ycol"=>"4,6",
+         "format"=>"png",
+         "lines"=>1,
+         "title1"=>"Out-Degree distribution",
+         "xleg1"=>"Degree",
+         "yleg1"=>"Number of nodes",
+         "legend"=>1,
+         "header"=>1
+       )
+     );
+     echo "<pre>";
+     $xy_out_echoed = $soap_client->xygraph($xy_out_parameters);
+     $xy_out_response =  $xy_out_echoed->response;
+     $xy_out_command = $xy_out_response->command;
+     $xy_out_server = $xy_out_response->server;
+     $xy_out_client = $xy_out_response->client;
+
+     echo "</pre>";
+     $xy_out_server = rtrim ($xy_out_server);
+     $xy_out_temp_file = explode('/',$xy_out_server);
+     $xy_out_temp_file = end($xy_out_temp_file);
+     $xy_out_resultURL = "tmp/".$xy_out_temp_file;
+//      echo "<img src='$xy_out_resultURL'>";
+   
+     echo "<table>
+       <th align = 'center' colspan = 4><b>Global, in- and out- degree distributions</b></th>
+       <tr>
+         <td>Figures</td>
+         <td><a href = '$xy_all_resultURL'><img src='$xy_all_resultURL' width = '100%'></a></td>
+         <td><a href = '$xy_in_resultURL'><img src='$xy_in_resultURL' width = '100%'></a></td>
+         <td><a href = '$xy_out_resultURL'><img src='$xy_out_resultURL' width = '100%'></a></td>
+       </tr><tr>
+         <td>Raw data</td>
+         <td><a href = '$cf_all_resultURL'>Global degree distribution</a></td>
+         <td><a href = '$cf_in_resultURL'>In degree distribution</a></td>
+         <td><a href = '$cf_out_resultURL'>Out degree distribution</a></td>
+       </tr>
+       
+     </table>";
   }
 ?>
