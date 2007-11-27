@@ -107,14 +107,19 @@ of Apache server allows to define a user-specific configuration in the
 directory \file{/etc/httpd/users}.
 
 Note that you need to restart the web server for these changes to take
-effect. The command to restart the server depends on its version. You
-can try the following commands, and if they don'r work check the
+effect. The command to restart the Apache server depends on the
+version installed on your computer. 
+
+Note that you need system administration privileges to restart the
+Apache server.
+
+You can try the following commands, and if they don'r work check the
 documentation of your web server.
 
 \begin{verbatim}
-httpd restart
+sudo httpd restart
 
-apachectl restart
+sudo apachectl restart
 \end{verbatim}
 
 \subsection{Editing the configuration file for the \RSAT server}
@@ -268,5 +273,9 @@ This will execute the make script \file{server.mk}, with the target
 In principle, you will receive an email from \program{crontab} each
 time the command is executed.
 
+Note that the command \program{crontab} takes effect only if the
+system administrator has activated the command \command{cron}. If you
+notice that the temporary files are not properly cleaned, please
+contact your system administrator to check the cron command.
 
 \end{document}
