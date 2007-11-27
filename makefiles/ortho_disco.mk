@@ -41,6 +41,15 @@ list_parameters:
 	@echo "GENE_DIR     ${GENE_DIR}"
 
 ################################################################
+## Compute taxon-wide frequencies
+BG_DIR=data/bg_models/${TAXON}
+BG_FILE=${BG_DIR}/dyads_3nt_sp0-20_upstream-noorf_${TAXON}${NOOV}${STR}.tab
+taxfreq:
+	@mkdir -p ${BG_DIR}
+	taxon-frequencies -v 1 -taxon ${TAXON}  -type dyad  -ml 3 \
+		-bg upstream-noorf ${NOOV} ${STR} -dir ${BG_DIR}
+
+################################################################
 ## List of all genes to be analyzed. 
 ## By default, all the genes of the considered organism (REF_ORG)
 ALL_GENES=`grep -v '^--' ${RSAT}/data/genomes/${REF_ORG}/genome/cds_names.tab | grep primary | cut -f 2 | sort -u  | perl -pe 's/\n/ /g'`
@@ -156,8 +165,8 @@ upstream:
 ################################################################
 ## Discover over-represented dyads in the promoters of the set of
 ## orthologous genes
-BG=monads
-#BG=expfreq
+#BG=monads
+BG=taxfreq
 STR=-2str
 NOOV=-noov
 RETURN=occ,freq,proba,rank
@@ -167,7 +176,7 @@ DYADS=${GENE_DIR}/${PREFIX}${SUFFIX}
 DYAD_CMD=mkdir -p ${GENE_DIR}; \
 	dyad-analysis -v ${V} -i ${PURGED} -sort -type any ${STR} ${NOOV} \
 		-lth occ 1 -lth occ_sig 0 -return ${RETURN} -l 3 -spacing 0-20 \
-		-bg ${BG} -org ${REF_ORG} \
+		-expfreq ${BG_FILE} -org ${REF_ORG} \
 		-o ${DYADS}.tab ${DYAD_OPT} 
 dyads:
 	@echo "${DYAD_CMD}"
@@ -499,7 +508,7 @@ dyad_classes: dyad_file_list
 ## results as a table with one row per pair of genes, and different
 ## significance statistics.
 GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_gene_pairs_dp${LTH_DOTPROD}
-GENE_PAIR_RETURN=occ,dotprod,jac_sim,proba,rank
+GENE_PAIR_RETURN=occ,dotprod,jac_sim,proba,entropy,rank
 #GENE_PAIR_RETURN=occ,dotprod,rank
 V2=3
 LTH_DOTPROD=2
@@ -515,7 +524,7 @@ gene_pairs:
 	echo ${GENE_PAIRS}.tab
 	@echo ${GENE_PAIRS}.html 
 	@echo "	`grep -v ';' ${GENE_PAIRS}.tab | grep -v '^#' |  wc -l`	gene pairs"
-#	text-to-html -chunk 200 -i ${GENE_PAIRS}.tab -o  ${GENE_PAIRS}.html -font variable 
+	text-to-html -chunk 1000 -i ${GENE_PAIRS}.tab -o  ${GENE_PAIRS}.html -font variable 
 
 
 ################################################################
