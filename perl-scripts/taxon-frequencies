@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.22 2007/09/17 13:07:27 rsat Exp $
+# $Id: taxon-frequencies,v 1.23 2007/11/27 01:28:31 jvanheld Exp $
 #
 ############################################################
 
@@ -44,8 +44,6 @@ The output format is a tab-delimited file with one row per pattern
 
 By default, the output file contains 4 columns:
 
-=over
-
 =head2 pattern sequence
 
 Pattern sequence is always a single-strand pattern description, even
@@ -79,8 +77,6 @@ When the option -freq_per_org is active, the program exports one
 additional column per organism, indicating the organism-specific
 frequency of each pattern.
 
-=back
-
 =cut
 
 
@@ -103,6 +99,7 @@ package main;
     my $start_time = &AlphaDate();
 
     local $taxon = "";
+    local %dir = ();
     local %outfile = ();
     local %infile = ();
 
@@ -180,15 +177,18 @@ package main;
 
       ## Output directory
       if (defined($RSA)) {
-	$dir{$taxon} = ${RSA}."/public_html/data";
+	$dir{taxfreq} = ${RSA}."/public_html/data";
       }
-      $dir{$taxon} .= "/taxon_frequencies/".$taxon;
-      $dir{$taxon} =~ s/\s/_/g;
-      &RSAT::util::CheckOutDir($dir{$taxon});
-      &RSAT::message::Info("Installation directory", $dir{$taxon}) if ($main::verbose >= 2);
+      $dir{taxfreq} .= "/taxon_frequencies/".$taxon;
+      $dir{taxfreq} =~ s/\s/_/g;
+      &RSAT::util::CheckOutDir($dir{taxfreq});
+      &RSAT::message::Info("Installation directory", $dir{taxfreq}) if ($main::verbose >= 2);
+    }
 
-      ## Output file name
-      $outfile{output} = $dir{$taxon}."/";
+
+    ## Automatically specify the output file name
+    if (($install) || ($dir{taxfreq})) {
+      $outfile{output} = $dir{taxfreq}."/";
       if ($pattern_type eq "oligo") {
 	$outfile{output} .= "_".$oligo_length."nt";
       } elsif ($pattern_type eq "dyad") {
@@ -554,9 +554,9 @@ Specify the taxon for which frequencies have to be computed.
 If no output file is specified, the standard output is used.  This
 allows to use the command within a pipe.
 
-Alternatively, the option -install can be used to automatically
-specify the name of the output file (options -o and -install are
-mutually exclusive).
+Alternatively, the option -dir or -install can be used to
+automatically specify the name of the output file (options -o, -dir
+and -install are mutually exclusive).
 
 =cut
 	} elsif ($arg eq "-o") {
@@ -564,6 +564,33 @@ mutually exclusive).
 	    if ($install) {
 	      &RSAT::error::FatalError("Options -o and -install are mutually exclusive");
 	    }
+	  if ($main::dir{taxfreq}) {
+	    &RSAT::error::FatalError("Options -o and -dir are mutually exclusive");
+	  }
+
+	    ## Output directory
+=pod
+
+=item	B<-dir output_directory>
+
+This option lets the program determine the name of the output file
+(respecting the same nomenclature as with the option -install), but
+you can specify the output directory.
+
+This is the most convenient way to use taxon-frequencies when you do
+not have write permissions in the RSAT directory.
+
+Incompatible with the option -o and -install.
+
+=cut
+	} elsif ($arg eq "-dir") {
+	    $main::dir{taxfreq} = shift(@arguments);
+	    if ($install) {
+	      &RSAT::error::FatalError("Options -dir and -install are mutually exclusive");
+	    }
+	  if ($main::outfile{output}) {
+	    &RSAT::error::FatalError("Options -o and -dir are mutually exclusive");
+	  }
 
 	    ## Automatic installation 
 =pod
@@ -574,13 +601,16 @@ Automatically specify the name of the output file and save the result
 in the $RSAT directory. This requires to have write permissions on the
 $RSAT/data directory.
 
-Incompatible with the option -o.
+Incompatible with the option -o and -dir.
 
 =cut
 	} elsif ($arg eq "-install") {
 	  $install = 1;
 	  if ($main::outfile{output}) {
 	    &RSAT::error::FatalError("Options -o and -install are mutually exclusive");
+	  }
+	  if ($main::dir{taxfreq}) {
+	    &RSAT::error::FatalError("Options -install and -dir are mutually exclusive");
 	  }
 
 	    ### Background model
