@@ -348,6 +348,11 @@ Supported: upstream, upstreamL, upstream-noorf, intergenic, input.</xsd:document
 	    <xsd:documentation>Lower threshold on some parameter. Format='param value'.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
+	<xsd:element name="pseudo" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>Pseudo-weight. Must be a real value between 0 and 1.</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
        </xsd:sequence>
       </xsd:complexType>
 
@@ -793,6 +798,188 @@ Default is 'both'.</xsd:documentation>
        </xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="ClassFreqRequest">
+	      <xsd:sequence>
+		      <xsd:element name="inputFile" type="xsd:string" minOccurs="1">
+			      <xsd:annotation>
+				      <xsd:documentation>Input file</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="classinterval" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>class interval. If not specified, takes the value (max - min)/20</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="col" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>column to which apply the program. This option can be used iteratively.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="min" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>numbers strictly smaller than this value are not taken into account</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="max" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>numbers strictly higher than this value are not taken into account</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="from" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>inferior limit for the classes to display
+					      values lower than this limit are however taken into account
+					      in the calculation of statistics (avg, variance, ...) and of
+                				class frequencies (In contrast with the -min option).
+				      </xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="to" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>superior limit for the classes to display
+					      values higher than this limit are however taken into account
+					      in the calculation of statistics (avg, variance, ...) and of
+					      class frequencies (In contrast with the -min option).
+				      </xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+	      </xsd:sequence>
+      </xsd:complexType>
+      
+      
+      
+      
+      <xsd:complexType name="XYGraphRequest">
+	      <xsd:sequence>
+		      <xsd:element name="inputFile" type="xsd:string" minOccurs="1">
+			      <xsd:annotation>
+				      <xsd:documentation>The input file should contain columns with
+					      numeric data.
+					      Each line contains info about one point of the graph.
+					      By default, the first column is considered to contain
+					      X data, and the second column Y data.
+					      X and Y columns can be changed with -xcol and -ycol
+					      options.
+					      Columns should be separated by tabs.
+                              		</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="format" type="xsd:string" minOccurs="1">
+			      <xsd:annotation>
+				      <xsd:documentation>Supported : png,pdf,jpg,eps,gif</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="title1" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>first graph title</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="title2" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>second graph title</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="lines" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>points are jointed by lines</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="legend" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>
+					      use the content of the first line from input file as
+                        		      legend for Y data.
+				      </xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="header" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>
+					      first line of the data file contains a column header
+                        		      if option -legend is active, this header is used as
+                        		      legend, else it is ignored.
+					</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="xleg1" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>first x legend</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="xleg2" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>second x legend</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="yleg1" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>first y legend</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="yleg2" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>second y legend</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="xmax" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>maximal value represented on X axis.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="ymax" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>maximal value represented on Y axis.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="xmin" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>minimal value represented on X axis.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="ymin" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>minimal value represented on Y axis.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="ylog" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>Y data are displayed on a logarithmic scale
+					      If the next argument is a number, it provides the
+                        		     log base. Default log base is 10.
+				      </xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="xlog" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>X data are displayed on a logarithmic scale
+					      		 If the next argument is a number, it provides the
+                			                 log base. Default log base is 10.
+				      </xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="xcol" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>column containing data for the X axis.
+					      A zero value indicates that there is no column with X va
+					      lues.
+                        In this case, X values are ordinal.
+				      </xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="ycol" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>column containing data for the Y axis.
+					      Several columns can be specified by:
+					      -ycol #,#,#
+					      A range of columns can be specified by:
+					      -ycol #-#
+                        They have to be separated by commas without spaces.
+				      </xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+	      </xsd:sequence>
+      </xsd:complexType>
+      
       <xsd:complexType name="SupportedOrganismsRequest">
        <xsd:sequence>
 	<xsd:element name="output" type="xsd:string" minOccurs="0">
@@ -1132,6 +1319,16 @@ The length file contains two columns : sequence ID (ignored) and sequence length
 	      <xsd:documentation>Input format. Supported: tab, gml, adj_matrix.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="ecolors" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>
+	        Compute an edge color for the GML output. The color intensity is
+        	proportional to the weight of the edge. All weights in the column
+                indicated by the -wcol argument must thus be real values. Supported
+                : green, blue, red, fire, grey.
+              </xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
 	  <xsd:element name="outformat" type="xsd:string" minOccurs="1">
 	    <xsd:annotation>
 	      <xsd:documentation>Output format. Supported: tab, gml, dot, adj_matrix.</xsd:documentation>
@@ -1183,9 +1380,83 @@ The length file contains two columns : sequence ID (ignored) and sequence length
 This option is only useful for GML output.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="ewidth" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>
+	        Calculate the edge width for the GML output. The width is
+                proportional to the weight of the edge. This value can only be
+                computed for the GML output. All weights in the column indicated by
+                the -wcol argument must thus be real values.</xsd:documentation>
+	      </xsd:annotation>
+	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-
+      <xsd:complexType name="DisplayGraphRequest">
+	      <xsd:sequence>
+		      <xsd:element name="informat" type="xsd:string" minOccurs="1">
+			      <xsd:annotation>
+				      <xsd:documentation>Input format. Supported: tab, gml, adj_matrix.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="outformat" type="xsd:string" minOccurs="1">
+			      <xsd:annotation>
+				      <xsd:documentation>Output format. Supported: ps, png, jpeg.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+	              <xsd:element name="ewidth" type="xsd:int" minOccurs="0">
+	                <xsd:annotation>
+	                  <xsd:documentation>
+	                    Calculate the edge width for the GML output. The width is
+                            proportional to the weight of the edge. This value can only be
+                            computed for the GML output. All weights in the column indicated by
+                            the -wcol argument must thus be real values.</xsd:documentation>
+	                  </xsd:annotation>
+	                </xsd:element>
+		      <xsd:element name="inputgraph" type="xsd:string" minOccurs="1">
+			      <xsd:annotation>
+				      <xsd:documentation>A graph in the format specified by the informat tag.</xsd:documentation>	
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="wcol" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>Specify a column of the input graph that contains an edge weight or an edge label for the tab-delimited format (no default).</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="scol" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>Specify a column of the input graph that contains the source nodes for the tab-delimited format (default = 1).</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="tcol" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>Specify a column of the input graph that contains the target nodes for the tab-delimited format (default = 2).</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="eccol" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>Specify a column of the input graph that containsthe color of the edge (no default).</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="sccol" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>Specify a column of the input graph that contains the color of the source node (no default).</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="tccol" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>Specify a column of the input graph that contains the color of the target node (no default).</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="layout" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>
+					      		Calculates the layout according to the Fruchterman and Reingold algorithm.
+							This option must be provided if the input graph is not GML.
+				      </xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+	      </xsd:sequence>
+      </xsd:complexType>
       <xsd:complexType name="CompareGraphsRequest">
 	<xsd:sequence>
 	  <xsd:element name="Qinformat" type="xsd:string" minOccurs="0">
@@ -1316,7 +1587,12 @@ Note that the graphs do not specially need to contain actual self-loops, the que
 	      <xsd:documentation>Input format. Supported: tab, gml.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="inputgraph" type="xsd:string" minOccurs="1">
+	  <xsd:element name="outformat" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Output format. Supported: tab, gml, dot.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="inputgraph" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>A graph in the format specified by the informat tag.</xsd:documentation>	
 	    </xsd:annotation>
@@ -1430,7 +1706,7 @@ This allows to extract the node together with its neighborhood, rather than the 
 	  </xsd:element>
 	  <xsd:element name="seedfile" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>A file containing the nodes for which you want to know the neighbours.</xsd:documentation>	
+	      <xsd:documentation>A list of nodes for which you want to know the neighbours.</xsd:documentation>	
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="wcol" type="xsd:int" minOccurs="0">
@@ -1463,12 +1739,12 @@ This allows to extract the node together with its neighborhood, rather than the 
 	      <xsd:documentation>Input format. Supported: tab, gml.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="return" type="xsd:string" minOccurs="0">
+	  <xsd:element name="return" type="xsd:string" minOccurs="1">
 	    <xsd:annotation>
 	      <xsd:documentation>Return format. Supported: table, cluster, graph.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="outformat" type="xsd:string" minOccurs="1">
+	  <xsd:element name="outformat" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Output format. Supported: tab, gml, dot.</xsd:documentation>
 	    </xsd:annotation>
@@ -1711,7 +1987,44 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-
+      <xsd:complexType name="XYGraphResponse">
+	      <xsd:sequence>
+		      <xsd:element name="server" type="xsd:string">
+			      <xsd:annotation>
+				      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="command" type="xsd:string">
+			      <xsd:annotation>
+				      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="client" type="xsd:string">
+			      <xsd:annotation>
+				      <xsd:documentation>The results.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+	      </xsd:sequence>
+      </xsd:complexType>
+      <xsd:complexType name="ClassFreqResponse">
+	      <xsd:sequence>
+		      <xsd:element name="server" type="xsd:string">
+			      <xsd:annotation>
+				      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="command" type="xsd:string">
+			      <xsd:annotation>
+				      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="client" type="xsd:string">
+			      <xsd:annotation>
+				      <xsd:documentation>The results.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+	      </xsd:sequence>
+      </xsd:complexType>
       <xsd:complexType name="ConvertSeqResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -1812,7 +2125,25 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-
+      <xsd:complexType name="DisplayGraphResponse">
+	      <xsd:sequence>
+		      <xsd:element name="server" type="xsd:string">
+			      <xsd:annotation>
+				      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="command" type="xsd:string">
+			      <xsd:annotation>
+				      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="client" type="xsd:string">
+			      <xsd:annotation>
+				      <xsd:documentation>The results.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+	      </xsd:sequence>
+      </xsd:complexType>
       <xsd:complexType name="GraphNodeDegreeResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -2066,6 +2397,8 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
+
+      
       <xsd:element name="supported_organismsResponse">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -2073,7 +2406,34 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
-
+      <xsd:element name="classfreq">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="request" type="tns:ClassFreqRequest" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="classfreqResponse">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="response" type="tns:ClassFreqResponse" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="xygraph">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="request" type="tns:XYGraphRequest" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="xygraphResponse">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="response" type="tns:XYGraphResponse" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>      
       <xsd:element name="convert_seq">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -2153,6 +2513,20 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    <xsd:element name="response" type="tns:ConvertGraphResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="display_graph">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="request" type="tns:DisplayGraphRequest" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="display_graphResponse">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="response" type="tns:DisplayGraphResponse" />
+		      </xsd:sequence>
+	      </xsd:complexType>
       </xsd:element>
       <xsd:element name="compare_graphs">
 	<xsd:complexType>
@@ -2316,7 +2690,20 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="supported_organismsResponse">
     <part name="output" element="tns:supported_organismsResponse"/>
   </message>
-
+  <message name="classfreqRequest">
+	  <part name="parameters" element="tns:classfreq"/>
+  </message>
+  
+  <message name="classfreqResponse">
+	  <part name="output" element="tns:classfreqResponse"/>
+  </message>
+  <message name="xygraphRequest">
+	  <part name="parameters" element="tns:xygraph"/>
+  </message>
+  
+  <message name="xygraphResponse">
+	  <part name="output" element="tns:xygraphResponse"/>
+  </message>
   <message name="convert_seqRequest">
     <part name="parameters" element="tns:convert_seq"/>
   </message>
@@ -2357,7 +2744,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="convert_graphResponse">
     <part name="output" element="tns:convert_graphResponse"/>
   </message>
-
+  
+  <message name="display_graphRequest">
+	  <part name="parameters" element="tns:display_graph"/>
+  </message>
+  
+  <message name="display_graphResponse">
+	  <part name="output" element="tns:display_graphResponse"/>
+  </message>
   <message name="compare_graphsRequest">
     <part name="parameters" element="tns:compare_graphs"/>
   </message>
@@ -2468,6 +2862,19 @@ The output graph will thus consist in the graph induced by all nodes of the firs
          <documentation>Get a list of supported organisms.
          </documentation>
       </operation>
+      <operation name="xygraph">
+	      <input name="XYGraphRequest" message="tns:xygraphRequest"/>
+	      <output name="XYGraphResponse" message="tns:xygraphResponse"/>
+	      <documentation>Get a list of supported organisms.
+	      </documentation>
+      </operation>
+      <operation name="classfreq">
+	      <input name="ClassFreqRequest" message="tns:classfreqRequest"/>
+	      <output name="ClassFreqResponse" message="tns:classfreqResponse"/>
+	      <documentation>This script takes a group of numbers (real or integers) and outputs
+        their distribution among classes.
+	      </documentation>
+      </operation>
       <operation name="convert_seq">
          <input name="ConvertSeqRequest" message="tns:convert_seqRequest"/>
          <output name="ConvertSeqResponse" message="tns:convert_seqResponse"/>
@@ -2500,6 +2907,12 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 	      <input name="ConvertGraphRequest" message="tns:convert_graphRequest"/>
 	      <output name="ConvertGraphResponse" message="tns:convert_graphResponse"/>         
 	      <documentation>Convert graphs between different formats
+	      </documentation>
+      </operation>
+      <operation name="display_graph">
+	      <input name="DisplayGraphRequest" message="tns:display_graphRequest"/>
+	      <output name="DisplayGraphResponse" message="tns:display_graphResponse"/>         
+	      <documentation>Produces the figure of a graph
 	      </documentation>
       </operation>
       <operation name="compare_graphs">
@@ -2627,6 +3040,24 @@ This program supports a variety of background models (Bernoulli, Markov chains o
              <soap:body use="literal" />
          </output>
       </operation>
+      <operation name="classfreq">
+	      <soap:operation soapAction=""/>
+	      <input>
+		      <soap:body use="literal" />
+	      </input>
+	      <output>
+		      <soap:body use="literal" />
+	      </output>
+      </operation>
+      <operation name="xygraph">
+	      <soap:operation soapAction=""/>
+	      <input>
+		      <soap:body use="literal" />
+	      </input>
+	      <output>
+		      <soap:body use="literal" />
+	      </output>
+      </operation>
       <operation name="convert_seq">
          <soap:operation soapAction=""/>
          <input>
@@ -2665,6 +3096,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
       </operation>
       <!-- 	  RSAT GRAPH TOOLS BINDING -->
       <operation name="convert_graph">
+	      <soap:operation soapAction=""/>
+	      <input>
+		      <soap:body use="literal" />
+	      </input>
+	      <output>
+		      <soap:body use="literal" />
+	      </output>
+      </operation>
+      <operation name="display_graph">
 	      <soap:operation soapAction=""/>
 	      <input>
 		      <soap:body use="literal" />
@@ -2728,7 +3168,7 @@ This program supports a variety of background models (Bernoulli, Markov chains o
       Olivier Sand (oly@scmbb.ulb.ac.be).
    </documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
-	<soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
+   <soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
 
     </port>
   </service>
