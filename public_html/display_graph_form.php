@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>GrA-tools - display-graph</title>
+   <title>NeA-tools - display-graph</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="form">
@@ -19,8 +19,10 @@
   $graph_format = $_REQUEST['graph_format'];
   $scol = $_REQUEST['scol'];
   $tcol = $_REQUEST['tcol'];
-  $wcol = $_REQUEST['wcol'];
+  $wcol = $_REQUEST['wcol'];  
   $eccol = $_REQUEST['eccol'];
+  $sccol = $_REQUEST['sccol'];  
+  $tccol = $_REQUEST['tccol'];
   
   # demo graph
   $demo = $_REQUEST['demo'];
@@ -73,6 +75,8 @@
     echo "<input type='hidden' NAME='t_col' VALUE='$tcol'/>\n";
     echo "<input type='hidden' NAME='w_col' VALUE='$wcol'/>\n";
     echo "<input type='hidden' NAME='ec_col' VALUE='$eccol'/>\n";
+    echo "<input type='hidden' NAME='sc_col' VALUE='$sccol'/>\n";
+    echo "<input type='hidden' NAME='tc_col' VALUE='$tccol'/>\n";
   }
   echo ("
   <input type='checkbox' name='layout' value='on' $default_layout/>&nbsp;<B><a href = 'help.display_graph.html#layout'>Calculate the layout of the nodes (mandatory for all input format except GML)</a></B><br>
