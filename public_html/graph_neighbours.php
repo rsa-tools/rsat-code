@@ -134,5 +134,21 @@
     echo "<a href = '$resultURL'>$resultURL</a>"; 
     echo "<hr>\n";
      
+    echo "
+  <TABLE CLASS = 'nextstep'>
+    <TR>
+      <Th colspan = 3>
+        Next step
+      </Th>
+    </TR>
+    <TR>
+      <TD>
+        <FORM METHOD='POST' ACTION='compare_classes_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='class_file' VALUE='$server'>
+          <INPUT type='submit' value='Compare the groups of neighbours'>
+        </form>
+      </td> 
+   ";  
   }
 ?>

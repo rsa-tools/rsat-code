@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>GrA-tools - compare-graphs</title>
+   <title>NeA-tools - compare-graphs</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="form">
@@ -32,7 +32,9 @@
   }
   title('compare-graphs');
   echo ("<center>Computes the intersection, the union or the difference of two graphs</center>\n");
-  demo($demo_remark);
+  if($demo) {
+    demo($demo_remark);
+  }
   echo ("<form method='post' action='compare_graphs.php' enctype='multipart/form-data'>");
   echo ("<table>\n");
   echo ("<tr><th>Query graph</th><th>Reference graph</th></tr>\n");
@@ -148,3 +150,6 @@
   <TD><B><A HREF='help.compare_graphs.html'>MANUAL</A></B></TD>
   <TD><B><A HREF='mailto:sylvain@scmbb.ulb.ac.be'>MAIL</A></B></TD>
   </TR></TABLE></ul></ul>");
+  ?>
+  </body>
+  </html>
