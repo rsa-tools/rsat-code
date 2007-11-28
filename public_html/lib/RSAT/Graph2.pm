@@ -388,7 +388,7 @@ Usage : $graph->create_random_graph(@nodes, $req_nodes, $req_edges, $self_loops,
 
 
 Create a random graph from the nodes in @nodes having $req_nodes nodes
-of maxium degree $max_degree and $req_edges edges.
+of maximum degree $max_degree and $req_edges edges.
 
 This supports multi-edges ($duplicated = 1) or not ($duplicated = 0)
 and self loops ($self_loops = 1) or not ($self_loops = 0) A weight is
@@ -560,8 +560,11 @@ sub create_random_graph {
   }
   $rdm_graph->load_from_array(@rdm_graph_array);
     
-  ## Add nodes that have degree 0
-  if (scalar(keys(%graph_node)) != scalar(@nodes)) {
+  ## Add nodes that have degree 0 (if %graph_node < req_nodes)
+  
+  
+  ## MAY BE ERRONEOUS
+  if (scalar(keys(%graph_node)) < $req_nodes) {
     my %rdm_nodes_id_name = $rdm_graph->get_attribute("nodes_id_name");
     my %rdm_nodes_name_id = $rdm_graph->get_attribute("nodes_name_id");
     my %rdm_nodes_label = $rdm_graph->get_attribute("nodes_label");
