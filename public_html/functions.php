@@ -8,7 +8,7 @@
 <?php
   // Grat TITLE
   Function title($title) {
-    echo "<H3><a href='GRAT_home.html'>GrA-tools</a> - $title</H3>\n";
+    echo "<H3><a href='NeAT_home.html'>NeA-tools</a> - $title</H3>\n";
   } 
 ?>
 

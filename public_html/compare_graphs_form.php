@@ -119,9 +119,10 @@
   </select><br><br>");
   echo ("<ul>
   <B><a href = 'help.compare_graphs.html#formats'>Output format</a></B>&nbsp;<select name='out_format'>
-  <option value = 'tab'> tab-delimited format
-  <option selected value = 'gml'> GML format
+  <option selected value = 'tab'> tab-delimited format
+  <option value = 'gml'> GML format
   <option value = 'adj_matrix'> Adjacency matrix
+  <option value = 'dot'> Dot format
   </select><br><br>");
   ## Weight on the edges
   echo ("
