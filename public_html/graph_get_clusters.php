@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>GrA-tools - graph-get-clusters</title>
+   <title>NeA-tools - graph-get-clusters</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="results">
@@ -28,6 +28,8 @@
   $induced = $_REQUEST['induced'];
   if ($induced == 'on') {
     $induced = 1;
+  } else {
+    $induced = 0;
   }
   $s_col = $_REQUEST['s_col'];
   $t_col = $_REQUEST['t_col'];
@@ -63,7 +65,7 @@
     error("You must submit an input graph");
   }
   ## If no clusters are submitted -> error
-  if ($clusters == "" && $clusters == "") {
+  if ($clusters == "") {
     $error = 1;
     error("You must submit input clusters");
   }  
@@ -106,7 +108,6 @@
     $command = $response->command;
     $server = $response->server;
     $client = $response->client;
-    echo("<pre>$command</pre>");
     $server = rtrim ($server);
     $temp_file = explode('/',$server);
     $temp_file = end($temp_file);
@@ -115,21 +116,67 @@
     echo "The results is available at the following URL ";
     echo "<a href = '$resultURL'>$resultURL</a>"; 
     echo "<hr>\n";
-    echo("
-<TABLE CLASS = 'nextstep'>
-    <TR>
-      <Th colspan = 3>
-        Next step
-      </Th>
-    </TR>
-    <TR>
-      <td>
-      </td>
-      <TD>
-        <FORM METHOD='POST' ACTION='display_graph_form.php'>
+    if ($return == 'clusters') {
+      echo "
+        <TABLE CLASS = 'nextstep'>
+      <TR>
+        <Th colspan = 3>
+          Next step
+        </Th>
+      </TR>
+      <TR>
+        <TD>
+          <FORM METHOD='POST' ACTION='display_graph_form.php'>
+            <input type='hidden' NAME='pipe' VALUE='1'>
+            <input type='hidden' NAME='graph_file' VALUE='$server'>
+            <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
+            if ($out_format == 'tab') {
+              echo "
+              <input type='hidden' NAME='scol' VALUE='1'>
+              <input type='hidden' NAME='tcol' VALUE='2'>
+              <input type='hidden' NAME='wcol' VALUE='3'>";
+            }
+            echo "
+            <INPUT type='submit' value='Display the graph'>
+          </form>
+        </td>
+        <TD>
+          <FORM METHOD='POST' ACTION='compare_graphs_form.php'>
+            <input type='hidden' NAME='pipe' VALUE='1'>
+            <input type='hidden' NAME='graph_file' VALUE='$server'>
+            <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
+            if ($out_format == 'tab') {
+              echo "
+              <input type='hidden' NAME='scol' VALUE='1'>
+              <input type='hidden' NAME='tcol' VALUE='2'>
+              <input type='hidden' NAME='wcol' VALUE='3'>";
+            }
+            echo "
+            <INPUT type='submit' value='Compare this graph to another one'>
+          </form>
+        </td>
+        <TD>
+          <FORM METHOD='POST' ACTION='random_graph_form.php'>
+            <input type='hidden' NAME='pipe' VALUE='1'>
+            <input type='hidden' NAME='graph_file' VALUE='$server'>
+            <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
+            if ($out_format == 'tab') {
+              echo "
+              <input type='hidden' NAME='scol' VALUE='1'>
+              <input type='hidden' NAME='tcol' VALUE='2'>
+              <input type='hidden' NAME='wcol' VALUE='3'>";
+            }
+            echo "
+            <INPUT type='submit' value='Randomize this graph'>
+          </form>
+        </td>
+      </tr>
+      <tr>
+<TD>
+        <FORM METHOD='POST' ACTION='convert_graph_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>");
+          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
           if ($out_format == 'tab') {
             echo "
             <input type='hidden' NAME='scol' VALUE='1'>
@@ -137,10 +184,42 @@
             <input type='hidden' NAME='wcol' VALUE='3'>";
           }
           echo "
-          <INPUT type='submit' value='Display the graph'>
+          <INPUT type='submit' value='Convert $out_format to another format'>
         </form>
       </td>
+      <TD>
+        <FORM METHOD='POST' ACTION='graph_node_degree_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$server'>
+          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
+          if ($out_format == 'tab') {
+            echo "
+            <input type='hidden' NAME='scol' VALUE='1'>
+            <input type='hidden' NAME='tcol' VALUE='2'>
+            <input type='hidden' NAME='wcol' VALUE='3'>";
+          }
+          echo "
+          <INPUT type='submit' value='Nodes degrees computation'>
+        </form>
+      </td>
+      <TD>
+        <FORM METHOD='POST' ACTION='graph_neighbours_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$server'>
+          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
+          if ($out_format == 'tab') {
+            echo "
+            <input type='hidden' NAME='scol' VALUE='1'>
+            <input type='hidden' NAME='tcol' VALUE='2'>
+            <input type='hidden' NAME='wcol' VALUE='3'>";
+          }
+          echo "
+          <INPUT type='submit' value='Neighbourhood analysis'>
+        </form>
+      </td>    
     </tr>
-  </table>";
+    </table>";
+    }
+
   }
 ?>

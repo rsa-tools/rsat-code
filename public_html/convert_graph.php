@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>GrA-tools - convert-graph</title>
+   <title>NeA-tools - convert-graph</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="results">
@@ -14,6 +14,8 @@
   $out_format = $_REQUEST['out_format'];
   if ($_FILES['graph_file']['name'] != "") {
     $graph_file = uploadFile('graph_file');
+  } else if ($_REQUEST['pipe_graph_file'] != "")  {
+    $graph_file = $_REQUEST['pipe_graph_file'];
   }
   $now = date("Ymd_His");
   $graph = $_REQUEST['graph'];
