@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.23 2007/11/19 16:07:28 rsat Exp $
+# $Id: random-graph,v 1.24 2007/11/28 11:34:58 rsat Exp $
 #
 ############################################################
 
@@ -507,10 +507,11 @@ Number of requested edges.
 	    ##  number of nodes
 =pod
 
-=item B<-nodes #>
 
-Number of requested nodes
+=item B<-nodefile #>
 
+Specification of a file containing node names. This file must be in the tab-delimited format.
+The first word of each line will be considered as a name
 =cut
 	} elsif ($arg eq "-nodefile") {
           $main::infile{nodefile} = shift(@arguments);
@@ -518,10 +519,9 @@ Number of requested nodes
 	    ## File containing nodes name
 =pod
 
-=item B<-nodefile #>
+.=item B<-nodes #>
 
-Specification of a file containing node names. This file must be in the tab-delimited format.
-The first word of each line will be considered as a name.
+Number of requested nodes
 
 =cut
 	} elsif ($arg eq "-nodes") {
