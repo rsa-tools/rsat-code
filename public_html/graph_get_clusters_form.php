@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>GrA-tools - graph-get-clusters</title>
+   <title>NeA-tools - graph-get-clusters</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="form">
@@ -68,13 +68,13 @@
   <br>Upload clusters from file : <br>
   <input type='file' name='clusters_file' size='45' /><br>
   <B><a href = 'help.graph_get_clusters.html#formats'>Output format (only useful for intra-cluster edges output)</a></B>&nbsp;<select name='out_format'>
-  <option value = 'tab'> tab-delimited format
-  <option selected value = 'gml'> GML format
+  <option selected value = 'tab'> tab-delimited format
+  <option value = 'gml'> GML format
   <option value = 'adj_matrix'> Adjacency matrix
   </select><br><br>");
   echo("
   <B><a href = 'help.compare_graphs.html#return'>Output</B></a>&nbsp;<select name='return'>
-  <option selected value = 'table'> contingency table
+  <option value = 'table'> contingency table
   <option selected value = 'clusters'> intra-cluster edges
   <option value = 'graph'> annotated graph (all edges)
   </select><br><br>");
