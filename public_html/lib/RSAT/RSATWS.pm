@@ -14,6 +14,18 @@ my $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||;
 my $SCRIPTS = $RSAT.'/perl-scripts';
 my $TMP = $RSAT.'/public_html/tmp';
 
+=pod
+
+=head1 NAME
+
+    RSAT::RSATWS
+
+=head1 DESCRIPTION
+
+Documentation for this module is at http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS_documentation.xml
+
+=cut
+
 sub retrieve_seq {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1700,16 +1712,16 @@ sub compare_classes_cmd {
   # my $query_classes = $args{"query_classes"};
   my $return_fields = $args{"return_fields"};
   my $score_column = $args{"score_column"};
-  my $upper_threshold_field = $args{"upper_threshold_field"};
-  my $upper_threshold_value = $args{"upper_threshold_value"};
-  my $lower_threshold_field = $args{"lower_threshold_field"};
-  my $lower_threshold_value = $args{"lower_threshold_value"};
+  my $upper_threshold_field_list = $args{"upper_threshold_field"};
+  my $upper_threshold_value_list = $args{"upper_threshold_value"};
+  my $lower_threshold_field_list = $args{"lower_threshold_field"};
+  my $lower_threshold_value_list = $args{"lower_threshold_value"};
   my $sort = $args{"sort"};
   my $distinct = $args{"distinct"};
   my $triangle = $args{"triangle"};
   my $matrix = $args{"matrix"};
 
-  my $command = "$SCRIPTS/compare-classes";
+  my $command = "$SCRIPTS/compare-classes -v 1";
 
   #pas d'utilite directe de "nettoyage" de la commande sauf si l'on rajoute un elsif...  
   if ($tmp_ref) {
@@ -1745,20 +1757,36 @@ sub compare_classes_cmd {
     $command .= " -sc '".$score_column."'";
   }
 
-  if ($upper_threshold_field && $upper_threshold_value =~ /\d/)  {
-    $upper_threshold_field =~ s/\'//g;
-    $upper_threshold_field =~ s/\"//g;
-    $upper_threshold_value =~ s/\'//g;
-    $upper_threshold_value =~ s/\"//g;
-    $command .= " -uth '".$upper_threshold_field."' '".$upper_threshold_value."'";
+  if ($upper_threshold_field_list && $upper_threshold_value_list)  {
+    my @upper_threshold_field_cp = split(":", $upper_threshold_field_list);
+    my @upper_threshold_value_cp = split(",", $upper_threshold_value_list);
+    if (scalar(@upper_threshold_field_cp) == scalar(@upper_threshold_value_cp)) {
+      for (my $i = 0; $i < scalar(@upper_threshold_field_cp); $i++) {
+        my $upper_threshold_field = $upper_threshold_field_cp[$i];
+        my $upper_threshold_value = $upper_threshold_value_cp[$i];
+        $upper_threshold_field =~ s/\'//g;
+        $upper_threshold_field =~ s/\"//g;
+        $upper_threshold_value =~ s/\'//g;
+        $upper_threshold_value =~ s/\"//g;
+        $command .= " -uth '".$upper_threshold_field."' '".$upper_threshold_value."'";
+      }
+    } 
   }
 
-  if ($lower_threshold_field && $lower_threshold_value =~ /\d/) {
-    $lower_threshold_field =~ s/\'//g;
-    $lower_threshold_field =~ s/\"//g;
-    $lower_threshold_value =~ s/\'//g;
-    $lower_threshold_value =~ s/\"//g;
-    $command .= " -lth '".$lower_threshold_field."' '".$lower_threshold_value."'";
+  if ($lower_threshold_field_list && $lower_threshold_value_list)  {
+    my @lower_threshold_field_cp = split(":", $lower_threshold_field_list);
+    my @lower_threshold_value_cp = split(",", $lower_threshold_value_list);
+    if (scalar(@lower_threshold_field_cp) == scalar(@lower_threshold_value_cp)) {
+      for (my $i = 0; $i < scalar(@lower_threshold_field_cp); $i++) {
+        my $lower_threshold_field = $lower_threshold_field_cp[$i];
+        my $lower_threshold_value = $lower_threshold_value_cp[$i];
+        $lower_threshold_field =~ s/\'//g;
+        $lower_threshold_field =~ s/\"//g;
+        $lower_threshold_value =~ s/\'//g;
+        $lower_threshold_value =~ s/\"//g;
+        $command .= " -lth '".$lower_threshold_field."' '".$lower_threshold_value."'";
+      }
+    }
   }
 
   if ($sort) {
