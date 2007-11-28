@@ -2702,7 +2702,7 @@ sub graph_neighbours {
     my $tmp_outfile = `mktemp $TMP/graph-neighbours.XXXXXXXXXX`;
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     print TMP_OUT $result;
-    print TMP_OUT "KEYS ".keys(%args);
+#     print TMP_OUT "KEYS ".keys(%args);
     close TMP_OUT;
     if ($output_choice eq 'server') {
 	return SOAP::Data->name('response' => {'command' => $command, 
