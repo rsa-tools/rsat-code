@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.93 2007/11/14 13:26:47 morgane Exp $
+# $Id: matrix-scan,v 1.94 2007/11/28 09:41:26 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -395,6 +395,7 @@ package main;
 
 			      limits=>1, ## Sequence limits (for drawing feature maps)
 			      seq_scores=>1, ## sequence-wise scores
+			      bg_residues=>1, ## composition is atgc of the background model (useful for bg_window)
 
 			      distrib=>1, ## Dataset-wise distribution of scores
 			      occ_proba=>1, ## Probability of the number of occurrences o predicted sites
@@ -806,6 +807,14 @@ package main;
       print $out "\t", "Pval";
       print $out "\t", "ln_Pval";
       print $out "\t", "sig";
+ #     print $out "\t", "Wmin";
+  #    print $out "\t", "Wmax";
+    }
+    if ($return_fields{bg_residues}) {
+      print $out "\t", "a";
+      print $out "\t", "c";
+      print $out "\t", "g";
+      print $out "\t", "t";
     }
     print $out "\tnormw" if ($return_fields{normw});
     print $out "\trank" if ($return_fields{rank});
@@ -2289,6 +2298,8 @@ sub score_segment {
   my $pval = $null;
   my $ln_pval = $null;
   my $sig = $null;
+  my $Wmin =$null;
+  my $Wmax =$null;
   
   my ($ref_residue_proba_M, $proba_M) = $matrix->segment_proba($segment);
   my ($ref_residue_proba_B, $proba_B)= $bg_model->segment_proba($segment);
@@ -2314,6 +2325,8 @@ sub score_segment {
       $score = sprintf("%.${decimals}f",$score);
 
   }
+  
+my %prior = $bg_model->get_attribute("suffix_proba");
   
   if (($proba_M > 0) && ($proba_B > 0)) {
       if ($calc_fields{normw}) {
@@ -2376,6 +2389,9 @@ sub score_segment {
   if (($bg_method eq "window")&&($score >= 0)&&($return_fields{pval})) { ## the p-val distrib only for hits whose score >=0
       $matrix->calcTheorScoreDistrib("weights");
       my %current_pval_distrib = $matrix->getTheorScoreDistrib("weights", "inv_cum");
+      #$matrix->weight_range();
+      #$Wmin = $matrix->{Wmin};
+      #$Wmax= $matrix->{Wmax};
       
       if (($proba_M > 0) && ($proba_B > 0)) {
 	  if ($calc_fields{pval}) {
@@ -2438,6 +2454,13 @@ sub score_segment {
       $match->force_attribute('pval',$pval);
       $match->force_attribute('ln_pval',$ln_pval);
       $match->force_attribute('sig',$sig);
+     # $match->force_attribute('wmin',$Wmin);
+      #$match->force_attribute('wmax',$Wmax);
+    }
+    if ($return_fields{bg_residues}) {
+    	foreach my $res (sort(keys(%prior))){
+    		$match->force_attribute($res,sprintf("%.3f", $prior{$res}));
+    	}
     }
     $match->force_attribute('normw',$normw) if ($return_fields{normw});
 
@@ -2498,6 +2521,14 @@ sub print_match {
       print $out "\t", $match->get_attribute('pval');
       print $out "\t", $match->get_attribute('ln_pval');
       print $out "\t", $match->get_attribute('sig');
+      #print $out "\t", $match->get_attribute('wmin');
+      #print $out "\t", $match->get_attribute('wmax');
+    }
+    if ($return_fields{bg_residues}) {
+    	print $out "\t", $match->get_attribute('a');
+    	print $out "\t", $match->get_attribute('c');
+    	print $out "\t", $match->get_attribute('g');
+    	print $out "\t", $match->get_attribute('t');
     }
     print $out "\t", $match->get_attribute('normw') if ($return_fields{normw});
     print $out "\t", $match->get_attribute('rank') if ($return_fields{rank});
