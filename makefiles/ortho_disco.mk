@@ -52,7 +52,7 @@ taxfreq:
 ################################################################
 ## List of all genes to be analyzed. 
 ## By default, all the genes of the considered organism (REF_ORG)
-ALL_GENES=`grep -v '^--' ${RSAT}/data/genomes/${REF_ORG}/genome/cds_names.tab | grep primary | cut -f 2 | sort -u  | perl -pe 's/\n/ /g'`
+ALL_GENES=`grep -v '^--' ${RSAT}/data/genomes/${REF_ORG}/genome/cds_names.tab | grep primary | cut -f 2 | sort -u ${ALL_GENES_FILTER} | perl -pe 's/\n/ /g'`
 list_all_genes:
 	@echo ""
 	@echo "All genes"
@@ -524,23 +524,28 @@ gene_pairs:
 	echo ${GENE_PAIRS}.tab
 	@echo ${GENE_PAIRS}.html 
 	@echo "	`grep -v ';' ${GENE_PAIRS}.tab | grep -v '^#' |  wc -l`	gene pairs"
-	text-to-html -chunk 1000 -i ${GENE_PAIRS}.tab -o  ${GENE_PAIRS}.html -font variable 
+	@text-to-html -chunk 1000 -i ${GENE_PAIRS}.tab -o  ${GENE_PAIRS}.html -font variable 
+
 
 
 ################################################################
 ## Convert the gene pairs into a graph (2 formats : .dot and .gml)
 MIN_SCORE=2
-SCORE_COL=12
-SCORE=dp
+SCORE_COL=14
+SCORE=dp_bits
 PAIR_GRAPH=${GENE_PAIRS}_${SCORE}${MIN_SCORE}
 PAIR_GRAPH_CMD=	\
 	grep -v '^;' ${GENE_PAIRS}.tab \
 		| awk -F '\t' '$$${SCORE_COL} >= ${MIN_SCORE}'  \
 		> ${PAIR_GRAPH}.tab ; echo ${PAIR_GRAPH}.tab ; \
-	convert-graph -i ${PAIR_GRAPH}.tab -from tab -scol 2 -tcol 3 -wcol ${SCORE_COL} -to dot \
-		-o ${PAIR_GRAPH}.dot ; echo ${PAIR_GRAPH}.gml \
-	convert-graph -i ${PAIR_GRAPH}.tab -from tab -scol 2 -tcol 3 -wcol ${SCORE_COL} -to gml \
-		-o ${PAIR_GRAPH}.gml; echo ${PAIR_GRAPH}.dot
+	convert-graph -i ${PAIR_GRAPH}.tab -from tab -to gml \
+		 -scol 2 -tcol 3 -wcol ${SCORE_COL} \
+		 -ewidth -ecolors grey \
+		-o ${PAIR_GRAPH}.gml ; echo ${PAIR_GRAPH}.gml ; \
+	convert-graph -i ${PAIR_GRAPH}.tab -from tab -to dot \
+		-scol 2 -tcol 3 -wcol ${SCORE_COL} \
+		-ewidth -ecolors grey \
+		-o ${PAIR_GRAPH}.dot; echo ${PAIR_GRAPH}.dot
 ## NOTE: THIS TARGET DOES NOT WORK WIRH MY_COMMAND, because the
 ## $$${MIN_SCORE} is not passed correctly. It can thus not be executed
 ## in batch mode on the PC cluster. Since it is not too much time
