@@ -227,9 +227,15 @@ close upstream neighbour.
 <A NAME="imp_pos"></A>
 <h3>Admit imprecise positions:</h3>
 <ul>
-In the annotation of some genomes (i.e. <i>Schizosaccharomyces pombe</i>, ...), the limits of some genes are imprecisely specified (e.g. <555245, >898098). By default, these genes are not loaded. This option allows to retrieve sequence for these genes as well, using the imprecise coordinate as reference position.
+In the annotations of some genomes, the limits of some genes are
+imprecisely specified, by indicating an upper limit (e.g. <555245) or
+a lower limit (e.g. >898098) rather than a precise value. Such
+annotations can be found for example in the genomes
+of <i>Schizosaccharomyces pombe</i>, <i>Arabidopsis thaliana</i>.
 
-
+<p>By default, these genes are not loaded. The option "Admit imprecise
+positions" allows to retrieve sequence for these genes as well, using
+the imprecise coordinate as reference position.
 
 
 <!--
