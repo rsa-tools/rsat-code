@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.94 2007/11/28 09:41:26 morgane Exp $
+# $Id: matrix-scan,v 1.95 2007/11/29 17:41:21 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -396,6 +396,7 @@ package main;
 			      limits=>1, ## Sequence limits (for drawing feature maps)
 			      seq_scores=>1, ## sequence-wise scores
 			      bg_residues=>1, ## composition is atgc of the background model (useful for bg_window)
+			      weight_limits=>1, ## composition is atgc of the background model (useful for bg_window)
 
 			      distrib=>1, ## Dataset-wise distribution of scores
 			      occ_proba=>1, ## Probability of the number of occurrences o predicted sites
@@ -489,7 +490,7 @@ package main;
   if (scalar(keys(%return_fields)) < 1) {
     $return_fields{sites} = 1;
     $return_fields{pval} = 1;
-  } elsif ($return_fields{pval}) {
+  } elsif (($return_fields{pval})||($return_fields{bg_residues})||($return_fields{weight_limits})) {
     ## It makes no sense to return pval without sites
     $return_fields{sites} = 1;
   }
@@ -807,9 +808,11 @@ package main;
       print $out "\t", "Pval";
       print $out "\t", "ln_Pval";
       print $out "\t", "sig";
- #     print $out "\t", "Wmin";
-  #    print $out "\t", "Wmax";
     }
+     if ($return_fields{weight_limits}){
+      	print $out "\t", "Wmin";
+      	print $out "\t", "Wmax";
+      }
     if ($return_fields{bg_residues}) {
       print $out "\t", "a";
       print $out "\t", "c";
@@ -1983,7 +1986,7 @@ single-strand search for DNA sequences.
 List of fields to return. 
 
 Supported fields:
-sites,pval,seq_scores,rank,normw,limits,disrib,occ_proba,bg_model,matrix,freq_matrix,weight_matrix
+sites,pval,seq_scores,rank,normw,limits,weight_limits,disrib,occ_proba,bg_model,bg_residues,matrix,freq_matrix,weight_matrix
 
 =over
 
@@ -2040,6 +2043,13 @@ using a Bernoulli model, for reasons of commputational efficiency.
 This is useful for drawing feature maps with sequences of different
 lengths.
 
+=item B<weight_limits:> Wmin and Wmax. 
+
+For each site, returns the minimal and maximal weight. This is useful with
+adaptative background models.
+
+
+
 =item B<distrib> Score distribution.
 
 Return the score distribution for each matrix.
@@ -2068,6 +2078,10 @@ Report the transition matrix of the background model. Note that this
 option only makes sense for fixed background models (-bgfile or
 -bginput), since when the background model is adaptive (-mindow), the
 transition matrix changes along he sequence.
+
+=item B<bg_residues>
+
+Return for each site the composition in A,C,G and T of the background model.
 
 =item B<matrix>
 
@@ -2332,6 +2346,10 @@ my %prior = $bg_model->get_attribute("suffix_proba");
       if ($calc_fields{normw}) {
 	  $normw = sprintf("%6.4f", ($score - $matrix->{Wmin})/($matrix->{Wrange}));
       }
+      if (($return_fields{weight_limits})&&($bg_method ne "window")){
+      	$Wmin = $matrix->{Wmin};
+      	$Wmax= $matrix->{Wmax};
+       }
       if ($calc_fields{pval}) {
 	  if (defined(${$main::pval{$matrix}}{$score})) {
 	      $pval_value = ${$main::pval{$matrix}}{$score};
@@ -2386,16 +2404,23 @@ my %prior = $bg_model->get_attribute("suffix_proba");
   ### computing p-val distribution for sliding windows only for
   ### those matches above the minimal defined threshold
   ############################################################ 
-  if (($bg_method eq "window")&&($score >= 0)&&($return_fields{pval})) { ## the p-val distrib only for hits whose score >=0
+  # if (($bg_method eq "window")&&($score >= 0)&&($return_fields{pval})) { ## the p-val distrib only for hits whose score >=0
+  
+  if (($bg_method eq "window")&&(($return_fields{pval})||($return_fields{weight_limits}))) { ## the p-val distrib only for hits whose score >=0
       $matrix->calcTheorScoreDistrib("weights");
+      my %current_weight_distrib = $matrix->getTheorScoreDistrib("weights"); ## needed to have the list of exact possible scores
       my %current_pval_distrib = $matrix->getTheorScoreDistrib("weights", "inv_cum");
-      #$matrix->weight_range();
-      #$Wmin = $matrix->{Wmin};
-      #$Wmax= $matrix->{Wmax};
+      
+      
+       if ($return_fields{weight_limits}){
+      	$matrix->weight_range();
+      	$Wmin = $matrix->{Wmin};
+      	$Wmax= $matrix->{Wmax};
+       }
       
       if (($proba_M > 0) && ($proba_B > 0)) {
 	  if ($calc_fields{pval}) {
-	      if (defined($current_pval_distrib{$score})) {
+	      if (defined($current_weight_distrib{$score})) {
 		  $pval_value = $current_pval_distrib{$score};
 		  $pval = sprintf("%.1e", $pval_value);
 		  if ($pval_value > 0) {
@@ -2405,6 +2430,8 @@ my %prior = $bg_model->get_attribute("suffix_proba");
 		      $ln_pval = "-Inf";
 		      $sig = "Inf";
 		  }
+	      } else {
+	      	&RSAT::error::FatalError("Observed score is not in the list of possible theorical scores with the current matrix and background model.");
 	      }
 	  }
       } elsif ($proba_M == 0) {
@@ -2454,8 +2481,10 @@ my %prior = $bg_model->get_attribute("suffix_proba");
       $match->force_attribute('pval',$pval);
       $match->force_attribute('ln_pval',$ln_pval);
       $match->force_attribute('sig',$sig);
-     # $match->force_attribute('wmin',$Wmin);
-      #$match->force_attribute('wmax',$Wmax);
+    }
+    if ($return_fields{weight_limits}){
+      $match->force_attribute('wmin',$Wmin);
+      $match->force_attribute('wmax',$Wmax);
     }
     if ($return_fields{bg_residues}) {
     	foreach my $res (sort(keys(%prior))){
@@ -2521,8 +2550,10 @@ sub print_match {
       print $out "\t", $match->get_attribute('pval');
       print $out "\t", $match->get_attribute('ln_pval');
       print $out "\t", $match->get_attribute('sig');
-      #print $out "\t", $match->get_attribute('wmin');
-      #print $out "\t", $match->get_attribute('wmax');
+    }
+    if ($return_fields{weight_limits}){
+      print $out "\t", $match->get_attribute('wmin');
+      print $out "\t", $match->get_attribute('wmax');
     }
     if ($return_fields{bg_residues}) {
     	print $out "\t", $match->get_attribute('a');
