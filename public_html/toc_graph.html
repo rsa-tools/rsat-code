@@ -21,27 +21,45 @@
 
 <div class="menu">
 <div class="menu_heading_open"
-onclick="toggleMenu('100')" id="heading100">Graph tools</div>
+onclick="toggleMenu('100')" id="heading100">Networks</div>
 <div id="menu100">
 	<a class="menu_item" href="convert_graph_form.php" target="tools">format conversions</a>
-	<a class="menu_item" href="display_graph_form.php" target="tools">network display</a>
 	<a class="menu_item" href="compare_graphs_form.php" target="tools">network comparaisons</a>
-	<a class="menu_item" href="graph_get_clusters_form.php" target="tools">map clusters onto a network</a>
-	<a class="menu_item" href="random_graph_form.php" target="tools">randomize networks</a>
+	<a class="menu_item" href="display_graph_form.php" target="tools">network display</a>
 	<a class="menu_item" href="graph_node_degree_form.php" target="tools">stats on node degrees</a>
-	<a class="menu_item" href="graph_neighbours_form.php" target="tools">stats on node neighbours</a>
+	<a class="menu_item" href="graph_neighbours_form.php" target="tools">get node neighborhood</a>
+	<a class="menu_item" href="random_graph_form.php" target="tools">randomize networks</a>
 </div>
 </div>
 
 <div class="menu">
 <div class="menu_heading_open"
-onclick="toggleMenu('100')" id="heading100">Cluster Analysis</div>
+onclick="toggleMenu('100')" id="heading100">Clusters</div>
 <div id="menu100">
 	<a class="menu_item" href="compare_classes_form.php" target="tools">Cluster/classes comparison</a>
+	<a class="menu_item" href="contingency_stats.php" target="tools">Contingency stats</a>
+</div>
+</div>
+
+<div class="menu">
+<div class="menu_heading_open"
+onclick="toggleMenu('100')" id="heading100">Clusters/Networks</div>
+<div id="menu100">
+	<a class="menu_item" href="mcl_form.php" target="tools">graph-based clustering (MCL)</a>
+	<a class="menu_item" href="graph_get_clusters_form.php" target="tools">map clusters onto network</a>
 </div>
 </div>
 
 
+<div class="menu">
+<div class="menu_heading_closed"
+onclick="toggleMenu('9')" id="heading9">Information</div>
+	<div id="menu9" class="menu_collapsible">
+	<a class="menu_item" href="credits.html" target="tools">Credits</a>
+	<a class="menu_item" href="neat_links.html" target="tools">Links</a>
+	<a class="menu_item" href="web_services.html" target=tools>Web services</a>
+	</div>
+</div>
 
 <h3>Feedback </h3>
 <h3>
