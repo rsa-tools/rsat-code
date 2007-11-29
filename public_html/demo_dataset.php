@@ -22493,7 +22493,7 @@ YPR203W	YPR202W	587
 "
 ?>
 
-<? $uetz_nodes = '
+<?php $uetz_nodes = '
 YML064C	TEM1
 YGL212W	VAM7
 YDR328C	SKP1
@@ -22507,7 +22507,7 @@ YAL016W	TPD3
 ';
 ?>
 
-<? $mips_complexes = 
+<?php $mips_complexes = 
 ";ORF	complex
 YMR108W	Acetolactate-synthase
 YCL009C	Acetolactate-synthase
