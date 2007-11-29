@@ -46,6 +46,19 @@ The web pages are located in the directory
 \file{rsa-tools/public\_html}. This directory contains both the HTML
 pages, and the CGI scripts.
 
+\subsection{Apache modules}
+
+The RSAT interface relies on CGI (for the earlier tools) and PHP (for
+the most recent tools). These modules should be installed on the web
+server, and activated in the Apache configuration files. 
+
+\subsubsection{PHP module for Mac OSX}
+
+If your server is running under Mac OSX, you need to install a recent
+version (at least v5) of the php module, which can be found at the following site. 
+
+\url{href=http://www.entropy.ch/software/macosx/php/}
+
 \subsection{Configuration of the Apache server}
 
 In order to provide web access to the rsa-tools, you need to adapt the

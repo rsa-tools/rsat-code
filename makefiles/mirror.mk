@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.42 2007/10/30 10:35:53 jvanheld Exp $
+# $Id: mirror.mk,v 1.43 2007/11/29 23:17:54 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -104,7 +104,6 @@ EXCLUDED_GENOMES=					\
 		--exclude Canis_familiaris*		\
 		--exclude Pan_troglodytes*		\
 		--exclude Rattus_norvegicus*		\
-		--exclude Homo_sapiens*			\
 		--exclude Danio_rerio*			\
 		--exclude Drosophila_melanogaster*	\
 		--exclude Anopheles_gambiae*		\
@@ -113,6 +112,7 @@ EXCLUDED_GENOMES=					\
 		--exclude Oryzias_latipes*		\
 		--exclude Arabidopsis_thaliana		\
 		--exclude Apis_mellifera		\
+		--exclude Homo_sapiens*			\
 		--exclude *_EnsEMBL*
 
 #EXCLUDED_BLAST= \
