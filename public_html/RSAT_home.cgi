@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.22 2007/11/02 15:14:36 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.23 2007/11/29 11:52:23 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -35,7 +35,7 @@ print <<EndText;
     
     
     <td align=center valign = top>
-    <img src="images/logo_ULB.jpg" alt="images/logo_ULB.jpg" border=0 height=75 width=75>
+    <img src="images/BiGRe_icon_580x484.png" alt="images/logo_ULB.jpg" border=0 height=75>
     <br>
     <font color="#0000dd" size=-2>
     <a href="http://www.bigre.ulb.ac.be" target=_blank>BiGRe</a> - <a href="http://www.ulb.ac.be" target=_blank>ULB</a>
