@@ -32,7 +32,7 @@
     demo($demo_remark);
   }
   echo ("<table>\n");
-  echo ("<tr><th>Query classes</th><th>Reference classes</th></tr>\n");
+  echo ("<tr align = 'center'><th>Query classes</th><th>Reference classes</th></tr>\n");
   ## QUERY INPUT CLASSES TEXTAREA
   echo "<td>";
   if (!$pipe) {
@@ -41,18 +41,18 @@
   echo "</td>";
   ## REFERENCE INPUT GRAPH TEXTAREA
   echo ("<td><textarea name='classesR' rows='6' cols='40'>$demo_classesR</textarea></td>");
-  echo ("<tr><td>");
+  echo ("<tr  align = 'center'><td>");
   ## QUERY INPUT GRAPH FILE
   if (!$pipe) {
-    echo ("Upload query graph from file : <br>
+    echo ("Upload query classes from file : <br>
     <input type='file' name='Qclass_file' size='40' />");
   } else {
-    info("Query graph uploaded from the previous treatment");
+    info("Query classes uploaded from the previous treatment");
     echo "<input type='hidden' NAME='pipe_Q_class_file' VALUE='$pipe_Q_class_file'/>";
   }
   echo "</td>";
   ## REFERENCE INPUT GRAPH FILE
-  echo ("<td>Upload reference graph from file : <br>
+  echo ("<td>Upload reference classes from file : <br>
   <input type='file' name='Rclass_file' size='40' /></td>");
   echo ("</tr>");
   ## QUERY INPUT GRAPH PARAMETERS
