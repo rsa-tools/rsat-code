@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.95 2007/11/29 17:41:21 morgane Exp $
+# $Id: matrix-scan,v 1.96 2007/11/29 19:00:05 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -481,6 +481,22 @@ package main;
     &RSAT::message::Warning("The concept of weight matrix is incompatible with higher order Markov chains. Weight matrix will not be returned.");
     undef($return_fields{weight_matrix});
   }
+  
+  ## calculation of pval with adaptative model requires a threhold to limit computing time
+   if ($bg_method eq "window"){
+   	unless (defined(%lth) || defined(%uth)){
+   		if ($return_fields{pval}){
+   			&RSAT::message::Warning("Calculating P-values for -window background model requires a lot of computing time. Specify a threshold with -lth or -uth. P-val will not be returned.");
+    		undef($return_fields{pval});
+    		$return_fields{sites} = 1;
+   		}
+   		if ($return_fields{weight_limits}){
+   			&RSAT::message::Warning("Calculating Weight limits for -window background model requires a lot of computing time. Specify a threshold with -lth or -uth. Weight limits will not be returned.");
+    		undef($return_fields{weight_limits});
+    		$return_fields{sites} = 1;
+   		}
+   	}
+   }
  
 
   ## Calculate only once the denominator for the logarithms
@@ -2382,16 +2398,18 @@ my %prior = $bg_model->get_attribute("suffix_proba");
   #    &RSAT::message::Debug("scoring segment", $segment, $seq_id, $pos, $strand, 
   #			  $proba_M , $proba_B, $score) if ($main::verbose >= 10);
   
+  ## switch to allow the calculation of pval for window bg model. Requires a lot of computing time !!!
+  my $calc_window_pval = 1;
   
   ## Perform the threshold filtering only after having added the score to the disribution
-  return(0) unless (&check_thresholds("proba_m", $proba_M));
-  return(0) unless (&check_thresholds("proba_b", $proba_B));
-  return(0) unless (&check_thresholds("pval_value", $pval_value));
-  return(0) unless (&check_thresholds("pval", $pval));
-  return(0) unless (&check_thresholds("ln_pval", $ln_pval));
-  return(0) unless (&check_thresholds("sig", $sig));
-  return(0) unless (&check_thresholds("score", $score));
-  return(0) unless (&check_thresholds("normw", $normw));
+  unless (&check_thresholds("proba_m", $proba_M)) {return(0) ; $calc_window_pval = 0; }
+  unless (&check_thresholds("proba_b", $proba_B)) {return(0) ; $calc_window_pval = 0; }
+  unless (&check_thresholds("pval_value", $pval_value)) {return(0) ; $calc_window_pval = 0; }
+  unless (&check_thresholds("pval", $pval)) {return(0) ; $calc_window_pval = 0; }
+  unless (&check_thresholds("ln_pval", $ln_pval)) {return(0) ; $calc_window_pval = 0; }
+  unless (&check_thresholds("sig", $sig)) {return(0) ; $calc_window_pval = 0; }
+  unless (&check_thresholds("score", $score)) {return(0) ; $calc_window_pval = 0; }
+  unless (&check_thresholds("normw", $normw)) {return(0) ; $calc_window_pval = 0; }
 
   #    &RSAT::message::Debug("match", $seq_id, $score, $pval, $ln_pval, $sig_base, $sig) if ($main::verbose >= 10);
 
@@ -2403,14 +2421,11 @@ my %prior = $bg_model->get_attribute("suffix_proba");
   ############################################################
   ### computing p-val distribution for sliding windows only for
   ### those matches above the minimal defined threshold
-  ############################################################ 
-  # if (($bg_method eq "window")&&($score >= 0)&&($return_fields{pval})) { ## the p-val distrib only for hits whose score >=0
-  
-  if (($bg_method eq "window")&&(($return_fields{pval})||($return_fields{weight_limits}))) { ## the p-val distrib only for hits whose score >=0
+  ############################################################   
+  if (($bg_method eq "window")&&(($return_fields{pval})||($return_fields{weight_limits}))&&($calc_window_pval)) { ## the p-val distrib only if necessary
       $matrix->calcTheorScoreDistrib("weights");
       my %current_weight_distrib = $matrix->getTheorScoreDistrib("weights"); ## needed to have the list of exact possible scores
       my %current_pval_distrib = $matrix->getTheorScoreDistrib("weights", "inv_cum");
-      
       
        if ($return_fields{weight_limits}){
       	$matrix->weight_range();
