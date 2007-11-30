@@ -1165,6 +1165,49 @@ P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R), dotprod, jac_sim, rank, sig</xsd:
       </xsd:complexType>
 
       
+     <xsd:complexType name="ContingencyStatsRequest">
+       <xsd:annotation>
+	<xsd:documentation>Parameters for the operation convert-classes.</xsd:documentation>
+       </xsd:annotation>
+       <xsd:sequence>
+        <xsd:element name="inputfile" type="xsd:string" minOccurs="1">
+         <xsd:annotation>
+          <xsd:documentation>A contingency table : a N*M table used to compare the contents of two classifications. Rows represent the clusters of the first classification (considered as reference), and columns the clusters of the second classification (query).</xsd:documentation>
+         </xsd:annotation>
+        </xsd:element> 
+        <xsd:element name="decimals" type="xsd:int" minOccurs="0">
+         <xsd:annotation>
+          <xsd:documentation>Number of decimals to display for the computed statistics.</xsd:documentation>
+         </xsd:annotation>
+        </xsd:element>
+        <xsd:element name="return" type="xsd:string" minOccurs="0">
+         <xsd:annotation>
+           <xsd:documentation>List of fields to return.
+	  	stats : table-wise statistics
+                rowstats : row-wise statistics (one line per row of the contingency table)
+                colstats : column-wise statistics (one line per column of the contingency table)
+                tables : full tables for each statistics (counts, Sn, PPV, separation).
+                margins : marginal statistics besides the tables (requires to return tables).
+           </xsd:documentation>
+         </xsd:annotation>
+        </xsd:element>
+        <xsd:element name="rsizes" type="xsd:string" minOccurs="0">
+         <xsd:annotation>
+          <xsd:documentation>Specify row group sizes in a separate file. This option can be used in particular cases where the marginal sum of the contingency table does not correspond to the group sizes (for example if a classification supoprts the same elements assigned to multiple groups, or on the contrary if some elements can be unassigned).
+            The row size file must contain one row per row of the contingency table, and two columns. The first column indicated the name of the row (the same name as in the contingency table), and the second the  size of the corresponding group.
+          </xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+        <xsd:element name="csizes" type="xsd:string" minOccurs="0">
+         <xsd:annotation>
+          <xsd:documentation>Specify column group sizes in a separate file.
+            Same description as for -rsizes tag.
+          </xsd:documentation>
+         </xsd:annotation>
+        </xsd:element>	
+       </xsd:sequence>
+      </xsd:complexType>
+      
       <xsd:complexType name="MatrixScanRequest">
 	<xsd:annotation>
 	  <xsd:documentation>Parameters for the operation matrix scan</xsd:documentation>
@@ -2154,6 +2197,26 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:sequence>
       </xsd:complexType>
       
+      <xsd:complexType name="ContingencyStatsResponse">
+   	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>      
+      
       <xsd:complexType name="MatrixScanResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -2594,6 +2657,23 @@ The output graph will thus consist in the graph induced by all nodes of the firs
       </xsd:element>      
       
       
+      <xsd:element name="contingency_stats">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:ContingencyStatsRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="contingency_statsResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:ContingencyStatsResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>     
+     
+      
       <xsd:element name="matrix_scan">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -2872,6 +2952,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:convert_classesResponse"/>
   </message>  
   
+  <message name="contingency_statsRequest">
+    <part name="parameters" element="tns:contingency_stats"/>
+  </message>
+
+  <message name="contingency_statsResponse">
+    <part name="output" element="tns:contingency_statsResponse"/>
+  </message>   
+  
   <message name="matrix_scanRequest">
     <part name="parameters" element="tns:matrix_scan"></part>
   </message>
@@ -3052,8 +3140,13 @@ The number of common elements is reported, as well as the probability to observe
 <operation name="convert_classes">
         <input name="ConvertClassesRequest" message="tns:convert_classesRequest"/>
         <output name="ConvertClassesResponse" message="tns:convert_classesResponse"/>
-	<documentation>Compare two class files(the query file and the reference file). Each class of the query file is compared to each class of the reference file.
-The number of common elements is reported, as well as the probability to observe at least this number of common elements by chance alone.
+	<documentation>Interconversions between different formats of cluster files.
+        </documentation>
+      </operation>
+<operation name="contingency_stats">
+        <input name="ContingencyStatsRequest" message="tns:contingency_statsRequest"/>
+        <output name="ContingencyStatsResponse" message="tns:contingency_statsResponse"/>
+	<documentation>Interconversions between different formats of cluster files.
         </documentation>
       </operation>
       <operation name="matrix_scan">
@@ -3251,6 +3344,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
          </output>
       </operation>
       <operation name="convert_classes">
+         <soap:operation soapAction=""/>
+         <input>
+             <soap:body use="literal" />
+         </input>
+         <output>
+             <soap:body use="literal" />
+         </output>
+      </operation>
+      <operation name="contingency_stats">
          <soap:operation soapAction=""/>
          <input>
              <soap:body use="literal" />
