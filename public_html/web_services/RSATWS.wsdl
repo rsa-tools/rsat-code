@@ -1120,6 +1120,51 @@ P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R), dotprod, jac_sim, rank, sig</xsd:
        </xsd:sequence>
       </xsd:complexType>
 
+      
+   <xsd:complexType name="ConvertClassesRequest">
+       <xsd:annotation>
+	<xsd:documentation>Parameters for the operation convert-classes.</xsd:documentation>
+       </xsd:annotation>
+       <xsd:sequence>
+	<xsd:element name="informat" type="xsd:string" minOccurs="1">
+	 <xsd:annotation>
+	  <xsd:documentation>Input format : supported tab, profiles, mcl</xsd:documentation>
+	 </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="outformat" type="xsd:string" minOccurs="1">
+	 <xsd:annotation>
+	  <xsd:documentation>Output format : supported tab, profiles, mcl</xsd:documentation>
+	 </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="member_col" type="xsd:string" minOccurs="0">
+         <xsd:annotation>
+          <xsd:documentation>Member column. Column containing the member names in the tab format (default 1).</xsd:documentation>
+         </xsd:annotation>
+        </xsd:element>
+	<xsd:element name="class_col" type="xsd:string" minOccurs="0">
+         <xsd:annotation>
+          <xsd:documentation>Class column. Column containing the class names in the tab format  (default 2).</xsd:documentation>
+         </xsd:annotation>
+        </xsd:element> 
+        <xsd:element name="score_col" type="xsd:int" minOccurs="0">
+         <xsd:annotation>
+          <xsd:documentation>Score column. Column containing the score in the tab format : if not specified, scores are not defined..</xsd:documentation>
+         </xsd:annotation>
+        </xsd:element>
+        <xsd:element name="min_score" type="xsd:string" minOccurs="0">
+         <xsd:annotation>
+          <xsd:documentation>Minimal score value for member to class assignation.</xsd:documentation>
+         </xsd:annotation>
+        </xsd:element>
+        <xsd:element name="inputclasses" type="xsd:string" minOccurs="0">
+         <xsd:annotation>
+          <xsd:documentation>Input classes in the format defined by the input_format tag</xsd:documentation>
+         </xsd:annotation>
+        </xsd:element> 
+       </xsd:sequence>
+      </xsd:complexType>
+
+      
       <xsd:complexType name="MatrixScanRequest">
 	<xsd:annotation>
 	  <xsd:documentation>Parameters for the operation matrix scan</xsd:documentation>
@@ -1678,6 +1723,28 @@ The mean and standard deviation can then be chosen (-mean and -sd option) or wil
 	</xsd:sequence>
       </xsd:complexType>
 
+      
+      
+<xsd:complexType name="MCLRequest">
+	<xsd:sequence>
+	  <xsd:element name="inputgraph" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>A graph in the tab delimited format first column : source node, second column : target node, third column : edge weight</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="inflation" type="xsd:float" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Sets the main inflation value. This value is the main handle for affecting cluster granularity. It is usually chosen somewhere in the range [1.2-5.0]. -I 5.0 will tend to result in fine-grained clusterings, and -I 1.2 will tend to result in very coarse grained clusterings.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>      
+      
+      
+      
+      
+      
+      
       <xsd:complexType name="GraphNeighboursRequest">
 	<xsd:sequence>
 	  <xsd:element name="informat" type="xsd:string" minOccurs="0">
@@ -2066,7 +2133,27 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-
+      
+      <xsd:complexType name="ConvertClassesResponse">
+   	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+      
       <xsd:complexType name="MatrixScanResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -2206,6 +2293,28 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:sequence>
       </xsd:complexType>
 
+      
+      <xsd:complexType name="MCLResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>      
+      
+      
       <xsd:complexType name="RandomGraphResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -2468,6 +2577,23 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
+      <xsd:element name="convert_classes">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:ConvertClassesRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="convert_classesResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:ConvertClassesResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>      
+      
+      
       <xsd:element name="matrix_scan">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -2569,11 +2695,27 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
-
+      
       <xsd:element name="graph_neighboursResponse">
 	<xsd:complexType>
 	  <xsd:sequence>
 	    <xsd:element name="response" type="tns:GraphNeighboursResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>      
+      
+      <xsd:element name="mcl">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:MCLRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="mclResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:MCLResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
@@ -2722,6 +2864,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:compare_classesResponse"/>
   </message>
 
+  <message name="convert_classesRequest">
+    <part name="parameters" element="tns:convert_classes"/>
+  </message>
+
+  <message name="convert_classesResponse">
+    <part name="output" element="tns:convert_classesResponse"/>
+  </message>  
+  
   <message name="matrix_scanRequest">
     <part name="parameters" element="tns:matrix_scan"></part>
   </message>
@@ -2794,6 +2944,15 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:graph_neighboursResponse"/>
   </message>
 
+  <message name="mclRequest">
+    <part name="parameters" element="tns:mcl"/>
+  </message>
+
+  <message name="mclResponse">
+    <part name="output" element="tns:mclResponse"/>
+  </message>  
+  
+  
   <portType name="RSATWSPortType">
 <!-- 	  RSAT CLASSICAL TOOLS Porttype -->
       <operation name="retrieve_seq">
@@ -2890,6 +3049,13 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 The number of common elements is reported, as well as the probability to observe at least this number of common elements by chance alone.
         </documentation>
       </operation>
+<operation name="convert_classes">
+        <input name="ConvertClassesRequest" message="tns:convert_classesRequest"/>
+        <output name="ConvertClassesResponse" message="tns:convert_classesResponse"/>
+	<documentation>Compare two class files(the query file and the reference file). Each class of the query file is compared to each class of the reference file.
+The number of common elements is reported, as well as the probability to observe at least this number of common elements by chance alone.
+        </documentation>
+      </operation>
       <operation name="matrix_scan">
         <input name="MatrixScanRequest" message="tns:matrix_scanRequest"/>
         <output name="MatrixScanResponse" message="tns:matrix_scanResponse"/>
@@ -2942,11 +3108,17 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 	      </documentation>
       </operation>
       <operation name="graph_neighbours">
-	      <input name="GraphGetClustersRequest" message="tns:graph_neighboursRequest"/>
-	      <output name="GraphGetClustersResponse" message="tns:graph_neighboursResponse"/>         
+	      <input name="GraphNeighboursRequest" message="tns:graph_neighboursRequest"/>
+	      <output name="GraphNeighboursResponse" message="tns:graph_neighboursResponse"/>         
 	      <documentation>Find the neihbours up to a certain distance of a collection of seed nodes
 	      </documentation>
-      	   </operation>	       
+      	   </operation>
+      <operation name="mcl">
+	      <input name="MCLRequest" message="tns:mclRequest"/>
+	      <output name="MCLResponse" message="tns:mclResponse"/>         
+	      <documentation>Find the neihbours up to a certain distance of a collection of seed nodes
+	      </documentation>
+      	   </operation>	
   </portType>
   
   <binding name="RSATWSBinding" type="tns:RSATWSPortType">
@@ -3077,6 +3249,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
          <output>
              <soap:body use="literal" />
          </output>
+      </operation>
+      <operation name="convert_classes">
+         <soap:operation soapAction=""/>
+         <input>
+             <soap:body use="literal" />
+         </input>
+         <output>
+             <soap:body use="literal" />
+         </output>
       </operation> 
       <operation name="matrix_scan">
          <soap:operation soapAction=""/>
@@ -3125,6 +3306,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 	      </output>
       </operation>
       <operation name="graph_neighbours">
+	      <soap:operation soapAction=""/>
+	      <input>
+		      <soap:body use="literal" />
+	      </input>
+	      <output>
+		      <soap:body use="literal" />
+	      </output>
+      </operation>
+      <operation name="mcl">
 	      <soap:operation soapAction=""/>
 	      <input>
 		      <soap:body use="literal" />

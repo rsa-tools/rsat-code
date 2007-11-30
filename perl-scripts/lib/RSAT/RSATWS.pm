@@ -1418,6 +1418,213 @@ sub classfreq_cmd {
 }
 
 
+sub convert_classes {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $tmp_outfile = `mktemp $TMP/convert-classes.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+#     print TMP_OUT $result;
+#     print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    my $command = $self->convert_classes_cmd(%args);
+    $command .= " -o $tmp_outfile";
+    system $command;
+    my $result = `cat $tmp_outfile`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+
+
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+sub convert_classes_cmd {
+  my ($self, %args) =@_;
+  
+  my $command = "$SCRIPTS/convert-classes";
+  
+  if ($args{informat}) {
+   my $in_format = $args{informat};
+   $in_format =~ s/\'//g;
+   $in_format =~ s/\"//g;
+   $command .= " -from $in_format";
+  }
+  if ($args{outformat}) {
+   my $out_format = $args{outformat};
+   $out_format =~ s/\'//g;
+   $out_format =~ s/\'//g;
+   $command .= " -to $out_format";
+  }
+  if ($args{member_col}) {
+   my $member_col = $args{member_col};
+   $member_col =~ s/\'//g;
+   $member_col =~ s/\'//g;
+   $command .= " -mcol $member_col";
+  }
+  if ($args{class_col}) {
+   my $class_col = $args{class_col};
+   $class_col =~ s/\'//g;
+   $class_col =~ s/\'//g;
+   $command .= " -ccol $class_col";
+  }
+  if ($args{score_col}) {
+   my $score_col = $args{score_col};
+   $score_col =~ s/\'//g;
+   $score_col =~ s/\'//g;
+   $command .= " -scol $score_col";
+  }
+  if ($args{min_score}) {
+   my $score_col = $args{min_score};
+   $min_score =~ s/\'//g;
+   $min_score =~ s/\'//g;
+   $command .= " -min_score $score_col";
+  }
+  if ($args{inputclasses}) {
+   my $inputclasses = $args{inputclasses};
+   chomp $inputclasses;
+   my $tmp_input = `mktemp $TMP/convert-classes-input.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
+   print TMP_IN $inputclasses;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  return $command;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+sub contingency_stats {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $tmp_outfile = `mktemp $TMP/contingency_stats.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+#     print TMP_OUT $result;
+#     print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    my $command = $self->contingency_stats_cmd(%args);
+    $command .= " -o $tmp_outfile";
+    system $command;
+    my $result = `cat $tmp_outfile`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+
+
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+sub contingency_stats_cmd {
+  my ($self, %args) =@_;
+  
+  my $command = "$SCRIPTS/contingency-stats -v 1";
+  
+  if ($args{return}) {
+   my $return = $args{return};
+   $return =~ s/\'//g;
+   $return =~ s/\'//g;
+   $command .= " -return $return";
+  }
+  if ($args{decimals}) {
+   my $decimals = $args{decimals};
+   $decimals =~ s/\'//g;
+   $decimals =~ s/\'//g;
+   $command .= " -decimals $decimals";
+  }
+  if ($args{inputfile}) {
+   my $inputfile = $args{inputfile};
+   chomp $inputfile;
+   my $tmp_input = `mktemp $TMP/contingency-stats-input.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
+   print TMP_IN $inputfile;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  if ($args{rsizes}) {
+   my $inputfile = $args{rsizes};
+   chomp $inputfile;
+   my $tmp_input = `mktemp $TMP/contingency-stats-rsizes.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
+   print TMP_IN $inputfile;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -rsizes '".$tmp_input."'";
+  }
+  if ($args{csizes}) {
+   my $inputfile = $args{csizes};
+   chomp $inputfile;
+   my $tmp_input = `mktemp $TMP/contingency-stats-csizes.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
+   print TMP_IN $inputfile;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -csizes '".$tmp_input."'";
+  }
+  return $command;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 sub xygraph {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -2789,6 +2996,78 @@ sub graph_neighbours_cmd {
   }
   return $command;
 }
+
+
+sub mcl {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    
+    my $command = $self->mcl_cmd(%args);
+    my $tmp_outfile = `mktemp $TMP/mcl-out.XXXXXXXXXX`;
+    chomp $tmp_outfile;
+    $command .= "-o $tmp_outfile";
+#     my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    system("$command");
+    $result = `cat $tmp_outfile`;
+    
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+#     print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+sub mcl_cmd {
+  my ($self, %args) =@_;
+  
+  my $command = "/usr/local/bin/mcl";
+  
+  if ($args{inputgraph}) {
+   my $input_graph = $args{inputgraph};
+   chomp $input_graph;
+   my $tmp_input = `mktemp $TMP/mcl-input-graph.XXXXXXXXXX`;
+   ## REMOVE ALL LEADING #
+   open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
+   my @input_graph_cp = split("\n", $input_graph);
+   foreach my $line (@input_graph_cp) {
+     next if ($line =~ /^#/);
+     next if ($line =~ /^;/);
+     print TMP_IN $line."\n";
+   }
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " '".$tmp_input."'";
+  }  
+  
+  if ($args{inflation}) {
+   my $inflation = $args{inflation};
+   $inflation =~ s/\'//g;
+   $inflation =~ s/\'//g;
+   $command .= " -I $inflation --abc -V all ";
+  }
+  return $command;
+}
+
 
 sub random_graph {
     my ($self, $args_ref) = @_;
