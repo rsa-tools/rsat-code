@@ -6,7 +6,7 @@
 <body class="results">
 <?php 
   require ('functions.php');
-  title('graph-node-degree - results');
+  title('graph-neighbours - results');
   # Error status
   $error = 0;
   # Get parameters
@@ -108,7 +108,7 @@
   
     # Open the SOAP client
     $soap_client = new SoapClient(
-                       'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl',
+                       'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS-temp.wsdl',
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
