@@ -42,7 +42,7 @@
   }
   if (!$pipe) {
     if ($demo) {
-      demo("This demonstration graph is the yeast two-hybrid dataset produced by <a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?db=pubmed&uid=10688190&cmd=showdetailview&indexed=google'>Uetz et al (2001)</a>. It consists in 865 interactions between 926 proteins.");
+      demo("This demonstration consists in the comparaison of the yeast co-immunoprecipitation interaction dataset from <a href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=16429126&ordinalpos=1&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum' target = 'top'>Gavin (2006)</a> with the clusters produced by the <a href = 'http://micans.org/mcl/'>MCL</a> algorithm (inflation 2.1)");
     }
     echo("
       <b>Graph</b><br>
