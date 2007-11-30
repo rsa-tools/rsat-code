@@ -1056,9 +1056,9 @@ Default is 'both'.</xsd:documentation>
           <xsd:documentation>A tab-delimited text file containing the description of query classes</xsd:documentation>
          </xsd:annotation>
         </xsd:element>
-	<xsd:element name="return_fields" type="xsd:int" minOccurs="0">
+	<xsd:element name="return_fields" type="xsd:string" minOccurs="0">
          <xsd:annotation>
-          <xsd:documentation>List of fields to return. Supported: dotprod, entropy, freq, jac_sim, members, occ, proba, rank</xsd:documentation>
+          <xsd:documentation>List of fields to return separated by a comma. Supported: dotprod, entropy, freq, jac_sim, members, occ, proba, rank</xsd:documentation>
          </xsd:annotation>
         </xsd:element> 
         <xsd:element name="score_column" type="xsd:int" minOccurs="0">
@@ -1074,12 +1074,14 @@ Default is 'both'.</xsd:documentation>
         <xsd:element name="upper_threshold_field" type="xsd:string" minOccurs="0">
          <xsd:annotation>
           <xsd:documentation>Supported fields: E(QR), E_val, F(!Q!R), F(Q!R), F(Q), F(QR), F(R!Q), F(R), H(Q), H(Q,R), H(Q|R), H(R), H(R|Q), 
-I(Q,R), IC, P(QR), P(Q|R), P(R|Q), P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R), dotprod, jac_sim, rank, sig</xsd:documentation>
+I(Q,R), IC, P(QR), P(Q|R), P(R|Q), P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R), dotprod, jac_sim, rank, sigE(QR),E_val,F(!Q!R),F(Q!R),F(Q),F(QR),F(R!Q),F(R),H(Q),H
+(Q,R),H(Q|R),H(R),H(R|Q),I(Q,R),IC,P(QR),P(Q|R),P(R|Q),P_val,Q,QR,QvR,R,U(Q|R),U
+(R|Q),dH(Q,R),dotprod,dp_bits,jac_sim,log2_dp,names,prodrts,sig,sqrt_dp. semicolumn (":") as there are fields containing commas.</xsd:documentation>
          </xsd:annotation>
         </xsd:element> 
-        <xsd:element name="upper_threshold_value" type="xsd:float" minOccurs="0">
+        <xsd:element name="upper_threshold_value" type="xsd:string" minOccurs="0">
          <xsd:annotation>
-          <xsd:documentation>Upper threshold value for a supported field</xsd:documentation>
+          <xsd:documentation>Upper threshold value for a supported field. There must be as many thresholds values as thresholds fields in the same order as the list of threshold fields were given. </xsd:documentation>
          </xsd:annotation>
         </xsd:element>
         <xsd:element name="lower_threshold_field" type="xsd:string" minOccurs="0">
@@ -1087,7 +1089,7 @@ I(Q,R), IC, P(QR), P(Q|R), P(R|Q), P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R)
           <xsd:documentation>Supported fields: same fields as upper_threshold_field.</xsd:documentation>
          </xsd:annotation>
         </xsd:element>
-        <xsd:element name="lower_threshold_value" type="xsd:float" minOccurs="0">
+        <xsd:element name="lower_threshold_value" type="xsd:string" minOccurs="0">
          <xsd:annotation>
           <xsd:documentation>Lower threshold value for a given field.</xsd:documentation>
          </xsd:annotation>
