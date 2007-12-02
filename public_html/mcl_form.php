@@ -1,62 +1,66 @@
 
 <html>
 <head>
-   <title>GrA-tools - MCL</title>
-   <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
-</head>
-<body class="form">
-<?php
-  require ('functions.php');
-  require ('demo_dataset.php');
-  # variable definition
-  $default_scol = 1;
-  $default_tcol = 2;
-  $default_wcol = "";
-  $default_inflation = 1.8;
+<title>GrA-tools - MCL</title>
+<link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+   </head>
+   <body class="form">
+   <?php
+   require ('functions.php');
+require ('demo_dataset.php');
+# variable definition
+$default_scol = 1;
+$default_tcol = 2;
+$default_wcol = "";
+$default_inflation = 1.8;
   
-  # PIPE VALUES
-  $pipe = $_REQUEST['pipe'];
-  $graph_file = $_REQUEST['graph_file'];
-  $graph_format = $_REQUEST['graph_format'];
-  $scol = $_REQUEST['scol'];
-  $tcol = $_REQUEST['tcol'];
-  $wcol = $_REQUEST['wcol'];  
+# PIPE VALUES
+$pipe = $_REQUEST['pipe'];
+$graph_file = $_REQUEST['graph_file'];
+$graph_format = $_REQUEST['graph_format'];
+$scol = $_REQUEST['scol'];
+$tcol = $_REQUEST['tcol'];
+$wcol = $_REQUEST['wcol'];  
   
-  # demo graph
-  $demo = $_REQUEST['demo'];
-  if ($demo == 1) {
-    $demo_graph = $gavin2006;
-    $demo_ecolors = "selected";
-    $demo_ewidth = "checked";
-    $default_ecolors = "";
-    $default_wcol = 3;
-  }
+# demo graph
+$demo = $_REQUEST['demo'];
+if ($demo == 1) {
+  $demo_graph = $gavin2006;
+  $demo_ecolors = "selected";
+  $demo_ewidth = "checked";
+  $default_ecolors = "";
+  $default_wcol = 3;
+ }
 
-  title('MCL');
-  echo("<center>Fast and scalable unsupervised cluster algorithm for graphs based on simulation of (stochastic) flow in graphs.<br>This program was developped by <a href = 'http://micans.org/stijn/contact.html'>Stijn van Dongen</a> (<a href = 'http://igitur-archive.library.uu.nl/dissertations/1895620/inhoud.htm' target = 'top'>Van Dongen, 2000, PhD thesis</a>; <a href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=11917018&ordinalpos=6&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum' target = 'top'>Enright et al, 2002</a>)<br>The stand-alone version of MCL is available at http://micans.org/mcl/</center>");
+title('MCL');
+echo("<center>Fast and scalable unsupervised cluster algorithm for graphs based on simulation of (stochastic) flow in graphs.
+	<br>The MCL program was developped by <a href = 'http://micans.org/stijn/contact.html'>Stijn van Dongen</a> 
+	(<a href = 'http://igitur-archive.library.uu.nl/dissertations/1895620/inhoud.htm' target = _blank'>Van Dongen, 2000, PhD thesis</a>; 
+	<a href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=11917018&ordinalpos=6&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum' target = 'top'>Enright et al, 2002</a>)
+	<br>The stand-alone version of MCL is available at <a target=_blank href='http://micans.org/mcl/'>http://micans.org/mcl/</a></center>");
   
-  echo ("<form method='post' action='mcl.php' enctype='multipart/form-data'>
+echo ("<form method='post' action='mcl.php' enctype='multipart/form-data'>
   &nbsp;&nbsp;&nbsp;<a href = 'help.mcl.html#formats'><B>Input format</B></a>");
   
   
-  if (!$pipe) {
-    echo("&nbsp;<select name='in_format'>
+if (!$pipe) {
+  echo("&nbsp;<select name='in_format'>
     <option selected value = 'tab'> tab-delimited format
     <option value = 'adj_matrix'> Adjacency matrix
     <option value = 'gml'> GML format
     </select><br>");
-  } else {
-    echo ": $graph_format<br>";
-    echo "<input type='hidden' NAME='in_format' VALUE='$graph_format'>";
-  } 
+ } else {
+  echo ": $graph_format<br>";
+  echo "<input type='hidden' NAME='in_format' VALUE='$graph_format'>";
+ } 
    
-  echo("<br>");
-  if (!$pipe) {
-    if ($demo) {
-      demo("This demonstration graph consists in the yeast co-immunopreciptation interaction dataset described in <a href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=16429126&ordinalpos=1&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum'>Gavin et al (2006)</a> ");
-    }
-    echo ("<b>Graph</b><br>");
-    echo ("<textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>
+echo("<br>");
+if (!$pipe) {
+  if ($demo) {
+    demo("This demonstration graph consists in the yeast co-immunopreciptation interaction dataset described in <a href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=16429126&ordinalpos=1&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum'>Gavin et al (2006)</a> ");
+  }
+  echo ("<b>Graph</b><br>");
+  echo ("<textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>
     <br>Upload graph from file : <br>
     <input type='file' name='graph_file' size='45' /><br>
     &nbsp;&nbsp;&nbsp;
@@ -67,25 +71,73 @@
     <tr><td><B><a href = 'help.mcl.html#scol'>Target node</a></B></td><td><input type = 'text' name='t_col' value = '$default_tcol' size = 1></input></td></tr>
     <tr><td><B><a href = 'help.mcl.html#wcol'>Weight or label column</a></B></td><td><input type = 'text' name='w_col' size = 1 value = '$default_wcol'></input></td></tr>
     </table>");
-  } else {
-    info("Graph uploaded from the previous treatment");
-    echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$graph_file'>";
-  }
-  if ($graph_format == 'tab') {
-    echo "<input type='hidden' NAME='s_col' VALUE='$scol'/>\n";
-    echo "<input type='hidden' NAME='t_col' VALUE='$tcol'/>\n";
-    echo "<input type='hidden' NAME='w_col' VALUE='$wcol'/>\n";
-  }
-  echo("
-  <B><a href = 'help.mcl.html#inflation'>Inflation value</a></B></td><td><input type = 'text' name='inflation' value = '$default_inflation' size = 1></input></td></tr>
-  <ul><ul><table class='formbutton'>
-  <TD><input type='submit' name='.submit' value='GO' /></TD>
-  <TD><B><A HREF='mcl_form.php?demo=0'>RESET</A></B></TD>
-  <TD><B><A HREF='mcl_form.php?demo=1'>DEMO</A></B></TD>
-  </form>
+ } else {
+  info("Graph uploaded from the previous treatment");
+  echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$graph_file'>";
+ }
+
+if ($graph_format == 'tab') {
+  echo "<input type='hidden' NAME='s_col' VALUE='$scol'/>\n";
+  echo "<input type='hidden' NAME='t_col' VALUE='$tcol'/>\n";
+  echo "<input type='hidden' NAME='w_col' VALUE='$wcol'/>\n";
+ }
+
+echo(  "<B><a href = 'help.mcl.html#inflation'>Inflation value</a></B></td><td>
+	    &nbsp;<select name=inflation'>
+	  <option value=1.0>1.0
+	  <option value=1.1>1.1
+	  <option value=1.2>1.2
+	  <option value=1.3>1.3
+	  <option value=1.4>1.4
+	  <option value=1.5>1.5
+	  <option value=1.6>1.6
+	  <option value=1.7>1.7
+	  <option selected value=1.8>1.8
+	  <option value=1.9>1.9
+	  <option value=2.0>2.0
+	  <option value=2.1>2.1
+	  <option value=2.2>2.2
+	  <option value=2.3>2.3
+	  <option value=2.4>2.4
+	  <option value=2.5>2.5
+	  <option value=2.6>2.6
+	  <option value=2.7>2.7
+	  <option value=2.8>2.8
+	  <option value=2.9>2.9
+	  <option value=3.0>3.0
+	  <option value=3.1>3.1
+	  <option value=3.2>3.2
+	  <option value=3.3>3.3
+	  <option value=3.4>3.4
+	  <option value=3.5>3.5
+	  <option value=3.6>3.6
+	  <option value=3.7>3.7
+	  <option value=3.8>3.8
+	  <option value=3.9>3.9
+	  <option value=4.0>4.0
+	  <option value=4.1>4.1
+	  <option value=4.2>4.2
+	  <option value=4.3>4.3
+	  <option value=4.4>4.4
+	  <option value=4.5>4.5
+	  <option value=4.6>4.6
+	  <option value=4.7>4.7
+	  <option value=4.8>4.8
+	  <option value=4.9>4.9
+	  <option value=5.0>5.0
+   </select><br>");
+
+// echo("
+//   <B><a href = 'help.mcl.html#inflation'>Inflation value</a></B></td><td><input type = 'text' name='inflation' value = '$default_inflation' size = 3></input> (a value between 1.0 and 5.0)</td></tr>");
+
+echo ("<ul><ul><table class='formbutton'>
+	 <TD><input type='submit' name='.submit' value='GO' /></TD>
+	 <TD><B><A HREF='mcl_form.php?demo=0'>RESET</A></B></TD>
+	 <TD><B><A HREF='mcl_form.php?demo=1'>DEMO</A></B></TD>
+   </form>
   <TD><B><A HREF='help.mcl.html'>MANUAL</A></B></TD>
   <TD><B><A HREF='mailto:sylvain@scmbb.ulb.ac.be'>MAIL</A></B></TD>
-  </TR></TABLE></ul></ul>
+   </TR></TABLE></ul></ul>
  ");
 
 ?>
