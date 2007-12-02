@@ -24,8 +24,14 @@
     $demo_remark = "This demonstration consists in the comparaison between clusters obtained after application of the <a href = 'http://micans.org/mcl/' target = 'top'>MCL</a> clustering algorithm to the <a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=16429126&ordinalpos=1&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum'>Gavin et al (2006)</a> interaction network and the complexes annotated in the <a target = 'top' href = 'http://mips.gsf.de/'>MIPS database</a>.";
   }
   title('compare-classes');
-  echo("<center>Compare two classifications (clustering results, functional classes, ...), and assess the statistical significance of common members between each pair of classes.<P>
-  Program developed by Joseph Tran and <A HREF='mailto:jvanheld@scmbb.ulb.ac.be (Jacques van Helden)'>Jacques van Helden</A></center>");
+
+  echo("<center>Compare two classifications (clustering results, functional
+  classes, ...), and assess the statistical significance of common
+  members between each pair of classes."); 
+
+   echo ("This program was developed <A HREF='mailto:jvanheld@scmbb.ulb.ac.be
+  (Jacques van Helden)'>Jacques van Helden</a>, with a contribution of
+  Joseph Tran for a prototype version.</center>");
   
   echo ("<form method='post' action='compare_classes.php' enctype='multipart/form-data'>");
   if($demo) {
