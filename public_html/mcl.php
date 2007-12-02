@@ -26,7 +26,7 @@
   ## If a file and a graph are submitted -> error
   if ($graph != "" && $graph_file != "") {
     $error = 1;
-    error("You must not submit both a graph and a graph file");
+    error("The graph can be entered either in the 'Graph' box, or uploaded, but you cannot fill both options simultaneously");
   }
 
   ## No specification of the source and target columns
