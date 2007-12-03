@@ -54,7 +54,7 @@
   
     # Open the SOAP client
     $client = new SoapClient(
-                       'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl',
+                       "$WWW_RSA"."/web_services/RSATWS.wsdl",
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
@@ -148,7 +148,7 @@
       <TD>
         <FORM METHOD='POST' ACTION='compare_classes_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='class_file' VALUE='$server'>
+          <input type='hidden' NAME='class_file' VALUE='$cc_server'>
           <INPUT type='submit' value='Compare these clusters'>
         </form>
       </td> 

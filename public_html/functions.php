@@ -1,11 +1,4 @@
 <?php
-  $tmp = 'tmp/';
-  $WWW_RSA = 'http://rsat.scmbb.ulb.ac.be/rsat/';
-//   ini_set('soap.wsdl_cache_enabled', 0);
-?>
-
-
-<?php
   // Grat TITLE
   Function title($title) {
     echo "<H3><a href='NeAT_home.html'>NeA-tools</a> - $title</H3>\n";
@@ -82,6 +75,32 @@ Function trim_text($text) {
      $trimmed_text .= trim($lines[$y])."\n";
    }
    return $trimmed_text;
-   
 }
+?>
+<?php
+/**
+ * Read a property file $props and return a hash
+ */
+Function load_props($props) {
+  $prop_array = array();
+  $properties = storeFile($props);
+  $lines = explode("\n",$properties);
+  $array_count = count($lines);
+  for($y=0; $y<$array_count; $y++) {
+   $line = trim($lines[$y]);
+   $property = explode('=', $line);
+   $prop_array[$property[0]] = $property[1];
+  }
+  return $prop_array;
+}
+?>
+
+
+<?php
+  # LOAD PROPERTIES
+  $rsat_public_html = getcwd()."/..";;
+  $properties = load_props($rsat_public_html."/RSAT_config.props");
+  $tmp = $properties[rsa_tmp];
+  $WWW_RSA = $properties[www_rsa];
+//   ini_set('soap.wsdl_cache_enabled', 0);
 ?>
