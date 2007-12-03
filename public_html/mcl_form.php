@@ -13,6 +13,7 @@ $default_scol = 1;
 $default_tcol = 2;
 $default_wcol = "";
 $default_inflation = 1.8;
+$epsilon = 0.001;
   
 # PIPE VALUES
 $pipe = $_REQUEST['pipe'];
@@ -82,50 +83,17 @@ if ($graph_format == 'tab') {
   echo "<input type='hidden' NAME='w_col' VALUE='$wcol'/>\n";
  }
 
-echo(  "<B><a href = 'help.mcl.html#inflation'>Inflation value</a></B></td><td>
-	    &nbsp;<select name=inflation'>
-	  <option value=1.0>1.0
-	  <option value=1.1>1.1
-	  <option value=1.2>1.2
-	  <option value=1.3>1.3
-	  <option value=1.4>1.4
-	  <option value=1.5>1.5
-	  <option value=1.6>1.6
-	  <option value=1.7>1.7
-	  <option selected value=1.8>1.8
-	  <option value=1.9>1.9
-	  <option value=2.0>2.0
-	  <option value=2.1>2.1
-	  <option value=2.2>2.2
-	  <option value=2.3>2.3
-	  <option value=2.4>2.4
-	  <option value=2.5>2.5
-	  <option value=2.6>2.6
-	  <option value=2.7>2.7
-	  <option value=2.8>2.8
-	  <option value=2.9>2.9
-	  <option value=3.0>3.0
-	  <option value=3.1>3.1
-	  <option value=3.2>3.2
-	  <option value=3.3>3.3
-	  <option value=3.4>3.4
-	  <option value=3.5>3.5
-	  <option value=3.6>3.6
-	  <option value=3.7>3.7
-	  <option value=3.8>3.8
-	  <option value=3.9>3.9
-	  <option value=4.0>4.0
-	  <option value=4.1>4.1
-	  <option value=4.2>4.2
-	  <option value=4.3>4.3
-	  <option value=4.4>4.4
-	  <option value=4.5>4.5
-	  <option value=4.6>4.6
-	  <option value=4.7>4.7
-	  <option value=4.8>4.8
-	  <option value=4.9>4.9
-	  <option value=5.0>5.0
-   </select><br>");
+
+echo("<B><a href = 'help.mcl.html#inflation'>Inflation value</a></B>&nbsp;<select name='inflation'>");
+for ($i = 1.1; $i <= 5; $i = $i+0.1) {
+  $select = "";
+  if (abs($i - $default_inflation) < $epsilon) {
+//     echo (abs($i - $default_inflation))."\n";
+    $select = "selected";
+  }
+  echo ("<option $select value='$i'>$i\n"); 
+}
+echo ("</select><br>");
 
 // echo("
 //   <B><a href = 'help.mcl.html#inflation'>Inflation value</a></B></td><td><input type = 'text' name='inflation' value = '$default_inflation' size = 3></input> (a value between 1.0 and 5.0)</td></tr>");
