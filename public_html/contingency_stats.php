@@ -72,7 +72,7 @@
   
     # Open the SOAP client
     $client = new SoapClient(
-                       'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl',
+                       "$WWW_RSA"."/web_services/RSATWS.wsdl",
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
