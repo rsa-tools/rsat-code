@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.97 2007/12/03 17:14:49 morgane Exp $
+# $Id: matrix-scan,v 1.98 2007/12/03 23:09:50 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -866,6 +866,26 @@ package main;
     print $out "\trank_pm" if ($return_fields{rank});
     print $out "\n";
   }
+  
+       ## Print header
+  if ($return_fields{crer}) {
+  	 print $out "#", join ("\t", 
+			  "seq_id",
+			  "ft_type",
+			  "ft_name",
+			  "strand",
+			  "start",
+			  "end",
+			  "hit_sum",
+			  "occ_sig",
+			  "occ_pval",
+			  "hit_pval_product",
+			  "weight_sum",
+			  "crer_length"
+			 );
+	print $out "\tnormw_sum" if ($return_fields{normw});
+	 print $out "\n";
+  }
 
   ################################################################
   ##### Scan the sequences
@@ -1135,24 +1155,27 @@ package main;
      next if ($hit_sum == 0) ; ## do not proceed to calculations if the last position is 0
      
      my $weight_sum = 0;
-     foreach my $matrix (keys(%crer_seed_hits)){
-     	$weight_sum += $crer_seed_weights{$matrix}->{"D"}->[$last_hit];
-      	$weight_sum += $crer_seed_weights{$matrix}->{"R"}->[$last_hit] if ($main::both_strands);
-      	}
-     
      my $pval_prod = 1;
-     foreach my $matrix (keys(%crer_seed_hits)){
-     	$pval_prod *= $crer_seed_pval{$matrix}->{"D"}->[$last_hit];
-      	$pval_prod *= $crer_seed_pval{$matrix}->{"R"}->[$last_hit] if ($main::both_strands);
-      	}
-     
      my $normw_sum = 0 if ($calc_fields{normw});
-     if ($calc_fields{normw}){
-     	foreach my $matrix (keys(%crer_seed_hits)){
-     		$normw_sum += $crer_seed_weights{$matrix}->{'normw'}->{"D"}->[$last_hit];
-      		$normw_sum += $crer_seed_weights{$matrix}->{'normw'}->{"R"}->[$last_hit] if ($main::both_strands);
+     my @strands = ();
+     push @strands,"D";
+     push @strands,"R" if ($main::both_strands);
+     
+     foreach my $matrix (keys(%crer_seed_hits)){
+     	foreach my $strand (@strands){
+     		##weight sum
+     		my $weight = $crer_seed_weights{$matrix}->{$strand}->[$last_hit];
+     		$weight_sum += $weight if ($weight ne $null);
+     		##pval sum
+     		my $pval =  $crer_seed_pval{$matrix}->{$strand}->[$last_hit];
+     		$pval_prod *= $pval if ($pval ne $null);
+     		##normw sum
+     		if ($calc_fields{normw}){
+     			my $normw = $crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$last_hit];
+     			$normw_sum += $normw if ($normw ne $null);
+     			}
+     		}
       	}
-     }
 	
 	 ## process each sub-window 
      for (my $k=($last_hit-1) ;  $k >= 0 ;  $k--){
@@ -1160,24 +1183,21 @@ package main;
      	my $sub_window_length = $last_hit - $k + 1;
      	$hit_sum += $crer_sum_hits[$k];
      	
-     	##weight sum
+     	## update sums
      	foreach my $matrix (keys(%crer_seed_hits)){
-     		$weight_sum += $crer_seed_weights{$matrix}->{"D"}->[$k];
-      		$weight_sum += $crer_seed_weights{$matrix}->{"R"}->[$k] if ($main::both_strands);
-      	}
-      	
-      	##normw sum
-      	if ($calc_fields{normw}){
-     	foreach my $matrix (keys(%crer_seed_hits)){
-     		$normw_sum += $crer_seed_weights{$matrix}->{'normw'}->{"D"}->[$k];
-      		$normw_sum += $crer_seed_weights{$matrix}->{'normw'}->{"R"}->[$k] if ($main::both_strands);
-      		}
-     	}
-      	
-      	##pval sum
-      	foreach my $matrix (keys(%crer_seed_hits)){
-     		$pval_prod *= $crer_seed_pval{$matrix}->{"D"}->[$k];
-      		$pval_prod *= $crer_seed_pval{$matrix}->{"R"}->[$k] if ($main::both_strands);
+     	foreach my $strand (@strands){
+     		##weight sum
+     		my $weight = $crer_seed_weights{$matrix}->{$strand}->[$k];
+     		$weight_sum += $weight if ($weight ne $null);
+     		##pval sum
+     		my $pval =  $crer_seed_pval{$matrix}->{$strand}->[$k];
+     		$pval_prod *= $pval if ($pval ne $null);
+     		##normw sum
+     		if ($calc_fields{normw}){
+     			my $normw = $crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$k];
+     			$normw_sum += $normw if ($normw ne $null);
+     			}
+     		}
       	}
       	
 		## calculate over-represantation sig with Binomiale
@@ -1191,6 +1211,11 @@ package main;
 			       );
 	    $nb_of_binom_tests++;
 	    
+	    my $occ_sig = "Inf";
+	    if ($occ_pval > 0) {
+		  $occ_sig = sprintf("%.3f", -log($occ_pval)/$sig_base);
+	      }
+	    
      	##print output (ft format)
      	my $strand_binon = "D";
      	$strand_binon = "DR" if ($main::both_strands);
@@ -1202,6 +1227,7 @@ package main;
     	$crer->force_attribute('start',$sub_window_end - ($last_hit - $k));
     	$crer->force_attribute('end',$sub_window_end);
     	$crer->force_attribute('hit_sum', $hit_sum);
+    	$crer->force_attribute('occ_sig', $occ_sig);
     	$crer->force_attribute('occ_pval', $occ_pval);
     	$crer->force_attribute('pval_prod',$pval_prod);
     	$crer->force_attribute('weight_sum',$weight_sum);
@@ -2261,8 +2287,15 @@ variable sizes. The number of hits is the sum of matches above a predefined thre
 set on hits p-values, for all matrices and on both strands (if -2str). The maximum size
 for a CRER is defined by the option -crer_max.
 
-To search for CRERs, use -return crer -uth pval p -crer_max c
-where p is the maximum allowed pval and c is the maximum size for a CRER
+The prior probability to find an instance of the motif is the same for all matrices,
+and corresponds to the chosen pval threshold. Within a region of maximal CRER size,
+subwindows are defined between each hits, and the observed number of matches in
+a subwindow is the sum of hits above the threshold. The significance of the
+observed number of matches in a subwindow is estimated by calculating a P-value using
+the binomial distribution (Aerts et al., 2003).
+
+To search for CRERs, use -return crer -uth pval p -crer_max c => where p 
+is the pval threshold and c is the maximum size for a CRER
 
 =item B<distrib> Score distribution.
 
@@ -2327,6 +2360,18 @@ for scanning.
 	      &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
 	    }
 	  }
+	  
+	    ## crer_max
+=pod
+
+=item B<-crer_max #>
+
+Maximal size for a CRER. Default is 100. To be used with -return crer.
+
+=cut
+	} elsif ($arg eq "-crer_max") {
+	    $main::crer_seed = shift (@arguments);;
+	    &RSAT::error::FatalError("CRER max size should be a positive integer") unless (&IsNatural($main::crer_seed));
 
 
 	    ## Sort score distribution by decreasing sig value
@@ -2603,16 +2648,20 @@ my %prior = $bg_model->get_attribute("suffix_proba");
   ## For CRER search
   my $is_hit = 1; 
   if ($return_fields{crer}) {
-  	push(@{$crer_seed_pval{$matrix_name}->{$strand}},$pval);
-  	push(@{$crer_seed_weights{$matrix_name}->{$strand}},$score);
-  	push(@{$crer_seed_weights{$matrix_name}->{'normw'}->{$strand}},$normw) if ($calc_fields{normw});
+  	#push(@{$crer_seed_pval{$matrix_name}->{$strand}},$pval);
+  	#push(@{$crer_seed_weights{$matrix_name}->{$strand}},$score);
+  	#push(@{$crer_seed_weights{$matrix_name}->{'normw'}->{$strand}},$normw) if ($calc_fields{normw});
   	unless (&check_thresholds("pval", $pval)) {$is_hit = 0;}
-  	unless (&check_thresholds("ln_pval", $ln_pval)) {$is_hit = 0; }
-  	unless (&check_thresholds("sig", $sig)) {$is_hit = 0;}
-  	if ($is_hit) {
+   	if ($is_hit) {
   		push(@{$crer_seed_hits{$matrix_name}->{$strand}},1);
+  		push(@{$crer_seed_pval{$matrix_name}->{$strand}},$pval);
+  		push(@{$crer_seed_weights{$matrix_name}->{$strand}},$score);
+  		push(@{$crer_seed_weights{$matrix_name}->{'normw'}->{$strand}},$normw) if ($calc_fields{normw});
   	} else {
   		push(@{$crer_seed_hits{$matrix_name}->{$strand}},0);
+  		push(@{$crer_seed_pval{$matrix_name}->{$strand}},$null);
+  		push(@{$crer_seed_weights{$matrix_name}->{$strand}},$null);
+  		push(@{$crer_seed_weights{$matrix_name}->{'normw'}->{$strand}},$null) if ($calc_fields{normw});
   	}
   }
   
@@ -2824,6 +2873,7 @@ sub print_crer {
 		     $crer->get_attribute('start'),
 		     $crer->get_attribute('end'),
 		     $crer->get_attribute('hit_sum'),
+		     $crer->get_attribute('occ_sig'),
 		     sprintf("%.1e",
 		     	$crer->get_attribute('occ_pval')
 		     	),
