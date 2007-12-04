@@ -1172,7 +1172,11 @@ Link the matrix to a specified RSAT::MarkovModel object
 sub setMarkovModel {
   my ($self,$bg_model) = @_;
   $self->force_attribute("bg_markov_model", $bg_model);
-  $self->set_parameter("bg_markov_order", $bg_model->get_attribute("order"));
+
+  unless ($self->get_attribute("bg_order_specified")){
+  	$self->set_parameter("bg_markov_order", $bg_model->get_attribute("order"));
+  	$self->set_attribute("bg_order_specified", 1);
+  }
 
   ## specify priors from the sufix probabilities of the Markov model
   my %bg_suffix_proba = $bg_model->get_attribute("suffix_proba");
