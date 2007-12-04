@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.16 2007/11/07 16:42:46 morgane Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.17 2007/12/04 11:35:18 rsat Exp $
 #
 # Time-stamp
 #
@@ -66,8 +66,7 @@ package main;
   local $ensembl_user = "anonymous";
   local $dbname = '';
   local $org = '';
- # local $dbversion = '46';
-  local $dbversion = '44';
+  local $dbversion = '';
 
   ################################################################
   ## Read arguments
@@ -102,26 +101,36 @@ package main;
   ## If option -org is used, connect to ensembldb to get list of 
   ## databases and pick the latest one corresponding to chosen organism
   if ($org) {
-    &RSAT::message::TimeWarn (join("\t", "Connecting EnsEMBL to get the dbname for organism ", $org, 
-				   "host=".$ensembl_host, 
-				   "user=".$ensembl_user )) if ($main::verbose >= 1);
-    my $dbh = DBI->connect("DBI:mysql:host=$ensembl_host", "$ensembl_user", "", {'RaiseError' => 1});
-    my $sth = $dbh->prepare("SHOW DATABASES");
-    $sth->execute();
-    while (my $ref = $sth->fetchrow_hashref()) {
-      if ($ref->{'Database'} =~ /($org)_core_\d+/) {
-	$dbname = $ref->{'Database'};
-#	$dbversion = $dbname;
-#	$dbversion =~ s/($org)_core_//;
-#	$dbversion =~ s/_.+//;
+      &RSAT::message::TimeWarn (join("\t", "Connecting EnsEMBL to get the dbname for organism ", $org, 
+				     "host=".$ensembl_host, 
+				     "user=".$ensembl_user )) if ($main::verbose >= 1);
+      my $dbh = DBI->connect("DBI:mysql:host=$ensembl_host", "$ensembl_user", "", {'RaiseError' => 1});
+      my $sth = $dbh->prepare("SHOW DATABASES");
+      $sth->execute();
+      while (my $ref = $sth->fetchrow_hashref()) {
+	  if ($ref->{'Database'} =~ /($org)_core_\d+/) {
+	      $dbname = $ref->{'Database'};
+	  }
       }
-    }
-    &RSAT::message::Debug("Db_version", $dbversion) if ($main::verbose >= 3);
-    &RSAT::message::Info (join("\t", "dbname = ", $dbname)) if ($main::verbose >= 1);
-    $sth->finish();
-    $dbh->disconnect();
+      $sth->finish();
+      $dbh->disconnect();
+  } else {  # get organism name from dbname
+      $org = $dbname;
+      $org =~s/_core_.+//;
   }
+  
+  &RSAT::message::Info (join("\t", "dbname = ", $dbname)) if ($main::verbose >= 1);
 
+  ################################################################
+  ## Get EnsEMBL db version from db name
+  unless ($dbversion) {
+      $dbversion = $dbname;
+      $dbversion =~ s/($org)_core_//;
+      $dbversion =~ s/_.+//;
+  }
+  
+  &RSAT::message::Info (join("\t", "dbversion", $dbversion)) if ($main::verbose >= 1);
+  
   ################################################################
   ## Open a new connection to EnsEMBL database, but this time we specify the DB name
     &RSAT::message::TimeWarn("Connecting EnsEMBL to retrieve the organism", 
@@ -320,6 +329,10 @@ sub ReadArguments {
       ### EnsEMBL database name
     } elsif ($ARGV[$a] eq "-dbname") {
       $dbname = $ARGV[$a+1];
+
+      ### EnsEMBL database version
+    } elsif ($ARGV[$a] eq "-dbversion") {
+      $dbversion = $ARGV[$a+1];
 
       ### organism
     } elsif ($ARGV[$a] eq "-org") {
