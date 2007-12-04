@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.100 2007/12/04 14:06:36 morgane Exp $
+# $Id: matrix-scan,v 1.101 2007/12/04 15:39:38 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -1164,7 +1164,7 @@ package main;
      foreach my $last_hit (sort {$b <=> $a} (keys(%last_hits))){
      	## get subwindow end absolute position
      	my $sub_window_end = $last_hits{$last_hit};
-     	&score_crer($last_hit,$seq_id,$sub_window_end);
+     	&score_crer($last_hit,$seq_id,$sub_window_end,$pos,$crer_seed);
      }
      
      	
@@ -2795,7 +2795,7 @@ Calculate
 
 =cut
 sub score_crer {
-  my ($last_hit, $seq_id, $sub_window_end) = @_;
+  my ($last_hit, $seq_id, $sub_window_end,$pos,$crer_seed) = @_;
   	my $hit_p = $uth{pval} || $lth{pval};
      
      my @strands = ();
@@ -2847,8 +2847,18 @@ sub score_crer {
 		## nb of trials (takes into account the end of sequence where some positions are not scored with all matrices if they do not have the same width)
 		my $n = 0;
 		foreach my $matrix (keys(%crer_seed_weights)){
-			my @sum = @{$crer_seed_weights{$matrix}->{"D"}};
-			$n += scalar(@sum);
+			my @seed_positions = @{$crer_seed_weights{$matrix}->{"D"}};
+			my $length;
+			if ($pos == $crer_seed){ ## first seed
+				$length = $last_hit - $k + 1;   	
+			}
+			if ($#seed_positions < $k){ ## last position is before $k
+				next;
+			}
+			if ($#seed_positions <= $last_hit){
+				$length = $#seed_positions - $k + 1;				
+			}
+			$n += $length;
 		}
      	$n *= 2 if ($main::both_strands);
   	
