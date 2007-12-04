@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.99 2007/12/04 11:06:43 morgane Exp $
+# $Id: matrix-scan,v 1.100 2007/12/04 14:06:36 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -963,13 +963,21 @@ package main;
 	}
     }
     
+    
+    ### CRER detection
+	our $nb_of_binom_tests = 0 if ($return_fields{crer});
+	my $crer_seed = $main::crer_seed_init; 
+   	## change $seed to sequence length if $seed size exceed seq length
+   	if ($seq_len < $crer_seed){
+   		&RSAT::message::Warning("sequence $seq_id : CRER max size ($crer_seed) exceeds sequence length ($seq_len). Max CRER size is switched to sequence length.");
+   		$crer_seed = $seq_len - $shortest_matrix_size; 
+   	}
+    
     ################################################################
     ## Detect sites
     &RSAT::message::TimeWarn("Scanning sequence", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id,  "with ".scalar(@matrices)." PSSM")
       if ($main::verbose >= 3);
     &RSAT::message::psWarn("Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id) if (($main::verbose >= 2) && (($sequence_number % 50) == 0));
-	
-	 our $nb_of_binom_tests = 0 if ($return_fields{crer});
 	
 
     if ($calc_fields{sites}) {
@@ -1095,12 +1103,7 @@ package main;
 	}
 
    ############################# 
-   ## CRER search
-   my $crer_seed = $main::crer_seed_init; 
-   ## change $seed to sequence length if $seed size exceed seq length
-   if ($seq_len < $crer_seed){
-   		$crer_seed = $seq_len - $shortest_matrix_size;
-   }
+   ## CRER search  
 	my %last_hits = ();
     if ($pos >= $crer_seed) {
     	&RSAT::message::Debug("position: ", $pos) if ($main::verbose >= 10);
@@ -1125,10 +1128,12 @@ package main;
      		$crer_sum_hits[$seed_pos]=0;
      	
       		foreach my $matrix (keys(%crer_seed_hits)){
-      		 	$crer_sum_hits[$seed_pos] += $crer_seed_hits{$matrix}->{"D"}->[$seed_pos];
-      		 	 if ($main::both_strands) {
-      		 		$crer_sum_hits[$seed_pos] += $crer_seed_hits{$matrix}->{"R"}->[$seed_pos];
-      		 	 }
+      			if (defined($crer_seed_hits{$matrix}->{"D"}->[$seed_pos])){
+      		 		$crer_sum_hits[$seed_pos] += $crer_seed_hits{$matrix}->{"D"}->[$seed_pos];
+      		 	 	if ($main::both_strands) {
+      		 			$crer_sum_hits[$seed_pos] += $crer_seed_hits{$matrix}->{"R"}->[$seed_pos];
+      		 	 	}
+      			}
       			}
       		}
       		
@@ -1142,7 +1147,6 @@ package main;
      } else {
      	$last_hits{($crer_seed - 1)} = $pos; ## only one last hit in the array
 
-     	
      	shift(@crer_sum_hits);## remove left entry
      	my $last_hits = 0;
      	foreach my $matrix (keys(%crer_seed_hits)){
@@ -1150,8 +1154,8 @@ package main;
      		 	$last_hits += $crer_seed_hits{$matrix}->{"D"}->[$crer_seed-1];
      		 	 if ($main::both_strands) {
       		 		$last_hits += $crer_seed_hits{$matrix}->{"R"}->[$crer_seed-1];
-     		 	 }
-     		}
+     		 	 	}
+     			}
       		}
      	push(@crer_sum_hits,$last_hits); ## add right entry
      }
@@ -2792,51 +2796,60 @@ Calculate
 =cut
 sub score_crer {
   my ($last_hit, $seq_id, $sub_window_end) = @_;
-  	my $hit_p = $uth{pval};
-  	 ## Define sub-windows inside the seed CRER : each window is bordered by the last hit (position from right) and each left limit
-     ## is a previous hit.
-     ## initiate sum of hits with hit of last position
-     my $hit_sum = $crer_sum_hits[$last_hit];
-     return(0) if ($hit_sum == 0) ; ## do not proceed to calculations if the last position is 0
+  	my $hit_p = $uth{pval} || $lth{pval};
      
-     my $weight_sum = 0;
-     my $pval_prod = 1;
-     my $normw_sum = 0 if ($calc_fields{normw});
      my @strands = ();
      push @strands,"D";
      push @strands,"R" if ($main::both_strands);
      
+     
+     ## initiate sum of hits with hit of last position
+     my $hit_sum = $crer_sum_hits[$last_hit];
+     return(0) if ($hit_sum == 0) ; ## do not proceed to calculations if the last position is 0
+     
+     ## initiate other sums with hit of last position
+     my $weight_sum = 0;
+     my $pval_prod = 1;
+     my $normw_sum = 0 if ($calc_fields{normw}); 
      foreach my $matrix (keys(%crer_seed_hits)){
      	foreach my $strand (@strands){
      		##weight sum
-     		$weight_sum += $crer_seed_weights{$matrix}->{$strand}->[$last_hit];
+     		$weight_sum += $crer_seed_weights{$matrix}->{$strand}->[$last_hit] if (defined($crer_seed_weights{$matrix}->{$strand}->[$last_hit]));
      		##pval sum
-     		$pval_prod *= $crer_seed_pval{$matrix}->{$strand}->[$last_hit];
+     		$pval_prod *= $crer_seed_pval{$matrix}->{$strand}->[$last_hit] if (defined($crer_seed_pval{$matrix}->{$strand}->[$last_hit]));
      		##normw sum
-			$normw_sum += $crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$last_hit] if ($calc_fields{normw});
+			$normw_sum += $crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$last_hit] if (($calc_fields{normw}) &&(defined($crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$last_hit])));
      		}
       	}
 	
+	 ## Define sub-windows inside the seed CRER : each window is bordered by the last hit (position from right) and each left limit
+     ## is a previous hit.
 	 ## process each sub-window 
      for (my $k=($last_hit-1) ;  $k >= 0 ;  $k--){
      	next if ($crer_sum_hits[$k] == 0);
-     	my $sub_window_length = $last_hit - $k + 1;
-     	$hit_sum += $crer_sum_hits[$k];
      	
      	## update sums
+     	$hit_sum += $crer_sum_hits[$k]; 	
      	foreach my $matrix (keys(%crer_seed_hits)){
      		foreach my $strand (@strands){
      		##weight sum
-     		$weight_sum += $crer_seed_weights{$matrix}->{$strand}->[$last_hit];
+     		$weight_sum += $crer_seed_weights{$matrix}->{$strand}->[$k] if (defined($crer_seed_weights{$matrix}->{$strand}->[$k]));;
      		##pval sum
-     		$pval_prod *= $crer_seed_pval{$matrix}->{$strand}->[$last_hit];
+     		$pval_prod *= $crer_seed_pval{$matrix}->{$strand}->[$k] if (defined($crer_seed_pval{$matrix}->{$strand}->[$k]));
      		##normw sum
-			$normw_sum += $crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$last_hit] if ($calc_fields{normw});
+			$normw_sum += $crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$k] if (($calc_fields{normw}) &&(defined($crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$k])));
      		}
       	}
       	
+      	#########################################################
 		## calculate over-represantation sig with Binomiale
-     	my $n =  $sub_window_length * scalar(@matrices);
+		
+		## nb of trials (takes into account the end of sequence where some positions are not scored with all matrices if they do not have the same width)
+		my $n = 0;
+		foreach my $matrix (keys(%crer_seed_weights)){
+			my @sum = @{$crer_seed_weights{$matrix}->{"D"}};
+			$n += scalar(@sum);
+		}
      	$n *= 2 if ($main::both_strands);
   	
      	my $crer_pval = &sum_of_binomials($hit_p, ## prior probabilty
@@ -2854,6 +2867,7 @@ sub score_crer {
      	##print output (ft format)
      	my $strand_binon = "D";
      	$strand_binon = "DR" if ($main::both_strands);
+     	my $sub_window_length = $last_hit - $k + 1;   	  	
      	
      	$crer->force_attribute('seq_name', $seq_id);
      	$crer->force_attribute('ft_type', 'CRER');
@@ -2873,8 +2887,15 @@ sub score_crer {
      }
      
      ## DEBUG
-     foreach my $i (0..$#crer_sum_hits){
-     	&RSAT::message::Debug($i, " hit sum: ",$crer_sum_hits[$i]) if ($main::verbose >= 10);
+     if ($main::verbose >= 10){
+     	foreach my $i (0..$#crer_sum_hits){
+     		foreach my $matrix (keys(%crer_seed_hits)){
+     			foreach my $strand (@strands){
+     			&RSAT::message::Debug($i, " matrix", $matrix,"hits",Dumper($crer_seed_hits{$matrix}->{$strand}->[$i])) ;
+     			}
+     		}
+     		&RSAT::message::Debug($i, " hit sum: ",$crer_sum_hits[$i]) ;
+     	}
      }
 }
 
