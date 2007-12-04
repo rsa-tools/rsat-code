@@ -23,6 +23,19 @@
   $classesR = $_REQUEST['classesR'];
   $score_col = $_REQUEST['score_col'];
   $sort = "";
+  ## self comparaison
+  $self_compa = 0;
+  $distinct = 0;
+  $triangle = 0;
+  if ($_REQUEST['self_compa'] == 'on') {
+    $self_compa = 1;
+  }
+  if ($_REQUEST['distinct'] == 'on') {
+    $distinct = 1;
+  }
+  if ($_REQUEST['triangle'] == 'on') {
+    $triangle = 1;
+  }
   ## RETURN FIELDS
   $return =  array("rank");
   if ($_REQUEST['occ'] == 'on') {
@@ -229,8 +242,8 @@
     $classesR = trim_text($classesR);
   }    
   
-  ## classes R -> empty : error
-  if ($classesR == '') {
+  ## classes R -> empty & self compa != 1 -> error
+  if ($classesR == '' && $self_compa == 0) {
     $error = 1;
     error("You must submit a set of reference classes");
   }
@@ -240,24 +253,30 @@
     $error = 1;
     error("You must submit a set of query classes");
   }  
-  ## If the score column is given for 2 different files : error.
-  if (($classesR != $classesQ) && $_REQUEST['dotprod'] == 'on' && $score_col != "") {
-    $error = 1;
-    error("You must submit the same file to calculate the dot product");
-  }
+
   ## If the score column is given for 2 different files : error.
   if ($_REQUEST['dotprod'] == 'on' && $score_col == "") {
     $error = 1;
     error("You must submit a score column to compute the dot product ");
   }
-
-  print_r ($parameters);
+  ## If -i option and reference classes are given -> error
+  if ($self_compa && $classesR != "") {
+    $error = 1;
+    error("You must not specify reference classes when query classes are compare to themselves");
+  }
+  
+  ## If -i option and query classes -> place the classes in a new variable
+  if ($self_compa) {
+    $input_classes = $classesQ;
+    $classesQ = "";
+  }  
   
    if (!$error) { 
      $parameters = array( 
        "request" => array (
          "ref_classes"=>$classesQ,
          "query_classes"=>$classesR,
+         "input_classes"=>$input_classes,
          "return_fields"=>$return,
          "score_column"=>$score_col,
          "upper_threshold_field"=>$u_thr_field,
@@ -265,6 +284,8 @@
          "lower_threshold_value"=>$l_thr_val,
          "upper_threshold_value"=>$u_thr_val,
          "sort"=>$sort,
+         "distinct"=>$distinct,
+         "triangle"=>$triangle,
          "matrix"=>$matrix
        )
 
