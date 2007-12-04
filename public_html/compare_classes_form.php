@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>NeA-tools - compare-classes</title>
+   <title>NeA-tools - compare_classes</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="form">
@@ -23,7 +23,7 @@
     $demo_classesR = $mips_complexes ;
     $demo_remark = "This demonstration consists in the comparaison between clusters obtained after application of the <a href = 'http://micans.org/mcl/' target = 'top'>MCL</a> clustering algorithm to the <a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=16429126&ordinalpos=1&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum'>Gavin et al (2006)</a> interaction network and the complexes annotated in the <a target = 'top' href = 'http://mips.gsf.de/'>MIPS database</a>.";
   }
-  title('compare-classes');
+  title('compare_classes');
 
   echo("<center>Compare two classifications (clustering results, functional
   classes, ...), and assess the statistical significance of common
@@ -63,10 +63,15 @@
   echo ("</tr>");
   ## QUERY INPUT GRAPH PARAMETERS
   echo ("</table><br>\n");
+  
+  ## COMPARAISON OF QUERY CLASSES WITH THEMSELVES
   if (!$pipe) {
-  echo("Score column (only relevant when a classification file is compared to itself)
-    <input type = 'text' name='score_col' size = 1></input></td></tr>");
-  }
+  echo("
+    <input type = 'checkbox' value='on' name='self_compa' size = 1> <a href = 'help.compare_classes.html#self'><b>Comparaison of the query classes with themselves (do not specify reference classes)</a></b><br>
+    <input type = 'checkbox' value='on' name='distinct' size = 1> <a href = 'help.compare_classes.html#distinct'><b>Prevent to compare each class with itself (when the reference and query files contain the same classes).</a></b><br>
+    <input type = 'checkbox' value='on' name='triangle' size = 1> <a href = 'help.compare_classes.html#triangle'><b>Do not perform the reciprocal comparisons.</a> (ony valid if query file and reference file are the same)</b><br>
+    Score column <input type = 'text' name='score_col' size = 1\><br>
+  ");}
   
   echo("<br>
   &nbsp;&nbsp;&nbsp;<B><a href = 'help.compare_classes_fortm.html#formats'>Output format</a></B>&nbsp;<select name='out_format'>
@@ -77,7 +82,7 @@
   echo ("<td><b>Class file output parameters</b></td><td><b>Matrix file parameters</b></td></tr><tr align = 'center' valign = 'TOP'><br>");
   # CLASS FILE OUTPUT PARAMETERS
   echo("<td><table border='0' cellspacing='0' cellpadding='0'>
-  <tr>  <th> <A HREF='help.compare-classes.html#return_fields'>Return fields</A> </th></tr> 
+  <tr>  <th> <A HREF='help.compare_classes.html#return_fields'>Return fields</A> </th></tr> 
   <tr><td><label><input type='checkbox' name='occ' value='on' checked='checked' /> Occurrences </label></td></tr> 
   <tr><td><label><input type='checkbox' name='freq' value='on' checked='checked' /> Frequencies </label></td></tr> 
   <tr><td><label><input type='checkbox' name='proba' value='on' checked='checked' /> Probabilities </label></td></tr> 
@@ -88,7 +93,7 @@
   echo("</table><br><br>");
      
   echo("<table border='0' cellspacing='0' cellpadding='0'>
-        <tr><th> <A HREF='help.compare-classes.html#return_fields'>Thresholds on return fields</A> </th> <th> <A HREF='help.compare-classes.html#thresholds'>Lower<BR>Threshold</A> </th> <th> <A HREF='help.compare-classes.html#thresholds'>Upper<BR>Threshold</A> </th></tr> 
+        <tr><th> <A HREF='help.compare_classes.html#return_fields'>Thresholds on return fields</A> </th> <th> <A HREF='help.compare_classes.html#thresholds'>Lower<BR>Threshold</A> </th> <th> <A HREF='help.compare_classes.html#thresholds'>Upper<BR>Threshold</A> </th></tr> 
         <tr align='left' valign='TOP'><td> Query size </td> <td><input type='text' name='lth_q' size='5' /></td> <td><input type='text' name='uth_q'  size='5' /></td></tr> 
         <tr align='left' valign='TOP'><td> Reference size </td> <td><input type='text' name='lth_r'  size='5' /></td> <td><input type='text' name='uth_r'  size='5' /></td></tr> 
         <tr align='left' valign='TOP'><td> Intersection size </td> <td><input type='text' name='lth_qr'  size='5' /></td> <td><input type='text' name='uth_qr'  size='5' /></td></tr> 
