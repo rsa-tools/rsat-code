@@ -1,3 +1,4 @@
+#! /Library/Frameworks/Python.framework/Versions/Current/bin/python2.4
 #!/usr/bin/env python
 
 '''
@@ -5,7 +6,6 @@ Gibbs sampling for Matrix (PSSM) Discovery
 
 '''
 import os, sys, glob
-#print sys.version
 PYTHONPATH = glob.glob1(os.path.abspath(sys.path[0]), '*.zlib')
 [sys.path.insert(1, os.path.join(sys.path[0], path)) for path in PYTHONPATH]
 from Bio.scripthelper import *
@@ -17,8 +17,6 @@ import Lib.matrix as matrix
 import Lib.gibbs93 as gibbs93
 import Lib.gibbs95 as gibbs95
 import Lib.finalcycle as finalcycle
-cli.UPDATE = 1
-DEBUG = 1
 
 usage = """
         %prog   [-i inputfile]
@@ -46,16 +44,19 @@ parser.add_option("--EM", action="store", dest="EM", type="int", help="number of
 parser.add_option("--alpha", action="store", dest="alpha", type="float", default=1)
 parser.add_option("--seed", action="store", dest="seed", type="int", help="set random seed", default=None)
 parser.add_option("--fulloutput", action="store_true", dest="fulloutput", default=False)
-parser.add_option("--bg", action="store", dest="bg", type="str", default=None)
+parser.add_option("--bg", action="store", dest="bg", type="str", help="background model in RAST format", default=None)
 parser.add_option("--startfrom", action="store", dest="startfrom", type="str", default=None)
 parser.add_option("--sampling", action="store", dest="sampling", type="str", default="llr")
 parser.add_option("--normalize", action="store", type="int", dest="normalize", default=0)
 parser.add_option("--strand", action="store", type="str", dest="strand", default='+-')
 parser.add_option("--shift", action="store", type="int", dest="shift", default=10, help="try to shift everyn n iteration")
+parser.add_option("--percent", action="store", dest="percent", type="float", help="keep only x% of sites", default=1.0)
+
 (options, args) = parser.parse_args()
 
 cli.VERBOSITY = options.verbosity
-
+cli.UPDATE = 1
+DEBUG = 1
 
 def run(args, options):
     seed = random_seed(options.seed)
@@ -84,6 +85,7 @@ def run(args, options):
         'sampling' : options.sampling,
         'normalize' : options.normalize,
         'shift' : options.shift,
+        'percent' : options.percent
         }
 
     # OUTPUT
@@ -94,15 +96,10 @@ def run(args, options):
     # BG MODEL
     if options.bg:
         mm = markov.oligo2MM(options.bg)
-
     else:
         mm = markov.MM(0)
         mm.learn(sequences)
         #print mm.priori
-
-    # MAIN
-    results = []
-
 
     # STARTING POINT
     if options.startfrom != None:
@@ -111,14 +108,14 @@ def run(args, options):
         start = motif.words2motif(sites, sequences, mm, parameters)
         #print start.full_str()
 
-
-    mask = motif.Mask()
-
+    # MAIN
+    sites = motif.all_sites(sequences, mm, parameters)
+    results = []
 
     for m in range(options.motifs):
         currentMotifs = []
         parameters['best'] = None
-        parameters['info'] = cli.Info(options.motifs * options.nrun * (options.iter + options.EM) * (options.maxwords - options.minwords +1), 1)
+        parameters['info'] = cli.Info(options.nrun * 0.1 * (options.iter + options.EM)  * (options.maxwords - options.minwords +1), 1)
         
         
         for n in range(options.nrun):
@@ -127,18 +124,18 @@ def run(args, options):
             parameters['nrun'] = n+1
 
             if options.startfrom == None:
-                start = motif.init(sequences, mm, mask, parameters)
+                start = motif.init(sequences, mm, sites, parameters)
 
-
+            # Gibbs sampling
             if options.type.startswith('95'):
                 best = gibbs95.gibbs(sequences, start, mm, parameters)
                 results.append(best)
             else:
                 for nwords in range(parameters['minwords'], parameters['maxwords']+1):
                     parameters['words'] = nwords
-                    best = gibbs93.gibbs(sequences, start, mm, mask, parameters)
+                    best = gibbs93.gibbs(sequences, start, mm, sites, parameters)
         
-            #final cycle
+            # Final cycle
             a = best.fitness()
             best = finalcycle.final(best, parameters)
             b = best.fitness()
@@ -152,24 +149,22 @@ def run(args, options):
                 output1.flush()
             
             currentMotifs.append(best)
-        sys.stderr.write('\n')
+
 
         winner = sorted(currentMotifs, reverse=True)[0]
         results.append(winner)
-        #mask
-        mask.update(winner.spl)
+        #print len(sites)
+        sites.difference_update(winner.sp())
+        #print len(sites)        
 
+        print >> output, winner.full_str()
+        if m < options.motifs - 1:
+            print >> output, '//'
+        output.flush()
 
-    results = sorted(results)
-    #top = min(len(results), options.top)
-    top = options.motifs
-    #print >> output, '\n//\n'.join([results[-i].str() for i in range(1, min(len(results)+1, options.top+1))])
-    print >> output, '\n//\n'.join([results[-i].full_str() for i in range(1, top+1)])
-
-    #print '\n//\n'.join([results[-i].full_str() for i in range(1, top+1)])
-
-
-
+    #results = sorted(results)
+    #top = options.motifs
+    #print >> output, '\n//\n'.join([results[-i].full_str() for i in range(1, top+1)])
 
 
 if __name__ == '__main__':
