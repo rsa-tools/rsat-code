@@ -1,13 +1,13 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.98 2007/12/03 23:09:50 morgane Exp $
+# $Id: matrix-scan,v 1.99 2007/12/04 11:06:43 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
 ############################################################
 ## TO DO: add an option to sort hits either by position or by score
-## TO DO: add a pseudo-weight to the bg model (for the time being, it only affects the matrix)
+## DONE: add a pseudo-weight to the bg model (for the time being, it only affects the matrix)
 ## TO DO: improve the rank output: calcualte a rank per sequence + a total rank + a rank per matrix+sequence
 
 ## TO DO: REGION SCORE
@@ -352,7 +352,7 @@ package main;
   local $cluster = 0;
   
   ## CRM (Cis Regulatory element Enriched Region => CRER)
-  local $crer_seed = 100;
+  local $crer_seed_init = 100;
   local %crer_seed_weights = ();
   local %crer_seed_pval = ();
   local %crer_seed_hits = ();
@@ -733,6 +733,7 @@ package main;
   ## derived statistics
   my %prior = $bg_model->get_attribute("suffix_proba");
   &RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 3);
+  my %matrix_sizes = ();
   foreach my $matrix_file (@matrix_files) {
     my @new_matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
 
@@ -810,6 +811,7 @@ package main;
 
 
 	push @matrices, $matrix;
+	$matrix_sizes{$matrix->get_attribute("name")} = $matrix->get_attribute("ncol");
 	
 	&RSAT::message::TimeWarn("Read matrix", 
 				 scalar(@matrices), 
@@ -819,7 +821,11 @@ package main;
       }
     }
   }
-
+  
+  ## get shortest matrix size
+  my @sorted_array = sort {$a <=> $b} (values(%matrix_sizes));
+  my $shortest_matrix_size = shift (@sorted_array);
+  
   ################################################################
   ## Calculate th pval distribution
   if (($calc_fields{pval})&&($bg_method ne "window")) {
@@ -1090,12 +1096,14 @@ package main;
 
    ############################# 
    ## CRER search
-   	my $hit_p = $uth{pval};
-	my $last_hit = $crer_seed - 1;
-	my $sub_window_end = $pos;
-	
+   my $crer_seed = $main::crer_seed_init; 
+   ## change $seed to sequence length if $seed size exceed seq length
+   if ($seq_len < $crer_seed){
+   		$crer_seed = $seq_len - $shortest_matrix_size;
+   }
+	my %last_hits = ();
     if ($pos >= $crer_seed) {
-    	&RSAT::message::Debug("position: ", $pos) if ($main::verbose >= 3);
+    	&RSAT::message::Debug("position: ", $pos) if ($main::verbose >= 10);
     unless ($pos == $crer_seed){
     	foreach my $matrix (keys(%crer_seed_hits)){
       		 shift(@{$crer_seed_hits{$matrix}->{"D"}});
@@ -1113,7 +1121,7 @@ package main;
 
      ## Populate sum vector that merge the hits of all matrices
      if ($pos == $crer_seed){
-     	foreach my $seed_pos (0..$last_hit){
+     	foreach my $seed_pos (0..($pos-1)){
      		$crer_sum_hits[$seed_pos]=0;
      	
       		foreach my $matrix (keys(%crer_seed_hits)){
@@ -1125,16 +1133,16 @@ package main;
       		}
       		
       		##get the last hit position (for first seed, the last hit may not be on the right end of the array)
-      		for (my $k=$last_hit ;  $k >= 0 ;  $k--){
+      		for (my $k=($pos-1) ;  $k >= 0 ;  $k--){
      			if ($crer_sum_hits[$k] != 0){
-     				$last_hit = $k;
-     				$sub_window_end = $pos - ($crer_seed - $k) +1;
-     				last;
+     				$last_hits{$k} = $pos - ($crer_seed - $k) +1; ## store last hit + corresponding absolute position
      			}
-      		}
-      	
+      		}  	
       ## only update each border of the seed
      } else {
+     	$last_hits{($crer_seed - 1)} = $pos; ## only one last hit in the array
+
+     	
      	shift(@crer_sum_hits);## remove left entry
      	my $last_hits = 0;
      	foreach my $matrix (keys(%crer_seed_hits)){
@@ -1148,102 +1156,15 @@ package main;
      	push(@crer_sum_hits,$last_hits); ## add right entry
      }
      
-     ## Define sub-windows inside the seed CRER : each window is bordered by the last hit (position from right) and each left limit
-     ## is a previous hit.
-     ## initiate sum of hits with hit of last position
-     my $hit_sum = $crer_sum_hits[$last_hit];
-     next if ($hit_sum == 0) ; ## do not proceed to calculations if the last position is 0
-     
-     my $weight_sum = 0;
-     my $pval_prod = 1;
-     my $normw_sum = 0 if ($calc_fields{normw});
-     my @strands = ();
-     push @strands,"D";
-     push @strands,"R" if ($main::both_strands);
-     
-     foreach my $matrix (keys(%crer_seed_hits)){
-     	foreach my $strand (@strands){
-     		##weight sum
-     		my $weight = $crer_seed_weights{$matrix}->{$strand}->[$last_hit];
-     		$weight_sum += $weight if ($weight ne $null);
-     		##pval sum
-     		my $pval =  $crer_seed_pval{$matrix}->{$strand}->[$last_hit];
-     		$pval_prod *= $pval if ($pval ne $null);
-     		##normw sum
-     		if ($calc_fields{normw}){
-     			my $normw = $crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$last_hit];
-     			$normw_sum += $normw if ($normw ne $null);
-     			}
-     		}
-      	}
-	
-	 ## process each sub-window 
-     for (my $k=($last_hit-1) ;  $k >= 0 ;  $k--){
-     	next if ($crer_sum_hits[$k] == 0);
-     	my $sub_window_length = $last_hit - $k + 1;
-     	$hit_sum += $crer_sum_hits[$k];
-     	
-     	## update sums
-     	foreach my $matrix (keys(%crer_seed_hits)){
-     	foreach my $strand (@strands){
-     		##weight sum
-     		my $weight = $crer_seed_weights{$matrix}->{$strand}->[$k];
-     		$weight_sum += $weight if ($weight ne $null);
-     		##pval sum
-     		my $pval =  $crer_seed_pval{$matrix}->{$strand}->[$k];
-     		$pval_prod *= $pval if ($pval ne $null);
-     		##normw sum
-     		if ($calc_fields{normw}){
-     			my $normw = $crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$k];
-     			$normw_sum += $normw if ($normw ne $null);
-     			}
-     		}
-      	}
-      	
-		## calculate over-represantation sig with Binomiale
-     	my $n =  $sub_window_length * scalar(@matrices);
-     	$n *= 2 if ($main::both_strands);
-  	
-     	my $occ_pval = &sum_of_binomials($hit_p, ## prior probabilty
-				$n,	## Number of trials
-				$hit_sum,	## Min number of successes
-				$n,	## Max number of successes
-			       );
-	    $nb_of_binom_tests++;
-	    
-	    my $occ_sig = "Inf";
-	    if ($occ_pval > 0) {
-		  $occ_sig = sprintf("%.3f", -log($occ_pval)/$sig_base);
-	      }
-	    
-     	##print output (ft format)
-     	my $strand_binon = "D";
-     	$strand_binon = "DR" if ($main::both_strands);
-     	
-     	$crer->force_attribute('seq_name', $seq_id);
-     	$crer->force_attribute('ft_type', 'CRER');
-    	$crer->force_attribute('feature_name', "crer_".$nb_of_binom_tests);
-    	$crer->force_attribute('strand',$strand_binon);
-    	$crer->force_attribute('start',$sub_window_end - ($last_hit - $k));
-    	$crer->force_attribute('end',$sub_window_end);
-    	$crer->force_attribute('hit_sum', $hit_sum);
-    	$crer->force_attribute('occ_sig', $occ_sig);
-    	$crer->force_attribute('occ_pval', $occ_pval);
-    	$crer->force_attribute('pval_prod',$pval_prod);
-    	$crer->force_attribute('weight_sum',$weight_sum);
-    	$crer->force_attribute('crer_length',$sub_window_length);
-		$crer->force_attribute('normw_sum',$normw_sum) if ($calc_fields{normw});
-		
-		&print_crer($crer);
+     ## calculate crer
+     foreach my $last_hit (sort {$b <=> $a} (keys(%last_hits))){
+     	## get subwindow end absolute position
+     	my $sub_window_end = $last_hits{$last_hit};
+     	&score_crer($last_hit,$seq_id,$sub_window_end);
      }
      
-     	## DEBUG
-     	foreach my $i (0..$#crer_sum_hits){
-     		&RSAT::message::Debug($i, " hit sum: ",$crer_sum_hits[$i]) if ($main::verbose >= 10);
-     	}
+     	
       	}  
-
- 
        } 
     }
     
@@ -2370,8 +2291,8 @@ Maximal size for a CRER. Default is 100. To be used with -return crer.
 
 =cut
 	} elsif ($arg eq "-crer_max") {
-	    $main::crer_seed = shift (@arguments);;
-	    &RSAT::error::FatalError("CRER max size should be a positive integer") unless (&IsNatural($main::crer_seed));
+	    $main::crer_seed_init = shift (@arguments);;
+	    &RSAT::error::FatalError("CRER max size should be a positive integer") unless (&IsNatural($main::crer_seed_init));
 
 
 	    ## Sort score distribution by decreasing sig value
@@ -2659,9 +2580,9 @@ my %prior = $bg_model->get_attribute("suffix_proba");
   		push(@{$crer_seed_weights{$matrix_name}->{'normw'}->{$strand}},$normw) if ($calc_fields{normw});
   	} else {
   		push(@{$crer_seed_hits{$matrix_name}->{$strand}},0);
-  		push(@{$crer_seed_pval{$matrix_name}->{$strand}},$null);
-  		push(@{$crer_seed_weights{$matrix_name}->{$strand}},$null);
-  		push(@{$crer_seed_weights{$matrix_name}->{'normw'}->{$strand}},$null) if ($calc_fields{normw});
+  		push(@{$crer_seed_pval{$matrix_name}->{$strand}},1);
+  		push(@{$crer_seed_weights{$matrix_name}->{$strand}},0);
+  		push(@{$crer_seed_weights{$matrix_name}->{'normw'}->{$strand}},0) if ($calc_fields{normw});
   	}
   }
   
@@ -2851,6 +2772,110 @@ sub print_match {
     print $out "\n";
 
     undef $match;
+}
+
+
+################################################################
+=pod
+
+=head1 INTERNAL PROCEDURES
+
+=cut
+
+################################################################
+=pod
+
+=item B<score_crer>
+
+Calculate 
+
+=cut
+sub score_crer {
+  my ($last_hit, $seq_id, $sub_window_end) = @_;
+  	my $hit_p = $uth{pval};
+  	 ## Define sub-windows inside the seed CRER : each window is bordered by the last hit (position from right) and each left limit
+     ## is a previous hit.
+     ## initiate sum of hits with hit of last position
+     my $hit_sum = $crer_sum_hits[$last_hit];
+     return(0) if ($hit_sum == 0) ; ## do not proceed to calculations if the last position is 0
+     
+     my $weight_sum = 0;
+     my $pval_prod = 1;
+     my $normw_sum = 0 if ($calc_fields{normw});
+     my @strands = ();
+     push @strands,"D";
+     push @strands,"R" if ($main::both_strands);
+     
+     foreach my $matrix (keys(%crer_seed_hits)){
+     	foreach my $strand (@strands){
+     		##weight sum
+     		$weight_sum += $crer_seed_weights{$matrix}->{$strand}->[$last_hit];
+     		##pval sum
+     		$pval_prod *= $crer_seed_pval{$matrix}->{$strand}->[$last_hit];
+     		##normw sum
+			$normw_sum += $crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$last_hit] if ($calc_fields{normw});
+     		}
+      	}
+	
+	 ## process each sub-window 
+     for (my $k=($last_hit-1) ;  $k >= 0 ;  $k--){
+     	next if ($crer_sum_hits[$k] == 0);
+     	my $sub_window_length = $last_hit - $k + 1;
+     	$hit_sum += $crer_sum_hits[$k];
+     	
+     	## update sums
+     	foreach my $matrix (keys(%crer_seed_hits)){
+     		foreach my $strand (@strands){
+     		##weight sum
+     		$weight_sum += $crer_seed_weights{$matrix}->{$strand}->[$last_hit];
+     		##pval sum
+     		$pval_prod *= $crer_seed_pval{$matrix}->{$strand}->[$last_hit];
+     		##normw sum
+			$normw_sum += $crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$last_hit] if ($calc_fields{normw});
+     		}
+      	}
+      	
+		## calculate over-represantation sig with Binomiale
+     	my $n =  $sub_window_length * scalar(@matrices);
+     	$n *= 2 if ($main::both_strands);
+  	
+     	my $crer_pval = &sum_of_binomials($hit_p, ## prior probabilty
+				$n,	## Number of trials
+				$hit_sum,	## Min number of successes
+				$n,	## Max number of successes
+			       );
+	    $nb_of_binom_tests++;
+	    
+	    my $crer_sig = "Inf";
+	    if ($crer_pval > 0) {
+		  $crer_sig = sprintf("%.3f", -log($crer_pval)/$sig_base);
+	      }
+	    
+     	##print output (ft format)
+     	my $strand_binon = "D";
+     	$strand_binon = "DR" if ($main::both_strands);
+     	
+     	$crer->force_attribute('seq_name', $seq_id);
+     	$crer->force_attribute('ft_type', 'CRER');
+    	$crer->force_attribute('feature_name', "crer_".$nb_of_binom_tests);
+    	$crer->force_attribute('strand',$strand_binon);
+    	$crer->force_attribute('start',$sub_window_end - ($last_hit - $k));
+    	$crer->force_attribute('end',$sub_window_end);
+    	$crer->force_attribute('hit_sum', $hit_sum);
+    	$crer->force_attribute('occ_sig', $crer_sig);
+    	$crer->force_attribute('occ_pval', $crer_pval);
+    	$crer->force_attribute('pval_prod',$pval_prod);
+    	$crer->force_attribute('weight_sum',$weight_sum);
+    	$crer->force_attribute('crer_length',$sub_window_length);
+		$crer->force_attribute('normw_sum',$normw_sum) if ($calc_fields{normw});
+		
+		&print_crer($crer);
+     }
+     
+     ## DEBUG
+     foreach my $i (0..$#crer_sum_hits){
+     	&RSAT::message::Debug($i, " hit sum: ",$crer_sum_hits[$i]) if ($main::verbose >= 10);
+     }
 }
 
 ################################################################
