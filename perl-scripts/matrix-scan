@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.103 2007/12/05 10:59:26 morgane Exp $
+# $Id: matrix-scan,v 1.104 2007/12/05 11:13:54 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -1616,10 +1616,14 @@ matrix-scan options
 		skip: N-containing regions are skipped
 		score: N-containing rgions are scored. 
 -mask [upper|lower] Mask lower or uppercases, respectively, i.e replace selected case by N characters.
+-origin pos	Define pos as the origin for the calculatin of positions
 -o		outputfile
 -m		matrix file
--matrix_format  format of the matrix (supported: tab(default), meme, consensus,MotifSampler)
 -mlist		list of matrices
+-matrix_format  format of the matrix (supported: tab(default), meme, consensus,MotifSampler)
+-top_matrices #	only scan with the top # matrices per matrix file
+-consensus_name use the motif (degenerate) consensus as matrix name.
+-decimals #	Number of decimals displayed for the weight score
 -pseudo	#	pseudo-count for the matrix (default value: 1). By default the pseudo is
                 distributed proportinally to residue prior
 -equi-pseudo #	the pseudo count is equally distributed
@@ -1632,7 +1636,7 @@ matrix-scan options
 -2str		scan both strands for DNA sequences.
 -1str		single-strand search for DNA sequences.
 -return		lists of fields to return. Supported fields: sites, pval, seq_scores, rank, normw,
-                limits, distrib, occ_proba, bg_model, matrix, freq_matrix, weight_matrix 
+                limits,weight_limits, distrib, occ_proba, bg_model,bg_residues, matrix, freq_matrix, weight_matrix,crer
 -lth/uth param # : lower/upper threshold on some parameters
 
 		Supported thresholds fields for the matches: score, pval, eval, 
@@ -1640,14 +1644,16 @@ matrix-scan options
 
 		Supported thresholds fields for score distributions: occ, occ_sum, 
 		inv_cum, exp_occ, occ_pval, occ_eval, occ_sig, occ_sig_rank
-
+-crer_max #	maximal size for a CRER
 -sort_distrib	sort score distributions by decreasing values of significance. 
                 (Default: score distibutions are sorted by score (weight)) 
 -bg_distrib	File specifying the background score distribution used to estimate prior
                 probabilities with the option -return occ_proba.
--decimals #	Number of decimals displayed for the weight score
+
 -base #		Base for the logarithms used in the score involving a log-likelihood (Default: exp(1))
--position pos	Define pos as the origin for the calculatin of positions
+-recursive	Run matrix-scan separately for each sequence.
+-batch #	Dispatch matrix-scan jobs on a cluster. Number of sequences to be analyzed by job (= on each node of the cluster)
+
 
 For details about all these options and return fields 
 see full help (matrix-scan -h)
