@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.101 2007/12/04 15:39:38 morgane Exp $
+# $Id: matrix-scan,v 1.102 2007/12/05 10:32:55 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -357,6 +357,8 @@ package main;
   local %crer_seed_pval = ();
   local %crer_seed_hits = ();
   local @crer_sum_hits = ();
+  local %nb_of_binom_tests = ();
+  local $sum_binom_tests = 0;
   ## By default, I use a single "recyclable"  feature object to avoid creating one object per match when this is not required
   local $crer = new RSAT::feature();
   
@@ -965,12 +967,20 @@ package main;
     
     
     ### CRER detection
-	our $nb_of_binom_tests = 0 if ($return_fields{crer});
-	my $crer_seed = $main::crer_seed_init; 
+	$nb_of_binom_tests{$seq_id} = 0 if ($return_fields{crer});
+	our $crer_seed = $main::crer_seed_init if ($return_fields{crer}); 
    	## change $seed to sequence length if $seed size exceed seq length
-   	if ($seq_len < $crer_seed){
-   		&RSAT::message::Warning("sequence $seq_id : CRER max size ($crer_seed) exceeds sequence length ($seq_len). Max CRER size is switched to sequence length.");
-   		$crer_seed = $seq_len - $shortest_matrix_size; 
+   	if ($return_fields{crer}){
+   		if ($seq_len < $crer_seed){
+   			&RSAT::message::Warning("sequence $seq_id : CRER max size ($crer_seed) exceeds sequence length ($seq_len). Max CRER size is switched to sequence length.");
+   			$crer_seed = $seq_len - $shortest_matrix_size; 
+   		}
+   		&RSAT::message::Debug("sequence",$seq_id,"CRER max length:", $crer_seed) if ($main::verbose >= 5);
+   		## reinitialise CRER windows for each sequence
+   		undef %crer_seed_weights;
+  		undef %crer_seed_pval;
+  		undef %crer_seed_hits;
+  		undef @crer_sum_hits;
    	}
     
     ################################################################
@@ -1103,7 +1113,8 @@ package main;
 	}
 
    ############################# 
-   ## CRER search  
+   ## CRER search 
+   if ($return_fields{crer}){ 
 	my %last_hits = ();
     if ($pos >= $crer_seed) {
     	&RSAT::message::Debug("position: ", $pos) if ($main::verbose >= 10);
@@ -1134,6 +1145,7 @@ package main;
       		 			$crer_sum_hits[$seed_pos] += $crer_seed_hits{$matrix}->{"R"}->[$seed_pos];
       		 	 	}
       			}
+      		#&RSAT::message::Debug("First seed:", "seed position",$seed_pos,"hits",$crer_sum_hits[$seed_pos]);
       			}
       		}
       		
@@ -1141,6 +1153,7 @@ package main;
       		for (my $k=($pos-1) ;  $k >= 0 ;  $k--){
      			if ($crer_sum_hits[$k] != 0){
      				$last_hits{$k} = $pos - ($crer_seed - $k) +1; ## store last hit + corresponding absolute position
+     				#&RSAT::message::Debug("First seed:", "hit in position", $pos - ($crer_seed - $k) +1,"position relative to seed", $k) if ($main::verbose >= 0);
      			}
       		}  	
       ## only update each border of the seed
@@ -1165,10 +1178,10 @@ package main;
      	## get subwindow end absolute position
      	my $sub_window_end = $last_hits{$last_hit};
      	&score_crer($last_hit,$seq_id,$sub_window_end,$pos,$crer_seed);
-     }
-     
-     	
-      	}  
+     	}
+     } 
+   } 
+   
        } 
     }
     
@@ -1553,9 +1566,12 @@ package main;
 			   $total_scored,
 			  ), "\n";
 	if ($return_fields{crer}){
-		   printf $main::out "; %-21s\t%s\t%s\n","Total number of Binomial tests",
-			   $nb_of_binom_tests,
-			   "(can be used for multi-testing correction)";
+		printf $main::out "; %-21s\n","Number of Binomial tests per sequence (can be used for multi-testing correction)";
+		printf $main::out "; \t%-15s\t%s\n", "sequence","number of tests";
+		 foreach my $seq (sort(keys(%nb_of_binom_tests))) {
+		   printf $main::out "; \t%-15s\t%s\n", $seq,$nb_of_binom_tests{$seq};
+		 }
+		 printf $main::out "; \t%-15s\t%s\n", "TOTAL",$sum_binom_tests;
 	}
 	
     my $done_time = &AlphaDate();
@@ -2807,6 +2823,8 @@ sub score_crer {
      my $hit_sum = $crer_sum_hits[$last_hit];
      return(0) if ($hit_sum == 0) ; ## do not proceed to calculations if the last position is 0
      
+     &RSAT::message::Debug("CRER: last position",$pos,"relative to seed window", $last_hit) if ($main::verbose >= 10);
+     
      ## initiate other sums with hit of last position
      my $weight_sum = 0;
      my $pval_prod = 1;
@@ -2867,7 +2885,8 @@ sub score_crer {
 				$hit_sum,	## Min number of successes
 				$n,	## Max number of successes
 			       );
-	    $nb_of_binom_tests++;
+		$nb_of_binom_tests{$seq_id}++;
+		$sum_binom_tests++;
 	    
 	    my $crer_sig = "Inf";
 	    if ($crer_pval > 0) {
@@ -2881,7 +2900,7 @@ sub score_crer {
      	
      	$crer->force_attribute('seq_name', $seq_id);
      	$crer->force_attribute('ft_type', 'CRER');
-    	$crer->force_attribute('feature_name', "crer_".$nb_of_binom_tests);
+    	$crer->force_attribute('feature_name', "crer_".$sum_binom_tests);
     	$crer->force_attribute('strand',$strand_binon);
     	$crer->force_attribute('start',$sub_window_end - ($last_hit - $k));
     	$crer->force_attribute('end',$sub_window_end);
