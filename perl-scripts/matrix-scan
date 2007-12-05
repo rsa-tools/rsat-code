@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.105 2007/12/05 13:57:53 morgane Exp $
+# $Id: matrix-scan,v 1.106 2007/12/05 15:07:19 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -387,6 +387,8 @@ package main;
 			      occ_eval
 			      occ_sig
 			      occ_sig_rank
+			      crer_size
+			      crer_nb
 			     );
   $supported_thresholds = join ",", @supported_thresholds;
   %supported_threshold = ();
@@ -502,6 +504,9 @@ package main;
   	unless ((defined($uth{pval})) || (defined($lth{pval}))) {
   		&RSAT::error::FatalError("Detection of CRER requires a pval threshold defined with option -uth pval");
   	}
+  	if (defined($uth{crer_size})){
+  		$crer_seed_init = $uth{crer_size};
+  	}
   }
   
   ## calculation of pval with adaptative model requires a threhold to limit computing time
@@ -546,7 +551,10 @@ package main;
       (defined($uth{rank_pm})) || (defined($lth{rank_pm}))) {
     $return_fields{rank} = 1;
   }
-
+	if ((defined($uth{crer_size})) || (defined($lth{crer_size})) ||
+      (defined($uth{crer_nb})) || (defined($lth{crer_nb}))) {
+    $return_fields{crer} = 1;
+  }
 
    
   ## Background distribution is required for the distrib probabilities
@@ -977,7 +985,10 @@ package main;
    			&RSAT::message::Warning("sequence $seq_id : CRER max size ($crer_seed) exceeds sequence length ($seq_len). Max CRER size is switched to sequence length.");
    			$crer_seed = $seq_len - $shortest_matrix_size; 
    		}
-   		&RSAT::message::Debug("sequence",$seq_id,"CRER max length:", $crer_seed) if ($main::verbose >= 5);
+   		
+   		## adapt seed to that final crer size does not exceed the desired crer_size
+   		$crer_seed = $crer_seed - $longest_matrix_size;
+   		&RSAT::message::Debug("sequence",$seq_id,"CRER seed length:", $crer_seed) if ($main::verbose >= 5);
    		## reinitialise CRER windows for each sequence
    		undef %crer_seed_weights;
   		undef %crer_seed_pval;
@@ -2140,7 +2151,7 @@ decimals).
 
 Threshold on some parameter (-lth: lower, -uth: upper threshold). 
 
-Supported threshold fields for the matches : score, pval, eval, sig, normw, proba_M, proba_B, rank
+Supported threshold fields for the matches : score, pval, eval, sig, normw, proba_M, proba_B, rank , crer_nb , crer_size
 
 Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ occ_pval occ_eval occ_sig occ_sig_rank
 
@@ -2278,8 +2289,9 @@ a subwindow is the sum of hits above the threshold. The significance of the
 observed number of matches in a subwindow is estimated by calculating a P-value using
 the binomial distribution (Aerts et al., 2003).
 
-To search for CRERs, use -return crer -uth pval p -crer_max c => where p 
-is the pval threshold and c is the maximum size for a CRER
+Example of CRER search: -return crer -uth pval 0.0001 -lth crer_size 20 -uth crer_size 200 
+
+ => the returned CRER lengths are between 20 and 200bp, and are constructed withhits having a pval less than 0.0001
 
 =item B<distrib> Score distribution.
 
@@ -2345,17 +2357,17 @@ for scanning.
 	    }
 	  }
 	  
-	    ## crer_max
-=pod
-
-=item B<-crer_max #>
-
-Maximal size for a CRER. Default is 100. To be used with -return crer.
-
-=cut
-	} elsif ($arg eq "-crer_max") {
-	    $main::crer_seed_init = shift (@arguments);;
-	    &RSAT::error::FatalError("CRER max size should be a positive integer") unless (&IsNatural($main::crer_seed_init));
+#	    ## crer_max
+#=pod
+#
+#=item B<-crer_max #>
+#
+#Maximal size for a CRER. Default is 100. To be used with -return crer.
+#
+#=cut
+#	} elsif ($arg eq "-crer_max") {
+#	    $main::crer_seed_init = shift (@arguments);;
+#	    &RSAT::error::FatalError("CRER max size should be a positive integer") unless (&IsNatural($main::crer_seed_init));
 
 
 	    ## Sort score distribution by decreasing sig value
@@ -2890,6 +2902,9 @@ sub score_crer {
      for (my $k=($last_hit-1) ;  $k >= 0 ;  $k--){
      	next if ($crer_sum_hits[$k] == 0);
      	
+     	my $sub_window_length = $last_hit - $k + 1;   
+     	unless (&check_thresholds("crer_size", $sub_window_length)) {next; }
+     	
      	## update sums
      	$hit_sum += $crer_sum_hits[$k]; 	
      	foreach my $matrix (keys(%crer_seed_hits)){
@@ -2905,6 +2920,8 @@ sub score_crer {
       	
       	#########################################################
 		## calculate over-represantation sig with Binomiale
+		
+		unless (&check_thresholds("crer_nb", $hit_sum)) {next; }
 		
 		## nb of trials (takes into account the end of sequence where some positions are not scored with all matrices if they do not have the same width)
 		my $n = 0;
@@ -2940,7 +2957,7 @@ sub score_crer {
      	##prepare output (ft format)
      	my $strand_binon = "D";
      	$strand_binon = "DR" if ($main::both_strands);
-     	my $sub_window_length = $last_hit - $k + 1;   	
+     	
      	## calculate start and end positions  	
      	my $start_pos = ($sub_window_end - ($last_hit - $k)) - $orig_pos;
     	my $end_pos = $sub_window_end + $longest_matrix_size -1 - $orig_pos;
@@ -3081,6 +3098,9 @@ Check the lower and upper threshold for a given hit.
 =cut
 sub check_thresholds {
     my ($key, $value) = @_;
+#    print "value $value \t";
+#    print "threshold $lth{crer_nb}\t";
+    
     if ((defined($lth{$key})) && 
 	(($value eq $null) || ($value < $lth{$key}))
        ) {
