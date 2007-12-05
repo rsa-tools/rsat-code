@@ -23,7 +23,7 @@
   if ($layout == 'on') {
     $layout = 1;
   } else {
-    $layout = 1;
+    $layout = 0;
   }
   $ewidth = $_REQUEST['ewidth'];
   $ecolors = $_REQUEST['ecolors'];
