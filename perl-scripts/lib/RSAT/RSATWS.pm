@@ -3111,9 +3111,9 @@ sub mcl {
     system("$command");
     $result = `cat $tmp_outfile`;
     
-    if ($stderr) {
-	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-    }
+#     if ($stderr) {
+# 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+#     }
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     print TMP_OUT $result;
 #     print TMP_OUT "KEYS ".keys(%args);
