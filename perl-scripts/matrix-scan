@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.102 2007/12/05 10:32:55 morgane Exp $
+# $Id: matrix-scan,v 1.103 2007/12/05 10:59:26 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -1836,8 +1836,8 @@ are used for scanning the sequences.
 =cut
 	} elsif ($arg eq "-top_matrices") {
 	    $main::top_matrices = shift(@arguments);
-	    &RSAT::error::FatalError("$main::origin. Invalid origin, should be an Integer number.")
-		unless (($main::origin eq "-0") || (&RSAT::util::IsInteger($main::origin)));
+	    &RSAT::error::FatalError("$main::top_matrices. Invalid top_matrices, should be an Integer number.")
+		unless (&RSAT::util::IsInteger($main::top_matrices));
 #	    $main::infile{matrix} = shift(@arguments);
 
 
@@ -2896,14 +2896,17 @@ sub score_crer {
      	##print output (ft format)
      	my $strand_binon = "D";
      	$strand_binon = "DR" if ($main::both_strands);
-     	my $sub_window_length = $last_hit - $k + 1;   	  	
+     	my $sub_window_length = $last_hit - $k + 1;   	
+     	## calculate start and end positions  	
+     	my $start_pos = ($sub_window_end - ($last_hit - $k)) - $orig_pos;
+    	my $end_pos = $sub_window_end - $orig_pos;
      	
      	$crer->force_attribute('seq_name', $seq_id);
      	$crer->force_attribute('ft_type', 'CRER');
     	$crer->force_attribute('feature_name', "crer_".$sum_binom_tests);
     	$crer->force_attribute('strand',$strand_binon);
-    	$crer->force_attribute('start',$sub_window_end - ($last_hit - $k));
-    	$crer->force_attribute('end',$sub_window_end);
+    	$crer->force_attribute('start',$start_pos);
+    	$crer->force_attribute('end',$end_pos);
     	$crer->force_attribute('hit_sum', $hit_sum);
     	$crer->force_attribute('occ_sig', $crer_sig);
     	$crer->force_attribute('occ_pval', $crer_pval);
