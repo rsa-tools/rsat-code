@@ -980,6 +980,26 @@ Default is 'both'.</xsd:documentation>
 	      </xsd:sequence>
       </xsd:complexType>
       
+      <xsd:complexType name="TextToHtmlRequest">
+       <xsd:sequence>
+	  <xsd:element name="inputfile" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>The text input file that will be converted in html</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="chunk" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Chunk size (when there are many rows, the program splits the table into several HTML tables, to reduce the waiting time on the browser.</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="font" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Use fixed or variable fonts in html. Supported : variable,fixed</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
+       </xsd:sequence>
+      </xsd:complexType>
+      
       <xsd:complexType name="SupportedOrganismsRequest">
        <xsd:sequence>
 	<xsd:element name="output" type="xsd:string" minOccurs="0">
@@ -1000,7 +1020,8 @@ Default is 'both'.</xsd:documentation>
 	</xsd:element>
        </xsd:sequence>
       </xsd:complexType>
-
+      
+      
       <xsd:complexType name="ConvertSeqRequest">
         <xsd:annotation>
 	  <xsd:documentation>Parameters for the operation convert_seq.</xsd:documentation>
@@ -2099,6 +2120,29 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
+      
+      
+      <xsd:complexType name="TextToHtmlResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+            
+      
       <xsd:complexType name="XYGraphResponse">
 	      <xsd:sequence>
 		      <xsd:element name="server" type="xsd:string">
@@ -2580,6 +2624,27 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
+      
+      
+      <xsd:element name="text_to_html">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:TextToHtmlRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+
+      
+      <xsd:element name="text_to_htmlResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:TextToHtmlResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>      
+      
+      
       <xsd:element name="classfreq">
 	      <xsd:complexType>
 		      <xsd:sequence>
@@ -2914,6 +2979,15 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="supported_organismsResponse">
     <part name="output" element="tns:supported_organismsResponse"/>
   </message>
+  
+  <message name="text_to_htmlRequest">
+    <part name="parameters" element="tns:text_to_html"/>
+  </message>
+
+  <message name="text_to_htmlResponse">
+    <part name="output" element="tns:text_to_htmlResponse"/>
+  </message>  
+  
   <message name="classfreqRequest">
 	  <part name="parameters" element="tns:classfreq"/>
   </message>
@@ -3108,6 +3182,12 @@ The output graph will thus consist in the graph induced by all nodes of the firs
       <operation name="supported_organisms">
          <input name="SupportedOrganismsRequest" message="tns:supported_organismsRequest"/>
          <output name="SupportedOrganismsResponse" message="tns:supported_organismsResponse"/>
+         <documentation>Converts a tab-delimited file into an HTML table.
+         </documentation>
+      </operation>
+      <operation name="text_to_html">
+         <input name="TextToHtmlRequest" message="tns:text_to_htmlRequest"/>
+         <output name="TextToHtmlResponse" message="tns:text_to_htmlResponse"/>
          <documentation>Get a list of supported organisms.
          </documentation>
       </operation>
@@ -3299,6 +3379,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
          </output>
       </operation>
       <operation name="supported_organisms">
+         <soap:operation soapAction=""/>
+         <input>
+             <soap:body use="literal" />
+         </input>
+         <output>
+             <soap:body use="literal" />
+         </output>
+      </operation>
+      <operation name="text_to_html">
          <soap:operation soapAction=""/>
          <input>
              <soap:body use="literal" />
