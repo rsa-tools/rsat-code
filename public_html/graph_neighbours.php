@@ -88,7 +88,7 @@
     $seeds = trim_text($seeds);
      
     ## Load the parameters of the program in to an array
-    $parameters = array( 
+    $gn_parameters = array( 
       "request" => array(
         "informat"=>$in_format,
         "seedfile"=>$seeds,
@@ -108,7 +108,7 @@
   
     # Open the SOAP client
     $soap_client = new SoapClient(
-                       "$WWW_RSA"."/web_services/RSATWS.wsdl",
+                       "$WWW_RSA"."/web_services/RSATWS-temp.wsdl",
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
@@ -118,20 +118,48 @@
                            );
     # Execute the command
     echo "<pre>";
-    $echoed = $soap_client->graph_neighbours($parameters);
+    $gn_echoed = $soap_client->graph_neighbours($gn_parameters);
 
-    $response =  $echoed->response;
-    $command = $response->command;
-    $server = $response->server;
-    $client = $response->client;
+    $gn_response =  $gn_echoed->response;
+    $gn_command = $gn_response->command;
+    $gn_server = $gn_response->server;
+    $gn_client = $gn_response->client;
     echo "</pre>";
-    $server = rtrim ($server);
-    $temp_file = explode('/',$server);
-    $temp_file = end($temp_file);
-    $resultURL = $WWW_RSA."/tmp/".$temp_file;
+    $gn_server = rtrim ($gn_server);
+    $gn_temp_file = explode('/',$gn_server);
+    $gn_temp_file = end($gn_temp_file);
+    $gn_resultURL = $WWW_RSA."/tmp/".$gn_temp_file;
+    # Text-to-html
+    $gn_file = storeFile($gn_server);
+    $tth_parameters = array( 
+      "request" => array(
+        "inputfile"=>$gn_file,
+        "chunk"=>1000,
+      )
+    );
+    
+    $tth_echoed = $soap_client->text_to_html($tth_parameters);
+
+    $tth_response =  $tth_echoed->response;
+    $tth_command = $tth_response->command;
+    $tth_server = $tth_response->server;
+    $tth_client = $tth_response->client;
+    echo "</pre>";
+    $tth_server = rtrim ($tth_server);
+    $tth_temp_file = explode('/',$tth_server);
+    $tth_temp_file = end($tth_temp_file);
+    $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;    
+    
+    
+    
+    
+    
+    
     # Display the results
-    echo "The results is available at the following URL ";
-    echo "<a href = '$resultURL'>$resultURL</a>"; 
+    echo "The results is available as text file at the following URL ";
+    echo "<a href = '$gn_resultURL'>$gn_resultURL</a><br>"; 
+    echo "The results is available as HTML page at the following URL ";
+    echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
     echo "<hr>\n";
      
     echo "
