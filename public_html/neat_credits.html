@@ -20,18 +20,27 @@ of their authors).</p>
 
 <ul>
 <li><p>The programs for handling graphs and clusters (conversion,
-comparisons, display) were mainly developed by Sylvain Brohée and
+comparisons, display) were mainly developed by Sylvain Broh&eacute;e and
 Jacques van Helden. </p></li>
 
-<li><p>The algorithms for path finding in metabolic networks were
-principally developed by Fabian Couche, Didier Croes, and Karoline
-Faust, under the supervision of Jacques van Helden.</p></li>
+<li><p>The backtrack algorithm for metabolic path finding was
+principally developed by Fabian Couche and Didier Croes and is available <a
+href="http://www.scmbb.ulb.ac.be/Users/didier/pathfinding/" target='_blank'>here</a>. The path finding
+web service implemented by Karoline Faust for NeAT relies on  REA (Jimenez & Marzal,
+1999) and can be applied to any network. Both path finding tools were developed under the supervision of Jacques van Helden.</p></li>
 </ul>
 
 <p>The respective contributions are indicated in more detail in the
 manual pages of each tool.</p>
 
+<hr>
 
+<ul>
+<li>display-graph uses the <a href ='http://search.cpan.org/~mcnewton/PostScript-Simple-0.07/' target = '_blank'>PostScript-Simple</a> an <a href ='http://search.cpan.org/dist/GD/' target = '_blank'>GD</a> perl libraries.</li>
+<li>convert-graph and display-graph uses the Fruchterman and Reingold layout algorithm available in the <a href = 'http://www.boost.org/libs/graph/doc/index.html'>boost graph library</a>.</li>
+<li>Pathfinder calls REA (Jimenez & Marzal, 1999) as k shortest paths
+algorithm.</li>
+</ul>
 <hr size=6>
 
 </body>
