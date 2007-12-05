@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.104 2007/12/05 11:13:54 morgane Exp $
+# $Id: matrix-scan,v 1.105 2007/12/05 13:57:53 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -361,6 +361,7 @@ package main;
   local $sum_binom_tests = 0;
   ## By default, I use a single "recyclable"  feature object to avoid creating one object per match when this is not required
   local $crer = new RSAT::feature();
+  local %crer_per_seq = ();
   
   #    local $in = STDIN;
   #    local $out = STDOUT;
@@ -826,7 +827,8 @@ package main;
   
   ## get shortest matrix size
   my @sorted_array = sort {$a <=> $b} (values(%matrix_sizes));
-  my $shortest_matrix_size = shift (@sorted_array);
+  local $shortest_matrix_size = shift (@sorted_array);
+  local $longest_matrix_size = pop (@sorted_array);
   
   ################################################################
   ## Calculate th pval distribution
@@ -885,8 +887,8 @@ package main;
 			  "start",
 			  "end",
 			  "hit_sum",
-			  "occ_sig",
-			  "occ_pval",
+			  "crer_sig",
+			  "crer_pval",
 			  "hit_pval_product",
 			  "weight_sum",
 			  "crer_length"
@@ -1185,6 +1187,41 @@ package main;
        } 
     }
     
+  	################################################################
+    ## Rank CRERs
+    if (($return_fields{crer})  && (defined(@{$crer_per_seq{$seq_id}}))) {
+    	&RSAT::message::TimeWarn( "Returning individual crer for sequence", $seq_id)
+		if ($main::verbose >= 3);
+		
+		my @ranked_crers = @{$crer_per_seq{$seq_id}};
+		if (scalar(@ranked_crers) <= 0) {
+			&RSAT::message::Info("No crer in sequence",
+			     $seq_id,
+			    ) if ($main::verbose >= 3);
+			next;
+      		}
+      	if ($calc_fields{rank}) {
+      		&RSAT::message::TimeWarn("Sorting crer for sequence", $seq_id) if ($main::verbose >= 3);
+      		## Sort CRERs by crer_sig
+	  		@ranked_crers =
+	    		sort {$b->get_attribute('crer_sig') <=> $a->get_attribute('crer_sig')}
+	      		@ranked_crers;
+      	}
+      	
+      	################################################################
+      	## Return the crer
+      	my $rank = 0;
+      	foreach my $crer (@ranked_crers) {
+
+			## Compute a sequence-specific rank
+			$rank++;
+			$crer->force_attribute('rank', $rank);
+
+			next if ((defined($lth{rank})) && ($rank < $lth{rank}));
+			&print_crer($crer);
+			last if ((defined($uth{rank})) && ($rank >= $uth{rank}));
+      }
+    }
 
 
     if (($return_fields{sites})  && (defined(@{$matches_per_seq{$seq_id}}))) {
@@ -2695,6 +2732,7 @@ my %prior = $bg_model->get_attribute("suffix_proba");
       $match = new RSAT::feature();
     }
 
+
     ## Calculate start and end position
     my $start_pos = $pos - $orig_pos;
     my $end_pos = $start_pos + $ncol -1;
@@ -2899,13 +2937,18 @@ sub score_crer {
 		  $crer_sig = sprintf("%.3f", -log($crer_pval)/$sig_base);
 	      }
 	    
-     	##print output (ft format)
+     	##prepare output (ft format)
      	my $strand_binon = "D";
      	$strand_binon = "DR" if ($main::both_strands);
      	my $sub_window_length = $last_hit - $k + 1;   	
      	## calculate start and end positions  	
      	my $start_pos = ($sub_window_end - ($last_hit - $k)) - $orig_pos;
-    	my $end_pos = $sub_window_end - $orig_pos;
+    	my $end_pos = $sub_window_end + $longest_matrix_size -1 - $orig_pos;
+    	
+    	  
+    	if ($create_sites) {
+      		$crer = new RSAT::feature();
+    	}
      	
      	$crer->force_attribute('seq_name', $seq_id);
      	$crer->force_attribute('ft_type', 'CRER');
@@ -2914,14 +2957,21 @@ sub score_crer {
     	$crer->force_attribute('start',$start_pos);
     	$crer->force_attribute('end',$end_pos);
     	$crer->force_attribute('hit_sum', $hit_sum);
-    	$crer->force_attribute('occ_sig', $crer_sig);
-    	$crer->force_attribute('occ_pval', $crer_pval);
+    	$crer->force_attribute('crer_sig', $crer_sig);
+    	$crer->force_attribute('crer_pval', $crer_pval);
     	$crer->force_attribute('pval_prod',$pval_prod);
     	$crer->force_attribute('weight_sum',$weight_sum);
-    	$crer->force_attribute('crer_length',$sub_window_length);
+    	$crer->force_attribute('crer_length',$end_pos - $start_pos + 1);
 		$crer->force_attribute('normw_sum',$normw_sum) if ($calc_fields{normw});
 		
-		&print_crer($crer);
+		# If the hits have to be ranked, store them rather than printing them immediately
+		if ($create_sites) {
+      		push @{$crer_per_seq{$seq_id}} , $crer;
+    	} else {
+      		&print_crer($crer);
+    	}
+		
+		
      }
      
      ## DEBUG
@@ -2957,9 +3007,9 @@ sub print_crer {
 		     $crer->get_attribute('start'),
 		     $crer->get_attribute('end'),
 		     $crer->get_attribute('hit_sum'),
-		     $crer->get_attribute('occ_sig'),
+		     $crer->get_attribute('crer_sig'),
 		     sprintf("%.1e",
-		     	$crer->get_attribute('occ_pval')
+		     	$crer->get_attribute('crer_pval')
 		     	),
 		     sprintf("%.1e",
 		     	$crer->get_attribute('pval_prod')
@@ -2970,6 +3020,7 @@ sub print_crer {
 	  if ($return_fields{normw}) {
       	print $out "\t", $crer->get_attribute('normw_sum');
     	}
+     	print $out "\t", $crer->get_attribute('rank') if ($return_fields{rank});
     	
         print $out "\n";
 
