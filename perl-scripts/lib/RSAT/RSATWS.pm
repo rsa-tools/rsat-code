@@ -1330,6 +1330,93 @@ sub supported_organisms_cmd {
 
   return $command;
 }
+
+
+
+
+
+
+
+
+
+sub text_to_html {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->text_to_html_cmd(%args);
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/text-to-html.XXXXXXXXXX`;
+    chomp $tmp_outfile;
+    system("rm $tmp_outfile");
+    $tmp_outfile .= ".html";
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => {'command' => $command, 
+					     'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => {'command' => $command,
+					     'client' => $result});
+    } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					     'command' => $command, 
+					     'client' => $result});
+    }
+}
+
+sub text_to_html_cmd {
+  my ($self, %args) =@_;
+
+  my $command = "$SCRIPTS/text-to-html";
+
+  if ($args{inputfile}) {
+   my $input_file = $args{inputfile};
+   chomp $input_file;
+   my $tmp_input = `mktemp $TMP/text-to-html-input.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
+   print TMP_IN $input_file;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  if ($args{chunk}) {
+      $args{chunk} =~ s/\'//g;
+      $args{chunk} =~ s/\"//g;
+      $command .= " -chunk '".$args{chunk}."'";
+  }
+  if ($args{font}) {
+      $args{font} =~ s/\'//g;
+      $args{font} =~ s/\"//g;
+      $command .= " -font '".$args{font}."'";
+  }
+  return $command;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 sub classfreq {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -2331,6 +2418,15 @@ sub convert_graph {
 	$output_choice = 'both';
     }
     my $tmp_outfile = `mktemp $TMP/convert-graph.XXXXXXXXXX`;
+    my $out_format = $args{outformat};
+    $out_format =~ s/\'//g;
+    $out_format =~ s/\'//g;
+    chop $tmp_outfile;
+    system("rm $tmp_outfile");
+    $tmp_outfile .= ".$out_format";
+    
+    
+    
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
 #     print TMP_OUT $result;
 #     print TMP_OUT "KEYS ".keys(%args);
