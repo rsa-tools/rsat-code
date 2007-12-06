@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.9 2007/10/26 11:45:23 rsat Exp $
+# $Id: matrix-scan.cgi,v 1.10 2007/12/06 15:55:34 morgane Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -31,7 +31,7 @@ $tmp_file_name = sprintf "matrix-scan.%s", &AlphaDate();
 ### Read the CGI query
 $query = new CGI;
 
-#$ECHO=2;
+$ECHO=1;
 
 ### print the result page
 &RSA_header("matrix-scan result", "results");
@@ -63,26 +63,7 @@ print "<pre>$command</pre>" if ($ECHO >= 1);
 ################################################################
 ### execute the command ###
 if ($query->param('output') eq "display") {
-
-    unless ($query->param('table')) {
-	&PipingWarning();
-    }
-
-    ### Print the result on Web page
-    $result_file =  "$TMP/$tmp_file_name.ft";
-    open RESULT, "$command |";
-
-    print "<PRE>";
-    &PrintHtmlTable(RESULT, $result_file, true);
-    print "</PRE>";
-
-    if ($query->param('return_sites') eq 'on') {
-	&PipingForm();
-    }
-
-    print "<HR SIZE = 3>";
-
-} elsif ($query->param('output') =~ /server/i) {
+@&} elsif ($query->param('output') =~ /server/i) {
     &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
     &EmailTheResult("$command $parameters", $query->param('user_email'));
@@ -150,6 +131,10 @@ sub ReadMatrixScanParameters {
     if (&IsReal($query->param('pseudo_counts'))) {
       $parameters .= " -pseudo ".$query->param('pseudo_counts');
     }
+    
+    if ($query->param('pseudo_distribution') eq "equi_pseudo") {
+      $parameters .= " -equi-pseudo ";
+    }
 
     ################################################################
     ## strands 
@@ -214,10 +199,11 @@ sub ReadMatrixScanParameters {
 	}
 	close BGFILE;
 	$parameters .= " -bgfile $bgfile";
+	$parameters .= " -bg_format ".$query->param('bg_format');
     } else {
 	&FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
     }
-
+		
     } else {
       &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
     }
