@@ -101,10 +101,77 @@ Function load_props($props) {
 
 
 <?php
+  # SET OF OPERATION DONE WHEN LOADING EACH PHP PAGE
+  $rsat_main = getcwd()."/..";
+  $rsat_logs = $rsat_main."/public_html/logs";
+  
   # LOAD PROPERTIES
-  $rsat_public_html = getcwd()."/..";;
-  $properties = load_props($rsat_public_html."/RSAT_config.props");
+  $properties = load_props($rsat_main."/RSAT_config.props");
   $tmp = $properties[rsa_tmp];
   $WWW_RSA = $properties[www_rsa];
-//   ini_set('soap.wsdl_cache_enabled', 0);
+  $log_name = $properties[config_site];
+
+  # LOG
+  $year = date("Y");
+  $month = date("m");
+  $neat_log_file = sprintf ("$rsat_logs/log-file_$log_name"."_neat_%04d_%02d", $year,$month);
+  $rsat_log_file = sprintf ("$rsat_logs/log-file_$log_name"."_%04d_%02d", $year,$month);  
 ?>
+
+<?php
+## This function returns the name of the script executing it
+Function getCurrentScriptName() {
+  
+  $currentFile = $_SERVER["SCRIPT_NAME"];
+  $parts = Explode('/', $currentFile);
+  $currentFile = $parts[count($parts) - 1];
+  return $currentFile;
+}
+?> 
+<?php
+## This function returns the name of the script executing it
+Function AlphaDate() {
+  $my_date = exec("date +%Y_%m_%d.%H%M%S", $my_date);
+  trim($my_date);
+  return $my_date;
+}
+?> 
+
+<?php 
+################################################################
+### store info into a log file in a conveninent way for 
+### subsequent login statistics
+### Usage:
+###     &UpdateLogFile();
+###     &UpdateLogFile($script_name);
+###     &UpdateLogFile($script_name, $message);
+### If script name is empty or null... the program determine
+### the name of the file
+
+Function UpdateLogFile($suite ,$script_name, $message) {
+//   echo "<pre>";
+  if ($script_name == "") {
+    $script_name = getCurrentScriptName();
+  }
+  # LOAD GLOBAL VARIABLES
+  global $log_file, $log_name, $rsat_log_file, $neat_log_file;
+  if ($suite == "rsat") {
+    $log_file = $rsat_log_file;
+  } else {
+    $log_file = $neat_log_file;
+  }
+  # LOAD OTHER VARIABLES
+  $my_date = AlphaDate();
+  $user = getenv('REMOTE_USER');
+  $address = getenv('REMOTE_ADDR');
+  $host = getenv('REMOTE_HOST');
+  $e_mail = "";
+  $user_address_at_host = $user."@".$address." (".$host.")";
+  $to_write = $my_date."\t".$log_name."\t".$user_address_at_host."\t".$script_name."\t".$e_mail."\t".$message."\n";
+  # Write to the file
+  $log_handle = fopen($log_file, 'a');
+  
+  fwrite($log_handle, $to_write);
+  fclose($log_handle);
+  chmod ($log_file, 0777);
+}

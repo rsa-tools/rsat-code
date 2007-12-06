@@ -30,7 +30,7 @@ if ($demo == 1) {
   $demo_ecolors = "selected";
   $demo_ewidth = "checked";
   $default_ecolors = "";
-  $default_wcol = 3;
+//   $default_wcol = 3;
  }
 
 title('MCL');
@@ -58,7 +58,7 @@ if (!$pipe) {
 echo("<br>");
 if (!$pipe) {
   if ($demo) {
-    demo("This demonstration graph consists in the yeast co-immunopreciptation interaction dataset described in <a href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=16429126&ordinalpos=1&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum'>Gavin et al (2006)</a> ");
+    demo("This demonstration graph consists in the yeast co-immunopreciptation interaction dataset described in <a href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=16429126&ordinalpos=1&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum'>Gavin et al (2006)</a>. It contains 1430 nodes and 6531 edges. The MCL algorithm is applied on it in order to highlight clusters of densely connected polypeptides.");
   }
   echo ("<b>Graph</b><br>");
   echo ("<textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>

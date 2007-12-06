@@ -6,6 +6,8 @@
 <body class="results">
 <?php 
   require ('functions.php');
+  # log file update
+  UpdateLogFile("neat","","");
   title('graph-get-clusters - results');
   # Error status
   $error = 0;
