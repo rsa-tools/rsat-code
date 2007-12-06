@@ -88,9 +88,13 @@ Function load_props($props) {
   $array_count = count($lines);
   for($y=0; $y<$array_count; $y++) {
    $line = trim($lines[$y]);
-   $property = explode('=', $line);
-   $prop_array[$property[0]] = $property[1];
+   if (!preg_match("/^\#/", $line)) {
+     $property = explode('=', $line);
+     $prop_array[$property[0]] = $property[1];
+//      echo "$line<br>";
+   }
   }
+//   print_r($prop_array);
   return $prop_array;
 }
 ?>
