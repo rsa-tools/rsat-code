@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.10 2007/12/06 15:55:34 morgane Exp $
+# $Id: matrix-scan.cgi,v 1.11 2007/12/06 16:20:33 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -31,11 +31,11 @@ $tmp_file_name = sprintf "matrix-scan.%s", &AlphaDate();
 ### Read the CGI query
 $query = new CGI;
 
-$ECHO=1;
+#$ENV{rsat_echo}=1;
 
 ### print the result page
 &RSA_header("matrix-scan result", "results");
-&ListParameters() if ($ECHO >=2);
+&ListParameters() if ($ENV{rsat_echo} >=2);
 
 #### update log file ####
 &UpdateLogFile();
@@ -58,15 +58,34 @@ $command .= " $parameters";
 
 ################################################################
 #### echo the command (for debugging)
-print "<pre>$command</pre>" if ($ECHO >= 1);
+print "<pre>$command</pre>" if ($ENV{rsat_echo} >= 1);
 
 ################################################################
 ### execute the command ###
 if ($query->param('output') eq "display") {
-@&} elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'));
+
+   unless ($query->param('table')) {
+     &PipingWarning();
+   }
+
+   ### Print the result on Web page
+   $result_file =  "$TMP/$tmp_file_name.ft";
+   open RESULT, "$command |";
+
+   print "<PRE>";
+   &PrintHtmlTable(RESULT, $result_file, true);
+   print "</PRE>";
+
+   if ($query->param('return_sites') eq 'on') {
+     &PipingForm();
+   }
+
+   print "<HR SIZE = 3>";
+
+} elsif ($query->param('output') =~ /server/i) {
+   &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+   &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
 
 
