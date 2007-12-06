@@ -8,8 +8,8 @@ rsat_server_admin=your.mail@your.mail.server
 ## name of the site (which will appear in the log file)
 rsat_site=your_site_name
 
-## Main RSAT directory 
-rsat_main=/home/rsat/rsa-tools
+## Main RSAT directory
+RSAT=/home/rsat/rsa-tools
 
 ## Directory for storing temporary file (for stand-alone scripts + web server + web services)
 rsat_tmp=/home/rsat/rsa-tools/public_html/tmp
@@ -30,6 +30,8 @@ rsat_echo=0
 ## Default image format
 rsat_img_format=png
 
+## Main RSAT directory
+RSAT=/home/rsat/rsa-tools
 
 ################################################################
 ## Directories for programs developed by third parties
