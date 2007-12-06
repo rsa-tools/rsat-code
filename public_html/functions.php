@@ -23,7 +23,7 @@
 <?php
   // Grat WARNING
   Function demo($demo) {
-    echo "<H4>Remark : </H4><blockquote class ='demo'>$demo</blockquote><br>";
+    echo "<H4>Comment on the demonstration example : </H4><blockquote class ='demo'>$demo</blockquote><br>";
   } 
 ?>
 
