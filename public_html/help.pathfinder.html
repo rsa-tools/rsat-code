@@ -15,6 +15,7 @@
 <ul>
     Given a number of source and a number of target nodes, enumerate the k lightest paths connecting any of the
     source nodes with any of the target nodes in the order of their weight.
+    Paths are simple, that is no node can occur more than once in the path.
     <br>
 </ul>
 	
@@ -221,12 +222,40 @@
 	option, input graphs and temp files will be deleted.
 	</ul>
 
+<h4><A NAME="limit">Limitations</a></h4>
+	<ul>Format limitations:
+	<ol>
+	<li>Pathfinder cannot deal with multi-edges (several edges between two nodes) or hyper-edges (edges between more than two nodes).</li>
+	<li>Pathfinder does not process correctly mixed graphs (mixtures of undirected and directed graphs).</li>
+	</ol>Algorithmic limitations:
+	<ol>
+	<li>REA does not allow a graph with negative-length cycles reachable from the start nodes. Therefore, negative weights on arcs should be used carefully, if at all.</li>
+	</ol>Runtime:
+	<ol>
+	<li>Runtime depends strongly on the size of the graph and the number of paths asked.<br>
+	We tested REA on metabolic graphs up to 44,000 arcs. With degree weighting scheme and paths requested up to second rank, the algorithm usually completed within one minute. 
+	Be aware that for unit weighting scheme, runtime can be much longer, because many more paths of equal weight may exist. 
+	</li>
+	</ol>
+	</ul>
+
+<h4><A NAME="webservice">Web service</a></h4>
+	<ul>In contrast to other tools in RSAT/NeAT, Pathfinder has been implemented in Java for historical reasons 
+	and runs as axis web service. Therefore, clients have to call the wsdl file located at<br> 
+	<a href='http://rsat.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl' target='_blank'>http://rsat.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl</a> and not the one of RSAT/NeAT. 
+	This wsdl file has the same format as the one of RSAT and clients can be written  
+	the same way as for RSAT. The only change required is for the address of the wsdl file. 
+	</ul>
+
+
 <h4><A NAME="credits"></A>Credits</h4>
 <ul>
    Pathfinder calls REA written by Jimenez and Marzal in C (1). The Java wrapper has been 
-   inspired by a Python wrapper written by Pierre Schaus and Jean-No&euml;l Monette at UCL.
+   inspired by a Python wrapper written by Pierre Schaus and Jean-No&euml;l Monette at UCL (INGI).
    The multiple-to-multiple end path finding relies on a graph transformation suggested
-   by Olivier Hubaut and also described in (2). 
+   by Olivier Hubaut (former aMAZE team member) and also described in (2). 
+   Pathfinder uses a graph library developed by
+   the former <a href="http://www.scmbb.ulb.ac.be/amaze/" target='_blank'> aMAZE team</a>.
 </ul>
 
 <h4><A NAME="literature"></A>Literature</h4>
@@ -234,8 +263,6 @@
 	<li>Jimenez, V.M., and Marzal, A. (1999). "Computing the K Shortest Paths: a New Algorithm and an Experimental Comparison", Proc. 3rd Int. Worksh. Algorithm Engineering (WAE 1999)</li>
 	<li>Duin, C.W., Volgenant, A., and Vo&szlig;, S. (2004). "Solving group Steiner problems as Steiner problems." European Journal of Operational Research 154, 323-329.</li>
 </ol>
-
-<h4><a href="pathfinder_form.php">Return to Pathfinder</a></h4>
 
 <h4 class="footer">
 <address>
