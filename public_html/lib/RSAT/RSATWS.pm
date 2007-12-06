@@ -2010,6 +2010,9 @@ sub compare_classes_cmd {
   my $upper_threshold_value_list = $args{"upper_threshold_value"};
   my $lower_threshold_field_list = $args{"lower_threshold_field"};
   my $lower_threshold_value_list = $args{"lower_threshold_value"};
+  
+  
+
   my $sort = $args{"sort"};
   my $distinct = $args{"distinct"};
   my $triangle = $args{"triangle"};
@@ -2051,7 +2054,8 @@ sub compare_classes_cmd {
     $command .= " -sc '".$score_column."'";
   }
 
-  if ($upper_threshold_field_list && $upper_threshold_value_list)  {
+  if ($upper_threshold_field_list ne "" && $upper_threshold_value_list ne "")  {
+    
     my @upper_threshold_field_cp = split(":", $upper_threshold_field_list);
     my @upper_threshold_value_cp = split(",", $upper_threshold_value_list);
     if (scalar(@upper_threshold_field_cp) == scalar(@upper_threshold_value_cp)) {
@@ -2067,7 +2071,7 @@ sub compare_classes_cmd {
     } 
   }
 
-  if ($lower_threshold_field_list && $lower_threshold_value_list)  {
+  if ($lower_threshold_field_list ne "" && $lower_threshold_value_list ne "")  {
     my @lower_threshold_field_cp = split(":", $lower_threshold_field_list);
     my @lower_threshold_value_cp = split(",", $lower_threshold_value_list);
     if (scalar(@lower_threshold_field_cp) == scalar(@lower_threshold_value_cp)) {
@@ -2080,9 +2084,9 @@ sub compare_classes_cmd {
         $lower_threshold_value =~ s/\"//g;
         $command .= " -lth '".$lower_threshold_field."' '".$lower_threshold_value."'";
       }
-    }
+    } 
   }
-
+  
   if ($sort) {
     $sort =~ s/\'//g;
     $sort =~ s/\"//g;

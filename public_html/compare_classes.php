@@ -272,7 +272,7 @@
   }  
   
    if (!$error) { 
-     $parameters = array( 
+     $cc_parameters = array( 
        "request" => array (
          "ref_classes"=>$classesQ,
          "query_classes"=>$classesR,
@@ -307,24 +307,45 @@
                            );
     # Execute the command
     echo "<pre>";
-    $echoed = $client->compare_classes($parameters);
-    echo "</pre>"; 
-    $response =  $echoed->response;
-    $command = $response->command;
-    $server = $response->server;
-    $client = $response->client;
-    $server = rtrim ($server);
-    $temp_file = explode('/',$server);
-    $temp_file = end($temp_file);
-    $resultURL = $WWW_RSA."/tmp/".$temp_file;
-    # The comment file has the same name as the
-    # result file with ".comments" at the end of the string.
-    # Comments
+    $cc_echoed = $client->compare_classes($cc_parameters);
+   
+    $cc_response =  $cc_echoed->response;
+    $cc_command = $cc_response->command;
+    $cc_server = $cc_response->server;
+    $cc_client = $cc_response->client;
+    $cc_server = rtrim ($cc_server);
+    $cc_temp_file = explode('/',$cc_server);
+    $cc_temp_file = end($cc_temp_file);
+    $cc_resultURL = $WWW_RSA."/tmp/".$cc_temp_file;
+    # Text-to-html
+    $cc_file = storeFile($cc_server);
+     echo "</pre>"; 
+    $tth_parameters = array( 
+      "request" => array(
+        "inputfile"=>$cc_file,
+        "chunk"=>1000,
+      )
+    );
+    
+    $tth_echoed = $client->text_to_html($tth_parameters);
+
+    $tth_response =  $tth_echoed->response;
+    $tth_command = $tth_response->command;
+    $tth_server = $tth_response->server;
+    $tth_client = $tth_response->client;
+    echo "</pre>";
+    $tth_server = rtrim ($tth_server);
+    $tth_temp_file = explode('/',$tth_server);
+    $tth_temp_file = end($tth_temp_file);
+    $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;    
     echo "<pre>";
     echo "</pre>";
+    
     # Display the results
-    echo "The results is available at the following URL ";
-    echo "<a href = '$resultURL'>$resultURL</a>"; 
+    echo "The results is available as text file at the following URL ";
+    echo "<a href = '$cc_resultURL'>$cc_resultURL</a><br>"; 
+    echo "The results is available as HTML page at the following URL ";
+    echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
     echo "<hr>\n";
  
   }
