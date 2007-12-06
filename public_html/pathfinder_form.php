@@ -15,7 +15,6 @@
   $default_targets = "";
   $default_graph = "";
   $default_graph_id = "";
-  $default_directed = 1;
   $default_rank = 5;
   $default_weight = "unit";
   $default_store_graph = 0;
@@ -63,6 +62,10 @@
   } else {
   	info("Graph has been stored from previous treatment.");
   	echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$requested_graph_file'>";
+  }
+  if($demo == 1){
+  		echo("The demo graph is the union of all paths annotated for <i>S. cerevisiae</i> in <a href='http://www.biocyc.org/' target='_blank'>BioCyc</a> release 10.6. It is an undirected graph consisting
+  		of 2,662 edges.<br><br>");
   }
    echo("
    <B><a href='help.pathfinder.html#terminals'>2. Seed nodes</a></B>
@@ -120,18 +123,12 @@
   <br>
   <table>
      <tr><td><B><a href = 'help.pathfinder.html#rank'>Rank</a></B></td>                   <td><input type = 'text' name='rank' value = '$default_rank' size = 10></input></td></tr>
-     ");
-     if(!$pipe){
-     echo("<tr><td><B><a href = 'help.pathfinder.html#weight'>Weighting scheme</a></B></td>     <td><select name='weight'>
+	 <tr><td><B><a href = 'help.pathfinder.html#weight'>Weighting scheme</a></B></td>     <td><select name='weight'>
                 <option value = 'unit'>unit weight
                 <option value = 'none'>as given in input graph
                 <option selected value = 'con'>degree of nodes as weight
-     	</select></td></tr>");
-     }else{
-     	info("No weight selection available for already submitted graphs");
-     }
-     echo("<tr><td><B><a href = 'help.pathfinder.html#directed'>Directed</a></B></td> <td><input type='checkbox' name='directed' value='on'></input></td></tr>
-     <tr><td><B><a href = 'help.pathfinder.html#server'>Store graph on server</a></B></td> <td><input type='checkbox' name='store_graph' value='on'></input></td></tr>
+    <tr><td><B><a href = 'help.pathfinder.html#directed'>Directed</a></B></td> <td><input type='checkbox' name='directed' value='on'></input></td></tr>
+    <tr><td><B><a href = 'help.pathfinder.html#server'>Store graph on server</a></B></td> <td><input type='checkbox' name='store_graph' value='on'></input></td></tr>
   </table>
   <h2>Launch</h2>
   <HR SIZE='2' NOSHADE>
@@ -143,7 +140,7 @@
   </form>
   <TD><B><A HREF='help.pathfinder.html'>MANUAL</A></B></TD>
   <TD><B><A HREF='mailto:kfaust@ulb.ac.be'>MAIL</A></B></TD>
-   <TD><B><A HREF='help.pathfinder.html#credits'>CREDITS</A></B></TD>
+   <TD><B><A HREF='help.pathfinder.html#webservice'>WSDL</A></B></TD>
   </TR></TABLE></ul></ul>
  ");
 ?>

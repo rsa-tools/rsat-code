@@ -6,6 +6,9 @@
 <body class="results">
 <?php 
   require ('functions.php');
+  # log file update
+  UpdateLogFile("neat","","");
+  
   title('display-graph - results');
   # Error status
   $error = 0;

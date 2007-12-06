@@ -31,7 +31,9 @@
   $out_format = $_REQUEST['out_format'];
   $sources = $_REQUEST['sources'];
   $targets = $_REQUEST['targets'];
-  $batchfile = $_REQUEST['batch_file'];
+  if ($_FILES['batch_file']['name'] != "") {
+    $batch_file = uploadFile('batch_file');
+  }
   if ($_FILES['graph_file']['name'] != "") {
     $graph_file = uploadFile('graph_file');
   }
@@ -79,13 +81,13 @@
   }
 
   ## forbidden to set both batchfile and source and target nodes
-  if($batchfile != "" && $sources != "" && $targets != ""){
+  if($batch_file != "" && $sources != "" && $targets != ""){
   	$error = 1;
   	error("Set either a path finding batch file or source and target nodes, but not both.");
   }
 
   ## set batch file
-  if($batchfile != ""){
+  if($batch_file != ""){
   	$sources =  storeFile($batch_file);
   	$targets = "";
   }
@@ -105,12 +107,12 @@
    ## If a graph id and a graph  are submitted -> error
   if ($graph_id != "" && $graph != "") {
     $error = 1;
-    error("You must not submit both a graph id and a graph");
+    error("You must not submit both a graph id and a graph.");
   }
 
-  ## No specification of the source and target nodes
-  if ($source == "" && $targets == "") {
-    error("You need to specify source and target nodes");
+  ## No specification of the source and target nodes or of a batch file
+  if ($source == "" && $targets == "" && $batch_file == "") {
+    error("You need to specify source and target nodes or a batch file.");
   }
 
   ## put the content of the file $graph_file in $graph
