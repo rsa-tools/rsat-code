@@ -24,6 +24,13 @@ $default{organism} = "Saccharomyces cerevisiae";
 $default{matrix_format} = "tab";
 $default{pseudo_counts} = 1;
 $default{consensus_as_name} = "CHECKED";
+$default{pseudo_distribution} = "bginput";
+$default{pseudo_prior} = "pseudo_prior";
+$checked{$default{pseudo_prior}} = "CHECKED";
+$default{bg_pseudo_counts} = "0.01";
+$default{bg_format}="oligo-analysis";
+$default{decimals} = "1";
+$default{sort_distrib} ="";
 
 ## Return fields
 $default{return_sites} = "CHECKED";
@@ -33,8 +40,9 @@ $default{return_rank} = "CHECKED";
 $default{return_normw} = "";
 $default{return_matrix} = "";
 $default{return_freq_matrix} = "";
-$default{return_weight_matrix} = "CHECKED";
+$default{return_weight_matrix} = "";
 $default{return_bg_model} = "";
+
 
 ## Threshold values
 $default{lth_score} = "6";
@@ -47,6 +55,8 @@ $default{lth_proba_B} = "none";
 $default{uth_proba_B} = "none";
 $default{lth_normw} = "none";
 $default{uth_normw} = "none";
+$default{lth_sig} = "none";
+$default{uth_sig} = "none";
 $default{lth_pval} = "none";
 $default{uth_pval} = "1e-5";
 
@@ -75,8 +85,7 @@ foreach $key (keys %default) {
 ### head
 print "<CENTER>";
 print "Scan a DNA sequence with a profile matrix<BR>\n";
-print "Program developed by <A HREF='mailto:jturatsi\@scmbb.ulb.ac.be (Jean Valery Turatsinze)'>Jean Val&eacute;ry Turatsinze</A><BR>";
-print "Web interface by <A HREF='mailto:jvanheld\@scmbb.ulb.ac.be (Jacques van Helden)'>Jacques van Helden</A><P>";
+print "Program developed by <A HREF='mailto:jturatsi\@scmbb.ulb.ac.be (Jean Valery Turatsinze)'>Jean Val&eacute;ry Turatsinze</A>, <A HREF='mailto:morgane\@scmbb.ulb.ac.be (Morgane Thomas-Chollier)'>Morgane Thomas-Chollier</A> and <A HREF='mailto:jvanheld\@scmbb.ulb.ac.be (Jacques van Helden)'>Jacques van Helden</A><P>";
 
 print "</CENTER>";
 
@@ -91,12 +100,11 @@ print "<hr>";
 ################################################################
 #### Matrix specification
 print "<hr>";
-print "<A HREF='help.patser.html#matrix'><B>\n";
-print "Matrix</B></A>\n";
+print "<B>Matrix</B>\n";
 print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
-print "<B>Format</B>&nbsp;";
+print "<A HREF='help.matrix-scan.html'><B>Format</B></a>&nbsp;";
 
-#### matrix format
+#### matrix format 
 print $query->popup_menu(-name=>'matrix_format',
 			 -Values=>[
 				   'tab',
@@ -104,7 +112,13 @@ print $query->popup_menu(-name=>'matrix_format',
 				   'MotifSampler',
 				   'consensus',
 				   'gibbs',
-				   'transfac'
+				   'transfac',
+				   'alignace',
+				   'clustal',
+				   'assembly',
+				   'cluster-buster',
+				   'feature',
+				   'infogibbs'
 				  ],
 			 -default=>$default{matrix_format});
 
@@ -118,6 +132,24 @@ print $query->textarea(-name=>'matrix',
 		       -default=>$default{matrix},
 		       -rows=>4,
 		       -columns=>60);
+
+
+#### pseudo-counts
+print "<BR>\n";
+print "<B><A HREF='help.matrix-scan.html'>Pseudo-counts</A></b>\n";
+print $query->textfield(-name=>'pseudo_counts',
+			-default=>$default{pseudo_counts},
+			-size=>2);
+
+print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='equi_pseudo' $checked{'equi_pseudo'}>","<b>distributed in an equiprobable way</b>");
+print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='pseudo_prior' $checked{'pseudo_prior'}>","<b>distributed proportionally to residues priors</b>");
+
+#### decimals
+print "<BR>\n";
+print "<B><A HREF='help.matrix-scan.html'>Decimals</A></b>\n";
+print $query->textfield(-name=>'decimals',
+			-default=>$default{decimals},
+			-size=>2);
 
 ################################################################
 ## Background model
@@ -140,12 +172,12 @@ print ("<b><a href=help.matrix-scan.html#bg_method>Estimation method</a></b>");
 print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='bginput' $checked{'bginput'}>", 
        "<b>Estimate from input sequences</b>");
 
-# ## Sliding window
-# print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='window' $checked{'window'}>",
-#        "<b>Sliding window</b> &nbsp;");
-# print $query->textfield(-name=>'window_size',
-# 			-default=>$default{window_size},
-# 			-size=>5);
+ ## Sliding window
+ print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='window' $checked{'window'}>",
+        "<b>Sliding window</b> &nbsp;");
+ print $query->textfield(-name=>'window_size',
+ 			-default=>$default{window_size},
+ 			-size=>5);
 
 #### Pre-defined background frequencies
 print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='bgfile' $checked{bgfile}>");
@@ -157,22 +189,38 @@ print  &OrganismPopUpString();
 
 #### custom background model
 print "<INPUT TYPE='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}><a href='help.matrix-scan.html#bg_file'>Upload your own file for the background model</a>", "&nbsp;"x5;
+print "<br/><b>&nbsp;&nbsp;&nbsp;&nbsp;Format</b>&nbsp;";
+#### bg format 
+print $query->popup_menu(-name=>'bg_format',
+			 -Values=>[
+				   'oligo-analysis',
+				   'MotifSampler',
+				   'meme'
+				  ],
+			 -default=>$default{bg_format});
+
 print $query->filefield(-name=>'upload_bgfile',
 			-default=>'starting value',
 			-size=>30,
 			-maxlength=>200);
+
+			
+#### pseudo-counts
+print "<p/>\n";
+print "<B><A HREF='help.matrix-scan.html'>Pseudo-counts</A></b>\n";
+print $query->textfield(-name=>'bg_pseudo',
+			-default=>$default{bg_pseudo_counts},
+			-size=>5);
+			
 print "<hr>";
 
-################################################################
-#### pseudo-counts
-print "<BR>\n";
-print "<B><A HREF='help.patser.html#pseudo_counts'>Pseudo-counts</A>\n";
-print $query->textfield(-name=>'pseudo_counts',
-			-default=>$default{pseudo_counts},
-			-size=>2);
+
 
 ################################################################
 #### strands
+
+print "<p><B>Scanning options</B><br>\n";
+
 print "<BR>\n";
 print "<A HREF='help.patser.html#strands'><B>Search strands</B></A>&nbsp;\n";
 print $query->popup_menu(-name=>'strands',
@@ -441,16 +489,44 @@ exit(0);
 ################################################################
 ## Table with all the supported statistics and thresholds
 sub ReturnTable {
-  print "<p><b>Return</b>\n";
+  print "<p><b>Return</b></p>\n";
+  
+  print "<b>individual matches:</b>";
+  print "(select fields to return)\n";
+  print "&nbsp;&nbsp;&nbsp;\n";
   
   ### Return fields
-  @return_fields = qw(sites pval rank normw limits matrix freq_matrix weight_matrix bg_model);
+  @return_fields = qw(sites pval rank normw occ_proba);
   foreach my $field (@return_fields) {
     print $query->checkbox(-name=>'return_'.$field,
 			   -checked=>$default{'return_'.$field},
 			   -label=>' '.$field.' ');
   }
 
+ print "<br/><b>or</b> <br/>\n";
+  print "<b>distribution of scores</b>";
+    print "&nbsp;&nbsp;&nbsp;\n";
+   ### Return fields
+  @return_fields = qw(distrib);
+  foreach my $field (@return_fields) {
+    print $query->checkbox(-name=>'return_'.$field,
+			   -checked=>$default{'return_'.$field},
+			   -label=>' '.$field.' ');
+  }
+  print $query->checkbox(-name=>'sort_distrib',
+		       -checked=>$default{sort_distrib},
+		       -label=>' sort distribution ');
+		       
+		       
+    print "<p><b>Additional fiels to retun</b></p>\n";
+    
+      ### Return fields
+  @return_fields = qw(limits matrix freq_matrix weight_matrix weight_limits bg_model  bg_residues);
+  foreach my $field (@return_fields) {
+    print $query->checkbox(-name=>'return_'.$field,
+			   -checked=>$default{'return_'.$field},
+			   -label=>' '.$field.' ');
+  }
 
   print "<p><b>Thresholds</b>\n";
   print "<blockquote>\n";
@@ -461,6 +537,10 @@ sub ReturnTable {
 				  $query->th([" <A HREF='help.matrix-scan.html#return_fields'>Fields</A> ",
 					      " <A HREF='help.matrix-scan.html#thresholds'>Lower<BR>Threshold</A> ",
 					      " <A HREF='help.matrix-scan.html#thresholds'>Upper<BR>Threshold</A> "]),
+					      
+				$query->th(["on matches",
+					      "",
+					      ""]),
 
 				  ### Threshold on score
 				  $query->td(['score',
@@ -479,6 +559,16 @@ sub ReturnTable {
 								-size=>5),
 					      $query->textfield(-name=>'uth_pval',
 								-default=>$default{uth_pval},
+								-size=>5)
+					     ]),
+					     
+				### Threshold on Sig of the score
+				  $query->td(['Sig',
+					      $query->textfield(-name=>'lth_sig',
+								-default=>$default{lth_sig},
+								-size=>5),
+					      $query->textfield(-name=>'uth_sig',
+								-default=>$default{uth_sig},
 								-size=>5)
 					     ]),
 
@@ -519,6 +609,20 @@ sub ReturnTable {
 								-size=>5),
 					      $query->textfield(-name=>'uth_rank',
 								-default=>$default{uth_rank},
+								-size=>5)
+					     ]),
+				
+				$query->th(["on distributions",
+					      "",
+					      ""]),
+					      
+					  ### Threshold on occ
+				  $query->td(['occ',
+					      $query->textfield(-name=>'lth_occ',
+								-default=>$default{lth_occ},
+								-size=>5),
+					      $query->textfield(-name=>'uth_occ',
+								-default=>$default{uth_occ},
 								-size=>5)
 					     ]),
 
