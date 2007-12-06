@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.106 2007/12/05 15:07:19 morgane Exp $
+# $Id: matrix-scan,v 1.107 2007/12/06 08:07:05 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -388,7 +388,7 @@ package main;
 			      occ_sig
 			      occ_sig_rank
 			      crer_size
-			      crer_nb
+			      crer_sites
 			     );
   $supported_thresholds = join ",", @supported_thresholds;
   %supported_threshold = ();
@@ -552,7 +552,7 @@ package main;
     $return_fields{rank} = 1;
   }
 	if ((defined($uth{crer_size})) || (defined($lth{crer_size})) ||
-      (defined($uth{crer_nb})) || (defined($lth{crer_nb}))) {
+      (defined($uth{crer_sites})) || (defined($lth{crer_sites}))) {
     $return_fields{crer} = 1;
   }
 
@@ -2151,7 +2151,7 @@ decimals).
 
 Threshold on some parameter (-lth: lower, -uth: upper threshold). 
 
-Supported threshold fields for the matches : score, pval, eval, sig, normw, proba_M, proba_B, rank , crer_nb , crer_size
+Supported threshold fields for the matches : score, pval, eval, sig, normw, proba_M, proba_B, rank , crer_sites , crer_size
 
 Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ occ_pval occ_eval occ_sig occ_sig_rank
 
@@ -2921,7 +2921,7 @@ sub score_crer {
       	#########################################################
 		## calculate over-represantation sig with Binomiale
 		
-		unless (&check_thresholds("crer_nb", $hit_sum)) {next; }
+		unless (&check_thresholds("crer_sites", $hit_sum)) {next; }
 		
 		## nb of trials (takes into account the end of sequence where some positions are not scored with all matrices if they do not have the same width)
 		my $n = 0;
@@ -3098,8 +3098,6 @@ Check the lower and upper threshold for a given hit.
 =cut
 sub check_thresholds {
     my ($key, $value) = @_;
-#    print "value $value \t";
-#    print "threshold $lth{crer_nb}\t";
     
     if ((defined($lth{$key})) && 
 	(($value eq $null) || ($value < $lth{$key}))
