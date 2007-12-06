@@ -1,18 +1,16 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>matrix-scan help</title>
-<link rev="made" href="mailto:root@b01.apple.com" />
-<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+<title>matrix-scan</title>
+<link rel="stylesheet" href="main.css" type="text/css" />
 </head>
+
 <body class="info">
 
 
 <center>
-<h2><a href="RSAT_home.cgi">RSA-tools</a> - Help about matrix-scan
-</h2>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - <a href=matrix-scan_form.cgi>matrix-scan</a> manual</h2>
 </center>
-
 
 <p><a name="__index__"></a></p>
 <!-- INDEX BEGIN -->
@@ -33,9 +31,27 @@
 
 	<li><a href="#output_format">OUTPUT FORMAT</a></li>
 	<li><a href="#scoring_scheme">SCORING SCHEME</a></li>
-	<li><a href="#background_models">BACKGROUND MODELS</a></li>
+	<ul>
+
+		<li><a href="#weight_score">WEIGHT SCORE</a></li>
+		<li><a href="#motif_model">MOTIF MODEL</a></li>
+		<ul>
+
+			<li><a href="#pseudocounts">Pseudo-counts</a></li>
+		</ul>
+
+		<li><a href="#background_models">BACKGROUND MODELS</a></li>
+		<ul>
+
+			<li><a href="#background_model_specification">Background model specification</a></li>
+			<li><a href="#pseudofrequencies_for_the_background_model">Pseudo-frequencies for the background model</a></li>
+		</ul>
+
+	</ul>
+
 	<li><a href="#references">REFERENCES</a></li>
 	<li><a href="#options">OPTIONS</a></li>
+	<li><a href="#internal_procedures">INTERNAL PROCEDURES</a></li>
 	<li><a href="#internal_procedures">INTERNAL PROCEDURES</a></li>
 	<li><a href="#see_also">SEE ALSO</a></li>
 </ul>
@@ -45,12 +61,12 @@
 <p>
 </p>
 <hr />
-<h1><a name="name"></a>NAME</h1>
+<h1><a name="name">NAME</a></h1>
 <p>matrix-scan</p>
 <p>
 </p>
 <hr />
-<h1><a name="description"></a>DESCRIPTION</h1>
+<h1><a name="description">DESCRIPTION</a></h1>
 <p>Scan sequences with one or several position-specific scoring matrices
 (PSSM) to identify instances of the corresponding motifs (putative
 sites). This program supports a variety of background models
@@ -58,44 +74,47 @@ sites). This program supports a variety of background models
 <p>
 </p>
 <hr />
-<h1><a name="authors"></a>AUTHORS</h1>
+<h1><a name="authors">AUTHORS</a></h1>
 <dl>
-<dt><strong><a name="item_jean_valery_turatsinze_jturatsi_40scmbb_2eulb_2eac">Jean Valery Turatsinze <a href="mailto:jturatsi@scmbb.ulb.ac.be">jturatsi@scmbb.ulb.ac.be</a></a></strong><br />
+<dt><strong><a name="item_jacques_van_helden__3cjvanheld_40scmbb_2eulb_2eac_">Jacques van Helden &lt;<a href="mailto:jvanheld@scmbb.ulb.ac.be">jvanheld@scmbb.ulb.ac.be</a>&gt;</a></strong><br />
 </dt>
-<dt><strong><a name="item_jacques_van_helden_jvanheld_40scmbb_2eulb_2eac_2eb">Jacques van Helden <a href="mailto:jvanheld@scmbb.ulb.ac.be">jvanheld@scmbb.ulb.ac.be</a></a></strong><br />
+<dt><strong><a name="item_jean_valery_turatsinze__3cjturatsi_40scmbb_2eulb_2">Jean Valery Turatsinze &lt;<a href="mailto:jturatsi@scmbb.ulb.ac.be">jturatsi@scmbb.ulb.ac.be</a>&gt;</a></strong><br />
+</dt>
+<dt><strong><a name="item_morgane_thomas_2dchollier__3cmorgane_40scmbb_2eulb">Morgane Thomas-Chollier &lt;<a href="mailto:morgane@scmbb.ulb.ac.be">morgane@scmbb.ulb.ac.be</a>&gt;</a></strong><br />
 </dt>
 </dl>
 <p>
 </p>
 <hr />
-<h1><a name="category"></a>CATEGORY</h1>
+<h1><a name="category">CATEGORY</a></h1>
 <dl>
-<dt><strong><a name="item_sequences"></a>sequences</strong><br />
+<dt><strong><a name="item_sequences">sequences</a></strong><br />
 </dt>
-<dt><strong><a name="item_pattern_matching"></a>pattern matching</strong><br />
+<dt><strong><a name="item_pattern_matching">pattern matching</a></strong><br />
 </dt>
-<dt><strong><a name="item_pssm"></a>PSSM</strong><br />
+<dt><strong><a name="item_pssm">PSSM</a></strong><br />
 </dt>
 </dl>
 <p>
 </p>
 <hr />
-<h1><a name="usage"></a>USAGE</h1>
+<h1><a name="usage">USAGE</a></h1>
 <p>matrix-scan -m matrixfile [-i inputfile] [-o outputfile] [-v]
     [-bgfile backgroundfile|-bgorder #]</p>
 <p>
 </p>
 <hr />
-<h1><a name="input_formats"></a>INPUT FORMATS</h1>
+<h1><a name="input_formats">INPUT FORMATS</a></h1>
 <p>
 </p>
-<h2><a name="sequence_file"></a>Sequence file</h2>
+<h2><a name="sequence_file">Sequence file</a></h2>
 <p>All the formats supported in RSAT can be used as input (default: fasta).</p>
 <p>
 </p>
-<h2><a name="matrix_file"></a>Matrix file</h2>
+<h2><a name="matrix_file">Matrix file</a></h2>
 <p>The matrix format is specified with the option -matrix_format.  Supported :
-consensus,gibbs,meme,tab. Default : tab.</p>
+tab,cb,consensus,gibbs,meme,assembly. Default : tab.</p>
+<p>For a description of these format, see <em>convert-matrix -h</em></p>
 <p>
 </p>
 <hr />
@@ -105,19 +124,22 @@ can directly be used as input for the program <em>feature-map</em>.</p>
 <p>
 </p>
 <hr />
-<h1><a name="scoring_scheme"></a>SCORING SCHEME</h1>
+<h1><a name="scoring_scheme">SCORING SCHEME</a></h1>
+<p>
+</p>
+<h2><a name="weight_score">WEIGHT SCORE</a></h2>
 <p>The program scans the input sequences with a position-specific scoring
 matrix (PSSM) by selecting, at each position, a sequence segment (S)
 of the same length as the matrix, and assigning a score to this
 segment.</p>
-<p>The secgment score (weight) is calculated according to the theory
-developed by Jerry Hertz and Gary Stormo, but with the capability to
-use Markov chain-based background models, as prposed by Thijs et
-al. (2001).</p>
+<p>The segment score (weight) is calculated according to the theory
+developed by Jerry Hertz and Gary Stormo (1999), but with the
+capability to use Markov chain-based background models, as prposed by
+Thijs et al. (2001).</p>
 <p>The weight of a sequence segment (Ws) is calculated as the log-ratio
 between two probabilities:</p>
 <dl>
-<dt><strong><a name="item_p"></a><em>Ws = log[P(S|M)/P(S|B)]</em></strong><br />
+<dt><strong><a name="item_p"><em>Ws = log[P(S|M)/P(S|B)]</em></a></strong><br />
 </dt>
 <dd>
 where
@@ -141,21 +163,69 @@ allows to specify any alternative base (e.g. 2 to obtain bit units);</p>
 </dl>
 <p>
 </p>
-<hr />
-<h1><a name="background_models"></a>BACKGROUND MODELS</h1>
+<h2><a name="motif_model">MOTIF MODEL</a></h2>
+<p>The position-specific scoring matrix is generally built from an
+alignment of transcription factor binding sites. The matrix indicates
+the absolute frequency (Nij = number of occurrences) of each residue
+(i = row) at each position (j = column) of the alignment.</p>
+<p>Note: some programs use ``vertical'' matrices, where rows represents
+positions and columns residues. See <em>convert-matrix</em> for a
+description of PSSM formats.</p>
+<p>
+</p>
+<h3><a name="pseudocounts">Pseudo-counts</a></h3>
+<p>Relative frequencies can be corrected by a pseudo-count (b) to reduce
+the bias due to the small number of observations.</p>
+<p>The pseudo-count an be shared either in an equiprobable way,</p>
+<pre>
+  S&lt;F''ij=(Nij + b/A)/[SUMi(Nij)+b]&gt;</pre>
+<p>or according to residue prior frequencies.</p>
+<pre>
+  S&lt;F''ij=(Nij + b*Pi)/[SUMi(Nij)+b]&gt;</pre>
+<p>where</p>
+<dl>
+<dt><strong><a name="item_pi">Pi</a></strong><br />
+</dt>
+<dd>
+is the prior frequency for residue i
+</dd>
+<p></p>
+<dt><strong><a name="item_a">A</a></strong><br />
+</dt>
+<dd>
+is the size of the alphabet (A=4 for DNA).
+</dd>
+<p></p>
+<dt><strong><a name="item_b">b</a></strong><br />
+</dt>
+<dd>
+is the pseudo-count, which is ``shared'' between residues according to
+their prior frequencies.
+</dd>
+<p></p></dl>
+<p>
+</p>
+<h2><a name="background_models">BACKGROUND MODELS</a></h2>
 <p>An essential parameter of any pattern detection approach is the choice
 of an appropriate background model. This model is used to estimate the
 probability for each site to occur by chance, rather than as an
 instance of the motif.</p>
 <p>The program matrix-scan supports Markov models of arbitrary order as
-background models. A Markov model of order m means that the
-probability of each residue depends on the m preceding residues in the
-sequence. Note that a Markov model of order 0 corresponds to a
-Bernoulli model, since eahc residue is independent from the preceding
-ones.</p>
-<p>A variety of options for specifying the background model.</p>
+background models. A Markov model of <em>order m</em> means that the
+probability of each residue depends on the <em>m</em> preceding residues in
+the sequence. Note that a Markov model of order 0 corresponds to a
+Bernoulli model (each residue is independent from the preceding ones).</p>
+<p>Markov models are represented as transition matrices, where each row
+represents a prefix and each column a residue (suffix), and each cell
+represents the conditional probability <em>P(r|prefix)</em> of observing
+residue <em>r</em> at a given position, given the prefix (the <em>m</em> preceding
+letters).</p>
+<p>
+</p>
+<h3><a name="background_model_specification">Background model specification</a></h3>
+<p>The background model can be specified in different ways.</p>
 <dl>
-<dt><strong><a name="item__2dbgfile"></a><em>-bgfile</em></strong><br />
+<dt><strong><a name="item__2dbgfile"><em>-bgfile</em></a></strong><br />
 </dt>
 <dd>
 This option allows to enter the background model from a background
@@ -173,7 +243,7 @@ for all the supported organisms.</p>
 <p>$RSAT/data/genomes/My_organism/oligo-frequencies/</p>
 </dd>
 <p></p>
-<dt><strong><a name="item__2dbginput"></a><em>-bginput</em></strong><br />
+<dt><strong><a name="item__2dbginput"><em>-bginput</em></a></strong><br />
 </dt>
 <dd>
 The backgound model is calculated from the whole set of input
@@ -181,7 +251,7 @@ sequences. This option requires to specify the order of the background
 model with the option -markov.
 </dd>
 <p></p>
-<dt><strong><a name="item__2dwindow"></a><em>-window</em></strong><br />
+<dt><strong><a name="item__2dwindow"><em>-window</em></a></strong><br />
 </dt>
 <dd>
 The background model is calculated locally at each step of the scan,
@@ -193,47 +263,110 @@ model. The required sequence length increases exponentially with the
 Markov order. This option is thus usually suitable for short order
 models only (-markov 0 to 1).
 </dd>
-</dl>
+<p></p></dl>
+<p>
+</p>
+<h3><a name="pseudofrequencies_for_the_background_model">Pseudo-frequencies for the background model</a></h3>
+<p>The concept of pseuo-count can be extended to <strong>pseudo-frequencies</strong> for
+the background model, in order to increase the robustness of BG models
+when the training sequence set is too small. This is particularly
+important for the adaptie models, which are trained on relatively
+short sliding windows (a few hundreds of bases).</p>
+<p>The reason for using pseudo-frequencies rather than pseudo-counts is
+that background models are usually defined in terms of relative
+frequencies, considered as estimates of prior frequencies. Since the
+absolute counts used for estimating those probabilities are not always
+available, we introduce the correction in terms of pseudo-frequencies.</p>
+<p>## Jean Valery &amp; Morgane continuent l'explication</p>
+<p>P'(r|prefix)=((P(r|prefix)&nbsp;+&nbsp;b/A)/(SUMi[P(i|prefix)]+b)</p>
 <p>
 </p>
 <hr />
-<h1><a name="references"></a>REFERENCES</h1>
-<p>1. Hertz, G.Z. and G.D. Stormo, Identifying DNA and protein patterns
-   with statistically significant alignments of multiple
-   sequences. Bioinformatics, 1999. 15(7-8): p. 563-77.</p>
-<p>2. Hertz, G.Z., G.W. Hartzell, 3rd, and G.D. Stormo, Identification of
-   consensus patterns in unaligned DNA sequences known to be
-   functionally related. Comput Appl Biosci, 1990. 6(2): p. 81-92.</p>
-<p>3. Thijs, G., et al., A higher-order background model improves the
-   detection of promoter regulatory elements by Gibbs
-   sampling. Bioinformatics, 2001. 17(12): p. 1113-22.</p>
-<p>
-</p>
-<hr />
-<h1><a name="options"></a>OPTIONS</h1>
+<h1><a name="references">REFERENCES</a></h1>
+<p>The probabilities use in this program were derived from the following
+papers.</p>
 <dl>
-<dt><strong><a name="item__2dv__23"></a><strong>-v #</strong></strong><br />
+<dt><strong><a name="item_aerts_2c_s_2e_2c_thijs_2c_g_2e_2c_coessens_2c_b_2e">Aerts, S., Thijs, G., Coessens, B., Staes, M., Moreau, Y. &amp; De
+Moor, B. (2003).</a></strong><br />
+</dt>
+<dd>
+Toucan: deciphering the cis-regulatory logic of coregulated
+genes. Nucleic Acids Res 31, 1753-64.
+</dd>
+<p></p>
+<dt><strong><a name="item_bailey_2c_t_2e_l_2e__26_gribskov_2c_m_2e__281998_2">Bailey, T. L. &amp; Gribskov, M. (1998).</a></strong><br />
+</dt>
+<dd>
+Combining evidence using p-values: application to sequence homology
+searches. Bioinformatics 14, 48-54.
+</dd>
+<p></p>
+<dt><strong><a name="item_stormo">Hertz, G.Z., G.W. Hartzell, 3rd, and G.D. Stormo (1990).</a></strong><br />
+</dt>
+<dd>
+Identification of consensus patterns in unaligned DNA sequences known
+to be functionally related. Comput Appl Biosci, 6(2): p. 81-92.
+</dd>
+<p></p>
+<dt><strong>Hertz, G.Z. and G.D. Stormo (1999).</strong><br />
+</dt>
+<dd>
+Identifying DNA and protein patterns with statistically significant
+alignments of multiple sequences. Bioinformatics, 15(7-8): p. 563-77.
+</dd>
+<p></p>
+<dt><strong><a name="item_staden">Staden (1989).</a></strong><br />
+</dt>
+<dd>
+Methods for calculating the probabilities of finding patterns in
+sequences. Comput Appl Biosci 5, 89-96.
+</dd>
+<p></p>
+<dt><strong><a name="item_thijs_2c_g_2e_2c_lescot_2c_m_2e_2c_marchal_2c_k_2e">Thijs, G., Lescot, M., Marchal, K., Rombauts, S., De Moor,
+B., Rouze, P. &amp; Moreau, Y. (2001).</a></strong><br />
+</dt>
+<dd>
+A higher-order background model improves the detection of promoter
+regulatory elements by Gibbs sampling. Bioinformatics 17, 1113-22.
+</dd>
+<p></p></dl>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<dl>
+<dt><strong><a name="item__2dv__23"><strong>-v #</strong></a></strong><br />
 </dt>
 <dd>
 Level of verbosity (detail in the warning messages during execution)
 </dd>
 <p></p>
-<dt><strong><a name="item__2dh"></a><strong>-h</strong></strong><br />
+<dt><strong><a name="item__2dh"><strong>-h</strong></a></strong><br />
 </dt>
 <dd>
 Display full help message
 </dd>
 <p></p>
-<dt><strong><a name="item__2dhelp"></a><strong>-help</strong></strong><br />
+<dt><strong><a name="item__2dhelp"><strong>-help</strong></a></strong><br />
 </dt>
 <dd>
-Same as -h
+Display only program options
 </dd>
 <p></p>
-<dt><strong><a name="item__2dbgfile_background_file"></a><strong>-bgfile background_file</strong></strong><br />
+<dt><strong><a name="item__2dbgfile_background_file"><strong>-bgfile background_file</strong></a></strong><br />
 </dt>
 <dd>
 Background model file.
+</dd>
+<p></p>
+<dt><strong><a name="item__2dbg_format_format"><strong>-bg_format format</strong></a></strong><br />
+</dt>
+<dd>
+Format for the background model file.
+</dd>
+<dd>
+<p>Supported formats: all the input formats supported by
+convert-background-model.</p>
 </dd>
 <p></p>
 <dt><strong><strong>-bginput</strong></strong><br />
@@ -242,7 +375,7 @@ Background model file.
 Calculate background model from the input sequence set.
 </dd>
 <p></p>
-<dt><strong><a name="item__2dmarkov"></a><strong>-markov</strong></strong><br />
+<dt><strong><a name="item__2dmarkov"><strong>-markov</strong></a></strong><br />
 </dt>
 <dd>
 Order of the markov chain for the background model.
@@ -254,10 +387,11 @@ Order of the markov chain for the background model.
 <dt><strong><strong>-window</strong></strong><br />
 </dt>
 <dd>
-Size of the sliding window for the background model calculation.
+Size of the sliding window for the background model calculation. 
+When this option is specified, the matrix pseudo-count is equally distributed.
 </dd>
 <p></p>
-<dt><strong><a name="item__2dm_matrixfile"></a><strong>-m matrixfile</strong></strong><br />
+<dt><strong><a name="item__2dm_matrixfile"><strong>-m matrixfile</strong></a></strong><br />
 </dt>
 <dd>
 Matrix file.
@@ -267,46 +401,84 @@ Matrix file.
 multiple matrices.</p>
 </dd>
 <p></p>
-<dt><strong><a name="item__2dseq_format_sequence_format"></a><strong>-seq_format sequence_format</strong></strong><br />
+<dt><strong><a name="item__2dtop_matrices__23"><strong>-top_matrices #</strong></a></strong><br />
 </dt>
 <dd>
-Sequence format.
+Only scan with the top # matrices per matrix file. This option is
+valid for some file formats containing multiple matrices
+(e.g. consensus, meme, MotifSampler), where the top matrix is
+generally the most informative.
+</dd>
+<dd>
+<p>If several matrix files are specified, the # top matrices of each file
+are used for scanning the sequences.</p>
 </dd>
 <p></p>
-<dt><strong><a name="item__2dmatrix_format_matrix_format"></a><strong>-matrix_format matrix_format</strong></strong><br />
+<dt><strong><a name="item__2dconsensus_name"><strong>-consensus_name</strong></a></strong><br />
+</dt>
+<dd>
+Use the motif (degenerate) consensus as matrix name.
+</dd>
+<p></p>
+<dt><strong><a name="item__2dmlist_matrix_list"><strong>-mlist matrix_list</strong></a></strong><br />
+</dt>
+<dd>
+Matrix list.
+</dd>
+<dd>
+<p>Indicate a file containing a list of matrices to be used for scanning
+the region. This facilitates the scanning of a sequence with a library
+of matrices (e.g. all the matrices from RegulonDB, or TRANSFAC).</p>
+</dd>
+<dd>
+<p>Format: the matrix list file is a text file. The first word of each
+row is suppose to indicate a file name. Any further information on the
+same row is ignored.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item__2dmatrix_format_matrix_format"><strong>-matrix_format matrix_format</strong></a></strong><br />
 </dt>
 <dd>
 Matrix format.
 </dd>
 <p></p>
-<dt><strong><a name="item__2di_inputfile"></a><strong>-i inputfile</strong></strong><br />
+<dt><strong><a name="item__2di_inputfile"><strong>-i inputfile</strong></a></strong><br />
 </dt>
 <dd>
-If no input file is specified, the standard input is used.  This
-allows to use the command within a pipe.
+File containing the sequences to scan.
+</dd>
+<dd>
+<p>If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.</p>
 </dd>
 <p></p>
-<dt><strong><a name="item__2dmask_upper_7clower"></a><strong>-mask upper|lower</strong></strong><br />
+<dt><strong><a name="item__2dseq_format_sequence_format"><strong>-seq_format sequence_format</strong></a></strong><br />
+</dt>
+<dd>
+Sequence format.
+</dd>
+<p></p>
+<dt><strong><a name="item__2dmask_upper_7clower"><strong>-mask upper|lower</strong></a></strong><br />
 </dt>
 <dd>
 Mask lower or uppercases, respecively, i.e. replace selected case by N
 characters.
 </dd>
 <p></p>
-<dt><strong><a name="item__2dn__5bskip_7cscore_5d"></a><<strong>-n [skip|score]</strong>/strong><br />
+<dt><strong><a name="item__2dn__5bskip_7cscore_5d"><strong>-n [skip|score]</strong></a></strong><br />
 </dt>
 <dd>
 Treatment of N characters. These characters are often used in DNA
 sequences to represent undefined or masked nucleotides.
 </dd>
 <dl>
-<dt><strong><a name="item_skip"></a><em>skip</em></strong><br />
+<dt><strong><a name="item_skip"><em>skip</em></a></strong><br />
 </dt>
 <dd>
 N-containing regions are skipped.
 </dd>
 <p></p>
-<dt><strong><a name="item_score"></a><em>score</em></strong><br />
+<dt><strong><a name="item_score"><em>score</em></a></strong><br />
 </dt>
 <dd>
 N-containing regions are scored. The probability of an N is 1 for both
@@ -317,30 +489,56 @@ which are at the border of N-containing regions, or in cases there are
 isolated N in the sequences.
 </dd>
 <p></p></dl>
-<dt><strong><a name="item__2do_outputfile"></a><strong>-o outputfile</strong></strong><br />
+<dt><strong><a name="item__2do_outputfile"><strong>-o outputfile</strong></a></strong><br />
 </dt>
 <dd>
 If no output file is specified, the standard output is used.  This
 allows to use the command within a pipe.
 </dd>
 <p></p>
-<dt><strong><a name="item__2dpseudo_pseudo_counts"></a><strong>-pseudo pseudo_counts</strong></strong><br />
+<dt><strong><a name="item__2dpseudo_pseudo_counts"><strong>-pseudo pseudo_counts</strong></a></strong><br />
 </dt>
 <dd>
-Pseudo-weight.
+Pseudo-count for the matrix (default: 1).
+</dd>
+<dd>
+<p>The pseudo-count reflects the possibility that residues that were not
+(yet) observed in the model might however be valid for future
+observations. The pseudo-count is used to compute the corrected
+residue frequencies.</p>
 </dd>
 <p></p>
-<dt><strong><a name="item__2dequi_pseudo"></a><strong>-equi_pseudo</strong></strong><br />
+<dt><strong><a name="item__2dequi_pseudo"><strong>-equi_pseudo</strong></a></strong><br />
 </dt>
 <dd>
-If this option is called, the pseudo-weight is distributed in an equiprobable
-way between residues.
+If this option is called, the pseudo-weight is distributed in an
+equiprobable way between residues.
 </dd>
 <dd>
-<p>By default, the pseudo-weight is distributed proportionally to residue priors.</p>
+<p>By default, the pseudo-weight is distributed proportionally to residue
+priors, except for the -window option where equipseudo is default.</p>
 </dd>
 <p></p>
-<dt><strong><a name="item__2dorigin_pos"></a><strong>-origin pos</strong></strong><br />
+<dt><strong><a name="item__2dbg_pseudo__23"><strong>-bg_pseudo #</strong></a></strong><br />
+</dt>
+<dd>
+Pseudo frequency for the background models. Value must be a real
+between 0 and 1.
+</dd>
+<dd>
+<p>If this option is not specified, the pseudo-frequency value depends on
+the background calculation.</p>
+</dd>
+<dd>
+<p>For -bginput and -window, the pseudo frequency is automatically calculated with the length (L) of the sequence following this formula : 
+square-root of L divided by L+squareroot of L</p>
+</dd>
+<dd>
+<p>For -bgfile, default value is 0.01. If the training sequence length (L) is known, the value can be set by -bg_pseudo option to
+square-root of L divided by L+squareroot of L.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item__2dorigin_pos"><strong>-origin pos</strong></a></strong><br />
 </dt>
 <dd>
 Define pos as the origin for the calculation of positions.
@@ -351,76 +549,117 @@ positions are then negative values, providing the distance between the match
 and the end of the sequence.</p>
 </dd>
 <p></p>
-<dt><strong><a name="item__2dbase__23"></a><strong>-base #</strong></strong><br />
+<dt><strong><a name="item__2dbase__23"><strong>-base #</strong></a></strong><br />
 </dt>
 <dd>
-Base for the logarithms (default: $base)
+Base for the logarithms used in the scores involving a log-likelihood
+(weight and information content). Default: <code>exp(1)</code> (natural logarithms).
+</dd>
+<dd>
+<p>A common alternative to natural logarithms is to use logarithms in
+base 2, in which case the information content is computed in bits.</p>
 </dd>
 <p></p>
-<dt><strong><a name="item__2ddecimals__23"></a><strong>-decimals #</strong></strong><br />
+<dt><strong><a name="item__2ddecimals__23"><strong>-decimals #</strong></a></strong><br />
 </dt>
 <dd>
-Number of decimals displayed for the score.
+Number of decimals displayed for the weight score.
+</dd>
+<dd>
+<p>Warning: the computation of P-values increases exponentially with the
+number of decimals. For matrices wih many columns, this can become
+non-tractable. We thus recommend to use the default value (2
+decimals).</p>
 </dd>
 <p></p>
-<dt><strong><a name="item__2duth_param_upper_threshold"></a><strong>-uth param upper_threshold</strong></strong><br />
+<dt><strong><a name="item__2duth_param_upper_threshold"><strong>-uth param upper_threshold</strong></a></strong><br />
 </dt>
 <dd>
 Threshold on some parameter (-lth: lower, -uth: upper threshold).
 </dd>
 <dd>
-<p>Supported threshold fields : score normw proba_M proba_B rank</p>
+<p>Supported threshold fields for the matches : score, pval, eval, sig, normw, proba_M, proba_B, rank , crer_sites , crer_size</p>
+</dd>
+<dd>
+<p>Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ occ_pval occ_eval occ_sig occ_sig_rank</p>
 </dd>
 <p></p>
-<dt><strong><a name="item__2d2str"></a><strong>-2str</strong></strong><br />
+<dt><strong><a name="item__2d2str"><strong>-2str</strong></a></strong><br />
 </dt>
 <dd>
 Scan both strands for DNA sequences.
 </dd>
 <p></p>
-<dt><strong><a name="item__2d1str"></a><strong>-1str</strong></strong><br />
+<dt><strong><a name="item__2d1str"><strong>-1str</strong></a></strong><br />
 </dt>
 <dd>
 single-strand search for DNA sequences.
 </dd>
 <p></p>
-<dt><strong><a name="item__2dreturn_return_fields"></a><strong>-return return_fields</strong></strong><br />
+<dt><strong><a name="item__2dreturn_return_fields"><strong>-return return_fields</strong></a></strong><br />
 </dt>
 <dd>
 List of fields to return.
 </dd>
 <dd>
-<p>Supported fields: sites,ranks,limits,normw,bg_model,matrix,freq_matrix,weight_matrix</p>
+<p>Supported fields:
+sites,pval,seq_scores,rank,normw,limits,weight_limits,disrib,occ_proba,bg_model,bg_residues,matrix,freq_matrix,weight_matrix,crer</p>
 </dd>
 <dl>
-<dt><strong><a name="item_sites_3a_matching_sites_2e"></a><strong>sites:</strong> Matching sites.</strong><br />
+<dt><strong><a name="item_sites_3a_matching_sites_2e"><strong>sites:</strong> Matching sites.</a></strong><br />
 </dt>
 <dd>
-Return the osition of matching sites in aformat which can be sed as
-input by <em>feature-map</em>.
+Return the position of each matching site, in a tab-delimited format
+which can be sed as input by <em>feature-map</em> (format .ft).
 </dd>
 <p></p>
-<dt><strong><a name="item_rank_3a_rank_2e"></a><strong>rank:</strong> Rank.</strong><br />
+<dt><strong><a name="item_pval_3a_site_2dwise_p_2dvalue"><strong>pval:</strong> site-wise P-value</a></strong><br />
+</dt>
+<dd>
+The site-wise P-value estimates the significance of the weight
+associated to each site. It is computed from the matrix, according to
+the probabilities described in Staden (1989), Bailey (1998).
+</dd>
+<dd>
+<p>In addition to the P-value, the program export a columns with the
+significance, defined as sig = -log(P-value). By default, logarithms
+are calculated in base 10, but this can be modified with the option
+-base.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item_seq_scores_3a_sequence_2dwise_score"><strong>seq_scores:</strong> sequence-wise score</a></strong><br />
+</dt>
+<dd>
+Score each sequence according to Bailey (1998), with the difference
+that, instead of computing the product of P-values, we compute the sum
+of significances.
+</dd>
+<p></p>
+<dt><strong><a name="item_rank_3a_rank_2e"><strong>rank:</strong> Rank.</a></strong><br />
 </dt>
 <dd>
 Sort the sites per decreasing values of score (weight), and return the
-rank value. The rank is calculated independently for each sequence and
-each matrix.
+rank value.
+</dd>
+<dd>
+<p>The rank is calculated independently for each sequence.  In addition,
+a matrix-specidic rank is calculated for each sequence (rank_pm). This
+allows to distinguish between multiple matches for a single matrix
+(homotypic modules), and separate matches for distinct matrices
+(heterotypic modules reflecting synergy between distinct transcription
+factors).</p>
 </dd>
 <dd>
 <p>A common usage of the rank is to select the top scoring site per
-matrix and per sequence (-th rank 1) or the 3 top scoring sites per
-matrix and per sequence (-uth rank 3).</p>
+sequence (-uth rank 1) or the 3 top scoring sites per sequence (-uth
+rank 3).</p>
 </dd>
-<p></p>
-<dt><strong><a name="item_limits"></a><strong>limits:</strong> limits (start, end) of the input sequences.</strong><br />
-</dt>
 <dd>
-This is useful for drawing feature maps with sequences of different
-lengths.
+<p>Another possibility is to define a maximal number of matches per
+matrix in the same sequence (-uth rank_pm 3).</p>
 </dd>
 <p></p>
-<dt><strong><a name="item_normw_3a_normalized_weights_2e"></a><strong>normw:</strong> normalized weights.</strong><br />
+<dt><strong><a name="item_normw_3a_normalized_weights_2e"><strong>normw:</strong> normalized weights.</a></strong><br />
 </dt>
 <dd>
 Normailzed weights are calculated according to Thijs' formula : normw
@@ -428,46 +667,202 @@ Normailzed weights are calculated according to Thijs' formula : normw
 using a Bernoulli model, for reasons of commputational efficiency.
 </dd>
 <p></p>
-<dt><strong><a name="item_bg_model_3a_background_model_2e"></a><strong>bg_model:</strong> Background model.</strong><br />
+<dt><strong><a name="item_limits"><strong>limits:</strong> limits (start, end) of the input sequences.</a></strong><br />
 </dt>
 <dd>
-Transition matrix of the background model. Note that this option only
-makes sense for fixed background models (-bgfile or -bginput), since
-when the background model is adaptive (-mindow), the transition matrix
-changes along he sequence.
+This is useful for drawing feature maps with sequences of different
+lengths.
+</dd>
+<p></p>
+<dt><strong><a name="item_weight_limits_3a_wmin_and_wmax_2e"><strong>weight_limits:</strong> Wmin and Wmax.</a></strong><br />
+</dt>
+<dd>
+For each site, returns the minimal and maximal weight. This is useful with
+adaptative background models.
+</dd>
+<p></p>
+<dt><strong><a name="item_crer"><strong>crer</strong></a></strong><br />
+</dt>
+<dd>
+Return Cis-Regulatory elements Enriched-Regions.
+</dd>
+<dd>
+<p>Calculate the statistical significance of the number of hits in windows of
+variable sizes. The number of hits is the sum of matches above a predefined threshold
+set on hits p-values, for all matrices and on both strands (if -2str). The maximum size
+for a CRER is defined by the option -crer_max.</p>
+</dd>
+<dd>
+<p>The prior probability to find an instance of the motif is the same for all matrices,
+and corresponds to the chosen pval threshold. Within a region of maximal CRER size,
+subwindows are defined between each hits, and the observed number of matches in
+a subwindow is the sum of hits above the threshold. The significance of the
+observed number of matches in a subwindow is estimated by calculating a P-value using
+the binomial distribution (Aerts et al., 2003).</p>
+</dd>
+<dd>
+<p>Example of CRER search: -return crer -uth pval 0.0001 -lth crer_size 20 -uth crer_size 200</p>
+</dd>
+<dd>
+<pre>
+ =&gt; the returned CRER lengths are between 20 and 200bp, and are constructed withhits having a pval less than 0.0001</pre>
+</dd>
+<p></p>
+<dt><strong><a name="item_distrib_score_distribution_2e"><strong>distrib</strong> Score distribution.</a></strong><br />
+</dt>
+<dd>
+Return the score distribution for each matrix.
+</dd>
+<p></p>
+<dt><strong><a name="item_occ_proba_probability_of_the_number_of_matches_in_"><strong>occ_proba</strong> Probability of the number of matches in the input sequence</a></strong><br />
+</dt>
+<dd>
+For each matrix and each score value, calculate the statistical
+significance of the number of matches. This allows to select the score
+associated with te maximal significance, on the basis of the
+matrix-specific distribution, rather than by selecting some a priori
+threshold.
+</dd>
+<dd>
+<p>For each motif (M) and each score value (s), the program estimates the
+significance of the observed number of matches (x), given the prior
+probability (p) to find an instance of this motif with at least this
+score at a given position of the sequence. The P-value is calculated
+using the binomial distribution (Aerts et al., 2003).</p>
+</dd>
+<dd>
+<p>This option requires to specify a background score distribution
+(option -bg_distrib) to estimate the prior probabilities of motif
+instances.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item_bg_model_3a_background_model_2e"><strong>bg_model:</strong> Background model.</a></strong><br />
+</dt>
+<dd>
+Report the transition matrix of the background model. Note that this
+option only makes sense for fixed background models (-bgfile or
+-bginput), since when the background model is adaptive (-mindow), the
+transition matrix changes along he sequence.
+</dd>
+<p></p>
+<dt><strong><a name="item_bg_residues"><strong>bg_residues</strong></a></strong><br />
+</dt>
+<dd>
+Return for each site the composition in A,C,G and T of the background model.
+</dd>
+<p></p>
+<dt><strong><a name="item_matrix"><strong>matrix</strong></a></strong><br />
+</dt>
+<dd>
+Return as comments the count matrix (or matrices) which were used for
+scanning.
+</dd>
+<p></p>
+<dt><strong><a name="item_freq_matrix"><strong>freq_matrix</strong></a></strong><br />
+</dt>
+<dd>
+Return as comments the frequency matrix (or matrices) which were used
+for scanning.
+</dd>
+<p></p>
+<dt><strong><a name="item_weight_matrix"><strong>weight_matrix</strong></a></strong><br />
+</dt>
+<dd>
+Return as comments the weight matrix (or matrices) which were used
+for scanning.
 </dd>
 <p></p></dl>
-</dl>
+<dt><strong><a name="item__2dsort_distrib"><strong>-sort_distrib</strong></a></strong><br />
+</dt>
+<dd>
+Sort score distribution by decreasing value of significance. By
+default, the score distributions are sorted by score (weight).
+</dd>
+<p></p>
+<dt><strong><a name="item__2dbg_distrib_bg_distrib_file"><strong>-bg_distrib bg_distrib_file</strong></a></strong><br />
+</dt>
+<dd>
+File specifying the background score distribution used to estimate
+prior probabilities with the option -return occ_proba. When this file
+is specified, the prior probabilities of motif occurrences are
+estimated from the frequencies of the background file, rather than
+using the theoretical site-wise P-value.
+</dd>
+<dd>
+<p>This background distribution can be generated by running matrix-scan
+on a set of background sequences, with the options</p>
+</dd>
+<p>matrix-proba -v 1 -return distrib -mlist matrix_list.txt -i bg_seq.fta [...]</p>
+<p>Various types of background sequences can be used as background model:
+whole genome, whole set of upstream sequences, randomly generated
+sequences, ... The choice of the background model has a strong effect
+on the estimated significance, and should thus be done carefully,
+according to the biological question.</p>
+<dt><strong><a name="item__2drecursive"><strong>-recursive</strong></a></strong><br />
+</dt>
+<dd>
+Run matrix-scan separately for each sequence.
+</dd>
+<p></p>
+<dt><strong><a name="item__2dbatch__23"><strong>-batch #</strong></a></strong><br />
+</dt>
+<dd>
+Dispatch matrix-scan jobs on a cluster.
+Number of sequences to be analyzed by job (= on each node of the cluster)
+</dd>
+<p></p></dl>
 <p>
 </p>
 <hr />
-<h1><a name="internal_procedures"></a>INTERNAL PROCEDURES</h1>
+<h1><a name="internal_procedures">INTERNAL PROCEDURES</a></h1>
 <dl>
-<dt><strong><a name="item_score_segment"></a><strong>score_segment</strong></strong><br />
+<dt><strong><a name="item_score_segment"><strong>score_segment</strong></a></strong><br />
 </dt>
 <dd>
 Assign a score to a sequence segment and print it if it passes the
 thresholds. Return value is 1 if the segment passed the thresholds.
 </dd>
 <p></p>
-<dt><strong><a name="item_print_match"></a><strong>print_match</strong></strong><br />
+<dt><strong><a name="item_print_match"><strong>print_match</strong></a></strong><br />
 </dt>
 <dd>
 Print the matching site.
-</dd>
-<p></p>
-<dt><strong><a name="item_check_thresholds"></a><strong>check_thresholds</strong></strong><br />
-</dt>
-<dd>
-Check the lower and upper threshold for a given score. 
-
-
 </dd>
 <p></p></dl>
 <p>
 </p>
 <hr />
-<h1><a name="see_also"></a>SEE ALSO</h1>
+<h1><a name="internal_procedures">INTERNAL PROCEDURES</a></h1>
+<dl>
+<dt><strong><a name="item_score_crer"><strong>score_crer</strong></a></strong><br />
+</dt>
+<dd>
+Calculate
+</dd>
+<p></p>
+<dt><strong><a name="item_print_crer"><strong>print_crer</strong></a></strong><br />
+</dt>
+<dd>
+Print the CRER.
+</dd>
+<p></p>
+<dt><strong><a name="item_check_thresholds"><strong>check_thresholds</strong></a></strong><br />
+</dt>
+<dd>
+Check the lower and upper threshold for a given hit.
+</dd>
+<p></p>
+<dt><strong><a name="item_check_distrib_thresholds"><strong>check_distrib_thresholds</strong></a></strong><br />
+</dt>
+<dd>
+Check the lower and upper threshold for a given parameter in the score
+distribution.
+</dd>
+<p></p></dl>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
 <dl>
 <dt><strong><a name="item_convert_2dmatrix"><em>convert-matrix</em></a></strong><br />
 </dt>
