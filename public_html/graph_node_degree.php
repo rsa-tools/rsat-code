@@ -7,6 +7,8 @@
 <?php 
   require ('functions.php');
   title('graph-node-degree - results');
+  # log file update
+  UpdateLogFile("neat","","");
   # Error status
   $error = 0;
   # Get parameters

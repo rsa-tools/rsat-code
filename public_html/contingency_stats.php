@@ -6,6 +6,8 @@
 <body class="results">
 <?php 
   require ('functions.php');
+  # log file update
+  UpdateLogFile("neat","","");
   title('contigency-stats - results');
   # Error status
   $error = 0;
