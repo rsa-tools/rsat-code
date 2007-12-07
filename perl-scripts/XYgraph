@@ -4,7 +4,7 @@ BEGIN {
 	push @INC, "$`lib/";
     }
     require "RSA.lib";
-    push @INC, "$RSA/extlib/arch/";
+    push @INC, "$ENV{RSAT}/extlib/arch/";
 }
 
 use GD;
@@ -20,7 +20,7 @@ use GD;
 		     "pdf" =>1
 		     );
 
-$img_format = $IMG_FORMAT || "png";
+$img_format = $ENV{rsat_img_format} || "png";
 $supported_formats = join (",", keys %supported_format); 
 
 
@@ -69,27 +69,27 @@ $large_font_height = 16;
 if (($img_format eq "eps")||($img_format eq "pdf")) {
 
   if (($x_grid_step1) || ($y_grid_step1) || ($x_grid_step2) || ($y_grid_step2)) {
-    &RSAT::message::TimeWarn("grid options -gstep are not yet compatible with eps format => no grid.") ;
+    &RSAT::message::Warning("grid options -gstep are not yet compatible with eps format => no grid.") ;
     #     &RSAT::message::TimeWarn("grid options -gstep are not yet compatible with eps format => png format is used.") ;
     #     $img_format = "png";
     #     $outputfile .=".png";
   }
   if ($bg ne "white") {
-    &RSAT::message::TimeWarn("changing background color is not yet compatible with eps format => ignored.") ;
+    &RSAT::message::Warning("changing background color is not yet compatible with eps format => ignored.") ;
     # 	&RSAT::message::TimeWarn("changing background color is not yet compatible with eps format => png format is used.") ;
     # 	 $img_format = "png";
     # 	 $outputfile .=".png";
   }
  
   if (($histogram)||($filled_histogram)) {
-    &RSAT::message::TimeWarn("histogram plot  is not yet compatible with eps format => this option will be ignored.") ;
+    &RSAT::message::Warning("histogram plot  is not yet compatible with eps format => this option will be ignored.") ;
     # 	 &RSAT::message::TimeWarn("histogram plot  is not yet compatible with eps format => png format is used.") ;
     # 	  $img_format = "png";
     # 	  $outputfile .=".png";
   }
 
   if ($HTML_map) {
-    &RSAT::message::TimeWarn("-htmap is not compatible with eps format..") ;
+    &RSAT::message::Warning("-htmap is not compatible with eps format..") ;
     # 	 &RSAT::message::TimeWarn("-htmap is not compatible with eps format => png format is used.") ;
     # 	  $img_format = "png";
   }
@@ -501,12 +501,14 @@ if ($legend) {
   while ($series <= $#y_col_list) {
     $current_color = $color_list[$series%($#color_list+1)];
     $current_symbol =  $symbol_list[$series%($#symbol_list+1)];
-    if ($legend_fields[$y_col_list[$series]] ne "") {
+    my $legend_text = $legend_fields[$y_col_list[$series]];
+    if ($legend_text) {
+      &RSAT::message::Debug("Legend item", "series", $series, "column", $y_col_list[$series], "legend text", $legend_text) if ($main::verbose >= 2);
       $legend_y_pos = $top + $series*$line_spacing;
       last if ($legend_y_pos >= $graph_y_size - $small_font_height);
       $point_y_pos = $legend_y_pos + $small_font_height/2 + 3 - $legend_point_size/2;
       DrawSymbol($current_symbol,$point_x_pos,$point_y_pos,$point_x_pos+$legend_point_size,$point_y_pos+$legend_point_size,$current_color);
-      $image->string(gdSmallFont, $legend_x_pos, $legend_y_pos, $legend_fields[$y_col_list[$series]], $text_color);
+      $image->string(gdSmallFont, $legend_x_pos, $legend_y_pos, $legend_text, $text_color);
     }
     $series++;
   }
@@ -1229,13 +1231,12 @@ sub ReadData {
   ################################################################
   #### point series correspond to columns
   if ($data_fields eq "columns") {
-	
     ### read X and Y values ###
     $l = 0;		## Counter for non-comment and non-empty lines
     while ($new_data_line = <$in>) {
       next unless ($new_data_line =~ /\S/);
       $l++; 
-      if (($header) && ($l == 1)|| ($new_data_line =~ /^#/)) {
+      if (($header) && ($l == 1) || ($new_data_line =~ /^#/)) {
 	#### read legend ####
 	$legend_line = $new_data_line;
 	$legend_line =~ s/^;//; ## Suppress leading comment char
@@ -1243,8 +1244,8 @@ sub ReadData {
 	  $legend_line =~ s/ {1,}/\t/g;	# single or multiple spaces are considered as a singlew tab
 	}
 	@legend_fields = split(/[\t\n\r]/, $legend_line);
-	&RSAT::message::Info(join("\t", "Header fields\t", join (";", @legend_fields))) if ($main::verbose >= 2);
-		
+	&RSAT::message::Info(join("\t", "Legend fields\t", join (";", @legend_fields))) if ($main::verbose >= 0);
+
 	### calculate legend width ###
 	$legend_length = 0;
 	for $series (0..$#y_col_list) {
@@ -1252,6 +1253,7 @@ sub ReadData {
 	  $legend_length = &checked_max($legend_length,$new_length);
 	}
 	$legend_size = $legend_length * $small_font_width + $point_size + 20;
+	&RSAT::message::Info("Legend length", $legend_length, "size", $legend_size) if ($main::verbose >= 0);
       }
       next if ($new_data_line =~ /^;/);	   ## Comment line
       if ($new_data_line =~ /\t/) { # if column delimiter is the tab character
@@ -1259,7 +1261,7 @@ sub ReadData {
       } else {			    # if there are no tabs,
 	$new_data_line =~ s/ +/\t/g; # single or multiple spaces are considered as a single tab
       }
-	    
+
       $new_data_line =~ s/\,//g; # remove all commas
       @data_fields = split(/[\t\n\r]/, $new_data_line);
 
@@ -1310,14 +1312,14 @@ sub ReadData {
     $xline = $x_col;	foreach $c (0..$#y_col_list) {
       $yline{$y_col_list[$c]} = $c;
     }
-	
+
     while ($new_data_line = <$in>) {
       next if ($new_data_line =~ /^;/);
       next unless ($new_data_line =~ /\S/);
       $line_nb++;
-	    
+
       next unless (($line_nb == $xline) || (defined($yline{$line_nb})));
-	    
+
       ### split data line
       if ($new_data_line =~ /\t/) { # if column delimiter is the tab character
 	$new_data_line =~ s/ //g;   # remove all blank spaces
@@ -1326,15 +1328,15 @@ sub ReadData {
       }
       $new_data_line =~ s/\,//g; # remove all commas
       @data_fields = split(/[\t\n\r]/, $new_data_line);
-	    
-      ### read legend ###
+
+      ### read legend
       if ($header) {
 	$line_legend = shift @data_fields; ### take first word as legend
 	$legend_fields[$line_nb] =  $line_legend;
 	$legend_length = &checked_max($legend_length,length($line_legend));
 	$legend_size = $legend_length * $small_font_width + $point_size + 20;
       }
-	    
+
       ### read X values
       if ($x_col == -1) {
 	$max_col = &checked_max($max_col, $#data_fields+1);
