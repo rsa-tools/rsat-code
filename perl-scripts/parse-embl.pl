@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.17 2006/11/26 06:55:28 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.18 2007/12/07 08:35:44 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -12,7 +12,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 
 require "RSA.lib";
-push @INC, "$RSA/perl-scripts/parsers/";
+push @INC, "$ENV{RSAT}/perl-scripts/parsers/";
 require "lib/load_classes.pl";
 #require "lib/util.pl";
 require "lib/parsing_util.pl";
@@ -361,7 +361,7 @@ package main;
 	#### default output directory
 	$export_subdir = "embl";
 	$dir{output} = "$parsed_data/$export_subdir/$delivery_date/$org";
-#	$dir{output} = "$RSA/data/embl_genomes/$org/genome";
+#	$dir{output} = "$ENV{RSAT}/data/embl_genomes/$org/genome";
 	warn "; Auto selection of output dir\t$dir{output}\n" if ($main::verbose >= 1);
     }
     &CheckOutputDir($dir{output});

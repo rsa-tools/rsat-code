@@ -11,8 +11,8 @@ $alpha_date = &AlphaDate;
 
 &ReadArguments;
 
-chdir $RSA;
-$out_dir = "$RSA/archives";
+chdir $ENV{RSAT};
+$out_dir = "$ENV{RSAT}/archives";
 
 for $folder ("perl-scripts","public_html") {
     warn "; Archiving folder $folder\n" if $verbose;

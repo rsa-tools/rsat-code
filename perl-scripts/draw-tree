@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: draw-tree,v 1.1 2005/03/13 10:41:01 jvanheld Exp $
+# $Id: draw-tree,v 1.2 2007/12/07 08:35:44 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -38,7 +38,7 @@ local $out = STDOUT;
 			 "ps"=>1,
 			);
 
-$img_format = $IMG_FORMAT || "png";
+$img_format = $ENV{rsat_img_format} || "png";
 $supported_img_formats = join (",", keys %supported_img_format); 
 
 &ReadArguments();

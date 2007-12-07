@@ -3,7 +3,7 @@ BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push @INC, "$`lib/";
     }
-#    push @INC, "$RSA/extlib/arch/";
+#    push @INC, "$ENV{RSAT}/extlib/arch/";
 #    if ($config_site eq "uppsala") {
 #	use lib ('/home/jvanheld/rsa-tools/perl-scripts/lib',  
 #		 '/home/jvanheld/rsa-tools/perl-scripts/lib/arch');
@@ -25,7 +25,7 @@ $start_time = `date`;
 		     "ps"=>1,
 		     );
 
-$img_format = $IMG_FORMAT || "png";
+$img_format = $ENV{rsat_img_format} || "png";
 $supported_formats = join (",", keys %supported_format); 
 
 #### font sizes ####
@@ -1657,7 +1657,7 @@ sub PrintHTMLmap {
     print "</map>";
     print <<EndZoomForm;
     
-    <FORM METHOD="POST" ACTION="$WWW_RSA/feature-map.cgi">
+    <FORM METHOD="POST" ACTION="$ENV{rsat_www}/feature-map.cgi">
 	<BLOCKQUOTE>
         <TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 VALIGN="top"><TR><TD VALIGN="top">
 	<B>Display from</B> <INPUT TEXT NAME="from" SIZE=7 VALUE="$view_from">

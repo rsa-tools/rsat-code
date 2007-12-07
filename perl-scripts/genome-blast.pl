@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast.pl,v 1.19 2006/10/10 17:43:12 jvanheld Exp $
+# $Id: genome-blast.pl,v 1.20 2007/12/07 08:35:44 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -51,7 +51,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
-push @INC, $RSA."/perl-scripts/parsers/" if ($RSA);
+push @INC, $ENV{RSAT}."/perl-scripts/parsers/" if ($ENV{RSAT});
 require "lib/load_classes.pl";
 require RSAT::blast_hit;
 

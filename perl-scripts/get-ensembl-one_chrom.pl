@@ -13,7 +13,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
-push @INC, $RSA."/perl-scripts/parsers/";
+push @INC, $ENV{RSAT}."/perl-scripts/parsers/";
 require "lib/load_classes.pl";
 require "lib/util.pl";
 require "lib/parsing_util.pl";
