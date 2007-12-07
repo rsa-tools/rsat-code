@@ -19,6 +19,7 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
+#require "RSA.cgi.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/random-seq";
@@ -132,14 +133,13 @@ if ($query->param('output') eq "display") {
     $sequence_file = "$TMP/$tmp_file_name.res";
 
     open RESULT, "$command $parameters |";
-    
+
     ### open the mirror file ###
     if (open MIRROR, ">$sequence_file") {
 	$mirror = 1;
 	&DelayedRemoval($sequence_file);
     }
-    
-    
+
     ### print the result ### 
     &PipingWarning();
     print '<H4>Result</H4>';
@@ -150,9 +150,9 @@ if ($query->param('output') eq "display") {
     }
     print "</PRE>";
     close RESULT;
-    
+
     ### prepare data for piping
-    &PipingForm();
+    &PipingFormForSequence();
     print "<HR SIZE = 3>";
 
     &DelayedRemoval($sequence_file);
@@ -165,188 +165,4 @@ if ($query->param('output') eq "display") {
 print $query->end_html;
 
 exit(0);
-
-
-################################################################
-#
-# Pipe the result to other commands
-#
-sub PipingForm {
-  print <<End_of_form;
-<table class = 'nextstep'>
-<tr><td colspan = 5><h3>next step</h3></td></tr>
-
-
-<tr valign="top" align="center">
-
-    <th align=center>
-      	<font size=-1>
-	String-based<br>
-	Pattern Discovery<br>
-	(unknown patterns)
-	</font>
-    </th>
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="oligo-analysis_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	$oligo_background_model
-	<INPUT type="submit" value="oligonucleotide analysis">
-	</FORM>
-	Over- or under-represented words
-    </td>
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="dyad-analysis_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	$dyad_background_model
-	<INPUT type="submit" value="dyad analysis">
-	</FORM>
-	Overrepresented spaced pairs
-    </td>
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="position-analysis_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="hidden" NAME="background" VALUE="$background">
-	<INPUT type="submit" value="position analysis">
-	</FORM>
-	Positionally biased words
-    </td>
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="ORM_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	$oligo_background_model
-	<INPUT type="submit" value="ORM">
-	</FORM>
-	<b><font color=red>New !</font></b>
-	Windows of word over-representation
-    </td>
-
-</tr>
-
-<tr valign="top" align="center">
-
-    <th align=center>
-      	<font size=-1>
-	<B>Matrix-based<br>
-	 Pattern Discovery</B><BR>
-	(unknown patterns)
-	</font>
-    </th>
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="consensus_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="consensus">
-	</FORM>
-	Greedy algorithm
-    </td>
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="gibbs_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="gibbs sampler">
-	</FORM>
-	Gibbs sampling (1995 version)
-    </td>
-
-</tr>
-
-<tr valign="top" align="center">
-
-    <th align=center>
-      	<font size=-1>
-	<B>Pattern matching</B><BR>
-	(known patterns)
-	</font>
-    </td>
-
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="dna-pattern">
-	</FORM>
-	Regular expressions and IUPAC search.
-    </td>
-
-    <td align=center>
-        <FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="matrix-scan (matrices)">
-	</FORM>
-	<b><font color=red>New !</font></b>
-	Position-specific scoring matrices
-    </td>
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="patser_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="patser (matrices)">
-	</FORM>
-	Position-specific scoring matrices
-    </td>
-
-
-    <td align=center>
-    &nbsp;
-    </td>
-
-    <td align=center>
-    &nbsp;
-    </td>
-
-</tr>
-
-
-<tr valign="top" align="center">
-
-    <th align=center>
-      	<font size=-1>
-	<B>Utilities</B>
-	</font>
-    </th>
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="purge-sequence_form.cgi">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="purge sequence">
-	</FORM>
-	Mask redundant fragments. 
-    </td>
-
-    <td align=center>
-    &nbsp;
-    </td>
-
-    <td align=center>
-    &nbsp;
-    </td>
-</tr>
-
-
-</table>
-End_of_form
-}
 
