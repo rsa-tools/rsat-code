@@ -144,7 +144,6 @@ print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'input_format',-default=>'tab');
 print $query->hidden(-name=>'info',-default=>"on");
 print $query->hidden(-name=>'weights',-default=>"on");
-print $query->hidden(-name=>'parameters',-default=>"on");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
