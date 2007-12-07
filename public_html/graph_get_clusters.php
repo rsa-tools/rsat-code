@@ -21,11 +21,15 @@
   }
   if ($_FILES['clusters_file']['name'] != "") {
     $clusters_file = uploadFile('clusters_file');
-  }
+  } 
   $now = date("Ymd_His");
   $graph = $_REQUEST['graph'];
   $return =  $_REQUEST['return'];
   $clusters = $_REQUEST['clusters'];
+  if ($clusters == "" && $_REQUEST['pipe_clusters_file']) {
+    $pipe_clusters_file = $_REQUEST['pipe_clusters_file'];
+    $clusters = storeFile($pipe_clusters_file);
+  }
   $distinct = $_REQUEST['distinct'];
   $induced = $_REQUEST['induced'];
   if ($induced == 'on') {
