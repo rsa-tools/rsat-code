@@ -28,8 +28,8 @@
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
      $demo_graph = $scer_biocyc;
-     $demo_sources = "PAPSSULFOTRANS-RXN/SULFITE-REDUCTASE-(FERREDOXIN)-RXN";
-     $demo_targets = "HOMO-SER/SER";
+     $demo_sources = "GLY";
+     $demo_targets = "PROTOHEME";
      $default_sources = $demo_sources;
      $default_targets = $demo_targets;
   }
@@ -64,8 +64,12 @@
   	echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$requested_graph_file'>";
   }
   if($demo == 1){
-  		echo("The demo graph is the union of all paths annotated for <i>S. cerevisiae</i> in <a href='http://www.biocyc.org/' target='_blank'>BioCyc</a> release 10.6. It is an undirected graph consisting
-  		of 2,662 edges.<br><br>");
+  		info("The demo graph is the union of all paths annotated for <i>S. cerevisiae</i> in <a href='http://www.biocyc.org/' target='_blank'>BioCyc</a> release 10.6. It is an undirected graph consisting
+  		of 2,662 edges.<br>
+  		The seed nodes are the start and end compound of the <a href='http://biocyc.org/YEAST/NEW-IMAGE?object=HEME-BIOSYNTHESIS-II' target='_blank'>heme biosynthesis II pathway</a> as annotated in BioCyc.<br>
+  		Pathway inference for this pathway in the KEGG and the EcoCyc graph has been described in Croes et al., J. Mol. Biol. 356: 222-236. (see our <a href='neat_publications.html '>list of publications</a>.)<br>
+  		Note that for this demo, path finding is done on a smaller, undirected graph without differentially weighting compounds and reactions. Use the <a href='http://www.scmbb.ulb.ac.be/Users/didier/pathfinding/' target='_blank'>metabolic pathfinding tool</a> to find paths in the complete KEGG network.<br>
+  		The path of first rank corresponds to the annotated heme biosynthesis II pathway. To see the influence of the weighting scheme, you can set the weighting scheme to unit weight and the rank to 1 (for quicker computation). You will obtain an entirely different result.<br><br>");
   }
    echo("
    <B><a href='help.pathfinder.html#terminals'>2. Seed nodes</a></B>
@@ -113,8 +117,8 @@
    <select name='outputType'>
   <option selected value = 'pathsTable'>table of paths
   <option value = 'pathsMarked'>input graph with paths highlighted
-  <option value = 'pathsGraphs'>paths separated in one graph
-  <option value = 'pathsUnion'>paths unified in one graph
+  <option value = 'pathsGraphs'>each path as a separated component in one graph
+  <option value = 'pathsUnion'>paths unified into one graph
   </select>
   <br>
   <br>
