@@ -32,7 +32,7 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("oligo-analysis result", "results");
-&ListParameters() if ($ECHO >=2);
+&ListParameters() if ($ENV{rsat_echo} >=2);
 
 #### update log file ####
 &UpdateLogFile();
@@ -182,23 +182,23 @@ if ($query->param('neighborhood') =~ /N at one position/i) {
 
 $command .= $parameters;
 
-print "<PRE>command: $command<P>\n</PRE>" if ($ECHO >=1);
+print "<PRE>command: $command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 
 &SaveCommand("$command", "$TMP/$tmp_file_name");
 
 if ($query->param('output') =~ /display/i) {
 
     &PipingWarning();
-    
+
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
     open RESULT, "$command |";
-    
+
     ### Print result on the web page
     print '<H2>Result</H2>';
     &PrintHtmlTable(RESULT, $result_file, true);
     close(RESULT);
-    
+
     #### oligonucleotide assembly ####
     if (($query->param('return') ne "table") &&
 	($query->param('return') ne "distrib") &&
@@ -219,12 +219,12 @@ if ($query->param('output') =~ /display/i) {
 
 	## Assemble the significant patterns
 	print "<H2>Pattern assembly</H2>\n";
-	print "<PRE>pattern-assembly command: $pattern_assembly_command<P>\n</PRE>" if ($ECHO >=1);
+	print "<PRE>pattern-assembly command: $pattern_assembly_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 	system "$pattern_assembly_command";
 	open ASSEMBLY, $assembly_file;
 	print "<PRE>\n";
 	while (<ASSEMBLY>) {
-	  s|$RSA/||g;
+	  s|$ENV{RSAT}/||g;
 	  print;
 	}
 	print "</PRE>\n";
@@ -238,13 +238,13 @@ if ($query->param('output') =~ /display/i) {
 # 	$profile_command .= " -return profile,counts,parameters";
 # 	$profile_command .= " -i $assembly_file";
 # 	$profile_command .= " -o $profile_file";
-# 	print "<PRE>command to generate profiles: $profile_command<P>\n</PRE>" if ($ECHO >=1);
+# 	print "<PRE>command to generate profiles: $profile_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 # 	system "$profile_command";
 # 	print "<H2>Position-specific scoring matrices (PSSM)</H2>\n";
 # 	open PROFILE, $profile_file;
 # 	print "<PRE>\n";
 # 	while (<PROFILE>) {
-# 	  s|$RSA/||g;
+# 	  s|$ENV{RSAT}/||g;
 # 	  print;
 # 	}
 # 	print "</PRE>\n";
@@ -257,7 +257,7 @@ if ($query->param('output') =~ /display/i) {
 # 	$pssm_command .= " -return counts";
 # 	$pssm_command .= " -i $assembly_file";
 # 	$pssm_command .= " -o $pssm_file";
-# 	print "<PRE>command to generate matrices: $pssm_command<P>\n</PRE>" if ($ECHO >=1);
+# 	print "<PRE>command to generate matrices: $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 # 	system "$pssm_command";
 
 
@@ -272,14 +272,14 @@ if ($query->param('output') =~ /display/i) {
 	$pssm_command .= " -uth Pval 0.00025";
 	$pssm_command .= " -bginput -markov 0";
 	$pssm_command .= " -o ".$pssm_prefix;
-	print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ECHO >=1);
+	print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 	system "$pssm_command";
 
 	print "<H2>Significance matrices</H2>\n";
 	open SIG, $sig_matrix_file;
 	print "<PRE>\n";
 	while (<SIG>) {
-	  s|$RSA/||g;
+	  s|$ENV{RSAT}/||g;
 	  print;
 	}
 	print "</PRE>\n";
@@ -289,7 +289,7 @@ if ($query->param('output') =~ /display/i) {
 	open PSSM, $pssm_file;
 	print "<PRE>\n";
 	while (<PSSM>) {
-	  s|$RSA/||g;
+	  s|$ENV{RSAT}/||g;
 	  print;
 	}
 	print "</PRE>\n";

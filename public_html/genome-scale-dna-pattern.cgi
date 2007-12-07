@@ -16,7 +16,7 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-require "$RSA/public_html/genome-scale.lib.pl";
+require "$ENV{RSAT}/public_html/genome-scale.lib.pl";
 
 $dna_pattern_command = "$SCRIPTS/dna-pattern -nolimits";
 $add_linenb_command = "$SCRIPTS/add-linenb";
@@ -30,7 +30,7 @@ $query = new CGI;
 ### print the header of the result page
 &RSA_header("dna-pattern result ".$query->param("title"), "results");
 
-&ListParameters() if ($ECHO >= 2);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 
 #### update log file ####
@@ -170,7 +170,7 @@ unless (($query->param("sequence_type") =~ /chromosome/) ||
 #    }
 }
 
-print "<PRE>$command</PRE>" if ($ECHO >= 1);
+print "<PRE>$command</PRE>" if ($ENV{rsat_echo} >= 1);
 
 ################################################################
 ### execute the command ###

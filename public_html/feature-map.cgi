@@ -138,7 +138,7 @@ if (lc($query->param('handle')) =~ /dot/) {
 if ($query->param('img_format')) {
     $image_format = $query->param('img_format');
 } else {
-    $image_format = $IMG_FORMAT || "png";
+    $image_format = $ENV{rsat_img_format} || "png";
 }
 $parameters .= " -format ".$image_format;
 
@@ -255,8 +255,8 @@ $html_file = "$tmp_file_name.html";
 $parameters .= " -o $TMP/$map_file > $TMP/$html_file";
 
 ## report the command (for debugging)
-#$ECHO = 2;
-if ($ECHO >= 2) {
+#$ENV{rsat_echo} = 2;
+if ($ENV{rsat_echo} >= 2) {
     print $query->header();
     print $query->start_html;
     &ListParameters();
@@ -275,9 +275,9 @@ system "$feature_map_command $parameters ";
 ### display the result ###
 if (($image_format ne 'ps') 
     && (lc($query->param('htmap')) eq "on")) {
-    $location = "$WWW_RSA/tmp/$html_file";
+    $location = "$ENV{rsat_www}/tmp/$html_file";
 } else {
-    $location = "$WWW_RSA/tmp/$map_file";
+    $location = "$ENV{rsat_www}/tmp/$map_file";
 }
 print "Location: $location", "\n\n";
 

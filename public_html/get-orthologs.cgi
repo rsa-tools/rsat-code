@@ -12,7 +12,7 @@ $command = "$SCRIPTS/get-orthologs";
 $tmp_file_name = sprintf "get-orthologs.%s", &AlphaDate();
 $result_file = "$TMP/$tmp_file_name.res";
 
-#$ECHO=2;
+#$ENV{rsat_echo}=2;
 
 ### Read the CGI query
 $query = new CGI;
@@ -23,7 +23,7 @@ $query = new CGI;
 #### update log file ####
 &UpdateLogFile();
 
-&ListParameters() if ($ECHO >= 2);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 &cgiMessage(join("<P>",
 		 "The computation can take a more or less important time depending on the taxon size.",
@@ -87,7 +87,7 @@ foreach my $param (@parameters) {
 
 
 ## Report the command
-print "<PRE>$command $parameters </PRE>" if ($ECHO >= 1);
+print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 
 ################################################################
 #### run the command

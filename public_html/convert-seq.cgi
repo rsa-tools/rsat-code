@@ -77,7 +77,7 @@ if ($query->param('output') eq "display") {
     ### Print the result on Web page
     open RESULT, "$command $parameters  & |";
     
-    print "<PRE>$command $parameters</PRE> " if ($ECHO >= 1);
+    print "<PRE>$command $parameters</PRE> " if ($ENV{rsat_echo} >= 1);
     
     print "<PRE>";
     while (<RESULT>) {

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.16 2007/10/26 11:45:23 rsat Exp $
+# $Id: consensus.cgi,v 1.17 2007/12/07 08:14:53 jvanheld Exp $
 #
 # Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
@@ -36,7 +36,7 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("consensus result", "results");
-&ListParameters() if ($ECHO >= 2);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #### update log file ####
 &UpdateLogFile();
@@ -114,7 +114,7 @@ $convert_matrix_command.= " -i ".$result_file." -o ".$matrix_file;
 #### execute the command ###
 if ($query->param('output') eq "display") {
     #### echo the commands
-    if ($ECHO >= 1) {
+    if ($ENV{rsat_echo} >= 1) {
 	print "<PRE><B>Command:</B> $command $parameters </PRE>";
 	print "<PRE><b>Conversion:</b> $convert_matrix_command</PRE>";
     }

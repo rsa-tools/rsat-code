@@ -26,9 +26,9 @@ MAIN:
 
     $form = `cat $form_file`;
 
-    $form =~ s/RSA.icon.gif/$WWW_RSA\/RSA.icon.gif"/;   
-    $form =~ s/lablogo.gif/$WWW_RSA\/lablogo.gif"/;   
-    $form =~ s/href="/href="$WWW_RSA\//i unless ((/http/) || (/mailto/));   
+    $form =~ s/RSA.icon.gif/$ENV{rsat_www}\/RSA.icon.gif"/;   
+    $form =~ s/lablogo.gif/$ENV{rsat_www}\/lablogo.gif"/;   
+    $form =~ s/href="/href="$ENV{rsat_www}\//i unless ((/http/) || (/mailto/));   
     $form =~ s/(NAME="query"[^>]*>)/${1}$query/;   
     $form =~ s/ selected>ORF/>ORF/i;   
     if ($input{'query_format'} =~ /genome/i) { 

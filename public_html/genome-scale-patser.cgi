@@ -25,7 +25,7 @@ $query = new CGI;
 ### print the header of the result page
 &RSA_header("patser result ".$query->param("title"), "results");
 
-&ListParameters() if ($ECHO >= 2);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #### update log file ####
 &UpdateLogFile();
@@ -62,7 +62,7 @@ if ($query->param("output") =~ /display/i) {
 
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
-    print "<PRE>$command</PRE>" if ($ECHO >= 1);
+    print "<PRE>$command</PRE>" if ($ENV{rsat_echo} >= 1);
     open RESULT, "$command & |";
 
     unless ($query->param('table')) {

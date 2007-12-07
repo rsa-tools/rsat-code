@@ -23,7 +23,7 @@ $tmp_file_name = sprintf "retrieve-seq.%s", &AlphaDate();
 $query = new CGI;
 
 
-#$ECHO=2;
+#$ENV{rsat_echo}=2;
 
 
 ### print the header
@@ -33,7 +33,7 @@ $query = new CGI;
 #### update log file ####
 &UpdateLogFile();
 
-&ListParameters() if ($ECHO >= 2);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 $parameters = "";
 
@@ -175,7 +175,7 @@ if ($query->param('genes') eq "all") {
     }
 }
 
-print  "<PRE><B>Command :</B> $command $parameters</PRE><P>" if ($ECHO >= 1);
+print  "<PRE><B>Command :</B> $command $parameters</PRE><P>" if ($ENV{rsat_echo} >= 1);
 
 #### execute the command #####
 if (($query->param('output') =~ /display/i) ||
@@ -209,7 +209,7 @@ if (($query->param('output') =~ /display/i) ||
     close MIRROR if ($mirror);
     
     if ($query->param('output') =~ /server/i) {
-	$result_URL = "${WWW_RSA}/tmp/${tmp_file_name}.res";
+	$result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
 	print ("The result is available at the following URL: ", "\n<br>",
 	       "<a href=${result_URL}>${result_URL}</a>",
 	       "<p>\n");
