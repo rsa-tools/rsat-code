@@ -36,7 +36,7 @@ $query = new CGI;
 &UpdateLogFile();
 
 
-&ListParameters() if ($ECHO >= 2);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 ################################################################
 #### read parameters ####
@@ -124,7 +124,7 @@ if ($query->param('proba') eq "alphabet") {
     $parameters .= " -bg upstream-noorf -org $organism -ol $oligo_size";
 }
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ECHO >= 1);
+print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
 
 ### execute the command ###

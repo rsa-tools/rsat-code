@@ -30,7 +30,7 @@ $query = new CGI;
 #### update log file ####
 &UpdateLogFile;
 
-&ListParameters() if ($ECHO >= 2);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #### read parameters ####
 $parameters = "";
@@ -74,7 +74,7 @@ if ($query->param('replacement')) {
 }
 
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ECHO);
+print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo});
 
 ### execute the command ###
 if ($query->param('output') eq "display") {

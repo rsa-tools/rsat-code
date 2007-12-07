@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.26 2007/10/26 11:45:23 rsat Exp $
+# $Id: patser.cgi,v 1.27 2007/12/07 08:15:45 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -37,11 +37,11 @@ $tmp_file_name = sprintf "patser.%s", &AlphaDate();
 ### Read the CGI query
 $query = new CGI;
 
-#$ECHO=2;
+#$ENV{rsat_echo}=2;
 
 ### print the result page
 &RSA_header("patser result", "results");
-&ListParameters() if ($ECHO >=2);
+&ListParameters() if ($ENV{rsat_echo} >=2);
 
 #### update log file ####
 &UpdateLogFile();
@@ -70,7 +70,7 @@ $command .= "| $features_from_patser_cmd";
 
 ################################################################
 #### echo the command (for debugging)
-print "<pre>$command</pre>" if ($ECHO >= 1);
+print "<pre>$command</pre>" if ($ENV{rsat_echo} >= 1);
 
 ################################################################
 ### execute the command ###
@@ -92,7 +92,7 @@ if ($query->param('output') eq "display") {
     &PrintHtmlTable(RESULT, $result_file, true);
     
 #    while (<RESULT>) {
-#	s|$RSA/||g;
+#	s|$ENV{RSAT}/||g;
 #	print;
 #	print FEATURES;
 #    }

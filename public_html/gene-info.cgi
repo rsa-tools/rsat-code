@@ -71,7 +71,7 @@ unless (defined(%{$supported_organism{$organism}})) {
 $parameters .= " -org $organism";
 
 
-print "<PRE>$command $parameters </PRE>" if ($ECHO);
+print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo});
 
 ################################################################
 #### run the command

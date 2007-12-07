@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.23 2007/11/29 11:52:23 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.24 2007/12/07 08:14:53 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -22,7 +22,7 @@ print $query->header;
 print $query->start_html(-class => "info",
 			   -author=>'jvanheld@scmbb.ulb.ac.be',
 			   
-			   -style => { 	-src => "$WWW_RSA/main.css",
+			   -style => { 	-src => "$ENV{rsat_www}/main.css",
                              	       	-type => 'text/css',
                              		-media => 'screen' });
 
@@ -208,7 +208,7 @@ print <<EndText;
 EndText
 
 @orgs =  &ListSupportedOrganisms("keys");
-print "<H4 align ='center'>", scalar(@orgs) ," organisms supported on <A HREF='$WWW_RSA' target=_top>",$WWW_RSA,"</A></H4>\n";
+print "<H4 align ='center'>", scalar(@orgs) ," organisms supported on <A HREF='$ENV{rsat_www}' target=_top>",$ENV{rsat_www},"</A></H4>\n";
 # print &ListSupportedOrganisms("html_list");
 
 &UpdateLogFile();

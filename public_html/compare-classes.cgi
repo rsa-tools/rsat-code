@@ -28,7 +28,7 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("compare-classes result", "results");
-&ListParameters() if ($ECHO >=2);
+&ListParameters() if ($ENV{rsat_echo} >=2);
 
 #### update log file ####
 &UpdateLogFile;
@@ -255,7 +255,7 @@ if ($upload_ref_classes) {
 $parameters .= " -r $tmp_ref_classes";
 
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ECHO >=1);
+print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 
 if ($query->param('output') =~ /display/i) {
 
