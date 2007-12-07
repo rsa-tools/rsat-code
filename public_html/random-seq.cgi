@@ -173,18 +173,21 @@ exit(0);
 #
 sub PipingForm {
   print <<End_of_form;
-<TABLE class = 'nextstep'>
-<tr><td colspan = 5><h3>Next step</h3></td></tr>
+<table class = 'nextstep'>
+<tr><td colspan = 5><h3>next step</h3></td></tr>
 
 
-<TR VALIGN="top" ALIGN="center">
+<tr valign="top" align="center">
 
-    <TD VALIGN=TOP ALIGN=CENTER>
-	<B>String-based Pattern Discovery</B><BR>
+    <th align=center>
+      	<font size=-1>
+	String-based<br>
+	Pattern Discovery<br>
 	(unknown patterns)
-    </TD>
+	</font>
+    </th>
 
-    <TD VALIGN=TOP ALIGN=CENTER>
+    <td align=center>
 	<FORM METHOD="POST" ACTION="oligo-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -193,9 +196,9 @@ sub PipingForm {
 	<INPUT type="submit" value="oligonucleotide analysis">
 	</FORM>
 	Over- or under-represented words
-    </TD>
+    </td>
 
-    <TD VALIGN=TOP ALIGN=CENTER>
+    <td align=center>
 	<FORM METHOD="POST" ACTION="dyad-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -204,9 +207,9 @@ sub PipingForm {
 	<INPUT type="submit" value="dyad analysis">
 	</FORM>
 	Overrepresented spaced pairs
-    </TD>
+    </td>
 
-    <TD VALIGN=TOP ALIGN=CENTER>
+    <td align=center>
 	<FORM METHOD="POST" ACTION="position-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -215,9 +218,9 @@ sub PipingForm {
 	<INPUT type="submit" value="position analysis">
 	</FORM>
 	Positionally biased words
-    </TD>
+    </td>
 
-    <TD VALIGN=TOP ALIGN=CENTER>
+    <td align=center>
 	<FORM METHOD="POST" ACTION="ORM_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -227,18 +230,21 @@ sub PipingForm {
 	</FORM>
 	<b><font color=red>New !</font></b>
 	Windows of word over-representation
-    </TD>
+    </td>
 
-</TR>
+</tr>
 
-<TR VALIGN="top" ALIGN="center">
+<tr valign="top" align="center">
 
-    <TD VALIGN=TOP ALIGN=CENTER>
-	<B>String-based Pattern Discovery</B><BR>
+    <th align=center>
+      	<font size=-1>
+	<B>Matrix-based<br>
+	 Pattern Discovery</B><BR>
 	(unknown patterns)
-    </TD>
+	</font>
+    </th>
 
-    <TD VALIGN=TOP ALIGN=CENTER>
+    <td align=center>
 	<FORM METHOD="POST" ACTION="consensus_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -246,9 +252,9 @@ sub PipingForm {
 	<INPUT type="submit" value="consensus">
 	</FORM>
 	Greedy algorithm
-    </TD>
+    </td>
 
-    <TD VALIGN=TOP ALIGN=CENTER>
+    <td align=center>
 	<FORM METHOD="POST" ACTION="gibbs_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -256,19 +262,21 @@ sub PipingForm {
 	<INPUT type="submit" value="gibbs sampler">
 	</FORM>
 	Gibbs sampling (1995 version)
-    </TD>
+    </td>
 
-</TR>
+</tr>
 
-<TR VALIGN="top" ALIGN="center">
+<tr valign="top" align="center">
 
-    <TD VALIGN=TOP ALIGN=CENTER>
+    <th align=center>
+      	<font size=-1>
 	<B>Pattern matching</B><BR>
 	(known patterns)
-    </TD>
+	</font>
+    </td>
 
 
-    <TD VALIGN=TOP ALIGN=CENTER>
+    <td align=center>
 	<FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -276,9 +284,9 @@ sub PipingForm {
 	<INPUT type="submit" value="dna-pattern">
 	</FORM>
 	Regular expressions and IUPAC search.
-    </TD>
+    </td>
 
-    <TD VALIGN=TOP ALIGN=CENTER valign=top>
+    <td align=center>
         <FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -287,9 +295,9 @@ sub PipingForm {
 	</FORM>
 	<b><font color=red>New !</font></b>
 	Position-specific scoring matrices
-    </TD>
+    </td>
 
-    <TD VALIGN=TOP ALIGN=CENTER>
+    <td align=center>
 	<FORM METHOD="POST" ACTION="patser_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -297,46 +305,48 @@ sub PipingForm {
 	<INPUT type="submit" value="patser (matrices)">
 	</FORM>
 	Position-specific scoring matrices
-    </TD>
+    </td>
 
 
-    <TD VALIGN=TOP ALIGN=CENTER>
+    <td align=center>
     &nbsp;
-    </TD>
+    </td>
 
-    <TD VALIGN=TOP ALIGN=CENTER>
+    <td align=center>
     &nbsp;
-    </TD>
+    </td>
 
-</TR>
+</tr>
 
 
-<TR VALIGN="top" ALIGN="center">
+<tr valign="top" align="center">
 
-    <TD VALIGN=TOP ALIGN=CENTER>
+    <th align=center>
+      	<font size=-1>
 	<B>Utilities</B>
-    </TD>
+	</font>
+    </th>
 
-    <TD VALIGN=TOP ALIGN=CENTER>
+    <td align=center>
 	<FORM METHOD="POST" ACTION="purge-sequence_form.cgi">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="purge sequence">
 	</FORM>
 	Mask redundant fragments. 
-    </TD>
+    </td>
 
-    <TD VALIGN=TOP ALIGN=CENTER>
+    <td align=center>
     &nbsp;
-    </TD>
+    </td>
 
-    <TD VALIGN=TOP ALIGN=CENTER>
+    <td align=center>
     &nbsp;
-    </TD>
-</TR>
+    </td>
+</tr>
 
 
-</TABLE>
+</table>
 End_of_form
 }
 
