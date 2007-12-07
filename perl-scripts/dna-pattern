@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.49 2006/11/30 07:26:17 jvanheld Exp $
+# $Id: dna-pattern,v 1.50 2007/12/07 09:21:21 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -1487,21 +1487,27 @@ PATTERN FORMATS
 	information).
 
 	The pattern sequence should thus only contain the following characters:
-		A			Adenine
-		C			Cytosine
-		G			Guanine
-		T			Thymine
-		R	= A or G        puRines
-		Y	= C or T        pYrimidines
-		W	= A or T        Weak hydrogen bonding
-		S	= G or C        Strong hydrogen bonding
-		M	= A or C        aMino group at common position
-		K	= G or T        Keto group at common position
-		H	= A, C or T     not G
-		B	= G, C or T     not A
-		V	= G, A, C       not T
-		D	= G, A or T     not C
-		N	= G, A, C or T  aNy
+
+            ------------------------------------------------------
+            Symbol  Nucleotide(s)   Description
+            ------------------------------------------------------
+            A       A               Adenosine
+            C       C               Cytidine
+            G       G               Guanosine
+            T       T               Thymidine
+            R       A or G          puRines
+            Y       C or T          pYrimidines
+            W       A or T          Weak hydrogen bonding
+            S       G or C          Strong hydrogen bonding
+            M       A or C          aMino group at common position
+            K       G or T          Keto group at common position
+            H       A, C or T       not G
+            B       G, C or T       not A
+            V       G, A, C         not T
+            D       G, A or T       not C
+            N       G, A, C or T    aNy
+            ------------------------------------------------------
+
 	Upper and lower case are considered equivalent.
 
 	Patterns can either be entered directly by the user, or listed
@@ -1602,10 +1608,10 @@ OUTPUT
 	4- number of matches for the current pattern in the current file
 
 EXAMPLES
-	dna-pattern -i GATA -p GATWA -s $RSAGENOME/chr1.raw -c
-	
+	dna-pattern -i GATA -p GATWA -i my_file.fasta -c
+
 	will count all occurences of the strings 'GATAA' and 'GATTA' present 
-	in the file $RSAGENOME/chr1.raw.
+	in the file my_file.fasta
 WEB VERSION
 	http://www.scmbb.ulb.ac.be/bioinformatics/rsa-tools/
 EndOfHelp
