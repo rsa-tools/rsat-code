@@ -110,7 +110,7 @@ Function load_props($props) {
   $properties = load_props($rsat_main."/RSAT_config.props");
   $tmp = $properties[rsa_tmp];
   $WWW_RSA = $properties[www_rsa];
-  $log_name = $properties[config_site];
+  $log_name = $properties[rsat_site];
 
   # LOG
   $year = date("Y");
@@ -143,9 +143,9 @@ Function AlphaDate() {
 ### store info into a log file in a conveninent way for 
 ### subsequent login statistics
 ### Usage:
-###     &UpdateLogFile();
-###     &UpdateLogFile($script_name);
-###     &UpdateLogFile($script_name, $message);
+###     UpdateLogFile();
+###     UpdateLogFile($script_name);
+###     UpdateLogFile($script_name, $message);
 ### If script name is empty or null... the program determine
 ### the name of the file
 

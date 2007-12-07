@@ -1813,43 +1813,43 @@ sub xygraph_cmd {
    $yleg2 =~ s/\'//g;
    $command .= " -yleg2 '$yleg2'";
   }
-  if ($args{xmax}) {
+  if ($args{xmax} ne "") {
    my $xmax = $args{xmax};
    $xmax =~ s/\'//g;
    $xmax =~ s/\'//g;
    $command .= " -xmax $xmax";
   }
-  if ($args{ymax}) {
+  if ($args{ymax} ne "") {
    my $ymax = $args{ymax};
    $ymax =~ s/\'//g;
    $ymax =~ s/\'//g;
    $command .= " -ymax $ymax";
   }
-  if ($args{xmin}) {
+  if ($args{xmin} ne "") {
    my $xmin = $args{xmin};
    $xmin =~ s/\'//g;
    $xmin =~ s/\'//g;
    $command .= " -xmin $xmin";
   }
-  if ($args{ymin}) {
+  if ($args{ymin} ne "") {
    my $ymin = $args{ymin};
    $ymin =~ s/\'//g;
    $ymin =~ s/\'//g;
    $command .= " -ymin $ymin";
   }
-  if ($args{xlog}) {
+  if ($args{xlog} ne "") {
    my $xlog = $args{xlog};
    $xlog =~ s/\'//g;
    $xlog =~ s/\'//g;
    $command .= " -xlog $xlog";
   }
-  if ($args{ylog}) {
+  if ($args{ylog} ne "") {
    my $ylog = $args{ylog};
    $ylog =~ s/\'//g;
    $ylog =~ s/\'//g;
    $command .= " -ylog $ylog";
   }
-  if ($args{xcol}) {
+  if ($args{xcol} ne "") {
    my $xcol = $args{xcol};
    $xcol =~ s/\'//g;
    $xcol =~ s/\'//g;
