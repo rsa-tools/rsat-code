@@ -41,16 +41,16 @@ if ($accepted_input_seq{$input_format}) {
 }
 
 ##### output format #####
-$output_format = lc($query->param('output_format'));
-if ($accepted_output_seq{$output_format}) {
-    $parameters .= " -to $output_format ";
+$out_format = lc($query->param('output_format'));
+if ($accepted_output_seq{$out_format}) {
+    $parameters .= " -to $out_format ";
 } else {
-    &cgiError("Invalid format for output sequence: $output_format.");
+    &cgiError("Invalid format for output sequence: $out_format.");
 }
 
 ### sequence file
-#($sequence_file,$sequence_format) = &GetSequenceFile();
-#$parameters .= " -i $sequence_file -format $sequence_format";
+#($sequence_file,$out_format) = &GetSequenceFile();
+#$parameters .= " -i $sequence_file -format $out_format";
 
 ##### input sequence file #####
 unless ($query->param('sequence') =~ /\S/) {
@@ -72,27 +72,76 @@ if ($query->param('line_width') =~ /\d+/) {
     $parameters .= " -lw ".$query->param('line_width');
 }
 
-### execute the command ###
-if ($query->param('output') eq "display") {
-    ### Print the result on Web page
-    open RESULT, "$command $parameters  & |";
-    
-    print "<PRE>$command $parameters</PRE> " if ($ENV{rsat_echo} >= 1);
-    
+
+#### execute the command #####
+if (($query->param('output') =~ /display/i) ||
+    ($query->param('output') =~ /server/i)) {
+
+#    $ENV{RSA_OUTPUT_CONTEXT} = "text";
+    open RESULT, "$command $parameters |";
+
+    ### print the result ### 
+    &PipingWarning();
+    if ($query->param('output') =~ /server/i) {
+	&Info("The result will appear below ...");
+    }
+
+    print '<H4>Result</H4>';
+    ### open the sequence file on the server
+    $sequence_file = "$TMP/$tmp_file_name.res";
+    if (open MIRROR, ">$sequence_file") {
+	$mirror = 1;
+	&DelayedRemoval($sequence_file);
+    }
+
     print "<PRE>";
     while (<RESULT>) {
-	print "$_";
+	print "$_" unless ($query->param('output') =~ /server/i);
+	print MIRROR $_ if ($mirror);
     }
     print "</PRE>";
     close RESULT;
+    close MIRROR if ($mirror);
+
+    if ($query->param('output') =~ /server/i) {
+	$result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
+	print ("The result is available at the following URL: ", "\n<br>",
+	       "<a href=${result_URL}>${result_URL}</a>",
+	       "<p>\n");
+    }
+
+    ### prepare data for piping
+    &PipingFormForSequence();
     
     print "<HR SIZE = 3>";
-} elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'));
+
+#} elsif 
+#    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
-    &EmailTheResult( "$command $parameters", , $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
-print $query->end_html;
+
+# ### execute the command ###
+# if ($query->param('output') eq "display") {
+#     ### Print the result on Web page
+#     open RESULT, "$command $parameters  & |";
+    
+#     print "<PRE>$command $parameters</PRE> " if ($ENV{rsat_echo} >= 1);
+    
+#     &PipingWarning();
+#     print "<PRE>";
+#     while (<RESULT>) {
+# 	print "$_";
+#     }
+#     print "</PRE>";
+#     close RESULT;
+#     print "<HR SIZE = 3>";
+# } elsif ($query->param('output') =~ /server/i) {
+#     &ServerOutput("$command $parameters", $query->param('user_email'));
+# } else {
+#     &EmailTheResult( "$command $parameters", , $query->param('user_email'));
+# }
+# print $query->end_html;
 
 exit(0);
 
