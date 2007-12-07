@@ -174,17 +174,17 @@ exit(0);
 sub PipingForm {
   print <<End_of_form;
 <TABLE class = 'nextstep'>
-<tr><td colspan = 6><h3>Next step</h3></td></tr>
+<tr><td colspan = 5><h3>Next step</h3></td></tr>
 
 
 <TR VALIGN="top" ALIGN="center">
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD VALIGN=TOP ALIGN=CENTER>
 	<B>String-based Pattern Discovery</B><BR>
 	(unknown patterns)
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD VALIGN=TOP ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="oligo-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -195,7 +195,7 @@ sub PipingForm {
 	Over- or under-represented words
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD VALIGN=TOP ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="dyad-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -206,7 +206,7 @@ sub PipingForm {
 	Overrepresented spaced pairs
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD VALIGN=TOP ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="position-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -217,7 +217,7 @@ sub PipingForm {
 	Positionally biased words
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD VALIGN=TOP ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="ORM_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -233,12 +233,12 @@ sub PipingForm {
 
 <TR VALIGN="top" ALIGN="center">
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD VALIGN=TOP ALIGN=CENTER>
 	<B>String-based Pattern Discovery</B><BR>
 	(unknown patterns)
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD VALIGN=TOP ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="consensus_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -248,7 +248,7 @@ sub PipingForm {
 	Greedy algorithm
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD VALIGN=TOP ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="gibbs_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -262,13 +262,13 @@ sub PipingForm {
 
 <TR VALIGN="top" ALIGN="center">
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD VALIGN=TOP ALIGN=CENTER>
 	<B>Pattern matching</B><BR>
 	(known patterns)
     </TD>
 
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD VALIGN=TOP ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -278,7 +278,7 @@ sub PipingForm {
 	Regular expressions and IUPAC search.
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER valign=top>
+    <TD VALIGN=TOP ALIGN=CENTER valign=top>
         <FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -289,7 +289,7 @@ sub PipingForm {
 	Position-specific scoring matrices
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD VALIGN=TOP ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="patser_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
@@ -300,11 +300,11 @@ sub PipingForm {
     </TD>
 
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD VALIGN=TOP ALIGN=CENTER>
     &nbsp;
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD VALIGN=TOP ALIGN=CENTER>
     &nbsp;
     </TD>
 
@@ -313,11 +313,11 @@ sub PipingForm {
 
 <TR VALIGN="top" ALIGN="center">
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD VALIGN=TOP ALIGN=CENTER>
 	<B>Utilities</B>
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD VALIGN=TOP ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="purge-sequence_form.cgi">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
@@ -326,11 +326,11 @@ sub PipingForm {
 	Mask redundant fragments. 
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD VALIGN=TOP ALIGN=CENTER>
     &nbsp;
     </TD>
 
-    <TD VALIGN=BOTTOM ALIGN=CENTER>
+    <TD VALIGN=TOP ALIGN=CENTER>
     &nbsp;
     </TD>
 </TR>
