@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.27 2006/05/16 08:51:44 rsat Exp $
+# $Id: purge-sequence,v 1.28 2007/12/07 08:36:47 jvanheld Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -13,7 +13,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 
 
-my $skdir = "$RSA/bin";
+my $skdir = "$ENV{RSAT}/bin";
 my $delete_repeats=0;
 
 #### initialise parameters ####

@@ -138,7 +138,7 @@ while (&NextSequence) {
 close $in;
 
 #### expected frequencies ####
-$freq_file = "$RSA/data/yeast/oligo-frequencies//$oligo_length.freq";
+$freq_file = "$ENV{RSAT}/data/yeast/oligo-frequencies//$oligo_length.freq";
 
 unless (open EXPECTED, $freq_file) {
   print "	cannot open frequency file\n";

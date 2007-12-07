@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.31 2007/06/19 10:29:36 rsat Exp $
+# $Id: get-ensembl-genome.pl,v 1.32 2007/12/07 08:35:44 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -21,7 +21,7 @@ require RSAT::util;
 
 ## parsing libraries
 require "RSA.lib";
-push @INC, $RSA."/perl-scripts/parsers/" if ($RSA);
+push @INC, $ENV{RSAT}."/perl-scripts/parsers/" if ($ENV{RSAT});
 require "lib/load_classes.pl";
 require "lib/parsing_util.pl";
 

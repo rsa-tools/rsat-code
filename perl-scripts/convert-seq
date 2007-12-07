@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.26 2007/08/07 22:20:39 jvanheld Exp $
+# $Id: convert-seq,v 1.27 2007/12/07 08:35:44 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -79,10 +79,10 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
 
     $seq_nb++;
 
-    ## Remove empty sequences 
-    if (($noempty) && ($current_seq !~ /\S/)) {
-	next;
-    }
+#    ## Remove empty sequences 
+#    if (($noempty) && ($current_seq !~ /\S/)) {
+#	next;
+#    }
 
     ## Skip short sequences
     if ($skip_short) {
@@ -271,6 +271,9 @@ OPTIONS
 		genomes, where short intergenic sequences generally correspond
 		to intra-operon segments.
 
+	-noempty
+		Remove empty sequences from the set (same as -skip_short 1)
+
 	-skip_long max_seq_len
 		Skip sequences longer than the specified length. These
 		sequences are not returned at all in the output. 
@@ -344,6 +347,7 @@ consvert-seq options
 -mask_short min_seq_len	Mask sequences shorter than the specified length
 -skip_short min_seq_len	Skip sequences shorter than the specified length
 -skip_long max_seq_len	Skip sequences longer than the specified length
+-noempty		Remove empty sequences from the set (same as -skip_short 1)
 -o			outputfile
 -from			input format (see below for accepted formats)
 -to			output format (see below for accepted formats)
@@ -356,7 +360,6 @@ consvert-seq options
 -id			sequence identifier
 -prefix			sequence prefix
 -nocheckid		Prevent to check sequence IDs for conversion to the format filelist.
--noempty		Remove empty sequences from the set. 
 SUPPORTED FORMATS
     INPUT $accepted_input_string
 	
@@ -414,6 +417,12 @@ sub ReadArguments {
 					  "Must be a strictly positive natural number"))
 		unless &IsNatural($skip_short) && ($skip_short > 0);
 	    
+	    ## Remove empty sequences from the set
+	} elsif ($ARGV[$a] eq "-noempty") {
+#	    $noempty = 1;
+	    $skip_short = 1;
+	    
+
 	    ## skip long sequences
 	} elsif ($ARGV[$a] eq "-skip_long") {
 	    $skip_long = $ARGV[$a+1];
@@ -490,10 +499,6 @@ sub ReadArguments {
 
 	} elsif ($ARGV[$a] eq "-dotmask") {
 	    $dotmask = 1;
-	    
-	    ## Remove empty sequences from the set
-	} elsif ($ARGV[$a] eq "-noempty") {
-	    $noempty = 1;
 	    
 	    ## Prevent to check sequence IDs for conversion to file list
 	} elsif ($ARGV[$a] eq "-nocheckid") {

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.70 2007/07/19 12:14:07 jvanheld Exp $
+# $Id: install-organism,v 1.71 2007/12/07 08:35:44 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -19,7 +19,7 @@ require RSAT::util;
 $verbose = 0;
 $batch = 0;
 $die_on_error = 1;
-$img_format = $IMG_FORMAT || "png";
+$img_format = $ENV{rsat_img_format} || "png";
 $noov="";
 $strands="-1str";
 $purged_frequencies = 0; #### temporarily inactivated because for human genome it suppresses almost all sequences !!!!
@@ -126,7 +126,7 @@ if ($dir{install}) {
     $dir{install} = $supported_organism{$organism_short_name}->{'data'};
     &RSAT::message::Info("Installing genome in directory previously specified in the config file", $dir{install}) if ($main::verbose >= 1);
 } else {
-    $dir{install} = $RSA."/data/genomes/".$organism_short_name;
+    $dir{install} = $ENV{RSAT}."/data/genomes/".$organism_short_name;
     &RSAT::message::Info("Installing genome in default directory", $dir{install}) if ($main::verbose >= 1);
 }
 
@@ -240,7 +240,7 @@ sub UpdateConfig {
     if ($local_config) {
 	$config_to_update = $ENV{'RSA_LOCAL_CONFIG'} ;
     } else {
-	$config_to_update = "$RSA/data/supported_organisms.pl";
+	$config_to_update = "$ENV{RSAT}/data/supported_organisms.pl";
     }
 
     if (defined($supported_organism{$organism_short_name}->{'genome'})) {
@@ -341,7 +341,7 @@ sub UpdateConfig {
     &RSAT::message::Info(join("\t", "Upstream region limits from", $up_from, "to", $up_to));
 
     #### replace absolute paths by relative paths
-    $new_org_config =~ s|$RSA/|\$RSA/|g;
+    $new_org_config =~ s|$ENV{RSAT}/|\$RSAT/|g;
     
     print CONFIG $new_org_config;
     print CONFIG "\nreturn 1;\n";
@@ -384,7 +384,7 @@ sub CreatePhylogeny {
 	$taxonomy =~ s|\)|_|g; ## this character cannot be used for a directory name
 	$taxonomy =~ s|\,|.|g; ## Not fatal, but usually not found in folder names.
 	$taxonomy =~ s|\:|.|g; ## Not fatal, but usually not found in folder names.
-	my $dir = $RSA."/data/phylogeny/".$taxonomy;
+	my $dir = $ENV{RSAT}."/data/phylogeny/".$taxonomy;
 	warn "; Taxonomy directory\t", $dir, "\n" if ($main::verbose >= 1);
 	&RSAT::util::CheckOutDir($dir);
 	&doit("cd $dir; ln -s $dir{install} .",0,0,$verbose);
@@ -749,9 +749,10 @@ OPTIONS
 		the main RSA config file is changed (provided the user
 		has write access to the RSA config file).
 
-		In addition to the organisms installed by the RSA
-		system administrator (found in $RSA/RSA.config), users
-		can install some organisms locally. 
+		In addition to the organisms installed by the RSAT
+		system administrator (found in
+		$ENV{RSAT}/RSA.config), users can install some
+		organisms locally.
 
 		For this, the user must first define an environment
 		variable called RSA_LOCAL_CONFIG, and indicating the
@@ -1371,7 +1372,7 @@ sub ParseGenome {
     } else {
 	&RSAT::error::FatalError("Cannot find a directory $organism_short_name in genbank dir $dir{genbank}" );
     }
-    my $command = "$RSA/perl-scripts/parse-genbank.pl -v 1 -i $dir{source}";
+    my $command = "$ENV{RSAT}/perl-scripts/parse-genbank.pl -v 1 -i $dir{source}";
     $command .= " -o ".$dir{genome};
     if ($dir{ensembl}) {
 	$command .= " -ext dat";
