@@ -22,8 +22,8 @@ $col{'gene'} = 0;
     unless ($organism_name);
 
 #### EC file
-$ec_file = $supported_organism{$organism_name}->{'data'}."/genome/Feature_EC_number_${organism_name}.tab";
-#$ec_file = "$RSA/data/${organism_name}/genome/Feature_EC_number_${organism_name}.tab";
+$ec_file = $supported_organism{$organism_name}->{'data'}."/genome/cds_ec_number.tab";
+#$ec_file = "$ENV{RSAT}/data/${organism_name}/genome/cds_EC_number_${organism_name}.tab";
 &RSAT::error::FatalError("EC file does not exist for organism $organism_name\t$ec_file\n")
     unless (-e $ec_file);
 
