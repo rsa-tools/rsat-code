@@ -73,10 +73,10 @@ sub RSA_header {
   print $query->start_html(-title=>"RSA-tools : $title",
 			   -class => "$css_body_class",
 			   -author=>'jvanheld@scmbb.ulb.ac.be',
-			   -style => { 	-src => "$WWW_RSA/main.css",
+			   -style => { 	-src => "$ENV{rsat_www}/main.css",
                              	       	-type => 'text/css',
                              		-media => 'screen' });
-  print "<H3 ALIGN='center'><A HREF='$WWW_RSA/RSAT_home.cgi'>RSA-tools</A> - $title</H3>";
+  print "<H3 ALIGN='center'><A HREF='$ENV{rsat_www}/RSAT_home.cgi'>RSA-tools</A> - $title</H3>";
 }
 
 ## ##############################################################
@@ -123,7 +123,7 @@ sub SequenceChoice {
 	### sequence file is already on the server machine 
 	### (piped from a previous script)
 	$sequence_url = $sequence_file;
-	$sequence_url =~ s|$RSA/public_html|$WWW_RSA|;
+	$sequence_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
 	$sequenceChoiceString .=  "<a href=$sequence_url>";
 	$sequenceChoiceString .=  " transferred from previous query<BR>\n";
 	$sequenceChoiceString .=  "</a>";
@@ -409,7 +409,7 @@ sub close_table_html {
 ################################################################
 ## Print a little java script produce a sortable HTML table
 sub sorttable_script {
-  my $script = $RSA."/perl-scripts/lib/sorttable.js";
+  my $script = $ENV{RSAT}."/perl-scripts/lib/sorttable.js";
   return `cat $script`;
 }
 
@@ -457,7 +457,7 @@ sub PrintHtmlTable {
 
     print $out "<PRE>";
     while (<$FILE>) {
-	s|$RSA/(public_html/)*||g; #### avoid exposing the full path through the web interface
+	s|$ENV{RSAT}/(public_html/)*||g; #### avoid exposing the full path through the web interface
 	if ($mirror) {
 	  print MIRROR $_
 	    unless ((/^;/) && !($mirror_verbose)); 
@@ -576,7 +576,7 @@ sub EmailTheResult {
     unless ($tmp_file_name) {
 	$tmp_file_name = sprintf "result.%s", &AlphaDate.".txt";
     }
-    my $result_URL = "$WWW_RSA/tmp/$tmp_file_name";
+    my $result_URL = "$ENV{rsat_www}/tmp/$tmp_file_name";
     
     #### debugging: report the command
     print "<PRE>$command > $TMP/$tmp_file_name</PRE>" if ($ECHO >= 1);
@@ -595,7 +595,7 @@ sub EmailTheResult {
     #### concatenate the command with the email notification
     my $email_message = "Your result is available at the following URL:\n\t${result_URL}";
     $email_message .= "\nThe result file will remain there for $delay.";
-    $email_command =  "$command | perl -pe 's|$RSA/(public_html/)*||g' > $TMP/$tmp_file_name; ";
+    $email_command =  "$command | perl -pe 's|$ENV{RSAT}/(public_html/)*||g' > $TMP/$tmp_file_name; ";
     $email_command .= "echo \"$email_message\" | $mail_command $email_address &"; 
     print "<PRE>$email_command</PRE>" if ($ECHO >= 1);
     system $email_command;

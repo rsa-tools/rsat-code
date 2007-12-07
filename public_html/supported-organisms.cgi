@@ -30,14 +30,14 @@ $query = new CGI;
 #### update log file ####
 &UpdateLogFile();
 
-&ListParameters() if ($ECHO >= 2);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 $parameters = " -format full";
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ECHO >=1);
+print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 
 ### execute the command ###
-open RESULT, "$command $parameters | awk '{print \$0\"\t<a href=${WWW_RSA}/data/genomes/\"\$1\"/>data</a>\"}' | perl -pe 's|/;/|/|' | ";
+open RESULT, "$command $parameters | awk '{print \$0\"\t<a href=$ENV{rsat_www}/data/genomes/\"\$1\"/>data</a>\"}' | perl -pe 's|/;/|/|' | ";
 
 ### Print result on the web page
 #$result_file = "$TMP/$tmp_file_name.res";

@@ -22,7 +22,7 @@ $tmp_file_name = sprintf "XYgraph.%s", &AlphaDate();
 
 
 ## dfault parameters
-$image_format = $IMG_FORMAT || "png";
+$image_format = $ENV{rsat_img_format} || "png";
 
 ### Read the CGI query
 $query = new CGI;
@@ -30,9 +30,9 @@ $query = new CGI;
 #### update log file ####
 &UpdateLogFile();
 
-#$ECHO=2;
+#$ENV{rsat_echo}=2;
 
-if ($ECHO >= 2) {
+if ($ENV{rsat_echo} >= 2) {
     &RSA_header();
     &ListParameters();
 }
@@ -185,7 +185,7 @@ if ($query->param('htmap')) {
 ### execute the command ###
 @data_report = `$XYgraph_command $parameters`;
 
-if ($ECHO >= 2) {
+if ($ENV{rsat_echo} >= 2) {
     print &RSA_header("XYgraph");
     print "<PRE>$XYgraph_command $parameters</PRE>";
 }
