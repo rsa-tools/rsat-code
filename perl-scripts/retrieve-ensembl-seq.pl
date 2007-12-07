@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.17 2007/12/04 11:35:18 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.18 2007/12/07 17:34:49 rsat Exp $
 #
 # Time-stamp
 #
@@ -266,21 +266,36 @@ package main;
     my $gene_adaptor = $db->get_GeneAdaptor();
     # Input file
     if ($query_file) {
-      open IN, $query_file;
-      while ($line = <IN>) {
-	chomp($line);
-	my $gene_id = $line;
-	my $gene = $gene_adaptor -> fetch_by_stable_id($gene_id);
-	&Main($gene);
-      }
+	open IN, $query_file;
+	while ($line = <IN>) {
+	    my $gene;
+	    $line =~s/\t//;
+	    chomp($line);
+	    if ($line =~ /ENST/) {
+		$gene = $gene_adaptor -> fetch_by_transcript_stable_id($line);
+	    } elsif ($line =~ /ENSP/) {
+		$gene = $gene_adaptor -> fetch_by_translation_stable_id($line);
+	    } else {
+		my $gene_id = $line;
+		$gene = $gene_adaptor -> fetch_by_stable_id($gene_id);
+	    }
+	    &Main($gene);
+	}
     } else {
-      foreach my $gene_id (@queries) {
-	my $gene = $gene_adaptor -> fetch_by_stable_id($gene_id);
-	&Main($gene);
-      }
+	foreach my $id (@queries) {
+	    my $gene;
+	    if ($id =~ /ENST/) {
+		$gene = $gene_adaptor -> fetch_by_transcript_stable_id($id);
+	    } elsif ($id =~ /ENSP/) {
+		$gene = $gene_adaptor -> fetch_by_translation_stable_id($id);
+	    } else {
+		$gene = $gene_adaptor -> fetch_by_stable_id($id);
+	    }
+	    &Main($gene);
+	}
     }
-  }
-
+}
+	       
   ################################################################
   ###### finish verbose
     if ($verbose >= 1) {
