@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-transfac.pl,v 1.9 2005/12/06 15:37:58 rsat Exp $
+# $Id: parse-transfac.pl,v 1.10 2007/12/07 08:35:44 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:52:52 jvanheld>
 #
@@ -13,7 +13,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 require "RSA.seq.lib";
-push @INC, "$RSA/perl-scripts/parsers/";
+push @INC, "$ENV{RSAT}/perl-scripts/parsers/";
 #require "config.pl";
 require "lib/load_classes.pl";
 require "lib/util.pl";

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-program-description,v 1.11 2007/03/04 09:53:46 jvanheld Exp $
+# $Id: get-program-description,v 1.12 2007/12/07 08:35:44 jvanheld Exp $
 #
 # Time-stamp: <2003-06-26 17:17:06 jvanheld>
 #
@@ -42,8 +42,8 @@ if ($all) {
     $exclude{CVS} = 1;
     $exclude{parsers} = 1;
 
-    if (defined($RSA)) {
-	@listing = glob("$RSA/perl-scripts/*");
+    if (defined($ENV{RSAT})) {
+	@listing = glob("$ENV{RSAT}/perl-scripts/*");
 
 	foreach $file (@listing) {
 	    $program = `basename $file`;

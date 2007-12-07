@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.46 2007/01/17 23:33:35 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.47 2007/12/07 08:35:44 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -13,7 +13,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 
 
 require "RSA.lib";
-push @INC, "$RSA/perl-scripts/parsers/";
+push @INC, "$ENV{RSAT}/perl-scripts/parsers/";
 require "lib/load_classes.pl";
 require "lib/util.pl";
 require "lib/parsing_util.pl";
@@ -193,7 +193,7 @@ package main;
 	    $dir{output} = $parsed_data."/refseq/".$ext."/".$delivery_date;
 	    warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
 	} else {
-	    $dir{output} = "$RSA/data/genomes/".$org."/genome";
+	    $dir{output} = "$ENV{RSAT}/data/genomes/".$org."/genome";
 	    warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
 	}
     }
