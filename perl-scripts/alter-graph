@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: alter-graph,v 1.1 2007/12/07 12:31:54 rsat Exp $
+# $Id: alter-graph,v 1.2 2007/12/07 17:46:12 rsat Exp $
 #
 ############################################################
 
@@ -60,7 +60,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -552,7 +552,8 @@ Number of edges to add. This value can either be a percentage value or a discret
 	    unless (&IsNatural($check) && ($check > 0)) {
 		&RSAT::error::FatalError(join("\t", $add_edges, "Invalid value for the number of edges to add. Must be a strictly positive natural number or a integer proportion (%)"));
 	    }
-	    
+=pod	
+    
 =item B<-add_nodes>
 
 Number of edges to add. This value can either be a percentage value or a discrete number.
@@ -565,6 +566,7 @@ Number of edges to add. This value can either be a percentage value or a discret
 	    unless (&IsNatural($check) && ($check > 0)) {
 		&RSAT::error::FatalError(join("\t", $add_nodes, "Invalid value for the number of nodes to add. Must be a strictly positive natural number or a integer proportion (%)"));
 	    }	    
+=pod
 
 =item B<-directed>
 
@@ -586,6 +588,7 @@ Specifies whether more than one edge may link two nodes. (by default, duplicated
 	} elsif ($arg eq "-duplicate") {
 	    $duplicated = 1;
 =pod
+
 =item B<-self>
 
 Allows self loops (by default, self loops are not allowed)
@@ -596,6 +599,7 @@ Allows self loops (by default, self loops are not allowed)
 	    $self_loop = 1;
 
 =pod
+
 =item B<-target>
 
 Nodes that have to be removed in the graph (if existing). This option can be used iteratively or the nodes names 
