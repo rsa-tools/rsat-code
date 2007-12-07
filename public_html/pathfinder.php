@@ -6,6 +6,9 @@
 <body class="results">
 <?php
   require ('functions.php');
+  # log file update thanks to Sylvain
+  UpdateLogFile("neat","","");
+
   title('Results Pathfinder');
   # Error status
   $error = 0;
@@ -187,6 +190,7 @@
     $graphid = $response->graphid;
     # location of result file on server (absolute path)
     $file_location = $result_location . $graphid . $result_suffix;
+
     # content of result file
     $fileContent = storeFile($file_location);
     # Display the results
@@ -221,8 +225,8 @@
     	$tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;
     	echo "The result is available as HTML page at the following URL:<br> ";
     	echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>";
+    	echo "You can sort the rows according to a selected column by clicking on the header entry of that column.<br>";
     }
-
     # in case of tab-format, truncate nodes to make it readable by Sylvain Brohee's tools
     if(strcmp($out_format,'flat') == 0){
     	if(ereg(';ARCS',$fileContent)){
@@ -238,10 +242,10 @@
     $sylvain_input_graph = rtrim($sylvain_input_graph);
 
 	# generate temp file
-	$tempFileName = tempnam($result_location,"Pathfinder_tmpGraph_");
-	$fh = fopen($tempFileName, 'w') or die("Can't open file $tempFileName");
-	fwrite($fh, $sylvain_input_graph);
-	fclose($fh);
+	 $tempFileName = tempnam($result_location,"Pathfinder_tmpGraph_");
+	 $fh = fopen($tempFileName, 'w') or die("Can't open file $tempFileName");
+	 fwrite($fh, $sylvain_input_graph);
+	 fclose($fh);
 
     echo "<br>Your input graph has the id:<br> $graphid</align>";
     echo "<hr>\n";
@@ -262,8 +266,7 @@
           if ($sylvain_input_format == 'tab') {
             echo "
             <input type='hidden' NAME='scol' VALUE='1'>
-            <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>";
+            <input type='hidden' NAME='tcol' VALUE='2'>";
           }
           echo "
           <INPUT type='submit' value='Display the graph'>
@@ -337,9 +340,53 @@
              <input type='hidden' NAME='wcol' VALUE='3'>";
            }
            echo "
-          <INPUT type='submit' value='Nodes degrees computation'>
+          <INPUT type='submit' value='Node degree computation'>
          </form>
        </td>
+     </tr>
+     <tr>
+      <TD>
+        <FORM METHOD='POST' ACTION='convert_graph_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$tempFileName'>
+          <input type='hidden' NAME='graph_format' VALUE='$sylvain_input_format'>";
+          if ($out_format == 'tab') {
+            echo "
+            <input type='hidden' NAME='scol' VALUE='1'>
+            <input type='hidden' NAME='tcol' VALUE='2'>";
+          }
+          echo "
+          <INPUT type='submit' value='Convert $sylvain_input_format to another format'>
+        </form>
+      </td>
+       <TD>
+        <FORM METHOD='POST' ACTION='graph_neighbours_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$tempFileName'>
+          <input type='hidden' NAME='graph_format' VALUE='$sylvain_input_format'>";
+          if ($out_format == 'tab') {
+            echo "
+            <input type='hidden' NAME='scol' VALUE='1'>
+            <input type='hidden' NAME='tcol' VALUE='2'>";
+          }
+          echo "
+          <INPUT type='submit' value='Neighbourhood analysis'>
+        </form>
+      </td>
+       <TD>
+        <FORM METHOD='POST' ACTION='mcl_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$tempFileName'>
+          <input type='hidden' NAME='graph_format' VALUE='$sylvain_input_format'>";
+          if ($out_format == 'tab') {
+            echo "
+            <input type='hidden' NAME='scol' VALUE='1'>
+            <input type='hidden' NAME='tcol' VALUE='2'>";
+          }
+          echo "
+          <INPUT type='submit' value='MCL Graph clustering'>
+        </form>
+      </td>
      </tr>
    </table>";
   }

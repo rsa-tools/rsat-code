@@ -2238,7 +2238,7 @@ sub get_position {
       $arcs_list .= join(" ",$arcs[$i][0], $arcs[$i][1], "\n");
     }
     print TMP $arcs_list;
-    my $command = "cat $tempfile | $fr_layout $layout_size $layout_size";
+    my $command = "cat $tempfile | $fr_layout --iterations 1000 $layout_size $layout_size";
     &RSAT::message::TimeWarn("Calculating the layout with $fr_layout") if ($main::verbose >= 2);
     my $coordinates = `$command`;
     my @lignes = split /\n/, $coordinates;

@@ -65,7 +65,7 @@
   echo("<br>");
   if (!$pipe) {
     if ($demo) {
-      demo("This demonstration graph consist in the top scoring edge of the yeast co-expression network included in the integrative database <a href = 'http://string.embl.de/' target = 'top'>String</a> (<a href ='http://www.ncbi.nlm.nih.gov/sites/entrez?cmd=Retrieve&db=PubMed&list_uids=17098935&dopt=AbstractPlus'  target = 'top'>Von Mering et al, 2007)</a>");
+      demo("This demonstration graph consist in the top scoring edges of the yeast co-expression network included in the integrative database <a href = 'http://string.embl.de/' target = 'top'>String</a> (<a href ='http://www.ncbi.nlm.nih.gov/sites/entrez?cmd=Retrieve&db=PubMed&list_uids=17098935&dopt=AbstractPlus'  target = 'top'>Von Mering et al, 2007)</a>. It contains 537 nodes and 4801 edges");
     }
     echo ("<b>Graph</b><br>");
     echo ("<textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>
