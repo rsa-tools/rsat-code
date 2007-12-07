@@ -1,19 +1,19 @@
 <?php
-  // Grat TITLE
+  // NeAT TITLE
   Function title($title) {
     echo "<H3><a href='NeAT_home.html'>NeA-tools</a> - $title</H3>\n";
   } 
 ?>
 
 <?php
-  // Grat ERROR
+  // NeAT ERROR
   Function error($error) {
     echo "<H4>Error : </H4><blockquote class='error'>$error</blockquote></h4><br>";
   } 
 ?>
 
 <?php
-  // Grat WARNING
+  // NeAT WARNING
   Function warning($warning) {
     echo "<H4>Warning : </H4><blockquote class ='warning'>$warning</blockquote><br>";
   } 
@@ -21,14 +21,14 @@
 
 
 <?php
-  // Grat WARNING
+  // NeAT WARNING
   Function demo($demo) {
     echo "<H4>Comment on the demonstration example : </H4><blockquote class ='demo'>$demo</blockquote><br>";
   } 
 ?>
 
 <?php
-  // Grat INFO
+  // NeAT INFO
   Function info($info) {
     echo "<H4>Info : </H4><blockquote class = 'info'>$info </blockquote><br>";
   } 
@@ -77,6 +77,7 @@ Function trim_text($text) {
    return $trimmed_text;
 }
 ?>
+
 <?php
 /**
  * Read a property file $props and return a hash
