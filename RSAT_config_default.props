@@ -35,7 +35,7 @@ RSAT=/home/rsat/rsa-tools
 
 ################################################################
 ## Parameters for Network Analysis Tools (NeAT)
-neat_supported=0
+neat_supported=1
 
 ## URL for the NeAT web services.  NeAT requires to install some
 ## specific programs for path finding and graph layout.  Before
