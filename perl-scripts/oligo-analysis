@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.129 2007/11/21 00:02:04 jvanheld Exp $
+# $Id: oligo-analysis,v 1.130 2007/12/07 09:16:23 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -22,7 +22,7 @@ require "RSA.disco.lib";
 ################################################################
 ###### initialize parameters ##########
 $start_time = &AlphaDate();
-$program_version = do { my @r = (q$Revision: 1.129 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+$program_version = do { my @r = (q$Revision: 1.130 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 #### background models
 %supported_bg = ('upstream'=>1,
@@ -2844,7 +2844,7 @@ PROBABILITIES
 
 EXAMPLE
 	oligo-analysis \
-		 -i $RSA/data/Saccharomyces_cerevisiae/genome/Contigs_Saccharomyces_cerevisiae.tab \ 
+		 -i $ENV{RSAT}/data/Saccharomyces_cerevisiae/genome/Contigs_Saccharomyces_cerevisiae.tab \ 
 		 -format filelist -l 6 -occ \
                  -freq -o hexanucleotides.occ_and_freq -v
 	
