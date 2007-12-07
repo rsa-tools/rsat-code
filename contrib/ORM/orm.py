@@ -1,4 +1,3 @@
-#!/Library/Frameworks/Python.framework/Versions/Current/bin/python2.4
 #!/usr/bin/env python
 import os, sys, glob
 
@@ -118,9 +117,11 @@ cli.VERBOSITY = options.verbosity
 def run(args, options):
     timer = Core.Sys.timer.Timer()
     spacing = ( int(options.spacing.split(':')[0]), int(options.spacing.split(':')[1]) )
-    bg = op.oload(options.background)
-
-
+    try:
+        bg = op.oload(options.background)
+    except IOError:
+        print 'Can not load bg model (try to run ormbg.py first)'
+        sys.exit()
     if options.location:
         location = ( int(options.location.split(':')[0]), int(options.location.split(':')[1]) ) 
     else:
@@ -227,8 +228,8 @@ if __name__ == '__main__':
         #import Core.Devel.devel as devel
         #devel.prof('run(args, options)')
     except:
-        import traceback
-        traceback.print_exc(file=sys.stdout)
+        #import traceback
+        #traceback.print_exc(file=sys.stdout)
         cli.error('Error while running orm')
         if DEBUG:
             raise

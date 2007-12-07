@@ -1,4 +1,3 @@
-#!/Library/Frameworks/Python.framework/Versions/Current/bin/python2.4
 #!/usr/bin/env python
 import os, sys, glob
 
@@ -90,8 +89,8 @@ if __name__ == '__main__':
     try:
         run(args, options)
     except:
-        import traceback
-        traceback.print_exc(file=sys.stdout)
+        #import traceback
+        #traceback.print_exc(file=sys.stdout)
         cli.error('Error while running ormbg')
         if DEBUG:
             raise
