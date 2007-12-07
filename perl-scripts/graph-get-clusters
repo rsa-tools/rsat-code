@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.17 2007/11/23 09:59:24 rsat Exp $
+# $Id: graph-get-clusters,v 1.18 2007/12/07 12:31:54 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -212,7 +212,9 @@ package main;
     if ($distinct && $return_type ne 'clusters') {
       &RSAT::error::FatalError("\t","Option -distinct cannot be used with -return ",$return_type);
     }
-
+    if (!$main::infile{clusters}) {
+      &RSAT::error::FatalError("\t","You must submit a cluster file with option -clusters");
+    }
     ################################################################
     ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
