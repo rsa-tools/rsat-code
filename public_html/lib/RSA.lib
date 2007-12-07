@@ -17,12 +17,6 @@ package main;
 
 umask 0022;
 
-## CVS: created separate objects for handling different methods
-## RSAT::organism (check_name, is_supported)
-## RSAT::error (FatalError, cgiError)
-## RSAT::util (IsNatureal, IsReal, IsInteger, trim, round)
-## ReadFeatures became RSAT::organism::LoadFeatures
-
 ############################################################################
 ############################################################################
 ############################################################################
@@ -42,7 +36,30 @@ umask 0022;
 ############################################################################
 
 
-#### read config files #####
+# ################################################################
+# ## Read props file
+use Util::Properties;
+if ($0 =~ /([^(\/)]+)$/) {
+  $property_file = $`."../RSAT_config.props";
+  unless (-e $property_file) {
+    $property_file = $`."../RSAT_config_default.props";
+  }
+  if (-e $property_file) {
+    my $prop =  Util::Properties->new();
+    $prop->file_name($property_file);
+    $prop->load();
+    my %args = $prop->prop_list();
+    foreach my $key (sort keys %args) {
+      my $value = $args{$key};
+      $ENV{$key} = $value;
+    $$key = $value;
+      #    &RSAT::message::Info("Site config", sprintf("%-15s\t%s\t%s", $key, $ENV{$key})) if ($main::verbose >= 0);
+    }
+  }
+}
+
+################################################################
+#### Read Perl config files
 if ($0 =~ /([^(\/)]+)$/) {
     $config_file = "$`../RSA.config";
     require $config_file;
@@ -65,11 +82,11 @@ if ($0 =~ /([^(\/)]+)$/) {
     &RSAT::error::FatalError("Error: problem when opening config file. Please contact jvanheld\@scmbb.ulb.ac.be");
 }
 
-$BIN = "$RSA/bin";
-$LIB = "$RSA/lib";
-$TMP = "$RSA/public_html/tmp";
-$LOGS = "$RSA/logs";
-$SCRIPTS = "$RSA/perl-scripts";
+$BIN = "$ENV{RSAT}/bin";
+$LIB = "$ENV{RSAT}/lib";
+$TMP = "$ENV{RSAT}/public_html/tmp";
+$LOGS = "$ENV{RSAT}/logs";
+$SCRIPTS = "$ENV{RSAT}/perl-scripts";
 
 my $login = getlogin();
 
@@ -91,13 +108,13 @@ if ($REMOTE_SERVER) {
 }
 
 
-$HTML = "$RSA/public_html"; 
-$WWW_TMP = "$WWW_RSA/tmp";
+$HTML = "$ENV{RSAT}/public_html"; 
+$WWW_TMP = "$ENV{rsat_www}/tmp";
 #$ENV{SERVER_ADMIN} = "jvanheld\@scmbb.ulb.ac.be";
 
 $counter_file = "$LOGS/count-file";
 ($sec, $min, $hour,$day,$month,$year) = localtime(time);
-$log_file = sprintf "$LOGS/log-file_${config_site}_%04d_%02d", $year+1900,$month+1;
+$log_file = join("", $LOGS, "/log-file_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1));
 
 $date = &AlphaDate();
 
@@ -682,7 +699,7 @@ sub UpdateLogFile {
     $date =~ s/\n//;
     print LOG join ("\t", 
 		    $date,
-		    $config_site, 
+		    $ENV{rsat_site}, 
 		    "$ENV{'REMOTE_USER'}\@$ENV{'REMOTE_ADDR'} ($ENV{'REMOTE_HOST'})",
 		    $script_name,
 		    $query->param('user_email'),
