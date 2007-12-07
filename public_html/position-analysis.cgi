@@ -19,7 +19,7 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 #### TEMPORARY
-#$ECHO=2;
+#$ENV{rsat_echo}=2;
 
 $position_analysis_command = "$SCRIPTS/position-analysis";
 $convert_seq_command = "$SCRIPTS/convert-seq";
@@ -31,7 +31,7 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("position-analysis result", "results");
-&ListParameters() if ($ECHO >=2);
+&ListParameters() if ($ENV{rsat_echo} >=2);
 
 #### update log file ####
 &UpdateLogFile;
@@ -139,7 +139,7 @@ $origin = $query->param('origin') ;
 $parameters .= " -origin $origin";
 
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ECHO >=1);
+print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 
 if ($query->param('output') =~ /display/i) {
 
@@ -168,7 +168,7 @@ if ($query->param('output') =~ /display/i) {
 	    open CLUSTERS, "$pattern_assembly_command -i $result_file |";
 	    print "<PRE>\n";
 	    while (<CLUSTERS>) {
-		s|$RSA/||g;
+		s|$ENV{RSAT}/||g;
 		print;
 	    }
 	    print "</PRE>\n";

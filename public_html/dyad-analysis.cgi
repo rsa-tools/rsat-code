@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.26 2007/10/26 11:45:23 rsat Exp $
+# $Id: dyad-analysis.cgi,v 1.27 2007/12/07 08:15:00 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -36,7 +36,7 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("dyad-analysis result", "results");
-&ListParameters if ($ECHO >=2);
+&ListParameters if ($ENV{rsat_echo} >=2);
 
 #### update log file ####
 &UpdateLogFile;
@@ -144,7 +144,7 @@ if ($query->param('freq_estimate') eq 'background') {
 
 $command .= $parameters;
 
-print "<PRE><B>Command:</B> $command </PRE>" if ($ECHO);
+print "<PRE><B>Command:</B> $command </PRE>" if ($ENV{rsat_echo});
 
 &SaveCommand($command, "$TMP/$tmp_file_name");
 
@@ -172,13 +172,13 @@ if ($query->param('output') eq "display") {
 # 	    $pattern_assembly_command .= " -2str";
 # 	}
 # 	$pattern_assembly_command .= " -maxfl 1 -subst 0 ";
-# 	print "<PRE>pattern-assembly command: $pattern_assembly_command<P>\n</PRE>" if ($ECHO >=1);
+# 	print "<PRE>pattern-assembly command: $pattern_assembly_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 	
 # 	print "<H4>Pattern assembly</H4>\n";
 # 	open CLUSTERS, "$pattern_assembly_command -i $result_file |";
 # 	print "<PRE>\n";
 # 	while (<CLUSTERS>) {
-# 	    s|$RSA/||g;
+# 	    s|$ENV{RSAT}/||g;
 # 	    print;
 # 	}
 # 	print "</PRE>\n";
@@ -197,12 +197,12 @@ if ($query->param('output') eq "display") {
 	$pattern_assembly_command .= "  -o $assembly_file";
 
 	print "<H2>Pattern assembly</H2>\n";
-	print "<PRE>pattern-assembly command: $pattern_assembly_command<P>\n</PRE>" if ($ECHO >=1);
+	print "<PRE>pattern-assembly command: $pattern_assembly_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 	system "$pattern_assembly_command";
 	open ASSEMBLY, $assembly_file;
 	print "<PRE>\n";
 	while (<ASSEMBLY>) {
-	  s|$RSA/||g;
+	  s|$ENV{RSAT}/||g;
 	  print;
 	}
 	print "</PRE>\n";
@@ -216,13 +216,13 @@ if ($query->param('output') eq "display") {
 # 	$profile_command .= " -return profile,counts,parameters";
 # 	$profile_command .= " -i $assembly_file";
 # 	$profile_command .= " -o $profile_file";
-# 	print "<PRE>command to generate profiles: $profile_command<P>\n</PRE>" if ($ECHO >=1);
+# 	print "<PRE>command to generate profiles: $profile_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 # 	system "$profile_command";
 # 	print "<H2>Position-specific scoring matrices (PSSM)</H2>\n";
 # 	open PROFILE, $profile_file;
 # 	print "<PRE>\n";
 # 	while (<PROFILE>) {
-# 	  s|$RSA/||g;
+# 	  s|$ENV{RSAT}/||g;
 # 	  print;
 # 	}
 # 	print "</PRE>\n";
@@ -235,7 +235,7 @@ if ($query->param('output') eq "display") {
 # 	$pssm_command .= " -return counts";
 # 	$pssm_command .= " -i $assembly_file";
 # 	$pssm_command .= " -o $pssm_file";
-# 	print "<PRE>command to generate matrices: $pssm_command<P>\n</PRE>" if ($ECHO >=1);
+# 	print "<PRE>command to generate matrices: $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 # 	system "$pssm_command";
 
 	## Convert pattern-assembly result into PSSM 
@@ -249,14 +249,14 @@ if ($query->param('output') eq "display") {
 	$pssm_command .= " -uth Pval 0.00025";
 	$pssm_command .= " -bginput -markov 0";
 	$pssm_command .= " -o ".$pssm_prefix;
-	print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ECHO >=1);
+	print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 	system "$pssm_command";
 
 	print "<H2>Significance matrices</H2>\n";
 	open SIG, $sig_matrix_file;
 	print "<PRE>\n";
 	while (<SIG>) {
-	  s|$RSA/||g;
+	  s|$ENV{RSAT}/||g;
 	  print;
 	}
 	print "</PRE>\n";
@@ -266,7 +266,7 @@ if ($query->param('output') eq "display") {
 	open PSSM, $pssm_file;
 	print "<PRE>\n";
 	while (<PSSM>) {
-	  s|$RSA/||g;
+	  s|$ENV{RSAT}/||g;
 	  print;
 	}
 	print "</PRE>\n";

@@ -30,7 +30,7 @@ $query = new CGI;
 #### update log file ####
 &UpdateLogFile();
 
-&ListParameters() if ($ECHO >= 2);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #### read parameters ####
 my $parameters;
@@ -92,7 +92,7 @@ if ($output_format eq 'tab') {
 } else {
   $parameters .= " -return counts";
 }
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ECHO >= 1);
+print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
 ### execute the command ###
 if ($query->param('output') eq "display") {

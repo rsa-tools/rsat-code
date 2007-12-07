@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs.cgi,v 1.18 2007/10/26 11:45:23 rsat Exp $
+# $Id: gibbs.cgi,v 1.19 2007/12/07 08:15:45 jvanheld Exp $
 #
 # Time-stamp: <2003-05-13 11:30:48 jvanheld>
 #
@@ -89,7 +89,7 @@ if ($query->param('output') eq "display") {
 
     $convert_matrix_command .= " -i ".$result_file." -o ".$matrix_file;
     system "$convert_matrix_command";
-    if ($ECHO >= 1) {
+    if ($ENV{rsat_echo} >= 1) {
 	print "<PRE><B>Command:</B> $command $parameters </PRE>";
 	print "<PRE><B>Conversion:</B> $convert_matrix_command </PRE>";
     }

@@ -28,7 +28,7 @@ $query = new CGI;
 
 ### Print the header
 &RSA_header("pattern-assembly result", "results");
-&ListParameters if ($ECHO >=2);
+&ListParameters if ($ENV{rsat_echo} >=2);
 
 #### read parameters ####
 $parameters .= " -v 1";
@@ -107,7 +107,7 @@ if ($query->param('strand') =~ /insensitive/) {
 
 ################################################################
 #### run the command
-print "<PRE>command: $pattern_assembly_command $parameters<P>\n</PRE>" if ($ECHO >=1);
+print "<PRE>command: $pattern_assembly_command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 if ($query->param('output') eq "display") {
 
     open RESULT, "$pattern_assembly_command $parameters |";

@@ -26,7 +26,7 @@ $query = new CGI;
 ### print the header of the result page
 &RSA_header("dna-pattern result ".$query->param("title"), "results");
 
-&ListParameters if ($ECHO >= 2);
+&ListParameters if ($ENV{rsat_echo} >= 2);
 
 
 #### update log file ####
@@ -148,7 +148,7 @@ if ($query->param("output") =~ /display/i) {
     
     $result_file = "$TMP/$tmp_file_name.res";
     open RESULT, "$command $parameters |";
-    print "<PRE>$command $parameters </b>" if ($ECHO);
+    print "<PRE>$command $parameters </b>" if ($ENV{rsat_echo});
   
     ### Print the result on Web page
     print "<H4>Result</H4>";

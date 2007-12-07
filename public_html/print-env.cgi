@@ -25,7 +25,7 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("print-env result");
-&ListParameters if ($ECHO >=2);
+&ListParameters if ($ENV{rsat_echo} >=2);
 
 
 ##### update log file ####

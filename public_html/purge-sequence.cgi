@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence.cgi,v 1.7 2007/10/26 11:45:23 rsat Exp $
+# $Id: purge-sequence.cgi,v 1.8 2007/12/07 08:15:45 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 00:38:45 jvanheld>
 #
@@ -34,7 +34,7 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("purge-sequence result", "results");
-&ListParameters() if ($ECHO >= 2);
+&ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #### update log file ####
 &UpdateLogFile;
@@ -77,7 +77,7 @@ if (&IsNatural($query->param('mismatches'))) {
 
 #$parameters .= " -o $TMP/bounpurged";
 
-print "<PRE><B>Command:</B> $command $parameters </PRE>" if ($ECHO >= 1);
+print "<PRE><B>Command:</B> $command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
@@ -111,7 +111,7 @@ if (($query->param('output') =~ /display/i) ||
     close MIRROR if ($mirror);
     
     if ($query->param('output') =~ /server/i) {
-	$result_URL = "${WWW_RSA}/tmp/${tmp_file_name}.res";
+	$result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
 	print ("Result is available in the file ",
 	       "<a href=${result_URL}>${result_URL}</a>",
 	       "\n");
