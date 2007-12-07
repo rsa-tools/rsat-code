@@ -25,9 +25,11 @@
   $scol = $_REQUEST['scol'];
   $tcol = $_REQUEST['tcol'];
   $wcol = $_REQUEST['wcol'];
+  $cluster_file = $_REQUEST['cluster_file'];
   title('graph-get-clusters');
   echo ("<center>Compares a graph with a classification/clustering file.</center>\n");
   echo ("<form method='post' action='graph_get_clusters.php' enctype='multipart/form-data'>
+  Graph<br>
   &nbsp;&nbsp;&nbsp;<a href = 'help.graph_get_clusters.html#formats'><B>Input format</B></a>&nbsp;");
   if (!$pipe) {
     echo ("  
@@ -60,18 +62,31 @@
   } else {
     info("Graph uploaded from the previous treatment");
     echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$graph_file'>";
+    echo "<input type='hidden' NAME='s_col' VALUE='$scol'>";
+    echo "<input type='hidden' NAME='t_col' VALUE='$tcol'>";
+    echo "<input type='hidden' NAME='w_col' VALUE='$wcol'>";
   }
       
   echo("<br>
-  </select><br><br><b>Clusters</b><br>
-  <textarea name='clusters' rows='6' cols='65'>$demo_clusters</textarea>
-  <br>Upload clusters from file : <br>
-  <input type='file' name='clusters_file' size='45' /><br>
-  <B><a href = 'help.graph_get_clusters.html#formats'>Output format (only useful for intra-cluster edges output)</a></B>&nbsp;<select name='out_format'>
-  <option selected value = 'tab'> tab-delimited format
-  <option value = 'gml'> GML format
-  <option value = 'adj_matrix'> Adjacency matrix
-  </select><br><br>");
+  </select><br><br><b>Clusters</b><br>");
+  if ($cluster_file == "") {
+    echo("
+    <textarea name='clusters' rows='6' cols='65'>$demo_clusters</textarea>
+    <br>Upload clusters from file : <br>
+    <input type='file' name='clusters_file' size='45' /><br>");
+  } else {
+    echo("
+    <input type='hidden' name='pipe_clusters_file' value = '$cluster_file' /><br>");
+    info("Clusters uploaded from the previous treatment");
+  }
+  echo("
+    <B><a href = 'help.graph_get_clusters.html#formats'>Output format (only useful for intra-cluster edges output)</a></B>&nbsp;<select name='out_format'>
+    <option selected value = 'tab'> tab-delimited format
+    <option value = 'gml'> GML format
+    <option value = 'adj_matrix'> Adjacency matrix
+    </select><br><br>");
+ 
+    
   echo("
   <B><a href = 'help.compare_graphs.html#return'>Output</B></a>&nbsp;<select name='return'>
   <option value = 'table'> contingency table

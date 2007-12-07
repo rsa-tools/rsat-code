@@ -46,7 +46,7 @@
   }
   if (!$pipe) {
     if ($demo) {
-      demo("This demonstration graph is the yeast two-hybrid dataset produced by <a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?db=pubmed&uid=10688190&cmd=showdetailview&indexed=google'>Uetz et al (2001)</a>. It consists in 865 interactions between 926 proteins. The nodes for which the degree is seeked were chosen in this network amongst the more and the less connected nodes." );
+      demo("This demonstration graph is the yeast two-hybrid dataset produced by <a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?db=pubmed&uid=10688190&cmd=showdetailview&indexed=google'>Uetz et al (2001)</a>. It consists in 865 interactions between 926 proteins. " );
     }
     echo ("<b>Graph</b><br>");
     echo ("<textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>
@@ -67,7 +67,7 @@
     echo "<input type='hidden' NAME='t_col' VALUE='$tcol'/>\n";
   }
   echo("
-  <br><br><b><a href = 'help.graph_node_degree.html#nodes'>Nodes selection</a></b><br>
+  <br><br><b><a href = 'help.graph_node_degree.html#nodes'>Node selection</a></b><br>
   <br><table>
   <tr><td><input type = 'radio' $all_nodes_selected name='allnodes' value = 'all'/></td><td>All nodes</td>
   <tr><td><input type='radio' $selection_nodes_selected name='allnodes' value='selection' /></td>

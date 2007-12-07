@@ -153,6 +153,20 @@
           <input type='hidden' NAME='class_file' VALUE='$cc_server'>
           <INPUT type='submit' value='Compare these clusters'>
         </form>
+      </td>
+
+      <TD>
+        <FORM METHOD='POST' ACTION='graph_get_clusters_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'\>
+          <input type='hidden' NAME='graph_file' VALUE='$cg_server'\>
+          <input type='hidden' NAME='cluster_file' VALUE='$cc_server'\>
+          <input type='hidden' NAME='graph_format' value = 'tab'\>
+          <input type='hidden' NAME='scol' VALUE='1'\>
+          <input type='hidden' NAME='tcol' VALUE='2'\>
+          <input type='hidden' NAME='wcol' VALUE='3'\>
+          
+          <INPUT type='submit' value='Extract those clusters from the network'\>
+        </form>
       </td> 
    ";  
   }
