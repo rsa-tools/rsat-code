@@ -19,15 +19,13 @@
   $tcol = $_REQUEST['tcol'];
   $wcol = $_REQUEST['wcol'];
   $eccol = $_REQUEST['eccol'];
-  $selection_nodes_selected = '';
   $all_nodes_selected = 'checked';
   # demo graph
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
     $demo_graph = $uetz;
-    $demo_nodes = $uetz_nodes;
-    $selection_nodes_selected = 'checked';
     $all_nodes_selected = '';
+    $all_nodes_selected = 'checked';
   }
 
   title('graph-node-degree');
@@ -75,7 +73,7 @@
   <tr><td><input type='radio' $selection_nodes_selected name='allnodes' value='selection' /></td>
   <td></select><br>
   <b>List of nodes</b><br>
-  <textarea name='nodes' rows='6' cols='65'>$demo_nodes</textarea>
+  <textarea name='nodes' rows='6' cols='65'></textarea>
   <br>Upload nodes from file : <br>
   <input type='file' name='nodes_file' size='45' /></td></tr></table>");
   echo ("
