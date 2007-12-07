@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.24 2007/11/28 11:34:58 rsat Exp $
+# $Id: random-graph,v 1.25 2007/12/07 12:31:54 rsat Exp $
 #
 ############################################################
 
@@ -95,7 +95,7 @@ package main;
     # number of required edges
     $req_edges = 0;
 
-    # number of required edges
+    # do not allow self loops
     $self = 0;
     
     # maxium degree
@@ -437,7 +437,6 @@ With the node_degree_distrib randomization type, the global distribution of node
 		unless ($supported_random_type{$random_type});
 
 	    ### Output format  
-=cut
 
 =item B<-output_format output_format>
 
