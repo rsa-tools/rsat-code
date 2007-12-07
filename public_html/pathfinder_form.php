@@ -67,7 +67,7 @@
   		info("The demo graph is the union of all paths annotated for <i>S. cerevisiae</i> in <a href='http://www.biocyc.org/' target='_blank'>BioCyc</a> release 10.6. It is an undirected graph consisting
   		of 2,662 edges.<br>
   		The seed nodes are the start and end compound of the <a href='http://biocyc.org/YEAST/NEW-IMAGE?object=HEME-BIOSYNTHESIS-II' target='_blank'>heme biosynthesis II pathway</a> as annotated in BioCyc.<br>
-  		Pathway inference for this pathway in the KEGG and the EcoCyc graph has been described in Croes et al., J. Mol. Biol. 356: 222-236. (see our <a href='neat_publications.html '>list of publications</a>.)<br>
+  		This pathway is one of the study cases described in Croes et al., J. Mol. Biol. 356: 222-236. (see our <a href='neat_publications.html '>list of publications</a>.)<br>
   		Note that for this demo, path finding is done on a smaller, undirected graph without differentially weighting compounds and reactions. Use the <a href='http://www.scmbb.ulb.ac.be/Users/didier/pathfinding/' target='_blank'>metabolic pathfinding tool</a> to find paths in the complete KEGG network.<br>
   		The path of first rank corresponds to the annotated heme biosynthesis II pathway. To see the influence of the weighting scheme, you can set the weighting scheme to unit weight and the rank to 1 (for quicker computation). You will obtain an entirely different result.<br><br>");
   }
