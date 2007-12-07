@@ -34,6 +34,10 @@ rsat_img_format=png
 RSAT=/home/rsat/rsa-tools
 
 ################################################################
+## Parameters for Network Analysis Tools (NeAT)
+neat_supported=0
+
+################################################################
 ## Directories for programs developed by third parties
 
 ## MEME, motif discovery program developed by Tim Bailey
