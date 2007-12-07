@@ -1,0 +1,37 @@
+=============================
+ORM (Over Represented Motifs)
+=============================
+Version 2007.11
+Matthieu Defrance <defrance@scmbb.ulb.ac.be>
+BiGRe ULB Bruxelles
+http://www.lifl.fr/~defrance/ORM
+
+
+INTRODUCTION
+============
+  ORM is a command line software that searches for locally 
+  overrepresented motifs in a set of DNA sequences.
+
+ARCHIVE CONTENT
+===============
+  README:    this file
+  ormbg.py:  construct background model
+  orm.py:    find over-represented oligomer
+  ORM.zlib:  library needed by orm.py and ormbg.py
+  Example/:  test data files
+
+REQUIREMENTS
+============
+  Python >= 2.3
+
+INSTALLATION
+============
+  Unzip the archive
+
+USAGE
+=====
+  First, construct a statistical background model given sequences found in MM0.fa
+  $ ormbg.py -i MM0.fa -m 1 -o MM0.bg  -w 2 --strand=+- --overlap -v 2
+
+  Second, search for overreprented motifs in 1.fa given previouly computed background model
+  $ orm.py -b MM0.bg -i 1.fa --heuristic=all --count=hash -v 2 --sort +seq --max rank 3 > outputfile
