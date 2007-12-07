@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.107 2007/12/06 08:07:05 morgane Exp $
+# $Id: matrix-scan,v 1.108 2007/12/07 09:15:09 jvanheld Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -50,11 +50,11 @@ sites). This program supports a variety of background models
 
 =head1 AUTHORS
 
-=item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
-
 =item Jean Valery Turatsinze <jturatsi@scmbb.ulb.ac.be>
 
 =item Morgane Thomas-Chollier <morgane@scmbb.ulb.ac.be>
+
+=item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -1687,11 +1687,12 @@ matrix-scan options
                 limits,weight_limits, distrib, occ_proba, bg_model,bg_residues, matrix, freq_matrix, weight_matrix,crer
 -lth/uth param # : lower/upper threshold on some parameters
 
-		Supported thresholds fields for the matches: score, pval, eval, 
-		sig, normw, proba_M, proba_B, rank
+		Supported thresholds fields for the matches: 
+		score, pval, eval, sig, normw, proba_M, proba_B, rank
 
-		Supported thresholds fields for score distributions: occ, occ_sum, 
-		inv_cum, exp_occ, occ_pval, occ_eval, occ_sig, occ_sig_rank
+		Supported thresholds fields for score distributions and site enrichment: 
+		occ, occ_sum, inv_cum, exp_occ, occ_pval, occ_eval, occ_sig, occ_sig_rank
+
 -crer_max #	maximal size for a CRER
 -sort_distrib	sort score distributions by decreasing values of significance. 
                 (Default: score distibutions are sorted by score (weight)) 
@@ -2065,22 +2066,20 @@ priors, except for the -window option where equipseudo is default.
 
 =item B<-bg_pseudo #>
 
-Pseudo frequency for the background models. Value must be a real
-between 0 and 1.
+Pseudo frequency for the background models. The value must be a Real
+number between 0 and 1.
 
 If this option is not specified, the pseudo-frequency value depends on
-the background calculation.
+the background type.
 
-=over
+For -bginput and -window, the pseudo frequency is automatically
+calculated with the length (L) of the sequence following this formula: 
 
-=item - For -bginput and -window, the pseudo frequency is automatically calculated with the length (L) of the sequence following this formula : 
-square-root of L divided by L+squareroot of L
+ sqrt(L)/[L+sqrt(L)]
 
-
-=item - For -bgfile, default value is 0.01. If the training sequence length (L) is known, the value can be set by -bg_pseudo option to
-square-root of L divided by L+squareroot of L.
-
-=back
+When the background is specified with the option -bgfile, the program
+has no information about the length of the training sequence. In such
+case, the bg_pseudo is set to 0.01 by default.
 
 =cut
 	} elsif ($arg eq "-bg_pseudo") {
@@ -2149,11 +2148,13 @@ decimals).
 
 =item	B<-uth param upper_threshold>
 
-Threshold on some parameter (-lth: lower, -uth: upper threshold). 
+Threshold on some parameter (-lth: lower, -uth: upper threshold).
 
-Supported threshold fields for the matches : score, pval, eval, sig, normw, proba_M, proba_B, rank , crer_sites , crer_size
+Supported threshold fields for the matches : score, pval, eval, sig,
+normw, proba_M, proba_B, rank , crer_nb , crer_size
 
-Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ occ_pval occ_eval occ_sig occ_sig_rank
+Supported threshold fields for score distributions: occ occ_sum
+inv_cum exp_occ occ_pval occ_eval occ_sig occ_sig_rank
 
 =cut
 
@@ -2851,12 +2852,6 @@ sub print_match {
 }
 
 
-################################################################
-=pod
-
-=head1 INTERNAL PROCEDURES
-
-=cut
 
 ################################################################
 =pod
