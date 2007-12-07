@@ -38,25 +38,50 @@ umask 0022;
 
 # ################################################################
 # ## Read props file
-use Util::Properties;
 if ($0 =~ /([^(\/)]+)$/) {
   $property_file = $`."../RSAT_config.props";
   unless (-e $property_file) {
     $property_file = $`."../RSAT_config_default.props";
   }
   if (-e $property_file) {
-    my $prop =  Util::Properties->new();
-    $prop->file_name($property_file);
-    $prop->load();
-    my %args = $prop->prop_list();
-    foreach my $key (sort keys %args) {
-      my $value = $args{$key};
-      $ENV{$key} = $value;
-    $$key = $value;
-      #    &RSAT::message::Info("Site config", sprintf("%-15s\t%s\t%s", $key, $ENV{$key})) if ($main::verbose >= 0);
+    my ($props) = &OpenInputFile($property_file);
+    while (<$props>) {
+      next if (/^#/);
+      next if (/^;/);
+      next unless (/\S/);
+      chomp();
+      if (/\=/) {
+	my $value = $'; #'
+	my $key = $`;
+	$ENV{$key} = $value;
+#        &RSAT::message::Info("Site config", sprintf("%-15s\t%s\t%s", $key, $ENV{$key})) if ($main::verbose >= 0);
+      }
     }
   }
 }
+
+
+# # ################################################################
+# # ## Read props file
+# use Util::Properties;
+# if ($0 =~ /([^(\/)]+)$/) {
+#   $property_file = $`."../RSAT_config.props";
+#   unless (-e $property_file) {
+#     $property_file = $`."../RSAT_config_default.props";
+#   }
+#   if (-e $property_file) {
+#     my $prop =  Util::Properties->new();
+#     $prop->file_name($property_file);
+#     $prop->load();
+#     my %args = $prop->prop_list();
+#     foreach my $key (sort keys %args) {
+#       my $value = $args{$key};
+#       $ENV{$key} = $value;
+#     $$key = $value;
+#       #    &RSAT::message::Info("Site config", sprintf("%-15s\t%s\t%s", $key, $ENV{$key})) if ($main::verbose >= 0);
+#     }
+#   }
+# }
 
 ################################################################
 #### Read Perl config files
