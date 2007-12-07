@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.226 2007/12/05 15:19:57 rsat Exp $
+# $Id: multiple-family-analysis,v 1.227 2007/12/07 17:35:30 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -36,7 +36,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.226 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.227 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -71,6 +71,7 @@ package main;
 
   ## Supported tasks
   @supported_tasks = qw (upstream
+			 upstream_ensembl
 			 purge
 
 			 calibrate
@@ -1132,6 +1133,30 @@ sub UpstreamSequences {
     $command .= " -to ".$to if (defined($to));
     $command .= " -feattype $feature_types " if ($feature_types);
     $command .= " -format $seq_format";
+    if ($batch) {
+	push @main::batch_commands, $command;
+    } else {
+	&doit($command, $dry_run, $die_on_error, $verbose);
+    }
+}
+
+sub UpstreamSequencesEnsEMBL {
+    &RSAT::message::TimeWarn ("Retrieving upstream sequences for family ".$family_name, $organism_name) if ($verbose >= 1);
+    $organism_name =~ s/_EnsEMBL//;
+    my $command;
+    $command = "retrieve-ensembl-seq.pl";
+#    $command .= " -label id,name ";
+    $command .= " -ensemblhost xserve2";
+    $command .= " -i ".$family{$family_name}->{family_file};
+    $command .= " -org ". $organism_name;
+    $command .= " -type upstream";
+    $command .= " -noorf " if ($noorf);
+    $command .= " -rm " if ($repeat_masked);
+    $command .= " -o ".$family{$family_name}->{seq_file};
+    $command .= " -from ".$from if (defined($from));
+    $command .= " -to ".$to if (defined($to));
+    $command .= " -feattype $feature_types " if ($feature_types);
+#    $command .= " -format $seq_format";
     if ($batch) {
 	push @main::batch_commands, $command;
     } else {
@@ -2737,6 +2762,9 @@ sub AnalyzeFamilies {
 
 	### retrieve upstream sequences of the family
 	&UpstreamSequences() if ($task{upstream});
+
+	### retrieve upstream sequences of the family
+	&UpstreamSequencesEnsEMBL() if ($task{upstream_ensembl});
 
 	### purge upstream sequences of the family
 	&PurgeSequences() if ($task{purge});
