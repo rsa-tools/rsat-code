@@ -74,7 +74,7 @@
   ");}
   
   echo("<br>
-  &nbsp;&nbsp;&nbsp;<B><a href = 'help.compare_classes_fortm.html#formats'>Output format</a></B>&nbsp;<select name='out_format'>
+  &nbsp;&nbsp;&nbsp;<B><a href = 'help.compare_classes.html#formats'>Output format</a></B>&nbsp;<select name='out_format'>
   <option selected value = 'class'> class file
   <option value = 'matrix'> matrix file
   </select><br>");

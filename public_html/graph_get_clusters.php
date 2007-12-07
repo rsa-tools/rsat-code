@@ -85,6 +85,7 @@
         "inputgraph"=>$graph,
         "scol"=>$s_col,
         "tcol"=>$t_col,
+        "wcol"=>$w_col,
         "distinct"=>$distinct,
         "induced"=>$induced
       )
