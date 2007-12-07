@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: load-goa,v 1.12 2007/03/02 13:45:44 rsat Exp $
+# $Id: load-goa,v 1.13 2007/12/07 08:35:44 jvanheld Exp $
 #
 ############################################################
 
@@ -129,7 +129,7 @@ package main;
 	if ($download eq 'default') {
 	    $download = $default_goa_download;
 	}
-	my $download_dir = $RSA."/tempgoa";
+	my $download_dir = $ENV{RSAT}."/tempgoa";
 	system("mkdir ".$download_dir);
 	system(join(" ","wget -rNL", $download, "--timeout=900 -nd -np -P", $download_dir, "-A '*.goa'"));
 	$dir = $download_dir;
@@ -140,7 +140,7 @@ package main;
 	#loading organism      
 	my $organism = &load_organism($organism_name);
 	($main::in) = &OpenInputFile($main::infile{input});
-	my $godir = $RSA."/data/genomes/".$organism_name."/go";
+	my $godir = $ENV{RSAT}."/data/genomes/".$organism_name."/go";
 	if ($outputfile eq "") { 
 	    system("mkdir $godir");
 	    $main::outfile{output} = $godir."/".$organism_name."_go.tab";
@@ -471,7 +471,7 @@ sub taxid_search() {
     keys %main::supported_organism;
     my @supported_organisms = keys %main::supported_organism;
     foreach my $organism (@supported_organisms) {
-	my $file = $RSA."/data/genomes/".$organism."/genome/organism.tab";
+	my $file = $ENV{RSAT}."/data/genomes/".$organism."/genome/organism.tab";
 	my $taxid =  `cat $file | grep -v '^-' | grep '[0-9]' | cut -f 1`;
 	chomp($taxid);
 	$rep->add_value($taxid, $organism);
@@ -515,7 +515,7 @@ sub read_goafile_directory() {
     ## have the same taxid in the goa files and the NCBI 
     $rep[$i][0] = "562";
     $rep[$i][1] = "Escherichia_coli_K12";
-    $rep[$i][2] = $RSA."/tempgoa/18.E_coli_K12.goa";
+    $rep[$i][2] = $ENV{RSAT}."/tempgoa/18.E_coli_K12.goa";
     
     return \@rep;
 }

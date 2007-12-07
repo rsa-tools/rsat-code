@@ -78,7 +78,7 @@ $start_time = `date`;
 $ORF_column = 1;
 
 #### initialise parameters ####
-#$ORF_function_file = "$RSA/data/yeast/genome/MIPS.orf_function";
+#$ORF_function_file = "$ENV{RSAT}/data/yeast/genome/MIPS.orf_function";
 
 
 #### read arguments ####

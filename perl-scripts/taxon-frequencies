@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.23 2007/11/27 01:28:31 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.24 2007/12/07 08:36:33 jvanheld Exp $
 #
 ############################################################
 
@@ -176,8 +176,8 @@ package main;
     if ($install) {
 
       ## Output directory
-      if (defined($RSA)) {
-	$dir{taxfreq} = ${RSA}."/public_html/data";
+      if (defined($ENV{RSAT})) {
+	$dir{taxfreq} = $ENV{RSAT}."/public_html/data";
       }
       $dir{taxfreq} .= "/taxon_frequencies/".$taxon;
       $dir{taxfreq} =~ s/\s/_/g;

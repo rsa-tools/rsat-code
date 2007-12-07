@@ -1,9 +1,14 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: roc-stats2,v 1.6 2007/07/23 10:31:53 jvanheld Exp $
+# $Id: roc-stats2,v 1.7 2007/12/07 08:36:33 jvanheld Exp $
 #
 ############################################################
+
+
+## TO DO: add a binomial test at each score value, to estimate the
+## significance of the positive versus negative occurrences: compute
+## P-value, E-value and significane.
 
 ## use strict;
 
