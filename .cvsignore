@@ -1,7 +1,9 @@
+public_html/images/RSAT_icon.jpg
 RSAT_config.props
+RSA.config
+public_html/logs/count_file
 .DS_Store
 */.DS_Store
-RSA.config
 data
 logs
 tmp
