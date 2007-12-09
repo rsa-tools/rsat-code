@@ -380,8 +380,132 @@ sub TaxonomyPopUpString {
     return $taxonomyPopup;
 }
 
+################################################################
+## MATRICES
+sub GetMatrix {
+print "<B>Matrix</B>\n";
+print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
+print "<A HREF='help.matrix-scan.html'><B>Format</B></a>&nbsp;";
+
+#### matrix format 
+print $query->popup_menu(-name=>'matrix_format',
+			 -Values=>[
+				   'tab',
+				   'meme',
+				   'MotifSampler',
+				   'consensus',
+				   'gibbs',
+				   'transfac',
+				   'alignace',
+				   'clustal',
+				   'assembly',
+				   'cluster-buster',
+				   'feature',
+				   'infogibbs'
+				  ],
+			 -default=>$default{matrix_format});
+
+print $query->checkbox(-name=>'consensus_as_name',
+		       -checked=>$default{consensus_as_name},
+		       -label=>' use motif consensus as matrix name ');
+
+#### text area to enter the matrix
+print "<BR>\n";
+print $query->textarea(-name=>'matrix',
+		       -default=>$default{matrix},
+		       -rows=>4,
+		       -columns=>60);
 
 
+#### pseudo-counts
+print "<BR>\n";
+print "<B><A HREF='help.matrix-scan.html'>Pseudo-counts</A></b>\n";
+print $query->textfield(-name=>'pseudo_counts',
+			-default=>$default{pseudo_counts},
+			-size=>2);
+
+print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='equi_pseudo' $checked{'equi_pseudo'}>","<b>distributed in an equiprobable way</b>");
+print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='pseudo_prior' $checked{'pseudo_prior'}>","<b>distributed proportionally to residues priors</b>");
+
+#### decimals
+print "<BR>\n";
+print "<B><A HREF='help.matrix-scan.html'>Decimals</A></b>\n";
+print $query->textfield(-name=>'decimals',
+			-default=>$default{decimals},
+			-size=>2);
+}
+
+
+################################################################
+## BACKGROUND MODEL
+sub GetBackgroundModel {
+
+my $bg_input = shift;
+my $bg_window = shift;
+
+
+print "<p><B>Background model</B><br>";
+
+#### Markov order
+print ("<b><a href=help.matrix-scan.html#markov_order>Markov Chain order</a></b> &nbsp;");
+print $query->popup_menu(-name=>'markov_order',
+			 -Values=>[0..8],
+			 -default=>$default{markov_order});
+print "<p>";
+
+
+## Method to estimate the bg model
+
+print ("<b><a href=help.matrix-scan.html#bg_method>Estimation method</a></b>");
+
+if ($bg_input) {
+#### Input sequences
+print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='bginput' $checked{'bginput'}>", 
+       "<b>Estimate from input sequences</b>");
+}
+
+if ($bg_window) {
+ ## Sliding window
+ print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='window' $checked{'window'}>",
+        "<b>Sliding window</b> &nbsp;");
+ print $query->textfield(-name=>'window_size',
+ 			-default=>$default{window_size},
+ 			-size=>5);
+}
+
+#### Pre-defined background frequencies
+print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='bgfile' $checked{bgfile}>");
+print ("<b>Genome subset</b> &nbsp; ", 
+       $query->popup_menu(-name=>'background',
+			  -Values=>["upstream","upstream-noorf","intergenic"],
+			  -default=>$default{background}));
+print  &OrganismPopUpString();
+
+#### custom background model
+print "<INPUT TYPE='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}><a href='help.matrix-scan.html#bg_file'>Upload your own file for the background model</a>", "&nbsp;"x5;
+print "<br/><b>&nbsp;&nbsp;&nbsp;&nbsp;Format</b>&nbsp;";
+#### bg format 
+print $query->popup_menu(-name=>'bg_format',
+			 -Values=>[
+				   'oligo-analysis',
+				   'MotifSampler',
+				   'meme'
+				  ],
+			 -default=>$default{bg_format});
+
+print $query->filefield(-name=>'upload_bgfile',
+			-default=>'starting value',
+			-size=>30,
+			-maxlength=>200);
+
+			
+#### pseudo-counts
+print "<p/>\n";
+print "<B><A HREF='help.matrix-scan.html'>Pseudo-counts</A></b>\n";
+print $query->textfield(-name=>'bg_pseudo',
+			-default=>$default{bg_pseudo},
+			-size=>5);
+}
 
 ################################################################
 ## Print HTML header
