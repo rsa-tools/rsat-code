@@ -21,7 +21,7 @@ $default{sequence_file} = "";
 $default{upload_freq_file} = "";
 #$default{sequence_type} = "dna";
 $default{oligo_length} = 6;
-$default{background} = "Residue frequencies from input sequence";
+$default{background} = "upstream-noorf";
 $default{markov_order} = 2;
 $default{pseudo_weight} = "0.05";
 $default{strand} = "both strands";
@@ -36,7 +36,7 @@ $default{freq_estimate} = "background";
 
 $default{rank} = 'checked';
 $default{lth_rank} = "none";
-$default{uth_rank} = "none";
+$default{uth_rank} = "20";
 
 $default{lth_w_rank} = "none";
 $default{uth_w_rank} = "1";
@@ -179,16 +179,16 @@ print "<A HREF='help.ORM.html#exp_freq'><B>Expected frequency calibration</B></A
 
 
 #### pre-defined background frequencies
-#print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='background' $checked{background}>", 
-#	"Predefined background frequencies");
-#print "<ul>";
-#print ( "<a href='help.ORM.html#background'>Background model</a> &nbsp;&nbsp;&nbsp;&nbsp;", 
-#	$query->popup_menu(-name=>'background',
-#			   -Values=>["upstream","upstream-noorf","intergenic"],
-#			   -default=>$default{background}));
-#	
-#print "<br>", &OrganismPopUpString();
-#print "</ul>";
+print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='background' $checked{background}>", 
+	"Predefined background frequencies");
+print "<ul>";
+print ( "<a href='help.ORM.html#background'>Background model</a> &nbsp;&nbsp;&nbsp;&nbsp;", 
+	$query->popup_menu(-name=>'background',
+			   -Values=>["upstream","upstream-noorf","intergenic"],
+			   -default=>$default{background}));
+	
+print "<br>", &OrganismPopUpString();
+print "</ul>";
 
 
 #### Markov chain model
@@ -203,7 +203,7 @@ print $query->textfield(-name=>'markov_order',
 print '</p>';
 
 #### Bernouilli model
-print "<p><INPUT TYPE='radio' NAME='freq_estimate' VALUE='Residue frequencies from input sequence' $checked{'background'}>Residue frequencies from input sequence</p>";
+print "<p><INPUT TYPE='radio' NAME='freq_estimate' VALUE='Residue frequencies from input sequence' $checked{'Residue frequencies from input sequence'}>Residue frequencies from input sequence</p>";
 
 #### custom expected frequency file
 #print "<p><INPUT TYPE='radio' NAME='freq_estimate' VALUE='file_upload' $checked{'file_upload'}><a href='help.ORM.html#upload_freq_file'>Upload your own expected frequency file</a><br />";
