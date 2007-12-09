@@ -34,6 +34,23 @@
 
   title('display-graph');
   echo ("<center>Generate a figure for a graph</center>\n");
+   echo ("<b>Warning!</b> The layout and display facilities supported on the Web
+	  site are restricted.<br>\n
+
+          Several specialized programs exists for visualizing networks
+	  in a dynamical way, and with a large diversity of layout
+	  options. <br>\n
+          
+          The GML files exported by the NeAT tools can be imported in
+	  <a target = '_blank' href =
+	  'http://cytoscape.org/'><b>Cytoscape</b></a> or <a target =
+	  '_blank' href =
+	  'http://tyna.gersteinlab.org/tyna/'><b>yED</b></a>.  <br>\n
+
+          For a flexible manipulation of the graphs, we recommend to
+	  use these program. <p>\n" 
+   );
+
   echo ("<form method='post' action='display_graph.php' enctype='multipart/form-data'>");
   echo ("&nbsp;&nbsp;&nbsp;<a href = 'help.display_graph.html#formats'><B>Input format</B></a>");
   if (!$pipe) {
