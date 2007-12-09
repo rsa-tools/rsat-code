@@ -24,15 +24,12 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 
 $orm_command = "$ENV{RSAT}/contrib/ORM/orm.py";
-$ormbg_command = "$ENV{RSAT}/contrib/ORM/ormbg.py";
 
 #$orm_command = "/Users/matthieu/Workspace/ORM/orm.py";
-#$ormbg_command = "/Users/matthieu/Workspace/ORM/ormbg.py";
+
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $purge_sequence_command = "$SCRIPTS/purge-sequence";
 $tmp_file_name = sprintf "ORM.%s", &AlphaDate();
-$bgtmp_file_name = sprintf "ORMbg.%s", &AlphaDate();
-
 
 ### Read the CGI query
 $query = new CGI;
@@ -46,7 +43,6 @@ $query = new CGI;
 
 #### read parameters ####
 $parameters = "";
-$bgparameters = "";
 #$parameters .= " -sort";
 
 $parameters .= " --sort -occ_sig";
@@ -64,9 +60,9 @@ if (IsReal($query->param('window_width'))) {
     $parameters .= ' --heuristic=slices';
 }
 if (IsReal($query->param('bg_window_width'))) {
-    $bgparameters .= ' --window=' . $query->param('bg_window_width');
+    $parameters .= ' --bgwindow=' . $query->param('bg_window_width');
 }else{
-    $bgparameters .= ' --window=200';
+    $parameters .= ' --bgwindow=200';
 }
 
 
@@ -106,10 +102,8 @@ if (IsReal($query->param('uth_w_rank'))) {
 
 ### align
 if ($query->param('align') =~ /right/) {
-  $bgparameters .= " --right=-1";
   $parameters .= " --right=-1";
 }else{
-  $bgparameters .= " --left=1";    
   $parameters .= " --left=1";    
 }
 
@@ -118,10 +112,12 @@ if ($query->param('align') =~ /right/) {
 $str = "";
 if ($query->param('strand') =~ /single/) {
   $str = " -1str";
-  $bgparameters .= " --strand=+";
+  $strand = "-1str";
+  $parameters .= " --strand=+";
 } else {
   $str = " -2str";
-  $bgparameters .= " --strand=+-";
+  $strand = "-2str";
+  $parameters .= " --strand=+-";
 }
 
 ### group patterns by pairs of reverse complements
@@ -138,12 +134,15 @@ if ($query->param('strand') =~ /single/) {
 
 ### prevent overlapping matches of the same pattern
 if (! $query->param('noov')) {
-  $bgparameters .= " --overlap";
+  $overlap='-ovlp';
+  $parameters .= " --overlap";
+}else{
+  $overlap='-noov';    
+    
 } 
 
 ### verbose
 $parameters .= " -v 5";
-$bgparameters .= " -v 5";
 
 #### sequence type
 #$parameters .= " -seqtype ".$query->param("sequence_type");
@@ -151,10 +150,35 @@ $bgparameters .= " -v 5";
 #### oligo size ####
 $oligo_length = $query->param('oligo_length') ;
 &FatalError("$oligo_length Invalid oligonucleotide length") unless &IsNatural($oligo_length);
-$bgparameters .= " -w $oligo_length";
+$parameters .= " -l $oligo_length";
 
 #### expected frequency estimation ####
-if ($query->param('freq_estimate') =~ /upload/i) {
+if ($query->param('freq_estimate') =~ /background/i) {
+    %supported_background = (
+			      "upstream"=>1,
+			      "upstream-noorf"=>1,
+			      "intergenic"=>1
+			      );
+
+	### check organism
+	unless ($organism = $query->param('organism')) {
+	    &cgiError("You should specify an organism to use intergenic frequency calibration");
+	}
+	unless (defined(%{$supported_organism{$organism}})) {
+	    &cgiError("Organism $org is not supported on this site");
+	}
+	my $background = $query->param("background");
+	unless ($supported_background{$background}) {
+	    &cgiError("$background is not supported as background model");
+	}
+
+    $exp_freq_file = "$ENV{RSAT}/data/genomes/$organism/oligo-frequencies/" . "$oligo_length" . "nt_" . "$background" . "_" . "$organism$overlap$strand.freq.gz";
+    #print $exp_freq_file;
+	#$freq_option = " -bg $background -org $organism";
+	$freq_option = " --bgoligo=$exp_freq_file";
+
+
+  } elsif ($query->param('freq_estimate') =~ /upload/i) {
     $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
     $upload_freq_file = $query->param('upload_freq_file');
     if ($upload_freq_file) {
@@ -175,13 +199,14 @@ if ($query->param('freq_estimate') =~ /upload/i) {
     }
 
 } elsif ($query->param('freq_estimate') =~ /residue frequenc/i) {
-  $bgparameters .= " --markov=0 ";
+  $freq_option = " --markov=0";
 } elsif ($query->param('freq_estimate') =~ /markov/i) {
-  #$freq_option = " --markov";
   if (&IsNatural($query->param('markov_order'))) {
-      $bgparameters .= " --markov=" . $query->param('markov_order');
+      $freq_option .= " --markov=".$query->param('markov_order');
   }
-}
+} else {
+  $freq_option = "";
+} 
 $parameters .= "$freq_option";
 
 
@@ -196,7 +221,8 @@ if ($purge) {
 } else {
     $command = "";
 }
-$command .=  "$ormbg_command -i $sequence_file -o $TMP/$bgtmp_file_name $bgparameters; $orm_command -i $sequence_file -b $TMP/$bgtmp_file_name $parameters";
+
+$command .=  "$orm_command -i $sequence_file $parameters";
 
 #print '<style> <!-- pre {overflow: auto;} --></style>';
 print "<pre>command: $command<P>\n</pre>" if ($ENV{rsat_echo} >=1);
