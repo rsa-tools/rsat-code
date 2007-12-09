@@ -81,7 +81,7 @@ usage = """
                 [--max parameter #][--min parameter #]
                 [-h | --help]
 
-        Example : %prog -b hg17.bg -i seq.fasta -v2 --max rank 10
+        Example : %prog  -i seq.fasta --markov=2 -v2 --max rank 10
 """
 
 parser = optparse.OptionParser(usage=usage, version=version, description=description)
