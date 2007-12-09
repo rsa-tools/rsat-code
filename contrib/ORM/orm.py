@@ -96,9 +96,9 @@ parser.add_option("--bgfile", action="store", dest="bgfile", type="string", defa
 parser.add_option("--bgoligo", action="store", dest="bgoligo", type="string", default=None)
 parser.add_option("--bgoligomarkov", action="store", dest="bgoligomarkov", type="string", default=None)
 
-parser.add_option("--max", action="append", dest="max", type="string", nargs=2, help="upper threshold", default=[])
-parser.add_option("--min", action="append", dest="min", type="string", nargs=2, help="lower threshold", default=[])
-parser.add_option("--sort", action="append", dest="sort", type="string", default=[], help="sort ouput with this criteria name. Preffix the name with a + (or -) for growing (or not) order")
+parser.add_option("--max", action="append", dest="max", type="string", nargs=2, help="upper threshold example: --max w_win 1", default=[])
+parser.add_option("--min", action="append", dest="min", type="string", nargs=2, help="lower threshold example: --min occ_sig 0", default=[])
+parser.add_option("--sort", action="append", dest="sort", type="string", default=[], help="sort ouput with this criteria name. Prefix the name with a + (or -) for growing (or not) order")
 parser.add_option("-v", "--verbosity", action="store", dest="verbosity", type="int", default=0)
 
 parser.add_option("--window", action="store", dest="window", help="use fixed window width", type='int', default=None)
