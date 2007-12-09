@@ -25,18 +25,18 @@ cli.UPDATE = 1
 
 HEADER = ''';
 ; ORM
-; Detection of overrepresented words
+; Detection of locally overrepresented motifs
 ; %(command)s
 ; %(date)s
 ; running time                     %(runningTime)s
-; Oligomer length                  %(l)d
-; Strand                           %(strand)s
+; oligomer length                  %(l)d
+; strand                           %(strand)s
 ; window width                     %(windowWidth)s
 ; bg window width                  %(bgwindowWidth)s            
 ; Input file                       %(inputfilename)s
-; Nb of sequences                  %(numberOfSequences)d
-; Scanned region                   [%(start)+05d:%(end)+05d]
-; Scanned words                    %(scannedWords)d
+; nb of sequences                  %(numberOfSequences)d
+; scanned region                   [%(start)+05d:%(end)+05d]
+; scanned words                    %(scannedWords)d
 ; lower thresholds                 %(lowerThreshold)s
 ; upper thresholds                 %(upperThreshold)s
 ; sorting criteria                 %(sort)s
@@ -85,16 +85,28 @@ usage = """
 """
 
 parser = optparse.OptionParser(usage=usage, version=version, description=description)
-parser.add_option("-b", "--background", action="store", dest="background", type="string", default="default.bg")
+parser.add_option("-s", "--strand", dest="strand", help="strand + or +- (default=+-)", choices=['+', '+-'], default='+-')
+parser.add_option("-p", "--overlap", dest="overlap", help="allow overlapping word occurences", action="store_true", default=False)
+parser.add_option("-l", "--length", dest="l", help="oligomer length", action="store", type="int", default=6)
+
+#BG
+parser.add_option("-m", "--markov", dest="markov", help="use markov model of order n", action="store", type="int", default=-1)
+
+parser.add_option("--bgfile", action="store", dest="bgfile", type="string", default=None)
+parser.add_option("--bgoligo", action="store", dest="bgoligo", type="string", default=None)
+parser.add_option("--bgoligomarkov", action="store", dest="bgoligomarkov", type="string", default=None)
+
 parser.add_option("--max", action="append", dest="max", type="string", nargs=2, help="upper threshold", default=[])
 parser.add_option("--min", action="append", dest="min", type="string", nargs=2, help="lower threshold", default=[])
-parser.add_option("-s", "--sort", action="append", dest="sort", type="string", default=[], help="sort ouput with this criteria name. Preffix the name with a + (or -) for growing (or not) order")
+parser.add_option("--sort", action="append", dest="sort", type="string", default=[], help="sort ouput with this criteria name. Preffix the name with a + (or -) for growing (or not) order")
 parser.add_option("-v", "--verbosity", action="store", dest="verbosity", type="int", default=0)
+
 parser.add_option("--window", action="store", dest="window", help="use fixed window width", type='int', default=None)
+parser.add_option("--bgwindow", action="store", dest="bgwindow", help="widow size in bg model", type='int', default=None)
+
 parser.add_option("--location", dest="location", help="region to scan (example -2000:-1)", action="store", type="string", default=None)
 parser.add_option("-o", "--output", action="store", dest="output", default=sys.stdout)
 parser.add_option("-i", "--input", action="store", dest="input", default=sys.stdin)
-#parser.add_option("-n", "--binomial", action="store", dest="binomial", type="int", default=1)
 parser.add_option("-r", "--ratio", action="store", dest="ratio", type="float", default=2.0)
 parser.add_option("--heuristic", action="store", dest="heuristic", type="string", default='slices', help='heutistic for extracting windows (form slower to faster): all, slices, score (default=slices)')
 parser.add_option("--count", action="store", dest="count", type="string", default='hash', help='method for counting oligos (hash or tree)')
@@ -117,33 +129,62 @@ cli.VERBOSITY = options.verbosity
 def run(args, options):
     timer = Core.Sys.timer.Timer()
     spacing = ( int(options.spacing.split(':')[0]), int(options.spacing.split(':')[1]) )
-    try:
-        bg = op.oload(options.background)
-    except IOError:
-        print 'Can not load bg model (try to run ormbg.py first)'
-        sys.exit()
-    if options.location:
-        location = ( int(options.location.split(':')[0]), int(options.location.split(':')[1]) ) 
-    else:
-        location = bg.location
 
+
+    ##
+    #
+    # input sequence
+    #
+    ##
     if options.left == None and options.right == None:
         options.right = -1
 
     s = Bio.sequence.fasta2sequences(options.input, rightPosition=options.right, leftPosition=options.left)
+
+    # location
+    if options.location:
+        location = ( int(options.location.split(':')[0]), int(options.location.split(':')[1]) ) 
+    else:
+        location = s.location
+        #location = bg.location
+
     if not Core.types.interval.is_included(location, s.location):
         cli.warning('Sequences are shorter then the given location')
         location = s.location
 
+    ##
+    #
+    # background
+    #
+    ##
+    options.bgwindow = options.bgwindow or 1000000
+    if options.bgwindow > s.location[1] - s.location[0] + 1:
+        options.bgwindow = s.location[1] - s.location[0] + 1
+
+    if options.bgfile:
+        bg = op.oload(options.bgfile)
+    else:
+        bgparams = dict(spacing=spacing, count=options.count, error=options.error)
+        bg = ormlib.Bg(location=location, W=options.bgwindow, l=options.l, strand=options.strand, overlap=options.overlap, params=bgparams)
+        if options.markov >= 0:
+            bg.build_markov(s, order=options.markov)
+        elif options.bgoligo:
+            bg.build_from_oligo_file(options.bgoligo, location)
+        elif options.bgoligomarkov:
+            bg.build_markov_from_oligo_file(options.bgoligomarkov, location)            
+        else:
+            bg.build(s)
+
     if options.window > s.location[1] - s.location[0] + 1:
         options.window = s.location[1] - s.location[0] + 1
-
-    output = Core.utils.uopen(options.output, mode='w')
 
     if not Core.types.interval.is_included(location, bg.location):
         cli.error('Given location do not match Background model location')
         return
 
+
+    ##
+    # Thresholds
     defaults = {'width' : (2, 1000000),
                 'occ'   : (1, 100000),
                 'occ_sig'   : (None, None),
@@ -167,45 +208,47 @@ def run(args, options):
               }
     params.update(thresholds)
 
-    # extract
+
+    ##
+    #
+    # Run ORM
+    #
+    ##
     R = ormlib.extract_windows(s, bg, location=location, params=params)
+    r = R['R']
+
+    r = ormlib.select(r, thresholds, COLUMN_HEADER)
+    options.sort = options.sort or ['-occ_sig']
+    r = ormlib.sort(r, options.sort, COLUMN_HEADER)
+    r = ormlib.window_rank(r, COLUMN_HEADER)
+    thresholds = ormlib.convert_thresholds({'w_rank' : (None, None)}, options.min, options.max, COLUMN_HEADER, COLUMN_TYPE)
+    r = ormlib.select(r, thresholds, COLUMN_HEADER)
+    r = ormlib.rank(r, COLUMN_HEADER)
+    thresholds = ormlib.convert_thresholds({'rank' : (None, None)}, options.min, options.max, COLUMN_HEADER, COLUMN_TYPE)
+    r = ormlib.select(r, thresholds, COLUMN_HEADER)
+
 
     if options.window != None:
         windowWidth = '%d' % options.window
     else:
         windowWidth = 'variable'
-        
-    r = R['R']
-    start,end = location
 
-    # select
-    r = ormlib.select(r, thresholds, COLUMN_HEADER)
+    ##
+    #
+    # output
+    #
+    ##
+    output = Core.utils.uopen(options.output, mode='w')
 
-    # sort
-    try:
-        options.sort = options.sort or ['+occ_E']
-        r = ormlib.sort(r, options.sort, COLUMN_HEADER)
-    except:
-        cli.error('Error on sorting')
-        raise
 
-    #add rank and window rank
-    r = ormlib.window_rank(r, COLUMN_HEADER)
-    thresholds = ormlib.convert_thresholds({'w_rank' : (None, None)}, options.min, options.max, COLUMN_HEADER, COLUMN_TYPE)
-    r = ormlib.select(r, thresholds, COLUMN_HEADER)
-    r = ormlib.rank(r, COLUMN_HEADER)
-
-    thresholds = ormlib.convert_thresholds({'rank' : (None, None)}, options.min, options.max, COLUMN_HEADER, COLUMN_TYPE)
-    r = ormlib.select(r, thresholds, COLUMN_HEADER)
-
-    print >> output, ormlib.format_header(HEADER, l=bg.l, 
+    print >> output, ormlib.format_header(HEADER, l=options.l, 
                                           inputfilename=str(options.input), 
                                           numberOfSequences=len(s), 
-                                          start=start, end=end,
+                                          start=location[0], end=location[1],
                                           command=' '.join(sys.argv),
                                           windowWidth = windowWidth,
                                           bgwindowWidth = bg.W,
-                                          strand=bg.strand,
+                                          strand=options.strand,
                                           lowerThreshold = str(options.min),
                                           upperThreshold = str(options.max),
                                           sort = str(options.sort),
@@ -213,6 +256,7 @@ def run(args, options):
                                           runningTime = str(timer),
                                           scannedWords = R['scannedWords'],
                                           )
+
     print >> output, ormlib.format_output(r, COLUMN_HEADER, COLUMN_HEADER_CHAR, FORMAT_ROW)
 
 
@@ -224,12 +268,16 @@ def run(args, options):
 
 if __name__ == '__main__':
     try:
+        #if len(sys.argv) == 1:
+        #    parser.print_help()
+        #else:
         run(args, options)
         #import Core.Devel.devel as devel
         #devel.prof('run(args, options)')
     except:
         #import traceback
         #traceback.print_exc(file=sys.stdout)
-        cli.error('Error while running orm')
+        #cli.error('Error while running orm')
+        #parser.error('while running')
         if DEBUG:
             raise
