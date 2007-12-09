@@ -27,25 +27,36 @@ $default{consensus_as_name} = "CHECKED";
 $default{pseudo_distribution} = "bginput";
 $default{pseudo_prior} = "pseudo_prior";
 $checked{$default{pseudo_prior}} = "CHECKED";
-$default{bg_pseudo_counts} = "0.01";
+$default{bg_pseudo} = "0.01";
 $default{bg_format}="oligo-analysis";
 $default{decimals} = "1";
-$default{sort_distrib} ="";
+
 
 ## Return fields
+## matches
 $default{return_sites} = "CHECKED";
 $default{return_pval} = "CHECKED";
 $default{return_limits} = "CHECKED";
 $default{return_rank} = "CHECKED";
 $default{return_normw} = "";
+$default{return_bg_residues} = "";
 $default{return_matrix} = "";
 $default{return_freq_matrix} = "";
 $default{return_weight_matrix} = "";
 $default{return_bg_model} = "";
 
+$default{return_distrib} = "CHECKED";
+$default{return_occ_proba} = "CHECKED";
+$default{sort_distrib} ="occ_sig";
+
+$default{return_crer} = "CHECKED";
+
+$default{analysis_type} = "analysis_sites";
+$checked{$default{analysis_type}} = "CHECKED";
+
 
 ## Threshold values
-$default{lth_score} = "6";
+$default{lth_score} = "0";
 $default{uth_score} = "none";
 $default{lth_rank} = "none";
 $default{uth_rank} = "none";
@@ -59,6 +70,26 @@ $default{lth_sig} = "none";
 $default{uth_sig} = "none";
 $default{lth_pval} = "none";
 $default{uth_pval} = "1e-5";
+
+$default{lth_inv_cum} = "none";
+$default{uth_inv_cum} = "none";
+$default{lth_exp_occ} = "none";
+$default{uth_exp_occ} = "none";
+$default{lth_occ_pval} = "none";
+$default{uth_occ_pval} = "none";
+$default{lth_occ_eval} = "none";
+$default{uth_occ_eval} = "none";
+$default{lth_occ_sig} = "none";
+$default{uth_occ_sig} = "none";
+$default{lth_occ_sig_rank} = "none";
+$default{uth_occ_sig_rank} = "3";
+
+$default{lth_crer_size} = "none";
+$default{uth_crer_size} = "200";
+$default{lth_crer_sites} = "none";
+$default{uth_crer_sites} = "none";
+
+
 
 
 ################################################################
@@ -100,117 +131,12 @@ print "<hr>";
 ################################################################
 #### Matrix specification
 print "<hr>";
-print "<B>Matrix</B>\n";
-print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
-print "<A HREF='help.matrix-scan.html'><B>Format</B></a>&nbsp;";
-
-#### matrix format 
-print $query->popup_menu(-name=>'matrix_format',
-			 -Values=>[
-				   'tab',
-				   'meme',
-				   'MotifSampler',
-				   'consensus',
-				   'gibbs',
-				   'transfac',
-				   'alignace',
-				   'clustal',
-				   'assembly',
-				   'cluster-buster',
-				   'feature',
-				   'infogibbs'
-				  ],
-			 -default=>$default{matrix_format});
-
-print $query->checkbox(-name=>'consensus_as_name',
-		       -checked=>$default{consensus_as_name},
-		       -label=>' use motif consensus as matrix name ');
-
-#### text area to enter the matrix
-print "<BR>\n";
-print $query->textarea(-name=>'matrix',
-		       -default=>$default{matrix},
-		       -rows=>4,
-		       -columns=>60);
-
-
-#### pseudo-counts
-print "<BR>\n";
-print "<B><A HREF='help.matrix-scan.html'>Pseudo-counts</A></b>\n";
-print $query->textfield(-name=>'pseudo_counts',
-			-default=>$default{pseudo_counts},
-			-size=>2);
-
-print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='equi_pseudo' $checked{'equi_pseudo'}>","<b>distributed in an equiprobable way</b>");
-print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='pseudo_prior' $checked{'pseudo_prior'}>","<b>distributed proportionally to residues priors</b>");
-
-#### decimals
-print "<BR>\n";
-print "<B><A HREF='help.matrix-scan.html'>Decimals</A></b>\n";
-print $query->textfield(-name=>'decimals',
-			-default=>$default{decimals},
-			-size=>2);
+&GetMatrix();
 
 ################################################################
 ## Background model
 print "<hr>";
-print "<p><B>Background model</B><br>";
-
-#### Markov order
-print ("<b><a href=help.matrix-scan.html#markov_order>Markov Chain order</a></b> &nbsp;");
-print $query->popup_menu(-name=>'markov_order',
-			 -Values=>[0..8],
-			 -default=>$default{markov_order});
-print "<p>";
-
-
-## Method to estimate the bg model
-
-print ("<b><a href=help.matrix-scan.html#bg_method>Estimation method</a></b>");
-
-#### Input sequences
-print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='bginput' $checked{'bginput'}>", 
-       "<b>Estimate from input sequences</b>");
-
- ## Sliding window
- print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='window' $checked{'window'}>",
-        "<b>Sliding window</b> &nbsp;");
- print $query->textfield(-name=>'window_size',
- 			-default=>$default{window_size},
- 			-size=>5);
-
-#### Pre-defined background frequencies
-print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='bgfile' $checked{bgfile}>");
-print ("<b>Genome subset</b> &nbsp; ", 
-       $query->popup_menu(-name=>'background',
-			  -Values=>["upstream","upstream-noorf","intergenic"],
-			  -default=>$default{background}));
-print  &OrganismPopUpString();
-
-#### custom background model
-print "<INPUT TYPE='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}><a href='help.matrix-scan.html#bg_file'>Upload your own file for the background model</a>", "&nbsp;"x5;
-print "<br/><b>&nbsp;&nbsp;&nbsp;&nbsp;Format</b>&nbsp;";
-#### bg format 
-print $query->popup_menu(-name=>'bg_format',
-			 -Values=>[
-				   'oligo-analysis',
-				   'MotifSampler',
-				   'meme'
-				  ],
-			 -default=>$default{bg_format});
-
-print $query->filefield(-name=>'upload_bgfile',
-			-default=>'starting value',
-			-size=>30,
-			-maxlength=>200);
-
-			
-#### pseudo-counts
-print "<p/>\n";
-print "<B><A HREF='help.matrix-scan.html'>Pseudo-counts</A></b>\n";
-print $query->textfield(-name=>'bg_pseudo',
-			-default=>$default{bg_pseudo_counts},
-			-size=>5);
+&GetBackgroundModel("1","1");
 			
 print "<hr>";
 
@@ -489,58 +415,90 @@ exit(0);
 ################################################################
 ## Table with all the supported statistics and thresholds
 sub ReturnTable {
-  print "<p><b>Return</b></p>\n";
+  print "<p><b>Return</b> (Select one return type) </p>\n";
   
-  print "<b>individual matches:</b>";
-  print "(select fields to return)\n";
-  print "&nbsp;&nbsp;&nbsp;\n";
+  
+  #############################################
+  ## Return fields
+  #
+  my $boxes_matches = ""; 
+  @return_fields_matches = qw(sites pval rank );
+  foreach my $field (@return_fields_matches) {
+    $boxes_matches .= $query->checkbox(-name=>'return_'.$field,
+			   -checked=>$default{'return_'.$field},
+			   -label=>' '.$field.' ');
+  }
+  $boxes_matches .= "<BR/>";
+   @return_fields_matches = qw( limits normw);
+  foreach my $field (@return_fields_matches) {
+    $boxes_matches .= $query->checkbox(-name=>'return_'.$field,
+			   -checked=>$default{'return_'.$field},
+			   -label=>' '.$field.' ');
+  }
+  $boxes_matches .= "<BR/>";
+   @return_fields_matches = qw(weight_limits bg_residues);
+  foreach my $field (@return_fields_matches) {
+    $boxes_matches .= $query->checkbox(-name=>'return_'.$field,
+			   -checked=>$default{'return_'.$field},
+			   -label=>' '.$field.' ');
+  }
   
   ### Return fields
-  @return_fields = qw(sites pval rank normw occ_proba);
-  foreach my $field (@return_fields) {
-    print $query->checkbox(-name=>'return_'.$field,
+  my $boxes_occ = "";
+  @return_fields_occ = qw(distrib);
+  foreach my $field (@return_fields_occ) {
+    $boxes_occ .= $query->checkbox(-name=>'return_'.$field,
 			   -checked=>$default{'return_'.$field},
 			   -label=>' '.$field.' ');
   }
-
- print "<br/><b>or</b> <br/>\n";
-  print "<b>distribution of scores</b>";
-    print "&nbsp;&nbsp;&nbsp;\n";
-   ### Return fields
-  @return_fields = qw(distrib);
-  foreach my $field (@return_fields) {
-    print $query->checkbox(-name=>'return_'.$field,
+  $boxes_occ .= "<BR/>";
+    @return_fields_occ = qw(occ_proba);
+  foreach my $field (@return_fields_occ) {
+    $boxes_occ .= $query->checkbox(-name=>'return_'.$field,
 			   -checked=>$default{'return_'.$field},
 			   -label=>' '.$field.' ');
   }
-  print $query->checkbox(-name=>'sort_distrib',
-		       -checked=>$default{sort_distrib},
-		       -label=>' sort distribution ');
-		       
-		       
-    print "<p><b>Additional fiels to retun</b></p>\n";
-    
-      ### Return fields
-  @return_fields = qw(limits matrix freq_matrix weight_matrix weight_limits bg_model  bg_residues);
-  foreach my $field (@return_fields) {
-    print $query->checkbox(-name=>'return_'.$field,
+  
+  $boxes_occ .= "&nbsp;&nbsp; <b> sort by </b> &nbsp;&nbsp;".$query->popup_menu(-name=>'sort_distrib',
+			 -Values=>['scores',
+				   'occ_sig'],
+			 -default=>$default{sort_distrib});
+
+  ### Return fields
+  my $boxes_crer = "";
+  @return_fields_crer = qw(crer normw);
+  foreach my $field (@return_fields_crer) {
+    $boxes_crer .= $query->checkbox(-name=>'return_'.$field,
 			   -checked=>$default{'return_'.$field},
 			   -label=>' '.$field.' ');
   }
-
-  print "<p><b>Thresholds</b>\n";
-  print "<blockquote>\n";
-
-  print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
-		      $query->Tr({-align=>left,-valign=>TOP},
+	$boxes_crer .= "<BR/>";
+  @return_fields_crer = qw(limits sites);
+  foreach my $field (@return_fields_crer) {
+    $boxes_crer .= $query->checkbox(-name=>'return_'.$field,
+			   -checked=>$default{'return_'.$field},
+			   -label=>' '.$field.' ');
+  }
+  
+  ### Return fields
+  my $boxes_add = "";
+  @return_fields_add = qw(matrix freq_matrix weight_matrix bg_model);
+  foreach my $field (@return_fields_add) {
+    $boxes_add.= $query->checkbox(-name=>'return_'.$field,
+			   -checked=>$default{'return_'.$field},
+			   -label=>' '.$field.' ');
+  }
+  
+  #############################################
+  ## Thresholds
+  #
+  my $thresh_matches = 
+     $query->table({-border=>0,-cellpadding=>1,-cellspacing=>0},
+		      $query->Tr({-align=>right,-valign=>MIDDLE},
 				 [
 				  $query->th([" <A HREF='help.matrix-scan.html#return_fields'>Fields</A> ",
 					      " <A HREF='help.matrix-scan.html#thresholds'>Lower<BR>Threshold</A> ",
 					      " <A HREF='help.matrix-scan.html#thresholds'>Upper<BR>Threshold</A> "]),
-					      
-				$query->th(["on matches",
-					      "",
-					      ""]),
 
 				  ### Threshold on score
 				  $query->td(['score',
@@ -611,25 +569,173 @@ sub ReturnTable {
 								-default=>$default{uth_rank},
 								-size=>5)
 					     ]),
-				
-				$query->th(["on distributions",
-					      "",
-					      ""]),
-					      
-					  ### Threshold on occ
-				  $query->td(['occ',
-					      $query->textfield(-name=>'lth_occ',
-								-default=>$default{lth_occ},
-								-size=>5),
-					      $query->textfield(-name=>'uth_occ',
-								-default=>$default{uth_occ},
-								-size=>5)
-					     ]),
 
 				 ]
 				)
 		     );
-  print "</blockquote>\n";
+
+## Occurences
+	 my $thresh_occ = 
+     $query->table({-border=>0,-cellpadding=>1,-cellspacing=>0},
+		      $query->Tr({-align=>right,-valign=>MIDDLE},
+				 [
+				  $query->th(["<A HREF='help.matrix-scan.html#return_fields'>Fields</A> ",
+					      " <A HREF='help.matrix-scan.html#thresholds'>Lower<BR>Threshold</A> ",
+					      " <A HREF='help.matrix-scan.html#thresholds'>Upper<BR>Threshold</A> "]),
+
+				   $query->th({-colspan=>3,-align=>left},["observed distribution of scores (distrib)"
+					     ]),
+				  ### Threshold on score
+				  $query->td(['score',
+					      $query->textfield(-name=>'lth_score',
+								-default=>$default{lth_score},
+								-size=>5),
+					      $query->textfield(-name=>'uth_score',
+								-default=>$default{uth_score},
+								-size=>5)
+					     ]),
+				
+				### Threshold on occ_inv_cum
+				  $query->td(['occ inv_cum',
+					      $query->textfield(-name=>'lth_inv_cum',
+								-default=>$default{lth_inv_cum},
+								-size=>5),
+					      $query->textfield(-name=>'uth_inv_cum',
+								-default=>$default{uth_inv_cum},
+								-size=>5)
+					     ]),
+
+				$query->th({-colspan=>3,-align=>left},["over-representation of scores (occ_proba)"
+					     ]),
+				
+				### Threshold on exp_occ
+				  $query->td(['exp_occ',
+					      $query->textfield(-name=>'lth_exp_occ',
+								-default=>$default{lth_exp_occ},
+								-size=>5),
+					      $query->textfield(-name=>'uth_exp_occ',
+								-default=>$default{uth_exp_occ},
+								-size=>5)
+					     ]),
+
+				  ### Threshold on P-value of the score
+				  $query->td(['occ P-value',
+					      $query->textfield(-name=>'lth_occ_pval',
+								-default=>$default{lth_occ_pval},
+								-size=>5),
+					      $query->textfield(-name=>'uth_occ_pval',
+								-default=>$default{uth_occ_pval},
+								-size=>5)
+					     ]),
+				
+				 ### Threshold on P-value of the score
+				  $query->td(['occ E-value',
+					      $query->textfield(-name=>'lth_occ_eval',
+								-default=>$default{lth_occ_eval},
+								-size=>5),
+					      $query->textfield(-name=>'uth_occ_eval',
+								-default=>$default{uth_occ_eval},
+								-size=>5)
+					     ]),
+					     
+				### Threshold on Sig of the score
+				  $query->td(['occ Sig',
+					      $query->textfield(-name=>'lth_occ_sig',
+								-default=>$default{lth_occ_sig},
+								-size=>5),
+					      $query->textfield(-name=>'uth_occ_sig',
+								-default=>$default{uth_occ_sig},
+								-size=>5)
+					     ]),
+
+				  ### Threshold on rank
+				  $query->td(['rank',
+					      $query->textfield(-name=>'lth_occ_sig_rank',
+								-default=>$default{lth_occ_sig_rank},
+								-size=>5),
+					      $query->textfield(-name=>'uth_occ_sig_rank',
+								-default=>$default{uth_occ_sig_rank},
+								-size=>5)
+					     ]),	
+				 ]
+				)
+		     );
+  ## CRERs
+	 my $thresh_crer = 
+     $query->table({-border=>0,-cellpadding=>1,-cellspacing=>0},
+		      $query->Tr({-align=>left,-valign=>MIDDLE},
+				 [
+				  $query->th([" <A HREF='help.matrix-scan.html#return_fields'>Fields</A> ",
+					      " <A HREF='help.matrix-scan.html#thresholds'>Lower<BR>Threshold</A> ",
+					      " <A HREF='help.matrix-scan.html#thresholds'>Upper<BR>Threshold</A> "]),
+
+				 
+				  ### Threshold on score
+				  $query->td(['crer_size*',
+					      $query->textfield(-name=>'lth_crer_size',
+								-default=>$default{lth_crer_size},
+								-size=>5),
+					      $query->textfield(-name=>'uth_crer_size',
+								-default=>$default{uth_crer_size},
+								-size=>5)
+					     ]),
+					     
+				### Threshold on P-value of the score
+				  $query->td(['site P-value*',
+					      $query->textfield(-name=>'lth_pval',
+								-default=>$default{lth_pval},
+								-size=>5),
+					      $query->textfield(-name=>'uth_pval',
+								-default=>$default{uth_pval},
+								-size=>5)
+					     ]),
+				
+				### Threshold on occ_inv_cum
+				  $query->td(['crer_sites',
+					      $query->textfield(-name=>'lth_crer_sites',
+								-default=>$default{lth_crer_sites},
+								-size=>5),
+					      $query->textfield(-name=>'uth_crer_sites',
+								-default=>$default{uth_crer_sites},
+								-size=>5)
+					     ]),
+				 ]
+				)
+		     );
+  
+  
+  #############################################
+  ## Table
+ 
+  print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>3},
+  			"<tr><td/>",
+  			"<th bgcolor='#CCCCCC'>
+  			<INPUT TYPE='radio' NAME='analysis_type' VALUE='analysis_sites' $checked{'analysis_sites'}><BR/>
+  			<A HREF='help.matrix-scan.html#return_fields'>Individual matches</A></th>",
+  			"<th bgcolor='#D6EEFA'> 
+  			<INPUT TYPE='radio' NAME='analysis_type' VALUE='analysis_occ' $checked{analysis_occ}><BR/>
+  			<A HREF='help.matrix-scan.html#return_fields'>Enrichment in sites <BR/> (over-representation of matches)</A></th> ",
+			"<th bgcolor='#F6E6CA'>
+			<INPUT TYPE='radio' NAME='analysis_type' VALUE='analysis_crer' $checked{analysis_crer}><BR/>
+			<A HREF='help.matrix-scan.html#return_fields'>CRERs <BR/> (Cis-Regulatory element <BR>Enriched Regions)</A> </th>",
+				"</tr>",
+			"<tr align='left' valign='top'><td><b>Fields to <BR/> return</b></td>",
+  			"<td bgcolor='#CCCCCC'>$boxes_matches</td>",
+  			"<td bgcolor='#D6EEFA'>  $boxes_occ</td> ",
+			"<td bgcolor='#F6E6CA'>$boxes_crer</td>",
+				"</tr>",
+
+			$query->Tr({-align=>middle,-valign=>TOP},
+				 [
+				  $query->td({-colspan=>4},[ "<b>Other fields to return</b>  $boxes_add"],
+				  			)
+				 ]),
+			"<tr align='left' valign='top'><td><b>Thresholds</b></td>",
+  			"<td bgcolor='#CCCCCC'>$thresh_matches</td>",
+  			"<td bgcolor='#D6EEFA'>  $thresh_occ</td> ",
+			"<td bgcolor='#F6E6CA'>$thresh_crer</td>",
+				"</tr>",
+		     );
 
 }
 
