@@ -563,7 +563,28 @@ First, we will retrieve the promoter sequences of the methionine-responding gene
 
 {\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
-MET8MET32MET18MET30MET28MET6MET10MET13MET3ECM17MET14MET1MET17VPS33MET2ZWF1MET4MET22MET7MET31MET12MET16
+MET8
+MET32
+MET18
+MET30
+MET28
+MET6
+MET10
+MET13
+MET3
+ECM17
+MET14
+MET1
+MET17
+VPS33
+MET2
+ZWF1
+MET4
+MET22
+MET7
+MET31
+MET12
+MET16
 \end{verbatim} \end{footnotesize}
 }
 
@@ -574,9 +595,21 @@ Copy the following matrices describing the MET motifs in a file named  \textit{M
 {\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 
-; MET4 matrix, from Gonze et al. (2005). Bioinformatics 21, 3490-500.A |   7   9   0   0  16   0   1   0   0  11   6   9   6   1   8C |   5   1   4  16   0  15   0   0   0   3   5   5   0   2   0G |   4   4   1   0   0   0  15   0  16   0   3   0   0   2   0T |   0   2  11   0   0   1   0  16   0   2   2   2  10  11   8//; MET31 matrix, from Gonze et al. (2005). Bioinformatics 21, 3490-500.A |   3   6   9   6  14  18  16  18   2   0   0   0   1   3   8C |   8   3   3   2   3   0   1   0  13   2   0   1   0   3   6G |   4   3   4   8   0   0   1   0   2   0  17   1  17  11   1T |   3   6   2   2   1   0   0   0   1  16   1  16   0   1   3
+; MET4 matrix, from Gonze et al. (2005). Bioinformatics 21, 3490-500.
+A |   7   9   0   0  16   0   1   0   0  11   6   9   6   1   8
+C |   5   1   4  16   0  15   0   0   0   3   5   5   0   2   0
+G |   4   4   1   0   0   0  15   0  16   0   3   0   0   2   0
+T |   0   2  11   0   0   1   0  16   0   2   2   2  10  11   8
+//
+; MET31 matrix, from Gonze et al. (2005). Bioinformatics 21, 3490-500.
+A |   3   6   9   6  14  18  16  18   2   0   0   0   1   3   8
+C |   8   3   3   2   3   0   1   0  13   2   0   1   0   3   6
+G |   4   3   4   8   0   0   1   0   2   0  17   1  17  11   1
+T |   3   6   2   2   1   0   0   0   1  16   1  16   0   1   3
 \end{verbatim} \end{footnotesize}
 }
+
+\subsubsection{Individual matches}
 
 We can search for individual matches with the 2 matrices, with a threshold on the P-value. This threshold is particularly important when dealing with multiple matrices. Indeed, matrices may be very different in terms of size or information content, leading to very different score ranges. Putting a threshold on the score may thus return many false positive predictions for one of the matrices. By putting a threshold on the P-value, the threshold is coherent for all matrices and results are not biased by the differences in weight ranges. Here we only report the 3 top scoring sites for each matrix in each sequences  with the option -rank\_pm.
 
@@ -594,6 +627,21 @@ matrix-scan -m MET_matrices.tab  -consensus_name \
 
 \end{verbatim} \end{footnotesize}
 }
+
+\subsubsection{Sites enrichment}
+It is also possible to detect the most significant matches, as regards to their enrichment in the input sequence, compared to the background. For each matrix, the 2 most significant scores are returned by using the threshold -uth occ\_sig\_rank 2.
+
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+matrix-scan -m MET_matrices.tab  -consensus_name \
+   -i MET_up800-noorf.fasta  -bginput -markov 0\
+ -return occ_proba -uth occ_sig_rank 2 -sort_distrib\
+   -o MET_2topscores_occ_mkv0.tab
+
+\end{verbatim} \end{footnotesize}
+}
+
 
 \subsection{Detecting Cis-Regulatory element Enriched Regions (CRER)}
 An extension of the concept of enrichement of sites in the input sequence is the detecttion of CRER, which are local over-representation of matches. The enrichment is calculated in windows of variable sizes, which may be overlapping. This concept is to be related to the search of homo- and hetero-typic modules, also known as CRM (Cis-Regulatory Modules). The rationale is that matches that are located in a region containing multiple predictions are more likely to be binding sites. 
