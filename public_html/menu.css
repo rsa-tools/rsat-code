@@ -173,6 +173,36 @@ img {
 	cursor: pointer;
 	
 }
+.menu_item_last {
+	display: block;
+	background: #0D73A7 url(images/bullet2-normal.gif) no-repeat 7px 7px;
+	text-decoration: none; 
+	padding: 4px 5px 4px 30px;
+	padding: 4px 5px 4px 20px;
+	border-bottom:1px solid #444;
+	margin: 0;
+	font-size: 9px;
+	color: #2D282E;
+	cursor: pointer;
+	
+}
+
+.menu_separator {
+	display: block;
+	background-color: #444;
+	text-decoration: none; 
+	padding: 0px 0px 2px 3px;
+	margin: 0;
+	font-size: 9px;
+	color: #D6EEFA;
+	cursor: pointer;
+}
+
+.menu  a.menu_separator:hover {
+	background-color: #444 ;
+	color: #D6EEFA;
+	text-decoration: none;
+}
 
 /*#content.graph .menu_item {
 	background: #D98875 url(images/bullet2-normal.gif) no-repeat 7px 7px;
