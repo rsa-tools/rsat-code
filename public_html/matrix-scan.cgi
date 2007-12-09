@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.11 2007/12/06 16:20:33 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.12 2007/12/09 21:16:54 morgane Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -152,7 +152,13 @@ sub ReadMatrixScanParameters {
     }
     
     if ($query->param('pseudo_distribution') eq "equi_pseudo") {
-      $parameters .= " -equi-pseudo ";
+      $parameters .= " -equi_pseudo ";
+    }
+    
+    ################################################################
+    ## decimals
+    if (&IsReal($query->param('decimals'))) {
+      $parameters .= " -decimals ".$query->param('decimals');
     }
 
     ################################################################
@@ -199,7 +205,7 @@ sub ReadMatrixScanParameters {
       my $oligo_length = $markov_order + 1;
       $bg_file = &ExpectedFreqFile($organism_name,
 				   $oligo_length, $background_model,
-				   noov=>$noov, str=>$str);
+				   noov=>$noov, str=>"-1str");
       $parameters .= " -bgfile ".$bg_file;
 
     } elsif ($bg_method =~ /upload/i) {
@@ -227,34 +233,108 @@ sub ReadMatrixScanParameters {
       &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
     }
 
+	################################################################
+    ## bg_pseudo
+    if (&IsReal($query->param('bg_pseudo'))) {
+      $parameters .= " -bg_pseudo ".$query->param('bg_pseudo');
+    }
 
     ################################################################
     ## Return fields
-    @return_fields = qw(sites pval rank normw limits bg_model matrix freq_matrix weight_matrix);
-    foreach my $field (@return_fields) {
-      if ($query->param("return_".$field) eq "on") {
-	$parameters .= " -return ".$field;
-      }
-    }
-
+    
     ################################################################
-    ## thresholds 
-    @threshold_fields = qw(score pval rank proba_M proba_B normw);
-    foreach my $field (@threshold_fields) {
-      if ($query->param("lth_".$field) ne "none") {
-	my $lth = $query->param("lth_".$field);
-	&RSAT::error::FatalError($lth." is not a valid value for the lower $field threshold. Should be a number. ") unless (&IsReal($lth));
-	$parameters .= " -lth $field $lth ";
-      }
+    ## Return sites
+    if ($query->param('analysis_type') eq "analysis_sites") {
+      my @return_fields = qw(sites pval rank normw limits weight_limits bg_residues);
+    	foreach my $field (@return_fields) {
+      	if ($query->param("return_".$field) eq "on") {
+		$parameters .= " -return ".$field;
+      	}
+    	}
+    
+    	
+    	## thresholds 
+    	my @threshold_fields = qw(score pval sig rank proba_M proba_B normw);
+    	foreach my $field (@threshold_fields) {
+      	if ($query->param("lth_".$field) ne "none") {
+			my $lth = $query->param("lth_".$field);
+			&RSAT::error::FatalError($lth." is not a valid value for the lower $field threshold. Should be a number. ") unless (&IsReal($lth));
+			$parameters .= " -lth $field $lth ";
+      	}
 
       if ($query->param("uth_".$field) ne "none") {
-	my $uth = $query->param("uth_".$field);
-	&RSAT::error::FatalError($uth." is not a valid value for the upper $field threshold. Should be a number. ") unless (&IsReal($uth));
-	$parameters .= " -uth $field $uth ";
-
+			my $uth = $query->param("uth_".$field);
+			&RSAT::error::FatalError($uth." is not a valid value for the upper $field threshold. Should be a number. ") unless (&IsReal($uth));
+			$parameters .= " -uth $field $uth ";
       }
     }
+ }
+ 
+ 	################################################################
+    ## Return distribution
+    if ($query->param('analysis_type') eq "analysis_occ") {
+      my @return_fields = qw(distrib occ_proba);
+    	foreach my $field (@return_fields) {
+      	if ($query->param("return_".$field) eq "on") {
+		$parameters .= " -return ".$field;
+      	}
+    	}
+    	
+    if ($query->param('sort_distrib') eq "occ_sig") {
+      $parameters .= " -sort_distrib ";
+    }
+    	
+    	## thresholds 
+    	my @threshold_fields = qw(score inv_cum exp_occ occ_pval occ_eval occ_sig occ_sig_rank);
+    	foreach my $field (@threshold_fields) {
+      	if ($query->param("lth_".$field) ne "none") {
+			my $lth = $query->param("lth_".$field);
+			&RSAT::error::FatalError($lth." is not a valid value for the lower $field threshold. Should be a number. ") unless (&IsReal($lth));
+			$parameters .= " -lth $field $lth ";
+      	}
 
+      if ($query->param("uth_".$field) ne "none") {
+			my $uth = $query->param("uth_".$field);
+			&RSAT::error::FatalError($uth." is not a valid value for the upper $field threshold. Should be a number. ") unless (&IsReal($uth));
+			$parameters .= " -uth $field $uth ";
+      }
+    }
+ }
+ 
+ 	################################################################
+    ## Return crer
+    if ($query->param('analysis_type') eq "analysis_crer") {
+      my @return_fields = qw(crer sites normw limits);
+    	foreach my $field (@return_fields) {
+      	if ($query->param("return_".$field) eq "on") {
+		$parameters .= " -return ".$field;
+      	}
+    	}
+    	
+    	## thresholds 
+    	my @threshold_fields = qw(crer_size pval crer_sites);
+    	foreach my $field (@threshold_fields) {
+      	if ($query->param("lth_".$field) ne "none") {
+			my $lth = $query->param("lth_".$field);
+			&RSAT::error::FatalError($lth." is not a valid value for the lower $field threshold. Should be a number. ") unless (&IsReal($lth));
+			$parameters .= " -lth $field $lth ";
+      	}
+
+      if ($query->param("uth_".$field) ne "none") {
+			my $uth = $query->param("uth_".$field);
+			&RSAT::error::FatalError($uth." is not a valid value for the upper $field threshold. Should be a number. ") unless (&IsReal($uth));
+			$parameters .= " -uth $field $uth ";
+      }
+    }
+ }
+ 
+  my @return_fields = qw(matrix freq_matrix weight_matrix bg_model);
+    	foreach my $field (@return_fields) {
+      	if ($query->param("return_".$field) eq "on") {
+		$parameters .= " -return ".$field;
+      	}
+    	}
+    
 }
 
 
