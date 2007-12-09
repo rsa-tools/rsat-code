@@ -85,36 +85,36 @@ usage = """
 """
 
 parser = optparse.OptionParser(usage=usage, version=version, description=description)
-parser.add_option("-s", "--strand", dest="strand", help="strand + or +- (default=+-)", choices=['+', '+-'], default='+-')
-parser.add_option("-p", "--overlap", dest="overlap", help="allow overlapping word occurences", action="store_true", default=False)
-parser.add_option("-l", "--length", dest="l", help="oligomer length", action="store", type="int", default=6)
+parser.add_option("-s", "--strand", dest="strand", help="strand + or +- (default=+-) Example: --strand=+", choices=['+', '+-'], default='+-')
+parser.add_option("-p", "--overlap", dest="overlap", help="allow overlapping word occurences Example: --overlap", action="store_true", default=False)
+parser.add_option("-l", "--length", dest="l", help="oligomer length (default=6) Example: --length=7", action="store", type="int", default=6)
 
 #BG
-parser.add_option("-m", "--markov", dest="markov", help="use markov model of order n", action="store", type="int", default=-1)
+parser.add_option("-m", "--markov", dest="markov", help="use markov model of order n Example: --markov=2 (Markov chain of order 2 generated with input sequences)", action="store", type="int", default=-1)
 
-parser.add_option("--bgfile", action="store", dest="bgfile", type="string", default=None)
-parser.add_option("--bgoligo", action="store", dest="bgoligo", type="string", default=None)
-parser.add_option("--bgoligomarkov", action="store", dest="bgoligomarkov", type="string", default=None)
+parser.add_option("--bgfile", action="store", dest="bgfile", type="string", help="background file to use Example --bgfile=mybgfile", default=None)
+parser.add_option("--bgoligo", action="store", dest="bgoligo", type="string", help="use oligo-analysis background model Example: --bgolio=myfile.gz", default=None)
+parser.add_option("--bgoligomarkov", action="store", dest="bgoligomarkov", type="string", help="use a Markovian background model loaded from an oligo-analysis file Example: --bgoligomarkov=myfile.gz", default=None)
 
-parser.add_option("--max", action="append", dest="max", type="string", nargs=2, help="upper threshold example: --max w_win 1", default=[])
-parser.add_option("--min", action="append", dest="min", type="string", nargs=2, help="lower threshold example: --min occ_sig 0", default=[])
-parser.add_option("--sort", action="append", dest="sort", type="string", default=[], help="sort ouput with this criteria name. Prefix the name with a + (or -) for growing (or not) order")
-parser.add_option("-v", "--verbosity", action="store", dest="verbosity", type="int", default=0)
+parser.add_option("--max", action="append", dest="max", type="string", nargs=2, help="upper threshold Example: --max w_win 1 Choose parameter among "+ str(COLUMN_HEADER), default=[])
+parser.add_option("--min", action="append", dest="min", type="string", nargs=2, help="lower threshold Example: --min occ_sig 0 Choose parameter among " + str(COLUMN_HEADER), default=[])
+parser.add_option("--sort", action="append", dest="sort", type="string", default=[], help="sort ouput with this criteria name. Prefix the name with a + (or -) for growing (or not) order Example: --sort=+label")
+parser.add_option("-v", "--verbosity", action="store", dest="verbosity", type="int", help="Set verbosity Example: --verbosity=2", default=0)
 
-parser.add_option("--window", action="store", dest="window", help="use fixed window width", type='int', default=None)
-parser.add_option("--bgwindow", action="store", dest="bgwindow", help="widow size in bg model", type='int', default=None)
+parser.add_option("--window", action="store", dest="window", help="use fixed window width Example --window=20 (use a window of length 20)", type='int', default=None)
+parser.add_option("--bgwindow", action="store", dest="bgwindow", help="widow size in background model Example --bgwindow=200 (use a background window of length 200)", type='int', default=None)
 
-parser.add_option("--location", dest="location", help="region to scan (example -2000:-1)", action="store", type="string", default=None)
+parser.add_option("--location", dest="location", help="region to scan Example --location=-2000:-1", action="store", type="string", default=None)
 parser.add_option("-o", "--output", action="store", dest="output", default=sys.stdout)
 parser.add_option("-i", "--input", action="store", dest="input", default=sys.stdin)
-parser.add_option("-r", "--ratio", action="store", dest="ratio", type="float", default=2.0)
+parser.add_option("-r", "--ratio", action="store", dest="ratio", type="float", help="", default=2.0)
 parser.add_option("--heuristic", action="store", dest="heuristic", type="string", default='slices', help='heutistic for extracting windows (form slower to faster): all, slices, score (default=slices)')
-parser.add_option("--count", action="store", dest="count", type="string", default='hash', help='method for counting oligos (hash or tree)')
+parser.add_option("--count", action="store", dest="count", type="string", default='hash', help='method for counting oligos (hash or tree) default=hash Example: --cont=tree')
 parser.add_option("--spacing", dest="spacing", help="spacing range (example 0:10)", action="store", type="string", default='1:1')
 parser.add_option("-e", "--error", action="store", dest="error", type="int", default=0)
 parser.add_option("--slices", action="store", dest="slices", type="int", help="number of slices to use (only when --heuristic=slice)", default=10)
-parser.add_option("--right", dest="right", action="store", type="int", help="use sequence right bound as reference (ok for upstream)", default=None)
-parser.add_option( "--left", dest="left", action="store", type="int", help="use sequence left bound as reference (ok for downstream)", default=None)
+parser.add_option("--right", dest="right", action="store", type="int", help="use sequence right bound position as reference (ok for upstream) Example --right=-1", default=None)
+parser.add_option( "--left", dest="left", action="store", type="int", help="use sequence left bound position as reference (ok for downstream) Example --left=0", default=None)
 
 (options, args) = parser.parse_args()
 cli.VERBOSITY = options.verbosity
