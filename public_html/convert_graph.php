@@ -67,7 +67,12 @@
     $error = 1;
     error("You must submit an input graph");
   }
-  
+  ## If tab out format et layout = 1 -> error 
+  if ($out_format != "gml" && $layout == "1") {
+    $layout = 0;
+    warning("Computing the nodes layout whith output format $out_format is useless");
+    
+  }    
   if (!$error) { 
   
     $graph = trim_text($graph);
