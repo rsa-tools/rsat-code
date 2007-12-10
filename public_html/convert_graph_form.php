@@ -1,4 +1,3 @@
-
 <html>
 <head>
    <title>Network Analysis Tools - convert-graph</title>
@@ -40,11 +39,15 @@
   }
 
   title('convert-graph');
-  echo ("<center>Convert graphs between different formats.</center>\n");
-  echo ("<form method='post' action='convert_graph.php' enctype='multipart/form-data'>
-  &nbsp;&nbsp;&nbsp;<a href = 'help.convert_graph.html#formats'><B>Input format</B></a>");
-  
-  
+   echo ("<center>Convert graphs between different formats. <br>Optionally, apply a spring-embedding layout algorithm to position the nodes of the graph.\n");
+   echo ("<br>This program was developed by 
+	  <a target=_blank href=http://www.bigre.ulb.ac.be/Users/sylvain/>Sylvain Broh&eacute;e</a> and
+          <a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.
+          </center>\n");
+   
+   echo ("<form method='post' action='convert_graph.php' enctype='multipart/form-data'>
+   &nbsp;&nbsp;&nbsp;<a href = 'help.convert_graph.html#formats'><B>Input format</B></a>");
+
   if (!$pipe) {
     echo("&nbsp;<select name='in_format'>
     <option selected value = 'tab'> tab-delimited format

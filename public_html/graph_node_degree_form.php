@@ -30,7 +30,11 @@
 
   title('graph-node-degree');
   echo ("<center>Calculate the node degree of each node and specifies if this node is a
-    seed or a target node.</center>\n");
+    seed or a target node.\n");
+   echo ("<br>This program was developed by 
+	  <a target=_blank href=http://www.bigre.ulb.ac.be/Users/sylvain/>Sylvain Broh&eacute;e</a> and
+          <a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.
+          </center>\n");
   echo ("<form method='post' action='graph_node_degree.php' enctype='multipart/form-data'>
   &nbsp;&nbsp;&nbsp;<a href = 'help.graph_node_degree.html#formats'><B>Input format</B></a>");
   if (!$pipe) {

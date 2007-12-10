@@ -29,9 +29,10 @@
   classes, ...), and assess the statistical significance of common
   members between each pair of classes."); 
 
-   echo ("This program was developed <A HREF='mailto:jvanheld@scmbb.ulb.ac.be
-  (Jacques van Helden)'>Jacques van Helden</a>, with a contribution of
-  Joseph Tran for a prototype version.</center>");
+   echo ("<br>This program was
+  developed <A HREF='mailto:jvanheld@scmbb.ulb.ac.be (Jacques van
+  Helden)'>Jacques van Helden</a>, with a contribution of Joseph Tran
+  for a first prototype.</center>");
   
   echo ("<form method='post' action='compare_classes.php' enctype='multipart/form-data'>");
   if($demo) {
