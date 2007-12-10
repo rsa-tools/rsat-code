@@ -75,49 +75,139 @@ description = '''ORM is a command line software that searches for locally overre
 [ Matthieu Defrance defrance@scmbb.ulb.ac.be ]
 '''
 version = '2007.12'
-usage = """
-        %prog -b bgmodel [-i inputfile]
+USAGE = """orm.py -l OLIGOMER_LENGTH [-i inputfile]
                 [-o outputfile] 
                 [--max parameter #][--min parameter #]
                 [-h | --help]
 
-        Example : %prog  -i seq.fasta --markov=2 -v2 --max rank 10
+        Example : %prog -i seq.fasta -l 6 --markov=2 -v2 --max rank 10
 """
 
-parser = optparse.OptionParser(usage=usage, version=version, description=description)
-parser.add_option("-s", "--strand", dest="strand", help="strand + or +- (default=+-) Example: --strand=+", choices=['+', '+-'], default='+-')
+parser = optparse.OptionParser(usage=USAGE, version=version, description=description, add_help_option=False)
+parser.add_option("-s", "--strand", dest="strand", help="search in foward strand (+) or in both strands (+-) (default=%default) Example: --strand=+", choices=['+', '+-'], default='+-')
 parser.add_option("-p", "--overlap", dest="overlap", help="allow overlapping word occurences Example: --overlap", action="store_true", default=False)
-parser.add_option("-l", "--length", dest="l", help="oligomer length (default=6) Example: --length=7", action="store", type="int", default=6)
+parser.add_option("-l", "--length", dest="l", help="oligomer length Example: --length=7 REQUIRED", action="store", type="int", default=None)
 
 #BG
-parser.add_option("-m", "--markov", dest="markov", help="use markov model of order n Example: --markov=2 (Markov chain of order 2 generated with input sequences)", action="store", type="int", default=-1)
+parser.add_option("-m", "--markov", dest="markov", help="use Markov model of order ORDER as background model. Markov model parameters are computed from the input sequence Example: --markov=2 (Markov chain of order 2 generated with input sequences)", action="store", type="int", metavar="ORDER", default=-1)
 
 parser.add_option("--bgfile", action="store", dest="bgfile", type="string", help="background file to use Example --bgfile=mybgfile", default=None)
 parser.add_option("--bgoligo", action="store", dest="bgoligo", type="string", help="use oligo-analysis background model Example: --bgolio=myfile.gz", default=None)
 parser.add_option("--bgoligomarkov", action="store", dest="bgoligomarkov", type="string", help="use a Markovian background model loaded from an oligo-analysis file Example: --bgoligomarkov=myfile.gz", default=None)
 
-parser.add_option("--max", action="append", dest="max", type="string", nargs=2, help="upper threshold Example: --max w_win 1 Choose parameter among "+ str(COLUMN_HEADER), default=[])
-parser.add_option("--min", action="append", dest="min", type="string", nargs=2, help="lower threshold Example: --min occ_sig 0 Choose parameter among " + str(COLUMN_HEADER), default=[])
-parser.add_option("--sort", action="append", dest="sort", type="string", default=[], help="sort ouput with this criteria name. Prefix the name with a + (or -) for growing (or not) order Example: --sort=+label")
-parser.add_option("-v", "--verbosity", action="store", dest="verbosity", type="int", help="Set verbosity Example: --verbosity=2", default=0)
+parser.add_option("--max", action="append", dest="max", type="string", nargs=2, help="limit output to items that have PARAM <= VALUE Example: --max w_win 1 Choose parameter among "+ str(COLUMN_HEADER), metavar="PARAM VALUE", default=[])
+parser.add_option("--min", action="append", dest="min", type="string", nargs=2, help="limit output to items that have PARAM >= VALUE Example: --min occ_sig 0 Choose parameter among " + str(COLUMN_HEADER), metavar="PARAM VALUE", default=[])
+parser.add_option("--sort", action="append", dest="sort", type="string", default=[], help="sort ouput on PARAM in growing order (+) or inverse (-) Example: --sort=+label", metavar="[+][-]PARAM")
+parser.add_option("-v", "--verbosity", action="store", dest="verbosity", type="int", help="Set verbosity to level LEVEL Example: --verbosity=2", metavar="LEVEL", default=0)
 
-parser.add_option("--window", action="store", dest="window", help="use fixed window width Example --window=20 (use a window of length 20)", type='int', default=None)
-parser.add_option("--bgwindow", action="store", dest="bgwindow", help="widow size in background model Example --bgwindow=200 (use a background window of length 200)", type='int', default=None)
+parser.add_option("--window", action="store", dest="window", help="use fixed window width of length LENGTH Example --window=20 (use a window of length 20)", type='int', metavar="LENGTH", default=None)
+parser.add_option("--bgwindow", action="store", dest="bgwindow", help="use a widow size of length LENGTH in background model Example --bgwindow=200 (use a background window of length 200)", type='int', metavar="LENGTH", default=None)
 
 parser.add_option("--location", dest="location", help="region to scan Example --location=-2000:-1", action="store", type="string", default=None)
-parser.add_option("-o", "--output", action="store", dest="output", default=sys.stdout)
-parser.add_option("-i", "--input", action="store", dest="input", default=sys.stdin)
+parser.add_option("-o", "--output", action="store", dest="output", metavar="FILE", default=sys.stdout)
+parser.add_option("-i", "--input", action="store", dest="input", metavar="FILE", default=sys.stdin)
 parser.add_option("-r", "--ratio", action="store", dest="ratio", type="float", help="", default=2.0)
 parser.add_option("--heuristic", action="store", dest="heuristic", type="string", default='slices', help='heutistic for extracting windows (form slower to faster): all, slices, score (default=slices)')
 parser.add_option("--count", action="store", dest="count", type="string", default='hash', help='method for counting oligos (hash or tree) default=hash Example: --cont=tree')
 parser.add_option("--spacing", dest="spacing", help="spacing range (example 0:10)", action="store", type="string", default='1:1')
 parser.add_option("-e", "--error", action="store", dest="error", type="int", default=0)
 parser.add_option("--slices", action="store", dest="slices", type="int", help="number of slices to use (only when --heuristic=slice)", default=10)
-parser.add_option("--right", dest="right", action="store", type="int", help="use sequence right bound position as reference (ok for upstream) Example --right=-1", default=None)
-parser.add_option( "--left", dest="left", action="store", type="int", help="use sequence left bound position as reference (ok for downstream) Example --left=0", default=None)
+parser.add_option("--right", dest="right", action="store", type="int", help="use sequence right bound position as reference position POSITION. This should be used for upstream sequences Example --right=-1", metavar="POSITION", default=None)
+parser.add_option( "--left", dest="left", action="store", type="int", help="use sequence left bound position as reference position POSITION. This should be used for downstream sequences Example --left=0", metavar="POSITION", default=None)
+
+parser.add_option( "-h", "--help", dest="help", action="store_true")
+
 
 (options, args) = parser.parse_args()
 cli.VERBOSITY = options.verbosity
+
+HELP='''NAME
+        orm
+
+VERSION
+        2007.12
+
+AUTHOR
+        2006-2006 by Matthieu Defrance (defrance@scmbb.ulb.ac.be)
+
+DESCRIPTION
+        compute oligomer frequencies in a set of sequences,
+        and detects locally overrepresented oligomers.
+
+CATEGORY
+        sequences
+        pattern discovery
+
+USAGE
+        %s
+
+ARGUMENTS
+        -h, --help            show this help message and exit.
+        --version             show program's version number and exit        
+        -i FILE, --inputfile=FILE  
+                              read sequence from FILE (must be in FASTA format)
+                              if not specified, the standard input is used.
+        -o FILE, --output=FILE
+                              output results to FILE
+                              if not specified, the standard output is used.
+        -l, --length          oligomer length. REQUIRED ARGUMENTS!
+                              EXAMPLE: --length=7
+        -s STRAND, --strand=STRAND
+                              search in foward strand (+) or in both strands (+-)
+                              default=+-
+                              EXAMPLE: --strand=+
+        -p, --overlap         allow overlapping word occurences 
+                              EXAMPLE: --overlap
+        -m ORDER, --markov=ORDER
+                              use Markov model of order ORDER as background model.
+                              Markov model parameters are computed from the input
+                              sequence 
+                              EXAMPLE: --markov=2 (Markov chain of order 2)
+                              generated with input sequences)
+        --bgfile=BGFILE       background file to use 
+                              Example: --bgfile=mybgfile
+        --bgoligo=BGOLIGO     use oligo-analysis background model 
+                              EXAMPLE: --bgolio=myfile.gz
+        --bgoligomarkov=BGOLIGOMARKOV
+                              use a Markovian background model loaded from an oligo-
+                              analysis file Example: --bgoligomarkov=myfile.gz
+        --max=PARAM VALUE     limit output to items that have PARAM <= VALUE
+                              EXAMPLE: --max w_win 1 
+                              Supported parameters: seq, identifier, obs_freq, exp_freq, occ, exp_occ, occ_P,
+                               occ_E, occ_sig, start, end, width, n_win, n_pos, w_rank, rank
+        --min=PARAM VALUE     limit output to items that have PARAM >= VALUE
+                              EXAMPLE: --min occ_sig 0 
+                              Supported parameters: seq, identifier, obs_freq, exp_freq, occ, exp_occ, occ_P,
+                               occ_E, occ_sig, start, end, width, n_win, n_pos, w_rank, rank
+        --sort=[+][-]PARAM    sort ouput according to parameter PARAM in growing order (+) or inverse
+                              (-) 
+                              EXAMPLE: --sort=+label
+                              Supported parameters: seq, identifier, obs_freq, exp_freq, occ, exp_occ, occ_P,
+                               occ_E, occ_sig, start, end, width, n_win, n_pos, w_rank, rank
+        -v LEVEL, --verbosity=LEVEL
+                              set verbosity to level LEVEL 
+                              EXAMPLE: --verbosity=2
+        --window=LENGTH       use a fixed window width of length LENGTH
+                              EXAMPLE: --window=20 (use a window of length 20)
+        --bgwindow=LENGTH     use a widow size of length LENGTH in background model
+                              EXAMPLE: --bgwindow=200 (use a background window of length 200)
+        --heuristic=HEURISTIC
+                              heutistic for extracting windows.
+                              Supported heutistic: all, slices, score 
+                              DEFAULT: slices
+                              EXAMPLE: --heuristic=all
+                              slices is faster than all
+        --slices=SLICES       number of slices to use
+                              This option is relevant only when heuristic is set to slices
+        --right=POSITION      use sequence right bound position as reference
+                              position POSITION. This should be used for upstream
+                              sequences.
+                              EXAMPLE: --right=-1 (use right bound of input sequence as position -1)
+        --left=POSITION       use sequence left bound position as reference position
+                              POSITION. This should be used for downstream sequences
+                              EXAMPLE: --left=0 (use left bound of input sequence as position 0)
+
+'''
 
 
 ########################################
@@ -127,6 +217,18 @@ cli.VERBOSITY = options.verbosity
 ########################################
 
 def run(args, options):
+    if options.help:
+        print HELP % USAGE
+        return
+
+
+    if options.l == None:
+        parser.error("options -l is required. You must provide at least an oligomer length")
+
+
+
+
+
     timer = Core.Sys.timer.Timer()
     spacing = ( int(options.spacing.split(':')[0]), int(options.spacing.split(':')[1]) )
 
