@@ -85,7 +85,7 @@ if ($graph_format == 'tab') {
 
 
 echo("<B><a href = 'help.mcl.html#inflation'>Inflation value</a></B>&nbsp;<select name='inflation'>");
-for ($i = 1.1; $i <= 5; $i = $i+0.1) {
+for ($i = 1.1; $i <= 10; $i = $i+0.1) {
   $select = "";
   if (abs($i - $default_inflation) < $epsilon) {
 //     echo (abs($i - $default_inflation))."\n";
