@@ -265,3 +265,29 @@ represents ($\approx$20\% of Ito, and $\approx$4\% of Uetz).
 
 
 
+\section{Troubleshooting}
+
+\begin{enumerate}
+
+\item The P-value of the intersection between two graphs is 0. Does it
+  mean that it is impossible to have such an intersection by chance
+  alone ?
+
+  No. Any intersection that you observe in practice might occur by
+  chance, but the limit of precision for the hypergeometric P-value is
+  $\approx$10^{-321}. Thus, a value of 0 can be interpreted as $Pval <
+  10^{-321}.$
+
+\item The web server indicates that the result will appear, and after
+  a few minutes my browser displays a message ``No response the
+  server''.
+
+  How big are the two graphs that you are comparing ? In principle,
+  compare-graphs can treat large graphs in a short time, but if your
+  graphs are very large (e.g. several hundreds of thousands of arcs),
+  the processing time may exceed the patience of your browser. In such
+  case, you should consider either to install the stand-alone version
+  of \neat on your computer, or o write a script that uses \neat via
+  their Web services interface.
+
+\end{enumerate}
