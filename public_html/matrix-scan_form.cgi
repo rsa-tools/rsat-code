@@ -494,9 +494,9 @@ sub ReturnTable {
   #
   my $thresh_matches = 
      $query->table({-border=>0,-cellpadding=>1,-cellspacing=>0},
-		      $query->Tr({-align=>right,-valign=>MIDDLE},
+		      $query->Tr({-align=>center,-valign=>MIDDLE},
 				 [
-				  $query->th([" <A HREF='help.matrix-scan.html#return_fields'>Fields</A> ",
+				  $query->th([" <A HREF='help.matrix-scan.html#return_fields'>Field</A> ",
 					      " <A HREF='help.matrix-scan.html#thresholds'>Lower<BR>Threshold</A> ",
 					      " <A HREF='help.matrix-scan.html#thresholds'>Upper<BR>Threshold</A> "]),
 
@@ -577,9 +577,9 @@ sub ReturnTable {
 ## Occurences
 	 my $thresh_occ = 
      $query->table({-border=>0,-cellpadding=>1,-cellspacing=>0},
-		      $query->Tr({-align=>right,-valign=>MIDDLE},
+		      $query->Tr({-align=>center,-valign=>MIDDLE},
 				 [
-				  $query->th(["<A HREF='help.matrix-scan.html#return_fields'>Fields</A> ",
+				  $query->th(["<A HREF='help.matrix-scan.html#return_fields'>Field</A> ",
 					      " <A HREF='help.matrix-scan.html#thresholds'>Lower<BR>Threshold</A> ",
 					      " <A HREF='help.matrix-scan.html#thresholds'>Upper<BR>Threshold</A> "]),
 
@@ -605,7 +605,7 @@ sub ReturnTable {
 								-size=>5)
 					     ]),
 
-				$query->th({-colspan=>3,-align=>left},["over-representation of scores (occ_proba)"
+				$query->th({-colspan=>3,-align=>left},["over-representation of matches (occ_proba)"
 					     ]),
 				
 				### Threshold on exp_occ
@@ -663,9 +663,9 @@ sub ReturnTable {
   ## CRERs
 	 my $thresh_crer = 
      $query->table({-border=>0,-cellpadding=>1,-cellspacing=>0},
-		      $query->Tr({-align=>left,-valign=>MIDDLE},
+		      $query->Tr({-align=>center,-valign=>MIDDLE},
 				 [
-				  $query->th([" <A HREF='help.matrix-scan.html#return_fields'>Fields</A> ",
+				  $query->th([" <A HREF='help.matrix-scan.html#return_fields'>Field</A> ",
 					      " <A HREF='help.matrix-scan.html#thresholds'>Lower<BR>Threshold</A> ",
 					      " <A HREF='help.matrix-scan.html#thresholds'>Upper<BR>Threshold</A> "]),
 
