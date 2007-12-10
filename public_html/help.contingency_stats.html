@@ -12,29 +12,29 @@
 
 <b>Warning</b>: the following text is the help message from the
 on-line program, we still need to format it for the html form. There
-re possibly some differencs in option names, but the help already
+are possibly some differencs in option names, but the help already
 provides information about the statistics used by the program, and the
 meaning of the different options.
 
 <PRE>
-NAME
+<h3>NAME</h3>
     contingency-stats
 
-DESCRIPTION
+<h3>DESCRIPTION</h3>
     This programs takes as input a contingency table, and calculates various
     matching statistics between the rows and columns. The description of
     these statistics can be found in Brohee and van Helden, 2006.
 
-AUTHORS
+<h3>AUTHORS</h3>
     jvanheld@scmbb.ulb.ac.be
 
-CATEGORY
+<h3>CATEGORY</h3>
     util
 
-USAGE
+<h3>USAGE</h3>
     contingency-stats [-i inputfile] [-o outputfile] [-v]
 
-INPUT FORMAT
+<h3>INPUT FORMAT</h3>
     A contingency table is a N*M table used to compare the contents of two
     classifications. Rows represent the clusters of the first classification
     (considered as reference), and columns the clusters of the second
@@ -43,11 +43,11 @@ meaning of the different options.
     Contingency tables can be generated with the program contingency-table,
     or with compare-classes (option -matrix QR).
 
-OUTPUT FORMAT
+<h3>OUTPUT FORMAT</h3>
     A tab-delimited text file with one row per statistics.
 
-STATISTICS
-    Sn
+<h3>STATISTICS</h3>
+    <b>Sn</b>
         Sensitivity. This parameter indicates the fraction of each reference
         cluster (row) covered by its best matching query cluster (column).
 
@@ -55,22 +55,22 @@ meaning of the different options.
         of each row (row-wise Sn) and of the whole contingency table
         (table-wise Sn).
 
-        Cell-wise sensitivity
+        <b>Cell-wise sensitivity</b>
             Sn_{i,j} = X_{i,j}/SUM_j(X_{i,j})
 
-        row-wise sensitivity
+        <b>row-wise sensitivity</b>
             Sn_{i.} = MAX_j(Sn_{i,j})
 
             The row-wise sensitivity of a row is the maximal value of
             sensitivity for all the cells of this row.
 
-        table-wise sensitivity
+        <b>table-wise sensitivity</b>
             Sn = SUM_i(Sn_{i.})/M
 
             The table-wise sensitivity is the average of the row-wise
             sensitivity over all the rows of the contingency table.
 
-    PPV
+    <b>PPV</b>
         Positive Predictive Value. This parameter indicates the fraction of
         each query cluster (column) covered by its best matching reference
         cluster (row).
@@ -79,50 +79,50 @@ meaning of the different options.
         column (column-wise PPV) and of the whole contingency table
         (table-wise PPV).
 
-        Cell-wise PPV
+        <b>Cell-wise PPV</b>
             PPV_{i,j} = X_{i,j}/SUM_i(X_{i,j})
 
-        column-wise PPV
+        <b>column-wise PPV</b>
             PPV_{.j} = MAX_i(PPV_{i,j})
 
             The column-wise PPV of a column is the maximal value of PPV for
             all the cells of this column.
 
-        table-wise PPV
+        <b>table-wise PPV</b>
             PPV = SUM_j(PPV_{j.})/N
 
             The table-wise PPV is the average of the column-wise PPV over
             all the columns of the contingency table.
 
-    Acc.geom
+    <b>Acc.geom</b>
         Geometric accuracy. This reflects the tradeoff between sensitivity
         and positive predictive value, by computing the geometric accuracy
         between Sn and PPV.
 
         Acc.geom = sqrt(Sn*PPV)
 
-    Sep
+    <b>Sep</b>
         Separation.
 
         The separation is defined, at the level of each cell (cell-wise
         separation) as the product between Sn and PPV.
 
-        Cell-wise separation
+        <b>Cell-wise separation</b>
             sep_{i,j}=Sn_{i,j}*PPV_{i,j}
 
-        Column-wise separation
+        <b>Column-wise separation</b>
             Column-wise separation is defined at the level of each column,
             as the sum of separation value for all the cells of this column.
 
             sep_{.j} = SUM_i( sep_{i,j})
 
-        Row-wise separation
+        <b>Row-wise separation</b>
             Row-wise separation is defined at the level of each row, as the
             sum of separation value for all the cells of this row.
 
             sep_{i.} = SUM_j(sep_{i,j})
 
-        Table-wise separation
+        <b>Table-wise separation</b>
             Three table-wise statistics are computed for separation.
 
             average column-wise separation
@@ -134,36 +134,36 @@ meaning of the different options.
             table-wise separation
                 sep = sqrt(sep_r*sep_c)
 
-SEE ALSO
+<h3>SEE ALSO</h3>
     contingency-table
     compare-classes
 
-REFERENCES
+<h3>REFERENCES</h3>
     Brohee, S. & van Helden, J. (2006). Evaluation of clustering algorithms
     for protein-protein interaction networks. BMC Bioinformatics 7, 488.
 
-OPTIONS
-    -v #
+<h3>OPTIONS</h3>
+    <b>-v #</b>
         Level of verbosity (detail in the warning messages during execution)
 
-    -h
+    <b>-h</b>
         Display full help message
 
-    -help
+    <b>-help</b>
         Same as -h
 
-    -i inputfile
+    <b>-i inputfile</b>
         If no input file is specified, the standard input is used. This
         allows to use the command within a pipe.
 
-    -o outputfile
+    <b>-o outputfile</b>
         If no output file is specified, the standard output is used. This
         allows to use the command within a pipe.
 
-    -decimals #
+    <b>-decimals #</b>
         Number of decimals to display for the computed statistics.
 
-    -param param_value
+    <b>-param param_value</b>
         Include a user-specified parameter value in the table-wise
         statistics. Can be used iteratively on the same commande line.
 
@@ -173,29 +173,29 @@ meaning of the different options.
         then be integrated in a single table with the program
         clompare-scores.
 
-    -return return_fields
+    <b>-return return_fields</b>
         List of fields to return.
 
         Supported fields: stats, rowstats, colstats, tables, margins
 
-        stats
+        <b>stats</b>
             table-wise statistics
 
-        rowstats
+        <b>rowstats</b>
             row-wise statistics (one line per row of the contingency table)
 
-        colstats
+        <b>colstats</b>
             column-wise statistics (one line per column of the contingency
             table)
 
-        tables
+        <b>tables</b>
             full tables for each statistics (counts, Sn, PPV, separation).
 
-        margins
+        <b>margins</b>
             marginal statistics besides the tables (requires to return
             tables).
 
-    -rsizes row_size_file
+    <b>-rsizes row_size_file</b>
         Specify row group sizes in a separate file. This option can be used
         in particular cases where the marginal sum of the contingency table
         does not correspond to the group sizes (for example if a
@@ -207,7 +207,7 @@ meaning of the different options.
         row (the same name as in the contingency table), and the second the
         size of the corresponding group.
 
-    -csizes column_size_file
+    <b>-csizes column_size_file</b>
         Specify column group sizes in a separate file.
 
         Same description as for -rsizes.
@@ -229,7 +229,7 @@ For information, contact
 var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
 //--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
 </address>
-</h4>
+</b>
 
 </blockquote>
 </body>

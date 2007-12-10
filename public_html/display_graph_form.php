@@ -33,7 +33,11 @@
   }
 
   title('display-graph');
-  echo ("<center>Generate a figure for a graph</center>\n");
+  echo ("<center>Generate a figure for a graph\n");
+   echo ("<br>This program was developed by 
+	  <a target=_blank href=http://www.bigre.ulb.ac.be/Users/sylvain/>Sylvain Broh&eacute;e</a> and
+          <a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.
+          </center>\n");
    echo ("<b>Warning!</b> The layout and display facilities supported on the Web
 	  site are restricted.<br>\n
 

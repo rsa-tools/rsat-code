@@ -31,7 +31,11 @@
   
   title('random-graph');
   echo ("<center>Generate random graphs either from an existing graph or from scratch 
-    according to different randomization procedure.</center>\n");
+    according to different randomization procedures.\n");
+   echo ("<br>This program was developed by 
+	  <a target=_blank href=http://www.bigre.ulb.ac.be/Users/sylvain/>Sylvain Broh&eacute;e</a> and
+          <a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.
+          </center>\n");   
   echo ("<form method='post' action='random_graph.php' enctype='multipart/form-data'>");
   echo ("&nbsp;&nbsp;&nbsp;<B><a href = 'help.random_graph.html#formats'>Input format</a></B>&nbsp;");
 

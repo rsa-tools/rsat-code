@@ -33,7 +33,7 @@
 two first publications reporting a complete characterization of the
 yeast interactome, obtained using the two-hybrid method.";
     $demo_remark .= "The first network (<a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?db=pubmed&uid=10688190&cmd=showdetailview&indexed=google'>Uetz et al, 2000)</a> contains 865 interactions between 926 proteins.";
-    $demo_remark .= "The second network  (<a href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=11283351&ordinalpos=3&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum' target = 'top'>Ito et al, 2001)</a> contains 865 interactions between 926 proteins.";
+    $demo_remark .= "The second network  (<a href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=11283351&ordinalpos=3&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum' target = 'top'>Ito et al, 2001)</a> contains 786 interactions between 779 proteins.";
 
     $demo_remark .= "We will merge the two networks (i.e. compute
 their union), and label each edge according to the fact that it is
@@ -43,7 +43,13 @@ between the two networks.";
 
   }
   title('compare-graphs');
-  echo ("<center>Computes the intersection, the union or the difference of two graphs</center>\n");
+echo ("<center>Computes the intersection, the union or the difference between two graphs.\n");
+echo ("<br>This program was developed by 
+<a target=_blank href=http://www.bigre.ulb.ac.be/Users/sylvain/>Sylvain Broh&eacute;e</a>,
+Gilles Vanderstocken 
+and 
+<a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.
+</center>\n");
   if($demo) {
     demo($demo_remark);
   }
