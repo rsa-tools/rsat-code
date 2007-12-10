@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.39 2007/12/10 00:19:20 jvanheld Exp $
+# $Id: compare-graphs,v 1.40 2007/12/10 00:24:30 jvanheld Exp $
 #
 ############################################################
 
@@ -244,18 +244,18 @@ package main;
 
     ################################################################
     ## Table synthesizing the statistics
+#    $message .= ";\n";
+#    $message .= sprintf "; %-23s\t%s\n", "Reference graph", $main::infile{graph_R};
+#    $message .= sprintf "; %-23s\t%s\n", "Query graph", $main::infile{graph_Q};
     $message .= ";\n";
-    $message .= sprintf ";\t%-23s\t%s\n", "Reference graph", $main::infile{graph_R};
-    $message .= sprintf ";\t%-23s\t%s\n", "Query graph", $main::infile{graph_Q};
-    $message .= ";\n";
-    $message .= ";\tCounts of nodes and arcs\n";
-    $message .= sprintf ";\t\t%s\t%s\t%s\t%s\n", "Graph", "Nodes", "Edges", "Description";
-    $message .= sprintf ";\t\t%s\t%d\t%d\t%s\n", "R", $nodes_R_graph, $arcs_R_graph, "Reference graph";
-    $message .= sprintf ":\t\t%s\t%d\t%d\t%s\n", "Q", $nodes_Q_graph, $arcs_Q_graph, "Query graph";
-    $message .= sprintf ":\t\t%s\t%d\t%d\t%s\n", "QvR", $union_nodes, $union_arcs, "Union";
-    $message .= sprintf ":\t\t%s\t%d\t%d\t%s\n", "Q^R", $common_nodes, $common_arcs, "Intersection";
-    $message .= sprintf ":\t\t%s\t%d\t%d\t%s\n", "Q!R", $query_only_nodes, $query_only_arcs, "Query not reference";
-    $message .= sprintf ":\t\t%s\t%d\t%d\t%s\n", "R!Q", $ref_only_nodes, $ref_only_arcs, "Reference not query";
+    $message .= "; Counts of nodes and arcs\n";
+    $message .= sprintf ";\t%s\t%s\t%s\t%s\n", "Graph", "Nodes", "Edges", "Description";
+    $message .= sprintf ";\t%s\t%d\t%d\t%s\n", "R", $nodes_R_graph, $arcs_R_graph, "Reference graph";
+    $message .= sprintf ";\t%s\t%d\t%d\t%s\n", "Q", $nodes_Q_graph, $arcs_Q_graph, "Query graph";
+    $message .= sprintf ";\t%s\t%d\t%d\t%s\n", "QvR", $union_nodes, $union_arcs, "Union";
+    $message .= sprintf ";\t%s\t%d\t%d\t%s\n", "Q^R", $common_nodes, $common_arcs, "Intersection";
+    $message .= sprintf ";\t%s\t%d\t%d\t%s\n", "Q!R", $query_only_nodes, $query_only_arcs, "Query not reference";
+    $message .= sprintf ";\t%s\t%d\t%d\t%s\n", "R!Q", $ref_only_nodes, $ref_only_arcs, "Reference not query";
     $message .= ";\n";
 
 
@@ -276,19 +276,19 @@ package main;
       $jac_sim = $common_arcs/$union_arcs;
     }
 
-    $message .= ";\tSignificance of the number of arcs at the intersection\n";
-    $message .= sprintf ";\t\t%s\t%s\t%-38s\t%s\n", "Symbol", "Value", "Description", "Formula";
-    $message .= sprintf ";\t\t%s\t%d\t%-38s\t%s\n", "M", $max_union_arcs, "Max number of arcs in the union", $max_union_formula;
-    $message .= sprintf ";\t\t%s\t%.2f\t%-38s\t%s\n", "E(QR)", $exp_inter_arcs, "Expected arcs in the intersection", "E(QR) = Q*R/M";
-    $message .= sprintf ";\t\t%s\t%.2f\t%-38s\t%s\n", "perc_Q", $perc_Q, "Percentage of query arcs", "perc_Q = QR/Q";
-    $message .= sprintf ";\t\t%s\t%.2f\t%-38s\t%s\n", "perc_R", $perc_R, "Percentage of reference arcs", "perc_R = QR/R";
-    $message .= sprintf ";\t\t%s\t%.2f\t%-38s\t%s\n", "Jac_sim", $jac_sim, "Jaccard coefficient of similarity", "Jac_sim = Q^R/(QvR)";
-    $message .= sprintf ";\t\t%s\t%d\t%s\n", "Q^R", $common_arcs, "Observed arcs in the intersection";
-    $message .= sprintf ";\t\t%s\t%g\t%-38s\t%s\n", "Pval", $pval, "P-value of the intersection", "Pval=P(X >= Q^R)";
+    $message .= "; Significance of the number of arcs at the intersection\n";
+    $message .= sprintf ";\t%s\t%s\t%-38s\t%s\n", "Symbol", "Value", "Description", "Formula";
+    $message .= sprintf ";\t%s\t%d\t%-38s\t%s\n", "M", $max_union_arcs, "Max number of arcs in the union", $max_union_formula;
+    $message .= sprintf ";\t%s\t%.2f\t%-38s\t%s\n", "E(QR)", $exp_inter_arcs, "Expected arcs in the intersection", "E(QR) = Q*R/M";
+    $message .= sprintf ";\t%s\t%.2f\t%-38s\t%s\n", "perc_Q", $perc_Q, "Percentage of query arcs", "perc_Q = QR/Q";
+    $message .= sprintf ";\t%s\t%.2f\t%-38s\t%s\n", "perc_R", $perc_R, "Percentage of reference arcs", "perc_R = QR/R";
+    $message .= sprintf ";\t%s\t%.2f\t%-38s\t%s\n", "Jac_sim", $jac_sim, "Jaccard coefficient of similarity", "Jac_sim = Q^R/(QvR)";
+    $message .= sprintf ";\t%s\t%d\t%s\n", "Q^R", $common_arcs, "Observed arcs in the intersection";
+    $message .= sprintf ";\t%s\t%g\t%-38s\t%s\n", "Pval", $pval, "P-value of the intersection", "Pval=P(X >= Q^R)";
 
 
     if ($main::verbose >= 1 && $output_format ne 'gml') {
-      print $main::out ";\t$message";
+      print $main::out "; $message";
     }
     if ($main::verbose >= 1 && $main::out ne "STDOUT") {
       &RSAT::message::Info("$message");
