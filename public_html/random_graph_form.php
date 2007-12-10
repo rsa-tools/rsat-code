@@ -79,14 +79,15 @@
   <option value = 'node_degree'> Node degree conservation
   <option value = 'node_degree_distrib'> Node degree distribution conservation 
   </select></td>
-  <td>number of nodes</td><td><input type = 'text' name='nodes' size = 1></td> 
-  <td>number of edges</td><td><input type = 'text' name='edges' size = 1></td>
-  <td><i>(nodes and edges number must be provided only for 'from scratch' randomization type)</i></td>
+  <td>number of nodes</td><td><input type = 'text' name='nodes' size = 4></td> 
+  <td>number of edges</td><td><input type = 'text' name='edges' size = 4></td>
+  <td><i>(node and edge numbers must be provided only for randomization type 'from scratch')</i></td>
   </tr><tr>
   <td><input type='checkbox' name='normal' value='on' />&nbsp;<B><a href = 'help.random_graph.html#normal'>Normal distribution of weights</a></B></td>
-  <td>Mean</td><td><input type = 'text' name='mean' size = 1></input></td>
-  <td>Standard deviation</td><td><input type = 'text' name='stddev' size = 1></input></td>
-  <td><i>(mean and standard deviation may be provided only for ER and for 'from scratch' randomization type)</i></td>
+  <td>Mean</td><td><input type = 'text' name='mean' size = 4></input></td>
+  <td>Standard deviation</td><td><input type = 'text' name='stddev' size = 4></input></td>
+  <td><i>(mean and standard deviation may be provided only for
+  randomization types 'ER' and for 'from scratch')</i></td>
   </tr></table>
   <br>
   <input type='checkbox' name='duplicate' value='on' />&nbsp;<B><a href = 'help.random_graph.html#duplicate'>Allow duplicated edges</a></B><br>
