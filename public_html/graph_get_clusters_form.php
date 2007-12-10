@@ -68,16 +68,16 @@
   }
       
   echo("<br>
-  </select><br><br><b>Clusters</b><br>");
+  </select><br><br><b>Clusters (or nodes for induction)</b><br>");
   if ($cluster_file == "") {
     echo("
     <textarea name='clusters' rows='6' cols='65'>$demo_clusters</textarea>
-    <br>Upload clusters from file : <br>
+    <br>Upload clusters (or nodes for induction) from file : <br>
     <input type='file' name='clusters_file' size='45' /><br>");
   } else {
     echo("
     <input type='hidden' name='pipe_clusters_file' value = '$cluster_file' /><br>");
-    info("Clusters uploaded from the previous treatment");
+    info("Clusters (or nodes) uploaded from the previous treatment");
   }
   echo("
     <B><a href = 'help.graph_get_clusters.html#formats'>Output format (only useful for intra-cluster edges output)</a></B>&nbsp;<select name='out_format'>
@@ -96,7 +96,7 @@
   ## This option is useful to duplicate nodes belonging to more than one cluster but for the moment
   ## this option does not work anymore (-distinct)
   #echo("<input type='checkbox' name='distinct' value='on' />&nbsp;<B><a href = 'help.convert_graph.html#distinct'>Duplicate the nodes belonging to more than one cluster</a></B><br>");
-  echo("<input type='checkbox' name='induced' value='on' />&nbsp;<B><a href = 'help.convert_graph.html#induced'>Induce the graph with the nodes of the cluster file</a></B><br>");
+  echo("<input type='checkbox' name='induced' value='on' />&nbsp;<B><a href = 'help.graph_get_clusters.html#induced'>Induce the graph with the nodes of the cluster file</a></B><br>");
   echo ("
   <ul><ul><table class='formbutton'>
   <TD><input type='submit' name='.submit' value='GO' /></TD>

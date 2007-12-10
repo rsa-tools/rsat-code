@@ -61,7 +61,14 @@
 <ul><A NAME="sccol"></A><b>Source and target node color colum</b>. Column containing the color of the node (RGB). 
 A node can only have one color. If in the file, the color of the
 node changes, only the first defined color will be taken into
-account.
+account. The first character of the RGB color code value must be '#'.
+For example, 
+<pre>
+Red	#FF0000
+Blue	#0000A0
+Black	#000000
+</pre>
+
 </ul>
 <h4><A NAME="undirected"></A>Undirected graph (only for adjacency table format)</h4>
 <ul>Specifies whether the edges must be considered as undirected, i.e.,
@@ -78,8 +85,7 @@ specify the node position.
 
 <h4><A NAME="ewidth"></A>Edge width computation</h4><ul>
 Calculate the edge width for the GML output. The width is proportional to the weight of the edge. This value can only be
-computed for the GML output. All weights in the column indicated by
-the -wcol argument must thus be real values.
+computed for the GML output. All weights in the column specified as containing the weights must thus be real values.
 </ul>
 
 <h4><A NAME="ecolors"></A>Edge color intensity computation</h4>

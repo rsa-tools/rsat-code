@@ -64,7 +64,7 @@
   	echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$requested_graph_file'>";
   }
   if($demo == 1){
-  		info("The demo graph is the union of all paths annotated for <i>S. cerevisiae</i> in <a href='http://www.biocyc.org/' target='_blank'>BioCyc</a> release 10.6. It is an undirected graph consisting
+  		demo("The demo graph is the union of all paths annotated for <i>S. cerevisiae</i> in <a href='http://www.biocyc.org/' target='_blank'>BioCyc</a> release 10.6. It is an undirected graph consisting
   		of 2,662 edges.<br>
   		The seed nodes are the start and end compound of the <a href='http://biocyc.org/YEAST/NEW-IMAGE?object=HEME-BIOSYNTHESIS-II' target='_blank'>heme biosynthesis II pathway</a> as annotated in BioCyc.<br>
   		This pathway is one of the study cases described in Croes et al., J. Mol. Biol. 356: 222-236 (see our <a href='neat_publications.html '>list of publications</a>.)<br>
