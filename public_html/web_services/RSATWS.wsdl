@@ -1229,6 +1229,60 @@ P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R), dotprod, jac_sim, rank, sig</xsd:
        </xsd:sequence>
       </xsd:complexType>
       
+      <xsd:complexType name="MatrixDistribRequest">
+	<xsd:annotation>
+	  <xsd:documentation>Parameters for the operation matrix distrib</xsd:documentation>
+	</xsd:annotation>
+	<xsd:sequence>
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
+Default is 'both'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="matrix_file" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>The matrix file content. Matrix format is specified with the option "matrix_format" (see below) Default format: tab.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_matrix_file" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+            <xsd:annotation>
+              <xsd:documentation>Name of the file containing matrix on the server. You need to supply either this parameter or the previous one (matrix_file).</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="matrix_format" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Supported fields: tab, cb, consensus, gibbs, meme, assembly.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element> 
+	  <xsd:element name="matrix_pseudo" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Pseudo counts to apply on the matrix. Default: 1.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="background" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Background model file is a tab-delimited file containing the specification of oligonucleotide frequencies.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="background_pseudo" type="xsd:float" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Pseudo frequency for the background models. Value must be a real between 0 and 1. Default: 0.01.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="decimals" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Number of decimals for the matrix frequencies.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="background_format" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation></xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="MatrixScanRequest">
 	<xsd:annotation>
 	  <xsd:documentation>Parameters for the operation matrix scan</xsd:documentation>
@@ -2280,6 +2334,26 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
+      
+       <xsd:complexType name="MatrixDistribResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
 
       <xsd:complexType name="RandomSequenceResponse">
 	<xsd:sequence>
@@ -2754,6 +2828,22 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
+      
+         <xsd:element name="matrix_distrib">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:MatrixDistribRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="matrix_distribResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:MatrixDistribResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
 
       <xsd:element name="random_seq">
 	<xsd:complexType>
@@ -3041,6 +3131,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="matrix_scanResponse">
     <part name="output" element="tns:matrix_scanResponse"></part>
   </message>
+  
+   <message name="matrix_distribRequest">
+    <part name="parameters" element="tns:matrix_distrib"></part>
+  </message>
+
+  <message name="matrix_distribResponse">
+    <part name="output" element="tns:matrix_distribResponse"></part>
+  </message>
 
   <message name="random_seqRequest">
     <part name="parameters" element="tns:random_seq"/>
@@ -3234,6 +3332,12 @@ The number of common elements is reported, as well as the probability to observe
         <output name="MatrixScanResponse" message="tns:matrix_scanResponse"/>
 	<documentation>Scan sequences with one or several position-specific scoring matrices (PSSM) to identify instances of the corresponding motifs(putative sites). 
 This program supports a variety of background models (Bernoulli, Markov chains of any order).
+	</documentation>
+      </operation>
+      <operation name="matrix_distrib">
+        <input name="MatrixDistribRequest" message="tns:matrix_distribRequest"/>
+        <output name="MatrixDistribResponse" message="tns:matrix_distribResponse"/>
+	<documentation>Returns the theoretical distribution of matrix weight within the defined background model.
 	</documentation>
       </operation>
       <operation name="random_seq">
@@ -3451,6 +3555,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
          </output>
       </operation> 
       <operation name="matrix_scan">
+         <soap:operation soapAction=""/>
+         <input>
+             <soap:body use="literal" />
+         </input>
+         <output>
+             <soap:body use="literal" />
+         </output>
+      </operation>
+      <operation name="matrix_distrib">
          <soap:operation soapAction=""/>
          <input>
              <soap:body use="literal" />
