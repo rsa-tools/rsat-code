@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.38 2007/11/22 13:57:47 rsat Exp $
+# $Id: compare-graphs,v 1.39 2007/12/10 00:19:20 jvanheld Exp $
 #
 ############################################################
 
@@ -200,47 +200,93 @@ package main;
     ## Calculation of the number of common and not common arcs and nodes
     my ($nodes_R_graph, $arcs_R_graph) = $R_graph->properties();
     my ($nodes_Q_graph, $arcs_Q_graph) = $Q_graph->properties();
-    my ($common_arcs, $common_nodes, $union_nodes, $max_union_arcs) = &in_common($R_graph, $Q_graph, $directed);
+    my ($common_arcs, $common_nodes, $union_nodes, $max_union_arcs, $max_union_formula) = &in_common($R_graph, $Q_graph, $directed);
     my $ref_only_arcs = $arcs_R_graph - $common_arcs;
     my $query_only_arcs = $arcs_Q_graph - $common_arcs;
     my $ref_only_nodes = $nodes_R_graph-$common_nodes;
     my $query_only_nodes = $nodes_Q_graph-$common_nodes;
     my $union_arcs = $ref_only_arcs + $query_only_arcs + $common_arcs;
     my $pval = &sum_of_hypergeometrics ($arcs_R_graph, $max_union_arcs, $arcs_Q_graph, $common_arcs, $arcs_Q_graph);
-    my $message = "Comparaison statistics\n";
+    my $message = "Comparison statistics\n";
 
-    ## Reference graph properties
+#     ## Reference graph properties
+#     $message .= sprintf ";\t%-23s\t%s\n", "Reference graph", $main::infile{graph_R};
+#     $message .= sprintf ";\t%-15s\t%s\n", "\tR nodes", $nodes_R_graph;
+#     $message .= sprintf ";\t%-15s\t%s\n", "\tR arcs", $arcs_R_graph;
+
+#     ## Query node graph properties
+#     $message .= sprintf ";\t%-23s\t%s\n", "Query graph", $main::infile{graph_Q};
+#     $message .= sprintf ";\t%-15s\t%s\n", "\tQ nodes", $nodes_Q_graph;
+#     $message .= sprintf ";\t%-15s\t%s\n", "\tQ arcs", $arcs_Q_graph;
+
+#     ## Intersection
+#     $message .= sprintf ";\t%s\n", "Intersection";
+#     $message .= sprintf ";\t%-15s\t%s\n", "\tinter nodes", $common_nodes;
+#     $message .= sprintf ";\t%-15s\t%g\n", "\tinter arcs", $common_arcs;
+#     $message .= sprintf ";\t%-15s\t%g\n", "\tinter arcs P-val", $pval;
+
+#     ## Union
+#     $message .= sprintf ";\t%s\n", "Union";
+#     $message .= sprintf ";\t%-15s\t%g\n", "\tunion nodes", $union_nodes;
+#     $message .= sprintf ";\t%-15s\t%s\n", "\tunion arcs", $union_arcs;
+#     $message .= sprintf ";\t%-15s\t%s\n", "\tunion max arcs", $max_union_arcs;
+
+#     ## Elements found in reference but not in query
+#     $message .= sprintf ";\t%s\n", "Reference not query";
+#     $message .= sprintf ";\t%-15s\t%s\n", "\tR.not.Q nodes", $ref_only_nodes;
+#     $message .= sprintf ";\t%-15s\t%g\n", "\tR.not.Q arcs", $ref_only_arcs;
+
+#     ## Elements found in query but not in reference
+#     $message .= sprintf ";\t%s\n", "Query not reference";
+#     $message .= sprintf ";\t%-15s\t%s\n", "\tQ.not.R nodes", $query_only_nodes;
+#     $message .= sprintf ";\t%-15s\t%g\n", "\tQ.not.R arcs", $query_only_arcs;
+
+
+    ################################################################
+    ## Table synthesizing the statistics
+    $message .= ";\n";
     $message .= sprintf ";\t%-23s\t%s\n", "Reference graph", $main::infile{graph_R};
-    $message .= sprintf ";\t%-15s\t%s\n", "\tR nodes", $nodes_R_graph;
-    $message .= sprintf ";\t%-15s\t%s\n", "\tR arcs", $arcs_R_graph;
-
-    ## Query node graph properties
     $message .= sprintf ";\t%-23s\t%s\n", "Query graph", $main::infile{graph_Q};
-    $message .= sprintf ";\t%-15s\t%s\n", "\tQ nodes", $nodes_Q_graph;
-    $message .= sprintf ";\t%-15s\t%s\n", "\tQ arcs", $arcs_Q_graph;
+    $message .= ";\n";
+    $message .= ";\tCounts of nodes and arcs\n";
+    $message .= sprintf ";\t\t%s\t%s\t%s\t%s\n", "Graph", "Nodes", "Edges", "Description";
+    $message .= sprintf ";\t\t%s\t%d\t%d\t%s\n", "R", $nodes_R_graph, $arcs_R_graph, "Reference graph";
+    $message .= sprintf ":\t\t%s\t%d\t%d\t%s\n", "Q", $nodes_Q_graph, $arcs_Q_graph, "Query graph";
+    $message .= sprintf ":\t\t%s\t%d\t%d\t%s\n", "QvR", $union_nodes, $union_arcs, "Union";
+    $message .= sprintf ":\t\t%s\t%d\t%d\t%s\n", "Q^R", $common_nodes, $common_arcs, "Intersection";
+    $message .= sprintf ":\t\t%s\t%d\t%d\t%s\n", "Q!R", $query_only_nodes, $query_only_arcs, "Query not reference";
+    $message .= sprintf ":\t\t%s\t%d\t%d\t%s\n", "R!Q", $ref_only_nodes, $ref_only_arcs, "Reference not query";
+    $message .= ";\n";
 
-    ## Intersection
-    $message .= sprintf ";\t%s\n", "Intersection";
-    $message .= sprintf ";\t%-15s\t%s\n", "\tinter nodes", $common_nodes;
-    $message .= sprintf ";\t%-15s\t%g\n", "\tinter arcs", $common_arcs;
-    $message .= sprintf ";\t%-15s\t%g\n", "\tinter arcs P-val", $pval;
 
-    ## Union
-    $message .= sprintf ";\t%s\n", "Union";
-    $message .= sprintf ";\t%-15s\t%g\n", "\tunion nodes", $union_nodes;
-    $message .= sprintf ";\t%-15s\t%s\n", "\tunion arcs", $union_arcs;
-    $message .= sprintf ";\t%-15s\t%s\n", "\tunion max arcs", $max_union_arcs;
+    my $exp_inter_arcs = 0;
+    if ($max_union_arcs > 0) {
+      $exp_inter_arcs = $arcs_R_graph*$arcs_Q_graph/$max_union_arcs;
+    } 
+    my $perc_Q = 0;
+    if ($nodes_Q_graph > 0) {
+      $perc_Q = 100*$common_arcs/$arcs_Q_graph;
+    }
+    my $perc_R = 0;
+    if ($nodes_R_graph > 0) {
+      $perc_R = 100*$common_arcs/$arcs_R_graph;
+    }
+    my $jac_sim = 0;
+    if ($union_arcs > 0) {
+      $jac_sim = $common_arcs/$union_arcs;
+    }
 
-    ## Elements found in reference but not in query
-    $message .= sprintf ";\t%s\n", "Reference not query";
-    $message .= sprintf ";\t%-15s\t%s\n", "\tR.not.Q nodes", "$ref_only_nodes";
-    $message .= sprintf ";\t%-15s\t%g\n", "\tR.not.Q arcs", $ref_only_arcs;
+    $message .= ";\tSignificance of the number of arcs at the intersection\n";
+    $message .= sprintf ";\t\t%s\t%s\t%-38s\t%s\n", "Symbol", "Value", "Description", "Formula";
+    $message .= sprintf ";\t\t%s\t%d\t%-38s\t%s\n", "M", $max_union_arcs, "Max number of arcs in the union", $max_union_formula;
+    $message .= sprintf ";\t\t%s\t%.2f\t%-38s\t%s\n", "E(QR)", $exp_inter_arcs, "Expected arcs in the intersection", "E(QR) = Q*R/M";
+    $message .= sprintf ";\t\t%s\t%.2f\t%-38s\t%s\n", "perc_Q", $perc_Q, "Percentage of query arcs", "perc_Q = QR/Q";
+    $message .= sprintf ";\t\t%s\t%.2f\t%-38s\t%s\n", "perc_R", $perc_R, "Percentage of reference arcs", "perc_R = QR/R";
+    $message .= sprintf ";\t\t%s\t%.2f\t%-38s\t%s\n", "Jac_sim", $jac_sim, "Jaccard coefficient of similarity", "Jac_sim = Q^R/(QvR)";
+    $message .= sprintf ";\t\t%s\t%d\t%s\n", "Q^R", $common_arcs, "Observed arcs in the intersection";
+    $message .= sprintf ";\t\t%s\t%g\t%-38s\t%s\n", "Pval", $pval, "P-value of the intersection", "Pval=P(X >= Q^R)";
 
-    ## Elements found in query but not in reference
-    $message .= sprintf ";\t%s\n", "Query not reference";
-    $message .= sprintf ";\t%-15s\t%s\n", "\tQ.not.R nodes", "$query_only_nodes";
-    $message .= sprintf ";\t%-15s\t%g\n", "\tQ.not.R arcs", $query_only_arcs;
-    
+
     if ($main::verbose >= 1 && $output_format ne 'gml') {
       print $main::out ";\t$message";
     }
@@ -961,23 +1007,28 @@ sub in_common {
   }
   foreach my $node (keys %nodes_name_id_g2) {
     $nodes{$node}++;
-  }  
+  }
   $union_nodes = scalar (keys %nodes);
-  
+
   ## Compute the maximal number of edges given the number of nodes in the graph
   if ($directed){
-    $max_union_arcs = $union_nodes*$union_nodes;
-    unless ($self) {
+    if ($self) {
+      $max_union_arcs = $union_nodes*$union_nodes;
+      $max_union_formula = "M = N*N";
+    } else {
       $max_union_arcs -= $union_nodes;
+      $max_union_formula = "M = N*(N-1)";
     }
   } else {
     if ($self) {
       $max_union_arcs = ($union_nodes*$union_nodes+$union_nodes)/2;
+      $max_union_formula = "M = N*(N+1)/2";
     } else {
       $max_union_arcs = ($union_nodes*$union_nodes-$union_nodes)/2;
+      $max_union_formula = "M = N*(N-1)/2";
     }
   }
-  return ($common_arcs, $common_nodes, $union_nodes, $max_union_arcs);
+  return ($common_arcs, $common_nodes, $union_nodes, $max_union_arcs, $max_union_formula);
 }
 
 ################################################################
