@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.41 2007/12/10 00:29:59 jvanheld Exp $
+# $Id: compare-graphs,v 1.42 2007/12/10 00:31:30 jvanheld Exp $
 #
 ############################################################
 
@@ -186,8 +186,8 @@ package main;
     $R_graph->graph_from_text($input_format_R, $main::infile{graph_R}, $source_col_R, $target_col_R, $weight_col_R);
     $Q_graph->graph_from_text($input_format_Q, $main::infile{graph_Q}, $source_col_Q, $target_col_Q, $weight_col_Q);
 
-    ## As it appeared quite difficult to work with graphs having more than one edge between two
-    ## nodes, we decided to remove any duplicated edges.
+    ## As it appeared quite difficult to work with graphs having more than one arc between two
+    ## nodes, we decided to remove any duplicated arcs.
     $R_graph->remove_duplicated_arcs($directed);
     $Q_graph->remove_duplicated_arcs($directed);
 
@@ -249,7 +249,7 @@ package main;
 #    $message .= sprintf "; %-23s\t%s\n", "Query graph", $main::infile{graph_Q};
     $message .= ";\n";
     $message .= "; Counts of nodes and arcs\n";
-    $message .= sprintf ";\t%s\t%s\t%s\t%s\n", "Graph", "Nodes", "Edges", "Description";
+    $message .= sprintf ";\t%s\t%s\t%s\t%s\n", "Graph", "Nodes", "Arcs", "Description";
     $message .= sprintf ";\t%s\t%d\t%d\t%s\n", "R", $nodes_R_graph, $arcs_R_graph, "Reference graph";
     $message .= sprintf ";\t%s\t%d\t%d\t%s\n", "Q", $nodes_Q_graph, $arcs_Q_graph, "Query graph";
     $message .= sprintf ";\t%s\t%d\t%d\t%s\n", "QvR", $union_nodes, $union_arcs, "Union";
@@ -523,12 +523,12 @@ If the union is requested, each arc is labelled to indicate whether it
 belongs to the intersection (R.and.Q), to Q only (Q.not.R) or to R
 only (R.not.Q). 
 
-I<intersection+R> and I<Q.and.R+R> or I<R.and.Q+R> corresponds only to the edges of the 
-reference graph. However, each edge is labelled and colored differently to indicate
+I<intersection+R> and I<Q.and.R+R> or I<R.and.Q+R> corresponds only to the arcs of the 
+reference graph. However, each arc is labelled and colored differently to indicate
 wether it belongs to the intersection or to the reference graph only. 
 
-Inversely, I<intersection+Q> and I<Q.and.R+Q> or I<R.and.Q+Q>  corresponds only to the edges of the 
-query graph. However, each edge is labelled and colored differently to indicate
+Inversely, I<intersection+Q> and I<Q.and.R+Q> or I<R.and.Q+Q>  corresponds only to the arcs of the 
+query graph. However, each arc is labelled and colored differently to indicate
 wether it belongs to the intersection or to the query graph only. 
 
 =cut
@@ -765,7 +765,7 @@ sub intersect {
 
 ################################################################
 ## Union of two graphs
-## This function creates in Graph $Q_graph all the edges that are in Graph $R_graph but 
+## This function creates in Graph $Q_graph all the arcs that are in Graph $R_graph but 
 ## absent in $Q_graph
 
 sub union {
@@ -805,7 +805,7 @@ sub union {
       push @arcs_id, $arc_id2; # ajouts des arcs du graph 1 "non dirigés"
     }
     my $arc_label = &calculate_weight("undef", $arc_label_g1);
-    my $arc_color = "#9932cc"; # by default color of edges belongs to R_graph is violet
+    my $arc_color = "#9932cc"; # by default color of arcs belongs to R_graph is violet
     my $arc_attribute = "R.not.Q";
     foreach my $arc_id (@arcs_id) {
       my $arc_intern_id = $arcs_name_id_g2{$arc_id};
@@ -1011,7 +1011,7 @@ sub in_common {
   }
   $union_nodes = scalar (keys %nodes);
 
-  ## Compute the maximal number of edges given the number of nodes in the graph
+  ## Compute the maximal number of arcs given the number of nodes in the graph
   if ($directed){
     if ($self) {
       $max_union_arcs = $union_nodes*$union_nodes;
