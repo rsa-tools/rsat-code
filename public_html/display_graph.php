@@ -86,6 +86,9 @@
         
       )
     );
+    echo "<pre>";
+//     print_r ($parameters);
+    echo "</pre>";
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
@@ -104,6 +107,7 @@
     $echoed = $client->display_graph($parameters);
 
     $response =  $echoed->response;
+    echo "$command";
     $command = $response->command;
     $server = $response->server;
     $client = $response->client;
