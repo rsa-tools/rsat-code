@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.32 2007/10/24 12:43:07 jvanheld Exp $
+# $Id: template,v 1.33 2007/12/10 02:56:03 jvanheld Exp $
 #
 ############################################################
 
@@ -57,7 +57,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.32 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.33 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -245,5 +245,7 @@ __END__
 =pod
 
 =head1 SEE ALSO
+
+=head1 WISH LIST
 
 =cut
