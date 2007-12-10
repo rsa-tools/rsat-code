@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: choose-background-model,v 1.1 2007/12/09 10:38:30 jvanheld Exp $
+# $Id: choose-background-model,v 1.2 2007/12/10 02:55:27 jvanheld Exp $
 #
 ############################################################
 
@@ -98,7 +98,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     local $oligo_length;
@@ -401,6 +401,8 @@ __END__
 
 =item convert-background-model
 
+=item taxon-frequencies
+
 =item seq-proba
 
 =item oligo-analysis
@@ -418,5 +420,9 @@ __END__
 =item InfoGibbs
 
 =back
+
+=head1 WISH LIST
+
+=item add an option -taxon, as an alternative to the option -org
 
 =cut
