@@ -2293,6 +2293,118 @@ sub matrix_scan_cmd {
     return $command;
 }
 
+sub matrix_distrib {
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+  my $command = $self->matrix_distrib_cmd(%args);
+#  my $stderr = `$command 2>&1 1>/dev/null`;  ####cette gestion des erreurs est incompatible avec le fonctionnement de matrix-scan dans RSAT #######
+  if ($stderr) {
+    die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+  }
+  my $result = `$command`;
+  my $tmp_outfile = `mktemp $TMP/matrix-distrib.XXXXXXXXXX`;
+  open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+  print TMP $result;
+  close TMP;
+  if ($output_choice eq 'server') {
+    return SOAP::Data->name('response' => {'command' => $command, 
+					   'server' => $tmp_outfile});
+  } elsif ($output_choice eq 'client') {
+    return SOAP::Data->name('response' => {'command' => $command,
+					   'client' => $result});
+  } elsif ($output_choice eq 'both') {
+    return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					   'command' => $command, 
+					   'client' => $result});
+  }
+}
+
+sub matrix_distrib_cmd {
+  my ($self,%args) = @_;
+
+    #idem
+    if ($args{"matrix_file"}) {
+      my $input_matrix = $args{"matrix_file"};
+      chomp $input_matrix;
+      $tmp_input_matrix = `mktemp $TMP/matdistrib-matrix_file.XXXXXXXXXX`;
+      open TMP_IN, ">".$tmp_input_matrix or die "cannot open temp file ".$tmp_input_matrix."\n";
+      print TMP_IN $input_matrix;
+      close TMP_IN;
+    }  elsif ($args{"tmp_matrix_file"}) {
+      $tmp_input_matrix = $args{"tmp_matrix_file"};
+      $tmp_input_matrix =~ s/\'//g;
+      $tmp_input_matrix =~ s/\"//g;
+    }
+
+    if ($args{"background"}) {
+      my $background = $args{"background"};
+      chomp $background;
+      $tmp_background = `mktemp $TMP/matdistrib-background.XXXXXXXXXX`;
+      open TMP_IN, ">".$tmp_background or die "cannot open temp file ".$tmp_background ."\n";
+      print TMP_IN $background;
+      close TMP_IN; 
+    }
+
+    my $matrix_format = $args{"matrix_format"}; 
+    my $background_pseudo = $args{"background_pseudo"};
+    my $background_format = $args{"background_format"}; 
+    my $pseudo = $args{"matrix_pseudo"};
+    my $decimals = $args{"decimals"};
+
+    my $command = "$SCRIPTS/matrix-distrib -v 1";
+
+    if ($tmp_input_matrix) {
+      $tmp_input_matrix =~ s/\'//g;
+      $tmp_input_matrix =~ s/\"//g;
+      chomp $tmp_input_matrix;
+      $command .= " -m '".$tmp_input_matrix."'";
+    }
+
+    if ($matrix_format) {
+      $matrix_format =~ s/\'//g;
+      $matrix_format=~ s/\"//g;
+      chomp $matrix_format;
+      $command .= " -matrix_format '".$matrix_format."'";
+    }
+
+    if ($pseudo =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+      $pseudo =~ s/\'//g;
+      $pseudo =~ s/\"//g;
+      $command .= " -pseudo '".$pseudo."'";
+    }
+
+    if ($decimals =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+      $decimals  =~ s/\'//g;
+      $decimals  =~ s/\"//g;
+      $command .= " -decimals '".$decimals."'";
+    }
+
+    if ($tmp_background) {
+      $tmp_background  =~ s/\'//g;
+      $tmp_background  =~ s/\"//g;
+      chomp $tmp_background;
+      $command .= " -bgfile '".$tmp_background."'";
+    }
+
+     if ($background_format) {
+     	 $background_format  =~ s/\'//g;
+      	 $background_format  =~ s/\"//g;
+      	 $command .= " -bg_format '".$background_format."'";
+    }
+
+     if ($background_pseudo =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+      $background_pseudo =~ s/\'//g;
+      $background_pseudo =~ s/\"//g;
+      $command .= " -bg_pseudo '".$background_pseudo."'";
+    }
+
+    return $command;
+}
+
 sub random_seq {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
