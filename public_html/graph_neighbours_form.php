@@ -32,7 +32,11 @@
   }
 
   title('graph-neighbours');
-  echo ("<center>Extract from a graph the neighbourhood of a set of seed nodes.</center>\n");
+  echo ("<center>Extract from a graph the neighbourhood of a set of seed nodes.\n");
+   echo ("<br>This program was developed by 
+	  <a target=_blank href=http://www.bigre.ulb.ac.be/Users/sylvain/>Sylvain Broh&eacute;e</a> and
+          <a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.
+          </center>\n");
   echo ("<form method='post' action='graph_neighbours.php' enctype='multipart/form-data'>
   &nbsp;&nbsp;&nbsp;<a href = 'help.graph_neighbours.html#formats'><B>Input format</B></a>");
   if (!$pipe) {

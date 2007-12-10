@@ -1,4 +1,3 @@
-
 <html>
 <head>
    <title>GrA-tools - convert-graph</title>
@@ -24,10 +23,14 @@
     $demo_matrix = "";
   }
 
-  title('contingency-stats');
-  echo ("<center>This programs takes as input a contingency table, and calculates various
-    matching statistics between the rows and columns. The description of
-    these statistics can be found in <a href = 'http://www.biomedcentral.com/1471-2105/7/488'>Broh&eacute;e and van Helden (2006)</a>.</center>\n");
+   title('contingency-stats');
+   echo ("<center>This programs takes as input a contingency table, and calculates various
+	  matching statistics between the rows and columns. <br>The description of
+	  these statistics can be found in <a href = 'http://www.biomedcentral.com/1471-2105/7/488'>Broh&eacute;e and van Helden (2006)</a>\n");
+   echo ("<br>This program was developed by <a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.
+	  </center>\n");
+
+
   echo ("<form method='post' action='contingency_stats.php' enctype='multipart/form-data'>");
   
   echo("<br>");
