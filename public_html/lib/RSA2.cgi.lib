@@ -501,7 +501,7 @@ print $query->filefield(-name=>'upload_bgfile',
 			
 #### pseudo-counts
 print "<p/>\n";
-print "<B><A HREF='help.matrix-scan.html'>Pseudo-counts</A></b>\n";
+print "<B><A HREF='help.matrix-scan.html'>Pseudo-frequencies</A></b>\n";
 print $query->textfield(-name=>'bg_pseudo',
 			-default=>$default{bg_pseudo},
 			-size=>5);
