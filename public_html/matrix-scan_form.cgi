@@ -671,7 +671,7 @@ sub ReturnTable {
 
 				 
 				  ### Threshold on score
-				  $query->td(['crer_size*',
+				  $query->td(['crer_size<b>*</b>',
 					      $query->textfield(-name=>'lth_crer_size',
 								-default=>$default{lth_crer_size},
 								-size=>5),
@@ -681,7 +681,7 @@ sub ReturnTable {
 					     ]),
 					     
 				### Threshold on P-value of the score
-				  $query->td(['site P-value*',
+				  $query->td(['site P-value<b>*</b>',
 					      $query->textfield(-name=>'lth_pval',
 								-default=>$default{lth_pval},
 								-size=>5),
@@ -699,6 +699,11 @@ sub ReturnTable {
 								-default=>$default{uth_crer_sites},
 								-size=>5)
 					     ]),
+				$query->Tr({-align=>middle,-valign=>TOP},
+				 [
+				  $query->td({-colspan=>4},[ "<b>*</b> =mandatory field"],
+				  			)
+				 ]),
 				 ]
 				)
 		     );
