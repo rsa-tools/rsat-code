@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.228 2007/12/09 16:42:11 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.229 2007/12/10 08:42:06 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -18,11 +18,11 @@ BEGIN {
     require "RSA.disco.lib";
     require "RSA.help.pl";
     require "RSA.cgi.lib";
-    push @INC, "$RSA/perl-scripts/parsers/";
+    push @INC, "$ENV{RSAT}/perl-scripts/parsers/";
     require "lib/load_classes.pl";
     require "lib/util.pl";
     require "lib/parsing_util.pl";
-    require "$RSA/perl-scripts/lib/RSA.classes";
+    require "$ENV{RSAT}/perl-scripts/lib/RSA.classes";
 }
 require RSAT::util;
 require RSAT::matrix;
@@ -36,7 +36,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.228 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.229 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -938,7 +938,7 @@ sub SetFileNames {
 	}
 
 	## Background frequencies
-	$meme_dir = $ENV{MEME_DIR} || $RSA."/bin/meme/";
+	$meme_dir = $ENV{MEME_DIR} || $ENV{RSAT}."/bin/meme/";
 	if ($MEME_bfile) { 
 	    $meme_options .= " -bfile ".$MEME_bfile;
 	}
@@ -1172,7 +1172,7 @@ sub PurgeSequences {
    ## Remove sequences of length 0
    $command = "convert-seq -dna -from fasta -to fasta -lw 0 -skip_short 1";
    $command .= " -i ".$family{$family_name}->{seq_file};
-   $command .= " | purge-sequence -format fasta -ml ".$purge_ml." -mis ".$purge_mis." -noempty";
+   $command .= " | purge-sequence -format fasta -ml ".$purge_ml." -mis ".$purge_mis;
    $command .= " -o ".$family{$family_name}->{seq_file_purged};
    if ($batch) {
        push @main::batch_commands, $command;
