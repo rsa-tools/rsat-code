@@ -34,10 +34,13 @@ two first publications reporting a complete characterization of the
 yeast interactome, obtained using the two-hybrid method.";
     $demo_remark .= "The first network (<a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?db=pubmed&uid=10688190&cmd=showdetailview&indexed=google'>Uetz et al, 2000)</a> contains 865 interactions between 926 proteins.";
     $demo_remark .= "The second network  (<a href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=11283351&ordinalpos=3&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum' target = 'top'>Ito et al, 2001)</a> contains 4,038 interactions between 2,937 proteins.";
-    $demo_remark .= "We will merge the two networks (compute the union), and label each
-edge according to the fact that it is found in Ito's network, Uetz'
-network, or both. We will also compute the statistical significance of
-the intersection between the two networks.";
+
+    $demo_remark .= "We will merge the two networks (i.e. compute
+their union), and label each edge according to the fact that it is
+found only in Ito's network, only in Uetz' network, or in both. We
+will also compute the statistical significance of the intersection
+between the two networks.";
+
   }
   title('compare-graphs');
   echo ("<center>Computes the intersection, the union or the difference of two graphs</center>\n");
@@ -135,13 +138,13 @@ the intersection between the two networks.";
   <option value = 'adj_matrix'> Adjacency matrix
   <option value = 'dot'> Dot format
   </select><br><br>");
-  ## Weight on the edges
+  ## Weight/label on the edges
   echo ("
-  <B><a href = 'help.compare_graphs.html#outweights'>Weight on the edges of the output graph</a></B></a>&nbsp;<select name='outweight'>
+  <B><a href = 'help.compare_graphs.html#outweights'>Weight/label on the edges of the output graph</a></B></a>&nbsp;<select name='outweight'>
   <option value = 'Q'> weight (label) of the query
   <option value = 'R'> weight (label) of the reference
   <option value = 'sum'> sum of the weights
-  <option value = 'mean'> arithemetic mean of the weights
+  <option value = 'mean'> arithmetic mean of the weights
   <option value = 'mean.g'> geometrical mean of the weights
   <option value = 'min'> min of the weights
   <option value = 'max'> max of the weights
