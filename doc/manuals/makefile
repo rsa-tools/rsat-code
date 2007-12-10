@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: makefile,v 1.8 2007/07/30 10:51:35 jvanheld Exp $
+# $Id: makefile,v 1.9 2007/12/10 08:35:07 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 15:13:34 jvanheld>
 #
@@ -14,6 +14,7 @@ RM=rm -f
 
 TEX_FILES = \
 	test.tex \
+	neat_tutorial.tex \
 	rsat_web_server.tex \
 	install_guide.tex \
 	tutorial_shell_rsat.tex
@@ -46,15 +47,19 @@ it:
 	${MAKE} ${DOC}.xdvi
 	${MAKE} tex_clean
 
-ug:
+rsat_tutorial:
 	${MAKE} tutorial_shell_rsat.pdf
 	${MAKE} tex_clean
 
-ig:
+neat_tutorial:
+	${MAKE} neat_tutorial.pdf
+	${MAKE} tex_clean
+
+installation_guide:
 	${MAKE} install_guide.pdf
 	${MAKE} tex_clean
 
-wg:
+web_server_guide:
 	${MAKE} rsat_web_server.pdf
 	${MAKE} tex_clean
 
@@ -111,9 +116,10 @@ SPLIT=4
 	latex2html -split ${SPLIT} $<
 
 .tex.dvi:
-	latex $< 
-	makeindex $< 
-	latex $< 
+	latex $<; bibtex $<; latex $<; latex $<
+#	latex $< 
+#	makeindex $< 
+#	latex $< 
 
 .dvi.pdf:
 	dvipdf $<
