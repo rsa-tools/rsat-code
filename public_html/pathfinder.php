@@ -195,7 +195,7 @@
     $fileContent = storeFile($file_location);
     # Display the results
     echo "<align='left'>The result is available as text file at the following URL:<br> ";
-    echo "<a href = '$server'>$server</a><br>";
+    echo "<a href = '$server'>$server</a><br></align>";
 
     # Text-to-html web service (for table of paths only)
     if(strcmp($outputType,'pathsTable') == 0){
@@ -223,9 +223,9 @@
         $tth_temp_file = explode('/',$tth_server);
    	    $tth_temp_file = end($tth_temp_file);
     	$tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;
-    	echo "The result is available as HTML page at the following URL:<br> ";
+    	echo "<align='left'>The result is available as HTML page at the following URL:<br> ";
     	echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>";
-    	echo "You can sort the rows according to a selected column by clicking on the header entry of that column.<br>";
+    	echo "You can sort the rows according to a selected column by clicking on the header entry of that column.<br></align>";
     }
     # in case of tab-format, truncate nodes to make it readable by Sylvain Brohee's tools
     if(strcmp($out_format,'flat') == 0){
@@ -247,10 +247,16 @@
 	 fwrite($fh, $sylvain_input_graph);
 	 fclose($fh);
 
-    echo "<br>Your input graph has the id:<br> $graphid</align>";
+   if($store_graph) {
+   		echo "<br><align='left'>Your stored input graph has the id:<br> $graphid<br>
+   		Submit this id to speed up other path finding jobs on this input graph.</align>";
+   }
     echo "<hr>\n";
     if(strcmp($outputType,'pathsUnion') == 0 || strcmp($outputType,'pathsMarked') == 0 || strcmp($outputType,'pathsGraphs') == 0){
      echo "
+     	To process your result with another tool, click one of the buttons listed below.
+     	<br>
+     	<br>
  	  <TABLE CLASS = 'nextstep'>
   		<TR>
       	<Th colspan = 3>

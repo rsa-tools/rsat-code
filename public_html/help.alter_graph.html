@@ -1,0 +1,114 @@
+<html>
+<head>
+   <title>convert-graph help</title>
+<link rel="stylesheet" type="text/css" href = "main.css" media="screen">
+</head>
+<body class="info">
+
+<center>
+<h2><a href="NeAT_home.html">NeA-tools</a> - Help about alter-graph
+</h2>
+</center>
+The complete webpage will be soon available
+<pre>
+NAME
+    alter-graph
+
+DESCRIPTION
+    Alter a graph either by adding or removing edges or nodes
+
+AUTHORS
+    Sylvain Brohée 
+    Jacques van Helden  
+
+CATEGORY
+    graph tools
+
+USAGE
+    alter-graph [-o outputfile] [-v #] [...]
+
+INPUT and OUTPUT FORMATS
+  Graph format
+    See convert-graph for a description of the supported input graph
+    formats. Default format for the input graph: tab. =head1 OUTPUT FORMAT
+
+    Graph in GML, TAB or DOT format (to be specified by the -out_format
+    option)
+
+OPTIONS
+    -v #
+        Level of verbosity (detail in the warning messages during execution)
+
+    -h
+        Display full help message
+
+    -help
+        Same as -h
+
+    -i inputfile
+        If no input file is specified, the standard input is used. This
+        allows to use the command within a pipe.
+
+    -o outputfile
+        If no output file is specified, the standard output is used. This
+        allows to use the command within a pipe.
+
+    -in_format input_format
+        Input format. Supported: tab, gml. By default, the output format is
+        tab.
+
+    -out_format output_format
+        Output format. Supported: tab, dot, gml. By default, the output
+        format is tab.
+
+    -scol
+        Source column. Column containing the source nodes.
+
+    -tcol
+        Target column. Column containing the target nodes.
+
+    -wcol
+        Weight column. Column containing the weight nodes.
+
+    -rm_edges
+        Number of edges to add. This value can either be a percentage value
+        or a discrete number.
+
+    -rm_nodes
+        Number of edges to add. This value can either be a percentage value
+        or a discrete number.
+
+    -add_edges
+        Number of edges to add. This value can either be a percentage value
+        or a discrete number.
+
+    -add_nodes
+        Number of edges to add. This value can either be a percentage value
+        or a discrete number.
+
+    -directed
+        Specifies whether the edges must be considered as directed, i.e., an
+        edge from node A to node B is different from an edge from B to A (by
+        default, edges are not directed).
+
+    -duplicate
+        Specifies whether more than one edge may link two nodes. (by
+        default, duplicated edges are not allowed)
+
+    -self
+        Allows self loops (by default, self loops are not allowed)
+
+    -target
+        Nodes that have to be removed in the graph (if existing). This
+        option can be used iteratively or the nodes names must be separated
+        by comas.
+
+</pre>
+
+
+<h4 class="footer">
+For information, contact <a href = 'mailto:sylvain-at-scmbb.ulb.ac.be'>Sylvain Broh&eacute;e</a>
+</h4>
+</blockquote>
+</body>
+</html>
