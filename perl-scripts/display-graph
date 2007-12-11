@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.8 2007/11/22 09:40:04 rsat Exp $
+# $Id: display-graph,v 1.9 2007/12/11 14:16:21 rsat Exp $
 #
 ############################################################
 
@@ -171,7 +171,7 @@ package main;
         $max = $pos;
       }
     } 
-    $max += 120;
+    $max += 160;
     ## for postscript figures : use of postscript simple library
     if ($output_format eq "ps" || $output_format eq "eps") {
       # computes the maximal coordinates of x and y
@@ -185,12 +185,12 @@ package main;
           my @neighbours = @{$out_neighbours[$i]};
           my @colors = @{$out_colors[$i]};
           my @weights = @{$out_labels[$i]};
-          my $source_xpos = $nodes_id_xpos{$i};
-          my $source_ypos = $nodes_id_ypos{$i};
+          my $source_xpos = $nodes_id_xpos{$i}+40;
+          my $source_ypos = $nodes_id_ypos{$i}+40;
           for (my $j = 0; $j < scalar(@neighbours); $j++) {
             if (defined $neighbours[$j]) {
-              my $target_xpos = $nodes_id_xpos{$neighbours[$j]};
-              my $target_ypos = $nodes_id_ypos{$neighbours[$j]};
+              my $target_xpos = $nodes_id_xpos{$neighbours[$j]}+40;
+              my $target_ypos = $nodes_id_ypos{$neighbours[$j]}+40;
               my $edge_color = $colors[$j];
               my $weight = $weights[$j];
               # get the color of the edge
@@ -215,15 +215,18 @@ package main;
       while (my ($id, $name) = each (%nodes_id_name)) {
         my $length_name = length($name)*10;
         my $xpos = $nodes_id_xpos{$id};
-        my $ypos = $nodes_id_ypos{$id} || 5;
-        if (!$xpos) {
+        my $ypos = $nodes_id_ypos{$id} || 45;
+        if (!defined($xpos)) {
           ## In case there is no location found for this node (orphan)
           ## For orphan nodes, fr_layout does not return the location!
           ## We place the orphan nodes side by side at the extremity of 
           ## the graphic.
-          $xpos = $not_connected_nodes+$length_name*10;
-          $not_connected_nodes+=$length_name+10;
-        }        
+          $xpos = ($not_connected_nodes+$length_name*10) + 40;
+          $not_connected_nodes += $length_name+10;
+        } else {
+          $xpos = $nodes_id_xpos{$id} + 40;
+          $ypos = $nodes_id_ypos{$id} + 40;
+        }
         # get the color of the node
         my $node_color = $nodes_color{$id};
         my $r = hex(substr($node_color, 1, 2));
@@ -251,14 +254,14 @@ package main;
         if (defined $out_neighbours[$i]) {
           my @neighbours = @{$out_neighbours[$i]};
           my @colors = @{$out_colors[$i]};
-          my $source_xpos = $nodes_id_xpos{$i};
-          my $source_ypos = $nodes_id_ypos{$i};
+          my $source_xpos = $nodes_id_xpos{$i}+40;
+          my $source_ypos = $nodes_id_ypos{$i}+40;
           my @weights = @{$out_labels[$i]};
           
           for (my $j = 0; $j < scalar(@neighbours); $j++) {
             if (defined $neighbours[$j]) {
-              my $target_xpos = $nodes_id_xpos{$neighbours[$j]};
-              my $target_ypos = $nodes_id_ypos{$neighbours[$j]};
+              my $target_xpos = $nodes_id_xpos{$neighbours[$j]}+40;
+              my $target_ypos = $nodes_id_ypos{$neighbours[$j]}+40;
               my $edge_color = $colors[$j];
               my $weight = $weights[$j];
               # get the color of the edge
@@ -282,11 +285,14 @@ package main;
       while (my ($id, $name) = each (%nodes_id_name)) {
         my $length_name = length($name)*10;
         my $xpos = $nodes_id_xpos{$id};
-        my $ypos = $nodes_id_ypos{$id} || 5;
-        if (!$xpos) {
+        my $ypos = $nodes_id_ypos{$id} || 45;
+        if (!defined($xpos)) {
           ## In case there is no location found for this node (orphan)
-          $xpos = $not_connected_nodes+length($name)*10;
+          $xpos = $not_connected_nodes+length($name)*10+40;
           $not_connected_nodes+=(length($name)*10)+10;
+        } else {
+          $xpos = $nodes_id_xpos{$id}+40;
+          $ypos = $nodes_id_ypos{$id}+40;
         }
         
         # get the color of the node
