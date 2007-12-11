@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.31 2007/11/22 09:40:04 rsat Exp $
+# $Id: convert-graph,v 1.32 2007/12/11 00:45:48 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -31,9 +31,9 @@ program should perform interconversions between any supported format).
 
 =head1 AUTHORS
 
-Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
-
 Sylvain Brohée <sylvain@scmbb.ulb.ac.be>
+
+Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -45,28 +45,45 @@ convert-graph [-i inputfile] [-o outputfile] [-from tab|gml|adj_matrix] [-to for
 
 =head1 FORMATS
 
-Tab format is the more intuitive way to encode a graph. It consists in the list of edges
-between the nodes. The names of the nodes are separated using the tabulation. 
-Some attributes of the edges can be placed in the following columns (weight, label, color).
-Orphan nodes can be specified using this format simply by not specifying the target node.
+=head2 tab
 
-Adjacency matrix is a n x n table (with n the number of nodes). In cell A[i,j], 
-you find the weight (or 1 if the graph is unweighted) on the edge between nodes i 
-and j. An undirected adjacency matrix is symmetrical : indeed, if an edge exists 
-from node A to node B, it also exists from node B to node A. A directed matrix is 
-asymmetrical. By default, convert-graph considers the graphs as undirected but if the graph you use is undirected, you can use the -undirected option.
+The tab-delimted text format is the most intuitive way to encode a
+graph. Each row represents an edge, and each column an attribute of
+this edge.  Columns are separated using the tabulation character.
+Some attributes of the edges can be placed in the following columns
+(weight, label, color).
 
-GML format allows to specify the location, the color, the label and
-the width of the nodes and of the edges. A GML file is made up of pairs of a key
-and a value. Example for keys are graphs, node and edges. You can then add any
-specific information for each key. GML format can be used by most graph editors (like
-cytoscape and yEd). For more information on the GML format, see http://www.infosun.fim.uni-passau.de/Graphlet/GML/.
+Orphan nodes can be specified using this format simply by specifying a
+source node without target node.
 
-DOT is a plain text graph description language. The DOT files are generally used by
-the programs composing the GraphViz suite (dot, neato, dotty, ...). It is a simple way of
-describing graphs that both humans and computer programs can use. DOT graphs are
-typically files that end with the .dot extension. Like GML, with DOT you can specify
-a lot of feature for the nodes (color, width, label).
+=head2 adj_matrix
+
+An adjacency matrix is a n x n table (n is the number of nodes). In
+cell A[i,j], you find the weight (or 1 if the graph is unweighted) on
+the edge between nodes i and j. An undirected adjacency matrix is
+symmetrical : indeed, if an edge exists from node A to node B, it also
+exists from node B to node A. A directed matrix is asymmetrical. By
+default, convert-graph considers the graphs as undirected but if the
+graph you use is undirected, you can use the -undirected option.
+
+=head2 GML
+
+The GML format allows to specify the location, the color, the label and
+the width of the nodes and of the edges. A GML file is made up of
+pairs of a key and a value. Example for keys are graphs, node and
+edges. You can then add any specific information for each key. GML
+format can be used by most graph editors (like cytoscape and yEd). For
+more information on the GML format, see
+http://www.infosun.fim.uni-passau.de/Graphlet/GML/.
+
+=head2 dot
+
+DOT is a plain text graph description language. The DOT files are
+generally used by the programs composing the GraphViz suite (dot,
+neato, dotty, ...). It is a simple way of describing graphs that both
+humans and computer programs can use. DOT graphs are typically files
+that end with the .dot extension. Like GML, with DOT you can specify a
+lot of feature for the nodes (color, width, label).
 
 =cut
 
