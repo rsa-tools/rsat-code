@@ -87,7 +87,7 @@
       )
     );
     echo "<pre>";
-//     print_r ($parameters);
+//      print_r ($parameters);
     echo "</pre>";
     # Info message
     info("Results will appear below");
@@ -107,8 +107,10 @@
     $echoed = $client->display_graph($parameters);
 
     $response =  $echoed->response;
-    echo "$command";
+
     $command = $response->command;
+        echo "<pre>";
+    echo "</pre>";
     $server = $response->server;
     $client = $response->client;
     $temp_file = explode('/',$server);
