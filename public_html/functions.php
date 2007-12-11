@@ -137,7 +137,12 @@ Function AlphaDate() {
   return $my_date;
 }
 ?> 
-
+<?php
+## This function returns the name of the script executing it
+Function check_integer($string) {
+  return (preg_match("/[0-9]*/", $string));
+}
+?> 
 <?php 
 ################################################################
 ### store info into a log file in a conveninent way for 
