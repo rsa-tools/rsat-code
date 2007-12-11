@@ -2653,6 +2653,157 @@ sub convert_graph_cmd {
   }
   return $command;
 }
+
+
+
+
+
+
+sub alter_graph {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $tmp_outfile = `mktemp $TMP/alter-graph.XXXXXXXXXX`;
+    my $out_format = $args{outformat} || "tab";
+    $out_format =~ s/\'//g;
+    $out_format =~ s/\'//g;
+    chop $tmp_outfile;
+    system("rm $tmp_outfile");
+    $tmp_outfile .= ".$out_format";
+    
+    
+    
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+#     print TMP_OUT $result;
+#     print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    my $command = $self->alter_graph_cmd(%args);
+    $command .= " -o $tmp_outfile";
+    system $command;
+    my $result = `cat $tmp_outfile`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+
+
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+sub alter_graph_cmd {
+  my ($self, %args) =@_;
+  
+  my $command = "$SCRIPTS/alter-graph";
+  
+  if ($args{informat}) {
+   my $in_format = $args{informat};
+   $in_format =~ s/\'//g;
+   $in_format =~ s/\"//g;
+   $command .= " -in_format $in_format";
+  }
+  if ($args{duplicate}) {
+   $command .= " -duplicate";
+  }
+  if ($args{directed}) {
+   $command .= " -directed";
+  }
+  if ($args{self}) {
+   $command .= " -self";
+  }
+  if ($args{outformat}) {
+   my $out_format = $args{outformat};
+   $out_format =~ s/\'//g;
+   $out_format =~ s/\'//g;
+   $command .= " -out_format $out_format";
+  }
+  if ($args{add_nodes}) {
+   my $add_nodes = $args{add_nodes};
+   $add_nodes =~ s/\'//g;
+   $add_nodes =~ s/\'//g;
+   $command .= " -add_nodes $add_nodes";
+  }
+  if ($args{rm_nodes}) {
+   my $rm_nodes = $args{rm_nodes};
+   $rm_nodes =~ s/\'//g;
+   $rm_nodes =~ s/\'//g;
+   $command .= " -rm_nodes $rm_nodes";
+  }
+  if ($args{add_edges}) {
+   my $add_edges = $args{add_edges};
+   $add_edges =~ s/\'//g;
+   $add_edges =~ s/\'//g;
+   $command .= " -add_edges $add_edges";
+  }
+  if ($args{rm_edges}) {
+   my $rm_edges = $args{rm_edges};
+   $rm_edges =~ s/\'//g;
+   $rm_edges =~ s/\'//g;
+   $command .= " -rm_edges $rm_edges";
+  }  
+  if ($args{wcol}) {
+   my $wcol = $args{wcol};
+   $wcol =~ s/\'//g;
+   $wcol =~ s/\'//g;
+   $command .= " -wcol $wcol";
+  }
+  if ($args{scol}) {
+   my $scol = $args{scol};
+   $scol =~ s/\'//g;
+   $scol =~ s/\'//g;
+   $command .= " -scol $scol";
+  }
+  if ($args{tcol}) {
+   my $tcol = $args{tcol};
+   $tcol =~ s/\'//g;
+   $tcol =~ s/\'//g;
+   $command .= " -tcol $tcol";
+  }
+  if ($args{target}) {
+   my $target = $args{target};
+   $target =~ s/\'//g;
+   $target =~ s/\'//g;
+   $command .= " -target $target";
+  }
+  if ($args{inputgraph}) {
+   my $input_graph = $args{inputgraph};
+   chomp $input_graph;
+   my $tmp_input = `mktemp $TMP/alter-graph-input.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
+   print TMP_IN $input_graph;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  return $command;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 sub display_graph {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
