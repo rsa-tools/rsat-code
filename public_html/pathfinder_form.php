@@ -127,7 +127,7 @@
   <br>
   <table>
      <tr><td><B><a href = 'help.pathfinder.html#rank'>Rank</a></B></td>                   <td><input type = 'text' name='rank' value = '$default_rank' size = 10></input></td></tr>
-     <tr><td><font color='red'>Warning: Edge weight is seen as edge cost, not as edge strength!</font></td></tr>
+     <tr><td><font color='#CC6600'>Warning: The edge weight is seen as edge cost, not as edge strength!</font></td></tr>
 	 <tr><td><B><a href = 'help.pathfinder.html#weight'>Weighting scheme</a></B></td>     <td><select name='weight'>
                 <option value = 'unit'>unit weight
                 <option value = 'none'>as given in input graph
