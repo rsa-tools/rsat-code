@@ -35,9 +35,9 @@ if ($demo == 1) {
 
 title('MCL');
 echo("<center>Fast and scalable unsupervised cluster algorithm for graphs based on simulation of (stochastic) flow in graphs.
-	<br>The MCL program was developped by <a href = 'http://micans.org/stijn/contact.html'>Stijn van Dongen</a> 
-	(<a href = 'http://igitur-archive.library.uu.nl/dissertations/1895620/inhoud.htm' target = _blank'>Van Dongen, 2000, PhD thesis</a>; 
-	<a href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=11917018&ordinalpos=6&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum' target = 'top'>Enright et al, 2002</a>)
+	<br>The MCL program was developed by <a target=_blank href='http://micans.org/stijn/contact.html'>Stijn van Dongen</a> 
+	(<a  target = _blank' href='http://igitur-archive.library.uu.nl/dissertations/1895620/inhoud.htm'>Van Dongen, 2000, PhD thesis</a>; 
+	<a  target=_blank href='http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=11917018&ordinalpos=6&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum'>Enright et al, 2002</a>)
 	<br>The stand-alone version of MCL is available at <a target=_blank href='http://micans.org/mcl/'>http://micans.org/mcl/</a></center>");
   
 echo ("<form method='post' action='mcl.php' enctype='multipart/form-data'>
