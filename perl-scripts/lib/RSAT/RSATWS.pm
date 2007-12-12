@@ -1513,6 +1513,18 @@ sub convert_classes {
 	$output_choice = 'both';
     }
     my $tmp_outfile = `mktemp $TMP/convert-classes.XXXXXXXXXX`;
+    my $out_format = $args{outformat};
+    my $in_format = $args{informat};
+    $out_format =~ s/\'//g;
+    $out_format =~ s/\'//g;
+    $in_format =~ s/\'//g;
+    $in_format =~ s/\'//g;    
+    chop $tmp_outfile;
+    system("rm $tmp_outfile");
+    $tmp_outfile .= "_from_".$in_format."_to_".$out_format;
+    
+    
+    
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
 #     print TMP_OUT $result;
 #     print TMP_OUT "KEYS ".keys(%args);
