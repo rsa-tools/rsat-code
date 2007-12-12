@@ -242,6 +242,21 @@
           <INPUT type='submit' value='MCL Graph clustering'>
         </form>
       </td>
+      <TD>
+        <FORM METHOD='POST' ACTION='alter_graph_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$server'>
+          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
+          if ($out_format == 'tab') {
+            echo "
+            <input type='hidden' NAME='scol' VALUE='1'>
+            <input type='hidden' NAME='tcol' VALUE='2'>
+            <input type='hidden' NAME='wcol' VALUE='3'>";
+          }
+          echo "
+          <INPUT type='submit' value='Graph alteration'>
+        </form>
+      </td>
       </tr>
     </table>";
     }

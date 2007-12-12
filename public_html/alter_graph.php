@@ -53,7 +53,9 @@
     $target = rtrim($target);
     $target = trim_text($target);
     $targets = explode("\n", $target);
-    
+    if (end($targets) == '') {
+      array_pop($targets);
+    }    
     $target = join(",", $targets);
   }
   
@@ -146,30 +148,38 @@
                                  )
                            );
     # Execute the command
-    $echoed = $client->alter_graph($parameters);
-
-    $response =  $echoed->response;
-    $command = $response->command;
-    echo "<pre>";
-    echo "</pre>";
-    $server = $response->server;
-    $client = $response->client;
-    $server = rtrim ($server);
-    $temp_file = explode('/',$server);
-    $temp_file = end($temp_file);
-    $resultURL = $WWW_RSA."/tmp/".$temp_file;
-    # Display the results
-    echo "The results is available at the following URL ";
-    echo "<a href = '$resultURL'>$resultURL</a>"; 
-    echo "<hr>\n";
-    echo "
-  <TABLE CLASS = 'nextstep'>
-    <TR>
-      <Th colspan = 3>
-        Next step
-      </Th>
-    </TR>
-    <TR>
+    try {
+      $echoed = $client->alter_graph($parameters);
+      $soap_error = 0;
+    } catch (Exception $soap_exception) {
+      echo ("<pre>");
+      echo "Error : \n",  $soap_exception->getMessage(), "\n";
+      echo ("</pre>");
+      $soap_error = 1;
+    } 
+    if (!$soap_error) {
+      $response =  $echoed->response;
+      $command = $response->command;
+      echo "<pre>";
+      echo "</pre>";
+      $server = $response->server;
+      $client = $response->client;
+      $server = rtrim ($server);
+      $temp_file = explode('/',$server);
+      $temp_file = end($temp_file);
+      $resultURL = $WWW_RSA."/tmp/".$temp_file;
+      # Display the results
+      echo "The results is available at the following URL ";
+      echo "<a href = '$resultURL'>$resultURL</a>"; 
+      echo "<hr>\n";
+      echo "
+    <TABLE CLASS = 'nextstep'>
+      <TR>
+        <Th colspan = 3>
+          Next step
+        </Th>
+      </TR>
+      <TR>
       <TD>
         <FORM METHOD='POST' ACTION='display_graph_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
@@ -281,6 +291,7 @@
         </form>
       </td>
       </tr>
-  </table>";
+    </table>";
+    }
   }
 ?>
