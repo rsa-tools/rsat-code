@@ -119,7 +119,7 @@ parser.add_option("--bgwindow", action="store", dest="bgwindow", help="use a wid
 
 parser.add_option("--location", dest="location", help="region to scan Example --location=-2000:-1", action="store", type="string", default=None, help=optparse.SUPPRESS_HELP)
 
-#parser.add_option("-r", "--ratio", action="store", dest="ratio", type="float", help="", default=2.0)
+parser.add_option("-r", "--ratio", action="store", dest="ratio", type="float", default=2.0, help=optparse.SUPPRESS_HELP)
 parser.add_option("--heuristic", action="store", dest="heuristic", choices=['all', 'slices', 'score'], default='slices', help='heutistic for extracting windows. Supported heutistics: all, slices, score\nDEFAULT: %default\nEXAMPLE: --heuristic=all')
 parser.add_option("--count", action="store", dest="count", type="string", default='hash', help='method for counting oligos (hash or tree) default=hash Example: --cont=tree', help=optparse.SUPPRESS_HELP)
 parser.add_option("--spacing", dest="spacing", help="spacing range (example 0:10)", action="store", type="string", default='1:1', help=optparse.SUPPRESS_HELP)
