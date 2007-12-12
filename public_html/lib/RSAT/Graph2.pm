@@ -1351,14 +1351,15 @@ sub read_from_table {
     
     ## Load the graph
     $cpt = 0;
+    $line_cpt = 0;
     while (my $line = <$main::in>) {
+      $linecpt++;
       next if ($line =~ /^--/); # Skip mysql-like comments
       next if ($line =~ /^;/); # Skip RSAT comments
       next if ($line =~ /^#/); # Skip comments and header
       next unless ($line =~ /\S/); # Skip empty rows
       chomp ($line);
       my @linecp = split "\t", $line;
-
       ## Filter on node names (for induced graphs and graph-get-clusters)
       my $source_id = $linecp[$source_col-1];
       chomp $source_id;
@@ -1378,28 +1379,45 @@ sub read_from_table {
       if ((!defined ($array[$cpt][1]) || $array[$cpt][1] eq "")  && $array[$cpt][0] ne "") {
         $array[$cpt][1] = "###NANODE###";
       }
+      # Edge weight
+      $array[$cpt][2] = join("_",$array[$cpt][0],$array[$cpt][1]);
       if ($weight && $array[$cpt][1] ne "###NANODE###") {
-        $array[$cpt][2] = $linecp[$weight_col-1];
-        $array[$cpt][2] =~ s/^\s*//;
-      } else {
-        $array[$cpt][2] = join("_",$array[$cpt][0],$array[$cpt][1]);
+        if (defined ($linecp[$weight_col-1])) {
+          $array[$cpt][2] = $linecp[$weight_col-1];
+          $array[$cpt][2] =~ s/^\s*//;
+         } else {
+           &RSAT::message::Warning("No label or weight in column $weight_col on line $linecpt") if ($main::verbose >= 1);
+         }
       }
+      # Source Node color
+      $array[$cpt][3] = $default_node_color;
       if (defined($source_color_col)) {
+        if (defined ($linecp[$source_color_col-1])) { 
         $array[$cpt][3] = $linecp[$source_color_col-1] || $default_node_color;
-      } else {
-        $array[$cpt][3] = $default_node_color;
+        } else {
+          &RSAT::message::Warning("No source node color in column $source_color_col on line $linecpt") if ($main::verbose >= 1);
+        }
       }
+      # Target Node color
+      $array[$cpt][4] = $default_node_color;
       if (defined($target_color_col)) {
+        if (defined ($linecp[$target_color_col-1])) { 
         $array[$cpt][4] = $linecp[$target_color_col-1] || $default_node_color;
-      } else {
-        $array[$cpt][4] = $default_node_color;
+        } else {
+          &RSAT::message::Warning("No target node color in column $target_color_col on line $linecpt") if ($main::verbose >= 1);
+        }
       }
+      # Edge color
+      $array[$cpt][5] = $default_edge_color;
       if (defined($edge_color_col)) {
-        $array[$cpt][5] = $linecp[$edge_color_col-1] || $default_edge_color;
-      } else {
-        $array[$cpt][5] = $default_edge_color;
+        if (defined($linecp[$edge_color_col-1])) {
+          $array[$cpt][5] = $linecp[$edge_color_col-1] || $default_edge_color;
+        } else {
+          &RSAT::message::Warning("No edge color in column $default_edge_color on line $linecpt") if ($main::verbose >= 1);
+        }
       }
       $cpt++;
+      
     }
     $self->load_from_array(@array);
     return $self;
