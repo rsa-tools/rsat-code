@@ -283,7 +283,8 @@
           if ($sylvain_input_format == 'tab') {
             echo "
             <input type='hidden' NAME='scol' VALUE='1'>
-            <input type='hidden' NAME='tcol' VALUE='2'>";
+            <input type='hidden' NAME='tcol' VALUE='2'>
+            <input type='hidden' NAME='eccol' VALUE='3'>";
           }
           echo "
           <INPUT type='submit' value='Display the graph'>
