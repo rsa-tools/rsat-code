@@ -41,7 +41,7 @@
   title('convert-graph');
    echo ("<center>Convert graphs between different formats. <br>Optionally, apply a spring-embedding layout algorithm to position the nodes of the graph.\n");
    echo ("<br>This program was developed by 
-	  <a target=_blank href=http://www.bigre.ulb.ac.be/Users/sylvain/>Sylvain Broh&eacute;e</a> and
+	  <a target=_blank href='http://www.bigre.ulb.ac.be/people/Members/sylvain'>Sylvain Broh&eacute;e</a> and
           <a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.
           </center>\n");
    
