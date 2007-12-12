@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.12 2007/12/09 21:16:54 morgane Exp $
+# $Id: matrix-scan.cgi,v 1.13 2007/12/12 17:21:51 morgane Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -304,15 +304,18 @@ sub ReadMatrixScanParameters {
  	################################################################
     ## Return crer
     if ($query->param('analysis_type') eq "analysis_crer") {
-      my @return_fields = qw(crer sites normw limits);
+      my @return_fields = qw(crer normw limits);
     	foreach my $field (@return_fields) {
       	if ($query->param("return_".$field) eq "on") {
 		$parameters .= " -return ".$field;
       	}
     	}
+    	if ($query->param("return_crer_sites") eq "on") {
+		$parameters .= " -return sites";
+      	}
     	
     	## thresholds 
-    	my @threshold_fields = qw(crer_size pval crer_sites);
+    	my @threshold_fields = qw(crer_size pval crer_sites crer_pval crer_sig);
     	foreach my $field (@threshold_fields) {
       	if ($query->param("lth_".$field) ne "none") {
 			my $lth = $query->param("lth_".$field);
