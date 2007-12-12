@@ -194,16 +194,11 @@
     $server = $response->server;
     $client = $response->client;
     $graphid = $response->graphid;
-    if(ereg('PATHFINDING ERROR',$server)){
+    if(ereg('PATHFINDER ERROR',$server)){
     	$error = 1;
+    	error("$server");
     }
-    if($error){
-    	# error("$server");
-    	info("Likely reasons for errors are: <br>
-    	1) Source and/or target nodes are not present in the input graph.<br>
-    	2) An out of memory error may occur if you request paths up to a high rank in a large graph with unit weighting scheme.<br>
-    	");
-    }else{
+    if($error == 0){
    		# location of result file on server (absolute path)
     	$file_location = $result_location . $graphid . $result_suffix;
 
