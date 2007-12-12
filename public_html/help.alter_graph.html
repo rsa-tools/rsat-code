@@ -9,103 +9,42 @@
 <h2><a href="NeAT_home.html">NeA-tools</a> - Help about alter-graph
 </h2>
 </center>
-The complete webpage will be soon available
-<pre>
-NAME
-    alter-graph
+<h4>Description</h4>
+<ul>
+Alter a graph either by adding or removing edges or nodes
+</ul>
 
-DESCRIPTION
-    Alter a graph either by adding or removing edges or nodes
-
-AUTHORS
-    Sylvain Brohée 
-    Jacques van Helden  
-
-CATEGORY
-    graph tools
-
-USAGE
-    alter-graph [-o outputfile] [-v #] [...]
-
-INPUT and OUTPUT FORMATS
-  Graph format
-    See convert-graph for a description of the supported input graph
-    formats. Default format for the input graph: tab. =head1 OUTPUT FORMAT
-
-    Graph in GML, TAB or DOT format (to be specified by the -out_format
-    option)
-
-OPTIONS
-    -v #
-        Level of verbosity (detail in the warning messages during execution)
-
-    -h
-        Display full help message
-
-    -help
-        Same as -h
-
-    -i inputfile
-        If no input file is specified, the standard input is used. This
-        allows to use the command within a pipe.
-
-    -o outputfile
-        If no output file is specified, the standard output is used. This
-        allows to use the command within a pipe.
-
-    -in_format input_format
-        Input format. Supported: tab, gml. By default, the output format is
-        tab.
-
-    -out_format output_format
-        Output format. Supported: tab, dot, gml. By default, the output
-        format is tab.
-
-    -scol
-        Source column. Column containing the source nodes.
-
-    -tcol
-        Target column. Column containing the target nodes.
-
-    -wcol
-        Weight column. Column containing the weight nodes.
-
-    -rm_edges
-        Number of edges to add. This value can either be a percentage value
-        or a discrete number.
-
-    -rm_nodes
-        Number of edges to add. This value can either be a percentage value
-        or a discrete number.
-
-    -add_edges
-        Number of edges to add. This value can either be a percentage value
-        or a discrete number.
-
-    -add_nodes
-        Number of edges to add. This value can either be a percentage value
-        or a discrete number.
-
-    -directed
-        Specifies whether the edges must be considered as directed, i.e., an
-        edge from node A to node B is different from an edge from B to A (by
-        default, edges are not directed).
-
-    -duplicate
-        Specifies whether more than one edge may link two nodes. (by
-        default, duplicated edges are not allowed)
-
-    -self
-        Allows self loops (by default, self loops are not allowed)
-
-    -target
-        Nodes that have to be removed in the graph (if existing). This
-        option can be used iteratively or the nodes names must be separated
-        by comas.
-
-</pre>
-
-
+<h4>Authors</h4>
+<ul>
+<li><a target=_blank href=http://www.bigre.ulb.ac.be/Users/sylvain/>Sylvain Broh&eacute;e</a></li>
+<li><a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a></li>
+</ul>
+<h4>Options</h4><ul>
+<A NAME="formats"></A>
+<h4>Input and output formats</h4>
+  The accepted input formats are GML, tab-delimited and adjacency matrix. 
+  For more explanations about these, refer to the <a href = 'help.convert_graph.html'>manual of convert-graph.</a> <br>
+  If the tab-delimited output is requested, the result graph displays a fourth column indicating whether the
+  edge comes from the original (<i>original</i>) graph or was added randomly by the program (<i>random</i>). 
+</ul>
+<h4><A NAME="columns"></A>Column specifications (only for tab-delimited format)</h4>
+<ul><A NAME="scol"></A><b>Source and target column</b>. Columns containing the source and target nodes. </ul>
+<ul><A NAME="wcol"></A><b>Label or weight column</b>. Columns containing the label or the weight of the edge. </ul>
+</ul>
+<h4><A NAME="alteration_format"></A>Graph alteration</h4><ul>The number of edges or nodes to removed must be a strictly positive integer or a strictly positive percentage. For example : 30 or 50% but not 0.5<br>
+Note that, by removing nodes, edges are generally removed. In this case, the removed edges are comptabilized as already
+removed edges and the number of edges that still has to be removed decreases.<br>
+Moreover, if you specify target nodes and a certain number of nodes to remove, the target nodes are comptabilized
+as already removed nodes and the number of nodes that still has to be removed decreases.</ul>
+<h4><A NAME="directed"></A>Directed graph</h4>
+<ul>Indicates whether the graphs must be considered as directed, i.e.,
+an arc from node A to node B is different from an arc from B to A.</ul>
+<h4><A NAME="self"></A>Self loops</h4>
+<ul>Allows self loops (by default, self loops are not allowed)</ul>
+<h4><A NAME="duplicate"></A>Duplicated edges</h4>
+<ul>Allows duplicated edges(by default, self loops are not allowed)</ul>
+<h4><A NAME="target"></A>Targets</h4>
+<ul>Nodes that have to be removed in the graph (if existing).</ul>
 <h4 class="footer">
 For information, contact <a href = 'mailto:sylvain-at-scmbb.ulb.ac.be'>Sylvain Broh&eacute;e</a>
 </h4>
