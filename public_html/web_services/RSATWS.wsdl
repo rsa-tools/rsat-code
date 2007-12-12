@@ -3396,13 +3396,13 @@ The output graph will thus consist in the graph induced by all nodes of the firs
       <operation name="text_to_html">
          <input name="TextToHtmlRequest" message="tns:text_to_htmlRequest"/>
          <output name="TextToHtmlResponse" message="tns:text_to_htmlResponse"/>
-         <documentation>Get a list of supported organisms.
+         <documentation>Converts a tab-delimited file into a HTML table
          </documentation>
       </operation>
       <operation name="xygraph">
 	      <input name="XYGraphRequest" message="tns:xygraphRequest"/>
 	      <output name="XYGraphResponse" message="tns:xygraphResponse"/>
-	      <documentation>Get a list of supported organisms.
+	      <documentation>Plot a graph and export it.
 	      </documentation>
       </operation>
       <operation name="classfreq">
@@ -3434,7 +3434,7 @@ The number of common elements is reported, as well as the probability to observe
 <operation name="contingency_stats">
         <input name="ContingencyStatsRequest" message="tns:contingency_statsRequest"/>
         <output name="ContingencyStatsResponse" message="tns:contingency_statsResponse"/>
-	<documentation>Interconversions between different formats of cluster files.
+	<documentation>This programs takes as input a contingency table, and calculates various     matching statistics between the rows and columns. The description of these statistics can be found in Brohee and van Helden (2006).
         </documentation>
       </operation>
       <operation name="matrix_scan">
