@@ -42,8 +42,8 @@
 	<ul><b>Sources and targets</b><br>
 	If several source and/or target node identifiers are given, they are separated by '/'. 
 	Example:<br>
-	Source nodes a/b/c<br>
-	Target nodes d
+	Source nodes: a/b/c<br>
+	Target nodes: d
 	</ul>
 	<ul><A NAME="batchfile"></A><b>Batchfile</b>
 		A batchfile allows to do several path finding tasks in a row. It is a collection 
@@ -74,34 +74,33 @@
 	does not need to be linear. <br>
 	Of course, if less than the requested number of paths
 	is present in the graph, Pathfinder cannot return these paths.<br>
+	If a graph is requested as Output type, the nodes have values for the
+	"Path_Rank" attribute, to distinguish different paths in the graph. 
+	Nodes and edges/arcs belonging to a path are colored in gold (that is they 
+	have a value "gold" for attribute color and value "#FFD700" for attribute rgb_color).
 	</ul>
 	
 	<ul>
-	<b>paths table</b><br>
+	<b>table of paths</b><br>
 	Pathfinder returns the requested number of lightest paths ranked according to their weight in a table.
 	No further processing of this table is possible. 
 	</ul>
 	<ul>
-	<b>input graph with paths marked</b><br>
-	Pathfinder returns the input graph with additional data, containing an attribute
-	"color" with values set to yellow for path nodes and to blue for source/target nodes.
-	In addition, it marks nodes with numbers according to the paths a node belongs to
-	("Path_Rank" attribute).<br>
+	<b>input graph with paths highlighted</b><br>
+	Pathfinder returns the input graph with paths highlighted in another color.<br>
 	The modified input graph can be input of further analysis steps. Its format can be
 	specified by setting output format either to "tab-delimited" or to "gml".
 	</ul>
 	<ul>
-	<b>paths as graphs</b><br>
-	Pathfinder returns the requested number of lightest paths ranked according to their weight as separated
-	components of a graph in the desired output format (gml or tab-delimited). The graph can be
+	<b>each path as a separated component of a single graph</b><br>
+	Pathfinder returns the requested number of paths as separated
+	components of one graph in the desired output format (gml or tab-delimited). The graph can be
 	input of further analsysis steps.
 	</ul>
 	<ul>
-	<b>paths unified as graph</b><br>
+	<b>paths unified into one graph</b><br>
 	Pathfinder returns the paths unified into one graph, which is returned in the desired 
-	output format ("gml" or "tab-delimited"). The nodes have values for the "color" and 
-	"Path_Rank" attributes, to distinguish different paths in the graph. The graph can be
-	input of further analsysis steps.
+	output format ("gml" or "tab-delimited"). The graph can be input of further analsysis steps.
 	</ul>
 
 <h4><A NAME="formats"></A>Graph formats</h4>
@@ -216,10 +215,9 @@
 	To submit large input graphs can take time. In addition, Pathfinder generates
 	temp files each time it is called. Re-using a graph and its associated
 	temp files saves time. This is why input graphs can be stored on the server.
-	Select this option and save the graph identifier that Pathfinder always returns
-	upon a request. The next time you want to work on the same graph, enter its
-	identifier in the graph id field. Note that without selecting the save-graph-on-server
-	option, input graphs and temp files will be deleted.
+	Select this option and save the graph identifier that Pathfinder returns. 
+	The next time you want to work on the same graph, enter its
+	identifier in the graph id field. 
 	</ul>
 
 <h4><A NAME="limit">Limitations</a></h4>
@@ -250,10 +248,10 @@
 
 <h4><A NAME="credits"></A>Credits</h4>
 <ul>
-   Pathfinder calls REA written by Jimenez and Marzal in C (1). The Java wrapper has been 
-   inspired by a Python wrapper written by Pierre Schaus and Jean-No&euml;l Monette at UCL (INGI).
+   Pathfinder is a Java wrapper around REA written by Jimenez and Marzal in C [1]. It has been 
+   inspired by a Python wrapper written by Pierre Schaus and Jean-No&euml;l Monette at <a href='http://www.uclouvain.be/ingi.html' target='_blank'>UCL (INGI)</a>.
    The multiple-to-multiple end path finding relies on a graph transformation suggested
-   by Olivier Hubaut (former aMAZE team member) and also described in (2). 
+   by Olivier Hubaut (former aMAZE team member) and also described in [2]. 
    Pathfinder uses a graph library developed by
    the former <a href="http://www.scmbb.ulb.ac.be/amaze/" target='_blank'> aMAZE team</a>.
 </ul>
@@ -265,12 +263,7 @@
 </ol>
 
 <h4 class="footer">
-<address>
-For information, contact
-<script type='text/javascript'><!--
-var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24*t/%268e2%3Ad%21P");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Jacques van Helden<\/a>');
-//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Jacques van Helden (using spam protection)</a></noscript>
-</address>
+For information, contact <a href='mailto:kfaust@ulb.ac.be'>Karoline Faust</a>
 </h4>
 
 </blockquote>

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.44 2007/12/11 00:47:20 jvanheld Exp $
+# $Id: compare-graphs,v 1.45 2007/12/12 13:10:51 rsat Exp $
 #
 ############################################################
 
@@ -292,7 +292,7 @@ package main;
     $message .= sprintf ";\t%s\t%d\t%s\n", "Q^R", $common_arcs, "Observed arcs in the intersection";
     $message .= sprintf ";\t%s\t%.2f\t%-38s\t%s\n", "perc_Q", $perc_Q, "Percentage of query arcs", "perc_Q = 100*Q^R/Q";
     $message .= sprintf ";\t%s\t%.2f\t%-38s\t%s\n", "perc_R", $perc_R, "Percentage of reference arcs", "perc_R = 100*Q^R/R";
-    $message .= sprintf ";\t%s\t%.4f\t%-38s\t%s\n", "Jac_sim", $jac_sim, "Jaccard coefficient of similarity", "Jac_sim = Q^R/(QvR)";
+    $message .= sprintf ";\t%s\t%.4f\t%-38s\t%s\n", "Jac_sim", $jac_sim, "Jaccard coefficient of similarity", "Jac_sim = Q^R/(QvR)\tintersection size divided by union";
     $message .= sprintf ";\t%s\t%.1e\t%-38s\t%s\n", "Pval", $pval, "P-value of the intersection", "Pval=P(X >= Q^R)";
 
 

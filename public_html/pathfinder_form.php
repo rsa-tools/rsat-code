@@ -35,7 +35,8 @@
   }
 
   title('Pathfinder');
-  echo ("<center>Do multiple-to-multiple end path finding.</center>\n");
+  echo ("<center>Do multiple-to-multiple end path finding.<br>
+  Web service and interface by <a href='mailto:kfaust@ulb.ac.be'>Karoline Faust</a>. This program calls REA (Jimenez and Marzal, 1999). See <a href='help.pathfinder.html#credits'>Credits</a> for other contributors.</center>\n");
   echo ("<form method='post' action='pathfinder.php' enctype='multipart/form-data'>
   <h2>Input/Output</h2>
   <HR SIZE='2' NOSHADE>
@@ -117,7 +118,7 @@
    <select name='outputType'>
   <option selected value = 'pathsTable'>table of paths
   <option value = 'pathsMarked'>input graph with paths highlighted
-  <option value = 'pathsGraphs'>each path as a separated component in one graph
+  <option value = 'pathsGraphs'>each path as a separated component of a single graph
   <option value = 'pathsUnion'>paths unified into one graph
   </select>
   <br>
@@ -146,8 +147,7 @@
   <TD><B><A HREF='help.pathfinder.html'>MANUAL</A></B></TD>
   <TD><B><A HREF='mailto:kfaust@ulb.ac.be'>MAIL</A></B></TD>
    <TD><B><A HREF='help.pathfinder.html#webservice'>WSDL</A></B></TD>
-  </TR></TABLE></ul></ul>
- ");
+  </TR></TABLE></ul></ul>");
 ?>
 </body>
 </html>
