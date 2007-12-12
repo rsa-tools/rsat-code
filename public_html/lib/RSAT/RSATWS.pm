@@ -2554,6 +2554,7 @@ sub convert_graph {
     my $stderr = `$command 2>&1 1>/dev/null`;
     if ($stderr) {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+
     }
 
 
@@ -2573,7 +2574,7 @@ sub convert_graph {
 sub convert_graph_cmd {
   my ($self, %args) =@_;
   
-  my $command = "$SCRIPTS/convert-graph";
+  my $command = "$SCRIPTS/convert-graph ";
   
   if ($args{informat}) {
    my $in_format = $args{informat};
