@@ -1386,7 +1386,7 @@ sub read_from_table {
           $array[$cpt][2] = $linecp[$weight_col-1];
           $array[$cpt][2] =~ s/^\s*//;
          } else {
-           &RSAT::message::Warning("No label or weight in column $weight_col on line $linecpt") if ($main::verbose >= 1);
+           &RSAT::message::Warning("No label or weight in column $weight_col on line $linecpt");# if ($main::verbose >= 1);
          }
       }
       # Source Node color
@@ -1395,7 +1395,7 @@ sub read_from_table {
         if (defined ($linecp[$source_color_col-1])) { 
         $array[$cpt][3] = $linecp[$source_color_col-1] || $default_node_color;
         } else {
-          &RSAT::message::Warning("No source node color in column $source_color_col on line $linecpt") if ($main::verbose >= 1);
+          &RSAT::message::Warning("No source node color in column $source_color_col on line $linecpt");# if ($main::verbose >= 1);
         }
       }
       # Target Node color
@@ -1404,7 +1404,7 @@ sub read_from_table {
         if (defined ($linecp[$target_color_col-1])) { 
         $array[$cpt][4] = $linecp[$target_color_col-1] || $default_node_color;
         } else {
-          &RSAT::message::Warning("No target node color in column $target_color_col on line $linecpt") if ($main::verbose >= 1);
+          &RSAT::message::Warning("No target node color in column $target_color_col on line $linecpt");# if ($main::verbose >= 1);
         }
       }
       # Edge color
@@ -1413,7 +1413,7 @@ sub read_from_table {
         if (defined($linecp[$edge_color_col-1])) {
           $array[$cpt][5] = $linecp[$edge_color_col-1] || $default_edge_color;
         } else {
-          &RSAT::message::Warning("No edge color in column $default_edge_color on line $linecpt") if ($main::verbose >= 1);
+          &RSAT::message::Warning("No edge color in column $default_edge_color on line $linecpt");# if ($main::verbose >= 1);
         }
       }
       $cpt++;

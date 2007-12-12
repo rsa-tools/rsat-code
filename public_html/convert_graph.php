@@ -109,46 +109,58 @@
                                  )
                            );
     # Execute the command
-    $echoed = $client->convert_graph($parameters);
-
-    $response =  $echoed->response;
-    $command = $response->command;
-    $server = $response->server;
-    $client = $response->client;
-    $server = rtrim ($server);
-    $temp_file = explode('/',$server);
-    $temp_file = end($temp_file);
-    $resultURL = $WWW_RSA."/tmp/".$temp_file;
-    # Display the results
-    echo "The results is available at the following URL ";
-    echo "<a href = '$resultURL'>$resultURL</a>"; 
-    echo "<hr>\n";
-    echo "
-  <TABLE CLASS = 'nextstep'>
-    <TR>
-      <Th colspan = 3>
-        Next step
-      </Th>
-    </TR>
-    <TR>
-      <TD>
-        <FORM METHOD='POST' ACTION='display_graph_form.php'>
-          <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-          if ($out_format == 'tab') {
+//     echo ("<pre>");
+//     $echoed = $client->convert_graph($parameters);
+//     echo ("</pre>");
+    # Work with exception catch
+    try {
+      $echoed = $client->convert_graph($parameters);
+      $soap_error = 0;
+    } catch (Exception $soap_exception) {
+      echo ("<pre>");
+      echo "Error : \n",  $soap_exception->getMessage(), "\n";
+      echo ("</pre>");
+      $soap_error = 1;
+    }  
+    if (!$soap_error) {
+      $response =  $echoed->response;
+      $command = $response->command;
+      $server = $response->server;
+      $client = $response->client;
+      $server = rtrim ($server);
+      $temp_file = explode('/',$server);
+      $temp_file = end($temp_file);
+      $resultURL = $WWW_RSA."/tmp/".$temp_file;
+      # Display the results
+      echo "The results is available at the following URL ";
+      echo "<a href = '$resultURL'>$resultURL</a>"; 
+      echo "<hr>\n";
+      echo "
+    <TABLE CLASS = 'nextstep'>
+      <TR>
+        <Th colspan = 3>
+          Next step
+        </Th>
+      </TR>
+      <TR>
+        <TD>
+          <FORM METHOD='POST' ACTION='display_graph_form.php'>
+            <input type='hidden' NAME='pipe' VALUE='1'>
+            <input type='hidden' NAME='graph_file' VALUE='$server'>
+            <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
+            if ($out_format == 'tab') {
+              echo "
+              <input type='hidden' NAME='scol' VALUE='1'>
+              <input type='hidden' NAME='tcol' VALUE='2'>
+              <input type='hidden' NAME='wcol' VALUE='3'>
+              <input type='hidden' NAME='eccol' VALUE='4'>";
+            }
             echo "
-            <input type='hidden' NAME='scol' VALUE='1'>
-            <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>
-            <input type='hidden' NAME='eccol' VALUE='4'>";
-          }
-          echo "
-          <INPUT type='submit' value='Display the graph'>
-        </form>
-      </td>
-      <TD>
-        <FORM METHOD='POST' ACTION='compare_graphs_form.php'>
+            <INPUT type='submit' value='Display the graph'>
+          </form>
+        </td>
+        <TD>
+          <FORM METHOD='POST' ACTION='compare_graphs_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='graph_file' VALUE='$server'>
           <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
@@ -242,6 +254,7 @@
         </form>
       </td>
       </tr>
-  </table>";
+    </table>";
+    }
   }
 ?>
