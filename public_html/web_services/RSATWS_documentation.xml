@@ -845,22 +845,11 @@ Default is 'both'.</xsd:documentation>
 		      </xsd:element>
 	      </xsd:sequence>
       </xsd:complexType>
-      
-      
-      
-      
       <xsd:complexType name="XYGraphRequest">
 	      <xsd:sequence>
 		      <xsd:element name="inputFile" type="xsd:string" minOccurs="1">
 			      <xsd:annotation>
-				      <xsd:documentation>The input file should contain columns with
-					      numeric data.
-					      Each line contains info about one point of the graph.
-					      By default, the first column is considered to contain
-					      X data, and the second column Y data.
-					      X and Y columns can be changed with -xcol and -ycol
-					      options.
-					      Columns should be separated by tabs.
+				      <xsd:documentation>The input file should contain columns with numeric data. Each line contains info about one point of the graph. By  default, the first column is considered to contain X data, and the second column Y data. X and Y columns can be changed with -xcol and -ycol options. Columns should be separated by tabs.
                               		</xsd:documentation>
 			      </xsd:annotation>
 		      </xsd:element>
@@ -1556,6 +1545,84 @@ This option is only useful for GML output.</xsd:documentation>
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
+      
+      <xsd:complexType name="AlterGraphRequest">
+	<xsd:sequence>
+	  <xsd:element name="informat" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Input format. Supported: tab, gml, adj_matrix.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="outformat" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Output format. Supported: tab, gml, dot, adj_matrix.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="inputgraph" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>A graph in the format specified by the informat tag.</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="wcol" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Specify a column of the input graph that contains an edge weight or an edge label for the tab-delimited format (no default).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="scol" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Specify a column of the input graph that contains the source nodes for the tab-delimited format (default = 1).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tcol" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Specify a column of the input graph that contains the target nodes for the tab-delimited format (default = 2).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="directed" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Specifies whether the edges must be considered as directed, i.e., an     edge from node A to node B is different from an edge from B to A (by default, edges are not directed).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="duplicate" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Specifies whether more than one edge may link two nodes. (by default, duplicated edges are not allowed).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="self" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Allows self loops (by default, self loops are not allowed)</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="target" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Nodes that have to be removed in the graph (if existing). The node names must be separated by comas.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="add_nodes" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Number of edges to add. This value can either be a percentage value or a discrete number.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="rm_nodes" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Number of edges to remove. This value can either be a percentage value or a discrete number.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="add_edges" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Number of edges to add. This value can either be a percentage value or a discrete number.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="rm_edges" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Number of edges to remove. This value can either be a percentage value or a discrete number.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+      
+      
+      
       <xsd:complexType name="DisplayGraphRequest">
 	      <xsd:sequence>
 		      <xsd:element name="informat" type="xsd:string" minOccurs="1">
@@ -2395,6 +2462,25 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
+      <xsd:complexType name="AlterGraphResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
       <xsd:complexType name="DisplayGraphResponse">
 	      <xsd:sequence>
 		      <xsd:element name="server" type="xsd:string">
@@ -2877,6 +2963,24 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
+      
+      <xsd:element name="alter_graph">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:AlterGraphRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="alter_graphResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:AlterGraphResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>      
+      
+      
       <xsd:element name="display_graph">
 	      <xsd:complexType>
 		      <xsd:sequence>
@@ -3156,7 +3260,13 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="convert_graphResponse">
     <part name="output" element="tns:convert_graphResponse"/>
   </message>
-  
+  <message name="alter_graphRequest">
+    <part name="parameters" element="tns:alter_graph"/>
+  </message>
+
+  <message name="alter_graphResponse">
+    <part name="output" element="tns:alter_graphResponse"/>
+  </message>  
   <message name="display_graphRequest">
 	  <part name="parameters" element="tns:display_graph"/>
   </message>
@@ -3286,13 +3396,13 @@ The output graph will thus consist in the graph induced by all nodes of the firs
       <operation name="text_to_html">
          <input name="TextToHtmlRequest" message="tns:text_to_htmlRequest"/>
          <output name="TextToHtmlResponse" message="tns:text_to_htmlResponse"/>
-         <documentation>Get a list of supported organisms.
+         <documentation>Converts a tab-delimited file into a HTML table
          </documentation>
       </operation>
       <operation name="xygraph">
 	      <input name="XYGraphRequest" message="tns:xygraphRequest"/>
 	      <output name="XYGraphResponse" message="tns:xygraphResponse"/>
-	      <documentation>Get a list of supported organisms.
+	      <documentation>Plot a graph and export it.
 	      </documentation>
       </operation>
       <operation name="classfreq">
@@ -3324,7 +3434,7 @@ The number of common elements is reported, as well as the probability to observe
 <operation name="contingency_stats">
         <input name="ContingencyStatsRequest" message="tns:contingency_statsRequest"/>
         <output name="ContingencyStatsResponse" message="tns:contingency_statsResponse"/>
-	<documentation>Interconversions between different formats of cluster files.
+	<documentation>This programs takes as input a contingency table, and calculates various     matching statistics between the rows and columns. The description of these statistics can be found in Brohee and van Helden (2006).
         </documentation>
       </operation>
       <operation name="matrix_scan">
@@ -3352,6 +3462,12 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 	      <input name="ConvertGraphRequest" message="tns:convert_graphRequest"/>
 	      <output name="ConvertGraphResponse" message="tns:convert_graphResponse"/>         
 	      <documentation>Convert graphs between different formats
+	      </documentation>
+      </operation>
+      <operation name="alter_graph">
+	      <input name="AlterGraphRequest" message="tns:alter_graphRequest"/>
+	      <output name="AlterGraphResponse" message="tns:alter_graphResponse"/>         
+	      <documentation>Alter a graph either by adding or removing edges or nodes
 	      </documentation>
       </operation>
       <operation name="display_graph">
@@ -3583,6 +3699,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
       </operation>
       <!-- 	  RSAT GRAPH TOOLS BINDING -->
       <operation name="convert_graph">
+	      <soap:operation soapAction=""/>
+	      <input>
+		      <soap:body use="literal" />
+	      </input>
+	      <output>
+		      <soap:body use="literal" />
+	      </output>
+      </operation>
+      <operation name="alter_graph">
 	      <soap:operation soapAction=""/>
 	      <input>
 		      <soap:body use="literal" />
