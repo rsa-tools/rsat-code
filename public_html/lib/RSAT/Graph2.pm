@@ -1392,7 +1392,7 @@ sub read_from_table {
       # Source Node color
       $array[$cpt][3] = $default_node_color;
       if (defined($source_color_col)) {
-        if (defined ($linecp[$source_color_col-1])) { 
+        if (defined ($linecp[$source_color_col-1]) && $array[$cpt][1] ne "###NANODE###") { 
         $array[$cpt][3] = $linecp[$source_color_col-1] || $default_node_color;
         } else {
           &RSAT::message::Warning("No source node color in column $source_color_col on line $linecpt");# if ($main::verbose >= 1);
@@ -1400,7 +1400,7 @@ sub read_from_table {
       }
       # Target Node color
       $array[$cpt][4] = $default_node_color;
-      if (defined($target_color_col)) {
+      if (defined($target_color_col) && $array[$cpt][1] ne "###NANODE###") {
         if (defined ($linecp[$target_color_col-1])) { 
         $array[$cpt][4] = $linecp[$target_color_col-1] || $default_node_color;
         } else {
@@ -1409,7 +1409,7 @@ sub read_from_table {
       }
       # Edge color
       $array[$cpt][5] = $default_edge_color;
-      if (defined($edge_color_col)) {
+      if (defined($edge_color_col) && $array[$cpt][1] ne "###NANODE###") {
         if (defined($linecp[$edge_color_col-1])) {
           $array[$cpt][5] = $linecp[$edge_color_col-1] || $default_edge_color;
         } else {
