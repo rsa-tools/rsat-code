@@ -76,6 +76,8 @@
   if (!$error) { 
   
     $graph = trim_text($graph);
+    $graph = space_to_tab($graph);
+    echo ("<pre>$graph</pre>");
     ## Load the parameters of the program in to an array
     $parameters = array( 
       "request" => array(
