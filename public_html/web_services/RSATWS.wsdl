@@ -3467,7 +3467,7 @@ This program supports a variety of background models (Bernoulli, Markov chains o
       <operation name="alter_graph">
 	      <input name="AlterGraphRequest" message="tns:alter_graphRequest"/>
 	      <output name="AlterGraphResponse" message="tns:alter_graphResponse"/>         
-	      <documentation>Convert graphs between different formats
+	      <documentation>Alter a graph either by adding or removing edges or nodes
 	      </documentation>
       </operation>
       <operation name="display_graph">
