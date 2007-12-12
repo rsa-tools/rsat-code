@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.109 2007/12/09 21:13:34 morgane Exp $
+# $Id: matrix-scan,v 1.110 2007/12/12 14:45:58 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -390,6 +390,8 @@ package main;
 			      occ_sig_rank
 			      crer_size
 			      crer_sites
+			      crer_sig
+			      crer_pval
 			     );
   $supported_thresholds = join ",", @supported_thresholds;
   %supported_threshold = ();
@@ -553,7 +555,8 @@ package main;
     $return_fields{rank} = 1;
   }
 	if ((defined($uth{crer_size})) || (defined($lth{crer_size})) ||
-      (defined($uth{crer_sites})) || (defined($lth{crer_sites}))) {
+      (defined($uth{crer_sites})) || (defined($lth{crer_sites})) ||
+      (defined($uth{crer_sig})) || (defined($lth{crer_sig}))){
     $return_fields{crer} = 1;
   }
 
@@ -2951,6 +2954,9 @@ sub score_crer {
 	    if ($crer_pval > 0) {
 		  $crer_sig = sprintf("%.3f", -log($crer_pval)/$sig_base);
 	      }
+	    
+	    unless (&check_thresholds("crer_pval", $crer_pval)) {next; }
+	    unless (&check_thresholds("crer_sig", $crer_sig)) {next; }
 	    
      	##prepare output (ft format)
      	my $strand_binon = "D";
