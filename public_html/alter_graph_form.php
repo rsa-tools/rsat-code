@@ -35,7 +35,7 @@
     $default_wcol = 3;
   }
 
-  title(alter-graph');
+  title('alter-graph');
    echo ("<center>Alter a graph either by adding or removing edges or nodes.\n");
    echo ("<br>This program was developed by 
 	  <a target=_blank href='http://www.bigre.ulb.ac.be/people/Members/sylvain'>Sylvain Broh&eacute;e</a> and
