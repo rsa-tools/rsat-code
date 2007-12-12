@@ -178,7 +178,13 @@
     # info(print_r($parameters));
     # info(print_r($functions));
  	# info(print_r($types));
-    $echoed = $client->pathfinding($parameters);
+ 	try{
+        $echoed = $client->pathfinding($parameters);
+    }catch(SoapFault $fault){
+       echo("The following error occurred:");
+       error($fault);
+       $error = 1;
+    }
 
     ########## Process results ###############
 
@@ -188,17 +194,27 @@
     $server = $response->server;
     $client = $response->client;
     $graphid = $response->graphid;
-    # location of result file on server (absolute path)
-    $file_location = $result_location . $graphid . $result_suffix;
+    if(ereg('PATHFINDING ERROR',$server)){
+    	$error = 1;
+    }
+    if($error){
+    	# error("$server");
+    	info("Likely reasons for errors are: <br>
+    	1) Source and/or target nodes are not present in the input graph.<br>
+    	2) An out of memory error may occur if you request paths up to a high rank in a large graph with unit weighting scheme.<br>
+    	");
+    }else{
+   		# location of result file on server (absolute path)
+    	$file_location = $result_location . $graphid . $result_suffix;
 
-    # content of result file
-    $fileContent = storeFile($file_location);
-    # Display the results
-    echo "<align='left'>The result is available as text file at the following URL:<br> ";
-    echo "<a href = '$server'>$server</a><br></align>";
+        # content of result file
+        $fileContent = storeFile($file_location);
+        # Display the results
+    	echo "<align='left'>The result is available as text file at the following URL:<br> ";
+    	echo "<a href = '$server'>$server</a><br></align>";
 
-    # Text-to-html web service (for table of paths only)
-    if(strcmp($outputType,'pathsTable') == 0){
+    	# Text-to-html web service (for table of paths only)
+    	if(strcmp($outputType,'pathsTable') == 0){
     	 $rsat_client = new SoapClient(
                        "$WWW_RSA"."/web_services/RSATWS.wsdl",
                            array(
@@ -226,20 +242,20 @@
     	echo "<align='left'>The result is available as HTML page at the following URL:<br> ";
     	echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>";
     	echo "You can sort the rows according to a selected column by clicking on the header entry of that column.<br></align>";
-    }
-    # in case of tab-format, truncate nodes to make it readable by Sylvain Brohee's tools
-    if(strcmp($out_format,'flat') == 0){
-    	if(ereg(';ARCS',$fileContent)){
-    		$sylvain_input_graph = end(explode(';ARCS',$fileContent));
     	}
-    }else{
-    	$sylvain_input_graph = $fileContent;
-    }
-    # remove leading or trailing white spaces or end of lines
-    $sylvain_input_graph = ltrim($sylvain_input_graph,"\n");
-    $sylvain_input_graph = rtrim($sylvain_input_graph,"\n");
-    $sylvain_input_graph = ltrim($sylvain_input_graph);
-    $sylvain_input_graph = rtrim($sylvain_input_graph);
+    	# in case of tab-format, truncate nodes to make it readable by Sylvain Brohee's tools
+    	if(strcmp($out_format,'flat') == 0){
+    		if(ereg(';ARCS',$fileContent)){
+    			$sylvain_input_graph = end(explode(';ARCS',$fileContent));
+    		}
+    	}else{
+    		$sylvain_input_graph = $fileContent;
+   		 }
+    	# remove leading or trailing white spaces or end of lines
+    	$sylvain_input_graph = ltrim($sylvain_input_graph,"\n");
+    	$sylvain_input_graph = rtrim($sylvain_input_graph,"\n");
+    	$sylvain_input_graph = ltrim($sylvain_input_graph);
+    	$sylvain_input_graph = rtrim($sylvain_input_graph);
 
 	# generate temp file
 	 $tempFileName = tempnam($result_location,"Pathfinder_tmpGraph_");
@@ -395,7 +411,8 @@
       </td>
      </tr>
    </table>";
-  }
+  		}
+  	}
   }
 ?>
 </body>
