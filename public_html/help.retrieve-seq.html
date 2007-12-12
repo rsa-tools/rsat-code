@@ -22,7 +22,7 @@ var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24
 <H2>Description</H2>
 
 <UL>
-Returns upstream, downstream or ORF sequences for one or several genes. <P>
+Returns upstream, downstream or coding sequences for one or several genes. <P>
 </UL>
 
 <H2>Options</H2>
@@ -49,7 +49,7 @@ the list of genes
 returns. The first word of each line is the query; any following
 information is ignored. </li>
 
-<li>Valiad queries are ORF identifiers (eg: YFL021W) or gene names (eg:
+<li>Valiad queries are gene identifiers (eg: YFL021W) or gene names (eg:
 GAL4, NIL1).</li>
 
 <li>By default, synonyms are accepted (eg: NIL1 = GAT1), but only one gene
@@ -151,7 +151,7 @@ origin is at the start codon.
 <li><B>Downstream</B> sequences located downstream the coding
 region. The origin is at the stop codon.
 
-<li><B>Unspliced ORF</B> DNA sequences located between the start and
+<li><B>Unspliced CDS</B> DNA sequences located between the start and
 stop codons. WARNING: introns are not spliced out (this will be
 implemented in further versions)
 
@@ -162,7 +162,7 @@ implemented in further versions)
 <h3>Sequence limits (from, to)</h3><ul>
 
 Limits of the region to retrieve. Coordintates are calculated relative
-to the ORF start.
+to the start of the coding sequence.
 
 <h4>Sign</h4><UL>
 
@@ -201,21 +201,21 @@ href=supported-organisms.cgi>supported-organisms</i>.
 </ul>
 
 <A NAME="noorf"></A>
-<h3>Prevent overlap with upstream ORFs:</h3>
+<h3>Prevent overlap with neighbour genes:</h3>
 <ul>
-It is quite frequent to find a predicted ORF in close proximity
-upstream from a query ORF. If you want to discard these sequences from
+It is quite frequent to find a predicted gene in close proximity
+upstream from a query gene. If you want to discard these sequences from
 your analysis, you should make sure this option is active. 
 
 <P>
 When the option is checked, upstream sequences are automatically
-clipped when a predicted ORF is located within the range defined by
+clipped when a predicted gene is located within the range defined by
 the option <I>from</I>. The actual size retainedfor the upstream
 sequence is indicated in the sequence comments.
 
 <P> Note that in some cases a known regulatory element is located
-upstream or within a predicted ORF. This means either that the
-predited ORF is an artifact, or that the same sequence is bifunctional
+upstream or within a predicted gene. This means either that the
+predited gene is an artifact, or that the same sequence is bifunctional
 (coding and regulatory). 
 
 <P>
@@ -265,10 +265,10 @@ The result can be displayed in various sequence formats (click on the links for 
 <ul>
 Sequences can be labeled (named) in different ways:
 <ul>
-<li><b>ORF identifier</b>
+<li><b>gene identifier</b>
 <li><b>gene name</b>
-<li><b>ORF id + gene name</b>
-<li><b>full</b>: a concatenation of ORF identifier, gene name, sequence type, from, to and strand. This option gives a full description of the conditions of sequence retrieval
+<li><b>gene id + gene name</b>
+<li><b>full</b>: a concatenation of gene identifier, gene name, sequence type, from, to and strand. This option gives a full description of the conditions of sequence retrieval
 </ul> 
 </ul>
 
