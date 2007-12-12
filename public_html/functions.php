@@ -92,10 +92,8 @@ Function load_props($props) {
    if (!preg_match("/^\#/", $line)) {
      $property = explode('=', $line);
      $prop_array[$property[0]] = $property[1];
-//      echo "$line<br>";
    }
   }
-//   print_r($prop_array);
   return $prop_array;
 }
 ?>
@@ -122,12 +120,31 @@ Function load_props($props) {
 <?php
 ## This function returns the name of the script executing it
 Function getCurrentScriptName() {
-  
   $currentFile = $_SERVER["SCRIPT_NAME"];
   $parts = Explode('/', $currentFile);
   $currentFile = $parts[count($parts) - 1];
   return $currentFile;
 }
+?>
+<?php
+## This function replaces all spaces of a string by tabulation
+## If the line starts with a ';' or a '#' it is skipped.
+Function tab_to_space($string) {
+  $result = "";
+  $lines = explode("\n",$string);
+  $array_count = count($lines);
+  for($i=0; $y<$lines; $i++) {
+    if (!preg_match("/^\#/", $line) && !preg_match("/^\;/", $line)) {
+     $line_sp = str_replace("\t", " ", $line[$i]);
+     $result .= $line_sp;
+    } else {
+      $result .= $line[$i];
+    }
+  }
+  return $result;
+}
+
+
 ?> 
 <?php
 ## This function returns the name of the script executing it
