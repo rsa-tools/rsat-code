@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.62 2007/06/20 14:01:32 rsat Exp $
+# $Id: retrieve-seq,v 1.63 2007/12/12 22:30:37 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -633,13 +633,38 @@ OPTIONS
 	-labelsep
 		Separator between label fields. Default: $label_sep
 
-	-noorf	the upstream sequence can only contain non-coding sequence.
-		i.e. the -from values is modified if a predicted orf
-		is encountered within its range. 
-		The weaknesses of using this option are that
-		- all predicted orf do not correspond to real orf,
-		- there is no a priori reason to exclude a regulatory site
-		  which would overlap the upstream coding sequence.
+	-noorf	prevent overlap with neighbout genes. 
+
+		When this option is active, the sequence size is
+		adapted to avoid including coding sequences of the
+		neighbour genes.
+
+		The reason for preventing overlap with upstream genes
+		is that (at least for microbial organisms, and in
+		large part for higher eukaryotes) most cis-acting
+		elements are located in the non-coding regions. Thus,
+		if the neighbour gene is closer than the selected
+		limit for collecting upstream sequences, the part of
+		coding sequences included it the result is likely to
+		add up to the noise, without bringing any additional
+		signal. 
+
+		More importantly, coding and non-coding sequences
+		generally have very different background models. The
+		inclusion of coding sequences from neighbour genes may
+		thus lead to biases in pattern discovery.
+
+		The weaknesses of using this option are that, in some
+		cases, predicted orf do not correspond to real genes,
+		This was particularly frequent in the early versions
+		of the yeast genome, but the annotations have been
+		improved since then.
+
+		For bacterial sequences, it is essential to prevent
+		overlap with upstream genes, because intergenic
+		distances are often very short, especially between
+		pairs of genes comprised in the same operon. 
+
 
 	-rm     Use the repeat masked version of the genome.  Attention :
 		repeated regions are annotated for some genomes only.
