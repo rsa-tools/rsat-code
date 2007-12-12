@@ -165,7 +165,7 @@
           <input type='hidden' NAME='tcol' VALUE='2'\>
           <input type='hidden' NAME='wcol' VALUE='3'\>
           
-          <INPUT type='submit' value='Extract those clusters from the network'\>
+          <INPUT type='submit' value='Map those clusters on the network'\>
         </form>
       </td> 
    ";  

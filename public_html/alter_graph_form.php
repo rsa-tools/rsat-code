@@ -14,7 +14,7 @@
   $default_layout = "checked";
   $default_ecolors = "";
   $default_ewidth = "";
-  
+
   # PIPE VALUES
   $pipe = $_REQUEST['pipe'];
   $graph_file = $_REQUEST['graph_file'];
@@ -28,11 +28,15 @@
   # demo graph
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
-    $demo_graph = $string_yeast_coex_550;
+    $demo_graph = $uetz;
     $demo_ecolors = "selected";
     $demo_ewidth = "checked";
     $default_ecolors = "";
-    $default_wcol = 3;
+    $default_wcol = "";
+    $demo_rm_nodes = "";
+    $demo_add_nodes = "5%";
+    $demo_rm_edges = "";
+    $demo_add_edges = "1000";
   }
 
   title('alter-graph');
@@ -52,8 +56,8 @@
     <option value = 'gml'> GML format
     </select><br>");
   } else {
-    echo ": $query_graph_format<br>";
-    echo "<input type='hidden' NAME='in_format' VALUE='$query_graph_format'>";
+    echo ": $graph_format<br>";
+    echo "<input type='hidden' NAME='in_format' VALUE='$graph_format'>";
   } 
    
   echo("<br>
@@ -65,7 +69,7 @@
   echo("<br>");
   if (!$pipe) {
     if ($demo) {
-      demo("This demonstration graph consist in the top scoring edges of the yeast co-expression network included in the integrative database <a href = 'http://string.embl.de/' target = 'top'>String</a> (<a href ='http://www.ncbi.nlm.nih.gov/sites/entrez?cmd=Retrieve&db=PubMed&list_uids=17098935&dopt=AbstractPlus'  target = 'top'>Von Mering et al, 2007)</a>. It contains 537 nodes and 4801 edges");
+      demo("This demonstration graph is the yeast two-hybrid dataset produced by <a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?db=pubmed&uid=10688190&cmd=showdetailview&indexed=google'>Uetz et al (2001)</a>. It consists in 865 interactions between 926 proteins. " );
     }
     echo ("<b>Graph</b><br>");
     echo ("<textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>
@@ -88,14 +92,14 @@
     echo "<input type='hidden' NAME='w_col' VALUE='$wcol'/>\n";
   }
   echo("
-    <br><a href = 'help.alter_graph.html#columns'>Graph alterations</a><br>
+    <br><a href = 'help.alter_graph.html#alteration_format'>Graph alterations (values can be entered as discrete numbers or as percentages)</a><br>
     <table>
-    <tr><td><B><a href = 'help.alter_graph.html#rm_nodes'>Number or percentage of nodes to remove</a></B></td><td><input type = 'text' name='rm_nodes' value = '$default_rm_nodes' size = 4></input></td></tr>
-    <tr><td><B><a href = 'help.alter_graph.html#rm_edges'>Number or percentage of edges to remove</a></B></td><td><input type = 'text' name='rm_edges' value = '$default_rm_edges' size = 4></input></td></tr>
-    <tr><td><B><a href = 'help.alter_graph.html#add_nodes'>Number or percentage of nodes to add</a></B></td><td><input type = 'text' name='add_nodes' value = '$default_add_nodes' size = 4></input></td></tr>
-    <tr><td><B><a href = 'help.alter_graph.html#add_edges'>Number or percentage of edges to add</a></B></td><td><input type = 'text' name='add_edges' value = '$default_add_edges' size = 4></input></td></tr>
+    <tr><td><B><a href = 'help.alter_graph.html#alteration_format'>Nodes to remove</a></B></td><td><input type = 'text' name='rm_nodes' value = '$demo_rm_nodes' size = 4></input></td></tr>
+    <tr><td><B><a href = 'help.alter_graph.html#alteration_format'>Edges to remove</a></B></td><td><input type = 'text' name='rm_edges' value = '$demo_rm_edges' size = 4></input></td></tr>
+    <tr><td><B><a href = 'help.alter_graph.html#alteration_format'>Nodes to add</a></B></td><td><input type = 'text' name='add_nodes' value = '$demo_add_nodes' size = 4></input></td></tr>
+    <tr><td><B><a href = 'help.alter_graph.html#alteration_format'>Edges to add</a></B></td><td><input type = 'text' name='add_edges' value = '$demo_add_edges' size = 4></input></td></tr>
     </table>");
-    echo ("<b>Targets (node to be removed)</b><br>");
+    echo ("<b>Targets (nodes to be removed)</b><br>");
     echo ("<textarea name='target' rows='6' cols='65'>$targets</textarea><br>
   
   
