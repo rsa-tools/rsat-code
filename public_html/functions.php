@@ -129,16 +129,17 @@ Function getCurrentScriptName() {
 <?php
 ## This function replaces all spaces of a string by tabulation
 ## If the line starts with a ';' or a '#' it is skipped.
-Function tab_to_space($string) {
+Function space_to_tab($string) {
   $result = "";
   $lines = explode("\n",$string);
   $array_count = count($lines);
-  for($i=0; $y<$lines; $i++) {
+  for($i=0; $i<$array_count; $i++) {
+    $line = $lines[$i];
     if (!preg_match("/^\#/", $line) && !preg_match("/^\;/", $line)) {
-     $line_sp = str_replace("\t", " ", $line[$i]);
-     $result .= $line_sp;
+      $line_sp = str_replace(" ", "\t", $line);
+      $result .= $line_sp."\n";
     } else {
-      $result .= $line[$i];
+      $result .= $line."\n";
     }
   }
   return $result;
