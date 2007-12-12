@@ -19255,7 +19255,7 @@ YAL016W	TPD3
 ?>
 
 <?php $mips_complexes = 
-";ORF	complex
+";Gene	complex
 YMR108W	Acetolactate-synthase
 YCL009C	Acetolactate-synthase
 YAL029C	Actin-associated-motorproteins
