@@ -53,7 +53,8 @@ my $scorethick = 1;
 my $map_format = 'jpg';
 
 ## Read cluster file
-open INPUT, "/Users/oly/Desktop/Nature_protocols/Harbison_2004_sig0.fam" or die "Can't open input file: $!\n";
+# open INPUT, "/Users/oly/Desktop/Nature_protocols/data/Harbison_2004_sig0.fam" or die "Can't open input file: $!\n";
+open INPUT, "/Users/oly/Desktop/Nature_protocols/data/Harbison_2004_sig0_select_sig4.fam" or die "Can't open input file: $!\n";
 
 ## Loop over gene clusters
 my @genes;
@@ -188,7 +189,7 @@ sub Analysis {
 
     ## Store the result in file
     my $result = $results{'client'};
-    my $output_oligo_file = "/Users/oly/Desktop/Nature_protocols/".$cluster."_oligos.tab";
+    my $output_oligo_file = "/Users/oly/Desktop/Nature_protocols/results/sig4/".$cluster."_oligos.tab";
     open OUTPUT_OLIGO, ">$output_oligo_file" or die "Can't open input file: $!\n";
     print OUTPUT_OLIGO $result;
     close OUTPUT_OLIGO;
@@ -312,7 +313,7 @@ sub Analysis {
 
     ## Store the result in file
     my $result = $results{'client'};
-    my $output_map_file = "/Users/oly/Desktop/Nature_protocols/".$cluster."_map.".$map_format;
+    my $output_map_file = "/Users/oly/Desktop/Nature_protocols/results/sig4/".$cluster."_map.".$map_format;
     open OUTPUT_MAP, ">$output_map_file" or die "Can't open input file: $!\n";
     print OUTPUT_MAP $result;
     close OUTPUT_MAP;
