@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.7 2007/11/23 07:41:20 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.8 2007/12/13 21:38:09 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -17,31 +17,41 @@ matrix-from-patterns
 
 =head1 DESCRIPTION
 
-Extrat one or several position-specific scoring matrices (PSSM) from a
-set of sequences, using a seeds a set of patterns (the
-output of oligo-analysis or dyad-analysis).
+Extract one or several position-specific scoring matrices (PSSM) from
+a set of sequences, using a seeds a set of patterns (the output of
+oligo-analysis or dyad-analysis).
 
-The patterns are first assembled (using the program pattern assembly)
-and converted into one or several significance matrices (using
-convert-matrix). A significance matrix contains one row per residue,
-one column per position of the pattern assembly, and each cell
-indicates the maximal significance value observed for that residue at
-that position in the assembly.
+The program proceeds in two steps: 
 
-Classically, position-specific scoring matrices are build from an
-alignemnt of sites (e.g. binding sites for a transcription factor).  A
-significance matrix already gives a good indication of the motif, but
-it does not always reflect the real sites present in the sequence,
-because it is built by assembling overlapping oligonucleotides (or
-dyads), irrespective of the fact that these patterns are found
-together or not in the input sequence.
+1) A B<significance matrix> is built by assembling the patterns (with
+I<pattern assembly>), and converting each assembly to a
+position-specific scoring matrix (the conversion is performed with
+I<convert-matrix>).  This significance matrix contains one row per
+residue, one column per position of the pattern assembly, and each
+cell indicates the maximal significance value observed for that
+residue at that position in the assembly.
 
-The program matrix-from-pattern solves this problem by using the
-assembled patterns as seeds to perform a matrix-based scanning of the
-input sequences, and collect the most likely instances of the motif
-(putative sites). These sites are then used to build an count matrix,
-reflecting the absolute residue frequencies at each position of the
-collected sites.
+2) The significance matrix is then used to scan the input sequences
+(with I<matrix-scan>), and collect all sites above a given threshold
+of P-value. A I<count matrix> is built from these sites.
+
+Advantage of this two-step process: classically, position-specific
+scoring matrices are build from an alignemnt of sites (e.g. binding
+sites for a transcription factor).  A significance matrix already
+gives a good indication of the motif, but it does not always reflect
+the real sites present in the sequence, because it is built by
+assembling overlapping oligonucleotides (or dyads), irrespective of
+the fact that these patterns are found together or not in the input
+sequence. The program matrix-from-pattern solves this problem by using
+the assembled patterns as seeds to perform a matrix-based scanning of
+the input sequences, and collect the most likely instances of the
+motif (putative sites). These sites are then used to build an count
+matrix, reflecting the absolute residue frequencies at each position
+of the collected sites.
+
+Weakness of this approach: the scanning stepc an be time-consuming
+when the input sequences are large (e.g. for whole-genome moti
+detection).
 
 =head1 AUTHORS
 
@@ -54,8 +64,9 @@ jvanheld@scmbb.ulb.ac.be
 =item pattern discovery
 
 =head1 USAGE
-    
-matrix-from-patterns -seq sequence_filfe [-pl pattern_file | -asmb assembly_file] [-o output_prefix] [-v #]
+
+matrix-from-patterns -seq sequence_filfe [-pl pattern_file | -asmb assembly_file] \
+   [-o output_prefix] [-v #]
 
 =head1 INPUT FORMAT
 
@@ -466,5 +477,12 @@ __END__
 =pod
 
 =head1 SEE ALSO
+
+=head2 I<pattern-assembly>
+
+=head2 I<convert-matrix>
+
+=head2 I<matrix-scan>
+
 
 =cut
