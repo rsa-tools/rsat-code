@@ -23,12 +23,11 @@ $default{upload_freq_file} = "";
 $default{oligo_length} = 6;
 $default{background} = "upstream-noorf";
 $default{markov_order} = 2;
-$default{pseudo_weight} = "0.05";
 $default{strand} = "both strands";
 $default{noov} = 'checked';
 $default{grouprc} = 'checked';
 $default{purge} = 'checked';
-$default{side} = 'over-represented';
+#$default{side} = 'over-represented';
 $default{align} = 'right (upstream)';
 $default{freq_estimate} = "background";
 
@@ -434,6 +433,8 @@ ATCAACCCATAGCAACTCATAAA
 ";
 print "<TD><B>";
 print $query->hidden(-name=>'lth_occ',-default=>'2');
+print $query->hidden(-name=>'window_width',-default=>'800');
+print $query->hidden(-name=>'bg_window_width',-default=>'800');
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'organism',-default=>'Saccharomyces cerevisiae');
 print $query->hidden(-name=>'title',-default=>'upstream sequences from the yeast MET genes');
@@ -444,7 +445,7 @@ print $query->end_form;
 
 #print "<TD><B><A HREF='demo.ORM.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.ORM.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_ORM.html'>TUTORIAL</A></B></TD>\n";
+#print "<TD><B><A HREF='tutorials/tut_ORM.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
