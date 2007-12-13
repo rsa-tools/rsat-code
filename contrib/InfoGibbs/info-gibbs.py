@@ -28,14 +28,14 @@ PYTHONPATH = glob.glob1(os.path.abspath(sys.path[0]), '*.zlib')
 [sys.path.insert(1, os.path.join(sys.path[0], path)) for path in PYTHONPATH]
 from Bio.scripthelper import *
 
-import Lib.markov as markov
+import Bio.markovsimple as markov
 import Lib.rand as rand
 import Lib.motif as motif
 import Lib.matrix as matrix
 import Lib.gibbs93 as gibbs93
 import Lib.gibbs95 as gibbs95
 import Lib.finalcycle as finalcycle
-
+import Core.cache
 
   
 parser = optparse.OptionParser(usage=USAGE, description=globals()['__doc__'] % {'version': VERSION}, version=VERSION, add_help_option=1, formatter=Formatter())
@@ -44,33 +44,29 @@ parser.add_option("-i", "--input", action="store", dest="input", default=sys.std
 parser.add_option("-o", "--output", action="store", dest="output", default=sys.stdout, metavar="FILE", help="output results to FILE\nif not specified, the standard output is used.")
 parser.add_option("-s", "--strand", dest="strand", choices=['+', '+-'], default='+-', help="search in foward strand (+) or in both strands (+-)\nDEFAULT:%default\nEXAMPLE: --strand=+",)
 
-
 parser.add_option("--iter", action="store", dest="iter", type="int", default=100, help="maximum number of Gibbs sampling iterations\nDEFAULT: %default")
 parser.add_option("--EM", action="store", dest="EM", type="int", default=0, help="number of Expecation Maximization cycles\nDEFAULT: %default")
 parser.add_option("--words", action="store", dest="words", type="int", default=10, help="number of motif occurrences that are expected to be found\nDEFAULT: %default")
 parser.add_option("--motifs", action="store", dest="motifs", type="int", default=1, help="number of motif to extract\nDEFAULT: %default ")
 parser.add_option("--nrun", action="store", dest="nrun", type="int", default=1, metavar="N", help="try to run the Gibbs sampling N times")
-parser.add_option("--finalcycle", action="store", type="int", dest="finalcycle", default=1)
+parser.add_option("--finalcycle", action="store_true", dest="finalcycle", help="Try to optimise number of words in a final cycle")
 parser.add_option("--shift", action="store", type="int", dest="shift", default=10, metavar="N", help="try to shift the motif evey N iteration\nDEFAULT: %default")
 
-parser.add_option("-m", "--markov", dest="markov", action="store", type="int", default=0, metavar="ORDER", help="use Markov model of order ORDER as backgroundarkov model parameters are computed from the input sequence\nEXAMPLE: --markov=2 (Markov chain of order 2) generated with input sequences)\nDEFAULT: %default")
-
-
-parser.add_option("--type", action="store", dest="type", default="93", choices=['93', '95'], help="use the TYPE method. supported TYPE are 93,95")
-
-parser.add_option("--seed", action="store", dest="seed", type="int", default=None, help="use SEED for random number intialization")
-
+parser.add_option("-m", "--markov", dest="markov", action="store", type="int", default=0, metavar="ORDER", 
+    help="use Markov model of order ORDER as backgroundarkov model parameters are computed from the input sequence\nEXAMPLE: --markov=2 (Markov chain of order 2) generated with input sequences)\nDEFAULT: %default")
 parser.add_option("--bgfile", action="store", dest="bg", type="str", default=None, metavar="FILE", help="use oligo-analysis background model")
-parser.add_option("--startfrom", action="store", dest="startfrom", type="str", default=None, metavar="FILE", help="use FILE as a starting point")
-
+parser.add_option("--type", action="store", dest="type", default="93", choices=['93', '95'], help="use the TYPE method. supported TYPE are 93,95")
+parser.add_option("--seed", action="store", dest="seed", type="int", default=None, help="use SEED for random number intialization")
+parser.add_option("--startwords", action="store", dest="startwords", type="str", default=None, metavar="FILE", help="read words in FILE and use them as a starting point")
+parser.add_option("--startmatrix", action="store", dest="startmatrix", type="str", default=None, metavar="FILE", help="read matrix form FILE and use it as a starting point")
 parser.add_option("-v", "--verbosity", action="store", dest="verbosity", type="int", help="Set verbosity to level LEVEL\nEXAMPLE: --verbosity=2", metavar="LEVEL", default=0)
 
 
 parser.add_option("--fulloutput", action="store_true", dest="fulloutput", default=False, help=optparse.SUPPRESS_HELP)
 parser.add_option("--top", action="store", dest="top", type="int", default=1, help=optparse.SUPPRESS_HELP)
 parser.add_option("--dir", action="store", dest="dir", type="str", default="", help=optparse.SUPPRESS_HELP)
-parser.add_option("--minwords", action="store", dest="minwords", type="int", help="", default=0, help=optparse.SUPPRESS_HELP)
-parser.add_option("--maxwords", action="store", dest="maxwords", type="int", help="", default=0, help=optparse.SUPPRESS_HELP)
+parser.add_option("--minwords", action="store", dest="minwords", type="int", default=0, help=optparse.SUPPRESS_HELP)
+parser.add_option("--maxwords", action="store", dest="maxwords", type="int", default=0, help=optparse.SUPPRESS_HELP)
 parser.add_option("--alpha", action="store", dest="alpha", type="float", default=1, help=optparse.SUPPRESS_HELP)
 parser.add_option("--sampling", action="store", dest="sampling", type="str", default="llr", help=optparse.SUPPRESS_HELP)
 parser.add_option("--normalize", action="store", type="int", dest="normalize", default=0, help=optparse.SUPPRESS_HELP)
@@ -81,6 +77,9 @@ parser.add_option("--debug", action="store_true", dest="debug", help=optparse.SU
 (options, args) = parser.parse_args()
 
 cli.VERBOSITY = options.verbosity
+if options.debug:
+    cli.VERBOSITY = 10
+
 cli.UPDATE = 1
 
 def run(args, options):
@@ -123,7 +122,7 @@ def run(args, options):
     # OUTPUT
     p = dict(l=parameters['wordMinLength'], alpha=parameters['alpha'])
     
-    output = new_output(options.input, options.output, options.dir, '.mat', p)
+    output = new_output(options.input, options.output, options.dir, '', p)
 
     # BG MODEL
     if options.bg:
@@ -133,12 +132,17 @@ def run(args, options):
         mm.learn(sequences)
         #print mm.priori
 
+    mmcache = Core.cache.MemoryCache(mm.logP)
+    mm.logP_cached = mmcache.__call__
+
     # STARTING POINT
-    if options.startfrom != None:
-        sites = open(options.startfrom).read().split()
-        #print sites
+    if options.startwords != None:
+        sites = open(options.startwords).read().split()
         start = motif.words2motif(sites, sequences, mm, parameters)
-        #print start.full_str()
+    if options.startmatrix != None:
+        m = matrix.tab2matrix(options.startmatrix)
+        start = finalcycle.matrix2motif(m, sequences, mm, parameters)
+
 
     # MAIN
     sites = motif.all_sites(sequences, mm, parameters)
@@ -155,7 +159,7 @@ def run(args, options):
             parameters['clock'] = Core.Sys.timer.Timer() 
             parameters['nrun'] = n+1
 
-            if options.startfrom == None:
+            if options.startwords == None and options.startmatrix == None:
                 start = motif.init(sequences, mm, sites, parameters)
 
             # Gibbs sampling
@@ -183,11 +187,7 @@ def run(args, options):
 
         winner = sorted(currentMotifs, reverse=True)[0]
         results.append(winner)
-        #print len(sites)
-        #for elt in winner.sp():
-        #    sites.remove(elt)
         sites.difference_update(winner.sp())
-        #print len(sites)        
 
         print >> output, winner.full_str()
         if m < options.motifs - 1:
