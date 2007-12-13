@@ -19,6 +19,7 @@
   $default_weight = "unit";
   $default_store_graph = 0;
 
+
   // variables given within workflow
   $pipe = $_REQUEST['pipe'];
   $requested_graph_file = $_REQUEST['graph_file'];
