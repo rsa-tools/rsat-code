@@ -74,10 +74,10 @@ href="mailto:kurtz@zbh.uni-hamburg.de">kurtz@zbh.uni-hamburg.de</a>).
 
 The analysis can be performed with oligonuleotides of any size between
 1 and 8. Selecting size 1 amounts to counting the alphabet utilization
-within the input sequeces. For the detection of regulatory sites, w
+within the input sequences. For the detection of regulatory sites, w
 recommend starting with an analysis of hexanucleotides (size=6), and
 scanning sizes between 4 and 8. When a pattern is significantly
-overrepresented, it generaly appears from the analyses with various
+overrepresented, it generally appears from the analyses with various
 sizes.
 
 <P>
@@ -118,7 +118,7 @@ The background model can be fragmented in several segments of a fixed width.
 <B>Prevent overlapping matches</B><BR> 
 
 Periodic patterns (e.g. AAAAAA, ATATAT) have an aggregative tendency,
-i.e. each occurrence of such a pattern strongly favours additional
+i.e. each occurrence of such a pattern strongly favors additional
 occurrences in its immediate vicinity. This introduces a bias to most
 statistics (binomial, log-likelihood). A simple way to correct for
 this bias is to prevent counting twice mutually overlapping
@@ -161,10 +161,8 @@ frequencies from input sequence" works poorly.
 
 <P>
 <A NAME="background"></A>
-<!--
+
 <p><li><B>Predefined background frequencies :</B>
-
-
 Compare oligo frequencies observed in the query sequence to those of a
 reference sequence (the background model).
 
@@ -185,11 +183,11 @@ sequences).
 <li><b>intergenic</b>: all the intergenic regions, including upstream
 and downstream sequences.
 </ul>
--->
+
 <p><li><B>Markov chain :</B> expected word (oligonucleotide) frequencies
 are calculated on the basis of the subword frequencies observed in the
 input sequence set. This calculation takes into account the higher
-order dependencies between neighbouring residues. 
+order dependencies between neighboring residues. 
 
 <P>
 For example, with a markov chain of order 4 :
@@ -205,19 +203,19 @@ Expected(GATAAC) = observed(GATAA) * observed(ATAAC) / observed(ATAA)
 
 For words of size k, the highest possible order is k-2. A Markov order
 of 0 amounts to use observed residue frequencies for calculating
-expected oligomer frequencies (no dependency between neighbour
+expected oligomer frequencies (no dependency between neighbor
 residues).
 <P>
 The higher the Markov order, the most stringent is the analysis:
 specificity is increased, but there si a loss of sensitivity,
-i.e. some relevant patterns might be overlooked. The optimal markov
+i.e. some relevant patterns might be overlooked. The optimal Markov
 order depends on the size of the sequence set. For small gene families
 (e.g. 10 sequences of 800bp), taking an order > 1 would result in a
 loss of sensitivity. For sequence sets of 1Mb, a Markov chain of 3 is
 optimal for hexanucleotides.
 
 <p><li><B>Residue frequencies from input sequence :</B> (Note: this is
-equivalent to a markov chain with order 0).
+equivalent to a Markov chain with order 0).
 
 </ul>
 
@@ -234,7 +232,7 @@ returned). For occurrence numbers, matching sequences and significance
 indices, lower thresholds are used (i.e. all values higher than the
 threshold are returned).  A threshold of 0 on occurrence significance
 index is selected by default. This is the most efficient way we found
-to automatically select the biologicaly significant regulatory sites,
+to automatically select the biologically significant regulatory sites,
 irrespective of oligonucleotide size, number and size of the sequences
 in the input set.
 
@@ -343,7 +341,7 @@ calculated with the binomial formulae.
     SPECIFIC TREATMENT FOR DOUBLE STRAND COUNTS
 
 	When occurrences are counted on both strands, each pattern is
-	grouped with its erverse complement. 
+	grouped with its rerverse complement. 
 
 	For reverse-palindromic patterns, probabilities are calculated
 	on the basis of the single strand count, since the occurrence
