@@ -86,10 +86,10 @@ href="mailto:kurtz@zbh.uni-hamburg.de">kurtz@zbh.uni-hamburg.de</a>).
 
 The analysis can be performed with oligonuleotides of any size between
 1 and 8. Selecting size 1 amounts to counting the alphabet utilization
-within the input sequeces. For the detection of regulatory sites, w
+within the input sequences. For the detection of regulatory sites, w
 recommend starting with an analysis of hexanucleotides (size=6), and
 scanning sizes between 4 and 8. When a pattern is significantly
-overrepresented, it generaly appears from the analyses with various
+overrepresented, it generally appears from the analyses with various
 sizes.
 
 <P>
@@ -115,7 +115,7 @@ with other programs.
 <B>Prevent overlapping matches</B><BR> 
 
 Periodic patterns (e.g. AAAAAA, ATATAT) have an aggregative tendency,
-i.e. each occurrence of such a pattern strongly favours additional
+i.e. each occurrence of such a pattern strongly favors additional
 occurrences in its immediate vicinity. This introduces a bias to most
 statistics (binomial, log-likelihood). A simple way to correct for
 this bias is to prevent counting twice mutually overlapping
@@ -189,7 +189,7 @@ input sequence set. This calculation takes into account the higher
 order dependencies between neighbouring residues. 
 
 <P>
-For example, with a markov chain of order 4 :
+For example, with a Markov chain of order 4 :
 <UL><PRE>
 P(GATAAC) = P(GATAA) * P(C|GATAA)
           = P(GATAA) * P(ATAAC) / P(ATAA)
@@ -207,7 +207,7 @@ residues).
 <P>
 The higher the Markov order, the most stringent is the analysis:
 specificity is increased, but there si a loss of sensitivity,
-i.e. some relevant patterns might be overlooked. The optimal markov
+i.e. some relevant patterns might be overlooked. The optimal Markov
 order depends on the size of the sequence set. For small gene families
 (e.g. 10 sequences of 800bp), taking an order > 1 would result in a
 loss of sensitivity. For sequence sets of 1Mb, a Markov chain of 3 is
@@ -235,7 +235,7 @@ optimal for hexanucleotides.
 
 
 <p><li><B>Residue frequencies from input sequence :</B> (Note: this is
-equivalent to a markov chain with order 0).
+equivalent to a Markov chain with order 0).
 
 <a name='equiprobable'></A>
 <p><li><B>Equiprobable residues:</B> This option gives very poor
@@ -333,24 +333,24 @@ possible patterns.</P>
 Various measures of oligonucleotide distribution can be returned/
 <UL>
 
-<LI><B>Occurrences:</B> a simple count of the number of ocurrences of
+<LI><B>Occurrences:</B> a simple count of the number of occurrences of
 each oligonucleotide. Overlapping matches are detected and summed in
 the counting.
 
 <LI><B>Frequencies:</B> relative frequencies, i.e. the number of
-ocurrence of the oligonucleotides divided by the sum of occurrencesfor
+occurrence of the oligonucleotides divided by the sum of occurrences for
 all oligonucleotides.
 
 <LI><B>Matching sequences:</B> the number of sequences from the input
-set which contain at least one ocurrence of the oligonucleotide.
+set which contain at least one occurrence of the oligonucleotide.
 
-<LI><B>Ratio:</B> observed/expected occurence ratio. This ratio can be
+<LI><B>Ratio:</B> observed/expected occurrence ratio. This ratio can be
 used as a rough indicator of over-representation, but it has the
 weakness to overestimate the patterns with a very weak number of
 expected occurrences. For instance, observing 1 occurrence when
 expecting 0.1 will have a very high index of 10 while it is quite
 likely to occur at random (proba ~10%). For comparison, observing 20
-occurences when expecting 10 has a probability of ~0.3%, although the
+occurrences when expecting 10 has a probability of ~0.3%, although the
 ratio is only 2!
 
 
@@ -372,14 +372,14 @@ is the observed number of occurrences).
 of sequences with at least one occurrence.
 	
 <LI><B>Matching sequence probability (ms_pro):</B> the probability to
-have L or more sequences with at least one ocurrence of the
+have L or more sequences with at least one occurrence of the
 oligonucleotide, given the probabilistic model (where L is the
 observed number of matching sequences).
 	
 <LI><B>Significance index (sig):</B> this is a conversion of the
 occurrence probability, taking into account the number of possible
 oligonucleotides (which varies with oligo size) and doing a
-logarithmic transformation. The highest sig corespond to the most
+logarithmic transformation. The highest sig corresponds to the most
 overrepresented oligonucleotide. Sig value higher than 0 indicate
 overrepresentation.
 
@@ -399,7 +399,7 @@ returned). For occurrence numbers, matching sequences and significance
 indices, lower thresholds are used (i.e. all values higher than the
 threshold are returned).  A threshold of 0 on occurrence significance
 index is selected by default. This is the most efficient way we found
-to automatically select the biologicaly significant regulatory sites,
+to automatically select the biologically significant regulatory sites,
 irrespective of oligonucleotide size, number and size of the sequences
 in the input set.
 
@@ -425,7 +425,7 @@ calculated with the binomial formulae.
 	                         j=1
 	
 	where	p  = probability of the pattern
-		     Severay models are supported for estimating the
+		     Several models are supported for estimating the
 		     prior probability (see options -a, -expfreq and
 		     -bg).
 		S  = number of sequences in the sequence set. 
@@ -448,7 +448,7 @@ calculated with the binomial formulae.
     EXPECTED NUMBER OF MATCHING SEQUENCES
 
 	In this counting mode, only the first occurrence of each
-	sequence is taken into connsideration. We have thus to
+	sequence is taken into consideration. We have thus to
 	calculate a probability of first occurrence.
 
 	   Exp_ms = n (1 - (1 - p)^T)
@@ -500,14 +500,14 @@ calculated with the binomial formulae.
 			                i=0
 
 		The option -under does not affect the other statistics
-		(zscore, loglikelihood). For z-score, the negative
+		(zscore, log-likelihood). For z-score, the negative
 		values can be used to asses word under-representation.
 
 	                        
     SPECIFIC TREATMENT FOR DOUBLE STRAND COUNTS
 
 	When occurrences are counted on both strands, each pattern is
-	grouped with its erverse complement. 
+	grouped with its reverse complement. 
 
 	For reverse-palindromic patterns, probabilities are calculated
 	on the basis of the single strand count, since the occurrence
@@ -515,7 +515,7 @@ calculated with the binomial formulae.
 	that on the direct strand. 
 
         A more biological justification for this is that, although the
-        word is foudn on both strands in a string representation of
+        word is found on both strands in a string representation of
         the sequences, at the structural level, there is a single
         binding site for the factor. 
 
@@ -611,7 +611,7 @@ calculated with the binomial formulae.
 	  (eg AAAAAA, TATATA). 
 	- its calculation is very fast. 
 	  This is especially critical when analyzing 
-	  very big sequences (whole genomes), where the expected oligont 
+	  very big sequences (whole genomes), where the expected oligo nt 
 	  occurrences are very high (and binomial calculation very slow).
 	- Z-score provides a way to detect both over- and under-represented 
 	  patterns. 
