@@ -2253,14 +2253,18 @@ sub get_position {
     chomp $tempfile;
     open (TMP, ">$tempfile");
     for (my $i = 0; $i < scalar(@arcs); $i++) {
-      $arcs_list .= join(" ",$arcs[$i][0], $arcs[$i][1], "\n");
+      my $source = $arcs[$i][0];
+      my $target = $arcs[$i][1];
+      $source =~ s/ /####space####/g;
+      $target =~ s/ /####space####/g;
+      $arcs_list .= join(" ",$source, $target, "\n");
     }
     print TMP $arcs_list;
     my $command = "cat $tempfile | $fr_layout --iterations 400 $layout_size $layout_size";
     &RSAT::message::TimeWarn("Calculating the layout with $fr_layout") if ($main::verbose >= 2);
     my $coordinates = `$command`;
     my @lignes = split /\n/, $coordinates;
-    system ("rm $tempfile");
+#     system ("rm $tempfile");
     foreach my $ligne (@lignes) {
       ## The four first line of the output of fr_layout displays the iterations
       ## of the program and so must no be parsed, so we skip them.
@@ -2270,6 +2274,7 @@ sub get_position {
       next if ($ligne =~ /^\*\*/); # Skip comments and header
       my @lignecp = split "\t", "$ligne";
       my $node = $lignecp[0];
+      $node =~ s/####space####/ /g; 
       my $id = $nodes_name_id{$node};
       $nodes_id_xpos{$id} = int($lignecp[1]+($layout_size/2));
       $nodes_id_ypos{$id} = int($lignecp[2]+($layout_size/2));
