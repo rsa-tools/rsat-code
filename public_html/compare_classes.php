@@ -225,10 +225,10 @@
   
   if ($output_format == "matrix") {
     $matrix = $_REQUEST['matrix_field'];
-    $l_thr_val = 0;
-    $u_thr_val = 0;
-    $l_thr_field = 0;
-    $u_thr_field = 0;
+    $l_thr_val = "";
+    $u_thr_val = "";
+    $l_thr_field = "";
+    $u_thr_field = "";
     $sort = 0;
     $return = 0;
   } 
@@ -344,11 +344,30 @@
     echo "</pre>";
     
     # Display the results
-    echo "The results is available as text file at the following URL ";
+    echo "The results are available as text file at the following URL ";
     echo "<a href = '$cc_resultURL'>$cc_resultURL</a><br>"; 
-    echo "The results is available as HTML page at the following URL ";
+    echo "The results are available as HTML page at the following URL ";
     echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
     echo "<hr>\n";
- 
+    if ($output_format == 'matrix') {
+      echo "
+      <TABLE CLASS = 'nextstep'>
+        <TR>
+          <Th colspan = 3>
+            Next step
+          </Th>
+        </TR>
+        <TR>
+          <TD>
+            <FORM METHOD='POST' ACTION='contingency_stats_form.php'>
+              <input type='hidden' NAME='pipe' VALUE='1'>
+              <input type='hidden' NAME='matrix_file' VALUE='$cc_server'>
+              <INPUT type='submit' value='Contingency-table statistics'>
+            </form>
+          </td>
+        </tr>
+      </table>";
+    }
+         
   }
 ?>
