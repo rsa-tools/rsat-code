@@ -50,7 +50,7 @@
   }
 
   echo("<table>
-  <tr><td  colspan = 2><b><a href = 'help.contingency_stats.html#return'>Return fields</a></b></td></tr>
+  <tr><td  colspan = 2><b><a href = 'help.contingency_stats.html#return_fields'>Return fields</a></b></td></tr>
   <tr><td><input type='checkbox' name='stats' value='on' $default_stats/></td><td><B>table-wise statistics</B></td>
   <tr><td><input type='checkbox' name='rowstats' value='on' $default_rowstats/></td><td><B>row-wise statistics</B></td>
   <tr><td><input type='checkbox' name='colstats' value='on' $default_colstats/></td><td><B>column-wise statistics</B></td>
