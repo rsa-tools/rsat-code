@@ -117,18 +117,18 @@ print $query->textfield(-name=>'title',
 			-maxlength=>80);
 
 print "<BR>\n";
-print "<A HREF='help.feature-map.html#legend'>";
 print $query->checkbox(-name=>'legend',
 		       -checked=>'checked',
-		       -label=>' Legend ');
-print "</A>";
+		       -label=>'');
+print "<A HREF='help.feature-map.html#legend'>Legend</a>";
+#print "</A>";
 print "&nbsp;&nbsp;&nbsp;";
 
-print "<A HREF='help.feature-map.html#scalebar'>";
+
 print $query->checkbox(-name=>'scalebar',
 		       -checked=>'checked',
-		       -label=>' Scalebar ');
-print "</A>";
+		       -label=>'');
+print "<A HREF='help.feature-map.html#scalebar'>Scalebar</a>";
 
 print "(step ";
 print $query->textfield(-name=>'scalestep',
@@ -204,22 +204,22 @@ print $query->textfield(-name=>'minfthick',
 			-size=>5);
 print "&nbsp;&nbsp;&nbsp;\n";
 
-print "<A HREF='help.feature-map.html#scorethick'>";
+
 print $query->checkbox(-name=>'scorethick',
 		       -checked=>'checked',
-		       -label=>' Proportional to score ');
-print "</A>";
+		       -label=>'');
+print "<A HREF='help.feature-map.html#scorethick'>Proportional to score</A>";
 print "</B>";
 
 
 
 print "<BR>\n";
 print "<B>";
-print "<A HREF='help.feature-map.html#htmap'>";;
+
 print $query->checkbox(-name=>'htmap',
 		       -checked=>'checked',
-		       -label=>' Dynamic map ');
-print "</A>";
+		       -label=>'');
+print "<A HREF='help.feature-map.html#htmap'>Dynamic map</A>";
 print "&nbsp;&nbsp;&nbsp;";
 
 print "<BR>\n";
