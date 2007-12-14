@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>GrA-tools - convert-graph</title>
+   <title>NeA-tools - convert-graph</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="results">
@@ -8,7 +8,7 @@
   require ('functions.php');
   # log file update
   UpdateLogFile("neat","","");  
-  title('compare-graphs - results');
+  title('compare-classes - results');
   # Error status
   $error = 0;
   # Get parameters
@@ -299,7 +299,7 @@
   
     # Open the SOAP client
     $client = new SoapClient(
-                       "$WWW_RSA"."/web_services/RSATWS.wsdl",
+                       $neat_wsdl,
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
