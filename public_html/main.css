@@ -210,6 +210,12 @@ body blockquote.warning {
 	font-size: 12px;
 }
 
+blockquote.demo {
+	color : #000000;
+	font-size: 12px;
+	font-style:italic;
+}
+
 
 body.results center {
 	margin-top: 5px;
