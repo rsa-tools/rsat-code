@@ -13,7 +13,8 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ### Read the CGI query
 $query = new CGI;
 
-$default{demo_descr} = "";
+$default{demo_descr1} = "";
+$default{demo_descr2} = "";
 
 $default{sequence_file} = ""; ### [-f <Name of sequence file---default: standard input>]
 $default{sequence} = ""; ### [-f <Name of sequence file---default: standard input>]
@@ -75,6 +76,8 @@ $default{uth_sig} = "none";
 $default{lth_pval} = "none";
 $default{uth_pval} = "1e-5";
 
+$default{lth_occ_score} = "0";
+$default{uth_occ_score} = "none";
 $default{lth_inv_cum} = "none";
 $default{uth_inv_cum} = "none";
 $default{lth_exp_occ} = "none";
@@ -88,6 +91,8 @@ $default{uth_occ_sig} = "none";
 $default{lth_occ_sig_rank} = "none";
 $default{uth_occ_sig_rank} = "3";
 
+$default{lth_site_pval} = "none";
+$default{uth_site_pval} = "1e-5";
 $default{lth_crer_size} = "none";
 $default{uth_crer_size} = "200";
 $default{lth_crer_sites} = "none";
@@ -135,7 +140,8 @@ print "Program developed by <A HREF='mailto:jturatsi\@scmbb.ulb.ac.be (Jean Vale
 print "</CENTER>";
 
 ## demo description
-#print "$default{demo_descr}";
+print $default{demo_descr1};
+print $default{demo_descr2};
 
 print $query->start_multipart_form(-action=>"matrix-scan.cgi");
 
@@ -378,8 +384,15 @@ g       |       0       1       8       8       0       0       0
 t       |       0       0       0       0       0       3       0
 ";
 
+$descr="<H4>Comment on the demonstration example : </H4><blockquote class ='demo'>In this demonstration, we will analyse
+the promoter of Drosophila melanogaster even-skipped gene (eve). We will scan the 5500 bp sequence upstream the CDS with
+matrices representing the binding specificity of 12 transcription factors known to regulate eve. These matrices were built from
+binding sites annotated in the <a href='http://www.oreganno.org'>ORegAnno</a> database by Jean-Valery Turatsinze.<p/>";
+
 ## demo 1
 print "<TD><B>";
+print $query->hidden(-name=>'demo_descr1',-default=>$descr."The program will return individual matches, i.e. sequence segments scoring above the predefined threshold. In this example, threshold is set on the P-value.  
+</blockquote>");
 print $query->hidden(-name=>'bg_method',-default=>'bgfile');
 print $query->hidden(-name=>'uth_pval',-default=>'1e-4');
 print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
@@ -398,16 +411,8 @@ print $query->end_form;
 print $query->start_multipart_form(-action=>"matrix-scan_form.cgi");
 print "<TD><B>";
 
-print $query->hidden(-name=>'demo_descr',-default=>'
-<H4>Comment on the demonstration example : </H4><blockquote class ="demo">In this demonstration, we will analyse
-the promoter of Drosophila melanogaster even-skipped gene (eve). We will scan the 5500 bp sequence upstream the CDS with
-matrices representing the binding specificity of 12 transcription factors known to regulate eve. These matrices were built from
-binding sites annotated in the <a href="http://www.oreganno.org">ORegAnno</a> database by Jean-Valery Turatsinze.<p/>
-The program will return individual matches and the matches threshold is set on the P-value of the matches.  
-</blockquote>
-
-');
-
+print $query->hidden(-name=>'demo_descr2',-default=>$descr."The program will return CRERs: regions of a few hundreds residues that have a higher density of matches than expected by chance.
+</blockquote>");
 print $query->hidden(-name=>'bg_method',-default=>'bgfile');
 print $query->hidden(-name=>'uth_pval',-default=>'1e-4');
 print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
@@ -835,11 +840,11 @@ sub ReturnTable {
 					     ]),
 				  ### Threshold on score
 				  $query->td(['score',
-					      $query->textfield(-name=>'lth_score',
-								-default=>$default{lth_score},
+					      $query->textfield(-name=>'lth_occ_score',
+								-default=>$default{lth_occ_score},
 								-size=>5),
-					      $query->textfield(-name=>'uth_score',
-								-default=>$default{uth_score},
+					      $query->textfield(-name=>'uth_occ_score',
+								-default=>$default{uth_occ_score},
 								-size=>5)
 					     ]),
 				
@@ -930,11 +935,11 @@ sub ReturnTable {
 					     
 				### Threshold on P-value of the score
 				  $query->td(['site P-value<b>*</b>',
-					      $query->textfield(-name=>'lth_pval',
-								-default=>$default{lth_pval},
+					      $query->textfield(-name=>'lth_site_pval',
+								-default=>$default{lth_site_pval},
 								-size=>5),
-					      $query->textfield(-name=>'uth_pval',
-								-default=>$default{uth_pval},
+					      $query->textfield(-name=>'uth_site_pval',
+								-default=>$default{uth_site_pval},
 								-size=>5)
 					     ]),
 				
