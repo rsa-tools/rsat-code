@@ -109,7 +109,7 @@ Function load_props($props) {
   $tmp = $properties[rsa_tmp];
   $WWW_RSA = $properties[www_rsa];
   $log_name = $properties[rsat_site];
-
+  $neat_wsdl = $properties[neat_ws];
   # LOG
   $year = date("Y");
   $month = date("m");
