@@ -13,6 +13,8 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ### Read the CGI query
 $query = new CGI;
 
+$default{demo_descr} = "";
+
 $default{sequence_file} = ""; ### [-f <Name of sequence file---default: standard input>]
 $default{sequence} = ""; ### [-f <Name of sequence file---default: standard input>]
 $default{sequence_format} = "fasta"; ### automatic conversion from any format to wc
@@ -132,6 +134,9 @@ print "Program developed by <A HREF='mailto:jturatsi\@scmbb.ulb.ac.be (Jean Vale
 
 print "</CENTER>";
 
+## demo description
+#print "$default{demo_descr}";
+
 print $query->start_multipart_form(-action=>"matrix-scan.cgi");
 
 ################################################################
@@ -173,6 +178,14 @@ print $query->popup_menu(-name=>'origin',
 			 -Values=>['start',
 				   'end'],
 			 -default=>$default{origin});
+
+################################################################
+#### origin for calculating position
+print "&nbsp;"x4,  "<A HREF='help.matrix-scan.html'><B>score decimals</B></A>\n";
+print $query->popup_menu(-name=>'decimals',
+			 -Values=>['0',
+				   '1','2'],
+			 -default=>$default{decimals});
 
 
 ################################################################
@@ -365,26 +378,41 @@ g       |       0       1       8       8       0       0       0
 t       |       0       0       0       0       0       3       0
 ";
 
+## demo 1
 print "<TD><B>";
 print $query->hidden(-name=>'bg_method',-default=>'bgfile');
 print $query->hidden(-name=>'uth_pval',-default=>'1e-4');
 print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
 print $query->hidden(-name=>'background',-default=>'upstream-noorf');
+print $query->hidden(-name=>'markov_order',-default=>'0');
 print $query->hidden(-name=>'organism',-default=>'Drosophila_melanogaster_EnsEMBL');
 print $query->hidden(-name=>'return_rank',-default=>'');
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
 print $query->submit(-label=>"DEMO 1");
-print "</B></TD>\n";
+print "</B></TD>";
 print $query->end_form;
 
-print "<TD><B>";
+## demo2
 print $query->start_multipart_form(-action=>"matrix-scan_form.cgi");
+print "<TD><B>";
+
+print $query->hidden(-name=>'demo_descr',-default=>'
+<H4>Comment on the demonstration example : </H4><blockquote class ="demo">In this demonstration, we will analyse
+the promoter of Drosophila melanogaster even-skipped gene (eve). We will scan the 5500 bp sequence upstream the CDS with
+matrices representing the binding specificity of 12 transcription factors known to regulate eve. These matrices were built from
+binding sites annotated in the <a href="http://www.oreganno.org">ORegAnno</a> database by Jean-Valery Turatsinze.<p/>
+The program will return individual matches and the matches threshold is set on the P-value of the matches.  
+</blockquote>
+
+');
+
 print $query->hidden(-name=>'bg_method',-default=>'bgfile');
 print $query->hidden(-name=>'uth_pval',-default=>'1e-4');
 print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
 print $query->hidden(-name=>'background',-default=>'upstream-noorf');
+print $query->hidden(-name=>'markov_order',-default=>'0');
 print $query->hidden(-name=>'organism',-default=>'Drosophila_melanogaster_EnsEMBL');
 print $query->hidden(-name=>'analysis_type',-default=>'analysis_crer');
 print $query->hidden(-name=>'return_rank',-default=>'');
@@ -651,7 +679,9 @@ sub ReturnTable {
     $boxes_matches .= $query->checkbox(-name=>'return_'.$field,
 			   -checked=>$default{'return_'.$field},
 			   -label=>' '.$field.' ');
+	$boxes_matches .= "<BR/>";
   }
+
   
   ### Return fields
   my $boxes_occ = "";
@@ -716,7 +746,7 @@ sub ReturnTable {
 				 [
 				  $query->th([" <A HREF='help.matrix-scan.html#return_fields'>Field</A> ",
 					      " <A HREF='help.matrix-scan.html#thresholds'>Lower<BR>Threshold</A> ",
-					      " <A HREF='help.matrix-scan.html#thresholds'>Upper<BR>Threshold</A> "]),
+					      " <A HREF='help.matrix-scan.html#thresholds'>Upper<BR>Threshold</A>"]),
 
 				  ### Threshold on score
 				  $query->td(['score',
@@ -823,7 +853,7 @@ sub ReturnTable {
 								-size=>5)
 					     ]),
 
-				$query->th({-colspan=>3,-align=>left},["over-representation of matches (occ_proba)"
+				$query->th({-colspan=>3,-align=>left},["over-represented matches (occ_proba)"
 					     ]),
 				
 				### Threshold on exp_occ
@@ -955,16 +985,16 @@ sub ReturnTable {
   			<INPUT TYPE='radio' NAME='analysis_type' VALUE='analysis_sites' $checked{'analysis_sites'}><BR/>
   			<A HREF='help.matrix-scan.html#return_fields'>Individual matches</A></th>",
   			"<th bgcolor='#D6EEFA'> 
-  			<INPUT TYPE='radio' NAME='analysis_type' VALUE='analysis_occ' $checked{analysis_occ}><BR/>
-  			<A HREF='help.matrix-scan.html#return_fields'>Enrichment in sites <BR/> (over-representation of matches)</A></th> ",
-			"<th bgcolor='#F6E6CA'>
-			<INPUT TYPE='radio' NAME='analysis_type' VALUE='analysis_crer' $checked{analysis_crer}><BR/>
+  			<INPUT TYPE='radio' NAME='analysis_type' VALUE='analysis_crer' $checked{analysis_crer}><BR/>
 			<A HREF='help.matrix-scan.html#return_fields'>CRERs <BR/> (Cis-Regulatory element <BR>Enriched Regions)</A> </th>",
+			"<th bgcolor='#F6E6CA'>
+  			<INPUT TYPE='radio' NAME='analysis_type' VALUE='analysis_occ' $checked{analysis_occ}><BR/>
+  			<A HREF='help.matrix-scan.html#return_fields'>Statistics on site enrichment in the whole input sequence set <BR/> (over-represented matches)</A></th> ",
 				"</tr>",
 			"<tr align='left' valign='top'><td><b>Fields to <BR/> return</b></td>",
   			"<td bgcolor='#CCCCCC'>$boxes_matches</td>",
-  			"<td bgcolor='#D6EEFA'>  $boxes_occ</td> ",
-			"<td bgcolor='#F6E6CA'>$boxes_crer</td>",
+  			"<td bgcolor='#D6EEFA'> $boxes_crer </td> ",
+			"<td bgcolor='#F6E6CA'>$boxes_occ</td>",
 				"</tr>",
 
 			$query->Tr({-align=>middle,-valign=>TOP},
@@ -974,8 +1004,8 @@ sub ReturnTable {
 				 ]),
 			"<tr align='left' valign='top'><td><b>Thresholds</b></td>",
   			"<td bgcolor='#CCCCCC'>$thresh_matches</td>",
-  			"<td bgcolor='#D6EEFA'>  $thresh_occ</td> ",
-			"<td bgcolor='#F6E6CA'>$thresh_crer</td>",
+  			"<td bgcolor='#D6EEFA'>$thresh_crer</td> ",
+			"<td bgcolor='#F6E6CA'>$thresh_occ</td>",
 				"</tr>",
 		     );
 
