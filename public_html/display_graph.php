@@ -104,23 +104,31 @@
                                  )
                            );
     # Execute the command
-    $echoed = $client->display_graph($parameters);
+    # Work with exception catch
+    try {
+      $echoed = $client->display_graph($parameters);
+      $soap_error = 0;
+    } catch (Exception $soap_exception) {
+      echo ("<pre>");
+      echo "Error : \n",  $soap_exception->getMessage(), "\n";
+      echo ("</pre>");
+      $soap_error = 1;
+    } 
+    if (!$soap_error) {
+      $response =  $echoed->response;
 
-    $response =  $echoed->response;
-
-    $command = $response->command;
-        echo "<pre>";
-    echo "</pre>";
-    $server = $response->server;
-    $client = $response->client;
-    $temp_file = explode('/',$server);
-    $temp_file = end($temp_file);
-    $resultURL = $WWW_RSA."/tmp/".$temp_file;
+      $command = $response->command;
+      $server = $response->server;
+      $client = $response->client;
+      $temp_file = explode('/',$server);
+      $temp_file = end($temp_file);
+      $resultURL = $WWW_RSA."/tmp/".$temp_file;
 
 
-    # Display the results
-    echo "The results is available at the following URL ";
-    echo "<a href = '$resultURL'>$resultURL</a>";
+      # Display the results 
+      echo "The results is available at the following URL ";
+      echo "<a href = '$resultURL'>$resultURL</a>";
+   }
  }
 
 ?>
