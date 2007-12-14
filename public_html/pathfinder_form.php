@@ -17,13 +17,17 @@
   $default_graph_id = "";
   $default_rank = 5;
   $default_weight = "unit";
-  $default_store_graph = 0;
+  $default_maxWeight = 1000000;
+
 
 
   // variables given within workflow
   $pipe = $_REQUEST['pipe'];
   $requested_graph_file = $_REQUEST['graph_file'];
   $requested_in_format = $_REQUEST['in_format'];
+  
+  # advanced options
+  $advanced = $_REQUEST['advanced'];
 
   # demo graph
   $demo = $_REQUEST['demo'];
@@ -136,7 +140,19 @@
                 <option selected value = 'con'>degree of nodes as weight
     <tr><td><B><a href = 'help.pathfinder.html#directed'>Directed</a></B></td> <td><input type='checkbox' name='directed' value='on'></input></td></tr>
     <tr><td><B><a href = 'help.pathfinder.html#server'>Store graph on server</a></B></td> <td><input type='checkbox' name='store_graph' value='on'></input></td></tr>
-  </table>
+    </table>
+  ");
+  if($advanced){
+    echo("<h2>Advanced Options</h2>
+    <HR SIZE='2' NOSHADE>
+    <br>
+    <table>
+         <tr><td><B><a href = 'help.pathfinder.html#directed'>Maximal path weight</a></B></td> <td><input type='text name='maxWeight' value='$default_maxWeight'></input></td></tr>
+         <tr><td><B><a href = 'help.pathfinder.html#server'>Store graph on server</a></B></td> <td><input type='checkbox' name='maximal Length' value='on'></input></td></tr>
+    </table>    
+    ");
+  }
+  echo("
   <h2>Launch</h2>
   <HR SIZE='2' NOSHADE>
   <br>
