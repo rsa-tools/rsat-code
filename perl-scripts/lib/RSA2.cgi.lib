@@ -477,7 +477,7 @@ if ($bg_window) {
 print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='bgfile' $checked{bgfile}>");
 print ("<b>Genome subset</b> &nbsp; ", 
        $query->popup_menu(-name=>'background',
-			  -Values=>["upstream","upstream-noorf","intergenic"],
+			  -Values=>["upstream-noorf","upstream","intergenic"],
 			  -default=>$default{background}));
 print  &OrganismPopUpString();
 
