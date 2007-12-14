@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.13 2007/12/12 17:21:51 morgane Exp $
+# $Id: matrix-scan.cgi,v 1.14 2007/12/14 20:00:27 morgane Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -285,7 +285,7 @@ sub ReadMatrixScanParameters {
     }
     	
     	## thresholds 
-    	my @threshold_fields = qw(score inv_cum exp_occ occ_pval occ_eval occ_sig occ_sig_rank);
+    	my @threshold_fields = qw(inv_cum exp_occ occ_pval occ_eval occ_sig occ_sig_rank);
     	foreach my $field (@threshold_fields) {
       	if ($query->param("lth_".$field) ne "none") {
 			my $lth = $query->param("lth_".$field);
@@ -297,6 +297,22 @@ sub ReadMatrixScanParameters {
 			my $uth = $query->param("uth_".$field);
 			&RSAT::error::FatalError($uth." is not a valid value for the upper $field threshold. Should be a number. ") unless (&IsReal($uth));
 			$parameters .= " -uth $field $uth ";
+      }
+    }
+    	my @threshold_fields = qw(occ_score);
+    	foreach my $field (@threshold_fields) {
+    		$ms_field = $field;
+    		$ms_field =~ s/occ_//;
+      	if ($query->param("lth_".$field) ne "none") {
+			my $lth = $query->param("lth_".$field);
+			&RSAT::error::FatalError($lth." is not a valid value for the lower $ms_field threshold. Should be a number. ") unless (&IsReal($lth));
+			$parameters .= " -lth $ms_field $lth ";
+      	}
+
+      if ($query->param("uth_".$field) ne "none") {
+			my $uth = $query->param("uth_".$field);
+			&RSAT::error::FatalError($uth." is not a valid value for the upper $ms_field threshold. Should be a number. ") unless (&IsReal($uth));
+			$parameters .= " -uth $ms_field $uth ";
       }
     }
  }
@@ -315,7 +331,7 @@ sub ReadMatrixScanParameters {
       	}
     	
     	## thresholds 
-    	my @threshold_fields = qw(crer_size pval crer_sites crer_pval crer_sig);
+    	my @threshold_fields = qw(crer_size crer_sites crer_pval crer_sig);
     	foreach my $field (@threshold_fields) {
       	if ($query->param("lth_".$field) ne "none") {
 			my $lth = $query->param("lth_".$field);
@@ -327,6 +343,23 @@ sub ReadMatrixScanParameters {
 			my $uth = $query->param("uth_".$field);
 			&RSAT::error::FatalError($uth." is not a valid value for the upper $field threshold. Should be a number. ") unless (&IsReal($uth));
 			$parameters .= " -uth $field $uth ";
+      }
+    }
+    
+    	my @threshold_fields = qw(site_pval);
+    	foreach my $field (@threshold_fields) {
+    		$ms_field = $field;
+    		$ms_field =~ s/site_//;
+      	if ($query->param("lth_".$field) ne "none") {
+			my $lth = $query->param("lth_".$field);
+			&RSAT::error::FatalError($lth." is not a valid value for the lower $ms_field threshold. Should be a number. ") unless (&IsReal($lth));
+			$parameters .= " -lth $ms_field $lth ";
+      	}
+
+      if ($query->param("uth_".$field) ne "none") {
+			my $uth = $query->param("uth_".$field);
+			&RSAT::error::FatalError($uth." is not a valid value for the upper $ms_field threshold. Should be a number. ") unless (&IsReal($uth));
+			$parameters .= " -uth $ms_field $uth ";
       }
     }
  }
