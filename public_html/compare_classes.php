@@ -300,6 +300,7 @@
     # Open the SOAP client
     $client = new SoapClient(
                        $neat_wsdl,
+// "http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl",
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
@@ -339,9 +340,8 @@
     $tth_server = rtrim ($tth_server);
     $tth_temp_file = explode('/',$tth_server);
     $tth_temp_file = end($tth_temp_file);
-    $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;    
-    echo "<pre>";
-    echo "</pre>";
+    $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;
+    
     
     # Display the results
     echo "The results are available as text file at the following URL ";
