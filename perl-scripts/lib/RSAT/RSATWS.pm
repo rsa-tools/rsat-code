@@ -1720,7 +1720,81 @@ sub contingency_stats_cmd {
 
 
 
+sub contingency_table {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $tmp_outfile = `mktemp $TMP/contingency_table.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+#     print TMP_OUT $result;
+#     print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    my $command = $self->contingency_table_cmd(%args);
+    $command .= " -o $tmp_outfile";
+    system $command;
+    my $result = `cat $tmp_outfile`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
 
+
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+sub contingency_table_cmd {
+  my ($self, %args) =@_;
+  
+  my $command = "$SCRIPTS/contingency-table ";
+  
+  if ($args{null}) {
+   my $null = $args{null};
+   $null =~ s/\'//g;
+   $null =~ s/\'//g;
+   $command .= " -null $null";
+  }
+  if ($args{margin}) {
+   $command .= " -margin";
+  }
+  if ($args{col1}) {
+   my $col1 = $args{col1};
+   $col1 =~ s/\'//g;
+   $col1 =~ s/\'//g;
+   $command .= " -col1 $col1";
+  }
+  if ($args{col2}) {
+   my $col2 = $args{col2};
+   $col2 =~ s/\'//g;
+   $col2 =~ s/\'//g;
+   $command .= " -col2 $col2";
+  }
+  if ($args{inputfile}) {
+   my $inputfile = $args{inputfile};
+   chomp $inputfile;
+   my $tmp_input = `mktemp $TMP/contingency-table-input.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
+   print TMP_IN $inputfile;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  return $command;
+}
 
 
 
