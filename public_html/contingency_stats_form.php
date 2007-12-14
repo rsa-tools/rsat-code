@@ -46,7 +46,6 @@
   } else {
     info("Contingency table uploaded from the previous treatment");
     echo "<input type='hidden' NAME='pipe_matrix_file' VALUE='$matrix_file'>";
-    echo "$matrix_file";
   }
 
   echo("<table>

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: contingency-table,v 1.3 2005/12/10 22:03:31 jvanheld Exp $
+# $Id: contingency-table,v 1.4 2007/12/14 16:23:01 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -61,6 +61,7 @@ local %row_sum;
 local %col_sum;
 local $total=0;
 local $null = 0;
+local $margin = 0;
 
 &ReadArguments();
 
@@ -99,16 +100,24 @@ close $in if ($infile{input});
 ################################################################
 ###### print output
 
+
 my @row_values = sort {$row_sum{$b} <=> $row_sum{$a}} keys %row_sum;
 my @col_values = sort {$col_sum{$b} <=> $col_sum{$a}} keys %col_sum;
-print $out join ("\t", "#", "Sum", @col_values), "\n";
-
-print $out "Sum";
-print $out "\t", $total;
-foreach my $col_value (@col_values) {
-    print $out "\t", $col_sum{$col_value}
+if ($margin) {
+  print $out join ("\t", "#", "Sum", @col_values), "\n";
+} else {
+  print $out join ("\t", "#", @col_values), "\n";
 }
-print $out "\n";
+if ($margin) {
+  print $out "Sum";
+
+  print $out "\t", $total;
+  foreach my $col_value (@col_values) {
+      print $out "\t", $col_sum{$col_value}
+  }
+  print $out "\n";
+}
+
 foreach my $row_value (@row_values) {
     print $out $row_value;
     print $out "\t", $row_sum{$row_value};    
@@ -241,6 +250,13 @@ Value for the null character (default: 0).
 	} elsif ($arg eq "-null") {
 	    $main::null =  shift (@ARGV);
 
+=item	B<-margin>
+
+Calculate the marginal sums
+
+=cut
+	} elsif ($arg eq "-margin") {
+	    $main::margin = 1;
 
 	    ## First column
 =pod

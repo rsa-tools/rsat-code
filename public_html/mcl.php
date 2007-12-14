@@ -56,7 +56,8 @@
   
     # Open the SOAP client
     $client = new SoapClient(
-                       $neat_wsdl,
+//                        $neat_wsdl,
+"http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS-temp.wsdl",
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
@@ -97,7 +98,7 @@
         "inputgraph"=>$cg_graph,
         "inflation"=>$inflation
       )
-    );                           
+    );
     # Execute the command
     $mcl_echoed = $client->mcl($mcl_parameters);
 
@@ -126,7 +127,6 @@
 
     $cc_response = $cc_echoed->response;
     $cc_command = $cc_response->command;
-//     echo ("$cc_command");
     $cc_server = $cc_response->server;
     $cc_client = $cc_response->client;
     $cc_server = rtrim ($cc_server);
@@ -134,6 +134,74 @@
     $cc_temp_file = end($cc_temp_file);
     $cc_resultURL = $WWW_RSA."/tmp/".$cc_temp_file;    
     
+    /*
+    # contingency-table
+    ## Load the parameters of the program into an array
+    $cc_input_file = storeFile($cc_server);
+    $ct_parameters = array(
+      "request" => array(
+        "inputfile" => $cc_input_file,
+        "col1" => 2,
+        "col2" => 1,
+        )
+      );
+    echo"<pre>";
+    $ct_echoed = $client->contingency_table($ct_parameters);
+    $ct_response = $ct_echoed->response;
+    $ct_command = $ct_response->command;
+    $ct_server = $ct_response->server;
+    $ct_client = $ct_response->client;
+    $ct_server = rtrim ($ct_server);
+    $ct_temp_file = explode('/',$ct_server);
+    $ct_temp_file = end($ct_temp_file);
+    $ct_resultURL = $WWW_RSA."/tmp/".$ct_temp_file;
+    echo "</pre>";
+    # classfreq 
+    $cf_inputfile =  storeFile($ct_server);
+    $cf_echoed = $client->contingency_table($cf_parameters);
+    $cf_parameters = array(
+      "request" => array(
+        "inputFile" => $cf_inputfile,
+        "col" => 2,
+        "classinterval"=>1
+        )
+      );    
+    $cf_echoed = $client->classfreq($cf_parameters);
+    $cf_response = $cf_echoed->response;
+    $cf_command = $cf_response->command;
+    $cf_server = $cf_response->server;
+    $cf_client = $cf_response->client;
+    $cf_server = rtrim ($cf_server);
+    $cf_temp_file = explode('/',$cf_server);
+    $cf_temp_file = end($cf_temp_file);
+    $cf_resultURL = $WWW_RSA."/tmp/".$cf_temp_file;    
+    # XYgraph
+    $xy_inputfile =  storeFile($cf_server);
+    $xy_parameters = array( 
+       "request" => array(
+         "inputFile"=>$xy_inputfile,
+         "xcol"=>"2",
+         "ycol"=>"4",
+         "format"=>"png",
+         "lines"=>1,
+         "xmin"=>0,
+         "title1"=>"Cluster size distribution",
+         "xleg1"=>"Degree",
+         "yleg1"=>"Number of nodes",
+         "legend"=>1,
+         "header"=>1
+       )
+     );
+    $xy_echoed = $client->xygraph($xy_parameters);
+    $xy_response = $xy_echoed->response;
+    $xy_command = $xy_response->command;
+    $xy_server = $xy_response->server;
+    $xy_client = $xy_response->client;
+    $xy_server = rtrim ($xy_server);
+    $xy_temp_file = explode('/',$xy_server);
+    $xy_temp_file = end($xy_temp_file);
+    $xy_resultURL = $WWW_RSA."/tmp/".$xy_temp_file;
+    */
     # Display the results
     echo "The results is available at the following URL ";
     echo "<a href = '$cc_resultURL'>$cc_resultURL</a>"; 
