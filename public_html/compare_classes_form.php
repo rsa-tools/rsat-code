@@ -21,7 +21,7 @@
   if ($demo == 1) {
     $demo_classesQ = $gavin_clusters_mcl_2_1 ;
     $demo_classesR = $mips_complexes ;
-    $demo_remark = "This demonstration consists in the comparaison between clusters obtained after application of the <a href = 'http://micans.org/mcl/' target = 'top'>MCL</a> clustering algorithm to the <a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=16429126&ordinalpos=1&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum'>Gavin et al (2006)</a> interaction network and the complexes annotated in the <a target = 'top' href = 'http://mips.gsf.de/'>MIPS database</a>.";
+    $demo_remark = "This demonstration consists in the comparaison between clusters obtained after application of the <a href = 'http://micans.org/mcl/' target = 'top'>MCL</a> clustering algorithm to the <a target = '_blank' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=16429126&ordinalpos=1&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum'>Gavin et al (2006)</a> interaction network and the complexes annotated in the <a target = '_blank' href = 'http://mips.gsf.de/'>MIPS database</a>.";
   }
   title('compare-classes');
 

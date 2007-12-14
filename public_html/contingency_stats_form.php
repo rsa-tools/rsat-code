@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>GrA-tools - convert-graph</title>
+   <title>NeA-tools - contingency-stats</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="form">
@@ -16,11 +16,12 @@
   $pipe = $_REQUEST['pipe'];
   $matrix_file = $_REQUEST['matrix_file'];
   
-  
   # demo graph
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
-    $demo_matrix = "";
+    $demo_matrix = $gavin_cc_mips;
+    $pipe = 0;
+    $demo_comment = "This contingency table consists in the comparaison between <a href = 'http://micans.org/mcl/' target = 'top'>MCL</a> obtained clusters applied on the <a target = '_blank' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=16429126&ordinalpos=1&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum'>Gavin <i>et al</i> (2006)</a> co-immunoprecipitation dataset (inflation 1.8) and the complexes described in the <a target = '_blank' href = 'http://mips.gsf.de/'>MIPS database</a>.";
   }
 
    title('contingency-stats');
@@ -36,17 +37,16 @@
   echo("<br>");
   if (!$pipe) {
     if ($demo) {
-      demo("");
+      demo($demo_comment);
     }
     echo ("<b>Contingency table</b><br>");
     echo ("<textarea name='matrix' rows='6' cols='65'>$demo_matrix</textarea>
     <br>Upload contingency table from file : <br>
     <input type='file' name='matrix_file' size='45' /><br>");
-
-
   } else {
     info("Contingency table uploaded from the previous treatment");
     echo "<input type='hidden' NAME='pipe_matrix_file' VALUE='$matrix_file'>";
+    echo "$matrix_file";
   }
 
   echo("<table>
@@ -66,6 +66,7 @@
   //<TD><B><A HREF='contingency_stats_form.php?demo=1'>DEMO</A></B></TD>
   echo("</form>
   <TD><B><A HREF='help.contingency_stats.html'>MANUAL</A></B></TD>
+  <TD><B><A HREF='contingency_stats_form.php?demo=1'>DEMO</A></B></TD>
   <TD><B><A HREF='mailto:sylvain@scmbb.ulb.ac.be'>MAIL</A></B></TD>
   </TR></TABLE></ul></ul>
  ");
