@@ -4,11 +4,12 @@
 ################################################################
 ##
 ## This script runs a workflow of the web service interface to the
-## RSAT tools retrieve-seq, purge-sequence, oligo-analysis, dna_pattern
-## and feature_map.
-##  It sends a request to the server for discovering 6 letter words
+## RSAT tools retrieve-seq, purge-sequence, oligo-analysis, dna-pattern,
+## convert-features and feature-map.
+##  It sends requests to the server for discovering 6 letter words
 ## in upstream sequences of clusters of yeast genes. The sequences are first
-## retrieved and purged for repeated segments.
+## retrieved and purged for repeated segments. The discovered motifs as well
+## as a map showing their positions on the sequences are printed to files
 ##
 ################################################################
 
@@ -53,8 +54,8 @@ my $scorethick = 1;
 my $map_format = 'jpg';
 
 ## Read cluster file
-# open INPUT, "/Users/oly/Desktop/Nature_protocols/data/Harbison_2004_sig0.fam" or die "Can't open input file: $!\n";
-open INPUT, "/Users/oly/Desktop/Nature_protocols/data/Harbison_2004_sig0_select_sig4.fam" or die "Can't open input file: $!\n";
+open INPUT, "/Users/oly/Desktop/Nature_protocols/data/Harbison_2004_sig0.fam" or die "Can't open input file: $!\n";
+# open INPUT, "/Users/oly/Desktop/Nature_protocols/data/Harbison_2004_sig0_select_sig4.fam" or die "Can't open input file: $!\n";
 
 ## Loop over gene clusters
 my @genes;
@@ -189,7 +190,8 @@ sub Analysis {
 
     ## Store the result in file
     my $result = $results{'client'};
-    my $output_oligo_file = "/Users/oly/Desktop/Nature_protocols/results/sig4/".$cluster."_oligos.tab";
+    my $output_oligo_file = "/Users/oly/Desktop/Nature_protocols/results/sig0/".$cluster."_oligos.tab";
+#    my $output_oligo_file = "/Users/oly/Desktop/Nature_protocols/results/sig4/".$cluster."_oligos.tab";
     open OUTPUT_OLIGO, ">$output_oligo_file" or die "Can't open input file: $!\n";
     print OUTPUT_OLIGO $result;
     close OUTPUT_OLIGO;
@@ -313,7 +315,8 @@ sub Analysis {
 
     ## Store the result in file
     my $result = $results{'client'};
-    my $output_map_file = "/Users/oly/Desktop/Nature_protocols/results/sig4/".$cluster."_map.".$map_format;
+    my $output_map_file = "/Users/oly/Desktop/Nature_protocols/results/sig0/".$cluster."_map.".$map_format;
+#    my $output_map_file = "/Users/oly/Desktop/Nature_protocols/results/sig4/".$cluster."_map.".$map_format;
     open OUTPUT_MAP, ">$output_map_file" or die "Can't open input file: $!\n";
     print OUTPUT_MAP $result;
     close OUTPUT_MAP;
