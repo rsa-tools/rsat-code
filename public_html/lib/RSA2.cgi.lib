@@ -383,7 +383,7 @@ sub TaxonomyPopUpString {
 ################################################################
 ## MATRICES
 sub GetMatrix {
-print "<B>Matrix</B>\n";
+print "<B>Matrix (or matrices)</B>\n";
 print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
 print "<A HREF='help.matrix-scan.html'><B>Format</B></a>&nbsp;";
 
@@ -443,7 +443,7 @@ print "<p><B>Background model</B><br>";
 #### Markov order
 print ("<b><a href=help.matrix-scan.html#markov_order>Markov Chain order</a></b> &nbsp;");
 print $query->popup_menu(-name=>'markov_order',
-			 -Values=>[0..8],
+			 -Values=>[0..7],
 			 -default=>$default{markov_order});
 print "<p>";
 
