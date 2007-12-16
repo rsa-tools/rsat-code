@@ -15,6 +15,7 @@ $query = new CGI;
 
 $default{demo_descr1} = "";
 $default{demo_descr2} = "";
+$default{demo_descr3} = "";
 
 $default{sequence_file} = ""; ### [-f <Name of sequence file---default: standard input>]
 $default{sequence} = ""; ### [-f <Name of sequence file---default: standard input>]
@@ -22,8 +23,8 @@ $default{sequence_format} = "fasta"; ### automatic conversion from any format to
 
 $default{bg_method}="bginput";
 $checked{$default{bg_method}} = "CHECKED";
-$default{markov_order} = 0;
-$default{window_size} = 200;
+$default{markov_order} = "0";
+$default{window_size} = "200";
 $default{organism} = "Saccharomyces cerevisiae";
 $default{matrix_format} = "tab";
 $default{pseudo_counts} = 1;
@@ -60,7 +61,7 @@ $default{analysis_type} = "analysis_sites";
 $checked{$default{analysis_type}} = "CHECKED";
 
 
-## Threshold values
+## Threshold values for site detection
 $default{lth_score} = "0";
 $default{uth_score} = "none";
 $default{lth_rank} = "none";
@@ -74,8 +75,21 @@ $default{uth_normw} = "none";
 $default{lth_sig} = "none";
 $default{uth_sig} = "none";
 $default{lth_pval} = "none";
-$default{uth_pval} = "1e-5";
+$default{uth_pval} = "1e-4";
 
+## Threshold values for CRER detection
+$default{lth_site_pval} = "none";
+$default{uth_site_pval} = "1e-3";
+$default{lth_crer_size} = "none";
+$default{uth_crer_size} = "200";
+$default{lth_crer_sites} = "none";
+$default{uth_crer_sites} = "none";
+$default{lth_crer_pval} = "none";
+$default{uth_crer_pval} = "none";
+$default{lth_crer_sig} = "2";
+$default{uth_crer_sig} = "none";
+
+## Threshold values for occurrence statistics
 $default{lth_occ_score} = "0";
 $default{uth_occ_score} = "none";
 $default{lth_inv_cum} = "none";
@@ -86,21 +100,10 @@ $default{lth_occ_pval} = "none";
 $default{uth_occ_pval} = "none";
 $default{lth_occ_eval} = "none";
 $default{uth_occ_eval} = "none";
-$default{lth_occ_sig} = "none";
+$default{lth_occ_sig} = "0";
 $default{uth_occ_sig} = "none";
 $default{lth_occ_sig_rank} = "none";
 $default{uth_occ_sig_rank} = "3";
-
-$default{lth_site_pval} = "none";
-$default{uth_site_pval} = "1e-5";
-$default{lth_crer_size} = "none";
-$default{uth_crer_size} = "200";
-$default{lth_crer_sites} = "none";
-$default{uth_crer_sites} = "none";
-$default{lth_crer_pval} = "none";
-$default{uth_crer_pval} = "none";
-$default{lth_crer_sig} = "3";
-$default{uth_crer_sig} = "none";
 
 
 
@@ -142,6 +145,7 @@ print "</CENTER>";
 ## demo description
 print $default{demo_descr1};
 print $default{demo_descr2};
+print $default{demo_descr3};
 
 print $query->start_multipart_form(-action=>"matrix-scan.cgi");
 
@@ -160,7 +164,7 @@ print "<hr>";
 ## Background model
 print "<hr>";
 &GetBackgroundModel("1","1");
-			
+
 print "<hr>";
 
 
@@ -213,102 +217,204 @@ print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
 ################################################################
-### data for the demo 
+### data for the demo
 print $query->start_multipart_form(-action=>"matrix-scan_form.cgi");
 
-$demo_sequence =">eve-RA	eve; upstream from -5500 to -1; size: 5500; location: chromosome:BDGP4.3:2R:1:20766785:1 5485728 5491227 D; upstream neighbour: CG12134-PB (distance: 6673)
-CGTTCTCCAGCCGAAGATTTTTTCGAGCAACCAAAATATTATGGTGTGCCCCGCTGTTCT
-CGCACAGTCAGCGCGAATTTGCTGCGGTGAGTCGATGCTGTTTCGCAGGACCTTCTTCCA
-TTTTCGTCTCCCTCTTGCTCAGCCTGTCCCTGTTCCTCTGCAGTTCCCTATCTCCTGATG
-CCTGTGCTCCTTTGGCGGCACTGTGTCCTGTCGTCGTTGTTTTCCTGTGATTTGACATGT
-CTGTTAGCAGGATGCCTGACCCTGAGGCCGAGCCCTGGTCTCAGTGTCCACTGTTCCACT
-TTGATGTGATTCGTCAGTGCGGTGGACTACTGCTACTGCTCTCTTGCTGGACTGCGTCTT
-GAGTCCTGTTCGGCTGCCCCCTCCCGTGACCTCTGACCCTGCACTCTGCGGCTTTCCAGC
-GGCGTTTGTTGGCGAATCTGACCCCGAGCTCCTGCTGCTCCTTCGCTCCTTCGCTCCTTC
-TCCGCATCTCCGCTCTTTGGACTTCGTACGAATCAAAATTGGTCACAGCACCGAGTGAAT
-TGCCCCGGAGACCGCAATGCGCTGTATTTATAGTAAACGTGTCCGATTGATTTGGCCACC
-CGTGGCGGCTCTGTCACAGATGCCTCAATTTGCATCTATCGAATGGTTTACATGGCTCTA
-AAAAGGTACCTCGATGGGTTGGTCACAATGTGGTGGCCTCTCAACATTGCAAGGCTCTTA
-CTTGTGAATTATTAAGTTATTAACTGCTGCGATGTAAGTCATGGCAGTTTCTGTTTTCTT
-TATAGGATATATATAGGAAGGATTAAAGGAGGCATGTACAATAATATGAGTATGATTTAG
-CTCAAATTCCAAATATGATAAAAGTACAAAGCATACGATAATATAATCAAATTACGCTGA
-CAATCACGATAATGTTCTTGTAGTAGTATTTGTGTAATATTTATGTTTTTTTAAGATAAG
-AAACGGTAATAAAATCCACGTAAGTGTAAAAAATGGATGCCCTAATCTATGCCATGATGT
-GTTCTACTTTCGAGATTTCGCCTCTGCCCTCATTGATGGTTTCCCGGGGCTACTTGGCCC
-AAAAATCCCGGCCGTCCAAAAAGACGATCCTTAAAAAAGAAACCGCTAATCATTGGGCCG
-CACAAAGAGCGGACAATCGCTCACCTAATTATTTGGCCCGATTGTGAGGAGCGGACAGTC
-GGCTCGTGGACGCTTTTTGTGGCCTCTTTTTGTTTCGACAAAAAGCGAGCCAATTTTTTT
-TCTTTCTGGGCCACTTTGTTGCTCTTTTTATGAGTTTTTTCCATTGTCAGTTTTTCCGGG
-CCTGTCTCGCAGCCCTCGATTCCCGCGATGCCTGCCCTACAAACCTCCTAATTACGGCAG
-TTAGTCGTTGTCCGGGACAGGAGAGTATGCGGAAGGACATGCGTGAGTTTATTGCCCGCT
-CGAATTTCCACTAAAAATTGGGCCGAAAAAAAAACAACTAGGTAGGACTAGGAACTGCAA
-ACTAGCAAAGCGGACGCGCCTTTTTATTGGTGCACCTTCGGCGGAACCGCAGGATAACAG
-CAGTAAAAGCGACGACGAGGACACAAGGATCCTCGAAATCGAGAGCGACCTCGCTGCATT
-AGAAAACTAGATCAGTTTTTTGTTTTGGCCGACCGATTTTTGTGCCCGGTGCTCTCTTTA
-CGGTTTATGGCCGCGTTCCCATTTCCCAGCTTCTTTGTTCCGGGCTCAGAAATCTGTATG
-GAATTATGGTATATGCAGATTTTTATGGGTCCCGGCGATCCGGTTCGCGGAACGGGAGTG
-TCCTGCCGCGAGAGGTCCTCGCCGGCGATCCTTGTCGCCCGTATTAGGAAAGTAGATCAC
-GTTTTTTGTTCCCATTGTGCGCTTTTTTCGCTGCGCTAGTTTTTTTCCCCGAACCCAGCG
-AACTGCTCTAATTTTTTAATTCTTCACGGCTTTTCATTGGGCTCCTGGAAAAACGCGGAC
-AAGGTTATAACGCTCTACTTACCTGCAATTGTGGCCATAACTCGCACTGCTCTCGTTTTT
-AAGATCCGTTTGTTTGTGTTTGTTTGTCCGCGATGGCATTCACGTTTTTACGAGCTCGTT
-CCTTCGGGTCCAAAATTATGCCAGTTTGTTTTGTCTCTGGCAATTATTGGAAATTTCATT
-GGGTCGATTTCGCTGCCTTCCTTGCTCTTCCCTTGAGAAAAGTGAATAGGTTGTGCCATA
-AAAATCGCTGCTCCTGAAGACCAAATGAAATGGATTTGTGTAAGCATTAAAAACGCGAGG
-CAAGCCCCAAGATTCCTCCACTGCTTTTTTTATATTGCCCACTGCTAAATGCAGCTAATT
-CGTCGATTGTTTAAAAATTAAATTACTTATGTTGCCATTCATACATCCCCTCACATTTTA
-TGGCCATTTGAGTGCGGGGTGCACAGTTCTGTCTTAAGTGGCGGATGGAAACCACCACAT
-TTACTCGAGGGATGATGTGCTCTAATATCTCCTCATCAAATGGGATGGTTTCTATGGAAA
-GGCAAAATCGTTGTAAAGTGAGGCGGAGTTAAAAAATACCTTGTTATAGCCTTTTTAAAA
-TAACACAAGATCGTTCGAATTGACTAGAAATATCAAAGTCTTTTTGTATTGAAGCGAGTG
-TAGTCTCAATTTATGCTTAATTTTAAGAAATACATCTCTTTATTAGCCCCAAAATGAAAC
-AAATGGTCTACTAATTAAGCAAGTCAACAGAATTTTTATGCAATTATTCAAAATGAAATA
-ATATATACATAAGATGTTTTTGGGAATCTGTCATGGGGTTTCTGAAATAGGTTTGCCAAA
-CAAATTTTAAGTATAAATGTATACATATGTCAACTAATAAATTTAGCAAATAAAATGTAC
-CTGCAAGTATCTATAAATTTATTGGACCAATTTTGTGTAAAAAACTGAACTGGCACTCTT
-CCCAAGAATGGGACTTCGAGGACTCCTTGCTGAATCACTTACTCAACCCATTCCAACTCA
-TCCAATCCGCGCAATCATCATAAATTTTGGCCTTTTTGTTGTAATTGTTTTATGGCAGAA
-ATTACTCAATCATCAAGCATAATTCCCTCGTTTTCGCCGTTTTATTGCCAATTTTTGCAC
-TGCCTTTGCCTTTTTCCCGCCCTTTCCTCAGCGTTTTGCGAATCTTTGCCGGCATTTCTA
-TTGCGCGGACAATCCGGCCAGTGTGTTGGCCATTTACTTGCCATGATGACGGGCATAATC
-AGCGAGATCGGCGCTTTGTGAGTGCAGAATGTGCAATAAAGCGGCAACAATCGGCAGGGA
-TTCGCCTTCCCATATTCCGGGTATTGCCGGCCCGGGAAAATGCGAAAGTGTTTGCGGATC
-GAGATGGAAGATAGAGGATTGAGTATTGAAACGAGGAAGGTACTTCCGCCGGCGGACACT
-TTCGCCTAACCAAGCCAATCCAACCCATCCCAATCCAATCCAACCCACCCGATCGCCATA
-AAGGGTATTTACTGTCGCTGCCGCAGAGCCTCGCTTGACGACTTAACCCAAGCGGTCGTT
-TCGCGTCCATTCTCCGGACGGAGTCAAAGACAAAGGCCGGCGGAGGTGGACAATAGGCAA
-GGTTGTTGCTTGTGGGTAGGGTTTGAGCTATGAGCTATGAGCTGTGAGCTGTTAGCCCTG
-AACCCCGAACCTCGAGAATTGAACCTTTCCCGGGGCAAGAAGGCTTGCATGTGGGCCTTT
-TCCAGGTCGGCCAGTAGGTAGAGTTGTTGCGATGCGGCTATGCCGGGCGAGTTAATGCCA
-ATGCAAATTGCGGGCGCAATATAACCCAATAATTTGAAGTAACTGGCAGGAGCGAGGTAT
-CCTTCCTGGTTACCCGGTACTGCATAACAATGGAACCCGAACCGTAACTGGGACAGATCG
-AAAAGCTGGCCTGGTTTCTCGCTGTGTGTGCCGTGTTAATCCGTTTGCCATCAGCGAGAT
-TATTAGTCAATTGCAGTTGCAGCGTTTCGCTTTCGTCCTCGTTTCACTTTCGAGTTAGAC
-TTTATTGCAGCATCTTGAACAATCGTCGCAGTTTGGTAACACGCTGTGCCATACTTTCAT
-TTAGACGGAATCGAGGGACCCTGGACTATAATCGCACAACGAGACCGGGTTGCGAAGTCA
-GGGCATTCCGCCGATCTAGCCATCGCCATCTTCTGCGGGCGTTTGTTTGTTTGTTTGCTG
-GGATTAGCCAAGGGCTTGACTTGGAATCCAATCCCGATCCCTAGCCCGATCCCAATCCCA
-ATCCCAATCCCTTGTCCTTTTCATTAGAAAGTCATAAAAACACATAATAATGATGTCGAA
-GGGATTAGGGGCGCGCAGGTCCAGGCAACGCAATTAACGGACTAGCGAACTGGGTTATTT
-TTTTGCGCCGACTTAGCCCTGATCCGCGAGCTTAACCCGTTTTGAGCCGGGCAGCAGGTA
-GTTGTGGGTGGACCCCACGATTTTTTTGGCCAAACCTCCAAGCTAACTTGCGCAAGTGGC
-AAGTGGCCGGTTTGCTGGCCCAAAAGAGGAGGCACTATCCCGGTCCTGGTACAGTTGGTA
-CGCTGGGAATGATTATATCATCATAATAAATGTTTTGCCCAACGAAACCGAAAACTTTTC
-AAATTAAGTCCCGGCAACTGGGTTCCCATTTTCCATTTTCCATGTTCTGCGGGCAGGGGC
-GGCCATTATCTCGCTACAGCAGTTCCCAAATGGTTATGGCTGGACACCCCTGCCGCCGCT
-CCAACGGGGTGGATGAAGCCCCCAAAACCCGAAAGTCATGGCAGCCATGGCAGTGTGGGG
-CTGTTAAACGTGCGGCATAATATTAAGACTTCATAAAAGCGCAAATAATTCGCTGGCAGG
-CGATCGATAATACATACATACAAATATATAGTGGGATACACACACTCTCTGCCGGCAAAC
-ACACACCACCCGACCCGACTGAGCGGCATAATGCCATATCATTCTTGATGAAGCCGATAA
-AATCCCATTATTAAGGGGGCCCGCCCGTCCCGCTCGCTCCTGCGGAGCAACCGCCTGCGG
-GCGGGCGAGACAAAAGATTCGCTCATCCGCTATGAATACCAAATCGGAACTCTCTCTCTC
-TCCAGCTCGGGAGTGCCATGGCCAGCATGGCCAGGACCTCCTCATGGTCCTGCCGAGCAG
-AGAACGCGGCTCCATCCCGCTGCTCCGGGTCCTGCTCCTCCGCTTTGTCCCGCCTCGTTA
-TCGCCGCTCAGCACCGAGAGCACAGCAGCGCATCCACTCTCAGCACCGCACGATTAGCAC
-CGTTCCGCTCAGGCTGTCCCGCTCGCACCTGCCTGGGTCGCTGCGATTGGCCGCTCCCAG
-CGACGGCGGCCATTTGCCTGCAGAGCGCAGCGGTATAAAAGGGCGCGGGGTGGCTGAGAG
-CAGCACACTCGAGCTGTGACCGCCGCACAGTCAACAACTAACTGCCTTCGTTAATATCCT
-CTGAATAAGCCAACTTTGAATCACAAGACGCATACCAAAC";
+# $demo_sequence = ">eve	eve; upstream from -6000 to -1; size: 6000; location: NT_033778.3 5860746 5866745 D; upstream neighbour: 45551055 (distance: 6450)
+# AAGTCATTCAAAGTTGATTCAATTCACCCCCACCCTGCGCACTCAGTGCTCAATTTCTGC
+# TCGCAGCAAGGTCTGCTGAGTAAAAAATTAGCACATCCTCAGCGCAGATAAACGCATCCT
+# TAAAACACCCCCTGGCCATCCCACAAGCTAGCCATCCATCCATCCGTTCATCCTGCATCC
+# GCATCCCTTCGCACAGAGAGCGGCCCAATTAGTGCTGCAGTAGGCATTTCGAATCCGTAC
+# CCACAAATCGGCTAATCCGCTGCCACTGCCTGCCGGCCCAGAGTCCAAAAGTCCTGTGTG
+# CAATGTCCAGATTTCCGAGTCGCAGAGTCTAAATGTTGACAAATACAACACCTACGATAC
+# AAATAAAATTGCTACAGAAGTACCACCTAAAAACGGGCACAACCGGAACGACTTAATTTT
+# CTCAAATTTACAGAAACAGACGATGACATAGGAATGGGAATGGTGATGGTGATGGAAACA
+# CAGGAAGATATCTCGACGCCGCCACTGAAGCTGTGGGTTTGCTCCTGCCGAGCGAATCCA
+# ACGCGAGTAGGGTCCCATTCGGGGCCCGAGTAGCCAGAGTCCTGCAGCTCACTCGAAACC
+# GCCACTCACCGTGGCTAATTGCCCATCAATAAAGGGCCCGGGCAGTGAGGAATTCCTCCG
+# AAAGTCGGGTCCTCCGTTCTCCAGCCGAAGATTTTTTCGAGCAACCAAAATATTATGGTG
+# TGCCCCGCTGTTCTCGCACAGTCAGCGCGAATTTGCTGCGGTGAGTCGATGCTGTTTCGC
+# AGGACCTTCTTCCATTTTCGTCTCCCTCTTGCTCAGCCTGTCCCTGTTCCTCTGCAGTTC
+# CCTATCTCCTGATGCCTGTGCTCCTTTGGCGGCACTGTGTCCTGTCGTCGTTGTTTTCCT
+# GTGATTTGACATGTCTGTTAGCAGGATGCCTGACCCTGAGGCCGAGCCCTGGTCTCAGTG
+# TCCACTGTTCCACTTTGATGTGATTCGTCAGTGCGGTGGACTACTGCTACTGCTCTCTTG
+# CTGGACTGCGTCTTGAGTCCTGTTCGGCTGCCCCCTCCCGTGACCTCTGACCCTGCACTC
+# TGCGGCTTTCCAGCGGCGTTTGTTGGCGAATCTGACCCCGAGCTCCTGCTGCTCCTTCGC
+# TCCTTCGCTCCTTCTCCGCATCTCCGCTCTTTGGACTTCGTACGAATCAAAATTGGTCAC
+# AGCACCGAGTGAATTGCCCCGGAGACCGCAATGCGCTGTATTTATAGTAAACGTGTCCGA
+# TTGATTTGGCCACCCGTGGCGGCTCTGTCACAGATGCCTCAATTTGCATCTATCGAATGG
+# TTTACATGGCTCTAAAAAGGTACCTCGATGGGTTGGTCACAATGTGGTGGCCTCTCAACA
+# TTGCAAGGCTCTTACTTGTGAATTATTAAGTTATTAACTGCTGCGATGTAAGTCATGGCA
+# GTTTCTGTTTTCTTTATAGGATATATATAGGAAGGATTAAAGGAGGCATGTACAATAATA
+# TGAGTATGATTTAGCTCAAATTCCAAATATGATAAAAGTACAAAGCATACGATAATATAA
+# TCAAATTACGCTGACAATCACGATAATGTTCTTGTAGTAGTATTTGTGTAATATTTATGT
+# TTTTTTAAGATAAGAAACGGTAATAAAATCCACGTAAGTGTAAAAAATGGATGCCCTAAT
+# CTATGCCATGATGTGTTCTACTTTCGAGATTTCGCCTCTGCCCTCATTGATGGTTTCCCG
+# GGGCTACTTGGCCCAAAAATCCCGGCCGTCCAAAAAGACGATCCTTAAAAAAGAAACCGC
+# TAATCATTGGGCCGCACAAAGAGCGGACAATCGCTCACCTAATTATTTGGCCCGATTGTG
+# AGGAGCGGACAGTCGGCTCGTGGACGCTTTTTGTGGCCTCTTTTTGTTTCGACAAAAAGC
+# GAGCCAATTTTTTTTCTTTCTGGGCCACTTTGTTGCTCTTTTTATGAGTTTTTTCCATTG
+# TCAGTTTTTCCGGGCCTGTCTCGCAGCCCTCGATTCCCGCGATGCCTGCCCTACAAACCT
+# CCTAATTACGGCAGTTAGTCGTTGTCCGGGACAGGAGAGTATGCGGAAGGACATGCGTGA
+# GTTTATTGCCCGCTCGAATTTCCACTAAAAATTGGGCCGAAAAAAAAACAACTAGGTAGG
+# ACTAGGAACTGCAAACTAGCAAAGCGGACGCGCCTTTTTATTGGTGCACCTTCGGCGGAA
+# CCGCAGGATAACAGCAGTAAAAGCGACGACGAGGACACAAGGATCCTCGAAATCGAGAGC
+# GACCTCGCTGCATTAGAAAACTAGATCAGTTTTTTGTTTTGGCCGACCGATTTTTGTGCC
+# CGGTGCTCTCTTTACGGTTTATGGCCGCGTTCCCATTTCCCAGCTTCTTTGTTCCGGGCT
+# CAGAAATCTGTATGGAATTATGGTATATGCAGATTTTTATGGGTCCCGGCGATCCGGTTC
+# GCGGAACGGGAGTGTCCTGCCGCGAGAGGTCCTCGCCGGCGATCCTTGTCGCCCGTATTA
+# GGAAAGTAGATCACGTTTTTTGTTCCCATTGTGCGCTTTTTTCGCTGCGCTAGTTTTTTT
+# CCCCGAACCCAGCGAACTGCTCTAATTTTTTAATTCTTCACGGCTTTTCATTGGGCTCCT
+# GGAAAAACGCGGACAAGGTTATAACGCTCTACTTACCTGCAATTGTGGCCATAACTCGCA
+# CTGCTCTCGTTTTTAAGATCCGTTTGTTTGTGTTTGTTTGTCCGCGATGGCATTCACGTT
+# TTTACGAGCTCGTTCCTTCGGGTCCAAAATTATGCCAGTTTGTTTTGTCTCTGGCAATTA
+# TTGGAAATTTCATTGGGTCGATTTCGCTGCCTTCCTTGCTCTTCCCTTGAGAAAAGTGAA
+# TAGGTTGTGCCATAAAAATCGCTGCTCCTGAAGACCAAATGAAATGGATTTGTGTAAGCA
+# TTAAAAACGCGAGGCAAGCCCCAAGATTCCTCCACTGCTTTTTTTATATTGCCCACTGCT
+# AAATGCAGCTAATTCGTCGATTGTTTAAAAATTAAATTACTTATGTTGCCATTCATACAT
+# CCCCTCACATTTTATGGCCATTTGAGTGCGGGGTGCACAGTTCTGTCTTAAGTGGCGGAT
+# GGAAACCACCACATTTACTCGAGGGATGATGTGCTCTAATATCTCCTCATCAAATGGGAT
+# GGTTTCTATGGAAAGGCAAAATCGTTGTAAAGTGAGGCGGAGTTAAAAAATACCTTGTTA
+# TAGCCTTTTTAAAATAACACAAGATCGTTCGAATTGACTAGAAATATCAAAGTCTTTTTG
+# TATTGAAGCGAGTGTAGTCTCAATTTATGCTTAATTTTAAGAAATACATCTCTTTATTAG
+# CCCCAAAATGAAACAAATGGTCTACTAATTAAGCAAGTCAACAGAATTTTTATGCAATTA
+# TTCAAAATGAAATAATATATACATAAGATGTTTTTGGGAATCTGTCATGGGGTTTCTGAA
+# ATAGGTTTGCCAAACAAATTTTAAGTATAAATGTATACATATGTCAACTAATAAATTTAG
+# CAAATAAAATGTACCTGCAAGTATCTATAAATTTATTGGACCAATTTTGTGTAAAAAACT
+# GAACTGGCACTCTTCCCAAGAATGGGACTTCGAGGACTCCTTGCTGAATCACTTACTCAA
+# CCCATTCCAACTCATCCAATCCGCGCAATCATCATAAATTTTGGCCTTTTTGTTGTAATT
+# GTTTTATGGCAGAAATTACTCAATCATCAAGCATAATTCCCTCGTTTTCGCCGTTTTATT
+# GCCAATTTTTGCACTGCCTTTGCCTTTTTCCCGCCCTTTCCTCAGCGTTTTGCGAATCTT
+# TGCCGGCATTTCTATTGCGCGGACAATCCGGCCAGTGTGTTGGCCATTTACTTGCCATGA
+# TGACGGGCATAATCAGCGAGATCGGCGCTTTGTGAGTGCAGAATGTGCAATAAAGCGGCA
+# ACAATCGGCAGGGATTCGCCTTCCCATATTCCGGGTATTGCCGGCCCGGGAAAATGCGAA
+# AGTGTTTGCGGATCGAGATGGAAGATAGAGGATTGAGTATTGAAACGAGGAAGGTACTTC
+# CGCCGGCGGACACTTTCGCCTAACCAAGCCAATCCAACCCATCCCAATCCAATCCAACCC
+# ACCCGATCGCCATAAAGGGTATTTACTGTCGCTGCCGCAGAGCCTCGCTTGACGACTTAA
+# CCCAAGCGGTCGTTTCGCGTCCATTCTCCGGACGGAGTCAAAGACAAAGGCCGGCGGAGG
+# TGGACAATAGGCAAGGTTGTTGCTTGTGGGTAGGGTTTGAGCTATGAGCTATGAGCTGTG
+# AGCTGTTAGCCCTGAACCCCGAACCTCGAGAATTGAACCTTTCCCGGGGCAAGAAGGCTT
+# GCATGTGGGCCTTTTCCAGGTCGGCCAGTAGGTAGAGTTGTTGCGATGCGGCTATGCCGG
+# GCGAGTTAATGCCAATGCAAATTGCGGGCGCAATATAACCCAATAATTTGAAGTAACTGG
+# CAGGAGCGAGGTATCCTTCCTGGTTACCCGGTACTGCATAACAATGGAACCCGAACCGTA
+# ACTGGGACAGATCGAAAAGCTGGCCTGGTTTCTCGCTGTGTGTGCCGTGTTAATCCGTTT
+# GCCATCAGCGAGATTATTAGTCAATTGCAGTTGCAGCGTTTCGCTTTCGTCCTCGTTTCA
+# CTTTCGAGTTAGACTTTATTGCAGCATCTTGAACAATCGTCGCAGTTTGGTAACACGCTG
+# TGCCATACTTTCATTTAGACGGAATCGAGGGACCCTGGACTATAATCGCACAACGAGACC
+# GGGTTGCGAAGTCAGGGCATTCCGCCGATCTAGCCATCGCCATCTTCTGCGGGCGTTTGT
+# TTGTTTGTTTGCTGGGATTAGCCAAGGGCTTGACTTGGAATCCAATCCCGATCCCTAGCC
+# CGATCCCAATCCCAATCCCAATCCCTTGTCCTTTTCATTAGAAAGTCATAAAAACACATA
+# ATAATGATGTCGAAGGGATTAGGGGCGCGCAGGTCCAGGCAACGCAATTAACGGACTAGC
+# GAACTGGGTTATTTTTTTGCGCCGACTTAGCCCTGATCCGCGAGCTTAACCCGTTTTGAG
+# CCGGGCAGCAGGTAGTTGTGGGTGGACCCCACGATTTTTTTGGCCAAACCTCCAAGCTAA
+# CTTGCGCAAGTGGCAAGTGGCCGGTTTGCTGGCCCAAAAGAGGAGGCACTATCCCGGTCC
+# TGGTACAGTTGGTACGCTGGGAATGATTATATCATCATAATAAATGTTTTGCCCAACGAA
+# ACCGAAAACTTTTCAAATTAAGTCCCGGCAACTGGGTTCCCATTTTCCATTTTCCATGTT
+# CTGCGGGCAGGGGCGGCCATTATCTCGCTACAGCAGTTCCCAAATGGTTATGGCTGGACA
+# CCCCTGCCGCCGCTCCAACGGGGTGGATGAAGCCCCCAAAACCCGAAAGTCATGGCAGCC
+# ATGGCAGTGTGGGGCTGTTAAACGTGCGGCATAATATTAAGACTTCATAAAAGCGCAAAT
+# AATTCGCTGGCAGGCGATCGATAATACATACATACAAATATATAGTGGGATACACACACT
+# CTCTGCCGGCAAACACACACCACCCGACCCGACTGAGCGGCATAATGCCATATCATTCTT
+# GATGAAGCCGATAAAATCCCATTATTAAGGGGGCCCGCCCGTCCCGCTCGCTCCTGCGGA
+# GCAACCGCCTGCGGGCGGGCGAGACAAAAGATTCGCTCATCCGCTATGAATACCAAATCG
+# GAACTCTCTCTCTCTCCAGCTCGGGAGTGCCATGGCCAGCATGGCCAGGACCTCCTCATG
+# GTCCTGCCGAGCAGAGAACGCGGCTCCATCCCGCTGCTCCGGGTCCTGCTCCTCCGCTTT
+# GTCCCGCCTCGTTATCGCCGCTCAGCACCGAGAGCACAGCAGCGCATCCACTCTCAGCAC
+# CGCACGATTAGCACCGTTCCGCTCAGGCTGTCCCGCTCGCACCTGCCTGGGTCGCTGCGA";
+
+$demo_sequence =">eve	eve; upstream from -5500 to -1; size: 5500; location: NT_033778.3 5861246 5866745 D; upstream neighbour: 45551055 (distance: 6450)
+GCCACTGAAGCTGTGGGTTTGCTCCTGCCGAGCGAATCCAACGCGAGTAGGGTCCCATTC
+GGGGCCCGAGTAGCCAGAGTCCTGCAGCTCACTCGAAACCGCCACTCACCGTGGCTAATT
+GCCCATCAATAAAGGGCCCGGGCAGTGAGGAATTCCTCCGAAAGTCGGGTCCTCCGTTCT
+CCAGCCGAAGATTTTTTCGAGCAACCAAAATATTATGGTGTGCCCCGCTGTTCTCGCACA
+GTCAGCGCGAATTTGCTGCGGTGAGTCGATGCTGTTTCGCAGGACCTTCTTCCATTTTCG
+TCTCCCTCTTGCTCAGCCTGTCCCTGTTCCTCTGCAGTTCCCTATCTCCTGATGCCTGTG
+CTCCTTTGGCGGCACTGTGTCCTGTCGTCGTTGTTTTCCTGTGATTTGACATGTCTGTTA
+GCAGGATGCCTGACCCTGAGGCCGAGCCCTGGTCTCAGTGTCCACTGTTCCACTTTGATG
+TGATTCGTCAGTGCGGTGGACTACTGCTACTGCTCTCTTGCTGGACTGCGTCTTGAGTCC
+TGTTCGGCTGCCCCCTCCCGTGACCTCTGACCCTGCACTCTGCGGCTTTCCAGCGGCGTT
+TGTTGGCGAATCTGACCCCGAGCTCCTGCTGCTCCTTCGCTCCTTCGCTCCTTCTCCGCA
+TCTCCGCTCTTTGGACTTCGTACGAATCAAAATTGGTCACAGCACCGAGTGAATTGCCCC
+GGAGACCGCAATGCGCTGTATTTATAGTAAACGTGTCCGATTGATTTGGCCACCCGTGGC
+GGCTCTGTCACAGATGCCTCAATTTGCATCTATCGAATGGTTTACATGGCTCTAAAAAGG
+TACCTCGATGGGTTGGTCACAATGTGGTGGCCTCTCAACATTGCAAGGCTCTTACTTGTG
+AATTATTAAGTTATTAACTGCTGCGATGTAAGTCATGGCAGTTTCTGTTTTCTTTATAGG
+ATATATATAGGAAGGATTAAAGGAGGCATGTACAATAATATGAGTATGATTTAGCTCAAA
+TTCCAAATATGATAAAAGTACAAAGCATACGATAATATAATCAAATTACGCTGACAATCA
+CGATAATGTTCTTGTAGTAGTATTTGTGTAATATTTATGTTTTTTTAAGATAAGAAACGG
+TAATAAAATCCACGTAAGTGTAAAAAATGGATGCCCTAATCTATGCCATGATGTGTTCTA
+CTTTCGAGATTTCGCCTCTGCCCTCATTGATGGTTTCCCGGGGCTACTTGGCCCAAAAAT
+CCCGGCCGTCCAAAAAGACGATCCTTAAAAAAGAAACCGCTAATCATTGGGCCGCACAAA
+GAGCGGACAATCGCTCACCTAATTATTTGGCCCGATTGTGAGGAGCGGACAGTCGGCTCG
+TGGACGCTTTTTGTGGCCTCTTTTTGTTTCGACAAAAAGCGAGCCAATTTTTTTTCTTTC
+TGGGCCACTTTGTTGCTCTTTTTATGAGTTTTTTCCATTGTCAGTTTTTCCGGGCCTGTC
+TCGCAGCCCTCGATTCCCGCGATGCCTGCCCTACAAACCTCCTAATTACGGCAGTTAGTC
+GTTGTCCGGGACAGGAGAGTATGCGGAAGGACATGCGTGAGTTTATTGCCCGCTCGAATT
+TCCACTAAAAATTGGGCCGAAAAAAAAACAACTAGGTAGGACTAGGAACTGCAAACTAGC
+AAAGCGGACGCGCCTTTTTATTGGTGCACCTTCGGCGGAACCGCAGGATAACAGCAGTAA
+AAGCGACGACGAGGACACAAGGATCCTCGAAATCGAGAGCGACCTCGCTGCATTAGAAAA
+CTAGATCAGTTTTTTGTTTTGGCCGACCGATTTTTGTGCCCGGTGCTCTCTTTACGGTTT
+ATGGCCGCGTTCCCATTTCCCAGCTTCTTTGTTCCGGGCTCAGAAATCTGTATGGAATTA
+TGGTATATGCAGATTTTTATGGGTCCCGGCGATCCGGTTCGCGGAACGGGAGTGTCCTGC
+CGCGAGAGGTCCTCGCCGGCGATCCTTGTCGCCCGTATTAGGAAAGTAGATCACGTTTTT
+TGTTCCCATTGTGCGCTTTTTTCGCTGCGCTAGTTTTTTTCCCCGAACCCAGCGAACTGC
+TCTAATTTTTTAATTCTTCACGGCTTTTCATTGGGCTCCTGGAAAAACGCGGACAAGGTT
+ATAACGCTCTACTTACCTGCAATTGTGGCCATAACTCGCACTGCTCTCGTTTTTAAGATC
+CGTTTGTTTGTGTTTGTTTGTCCGCGATGGCATTCACGTTTTTACGAGCTCGTTCCTTCG
+GGTCCAAAATTATGCCAGTTTGTTTTGTCTCTGGCAATTATTGGAAATTTCATTGGGTCG
+ATTTCGCTGCCTTCCTTGCTCTTCCCTTGAGAAAAGTGAATAGGTTGTGCCATAAAAATC
+GCTGCTCCTGAAGACCAAATGAAATGGATTTGTGTAAGCATTAAAAACGCGAGGCAAGCC
+CCAAGATTCCTCCACTGCTTTTTTTATATTGCCCACTGCTAAATGCAGCTAATTCGTCGA
+TTGTTTAAAAATTAAATTACTTATGTTGCCATTCATACATCCCCTCACATTTTATGGCCA
+TTTGAGTGCGGGGTGCACAGTTCTGTCTTAAGTGGCGGATGGAAACCACCACATTTACTC
+GAGGGATGATGTGCTCTAATATCTCCTCATCAAATGGGATGGTTTCTATGGAAAGGCAAA
+ATCGTTGTAAAGTGAGGCGGAGTTAAAAAATACCTTGTTATAGCCTTTTTAAAATAACAC
+AAGATCGTTCGAATTGACTAGAAATATCAAAGTCTTTTTGTATTGAAGCGAGTGTAGTCT
+CAATTTATGCTTAATTTTAAGAAATACATCTCTTTATTAGCCCCAAAATGAAACAAATGG
+TCTACTAATTAAGCAAGTCAACAGAATTTTTATGCAATTATTCAAAATGAAATAATATAT
+ACATAAGATGTTTTTGGGAATCTGTCATGGGGTTTCTGAAATAGGTTTGCCAAACAAATT
+TTAAGTATAAATGTATACATATGTCAACTAATAAATTTAGCAAATAAAATGTACCTGCAA
+GTATCTATAAATTTATTGGACCAATTTTGTGTAAAAAACTGAACTGGCACTCTTCCCAAG
+AATGGGACTTCGAGGACTCCTTGCTGAATCACTTACTCAACCCATTCCAACTCATCCAAT
+CCGCGCAATCATCATAAATTTTGGCCTTTTTGTTGTAATTGTTTTATGGCAGAAATTACT
+CAATCATCAAGCATAATTCCCTCGTTTTCGCCGTTTTATTGCCAATTTTTGCACTGCCTT
+TGCCTTTTTCCCGCCCTTTCCTCAGCGTTTTGCGAATCTTTGCCGGCATTTCTATTGCGC
+GGACAATCCGGCCAGTGTGTTGGCCATTTACTTGCCATGATGACGGGCATAATCAGCGAG
+ATCGGCGCTTTGTGAGTGCAGAATGTGCAATAAAGCGGCAACAATCGGCAGGGATTCGCC
+TTCCCATATTCCGGGTATTGCCGGCCCGGGAAAATGCGAAAGTGTTTGCGGATCGAGATG
+GAAGATAGAGGATTGAGTATTGAAACGAGGAAGGTACTTCCGCCGGCGGACACTTTCGCC
+TAACCAAGCCAATCCAACCCATCCCAATCCAATCCAACCCACCCGATCGCCATAAAGGGT
+ATTTACTGTCGCTGCCGCAGAGCCTCGCTTGACGACTTAACCCAAGCGGTCGTTTCGCGT
+CCATTCTCCGGACGGAGTCAAAGACAAAGGCCGGCGGAGGTGGACAATAGGCAAGGTTGT
+TGCTTGTGGGTAGGGTTTGAGCTATGAGCTATGAGCTGTGAGCTGTTAGCCCTGAACCCC
+GAACCTCGAGAATTGAACCTTTCCCGGGGCAAGAAGGCTTGCATGTGGGCCTTTTCCAGG
+TCGGCCAGTAGGTAGAGTTGTTGCGATGCGGCTATGCCGGGCGAGTTAATGCCAATGCAA
+ATTGCGGGCGCAATATAACCCAATAATTTGAAGTAACTGGCAGGAGCGAGGTATCCTTCC
+TGGTTACCCGGTACTGCATAACAATGGAACCCGAACCGTAACTGGGACAGATCGAAAAGC
+TGGCCTGGTTTCTCGCTGTGTGTGCCGTGTTAATCCGTTTGCCATCAGCGAGATTATTAG
+TCAATTGCAGTTGCAGCGTTTCGCTTTCGTCCTCGTTTCACTTTCGAGTTAGACTTTATT
+GCAGCATCTTGAACAATCGTCGCAGTTTGGTAACACGCTGTGCCATACTTTCATTTAGAC
+GGAATCGAGGGACCCTGGACTATAATCGCACAACGAGACCGGGTTGCGAAGTCAGGGCAT
+TCCGCCGATCTAGCCATCGCCATCTTCTGCGGGCGTTTGTTTGTTTGTTTGCTGGGATTA
+GCCAAGGGCTTGACTTGGAATCCAATCCCGATCCCTAGCCCGATCCCAATCCCAATCCCA
+ATCCCTTGTCCTTTTCATTAGAAAGTCATAAAAACACATAATAATGATGTCGAAGGGATT
+AGGGGCGCGCAGGTCCAGGCAACGCAATTAACGGACTAGCGAACTGGGTTATTTTTTTGC
+GCCGACTTAGCCCTGATCCGCGAGCTTAACCCGTTTTGAGCCGGGCAGCAGGTAGTTGTG
+GGTGGACCCCACGATTTTTTTGGCCAAACCTCCAAGCTAACTTGCGCAAGTGGCAAGTGG
+CCGGTTTGCTGGCCCAAAAGAGGAGGCACTATCCCGGTCCTGGTACAGTTGGTACGCTGG
+GAATGATTATATCATCATAATAAATGTTTTGCCCAACGAAACCGAAAACTTTTCAAATTA
+AGTCCCGGCAACTGGGTTCCCATTTTCCATTTTCCATGTTCTGCGGGCAGGGGCGGCCAT
+TATCTCGCTACAGCAGTTCCCAAATGGTTATGGCTGGACACCCCTGCCGCCGCTCCAACG
+GGGTGGATGAAGCCCCCAAAACCCGAAAGTCATGGCAGCCATGGCAGTGTGGGGCTGTTA
+AACGTGCGGCATAATATTAAGACTTCATAAAAGCGCAAATAATTCGCTGGCAGGCGATCG
+ATAATACATACATACAAATATATAGTGGGATACACACACTCTCTGCCGGCAAACACACAC
+CACCCGACCCGACTGAGCGGCATAATGCCATATCATTCTTGATGAAGCCGATAAAATCCC
+ATTATTAAGGGGGCCCGCCCGTCCCGCTCGCTCCTGCGGAGCAACCGCCTGCGGGCGGGC
+GAGACAAAAGATTCGCTCATCCGCTATGAATACCAAATCGGAACTCTCTCTCTCTCCAGC
+TCGGGAGTGCCATGGCCAGCATGGCCAGGACCTCCTCATGGTCCTGCCGAGCAGAGAACG
+CGGCTCCATCCCGCTGCTCCGGGTCCTGCTCCTCCGCTTTGTCCCGCCTCGTTATCGCCG
+CTCAGCACCGAGAGCACAGCAGCGCATCCACTCTCAGCACCGCACGATTAGCACCGTTCC
+GCTCAGGCTGTCCCGCTCGCACCTGCCTGGGTCGCTGCGA";
 
 $demo_matrix = "
 ; Kr matrix, derived from OregAnno by J.V. Turatsinze (2007).
@@ -387,18 +493,19 @@ t       |       0       0       0       0       0       3       0
 $descr="<H4>Comment on the demonstration example : </H4><blockquote class ='demo'>In this demonstration, we will analyse
 the promoter of Drosophila melanogaster even-skipped gene (eve). We will scan the 5500 bp sequence upstream the CDS with
 matrices representing the binding specificity of 12 transcription factors known to regulate eve. These matrices were built from
-binding sites annotated in the <a href='http://www.oreganno.org'>ORegAnno</a> database by Jean-Valery Turatsinze.<p/>";
+binding sites annotated in the <a target=_blank href='http://www.oreganno.org'>ORegAnno</a> database by Jean-Valery Turatsinze.<p/>";
 
 ## demo 1
 print "<TD><B>";
-print $query->hidden(-name=>'demo_descr1',-default=>$descr."The program will return individual matches, i.e. sequence segments scoring above the predefined threshold. In this example, threshold is set on the P-value.  
+print $query->hidden(-name=>'demo_descr1',-default=>$descr."The program will return individual matches, i.e. sequence segments scoring above the predefined threshold. In this example, threshold is set on the P-value.
 </blockquote>");
 print $query->hidden(-name=>'bg_method',-default=>'bgfile');
 print $query->hidden(-name=>'uth_pval',-default=>'1e-4');
 print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
 print $query->hidden(-name=>'background',-default=>'upstream-noorf');
 print $query->hidden(-name=>'markov_order',-default=>'0');
-print $query->hidden(-name=>'organism',-default=>'Drosophila_melanogaster_EnsEMBL');
+print $query->hidden(-name=>'organism',-default=>'Drosophila_melanogaster');
+print $query->hidden(-name=>'analysis_type',-default=>'analysis_sites');
 print $query->hidden(-name=>'return_rank',-default=>'');
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
@@ -414,17 +521,38 @@ print "<TD><B>";
 print $query->hidden(-name=>'demo_descr2',-default=>$descr."The program will return CRERs: regions of a few hundreds residues that have a higher density of matches than expected by chance.
 </blockquote>");
 print $query->hidden(-name=>'bg_method',-default=>'bgfile');
-print $query->hidden(-name=>'uth_pval',-default=>'1e-4');
+print $query->hidden(-name=>'uth_site_pval',-default=>'1e-3');
 print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
 print $query->hidden(-name=>'background',-default=>'upstream-noorf');
 print $query->hidden(-name=>'markov_order',-default=>'0');
-print $query->hidden(-name=>'organism',-default=>'Drosophila_melanogaster_EnsEMBL');
+print $query->hidden(-name=>'organism',-default=>'Drosophila_melanogaster');
 print $query->hidden(-name=>'analysis_type',-default=>'analysis_crer');
 print $query->hidden(-name=>'return_rank',-default=>'');
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
 print $query->submit(-label=>"DEMO 2");
+print "</B></TD>\n";
+print $query->end_form;
+
+## demo3: detect over-representation of hits for PSSMs
+print $query->start_multipart_form(-action=>"matrix-scan_form.cgi");
+print "<TD><B>";
+print $query->hidden(-name=>'demo_descr3',-default=>$descr."The program will return matrices for which the total nmber of hits in the input sequences is higher than expected by chance.</blockquote>");
+print $query->hidden(-name=>'bg_method',-default=>'bgfile');
+print $query->hidden(-name=>'uth_site_pval',-default=>'1e-3');
+print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
+print $query->hidden(-name=>'background',-default=>'upstream-noorf');
+print $query->hidden(-name=>'markov_order',-default=>'0');
+print $query->hidden(-name=>'organism',-default=>'Drosophila_melanogaster');
+print $query->hidden(-name=>'analysis_type',-default=>'analysis_occ');
+print $query->hidden(-name=>'return_rank',-default=>'');
+print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
+print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
+print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
+print $query->hidden(-name=>'uth_occ_sig_rank',-default=>1);
+print $query->hidden(-name=>'lth_occ_score',-default=>5);
+print $query->submit(-label=>"DEMO 3");
 print "</B></TD>\n";
 print $query->end_form;
 
@@ -659,359 +787,359 @@ exit(0);
 ## Table with all the supported statistics and thresholds
 sub ReturnTable {
   print "<p><b>Return</b> (Select one return type) </p>\n";
-  
-  
+
+
   #############################################
   ## Return fields
   #
-  my $boxes_matches = ""; 
+  my $boxes_matches = "";
   @return_fields_matches = qw(sites pval rank );
   foreach my $field (@return_fields_matches) {
     $boxes_matches .= $query->checkbox(-name=>'return_'.$field,
-			   -checked=>$default{'return_'.$field},
-			   -label=>' '.$field.' ');
+				       -checked=>$default{'return_'.$field},
+				       -label=>' '.$field.' ');
   }
   $boxes_matches .= "<BR/>";
-   @return_fields_matches = qw( limits normw);
+  @return_fields_matches = qw( limits normw);
   foreach my $field (@return_fields_matches) {
     $boxes_matches .= $query->checkbox(-name=>'return_'.$field,
-			   -checked=>$default{'return_'.$field},
-			   -label=>' '.$field.' ');
+				       -checked=>$default{'return_'.$field},
+				       -label=>' '.$field.' ');
   }
   $boxes_matches .= "<BR/>";
-   @return_fields_matches = qw(weight_limits bg_residues);
+  @return_fields_matches = qw(weight_limits bg_residues);
   foreach my $field (@return_fields_matches) {
     $boxes_matches .= $query->checkbox(-name=>'return_'.$field,
-			   -checked=>$default{'return_'.$field},
-			   -label=>' '.$field.' ');
-	$boxes_matches .= "<BR/>";
+				       -checked=>$default{'return_'.$field},
+				       -label=>' '.$field.' ');
+    $boxes_matches .= "<BR/>";
   }
 
-  
+
   ### Return fields
   my $boxes_occ = "";
   @return_fields_occ = qw(distrib);
   foreach my $field (@return_fields_occ) {
     $boxes_occ .= $query->checkbox(-name=>'return_'.$field,
-			   -checked=>$default{'return_'.$field},
-			   -label=>' '.$field.' ');
+				   -checked=>$default{'return_'.$field},
+				   -label=>' '.$field.' ');
   }
   $boxes_occ .= "<BR/>";
-    @return_fields_occ = qw(occ_proba);
+  @return_fields_occ = qw(occ_proba);
   foreach my $field (@return_fields_occ) {
     $boxes_occ .= $query->checkbox(-name=>'return_'.$field,
-			   -checked=>$default{'return_'.$field},
-			   -label=>' '.$field.' ');
+				   -checked=>$default{'return_'.$field},
+				   -label=>' '.$field.' ');
   }
-  
+
   $boxes_occ .= "&nbsp;&nbsp; <b> sort by </b> &nbsp;&nbsp;".$query->popup_menu(-name=>'sort_distrib',
-			 -Values=>['scores',
-				   'occ_sig'],
-			 -default=>$default{sort_distrib});
+										-Values=>['scores',
+											  'occ_sig'],
+										-default=>$default{sort_distrib});
 
   ### Return fields
   my $boxes_crer = "";
   @return_fields_crer = qw(crer normw);
   foreach my $field (@return_fields_crer) {
     $boxes_crer .= $query->checkbox(-name=>'return_'.$field,
-			   -checked=>$default{'return_'.$field},
-			   -label=>' '.$field.' ');
+				    -checked=>$default{'return_'.$field},
+				    -label=>' '.$field.' ');
   }
-	$boxes_crer .= "<BR/>";
+  $boxes_crer .= "<BR/>";
   @return_fields_crer = qw(limits);
   foreach my $field (@return_fields_crer) {
     $boxes_crer .= $query->checkbox(-name=>'return_'.$field,
-			   -checked=>$default{'return_'.$field},
-			   -label=>' '.$field.' ');
+				    -checked=>$default{'return_'.$field},
+				    -label=>' '.$field.' ');
   }
   @return_fields_crer = qw(crer_sites);
   foreach my $field (@return_fields_crer) {
     $boxes_crer .= $query->checkbox(-name=>'return_'.$field,
-			   -checked=>$default{'return_'.$field},
-			   -label=>' '."sites".' ');
+				    -checked=>$default{'return_'.$field},
+				    -label=>' '."sites".' ');
   }
-  
-  
-  
+
+
+
   ### Return fields
   my $boxes_add = "";
   @return_fields_add = qw(matrix freq_matrix weight_matrix bg_model);
   foreach my $field (@return_fields_add) {
     $boxes_add.= $query->checkbox(-name=>'return_'.$field,
-			   -checked=>$default{'return_'.$field},
-			   -label=>' '.$field.' ');
+				  -checked=>$default{'return_'.$field},
+				  -label=>' '.$field.' ');
   }
-  
+
   #############################################
   ## Thresholds
   #
-  my $thresh_matches = 
-     $query->table({-border=>0,-cellpadding=>1,-cellspacing=>0},
-		      $query->Tr({-align=>center,-valign=>MIDDLE},
-				 [
-				  $query->th([" <A HREF='help.matrix-scan.html#return_fields'>Field</A> ",
-					      " <A HREF='help.matrix-scan.html#thresholds'>Lower<BR>Threshold</A> ",
-					      " <A HREF='help.matrix-scan.html#thresholds'>Upper<BR>Threshold</A>"]),
+  my $thresh_matches =
+    $query->table({-border=>0,-cellpadding=>1,-cellspacing=>0},
+		  $query->Tr({-align=>center,-valign=>MIDDLE},
+			     [
+			      $query->th([" <A HREF='help.matrix-scan.html#return_fields'>Field</A> ",
+					  " <A HREF='help.matrix-scan.html#thresholds'>Lower<BR>Threshold</A> ",
+					  " <A HREF='help.matrix-scan.html#thresholds'>Upper<BR>Threshold</A>"]),
 
-				  ### Threshold on score
-				  $query->td(['score',
-					      $query->textfield(-name=>'lth_score',
-								-default=>$default{lth_score},
-								-size=>5),
-					      $query->textfield(-name=>'uth_score',
-								-default=>$default{uth_score},
-								-size=>5)
-					     ]),
+			      ### Threshold on score
+			      $query->td(['Weight<br>score',
+					  $query->textfield(-name=>'lth_score',
+							    -default=>$default{lth_score},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_score',
+							    -default=>$default{uth_score},
+							    -size=>5)
+					 ]),
 
-				  ### Threshold on P-value of the score
-				  $query->td(['P-value',
-					      $query->textfield(-name=>'lth_pval',
-								-default=>$default{lth_pval},
-								-size=>5),
-					      $query->textfield(-name=>'uth_pval',
-								-default=>$default{uth_pval},
-								-size=>5)
-					     ]),
-					     
+			      ### Threshold on P-value of the score
+			      $query->td(['P-value',
+					  $query->textfield(-name=>'lth_pval',
+							    -default=>$default{lth_pval},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_pval',
+							    -default=>$default{uth_pval},
+							    -size=>5)
+					 ]),
+					  
 				### Threshold on Sig of the score
-				  $query->td(['Sig',
-					      $query->textfield(-name=>'lth_sig',
-								-default=>$default{lth_sig},
-								-size=>5),
-					      $query->textfield(-name=>'uth_sig',
-								-default=>$default{uth_sig},
-								-size=>5)
-					     ]),
+			      $query->td(['Sig',
+					  $query->textfield(-name=>'lth_sig',
+							    -default=>$default{lth_sig},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_sig',
+							    -default=>$default{uth_sig},
+							    -size=>5)
+					 ]),
 
-				  ### Threshold on proba_M
-				  $query->td(['proba_M',
-					      $query->textfield(-name=>'lth_proba_M',
-								-default=>$default{lth_proba_M},
-								-size=>5),
-					      $query->textfield(-name=>'uth_proba_M',
-								-default=>$default{uth_proba_M},
-								-size=>5)
-					     ]),
+			      ### Threshold on proba_M
+			      $query->td(['P(S|M)<br>proba_M',
+					  $query->textfield(-name=>'lth_proba_M',
+							    -default=>$default{lth_proba_M},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_proba_M',
+							    -default=>$default{uth_proba_M},
+							    -size=>5)
+					 ]),
 
-				  ### Threshold on proba_B
-				  $query->td(['proba_B',
-					      $query->textfield(-name=>'lth_proba_B',
-								-default=>$default{lth_proba_B},
-								-size=>5),
-					      $query->textfield(-name=>'uth_proba_B',
-								-default=>$default{uth_proba_B},
-								-size=>5)
-					     ]),
+			      ### Threshold on proba_B
+			      $query->td(['P(S|B)<br>proba_B',
+					  $query->textfield(-name=>'lth_proba_B',
+							    -default=>$default{lth_proba_B},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_proba_B',
+							    -default=>$default{uth_proba_B},
+							    -size=>5)
+					 ]),
 
-				  ### Threshold on normw
-				  $query->td(['normw',
-					      $query->textfield(-name=>'lth_normw',
-								-default=>$default{lth_normw},
-								-size=>5),
-					      $query->textfield(-name=>'uth_normw',
-								-default=>$default{uth_normw},
-								-size=>5)
-					     ]),
+			      ### Threshold on normw
+			      $query->td(['Normalized<br>weight',
+					  $query->textfield(-name=>'lth_normw',
+							    -default=>$default{lth_normw},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_normw',
+							    -default=>$default{uth_normw},
+							    -size=>5)
+					 ]),
 
-				  ### Threshold on rank
-				  $query->td(['rank',
-					      $query->textfield(-name=>'lth_rank',
-								-default=>$default{lth_rank},
-								-size=>5),
-					      $query->textfield(-name=>'uth_rank',
-								-default=>$default{uth_rank},
-								-size=>5)
-					     ]),
+			      ### Threshold on rank
+			      $query->td(['Rank',
+					  $query->textfield(-name=>'lth_rank',
+							    -default=>$default{lth_rank},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_rank',
+							    -default=>$default{uth_rank},
+							    -size=>5)
+					 ]),
 
-				 ]
-				)
-		     );
+			     ]
+			    )
+		 );
 
-## Occurences
-	 my $thresh_occ = 
-     $query->table({-border=>0,-cellpadding=>1,-cellspacing=>0},
-		      $query->Tr({-align=>center,-valign=>MIDDLE},
-				 [
-				  $query->th(["<A HREF='help.matrix-scan.html#return_fields'>Field</A> ",
-					      " <A HREF='help.matrix-scan.html#thresholds'>Lower<BR>Threshold</A> ",
-					      " <A HREF='help.matrix-scan.html#thresholds'>Upper<BR>Threshold</A> "]),
+  ## Occurrences
+  my $thresh_occ =
+    $query->table({-border=>0,-cellpadding=>1,-cellspacing=>0},
+		  $query->Tr({-align=>center,-valign=>MIDDLE},
+			     [
+			      $query->th(["<A HREF='help.matrix-scan.html#return_fields'>Field</A> ",
+					  " <A HREF='help.matrix-scan.html#thresholds'>Lower<BR>Threshold</A> ",
+					  " <A HREF='help.matrix-scan.html#thresholds'>Upper<BR>Threshold</A> "]),
 
-				   $query->th({-colspan=>3,-align=>left},["observed distribution of scores (distrib)"
-					     ]),
-				  ### Threshold on score
-				  $query->td(['score',
-					      $query->textfield(-name=>'lth_occ_score',
-								-default=>$default{lth_occ_score},
-								-size=>5),
-					      $query->textfield(-name=>'uth_occ_score',
-								-default=>$default{uth_occ_score},
-								-size=>5)
-					     ]),
-				
+			      $query->th({-colspan=>3,-align=>left},["Occurrences"
+								    ]),
+			      ### Threshold on score
+			      $query->td(['Weight<br>score',
+					  $query->textfield(-name=>'lth_occ_score',
+							    -default=>$default{lth_occ_score},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_occ_score',
+							    -default=>$default{uth_occ_score},
+							    -size=>5)
+					 ]),
+
 				### Threshold on occ_inv_cum
-				  $query->td(['occ inv_cum',
-					      $query->textfield(-name=>'lth_inv_cum',
-								-default=>$default{lth_inv_cum},
-								-size=>5),
-					      $query->textfield(-name=>'uth_inv_cum',
-								-default=>$default{uth_inv_cum},
-								-size=>5)
-					     ]),
+			      $query->td(['Occurrences<br>above the score',
+					  $query->textfield(-name=>'lth_inv_cum',
+							    -default=>$default{lth_inv_cum},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_inv_cum',
+							    -default=>$default{uth_inv_cum},
+							    -size=>5)
+					 ]),
 
-				$query->th({-colspan=>3,-align=>left},["over-represented matches (occ_proba)"
-					     ]),
-				
+			      $query->th({-colspan=>3,-align=>left},["Over-representation"
+								    ]),
+
 				### Threshold on exp_occ
-				  $query->td(['exp_occ',
-					      $query->textfield(-name=>'lth_exp_occ',
-								-default=>$default{lth_exp_occ},
-								-size=>5),
-					      $query->textfield(-name=>'uth_exp_occ',
-								-default=>$default{uth_exp_occ},
-								-size=>5)
-					     ]),
+			      $query->td(['Expected<br>occurrences',
+					  $query->textfield(-name=>'lth_exp_occ',
+							    -default=>$default{lth_exp_occ},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_exp_occ',
+							    -default=>$default{uth_exp_occ},
+							    -size=>5)
+					 ]),
 
-				  ### Threshold on P-value of the score
-				  $query->td(['occ P-value',
-					      $query->textfield(-name=>'lth_occ_pval',
-								-default=>$default{lth_occ_pval},
-								-size=>5),
-					      $query->textfield(-name=>'uth_occ_pval',
-								-default=>$default{uth_occ_pval},
-								-size=>5)
-					     ]),
-				
-				 ### Threshold on P-value of the score
-				  $query->td(['occ E-value',
-					      $query->textfield(-name=>'lth_occ_eval',
-								-default=>$default{lth_occ_eval},
-								-size=>5),
-					      $query->textfield(-name=>'uth_occ_eval',
-								-default=>$default{uth_occ_eval},
-								-size=>5)
-					     ]),
-					     
+			      ### Threshold on P-value of the score
+			      $query->td(['Occ P-value',
+					  $query->textfield(-name=>'lth_occ_pval',
+							    -default=>$default{lth_occ_pval},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_occ_pval',
+							    -default=>$default{uth_occ_pval},
+							    -size=>5)
+					 ]),
+
+			      ### Threshold on P-value of the score
+			      $query->td(['Occ E-value',
+					  $query->textfield(-name=>'lth_occ_eval',
+							    -default=>$default{lth_occ_eval},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_occ_eval',
+							    -default=>$default{uth_occ_eval},
+							    -size=>5)
+					 ]),
+					  
 				### Threshold on Sig of the score
-				  $query->td(['occ Sig',
-					      $query->textfield(-name=>'lth_occ_sig',
-								-default=>$default{lth_occ_sig},
-								-size=>5),
-					      $query->textfield(-name=>'uth_occ_sig',
-								-default=>$default{uth_occ_sig},
-								-size=>5)
-					     ]),
+			      $query->td(['Occ sig',
+					  $query->textfield(-name=>'lth_occ_sig',
+							    -default=>$default{lth_occ_sig},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_occ_sig',
+							    -default=>$default{uth_occ_sig},
+							    -size=>5)
+					 ]),
 
-				  ### Threshold on rank
-				  $query->td(['rank',
-					      $query->textfield(-name=>'lth_occ_sig_rank',
-								-default=>$default{lth_occ_sig_rank},
-								-size=>5),
-					      $query->textfield(-name=>'uth_occ_sig_rank',
-								-default=>$default{uth_occ_sig_rank},
-								-size=>5)
-					     ]),	
-				 ]
-				)
-		     );
+			      ### Threshold on rank
+			      $query->td(['Rank',
+					  $query->textfield(-name=>'lth_occ_sig_rank',
+							    -default=>$default{lth_occ_sig_rank},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_occ_sig_rank',
+							    -default=>$default{uth_occ_sig_rank},
+							    -size=>5)
+					 ]),
+			     ]
+			    )
+		 );
   ## CRERs
-	 my $thresh_crer = 
-     $query->table({-border=>0,-cellpadding=>1,-cellspacing=>0},
-		      $query->Tr({-align=>center,-valign=>MIDDLE},
-				 [
-				  $query->th([" <A HREF='help.matrix-scan.html#return_fields'>Field</A> ",
-					      " <A HREF='help.matrix-scan.html#thresholds'>Lower<BR>Threshold</A> ",
-					      " <A HREF='help.matrix-scan.html#thresholds'>Upper<BR>Threshold</A> "]),
+  my $thresh_crer =
+    $query->table({-border=>0,-cellpadding=>1,-cellspacing=>0},
+		  $query->Tr({-align=>center,-valign=>MIDDLE},
+			     [
+			      $query->th([" <A HREF='help.matrix-scan.html#return_fields'>Field</A> ",
+					  " <A HREF='help.matrix-scan.html#thresholds'>Lower<BR>Threshold</A> ",
+					  " <A HREF='help.matrix-scan.html#thresholds'>Upper<BR>Threshold</A> "]),
 
-				 
-				  ### Threshold on score
-				  $query->td(['crer_size<b>*</b>',
-					      $query->textfield(-name=>'lth_crer_size',
-								-default=>$default{lth_crer_size},
-								-size=>5),
-					      $query->textfield(-name=>'uth_crer_size',
-								-default=>$default{uth_crer_size},
-								-size=>5)
-					     ]),
-					     
+
+			      ### Threshold on score
+			      $query->td(['CRER size<b>*</b>',
+					  $query->textfield(-name=>'lth_crer_size',
+							    -default=>$default{lth_crer_size},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_crer_size',
+							    -default=>$default{uth_crer_size},
+							    -size=>5)
+					 ]),
+
 				### Threshold on P-value of the score
-				  $query->td(['site P-value<b>*</b>',
-					      $query->textfield(-name=>'lth_site_pval',
-								-default=>$default{lth_site_pval},
-								-size=>5),
-					      $query->textfield(-name=>'uth_site_pval',
-								-default=>$default{uth_site_pval},
-								-size=>5)
-					     ]),
-				
+			      $query->td(['site P-value<b>*</b>',
+					  $query->textfield(-name=>'lth_site_pval',
+							    -default=>$default{lth_site_pval},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_site_pval',
+							    -default=>$default{uth_site_pval},
+							    -size=>5)
+					 ]),
+
 				### Threshold on crer_sites
-				  $query->td(['crer_sites',
-					      $query->textfield(-name=>'lth_crer_sites',
-								-default=>$default{lth_crer_sites},
-								-size=>5),
-					      $query->textfield(-name=>'uth_crer_sites',
-								-default=>$default{uth_crer_sites},
-								-size=>5)
-					     ]),
-					     
+			      $query->td(['CRER sites',
+					  $query->textfield(-name=>'lth_crer_sites',
+							    -default=>$default{lth_crer_sites},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_crer_sites',
+							    -default=>$default{uth_crer_sites},
+							    -size=>5)
+					 ]),
+
 				### Threshold on crer_pval
-				  $query->td(['crer_pval',
-					      $query->textfield(-name=>'lth_crer_pval',
-								-default=>$default{lth_crer_pval},
-								-size=>5),
-					      $query->textfield(-name=>'uth_crer_pval',
-								-default=>$default{uth_crer_pval},
-								-size=>5)
-					     ]),
-								### Threshold on crer_pval
-				  $query->td(['crer_sig',
-					      $query->textfield(-name=>'lth_crer_sig',
-								-default=>$default{lth_crer_sig},
-								-size=>5),
-					      $query->textfield(-name=>'uth_crer_sig',
-								-default=>$default{uth_crer_sig},
-								-size=>5)
-					     ]),
-				$query->Tr({-align=>middle,-valign=>TOP},
-				 [
-				  $query->td({-colspan=>4},[ "<b>*</b> =mandatory field"],
-				  			)
-				 ]),
-				 ]
-				)
-		     );
-  
-  
+			      $query->td(['CRER pval',
+					  $query->textfield(-name=>'lth_crer_pval',
+							    -default=>$default{lth_crer_pval},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_crer_pval',
+							    -default=>$default{uth_crer_pval},
+							    -size=>5)
+					 ]),
+			      ### Threshold on crer_pval
+			      $query->td(['CRER sig',
+					  $query->textfield(-name=>'lth_crer_sig',
+							    -default=>$default{lth_crer_sig},
+							    -size=>5),
+					  $query->textfield(-name=>'uth_crer_sig',
+							    -default=>$default{uth_crer_sig},
+							    -size=>5)
+					 ]),
+			      $query->Tr({-align=>middle,-valign=>TOP},
+					 [
+					  $query->td({-colspan=>4},[ "<b>*</b> =mandatory field"],
+						    )
+					 ]),
+			     ]
+			    )
+		 );
+
+
   #############################################
   ## Table
- 
+
   print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>3},
-  			"<tr><td/>",
-  			"<th bgcolor='#CCCCCC'>
+		      "<tr><td/>",
+		      "<th bgcolor='#CCCCCC'>
   			<INPUT TYPE='radio' NAME='analysis_type' VALUE='analysis_sites' $checked{'analysis_sites'}><BR/>
   			<A HREF='help.matrix-scan.html#return_fields'>Individual matches</A></th>",
-  			"<th bgcolor='#D6EEFA'> 
+		      "<th bgcolor='#D6EEFA'>
   			<INPUT TYPE='radio' NAME='analysis_type' VALUE='analysis_crer' $checked{analysis_crer}><BR/>
 			<A HREF='help.matrix-scan.html#return_fields'>CRERs <BR/> (Cis-Regulatory element <BR>Enriched Regions)</A> </th>",
-			"<th bgcolor='#F6E6CA'>
+		      "<th bgcolor='#F6E6CA'>
   			<INPUT TYPE='radio' NAME='analysis_type' VALUE='analysis_occ' $checked{analysis_occ}><BR/>
-  			<A HREF='help.matrix-scan.html#return_fields'>Statistics on site enrichment in the whole input sequence set <BR/> (over-represented matches)</A></th> ",
-				"</tr>",
-			"<tr align='left' valign='top'><td><b>Fields to <BR/> return</b></td>",
-  			"<td bgcolor='#CCCCCC'>$boxes_matches</td>",
-  			"<td bgcolor='#D6EEFA'> $boxes_crer </td> ",
-			"<td bgcolor='#F6E6CA'>$boxes_occ</td>",
-				"</tr>",
+  			<A HREF='help.matrix-scan.html#return_fields'>Over-representation of hits<br>in the whole input sequence set</A></th> ",
+		      "</tr>",
+		      "<tr align='left' valign='top'><td><b>Fields to <BR/> return</b></td>",
+		      "<td bgcolor='#CCCCCC'>$boxes_matches</td>",
+		      "<td bgcolor='#D6EEFA'> $boxes_crer </td> ",
+		      "<td bgcolor='#F6E6CA'>$boxes_occ</td>",
+		      "</tr>",
 
-			$query->Tr({-align=>middle,-valign=>TOP},
+		      $query->Tr({-align=>middle,-valign=>TOP},
 				 [
 				  $query->td({-colspan=>4},[ "<b>Other fields to return</b>  $boxes_add"],
-				  			)
+					    )
 				 ]),
-			"<tr align='left' valign='top'><td><b>Thresholds</b></td>",
-  			"<td bgcolor='#CCCCCC'>$thresh_matches</td>",
-  			"<td bgcolor='#D6EEFA'>$thresh_crer</td> ",
-			"<td bgcolor='#F6E6CA'>$thresh_occ</td>",
-				"</tr>",
+		      "<tr align='left' valign='top'><td><b>Thresholds</b></td>",
+		      "<td bgcolor='#CCCCCC'>$thresh_matches</td>",
+		      "<td bgcolor='#D6EEFA'>$thresh_crer</td> ",
+		      "<td bgcolor='#F6E6CA'>$thresh_occ</td>",
+		      "</tr>",
 		     );
 
 }
