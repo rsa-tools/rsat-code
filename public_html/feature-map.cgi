@@ -93,8 +93,8 @@ if ($query->param('orientation') =~ /vertic/i) {
 
 
 ### scale bar step ###
-if ($query->param('scalebarstep') =~ /\d+/) {
-    $parameters .= " -scalestep ".$query->param('scalebarstep');
+if ($query->param('scalestep') =~ /^\d+$/) {
+  $parameters .= " -scalestep ".$query->param('scalestep');
 }
 
 ### title ###
