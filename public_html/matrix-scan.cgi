@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.15 2007/12/16 16:26:03 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.16 2007/12/16 17:20:57 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -65,7 +65,7 @@ print "<pre>$command</pre>" if ($ENV{rsat_echo} >= 1);
 if ($query->param('output') eq "display") {
 
   unless ($query->param('table')) {
-    &PipingWarning() unless ($query->param("return_distrib") eq "on");
+    &PipingWarning() unless ($query->param("analysis_type") eq "analysis_occ");
   }
 
   ### Print the result on Web page
@@ -76,7 +76,7 @@ if ($query->param('output') eq "display") {
   &PrintHtmlTable(RESULT, $result_file, true);
   print "</PRE>";
 
-  &PipingForm() unless ($query->param("return_distrib") eq "on");
+  &PipingForm() unless ($query->param("analysis_type") eq "analysis_occ");
 
   print "<HR SIZE = 3>";
 
