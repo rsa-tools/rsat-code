@@ -111,7 +111,7 @@ echo("<td><table border='0' cellspacing='0' cellpadding='0'>
   <tr><td><label><input type='checkbox' name='proba' value='on' checked='checked' />Hypergeometric probability</label></td></tr> 
   <tr><td><label><input type='checkbox' name='jac_sim' value='on' checked='checked' />Jaccard index</label></td></tr> 
   <tr><td><label><input type='checkbox' name='entropy' value='on' />Entropy</label></td></tr> 
-  <tr><td><label><input type='checkbox' name='members' value='on' /> Members </label></td></tr>
+  <tr><td><label><input type='checkbox' name='members' value='on' /> Members <i>(Beware, this might generate large result files)</i></label></td></tr>
   <tr><td><label><input type='checkbox' name='dotprod' value='on' /> Dotproduct <i> (Only relevant if a score column is specified)</i></label></td></tr>");
 echo("</table><br><br>");
      
@@ -126,9 +126,7 @@ echo("<table border='0' cellspacing='0' cellpadding='0'>
         <tr align='left' valign='TOP'><td> Jaccard index </td> <td><input type='text' name='lth_jac'  size='5' /></td> <td><input type='text' name='uth_jac'  size='5' /></td></tr> 
         <tr align='left' valign='TOP'><td> Mutual information </td> <td><input type='text' name='lth_mi'  size='5' /></td> <td><input type='text' name='uth_mi'  size='5' /></td></tr>
         
-        <tr><td><i> (Only relevant if a score column is specified)</i></td></tr>
-        
-        <tr align='left' valign='TOP'><td> Dot product </td> <td><input type='text' name='lth_dp'  size='5' /></td> <td><input type='text' name='uth_dp'  size='5' /></td></tr>
+        <tr align='left' valign='TOP'><td> Dot product <i><br>(Only relevant if a score column is specified)</i></td> <td><input type='text' name='lth_dp'  size='5' /></td> <td><input type='text' name='uth_dp'  size='5' /></td></tr>
         </table><br>");
 echo ("</td>");
 # MATRIX FILE OUTPUT PARAMETERS
