@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.111 2007/12/16 17:23:34 jvanheld Exp $
+# $Id: matrix-scan,v 1.112 2007/12/16 17:32:14 jvanheld Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -1336,7 +1336,7 @@ package main;
   if ($main::verbose >= 1) {
     print $main::out ";\n; Matrices\n";
     print $out join ("\t", ";",
-		     "nb",
+		     "matrix",
 		     sprintf("%-${max_name_len}s", "name"),
 		     "ncol",
 		     "nrow",
@@ -1600,23 +1600,28 @@ package main;
     ## Matching statistics
     print $main::out "; Matches per matrix\n";
     print $main::out join("\t", ";",
-			  sprintf("%-${max_name_len}s", "matrix"),
+			  "matrix",
+			  sprintf("%-${max_name_len}s", "name"),
 			  "matches",
 			  "scored",
 			 ), "\n";
 
     my $total_scored = 0;
     my $total_matches = 0;
+    my $m = 0;
     foreach my $matrix (@matrices) {
+      $m++;
       $total_matches += $matrix->get_attribute("matches");
       $total_scored += $matrix->get_attribute("scored");
       print $main::out join ("\t", ";", 
+			     $m,
 			     sprintf("%-15s", $matrix->get_attribute("name")),
 			     sprintf("%d", $matrix->get_attribute("matches")),
 			     sprintf("%d", $matrix->get_attribute("scored")),
 			    ), "\n";
     }
     print $main::out join ("\t", ";", 
+			   "",
 			   sprintf("%-15s", "TOTAL"),
 			   $total_matches,
 			   $total_scored,
