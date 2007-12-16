@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.110 2007/12/12 14:45:58 morgane Exp $
+# $Id: matrix-scan,v 1.111 2007/12/16 17:23:34 jvanheld Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -1335,7 +1335,8 @@ package main;
   ## Print summary statistics of each matrix
   if ($main::verbose >= 1) {
     print $main::out ";\n; Matrices\n";
-    print $out join ("\t", ";", 
+    print $out join ("\t", ";",
+		     "nb",
 		     sprintf("%-${max_name_len}s", "name"),
 		     "ncol",
 		     "nrow",
@@ -1348,9 +1349,12 @@ package main;
 		     "prior",
 		    ), "\n";
 
+    my $m = 0;
     foreach my $matrix (@matrices) {
+      $m++;
       print $out join ("\t", ";", 
-		       $matrix->get_attribute("name"),
+		       $m,
+		       sprintf("%-${max_name_len}s", $matrix->get_attribute("name")),
 		       $matrix->get_attribute("ncol"),
 		       $matrix->get_attribute("nrow"),
 		       $matrix->get_attribute("pseudo"),
@@ -2517,7 +2521,7 @@ sub Verbose {
     my %th_keys = (%lth, %uth);
     print $main::out "; Thresholds\tlower\tupper\n";
     foreach $f (sort keys %th_keys) {
-	print $main::out ";\t$f";
+	printf $main::out ";\t%-14s", $f;
 	if (defined($lth{$f})) {
 	    printf $main::out "\t%-5g", $lth{$f};
 	} else {
