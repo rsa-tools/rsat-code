@@ -130,7 +130,7 @@ print $query->checkbox(-name=>'scalebar',
 		       -label=>'');
 print "<A HREF='help.feature-map.html#scalebar'>Scalebar</a>";
 
-print "(step ";
+print " (step ";
 print $query->textfield(-name=>'scalestep',
 			-default=>'auto',
 			-size=>5);
