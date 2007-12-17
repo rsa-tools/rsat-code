@@ -38,22 +38,22 @@ echo ("<form method='post' action='compare_classes.php' enctype='multipart/form-
 if($demo) {
   demo($demo_remark);
  }
-echo ("<table border=1 cellspacing=0 cellpadding=4 align=center>\n");
+echo ("<table border=0 cellspacing=0 cellpadding=4 align=center>\n");
 
 echo ("<tr align = 'center'><th>Query classes</th><th>Reference classes</th></tr>\n");
 
 ################################################################
 ## Query input classes textarea
-echo "<td>";
+echo "<tr><td>\n";
 if (!$pipe) {
-  echo ("<textarea name='classesQ' rows='6' cols='40'>$demo_classesQ</textarea></td>");
+  echo ("<textarea name='classesQ' rows='6' cols='40'>$demo_classesQ</textarea>");
  } 
 echo "</td>";
 
 ################################################################
-## reference input classes textarea
-echo ("<td><textarea name='classesR' rows='6' cols='40'>$demo_classesR</textarea></td>");
-echo ("<tr  align = 'center'><td>");
+## Reference input classes textarea
+echo ("<td><textarea name='classesR' rows='6' cols='40'>$demo_classesR</textarea></td></tr>");
+echo ("<tr align = 'center'><td>");
 
 ################################################################
 ## query input classes file
@@ -69,24 +69,21 @@ echo "</td>";
 ################################################################
 ## reference input classes file
 echo ("<td>Upload reference classes from file : <br>
-  <input type='file' name='Rclass_file' size='40' /></td>");
+<input type='file' name='Rclass_file' size='40' /></td>");
 echo ("</tr>");
-
+echo ("</table>");
 ################################################################
 ## comparaison of query classes with themselves
-echo ("<tr><td></td>");
-
-################################################################
 ## options for self-comparison
-  echo("<td>
-    <input type = 'checkbox' value='on' name='self_compa' size = 1> <a href = 'help.compare_classes.html#self'><b>Compare query classes with themselves (do not specify reference classes)</a></b><br>
+echo ("<br><br><input type = 'checkbox' value='on' name='self_compa' size = 1> <a href = 'help.compare_classes.html#self'><b>Compare query classes with themselves (do not specify reference classes)</a></b><br>
     <ul><input type = 'checkbox' value='on' name='distinct' size = 1> <a href = 'help.compare_classes.html#distinct'><b>Prevent self-comparison.</a></b><br>
     <input type = 'checkbox' value='on' name='triangle' size = 1> <a href = 'help.compare_classes.html#triangle'><b>Prevent reciprocal comparisons.</a></b><br></ul></td>");
 
 ################################################################
 ## Score column (for the dot product)
 if (!$pipe) {
-  echo ("<tr><td colspan=2 align=center>Score column (must be valid for both query and reference classes)<input type = 'text' name='score_col' size = 1\><br></td></tr>");}
+  echo ("<tr><td colspan=2 align=center>Score column (must be valid for both query and reference classes)<input type = 'text' name='score_col' size = 1\><br></td></tr>");
+}
 
   
 ################################################################
@@ -94,14 +91,14 @@ if (!$pipe) {
 echo ("</table><br>\n");
   
 ## Output format
-echo("<br>
-  &nbsp;&nbsp;&nbsp;<B><a href = 'help.compare_classes.html#formats'>Output format</a></B>&nbsp;<select name='out_format'>
-  <option selected value = 'class'> class file
-  <option value = 'matrix'> matrix file
-  </select><br>");
+echo("<br><table>
+  <tr><td colspan = 2 >&nbsp;&nbsp;&nbsp;<B><a href = 'help.compare_classes.html#formats'>Output format</a></B>
+  <tr><td><input type = 'radio' checked name='out_format' value = 'class'/></td><td>Classes file</td></tr>
+  <tr><td><input type = 'radio' name='out_format' value = 'matrix'/></td><td>Matrix file</td></tr>
+");
 
 echo ("<table border=1  cellspacing=0 cellpadding=4 align=center><tr align=center>");
-echo ("<td><b>Parameters for output type 'class file'</b></td><td><b>Parameters for output type 'Matrix file'</b></td></tr><tr align='center' valign='TOP'><br>");
+echo ("<td><b>Parameters for output type 'Classes file'</b></td><td><b>Parameters for output type 'Matrix file'</b></td></tr><tr align='center' valign='TOP'><br>");
 
 # CLASS FILE OUTPUT PARAMETERS
 echo("<td><table border='0' cellspacing='0' cellpadding='0'>
@@ -111,7 +108,7 @@ echo("<td><table border='0' cellspacing='0' cellpadding='0'>
   <tr><td><label><input type='checkbox' name='proba' value='on' checked='checked' />Hypergeometric probability</label></td></tr> 
   <tr><td><label><input type='checkbox' name='jac_sim' value='on' checked='checked' />Jaccard index</label></td></tr> 
   <tr><td><label><input type='checkbox' name='entropy' value='on' />Entropy</label></td></tr> 
-  <tr><td><label><input type='checkbox' name='members' value='on' /> Members <i>(Beware, this might generate large result files)</i></label></td></tr>
+  <tr><td><label><input type='checkbox' name='members' value='on' /> Members <i> (Beware, this might generate large result files)</i></label></td></tr>
   <tr><td><label><input type='checkbox' name='dotprod' value='on' /> Dotproduct <i> (Only relevant if a score column is specified)</i></label></td></tr>");
 echo("</table><br><br>");
      
