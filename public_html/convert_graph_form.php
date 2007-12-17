@@ -86,7 +86,7 @@
     <tr><td><B><a href = 'help.convert_graph.html#sccol'>Target node color column</a></B></td><td><input type = 'text' name='tc_col' size = 1></input></td></tr>
     </table>");
   } else {
-    info("Graph uploaded from the previous treatment");
+    info_link("Graph uploaded from the previous treatment", rsat_path_to_url($graph_file));
     echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$graph_file'>";
   }
   if ($graph_format == 'tab') {

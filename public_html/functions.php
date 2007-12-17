@@ -35,6 +35,15 @@
 ?>
 
 <?php
+  // NeAT INFO
+  // This function add an hypertext link
+  Function info_link($info, $link_url) {
+    echo "<H4>Info : </H4><blockquote class = 'info'><a href = '$link_url'>$info </a></blockquote></a><br>";
+  } 
+?>
+
+
+<?php
     Function uploadFile($file) {
     $repertoireDestination = "tmp/";
     $nomDestination = $_FILES[$file]["name"];
@@ -145,8 +154,25 @@ Function space_to_tab($string) {
   return $result;
 }
 
+?>
+ 
+<?php
+# This function converts a file name from its complete path 
+# its URL on the RSAT webserver
+# For example : /home/rsat/rsa-tool/public_html/tmp/brol.truc
+# will be converted to
+# http://rsat.scmbb.ulb.ac.be/rsat/tmp/brol.truc
+Function rsat_path_to_url ($file_name) {
+    global $WWW_RSA;
+    $temp_file = explode('/',$file_name);
+    $temp_file = end($temp_file);
+    $resultURL = $WWW_RSA."/tmp/".$temp_file;
+    return $resultURL;
+}
 
-?> 
+?>
+ 
+ 
 <?php
 ## This function returns the name of the script executing it
 Function AlphaDate() {
@@ -199,3 +225,4 @@ Function UpdateLogFile($suite ,$script_name, $message) {
   fclose($log_handle);
   chmod ($log_file, 0777);
 }
+

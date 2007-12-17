@@ -61,7 +61,7 @@ if (!$pipe) {
   echo ("Upload query classes from file : <br>
     <input type='file' name='Qclass_file' size='40' />");
  } else {
-  info("Query classes uploaded from the previous treatment");
+    info_link("Query classes loaded from the previous treatment", rsat_path_to_url($pipe_Q_class_file));
   echo "<input type='hidden' NAME='pipe_Q_class_file' VALUE='$pipe_Q_class_file'/>";
  }
 echo "</td>";

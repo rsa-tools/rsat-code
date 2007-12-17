@@ -64,7 +64,7 @@
       </table>"
     );
   } else {
-    info("Graph uploaded from the previous treatment");
+    info_link("Graph uploaded from the previous treatment", rsat_path_to_url($graph_file));    
     echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$graph_file'>";
     echo "<input type='hidden' NAME='s_col' VALUE='$scol'>";
     echo "<input type='hidden' NAME='t_col' VALUE='$tcol'>";
@@ -81,7 +81,7 @@
   } else {
     echo("
     <input type='hidden' name='pipe_clusters_file' value = '$cluster_file' /><br>");
-    info("Clusters (or nodes) uploaded from the previous treatment");
+    info_link("Clusters (or nodes) uploaded from the previous treatment", rsat_path_to_url($cluster_file));    
   }
   echo("
     <B><a href = 'help.graph_get_clusters.html#formats'>Output format (only useful for intra-cluster edges output)</a></B>&nbsp;<select name='out_format'>
