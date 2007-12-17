@@ -44,7 +44,7 @@
     <br>Upload contingency table from file : <br>
     <input type='file' name='matrix_file' size='45' /><br>");
   } else {
-    info("Contingency table uploaded from the previous treatment");
+    info_link("Contingency table loaded from the previous treatment", rsat_path_to_url($matrix_file));
     echo "<input type='hidden' NAME='pipe_matrix_file' VALUE='$matrix_file'>";
   }
 
