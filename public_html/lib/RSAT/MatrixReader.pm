@@ -168,6 +168,7 @@ sub _readFromTRANSFACFile {
   while (<$in>) {
     $l++;
     next unless (/\S/);
+    next if (/^;/);
     s/\r//;
     chomp();
     my $version = "";
