@@ -67,21 +67,26 @@
   $l_thr_field = array();
   $u_thr_val = array();
   $u_thr_field = array();
+  
+  
+  
+  
   if ($_REQUEST['lth_q'] != "") {
     $thr = $_REQUEST['lth_q'];
     if (preg_match("/\d/", $thr)) {
       array_push($l_thr_field, "Q");
       array_push($l_thr_val, $thr);
-    } else {
+    } else if ($thr != 'none') {
       warning("$thr is not a valid query lower threshold");
     }
   }
+  
   if ($_REQUEST['lth_r'] != "") {
     $thr = $_REQUEST['lth_r'];
     if (preg_match("/\d/", $thr)) {
       array_push($l_thr_field, "R");
       array_push($l_thr_val, $thr);
-    } else {
+    } else if ($thr != 'none'){
       warning("$thr is not a valid reference lower threshold");
     }
   }
@@ -90,7 +95,7 @@
     if (preg_match("/\d/", $thr)) {
       array_push($l_thr_field, "QR");
       array_push($l_thr_val, $thr);
-    } else {
+    } else if ($thr != 'none'){
       warning("$thr is not a valid reference-query intersection lower threshold");
     }
   }
@@ -100,7 +105,7 @@
       array_push($l_thr_field, "sig");
       array_push($l_thr_val, $thr);
       $sort = "sig";
-    } else {
+    } else if ($thr != 'none'){
       warning("$thr is not a valid significance lower threshold");
     }
   }
@@ -109,7 +114,7 @@
     if (preg_match("/\d/", $thr)) {
       array_push($l_thr_field, "P_val");
       array_push($l_thr_val, $thr);
-    } else {
+    } else if ($thr != 'none'){
       warning("$thr is not a valid P-value lower threshold");
     }
   }    
@@ -118,7 +123,7 @@
     if (preg_match("/\d/", $thr)) {
       array_push($l_thr_field, "E_val");
       array_push($l_thr_val, $thr);
-    } else {
+    } else if ($thr != 'none'){
       warning("$thr is not a valid E-value lower threshold");
     }
   }    
@@ -127,7 +132,7 @@
     if (preg_match("/\d/", $thr)) {
       array_push($l_thr_field, "jac_sim");
       array_push($l_thr_val, $thr);
-    } else {
+    } else if ($thr != 'none'){
       warning("$thr is not a valid Jaccard similarity lower threshold");
     }
   }      
@@ -136,7 +141,7 @@
     if (preg_match("/\d/", $thr)) {
       array_push($l_thr_field, "I(Q,R)");
       array_push($l_thr_val, $thr);
-    } else {
+    } else if ($thr != 'none'){
       warning("$thr is not a valid mutual information lower threshold");
     }
   }
@@ -146,7 +151,7 @@
     if (preg_match("/\d/", $thr)) {
       array_push($u_thr_field, "Q");
       array_push($u_thr_val, $thr);
-    } else {
+    } else if ($thr != 'none'){
       warning("$thr is not a valid query size upper threshold");
     }
   }
@@ -155,7 +160,7 @@
     if (preg_match("/\d/", $thr)) {
       array_push($u_thr_field, "R");
       array_push($u_thr_val, $thr);
-    } else {
+    } else if ($thr != 'none'){
       warning("$thr is not a valid reference size upper threshold");
     }
   }
@@ -164,7 +169,7 @@
     if (preg_match("/\d/", $thr)) {
       array_push($u_thr_field, "QR");
       array_push($u_thr_val, $thr);
-    } else {
+    } else if ($thr != 'none'){
       warning("$thr is not a valid reference-query intersection size upper threshold");
     }
   }
@@ -173,7 +178,7 @@
     if (preg_match("/\d/", $thr)) {
       array_push($u_thr_field, "sig");
       array_push($u_thr_val, $thr);
-    } else {
+    } else if ($thr != 'none'){
       warning("$thr is not a valid significance upper threshold");
     }
   }
@@ -182,7 +187,7 @@
     if (preg_match("/\d/", $thr)) {
       array_push($u_thr_field, "P_val");
       array_push($u_thr_val, $thr);
-    } else {
+    } else if ($thr != 'none'){
       warning("$thr is not a valid P-value upper threshold");
     }
   }    
@@ -191,7 +196,7 @@
     if (preg_match("/\d/", $thr)) {
       array_push($l_thr_field, "E_val");
       array_push($l_thr_val, $thr);
-    } else {
+    } else if ($thr != 'none') {
       warning("$thr is not a valid E-value upper threshold");
     }
   }    
@@ -200,7 +205,7 @@
     if (preg_match("/\d/", $thr)) {
       array_push($u_thr_field, "jac_sim");
       array_push($u_thr_val, $thr);
-    } else {
+    } else if ($thr != 'none'){
       warning("$thr is not a valid Jaccard similarity index threshold");
     }
   }      
@@ -209,7 +214,7 @@
     if (preg_match("/\d/", $thr)) {
       array_push($u_thr_field, "I(Q,R)");
       array_push($u_thr_val, $thr);
-    } else {
+    } else if ($thr != 'none'){
       warning("$thr is not a valid mutual information index threshold");
     }
   }  
@@ -264,7 +269,7 @@
   ## If -i option and reference classes are given -> error
   if ($self_compa && $classesR != "") {
     $error = 1;
-    error("You must not specify reference classes when query classes are compare to themselves");
+    error("You must not specify reference classes when query classes are compared to themselves");
   }
   
   ## If -i option and query classes -> place the classes in a new variable

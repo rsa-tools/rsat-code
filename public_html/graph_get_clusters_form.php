@@ -83,6 +83,13 @@
     <input type='hidden' name='pipe_clusters_file' value = '$cluster_file' /><br>");
     info_link("Clusters (or nodes) uploaded from the previous treatment", rsat_path_to_url($cluster_file));    
   }
+  
+  echo("
+  <B><a href = 'help.compare_graphs.html#return'>Output</B></a>&nbsp;<select name='return'>
+  <option value = 'table'> node-cluster connections
+  <option selected value = 'clusters'> intra-cluster edges
+  <option value = 'graph'> annotated graph (all edges)
+  </select><br><br>");
   echo("
     <B><a href = 'help.graph_get_clusters.html#formats'>Output format (only useful for intra-cluster edges output)</a></B>&nbsp;<select name='out_format'>
     <option selected value = 'tab'> tab-delimited format
@@ -91,12 +98,7 @@
     </select><br><br>");
  
     
-  echo("
-  <B><a href = 'help.compare_graphs.html#return'>Output</B></a>&nbsp;<select name='return'>
-  <option value = 'table'> contingency table
-  <option selected value = 'clusters'> intra-cluster edges
-  <option value = 'graph'> annotated graph (all edges)
-  </select><br><br>");
+
   ## This option is useful to duplicate nodes belonging to more than one cluster but for the moment
   ## this option does not work anymore (-distinct)
   #echo("<input type='checkbox' name='distinct' value='on' />&nbsp;<B><a href = 'help.convert_graph.html#distinct'>Duplicate the nodes belonging to more than one cluster</a></B><br>");
