@@ -417,81 +417,206 @@ CTCAGCACCGAGAGCACAGCAGCGCATCCACTCTCAGCACCGCACGATTAGCACCGTTCC
 GCTCAGGCTGTCCCGCTCGCACCTGCCTGGGTCGCTGCGA";
 
 $demo_matrix = "
-; Kr matrix, derived from OregAnno by J.V. Turatsinze (2007).
-a       |       30      37      0       3       1       5       4       2
-c       |       4       0       35      37      41      9       1       4
-g       |       4       2       3       0       0       11      7       0
-t       |       6       5       6       4       2       19      32      38
+; Matrices derived from OregAnno by J.V. Turatsinze (2007).
+;
+; MATRIX 1/12 : Kr
+;
+AC  Kr
+XX
+P0       A     C     G     T
+1       30     4     4     6
+2       37     0     2     5
+3        0    35     3     6
+4        3    37     0     4
+5        1    41     0     2
+6        5     9    11    19
+7        4     1     7    32
+8        2     4     0    38
+XX
 //
-; Med matrix, derived from OregAnno by J.V. Turatsinze (2007).
-a       |       0       0       0       0       0       0
-c       |       6       0       0       10      0       0
-g       |       1       10      2       0       0       7
-t       |       3       0       8       0       10      3
+;
+; MATRIX 2/12 : Med
+;
+AC  Med
+XX
+P0       A     C     G     T
+1        0     6     1     3
+2        0     0    10     0
+3        0     0     2     8
+4        0    10     0     0
+5        0     0     0    10
+6        0     0     7     3
+XX
 //
-; Stat92E matrix, derived from OregAnno by J.V. Turatsinze (2007).
-a       |       0       0       0       0       0       0       0       3       3
-c       |       0       0       3       0       2       0       0       0       0
-g       |       0       0       0       3       1       3       3       0       0
-t       |       3       3       0       0       0       0       0       0       0
+;
+; MATRIX 3/12 : Stat92E
+;
+AC  Stat92E
+XX
+P0       A     C     G     T
+1        0     0     0     3
+2        0     0     0     3
+3        0     3     0     0
+4        0     0     3     0
+5        0     2     1     0
+6        0     0     3     0
+7        0     0     3     0
+8        3     0     0     0
+9        3     0     0     0
+XX
 //
-; bcd matrix, derived from OregAnno by J.V. Turatsinze (2007).
-a       |       8       45      46      1       0       3
-c       |       3       1       0       0       45      27
-g       |       1       1       2       13      1       3
-t       |       36      1       0       34      2       15
+;
+; MATRIX 4/12 : bcd
+;
+AC  bcd
+XX
+P0       A     C     G     T
+1        8     3     1    36
+2       45     1     1     1
+3       46     0     2     0
+4        1     0    13    34
+5        0    45     1     2
+6        3    27     3    15
+XX
 //
-; eve matrix, derived from OregAnno by J.V. Turatsinze (2007).
-a       |       0       5       3       6       1       2       7       0       0       8       4       2       3       1       0
-c       |       8       0       4       2       3       3       0       0       1       1       0       5       0       6       7
-g       |       1       4       2       1       0       3       2       0       0       0       4       2       6       2       0
-t       |       0       0       0       0       5       1       0       9       8       0       1       0       0       0       2
+;
+; MATRIX 5/12 : eve
+;
+AC  eve
+XX
+P0       A     C     G     T
+1        0     8     1     0
+2        5     0     4     0
+3        3     4     2     0
+4        6     2     1     0
+5        1     3     0     5
+6        2     3     3     1
+7        7     0     2     0
+8        0     0     0     9
+9        0     1     0     8
+10       8     1     0     0
+11       4     0     4     1
+12       2     5     2     0
+13       3     0     6     0
+14       1     6     2     0
+15       0     7     0     2
+XX
 //
-; gt matrix, derived from OregAnno by J.V. Turatsinze (2007).
-a       |       3       0       5       0       0       6       0       0       0       5
-c       |       0       0       0       0       0       2       5       0       3       0
-g       |       0       1       2       0       5       0       2       4       0       0
-t       |       5       7       1       8       3       0       1       4       5       3
+;
+; MATRIX 6/12 : gt
+;
+AC  gt
+XX
+P0       A     C     G     T
+1        3     0     0     5
+2        0     0     1     7
+3        5     0     2     1
+4        0     0     0     8
+5        0     0     5     3
+6        6     2     0     0
+7        0     5     2     1
+8        0     0     4     4
+9        0     3     0     5
+10       5     0     0     3
+XX
 //
-; hb matrix, derived from OregAnno by J.V. Turatsinze (2007).
-a       |       1       4       0       0       2       53      24      2
-c       |       0       4       2       0       2       4       14      20
-g       |       3       4       0       0       0       22      10      55
-t       |       99      91      101     103     99      24      55      26
+;
+; MATRIX 7/12 : hb
+;
+AC  hb
+XX
+P0       A     C     G     T
+1        1     0     3    99
+2        4     4     4    91
+3        0     2     0   101
+4        0     0     0   103
+5        2     2     0    99
+6       53     4    22    24
+7       24    14    10    55
+8        2    20    55    26
+XX
 //
-; kni matrix, derived from OregAnno by J.V. Turatsinze (2007).
-a       |       6       18      7       0       3       15      10      10
-c       |       2       7       6       33      4       7       8       2
-g       |       22      0       2       0       4       4       10      2
-t       |       3       8       18      0       22      7       5       19
+;
+; MATRIX 8/12 : kni
+;
+AC  kni
+XX
+P0       A     C     G     T
+1        6     2    22     3
+2       18     7     0     8
+3        7     6     2    18
+4        0    33     0     0
+5        3     4     4    22
+6       15     7     4     7
+7       10     8    10     5
+8       10     2     2    19
+XX
 //
-; pan matrix, derived from OregAnno by J.V. Turatsinze (2007).
-a       |       15      7       1       22      22      21      9       7
-c       |       1       2       23      0       1       1       2       6
-g       |       3       0       0       0       1       0       10      9
-t       |       6       16      1       3       1       3       4       3
+;
+; MATRIX 9/12 : pan
+;
+AC  pan
+XX
+P0       A     C     G     T
+1       15     1     3     6
+2        7     2     0    16
+3        1    23     0     1
+4       22     0     0     3
+5       22     1     1     1
+6       21     1     0     3
+7        9     2    10     4
+8        7     6     9     3
+XX
 //
-; prd matrix, derived from OregAnno by J.V. Turatsinze (2007).
-a       |       0       5       0       0       3       0       9       7
-c       |       6       0       8       5       2       7       0       2
-g       |       0       4       1       4       4       2       0       0
-t       |       3       0       0       0       0       0       0       0
+;
+; MATRIX 10/12 : prd
+;
+AC  prd
+XX
+P0       A     C     G     T
+1        0     6     0     3
+2        5     0     4     0
+3        0     8     1     0
+4        0     5     4     0
+5        3     2     4     0
+6        0     7     2     0
+7        9     0     0     0
+8        7     2     0     0
+XX
 //
-; tin matrix, derived from OregAnno by J.V. Turatsinze (2007).
-a       |       10      0       0       0       2       10
-c       |       1       11      0       0       1       0
-g       |       0       0       0       0       8       1
-t       |       0       0       11      11      0       0
+;
+; MATRIX 11/12 : tin
+;
+AC  tin
+XX
+P0       A     C     G     T
+1       10     1     0     0
+2        0    11     0     0
+3        0     0     0    11
+4        0     0     0    11
+5        2     1     8     0
+6       10     0     1     0
+XX
 //
-; ttk matrix, derived from OregAnno by J.V. Turatsinze (2007).
-a       |       3       7       0       0       8       0       3
-c       |       5       0       0       0       0       5       5
-g       |       0       1       8       8       0       0       0
-t       |       0       0       0       0       0       3       0
+;
+; MATRIX 12/12 : ttk
+;
+AC  ttk
+XX
+P0       A     C     G     T
+1        3     5     0     0
+2        7     0     1     0
+3        0     0     8     0
+4        0     0     8     0
+5        8     0     0     0
+6        0     5     0     3
+7        3     5     0     0
+XX
+//
 ";
 
 $descr="<H4>Comment on the demonstration example : </H4><blockquote class ='demo'>In this demonstration, we will analyse
-the promoter of Drosophila melanogaster even-skipped gene (eve). We will scan the 5500 bp sequence upstream the CDS with
+the promoter of Drosophila melanogaster even-skipped gene (eve). We will scan the 5500 bp sequence upstream the transcription start site with
 matrices representing the binding specificity of 12 transcription factors known to regulate eve. These matrices were built from
 binding sites annotated in the <a target=_blank href='http://www.oreganno.org'>ORegAnno</a> database by Jean-Valery Turatsinze.<p/>";
 
@@ -508,6 +633,8 @@ print $query->hidden(-name=>'organism',-default=>'Drosophila_melanogaster');
 print $query->hidden(-name=>'analysis_type',-default=>'analysis_sites');
 print $query->hidden(-name=>'return_rank',-default=>'');
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
+print $query->hidden(-name=>'matrix_format',-default=>'transfac');
+print $query->hidden(-name=>'consensus_as_name',-default=>'');
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
 print $query->submit(-label=>"DEMO 1");
@@ -529,6 +656,8 @@ print $query->hidden(-name=>'organism',-default=>'Drosophila_melanogaster');
 print $query->hidden(-name=>'analysis_type',-default=>'analysis_crer');
 print $query->hidden(-name=>'return_rank',-default=>'');
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
+print $query->hidden(-name=>'matrix_format',-default=>'transfac');
+print $query->hidden(-name=>'consensus_as_name',-default=>'');
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
 print $query->submit(-label=>"DEMO 2");
@@ -538,7 +667,7 @@ print $query->end_form;
 ## demo3: detect over-representation of hits for PSSMs
 print $query->start_multipart_form(-action=>"matrix-scan_form.cgi");
 print "<TD><B>";
-print $query->hidden(-name=>'demo_descr3',-default=>$descr."The program will return matrices for which the total nmber of hits in the input sequences is higher than expected by chance.</blockquote>");
+print $query->hidden(-name=>'demo_descr3',-default=>$descr."The program will return matrices for which the total number of hits in the input sequences is higher than expected by chance.</blockquote>");
 print $query->hidden(-name=>'bg_method',-default=>'bgfile');
 print $query->hidden(-name=>'uth_site_pval',-default=>'1e-3');
 print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
@@ -548,6 +677,8 @@ print $query->hidden(-name=>'organism',-default=>'Drosophila_melanogaster');
 print $query->hidden(-name=>'analysis_type',-default=>'analysis_occ');
 print $query->hidden(-name=>'return_rank',-default=>'');
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
+print $query->hidden(-name=>'matrix_format',-default=>'transfac');
+print $query->hidden(-name=>'consensus_as_name',-default=>'');
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
 print $query->hidden(-name=>'uth_occ_sig_rank',-default=>1);
