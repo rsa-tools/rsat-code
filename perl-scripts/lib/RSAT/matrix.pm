@@ -607,7 +607,7 @@ sub to_TRANSFAC {
     my $to_print = "";
 
     ## Accession number
-    my $accession = $self->get_attribute("accession") ||  $self->get_attribute("AC");
+    my $accession = $self->get_attribute("accession") ||  $self->get_attribute("AC") || $self->get_attribute("name");
     if ($accession) {
       $to_print .= "AC  ".$accession."\n";
       $to_print .= "XX\n";
