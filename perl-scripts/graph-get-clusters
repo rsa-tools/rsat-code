@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.18 2007/12/07 12:31:54 rsat Exp $
+# $Id: graph-get-clusters,v 1.19 2007/12/17 09:50:41 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -245,7 +245,7 @@ package main;
       my %cluster_color = ();
       my $arc_nb = scalar(@arcs);
       for (my $i = 0; $i < scalar(@arcs); $i++) {
-        if (($main::verbose >= 2) && ($i%1000==0)) {
+        if (($main::verbose >= 3) && ($i%1000==0)) {
 	  &RSAT::message::psWarn("Treated", $i."/".$arc_nb, "arcs");
         }
         my $source_node = $arcs[$i][0];
@@ -332,6 +332,7 @@ package main;
       my %clusters_name_id = ();
       my %clusters_edge_nb = ();
       my @arcs_attribute = ();
+      my %cluster_color = ();
       for (my $i = 0; $i < scalar(@cluster_list); $i++) {
        $cluster_name_id{$cluster_list[$i]} = $i;
       }
@@ -359,6 +360,7 @@ package main;
         my %tclusters = ();
         my %stclusters = ();
         my $intra_cluster = "inter_cluster";
+        my $arc_color = "#000000";
         foreach my $scluster (@source_clusters) {
           $sclusters{$scluster}++;
           foreach my $tcluster (@target_clusters) {
@@ -373,9 +375,15 @@ package main;
               $common_clusters++;
               $stclusters{$tcluster}++;
               $intra_cluster = "intra_cluster";
+	      $arc_color = $cluster_color{$scluster};
+	      if (!defined($arc_color)) {
+	        $arc_color = $cluster_colors[scalar(keys(%cluster_color)) % scalar(@cluster_colors)];
+	        $cluster_color{$scluster} = $arc_color;
+	      }
             }
           }
         }
+        $arcs[$i][3] = $arc_color; 
         my %s_not_tclusters = &set_difference(\%sclusters,\%stclusters);
         my %not_s_tclusters = &set_difference(\%tclusters,\%stclusters);
         $arcs_attribute[$i][0] = $intra_cluster;
@@ -772,7 +780,6 @@ __END__
 =item I<graph-neighbours>
 
 =item I<convert-graph>
-
 
 =item I<compare-classes>
 
