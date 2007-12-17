@@ -107,7 +107,7 @@ echo ("<td><b>Parameters for output type 'class file'</b></td><td><b>Parameters 
 echo("<td><table border='0' cellspacing='0' cellpadding='0'>
   <tr>  <th> <A HREF='help.compare_classes.html#return_fields'>Return fields</A> </th></tr> 
   <tr><td><label><input type='checkbox' name='occ' value='on' checked='checked' />Occurrences</label></td></tr> 
-  <tr><td><label><input type='checkbox' name='freq' value='on' checked='checked' />Frequencies</label></td></tr> 
+  <tr><td><label><input type='checkbox' name='freq' value='on' />Frequencies</label></td></tr> 
   <tr><td><label><input type='checkbox' name='proba' value='on' checked='checked' />Hypergeometric probability</label></td></tr> 
   <tr><td><label><input type='checkbox' name='jac_sim' value='on' checked='checked' />Jaccard index</label></td></tr> 
   <tr><td><label><input type='checkbox' name='entropy' value='on' />Entropy</label></td></tr> 
