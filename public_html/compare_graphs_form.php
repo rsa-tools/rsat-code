@@ -92,7 +92,7 @@ and
     echo ("Upload query graph from file : <br>
     <input type='file' name='graph_fileQ' size='40' />");
   } else {
-    info("Query graph uploaded from the previous treatment");
+    info_link("Graph uploaded from the previous treatment", rsat_path_to_url($query_graph_file));
     echo "<input type='hidden' NAME='pipe_query_graph_file' VALUE='$query_graph_file'/>";
   }
   echo "</td>";
