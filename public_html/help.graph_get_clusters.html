@@ -64,7 +64,7 @@ nodes. Extra-columns are documented in the header of the file.  <br><br>
   <b>Graph</b><br>
 A list of intra-cluster edges in the requested format. The intra-cluster edges belonging 
 to different classification are colored differently<br><br>
-  <b>Contingency table</b><br>
+  <b>Node cluster connection table</b><br>
 A tab-delimited file where each row represents a node of the graph,
 and each column a cluster (class). The cells indicate the number of
 arcs connecting each node to each cluster (class) (or the sum of the
@@ -72,11 +72,12 @@ weights on the edges).
   </ul></ul>
 </ul>
 <h4><A NAME="induced"></A>Graph induction</h4>
-<ul>With this option, the resulting graph consists in a graph induced by the list of nodes given in the 
+<ul>With this option, the resulting graph consists in a subgraph induced by the list of nodes given in the 
 first column of the file uploaded or copied in the cluster text area.
 
 Induction of a graph means that we only keep in the resulting graph, the list of edges between the specified nodes  
 
+This option is useful if you want to consider only the relationships between some nodes of the graph.
 </ul>
 
 

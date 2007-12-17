@@ -73,22 +73,20 @@ echo ("<td>Upload reference classes from file : <br>
 echo ("</tr>");
 echo ("</table>");
 ################################################################
+## Score column (for the dot product)
+if (!$pipe) {
+  echo ("Score column (must be valid for both query and reference classes)<input type = 'text' name='score_col' size = 1\><br>");
+}
+
+################################################################
 ## comparaison of query classes with themselves
 ## options for self-comparison
-echo ("<br><br><input type = 'checkbox' value='on' name='self_compa' size = 1> <a href = 'help.compare_classes.html#self'><b>Compare query classes with themselves (do not specify reference classes)</a></b><br>
+echo ("<br><br><input type = 'radio' checked value='off' name='self_compa' size = 1> <a href = 'help.compare_classes.html#self'><b>Specify reference classes distinct from the query classes </a></b>
+    <br><br><input type = 'radio' value='on' name='self_compa' size = 1> <a href = 'help.compare_classes.html#self'><b>Compare query classes with themselves (do not specify reference classes)</a></b><br>
     <ul><input type = 'checkbox' value='on' name='distinct' size = 1> <a href = 'help.compare_classes.html#distinct'><b>Prevent self-comparison.</a></b><br>
     <input type = 'checkbox' value='on' name='triangle' size = 1> <a href = 'help.compare_classes.html#triangle'><b>Prevent reciprocal comparisons.</a></b><br></ul></td>");
 
-################################################################
-## Score column (for the dot product)
-if (!$pipe) {
-  echo ("<tr><td colspan=2 align=center>Score column (must be valid for both query and reference classes)<input type = 'text' name='score_col' size = 1\><br></td></tr>");
-}
 
-  
-################################################################
-## query input classes parameters
-echo ("</table><br>\n");
   
 ## Output format
 echo("<br><table>
@@ -114,16 +112,16 @@ echo("</table><br><br>");
      
 echo("<table border='0' cellspacing='0' cellpadding='0'>
         <tr><th> <A HREF='help.compare_classes.html#return_fields'>Thresholds on return fields</A> </th> <th> <A HREF='help.compare_classes.html#thresholds'>Lower<BR>Threshold</A> </th> <th> <A HREF='help.compare_classes.html#thresholds'>Upper<BR>Threshold</A> </th></tr> 
-        <tr align='left' valign='TOP'><td> Query size </td> <td><input type='text' name='lth_q' value='1' size='5' /></td> <td><input type='text' name='uth_q'  size='5' /></td></tr> 
-        <tr align='left' valign='TOP'><td> Reference size </td> <td><input type='text' name='lth_r' value='1'  size='5' /></td> <td><input type='text' name='uth_r'  size='5' /></td></tr> 
-        <tr align='left' valign='TOP'><td> Intersection size </td> <td><input type='text' name='lth_qr' value='1'  size='5' /></td> <td><input type='text' name='uth_qr'  size='5' /></td></tr> 
-        <tr align='left' valign='TOP'><td> Significance </td> <td><input type='text' name='lth_sig' value='0' size='5' /></td> <td><input type='text' name='uth_sig' value='' size='5' /></td></tr> 
-        <tr align='left' valign='TOP'><td> P-value </td> <td><input type='text' name='lth_pval'  size='5' /></td> <td><input type='text' name='uth_pval'  size='5' /></td></tr> 
-        <tr align='left' valign='TOP'><td> E-value </td> <td><input type='text' name='lth_eval'  size='5' /></td> <td><input type='text' name='uth_eval'  size='5' /></td></tr> 
-        <tr align='left' valign='TOP'><td> Jaccard index </td> <td><input type='text' name='lth_jac'  size='5' /></td> <td><input type='text' name='uth_jac'  size='5' /></td></tr> 
-        <tr align='left' valign='TOP'><td> Mutual information </td> <td><input type='text' name='lth_mi'  size='5' /></td> <td><input type='text' name='uth_mi'  size='5' /></td></tr>
+        <tr align='left' valign='TOP'><td> Query size </td> <td><input type='text' name='lth_q' value='1' size='5' /></td> <td><input type='text' name='uth_q'  size='5'  value='none'/></td></tr> 
+        <tr align='left' valign='TOP'><td> Reference size </td> <td><input type='text' name='lth_r' value='1'  size='5' /></td> <td><input type='text' name='uth_r'  size='5' value='none' /></td></tr> 
+        <tr align='left' valign='TOP'><td> Intersection size </td> <td><input type='text' name='lth_qr' value='1'  size='5' /></td> <td><input type='text' name='uth_qr'  size='5' value='none' /></td></tr> 
+        <tr align='left' valign='TOP'><td> Significance </td> <td><input type='text' name='lth_sig' value='$default_min_sig' size='5' /></td> <td><input type='text' name='uth_sig' value='none' size='5' value='none' /></td></tr> 
+        <tr align='left' valign='TOP'><td> P-value </td> <td><input type='text' name='lth_pval' value='none' size='5' /></td> <td><input type='text' name='uth_pval'  size='5' value='none' /></td></tr> 
+        <tr align='left' valign='TOP'><td> E-value </td> <td><input type='text' name='lth_eval' value='none' size='5' /></td> <td><input type='text' name='uth_eval'  size='5' value='none' /></td></tr> 
+        <tr align='left' valign='TOP'><td> Jaccard index </td> <td><input type='text' name='lth_jac' value='none' size='5' /></td> <td><input type='text' name='uth_jac'  size='5' value='none' /></td></tr> 
+        <tr align='left' valign='TOP'><td> Mutual information </td> <td><input type='text' name='lth_mi' value='none' size='5' /></td> <td><input type='text' name='uth_mi'  size='5' value='none' /></td></tr>
         
-        <tr align='left' valign='TOP'><td> Dot product <i><br>(Only relevant if a score column is specified)</i></td> <td><input type='text' name='lth_dp'  size='5' /></td> <td><input type='text' name='uth_dp'  size='5' /></td></tr>
+        <tr align='left' valign='TOP'><td> Dot product <i><br>(Only relevant if a score column is specified)</i></td> <td><input type='text' value='none' name='lth_dp'  size='5' /></td> <td><input type='text' name='uth_dp' value='none' size='5' /></td></tr>
         </table><br>");
 echo ("</td>");
 # MATRIX FILE OUTPUT PARAMETERS
