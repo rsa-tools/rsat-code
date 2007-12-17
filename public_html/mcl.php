@@ -134,7 +134,7 @@
     $cc_temp_file = end($cc_temp_file);
     $cc_resultURL = $WWW_RSA."/tmp/".$cc_temp_file;    
     
-    /*
+    
     # contingency-table
     ## Load the parameters of the program into an array
     $cc_input_file = storeFile($cc_server);
@@ -186,10 +186,8 @@
          "lines"=>1,
          "xmin"=>0,
          "title1"=>"Cluster size distribution",
-         "xleg1"=>"Degree",
-         "yleg1"=>"Number of nodes",
-         "legend"=>1,
-         "header"=>1
+         "xleg1"=>"Cluster size",
+         "yleg1"=>"Number of clusters",
        )
      );
     $xy_echoed = $client->xygraph($xy_parameters);
@@ -201,7 +199,11 @@
     $xy_temp_file = explode('/',$xy_server);
     $xy_temp_file = end($xy_temp_file);
     $xy_resultURL = $WWW_RSA."/tmp/".$xy_temp_file;
-    */
+    
+    echo ("<a href = '$xy_resultURL'><img align = 'center' src='$xy_resultURL' width ='50%'></a><br>");
+    echo "<br><hr>\n";
+    
+    
     # Display the results
     echo "The results is available at the following URL ";
     echo "<a href = '$cc_resultURL'>$cc_resultURL</a>"; 
