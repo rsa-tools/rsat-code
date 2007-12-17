@@ -1175,9 +1175,43 @@ P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R), dotprod, jac_sim, rank, sig</xsd:
       </xsd:complexType>
 
       
-     <xsd:complexType name="ContingencyStatsRequest">
+     <xsd:complexType name="ContingencyTableRequest">
        <xsd:annotation>
-	<xsd:documentation>Parameters for the operation convert-classes.</xsd:documentation>
+	<xsd:documentation>Parameters for the operation contingency-table.</xsd:documentation>
+       </xsd:annotation>
+       <xsd:sequence>
+        <xsd:element name="inputfile" type="xsd:string" minOccurs="1">
+         <xsd:annotation>
+          <xsd:documentation>A tab delimited file</xsd:documentation>
+         </xsd:annotation>
+        </xsd:element> 
+        <xsd:element name="col1" type="xsd:int" minOccurs="1">
+         <xsd:annotation>
+          <xsd:documentation>First column to use for the contingency table</xsd:documentation>
+         </xsd:annotation>
+        </xsd:element>
+        <xsd:element name="col2" type="xsd:int" minOccurs="1">
+         <xsd:annotation>
+          <xsd:documentation>Second column to use for the contingency table</xsd:documentation>
+         </xsd:annotation>
+        </xsd:element>
+        <xsd:element name="margin" type="xsd:int" minOccurs="0">
+         <xsd:annotation>
+          <xsd:documentation>Calculate the marginal sums</xsd:documentation>
+         </xsd:annotation>
+        </xsd:element>
+        <xsd:element name="null" type="xsd:int" minOccurs="0">
+         <xsd:annotation>
+          <xsd:documentation>Value for the null character (default: 0).</xsd:documentation>
+         </xsd:annotation>
+        </xsd:element>
+       </xsd:sequence>
+      </xsd:complexType>
+      
+      
+           <xsd:complexType name="ContingencyStatsRequest">
+       <xsd:annotation>
+	<xsd:documentation>Parameters for the operation contingency-stats.</xsd:documentation>
        </xsd:annotation>
        <xsd:sequence>
         <xsd:element name="inputfile" type="xsd:string" minOccurs="1">
@@ -1217,6 +1251,15 @@ P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R), dotprod, jac_sim, rank, sig</xsd:
         </xsd:element>	
        </xsd:sequence>
       </xsd:complexType>
+
+      
+      
+      
+      
+      
+      
+      
+      
       
       <xsd:complexType name="MatrixDistribRequest">
 	<xsd:annotation>
@@ -2380,8 +2423,27 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    </xsd:annotation>
 	  </xsd:element>
 	</xsd:sequence>
-      </xsd:complexType>      
+      </xsd:complexType>
       
+      <xsd:complexType name="ContingencyTableResponse">
+   	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>          
       <xsd:complexType name="MatrixScanResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -2897,7 +2959,23 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>     
-     
+      
+      <xsd:element name="contingency_table">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:ContingencyTableRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="contingency_tableResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:ContingencyTableResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>     
+          
       
       <xsd:element name="matrix_scan">
 	<xsd:complexType>
@@ -3228,6 +3306,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:contingency_statsResponse"/>
   </message>   
   
+  <message name="contingency_tableRequest">
+    <part name="parameters" element="tns:contingency_table"/>
+  </message>
+
+  <message name="contingency_tableResponse">
+    <part name="output" element="tns:contingency_tableResponse"/>
+  </message>   
+  
   <message name="matrix_scanRequest">
     <part name="parameters" element="tns:matrix_scan"></part>
   </message>
@@ -3435,6 +3521,12 @@ The number of common elements is reported, as well as the probability to observe
         <input name="ContingencyStatsRequest" message="tns:contingency_statsRequest"/>
         <output name="ContingencyStatsResponse" message="tns:contingency_statsResponse"/>
 	<documentation>This programs takes as input a contingency table, and calculates various     matching statistics between the rows and columns. The description of these statistics can be found in Brohee and van Helden (2006).
+        </documentation>
+      </operation>
+<operation name="contingency_table">
+        <input name="ContingencyTableRequest" message="tns:contingency_tableRequest"/>
+        <output name="ContingencyTableResponse" message="tns:contingency_tableResponse"/>
+	<documentation> Create a contingency table from a two-column file.
         </documentation>
       </operation>
       <operation name="matrix_scan">
@@ -3662,6 +3754,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
          </output>
       </operation>
       <operation name="contingency_stats">
+         <soap:operation soapAction=""/>
+         <input>
+             <soap:body use="literal" />
+         </input>
+         <output>
+             <soap:body use="literal" />
+         </output>
+      </operation>
+      <operation name="contingency_table">
          <soap:operation soapAction=""/>
          <input>
              <soap:body use="literal" />
