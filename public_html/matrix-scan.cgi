@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.16 2007/12/16 17:20:57 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.17 2007/12/17 00:24:26 morgane Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -131,6 +131,7 @@ sub ReadMatrixScanParameters {
   $matrix_file = "$TMP/$tmp_file_name.matrix";
 
   $matrix_format = lc($query->param('matrix_format'));
+  $parameters .= " -matrix_format ".$matrix_format;
 
   open MAT, "> ".$matrix_file;
   print MAT $query->param('matrix');
