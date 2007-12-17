@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.112 2007/12/16 17:32:14 jvanheld Exp $
+# $Id: matrix-scan,v 1.113 2007/12/17 00:34:23 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -773,7 +773,9 @@ package main;
 	    &RSAT::message::Warning("Using consensus as name", $consensus) if ($main::verbose >= 3);
 	    $matrix->force_attribute("name", $consensus);
 	  }
-	} else {
+	} elsif ($matrix->get_attribute("accession")) {
+		$matrix->force_attribute("name", $matrix->get_attribute("accession"));
+     } else {
 	  my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
 	  $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
 	  if (scalar(@new_matrices) > 1) {
