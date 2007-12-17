@@ -221,7 +221,7 @@
         <FORM METHOD='POST' ACTION='compare_classes_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='class_file' VALUE='$cc_server'>
-          <INPUT type='submit' value='Compare these clusters'>
+          <INPUT type='submit' value='Compare these clusters with other clusters'>
         </form>
       </td>
 
