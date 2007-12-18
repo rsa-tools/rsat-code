@@ -55,7 +55,12 @@ $parameters .= " --sort -occ_sig";
 
 ### window
 if (IsReal($query->param('window_width'))) {
-    $parameters .= ' --window=' . $query->param('window_width');
+    if ($query->param('window_group')) {
+        $parameters .= ' --windowgroup=' . $query->param('window_width');                
+    }else{
+        $parameters .= ' --window=' . $query->param('window_width');        
+    }
+    
 }else{
     $parameters .= ' --heuristic=slices';
 }
