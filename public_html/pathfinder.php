@@ -13,13 +13,7 @@
   # Error status
   $error = 0;
   # default params
-  $default_metabolic = 0;
-  $default_exlcusionAttr = "ReferencedObject.PublicId";
   $default_nodeIntegers = 0;
-  $default_algorithm = "rea";
-  $default_maxWeight = 1000000;
-  $default_maxLength = 1000000;
-  $default_minLength = 0;
   $default_returnType = "server";
   # server-related params
   $result_location = "/home/rsat/rsa-tools/public_html/tmp/";
@@ -55,6 +49,13 @@
   $outputType =   $_REQUEST['outputType'];
   $store_graph = $_REQUEST['store_graph'];
   $return_type = $default_returnType;
+  # Get advanced parameters
+  $algorithm = $_REQUEST['algorithm'];
+  $maxWeight = $_REQUEST['maxWeight'];
+  $maxLength = $_REQUEST['maxLength'];
+  $minLength = $_REQUEST['minLength'];
+  $exAttrib = $_REQUEST['exAttrib'];
+  $metabolic = $_REQUEST['metabolic']; 
 
   ############ Check input ########################
 
@@ -73,6 +74,12 @@
     $directed = 1;
   } else {
     $directed = 0;
+  }
+  
+  if($metabolic == 'on'){
+    $metabolic = 1;
+  }else{
+    $metabolic = 0;
   }
 
   ## convert format names
@@ -146,7 +153,7 @@
         'outFormat'=>$out_format,
     	'directed'=>$directed,
     	'metabolic'=>$metabolic,
-    	'exclusionAttr'=>$exclusionAttr,
+    	'exclusionAttr'=>$exAttrib,
     	'nodeIntegers'=>$nodeIntegers,
     	'weight'=>$weight,
     	'algorithm'=>$algorithm,
@@ -271,7 +278,7 @@
  	  <TABLE CLASS = 'nextstep'>
   		<TR>
       	<Th colspan = 3>
-        	Next step
+        	<a href = 'help.pathfinder.html#next'>Next steps</a>
       	</Th>
     	</TR>
     	<TR>
