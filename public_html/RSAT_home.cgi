@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.24 2007/12/07 08:14:53 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.25 2007/12/18 11:25:40 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -112,12 +112,9 @@ print <<EndText;
       are now also available as <a href=web_services.html><b>Web Services</b></a>. 
     </p>
 
-    <P>
-    This web site and the Web Services are freely available for
-    academic users. For users from commercial companies, please read
-    our <A HREF="disclaimer.html">disclaimer</A>.
-    </p>
-    </td>
+    <P> This website is free and open to all users.
+   </p> 
+</td>
 
     
     <td>
