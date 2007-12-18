@@ -17,9 +17,13 @@
   $default_graph_id = "";
   $default_rank = 5;
   $default_weight = "unit";
+  // default advanced params
   $default_maxWeight = 1000000;
-
-
+  $default_maxLength = 1000000;
+  $default_minLength = 0;  
+  $default_exAttrib = "";
+  $default_algorithm = "rea";
+  $default_metabolic = 0;
 
   // variables given within workflow
   $pipe = $_REQUEST['pipe'];
@@ -66,7 +70,7 @@
   	<br>
   	<br>");
   } else {
-    	info_link("Graph has benn stored from the previous treatment", rsat_path_to_url($requested_graph_file));
+  	info("Graph has been stored from previous treatment.");
   	echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$requested_graph_file'>";
   }
   if($demo == 1){
@@ -141,16 +145,35 @@
     <tr><td><B><a href = 'help.pathfinder.html#directed'>Directed</a></B></td> <td><input type='checkbox' name='directed' value='on'></input></td></tr>
     <tr><td><B><a href = 'help.pathfinder.html#server'>Store graph on server</a></B></td> <td><input type='checkbox' name='store_graph' value='on'></input></td></tr>
     </table>
+    <br>
   ");
   if($advanced){
     echo("<h2>Advanced Options</h2>
     <HR SIZE='2' NOSHADE>
     <br>
     <table>
-         <tr><td><B><a href = 'help.pathfinder.html#directed'>Maximal path weight</a></B></td> <td><input type='text name='maxWeight' value='$default_maxWeight'></input></td></tr>
-         <tr><td><B><a href = 'help.pathfinder.html#server'>Store graph on server</a></B></td> <td><input type='checkbox' name='maximal Length' value='on'></input></td></tr>
-    </table>    
+         <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path weight</a></B></td> <td><input type='text name='maxWeight' value='$default_maxWeight'></input></td></tr>
+         <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path length</a></B></td> <td><input type='text' name='maxLength' value='$default_maxLength'></input></td></tr>
+         <tr><td><B><a href = 'help.pathfinder.html#sconstraints'>Minimal path length</a></B></td> <td><input type='text' name='minLength' value='$default_minLength'></input></td></tr> 
+          <tr><td><B><a href = 'help.pathfinder.html#exclusion'>Exclusion attribute</a></B></td> <td><input type='text' name='exAttrib' value='$default_exAttrib'></input></td></tr> 
+           <tr><td><B><a href = 'help.pathfinder.html#metabolic'>Metabolic</a></B></td> <td><input type='checkbox' name='metabolic' value='on'></input></td></tr>
+         <tr><td><font color='#CC6600'>Warning: Backtracking is only available for metabolic graphs!</font></td></tr>
+          <tr><td><B><a href = 'help.pathfinder.html#algorithm'>k shortest paths algorithm</a></B></td> <td> 
+          <select name='algorithm'>
+            <option selected value = 'rea'>REA
+            <option value = 'backtrack'>Backtracking
+        </select>
+  </td></tr> 
+    </table>  
+    <br>  
     ");
+  }else{
+    echo "<input type='hidden' NAME='maxWeight' VALUE='$default_maxWeight'>";
+    echo "<input type='hidden' NAME='maxLength' VALUE='$default_maxLength'>";
+    echo "<input type='hidden' NAME='minLength' VALUE='$default_minLength'>";
+    echo "<input type='hidden' NAME='exAttrib' VALUE='$default_exAttrib'>";
+    echo "<input type='hidden' NAME='metabolic' VALUE='$default_metabolic'>";
+    echo "<input type='hidden' NAME='algorithm' VALUE='$default_algorithm'>";
   }
   echo("
   <h2>Launch</h2>
@@ -160,6 +183,7 @@
   <TD><input type='submit' name='.submit' value='GO' /></TD>
   <TD><B><A HREF='pathfinder_form.php?demo=0'>RESET</A></B></TD>
   <TD><B><A HREF='pathfinder_form.php?demo=1'>DEMO</A></B></TD>
+  <TD><B><A HREF='pathfinder_form.php?advanced=1'>ADVANCED</A></B></TD>
   </form>
   <TD><B><A HREF='help.pathfinder.html'>MANUAL</A></B></TD>
   <TD><B><A HREF='mailto:kfaust@ulb.ac.be'>MAIL</A></B></TD>
