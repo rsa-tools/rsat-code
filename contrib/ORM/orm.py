@@ -114,6 +114,8 @@ parser.add_option("--min", action="append", dest="min", type="string", nargs=2, 
 parser.add_option("--sort", action="append", dest="sort", type="string", default=[], help="sort ouput according to parameter PARAM in growing order (+) or inverse (-)\nEXAMPLE: --sort=+label\nSupported parameters:" + str(','.join(COLUMN_HEADER)), metavar="[+][-]PARAM")
 
 parser.add_option("--window", action="store", dest="window", help="use fixed window width of length LENGTH EXAMPLE: --window=20 (use a window of length 20)", type='int', metavar="LENGTH", default=None)
+parser.add_option("--windowgroup", action="store", dest="window_group", help="use fixed window width of length LENGTH, 2*LENGTH, ... ,N*LENGTH\nEXAMPLE: --window=20 (use a window of length 20)", type='int', metavar="LENGTH", default=None)
+
 parser.add_option("--bgwindow", action="store", dest="bgwindow", help="use a widow size of length LENGTH in background model EXAMPLE: --bgwindow=200 (use a background window of length 200)", type='int', metavar="LENGTH", default=None)
 parser.add_option("--slices", action="store", dest="slices", type="int", help="number of slices to use\nThis option is relevant only when heuristic is set to slices\nDEFAULT: %default", default=10)
 parser.add_option("--right", dest="right", action="store", type="int", help="use sequence right bound position as reference position POSITION. This should be used for upstream sequences.\nEXAMPLE: --right=-1 (use right bound of input sequence as position -1)", metavar="POSITION", default=None)
@@ -226,7 +228,8 @@ def run(args, options):
               'heuristic' : options.heuristic,
               'count'     : options.count,
               'slices'    : options.slices,
-              'window' : options.window
+              'window' : options.window,
+              'window_group' : options.window_group
               }
     params.update(thresholds)
 
