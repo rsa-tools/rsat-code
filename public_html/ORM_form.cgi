@@ -26,6 +26,7 @@ $default{markov_order} = 2;
 $default{strand} = "both strands";
 $default{noov} = 'checked';
 $default{grouprc} = 'checked';
+$default{window_group} = 'checked';
 $default{purge} = 'checked';
 #$default{side} = 'over-represented';
 $default{align} = 'right (upstream)';
@@ -157,6 +158,11 @@ print '<b><a href="help.ORM.html#window_width">Window width</a></b>';
 print $query->textfield(-name=>'window_width',
 			-default=>$default{window_width},
 			-size=>5);
+print '<b><a href="help.ORM.html#window_width">group windows</a></b>';
+print $query->checkbox(-name=>'window_group',
+		       -checked=>$default{window_group},
+		       -label=>'');
+
 
 print '&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="help.ORM.html#bgwindow_width">Background Window width</a></b>';
 print $query->textfield(-name=>'bg_window_width',
