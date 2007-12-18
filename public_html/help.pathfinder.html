@@ -230,6 +230,60 @@
 	identifier in the graph id field. 
 	</ul>
 
+<h4><A NAME="advanced">Advanced options</a></h4>
+	<ul><ul><A NAME="constraints"></A><b>Maximal Weight</b><br>
+	This option sets the maximal weight a path can have.
+	</ul>
+	<ul><b>Maximal Length</b><br>
+	This option sets the maximal length a path can have.
+	</ul>
+	<ul><b>Minimal Length</b><br>
+	This option sets the minimal length a path should have.
+	</ul>
+	<ul><b><A NAME="exclusion"></A>Exclusion attribute</b><br>
+	This option allows to specify the name of the exclusion attribute.
+	The exclusion attribute is set if certain nodes should not appear together in one path. 
+	Nodes sharing the same value for the exclusion attribute are treated as mutually exclusive.
+	</ul>
+	<ul><b><A NAME="metabolic"></A>Metabolic</b><br>
+	A metabolic graph is defined as follows: It has values on its nodes for two attributes, namely "ObjectType"
+	and the given exclusion attribute. In addition, it is a directed graph.<br>
+	This definition follows from our experience that metabolic graphs should be represented as directed, bipartite graphs, where
+	direct and reverse direction of a reaction are mutually exclusive (see <a href='neat_publications.html'>publications</a>).<br> 
+	In a tab-delimited file, you should set the "ObjectType" column
+	as second column after the node identifiers and the exclusion attribute column as third column.<br>
+	In GML format, you should use the "ObjectType" attribute and an exclusion attribute, whose name should be specified.<br>
+	The "ObjectType" attribute has two values: one for compound nodes ("Compound") and one for reaction nodes ("Reaction").<br>
+	For REA, the exclusion attribute values should be given as follows:<br>
+	<ol>
+	<li>A compound should have the same string as identifier and exclusion attribute value.</li>
+	<li>Reaction identifiers and exclusion attribute of reactions match except for the last character in the reaction identifier string<br>
+      - direct reactions have an identifier composed of exclusion attribute and the direct reaction symbol (i.e. ">")<br>
+      - reverse reactions have an identifier composed of exclusion attribute and the reverse reaction symbol (i.e. "<") <br></li>
+	</ol>
+	Here is a small example for a metabolic graph in tab-delimited format:
+	<pre>
+	; small example for a metabolic graph
+	R02283>	Reaction	R02283	
+	R02283<	Reaction	R02283
+	C00437	Compound	C00437
+	C00631	Compound	C00631
+	R01518>	Reaction	R01518
+	R01518<	Reaction	R01518		
+	;ARCS
+	R02283<	C00437
+	C00437	R02283>	
+	C00631	R01518>
+	R01518<	C00631	
+	</pre>
+	</ul>
+	<ul><b><A NAME="algorithm"></A>Algorithm</b><br>
+	You can choose between REA (the default, see <a href='help.pathfinder.html#literature'>[1]</a>) or backtrack
+	developed by Fabian Couche and Didier Croes (see <a href='neat_publications.html'>publications</a>). Note that 
+	you can use the backtrack only on metabolic graphs.
+	</ul>
+	</ul>
+	
 <h4><A NAME="next">Next steps panel</a></h4>
 	<ul>The next steps panel allows you to input the result of Pathfinder into one of the listed tools without copy-pasting
 	the result into that tool. The next steps panel will only appear if you request a graph output.
