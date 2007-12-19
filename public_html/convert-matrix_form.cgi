@@ -30,7 +30,7 @@ local @supported_output_formats = sort(keys( %RSAT::matrix::supported_output_for
 $default{output}="display";
 $default{matrix}="";
 $default{matrix_file}="";
-$default{input_format} = "tab";
+$default{matrix_format} = "tab";
 $default{output_format} = "tab";
 $default{counts}="checked";
 $default{consensus}="checked";
@@ -42,7 +42,14 @@ $default{weights}="";
 $default{pseudo_weight}=1;
 $default{margins}="checked";
 $default{max_profile}=10;
-$default{decimals}=4;
+$default{decimals}=1;
+$default{perm} = 0;
+$default{pseudo_prior} = "pseudo_prior";
+$checked{$default{pseudo_prior}} = "CHECKED";
+$default{bg_pseudo} = "0.01";
+$default{bg_format}="oligo-analysis";
+$default{bg_method}="from_matrix";
+$checked{$default{bg_method}} = "CHECKED";
 
 
 &ReadMatrixFromFile();
@@ -73,20 +80,30 @@ print $query->start_multipart_form(-action=>"convert-matrix.cgi");
 #print "<FONT FACE='Helvetica'>";
 
 ################################################################
-### Input matrix
-print "<B><A HREF='help.convert-matrix.html#matrix'>Input matrix</A></B><br>";
-print $query->textarea(-name=>'matrix',
-		       -default=>$default{matrix},
-		       -rows=>10,
-		       -columns=>60);
-print "<BR>";
+#### Matrix specification
+print "<hr>";
+&GetMatrix();
+print "<hr>";
 
-### Input matrix format
-print "<B><A HREF='help.convert-matrix.html#input_format'>Input format</A></B>&nbsp;";
-print $query->popup_menu(-name=>'input_format',
-			 -Values=>[@supported_input_formats],
-			 -default=>$default{input_format});
-print "<BR>\n";
+&GetBackgroundModel("","","","1");
+
+print "<br/>Note: Only Bernoulli models are supported. Higher-order Markov chain models are converted into Markov 0 (Bernoulli).";
+print "<hr>";
+################################################################
+### Input matrix
+#print "<B><A HREF='help.convert-matrix.html#matrix'>Input matrix</A></B><br>";
+#print $query->textarea(-name=>'matrix',
+#		       -default=>$default{matrix},
+#		       -rows=>10,
+#		       -columns=>60);
+#print "<BR>";                   
+#
+#### Input matrix format
+#print "<B><A HREF='help.convert-matrix.html#input_format'>Input format</A></B>&nbsp;";
+#print $query->popup_menu(-name=>'input_format',
+#			 -Values=>[@supported_input_formats],
+#			 -default=>$default{input_format});
+#print "<BR>\n";
 
 ### Output matrix format
 print "<BR>";
@@ -110,17 +127,30 @@ foreach my $stat qw(counts frequencies weights info margins consensus parameters
 
 
 ## Pseudo weight
-print "<p><A HREF='help.convert-matrix.html#item_weight'><B>Pseudo-weight</B></A>&nbsp; ";
-print $query->textfield(-name=>'pseudo_weight',
-			-default=>$default{pseudo_weight},
-			-size=>2);
+#print "<p><A HREF='help.convert-matrix.html#item_weight'><B>Pseudo-weight</B></A>&nbsp; ";
+#print $query->textfield(-name=>'pseudo_weight',
+#			-default=>$default{pseudo_weight},
+#			-size=>2);
 
 ## Decimals
-print "&nbsp;"x5;
-print "<A HREF='help.convert-matrix.html#decimals'><B>Decimals</B></A>&nbsp; ";
-print $query->textfield(-name=>'decimals',
-			-default=>$default{decimals},
-			-size=>2);
+#print "&nbsp;"x5;
+#print "<A HREF='help.convert-matrix.html#decimals'><B>Decimals</B></A>&nbsp; ";
+#print $query->textfield(-name=>'decimals',
+#			-default=>$default{decimals},
+#			-size=>2);
+print "<br/>";
+print "<A HREF='help.convert-matrix.html#decimals'><B>score decimals</B></A>\n";
+print $query->popup_menu(-name=>'decimals',
+			 -Values=>['0',
+				   '1','2'],
+			 -default=>$default{decimals});
+
+##### permutations
+#print "<BR>\n";
+#print "<B><A HREF='help.convert-matrix.html#permutations'>Number of permutations</A></b>\n";
+#print $query->textfield(-name=>'perm',
+#			-default=>$default{perm},
+#			-size=>2);
 
 ################################################################
 ### send results by email or display on the browser
