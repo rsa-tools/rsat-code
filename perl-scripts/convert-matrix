@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.51 2007/11/22 12:28:34 jvanheld Exp $
+# $Id: convert-matrix,v 1.52 2007/12/19 16:27:03 morgane Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -40,6 +40,8 @@ local $output_format = "patser";
 local $verbose = 0;
 local $out = STDOUT;
 local $info_log_base = exp(1);
+
+local $bg_model = new RSAT::MarkovModel();
 
 local $sort_key = "";
 local $sort_order = "";
@@ -78,6 +80,10 @@ $supported_output_formats = join ",", sort keys %supported_output_format;
 $supported_site_formats = join ",", sort keys %supported_site_format;
 $site_format="fasta";
 
+## bg formats
+$bg_format = "oligo-analysis";
+%supported_bg_format = $bg_model->get_supported_input_formats();
+$supported_bg_formats = join ",", sort keys %supported_bg_format;
 
 &ReadArguments();
 
@@ -144,9 +150,9 @@ if ($return_fields{information}) {
 local %prior = ();
 ## Prior residue frequencies
 if ($infile{prior}) {
-    ## bg formats
-    my $bg_model = new RSAT::MarkovModel();
-    my $bg_format = "oligo-analysis";
+	if (defined($bg_pseudo)) {
+  		$bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
+  	}
     $bg_model->load_from_file($infile{prior}, $bg_format);
     %prior = $bg_model->get_attribute("suffix_proba");
     foreach my $key (sort keys %prior) {
@@ -329,6 +335,15 @@ OPTIONS
 		frequencies are read from the input file. In case this
 		file does not contain any indication of prior
 		frequencies, equal priors are assumed.
+		
+	-bg_format bg_format
+		Format for the background model (prior) files.
+		Supported formats: all the input formats supported by 
+		convert-background-model.
+        
+	-bg_pseudo #
+		Pseudo frequency for the background models. Value must be a real
+		between 0 and 1 (default: $bg_model->{bg_pseudo})
 
 	-from
 		input matrix format
@@ -681,7 +696,9 @@ convert-matrix options
 -return		return type(s). Supported: $supported_return_fields
 -sort desc|asc|alpha key     Sort matrices according to the specified key.
 -top		maximal number of matrices to return. 
--prior 		prior frequency file
+-prior 		background model (prior frequency file)
+-bg_format	background model format. Supported: $supported_bg_formats
+-bg_pseudo	pseudo-frequency for background model. (default:$bg_model->{bg_pseudo})
 -pseudo		pseudo-weight (default: $pseudo_weight)
 -equi_pseudo	equiprobable distribution of pseudo-weights between residues
 -base		base for the logarithms used to compute the weight and info content
@@ -742,6 +759,21 @@ sub ReadArguments {
       ### prior frequency file
     } elsif ($ARGV[$a] eq "-prior") {
 	$infile{prior} = $ARGV[$a+1];
+	
+	## bg format
+	 } elsif ($ARGV[$a] eq "-bg_format") {
+	$main::bg_format = lc($ARGV[$a+1]);
+	    &RSAT::error::FatalError(join("\t", $main::bg_format,
+					  "Invalid input format.",
+					  "Supported: ", $main::bg_format))
+		unless ($main::supported_bg_format{$main::bg_format});  
+	
+	##bg_pseudo
+	} elsif ($ARGV[$a] eq "-bg_pseudo") {
+	    $main::bg_pseudo = $ARGV[$a+1];
+	    &RSAT::error::FatalError(join("\t", $main::bg_pseudo,
+					  "Invalid value for bg_pseudo, should be a Real number between 0 and 1."))
+		unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
 
       ### output file 
     } elsif ($ARGV[$a] eq "-o") {
@@ -856,6 +888,24 @@ sub Verbose {
   }
 
   printf $out "%-22s\t%d\n", "; pseudo-weight", $pseudo_weight;
+  
+      ## Background model
+    if ($infile{prior}) {
+   	printf $main::out "; Background model\n";
+	my $order = $bg_model->get_attribute("order");
+    if ($order == 0) {
+	printf $main::out ";\t%-14s\n", "Bernoulli model (order=0)";
+    }
+   	printf $main::out ";\t%-14s\t%s\n", "Strand", $bg_model->get_attribute("strand");
+    printf $main::out ";\t%-14s\t%s\n", "Background pseudo-frequency", $bg_model->get_attribute("bg_pseudo");
+
+    my %bg_prior = $bg_model->get_attribute("suffix_proba");
+    print $main::out ";\tResidue probabilities\n";
+    foreach my $residue (sort keys %bg_prior) {
+	printf $main::out ";\t\t%s\t%.5f\n", $residue, $bg_prior{$residue};
+    }
+    }
+  
 }
 
 
@@ -914,7 +964,7 @@ sub ExportMatrix {
     		print $out "; permutation $i/$perm\n" if ($verbose >=1);
     		print $out `echo '$tab_matrix'| perl -ple 's/ /\t/g if !/^;/' | perl -ple 's/\t+/\t/g if !/^;/' | permute-table -rownames -entire_col`;
   			}
-  		print $out "; original matrix\n" if ($verbose >=1);
+  		#print $out "; original matrix\n" if ($verbose >=1);
   } else {
 
 
