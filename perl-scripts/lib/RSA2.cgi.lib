@@ -383,6 +383,7 @@ sub TaxonomyPopUpString {
 ################################################################
 ## MATRICES
 sub GetMatrix {
+my $consensus = shift;
 print "<B>Matrix (or matrices)</B>\n";
 print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
 print "<A HREF='help.matrix-scan.html'><B>Format</B></a>&nbsp;";
@@ -405,10 +406,11 @@ print $query->popup_menu(-name=>'matrix_format',
 				  ],
 			 -default=>$default{matrix_format});
 
+if ($consensus) {
 print $query->checkbox(-name=>'consensus_as_name',
 		       -checked=>$default{consensus_as_name},
 		       -label=>' use motif consensus as matrix name ');
-
+}
 #### text area to enter the matrix
 print "<BR>\n";
 print $query->textarea(-name=>'matrix',
@@ -436,21 +438,28 @@ sub GetBackgroundModel {
 
 my $bg_input = shift;
 my $bg_window = shift;
+my $markov = shift;
+my $from_matrix = shift;
 
 
 print "<p><B>Background model</B><br>";
 
+if ($markov) {
 #### Markov order
 print ("<b><a href=help.matrix-scan.html#markov_order>Markov Chain order</a></b> &nbsp;");
 print $query->popup_menu(-name=>'markov_order',
 			 -Values=>[0..7],
 			 -default=>$default{markov_order});
+}
 print "<p>";
-
-
 ## Method to estimate the bg model
 
 print ("<b><a href=help.matrix-scan.html#bg_method>Estimation method</a></b>");
+
+if ($from_matrix){
+	print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='from_matrix' $checked{'from_matrix'}>", 
+       "<b>Estimate from input matrix</b>");
+}
 
 if ($bg_input) {
 #### Input sequences
