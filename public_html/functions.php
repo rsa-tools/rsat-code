@@ -153,7 +153,7 @@ Function space_to_tab($string) {
   }
   return $result;
 }
-
+?>
 <?php
 ## This function replaces the given number of spaces in a row inside a string by tabulation
 ## If the line starts with a ';' or a '#' it is skipped.

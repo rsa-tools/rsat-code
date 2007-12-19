@@ -91,7 +91,7 @@
   <option value = 'graph'> annotated graph (all edges)
   </select><br><br>");
   echo("
-    <B><a href = 'help.graph_get_clusters.html#formats'>Output format (only useful for intra-cluster edges output)</a></B>&nbsp;<select name='out_format'>
+    <B><a href = 'help.graph_get_clusters.html#formats'>Output format (not relevant for node-cluster connection output format)</a></B>&nbsp;<select name='out_format'>
     <option selected value = 'tab'> tab-delimited format
     <option value = 'gml'> GML format
     <option value = 'adj_matrix'> Adjacency matrix
