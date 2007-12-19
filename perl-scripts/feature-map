@@ -34,7 +34,7 @@ $small_font_height = 8;
 $large_font_width = 8;
 $large_font_height = 16;
 
-## parameters 
+## Map parameters 
 $horizontal_map = 1;
 $verbose = 0;
 $view_from = "auto";
@@ -54,6 +54,14 @@ $symbol_thick = 8;
 $symbol_length = 8;
 $handle_bar_length = 10;
 
+## Colors
+$monochrome = 0;
+$aa_colors= 0;
+%aa_color = ();
+$color_file = "";
+%feature_color = ();
+
+
 ## data 
 @keys = ('map','feature_type', 'id', 'strand', 'start_pos', 'end_pos', 'description', 'score');
 $format = "feature-map";
@@ -68,6 +76,7 @@ $col{score} = 7;
 @features = ();
 @label_keys = ();
 @id_list = ();
+@sorted_ids = (); ## feature identifiers sorted by max score value
 
 ## Sequence format for reading sequence lengths
 $sequence_format = "fasta";
@@ -92,6 +101,7 @@ if ($#label_keys >= 0) {
   $labels = 1;
   $side_labels = 1 unless ($box_labels);
 }
+
 
 ################################################################
 ## Read Data 
@@ -351,18 +361,26 @@ sub DrawSymbol {
 ## Calculate the maximum score associated to each feature ID
 sub MaxScorePerID {
     %max_score_per_id = ();
+    $no_scores = 1; ## Boolean variable indicating if there i at least one score
     foreach my $map (keys %features) {
 	foreach my $f (@{$features{$map}}) {
 	    my $id = $f->{id};
 	    my $score = $f->{score};
+	    $no_scores = 0 if (&IsReal($score));
 	    $max_score_per_id{$id} = &max ($max_score_per_id{$id}, $score);
 	}
+    }
+    if ($no_scores) {
+	@sorted_ids = @id_list;
+    } else {
+	@sorted_ids = sort {$max_score_per_id{$b} <=> $max_score_per_id{$a}} keys(%max_score_per_id);
     }
 }
 
 ################################################################
 ## Legend Initialization 
 sub InitLegend {
+    &RSAT::message::TimeWarn("Initializing the legend") if ($main::verbose >= 2);
 
     #### calculate the max score for each feature ID
     &MaxScorePerID();
@@ -375,15 +393,14 @@ sub InitLegend {
     } else {
 	$legend_top = $box_top;
     }
-    $legend_height =  ($#id_list+1)*($small_font_height+$legend_spacing) + 2*$legend_spacing + $large_font_height;
+    $legend_height =  scalar(@id_list)*($small_font_height+$legend_spacing) + 2*$legend_spacing + $large_font_height;
     $legend_bottom = $legend_top + $legend_height;
 
     $legend_border = 4;
     $max_id_length = 0;
-    foreach $id (@id_list) {
+    foreach $id (@sorted_ids) {
 	$legend_text{$id} = $id." ".$max_score_per_id{$id};
 	$max_id_length = &max ($max_id_length, length($legend_text{$id}));
-
     }
     $legend_width = $max_id_length * $small_font_width + 3*$legend_border + $max_feature_thick;
     $legend_width  = &max ($legend_width, 6*$small_font_width + 2*$legend_border);
@@ -396,9 +413,9 @@ sub InitLegend {
 ################################################################
 ## Draw the legend
 sub DrawLegend {
-    warn "; Drawing the legend\n" if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Drawing the legend") if ($main::verbose >= 2);
 
-    #### calculate limits of the legend box
+    #### Calculate limits of the legend box
     $legend_right = $graph_x_size - $x_border;
     $legend_left = $legend_right - $legend_width;
 
@@ -407,8 +424,8 @@ sub DrawLegend {
     $rect_left = $legend_left + $legend_border;
     $rect_right = $rect_left + $max_feature_thick;
 
+    #### Take into account the feature handle associated to each ID
     if ($draw_handles) {
-	#### draw the feature handle associated to each ID
 	$handle_left = $rect_right + $handle_bar_length + 1;
 	$handle_right = $handle_left + $handle_thick -1;
 	$legend_x = $handle_right + $legend_border + 1;
@@ -419,9 +436,12 @@ sub DrawLegend {
     $image->string($small_font, $rect_left, $legend_y, "Legend", $text_color);
     $legend_y += $large_font_height + $legend_spacing;
 
-
-    foreach $i (0..$#id_list) {
-	$id =  $id_list[$i];
+    ## Draw sequence IDs
+    $i = 0;
+    foreach my $id (@sorted_ids) {
+	$i++;
+#	$id =  $sorted_ids[$i];
+#	$id =  $id_list[$i];
 	$rect_top = $legend_y + 2;
 	$rect_bottom = $rect_top + $small_font_height - 1;
 	$rect_middle = ( $rect_top + $rect_bottom ) /2 + 1;
@@ -430,6 +450,8 @@ sub DrawLegend {
 	} else {
 	    $rect_color = $color_list[$i%($#color_list+1)];
 	}
+	$rect_color = &ChooseFeatureColor($id);
+
 	if ($id eq "ORF") {
 	    #### a specific symbol for ORFs (empty box)
 	    $image->rectangle($rect_left, $rect_top, $rect_right, $rect_bottom, $rect_color);
@@ -558,7 +580,7 @@ sub DrawScaleBar {
 ################################################################
 ##### Read input data 
 sub ReadMapData {
-    warn "; Reading map data\n" if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn( "Reading map data") if ($main::verbose >= 2);
 
     while ($new_data_line = <$in>) {
 	next if ($new_data_line =~ /^#/); ### skip header lines
@@ -699,13 +721,17 @@ sub OpenFeatureMap {
 	$large_font = gdLargeFont;
     }
 
-    #### define colors ####
+    ################################################################
+    #### define colors
     if ($monochrome) {
 	&GrayScalePalette();
     } else {
 	&StandardPalette();
     }
-    &AminoAcidPalette if ($aa_colors);
+    &AminoAcidPalette() if ($aa_colors);
+
+    ## Read color specification from a file
+    &ReadColors($color_file) if ($color_file);
 
     ## Fill the background
     $image->filledRectangle(1,1,$graph_x_size, $graph_y_size, $bg_color);
@@ -1177,7 +1203,7 @@ sub StandardPalette {
     $green_127 = $image->colorAllocate(0,127,0);
     $green_096 = $image->colorAllocate(0,96,0);
     $green_064 = $image->colorAllocate(0,64,0);
-    
+
     $cyan = $image->colorAllocate(0,255,255);
     $cyan_200 = $image->colorAllocate(0,200,200);
     $cyan_127 = $image->colorAllocate(0,127,127);
@@ -1328,6 +1354,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-aacolors") {
 	    $aa_colors = 1;
 	    
+	    ### amino acid specific colors ###
+	} elsif ($ARGV[$a] eq "-colors") {
+	    $color_file = $ARGV[$a+1];
+	    
 	    ### monochrome palette ###
 	} elsif ($ARGV[$a] =~ /^-mono/) {
 	    $monochrome = 1;
@@ -1458,16 +1488,22 @@ OPTIONS
 			If no input file is specified, the data are taken 
 			from the standard input (keyboard).
 			Lines beginning with ";" are ignored.
+
 	-o outpufile    The name under which the graph will be saved, in the 
 			form of a GIF document. 
 			If no output file is specified, the result is sent 
 			to the standard output (screen).
+
 	-format		output image format
 			Supported: $supported_formats
 			Default: $img_format
+
 	-from #		lower limit of the positions represented on the graph
+
 	-to #		upper limit of the positions represented on the graph
+
 	-title		Generic Title for the feature map.
+
 	-label	keylist	define the info to display for each feature. 
 			valid keys are 
 			- id,
@@ -1478,53 +1514,68 @@ OPTIONS
 			without space.
 			ex: -label pos,id.
 			Default is id.
+
 	-boxlabels	writes the label within the feature box 
 			(by default, the label is written outside of this box).
+
  	-symbol		associates a graphical symbol (i.e. rectangle, circle, 
 			buterfly, ...) to each feature. 
 			This is convenient to distinguish the 
 			features on black and white printings.
 			Mutually exclusive with the -dot option
+
 	-dot		a color dot is associated to each feature. 
 			This allows to distinguish overlapping structures on a 
 			color screen.
 			Mutually exclusive with the -symbol option.
+
 	-mlen	#	map length (in pixels). Default is 600.
 			Length refers to either height (for vertical maps)
 			of width (for horizontal maps).
+
 	-mapthick	#	map thickness. 
 			Thickness refers to either width (for vertical maps) 
 			or height (horizintal maps). 
 			This parameter allows to change the thickness
 			allocated to each map. This is useful when labels 
 			are too large. Default is 150.
+
 	-mspacing #	map spacing.
 			The size of the border between maps (in pixel).
+
 	-origin #	all coordinates are recalculated relative to #.
 			This allows to display all coordinates with respect to
 			the ORF start or transcription start site
+
         -legend  Draws a legend on the graph, showing the symbol associated to 
                  each distinct feature.
 
         -scalebar
                  Draws a scale bar on the left of the graph
+
         -scalestep #
                  Step between annotations of the scale bar.
                  If not specified, a reasonable stp is calculated on basis of 
                  the scale bar range.
+
 	-scorethick
 		each feature is displayed with a thickness proportional to 
 		its score. Only positive scores are represented.
+
 	-maxscore # (only valid when -scorethick is active)
 		maximal allowed score value. Higher score values are clipped for 
 		the drawing. 
+
 	-minscore # (only valid when -scorethick is active)
 		minimal allowed score value. Features with smaller score are not
 		displayed. 
+
 	-maxfthick #
 		max feature thickness
+
 	-minfthick #
 		min feature thickness
+
 	-htmap	HTML map
 		An HTML document is automatically generated, which includes 
 		the feature map GIF file as an HTML map. In other words,
@@ -1532,13 +1583,33 @@ OPTIONS
 		Each time the mouse is positioned above a feature, 
 		information about this particuliar feature is displayed 
 		at the bottom of the browser window.
+
 	-mono	monochrome palette (for printing on black/white printer)
+
 	-aacolors
 		amino acid specific colors. 
 		See the following reference for their definition:
 		Taylor (1997). Protein Engeneering 10 (7): 743-746.
+
+	-colors color_file
+		Provide a file containing feature-specific colors.
+		The file contains 2 columns
+		1) Feature identifier
+		2) Red,Green,Blue intensity in a scale from 0 to 255.
+    		Example:
+			Met4p	255,0,0
+			Pho4p	0,128,0
+			Met31p	0,0,64
+
+		will assign the red color to all features identified
+		as "Met4p", dark green to features "Pho4p", and very
+		dark blue to features identified as "Met31p".
+
 	-horiz	horizontal map (default).
-	-vertic	vertical map (default is horizontal).
+
+	-vertic	
+		vertical map (default is horizontal).
+
 	-select id_list
 		only display the features whose ID is in id_list.
 		the id_list contains one or several IDs, separated by commas.
@@ -1548,26 +1619,33 @@ OPTIONS
 		Example:
 			-select 'gataag','gattag'
 		only displays features identified by gataag or gattag.
+
 	-seq	reference sequence file
 		This file is used for calculating the sequence
 		length. Each backbone (the black line) has a length that reflects the lengths of the sequence.
+
 	-seqformat
 		format of the reference sequence file. 
 
 SUPPORTED FEATURE TYPES
 	A few special types are defined
-	- SEQ_START     	starting position for the curent map
+	- SEQ_START     starting position for the curent map
 	- SEQ_END	ending position for the current map
 	- ORIGIN	map-specific origin (all coordinates of the map
 			are recalculated relative to this value)
 
-OUTPUT FORMAT
-        The output is a GIF file, which can be opened by most graphical 
-        applications, and by web browsers.
+OUTPUT FORMATS
 
-WEB VERSION
-	http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
-	
+        The supported image formats depend on th local configuration
+        of the GD library. If correctly installed, the library
+        supports png, jpg, gif. The default output is a png, which can
+        be opened by most graphical applications, and by web
+        browsers. All these formats are suitable for producing
+        screen-resolution images, but not for high-quality printing.
+
+	The Postscript format produces a vectorial image, that can be
+	used to produce high-resolution printouts.
+
 End_of_Help
   close HELP;
   exit(0);
@@ -1609,6 +1687,7 @@ feature-map options
 -minfthick #	min feature thickness
 -mono		monochrome palette (for printing on black/white printer)
 -aacolors	amino acid specific colors
+-colors		color file
 -horiz		horizontal map (default).
 -vertic		vertical map (default is horizontal).
 -select id_list	only display features with an ID included in id_list
@@ -1783,7 +1862,7 @@ sub DrawFeature {
 		 (($end >= $view_to) && ($start <= $view_from)));
     
     
-    &ChooseFeatureColor();
+    &ChooseFeatureColor($id);
     
     &DrawFeatureBox();
     &DrawFeatureHandle();
@@ -1836,14 +1915,56 @@ sub DrawFeature {
 
 
 ################################################################
+## Read the file containing feature-specific color specification
+sub ReadColors {
+    my ($color_file) = @_;
+    my ($col) = &OpenInputFile($color_file);
+    my $l = 0;
+    while (<$col>) {
+	$l++;
+#	&RSAT::message::Debug("color file line", $l, $_) if ($main::verbose >= 0);
+	next unless (/\S/); ## Skip empty lines
+	next if (/^\#/); ## Skip header lines
+	next if (/^;/); ## Skip comment lines
+	chomp();
+	my @fields = split(/\t/);
+	my $id = shift(@fields);
+	unless ($id) {
+	    &RSAT::message::Warning("Color file: skipped line", $l, "because it does not start with a valid ID");
+	}
+	my $rgb = shift(@fields);
+	if ($rgb =~/^(\d+),(\d+),(\d+)$/) {
+	    my ($r,$g,$b) = ($1,$2,$3);
+	    &RSAT::message::FatalError("Invalid R,G,B values, must be <= 255")
+		if (($r > 255) || ($g > 255) || ($b > 255));
+	    $feature_color{$id} = $image->colorAllocate($r,$g,$b);
+#	    &RSAT::message::Debug("feature-specific color", $id, $r, $g, $b, $feature_color{$id}) if ($main::verbose >= 0);
+	} else {
+	    &RSAT::message::Warning("Color file: skipped line", $l, "because it does not start with a valid R,G,B color specification");
+	}
+    }
+    close($color_file);
+}
+
+################################################################
 ### Choose feature color
 sub ChooseFeatureColor {
+    my ($id) = @_;
+
+    ## If a color has been specified in the color file, use this one
+    if (($color_file) && (defined($feature_color{$id}))) {
+	$feature_color = $feature_color{$id};
+
     ### special choice of colors for amino acids
-    if ($aa_colors)  {
+    } elsif ($aa_colors)  {
 	$feature_color = $aa_color{$id};
+
+    ## Automatic color selection
     } else {
-	$feature_color = $color_list[$id_number{$features{$map}[$f]{id}}%($#color_list+1)];
+	$feature_color = $color_list[$id_number{$id}%($#color_list+1)];
+#	$feature_color = $color_list[$id_number{$features{$map}[$f]{id}}%($#color_list+1)];
     }
+    return $feature_color;
 }
 
 
