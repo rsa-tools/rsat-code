@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.19 2007/12/17 09:50:41 rsat Exp $
+# $Id: graph-get-clusters,v 1.20 2007/12/19 10:16:33 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -328,6 +328,7 @@ package main;
       ## Indices of the two-dimensional array;
       my %nodes_name_id = $graph->get_attribute("nodes_name_id");
       my %nodes_id_name = $graph->get_attribute("nodes_id_name");
+      my %nodes_color = $graph->get_attribute("nodes_color");
       my @cluster_list = $graph->get_attribute("cluster_list");
       my %clusters_name_id = ();
       my %clusters_edge_nb = ();
@@ -383,7 +384,13 @@ package main;
             }
           }
         }
-        $arcs[$i][3] = $arc_color; 
+        # FILL THE ANNOTATED NETWORK
+        $cluster_graph_array[$i][0] = $source_node;
+        $cluster_graph_array[$i][1] = $target_node;
+        $cluster_graph_array[$i][2] = $arcs[$i][2];
+        $cluster_graph_array[$i][3] = $node_colors{$source_node};
+        $cluster_graph_array[$i][4] = $node_colors{$target_node};
+        $cluster_graph_array[$i][5] = $arc_color;
         my %s_not_tclusters = &set_difference(\%sclusters,\%stclusters);
         my %not_s_tclusters = &set_difference(\%tclusters,\%stclusters);
         $arcs_attribute[$i][0] = $intra_cluster;
@@ -398,9 +405,12 @@ package main;
         $arcs_attribute[$i][9] = join(";",keys(%s_not_tclusters));
         $arcs_attribute[$i][10] = join(";",keys(%not_s_tclusters));
       }
+      
       my @arcs_attribute_header = ("type","#s","#t","#st","#s!t","#!st","cl_s","cl_t","cl_st","cl_s!t","cl_!st");
-      $graph->set_array_attribute("arcs_attribute",@arcs_attribute);
-      $graph->set_array_attribute("arcs_attribute_header", @arcs_attribute_header);
+      $cluster_graph->load_from_array(@cluster_graph_array);
+      $cluster_graph->set_array_attribute("arcs_attribute",@arcs_attribute);
+      $cluster_graph->set_array_attribute("arcs_attribute_header", @arcs_attribute_header);
+     
       if ($return_type eq "table") {
       ## Print cluster names
         foreach my $cluster (@cluster_list) {
@@ -435,7 +445,7 @@ package main;
         }
         print $out "\n";
       } else {
-        if ($main::verbose >= 1) {
+        if ($main::verbose >= 1 && $output_format eq "tab") {
           print $out join("\t",  ";","1","source","source node"), "\n";
           print $out join("\t",  ";","2","target","target node"), "\n";
           print $out join("\t",  ";","3","label","arc label"), "\n";
@@ -451,7 +461,7 @@ package main;
           print $out join("\t",  ";","13","cl_s!t","clusters where only source node is present"), "\n";
           print $out join("\t",  ";","14","cl_!st","clusters where only target node is present"), "\n";
         }
-        print $out $graph->to_tab();
+        print $out $cluster_graph->to_text($output_format);
       }
       ################################################################
       ## Finish verbose
