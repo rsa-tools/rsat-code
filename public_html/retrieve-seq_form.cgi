@@ -153,7 +153,7 @@ print "<BR>\n";
 print $query->checkbox(-name=>'noorf',
   		       -checked=>$default{noorf},
   		       -label=>'');
-print "&nbsp;<A HREF='help.retrieve-seq.html#noorf'><B>Prevent overlap with neighbour genes</B></A>";
+print "&nbsp;<A HREF='help.retrieve-seq.html#noorf'><B>Prevent overlap with neighbour genes (noorf)</B></A>";
 print "<BR>\n";
 
 ### allows for imprecise postions
