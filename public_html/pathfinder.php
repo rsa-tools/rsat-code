@@ -140,8 +140,9 @@
     $error = 1;
     error("You must submit an input graph");
   }
+  
   if (!$error) {
-
+   
    ########## Launch the client ###############
 
     $parameters = array(
