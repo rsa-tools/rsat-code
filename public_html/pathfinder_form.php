@@ -55,9 +55,11 @@
   <br>");
   if(!$pipe){
   	echo("
-  	Enter the graph here (tab-delimited or gml):
+  	Enter the graph here (tab-delimited* or gml):
   	<br>
   	<textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>
+  	<br>
+  	*The tab-delimiter can be replaced by two white spaces.
   	<br>
   	<br>
   	<b>Or</b> upload the graph from a file:
