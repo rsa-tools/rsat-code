@@ -60,6 +60,8 @@ $aa_colors= 0;
 %aa_color = ();
 $color_file = "";
 %feature_color = ();
+#$bg_rgb = "214,238,250",
+$bg_rgb = "255,255,255",
 
 
 ## data 
@@ -722,6 +724,10 @@ sub OpenFeatureMap {
     }
 
     ################################################################
+    ## Allocate background color
+    $bg_color = &set_bg_color($bg_rgb);
+
+    ################################################################
     #### define colors
     if ($monochrome) {
 	&GrayScalePalette();
@@ -1262,13 +1268,28 @@ sub StandardPalette {
     push @color_list, $blue_064;
     push @color_list, $gray_064;
 
-    $bg_color = $violet_pale;
+#    $bg_color = $violet_pale;
     $box_color = $white;
     $backbone_color = $black;
     $text_color = $black;
 
 }
 
+
+################################################################
+## Define the background color
+sub set_bg_color {
+  my ($bg_rgb) = @_;
+  my ($r,$g,$b) = split (",", $bg_rgb);
+  &RSAT::message::FatalError($bg_rgb, "Invalid red value", $r, "should be a natural between 0 and 255")
+    unless (&IsNatural($r) && ($r <= 255));
+  &RSAT::message::FatalError($bg_rgb, "Invalid red value", $g, "should be a natural between 0 and 255")
+    unless (&IsNatural($g) && ($g <= 255));
+  &RSAT::message::FatalError($bg_rgb, "Invalid red value", $b, "should be a natural between 0 and 255")
+    unless (&IsNatural($b) && ($b <= 255));
+  $bg_color= $image->colorAllocate($r,$g,$b);
+  return $bg_color;
+}
 
 ################################################################
 ## Define a grayscale palette
@@ -1296,7 +1317,7 @@ sub GrayScalePalette {
     push @color_list, $gray_200;
     push @color_list, $gray_225;
 
-    $bg_color = $gray_175;
+#    $bg_color = $gray_175;
     $box_color = $white;
     $backbone_color = $black;
     $text_color = $black;
@@ -1358,6 +1379,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-colors") {
 	    $color_file = $ARGV[$a+1];
 	    
+	    ### specify the background color
+	} elsif ($ARGV[$a] eq "-bg") {
+	    $bg_rgb = $ARGV[$a+1];
+
 	    ### monochrome palette ###
 	} elsif ($ARGV[$a] =~ /^-mono/) {
 	    $monochrome = 1;
