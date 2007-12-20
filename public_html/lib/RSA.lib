@@ -42,6 +42,9 @@ if ($0 =~ /([^(\/)]+)$/) {
   $property_file = $`."../RSAT_config.props";
   unless (-e $property_file) {
     $property_file = $`."../RSAT_config_default.props";
+    &RSAT::message::Warning("This RSAT site is not properly configured.", 
+			    "Missing file: $RSAT/RSAT_config.props", 
+			    "Please contact the system administrator.");
   }
   if (-e $property_file) {
     my ($props) = &OpenInputFile($property_file);
