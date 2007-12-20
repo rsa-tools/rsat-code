@@ -1281,11 +1281,11 @@ sub StandardPalette {
 sub set_bg_color {
   my ($bg_rgb) = @_;
   my ($r,$g,$b) = split (",", $bg_rgb);
-  &RSAT::message::FatalError($bg_rgb, "Invalid red value", $r, "should be a natural between 0 and 255")
+  &RSAT::error::FatalError($bg_rgb, "Invalid red value", $r, "should be a natural between 0 and 255")
     unless (&IsNatural($r) && ($r <= 255));
-  &RSAT::message::FatalError($bg_rgb, "Invalid red value", $g, "should be a natural between 0 and 255")
+  &RSAT::error::FatalError($bg_rgb, "Invalid red value", $g, "should be a natural between 0 and 255")
     unless (&IsNatural($g) && ($g <= 255));
-  &RSAT::message::FatalError($bg_rgb, "Invalid red value", $b, "should be a natural between 0 and 255")
+  &RSAT::error::FatalError($bg_rgb, "Invalid red value", $b, "should be a natural between 0 and 255")
     unless (&IsNatural($b) && ($b <= 255));
   $bg_color= $image->colorAllocate($r,$g,$b);
   return $bg_color;
@@ -1380,12 +1380,12 @@ sub ReadArguments {
 	    $color_file = $ARGV[$a+1];
 
 	    ### specify the background color
-	  } elsif (($ARGV[$a] eq "-bg") {
+	  } elsif ($ARGV[$a] eq "-bg") {
 	    &RSAT::message::Warning("option -bg is obsolete, please use -bgcolor instead.");
 	    $bg_rgb = $ARGV[$a+1];
 
 	    ### specify the background color
-	  } elsif (($ARGV[$a] eq "-bgcolor") {
+	  } elsif ($ARGV[$a] eq "-bgcolor") {
 	    $bg_rgb = $ARGV[$a+1];
 
 	    ### monochrome palette ###
@@ -1970,8 +1970,14 @@ sub ReadColors {
 	my $rgb = shift(@fields);
 	if ($rgb =~/^(\d+),(\d+),(\d+)$/) {
 	    my ($r,$g,$b) = ($1,$2,$3);
-	    &RSAT::message::FatalError("Invalid R,G,B values, must be <= 255")
-		if (($r > 255) || ($g > 255) || ($b > 255));
+	    &RSAT::error::FatalError($bg_rgb, "Invalid red value", $r, "should be a natural between 0 and 255")
+	      unless (&IsNatural($r) && ($r <= 255));
+	    &RSAT::error::FatalError($bg_rgb, "Invalid red value", $g, "should be a natural between 0 and 255")
+	      unless (&IsNatural($g) && ($g <= 255));
+	    &RSAT::error::FatalError($bg_rgb, "Invalid red value", $b, "should be a natural between 0 and 255")
+	      unless (&IsNatural($b) && ($b <= 255));
+#	    &RSAT::error::FatalError("Invalid R,G,B values, must be <= 255")
+#		if (($r > 255) || ($g > 255) || ($b > 255));
 	    $feature_color{$id} = $image->colorAllocate($r,$g,$b);
 #	    &RSAT::message::Debug("feature-specific color", $id, $r, $g, $b, $feature_color{$id}) if ($main::verbose >= 0);
 	} else {
