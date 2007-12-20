@@ -179,16 +179,22 @@ print $query->textfield(-name=>'mspacing',
 			-size=>5);
 
 print "<BR>\n";
-print "<B><A HREF='help.feature-map.html#handle'>Feature handle</A></B>&nbsp;&nbsp;&nbsp;&nbsp";
-print $query->popup_menu(-name=>'handle',
-			 -Values=>['color dot','symbol','none'],
-			 -default=>$default{handle});
-
 print "<B><A HREF='help.feature-map.html#palette'>Color palette</A></B>&nbsp;&nbsp;&nbsp;&nbsp";
 print $query->popup_menu(-name=>'palette',
 			 -Values=>['color','monochrome'],
 			 -default=>'color');
 
+print "<B><A HREF='help.feature-map.html#bg'>Background color (R,G,B)</A></B>&nbsp;&nbsp;&nbsp;&nbsp";
+print $query->textfield(-name=>'bg',
+			-default=>'220,220,220',
+			-size=>11);
+
+
+print "<BR>\n";
+print "<B><A HREF='help.feature-map.html#handle'>Feature handle</A></B>&nbsp;&nbsp;&nbsp;&nbsp";
+print $query->popup_menu(-name=>'handle',
+			 -Values=>['color dot','symbol','none'],
+			 -default=>$default{handle});
 
 print "<BR>\n";
 print "<B>Feature thickness</B> \n";
