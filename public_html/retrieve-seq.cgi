@@ -127,8 +127,12 @@ if (&IsInteger($query->param('to'))) {
 
 ### prevent orf overlap ###
 if (lc($query->param('noorf')) eq "on") {
-    $noorf = 1;
     $parameters .= " -noorf ";
+}
+
+### repeat masking
+if (lc($query->param('rm')) eq "on") {
+    $parameters .= " -rm ";
 }
 
 ### prevent orf overlap ###
