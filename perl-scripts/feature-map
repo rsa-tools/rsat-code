@@ -1630,6 +1630,10 @@ OPTIONS
 		as "Met4p", dark green to features "Pho4p", and very
 		dark blue to features identified as "Met31p".
 
+	-bg	R,G,B
+		Background color in R,G,B format. R,G,B should be
+		Natural numbers comprized between 0 and 255.
+
 	-horiz	horizontal map (default).
 
 	-vertic	
@@ -1713,6 +1717,7 @@ feature-map options
 -mono		monochrome palette (for printing on black/white printer)
 -aacolors	amino acid specific colors
 -colors		color file
+-bg R,G,B	background color (R,G,B are Natural numbers <= 255)		
 -horiz		horizontal map (default).
 -vertic		vertical map (default is horizontal).
 -select id_list	only display features with an ID included in id_list
