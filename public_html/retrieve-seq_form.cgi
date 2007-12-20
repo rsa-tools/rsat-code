@@ -17,6 +17,7 @@ $default{sequence_format} = "fasta";
 #$default{seq_label} = "gene identifier + organism + gene name";
 $default{seq_label} = "gene name";
 $default{organism} = "Saccharomyces cerevisiae";
+$default{rm} = "";
 $default{noorf} = "checked";
 $default{imp_pos} = "checked";
 $default{from} = "default";
@@ -154,6 +155,13 @@ print $query->checkbox(-name=>'noorf',
   		       -checked=>$default{noorf},
   		       -label=>'');
 print "&nbsp;<A HREF='help.retrieve-seq.html#noorf'><B>Prevent overlap with neighbour genes (noorf)</B></A>";
+print "<BR>\n";
+
+### Repeat masking
+print $query->checkbox(-name=>'rm',
+  		       -checked=>$default{rm},
+  		       -label=>'');
+print "&nbsp;<A HREF='help.retrieve-seq.html#rm'><B>Mask repeats (only valid for organisms with annotated repeats)</B></A>";
 print "<BR>\n";
 
 ### allows for imprecise postions
