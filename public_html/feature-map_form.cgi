@@ -186,7 +186,7 @@ print $query->popup_menu(-name=>'palette',
 
 print "<B><A HREF='help.feature-map.html#bg'>Background color (R,G,B)</A></B>&nbsp;&nbsp;&nbsp;&nbsp";
 print $query->textfield(-name=>'bgcolor',
-			-default=>'220,220,220',
+			-default=>'220,220,255',
 			-size=>11);
 
 
