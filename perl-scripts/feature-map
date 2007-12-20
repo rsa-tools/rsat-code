@@ -639,7 +639,7 @@ sub ReadMapData {
 		@id_number{$temp_features{id}} = $#id_list;
 	    }
 	    next if (($id_selection) && ($selected{$temp_features{id}} <1));
-	    
+
 	    #### feature strand ####
 	    $temp_features{strand} = uc($temp_features{strand});
 	    $temp_features{strand} =~ s/W/D/i;
@@ -655,7 +655,7 @@ sub ReadMapData {
 		$temp_features{strand} ="DR";
 		$features_on_D_strand = 1;
 	    }
-	    
+
 	    #### start and end positions ####
 	    if (&IsReal($temp_features{start_pos})) {
 		unless (&IsReal($temp_features{end_pos})) {
@@ -1335,15 +1335,15 @@ sub ReadArguments {
 	    } else {
 		$verbose = 1;
 	    }
-	    
+
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
 	    &PrintHelp;
-	    
+
 	    ### list of options
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions;
-	    
+
 	    ### input, output files ###
 	} elsif ($ARGV[$a] eq "-i") {
 	    $inputfile = $ARGV[$a+1];
@@ -1356,64 +1356,69 @@ sub ReadArguments {
 	    unless ($supported_format{$img_format}) {
 		&RSAT::error::FatalError("Format $img_format is not supported (supported: $supported_formats)");
 	    }
-	    
+
 	    ### data report ###
 	} elsif ($ARGV[$a] eq "-data") {
 	    $data_report = 1;
-	    
+
 	    ### HTML map ###
 	} elsif ($ARGV[$a] eq "-htmap") {
 	    $HTML_map = 1;
-	    
+
 	    ### reference sequence file (for calculating backbone lengths)
 	} elsif ($ARGV[$a] eq "-seq") {
 	    $sequence_file = $ARGV[$a+1];
 	} elsif ($ARGV[$a] eq "-seqformat") {
 	    $sequence_format = $ARGV[$a+1];
-	    
+
 	    ### amino acid specific colors ###
 	} elsif ($ARGV[$a] eq "-aacolors") {
 	    $aa_colors = 1;
-	    
+
 	    ### amino acid specific colors ###
 	} elsif ($ARGV[$a] eq "-colors") {
 	    $color_file = $ARGV[$a+1];
-	    
+
 	    ### specify the background color
-	} elsif ($ARGV[$a] eq "-bg") {
+	  } elsif (($ARGV[$a] eq "-bg") {
+	    &RSAT::message::Warning("option -bg is obsolete, please use -bgcolor instead.");
+	    $bg_rgb = $ARGV[$a+1];
+
+	    ### specify the background color
+	  } elsif (($ARGV[$a] eq "-bgcolor") {
 	    $bg_rgb = $ARGV[$a+1];
 
 	    ### monochrome palette ###
 	} elsif ($ARGV[$a] =~ /^-mono/) {
 	    $monochrome = 1;
-	    
+
 	    ### map orientation
 	} elsif  ($ARGV[$a] =~ /^-horiz/) {
 	    $horizontal_map = 1;
 	} elsif  ($ARGV[$a] =~ /^-vertic/) {
 	    $horizontal_map = 0;
-	    
+
 	    ### title ###
 	} elsif ($ARGV[$a] eq "-title") {
 	    $title = $ARGV[$a+1];
-	    
+
 	    ### legend ###
 	} elsif ($ARGV[$a] eq "-legend") {
 	    $legend = 1;
-	    
+
 	    ### scale bar ###
 	} elsif ($ARGV[$a] eq "-scalebar") {
 	    $scalebar = 1;
 	    ### scale bar step ###
 	} elsif ($ARGV[$a] eq "-scalestep") {
 	    $scale_bar_step = $ARGV[$a+1];
-	    
+
 	    ### label keys ###
 	} elsif ($ARGV[$a] eq "-label") {
 	    @label_keys = split(/,/, $ARGV[$a+1]);
 	}elsif ($ARGV[$a] =~ /^-boxlabel/) {
 	    $box_labels = 1;
-	    
+
 	    ### ID selection ###
 	} elsif ($ARGV[$a] eq "-select") {
 	    $id_selection = 1;
@@ -1423,7 +1428,7 @@ sub ReadArguments {
 		$id =~ s/\s//g;
 		$selected{$id} = 1;
 	    }
-	    
+
 	    ### feature handle ###
 	} elsif ($ARGV[$a] =~ /^-symbol/) {
 	    $draw_symbols = 1;
@@ -1431,14 +1436,14 @@ sub ReadArguments {
 	    $draw_handles = 1;
 	    $handle_thick = $symbol_thick;
 	    $handle_length = $symbol_length;
-	    
+
 	} elsif ($ARGV[$a] =~ /^-dot/) {
 	    $draw_dots = 1;
 	    $draw_symbols = 0;
 	    $draw_handles = 1;
 	    $handle_thick = $dot_thick;
 	    $handle_length = $dot_length;
-	    
+
 	    ### from, to coordinates and origin ###
 	} elsif (($ARGV[$a] eq "-origin") && (&IsReal($ARGV[$a+1]))){
 	    $origin = $ARGV[$a+1];
@@ -1446,7 +1451,7 @@ sub ReadArguments {
 	    $view_from = $ARGV[$a+1];
 	} elsif (($ARGV[$a] eq "-to") &&  (&IsReal($ARGV[$a+1]))){
 	    $view_to = $ARGV[$a+1];
-	    
+
 	    ### thickness proportional to score
 	} elsif ($ARGV[$a] =~ /^-score/) {
 	    $score_thick = 1;
@@ -1630,7 +1635,7 @@ OPTIONS
 		as "Met4p", dark green to features "Pho4p", and very
 		dark blue to features identified as "Met31p".
 
-	-bg	R,G,B
+	-bgcolor R,G,B
 		Background color in R,G,B format. R,G,B should be
 		Natural numbers comprized between 0 and 255.
 
@@ -1717,7 +1722,7 @@ feature-map options
 -mono		monochrome palette (for printing on black/white printer)
 -aacolors	amino acid specific colors
 -colors		color file
--bg R,G,B	background color (R,G,B are Natural numbers <= 255)		
+-bgcolor R,G,B	background color (R,G,B are Natural numbers <= 255)		
 -horiz		horizontal map (default).
 -vertic		vertical map (default is horizontal).
 -select id_list	only display features with an ID included in id_list
@@ -1912,7 +1917,7 @@ sub DrawFeature {
 	$map_message =~ s/\'/_/g;
 	$map_message =~ s/\t/    /g;
 	$map_message =~ s/\n/ /g;
-	    
+
 	#### area over the handle
 	if ($draw_handles) {
 	    print "   <area href=\"$href\" ";
@@ -1938,7 +1943,7 @@ sub DrawFeature {
 	print "onMouseOver=\"window.status=\'$map_message\' ;return true\" ";
 	print "shape=rect ";
 	print "coords=\"", int($feature_left), ",", int($feature_top), ",",int($feature_right), ",", int($feature_bottom), "\">\n";
-	    
+
 	
     }
 }
@@ -2127,7 +2132,7 @@ sub DrawFeatureHandle {
 	if (($horizontal_map) && 
 	    ($label_pos > 0) && 
 	    ($label_pos <=  $graph_x_size)) {
-	    
+
 	    $handle_left = $label_pos - $handle_length/2;
 	    $handle_right = $handle_left + $handle_length;
 	    if ($label_strand eq "R") {
@@ -2225,7 +2230,7 @@ sub DrawFeatureLabel {
     }
     
     ################################################################
-    #### write label	    
+    #### write label
     $image->string($small_font, $text_x_pos, $text_y_pos - $small_font_height/2, $label, $text_color) unless (($text_y_pos >  $graph_y_size) || ($text_y_pos < 0));
 }
 
@@ -2391,7 +2396,7 @@ sub DataReport {
 	    print $f->{end_pos}, "\t";
 	    print $f->{description}, "\t";
 	    print $f->{score}, "\n";
-	    
+
 	}
     }
 }
