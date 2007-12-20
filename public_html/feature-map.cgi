@@ -148,8 +148,8 @@ if (lc($query->param('palette')) =~ /mono/i) {
 }
 
 ### bg color
-if (lc($query->param('bg'))) {
-    $parameters .= " -bg ".$query->param('bg');
+if (lc($query->param('bgcolor'))) {
+    $parameters .= " -bgcolor ".$query->param('bg');
 }
 
 
