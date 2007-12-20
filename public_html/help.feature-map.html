@@ -131,21 +131,43 @@ required for its transfer to your client browser.
 
 
 
-<A NAME="handle"></A>
-<B>Feature handle</B><BR> A color dot or a symbol can be associated to
+<a name="handle"></A>
+<b>Feature handle</b><br> A color dot or a symbol can be associated to
 each feature. This is particularly convenient to discernate
 overlapping features, because the handle are shifted in order to avoid
 overlap. Black symbols are conveninent to distinguish features on a
-black and white printing.
-<P>
+black and white printing.<p>
+
+<a name="palette"></a>
+<b>Color palette</b><br> The default palette assigns one color to each
+feature identifier (e.g. each pattern). The monochrome palette is
+convenient for printing feature maps on a balck and white printer, and
+to avoid publication costs for color pictures.<p>
+
+<a name=bgcolor></a>
+<b>Background color (R,G,B)</b><br> Specify the color of the
+background color. Colors are specified with three numbers from 0 to
+255, separated by commas, representing the color intensity of the red
+(R), green (G) and blue (B) channels, respectively. The value 0 means
+null intensity, and 255 maximal intensity. Some examples:
+
+<table align=center cellspacing=5>
+<tr><td><font size=-1>0,0,0</font></td><td><font size=-1>black</font></td></tr>
+<tr><td><font size=-1>255,255,255</font></td><td><font size=-1>white</font></td></tr>
+<tr><td><font size=-1><font color=#FF0000>255,0,0</font></td><td><font size=-1>red</font></font></td></tr>
+<tr><td><font size=-1><font color=#00FF00>0,255,0</font></td><td><font size=-1>green</font></font></td></tr>
+<tr><td><font size=-1><font color=#0000FF>0,0,255</font></td><td><font size=-1>blue</font></font></td></tr>
+<tr><td><font size=-1><font color=#000080>0,0,128</font></td><td><font size=-1>dark blue</font></font></td></tr>
+<tr><td><font size=-1><font color=#888880>128,128,128</font></td><td><font size=-1>grey</font></font></td></tr>
+</table>
+<p>
 
 <A NAME="htmap"></A>
 <B>Dynamic map</B><BR> This option requires a recent browser (Netscape
 3 or later). When the mous is placed for a second on a given feature,
 a specific message appears at the bottom of the window, providing all
 characteristics of this feature (type, position, identifier,
-description).
-<P>
+description).<P>
 
 
 <A NAME="keys"></A>
