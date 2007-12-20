@@ -142,6 +142,10 @@
   }
   
   if (!$error) {
+    # convert two spaces in a row into a tab delimiter
+    if(strcmp($out_format,'flat') == 0){
+        $graph = spaces_to_tab($graph,2);
+    }
    
    ########## Launch the client ###############
 
