@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.231 2007/12/21 00:44:27 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.232 2007/12/21 08:39:55 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -36,7 +36,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.231 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.232 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -414,7 +414,7 @@ package main;
     ## Family file
   } else {
     ### read gene name and identifiers
-    &RSAT::message::TimeWarn ("Reading ORF information") 
+    &RSAT::message::TimeWarn("Reading ORF information") 
       if ($verbose >= 1);
     #### Check organism name
     if ($organism_name) {
@@ -531,11 +531,11 @@ package main;
 
   ### Warn output dir and files
   if ($verbose >= 1) {
-    warn "; Results were stored in directory\t".$dir{output}."\n";
-    warn "; Synthetic table\t", $dir{output}."/".$outfile{table}, "\n";
+    &RSAT::message::Info("Results were stored in directory\t".$dir{output});
+    &RSAT::message::Info("Synthetic table\t", $dir{output}."/".$outfile{table});
     if ($task{report}) {
-      warn "; Result report (MDC 2004)\t", $dir{output}."/".$outfile{results}, "\n";
-      warn "; Parameter report (MDC 2004)\t", $dir{output}."/".$outfile{parameters}, "\n";
+      &RSAT::message::Info("Result report (MDC 2004)\t", $dir{output}."/".$outfile{results});
+      &RSAT::message::Info("Parameter report (MDC 2004)\t", $dir{output}."/".$outfile{parameters});
     }
   }
 
@@ -1168,7 +1168,7 @@ sub UpstreamSequencesEnsEMBL {
 ################################################################
 #### Purge input sequences
 sub PurgeSequences {
-   warn ";\tPurging sequences for family $family_name\n" if ($verbose >= 1);
+   &RSAT::message::TimeWarn("Purging sequences for family\t".$family_name) if ($verbose >= 1);
 
    ## Remove sequences of length 0
    $command = "convert-seq -dna -from fasta -to fasta -lw 0 -skip_short 1";
@@ -1225,7 +1225,7 @@ sub CalcOligoOptions {
 	    &RSAT::error::FatalError ("Calibration file not found\t".$calib.file);
 	}
 	$oligo_options .= " -calib1 ".$calib_file;
-	warn join ("\t", "; Oligonucleotide calibration", $calib_length, $calib_file), "\n" if ($verbose >= 3);
+	&RSAT::message::Info("Oligonucleotide calibration", $calib_length, $calib_file) if ($verbose >= 3);
 	
    } elsif ($background eq "calibN") {
 	### Set-based calibrated occurrences (mean and var per set of N sequences)
@@ -1253,7 +1253,7 @@ sub CalcOligoOptions {
 	}
 	
 	$oligo_options .= " -calibN ".$calib_file;
-	warn join ("\t", "; Oligonucleotide calibration", $calib_length, $calib_file), "\n" if ($verbose >= 3);
+	&RSAT::message::Info("Oligonucleotide calibration", $calib_length, $calib_file) if ($verbose >= 3);
 	
    } else {
 	### Pre-calculated expected frequency files
@@ -1944,7 +1944,7 @@ sub SyntheticTable {
   $outfile{table} .= "_tr" if ($transpose);
   $outfile{table} .= ".html";
 
-  &RSAT::message::TimeWarn ("Generating synthetic table ", $outfile{table}) if ($verbose >= 1);
+  &RSAT::message::TimeWarn("Generating synthetic table ", $outfile{table}) if ($verbose >= 1);
 
   unless (-d $dir) {
     mkdir $dir, 0755 || &RSAT::error::FatalError("Cannot create directory", $dir);
@@ -2872,14 +2872,14 @@ sub AnalyzeFamilies {
 		
 	### delete upstream sequence file
        if ($task{clean}) {
-	   warn ";\tCleaning files from the hard drive for family $family_name\n" if ($verbose >=1);
+	   &RSAT::message::TimeWarn("Cleaning files from the hard drive for family $family_name") if ($verbose >=1);
 	   foreach my $file ($family{$family_name}->{seq_file},
 			     $family{$family_name}->{seq_file_purged},
 			     $family{$family_name}->{merged_ft_file},
 			     $family{$family_name}->{orm_ft_file},
 			     $family{$family_name}->{dyad_ft_file}
 			    ) {
-	       warn ";\t\t$file\n" if ($verbose >=1);
+	       &RSAT::message::Info("\t$file") if ($verbose >=2);
 	       $command = "rm -f $file";
 	       if ($main::batch) {
 		   push @main::batch_commands, $command;
@@ -3816,7 +3816,7 @@ sub MakeDirectories {
 ### Generate tab files and SQL scripts for storing the results in a
 ### relational database
 sub ExportSQL {
-  &RSAT::message::TimeWarn ("Generating SQL") if ($verbose >= 1);
+  &RSAT::message::TimeWarn("Generating SQL") if ($verbose >= 1);
 
   &RSAT::message::debug($current_analysis, $current_analysis->get_attribute("id")) if ($verbose >= 10);
 
@@ -3837,7 +3837,7 @@ sub ExportSQL {
   my $f = 0;
   foreach my $family_name (@families) {
     $f++;
-    &RSAT::message::TimeWarn ("Generating SQL for family", $f."/".scalar(@families), $family_name) if ($verbose >= 1);
+    &RSAT::message::TimeWarn("Generating SQL for family", $f."/".scalar(@families), $family_name) if ($verbose >= 1);
 
     #### general family attributes
     my $family_object = $family_factory->new_object(id=>$run_prefix."_".$family_name);
@@ -3873,7 +3873,7 @@ sub ExportSQL {
 	my @fields = split;
 	my $sequence = uc($fields[0]);
 	my $oligo_object = $pattern_factory->new_object();
-	warn join ("\t", "; Created object", $sequence, $oligo_object), "\n" if ($verbose >= 3);
+	&RSAT::message::Debug("Created object", $sequence, $oligo_object) if ($verbose >= 5);
 	foreach $k (sort keys %export_columns) {
 	  &RSAT::message::Debug ( "specifying attribute", 
 				  $k, 
@@ -3921,7 +3921,7 @@ sub ExportSQL {
 	my $sequence = uc($fields[0]);
 	$sequence =~ s/N/n/g;
 	my $dyad_object = $pattern_factory->new_object();
-	warn join ("\t", "; Created object", $sequence, $dyad_object), "\n" if ($verbose >= 3);
+	&RSAT::message::Debug("Created object", $sequence, $dyad_object) if ($verbose >= 5);
 	foreach $k (sort keys %export_columns) {
 	  &RSAT::message::Debug("specifying attribute", $k, $export_columns{$k},$fields[$export_columns{$k}])
 	    if ($verbose >= 5);
@@ -4767,8 +4767,8 @@ sub CalibrationPrefix {
 ## Generate report fiels for the motif disovery competition 2004
 sub MDCreport {
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir{mdc_report});
-   warn ";\n; Generating report\t", $outfile{results}, "\n" if ($verbose >=1);
-   
+   &RSAT::message::TimeWarn("Generating MCD report\t".$outfile{results}) if ($verbose >=1);
+
    ################################################################
    ## Open a file for the report of results
    ($results) = &OpenOutputFile($outfile{results});
@@ -4866,16 +4866,16 @@ sub MDCreport {
 	    } elsif ($parameters_started) {
 		$parameters_text .= $line;
 		$matching_options .= " ".$line;
-		warn "manually specified parameter $line\n" if ($verbose >= 3);
+		&RSAT::message::Info("manually specified parameter $line") if ($verbose >= 3);
 	    }
 	}
 	close($in);
 	$matching_options =~ s/\n/ /g;
 	$matching_options =~ s/\r/ /g;
 
-	warn "Family $family_name\tParameters\t", $parameters_text, "\n" if ($verbose >= 2);
-	warn "Family $family_name\tPostprocessing\t", $postprocessing_text, "\n" if ($verbose >= 2);
-	warn "Matching options\t", $matching_options, "\n" if ($verbose >= 2);
+	&RSAT::message::Info("Family $family_name\tParameters\t", $parameters_text) if ($verbose >= 2);
+	&RSAT::message::Info("Family $family_name\tPostprocessing\t", $postprocessing_text) if ($verbose >= 2);
+	&RSAT::message::Info("Matching options\t", $matching_options) if ($verbose >= 2);
 
 	## Make sure there is a carriage return after postprocessing and parameters
 	chomp($parameter_text);
@@ -4894,7 +4894,7 @@ sub MDCreport {
 	&DrawFeatureMap($selection_ft_prefix, $selection_ft_prefix, " -minfthick 5");
 
 	## Convert the features in MDC format
-	warn ";\tReporting\t",$feature_file, "\n" if ($verbose >=2);
+	&RSAT::message::Info("\tReporting\t",$feature_file) if ($verbose >=2);
 	$command = "MDCreport-from-dnapat -d ".$family_name;
 	$command .= " -i ".$feature_file;
 	$command .= ">> ".$outfile{results} if ($outfile{results});
@@ -4903,7 +4903,7 @@ sub MDCreport {
 
    close $parameters;
 
-   warn ";\n; Generated report\t", $outfile{results}, "\n" if ($verbose >=1);
+   &RSAT::message::TimeWarn("Generated report\t", $outfile{results}) if ($verbose >=1);
 }
 
 
@@ -4949,15 +4949,16 @@ sub ReadAssemblyFile {
       $pattern->force_attribute("type", $type);
       $max_score{$family_name} = &max($max_score{$family_name}, $score{$pattern});
       $max_score{$pattern_type}{$family_name} = &max($max_score{$pattern_type}{$family_name}, $score{$pattern});
-      warn "Pattern\t", $_, "\n", join("\t", $family_name, 
+      &RSAT::message::Debug("Pattern\t", $_,
+			    "\n", join("\t", $family_name, 
 				       $pattern->get_attribute('sequence'),
 				       $pattern->get_attribute('rc'),
 				       $pattern->get_attribute('score'),
 				       $pattern->get_attribute('type'),
 				       $score{$pattern},
 				       $max_score{$family_name},
-				      ), "\n" if ($verbose >= 10);
-    }
+				      )) if ($verbose >= 10);
+			  }
   }
   close $pattern_handle;
   return ($error, @assembled_patterns);
@@ -4970,11 +4971,11 @@ sub ReadAssemblyFile {
 ## sequence length
 sub CalibrateOligos {
    my @calib_lengths = @_;
-   warn ";\n; Calibrating oligonucleotide occurrences\n" if ($verbose >=1);
+   &RSAT::message::TimeWarn("Calibrating oligonucleotide occurrences") if ($verbose >=1);
 
    ### Analyse upstream occurrence distributions for each sequence length
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir{calib1});
-   &RSAT::message::TimeWarn ("Calculating oligonucleotide distributions in all upstream sequences") 
+   &RSAT::message::TimeWarn("Calculating oligonucleotide distributions in all upstream sequences") 
      if ($verbose >= 1);
    foreach my $calib_length (sort {$a <=> $b} @calib_lengths) {
 
@@ -5003,10 +5004,10 @@ sub CalibrateOligos {
 
 	    ## Skip the calibration if the file already exists
 	    if ((-e $fitting_file.".gz") && !($force_calib)) {
-		warn "Calibration file already exists. Skipping calibration.\t${fitting_file}.gz\n";
+		&RSAT::message::Info("Calibration file already exists. Skipping calibration.\t${fitting_file}.gz");
 		next;
 	    } else {
-		warn "Calculating oligo calibration\t${fitting_file}.gz\n";
+		&RSAT::message::TimeWarn("Calculating oligo calibration\t${fitting_file}.gz");
 	    }
 
 	    ## Calculate occurrence distributions
