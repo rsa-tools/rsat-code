@@ -251,13 +251,14 @@
 	</ul>
 	<ul><b><A NAME="metabolic"></A>Metabolic</b><br>
 	A metabolic graph is defined as follows: It has values on its nodes for two attributes, namely "ObjectType"
-	and the given exclusion attribute. In addition, it is a directed graph.<br>
+	and the given exclusion attribute. The "ObjectType" attribute has two values: one for compound nodes ("Compound") and one for reaction nodes ("Reaction").
+	In addition, the graph is directed.<br>
 	This definition follows from our experience that metabolic graphs should be represented as directed, bipartite graphs, where
 	direct and reverse direction of a reaction are mutually exclusive (see <a href='neat_publications.html'>publications</a>).<br> 
-	In a tab-delimited file, you should set the "ObjectType" column
-	as second column after the node identifiers and the exclusion attribute column as third column.<br>
-	In GML format, you should use the "ObjectType" attribute and an exclusion attribute, whose name should be specified.<br>
-	The "ObjectType" attribute has two values: one for compound nodes ("Compound") and one for reaction nodes ("Reaction").<br>
+	In a tab-delimited file, you should set the "ObjectType" column as second column after the node identifiers and the exclusion attribute column as third column. 
+	Don't set column headers and leave the "Exclusion attribute" option blank.<br>
+	In GML format, you should use the "ObjectType" attribute and an exclusion attribute, whose name should be specified with the "Exclusion attribute" option.<br>
+	<br>
 	For REA, the exclusion attribute values should be given as follows:<br>
 	<ol>
 	<li>A compound should have the same string as identifier and exclusion attribute value.</li>
@@ -282,9 +283,11 @@
 	</pre>
 	</ul>
 	<ul><b><A NAME="algorithm"></A>Algorithm</b><br>
-	You can choose between REA (the default, see <a href='help.pathfinder.html#literature'>[1]</a>) or backtrack
-	developed by Fabian Couche and Didier Croes (see <a href='neat_publications.html'>publications</a>). Note that 
-	you can use the backtrack only on metabolic graphs.
+	You can choose between REA (the default, see <a href='help.pathfinder.html#literature'>[1]</a>) or backtracking 
+	developed by Fabian Couche and Didier Croes (see <a href='neat_publications.html'>publications</a>). 
+	<font color='red'>You can use backtracking only on metabolic graphs and only with a pre-defined weighting scheme. 
+	Backtracking treats the input graph as directed and sets weights as follows: compound nodes receive their degree
+	as weight and reaction nodes receive a weight of one. Only one start and one end node can be given.</font>
 	</ul>
 	
 <h4><A NAME="next">Next steps panel</a></h4>
