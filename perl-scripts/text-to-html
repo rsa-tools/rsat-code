@@ -117,7 +117,8 @@ OPTIONS
 
 	
 INPUT FORMAT
-	A tab-delimited text file
+	A tab-delimited text file. To enable sorting of the output table,
+	make sure the header line of the input file starts with the character "#"
 	
 OUTPUT FORMAT
 	An HTML file with a HTML table.
