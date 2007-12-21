@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.233 2007/12/21 08:58:42 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.234 2007/12/21 09:24:55 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.233 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.234 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -678,19 +678,24 @@ sub SetFileNames {
 	$expected_sites = $gene_nb*$expected_sites_per_gene;	
 	$family{$family_name}->{family_file} = $family_name."/".$family_name."_".$feature_types.".fam";
 	$family{$family_name}->{known_site_file} = $family_name."/".$family_name."_known_sites";
+
+	## Prefix for files
 	$family{$family_name}->{file_prefix} = $family_name;
 	if ($size_names) { ## Old naming system, maintained only for backward compatibility
 	  $family{$family_name}->{file_prefix} .= "_up".$seq_length unless ($sequence_file_list);
 	} else {
-	  $family{$family_name}->{file_prefix} .= "_up_from".$from."_to".$to unless ($sequence_file_list);
+	  $family{$family_name}->{file_prefix} .= "_from".$from."_to".$to unless ($sequence_file_list);
 	}
 	$family{$family_name}->{file_prefix} .= "_".$feature_types;
-	$family{$family_name}->{file_prefix} .= $noorf_string; 
+	$family{$family_name}->{file_prefix} .= $noorf_string;
+	unless ($size_names) { ## only for backward compatibility
+	  $family{$family_name}->{file_prefix} .= '-rm' if ($repeat_masked);
+	}
 	if ($taxon) {
 	    $family{$family_name}->{file_prefix} .= "_".$taxon; 
 	    $family{$family_name}->{ortho_file} = $family_name."/".$family_name."_".$feature_types."_orthologs_".$taxon.".fam";
 	}
-	
+
 	## Sequence files	unless ($sequence_file_list) {
 	unless ($sequence_file_list) {
 	    $family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".".$seq_format;
