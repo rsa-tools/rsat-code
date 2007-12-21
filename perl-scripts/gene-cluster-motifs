@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.229 2007/12/10 08:42:06 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.230 2007/12/21 00:35:59 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -36,7 +36,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.229 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.230 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -677,7 +677,8 @@ sub SetFileNames {
 	$family{$family_name}->{family_file} = $family_name."/".$family_name."_".$feature_types.".fam";
 	$family{$family_name}->{known_site_file} = $family_name."/".$family_name."_known_sites";
 	$family{$family_name}->{file_prefix} = $family_name;
-	$family{$family_name}->{file_prefix} .= "_up".$seq_length unless ($sequence_file_list);
+	$family{$family_name}->{file_prefix} .= "_up_from".$from."_to".$to unless ($sequence_file_list);
+#	$family{$family_name}->{file_prefix} .= "_up".$seq_length unless ($sequence_file_list);
 	$family{$family_name}->{file_prefix} .= "_".$feature_types;
 	$family{$family_name}->{file_prefix} .= $noorf_string; 
 	if ($taxon) {
@@ -2668,7 +2669,7 @@ sub CheckParameters {
     }
     ### family file ###
     unless (($family_file) || ($sequence_file_list)) {
-	&RSAT::error::FatalError("Youmust specify either a family file or a sequence file list");
+	&RSAT::error::FatalError("You must specify either a family file or a sequence file list");
     }
 
     ### organism ###
