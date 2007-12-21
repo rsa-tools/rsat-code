@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.232 2007/12/21 08:39:55 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.233 2007/12/21 08:58:42 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -34,9 +34,11 @@ require RSAT::MatrixReader;
 package main;
 {
 
+  $size_names = 0;
+
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.232 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.233 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -677,8 +679,11 @@ sub SetFileNames {
 	$family{$family_name}->{family_file} = $family_name."/".$family_name."_".$feature_types.".fam";
 	$family{$family_name}->{known_site_file} = $family_name."/".$family_name."_known_sites";
 	$family{$family_name}->{file_prefix} = $family_name;
-#	$family{$family_name}->{file_prefix} .= "_up_from".$from."_to".$to unless ($sequence_file_list);
-	$family{$family_name}->{file_prefix} .= "_up".$seq_length unless ($sequence_file_list);
+	if ($size_names) { ## Old naming system, maintained only for backward compatibility
+	  $family{$family_name}->{file_prefix} .= "_up".$seq_length unless ($sequence_file_list);
+	} else {
+	  $family{$family_name}->{file_prefix} .= "_up_from".$from."_to".$to unless ($sequence_file_list);
+	}
 	$family{$family_name}->{file_prefix} .= "_".$feature_types;
 	$family{$family_name}->{file_prefix} .= $noorf_string; 
 	if ($taxon) {
@@ -3009,6 +3014,7 @@ OPTIONS
    Sequence retrieval options
 	-org	organism
 
+
 	-org_fam
 		When this option is used, the name of the family
 		(second column of the family file) is used as
@@ -3046,6 +3052,14 @@ OPTIONS
 
        -feattype
 		feature type (e.g. CDS, mRNA)
+
+        -size_names
+                Use the old naming system (obsolete, only for backward
+                compatibility). In the old naming system, file names
+                included the upstream size. New names are more
+                precise, indicating the -from and -to parameters. This
+                avoids ambiguity in some cases.
+
 
    Sequence purging option
 
@@ -3536,6 +3550,10 @@ sub ReadArguments {
       ### organisms are specified as family names
     } elsif ($ARGV[$a] eq "-org_fam") {
       $org_fam = 1;
+
+      ### Old naming system, maintained for backward compatibility
+    } elsif ($ARGV[$a] eq "-size_names") {
+      $size_names = 1;
 
       ### taxon
     } elsif ($ARGV[$a] eq "-taxon") {
@@ -5126,6 +5144,7 @@ multiple-family-analysis options
 
 ## Sequence options
 -org		organism
+-size_names     use the old naming system (obsolete, only for backward compatibility)
 -org_fam	each family corresponds to one organism
 -taxon		taxon (collect upstream sequences of orthologous genes)
 -purge		use purged sequences for pattern discovery (default)
