@@ -546,7 +546,7 @@ print "<TD><B>";
 print $query->hidden(-name=>'demo_descr2',-default=>$descr."The program will return CRERs: regions of a few hundreds residues that have a higher density of matches than expected by chance.
 </blockquote>");
 print $query->hidden(-name=>'bg_method',-default=>'bgfile');
-print $query->hidden(-name=>'uth_site_pval',-default=>'1e-3');
+print $query->hidden(-name=>'uth_site_pval',-default=>'1e-4');
 print $query->hidden(-name=>'bgfile',-default=>'CHECKED');
 print $query->hidden(-name=>'background',-default=>'upstream-noorf');
 print $query->hidden(-name=>'markov_order',-default=>'0');
