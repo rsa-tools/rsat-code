@@ -38,14 +38,9 @@
   $graph_id = $_REQUEST['graph_id'];
   $directed = $_REQUEST['directed'];
   $weight = $_REQUEST['weight'];
-  $metabolic = $default_metabolic;
-  $exclusionAttr = $default_exlcusionAttr;
   $nodeIntegers = $default_nodeIntegers;
   $algorithm =  $default_algorithm;
   $rank = $_REQUEST['rank'];
-  $maxWeight =  $default_maxWeight;
-  $maxLength = $default_maxLength;
-  $minLength =  $default_minLength;
   $outputType =   $_REQUEST['outputType'];
   $store_graph = $_REQUEST['store_graph'];
   $return_type = $default_returnType;

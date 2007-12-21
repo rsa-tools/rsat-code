@@ -154,7 +154,7 @@
     <HR SIZE='2' NOSHADE>
     <br>
     <table>
-         <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path weight</a></B></td> <td><input type='text name='maxWeight' value='$default_maxWeight'></input></td></tr>
+         <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path weight</a></B></td> <td><input type='text' NAME='maxWeight' VALUE='$default_maxWeight'></input></td></tr>
          <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path length</a></B></td> <td><input type='text' name='maxLength' value='$default_maxLength'></input></td></tr>
          <tr><td><B><a href = 'help.pathfinder.html#sconstraints'>Minimal path length</a></B></td> <td><input type='text' name='minLength' value='$default_minLength'></input></td></tr> 
           <tr><td><B><a href = 'help.pathfinder.html#exclusion'>Exclusion attribute</a></B></td> <td><input type='text' name='exAttrib' value='$default_exAttrib'></input></td></tr> 
