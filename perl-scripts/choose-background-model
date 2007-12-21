@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: choose-background-model,v 1.2 2007/12/10 02:55:27 jvanheld Exp $
+# $Id: choose-background-model,v 1.3 2007/12/21 08:40:19 jvanheld Exp $
 #
 ############################################################
 
@@ -98,7 +98,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     local $oligo_length;
@@ -339,7 +339,7 @@ When the pattern type is dyad, the spacing is automatically set to
 
 =cut
 	} elsif ($arg eq "-type") {
-	    $main::type = shit(@arguments);
+	    $main::type = shift(@arguments);
 
 	    ## Output file
 =pod
