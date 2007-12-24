@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.234 2007/12/21 09:24:55 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.235 2007/12/24 10:41:57 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.234 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.235 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -1160,7 +1160,7 @@ sub UpstreamSequencesEnsEMBL {
     $command .= " -ensemblhost xserve2 -alltranscripts";
     $command .= " -i ".$family{$family_name}->{family_file};
     $command .= " -org ". $organism_name;
-    $command .= " -type upstream";
+    $command .= " -type upstream -maskcoding";
     $command .= " -noorf " if ($noorf);
     $command .= " -rm " if ($repeat_masked);
     $command .= " -o ".$family{$family_name}->{seq_file};
