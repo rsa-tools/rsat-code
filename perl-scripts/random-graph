@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.25 2007/12/07 12:31:54 rsat Exp $
+# $Id: random-graph,v 1.26 2007/12/26 03:02:08 jvanheld Exp $
 #
 ############################################################
 
@@ -438,7 +438,7 @@ With the node_degree_distrib randomization type, the global distribution of node
 
 	    ### Output format  
 
-=item B<-output_format output_format>
+=item B<-out_format output_format>
 
 Output format. Supported: tab, dot, gml. By default, the output format is tab.
 
