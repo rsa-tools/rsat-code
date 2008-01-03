@@ -510,7 +510,7 @@ sub ReadPatternFrequencies {
 
 ################################################################
 # Read pattern expected frequencies from a file This does the same as
-# ReadOligoFrequencies, but it modifies a global variable
+# &ReadPatternFrequencies(), but it modifies a global variable
 # %patterns. This is not very elegant, I just maintain it temporarily,
 # until I find time to implement and test a more appropriate procedure.
 sub ReadExpectedFrequencies {
@@ -542,7 +542,7 @@ sub ReadExpectedFrequencies {
   	} elsif (($fields[1] =~ /(\S+)\|(\S+)/) && (&IsReal($fields[2]))) {
 	    #### second field contains the ID as a pair of reverse complements
 	    $file_type = "2str";
-  	    $fw = lc($1);
+	    $fw = lc($1);
   	    $rc = lc($2);
   	    $patterns{$rc}->{exp_freq} = $fields[2];
   	    $patterns{$fw}->{exp_freq} = $fields[2];
@@ -560,8 +560,12 @@ sub ReadExpectedFrequencies {
 	if ($patterns{$pattern_seq}->{exp_freq} < 0) {
 	    &RSAT::error::FatalError("Expected frequency cannot be negative\t$pattern_seq\t".$patterns{$pattern_seq}->{exp_freq});
 	}
+
+#	&RSAT::message::Debug("&ReadExpectedFrequencies()", $file_type, $l, $pattern_seq, $patterns{$pattern_seq}->{exp_freq})
+#	  if ($main::verbose >= 10);
     }
     close $exp if ($exp_freq_file);
+
 
     #### check if reverse complements were included in the expected freq file;
     #### if not, infer them from the direct strand 
@@ -601,6 +605,10 @@ sub ReadExpectedFrequencies {
 			     "sum_rc=".$sum_rc,
 			     "rescale_freq=".$rescale_freq,
 			    ) if ($main::verbose >=2);
+
+
+
+
 
 
     return %patterns;
@@ -645,7 +653,7 @@ sub CalcConditionalProbabilities {
     &ReadExpectedFrequencies($exp_freq_file) ;
 
     &RSAT::message::TimeWarn("Calculating Markov model from file $exp_freq_file") if ($main::verbose >= 2);
-    
+
     foreach my $pattern_seq (keys %patterns) {
 	$expected_freq{$pattern_seq} = $patterns{$pattern_seq}->{exp_freq};
     }
