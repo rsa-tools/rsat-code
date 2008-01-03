@@ -127,7 +127,8 @@ if (&IsInteger($query->param('to'))) {
 
 ### prevent orf overlap ###
 if (lc($query->param('noorf')) eq "on") {
-    $parameters .= " -noorf ";
+  $noorf = 1; ## For the piping form
+  $parameters .= " -noorf ";
 }
 
 ### repeat masking
