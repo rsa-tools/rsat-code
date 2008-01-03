@@ -373,7 +373,64 @@ sub TaxonomyPopUpString {
 }
 
 
+################################################################
+## Background model options for oligo-analysis + ORM
+sub PrintOligoBackgroundOptions {
+  print "<A HREF='help.oligo-analysis.html#exp_freq'><B>Background model</B></A>&nbsp;<p>";
 
+
+  #### Calibrated on genome subsets
+  print ("<b>Genome subset</b>");
+  print "<ul>";
+  print( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='background' $checked{background}>");
+  print ( "<a href='help.oligo-analysis.html#background'>Sequence type</a> &nbsp;&nbsp;&nbsp;&nbsp;", 
+	  $query->popup_menu(-name=>'background',
+			     -Values=>["upstream","upstream-noorf","intergenic"],
+			     -default=>$default{background}));
+
+  print &OrganismPopUpString();
+  print "</ul>";
+
+
+  print "<p>";
+
+  #### Estimated from the input sequence set
+
+  print ("<br><b>Estimate from input sequence</b>");
+  print ("<ul>");
+
+  ## Markov chain model
+  print ("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Markov Chain (higher order dependencies)' $checked{'Markov Chain (higher order dependencies)'}>", 
+	 "Markov Chain (higher order dependencies)");
+
+  print "&nbsp;&nbsp;order &nbsp;";
+  print $query->textfield(-name=>'markov_order',
+			  -default=>$default{markov_order},
+			  -size=>5);
+
+  #### Lexicon partitioning
+  #print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Lexicon partitioning' $checked{'Lexicon partitioning'}>Lexicon partitioning<p>";
+
+  #### Bernouilli model
+  #print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Residue frequencies from input sequence' $checked{'Residue frequencies from input sequence'}>Residue frequencies from input sequence<p>";
+
+  #### equiprobable residues
+  print "<br><INPUT TYPE='radio' NAME='freq_estimate' VALUE='Equiprobable residues' $checked{'Equiprobable residues'}>Equiprobable residues (<A HREF='help.oligo-analysis.html#equiprobable'>usually NOT recommended</a>)<p>";
+
+  print ("</ul>");
+
+  #### custom expected frequency file
+
+  print ("<a href='help.oligo-analysis.html#upload_freq_file'><b>Upload your own expected frequency file</b></a><BR>");
+  print ("<ul>");
+  print ("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='file_upload' $checked{'file_upload'}>");
+  print ($query->filefield(-name=>'upload_freq_file',
+			   -default=>'starting value',
+			   -size=>30,
+			   -maxlength=>200));
+  print ("</ul>");
+  print "<p>";
+}
 
 ################################################################
 ## Print HTML header
