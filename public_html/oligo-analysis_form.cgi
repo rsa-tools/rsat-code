@@ -6,6 +6,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
+require "RSA.cgi.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
@@ -23,7 +24,7 @@ $default{sequence_type} = "dna";
 $default{oligo_length} = 6;
 $default{background} = "upstream-noorf";
 $default{markov_order} = 2;
-$default{pseudo_weight} = "0.05";
+$default{pseudo_weight} = "0.01";
 $default{strand} = "both strands";
 $default{noov} = 'checked';
 $default{grouprc} = 'checked';
@@ -154,55 +155,9 @@ print "<BR>";
 
 print "<HR width=550 align=left>\n";
 
-
-
 ################################################################
-#### estimation of expected frequencies
-print "<A HREF='help.oligo-analysis.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<p>";
-
-
-#### pre-defined background frequencies
-print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='background' $checked{background}>", 
-	"Predefined background frequencies");
-print "<ul>";
-print ( "<a href='help.oligo-analysis.html#background'>Background model</a> &nbsp;&nbsp;&nbsp;&nbsp;", 
-	$query->popup_menu(-name=>'background',
-			   -Values=>["upstream","upstream-noorf","intergenic"],
-			   -default=>$default{background}));
-	
-print "<br>", &OrganismPopUpString();
-print "</ul>";
-
-
-print "<p>";
-
-#### Markov chain model
-print ("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Markov Chain (higher order dependencies)' $checked{'Markov Chain (higher order dependencies)'}>", 
-       "Markov Chain (higher order dependencies)");
-
-print "order &nbsp;";
-print $query->textfield(-name=>'markov_order',
-			-default=>$default{markov_order},
-			-size=>5);
-print "<p>";
-
-#### Lexicon partitioning
-print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Lexicon partitioning' $checked{'Lexicon partitioning'}>Lexicon partitioning<p>";
-
-#### Bernouilli model
-print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Residue frequencies from input sequence' $checked{'Residue frequencies from input sequence'}>Residue frequencies from input sequence<p>";
-
-#### equiprobable residues
-print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Equiprobable residues' $checked{'Equiprobable residues'}>Equiprobable residues (<A HREF='help.oligo-analysis.html#equiprobable'>usually NOT recommended</a>)<p>";
-
-#### custom expected frequency file
-print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='file_upload' $checked{'file_upload'}><a href='help.oligo-analysis.html#upload_freq_file'>Upload your own expected frequency file</a><BR>";
-
-print $query->filefield(-name=>'upload_freq_file',
-			-default=>'starting value',
-			-size=>30,
-			-maxlength=>200);
-print "<p>";
+## Background model
+&PrintOligoBackgroundOptions();
 
 ################################################################
 #### pseudo-weights
