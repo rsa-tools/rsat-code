@@ -768,6 +768,7 @@ sub to_patser {
 
     %supported_types = (profile=>1,
 			counts=>1,
+			perm_columns => 1,
 			frequencies=>1,
 			weights=>1,
 			information=>1,
@@ -1810,6 +1811,40 @@ sub get_column {
 	push @col, $table[$col_nb-1][$r];
     }
     return @col;
+}
+
+################################################################
+=pod
+
+=item permute_columns()
+
+Permute the columns of the matrix
+
+=cut
+sub permute_columns {
+    my ($self) = @_;
+    
+    my @matrix = @{$self->{table}};
+    my @perm_matrix = ();
+    
+    ## Permute entire columns
+    #my $perm_col_values;
+    my @perm_col_values = ();;
+    my $ncol = $self->ncol();
+    my $nrow = $self->nrow();
+    my @cols = 0..($ncol-1);
+    my @perm_col = &RSAT::stats::permute(@cols);
+    foreach my $c (@cols) {
+    	my @perm_values =  &RSAT::matrix::get_column($perm_col[$c], $nrow, @matrix);
+      	push @{$perm_col_values[$c]}, @perm_values;
+    }
+    
+   	for my $r (0..($nrow-1)) {
+		for my $c (0..($ncol-1)) {
+	    $perm_matrix[$c][$r] = $perm_col_values[$c][$r];
+	}
+    }
+     @{$self->{perm_columns}} = @perm_matrix;
 }
 
 

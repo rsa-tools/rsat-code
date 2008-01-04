@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.52 2007/12/19 16:27:03 morgane Exp $
+# $Id: convert-matrix,v 1.53 2008/01/04 13:08:36 morgane Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -920,51 +920,29 @@ sub ExportMatrix {
   
   
    ## Return parameters
-  if ($perm) {
-    	my $m = 0;
-    	my $tab_matrix;
-
+  if ($perm) { 	
     	&RSAT::message::Info("permutating matrix")
-		if ($main::verbose >= 3);	
-
-		## Calculate count matrix
-		if ($return_fields{counts}) {
-			$tab_matrix = $matrix->toString(sep=>"\t",
-					 type=>"counts",
-					 format=>"tab",
-					 pipe=>"" ## We suppress the pipe for permute-table
-					);
-		## Calculate frequency matrix
-		} elsif ($return_fields{frequencies}) {
-    		$matrix->calcFrequencies();
-    		$tab_matrix = $matrix->toString(col_width=>($decimals+4), 
-					 decimals=>$decimals, 
-					 type=>"frequencies",
-					 format=>'tab',
-					 pipe=>"" ## We suppress the pipe for permute-table
-					 );
-		} elsif ($return_fields{weights}) {
-    		$matrix->calcWeights();
-    		$tab_matrix = $matrix->toString(col_width=>($decimals+4), 
-					 decimals=>$decimals, 
-					 type=>"weights",
-					 format=>'tab',
-					 pipe=>"" ## We suppress the pipe for permute-table
-					 );
-  		} else {
-  			&RSAT::error::FatalError("Specify the type of matrix to permute with -return option. Specify counts, frequencies or weights");
-  		}
-
-    	## export matrix in tab format, then permute
+		if ($main::verbose >= 3);
+		
+		## permute matrix
   		for my $i (1..$perm) {
 
 			if ($i > 1) {
       			print $out $RSAT::matrix::matrix_separator{$output_format}, "\n";
     		}
+    		
+    		##permute the matrix
+    		$matrix->permute_columns();	
+    		
+    		## print result
     		print $out "; permutation $i/$perm\n" if ($verbose >=1);
-    		print $out `echo '$tab_matrix'| perl -ple 's/ /\t/g if !/^;/' | perl -ple 's/\t+/\t/g if !/^;/' | permute-table -rownames -entire_col`;
-  			}
-  		#print $out "; original matrix\n" if ($verbose >=1);
+
+  			print $out $matrix->toString(sep=>"\t",
+					 type=>"perm_columns",
+					 format=>"tab",
+					 pipe=>"" ## We suppress the pipe for permute-table
+					);
+  			} 		
   } else {
 
 
@@ -994,7 +972,6 @@ sub ExportMatrix {
 					 format=>$output_format);
   }
   
-  }
   
   ## Print the profile matrix
   if ($return_fields{profile}) {
@@ -1040,7 +1017,7 @@ sub ExportMatrix {
   }
   
   
- 
+  }
 
   ## Return weight distribution
   if ($return_fields{wdistrib}) {
