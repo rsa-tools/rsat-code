@@ -252,14 +252,14 @@ sub doit {
 ## For an organism-specific background model
 ##    my $background_file = &ExpectedFreqFile($organism_name, $oligo_length,
 ##				$background,str=>$str,noov=>$overlap,type=>$type,
-##                              warn=0|1,nowarn=0|1,
-##                              taxon=0);
+##                              warn=>0|1,nowarn=>0|1,
+##                              taxon=>0);
 ##
 ## For a taxon-wide background model
 ##    my $background_file = &ExpectedFreqFile($taxon_name, $oligo_length,
 ##				$background,str=>$str,noov=>$overlap,type=>$type,
-##                              warn=0|1,nowarn=0|1,
-##                              taxon=1);
+##                              warn=>0|1,nowarn=>0|1,
+##                              taxon=>1);
 sub ExpectedFreqFile {
     my ($org_or_taxon, $oligo_length, $background, %args) = @_;
     my $exp_freq_file = "";
@@ -330,7 +330,7 @@ sub ExpectedFreqFile {
       $exp_freq_file = join("",
 			    $data_dir,
 			    "dyads_",$oligo_length,"nt_sp0-20_",
-			    $background_model,
+			    $background,
 			    "_",
 			    $org_or_taxon,
 			    $overlap_suffix.$str,
@@ -889,14 +889,18 @@ sub CheckOrganismName {
 sub GetOrganismsForTaxon {
   my ($query_taxon) = @_;
   my @organisms = ();
-  foreach my $org (sort keys %supported_organism) {
-    my $taxonomy = $supported_organism{$org}->{'taxonomy'};
-    my @org_taxa = split /\s*;\s*/, $taxonomy;
-    &RSAT::message::Debug("GetOrganismsForTaxon", $query_taxon, "checking", $org) if ($main::verbose >= 5);
-    foreach my $orf_taxon (@org_taxa) {
-      if (lc($orf_taxon) eq lc($query_taxon)) {
-	push @organisms, $org;
-	&RSAT::message::Debug("GetOrganismsForTaxon", $query_taxon, "collected", $org) if ($main::verbose >= 3);
+  if ($query_taxon eq "Organisms") {
+    @organisms =  (sort keys %supported_organism);
+  } else {
+    foreach my $org (sort keys %supported_organism) {
+      my $taxonomy = $supported_organism{$org}->{'taxonomy'};
+      my @org_taxa = split /\s*;\s*/, $taxonomy;
+      &RSAT::message::Debug("GetOrganismsForTaxon", $query_taxon, "checking", $org) if ($main::verbose >= 5);
+      foreach my $orf_taxon (@org_taxa) {
+	if (lc($orf_taxon) eq lc($query_taxon)) {
+	  push @organisms, $org;
+	  &RSAT::message::Debug("GetOrganismsForTaxon", $query_taxon, "collected", $org) if ($main::verbose >= 3);
+	}
       }
     }
   }
@@ -1033,6 +1037,16 @@ sub ListSupportedOrganisms {
 
 $supported_organisms = &ListSupportedOrganisms();
 
+
+################################################################
+## Return the list of supported taxa
+sub ListSupportedTaxa {
+  require RSAT::Tree;
+  my $tree = new RSAT::Tree();
+  $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
+  my @supported_taxa = $tree->node_names();
+  return @supported_taxa;
+}
 
 
 
