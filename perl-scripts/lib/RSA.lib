@@ -329,7 +329,7 @@ sub ExpectedFreqFile {
       ## Dyad frequencies
       $exp_freq_file = join("",
 			    $data_dir,
-			    "/oligo-frequencies/dyads_",$oligo_length,"nt_sp0-20_",
+			    "dyads_",$oligo_length,"nt_sp0-20_",
 			    $background_model,
 			    "_",
 			    $org_or_taxon,
