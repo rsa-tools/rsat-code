@@ -248,24 +248,45 @@ sub doit {
 ## given the organism, oligo length and background model
 ##
 ## Usage: 
+##
+## For an organism-specific background model
 ##    my $background_file = &ExpectedFreqFile($organism_name, $oligo_length,
-##				$background,str=>$str,noov=>$overlap,type=>$type);
+##				$background,str=>$str,noov=>$overlap,type=>$type,
+##                              warn=0|1,nowarn=0|1,
+##                              taxon=0);
+##
+## For a taxon-wide background model
+##    my $background_file = &ExpectedFreqFile($taxon_name, $oligo_length,
+##				$background,str=>$str,noov=>$overlap,type=>$type,
+##                              warn=0|1,nowarn=0|1,
+##                              taxon=1);
 sub ExpectedFreqFile {
-    my ($organism_name, $oligo_length, $background, %args) = @_;
+    my ($org_or_taxon, $oligo_length, $background, %args) = @_;
     my $exp_freq_file = "";
 
     my $type = $args{type} || "oligo";
     my $str = $args{str} || "-2str";
     my $overlap = $args{noov} || "-noov";
     my $overlap_suffix;
+    my $taxon = $args{taxon} || 0;
     if ($overlap eq "-noov") {
       $overlap_suffix = "-noov";
     } else { 
       $overlap_suffix = "-ovlp";
     }
 
-    #### organism
-    &CheckOrganism($organism_name);
+    #### Check organism or taxon
+    my $data_dir = "";
+    if ($taxon) {
+      &CheckTaxon($org_or_taxon);
+      $data_dir = $ENV{RSAT}."/public_html/data";
+      $data_dir .= "/taxon_frequencies/".$org_or_taxon."/";
+      $data_dir =~ s/\s/_/g;
+    } else {
+      &CheckOrganism($org_or_taxon);
+      $data_dir = $supported_organism{$org_or_taxon}->{'data'};
+      $data_dir .= "/oligo-frequencies/";
+    }
 
     #### check oligo length
     unless ($oligo_length) {
@@ -303,8 +324,7 @@ sub ExpectedFreqFile {
 # 	&RSAT::error::FatalError("Invalid oligonucleotide length : must be <= 8");
 #     }
 
-    my $data_dir = $supported_organism{$organism_name}->{'data'};
-    $exp_freq_file = $data_dir."/oligo-frequencies/";
+    $exp_freq_file = $data_dir;
     if ($type eq "dyad") {
       ## Dyad frequencies
       $exp_freq_file = join("",
@@ -312,13 +332,13 @@ sub ExpectedFreqFile {
 			    "/oligo-frequencies/dyads_",$oligo_length,"nt_sp0-20_",
 			    $background_model,
 			    "_",
-			    $organism_name,
+			    $org_or_taxon,
 			    $overlap_suffix.$str,
 			    ".freq");
 
     } elsif ($background eq "upstreamL") {
       ## ???
-      $exp_freq_file .= "_".$organism_name;
+      $exp_freq_file .= "_".$org_or_taxon;
       $exp_freq_file .= "_allup500";
       $exp_freq_file .= $oligo_length."nt";
       $exp_freq_file .= $str;
@@ -329,7 +349,7 @@ sub ExpectedFreqFile {
       ## Oligonucleotide frequencies
       $exp_freq_file .= $oligo_length."nt";
       $exp_freq_file .= "_".$background;
-      $exp_freq_file .= "_".$organism_name;
+      $exp_freq_file .= "_".$org_or_taxon;
       $exp_freq_file .= $overlap_suffix;
       $exp_freq_file .= $str;
       $exp_freq_file .= ".freq";
@@ -340,6 +360,8 @@ sub ExpectedFreqFile {
 	    (-e $exp_freq_file.".gz")) {
       if ($args{warn}) {
 	&RSAT::message::Warning("Cannot find expected frequency file $exp_freq_file");
+      } elsif ($args{nowarn}) {
+	## Do nothing
       } else {
 	&RSAT::error::FatalError("Cannot find expected frequency file $exp_freq_file");
       }
