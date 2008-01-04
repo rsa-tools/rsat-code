@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.24 2007/12/07 08:36:33 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.25 2008/01/04 00:23:48 jvanheld Exp $
 #
 ############################################################
 
@@ -169,45 +169,67 @@ package main;
     }
 
     ## Check taxon and collect organisms
+    &RSAT::error::FatalError("You must specify a taxon (optio -taxon)") unless ($taxon);
     @organisms = &CheckTaxon($taxon);
 
     ## Automatic specification of the output file for the installatin
     ## in the RSAT data folder
     if ($install) {
 
-      ## Output directory
-      if (defined($ENV{RSAT})) {
-	$dir{taxfreq} = $ENV{RSAT}."/public_html/data";
-      }
-      $dir{taxfreq} .= "/taxon_frequencies/".$taxon;
-      $dir{taxfreq} =~ s/\s/_/g;
-      &RSAT::util::CheckOutDir($dir{taxfreq});
-      &RSAT::message::Info("Installation directory", $dir{taxfreq}) if ($main::verbose >= 2);
-    }
-
-
-    ## Automatically specify the output file name
-    if (($install) || ($dir{taxfreq})) {
-      $outfile{output} = $dir{taxfreq}."/";
+      ## Output file name
       if ($pattern_type eq "oligo") {
-	$outfile{output} .= "_".$oligo_length."nt";
-      } elsif ($pattern_type eq "dyad") {
-	$outfile{output} .= "dyads";
-	$outfile{output} .= "_".$monad_length."nt";
-	$outfile{output} .= "_sp0-20";
+	$outfile{taxfreq} = &ExpectedFreqFile($taxon, $oligo_length, $background_model,
+					      type=>'oligo',
+					      noov=>$noov, 
+					      str=>$str,
+					      nowarn=>1,
+					      taxon=>1);
+      } elsif  ($pattern_type eq "dyad") {
+	$outfile{taxfreq} = &ExpectedFreqFile($taxon, $monad_length, $background_model,
+					      type=>'dyad',
+					      noov=>$noov, 
+					      str=>$str,
+					      nowarn=>1,
+					      taxon=>1);
+      } else {
+	&RSAT::error::FatalError($pattern_type, "is not a valid pattern type. Supported: oligo,dyad");
       }
-      $outfile{output} .= "_".$background_model;
-      $outfile{output} .= "_".$taxon;
-      $outfile{output} .= $noov;
-      $outfile{output} .= $str;
-      $outfile{output} .= ".tab.gz";
-      $outfile{output} =~ s/\s/_/g;
-      &RSAT::message::Info("Installation file", $outfile{output}) if ($main::verbose >= 1);
+
+      ## Output directory
+      if ($dir{taxfreq}) {
+	## Replace automatic by user-specified taxfreq directory
+	$outfile{taxfreq} = join ("/", $dir{taxfreq}), &ShortFileName($outfile{taxfreq});
+      } else {
+	($dir{taxfreq}) = &SplitFileName($outfile{taxfreq});
+      }
+      &RSAT::util::CheckOutDir($dir{taxfreq});
+      &RSAT::message::Info("Install dir", $dir{taxfreq}) if ($main::verbose >= 2);
+      &RSAT::message::Info("Install file", $outfile{taxfreq}) if ($main::verbose >= 1);
     }
+
+
+#     ## Automatically specify the output file name
+#     if (($install) || ($dir{taxfreq})) {
+#       $outfile{taxfreq} = $dir{taxfreq}."/";
+#       if ($pattern_type eq "oligo") {
+# 	$outfile{taxfreq} .= "_".$oligo_length."nt";
+#       } elsif ($pattern_type eq "dyad") {
+# 	$outfile{taxfreq} .= "dyads";
+# 	$outfile{taxfreq} .= "_".$monad_length."nt";
+# 	$outfile{taxfreq} .= "_sp0-20";
+#       }
+#       $outfile{taxfreq} .= "_".$background_model;
+#       $outfile{taxfreq} .= "_".$taxon;
+#       $outfile{taxfreq} .= $noov;
+#       $outfile{taxfreq} .= $str;
+#       $outfile{taxfreq} .= ".tab.gz";
+#       $outfile{taxfreq} =~ s/\s/_/g;
+#       &RSAT::message::Info("Installation file", $outfile{taxfreq}) if ($main::verbose >= 1);
+#     }
 
     ################################################################
     ## Open output stream
-    $out = &OpenOutputFile($outfile{output});
+    $out = &OpenOutputFile($outfile{taxfreq});
 
     ################################################################
     ## Read background pattern frequencies
@@ -463,8 +485,8 @@ package main;
 
     ################################################################
     ## Close output stream
-    close $main::out if ($main::outfile{output});
-    &RSAT::message::Info("Taxon frequency file", $outfile{output}) if (($main::verbose >= 1) && ($outfile{output}));
+    close $main::out if ($main::outfile{taxfreq});
+    &RSAT::message::Info("Taxon frequency file", $outfile{taxfreq}) if (($main::verbose >= 1) && ($outfile{taxfreq}));
 
     exit(0);
 }
@@ -560,7 +582,7 @@ and -install are mutually exclusive).
 
 =cut
 	} elsif ($arg eq "-o") {
-	    $main::outfile{output} = shift(@arguments);
+	    $main::outfile{taxfreq} = shift(@arguments);
 	    if ($install) {
 	      &RSAT::error::FatalError("Options -o and -install are mutually exclusive");
 	    }
@@ -588,7 +610,7 @@ Incompatible with the option -o and -install.
 	    if ($install) {
 	      &RSAT::error::FatalError("Options -dir and -install are mutually exclusive");
 	    }
-	  if ($main::outfile{output}) {
+	  if ($main::outfile{taxfreq}) {
 	    &RSAT::error::FatalError("Options -o and -dir are mutually exclusive");
 	  }
 
@@ -606,7 +628,7 @@ Incompatible with the option -o and -dir.
 =cut
 	} elsif ($arg eq "-install") {
 	  $install = 1;
-	  if ($main::outfile{output}) {
+	  if ($main::outfile{taxfreq}) {
 	    &RSAT::error::FatalError("Options -o and -install are mutually exclusive");
 	  }
 	  if ($main::dir{taxfreq}) {
