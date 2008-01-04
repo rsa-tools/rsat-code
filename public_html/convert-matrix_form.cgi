@@ -145,12 +145,13 @@ print $query->popup_menu(-name=>'decimals',
 				   '1','2'],
 			 -default=>$default{decimals});
 
-##### permutations
-#print "<BR>\n";
-#print "<B><A HREF='help.convert-matrix.html#permutations'>Number of permutations</A></b>\n";
-#print $query->textfield(-name=>'perm',
-#			-default=>$default{perm},
-#			-size=>2);
+#### permutations
+print "<BR>\n";
+print "<B><A HREF='help.convert-matrix.html#permutations'>Number of permutations</A></b>\n";
+print $query->textfield(-name=>'perm',
+			-default=>$default{perm},
+			-size=>2);
+print "<B>(returns 'counts' field only)</b>\n";
 
 ################################################################
 ### send results by email or display on the browser
