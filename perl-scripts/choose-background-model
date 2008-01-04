@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: choose-background-model,v 1.3 2007/12/21 08:40:19 jvanheld Exp $
+# $Id: choose-background-model,v 1.4 2008/01/04 02:48:07 jvanheld Exp $
 #
 ############################################################
 
@@ -51,6 +51,8 @@ using Markov chain background model.
 
 =item organism (option -org organism_name)
 
+=item taxon (option -taxon taxon_name)
+
 =item sequence type (options -bg upstream or -bg upstream-noorf)
 
 =item strands (-1str or -2str)
@@ -70,7 +72,10 @@ util
 
 =head1 USAGE
 
-choose-background-model -type oligo|dyad -org organism [-1str|-2str] \
+choose-background-model -type oligo|dyad -org organism_name [-1str|-2str] \
+  -l oligo_length -bg upstream|upstream-noorf -ovlp|-noov
+
+choose-background-model -type oligo|dyad -taxon taxon_name [-1str|-2str] \
   -l oligo_length -bg upstream|upstream-noorf -ovlp|-noov
 
 =head1 OUTPUT FORMAT
@@ -98,7 +103,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     local $oligo_length;
@@ -106,6 +111,7 @@ package main;
     local $type="oligo";
     local $overlap;
     local $organism_name;
+    local $taxon_name;
     local $background;
 
     %main::outfile = ();
@@ -121,7 +127,7 @@ package main;
     ## Check argument values
     ## At this stage, we only check that the required parameters have been specified by the user. 
     ## Their validity is checked by the function &ExpectedFreqFile()
-    &RSAT::error::FatalError("You must specify an organism (option -org)") unless ($organism_name);
+    &RSAT::error::FatalError("You must specify an organism (option -org) or a taxon (option -taxon)") unless (($organism_name)|| ($taxon_name));
     &RSAT::error::FatalError("You must specify the pattern type (option -type oligo|dyad)") unless ($type);
     &RSAT::error::FatalError("You must specify the oligo length (option -l)") unless ($oligo_length);
     &RSAT::error::FatalError("You must specify the strand (option -1str or -2str)") unless ($str);
@@ -138,8 +144,15 @@ package main;
 
     ################################################################
     ## Execute the command
-    my $background_file = &ExpectedFreqFile($organism_name, $oligo_length, $background,
-					    str=>$str,noov=>$overlap,type=>$type);
+
+    my $background_file;
+    if ($organism_name) {
+      $background_file = &ExpectedFreqFile($organism_name, $oligo_length, $background,
+					   str=>$str,noov=>$overlap,type=>$type, warn=>1, taxon=>0);
+    } elsif ($taxon_name) {
+      $background_file = &ExpectedFreqFile($taxon_name, $oligo_length, $background,
+					   str=>$str,noov=>$overlap,type=>$type, warn=>1, taxon=>1);
+    }
 
     ################################################################
     ## Print output
@@ -236,9 +249,29 @@ Same as -h
 The organism has to be supported on RSAT. To obtain a list of
 supported organisms, use the command B<supported-organisms>
 
+This option is mutually exclusive with -taxon.
+
 =cut
 	} elsif ($arg eq "-org") {
+	  &RSAT::error::FatalError("Options -org and -taxon are mutually exclusive") if ($main::taxon_name);
 	  $main::organism_name = shift(@arguments);
+
+	    ## Taxon
+=pod
+
+=item B<-taxon taxon_name>
+
+Choose a taxon-wide background model.
+
+The taxon has to be supported on RSAT. To obtain a list of
+supported organisms, use the command B<supported-organisms -format full>
+
+This option is mutually exclusive with -org.
+
+=cut
+	} elsif ($arg eq "-taxon") {
+	  &RSAT::error::FatalError("Options -org and -taxon are mutually exclusive") if ($main::organism_name);
+	  $main::taxon_name = shift(@arguments);
 
 	    ## Background type
 =pod
