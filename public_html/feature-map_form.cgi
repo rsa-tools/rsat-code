@@ -38,6 +38,8 @@ $default{to} = 'auto';
 $default{handle} = 'none';
 $default{origin} = '0';
 $default{map_len} = 500;
+$default{spacing} = 2;
+$default{thickness} = 25;
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -170,12 +172,12 @@ print $query->textfield(-name=>'mlen',
 
 print "&nbsp;thickness&nbsp;";
 print $query->textfield(-name=>'mapthick',
-			-default=>'auto',
+			-default=>$default{thickness},
 			-size=>5);
 
 print "&nbsp;spacing&nbsp;";
 print $query->textfield(-name=>'mspacing',
-			-default=>'6',
+			-default=>$default{spacing},
 			-size=>5);
 
 print "<BR>\n";
@@ -186,7 +188,7 @@ print $query->popup_menu(-name=>'palette',
 
 print "<B><A HREF='help.feature-map.html#bgcolor'>Background color (R,G,B)</A></B>&nbsp;&nbsp;&nbsp;&nbsp";
 print $query->textfield(-name=>'bgcolor',
-			-default=>'220,220,255',
+			-default=>'220,220,220',
 			-size=>11);
 
 
