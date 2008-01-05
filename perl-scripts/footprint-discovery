@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.5 2008/01/05 10:45:44 jvanheld Exp $
+# $Id: footprint-discovery,v 1.6 2008/01/05 10:53:24 jvanheld Exp $
 #
 ############################################################
 
@@ -120,7 +120,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -589,5 +589,59 @@ __END__
 =back
 
 =head1 WISH LIST
+
+
+The following options are not yet implemented, but this should be done
+soon.
+
+=over
+
+=item B<-all_genes>
+
+Automatically analyze all the genes of a query
+genome, and store each result in a separate folder.
+
+=item B<-query_genes>
+
+Specify a file containing a list of genes, each of which will be
+analyzed separately.
+
+=item B<-batch>
+
+Generate one command per query gene, and post it on the queue of a PC
+cluster.
+
+=item B<-bg_model taxfreq|monad>
+
+Allow the user to choose among alternative background model (see Janky
+& van Helden, 2008).
+
+=over
+
+=item taxfreq
+
+Taxon-wide background model, computed by counting dyad frequencies in
+all the promoters of all the genes of the reference taxon.
+
+=item monad
+
+Expected dyad frequencies are the product of monad frequencies
+observed in the input sequences.
+
+=back
+
+=item B<-filter>
+
+Only accept dyads found in the promoter of the query gene, in the
+query organism.
+
+=item B<-no_filter>
+
+Accept all dyads, even if they are not found in the promoter of the
+query gene, in the query organism.
+
+
+
+=back
 
 =cut
