@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.4 2008/01/05 10:45:10 jvanheld Exp $
+# $Id: footprint-discovery,v 1.5 2008/01/05 10:45:44 jvanheld Exp $
 #
 ############################################################
 
@@ -120,7 +120,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -580,9 +580,13 @@ __END__
 
 =head1 SEE ALSO
 
+=over
+
 =item get-orthologs
 
 =item dyad-analysis
+
+=back
 
 =head1 WISH LIST
 
