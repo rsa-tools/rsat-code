@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.7 2008/01/05 11:00:34 jvanheld Exp $
+# $Id: footprint-discovery,v 1.8 2008/01/05 12:25:00 jvanheld Exp $
 #
 ############################################################
 
@@ -120,7 +120,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -627,16 +627,28 @@ Accept all dyads, even if they are not found in the promoter of the
 query gene, in the query organism.
 
 
-=item B<-query_genes>
-
-Specify a file containing a list of genes, each of which will be
-analyzed separately. The results is stored in a separate folder for
-each gene. The folder name is defined automatically.
 
 =item B<-batch>
 
 Generate one command per query gene, and post it on the queue of a PC
 cluster.
+
+=item B<-taxa>
+
+Specify a file containing a list of taxa, each of which will be
+analyzed separately. The results are stored in a separate folder for
+each taxon. The folder name is defined automatically.
+
+=item B<-all_taxa>
+
+Automatically analyze all the taxa, and store each result in a
+separate folder (the folder name is defined automatically).
+
+=item B<-genes>
+
+Specify a file containing a list of genes, each of which will be
+analyzed separately. The results are stored in a separate folder for
+each gene. The folder name is defined automatically.
 
 =item B<-all_genes>
 
@@ -644,11 +656,12 @@ Automatically analyze all the genes of a query genome, and store each
 result in a separate folder (the folder name is defined
 automatically).
 
-=item B<-all_taxa>
+=item B<-index>
 
-Automatically analyze all the taxa, and store each result in a
-separate folder (the folder name is defined automatically).
-
+Generate an HTML index with links to the result files. This option is
+used for the web interface, but can also be convenient to index
+results, epecially when several genes or taxa are analyzed (options
+-genes, -all_genes, -all_taxa).
 
 =back
 
