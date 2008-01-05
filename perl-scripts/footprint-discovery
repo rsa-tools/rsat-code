@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.2 2008/01/05 10:27:22 jvanheld Exp $
+# $Id: footprint-discovery,v 1.3 2008/01/05 10:43:27 jvanheld Exp $
 #
 ############################################################
 
@@ -120,7 +120,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -166,19 +166,28 @@ package main;
     $organism->check_name($organism_name);
     $organism->set_attribute("name", $organism_name);
 
+    ################################################################
+    ## Define a query prefix for the title of the feature map and for
+    ## automatic output file specification
+    my $query_prefix;
+    if (scalar(@query_genes) == 1) {
+      $query_prefix = $query_genes[0];
+    } elsif ($infile{input}) {
+      $query_prefix = `basename $infile{input} .tab`;
+    } elsif ($outfile{prefix}) {
+      $query_prefix = `basename $outfile{prefix}`;
+    }
+    &RSAT::message::Warning("Query prefix", $query_prefix) if ($main::verbose >= 1);
+
     ## Output prefix is mandatory
     ## If not specified by the user, define it automatically
-    unless ($outfile{prefix}) {
-      my $query_prefix;
-      if (scalar(@query_genes) == 1) {
-	$query_prefix = $query_genes[0];
-      } elsif ($infile{input}) {
-	$query_prefix = `basename $infile{input} .tab`;
+    unless  ($outfile{prefix}) {
+      if ($query_prefix) {
+	$outfile{prefix} = join "/", "footprints", $taxon, $organism_name, $query_prefix, $query_prefix."_".$organism_name."_".$taxon;
+	&RSAT::message::Warning("Automatic definition of the output prefix", $outfile{prefix});
       } else {
 	&RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
       }
-      $outfile{prefix} = join "/", "footprints", $taxon, $organism_name, $query_prefix, $query_prefix."_".$organism_name."_".$taxon;
-      &RSAT::message::Warning("Automatic definition of the output prefix", $outfile{prefix});
     }
 
     ## Create output directory if required
@@ -325,17 +334,14 @@ package main;
 
     ################################################################
     ## Generate a feature-map of the discovered dyads
-    my $map_title = join "; ", $organism_name, $taxon;
-    if (scalar(@query_genes) == 1) {
-      $map_title .= "; ".$query_genes[0];
-    }
+    my $map_title = join "; ", $taxon, $organism_name, $query_prefix;
     &RSAT::message::TimeWarn("Generating feature map", $outfile{map}) if ($verbose >= 1);
     $cmd = "dna-pattern -return limits,sites -origin -0";
     $cmd .= " -pl ".$outfile{dyads};
     $cmd .= " -i ".$outfile{ortho_seq};
     $cmd .= " | convert-features -from dnapat -to ft";
     $cmd .= " | feature-map";
-    $cmd .= " -title ".map_title;
+    $cmd .= " -title '".$map_title."'";
     $cmd .= " -format ".$img_format;
     $cmd .= " -scalebar -legend";
     $cmd .= " -scorethick";
