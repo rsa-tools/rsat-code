@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.27 2008/01/04 03:24:07 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.28 2008/01/05 01:25:54 jvanheld Exp $
 #
 ############################################################
 
@@ -159,7 +159,8 @@ package main;
   if ($all_taxa) {
     @taxa = &ListSupportedTaxa();
   } else {
-    &RSAT::error::FatalError("You must specify a taxon (option -taxon) or select all taxa (option -all_taxa)") unless ($taxon);
+    &RSAT::error::FatalError("You must specify a taxon (option -taxon) or select all taxa (option -all_taxa)") 
+      unless ($taxon);
     @taxa = ($taxon);
   }
 
