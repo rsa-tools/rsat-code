@@ -30,7 +30,7 @@ $default{grouprc} = 'checked';
 $default{window_group} = 'checked';
 $default{purge} = 'checked';
 #$default{side} = 'over-represented';
-$default{align} = 'right (upstream)';
+$default{align} = 'right';
 $default{freq_estimate} = "background";
 
 
@@ -143,8 +143,8 @@ print $query->popup_menu(-name=>'strand',
 ### align ###
 print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.ORM.html#align'>Align</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'align',
-			 -Values=>['right (upstream)',
- 				  'left (downstream)'],
+			 -Values=>['right',
+ 				  'left'],
  			 -default=>$default{align});
 
 
