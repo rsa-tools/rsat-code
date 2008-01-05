@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.71 2007/12/07 08:35:44 jvanheld Exp $
+# $Id: install-organism,v 1.72 2008/01/05 01:25:05 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -341,7 +341,7 @@ sub UpdateConfig {
     &RSAT::message::Info(join("\t", "Upstream region limits from", $up_from, "to", $up_to));
 
     #### replace absolute paths by relative paths
-    $new_org_config =~ s|$ENV{RSAT}/|\$RSAT/|g;
+    $new_org_config =~ s|$ENV{RSAT}/|\$ENV\{RSAT\}/|g;
     
     print CONFIG $new_org_config;
     print CONFIG "\nreturn 1;\n";
