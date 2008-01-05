@@ -198,12 +198,12 @@ if ($query->param('freq_estimate') =~ /background/i) {
 	print FREQ;
       }
       close FREQ;
-      $freq_option = " -expfreq $exp_freq_file";
+      $freq_option = " --bgoligo=$exp_freq_file";
     } else {
       &FatalError ("If you want to upload an expected frequency file, you should specify the location of this file on your hard drive with the Browse button");
     }
 
-} elsif ($query->param('freq_estimate') =~ /residue frequenc/i) {
+} elsif ($query->param('freq_estimate') =~ /Equiprobable residues/i) {
   $freq_option = " --markov=0";
 } elsif ($query->param('freq_estimate') =~ /markov/i) {
   if (&IsNatural($query->param('markov_order'))) {
