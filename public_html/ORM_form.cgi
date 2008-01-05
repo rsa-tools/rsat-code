@@ -6,6 +6,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
+require "RSA.cgi.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
@@ -174,41 +175,41 @@ print $query->textfield(-name=>'bg_window_width',
 
 print "<HR width=550 align=left>\n";
 
-
+################################################################
+## Background model
+&PrintOligoBackgroundOptions();
 
 ################################################################
+
+
 #### estimation of expected frequencies
-print "<A HREF='help.ORM.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<br />";
-
-
-
-
+#print "<A HREF='help.ORM.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<br />";
 #### pre-defined background frequencies
-print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='background' $checked{background}>", 
-	"Predefined background frequencies");
-print "<ul>";
-print ( "<a href='help.ORM.html#background'>Background model</a> &nbsp;&nbsp;&nbsp;&nbsp;", 
-	$query->popup_menu(-name=>'background',
-			   -Values=>["upstream","upstream-noorf","intergenic"],
-			   -default=>$default{background}));
-	
-print "<br>", &OrganismPopUpString();
-print "</ul>";
+#print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='background' $checked{background}>", 
+#	"Predefined background frequencies");
+#print "<ul>";
+#print ( "<a href='help.ORM.html#background'>Background model</a> &nbsp;&nbsp;&nbsp;&nbsp;", 
+#	$query->popup_menu(-name=>'background',
+#			   -Values=>["upstream","upstream-noorf","intergenic"],
+#			   -default=>$default{background}));
+#	
+#print "<br>", &OrganismPopUpString();
+#print "</ul>";
 
 
 #### Markov chain model
-print ("<p><INPUT TYPE='radio' NAME='freq_estimate' VALUE='Markov Chain (higher order dependencies)' $checked{'Markov Chain (higher order dependencies)'}>", 
-       "Markov Chain (higher order dependencies)");
+#print ("<p><INPUT TYPE='radio' NAME='freq_estimate' VALUE='Markov Chain (higher order dependencies)' $checked{'Markov Chain (higher order dependencies)'}>", 
+#       "Markov Chain (higher order dependencies)");
 
-print "order &nbsp;";
-print $query->textfield(-name=>'markov_order',
-			-default=>$default{markov_order},
-			-size=>5);
+#print "order &nbsp;";
+#print $query->textfield(-name=>'markov_order',
+#			-default=>$default{markov_order},
+#			-size=>5);
 
-print '</p>';
+#print '</p>';
 
 #### Bernouilli model
-print "<p><INPUT TYPE='radio' NAME='freq_estimate' VALUE='Residue frequencies from input sequence' $checked{'Residue frequencies from input sequence'}>Residue frequencies from input sequence</p>";
+#print "<p><INPUT TYPE='radio' NAME='freq_estimate' VALUE='Residue frequencies from input sequence' $checked{'Residue frequencies from input sequence'}>Residue frequencies from input sequence</p>";
 
 #### custom expected frequency file
 #print "<p><INPUT TYPE='radio' NAME='freq_estimate' VALUE='file_upload' $checked{'file_upload'}><a href='help.ORM.html#upload_freq_file'>Upload your own expected frequency file</a><br />";
