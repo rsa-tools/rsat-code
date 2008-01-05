@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.1 2008/01/05 01:23:37 jvanheld Exp $
+# $Id: footprint-discovery,v 1.2 2008/01/05 10:27:22 jvanheld Exp $
 #
 ############################################################
 
@@ -37,7 +37,7 @@ rekins@\scmbb.ulb.ac.be
 
 =head1 USAGE
 
-footprint-discovery [-i inputfile] -o output_prefix \
+footprint-discovery [-i inputfile] -o [output_prefix] \
      -taxon \
      -q query_gene [-q query_gene2 ...] \
      [-v #] [...]
@@ -120,7 +120,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -153,9 +153,33 @@ package main;
     ################################################################
     ## Check argument values
 
+
+    ## Check taxon
+    &RSAT::error::FatalError("You must specify a taxon (option -taxon)")
+      unless ($taxon);
+    my @organisms = &CheckTaxon($taxon);
+
+    ## Check organism
+    &RSAT::error::FatalError("You must specify a organism (option -org)")
+      unless ($organism_name);
+    $organism = new RSAT::organism();
+    $organism->check_name($organism_name);
+    $organism->set_attribute("name", $organism_name);
+
     ## Output prefix is mandatory
-    &RSAT::error::FatalError("You must define a prefix for the output files with the option -o")
-      unless ($outfile{prefix});
+    ## If not specified by the user, define it automatically
+    unless ($outfile{prefix}) {
+      my $query_prefix;
+      if (scalar(@query_genes) == 1) {
+	$query_prefix = $query_genes[0];
+      } elsif ($infile{input}) {
+	$query_prefix = `basename $infile{input} .tab`;
+      } else {
+	&RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
+      }
+      $outfile{prefix} = join "/", "footprints", $taxon, $organism_name, $query_prefix, $query_prefix."_".$organism_name."_".$taxon;
+      &RSAT::message::Warning("Automatic definition of the output prefix", $outfile{prefix});
+    }
 
     ## Create output directory if required
     $dir{output} = `dirname $outfile{prefix}`;
@@ -188,18 +212,6 @@ package main;
 					      warn=>1,
 					      taxon=>1);
     }
-
-    ## Check taxon
-    &RSAT::error::FatalError("You must specify a taxon (option -taxon)")
-      unless ($taxon);
-    my @organisms = &CheckTaxon($taxon);
-
-    ## Check organism
-    &RSAT::error::FatalError("You must specify a organism (option -org)")
-      unless ($organism_name);
-    $organism = new RSAT::organism();
-    $organism->check_name($organism_name);
-    $organism->set_attribute("name", $organism_name);
 
 
     ################################################################
@@ -266,7 +278,7 @@ package main;
     ################################################################
     ## Retrieve sequences from orthologs
     &RSAT::message::TimeWarn("Retrieving promoter sequences of orthologs", $outfile{ortho_seq}) if ($verbose >= 1);
-    $cmd = "retrieve-seq-multigenome";
+    $cmd = "retrieve-seq-multigenome -ids_only";
     $cmd .= " -i ".$outfile{orthologs};
     $cmd .= " -noorf";
     $cmd .= " -o ".$outfile{ortho_seq};
@@ -313,17 +325,22 @@ package main;
 
     ################################################################
     ## Generate a feature-map of the discovered dyads
+    my $map_title = join "; ", $organism_name, $taxon;
+    if (scalar(@query_genes) == 1) {
+      $map_title .= "; ".$query_genes[0];
+    }
     &RSAT::message::TimeWarn("Generating feature map", $outfile{map}) if ($verbose >= 1);
     $cmd = "dna-pattern -return limits,sites -origin -0";
     $cmd .= " -pl ".$outfile{dyads};
     $cmd .= " -i ".$outfile{ortho_seq};
     $cmd .= " | convert-features -from dnapat -to ft";
     $cmd .= " | feature-map";
+    $cmd .= " -title ".map_title;
     $cmd .= " -format ".$img_format;
     $cmd .= " -scalebar -legend";
     $cmd .= " -scorethick";
     $cmd .= " -o ".$outfile{map};
-    print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    print $out "\n", $cmd, "\n\n"; &doit($cmd, 0, $die_on_error, $verbose, $batch, $job_prefix);
 
     ################################################################
     ## Finish verbose
@@ -438,6 +455,10 @@ allows to use the command within a pipe.
 =item	B<-o output_prefix>
 
 Prefix for the output files.
+
+If the prefix is not specified, the program can guess a default
+prefix, but this is working only if there is a single query gene or
+query file.
 
 =cut
 	} elsif ($arg eq "-o") {
