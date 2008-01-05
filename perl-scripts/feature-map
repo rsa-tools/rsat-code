@@ -61,7 +61,8 @@ $aa_colors= 0;
 $color_file = "";
 %feature_color = ();
 #$bg_rgb = "214,238,250",
-$bg_rgb = "255,255,255",
+#$bg_rgb = "255,255,255",
+$bg_rgb = "220,220,220",
 
 
 ## data 
