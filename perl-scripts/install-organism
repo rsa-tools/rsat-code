@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.73 2008/01/06 23:50:13 rsat Exp $
+# $Id: install-organism,v 1.74 2008/01/06 23:56:09 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -348,7 +348,7 @@ sub UpdateConfig {
     print CONFIG "\nreturn 1;\n";
     close CONFIG;
 
-    &RSAT::message::Debug("new_org_config", $new_org_config) if ($main::verbose >= 0);
+#    &RSAT::message::Debug("new_org_config", $new_org_config) if ($main::verbose >= 0);
 }
 
 ################################################################
