@@ -1041,9 +1041,11 @@ $supported_organisms = &ListSupportedOrganisms();
 ################################################################
 ## Return the list of supported taxa
 sub ListSupportedTaxa {
+  my ($root_name) = @_;
+  &RSAT::message::Debug("&ListSupportedTaxa()", "root taxon", $root_name) if ($main::verbose >= 0);
   require RSAT::Tree;
   my $tree = new RSAT::Tree();
-  $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
+  $tree->LoadSupportedTaxonomy($root_name, \%supported_organism, 1);
   my @supported_taxa = $tree->node_names();
   return @supported_taxa;
 }
