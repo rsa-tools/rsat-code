@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.31 2008/01/06 23:37:09 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.32 2008/01/06 23:40:33 jvanheld Exp $
 #
 ############################################################
 
@@ -94,8 +94,9 @@ package main;
   ## Initialize parameters
   my $start_time = &AlphaDate();
 
-#  local $taxon = "";
+  local $taxon;
   local @taxa = ();
+  local @organisms = ();
 
   local %dir = ();
   local %outfile = ();
@@ -192,10 +193,10 @@ package main;
   }
 
   ## Iterate taxa
-  foreach my $taxon (@taxa) {
+  foreach  $taxon (@taxa) {
 
     ## Check taxon and collect organisms
-    my @organisms = $tree->get_node_descendents_names($taxon, "DFS", "leaf");
+    @organisms = $tree->get_node_descendents_names($taxon, "DFS", "leaf");
 
     ## TEMPORARY FIX: the current implementation of
     ## &RSAT::Tree::get_node_descendents() includes the nodes in the
