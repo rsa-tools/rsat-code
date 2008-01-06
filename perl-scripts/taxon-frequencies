@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.28 2008/01/05 01:25:54 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.29 2008/01/06 22:12:23 jvanheld Exp $
 #
 ############################################################
 
@@ -83,6 +83,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
+require RSAT::Tree;
 
 ################################################################
 ## Main package
@@ -161,8 +162,21 @@ package main;
   } else {
     &RSAT::error::FatalError("You must specify a taxon (option -taxon) or select all taxa (option -all_taxa)") 
       unless ($taxon);
-    @taxa = ($taxon);
+    if ($sub_taxa) {
+      my $tree = new RSAT::Tree();
+      $tree->LoadSupportedTaxonomy("Organisms", \%supported_organism, 1);
+#      $tree->LoadSupportedTaxonomy_jvh();
+      my @taxnodes = $tree->get_node_descendents($taxon, "DFS", "node");
+#      die "HELLO\t", scalar(@taxnodes), " taxnodes", "\n";
+      foreach my $node (@taxnodes) {
+	push @taxa, $node->get_attribute("name");
+      }
+    } else {
+      @taxa = ($taxon);
+    }
   }
+  &RSAT::message::Info("Computing taxon-frequencies for taxa\n\t", join("\n\t", @taxa)) if ($main::verbose >= 1);
+
 
   ## Iterate taxa
   foreach $taxon (@taxa) {
@@ -615,6 +629,9 @@ Specify the taxon for which frequencies have to be computed.
 =cut
 	} elsif ($arg eq "-taxon") {
 	    $main::taxon = shift(@arguments);
+	    if ($main::all_taxa) {
+	      &RSAT::error::FatalError("Options -taxon and -all_taxa are mutually incompatible");
+	    }
 
 	    ## Output file
 =pod
@@ -795,6 +812,19 @@ Compute all the background models for the specified taxon
         } elsif ($arg eq "-all_models") {
 	  $main::all_models = 1;
 
+	  ## Calculate background model(s) for all taxa below the specified taxon
+=pod
+
+=item B<-sub_taxa>
+
+Compute the background model(s) for all taxa below the taxon specified
+with the option -taxon.
+
+=cut
+        } elsif ($arg eq "-sub_taxa") {
+	  $main::sub_taxa = 1;
+
+
 	  ## Calculate background model(s) for all taxa
 =pod
 
@@ -807,8 +837,9 @@ only when many genomes are updated.
 =cut
         } elsif ($arg eq "-all_taxa") {
 	  $main::all_taxa = 1;
-
-
+	  if ($main::taxon) {
+	    &RSAT::error::FatalError("Options -taxon and -all_taxa are mutually incompatible");
+	  }
 
 	  ## Return occurrences per organism
 =pod
