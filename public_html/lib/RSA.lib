@@ -15,6 +15,8 @@ require RSAT::Tree;
 
 package main;
 
+$main::tree = new RSAT::Tree();
+
 umask 0022;
 
 ############################################################################
@@ -278,7 +280,7 @@ sub ExpectedFreqFile {
     #### Check organism or taxon
     my $data_dir = "";
     if ($taxon) {
-      &CheckTaxon($org_or_taxon);
+      &CheckTaxon($org_or_taxon, 1);
       $data_dir = $ENV{RSAT}."/public_html/data";
       $data_dir .= "/taxon_frequencies/".$org_or_taxon."/";
       $data_dir =~ s/\s/_/g;
@@ -888,6 +890,7 @@ sub CheckOrganismName {
 ## Collect all organisms belonging to a given taxon
 sub GetOrganismsForTaxon {
   my ($query_taxon) = @_;
+  &RSAT::message::Warning("GetOrganismsForTaxon is obsolete, the class RSAT::Tree should be used instead");
   my @organisms = ();
   if ($query_taxon eq "Organisms") {
     @organisms =  (sort keys %supported_organism);
@@ -895,11 +898,11 @@ sub GetOrganismsForTaxon {
     foreach my $org (sort keys %supported_organism) {
       my $taxonomy = $supported_organism{$org}->{'taxonomy'};
       my @org_taxa = split /\s*;\s*/, $taxonomy;
-      &RSAT::message::Debug("GetOrganismsForTaxon", $query_taxon, "checking", $org) if ($main::verbose >= 5);
+      &RSAT::message::Debug("GetOrganismsForTaxon", $query_taxon, "checking", $org) if ($main::verbose >= 3);
       foreach my $orf_taxon (@org_taxa) {
 	if (lc($orf_taxon) eq lc($query_taxon)) {
 	  push @organisms, $org;
-	  &RSAT::message::Debug("GetOrganismsForTaxon", $query_taxon, "collected", $org) if ($main::verbose >= 3);
+	  &RSAT::message::Debug("GetOrganismsForTaxon", $query_taxon, "collected", $org) if ($main::verbose >= 4);
 	}
       }
     }
@@ -911,13 +914,19 @@ sub GetOrganismsForTaxon {
 ## Check if there is at least one supported organism belonging to the
 ## specified taxon on this RSAT server.
 sub CheckTaxon {
-  my ($query_taxon) = @_;
-  my @organisms = &GetOrganismsForTaxon($query_taxon);
+  my ($query_taxon, $warn_only) = @_;
+  my @organisms = $tree->get_node_descendents_names($query_taxon, "DFS", "node");
+#  my @organisms = &GetOrganismsForTaxon($query_taxon);
+  &RSAT::message::Info("CheckTaxon", $query_taxon, scalar(@organisms), "organisms") if ($main::verbose >= 3);
   if (scalar(@organisms) > 0) {
     return @organisms;
   } else {
-    &RSAT::error::FatalError("There is no supported organism for taxon", $taxon, 
-			     "\nType supported-organisms -format full for a list of supported taxa");
+    my $message = join("\t", "There is no supported organism for taxon", $query_taxon, "\nType supported-organisms -format full for a list of supported taxa");
+    if ($warn_only) {
+      &RSAT::message::Warning($message);
+    } else {
+      &RSAT::error::FatalError($message);
+    }
   }
 }
 
@@ -1043,9 +1052,7 @@ $supported_organisms = &ListSupportedOrganisms();
 sub ListSupportedTaxa {
   my ($root_name) = @_;
   &RSAT::message::Debug("&ListSupportedTaxa()", "root taxon", $root_name) if ($main::verbose >= 0);
-  require RSAT::Tree;
-  my $tree = new RSAT::Tree();
-  $tree->LoadSupportedTaxonomy($root_name, \%supported_organism, 1);
+  $tree->LoadSupportedTaxonomy($root_name, \%supported_organism, 1) unless ($tree->loaded());
   my @supported_taxa = $tree->node_names();
   return @supported_taxa;
 }
