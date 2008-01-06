@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.30 2008/01/06 23:21:13 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.31 2008/01/06 23:37:09 jvanheld Exp $
 #
 ############################################################
 
@@ -288,21 +288,21 @@ package main;
 		&RSAT::message::Info("Auto install file", $taxfreq_file) if ($main::verbose >= 3);
 
 		## Output directory
+		my $current_out_dir  ="";
 		if ($dir{taxfreq}) {
 		  ## Replace automatic by user-specified taxfreq directory
 		  my $short_file = &ShortFileName($taxfreq_file);
 		  $outfile{taxfreq} = join ("/", $dir{taxfreq}, $short_file);
+		  $current_out_dir = $dir{taxfreq};
 		} else {
 		  $outfile{taxfreq} = $taxfreq_file;
-		  ($dir{taxfreq}) = &SplitFileName($taxfreq_file);
+		  ($current_out_dir) = &SplitFileName($taxfreq_file);
 		}
 		$outfile{taxfreq} =~ s|//|/|g;
-		&RSAT::util::CheckOutDir($dir{taxfreq});
-		&RSAT::message::Info("Install dir", $dir{taxfreq}) if ($main::verbose >= 3);
+		&RSAT::util::CheckOutDir($current_out_dir);
+		&RSAT::message::Info("Install dir", $current_out_dir) if ($main::verbose >= 3);
 		&RSAT::message::Info("Install file", $outfile{taxfreq}) if ($main::verbose >= 2);
 	      }
-
-
 
 	      ################################################################
 	      ## Open output stream
@@ -661,28 +661,6 @@ taxon-frequencies -v 1 -taxon Bacteria -taxon Fungi -sub_taxa [...]
 	    &RSAT::error::FatalError("Options -taxon and -all_taxa are mutually incompatible");
 	  }
 	  push @main::taxa, shift(@arguments);
-
-	    ## Output file
-=pod
-
-=item	B<-o outputfile>
-
-If no output file is specified, the standard output is used.  This
-allows to use the command within a pipe.
-
-Alternatively, the option -dir or -install can be used to
-automatically specify the name of the output file (options -o, -dir
-and -install are mutually exclusive).
-
-=cut
-	} elsif ($arg eq "-o") {
-	    $main::outfile{taxfreq} = shift(@arguments);
-	    if ($install) {
-	      &RSAT::error::FatalError("Options -o and -install are mutually exclusive");
-	    }
-	  if ($main::dir{taxfreq}) {
-	    &RSAT::error::FatalError("Options -o and -dir are mutually exclusive");
-	  }
 
 	    ## Output directory
 =pod
