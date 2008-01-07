@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.27 2007/12/07 08:15:00 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.28 2008/01/07 02:09:44 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -82,12 +82,8 @@ if ($query->param('strand') =~ /single/) {
 ### overlapping matches
 if ($query->param('noov')) {
   $parameters .= " -noov";
-} 
+}
 
-### organism
-if ($organism = $query->param('organism')) {
-  $parameters .= " -org $organism";
-} 
 
 
 ### threshold ###
@@ -114,9 +110,47 @@ if ($query->param('spacing_from') >$query->param('spacing_to')) {
 }
 $parameters .= " -spacing $spacing";
 
-#### expected frequency estimation ####
+################################################################
+## Background model
 if ($query->param('freq_estimate') eq 'background') {
-    $parameters .= " -bg ".$query->param('background');
+  ## Check genome subset
+  %supported_background = (
+			   "upstream"=>1,
+			   "upstream-noorf"=>1,
+			   "intergenic"=>1
+			  );
+  my $background = $query->param("background");
+  unless ($supported_background{$background}) {
+    &cgiError("$background is not supported as background model");
+  }
+  $freq_option = " -bg $background";
+
+  ### Organism-specific background model
+  if ($query->param('bg_level') eq 'organism') {
+    unless ($organism = $query->param('organism')) {
+      &cgiError("You should specify an organism to use intergenic frequency calibration");
+    }
+    unless (defined(%{$supported_organism{$organism}})) {
+      &cgiError("Organism $org is not supported on this site");
+    }
+    $freq_option .= " -org $organism";
+  }
+
+  ### Taxon-specific background model
+  if ($query->param('bg_level') eq 'taxon') {
+    unless ($taxon = $query->param('taxon')) {
+      &cgiError("You should specify an taxon to use intergenic frequency calibration");
+    }
+    &CheckTaxon($taxon);
+    $freq_option .= " -taxon $taxon";
+  }
+  $parameters .= " ".$freq_option;
+
+  ### organism
+  #if ($organism = $query->param('organism')) {
+  #  $parameters .= " -org $organism";
+  #}
+  #    $parameters .= " -bg ".$query->param('background');
 } elsif ($query->param('freq_estimate') =~ /upload/i) {
     $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
     $upload_freq_file = $query->param('upload_freq_file');
@@ -239,39 +273,40 @@ if ($query->param('output') eq "display") {
 # 	system "$pssm_command";
 
 	## Convert pattern-assembly result into PSSM 
-	$pssm_prefix = $TMP."/".$tmp_file_name."_pssm";
-	$sig_matrix_file = $pssm_prefix."_sig_matrices.txt";
-	$pssm_file = $pssm_prefix."_count_matrices.txt";
-	$pssm_command = "$SCRIPTS/matrix-from-patterns -v 1 ".$str;
-	$pssm_command .= " -seq ".$sequence_file;
-	$pssm_command .= " -format $sequence_format";
-	$pssm_command .= " -asmb ".$assembly_file;
-	$pssm_command .= " -uth Pval 0.00025";
-	$pssm_command .= " -bginput -markov 0";
-	$pssm_command .= " -o ".$pssm_prefix;
-	print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
-	system "$pssm_command";
+	if ($query->param('to_matrix')) {
+	  $pssm_prefix = $TMP."/".$tmp_file_name."_pssm";
+	  $sig_matrix_file = $pssm_prefix."_sig_matrices.txt";
+	  $pssm_file = $pssm_prefix."_count_matrices.txt";
+	  $pssm_command = "$SCRIPTS/matrix-from-patterns -v 1 ".$str;
+	  $pssm_command .= " -seq ".$sequence_file;
+	  $pssm_command .= " -format $sequence_format";
+	  $pssm_command .= " -asmb ".$assembly_file;
+	  $pssm_command .= " -uth Pval 0.00025";
+	  $pssm_command .= " -bginput -markov 0";
+	  $pssm_command .= " -o ".$pssm_prefix;
+	  print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+	  system "$pssm_command";
 
-	print "<H2>Significance matrices</H2>\n";
-	open SIG, $sig_matrix_file;
-	print "<PRE>\n";
-	while (<SIG>) {
-	  s|$ENV{RSAT}/||g;
-	  print;
+	  print "<H2>Significance matrices</H2>\n";
+	  open SIG, $sig_matrix_file;
+	  print "<PRE>\n";
+	  while (<SIG>) {
+	    s|$ENV{RSAT}/||g;
+	    print;
+	  }
+	  print "</PRE>\n";
+	  close(SIG);
+
+	  print "<H2>Count matrices</H2>\n";
+	  open PSSM, $pssm_file;
+	  print "<PRE>\n";
+	  while (<PSSM>) {
+	    s|$ENV{RSAT}/||g;
+	    print;
+	  }
+	  print "</PRE>\n";
+	  close(PSSM);
 	}
-	print "</PRE>\n";
-	close(SIG);
-
-	print "<H2>Count matrices</H2>\n";
-	open PSSM, $pssm_file;
-	print "<PRE>\n";
-	while (<PSSM>) {
-	  s|$ENV{RSAT}/||g;
-	  print;
-	}
-	print "</PRE>\n";
-	close(PSSM);
-
     }
 
     &PipingForm();
@@ -302,6 +337,23 @@ sub PipingForm {
     } else {
 	$strand_opt .= " insensitive";
     }
+
+
+    ## matrix scanning
+    if ($query->param('to_matrix')) {
+      $to_matrix_scan = "<td valign=bottom align=center>";
+      $to_matrix_scan .= "<b><font color='red'>New !</font></b>";
+      $to_matrix_scan .= "<FORM METHOD='POST' ACTION='matrix-scan_form.cgi'>";
+      $to_matrix_scan .= "<INPUT type='hidden' NAME='title' VALUE='$title'>";
+      $to_matrix_scan .= "<INPUT type='hidden' NAME='matrix_file' VALUE='$pssm_file'>";
+      $to_matrix_scan .= "<INPUT type='hidden' NAME='matrix_format' VALUE='tab'>";
+      $to_matrix_scan .= "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>";
+      $to_matrix_scan .= "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>";
+      $to_matrix_scan .= "<INPUT type='submit' value='matrix-based pattern matching (matrix-scan)'>";
+      $to_matrix_scan .= "</FORM>";
+      $to_matrix_scan .= "</TD>";
+    }
+
     print <<End_of_form;
 <TABLE class='nextstep'>
 <Tr>
@@ -320,17 +372,7 @@ sub PipingForm {
 </FORM>
 </TD>
 
-<td valign=bottom align=center>
-<b><font color="red">New !</font></b>
-<FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
-<INPUT type="hidden" NAME="title" VALUE="$title">
-<INPUT type="hidden" NAME="matrix_file" VALUE="$pssm_file">
-<INPUT type="hidden" NAME="matrix_format" VALUE="tab">
-<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
-<INPUT type="submit" value="matrix-based pattern matching (matrix-scan)">
-</FORM>
-</TD>
+$to_matrix_scan
 
 <TD VALIGN=BOTTOM ALIGN=CENTER>
 <FORM METHOD="POST" ACTION="pattern-assembly_form.cgi">
