@@ -17,15 +17,15 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$command = "$SCRIPTS/convert-matrix";
-$tmp_file_name = sprintf "convert-matrix.%s", &AlphaDate();
+$command = "$SCRIPTS/matrix-distrib -v 1";
+$tmp_file_name = sprintf "matrix-distrib.%s", &AlphaDate();
 $result_file = "$TMP/$tmp_file_name.res";
 
 ### Read the CGI query
 $query = new CGI;
 
 ### print the header
-&RSA_header("convert-matrix result", 'results');
+&RSA_header("matrix-distrib result", 'results');
 
 #### update log file ####
 &UpdateLogFile();
@@ -43,7 +43,7 @@ print MAT $query->param('matrix');
 close MAT;
 &DelayedRemoval($matrix_file);
 
-$parameters .= " -i $matrix_file";
+$parameters .= " -m $matrix_file";
 
 
   ################################################################
@@ -66,12 +66,6 @@ $parameters .= " -i $matrix_file";
   } else {
     &FatalError("Decimals should be an integer number");
 }
-
-  ################################################################
-  ## permutations
-  if (&IsInteger($query->param('perm'))) {
-  	$parameters .= " -perm ".$query->param('perm');
-  }
   
 
 
@@ -82,15 +76,14 @@ my $input_format = lc($query->param('matrix_format'));
 ($input_format) = split (/\s+/, $input_format);
 #$input_format =~ s/cluster\-buster/cb/i;
 #$input_format =~ s/(\S+)/$1/; ## Only retain the first word
-$parameters .= " -from ".$input_format;
+$parameters .= " -matrix_format ".$input_format;
 
 
  ################################################################
   ## Background model method
   my $bg_method = $query->param('bg_method');
-  if ($bg_method eq "from_matrix") {
-
-  } elsif ($bg_method eq "bgfile") {
+  
+  if ($bg_method eq "bgfile") {
     ## Select pre-computed background file in RSAT genome directory
     my $organism_name = $query->param("organism");
     my $noov = "ovlp";
@@ -133,51 +126,68 @@ $parameters .= " -from ".$input_format;
   }
 
 
-################################################################
-## Matrix output format
-my $output_format = lc($query->param('output_format'));
-$parameters .= " -to ".$output_format;
-
-## Return fields
-my @return_fields = ();
-foreach my $stat qw (counts frequencies weights info consensus parameters profile margins) {
-    if ($query->param($stat)) {
-	push @return_fields, $stat;
-    }
-}
-if ($output_format eq 'tab') {
-  $parameters .= " -v 1 ";
-  $parameters .= " -return ";
-  $parameters .= join ",", @return_fields;
-} else {
-  $parameters .= " -return counts";
-}
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
 ### execute the command ###
-if ($query->param('output') eq "display") {
-#    &PipingWarning();
+if (($query->param('output') =~ /display/i) ||
+    ($query->param('output') =~ /server/i)) {
+    	
+    &PipingWarning();
+    if ($query->param('output') =~ /server/i) {
+	&Info("The result will appear below ...");
+    }
+    
 
     ### prepare data for piping
     open RESULT, "$command $parameters |";
-
-    print '<H4>Result</H4>';
-    print '<PRE>';
-    while (<RESULT>) {
-	s|${TMP}/||g;
-	s|${BIN}/||g;
-	print $_;
-	$genes .= $_;
+    
+    ### open the sequence file on the server
+    $sequence_file = "$TMP/$tmp_file_name.res";
+    if (open MIRROR, ">$sequence_file") {
+	$mirror = 1;
+	&DelayedRemoval($sequence_file);
     }
-    print '</PRE>';
-    close(RESULT);
 
-#    &PipingForm();
+    print "<PRE>";
+    while (<RESULT>) {
+	print "$_" unless ($query->param('output') =~ /server/i);
+	print MIRROR $_ if ($mirror);
+    }
+    print "</PRE>";
+    close RESULT;
+    close MIRROR if ($mirror);
 
+    if ($query->param('output') =~ /server/i) {
+	$result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
+	print ("The result is available at the following URL: ", "\n<br>",
+	       "<a href=${result_URL}>${result_URL}</a>",
+	       "<p>\n");
+    }
+ 	
+ 	print "<hr/>";
+
+    ## prepare figures
+    my $XYgraph_command = "$SCRIPTS/XYgraph";
+    
+    my $graph_file1 = "$tmp_file_name"."_1.png";
+    my $figure = "$TMP/$graph_file1";
+    &DelayedRemoval("$TMP/$graph_file1");
+    my $command2 = "$XYgraph_command -i $sequence_file -o $figure -title1 'Distribution of weights' -xcol 1 -ycol 2 -legend -lines -pointsize 2 -xleg1 'weight' -yleg1 'frequency' -format png";
+    `$command2`;
+    
+    my $graph_file2 = "$tmp_file_name"."_2.png";
+    $figure = "$TMP/$graph_file2";
+    &DelayedRemoval("$TMP/$graph_file2");
+    my $command3 = "$XYgraph_command -i $sequence_file -o $figure -title1 'Distribution of weights' -xcol 1 -ycol 4 -legend -lines -pointsize 2 -xleg1 'weight' -yleg1 'log(frequency)' -format png -ylog -ymax 1 -ymin 0";
+    `$command3`;
+	 print "<CENTER><a href = \"$WWW_TMP/$graph_file1\"><IMG SRC=\"$WWW_TMP/$graph_file1\" width='200'></a>";
+	 print "<a href = \"$WWW_TMP/$graph_file2\"><IMG SRC=\"$WWW_TMP/$graph_file2\" width='200'></a></CENTER><P>\n";
+
+    ### prepare data for piping
+    &PipingForm();
+    
     print "<HR SIZE = 3>";
 
-} elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
     &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
@@ -185,3 +195,71 @@ print $query->end_html;
 
 exit(0);
 
+sub PipingForm {
+
+    ### prepare data for piping
+    $title = "Distribution of weights";
+    print <<End_of_form;
+<CENTER>
+
+<TABLE class='nextstep'>
+<TR>
+  <TD>
+    <H3>Next step</H3>
+  </TD>
+  </tr>
+  <tr>
+  <TD>
+<FORM METHOD="POST" ACTION="XYgraph_form.cgi">
+<INPUT type="hidden" NAME="title" VALUE="$title">
+<INPUT type="hidden" NAME="XYgraph_file" VALUE="$sequence_file">
+<INPUT type="hidden" NAME="xleg1" VALUE="weight">
+<INPUT type="hidden" NAME="yleg1" VALUE="frequency">
+<INPUT type="hidden" NAME="lines" VALUE="on">
+<INPUT type="submit" VALUE="XY graph">(Draw graph with user-defined parameters)
+</FORM>
+
+</TD>
+</TR>
+</TABLE>
+</CENTER>
+End_of_form
+}
+
+
+
+################################################################
+#
+# Pipe the result to another command
+#
+sub PipingFormForDistrib {
+    
+  print <<End_of_form;
+<HR SIZE = 3>
+<table class = 'nextstep'>
+<tr><td colspan = 5><h3>next step</h3></td></tr>
+
+
+<tr valign="top" align="center">
+
+    <th align=center>
+      	<font size=-1>
+	Drawing<br>
+	</font>
+    </th>
+
+    <td align=center>
+	<FORM METHOD="POST" ACTION="XYgraph_form.cgi">
+	<INPUT type="hidden" NAME="title1" VALUE="Distribution of weights">
+	<INPUT type="hidden" NAME="XYgraph_file" VALUE="$result_URL">
+	<INPUT type="hidden" NAME="xcol" VALUE="1">
+	<INPUT type="hidden" NAME="ycol" VALUE="2">
+	<INPUT type="submit" value="XY Graph">
+	</FORM>
+	Draws a XY graph from a table of numeric data 
+    </td>
+
+</tr>
+</table>
+End_of_form
+}
