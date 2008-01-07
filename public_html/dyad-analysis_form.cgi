@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.14 2007/10/26 11:45:23 rsat Exp $
+# $Id: dyad-analysis_form.cgi,v 1.15 2008/01/07 02:09:44 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -13,6 +13,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
+require "RSA.cgi.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
@@ -22,6 +23,8 @@ $query = new CGI;
 ### default values for filling the form
 $default{organism} = "Saccharomyces cerevisiae";
 $default{freq_estimate} = "background";
+$default{background} = "upstream-noorf";
+$default{bg_level} = "organism";
 #$default{title} = "";
 $default{sequence} = "";
 $default{sequence_format} = "fasta";
@@ -36,8 +39,8 @@ $default{purge} = 'checked';
 $default{dyad_type} = "any dyad";
 $default{exp_freq} = "background";
 $default{upload_freq_file} = "";
-$default{background} = "upstream-noorf";
 #$default{lth_occ_sig} = "0";
+$default{to_matrix} = 0;
 
 ## Return values and thresholds
 $default{zscore} = '';
@@ -76,8 +79,7 @@ foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
   }
-} 
-$checked{$default{freq_estimate}} = "CHECKED";
+}
 
 ### print the form ###
 &RSA_header("dyad-analysis", "form");
@@ -99,10 +101,7 @@ print $query->start_multipart_form(-action=>"dyad-analysis.cgi");
 #
 #print "<BR>\n";
 
-
-
 &DisplaySequenceChoice();
-
 
 #### purge sequences
 print $query->checkbox(-name=>'purge',
@@ -162,34 +161,7 @@ print "<BR>\n";
 
 print "<HR width=550 align=left>\n";
 
-
-### expected frequency calculation
-print "<A HREF='help.dyad-analysis.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<p>";
-print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='background' $checked{background}>", 
-	"Background model");
-print "<ul>";
-print ( "<a href='help.dyad-analysis.html#background'>Sequence type</a> &nbsp;&nbsp;&nbsp;&nbsp;", 
-	$query->popup_menu(-name=>'background',
-			   -Values=>["upstream","upstream-noorf","intergenic"],
-			   -default=>$default{background}));
-
-print "<br>", &OrganismPopUpString();
-print "</ul>";
-
-print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='monads' $checked{monads}>", 
-	"Monad frequencies in the input sequence");
-
-print "<BR>\n";
-
-#### custom expected frequency file
-print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='file_upload' $checked{file_upload}><a href='help.oligo-analysis.html#upload_freq_file'>Upload your own expected frequency file</a><BR>";
-
-print $query->filefield(-name=>'upload_freq_file',
-			-default=>'starting value',
-			-size=>30,
-			-maxlength=>200);
-print "<p>";
-
+&PrintDyadBackgroundOptions();
 
 # print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 # 		    $query->Tr($query->td("<A HREF='help.dyad-analysis.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<BR>")),
@@ -325,7 +297,8 @@ print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>"fasta");
 #print $query->hidden(-name=>'spacing_from',-default=>"8");
 #print $query->hidden(-name=>'spacing_to',-default=>"12");
-print $query->hidden(-name=>'background',-default=>"upstream");
+print $query->hidden(-name=>'background',-default=>"upstream-noorf");
+print $query->hidden(-name=>'bg_level',-default=>"organism");
 print $query->hidden(-name=>'organism',-default=>'Saccharomyces cerevisiae');
 #print $query->hidden(-name=>'title',-default=>'upstream sequences from the yeast GAL genes');
 print $query->submit(-label=>"DEMO");
@@ -457,6 +430,14 @@ sub ReturnTable {
 				   ]
 				  )
 		       );
+
+#### Convert patterns to matrix
+print $query->checkbox(-name=>'to_matrix',
+		       -checked=>$default{to_matrix},
+		       -label=>'');
+print "&nbsp;Convert assembled patterns to Position-Specific Scoring Matrices (<font color=red>Can be time-consuming</font>)";
+print "<BR>";
+
 
     print "</blockquote>";
 }
