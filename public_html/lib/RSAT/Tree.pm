@@ -146,21 +146,25 @@ sub get_all_descendents{
 =head2 get node descendents
 
  Title   : get_node_descendents()
- Usage   : my @descendants = $tree->get_node_descendents("Gammaproteobacteria")
+ Usage   : my @descendants = $tree->get_node_descendents($taxon, $order, $type, $max_depth, $max_leaves);
+ Example : my @descendants = $tree->get_node_descendents("Gammaproteobacteria", "DFS", "all");
  Function: Get node descendents of the tree from the root by DFS algorithm
  Returns : Array of nodes
 
 =cut
 
 sub get_node_descendents{
-  my $self =shift;
-  my $node_id=shift;
-  my $order=shift;
-  my $type=shift; # all, leave, node
-  my $max_depth=shift;
-  my $max_leaves=shift;
+  my ($self, $node_id, $order, $type, $max_depth, $max_leaves) = @_;
+#   my $self =shift;
+#   my $node_id=shift;
+#   my $order=shift;
+#   my $type=shift; # all, leave, node
+#   my $max_depth=shift;
+#   my $max_leaves=shift;
+#  &RSAT::message::Info("RSAT::Tree", $self, "Getting node descendents", $node_id, $order, $type) if ($main::verbose >= 4);
   if ($node_id){
-    my $node=$self->get_node_by_id($node_id);
+    my $node = $self->get_node_by_id($node_id);
+#    &RSAT::message::Debug("RSAT::Tree", $node_id, "node", $node) if ($main::verbose >= 10);
     my (@descendents) = $node->get_all_descendents($order,$type,$max_depth,$max_leaves);
     return ($node,@descendents);
   }else{
@@ -173,20 +177,23 @@ sub get_node_descendents{
 =head2 get node descendents names
 
  Title   : get_node_descendents()
- Usage   : my @descendants = $tree->get_node_descendents("Gammaproteobacteria")
+ Usage   : my @descendants = $tree->get_node_descendents(@args)
+ Arguments: all arguments are passed to RSAT::Tree::get_node_descendents
  Function: Get node descendents of the tree from the root by DFS algorithm
  Returns : Array of nodes
 
 =cut
 
-sub get_node_descendents_names{
-  my $self =shift;
-  my $node_id=shift;
-  my $order=shift;
-  my $type=shift; # all, leave, node
-  my $max_depth=shift;
-  my $max_leaves=shift;
-  my (@descendents) = $self->get_node_descendents($node_id,$order,$type,$max_depth,$max_leaves);
+sub get_node_descendents_names {
+  my ($self, @args) = @_;
+  &RSAT::message::Info("RSAT::Tree", $self, "Getting names of node descendents", $node_id, $order, $type) if ($main::verbose >= 3);
+#  my $node_id=shift;
+#  my $order=shift;
+#  my $type=shift; # all, leave, node
+#  my $max_depth=shift;
+#  my $max_leaves=shift;
+#  my (@descendents) = $self->get_node_descendents($node_id,$order,$type,$max_depth,$max_leaves);
+  my (@descendents) = $self->get_node_descendents(@args);
   my @node_names=();
   foreach my $n (@descendents){
     push @node_names, $n->getid();
@@ -206,20 +213,26 @@ sub get_node_descendents_names{
 
 =cut
 
-sub get_node_by_id{
-  my $self = shift;
-  my $id = shift;
+sub get_node_by_id {
+  my ($self, $id) = @_;
+#  my $self = shift;
+#  my $id = shift;
   my $rootnode = $self->get_root_node();
-  
+
+#  &RSAT::message::Debug("RSAT::Tree", $self, "Getting node by id", $id, $rootnode) if ($main::verbose >= 5);
+
   if ( ($rootnode->getid) && ($rootnode->getid eq $id) ) {
     return $rootnode;
   }
-  foreach my $node ( $rootnode->get_all_descendents(undef,"node") ) {
-    if ( ($node->getid) and ($node->getid eq $id ) ) {
+  foreach my $node ($rootnode->get_all_descendents(undef,"node") ) {
+    my $current_id = $node->get_id();
+    if ($current_id eq $id) {
       return $node;
     }
+#    &RSAT::message::Debug("&RSAT::Tree::get_node_by_id()",$current_id, "differs from", $node_id) if ($main::verbose >= 10);
   }
-  return(0);
+  &RSAT::message::Warning("&RSAT::Tree::get_node_by_id()", "no node with id", $id);
+  return(undef);
 }
 
 # =pod 
@@ -322,10 +335,13 @@ sub get_leaves_names {
 ################################################################
 
 ## ##############################################################
-## TEMP: allows to choose between two versions of LoadSupportedTaxonomu
+## TEMP: allows to choose between two versions of LoadSupportedTaxonomy
 ## In order to compare the results
 sub LoadSupportedTaxonomy {
-    &LoadSupportedTaxonomy_rj(@_);
+  my ($self) = @_;
+  &RSAT::message::Info("RSAT::Tree", $self, "Loading supported taxonomy") if ($main::verbose >= 3);
+  &LoadSupportedTaxonomy_rj(@_);
+  $self->force_attribute("loaded", 1);
 }
 
 
@@ -342,23 +358,26 @@ sub LoadSupportedTaxonomy {
       %supported_organisms [hash]   ( '$organism_name' => '$taxonomy')
 
 =cut
-
 sub LoadSupportedTaxonomy_rj {
   my ($self,$root_name,$supported_organism)=@_;
   unless ($root_name) {
-      $root_name = "Organisms";
+    $root_name = "Organisms";
   }
+
+  &RSAT::message::Info("RSAT::Tree", "Loading supported taxonomy with root")
+    if ($main::verbose >= 3);
+
   my %supported_organism=%{$supported_organism};
-  my %nodes = (); # node index
-  
+  my %nodes = ();		# node index
+
   ## Instantiate the root of the taxonomy
   my $root_node = new RSAT::TreeNode("id"=>$root_name,
 				     "name"=>$root_name,
 				     "type"=>"root"
-				     );
+				    );
   $nodes{$root_name} = $root_node;
   my $root=$self->set_root_node($root_node);
-  
+
   ## Get  thetaxonomy
   my $c = 0;
   foreach my $org (sort {$supported_organism{$a}->{"taxonomy"} cmp $supported_organism{$b}->{"taxonomy"}}
@@ -374,44 +393,45 @@ sub LoadSupportedTaxonomy_rj {
     my $leaf = new RSAT::TreeNode(id=>$org,
 				  name=>$org,
 				  type=>"leaf"
-				  );
-    &RSAT::message::Warning(join("\t","Initiate leaf",$leaf->get_name())) if ($main::verbose >= 5);
-    
+				 );
+    &RSAT::message::Warning(join("\t","Instantiated leaf",$leaf->get_name())) if ($main::verbose >= 5);
+
     for my $t (0..$#taxons) {
-	# TEMPORARY 
-	# correct the taxon name for weird taxon name due to parsing error (cases of Salmonella enterica)
-	if (($taxons[$t] =~ "^SC-B67")||($taxons[$t] =~ "^9150")){
-	    $taxons[$t]="Bacteria";
+      # TEMPORARY 
+      # correct the taxon name for weird taxon name due to parsing error (cases of Salmonella enterica)
+      if (($taxons[$t] =~ "^SC-B67")||($taxons[$t] =~ "^9150")) {
+	$taxons[$t]="Bacteria";
+      }
+
+      # start top->down to build the tree
+      if (defined $nodes{$taxons[$t]}) {
+	if ($t == $#taxons) {
+	  $nodes{$taxons[$t]}->add_child($leaf);
+	} else {
+	  next;
 	}
-	# start top->down to increase the tree
-	if (defined $nodes{$taxons[$t]}){
-	    if ($t == $#taxons){
-		$nodes{$taxons[$t]}->add_child($leaf);
-	    }else{
-		next;
-	    }
-	}else{
-	    my $node = new RSAT::TreeNode(id=>$taxons[$t],
-					  name=>$taxons[$t],
-					  type=>"node",
-#               			 all_leaves=>[$org]
-					  );
-	    $nodes{$taxons[$t]}=$node;
-	    
-	    if ((defined $nodes{$taxons[$t-1]})&&($t-1>=0)){
-		$nodes{$taxons[$t-1]}->add_child($node);
-	    }else{
-		# attach first taxon to the root
-		$nodes{$root_name}->add_child($node);
-	    }
-	    
-	    # attach organism as leaf if it is the last taxon
-	    if ($t == $#taxons){
-		$node->add_child($leaf);
-	    }
+      } else {
+	my $node = new RSAT::TreeNode(id=>$taxons[$t],
+				      name=>$taxons[$t],
+				      type=>"node",
+				      ## all_leaves=>[$org]
+				     );
+	$nodes{$taxons[$t]}=$node;
+
+	if ((defined $nodes{$taxons[$t-1]})&&($t-1>=0)) {
+	  $nodes{$taxons[$t-1]}->add_child($node);
+	} else {
+	  # attach first taxon to the root
+	  $nodes{$root_name}->add_child($node);
 	}
+
+	# attach organism as leaf if it is the last taxon
+	if ($t == $#taxons) {
+	  $node->add_child($leaf);
+	}
+      }
     }
-}
+  }
   return $self;
 }
 
@@ -423,7 +443,8 @@ sub LoadSupportedTaxonomy_rj {
 
 Fill a tree (RSAT::Tree) with the taxonomy of supported organisms on RSAT
 
-Usage:  my $tree = SupportedOrganismTree($no_species);
+#Usage:  my $tree = &SupportedOrganismTree($no_species);
+Usage:  $tree->LoadSupportedTaxonomy_jvh($no_species);
 
 Parameters:
 
@@ -431,7 +452,7 @@ Parameters:
 
 =item $no_species
 
-do not create a node for the species, but only for
+Do not create a node for the species, but only for higher taxonomical levels.
 
 =back
 
