@@ -23,6 +23,7 @@ $default{upload_freq_file} = "";
 $default{sequence_type} = "dna";
 $default{oligo_length} = 6;
 $default{background} = "upstream-noorf";
+$default{bg_level} = "organism";
 $default{markov_order} = 2;
 $default{pseudo_weight} = "0.01";
 $default{strand} = "both strands";
@@ -30,6 +31,7 @@ $default{noov} = 'checked';
 $default{grouprc} = 'checked';
 $default{purge} = 'checked';
 $default{side} = 'over-represented';
+$default{to_matrix} = 0;
 
 $default{freq_estimate} = "background";
 
@@ -78,6 +80,7 @@ foreach $key (keys %default) {
   }
 } 
 $checked{$default{freq_estimate}} = "CHECKED";
+$checked{$default{bg_level}} = "CHECKED";
 
 ### print the form ###
 &RSA_header("oligo-analysis", "form");
@@ -544,6 +547,15 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 			  ]
 			       )
 		    );
+
+#### Convert patterns to matrix
+print $query->checkbox(-name=>'to_matrix',
+		       -checked=>$default{to_matrix},
+		       -label=>'');
+print "&nbsp;Convert assembled patterns to Position-Specific Scoring Matrices (<font color=red>Can be time-consuming</font>)";
+print "<BR>";
+
+
 print "</BLOCKQUOTE>\n";
 print ("<INPUT TYPE='radio' NAME='return' VALUE='table'>", 
        "One row per gene (occurrence counts only, email output recommended)", "<P>\n");

@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.59 2007/11/20 22:16:45 jvanheld Exp $
+# $Id: dyad-analysis,v 1.60 2008/01/07 01:24:31 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -15,13 +15,13 @@ require "RSA.disco.lib";
 
 ################################################################
 #### Initialise parameters
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-%default_return_fields = (occ=>1,proba=>1);
-$timeout = 900;
-@alphabet = ("a","c","g","t"); ## For &all_oligos()
+local $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+local %default_return_fields = (occ=>1,proba=>1);
+local $timeout = 900;
+local @alphabet = ("a","c","g","t"); ## For &all_oligos()
 
 #### background models
-%supported_bg = ('upstream'=>1,
+local %supported_bg = ('upstream'=>1,
 		 'upstream-noorf'=>1,
 		 'intergenic'=>1,
 		 'monads'=>1,
@@ -31,6 +31,10 @@ $timeout = 900;
 		);
 $supported_bg = join ",", sort keys %supported_bg;
 $background_model="monads"; ## Default background model : estimate expected dyad freq from observed monad freq
+
+
+local $org_or_taxon; ## Name of the organism or taxon for the background model
+local $taxon = 0; ## Specify it the background model is organism-specific or taxon-specific
 
 ## Dyad parameters
 $oligo_length = 3;
@@ -119,27 +123,33 @@ eval {
     ################################################################
     ## Check pre-defined frequency table for intergenic frequency
     ## calibration
+
+      ## Suffix for the -noov/-ovlp option
+      if ($noov) {
+	$noov_suffix = "-noov";
+      } else { 
+	$noov_suffix = "-ovlp";
+      }
+
     if ($mncf) {
-      ## localize monad intergenic frequency file
-      $infile{monad_exp_freq} .= "$data_dir/oligo-frequencies/${oligo_length}nt_intergenic_${organism_name}.freq";
+	## localize monad intergenic frequency file
+#	$infile{monad_exp_freq} .= "$data_dir/oligo-frequencies/${oligo_length}nt_intergenic_${organism_name}.freq";
+	$infile{monad_exp_freq} = &ExpectedFreqFile($org_or_taxon, $oligo_length, $background_model,
+					      type=>"oligo",
+					      noov=>$noov_suffix, str=>$str, taxon=>$taxon);
     } elsif ($background_model eq "monads") {
       &RSAT::message::Info("Background model", "monads") if ($main::verbose >= 3);
     } elsif ($background_model eq "exp_freq_file") {
       &RSAT::message::Info("User-specified expected frequency file", $infile{exp_freq}) if ($main::verbose >= 3);
     } else {
       ## Check organism
-      &CheckOrganism($organism_name);
-      my $data_dir = $supported_organism{$organism_name}->{'data'};
 
-      ## Automatic identification of the background file
-      if ($noov) {
-	$noov_suffix = "-noov";
-      } else { 
-	$noov_suffix = "-ovlp";
-      }
-      $infile{exp_freq} = &ExpectedFreqFile($organism_name, $oligo_length, $background_model,
+      $infile{exp_freq} = &ExpectedFreqFile($org_or_taxon, $oligo_length, $background_model,
 					    type=>"dyad",
-					    noov=>$noov, str=>$str);
+					    noov=>$noov_suffix, str=>$str, taxon=>$taxon);
+#      $infile{exp_freq} = &ExpectedFreqFile($org_or_taxon, $oligo_length, $background_model,
+#					    type=>"dyad",
+#					    noov=>$noov_suffix, str=>$str);
     }
 
     ## Check fields to calculate
@@ -866,9 +876,19 @@ sub ReadArguments {
 		&RSAT::error::FatalError("Invalid background model\t$background_model\tsupported: $supported_bg");
 	    }
 
-	    ### organism (for selecting the appropriate expected frequencies)
+	    ### organism (for selecting an organism-specific background model)
 	} elsif ($ARGV[$a] =~ /^-org/i) {
-	    $organism_name = $ARGV[$a+1];
+	    if ($taxon) {
+		&RSAT::message::FatalError("Options -org and -taxon are mutually exclusive");
+	    }
+	    $org_or_taxon = $ARGV[$a+1];
+	    &CheckOrganismName($org_or_taxon);
+
+	    ### taxon (for selecting a taxon-specific background model)
+	  } elsif ($ARGV[$a] =~ /^-taxon/i) {
+	    $taxon = 1;
+	    $org_or_taxon = $ARGV[$a+1];
+	    &CheckTaxon($org_or_taxon);
 
 	    ### use monad intergenic frequencies as expected frequencies
 	} elsif ($ARGV[$a] =~ /^-mncf/i) {
@@ -1456,11 +1476,11 @@ sub PrintVerbose {
     print $out ";\tBackground model\t", $background_model, "\n";
     unless (($background_model eq "monads") ||
 	    ($background_model eq "exp_freq_file")) {
-	printf $out ";\t%-29s\t%s\n", "    organism", ($supported_organism{$organism_name}->{name} || $organism_name);
+	printf $out ";\t%-29s\t%s\n", "    organism", ($supported_organism{$org_or_taxon}->{name} || $org_or_taxon);
     }
     if ($mncf) {
 	print $out ";\tMonad frequencies in intergenic region\n";
-	printf $out ";\t%-29s\t%s\n", "organism", $organism_name;
+	printf $out ";\t%-29s\t%s\n", "organism", $org_or_taxon;
 	printf $out ";\t%-29s\t%s\n", "exp. monad freq. file", $infile{monad_exp_freq};
     } elsif ($infile{exp_freq}) {
 	printf $out ";\t%-22s\t%s\n", "exp. freq. file", $infile{exp_freq};
@@ -1810,7 +1830,9 @@ OPTIONS
 	-bg	background model
 		Type of sequences used as background model for
 		estimating expected dyad frequencies.
-		
+
+		Either -org or -taxon is required with the option -bg.
+
 		Supported models: 
 		-bg upstream 
 			 all upstream sequences, allowing overlap with
@@ -1833,10 +1855,15 @@ OPTIONS
 		    Same as -bg monads, allowed for consistency with
 		    oligo-analysis.
 
-	-org	organism 
-		This is necessary with the option -bg, to determine
-		which frequency file has to be used for expected
-		frequency calibration.
+
+	-org	organism
+	-taxon	taxon
+		Organism or taxon that used as reference for the
+		estimation of a background model based on a genome
+		subset (option -bg).  Either -org or -taxon is
+		required with the option -bg.
+
+   		Options -org and -taxon are mutually exclusive.
 
 	-thosig #
 		Threshold on occurrence significance.
@@ -2067,7 +2094,8 @@ dyad-analysis options
 -expfreq	expected frequency file
 -ncf		(deprecated, use '-bg intergenic' instead) 
 -bg		background model (supported: $supported_bg)
--org		organism 
+-org		organism (-org and -taxon are mutually exclusive)
+-taxon		taxon (-org and -taxon are mutually exclusive)
 -type		ir|dr|rep|any
 -accept 	accepted_dyad_file
 -groupsp	Group dyads made of the same words (monads) but with different spacings.
