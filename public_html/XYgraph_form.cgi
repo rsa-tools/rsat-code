@@ -69,7 +69,7 @@ $default{title} =~ s/\"//g;
 
 
 ### print the form 
-&RSA_header("XYgraph");
+&RSA_header("XYgraph","form");
 
 
 print "<CENTER>";

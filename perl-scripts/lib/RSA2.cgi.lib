@@ -988,6 +988,5 @@ sub PipingFormForSequence {
 End_of_form
 }
 
-
 1; # return true
 
