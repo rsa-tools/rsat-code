@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.11 2008/01/07 03:56:05 jvanheld Exp $
+# $Id: footprint-discovery,v 1.12 2008/01/07 04:13:14 jvanheld Exp $
 #
 ############################################################
 
@@ -119,7 +119,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -178,7 +178,7 @@ package main;
     $query_prefix = `basename $outfile{prefix}`;
     chomp($query_prefix);
   }
-  &RSAT::message::Warning("Query prefix", $query_prefix) if ($main::verbose >= 1);
+  &RSAT::message::Warning("Query prefix", $query_prefix) if ($main::verbose >= 2);
 
   ## Output prefix is mandatory
   ## If not specified by the user, define it automatically
@@ -274,7 +274,7 @@ package main;
   ################################################################
   ## Retrieve promoters of the query organism
   &RSAT::message::TimeWarn("Retrieving promoter sequences for query genes", $outfile{query_seq}) if ($verbose >= 1);
-  $cmd = "retrieve-seq ";
+  $cmd = "$SCRIPTS/retrieve-seq ";
   $cmd .= " -org ".$organism_name;
   $cmd .= " -i ".$outfile{genes};
   $cmd .= " -o ".$outfile{query_seq};
@@ -284,7 +284,7 @@ package main;
   ################################################################
   ## Detect all dyads in promoters of query genes for dyad filtering
   &RSAT::message::TimeWarn("Computing filter dyads", $outfile{filter_dyads}) if ($verbose >= 1);
-  $cmd = "dyad-analysis -v 1 -return occ -lth occ 1";
+  $cmd = "$SCRIPTS/dyad-analysis -v 1 -return occ -lth occ 1";
   $cmd .= " -i ".$outfile{query_seq};
   $cmd .= " -l 3 -sp 0-20";
   $cmd .= " ".$strands;
@@ -296,7 +296,7 @@ package main;
   ################################################################
   ## get orthologs
   &RSAT::message::TimeWarn("Getting orthologs", $outfile{orthologs}) if ($verbose >= 1);
-  $cmd = "get-orthologs";
+  $cmd = "$SCRIPTS/get-orthologs";
   $cmd .= " -i ".$outfile{genes};
   $cmd .= " -org ".$organism_name;
   $cmd .= " -taxon ".$taxon;
@@ -308,7 +308,7 @@ package main;
   ################################################################
   ## Retrieve sequences from orthologs
   &RSAT::message::TimeWarn("Retrieving promoter sequences of orthologs", $outfile{ortho_seq}) if ($verbose >= 1);
-  $cmd = "retrieve-seq-multigenome -ids_only";
+  $cmd = "$SCRIPTS/retrieve-seq-multigenome -ids_only";
   $cmd .= " -i ".$outfile{orthologs};
   $cmd .= " -noorf";
   $cmd .= " -o ".$outfile{ortho_seq};
@@ -318,7 +318,7 @@ package main;
   ################################################################
   ## Purge sequences
   &RSAT::message::TimeWarn("Purging promoter sequences of orthologs", $outfile{purged}) if ($verbose >= 1);
-  $cmd = "purge-sequence";
+  $cmd = "$SCRIPTS/purge-sequence";
   $cmd .= " -i ".$outfile{ortho_seq};
   $cmd .= " -ml 30 -mis 0 ";
   $cmd .= " ".$strands;
@@ -329,7 +329,7 @@ package main;
   ################################################################
   ## Discover over-represented dyads in promtoers of orthologous genes
   &RSAT::message::TimeWarn("Detecting phylogenetic footprints", $outfile{dyads}) if ($verbose >= 1);
-  $cmd = "dyad-analysis -v 1 -return occ,proba,rank -lth occ 1";
+  $cmd = "$SCRIPTS/dyad-analysis -v 1 -return occ,proba,rank -lth occ 1";
   $cmd .= " -expfreq ".$infile{bg_model} if ($bg_model eq "taxfreq");
   $cmd .= " -accept ".$outfile{filter_dyads};
   foreach my $field (sort keys %lth) {
@@ -348,7 +348,7 @@ package main;
   &IndexOneFile("dyads", $outfile{dyads}) if ($create_index);
 
   ## Generate a HTML table with the discovered dyads
-  $cmd = "text-to-html";
+  $cmd = "$SCRIPTS/text-to-html";
   $cmd .= " -i ".$outfile{dyads};
   $cmd .= " -font variable -chunk 1000";
   $cmd .= " -o ".$outfile{dyads}.".html";
@@ -358,7 +358,7 @@ package main;
   ################################################################
   ## Assemble significant dyads
   &RSAT::message::TimeWarn("Assembling significant dyads", $outfile{asmb}) if ($verbose >= 1);
-  $cmd = "pattern-assembly -v 1";
+  $cmd = "$SCRIPTS/pattern-assembly -v 1";
   $cmd .= " -i ".$outfile{dyads};
   $cmd .= " -subst 0 -maxfl 1 -toppat 50";
   $cmd .= " -o ".$outfile{asmb};
@@ -369,11 +369,11 @@ package main;
   ## Generate a feature-map of the discovered dyads
   my $map_title = join "; ", $taxon, $organism_name, $query_prefix;
   &RSAT::message::TimeWarn("Generating feature map", $outfile{map}) if ($verbose >= 1);
-  $cmd = "dna-pattern -return limits,sites -origin -0";
+  $cmd = "$SCRIPTS/dna-pattern -return limits,sites -origin -0";
   $cmd .= " -pl ".$outfile{dyads};
   $cmd .= " -i ".$outfile{ortho_seq};
   $cmd .= " | convert-features -from dnapat -to ft";
-  $cmd .= " | feature-map";
+  $cmd .= " | $SCRIPTS/feature-map";
   $cmd .= " -title '".$map_title."'";
   $cmd .= " -format ".$img_format;
   $cmd .= " -scalebar -legend";
