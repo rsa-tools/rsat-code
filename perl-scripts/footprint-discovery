@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.12 2008/01/07 04:13:14 jvanheld Exp $
+# $Id: footprint-discovery,v 1.13 2008/01/07 08:15:09 jvanheld Exp $
 #
 ############################################################
 
@@ -26,8 +26,13 @@ Adapted from the procedure described in Janky & van Helden (2008).
 
 =head1 AUTHORS
 
-jacques.van.helden@\ulb.ac.be
-rekins@\scmbb.ulb.ac.be
+=over
+
+=item rekins@scmbb.ulb.ac.be
+
+=item jacques.van.helden@ulb.ac.be
+
+=back
 
 =head1 CATEGORY
 
@@ -119,7 +124,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -372,7 +377,7 @@ package main;
   $cmd = "$SCRIPTS/dna-pattern -return limits,sites -origin -0";
   $cmd .= " -pl ".$outfile{dyads};
   $cmd .= " -i ".$outfile{ortho_seq};
-  $cmd .= " | convert-features -from dnapat -to ft";
+  $cmd .= " | $SCRIPTS/convert-features -from dnapat -to ft";
   $cmd .= " | $SCRIPTS/feature-map";
   $cmd .= " -title '".$map_title."'";
   $cmd .= " -format ".$img_format;
@@ -539,16 +544,6 @@ multiple genes.
 	} elsif ($arg eq "-q") {
 	  push @main::query_genes, shift(@arguments);
 
-	    ## Taxon
-=pod
-
-=item	B<-taxon reference_taxon>
-
-Reference taxon, in which orthologous genes have to be collected.
-
-=cut
-	} elsif ($arg eq "-taxon") {
-	  $main::taxon = shift(@arguments);
 
 	    ## Organism
 =pod
@@ -560,6 +555,34 @@ Query organism, to which the query genes belong.
 =cut
 	} elsif ($arg eq "-org") {
 	  $main::organism_name = shift(@arguments);
+
+	    ## Taxon
+=pod
+
+=item	B<-taxon reference_taxon>
+
+Reference taxon, in which orthologous genes have to be collected.
+
+=cut
+	} elsif ($arg eq "-taxon") {
+	  $main::taxon = shift(@arguments);
+
+
+
+         ## Create HTML Index
+=pod
+
+=item B<-index>
+
+Generate an HTML index with links to the result files. This option is
+used for the web interface, but can also be convenient to index
+results, epecially when several genes or taxa are analyzed (options
+-genes, -all_genes, -all_taxa).
+
+=cut
+
+	} elsif ($arg eq "-index") {
+	  $main::create_index = 1;
 
 	    ### Lower threshold
 =pod
@@ -592,23 +615,6 @@ which a threshold can be imposed.
 	  my $thr_field = shift (@arguments);
 	  my $thr_value =  shift (@arguments);
 	  $main::uth{$thr_field} = $thr_value;
-
-
-         ## Create HTML Index
-=pod
-
-=item B<-index>
-
-Generate an HTML index with links to the result files. This option is
-used for the web interface, but can also be convenient to index
-results, epecially when several genes or taxa are analyzed (options
--genes, -all_genes, -all_taxa).
-
-=cut
-
-	} elsif ($arg eq "-index") {
-	  $main::create_index = 1;
-
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
