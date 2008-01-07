@@ -103,7 +103,8 @@ $oligo_length = $query->param('oligo_length') ;
 &FatalError("$oligo_length Invalid oligonucleotide length") unless &IsNatural($oligo_length);
 $parameters .= " -l $oligo_length";
 
-#### expected frequency estimation ####
+################################################################
+## Background model
 if ($query->param('freq_estimate') =~ /background/i) {
 
   ## Check background subset
@@ -139,6 +140,7 @@ if ($query->param('freq_estimate') =~ /background/i) {
   }
 
 } elsif ($query->param('freq_estimate') =~ /upload/i) {
+  ## User-specific background model
   $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
   $upload_freq_file = $query->param('upload_freq_file');
   if ($upload_freq_file) {
@@ -159,16 +161,24 @@ if ($query->param('freq_estimate') =~ /background/i) {
   }
 
 } elsif ($query->param('freq_estimate') =~ /residue frequenc/i) {
+  ## Bernoulli background model
   $freq_option = " -bg bernoulli";
+
 } elsif ($query->param('freq_estimate') =~ /markov/i) {
+  ## Markov chain calibrated on input sequences
   $freq_option = " -markov";
   if (&IsNatural($query->param('markov_order'))) {
     $freq_option .= " ".$query->param('markov_order');
   }
+
 } elsif ($query->param('freq_estimate') =~ /lexicon/i) {
+  ## Lexicon background model
   $freq_option = " -lexicon";
+
 } elsif ($query->param('freq_estimate') =~ /equiprobable/i) {
+  ## Equiprobable residues
   $freq_option = " -bg equi";
+
 } else {
   $freq_option = "";
 } 
