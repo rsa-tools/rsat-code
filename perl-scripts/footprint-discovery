@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.10 2008/01/07 03:33:52 jvanheld Exp $
+# $Id: footprint-discovery,v 1.11 2008/01/07 03:56:05 jvanheld Exp $
 #
 ############################################################
 
@@ -119,7 +119,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -631,6 +631,7 @@ sub Verbose {
     print $main::out "; footprint-discovery ";
     &PrintArguments($main::out);
     printf $main::out "; %-15s\t%s\n", "Program version", $program_version;
+    printf $main::out "; %-15s\t%s", "Working directory", `pwd`;
     if (defined(%main::infile)) {
 	print $main::out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
