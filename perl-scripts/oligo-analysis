@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.131 2008/01/03 12:37:01 jvanheld Exp $
+# $Id: oligo-analysis,v 1.132 2008/01/07 01:10:06 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -18,11 +18,16 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 require "RSA.seq.lib";
 require "RSA.disco.lib";
+require RSAT::Tree;
+#require RSAT::TreeNode;
 
 ################################################################
 ###### initialize parameters ##########
-$start_time = &AlphaDate();
-$program_version = do { my @r = (q$Revision: 1.131 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $start_time = &AlphaDate();
+local $program_version = do { my @r = (q$Revision: 1.132 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+
+local $org_or_taxon; ## Name of the organism or taxon for the background model
+local $taxon = 0; ## Specify it the background model is organism-specific or taxon-specific
 
 #### background models
 %supported_bg = ('upstream'=>1,
@@ -108,7 +113,6 @@ if (($tail eq "left") ||
     $zeroocc = 1;
 }
 
-
 ### Check output fields
 if (@output_fields == ()) { #default output is occurrence numbers
     @output_fields = ("occurrences");
@@ -185,8 +189,8 @@ if ($background_model eq "equi") {
     } else {
 	$str="-1str";
     }
-    $infile{exp_freq} = &ExpectedFreqFile($organism_name, $oligo_length, $background_model,
-					  noov=>$noov, str=>$str);
+    $infile{exp_freq} = &ExpectedFreqFile($org_or_taxon, $oligo_length, $background_model,
+					  noov=>$noov, str=>$str, taxon=>$taxon);
 
     #### read alphabet from a file
 } elsif ($infile{alphabet}) {
@@ -1523,7 +1527,14 @@ sub Verbose {
 	unless ($return{'table'}) {
 
 	    printf $out "; %-29s\t%s\n", "Background model", $background_model if ($background_model);
-	    printf $out "; %-29s\t%s\n", "Organism", $organism_name if ($organism_name);
+	    if ($org_or_taxon) {
+	      if ($taxon) {
+		printf $out "; %-29s\t%s\n", "Taxon", $org_or_taxon;
+	      } else {
+		printf $out "; %-29s\t%s\n", "Organism", $org_or_taxon;
+	      }
+	    }
+
 	    printf $out "; %-29s\t%s\n", "Method", $method;
 	    printf $out "; %-29s\t%s\n", "Expected frequency file", $infile{exp_freq} if ($infile{exp_freq});
 	    printf $out "; %-29s\n", "\trescaled to 1" if ($rescale_freq);
@@ -1863,10 +1874,16 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
 
-	    ### organism (for selecting the appropriate expected frequencies)
+	    ### organism (for selecting an organism-specific background model)
 	} elsif ($ARGV[$a] =~ /^-org/i) {
-	    $organism_name = $ARGV[$a+1];
-	    &CheckOrganismName($organism_name);
+	    $org_or_taxon = $ARGV[$a+1];
+	    &CheckOrganismName($org_or_taxon);
+
+	    ### taxon (for selecting a taxon-specific background model)
+	  } elsif ($ARGV[$a] =~ /^-taxon/i) {
+	    $taxon = 1;
+	    $org_or_taxon = $ARGV[$a+1];
+	    &CheckTaxon($org_or_taxon);
 
 	    ################################################################
 	    #### oligonucleotide counting options
