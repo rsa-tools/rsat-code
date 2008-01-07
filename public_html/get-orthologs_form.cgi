@@ -10,6 +10,7 @@ BEGIN {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
+require "RSA.cgi.lib";
 require "RSA2.cgi.lib";
 use RSAT::Tree;
 
@@ -187,7 +188,7 @@ $demo_queries = "lexA\n";
 print "<TD><B>";
 print $query->hidden(-name=>'queries',-default=>$demo_queries);
 print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_K12");
-print $query->hidden(-name=>'taxon',-default=>"Gammaproteobacteria");
+print $query->hidden(-name=>'taxon',-default=>"Enterobacteriales");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
