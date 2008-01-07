@@ -182,6 +182,7 @@ if ($query->param('freq_estimate') =~ /background/i) {
         &cgiError("You should specify an taxon to use intergenic frequency calibration");
       }
       &CheckTaxon($taxon);
+      $organism = $taxon;
     }
 
     #$exp_freq_file = "$ENV{RSAT}/data/genomes/$organism/oligo-frequencies/" . "$oligo_length" . "nt_" . "$background" . "_" . "$organism$overlap$strand.freq.gz";
