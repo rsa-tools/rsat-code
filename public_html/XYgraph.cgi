@@ -41,8 +41,8 @@ if ($ENV{rsat_echo} >= 2) {
 $parameters = " -v ";
 
 ### general parameters ###
-if ($query->param('title1')) {
-    $parameters .= " -title1 \"".$query->param('title1')."\" ";
+if ($query->param('title')) {
+    $parameters .= " -title1 \"".$query->param('title')."\" ";
 }
 if ($query->param('title2')) {
     $parameters .= " -title2 \"".$query->param('title2')."\" ";
