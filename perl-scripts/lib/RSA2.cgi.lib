@@ -79,23 +79,26 @@ sub RSA_header {
   print "<H3 ALIGN='center'><A HREF='$ENV{rsat_www}/RSAT_home.cgi'>RSA-tools</A> - $title</H3>";
 }
 
+
 ## ##############################################################
 ## send results by e-mail or display on the browser
 sub SelectOutput {
-    my ($default_output) = @_;
+    my ($default_output, %args) = @_;
     $default_output = "display" unless ($default_output);
-
     my @values = ();
-    if ($default_output eq 'server') {
+    if ($args{email_only}) {
+      push @values, 'email';
+      $default{output} = 'email';
+    } else {
+      if ($default_output eq 'server') {
 	push @values, 'server'
+      }
+      push @values, ('display','email');
     }
-    push @values, ('display','email');
-
     print "<B>Output</B>&nbsp;";
     print $query->radio_group(-name=>'output',
-#			      -values=>['display','server','e-mail'],
 			      -values=>[@values],
-			      -default=>$default{'output'});
+			      -default=>$default_output);
     print $query->textfield(-name=>'user_email',
 			    -size=>30);
     print "<BR>\n";
@@ -348,12 +351,12 @@ sub OrganismPopUpString {
 }
 
 
-# ################################################################
-# ### display a pop-up menu with the supported taxonomy
-# ### on the basis of the configuration found in RSA.config
-# sub TaxonPopUp {
-#   print &TaxonPopUpString();
-# }
+################################################################
+### display a pop-up menu with the supported taxonomy
+### on the basis of the configuration found in RSA.config
+#sub TaxonPopUp {
+#  print &TaxonPopUpString();
+#}
 # sub TaxonPopUpString {
 #   require RSAT::Tree;
 #   #require RSAT::TreeNode;

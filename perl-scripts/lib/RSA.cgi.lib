@@ -71,29 +71,6 @@ sub RSA_header {
 }
 
 
-## ##############################################################
-## send results by e-mail or display on the browser
-sub SelectOutput {
-    my ($default_output) = @_;
-    $default_output = "display" unless ($default_output);
-
-    my @values = ();
-    if ($default_output eq 'server') {
-	push @values, 'server'
-    }
-    push @values, ('display','email');
-
-    print "<B>Output</B>&nbsp;";
-    print $query->radio_group(-name=>'output',
-#			      -values=>['display','server','e-mail'],
-			      -values=>[@values],
-			      -default=>$default{'output'});
-    print $query->textfield(-name=>'user_email',
-			    -size=>30);
-    print "<BR>\n";
-    print "<BR>\n";
-}
-
 
 ################################################################
 ### print a selection between diferent modes of sequence entry 
@@ -306,9 +283,9 @@ sub GetSequenceFile {
 
 #### warn the users to wait for complete result before clicking on piping buttons
 sub PipingWarning {
-    my $message = "One or several button(s) will appear at the bottom of this page, ";
-    $message .= "allowing you to send the result as input for a subsequent query."; 
-    &cgiMessage($message, "Information");
+  my $message = "One or several button(s) will appear at the bottom of this page, ";
+  $message .= "allowing you to send the result as input for a subsequent query."; 
+  &cgiMessage($message, "Information");
 }
 
 
@@ -352,7 +329,7 @@ sub TaxonPopUpString {
     $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
 #    $tree->LoadSupportedTaxonomy(1);
     my @supported_taxons = $tree->node_names();
-    my $indent_char = "-";
+    my $indent_char = ":-";
     my %indented_taxa = ($tree->as_indented_hash($indent_char,"Bacteria"),
 			 $tree->as_indented_hash($indent_char,"Fungi"));
 
@@ -689,7 +666,7 @@ sub EmailTheResult {
 	$tmp_file_name = sprintf "result.%s", &AlphaDate.".txt";
     }
     my $result_URL = "$ENV{rsat_www}/tmp/$tmp_file_name";
-    
+
     #### debugging: report the command
     print "<PRE>$command > $TMP/$tmp_file_name</PRE>" if ($ECHO >= 1);
 
