@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.9 2008/01/06 12:44:05 jvanheld Exp $
+# $Id: footprint-discovery,v 1.10 2008/01/07 03:33:52 jvanheld Exp $
 #
 ############################################################
 
@@ -116,259 +116,315 @@ require "RSA.lib";
 package main;
 {
 
-    ################################################################
-    ## Initialise parameters
-    my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-#    $program_version = "0.00";
+  ################################################################
+  ## Initialise parameters
+  my $start_time = &AlphaDate();
+  $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
 
-    %main::infile = ();
-    %main::outfile = ();
-
-
-    local $verbose = 0;
-    local $in = STDIN;
-    local $taxon;
-    local $organism_name;
-    local @query_genes = ();
-    local $img_format = "png";
-    local $strands = "-2str";
-    local $noov = "-noov";
-    local $bg_model = "taxfreq";
-    local %lth = (occ=>1,occ_sig=>0);
-    local %uth = (rank=>50);
-
-    ## Options for the &doit() command;
-    local $dry = 0;
-    local $batch = 0;
-    local $die_on_error = 1;
-    local $job_prefix = "footprint_disco";
-    local $cmd;
-
-    ################################################################
-    ## Read argument values
-    &ReadArguments();
-
-    ################################################################
-    ## Check argument values
+  %main::infile = ();
+  %main::outfile = ();
 
 
-    ## Check taxon
-    &RSAT::error::FatalError("You must specify a taxon (option -taxon)")
-      unless ($taxon);
-    my @organisms = &CheckTaxon($taxon);
+  local $create_index = 0;
+  local $verbose = 0;
+  local $in = STDIN;
+  local $taxon;
+  local $organism_name;
+  local @query_genes = ();
+  local $img_format = "png";
+  local $strands = "-2str";
+  local $noov = "-noov";
+  local $bg_model = "taxfreq";
+  local %lth = (occ=>1,occ_sig=>0);
+  local %uth = (rank=>50);
 
-    ## Check organism
-    &RSAT::error::FatalError("You must specify a organism (option -org)")
-      unless ($organism_name);
-    $organism = new RSAT::organism();
-    $organism->check_name($organism_name);
-    $organism->set_attribute("name", $organism_name);
+  ## Options for the &doit() command;
+  local $dry = 0;
+  local $batch = 0;
+  local $die_on_error = 1;
+  local $job_prefix = "footprint_disco";
+  local $cmd;
 
-    ################################################################
-    ## Define a query prefix for the title of the feature map and for
-    ## automatic output file specification
-    my $query_prefix;
-    if (scalar(@query_genes) == 1) {
-      $query_prefix = $query_genes[0];
-    } elsif ($infile{input}) {
-      $query_prefix = `basename $infile{input} .tab`;
-    } elsif ($outfile{prefix}) {
-      $query_prefix = `basename $outfile{prefix}`;
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+
+  ## Check taxon
+  &RSAT::error::FatalError("You must specify a taxon (option -taxon)")
+    unless ($taxon);
+  my @organisms = &CheckTaxon($taxon);
+
+  ## Check organism
+  &RSAT::error::FatalError("You must specify a organism (option -org)")
+    unless ($organism_name);
+  $organism = new RSAT::organism();
+  $organism->check_name($organism_name);
+  $organism->set_attribute("name", $organism_name);
+
+  ################################################################
+  ## Define a query prefix for the title of the feature map and for
+  ## automatic output file specification
+  my $query_prefix;
+  if (scalar(@query_genes) == 1) {
+    $query_prefix = $query_genes[0];
+  } elsif ($infile{input}) {
+    $query_prefix = `basename $infile{input} .tab`;
+  } elsif ($outfile{prefix}) {
+    $query_prefix = `basename $outfile{prefix}`;
+    chomp($query_prefix);
+  }
+  &RSAT::message::Warning("Query prefix", $query_prefix) if ($main::verbose >= 1);
+
+  ## Output prefix is mandatory
+  ## If not specified by the user, define it automatically
+  unless ($outfile{prefix}) {
+    if ($query_prefix) {
+      $outfile{prefix} = join "/", "footprints", $taxon, $organism_name, $query_prefix, $query_prefix."_".$organism_name."_".$taxon;
+      &RSAT::message::Warning("Automatic definition of the output prefix", $outfile{prefix});
+    } else {
+      &RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
     }
-    &RSAT::message::Warning("Query prefix", $query_prefix) if ($main::verbose >= 1);
+  }
 
-    ## Output prefix is mandatory
-    ## If not specified by the user, define it automatically
-    unless  ($outfile{prefix}) {
-      if ($query_prefix) {
-	$outfile{prefix} = join "/", "footprints", $taxon, $organism_name, $query_prefix, $query_prefix."_".$organism_name."_".$taxon;
-	&RSAT::message::Warning("Automatic definition of the output prefix", $outfile{prefix});
-      } else {
-	&RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
-      }
+  ## Create output directory if required
+  $dir{output} = `dirname $outfile{prefix}`;
+  chomp($dir{output});
+  &RSAT::util::CheckOutDir($dir{output});
+
+  ## Open output stream for the log file
+  $outfile{log} = $outfile{prefix}."_log.txt";
+  $out = &OpenOutputFile($outfile{log});
+
+  ## File for storing query gene names
+  $outfile{genes} = $outfile{prefix}."_query_genes.tab";
+  $genes = &OpenOutputFile($outfile{genes});
+
+  ## Specity other file names
+  $outfile{orthologs} = $outfile{prefix}."_ortho_bbh.tab";
+  $outfile{query_seq} = $outfile{prefix}."_query_seq.fasta";
+  $outfile{ortho_seq} = $outfile{prefix}."_ortho_seq.fasta";
+  $outfile{purged} = $outfile{prefix}."_ortho_seq_purged.fasta";
+  $outfile{filter_dyads} = $outfile{prefix}."_filter_dyads.tab";
+  $outfile{dyad_prefix} = $outfile{prefix}."_dyads_3nt_sp0-20".$strands.$noov."_".$bg_model."_sig".$lth{occ_sig};
+  $outfile{dyads} = $outfile{dyad_prefix}.".tab";
+  $outfile{asmb} = $outfile{dyad_prefix}.".asmb";
+  $outfile{map} = $outfile{dyad_prefix}.".".${img_format};
+
+
+  ## HTML index
+  if ($create_index) {
+    $outfile{index} = $outfile{prefix}."_index.html";
+    $index = &OpenOutputFile($outfile{index});
+    print $index "<html>\n";
+    print $index "<body>\n";
+    print $index "<hr size=4 color='#000088'>";
+    print $index "<h1 align=center>Footprint discovery result</h1>";
+    print $index "<hr size=2 color='#000088'>";
+    print $index "<blockquote>";
+    print $index "<table cellspacing=0 cellpadding=3 border=0>\n";
+    &IndexOneFile("log", $outfile{log});
+  }
+
+  ## Background model file
+  if ($bg_model eq "taxfreq") {
+    $infile{bg_model} = &ExpectedFreqFile($taxon, 3,
+					  "upstream-noorf",str=>$strands,noov=>$noov,type=>"dyad",
+					  warn=>1,
+					  taxon=>1);
+  }
+
+
+  ################################################################
+  ## Read query genes from input file
+  if ($infile{input}) {
+    ($in) = &OpenInputFile($infile{input});
+    while (<$in>) {
+      next if (/^;/);
+      next if (/^#/);
+      next unless (/\S/);
+      chomp;
+      my @fields = split /\s+/;
+      my $query = shift @fields;
+      push @query_genes, $query;
     }
+    close $in;
+    &IndexOneFile("input", $infile{input}) if ($create_index);
+  }
 
-    ## Create output directory if required
-    $dir{output} = `dirname $outfile{prefix}`;
-    chomp($dir{output});
-    &RSAT::util::CheckOutDir($dir{output});
+  ################################################################
+  ## Check query genes
+  if (scalar(@query_genes) ==0) {
+    &RSAT::error::FatalError("You must specify at least one query gene (options -q or -i)");
+  }
+  ## Print query genes in the gene file
+  foreach my $gene (@query_genes) {
+    print $genes $gene, "\t", $organism_name, "\n";
+  }
+  &IndexOneFile("genes", $outfile{genes}) if ($create_index);
 
-    ## Open output stream for the log file
-    $outfile{log} = $outfile{prefix}."_log.txt";
-    $out = &OpenOutputFile($outfile{log});
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($verbose);
 
-    ## File for storing query gene names
-    $outfile{genes} = $outfile{prefix}."_query_genes.tab";
-    $genes = &OpenOutputFile($outfile{genes});
+  ################################################################
+  ## Retrieve promoters of the query organism
+  &RSAT::message::TimeWarn("Retrieving promoter sequences for query genes", $outfile{query_seq}) if ($verbose >= 1);
+  $cmd = "retrieve-seq ";
+  $cmd .= " -org ".$organism_name;
+  $cmd .= " -i ".$outfile{genes};
+  $cmd .= " -o ".$outfile{query_seq};
+  print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &IndexOneFile("query sequence", $outfile{query_seq}) if ($create_index);
 
-    ## Specity other file names
-    $outfile{orthologs} = $outfile{prefix}."_ortho_bbh.tab";
-    $outfile{query_seq} = $outfile{prefix}."_query_seq.fasta";
-    $outfile{ortho_seq} = $outfile{prefix}."_ortho_seq.fasta";
-    $outfile{purged} = $outfile{prefix}."_ortho_seq_purged.fasta";
-    $outfile{filter_dyads} = $outfile{prefix}."_filter_dyads.tab";
-    $outfile{dyad_prefix} = $outfile{prefix}."_dyads_3nt_sp0-20".$strands.$noov."_".$bg_model."_sig".$lth{occ_sig};
-    $outfile{dyads} = $outfile{dyad_prefix}.".tab";
-    $outfile{asmb} = $outfile{dyad_prefix}.".asmb";
-    $outfile{map} = $outfile{dyad_prefix}.".".${img_format};
+  ################################################################
+  ## Detect all dyads in promoters of query genes for dyad filtering
+  &RSAT::message::TimeWarn("Computing filter dyads", $outfile{filter_dyads}) if ($verbose >= 1);
+  $cmd = "dyad-analysis -v 1 -return occ -lth occ 1";
+  $cmd .= " -i ".$outfile{query_seq};
+  $cmd .= " -l 3 -sp 0-20";
+  $cmd .= " ".$strands;
+  $cmd .= " ".$noov;
+  $cmd .= " -o ".$outfile{filter_dyads};
+  print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &IndexOneFile("filter dyads", $outfile{filter_dyads}) if ($create_index);
 
-    ## Background model file
-    if ($bg_model eq "taxfreq") {
-      $infile{bg_model} = &ExpectedFreqFile($taxon, 3,
-					      "upstream-noorf",str=>$strands,noov=>$noov,type=>"dyad",
-					      warn=>1,
-					      taxon=>1);
-    }
+  ################################################################
+  ## get orthologs
+  &RSAT::message::TimeWarn("Getting orthologs", $outfile{orthologs}) if ($verbose >= 1);
+  $cmd = "get-orthologs";
+  $cmd .= " -i ".$outfile{genes};
+  $cmd .= " -org ".$organism_name;
+  $cmd .= " -taxon ".$taxon;
+  $cmd .= " -uth rank 1";	## BBH criterion
+  $cmd .= " -o ".$outfile{orthologs};
+  print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &IndexOneFile("orthologs", $outfile{orthologs}) if ($create_index);
 
+  ################################################################
+  ## Retrieve sequences from orthologs
+  &RSAT::message::TimeWarn("Retrieving promoter sequences of orthologs", $outfile{ortho_seq}) if ($verbose >= 1);
+  $cmd = "retrieve-seq-multigenome -ids_only";
+  $cmd .= " -i ".$outfile{orthologs};
+  $cmd .= " -noorf";
+  $cmd .= " -o ".$outfile{ortho_seq};
+  print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &IndexOneFile("ortholog sequences", $outfile{ortho_seq}) if ($create_index);
 
-    ################################################################
-    ## Read query genes from input file
-    if ($infile{input}) {
-      ($in) = &OpenInputFile($infile{input});
-      while (<$in>) {
-	next if (/^;/);
-	next if (/^#/);
-	next unless (/\S/);
-	chomp;
-	my @fields = split /\s+/;
-	my $query = shift @fields;
-	push @query_genes, $query;
-      }
-      close $in;
-    }
+  ################################################################
+  ## Purge sequences
+  &RSAT::message::TimeWarn("Purging promoter sequences of orthologs", $outfile{purged}) if ($verbose >= 1);
+  $cmd = "purge-sequence";
+  $cmd .= " -i ".$outfile{ortho_seq};
+  $cmd .= " -ml 30 -mis 0 ";
+  $cmd .= " ".$strands;
+  $cmd .= " -o ".$outfile{purged};
+  print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &IndexOneFile("purged sequences", $outfile{purged}) if ($create_index);
 
-    ################################################################
-    ## Check query genes
-    if (scalar(@query_genes) ==0) {
-      &RSAT::error::FatalError("You must specify at least one query gene (options -q or -i)");
-    }
-    ## Print query genes in the gene file
-    foreach my $gene (@query_genes) {
-      print $genes $gene, "\t", $organism_name, "\n";
-    }
+  ################################################################
+  ## Discover over-represented dyads in promtoers of orthologous genes
+  &RSAT::message::TimeWarn("Detecting phylogenetic footprints", $outfile{dyads}) if ($verbose >= 1);
+  $cmd = "dyad-analysis -v 1 -return occ,proba,rank -lth occ 1";
+  $cmd .= " -expfreq ".$infile{bg_model} if ($bg_model eq "taxfreq");
+  $cmd .= " -accept ".$outfile{filter_dyads};
+  foreach my $field (sort keys %lth) {
+    $cmd .= " -lth ".$field." ".$lth{$field};
+  }
+  foreach my $field (sort keys %uth) {
+    $cmd .= " -uth ".$field." ".$uth{$field};
+  }
+  $cmd .= " -i ".$outfile{purged};
+  $cmd .= " -l 3 -sp 0-20";
+  $cmd .= " ".$strands;
+  $cmd .= " ".$noov;
+  $cmd .= " -sort";
+  $cmd .= " -o ".$outfile{dyads};
+  print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &IndexOneFile("dyads", $outfile{dyads}) if ($create_index);
 
-    ################################################################
-    ## Print verbose
-    &Verbose() if ($verbose);
+  ## Generate a HTML table with the discovered dyads
+  $cmd = "text-to-html";
+  $cmd .= " -i ".$outfile{dyads};
+  $cmd .= " -font variable -chunk 1000";
+  $cmd .= " -o ".$outfile{dyads}.".html";
+  print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &IndexOneFile("dyads [htm]", $outfile{dyads}.".html") if ($create_index);
 
-    ################################################################
-    ## Retrieve promoters of the query organism
-    &RSAT::message::TimeWarn("Retrieving promoter sequences for query genes", $outfile{query_seq}) if ($verbose >= 1);
-    $cmd = "retrieve-seq ";
-    $cmd .= " -org ".$organism_name;
-    $cmd .= " -i ".$outfile{genes};
-    $cmd .= " -o ".$outfile{query_seq};
-    print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  ################################################################
+  ## Assemble significant dyads
+  &RSAT::message::TimeWarn("Assembling significant dyads", $outfile{asmb}) if ($verbose >= 1);
+  $cmd = "pattern-assembly -v 1";
+  $cmd .= " -i ".$outfile{dyads};
+  $cmd .= " -subst 0 -maxfl 1 -toppat 50";
+  $cmd .= " -o ".$outfile{asmb};
+  print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &IndexOneFile("assembled dyads", $outfile{asmb}) if ($create_index);
 
-    ################################################################
-    ## Detect all dyads in promoters of query genes for dyad filtering
-    &RSAT::message::TimeWarn("Computing filter dyads", $outfile{filter_dyads}) if ($verbose >= 1);
-    $cmd = "dyad-analysis -v 1 -return occ -lth occ 1";
-    $cmd .= " -i ".$outfile{query_seq};
-    $cmd .= " -l 3 -sp 0-20";
-    $cmd .= " ".$strands;
-    $cmd .= " ".$noov;
-    $cmd .= " -o ".$outfile{filter_dyads};
-    print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  ################################################################
+  ## Generate a feature-map of the discovered dyads
+  my $map_title = join "; ", $taxon, $organism_name, $query_prefix;
+  &RSAT::message::TimeWarn("Generating feature map", $outfile{map}) if ($verbose >= 1);
+  $cmd = "dna-pattern -return limits,sites -origin -0";
+  $cmd .= " -pl ".$outfile{dyads};
+  $cmd .= " -i ".$outfile{ortho_seq};
+  $cmd .= " | convert-features -from dnapat -to ft";
+  $cmd .= " | feature-map";
+  $cmd .= " -title '".$map_title."'";
+  $cmd .= " -format ".$img_format;
+  $cmd .= " -scalebar -legend";
+  $cmd .= " -scorethick";
+  $cmd .= " -o ".$outfile{map};
+  print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &IndexOneFile("feature map", $outfile{map}, image=>1) if ($create_index);
 
-    ################################################################
-    ## get orthologs
-    &RSAT::message::TimeWarn("Getting orthologs", $outfile{orthologs}) if ($verbose >= 1);
-    $cmd = "get-orthologs";
-    $cmd .= " -i ".$outfile{genes};
-    $cmd .= " -org ".$organism_name;
-    $cmd .= " -taxon ".$taxon;
-    $cmd .= " -uth rank 1"; ## BBH criterion
-    $cmd .= " -o ".$outfile{orthologs};
-    print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  ################################################################
+  ## Finish verbose
+  if ($verbose >= 1) {
+    my $done_time = &AlphaDate();
+    print $out "; Job started $start_time\n";
+    print $out "; Job done    $done_time\n";
+  }
 
-    ################################################################
-    ## Retrieve sequences from orthologs
-    &RSAT::message::TimeWarn("Retrieving promoter sequences of orthologs", $outfile{ortho_seq}) if ($verbose >= 1);
-    $cmd = "retrieve-seq-multigenome -ids_only";
-    $cmd .= " -i ".$outfile{orthologs};
-    $cmd .= " -noorf";
-    $cmd .= " -o ".$outfile{ortho_seq};
-    print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-
-    ################################################################
-    ## Purge sequences
-    &RSAT::message::TimeWarn("Purging promoter sequences of orthologs", $outfile{purged}) if ($verbose >= 1);
-    $cmd = "purge-sequence";
-    $cmd .= " -i ".$outfile{ortho_seq};
-    $cmd .= " -ml 30 -mis 0 ";
-    $cmd .= " ".$strands;
-    $cmd .= " -o ".$outfile{purged};
-    print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-
-    ################################################################
-    ## Discover over-represented dyads in promtoers of orthologous genes
-    &RSAT::message::TimeWarn("Detecting phylogenetic footprints", $outfile{dyads}) if ($verbose >= 1);
-    $cmd = "dyad-analysis -v 1 -return occ,proba,rank -lth occ 1";
-    $cmd .= " -expfreq ".$infile{bg_model} if ($bg_model eq "taxfreq");
-    $cmd .= " -accept ".$outfile{filter_dyads};
-    foreach my $field (sort keys %lth) {
-      $cmd .= " -lth ".$field." ".$lth{$field};
-    }
-    foreach my $field (sort keys %uth) {
-      $cmd .= " -uth ".$field." ".$uth{$field};
-    }
-    $cmd .= " -i ".$outfile{purged};
-    $cmd .= " -l 3 -sp 0-20";
-    $cmd .= " ".$strands;
-    $cmd .= " ".$noov;
-    $cmd .= " -sort";
-    $cmd .= " -o ".$outfile{dyads};
-    print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-
-    ################################################################
-    ## Assemble significant dyads
-    &RSAT::message::TimeWarn("Assembling significant dyads", $outfile{asmb}) if ($verbose >= 1);
-    $cmd = "pattern-assembly -v 1";
-    $cmd .= " -i ".$outfile{dyads};
-    $cmd .= " -subst 0 -maxfl 1 -toppat 50";
-    $cmd .= " -o ".$outfile{asmb};
-    print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-
-    ################################################################
-    ## Generate a feature-map of the discovered dyads
-    my $map_title = join "; ", $taxon, $organism_name, $query_prefix;
-    &RSAT::message::TimeWarn("Generating feature map", $outfile{map}) if ($verbose >= 1);
-    $cmd = "dna-pattern -return limits,sites -origin -0";
-    $cmd .= " -pl ".$outfile{dyads};
-    $cmd .= " -i ".$outfile{ortho_seq};
-    $cmd .= " | convert-features -from dnapat -to ft";
-    $cmd .= " | feature-map";
-    $cmd .= " -title '".$map_title."'";
-    $cmd .= " -format ".$img_format;
-    $cmd .= " -scalebar -legend";
-    $cmd .= " -scorethick";
-    $cmd .= " -o ".$outfile{map};
-    print $out "\n", $cmd, "\n\n"; &doit($cmd, 0, $die_on_error, $verbose, $batch, $job_prefix);
-
-    ################################################################
-    ## Finish verbose
-    if ($verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $out "; Job started $start_time\n";
-	print $out "; Job done    $done_time\n";
-    }
+  ################################################################
+  ## Close output stream
+  close $out if ($outfile{log});
+  close $genes if ($outfile{genes});
+  if ($create_index) {
+    print $index "</table>\n";
+    print $index "</blockquote>";
+    print $index "<hr size=2 color='#000088'>";
+    print $index "</body>";
+    print $index "</html>";
+    close $index;
+  }
 
 
-    ################################################################
-    ## Close output stream
-    close $out if ($outfile{log});
-    close $genes if ($outfile{genes});
-
-
-    exit(0);
+  exit(0);
 }
 
 ################################################################
 ################### SUBROUTINE DEFINITION ######################
 ################################################################
 
+
+################################################################
+## Add one file to the index file
+sub IndexOneFile {
+  my ($name, $file, %args) = @_;
+  $short_file = `basename $file`;
+  print $index "<tr valign=top>\n";
+  print $index "<td>", $name, "</td>\n<td><a href=".$short_file.">".$short_file."</a></td>\n";
+  if ($args{image}) {
+    print $index "<td><a href=".$short_file."><img width=100 src=".$short_file."></a></td>\n";
+
+  }
+  print $index ("</tr>\n\n");
+}
 
 ################################################################
 ## Display full help message 
@@ -402,7 +458,7 @@ sub ReadArguments {
 Level of verbosity (detail in the warning messages during execution)
 
 =cut
-	if ($arg eq "-v") {
+  if ($arg eq "-v") {
 	    if (&IsNatural($arguments[0])) {
 		$main::verbose = shift(@arguments);
 	    } else {
@@ -516,7 +572,7 @@ See the manual of dyad-analysis for a description of the fields on
 which a threshold can be imposed.
 
 =cut
-	} elsif ($ARGV[$a] eq "-lth") {
+	} elsif ($arg eq "-lth") {
 	    my $thr_field = shift (@arguments);
 	    my $thr_value =  shift (@arguments);
 	    $main::lth{$thr_field} = $thr_value;
@@ -532,10 +588,27 @@ See the manual of dyad-analysis for a description of the fields on
 which a threshold can be imposed.
 
 =cut
-	} elsif ($ARGV[$a] eq "-uth") {
-	    my $thr_field = shift (@arguments);
-	    my $thr_value =  shift (@arguments);
-	    $main::uth{$thr_field} = $thr_value;
+	} elsif ($arg eq "-uth") {
+	  my $thr_field = shift (@arguments);
+	  my $thr_value =  shift (@arguments);
+	  $main::uth{$thr_field} = $thr_value;
+
+
+         ## Create HTML Index
+=pod
+
+=item B<-index>
+
+Generate an HTML index with links to the result files. This option is
+used for the web interface, but can also be convenient to index
+results, epecially when several genes or taxa are analyzed (options
+-genes, -all_genes, -all_taxa).
+
+=cut
+
+	} elsif ($arg eq "-index") {
+	  $main::create_index = 1;
+
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
@@ -659,12 +732,6 @@ automatically).
 Generate one command per query gene, and post it on the queue of a PC
 cluster.
 
-=item B<-index>
-
-Generate an HTML index with links to the result files. This option is
-used for the web interface, but can also be convenient to index
-results, epecially when several genes or taxa are analyzed (options
--genes, -all_genes, -all_taxa).
 
 =back
 
