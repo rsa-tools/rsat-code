@@ -176,11 +176,20 @@ if ($query->param('freq_estimate') =~ /background/i) {
 	unless ($supported_background{$background}) {
 	    &cgiError("$background is not supported as background model");
 	}
+    ### Taxon-specific background model
+    if ($query->param('bg_level') eq 'taxon') {
+      unless ($taxon = $query->param('taxon')) {
+        &cgiError("You should specify an taxon to use intergenic frequency calibration");
+      }
+      &CheckTaxon($taxon);
+    }
 
-    $exp_freq_file = "$ENV{RSAT}/data/genomes/$organism/oligo-frequencies/" . "$oligo_length" . "nt_" . "$background" . "_" . "$organism$overlap$strand.freq.gz";
-    #print $exp_freq_file;
+    #$exp_freq_file = "$ENV{RSAT}/data/genomes/$organism/oligo-frequencies/" . "$oligo_length" . "nt_" . "$background" . "_" . "$organism$overlap$strand.freq.gz";
+    $exp_freq_file = &ExpectedFreqFile($organism, $oligo_length, $background, type=>"oligo", noov=>$overlap, str=>$strand, taxon=>$taxon);
+
+    print $exp_freq_file;
 	#$freq_option = " -bg $background -org $organism";
-	$freq_option = " --bgoligo=$exp_freq_file";
+	$freq_option = " --bgoligo=$exp_freq_file.gz";
 
 
   } elsif ($query->param('freq_estimate') =~ /upload/i) {
