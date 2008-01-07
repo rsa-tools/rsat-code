@@ -14,7 +14,6 @@ $result_dir = $TMP."/".$tmp_file_name;
 $result_dir =~ s|\/\/|\/|g;
 `mkdir -p $result_dir`;
 $file_prefix = $result_dir."/footprints";
-$index_file = $file_prefix."_index.html";
 $query_file = $file_prefix."_genes";
 
 #$ENV{rsat_echo}=2;
@@ -31,7 +30,7 @@ $query = new CGI;
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #### read parameters ####
-$parameters = " -v 1 ";
+$parameters = " -v 1 -index ";
 
 ################################################################
 #### queries
@@ -109,8 +108,9 @@ print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 #} elsif ($query->param('output') =~ /server/i) {
 #    &ServerOutput("$command $parameters", $query->param('user_email'));
 #} else { 
-#&EmailTheResult("$command $parameters", $query->param('user_email'), $index_file);
-&EmailTheResult("$command $parameters", $query->param('user_email'));
+$index_file = $tmp_file_name."/footprints_index.html";
+&EmailTheResult("$command $parameters", $query->param('user_email'), $index_file);
+#&EmailTheResult("$command $parameters", $query->param('user_email'));
 #}
 print $query->end_html();
 
