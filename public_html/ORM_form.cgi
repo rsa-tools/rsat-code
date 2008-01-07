@@ -32,7 +32,7 @@ $default{purge} = 'checked';
 #$default{side} = 'over-represented';
 $default{align} = 'right';
 $default{freq_estimate} = "background";
-
+$default{bg_level} = "organism";
 
 
 $default{rank} = 'checked';
@@ -441,6 +441,7 @@ ATCAACCCATAGCAACTCATAAA
 print "<TD><B>";
 print $query->hidden(-name=>'lth_occ',-default=>'2');
 print $query->hidden(-name=>'window_width',-default=>'800');
+print $query->hidden(-name=>'bg_level',-default=>"organism");
 print $query->hidden(-name=>'bg_window_width',-default=>'800');
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'organism',-default=>'Saccharomyces cerevisiae');
