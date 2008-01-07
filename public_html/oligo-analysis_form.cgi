@@ -22,6 +22,7 @@ $default{sequence_file} = "";
 $default{upload_freq_file} = "";
 $default{sequence_type} = "dna";
 $default{oligo_length} = 6;
+$default{freq_estimate} = "background";
 $default{background} = "upstream-noorf";
 $default{bg_level} = "organism";
 $default{markov_order} = 2;
@@ -33,7 +34,6 @@ $default{purge} = 'checked';
 $default{side} = 'over-represented';
 $default{to_matrix} = 0;
 
-$default{freq_estimate} = "background";
 
 $default{zscore} = '';
 $default{lth_zscore} = 'none';
@@ -78,9 +78,7 @@ foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
   }
-} 
-$checked{$default{freq_estimate}} = "CHECKED";
-$checked{$default{bg_level}} = "CHECKED";
+}
 
 ### print the form ###
 &RSA_header("oligo-analysis", "form");
@@ -392,6 +390,8 @@ ATCAACCCATAGCAACTCATAAA
 ";
 print "<TD><B>";
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
+print $query->hidden(-name=>'background',-default=>"upstream-noorf");
+print $query->hidden(-name=>'bg_level',-default=>"organism");
 print $query->hidden(-name=>'organism',-default=>'Saccharomyces cerevisiae');
 print $query->hidden(-name=>'title',-default=>'upstream sequences from the yeast PHO genes');
 print $query->submit(-label=>"DEMO");
