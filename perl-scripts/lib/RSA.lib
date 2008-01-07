@@ -15,7 +15,13 @@ require RSAT::Tree;
 
 package main;
 
-$main::tree = new RSAT::Tree();
+#$main::tree = new RSAT::Tree();
+#$main::tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism, 1);
+## Load the taxonomical tree of organisms supported in RSAT
+#$main::tree = new RSAT::Tree();
+#my @supported_organisms = sort keys (%supported_organism);
+#$tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism, 1);
+
 
 umask 0022;
 
@@ -59,7 +65,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 	my $value = $'; #'
 	my $key = $`;
 	$ENV{$key} = $value;
-#        &RSAT::message::Info("Site config", sprintf("%-15s\t%s\t%s", $key, $ENV{$key})) if ($main::verbose >= 0);
+#        &RSAT::message::Info("Site config", sprintf("%-15s\t%s\t%s", $key, $ENV{$key})) if ($main::verbose >= 10);
       }
     }
   }
@@ -82,7 +88,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 #       my $value = $args{$key};
 #       $ENV{$key} = $value;
 #     $$key = $value;
-#       #    &RSAT::message::Info("Site config", sprintf("%-15s\t%s\t%s", $key, $ENV{$key})) if ($main::verbose >= 0);
+#       #    &RSAT::message::Info("Site config", sprintf("%-15s\t%s\t%s", $key, $ENV{$key})) if ($main::verbose >= 10);
 #     }
 #   }
 # }
@@ -185,8 +191,8 @@ sub doit {
 	print JOB "; hostname >> ", $job, ".done"; ## Write a file called [job].done indicating the time when the job was done
 	print JOB " )", "\n";
 	close JOB;
-	&RSAT::message::TimeWarn(join("\t", "Job queued", $wd."/".$job)) if ($main::verbose >= 0);
-	
+	&RSAT::message::TimeWarn(join("\t", "Job queued", $wd."/".$job)) if ($main::verbose >= 2);
+
 	my $job_name = $job;
 	$job_name =~ s/\//_/g;
 	my $job_log = $wd."/".$job.".log";
@@ -461,7 +467,7 @@ sub ReadPatternFrequencies {
     my $pattern_seq = lc($fields[0]);
     next unless $pattern_seq;
 
-#    &RSAT::message::Debug( "fields", join ("\t", @fields)) if ($main::verbose >= 0);
+#    &RSAT::message::Debug( "fields", join ("\t", @fields)) if ($main::verbose >= 10);
 
     #### check the format and extract expected frequency
     if (&IsReal($fields[1])) {
@@ -915,9 +921,17 @@ sub GetOrganismsForTaxon {
 ## specified taxon on this RSAT server.
 sub CheckTaxon {
   my ($query_taxon, $warn_only) = @_;
-  my @organisms = $tree->get_node_descendents_names($query_taxon, "DFS", "node");
-#  my @organisms = &GetOrganismsForTaxon($query_taxon);
-  &RSAT::message::Info("CheckTaxon", $query_taxon, scalar(@organisms), "organisms") if ($main::verbose >= 3);
+#  &RSAT::message::Info("CheckTaxon", $query_taxon, $main::tree) if ($main::verbose >= 10);
+  ## Load the taxonomical tree of organisms supported in RSAT
+  unless ($main::tree) {
+    $main::tree = new RSAT::Tree();
+  }
+  unless ($main::tree->get_attribute("is_loaded")) {
+    my @supported_organisms = sort keys (%supported_organism);
+    $main::tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism, 1);
+  }
+  my @organisms = $main::tree->get_node_descendents_names($query_taxon, "DFS", "leaf");
+  &RSAT::message::Info("CheckTaxon", $query_taxon, scalar(@organisms), "organisms") if ($main::verbose >= 4);
   if (scalar(@organisms) > 0) {
     return @organisms;
   } else {
@@ -1051,7 +1065,7 @@ $supported_organisms = &ListSupportedOrganisms();
 ## Return the list of supported taxa
 sub ListSupportedTaxa {
   my ($root_name) = @_;
-  &RSAT::message::Debug("&ListSupportedTaxa()", "root taxon", $root_name) if ($main::verbose >= 0);
+#  &RSAT::message::Debug("&ListSupportedTaxa()", "root taxon", $root_name) if ($main::verbose >= 10);
   $tree->LoadSupportedTaxonomy($root_name, \%supported_organism, 1) unless ($tree->loaded());
   my @supported_taxa = $tree->node_names();
   return @supported_taxa;
@@ -1305,7 +1319,7 @@ sub ReadClasses {
 						  ));
 		}
 		$family{$family_name}->new_member($member_key, 0, score=>$score);
-#		&RSAT::message::Debug("member score", $family_name, $member_name, $score) if ($main::verbose >= 0);
+#		&RSAT::message::Debug("member score", $family_name, $member_name, $score) if ($main::verbose >= 10);
 	    } else {
 		$family{$family_name}->new_member($member_key);
 	    }
@@ -1313,7 +1327,7 @@ sub ReadClasses {
 					   $member_name,
 					   $member_key,
 					   $name{$id}) ) if ($main::verbose >= 5);
-#	    &RSAT::message::Debug("Scores", $family_name, $family{$family_name}->get_attribute("scores")) if ($main::verbose >= 0);
+#	    &RSAT::message::Debug("Scores", $family_name, $family{$family_name}->get_attribute("scores")) if ($main::verbose >= 10);
 	} else {
 	    &RSAT::message::Warning ($member_name." unknown gene name");
 	}
