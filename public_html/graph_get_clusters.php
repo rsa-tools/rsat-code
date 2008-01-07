@@ -75,7 +75,11 @@
     $error = 1;
     error("You must submit input clusters");
   }  
-  
+  ## If no clusters are submitted -> error
+  if ($induced && $return == 'graph') {
+    $error = 1;
+    error("You must not ask for an annotated graph when inducing the graph");
+  }    
   if (!$error) { 
     $graph = trim_text($graph);
     $clusters = trim_text($clusters);
