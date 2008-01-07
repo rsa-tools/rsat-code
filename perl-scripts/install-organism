@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.74 2008/01/06 23:56:09 rsat Exp $
+# $Id: install-organism,v 1.75 2008/01/07 04:27:04 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -342,8 +342,9 @@ sub UpdateConfig {
 
     #### replace absolute paths by relative paths
 #   $new_org_config =~ s|$ENV{RSAT}\/|\$ENV\{RSAT\}\/|g;
-    $new_org_config =~ s|$ENV{RSAT}|\$ENV\{RSAT\}|g;
-    
+    $new_org_config =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|g;
+    $new_org_config =~ s|\/\/|/|g;
+
     print CONFIG $new_org_config;
     print CONFIG "\nreturn 1;\n";
     close CONFIG;
