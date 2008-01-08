@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.13 2008/01/07 08:15:09 jvanheld Exp $
+# $Id: footprint-discovery,v 1.14 2008/01/08 02:47:21 rsat Exp $
 #
 ############################################################
 
@@ -73,28 +73,29 @@ List of orthologous genes
 
 =item [prefix]_ortho_seq.fasta
 
-Promotoer sequences of the orthologous genes
+Promoter sequences of the orthologous genes
 
 =item [prefix]_ortho_seq_purged.fasta
 
 Purged promoter sequences (for pattern discovery)
-
-=item [prefix]_filter_dyads.tab
+=item [prefix]_ortho_filter_dyads.tab
 
 Dyads found in the query genes (for dyad filtering)
 
-=item [prefix]_dyads.tab
+=item [prefix]_ortho_dyads.tab
 
 Significant dyads found in the promoters of orthologous genes
 (the footprints)
 
-=item [prefix]_dyads.asmb
+=item [prefix]_ortho_dyads.asmb
 
 Assembled dyads
 
-=item [prefix]_dyads.png
+=item [prefix]_ortho_dyads.png
 
 Feature-map
+
+=item NOTE : 'ortho' is replaced by 'leaders' in the filename prefix with option -infer_operons
 
 =back
 
@@ -124,7 +125,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -140,6 +141,8 @@ package main;
   local $img_format = "png";
   local $strands = "-2str";
   local $noov = "-noov";
+  local $filter = 1;
+  local $dist_thr = 55;
   local $bg_model = "taxfreq";
   local %lth = (occ=>1,occ_sig=>0);
   local %uth = (rank=>50);
@@ -212,14 +215,20 @@ package main;
   ## Specity other file names
   $outfile{orthologs} = $outfile{prefix}."_ortho_bbh.tab";
   $outfile{query_seq} = $outfile{prefix}."_query_seq.fasta";
-  $outfile{ortho_seq} = $outfile{prefix}."_ortho_seq.fasta";
-  $outfile{purged} = $outfile{prefix}."_ortho_seq_purged.fasta";
   $outfile{filter_dyads} = $outfile{prefix}."_filter_dyads.tab";
-  $outfile{dyad_prefix} = $outfile{prefix}."_dyads_3nt_sp0-20".$strands.$noov."_".$bg_model."_sig".$lth{occ_sig};
+  if ($infer_operons){
+    $promoter = "leaders";
+  }else{
+    $promoter = "ortho"; 
+  }
+  $outfile{bbh} = $outfile{prefix}."_".$promoter."_bbh.tab";
+  $outfile{seq} = $outfile{prefix}."_".$promoter."_seq.fasta";
+  $outfile{purged} = $outfile{prefix}."_".$promoter."_seq_purged.fasta";
+  $outfile{dyad_prefix} = $outfile{prefix}."_".$promoter."_dyads_3nt_sp0-20".$strands.$noov."_".$bg_model."_sig".$lth{occ_sig};
   $outfile{dyads} = $outfile{dyad_prefix}.".tab";
+  $outfile{dyads_html} = $outfile{dyad_prefix}.".html";
   $outfile{asmb} = $outfile{dyad_prefix}.".asmb";
   $outfile{map} = $outfile{dyad_prefix}.".".${img_format};
-
 
   ## HTML index
   if ($create_index) {
@@ -237,12 +246,16 @@ package main;
 
   ## Background model file
   if ($bg_model eq "taxfreq") {
-    $infile{bg_model} = &ExpectedFreqFile($taxon, 3,
-					  "upstream-noorf",str=>$strands,noov=>$noov,type=>"dyad",
+    $infile{bg_model} = &ExpectedFreqFile($taxon,
+					  3,
+					  # spacing ? 0-20
+					  "upstream-noorf",
+					  str=>$strands,
+					  noov=>$noov,
+					  type=>"dyad",
 					  warn=>1,
 					  taxon=>1);
   }
-
 
   ################################################################
   ## Read query genes from input file
@@ -288,15 +301,17 @@ package main;
 
   ################################################################
   ## Detect all dyads in promoters of query genes for dyad filtering
-  &RSAT::message::TimeWarn("Computing filter dyads", $outfile{filter_dyads}) if ($verbose >= 1);
-  $cmd = "$SCRIPTS/dyad-analysis -v 1 -return occ -lth occ 1";
-  $cmd .= " -i ".$outfile{query_seq};
-  $cmd .= " -l 3 -sp 0-20";
-  $cmd .= " ".$strands;
-  $cmd .= " ".$noov;
-  $cmd .= " -o ".$outfile{filter_dyads};
-  print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  &IndexOneFile("filter dyads", $outfile{filter_dyads}) if ($create_index);
+  if (!$nofilter){
+    &RSAT::message::TimeWarn("Computing filter dyads", $outfile{filter_dyads}) if ($verbose >= 1);
+    $cmd = "$SCRIPTS/dyad-analysis -v 1 -return occ -lth occ 1";
+    $cmd .= " -i ".$outfile{query_seq};
+    $cmd .= " -l 3 -sp 0-20";
+    $cmd .= " ".$strands;
+    $cmd .= " ".$noov;
+    $cmd .= " -o ".$outfile{filter_dyads};
+    print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &IndexOneFile("filter dyads", $outfile{filter_dyads}) if ($create_index);
+  }
 
   ################################################################
   ## get orthologs
@@ -310,21 +325,34 @@ package main;
   print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("orthologs", $outfile{orthologs}) if ($create_index);
 
+
+  ################################################################
+  ## Get predicted leader genes
+  if ($infer_operons) {
+    &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{bbh}) if ($verbose >= 1);
+    $cmd = "$SCRIPTS/get-leader-multigenome ";
+    $cmd .= " -i ".$outfile{orthologs};
+    $cmd .= " -o ".$outfile{bbh};
+    $cmd .= " -uth interg_dist ".$dist_thr;
+    print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &IndexOneFile("leader genes", $outfile{bbh}) if ($create_index);
+  }
+
   ################################################################
   ## Retrieve sequences from orthologs
-  &RSAT::message::TimeWarn("Retrieving promoter sequences of orthologs", $outfile{ortho_seq}) if ($verbose >= 1);
+  &RSAT::message::TimeWarn("Retrieving promoter sequences of orthologs", $outfile{seq}) if ($verbose >= 1);
   $cmd = "$SCRIPTS/retrieve-seq-multigenome -ids_only";
-  $cmd .= " -i ".$outfile{orthologs};
+  $cmd .= " -i ".$outfile{bbh};
   $cmd .= " -noorf";
-  $cmd .= " -o ".$outfile{ortho_seq};
+  $cmd .= " -o ".$outfile{seq};
   print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  &IndexOneFile("ortholog sequences", $outfile{ortho_seq}) if ($create_index);
+  &IndexOneFile("$promoter sequences", $outfile{seq}) if ($create_index);
 
   ################################################################
   ## Purge sequences
   &RSAT::message::TimeWarn("Purging promoter sequences of orthologs", $outfile{purged}) if ($verbose >= 1);
   $cmd = "$SCRIPTS/purge-sequence";
-  $cmd .= " -i ".$outfile{ortho_seq};
+  $cmd .= " -i ".$outfile{seq};
   $cmd .= " -ml 30 -mis 0 ";
   $cmd .= " ".$strands;
   $cmd .= " -o ".$outfile{purged};
@@ -332,11 +360,17 @@ package main;
   &IndexOneFile("purged sequences", $outfile{purged}) if ($create_index);
 
   ################################################################
-  ## Discover over-represented dyads in promtoers of orthologous genes
+  ## Discover over-represented dyads in promoters of orthologous genes
   &RSAT::message::TimeWarn("Detecting phylogenetic footprints", $outfile{dyads}) if ($verbose >= 1);
   $cmd = "$SCRIPTS/dyad-analysis -v 1 -return occ,proba,rank -lth occ 1";
-  $cmd .= " -expfreq ".$infile{bg_model} if ($bg_model eq "taxfreq");
-  $cmd .= " -accept ".$outfile{filter_dyads};
+  if ($bg_model eq "taxfreq"){
+    $cmd .= " -expfreq ".$infile{bg_model} ;
+  } elsif ($bg_model eq "monad") {
+    $cmd .= " -bg monads" ;
+  }
+  if (!$nofilter){
+    $cmd .= " -accept ".$outfile{filter_dyads};
+  }
   foreach my $field (sort keys %lth) {
     $cmd .= " -lth ".$field." ".$lth{$field};
   }
@@ -356,9 +390,9 @@ package main;
   $cmd = "$SCRIPTS/text-to-html";
   $cmd .= " -i ".$outfile{dyads};
   $cmd .= " -font variable -chunk 1000";
-  $cmd .= " -o ".$outfile{dyads}.".html";
+  $cmd .= " -o ".$outfile{dyads_html};
   print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  &IndexOneFile("dyads [htm]", $outfile{dyads}.".html") if ($create_index);
+  &IndexOneFile("dyads [htm]", $outfile{dyads_html}) if ($create_index);
 
   ################################################################
   ## Assemble significant dyads
@@ -374,9 +408,9 @@ package main;
   ## Generate a feature-map of the discovered dyads
   my $map_title = join "; ", $taxon, $organism_name, $query_prefix;
   &RSAT::message::TimeWarn("Generating feature map", $outfile{map}) if ($verbose >= 1);
-  $cmd = "$SCRIPTS/dna-pattern -return limits,sites -origin -0";
+  $cmd = "$SCRIPTS/dna-pattern -return limits,sites -origin -0 -N 4";
   $cmd .= " -pl ".$outfile{dyads};
-  $cmd .= " -i ".$outfile{ortho_seq};
+  $cmd .= " -format fasta -i ".$outfile{seq};
   $cmd .= " | $SCRIPTS/convert-features -from dnapat -to ft";
   $cmd .= " | $SCRIPTS/feature-map";
   $cmd .= " -title '".$map_title."'";
@@ -425,8 +459,8 @@ sub IndexOneFile {
   print $index "<tr valign=top>\n";
   print $index "<td>", $name, "</td>\n<td><a href=".$short_file.">".$short_file."</a></td>\n";
   if ($args{image}) {
-    print $index "<td><a href=".$short_file."><img width=100 src=".$short_file."></a></td>\n";
-
+#    print $index "<td><a href=".$short_file."><img width=100 src=".$short_file."></a></td>\n";
+    print $index "</tr><tr><td colspan=\"2\">(Click on image below)</td></tr><tr><td colspan=\"2\"><a href=".$short_file."><img width=\"100%\" src=".$short_file."></a></td>\n";
   }
   print $index ("</tr>\n\n");
 }
@@ -576,7 +610,7 @@ Reference taxon, in which orthologous genes have to be collected.
 
 Generate an HTML index with links to the result files. This option is
 used for the web interface, but can also be convenient to index
-results, epecially when several genes or taxa are analyzed (options
+results, especially when several genes or taxa are analyzed (options
 -genes, -all_genes, -all_taxa).
 
 =cut
@@ -615,6 +649,85 @@ which a threshold can be imposed.
 	  my $thr_field = shift (@arguments);
 	  my $thr_value =  shift (@arguments);
 	  $main::uth{$thr_field} = $thr_value;
+
+	    ## Background model
+
+=pod
+
+=item B<-bg_model taxfreq|monad>
+
+Allow the user to choose among alternative background model (see Janky
+& van Helden, 2008).
+
+=over
+
+=item I<taxfreq>
+
+Taxon-wide background model, computed by counting dyad frequencies in
+all the promoters of all the genes of the reference taxon.
+
+=item I<monad>
+
+Expected dyad frequencies are the product of monad frequencies
+observed in the input sequences.
+
+=back
+
+=cut
+	} elsif ($arg eq "-bg_model") {
+	  $main::bg_model = shift(@arguments);
+
+	  ## Dyads filtering
+
+=pod
+
+=item B<-filter>
+
+Only accept dyads found in the promoter of the query gene, in the
+query organism. (option selected by default)
+
+=cut
+
+	} elsif ($arg eq "-filter") {
+	  $main::filter = 1;
+
+=pod
+
+=item B<-no_filter>
+
+Accept all dyads, even if they are not found in the promoter of the
+query gene, in the query organism. (will cancel -filter option if selected)
+
+=cut
+
+	} elsif ($arg eq "-no_filter") {
+	  $main::nofilter = 1;
+	  
+	  ## infer operons
+
+=pod
+
+=item B<-infer_operons>
+
+Infer operons in order to retrieve the promoters of the predicted
+operon leader genes rather than those located immediately upstream of
+the orthologs. This method uses a threshold on the intergenic distance.
+
+=cut
+
+	} elsif ($arg eq "-infer_operons") {
+	  $main::infer_operons = 1;
+
+=pod
+
+=item B<-dist_thr value> 
+
+Specify here the intergenic distance threshold in base pairs. Pair of adjacent genes with intergenic distance equal or less than this value are predicted to be within operon. (default : 55)
+
+=cut
+
+	} elsif ($arg eq "-dist_thr") {
+	  $main::dist_thr = shift(@arguments);
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
@@ -674,42 +787,6 @@ The following options are not yet implemented, but this should be done
 soon.
 
 =over
-
-
-=item B<-bg_model taxfreq|monad>
-
-Allow the user to choose among alternative background model (see Janky
-& van Helden, 2008).
-
-=over
-
-=item I<taxfreq>
-
-Taxon-wide background model, computed by counting dyad frequencies in
-all the promoters of all the genes of the reference taxon.
-
-=item I<monad>
-
-Expected dyad frequencies are the product of monad frequencies
-observed in the input sequences.
-
-=back
-
-=item B<-filter>
-
-Only accept dyads found in the promoter of the query gene, in the
-query organism.
-
-=item B<-no_filter>
-
-Accept all dyads, even if they are not found in the promoter of the
-query gene, in the query organism.
-
-=item B<-infer_operons>
-
-Infer operons in order to retrieve the promoters of the predicted
-operon leader genes rather than those located immediately upstream of
-the orthologs.
 
 =item B<-taxa>
 
