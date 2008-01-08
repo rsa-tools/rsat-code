@@ -88,7 +88,7 @@ print "<HR>";
 print "<blockquote>";
 
 
-&ListDefaultParameters() if ($ENV{rsat_echo} >= 0);
+&ListDefaultParameters() if ($ENV{rsat_echo} >= 2);
 
 print $query->start_multipart_form(-action=>"oligo-analysis.cgi");
 
