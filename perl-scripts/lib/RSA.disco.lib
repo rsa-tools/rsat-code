@@ -230,16 +230,16 @@ sub CalcRatio {
 ################################################################
 ## Concatenate return and threshold options from the CGI form
 sub CGI_return_fields {
-  my %field_group = (occ=>occ,
-		     freq=>freq,
-		     zscore=>zscore,
-		     rank=>rank,
-		     mseq=>mseq,
-		     ratio=>ratio,
-		     occ_sig=>proba,
-		     occ_P=>proba,
-		     occ_E=>proba,
-		     pos=>pos
+  my %field_group = (occ=>"occ",
+		     freq=>"freq",
+		     zscore=>"zscore",
+		     rank=>"rank",
+		     mseq=>"mseq",
+		     ratio=>"ratio",
+		     occ_sig=>"proba",
+		     occ_P=>"proba",
+		     occ_E=>"proba",
+		     pos=>"pos"
 		    );
   my %return_fields = ();
   foreach my $field (sort keys %field_group) {
