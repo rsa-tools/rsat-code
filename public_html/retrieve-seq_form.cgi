@@ -36,7 +36,7 @@ foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
   }
-} 
+}
 
 ### print the form ###
 &RSA_header("retrieve sequence", 'form');
@@ -193,6 +193,10 @@ print $query->popup_menu(-name=>'seq_label',
 			 -default=>$default{seq_label});
 print "<BR>\n";
 
+## Pass the taxon from get-orthologs for the further programs
+if ($query->param('taxon')) {
+  print $query->hidden(-name=>'taxon',-default=>$query->param('taxon'));
+}
 
 ### send results by email or display on the browser
 &SelectOutput("server");
