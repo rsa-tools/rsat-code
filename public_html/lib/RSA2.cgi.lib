@@ -771,7 +771,7 @@ sub EmailTheResult {
     my $delay = "72 hours";
     my $mail_title = $args{title};
     unless ($mail_title) {
-      $mail_title = join "; ", "RSAT", $script_name, $date;
+      $mail_title = join " ", "[RSAT]", $script_name, &AlphaDate();
     }
     $mail_command = "mail -s \'".$mail_title."\'";
 
