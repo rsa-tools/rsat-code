@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.15 2008/01/08 13:05:35 jvanheld Exp $
+# $Id: footprint-discovery,v 1.16 2008/01/08 15:27:30 jvanheld Exp $
 #
 ############################################################
 
@@ -125,13 +125,14 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
   %main::outfile = ();
 
 
+  local $infer_operons = 0;
   local $dyad_return_fields = "occ,proba,rank"; ## Default return fields for dyad-analysis
   local @dyad_return_fields = (); ## User-specified return fields for dyad-analysis
   local $create_index = 0;
@@ -176,16 +177,34 @@ package main;
   $organism->set_attribute("name", $organism_name);
 
   ################################################################
+  ## Read query genes from input file
+  if ($infile{input}) {
+    ($in) = &OpenInputFile($infile{input});
+    while (<$in>) {
+      next if (/^;/);
+      next if (/^#/);
+      next unless (/\S/);
+      chomp;
+      my @fields = split /\s+/;
+      my $query = shift @fields;
+      push @query_genes, $query;
+    }
+    close $in;
+  }
+
+  ################################################################
   ## Define a query prefix for the title of the feature map and for
   ## automatic output file specification
   my $query_prefix;
   if (scalar(@query_genes) == 1) {
     $query_prefix = $query_genes[0];
-  } elsif ($infile{input}) {
-    $query_prefix = `basename $infile{input} .tab`;
+  } elsif (scalar(@query_genes) <= 10) {
+    $query_prefix = join "_", @query_genes;
   } elsif ($outfile{prefix}) {
     $query_prefix = `basename $outfile{prefix}`;
     chomp($query_prefix);
+  } elsif ($infile{input}) {
+    $query_prefix = `basename $infile{input} .tab`;
   }
   &RSAT::message::Warning("Query prefix", $query_prefix) if ($main::verbose >= 2);
 
@@ -243,7 +262,9 @@ package main;
     print $index "<blockquote>";
     print $index "<table cellspacing=0 cellpadding=3 border=0>\n";
     &IndexOneFile("log", $outfile{log});
+    &IndexOneFile("input", $infile{input}) if ($infile{input});
   }
+
 
   ## Background model file
   if ($bg_model eq "taxfreq") {
@@ -263,23 +284,6 @@ package main;
   ## Return fields for dyad-analysis
   if (scalar(@dyad_return_fields) > 0) {
     $dyad_return_fields = join ",", @dyad_return_fields;
-  }
-
-  ################################################################
-  ## Read query genes from input file
-  if ($infile{input}) {
-    ($in) = &OpenInputFile($infile{input});
-    while (<$in>) {
-      next if (/^;/);
-      next if (/^#/);
-      next unless (/\S/);
-      chomp;
-      my @fields = split /\s+/;
-      my $query = shift @fields;
-      push @query_genes, $query;
-    }
-    close $in;
-    &IndexOneFile("input", $infile{input}) if ($create_index);
   }
 
   ################################################################
@@ -361,7 +365,7 @@ package main;
   &RSAT::message::TimeWarn("Purging promoter sequences of orthologs", $outfile{purged}) if ($verbose >= 1);
   $cmd = "$SCRIPTS/purge-sequence";
   $cmd .= " -i ".$outfile{seq};
-  $cmd .= " -ml 30 -mis 0 ";
+  $cmd .= " -ml 30 -mis 0 -mask_short 30";
   $cmd .= " ".$strands;
   $cmd .= " -o ".$outfile{purged};
   print $out "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -775,22 +779,46 @@ Specify here the intergenic distance threshold in base pairs. Pair of adjacent g
 ################################################################
 ## Verbose message
 sub Verbose {
-    print $main::out "; footprint-discovery ";
-    &PrintArguments($main::out);
-    printf $main::out "; %-15s\t%s\n", "Program version", $program_version;
-    printf $main::out "; %-15s\t%s", "Working directory", `pwd`;
-    if (defined(%main::infile)) {
-	print $main::out "; Input files\n";
-	while (my ($key,$value) = each %main::infile) {
-	    print $main::out ";\t$key\t$value\n";
-	}
+  my $header_verbose = "";
+  $header_verbose .=  "; footprint-discovery ";
+  $header_verbose .= &PrintArguments();
+  $header_verbose .= sprintf "; %-22s\t%s\n", "Program version", $program_version;
+  $header_verbose .= sprintf "; %-22s\t%s", "Working directory", `pwd`;
+  $header_verbose .= sprintf "; %-22s\t%s\n", "Query organism", $organism_name;
+  $header_verbose .= sprintf "; %-22s\t%s\n", "Reference taxon", $taxon;
+  $header_verbose .= sprintf "; %s\n", "Promoters from predicted operon leader genes" if ($infer_operons);
+  if (scalar(@query_genes) == 1) {
+    $header_verbose .= sprintf "; %-22s\t%s\n", "Query gene", $query_genes[0];
+  } elsif (scalar(@query_genes) <= 10) {
+    $header_verbose .= sprintf "; %-22s\t%s\n", "Query genes", join "; ", @query_genes;
+  } else {
+    $header_verbose .= sprintf "; %-22s\t%s\n", "Query genes", scalar(@query_genes);
+  }
+  $header_verbose .= sprintf "; %-22s\t%s\n", "Background model", $bg_model;
+  $header_verbose .= sprintf "; %-22s\t%s\n", "Dyad filtering" if ($filter);
+
+  if (defined(%main::infile)) {
+    print $main::out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
     }
-    if (defined(%main::outfile)) {
-	print $main::out "; Output files\n";
-	while (my ($key,$value) = each %main::outfile) {
-	    printf $main::out ";\t%-13s\t%s\n", $key, $value;
-	}
+  }
+  if (defined(%main::outfile)) {
+    print $main::out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      printf $out ";\t%-13s\t%s\n", $key, $value;
     }
+  }
+  print $out $header_verbose;
+
+
+  if ($main::create_index) {
+    $header_verbose =~ s/^; //;
+    $header_verbose =~ s/\n; /\n/gm;
+    print $index "<pre>";
+    print $index $header_verbose;
+    print $index "</pre>";
+  }
 }
 
 
