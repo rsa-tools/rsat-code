@@ -127,7 +127,7 @@
     echo "The results is available at the following URL ";
     echo "<a href = '$resultURL'>$resultURL</a>"; 
     echo "<hr>\n";
-    if ($return == 'clusters') {
+    if ($return == 'clusters' || $return == 'graph') {
       echo "
         <TABLE CLASS = 'nextstep'>
       <TR>
