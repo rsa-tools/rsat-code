@@ -77,6 +77,10 @@ $default{return_bit_sc} = "";
 $default{return_rank} = "";
 #$default{return_s_rank} = "";
 
+$default{dyads_filter} = 'checked';
+$default{bg_model} = 'taxfreq';
+$default{leaders} = '';
+
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
   if ($query->param($key)) {
@@ -127,8 +131,44 @@ print "<p>\n";
 &TaxonPopUp();
 
 ################################################################
+#### Options
+print "<BR>";
+print "<HR width=550 align=left>\n";
+print "<B>Options</B>&nbsp;";
+print "<BR>";
+
+### filtering dyads
+print "&nbsp;" x 5;
+print $query->checkbox(-name=>'dyads_filter',
+		       -checked=>$default{dyads_filter},
+		       -label=>'');
+print "<A HREF='help.footprint-discovery.html#filtering'><B>\n";
+print "filter dyads having occurrences in the query gene\n";
+print "</B></A>\n";
+
+### use predicted leader genes
+print "<BR>";
+print "&nbsp;" x 5;
+print $query->checkbox(-name=>'leaders',
+		       -checked=>$default{leaders},
+		       -label=>'');
+print "<A HREF='help.footprint-discovery.html#leader'><B>\n";
+print "use prediction of upstream leader genes (slow process)\n";
+print "</B></A>\n";
+
+### use background model
+print "<BR>";
+print "&nbsp;" x 5;
+print "<B><A HREF='help.footprint-discovery.html#bg_model'>Background model</A>&nbsp;</B>\n";
+print $query->popup_menu(-name=>'bg_model',
+			 -Values=>['taxfreq',#taxon-wise background model (taxfreq)',
+				  'monad'],
+			 -default=>$default{bg_model});
+
+################################################################
 ### send results by email or display on the browser
 print "<p>\n"; 
+print "<HR width=550 align=left>\n";
 &SelectOutput('email', email_only=>1);
 
 ################################################################
