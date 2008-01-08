@@ -114,10 +114,8 @@ $parameters .= " -o ".$file_prefix;
 print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 
 $index_file = $result_subdir."/".$query_prefix."_index.html";
-my $mail_title = join (";", "RSAT", "footprint-discovery", &AlphaDate(), $taxon, $organism, $query_prefix);
-&EmailTheResult("$command $parameters", $query->param('user_email'), $index_file,
-		title=>$mail_title,
-	       );
+my $mail_title = join (" ", "[RSAT]", "footprint-discovery", &AlphaDate(), $query_prefix, $organism, $taxon);
+&EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
 
 print $query->end_html();
 
