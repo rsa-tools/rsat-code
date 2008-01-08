@@ -3,40 +3,10 @@ use CGI;
 
 package main;
 
-#use CGI::Carp;
 
-#  #### redirect error log to a file
-#  BEGIN {
-#      $ERR_LOG = "/dev/null";
-#  #    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
-#      use CGI::Carp qw(carpout);
-#      open (LOG, ">> $ERR_LOG")
-#  	|| die "Unable to redirect log\n";
-#      carpout(*LOG);
-#  }
-
-
-### For debugging
-sub ListParameters {
-  my($cgi_query) = $_[0];
-  @param = $query->param;
-  print "<H3>Parameter values</H3>";
-  print "<UL><TABLE>\n";
-  foreach $key (@param) {
-    print "<TR>";
-    print "<TD VALIGN=TOP><B>$key</B></TD>";
-    $value = $query->param($key);
-    $value =~ s/\n/<BR>/g;
-    print "<TD VALIGN=TOP>$value</TD>";
-    print "</TR>\n";
-  }
-  print "</TABLE></UL>\n";
-}
-
-# ################################################################
-# #### list parameters from a CGI query
+# ### For debugging
 # sub ListParameters {
-#   my $cgi_query = $_[0];
+#   my($cgi_query) = $_[0];
 #   @param = $query->param;
 #   print "<H3>Parameter values</H3>";
 #   print "<UL><TABLE>\n";
@@ -49,215 +19,214 @@ sub ListParameters {
 #     print "</TR>\n";
 #   }
 #   print "</TABLE></UL>\n";
-
 # }
 
 
-## ##############################################################
-## Start a new HTML page and write the header of a RSAT query form or result
-## page usage &RSA_header($program_name)
-sub RSA_header {
-  my ($title) = @_;
-  $title =~ s/\"//g;
-  $title =~ s/\'//g;
-#  print &html_header();
-  print $query->header();
-  print sorttable_script();
-  ### print the header of the result page
-  print $query->start_html(-title=>"RSA-tools : $title",
-			   -author=>'jvanheld@ucmb.ulb.ac.be',
-			   -BGCOLOR=>'#FFFFFF');
-  print "<H3 ALIGN='center'><A HREF='$ENV{rsat_www}/RSAT_home.cgi'>RSA-tools</A> - $title</H3>";
-}
+# ## ##############################################################
+# ## Start a new HTML page and write the header of a RSAT query form or result
+# ## page usage &RSA_header($program_name)
+# sub RSA_header {
+#   my ($title) = @_;
+#   $title =~ s/\"//g;
+#   $title =~ s/\'//g;
+# #  print &html_header();
+#   print $query->header();
+#   print sorttable_script();
+#   ### print the header of the result page
+#   print $query->start_html(-title=>"RSA-tools : $title",
+# 			   -author=>'jvanheld@ucmb.ulb.ac.be',
+# 			   -BGCOLOR=>'#FFFFFF');
+#   print "<H3 ALIGN='center'><A HREF='$ENV{rsat_www}/RSAT_home.cgi'>RSA-tools</A> - $title</H3>";
+# }
 
 
 
-################################################################
-### print a selection between diferent modes of sequence entry 
-### in a HTML form
-### - sequences copy-pasted in a textarea
-### - sequences uploaded from a file on the client side
-### - sequences piped from a previous script, and stored on the server
-###   (typically  in a temporary dir)
-sub DisplaySequenceChoice {
-    print &SequenceChoice();
-}
+# ################################################################
+# ### print a selection between diferent modes of sequence entry 
+# ### in a HTML form
+# ### - sequences copy-pasted in a textarea
+# ### - sequences uploaded from a file on the client side
+# ### - sequences piped from a previous script, and stored on the server
+# ###   (typically  in a temporary dir)
+# sub DisplaySequenceChoice {
+#     print &SequenceChoice();
+# }
 
-sub SequenceChoice {
-    my $sequenceChoiceString = "";
-    $sequenceChoiceString .=  "<B>Sequence</B>";
-    #$sequenceChoiceString .=  "<UL>\n";
+# sub SequenceChoice {
+#     my $sequenceChoiceString = "";
+#     $sequenceChoiceString .=  "<B>Sequence</B>";
+#     #$sequenceChoiceString .=  "<UL>\n";
     
-    if ($sequence_file = $query->param(sequence_file)) {
-	### sequence file is already on the server machine 
-	### (piped from a previous script)
-	$sequence_url = $sequence_file;
-	$sequence_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
-	$sequenceChoiceString .=  "<a href=$sequence_url>";
-	$sequenceChoiceString .=  " transferred from previous query<BR>\n";
-	$sequenceChoiceString .=  "</a>";
-	$sequence_format = $query->param(sequence_format);
-	$sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>\n";
-	$sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>\n";
-    } else {
+#     if ($sequence_file = $query->param(sequence_file)) {
+# 	### sequence file is already on the server machine 
+# 	### (piped from a previous script)
+# 	$sequence_url = $sequence_file;
+# 	$sequence_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
+# 	$sequenceChoiceString .=  "<a href=$sequence_url>";
+# 	$sequenceChoiceString .=  " transferred from previous query<BR>\n";
+# 	$sequenceChoiceString .=  "</a>";
+# 	$sequence_format = $query->param(sequence_format);
+# 	$sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>\n";
+# 	$sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>\n";
+#     } else {
 
-	#### sequence format (pop-up menu)
-	$sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
-	$sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Format</A></B>&nbsp;";
-	$sequenceChoiceString .=  $query->popup_menu(-name=>'sequence_format',
-						    -Values=>['fasta', 
-							      'ig',
-							      'wconsensus',
-							      'raw',
-							      'ncbi',
-							      "tab",
-							      'multi'],
-						    -default=>$sequence_format);
-	#### Mask option
-	$sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Mask</A></B>&nbsp;";
-	$sequenceChoiceString .=  $query->popup_menu(-name=>'mask',
-						    -Values=>['none', 
-							      'upper',
-							      'lower'],
-						    -default=>"none");
-	$sequenceChoiceString .=  "<BR>\n";
+# 	#### sequence format (pop-up menu)
+# 	$sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
+# 	$sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Format</A></B>&nbsp;";
+# 	$sequenceChoiceString .=  $query->popup_menu(-name=>'sequence_format',
+# 						    -Values=>['fasta', 
+# 							      'ig',
+# 							      'wconsensus',
+# 							      'raw',
+# 							      'ncbi',
+# 							      "tab",
+# 							      'multi'],
+# 						    -default=>$sequence_format);
+# 	#### Mask option
+# 	$sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Mask</A></B>&nbsp;";
+# 	$sequenceChoiceString .=  $query->popup_menu(-name=>'mask',
+# 						    -Values=>['none', 
+# 							      'upper',
+# 							      'lower'],
+# 						    -default=>"none");
+# 	$sequenceChoiceString .=  "<BR>\n";
 
-	### text area to copy-paste the sequence
-	$sequenceChoiceString .=  "Paste your sequence in the box below<BR>\n";
-	$sequenceChoiceString .=  $query->textarea(-name=>'sequence',
-						  -default=>$default{sequence},
-						  -rows=>4,
-						  -columns=>55);
-	$sequenceChoiceString .=  "<BR>\n";
+# 	### text area to copy-paste the sequence
+# 	$sequenceChoiceString .=  "Paste your sequence in the box below<BR>\n";
+# 	$sequenceChoiceString .=  $query->textarea(-name=>'sequence',
+# 						  -default=>$default{sequence},
+# 						  -rows=>4,
+# 						  -columns=>55);
+# 	$sequenceChoiceString .=  "<BR>\n";
 
-	### option to upload the sequence file from the client machine 
-	$sequenceChoiceString .=  "Or select a file to upload<BR>\n";
-	$sequenceChoiceString .=  $query->filefield(-name=>'uploaded_file',
-						    -default=>'',
-						    -size=>45,
-						    -maxlength=>200);
-	$sequenceChoiceString .=  "<BR>\n";
+# 	### option to upload the sequence file from the client machine 
+# 	$sequenceChoiceString .=  "Or select a file to upload<BR>\n";
+# 	$sequenceChoiceString .=  $query->filefield(-name=>'uploaded_file',
+# 						    -default=>'',
+# 						    -size=>45,
+# 						    -maxlength=>200);
+# 	$sequenceChoiceString .=  "<BR>\n";
 
-    }
-    $sequenceChoiceString .=  "<BR>\n";
+#     }
+#     $sequenceChoiceString .=  "<BR>\n";
     
     
-    #$sequenceChoiceString .=  "</UL>\n";
-    return $sequenceChoiceString;
-}
+#     #$sequenceChoiceString .=  "</UL>\n";
+#     return $sequenceChoiceString;
+# }
 
 
-################################################################
-## Treat input sequence for the RSAT web server
-## The seqence can be specified in 3 ways :
-## - as a file to upload from the client to the server $query->param('uploaded_file')
-## - as a text in the textarea $query->param('sequence')
-## - as a sequence file already on the server $query->param('sequence_file')
-##
-## Usage:
-##    ($sequence_file,$sequence_format) = &GetSequenceFile();
-##    ($sequence_file,$sequence_format) = &GetSequenceFile($required_format,
-##                                                         add_rc=>1,
-##                                                         skip_short=>30);
-sub GetSequenceFile {
-  my ($required_format, %args) = @_;
-  my $add_rc = $args{add_rc} || 0;
-  my $no_format = $args{no_format} || 0;
-  my $skip_short = $args{skip_short} || 0;
+# ################################################################
+# ## Treat input sequence for the RSAT web server
+# ## The seqence can be specified in 3 ways :
+# ## - as a file to upload from the client to the server $query->param('uploaded_file')
+# ## - as a text in the textarea $query->param('sequence')
+# ## - as a sequence file already on the server $query->param('sequence_file')
+# ##
+# ## Usage:
+# ##    ($sequence_file,$sequence_format) = &GetSequenceFile();
+# ##    ($sequence_file,$sequence_format) = &GetSequenceFile($required_format,
+# ##                                                         add_rc=>1,
+# ##                                                         skip_short=>30);
+# sub GetSequenceFile {
+#   my ($required_format, %args) = @_;
+#   my $add_rc = $args{add_rc} || 0;
+#   my $no_format = $args{no_format} || 0;
+#   my $skip_short = $args{skip_short} || 0;
 
-  ### sequence file format
-  my $sequence_format = lc($query->param("sequence_format"));
-  unless ($accepted_input_seq{$sequence_format}) {
-    &cgiError("Invalid sequence format : '$sequence_format'.");
-  }
+#   ### sequence file format
+#   my $sequence_format = lc($query->param("sequence_format"));
+#   unless ($accepted_input_seq{$sequence_format}) {
+#     &cgiError("Invalid sequence format : '$sequence_format'.");
+#   }
 
-  unless ($sequence_file = $query->param('sequence_file')) { 
-    ### sequence file already on the server side
-    ### create a new temporary sequence file
-    $sequence_file = "$TMP/$tmp_file_name.seq"; 
+#   unless ($sequence_file = $query->param('sequence_file')) { 
+#     ### sequence file already on the server side
+#     ### create a new temporary sequence file
+#     $sequence_file = "$TMP/$tmp_file_name.seq"; 
 
-    ### upload sequence file from the client side
-    $upload_file = $query->param('uploaded_file');
-    if ($upload_file) {
-      if ($upload_file =~ /\.gz$/) {
-	$sequence_file .= ".gz";
-      }
-      $type = $query->uploadInfo($upload_file)->{'Content-Type'};
-      open SEQ, ">$sequence_file" ||
-	&cgiError("Cannot store sequence file in temp dir.");
-      while (<$upload_file>) {
-	print SEQ;
-      }
-      close SEQ;
+#     ### upload sequence file from the client side
+#     $upload_file = $query->param('uploaded_file');
+#     if ($upload_file) {
+#       if ($upload_file =~ /\.gz$/) {
+# 	$sequence_file .= ".gz";
+#       }
+#       $type = $query->uploadInfo($upload_file)->{'Content-Type'};
+#       open SEQ, ">$sequence_file" ||
+# 	&cgiError("Cannot store sequence file in temp dir.");
+#       while (<$upload_file>) {
+# 	print SEQ;
+#       }
+#       close SEQ;
 
-      ### read sequence from the textarea "sequence"
-    } elsif ($query->param('sequence') =~ /\S/) {
-      if (open SEQ, ">$sequence_file") {
-	print SEQ $query->param('sequence');
-	close SEQ;
-      }
-    } else {
-      &cgiError("The sequence box should not be empty.");
-    }
+#       ### read sequence from the textarea "sequence"
+#     } elsif ($query->param('sequence') =~ /\S/) {
+#       if (open SEQ, ">$sequence_file") {
+# 	print SEQ $query->param('sequence');
+# 	close SEQ;
+#       }
+#     } else {
+#       &cgiError("The sequence box should not be empty.");
+#     }
 
-    #### sequence file will be deleted
-    &DelayedRemoval($sequence_file);
-  }
+#     #### sequence file will be deleted
+#     &DelayedRemoval($sequence_file);
+#   }
 
-  ## Mask option
-  my $mask = "";
-  if ($query->param('mask')) {
-    unless ($query->param('mask') eq "none") {
-      $mask = $query->param('mask');
-      &CheckMask($mask);
-    }
-  }
+#   ## Mask option
+#   my $mask = "";
+#   if ($query->param('mask')) {
+#     unless ($query->param('mask') eq "none") {
+#       $mask = $query->param('mask');
+#       &CheckMask($mask);
+#     }
+#   }
 
-  #### convert-seq
-  if (($add_rc) ||
-      ($mask) ||
-      ($skip_short) ||
-      ((defined($required_format)) && (lc($sequence_format) ne lc($required_format)))
-     ) {
+#   #### convert-seq
+#   if (($add_rc) ||
+#       ($mask) ||
+#       ($skip_short) ||
+#       ((defined($required_format)) && (lc($sequence_format) ne lc($required_format)))
+#      ) {
 
-    ## Check required format
-    unless ($required_format) {
-      $required_format = $sequence_format;
-    }
-    unless ($accepted_output_seq{$required_format}) { 
-      &cgiError("Invalid sequence format : ${required_format}.");
-    }
-    my $converted_seq_file = $sequence_file.".".$required_format;
-    my $convert_seq_command = "$SCRIPTS/convert-seq ";
-    $convert_seq_command .= " -i $sequence_file -o $converted_seq_file ";
-    $convert_seq_command .= " -from  $sequence_format -to $required_format ";
+#     ## Check required format
+#     unless ($required_format) {
+#       $required_format = $sequence_format;
+#     }
+#     unless ($accepted_output_seq{$required_format}) { 
+#       &cgiError("Invalid sequence format : ${required_format}.");
+#     }
+#     my $converted_seq_file = $sequence_file.".".$required_format;
+#     my $convert_seq_command = "$SCRIPTS/convert-seq ";
+#     $convert_seq_command .= " -i $sequence_file -o $converted_seq_file ";
+#     $convert_seq_command .= " -from  $sequence_format -to $required_format ";
 
-    ## Add reverse complement
-    if ($add_rc) {
-      $convert_seq_command .= " -addrc ";
-    }
+#     ## Add reverse complement
+#     if ($add_rc) {
+#       $convert_seq_command .= " -addrc ";
+#     }
 
-    ## Mask
-    if ($mask) {
-      $convert_seq_command .= " -mask ".$mask;
-    }
+#     ## Mask
+#     if ($mask) {
+#       $convert_seq_command .= " -mask ".$mask;
+#     }
 
-    ## Skip short sequences
-    if ($skip_short) {
-      $convert_seq_command .= " -skip_short ".$skip_short;
-    }
+#     ## Skip short sequences
+#     if ($skip_short) {
+#       $convert_seq_command .= " -skip_short ".$skip_short;
+#     }
 
-    ## Execute the sequence conversion
-    system($convert_seq_command);
+#     ## Execute the sequence conversion
+#     system($convert_seq_command);
 
-    #print "<PRE>$convert_seq_command</PRE>\n";
-    &DelayedRemoval($converted_seq_file);
-    $sequence_file = $converted_seq_file;
-    $sequence_format = $required_format;
-  }
+#     #print "<PRE>$convert_seq_command</PRE>\n";
+#     &DelayedRemoval($converted_seq_file);
+#     $sequence_file = $converted_seq_file;
+#     $sequence_format = $required_format;
+#   }
 
-  return($sequence_file, $sequence_format);
-}
+#   return($sequence_file, $sequence_format);
+# }
 
 
 ### input pattern ####
@@ -281,418 +250,263 @@ sub GetSequenceFile {
 #}
 
 
-#### warn the users to wait for complete result before clicking on piping buttons
-sub PipingWarning {
-  my $message = "One or several button(s) will appear at the bottom of this page, ";
-  $message .= "allowing you to send the result as input for a subsequent query."; 
-  &cgiMessage($message, "Information");
-}
+# #### warn the users to wait for complete result before clicking on piping buttons
+# sub PipingWarning {
+#   my $message = "One or several button(s) will appear at the bottom of this page, ";
+#   $message .= "allowing you to send the result as input for a subsequent query."; 
+#   &cgiMessage($message, "Information");
+# }
 
 
-################################################################
-### display a pop-up menu with a selection of organism
-### on the basis of the configuration found in RSA.config
-sub OrganismPopUp {
-    print &OrganismPopUpString(@_);
-}
-sub OrganismPopUpString {
-    my (@selected_organisms) = @_;
-    if (scalar(@selected_organisms) <= 0) {
-	@selected_organisms = &ListSupportedOrganisms("keys");
-    }
-    my $organismPopup = "";
-    $organismPopup .=  "<B>Organism</B>&nbsp;";
-    $organismPopup .=  "<SELECT NAME='organism'>\n";
-    foreach my $org (@selected_organisms) {
-	$name = $supported_organism{$org}->{'name'};
-	if ((lc($org) eq lc($default{organism})) ||
-	    (lc($name) eq lc($default{organism}))) {
-	    $organismPopup .=  "<OPTION SELECTED VALUE='$org'>$name\n";
-	} else {
-	    $organismPopup .=  "<OPTION VALUE='$org'>$name\n";
-	}
-    }
-    $organismPopup .=  "</SELECT>";
-    $organismPopup .=  "<BR>\n";
-    return $organismPopup;
-}
+# ################################################################
+# ### display a pop-up menu with a selection of organism
+# ### on the basis of the configuration found in RSA.config
+# sub OrganismPopUp {
+#     print &OrganismPopUpString(@_);
+# }
+# sub OrganismPopUpString {
+#     my (@selected_organisms) = @_;
+#     if (scalar(@selected_organisms) <= 0) {
+# 	@selected_organisms = &ListSupportedOrganisms("keys");
+#     }
+#     my $organismPopup = "";
+#     $organismPopup .=  "<B>Organism</B>&nbsp;";
+#     $organismPopup .=  "<SELECT NAME='organism'>\n";
+#     foreach my $org (@selected_organisms) {
+# 	$name = $supported_organism{$org}->{'name'};
+# 	if ((lc($org) eq lc($default{organism})) ||
+# 	    (lc($name) eq lc($default{organism}))) {
+# 	    $organismPopup .=  "<OPTION SELECTED VALUE='$org'>$name\n";
+# 	} else {
+# 	    $organismPopup .=  "<OPTION VALUE='$org'>$name\n";
+# 	}
+#     }
+#     $organismPopup .=  "</SELECT>";
+#     $organismPopup .=  "<BR>\n";
+#     return $organismPopup;
+# }
 
-################################################################
-### display a pop-up menu with the supported taxonomy
-### on the basis of the configuration found in RSA.config
-sub TaxonPopUp {
-    print &TaxonPopUpString();
-}
-sub TaxonPopUpString {
-    require RSAT::Tree;
-    my $tree = new RSAT::Tree();
-    $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
-#    $tree->LoadSupportedTaxonomy(1);
-    my @supported_taxons = $tree->node_names();
-    my $indent_char = ":-";
-    my %indented_taxa = ($tree->as_indented_hash($indent_char,"Bacteria"),
-			 $tree->as_indented_hash($indent_char,"Fungi"));
+# ################################################################
+# ## Print HTML header
+# sub html_header {
+#   my $header = "";
+#   $header .=  "<html>\n";
+#   $header .=  "<header>\n";
+#   $header .=  "<title>$infile{input}</title>\n";
+#   $header .= &sorttable_script();
+#   $header .=  "<header>\n";
+#   $header .=  "<body bgcolor='#ffffff'>\n";
+#   return $header;
+# }
 
-    my $taxonomyPopup = "";
-    $taxonomyPopup .=  "<B>Taxon</B>&nbsp;";
-    $taxonomyPopup .=  "<SELECT NAME='taxon'>\n";
-    foreach my $taxon (@supported_taxons) {
-      if ($indented_taxa{$taxon}){
-	$name = $indented_taxa{$taxon};
-	if ((lc($taxon) eq lc($main::default{taxon})) ||
-	    (lc($name) eq lc($main::default{taxon}))) {
-	    $taxonomyPopup .=  "<OPTION SELECTED VALUE='$taxon'>$name\n";
-	  } else {
-	    $taxonomyPopup .=  "<OPTION VALUE='$taxon'>$name\n";
-	  }
-      }
-    }
-    $taxonomyPopup .=  "</SELECT>";
-    $taxonomyPopup .=  "<BR>\n";
-    return $taxonomyPopup;
-}
+# ################################################################
+# ## Close HTML table
+# sub close_table_html {
+#   my $string = "";
+#   $string .=  "</BODY>";
+#   $string .=  "</HTML>";
+#   return $string;
+# }
 
 
-################################################################
-## Background models based on a genome subset
-sub PrintGenomeSubsetBgOptions {
-  $checked{$default{bg_level}} = "CHECKED";
-  $checked{$default{freq_estimate}} = "CHECKED";
-
-  #### Calibrated on genome subsets
-  print( "<br><input type='radio' NAME='freq_estimate' VALUE='background' $checked{background}>");
-  print ("<b>Genome subset</b>");
-#  print "<ul>";
-  print ( "&nbsp;&nbsp;<a href='help.oligo-analysis.html#background'>Sequence type</a> &nbsp;&nbsp;&nbsp;&nbsp;", 
-	  $query->popup_menu(-name=>'background',
-			     -Values=>["upstream","upstream-noorf","intergenic"],
-			     -default=>$default{background}));
+# ################################################################
+# ## Print a little java script produce a sortable HTML table
+# sub sorttable_script {
+#   my $script = $ENV{RSAT}."/perl-scripts/lib/sorttable.js";
+#   return `cat $script`;
+# }
 
 
-  print ("<ul>");
-  print( "<input type='radio' NAME='bg_level' VALUE='organism' $checked{organism}>", &OrganismPopUpString());
-  print( "<br><input type='radio' NAME='bg_level' VALUE='taxon' $checked{taxon}>", &TaxonPopUpString());
-  print ("</ul>");
-#  print "</ul>";
+# ################################################################
+# #### Print a text table in html format
+# ##
+# ## usage
+# ##   PrintHtmlTable(FILE_HANDLE,$mirror_file)
+# ## reads the content of FILEHANDLE and displays 
+# ## it in the form of a HTML table.
+# ## if $mirror_file is specified, a copy of the input text (without HTML formatting)  
+# ## is saved on the hard drive
+# ##
+# ## global variables
+# ## ================
+# ## The fixed font type can be switched off 
+# ## by specifiying a global variable 
+# ##       $font{variable} = 1;
+# sub PrintHtmlTable {
+#     my ($FILE, $mirror_file, $mirror_verbose, $chunk, $out, $border) = @_;
+#     $out = STDOUT unless ($out);
+#     $chunk = 1000 unless (&IsNatural($chunk));
+#     my $line_count = 0;
+#     my $last_line = "";
+#     my $header_line = "";
+#     unless ($border) {
+# 	$border=1;
+#     }
 
-
-  print "<p>";
-}
-
-################################################################
-## Background model options for oligo-analysis + ORM
-sub PrintOligoBackgroundOptions {
-  $checked{$default{freq_estimate}} = "CHECKED";
-  print "<A HREF='help.oligo-analysis.html#exp_freq'><B>Background model</B></A>&nbsp;<p>";
-
-  &PrintGenomeSubsetBgOptions();
-
-  #### Estimated from the input sequence set
-
-  print ("<br><b>Estimate from input sequence</b>");
-#  print ("<ul>");
-
-  ## Markov chain model
-  print ("<br><input type='radio' NAME='freq_estimate' VALUE='Markov Chain (higher order dependencies)' $checked{'Markov Chain (higher order dependencies)'}>", 
-	 "Markov Chain (higher order dependencies)");
-
-  print "&nbsp;&nbsp;order &nbsp;";
-  print $query->textfield(-name=>'markov_order',
-			  -default=>$default{markov_order},
-			  -size=>5);
-
-  #### Lexicon partitioning
-  #print "<br><input type='radio' NAME='freq_estimate' VALUE='Lexicon partitioning' $checked{'Lexicon partitioning'}>Lexicon partitioning<p>";
-
-  #### Bernouilli model
-  #print "<br><input type='radio' NAME='freq_estimate' VALUE='Residue frequencies from input sequence' $checked{'Residue frequencies from input sequence'}>Residue frequencies from input sequence<p>";
-
-  #### equiprobable residues
-  print "<br><input type='radio' NAME='freq_estimate' VALUE='Equiprobable residues' $checked{'Equiprobable residues'}>Equiprobable residues (<A HREF='help.oligo-analysis.html#equiprobable'>usually NOT recommended</a>)<p>";
-
-#  print ("</ul>");
-
-  #### custom expected frequency file
-  print ("<a href='help.oligo-analysis.html#upload_freq_file'><b>Upload your own expected frequency file</b></a><BR>");
-#  print ("<ul>");
-  print ("<br><input type='radio' NAME='freq_estimate' VALUE='file_upload' $checked{'file_upload'}>");
-  print ($query->filefield(-name=>'upload_freq_file',
-			   -default=>'starting value',
-			   -size=>30,
-			   -maxlength=>200));
-#  print ("</ul>");
-  print "<p>";
-}
-
-
-################################################################
-## Print background model optiosn for dyad-analysis
-sub PrintDyadBackgroundOptions {
-  $checked{$default{freq_estimate}} = "CHECKED";
-  print "<A HREF='help.oligo-analysis.html#exp_freq'><B>Background model</B></A>&nbsp;<p>";
-
-  &PrintGenomeSubsetBgOptions();
-
-#   ### expected frequency calculation
-#   print "<A HREF='help.dyad-analysis.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<p>";
-#   print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='background' $checked{background}>", 
-# 	  "Background model");
-#   print "<ul>";
-#   print ( "<a href='help.dyad-analysis.html#background'>Sequence type</a> &nbsp;&nbsp;&nbsp;&nbsp;", 
-# 	$query->popup_menu(-name=>'background',
-# 			   -Values=>["upstream","upstream-noorf","intergenic"],
-# 			   -default=>$default{background}));
-
-# print "<br>", &OrganismPopUpString();
-# print "</ul>";
-
-  print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='monads' $checked{monads}>",
-	  "<b>Monad frequencies from the input sequence</b>");
-
-  print "<BR>\n";
-
-  print ("<a href='help.dyad-analysis.html#upload_freq_file'><b>Upload your own expected frequency file</b></a><BR>");
-#  print ("<ul>");
-  print ("<br><input type='radio' NAME='freq_estimate' VALUE='file_upload' $checked{'file_upload'}>");
-  print ($query->filefield(-name=>'upload_freq_file',
-			   -default=>'starting value',
-			   -size=>30,
-			   -maxlength=>200));
-#  print ("</ul>");
-  print "<p>";
-
-#   #### custom expected frequency file
-#   print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='file_upload' $checked{file_upload}><a href='help.oligo-analysis.html#upload_freq_file'>Upload your own expected frequency file</a><BR>";
-
-#   print $query->filefield(-name=>'upload_freq_file',
-# 			  -default=>'starting value',
-# 			  -size=>30,
-# 			  -maxlength=>200);
-#   print "<p>";
-
-}
-
-################################################################
-## Print HTML header
-sub html_header {
-  my $header = "";
-  $header .=  "<html>\n";
-  $header .=  "<header>\n";
-  $header .=  "<title>$infile{input}</title>\n";
-  $header .= &sorttable_script();
-  $header .=  "<header>\n";
-  $header .=  "<body bgcolor='#ffffff'>\n";
-  return $header;
-}
-
-################################################################
-## Close HTML table
-sub close_table_html {
-  my $string = "";
-  $string .=  "</BODY>";
-  $string .=  "</HTML>";
-  return $string;
-}
-
-
-################################################################
-## Print a little java script produce a sortable HTML table
-sub sorttable_script {
-  my $script = $ENV{RSAT}."/perl-scripts/lib/sorttable.js";
-  return `cat $script`;
-}
-
-
-################################################################
-#### Print a text table in html format
-##
-## usage
-##   PrintHtmlTable(FILE_HANDLE,$mirror_file)
-## reads the content of FILEHANDLE and displays 
-## it in the form of a HTML table.
-## if $mirror_file is specified, a copy of the input text (without HTML formatting)  
-## is saved on the hard drive
-##
-## global variables
-## ================
-## The fixed font type can be switched off 
-## by specifiying a global variable 
-##       $font{variable} = 1;
-sub PrintHtmlTable {
-    my ($FILE, $mirror_file, $mirror_verbose, $chunk, $out, $border) = @_;
-    $out = STDOUT unless ($out);
-    $chunk = 1000 unless (&IsNatural($chunk));
-    my $line_count = 0;
-    my $last_line = "";
-    my $header_line = "";
-    unless ($border) {
-	$border=1;
-    }
-
-    $TABLE="<TABLE  class=\"sortable\" bgcolor='#EEEEFF' CELLSPACING=1 CELLPADDING=3 BORDER=$border>";
-    unless ($main::font{variable}) {
-	$font_spec_start = "<TT>";
-	$font_spec_end = "</TT>";
-    }
+#     $TABLE="<TABLE  class=\"sortable\" bgcolor='#EEEEFF' CELLSPACING=1 CELLPADDING=3 BORDER=$border>";
+#     unless ($main::font{variable}) {
+# 	$font_spec_start = "<TT>";
+# 	$font_spec_end = "</TT>";
+#     }
     
-    if ($mirror_file) {
-	if (open MIRROR, ">$mirror_file") {
-	    $mirror = 1;
-	    &DelayedRemoval($mirror_file);
-	} else {
-	    &Warning("Could not open the mirror file $mirror_file<P>\n");
-	}
-    }
+#     if ($mirror_file) {
+# 	if (open MIRROR, ">$mirror_file") {
+# 	    $mirror = 1;
+# 	    &DelayedRemoval($mirror_file);
+# 	} else {
+# 	    &Warning("Could not open the mirror file $mirror_file<P>\n");
+# 	}
+#     }
 
-    print $out "<PRE>";
-    while (<$FILE>) {
-	s|$ENV{RSAT}/(public_html/)*||g; #### avoid exposing the full path through the web interface
-	if ($mirror) {
-	  print MIRROR $_
-	    unless ((/^;/) && !($mirror_verbose)); 
-	}
-	if (/^\s*$/) {		#nothing on the line
-	} elsif (/^;WARNING/) {		# warning
-	  push @warnings, $_;
-	} elsif ((/^;/) ||
-		 (/^\-\-/) ||
-		 (/^\#/) ||
-		 (/^\/\//)) {		# comment line
-	  if ($table_opened) {
-	    print $out "<\/TABLE><PRE>\n";
-	    $table_opened = 0;
-	  }
-	  $last_line =~ s/^;//;
-	  $last_line =~ s/^#//;
-	  $last_line =~ s/^--//;
-	  print $out $last_line;
-	  $last_line = $_;
+#     print $out "<PRE>";
+#     while (<$FILE>) {
+# 	s|$ENV{RSAT}/(public_html/)*||g; #### avoid exposing the full path through the web interface
+# 	if ($mirror) {
+# 	  print MIRROR $_
+# 	    unless ((/^;/) && !($mirror_verbose)); 
+# 	}
+# 	if (/^\s*$/) {		#nothing on the line
+# 	} elsif (/^;WARNING/) {		# warning
+# 	  push @warnings, $_;
+# 	} elsif ((/^;/) ||
+# 		 (/^\-\-/) ||
+# 		 (/^\#/) ||
+# 		 (/^\/\//)) {		# comment line
+# 	  if ($table_opened) {
+# 	    print $out "<\/TABLE><PRE>\n";
+# 	    $table_opened = 0;
+# 	  }
+# 	  $last_line =~ s/^;//;
+# 	  $last_line =~ s/^#//;
+# 	  $last_line =~ s/^--//;
+# 	  print $out $last_line;
+# 	  $last_line = $_;
 
-	} elsif (!($table_opened)) { # first line of the table
-	    $table_opened = 1;
-	    $line_count = 0;
-	    print $out "</PRE>\n\n$TABLE\n";
+# 	} elsif (!($table_opened)) { # first line of the table
+# 	    $table_opened = 1;
+# 	    $line_count = 0;
+# 	    print $out "</PRE>\n\n$TABLE\n";
 
-	    # print the header line
-	    chomp($last_line);
-	    $last_line =~ s/^;//;
-	    $last_line =~ s/^#//;
-	    $last_line =~ s/^--//;
-	    $last_line =~ s/\t/ <\/TT><\/TH>\n<TH ALIGN=LEFT bgcolor='#BBBBFF'>$font_spec_start/g;
-	    $header_line = "<TR VALIGN=top>\n<TH ALIGN=LEFT bgcolor='#BBBBFF'>".$font_spec_start.$last_line.$font_spec_end."</TH>\n</TR>\n\n";
-	    print $out $header_line;
-	    $last_line = "";
+# 	    # print the header line
+# 	    chomp($last_line);
+# 	    $last_line =~ s/^;//;
+# 	    $last_line =~ s/^#//;
+# 	    $last_line =~ s/^--//;
+# 	    $last_line =~ s/\t/ <\/TT><\/TH>\n<TH ALIGN=LEFT bgcolor='#BBBBFF'>$font_spec_start/g;
+# 	    $header_line = "<TR VALIGN=top>\n<TH ALIGN=LEFT bgcolor='#BBBBFF'>".$font_spec_start.$last_line.$font_spec_end."</TH>\n</TR>\n\n";
+# 	    print $out $header_line;
+# 	    $last_line = "";
 	    
-	    ### print the first result line
-	    chomp;
-	    s/\t/ <\/TT><\/TD>\n<TD>$font_spec_start/g;
-	    print $out "<TR VALIGN=top>\n<TD>".$font_spec_start;
-	    print $out $_;
-	    print $out $font_spec_end."</TD>\n</TR>\n\n";
+# 	    ### print the first result line
+# 	    chomp;
+# 	    s/\t/ <\/TT><\/TD>\n<TD>$font_spec_start/g;
+# 	    print $out "<TR VALIGN=top>\n<TD>".$font_spec_start;
+# 	    print $out $_;
+# 	    print $out $font_spec_end."</TD>\n</TR>\n\n";
 	    
-	} else {			# other line of the table
-	    $line_count++;
-	    if ($line_count%$chunk == 0) {
-		### avoid HTML tables with too many rows
-		print $out "</TABLE>\n\n$TABLE";
-		print $out $header_line;
-	    }
-	    chomp;
-	    s/\t/ <\/TT><\/TD>\n<TD>$font_spec_start/g;
-	    print $out "<TR VALIGN=top>\n<TD>".$font_spec_start.$_.$font_spec_end."</TD>\n</TR>\n\n";
-	}
-    }
-    if ($table_opened) {
-	print $out "</TABLE>\n\n";
-	print $out @warnings;
-	print $out "<PRE>\n";
-	$table_opened = 0;
-    }
-    print $out $last_line;
-    print $out "</PRE>\n";
-    if ($mirror_file ne "") {
-	close MIRROR;
-    }
-}
+# 	} else {			# other line of the table
+# 	    $line_count++;
+# 	    if ($line_count%$chunk == 0) {
+# 		### avoid HTML tables with too many rows
+# 		print $out "</TABLE>\n\n$TABLE";
+# 		print $out $header_line;
+# 	    }
+# 	    chomp;
+# 	    s/\t/ <\/TT><\/TD>\n<TD>$font_spec_start/g;
+# 	    print $out "<TR VALIGN=top>\n<TD>".$font_spec_start.$_.$font_spec_end."</TD>\n</TR>\n\n";
+# 	}
+#     }
+#     if ($table_opened) {
+# 	print $out "</TABLE>\n\n";
+# 	print $out @warnings;
+# 	print $out "<PRE>\n";
+# 	$table_opened = 0;
+#     }
+#     print $out $last_line;
+#     print $out "</PRE>\n";
+#     if ($mirror_file ne "") {
+# 	close MIRROR;
+#     }
+# }
 
-sub Print_CGI_Input {
-### returns all the fields of the %input hash
-    print "<PRE>";
-    foreach $key (sort keys %input) {
-	print "$key\t$input{$key}\n";
-    }
-    print "</PRE>";
+# sub Print_CGI_Input {
+# ### returns all the fields of the %input hash
+#     print "<PRE>";
+#     foreach $key (sort keys %input) {
+# 	print "$key\t$input{$key}\n";
+#     }
+#     print "</PRE>";
 
-    print "Parameters: $parameters<P><P>\n";
-}
-
-
-################################################################
-##### Save the command string in a temporry file for debugging
-sub SaveCommand {
-    my ($command, $tmp_file_name) = @_;
-
-    #### temporary file for storing the result
-    unless ($tmp_file_name) {
-	$tmp_file_name = sprintf "command.%s", &AlphaDate.".txt";
-    }
-    open CMD, ">${tmp_file_name}_command.txt";
-    print CMD $command, "\n";
-    close CMD;
-
-}
+#     print "Parameters: $parameters<P><P>\n";
+# }
 
 
-################################################################
-#### save the result in a temporary file on the server
-#### this file will be deleted after some delay
-sub ServerOutput {
-    #### redirect the task to email output
-    &EmailTheResult(@_);
+# ################################################################
+# ##### Save the command string in a temporry file for debugging
+# sub SaveCommand {
+#     my ($command, $tmp_file_name) = @_;
 
-}
+#     #### temporary file for storing the result
+#     unless ($tmp_file_name) {
+# 	$tmp_file_name = sprintf "command.%s", &AlphaDate.".txt";
+#     }
+#     open CMD, ">${tmp_file_name}_command.txt";
+#     print CMD $command, "\n";
+#     close CMD;
 
-#### send e-mail with the result of a command
-sub EmailTheResult {
-    my ($command, $email_address, $tmp_file_name) = @_;
-    my $delay = "72 hours";
-    $mail_command = "mail -s \'RSA-tools - $script_name - $date\'";
-
-    #### check the email address
-    &CheckEmailAddress($email_address);
-
-    #### temporary file for storing the result
-    unless ($tmp_file_name) {
-	$tmp_file_name = sprintf "result.%s", &AlphaDate.".txt";
-    }
-    my $result_URL = "$ENV{rsat_www}/tmp/$tmp_file_name";
-
-    #### debugging: report the command
-    print "<PRE>$command > $TMP/$tmp_file_name</PRE>" if ($ECHO >= 1);
-
-    #### Indicate the URL of the future result file
-    my $message = "The server is now processing your request.\n"; 
-    $message .= "Once it will be finished, the result will become available at the following URL\n";
-    $message .= "\t${result_URL}\n";
-    $message .= "When the result will be ready, you will be warned at your email address ($email_address).\n";
-    $message .= "The result file will remain on the server for $delay.\n";
-    $html_message = $message;
-    $html_message =~ s|(http://\S+)|<a href=$1>$1</a>|gm;
-
-    &Info($html_message);
-
-    #### concatenate the command with the email notification
-    my $email_message = "Your result is available at the following URL:\n\t${result_URL}";
-    $email_message .= "\nThe result file will remain there for $delay.";
-    $email_command =  "$command | perl -pe 's|$ENV{RSAT}/(public_html/)*||g' > $TMP/$tmp_file_name; ";
-    $email_command .= "echo \"$email_message\" | $mail_command $email_address &"; 
-    print "<PRE>$email_command</PRE>" if ($ECHO >= 1);
-    system $email_command;
+# }
 
 
-    #### prepare removal of the temporary file
-    &DelayedRemoval("$TMP/$tmp_file_name", $delay);
-}
+# ################################################################
+# #### save the result in a temporary file on the server
+# #### this file will be deleted after some delay
+# sub ServerOutput {
+#     #### redirect the task to email output
+#     &EmailTheResult(@_);
+
+# }
+
+# #### send e-mail with the result of a command
+# sub EmailTheResult {
+#     my ($command, $email_address, $tmp_file_name) = @_;
+#     my $delay = "72 hours";
+#     $mail_command = "mail -s \'RSA-tools - $script_name - $date\'";
+
+#     #### check the email address
+#     &CheckEmailAddress($email_address);
+
+#     #### temporary file for storing the result
+#     unless ($tmp_file_name) {
+# 	$tmp_file_name = sprintf "result.%s", &AlphaDate.".txt";
+#     }
+#     my $result_URL = "$ENV{rsat_www}/tmp/$tmp_file_name";
+
+#     #### debugging: report the command
+#     print "<PRE>$command > $TMP/$tmp_file_name</PRE>" if ($ECHO >= 1);
+
+#     #### Indicate the URL of the future result file
+#     my $message = "The server is now processing your request.\n"; 
+#     $message .= "Once it will be finished, the result will become available at the following URL\n";
+#     $message .= "\t${result_URL}\n";
+#     $message .= "When the result will be ready, you will be warned at your email address ($email_address).\n";
+#     $message .= "The result file will remain on the server for $delay.\n";
+#     $html_message = $message;
+#     $html_message =~ s|(http://\S+)|<a href=$1>$1</a>|gm;
+
+#     &Info($html_message);
+
+#     #### concatenate the command with the email notification
+#     my $email_message = "Your result is available at the following URL:\n\t${result_URL}";
+#     $email_message .= "\nThe result file will remain there for $delay.";
+#     $email_command =  "$command | perl -pe 's|$ENV{RSAT}/(public_html/)*||g' > $TMP/$tmp_file_name; ";
+#     $email_command .= "echo \"$email_message\" | $mail_command $email_address &"; 
+#     print "<PRE>$email_command</PRE>" if ($ECHO >= 1);
+#     system $email_command;
+
+
+#     #### prepare removal of the temporary file
+#     &DelayedRemoval("$TMP/$tmp_file_name", $delay);
+# }
 
 #  sub OldEmailTheResult {
 #      my ($command, $email_address) = @_;
@@ -703,247 +517,43 @@ sub EmailTheResult {
 #      system "$command | $mail_command $email_address &"; 
 #  }
 
-#### check email address format
-sub CheckEmailAddress {
-    my ($email_address) = @_;
-    if ($email_address eq "") {
-	&RSAT::error::FatalError ("You did not enter your e-mail address");
-    } elsif ($email_address !~ /(\S+\@\S+)/) {
-	&RSAT::error::FatalError ("The e-mail address you entered is not valid: $email_address");
-    }
-}
+# #### check email address format
+# sub CheckEmailAddress {
+#     my ($email_address) = @_;
+#     if ($email_address eq "") {
+# 	&RSAT::error::FatalError ("You did not enter your e-mail address");
+#     } elsif ($email_address !~ /(\S+\@\S+)/) {
+# 	&RSAT::error::FatalError ("The e-mail address you entered is not valid: $email_address");
+#     }
+# }
 
 
-################################################################
-## Select the format for an input sequence
-sub SelectFormat {
-    my($in_format) = lc($_[0]);
+# ################################################################
+# ## Select the format for an input sequence
+# sub SelectFormat {
+#     my($in_format) = lc($_[0]);
 
-    #### update the sequence format in a web form
-    $form =~  s/ selected>Wconsensus/>Wconsensus/i;
-    $form =~  s/ selected>Fasta/>Fasta/i; 
-    $form =~  s/ selected>NCBI/>NCBI/i; 
-    $form =~  s/ selected>IG/>IG/i; 
-    $form =~  s/ selected>raw/>raw/i; 
-    $form =~  s/ selected>multi/>multi/i; 
-    if ($in_format =~ /fasta/i) {
-	$form =~  s/\>Fasta/ SELECTED\>Fasta/i; 
-    } elsif ($in_format =~ /multi/i) {
-	$form =~  s/\>multi/ SELECTED\>multi/i; 
-    } elsif ($in_format =~ /raw/i) {
-	$form =~  s/\>raw/ SELECTED\>raw/i; 
-    } elsif ($in_format =~ /^wc/i) {
-	$form =~  s/\>Wconsensus/ SELECTED\>Wconsensus/i; 
-    } elsif ($in_format =~ /ig/i) {
-	$form =~  s/\>IG/ SELECTED\>IG/i; 
-    }
-}
-
-
-
-################################################################
-#
-# Pipe the result to another command
-#
-sub PipingFormForSequence {
-    ## Choose organism-specific or alternative background
-    if ($query->param('single_multi_org') eq 'multi') {
-	$oligo_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"Residue frequencies from input sequence\">";
-	$dyad_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"monads\">";
-    } else {
-	#### choose background model for oligo-analysis
-	if ($seq_type =~ /upstream/) {
-	    if ($noorf) {
-		$background = "upstream-noorf";
-	    } else {
-		$background = "upstream";
-	    }
-	} else {
-	    $background = "intergenic";
-	}
-	$oligo_background_model = "\n<INPUT type=\"hidden\" NAME=\"background\" VALUE=\"$background\">";
-	$dyad_background_model = $oligo_background_model;
-    }
+#     #### update the sequence format in a web form
+#     $form =~  s/ selected>Wconsensus/>Wconsensus/i;
+#     $form =~  s/ selected>Fasta/>Fasta/i; 
+#     $form =~  s/ selected>NCBI/>NCBI/i; 
+#     $form =~  s/ selected>IG/>IG/i; 
+#     $form =~  s/ selected>raw/>raw/i; 
+#     $form =~  s/ selected>multi/>multi/i; 
+#     if ($in_format =~ /fasta/i) {
+# 	$form =~  s/\>Fasta/ SELECTED\>Fasta/i; 
+#     } elsif ($in_format =~ /multi/i) {
+# 	$form =~  s/\>multi/ SELECTED\>multi/i; 
+#     } elsif ($in_format =~ /raw/i) {
+# 	$form =~  s/\>raw/ SELECTED\>raw/i; 
+#     } elsif ($in_format =~ /^wc/i) {
+# 	$form =~  s/\>Wconsensus/ SELECTED\>Wconsensus/i; 
+#     } elsif ($in_format =~ /ig/i) {
+# 	$form =~  s/\>IG/ SELECTED\>IG/i; 
+#     }
+# }
 
 
-  print <<End_of_form;
-<HR SIZE = 3>
-<table class = 'nextstep'>
-<tr><td colspan = 5><h3>next step</h3></td></tr>
-
-
-<tr valign="top" align="center">
-
-    <th align=center>
-      	<font size=-1>
-	String-based<br>
-	Pattern Discovery<br>
-	(unknown patterns)
-	</font>
-    </th>
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="oligo-analysis_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	$oligo_background_model
-	<INPUT type="submit" value="oligonucleotide analysis">
-	</FORM>
-	Over- or under-represented words
-    </td>
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="dyad-analysis_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	$dyad_background_model
-	<INPUT type="submit" value="dyad analysis">
-	</FORM>
-	Overrepresented spaced pairs
-    </td>
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="position-analysis_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="hidden" NAME="background" VALUE="$background">
-	<INPUT type="submit" value="position analysis">
-	</FORM>
-	Positionally biased words
-    </td>
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="ORM_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	$oligo_background_model
-	<INPUT type="submit" value="ORM">
-	</FORM>
-	<b><font color=red>New !</font></b>
-	Windows of word over-representation
-    </td>
-
-</tr>
-
-<tr valign="top" align="center">
-
-    <th align=center>
-      	<font size=-1>
-	<B>Matrix-based<br>
-	 Pattern Discovery</B><BR>
-	(unknown patterns)
-	</font>
-    </th>
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="consensus_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="consensus">
-	</FORM>
-	Greedy algorithm
-    </td>
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="gibbs_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="gibbs sampler">
-	</FORM>
-	Gibbs sampling (1995 version)
-    </td>
-
-</tr>
-
-<tr valign="top" align="center">
-
-    <th align=center>
-      	<font size=-1>
-	<B>Pattern matching</B><BR>
-	(known patterns)
-	</font>
-    </td>
-
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="dna-pattern">
-	</FORM>
-	Regular expressions and IUPAC search.
-    </td>
-
-    <td align=center>
-        <FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="matrix-scan (matrices)">
-	</FORM>
-	<b><font color=red>New !</font></b>
-	Position-specific scoring matrices
-    </td>
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="patser_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="patser (matrices)">
-	</FORM>
-	Position-specific scoring matrices
-    </td>
-
-
-    <td align=center>
-    &nbsp;
-    </td>
-
-    <td align=center>
-    &nbsp;
-    </td>
-
-</tr>
-
-
-<tr valign="top" align="center">
-
-    <th align=center>
-      	<font size=-1>
-	<B>Utilities</B>
-	</font>
-    </th>
-
-    <td align=center>
-	<FORM METHOD="POST" ACTION="purge-sequence_form.cgi">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="purge sequence">
-	</FORM>
-	Mask redundant fragments. 
-    </td>
-
-    <td align=center>
-    &nbsp;
-    </td>
-
-    <td align=center>
-    &nbsp;
-    </td>
-</tr>
-
-
-</table>
-End_of_form
-}
 
 1; # return true
 
