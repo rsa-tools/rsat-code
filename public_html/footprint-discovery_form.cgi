@@ -94,7 +94,7 @@ print $query->checkbox(-name=>'leaders',
 		       -checked=>$default{leaders},
 		       -label=>'');
 print "<A HREF='help.footprint-discovery.html#leader'><B>\n";
-print "use promoters of predicted operon leader genes";
+print "predict operon leader genes";
 print "</B></A>\n";
 
 ################################################################
