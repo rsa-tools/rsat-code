@@ -73,7 +73,7 @@ foreach $key (keys %default) {
 &RSA_header("footprint-discovery", "form");
 print "<CENTER>";
 print "Given one or several genes from a query organism, collect all orthologous genes for a given taxonomical level <br>and discover conserved elements in their promoters.<br>\n";
-print "Program developed by <A HREF='mailto:rekins\@scmbb.ulb.ac.be'>Rekin's Janky</A>\n";
+print "(Program developed by <A HREF='mailto:rekins\@scmbb.ulb.ac.be'>Rekin's Janky</A>\n";
 print "and <A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>Jacques van Helden</A>).\n";
 print "<br>Reference: Janky & van Helden (2008), BMC Bioinformatics, in press. ";
 print "</CENTER>";
