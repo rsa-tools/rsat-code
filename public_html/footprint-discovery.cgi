@@ -67,25 +67,35 @@ $parameters .= " -taxon $taxon";
 
 ## ##############################################################
 ## Thresholds
-my @parameters = $query->param();
-foreach my $param (@parameters) {
-    if ($param =~ /^return_(.+)/) {
-	my $field = $1;
-	$parameters .= " -return ".$field;
-    } elsif ($param =~ /^lth_(.+)/) {
-	my $field = $1 ;
-	my $value = $query->param($param);
-	next unless (&IsReal($value));
-	$parameters .= " -lth ".$field." ".$value;
-    } elsif ($param =~ /^uth_(.+)/) {
-	my $field = $1 ;
-	my $value = $query->param($param);
-	next unless (&IsReal($value));
-	$parameters .= " -uth ".$field." ".$value;
-    }
+#my @parameters = $query->param();
+#foreach my $param (@parameters) {
+#    if ($param =~ /^return_(.+)/) {
+#	my $field = $1;
+#	$parameters .= " -return ".$field;
+#    } elsif ($param =~ /^lth_(.+)/) {
+#	my $field = $1 ;
+#	my $value = $query->param($param);
+#	next unless (&IsReal($value));
+#	$parameters .= " -lth ".$field." ".$value;
+#    } elsif ($param =~ /^uth_(.+)/) {
+#	my $field = $1 ;
+#	my $value = $query->param($param);
+#	next unless (&IsReal($value));
+#	$parameters .= " -uth ".$field." ".$value;
+#    }
+#}
+### Thresholds are NOT used by footprint-discovery ! (defaut parma od dyad-analysis)
+
+## Add options
+if ($query->param('leaders')) {
+  $parameters .= " -infer_operons";
 }
 
+if (!$query->param('dyads_filter')) {
+  $parameters .= " -no_filter";
+}
 
+$parameters .= " -bg_model ".$query->param('bg_model');
 $parameters .= " -o ".$file_prefix;
 
 ## Report the command
