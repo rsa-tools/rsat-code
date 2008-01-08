@@ -88,6 +88,15 @@ print $query->start_multipart_form(-action=>"footprint-discovery.cgi");
 print "<hr>";
 &PrintOrthoSelectionSection();
 
+### use predicted leader genes
+print "<br>";
+print $query->checkbox(-name=>'leaders',
+		       -checked=>$default{leaders},
+		       -label=>'');
+print "<A HREF='help.footprint-discovery.html#leader'><B>\n";
+print "use promoters of predicted operon leader genes";
+print "</B></A>\n";
+
 ################################################################
 #### Footprint-discovery-specific options
 print "<hr>";
@@ -100,17 +109,8 @@ print $query->checkbox(-name=>'dyads_filter',
 		       -checked=>$default{dyads_filter},
 		       -label=>'');
 print "<a href='help.footprint-discovery.html#filtering'><b>\n";
-print "filter dyads having occurrences in the query gene\n";
-print "</b></a>\n";
-
-### use predicted leader genes
-print "<br>";
-print $query->checkbox(-name=>'leaders',
-		       -checked=>$default{leaders},
-		       -label=>'');
-print "<A HREF='help.footprint-discovery.html#leader'><B>\n";
-print "use prediction of upstream leader genes (slow process)\n";
-print "</B></A>\n";
+print "dyad filtering</b></a>\n";
+print "(only accept dyads having at least one occurrence in the promoter of the query gene)";
 
 ### use background model
 print "<br>";
