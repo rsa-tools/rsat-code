@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.28 2008/01/07 02:09:44 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.29 2008/01/08 15:29:03 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -84,13 +84,8 @@ if ($query->param('noov')) {
   $parameters .= " -noov";
 }
 
-
-
-### threshold ###
-#if ($query->param('lth_occ_sig') =~ /^-{0,1}[\d\.\-+e]+$/i) {
-#  $parameters .= "  -thosig ".$query->param('lth_occ_sig');
-#}
-
+################################################################
+## Treat the return fields and thresholds
 &CGI_return_fields();
 
 #### oligo size ####
