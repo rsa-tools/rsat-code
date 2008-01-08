@@ -26,7 +26,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 
 require "RSA.lib";
-require "RSA.cgi.lib";
+require "RSA2.cgi.lib";
 
 ## Service location
 #my $server = 'http://localhost/rsat/web_services';
