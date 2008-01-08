@@ -767,9 +767,13 @@ sub ServerOutput {
 
 #### send e-mail with the result of a command
 sub EmailTheResult {
-    my ($command, $email_address, $tmp_file_name) = @_;
+    my ($command, $email_address, $tmp_file_name, %args) = @_;
     my $delay = "72 hours";
-    $mail_command = "mail -s \'RSA-tools - $script_name - $date\'";
+    my $mail_title = $args{title};
+    unless ($mail_title) {
+      $mail_title = join "; ", "RSAT", $script_name, $date;
+    }
+    $mail_command = "mail -s \'".$mail_title."\'";
 
     #### check the email address
     &CheckEmailAddress($email_address);
@@ -779,9 +783,9 @@ sub EmailTheResult {
 	$tmp_file_name = sprintf "result.%s", &AlphaDate.".txt";
     }
     my $result_URL = "$ENV{rsat_www}/tmp/$tmp_file_name";
-    
+
     #### debugging: report the command
-    print "<PRE>$command > $TMP/$tmp_file_name</PRE>" if ($ECHO >= 1);
+    print "<pre>$command > $TMP/$tmp_file_name</pre>" if ($ECHO >= 1);
 
     #### Indicate the URL of the future result file
     my $message = "The server is now processing your request.\n"; 
@@ -806,15 +810,6 @@ sub EmailTheResult {
     #### prepare removal of the temporary file
     &DelayedRemoval("$TMP/$tmp_file_name", $delay);
 }
-
-#  sub OldEmailTheResult {
-#      my ($command, $email_address) = @_;
-#      $mail_command = "mail -s \'RSA-tools - $script_name - $date\'";
-#      $email_address = &trim($email_address);
-#      &CheckEmailAddress($email_address);
-#      &Info ("Result will be sent to your e-mail address: $email_address");
-#      system "$command | $mail_command $email_address &"; 
-#  }
 
 #### check email address format
 sub CheckEmailAddress {
