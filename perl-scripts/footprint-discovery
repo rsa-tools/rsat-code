@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.14 2008/01/08 02:47:21 rsat Exp $
+# $Id: footprint-discovery,v 1.15 2008/01/08 13:05:35 jvanheld Exp $
 #
 ############################################################
 
@@ -125,13 +125,15 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
   %main::outfile = ();
 
 
+  local $dyad_return_fields = "occ,proba,rank"; ## Default return fields for dyad-analysis
+  local @dyad_return_fields = (); ## User-specified return fields for dyad-analysis
   local $create_index = 0;
   local $verbose = 0;
   local $in = STDIN;
@@ -160,7 +162,6 @@ package main;
 
   ################################################################
   ## Check argument values
-
 
   ## Check taxon
   &RSAT::error::FatalError("You must specify a taxon (option -taxon)")
@@ -255,6 +256,13 @@ package main;
 					  type=>"dyad",
 					  warn=>1,
 					  taxon=>1);
+  }
+
+
+  ################################################################
+  ## Return fields for dyad-analysis
+  if (scalar(@dyad_return_fields) > 0) {
+    $dyad_return_fields = join ",", @dyad_return_fields;
   }
 
   ################################################################
@@ -362,7 +370,8 @@ package main;
   ################################################################
   ## Discover over-represented dyads in promoters of orthologous genes
   &RSAT::message::TimeWarn("Detecting phylogenetic footprints", $outfile{dyads}) if ($verbose >= 1);
-  $cmd = "$SCRIPTS/dyad-analysis -v 1 -return occ,proba,rank -lth occ 1";
+  $cmd = "$SCRIPTS/dyad-analysis -v 1 ";
+  $cmd .= " -return ".$dyad_return_fields;
   if ($bg_model eq "taxfreq"){
     $cmd .= " -expfreq ".$infile{bg_model} ;
   } elsif ($bg_model eq "monad") {
@@ -649,6 +658,25 @@ which a threshold can be imposed.
 	  my $thr_field = shift (@arguments);
 	  my $thr_value =  shift (@arguments);
 	  $main::uth{$thr_field} = $thr_value;
+
+	  ## Return fields for dyad-analysis
+=pod
+
+=item B<-return dyad_return_fields>
+
+Return fields for dyad-analysis.  This argument is passed to
+dyad-analysis for the discovery of dyads in promoters of orthologous
+genes.
+
+Multiple-fields can be entered either by calling this argument
+iterativelyk or by entering multiple fields separated by commas.
+
+Type I<dyad-analysis -help> to obtain the list of supported return
+fields.
+
+=cut
+	} elsif ($arg eq "-return") {
+	  push @dyad_return_fields, shift (@arguments);
 
 	    ## Background model
 
