@@ -59,12 +59,9 @@ if ($query->param('return') eq "table") {
 } elsif ($query->param('return') eq "distrib") {
     $parameters .= " -return occ -distrib"; 
 } else {
-
-    &CGI_return_fields();
-    
+  &CGI_return_fields();
 }
 
-    
 ### single or both strands
 $str = "";
 if ($query->param('strand') =~ /single/) {
