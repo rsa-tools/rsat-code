@@ -50,7 +50,7 @@ sub PrintOrthoSelectionSection {
 
   ################################################################
   ### gene queries
-  print "<B><A HREF='help.get-orthologs.html#queries'>Query genes</A></B>&nbsp;";
+  print "<B><A HREF='help.retrieve-seq.html#genes'>Query genes</A></B>&nbsp;";
   print "<BR>\n";
   print $query->textarea(-name=>'queries',
 			 -default=>$default{queries},
