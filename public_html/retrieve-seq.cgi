@@ -51,17 +51,6 @@ if ($query->param('single_multi_org') eq 'multi') {
     &cgiMessage(join("<P>",
 		     "The computation can take a more or less important time depending on the taxon size.",
 		     "If the answer does not appear in due time, use the option <i>output email</i>"));
-
-
-#     my $gene_col = $query->param('gene_col');
-#     if (&IsNatural($gene_col) && ($gene_col > 0)) {
-# 	$parameters .= " -gene_col ".$gene_col;
-#     }
-#     my $org_col = $query->param('org_col');
-#     if (&IsNatural($org_col) && ($org_col > 0)) {
-# 	$parameters .= " -org_col ".$org_col;
-#     }
-    
 } else {
     $command = "$SCRIPTS/retrieve-seq";
 
@@ -119,7 +108,7 @@ if ($seq_label eq 'gene identifier') {
 ### limits ###
 if (&IsInteger($query->param('from'))) {
     $parameters .= " -from ".$query->param('from');
-}  
+}
 if (&IsInteger($query->param('to'))) {
     $parameters .= " -to ".$query->param('to');
 }
@@ -222,7 +211,7 @@ if (($query->param('output') =~ /display/i) ||
 
     ### prepare data for piping
     &PipingFormForSequence();
-    
+
     print "<HR SIZE = 3>";
 
 #} elsif 
