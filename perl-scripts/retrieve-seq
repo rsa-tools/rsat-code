@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.63 2007/12/12 22:30:37 jvanheld Exp $
+# $Id: retrieve-seq,v 1.64 2008/01/08 12:20:14 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -53,7 +53,7 @@ $supported_label_fields = join ",", @supported_label_fields;
 ## Label fields
 if (scalar(@label_fields) <= 0) {
     @label_fields = "name";
-} 
+}
 
 
 ################################################################
