@@ -448,7 +448,7 @@ sub LoadFeatures {
       if (-e $annotation_table) {
 	  $self->push_attribute("annotation_tables", $annotation_table);
       } else {
-	  &RSAT::message::Warning("Annotation table not found, skipped", $annotation_table);
+	  &RSAT::message::Warning("Annotation table not found, skipped", $annotation_table) if ($main::verbose >= 2);
       }
     }
   }
