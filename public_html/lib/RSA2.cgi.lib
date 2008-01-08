@@ -3,54 +3,122 @@ use CGI;
 
 package main;
 
-#use CGI::Carp;
 
-#  #### redirect error log to a file
-#  BEGIN {
-#      $ERR_LOG = "/dev/null";
-#  #    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
-#      use CGI::Carp qw(carpout);
-#      open (LOG, ">> $ERR_LOG")
-#  	|| die "Unable to redirect log\n";
-#      carpout(*LOG);
-#  }
+################################################################
+## Load the default parameters for get-orthologs`
+sub LoadGetOrthoDefault {
+  $default{organism} = "Escherichia_coli_K12";
+  $default{taxon} = "Gammaproteobacteria";
+  $default{queries} = '';
+  $default{full} = '';
+  $default{match_description} = '';
+  $default{feattype} = "CDS";
+  $default{ortho_lth_ali_len} = 50;
+  $default{ortho_uth_e_value} = 1e-5;
+  $default{ortho_uth_rank} = 1;
+  #$default{ortho_uth_s_rank} = 1;
+  $default{return_ident} = "checked";
+  $default{return_ali_len} = "";
+  $default{return_mismat} = "";
+  $default{return_gap_open} = "";
+  $default{return_e_value} = "checked";
+  $default{return_bit_sc} = "";
+  $default{return_rank} = "";
+  #$default{return_s_rank} = "";
+}
+
+################################################################
+## Print the options for selecting ortholofs:
+## - query organism
+## - query genes
+## - reference taxon
+sub PrintOrthoSelectionSection {
 
 
-### For debugging
+  ################################################################
+  ## List of organisms for which ortholog search is supported
+  ## This is temporary, we need to find a way to provide orhtologs for all organisms
+  my @supported_orthologs = qw(
+			       Bacillus_subtilis
+			       Brucella_melitensis
+			       Escherichia_coli_K12
+			       Saccharomyces_cerevisiae
+			      );
+
+  #### choice of the organism
+  &OrganismPopUp(@supported_orthologs);
+
+  ################################################################
+  ### gene queries
+  print "<B><A HREF='help.get-orthologs.html#queries'>Query genes</A></B>&nbsp;";
+  print "<BR>\n";
+  print $query->textarea(-name=>'queries',
+			 -default=>$default{queries},
+			 -rows=>3,
+			 -columns=>40);
+  ### option to upload a file with the gene list from the client machine 
+  print "<BR>Upload gene list from file<BR>\n";
+  print $query->filefield(-name=>'uploaded_file',
+			  -default=>'',
+			  -size=>45,
+			  -maxlength=>200);
+  print "<p>\n";
+
+  ## Taxon of interest
+  &TaxonPopUp();
+}
+
+
+################################################################
+## For debugging: if the echo level is >= 2, display the parameters
+## transmitted to the CGI query.
+## This method should be called from the cgi scripts
 sub ListParameters {
   my($cgi_query) = $_[0];
   @param = $query->param;
-  print "<H3>Parameter values</H3>";
-  print "<UL><TABLE>\n";
-  foreach $key (@param) {
-    print "<TR>";
-    print "<TD VALIGN=TOP><B>$key</B></TD>";
-    $value = $query->param($key);
-    $value =~ s/\n/<BR>/g;
-    print "<TD VALIGN=TOP>$value</TD>";
-    print "</TR>\n";
+  print "<H3>CGI query parameters</H3>";
+  print "<ul><table>\n";
+  foreach my $key (@param) {
+    print "<tr>";
+    print "<td valign=top><b>$key</b></td>";
+    my $value = $query->param($key);
+    $value =~ s/\n/<br>/g;
+    print "<td valign=top>$value</td>";
+    print "</tr>\n";
   }
-  print "</TABLE></UL>\n";
+  print "</table></ul>\n";
 }
 
-# ################################################################
-# #### list parameters from a CGI query
-# sub ListParameters {
-#   my $cgi_query = $_[0];
-#   @param = $query->param;
-#   print "<H3>Parameter values</H3>";
-#   print "<UL><TABLE>\n";
-#   foreach $key (@param) {
-#     print "<TR>";
-#     print "<TD VALIGN=TOP><B>$key</B></TD>";
-#     $value = $query->param($key);
-#     $value =~ s/\n/<BR>/g;
-#     print "<TD VALIGN=TOP>$value</TD>";
-#     print "</TR>\n";
-#   }
-#   print "</TABLE></UL>\n";
+################################################################
+## List the default parameter values for a CGI script
+## This method should be called from the *_form.cgi scripts
+sub ListDefaultParameters {
+  @param = $query->param;
+  print "<b>Default parameter values</b>";
+  print "<ul><table>\n";
+  foreach my $key (sort keys %main::default) {
+    print "<tr>";
+    print "<td valign=top><b>$key</b></td>";
+    my $value = $default{$key};
+    $value =~ s/\n/<br>/g;
+    print "<td valign=top>$value</td>";
+    print "</tr>\n";
+  }
+  print "</table></ul>\n";
+}
 
-# }
+################################################################
+## returns all the fields of the %input hash
+## TO CHECK: IS THIS METHOD STILL USED ? LOOKS LIKE AN OLD VERSION OF &LISTPARAMETERS()
+sub Print_CGI_Input {
+    print "<PRE>";
+    foreach $key (sort keys %input) {
+	print "$key\t$input{$key}\n";
+    }
+    print "</PRE>";
+
+    print "Parameters: $parameters<P><P>\n";
+}
 
 
 ## ##############################################################
@@ -294,27 +362,6 @@ sub GetSequenceFile {
 }
 
 
-### input pattern ####
-#sub GetPatternFile {
-#  ### usage : $pattern_file = &GetPatternFile;
-#  unless ($pattern_file = $query->param(pattern_file)) { ### pattern file already on the server side
-#    $pattern_file = "$TMP/$tmp_file_name.pat"; ### create a new temporary pattern file
-#    
-#    ### read pattern from the textarea "patterns"
-#    if ($query->param('patterns') =~ /\S/) {
-#      if (open SEQ, ">$pattern_file") {
-#	print SEQ $query->param('patterns');
-#	close SEQ;
-#      }
-#    } else {
-#      &cgiError("The pattern box should not be empty.");
-#    }
-#  }
-#  &DelayedRemoval("$pattern_file"); ### remove the file after one hour
-#  return($pattern_file);
-#}
-
-
 #### warn the users to wait for complete result before clicking on piping buttons
 sub PipingWarning {
     my $message = "One or several button(s) will appear at the bottom of this page, ";
@@ -351,38 +398,72 @@ sub OrganismPopUpString {
 }
 
 
+
 ################################################################
 ### display a pop-up menu with the supported taxonomy
 ### on the basis of the configuration found in RSA.config
-#sub TaxonPopUp {
-#  print &TaxonPopUpString();
-#}
-# sub TaxonPopUpString {
-#   require RSAT::Tree;
-#   #require RSAT::TreeNode;
-#   my $tree = new RSAT::Tree();
-#   $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
-#   #    $tree->LoadSupportedTaxonomy(1);
-#   my @supported_taxons = $tree->node_names();
-#   my %indented_taxon = $tree->as_indented_hash(" ","Bacteria");
-#   my $taxonomyPopup = "";
-#   $taxonomyPopup .=  "<B>Taxon</B>&nbsp;";
-#   $taxonomyPopup .=  "<SELECT NAME='taxon'>\n";
-#   foreach my $taxon (@supported_taxons) {
-#     if ($indented_taxon{$taxon}) {
-#       $name = $indented_taxon{$taxon};
-#       if ((lc($taxon) eq lc($main::default{taxon})) ||
-# 	  (lc($name) eq lc($main::default{taxon}))) {
-# 	$taxonomyPopup .=  "<OPTION SELECTED VALUE='$taxon'>$name\n";
-#       } else {
-# 	$taxonomyPopup .=  "<OPTION VALUE='$taxon'>$name\n";
-#       }
-#     }
-#   }
-#   $taxonomyPopup .=  "</SELECT>";
-#   $taxonomyPopup .=  "<BR>\n";
-#   return $taxonomyPopup;
-# }
+sub TaxonPopUp {
+    print &TaxonPopUpString();
+}
+sub TaxonPopUpStringIndented {
+    require RSAT::Tree;
+    my $tree = new RSAT::Tree();
+    $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
+#    $tree->LoadSupportedTaxonomy(1);
+    my @supported_taxons = $tree->node_names();
+    my $indent_char = ":-";
+
+    my %indented_taxa = ($tree->as_indented_hash($indent_char,"Bacteria"),
+			 $tree->as_indented_hash($indent_char,"Fungi"));
+    my $taxonomyPopup = "";
+    $taxonomyPopup .=  "<B>Taxon</B>&nbsp;";
+    $taxonomyPopup .=  "<SELECT NAME='taxon'>\n";
+    foreach my $taxon (@supported_taxons) {
+      if ($indented_taxa{$taxon}){
+	$name = $indented_taxa{$taxon};
+	if ((lc($taxon) eq lc($main::default{taxon})) ||
+	    (lc($name) eq lc($main::default{taxon}))) {
+	    $taxonomyPopup .=  "<OPTION SELECTED VALUE='$taxon'>$name\n";
+	  } else {
+	    $taxonomyPopup .=  "<OPTION VALUE='$taxon'>$name\n";
+	  }
+      }
+    }
+    $taxonomyPopup .=  "</SELECT>";
+    $taxonomyPopup .=  "<BR>\n";
+    return $taxonomyPopup;
+}
+
+sub TaxonPopUpString {
+    require RSAT::Tree;
+    my $tree = new RSAT::Tree();
+    $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
+
+
+    my @taxa = $tree->get_node_descendents_names("Bacteria");
+    push @taxa, $tree->get_node_descendents_names("Fungi");
+    @taxa = sort @taxa;
+
+    my $taxonomyPopup = "";
+    $taxonomyPopup .=  "<B>Taxon</B>&nbsp;";
+    $taxonomyPopup .=  "<SELECT NAME='taxon'>\n";
+    foreach my $taxon (@taxa) {
+      my $name = $taxon;
+      $label =~ s/_/ /g;
+      if ((lc($taxon) eq lc($main::default{taxon})) ||
+	  (lc($name) eq lc($main::default{taxon}))) {
+	$taxonomyPopup .=  "<OPTION SELECTED VALUE='$taxon'>$name\n";
+      } else {
+	$taxonomyPopup .=  "<OPTION VALUE='$taxon'>$name\n";
+      }
+    }
+    $taxonomyPopup .=  "</SELECT>";
+    $taxonomyPopup .=  "<BR>\n";
+    return $taxonomyPopup;
+}
+
+
+
 
 ################################################################
 ## MATRICES
@@ -437,7 +518,7 @@ print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='pseudo_prior' $che
 
 
 ################################################################
-## BACKGROUND MODEL
+## BACKGROUND MODEL for matrix-based programs
 sub GetBackgroundModel {
 
 my $bg_input = shift;
@@ -657,20 +738,10 @@ sub PrintHtmlTable {
     }
 }
 
-sub Print_CGI_Input {
-### returns all the fields of the %input hash
-    print "<PRE>";
-    foreach $key (sort keys %input) {
-	print "$key\t$input{$key}\n";
-    }
-    print "</PRE>";
-
-    print "Parameters: $parameters<P><P>\n";
-}
 
 
 ################################################################
-##### Save the command string in a temporry file for debugging
+## Save the command string in a temporary file for debugging
 sub SaveCommand {
     my ($command, $tmp_file_name) = @_;
 
@@ -686,8 +757,8 @@ sub SaveCommand {
 
 
 ################################################################
-#### save the result in a temporary file on the server
-#### this file will be deleted after some delay
+## Save the result in a temporary file on the server this file will be
+## deleted after some delay
 sub ServerOutput {
     #### redirect the task to email output
     &EmailTheResult(@_);
@@ -781,17 +852,23 @@ sub SelectFormat {
 
 
 
-
-
 ################################################################
 #
 # Pipe the result to another command
 #
 sub PipingFormForSequence {
+
     ## Choose organism-specific or alternative background
     if ($query->param('single_multi_org') eq 'multi') {
-	$oligo_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"Residue frequencies from input sequence\">";
-	$dyad_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"monads\">";
+
+#	$oligo_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"Residue frequencies from input sequence\">";
+#	$dyad_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"monads\">";
+      $oligo_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"background\">";
+      $oligo_background_model .= "<INPUT type=\"hidden\" NAME=\"bg_level\" VALUE=\"taxon\">";
+      $oligo_background_model .= "<INPUT type=\"hidden\" NAME=\"taxon\" VALUE=".$query->param('taxon').">";
+      $dyad_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"background\">";
+      $dyad_background_model .= "<INPUT type=\"hidden\" NAME=\"bg_level\" VALUE=\"taxon\">";
+      $dyad_background_model .= "<INPUT type=\"hidden\" NAME=\"taxon\" VALUE=".$query->param('taxon').">";
     } else {
 	#### choose background model for oligo-analysis
 	if ($seq_type =~ /upstream/) {
@@ -827,6 +904,7 @@ sub PipingFormForSequence {
     <td align=center>
 	<FORM METHOD="POST" ACTION="oligo-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	$oligo_background_model
@@ -838,6 +916,7 @@ sub PipingFormForSequence {
     <td align=center>
 	<FORM METHOD="POST" ACTION="dyad-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	$dyad_background_model
@@ -849,6 +928,7 @@ sub PipingFormForSequence {
     <td align=center>
 	<FORM METHOD="POST" ACTION="position-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="hidden" NAME="background" VALUE="$background">
@@ -860,6 +940,7 @@ sub PipingFormForSequence {
     <td align=center>
 	<FORM METHOD="POST" ACTION="ORM_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	$oligo_background_model
@@ -884,6 +965,7 @@ sub PipingFormForSequence {
     <td align=center>
 	<FORM METHOD="POST" ACTION="consensus_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="consensus">
@@ -894,6 +976,7 @@ sub PipingFormForSequence {
     <td align=center>
 	<FORM METHOD="POST" ACTION="gibbs_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="gibbs sampler">
@@ -916,6 +999,7 @@ sub PipingFormForSequence {
     <td align=center>
 	<FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="dna-pattern">
@@ -926,9 +1010,9 @@ sub PipingFormForSequence {
     <td align=center>
         <FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="hidden" NAME="background" VALUE="$background">
 	<INPUT type="submit" value="matrix-scan (matrices)">
 	</FORM>
 	<b><font color=red>New !</font></b>
@@ -938,6 +1022,7 @@ sub PipingFormForSequence {
     <td align=center>
 	<FORM METHOD="POST" ACTION="patser_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="patser (matrices)">
@@ -987,6 +1072,281 @@ sub PipingFormForSequence {
 </table>
 End_of_form
 }
+
+
+
+################################################################
+## Background models based on a genome subset
+sub PrintGenomeSubsetBgOptions {
+  $checked{$default{bg_level}} = "CHECKED";
+  $checked{$default{freq_estimate}} = "CHECKED";
+
+  #### Calibrated on genome subsets
+  print( "<br><input type='radio' NAME='freq_estimate' VALUE='background' $checked{background}>");
+  print ("<b>Genome subset</b>");
+#  print "<ul>";
+  print ( "&nbsp;&nbsp;<a href='help.oligo-analysis.html#background'>Sequence type</a> &nbsp;&nbsp;&nbsp;&nbsp;", 
+	  $query->popup_menu(-name=>'background',
+			     -Values=>["upstream","upstream-noorf","intergenic"],
+			     -default=>$default{background}));
+
+
+  print ("<ul>");
+  print( "<input type='radio' NAME='bg_level' VALUE='organism' $checked{organism}>", &OrganismPopUpString());
+  print( "<br><input type='radio' NAME='bg_level' VALUE='taxon' $checked{taxon}>", &TaxonPopUpString());
+  print ("</ul>");
+#  print "</ul>";
+
+
+  print "<p>";
+}
+
+################################################################
+## Background model options for oligo-analysis + ORM
+sub PrintOligoBackgroundOptions {
+  $checked{$default{freq_estimate}} = "CHECKED";
+  print "<A HREF='help.oligo-analysis.html#exp_freq'><B>Background model</B></A>&nbsp;<p>";
+  &PrintGenomeSubsetBgOptions();
+
+  #### Estimated from the input sequence set
+
+  print ("<br><b>Estimate from input sequence</b>");
+
+  ## Markov chain model
+  print ("<br><input type='radio' NAME='freq_estimate' VALUE='Markov Chain (higher order dependencies)' $checked{'Markov Chain (higher order dependencies)'}>", 
+	 "Markov Chain (higher order dependencies)");
+
+  print "&nbsp;&nbsp;order &nbsp;";
+  print $query->textfield(-name=>'markov_order',
+			  -default=>$default{markov_order},
+			  -size=>5);
+
+  #### Lexicon partitioning
+  #print "<br><input type='radio' NAME='freq_estimate' VALUE='Lexicon partitioning' $checked{'Lexicon partitioning'}>Lexicon partitioning<p>";
+
+  #### Bernouilli model
+  #print "<br><input type='radio' NAME='freq_estimate' VALUE='Residue frequencies from input sequence' $checked{'Residue frequencies from input sequence'}>Residue frequencies from input sequence<p>";
+
+  #### equiprobable residues
+  print "<br><input type='radio' NAME='freq_estimate' VALUE='Equiprobable residues' $checked{'Equiprobable residues'}>Equiprobable residues (<A HREF='help.oligo-analysis.html#equiprobable'>usually NOT recommended</a>)<p>";
+
+  #### custom expected frequency file
+  print ("<a href='help.oligo-analysis.html#upload_freq_file'><b>Upload your own expected frequency file</b></a><BR>");
+  print ("<br><input type='radio' NAME='freq_estimate' VALUE='file_upload' $checked{'file_upload'}>");
+  print ($query->filefield(-name=>'upload_freq_file',
+			   -default=>'starting value',
+			   -size=>30,
+			   -maxlength=>200));
+  print "<p>";
+}
+
+
+################################################################
+## Load default prameters for dyad-analysis form
+sub LoadDyadDefault {
+  ### default values for filling the form
+  $default{organism} = "Saccharomyces cerevisiae";
+  $default{freq_estimate} = "background";
+  $default{background} = "upstream-noorf";
+  $default{bg_level} = "organism";
+  #$default{title} = "";
+  $default{sequence} = "";
+  $default{sequence_format} = "fasta";
+  $default{sequence_file} = "";
+  $default{upload_file} = "";
+  $default{oligo_size} = 3;
+  $default{spacing_from} = 0;
+  $default{spacing_to} = 20;
+  $default{strand} = "both strands";
+  $default{noov} = 'checked';
+  $default{purge} = 'checked';
+  $default{dyad_type} = "any dyad";
+  $default{exp_freq} = "background";
+  $default{upload_freq_file} = "";
+  #$default{lth_occ_sig} = "0";
+  $default{to_matrix} = 0;
+
+  ## Return values and thresholds
+  $default{zscore} = '';
+  $default{lth_zscore} = 'none';
+  $default{uth_zscore} = 'none';
+
+  $default{rank} = 'checked';
+  $default{lth_rank} = "none";
+  $default{uth_rank} = "none";
+
+  $default{ratio} = '';
+  $default{lth_ratio} = "none";
+  $default{uth_ratio} = "none";
+
+  $default{occ} = 'checked';
+  $default{lth_occ} = "1";
+  $default{uth_occ} = "none";
+
+  $default{proba} = 'checked';
+  $default{lth_occ_P} = "none";
+  $default{uth_occ_P} = "none";
+
+  $default{eval} = 'checked';
+  $default{lth_occ_E} = "none";
+  $default{uth_occ_E} = "none";
+
+  $default{lth_occ_sig} = "0";
+  $default{uth_occ_sig} = "none";
+
+  $default{freq} = '';
+  $default{lth_observed_freq} = "none";
+  $default{uth_observed_freq} = "none";
+}
+
+################################################################
+## Print background model optiosn for dyad-analysis
+sub PrintDyadBackgroundOptions {
+  $checked{$default{freq_estimate}} = "CHECKED";
+  print "<A HREF='help.oligo-analysis.html#exp_freq'><B>Background model</B></A>&nbsp;<p>";
+
+  &PrintGenomeSubsetBgOptions();
+
+  print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='monads' $checked{monads}>",
+	  "<b>Monad frequencies from the input sequence</b>");
+
+  print "<BR>\n";
+
+  print ("<a href='help.dyad-analysis.html#upload_freq_file'><b>Upload your own expected frequency file</b></a><BR>");
+  print ("<br><input type='radio' NAME='freq_estimate' VALUE='file_upload' $checked{'file_upload'}>");
+  print ($query->filefield(-name=>'upload_freq_file',
+			   -default=>'starting value',
+			   -size=>30,
+			   -maxlength=>200));
+  print "<p>";
+
+}
+
+
+################################################################
+## Table with all the return fields and thresholds for dyad-analysis
+sub PrintDyadReturnFields {
+  my (%args) = @_;
+#  print "<p><br>\n";
+
+  print $query->table({-border=>0,-cellpadding=>2,-cellspacing=>0, -bgcolor=>'#FFFFFF'},
+		      $query->Tr({-align=>left,-valign=>TOP},
+				 [
+				  $query->th(["<a href='help.oligo-analysis.html#return_fields'><b>Return fields</b></a>",
+					      " <a href='help.oligo-analysis.html#thresholds'>Lower<br>Threshold</a> ",
+					      " <a href='help.oligo-analysis.html#thresholds'>Upper<br>Threshold</a> "]),
+
+				  ### occurrences
+				  $query->td([$query->checkbox(-name=>'occ',
+							       -checked=>$default{occ},
+							       -label=>' Occurrences '),
+					      $query->textfield(-name=>'lth_occ',
+								-default=>$default{lth_occ},
+								-size=>5),
+					      $query->textfield(-name=>'uth_occ',
+								-default=>$default{uth_occ},
+								-size=>5)
+					     ]),
+
+				  ### binomial proba
+				  $query->td([$query->checkbox(-name=>'proba',
+							       -checked=>$default{proba},
+							       -label=>' Binomial proba '),
+					      $query->textfield(-name=>'lth_occ_P',
+								-default=>$default{lth_occ_P},
+								-size=>5),
+					      $query->textfield(-name=>'uth_occ_P',
+								-default=>$default{uth_occ_P},
+								-size=>5)]),
+				  ### binomial E-value
+				  $query->td([$query->checkbox(-name=>'eval',
+							       -checked=>$default{eval},
+							       -label=>' Binomial E-value '),
+					      $query->textfield(-name=>'lth_occ_E',
+								-default=>$default{lth_occ_E},
+								-size=>5),
+					      $query->textfield(-name=>'uth_occ_E',
+								-default=>$default{uth_occ_E},
+								-size=>5),
+					     ]),
+
+				  ### significance index
+				  $query->td([$query->checkbox(-name=>'proba',
+							       -checked=>$default{proba},
+							       -label=>' Significance '),
+					      $query->textfield(-name=>'lth_occ_sig',
+								-default=>$default{lth_occ_sig},
+								-size=>5),
+					      $query->textfield(-name=>'uth_occ_sig',
+								-default=>$default{uth_occ_sig},
+								-size=>5)
+					     ]),
+
+				  ### Z-scores
+				  $query->td([$query->checkbox(-name=>'zscore',
+							       -checked=>$default{zscore},
+							       -label=>' Z-scores '),
+					      $query->textfield(-name=>'lth_zscore',
+								-default=>$default{lth_zscore},
+								-size=>5),
+					      $query->textfield(-name=>'uth_zscore',
+								-default=>$default{uth_zscore},
+								-size=>5)
+					     ]),
+
+				  ### frequencies
+				  $query->td([$query->checkbox(-name=>'freq',
+							       -checked=>$default{freq},
+							       -label=>' Frequencies '),
+					      $query->textfield(-name=>'lth_observed_freq',
+								-default=>$default{lth_observed_freq},
+								-size=>5),
+					      $query->textfield(-name=>'uth_observed_freq',
+								-default=>$default{uth_observed_freq},
+								-size=>5)
+					     ]),
+
+
+				  ### ratio
+				  $query->td([$query->checkbox(-name=>'ratio',
+							       -checked=>$default{ratio},
+							       -label=>' Obs/exp ratio '),
+					      $query->textfield(-name=>'lth_ratio',
+								-default=>$default{lth_ratio},
+								-size=>5),
+					      $query->textfield(-name=>'uth_ratio',
+								-default=>$default{uth_ratio},
+								-size=>5)
+					     ]),
+
+				  ### rank
+				  $query->td([$query->checkbox(-name=>'rank',
+							       -checked=>$default{rank},
+							       -label=>' Rank '),
+					      $query->textfield(-name=>'lth_rank',
+								-default=>$default{lth_rank},
+								-size=>5),
+					      $query->textfield(-name=>'uth_rank',
+								-default=>$default{uth_rank},
+								-size=>5)
+					     ]),
+
+				 ]
+				)
+		     );
+
+  #### Convert patterns to matrix
+  unless ($args{no_matrix}) {
+    print $query->checkbox(-name=>'to_matrix',
+			   -checked=>$default{to_matrix},
+			   -label=>'');
+    print "&nbsp;Convert assembled patterns to Position-Specific Scoring Matrices (<font color=red>Can be time-consuming</font>)";
+    print "<BR>";
+  }
+}
+
+
+
 
 1; # return true
 

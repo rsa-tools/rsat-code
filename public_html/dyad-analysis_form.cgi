@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.15 2008/01/07 02:09:44 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.16 2008/01/08 12:16:24 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -13,66 +13,14 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
 $query = new CGI;
 
-### default values for filling the form
-$default{organism} = "Saccharomyces cerevisiae";
-$default{freq_estimate} = "background";
-$default{background} = "upstream-noorf";
-$default{bg_level} = "organism";
-#$default{title} = "";
-$default{sequence} = "";
-$default{sequence_format} = "fasta";
-$default{sequence_file} = "";
-$default{upload_file} = "";
-$default{oligo_size} = 3;
-$default{spacing_from} = 0;
-$default{spacing_to} = 20;
-$default{strand} = "both strands";
-$default{noov} = 'checked';
-$default{purge} = 'checked';
-$default{dyad_type} = "any dyad";
-$default{exp_freq} = "background";
-$default{upload_freq_file} = "";
-#$default{lth_occ_sig} = "0";
-$default{to_matrix} = 0;
-
-## Return values and thresholds
-$default{zscore} = '';
-$default{lth_zscore} = 'none';
-$default{uth_zscore} = 'none';
-
-$default{rank} = 'checked';
-$default{lth_rank} = "none";
-$default{uth_rank} = "none";
-
-$default{ratio} = '';
-$default{lth_ratio} = "none";
-$default{uth_ratio} = "none";
-
-$default{occ} = 'checked';
-$default{lth_occ} = "1";
-$default{uth_occ} = "none";
-
-$default{proba} = 'checked';
-$default{lth_occ_P} = "none";
-$default{uth_occ_P} = "none";
-
-$default{eval} = 'checked';
-$default{lth_occ_E} = "none";
-$default{uth_occ_E} = "none";
-
-$default{lth_occ_sig} = "0";
-$default{uth_occ_sig} = "none";
-
-$default{freq} = '';
-$default{lth_observed_freq} = "none";
-$default{uth_observed_freq} = "none";
+%default = ();
+&LoadDyadDefault();
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -89,18 +37,12 @@ print "<CENTER>";
 print "Analysis of spaced dyads in a set of DNA sequences<P>\n";
 print "</CENTER>";
 
+&ListDefaultParameters() if ($ENV{rsat_echo} >=2);
+
+
 print $query->start_multipart_form(-action=>"dyad-analysis.cgi");
 
-#print "<FONT FACE='Helvetica'>";
-
-### Title
-#print "<B><A HREF='help.dyad-analysis.html#title'>Title</A></B>&nbsp;\n";
-#print $query->textfield(-name=>'title',
-#			-default=>$default{title},
-#			-size=>50);
-#
-#print "<BR>\n";
-
+print "<hr/>\n";
 &DisplaySequenceChoice();
 
 #### purge sequences
@@ -108,16 +50,15 @@ print $query->checkbox(-name=>'purge',
   		       -checked=>$default{purge},
   		       -label=>'');
 print "&nbsp;<A HREF='help.dyad-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
-print "<BR>";
-print "<HR width=550 align=left>\n";
 
-### oligo size
+### Monad size
+print "<hr/>\n";
 print "<B><A HREF='help.dyad-analysis.html#oligo_size'>Oligonucleotide size</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'oligo_size',
 			 -Values=>[3..3],
 			 -default=>$default{oligo_size});
 
-### spacing
+### Spacing
 print "<A HREF='help.dyad-analysis.html#spacing'><B>Spacing</B></A>&nbsp;\n";
 print "&nbsp;", "from", "&nbsp;";
 print $query->popup_menu(-name=>'spacing_from',
@@ -130,7 +71,7 @@ print $query->popup_menu(-name=>'spacing_to',
 
 print "<BR>\n";
 
-### dyad type
+### Dyad type
 print "<B><A HREF='help.dyad-analysis.html#dyad_type'>Dyad type</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'dyad_type',
 			 -Values=>["inverted repeats",
@@ -139,7 +80,7 @@ print $query->popup_menu(-name=>'dyad_type',
 				   "any dyad"],
 			 -default=>$default{dyad_type});
 
-### strand ###
+### Strand
 print "<BR>";
 print "<B><A HREF='help.dyad-analysis.html#count_strands'>Count on</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'strand',
@@ -152,42 +93,22 @@ print "&nbsp;" x 5;
 print $query->checkbox(-name=>'noov',
 		       -checked=>$default{noov},
 		       -label=>'');
-print "<A HREF='help.dyad-analysis.html#noov'><B>\n";
+print "<a href='help.dyad-analysis.html#noov'><B>\n";
 print "prevent overlapping matches\n";
-print "</B></A>\n";
+print "</b></a>\n";
 
-print "<BR>\n";
+print "<br>\n";
 
-
-print "<HR width=550 align=left>\n";
+print "<hr/>\n";
 
 &PrintDyadBackgroundOptions();
 
-# print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
-# 		    $query->Tr($query->td("<A HREF='help.dyad-analysis.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<BR>")),
-# 		    $query->Tr($query->td(["<INPUT TYPE='radio' NAME='exp_freq' VALUE='dyad freq from intergenic sequences' CHECKED>Dyad frequencies from all intergenic regions<BR>",
-# 					   &OrganismPopUpString])),
-# 		    $query->Tr($query->td([
-# 					   "<INPUT TYPE='radio' NAME='exp_freq' VALUE='monad (word) freq in the input sequences.'>Monad (word) frequencies from the input sequences<BR>",
-# 					   ])),
-# 		    );
+print "<hr/>\n";
 
- print "<HR width=550 align=left>\n";
-
-# ### significance threshold
-# print "<B><A HREF='help.dyad-analysis.html#threshold'>\n";
-# print "Threshold of significance</A> >= \n";
-# print $query->textfield(-name=>'lth_occ_sig',
-# 		  -default=>$default{lth_occ_sig},
-# 		  -size=>5);
-# print "<BR>\n";
-
-&ReturnTable();
-
-
+&PrintDyadReturnFields();
 
 ### send results by email or display on the browser
-print "<HR width=550 align=left>\n";
+print "<hr/>\n";
 
 &SelectOutput();
 
@@ -317,127 +238,3 @@ print "</FONT>\n";
 print $query->end_html;
 
 exit(0);
-
-################################################################
-## Table with all the supported statistics and thresholds
-sub ReturnTable {
-
-    print "<h4>Return</h4>\n";
-
-    print "<BLOCKQUOTE>\n";
-    print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
-			$query->Tr({-align=>left,-valign=>TOP},
-				   [
-				    $query->th([" <A HREF='help.oligo-analysis.html#return_fields'>Fields</A> ",
-						" <A HREF='help.oligo-analysis.html#thresholds'>Lower<BR>Threshold</A> ",
-						" <A HREF='help.oligo-analysis.html#thresholds'>Upper<BR>Threshold</A> "]),
-
-				    ### occurrences
-				    $query->td([$query->checkbox(-name=>'occ',
-								 -checked=>$default{occ},
-								 -label=>' Occurrences '),
-						$query->textfield(-name=>'lth_occ',
-								  -default=>$default{lth_occ},
-								  -size=>5),
-						$query->textfield(-name=>'uth_occ',
-								  -default=>$default{uth_occ},
-								  -size=>5)
-					       ]),
-
-				    ### binomial proba
-				    $query->td([$query->checkbox(-name=>'proba',
-								 -checked=>$default{proba},
-								 -label=>' Binomial proba '),
-						$query->textfield(-name=>'lth_occ_P',
-								  -default=>$default{lth_occ_P},
-								  -size=>5),
-						$query->textfield(-name=>'uth_occ_P',
-								  -default=>$default{uth_occ_P},
-								  -size=>5)]),
-				    ### binomial E-value
-				    $query->td([$query->checkbox(-name=>'eval',
-								 -checked=>$default{eval},
-								 -label=>' Binomial E-value '),
-						$query->textfield(-name=>'lth_occ_E',
-								  -default=>$default{lth_occ_E},
-								  -size=>5),
-						$query->textfield(-name=>'uth_occ_E',
-								  -default=>$default{uth_occ_E},
-								  -size=>5),
-					       ]),
-
-				    ### significance index
-				    $query->td([$query->checkbox(-name=>'proba',
-								 -checked=>$default{proba},
-								 -label=>' Significance '),
-						$query->textfield(-name=>'lth_occ_sig',
-								  -default=>$default{lth_occ_sig},
-								  -size=>5),
-						$query->textfield(-name=>'uth_occ_sig',
-								  -default=>$default{uth_occ_sig},
-								  -size=>5)
-					       ]),
-
-				    ### Z-scores
-				    $query->td([$query->checkbox(-name=>'zscore',
-								 -checked=>$default{zscore},
-								 -label=>' Z-scores '),
-						$query->textfield(-name=>'lth_zscore',
-								  -default=>$default{lth_zscore},
-								  -size=>5),
-						$query->textfield(-name=>'uth_zscore',
-								  -default=>$default{uth_zscore},
-								  -size=>5)
-					       ]),
-
-				    ### frequencies
-				    $query->td([$query->checkbox(-name=>'freq',
-								 -checked=>$default{freq},
-								 -label=>' Frequencies '),
-						$query->textfield(-name=>'lth_observed_freq',
-								  -default=>$default{lth_observed_freq},
-								  -size=>5),
-						$query->textfield(-name=>'uth_observed_freq',
-								  -default=>$default{uth_observed_freq},
-								  -size=>5)
-					       ]),
-
-
-				    ### ratio
-				    $query->td([$query->checkbox(-name=>'ratio',
-								 -checked=>$default{ratio},
-								 -label=>' Obs/exp ratio '),
-						$query->textfield(-name=>'lth_ratio',
-								  -default=>$default{lth_ratio},
-								  -size=>5),
-						$query->textfield(-name=>'uth_ratio',
-								  -default=>$default{uth_ratio},
-								  -size=>5)
-					       ]),
-
-				    ### rank
-				    $query->td([$query->checkbox(-name=>'rank',
-								 -checked=>$default{rank},
-								 -label=>' Rank '),
-						$query->textfield(-name=>'lth_rank',
-								  -default=>$default{lth_rank},
-								  -size=>5),
-						$query->textfield(-name=>'uth_rank',
-								  -default=>$default{uth_rank},
-								  -size=>5)
-					       ]),
-				    
-				   ]
-				  )
-		       );
-
-#### Convert patterns to matrix
-print $query->checkbox(-name=>'to_matrix',
-		       -checked=>$default{to_matrix},
-		       -label=>'');
-print "&nbsp;Convert assembled patterns to Position-Specific Scoring Matrices (<font color=red>Can be time-consuming</font>)";
-print "<BR>";
-
-
-    print "</blockquote>";
-}
