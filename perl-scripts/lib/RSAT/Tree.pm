@@ -630,28 +630,12 @@ sub as_indented_text{
 =cut
 
 sub as_indented_hash{
-  my $self = shift;
-  my $indent_string=shift||"-";
-  my $start_node_id = shift||$self->get_root_node()->getid();
+  my ($self, $indent_string, $start_node_id) = @_;
   unless (defined($indent_string)) {
-      $indent_string = $default_indent_string;;
+    $indent_string = $default_indent_string;;
   }
   my %taxons =();
   $self->set_all_levels();
-
-
-#   my $start_node=$self->get_node_by_id($start_node_id);
-#   if (! $start_node){
-#       die("No node with this id in the tree : \"$start_node_id\" !");
-#   }
-#   my $initlevel = $start_node->get_level();
-#   foreach my $n ($start_node,$start_node->get_all_descendents(undef,"node")){
-#       if ($n->is_leaf()){
-# 	  die("This node must not be a leaf ! ".$n->getid());
-#       }else{
-# 	  $taxons{$n->getid()} = join(" ",$indent_string x ($n->get_level() - $initlevel),$n->getid())."\n";
-#       }
-#   }
 
   my $start_node=$self->get_node_by_id($start_node_id);
   if (! $start_node){
