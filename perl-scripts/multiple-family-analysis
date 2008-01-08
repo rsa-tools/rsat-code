@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.235 2007/12/24 10:41:57 rsat Exp $
+# $Id: multiple-family-analysis,v 1.236 2008/01/08 12:32:07 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -17,7 +17,7 @@ BEGIN {
     require "RSA.seq.lib";
     require "RSA.disco.lib";
     require "RSA.help.pl";
-    require "RSA.cgi.lib";
+    require "RSA2.cgi.lib";
     push @INC, "$ENV{RSAT}/perl-scripts/parsers/";
     require "lib/load_classes.pl";
     require "lib/util.pl";
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.235 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.236 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
