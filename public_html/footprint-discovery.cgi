@@ -5,6 +5,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
+require "RSA.disco.lib";
 require "RSA2.cgi.lib";
 
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
@@ -64,64 +65,31 @@ unless ($taxon = $query->param('taxon')) {
 }
 $parameters .= " -taxon $taxon";
 
+## Return fields and threshold values for dyad-analysis
+&CGI_return_fields();
 
-## ##############################################################
-## Thresholds
-#my @parameters = $query->param();
-#foreach my $param (@parameters) {
-#    if ($param =~ /^return_(.+)/) {
-#	my $field = $1;
-#	$parameters .= " -return ".$field;
-#    } elsif ($param =~ /^lth_(.+)/) {
-#	my $field = $1 ;
-#	my $value = $query->param($param);
-#	next unless (&IsReal($value));
-#	$parameters .= " -lth ".$field." ".$value;
-#    } elsif ($param =~ /^uth_(.+)/) {
-#	my $field = $1 ;
-#	my $value = $query->param($param);
-#	next unless (&IsReal($value));
-#	$parameters .= " -uth ".$field." ".$value;
-#    }
-#}
-### Thresholds are NOT used by footprint-discovery ! (defaut parma od dyad-analysis)
-
-## Add options
+## Infer operon leader genes
 if ($query->param('leaders')) {
   $parameters .= " -infer_operons";
 }
 
+## Dyad filter
 if (!$query->param('dyads_filter')) {
   $parameters .= " -no_filter";
 }
 
+## Background model
 $parameters .= " -bg_model ".$query->param('bg_model');
+
+## Output prefix
 $parameters .= " -o ".$file_prefix;
 
 ## Report the command
 print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 
-################################################################
-#### run the command
-#if ($query->param('output') eq "display") {
-#    &PipingWarning();
-#
-#    open RESULT, "$command $parameters |";
-#
-#    print '<H2>Result</H2>';
-#    &PrintHtmlTable(RESULT, $result_file, true);
-#    close(RESULT);
-#
-#    &PipingForm();
-#
-#    print "<HR SIZE = 3>";
-#} elsif ($query->param('output') =~ /server/i) {
-#    &ServerOutput("$command $parameters", $query->param('user_email'));
-#} else { 
 $index_file = $tmp_file_name."/footprints_index.html";
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file);
-#&EmailTheResult("$command $parameters", $query->param('user_email'));
-#}
+
 print $query->end_html();
 
 exit(0);
