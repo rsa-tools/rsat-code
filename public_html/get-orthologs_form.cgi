@@ -10,7 +10,6 @@ BEGIN {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
-require "RSA.cgi.lib";
 require "RSA2.cgi.lib";
 use RSAT::Tree;
 
@@ -23,27 +22,14 @@ $query = new CGI;
 ################################################################
 ## Initialize parameters
 
-@selected_organisms = qw(
-			 Bacillus_subtilis
-			 Brucella_melitensis
-			 Escherichia_coli_O157H7
-			 Escherichia_coli_K12
-			 Pseudomonas_putida_KT2440
-			 Porphyromonas_gingivalis_W83
-			 Salmonella_typhimurium_LT2
-			 Streptococcus_mutans
-			 Streptomyces_coelicolor
-			 Treponema_denticola_ATCC_35405
-			 );
-
 ## Output fields
 my @output_fields = qw(ident
-			   ali_len
-			   mismat
-			   gap_open
-			   e_value
-			   bit_sc
-			   rank);
+		       ali_len
+		       mismat
+		       gap_open
+		       e_value
+		       bit_sc
+		       rank);
 my %field_description = ();
 $field_description{ident} = "Percentage of identity";
 $field_description{ali_len} = "Alignment length";
@@ -56,33 +42,16 @@ $field_description{rank} = "Rank";
 
 
 ################################################################
-### default values for filling the form
-$default{organism} = "Escherichia_coli_K12";
-$default{taxon} = "Gammaproteobacteria";
-$default{queries} = '';
-$default{full} = '';
-$default{match_description} = '';
-$default{feattype} = "CDS";
-$default{lth_ali_len} = 50;
-$default{uth_e_value} = 1e-5;
-$default{uth_rank} = 1;
-#$default{uth_s_rank} = 1;
-
-$default{return_ident} = "checked";
-$default{return_ali_len} = "";
-$default{return_mismat} = "";
-$default{return_gap_open} = "";
-$default{return_e_value} = "checked";
-$default{return_bit_sc} = "";
-$default{return_rank} = "";
-#$default{return_s_rank} = "";
+### default values for get-orthologs
+%default = ();
+&LoadGetOrthoDefault(\%default);
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
   }
-} 
+}
 
 ################################################################
 ### print the form ###
@@ -100,33 +69,16 @@ print "<BLOCKQUOTE>\n";
 
 print $query->start_multipart_form(-action=>"get-orthologs.cgi");
 
-################################################################
-#### choice of the organism
-&OrganismPopUp(@selected_organisms);
+&ListDefaultParameters() if ($ENV{rsat_echo} >= 2);
 
 ################################################################
-### gene queries
-print "<B><A HREF='help.get-orthologs.html#queries'>Query genes</A></B>&nbsp;";
-print "<BR>\n";
-print $query->textarea(-name=>'queries',
-		       -default=>$default{queries},
-		       -rows=>3,
-		       -columns=>40);
-
-### option to upload a file with the gene list from the client machine 
-print "<BR>Upload gene list from file<BR>\n";
-print $query->filefield(-name=>'uploaded_file',
-			-default=>'',
-			-size=>45,
-			-maxlength=>200);
-print "<p>\n";
-
-################################################################
-## Taxon of interest
-&TaxonPopUp();
+## Print the options for the selection of orthologs
+print "<hr/>\n"; 
+&PrintOrthoSelectionSection();
 
 ################################################################
 ## Return fields + thresholds
+print "<hr/>\n";
 
 print "<B><A HREF='help.get-organisms.html#return'>Return fields</A>&nbsp;</B>\n";
 print "<ul>\n";
@@ -138,7 +90,6 @@ print ("<tr>",
        "</tr>\n");
 foreach my $field (@output_fields) {
     print "\n<tr>\n";
-
     my $return_field = "return_".$field;
     print "<th align=left>";
     print $query->checkbox(-name=>$return_field,
@@ -146,9 +97,7 @@ foreach my $field (@output_fields) {
 			   -label=>' ');
     print join "", "<a href='help.get-organisms.html#",$field,"'>", $field_description{$field}, "</a>\n";
     print "</th>\n";
-
-				     
-    foreach my $th ("lth", "uth") {
+    foreach my $th ("ortho_lth", "ortho_uth") {
 	my $param = $th."_".$field;
 	my $default_param = "none";
 	if (defined($default{$param})) {
@@ -168,7 +117,7 @@ print "</ul>\n";
 
 ################################################################
 ### send results by email or display on the browser
-print "<p>\n"; 
+print "<hr/>\n"; 
 &SelectOutput();
 
 ################################################################
