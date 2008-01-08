@@ -72,12 +72,12 @@ foreach my $param (@parameters) {
     if ($param =~ /^return_(.+)/) {
 	my $field = $1;
 	$parameters .= " -return ".$field;
-    } elsif ($param =~ /^lth_(.+)/) {
+    } elsif ($param =~ /^ortho_lth_(.+)/) {
 	my $field = $1 ;
 	my $value = $query->param($param);
 	next unless (&IsReal($value));
 	$parameters .= " -lth ".$field." ".$value;
-    } elsif ($param =~ /^uth_(.+)/) {
+    } elsif ($param =~ /^ortho_uth_(.+)/) {
 	my $field = $1 ;
 	my $value = $query->param($param);
 	next unless (&IsReal($value));
@@ -134,6 +134,7 @@ sub PipingForm {
 <TD>
 <FORM METHOD="POST" ACTION="retrieve-seq_form.cgi">
 <INPUT type="hidden" NAME="organism" VALUE="$organism">
+<INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 <INPUT type="hidden" NAME="single_multi_org" VALUE="multi">
 <INPUT type="hidden" NAME="seq_label" VALUE="gene identifier + organism + gene name">
 <INPUT type="hidden" NAME="genes" VALUE="selection">
