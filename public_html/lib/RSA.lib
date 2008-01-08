@@ -15,14 +15,6 @@ require RSAT::Tree;
 
 package main;
 
-#$main::tree = new RSAT::Tree();
-#$main::tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism, 1);
-## Load the taxonomical tree of organisms supported in RSAT
-#$main::tree = new RSAT::Tree();
-#my @supported_organisms = sort keys (%supported_organism);
-#$tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism, 1);
-
-
 umask 0022;
 
 ############################################################################
