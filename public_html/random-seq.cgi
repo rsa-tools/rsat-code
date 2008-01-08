@@ -19,7 +19,6 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
-#require "RSA.cgi.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/random-seq";
