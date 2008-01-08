@@ -10,12 +10,6 @@ require "RSA2.cgi.lib";
 
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/footprint-discovery";
-$tmp_file_name = sprintf "footprint-discovery.%s", &AlphaDate();
-$result_dir = $TMP."/".$tmp_file_name;
-$result_dir =~ s|\/\/|\/|g;
-`mkdir -p $result_dir`;
-$file_prefix = $result_dir."/footprints";
-$query_file = $file_prefix."_genes";
 
 #$ENV{rsat_echo}=2;
 
@@ -34,15 +28,25 @@ $query = new CGI;
 $parameters = " -v 1 -index ";
 
 ################################################################
-#### queries
-if ( $query->param('queries') =~ /\S/) {
-    open QUERY, ">".$query_file;
-    print QUERY $query->param('queries');
-    close QUERY;
-    &DelayedRemoval($query_file);
-    $parameters .= " -i ".$query_file;
-} else {
-    &cgiError("You should enter at least one query in the box\n");
+#### Compute the query prefix
+my $query_prefix = "footprints";
+if ($query->param('queries') =~ /\S/) {
+  my @query_lines = split "\n", $query->param('queries');
+  my $l = 0;
+  foreach my $line (@query_lines) {
+    $l++;
+    $line =~ s/^\s+//;
+    my @fields = split /\s+/, $line;
+    push @query_genes,  $fields[0];
+  }
+
+  if (scalar(@query_genes) == 1) {
+    $query_prefix = $query_genes[0];
+  } elsif (scalar(@query_genes) <= 10) {
+    $query_prefix = join "_", @query_genes;
+  } else {
+    $query_prefix = scalar(@query_genes)." genes";
+  }
 }
 
 ################################################################
@@ -64,6 +68,28 @@ unless ($taxon = $query->param('taxon')) {
     &cgiError("You should specify a taxon");
 }
 $parameters .= " -taxon $taxon";
+
+################################################################
+## File prefix
+$tmp_file_name = join( "_", "footprint-discovery", $taxon, $organism, $query_prefix, &AlphaDate());
+$result_subdir = $tmp_file_name;
+$result_dir = $TMP."/".$result_subdir;
+$result_dir =~ s|\/\/|\/|g;
+`mkdir -p $result_dir`;
+$file_prefix = $result_dir."/".$query_prefix;
+$query_file = $file_prefix."_genes";
+
+################################################################
+## Prepare a file on the server with the query genes
+if ($query->param('queries') =~ /\S/) {
+  open QUERY, ">".$query_file;
+  print QUERY $query->param('queries');
+  close QUERY;
+  &DelayedRemoval($query_file);
+  $parameters .= " -i ".$query_file;
+} else {
+  &cgiError("You should enter at least one query in the box\n");
+}
 
 ## Return fields and threshold values for dyad-analysis
 &CGI_return_fields();
@@ -87,8 +113,11 @@ $parameters .= " -o ".$file_prefix;
 ## Report the command
 print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 
-$index_file = $tmp_file_name."/footprints_index.html";
-&EmailTheResult("$command $parameters", $query->param('user_email'), $index_file);
+$index_file = $result_subdir."/".$query_prefix."_index.html";
+my $mail_title = join (";", "RSAT", "footprint-discovery", &AlphaDate(), $taxon, $organism, $query_prefix);
+&EmailTheResult("$command $parameters", $query->param('user_email'), $index_file,
+		title=>$mail_title,
+	       );
 
 print $query->end_html();
 
