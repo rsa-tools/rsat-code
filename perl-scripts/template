@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.33 2007/12/10 02:56:03 jvanheld Exp $
+# $Id: template,v 1.34 2008/01/08 16:33:32 jvanheld Exp $
 #
 ############################################################
 
@@ -57,7 +57,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.33 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.34 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -228,13 +228,13 @@ sub Verbose {
     if (defined(%main::infile)) {
 	print $main::out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
-	    print $main::out ";\t$key\t$value\n";
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
 	}
     }
     if (defined(%main::outfile)) {
 	print $main::out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
-	    print $main::out ";\t$key\t$value\n";
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
 	}
     }
 }
