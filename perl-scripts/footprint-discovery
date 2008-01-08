@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.17 2008/01/08 22:36:57 jvanheld Exp $
+# $Id: footprint-discovery,v 1.18 2008/01/08 22:45:22 jvanheld Exp $
 #
 ############################################################
 
@@ -125,7 +125,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -308,7 +308,7 @@ package main;
   $cmd .= " -org ".$organism_name;
   $cmd .= " -i ".$outfile{genes};
   $cmd .= " -o ".$outfile{query_seq};
-  print $out "\n", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("query sequence", $outfile{query_seq}) if ($create_index);
 
   ################################################################
@@ -321,7 +321,7 @@ package main;
     $cmd .= " ".$strands;
     $cmd .= " ".$noov;
     $cmd .= " -o ".$outfile{filter_dyads};
-    print $out "\n", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     &IndexOneFile("filter dyads", $outfile{filter_dyads}) if ($create_index);
   }
 
@@ -334,7 +334,7 @@ package main;
   $cmd .= " -taxon ".$taxon;
   $cmd .= " -uth rank 1";	## BBH criterion
   $cmd .= " -o ".$outfile{orthologs};
-  print $out "\n", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("orthologs", $outfile{orthologs}) if ($create_index);
 
 
@@ -346,7 +346,7 @@ package main;
     $cmd .= " -i ".$outfile{orthologs};
     $cmd .= " -o ".$outfile{bbh};
     $cmd .= " -uth interg_dist ".$dist_thr;
-    print $out "\n", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     &IndexOneFile("leader genes", $outfile{bbh}) if ($create_index);
   }
 
@@ -357,7 +357,7 @@ package main;
   $cmd .= " -i ".$outfile{bbh};
   $cmd .= " -noorf";
   $cmd .= " -o ".$outfile{seq};
-  print $out "\n", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("$promoter sequences", $outfile{seq}) if ($create_index);
 
   ################################################################
@@ -368,7 +368,7 @@ package main;
   $cmd .= " -ml 30 -mis 0 -mask_short 30";
   $cmd .= " ".$strands;
   $cmd .= " -o ".$outfile{purged};
-  print $out "\n", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("purged sequences", $outfile{purged}) if ($create_index);
 
   ################################################################
@@ -396,7 +396,7 @@ package main;
   $cmd .= " ".$noov;
   $cmd .= " -sort";
   $cmd .= " -o ".$outfile{dyads};
-  print $out "\n", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("dyads", $outfile{dyads}) if ($create_index);
 
   ## Generate a HTML table with the discovered dyads
@@ -404,7 +404,7 @@ package main;
   $cmd .= " -i ".$outfile{dyads};
   $cmd .= " -font variable -chunk 1000";
   $cmd .= " -o ".$outfile{dyads_html};
-  print $out "\n", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("dyads [htm]", $outfile{dyads_html}) if ($create_index);
 
   ################################################################
@@ -414,7 +414,7 @@ package main;
   $cmd .= " -i ".$outfile{dyads};
   $cmd .= " -subst 0 -maxfl 1 -toppat 50";
   $cmd .= " -o ".$outfile{asmb};
-  print $out "\n", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("assembled dyads", $outfile{asmb}) if ($create_index);
 
   ################################################################
@@ -431,7 +431,7 @@ package main;
   $cmd .= " -scalebar -legend";
   $cmd .= " -scorethick";
   $cmd .= " -o ".$outfile{map};
-  print $out "\n", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("feature map", $outfile{map}, image=>1) if ($create_index);
 
   ################################################################
