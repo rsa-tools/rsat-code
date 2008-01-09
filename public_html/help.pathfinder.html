@@ -122,7 +122,9 @@
 	The tab-delimited format is simpler and therefore faster to transfer than 
 	the gml format. <font color="red">Warning: For tab-delimited format, the user needs 
 	to specify whether or not the graph is directed.</font>
-	See the option described <a href="help.pathfinder.html#directed">below</a> to do this.
+	See the option described <a href="help.pathfinder.html#directed">below</a> to do this.<br>
+	<font color="red">Warning: The tab-delimited format with a node part is restricted to Pathfinder
+	and cannot be read in by other NeAT tools.</font>
 	</ul><ul>
 	<b><A NAME="tab"></A>Tab-delimited</b><br>
 	<ol>
@@ -305,9 +307,10 @@
 	<li>REA does not allow a graph with negative-length cycles reachable from the start nodes. Therefore, negative weights on arcs should be used carefully, if at all.</li>
 	</ol>Runtime:
 	<ol>
-	<li>Runtime depends strongly on the size of the graph and the number of paths asked.<br>
+	<li>Runtime depends strongly on the size of the graph and the number of paths asked. A timeout of 10 minutes has been set.<br>
 	We tested REA on metabolic graphs up to 44,000 arcs. With degree weighting scheme and paths requested up to second rank, the algorithm usually completed within one minute. 
-	Be aware that for unit weighting scheme, runtime can be much longer, because many more paths of equal weight may exist. 
+	Be aware that for unit weighting scheme, runtime can be much longer, because many more paths of equal weight may exist. The timeout set may not be sufficient in these cases
+	and we plan a larger timeout in combination with email notification later on.
 	</li>
 	</ol>
 	</ul>

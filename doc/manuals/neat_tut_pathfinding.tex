@@ -25,7 +25,7 @@ Whether weights are used and how they are set has to be decided depending on the
 
 % what will be covered in this chapter
 In this chapter, we will demonstrate path finding on the example of metabolic networks. We will work on a network assembled
-from all metabolic pathways annotated for the yeast S. cerevisiae in BioCyc (Release 10.6). We will also show
+from all metabolic pathways annotated for the yeast \textit{S. cerevisiae} in BioCyc (Release 10.6). We will also show
 the influence of the weighting scheme on path finding results.
 
 \section{Computing the k shortest paths in weighted networks}
@@ -35,18 +35,19 @@ the influence of the weighting scheme on path finding results.
 % network
 The yeast network constructed from BioCyc data consists of 1,185 nodes and 2,656 edges.
 It has been obtained by unifying 171 metabolic pathways. Note that this network is bipartite, which means that it is made up of
-two different node types: reactions and compounds. An edge never connects two nodes of the same type.
+two different node types: reactions and compounds. An edge never connects two nodes of the same type. For the tutorial, we choose
+to represent the metabolic data as undirected network.
 
 % pathway
 We will recover the heme biosynthesis II pathway given its start and end compound, namely glycine and protoheme. First, we will
-use the "unit" weighting scheme, which sets the same weight on all nodes. Second, we will infer the path using the "degree"
+use the "degree" weighting scheme, which penalizes hub nodes. Second, we will infer the path using the "unit"
 weighting scheme and compare the results.
 
 \subsection{Protocol for the web server}
 
 \begin{enumerate}
 
-\item In the \neat menu, select the command \program{k shortest path finding}.
+\item In the \neat  menu, select the command \program{k shortest path finding}.
 
   In the right panel, you should now see a form entitled
   ``Pathfinder''.
@@ -60,28 +61,74 @@ weighting scheme and compare the results.
 
 \item Click on the button \option{GO}.
 
-  The computation should take a few seconds only. The result page
-  shows you some statistics about the comparison (see interpretation
-  below), and a link pointing to the full result file.
-
+  The computation should take no more than two minutes. When it is finished, a link to the results should appear.
+  
 \item Click on the link to see the full result file.
 
+  It lists a table of all paths found for the requested rank number (5 by default). You can also specify another type of output, for instance a network made up of all paths found. Vary the parameter \option{Output type} for this.
 
 \end{enumerate}
 
+To see how results change with modified weight, you can repeat steps 1 and 2. Before clicking on \option{GO}, choose ``unit weight'' as \option{Weighting scheme} and set the \option{Rank} to 1. Continue as described above. You will obtain another paths table than before.
 
-
+% to be skipped for web tutorial
 \subsection{Protocol for the command-line tools}
+
+If you have installed a stand-alone version of the NeAT distribution (Graphtools), you can use the 
+program Pathfinder on the command-line. This requires to be familiar with the 
+Unix shell interface. See the Readme of Graphtools for more details.
+If you do not have the stand-alone tools, you can skip this section 
+and read the next section (Interpretation of the results). 
 
 \subsection{Interpretation of the results}
 
+\subsubsection{Degree weighting scheme}
+
+First, we run Pathfinder with degree weighting scheme, which is the default weighting scheme of the demo. This weighting scheme sets the weights of compound nodes to their degree and of reaction nodes to one. The first ranked path obtained should look like this:
+
+\textbf{GLY} 5-AMINOLEVULINIC-ACID-SYNTHASE-RXN  5-AMINO-LEVULINATE  PORPHOBILSYNTH-RXN PORPHOBILINOGEN OHMETHYLBILANESYN-RXN HYDROXYMETHYLBILANE UROGENIIISYN-RXN UROPORPHYRINOGEN-III UROGENDECARBOX-RXN COPROPORPHYRINOGEN\_III RXN0-1461 PROTOPORPHYRINOGEN PROTOPORGENOXI-RXN PROTOPORPHYRIN\_IX PROTOHEMEFERROCHELAT-RXN \textbf{PROTOHEME} 	
+
+This path recovers very well the annotated heme biosynthesis II pathway. 
+
+\subsubsection{Unit weighting scheme}
+We repeated path finding on the same network but used the unit weighting scheme, which sets all node weights to one. This is equivalent to path finding in an unweighted network. We obtain a large number of paths of first rank, among them this one:
+
+\textbf{GLY} GLUTATHIONE-SYN-RXN ADP PEPDEPHOS-RXN PROTON PROTOHEMEFERROCHELAT-RXN \textbf{PROTOHEME} 	
+
+This path deviates strongly from the heme biosynthesis II pathway annotated in BioCyc. It contains two hub nodes: ADP and PROTON.  
+
 \subsection{Summary}
+
+To sum up: path finding can predict pathways with high accuracy if an appropriate weighting scheme is applied to the network of interest. Our metabolic example shows that the heme biosynthesis II pathway is accurately predicted when using a weighted network and not found at all when using an unweighted network. The take home message is that in order to use Pathfinder on biological networks, weights have to be carefully adjusted.
 
 \subsection{Strengths and Weaknesses of the approach}
 
+\subsubsection{Strengths}
+The strength of the approach is that for a given network and appropriate weighting scheme, pathways can be discovered with high accuracy. These pathways may be known or novel pathways. Other methods such as pathway mapping
+are unable to recover entirely novel pathways or pathways which are combinations of known pathways.
+
+\subsubsection{Weaknesses}
+The weakness is that the weighting scheme has to be optimized for the biological network of interest.
+
 \subsection{Troubleshooting}
 
+\begin{enumerate}
 
+\item No path could be found.
+
+ Make sure that your start and end nodes are present in your network of interest. If no path could be found, none
+ of the end nodes is reachable from the start nodes, thus no path exists. For big graphs and long waiting time, there is the possibility that
+ the pre-processing step of REA, namely to compute the shortest paths from the source to all nodes with Dijkstra, was not finished before
+ the server timeout. In this case, a path might exist but could not be detected due to the timeout. 
+
+\item An out of memory error occurred. 
+
+ When searching for paths with the "unit" weighting scheme in large networks, there might be 
+ a large number of possible paths for each requested rank.  Although REA has a memory-efficient
+ way to store paths with pointers, there is a limit for the number of paths that can be hold in memory. 
+ Reduce the number of requested paths or the size of the graph or use another weighting scheme. 
+   
+\end{enumerate}
 
 
 
