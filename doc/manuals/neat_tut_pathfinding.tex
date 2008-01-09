@@ -1,0 +1,91 @@
+\chapter{Path finding}
+
+\section{Introduction}
+% what is k shortest path finding
+Given a biological network and two nodes of interest, the aim of k shortest path finding is
+to enumerate the requested number of shortest paths connecting these nodes ordered according to their weight.
+For instance, we might look for all shortest paths between a receptor and a DNA binding protein to predict a signal
+transduction pathway from a protein protein interaction network. Another example is the prediction of a metabolic pathway
+given two reactions or compounds of interest and a metabolic network.\\
+% ubiquitous nodes
+A problem encountered in many biological networks is the presence of so-called hub nodes, that is nodes with
+a large number of connections. For example, in bacterial protein-protein interaction networks,
+CRP has the role of a hub node because it interacts with many targets. Likewise,
+in metabolic networks, compounds such as ADP or water are hubs, since they are generated and consumed by thousands of
+reactions.\\
+% weighted networks
+The shortest path very likely traverses the hub nodes of a network. It depends on the biological context, whether this
+behaviour is desired or not. In metabolic networks, we are less interested in paths going through water or ADP, since
+those paths are often not biological relevant. For instance, we can bypass the glycolysis pathway by connecting glucose
+via ADP to 3-Phosphoglycerate. To avoid finding irrelevant pathways like this one,
+we tested different strategies and concluded that using a weighted network gave the best results \cite{croes05},\cite{croes06}.
+In a weighted network, not the shortest, but the lightest paths are searched. Hub nodes receive large weights, making them
+less likely to appear in a solution path.\\
+Whether weights are used and how they are set has to be decided depending on the biological network of interest.
+
+% what will be covered in this chapter
+In this chapter, we will demonstrate path finding on the example of metabolic networks. We will work on a network assembled
+from all metabolic pathways annotated for the yeast S. cerevisiae in BioCyc (Release 10.6). We will also show
+the influence of the weighting scheme on path finding results.
+
+\section{Computing the k shortest paths in weighted networks}
+
+\subsection{Study case}
+
+% network
+The yeast network constructed from BioCyc data consists of 1,185 nodes and 2,656 edges.
+It has been obtained by unifying 171 metabolic pathways. Note that this network is bipartite, which means that it is made up of
+two different node types: reactions and compounds. An edge never connects two nodes of the same type.
+
+% pathway
+We will recover the heme biosynthesis II pathway given its start and end compound, namely glycine and protoheme. First, we will
+use the "unit" weighting scheme, which sets the same weight on all nodes. Second, we will infer the path using the "degree"
+weighting scheme and compare the results.
+
+\subsection{Protocol for the web server}
+
+\begin{enumerate}
+
+\item In the \neat menu, select the command \program{k shortest path finding}.
+
+  In the right panel, you should now see a form entitled
+  ``Pathfinder''.
+
+\item Click on the button \option{DEMO}.
+
+  The form is now filled with the BioCyc demo network, and the parameters have been
+  set up to their appropriate value for the demonstration. At the top
+  of the form, you can read some information about the goal of the
+  demo, and the source of the data.
+
+\item Click on the button \option{GO}.
+
+  The computation should take a few seconds only. The result page
+  shows you some statistics about the comparison (see interpretation
+  below), and a link pointing to the full result file.
+
+\item Click on the link to see the full result file.
+
+
+\end{enumerate}
+
+
+
+\subsection{Protocol for the command-line tools}
+
+\subsection{Interpretation of the results}
+
+\subsection{Summary}
+
+\subsection{Strengths and Weaknesses of the approach}
+
+\subsection{Troubleshooting}
+
+
+
+
+
+
+
+
+
