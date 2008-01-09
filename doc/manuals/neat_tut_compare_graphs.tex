@@ -82,8 +82,39 @@ command-line. This requires to be familiar with the Unix shell
 interface. If you don't have the stand-alone tools, you can skip this
 section and read the next section (Interpretation of the results).
 
+We will now describe the use of \program{compare-graphs} as a command line tool. 
+The two two-hybrid datasets described
+in the previous section may be downloaded at the following address \url{http://rsat.scmbb.ulb.ac.be/rsat/data/neat\_tuto\_data/}. 
+These are the files \file{uetz\_2001.tab} and \file{ito\_2002.tab}.
 
-\subsection{Interpretation of the result}
+\begin{enumerate}
+
+\item 
+	Go in the directory where the files containing the graphs to compare are 
+	located. 
+
+\item 
+	Type the following command
+	{\color{Blue} \begin{footnotesize} 
+		\begin{verbatim}
+			compare-graphs -v 1 -Q ito_2002.tab -R uetz_2001.tab -return union \ 
+			-o uetz_2001_union_ito_2002.tab
+		\end{verbatim} \end{footnotesize}
+	}		
+\end{enumerate}
+Using these options, some comparaison statistics are displayed and the results are stored in the tab-delimited 
+file \file{uetz\_2001\_union\_ito\_2002.tab}.
+
+In order to compute the difference or the intersection, you must change the \option{-return} option. For example, to compute the intersection, you shoud type. 
+	{\color{Blue} \begin{footnotesize} 
+		\begin{verbatim}
+			compare-graphs -v 1 -Q ito_2002.tab -R uetz_2001.tab -return intersection \ 
+			-o uetz_2001_inter_ito_2002.tab
+		\end{verbatim} \end{footnotesize}
+	}
+
+
+\subsection{Interpretation of the results}
 
 The program \program{compare-graphs} uses symbols $R$ and $Q$
 respectively, to denote the two graphs to be compared. Usually, $R$
@@ -317,7 +348,7 @@ represents (14.10\% of Ito, and 15.52\% of Uetz).
   graphs are very large (e.g. several hundreds of thousands of arcs),
   the processing time may exceed the patience of your browser. In such
   case, you should consider either to install the stand-alone version
-  of \neat on your computer, or o write a script that uses \neat via
+  of \neat on your computer, or write a script that uses \neat via
   their Web services interface.
 
 \end{enumerate}
