@@ -82,13 +82,15 @@ $parameters .= " -matrix_format ".$input_format;
  ################################################################
   ## Background model method
   my $bg_method = $query->param('bg_method');
-  
+
   if ($bg_method eq "bgfile") {
     ## Select pre-computed background file in RSAT genome directory
     my $organism_name = $query->param("organism");
     my $noov = "ovlp";
     my $background_model = $query->param("background");
-    my $oligo_length = 1;
+#    my $oligo_length = 1;
+    my $markov_order = $query->param('markov_order');
+    my $oligo_length = $markov_order + 1;
     $bg_file = &ExpectedFreqFile($organism_name,
 				 $oligo_length, $background_model,
 				 noov=>$noov, str=>"-1str");
