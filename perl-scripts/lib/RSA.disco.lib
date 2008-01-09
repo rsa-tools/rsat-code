@@ -250,12 +250,12 @@ sub CGI_return_fields {
 
     ## Lower threshold value
     if (&IsReal($query->param('lth_'.$field))) {
-      $parameters .= " -lth occ ".$query->param('lth_'.$field);
+      $parameters .= " -lth ".$field." ".$query->param('lth_'.$field);
     }
 
     ## Upper threshold value
     if (&IsReal($query->param('uth_'.$field))) {
-      $parameters .= " -uth occ ".$query->param('uth_'.$field);
+      $parameters .= " -uth ".$field." ".$query->param('uth_'.$field);
     }
   }
   my $return_fields = join ",", sort(keys(%return_fields));
@@ -263,7 +263,7 @@ sub CGI_return_fields {
   unless ($return_fields) {
     &cgiError("You should select at least one option in the \"Return\" box.");
   } else {
-    $parameters .= " -return $return_fields";
+    $parameters .= " -return ".$return_fields;
   }
 }
 
