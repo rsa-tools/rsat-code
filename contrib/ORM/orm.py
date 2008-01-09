@@ -206,6 +206,11 @@ def run(args, options):
 
     if options.window > s.location[1] - s.location[0] + 1:
         options.window = s.location[1] - s.location[0] + 1
+    if options.window_group > s.location[1] - s.location[0] + 1:
+        options.window_group = s.location[1] - s.location[0] + 1
+
+
+
 
     if not Core.types.interval.is_included(location, bg.location):
         cli.error('Given location do not match Background model location')
@@ -214,8 +219,8 @@ def run(args, options):
 
     ##
     # Thresholds
-    defaults = {'width' : (2, 1000000),
-                'occ'   : (1, 100000),
+    defaults = {'width' : (2, sys.maxint),
+                'occ'   : (1, sys.maxint),
                 'occ_sig'   : (None, None),
                 'occ_E' : (None, None),
                 'occ_P' : (None, None),
