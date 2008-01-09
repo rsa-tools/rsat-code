@@ -163,29 +163,27 @@ if (($query->param('output') =~ /display/i) ||
 	       "<a href=${result_URL}>${result_URL}</a>",
 	       "<p>\n");
     }
- 	
- 	print "<hr/>";
+    print "<hr/>";
 
     ## prepare figures
     my $XYgraph_command = "$SCRIPTS/XYgraph";
-    
+
     my $graph_file1 = "$tmp_file_name"."_1.png";
     my $figure = "$TMP/$graph_file1";
-    &DelayedRemoval("$TMP/$graph_file1");
-    my $command2 = "$XYgraph_command -i $sequence_file -o $figure -title1 'Distribution of weights' -xcol 1 -ycol 2 -legend -lines -pointsize 2 -xleg1 'weight' -yleg1 'frequency' -format png";
+    my $command2 = "$XYgraph_command -i $sequence_file -o $figure -title1 'Distribution of weights' -title2 'Score probability' -xcol 1 -ycol 2 -legend -lines -pointsize 1 -xleg1 'weight' -yleg1 'frequency' -format png";
     `$command2`;
-    
+    print "<CENTER><a href = \"$WWW_TMP/$graph_file1\"><IMG SRC=\"$WWW_TMP/$graph_file1\" width='200'></a>";
+    &DelayedRemoval("$TMP/$graph_file1");
+
     my $graph_file2 = "$tmp_file_name"."_2.png";
     $figure = "$TMP/$graph_file2";
-    &DelayedRemoval("$TMP/$graph_file2");
-    my $command3 = "$XYgraph_command -i $sequence_file -o $figure -title1 'Distribution of weights' -xcol 1 -ycol 4 -legend -lines -pointsize 2 -xleg1 'weight' -yleg1 'log(frequency)' -format png -ylog -ymax 1 -ymin 0";
+    my $command3 = "$XYgraph_command -i $sequence_file -o $figure -title1 'Distribution of weights  (log scale)' -title2 'Score probability and P-value' -xcol 1 -ycol 2,4 -legend -lines -pointsize 1 -xleg1 'weight' -yleg1 'Frequency (log scale)' -format png -ylog -ymax 1 -ymin 0";
     `$command3`;
-	 print "<CENTER><a href = \"$WWW_TMP/$graph_file1\"><IMG SRC=\"$WWW_TMP/$graph_file1\" width='200'></a>";
-	 print "<a href = \"$WWW_TMP/$graph_file2\"><IMG SRC=\"$WWW_TMP/$graph_file2\" width='200'></a></CENTER><P>\n";
+    print "<a href = \"$WWW_TMP/$graph_file2\"><IMG SRC=\"$WWW_TMP/$graph_file2\" width='200'></a></CENTER><P>\n";
+    &DelayedRemoval("$TMP/$graph_file2");
 
     ### prepare data for piping
     &PipingForm();
-    
     print "<HR SIZE = 3>";
 
 } else {
