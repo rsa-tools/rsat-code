@@ -6,7 +6,7 @@ VERSION
         %(version)s
 
 AUTHOR
-        2006-2006 by Matthieu Defrance (defrance@scmbb.ulb.ac.be)
+        Matthieu Defrance (defrance@scmbb.ulb.ac.be)
 
 DESCRIPTION
         compute oligomer frequencies in a set of sequences,
@@ -28,12 +28,11 @@ import os, sys, glob
 
 import optparse
 import time
-
-import Core.Sys.timer
+import Core.timer
 import Core.Persistence.op as op
 import Core.UI.cli as cli
 import Core.types
-import Core.utils
+import Core.IO.utils
 import Bio.sequence
 from Bio.scripthelper import *
 import ORMLib.ormlib as ormlib
@@ -58,6 +57,7 @@ HEADER = ''';
 ; window width                     %(windowWidth)s
 ; bg window width                  %(bgwindowWidth)s            
 ; input file                       %(inputfilename)s
+; bg file                          %(bgfile)s   
 ; nb of sequences                  %(numberOfSequences)d
 ; scanned region                   [%(start)+05d:%(end)+05d]
 ; scanned words                    %(scannedWords)d
@@ -151,7 +151,7 @@ def run(args, options):
         parser.error("options -l is required. You must provide at least an oligomer length")
 
 
-    timer = Core.Sys.timer.Timer()
+    timer = Core.timer.Timer()
     spacing = ( int(options.spacing.split(':')[0]), int(options.spacing.split(':')[1]) )
 
 
@@ -181,21 +181,26 @@ def run(args, options):
     # background
     #
     ##
+    bgfile = ''
     options.bgwindow = options.bgwindow or 1000000
     if options.bgwindow > s.location[1] - s.location[0] + 1:
         options.bgwindow = s.location[1] - s.location[0] + 1
 
     if options.bgfile:
         bg = op.oload(options.bgfile)
+        bgfile = options.bgfile
     else:
         bgparams = dict(spacing=spacing, count=options.count, error=options.error)
         bg = ormlib.Bg(location=location, W=options.bgwindow, l=options.l, strand=options.strand, overlap=options.overlap, params=bgparams)
         if options.markov >= 0:
             bg.build_markov(s, order=options.markov)
+            bgfile = 'Markov order %d from input' % options.markov
         elif options.bgoligo:
             bg.build_from_oligo_file(options.bgoligo, location)
+            bgfile = options.bgoligo
         elif options.bgoligomarkov:
             bg.build_markov_from_oligo_file(options.bgoligomarkov, location)            
+            bgfile = options.bgoligomarkov
         else:
             bg.build(s)
 
@@ -263,7 +268,7 @@ def run(args, options):
     # output
     #
     ##
-    output = Core.utils.uopen(options.output, mode='w')
+    output = Core.IO.utils.uopen(options.output, mode='w')
 
 
     print >> output, ormlib.format_header(HEADER, l=options.l, 
@@ -280,7 +285,8 @@ def run(args, options):
                                           date = time.ctime(),
                                           runningTime = str(timer),
                                           scannedWords = R['scannedWords'],
-                                          version = VERSION
+                                          version = VERSION,
+                                          bgfile = bgfile
                                           )
 
     print >> output, ormlib.format_output(r, COLUMN_HEADER, COLUMN_HEADER_CHAR, FORMAT_ROW)
