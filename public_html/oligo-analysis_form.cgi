@@ -182,7 +182,7 @@ print "<HR width=550 align=left>\n";
 #			  -default=>$default{freq_estimate});
 #print "<BR>";
 
-&ReturnTable();
+&OligoReturnTable();
 
 print "<HR width=550 align=left>\n";
 
@@ -416,9 +416,9 @@ exit(0);
 
 ################################################################
 ## Table with all the supported statistics and thresholds
-sub ReturnTable {
+sub OligoReturnTable {
 
-print "<h4>Return</h4>\n";
+print "<p><b>Result</b></p>\n";
 
 print ("<INPUT TYPE='radio' NAME='return' VALUE='fields' checked>", 
        "One row per pattern");
@@ -427,7 +427,7 @@ print "<BLOCKQUOTE>\n";
 print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 		    $query->Tr({-align=>left,-valign=>TOP},
 			 [
-			  $query->th([" <A HREF='help.oligo-analysis.html#return_fields'>Fields</A> ",
+			  $query->th([" <A HREF='help.oligo-analysis.html#return_fields'>Return fields</A> ",
 				   " <A HREF='help.oligo-analysis.html#thresholds'>Lower<BR>Threshold</A> ",
 				   " <A HREF='help.oligo-analysis.html#thresholds'>Upper<BR>Threshold</A> "]),
 
@@ -460,9 +460,6 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 
 			  ### binomial E-value
 			  $query->td(["&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;E-value",
-#				      $query->checkbox(-name=>'proba',
-#						       -checked=>$default{proba},
-#						       -label=>' Binomial E-value '),
 				      $query->textfield(-name=>'lth_occ_E',
 							-default=>$default{lth_occ_E},
 							-size=>5),
@@ -473,9 +470,6 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 
 			  ### significance index
 			  $query->td(["&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Significance",
-#				      $query->checkbox(-name=>'proba',
-#						    -checked=>$default{proba},
-#						    -label=>' Significance '),
 				   $query->textfield(-name=>'lth_occ_sig',
 						     -default=>$default{lth_occ_sig},
 						     -size=>5),
