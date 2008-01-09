@@ -36,14 +36,14 @@ $default{bg_level} = "organism";
 
 $default{rank} = 'checked';
 $default{lth_rank} = "none";
-$default{uth_rank} = "20";
+$default{uth_rank} = 50;
 
 $default{lth_w_rank} = "none";
-$default{uth_w_rank} = "1";
+$default{uth_w_rank} = 1;
 
 
 $default{occ} = 'checked';
-$default{lth_occ} = "2";
+$default{lth_occ} = 2;
 $default{uth_occ} = "none";
 
 $default{proba} = 'checked';
@@ -80,23 +80,15 @@ $checked{$default{freq_estimate}} = "CHECKED";
 &RSA_header("ORM", "form");
 print '<style><!-- textarea {height: 100px; width: 550px;}--></style>';
 print "<CENTER>";
-print "Analysis of oligonucleotide representation in a set of DNA sequences<P>\n";
-print "</CENTER>";
-print "<HR>";
-print "<blockquote>";
+print "Analysis of oligonucleotide representation in a set of DNA sequences.\n";
+print "<br>Program developed by <a href='mailto:defrance\@scmbb.ulb.ac.be (Matthieu Defrance)'>Matthieu Defrance</A><P>";
+print "</center>";
 
-#&ListParameters();
+&ListDefaultParameters() if ($ENV{rsat_echo} >= 2);
 
 print $query->start_multipart_form(-action=>"ORM.cgi");
 
-### Title
-#print "<B><A HREF='help.ORM.html#title'>Title</A></B>&nbsp;\n";
-#print $query->textfield(-name=>'title',
-#			-default=>$default{title},
-#			-size=>50);
-#print "<BR>\n";
-#print "<HR width=550 align=left>\n";
-
+print "<hr>";
 print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 	       $query->Tr({-align=>left,-valign=>TOP},
 		       [
@@ -236,14 +228,13 @@ print "<HR width=550 align=left>\n";
 print "<HR width=550 align=left>\n";
 
 ### send results by email or display on the browser
-&SelectOutput();
-
+&SelectOutput('email');
 
 ### action buttons
-print "<UL><UL><TABLE class = 'formbutton'>\n";
-print "<TR VALIGN=MIDDLE>\n";
-print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
-print "<TD>", $query->reset, "</TD>\n";
+print "<ul><ul><table class = 'formbutton'>\n";
+print "<tr valign=middle>\n";
+print "<td>", $query->submit(-label=>"GO"), "</td>\n";
+print "<td>", $query->reset, "</td>\n";
 print $query->end_form;
 
 ### data for the demo 
@@ -456,9 +447,8 @@ print "<TD><B><A HREF='help.ORM.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
-print "</FONT>\n";
-print "</blockquote>";
-print "<HR>";
+print "</font>\n";
+print "<hr>";
 
 print $query->end_html;
 
