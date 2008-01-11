@@ -142,6 +142,11 @@ if ($legend) {
   &DrawLegend();
 }
 
+## Export feature colors
+if ($ftcol_file) {
+  &ExportFtColors();
+}
+
 ## Scale bar 
 if ($scalebar) {
   &DrawScaleBar();
@@ -412,6 +417,27 @@ sub InitLegend {
     }
 }
 
+################################################################
+## Export the features colors
+## TEMPORARY ?
+sub ExportFtColors {
+  &RSAT::message::TimeWarn("Writing the feature colors in $ftcol_file") if ($main::verbose >= 2);
+  ## get sequence IDs
+  $i = 0;
+  $ft_out = &OpenOutputFile($ftcol_file);
+  foreach my $id (@sorted_ids) {
+    $i++;
+    if ($aa_colors) {
+      $rect_color = $aa_color{$id};
+    } else {
+      $rect_color = $color_list[$i%($#color_list+1)];
+    }
+    $rect_color = &ChooseFeatureColor($id);
+    ($r,$g,$b)=split / /,$rect_color;
+    print $ft_out "$id\t$r,$g,$b\n";
+  }
+  close $ft_out;
+}
 
 ################################################################
 ## Draw the legend
@@ -454,6 +480,7 @@ sub DrawLegend {
 	    $rect_color = $color_list[$i%($#color_list+1)];
 	}
 	$rect_color = &ChooseFeatureColor($id);
+#	print "$id\t$rect_color\n" if ($main::verbose >= 3); ## TEMPORARY IN ORDER TO EXTRACT THE COLOURS
 
 	if ($id eq "ORF") {
 	    #### a specific symbol for ORFs (empty box)
@@ -1376,9 +1403,13 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-aacolors") {
 	    $aa_colors = 1;
 
-	    ### amino acid specific colors ###
+	    ### specific colors ###
 	} elsif ($ARGV[$a] eq "-colors") {
 	    $color_file = $ARGV[$a+1];
+
+	    ### export the colors
+	  } elsif ($ARGV[$a] eq "-export_colors") {
+	    $ftcol_file = $ARGV[$a+1];
 
 	    ### specify the background color
 	  } elsif ($ARGV[$a] eq "-bg") {
@@ -1635,6 +1666,10 @@ OPTIONS
 		will assign the red color to all features identified
 		as "Met4p", dark green to features "Pho4p", and very
 		dark blue to features identified as "Met31p".
+
+	-export_colors color_file
+                Export the feature-specific colors in a separate file
+                as a color file (see -colors).
 
 	-bgcolor R,G,B
 		Background color in R,G,B format. R,G,B should be
@@ -2344,7 +2379,7 @@ sub Verbose {
     
     print ";Feature IDs:\n";
     for $i (0..$#id_list) {
-	print ";\t$id_list[$i]";
+	print ";\t$id_list[$i]"; # NICE IF COLOR APPEARS HERE !
 	print "\tselected" if ($selected{$id_list[$i]});
 	print "\n";
     }
