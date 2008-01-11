@@ -535,6 +535,7 @@ print ("<b><a href=help.matrix-scan.html#markov_order>Markov Chain order</a></b>
 print $query->popup_menu(-name=>'markov_order',
 			 -Values=>[0..7],
 			 -default=>$default{markov_order});
+print ("&nbsp;&nbsp;&nbsp;<font color=red>High orders can be time-comsuming.</font>") 
 }
 print "<p>";
 ## Method to estimate the bg model
