@@ -28,6 +28,11 @@ $start_time = `date`;
 $img_format = $ENV{rsat_img_format} || "png";
 $supported_formats = join (",", keys %supported_format); 
 
+## General parameters
+$map_names = 1; ## Print map names
+$legend = 0; ## Draw legend box
+
+
 #### font sizes ####
 $small_font_width = 6;
 $small_font_height = 8;
@@ -42,8 +47,8 @@ $view_to = "auto";
 $map_spacing = 6;
 $map_thick = "auto";
 $map_length = 600;
-$x_border = 20;
-$y_border = 20;
+$x_border = 10;
+$y_border = 10;
 $max_feature_thick = 12;
 $min_feature_thick = 0;
 $feature_thick{'ORF'} = 14;
@@ -505,7 +510,6 @@ sub DrawLegend {
 	    }
 	}
 
-	
 	$image->string($small_font, $legend_x, $legend_y,$legend_text{$id}, $text_color);
 	$legend_y += $small_font_height + $legend_spacing;
     }
@@ -625,12 +629,11 @@ sub ReadMapData {
 	#print "$new_data_line\n";
 	$new_data_line =~ s/^ *//; ### suppress white spaces at the beginning af the line
 	@input_fields = split(/\t/, $new_data_line);
-	
+
 	foreach $key (keys %col) {
 	    $temp_features{$key} = $input_fields[$col{$key}];
 	}
-	
-	
+
 	#### map name ####
 	$temp_features{map} =~ s/\'/_/g;
 	$current_map = $temp_features{map};
@@ -842,11 +845,13 @@ sub CalcDimensions {
     $max_map_name_length - 0;
     foreach $map (@map_list) {
 	#### maximal map name length ####
+      if ($map_names) {
 	$max_map_name_length = &max($max_map_name_length, length($map));
 	$max_end_letters = &max($max_end_letters, length($map_end{$map}));
 	$max_start_letters = &max($max_start_letters, length($map_start{$map}));
-	
-	#### labels and maximum label length ####
+      }
+
+	#### Feature labels and maximum label length ####
 	if ($labels) {
 	    foreach $f (@{$features{$map}}) {
 		$label = "";
@@ -1006,11 +1011,10 @@ sub CalcDimensions {
 	    &InitLegend;
 	}
 	$graph_y_size = &max($graph_y_size, $legend_bottom + $y_border);
-	
+
 	$box_bottom = $graph_y_size - $y_border;
 	#	$box_bottom = $map_end + 4 + $small_font_height;
-	
-	
+
 	#### X dimensions ####
 	$graph_x_size = 2*$x_border;
 	$graph_x_size += $nb_of_maps*$map_thick + ($nb_of_maps-1)*$map_spacing;
@@ -1029,14 +1033,14 @@ sub CalcDimensions {
 
 
 ################################################################
-### Calculate label positions
+### Calculate positions for feature labels
 sub CalcLabelPos {
     warn "; Calculating label positions\n" if ($main::verbose >= 2);
     @{$rank{'D'}} = @{$rank{'R'}} = ();
     @label_pos = ();
     @{$label_pos{R}} = ();
     @{$label_pos{D}} = ();
-    
+
     for $f (0..$#{$features{$map}}) {
 	$label_strand = $features{$map}[$f]{strand};
 	if ($label_strand =~ /^R$/i) {
@@ -1048,9 +1052,10 @@ sub CalcLabelPos {
 	$rank{$label_strand}[$f] = $f;
 	$label_pos{$label_strand}[$f] = $feature_mid_pos;
     }
-    
-    ### adjust label pos for close features, 
-    ### so that their label do not overlap
+
+    ################################################################
+    ### Adjust label pos for close features,
+    ### to avoid overlap between their labels
     if ($horizontal_map) {
 	if ($draw_handles) {
 	    $overlap_width = $handle_length + 3;
@@ -1058,17 +1063,17 @@ sub CalcLabelPos {
     } else {
 	$overlap_height = $small_font_height + 2;
     }
-    
+
     foreach $s ('D', 'R') {
 	$last_pos = $last_f = "";
 	@sorted_rank = 0;
-	
+
 	@sorted_rank = sort {
 	    $label_pos{$s}[$a] <=> $label_pos{$s}[$b];
 	} @{$rank{$s}};
 	$f =  $sorted_rank[0];
 	$pos =  $label_pos{$s}[$f];
-	
+
 	foreach $r (1..$#sorted_rank) {
 	    $last_f = $f;
 	    $f = $sorted_rank[$r];
@@ -1194,12 +1199,7 @@ sub RectInLimits {
 	if ($rect_bottom > $limit_bottom) {
 	    $rect_bottom = $limit_bottom;
 	    $draw_rect_bottom = 0;
-        } 
-
-#    print "$rect_left\t$rect_top\t$rect_right\t$rect_bottom\n";
-#    print "$limit_left\t$limit_top\t$limit_right\t$limit_bottom\n";
-#    print "$draw_rect_left\t$draw_rect_top\t$draw_rect_right\t$draw_rect_bottom\n";
-
+        }
 
 	$image->line($rect_left, $rect_top, $rect_left, $rect_bottom, $rect_color) if ($draw_rect_left);
 	$image->line($rect_right, $rect_top, $rect_right, $rect_bottom, $rect_color) if ($draw_rect_right);
@@ -1445,7 +1445,11 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-scalestep") {
 	    $scale_bar_step = $ARGV[$a+1];
 
-	    ### label keys ###
+	    ### map name
+	} elsif ($ARGV[$a] =~ /^-no_name/) {
+	    $map_names = 0;
+
+	    ### label keys
 	} elsif ($ARGV[$a] eq "-label") {
 	    @label_keys = split(/,/, $ARGV[$a+1]);
 	}elsif ($ARGV[$a] =~ /^-boxlabel/) {
@@ -1507,6 +1511,10 @@ sub ReadArguments {
 	    $map_thick = $ARGV[$a+1];
 	} elsif (($ARGV[$a] eq "-mspacing") && (&IsNatural($ARGV[$a+1]))){
 	    $map_spacing = $ARGV[$a+1];
+
+	    ## image border
+	} elsif (($ARGV[$a] eq "-border") && (&IsNatural($ARGV[$a+1]))){
+	    $border = $ARGV[$a+1];
 	}
     }
 
@@ -1520,8 +1528,8 @@ sub PrintHelp {
   print HELP <<End_of_Help;
 NAME
 	feature-map
-	
-	1997-98 by Jacques van Helden
+
+	1997-2008 by Jacques van Helden
 
 DESCRIPTION
         draws a graphical map of regulatory features in a series of 
@@ -1605,6 +1613,8 @@ OPTIONS
 	-mspacing #	map spacing.
 			The size of the border between maps (in pixel).
 
+	-border	#	image border (default=10 pixels)
+
 	-origin #	all coordinates are recalculated relative to #.
 			This allows to display all coordinates with respect to
 			the ORF start or transcription start site
@@ -1613,12 +1623,15 @@ OPTIONS
                  each distinct feature.
 
         -scalebar
-                 Draws a scale bar on the left of the graph
+                 Draw a scale bar on the left of the graph
 
         -scalestep #
                  Step between annotations of the scale bar.
                  If not specified, a reasonable stp is calculated on basis of 
                  the scale bar range.
+
+	-no_name
+		Do not print sequence names besides each sequence. 
 
 	-scorethick
 		each feature is displayed with a thickness proportional to 
@@ -1669,7 +1682,9 @@ OPTIONS
 
 	-export_colors color_file
                 Export the feature-specific colors in a separate file
-                as a color file (see -colors).
+                as a color file. This file can then be re-used to
+                specify the same colors for other feature-maps
+                (option -colors)
 
 	-bgcolor R,G,B
 		Background color in R,G,B format. R,G,B should be
@@ -1746,9 +1761,11 @@ feature-map options
 -mlen	#	map length (in pixels). Default is 600.
 -mapthick #	map thickness
 -mspacing	map spacing
+-border         image border (default: 10)
 -origin #	all coordinates are recalculated relative to #.
 -legend		Draws a legend
 -scalebar	Draws a scale bar
+-no_name	Do not print sequence names besides each sequence. 
 -scalestep #	step of the scale bar
 -scorethick	each feature is displayed with a thickness proportional to its score. 
 -maxscore #	maximal allowed score value
@@ -1890,15 +1907,13 @@ sub DrawMaps {
 
     foreach $m (0..$#map_list) {
 	$map = $map_list[$m];
-	
 	if (($labels) || ($draw_symbols) || ($draw_dots)) {
 	    &CalcLabelPos();
 	}
-	
 	&DrawMapBackground();
 	&DrawMapBackbone();
-	&WriteMapName();
-	
+	&WriteMapName() if ($map_names);
+
 	## Draw the features
 	foreach $f (0..$#{$features{$map}}) { 
 	    &DrawFeature();
