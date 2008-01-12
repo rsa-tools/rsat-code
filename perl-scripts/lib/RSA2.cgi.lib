@@ -46,7 +46,8 @@ sub PrintOrthoSelectionSection {
 			      );
 
   #### choice of the organism
-  &OrganismPopUp(@supported_orthologs);
+  print "<b>Query </b>";
+ &OrganismPopUp(@supported_orthologs);
 
   ################################################################
   ### gene queries
@@ -65,7 +66,9 @@ sub PrintOrthoSelectionSection {
   print "<p>\n";
 
   ## Taxon of interest
-  &TaxonPopUp();
+  print "<b>Target </b>";
+  &TaxonPopUp("node");
+#  &TaxonPopUp("all");
 }
 
 
@@ -403,7 +406,7 @@ sub OrganismPopUpString {
 ### display a pop-up menu with the supported taxonomy
 ### on the basis of the configuration found in RSA.config
 sub TaxonPopUp {
-    print &TaxonPopUpString();
+    print &TaxonPopUpString(@_);
 }
 sub TaxonPopUpStringIndented {
     require RSAT::Tree;
@@ -435,17 +438,23 @@ sub TaxonPopUpStringIndented {
 }
 
 sub TaxonPopUpString {
+    my $node_type = shift @_ || "node";
+    
     require RSAT::Tree;
     my $tree = new RSAT::Tree();
     $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
 
 
-    my @taxa = $tree->get_node_descendents_names("Bacteria",undef,"node");
-    push @taxa, $tree->get_node_descendents_names("Fungi",undef,"node");
+    my @taxa = $tree->get_node_descendents_names("Bacteria",undef,$node_type);
+    push @taxa, $tree->get_node_descendents_names("Fungi",undef,$node_type);
     @taxa = sort @taxa;
 
     my $taxonomyPopup = "";
-    $taxonomyPopup .=  "<B>Taxon</B>&nbsp;";
+    if ($node_type eq "all") {
+	$taxonomyPopup .=  "<B>Taxon/Organism</B>&nbsp;";
+    } else {
+	$taxonomyPopup .=  "<B>Taxon</B>&nbsp;";
+    }
     $taxonomyPopup .=  "<SELECT NAME='taxon'>\n";
     foreach my $taxon (@taxa) {
       my $name = $taxon;
@@ -1089,7 +1098,7 @@ sub PrintGenomeSubsetBgOptions {
 
   print ("<ul>");
   print( "<input type='radio' NAME='bg_level' VALUE='organism' $checked{organism}>", &OrganismPopUpString());
-  print( "<br><input type='radio' NAME='bg_level' VALUE='taxon' $checked{taxon}>", &TaxonPopUpString());
+  print( "<br><input type='radio' NAME='bg_level' VALUE='taxon' $checked{taxon}>", &TaxonPopUpString("node"));
   print ("</ul>");
 #  print "</ul>";
 
