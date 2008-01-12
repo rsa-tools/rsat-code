@@ -105,23 +105,31 @@ sub PipingForm {
     my $genes = `cat $result_file`;
     ### prepare data for piping
     print <<End_of_form;
-<HR SIZE = 3>
-<TABLE class='nextstep'>
-<TR>
-<TD>
-<H3>Next step</H3>
-</TD>
-</tr>
+<hr>
+<table class='nextstep'>
+
+<tr><td colspan=2>
+<h3>Next step</h3>
+</td></tr>
+
 <tr>
-<TD>
-<FORM METHOD="POST" ACTION="retrieve-seq_form.cgi">
-<INPUT type="hidden" NAME="organism" VALUE="$organism">
-<INPUT type="hidden" NAME="genes" VALUE="selection">
-<INPUT type="hidden" NAME="gene_selection" VALUE="$genes">
+
+<td><form method="post" action="retrieve-seq_form.cgi">
+<input type="hidden" name="organism" VALUE="$organism">
+<input type="hidden" name="genes" VALUE="selection">
+<input type="hidden" name="gene_selection" VALUE="$genes">
 <INPUT type="submit" value="retrieve sequences">
-</FORM>
-</TD>
-</TR>
+</form></td>
+
+<td><form method="post" action="get-orthologs_form.cgi">
+<input type="hidden" name="organism" VALUE="$organism">
+<input type="hidden" name="queries" VALUE="$genes">
+<INPUT type="submit" value="get orthologs">
+</form></td>
+
+</tr>
+
+
 </TABLE>
 End_of_form
 
