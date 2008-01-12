@@ -378,7 +378,7 @@ sub LoadSupportedTaxonomy_rj {
   $nodes{$root_name} = $root_node;
   my $root=$self->set_root_node($root_node);
 
-  ## Get  thetaxonomy
+  ## Get  the taxonomy
   my $c = 0;
   foreach my $org (sort {$supported_organism{$a}->{"taxonomy"} cmp $supported_organism{$b}->{"taxonomy"}}
 		   keys (%supported_organism)) {
@@ -395,6 +395,10 @@ sub LoadSupportedTaxonomy_rj {
 				  type=>"leaf"
 				 );
     &RSAT::message::Warning(join("\t","Instantiated leaf",$leaf->get_name())) if ($main::verbose >= 5);
+
+#     my $org_id = $org;
+#     $org_id =~ s/\s+/_/g;
+#     $nodes{$org_id}=$leaf;
 
     for my $t (0..$#taxons) {
       # TEMPORARY 
