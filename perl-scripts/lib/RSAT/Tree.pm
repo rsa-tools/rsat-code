@@ -359,7 +359,7 @@ sub LoadSupportedTaxonomy {
 
 =cut
 sub LoadSupportedTaxonomy_rj {
-  my ($self,$root_name,$supported_organism)=@_;
+  my ($self,$root_name,$supported_organism) = @_;
   unless ($root_name) {
     $root_name = "Organisms";
   }
@@ -396,9 +396,10 @@ sub LoadSupportedTaxonomy_rj {
 				 );
     &RSAT::message::Warning(join("\t","Instantiated leaf",$leaf->get_name())) if ($main::verbose >= 5);
 
-#     my $org_id = $org;
-#     $org_id =~ s/\s+/_/g;
-#     $nodes{$org_id}=$leaf;
+    my $org_id = $org;
+    $org_id =~ s/\s+/_/g;
+    $nodes{$org_id}=$leaf;
+#    &RSAT::message::Debug("Created TreeNode for organism", $org, $org_id, $species_node) if ($main::verbose >= 10);
 
     for my $t (0..$#taxons) {
       # TEMPORARY 
@@ -421,6 +422,7 @@ sub LoadSupportedTaxonomy_rj {
 				      ## all_leaves=>[$org]
 				     );
 	$nodes{$taxons[$t]}=$node;
+#	&RSAT::message::Debug("Created TreeNode for taxon", $t, $taxons[$t], $node) if ($main::verbose >= 10);
 
 	if ((defined $nodes{$taxons[$t-1]})&&($t-1>=0)) {
 	  $nodes{$taxons[$t-1]}->add_child($node);
