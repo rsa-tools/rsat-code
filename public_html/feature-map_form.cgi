@@ -122,24 +122,28 @@ print "<BR>\n";
 print $query->checkbox(-name=>'legend',
 		       -checked=>'checked',
 		       -label=>'');
-print "<A HREF='help.feature-map.html#legend'>Legend</a>";
-#print "</A>";
-print "&nbsp;&nbsp;&nbsp;";
+print "<A HREF='help.feature-map.html#legend'><b>Legend</b></a>";
 
-
+print "&nbsp"x5;
 print $query->checkbox(-name=>'scalebar',
 		       -checked=>'checked',
 		       -label=>'');
-print "<A HREF='help.feature-map.html#scalebar'>Scalebar</a>";
+print "<A HREF='help.feature-map.html#scalebar'><b>Scalebar</b></a>";
 
-print " (step ";
+print "&nbsp;"x2, "step ";
 print $query->textfield(-name=>'scalestep',
 			-default=>'auto',
 			-size=>5);
-print ")\n";
+print "\n";
 print "&nbsp;&nbsp;&nbsp;";
 
-print "<B><A HREF='help.feature-map.html#orientation'>Orientation</B></A>&nbsp;&nbsp;&nbsp;&nbsp";
+print "<br>\n";
+print $query->checkbox(-name=>'seq_names',
+		       -checked=>'checked',
+		       -label=>'');
+print "<A HREF='help.feature-map.html#seq_names'><b>Sequence names</b></a>";
+
+print "&nbsp;"x5, "<B><A HREF='help.feature-map.html#orientation'>Orientation</B></A>&nbsp;&nbsp;&nbsp;&nbsp";
 print $query->popup_menu(-name=>'orientation',
 			 -Values=>['horizontal','vertical'],
 			 -default=>'horizontal');
