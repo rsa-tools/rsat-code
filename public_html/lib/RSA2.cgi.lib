@@ -66,9 +66,8 @@ sub PrintOrthoSelectionSection {
   print "<p>\n";
 
   ## Taxon of interest
-  print "<b>Target </b>";
-  &TaxonPopUp("node");
-#  &TaxonPopUp("all");
+#  &TaxonPopUp("node");
+  &TaxonPopUp("all");
 }
 
 
@@ -438,37 +437,36 @@ sub TaxonPopUpStringIndented {
 }
 
 sub TaxonPopUpString {
-    my $node_type = shift @_ || "node";
-    
-    require RSAT::Tree;
-    my $tree = new RSAT::Tree();
-    $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
+  my ($node_type) =  @_;
+  $node_type = "node" unless ($node_type);
+  require RSAT::Tree;
+  my $tree = new RSAT::Tree();
+  $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
 
+  my @taxa = $tree->get_node_descendents_names("Bacteria",undef,$node_type);
+  push @taxa, $tree->get_node_descendents_names("Fungi",undef,$node_type);
+  @taxa = sort @taxa;
 
-    my @taxa = $tree->get_node_descendents_names("Bacteria",undef,$node_type);
-    push @taxa, $tree->get_node_descendents_names("Fungi",undef,$node_type);
-    @taxa = sort @taxa;
-
-    my $taxonomyPopup = "";
-    if ($node_type eq "all") {
-	$taxonomyPopup .=  "<B>Taxon/Organism</B>&nbsp;";
+  my $taxonomyPopup = "";
+  if ($node_type eq "all") {
+    $taxonomyPopup .=  "<B>Taxon/Organism</B>&nbsp;";
+  } else {
+    $taxonomyPopup .=  "<B>Taxon</B>&nbsp;";
+  }
+  $taxonomyPopup .=  "<SELECT NAME='taxon'>\n";
+  foreach my $taxon (@taxa) {
+    my $name = $taxon;
+    $label =~ s/_/ /g;
+    if ((lc($taxon) eq lc($main::default{taxon})) ||
+	(lc($name) eq lc($main::default{taxon}))) {
+      $taxonomyPopup .=  "<OPTION SELECTED VALUE='$taxon'>$name\n";
     } else {
-	$taxonomyPopup .=  "<B>Taxon</B>&nbsp;";
+      $taxonomyPopup .=  "<OPTION VALUE='$taxon'>$name\n";
     }
-    $taxonomyPopup .=  "<SELECT NAME='taxon'>\n";
-    foreach my $taxon (@taxa) {
-      my $name = $taxon;
-      $label =~ s/_/ /g;
-      if ((lc($taxon) eq lc($main::default{taxon})) ||
-	  (lc($name) eq lc($main::default{taxon}))) {
-	$taxonomyPopup .=  "<OPTION SELECTED VALUE='$taxon'>$name\n";
-      } else {
-	$taxonomyPopup .=  "<OPTION VALUE='$taxon'>$name\n";
-      }
-    }
-    $taxonomyPopup .=  "</SELECT>";
-    $taxonomyPopup .=  "<BR>\n";
-    return $taxonomyPopup;
+  }
+  $taxonomyPopup .=  "</SELECT>";
+  $taxonomyPopup .=  "<BR>\n";
+  return $taxonomyPopup;
 }
 
 
