@@ -84,6 +84,11 @@ if ($query->param('scalebar') eq "on") {
     $parameters .= " -scalebar ";
 }
 
+### sequence names
+unless ($query->param('seq_names') eq "on") {
+    $parameters .= " -no_name ";
+}
+
 ### horizontal format ###
 if ($query->param('orientation') =~ /vertic/i) {
     $parameters .= " -vertical ";
