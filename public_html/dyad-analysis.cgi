@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.29 2008/01/08 15:29:03 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.30 2008/01/14 02:32:45 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -194,29 +194,9 @@ if ($query->param('output') eq "display") {
     #### pattern assembly ####
     if ((&IsReal($query->param('lth_occ_sig'))) && ($query->param('lth_occ_sig')>= -1)) {
 
-# 	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 0";
-# 	if ($query->param('strand') =~ /single/) {
-# 	    $pattern_assembly_command .= " -1str";
-# 	} else {
-# 	    $pattern_assembly_command .= " -2str";
-# 	}
-# 	$pattern_assembly_command .= " -maxfl 1 -subst 0 ";
-# 	print "<PRE>pattern-assembly command: $pattern_assembly_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
-	
-# 	print "<H4>Pattern assembly</H4>\n";
-# 	open CLUSTERS, "$pattern_assembly_command -i $result_file |";
-# 	print "<PRE>\n";
-# 	while (<CLUSTERS>) {
-# 	    s|$ENV{RSAT}/||g;
-# 	    print;
-# 	}
-# 	print "</PRE>\n";
-# 	close(CLUSTERS);
-
-
 	## Assemble the significant patterns with pattern-assembly
 	$assembly_file = "$TMP/$tmp_file_name.asmb";
-	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1 -top 50";
+	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 0 -top 50";
 	if ($query->param('strand') =~ /single/) {
 	  $pattern_assembly_command .= " -1str";
 	} else {
