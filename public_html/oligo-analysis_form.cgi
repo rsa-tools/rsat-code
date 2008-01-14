@@ -121,9 +121,9 @@ print "<BR>";
 
 
 ################################################################
-## Oligonucleotide Counting mode section
+## Oligonucleotide counting options
 print "<hr>\n";
-print "<b>Counting mode</b><br>\n";
+print "<b>Oligonucleotide counting mode</b><br>\n";
 
 ### oligo size
 print "<B><A HREF='help.oligo-analysis.html#oligo_length'>Oligonucleotide length</A>&nbsp;</B>\n";
