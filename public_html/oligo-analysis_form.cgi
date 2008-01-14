@@ -81,53 +81,52 @@ foreach $key (keys %default) {
 
 ### print the form ###
 &RSA_header("oligo-analysis", "form");
-print "<CENTER>";
-print "Analysis of oligonucleotide representation in a set of DNA sequences<P>\n";
-print "</CENTER>";
-print "<HR>";
-print "<blockquote>";
-
+print "<center>";
+print "Analysis of oligonucleotide occurrences in nucleotidic sequences<P>\n";
+print "</center>";
+print "<hr>";
 
 &ListDefaultParameters() if ($ENV{rsat_echo} >= 2);
 
 print $query->start_multipart_form(-action=>"oligo-analysis.cgi");
 
-### Title
-#print "<B><A HREF='help.oligo-analysis.html#title'>Title</A></B>&nbsp;\n";
-#print $query->textfield(-name=>'title',
-#			-default=>$default{title},
-#			-size=>50);
-#print "<BR>\n";
-#print "<HR width=550 align=left>\n";
+### sequence type
+# print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
+# 		    $query->Tr({-align=>left,-valign=>TOP},
+# 			       [
+# 				$query->td([&SequenceChoice()])
+# 			       ]),
+# 		    $query->Tr({-align=>left,-valign=>TOP},
+# 			       [
+# 				$query->td(["<B><A HREF='help.oligo-analysis.html#sequence_type'>Sequence type</A></B>".
+# 					    $query->popup_menu(-name=>'sequence_type',
+# 							       -Values=>["dna","protein","other"],
+# 							       -default=>$default{sequence_type})
+# 					   ])
+# 			       ])
+# 		 );
 
-print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
-	       $query->Tr({-align=>left,-valign=>TOP},
-		       [
-		      $query->td([&SequenceChoice()])
-			]),
-	       $query->Tr({-align=>left,-valign=>TOP},
-		       [
-		      $query->td(["<B><A HREF='help.oligo-analysis.html#sequence_type'>Sequence type</A></B>".
-			       $query->popup_menu(-name=>'sequence_type',
-						  -Values=>["dna","protein","other"],
-						  -default=>$default{sequence_type})
-			       ])
-			])
-
-		 );
+print &SequenceChoice();
+print "<b><a href='help.oligo-analysis.html#sequence_type'>Sequence type</a></b>";
+print "&nbsp;"x3,  $query->popup_menu(-name=>'sequence_type',
+				      -Values=>["dna","protein","other"],
+				      -default=>$default{sequence_type});
 
 #### purge sequences
-print $query->checkbox(-name=>'purge',
+print "<br>", $query->checkbox(-name=>'purge',
 		       -checked=>$default{purge},
 		       -label=>'');
 print "&nbsp;<A HREF='help.oligo-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
 print "<BR>";
 
-print "<HR width=550 align=left>\n";
 
+################################################################
+## Oligonucleotide Counting mode section
+print "<hr>\n";
+print "<b>Counting mode</b><br>\n";
 
 ### oligo size
-print "<B><A HREF='help.oligo-analysis.html#oligo_length'>Oligonucleotide size</A>&nbsp;</B>\n";
+print "<B><A HREF='help.oligo-analysis.html#oligo_length'>Oligonucleotide length</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'oligo_length',
 			 -Values=>[1,2,3,4,5,6,7,8],
 			 -default=>$default{oligo_length});
@@ -154,7 +153,7 @@ print "&nbsp;<A HREF='help.oligo-analysis.html#grouprc'><B>return reverse comple
 print "<BR>";
 
 
-print "<HR width=550 align=left>\n";
+print "<hr>\n";
 
 ################################################################
 ## Background model
@@ -167,9 +166,7 @@ print ("<b><a href=help.oligo-analysis.html#pseudo>Pseudo-weight</a></b> &nbsp;"
 			 -default=>$default{pseudo_weight},
 			 -size=>5));
 
-print "<HR width=550 align=left>\n";
-
-
+print "<hr>\n";
 
 
 #print "<A HREF='help.oligo-analysis.html#exp_freq'><B>Expected frequency</B></A>&nbsp;";
@@ -184,14 +181,14 @@ print "<HR width=550 align=left>\n";
 
 &OligoReturnTable();
 
-print "<HR width=550 align=left>\n";
+print "<hr width=550 align=left>\n";
 
 ### send results by email or display on the browser
 &SelectOutput();
 
 
 ### action buttons
-print "<UL><UL><TABLE class = 'formbutton'>\n";
+print "<ul><ul><table class = 'formbutton'>\n";
 print "<TR VALIGN=MIDDLE>\n";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
@@ -400,14 +397,14 @@ print $query->end_form;
 
 
 #print "<TD><B><A HREF='demo.oligo-analysis.html'>DEMO</A></B></TD>\n";
-print "<TD><B><A HREF='help.oligo-analysis.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_oligo-analysis.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
-print "</TR></TABLE></UL></UL>\n";
+print "<td><b><a href='help.oligo-analysis.html'>MANUAL</A></B></TD>\n";
+print "<td><b><a href='tutorials/tut_oligo-analysis.html'>TUTORIAL</A></B></TD>\n";
+print "<td><b><a href='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</a></b></td>\n";
+print "</tr></table>
+</ul></ul>\n";
 
-print "</FONT>\n";
-print "</blockquote>";
-print "<HR>";
+print "</font>\n";
+print "<hr>";
 
 print $query->end_html;
 

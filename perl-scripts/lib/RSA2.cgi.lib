@@ -1108,7 +1108,7 @@ sub PrintGenomeSubsetBgOptions {
 ## Background model options for oligo-analysis + ORM
 sub PrintOligoBackgroundOptions {
   $checked{$default{freq_estimate}} = "CHECKED";
-  print "<A HREF='help.oligo-analysis.html#exp_freq'><B>Background model</B></A>&nbsp;<p>";
+  print "<a href='help.oligo-analysis.html#exp_freq'><B>Background model</b></a>&nbsp;";
   &PrintGenomeSubsetBgOptions();
 
   #### Estimated from the input sequence set
