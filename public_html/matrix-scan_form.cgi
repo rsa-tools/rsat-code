@@ -80,7 +80,7 @@ $default{uth_pval} = "1e-4";
 ## Threshold values for CRER detection
 $default{lth_site_pval} = "none";
 $default{uth_site_pval} = "1e-3";
-$default{lth_crer_size} = "none";
+$default{lth_crer_size} = "30";
 $default{uth_crer_size} = "200";
 $default{lth_crer_sites} = "none";
 $default{uth_crer_sites} = "none";
