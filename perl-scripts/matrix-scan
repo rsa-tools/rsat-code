@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.113 2007/12/17 00:34:23 morgane Exp $
+# $Id: matrix-scan,v 1.114 2008/01/15 14:34:36 morgane Exp $
 #
 # Time-stamp: <2007-10-03 18:23:27 jturatsi>
 #
@@ -2915,10 +2915,14 @@ sub score_crer {
      	next if ($crer_sum_hits[$k] == 0);
      	
      	my $sub_window_length = $last_hit - $k + 1;   
-     	unless (&check_thresholds("crer_size", $sub_window_length)) {next; }
+     	#&RSAT::message::Debug("subwindow length",$sub_window_length) if ($main::verbose >= 0);
      	
      	## update sums
-     	$hit_sum += $crer_sum_hits[$k]; 	
+     	$hit_sum += $crer_sum_hits[$k];
+     	
+     	unless (&check_thresholds("crer_size", $sub_window_length)) {next; }
+     	
+ 	
      	foreach my $matrix (keys(%crer_seed_hits)){
      		foreach my $strand (@strands){
      		##weight sum
