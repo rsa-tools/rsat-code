@@ -823,7 +823,7 @@ sub pattern_assembly_cmd {
 
   ## Verbosity
   my $v = $args{"verbosity"};
-  if (&IsNatural($v)) {
+  if ($v =~ /^\d+$/) {
     $command .= " -v ".$v;
   }
 
@@ -839,37 +839,43 @@ sub pattern_assembly_cmd {
 
   ## Score column
   my $score_col = $args{score_col};
-  if (&IsNatural($score_col)) {
+  if ($score_col =~ /^\d+$/) {
+#  if (&IsNatural($score_col)) {
     $command .= " -sc ".$score_col;
   }
 
   ## Max flanking segment size
   my $maxfl = $args{maxfl};
-  if (&IsNatural($maxfl)) {
+  if ($maxfl =~ /^\d+$/) {
+#  if (&IsNatural($maxfl)) {
     $command .= " -maxfl ".$maxfl;
   }
 
   ## Max substitutions
   my $subst = $args{subst};
-  if (&IsNatural($subst)) {
+  if ($subst =~ /^\d+$/) {
+#  if (&IsNatural($subst)) {
     $command .= " -subst ".$subst;
   }
 
   ## Max assembly size (number of patterns per cluster)
   my $maxcl = $args{maxcl};
-  if (&IsNatural($maxcl)) {
+  if ($maxcl =~ /^\d+$/) {
+#  if (&IsNatural($maxcl)) {
     $command .= " -maxcl ".$maxcl;
   }
 
   ## Max number of patterns in total
   my $maxpat = $args{maxpat};
-  if (&IsNatural($maxpat)) {
+  if ($maxpat =~ /^\d+$/) {
+#  if (&IsNatural($maxpat)) {
     $command .= " -maxpat ".$maxpat;
   }
 
   ## Max number of top patternsto use for assembly
   my $toppat = $args{toppat};
-  if (&IsNatural($toppat)) {
+  if ($toppat =~ /^\d+$/) {
+#  if (&IsNatural($toppat)) {
     $command .= " -toppat ".$toppat;
   }
 
