@@ -1,21 +1,17 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fuzzy-clustering,v 1.1 2008/01/16 09:25:27 rsat Exp $
+# $Id: fuzzy-clustering,v 1.2 2008/01/16 23:41:12 rsat Exp $
 #
 ############################################################
 
 ## use strict;
-
 =pod
 
 =head1 NAME
 
 fuzzy-clustering
 
-=head1 VERSION
-
-$program_version
 
 =head1 DESCRIPTION
 
@@ -25,7 +21,7 @@ A partition of the graph is mapped onto the original graph. The weight of the co
 
 In assigning the membership of a node to a cluster, there are two possiblities:
 
-    -the node-membership to a given cluster is the sum over all connections to the individual nodes assigned to that cluster in the partition  
+    -the node-membership to a given cluster is the sum over the weights of the edges to each individual node assigned to that cluster in the partition.  
     -the weight of the connections of a node to a given cluster are normalized to the size of the cluster. This avoids membership bias towards larger clusters (see -norm option).
 
 =head1 AUTHORS
@@ -43,17 +39,17 @@ In assigning the membership of a node to a cluster, there are two possiblities:
 
 =head1 CATEGORY
 
-graph analysis
+graph analysis and clustering
 
 =head1 USAGE
 
-fuzzy-clustering [-i graphtfile] [-o outputfile] [-v #] [...]
+fuzzy-clustering [-i graphfile] [-clusters partition_file] [-o outputfile] [-v #] [...]
 
 =head1 INPUT FORMAT
 
 =head2 Graph format
 
-tab-delimited file. See I<convert-graph> for format conversions. 
+gml or tab-delimited file. default: tab
 
 =head2 Cluster format
 
@@ -87,19 +83,32 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     ################################################################
     ## Initialize the input graph # this is Sylvain stuff
-#     $graph = new RSAT::Graph2();
-#     $graph->set_attribute("label", "original graph");
+     my $graph = new RSAT::Graph2();
+     $graph->set_attribute("label", "graph");
 # 
 #     ## Columns of the tab-delimited graph file
 #     local $n1 = 1;
 #     local $n2 = 2;
 #     local $weight = 0;
 # 
+    ## Input formats
+    local $input_format = "tab";
+    %supported_input_format =(
+	tab=>1,
+	gml=>1
+    );
+    $supported_input_formats = join (",", keys %supported_input_format);
+    local $source_col = 1;
+    local $target_col = 2;
+    local $weight_col = 3;
+    
+    
+    
     my $ori_graph = {};
     my $clusters = {};
     my $Membership = {};
@@ -128,85 +137,106 @@ package main;
     ## Read input
     
     ## Read input graph # this is Sylvain stuff
-#     $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col,0, 0,$color_col, 1);
-#     $graph->load_classes($main::infile{clusters}, $induced);
+    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col,0,0,0,0);
     
-    ###read input graph
-    ($main::in) = &OpenInputFile($main::infile{graph});
-    while (my $line = <$main::in>) {
-    	chomp $line;	
-	next if ($line =~ /^#/ || $line =~ /^;/);
-	my @line = split("\t",$line);
-	$ori_graph->{$line[0]}->{$line[1]} = $line[2];
-	$ori_graph->{$line[1]}->{$line[0]} = $line[2];
-	
-    }
-    close $main::in;
     
-    ### read partition
+    ### read partition. nodes in the partition are named after their name
     ($main::in) = &OpenInputFile($main::infile{partition});
     while (my $line = <$main::in>) {
     	chomp $line;	
 	next if ($line =~ /^#/ || $line =~ /^;/);
 	$line =~ s/cluster_//g;
 	my @line = split("\t",$line);
+	
 	$clusters->{'node_cluster'}->{$line[0]}=$line[1];
 	$clusters->{'cluster_node'}->{$line[1]}->{$line[0]} = 1;
+	
     }
     close $main::in;
-    
+    # check if clusters names are stribg or numbers
+    $clusters->{'num'}=1;
+    foreach my $cluster (keys %{$clusters->{'cluster_node'}}) {
+    	if ($cluster !~ /^(\d+)$/) {
+		$clusters->{'num'}=0;
+		last;
+	}
+    }
     
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
 
     ################################################################
-    ## Execute the command
+    ## get the graph. nodes in the graph object are encoded after an id.
     
-    # initialize the membership of phage to clusters
-    foreach my $node (keys %{$ori_graph}) {
+    my @out_neighbours = $graph->get_attribute("out_neighbours");
+    my @weights = $graph->get_attribute("out_label");
+    my %nodes_name_id = $graph->get_attribute("nodes_name_id");
+    my %nodes_id_name= $graph->get_attribute("nodes_id_name");
+    
+    # initialize the membership of node to clusters. Here the node is the node name.
+    foreach my $node (keys %{$clusters->{'node_cluster'}}) {
     	foreach my $cluster (keys %{$clusters->{'cluster_node'}}) {
 	   $WeightMat->{$node}->{$cluster} = 0;
 	}
     }
+    
+    
     if (defined $main::norm{ClusterSizeNorm}) {
     # with this option the weight of the edges to a node X is normalized to the size of the cluster to which node X is assigned in the partition
-	foreach my $n1 (keys %{$ori_graph}) { 	
- 	    # get partition cluster for node
-	    my $clust1 = $clusters->{'node_cluster'}->{$n1};
-    	    foreach my $n2 (keys %{$ori_graph->{$n1}}) {
-		# get cluster where n2 is
-		if (defined $clusters->{'node_cluster'}->{$n2}) {
-    	    	    my $clust2 = $clusters->{'node_cluster'}->{$n2};
-		    my $sizeCluster2 = scalar(keys %{$clusters->{'cluster_node'}->{$clust2}});
+	foreach my $n1 (keys %{$clusters->{'node_cluster'}}) { # here I get all nodes
+		# get partition cluster for node n1
+		my $clust1 = $clusters->{'node_cluster'}->{$n1};
+		my $sizeCluster1 = scalar(keys %{$clusters->{'cluster_node'}->{$clust1}});
+		# get n1 id
+		my $n1_id = $nodes_name_id{$n1};
+		next unless (defined @{$out_neighbours[$n1_id]});
+		my @n1_out_neighbours = @{$out_neighbours[$n1_id]};
+		my @n1_out_weights = @{$weights[$n1_id]};
+		my $index = 0;
+    	    	foreach my $n2_id (@n1_out_neighbours) {
+			# get n2 name
+			my $n2 = $nodes_id_name{$n2_id};
+			# get cluster where n2 is
+			next unless (defined $clusters->{'node_cluster'}->{$n2});
+    	    	    	my $clust2 = $clusters->{'node_cluster'}->{$n2};
+		    	my $sizeCluster2 = scalar(keys %{$clusters->{'cluster_node'}->{$clust2}});
+				
+		    	$WeightMat->{$n1}->{$clust2}=$WeightMat->{$n1}->{$clust2} + $n1_out_weights[$index]/$sizeCluster2;
 
-		    $WeightMat->{$n1}->{$clust2}=$WeightMat->{$n1}->{$clust2} + $ori_graph->{$n1}->{$n2}/$sizeCluster2;
+			$WeightMat->{$n2}->{$clust1}=$WeightMat->{$n2}->{$clust1} + $n1_out_weights[$index]/$sizeCluster1;
+			
+			$index++;
 		}
-		else {
-	    	    next;
-		}
-	    }
 	}
     }
     
     else {
     # this section adds to the Node-Cluster Weight from the Node-Node weight connection
-	foreach my $n1 (keys %{$ori_graph}) {
- 	    # get partition cluster for node
-	    my $clust = $clusters->{'node_cluster'}->{$n1};
-    	    foreach my $n2 (keys %{$ori_graph->{$n1}}) {
-		# get cluster where n2 is
-		if (defined $clusters->{'node_cluster'}->{$n2}) {
-		    my $clust2 = $clusters->{'node_cluster'}->{$n2};
-	    	    $WeightMat->{$n1}->{$clust2}=$WeightMat->{$n1}->{$clust2} + $ori_graph->{$n1}->{$n2};
+	foreach my $n1 (keys %{$clusters->{'node_cluster'}}) { # here I get all nodes
+		# get partition cluster for node n1
+		my $clust1 = $clusters->{'node_cluster'}->{$n1};
+		my $n1_id = $nodes_name_id{$n1};
+		next unless (defined @{$out_neighbours[$n1_id]});
+		my @n1_out_neighbours = @{$out_neighbours[$n1_id]};
+		my @n1_out_weights = @{$weights[$n1_id]};
+		my $index = 0;
+    	    	foreach my $n2_id (@n1_out_neighbours) {
+			# get n2 name
+			my $n2 = $nodes_id_name{$n2_id};
+			# get cluster where n2 is
+			next unless (defined $clusters->{'node_cluster'}->{$n2});
+    	    	    	my $clust2 = $clusters->{'node_cluster'}->{$n2};
+		    	my $sizeCluster2 = scalar(keys %{$clusters->{'cluster_node'}->{$clust2}});
+
+		    	$WeightMat->{$n1}->{$clust2}=$WeightMat->{$n1}->{$clust2} + $n1_out_weights[$index];
+
+			$WeightMat->{$n2}->{$clust1}=$WeightMat->{$n2}->{$clust1} + $n1_out_weights[$index];
+			
+			$index++;
 		}
-		else {
-	    	    next;
-		}
-	    }
 	}
     }
-    
     foreach my $node (keys %{$WeightMat}) {
     	my $totalWeight = 0;
 	my $normWeight = 0;
@@ -227,8 +257,17 @@ package main;
     ################################################################
     ## Print output
     
-        
-    my @header = sort({$a <=> $b} keys %{$clusters->{'cluster_node'}});
+    # check if cluster ids are numeric, then sort after id. Otherwise sort alphabetically
+    
+    my @header;
+    if ($clusters->{'num'} == 1) {
+    	@header = sort({$a <=> $b} keys %{$clusters->{'cluster_node'}});
+	}
+	else {
+    	@header = sort({$a cmp $b} keys %{$clusters->{'cluster_node'}});
+	}
+    
+    
     
     foreach my $cluster (@header) {
     	print $main::out "\t",$cluster;
@@ -352,6 +391,20 @@ allows to use the command within a pipe.
 =cut
 	} elsif ($arg eq "-clusters") {
 	    $main::infile{partition} = shift(@arguments);
+
+=pod
+
+=item B<-in_format input_format>
+
+Input format. Supported: tab, gml
+
+=cut
+	} elsif ($arg eq "-in_format") {
+	    $input_format = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
+
+
 =pod
 
 =item B<-o outfile>
