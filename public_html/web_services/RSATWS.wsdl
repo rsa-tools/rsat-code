@@ -474,6 +474,16 @@ This is the function of the option -zeroocc.</xsd:documentation>
 		Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+          <xsd:element name="input" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input data</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input file on the server (workflow usage)</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
 	  <xsd:element name="verbosity" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Verbosity.</xsd:documentation>
@@ -4000,7 +4010,7 @@ This program supports a variety of background models (Bernoulli, Markov chains o
       Olivier Sand (oly@scmbb.ulb.ac.be).
    </documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
-      <soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
+      <soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/>
     </port>
   </service>
 </definitions>
