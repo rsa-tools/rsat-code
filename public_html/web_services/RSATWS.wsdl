@@ -466,6 +466,57 @@ This is the function of the option -zeroocc.</xsd:documentation>
        </xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="PatternAssemblyRequest">
+	<xsd:sequence>
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
+		Default is 'both'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="verbosity" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Verbosity.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="score_col" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Score column. Column of the input file that contains the scores. if not specified, patterns are incorporated according to their order in the input file. However, if the input file has been generated with oligo-analysis or dyad-analysis with a verbosity >= 1, pattern-assembly detects the occ_sig column in the file header and uses this column as score column.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="str" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Strands for the assembly: 1 for single-strand; 2 for two-strand assembly. Default is 2.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="maxfl" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Maximum flanking segment size. Default is 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="subst" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Maximum allowed substitutions. Default is 0.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="maxcl" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Maximum assembly size, i.e. number of patterns per assembly. Default is 50.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="maxpat" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Maximum number of allowed patterns. If the number of patterns exceeds this value, the program issues a fatal error. Default: no limit.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="toppat" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Maximum number of patterns to analyze. If the number of patterns exceeds this value, the program selects a subset of them, , starting from the top of the. Default: 100.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="DnaPatternRequest">
        	<xsd:sequence>
         <xsd:element name="output" type="xsd:string" minOccurs="0">
@@ -596,206 +647,206 @@ Default is 'both'.</xsd:documentation>
        </xsd:sequence>
       </xsd:complexType>
 
-<xsd:complexType name="FeatureMapRequest">
+      <xsd:complexType name="FeatureMapRequest">
        	<xsd:sequence>
-        <xsd:element name="output" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
-Default is 'both'.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="features" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>a list of features (ORFs, regulatory sites). Each feature is represented by a single line, which should	provide the following information:
-Input file columns:
-  1. map label (eg gene name)
-  2. feature type
-  3. feature identifier (ex: GATAbox, Abf1_site)
-  4. strand (D for Direct, R for Reverse),
-  5. feature start position
-  6. feature end position
-  7. (optional) description 
-  8. (optional) score
-The standard input format assumes that these topics are provided in this order, separated by tabs. Start and end positions can be positive or negative.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Name of the file with input sequence on the server. You need to supply either this parameter or the previous one (features).</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="format" type="xsd:string" minOccurs="0">
-	<xsd:annotation>
-	<xsd:documentation>Output image format. Supported: png,jpg,ps,gif (default = jpg)</xsd:documentation>
-	</xsd:annotation>
-	</xsd:element>
-	<xsd:element name="from" type="xsd:int" minOccurs="0">
-	<xsd:annotation>
-	<xsd:documentation>Lower limit of the positions represented on the graph.</xsd:documentation>
-	</xsd:annotation>
-	</xsd:element>
-	<xsd:element name="to" type="xsd:int" minOccurs="0">
-	<xsd:annotation>
-	<xsd:documentation>Upper limit of the positions represented on the graph.</xsd:documentation>
-	</xsd:annotation>
-	</xsd:element>
-	<xsd:element name="title" type="xsd:string" minOccurs="0">
-	<xsd:annotation>
-	<xsd:documentation>Generic Title for the feature map.</xsd:documentation>
-	</xsd:annotation>
-	</xsd:element>
-	<xsd:element name="label" type="xsd:string" minOccurs="0">
-	<xsd:annotation>
-	<xsd:documentation>Define the info to display for each feature. Valid keys are: id, strand, descr (feature descritption), pos (feature start and end positions).
-Several keys can be entered separated by commas without space. ex: -label pos,id. (default = id).</xsd:documentation>
-	</xsd:annotation>
-	</xsd:element>
-	<xsd:element name="symbol" type="xsd:int" minOccurs="0">
-	<xsd:annotation>
-	<xsd:documentation>Associates a graphical symbol (i.e. rectangle, circle, buterfly, ...) to each feature. This is convenient to distinguish the features on black and white printings.
-Mutually exclusive with the -dot option.</xsd:documentation>
-	</xsd:annotation>
-	</xsd:element>
-	<xsd:element name="dot" type="xsd:int" minOccurs="0">
-	<xsd:annotation>
-	<xsd:documentation>A color dot is associated to each feature. This allows to distinguish overlapping structures on a color screen. Mutually exclusive with the -symbol option.</xsd:documentation>
-	</xsd:annotation>
-	</xsd:element>
-	<xsd:element name="mlen" type="xsd:int" minOccurs="0">
-	<xsd:annotation>
-	<xsd:documentation>map length (in pixels).Default is 600.Length refers to either height (for vertical maps) of width (for horizontal maps).</xsd:documentation>
-	</xsd:annotation>
-	</xsd:element>
-        <xsd:element name="mapthick" type="xsd:int" minOccurs="0">
-        <xsd:annotation>
-        <xsd:documentation>Map thickness.Thickness refers to either width (for vertical maps) or height (horizintal maps). This parameter allows to change the thickness allocated to each map. This is useful when labels are too large. Default is 150.</xsd:documentation>
-        </xsd:annotation>
-        </xsd:element>
-	<xsd:element name="mspacing" type="xsd:int" minOccurs="0">
-        <xsd:annotation>
-        <xsd:documentation>Map spacing.The size of the border between maps (in pixel).</xsd:documentation>
-        </xsd:annotation>
-        </xsd:element>
-	<xsd:element name="origin" type="xsd:int" minOccurs="0">
-        <xsd:annotation>
-        <xsd:documentation>All coordinates are recalculated relative to this origin.This allows to display all coordinates with respect to the ORF start or transcription start site.</xsd:documentation>
-        </xsd:annotation>
-        </xsd:element>
-	<xsd:element name="legend" type="xsd:int" minOccurs="0">
-        <xsd:annotation>
-        <xsd:documentation>Draws a legend on the graph, showing the symbol associated to each distinct feature.</xsd:documentation>
-        </xsd:annotation>
-        </xsd:element>
-	<xsd:element name="scalebar" type="xsd:int" minOccurs="0">
-        <xsd:annotation>
-        <xsd:documentation>Draws a scale bar on the left of the graph.</xsd:documentation>
-        </xsd:annotation>
-        </xsd:element>
-	<xsd:element name="scalestep" type="xsd:int" minOccurs="0">
-        <xsd:annotation>
-        <xsd:documentation>Step between annotations of the scale bar. If not specified, a reasonable step is calculated on basis of the scale bar range.</xsd:documentation>
-        </xsd:annotation>
-        </xsd:element>
-	<xsd:element name="scorethick" type="xsd:int" minOccurs="0">
-        <xsd:annotation>
-        <xsd:documentation>Each feature is displayed with a thickness proportional to its score. Only positive scores are represented.</xsd:documentation>
-        </xsd:annotation>
-        </xsd:element>
-	<xsd:element name="maxscore" type="xsd:int" minOccurs="0">
-        <xsd:annotation>
-        <xsd:documentation>(only valid when -scorethick is active) Maximal allowed score value. Higher score values are clipped for the drawing.</xsd:documentation>
-        </xsd:annotation>
-        </xsd:element>
-	<xsd:element name="minscore" type="xsd:int" minOccurs="0">
-        <xsd:annotation>
-        <xsd:documentation>(only valid when -scorethick is active) Minimal allowed score value. Features with smaller score are not displayed.</xsd:documentation>
-        </xsd:annotation>
-        </xsd:element>
-	<xsd:element name="maxfthick" type="xsd:int" minOccurs="0">
-        <xsd:annotation>
-        <xsd:documentation>Max feature thickness</xsd:documentation>
-        </xsd:annotation>
-        </xsd:element>
-	<xsd:element name="minfthick" type="xsd:int" minOccurs="0">
-        <xsd:annotation>
-        <xsd:documentation>Min feature thickness</xsd:documentation>
-        </xsd:annotation>
-        </xsd:element>
-	<xsd:element name="htmap" type="xsd:int" minOccurs="0">
-        <xsd:annotation>
-       <xsd:documentation>HTML map.An HTML document is automatically generated, which includes the feature map GIF file as an HTML map.
-In other words,this document displays a figure with sensitive areas. Each time the mouse is positioned above a feature, information about this particuliar feature is displayed at the bottom of the browser window.</xsd:documentation>
-        </xsd:annotation>
-        </xsd:element>
-	<xsd:element name="mono" type="xsd:int" minOccurs="0">
-        <xsd:annotation>
-        <xsd:documentation>Monochrome palette (for printing on black/white printer).</xsd:documentation>
-        </xsd:annotation>
-        </xsd:element>
-	<xsd:element name="orientation" type="xsd:string" minOccurs="0">
-        <xsd:annotation>
-        <xsd:documentation>Orientation of the map. Valid values are "horiz" for an horizontal map (default) and "vertic" for a vertical map.</xsd:documentation>
-        </xsd:annotation>
-        </xsd:element>
-	<xsd:element name="select" type="xsd:string" minOccurs="0">
-        <xsd:annotation>
-        <xsd:documentation> Only display the features whose ID is in the provided id_list.
-The id_list contains one or several IDs, separated by commas.IDs may be embraced in single quotes to allow multiple words within the IDs. Commas and single quotes are not allowed within an ID.
-Example:-select 'gataag','gattag' only displays features identified by gataag or gattag.</xsd:documentation>
-        </xsd:annotation>
-        </xsd:element>
-	<xsd:element name="tmp_sequence_file" type="xsd:string" minOccurs="0">
-        <xsd:annotation>
-        <xsd:documentation>Reference sequence file on the server (workflow usage)</xsd:documentation>
-        </xsd:annotation>
-        </xsd:element>
-	<xsd:element name="sequence_format" type="xsd:string" minOccurs="0">
-        <xsd:annotation>
-        <xsd:documentation>Format of reference sequence file on the server (workflow usage)</xsd:documentation>
-        </xsd:annotation>
-        </xsd:element>
+          <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
+		Default is 'both'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="features" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>a list of features (ORFs, regulatory sites). Each feature is represented by a single line, which should	provide the following information:
+		Input file columns:
+		1. map label (eg gene name)
+		2. feature type
+		3. feature identifier (ex: GATAbox, Abf1_site)
+		4. strand (D for Direct, R for Reverse),
+		5. feature start position
+		6. feature end position
+		7. (optional) description 
+		8. (optional) score
+		The standard input format assumes that these topics are provided in this order, separated by tabs. Start and end positions can be positive or negative.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Name of the file with input sequence on the server. You need to supply either this parameter or the previous one (features).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="format" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Output image format. Supported: png,jpg,ps,gif (default = jpg)</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="from" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Lower limit of the positions represented on the graph.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="to" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Upper limit of the positions represented on the graph.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="title" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Generic Title for the feature map.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="label" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Define the info to display for each feature. Valid keys are: id, strand, descr (feature descritption), pos (feature start and end positions).
+		Several keys can be entered separated by commas without space. ex: -label pos,id. (default = id).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="symbol" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Associates a graphical symbol (i.e. rectangle, circle, buterfly, ...) to each feature. This is convenient to distinguish the features on black and white printings.
+		Mutually exclusive with the -dot option.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="dot" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>A color dot is associated to each feature. This allows to distinguish overlapping structures on a color screen. Mutually exclusive with the -symbol option.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="mlen" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>map length (in pixels).Default is 600.Length refers to either height (for vertical maps) of width (for horizontal maps).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="mapthick" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Map thickness.Thickness refers to either width (for vertical maps) or height (horizintal maps). This parameter allows to change the thickness allocated to each map. This is useful when labels are too large. Default is 150.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="mspacing" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Map spacing.The size of the border between maps (in pixel).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="origin" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>All coordinates are recalculated relative to this origin.This allows to display all coordinates with respect to the ORF start or transcription start site.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="legend" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Draws a legend on the graph, showing the symbol associated to each distinct feature.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="scalebar" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Draws a scale bar on the left of the graph.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="scalestep" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Step between annotations of the scale bar. If not specified, a reasonable step is calculated on basis of the scale bar range.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="scorethick" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Each feature is displayed with a thickness proportional to its score. Only positive scores are represented.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="maxscore" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>(only valid when -scorethick is active) Maximal allowed score value. Higher score values are clipped for the drawing.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="minscore" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>(only valid when -scorethick is active) Minimal allowed score value. Features with smaller score are not displayed.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="maxfthick" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Max feature thickness</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="minfthick" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Min feature thickness</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="htmap" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+	      <xsd:documentation>HTML map.An HTML document is automatically generated, which includes the feature map GIF file as an HTML map.
+		In other words,this document displays a figure with sensitive areas. Each time the mouse is positioned above a feature, information about this particuliar feature is displayed at the bottom of the browser window.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="mono" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Monochrome palette (for printing on black/white printer).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="orientation" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Orientation of the map. Valid values are "horiz" for an horizontal map (default) and "vertic" for a vertical map.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="select" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation> Only display the features whose ID is in the provided id_list.
+		The id_list contains one or several IDs, separated by commas.IDs may be embraced in single quotes to allow multiple words within the IDs. Commas and single quotes are not allowed within an ID.
+		Example:-select 'gataag','gattag' only displays features identified by gataag or gattag.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="tmp_sequence_file" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Reference sequence file on the server (workflow usage)</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="sequence_format" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Format of reference sequence file on the server (workflow usage)</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
 	</xsd:sequence>
-	</xsd:complexType>
+      </xsd:complexType>
 
       <xsd:complexType name="GeneInfoRequest">
-       <xsd:sequence>
-	<xsd:element name="output" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
-Default is 'both'.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-        <xsd:element name="organism" type="xsd:string" minOccurs="1">
-	 <xsd:annotation>
-	  <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
-	 </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="query" type="xsd:string" minOccurs="1" maxOccurs="unbounded">
-	 <xsd:annotation>
-	  <xsd:documentation>List of gene(s) for which you want info on or list of keywords to search for (can be regular expressions).</xsd:documentation>
-	 </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="full" type="xsd:int" minOccurs="0">
-	 <xsd:annotation>
-	  <xsd:documentation>Full match only (no substring matching) if value = 1.</xsd:documentation>
-	 </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="noquery" type="xsd:int" minOccurs="0">
-	 <xsd:annotation>
-	  <xsd:documentation>Do not print the query at the begining of each line if value = 1.</xsd:documentation>
-	 </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="descr" type="xsd:int" minOccurs="0">
-	 <xsd:annotation>
-	  <xsd:documentation>Match query against the description, too, not just against gene ID and name if value = 1.</xsd:documentation>
-	 </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="feattype" type="xsd:string" minOccurs="0">
-	 <xsd:annotation>
-	  <xsd:documentation>Feature type (CDS, mRNA, tRNA, rRNA, scRNA).</xsd:documentation>
-	 </xsd:annotation>
-	</xsd:element>
-       </xsd:sequence>
+	<xsd:sequence>
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
+		Default is 'both'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="organism" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="query" type="xsd:string" minOccurs="1" maxOccurs="unbounded">
+	    <xsd:annotation>
+	      <xsd:documentation>List of gene(s) for which you want info on or list of keywords to search for (can be regular expressions).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="full" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Full match only (no substring matching) if value = 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="noquery" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Do not print the query at the begining of each line if value = 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="descr" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Match query against the description, too, not just against gene ID and name if value = 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="feattype" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Feature type (CDS, mRNA, tRNA, rRNA, scRNA).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
       </xsd:complexType>
 
       <xsd:complexType name="ClassFreqRequest">
@@ -2094,7 +2145,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2114,7 +2165,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2134,7 +2185,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2154,7 +2205,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2174,7 +2225,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2183,6 +2234,26 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    </xsd:annotation>
 	  </xsd:element>
 	</xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="PatternAssemblyResponse">
+        <xsd:sequence>
+          <xsd:element name="server" type="xsd:string">
+            <xsd:annotation>
+              <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+          <xsd:element name="command" type="xsd:string">
+            <xsd:annotation>
+              <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+          <xsd:element name="client" type="xsd:string">
+            <xsd:annotation>
+              <xsd:documentation>The results.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
       </xsd:complexType>
 
       <xsd:complexType name="DnaPatternResponse">
@@ -2194,7 +2265,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2214,7 +2285,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
           </xsd:element>
           <xsd:element name="command" type="xsd:string">
             <xsd:annotation>
-              <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+              <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
           <xsd:element name="client" type="xsd:string">
@@ -2234,7 +2305,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
           </xsd:element>
           <xsd:element name="command" type="xsd:string">
             <xsd:annotation>
-              <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+              <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
           <xsd:element name="client" type="xsd:string">
@@ -2254,7 +2325,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2274,7 +2345,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2295,7 +2366,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2316,7 +2387,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 		      </xsd:element>
 		      <xsd:element name="command" type="xsd:string">
 			      <xsd:annotation>
-				      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+				      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 			      </xsd:annotation>
 		      </xsd:element>
 		      <xsd:element name="client" type="xsd:string">
@@ -2335,7 +2406,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 		      </xsd:element>
 		      <xsd:element name="command" type="xsd:string">
 			      <xsd:annotation>
-				      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+				      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 			      </xsd:annotation>
 		      </xsd:element>
 		      <xsd:element name="client" type="xsd:string">
@@ -2354,7 +2425,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2374,7 +2445,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2394,7 +2465,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2414,7 +2485,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2434,7 +2505,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2453,7 +2524,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2473,7 +2544,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2493,7 +2564,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2514,7 +2585,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2533,7 +2604,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2552,7 +2623,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 		      </xsd:element>
 		      <xsd:element name="command" type="xsd:string">
 			      <xsd:annotation>
-				      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+				      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 			      </xsd:annotation>
 		      </xsd:element>
 		      <xsd:element name="client" type="xsd:string">
@@ -2571,7 +2642,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2591,7 +2662,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2611,7 +2682,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2632,7 +2703,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2653,7 +2724,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2673,7 +2744,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>The stand alone command executed on the server.</xsd:documentation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="client" type="xsd:string">
@@ -2763,6 +2834,22 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    <xsd:element name="response" type="tns:DyadAnalysisResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="pattern_assembly">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="request" type="tns:PatternAssemblyRequest" />
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="pattern_assemblyResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="response" type="tns:PatternAssemblyResponse" />
+          </xsd:sequence>
+        </xsd:complexType>
       </xsd:element>
 
       <xsd:element name="dna_pattern">
@@ -3212,6 +3299,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:dyad_analysisResponse"/>
   </message>
 
+  <message name="pattern_assemblyRequest">
+    <part name="parameters" element="tns:pattern_assembly"/>
+  </message>
+
+  <message name="pattern_assemblyResponse">
+    <part name="output" element="tns:pattern_assemblyResponse"/>
+  </message>
+
   <message name="dna_patternRequest">
     <part name="parameters" element="tns:dna_pattern"/>
   </message>
@@ -3449,6 +3544,12 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	   sequences.
          </documentation>
       </operation>
+      <operation name="pattern_assembly">
+         <input name="PatternAssemblyRequest" message="tns:pattern_assemblyRequest"/>
+         <output name="PatternAssemblyResponse" message="tns:pattern_assemblyResponse"/>
+         <documentation>
+         </documentation>
+      </operation>
       <operation name="dna_pattern">
          <input name="DnaPatternRequest" message="tns:dna_patternRequest"/>
          <output name="DnaPatternResponse" message="tns:dna_patternResponse"/>
@@ -3646,6 +3747,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
          </output>
       </operation>
       <operation name="dyad_analysis">
+         <soap:operation soapAction=""/>
+         <input>
+             <soap:body use="literal" />
+         </input>
+         <output>
+             <soap:body use="literal" />
+         </output>
+      </operation>
+      <operation name="pattern_assembly">
          <soap:operation soapAction=""/>
          <input>
              <soap:body use="literal" />
@@ -3890,8 +4000,7 @@ This program supports a variety of background models (Bernoulli, Markov chains o
       Olivier Sand (oly@scmbb.ulb.ac.be).
    </documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
-   <soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
-
+      <soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
     </port>
   </service>
 </definitions>
