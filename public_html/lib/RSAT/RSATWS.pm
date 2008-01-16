@@ -771,6 +771,115 @@ sub dyad_analysis_cmd {
 }
 
 
+sub pattern_assembly {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+      $output_choice = 'both';
+    }
+    my $command = $self->pattern_assembly_cmd(%args);
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+      die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $result = `$command`;
+    my ($TMP_OUT, $tmp_outfile) = tempfile(pattern-assembly.XXXXXXXXXX, DIR => $TMP);
+    print $TMP_OUT $result;
+    close $TMP_OUT;
+    if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => {'command' => $command, 
+					     'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => {'command' => $command,
+					     'client' => $result});
+    } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					     'command' => $command, 
+					     'client' => $result});
+    }
+}
+
+
+sub pattern_assembly_cmd {
+  my ($self, %args) =@_;
+
+
+  my $command = "$SCRIPTS/pattern-assembly";
+
+  ## Input file
+  if ($args{"input"}) {
+    my $input = $args{"input"};
+    chomp $input;
+    $tmp_infile = `mktemp $TMP/pattern-assembly.XXXXXXXXXX`;
+    open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
+    print TMP_IN $input;
+    close TMP_IN;
+  } elsif ($args{"tmp_infile"}) {
+    $tmp_infile = $args{"tmp_infile"};
+  }
+  chomp $tmp_infile;
+  $command .= " -i '".$tmp_infile."'";
+
+  ## Verbosity
+  my $v = $args{"verbosity"};
+  if (&IsNatural($v)) {
+    $command .= " -v ".$v;
+  }
+
+  ## Strands
+  my $str = $args{"str"};
+  if ($str) {
+    if ($str == 1 || $str == 2) {
+      $command .= " -".$str."str";
+    } else {
+      die "str value must be 1 or 2";
+    }
+  }
+
+  ## Score column
+  my $score_col = $args{score_col};
+  if (&IsNatural($score_col)) {
+    $command .= " -sc ".$score_col;
+  }
+
+  ## Max flanking segment size
+  my $maxfl = $args{maxfl};
+  if (&IsNatural($maxfl)) {
+    $command .= " -maxfl ".$maxfl;
+  }
+
+  ## Max substitutions
+  my $subst = $args{subst};
+  if (&IsNatural($subst)) {
+    $command .= " -subst ".$subst;
+  }
+
+  ## Max assembly size (number of patterns per cluster)
+  my $maxcl = $args{maxcl};
+  if (&IsNatural($maxcl)) {
+    $command .= " -maxcl ".$maxcl;
+  }
+
+  ## Max number of patterns in total
+  my $maxpat = $args{maxpat};
+  if (&IsNatural($maxpat)) {
+    $command .= " -maxpat ".$maxpat;
+  }
+
+  ## Max number of top patternsto use for assembly
+  my $toppat = $args{toppat};
+  if (&IsNatural($toppat)) {
+    $command .= " -toppat ".$toppat;
+  }
+
+
+
+  return $command;
+}
+
+
+
 sub dna_pattern {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
