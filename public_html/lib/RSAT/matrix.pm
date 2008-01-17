@@ -2000,8 +2000,7 @@ corrected frequencies.
 =cut
 
 sub segment_proba {
-    my ($self, $segment) = @_;
-    
+    my ($self, $segment) = @_;    
     $segment = lc($segment);
     my $seq_len = length($segment);
     my @residue_proba = ();
@@ -2912,6 +2911,66 @@ sub getTheorScoreDistrib {
   return %{$self->{$distrib_key}};
 }
 
+################################################################
+=pod
+
+=item makeLogo()
+
+Return the logo from the matrix
+
+=cut
+sub makeLogo{
+	my ($self) = @_;
+	my ($seqs) =$self->seq_from_matrix();
+}
+
+sub seq_from_matrix {
+	my ($self) = @_;
+	my $nb_col = $self->ncol();
+	my $nb_row = $self->nrow();
+	@matrix = @{$self->{table}};
+	my @col_sum = col_sum($nb_row,$nb_col,@matrix);
+	for my $i (1..$#col_sum) {
+		if ($col_sum[$i-1] != $col_sum[$i]) {
+			&RSAT::error::FatalError("Your matrix column sums must be equal n order to make logo.");
+		}
+	}
+	my $seq_number = shift @col_sum;
+	my @letters_at_position = ();
+	for my $c (0..$nb_col-1) {
+#		my @col_counts = $self->get_column($c+1,$self->nrow(),@matrix);
+#		print Dumper(\@col_counts); die();
+		my $i=0;
+		foreach my $letter ("A","C","G","T") {
+			$letters_at_position[$c] .= "$letter" x $matrix[$c][$i]; #$self->{"count"}[$c][$i];
+#			push $letters_at_position[$c], split ("$letter" x $matrix[$c][$i]); #$self->{"count"}[$c][$i];
+			$i++;
+		}
+		&RSAT::message::Debug("position", $c, $letters_at_position[$c]) if ($main::verbose >= 0);
+#		&RSAT::message::Debug("position", $c, join("",@{$letters_at_position[$c]})) if ($main::verbose >= 0);
+	}
+	## Print sequences
+	my @seqs=();
+#	foreach my $seqnb (1..$seq_number) {
+	#	$seqs
+#foreach (my $) {
+#		}
+	my @intermediate = ();
+	for my $false_seq (@letters_at_position) {
+		my @residues = split ("",$false_seq);
+		push @intermediate, \@residues;
+	}
+	
+	
+	for my $residue (0..$seq_number-1) {
+		my $seq;
+		for my $array (@intermediate) {
+			$seq .=$array->[$residue];
+		}
+		push @seqs, $seq; 
+	}
+	return @seqs;
+}
 return 1;
 
 
@@ -2920,4 +2979,5 @@ __END__
 =pod
 
 =back
+
 
