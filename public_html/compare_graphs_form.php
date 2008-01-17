@@ -32,7 +32,7 @@
     $demo_remark = "In this demonstration, we will compare the networks resulting from the
 two first publications reporting a complete characterization of the
 yeast interactome, obtained using the two-hybrid method.";
-    $demo_remark .= "The first network (<a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?db=pubmed&uid=10688190&cmd=showdetailview&indexed=google'>Uetz et al, 2000)</a> contains 865 interactions between 926 proteins.";
+    $demo_remark .= "The first network (<a target = '_top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?db=pubmed&uid=10688190&cmd=showdetailview&indexed=google'>Uetz et al, 2000)</a> contains 865 interactions between 926 proteins.";
     $demo_remark .= "The second network  (<a href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=11283351&ordinalpos=3&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum' target = 'top'>Ito et al, 2001)</a> contains 786 interactions between 779 proteins.";
 
     $demo_remark .= "We will merge the two networks (i.e. compute
@@ -166,7 +166,9 @@ and
   <TD><B><A HREF='compare_graphs_form.php?demo=1'>DEMO</A></B></TD>
   </form>
   <TD><B><A HREF='help.compare_graphs.html'>MANUAL</A></B></TD>
-  <TD><B><A HREF='mailto:sylvain@scmbb.ulb.ac.be'>MAIL</A></B></TD>
+  <TD><B><A target = '_blank' HREF='".checkNeatTutorial("tutorials/neat_tutorial/node3.html")."'>TUTORIAL</A></B></TD>
+
+  <TD><B><A HREF='mailto:sylvain@scmbb.ulb.ac.be' >MAIL</A></B></TD>
   </TR></TABLE></ul></ul>");
   ?>
   </body>
