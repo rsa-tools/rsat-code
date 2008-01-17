@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-cluster-membership,v 1.1 2008/01/17 13:41:18 rsat Exp $
+# $Id: graph-cluster-membership,v 1.2 2008/01/17 13:48:23 rsat Exp $
 #
 ############################################################
 
@@ -83,7 +83,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     ################################################################
@@ -414,7 +414,7 @@ By default this option is off.
 
 =item B<-decimals number_of_decimals>
 
-Number of decimals to print for the membership. Note that by selecting this option, the membership-vectors (rows)
+Number of decimals to print for the membership. Note that by selecting this option, the entries of the membership-vectors (rows)
 won't sum up to 1.
 
 =cut
