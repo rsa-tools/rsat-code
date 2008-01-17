@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.53 2008/01/04 13:08:36 morgane Exp $
+# $Id: convert-matrix,v 1.54 2008/01/17 07:08:26 rsat Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -60,6 +60,7 @@ local $sort_order = "";
 			  "margins"=>1,
 			  "sites"=>1,
 			  "wdistrib"=>1,
+			  "logo"=>1,
 			 );
 $supported_return_fields = join ",", sort keys %supported_return_type;
 
@@ -222,6 +223,11 @@ foreach my $matrix (@matrices) {
     $matrix->calcConsensus();
     $matrix->calcGCcontent();
   }
+  ## Generate logo
+  if ($return_fields{logo}) {
+	 $matrix->makeLogo();
+  }
+
 }
 
 ## Sort the matrices if requested
