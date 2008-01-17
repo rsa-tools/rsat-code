@@ -224,7 +224,6 @@ Function check_integer($string) {
 ### the name of the file
 
 Function UpdateLogFile($suite ,$script_name, $message) {
-//   echo "<pre>";
   if ($script_name == "") {
     $script_name = getCurrentScriptName();
   }
@@ -250,4 +249,16 @@ Function UpdateLogFile($suite ,$script_name, $message) {
   fclose($log_handle);
   chmod ($log_file, 0777);
 }
-
+?>
+<?php
+  Function checkNeatTutorial($tutorial_url) {
+  global $WWW_RSA;
+  $pdf_tutorial = $WWW_RSA.'/tutorials/neat_tutorial.pdf';
+  $address = $pdf_tutorial;
+  if (file_exists($tutorial_url)) {
+    $address = $tutorial_url; 
+  } 
+  return $address;
+  
+}
+?>

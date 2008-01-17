@@ -281,8 +281,8 @@
    if (!$error) { 
      $cc_parameters = array( 
        "request" => array (
-         "ref_classes"=>$classesQ,
-         "query_classes"=>$classesR,
+         "ref_classes"=>$classesR,
+         "query_classes"=>$classesQ,
          "input_classes"=>$input_classes,
          "return_fields"=>$return,
          "score_column"=>$score_col,
