@@ -188,7 +188,7 @@
   <TD><B><A HREF='pathfinder_form.php?advanced=1'>ADVANCED</A></B></TD>
   </form>
   <TD><B><A HREF='help.pathfinder.html'>MANUAL</A></B></TD>
-  <TD><B><A HREF='tutorials/neat_tutorial/node7.html'>TUTORIAL</A></B></TD>
+  <TD><B><A HREF='tutorials/neat_tutorial/Path_finding.html'>TUTORIAL</A></B></TD>
   <TD><B><A HREF='mailto:kfaust@ulb.ac.be'>MAIL</A></B></TD>
    <TD><B><A HREF='help.pathfinder.html#webservice'>WSDL</A></B></TD>
   </TR></TABLE></ul></ul>");
