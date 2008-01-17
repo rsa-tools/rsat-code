@@ -162,7 +162,7 @@ Repeat these steps for \file{complexes\_rm\_10\_ad\_10.tab}, \file{complexes\_rm
 
 \subsection{Interpretation of the results}
 
-We will now compare the performances of MCL when applied to networks containing a increasing proportion of noise or no signal at all.
+We will now compare the performances of MCL when applied to networks containing an increasing proportion of noise or no signal at all.
 
 \subsubsection{Files description}
 
@@ -257,3 +257,4 @@ As expected, the value of the global parameters, the geometric accuracy (row acc
 
 We can observe that the sensitivity is more affected than the \textit{PPV} and that the complex wise separation (sep\_r) is more affected than the cluster wise separation. This is due to the fact that by increasing the noise, MCL increases the number of small sized clusters (ncol) too and, as we saw in previous section, this has an impact on the sensitivity.
 
+Note that with a random graph, we would have a separation of 0.15 but an unweighted geometric accuracy of 0.365 which is far from being 0. The relatively good performances of MCL on the highly altered graph must thus be taken with caution as the gain in performances is only of 23\%. This illustrates the interest of using negative controls.
