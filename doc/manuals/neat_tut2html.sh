@@ -13,7 +13,7 @@ bibtex neat_tutorial.aux
 latex neat_tutorial.tex
 latex neat_tutorial.tex
 # convert tex to bib
-latex2html neat_tutorial.tex -split 3 -style $STYLEFILE -dir $OUTDIR
+latex2html neat_tutorial.tex -split 3 -dir $OUTDIR
 # make sure we have correct style
 cp $STYLEFILE $OUTDIR/neat_tutorial.css
 # remove temp files
