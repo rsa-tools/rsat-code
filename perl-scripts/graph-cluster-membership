@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-cluster-membership,v 1.2 2008/01/17 13:48:23 rsat Exp $
+# $Id: graph-cluster-membership,v 1.3 2008/01/17 13:59:39 rsat Exp $
 #
 ############################################################
 
@@ -10,12 +10,12 @@
 
 =head1 NAME
 
-fuzzy-clustering
+graph-cluster-membership
 
 
 =head1 DESCRIPTION
 
-Generates a fuzzy clustering of a graph.
+Mapping a clustering of a graph onto the original graph, provides a 'fuzzy clustering' of a graph.
 
 A partition of the graph is mapped onto the original graph. The weight of the connections of a node to a given partition cluster, divided by the total weight of the connections established by that node, is the membership of the node to the given cluster. The clustering of the node is described with a membership vector and the whole clustering is described with the membership matrix.
 
@@ -83,7 +83,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     ################################################################
