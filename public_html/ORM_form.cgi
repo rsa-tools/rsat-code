@@ -105,7 +105,7 @@ print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 print $query->checkbox(-name=>'purge',
 		       -checked=>$default{purge},
 		       -label=>'');
-print "&nbsp;<A HREF='help.ORM.html#purge'><B>purge sequences (highly recommended)</B></A>";
+print "<a href='help.ORM.html#purge'><b>Purge sequences (highly recommended)</b></a>";
 print "<br />";
 
 print "<hr width=550 align=left />\n";
@@ -128,7 +128,7 @@ print $query->popup_menu(-name=>'monad_length',
  print "<b><a href='help.ORM.html#oligo_length'> and spacing from </a></b>\n";
  print $query->popup_menu(-name=>'spacing_a',
 			 -Values=>[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
- 			 -default=>1);
+ 			 -default=>0);
  print "<b><a href='help.ORM.html#oligo_length'> to </a></b>\n";
  print $query->popup_menu(-name=>'spacing_b',
 			 -Values=>[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
@@ -142,18 +142,17 @@ print '<br /><br />';
 print $query->checkbox(-name=>'noov',
 		       -checked=>$default{noov},
 		       -label=>'');
-print "&nbsp;<A HREF='help.ORM.html#noov'><B>prevent overlapping matches</B></A>";
-print "<br />\n";
+print '<a href="help.ORM.html#noov""><b>Prevent overlapping matches</b></a>';
 
 ### strand ###
-print "<B><A HREF='help.ORM.html#count_strands'>Count on</A>&nbsp;</B>\n";
+print '&nbsp;&nbsp&nbsp;&nbsp<b><a href="help.ORM.html#count_strands">Count on </a></b>';
 print $query->popup_menu(-name=>'strand',
 			 -Values=>['single strand',
 				  'both strands'],
 			 -default=>$default{strand});
 
 ### align ###
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.ORM.html#align'>Align</A>&nbsp;</B>\n";
+print '&nbsp;&nbsp&nbsp;&nbsp<b><a href="help.ORM.html#align">Align </a></b>';
 print $query->popup_menu(-name=>'align',
 			 -Values=>['right',
  				  'left'],
@@ -166,29 +165,39 @@ print $query->popup_menu(-name=>'align',
 #		       -label=>'');
 #print "&nbsp;<A HREF='help.ORM.html#grouprc'><B>return reverse complements together in the output</B></A>";
 #print "<BR>";
+print '<br /><br />';
+print '<input type="radio" name="windowtype" value="no" />';
+print '<b><a href="help.ORM.html#window_width">No window (like oligo-analysis or dyad-analysis)</a></b>';
+
 print '<br />';
-print '<b><a href="help.ORM.html#window_width">Window width</a></b>';
+
+print '<input type="radio" name="windowtype" value="fixed" checked="checked"/>';
+print '<b><a href="help.ORM.html#window_width">Fixed window of width</a></b>';
 print $query->textfield(-name=>'window_width',
 			-default=>$default{window_width},
 			-size=>5);
-print '<b><a href="help.ORM.html#window_width"> Group windows</a></b>';
+print ' ';
 print $query->checkbox(-name=>'window_group',
 		       -checked=>$default{window_group},
 		       -label=>'');
+print '<b><a href="help.ORM.html#window_width">Group windows</a></b>';
 
 
-print '&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="help.ORM.html#bgwindow_width">Background window width</a></b>';
-print $query->textfield(-name=>'bg_window_width',
-			-default=>$default{bg_window_width},
-			-size=>5);
-
-
-
+print '<br />';
+print '<input type="radio" name="windowtype" value="variable" />';
+print '<b><a href="help.ORM.html#window_width">Variable window width</a></b> (Warning ! this can be time consuming)';
 
 print '<hr width="550" align="left">';
 
 ################################################################
 ## Background model
+#print '<br /><br />';
+print '<b><a href="help.ORM.html#bgwindow_width">Background window width</a></b>';
+print $query->textfield(-name=>'bg_window_width',
+			-default=>$default{bg_window_width},
+			-size=>5);
+
+print '<br />';
 &PrintOligoBackgroundOptions();
 
 ################################################################
