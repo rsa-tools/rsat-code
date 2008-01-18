@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-cluster-membership,v 1.6 2008/01/18 13:38:02 jvanheld Exp $
+# $Id: graph-cluster-membership,v 1.7 2008/01/18 15:06:58 gipsi Exp $
 #
 ############################################################
 
@@ -48,7 +48,7 @@ the total number of edges connecting node I<n>.
 Me(n,c)= SUM[E(n,i)]/ SUM[E(n,j)]
           i            j
 
-where I<E(n,i)> is a boolean variable indicating if ther is an edge
+where I<E(n,i)> is a boolean variable indicating if there is an edge
 between nodes I<n> and I<i>,
 I<i> is the index for the nodes I<Nc> belonging to cluster I<c>, and
 I<j> is the index for all nodes I<N>.
@@ -75,9 +75,8 @@ normalized to the size of the cluster:
 Mw(n,c)= (SUM[W(n,i)]/Nc) / SUM (SUM[W(n,j)/Nk])
            i                 k    j
 
-where
-....
-
+where I<Nc> is the number of nodes in cluster I<c> (cluster size), K is the set of all clusters,
+the other symbols are defined as above.
 
 The relative weight reduces the bias of membership coefficients towards
 large clusters
@@ -115,7 +114,7 @@ With the help of
 
 =head1 USAGE
 
-graph-cluster-membership [-i graphfile] [-clusters partition_file] [-o outputfile] [-v #] [...]
+graph-cluster-membership [-i graphfile] [-clusters file_with_cluster_assignment] [-o outputfile] [-stat stat_option] [-v #] 
 
 =head1 INPUT FORMAT
 
@@ -157,7 +156,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     ################################################################
@@ -186,7 +185,7 @@ package main;
     %main::outfile = ();
     $main::verbose = 0;
     $main::out = STDOUT;
-    
+    $main::norm{stat} = 'weight';
 
 
     ################################################################
@@ -261,27 +260,33 @@ package main;
 		my @n1_out_neighbours = @{$out_neighbours[$n1_id]};
 		my @n1_out_weights = @{$weights[$n1_id]};
 		my $index = 0;
-    		foreach my $n2_id (@n1_out_neighbours) {
+    	foreach my $n2_id (@n1_out_neighbours) {
 			# get n2 name
 			my $n2 = $nodes_id_name{$n2_id};
 			# get cluster where n2 is
 			next unless (defined $clusters->{'node_cluster'}->{$n2});
-    	    		my $clust2 = $clusters->{'node_cluster'}->{$n2};
+    	    my $clust2 = $clusters->{'node_cluster'}->{$n2};
 			my $sizeCluster2 = scalar(keys %{$clusters->{'cluster_node'}->{$clust2}});
-
-			if (defined $main::norm{ClusterSizeNorm}) {
-   				 # with this option the weight of the edges to a node X is normalized to the size of the cluster to which node X is assigned in the partition
+			
+			if ($main::norm{stat} eq 'relw') {
+   				 # with this option the weight of the edges to a node n is normalized to the size of the cluster to which node n is assigned in the clustering
 
 				$WeightMat->{$n1}->{$clust2}=$WeightMat->{$n1}->{$clust2} + $n1_out_weights[$index]/$sizeCluster2;
 
 				$WeightMat->{$n2}->{$clust1}=$WeightMat->{$n2}->{$clust1} + $n1_out_weights[$index]/$sizeCluster1;
 			}
 
-			else {
-		    		$WeightMat->{$n1}->{$clust2}=$WeightMat->{$n1}->{$clust2} + $n1_out_weights[$index];
+			elsif ($main::norm{stat} eq 'weight') {
+		    	$WeightMat->{$n1}->{$clust2}=$WeightMat->{$n1}->{$clust2} + $n1_out_weights[$index];
 
 				$WeightMat->{$n2}->{$clust1}=$WeightMat->{$n2}->{$clust1} + $n1_out_weights[$index];
 
+			}
+			elsif ($main::norm{stat} eq 'edge') {
+		    	$WeightMat->{$n1}->{$clust2}=$WeightMat->{$n1}->{$clust2} + 1;
+
+				$WeightMat->{$n2}->{$clust1}=$WeightMat->{$n2}->{$clust1} + 1;
+				
 			}
 			$index++;
 		}
@@ -472,24 +477,35 @@ allows to use the command within a pipe.
 	    
 =pod
 
-=item B<-norm>
+=item B<-stat>
 
-This argument shitches on the normalization according to the size of the clusters. 
-That is, to calculate the membership of node X to cluster K, the sum of the weights of node X to the nodes of cluster K are divided by the size of K (number of nodes assigned to cluster K). This prevents bias towards large clusters.
+Determines how the node membership will be calculated:
 
-By default this option is off.
+
+-stat edge
+
+The membership of node I<n> to cluster I<c> is calculated as the fraction of the total edges of  node I<n> that are linking to nodes of the cluster I<c>.  
+
+-stat weight (default)
+
+The membership of node I<n> for cluster I<c> is is the fraction of
+edge weights linking node I<n> to cluster I<c>.
+
+-stat relw
+
+The weight of the edge between node I<n> and nodes of cluster I<c> are standardized after the size of cluster I<c>. Reduces the bias of membership coefficients towards large clusters.
+
 
 =cut
 	    
 	    
-	} elsif ($arg eq '-norm') {
-	    $main::norm{ClusterSizeNorm} = 1;
+	} elsif ($arg eq '-stat') {
+		$main::norm{stat} = shift(@arguments);
 =pod
 
 =item B<-decimals number_of_decimals>
 
-Number of decimals to print for the membership. Note that by selecting this option, the entries of the membership-vectors (rows)
-won't sum up to 1.
+Number of decimals to print for the membership. Note that by selecting this option, the entries of the membership-vectors (rows) won't sum up to 1.
 
 =cut
 	    
