@@ -297,6 +297,15 @@
           <INPUT type='submit' value='Display the graph'>
          </form>
         </td>
+        <TD>
+        <FORM METHOD='POST' ACTION='visant.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='visant_graph_file' VALUE='$tempFileName'>
+          <input type='hidden' NAME='visant_graph_format' VALUE='$sylvain_input_format'>
+          <input type='hidden' NAME='visant_directed' VALUE='$directed'>
+          <INPUT type='submit' value='Display the graph with VisANT'>
+         </form>
+        </td>
        <TD>
          <FORM METHOD='POST' ACTION='compare_graphs_form.php'>
            <input type='hidden' NAME='pipe' VALUE='1'>
