@@ -23,9 +23,8 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 #### TEMPORARY
 
 
-$orm_command = "$ENV{RSAT}/contrib/ORM/orm.py";
-
-#$orm_command = "/Users/matthieu/Workspace/ORM/orm.py";
+$orm_command = "$ENV{RSAT}/contrib/ORM/orm";
+#$orm_command = "/Users/matthieu/Workspace/ORM/orm";
 
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $purge_sequence_command = "$SCRIPTS/purge-sequence";
@@ -152,10 +151,24 @@ $parameters .= " -v 5";
 #### sequence type
 #$parameters .= " -seqtype ".$query->param("sequence_type");
 
-#### oligo size ####
-$oligo_length = $query->param('oligo_length') ;
-&FatalError("$oligo_length Invalid oligonucleotide length") unless &IsNatural($oligo_length);
-$parameters .= " -l $oligo_length";
+#### oligo type and size ####
+
+if ($query->param('oligotype') =~ /dyad/i) {
+    $oligotype="dyad";
+    $oligo_length = $query->param('monad_length');
+    $parameters .= " --dyad";
+    $parameters .= " -l $oligo_length";
+    $spacing_a = $query->param('spacing_a');
+    $spacing_b = $query->param('spacing_b');
+    &FatalError("$oligo_length Invalid oligonucleotide length") unless &IsNatural($oligo_length);
+    $parameters .= " --spacing=$spacing_a:$spacing_b";
+}else{
+    $oligotype="oligo";
+    $oligo_length = $query->param('oligo_length');
+    &FatalError("$oligo_length Invalid oligonucleotide length") unless &IsNatural($oligo_length);
+    $parameters .= " -l $oligo_length";
+}
+
 
 #### expected frequency estimation ####
 if ($query->param('freq_estimate') =~ /background/i) {
@@ -186,9 +199,9 @@ if ($query->param('freq_estimate') =~ /background/i) {
     }
 
     #$exp_freq_file = "$ENV{RSAT}/data/genomes/$organism/oligo-frequencies/" . "$oligo_length" . "nt_" . "$background" . "_" . "$organism$overlap$strand.freq.gz";
-    $exp_freq_file = &ExpectedFreqFile($organism, $oligo_length, $background, type=>"oligo", noov=>$overlap, str=>$strand, taxon=>$taxon);
+    $exp_freq_file = &ExpectedFreqFile($organism, $oligo_length, $background, type=>$oligotype, noov=>$overlap, str=>$strand, taxon=>$taxon);
 
-    print $exp_freq_file;
+    #print $exp_freq_file;
 	#$freq_option = " -bg $background -org $organism";
 	$freq_option = " --bgoligo=$exp_freq_file.gz";
 
