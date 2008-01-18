@@ -25,7 +25,7 @@
   $default_algorithm = "rea";
   $default_metabolic = 0;
 
-  // variables given within workflow
+  # variables given within workflow
   $pipe = $_REQUEST['pipe'];
   $requested_graph_file = $_REQUEST['graph_file'];
   $requested_in_format = $_REQUEST['in_format'];
@@ -72,7 +72,7 @@
   	<br>
   	<br>");
   } else {
-  	info_link("Graph has been stored from previous treatment.",  rsat_path_to_url($requested_graph_file));
+  	  info_link("Graph uploaded from the previous treatment", rsat_path_to_url($requested_graph_file));    
   	echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$requested_graph_file'>";
   }
   if($demo == 1){
@@ -86,7 +86,11 @@
    echo("
    <B><a href='help.pathfinder.html#terminals'>2. Seed nodes</a></B>
    <br>
-   <br>
+   <br>");
+   if($pipe && ($requested_in_format == 'gml' || $requested_in_format == 'GML')){
+    echo("Please make sure to enter the identifiers (numbers) and not the labels of the nodes. If you are unsure about the node identifiers, check the input graph by clicking on 'Graph uploaded from the previous treatment'.");
+   }
+   echo("
    Enter source and target nodes:
   <br>
   <br>
@@ -188,7 +192,7 @@
   <TD><B><A HREF='pathfinder_form.php?advanced=1'>ADVANCED</A></B></TD>
   </form>
   <TD><B><A HREF='help.pathfinder.html'>MANUAL</A></B></TD>
-  <TD><B><A HREF='tutorials/neat_tutorial/Path_finding.html'>TUTORIAL</A></B></TD>
+  <TD><B><A target = '_blank' HREF='".checkNeatTutorial("tutorials/neat_tutorial/Path_finding.html")."'>TUTORIAL</A></B></TD>
   <TD><B><A HREF='mailto:kfaust@ulb.ac.be'>MAIL</A></B></TD>
    <TD><B><A HREF='help.pathfinder.html#webservice'>WSDL</A></B></TD>
   </TR></TABLE></ul></ul>");
