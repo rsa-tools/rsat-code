@@ -53,22 +53,26 @@ $parameters .= " --sort -occ_sig";
 
 
 ### window
-if (IsReal($query->param('window_width'))) {
-    if ($query->param('window_group')) {
-        $parameters .= ' --windowgroup=' . $query->param('window_width');                
-    }else{
-        $parameters .= ' --window=' . $query->param('window_width');        
+if ($query->param('windowtype') =~ /no/ ){
+    $parameters .= ' --all';
+}elsif ($query->param('windowtype') =~ /fixed/){
+    
+    if (IsReal($query->param('window_width'))) {
+        if ($query->param('window_group')) {
+            $parameters .= ' --windowgroup=' . $query->param('window_width');                
+        }else{
+            $parameters .= ' --window=' . $query->param('window_width');        
+        }
     }
     
-}else{
+}else {
     $parameters .= ' --heuristic=slices';
-}
-if (IsReal($query->param('bg_window_width'))) {
-    $parameters .= ' --bgwindow=' . $query->param('bg_window_width');
-}else{
-    $parameters .= ' --bgwindow=200';
+    #variable size
 }
 
+if (IsReal($query->param('bg_window_width'))) {
+    $parameters .= ' --bgwindow=' . $query->param('bg_window_width');
+}
 
 ### filters
 if (IsReal($query->param('lth_occ'))) {

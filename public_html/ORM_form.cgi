@@ -80,7 +80,7 @@ $checked{$default{freq_estimate}} = "CHECKED";
 &RSA_header("ORM", "form");
 print '<style><!-- textarea {height: 100px; width: 550px;}--></style>';
 print "<CENTER>";
-print "Analysis of oligonucleotide representation in a set of DNA sequences.\n";
+print "Analysis of oligonucleotide occurrences in a set of DNA sequences.\n";
 print "<br>Program developed by <a href='mailto:defrance\@scmbb.ulb.ac.be (Matthieu Defrance)'>Matthieu Defrance</A><P>";
 print "</center>";
 
