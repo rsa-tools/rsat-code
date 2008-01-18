@@ -106,23 +106,44 @@ print $query->checkbox(-name=>'purge',
 		       -checked=>$default{purge},
 		       -label=>'');
 print "&nbsp;<A HREF='help.ORM.html#purge'><B>purge sequences (highly recommended)</B></A>";
-print "<BR>";
+print "<br />";
 
-print "<HR width=550 align=left>\n";
+print "<hr width=550 align=left />\n";
 
 
+print "<b>Search parameters (motif)</b><br />\n";
+print '<input type="radio" name="oligotype" value="oligo" checked="checked"/>';
 ### oligo size
-print "<B><A HREF='help.ORM.html#oligo_length'>Oligonucleotide size</A>&nbsp;</B>\n";
+print "<b><a href='help.ORM.html#oligo_length'>Oligonucleotides of size </a></b>\n";
 print $query->popup_menu(-name=>'oligo_length',
 			 -Values=>[1,2,3,4,5,6,7,8],
 			 -default=>$default{oligo_length});
+
+print '<br />';
+print '<input type="radio" name="oligotype" value="dyad" />';
+print "<b><a href='help.ORM.html#oligo_length'>Dyads with monad of length </a> </b>\n";
+print $query->popup_menu(-name=>'monad_length',
+			 -Values=>[1,2,3],
+			 -default=>3);
+ print "<b><a href='help.ORM.html#oligo_length'> and spacing from </a></b>\n";
+ print $query->popup_menu(-name=>'spacing_a',
+			 -Values=>[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+ 			 -default=>1);
+ print "<b><a href='help.ORM.html#oligo_length'> to </a></b>\n";
+ print $query->popup_menu(-name=>'spacing_b',
+			 -Values=>[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+ 			 -default=>20);
+
+
+
+print '<br /><br />';
 
 ### prevent overlapping matches of the same pattern
 print $query->checkbox(-name=>'noov',
 		       -checked=>$default{noov},
 		       -label=>'');
 print "&nbsp;<A HREF='help.ORM.html#noov'><B>prevent overlapping matches</B></A>";
-print "<BR>\n";
+print "<br />\n";
 
 ### strand ###
 print "<B><A HREF='help.ORM.html#count_strands'>Count on</A>&nbsp;</B>\n";
@@ -150,13 +171,13 @@ print '<b><a href="help.ORM.html#window_width">Window width</a></b>';
 print $query->textfield(-name=>'window_width',
 			-default=>$default{window_width},
 			-size=>5);
-print '<b><a href="help.ORM.html#window_width">group windows</a></b>';
+print '<b><a href="help.ORM.html#window_width"> Group windows</a></b>';
 print $query->checkbox(-name=>'window_group',
 		       -checked=>$default{window_group},
 		       -label=>'');
 
 
-print '&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="help.ORM.html#bgwindow_width">Background Window width</a></b>';
+print '&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="help.ORM.html#bgwindow_width">Background window width</a></b>';
 print $query->textfield(-name=>'bg_window_width',
 			-default=>$default{bg_window_width},
 			-size=>5);
@@ -164,7 +185,7 @@ print $query->textfield(-name=>'bg_window_width',
 
 
 
-print "<HR width=550 align=left>\n";
+print '<hr width="550" align="left">';
 
 ################################################################
 ## Background model
@@ -447,8 +468,7 @@ print "<TD><B><A HREF='help.ORM.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
-print "</font>\n";
-print "<hr>";
+print "<hr />";
 
 print $query->end_html;
 
