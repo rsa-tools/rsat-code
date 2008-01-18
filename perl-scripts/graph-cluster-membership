@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-cluster-membership,v 1.4 2008/01/17 14:47:28 jvanheld Exp $
+# $Id: graph-cluster-membership,v 1.5 2008/01/18 13:03:16 rsat Exp $
 #
 ############################################################
 
@@ -20,10 +20,10 @@ degree between each node and each cluster, on the basis of egdes
 linking this node to the cluster.
 
 The result is a membership table, indicating the membership
-coefficient between each node (row) and each cluster (column).
+coefficient of each node (row) to each cluster (column).
 
 The result can be interpreted as a 'fuzzy clustering' of a graph,
-where nodes can belong to multiple clusters, with vraious degree of
+where nodes can belong to multiple clusters, with various degree of
 membership.
 
 =head1 STATISTICS
@@ -44,11 +44,29 @@ the node-membership to a given cluster is the sum over the weights of
 the edges to each individual node assigned to that cluster in the
 partition.
 
+			Nc		N
+M (n, c)= SUM W n,i/(SUM W n,j)
+			i		j
+			
+where W is the weigh of an edge;
+i is the index for the nodes  Nc of cluster c;
+j is the index for all nodes N.
+
+
+
 =item normalized weight sum
 
 the weight of the connections of a node to a given cluster are
-normalized to the size of the cluster. This avoids membership bias
+normalized to the size of the cluster:
+
+i.e: W n,i becomes W n,i/Nc
+
+This avoids membership bias
 towards larger clusters (option -norm).
+
+
+
+
 
 =back
 
@@ -73,9 +91,13 @@ With the help of
 
 =head1 CATEGORY
 
+=over
+
 =item graph analysis
 
 =item clustering
+
+=back
 
 =head1 USAGE
 
@@ -121,7 +143,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     ################################################################
@@ -225,7 +247,7 @@ package main;
 		my @n1_out_neighbours = @{$out_neighbours[$n1_id]};
 		my @n1_out_weights = @{$weights[$n1_id]};
 		my $index = 0;
-    	foreach my $n2_id (@n1_out_neighbours) {
+    		foreach my $n2_id (@n1_out_neighbours) {
 			# get n2 name
 			my $n2 = $nodes_id_name{$n2_id};
 			# get cluster where n2 is
