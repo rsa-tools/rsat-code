@@ -166,7 +166,7 @@ and
   <TD><B><A HREF='compare_graphs_form.php?demo=1'>DEMO</A></B></TD>
   </form>
   <TD><B><A HREF='help.compare_graphs.html'>MANUAL</A></B></TD>
-  <TD><B><A target = '_blank' HREF='".checkNeatTutorial("tutorials/neat_tutorial/node3.html")."'>TUTORIAL</A></B></TD>
+  <TD><B><A target = '_blank' HREF='".checkNeatTutorial("tutorials/neat_tutorial/Comparisons_between_network.html")."'>TUTORIAL</A></B></TD>
 
   <TD><B><A HREF='mailto:sylvain@scmbb.ulb.ac.be' >MAIL</A></B></TD>
   </TR></TABLE></ul></ul>");
