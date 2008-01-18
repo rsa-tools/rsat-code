@@ -273,6 +273,15 @@
           <INPUT type='submit' value='Graph alteration'>
         </form>
       </td>
+      <TD>
+        <FORM METHOD='POST' ACTION='pathfinder_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$server'>
+          <input type='hidden' NAME='in_format' VALUE='$out_format'>";
+          echo "
+          <INPUT type='submit' value='Path Finding'>
+        </form>
+      </td>
       </tr>
   </table>";
  }

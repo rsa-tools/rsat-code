@@ -63,7 +63,7 @@
   &nbsp;&nbsp;&nbsp;<B><a href = 'help.convert_graph.html#formats'>Output format</a></B>&nbsp;<select name='out_format'>
   <option value = 'tab'> tab-delimited format
   <option selected value = 'gml'> GML format
-  <option selected value = 'dot'> DOT format
+  <option value = 'dot'> DOT format
   <option value = 'adj_matrix'> Adjacency matrix
   </select><br>");
   echo("<br>");
