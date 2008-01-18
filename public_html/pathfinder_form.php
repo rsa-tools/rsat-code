@@ -72,7 +72,7 @@
   	<br>
   	<br>");
   } else {
-  	info("Graph has been stored from previous treatment.");
+  	info_link("Graph has been stored from previous treatment.",  rsat_path_to_url($requested_graph_file));
   	echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$requested_graph_file'>";
   }
   if($demo == 1){
