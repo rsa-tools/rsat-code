@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-cluster-membership,v 1.5 2008/01/18 13:03:16 rsat Exp $
+# $Id: graph-cluster-membership,v 1.6 2008/01/18 13:38:02 jvanheld Exp $
 #
 ############################################################
 
@@ -38,35 +38,49 @@ possiblities:
 
 =over
 
-=item weight sum
+=item edge fraction (option I<-stat edge>)
 
-the node-membership to a given cluster is the sum over the weights of
-the edges to each individual node assigned to that cluster in the
-partition.
+The membership Me(n,c) of node I<n> for a cluster I<c> is the number of edges
+connecting node I<n> to any node belonging to cluster I<c> divided by
+the total number of edges connecting node I<n>.
 
-			Nc		N
-M (n, c)= SUM W n,i/(SUM W n,j)
-			i		j
-			
-where W is the weigh of an edge;
-i is the index for the nodes  Nc of cluster c;
-j is the index for all nodes N.
+          Nc           N
+Me(n,c)= SUM[E(n,i)]/ SUM[E(n,j)]
+          i            j
 
+where I<E(n,i)> is a boolean variable indicating if ther is an edge
+between nodes I<n> and I<i>,
+I<i> is the index for the nodes I<Nc> belonging to cluster I<c>, and
+I<j> is the index for all nodes I<N>.
 
+=item weight sum (option I<-stat weight>)
 
-=item normalized weight sum
+The membership of node I<n> for cluster I<c> is is the fraction of
+edge weights linking node I<n> to cluster I<c>.
 
-the weight of the connections of a node to a given cluster are
+          Nc            N
+Mw(n,c)= SUM[W(n,i)] / SUM[W(n,j)]
+          i             j
+
+where I<W(n,i)> is the weigh of the edge between nodes I<n> and I<i>,
+and the other symbols are defined as above.
+
+=item relative weight sum  (option I<-stat relw>)
+
+The weight of the connections of a node to a given cluster are
 normalized to the size of the cluster:
 
-i.e: W n,i becomes W n,i/Nc
 
-This avoids membership bias
-towards larger clusters (option -norm).
+           Nc                K    Nk
+Mw(n,c)= (SUM[W(n,i)]/Nc) / SUM (SUM[W(n,j)/Nk])
+           i                 k    j
+
+where
+....
 
 
-
-
+The relative weight reduces the bias of membership coefficients towards
+large clusters
 
 =back
 
@@ -143,7 +157,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     ################################################################
