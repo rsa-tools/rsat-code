@@ -89,7 +89,9 @@ if ($graph_location != "") {
     	echo("<align='left'>Click on the image below to display graph via visANT java web start:<br><br>
     	<a href='$address$server'><img src='images/visant_icon.png' alt='VisANT icon' name'VisANT icon' width='150' border='1'></a></align>
     	<br><br>Download graph in VisML format:<br><br>
-    	<a href='$server'>$server</a>");
+    	<a href='$server'>$server</a>
+    	<br><br><br><br>
+    	More about VisANT: see <a href='http://visant.bu.edu/' target='_blank'>VisANT homepage</a>");
     }
 
 ?>
