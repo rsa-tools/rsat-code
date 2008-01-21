@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.27 2008/01/12 15:57:03 jvanheld Exp $
+# $Id: get-orthologs,v 1.28 2008/01/21 23:22:09 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -319,14 +319,12 @@ package main;
     }
 
     &RSAT::message::Info("Query keys", join("; ", keys(%is_query))) if ($main::verbose >= 3);
-#    die();
 
     ## ##############################################################
     ## Prepare a regexp filter for fast selection with grep
     if (scalar(keys(%is_query)) > $max_filter_queries) {
       $main::grep_filtering = 0;
     }
-    
     if ($main::grep_filtering) {
       $main::query_filter = "(";
       $main::query_filter .= join (")|(", (keys(%is_query)));
@@ -357,18 +355,17 @@ package main;
 	my $rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism,"_ranks.tab");
 	# my (%rev_hits)=&readBLAST($rev_blast_file,\@main::blast_columns);
 	my ($rev_hits)=&select_hits($rev_blast_file,\@main::blast_columns,"ref_id",\%is_query);
-	
+
 	################################################################
 	# Let us define Reciprocal Best hits (RBH) as a relationship inferred
 	# from a single blast file, in contrast with Bidirectionnal Bests Hits
 	# (BBH), which is inferred from blast files in both direction (genome
 	# A against genome B, and B against A).
 	################################################################
-	
+
 	## my (%rbh) = &GetReciprocalBestHits(\%hits);
 	## This option (NOT IMPLEMENTED YET) may be obsolete as it is
 	## included in genome-blast.pl -task bbh
-	
 	#	my (%bbh)=&GetBidirectionalBesthits(\%hits,\%rev_hits);
 
 	################################################################
@@ -423,9 +420,9 @@ package main;
     }
     
     ################################################################
-    ###### print output
+    ## Print output
     
-    ## ##############################################################
+    ################################################################
     ## Report bidirectional hits
     
     ## Header line
@@ -443,7 +440,7 @@ package main;
 	    $header .= "\t";
 	    $header .= $field;
 	}
-	
+
 #	## add fields for the rev hit
 #	$header .= "\tREV";
 #	foreach $field (@output_fields) {
@@ -500,103 +497,17 @@ package main;
 	print $main::out "; Job started $start_time\n";
 	print $main::out "; Job done    $done_time\n";
     }
-    
-     
+
     ################################################################
     ###### close output stream
     close $main::out if ($main::outfile{output});
-    
-    
+
     exit(0);
 }
 
 ################################################################
 ################### subroutine definition ######################
 ################################################################
-
-
-################################################################
-#### READ BLAST FILE
-# sub readBLAST{
-#   my ($blast_file,$blast_columns) = @_;
-# #  my (@blast_columns)=@{$blast_columns};
-#   if ((-e $blast_file) || (-e $blast_file.".gz")) {
-#     &RSAT::message::TimeWarn(join("\t", "\tblast file", $blast_file)) if ($main::verbose >= 3);
-#     my ($hit_handle) = &OpenInputFile($blast_file);
-#     my $l =0;			# counter of lines
-#     my $selected_hits = {}; # ref to a hash
-#     while (<$hit_handle>) {
-#       $l++;
-#       chomp();
-#       s/\r/\n/g;		## Suppress Windows-specific carriage return
-#       next if /^;/;
-#       next if /^\#/;
-#       next unless /\S/;
-#       next if ($l==1);		# skip first line header (temporary)
-
-#       my @fields = split "\t";
-#       #		my $query_id = $main::blast_columns{query};
-#       my $hit ={};
-#       ## Get hit and check thresholds on fields
-#       my $discarded =0;
-#       foreach my $field (@{$blast_columns}) {
-# 	# get hit
-# 	$hit->{$field} = shift @fields;
-
-# 	# check lower threshold
-# 	if ($lth{$field}) {
-# 	  if ($hit->{$field} < $lth{$field}) {
-# 	    &RSAT::message::Warning(join("\t","query",
-# 					 $hit->{query},
-# 					 "ref_id",
-# 					 $hit->{ref_id},
-# 					 "hit not selected",
-# 					 $field,
-# 					 $hit->{$field},"<=>","lth",$lth{$field})) if ($main::verbose >=4);
-# 	    $discarded++;
-# 	  }
-# 	}
-# 	#next if ($discarded);
-
-# 	# check upper threshold
-# 	if ($uth{$field}) {
-# 	  if ($hit->{$field} > $uth{$field}) {
-# 	    &RSAT::message::Warning(join("\t","query",
-# 					 $hit->{query},
-# 					 "ref_id",
-# 					 $hit->{ref_id},
-# 					 "hit not selected",
-# 					 $field,
-# 					 $hit->{$field},"<=>","uth",$uth{$field})) if ($main::verbose >=4);
-# 	    $discarded++;
-# 	  }
-# 	}
-#       }
-#       next if ($discarded);
-      
-#       # Select all hit respecting thresholds
-#       $selected_hits->{$hit->{query}}->{$hit->{ref_id}}=$hit;
-#       #	push @hits, \%hit;
-#       if ($main::verbose >= 4) {
-# 	&RSAT::message::Info(join("\t", "query",
-# 				  $hit->{query},
-# 				  "hit found", 
-# 				  $hit->{ref_id},
-# 				  $hit->{ali_len},
-# 				  $hit->{ident},
-# 				  $hit->{e_value},
-# 				 ));
-#       }
-#     }
-#     close $hit_handle;	
-#     &RSAT::message::TimeWarn("\t",join("\t", scalar(keys %{$selected_hits}), "selected hits by query")) if ($main::verbose >= 2);
-#     return($selected_hits);
-#   } else {
-#     push @main::missing_blast_files, $blast_file;
-#     &RSAT::message::Warning(join("\t", "Missing BLAST file", $blast_file));
-#     return(0);
-#   }
-# }
 
 
 ## ##############################################################
