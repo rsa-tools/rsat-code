@@ -34,7 +34,7 @@ We will use an artificial interaction network created from the complexes annotat
 
 We will then compare these clusters to the MIPS complexes and estimate how well MCL can retrieve protein complexes from a protein-protein interaction and the influence of the noise on the results.
 
-In this example, we will only use random alteration, i.e., the edges that are removed are randomly chosen. This is done to mimick what happens really in biological experiments where some inter-relationships between may not be discovered (false negative) or are erroneously discovered (false positive). However the \program{alter-graph} program also allows to alterate the network with targeted attack on user-selected node. In their study, Spirin and Mirny \cite{Spirin2003} showed the affect of graph targeted attacks on clustering results.
+In this example, we will only use random alteration, i.e., the edges that are removed are randomly chosen. This is done to mimick what happens really in biological experiments where some inter-relationships between the nodes (genes, proteins, metabolites, \ldots) may not be discovered (false negatives) or are erroneously discovered (false positives). However the \program{alter-graph} program also allows to alterate the network with targeted attack on user-selected nodes. In their study, Spirin and Mirny \cite{Spirin2003} showed the affect of node targeted attacks on clustering results.
 
 \subsection{Protocol for the web server}
 
@@ -167,7 +167,7 @@ We will now compare the performances of MCL when applied to networks containing 
 \subsubsection{Files description}
 
 \paragraph{Randomized network}
-As the real MIPS complexes network, this randomized network contains 12262 edges between 1095 nodes. With our parameter choice, no edge should be duplicated. However, as in \program{random-graph} the process to avoid duplicated edges may not avoid all the cases, some duplicated edges may subsist in the randomized network. 
+As the real MIPS complexes network, this randomized network contains 12262 edges between 1095 nodes. With our parameter choice, no edge should be duplicated. However, as in \program{random-graph} the iterative process designed to avoid duplicated edges may not be totally efficient, some duplicated edges may subsist in the randomized network. 
 
 \paragraph{Altered networks}
   This file is a classical NeAT tab-delimited edge list. However, there is a fifth column that indicates
@@ -186,7 +186,7 @@ of a cell $T_{i,j}$ indicates the number of proteins found in common
 between complex $i$ and cluster $j$.
 
 The clustering quality will be evaluated from this table by calculating the Sensitivity ($Sn$), the Positive predictive
-value ($PPV$), the complex separation ($Sep_{co}$) and the cluster separation ($Sep_{cl}$).
+value ($PPV$), the row wise separation ($Sep_{r}$) and the cluster separation ($Sep_{c}$).
 
 \paragraph{Contingency table metrics}
   A list of metrics and their value. These will be described in the next section.
@@ -203,7 +203,7 @@ Moreover, for each cluster $j$, we calculated the Positive Predictive Value ($PP
 where $M_j$ corresponds to the cluster size.
 
 To summarize these values at the level of the confusion table, we calculated the average of these values. 
-First, we calculated their classical mean by averaging all the $PPV_{.j}$ and $Sn_{i.}$ values. We also calculated a weighted mean where the clusters and complexes presenting have a weight proportional to their relative size on the the calculation of the mean.
+First, we calculated their classical mean by averaging all the $PPV_{.j}$ and $Sn_{i.}$ values. We also calculated a weighted mean where the clusters and complexes have a weight proportional to their relative size on the the calculation of the mean.
 
 \[Sn = \frac{\sum_{i=1}^nSn_{i.}}{n}\]
 \[PPV = \frac{\sum_{j=1}^mPPV_{.j}}{m}\]
@@ -218,15 +218,18 @@ Sensitivity and $PPV$ reflect two contradictory tendencies of the clustering. $S
 
 We also defined another metrics called \textit{Separation} ($Sep$). High $Sep$ values indicated a high bidirectionnal correspondance between a cluster and a complex.
 
-The complex-wise separation estimates how a complex is isolated from the others. Its maximal value is 1 if this correspondance is perfect, i.e., when all the protein of a complex are grouped in one cluster and if this cluster does not contain any other protein. This maximal value may also be reached when the complex is separated between many clusters containing only members of the complex.
+The row-wise separation estimates how a complex is isolated from the others. Its maximal value is 1 if this correspondance is perfect, i.e., when all the protein of a complex are grouped in one cluster and if this cluster does not contain any other protein. This maximal value may also be reached when the complex is separated between many clusters containing only members of the complex.
 
-\[Sep_{Co_{i.}} = \sum_{j=1}^{m}{(\frac{T_{i,j}}{\sum_{j=1}^{m}{T_{i,j}}} \cdot \frac{T_{i,j}}{\sum_{i=1}^{n}{T_{i,j}}})}\]
+\[Sep_{r_{i.}} = \sum_{j=1}^{m}{(\frac{T_{i,j}}{\sum_{j=1}^{m}{T_{i,j}}} \cdot \frac{T_{i,j}}{\sum_{i=1}^{n}{T_{i,j}}})}\]
 
-The cluster-wise separation indicates how well a cluster isolates one or more complex from the other clusters. The maximal value 1 indicates that a cluster contains all the elements of one or more complexes.  
+The column-wise separation indicates how well a cluster isolates one or more complex from the other clusters. The maximal value 1 indicates that a cluster contains all the elements of one or more complexes.  
 
-\[Sep_{Cl_{.j}} = \sum_{i=1}^{n}{(\frac{T_{i,j}}{\sum_{j=1}^{m}{T_{i,j}}} \cdot \frac{T_{i,j}}{\sum_{i=1}^{n}{T_{i,j}}})}\]
+\[Sep_{c_{.j}} = \sum_{i=1}^{n}{(\frac{T_{i,j}}{\sum_{j=1}^{m}{T_{i,j}}} \cdot \frac{T_{i,j}}{\sum_{i=1}^{n}{T_{i,j}}})}\]
 
-As for the sensitivity and the $PPV$, for each clustering result, all values of $Sep_{Cl_{.j}}$ and $Sep_{Co_{i.}}$ are averaged over all clusters and all complexes.
+As for the sensitivity and the $PPV$, for each clustering result, all values of $Sep_{c_{.j}}$ and $Sep_{r_{i.}}$ are averaged over all clusters and all complexes. We then calculate a global separation value by calculating the geometrical mean of the average row wise separation and of the average column wise separation.
+
+\[Sep = \sqrt{Sep_c \cdot Sep_r}\]
+
 
 \subsubsection{Score comparaison}
 
@@ -250,8 +253,6 @@ The table summarizes the kind of values that should be obtained for the metrics 
 \textit{sep} & 0.752 & 0.704 & 0.375 & 0.15 \\ \hline
 \end{tabular}
 
-
-\program{contingency-stats} does not give exactly the same names to the metrics. What we called \textit{cluster} in the metrics description section is \textit{column} (\textit{c}) and \textit{complex} is row (\textit{r}).
 
 As expected, the value of the global parameters, the geometric accuracy (row acc\_g), the weighted geometric accuracy (row acc\_g\_w) and the separation (row sep) decrease drastically as the network contain less and less relevant information.
 
