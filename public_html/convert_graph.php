@@ -41,6 +41,7 @@
   } 
 
   $undirected = $_REQUEST['undirected'];
+  $directed = !$undirected;
   $s_col = $_REQUEST['s_col'];
   $t_col = $_REQUEST['t_col'];
   $w_col = $_REQUEST['w_col'];
@@ -279,6 +280,18 @@
           <INPUT type='submit' value='Path Finding'>
         </form>
       </td>
+      </tr>
+        <tr>
+        <TD>
+          <FORM METHOD='POST' ACTION='visant.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='visant_graph_file' VALUE='$server'>
+          <input type='hidden' NAME='visant_graph_format' VALUE='$out_format'>
+          <input type='hidden' NAME='visant_directed' VALUE='$directed'>";
+          echo "
+          <INPUT type='submit' value='Load in VisANT'>
+          </form>
+        </td>
       </tr>
     </table>";
     }

@@ -274,15 +274,16 @@
      echo "<table>
        <th align = 'center' colspan = 4><b>Global, in- and out- degree distributions</b></th>
        <tr>
-         <td>Figures</td>
-         <td><a href = '$xy_all_resultURL'><img src='$xy_all_resultURL' width = '100%'></a></td>
-         <td><a href = '$xy_in_resultURL'><img src='$xy_in_resultURL' width = '100%'></a></td>
-         <td><a href = '$xy_out_resultURL'><img src='$xy_out_resultURL' width = '100%'></a></td>
-       </tr><tr>
-         <td>Raw data</td>
+         
          <td><a href = '$cf_all_resultURL'>Global degree distribution</a></td>
          <td><a href = '$cf_in_resultURL'>In degree distribution</a></td>
          <td><a href = '$cf_out_resultURL'>Out degree distribution</a></td>
+       </tr>
+       <tr>
+         
+         <td><a href = '$xy_all_resultURL'><img src='$xy_all_resultURL' width = '100%'></a></td>
+         <td><a href = '$xy_in_resultURL'><img src='$xy_in_resultURL' width = '100%'></a></td>
+         <td><a href = '$xy_out_resultURL'><img src='$xy_out_resultURL' width = '100%'></a></td>
        </tr>
        
      </table>";
