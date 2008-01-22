@@ -2300,11 +2300,13 @@ sub to_gml {
     my %nodes_id_xpos = $self->get_attribute("nodes_id_xpos");
     my %nodes_id_ypos = $self->get_attribute("nodes_id_ypos");
     my %nodes_id_name = $self->get_attribute("nodes_id_name");
+    my %nodes_name_id = $self->get_attribute("nodes_name_id");
     my %nodes_color = $self->get_attribute("nodes_color");
     my %nodes_label = $self->get_attribute("nodes_label");
     my @out_neighbours = $self->get_attribute("out_neighbours");
     my @out_label = $self->get_attribute("out_label");
     my @out_color = $self->get_attribute("out_color");
+    my @arcs = $self->get_attribute("arcs");
     my $min = $self->get_attribute("min_weight");
     my $max = $self->get_attribute("max_weight");
     my $edge_width_calc = 0;
@@ -2354,39 +2356,35 @@ sub to_gml {
     }
     ## Export arcs
     &RSAT::message::Info("Exporting edges") if ($main::verbose >= 3);
-    for (my $i = 0; $i < scalar(@out_neighbours); $i++) {
-      
-      if (defined (@{$out_neighbours[$i]})) {
-        my $source_id = $i;
-        my $nodename = $nodes_id_name{$source_id};
-        my @source_out_neighbours = @{$out_neighbours[$i]};
-        my @source_out_label = @{$out_label[$i]};
-        my @source_out_color = @{$out_color[$i]};
-
-        for (my $j = 0; $j < scalar(@source_out_neighbours); $j++) {
-          my $target_id = $source_out_neighbours[$j];
-          my $arc_color = $source_out_color[$j];
-          my $arc_label = $source_out_label[$j];
-          $arc_label =~ s/^\s*//;
-          my $edge_width= 2;
-          if ($edge_width_calc) {
-            $edge_width = ((($arc_label-$min)/($max-$min))*6.5)+0.5;
-          }
-          $gml .= "\tedge\n";
-	  $gml .= "\t"."[\n";
-  	  $gml .= "\t\t"."source\t".$source_id."\n";
-	  $gml .= "\t\t"."target\t".$target_id."\n";
-	  $gml .= "\t\t"."label\t\"".$arc_label."\"\n" if (defined($arc_label));
-	  $gml .= "\t\t"."graphics\n";
-	  $gml .= "\t\t"."[\n";
-	  $gml .= "\t\t\t"."width\t$edge_width\n";
-	  $gml .= "\t\t\t"."type\t\"line\"\n";
-	  $gml .= "\t\t\t"."fill\t\"".$arc_color."\"\n";
-	  $gml .= "\t\t]\n";
-	  $gml .= "\t]\n";
-        }
+    for (my $j = 0; $j < scalar(@arcs); $j++) {
+      my $source_name = $arcs[$j][0];
+      my $target_name = $arcs[$j][1];
+      my $edge_label = $arcs[$j][2];
+      my $edge_color = $arcs[$j][3];
+      my $source_id = $nodes_name_id{$source_name};
+      my $target_id = $nodes_name_id{$target_name};
+      $edge_label =~ s/^\s*//;
+      my $edge_width= 2;
+      if ($edge_width_calc) {
+        $edge_width = ((($arc_label-$min)/($max-$min))*6.5)+0.5;
       }
+      $gml .= "\tedge\n";
+      $gml .= "\t"."[\n";
+      $gml .= "\t\t"."source\t".$source_id."\n";
+      $gml .= "\t\t"."target\t".$target_id."\n";
+      $gml .= "\t\t"."label\t\"".$edge_label."\"\n" if (defined($edge_label));
+      $gml .= "\t\t"."graphics\n";
+      $gml .= "\t\t"."[\n";
+      $gml .= "\t\t\t"."width\t$edge_width\n";
+      $gml .= "\t\t\t"."type\t\"line\"\n";
+      $gml .= "\t\t\t"."fill\t\"".$edge_color."\"\n";
+      $gml .= "\t\t]\n";
+      $gml .= "\t]\n";      
     }
+    
+    
+    
+    
     ## Close the graph
     $gml .= "]\n";
 
