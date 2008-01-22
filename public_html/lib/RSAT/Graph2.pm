@@ -2079,6 +2079,8 @@ sub to_text {
 	return $self->to_gml(@args);
     } elsif ($out_format eq "tab") {
 	return $self->to_tab(@args);
+    } elsif ($out_format eq "tab_java") {
+	return $self->to_tab_java(@args);
     } elsif ($out_format eq "adj_matrix") {
         shift @args;
 	return $self->to_adj_matrix(@args);
@@ -2721,7 +2723,52 @@ sub gaussian_rand {
 
 return 1;
 
+################################################################
+=pod
 
+=item B<to_tab_java($arc_id)>
+
+# Return the graph in a tab-delimited format fully compatible with 
+# Neat Java tools (pathfinder ...)
+
+=cut
+sub to_tab_java {
+    
+    my ($self) = @_;
+    my @arcs = $self->get_attribute("arcs");
+    my %nodes_name_id = $self->get_attribute("nodes_name_id");
+    my %nodes_color = $self->get_attribute("nodes_color");
+    my $tab = "";
+    my $real = $self->get_attribute("real");
+    if ($real eq "null") {
+      $real = $self->get_weights();
+    }
+    
+    #### Nodes definition
+    # Nodes list ($tab)+ color ($tab_color)
+    $tab = ";NODES";
+    $tab_color = ";NODES\tCOLOR";
+    while (my ($name, $color) = each(%nodes_color)) {
+      $tab .= $name."\n";
+      $tab_color .= $name."\t".$color."\n";
+    }
+    $tab .= $tab_color;
+    $tab .= ";ARCS\tcolor";
+    # Edge list ($tab color + weight)
+    for (my $i = 0; $i < scalar(@arcs); $i++) {
+      my $source = $arcs[$i][0];
+      my $target = $arcs[$i][1];
+      my $label = $arcs[$i][2];
+      my $color = $arcs[$i][3];
+      if (!$real) {
+        $label = 1;
+      }
+      $tab .= join("\t", $source, $target, $color, $label)."\n";
+    }
+    return $tab;
+}
+
+################################################################
 
 
 __END__
