@@ -38,10 +38,12 @@
   if ($directed == "on") {
     $directed = 1;
   }
+  $directed = 0;
   $self = $_REQUEST['self'];  
   if ($self == "on") {
     $self = 1;
   }
+  
   $return =  $_REQUEST['return'];
   $outweight =  $_REQUEST['outweight']; 
   ## If a query graph file and a query graph are submitted -> error
@@ -276,6 +278,27 @@
           <INPUT type='submit' value='Graph alteration'>
         </form>
       </td>
+      <TD>
+        <FORM METHOD='POST' ACTION='pathfinder_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$server'>
+          <input type='hidden' NAME='in_format' VALUE='$out_format'>";
+          echo "
+          <INPUT type='submit' value='Path Finding'>
+        </form>
+      </td>
+      </tr>
+      <tr>
+        <TD>
+          <FORM METHOD='POST' ACTION='visant.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='visant_graph_file' VALUE='$server'>
+          <input type='hidden' NAME='visant_graph_format' VALUE='$out_format'>
+          <input type='hidden' NAME='visant_directed' VALUE='$directed'>";
+          echo "
+          <INPUT type='submit' value='Load in VisANT'>
+          </form>
+        </td>
       </tr>
   </table>";
   }
