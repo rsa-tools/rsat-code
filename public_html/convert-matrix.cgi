@@ -20,6 +20,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/convert-matrix";
 $tmp_file_name = sprintf "convert-matrix.%s", &AlphaDate();
 $result_file = "$TMP/$tmp_file_name.res";
+$ENV{rsat_echo} = 2;
 
 ### Read the CGI query
 $query = new CGI;
@@ -136,7 +137,7 @@ $parameters .= " -from ".$input_format;
 ################################################################
 ## Matrix output format
 my $output_format = lc($query->param('output_format'));
-$parameters .= " -to ".$output_format;
+#$parameters .= " -to ".$output_format;
 
 ## Return fields
 my @return_fields = ();
@@ -146,11 +147,15 @@ foreach my $stat qw (counts frequencies weights info consensus parameters profil
     }
 }
 if ($output_format eq 'tab') {
+  $parameters .= " -to ".$output_format;
   $parameters .= " -v 1 ";
   $parameters .= " -return ";
   $parameters .= join ",", @return_fields;
-} else {
-  $parameters .= " -return counts";
+} elsif($output_format eq 'logo'){
+    $parameters .= " -return logo -o $TMP/$tmp_file_name.output";
+}else {
+    $parameters .= " -to ".$output_format;
+    $parameters .= " -return counts";
 }
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
@@ -168,6 +173,9 @@ if ($query->param('output') eq "display") {
 	s|${BIN}/||g;
 	print $_;
 	$genes .= $_;
+    }
+    if ($output_format eq 'logo'){
+	print "<IMG SRC=\"http://rsat.scmbb.ulb.ac.be/rsat/tmp/convert-matrix_logo.png\">";
     }
     print '</PRE>';
     close(RESULT);

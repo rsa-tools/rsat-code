@@ -111,6 +111,7 @@
   <TD><B><A HREF='display_graph_form.php?demo=1'>DEMO</A></B></TD>
   </form>
   <TD><B><A HREF='help.display_graph.html'>MANUAL</A></B></TD>
+  <TD><B><A target = '_blank' HREF='".checkNeatTutorial("tutorials/neat_tutorial/Network_visualization_forma.html")."'>TUTORIAL</A></B></TD>
   <TD><B><A HREF='mailto:sylvain@scmbb.ulb.ac.be'>MAIL</A></B></TD>
   </TR></TABLE></ul></ul>
  ");
