@@ -227,6 +227,7 @@ the program consensus (Hertz), but not by other programs.
 			    "transfac"=>1,
 			    "tab"=>1,
 			    "consensus"=>1,
+			    "logo"=>1
 			   );
 
 ## Separator between matrices for multi-matrix files
