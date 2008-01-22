@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.21 2008/01/22 10:04:27 rsat Exp $
+# $Id: graph-get-clusters,v 1.22 2008/01/22 14:42:58 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -119,19 +119,24 @@ package main;
 			      violet
 			      darkgray);
   my @cluster_colors_gml = ('#FF0000', ## Red
-			    '#00FFFF', ## Turquoise
-			    '#0000A0', ## Dark blue
-			    '#FF0080', ## Light Purple
-			    '#800080', ## Dark purple
-			    '#FFFF00', ## Yellow
-			    '#00FF00', ## Pastel green
+			    '#00FF00', ## Green
+			    '#FF3300', ## Scarlet
+			    '#0000FF', ## Dark blue
+			    '#800000', ## Light red
+			    '#008000', ## Light green
+			    '#000080', ## Light blue
+			    '#FF6600', ## Vermillon
+			    '#FFCC00', ## Tangerine
+			    '#00FF00', ## Green
 			    '#FF8040', ## Orange
 			    '#804000', ## Brown
 			    '#808000', ## Forest Green
 			    '#408080', ## Grass green
 			    '#7E587E', ## Plum 4
 			    '#C9BE62', ## Khaki3
-			    '#827839'  ## Khaki4
+			    '#827839', ## Khaki4
+			    '#0066FF', ## Peacock
+			    '#00FF66'  ## Emerald
 			    );
 
 
