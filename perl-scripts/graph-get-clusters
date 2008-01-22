@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.20 2007/12/19 10:16:33 rsat Exp $
+# $Id: graph-get-clusters,v 1.21 2008/01/22 10:04:27 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -118,18 +118,21 @@ package main;
 			      darkblue
 			      violet
 			      darkgray);
-  my @cluster_colors_gml = ('#0000FF', ## Blue
-			    '#FF0000', ## Red
-			    '#FF00FF', ## Magenta
-			    '#004488', ## 
-			    '#00FF00',
-			    '#888888',
-			    '#FF0088',
-			    '#000000',
-			    '#880000',
-			    '#000088',
-			    '#8800FF',
-			    '#444444');
+  my @cluster_colors_gml = ('#FF0000', ## Red
+			    '#00FFFF', ## Turquoise
+			    '#0000A0', ## Dark blue
+			    '#FF0080', ## Light Purple
+			    '#800080', ## Dark purple
+			    '#FFFF00', ## Yellow
+			    '#00FF00', ## Pastel green
+			    '#FF8040', ## Orange
+			    '#804000', ## Brown
+			    '#808000', ## Forest Green
+			    '#408080', ## Grass green
+			    '#7E587E', ## Plum 4
+			    '#C9BE62', ## Khaki3
+			    '#827839'  ## Khaki4
+			    );
 
 
     ################################################################
@@ -334,6 +337,8 @@ package main;
       my %clusters_edge_nb = ();
       my @arcs_attribute = ();
       my %cluster_color = ();
+      my $intra_cpt = 0;
+      my $extra_cpt = 0;
       for (my $i = 0; $i < scalar(@cluster_list); $i++) {
        $cluster_name_id{$cluster_list[$i]} = $i;
       }
@@ -361,7 +366,7 @@ package main;
         my %tclusters = ();
         my %stclusters = ();
         my $intra_cluster = "inter_cluster";
-        my $arc_color = "#000000";
+        my $arc_color = "#C0C0C0";
         foreach my $scluster (@source_clusters) {
           $sclusters{$scluster}++;
           foreach my $tcluster (@target_clusters) {
@@ -385,25 +390,36 @@ package main;
           }
         }
         # FILL THE ANNOTATED NETWORK
-        $cluster_graph_array[$i][0] = $source_node;
-        $cluster_graph_array[$i][1] = $target_node;
-        $cluster_graph_array[$i][2] = $arcs[$i][2];
-        $cluster_graph_array[$i][3] = $node_colors{$source_node};
-        $cluster_graph_array[$i][4] = $node_colors{$target_node};
-        $cluster_graph_array[$i][5] = $arc_color;
+        my $index;
+        if ($intra_cluster eq 'intra_cluster') {
+          $index = (scalar(@arcs)-1) - $intra_cpt;
+          $intra_cpt++;
+        } else {
+          $index = $extra_cpt;
+          $extra_cpt++;
+        }
+        if (!defined($index)) {
+          print $source_node."\t".$target_node."\n";
+        }
+        $cluster_graph_array[$index][0] = $source_node;
+        $cluster_graph_array[$index][1] = $target_node;
+        $cluster_graph_array[$index][2] = $arcs[$i][2];
+        $cluster_graph_array[$index][3] = $node_colors{$source_node};
+        $cluster_graph_array[$index][4] = $node_colors{$target_node};
+        $cluster_graph_array[$index][5] = $arc_color;
         my %s_not_tclusters = &set_difference(\%sclusters,\%stclusters);
         my %not_s_tclusters = &set_difference(\%tclusters,\%stclusters);
-        $arcs_attribute[$i][0] = $intra_cluster;
-        $arcs_attribute[$i][1] = $source_nb_clusters; 
-        $arcs_attribute[$i][2] = $target_nb_clusters; 
-        $arcs_attribute[$i][3] = $common_clusters;
-        $arcs_attribute[$i][4] = ($source_nb_clusters-$common_clusters);
-        $arcs_attribute[$i][5] = ($target_nb_clusters-$common_clusters);
-        $arcs_attribute[$i][6] = join(";",keys(%sclusters));
-        $arcs_attribute[$i][7] = join(";",keys(%tclusters));
-        $arcs_attribute[$i][8] = join(";",keys(%stclusters));
-        $arcs_attribute[$i][9] = join(";",keys(%s_not_tclusters));
-        $arcs_attribute[$i][10] = join(";",keys(%not_s_tclusters));
+        $arcs_attribute[$index][0] = $intra_cluster;
+        $arcs_attribute[$index][1] = $source_nb_clusters; 
+        $arcs_attribute[$index][2] = $target_nb_clusters; 
+        $arcs_attribute[$index][3] = $common_clusters;
+        $arcs_attribute[$index][4] = ($source_nb_clusters-$common_clusters);
+        $arcs_attribute[$index][5] = ($target_nb_clusters-$common_clusters);
+        $arcs_attribute[$index][6] = join(";",keys(%sclusters));
+        $arcs_attribute[$index][7] = join(";",keys(%tclusters));
+        $arcs_attribute[$index][8] = join(";",keys(%stclusters));
+        $arcs_attribute[$index][9] = join(";",keys(%s_not_tclusters));
+        $arcs_attribute[$index][10] = join(";",keys(%not_s_tclusters));
       }
       
       my @arcs_attribute_header = ("type","#s","#t","#st","#s!t","#!st","cl_s","cl_t","cl_st","cl_s!t","cl_!st");
@@ -790,6 +806,12 @@ __END__
 =item I<graph-neighbours>
 
 =item I<convert-graph>
+
+=item I<compare-graphs>
+
+=item I<graph-node-degree>
+
+=item I<graph-neighbours>
 
 =item I<compare-classes>
 
