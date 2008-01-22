@@ -2413,7 +2413,7 @@ sub to_tab {
     } else {
       if (!$arc_id) {
         $tab = join("\t","#source","target","label","color")."\n";
-        $tab = (";ARCS");
+        $tab .= (";ARCS");
         $tab .= "\n";
         for (my $i = 0; $i < scalar(@arcs); $i++) {
           $tab .= $arcs[$i][0]."\t";
