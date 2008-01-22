@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.55 2008/01/17 13:55:46 rsat Exp $
+# $Id: convert-matrix,v 1.56 2008/01/22 15:25:19 rsat Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -109,40 +109,39 @@ unless ($input_format) {
 
 ## Matrix provided with -i option
 if ($infile{input}) {
-	push @matrix_files, $infile{input};
+    push @matrix_files, $infile{input};
 }
 
 
 ## Matrix list has been provided
- if ($infile{matrix_list}) {
+if ($infile{matrix_list}) {
     my ($mlist, $input_dir) = &OpenInputFile($infile{matrix_list});
     while (<$mlist>) {
-      next if (/'^;'/);		# skip comment lines
-      next if (/'^#'/);		# skip header lines
-      next if (/'^--'/);	# skip mysql-type comment lines
-      next unless (/\S/);	# skip empty lines
-
-      my @fields = split /\s+/;
-      my $matrix_file = $fields[0];
-      push @matrix_files, $matrix_file;
+	next if (/'^;'/);		# skip comment lines
+	next if (/'^#'/);		# skip header lines
+	next if (/'^--'/);	# skip mysql-type comment lines
+	next unless (/\S/);	# skip empty lines
+	my @fields = split /\s+/;
+	my $matrix_file = $fields[0];
+	push @matrix_files, $matrix_file;
     }
     close $mlist;
     &RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
-  }
+}
 
-  ## Check that there is at least one input matrix
-  unless (scalar(@matrix_files >= 1)) {
-   # &RSAT::error::FatalError("You must specify at least one matrix file.(option -i or -mlist)");
-  }
+## Check that there is at least one input matrix
+unless (scalar(@matrix_files >= 1)) {
+    # &RSAT::error::FatalError("You must specify at least one matrix file.(option -i or -mlist)");
+}
 
 ## return type(s)
 local %return_fields = ();
 unless (scalar(@return_fields)) {
-  if ((lc($output_format ) eq "transfac") ||
-      (lc($output_format ) eq "consensus")) {
-    push @return_fields, "counts";
-  } else {
-    &RSAT::error::FatalError("You should define at least one return type");
+    if ((lc($output_format ) eq "transfac") ||
+	(lc($output_format ) eq "consensus")) {
+	push @return_fields, "counts";
+    } else {
+	&RSAT::error::FatalError("You should define at least one return type");
   }
 }
 foreach my $format (@return_fields) {
@@ -155,16 +154,16 @@ foreach my $format (@return_fields) {
 
 ## Information
 if ($return_fields{information}) {
-  $return_fields{info} = 1;
-  &RSAT::message::Warning("Option -return information is obsolete. Please use -return info.");
+    $return_fields{info} = 1;
+    &RSAT::message::Warning("Option -return information is obsolete. Please use -return info.");
 }
 
 local %prior = ();
 ## Prior residue frequencies
 if ($infile{prior}) {
-	if (defined($bg_pseudo)) {
-  		$bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
-  	}
+    if (defined($bg_pseudo)) {
+	$bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
+    }
     $bg_model->load_from_file($infile{prior}, $bg_format);
     %prior = $bg_model->get_attribute("suffix_proba");
     foreach my $key (sort keys %prior) {
@@ -184,72 +183,73 @@ $out = &OpenOutputFile($outfile{output});
 &Verbose if ($verbose);
 
 ## Read the input matrices and collect all matrices
-if (scalar(@matrix_files >= 1)) {	
-	foreach my $matrix_file (@matrix_files) {	
-		my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format);
-		foreach my $matrix (@matrices_from_file) {
-    		my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
-    		$matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
-    		unless (defined($matrix->get_attribute("name"))){
-    			$matrix->set_attribute("name", $matrix_name);
-				}
-    		push @matrices, $matrix;
-		}
-	}
-} else {
-	my @matrices_from_file = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format);
+if (scalar(@matrix_files >= 1)) {
+    foreach my $matrix_file (@matrix_files) {	
+	my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format);
 	foreach my $matrix (@matrices_from_file) {
-			my ($matrix_name) = &RSAT::util::ShortFileName($infile{input});
-    		$matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
-    		unless (defined($matrix->get_attribute("name"))){
-    			$matrix->set_attribute("name", $matrix_name);
-    		}
-			push @matrices, $matrix;
-		}
+	    my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+	    $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
+	    unless (defined($matrix->get_attribute("name"))){
+		$matrix->set_attribute("name", $matrix_name);
+	    }
+	    ## if we have maore than one matrix in the same file a number is added to the attribute "name"
+	    if (scalar(@matrices_from_file) > 1) {
+		$matrix->force_attribute("name" => $matrix_name."_".$matrix->get_attribute("matrix.nb"));
+	    }
+	    push @matrices, $matrix;
+	}
+    }
+} else {
+    my @matrices_from_file = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format);
+    die;
+    foreach my $matrix (@matrices_from_file) {
+	my ($matrix_name) = &RSAT::util::ShortFileName($infile{input});
+	$matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
+	unless (defined($matrix->get_attribute("name"))){
+	    $matrix->set_attribute("name", $matrix_name);
+	}
+	push @matrices, $matrix;
+    }
 }
-
 
 ## process each matrix
 foreach my $matrix (@matrices) {
-  $matrix->set_parameter("pseudo", $pseudo_weight);
-  $matrix->set_attribute("equi_pseudo", $equi_pseudo);
-  #  $matrix->push_attribute("parameters", "pseudo");
-  $matrix->force_attribute("decimals", $decimals);
-  $matrix->force_attribute("max_profile", $max_profile);
-  $matrix->force_attribute("sep", $sep);
-  # $matrix->force_attribute("col_width", $col_width);
-  $matrix->force_attribute("margins", $return_fields{margins});
-  $matrix->setInfoLogBase($info_log_base);
-  $matrix->set_parameter("bg_markov_order", 0);	
-  if ($infile{prior}) {
-    $matrix->setPrior(%prior);
-  }
-
-
-  ## Calculate parameters before sorting because sorting can be done on
-  ## a computed parameter rather than defined in the input file.
-  if ($return_fields{parameters}) {
-    $matrix->calcWeights();
-    $matrix->calcInformation();
-    $matrix->calcConsensus();
-    $matrix->calcGCcontent();
-  }
-  ## Generate logo
-  if ($return_fields{logo}) {
-	  my $basedir ="";
-	  if ($outfile{output}) {
-		  $basedir = dirname($outfile{output});
-		  $basedir .= "/";
-	  }
-	  my $logo_file=$basedir.$matrix->get_attribute("name")."_logo";
-	 $matrix->makeLogo($logo_file,$logo_format);
-  }
-
+    $matrix->set_parameter("pseudo", $pseudo_weight);
+    $matrix->set_attribute("equi_pseudo", $equi_pseudo);
+    #  $matrix->push_attribute("parameters", "pseudo");
+    $matrix->force_attribute("decimals", $decimals);
+    $matrix->force_attribute("max_profile", $max_profile);
+    $matrix->force_attribute("sep", $sep);
+    # $matrix->force_attribute("col_width", $col_width);
+    $matrix->force_attribute("margins", $return_fields{margins});
+    $matrix->setInfoLogBase($info_log_base);
+    $matrix->set_parameter("bg_markov_order", 0);	
+    if ($infile{prior}) {
+	$matrix->setPrior(%prior);
+    }
+    ## Calculate parameters before sorting because sorting can be done on
+    ## a computed parameter rather than defined in the input file.
+    if ($return_fields{parameters}) {
+	$matrix->calcWeights();
+	$matrix->calcInformation();
+	$matrix->calcConsensus();
+	$matrix->calcGCcontent();
+    }
+    ## Generate logo
+    if ($return_fields{logo}) {
+	my $basedir ="";
+	if ($outfile{output}) {
+	    $basedir = dirname($outfile{output});
+	    $basedir .= "/";
+	}
+	my $logo_file=$basedir.$matrix->get_attribute("name")."_logo";
+	$matrix->makeLogo($logo_file,$logo_format);
+    }
 }
 
 ## Sort the matrices if requested
 if ($sort_key) {
-  	@matrices = &RSAT::MatrixReader::SortMatrices($sort_key, $sort_order, @matrices);
+    @matrices = &RSAT::MatrixReader::SortMatrices($sort_key, $sort_order, @matrices);
 }
 
 #### export the matrices
@@ -259,12 +259,12 @@ foreach my $matrix (@matrices) {
     if ((defined($top_matrices)) && ($m > $top_matrices)) {
 	last;
     }
-
+    
     &RSAT::message::Info("Exporting matrix", $m."/".scalar(@matrices))
-	if ($main::verbose >= 3);	
-
+      if ($main::verbose >= 3);	
+    
     if ($m > 1) {
-      print $out $RSAT::matrix::matrix_separator{$output_format}, "\n";
+	print $out $RSAT::matrix::matrix_separator{$output_format}, "\n";
     }
     if ($main::verbose >= 1) {
 	print $out  ";\n; MATRIX ", $m."/".scalar(@matrices), " : " , $matrix->get_attribute("name"), "\n;\n";
