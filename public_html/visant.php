@@ -8,6 +8,8 @@
 require ('functions.php');
 # log file update thanks to Sylvain
 UpdateLogFile("neat","","");
+
+title('Display graph in VisANT');
 # default variables
 $out_format="VisML";
 $directed = 0;
