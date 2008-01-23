@@ -2737,6 +2737,7 @@ sub to_tab_java {
     my ($self) = @_;
     my @arcs = $self->get_attribute("arcs");
     my %nodes_name_id = $self->get_attribute("nodes_name_id");
+    my %nodes_id_name = $self->get_attribute("nodes_id_name");
     my %nodes_color = $self->get_attribute("nodes_color");
     my $tab = "";
     my $real = $self->get_attribute("real");
@@ -2746,14 +2747,13 @@ sub to_tab_java {
     
     #### Nodes definition
     # Nodes list ($tab)+ color ($tab_color)
-    $tab = ";NODES";
-    $tab_color = ";NODES\tCOLOR";
-    while (my ($name, $color) = each(%nodes_color)) {
-      $tab .= $name."\n";
+    $tab_color = ";NODES\trgb_color\n";
+    while (my ($id, $color) = each(%nodes_color)) {
+      my $name = $nodes_id_name{$id};
       $tab_color .= $name."\t".$color."\n";
     }
     $tab .= $tab_color;
-    $tab .= ";ARCS\tcolor";
+    $tab .= ";ARCS\trgb_color\tlabel\n";
     # Edge list ($tab color + weight)
     for (my $i = 0; $i < scalar(@arcs); $i++) {
       my $source = $arcs[$i][0];
