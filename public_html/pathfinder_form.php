@@ -15,7 +15,7 @@
   $default_targets = "";
   $default_graph = "";
   $default_graph_id = "";
-  $default_rank = 5;
+  $default_rank = 1;
   $default_weight = "unit";
   // default advanced params
   $default_maxWeight = 1000000;
