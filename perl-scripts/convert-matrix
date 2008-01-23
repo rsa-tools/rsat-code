@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.56 2008/01/22 15:25:19 rsat Exp $
+# $Id: convert-matrix,v 1.57 2008/01/23 12:29:16 rsat Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -188,7 +188,8 @@ if (scalar(@matrix_files >= 1)) {
 	my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format);
 	foreach my $matrix (@matrices_from_file) {
 	    my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
-	    $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
+#	    $matrix_name = basename($matrix_file);
+	    $matrix_name =~ s/\.\w+$//; ## suppress the extension from the file name
 	    unless (defined($matrix->get_attribute("name"))){
 		$matrix->set_attribute("name", $matrix_name);
 	    }
@@ -201,10 +202,9 @@ if (scalar(@matrix_files >= 1)) {
     }
 } else {
     my @matrices_from_file = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format);
-    die;
     foreach my $matrix (@matrices_from_file) {
 	my ($matrix_name) = &RSAT::util::ShortFileName($infile{input});
-	$matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
+	$matrix_name =~ s/\.\w+$//; ## suppress the extension from the file name
 	unless (defined($matrix->get_attribute("name"))){
 	    $matrix->set_attribute("name", $matrix_name);
 	}
@@ -243,6 +243,7 @@ foreach my $matrix (@matrices) {
 	    $basedir .= "/";
 	}
 	my $logo_file=$basedir.$matrix->get_attribute("name")."_logo";
+	$matrix->set_attribute("logo_file" => $logo_file);
 	$matrix->makeLogo($logo_file,$logo_format);
     }
 }
@@ -1049,6 +1050,14 @@ sub ExportMatrix {
   if ($return_fields{parameters}) {
     $matrix->calcConsensus();
     print $out $matrix->toString(type=>"parameters");
+  }
+
+  ## Return parameters
+  if ($return_fields{logo}) {
+    if ($main::verbose >= 1) {
+	print $out  "; logo file : " , $matrix->get_attribute("logo_file").".".$logo_format, "\n";
+    }
+
   }
   
   
