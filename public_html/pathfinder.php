@@ -15,6 +15,7 @@
   # default params
   $default_nodeIntegers = 0;
   $default_returnType = "server";
+  $tab_java = 1;
   # server-related params
   $result_location = "/home/rsat/rsa-tools/public_html/tmp/";
   $result_suffix = "_Result.txt";
@@ -303,6 +304,7 @@
           <input type='hidden' NAME='visant_graph_file' VALUE='$file_location'>
           <input type='hidden' NAME='visant_graph_format' VALUE='$sylvain_input_format'>
           <input type='hidden' NAME='visant_directed' VALUE='$directed'>
+          <input type='hidden' NAME='tab_java' VALUE='$tab_java'> 
           <INPUT type='submit' value='Display the graph with VisANT'>
          </form>
         </td>
