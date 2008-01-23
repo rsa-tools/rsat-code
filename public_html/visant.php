@@ -23,6 +23,7 @@ $error = 0;
 $graph_location = $_REQUEST['visant_graph_file'];
 $graph_format = $_REQUEST['visant_graph_format'];
 $directed = $_REQUEST['visant_directed'];
+$tab_java = $_REQUEST['tab_java'];
 
 # check parameters
 if($graph_format == ""){
@@ -32,13 +33,68 @@ if($graph_format == ""){
 }else if($graph_format == 'gml'){
     $graph_format = 'GML';
 }
-
+# check whether the graph comes from NeAT java tools ($tab_java = 1) or NeAT perl tools ($tab_java = 0)
+if ($tab_java == "") {
+  $tab_java = 1;
+}
 # read in graph
 if ($graph_location != "") {
     $graph = storeFile($graph_location);
 }else{
     error("You did not specify the location of the graph to be converted into visML!");
 }
+
+# if tab_java = 0 and $graph_format = flat ... conversion to the tab_java format (use of convert-graph)
+$parameters = array(
+      "request" => array(
+        "informat"=>"tab",
+        "outformat"=>"tab_java",
+        "inputgraph"=>$graph,
+        "scol"=>1,
+        "tcol"=>2,
+        "wcol"=>3,
+        "eccol"=>4
+      )
+    );
+
+
+    # Open the SOAP client
+    $client = new SoapClient(
+                       $neat_wsdl,
+                           array(
+                                 'trace' => 1,
+                                 'soap_version' => SOAP_1_1,
+                                 'style' => SOAP_DOCUMENT,
+                                 'encoding' => SOAP_LITERAL
+                                 )
+                           );
+    # Execute the command
+//     echo ("<pre>");
+//     $echoed = $client->convert_graph($parameters);
+//     echo ("</pre>");
+    # Work with exception catch
+    try {
+      $echoed = $client->convert_graph($parameters);
+      $soap_error = 0;
+    } catch (Exception $soap_exception) {
+      echo ("<pre>");
+      echo "Error : \n",  $soap_exception->getMessage(), "\n";
+      echo ("</pre>");
+      $soap_error = 1;
+    }
+    if (!$soap_error) {
+      $response =  $echoed->response;
+      $command = $response->command;
+      $server = $response->server;
+      $client = $response->client;
+      $server = rtrim ($server);
+      $temp_file = explode('/',$server);
+      $temp_file = end($temp_file);
+      $resultURL = $WWW_RSA."/tmp/".$temp_file;
+}
+
+$graph = storeFile($server);
+$graph = rtrim($graph);
 
 ############## call conversion web service #################
 
@@ -92,6 +148,8 @@ if ($graph_location != "") {
     	<a href='$server'>$server</a>
     	<br><br><br><br>
     	More about VisANT: see <a href='http://visant.bu.edu/' target='_blank'>VisANT homepage</a>");
+    }else{
+    	echo("An error occurred. Could not display graph in VisANT.");
     }
 
 ?>
