@@ -45,6 +45,7 @@ if ($graph_location != "") {
 }
 
 # if tab_java = 0 and $graph_format = flat ... conversion to the tab_java format (use of convert-graph)
+if($tab_java == 0 && $graph_format == 'flat'){
 $parameters = array(
       "request" => array(
         "informat"=>"tab",
@@ -95,6 +96,7 @@ $parameters = array(
 
 $graph = storeFile($server);
 $graph = rtrim($graph);
+}
 
 ############## call conversion web service #################
 
