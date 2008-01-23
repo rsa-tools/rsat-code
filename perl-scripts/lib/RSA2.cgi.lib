@@ -43,6 +43,7 @@ sub PrintOrthoSelectionSection {
 			       Brucella_melitensis
 			       Escherichia_coli_K12
 			       Saccharomyces_cerevisiae
+			       Salmonella_typhimurium_LT2
 			      );
 
   #### choice of the organism
