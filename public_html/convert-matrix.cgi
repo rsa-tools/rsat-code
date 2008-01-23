@@ -20,7 +20,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/convert-matrix";
 $tmp_file_name = sprintf "convert-matrix.%s", &AlphaDate();
 $result_file = "$TMP/$tmp_file_name.res";
-$ENV{rsat_echo} = 2;
+#$ENV{rsat_echo} = 2;
 
 ### Read the CGI query
 $query = new CGI;
@@ -152,7 +152,8 @@ if ($output_format eq 'tab') {
   $parameters .= " -return ";
   $parameters .= join ",", @return_fields;
 } elsif($output_format eq 'logo'){
-    $parameters .= " -return logo -o $TMP/$tmp_file_name.output";
+    $parameters .= " -v 1 ";
+    $parameters .= " -return logo ";
 }else {
     $parameters .= " -to ".$output_format;
     $parameters .= " -return counts";
@@ -171,12 +172,13 @@ if ($query->param('output') eq "display") {
     while (<RESULT>) {
 	s|${TMP}/||g;
 	s|${BIN}/||g;
+#	s|^; logo file : (.*)|<IMG SRC=\"http://rsat.scmbb.ulb.ac.be/rsat/tmp/\$1\">|g;
 	print $_;
 	$genes .= $_;
     }
-    if ($output_format eq 'logo'){
-	print "<IMG SRC=\"http://rsat.scmbb.ulb.ac.be/rsat/tmp/convert-matrix_logo.png\">";
-    }
+#    if ($output_format eq 'logo'){
+#	print "<IMG SRC=\"http://rsat.scmbb.ulb.ac.be/rsat/tmp/convert-matrix_logo.png\">";
+#    }
     print '</PRE>';
     close(RESULT);
 
