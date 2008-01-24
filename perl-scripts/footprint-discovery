@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.18 2008/01/08 22:45:22 jvanheld Exp $
+# $Id: footprint-discovery,v 1.19 2008/01/24 13:37:38 rsat Exp $
 #
 ############################################################
 
@@ -125,7 +125,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -332,6 +332,7 @@ package main;
   $cmd .= " -i ".$outfile{genes};
   $cmd .= " -org ".$organism_name;
   $cmd .= " -taxon ".$taxon;
+  $cmd .= " -return query_name,query_organism -return ident -lth ali_len 50 -return e_value -uth e_value 1e-05";
   $cmd .= " -uth rank 1";	## BBH criterion
   $cmd .= " -o ".$outfile{orthologs};
   print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
