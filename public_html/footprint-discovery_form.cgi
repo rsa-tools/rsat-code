@@ -75,7 +75,7 @@ print "<CENTER>";
 print "Given one or several genes from a query organism, collect all orthologous genes for a given taxonomical level <br>and discover conserved elements in their promoters.<br>\n";
 print "(Program developed by <A HREF='mailto:rekins\@scmbb.ulb.ac.be'>Rekin's Janky</A>\n";
 print "and <A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>Jacques van Helden</A>).\n";
-print "<br>Reference: <a href=\"http://www.biomedcentral.com/1471-2105/9/37\">Janky & van Helden, BMC Bioinformatics 2008, 9:37. ";
+print "<br>Reference: <a href=\"http://www.biomedcentral.com/1471-2105/9/37\">Janky & van Helden, BMC Bioinformatics 2008, 9:37.</a>";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
