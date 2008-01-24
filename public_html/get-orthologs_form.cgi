@@ -23,7 +23,8 @@ $query = new CGI;
 ## Initialize parameters
 
 ## Output fields
-my @output_fields = qw(ident
+my @output_fields = qw(query_name
+		       ident
 		       ali_len
 		       mismat
 		       gap_open
@@ -31,6 +32,7 @@ my @output_fields = qw(ident
 		       bit_sc
 		       rank);
 my %field_description = ();
+$field_description{query_name} = "Query gene name";
 $field_description{ident} = "Percentage of identity";
 $field_description{ali_len} = "Alignment length";
 $field_description{mismat} = "Number of mismatches";
@@ -97,17 +99,21 @@ foreach my $field (@output_fields) {
 			   -label=>' ');
     print join "", "<a href='help.get-organisms.html#",$field,"'>", $field_description{$field}, "</a>\n";
     print "</th>\n";
-    foreach my $th ("ortho_lth", "ortho_uth") {
-	my $param = $th."_".$field;
-	my $default_param = "none";
-	if (defined($default{$param})) {
-	    $default_param = $default{$param};
+    if ($field eq "query_name"){
+	print "<td></td>";
+    }else{
+	foreach my $th ("ortho_lth", "ortho_uth") {
+	    my $param = $th."_".$field;
+	    my $default_param = "none";
+	    if (defined($default{$param})) {
+		$default_param = $default{$param};
+	    }
+	    print "<td align=center>";
+	    print $query->textfield(-name=>$param,
+				    -default=>$default_param,
+				    -size=>5);
+	    print "</td>";
 	}
-	print "<td align=center>";
-	print $query->textfield(-name=>$param,
-				-default=>$default_param,
-				-size=>5);
-	print "</td>";
     }
     print "</tr>\n";
 }
