@@ -24,6 +24,7 @@ $query = new CGI;
 
 ## Output fields
 my @output_fields = qw(query_name
+		       query_organism
 		       ident
 		       ali_len
 		       mismat
@@ -33,6 +34,7 @@ my @output_fields = qw(query_name
 		       rank);
 my %field_description = ();
 $field_description{query_name} = "Query gene name";
+$field_description{query_organism} = "Query organism";
 $field_description{ident} = "Percentage of identity";
 $field_description{ali_len} = "Alignment length";
 $field_description{mismat} = "Number of mismatches";
@@ -99,7 +101,7 @@ foreach my $field (@output_fields) {
 			   -label=>' ');
     print join "", "<a href='help.get-organisms.html#",$field,"'>", $field_description{$field}, "</a>\n";
     print "</th>\n";
-    if ($field eq "query_name"){
+    if (($field eq "query_name")||($field eq "query_organism")){
 	print "<td></td>";
     }else{
 	foreach my $th ("ortho_lth", "ortho_uth") {
