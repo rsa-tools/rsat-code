@@ -72,9 +72,12 @@ NAME
 	supported-organisms
 
         2002 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
-	
+
 USAGE
         supported-organisms [-i inputfile] [-o outputfile] [-v]
+
+AUTHOR
+	Jacques.van.Helden@ulb.ac.be
 
 DESCRIPTION
 	Returns the list of organisms supported on this site of
@@ -90,6 +93,11 @@ OPTIONS
 	-format	output format
 		supported: $formats
         -taxon  root taxon
+
+WISH LIST
+        -taxon  return only the organisms belonging to the specified
+                taxon
+
 End_of_help
   close HELP;
   exit;
