@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.28 2008/01/21 23:22:09 jvanheld Exp $
+# $Id: get-orthologs,v 1.29 2008/01/24 11:55:23 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -154,7 +154,7 @@ package main;
     ## Columns in the BLAST file
     @main::blast_columns = qw(query_organism
 			      ref_organism
-			      query
+			      query_id
 			      ref_id
 			      ident
 			      ali_len
@@ -200,7 +200,8 @@ package main;
     ## Output fields
     @output_fields = ();
 
-    @supported_output_fields = qw(query_organism
+    @supported_output_fields = qw(query_name
+				  query_organism
 				  ident
 				  ali_len
 				  mismat
@@ -349,7 +350,7 @@ package main;
 	## Check if the BLAST file exists and read it
 	my $blast_file = join("", $query_org_blast_dir,"/","q_",$main::query_organism,"_db_",$ref_organism,"_ranks.tab");
 	#my ($hits)=&readBLAST($blast_file,\@main::blast_columns);
-	my ($hits)=&select_hits($blast_file,\@main::blast_columns,"query",\%is_query);
+	my ($hits)=&select_hits($blast_file,\@main::blast_columns,"query_id",\%is_query);
 #	print &Dumper($hits) if ($main::verbose >= 0); # DEBUG
 
 	my $rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism,"_ranks.tab");
@@ -381,7 +382,7 @@ package main;
 			my $hit_info = join("\t",
 					    $fwd_hit->{ref_id},
 					    $ref_organism,
-					    $fwd_hit->{query},
+					    $fwd_hit->{query_id},
 #				  $main::query_organism,
 					    );
 			
@@ -391,7 +392,11 @@ package main;
 #			  $hit_info .= "\tFWD";
 			    foreach my $field (@output_fields) {
 				$hit_info .= "\t";
-				$hit_info .= $fwd_hit->{$field};
+				if ($field eq "query_name"){
+				    $hit_info .= $is_query{$query_gene};
+				}else{
+				    $hit_info .= $fwd_hit->{$field};
+				}
 #		  &RSAT::message::Debug("Adding output field", $field, $fwd_hit->{$field}, $hit_info) if ($main::verbose >= 0);
 			    }
 			    
@@ -429,7 +434,7 @@ package main;
     my $header =  join("\t",
 		       "ref_id",
 		       "ref_org",
-		       "query",
+		       "query_id",
 #		       "query_org",
 		       );
 
@@ -611,11 +616,11 @@ sub select_hits{
     next if ($discarded);
 	
     ## Index the hit by query and ref_id (double index)
-    $hits->{$hit->{query}}->{$hit->{ref_id}}=$hit;
+    $hits->{$hit->{query_id}}->{$hit->{ref_id}}=$hit;
 	
     if ($main::verbose >= 4) {
       &RSAT::message::Info(join("\t", "query",
-				$hit->{query},
+				$hit->{query_id},
 				"hit found", 
 				$hit->{ref_id},
 				$hit->{ali_len},
