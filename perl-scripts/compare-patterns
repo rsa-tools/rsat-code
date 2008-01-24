@@ -455,9 +455,11 @@ USAGE
 
 DESCRIPTION
 
-	Count matching residues between each pair of sequences from
-	two sets, and assess the statistical significance of the
-	matches.
+	Count matching residues between pairs of sequences/patterns
+	from two sets, and assess the statistical significance of the
+	matches. Patterns can be described using the IUPAC code for
+	ambiguous nucleotides. Spaced patterns (dyads) are also
+	supported.
 
 	This program is typically used to compare a set of discovered
 	patterns (e.g. oligo-analysis result) with a set of known
