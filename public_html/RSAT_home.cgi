@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.25 2007/12/18 11:25:40 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.26 2008/01/24 20:48:11 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -61,6 +61,9 @@ print <<EndText;
     
     <table border=0 cellspacing=3 cellpadding=7>
     <TR>
+    <TD><A HREF="tool_map.html"><B>
+    Tool Map</B></A></TD>
+    
     <TD><A HREF="intro.html"><B>
     Introduction</B></A></TD>
     
