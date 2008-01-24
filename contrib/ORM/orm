@@ -260,8 +260,8 @@ if options.debug:
 ########################################
 def main(args, options):
     if options.help:
-        print globals()['__doc__'] % {'usage' : USAGE, 'version' : VERSION}
-        return
+        doc = globals()['__doc__'] % {'usage' : USAGE, 'version' : VERSION}
+        return pager(doc)
 
     if options.l == None:
         parser.error("options -l is required. You must provide at least an oligomer length")
