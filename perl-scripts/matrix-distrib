@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-distrib,v 1.9 2007/11/19 01:11:01 jvanheld Exp $
+# $Id: matrix-distrib,v 1.10 2008/01/24 02:32:00 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -17,9 +17,9 @@ matrix-distrib
 
 =head1 DESCRIPTION
 
-Computes the theoretical distribtuion of score probabilities of a given PSSM.
-It is not limited to a Bernoulli assumption and takes into account background 
-models of any Markov order. 
+Computes the theoretical distribution of score probabilities of a
+given PSSM.  Score probabilities can be computed according to
+bernoulli as well as markov-chain background models.
 
 =head1 AUTHORS
 
