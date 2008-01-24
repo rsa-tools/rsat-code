@@ -44,6 +44,7 @@ sub PrintOrthoSelectionSection {
 			       Escherichia_coli_K12
 			       Saccharomyces_cerevisiae
 			       Salmonella_typhimurium_LT2
+			       Salmonella_typhi
 			      );
 
   #### choice of the organism
