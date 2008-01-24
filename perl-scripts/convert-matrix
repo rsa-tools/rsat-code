@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.57 2008/01/23 12:29:16 rsat Exp $
+# $Id: convert-matrix,v 1.58 2008/01/24 02:33:40 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -306,15 +306,14 @@ USAGE
 
 DESCRIPTION
 
-	Read a position-specific scoring matrix (PSSM) from different
-	formats, and exports it in a format that can be used by the
-	matrix matching program patser (Hertz et al, 1999).
+	Performs inter-conversions between various formats of
+	position-specific scoring matrices (PSSM).
 
 	The program also performs a statistical analysis of the
 	original matrix to provide different position-specific scores
 	(weight, frequencies, information contents), general
 	statistics (E-value, total information content), and synthetic
-	descriptions (consensus). All statistical analysis assume a BERNOUILLI background model. 
+	descriptions (consensus).
 
 	PSSM can be used to represent the binding specificity of a
 	transcription factor or the conserved residues of a protein

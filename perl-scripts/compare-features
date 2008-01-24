@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.17 2007/11/24 21:24:23 jvanheld Exp $
+# $Id: compare-features,v 1.18 2008/01/24 02:32:48 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -30,7 +30,8 @@ compare-features
 Compare two or more sets of features. 
 
 This program takes as input several feature files (two or more), and
-calculates the intersection and difference between features.
+calculates the intersection, union and difference between features. It
+also computes contingency tables and comparison statistics.
 
 =head1 AUTHORS
 
