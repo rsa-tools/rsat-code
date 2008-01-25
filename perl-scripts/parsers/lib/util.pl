@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: util.pl,v 1.11 2007/01/14 01:16:30 jvanheld Exp $
+# $Id: util.pl,v 1.12 2008/01/25 21:58:35 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:46:32 jvanheld>
 #
@@ -40,12 +40,12 @@ $generic_option_message = "	-h	detailed help
 	-nocomp skip data compression
 	-clean	remove all files from the output directory before
 		parsing
-
-	-schema	db schema (default=$main::default{schema}, current=$main::schema)
-	-user	db user (default=$main::default{user}, current=$main::user)
-	-pass	db password (default=$main::default{password}, current=$main::password)
-	-host	db host (default=$main::default{host}, current=$main::host)
 ";
+
+#	-schema	db schema (default=$main::default{schema}, current=$main::schema)
+#	-user	db user (default=$main::default{user}, current=$main::user)
+#	-pass	db password (default=$main::default{password}, current=$main::password)
+#	-host	db host (default=$main::default{host}, current=$main::host)
 
 
 sub ReadGenericOptions {	### warn level
