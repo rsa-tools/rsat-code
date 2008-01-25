@@ -249,7 +249,9 @@
     	# in case of tab-format, truncate nodes to make it readable by Sylvain Brohee's tools
     	if(strcmp($out_format,'flat') == 0){
     		if(ereg(';ARCS',$fileContent)){
-    			$sylvain_input_graph = end(explode(';ARCS',$fileContent));
+    		    # get string without nodes
+    			$fileContent = end(explode(';ARCS	rgb_color	color',$fileContent));
+    			$sylvain_input_graph = $fileContent;
     		}
     	}else{
     		$sylvain_input_graph = $fileContent;
