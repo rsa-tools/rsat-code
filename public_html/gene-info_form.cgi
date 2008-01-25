@@ -36,7 +36,7 @@ foreach $key (keys %default) {
 ### header
 &RSA_header("gene-info");
 print "<CENTER>";
-print "Returns genes by string matching a list of query strings against their queries, ID and (optionally) description).<P>\n";
+print "Returns the information about genes (CDS, mRNA, ...) specified either by their identifier, name, or by any supported synonym. 	Searches can also be done by specifying a sub-string of the gene descriptions. Regular expressions are supported. <P>\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
