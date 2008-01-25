@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast,v 1.8 2008/01/25 14:07:35 jvanheld Exp $
+# $Id: genome-blast,v 1.9 2008/01/25 14:16:46 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -80,6 +80,7 @@ local @db_taxons = ();
 ## Options for the command &doit()
 local $dry = 0;
 local $new_only = 0;
+local $no_self = 0;
 local $batch = 0;
 local $die_on_error = 1;
 
@@ -183,9 +184,19 @@ foreach $db_organism (@db_organisms) {
     my $q = 0;
     foreach $query_organism (@query_organisms) {
 	$q++;
+
+	## Skip self-comparison if required
+	if (($no_self) && ($query_organism eq $db_organism)) {
+	  &RSAT::message::Warning("Skipping self-comparison", "DB", $d."/".scalar(@db_organisms), $db_organism, 
+				  "Query", $q."/".scalar(@query_organisms), $query_organism,
+				 ) if ($main::verbose >= 1);
+	  next;
+	}
+
 	&RSAT::message::TimeWarn("DB", $d."/".scalar(@db_organisms), $db_organism, 
 				 "Query", $q."/".scalar(@query_organisms), $query_organism, 
 				 ) if ($main::verbose >= 1);
+
 
 	################################################################
 	## Directories and files
@@ -468,6 +479,23 @@ installed organisms.
 	} elsif ($ARGV[$a] eq "-new_only") {
 	    $new_only = 1;
 
+=pod
+
+=item B<-no_self>
+
+Avoid self-comparison. Note that self-comparison is required for
+get-orthologs, but this option alllows to run it twice when running
+blast of an organism against a taxon in both directions. In this case,
+you use the option -no_self only when running the reciprocal blast.
+
+ genome-blast -v 1 -q my_org -dbtaxon my_taxon -task blastall
+ genome-blast -v 1 -db my_org -qtaxon my_taxon -task blastall -no_self
+
+=cut
+
+	} elsif ($ARGV[$a] eq "-no_self") {
+	    $no_self = 1;
+
 
 
 	    #### dry run
@@ -725,18 +753,9 @@ __END__
 
 =item B<-reciprocal>
 
-Run blats in both direction, i.e. after having blasted query organism
-against database organism, blast database organism against taxon
-organism. This option is useless when dbtaxon == qtaxon.
+Run blastall in both direction, i.e. after having blasted query
+organism against database organism, blast database organism against
+taxon organism. This option is useless when dbtaxon == qtaxon.
 
-=item B<-noself>
-
-Avoid self-comparison. Note that self-comparison is required for
-get-orthologs, but this option alllows to run it twice when running
-blast of an organism against a taxon in both directions. In this case,
-you use the option -noself only when running the reciprocal blast.
-
- genome-blast -v 1 -q my_org -dbtaxon my_taxon -task blastall
- genome-blast -v 1 -db my_org -qtaxon my_taxon -task blastall -noself
 
 =cut
