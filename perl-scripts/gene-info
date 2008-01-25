@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: gene-info,v 1.6 2006/11/07 08:14:58 jvanheld Exp $
+# $Id: gene-info,v 1.7 2008/01/25 21:31:58 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:30:09 jvanheld>
 #
@@ -186,8 +186,11 @@ USAGE
 	gene-info -org organism i query_file
 
 DESCRIPTION
-	Returns the information about ORFs specified either by their
-	ORF identifier, or by any supported synonym.
+	Returns the information about genes (CDS, mRNA, ...) specified
+	either by their identifier, name, or by any supported synonym.
+
+	Searches can also be done by specifying a sub-string of the
+	gene descriptions. Regular expressions are supported. 
 
 CATEGORY
 	genomics
