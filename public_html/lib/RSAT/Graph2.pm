@@ -2314,6 +2314,7 @@ sub to_gml {
     my $edge_width_calc = 0;
     if ($min ne "null" && $max ne "null" && $main::edge_width) {
       $edge_width_calc = 1;
+      
     } 
     
     
@@ -2368,7 +2369,7 @@ sub to_gml {
       $edge_label =~ s/^\s*//;
       my $edge_width= 2;
       if ($edge_width_calc) {
-        $edge_width = ((($arc_label-$min)/($max-$min))*6.5)+0.5;
+        $edge_width = ((($edge_label-$min)/($max-$min))*6.5)+0.5;
       }
       $gml .= "\tedge\n";
       $gml .= "\t"."[\n";
