@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.29 2008/01/24 11:55:23 rsat Exp $
+# $Id: get-orthologs,v 1.30 2008/01/25 21:59:29 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -71,19 +71,15 @@ can be specified with the option -return.
 
 =item 5) rank	query -> reference rank
 
-=over
-
-   rank of this reference gene among all those matching the same query gene
-   for this pair of organisms.
+Rank of this reference (target) gene among all those matching the same
+query gene for this pair of organisms.
 
 =back
 
 =item 6) s_rank	reference <- query rank
 
-=over
-
-   rank of this query gene among all those matching the same reference
-   gene for this pair of organisms.
+Rank of this query gene among all those matching the same reference
+(target) gene for this pair of organisms.
 
 =back
 
@@ -217,9 +213,15 @@ package main;
     }
     $supported_output_fields = join ",", (@supported_output_fields, "all");
 
+    %return_format = ();
+    $return_format{hits} = 1;
+#    $return_format{table} = 1;
+
     ################################################################
     ## Read argument values
     &ReadArguments();
+
+    $return_format{stats} =  1 if ($main::verbose >= 2);
 
 
     ################################################################
@@ -385,7 +387,7 @@ package main;
 					    $fwd_hit->{query_id},
 #				  $main::query_organism,
 					    );
-			
+
 			## Additional output fields (specified with the option -return)
 			if (scalar(@output_fields) > 0) {
 			    ## add fields for the fwd hit
@@ -399,7 +401,7 @@ package main;
 				}
 #		  &RSAT::message::Debug("Adding output field", $field, $fwd_hit->{$field}, $hit_info) if ($main::verbose >= 0);
 			    }
-			    
+
 			    ## add fields for the rev hit
 #			  $hit_info .= "\tREV";
 #			  foreach my $field (@output_fields) {
@@ -411,7 +413,7 @@ package main;
 			################
 			# put all hit info in a hash
 			$bbh->{$query_gene}->{$ref_organism}->{$fwd_hit->{ref_id}}=$hit_info;
-			
+
 			&RSAT::message::Info("bidirectional hit\t",$hit_info) if ($main::verbose >= 3);
 			push @bidirect_hits, $hit_info;
 		    } else {
@@ -423,61 +425,88 @@ package main;
 	    }
 	}
     }
-    
+
     ################################################################
     ## Print output
-    
+
     ################################################################
-    ## Report bidirectional hits
-    
-    ## Header line
-    my $header =  join("\t",
-		       "ref_id",
-		       "ref_org",
-		       "query_id",
-#		       "query_org",
-		       );
+    ## Report one row per hit
+    if ($return_format{hits}) {
 
-    if (scalar(@output_fields) > 0) {
+      ## Header line
+      my $header =  join("\t",
+			 "ref_id",
+			 "ref_org",
+			 "query",
+			 #		       "query_org",
+			);
+
+      if (scalar(@output_fields) > 0) {
 	## add fields for the fwd hit
-#	$header .= "\tFWD";
+	#	$header .= "\tFWD";
 	foreach $field (@output_fields) {
-	    $header .= "\t";
-	    $header .= $field;
+	  $header .= "\t";
+	  $header .= $field;
 	}
-
-#	## add fields for the rev hit
-#	$header .= "\tREV";
-#	foreach $field (@output_fields) {
-#	    $header .= "\t";
-#	    $header .= $field;
-#	}
-    }
-    print $out "#", $header, "\n";
-
-    my $nb_hits_info="";
-    foreach my $query_gene (keys (%is_query)) {
-      my $nb_hits=0;
-      foreach my $org (@ordered_ref_organisms){
-	if ($bbh->{$query_gene}->{$org}){
-	  foreach my $hit (keys %{$bbh->{$query_gene}->{$org}}){
-	    print $out $bbh->{$query_gene}->{$org}->{$hit},"\n";
-	    $nb_hits++;
-	  }
-	}else{
-	  next;
-	}
+	#	## add fields for the rev hit
+	#	$header .= "\tREV";
+	#	foreach $field (@output_fields) {
+	#	    $header .= "\t";
+	#	    $header .= $field;
+	#	}
       }
-      # get info about the results
-      $nb_hits_info .= "; Query gene ".$is_query{$query_gene}." $query_gene\n";
-      my $genomes_with_hit = scalar keys %{$bbh->{$query_gene}};
-      my $searched_genomes= scalar(@main::ref_organisms);
-      my $rate = sprintf("%.2f",100 * $genomes_with_hit/$searched_genomes);
-      $nb_hits_info .= join("\t",";",$nb_hits,"hits found in",$genomes_with_hit." among the ".$searched_genomes." searched organisms(".$rate."\%)\n");
+      print $out "#", $header, "\n";
+
+      my $nb_hits_info="";
+      foreach my $query_gene (keys (%is_query)) {
+	my $nb_hits=0;
+	foreach my $org (@ordered_ref_organisms) {
+	  if ($bbh->{$query_gene}->{$org}) {
+	    foreach my $hit (keys %{$bbh->{$query_gene}->{$org}}) {
+	      print $out $bbh->{$query_gene}->{$org}->{$hit},"\n";
+	      $nb_hits++;
+	    }
+	  } else {
+	    next;
+	  }
+	}
+	# get info about the results
+	$nb_hits_info .= "; Query gene ".$is_query{$query_gene}." $query_gene\n";
+	my $genomes_with_hit = scalar keys %{$bbh->{$query_gene}};
+	my $searched_genomes= scalar(@main::ref_organisms);
+	my $rate = sprintf("%.2f",100 * $genomes_with_hit/$searched_genomes);
+	$nb_hits_info .= join("\t",";",$nb_hits,"hits found in",$genomes_with_hit." organisms among ".$searched_genomes."  (".$rate."\%)\n");
+      }
+      ## Report number of hits
+      print $out $nb_hits_info if ($return_format{stats});
     }
 
-    ## Report number of hits
-    print $out $nb_hits_info if ($main::verbose >= 3);
+#     ## Return a  table with one row per quey gnee and one column per target organism
+#     if ($return_format{table}) {
+#       print $out "; Hit table", "\n" if ($main::verbose >= 1);
+
+#       ## Header line
+#       my $header =  join("\t", "query", @ordered_ref_organisms);
+#       print $out "#", $header, "\n";
+#       foreach my $query_gene (keys (%is_query)) {
+# 	my $nb_hits=0;
+# 	my @hits = ();
+# 	foreach my $org (@ordered_ref_organisms) {
+# 	  if ($bbh->{$query_gene}->{$org}) {
+# 	    my @current_hits = ();
+# 	    foreach my $hit (keys %{$bbh->{$query_gene}->{$org}}) {
+# 	      push @current_hits, $bbh->{$query_gene}->{$org}->{$hit};
+# 	      die $bbh->{$query_gene}->{$org}->{$hit}, "HELLO\n";
+# 	    }
+# 	    push @hits, join ";", @current_hits;
+# 	  } else {
+# 	    push @hits, $null;
+# 	  }
+# 	}
+# 	print $out join ("\t", $query_gene, @hits), "\n";
+#       }
+#     }
+
 
     ## Report missing BLAST files
     if (scalar(@main::missing_blast_files) > 0) {
@@ -839,27 +868,51 @@ Supported fields:
 
 =item ref_id
 
+ID of the reference (target) gene
+
 =item  ref_organism
+
+Name of the reference (target) organism
 
 =item  query_id
 
+ID of the query gene
+
 =item  query_organism
+
+Name of the query organism
 
 =item  ident
 
+Percent of identity (a number between 0 and 100)
+
 =item  ali_len
+
+Alignment lengths (in residues)
 
 =item  mismat
 
+Number of mismatches
+
 =item  gap_open
+
+Number of gap openings
 
 =item  e_value
 
+E-value (expected number of false positives)
+
 =item  bit_sc
+
+Bit score
 
 =item  rank
 
+Rank
+
 =item  s_rank
+
+Source rank (rank of the hit for the query organism).
 
 =back
 
