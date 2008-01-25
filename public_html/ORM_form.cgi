@@ -114,7 +114,7 @@ print "<hr width=550 align=left />\n";
 print "<b>Search parameters (motif)</b><br />\n";
 print '<input type="radio" name="oligotype" value="oligo" checked="checked"/>';
 ### oligo size
-print "<b><a href='help.ORM.html#oligo_length'>Oligonucleotides of size </a></b>\n";
+print "<b><a href='help.ORM.html#oligo_length'>Oligonucleotides of length </a></b>\n";
 print $query->popup_menu(-name=>'oligo_length',
 			 -Values=>[1,2,3,4,5,6,7,8],
 			 -default=>$default{oligo_length});
@@ -488,15 +488,15 @@ exit(0);
 ## Table with all the supported statistics and thresholds
 sub ReturnTable {
 
-print "<b>Thresholds</b><br />\n";
+print '<b><a href="help.ORM.html#thresholds">Thresholds</b><a/><br />';
 
 #print "<BLOCKQUOTE>\n";
 print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 		    $query->Tr({-align=>left,-valign=>CENTER},
 			 [
-			  $query->th([" <A HREF='help.ORM.html#return_fields'>Fields</A> ",
-				   " <A HREF='help.ORM.html#thresholds'>Lower<BR>Threshold</A> ",
-				   " <A HREF='help.ORM.html#thresholds'>Upper<BR>Threshold</A> "]),
+			  $query->th(["Fields ",
+				   " <a href='help.ORM.html#thresholds'>Lower<br />Threshold</a> ",
+				   " <a href='help.ORM.html#thresholds'>Upper<br />Threshold</a> "]),
 
 			  ### occurrences
 			  $query->td(['Occurrences',
