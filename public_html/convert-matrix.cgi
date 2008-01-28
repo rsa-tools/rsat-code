@@ -20,7 +20,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/convert-matrix";
 $tmp_file_name = sprintf "convert-matrix.%s", &AlphaDate();
 $result_file = "$TMP/$tmp_file_name.res";
-$ENV{rsat_echo} = 2;
+$ENV{rsat_echo} = 1;
 
 ### Read the CGI query
 $query = new CGI;
