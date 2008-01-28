@@ -74,9 +74,9 @@
   <br><table>
   <tr><td><input type = 'radio' $all_nodes_selected name='allnodes' value = 'all'/></td><td>All nodes</td>
   <tr><td><input type='radio' $selection_nodes_selected name='allnodes' value='selection' /></td>
-  <td></select><br>
-  <b>List of nodes</b><br>
-  <textarea name='nodes' rows='6' cols='65'></textarea>
+  <td></select>
+  List of nodes<br></td></tr>
+  <tr><td></td><td><textarea name='nodes' rows='6' cols='65'></textarea>
   <br>Upload nodes from file : <br>
   <input type='file' name='nodes_file' size='45' /></td></tr></table>");
   echo ("
