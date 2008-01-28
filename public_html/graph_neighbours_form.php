@@ -83,7 +83,7 @@
   }
   echo("<br><br><input type='checkbox' name='self' value='on' checked/>&nbsp;<B><a href = 'help.display_graph.html#layout'>Include each node in its neighborhood (with a distance of zero)</a></B><br>");
 
-  echo("
+  echo("<hr>
   <br><br><b><a href = 'help.graph_neighbours.html#seeds'>Seed node selection</a></b><br>
   <br><table>
   <tr><td><input type = 'radio' $all_nodes_selected name='allseeds' value = 'all'/></td><td>All nodes</td>

@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>GrA-tools - graph-node-degree</title>
+   <title>NeAT - graph-node-degree</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="results">
@@ -161,7 +161,39 @@
          $xy_all_temp_file = explode('/',$xy_all_server);
     $xy_all_temp_file = end($xy_all_temp_file);
     $xy_all_resultURL = "tmp/".$xy_all_temp_file;
-//      echo "<img src='$xy_all_resultURL'>";
+    
+    
+    # xy graph (log)
+    $xy_all_parameters_log = array( 
+       "request" => array(
+         "inputFile"=>$cf_all_results,
+         "xcol"=>"2",
+         "ycol"=>"4,6",
+         "xmin"=>0,
+         "format"=>"png",
+         "lines"=>1,
+         "xleg1"=>"Degree",
+         "yleg1"=>"Number of nodes",
+         "title1"=>"Degree distribution",
+         "legend"=>1,
+         "header"=>1,
+         "xlog"=>10,
+         "ylog"=>10
+       )
+     );
+     echo "<pre>";
+     $xy_all_echoed_log = $soap_client->xygraph($xy_all_parameters_log);
+     $xy_all_response_log =  $xy_all_echoed_log->response;
+     $xy_all_command_log = $xy_all_response_log->command;
+     $xy_all_server_log = $xy_all_response_log->server;
+     $xy_all_client_log = $xy_all_response_log->client;
+
+     echo "</pre>";
+     $xy_all_server_log = rtrim ($xy_all_server_log);
+     $xy_all_temp_file_log = explode('/',$xy_all_server_log);
+     $xy_all_temp_file_log = end($xy_all_temp_file_log);
+     $xy_all_resultURL_log = "tmp/".$xy_all_temp_file_log;
+
      
    ### CLASSFREQ + XY-GRAPH (intra nodes degree)
    # classfreq
@@ -186,7 +218,7 @@
     echo "</pre>";
     $cf_in_server = rtrim ($cf_in_server);
     
-    # xy graph
+    # xy graph 
     $cf_in_results = storeFile($cf_in_server);
     $xy_in_parameters = array( 
        "request" => array(
@@ -215,8 +247,40 @@
          $xy_in_temp_file = explode('/',$xy_in_server);
     $xy_in_temp_file = end($xy_in_temp_file);
     $xy_in_resultURL = "tmp/".$xy_in_temp_file;
-//      echo "<img src='$xy_in_resultURL'>";
-   
+  
+    # xy graph (log)
+    $xy_in_parameters_log = array( 
+       "request" => array(
+         "inputFile"=>$cf_in_results,
+         "xcol"=>"2",
+         "ycol"=>"4,6",
+         "format"=>"png",
+         "lines"=>1,
+         "xmin"=>0,
+         "title1"=>"In-Degree distribution",
+         "xleg1"=>"Degree",
+         "yleg1"=>"Number of nodes",
+         "legend"=>1,
+         "header"=>1,
+         "xlog"=>10,
+         "ylog"=>10
+       )
+     );
+     echo "<pre>";
+     $xy_in_echoed_log = $soap_client->xygraph($xy_in_parameters_log);
+     $xy_in_response_log =  $xy_in_echoed_log->response;
+     $xy_in_command_log = $xy_in_response_log->command;
+     $xy_in_server_log = $xy_in_response_log->server;
+     $xy_in_client_log = $xy_in_response_log->client;
+
+     echo "</pre>";
+     $xy_in_server_log = rtrim ($xy_in_server_log);
+     $xy_in_temp_file_log = explode('/',$xy_in_server_log);
+     $xy_in_temp_file_log = end($xy_in_temp_file_log);
+     $xy_in_resultURL_log = "tmp/".$xy_in_temp_file_log;  
+  
+  
+  
    ### CLASSFREQ + XY-GRAPH (extra nodes degree)
    # classfreq
    $cf_out_parameters = array( 
@@ -269,7 +333,38 @@
      $xy_out_temp_file = explode('/',$xy_out_server);
      $xy_out_temp_file = end($xy_out_temp_file);
      $xy_out_resultURL = "tmp/".$xy_out_temp_file;
-//      echo "<img src='$xy_out_resultURL'>";
+   
+    # xy graph (log)
+    $xy_out_parameters_log = array( 
+       "request" => array(
+         "inputFile"=>$cf_out_results,
+         "xcol"=>"2",
+         "ycol"=>"4,6",
+         "format"=>"png",
+         "lines"=>1,
+         "xmin"=>0,
+         "title1"=>"Out-Degree distribution",
+         "xleg1"=>"Degree",
+         "yleg1"=>"Number of nodes",
+         "legend"=>1,
+         "header"=>1,
+         "xlog"=>10,
+         "ylog"=>10
+       )
+     );
+     echo "<pre>";
+     $xy_out_echoed_log = $soap_client->xygraph($xy_out_parameters_log);
+     $xy_out_response_log =  $xy_out_echoed_log->response;
+     $xy_out_command_log = $xy_out_response_log->command;
+     $xy_out_server_log = $xy_out_response_log->server;
+     $xy_out_client_log = $xy_out_response_log->client;
+
+     echo "</pre>";
+     $xy_out_server_log = rtrim ($xy_out_server_log);
+     $xy_out_temp_file_log = explode('/',$xy_out_server_log);
+     $xy_out_temp_file_log = end($xy_out_temp_file_log);
+     $xy_out_resultURL_log = "tmp/".$xy_out_temp_file_log;   
+   
    
      echo "<table>
        <th align = 'center' colspan = 4><b>Global, in- and out- degree distributions</b></th>
@@ -285,6 +380,11 @@
          <td><a href = '$xy_in_resultURL'><img src='$xy_in_resultURL' width = '100%'></a></td>
          <td><a href = '$xy_out_resultURL'><img src='$xy_out_resultURL' width = '100%'></a></td>
        </tr>
+       <tr>
+         <td><a href = '$xy_all_resultURL_log'><img src='$xy_all_resultURL_log' width = '100%'></a></td>
+         <td><a href = '$xy_in_resultURL_log'><img src='$xy_in_resultURL_log' width = '100%'></a></td>
+         <td><a href = '$xy_out_resultURL_log'><img src='$xy_out_resultURL_log' width = '100%'></a></td>
+       </tr>       
        
      </table>";
   }
