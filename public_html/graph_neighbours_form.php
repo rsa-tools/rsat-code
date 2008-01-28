@@ -87,9 +87,7 @@
   <br><br><b><a href = 'help.graph_neighbours.html#seeds'>Seed node selection</a></b><br>
   <br><table>
   <tr><td><input type = 'radio' $all_nodes_selected name='allseeds' value = 'all'/></td><td>All nodes</td>
-  <tr><td><input type='radio' $selection_nodes_selected name='allseeds' value='selection' /></td>
-  <td></select><br>
-  <b>List of nodes</b><br>
+  <tr><td><input type='radio' $selection_nodes_selected name='allseeds' value='selection' /></select></td><td>Node selection</td><tr><td></td><td>
   <textarea name='seeds' rows='6' cols='65'>$demo_nodes</textarea>
   <br>Upload seed nodes from file : <br>
   <input type='file' name='seeds_file' size='45' /></td></tr></table>");
