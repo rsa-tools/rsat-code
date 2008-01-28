@@ -69,7 +69,7 @@
     echo "<input type='hidden' NAME='s_col' VALUE='$scol'/>\n";
     echo "<input type='hidden' NAME='t_col' VALUE='$tcol'/>\n";
   }
-  echo("
+  echo("<hr>
   <br><br><b><a href = 'help.graph_node_degree.html#nodes'>Node selection</a></b><br>
   <br><table>
   <tr><td><input type = 'radio' $all_nodes_selected name='allnodes' value = 'all'/></td><td>All nodes</td>
