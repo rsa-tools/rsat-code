@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.116 2008/01/29 11:38:18 rsat Exp $
+# $Id: matrix-scan,v 1.117 2008/01/29 11:48:01 rsat Exp $
 #
-# Time-stamp: <2008-01-29 12:37:46 jturatsi>
+# Time-stamp: <2008-01-29 12:47:36 jturatsi>
 #
 ############################################################
 ## TO DO: add an option to sort hits either by position or by score
@@ -1709,7 +1709,8 @@ matrix-scan options
 
 		Supported thresholds fields for score distributions: occ, occ_sum, 
 		inv_cum, exp_occ, occ_pval, occ_eval, occ_sig, occ_sig_rank
--crer_ids	assign to each crer its own id. If not specified all crer have "crer" as id (more convenient for feature-map legend)
+-crer_ids	Assign one separate feature ID per CRER. This option is convenient to distinguish separate CRERs,
+                but it can be heavy for feature-map legends, especially when many CRERs are detected.
 -sort_distrib	sort score distributions by decreasing values of significance. 
                 (Default: score distibutions are sorted by score (weight)) 
 -bg_distrib	File specifying the background score distribution used to estimate prior
@@ -2434,8 +2435,8 @@ according to the biological question.
 
 =item B<-crer_ids>
 
-Assign to each crer its own id. If not specified all crer are identified 
-by "crer" (this more convenient for feature-map legend)
+Assign one separate feature ID per CRER
+This option is convenient to distinguish separate CRERs, but it can be heavy for feature-map legends, especially when many CRERs are detected.
 
 =cut
 	} elsif ($arg eq "-crer_ids") {
