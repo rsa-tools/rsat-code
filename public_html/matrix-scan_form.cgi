@@ -35,6 +35,7 @@ $checked{$default{pseudo_prior}} = "CHECKED";
 $default{bg_pseudo} = "0.01";
 $default{bg_format}="oligo-analysis";
 $default{decimals} = "1";
+$default{crer_ids} = "CHECKED";
 
 
 ## Return fields
@@ -887,6 +888,10 @@ sub ReturnTable {
 				    -checked=>$default{'return_'.$field},
 				    -label=>' '."sites".' ');
   }
+  $boxes_crer .= "<BR/>";
+  $boxes_crer .= $query->checkbox(-name=>'crer_ids',
+				    -checked=>$default{crer_ids},
+				    -label=>' '."crer identifier".' ');
 
 
 

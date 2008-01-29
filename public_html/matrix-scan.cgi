@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.17 2007/12/17 00:24:26 morgane Exp $
+# $Id: matrix-scan.cgi,v 1.18 2008/01/29 11:29:36 morgane Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -326,6 +326,10 @@ sub ReadMatrixScanParameters {
     }
     if ($query->param("return_crer_sites") eq "on") {
       $parameters .= " -return sites";
+    }
+    
+    if ($query->param("crer_ids") eq "on") {
+      $parameters .= " -crer_ids";
     }
     	
     ## thresholds
