@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.22 2008/01/29 14:50:26 jvanheld Exp $
+# $Id: footprint-discovery,v 1.23 2008/01/29 15:29:30 jvanheld Exp $
 #
 ############################################################
 
@@ -124,7 +124,7 @@ package main;
 
   ################################################################
   ## Initialise parameters
-  $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -898,7 +898,7 @@ sub Verbose {
     $header_verbose .= sprintf "; %-22s\t%s\n", "Query genes", scalar(@current_query_genes);
   }
   $header_verbose .= sprintf "; %-22s\t%s\n", "Background model", $bg_model;
-  $header_verbose .= sprintf "; %-22s\t%s\n", "Dyad filtering" if ($filter);
+  $header_verbose .= sprintf "; %s\n", "Dyad filtering" if ($filter);
 
   if (defined(%main::infile)) {
     print $main::out "; Input files\n";
