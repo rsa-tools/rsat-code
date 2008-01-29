@@ -110,7 +110,8 @@ if ($query->param('to_matrix')) {
 }
 
 ## Background model
-$parameters .= " -bg_model ".$query->param('bg_model');
+$bg_model = $query->param('bg_model')
+$parameters .= " -bg_model ".$bg_model;
 
 ## Output prefix
 $parameters .= " -o ".$file_prefix;
@@ -119,7 +120,7 @@ $parameters .= " -o ".$file_prefix;
 print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 
 $index_file = $result_subdir."/".$query_prefix."_index.html";
-my $mail_title = join (" ", "[RSAT]", "footprint-discovery", &AlphaDate(), $query_prefix, $organism, $taxon);
+my $mail_title = join (" ", "[RSAT]", "footprint-discovery", $query_prefix, $bg_model, $taxon, $organism, &AlphaDate());
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
 
 print $query->end_html();
