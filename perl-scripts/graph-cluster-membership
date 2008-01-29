@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-cluster-membership,v 1.9 2008/01/29 14:10:28 gipsi Exp $
+# $Id: graph-cluster-membership,v 1.10 2008/01/29 17:06:50 gipsi Exp $
 #
 ############################################################
 
@@ -171,7 +171,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     ################################################################
@@ -257,11 +257,11 @@ package main;
     my $R_weights = $graph->get_weights();
     if ($R_weights == 0 && ($main::norm{stat} ne 'edge' && $main::norm{stat} ne 'reledge')) {
     	if ($main::norm{stat} eq 'weight') {
-    	    &RSAT::message::Warning("Weights are not real numbers!  Stat switched from weight to edge");
+    	    &RSAT::message::Info("Weights are not real numbers!  Stat switched from weight to edge");
 	    $main::norm{stat} ='edge';
 	}
 	else {
-    	    &RSAT::message::Warning("Weights are not real numbers!  Stat switched from relw to relative edge");
+    	    &RSAT::message::Info("Weights are not real numbers!  Stat switched from relw to relative edge");
 	    $main::norm{stat} = 'reledge';
 	}
     }
