@@ -1,0 +1,11 @@
+0.95	pos
+0.85	neg
+0.75	pos
+0.65	pos
+0.55	pos
+0.45	neg
+0.35	pos
+0.35	neg
+0.25	neg
+0.15	pos
+0.05	neg
