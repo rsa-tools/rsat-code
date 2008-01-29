@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.21 2008/01/29 14:34:05 jvanheld Exp $
+# $Id: footprint-discovery,v 1.22 2008/01/29 14:50:26 jvanheld Exp $
 #
 ############################################################
 
@@ -124,7 +124,7 @@ package main;
 
   ################################################################
   ## Initialise parameters
-  $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -214,7 +214,7 @@ package main;
   ################################################################
   ## Report the index files
   if ($create_index) {
-    if ($main::verbose >= 0) {
+    if ($main::verbose >= 2) {
       print ("; Index files\n");
       foreach my $key (sort keys %index_list) {
 	print join ("\t", ";", $key, $index_list{$key}), "\n";
@@ -255,7 +255,7 @@ sub RunFootprintDisco {
   ## Output prefix is mandatory
   ## If not specified by the user, define it automatically
   ## If genes are to be analyzed separately, also define output prefix automatically
-  if (($sep_genes) || ($outfile{prefix} == "")) {
+  if (($sep_genes) || ($outfile{prefix} eq "")) {
     if ($query_prefix) {
       $outfile{prefix} = join( "/", "footprints", $taxon, $organism_name, $query_prefix, $bg_model, 
 			       join ("_", $query_prefix, $organism_name, $taxon, $bg_model));
