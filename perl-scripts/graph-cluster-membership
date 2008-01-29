@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-cluster-membership,v 1.8 2008/01/29 09:37:04 gipsi Exp $
+# $Id: graph-cluster-membership,v 1.9 2008/01/29 14:10:28 gipsi Exp $
 #
 ############################################################
 
@@ -33,7 +33,7 @@ The membership coefficient is the fraction of weight of the edges
 linking a node to a cluster relative to the total weight of edges of
 that node.
 
-In assigning the membership of a node to a cluster, there are two
+In assigning the membership of a node to a cluster, there are several
 possiblities:
 
 =over
@@ -47,8 +47,9 @@ edge weights linking node I<n> to cluster I<c>.
 Mw(n,c)= SUM[W(n,i)] / SUM[W(n,j)]
           i             j
 
-where I<W(n,i)> is the weigh of the edge between nodes I<n> and I<i>,
-and the other symbols are defined as above.
+where I<W(n,i)> is the weight of the edge between nodes I<n> and I<i>,
+i is the index for the nodes Nc belonging to
+cluster c, and j is the index for all nodes N.
 
 =item relative weight sum  (option I<-stat relw>)
 
@@ -60,7 +61,7 @@ normalized to the size of the cluster:
 Mrw(n,c)= (SUM[W(n,i)]/Nc) / SUM (SUM[W(n,j)/Nk])
            i                 k    j
 
-where I<Nc> is the number of nodes in cluster I<c> (cluster size), K is the set of all clusters,
+where I<K> is the set of all clusters,
 the other symbols are defined as above.
 
 The relative weight reduces the bias of membership coefficients towards
@@ -78,9 +79,7 @@ Me(n,c)= SUM[E(n,i)]/ SUM[E(n,j)]
           i            j
 
 where I<E(n,i)> is a boolean variable indicating if there is an edge
-between nodes I<n> and I<i>,
-I<i> is the index for the nodes I<Nc> belonging to cluster I<c>, and
-I<j> is the index for all nodes I<N>.
+between nodes I<n> and I<i>, the other symbols are defined as above.
 
 
 =item relative relative edge  (option I<-stat reledge>)
@@ -93,8 +92,7 @@ normalized to the size of the cluster:
 Mre(n,c)= (SUM[E(n,i)]/Nc) / SUM (SUM[E(n,j)/Nk])
            i                 k    j
 
-where I<Nc> is the number of nodes in cluster I<c> (cluster size), K is the set of all clusters,
-the other symbols are defined as above.
+where all symbols are defined as above.
 
 
 
@@ -173,7 +171,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     ################################################################
