@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.23 2008/01/29 15:29:30 jvanheld Exp $
+# $Id: footprint-discovery,v 1.24 2008/01/29 16:35:20 jvanheld Exp $
 #
 ############################################################
 
@@ -109,9 +109,9 @@ Bioinformatics, in press.
 
 
 BEGIN {
-    if ($0 =~ /([^(\/)]+)$/) {
-	push (@INC, "$`lib/");
-    }
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
 }
 require "RSA.lib";
 
@@ -124,7 +124,7 @@ package main;
 
   ################################################################
   ## Initialise parameters
-  $program_version = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -180,12 +180,18 @@ package main;
 
   ################################################################
   ## Read query genes from input file
+  if ($all_genes) {
+    $infile{genes} = $supported_organism{$organism_name}->{'data'};
+    $infile{genes} .= "/genome/cds.tab";
+  }
+
   if ($infile{genes}) {
     ($in) = &OpenInputFile($infile{genes});
     while (<$in>) {
-      next if (/^;/);
-      next if (/^#/);
-      next unless (/\S/);
+      next if (/^--/); ## Skip mysql-type comment lines
+      next if (/^;/); ## Skip comment lines
+      next if (/^#/); ## Skip header lines
+      next unless (/\S/); ## Skip empty lines
       chomp;
       my @fields = split /\s+/;
       my $query = shift @fields;
@@ -229,12 +235,23 @@ package main;
 ################################################################
 
 
+sub one_command {
+  my ($cmd) = @_;
+  if ($main::batch) {
+    $main::batch_cmd .= " ; $cmd";
+  } else {
+    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  }
+}
+
 ################################################################
 ## Run footprint discovery flow chart for one or several query genes
 sub RunFootprintDisco {
   my (@current_query_genes) = @_;
 
-  my $start_time = &AlphaDate();
+  local $start_time = &AlphaDate();
+  local $batch_cmd = "";
+
 
   ################################################################
   ## Define a query prefix for the title of the feature map and for
@@ -357,7 +374,8 @@ sub RunFootprintDisco {
   $cmd .= " -org ".$organism_name;
   $cmd .= " -i ".$outfile{genes};
   $cmd .= " -o ".$outfile{query_seq};
-  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &one_command($cmd);
+#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("query sequence", $outfile{query_seq}) if ($create_index);
 
   ################################################################
@@ -370,7 +388,8 @@ sub RunFootprintDisco {
     $cmd .= " ".$strands;
     $cmd .= " ".$noov;
     $cmd .= " -o ".$outfile{filter_dyads};
-    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &one_command($cmd);
+#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     &IndexOneFile("filter dyads", $outfile{filter_dyads}) if ($create_index);
   }
 
@@ -384,7 +403,8 @@ sub RunFootprintDisco {
   $cmd .= " -return query_name,query_organism -return ident -lth ali_len 50 -return e_value -uth e_value 1e-05";
   $cmd .= " -uth rank 1";	## BBH criterion
   $cmd .= " -o ".$outfile{orthologs};
-  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &one_command($cmd);
+#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("orthologs", $outfile{orthologs}) if ($create_index);
 
 
@@ -396,7 +416,8 @@ sub RunFootprintDisco {
     $cmd .= " -i ".$outfile{orthologs};
     $cmd .= " -o ".$outfile{bbh};
     $cmd .= " -uth interg_dist ".$dist_thr;
-    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &one_command($cmd);
+#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     &IndexOneFile("leader genes", $outfile{bbh}) if ($create_index);
   }
 
@@ -407,7 +428,8 @@ sub RunFootprintDisco {
   $cmd .= " -i ".$outfile{bbh};
   $cmd .= " -noorf";
   $cmd .= " -o ".$outfile{seq};
-  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &one_command($cmd);
+#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("$promoter sequences", $outfile{seq}) if ($create_index);
 
   ################################################################
@@ -418,7 +440,8 @@ sub RunFootprintDisco {
   $cmd .= " -ml 30 -mis 0 -mask_short 30";
   $cmd .= " ".$strands;
   $cmd .= " -o ".$outfile{purged};
-  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &one_command($cmd);
+#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("purged sequences", $outfile{purged}) if ($create_index);
 
   ################################################################
@@ -446,7 +469,8 @@ sub RunFootprintDisco {
   $cmd .= " ".$noov;
   $cmd .= " -sort";
   $cmd .= " -o ".$outfile{dyads};
-  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &one_command($cmd);
+#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("dyads", $outfile{dyads}) if ($create_index);
 
   ## Generate a HTML table with the discovered dyads
@@ -454,7 +478,8 @@ sub RunFootprintDisco {
   $cmd .= " -i ".$outfile{dyads};
   $cmd .= " -font variable -chunk 1000";
   $cmd .= " -o ".$outfile{dyads_html};
-  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &one_command($cmd);
+#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("dyads [htm]", $outfile{dyads_html}) if ($create_index);
 
   ################################################################
@@ -464,7 +489,8 @@ sub RunFootprintDisco {
   $cmd .= " -i ".$outfile{dyads};
   $cmd .= " -subst 0 -maxfl 1 -toppat 50";
   $cmd .= " -o ".$outfile{asmb};
-  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &one_command($cmd);
+#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("assembled dyads", $outfile{asmb}) if ($create_index);
 
   ################################################################
@@ -479,7 +505,8 @@ sub RunFootprintDisco {
     $cmd .= " -bginput -markov 0";
     $cmd .= " ".$strands;
     $cmd .= " -o ".$outfile{pssm_prefix};
-    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &one_command($cmd);
+    #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     &IndexOneFile("significance matrix (PSSM)", $outfile{sig_PSSM}) if ($create_index);
     &IndexOneFile("count matrix (PSSM)", $outfile{count_PSSM}) if ($create_index);
   }
@@ -498,8 +525,15 @@ sub RunFootprintDisco {
   $cmd .= " -scalebar -legend";
   $cmd .= " -scorethick";
   $cmd .= " -o ".$outfile{map};
-  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &one_command($cmd);
+#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("feature map", $outfile{map}, image=>1) if ($create_index);
+
+  ################################################################
+  ## Send the command to a batch queue (e.g. PC cluster)
+  if ($batch) {
+    &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
+  }
 
   ################################################################
   ## Finish verbose
@@ -631,6 +665,19 @@ specified by using iteratively the option -q.
 =cut
 	} elsif ($arg eq "-genes") {
 	  $main::infile{genes} = shift(@arguments);
+
+=pod
+
+=item B<-all_genes>
+
+Automatically analyze all the genes of a query genome, and store each
+result in a separate folder (the folder name is defined
+automatically).
+
+=cut
+	} elsif ($arg eq "-all_genes") {
+	  $main::all_genes = 1;
+
 
 	    ## Output prefix
 =pod
@@ -957,12 +1004,6 @@ each taxon. The folder name is defined automatically.
 
 Automatically analyze all the taxa, and store each result in a
 separate folder (the folder name is defined automatically).
-
-=item B<-all_genes>
-
-Automatically analyze all the genes of a query genome, and store each
-result in a separate folder (the folder name is defined
-automatically).
 
 
 =back
