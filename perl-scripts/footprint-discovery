@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.19 2008/01/24 13:37:38 rsat Exp $
+# $Id: footprint-discovery,v 1.20 2008/01/29 10:37:46 jvanheld Exp $
 #
 ############################################################
 
@@ -125,34 +125,35 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
   %main::outfile = ();
 
 
-  local $infer_operons = 0;
   local $dyad_return_fields = "occ,proba,rank"; ## Default return fields for dyad-analysis
   local @dyad_return_fields = (); ## User-specified return fields for dyad-analysis
-  local $create_index = 0;
-  local $verbose = 0;
+  local $create_index = 0; ## Create an HTML file with index to the other result files
+  local $verbose = 0; ## Verbosity
   local $in = STDIN;
-  local $taxon;
-  local $organism_name;
-  local @query_genes = ();
-  local $img_format = "png";
-  local $strands = "-2str";
-  local $noov = "-noov";
-  local $filter = 1;
-  local $dist_thr = 55;
-  local $bg_model = "taxfreq";
-  local %lth = (occ=>1,occ_sig=>0);
-  local %uth = (rank=>50);
+  local $taxon; ## Reference taxon
+  local $organism_name; ## Query organism
+  local @query_genes = (); ## list of query genes
+  local $img_format = "png"; ## Image format
+  local $strands = "-2str"; ## Strands for pattern discovery and pattern matching
+  local $noov = "-noov"; ## Treatment of self-overlapping patterns
+  local $filter = 1; ## Only report dyads present in the query promoter
+  local $bg_model = "taxfreq"; ## Background model for pattern discovery (Supported:taxfreq or monads)
+  local %lth = (occ=>1,occ_sig=>0); ## Lower thresholds
+  local %uth = (rank=>50); ## Upper thresholds
+  local $infer_operons = 0; ## Infer operon leader genes
+  local $dist_thr = 55; ## DIstance threshold for operon inference
+  local $to_matrix = 0; ## Convert assembled dyads into PSSM
 
   ## Options for the &doit() command;
-  local $dry = 0;
-  local $batch = 0;
+  local $dry = 0; ## Do not run the command, just echo them as warning
+  local $batch = 0; ## Run the processes on a PC cluster
   local $die_on_error = 1;
   local $job_prefix = "footprint_disco";
   local $cmd;
@@ -249,6 +250,11 @@ package main;
   $outfile{dyads_html} = $outfile{dyad_prefix}.".html";
   $outfile{asmb} = $outfile{dyad_prefix}.".asmb";
   $outfile{map} = $outfile{dyad_prefix}.".".${img_format};
+  if ($to_matrix) {
+    $outfile{pssm_prefix} = $outfile{dyad_prefix}."_pssm";
+    $outfile{sig_PSSM} = $outfile{pssm_prefix}."_sig_matrices.txt";
+    $outfile{count_PSSM} = $outfile{pssm_prefix}."_count_matrices.txt";
+  }
 
   ## HTML index
   if ($create_index) {
@@ -417,6 +423,23 @@ package main;
   $cmd .= " -o ".$outfile{asmb};
   print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("assembled dyads", $outfile{asmb}) if ($create_index);
+
+  ################################################################
+  ## Convert assembled dyads into a position-specific scoring matrix
+  if ($to_matrix) {
+    &RSAT::message::TimeWarn("Converting assembled dyads into PSSM", $outfile{pssm}) if ($verbose >= 1);
+    $cmd = "$SCRIPTS/matrix-from-patterns -v 1";
+    $cmd .= " -seq ".$outfile{seq};
+    $cmd .= " -asmb ".$outfile{asmb};
+    $cmd .= " -format fasta";
+    $cmd .= " -uth Pval 0.00025";
+    $cmd .= " -bginput -markov 0";
+    $cmd .= " ".$strands;
+    $cmd .= " -o ".$outfile{pssm_prefix};
+    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &IndexOneFile("significance matrix (PSSM)", $outfile{sig_PSSM}) if ($create_index);
+    &IndexOneFile("count matrix (PSSM)", $outfile{count_PSSM}) if ($create_index);
+  }
 
   ################################################################
   ## Generate a feature-map of the discovered dyads
@@ -682,6 +705,19 @@ fields.
 =cut
 	} elsif ($arg eq "-return") {
 	  push @dyad_return_fields, shift (@arguments);
+
+=pod
+
+=item B<-to_matrix>
+
+Convert assembled patterns into position-specific scoring matrices
+(PSSM).  Caution ! This conversion can take time if the sequence set
+is large and if there are many assemblies.
+
+=cut
+	} elsif ($arg eq "-to_matrix") {
+	  $main::to_matrix = 1;
+
 
 	    ## Background model
 
