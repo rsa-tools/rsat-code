@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.24 2008/01/29 16:35:20 jvanheld Exp $
+# $Id: footprint-discovery,v 1.25 2008/01/29 18:09:31 jvanheld Exp $
 #
 ############################################################
 
@@ -124,7 +124,7 @@ package main;
 
   ################################################################
   ## Initialise parameters
-  $program_version = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -494,24 +494,6 @@ sub RunFootprintDisco {
   &IndexOneFile("assembled dyads", $outfile{asmb}) if ($create_index);
 
   ################################################################
-  ## Convert assembled dyads into a position-specific scoring matrix
-  if ($to_matrix) {
-    &RSAT::message::TimeWarn("Converting assembled dyads into PSSM", $outfile{pssm}) if ($verbose >= 1);
-    $cmd = "$SCRIPTS/matrix-from-patterns -v 1";
-    $cmd .= " -seq ".$outfile{seq};
-    $cmd .= " -asmb ".$outfile{asmb};
-    $cmd .= " -format fasta";
-    $cmd .= " -uth Pval 0.00025";
-    $cmd .= " -bginput -markov 0";
-    $cmd .= " ".$strands;
-    $cmd .= " -o ".$outfile{pssm_prefix};
-    &one_command($cmd);
-    #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-    &IndexOneFile("significance matrix (PSSM)", $outfile{sig_PSSM}) if ($create_index);
-    &IndexOneFile("count matrix (PSSM)", $outfile{count_PSSM}) if ($create_index);
-  }
-
-  ################################################################
   ## Generate a feature-map of the discovered dyads
   my $map_title = join "; ", $taxon, $organism_name, $query_prefix;
   &RSAT::message::TimeWarn("Generating feature map", $outfile{map}) if ($verbose >= 1);
@@ -528,6 +510,24 @@ sub RunFootprintDisco {
   &one_command($cmd);
 #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("feature map", $outfile{map}, image=>1) if ($create_index);
+
+  ################################################################
+  ## Convert assembled dyads into a position-specific scoring matrix
+  if ($to_matrix) {
+    &RSAT::message::TimeWarn("Converting assembled dyads into PSSM", $outfile{pssm}) if ($verbose >= 1);
+    $cmd = "$SCRIPTS/matrix-from-patterns -v 1";
+    $cmd .= " -seq ".$outfile{seq};
+    $cmd .= " -asmb ".$outfile{asmb};
+    $cmd .= " -format fasta";
+    $cmd .= " -uth Pval 0.00025";
+    $cmd .= " -bginput -markov 0";
+    $cmd .= " ".$strands;
+    $cmd .= " -o ".$outfile{pssm_prefix};
+    &one_command($cmd);
+    #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &IndexOneFile("significance matrix (PSSM)", $outfile{sig_PSSM}) if ($create_index);
+    &IndexOneFile("count matrix (PSSM)", $outfile{count_PSSM}) if ($create_index);
+  }
 
   ################################################################
   ## Send the command to a batch queue (e.g. PC cluster)
