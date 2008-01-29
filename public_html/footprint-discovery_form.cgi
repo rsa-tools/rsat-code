@@ -116,8 +116,8 @@ print "(only accept dyads having at least one occurrence in the promoter of the 
 print "<br>";
 print "<b><a href='help.footprint-discovery.html#bg_model'>Background model</A>&nbsp;</b>\n";
 print $query->popup_menu(-name=>'bg_model',
-			 -Values=>['taxfreq',#taxon-wise background model (taxfreq)',
-				  'monad'],
+			 -Values=>['taxfreq', ## taxon-wise background model (taxfreq)
+				   'monads'], ## background model estimated from the input sequence set
 			 -default=>$default{bg_model});
 
 

@@ -86,7 +86,7 @@ if ($query->param('queries') =~ /\S/) {
   print QUERY $query->param('queries');
   close QUERY;
   &DelayedRemoval($query_file);
-  $parameters .= " -i ".$query_file;
+  $parameters .= " -genes ".$query_file;
 } else {
   &cgiError("You should enter at least one query in the box\n");
 }
@@ -110,7 +110,7 @@ if ($query->param('to_matrix')) {
 }
 
 ## Background model
-$bg_model = $query->param('bg_model')
+$bg_model = $query->param('bg_model');
 $parameters .= " -bg_model ".$bg_model;
 
 ## Output prefix
