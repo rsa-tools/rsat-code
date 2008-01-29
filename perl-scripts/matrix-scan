@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.114 2008/01/15 14:34:36 morgane Exp $
+# $Id: matrix-scan,v 1.115 2008/01/29 11:20:14 rsat Exp $
 #
-# Time-stamp: <2007-10-03 18:23:27 jturatsi>
+# Time-stamp: <2008-01-29 12:15:59 jturatsi>
 #
 ############################################################
 ## TO DO: add an option to sort hits either by position or by score
@@ -363,6 +363,7 @@ package main;
   local $crer = new RSAT::feature();
   local %crer_per_seq = ();
   local $warnings ="";
+  local $crer_ids = 0;
   
   #    local $in = STDIN;
   #    local $out = STDOUT;
@@ -980,8 +981,8 @@ package main;
 	    }
 	}
     }
-    
-    
+
+
     ### CRER detection
 	$nb_of_binom_tests{$seq_id} = 0 if ($return_fields{crer});
 	our $crer_seed = $main::crer_seed_init if ($return_fields{crer}); 
@@ -991,7 +992,7 @@ package main;
    			$main::warnings .= "; sequence $seq_id : CRER max size ($crer_seed) exceeds sequence length ($seq_len). Max CRER size is switched to sequence length.\n";
    			$crer_seed = $seq_len - $shortest_matrix_size; 
    		}
-   		
+
    		## adapt seed to that final crer size does not exceed the desired crer_size
    		$crer_seed = $crer_seed - $longest_matrix_size;
    		&RSAT::message::Debug("sequence",$seq_id,"CRER seed length:", $crer_seed) if ($main::verbose >= 5);
@@ -1001,13 +1002,13 @@ package main;
   		undef %crer_seed_hits;
   		undef @crer_sum_hits;
    	}
-    
+
     ################################################################
     ## Detect sites
     &RSAT::message::TimeWarn("Scanning sequence", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id,  "with ".scalar(@matrices)." PSSM")
       if ($main::verbose >= 3);
     &RSAT::message::psWarn("Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id) if (($main::verbose >= 2) && (($sequence_number % 50) == 0));
-	
+
 
     if ($calc_fields{sites}) {
       #	  $n_containing_region = 0;
@@ -1059,9 +1060,9 @@ package main;
 		my $added_word = substr($current_seq, $pos - ($markov + 2), $markov+1);
 		&RSAT::message::Debug("added word", $added_word,"begins at" ,$pos - ($markov + 2) ) if ($main::verbose >= 3);
 		$bg_model->one_word_update($added_word, "add",$pos - ($markov + 2));
-	      }                                                                                                                             
+	      }
 	      &RSAT::message::Debug( "pos", $pos,"> window/2", $main::window/2,  "condition",$pos + $main::window, "<=","seq_len", $seq_len ) if ($main::verbose >= 10);	 
-   		
+
 	      ## make the window slides
 	      if (($main::window > 0) &&
 		  (floor($pos + $ncol/2) > floor($main::window/2) + 1) && ##  condition where matrix is exactly centered on the window
@@ -2368,6 +2369,8 @@ for scanning.
 	      &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
 	    }
 	  }
+
+
 	  
 #	    ## crer_max
 #=pod
@@ -2426,7 +2429,18 @@ according to the biological question.
 	  $main::infile{bg_distrib} = shift(@arguments);
 	  
 	  ## Batch method
-	  
+
+=pod
+
+=item B<-crer_ids>
+
+Scan both strands for DNA sequences.
+
+=cut
+	} elsif ($arg eq "-crer_ids") {
+	    $main::crer_ids = 1;
+	    
+
 =pod
 
 =item B<-recursive>
@@ -2972,24 +2986,28 @@ sub score_crer {
 	    
 	    unless (&check_thresholds("crer_pval", $crer_pval)) {next; }
 	    unless (&check_thresholds("crer_sig", $crer_sig)) {next; }
-	    
+ 
      	##prepare output (ft format)
      	my $strand_binon = "D";
      	$strand_binon = "DR" if ($main::both_strands);
-     	
+
      	## calculate start and end positions  	
      	my $start_pos = ($sub_window_end - ($last_hit - $k)) - $orig_pos;
     	my $end_pos = $sub_window_end + $longest_matrix_size -1 - $orig_pos;
-    	
-    	  
+
+
     	if ($create_sites) {
       		$crer = new RSAT::feature();
     	}
-     	
+
      	$crer->force_attribute('seq_name', $seq_id);
      	$crer->force_attribute('ft_type', 'CRER');
-    	$crer->force_attribute('feature_name', "crer_".$sum_binom_tests);
-    	$crer->force_attribute('strand',$strand_binon);
+	if ($crer_ids) {
+	    $crer->force_attribute('feature_name', "crer_".$sum_binom_tests);
+	}else {
+	    $crer->force_attribute('feature_name', "crer");
+	}
+	$crer->force_attribute('strand',$strand_binon);
     	$crer->force_attribute('start',$start_pos);
     	$crer->force_attribute('end',$end_pos);
     	$crer->force_attribute('hit_sum', $hit_sum);
@@ -2998,32 +3016,32 @@ sub score_crer {
     	$crer->force_attribute('pval_prod',$pval_prod);
     	$crer->force_attribute('weight_sum',$weight_sum);
     	$crer->force_attribute('crer_length',$end_pos - $start_pos + 1);
-		$crer->force_attribute('normw_sum',$normw_sum) if ($calc_fields{normw});
-		
-		# If the hits have to be ranked, store them rather than printing them immediately
-		if ($create_sites) {
-      		push @{$crer_per_seq{$seq_id}} , $crer;
+	$crer->force_attribute('normw_sum',$normw_sum) if ($calc_fields{normw});
+
+	# If the hits have to be ranked, store them rather than printing them immediately
+	if ($create_sites) {
+	    push @{$crer_per_seq{$seq_id}} , $crer;
     	} else {
-      		&print_crer($crer);
+	    &print_crer($crer);
     	}
-		
-		
-     }
-     
-     ## DEBUG
-     if ($main::verbose >= 10){
-     	foreach my $i (0..$#crer_sum_hits){
-     		foreach my $matrix (keys(%crer_seed_hits)){
-     			foreach my $strand (@strands){
-     			&RSAT::message::Debug($i, " matrix", $matrix,"hits",Dumper($crer_seed_hits{$matrix}->{$strand}->[$i])) ;
-     			}
-     		}
-     		&RSAT::message::Debug($i, " hit sum: ",$crer_sum_hits[$i]) ;
-     	}
-     }
+
+    }
+
+  ## DEBUG
+  if ($main::verbose >= 10){
+      foreach my $i (0..$#crer_sum_hits){
+	  foreach my $matrix (keys(%crer_seed_hits)){
+	      foreach my $strand (@strands){
+		  &RSAT::message::Debug($i, " matrix", $matrix,"hits",Dumper($crer_seed_hits{$matrix}->{$strand}->[$i])) ;
+	      }
+	  }
+	  &RSAT::message::Debug($i, " hit sum: ",$crer_sum_hits[$i]) ;
+      }
+  }
 }
 
 ################################################################
+
 =pod
 
 =item B<print_crer>
@@ -3034,7 +3052,7 @@ Print the CRER.
 
 sub print_crer {
     my ($crer) = @_;
- 
+
     print $out join ("\t", 
 		     $crer->get_attribute('seq_name'),
 		     $crer->get_attribute('ft_type'),
@@ -3045,30 +3063,28 @@ sub print_crer {
 		     $crer->get_attribute('hit_sum'),
 		     $crer->get_attribute('crer_sig'),
 		     sprintf("%.1e",
-		     	$crer->get_attribute('crer_pval')
-		     	),
+			     $crer->get_attribute('crer_pval')
+			    ),
 		     sprintf("%.1e",
-		     	$crer->get_attribute('pval_prod')
-		     	),
+			     $crer->get_attribute('pval_prod')
+			    ),
 		     $crer->get_attribute('weight_sum'),
 		     $crer->get_attribute('crer_length')
-		     );
-	  if ($return_fields{normw}) {
-      	print $out "\t", $crer->get_attribute('normw_sum');
-    	}
-     	print $out "\t", $crer->get_attribute('rank') if ($return_fields{rank});
-    	
-        print $out "\n";
+		    );
+    if ($return_fields{normw}) {
+	print $out "\t", $crer->get_attribute('normw_sum');
+    }
+    print $out "\t", $crer->get_attribute('rank') if ($return_fields{rank});
 
-    	undef $crer;
+    print $out "\n";
+
+    undef $crer;
 }
-
-
+  
 # ################################################################
 # =pod
 
 # =item B<print_match>
-
 # Print the matching site.
 
 # =cut
