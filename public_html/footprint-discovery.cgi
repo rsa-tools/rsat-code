@@ -104,6 +104,11 @@ if (!$query->param('dyads_filter')) {
   $parameters .= " -no_filter";
 }
 
+## Convert assembled patterns to PSSM
+if ($query->param('to_matrix')) {
+  $parameters .= " -to_matrix";
+}
+
 ## Background model
 $parameters .= " -bg_model ".$query->param('bg_model');
 
