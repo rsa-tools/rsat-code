@@ -248,6 +248,10 @@ table.list th {
 body.form table {
 	font-size: 100%;
 }
+body.info table.normal {
+	font-size: 100%;
+	}
+	
 /* TABLE ON RESULT PAGES - COMPATIBLE WITH THE SORTTABLE TYPE
    DEFINED BY JAVASCRIPT */
 
