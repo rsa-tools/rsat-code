@@ -244,7 +244,7 @@
           }
           echo "
           <INPUT type='submit' value='Neighbourhood analysis'>
-        </form>
+       </form>
       </td>    
     </tr>
     <TR>
@@ -299,8 +299,25 @@
           echo "
           <INPUT type='submit' value='Load in VisANT'>
           </form>
-        </td>
+        </td>";
+	  if (($out_format == 'tab')&&($outweight != "Q::R")){
+	    echo "
+      <TD>
+        <FORM METHOD='POST' ACTION='roc-stats_form.cgi'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='roc-stats_graph_file' VALUE='$resultURL'>
+          <input type='hidden' NAME='sc_col' VALUE='3'>
+          <input type='hidden' NAME='status_col' VALUE='5'>
+          <input type='hidden' NAME='pos' VALUE=\"Q.and.R\nR.not.Q\">
+	  <input type='hidden' NAME='neg' VALUE=\"Q.not.R\">
+	  <input type='hidden' NAME='null' VALUE=\"\<NULL\>\">";
+	    echo "
+          <INPUT type='submit' value='ROC stats'>
+        </form>
+      </td>";
+	  }
+	  echo "
       </tr>
   </table>";
-  }
+   }
 ?>
