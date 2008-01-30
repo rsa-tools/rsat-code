@@ -73,16 +73,7 @@ $default{FPR} = "checked";
 $default{Acc_g} = "checked";
 $default{Acc_a} = "checked";
 $default{AUC} = "";
-
-#### specific treatment for internal XYgraph file (piped from dna-patttern)
-if (-e $query->param('roc-stats_graph_file')) {
-    my $file = $query->param('roc-stats_graph_file');
-    $default{data} = `cat $file`;
-} else {
-    $default{data} = $query->param('data');
-}
-$default{data} =~ s/\"//g; #### remove quotes for security reasons (avoid imbedded command)
-$default{data} =~ s/\r//g; #### remove quotes for security reasons (avoid imbedded command)
+$default{uploaded_file}="";
 
 $default{demo_comment} = $query->param('demo_comment');
 $default{sc_col} = "1";
@@ -131,18 +122,33 @@ if ($query->param('demo_comment')){
 
 ################################################################
 ### Input data
-print "<B><A HREF='help.roc-stats.html#data'>Input data</A></B><br>";
-print $query->textarea(-name=>'data',
-		       -default=>$default{data},
-		       -rows=>6,
-		       -columns=>65);
 
-### option to upload a file with the data from the client machine
-print "<BR>Upload data from file<BR>\n";
-print $query->filefield(-name=>'uploaded_file',
-			-default=>'',
-			-size=>45,
-			-maxlength=>200);
+print "<B><A HREF='help.roc-stats.html#data'>Input data</A></B><br>";
+
+#### data from pipe (compare-graphs)
+if (-e $query->param('roc-stats_graph_file')) {
+  my $file = $query->param('roc-stats_graph_file');
+  $file_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
+  print "<ul><a href=$file_url>";
+  print " transferred from previous query<BR>\n";
+  print "</a></ul>";
+  $default{uploaded_file} = $file;
+} else {
+  $default{data} = $query->param('data');
+  $default{data} =~ s/\"//g; #### remove quotes for security reasons (avoid imbedded command)
+  $default{data} =~ s/\r//g; #### remove quotes for security reasons (avoid imbedded command)
+  print $query->textarea(-name=>'data',
+			   -default=>$default{data},
+			 -rows=>6,
+			 -columns=>65);
+  
+  ### option to upload a file with the data from the client machine
+  print "<BR>Upload data from file<BR>\n";
+  print $query->filefield(-name=>'uploaded_file',
+			  -default=>$default{uploaded_file},
+			  -size=>45,
+			  -maxlength=>200);
+}
 
 ################################################################
 #### Input parameters
@@ -209,7 +215,7 @@ print $query->end_form;
 ################################################################
 ### data for the demo 
 print $query->start_multipart_form(-action=>"roc-stats_form.cgi");
-my $demo_data=`grep -v "^;" /home/rsat/rsa-tools/public_html/data/demo_files/roc-stats_demo_regulonDB_cg_stringcoex_inter-Q.tab`;
+my $demo_data=`grep -v "^;" $ENV{rsat_www}/data/demo_files/roc-stats_demo_regulonDB_cg_stringcoex_inter-Q.tab`;
 # "0.95	pos
 # 0.85	neg
 # 0.75	pos

@@ -30,12 +30,17 @@ my $parameters = " -v 1 ";
 my $tmp_file_prefix = sprintf "roc-stats.%s", &AlphaDate();
 my $result_file = "$TMP/$tmp_file_prefix.res";
 my $score_file = "$TMP/$tmp_file_prefix.input";
-&cgiError("You should specify input data") unless($data = $query->param('data'));
 my $data = $query->param('data');
-$data =~ s/\r//g;
-open DATA, "> $score_file";
-print DATA $data;
-close DATA;
+if ($data){
+  $data =~ s/\r//g;
+  open DATA, "> $score_file";
+  print DATA $data;
+  close DATA;
+}elsif($query->param('uploaded_file')){
+  $score_file =  $query->param('uploaded_file');
+}else{
+  &cgiError("You should specify input data");
+}
 $parameters .= " -i $score_file";
 
 ################################################################
