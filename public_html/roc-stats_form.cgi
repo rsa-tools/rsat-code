@@ -126,9 +126,9 @@ if ($query->param('demo_comment')){
 print "<B><A HREF='help.roc-stats.html#data'>Input data</A></B><br>";
 
 #### data from pipe (compare-graphs)
-if (-e $query->param('roc-stats_graph_file')) {
-  my $file = $query->param('roc-stats_graph_file');
-  $file_url =~ s|$ENV{RSAT}/public_html|$ENV{rsat_www}|;
+if ($query->param('roc-stats_graph_file')) {
+  my $file_url = $query->param('roc-stats_graph_file');
+  $file =~ s|$ENV{rsat_www}|$ENV{RSAT}/public_html|;
   print "<ul><a href=$file_url>";
   print " transferred from previous query<BR>\n";
   print "</a></ul>";

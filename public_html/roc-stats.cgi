@@ -38,6 +38,8 @@ if ($data){
   close DATA;
 }elsif($query->param('uploaded_file')){
   $score_file =  $query->param('uploaded_file');
+}elsif($query->param('roc-stats_graph_file')){
+  $score_file =  $query->param('uploaded_file');
 }else{
   &cgiError("You should specify input data");
 }
