@@ -14,7 +14,7 @@ $command = "$SCRIPTS/roc-stats2";
 $query = new CGI;
 
 ### Print the header
-&RSA_header("roc-stats result", "results");
+&NeAT_header("roc-stats result", "results");
 
 #### update log file ####
 &UpdateLogFile();
@@ -30,12 +30,12 @@ my $parameters = " -v 1 ";
 my $tmp_file_prefix = sprintf "roc-stats.%s", &AlphaDate();
 my $result_file = "$TMP/$tmp_file_prefix.res";
 my $score_file = "$TMP/$tmp_file_prefix.input";
-&cgiError("You should specify scores data") unless($scores = $query->param('scores'));
-my $scores = $query->param('scores');
-$scores =~ s/\r//g;
-open SCORES, "> $score_file";
-print SCORES $scores;
-close SCORES;
+&cgiError("You should specify input data") unless($data = $query->param('data'));
+my $data = $query->param('data');
+$data =~ s/\r//g;
+open DATA, "> $score_file";
+print DATA $data;
+close DATA;
 $parameters .= " -i $score_file";
 
 ################################################################
@@ -56,12 +56,20 @@ if (&IsInteger($query->param('status_col'))) {
 }
 
 ## Status label
-if ($query->param('pos') ne "pos") {
-  $parameters .= " -status ".$query->param('pos')." pos";
+(my $query_pos = $query->param('pos')) =~ s/\r/\n/g;
+foreach my $pos_status (split /\n/,$query_pos){
+  if (($pos_status =~ /\S/)&&($pos_status ne "pos")) {
+    $parameters .= " -status ".$pos_status." pos";
+  }
 }
-if ($query->param('neg') ne "neg") {
-  $parameters .= " -status ".$query->param('neg')." neg";
+
+(my $query_neg = $query->param('neg')) =~ s/\r/\n/g;
+foreach my $neg_status (split /\n/,$query_neg){
+  if (($neg_status =~ /\S/)&&($neg_status ne "neg")) {
+    $parameters .= " -status ".$neg_status." neg";
+  }
 }
+
 
 ## total numbers
 if (&IsInteger($query->param('total'))) {
@@ -90,23 +98,38 @@ print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 if ($query->param('output') =~ /display/i){
   if ($query->param('graphs')){
     @data_report = `$command $parameters`;
-    print '<H4>Result</H4>';
-    print @data_report;
-    open RESULTS, "<$result_file";
-    &PrintHtmlTable(RESULTS, $result_file.".html", true);
-    close(RESULTS);
     my $result_prefix = $tmp_file_prefix.".res";
     my $img_format = $query->param('img_format');
 
-    print "<H3><CENTER>Graphs</CENTER></H3>";
-    print "<A HREF=\"#scores\">scores<BR>";
-    print "<A HREF=\"#scores_xlog2\">scores (xlog)<BR>";
-    print "<A HREF=\"#FP_TP\">FP vs TP<BR>";
-    print "<A HREF=\"#roc\">ROC (Receiving Operator Characteristic) curve<BR>";
-    print "<A HREF=\"#precision_recall\">PR (Precision-Recall) curve<BR>";
-    print "<A HREF=\"#precision_recall_xlog\">PR (xlog)<BR>";
-    print "<A HREF=\"#precision_recall_log\">PR (log log)<BR>";
+    print '<H4>Graphs</H4>';
+    print "<UL>\n";
+    print "<A HREF=\"#scores\">scores</A><BR>";
+    print "<A HREF=\"#scores_xlog2\">scores (xlog)</A><BR>";
+    print "<A HREF=\"#FP_TP\">FP vs TP</A><BR>";
+    print "<A HREF=\"#roc\">ROC (Receiving Operator Characteristic) curve</A><BR>";
+    print "<A HREF=\"#precision_recall\">PR (Precision-Recall) curve</A><BR>";
+    print "<A HREF=\"#precision_recall_xlog\">PR (xlog)</A><BR>";
+    print "<A HREF=\"#precision_recall_log\">PR (log log)</A><BR>";
+    print "</UL>\n";
     print "<HR>\n";
+
+    if($query->param('occ')||
+       $query->param('TP')||
+       $query->param('FP')||
+       $query->param('FN')||
+       $query->param('Sn')||
+       $query->param('PPV')||
+       $query->param('FPR')||
+       $query->param('Acc_g')||
+       $query->param('Acc_a')
+      ){
+      print '<H4>Table</H4>';
+      print @data_report;
+      open RESULTS, "<$result_file";
+      &PrintHtmlTable(RESULTS, $result_file.".html", true);
+      close(RESULTS);
+    }
+    print "<H3><CENTER>Graphs</CENTER></H3>";
 
    ## Draw stats as a function of score
     my $cmd = "$SCRIPTS/XYgraph -i ".$result_file;
@@ -184,7 +207,7 @@ if ($query->param('output') =~ /display/i){
 
   }else{
     open RESULT, "$command $parameters | ";
-    print '<H4>Result</H4>';
+    print '<H4>Table</H4>';
     &PrintHtmlTable(RESULT, $result_file, true);
     close(RESULT);
   }
@@ -228,4 +251,28 @@ sub CGI_return_fields {
   } else {
     $parameters .= " -return ".$return_fields;
   }
+}
+
+
+sub NeAT_header {
+  my $css_body_class = "form";
+  my ($title) = shift;
+  $title =~ s/\"//g;
+  $title =~ s/\'//g;
+  if (scalar @_ > 0) {
+    $css_body_class = shift;
+  }
+
+
+#  print &html_header();
+  print $query->header();
+  print sorttable_script();
+  ### print the header of the result page
+  print $query->start_html(-title=>"NeA-tools : $title",
+			   -class => "$css_body_class",
+			   -author=>'jvanheld@scmbb.ulb.ac.be',
+			   -style => { 	-src => "$ENV{rsat_www}/main.css",
+                             	       	-type => 'text/css',
+                             		-media => 'screen' });
+  print "<H3 ALIGN='center'><A HREF='$ENV{rsat_www}/NeAT_home.html'>NeA-tools</A> - $title</H3>";
 }
