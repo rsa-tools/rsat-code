@@ -98,8 +98,17 @@
                                  )
                            );
     # Execute the command
-    $echoed = $client->graph_cluster_membership($parameters);
+    try {
+      $echoed = $client->graph_cluster_membership($parameters);
+      $soap_error = 0;
+    } catch (Exception $soap_exception) {
+      echo ("<pre>");
+      echo "Error : \n",  $soap_exception->getMessage(), "\n";
+      echo ("</pre>");
+      $soap_error = 1;
+    } 
 
+if ($soap_error!=1) {
     $response =  $echoed->response;
     $command = $response->command;
     $server = $response->server;
@@ -122,5 +131,6 @@
     echo "<a href = '$resultURL'>$resultURL</a>"; 
     echo "<hr>\n";
  
+  	}
   }
 ?>
