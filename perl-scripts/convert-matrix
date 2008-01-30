@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.58 2008/01/24 02:33:40 jvanheld Exp $
+# $Id: convert-matrix,v 1.59 2008/01/30 16:47:24 morgane Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -237,14 +237,23 @@ foreach my $matrix (@matrices) {
     }
     ## Generate logo
     if ($return_fields{logo}) {
-	my $basedir ="";
-	if ($outfile{output}) {
-	    $basedir = dirname($outfile{output});
-	    $basedir .= "/";
-	}
+    
+    my $basedir ="";
+    if (($logo_dir)&&(-d $logo_dir)){
+    		$basedir = $logo_dir."/";
+    	} else {
+    	if ($outfile{output}) {
+    		$basedir = dirname($outfile{output});
+	    	$basedir .= "/";
+    		}
+    	}
 	my $logo_file=$basedir.$matrix->get_attribute("name")."_logo";
 	$matrix->set_attribute("logo_file" => $logo_file);
-	$matrix->makeLogo($logo_file,$logo_format);
+	if ($logo_dir){
+		$matrix->makeLogo($logo_file,$logo_format,$logo_dir);
+    } else {
+    	$matrix->makeLogo($logo_file,$logo_format);
+	}
     }
 }
 
@@ -476,6 +485,10 @@ OPTIONS
 		Beware: the logo file will be created in currunt directory by default, unless
 		the -o option is specified. In this case the logo will be in the same 
 		directory than the output file (-o ). 
+	
+	-logo_dir
+		Specifies a directory for the output of the logo file. By default, the logos are exported
+		in the directory from which is called the convert-matrix command.
 
 PRIOR FREQUENCY FILE
 
@@ -735,6 +748,7 @@ convert-matrix options
 -perm		number of permuted matrices to return.
 -max_profile	Maximal width of the profile histogram 
 -logo_format	logo image format. Supported $supported_logo_formats 
+-logo_dir	specifies a directory to output the logo files
 End_short_help
   close HELP;
   exit(0);
@@ -900,6 +914,8 @@ sub ReadArguments {
 			unless ($supported_logo_format{$logo_format}) {
 				&RSAT::error::FatalError("$logo_format\tInvalid format for logo\tSupported: $supported_logo_formats");
 			}
+		} elsif ($ARGV[$a] eq "-logo_dir") {
+			$logo_dir = $ARGV[$a+1];
 		}
 	}
 }
@@ -1054,7 +1070,7 @@ sub ExportMatrix {
   ## Return parameters
   if ($return_fields{logo}) {
     if ($main::verbose >= 1) {
-	print $out  "; logo file : " , $matrix->get_attribute("logo_file").".".$logo_format, "\n";
+	print $out  "; logo file:" , $matrix->get_attribute("name").".".$logo_format, "\n";
     }
 
   }
