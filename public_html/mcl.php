@@ -237,6 +237,19 @@
           
           <INPUT type='submit' value='Map those clusters on the network'\>
         </form>
+      </td>
+      <TD>
+        <FORM METHOD='POST' ACTION='graph_cluster_membership_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'\>
+          <input type='hidden' NAME='graph_file' VALUE='$cg_server'\>
+          <input type='hidden' NAME='cluster_file' VALUE='$cc_server'\>
+          <input type='hidden' NAME='graph_format' value = 'tab'\>
+          <input type='hidden' NAME='scol' VALUE='1'\>
+          <input type='hidden' NAME='tcol' VALUE='2'\>
+          <input type='hidden' NAME='wcol' VALUE='3'\>
+          
+          <INPUT type='submit' value='Fuzzy clustering'\>
+        </form>
       </td> 
    ";  
   }
