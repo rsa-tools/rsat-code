@@ -2921,14 +2921,19 @@ Return the logo from the matrix
 
 =cut
 sub makeLogo{
-	my ($self,$logo_file,$logo_format) = @_;
+	my ($self,$logo_file,$logo_format,$logo_dir) = @_;
 	my ($seqs_file) =$self->seq_from_matrix();
+	
 	my $logo_cmd = "$ENV{RSAT}/bin/seqlogo -f ".$seqs_file;
 	$logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -e -k 1";
 	$logo_cmd .= " -o ". $logo_file;
 	$logo_cmd .= " -t ".$self->get_attribute("name");
-	&RSAT::message::Debug("Logo cmd :".$logo_cmd) if ($main::verbose >= 4);
-	system $logo_cmd || &RSAT::message::Debug("Logo cmd :".$logo_cmd) if ($main::verbose >= 0);
+	
+	if ($logo_dir){
+		$logo_cmd = "(cd $logo_dir; ".$logo_cmd. ")";
+	}
+	&RSAT::message::Debug("Logo cmd :".$logo_cmd) if ($main::verbose >= 1);
+	system $logo_cmd  ;#or die "Error with seqlogo: $!";
 	&RSAT::message::Info("Export logo in file ".$logo_file.".".$logo_format) if ($main::verbose >= 2);
 	unlink $seqs_file;
 }

@@ -143,7 +143,10 @@ $parameters .= " -to ".$output_format;
 my @return_fields = ();
 foreach my $stat qw (counts frequencies weights info consensus parameters profile margins logo) {
     if ($query->param($stat)) {
-	push @return_fields, $stat;
+		push @return_fields, $stat;
+		if ($stat eq "logo"){
+			 $parameters .= " -logo_dir '$ENV{RSAT}/public_html/tmp' ";
+		}
     }
 }
 if ($output_format eq 'tab') {
@@ -160,17 +163,25 @@ print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 if ($query->param('output') eq "display") {
 #    &PipingWarning();
 
+ ## prepare figures
     ### prepare data for piping
     open RESULT, "$command $parameters |";
     
     print '<H4>Result</H4>';
     print '<PRE>';
     while (<RESULT>) {
-	s|${TMP}/||g;
-	s|${BIN}/||g;
-#	s|^; logo file : (.*)|"<IMG SRC=\"http://rsat.scmbb.ulb.ac.be/rsat/tmp/\$1\"">|g;
-	print $_;
-	$genes .= $_;
+#	s|${TMP}/||g;
+#	s|${BIN}/||g;
+	if ($_ =~ /logo file:(.*)/){
+		print "<a href = \"$WWW_TMP/$1\"><IMG SRC=\"$WWW_TMP/$1\" width='200'></a>\n";
+		print "<br/>";
+		&DelayedRemoval("$TMP/$1");
+		
+	}
+	else {
+		print $_;
+	}
+#	$genes .= $_;
     }
     print '</PRE>';
     close(RESULT);
