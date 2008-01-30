@@ -3331,7 +3331,7 @@ sub graph_cluster_membership {
     my $command = $self->graph_cluster_membership_cmd(%args);
     my $result = `$command`;
     my $stderr = `$command 2>&1 1>/dev/null`;
-    if ($stderr =~ /Warning/) {
+    if ($stderr !~ /Info/ || $stderr !~ /Warning/) {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
     my $tmp_outfile = `mktemp $TMP/graph-cluster-membership-out.XXXXXXXXXX`;
