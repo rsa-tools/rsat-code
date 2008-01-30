@@ -11,6 +11,7 @@
   $default_scol = 1;
   $default_tcol = 2;
   $default_wcol = "";
+$default_decimals = 2;
   $default_layout = "checked";
   # demo graph
   $demo = $_REQUEST['demo'];
@@ -34,7 +35,7 @@
     between each node and each cluster, on the basis of egdes linking this
     node to the cluster.\n");
    echo ("<br>This program was developed by 
-	  <a target=_blank href=http://www.bigre.ulb.ac.be/Users/gipsi/>Gipsi Lima-Mendez</a>
+	  <a target=_blank href=http://www.bigre.ulb.ac.be/people/Members/gipsi/>Gipsi Lima-Mendez</a>
 	  With the help of:
 	  <a target=_blank href=http://www.bigre.ulb.ac.be/Users/sylvain/>Sylvain Broh&eacute;e</a> and
           <a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.
@@ -90,7 +91,21 @@
     <input type='hidden' name='pipe_clusters_file' value = '$cluster_file' /><br>");
     info_link("Clusters uploaded from the previous treatment", rsat_path_to_url($cluster_file));    
   }
-    
+  echo ("<br><br><form method='post' action='graph_cluster_membership.php' enctype='multipart/form-data'>
+  <b>Membership Matrix<br>
+  &nbsp;&nbsp;&nbsp;<a href = 'help.graph_cluster_membership.html#stats'><B>Stat</B></a>&nbsp;");
+    echo ("  
+    <select name='stat'>
+    <option selected value = 'weight'> weight
+    <option value = 'relw'> relative weight
+    <option value = 'edge'> edge
+<option value = 'reledge'> relative edge
+    </select> <br><br>");
+
+  echo ("<table>
+      <tr><td><B><a href = 'help.graph_cluster_membership.html#decimals'>Number of Decimals</a></B></td><td><input type = 'text' name='decimals' value = '$default_decimals' size = 1></input></td></tr>
+");
+ 
   echo ("
   <ul><ul><table class='formbutton'>
   <TD><input type='submit' name='.submit' value='GO' /></TD>
@@ -98,7 +113,7 @@
   <TD><B><A HREF='graph_cluster_membership_form.php?demo=1'>DEMO</A></B></TD>
   </form>
   <TD><B><A HREF='help.graph_cluster_membership.html'>MANUAL</A></B></TD>
-  <TD><B><A HREF='mailto:sylvain@scmbb.ulb.ac.be'>MAIL</A></B></TD>
+  <TD><B><A HREF='mailto:gipsi@scmbb.ulb.ac.be'>MAIL</A></B></TD>
   </TR></TABLE></ul></ul>");
 
 

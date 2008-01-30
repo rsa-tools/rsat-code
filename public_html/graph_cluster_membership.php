@@ -31,8 +31,8 @@
   $s_col = $_REQUEST['s_col'];
   $t_col = $_REQUEST['t_col'];
   $w_col = $_REQUEST['w_col'];
-  
-  
+  $decimals = $_REQUEST['decimals'];
+  $stat = $_REQUEST['stat'];
   
   ## If a file and a graph are submitted -> error
   if ($graph != "" && $graph_file != "") {
@@ -52,6 +52,7 @@
   if ($graph_file != "" && $graph == "") {
     $graph = storeFile($graph_file);
   }
+  
   ## put the content of the file $clusters_file in $clusters
   if ($clusters_file != "" && $clusters == "") {
     $clusters = storeFile($clusters_file);
@@ -79,7 +80,7 @@
         "tcol"=>$t_col,
         "wcol"=>$w_col,
 	"stat"=>$stat,
-	"decimals=>$decimals,
+	"decimals"=>$decimals,
       )
     );
     # Info message
@@ -97,7 +98,7 @@
                                  )
                            );
     # Execute the command
-    $echoed = $client->graph_get_clusters($parameters);
+    $echoed = $client->graph_cluster_membership($parameters);
 
     $response =  $echoed->response;
     $command = $response->command;
@@ -107,6 +108,15 @@
     $temp_file = explode('/',$server);
     $temp_file = end($temp_file);
     $resultURL = $WWW_RSA."/tmp/".$temp_file;
+    #comment_file 
+    $comment_file = $server.".comments";
+    $comments = storeFile($comment_file);
+    if ($comments != "") {
+      warning($comments);
+      echo "<hr>";
+    }
+    
+
     # Display the results
     echo "The result is available at the following URL ";
     echo "<a href = '$resultURL'>$resultURL</a>"; 
