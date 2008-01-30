@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: select-clustering,v 1.1 2008/01/18 15:09:19 rsat Exp $
+# $Id: select-clustering,v 1.2 2008/01/30 13:43:57 gipsi Exp $
 #
 ############################################################
 
@@ -20,6 +20,14 @@ Proposes the best among several clustering solution. The selection is currently 
 by calculating the clustering coefficient of the intra-cluster edges. 
 The clustering solution with the highest intra-cluster clustering coefficient is selected (i.e. that one where clusters are more clique-like). 
 Other criteria for clustering selection will be added in the future.
+
+
+=head1 STATISTICS
+
+The clustering coefficient consists in the number of edges among the nodes of the
+group divided by the maximum number of edges. Duplicated edges are counted only once.
+The clustering cofficient for nodes with one or zero neighbors is set to 0. This prevents the best-clustering to be that with duets or singlets.
+
 
 
 =head1 AUTHORS
@@ -43,11 +51,17 @@ With the help of:
 
 =head1 CATEGORY
 
-util
+=over
+
+=item graph analysis
+
+=item clustering
+
+=back
 
 =head1 USAGE
 
-select-clustering [-g graphfile] [-fileList fileWithListOfFiles] [-c clustering1,clustering2,...,clusteringN] [-v #]
+select-clustering [-g graphfile] [-fileList fileWithListOfFiles] [-c clustering1,clustering2,...,clusteringN]  [-o outfile][-v #]
 
 =head1 INPUT FORMAT
 
@@ -61,7 +75,7 @@ a two-column file with column corresponding respectively to the node name and to
 
 =head1 OUTPUT FORMAT
 
-a two column table, the first column is the clusteringID and the second column is the Average Intra-Clustering Clustering Coefficient.
+a two column table, the first column is the clusteringID and the second column is the Average Intra-Clustering Clustering Coefficient. The best clustering according to the selection criterion is indicated at the end of the file as a commented line. This allows plotting the results using XY graph.
 
 =cut
 
@@ -84,7 +98,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -109,6 +123,11 @@ package main;
     local $target_col = 2;
     local $weight_col = 3;
 
+
+    my $Clusters_Nodes;
+    my $Clusters;
+    my $File_ids;
+    
     ################################################################
     ## Read argument values
     &ReadArguments();
@@ -122,11 +141,38 @@ package main;
 
     ################################################################
     ## Read input
-    ($main::in) = &OpenInputFile($main::infile{input});
-    while (<$main::in>) {
+    
+     ## Read input graph # this is Sylvain stuff
+    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col,0,0,0,0);
+    
+    # get the nodes Id correspondences and the node list, since they are used for checking in reading the clustering files.
+    my %nodes_name_id = $graph->get_attribute("nodes_name_id");
+    my %nodes_id_name= $graph->get_attribute("nodes_id_name");
+    my @out_neighbours = $graph->get_attribute("out_neighbours");
+    my @in_neighbours = $graph->get_attribute("in_neighbours");
 
+    my @nodes = (sort {$a cmp $b} keys %nodes_name_id);
+
+    if (defined $main::infile{partitionList}) { # if there is a file listing the partition files, read the file and push the file names into an array.
+    	($main::in) = &OpenInputFile($main::infile{partitionList});
+	while (my $line = <$main::in>) {
+	    chomp $line;
+	    push(@{$main::infile{partition}},$line); # this is the same array where files read individually from the argument -c are pushed.
+	}
     }
-    close $main::in if ($main::infile{input});
+    my $fileID = 0;
+    foreach my $file (@{$main::infile{partition}}) {
+    	my $clusteringFile;
+	if ($main::dir) {
+	    $clusteringFile = $main::dir.'/'.$file;
+	} 
+	else {
+	    $clusteringFile = $file;
+	}
+    	$fileID++;
+	$File_ids->{$fileID} = $clusteringFile;
+	readClusters($fileID,$clusteringFile);
+    }
 
     ################################################################
     ## Print verbose
@@ -134,10 +180,98 @@ package main;
 
     ################################################################
     ## Execute the command
+    
+
+    my $count = 0;
+    my $CCGraph = 0;
+    foreach my $node (@nodes) {
+	$ClusteringCoefficientGraph->{$node} = calculateClusteringCoefficient($node,$Graph);
+	$count++;
+	$CCGraph = $CCGraph + $ClusteringCoefficientGraph->{$node};
+
+    }
+    $CCGraph = $CCGraph/$count;
+    print "Ori Graph CC: $CCGraph\n";
+
+
+
+    my $ClustCoef;
+
+
+    foreach my $fileID (sort {$a <=> $b} keys %{$Clusters}) {
+	my $seen;
+
+	foreach my $node1 (keys %{$Clusters->{$fileID}}) {
+	    my $node1clust = $Clusters->{$fileID}->{$node1};
+    	    #print "Node1: $node1\n";
+	    foreach my $node2 (keys %{$Graph->{$node1}}) {
+		#print "Node2: $node2\n";
+		next if ($seen->{$node2}->{$node1});
+		my $node2clust = $Clusters->{$fileID}->{$node2};
+		if ($node2clust eq $node1clust){
+
+		    $IntraClusterGraph->{$fileID}->{$node1clust}->{$node1}->{$node2} = 1;
+		    $IntraClusterGraph->{$fileID}->{$node1clust}->{$node2}->{$node1} = 1;
+
+    		}
+		$seen->{$node1}->{$node2} = 1;
+
+	    }
+
+	}
+
+    }
+    foreach my $fileID (keys %{$IntraClusterGraph}) {
+	print "fileID: $fileID\n";
+	my $AveClust = 0;
+	my $AveT = 0;
+
+	my $totalnodes = 0;
+
+	my $NbClusters = scalar(keys %{$IntraClusterGraph->{$fileID}});
+	foreach my $cluster (keys %{$IntraClusterGraph->{$fileID}}) {
+    	    print "Cluster: $cluster\n";
+    	    my $ave = 0;
+	    my $nbnodes = scalar(keys %{$IntraClusterGraph->{$fileID}->{$cluster}});
+    	    foreach my $node (keys %{$IntraClusterGraph->{$fileID}->{$cluster}}) {
+		#print "node: $node\n";
+		$totalnodes++;
+		my $cc = $ClusteringCoefficientGraph->{$node} = calculateClusteringCoefficient($node,$IntraClusterGraph->{$fileID}->{$cluster});
+		#print "Got CC: $cc\n";
+		$ave += $cc;
+		$AveT += $cc;
+	    }
+	    $ave = $ave/$nbnodes;
+
+	    $ClustCoef->{$fileID}->{'cl'}->{$cluster} = $ave;
+	    #print "Ave CC for Cluster $cluster and fileIDation: $fileID is $ave\n";
+	    $AveClust += $ave;
+	}
+
+	$ClustCoef->{$fileID}->{'ave'} = $AveClust/$NbClusters;
+	$ClustCoef->{$fileID}->{'aveT'} = $AveT/$totalnodes;
+
+    }
+    my $max = 0;
+    my $fileIDmax = '';
+    foreach my $fileID (sort {$a <=>$b} keys %{$ClustCoef}) {
+    	if ($ClustCoef->{$fileID}->{'ave'} > $max) {
+	    $max = $ClustCoef->{$fileID}->{'ave'};
+	    $fileIDmax = $fileID;
+	}
+    }
+
 
     ################################################################
     ## Print output
-
+    
+    print $main::out "; Results of Average Intra Cluster Clustering Coefficient (AveICCC)\n";
+    print $main::out "; Maximum AveICCC: $max, corresponding to clustering solution: ",$File_ids->{$fileIDmax},"\n";
+    print $main::out ";file id\tAveICCC\n";
+    foreach my $fileID (sort {$a <=>$b} keys %{$ClustCoef}) {
+    	print $main::out $fileID,"\t",$ClustCoef->{$fileID}->{'ave'},"\n";
+    }
+    
 
     ################################################################
     ## Finish verbose
@@ -160,6 +294,95 @@ package main;
 ################### SUBROUTINE DEFINITION ######################
 ################################################################
 
+sub calculateClusteringCoefficient {
+    my $node = shift;
+    my $out_neighbors = shift;
+    my $in_neighbors = shift;
+    my $cc = 0;
+    
+    my @conectednodes = keys %{$graph->{$node}};
+    my $NbEdges = scalar(@conectednodes);
+    #print "$node Nb edges: $NbEdges\n";
+    my $n = 0;
+    my $triangles = 0;
+    for (my $i = 0; $i < $NbEdges-1; $i++) {
+	for (my $j = $i + 1; $j < $NbEdges; $j++) {
+	    if (defined $graph->{$conectednodes[$i]}->{$conectednodes[$j]}) {
+		$n++; # n counts the number of triangles: A is connected to B and B to C, is C connected to A? if yes n++
+		#print "n is $n\n";
+	    }
+	    $triangles++;
+	    #print "possible triangles is $triangles\n";
+	}
+    }
+    #print "N: $n, Triangles: $triangles\n";
+
+    if ($triangles == 0) {
+	#$CCoef->{$node}->{'ccoef'} = 99999999;
+	if (defined $params->{'noT'} && $params->{'noT'}== 1) {
+	    $cc = 1;
+	}
+	else {
+	    #print "possible triangles is 0 for node $node, setting as 0 (default)\n";
+	    $cc = 0;
+	}
+    }
+    else {
+# 	
+	$cc = $n/$triangles;
+
+    }
+
+    return $cc;
+    
+
+}
+sub readClusters {
+    my $fileID = shift;
+    my $cluster_file = shift;
+    my $fh = FileHandle->new($cluster_file);
+    unless ($fh) {
+    	print "Unable to open FH ",$cluster_file,"\n";
+	exit;
+    }
+    while (my $line = <$fh>) {
+    	chomp $line;
+	my @line = split(/\s+/,$line);
+	
+	my $cluster = $line[1];
+	$cluster =~ s/cluster_//;
+	$Clusters->{$fileID}->{$line[0]}= $cluster;
+	$Clusters_Nodes->{$fileID}->{$cluster}->{$line[0]} = 1;
+	
+    }
+    foreach my $node (@nodes) {
+    	if (! defined $Clusters->{$fileID}->{$node}) {
+	    print "WARNING: Node $node included in no cluster for fileID: $fileID\n";
+	}
+    }
+
+}
+# sylvain sub for calc CC. it's incorrect, this is more like edge density.
+# sub get_clust_coef {
+#   my ($self, @nodes) = @_;
+#   my %arcs_name_id = $self->get_attribute("arcs_name_id");
+#   my $max_arc = $self->get_attribute("nb_arc_bw_node");
+#   my $group_size = scalar(@nodes);
+#   my $max_arc_number = (scalar(@nodes)*(scalar(@nodes)-1))/2;
+#   my $arc_cpt = 0;
+#   for (my $i = 0; $i < scalar(@nodes); $i++) {
+#     for (my $j = $i+1; $j < scalar(@nodes); $j++) {
+#       next if (!$self_loops && ($i == $j));
+#       my $label = $nodes[$i]."_".$nodes[$j]."_1";
+#       my $invlabel = $nodes[$j]."_".$nodes[$i]."_1";
+#       if (exists($arcs_name_id{$label}) || exists($arcs_name_id{$invlabel})) {
+#         $arc_cpt++;
+#       }
+#     }
+#   }
+#   my $result = $arc_cpt / $max_arc_number;
+#   return $result;
+# }
 
 ################################################################
 ## Display full help message 
@@ -225,16 +448,46 @@ Same as -h
 	    ## Input file
 =pod
 
-=item B<-i inputfile>
+=item B<-i graph file>
 
-If no input file is specified, the standard input is used.  This
-allows to use the command within a pipe.
+graph file
 
 =cut
 	} elsif ($arg eq "-i") {
 	    $main::infile{input} = shift(@arguments);
 
 	    ## Output file
+=pod
+
+=item	B<-c>
+
+clustering as a tab-delimited file. Different clustering files can be entered  separated by commas. Alternatively, different clustering files can be entered after respective -c options.
+
+=cut
+	} elsif ($arg eq "-clusters") {
+	    push(@{$main::infile{partition}},split(',',shift(@arguments)));
+=pod
+
+=item	B<-dir path to directory>
+
+directory where the clustering files are located
+
+=cut
+	} elsif ($arg eq "-dir") {
+	   $main::dir = shift(@arguments);;
+
+=pod
+
+=item	B<-fileList file with list of files>
+
+clustering as a tab-delimited file
+
+=cut
+	} elsif ($arg eq "-fileList") {
+	    $main::infile{partitionList} = shift(@arguments);
+
+
+
 =pod
 
 =item	B<-o outputfile>
