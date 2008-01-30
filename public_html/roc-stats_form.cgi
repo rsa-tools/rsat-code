@@ -74,10 +74,17 @@ $default{Acc_g} = "checked";
 $default{Acc_a} = "checked";
 $default{AUC} = "";
 
-$default{scores} = $query->param("scores");
-$default{scores} =~ s/\"//g; #### remove quotes for security reasons (avoid imbedded command)
-$default{scores} =~ s/\r//g; #### remove quotes for security reasons (avoid imbedded command)
+#### specific treatment for internal XYgraph file (piped from dna-patttern)
+if (-e $query->param('roc-stats_graph_file')) {
+    my $file = $query->param('roc-stats_graph_file');
+    $default{data} = `cat $file`;
+} else {
+    $default{data} = $query->param('data');
+}
+$default{data} =~ s/\"//g; #### remove quotes for security reasons (avoid imbedded command)
+$default{data} =~ s/\r//g; #### remove quotes for security reasons (avoid imbedded command)
 
+$default{demo_comment} = $query->param('demo_comment');
 $default{sc_col} = "1";
 $default{status_col} = "2";
 $default{pos} = 'pos';
@@ -106,7 +113,7 @@ foreach $key (keys %default) {
 #    <link rel=\"stylesheet\" type=\"text/css\" href = \"main_grat.css\" media=\"screen\">
 # </head>";
 
-&RSA_header("roc-stats", "form");
+&NeAT_header("roc-stats", "form");
 print "<CENTER>";
 print "This program takes as input a set of scored results associated with validation labels (pos for positive, neg for negative) and computes, for each score value, the derived statistics (Sn, PPV, FPR), which can be further used to draw a ROC curve.<P>\n";
 print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
@@ -118,16 +125,20 @@ print $query->start_multipart_form(-action=>"roc-stats.cgi");
 
 print "<hr>";
 
+if ($query->param('demo_comment')){
+  print "<H4>Comment on the demonstration example : </H4><blockquote class ='demo'>In this demonstration, we use the results of the comparison of the String database network on <i>E.coli</i> genes and the gene-gene network inferred from RegulonDB database (performed in November 2007).</blockquote><br>\n";
+}
+
 ################################################################
-### Input scores
-print "<B><A HREF='help.roc-stats.html#scores'>Input scores</A></B><br>";
-print $query->textarea(-name=>'scores',
-		       -default=>$default{scores},
+### Input data
+print "<B><A HREF='help.roc-stats.html#data'>Input data</A></B><br>";
+print $query->textarea(-name=>'data',
+		       -default=>$default{data},
 		       -rows=>6,
 		       -columns=>65);
 
-### option to upload a file with the scores from the client machine
-print "<BR>Upload scores from file<BR>\n";
+### option to upload a file with the data from the client machine
+print "<BR>Upload data from file<BR>\n";
 print $query->filefield(-name=>'uploaded_file',
 			-default=>'',
 			-size=>45,
@@ -136,11 +147,23 @@ print $query->filefield(-name=>'uploaded_file',
 ################################################################
 #### Input parameters
 print "<HR><b><a href = 'help.roc-stats.html#params'>Input parameters</a></b><br>";
-print "<table><tr><td><B><a href = 'help.roc-stats.html#scores'>Scores column</a></B></td><td><input type = 'text' name='sc_col' value = '".$default{sc_col}."' size = 1></input></td>";#</tr>";
-print "<td><B><a href = 'help.roc-stats.html#pos'>Positive labels</a></B></td><td><input type = 'text' name='pos' value = '".$default{pos}."' size = 1></input></td>";
-print "<td><B><a href = 'help.roc-stats.html#total'>Total Number of elements</a></B></td><td><input type = 'text' name='total' value = '".$default{total}."' size = 1></input></td></tr>";
-print "<tr><td><B><a href = 'help.roc-stats.html#status'>Status column</a></B></td><td><input type = 'text' name='status_col' value = '".$default{status_col}."' size = 1></input></td>";
-print "<td><B><a href = 'help.roc-stats.html#neg'>Negative labels</a></B></td><td><input type = 'text' name='neg' value = '".$default{neg}."' size = 1></input></td></tr></table>";
+print "<table><tr><td><B><a href = 'help.roc-stats.html#scores'>Scores column</a></B></td><td><input type = 'text' name='sc_col' value = '".$default{sc_col}."' size=1></input></td>";#</tr>";
+print "<td><B><a href = 'help.roc-stats.html#pos'>Positive labels</a></B></td><td>";
+print $query->textarea(-name=>'pos',
+		       -default=>$default{pos},
+		       -rows=>1,
+		       -columns=>5);
+#"<input type = 'text' name='pos' value = '".$default{pos}."' size=1></input>
+print "</td>";
+print "<td><B><a href = 'help.roc-stats.html#total'>Total Number of elements</a></B></td><td><input type = 'text' name='total' value = '".$default{total}."' size=1></input></td></tr>";
+print "<tr><td><B><a href = 'help.roc-stats.html#status'>Status column</a></B></td><td><input type = 'text' name='status_col' value = '".$default{status_col}."' size=1></input></td>";
+print "<td><B><a href = 'help.roc-stats.html#neg'>Negative labels</a></B></td><td>";
+print $query->textarea(-name=>'neg',
+		       -default=>$default{neg},
+		       -rows=>1,
+		       -columns=>5);
+#"<input type = 'text' name='neg' value = '".$default{neg}."' size=1></input>
+print "</td></tr></table>";
 
 ################################################################
 #### Return fields
@@ -154,7 +177,7 @@ foreach my $field (@output_fields) {
 			 -label=>'');
   print "&nbsp;<A HREF='help.roc-stats.html#",$field,"'><B>", $field_description{$field}, "</B></A>\n";
   if ($field eq "graphs"){
-    print "&nbsp;&nbsp;<A HREF='help.roc-stats.html#img'>Image format (if graphs is checked)</A>&nbsp;\n";
+    print "<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A HREF='help.roc-stats.html#img'>Image format (if graphs is checked)</A>&nbsp;\n";
     print $query->popup_menu(-name=>'img_format',
 			     -Values=>['png',
 				       'jpg',
@@ -186,26 +209,28 @@ print $query->end_form;
 ################################################################
 ### data for the demo 
 print $query->start_multipart_form(-action=>"roc-stats_form.cgi");
-my $demo_scores="0.95	pos
-0.85	neg
-0.75	pos
-0.65	pos
-0.55	pos
-0.45	neg
-0.35	pos
-0.35	neg
-0.25	neg
-0.15	pos
-0.05	neg
-";
-#print $demo_scores;
+my $demo_data=`grep -v "^;" /home/rsat/rsa-tools/public_html/data/demo_files/roc-stats_demo_regulonDB_cg_stringcoex_inter-Q.tab`;
+# "0.95	pos
+# 0.85	neg
+# 0.75	pos
+# 0.65	pos
+# 0.55	pos
+# 0.45	neg
+# 0.35	pos
+# 0.35	neg
+# 0.25	neg
+# 0.15	pos
+# 0.05	neg
+# ";
+#print $demo_data;
 print "<TD><B>";
-print $query->hidden(-name=>'scores',-default=>$demo_scores);
-print $query->hidden(-name=>'sc_col',-default=>'1');
-print $query->hidden(-name=>'status_col',-default=>'2');
-print $query->hidden(-name=>'pos',-default=>'pos');
-print $query->hidden(-name=>'neg',-default=>'neg');
+print $query->hidden(-name=>'data',-default=>$demo_data);
+print $query->hidden(-name=>'sc_col',-default=>'3');
+print $query->hidden(-name=>'status_col',-default=>'6');
+print $query->hidden(-name=>'pos',-default=>"Q.and.R\nR.not.Q");
+print $query->hidden(-name=>'neg',-default=>"Q.not.R");
 print $query->hidden(-name=>'AUC',-default=>"checked");
+print $query->hidden(-name=>'demo_comment',-default=>1);
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
@@ -221,3 +246,25 @@ print $query->end_html;
 
 exit(0);
 
+sub NeAT_header {
+  my $css_body_class = "form";
+  my ($title) = shift;
+  $title =~ s/\"//g;
+  $title =~ s/\'//g;
+  if (scalar @_ > 0) {
+    $css_body_class = shift;
+  }
+
+
+#  print &html_header();
+  print $query->header();
+  print sorttable_script();
+  ### print the header of the result page
+  print $query->start_html(-title=>"NeA-tools : $title",
+			   -class => "$css_body_class",
+			   -author=>'jvanheld@scmbb.ulb.ac.be',
+			   -style => { 	-src => "$ENV{rsat_www}/main.css",
+                             	       	-type => 'text/css',
+                             		-media => 'screen' });
+  print "<H3 ALIGN='center'><A HREF='$ENV{rsat_www}/NeAT_home.html'>NeA-tools</A> - $title</H3>";
+}
