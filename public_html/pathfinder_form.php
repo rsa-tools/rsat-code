@@ -20,7 +20,7 @@
   // default advanced params
   $default_maxWeight = 1000000;
   $default_maxLength = 1000000;
-  $default_minLength = 0;  
+  $default_minLength = 0;
   $default_exAttrib = "";
   $default_algorithm = "rea";
   $default_metabolic = 0;
@@ -29,7 +29,7 @@
   $pipe = $_REQUEST['pipe'];
   $requested_graph_file = $_REQUEST['graph_file'];
   $requested_in_format = $_REQUEST['in_format'];
-  
+
   # advanced options
   $advanced = $_REQUEST['advanced'];
 
@@ -44,39 +44,40 @@
   }
 
   title('Pathfinder');
-  echo ("<center>Do multiple-to-multiple end path finding.<br>
-  Web service and interface by <a href='mailto:kfaust@ulb.ac.be'>Karoline Faust</a>. This program calls REA (Jimenez and Marzal, 1999). See <a href='help.pathfinder.html#credits'>Credits</a> for other contributors.</center>\n");
+  echo ("<center>Do multiple-to-multiple end path finding. Click on <a href='help.pathfinder.html'><img src='images/question-mark-button.jpg' width='20' alt='help'></a> for help.<br>
+  Web service and interface by <a href='mailto:kfaust@ulb.ac.be'>Karoline Faust</a>.
+  This program calls REA (Jimenez and Marzal, 1999). See
+  <a href='help.pathfinder.html#credits'>Credits</a> for other contributors.</center>\n");
   echo ("<form method='post' action='pathfinder.php' enctype='multipart/form-data'>
   <hr>
-  <h2>Input/Output</h2>
-  <br>
-  <B><a href='help.pathfinder.html#graph'>1. Input graph</a></B>
+  <h2>1. Network <a href='help.pathfinder.html#graph'><img src='images/question-mark-button.jpg' width='20' alt='help'></a>
+  </h2>
   <br>
   <br>");
   if(!$pipe){
   	echo("
-  	Enter the graph here (tab-delimited* or gml):
+  	Enter the network here (tab-delimited* or gml):
   	<br>
   	<textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>
   	<br>
   	*The tab-delimiter can be replaced by two white spaces.
   	<br>
   	<br>
-  	<b>Or</b> upload the graph from a file:
+  	<b>Or</b> upload the network from a file:
   	<br>
   	<input type='file' name='graph_file' size='45' />
   	<br>
-  	<br><b>OR</b> enter a graph id (id of previously submitted graph):
+  	<br><b>OR</b> enter a network id (id of previously submitted network):
   	<br>
   	<input type='text' name='graph_id' size='45' />
   	<br>
   	<br>");
   } else {
-  	  info_link("Graph uploaded from the previous treatment", rsat_path_to_url($requested_graph_file));    
+  	  info_link("Network uploaded from the previous treatment", rsat_path_to_url($requested_graph_file));
   	echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$requested_graph_file'>";
   }
   if($demo == 1){
-  		demo("The demo graph is the union of all paths annotated for <i>S. cerevisiae</i> in <a href='http://www.biocyc.org/' target='_blank'>BioCyc</a> release 10.6. It is an undirected graph consisting
+  		demo("The demo network is the union of all paths annotated for <i>S. cerevisiae</i> in <a href='http://www.biocyc.org/' target='_blank'>BioCyc</a> release 10.6. It is an undirected graph consisting
   		of 2,656 edges.<br>
   		The seed nodes are the start and end compound of the <a href='http://biocyc.org/YEAST/NEW-IMAGE?object=HEME-BIOSYNTHESIS-II' target='_blank'>heme biosynthesis II pathway</a> as annotated in BioCyc.<br>
   		This pathway is one of the study cases described in Croes et al., J. Mol. Biol. 356: 222-236 (see our <a href='neat_publications.html '>list of publications</a>.)<br>
@@ -84,7 +85,10 @@
   		The path of first rank corresponds to the annotated heme biosynthesis II pathway. To see the influence of the weighting scheme, you can set the weighting scheme to unit weight and the rank to 1 (for quicker computation). You will obtain an entirely different result.<br><br>");
   }
    echo("
-   <B><a href='help.pathfinder.html#terminals'>2. Seed nodes</a></B>
+   <hr>
+   <h2>2. Seed nodes
+   <a href='help.pathfinder.html#terminals'><img src='images/question-mark-button.jpg' width='20' alt='help'></a>
+   </h2>
    <br>
    <br>");
    if($pipe && ($requested_in_format == 'gml' || $requested_in_format == 'GML')){
@@ -105,7 +109,10 @@
   <input type='file' name='batch_file' size='45' />
   <br>
   <br>
-   <B><a href='help.pathfinder.html#formats'>3. Input/Output graph formats</a></B>
+  <hr>
+  <h2>3. Network formats
+  <a href='help.pathfinder.html#formats'><img src='images/question-mark-button.jpg' width='20' alt='help'></a>
+  </h2>
   <br>");
   if(!$pipe){
     echo("<br>
@@ -120,14 +127,19 @@
   		 echo "<input type='hidden' NAME='pipe_in_format' VALUE='$requested_in_format'>";
   }
   echo("<br><br>
-  Output format&nbsp;
+  Output format</a>&nbsp;
    <select name='out_format'>
   <option selected value = 'flat'> tab-delimited format
   <option value = 'GML'> GML format
   </select>
   <br>
   <br>
-  <B><a href = 'help.pathfinder.html#output'>4. Output type</a></B>
+   <hr>
+  <h2>4. Path finding options
+  <a href='help.pathfinder.html#options'><img src='images/question-mark-button.jpg' width='20' alt='help'></a>
+  </h2>
+  <br>
+  <B><a href = 'help.pathfinder.html#output'>Output type</a></B>
   <br>
   <br>
    <select name='outputType'>
@@ -138,8 +150,6 @@
   </select>
   <br>
   <br>
-  <hr>
-  <h2>Options</h2>
   <br>
   <table>
      <tr><td><B><a href = 'help.pathfinder.html#rank'>Rank</a></B></td>                   <td><input type = 'text' name='rank' value = '$default_rank' size = 10></input></td></tr>
@@ -156,23 +166,25 @@
   if($advanced){
     echo("
     <hr>
-    <h2>Advanced Options</h2>
+    <h2>5. Advanced Options
+    <a href='help.pathfinder.html#advanced'><img src='images/question-mark-button.jpg' width='20' alt='help'></a>
+    </h2>
     <br>
     <table>
          <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path weight</a></B></td> <td><input type='text' NAME='maxWeight' VALUE='$default_maxWeight'></input></td></tr>
          <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path length</a></B></td> <td><input type='text' name='maxLength' value='$default_maxLength'></input></td></tr>
-         <tr><td><B><a href = 'help.pathfinder.html#sconstraints'>Minimal path length</a></B></td> <td><input type='text' name='minLength' value='$default_minLength'></input></td></tr> 
-          <tr><td><B><a href = 'help.pathfinder.html#exclusion'>Exclusion attribute</a></B></td> <td><input type='text' name='exAttrib' value='$default_exAttrib'></input></td></tr> 
+         <tr><td><B><a href = 'help.pathfinder.html#sconstraints'>Minimal path length</a></B></td> <td><input type='text' name='minLength' value='$default_minLength'></input></td></tr>
+          <tr><td><B><a href = 'help.pathfinder.html#exclusion'>Exclusion attribute</a></B></td> <td><input type='text' name='exAttrib' value='$default_exAttrib'></input></td></tr>
            <tr><td><B><a href = 'help.pathfinder.html#metabolic'>Metabolic</a></B></td> <td><input type='checkbox' name='metabolic' value='on'></input></td></tr>
          <tr><td><font color='#CC6600'>Warning: Backtracking is only available for metabolic graphs!</font></td></tr>
-          <tr><td><B><a href = 'help.pathfinder.html#algorithm'>k shortest paths algorithm</a></B></td> <td> 
+          <tr><td><B><a href = 'help.pathfinder.html#algorithm'>k shortest paths algorithm</a></B></td> <td>
           <select name='algorithm'>
             <option selected value = 'rea'>REA
             <option value = 'backtrack'>Backtracking
         </select>
-  </td></tr> 
-    </table>  
-    <br>  
+  </td></tr>
+    </table>
+    <br>
     ");
   }else{
     echo "<input type='hidden' NAME='maxWeight' VALUE='$default_maxWeight'>";
