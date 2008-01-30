@@ -85,6 +85,28 @@
   		The path of first rank corresponds to the annotated heme biosynthesis II pathway. To see the influence of the weighting scheme, you can set the weighting scheme to unit weight and the rank to 1 (for quicker computation). You will obtain an entirely different result.<br><br>");
   }
    echo("
+   <br>
+   ");
+  	if(!$pipe){
+    echo("<br>
+       <a href='help.pathfinder.html#formats'><b>Input format</b></a>&nbsp;
+       <select name='in_format'>
+       <option selected value = 'flat'> tab-delimited format
+       <option value = 'gml'> GML format
+       </select>
+       <br>");
+  	}else{
+  		info("Input graph format: ".$requested_in_format);
+  		echo "<input type='hidden' NAME='pipe_in_format' VALUE='$requested_in_format'>";
+  }
+  echo("
+   	<br>
+   <table>
+   	<tr><td><B><a href = 'help.pathfinder.html#directed'>Directed network</a></B></td> <td><input type='checkbox' name='directed' value='on'></input></td></tr>
+    <tr><td><B><a href = 'help.pathfinder.html#server'>Store network on server</a></B></td> <td><input type='checkbox' name='store_graph' value='on'></input></td></tr>
+   </table>
+   <br>
+   <br>
    <hr>
    <h2>2. Seed nodes
    <a href='help.pathfinder.html#terminals'><img src='images/question-mark-button.jpg' width='20' alt='help'></a>
@@ -109,66 +131,28 @@
   <input type='file' name='batch_file' size='45' />
   <br>
   <br>
-  <hr>
-  <h2>3. Network formats
-  <a href='help.pathfinder.html#formats'><img src='images/question-mark-button.jpg' width='20' alt='help'></a>
-  </h2>
-  <br>");
-  if(!$pipe){
-    echo("<br>
-       Input format&nbsp;
-       <select name='in_format'>
-       <option selected value = 'flat'> tab-delimited format
-       <option value = 'gml'> GML format
-       </select>
-       <br>");
-  }else{
-  		info("Input graph format: ".$requested_in_format);
-  		 echo "<input type='hidden' NAME='pipe_in_format' VALUE='$requested_in_format'>";
-  }
-  echo("<br><br>
-  Output format</a>&nbsp;
-   <select name='out_format'>
-  <option selected value = 'flat'> tab-delimited format
-  <option value = 'GML'> GML format
-  </select>
-  <br>
-  <br>
    <hr>
-  <h2>4. Path finding options
+  <h2>3. Path finding options
   <a href='help.pathfinder.html#options'><img src='images/question-mark-button.jpg' width='20' alt='help'></a>
   </h2>
-  <br>
-  <B><a href = 'help.pathfinder.html#output'>Output type</a></B>
-  <br>
-  <br>
-   <select name='outputType'>
-  <option selected value = 'pathsTable'>table of paths
-  <option value = 'pathsMarked'>input graph with paths highlighted
-  <option value = 'pathsGraphs'>each path as a separated component of a single graph
-  <option value = 'pathsUnion'>paths unified into one graph
-  </select>
-  <br>
   <br>
   <br>
   <table>
      <tr><td><B><a href = 'help.pathfinder.html#rank'>Rank</a></B></td>                   <td><input type = 'text' name='rank' value = '$default_rank' size = 10></input></td></tr>
      <tr><td><font color='#CC6600'>Warning: The edge weight is seen as edge cost, not as edge strength!</font></td></tr>
 	 <tr><td><B><a href = 'help.pathfinder.html#weight'>Weighting scheme</a></B></td>     <td><select name='weight'>
-                <option value = 'unit'>unit weight
-                <option value = 'none'>as given in input graph
-                <option selected value = 'con'>degree of nodes as weight
-    <tr><td><B><a href = 'help.pathfinder.html#directed'>Directed</a></B></td> <td><input type='checkbox' name='directed' value='on'></input></td></tr>
-    <tr><td><B><a href = 'help.pathfinder.html#server'>Store graph on server</a></B></td> <td><input type='checkbox' name='store_graph' value='on'></input></td></tr>
+                <option value = 'unit'>unit weight</option>
+                <option value = 'none'>as given in input graph</option>
+                <option selected value = 'con'>degree of nodes as weight</option>
+                </select>
     </table>
-    <br>
+  <br>
   ");
   if($advanced){
     echo("
-    <hr>
-    <h2>5. Advanced Options
+    <h4>Advanced Options
     <a href='help.pathfinder.html#advanced'><img src='images/question-mark-button.jpg' width='20' alt='help'></a>
-    </h2>
+    </h4>
     <br>
     <table>
          <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path weight</a></B></td> <td><input type='text' NAME='maxWeight' VALUE='$default_maxWeight'></input></td></tr>
@@ -195,6 +179,33 @@
     echo "<input type='hidden' NAME='algorithm' VALUE='$default_algorithm'>";
   }
   echo("
+  <br>
+  <br>
+  <hr>
+  <h2>4. Output
+  <a href='help.pathfinder.html#output'><img src='images/question-mark-button.jpg' width='20' alt='help'></a>
+  </h2>
+  <br><br>
+  <table>
+  <tr>
+  <td><a href='help.pathfinder.html#formats'><b>Output format&nbsp;&nbsp;</b></a></td><td>
+   <select name='out_format'>
+  <option selected value = 'flat'>tab-delimited format</option>
+  <option value = 'GML'>GML format</option>
+  </select>
+  </td></tr>
+  <tr><td>
+  <B><a href = 'help.pathfinder.html#output'>Output type</a></B>
+  </td><td>
+   <select name='outputType'>
+  <option selected value = 'pathsTable'>table of paths</option>
+  <option value = 'pathsMarked'>input graph with paths highlighted</option>
+  <option value = 'pathsGraphs'>each path as a separated component of a single graph</option>
+  <option value = 'pathsUnion'>paths unified into one graph</option>
+  </select>
+  </td></tr>
+  </table>
+  <br>
   <hr>
   <table class='formbutton'>
   <TD><input type='submit' name='.submit' value='GO' /></TD>
