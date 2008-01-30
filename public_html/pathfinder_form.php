@@ -47,8 +47,8 @@
   echo ("<center>Do multiple-to-multiple end path finding.<br>
   Web service and interface by <a href='mailto:kfaust@ulb.ac.be'>Karoline Faust</a>. This program calls REA (Jimenez and Marzal, 1999). See <a href='help.pathfinder.html#credits'>Credits</a> for other contributors.</center>\n");
   echo ("<form method='post' action='pathfinder.php' enctype='multipart/form-data'>
+  <hr>
   <h2>Input/Output</h2>
-  <HR SIZE='2' NOSHADE>
   <br>
   <B><a href='help.pathfinder.html#graph'>1. Input graph</a></B>
   <br>
@@ -138,8 +138,8 @@
   </select>
   <br>
   <br>
+  <hr>
   <h2>Options</h2>
-  <HR SIZE='2' NOSHADE>
   <br>
   <table>
      <tr><td><B><a href = 'help.pathfinder.html#rank'>Rank</a></B></td>                   <td><input type = 'text' name='rank' value = '$default_rank' size = 10></input></td></tr>
@@ -154,8 +154,9 @@
     <br>
   ");
   if($advanced){
-    echo("<h2>Advanced Options</h2>
-    <HR SIZE='2' NOSHADE>
+    echo("
+    <hr>
+    <h2>Advanced Options</h2>
     <br>
     <table>
          <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path weight</a></B></td> <td><input type='text' NAME='maxWeight' VALUE='$default_maxWeight'></input></td></tr>
@@ -182,9 +183,7 @@
     echo "<input type='hidden' NAME='algorithm' VALUE='$default_algorithm'>";
   }
   echo("
-  <h2>Launch</h2>
-  <HR SIZE='2' NOSHADE>
-  <br>
+  <hr>
   <table class='formbutton'>
   <TD><input type='submit' name='.submit' value='GO' /></TD>
   <TD><B><A HREF='pathfinder_form.php?demo=0'>RESET</A></B></TD>
