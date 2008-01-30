@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-cluster-membership,v 1.12 2008/01/29 17:26:35 gipsi Exp $
+# $Id: graph-cluster-membership,v 1.13 2008/01/30 09:31:53 gipsi Exp $
 #
 ############################################################
 
@@ -171,7 +171,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     ################################################################
@@ -273,7 +273,6 @@ package main;
     foreach my $node (keys %{$clusters->{'node_cluster'}}) {
     	unless (defined $nodes_name_id{$node}) {
 	    &RSAT::error::FatalError("Incongruency between graph and cluster files: Node $node is in clusters but not in graph");
-	    exit;
 	}
     	foreach my $cluster (keys %{$clusters->{'cluster_node'}}) {
 	   $WeightMat->{$node}->{$cluster} = 0;
