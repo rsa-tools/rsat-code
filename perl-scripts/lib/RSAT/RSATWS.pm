@@ -3319,6 +3319,132 @@ sub graph_node_degree_cmd {
   return $command;
 }
 
+
+
+sub graph_cluster_membership {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->graph_cluster_membership_cmd(%args);
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr =~ /Warning/) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/graph-cluster-membership-out.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    chomp($tmp_outfile);
+    my $tmp_comments = $tmp_outfile.".comments";
+#     print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    # Print the comments
+    open COMMENTS_OUT, ">".$tmp_comments or die "cannot open temp file ".$tmp_comments."\n";
+    print COMMENTS_OUT $stderr;
+    close COMMENTS_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+sub graph_cluster_membership_cmd {
+  my ($self, %args) =@_;
+  
+  my $command = "$SCRIPTS/graph-cluster-membership";
+  
+  if ($args{informat}) {
+   my $in_format = $args{informat};
+   $in_format =~ s/\'//g;
+   $in_format =~ s/\'//g;
+   $command .= " -in_format $in_format";
+  }
+  if ($args{stat}) {
+   my $stat = $args{stat};
+   $stat =~ s/\'//g;
+   $stat =~ s/\'//g;
+   $command .= " -stat $stat";
+  }
+  if ($args{decimals}) {
+   my $decimals = $args{decimals};
+   $decimals =~ s/\'//g;
+   $decimals =~ s/\'//g;
+   $command .= " -decimals $decimals";
+  }
+  if ($args{wcol}) {
+   my $wcol = $args{wcol};
+   $wcol =~ s/\'//g;
+   $wcol =~ s/\'//g;
+   $command .= " -wcol $wcol";
+  }
+  if ($args{scol}) {
+   my $scol = $args{scol};
+   $scol =~ s/\'//g;
+   $scol =~ s/\'//g;
+   $command .= " -scol $scol";
+  }
+  if ($args{tcol}) {
+   my $tcol = $args{tcol};
+   $tcol =~ s/\'//g;
+   $tcol =~ s/\'//g;
+   $command .= " -tcol $tcol";
+  }
+
+  if ($args{inputgraph}) {
+   my $input_graph = $args{inputgraph};
+   chomp $input_graph;
+   my $tmp_input = `mktemp $TMP/graph-cluster-membership-graph.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
+   print TMP_IN $input_graph;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  if ($args{clusters}) {
+   my $clusters = $args{clusters};
+   chomp $clusters;
+   my $tmp_input = `mktemp $TMP/graph-cluster-membership-clusters.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open clusters temp file ".$tmp_input."\n";
+   print TMP_IN $clusters;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -clusters '".$tmp_input."'";
+  }
+  return $command;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 sub compare_graphs {
     ## In order to recuperate the statistics calculated
     ## by compare-graphs, I place all the standard error
