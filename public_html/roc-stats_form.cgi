@@ -197,6 +197,7 @@ print "</ul><p>\n";
 
 ################################################################
 ### send results by email or display on the browser
+print "<HR>\n";
 &SelectOutput("display");
 
 ################################################################
@@ -246,6 +247,9 @@ print "</FONT>\n";
 print $query->end_html;
 
 exit(0);
+
+################################################################
+#### print Header
 
 sub NeAT_header {
   my $css_body_class = "form";
