@@ -1,0 +1,121 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>infer-operons</title>
+<link rel="stylesheet" href="main.css" type="text/css" />
+</head>
+
+<body class="info">
+
+<body style="background-color: white">
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - <a href=infer-operons_form.cgi>infer-operons</a> manual</h2>
+</center>
+
+<p><a name="__index__"></a></p>
+
+<h1><a name="description">DESCRIPTION</a></h1>
+<ul>
+<p>Given a list of input genes, infer the operon to which each of these
+genes belong.</p>
+<p>The inference is based on a <strong>very</strong> simplistic distance-based method,
+inspired from the Salgado & Moreno-Hagelsieb method (<a target=_blank href="http://www.pubmedcentral.nih.gov/articlerender.fcgi?tool=pubmed&pubmedid=10823905">Proc Natl Acad Sci U S
+A. 2000;97:6652-7</a>). The Salgado & Moreno-Hagelsieb method classifies intergenic
+distances as <i><b>TUB</b></i> (transcription unit border) or <i><b>WO</b></i> (within operon),
+and infers operons by iteratively collecting genes until a TUB is
+found. In the original method, the TUB or WO assignation relies on a
+log-likelihood score calculated from a training set.</p>
+
+<p>The difference is that we do not use the <i><b>log-likelihood</b></i> (which
+presents risks of over-fitting), but a <i>simple threshold on
+the intergenic distance</i>. Thus, we infer that the region upstream of a gene is TUB if
+its size is larger than a given distance threshold, and WO
+otherwise. Our validations (Rekin&rsquos Janky and Jacques van Helden,
+<i>unpublished results</i>) show that a simple threshold on distance raises a
+similar accuracy as the log-likelihood score (Acc ~ 78% for a
+threshold t=55).</p>
+</ul>
+<h1><a name="dist_thr">ALGORITHM (DISTANCE THRESHOLD)</a></h1>
+<p>The algorithm is based on three simple rules, depending on the
+relative orientation of the adjacent genes.</p>
+<dl>
+<dt><strong><a name="item_rule_1_3a_divergently_transcribed_genes">Rule 1: divergently transcribed genes</a></strong>
+
+<dd>
+<p>If the gene found upstream of a query gene is transcribed in the
+opposite direction, then the intergenic region is considered as a TUB,
+and the two flanking genes are labelled as operon leaders. This
+prediction is reliable (as far as genome annotation is correct), since
+operons only contain genes on the same strand.</p>
+</dd>
+</li>
+<dt><strong><a name="item_rule_2_3a_convergently_transcribed_genes">Rule 2: convergently transcribed genes</a></strong>
+
+<dd>
+<p>If the gene found downstream of a query gene is transcribed in the
+opposite direction, then the intergenic region is considered as a TUB,
+and the two flanking genes are labelled as operon trailers. This
+prediction is reliable (as far as genome annotation is correct), since
+operons only contain genes on the same strand.</p>
+</dd>
+</li>
+<dt><strong><a name="item_genes">Rule 3: tandem genes (adjacent genes on the same strand)</a></strong>
+
+<dd>
+<p>If two adjacent genes are on the same strand, then a distance
+threshold (option -dist) is applied to decide whether they belong to
+the same operon (dist &lt;= threshold) or not (dist &gt; threshold). If they
+are predicted to be in distinct operon, the upstream gene is labelled
+as operon trailer, and the downstream gene as leader of the next
+operon.</p>
+</dd>
+</li>
+</dl>
+<h1><a name="Genes">Genes</a></h1>
+<p>Each row of the input specifies one query gene (similarly to <a href ="http://rsat.scmbb.ulb.ac.be/rsat/help.retrieve-seq.html#genes">rerieve-seq</a>). The first word of a gene is the query, the rest of the row is ignored.</p>
+<h1><a name="return">OUTPUT FIELDS</a></h1>
+<dl>
+<dt><strong><a name="leader"><strong>leader</strong></a></strong>
+
+<dd>
+<p>Predicted operon leader.</p>
+</dd>
+</dt>
+<dt><strong><a name="trailer"><strong>trailer</strong></a></strong>
+
+<dd>
+<p>Predicted operon trailer.</p>
+</dd>
+</dt>
+<dt><strong><a name="operon"><strong>operon</strong></a></strong>
+
+<dd>
+<p>Full composition of the operon. The names of member genes are
+separated by a semi-column ``;''.</p>
+</dd>
+</dt>
+<dt><strong><a name="q_info"><strong>q_info</strong></a></strong>
+
+<dd>
+<p>Detailed info on the query gene(s).</p>
+</dd>
+</dt>
+<dt><strong><a name="up_info"><strong>up_info</strong></a></strong>
+
+<dd>
+<p>Detailed info on the upstream gene.</p>
+</dd>
+</dt>
+<dt><strong><a name="down_info"><strong>down_info</strong></a></strong>
+
+<dd>
+<p>Detailed info on the downstream gene.</p>
+</dd>
+</dt>
+</dl>
+</dl>
+
+</body>
+
+</html>
