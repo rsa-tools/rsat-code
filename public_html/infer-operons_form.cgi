@@ -54,7 +54,8 @@ $field_description{down_info} = "Detailed info on the upstream trailer gene";
 
 ### head
 print "<CENTER>";
-print "Infers the operon to which each coding gene of given a list belongs in a prokaryotic genome.";
+print "Infers the operon to which each coding gene of a given list belongs in a prokaryotic genome.";
+print "<br>This program was developed by <a target=_blank href='http://www.bigre.ulb.ac.be/people/Members/rekins'>Rekins Janky</a> and <a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.</center>";
 print "</CENTER>";
 
 
@@ -160,7 +161,7 @@ print $query->end_form;
 
 #print "<TD><B><A HREF='demo.infer-operons.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.infer-operons.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_infer-operons.html'>TUTORIAL</A></B></TD>\n";
+#print "<TD><B><A HREF='tutorials/tut_infer-operons.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
