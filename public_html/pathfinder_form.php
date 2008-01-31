@@ -44,13 +44,13 @@
   }
 
   title('Pathfinder');
-  echo ("<center>Do multiple-to-multiple end path finding. Click on <a href='help.pathfinder.html'><img src='images/question-mark-button.jpg' width='20' alt='help'></a> for help.<br>
+  echo ("<center>Do multiple-to-multiple end path finding. Click on <a href='help.pathfinder.html'><img src='images/question-mark-button.jpg' width='15' alt='help'></a> for help.<br>
   Web service and interface by <a href='mailto:kfaust@ulb.ac.be'>Karoline Faust</a>.
   This program calls REA (Jimenez and Marzal, 1999). See
   <a href='help.pathfinder.html#credits'>Credits</a> for other contributors.</center>\n");
   echo ("<form method='post' action='pathfinder.php' enctype='multipart/form-data'>
   <hr>
-  <h2>1. Network <a href='help.pathfinder.html#graph'><img src='images/question-mark-button.jpg' width='20' alt='help'></a>
+  <h2>1. Network <a href='help.pathfinder.html#graph'><img src='images/question-mark-button.jpg' width='15' alt='help'></a>
   </h2>
   <br>
   <br>");
@@ -109,7 +109,7 @@
    <br>
    <hr>
    <h2>2. Seed nodes
-   <a href='help.pathfinder.html#terminals'><img src='images/question-mark-button.jpg' width='20' alt='help'></a>
+   <a href='help.pathfinder.html#terminals'><img src='images/question-mark-button.jpg' width='15' alt='help'></a>
    </h2>
    <br>
    <br>");
@@ -133,7 +133,7 @@
   <br>
    <hr>
   <h2>3. Path finding options
-  <a href='help.pathfinder.html#options'><img src='images/question-mark-button.jpg' width='20' alt='help'></a>
+  <a href='help.pathfinder.html#options'><img src='images/question-mark-button.jpg' width='15' alt='help'></a>
   </h2>
   <br>
   <br>
@@ -151,7 +151,7 @@
   if($advanced){
     echo("
     <h4>Advanced Options
-    <a href='help.pathfinder.html#advanced'><img src='images/question-mark-button.jpg' width='20' alt='help'></a>
+    <a href='help.pathfinder.html#advanced'><img src='images/question-mark-button.jpg' width='15' alt='help'></a>
     </h4>
     <br>
     <table>
@@ -183,7 +183,7 @@
   <br>
   <hr>
   <h2>4. Output
-  <a href='help.pathfinder.html#output'><img src='images/question-mark-button.jpg' width='20' alt='help'></a>
+  <a href='help.pathfinder.html#output'><img src='images/question-mark-button.jpg' width='15' alt='help'></a>
   </h2>
   <br><br>
   <table>
