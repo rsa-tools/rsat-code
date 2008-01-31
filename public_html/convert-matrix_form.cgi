@@ -117,7 +117,7 @@ print "<BR>\n";
 #### Return fields
 print "<p><B><A HREF='help.convert-matrix.html#return'>Return fields</A> (only valid with output format 'tab')</B>&nbsp;<br>\n";
 my $i = 0;
-foreach my $stat qw(counts frequencies weights info margins consensus parameters profile logo) {
+foreach my $stat qw(counts frequencies weights info margins consensus parameters profile) { #removed logo as does not work
     print $query->checkbox(-name=>$stat,
 			   -checked=>$default{$stat},
 			   -label=>'');
