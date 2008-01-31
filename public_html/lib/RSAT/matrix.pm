@@ -2921,20 +2921,15 @@ Return the logo from the matrix
 
 =cut
 sub makeLogo{
-	my ($self,$logo_file,$logo_format,$logo_dir) = @_;
+	my ($self,$logo_file,$logo_format) = @_;
 	my ($seqs_file) =$self->seq_from_matrix();
-	
-	my $logo_cmd = "$ENV{RSAT}/bin/seqlogo -f ".$seqs_file;
+	my $logo_cmd = "seqlogo -f ".$seqs_file;
 	$logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -e -k 1";
 	$logo_cmd .= " -o ". $logo_file;
 	$logo_cmd .= " -t ".$self->get_attribute("name");
-	
-	if ($logo_dir){
-		$logo_cmd = "(cd $logo_dir; ".$logo_cmd. ")";
-	}
-	&RSAT::message::Debug("Logo cmd :".$logo_cmd) if ($main::verbose >= 1);
-	system $logo_cmd  ;#or die "Error with seqlogo: $!";
-	&RSAT::message::Info("Export logo in file ".$logo_file.".".$logo_format) if ($main::verbose >= 2);
+	&RSAT::message::Debug("Logo cmd :".$logo_cmd) if ($main::verbose >= 4);
+	system $logo_cmd;
+	&RSAT::message::Info("Export logo in file ".$logo_file.".".$logo_format) if ($main::verbose >= 1);
 	unlink $seqs_file;
 }
 
@@ -2978,7 +2973,7 @@ sub seq_from_matrix {
 	}
 	&RSAT::message::Info("Inferred sequences from matrix :\n;",join ("\n;\t",@seqs)) if ($main::verbose >= 4);
 	## create a temporary sequence file which will be deleted after logo creation 
-	my $tmp_seq_file = "$ENV{RSAT}/public_html/tmp/seq.tmp";
+	my $tmp_seq_file = "seq.tmp";
 	open SEQ, ">".$tmp_seq_file
 	  or die "Can't write to file ".$tmp_seq_file."$!";
 	print SEQ join("\n",@seqs)."\n";
