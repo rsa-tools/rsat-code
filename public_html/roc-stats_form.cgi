@@ -99,15 +99,10 @@ foreach $key (keys %default) {
 
 ################################################################
 ### Header
-# print "<head>
-#    <title>NeAT - roc-stats</title>
-#    <link rel=\"stylesheet\" type=\"text/css\" href = \"main_grat.css\" media=\"screen\">
-# </head>";
-
 &NeAT_header("roc-stats", "form");
 print "<CENTER>";
 print "This program takes as input a set of scored results associated with validation labels (pos for positive, neg for negative) and computes, for each score value, the derived statistics (Sn, PPV, FPR), which can be further used to draw a ROC curve.<P>\n";
-print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
+#print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
 print "<br>This program was developed by <a target=_blank href='http://www.bigre.ulb.ac.be/people/Members/rekins'>Rekins Janky</a> and <a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.</center>";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
@@ -123,7 +118,7 @@ if ($query->param('demo_comment')){
 ################################################################
 ### Input data
 
-print "<B><A HREF='help.roc-stats.html#data'>Input data</A></B><br>";
+print "<B><A HREF='help.roc-stats.html#input_format'>Input data</A></B><br>";
 
 #### data from pipe (compare-graphs)
 if ($query->param('roc-stats_graph_file')) {
@@ -132,16 +127,16 @@ if ($query->param('roc-stats_graph_file')) {
   print "<ul><a href=$file_url>";
   print " transferred from previous query<BR>\n";
   print "</a></ul>";
-  $default{uploaded_file} = $file;
+#  $default{uploaded_file} = $file;
 } else {
   $default{data} = $query->param('data');
   $default{data} =~ s/\"//g; #### remove quotes for security reasons (avoid imbedded command)
   $default{data} =~ s/\r//g; #### remove quotes for security reasons (avoid imbedded command)
   print $query->textarea(-name=>'data',
-			   -default=>$default{data},
+			 -default=>$default{data},
 			 -rows=>6,
 			 -columns=>65);
-  
+
   ### option to upload a file with the data from the client machine
   print "<BR>Upload data from file<BR>\n";
   print $query->filefield(-name=>'uploaded_file',
@@ -152,7 +147,7 @@ if ($query->param('roc-stats_graph_file')) {
 
 ################################################################
 #### Input parameters
-print "<HR><b><a href = 'help.roc-stats.html#params'>Input parameters</a></b><br>";
+print "<HR><b><a href = 'help.roc-stats.html#input_format'>Input parameters</a></b><br>";
 print "<table><tr><td><B><a href = 'help.roc-stats.html#scores'>Scores column</a></B></td><td><input type = 'text' name='sc_col' value = '".$default{sc_col}."' size=1></input></td>";#</tr>";
 print "<td><B><a href = 'help.roc-stats.html#pos'>Positive labels</a></B></td><td>";
 print $query->textarea(-name=>'pos',
@@ -174,7 +169,7 @@ print "</td></tr></table>";
 ################################################################
 #### Return fields
 print "<HR><BR>\n";
-print "<B><A HREF='help.roc-stats.html#return'>Return fields</A></B>&nbsp;<br><UL>\n";
+print "<B><A HREF='help.roc-stats.html#table'>Return fields</A></B>&nbsp;<br><UL>\n";
 my $i = 0;
 foreach my $field (@output_fields) {
   $i++;
@@ -183,7 +178,7 @@ foreach my $field (@output_fields) {
 			 -label=>'');
   print "&nbsp;<A HREF='help.roc-stats.html#",$field,"'><B>", $field_description{$field}, "</B></A>\n";
   if ($field eq "graphs"){
-    print "<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A HREF='help.roc-stats.html#img'>Image format (if graphs is checked)</A>&nbsp;\n";
+    print "<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Image format (if graphs is checked)&nbsp;\n";
     print $query->popup_menu(-name=>'img_format',
 			     -Values=>['png',
 				       'jpg',
@@ -215,7 +210,7 @@ print $query->end_form;
 ################################################################
 ### data for the demo 
 print $query->start_multipart_form(-action=>"roc-stats_form.cgi");
-my $demo_data=`grep -v "^;" $ENV{rsat_www}/data/demo_files/roc-stats_demo_regulonDB_cg_stringcoex_inter-Q.tab`;
+my $demo_data=`grep -v "^;" $ENV{RSAT}/data/demo_files/roc-stats_demo_regulonDB_cg_stringcoex_inter-Q.tab`;
 # "0.95	pos
 # 0.85	neg
 # 0.75	pos
@@ -228,7 +223,7 @@ my $demo_data=`grep -v "^;" $ENV{rsat_www}/data/demo_files/roc-stats_demo_regulo
 # 0.15	pos
 # 0.05	neg
 # ";
-#print $demo_data;
+#print "$ENV{RSAT}/data/demo_files/roc-stats_demo_regulonDB_cg_stringcoex_inter-Q.tab\n<BR>".$demo_data;
 print "<TD><B>";
 print $query->hidden(-name=>'data',-default=>$demo_data);
 print $query->hidden(-name=>'sc_col',-default=>'3');
@@ -242,8 +237,8 @@ print "</B></TD>\n";
 print $query->end_form;
 
 print "<TD><B><A HREF='help.roc-stats.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_roc.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
+#print "<TD><B><A HREF='tutorials/tut_roc.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:{rekins,jvanheld}\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";
