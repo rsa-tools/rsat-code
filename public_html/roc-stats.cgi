@@ -28,7 +28,6 @@ my $parameters = " -v 1 ";
 ################################################################
 #### Get input
 my $tmp_file_prefix = sprintf "roc-stats.%s", &AlphaDate();
-my $result_file = "$TMP/$tmp_file_prefix.res";
 my $score_file = "$TMP/$tmp_file_prefix.input";
 my $data = $query->param('data');
 if ($data){
@@ -86,6 +85,7 @@ if (&IsInteger($query->param('total'))) {
 ################################################################
 ## Return fields
 #&CGI_return_fields();
+my $result_file = "$TMP/$tmp_file_prefix.res";
 
 ## graphs 
 if ($query->param('graphs')) {
@@ -102,21 +102,28 @@ if ($query->param('graphs')) {
 print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
 
 ## execute the command
-if ($query->param('output') =~ /display/i){
-  if ($query->param('graphs')){
+
+if ($query->param('graphs')){
+  if ($query->param('output') =~ /display/i){
     @data_report = `$command $parameters`;
     my $result_prefix = $tmp_file_prefix.".res";
     my $img_format = $query->param('img_format');
 
     print '<H4>Graphs</H4>';
     print "<UL>\n";
-    print "<A HREF=\"#scores\">scores</A><BR>";
-    print "<A HREF=\"#scores_xlog2\">scores (xlog)</A><BR>";
+    print "<A HREF=\"#scores\">Scores</A><BR>";
+    print "<UL>";
+    print "<LI><A HREF=\"#scores\">normal scale</A><BR>";
+    print "<LI><A HREF=\"#scores_xlog2\">xlog scale</A><BR>";
+    print "</UL>";
     print "<A HREF=\"#FP_TP\">FP vs TP</A><BR>";
-    print "<A HREF=\"#roc\">ROC (Receiving Operator Characteristic) curve</A><BR>";
-    print "<A HREF=\"#precision_recall\">PR (Precision-Recall) curve</A><BR>";
-    print "<A HREF=\"#precision_recall_xlog\">PR (xlog)</A><BR>";
-    print "<A HREF=\"#precision_recall_log\">PR (log log)</A><BR>";
+    print "<A HREF=\"#roc\">ROC (Receiver Operating Characteristic) curve</A><BR>";
+    print "<A HREF=\"#precision_recall\">Precision-Recall curve</A><BR>";
+    print "<UL>";
+    print "<LI><A HREF=\"#precision_recall\">normal scale</A><BR>";
+    print "<LI><A HREF=\"#precision_recall_xlog\">xlog scale</A><BR>";
+    print "<LI><A HREF=\"#precision_recall_log\">xlog ylog scale</A><BR>";
+    print "</UL>";
     print "</UL>\n";
     print "<HR>\n";
 
@@ -213,16 +220,21 @@ if ($query->param('output') =~ /display/i){
     print "<IMG SRC=\"$WWW_TMP/".$result_prefix."_precision_recall_log.".$img_format."\"><BR>";
 
   }else{
+    ## TO BE IMPLEMENTED
+    &cgiError("Graph option is still not supported with email output. Please choose display output.");
+  }
+} else {
+  if ($query->param('output') =~ /display/i){
     open RESULT, "$command $parameters | ";
     print '<H4>Table</H4>';
     &PrintHtmlTable(RESULT, $result_file, true);
     close(RESULT);
+  }else{
+    my $mail_title = join (";", "NeAT", "roc-stats", &AlphaDate());
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_prefix.".res",
+		    title=>$mail_title,
+		   );
   }
-} else {
-  my $mail_title = join (";", "NeAT", "roc-stats", &AlphaDate(), $tmp_file_prefix);
-  &EmailTheResult("$command $parameters", $query->param('user_email'), $result_file,
-		  title=>$mail_title,
-		 );
 }
 
 print $query->end_html();
