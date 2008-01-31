@@ -60,7 +60,7 @@ print "<hr>";
 
 print "<B>Feature</B>\n";
 print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
-print "<A HREF='help.matrix-scan.html'><B>Format</B></a>&nbsp;";
+print "<A HREF='help.convert-features.html'><B>Format</B></a>&nbsp;";
 
 
 #### feature format (pop-up menu)
@@ -88,7 +88,7 @@ print "<HR/>";
 ### Output bg format
 print "<BR>";
 
-print "<B><A HREF='help.convert-background-model.html#item__2dto_output_format'>Output format</A></B>&nbsp;";
+print "<B><A HREF='help.convert-features.html'>Output format</A></B>&nbsp;";
 print $query->popup_menu(-name=>'output_format',
 			 -Values=>[@supported_output_formats],
 			 -default=>$default{output_format});
