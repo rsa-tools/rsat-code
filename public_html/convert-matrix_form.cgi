@@ -85,7 +85,10 @@ print "<hr>";
 &GetMatrix();
 print "<hr>";
 
-&GetBackgroundModel("","","","1");
+my %bg_params =(
+				"from_matrix" => 1,
+				);
+&GetBackgroundModel(\%bg_params);
 
 print "<br/>Note: Only Bernoulli models are supported. Higher-order Markov chain models are converted into Markov 0 (Bernoulli).";
 print "<hr>";

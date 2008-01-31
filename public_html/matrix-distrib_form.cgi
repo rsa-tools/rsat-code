@@ -75,7 +75,10 @@ print "<hr>";
 &GetMatrix();
 print "<hr>";
 
-&GetBackgroundModel("","","1","");
+my %bg_params =("markov" => 1,
+				"markov_message" => 1
+				);
+&GetBackgroundModel(\%bg_params);
 
 print "<hr>";
 
