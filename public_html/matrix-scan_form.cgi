@@ -164,7 +164,13 @@ print "<hr>";
 ################################################################
 ## Background model
 print "<hr>";
-&GetBackgroundModel("1","1","1");
+
+my %bg_params =("markov" => 1,
+				"bg_input" => 1,
+				"bg_window" => 1,
+				"markov_message" => 1
+				);
+&GetBackgroundModel(\%bg_params);
 
 print "<hr>";
 
