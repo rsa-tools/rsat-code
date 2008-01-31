@@ -42,8 +42,12 @@ my $parameters;
 my $bg_method = $query->param('bg_choose');
 if ($bg_method eq "rsat") {
     ## Select pre-computed background file in RSAT genome directory
-    my $organism_name = $query->param("organism");
-    $parameters .= " -org ".$organism_name;
+    
+    #my $bg_taxo = $query->param('bg_taxo');
+    #if ($bg_taxo eq "organism"){
+    	my $organism_name = $query->param("organism");
+    	$parameters .= " -org ".$organism_name;
+    #}
     
     my $background_model = $query->param("background");
     $parameters .= " -bg ".$background_model;
