@@ -73,7 +73,7 @@ my %bg_params =("markov" => 1,
 				"noov" => 1,
 				"strands"=> 1,
 				"title2"=>"Custom background model",
-				"taxon" => 1,
+				#"taxon" => 1,
 				"sep_bg_pseudo" => 1
 				);
 
