@@ -32,21 +32,18 @@ $query = new CGI;
 #### read parameters ####
 $parameters = "";
 
-##### input format #####
-$input_format = lc($query->param('input_format'));
-if ($accepted_input_seq{$input_format}) {
-    $parameters .= " -from $input_format ";
-} else {
-    &cgiError("Invalid format for input sequence: $input_format.");
-}
+################################################################
+## sequence file
+($sequence_file,$sequence_format) = &GetSequenceFile();
+
+#### matrix-scan parameters
+$parameters .= " -i $sequence_file -from $sequence_format";
+
 
 ##### output format #####
 $out_format = lc($query->param('output_format'));
-if ($accepted_output_seq{$out_format}) {
-    $parameters .= " -to $out_format ";
-} else {
-    &cgiError("Invalid format for output sequence: $out_format.");
-}
+$parameters .= " -to $out_format ";
+
 
 ### sequence file
 #($sequence_file,$out_format) = &GetSequenceFile();
@@ -63,7 +60,7 @@ $parameters .= " -i $TMP/$tmp_file_name ";
 &DelayedRemoval("$TMP/$tmp_file_name");
 
 ##### add reverse-complement #####
-if ($query->param('addrc') eq "yes") {
+if ($query->param('addrc')) {
     $parameters .= " -addrc ";
 }
 
@@ -72,6 +69,7 @@ if ($query->param('line_width') =~ /\d+/) {
     $parameters .= " -lw ".$query->param('line_width');
 }
 
+print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
 #### execute the command #####
 if (($query->param('output') =~ /display/i) ||
