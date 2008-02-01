@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.59 2008/01/30 16:47:24 morgane Exp $
+# $Id: convert-matrix,v 1.60 2008/02/01 18:22:01 rsat Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -1070,7 +1070,7 @@ sub ExportMatrix {
   ## Return parameters
   if ($return_fields{logo}) {
     if ($main::verbose >= 1) {
-	print $out  "; logo file:" , $matrix->get_attribute("name").".".$logo_format, "\n";
+	print $out  "; logo file:" , $matrix->get_attribute("logo_file").".".$logo_format, "\n";
     }
 
   }
