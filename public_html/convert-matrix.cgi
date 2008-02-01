@@ -6,14 +6,14 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
-BEGIN {
-    $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
-    use CGI::Carp qw(carpout);
-    open (LOG, ">> $ERR_LOG")
-	|| die "Unable to redirect log\n";
-    carpout(*LOG);
-}
+#BEGIN {
+#    $ERR_LOG = "/dev/null";
+##    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+#    use CGI::Carp qw(carpout);
+#    open (LOG, ">> $ERR_LOG")
+#	|| die "Unable to redirect log\n";
+#    carpout(*LOG);
+#}
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
@@ -145,10 +145,11 @@ foreach my $stat qw (counts frequencies weights info consensus parameters profil
     if ($query->param($stat)) {
 		push @return_fields, $stat;
 		if ($stat eq "logo"){
-			 $parameters .= " -logo_dir '$ENV{RSAT}/public_html/tmp' ";
+			 $parameters .= " -v 1 -logo_dir $ENV{RSAT}/public_html/tmp ";
 		}
     }
 }
+
 if ($output_format eq 'tab') {
     $parameters .= " -v 1 ";
     $parameters .= " -return ";
@@ -157,6 +158,8 @@ if ($output_format eq 'tab') {
     $parameters .= " -to ".$output_format;
     $parameters .= " -return counts";
 }
+$parameters .= " -o $result_file";
+
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
 ### execute the command ###
@@ -165,7 +168,9 @@ if ($query->param('output') eq "display") {
 
  ## prepare figures
     ### prepare data for piping
-    open RESULT, "$command $parameters |";
+ #   open RESULT, "$command $parameters |";
+  &doit("$command $parameters"); ## DEBUG test
+  open RESULT, "$result_file";  ## DEBUG
     
     print '<H4>Result</H4>';
     print '<PRE>';
@@ -173,10 +178,11 @@ if ($query->param('output') eq "display") {
 #	s|${TMP}/||g;
 #	s|${BIN}/||g;
 	if ($_ =~ /logo file:(.*)/){
-		print "<a href = \"$WWW_TMP/$1\"><IMG SRC=\"$WWW_TMP/$1\" width='200'></a>\n";
-		print "<br/>";
-		&DelayedRemoval("$TMP/$1");
-		
+	  (my $logo = $1 )=~ s|${TMP}| ${WWW_TMP}|g;
+	  print "<IMG SRC=\"$logo\">\n";
+#	  print "<a href = \"$logo\"><IMG SRC=\"$logo\" ></a>\n";
+	  print "<br/>";
+	  &DelayedRemoval("$TMP/$1");
 	}
 	else {
 		print $_;
@@ -191,9 +197,9 @@ if ($query->param('output') eq "display") {
     print "<HR SIZE = 3>";
     
 } elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'));
+    &ServerOutput("$command $parameters", $query->param('user_email',$result_file));
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'),$result_file);
 }
 print $query->end_html;
 
