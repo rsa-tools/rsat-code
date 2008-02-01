@@ -2923,7 +2923,7 @@ Return the logo from the matrix
 sub makeLogo{
 	my ($self,$logo_file,$logo_format,$logo_tmp_dir) = @_;
 	my ($seqs_file) =$self->seq_from_matrix($logo_tmp_dir);
-	my $logo_cmd = $ENV{RSAT}"/bin/seqlogo ";
+	my $logo_cmd = $ENV{RSAT}."/bin/seqlogo ";
 	$logo_cmd.= "-f ".$seqs_file;
 	$logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -e -k 1";
 	$logo_cmd .= " -o ". $logo_file;
