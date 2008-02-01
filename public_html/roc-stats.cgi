@@ -24,6 +24,7 @@ $query = new CGI;
 
 #### read parameters ####
 my $parameters = " -v 1 ";
+my $img_format = $query->param('img_format')||'png';
 
 ################################################################
 #### Get input
@@ -90,7 +91,7 @@ my $result_file = "$TMP/$tmp_file_prefix.res";
 ## graphs 
 if ($query->param('graphs')) {
   $parameters .= " -graphs "; # TROUBLESHOOTING ! files are not created on rsat webserver.
-  $parameters .= " -img_format ".$query->param('img_format');
+  $parameters .= " -img_format $img_format";
   $parameters .= " -o ".$result_file;
 }
 
@@ -107,7 +108,6 @@ if ($query->param('graphs')){
   if ($query->param('output') =~ /display/i){
     @data_report = `$command $parameters`;
     my $result_prefix = $tmp_file_prefix.".res";
-    my $img_format = $query->param('img_format');
 
     print '<H4>Graphs</H4>';
     print "<UL>\n";
@@ -221,7 +221,7 @@ if ($query->param('graphs')){
 
   }else{
     ## TO BE IMPLEMENTED
-    &cgiError("Graph option is still not supported with email output. Please choose display output.");
+    &cgiError("Graph option is not yet supported by email output. Please choose display output.");
   }
 } else {
   if ($query->param('output') =~ /display/i){

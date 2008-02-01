@@ -23,18 +23,21 @@ $query = new CGI;
 
 ################################################################
 ## Output fields
-my @output_fields = qw(
-		       occ
-		       TP
-		       FP
-		       FN
-		       Sn
-		       PPV
-		       FPR
-		       Acc_g
-		       Acc_a
+my @output_fields = qw(stats
 		       graphs
 		      ); # add AUC when possible
+#my @output_fields = qw(
+#		       occ
+#		       TP
+#		       FP
+#		       FN
+#		       Sn
+#		       PPV
+#		       FPR
+#		       Acc_g
+#		       Acc_a
+#		       graphs
+#		      ); # add AUC when possible
 my %field_description = ();
 $field_description{occ} = "Inverse cumulative occurrences";
 $field_description{TP} = "TP (True Positives)";
@@ -46,6 +49,7 @@ $field_description{FPR} = "FPR (False Positive Rate)";
 $field_description{Acc_g} = "Geometic Accuracy";
 $field_description{Acc_a} = "Arithmetic Accuracy";
 $field_description{AUC} = "AUC (Area Under the Curve)";
+$field_description{stats} = "Table of statistics (Inverse cumulative occurrences, Sn, PPV, Accuracy)";
 $field_description{graphs} = "Graphs (distribution of statistics, ROC and PR curves)";
 
 ################################################################
@@ -72,6 +76,7 @@ $default{PPV} = "checked";
 $default{FPR} = "checked";
 $default{Acc_g} = "checked";
 $default{Acc_a} = "checked";
+$default{stats} = "checked";
 $default{AUC} = "";
 $default{uploaded_file}="";
 
@@ -147,7 +152,7 @@ if ($query->param('roc-stats_graph_file')) {
 
 ################################################################
 #### Input parameters
-print "<HR><b><a href = 'help.roc-stats.html#input_format'>Input parameters</a></b><br>";
+print "<HR><b><a href = 'help.roc-stats.html#input_format'>Input parameters</a></b><UL>";
 print "<table><tr><td><B><a href = 'help.roc-stats.html#scores'>Scores column</a></B></td><td><input type = 'text' name='sc_col' value = '".$default{sc_col}."' size=1></input></td>";#</tr>";
 print "<td><B><a href = 'help.roc-stats.html#pos'>Positive labels</a></B></td><td>";
 print $query->textarea(-name=>'pos',
@@ -165,11 +170,12 @@ print $query->textarea(-name=>'neg',
 		       -columns=>5);
 #"<input type = 'text' name='neg' value = '".$default{neg}."' size=1></input>
 print "</td></tr></table>";
+print "</UL>";
 
 ################################################################
 #### Return fields
-print "<HR><BR>\n";
-print "<B><A HREF='help.roc-stats.html#table'>Return fields</A></B>&nbsp;<br><UL>\n";
+print "<HR>\n";
+print "<B><A HREF='help.roc-stats.html#output_format'>Return</A></B>&nbsp;<UL>\n";
 my $i = 0;
 foreach my $field (@output_fields) {
   $i++;
@@ -177,16 +183,16 @@ foreach my $field (@output_fields) {
 			 -checked=>$default{$field},
 			 -label=>'');
   print "&nbsp;<A HREF='help.roc-stats.html#",$field,"'><B>", $field_description{$field}, "</B></A>\n";
-  if ($field eq "graphs"){
-    print "<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Image format (if graphs is checked)&nbsp;\n";
-    print $query->popup_menu(-name=>'img_format',
-			     -Values=>['png',
-				       'jpg',
-				       'gif',
-				       'eps',
-				       'pdf'],
-			     -default=>$default{img_format});
-  }
+#  if ($field eq "graphs"){
+#    print "<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Image format (if graphs is checked)&nbsp;\n";
+#    print $query->popup_menu(-name=>'img_format',
+#			     -Values=>['png',
+#				       'jpg',
+#				       'gif',
+#				       'eps',
+#				       'pdf'],
+#			     -default=>$default{img_format});
+#  }
 print "<BR>\n";
 }
 print "</ul><p>\n";
@@ -239,7 +245,7 @@ print $query->end_form;
 
 print "<TD><B><A HREF='help.roc-stats.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_roc.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:{rekins,jvanheld}\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:rekins\@scmbb.ulb.ac.be,jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";
