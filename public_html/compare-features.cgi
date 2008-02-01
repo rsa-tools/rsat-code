@@ -42,12 +42,11 @@ $parameters = " -v 1";
 # } 
 
 ### fields to return
-$return_fields = "";
+$return_fields = " -return ";
 
 ### statistics
 if ($query->param('stats')) {
     $return_fields .= "stats,";
-    
 } 
 
 ### intersection
@@ -60,35 +59,13 @@ if ($query->param('diff')) {
 	$return_fields .= "diff,";
 }
 
-### upper threshold on occurrences in the intersection
-if ($query->param('uth_qr') =~ /^\d+$/) {
-  $parameters .= " -uth QR ".$query->param('lth_qr');
-}
-### lower threshold on significance
-if ($query->param('lth_sig') =~ /^\d+$/) {
-  $lth_sig = $query->param('lth_sig');
-  if (&IsReal($lth_sig)) {
-    $parameters .= " -lth sig ".$lth_sig;
-  } else {
-    &FatalError("Lower threshold on significance: $lth_sig invalid value.");
-  }
-}
-### upper threshold on significance
-if ($query->param('uth_sig') =~ /^\d+$/) {
-  $uth_sig = $query->param('uth_sig');
-  if (&IsReal($uth_sig)) {
-    $parameters .= " -uth sig ".$uth_sig;
-  } else {
-    &FatalError("Upper threshold on significance: $uth_sig invalid value.");
-  }
-}
 ### lower threshold on interection leength (size)
 if ($query->param('inter_len') =~ /^\d+$/) {
   $inter_len = $query->param('inter_len');
   if (&IsNatural($inter_len)) {
     $parameters .= " -lth inter_len ".$inter_len;
   } else {
-    &FatalError("Lower threshold on P-value: $inter_len invalid value.");
+    &FatalError("Lower threshold on inter_len: $inter_len invalid value.");
   }
 }
 
@@ -98,7 +75,7 @@ if ($query->param('inter_cov') =~ /^\d+$/) {
   if (&IsReal($inter_cov)) {
     $parameters .= " -lth inter_cov ".$inter_cov;
   } else {
-    &FatalError("Lower threshold on P-value: $inter_cov invalid value.");
+    &FatalError("Lower threshold on inter_cov: $inter_cov invalid value.");
   }
 }
 
@@ -162,26 +139,26 @@ if ($uploaded_file) {
 $parameters .= " -ref $tmp_query_features";
 
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+print "<PRE>command: $command $return_fields $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 
 if ($query->param('output') =~ /display/i) {
 
 #    &PipingWarning();
-    
+
     ### execute the command ###
     $result_file = "$TMP/${tmp_file_name}.res";
-    open RESULT, "$command $parameters |";
-    
+    open RESULT, "$command $parameters $return_fields |";
+
     ### Print result on the web page
     print '<H2>Result</H2>';
     &PrintHtmlTable(RESULT, $result_file, true);
     close(RESULT);
-    
+
 #    &PipingForm();
     print '<HR SIZE=3>';
-  
+
 } elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'), $tmp_file_name);
+    &ServerOutput("$command $parameters $return_fields", $query->param('user_email'), $tmp_file_name);
 } else {
     &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_name);
 }
