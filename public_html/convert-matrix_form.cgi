@@ -6,8 +6,6 @@ BEGIN {
     }
     require "RSA.lib";
 }
-use RSAT::matrix;
-use RSAT::MatrixReader;
 #if ($0 =~ /([^(\/)]+)$/) {
 #    push (@INC, "$`lib/");
 #}
@@ -17,6 +15,7 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 require "patser.lib.pl";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+use RSAT::matrix;
 use RSAT::MatrixReader;
 
 ### Read the CGI query
