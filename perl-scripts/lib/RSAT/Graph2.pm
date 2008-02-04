@@ -1747,7 +1747,7 @@ sub load_from_gml {
       }
     }
 
-    
+    exit(0);
     
 
     foreach my $edge (@fichier_edge) {
@@ -1783,6 +1783,7 @@ sub load_from_gml {
           $color_edge = substr($color_edge,1, index($color_edge, "\" "));
           $color_edge =~ s/\"//;
         }
+	
 	
         if ($source_edge ne "NA#" || $target_edge ne "NA#") {
           next if $discarded_nodes{$source_edge};
