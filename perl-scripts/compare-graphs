@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.45 2007/12/12 13:10:51 rsat Exp $
+# $Id: compare-graphs,v 1.46 2008/02/04 17:26:23 rsat Exp $
 #
 ############################################################
 
@@ -895,6 +895,7 @@ sub union {
   }
   $union_graph->load_from_array(@union_graph_array);
   $union_graph->set_array_attribute("arcs_attribute", @arcs_attributes);
+  $union_graph = &inter_end($union_graph);
   return ($union_graph);
 }
 
@@ -1038,6 +1039,47 @@ sub in_common {
   }
   return ($common_arcs, $common_nodes, $union_nodes, $max_union_arcs, $max_union_formula);
 }
+
+################################################################
+#### put intersection edge at the end
+#### this function takes a graph object as argument and sends a graph where
+#### the intersection edges are at the end
+
+sub inter_end {
+  my $graph = shift;
+  my @arcs = $graph->get_attribute("arcs");
+  my @arcs_attribute = $graph->get_attribute("arcs_attribute"); 
+  my %nodes_name_id = $graph->get_attribute("nodes_name_id");
+  my %nodes_color = $graph->get_attribute("nodes_color");
+  my @sorted_edges = ();
+  my @sorted_edges_attribute = ();
+  my $cpt_in = 0;
+  my $cpt_dec = scalar(@arcs)-1;
+  for (my $i = 0; $i < scalar(@arcs); $i++) {
+    if ($arcs_attribute[$i] eq 'R.and.Q') {
+      $cpt = $cpt_dec;
+      $cpt_dec--;
+    } else {
+      $cpt = $cpt_in;
+      $cpt_in++;
+    }
+    $sorted_edges[$cpt][0] = $arcs[$i][0];
+    $sorted_edges[$cpt][1] = $arcs[$i][1];
+    $sorted_edges[$cpt][2] = $arcs[$i][2];
+    $sorted_edges[$cpt][3] = $nodes_color{$arcs[$i][0]};
+    $sorted_edges[$cpt][4] = $nodes_color{$arcs[$i][1]};
+    $sorted_edges[$cpt][5] = $arcs[$i][3];
+    $sorted_edges_attribute[$cpt] = $arcs_attribute[$i];
+  }
+  my $sorted_graph = new RSAT::Graph2;
+  $sorted_graph->load_from_array(@sorted_edges);
+  $sorted_graph->set_array_attribute("arcs_attribute", @sorted_edges_attribute);
+  return $sorted_graph;
+}
+
+
+
+
 
 ################################################################
 #### verbose message
