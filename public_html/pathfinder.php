@@ -16,8 +16,10 @@
   $default_nodeIntegers = 0;
   $default_returnType = "server";
   $tab_java = 1;
+  $tmpGraphFile = "";
   # server-related params
   $result_location = "/home/rsat/rsa-tools/public_html/tmp/";
+  $html_location = "http://rsat.scmbb.ulb.ac.be/rsat/tmp/";
   $result_suffix = "_Result.txt";
   $sylvain_input_format = "tab";
   $sylvain_input_graph = "";
@@ -150,6 +152,7 @@
      	'source'=>$sources,
      	'target'=>$targets,
      	'graphString'=>$graph,
+     	'tmpInGraphFile'=>$tmpGraphFile,
         'inFormat'=>$in_format,
         'outFormat'=>$out_format,
     	'directed'=>$directed,
@@ -209,12 +212,13 @@
     if($error == 0){
    		# location of result file on server (absolute path)
     	$file_location = $result_location . $graphid . $result_suffix;
-
         # content of result file
         $fileContent = storeFile($file_location);
+        # html location
+        $file_html_location = $html_location . $graphid . $result_suffix; 
         # Display the results
     	echo "<align='left'>The result is available as text file at the following URL:<br> ";
-    	echo "<a href = '$server'>$server</a><br></align>";
+    	echo "<a href = '$file_html_location'>$file_html_location</a><br></align>";
 
     	# Text-to-html web service (for table of paths only)
     	if(strcmp($outputType,'pathsTable') == 0){

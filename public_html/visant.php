@@ -18,6 +18,12 @@ $edgeAttribs = "";
 $noNodes = 0;
 $return_type="server";
 $error = 0;
+$tmpGraphFile = "";
+# server-related params
+$result_location = "/home/rsat/rsa-tools/public_html/tmp/";
+$html_location = "http://rsat.scmbb.ulb.ac.be/rsat/tmp/";
+# visant address
+$address = "http://visant.bu.edu:8080/vserver/DAI?command=link&location=";
 
 ############## prepare parameters ##########################
 
@@ -105,6 +111,7 @@ $graph = rtrim($graph);
   $parameters = array(
       "request" => array(
         'graphString'=>$graph,
+        'tmpInGraphFile'=>$tmpGraphFile,
         'inFormat'=>$graph_format,
         'outFormat'=>$out_format,
     	'directed'=>$directed,
@@ -144,12 +151,11 @@ $graph = rtrim($graph);
     $client = $response->client;
 
     if($error == 0){
-        $address = " http://visant.bu.edu:8080/vserver/DAI?command=link&location=";
          # Display the results
     	echo("<align='left'>Click on the image below to display graph via visANT java web start:<br><br>
-    	<a href='$address$server'><img src='images/visant_icon.png' alt='VisANT icon' name'VisANT icon' width='150' border='1'></a></align>
+    	<a href='$address$html_location$server'><img src='images/visant_icon.png' alt='VisANT icon' name'VisANT icon' width='150' border='1'></a></align>
     	<br><br>Download graph in VisML format:<br><br>
-    	<a href='$server'>$server</a>
+    	<a href='$html_location$server'>$html_location$server</a>
     	<br><br><br><br>
     	More about VisANT: see <a href='http://visant.bu.edu/' target='_blank'>VisANT homepage</a>");
     }else{
