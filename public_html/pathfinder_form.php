@@ -24,6 +24,7 @@
   $default_exAttrib = "";
   $default_algorithm = "rea";
   $default_metabolic = 0;
+  $demoM_graph_id = 'Pathfinder_tmpGraph_92f857cc-1748-4456-868d-c51f3495e803.tab';
 
   # variables given within workflow
   $pipe = $_REQUEST['pipe'];
@@ -42,6 +43,14 @@
      $default_sources = $demo_sources;
      $default_targets = $demo_targets;
   }
+  
+  # demo metabolic path finding
+  $demoM = $_REQUEST['demoM'];
+  if($demoM == 1){
+    $default_weight = "rpairs";
+    $default_sources = "A01297/A01298";
+    $default_targets = "A04458"; 
+  }
 
   title('Pathfinder');
   echo ("<center>Do multiple-to-multiple end path finding. Click on <a href='help.pathfinder.html'><img src='images/question-mark-button.jpg' width='15' alt='help'></a> for help.<br>
@@ -55,6 +64,7 @@
   <br>
   <br>");
   if(!$pipe){
+  	if(!$demoM){
   	echo("
   	Enter the network here (tab-delimited* or gml):
   	<br>
@@ -72,6 +82,9 @@
   	<input type='text' name='graph_id' size='45' />
   	<br>
   	<br>");
+  	}else{
+  	 echo("The metabolic network has been already uploaded. Its network identifier is: $demoM_graph_id");
+  	}
   } else {
   	  info_link("Network uploaded from the previous treatment", rsat_path_to_url($requested_graph_file));
   	echo "<input type='hidden' NAME='pipe_graph_file' VALUE='$requested_graph_file'>";
@@ -83,29 +96,40 @@
   		This pathway is one of the study cases described in Croes et al., J. Mol. Biol. 356: 222-236 (see our <a href='neat_publications.html '>list of publications</a>.)<br>
   		Note that for this demo, path finding is done on a smaller, undirected graph without differentially weighting compounds and reactions. Use the <a href='http://www.scmbb.ulb.ac.be/Users/didier/pathfinding/' target='_blank'>metabolic pathfinding tool</a> to find paths in the complete KEGG network.<br>
   		The path of first rank corresponds to the annotated heme biosynthesis II pathway. To see the influence of the weighting scheme, you can set the weighting scheme to unit weight and the rank to 1 (for quicker computation). You will obtain an entirely different result.<br><br>");
+  }else if($demoM == 1){
+  demo("The demo network consists of all small molecule compounds and sub-reactions (RPAIRS) stored in KEGG (Release 41.0, January 2007). This undirected network has 7,058 reaction nodes and 4,297 compound nodes
+  connected by 28,232 edges. In a comparative evaluation of metabolic path finding, this network with the default parameters of this demo performed best. 
+  See <a target='_blank' href='http://rsat.scmbb.ulb.ac.be/pathfindingsupplementref/index.html'>here</a> for the results of the evaluation.<br>
+  The source and target sub-reactions are taken from the Arginine biosynthesis pathway in <i>E. coli</i>, which is listed among the reference pathways tested.");
   }
    echo("
    <br>
    ");
   	if(!$pipe){
-    echo("<br>
-       <a href='help.pathfinder.html#formats'><b>Input format</b></a>&nbsp;
-       <select name='in_format'>
-       <option selected value = 'flat'> tab-delimited format
-       <option value = 'gml'> GML format
-       </select>
-       <br>");
+  	 if(!$demoM){
+        echo("<br>
+        <a href='help.pathfinder.html#formats'><b>Input format</b></a>&nbsp;
+        <select name='in_format'>
+        <option selected value = 'flat'> tab-delimited format
+        <option value = 'gml'> GML format
+        </select>
+        <br>");
+        }else{
+        }
   	}else{
   		info("Input graph format: ".$requested_in_format);
   		echo "<input type='hidden' NAME='pipe_in_format' VALUE='$requested_in_format'>";
   }
+ if(!$demoM){
   echo("
    	<br>
    <table>
    	<tr><td><B><a href = 'help.pathfinder.html#directed'>Directed network</a></B></td> <td><input type='checkbox' name='directed' value='on'></input></td></tr>
     <tr><td><B><a href = 'help.pathfinder.html#server'>Store network on server</a></B></td> <td><input type='checkbox' name='store_graph' value='on'></input></td></tr>
    </table>
-   <br>
+   <br>");
+  }
+ echo("
    <br>
    <hr>
    <h2>2. Seed nodes
@@ -116,9 +140,13 @@
    if($pipe && ($requested_in_format == 'gml' || $requested_in_format == 'GML')){
     echo("Please make sure to enter the identifiers (numbers) and not the labels of the nodes. If you are unsure about the node identifiers, check the input graph by clicking on 'Graph uploaded from the previous treatment'.");
    }
+   if($demoM == 1){
+     echo("Please provide KEGG identifiers of sub-reactions (RPAIR) starting with A or of compounds (starting with C)<br>");
+   }
    echo("
    Enter source and target nodes:
-  <br>
+  <br>");
+  echo("
   <br>
   <table>
      <tr><td>Source nodes&nbsp;&nbsp;</td>        <td><input type='text' name='sources' value='$default_sources' size=100></input></td></tr>
@@ -136,8 +164,10 @@
   <a href='help.pathfinder.html#options'><img src='images/question-mark-button.jpg' width='15' alt='help'></a>
   </h2>
   <br>
-  <br>
-  <table>
+  <br>");
+  if(!$demoM){
+    echo("
+    <table>
      <tr><td><B><a href = 'help.pathfinder.html#rank'>Rank</a></B></td>                   <td><input type = 'text' name='rank' value = '$default_rank' size = 10></input></td></tr>
      <tr><td><font color='#CC6600'>Warning: The edge weight is seen as edge cost, not as edge strength!</font></td></tr>
 	 <tr><td><B><a href = 'help.pathfinder.html#weight'>Weighting scheme</a></B></td>     <td><select name='weight'>
@@ -145,10 +175,20 @@
                 <option value = 'none'>as given in input graph</option>
                 <option selected value = 'con'>degree of nodes as weight</option>
                 </select>
-    </table>
-  <br>
-  ");
-  if($advanced){
+        </table>
+    <br>");
+  }else{
+   echo("
+    Default weights have been set (sub-reactions = weighting scheme according to RPAIRS type, compounds = degree)<br>
+    <br>
+    <table>
+     <tr><td><B><a href = 'help.pathfinder.html#rank'>Rank</a></B></td><td><input type = 'text' name='rank' value = '$default_rank' size = 10></input></td></tr>
+   </table>
+   <input type='hidden' name='weight' value=$default_weight></input>
+    <br>
+   ");
+  }
+  if($advanced && !$demoM){
     echo("
     <h4>Advanced Options
     <a href='help.pathfinder.html#advanced'><img src='images/question-mark-button.jpg' width='15' alt='help'></a>
@@ -210,7 +250,8 @@
   <table class='formbutton'>
   <TD><input type='submit' name='.submit' value='GO' /></TD>
   <TD><B><A HREF='pathfinder_form.php?demo=0'>RESET</A></B></TD>
-  <TD><B><A HREF='pathfinder_form.php?demo=1'>DEMO</A></B></TD>
+  <TD><B><A HREF='pathfinder_form.php?demo=1'>DEMO1</A></B></TD>
+  <TD><B><A HREF='pathfinder_form.php?demoM=1'>DEMO2</A></B></TD>
   <TD><B><A HREF='pathfinder_form.php?advanced=1'>ADVANCED</A></B></TD>
   </form>
   <TD><B><A HREF='help.pathfinder.html'>MANUAL</A></B></TD>
