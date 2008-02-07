@@ -24,7 +24,7 @@
   $default_exAttrib = "";
   $default_algorithm = "rea";
   $default_metabolic = 0;
-  $demoM_graph_id = 'Pathfinder_tmpGraph_92f857cc-1748-4456-868d-c51f3495e803.tab';
+  $demoM_graph_id = 'Pathfinder_tmpGraph_b438f121-ea8e-4ac2-8c6a-6434ec59da1f.tab';
 
   # variables given within workflow
   $pipe = $_REQUEST['pipe'];
@@ -83,7 +83,9 @@
   	<br>
   	<br>");
   	}else{
-  	 echo("The metabolic network has been already uploaded. Its network identifier is: $demoM_graph_id");
+  	 echo("The metabolic network has been already uploaded. Its network identifier is: $demoM_graph_id<br>
+  	 <input type='hidden' name='graph_id' value=$demoM_graph_id></input>
+  	 ");
   	}
   } else {
   	  info_link("Network uploaded from the previous treatment", rsat_path_to_url($requested_graph_file));
@@ -115,6 +117,7 @@
         </select>
         <br>");
         }else{
+            echo("<input type='hidden' name='in_format' value='flat'></input>");
         }
   	}else{
   		info("Input graph format: ".$requested_in_format);
@@ -128,7 +131,9 @@
     <tr><td><B><a href = 'help.pathfinder.html#server'>Store network on server</a></B></td> <td><input type='checkbox' name='store_graph' value='on'></input></td></tr>
    </table>
    <br>");
-  }
+ }else{
+    echo("<input type='hidden' name='directed' value='on'></input><input type='hidden' name='store_graph' value='on'></input>");
+ }
  echo("
    <br>
    <hr>
@@ -250,8 +255,9 @@
   <table class='formbutton'>
   <TD><input type='submit' name='.submit' value='GO' /></TD>
   <TD><B><A HREF='pathfinder_form.php?demo=0'>RESET</A></B></TD>
-  <TD><B><A HREF='pathfinder_form.php?demo=1'>DEMO1</A></B></TD>
-  <TD><B><A HREF='pathfinder_form.php?demoM=1'>DEMO2</A></B></TD>
+  <TD><B><A HREF='pathfinder_form.php?demo=1'>DEMO</A></B></TD>");
+ # to be debugged: <TD><B><A HREF='pathfinder_form.php?demoM=1'>DEMO2</A></B></TD>
+  echo("
   <TD><B><A HREF='pathfinder_form.php?advanced=1'>ADVANCED</A></B></TD>
   </form>
   <TD><B><A HREF='help.pathfinder.html'>MANUAL</A></B></TD>
