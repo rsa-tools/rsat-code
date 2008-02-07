@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.19 2007/03/10 12:15:55 rsat Exp $
+# $Id: server.mk,v 1.20 2008/02/07 00:17:23 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -229,7 +229,8 @@ CLEAN_DATE=3
 clean_tmp:
 	@echo `date` Cleaning temporary directory on `hostname` 
 	@echo "Before cleaning	" `du -sk ${RSAT}/public_html/tmp`
-	find ${RSAT}/public_html/tmp/ -mtime +${CLEAN_DATE} -type f -exec rm -f {} \;	
+	touch ${RSAT}/public_html/tmp
+	find ${RSAT}/public_html/tmp/ -mtime +${CLEAN_DATE} -type f -exec rm -rf {} \;	
 	@echo "After cleaning	" `du -sk ${RSAT}/public_html/tmp`
 	@echo "Disk free" 
 	@df `pwd`   
