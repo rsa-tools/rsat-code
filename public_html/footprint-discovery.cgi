@@ -27,6 +27,10 @@ $query = new CGI;
 #### read parameters ####
 $parameters = " -v 1 -index ";
 
+## Limit the analysis to only the 100 first genes
+#$parameters .= " -max_genes 2 ";
+my $max_genes = 100;
+
 ################################################################
 #### Compute the query prefix
 my $query_prefix = "footprints";
@@ -40,12 +44,18 @@ if ($query->param('queries') =~ /\S/) {
     push @query_genes,  $fields[0];
   }
 
-  if (scalar(@query_genes) == 1) {
-    $query_prefix = $query_genes[0];
-  } elsif (scalar(@query_genes) <= 10) {
-    $query_prefix = join "_", @query_genes;
-  } else {
-    $query_prefix = scalar(@query_genes)." genes";
+  if (scalar(@query_genes) > $max_genes) {
+    &Warning("The RSAT web server cannot handle large scale analysis.<P> The analysis has been restricted to the ", $max_genes, " first genes<P>\n");
+    @query_genes= splice(@query_genes,0,$max_genes);
+    $query_prefix = $max_genes."_first_genes";
+  }else{
+    if (scalar(@query_genes) == 1) {
+      $query_prefix = $query_genes[0];
+    } elsif (scalar(@query_genes) <= 10) {
+      $query_prefix = join "_", @query_genes;
+    }else {
+      $query_prefix = scalar(@query_genes)."_genes";
+    }
   }
 }
 
@@ -83,7 +93,8 @@ $query_file = $file_prefix."_genes";
 ## Prepare a file on the server with the query genes
 if ($query->param('queries') =~ /\S/) {
   open QUERY, ">".$query_file;
-  print QUERY $query->param('queries');
+#  print QUERY $query->param('queries');
+  print QUERY join("\n",@query_genes);
   close QUERY;
   &DelayedRemoval($query_file);
   $parameters .= " -genes ".$query_file;
