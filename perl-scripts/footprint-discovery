@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.25 2008/01/29 18:09:31 jvanheld Exp $
+# $Id: footprint-discovery,v 1.26 2008/02/07 15:46:19 rsat Exp $
 #
 ############################################################
 
@@ -124,7 +124,7 @@ package main;
 
   ################################################################
   ## Initialise parameters
-  $program_version = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -151,6 +151,7 @@ package main;
   local $dist_thr = 55;	    ## DIstance threshold for operon inference
   local $to_matrix = 0;		## Convert assembled dyads into PSSM
   local $sep_genes = 0;		## Analyze each gene separately
+  local $max_genes = undef;	## Analyze a limited number of genes
 
   ## Options for the &doit() command;
   local $dry = 0; ## Do not run the command, just echo them as warning
@@ -205,6 +206,15 @@ package main;
   ## Check query genes
   if (scalar(@query_genes) ==0) {
     &RSAT::error::FatalError("You must specify at least one query gene (options -q or -i)");
+  }
+
+  ## Get maximum number of genes if limited
+  if ($max_genes){
+    if (scalar(@query_genes)>$max_genes){
+      &RSAT::message::Warning("The analysis has been limited to the first ", $max_genes,"genes");
+      @query_genes= splice(@query_genes,0,$max_genes);
+      &RSAT::message::Warning(join("\t","Query genes:",@query_genes)) if ($main::verbose >= 2);
+    }
   }
 
   ################################################################
@@ -678,6 +688,15 @@ automatically).
 	} elsif ($arg eq "-all_genes") {
 	  $main::all_genes = 1;
 
+=pod
+
+=item B<-max_genes>
+
+Maximal number of genes to analyze.
+
+=cut
+	} elsif ($arg eq "-max_genes") {
+	  $main::max_genes = shift(@arguments);
 
 	    ## Output prefix
 =pod
