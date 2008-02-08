@@ -24,7 +24,7 @@
   $default_exAttrib = "";
   $default_algorithm = "rea";
   $default_metabolic = 0;
-  $demoM_graph_id = 'Pathfinder_tmpGraph_b438f121-ea8e-4ac2-8c6a-6434ec59da1f.tab';
+  $demoM_graph_id = 'Pathfinder_tmpGraph_12be1fa1-4f8e-475e-864d-e98cb17bd494.tab';
 
   # variables given within workflow
   $pipe = $_REQUEST['pipe'];
@@ -49,7 +49,8 @@
   if($demoM == 1){
     $default_weight = "rpairs";
     $default_sources = "A01297/A01298";
-    $default_targets = "A04458"; 
+    $default_targets = "A04458";
+    $default_rank = 1; 
   }
 
   title('Pathfinder');
@@ -99,7 +100,7 @@
   		Note that for this demo, path finding is done on a smaller, undirected graph without differentially weighting compounds and reactions. Use the <a href='http://www.scmbb.ulb.ac.be/Users/didier/pathfinding/' target='_blank'>metabolic pathfinding tool</a> to find paths in the complete KEGG network.<br>
   		The path of first rank corresponds to the annotated heme biosynthesis II pathway. To see the influence of the weighting scheme, you can set the weighting scheme to unit weight and the rank to 1 (for quicker computation). You will obtain an entirely different result.<br><br>");
   }else if($demoM == 1){
-  demo("The demo network consists of all small molecule compounds and sub-reactions (RPAIRS) stored in KEGG (Release 41.0, January 2007). This undirected network has 7,058 reaction nodes and 4,297 compound nodes
+  demo("The demo network consists of all small molecule compounds and sub-reactions (RPAIRS) stored in <a target='_blank' href='http://www.genome.ad.jp/kegg/ligand.html'>KEGG LIGAND</a> (Release 41.0, January 2007). This undirected network has 7,058 sub-reaction nodes and 4,297 compound nodes
   connected by 28,232 edges. In a comparative evaluation of metabolic path finding, this network with the default parameters of this demo performed best. 
   See <a target='_blank' href='http://rsat.scmbb.ulb.ac.be/pathfindingsupplementref/index.html'>here</a> for the results of the evaluation.<br>
   The source and target sub-reactions are taken from the Arginine biosynthesis pathway in <i>E. coli</i>, which is listed among the reference pathways tested.");
@@ -132,7 +133,7 @@
    </table>
    <br>");
  }else{
-    echo("<input type='hidden' name='directed' value='on'></input><input type='hidden' name='store_graph' value='on'></input>");
+    echo("<input type='hidden' name='directed' value='off'></input><input type='hidden' name='store_graph' value='off'></input>");
  }
  echo("
    <br>
@@ -255,9 +256,8 @@
   <table class='formbutton'>
   <TD><input type='submit' name='.submit' value='GO' /></TD>
   <TD><B><A HREF='pathfinder_form.php?demo=0'>RESET</A></B></TD>
-  <TD><B><A HREF='pathfinder_form.php?demo=1'>DEMO</A></B></TD>");
- # to be debugged: <TD><B><A HREF='pathfinder_form.php?demoM=1'>DEMO2</A></B></TD>
-  echo("
+  <TD><B><A HREF='pathfinder_form.php?demo=1'>DEMO1</A></B></TD>
+  <TD><B><A HREF='pathfinder_form.php?demoM=1'>DEMO2</A></B></TD>
   <TD><B><A HREF='pathfinder_form.php?advanced=1'>ADVANCED</A></B></TD>
   </form>
   <TD><B><A HREF='help.pathfinder.html'>MANUAL</A></B></TD>
