@@ -24,7 +24,7 @@
   $default_exAttrib = "";
   $default_algorithm = "rea";
   $default_metabolic = 0;
-  $demoM_graph_id = 'Pathfinder_tmpGraph_12be1fa1-4f8e-475e-864d-e98cb17bd494.tab';
+  $demoM_graph_id = 'Pathfinder_tmpGraph_b299d55c-a3b2-497b-bda8-e6608646e639.tab';
 
   # variables given within workflow
   $pipe = $_REQUEST['pipe'];
