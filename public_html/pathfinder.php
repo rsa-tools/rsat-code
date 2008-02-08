@@ -284,9 +284,7 @@
      	<br>
  	  <TABLE CLASS = 'nextstep'>
   		<TR>
-      	<Th colspan = 3>
-        	<a href = 'help.pathfinder.html#next'>Next steps</a>
-      	</Th>
+      	<Th colspan = 3>Next steps</Th>
     	</TR>
     	<TR>
       	<TD>
