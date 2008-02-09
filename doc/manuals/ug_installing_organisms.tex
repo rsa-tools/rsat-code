@@ -2,7 +2,7 @@
 %%%% Parsing and installing new organisms
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\chapter{Installing genomes from  NCBI or EMBL}
+\chapter{Installing genomes from  NCBI/Genbank files}
 
 In the section \ref{downloading_genomes}, we saw that the genomes
 installed on the main \RSAT server can easily be installed on your
@@ -85,9 +85,6 @@ more organism_names.tab
 
 \item \file{organism\_name.tab} indicates the name of the organism.
 \end{enumerate}
-
-
-\subsection{Example}
 
 
 \subsection{Genome sequence} 
@@ -190,26 +187,27 @@ grep YFL021W cds_names.tab
 \end{footnotesize}
 
 
-\section{Parsing genomes from NCBI/Genbank}
+
+\section{Downloading genomes from NCBI/Genbank}
 
 The normal way to install an organism in \RSAT is to download the
 complete genome files from the NCBI
 \urlref{ftp://ftp.ncbi.nih.gov/genomes/}, and to parse it with the
 program \program{parse-genbank.pl}.
 
-Instead of downloading genomes from the NCBI site, we will use a
-mirror \urlref{bio-mirror.net/biomirror/ncbigenomes/} which presents
-two advantages:
+However, rather than downloading genomes directly from the NCBI site,
+we will obtain them from a mirror
+\urlref{bio-mirror.net/biomirror/ncbigenomes/} which presents two
+advantages?
+
 \begin{itemize}
-\item genome files are compressed (gzipped), which strongly reduces
+\item Genome files are compressed (gzipped), which strongly reduces
   the transfer and storage volume. 
-\item this mirror can be queried by \program{rsync}, which facilitates
+\item This mirror can be queried by \program{rsync}, which facilitates
   the updates (with the appropriate options, \program{rsync} will only
   download the files which are newer on the server than on your
   computer).
 \end{itemize}
-
-\section{Downloading genomes from NCBI/Genbank}
 
 \RSAT includes a makefile to download genomes from different sources.
 We provide hereafter a protocol to create a download directory in your
@@ -298,7 +296,6 @@ tail -15 $RSAT/data/supported_organisms.pl
 
 From now on, the genome is considered as supported on your local \RSAT
 site. You can check this with the command \program{supported-organisms}. 
-
 
 \section{Checking the start and stop codon composition}
 
@@ -406,7 +403,7 @@ needed for genome installation.
 \end{itemize}
 
 
-\section{Parsing genomes from EMBL files}
+\chapter{Installing genomes from EMBL files}
 
 \RSAT also includes a script \program{parse-embl.pl} to parse genomes
 from EMBL files. However, for practicaly reasons we generally parse
