@@ -4,7 +4,7 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\documentclass{article}
+\documentclass{book}
 %\documentstyle[makeidx]{book}
 \makeindex
 \include{rsat_latex_commands}
@@ -17,7 +17,7 @@ Installation guide}
 \author{
 	Jacques van Helden \\
 	\email{jvhelden@ulb.ac.be} \\
-	\url{http://www.bigre.ulb.ac.be/$\tilde{\hspace{0.4em}}$jvanheld/} \\
+	\url{http://www.bigre.ulb.ac.be/Users/jvanheld/} \\
 	\bigre 
 }
 
@@ -27,6 +27,8 @@ Installation guide}
 \newpage
 \tableofcontents
 \newpage
+
+\chapter{Description and requirements}
 
 \section{Description}
 
@@ -88,19 +90,10 @@ can be installed with the command \program{cpan}.
   \$RSAT/perl-scripts/lib/RSAT/stats.pm) which reaches a precision of
   1e-300.
 
-\item[Util::Properties] This is for advanced users only. Properly
-  speaking, this module is not required, but it can be very useful to
-  load parameters if you want to write your own perl clients for the
-  Web service interface to \RSAT (RSATWS).
-
-  % \item[bioperl] \RSAT was developed independently of the bioperl
-  %   project, but for some recent programs, I used bioperl classes
-  %   (e.g. for reading and exporting taxonomic trees). It is thus
-  %   useful to install a recent version of bioperl to take benefit of
-  %   the full functionalities of \RSAT.  For \program{bioperl}, we
-  %   recommend to use the CVS distribution
-  %   (\url{http://cvs.open-bio.org/}), which includes more recent
-  %   updates.
+\item[Util::Properties] This module is required to load property
+  files, which are used to specify the site-specific configuration of
+  your \RSAT server. Property filesa are also useful to write your own
+  perl clients for the Web service interface to \RSAT (RSATWS).
 
 \end{description}
 
@@ -109,7 +102,7 @@ can be installed with the command \program{cpan}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Installation
-\section{Installation}
+\chapter{Obtaining \RSAT distribution}
 
 For the time being, \RSAT is distributed as a compressed archive. In a
 near future, we will also distribute it via an anonymous CVS server,
@@ -123,10 +116,10 @@ external users is the compressed archive. If you are not member of the
 BiGRe laboratory, please skip the section \textit{Installation from
   the CVS repository}.
 
-\subsection{Installation from the CVS repository}
+\section{Installation from the CVS repository}
 
 
-\subsubsection{CVS configuration}
+\subsection{CVS configuration}
 
 You need to indicate your \program{cvs} client to use \program{ssh}
 as remote shell application. For this, you can specify an environment
@@ -147,8 +140,7 @@ export CVS_RSH=ssh
 \end{verbatim}
 
 
-
-\subsubsection{First installation}
+\subsection{Obtaining a first version of \RSAT programs}
 
 The following command should be used the first time you retrieve the
 tools from the server (you need to replace \texttt{[mylogin]} by the
@@ -163,7 +155,7 @@ store the programs in it. Note that at this stage the programs are not
 yet functional, because you still need to install genomes, which are
 not included in the CVS distribution.
 
-\subsubsection{Updates}
+\subsection{Updating \RSAT programs}
 
 Once the tools have been retrieved, you can obtain updates very
 easily. For this, you need to change your directory to the rsa-tools
@@ -175,7 +167,7 @@ cvs update -d
 \end{verbatim}
 
 
-\subsection{Installation from a compressed archive}
+\section{Installation from a compressed archive}
 
 Uncompress the archive containing the programs. The archive is
 distributed \texttt{tar} format.
@@ -278,32 +270,32 @@ make -f makefiles/init_RSAT.mk init
 \section{Configuring \RSAT for utilization on the command line}
 
 The \RSAT distribution comes with a template configuration file named
-\file{RSA.config.default} and located in the \file{rsa-tools}
+\file{RSAT\_config\_default.props} and located in the \file{rsa-tools}
 directory.
 
-Copy this file to create your own config file \file{RSA.config}.
+Copy this file to create your own config file \file{RSAT\_config.props}.
 
 \begin{verbatim}
-cp RSA.config.default RSA.config
+cp RSAT_config_default.props RSAT_config.props 
 \end{verbatim}
 
-In principle, this default configuration file is sufficient to run the
-tools on the command-line. 
+You need to edit this file and specify the parameters of your local
+configuration. In particular, it is essential to specify the variable
+RSAT, which specifies the RSAT main directory. 
 
-You only need to edit it if you want to install a web server of the
-tools, or if you want to specify custom settings (for example the
-installation of additional genomes on a separate hard drive).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Genome Download
+% Downloading genomes from RSAT main server
 
-\input{ig_installing_genomes.tex}
+\input{ig_downloading_genomes.tex}
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Tests for the command line tools
-\section{Testing the command-line tools}
+\chapter{Testing the command-line tools}
 
-\subsection{Testing the access to perl scripts}
+\section{Testing the access to perl scripts}
 
 From now on, you should be able to use the perl scripts from the
 command line. To test this, run: 
@@ -321,7 +313,7 @@ random-seq -l 200 -r 4 -a a:t 0.3 c:g 0.2
 
 Should generate a random sequence.
 
-\subsection{Testing genome installation}
+\section{Testing genome installation}
 
 We will now test if the genomes are correctly installed. You can
 obtain the list of supported organisms with the command:
@@ -355,7 +347,7 @@ retrieve-seq -org Saccharomyces_cerevisiae \
 This should return a set of 3 bp sequences, mostly ATG (in the case of
 \org{Saccharomyces cerevisiae} at least)
 
-\subsection{Testing the graphical scripts}
+\section{Testing the graphical scripts}
 
 \RSAT includes two graphical tools, \program{feature-map} and
 \program{XYgraph}. These tools require the following  perl modules: 
@@ -431,10 +423,18 @@ programs and include their binaries path rsa-tools/bin. If you are not
 familiar with the installation of unix programs, ask assistance to
 your system administrator.
 
-
 \section{Further steps}
 
 The installation is now finished, you can start the user's guide. 
+
+In case you would like to install additional genomes that are not
+supported on \RSAT main server, the next chapter indicates yiou how to
+proceed.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Parsing and installing additional genomes
+
+\input{ug_installing_organisms.tex}
 
 \end{document}
 
