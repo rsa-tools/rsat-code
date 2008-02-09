@@ -11,14 +11,15 @@ genomes, which are not published yet, or which are not supported on
 the main \RSAT server.
 
 If your genomes are available in Genbank (files .gbk) or EMBL (files
-.embl) format, this cen be done without too much effort, using the
+.embl) format, this can be done without too much effort, using the
 installation tools of \RSAT. 
 
 The parsing of genomes from their original data sources is however
 more tricky than the synchronization from the \RSAT server, so this
 procedure should be used only if you need to install a genome that is
-not yet supported. Unless this is your case, you can skip the rest of
-this section.
+not yet supported. 
+
+If this is not your case, you can skip the rest of this section.
 
 \section{The \RSAT genome files}
 
@@ -28,9 +29,25 @@ the following files.
 \begin{enumerate}
 \item organism description
 \item genome sequences
-\item feature tables (CDS, mRNA, ...)
+\item feature tables (CDS, mRNA, \ldots)
 \item lists of names/synonyms
 \end{enumerate}
+
+From these files, a set of additional installation steps will be done
+by \RSAT programs in order to compute the frequencies of
+oligonucleotides and dyads in upstream sequences.
+
+If you installed \RSAT as specified above, you can have a look at the
+organization of a supported genome, for example the yeast
+\org{Saccharomyces cerevisiae}.
+
+\begin{verbatim}
+cd ${RSAT}/public_html/data/genomes/Saccharomyces_cerevisiae/
+ls -l
+\end{verbatim}
+
+The folder \file{genome} contains the sequence files and the tables
+describing the organism and its features (CDSs, mRNAs, \ldots).
 
 \subsection{Organism description} 
 

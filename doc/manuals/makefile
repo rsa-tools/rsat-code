@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: makefile,v 1.9 2007/12/10 08:35:07 jvanheld Exp $
+# $Id: makefile,v 1.10 2008/02/09 17:06:49 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 15:13:34 jvanheld>
 #
@@ -55,7 +55,7 @@ neat_tutorial:
 	${MAKE} neat_tutorial.pdf
 	${MAKE} tex_clean
 
-installation_guide:
+install_guide:
 	${MAKE} install_guide.pdf
 	${MAKE} tex_clean
 
