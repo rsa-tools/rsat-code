@@ -2,7 +2,7 @@
 %%%% Parsing and installing new organisms
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\chapter{Parsing and installing genomes from  their original source}
+\chapter{Installing genomes from  NCBI or EMBL}
 
 In the section \ref{downloading_genomes}, we saw that the genomes
 installed on the main \RSAT server can easily be installed on your
@@ -21,7 +21,7 @@ not yet supported.
 
 If this is not your case, you can skip the rest of this section.
 
-\section{The \RSAT genome files}
+\section{Organization of the genome files}
 
 In order for a genome to be supported, \RSAT needs to find at least
 the following files.
@@ -41,27 +41,49 @@ If you installed \RSAT as specified above, you can have a look at the
 organization of a supported genome, for example the yeast
 \org{Saccharomyces cerevisiae}.
 
+\begin{footnotesize}
 \begin{verbatim}
-cd ${RSAT}/public_html/data/genomes/Saccharomyces_cerevisiae/
+cd ${RSAT}/public_html/data/genomes/Saccharomyces_cerevisiae/genome
 ls -l
 \end{verbatim}
+\end{footnotesize}
 
-The folder \file{genome} contains the sequence files and the tables
-describing the organism and its features (CDSs, mRNAs, \ldots).
+As you see, the folder \file{genome} contains the sequence files and
+the tables describing the organism and its features (CDSs, mRNAs,
+\ldots). The \RSAT parser exports tables for all the feature types
+found in the original genbank file. There are thus a lot of distinct
+files, but you should not worry too much, for the two following
+reasons:
+\begin{enumerate}
+\item \RSAT only requires a subset of these files (basically, those
+  describing organisms, CDSs, mRNAs, rRNAs and tRNAs).
+\item All these files can be generated automatically by \RSAT parsers.
+\end{enumerate}
 
 \subsection{Organism description} 
 
 The description of the organism is given in two separate files.
 
+
+\begin{footnotesize}
+\begin{verbatim}
+cd ${RSAT}/public_html/data/genomes/Saccharomyces_cerevisiae/genome
+ls -l organism*.tab
+
+more organism.tab
+
+more organism_names.tab
+\end{verbatim}
+\end{footnotesize}
+
 \begin{enumerate}
-\item \file{organism.tab} specifies the ID of the organism + its
+\item \file{organism.tab} specifies the ID of the organism and its
   taxonomy. The ID of an organism is the TAXID defined by the NCBI
   taxonomical database, and its taxonomy is usually parsed from the
   .gbk files (but yo may need to specify it yourself in case it would
   be missing in your own data files).
 
-\item \file{organism\_name.tab} specifies the name associated to this
-  organism.
+\item \file{organism\_name.tab} indicates the name of the organism.
 \end{enumerate}
 
 
@@ -70,16 +92,20 @@ The description of the organism is given in two separate files.
 
 \subsection{Genome sequence} 
 
-The genome must be in raw format (text files containing the sequence
-without any space or carriage return). If the organism contains
-several chromosomes, there should be one separate file per contig
-(chromosome). 
+A genome sequence is composed of one or more contigs. A contig is a
+contigous sequence, resulting from the assembly of short sequence
+fragments obtained during the sequencing. When a genome is completely
+sequenced and assembled, each chomosome comes as a single contig. 
 
-In addition, the genome directory must contain one file listing the
-contig (chromosome) files. You can find an example in the directory
-\file{\$RSAT/data/genomes/Saccharomyces\_cerevisiae/genome/}.
+In \RSAT, the genome sequence is specified as one separate file per
+contig (chromosome) sequence. Each sequence file must be in raw format
+(i.e. a text file containing the sequence without any space or
+carriage return). 
 
+In addition, the genome directory contains one file indicating the
+list of the contig (chromosome) files.
 
+\begin{footnotesize}
 \begin{verbatim}
 cd $RSAT/data/genomes/Saccharomyces_cerevisiae/genome/
 
@@ -90,13 +116,14 @@ cat contigs.txt
 ls -l *.raw
 
 \end{verbatim}
+\end{footnotesize}
 
 \subsection{Feature table}
 
-A set of feature tables giving the basic information about gene
-locations. Several feature types (CDS, mRNA, tRNA, rRNA) can be
-specified in separate files (\file{cds.tab}, \file{mrna.tab},
-\file{trna.tab}, \file{rrna.tab}).
+The \file{genome} directory also contains a set of feature tables
+giving the basic information about gene locations. Several feature
+types (CDS, mRNA, tRNA, rRNA) can be specified in separate files
+(\file{cds.tab}, \file{mrna.tab}, \file{trna.tab}, \file{rrna.tab}).
 
 Each feature table is a tab-delimited text file, with one row per
 feature (cds, mrna, \ldots) and one column per parameter. The
@@ -124,54 +151,63 @@ identifiers from the fasta file.
 \end{enumerate}
 
 
+\begin{footnotesize}
 \begin{verbatim}
 ## The feature table
 head -30 cds.tab
-
-## The gene names/synonyms
-head -30 cds_names.tab
 \end{verbatim}
+\end{footnotesize}
 
 
-\subsection{Gene names (synonyms)}
+\subsection{Feature names/synonyms}
 
-Optionally, you can provide a synonym file, which contains two
-columns:
+Some genes can have several names (synonyms), which are specified in
+separate tables.
 
 \begin{enumerate}
 \item ID. This must be one identifier found in the feature table
 \item Synonym
+\item Name priority (primary or alternate)
 \end{enumerate}
+
+
+\begin{footnotesize}
+\begin{verbatim}
+## View the first row of the file specifying gene names/synonyms
+head -30 cds_names.tab
+\end{verbatim}
+\end{footnotesize}
+
 
 Multiple synonyms can be given for a gene, by adding several lines with
 the same ID in the first column.
 
-\subsection{Example}
-
+\begin{footnotesize}
 \begin{verbatim}
-cd $RSAT/data/genomes/Saccharomyces_cerevisiae/genome/
-
-## The list of sequence files
-cat contigs.txt
-
-## The sequence files
-ls -l *.raw
-
-## The feature table
-head -30 cds.tab
-
-## The gene names/synonyms
-head -30 cds_names.tab
-
+## An example of yeast genes with multiple names
+grep YFL021W cds_names.tab 
 \end{verbatim}
+\end{footnotesize}
 
 
-\chapter{Parsing genomes from NCBI/Genbank}
+\section{Parsing genomes from NCBI/Genbank}
 
-The easiest way to install an organism in \RSAT is to download the
+The normal way to install an organism in \RSAT is to download the
 complete genome files from the NCBI
 \urlref{ftp://ftp.ncbi.nih.gov/genomes/}, and to parse it with the
 program \program{parse-genbank.pl}.
+
+Instead of downloading genomes from the NCBI site, we will use a
+mirror \urlref{bio-mirror.net/biomirror/ncbigenomes/} which presents
+two advantages:
+\begin{itemize}
+\item genome files are compressed (gzipped), which strongly reduces
+  the transfer and storage volume. 
+\item this mirror can be queried by \program{rsync}, which facilitates
+  the updates (with the appropriate options, \program{rsync} will only
+  download the files which are newer on the server than on your
+  computer).
+\end{itemize}
 
 \section{Downloading genomes from NCBI/Genbank}
 
@@ -184,39 +220,198 @@ with the smallest procaryote genome to date: \textit{Mycoplasma
   genitamlium}.
 
 
+\begin{footnotesize}
 \begin{verbatim}
 ## Creating a directory for downloading genomes in your home account
-cd $HOME
+cd $RSAT
 mkdir -p downloads
 cd downloads
 
 ## Creating a link to the makefile which allows you to dowload genomes
 ln -s $RSAT/makefiles/downloads.mk ./makefile
 \end{verbatim}
+\end{footnotesize}
 
 We will now download a small genome from NCBI/Genbank. 
 
+\begin{footnotesize}
 \begin{verbatim}
 ## Downloading one directory from NCBI Genbank
-cd $HOME/downloads/
-make one_genbank_dir GB_DIR=genomes/Bacteria/Mycoplasma_genitalium
+cd $RSAT/downloads/
+make one_genbank_dir NCBI_DIR=Bacteria/Mycoplasma_genitalium
 \end{verbatim}
+\end{footnotesize}
 
+We can now check the list of files that have been downloaded.
 
-\section{Parsing genomes from NCBI/Genbank}
+\begin{footnotesize}
+\begin{verbatim}
+## Downloading one directory from NCBI Genbank
+cd $RSAT/downloads/
+ls -l ftp.ncbi.nih.gov/genomes/Bacteria/Mycoplasma_genitalium/
+\end{verbatim}
+\end{footnotesize}
+
+\RSAT parsers only use the files with extension \file{.gbk.gz}.
+
+You can also adapt the commande to download (for example) all the
+Fungal genomes in a single run.
+
+\begin{footnotesize}
+\begin{verbatim}
+## Downloading one directory from NCBI Genbank
+cd $RSAT/downloads/
+make one_ncbi_dir NCBI_DIR=Fungi
+\end{verbatim}
+\end{footnotesize}
+
+You can do the same for Bacteria, of for the whole NCBI genome
+repository, but this requires sveral Gb of free disck space.
+
+\section{Parsing a genome from NCBI/Genbank}
 
 The program \program{parse-genbank.pl} extract genome information
 (sequence, gene location, ...) from Genbank flat files, and exports
 the result in a set of tab-delimited files.
 
+\begin{footnotesize}
 \begin{verbatim}
-
-
-
+parse-genbank.pl -v 1 \
+    -i $RSAT/downloads/ftp.ncbi.nih.gov/genomes/Bacteria/Mycoplasma_genitalium 
 \end{verbatim}
+\end{footnotesize}
+
+\section{Updating the configuration file}
+
+After having parsed the genome, you need to perform one additional
+operation in order for \RSAT to be aware of the new organism: update
+the configuration file.
+
+\begin{footnotesize}
+\begin{verbatim}
+install-organism -v 1 -org Mycoplasma_genitalium -task config
+
+## Check the last lines of the configuration file
+tail -15 $RSAT/data/supported_organisms.pl
+\end{verbatim}
+\end{footnotesize}
+
+From now on, the genome is considered as supported on your local \RSAT
+site. You can check this with the command \program{supported-organisms}. 
 
 
-\chapter{Parsing genomes from EMBL files}
+\section{Checking the start and stop codon composition}
+
+Once the organism is found in your configuration, you need to check
+whether sequences are retrieved properly. A good test for this is to
+retrieve all the start codons, and check whether they are made of the
+expected codons (mainly ATG, plus some alternative start codons like
+GTG or TTG for bacteria).
+
+The script \program{install-organism} allows you to perform some
+additional steps for checking the conformity of the newly installed
+genome. For example, we will compute the frequencies of all the start
+and stop codons, i order to check that gene locations were corectly
+parsed.
+
+\begin{footnotesize}
+\begin{verbatim}
+install-organism -v 1 -org Mycoplasma_genitalium -task start_stop
+
+ls -l $RSAT/data/genomes/Mycoplasma_genitalium/genome/*start*
+
+ls -l $RSAT/data/genomes/Mycoplasma_genitalium/genome/*stop*
+\end{verbatim}
+\end{footnotesize}
+
+
+The stop codons should be TAA, TAG or TGA, for any organism. For
+eucaryotes, all start codons should be ATG. For some procaryotes,
+alternative start codons (GTG, TGG) are found with some
+genome-specific frequency.
+
+\begin{footnotesize}
+\begin{verbatim}
+cd $RSAT/data/genomes/Mycoplasma_genitalium/genome/
+
+## A file containing all the start codons
+more Mycoplasma_genitalium_start_codons.wc
+
+## A file with trinucleotide frequencies in all start codons
+more Mycoplasma_genitalium_start_codon_frequencies
+
+## A file containing all the stop codons
+more Mycoplasma_genitalium_stop_codons.wc
+
+## A file with trinucleotide frequencies in all stop codons
+more Mycoplasma_genitalium_stop_codon_frequencies
+\end{verbatim}
+\end{footnotesize}
+
+
+\section{Calibrating oligonucleotide and dyad frequencies with \program{install-organisms}}
+
+The programs \program{oligo-analysis} and \program{dyad-analysis}
+require calibrated frequencies for the background models. These
+frequencies are calculated automatically with
+\program{install-organism}.
+
+\textbf{Warning: } this task may require several hours of computation,
+depending on the genome size. For the \RSAT server, we use a PC
+cluster to regularly install and update genomes.
+
+\begin{footnotesize}
+\begin{verbatim}
+install-organism -v 1 -org Debaryomyces_hansenii \
+    -task allup,oligos,dyads,upstream_freq,clean
+\end{verbatim}
+\end{footnotesize}
+
+\section{Installing a genome in your own account}
+
+In some cases, you might want to install a genome in your own account
+rather than in the \RSAT folder, in order to be able to analyze this
+genome before putting it in public access.
+
+
+In this chapter, we explain how to add support for an organism on your
+local configuration of \RSAT. This assumes that you have the complete
+sequence of a genome, and a table describing the predicted location of
+genes.
+
+First, prepare a directory where you will store the data for your
+organism. For example:
+
+\begin{footnotesize}
+\begin{verbatim}
+mkdir -p $HOME/rsat-add/data/Mygenus_myspecies/
+\end{verbatim}
+\end{footnotesize}
+
+
+One you have this information, start the program
+\program{install-organism}. You will be asked to enter the information
+needed for genome installation.
+
+\subsection{Updating your local configuration}
+
+
+\begin{itemize}
+\item Modify the local config file
+
+\item You need to define an environment variable called
+  RSA\_LOCAL\_CONFIG, containing the full path of the local config
+  file.
+
+\end{itemize}
+
+
+\section{Parsing genomes from EMBL files}
+
+\RSAT also includes a script \program{parse-embl.pl} to parse genomes
+from EMBL files. However, for practicaly reasons we generally parse
+genomes from the NCBI genome repository. Thus, unless you have a
+specific reason to parse EMBL files, you can skip this section.
 
 The program \program{parse-embl.pl} reads flat files in EMBL format,
 and exports genome sequences and features (CDS, tRNA, ...) in
@@ -235,7 +430,7 @@ Before parsing, you need to download the files in your account,
 \item Create a directory for storing the EMBL files. The last level of
   the directory should be the name of the organism, where spaces are
   replaced by underscores. Let us assume that you store them in
-  the directory \file{\$HOME/downloads/Debaryomyces\_hansenii}.
+  the directory \file{\$RSAT/downloads/Debaryomyces\_hansenii}.
 
 \item Download all the EMBL file for the selected organism. Save each
   name under its original name (the contig ID), followed by the
@@ -245,12 +440,15 @@ Before parsing, you need to download the files in your account,
 
 We will check the content of this directory.
 
+\begin{footnotesize}
 \begin{verbatim}
-ls -1 $HOME/downloads/Debaryomyces_hansenii
+ls -1 $RSAT/downloads/Debaryomyces_hansenii
 \end{verbatim}
+\end{footnotesize}
 
 On my computer, it gives the following result
 
+\begin{footnotesize}
 \begin{verbatim}
 CR382133.embl
 CR382134.embl
@@ -260,12 +458,15 @@ CR382137.embl
 CR382138.embl
 CR382139.embl
 \end{verbatim}
+\end{footnotesize}
 
 The following instruction will parse this genome.
 
+\begin{footnotesize}
 \begin{verbatim}
-parse-embl.pl -v 1 -i  $HOME/downloads/Debaryomyces_hansenii
+parse-embl.pl -v 1 -i  $RSAT/downloads/Debaryomyces_hansenii
 \end{verbatim}
+\end{footnotesize}
 
 If you do not specify the output directory, a directory is
 automatically created by combining the current date and the organism
@@ -273,16 +474,23 @@ name.  The verbose messages will indicate you the path of this
 directory, something like
 \file{\$HOME/parsed\_data/embl/20050309/Debaryomyces\_hanseni}.
 
+You can now perform all the steps above (updating the config file,
+installing oligo- and dyad frequencies, \ldots) as for genomes parsed
+from NCBI.
 
-\section{Installing a genome in the main \RSAT directory}
+
+
+\subsection{Installing a genome in the main \RSAT directory}
 
 Once the genome has been parsed, the simplest way to make it available
  for all the users is to install it in the \RSAT genome directory. You
  can already check the genomes installed in this directory.
 
+\begin{footnotesize}
 \begin{verbatim}
 ls -1 $RSAT/data/genomes/
 \end{verbatim}
+\end{footnotesize}
 
 There is one subdirectory per organism. For example, the yeast data is
  in \file{\$RSAT/data/genomes/Saccharomyces\_cerevisiae/}. This
@@ -293,6 +501,7 @@ We will now create a directory to store data about
  Debaryomyces\_hansenii, and transfer the newly parsed genome in this
  directory.
 
+\begin{footnotesize}
 \begin{verbatim}
 ## Create the directory
 mkdir -p $RSAT/data/genomes/Debaryomyces_hansenii/genome
@@ -304,129 +513,4 @@ mv $HOME/parsed_data/embl/20050309/Debaryomyces_hanseni/* \
 ## Check the transfer
 ls -ltr $RSAT/data/genomes/Debaryomyces_hansenii/genome
 \end{verbatim}
-
-\section{Updating the configuration file}
-
-The fact to add a directory is not sufficient for \RSAT to be aware of
-the new organism. For this, we must update the configuration file. We
-will also specify the default upstream sequence length. For a yeast
-(\textit{Debaryomyces hansenii}), a good guess is 800bp (this is at
-least the value I chose for \textit{Saccharomyces cerevisiae}).
-
-\begin{verbatim}
-install-organism -v 1 -org Debaryomyces_hansenii -task config -up_from -800
-
-## Check the last lines of the configuration file
-tail -15 $RSAT/data/supported_organisms.pl
-\end{verbatim}
-
-\chapter{Checking that the organism is installed properly}
-
-To check the installation, start by checking whether your newly
-installed now appears in the list of supported organisms.
-
-\begin{verbatim}
-supported-organisms
-\end{verbatim}
-
-Will give you a list of installed organisms.
-
-
-\section{Retrieving sequences}
-
-As soon as the configuration file has been updated, we should be in
-state to retrieve sequences for the newly installed genome. We will
-check this by retrieving a the start codons.
-
-\begin{verbatim}
-retrieve-seq -org Debaryomyces_hansenii -all -from 0 -to 2
-\end{verbatim}
-
-\section{Checking the composition of start codons}
-
-Once the organism is found in your configuration, you need to check
-whether sequences are retrieved properly. A good test for this is to
-retrieve all the start codons, and check whether they are made of the
-expected codons (mainly ATG, plus some alternative start codons like
-GTG or TTG for bacteria).
-
-We will now analyze the trinucleotide composition of the start
-codons. In principle, al of them should be ATG for an eucaryote
-organism.
-
-\begin{verbatim}
-retrieve-seq -org Debaryomyces_hansenii -all -from 0 -to 2 \
-    | oligo-analysis -l 3 -1str -v 1 -return occ,freq -sort
-\end{verbatim}
-
-\section{Checking the start and stop codons with \program{install-organisms}}
-
-The program \program{install-organisms} includes an option to
-automatically check all the start and stop codons from a parsed
-organism.
-
-\begin{verbatim}
-install-organism -v 1 -org Debaryomyces_hansenii -task start_stop
-\end{verbatim}
-
-You can then check the composition of the start and stop codons.
-
-\begin{verbatim}
-cd $RSAT/data/genomes/Debaryomyces_hansenii/genome/
-more Debaryomyces_hansenii_start_codon_frequencies
-more Debaryomyces_hansenii_stop_codon_frequencies
-\end{verbatim}
-
-The stop codons should be TAA, TAG or TGA, for any organism. For
-eucaryotes, all start codons should be ATG. For some procaryotes,
-alternative start codons (GTG, TGG) are frequent.
-
-\section{Calibrating oligonucleotide and dyad frequencies with \program{install-organisms}}
-
-The programs \program{oligo-analysis} and \program{dyad-analysis}
-  require calibrated frequencies for the background models. These
-  frequencies are calculated automatically with
-  \program{install-organism}.
-
-\textbf{Warning: } this task requires several hours of computation (a
-few hours for small bacterial genomes, and several days for the human
-genome).
-
-\begin{verbatim}
-install-organism -v 1 -org Debaryomyces_hansenii \
-    -task allup,oligos,dyads,upstream_freq,clean
-\end{verbatim}
-
-\section{Installing a genome in your own account}
-
-We describe below how this information should be formatted to be used
-in rsa-tools.
-
-In this chapter, we explain how to add support for an organism on your
-local configuration of \RSAT. This assumes that you have the complete
-sequence of a genome, and a table describing the predicted location of
-genes.
-
-First, prepare a directory where you will store the data for your
-organism. For example:
-
-\begin{verbatim}
-mkdir -p $HOME/rsat-add/data/Mygenus_myspecies/
-\end{verbatim}
-
-
-One you have this information, start the program
-\program{install-organism}. You will be asked to enter the information
-needed for genome installation.
-
-\section{Updating your local configuration}
-
-
-\begin{itemize}
-\item Modify the local config file
-
-\item You need to define an environment variable called
-  RSA\_LOCAL\_CONFIG, containing the full path of the local config
-  file.
-
-\end{itemize}
+\end{footnotesize}
