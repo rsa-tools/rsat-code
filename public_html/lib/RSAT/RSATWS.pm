@@ -26,6 +26,7 @@ Documentation for this module is at http://rsat.scmbb.ulb.ac.be/rsat/web_service
 
 =cut
 
+##########
 sub retrieve_seq {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -158,6 +159,7 @@ sub retrieve_seq_cmd {
     return $command;
 }
 
+##########
 sub retrieve_ensembl_seq {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -397,6 +399,7 @@ sub retrieve_ensembl_seq_cmd {
     return $command;
 }
 
+##########
 sub purge_seq {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -492,6 +495,7 @@ sub purge_seq_cmd {
     return $command;
 }
 
+##########
 sub oligo_analysis {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -619,7 +623,7 @@ sub oligo_analysis_cmd {
     return $command;
 }
 
-
+##########
 sub dyad_analysis {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -770,7 +774,7 @@ sub dyad_analysis_cmd {
     return $command;
 }
 
-
+##########
 sub pattern_assembly {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -799,7 +803,6 @@ sub pattern_assembly {
 					     'client' => $result});
     }
 }
-
 
 sub pattern_assembly_cmd {
   my ($self, %args) =@_;
@@ -884,8 +887,7 @@ sub pattern_assembly_cmd {
   return $command;
 }
 
-
-
+##########
 sub dna_pattern {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1033,6 +1035,7 @@ sub dna_pattern_cmd {
     return $command;
 }
 
+##########
 sub convert_features {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1098,6 +1101,7 @@ my ($self, %args) =@_;
     return $command;
 }
 
+##########
 sub feature_map {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1320,6 +1324,192 @@ sub feature_map_cmd {
     return $command;
 }
 
+
+
+##########
+sub footprint_discovery {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->footprint_discovery_cmd(%args);
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $result = `$command`;
+    my ($TMP_OUT, $tmp_outfile) = tempfile(footprint_discovery.XXXXXXXXXX, DIR => $TMP);
+    print $TMP_OUT $result;
+    close $TMP_OUT;
+    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.scmbb\.ulb\.ac\.be\/rsat/g;
+#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+sub footprint_discovery_cmd {
+    my ($self, %args) =@_;
+    if ($args{"genes"}) {
+	my $genes = $args{"genes"};
+	chomp $genes;
+	$tmp_infile = `mktemp $TMP/footprint_discovery.XXXXXXXXXX`;
+	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
+	print TMP_IN $genes;
+	close TMP_IN;
+    } elsif ($args{"tmp_infile"}) {
+	$tmp_infile = $args{"tmp_infile"};
+    }
+
+
+    ## List of query genes
+    my $query_ref = $args{"query"};
+    my $query = "";
+    if ($query_ref) {
+	my @query = @{$query_ref};
+	foreach $q (@query) {
+	    $q =~s/\'//g;
+	    $q =~s/\"//g;
+	}
+	$query = " -q '";
+	$query .= join "' -q '", @query;
+	$query .= "'";
+    }
+
+
+    my $verbosity = $args{"verbosity"};
+    my $all_genes = $args{"all_genes"};
+    my $max_genes = $args{"max_genes"};
+    my $output_prefix = $args{"output_prefix"};
+    my $sep_genes = $args{"sep_genes"};
+    my $organism = $args{"organism"};
+    my $taxon = $args{"taxon"};
+    my $index = $args{"index"};
+    my $lth = $args{"lth"};
+    my $uth = $args{"uth"};
+    my $stats = $args{"stats"};
+    my $to_matrix = $args{"to_matrix"};
+    my $bg_model = $args{"bg_model"};
+    my $no_filter = $args{"no_filter"};
+    my $infer_operons = $args{"infer_operons"};
+    my $dist_thr = $args{"dist_thr"};
+
+    my $command = "$SCRIPTS/footprint-discovery";
+
+    if ($verbosity) {
+      $verbosity =~ s/\'//g;
+      $verbosity =~ s/\"//g;
+      $command .= " -v '".$verbosity."'";
+    }
+
+    if ($all_genes == 1) {
+      $command .= " -all_genes";
+    }
+
+    if ($max_genes =~ /\d/) {
+      $max_genes =~ s/\'//g;
+      $max_genes =~ s/\"//g;
+      $command .= " -max_genes '".$max_genes."'";
+    }
+
+    if ($output_prefix) {
+      $output_prefix =~ s/\'//g;
+      $output_prefix =~ s/\"//g;
+      $command .= " -o '".$output_prefix."'";
+    }
+
+    if ($query) {
+	$command .= $query;
+    }
+
+    if ($sep_genes == 1) {
+      $command .= " -sep_genes";
+    }
+
+    if ($organism) {
+      $organism =~ s/\'//g;
+      $organism =~ s/\"//g;
+      $command .= " -org '".$organism."'";
+    }
+
+
+    if ($taxon) {
+      $taxon =~ s/\'//g;
+      $taxon =~ s/\"//g;
+      $command .= " -taxon '".$taxon."'";
+    }
+
+    if ($index == 1) {
+      $command .= " -index";
+    }
+
+    if ($lth) {
+      $lth =~ s/\'//g;
+      $lth =~ s/\"//g;
+      $command .= " -lth '".$_lth[0]."' '".$_lth[1]."'";
+    }
+
+    if ($uth) {
+      $uth =~ s/\'//g;
+      $uth =~ s/\"//g;
+      @_uth = split / /, $uth;
+      $command .= " -uth '".$_uth[0]."' '".$_uth[1]."'";
+    }
+
+    if ($stats) {
+      $stats =~ s/\'//g;
+      $stats =~ s/\"//g;
+      $command .= " -return '".$stats."'";
+    }
+
+    if ($to_matrix == 1) {
+      $command .= " -to_matrix";
+    }
+
+    if ($bg_model) {
+	if ($bg_model eq "taxfreq" || $bg_model eq "monads") {
+	    $command .= " -bg_model ".$bg_model;
+	} else {
+	    die "Orientation must be equal to either 'taxfreq' or 'monad'";
+	}
+    }
+
+    if ($no_filter == 1) {
+      $command .= " -no_filter";
+    }
+
+    if ($infer_operons == 1) {
+      $command .= " -infer_operons";
+    }
+
+    if ($dist_thr =~ /\d/) {
+      $dist_thr =~ s/\'//g;
+      $dist_thr =~ s/\"//g;
+      $command .= " -dist_thr '".$dist_thr."'";
+    }
+
+    if ($tmp_infile) {
+	chomp $tmp_infile;
+	$command .= " -i '".$tmp_infile."'";
+    }
+
+    return $command;
+}
+
+
+
+
+##########
 sub gene_info {
     my ($self, $args_ref) = @_;
 
@@ -1397,6 +1587,7 @@ sub gene_info_cmd {
   return $command;
 }
 
+##########
 sub supported_organisms {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1446,14 +1637,7 @@ sub supported_organisms_cmd {
   return $command;
 }
 
-
-
-
-
-
-
-
-
+##########
 sub text_to_html {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1517,21 +1701,85 @@ sub text_to_html_cmd {
   return $command;
 }
 
+##########
+sub roc_stats {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->roc_stats_cmd(%args);
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/roc_stats.XXXXXXXXXX`;
+    chomp $tmp_outfile;
+    system("rm $tmp_outfile");
+    $tmp_outfile .= ".html";
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => {'command' => $command, 
+					     'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => {'command' => $command,
+					     'client' => $result});
+    } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					     'command' => $command, 
+					     'client' => $result});
+    }
+}
 
+sub roc_stats_cmd {
+  my ($self, %args) =@_;
 
+  my $command = "$SCRIPTS/roc-stats2";
 
+  if ($args{inputfile}) {
+   my $input_file = $args{inputfile};
+   chomp $input_file;
+   my $tmp_input = `mktemp $TMP/roc-stats-input.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
+   print TMP_IN $input_file;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  if ($args{scol}) {
+      $args{scol} =~ s/\'//g;
+      $args{scol} =~ s/\"//g;
+      $command .= " -scol '".$args{scol}."'";
+  }
+  if ($args{lcol}) {
+      $args{lcol} =~ s/\'//g;
+      $args{lcol} =~ s/\"//g;
+      $command .= " -lcol '".$args{lcol}."'";
+  }
+  if ($args{status}) {
+      $args{status} =~ s/\'//g;
+      $args{status} =~ s/\"//g;
+      $status = $args{status};
+      my @statuscp = split (/ /, $status);
+      if (scalar(@statuscp) % 2 ==0) {
+        for (my $i = 0; $i < scalar(@statuscp)-1; $i+=2) {
+          $command .= " -status '".$statuscp[$i]." ".$statuscp[$i+1]."'";
+        }
+      }
+  }
+  if ($args{total}) {
+      $command .= " -total";
+  }
+  return $command;
+}
 
-
-
-
-
-
-
-
-
-
-
-
+##########
 sub classfreq {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1619,7 +1867,7 @@ sub classfreq_cmd {
   return $command;
 }
 
-
+##########
 sub convert_classes {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1723,17 +1971,7 @@ sub convert_classes_cmd {
   return $command;
 }
 
-
-
-
-
-
-
-
-
-
-
-
+##########
 sub contingency_stats {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1825,16 +2063,7 @@ sub contingency_stats_cmd {
   return $command;
 }
 
-
-
-
-
-
-
-
-
-
-
+##########
 sub contingency_table {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1911,8 +2140,7 @@ sub contingency_table_cmd {
   return $command;
 }
 
-
-
+##########
 sub xygraph {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1953,7 +2181,6 @@ sub xygraph {
 					       'client' => $result});
     }
 }
-
 
 sub xygraph_cmd {
   my ($self, %args) =@_;
@@ -2077,10 +2304,7 @@ sub xygraph_cmd {
   return $command;
 }
 
-
-
-
-
+##########
 sub convert_seq {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -2144,6 +2368,7 @@ sub convert_seq_cmd {
   return $command;
 }
 
+##########
 sub compare_classes {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -2211,8 +2436,6 @@ sub compare_classes_cmd {
   my $upper_threshold_value_list = $args{"upper_threshold_value"};
   my $lower_threshold_field_list = $args{"lower_threshold_field"};
   my $lower_threshold_value_list = $args{"lower_threshold_value"};
-  
-  
 
   my $sort = $args{"sort"};
   my $distinct = $args{"distinct"};
@@ -2311,6 +2534,7 @@ sub compare_classes_cmd {
   return $command;
 }
 
+##########
 sub matrix_scan {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -2494,6 +2718,7 @@ sub matrix_scan_cmd {
     return $command;
 }
 
+##########
 sub matrix_distrib {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -2606,6 +2831,7 @@ sub matrix_distrib_cmd {
     return $command;
 }
 
+##########
 sub random_seq {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -2726,7 +2952,9 @@ sub random_seq_cmd {
 
   return $command;
 }
+
 # RSA GRAPH TOOLS
+##########
 sub convert_graph {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -2856,11 +3084,7 @@ sub convert_graph_cmd {
   return $command;
 }
 
-
-
-
-
-
+##########
 sub alter_graph {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -2994,18 +3218,7 @@ sub alter_graph_cmd {
   return $command;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+##########
 sub display_graph {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -3121,6 +3334,7 @@ sub display_graph_cmd {
   return $command;
 }
 
+##########
 sub graph_get_clusters {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -3228,6 +3442,7 @@ sub graph_get_clusters_cmd {
   return $command;
 }
 
+##########
 sub graph_node_degree {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -3319,8 +3534,7 @@ sub graph_node_degree_cmd {
   return $command;
 }
 
-
-
+##########
 sub graph_cluster_membership {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -3331,7 +3545,7 @@ sub graph_cluster_membership {
     my $command = $self->graph_cluster_membership_cmd(%args);
     my $result = `$command`;
     my $stderr = `$command 2>&1 1>/dev/null`;
-    if ($stderr !~ /Info/ || $stderr !~ /Warning/) {
+    if ($stderr !~ /INFO/ && $stderr !~ /WARNING/) {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
     my $tmp_outfile = `mktemp $TMP/graph-cluster-membership-out.XXXXXXXXXX`;
@@ -3427,24 +3641,7 @@ sub graph_cluster_membership_cmd {
   return $command;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+##########
 sub compare_graphs {
     ## In order to recuperate the statistics calculated
     ## by compare-graphs, I place all the standard error
@@ -3584,6 +3781,7 @@ sub compare_graphs_cmd {
   return $command;
 }
 
+##########
 sub graph_neighbours {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -3688,7 +3886,7 @@ sub graph_neighbours_cmd {
   return $command;
 }
 
-
+##########
 sub mcl {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -3759,7 +3957,7 @@ sub mcl_cmd {
   return $command;
 }
 
-
+##########
 sub random_graph {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
