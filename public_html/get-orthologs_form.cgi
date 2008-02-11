@@ -84,7 +84,7 @@ print "<hr/>\n";
 ## Return fields + thresholds
 print "<hr/>\n";
 
-print "<B><A HREF='help.get-organisms.html#return'>Return fields</A>&nbsp;</B>\n";
+print "<B><A HREF='help.get-orthologs.html#return'>Return fields</A>&nbsp;</B>\n";
 print "<ul>\n";
 print "<table cellpadding=3>\n";
 print ("<tr>",
@@ -99,7 +99,7 @@ foreach my $field (@output_fields) {
     print $query->checkbox(-name=>$return_field,
 			   -checked=>$default{$return_field},
 			   -label=>' ');
-    print join "", "<a href='help.get-organisms.html#",$field,"'>", $field_description{$field}, "</a>\n";
+    print join "", "<a href='help.get-orthologs.html#",$field,"'>", $field_description{$field}, "</a>\n";
     print "</th>\n";
     if (($field eq "query_name")||($field eq "query_organism")){
 	print "<td></td>";

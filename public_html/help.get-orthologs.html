@@ -1,0 +1,319 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>get-orthologs manual</title>
+<link rel="stylesheet" href="main.css" type="text/css" />
+</head>
+
+<body class="info">
+
+
+<center>
+<h2><A HREF="RSAT_home.cgi">RSA-tools</A> - <a href=get-orthologs_form.cgi>get-orthologs</a> manual</h2>
+</center>
+
+<p><a name="__index__"></a></p>
+<!-- INDEX BEGIN -->
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+	<li><a href="#category">CATEGORY</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<li><a href="#input_format">INPUT FORMAT</a></li>
+	<li><a href="#output_format">OUTPUT FORMAT</a></li>
+	<li><a href="#orthology_criteria">ORTHOLOGY CRITERIA</a></li>
+	<li><a href="#options">OPTIONS</a></li>
+	<li><a href="#examples">EXAMPLES</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+<!-- INDEX END -->
+
+<hr />
+<p>
+</p>
+<hr />
+<h1><a name="name">NAME</a></h1>
+<p>get-orthologs</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Given a gene or a list of genes from a query organism, and a reference taxon,
+this programs returns the orthologs of the query <code>gene(s)</code> in all the organisms
+belonging to the reference taxon.</p>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<dl>
+<dt><strong><a name="item_rekins_40scmbb_2eulb_2eac_2ebe"><a href="mailto:rekins@scmbb.ulb.ac.be">rekins@scmbb.ulb.ac.be</a></a></strong><br />
+</dt>
+<dt><strong><a name="item_jvanheld_40scmbb_2eulb_2eac_2ebe"><a href="mailto:jvanheld@scmbb.ulb.ac.be">jvanheld@scmbb.ulb.ac.be</a></a></strong><br />
+</dt>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="category">CATEGORY</a></h1>
+<p>comparative genomics</p>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<p>get-orthologs -org query_organism -q GENE1 -q GENE2 ... -taxon ref_taxon
+    [other options]</p>
+<p>
+</p>
+<hr />
+<h1><a name="input_format">INPUT FORMAT</a></h1>
+<p>Query genes can be directly entered on the command line (command -q) or in an
+input file.</p>
+<p>The first word of each row of input file is considered as a query. Any
+additional information on the same row is ignored.</p>
+<p>
+</p>
+<hr />
+<h1><a name="output_format">OUTPUT FORMAT</a></h1>
+<p>A tab-separated file with two (or more) columns. Each row of the output file
+describes one similarity between a query gene and another gene (orhtolog or
+paralog, depending on the parameters).</p>
+<p>The first column indicates the ``hit'' gene (the one identified by BLAST
+as similar to the query), the second column gives the reference
+organism (the organism in which the BLAST search was performed). The
+third column inciates the ID of the query gene.</p>
+<p>Additional columns (percentage of identity, hit rank, e_value, ...)
+can be specified with the option -return.</p>
+<ol>
+<li><strong><a name="item__29_id_of_the_ortholog_gene_2e"> ID of the ortholog gene.</a></strong><br />
+</li>
+<li><strong><a name="item__29_name_of_the_reference_organism_2e"> Name of the reference organism.</a></strong><br />
+</li>
+<li><strong><a name="item__29_id_of_the_query_gene_2e"> ID of the query gene.</a></strong><br />
+</li>
+<li><strong><a name="item__29_e_2dvalue"> E-value</a></strong><br />
+</li>
+<li><strong><a name="item_reference"> rank	query -&gt; reference rank</a></strong><br />
+</li>
+Rank of this reference (target) gene among all those matching the same
+query gene for this pair of organisms.
+<p></p>
+<li><strong><a name="item__29_s_rank_reference__3c_2d_query_rank"> s_rank	reference &lt;- query rank</a></strong><br />
+</li>
+Rank of this query gene among all those matching the same reference
+(target) gene for this pair of organisms.
+<p></p></ol>
+<p>
+</p>
+<hr />
+<h1><a name="orthology_criteria">ORTHOLOGY CRITERIA</a></h1>
+<p>Actually, this program allows to retrieve orthologs, but also paralogs.</p>
+<p>The detection of pairwise similarities is based on a bidirectional BLAST of
+each genome against each other. During the detection phase, multiple hits for
+a single gene are allowed, and the user can decide to filter them out or
+not.</p>
+<p>
+</p>
+<hr />
+<h1><a name="options">OPTIONS</a></h1>
+<dl>
+<dt><strong><a name="item__2dv__23"><strong>-v #</strong></a></strong><br />
+</dt>
+<dd>
+Level of verbosity (detail in the warning messages during execution)
+</dd>
+<p></p>
+<dt><strong><a name="item__2dh"><strong>-h</strong></a></strong><br />
+</dt>
+<dd>
+Display full help message
+</dd>
+<p></p>
+<dt><strong><a name="item__2dhelp"><strong>-help</strong></a></strong><br />
+</dt>
+<dd>
+Same as -h
+</dd>
+<p></p>
+<dt><strong><a name="item__2di_inputfile"><strong>-i inputfile</strong></a></strong><br />
+</dt>
+<dd>
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+</dd>
+<p></p>
+<dt><strong><a name="item__2dall"><strong>-all</strong></a></strong><br />
+</dt>
+<dd>
+Get orthologs for all the genes of the query organism. This option is
+particularly convenient to extract phylogenetic profiles.
+</dd>
+<p></p>
+<dt><strong><a name="item__2do_outputfile"><strong>-o outputfile</strong></a></strong><br />
+</dt>
+<dd>
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+</dd>
+<p></p>
+<dt><strong><a name="item__2dorg_query_organism"><strong>-org query_organism</strong></a></strong><br />
+</dt>
+<dd>
+Organisms to whih the query <code>gene(s)</code> belong.
+</dd>
+<p></p>
+<dt><strong><a name="item__2dq_query_gene"><strong>-q query_gene</strong></a></strong><br />
+</dt>
+<dd>
+Query gene. The query can be either the gene identifier, or any supported name
+(synonyms, cross-references).
+</dd>
+<dd>
+<p>This option can be used iteratively on the same command to specify multiple
+query genes.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item__2dtaxon_ref_taxon"><strong>-taxon ref_taxon</strong></a></strong><br />
+</dt>
+<dd>
+Reference taxon. Orthologs are returned for each supported organism belonging
+to the reference taxon.
+</dd>
+<p></p>
+<dt><strong><a name="item__2dlth_field_lower_threshold"><strong>-lth field lower_threshold</strong></a></strong><br />
+</dt>
+<dd>
+Lower threshold value on the specified field.
+</dd>
+<p></p>
+<dt><strong><a name="item__2duth_field_upper_threshold"><strong>-uth field upper_threshold</strong></a></strong><br />
+</dt>
+<dd>
+Upper threshold value on the specified field.
+</dd>
+<dd>
+<p>Supported threshold values: ali_len,mismat,gap_open,q_start,q_end,s_start,s_end,e_value,bit_sc,rank,s_rank</p>
+</dd>
+<p></p>
+<dt><strong><a name="item__2dreturn_output_fields"><strong>-return output_fields</strong></a></strong><br />
+</dt>
+<dd>
+Output field(s).
+</dd>
+<dd>
+<p>By default, the output is a two-column file indicating the ID of the gene
+identified as similar to the query gene, and the name of the reference
+organism.</p>
+</dd>
+<dd>
+<p>The option -return can be used to specify additional output fields.</p>
+</dd>
+<dd>
+<p>Supported fields:</p>
+</dd>
+<dl>
+<dt><strong><a name="item_ref_id">ref_id</a></strong><br />
+</dt>
+<dd>
+ID of the reference (target) gene
+</dd>
+<p></p>
+<dt><strong><a name="item_ref_organism">ref_organism</a></strong><br />
+</dt>
+<dd>
+Name of the reference (target) organism
+</dd>
+<p></p>
+<dt><strong><a name="item_query_id">query_id</a></strong><br />
+</dt>
+<dd>
+ID of the query gene
+</dd>
+<p></p>
+<dt><strong><a name="item_query_organism">query_organism</a></strong><br />
+</dt>
+<dd>
+Name of the query organism
+</dd>
+<p></p>
+<dt><strong><a name="item_ident">ident</a></strong><br />
+</dt>
+<dd>
+Percent of identity (a number between 0 and 100)
+</dd>
+<p></p>
+<dt><strong><a name="item_ali_len">ali_len</a></strong><br />
+</dt>
+<dd>
+Alignment lengths (in residues)
+</dd>
+<p></p>
+<dt><strong><a name="item_mismat">mismat</a></strong><br />
+</dt>
+<dd>
+Number of mismatches
+</dd>
+<p></p>
+<dt><strong><a name="item_gap_open">gap_open</a></strong><br />
+</dt>
+<dd>
+Number of gap openings
+</dd>
+<p></p>
+<dt><strong><a name="item_e_value">e_value</a></strong><br />
+</dt>
+<dd>
+E-value (expected number of false positives)
+</dd>
+<p></p>
+<dt><strong><a name="item_bit_sc">bit_sc</a></strong><br />
+</dt>
+<dd>
+Bit score
+</dd>
+<p></p>
+<dt><strong><a name="item_rank">rank</a></strong><br />
+</dt>
+<dd>
+Rank
+</dd>
+<p></p>
+<dt><strong><a name="item_s_rank">s_rank</a></strong><br />
+</dt>
+<dd>
+Source rank (rank of the hit for the query organism).
+</dd>
+</dl>
+<p>The option -return can be used iteratively on the same command line to specify
+several output fields. Another way to specify multiple output fields is to
+enter them separated by commas.</p>
+<p>Examples:</p>
+<pre>
+    -return query_id -return e_value -return rank</pre>
+<pre>
+    -return query_id,e_value,rank</pre>
+<dt><strong><a name="item__2dnogrep"><strong>-nogrep</strong></a></strong><br />
+</dt>
+<dd>
+Disable the pre-filtering with grep. This pre-filtering accelerates
+the selection of hits, but some grep versions do not support the -E
+option. If this is the case on your operating system, you can still
+obtain the correct results by inactivating the grep filter.
+</dd>
+<p></p></dl>
+<p>
+</p>
+<hr />
+<h1><a name="examples_getorthologs_q_lexa_org_escherichia_coli_k12_taxon_gammaproteobacteria">EXAMPLES</a></h1>
+<pre>
+    get-orthologs -q lexA -org Escherichia_coli_K12 -taxon Gammaproteobacteria
+</pre>
+<p>
+</p>
+<hr />
+
+</body>
+
+</html>
