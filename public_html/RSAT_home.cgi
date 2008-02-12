@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.27 2008/02/12 20:14:13 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.28 2008/02/12 20:19:49 rsat Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -36,7 +36,7 @@ print <<EndText;
     
     <td align=center valign = top>
     <a href="http://www.bigre.ulb.ac.be" target=_blank>
-    <img src="images/BiGRe_logo.png" alt="images/logo_ULB.jpg" border=1 height=75>
+    <img src="images/bigre_logo.png" alt="BiGRE lab" border=1 height=75>
     <br>
     <font color="#0000dd" size=-2>
     BiGRe</a> - <a href="http://www.ulb.ac.be" target=_blank>ULB</a>
@@ -49,7 +49,7 @@ print <<EndText;
     
     
     <td align=center valign = top width="160">
-    <a href="http://embnet.ccg.unam.mx/=_blank>
+    <a target=_blank href="http://embnet.ccg.unam.mx/">
     <img src="images/lablogo.gif" alt="lab logo" border=0 height=48 width=75></a>
     <br>
     <font color="#006600" size=-2>LABORATORIO DE BIOLOGIA COMPUTACIONAL
