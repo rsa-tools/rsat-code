@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.26 2008/01/24 20:48:11 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.27 2008/02/12 20:14:13 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -35,10 +35,11 @@ print <<EndText;
     
     
     <td align=center valign = top>
-    <img src="images/BiGRe_icon_580x484.png" alt="images/logo_ULB.jpg" border=0 height=75>
+    <a href="http://www.bigre.ulb.ac.be" target=_blank>
+    <img src="images/BiGRe_logo.png" alt="images/logo_ULB.jpg" border=1 height=75>
     <br>
     <font color="#0000dd" size=-2>
-    <a href="http://www.bigre.ulb.ac.be" target=_blank>BiGRe</a> - <a href="http://www.ulb.ac.be" target=_blank>ULB</a>
+    BiGRe</a> - <a href="http://www.ulb.ac.be" target=_blank>ULB</a>
     </font>
     </td>
     
@@ -48,7 +49,7 @@ print <<EndText;
     
     
     <td align=center valign = top width="160">
-    <a href="http://embnet.ccg.unam.mx/Computational_Genomics/" target=_blank>
+    <a href="http://embnet.ccg.unam.mx/=_blank>
     <img src="images/lablogo.gif" alt="lab logo" border=0 height=48 width=75></a>
     <br>
     <font color="#006600" size=-2>LABORATORIO DE BIOLOGIA COMPUTACIONAL
