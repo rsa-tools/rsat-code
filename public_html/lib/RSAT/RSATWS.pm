@@ -14,10 +14,12 @@ my $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||;
 my $SCRIPTS = $RSAT.'/perl-scripts';
 my $TMP = $RSAT.'/public_html/tmp';
 
-if ($0 =~ /([^(\/)]+)$/) {
-  push (@INC, "$`lib/");
-}
+#if ($0 =~ /([^(\/)]+)$/) {
+#  push (@INC, "$`lib/");
+#}
 
+#unshift (@INC, "/home/rsat/rsa-tools/perl-scripts/lib/");
+unshift (@INC, "../../perl-scripts/lib/");
 #require "RSA.lib";
 #&UpdateLogFile("","","WS");
 
@@ -2584,145 +2586,171 @@ sub matrix_scan_cmd {
     close TMP_IN;
   }
 
-    #idem
-    if ($args{"matrix_file"}) {
+  #idem
+  if ($args{"matrix_file"}) {
       my $input_matrix = $args{"matrix_file"};
       chomp $input_matrix;
       $tmp_input_matrix = `mktemp $TMP/matscan-matrix_file.XXXXXXXXXX`;
       open TMP_IN, ">".$tmp_input_matrix or die "cannot open temp file ".$tmp_input_matrix."\n";
       print TMP_IN $input_matrix;
       close TMP_IN;
-    }
+  }
 
-    if ($args{"matrix_list"}) {
+  if ($args{"matrix_list"}) {
       my $input_list = $args{"matrix_list"};
       chomp $input_list;
       $tmp_input_list = `mktemp $TMP/matscan-matrix_list.XXXXXXXXXX`;
       open TMP_IN, ">".$tmp_input_list or die "cannot open temp file ".$tmp_input_list."\n";
       print TMP_IN $input_list;
       close TMP_IN;
-    }
+  }
 
-    if ($args{"background"}) {
+  if ($args{"background"}) {
       my $background = $args{"background"};
       chomp $background;
       $tmp_background = `mktemp $TMP/matscan-background.XXXXXXXXXX`;
       open TMP_IN, ">".$tmp_background or die "cannot open temp file ".$tmp_background ."\n";
       print TMP_IN $background;
       close TMP_IN; 
-    }
+  }
 
-    my $matrix_format = $args{"matrix_format"}; 
-    my $top_matrices = $args{"top_matrices"};
-    my $background_input = $args{"background_input"};
-    my $background_window = $args{"background_window"};
-    my $markov = $args{"markov"};
-    my $background_pseudo = $args{"background_pseudo"};
-    my $return_fields = $args{"return_fields"};
-    my $upper_threshold_field = $args{"upper_threshold_field"};
-    my $upper_threshold_value = $args{"upper_threshold_value"};
-    my $lower_threshold_field = $args{"lower_threshold_field"};
-    my $lower_threshold_value = $args{"lower_threshold_value"};
-    my $both_strand = $args{"both_strand"};
-    my $single_strand = $args{"single_strand"};
+  my $matrix_format = $args{"matrix_format"}; 
+  my $top_matrices = $args{"top_matrices"};
+  my $background_input = $args{"background_input"};
+  my $background_window = $args{"background_window"};
+  my $markov = $args{"markov"};
+  my $background_pseudo = $args{"background_pseudo"};
+  my $return_fields = $args{"return_fields"};
+  my $upper_threshold_field = $args{"upper_threshold_field"};
+  my $upper_threshold_value = $args{"upper_threshold_value"};
+  my $lower_threshold_field = $args{"lower_threshold_field"};
+  my $lower_threshold_value = $args{"lower_threshold_value"};
+  my $both_strand = $args{"both_strand"};
+  my $single_strand = $args{"single_strand"};
+  my $verbosity = $args{"verbosity"};
+  my $origin = $args{"origin"};
+  my $decimals = $args{"decimals"};
+  my $crer_ids = $args{"crer_ids"};
 
-    my $command = "$SCRIPTS/matrix-scan";
+  my $command = "$SCRIPTS/matrix-scan";
 
  #pas d'utilite directe de "nettoyage" de la commande sauf si l'on rajoute un elsif...
-    if ($tmp_sequence_file) {
+  if ($tmp_sequence_file) {
       $tmp_sequence_file =~ s/\'//g;
       $tmp_sequence_file =~ s/\"//g;
       chomp $tmp_sequence_file;
       $command .= " -i '".$tmp_sequence_file."'";
-    }
+  }
 
-    if ($tmp_input_matrix) {
+  if ($tmp_input_matrix) {
       $tmp_input_matrix =~ s/\'//g;
       $tmp_input_matrix =~ s/\"//g;
       chomp $tmp_input_matrix;
       $command .= " -m '".$tmp_input_matrix."'";
-    }
+  }
 
-    if ($matrix_format) {
+  if ($matrix_format) {
       $matrix_format =~ s/\'//g;
       $matrix_format=~ s/\"//g;
       chomp $matrix_format;
       $command .= " -matrix_format '".$matrix_format."'";
-    }
+  }
 
-    if ($tmp_input_list) {
+  if ($tmp_input_list) {
       $tmp_input_list =~ s/\'//g;
       $tmp_input_list =~ s/\"//g;
       $command .= " -mlist '".$tmp_input_list."'";
-    }
+  }
 
-    if ($top_matrices ) {
+  if ($top_matrices ) {
       $top_matrices  =~ s/\'//g;
       $top_matrices  =~ s/\"//g;
       $command .= " -top_matrices '".$top_matrices."'";
-    }
+  }
 
-    if ($tmp_background) {
+  if ($tmp_background) {
       $tmp_background  =~ s/\'//g;
       $tmp_background  =~ s/\"//g;
       chomp $tmp_background;
       $command .= " -bgfile '".$tmp_background."'";
-    }
+  }
 
-     if ($background_input == 1 ) {
+  if ($background_input == 1 ) {
       $command .= " -bginput";
-    }
+  }
 
-     if ($background_window) {
+  if ($background_window) {
       $background_window  =~ s/\'//g;
       $background_window=~ s/\"//g;
       $command .= " -window '".$background_window."'";
-    }
+  }
 
-     if ($markov =~ /\d/) {
+  if ($markov =~ /\d/) {
       $markov  =~ s/\'//g;
       $markov =~ s/\"//g;
       $command .= " -markov '".$markov."'";
-    }
+  }
 
-     if ($background_pseudo) {
+  if ($background_pseudo) {
       $background_pseudo =~ s/\'//g;
       $background_pseudo =~ s/\"//g;
       $command .= " -bg_pseudo '".$background_pseudo."'";
-    }
+  }
 
-     if ($return_fields) {
+  if ($return_fields) {
       $return_fields =~ s/\'//g;
       $return_fields =~ s/\"//g;
       $command .= " -return '".$return_fields."'";
-    }
+  }
 
-    if ($upper_threshold_field && $upper_threshold_value =~ /\d/)  {
+  if ($upper_threshold_field && $upper_threshold_value =~ /\d/)  {
       $upper_threshold_field =~ s/\'//g;
       $upper_threshold_field =~ s/\"//g;
       $upper_threshold_value =~ s/\'//g;
       $upper_threshold_value =~ s/\"//g;
       $command .= " -uth '".$upper_threshold_field."' '".$upper_threshold_value."'";
-    }
+  }
 
-    if ($lower_threshold_field && $lower_threshold_value =~ /\d/) {
+  if ($lower_threshold_field && $lower_threshold_value =~ /\d/) {
       $lower_threshold_field =~ s/\'//g;
       $lower_threshold_field =~ s/\"//g;
       $lower_threshold_value =~ s/\'//g;
       $lower_threshold_value =~ s/\"//g;
 
       $command .= " -lth '".$lower_threshold_field."' '".$lower_threshold_value."'";
-    }
+  }
 
-    if ($both_strand  == 1) {
+  if ($both_strand  == 1) {
       $command .= " -2str";
-    }
+  }
 
-    if ($single_strand == 1) {
+  if ($single_strand == 1) {
        $command .= " -1str";
-    }
+   }
 
-    return $command;
+  if ($verbosity =~ /\d/) {
+      $verbosity =~ s/\'//g;
+      $verbosity =~ s/\"//g;
+      $command .= " -v '".$verbosity."'";
+  }
+
+  if ($origin =~ /\d/) {
+      $origin =~ s/\'//g;
+      $origin =~ s/\"//g;
+      $command .= " -origin '".$origin."'";
+  }
+
+  if ($decimals =~ /\d/) {
+      $decimals =~ s/\'//g;
+      $decimals =~ s/\"//g;
+      $command .= " -decimals '".$decimals."'";
+  }
+
+  if ($crer_ids == 1) {
+      $command .= " -crer_ids";
+  }
+
+  return $command;
 }
 
 ##########
