@@ -1623,6 +1623,31 @@ I(Q,R), IC, P(QR), P(Q|R), P(R|Q), P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R)
               <xsd:documentation>Single-strand search for DNA sequences.</xsd:documentation>
             </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="verbosity" type="xsd:float" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Level of verbosity (detail in the warning
+	messages during execution)</xsd:documentation>
+            </xsd:annotation>
+	      </xsd:element>
+	        <xsd:element name="origin" type="xsd:float" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Define pos as the origin for the calculation
+	of positions.</xsd:documentation>
+            </xsd:annotation>
+	      </xsd:element>
+	        <xsd:element name="decimals" type="xsd:float" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Number of decimals displayed for the weight
+	score.</xsd:documentation>
+            </xsd:annotation>
+	      </xsd:element>
+	        <xsd:element name="crer_ids" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Assign one separate feature ID per CRER. This
+	option is convenient to distinguish separate
+	CRERs.</xsd:documentation>
+            </xsd:annotation>
+	      </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
 
