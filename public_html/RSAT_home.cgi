@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.28 2008/02/12 20:19:49 rsat Exp $
+# $Id: RSAT_home.cgi,v 1.29 2008/02/12 20:26:10 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -50,9 +50,9 @@ print <<EndText;
     
     <td align=center valign = top width="160">
     <a target=_blank href="http://embnet.ccg.unam.mx/">
-    <img src="images/lablogo.gif" alt="lab logo" border=0 height=48 width=75></a>
+    <img src="images/ccg_logo_lr.jpg" alt="CCG" border=0  width=75></a>
     <br>
-    <font color="#006600" size=-2>LABORATORIO DE BIOLOGIA COMPUTACIONAL
+    <font color="#006600" size=-2>Laboratorio de Biologia Computacional<br>UNAM/CCG
     </FONT>
     </TD>
     
