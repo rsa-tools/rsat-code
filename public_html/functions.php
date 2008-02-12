@@ -66,8 +66,11 @@
 <?php
     Function storeFile($file) {
       $fh = fopen($file, 'r');
-      $theData = fread($fh, filesize($file));
-      fclose($fh);
+      $theData = "";
+      if (filesize($file) > 0) {
+        $theData = fread($fh, filesize($file));
+        fclose($fh);
+      }
       return $theData;
   }
 ?>
