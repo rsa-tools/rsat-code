@@ -52,7 +52,7 @@ weighting scheme and compare the results.
   In the right panel, you should now see a form entitled
   ``Pathfinder''.
 
-\item Click on the button \option{DEMO}.
+\item Click on the button \option{DEMO1}.
 
   The form is now filled with the BioCyc demo network, and the parameters have been
   set up to their appropriate value for the demonstration. At the top
@@ -62,7 +62,7 @@ weighting scheme and compare the results.
 \item Click on the button \option{GO}.
 
   The computation should take no more than two minutes. When it is finished, a link to the results should appear.
-  
+
 \item Click on the link to see the full result file.
 
   It lists a table of all paths found for the requested rank number (5 by default). You can also specify another type of output, for instance a network made up of all paths found. Vary the parameter \option{Output type} for this.
@@ -74,11 +74,11 @@ To see how results change with modified weight, you can repeat steps 1 and 2. Be
 % to be skipped for web tutorial
 \subsection{Protocol for the command-line tools}
 
-If you have installed a stand-alone version of the NeAT distribution (Graphtools), you can use the 
-program Pathfinder on the command-line. This requires to be familiar with the 
+If you have installed a stand-alone version of the NeAT distribution (Graphtools), you can use the
+program Pathfinder on the command-line. This requires to be familiar with the
 Unix shell interface. See the Readme of Graphtools for more details.
-If you do not have the stand-alone tools, you can skip this section 
-and read the next section (Interpretation of the results). 
+If you do not have the stand-alone tools, you can skip this section
+and read the next section (Interpretation of the results).
 
 \subsection{Interpretation of the results}
 
@@ -86,16 +86,16 @@ and read the next section (Interpretation of the results).
 
 First, we run Pathfinder with degree weighting scheme, which is the default weighting scheme of the demo. This weighting scheme sets the weights of compound nodes to their degree and of reaction nodes to one. The first ranked path obtained should look like this:
 
-\textbf{GLY} 5-AMINOLEVULINIC-ACID-SYNTHASE-RXN  5-AMINO-LEVULINATE  PORPHOBILSYNTH-RXN PORPHOBILINOGEN OHMETHYLBILANESYN-RXN HYDROXYMETHYLBILANE UROGENIIISYN-RXN UROPORPHYRINOGEN-III UROGENDECARBOX-RXN COPROPORPHYRINOGEN\_III RXN0-1461 PROTOPORPHYRINOGEN PROTOPORGENOXI-RXN PROTOPORPHYRIN\_IX PROTOHEMEFERROCHELAT-RXN \textbf{PROTOHEME} 	
+\textbf{GLY} 5-AMINOLEVULINIC-ACID-SYNTHASE-RXN  5-AMINO-LEVULINATE  PORPHOBILSYNTH-RXN PORPHOBILINOGEN OHMETHYLBILANESYN-RXN HYDROXYMETHYLBILANE UROGENIIISYN-RXN UROPORPHYRINOGEN-III UROGENDECARBOX-RXN COPROPORPHYRINOGEN\_III RXN0-1461 PROTOPORPHYRINOGEN PROTOPORGENOXI-RXN PROTOPORPHYRIN\_IX PROTOHEMEFERROCHELAT-RXN \textbf{PROTOHEME}
 
-This path recovers very well the annotated heme biosynthesis II pathway. 
+This path recovers very well the annotated heme biosynthesis II pathway.
 
 \subsubsection{Unit weighting scheme}
 We repeated path finding on the same network but used the unit weighting scheme, which sets all node weights to one. This is equivalent to path finding in an unweighted network. We obtain a large number of paths of first rank, among them this one:
 
-\textbf{GLY} GLUTATHIONE-SYN-RXN ADP PEPDEPHOS-RXN PROTON PROTOHEMEFERROCHELAT-RXN \textbf{PROTOHEME} 	
+\textbf{GLY} GLUTATHIONE-SYN-RXN ADP PEPDEPHOS-RXN PROTON PROTOHEMEFERROCHELAT-RXN \textbf{PROTOHEME}
 
-This path deviates strongly from the heme biosynthesis II pathway annotated in BioCyc. It contains two hub nodes: ADP and PROTON.  
+This path deviates strongly from the heme biosynthesis II pathway annotated in BioCyc. It contains two hub nodes: ADP and PROTON.
 
 \subsection{Summary}
 
@@ -119,15 +119,15 @@ The weakness is that the weighting scheme has to be optimized for the biological
  Make sure that your start and end nodes are present in your network of interest. If no path could be found, none
  of the end nodes is reachable from the start nodes, thus no path exists. For big graphs and long waiting time, there is the possibility that
  the pre-processing step of REA, namely to compute the shortest paths from the source to all nodes with Dijkstra, was not finished before
- the server timeout. In this case, a path might exist but could not be detected due to the timeout. 
+ the server timeout. In this case, a path might exist but could not be detected due to the timeout.
 
-\item An out of memory error occurred. 
+\item An out of memory error occurred.
 
- When searching for paths with the "unit" weighting scheme in large networks, there might be 
+ When searching for paths with the "unit" weighting scheme in large networks, there might be
  a large number of possible paths for each requested rank.  Although REA has a memory-efficient
- way to store paths with pointers, there is a limit for the number of paths that can be hold in memory. 
- Reduce the number of requested paths or the size of the graph or use another weighting scheme. 
-   
+ way to store paths with pointers, there is a limit for the number of paths that can be hold in memory.
+ Reduce the number of requested paths or the size of the graph or use another weighting scheme.
+
 \end{enumerate}
 
 
