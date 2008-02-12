@@ -14,6 +14,13 @@ my $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||;
 my $SCRIPTS = $RSAT.'/perl-scripts';
 my $TMP = $RSAT.'/public_html/tmp';
 
+if ($0 =~ /([^(\/)]+)$/) {
+  push (@INC, "$`lib/");
+}
+
+#require "RSA.lib";
+#&UpdateLogFile("","","WS");
+
 =pod
 
 =head1 NAME
