@@ -30,7 +30,7 @@ echo("<center>Compare two classifications (clustering results, functional
   members between each pair of classes."); 
 
 echo ("<br>This program was
-  developed <A HREF='mailto:jvanheld@scmbb.ulb.ac.be (Jacques van
+  developed <A HREF='mailto:jacques.van.helden@ulb.ac.be (Jacques van
   Helden)'>Jacques van Helden</a>, with a contribution of Joseph Tran
   for a first prototype.</center>");
   
