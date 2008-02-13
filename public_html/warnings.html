@@ -15,37 +15,40 @@
 <p>
 Several vertebrate genomes are currrently supported on RSAT.
 
-<P>
+<p>
 Pattern discovery programs (e.g. oligo-analysis and dyad-analysis),
-have been proven to be highly efficient with the yeast genome, and
-relatively efficient with A.thaliana and Drosophila melanogaster
-melanogaster. 
+have been proven to be highly efficient with microbial genomes (Fungi,
+Bacteria), and relatively efficient with medium-sized genomes
+like <i>Arabidopsis thaliana</i> and <i>Drosophila melanogaster</i>.
 
-<P>
-My first tests with human and mouse genes suggest that with
+<p>
+Our first tests with human and mouse genes suggest that with
 vertebrate genomes these programs return many false positive (i.e. if
 you submit a random set of genes, you always get plenty of highly
 'significant' motifs). This is likely to come from the heterogeneity
-of human sequences, and I am currently working on an improvement of
-the background model.
-
-<P>
-Consensus and the gibbs sampler are also likely to return many false
-positives with human sequences, since they generally return more false
-positives than oligo-analysis and dyad-analysis. I suspect that the
-same problem will be encountered by most currently existing pattern
-discovery programs : if you submit a random selection of human
-promoters, they will always return plenty of motifs, although the
-correct answer would be to return no motif (since these genes are not
-likely to be co-regulated).  If you know any counter example, please
-indicate it to me.
+of human sequences (mixtures of GC-rich and GC-poor promoters).
 
 <p>
-I am currently working on methodological improvements to model
+Other pattern discovrey approaches like <i>consensus</i> and
+the <i>gibbs</i> sampler are also likely to return many false
+positives with vertebrate sequences, since, even with microbes, they
+generally return more false positives than <i>oligo-analysis</i>
+and <i>dyad-analysis</i>. </p>
+
+<p>We suspect that the same problem will be
+encountered by most currently existing pattern discovery programs : if
+you submit a random selection of human promoters, they will always
+return plenty of motifs, although the correct answer would be to
+return no motif (since these genes are not likely to be co-regulated).
+If you know any counter example, please indicate it to me.
+
+<p>
+We are currently working on methodological improvements to model
 heterogeneous sequences. This is an on-going research, and it may take
-several months. Inbetween, I installed the genomes because you can
-already run some tools (pattern matching for example), but I do not
-recommend to trust pattern discovery results with vertebrate genomes.
+several months. In the mean time, we already installed the genomes to
+offer support for some tools that give reasonably good reasults
+(pattern matching for example), but we do not recommend to trust
+pattern discovery results with vertebrate genomes.
 
 <P>
 <script type='text/javascript'><!--
