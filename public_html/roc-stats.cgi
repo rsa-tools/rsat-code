@@ -289,7 +289,7 @@ sub NeAT_header {
   ### print the header of the result page
   print $query->start_html(-title=>"NeA-tools : $title",
 			   -class => "$css_body_class",
-			   -author=>'jvanheld@scmbb.ulb.ac.be',
+			   -author=>'jacques.van.helden@ulb.ac.be',
 			   -style => { 	-src => "$ENV{rsat_www}/main.css",
                              	       	-type => 'text/css',
                              		-media => 'screen' });
