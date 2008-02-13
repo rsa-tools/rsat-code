@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.29 2008/02/12 20:26:10 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.30 2008/02/13 12:47:00 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -20,9 +20,8 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 print $query->header;
 print $query->start_html(-class => "info",
-			   -author=>'jvanheld@scmbb.ulb.ac.be',
-			   
-			   -style => { 	-src => "$ENV{rsat_www}/main.css",
+			 -author=>'jacques.van.helden@ulb.ac.be',
+			 -style => { 	-src => "$ENV{rsat_www}/main.css",
                              	       	-type => 'text/css',
                              		-media => 'screen' });
 
