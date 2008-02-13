@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast,v 1.9 2008/01/25 14:16:46 jvanheld Exp $
+# $Id: genome-blast,v 1.10 2008/02/13 19:10:08 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -177,7 +177,7 @@ foreach $db_organism (@db_organisms) {
 	$dir{blast_db}= $dir{db_org_dir}."/blastdb";
     }
     $outfile{blast_db}=$dir{blast_db}."/".$db_organism."_db"; 
-    
+
     &FormatDB() if ($task{formatdb});
 
     ## Query organism(s)
@@ -449,11 +449,11 @@ This option can be used iteratively on the same command line to select
 multiple tasks.
 
 Example:
-		    
+
 -task formatdb,blastall
-		
+
 For a full analysis, simply type '-task all'
-		
+
 =cut
 	} elsif ($ARGV[$a] eq "-task") {
 	    my @requested_tasks = split ",", $ARGV[$a+1];
@@ -594,21 +594,10 @@ sub FormatDB {
     &RSAT::message::TimeWarn(join ("\t","Formatting DB for organism", $db_organism)) if ($main::verbose >= 1);
     &RSAT::util::CheckOutDir($dir{blast_db}); 
     my $command = "formatdb -i ".$infile{db_org_fasta}." -p t -o t -n ".$outfile{blast_db};
-    &doit($command, $dry, $die_on_error, $verbose);
+    &doit($command, $dry, $die_on_error, $main::verbose);
     &RSAT::message::Info(join("\t", "DB formatted", $outfile{blast_db}.".*")) if ($main::verbose >= 2);
 }
 
-
-# ################################################################
-# ## Blast one genome against another one
-# #HEADER="Query	level	Subject	%_ident	ali_len	mismat	gap_opn	q.start	q.end	s.start	s.end	e-value	bit_sc"
-# sub BlastAll {
-#     &RSAT::message::TimeWarn(join ("\t","Running blastall", "query organism", $query_organism, "DB organism", $db_organism)) if ($main::verbose >= 1);
-#     &RSAT::util::CheckOutDir($dir{blast_result}); 
-#     my $command="blastall -M ".$blast_matrix." -p blastp -d ".$outfile{blast_db}." -i ".$infile{query_org_fasta}." -m 8 -e 0.00001 > ".$outfile{blast_result};
-#     &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-#     &RSAT::message::TimeWarn(join("\t","Blastall done", $outfile{blast_result})) if ($main::verbose >= 1);
-# }
 
 ################################################################
 ## Rank the blast hits
@@ -618,7 +607,7 @@ sub BlastAndRank {
 
     ## Class factory for managing blast hits
     my $blast_hits = classes::ClassFactory->new_class(object_type=>"RSAT::blast_hit",prefix=>"hit_");
-    
+
     ## Check the existence of the output  directory
     &RSAT::util::CheckOutDir($dir{blast_result}); 
 
@@ -643,7 +632,7 @@ sub BlastAndRank {
 	$h++; ## Hit number
 
 	my @fields = split "\t";
-	
+
 	## Create a new object for the match
 	my $hit = $blast_hits->new_object(id=>$query_organism."_".$db_organism."_".$h);
 	foreach my $col (@blast_columns) {
@@ -664,13 +653,12 @@ sub BlastAndRank {
 	push @{$hits_per_subject{$subject}}, $hit;
     }
     close BLAST;
-    
-    
+
     ## Calculate hit rank per query
     &RSAT::message::Info("Ranking BLAST hits per query") if ($main::verbose >= 1);
     foreach my $query (sort keys %hits_per_query) {
 	my @sorted_hits = sort {$a->get_attribute("e_value") <=> $b->get_attribute("e_value") }  @{$hits_per_query{$query}};
-	
+
 	my $rank=0;
 	foreach my $hit (@sorted_hits) {
 	    ## Assign rank attribute
