@@ -4,24 +4,178 @@
 \chapter{Comparative genomics}
 
 \section{Genome-wise comparison of protein sequences}
+\label{genome_blast}
 
-In this section, I explain how to use the program
+In this section, we explain how to use the program
 \program{genome-blast}, which runs the sequence similarity search
 program \program{BLAST} to detect significant similarities between all
-the proteins of a set of genomes. This operation can take time, and
-the result tables occupy a considerable amount of space on the hard
-disk. The \RSAT distribution does thus not include the complete
-comparison of all genomes against all other ones. The current \RSAT
-distribution includes the complete comparisons for some model genomes
-(\org{Escherchia coli K12} versus all bacteria,
-\org{Saccharomyces cerevisiae} against all Fungi, ...), but you
-might need to perform additional comparisons for your own purpose.
+the proteins of a set of genomes. 
 
-In order to install the tables of gene similarities in the \RSAT data,
-you need to have the writing permission in the $\$RSAT$ directory. If
-this is not the case, ask your system administrator to do it for you.
+This operation can take time, and the result tables occupy a
+considerable amount of space on the hard disk. For this reason, the
+\RSAT distribution does thus not include the complete comparison of
+all genomes against all other ones, but is restricted to some model
+genomes (\org{Escherchia coli K12} versus all bacteria,
+\org{Saccharomyces cerevisiae} against all Fungi, ...). 
 
-\textbf{TO BE WRITTEN}
+Depending on your organism of interest, you might wish to perform
+additional comparisons for your own purpose. In this section, we
+explain how to compute the similiraty tables between a query organism
+(e.g. \org{Mycoplasma pneumoniae}) and a reference taxon (e.g. all
+Bacteria).
+
+In order to install the tables of similarities between gene products
+in \RSAT, you need writing permissions in the directory
+$\$RSAT/data$. If this is not the case, ask your system administrator
+to do it for you.
+
+
+\subsection{Applying genome-blast between two genomes}
+
+As a first test, we will use \program{genome-blast} to compare all the
+gene products (proteins) of a query organism (e.g. \org{Mycoplasma
+  pneumoniae}) against all the gene products of a reference organism
+(e.g. \org{Bacillus subtilis}).
+
+This protocol assumes that the two organisms are already installed on
+your \RSAT site, as explained in the installation guide.
+
+We will perform in two steps:
+
+\begin{enumerate}
+\item Use the program \program{formatdb} (which is part of the
+  \program{BLAST} distribution) to create a BLAST-formatted structure
+  (the ``database'') with all proteins of the reference organism
+  (\org{Bacillus subtilis}).
+\item Use the program \program{blastall} (part of the \program{BLAST}
+  distribution) to detect similarities between each protein of the
+  query organism (\org{Mycoplasma pneumoniae}) and the reference
+  organism.
+\end{enumerate}
+
+\subsubsection{Formatting the BLAST DB}
+
+This DB formatting step is very efficient, it should be completed in a
+few seconds.
+
+\begin{footnotesize}
+\begin{verbatim}
+genome-blast -v 1 -task formatdb \
+   -q Mycoplasma_pneumoniae \
+    -db Bacillus_subtilis 
+\end{verbatim}
+\end{footnotesize}
+
+The result is found in the data directory containing
+\org{Bacillus subtilis}. A new directory \file{blastdb} has been
+created, which contains the BLAST-formatted database with all the
+proteins of the reference organism.
+
+\begin{footnotesize}
+\begin{verbatim}
+ls -ltr $RSAT/data/genomes/Bacillus_subtilis/blastdb
+\end{verbatim}
+\end{footnotesize}
+
+These are binary files, that you should in principle not open as such.
+
+\subsubsection{Searching similarities}
+
+The program \program{blastall} compares all the sequences of an input
+set against all the sequences of a database (the one we just created
+above). The program \program{genome-blast} generates the appropriate
+\program{blastall} command to find the BLAST database directory, and
+query it with the proteins of the query organism.
+
+\begin{footnotesize}
+\begin{verbatim}
+genome-blast -v 1 -task blastall \
+   -q Mycoplasma_pneumoniae \
+    -db Bacillus_subtilis 
+\end{verbatim}
+\end{footnotesize}
+
+This task takes a bit less that one minute for Pneumoniae (because we
+chose a very small genomes), and can take around 10 minutes for
+medium-sized bacterial genomes (~4,000 genes).
+
+Note that the \program{blastall} command is written in the verbosity
+message. If you have specific reasons to customize this command, you
+can adapt it to apply different parameters.
+
+\subsubsection{Searching reciprocal similarities}
+
+One classical orthology criterion (which is not perfect but has
+practical advantages) is to select the bidirectional best hits as
+candidate orthologs.
+
+For this, we need to run the reciprocal blast, i.e. using
+\org{Bacillus subtilis} as query organism, and \org{Mycoplasma
+  genitalium} as reference organism.
+
+Note that you can run the two BLAST commands (\program{formatdb} and
+\program{blastall}) in a single shot, by specifying multiple tasks for
+\program{genome-blast}.
+
+\begin{footnotesize}
+\begin{verbatim}
+genome-blast -v 1 -task formatdb,blastall \
+    -q Bacillus_subtilis \
+    -db Mycoplasma_pneumoniae
+\end{verbatim}
+\end{footnotesize}
+
+We can now perform a quick test: select the bidirectional best hit
+(\option{-rank 1}) for the gene \gene{NP\_109706.1}.
+
+\begin{footnotesize}
+\begin{verbatim}
+get-orthologs -q NP_109706.1 -uth rank 1 -return all \
+    -org Mycoplasma_pneumoniae -taxon Bacillus_subtilis
+\end{verbatim}
+\end{footnotesize}
+
+\subsection{Applying genome-blast between a genome and a  taxon}
+
+Generally, we want to compare a query organism to all the organisms of
+a given taxon (the \concept{reference taxon}). This can be done with
+the option \option{-dbtaxon}.
+
+As an example, we will BLAST all the proteins of \org{Mycoplasma
+  pneumoniae} against all the proteins of each species of
+\org{Mollicutes}.
+
+
+\begin{footnotesize}
+\begin{verbatim}
+genome-blast -v 1 -task formatdb,blastall \
+    -q Mycoplasma_pneumoniae \
+    -dbtaxon Mollicutes
+\end{verbatim}
+\end{footnotesize}
+
+And now the reciprocal search: BLAST all gene products of each
+bacteria of the taxon \org{Mollicutes} against those of
+\org{Mycoplasma pneumoniae}.
+
+\begin{footnotesize}
+\begin{verbatim}
+genome-blast -v 1 -task formatdb,blastall \
+    -db Mycoplasma_pneumoniae \
+    -qtaxon Mollicutes
+\end{verbatim}
+\end{footnotesize}
+
+We can now retrieve the orthologs of the gene
+\gene{Mycoplasma_pneumoniae} in all Mollicutes.
+
+\begin{footnotesize}
+\begin{verbatim}
+get-orthologs -q NP_109706.1 -uth rank 1 -return all \
+    -org Mycoplasma_pneumoniae -taxon Mollicutes
+\end{verbatim}
+\end{footnotesize}
+
 
 \section{Getting putative homologs, orthologs and paralogs}
 
