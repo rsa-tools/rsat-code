@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.60 2008/02/01 18:22:01 rsat Exp $
+# $Id: convert-matrix,v 1.61 2008/02/14 18:31:28 rsat Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -90,6 +90,7 @@ $bg_format = "oligo-analysis";
 $supported_bg_formats = join ",", sort keys %supported_bg_format;
 
 ## logo formats
+@logo_formats=();
 %supported_logo_format =  ('png'=>1,
 			  "eps"=>1,
 #			  "gif"=>1, # log from seqlogo : check logo.conf
@@ -111,7 +112,6 @@ unless ($input_format) {
 if ($infile{input}) {
     push @matrix_files, $infile{input};
 }
-
 
 ## Matrix list has been provided
 if ($infile{matrix_list}) {
@@ -172,9 +172,21 @@ if ($infile{prior}) {
     }
 }
 
+## logo format
+if ($return_fields{logo}) {
+  if (scalar(@logo_formats)>=1){
+    foreach my $logo_format (@logo_formats){
+      unless ($supported_logo_format{$logo_format}) {
+	&RSAT::error::FatalError("$logo_format\tInvalid format for logo\tSupported: $supported_logo_formats");
+      }
+    }
+  }else{
+    @logo_formats = ($logo_format);
+  }
+}
+
 ################################################################
 #### Perform the conversion
-
 
 ### open output file ###
 $out = &OpenOutputFile($outfile{output});
@@ -249,11 +261,11 @@ foreach my $matrix (@matrices) {
     	}
 	my $logo_file=$basedir.$matrix->get_attribute("name")."_logo";
 	$matrix->set_attribute("logo_file" => $logo_file);
-	if ($logo_dir){
-		$matrix->makeLogo($logo_file,$logo_format,$logo_dir);
+    if ($logo_dir){
+      $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir);
     } else {
-    	$matrix->makeLogo($logo_file,$logo_format);
-	}
+      $matrix->makeLogo($logo_file,\@logo_formats);
+    }
     }
 }
 
@@ -482,9 +494,11 @@ OPTIONS
 
 	-logo_format
 		Format for logo image file. supported : $supported_logo_formats (default:png).
-		Beware: the logo file will be created in currunt directory by default, unless
-		the -o option is specified. In this case the logo will be in the same 
-		directory than the output file (-o ). 
+		Beware: the logo file will be created in current directory by default, unless
+		the -logo_dir option is specified or the -o option. In the last case the logo
+                will be in the same directory than the output file (-o ).
+                Several formats can be sepcified at the same time by using comma as separator
+                (eg. -logo_format png,pdf)
 	
 	-logo_dir
 		Specifies a directory for the output of the logo file. By default, the logos are exported
@@ -910,10 +924,9 @@ sub ReadArguments {
 			}
 
 		} elsif ($ARGV[$a] eq "-logo_format") {
-			$logo_format = $ARGV[$a+1];
-			unless ($supported_logo_format{$logo_format}) {
-				&RSAT::error::FatalError("$logo_format\tInvalid format for logo\tSupported: $supported_logo_formats");
-			}
+			$logo_formats = $ARGV[$a+1];
+			push @logo_formats, split(",", $logo_formats);
+
 		} elsif ($ARGV[$a] eq "-logo_dir") {
 			$logo_dir = $ARGV[$a+1];
 		}
@@ -1070,7 +1083,9 @@ sub ExportMatrix {
   ## Return parameters
   if ($return_fields{logo}) {
     if ($main::verbose >= 1) {
+      foreach my $logo_format (@logo_formats){
 	print $out  "; logo file:" , $matrix->get_attribute("logo_file").".".$logo_format, "\n";
+      }
     }
 
   }
