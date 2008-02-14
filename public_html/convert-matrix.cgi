@@ -146,6 +146,7 @@ foreach my $stat qw (counts frequencies weights info consensus parameters profil
 		push @return_fields, $stat;
 		if ($stat eq "logo"){
 			 $parameters .= " -v 1 -logo_dir $ENV{RSAT}/public_html/tmp ";
+			 $parameters .= " -logo_format png,pdf ";
 		}
     }
 }
@@ -176,14 +177,16 @@ if ($query->param('output') eq "display") {
     print '<PRE>';
     while (<RESULT>) {
 #	s|${TMP}/||g;
-#	s|${BIN}/||g;
-	if ($_ =~ /logo file:(.*)/){
-	  (my $logo = $1 )=~ s|${TMP}| ${WWW_TMP}|g;
-	  print "<IMG SRC=\"$logo\">\n";
-#	  print "<a href = \"$logo\"><IMG SRC=\"$logo\" ></a>\n";
-	  print "<br/>";
-	  &DelayedRemoval("$TMP/$1");
-	}
+      #	s|${BIN}/||g;
+      next if ($_ =~ /logo file:(.*)\.pdf$/);
+      if ($_ =~ /logo file:(.*)\.png$/){
+	(my $logo = $1 )=~ s|${TMP}| ${WWW_TMP}|g;
+	#	  print "<IMG SRC=\"$logo\">\n";
+	$logo =~ s/\.png//;
+	print "<a href = \"$logo.pdf\"><IMG SRC=\"$logo\.png\" ></a>\n";
+	print "<br/>";
+	&DelayedRemoval("$TMP/$1");
+      }
 	else {
 		print $_;
 	}
