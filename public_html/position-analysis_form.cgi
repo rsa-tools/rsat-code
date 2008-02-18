@@ -237,7 +237,7 @@ print $query->end_form;
 ### data for the demo 
 print $query->start_multipart_form(-action=>"position-analysis_form.cgi");
 ### $demo_seq_file = "$ENV{RSAT}/public_html/data/demo_files/all_yeast_downstream_200bp.fasta.gz";
-$demo_seq_file = "$ENV{RSAT}/public_html/data/demo_files/Mycoplasma_genitalium_upstream_-30_+29.fasta.gz";
+$demo_seq_file = "$ENV{RSAT}/public_html/demo_files/Mycoplasma_genitalium_upstream_-30_+29.fasta.gz";
 
 print "<TD><B>";
 print $query->hidden(-name=>'sequence_file',-default=>$demo_seq_file);
