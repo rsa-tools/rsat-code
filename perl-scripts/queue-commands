@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: queue-commands,v 1.1 2007/04/30 14:20:19 rsat Exp $
+# $Id: queue-commands,v 1.2 2008/02/18 20:20:15 jvanheld Exp $
 #
 ############################################################
 
@@ -20,24 +20,24 @@ Send a set of commands to the queue of a cluster, using the RSAT function
 
 =head1 AUTHORS
 
-jvanheld@scmbb.ulb.ac.be
+Jacques van Helden <jvhelden@ulb.ac.be>
 
 =head1 CATEGORY
 
 util
 
 =head1 USAGE
-    
+
 queue-commands [-i inputfile] [-o outputfile] [-v #] [...]
 
 =head1 INPUT FORMAT
 
-The input file is a text file containing the commands that have to be sent to
-the cluster. 
+The input file is a text file containing the commands that have to be
+sent to the cluster.
 
 Each non-empty row is considered to contain one command.
 
-Empty rows are skipped. 
+Empty rows are skipped.
 
 Lines starting with # are considered as comments, and are echoed on the STDER. 
 
@@ -62,73 +62,70 @@ require "RSA.lib";
 package main;
 {
 
-    ################################################################
-    ## Initialise parameters
-    my $start_time = &AlphaDate();
+  ################################################################
+  ## Initialise parameters
+  my $start_time = &AlphaDate();
 
 
-    %infile = ();
-    %outfile = ();
+  %infile = ();
+  %outfile = ();
 
-    $verbose = 0;
-    $in = STDIN;
-    $out = STDOUT;
+  $verbose = 0;
+  $in = STDIN;
+  $out = STDOUT;
 
-    $dry_run = 0;
-    $die_on_error = 1;
-    $batch = 1;
-    $job_prefix = "RSAT_queue";
+  $dry_run = 0;
+  $die_on_error = 1;
+  $batch = 1;
+  $job_prefix = "RSAT_queue";
 
-    ################################################################
-    ## Read argument values
-    &ReadArguments();
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
 
-    ################################################################
-    ## Check argument values
+  ################################################################
+  ## Check argument values
 
-    ################################################################
-    ## Open output stream
-    $main::out = &OpenOutputFile($main::outfile{output});
+  ################################################################
+  ## Open output stream
+  $main::out = &OpenOutputFile($main::outfile{output});
 
-    ################################################################
-    ## Read input
-    ($main::in) = &OpenInputFile($main::infile{commands});
-    while ($command = <$main::in>) {
-	chomp($command);
-	next unless ($command);
-	if ($command =~ /^\#/) {
-	    warn $command, "\n";
-	    next;
-	}
-	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+  ################################################################
+  ## Read input
+  ($main::in) = &OpenInputFile($main::infile{commands});
+  while ($command = <$main::in>) {
+    chomp($command);
+    next unless ($command);
+    if ($command =~ /^\#/) {
+      warn $command, "\n";
+      next;
     }
-    close $main::in if ($main::infile{commands});
-    
-    ################################################################
-    ## Print verbose
-    &Verbose() if ($main::verbose);
-    
-    ################################################################
-    ## Finish verbose
-    if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $main::out "; Job started $start_time\n";
-	print $main::out "; Job done    $done_time\n";
-    }
-    
-     
-    ################################################################
-    ## Close output stream
-    close $main::out if ($main::outfile{output});
-    
-    
-    exit(0);
+    &doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+  }
+  close $main::in if ($main::infile{commands});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose);
+
+  ################################################################
+  ## Finish verbose
+  if ($main::verbose >= 1) {
+    my $done_time = &AlphaDate();
+    print $main::out "; Job started $start_time\n";
+    print $main::out "; Job done    $done_time\n";
+  }
+
+  ################################################################
+  ## Close output stream
+  close $main::out if ($main::outfile{output});
+
+  exit(0);
 }
 
 ################################################################
 ################### SUBROUTINE DEFINITION ######################
 ################################################################
-
 
 ################################################################
 ## Display full help message 
