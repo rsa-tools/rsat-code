@@ -313,10 +313,10 @@
                                  'encoding' => SOAP_LITERAL
                                  )
                            );
+   
     # Execute the command
     echo "<pre>";
     $cc_echoed = $client->compare_classes($cc_parameters);
-   
     $cc_response =  $cc_echoed->response;
     $cc_command = $cc_response->command;
     $cc_server = $cc_response->server;
