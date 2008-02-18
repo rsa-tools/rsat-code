@@ -12,10 +12,8 @@ require RSAT::contig;
 require RSAT::error;
 require RSAT::util;
 require RSAT::Tree;
-
+require RSAT::server;
 package main;
-
-umask 0022;
 
 ############################################################################
 ############################################################################
@@ -32,215 +30,14 @@ umask 0022;
 
 
 ############################################################################
-########################## PATH DEFINITION ##############################
+####################### INITIALIZE THE RSAT SERVER  ########################
 ############################################################################
 
-
-# ################################################################
-# ## Read props file
-if ($0 =~ /([^(\/)]+)$/) {
-  $property_file = $`."../RSAT_config.props";
-  unless (-e $property_file) {
-    $property_file = $`."../RSAT_config_default.props";
-    &RSAT::message::Warning("This RSAT site is not properly configured.", 
-			    "Missing file: $RSAT/RSAT_config.props", 
-			    "Please contact the system administrator.");
-  }
-  if (-e $property_file) {
-    my ($props) = &OpenInputFile($property_file);
-    while (<$props>) {
-      next if (/^#/);
-      next if (/^;/);
-      next unless (/\S/);
-      chomp();
-      if (/\=/) {
-	my $value = $'; #'
-	my $key = $`;
-	$ENV{$key} = $value;
-#        &RSAT::message::Info("Site config", sprintf("%-15s\t%s\t%s", $key, $ENV{$key})) if ($main::verbose >= 10);
-      }
-    }
-  }
-}
-
-
-# # ################################################################
-# # ## Read props file
-# if ($0 =~ /([^(\/)]+)$/) {
-#   $property_file = $`."../RSAT_config.props";
-#   unless (-e $property_file) {
-#     $property_file = $`."../RSAT_config_default.props";
-#   }
-#   if (-e $property_file) {
-#     my $prop =  Util::Properties->new();
-#     $prop->file_name($property_file);
-#     $prop->load();
-#     my %args = $prop->prop_list();
-#     foreach my $key (sort keys %args) {
-#       my $value = $args{$key};
-#       $ENV{$key} = $value;
-#     $$key = $value;
-#       #    &RSAT::message::Info("Site config", sprintf("%-15s\t%s\t%s", $key, $ENV{$key})) if ($main::verbose >= 10);
-#     }
-#   }
-# }
-
-################################################################
-#### Read Perl config files
-if ($0 =~ /([^(\/)]+)$/) {
-    $config_file = "$`../RSA.config";
-    require $config_file;
-    if ($ENV{'RSA_LOCAL_CONFIG'}) {
-	if (-e $ENV{'RSA_LOCAL_CONFIG'}) {
-	    if (-r $ENV{'RSA_LOCAL_CONFIG'}) {
-		require $ENV{'RSA_LOCAL_CONFIG'};
-	    } else {
-		warn (";WARNING: cannot read local config file ", 
-		      $ENV{'RSA_LOCAL_CONFIG'}, 
-		      "\n"), 
-	    }
-	} else {
-	    warn (";WARNING: local config file ", 
-		  $ENV{'RSA_LOCAL_CONFIG'}, 
-		  " does not exist\n"), 
-	}
-    }
-} else {
-    &RSAT::error::FatalError("Error: problem when opening config file. Please contact jvanheld\@scmbb.ulb.ac.be");
-}
-
-$BIN = "$ENV{RSAT}/bin";
-$LIB = "$ENV{RSAT}/lib";
-$TMP = "$ENV{RSAT}/public_html/tmp";
-$LOGS = "$ENV{RSAT}/logs";
-$SCRIPTS = "$ENV{RSAT}/perl-scripts";
-
-my $login = getlogin();
-
-################################################################
-## Redirect queries to a remote server 
-##
-## This piece of code used to ensure load balancing between several
-## machines, but it relies on rsh, which is not a safe protocol. In
-## case of need, it could be adapted to work with ssh in the
-## future. Anyway, this will probably be replaced by more efficient
-## protocols for grid computation.
-if ($REMOTE_SERVER) {
-    if (($login eq "webserv") || !($login)) {
-	$NICE = "nice +5";
-	$RSH = "rsh -l jvanheld ${REMOTE_SERVER} $NICE";
-	$SCRIPTS = "$RSH /home/rsa/rsa-tools/perl-scripts";
-	$BIN = "$RSH /home/rsa/rsa-tools/bin";
-    }
-}
-
-
-$HTML = "$ENV{RSAT}/public_html"; 
-$WWW_TMP = "$ENV{rsat_www}/tmp";
-#$ENV{SERVER_ADMIN} = "jvanheld\@scmbb.ulb.ac.be";
-
-$counter_file = "$LOGS/count-file";
-($sec, $min, $hour,$day,$month,$year) = localtime(time);
-$log_file = join("", $LOGS, "/log-file_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1));
-
-$date = &AlphaDate();
-
-############################################################################
-############################ GLOBAL VARIABLES ##############################
-############################################################################
-
+&InitRSAT();
 
 ############################################################################
 ##################### PERL SUBROUTINE DEFINITION ###########################
 ############################################################################
-
-
-
-################################################################
-## echo a command and send it to the system
-## Usage:
-##   &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-sub doit {
-    my ($command, $dry, $die_on_error, $verbose, $batch, $job_prefix) = @_;
-    my $wd = `pwd`;
-    chomp $wd;
-
-    if ($batch) {
-	## Store the command in a sh script (the job)
-	my $job_dir = "jobs";
-	$job_dir .= "/".`date +%Y%m%d`;
-	chomp($job_dir);
-	my $job_prefix = $job_prefix || "doit";
-	&RSAT::util::CheckOutDir($job_dir);
-	my $job = `mktemp ${job_dir}/${job_prefix}.XXXXXX`;
-	chomp $job;
-	open JOB, ">$job";
-	print JOB "( cd ", $wd;
-	print JOB "; date > ", $job, ".started"; ## Write a file called [job].started indicating the time when the job was started
-        print JOB "; hostname >> ", $job,".started"; 
-	print JOB "; ", $command;
-	print JOB "; date > ", $job, ".done"; ## Write a file called [job].done indicating the time when the job was done
-	print JOB "; hostname >> ", $job, ".done"; ## Write a file called [job].done indicating the time when the job was done
-	print JOB " )", "\n";
-	close JOB;
-	&RSAT::message::TimeWarn(join("\t", "Job queued", $wd."/".$job)) if ($main::verbose >= 2);
-
-	my $job_name = $job;
-	$job_name =~ s/\//_/g;
-	my $job_log = $wd."/".$job.".log";
-	## Send the command to a batch queue on a PC cluster The default
-	## values are for internal use in the SCMBB, but alternative values
-	## can be specified by specifying the environment variables
-	## CLUSTER_QUEUE and CLUSTER_MASTER
-	my $cluster_queue = $ENV{CLUSTER_QUEUE} || "short";
-	my $batch_mail=$ENV{BATCH_MAIL} || "a";
-	my $qsub_manager=$ENV{QSUB_MANAGER} || "sge";
-	$selected_nodes = " -l nodes=1:k2.6 ";
-	my $qsub_cmd;
-
-
-	################################################################
-	## Choose the queue manager depending on the local configuration
-	if ($qsub_manager eq "torque") {
-	    ## qsub command functionning using Torque
-	    my $cluster_master=$ENV{CLUSTER_MASTER} || "arthur.scmbb.ulb.ac.be"; ## for torque only
-	    $qsub_cmd = "qsub ".$selected_nodes." -m ".$batch_mail." -q ".$cluster_master." -N ${job} -j oe -o ${job}.log ${job}";
-
-	} else {
-	    ## qsub command functionning using Sun Grid Engine (SCMBB)
-	    $qsub_cmd = join(" ", "qsub", 
-			     "-m",$batch_mail,
-			     "-q ", $cluster_queue, 
-			     " -j y ",
-			     "-N ", $job_name,
-			     "-o ".$job_log, $job);
-	}
-	&doit($qsub_cmd, $dry, $die_on_error,$verbose,0);
-
-    } else {
-	## Verbose
-	if (($dry) || ($main::verbose >= 2)) {
-	    warn "\n";
-	    &RSAT::message::TimeWarn("Working dir", $wd) if ($main::verbose >= 3);
-	    &RSAT::message::TimeWarn($command);
-	}
-
-	## Send the command to the queue
-	unless ($dry) {
-	    my $error = system $command;
-	    if ($die_on_error) {
-		if ($error == -1) {
-		    &RSAT::error::FatalError("Could not execute the command\n\t$command");
-		} elsif ($error) {
-		    &RSAT::error::FatalError("Error", $error , "occurred during execution of the command", "\n\t".$command);
-		}
-	    } else {
-		return ($error);
-	    }
-	}
-    }
-}
-
 
 
 ################################################################
@@ -261,113 +58,113 @@ sub doit {
 ##                              warn=>0|1,nowarn=>0|1,
 ##                              taxon=>1);
 sub ExpectedFreqFile {
-    my ($org_or_taxon, $oligo_length, $background, %args) = @_;
-    my $exp_freq_file = "";
+  my ($org_or_taxon, $oligo_length, $background, %args) = @_;
+  my $exp_freq_file = "";
 
-    my $type = $args{type} || "oligo";
-    my $str = $args{str} || "-2str";
-    my $overlap = $args{noov} || "-noov";
-    my $overlap_suffix;
-    my $taxon = $args{taxon} || 0;
-    if ($overlap eq "-noov") {
-      $overlap_suffix = "-noov";
-    } else { 
-      $overlap_suffix = "-ovlp";
-    }
+  my $type = $args{type} || "oligo";
+  my $str = $args{str} || "-2str";
+  my $overlap = $args{noov} || "-noov";
+  my $overlap_suffix;
+  my $taxon = $args{taxon} || 0;
+  if ($overlap eq "-noov") {
+    $overlap_suffix = "-noov";
+  } else { 
+    $overlap_suffix = "-ovlp";
+  }
 
-    #### Check organism or taxon
-    my $data_dir = "";
-    if ($taxon) {
-      &CheckTaxon($org_or_taxon, 1);
-      $data_dir = $ENV{RSAT}."/public_html/data";
-      $data_dir .= "/taxon_frequencies/".$org_or_taxon."/";
-      $data_dir =~ s/\s/_/g;
+  #### Check organism or taxon
+  my $data_dir = "";
+  if ($taxon) {
+    &CheckTaxon($org_or_taxon, 1);
+    $data_dir = $ENV{RSAT}."/public_html/data";
+    $data_dir .= "/taxon_frequencies/".$org_or_taxon."/";
+    $data_dir =~ s/\s/_/g;
+  } else {
+    &CheckOrganism($org_or_taxon);
+    $data_dir = $supported_organism{$org_or_taxon}->{'data'};
+    $data_dir .= "/oligo-frequencies/";
+  }
+
+  #### check oligo length
+  unless ($oligo_length) {
+    &FatalError("You must specify the oligonucleotide length for the background model (expected frequency file)");
+  }
+
+  unless (&IsNatural($oligo_length)) {
+    &RSAT::error::FatalError("Invalid oligonucleotide length : must be a natural number");
+  }
+
+  #### check background
+  my %supported_bg = ('upstream'=>1,
+		      'upstream-noorf'=>1,
+		      'intergenic'=>1,
+		      'upstream-rm'=>1,
+		      'upstream-noorf-rm'=>1
+		     );
+  $supported_bg = join ",", sort keys %supported_bg;
+  unless ($supported_bg{$background}) {
+    &FatalError($background, "is not a supported background model type. Supported: ", $supported_bg);
+  }
+
+  ## Oligo length
+  if ($type eq 'oligo') {
+    &RSAT::error::FatalError($oligo_length, "is not a supported length for oligonucleotides, should be comprised between 1 and 8") 
+      unless (($oligo_length >= 1) && ($oligo_length <= 8));
+  } elsif ($type eq 'dyad') {
+    &RSAT::error::FatalError($oligo_length, "is not a supported length for monads, should be comprised between 1 and 3")
+      unless (($oligo_length >= 1) && ($oligo_length <= 3));
+  }
+  #     if ($oligo_length < 1) {
+  # 	&RSAT::error::FatalError("Invalid oligonucleotide length : must be >= 1");
+  #     }
+  #     if ($oligo_length > 8) {
+  # 	&RSAT::error::FatalError("Invalid oligonucleotide length : must be <= 8");
+  #     }
+
+  $exp_freq_file = $data_dir;
+  if ($type eq "dyad") {
+    ## Dyad frequencies
+    $exp_freq_file = join("",
+			  $data_dir,
+			  "dyads_",$oligo_length,"nt_sp0-20_",
+			  $background,
+			  "_",
+			  $org_or_taxon,
+			  $overlap_suffix.$str,
+			  ".freq");
+
+  } elsif ($background eq "upstreamL") {
+    ## ???
+    $exp_freq_file .= "_".$org_or_taxon;
+    $exp_freq_file .= "_allup500";
+    $exp_freq_file .= $oligo_length."nt";
+    $exp_freq_file .= $str;
+    $exp_freq_file .= $overlap_suffix;
+    $exp_freq_file .= "_freq.tab";
+
+  } else {
+    ## Oligonucleotide frequencies
+    $exp_freq_file .= $oligo_length."nt";
+    $exp_freq_file .= "_".$background;
+    $exp_freq_file .= "_".$org_or_taxon;
+    $exp_freq_file .= $overlap_suffix;
+    $exp_freq_file .= $str;
+    $exp_freq_file .= ".freq";
+  }
+
+  ## Check the existence of the exp freq file
+  unless ((-e $exp_freq_file) ||
+	  (-e $exp_freq_file.".gz")) {
+    if ($args{warn}) {
+      &RSAT::message::Warning("Cannot find expected frequency file $exp_freq_file");
+    } elsif ($args{nowarn}) {
+      ## Do nothing
     } else {
-      &CheckOrganism($org_or_taxon);
-      $data_dir = $supported_organism{$org_or_taxon}->{'data'};
-      $data_dir .= "/oligo-frequencies/";
+      &RSAT::error::FatalError("Cannot find expected frequency file $exp_freq_file");
     }
-
-    #### check oligo length
-    unless ($oligo_length) {
-	&FatalError("You must specify the oligonucleotide length for the background model (expected frequency file)");
-    }
-
-    unless (&IsNatural($oligo_length)) {
-	&RSAT::error::FatalError("Invalid oligonucleotide length : must be a natural number");
-    }
-
-    #### check background
-    my %supported_bg = ('upstream'=>1,
-			'upstream-noorf'=>1,
-			'intergenic'=>1,
-			'upstream-rm'=>1,
-			'upstream-noorf-rm'=>1
-		       );
-    $supported_bg = join ",", sort keys %supported_bg;
-    unless ($supported_bg{$background}) {
-      &FatalError($background, "is not a supported background model type. Supported: ", $supported_bg);
-    }
-
-    ## Oligo length
-    if ($type eq 'oligo') {
-      &RSAT::error::FatalError($oligo_length, "is not a supported length for oligonucleotides, should be comprised between 1 and 8") 
-	unless (($oligo_length >= 1) && ($oligo_length <= 8));
-    } elsif ($type eq 'dyad') {
-      &RSAT::error::FatalError($oligo_length, "is not a supported length for monads, should be comprised between 1 and 3")
-	unless (($oligo_length >= 1) && ($oligo_length <= 3));
-    }
-#     if ($oligo_length < 1) {
-# 	&RSAT::error::FatalError("Invalid oligonucleotide length : must be >= 1");
-#     }
-#     if ($oligo_length > 8) {
-# 	&RSAT::error::FatalError("Invalid oligonucleotide length : must be <= 8");
-#     }
-
-    $exp_freq_file = $data_dir;
-    if ($type eq "dyad") {
-      ## Dyad frequencies
-      $exp_freq_file = join("",
-			    $data_dir,
-			    "dyads_",$oligo_length,"nt_sp0-20_",
-			    $background,
-			    "_",
-			    $org_or_taxon,
-			    $overlap_suffix.$str,
-			    ".freq");
-
-    } elsif ($background eq "upstreamL") {
-      ## ???
-      $exp_freq_file .= "_".$org_or_taxon;
-      $exp_freq_file .= "_allup500";
-      $exp_freq_file .= $oligo_length."nt";
-      $exp_freq_file .= $str;
-      $exp_freq_file .= $overlap_suffix;
-      $exp_freq_file .= "_freq.tab";
-
-    } else {
-      ## Oligonucleotide frequencies
-      $exp_freq_file .= $oligo_length."nt";
-      $exp_freq_file .= "_".$background;
-      $exp_freq_file .= "_".$org_or_taxon;
-      $exp_freq_file .= $overlap_suffix;
-      $exp_freq_file .= $str;
-      $exp_freq_file .= ".freq";
-    }
-
-    ## Check the existence of the exp freq file
-    unless ((-e $exp_freq_file) ||
-	    (-e $exp_freq_file.".gz")) {
-      if ($args{warn}) {
-	&RSAT::message::Warning("Cannot find expected frequency file $exp_freq_file");
-      } elsif ($args{nowarn}) {
-	## Do nothing
-      } else {
-	&RSAT::error::FatalError("Cannot find expected frequency file $exp_freq_file");
-      }
-    }
-    &RSAT::message::Info("Expected frequency file", $exp_freq_file) if ($main::verbose >= 2);
-    return $exp_freq_file;
+  }
+  &RSAT::message::Info("Expected frequency file", $exp_freq_file) if ($main::verbose >= 2);
+  return $exp_freq_file;
 }
 
 
@@ -738,28 +535,8 @@ sub CalcConditionalProbabilities {
 ################################################################
 #### increment the counter file for monitoring web access
 sub UpdateCounterFile {
-    my $nb_visitors = 1;
-
-    ### read previous counter value
-    if (-e $counter_file) {
-	open(COUNTER, "<$counter_file");
-	#flock(COUNTER, 2);
-	$nb_visitors = <COUNTER>;
-	#flock(COUNTER,8);
-	close(COUNTER);
-	$nb_visitors++;
-    }
-    
-    ### save new counter value
-    open(COUNTER, ">$counter_file");
-    #flock(COUNTER,2);
-    print COUNTER $nb_visitors;
-    #flock(COUNTER,8);
-    close(COUNTER);
-    
-    return $nb_visitors;
+  &RSAT::server::UpdateCounterFile();
 }
-
 
 ################################################################
 ### store info into a log file in a conveninent way for 
@@ -770,30 +547,10 @@ sub UpdateCounterFile {
 ###     &UpdateLogFile($script_name, $message);
 sub UpdateLogFile {
   my ($script_name, $message) = @_;
-
-  unless ($script_name) {
-    $script_name = &RSAT::util::ShortFileName($0);
-  }
-
-  if (open LOG, ">>$log_file") {
-    #flock(LOG,2);
-    $date = &AlphaDate();
-    $date =~ s/\n//;
-    print LOG join ("\t", 
-		    $date,
-		    $ENV{rsat_site}, 
-		    "$ENV{'REMOTE_USER'}\@$ENV{'REMOTE_ADDR'} ($ENV{'REMOTE_HOST'})",
-		    $script_name,
-		    $query->param('user_email'),
-		    $message
-		    ), "\n";
-    #flock(LOG,8);
-    close LOG;
-  }
-  chmod 0777, $log_file;
+  my $user_email = $query->param('user_email') || "";
+#  &RSAT::message::Debug("RSA.lib log file=", $log_file);
+  &RSAT::server::UpdateLogFile($script_name, $message, $log_file);
 }
-
-
 
 ################################################################
 #### send a unix command to remove a file the next day
@@ -801,62 +558,38 @@ sub UpdateLogFile {
 #### &DelayedRemoval($file_to_remove, $delay);
 ####
 sub DelayedRemoval {
-    my ($file_to_remove, $delay) = @_;
-    $delay = "12 hours" unless ($delay);
-
-    unless (-e $file_to_remove) {
-	&MessageToAdmin("DelayedRemoval: file $file_to_remove does not exist");
-	return();
-    }
-    unless (-r $file_to_remove) {
-	&MessageToAdmin("DelayedRemoval: file $file_to_remove is not readable");
-	return();
-    }
-    unless (-w $file_to_remove) {
-	&MessageToAdmin("DelayedRemoval: file $file_to_remove is not writable");
-	return();
-    }
-
-    &MessageToAdmin("DelayedRemoval: file $file_to_remove will be removed in $delay") if ($ECHO >= 2);
-
-    #### TEMPORARILY INACTIVATED BECAUSE IT MOBILIZES A LOT OF MEMORY
-    return();
-
-    open REMOVE, "| at now + $delay";
-    print REMOVE "rm -f $file_to_remove \n";
-    close REMOVE;
+  &RSAT::server::DelayedRemoval();
 }
 
+# ################################################################
+# ### prints a list of elements, one per line
+# sub PrintList {
+#     my $spacer = "\n";
+#     foreach $element (@_) {
+# 	print $element;
+# 	print $spacer;
+#     }
+# }
 
-################################################################
-### prints a list of elements, one per line
-sub PrintList {
-    my $spacer = "\n";
-    foreach $element (@_) {
-	print $element;
-	print $spacer;
-    }
 
-}
+# ################################################################
+# #### print the command-line arguments
+# sub PrintArguments {
+#   my ($local_out) = @_;
+#   my $argument_string = "";
 
-################################################################
-#### print the command-line arguments
-sub PrintArguments {
-  my ($local_out) = @_;
-  my $argument_string = "";
-
-  foreach my $a (@main::ARGV) {
-    if (($a =~ /\s+/)  ||
-	($a !~ /\S+/) ||
-	($a =~ /[\(\)\>\<\&]/)) {
-      $argument_string .= " '$a'";
-    } else {
-      $argument_string .= " $a";
-    }
-  }
-  print $local_out $argument_string, "\n" if ($local_out);
-  return $argument_string;
-}
+#   foreach my $a (@main::ARGV) {
+#     if (($a =~ /\s+/)  ||
+# 	($a !~ /\S+/) ||
+# 	($a =~ /[\(\)\>\<\&]/)) {
+#       $argument_string .= " '$a'";
+#     } else {
+#       $argument_string .= " $a";
+#     }
+#   }
+#   print $local_out $argument_string, "\n" if ($local_out);
+#   return $argument_string;
+# }
 
 
 ############################################################
@@ -1062,99 +795,6 @@ sub ListSupportedTaxa {
 
 
 
-
-# ################################################################
-# ## Methods below have been transferred to RSAT::util
-
-sub ConvertStrand {
-    return &RSAT::util::ConvertStrand(@_);
-}
-
-sub OpenInputFile {
-    return &RSAT::util::OpenInputFile(@_);
-}
-
-sub OpenOutputFile {
-    return &RSAT::util::OpenOutputFile(@_);
-}
-
-sub IsNatural {
-    return &RSAT::util::IsNatural(@_);
-}
-
-sub IsInteger {
-    return &RSAT::util::IsInteger(@_);
-}
-
-sub IsReal {
-    return &RSAT::util::IsReal(@_);
-}
-
-sub round {
-    return &RSAT::util::round(@_);
-}
-
-sub trim {
-    return &RSAT::util::trim(@_);
-}
-
-sub AlphaDate {
-    return &RSAT::util::AlphaDate(@_);
-}
-
-sub SplitFileName {
-    return &RSAT::util::SplitFileName(@_);
-}
-
-sub ShortFileName {
-    return &RSAT::util::ShortFileName(@_);
-}
-
-sub ExtractPath {
-    return &RSAT::util::ExtractPath(@_);
-}
-
-################################################################
-#### Treatment of warnings and  errors
-################################################################
-
-
-################################################################
-### Messages and errors are now passed to RSAT::message and RSAT::error
-sub FatalError {
-    &RSAT::error::FatalError(@_);
-}
-
-sub cgiError {
-    &RSAT::error::cgiError(@_);
-}
-
-
-sub Warning {
-    &RSAT::message::Warning(@_);
-}
-
-sub cgiWarning {
-    &RSAT::message::cgiWarning(@_);
-}
-
-sub Info {
-    &RSAT::message::Info(@_);
-}
-
-sub cgiMessage {
-    &RSAT::message::cgiMessage(@_);
-}
-
-sub TimeWarn {
-    &RSAT::message::TimeWarn(@_);
-}
-
-sub MessageToAdmin {
-    &RSAT::message::MessageToAdmin(@_);
-}
-
-
 ################################################################
 ## Changed the name of this method
 sub ReadFamilies {
@@ -1327,6 +967,104 @@ sub ReadClasses {
     return %family;
 }
 
+
+# ################################################################
+# ## Methods below have been transferred to RSAT::util
+sub doit {
+  RSAT::util::doit(@_);
+}
+
+sub PrintArguments {
+  &RSAT::util::PrintArguments(@_);
+}
+
+sub ConvertStrand {
+    return &RSAT::util::ConvertStrand(@_);
+}
+
+sub OpenInputFile {
+    return &RSAT::util::OpenInputFile(@_);
+}
+
+sub OpenOutputFile {
+    return &RSAT::util::OpenOutputFile(@_);
+}
+
+sub IsNatural {
+    return &RSAT::util::IsNatural(@_);
+}
+
+sub IsInteger {
+    return &RSAT::util::IsInteger(@_);
+}
+
+sub IsReal {
+    return &RSAT::util::IsReal(@_);
+}
+
+sub round {
+    return &RSAT::util::round(@_);
+}
+
+sub trim {
+    return &RSAT::util::trim(@_);
+}
+
+sub AlphaDate {
+    return &RSAT::util::AlphaDate(@_);
+}
+
+sub SplitFileName {
+    return &RSAT::util::SplitFileName(@_);
+}
+
+sub ShortFileName {
+    return &RSAT::util::ShortFileName(@_);
+}
+
+sub ExtractPath {
+    return &RSAT::util::ExtractPath(@_);
+}
+
+################################################################
+#### Treatment of warnings and  errors
+################################################################
+
+
+################################################################
+### Messages and errors are now passed to RSAT::message and RSAT::error
+sub FatalError {
+    &RSAT::error::FatalError(@_);
+}
+
+sub cgiError {
+    &RSAT::error::cgiError(@_);
+}
+
+
+sub Warning {
+    &RSAT::message::Warning(@_);
+}
+
+sub cgiWarning {
+    &RSAT::message::cgiWarning(@_);
+}
+
+sub Info {
+    &RSAT::message::Info(@_);
+}
+
+sub cgiMessage {
+    &RSAT::message::cgiMessage(@_);
+}
+
+sub TimeWarn {
+    &RSAT::message::TimeWarn(@_);
+}
+
+sub MessageToAdmin {
+    &RSAT::message::MessageToAdmin(@_);
+}
 
 
 #### end of the library #####
