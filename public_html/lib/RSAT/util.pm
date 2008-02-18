@@ -374,35 +374,6 @@ sub ConvertStrand {
 }
 
 ################################################################
-=pod
-
-=item PrintArguments()
-
-print the command-line arguments
-
-=cut
-sub PrintArguments {
-    my $local_out = $_[0];
-#    unless ($local_out)  {
-#	$local_out = STDOUT;
-#    }
-    my $argument_string = "";
-
-    foreach my $a (@main::ARGV) {
-	if (($a =~ /\s+/)  ||
-	    ($a !~ /\S+/) ||
-	    ($a =~ /[\(\)\>\<\&]/)) {
-	    $argument_string .= " '$a'";
-	} else {
-	    $argument_string .= " $a";
-	}
-    }
-    print $local_out $argument_string, "\n" if ($local_out);
-    return $argument_string;
-}
-
-
-################################################################
 ### get Background Color from a score value
 ###  this subroutine was created by Rekin's and adapted to the RSA-tools
 ###  by Sylvain
@@ -457,9 +428,6 @@ sub getBgColorFromOneScore{
 
 ######################################################
 ## Convert RGB code to hexadecimal
-
-
-
 sub rgb2hex{
   my(@rgb)=@_;
   my $hex = "#";
@@ -479,6 +447,115 @@ sub rgb2hex{
   return $hex;
 }
 
+
+################################################################
+## echo a command and send it to the system
+## Usage:
+##   &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+sub doit {
+  my ($command, $dry, $die_on_error, $verbose, $batch, $job_prefix) = @_;
+  my $wd = `pwd`;
+  chomp $wd;
+
+  if ($batch) {
+    ## Store the command in a sh script (the job)
+    my $job_dir = "jobs";
+    $job_dir .= "/".`date +%Y%m%d`;
+    chomp($job_dir);
+    my $job_prefix = $job_prefix || "doit";
+    &RSAT::util::CheckOutDir($job_dir);
+    my $job = `mktemp ${job_dir}/${job_prefix}.XXXXXX`;
+    chomp $job;
+    open JOB, ">$job";
+    print JOB "( cd ", $wd;
+    print JOB "; date > ", $job, ".started"; ## Write a file called [job].started indicating the time when the job was started
+    print JOB "; hostname >> ", $job,".started"; 
+    print JOB "; ", $command;
+    print JOB "; date > ", $job, ".done"; ## Write a file called [job].done indicating the time when the job was done
+    print JOB "; hostname >> ", $job, ".done"; ## Write a file called [job].done indicating the time when the job was done
+    print JOB " )", "\n";
+    close JOB;
+    &RSAT::message::TimeWarn(join("\t", "Job queued", $wd."/".$job)) if ($main::verbose >= 2);
+
+    my $job_name = $job;
+    $job_name =~ s/\//_/g;
+    my $job_log = $wd."/".$job.".log";
+    ## Send the command to a batch queue on a PC cluster The default
+    ## values are for internal use in the SCMBB, but alternative values
+    ## can be specified by specifying the environment variables
+    ## CLUSTER_QUEUE and CLUSTER_MASTER
+    my $cluster_queue = $ENV{CLUSTER_QUEUE} || "short";
+    my $batch_mail=$ENV{BATCH_MAIL} || "a";
+    my $qsub_manager=$ENV{QSUB_MANAGER} || "sge";
+    $selected_nodes = " -l nodes=1:k2.6 ";
+    my $qsub_cmd;
+
+
+    ################################################################
+    ## Choose the queue manager depending on the local configuration
+    if ($qsub_manager eq "torque") {
+      ## qsub command functionning using Torque
+      my $cluster_master=$ENV{CLUSTER_MASTER} || "arthur.scmbb.ulb.ac.be"; ## for torque only
+      $qsub_cmd = "qsub ".$selected_nodes." -m ".$batch_mail." -q ".$cluster_master." -N ${job} -j oe -o ${job}.log ${job}";
+
+    } else {
+      ## qsub command functionning using Sun Grid Engine (SCMBB)
+      $qsub_cmd = join(" ", "qsub", 
+		       "-m",$batch_mail,
+		       "-q ", $cluster_queue, 
+		       " -j y ",
+		       "-N ", $job_name,
+		       "-o ".$job_log, $job);
+    }
+    &doit($qsub_cmd, $dry, $die_on_error,$verbose,0);
+
+  } else {
+    ## Verbose
+    if (($dry) || ($main::verbose >= 2)) {
+      warn "\n";
+      &RSAT::message::TimeWarn("Working dir", $wd) if ($main::verbose >= 3);
+      &RSAT::message::TimeWarn($command);
+    }
+
+    ## Send the command to the queue
+    unless ($dry) {
+      my $error = system $command;
+      if ($die_on_error) {
+	if ($error == -1) {
+	  &RSAT::error::FatalError("Could not execute the command\n\t$command");
+	} elsif ($error) {
+	  &RSAT::error::FatalError("Error", $error , "occurred during execution of the command", "\n\t".$command);
+	}
+      } else {
+	return ($error);
+      }
+    }
+  }
+}
+
+################################################################
+=pod
+
+=item PrintArguments()
+
+print the command-line arguments
+
+=cut
+sub PrintArguments {
+  my ($local_out) = @_;
+  my $argument_string = "";
+  foreach my $a (@main::ARGV) {
+    if (($a =~ /\s+/)  ||
+	($a !~ /\S+/) ||
+	($a =~ /[\(\)\>\<\&]/)) {
+      $argument_string .= " '$a'";
+    } else {
+      $argument_string .= " $a";
+    }
+  }
+  print $local_out $argument_string, "\n" if ($local_out);
+  return $argument_string;
+}
 
 
 return 1;
