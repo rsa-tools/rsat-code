@@ -19,7 +19,7 @@ use RSAT::error;
 
 SequenceOnDisk provides direct read access to a sequence on disk this
 is particularly important for retrieving sub-sequences of large
-contigs whose size could exceeed the RAM (example whole human
+contigs whose size could exceed the RAM (example whole human
 chromosomes).
 
 =cut

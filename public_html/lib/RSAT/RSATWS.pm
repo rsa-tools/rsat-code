@@ -11,22 +11,12 @@ use vars qw(@ISA);
 use File::Temp qw/ tempfile tempdir /;
 
 my $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||;
-$ENV{RSAT} = $RSAT;
 my $SCRIPTS = $RSAT.'/perl-scripts';
 my $TMP = $RSAT.'/public_html/tmp';
 
-
-#if ($0 =~ /([^(\/)]+)$/) {
-#  push (@INC, "$`lib/");
-#}
-
-#unshift (@INC, "/home/rsat/rsa-tools/perl-scripts/lib/");
-use lib '../../perl-scripts/lib';
-#unshift (@INC, "../../perl-scripts/lib/");
+unshift (@INC, "../../perl-scripts/lib/");
 #require "RSA.lib";
-require RSAT::server;
-require RSAT::util;
-#&RSAT::server::UpdateLogFile("","","WS");
+#&UpdateLogFile("","","WS");
 
 =pod
 
@@ -36,145 +26,141 @@ require RSAT::util;
 
 =head1 DESCRIPTION
 
-Documentation for this module is at
-http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS_documentation.xml
+Documentation for this module is at http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS_documentation.xml
 
 =cut
 
 ##########
 sub retrieve_seq {
-  my ($self, $args_ref) = @_;
-  my %args = %$args_ref;
-  my $output_choice = $args{"output"};
-  unless ($output_choice) {
-    $output_choice = 'both';
-  }
-  my $command = $self->retrieve_seq_cmd(%args);
-  &run_WS_command($command, $output_choice);
-
-#    my $result = `$command`;
-#    my $stderr = `$command 2>&1 1>/dev/null`;
-#    if ($stderr) {
-#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#    }
-#    my $tmp_outfile = `mktemp $TMP/oligo.XXXXXXXXXX`;
-#    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile);
-#    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#    print TMP_OUT $result;
-#    close TMP_OUT;
-#    if ($output_choice eq 'server') {
-#      return SOAP::Data->name('response' => {'command' => $command, 
-#					     'server' => $tmp_outfile});
-#    } elsif ($output_choice eq 'client') {
-#      return SOAP::Data->name('response' => {'command' => $command,
-#					     'client' => $result});
-#    } elsif ($output_choice eq 'both') {
-#      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-#					     'command' => $command, 
-#					     'client' => $result});
-#    }
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->retrieve_seq_cmd(%args);
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $result = `$command`;
+    my $tmp_outfile = `mktemp $TMP/retrieve-seq.XXXXXXXXXX`;
+    open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP $result;
+    close TMP;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
 }
 
 sub retrieve_seq_cmd {
-  my ($self,%args) = @_;
-  my $organism = $args{"organism"};
-  my $noorf = $args{"noorf"};
-  my $from = $args{"from"};
-  my $to = $args{"to"};
+    my ($self,%args) = @_;
+    my $organism = $args{"organism"};
+    my $noorf = $args{"noorf"};
+    my $from = $args{"from"};
+    my $to = $args{"to"};
 
-  ## List of query genes
-  my $query_ref = $args{"query"};
-  my $query = "";
-  if ($query_ref) {
-    my @query = @{$query_ref};
-    foreach $q (@query) {
-      $q =~s/\'//g;
-      $q =~s/\"//g;
+    ## List of query genes
+    my $query_ref = $args{"query"};
+    my $query = "";
+    if ($query_ref) {
+	my @query = @{$query_ref};
+	foreach $q (@query) {
+	    $q =~s/\'//g;
+	    $q =~s/\"//g;
+	}
+	$query = " -q '";
+	$query .= join "' -q '", @query;
+	$query .= "'";
     }
-    $query = " -q '";
-    $query .= join "' -q '", @query;
-    $query .= "'";
-  }
 
-  my $feattype = $args{"feattype"};
-  my $type = $args{"type"};
-  my $format = $args{"format"};
-  my $all = $args{"all"};
-  my $lw = $args{"lw"};
-  my $label = $args{"label"};
-  my $label_sep = $args{"label_sep"};
-  my $nocom = $args{"nocom"};
-  my $repeat = $args{'repeat'};
-  my $imp_pos = $args{'imp_pos'};
+    my $feattype = $args{"feattype"};
+    my $type = $args{"type"};
+    my $format = $args{"format"};
+    my $all = $args{"all"};
+    my $lw = $args{"lw"};
+    my $label = $args{"label"};
+    my $label_sep = $args{"label_sep"};
+    my $nocom = $args{"nocom"};
+    my $repeat = $args{'repeat'};
+    my $imp_pos = $args{'imp_pos'};
 
-  my $command = "$SCRIPTS/retrieve-seq";
+    my $command = "$SCRIPTS/retrieve-seq";
 
-  if ($organism) {
-    $organism =~ s/\'//g;
-    $organism =~ s/\"//g;
-    $command .= " -org '".$organism."'";
-  }
-  if ($query) {
-    $command .= $query;
-  }
+    if ($organism) {
+      $organism =~ s/\'//g;
+      $organism =~ s/\"//g;
+      $command .= " -org '".$organism."'";
+    }
+    if ($query) {
+	$command .= $query;
+    }
 
-  if ($noorf == 1) {
-    $command .= " -noorf";
-  }
-  if ($from =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
-    $from =~ s/\'//g;
-    $from =~ s/\"//g;
-    $command .= " -from '".$from."'";
-  }
-  if ($to =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
-    $to =~ s/\'//g;
-    $to =~ s/\"//g;
-    $command .= " -to '".$to."'";
-  }
-  if ($feattype) {
-    $feattype =~ s/\'//g;
-    $feattype =~ s/\"//g;
-    $command .= " -feattype '".$feattype."'";
-  }
-  if ($type) {
-    $type =~ s/\'//g;
-    $type =~ s/\"//g;
-    $command .= " -type '".$type."'";
-  }
-  if ($format) {
-    $format =~ s/\'//g;
-    $format =~ s/\"//g;
-    $command .= " -format '".$format."'";
-  }
-  if ($all == 1) {
-    $command .= " -all";
-  }
-  if ($lw) {
-    $lw =~ s/\'//g;
-    $lw =~ s/\"//g;
-    $command .= " -lw '".$lw."'";
-  }
-  if ($label) {
-    $label =~ s/\'//g;
-    $label =~ s/\"//g;
-    $command .= " -label '".$label."'";
-  }
-  if ($label_sep) {
-    $label_sep =~ s/\'//g;
-    $label_sep =~ s/\"//g;
-    $command .= " -labelsep '".$label_sep."'";
-  }
-  if ($nocom == 1) {
-    $command .= " -nocom";
-  }
-  if ($repeat == 1) {
-    $command .= " -rm";
-  }
-  if ($imp_pos == 1) {
-    $command .= " -imp_pos";
-  }
+    if ($noorf == 1) {
+	$command .= " -noorf";
+    }
+    if ($from =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+	$from =~ s/\'//g;
+	$from =~ s/\"//g;
+	$command .= " -from '".$from."'";
+    }
+    if ($to =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+	$to =~ s/\'//g;
+	$to =~ s/\"//g;
+	$command .= " -to '".$to."'";
+    }
+    if ($feattype) {
+	$feattype =~ s/\'//g;
+	$feattype =~ s/\"//g;
+	$command .= " -feattype '".$feattype."'";
+    }
+    if ($type) {
+	$type =~ s/\'//g;
+	$type =~ s/\"//g;
+	$command .= " -type '".$type."'";
+    }
+    if ($format) {
+	$format =~ s/\'//g;
+	$format =~ s/\"//g;
+	$command .= " -format '".$format."'";
+    }
+    if ($all == 1) {
+	$command .= " -all";
+    }
+    if ($lw) {
+	$lw =~ s/\'//g;
+	$lw =~ s/\"//g;
+	$command .= " -lw '".$lw."'";
+    }
+    if ($label) {
+	$label =~ s/\'//g;
+	$label =~ s/\"//g;
+	$command .= " -label '".$label."'";
+    }
+    if ($label_sep) {
+	$label_sep =~ s/\'//g;
+	$label_sep =~ s/\"//g;
+	$command .= " -labelsep '".$label_sep."'";
+    }
+    if ($nocom == 1) {
+	$command .= " -nocom";
+    }
+    if ($repeat == 1) {
+	$command .= " -rm";
+    }
+    if ($imp_pos == 1) {
+	$command .= " -imp_pos";
+    }
 
-  return $command;
+    return $command;
 }
 
 ##########
@@ -186,29 +172,26 @@ sub retrieve_ensembl_seq {
 	$output_choice = 'both';
     }
     my $command = $self->retrieve_ensembl_seq_cmd(%args);
-    &run_WS_command($command, $output_choice);
-
-#    my $result = `$command`;
-#    my $stderr = `$command 2>&1 1>/dev/null`;
-#    if ($stderr) {
-#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#    }
-#    my $tmp_outfile = `mktemp $TMP/oligo.XXXXXXXXXX`;
-#    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile);
-#    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#    print TMP_OUT $result;
-#    close TMP_OUT;
-#    if ($output_choice eq 'server') {
-#      return SOAP::Data->name('response' => {'command' => $command, 
-#					     'server' => $tmp_outfile});
-#    } elsif ($output_choice eq 'client') {
-#      return SOAP::Data->name('response' => {'command' => $command,
-#					     'client' => $result});
-#    } elsif ($output_choice eq 'both') {
-#      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-#					     'command' => $command, 
-#					     'client' => $result});
-#    }
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $result = `$command`;
+    my $tmp_outfile = `mktemp $TMP/retrieve-ensembl-seq.XXXXXXXXXX`;
+    open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP $result;
+    close TMP;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
 }
 
 sub retrieve_ensembl_seq_cmd {
@@ -429,29 +412,26 @@ sub purge_seq {
 	$output_choice = 'both';
     }
     my $command = $self->purge_seq_cmd(%args);
-    &run_WS_command($command, $output_choice);
-
-#    my $result = `$command`;
-#    my $stderr = `$command 2>&1 1>/dev/null`;
-#    if ($stderr) {
-#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#    }
-#    my $tmp_outfile = `mktemp $TMP/oligo.XXXXXXXXXX`;
-#    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile);
-#    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#    print TMP_OUT $result;
-#    close TMP_OUT;
-#    if ($output_choice eq 'server') {
-#      return SOAP::Data->name('response' => {'command' => $command, 
-#					     'server' => $tmp_outfile});
-#    } elsif ($output_choice eq 'client') {
-#      return SOAP::Data->name('response' => {'command' => $command,
-#					     'client' => $result});
-#    } elsif ($output_choice eq 'both') {
-#      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-#					     'command' => $command, 
-#					     'client' => $result});
-#    }
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $result = `$command`;
+    my $tmp_outfile = `mktemp $TMP/purge-seq.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command,
+					       'client' => $result});
+    }
 }
 
 sub purge_seq_cmd {
@@ -528,29 +508,26 @@ sub oligo_analysis {
 	$output_choice = 'both';
     }
     my $command = $self->oligo_analysis_cmd(%args);
-    &run_WS_command($command, $output_choice);
-
-#    my $result = `$command`;
-#    my $stderr = `$command 2>&1 1>/dev/null`;
-#    if ($stderr) {
-#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#    }
-#    my $tmp_outfile = `mktemp $TMP/oligo.XXXXXXXXXX`;
-#    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile);
-#    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#    print TMP_OUT $result;
-#    close TMP_OUT;
-#    if ($output_choice eq 'server') {
-#      return SOAP::Data->name('response' => {'command' => $command, 
-#					     'server' => $tmp_outfile});
-#    } elsif ($output_choice eq 'client') {
-#      return SOAP::Data->name('response' => {'command' => $command,
-#					     'client' => $result});
-#    } elsif ($output_choice eq 'both') {
-#      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-#					     'command' => $command, 
-#					     'client' => $result});
-#    }
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $result = `$command`;
+    my $tmp_outfile = `mktemp $TMP/oligo.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
 }
 
 sub oligo_analysis_cmd {
@@ -659,29 +636,26 @@ sub dyad_analysis {
 	$output_choice = 'both';
     }
     my $command = $self->dyad_analysis_cmd(%args);
-    &run_WS_command($command, $output_choice);
-
-#    my $result = `$command`;
-#    my $stderr = `$command 2>&1 1>/dev/null`;
-#    if ($stderr) {
-#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#    }
-#    my $tmp_outfile = `mktemp $TMP/oligo.XXXXXXXXXX`;
-#    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile);
-#    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#    print TMP_OUT $result;
-#    close TMP_OUT;
-#    if ($output_choice eq 'server') {
-#      return SOAP::Data->name('response' => {'command' => $command, 
-#					     'server' => $tmp_outfile});
-#    } elsif ($output_choice eq 'client') {
-#      return SOAP::Data->name('response' => {'command' => $command,
-#					     'client' => $result});
-#    } elsif ($output_choice eq 'both') {
-#      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-#					     'command' => $command, 
-#					     'client' => $result});
-#    }
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $result = `$command`;
+    my $tmp_outfile = `mktemp $TMP/dyad.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
 }
 
 sub dyad_analysis_cmd {
@@ -813,29 +787,25 @@ sub pattern_assembly {
       $output_choice = 'both';
     }
     my $command = $self->pattern_assembly_cmd(%args);
-    &run_WS_command($command, $output_choice);
-
-#    my $result = `$command`;
-#    my $stderr = `$command 2>&1 1>/dev/null`;
-#    if ($stderr) {
-#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#    }
-#    my $tmp_outfile = `mktemp $TMP/oligo.XXXXXXXXXX`;
-#    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile);
-#    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#    print TMP_OUT $result;
-#    close TMP_OUT;
-#    if ($output_choice eq 'server') {
-#      return SOAP::Data->name('response' => {'command' => $command, 
-#					     'server' => $tmp_outfile});
-#    } elsif ($output_choice eq 'client') {
-#      return SOAP::Data->name('response' => {'command' => $command,
-#					     'client' => $result});
-#    } elsif ($output_choice eq 'both') {
-#      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-#					     'command' => $command, 
-#					     'client' => $result});
-#    }
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+      die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $result = `$command`;
+    my ($TMP_OUT, $tmp_outfile) = tempfile(pattern-assembly.XXXXXXXXXX, DIR => $TMP);
+    print $TMP_OUT $result;
+    close $TMP_OUT;
+    if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => {'command' => $command, 
+					     'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => {'command' => $command,
+					     'client' => $result});
+    } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					     'command' => $command, 
+					     'client' => $result});
+    }
 }
 
 sub pattern_assembly_cmd {
@@ -930,28 +900,26 @@ sub dna_pattern {
 	$output_choice = 'both';
     }
     my $command = $self->dna_pattern_cmd(%args);
-    &run_WS_command($command, $output_choice);
-
-#     my $stderr = `$command 2>&1 1>/dev/null`;
-#     if ($stderr) {
-# 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#     }
-#     my $result = `$command`;
-#     my $tmp_outfile = `mktemp $TMP/dna_pattern.XXXXXXXXXX`;
-#     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#     print TMP_OUT $result;
-#     close TMP_OUT;
-#     if ($output_choice eq 'server') {
-# 	return SOAP::Data->name('response' => {'command' => $command, 
-# 					       'server' => $tmp_outfile});
-#     } elsif ($output_choice eq 'client') {
-# 	return SOAP::Data->name('response' => {'command' => $command,
-# 					       'client' => $result});
-#     } elsif ($output_choice eq 'both') {
-# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-# 					       'command' => $command, 
-# 					       'client' => $result});
-#     }
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $result = `$command`;
+    my $tmp_outfile = `mktemp $TMP/dna_pattern.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
 }
 
 sub dna_pattern_cmd {
@@ -1080,27 +1048,25 @@ sub convert_features {
       $output_choice = 'both';
     }
     my $command = $self->convert_features_cmd(%args);
-    &run_WS_command($command, $output_choice);
-
-#     my $stderr = `$command 2>&1 1>/dev/null`;
-#     if ($stderr) {
-#       die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#     }
-#     my $result = `$command`;
-#     my ($TMP_OUT, $tmp_outfile) = tempfile(convert-features.XXXXXXXXXX, DIR => $TMP);
-#     print $TMP_OUT $result;
-#     close $TMP_OUT;
-#     if ($output_choice eq 'server') {
-#       return SOAP::Data->name('response' => {'command' => $command, 
-# 					     'server' => $tmp_outfile});
-#     } elsif ($output_choice eq 'client') {
-#       return SOAP::Data->name('response' => {'command' => $command,
-# 					     'client' => $result});
-#     } elsif ($output_choice eq 'both') {
-#       return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-# 					     'command' => $command, 
-# 					     'client' => $result});
-#     }
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+      die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $result = `$command`;
+    my ($TMP_OUT, $tmp_outfile) = tempfile(convert-features.XXXXXXXXXX, DIR => $TMP);
+    print $TMP_OUT $result;
+    close $TMP_OUT;
+    if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => {'command' => $command, 
+					     'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => {'command' => $command,
+					     'client' => $result});
+    } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					     'command' => $command, 
+					     'client' => $result});
+    }
 }
 
 sub convert_features_cmd {
@@ -1148,8 +1114,6 @@ sub feature_map {
 	$output_choice = 'both';
     }
     my $command = $self->feature_map_cmd(%args);
-    &run_WS_command($command, $output_choice);
-
     my $stderr = `$command 2>&1 1>/dev/null`;
     if ($stderr) {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
@@ -1375,29 +1339,27 @@ sub footprint_discovery {
 	$output_choice = 'both';
     }
     my $command = $self->footprint_discovery_cmd(%args);
-    &run_WS_command($command, $output_choice);
-
-#     my $stderr = `$command 2>&1 1>/dev/null`;
-#     if ($stderr) {
-# 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#     }
-#     my $result = `$command`;
-#     my ($TMP_OUT, $tmp_outfile) = tempfile(footprint_discovery.XXXXXXXXXX, DIR => $TMP);
-#     print $TMP_OUT $result;
-#     close $TMP_OUT;
-#     $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.scmbb\.ulb\.ac\.be\/rsat/g;
-# #    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
-#     if ($output_choice eq 'server') {
-# 	return SOAP::Data->name('response' => {'command' => $command, 
-# 					       'server' => $tmp_outfile});
-#     } elsif ($output_choice eq 'client') {
-# 	return SOAP::Data->name('response' => {'command' => $command,
-# 					       'client' => $result});
-#     } elsif ($output_choice eq 'both') {
-# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-# 					       'command' => $command, 
-# 					       'client' => $result});
-#     }
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $result = `$command`;
+    my ($TMP_OUT, $tmp_outfile) = tempfile(footprint_discovery.XXXXXXXXXX, DIR => $TMP);
+    print $TMP_OUT $result;
+    close $TMP_OUT;
+    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.scmbb\.ulb\.ac\.be\/rsat/g;
+#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
 }
 
 sub footprint_discovery_cmd {
@@ -1467,8 +1429,11 @@ sub footprint_discovery_cmd {
     if ($output_prefix) {
       $output_prefix =~ s/\'//g;
       $output_prefix =~ s/\"//g;
-      $command .= " -o '".$output_prefix."'";
-    }
+      $command .= " -o ../tmp/'".$output_prefix."'";
+  } else {
+      $output_prefix = "footprints/".$taxon."/".$organism."/".$query."/".$bg_model;
+      $command .= " -o ../tmp/'".$output_prefix."'";
+  }
 
     if ($query) {
 	$command .= $query;
@@ -1561,29 +1526,27 @@ sub gene_info {
 	$output_choice = 'both';
     }
     my $command = $self->gene_info_cmd(%args);
-    &run_WS_command($command, $output_choice);
-
-#     my $result = `$command`;
-#     my $stderr = `$command 2>&1 1>/dev/null`;
-#     if ($stderr) {
-# 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#     }
-#     my $tmp_outfile = `mktemp $TMP/oligo.XXXXXXXXXX`;
-#     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#     print TMP_OUT $result;
-#     close TMP_OUT;
-#     chomp $tmp_outfile;
-#     if ($output_choice eq 'server') {
-# 	return SOAP::Data->name('response'=>{'command' => $command, 
-# 					     'server' => $tmp_outfile});
-#     } elsif ($output_choice eq 'client') {
-# 	return SOAP::Data->name('response'=>{'command' => $command,
-# 					     'client' => $result});
-#     } elsif ($output_choice eq 'both') {
-# 	return SOAP::Data->name('response'=>{'server' => $tmp_outfile,
-# 					     'command' => $command, 
-# 					     'client' => $result});
-#     }
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/oligo.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    close TMP_OUT;
+    chomp $tmp_outfile;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response'=>{'command' => $command, 
+					     'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response'=>{'command' => $command,
+					     'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response'=>{'server' => $tmp_outfile,
+					     'command' => $command, 
+					     'client' => $result});
+    }
 }
 
 sub gene_info_cmd {
@@ -1634,38 +1597,32 @@ sub gene_info_cmd {
 ##########
 sub supported_organisms {
     my ($self, $args_ref) = @_;
-#    $log_file = join("", $ENV{RSAT}, "/logs/log-file_", $ENV{rsat_site}, sprintf("_%04d_%02d", $year+1900,$month+1));
-#    &RSAT::server::UpdateLogFile($0, "WS", $log_file);
-
     my %args = %$args_ref;
     my $output_choice = $args{"output"};
     unless ($output_choice) {
 	$output_choice = 'both';
     }
     my $command = $self->supported_organisms_cmd(%args);
-    &run_WS_command($command, $output_choice);
-
-#    my $result = `$command`;
-#    my $stderr = `$command 2>&1 1>/dev/null`;
-#    if ($stderr) {
-#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#    }
-#    my $tmp_outfile = `mktemp $TMP/oligo.XXXXXXXXXX`;
-#    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile);
-#    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#    print TMP_OUT $result;
-#    close TMP_OUT;
-#    if ($output_choice eq 'server') {
-#      return SOAP::Data->name('response' => {'command' => $command, 
-#					     'server' => $tmp_outfile});
-#    } elsif ($output_choice eq 'client') {
-#      return SOAP::Data->name('response' => {'command' => $command,
-#					     'client' => $result});
-#    } elsif ($output_choice eq 'both') {
-#      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-#					     'command' => $command, 
-#					     'client' => $result});
-#    }
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/oligo.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => {'command' => $command, 
+					     'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => {'command' => $command,
+					     'client' => $result});
+    } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					     'command' => $command, 
+					     'client' => $result});
+    }
 }
 
 sub supported_organisms_cmd {
@@ -1697,30 +1654,28 @@ sub text_to_html {
     }
     my $command = $self->text_to_html_cmd(%args);
     my $result = `$command`;
-    &run_WS_command($command, $output_choice);
-
-#     my $stderr = `$command 2>&1 1>/dev/null`;
-#     if ($stderr) {
-# 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#     }
-#     my $tmp_outfile = `mktemp $TMP/text-to-html.XXXXXXXXXX`;
-#     chomp $tmp_outfile;
-#     system("rm $tmp_outfile");
-#     $tmp_outfile .= ".html";
-#     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#     print TMP_OUT $result;
-#     close TMP_OUT;
-#     if ($output_choice eq 'server') {
-#       return SOAP::Data->name('response' => {'command' => $command, 
-# 					     'server' => $tmp_outfile});
-#     } elsif ($output_choice eq 'client') {
-#       return SOAP::Data->name('response' => {'command' => $command,
-# 					     'client' => $result});
-#     } elsif ($output_choice eq 'both') {
-#       return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-# 					     'command' => $command, 
-# 					     'client' => $result});
-#     }
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/text-to-html.XXXXXXXXXX`;
+    chomp $tmp_outfile;
+    system("rm $tmp_outfile");
+    $tmp_outfile .= ".html";
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => {'command' => $command, 
+					     'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => {'command' => $command,
+					     'client' => $result});
+    } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					     'command' => $command, 
+					     'client' => $result});
+    }
 }
 
 sub text_to_html_cmd {
@@ -1763,30 +1718,28 @@ sub roc_stats {
     }
     my $command = $self->roc_stats_cmd(%args);
     my $result = `$command`;
-    &run_WS_command($command, $output_choice);
-
-#     my $stderr = `$command 2>&1 1>/dev/null`;
-#     if ($stderr) {
-# 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#     }
-#     my $tmp_outfile = `mktemp $TMP/roc_stats.XXXXXXXXXX`;
-#     chomp $tmp_outfile;
-#     system("rm $tmp_outfile");
-#     $tmp_outfile .= ".html";
-#     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#     print TMP_OUT $result;
-#     close TMP_OUT;
-#     if ($output_choice eq 'server') {
-#       return SOAP::Data->name('response' => {'command' => $command, 
-# 					     'server' => $tmp_outfile});
-#     } elsif ($output_choice eq 'client') {
-#       return SOAP::Data->name('response' => {'command' => $command,
-# 					     'client' => $result});
-#     } elsif ($output_choice eq 'both') {
-#       return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-# 					     'command' => $command, 
-# 					     'client' => $result});
-#     }
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/roc_stats.XXXXXXXXXX`;
+    chomp $tmp_outfile;
+    system("rm $tmp_outfile");
+    $tmp_outfile .= ".html";
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+      return SOAP::Data->name('response' => {'command' => $command, 
+					     'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+      return SOAP::Data->name('response' => {'command' => $command,
+					     'client' => $result});
+    } elsif ($output_choice eq 'both') {
+      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					     'command' => $command, 
+					     'client' => $result});
+    }
 }
 
 sub roc_stats_cmd {
@@ -1842,29 +1795,27 @@ sub classfreq {
 	$output_choice = 'both';
     }
     my $command = $self->classfreq_cmd(%args);
-    &run_WS_command($command, $output_choice);
-
-#     my $result = `$command`;
-#     my $stderr = `$command 2>&1 1>/dev/null`;
-#     if ($stderr) {
-# 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#     }
-#     my $tmp_outfile = `mktemp $TMP/classfreq-output.XXXXXXXXXX`;
-#     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#     print TMP_OUT $result;
-# #     print TMP_OUT "KEYS ".keys(%args);
-#     close TMP_OUT;
-#     if ($output_choice eq 'server') {
-# 	return SOAP::Data->name('response' => {'command' => $command, 
-# 					       'server' => $tmp_outfile});
-#     } elsif ($output_choice eq 'client') {
-# 	return SOAP::Data->name('response' => {'command' => $command,
-# 					       'client' => $result});
-#     } elsif ($output_choice eq 'both') {
-# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-# 					       'command' => $command, 
-# 					       'client' => $result});
-#     }
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/classfreq-output.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+#     print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
 }
 
 sub classfreq_cmd {
@@ -2369,28 +2320,26 @@ sub convert_seq {
 	$output_choice = 'both';
     }
     my $command = $self->convert_seq_cmd(%args);
-    &run_WS_command($command, $output_choice);
-
-#     my $result = `$command`;
-#     my $stderr = `$command 2>&1 1>/dev/null`;
-#     if ($stderr) {
-# 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#     }
-#     my $tmp_outfile = `mktemp $TMP/convert-seq.XXXXXXXXXX`;
-#     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#     print TMP_OUT $result;
-#     close TMP_OUT;
-#     if ($output_choice eq 'server') {
-# 	return SOAP::Data->name('response' => {'command' => $command, 
-# 					       'server' => $tmp_outfile});
-#     } elsif ($output_choice eq 'client') {
-# 	return SOAP::Data->name('response' => {'command' => $command,
-# 					       'client' => $result});
-#     } elsif ($output_choice eq 'both') {
-# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-# 					       'command' => $command, 
-# 					       'client' => $result});
-#     }
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/convert-seq.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
 }
 
 sub convert_seq_cmd {
@@ -2435,28 +2384,26 @@ sub compare_classes {
     $output_choice = 'both';
   }
   my $command = $self->compare_classes_cmd(%args);
-  &run_WS_command($command, $output_choice);
-
-#   my $stderr = `$command 2>&1 1>/dev/null`;
-#   if ($stderr) {
-#     die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#   }
-#   my $result = `$command`;
-#   my $tmp_outfile = `mktemp $TMP/compare-classes.XXXXXXXXXX`;
-#   open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#   print TMP $result;
-#   close TMP;
-#   if ($output_choice eq 'server') {
-#     return SOAP::Data->name('response' => {'command' => $command, 
-# 					   'server' => $tmp_outfile});
-#   } elsif ($output_choice eq 'client') {
-#     return SOAP::Data->name('response' => {'command' => $command,
-# 					   'client' => $result});
-#   } elsif ($output_choice eq 'both') {
-#     return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-# 					   'command' => $command, 
-# 					   'client' => $result});
-#     }
+  my $stderr = `$command 2>&1 1>/dev/null`;
+  if ($stderr) {
+    die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+  }
+  my $result = `$command`;
+  my $tmp_outfile = `mktemp $TMP/compare-classes.XXXXXXXXXX`;
+  open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+  print TMP $result;
+  close TMP;
+  if ($output_choice eq 'server') {
+    return SOAP::Data->name('response' => {'command' => $command, 
+					   'server' => $tmp_outfile});
+  } elsif ($output_choice eq 'client') {
+    return SOAP::Data->name('response' => {'command' => $command,
+					   'client' => $result});
+  } elsif ($output_choice eq 'both') {
+    return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					   'command' => $command, 
+					   'client' => $result});
+    }
 }
 
 sub compare_classes_cmd {
@@ -2539,7 +2486,7 @@ sub compare_classes_cmd {
   }
 
   if ($upper_threshold_field_list ne "" && $upper_threshold_value_list ne "")  {
-
+    
     my @upper_threshold_field_cp = split(":", $upper_threshold_field_list);
     my @upper_threshold_value_cp = split(",", $upper_threshold_value_list);
     if (scalar(@upper_threshold_field_cp) == scalar(@upper_threshold_value_cp)) {
@@ -2926,28 +2873,26 @@ sub random_seq {
     $output_choice = 'both';
   }
   my $command = $self->random_seq_cmd(%args);
-  &run_WS_command($command, $output_choice);
-  
-#   my $stderr = `$command 2>&1 1>/dev/null`;
-#   if ($stderr) {
-#     die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#   }
-#   my $result = `$command`;
-#   my $tmp_outfile = `mktemp $TMP/random_seq.XXXXXXXXXX`;
-#   open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#   print TMP $result;
-#   close TMP;
-#   if ($output_choice eq 'server') {
-#     return SOAP::Data->name('response' => {'command' => $command, 
-# 					   'server' => $tmp_outfile});
-#   } elsif ($output_choice eq 'client') {
-#     return SOAP::Data->name('response' => {'command' => $command,
-# 					   'client' => $result});
-#   } elsif ($output_choice eq 'both') {
-#     return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-# 					   'command' => $command, 
-# 					   'client' => $result});
-#     }
+  my $stderr = `$command 2>&1 1>/dev/null`;
+  if ($stderr) {
+    die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+  }
+  my $result = `$command`;
+  my $tmp_outfile = `mktemp $TMP/random_seq.XXXXXXXXXX`;
+  open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+  print TMP $result;
+  close TMP;
+  if ($output_choice eq 'server') {
+    return SOAP::Data->name('response' => {'command' => $command, 
+					   'server' => $tmp_outfile});
+  } elsif ($output_choice eq 'client') {
+    return SOAP::Data->name('response' => {'command' => $command,
+					   'client' => $result});
+  } elsif ($output_choice eq 'both') {
+    return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					   'command' => $command, 
+					   'client' => $result});
+    }
 }
 
 sub random_seq_cmd {
@@ -3431,29 +3376,27 @@ sub graph_get_clusters {
 	$output_choice = 'both';
     }
     my $command = $self->graph_get_clusters_cmd(%args);
-    &run_WS_command($command, $output_choice);
-
-#     my $result = `$command`;
-#     my $stderr = `$command 2>&1 1>/dev/null`;
-#     if ($stderr) {
-# 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#     }
-#     my $tmp_outfile = `mktemp $TMP/graph-get-clusters-out.XXXXXXXXXX`;
-#     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#     print TMP_OUT $result;
-# #     print TMP_OUT "KEYS ".keys(%args);
-#     close TMP_OUT;
-#     if ($output_choice eq 'server') {
-# 	return SOAP::Data->name('response' => {'command' => $command, 
-# 					       'server' => $tmp_outfile});
-#     } elsif ($output_choice eq 'client') {
-# 	return SOAP::Data->name('response' => {'command' => $command,
-# 					       'client' => $result});
-#     } elsif ($output_choice eq 'both') {
-# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-# 					       'command' => $command, 
-# 					       'client' => $result});
-#     }
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/graph-get-clusters-out.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+#     print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
 }
 
 sub graph_get_clusters_cmd {
@@ -3542,28 +3485,26 @@ sub graph_node_degree {
     }
     my $command = $self->graph_node_degree_cmd(%args);
     my $result = `$command`;
-    &run_WS_command($command, $output_choice);
-
-#     my $stderr = `$command 2>&1 1>/dev/null`;
-#     if ($stderr) {
-# 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#     }
-#     my $tmp_outfile = `mktemp $TMP/graph-node-degree-out.XXXXXXXXXX`;
-#     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#     print TMP_OUT $result;
-# #     print TMP_OUT "KEYS ".keys(%args);
-#     close TMP_OUT;
-#     if ($output_choice eq 'server') {
-# 	return SOAP::Data->name('response' => {'command' => $command, 
-# 					       'server' => $tmp_outfile});
-#     } elsif ($output_choice eq 'client') {
-# 	return SOAP::Data->name('response' => {'command' => $command,
-# 					       'client' => $result});
-#     } elsif ($output_choice eq 'both') {
-# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-# 					       'command' => $command, 
-# 					       'client' => $result});
-#     }
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/graph-node-degree-out.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+#     print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
 }
 
 sub graph_node_degree_cmd {
@@ -4059,28 +4000,26 @@ sub random_graph {
     }
     my $command = $self->random_graph_cmd(%args);
     my $result = `$command`;
-    &run_WS_command($command, $output_choice);
-
-#     my $stderr = `$command 2>&1 1>/dev/null`;
-#     if ($stderr) {
-# 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#     }
-#     my $tmp_outfile = `mktemp $TMP/random-graph.XXXXXXXXXX`;
-#     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#     print TMP_OUT $result;
-# #     print TMP_OUT "KEYS ".keys(%args);
-#     close TMP_OUT;
-#     if ($output_choice eq 'server') {
-# 	return SOAP::Data->name('response' => {'command' => $command, 
-# 					       'server' => $tmp_outfile});
-#     } elsif ($output_choice eq 'client') {
-# 	return SOAP::Data->name('response' => {'command' => $command,
-# 					       'client' => $result});
-#     } elsif ($output_choice eq 'both') {
-# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-# 					       'command' => $command, 
-# 					       'client' => $result});
-#     }
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/random-graph.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+#     print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
 }
 
 sub random_graph_cmd {
@@ -4201,76 +4140,4 @@ sub random_graph_cmd {
   return $command;
 }
 
-################################################################
-=pod
-
-=item B<run_WS_command>
-
-Run a command for the web services.
-
-=cut
-sub run_WS_command {
-  my ($command, $output_choice) = @_;
-  my $result = `$command`;
-  my $stderr = `$command 2>&1 1>/dev/null`;
-  if ($stderr) {
-    die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-  }
-  my $tmp_outfile = `mktemp $TMP/oligo.XXXXXXXXXX`;
-  chomp($tmp_outfile);
-  &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile);
-  open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-  print TMP_OUT $result;
-  close TMP_OUT;
-  if ($output_choice eq 'server') {
-    return SOAP::Data->name('response' => {'command' => $command, 
-					   'server' => $tmp_outfile});
-  } elsif ($output_choice eq 'client') {
-    return SOAP::Data->name('response' => {'command' => $command,
-					   'client' => $result});
-  } elsif ($output_choice eq 'both') {
-    return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-					   'command' => $command, 
-					   'client' => $result});
-  }
-}
-
-
-################################################################
-=pod
-
-=item B<UpdateLogFileWS>
-
-Update a specifig col file for the web services.
-
-=cut
-sub UpdateLogFileWS {
-  my (%args) = @_; 
-  my ($sec, $min, $hour,$day,$month,$year) = localtime(time);
-  unless (defined($ENV{rsat_site})) {
-    $ENV{rsat_site} = `hostname`;
-    chomp($ENV{rsat_site});
-  }
-  my $log_file = join("", $ENV{RSAT}, "/logs/log-file_", $ENV{rsat_site}, "_WS", sprintf("_%04d_%02d", $year+1900,$month+1));
-  if (open LOG, ">>".$log_file) {
-    #flock(LOG,2);
-    $date = &RSAT::util::AlphaDate();
-    $date =~ s/\n//;
-    print LOG join ("\t",
-		    $date,
-		    $ENV{rsat_site},
-		    "$ENV{'REMOTE_USER'}\@$ENV{'REMOTE_ADDR'} ($ENV{'REMOTE_HOST'})",
-		    $script_name,
-		    $output_choice,
-		    $user_email,
-		    $message,
-		   ), "\n";
-    print LOG join ("\t", $args{command}, $args{tmp_outfile}), "\n";
-    #flock(LOG,8);
-    close LOG;
-  }
-}
-
 1;
-
-
