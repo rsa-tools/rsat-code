@@ -180,9 +180,6 @@ if (($query->param('output') =~ /display/i) ||
 
     ### print the result ### 
     &PipingWarning();
-    if ($query->param('output') =~ /server/i) {
-	&Info("The result will appear below ...");
-    }
 
     print '<H4>Result</H4>';
 
