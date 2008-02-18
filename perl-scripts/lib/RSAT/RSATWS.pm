@@ -15,8 +15,6 @@ my $SCRIPTS = $RSAT.'/perl-scripts';
 my $TMP = $RSAT.'/public_html/tmp';
 
 unshift (@INC, "../../perl-scripts/lib/");
-#require "RSA.lib";
-#&UpdateLogFile("","","WS");
 
 =pod
 
@@ -39,26 +37,7 @@ sub retrieve_seq {
 	$output_choice = 'both';
     }
     my $command = $self->retrieve_seq_cmd(%args);
-    my $stderr = `$command 2>&1 1>/dev/null`;
-    if ($stderr) {
-	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-    }
-    my $result = `$command`;
-    my $tmp_outfile = `mktemp $TMP/retrieve-seq.XXXXXXXXXX`;
-    open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-    print TMP $result;
-    close TMP;
-    if ($output_choice eq 'server') {
-	return SOAP::Data->name('response' => {'command' => $command, 
-					       'server' => $tmp_outfile});
-    } elsif ($output_choice eq 'client') {
-	return SOAP::Data->name('response' => {'command' => $command,
-					       'client' => $result});
-    } elsif ($output_choice eq 'both') {
-	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-					       'command' => $command, 
-					       'client' => $result});
-    }
+    &run_WS_command($command, $output_choice, "retrieve-seq");
 }
 
 sub retrieve_seq_cmd {
@@ -4138,6 +4117,75 @@ sub random_graph_cmd {
    $command .= " -nodefile '".$tmp_input."'";
   }
   return $command;
+}
+
+################################################################
+=pod
+
+=item B<run_WS_command>
+
+Run a command for the web services.
+
+=cut
+sub run_WS_command {
+  my ($command, $output_choice, $suffix) = @_;
+  my $result = `$command`;
+  my $stderr = `$command 2>&1 1>/dev/null`;
+  if ($stderr) {
+    die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+  }
+  my $tmp_outfile = `mktemp $TMP/$suffix.XXXXXXXXXX`;
+  chomp($tmp_outfile);
+  &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile);
+  open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+  print TMP_OUT $result;
+  close TMP_OUT;
+  if ($output_choice eq 'server') {
+    return SOAP::Data->name('response' => {'command' => $command, 
+                                           'server' => $tmp_outfile});
+  } elsif ($output_choice eq 'client') {
+    return SOAP::Data->name('response' => {'command' => $command,
+                                           'client' => $result});
+  } elsif ($output_choice eq 'both') {
+    return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+                                           'command' => $command, 
+                                           'client' => $result});
+  }
+}
+
+################################################################
+=pod
+
+=item B<UpdateLogFileWS>
+
+Update a specific log file for the web services.
+
+=cut
+sub UpdateLogFileWS {
+  my (%args) = @_; 
+  my ($sec, $min, $hour,$day,$month,$year) = localtime(time);
+  unless (defined($ENV{rsat_site})) {
+    $ENV{rsat_site} = `hostname`;
+    chomp($ENV{rsat_site});
+  }
+  my $log_file = join("", $ENV{RSAT}, "/logs/log-file_", $ENV{rsat_site}, "_WS", sprintf("_%04d_%02d", $year+1900,$month+1));
+  if (open LOG, ">>".$log_file) {
+    #flock(LOG,2);
+    $date = &RSAT::util::AlphaDate();
+    $date =~ s/\n//;
+    print LOG join ("\t",
+                    $date,
+                    $ENV{rsat_site},
+                    "$ENV{'REMOTE_USER'}\@$ENV{'REMOTE_ADDR'} ($ENV{'REMOTE_HOST'})",
+                    $script_name,
+                    $output_choice,
+                    $user_email,
+                    $message,
+                   ), "\n";
+    print LOG join ("\t", $args{command}, $args{tmp_outfile}), "\n";
+    #flock(LOG,8);
+    close LOG;
+  }
 }
 
 1;
