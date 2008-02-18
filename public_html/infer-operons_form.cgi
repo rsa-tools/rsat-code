@@ -18,7 +18,7 @@ $default{organism} = "Escherichia coli K12";
 $default{dist_thr} = 55;
 $default{return_leader} = "checked";
 $default{return_trailer} = "";
-$default{return_operon} = "";
+$default{return_operon} = "checked";
 $default{return_query} = "checked";
 $default{return_q_info} = "";
 $default{return_up_info} = "";
@@ -136,7 +136,7 @@ print "<BR><HR>\n";
 &SelectOutput();
 
 ### data for the demo 
-@demo_genes = qw (bioB bioA trpE);
+@demo_genes = qw (bioD bioA trpB trpE);
 $demo_genes = join "\n", @demo_genes;
 
 
@@ -154,6 +154,7 @@ print $query->hidden(-name=>'organism',-default=>"Escherichia coli K12");
 print $query->hidden(-name=>'dist_thr',-default=>"55");
 print $query->hidden(-name=>'leader',-default=>"checked");
 print $query->hidden(-name=>'query',-default=>"checked");
+print $query->hidden(-name=>'operon',-default=>"checked");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
