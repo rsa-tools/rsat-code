@@ -127,15 +127,17 @@ if ($query->param('graphs')){
     print "</UL>\n";
     print "<HR>\n";
 
-    if($query->param('occ')||
-       $query->param('TP')||
-       $query->param('FP')||
-       $query->param('FN')||
-       $query->param('Sn')||
-       $query->param('PPV')||
-       $query->param('FPR')||
-       $query->param('Acc_g')||
-       $query->param('Acc_a')
+    if($query->param('stats')
+#        ||
+#        $query->param('occ')||
+#        $query->param('TP')||
+#        $query->param('FP')||
+#        $query->param('FN')||
+#        $query->param('Sn')||
+#        $query->param('PPV')||
+#        $query->param('FPR')||
+#        $query->param('Acc_g')||
+#        $query->param('Acc_a')
       ){
       print '<H4>Table</H4>';
       print @data_report;
