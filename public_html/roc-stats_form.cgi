@@ -217,7 +217,7 @@ print $query->end_form;
 ################################################################
 ### data for the demo 
 print $query->start_multipart_form(-action=>"roc-stats_form.cgi");
-my $demo_data=`grep -v "^;" $ENV{RSAT}/data/demo_files/roc-stats_demo_regulonDB_cg_stringcoex_inter-Q.tab`;
+my $demo_data=`grep -v "^;" $ENV{RSAT}/public_html/demo_files/roc-stats_demo_regulonDB_cg_stringcoex_inter-Q.tab`;
 # "0.95	pos
 # 0.85	neg
 # 0.75	pos
