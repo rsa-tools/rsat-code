@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.48 2008/02/18 08:14:00 jvanheld Exp $
+# $Id: matrix-quality,v 1.49 2008/02/18 20:19:51 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -164,22 +164,21 @@ package main;
     ## Matrix file is mandatory
     &RSAT::error::FatalError("You must define a matrix file, with either option -m or -ms")
       unless ($infile{matrix});
-      
-   ## Background model file is mandatory
+
+    ## Background model file is mandatory
     foreach my $i (0..$#matrix_scan_options) {
-    	if (($matrix_scan_options[$i] eq "-bgfile")&&(!$main::infile{th_prior})) {
-    		$infile{th_prior} = $matrix_scan_options[$i+1];
-    	}
-    	if ($matrix_scan_options[$i] eq "-bg_pseudo") {
-    		$main::bg_pseudo = $matrix_scan_options[$i+1]
-    	}
+      if (($matrix_scan_options[$i] eq "-bgfile") && (!$main::infile{th_prior})) {
+	$infile{th_prior} = $matrix_scan_options[$i+1];
+      }
+      if ($matrix_scan_options[$i] eq "-bg_pseudo") {
+	$main::bg_pseudo = $matrix_scan_options[$i+1]
+      }
     }
     if (($tasks{theor}) || ($tasks{theor_loo})) {
-   		&RSAT::error::FatalError("You must define a background model file, with either option -bgfile or -th_prior")
-      unless ($infile{th_prior});
+      &RSAT::error::FatalError("You must define a background model file, with either option -bgfile or -th_prior")
+	unless ($infile{th_prior});
     }
-      
-     
+
     ## Output prefix is mandatory
     &RSAT::error::FatalError("You must define a prefix for the output files with the option -o")
       unless ($outfile{prefix});
@@ -189,7 +188,7 @@ package main;
     $dir{output} = `dirname $outfile{prefix}`;
     chomp($dir{output});
     &RSAT::util::CheckOutDir($dir{output});
-    
+
     ## Graph image formats : png is default
     unless (scalar(@image_formats)>0) {
     	push (@image_formats,"png");
@@ -199,17 +198,16 @@ package main;
     ################################################################
     ### open output stream
     $main::out = &OpenOutputFile($outfile{log});
-    
-    
+    &PreVerbose() if ($main::verbose);
+
     ################################################################
     ### Read background model to use for theorical distribution
-	
-	if ($main::infile{th_prior}){
-  		$bg_model->load_from_file($main::infile{th_prior},$bg_format);
-	}
-  	if (defined($main::bg_pseudo)){
-  		$bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
-  	}
+    if ($main::infile{th_prior}){
+      $bg_model->load_from_file($main::infile{th_prior},$bg_format);
+    }
+    if (defined($main::bg_pseudo)){
+      $bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
+    }
 
     ################################################################
     ## Read input matrix.
@@ -223,7 +221,6 @@ package main;
 			      "contains ".scalar(@matrices)." matrices. ",
 			      "Only the first one will be evaluated.");
     }
-
     local $matrix = shift (@matrices);
     $matrix->set_attribute("pseudo", $pseudo_counts);
     $matrix->set_attribute("decimals", $decimals);
@@ -259,7 +256,7 @@ package main;
     if ($tasks{loo}) {
       &LOO_scores($matrix, @matrix_scan_options);
     }
-    
+
     ## Calculate the theorical distribution of LOO partial matrices
     if ($tasks{theor_loo}) {
     	our @th_distrib_files =();
@@ -275,45 +272,44 @@ package main;
     ## Other sequence files
     foreach my $seq_type (@seq_types) {
       &RSAT::message::TimeWarn("Analyzing sequence type", $seq_type, $seqfile{$seq_type});
-#      &ScanSequences($seqfile{$seq_type}, $matrix_file, $matrix_format, $seq_type,   @matrix_scan_options) ;
-#      push @distrib_files, &ScoreDistrib($seq_type, $Wmin, $Wmax); $file_nb{$seq_type} = scalar(@distrib_files);
+      #      &ScanSequences($seqfile{$seq_type}, $matrix_file, $matrix_format, $seq_type,   @matrix_scan_options) ;
+      #      push @distrib_files, &ScoreDistrib($seq_type, $Wmin, $Wmax); $file_nb{$seq_type} = scalar(@distrib_files);
       &CalcSequenceDistrib($seqfile{$seq_type}, $matrix_file, $matrix_format, $seq_type,   @matrix_scan_options) ;
 
       ## Score sequences with the permuted matrices
       if (($seqfile{$seq_type}) && ($perm_nb{$seq_type} > 0)) {
-	  ## Calculate the merged distribution for permuted matrices
-	  my $perm_suffix = $seq_type."_perm_col_1-".$perm_nb{$seq_type};
-	  if (defined($scanopt{$seq_type})) {
+	## Calculate the merged distribution for permuted matrices
+	my $perm_suffix = $seq_type."_perm_col_1-".$perm_nb{$seq_type};
+	if (defined($scanopt{$seq_type})) {
+	  $scanopt{$perm_suffix} = $scanopt{$seq_type};
+	  $scanopt{$perm_suffix} .= " -top_matrices ".$perm_nb{$seq_type}; ## Select the type-specific number of permutations
+	}
+	#	  &ScanSequences($seqfile{$seq_type}, $outfile{$seq_type.'_matrix_perm_col_all'}, "tab", $perm_suffix, @matrix_scan_options); 
+	#	  push @distrib_files, &ScoreDistrib($perm_suffix, $Wmin, $Wmax);
+	&CalcSequenceDistrib($seqfile{$seq_type}, $outfile{$seq_type.'_matrix_perm_col_all'}, "tab", $perm_suffix,   @matrix_scan_options) ;
+
+	## Calculate the separate distributions for each permuted matrix
+	## (this highlights the variability but the graph is noisy)
+	if ($perm_separate_distrib) {
+	  for my $i (1..$perm_nb{$seq_type}) {
+	    $perm_suffix = $seq_type."_perm_col_".$i;
+	    if (defined($scanopt{$seq_type})) {
 	      $scanopt{$perm_suffix} = $scanopt{$seq_type};
-	      $scanopt{$perm_suffix} .= " -top_matrices ".$perm_nb{$seq_type}; ## Select the type-specific number of permutations
+	      $scanopt{$perm_suffix} .= " -top_matrices 1"; ## Select a single matrix
+	    }
+	    #		  &ScanSequences($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $perm_suffix, @matrix_scan_options); 
+	    #		  push @distrib_files, &ScoreDistrib($perm_suffix, $Wmin, $Wmax);
+	    &CalcSequenceDistrib($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $perm_suffix,   @matrix_scan_options) ;
 	  }
-#	  &ScanSequences($seqfile{$seq_type}, $outfile{$seq_type.'_matrix_perm_col_all'}, "tab", $perm_suffix, @matrix_scan_options); 
-#	  push @distrib_files, &ScoreDistrib($perm_suffix, $Wmin, $Wmax);
-	  &CalcSequenceDistrib($seqfile{$seq_type}, $outfile{$seq_type.'_matrix_perm_col_all'}, "tab", $perm_suffix,   @matrix_scan_options) ;
-	  
-	  ## Calculate the separate distributions for each permuted matrix
-	  ## (this highlights the variability but the graph is noisy)
-	  if ($perm_separate_distrib) {
-	      for my $i (1..$perm_nb{$seq_type}) {
-		  $perm_suffix = $seq_type."_perm_col_".$i;
-		  if (defined($scanopt{$seq_type})) {
-		      $scanopt{$perm_suffix} = $scanopt{$seq_type};
-		      $scanopt{$perm_suffix} .= " -top_matrices 1"; ## Select a single matrix
-		  }
-#		  &ScanSequences($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $perm_suffix, @matrix_scan_options); 
-#		  push @distrib_files, &ScoreDistrib($perm_suffix, $Wmin, $Wmax);
-		  &CalcSequenceDistrib($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $perm_suffix,   @matrix_scan_options) ;
-	      }
-	  }
+	}
       }
-  }
+    }
 
     ## Compare the distributions
     &CompareDistrib(9, @distrib_files); # the column of interest is rel_ic (inv_cum_freq)
 
-
     #### print verbosity
-    &Verbose() if ($main::verbose);
+    &PostVerbose() if ($main::verbose);
 
     ################################################################
     ###### finish verbose
@@ -335,22 +331,22 @@ package main;
       my $perm_file = $outfile{'matrix_perm_col_'.$i};
       if ($perm_file) {
 	my $clean_cmd = "rm -f ".$perm_file;
-	&doit($clean_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	&doit($clean_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
       }
     }
-    
-    ## Remove theorical distribution of partial matrices
+
+    ## Remove the files containing theorical distribution computed from partial matrices
     if (scalar(@partial_matrix_files) > 0) {
       my $clean_partial_cmd = "rm -f ";
       $clean_partial_cmd .= join (" ", @partial_matrix_files);
-      &doit($clean_partial_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &doit($clean_partial_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
     }
 
-    ## Remove the partial matrices
+    ## Remove the files containing the partial matrices
     if (scalar(@th_distrib_files) > 0) {
       my $clean_partial_cmd = "rm -f ";
       $clean_partial_cmd .= join (" ", @th_distrib_files);
-      &doit($clean_partial_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &doit($clean_partial_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
     }
     
     ################################################################
@@ -360,7 +356,7 @@ package main;
     if (scalar(@temporary_distrib_files) > 0) {
     	my $clean_partial_cmd = "rm -f ";
     	$clean_partial_cmd .= join (" ", @temporary_distrib_files);
-    	&doit($clean_partial_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    	&doit($clean_partial_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
       }
 
     ## Give the warning about the output prefix
@@ -696,16 +692,16 @@ Pseudo-weight.
 		unless ((&RSAT::util::IsReal($main::pseudo_counts) )
 			&& ($main::pseudo_counts >= 0));
 
-			## Background model for theorical score distribution
-
+	    ## Background model for theorical score distribution
 =pod
 
 =item B<-th_prior background_file>
 
-Background model to be used to calculate the matrix theorical distribution.
-The matrix theorical distribution is calculated with I<matrix-distrib>.
-This option is to be specified if the option -bgfile has not been specified. 
-(see Other options section for more details)
+Background model to be used to calculate the matrix theorical
+distribution.  The matrix theorical distribution is calculated with
+I<matrix-distrib>.  This option is to be specified if the option
+-bgfile has not been specified.  (see other options section for more
+details).
 
 =cut
 	} elsif ($arg eq "-th_prior") {
@@ -896,11 +892,12 @@ Note that the option '-return' of matrix-scan cannot be used here,
 because matrix-quality specifies the return fields required for its
 statistics.
 
-If the option '-bgfile' is specified, the specified background model will be
-used to calculate the matrix theorical distribution. If another type
-of background model is specified for matrix-scan ('-bginput' or '-window'), use
-'-th_prior' option to specify the background model to be used for the calculation
-of the matrix theorical distribution.
+If the option '-bgfile' is specified, the specified background model
+will be used to calculate the matrix theorical distribution. If
+another type of background model is specified for matrix-scan
+('-bginput' or '-window'), use '-th_prior' option to specify the
+background model to be used for the calculation of the matrix
+theorical distribution.
 
 =cut
 
@@ -918,49 +915,54 @@ of the matrix theorical distribution.
 }
 
 ################################################################
-#### verbose message
-sub Verbose {
-    print $main::out "; matrix-quality ";
-    &PrintArguments($main::out);
-    if (defined(%main::infile)) {
-	print $main::out "; Input files\n";
-	foreach my $key (sort(keys %infile)) {
-	  my $value = $infile{$key};
-#	while (my ($key,$value) = each %main::infile) {
-	    printf $main::out ";\t%-29s\t%s\n", $key , $value;
-	}
-    }
-    if (defined(%main::seqfile)) {
-	print $main::out "; Sequence files\n";
-	foreach my $key (sort(keys %seqfile)) {
-	  my $value = $seqfile{$key};
-	    printf $main::out ";\t%-29s\t%s\n", $key , $value;
-	}
-    }
-    if (defined(%main::outfile)) {
-	print $main::out "; Output files\n";
-	foreach my $key (sort(keys %outfile)) {
-	  my $value = $outfile{$key};
-	  printf $main::out ";\t%-29s\t%s\n", $key , $value;
-	}
-    }
-    if (defined(%main::dir)) {
-	print $main::out "; Directories\n";
-	foreach my $key (sort(keys %dir)) {
-	  my $value = $dir{$key};
-	  printf $main::out ";\t%-29s\t%s\n", $key , $value;
-	}
-    }
+#### Pre-verbose message
+sub PreVerbose {
+  print $main::out "; matrix-quality ";
+  &PrintArguments($main::out);
+}
 
-    if (scalar(@seq_types) > 0) {
-	print $main::out "; Matrix permutations per sequence type\n";
-	foreach my $seq_type (@seq_types) {
-	    unless (defined($perm_nb{$seq_type})) {
-		$perm_nb{$seq_type} = 0;
-	    }
-	    printf $main::out ";\t%-21s\t%d\n", $seq_type , $perm_nb{$seq_type};
-	}
+################################################################
+#### Pre-verbose message
+sub PostVerbose {
+  if (defined(%main::infile)) {
+    print $main::out "; Input files\n";
+    foreach my $key (sort(keys %infile)) {
+      my $value = $infile{$key};
+      #	while (my ($key,$value) = each %main::infile) {
+      printf $main::out ";\t%-29s\t%s\n", $key , $value;
     }
+  }
+  if (defined(%main::seqfile)) {
+    print $main::out "; Sequence files\n";
+    foreach my $key (sort(keys %seqfile)) {
+      my $value = $seqfile{$key};
+      printf $main::out ";\t%-29s\t%s\n", $key , $value;
+    }
+  }
+  if (defined(%main::outfile)) {
+    print $main::out "; Output files\n";
+    foreach my $key (sort(keys %outfile)) {
+      my $value = $outfile{$key};
+      printf $main::out ";\t%-29s\t%s\n", $key , $value;
+    }
+  }
+  if (defined(%main::dir)) {
+    print $main::out "; Directories\n";
+    foreach my $key (sort(keys %dir)) {
+      my $value = $dir{$key};
+      printf $main::out ";\t%-29s\t%s\n", $key , $value;
+    }
+  }
+
+  if (scalar(@seq_types) > 0) {
+    print $main::out "; Matrix permutations per sequence type\n";
+    foreach my $seq_type (@seq_types) {
+      unless (defined($perm_nb{$seq_type})) {
+	$perm_nb{$seq_type} = 0;
+      }
+      printf $main::out ";\t%-21s\t%d\n", $seq_type , $perm_nb{$seq_type};
+    }
+  }
 }
 
 
@@ -1007,7 +1009,7 @@ sub LOO_scores {
   if ($main::verbose >= 1) {
     print $main::out "; LOO partial matrices\n";
   }
-  
+
   my $seq_type = "matrix_sites_loo";
 
   $main::outfile{matrix_sites_loo} = $outfile{prefix}."_matrix_sites_loo.tab";
@@ -1072,8 +1074,6 @@ sub LOO_scores {
 							  );
     $verbose = $tmp_verbose;
     close $partial_matrix_handle;
-    
-
 
     ## Score the left out site with the partial matrix
     my $matrix_scan_cmd = "echo $lo_site | matrix-scan -v ".$main::verbose;
@@ -1107,10 +1107,10 @@ sub LOO_scores {
   print $main::out ";\n";
   close $loo_scores_handle;
 
-
+  
   ## Prepare the classfreq command (to extract the distribution from the scores)
   my $classfreq_min = sprintf("%.${decimals}f", $main::Wmin);
-#  my $classfreq_min = POSIX::floor($Wmin*(10^$decimals))/(10^$decimals);
+  #  my $classfreq_min = POSIX::floor($Wmin*(10^$decimals))/(10^$decimals);
   $outfile{matrix_sites_loo_distrib} = $outfile{prefix}."_scan_matrix_sites_loo_score_distrib.tab";  
   my $classfreq_cmd = "grep -v '^;' ".$main::outfile{matrix_sites_loo}." | grep -v '^#'";
   $classfreq_cmd .= " | cut -f 8";
@@ -1119,7 +1119,6 @@ sub LOO_scores {
   $classfreq_cmd .= " -o ".$outfile{matrix_sites_loo_distrib};
   &doit($classfreq_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   push @distrib_files, $outfile{matrix_sites_loo_distrib};
-
 }
 
 
@@ -1350,7 +1349,7 @@ sub PermuteMatrixColumns {
   foreach my $seq_type (sort keys %seqfile) {
    $outfile{$seq_type.'_matrix_perm_col_all'} = $outfile{prefix}."_".$seq_type."_matrix_perm_col_all_".$perm_nb{$seq_type}.".tab";
     $init_matrix_cmd = "rm -f ".$outfile{$seq_type.'_matrix_perm_col_all'};
-    &doit($init_matrix_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &doit($init_matrix_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
   }
 
   for my $i (1..$perm_nb_max) {
@@ -1380,7 +1379,7 @@ sub PermuteMatrixColumns {
 #     }
 
     ## Execute the command
-    &doit($permute_matrix_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix)  if ($tasks{permute});
+    &doit($permute_matrix_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix)  if ($tasks{permute});
   }
 }
 
@@ -1416,154 +1415,154 @@ sub CompareDistrib {
   if ($tasks{graphs}) {
     &RSAT::message::TimeWarn("Generating comparison graphs") 
       if ($main::verbose >= 1);
-      
+
     ## Generate the graphs for each image format
     foreach my $image_format (@image_formats) {
 
-    	## General options for all the graphs below
-    	my $all_graph_options = " -i ".$outfile{distrib_compa}.".tab";
-    	$all_graph_options .= " -format ".$image_format." -lines -pointsize 0";
+      ## General options for all the graphs below
+      my $all_graph_options = " -i ".$outfile{distrib_compa}.".tab";
+      $all_graph_options .= " -format ".$image_format." -lines -pointsize 0";
 
-    	## Alternative options for the large graphs and for the icons, respectively
-    	my $large_graph_options = " -title1 'ROC curve ".$infile{matrix}."'";
-    	$large_graph_options .= " -title2 ".$outfile{prefix};
-    	$large_graph_options .= " -legend";
-    	$large_graph_options .= " -xsize 800 -ysize 400";
-    	$large_graph_options .= " -xleg1 'matrix score' ";
-    	$large_graph_options .= " -yleg1 'Frequency (inverse cumulative) ' ";
+      ## Alternative options for the large graphs and for the icons, respectively
+      my $large_graph_options = " -title1 'ROC curve ".$infile{matrix}."'";
+      $large_graph_options .= " -title2 ".$outfile{prefix};
+      $large_graph_options .= " -legend";
+      $large_graph_options .= " -xsize 800 -ysize 400";
+      $large_graph_options .= " -xleg1 'matrix score' ";
+      $large_graph_options .= " -yleg1 'Frequency (inverse cumulative) ' ";
 
-    	my $icon_options;
+      my $icon_options;
 
-   		################################################################
-   		## Draw a graph with all the inverse cumulative distributions
-    	my $XYgraph_cmd = "XYgraph ".$all_graph_options;
-    	my $ycols = join ",", 2..(scalar(@distrib_files)+2);
-    	$XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
-    	$XYgraph_cmd .= " -ymin 0  -ymax 1 ";
- 	    $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-	    $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}.".".$image_format;
-	    &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	&RSAT::message::Info("Distribution comparison graph", $outfile{distrib_compa}.".".$image_format) if ($main::verbose >= 1);
+      ################################################################
+      ## Draw a graph with all the inverse cumulative distributions
+      my $XYgraph_cmd = "XYgraph ".$all_graph_options;
+      my $ycols = join ",", 2..(scalar(@distrib_files)+2);
+      $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
+      $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+      $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+      $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}.".".$image_format;
+      &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &RSAT::message::Info("Distribution comparison graph", $outfile{distrib_compa}.".".$image_format) if ($main::verbose >= 1);
 
-	    ## Generate the icon
- 	   $icon_options = " -xsize 170 -ysize 120 -o ".$outfile{distrib_compa}."_small.".$image_format;
- 	   &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      ## Generate the icon
+      $icon_options = " -xsize 170 -ysize 120 -o ".$outfile{distrib_compa}."_small.".$image_format;
+      &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
- 	   ################################################################
- 	   ## Draw a graph with all the inverse cumulative distributions
- 	   ## and a logarithmic Y axis
- 	   $XYgraph_cmd = "XYgraph ".$all_graph_options;
- 	   $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
- 	   $XYgraph_cmd .= " -ymax 1 -ylog 10";
- 	   $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
- 	   $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}."_logy.".$image_format;
- 	   &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	&RSAT::message::Info("Distribution comparison graph (log Y)", $outfile{distrib_compa}."_logy.".$image_format) if ($main::verbose >= 1);
+      ################################################################
+      ## Draw a graph with all the inverse cumulative distributions
+      ## and a logarithmic Y axis
+      $XYgraph_cmd = "XYgraph ".$all_graph_options;
+      $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
+      $XYgraph_cmd .= " -ymax 1 -ylog 10";
+      $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+      $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}."_logy.".$image_format;
+      &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &RSAT::message::Info("Distribution comparison graph (log Y)", $outfile{distrib_compa}."_logy.".$image_format) if ($main::verbose >= 1);
 
- 	   ## Generate the icon
- 	   $icon_options = " -xsize 170 -ysize 120 -o ".$outfile{distrib_compa}."_logy_small.".$image_format;
- 	   &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	&RSAT::message::Info("Distribution comparison icon (log Y)", $outfile{distrib_compa}."_logy_small.".$image_format) if ($main::verbose >= 1);
+      ## Generate the icon
+      $icon_options = " -xsize 170 -ysize 120 -o ".$outfile{distrib_compa}."_logy_small.".$image_format;
+      &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &RSAT::message::Info("Distribution comparison icon (log Y)", $outfile{distrib_compa}."_logy_small.".$image_format) if ($main::verbose >= 1);
 
- 	   ################################################################
- 	   ## Draw a ROC curve
- 	   my $ref_column = 2;
- 	   if ($roc_ref) {
- 	     if (defined($file_nb{$roc_ref})) {
-		$ref_column = 2 + $file_nb{$roc_ref};
- 	     } else {
-		&RSAT::message::Warning($roc_ref, "Invalid reference distribution for the ROC curve: should be one of the input sequence types, or 'theor'.");
-		$roc_ref = "Forced to use theoretical";
-  	    }
- 	   }
- 	   $ycols = join ",", 2..(scalar(@distrib_files)+2);
- 	   $large_graph_options =~ s/-xsize 800/-xsize 400/;
- 	   $XYgraph_cmd = "XYgraph ".$all_graph_options;
- 	   $XYgraph_cmd .= " -xcol ".$ref_column;
- 	   $XYgraph_cmd .= " -ycol ".$ycols;
- 	  # $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
- 	  # $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
- 	   $XYgraph_cmd .= " -ymax 1 ";
- 	   $XYgraph_cmd .= " -xmax 1 ";
- 	   my $roc_file_opt = $large_graph_options.$roc_options." -o ".$outfile{distrib_compa}."_roc.".$image_format;
- 	   $roc_file_opt .= " -xleg1 'Reference set : ".$roc_ref."' ";
- 	   $roc_file_opt .= " -yleg1 'other distributions' ";
- 	   &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	&RSAT::message::Info("ROC curve graph", $outfile{distrib_compa}."_roc.".$image_format) if ($main::verbose >= 1);
+      ################################################################
+      ## Draw a ROC curve
+      my $ref_column = 2;
+      if ($roc_ref) {
+	if (defined($file_nb{$roc_ref})) {
+	  $ref_column = 2 + $file_nb{$roc_ref};
+	} else {
+	  &RSAT::message::Warning($roc_ref, "Invalid reference distribution for the ROC curve: should be one of the input sequence types, or 'theor'.");
+	  $roc_ref = "Forced to use theoretical";
+	}
+      }
+      $ycols = join ",", 2..(scalar(@distrib_files)+2);
+      $large_graph_options =~ s/-xsize 800/-xsize 400/;
+      $XYgraph_cmd = "XYgraph ".$all_graph_options;
+      $XYgraph_cmd .= " -xcol ".$ref_column;
+      $XYgraph_cmd .= " -ycol ".$ycols;
+      # $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+      # $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
+      $XYgraph_cmd .= " -ymax 1 ";
+      $XYgraph_cmd .= " -xmax 1 ";
+      my $roc_file_opt = $large_graph_options.$roc_options." -o ".$outfile{distrib_compa}."_roc.".$image_format;
+      $roc_file_opt .= " -xleg1 'Reference set : ".$roc_ref."' ";
+      $roc_file_opt .= " -yleg1 'other distributions' ";
+      &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &RSAT::message::Info("ROC curve graph", $outfile{distrib_compa}."_roc.".$image_format) if ($main::verbose >= 1);
 
- 	   ## Generate the icon for the ROC curve
- 	   $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_small.".$image_format;
- 	   &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	&RSAT::message::Info("ROC curve icon", $outfile{distrib_compa}."_roc_small.".$image_format) if ($main::verbose >= 1);
+      ## Generate the icon for the ROC curve
+      $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_small.".$image_format;
+      &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &RSAT::message::Info("ROC curve icon", $outfile{distrib_compa}."_roc_small.".$image_format) if ($main::verbose >= 1);
 
- 	   ################################################################
- 	   ## Draw a ROC curve with xlog
- 	   $XYgraph_cmd =~ s/XYgraph/XYgraph -xlog 10/;
- 	   $roc_file_opt =~ s/_roc/_roc_xlog/;
- 	   &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	&RSAT::message::Info("ROC curve graph (log X)", $outfile{distrib_compa}."_roc_xlog.".$image_format) if ($main::verbose >= 1);
+      ################################################################
+      ## Draw a ROC curve with xlog
+      $XYgraph_cmd =~ s/XYgraph/XYgraph -xlog 10/;
+      $roc_file_opt =~ s/_roc/_roc_xlog/;
+      &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &RSAT::message::Info("ROC curve graph (log X)", $outfile{distrib_compa}."_roc_xlog.".$image_format) if ($main::verbose >= 1);
 
-  	  ## Generate the icon for the ROC curve
-  	  $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xlog_small.".$image_format;
-  	  &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	&RSAT::message::Info("ROC curve icon (log X)", $outfile{distrib_compa}."_roc_xlog_small.".$image_format) if ($main::verbose >= 1);
+      ## Generate the icon for the ROC curve
+      $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xlog_small.".$image_format;
+      &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &RSAT::message::Info("ROC curve icon (log X)", $outfile{distrib_compa}."_roc_xlog_small.".$image_format) if ($main::verbose >= 1);
 
- 	   ################################################################
- 	   ## Draw a ROC curve with xylog
- 	   $XYgraph_cmd =~ s/XYgraph/XYgraph -xlog 10 -ylog 10/;
- 	   $roc_file_opt =~ s/_roc/_roc_xylog/;
- 	   &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	&RSAT::message::Info("ROC curve graph (log X)", $outfile{distrib_compa}."_roc_xylog.".$image_format) if ($main::verbose >= 1);
+      ################################################################
+      ## Draw a ROC curve with xylog
+      $XYgraph_cmd =~ s/XYgraph/XYgraph -ylog 10/;
+      $roc_file_opt =~ s/_roc_xlog/_roc_xylog/;
+      &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &RSAT::message::Info("ROC curve graph (log XY)", $outfile{distrib_compa}."_roc_xylog.".$image_format) if ($main::verbose >= 1);
 
-  	  ## Generate the icon for the ROC curve
-  	  $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xylog_small.".$image_format;
-  	  &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	&RSAT::message::Info("ROC curve icon (log X)", $outfile{distrib_compa}."_roc_xylog_small.".$image_format) if ($main::verbose >= 1);
+      ## Generate the icon for the ROC curve
+      $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xylog_small.".$image_format;
+      &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      &RSAT::message::Info("ROC curve icon (log XY)", $outfile{distrib_compa}."_roc_xylog_small.".$image_format) if ($main::verbose >= 1);
 
 
-  	   if ($tasks{theor_loo}) {
-  	   	
-  	   	$outfile{th_distrib_compa} = $outfile{prefix}."_theorical_score_distrib_compa";
-  	   	
-  	   	################################################################
+      if ($tasks{theor_loo}) {
+
+	$outfile{th_distrib_compa} = $outfile{prefix}."_theorical_score_distrib_compa";
+
+	################################################################
     	## Compare the theorical distributions
     	my $distrib_compa_cmd = "compare-scores ";
     	$distrib_compa_cmd .= " -numeric";
-    	$distrib_compa_cmd .= " -sc 4"; # score column for the theoretical distribution
+    	$distrib_compa_cmd .= " -sc 4";	# score column for the theoretical distribution
     	$distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_";
     	$distrib_compa_cmd .= " -suppress .tab";
     	$distrib_compa_cmd .= " -o ".$outfile{th_distrib_compa}.".tab";
     	$distrib_compa_cmd .= " -files ";
     	$distrib_compa_cmd .= join(" ", $main::outfile{'theoretical_distrib'}, @th_distrib_files);
     	&doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  	   	  	   
-  	  	################################################################
-  	  	## draw a graph with the theorical distributions of partial and complete matrix
-  	   	## General options for all the graphs below
+
+	################################################################
+	## draw a graph with the theorical distributions of partial and complete matrix
+	## General options for all the graphs below
     	$all_graph_options =~ s/$outfile{distrib_compa}/$outfile{th_distrib_compa}/g; 
-    	
+
     	################################################################
-   		## Draw a graph with all the inverse cumulative distributions
+	## Draw a graph with all the inverse cumulative distributions
     	my $XYgraph_cmd = "XYgraph ".$all_graph_options;
     	my $ycols = join ",", 2..(scalar(@th_distrib_files)+2);
     	$XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
     	$XYgraph_cmd .= " -ymin 0  -ymax 1 ";
- 	    $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-	    $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{th_distrib_compa}.".".$image_format;
-	    &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	    
-	   ################################################################
- 	   ## Draw a graph with all the inverse cumulative distributions
- 	   ## and a logarithmic Y axis
- 	   $XYgraph_cmd = "XYgraph ".$all_graph_options;
- 	   $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
- 	   $XYgraph_cmd .= " -ymax 1 -ylog 10";
- 	   $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
- 	   $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{th_distrib_compa}."_logy.".$image_format;
- 	   &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  	   }
-    	}
-  	}
+	$XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+	$graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{th_distrib_compa}.".".$image_format;
+	&doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+	################################################################
+	## Draw a graph with all the inverse cumulative distributions
+	## and a logarithmic Y axis
+	$XYgraph_cmd = "XYgraph ".$all_graph_options;
+	$XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
+	$XYgraph_cmd .= " -ymax 1 -ylog 10";
+	$XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+	$graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{th_distrib_compa}."_logy.".$image_format;
+	&doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      }
+    }
+  }
 
 }
 
@@ -1571,13 +1570,12 @@ sub CompareDistrib {
 ################################################################
 ## Calculate score distribution
 sub PrintTheorScoreDistribution {
-	
   my $matrix_tab_file = shift;
   my $out_file = shift;
-  
+
   &RSAT::message::TimeWarn("Calculating matrix theorical distribution") 
     if ($main::verbose >= 2);
-  
+
   my $matrix_distrib_cmd = "matrix-distrib -v 1 ";
   $matrix_distrib_cmd .= " -m ".$matrix_tab_file;
   $matrix_distrib_cmd .= " -matrix_format tab";
@@ -1589,13 +1587,11 @@ sub PrintTheorScoreDistribution {
   }
   $matrix_distrib_cmd .= " -decimals ".$decimals;
   $matrix_distrib_cmd .= " -o ".$out_file;
-  
+
   ## Execute the command
   &RSAT::message::TimeWarn("Matrix-distrib command: ", $matrix_distrib_cmd) 
   	 if ($main::verbose >= 2);
   &doit($matrix_distrib_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  
-
 }
 
 
