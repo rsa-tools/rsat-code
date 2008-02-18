@@ -18,6 +18,7 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $tmp_file_name = sprintf "infer-operon.%s", &AlphaDate();
+$result_file = "$TMP/$tmp_file_name.res";
 
 ### Read the CGI query
 $query = new CGI;
@@ -122,13 +123,13 @@ print  "<PRE><B>Command :</B> $command $parameters</PRE><P>" if ($ENV{rsat_echo}
 if ($query->param('output') eq "display") {
     &PipingWarning();
 
-    open RESULT, "$command $parameters |";
-
     print '<H2>Result</H2>';
+
+    open RESULT, "$command $parameters |";
     &PrintHtmlTable(RESULT, $result_file, true);
     close(RESULT);
 
-#    &PipingForm();
+    &PipingForm();
 
     print "<HR SIZE = 3>";
 } elsif ($query->param('output') =~ /server/i) {
@@ -140,3 +141,35 @@ print $query->end_html();
 
 
 exit(0);
+
+
+################################################################
+#
+# Pipe the result to other commands
+#
+sub PipingForm {
+    my $genes = `cat $result_file`;
+
+    ### prepare data for piping
+    print <<End_of_form;
+<HR SIZE = 3>
+<TABLE class = 'nextstep'>
+<tr>
+<td>
+<H3>Next step</H3>
+</td>
+</tr>
+<tr>
+<TD>
+<FORM METHOD="POST" ACTION="retrieve-seq_form.cgi">
+<INPUT type="hidden" NAME="organism" VALUE="$organism">
+<INPUT type="hidden" NAME="genes" VALUE="selection">
+<INPUT type="hidden" NAME="gene_selection" VALUE="$genes">
+<INPUT type="hidden" NAME="feattype" VALUE="$feattype">
+<INPUT type="submit" value="retrieve sequences">
+</FORM>
+</TD>
+</TR>
+</TABLE>
+End_of_form
+}
