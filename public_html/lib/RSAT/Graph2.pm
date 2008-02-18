@@ -9,6 +9,7 @@ use RSAT::error;
 use RSAT::util;
 use RSAT::stats;
 use List::Util 'shuffle';
+use POSIX qw(log10);
 
 require "RSA.lib";
 
@@ -2286,6 +2287,124 @@ sub get_position {
   $self->set_hash_attribute("nodes_id_xpos", %nodes_id_xpos);
   $self->set_hash_attribute("nodes_id_ypos", %nodes_id_ypos);
 }
+
+# ################################################################
+# =pod
+# 
+# =item B<get_position()>
+# 
+# Fill the hashes %node_id_xpos and %node_id_ypos using a spring embedding method.
+# 
+# 
+# 
+# =cut
+# 
+# sub get_position {
+#   my ($self) = @_;
+#   my %nodes_id_xpos = $self->get_attribute("nodes_id_xpos");
+#   my %nodes_id_ypos = $self->get_attribute("nodes_id_ypos");
+#   my %nodes_name_id = $self->get_attribute("nodes_name_id");
+#   my %arc_name_id = $self->get_attribute("arcs_name_id");
+#   my %nodes_id_force = ();
+#   my @arcs = $self->get_attribute("arcs");
+#   my $nodes_nb = scalar keys %nodes_name_id;
+#   my $layout_size = 1000;
+#   my $attraction_1 = 2;
+#   my $attraction_2 = 1;
+#   my $repulsion = 2;
+#   my $node_mobility = 0.1;
+#   my $max_it = 100;
+#   if ($nodes_nb > 6000) {
+#     $layout_size = 3000;
+#   } elsif ($nodes_nb < 30) {
+#     $layout_size = 1000;
+#   } else {
+#     $layout_size = int(1000+($nodes_nb/(2)))
+#   }
+#   my @random_position = 0..$layout_size;
+#   @random_position = shuffle(@random_position);
+#   my $i = 0;
+#   # randomize node positions
+#   while (($node_name, $id) = each %nodes_name_id) {
+#     $nodes_id_xpos{$id} = $random_position[$i];
+#     $nodes_id_ypos{$id} = $random_position[($layout_size-$i)];
+#     $i++;
+#   }
+#   my @nodes_names = keys %nodes_name_id;
+#   my $mean_mov = 30;
+#   for (my $iteration = 0; $iteration < $max_it; $iteration++) {
+# #     if ($mean_mov < 17) {
+# #       last;
+# #     }
+#     $mean_mov = 0;
+#     my %nodes_force_x = ();
+#     my %nodes_force_y = ();
+#     for (my $i = 0; $i < scalar(@nodes_names); $i++) {
+#       @nodeA_pos = ($nodes_id_xpos{$nodes_name_id{$nodes_names[$i]}}, $nodes_id_ypos{$nodes_name_id{$nodes_names[$i]}});
+#       my %already_calculated;
+#       my $force_x = 0;
+#       my $force_y = 0;
+#       for (my $j = 0; $j < scalar(@nodes_names); $j++) {
+#         my $arc_id = join("_", $nodes_names[$i], $nodes_names[$j], "1");
+#         my $arc_id_rev = join("_", $nodes_names[$j], $nodes_names[$i], "1");
+#         if ($i != $j) {
+#           @nodeB_pos = ($nodes_id_xpos{$nodes_name_id{$nodes_names[$j]}}, $nodes_id_ypos{$nodes_name_id{$nodes_names[$j]}});
+#           # distance calculation between nodeA and nodeB
+#           $x_dir = $nodeA_pos[0] - $nodeB_pos[0];
+#           print "XDIR $x_dir ";
+#           $y_dir = $nodeA_pos[1] - $nodeB_pos[1];
+#           $dist_x = abs($x_dir);
+#           $dist_y = abs($y_dir);
+#           if ($x_dir < 0) {
+#             $x_dir = +1;
+#           } else {
+#             $x_dir = -1;
+#           }
+#           if ($y_dir < 0) {
+#             $y_dir = +1;
+#           } else {
+#             $y_dir = -1;
+#           }          
+# 
+#           print $iteration." ".$nodes_names[$i]." ".$nodes_names[$j]." P".join(" ", @nodeA_pos)." ".join(" ", @nodeB_pos)." D $dist_x $dist_y";
+#           if (defined($arc_name_id{$arc_id}) || defined($arc_name_id{$arc_id_rev})) {
+#             # Both nodes are neighbours
+#             print " CONNECTED ";
+#             $force_x += $x_dir*($attraction_1*log10($dist_x/$attraction_2));
+#             $force_y += $y_dir*($attraction_1*log10($dist_y/$attraction_2));
+#             print " F ".$x_dir*($attraction_1*log10($dist_x/$attraction_2))." ".$y_dir*($attraction_1*log10($dist_y/$attraction_2))."\n";
+#           } else {
+#             print " NOT CONNECTED ";
+#             # Both nodes are not connected
+# #             print "DISTX ".$dist_x."\n";
+#             $force_x += -1*($x_dir*($repulsion/sqrt($dist_x)));
+# #             print "DISTY ".$dist_y."\n";
+#             $force_y += -1*($y_dir*($repulsion/sqrt($dist_y)));
+#             print " F".-1*($x_dir*($repulsion/sqrt($dist_x)))." ".-1*($y_dir*($repulsion/sqrt($dist_y)))."\n";
+#           }
+# #           $already_calculated{$arc_id}++;
+# #           $already_calculated{$arc_id_rev}++;
+#             
+#         
+#         }
+#       }
+#       $nodes_force_x{$nodes_names[$i]} = $force_x;
+#       $nodes_force_y{$nodes_names[$i]} = $force_y;
+# 
+#     }
+#     for (my $k = 0; $k < scalar(@nodes_names); $k++ ) {
+#       $nodes_id_xpos{$nodes_name_id{$nodes_names[$k]}} += $node_mobility*$nodes_force_x{$nodes_names[$k]};
+#       $nodes_id_ypos{$nodes_name_id{$nodes_names[$k]}} += $node_mobility*$nodes_force_y{$nodes_names[$k]};
+#       $mean_mov += ($node_mobility*$nodes_force_y{$nodes_names[$k]})/scalar(@nodes_names)^2;
+# #       print $c4*$nodes_force_y{$nodes_names[$k]}."\n";
+#     }
+# #     print "MEAN MOV $mean_mov\n";
+# #     print "ITER $iteration\n";
+#   }
+#   $self->set_hash_attribute("nodes_id_xpos", %nodes_id_xpos);
+#   $self->set_hash_attribute("nodes_id_ypos", %nodes_id_ypos);
+# }
+# 
 
 
 
