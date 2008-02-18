@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.47 2007/11/23 07:42:47 jvanheld Exp $
+# $Id: matrix-quality,v 1.48 2008/02/18 08:14:00 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1507,7 +1507,20 @@ sub CompareDistrib {
   	  $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xlog_small.".$image_format;
   	  &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 	&RSAT::message::Info("ROC curve icon (log X)", $outfile{distrib_compa}."_roc_xlog_small.".$image_format) if ($main::verbose >= 1);
-  	  
+
+ 	   ################################################################
+ 	   ## Draw a ROC curve with xylog
+ 	   $XYgraph_cmd =~ s/XYgraph/XYgraph -xlog 10 -ylog 10/;
+ 	   $roc_file_opt =~ s/_roc/_roc_xylog/;
+ 	   &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	&RSAT::message::Info("ROC curve graph (log X)", $outfile{distrib_compa}."_roc_xylog.".$image_format) if ($main::verbose >= 1);
+
+  	  ## Generate the icon for the ROC curve
+  	  $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xylog_small.".$image_format;
+  	  &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	&RSAT::message::Info("ROC curve icon (log X)", $outfile{distrib_compa}."_roc_xylog_small.".$image_format) if ($main::verbose >= 1);
+
+
   	   if ($tasks{theor_loo}) {
   	   	
   	   	$outfile{th_distrib_compa} = $outfile{prefix}."_theorical_score_distrib_compa";
