@@ -26,7 +26,6 @@ sub UpdateCounterFile {
     print COUNTER $nb_visitors;
     #flock(COUNTER,8);
     close(COUNTER);
-    
     return $nb_visitors;
 }
 
@@ -183,7 +182,6 @@ sub ReadConfig {
 ## THIS SHOULD BE CLEANED WHEN I FIND TIME TO DO IT
 sub InitRSAT {
   umask 0022;
-
 
   &ReadProperties();
   &ReadConfig();
