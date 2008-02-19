@@ -11,7 +11,7 @@ use vars qw(@ISA);
 use File::Temp qw/ tempfile tempdir /;
 
 my $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||;
-$ENV{RSAT} = $RSAT;
+# $ENV{RSAT} = $RSAT;
 my $SCRIPTS = $RSAT.'/perl-scripts';
 my $TMP = $RSAT.'/public_html/tmp';
 
@@ -3855,7 +3855,7 @@ sub UpdateLogFileWS {
     $ENV{rsat_site} = `hostname`;
     chomp($ENV{rsat_site});
   }
-  my $log_file = join("", $ENV{RSAT}, "/logs/log-file_", $ENV{rsat_site}, "_WS", sprintf("_%04d_%02d", $year+1900,$month+1));
+  my $log_file = join("", $RSAT, "/logs/log-file_", $ENV{rsat_site}, "_WS", sprintf("_%04d_%02d", $year+1900,$month+1));
   if (open LOG, ">>".$log_file) {
     #flock(LOG,2);
     $date = &RSAT::util::AlphaDate();
