@@ -145,31 +145,7 @@ sub retrieve_ensembl_seq {
     unless ($output_choice) {
 	$output_choice = 'both';
     }
-#     my $command = $self->retrieve_ensembl_seq_cmd(%args);
-#     my $stderr = `$command 2>&1 1>/dev/null`;
-#     if ($stderr) {
-# 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#     }
-#     my $result = `$command`;
-#     my $tmp_outfile = `mktemp $TMP/retrieve-ensembl-seq.XXXXXXXXXX`;
-#     open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-#     print TMP $result;
-#     close TMP;
-#     if ($output_choice eq 'server') {
-# 	return SOAP::Data->name('response' => {'command' => $command, 
-# 					       'server' => $tmp_outfile});
-#     } elsif ($output_choice eq 'client') {
-# 	return SOAP::Data->name('response' => {'command' => $command,
-# 					       'client' => $result});
-#     } elsif ($output_choice eq 'both') {
-# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-# 					       'command' => $command, 
-# 					       'client' => $result});
-#     }
-# }
 
-# sub retrieve_ensembl_seq_cmd {
-#     my ($self,%args) = @_;
     my $organism = $args{"organism"};
     my $ensembl_host = $args{"ensembl_host"};
     my $dbname = $args{"db_name"};
@@ -375,7 +351,6 @@ sub retrieve_ensembl_seq {
 #    }
 
  &run_WS_command($command, $output_choice, "retrieve-ensembl-seq")
-#    return $command;
 }
 
 ##########
