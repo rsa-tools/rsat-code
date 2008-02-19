@@ -31,242 +31,255 @@ Documentation for this module is at http://rsat.scmbb.ulb.ac.be/rsat/web_service
 
 ##########
 sub retrieve_seq {
-    my ($self, $args_ref) = @_;
-    my %args = %$args_ref;
-    my $output_choice = $args{"output"};
-    unless ($output_choice) {
-	$output_choice = 'both';
-    }
-    my $organism = $args{"organism"};
-    my $noorf = $args{"noorf"};
-    my $from = $args{"from"};
-    my $to = $args{"to"};
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+  my $organism = $args{"organism"};
+  my $noorf = $args{"noorf"};
+  my $from = $args{"from"};
+  my $to = $args{"to"};
 
-    ## List of query genes
-    my $query_ref = $args{"query"};
-    my $query = "";
-    if ($query_ref) {
-	my @query = @{$query_ref};
-	foreach $q (@query) {
-	    $q =~s/\'//g;
-	    $q =~s/\"//g;
-	}
-	$query = " -q '";
-	$query .= join "' -q '", @query;
-	$query .= "'";
+  ## List of query genes
+  my $query_ref = $args{"query"};
+  my $query = "";
+  if ($query_ref) {
+    my @query = @{$query_ref};
+    foreach $q (@query) {
+      $q =~s/\'//g;
+      $q =~s/\"//g;
     }
+    $query = " -q '";
+    $query .= join "' -q '", @query;
+    $query .= "'";
+  }
 
-    my $feattype = $args{"feattype"};
-    my $type = $args{"type"};
-    my $format = $args{"format"};
-    my $all = $args{"all"};
-    my $lw = $args{"lw"};
-    my $label = $args{"label"};
-    my $label_sep = $args{"label_sep"};
-    my $nocom = $args{"nocom"};
-    my $repeat = $args{'repeat'};
-    my $imp_pos = $args{'imp_pos'};
+  my $feattype = $args{"feattype"};
+  my $type = $args{"type"};
+  my $format = $args{"format"};
+  my $all = $args{"all"};
+  my $lw = $args{"lw"};
+  my $label = $args{"label"};
+  my $label_sep = $args{"label_sep"};
+  my $nocom = $args{"nocom"};
+  my $repeat = $args{'repeat'};
+  my $imp_pos = $args{'imp_pos'};
 
-    my $command = "$SCRIPTS/retrieve-seq";
+  my $command = "$SCRIPTS/retrieve-seq";
 
-    if ($organism) {
-      $organism =~ s/\'//g;
-      $organism =~ s/\"//g;
-      $command .= " -org '".$organism."'";
-    }
-    if ($query) {
-	$command .= $query;
-    }
+  if ($organism) {
+    $organism =~ s/\'//g;
+    $organism =~ s/\"//g;
+    $command .= " -org '".$organism."'";
+  }
 
-    if ($noorf == 1) {
-	$command .= " -noorf";
-    }
-    if ($from =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
-	$from =~ s/\'//g;
-	$from =~ s/\"//g;
-	$command .= " -from '".$from."'";
-    }
-    if ($to =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
-	$to =~ s/\'//g;
-	$to =~ s/\"//g;
-	$command .= " -to '".$to."'";
-    }
-    if ($feattype) {
-	$feattype =~ s/\'//g;
-	$feattype =~ s/\"//g;
-	$command .= " -feattype '".$feattype."'";
-    }
-    if ($type) {
-	$type =~ s/\'//g;
-	$type =~ s/\"//g;
-	$command .= " -type '".$type."'";
-    }
-    if ($format) {
-	$format =~ s/\'//g;
-	$format =~ s/\"//g;
-	$command .= " -format '".$format."'";
-    }
-    if ($all == 1) {
-	$command .= " -all";
-    }
-    if ($lw) {
-	$lw =~ s/\'//g;
-	$lw =~ s/\"//g;
-	$command .= " -lw '".$lw."'";
-    }
-    if ($label) {
-	$label =~ s/\'//g;
-	$label =~ s/\"//g;
-	$command .= " -label '".$label."'";
-    }
-    if ($label_sep) {
-	$label_sep =~ s/\'//g;
-	$label_sep =~ s/\"//g;
-	$command .= " -labelsep '".$label_sep."'";
-    }
-    if ($nocom == 1) {
-	$command .= " -nocom";
-    }
-    if ($repeat == 1) {
-	$command .= " -rm";
-    }
-    if ($imp_pos == 1) {
-	$command .= " -imp_pos";
-    }
+  if ($query) {
+    $command .= $query;
+  }
 
-    &run_WS_command($command, $output_choice, "retrieve-seq");
+  if ($noorf == 1) {
+    $command .= " -noorf";
+  }
+
+  if ($from =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $from =~ s/\'//g;
+    $from =~ s/\"//g;
+    $command .= " -from '".$from."'";
+  }
+
+  if ($to =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $to =~ s/\'//g;
+    $to =~ s/\"//g;
+    $command .= " -to '".$to."'";
+  }
+
+  if ($feattype) {
+    $feattype =~ s/\'//g;
+    $feattype =~ s/\"//g;
+    $command .= " -feattype '".$feattype."'";
+  }
+
+  if ($type) {
+    $type =~ s/\'//g;
+    $type =~ s/\"//g;
+    $command .= " -type '".$type."'";
+  }
+
+  if ($format) {
+    $format =~ s/\'//g;
+    $format =~ s/\"//g;
+    $command .= " -format '".$format."'";
+  }
+
+  if ($all == 1) {
+    $command .= " -all";
+  }
+
+  if ($lw) {
+    $lw =~ s/\'//g;
+    $lw =~ s/\"//g;
+    $command .= " -lw '".$lw."'";
+  }
+
+  if ($label) {
+    $label =~ s/\'//g;
+    $label =~ s/\"//g;
+    $command .= " -label '".$label."'";
+  }
+
+  if ($label_sep) {
+    $label_sep =~ s/\'//g;
+    $label_sep =~ s/\"//g;
+    $command .= " -labelsep '".$label_sep."'";
+  }
+
+  if ($nocom == 1) {
+    $command .= " -nocom";
+  }
+
+  if ($repeat == 1) {
+    $command .= " -rm";
+  }
+
+  if ($imp_pos == 1) {
+    $command .= " -imp_pos";
+  }
+
+  &run_WS_command($command, $output_choice, "retrieve-seq");
 }
 
 ##########
 sub retrieve_ensembl_seq {
-    my ($self, $args_ref) = @_;
-    my %args = %$args_ref;
-    my $output_choice = $args{"output"};
-    unless ($output_choice) {
-	$output_choice = 'both';
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+
+  my $organism = $args{"organism"};
+  my $ensembl_host = $args{"ensembl_host"};
+  my $dbname = $args{"db_name"};
+  my $noorf = $args{"noorf"};
+  my $nogene = $args{"nogene"};
+  my $from = $args{"from"};
+  my $to = $args{"to"};
+
+  ## List of query genes
+  my $query_ref = $args{"query"};
+  my $query = "";
+  if ($query_ref) {
+    my @query = @{$query_ref};
+    foreach $q (@query) {
+      $q =~s/\'//g;
+      $q =~s/\"//g;
     }
+    $query = " -q '";
+    $query .= join "' -q '", @query;
+    $query .= "'";
+  }
 
-    my $organism = $args{"organism"};
-    my $ensembl_host = $args{"ensembl_host"};
-    my $dbname = $args{"db_name"};
-    my $noorf = $args{"noorf"};
-    my $nogene = $args{"nogene"};
-    my $from = $args{"from"};
-    my $to = $args{"to"};
+  my $feattype = $args{"feattype"};
+  my $type = $args{"type"};
+# my $format = $args{"format"};
+  my $all = $args{"all"};
+# my $lw = $args{"lw"};
+# my $label = $args{"label"};
+# my $label_sep = $args{"label_sep"};
+# my $nocom = $args{"nocom"};
+  my $repeat = $args{'repeat'};
+  my $mask_coding = $args{"mask_coding"};
+  my $all_transcripts = $args{"all_transcripts"};
+  my $first_intron = $args{"first_intron"};
+  my $non_coding = $args{"non_coding"};
+  my $chrom = $args{"chromosome"};
+  my $left = $args{"left"};
+  my $right =$args{"right"};
+  my $strand = $args{"strand"};
 
-    ## List of query genes
-    my $query_ref = $args{"query"};
-    my $query = "";
-    if ($query_ref) {
-	my @query = @{$query_ref};
-	foreach $q (@query) {
-	    $q =~s/\'//g;
-	    $q =~s/\"//g;
-	}
-	$query = " -q '";
-	$query .= join "' -q '", @query;
-	$query .= "'";
-    }
+  if ($args{"features"}) {
+    my $features = $args{"features"};
+    chomp $features;
+    $tmp_ft_file = `mktemp $TMP/retrieve-ensembl-seq.XXXXXXXXXX`;
+    open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
+    print TMP_IN $feature;
+    close TMP_IN;
+  } elsif ($args{"tmp_ft_file"}) {
+    $tmp_ft_file = $args{"tmp_ft_file"};
+    $tmp_ft_file =~ s/\'//g;
+    $tmp_ft_file =~ s/\"//g;
+  }
 
-    my $feattype = $args{"feattype"};
-    my $type = $args{"type"};
-#    my $format = $args{"format"};
-    my $all = $args{"all"};
-#    my $lw = $args{"lw"};
-#    my $label = $args{"label"};
-#    my $label_sep = $args{"label_sep"};
-#    my $nocom = $args{"nocom"};
-    my $repeat = $args{'repeat'};
-    my $mask_coding = $args{"mask_coding"};
-    my $all_transcripts = $args{"all_transcripts"};
-    my $first_intron = $args{"first_intron"};
-    my $non_coding = $args{"non_coding"};
-    my $chrom = $args{"chromosome"};
-    my $left = $args{"left"};
-    my $right =$args{"right"};
-    my $strand = $args{"strand"};
+  my $feat_format = $args{"feat_format"};
+# my $imp_pos = $args{'imp_pos'};
 
-    if ($args{"features"}) {
-      my $features = $args{"features"};
-      chomp $features;
-      $tmp_ft_file = `mktemp $TMP/retrieve-ensembl-seq.XXXXXXXXXX`;
-      open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
-      print TMP_IN $feature;
-      close TMP_IN;
-    } elsif ($args{"tmp_ft_file"}) {
-      $tmp_ft_file = $args{"tmp_ft_file"};
-      $tmp_ft_file =~ s/\'//g;
-      $tmp_ft_file =~ s/\"//g;
-    }
+  my $command = "$SCRIPTS/retrieve-ensembl-seq.pl";
 
-    my $feat_format = $args{"feat_format"};
-#    my $imp_pos = $args{'imp_pos'};
+  if ($organism) {
+    $organism =~ s/\'//g;
+    $organism =~ s/\"//g;
+    $command .= " -org '".$organism."'";
+  }
 
-    my $command = "$SCRIPTS/retrieve-ensembl-seq.pl";
+  if ($ensembl_host) {
+    $ensembl_host =~ s/\'//g;
+    $ensembl_host =~ s/\"//g;
+    $command .= " -ensemblhost '".$ensembl_host."'";
+  }
 
-    if ($organism) {
-      $organism =~ s/\'//g;
-      $organism =~ s/\"//g;
-      $command .= " -org '".$organism."'";
-    }
+  if ($dbname) {
+    $dbname =~ s/\'//g;
+    $dbname =~ s/\"//g;
+    $command .= " -dbname '".$dbname."'";
+  }
 
-    if ($ensembl_host) {
-      $ensembl_host =~ s/\'//g;
-      $ensembl_host =~ s/\"//g;
-      $command .= " -ensemblhost '".$ensembl_host."'";
-    }
+  if ($query) {
+    $command .= $query;
+  }
 
-    if ($dbname) {
-      $dbname =~ s/\'//g;
-      $dbname =~ s/\"//g;
-      $command .= " -dbname '".$dbname."'";
-    }
+  if ($noorf == 1) {
+    $command .= " -noorf";
+  }
 
-    if ($query) {
-	$command .= $query;
-    }
+  if ($nogene == 1) {
+    $command .= " -nogene";
+  }
 
-    if ($noorf == 1) {
-	$command .= " -noorf";
-    }
+  if ($from =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $from =~ s/\'//g;
+    $from =~ s/\"//g;
+    $command .= " -from '".$from."'";
+  }
 
-    if ($nogene == 1) {
-	$command .= " -nogene";
-    }
+  if ($to =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $to =~ s/\'//g;
+    $to =~ s/\"//g;
+    $command .= " -to '".$to."'";
+  }
 
-    if ($from =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
-	$from =~ s/\'//g;
-	$from =~ s/\"//g;
-	$command .= " -from '".$from."'";
-    }
+  if ($feattype) {
+    $feattype =~ s/\'//g;
+    $feattype =~ s/\"//g;
+    $command .= " -feattype '".$feattype."'";
+  }
 
-    if ($to =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
-	$to =~ s/\'//g;
-	$to =~ s/\"//g;
-	$command .= " -to '".$to."'";
-    }
+  if ($type) {
+    $type =~ s/\'//g;
+    $type =~ s/\"//g;
+    $command .= " -type '".$type."'";
+  }
 
-    if ($feattype) {
-	$feattype =~ s/\'//g;
-	$feattype =~ s/\"//g;
-	$command .= " -feattype '".$feattype."'";
-    }
+  if ($format) {
+    $format =~ s/\'//g;
+    $format =~ s/\"//g;
+    $command .= " -format '".$format."'";
+  }
 
-    if ($type) {
-	$type =~ s/\'//g;
-	$type =~ s/\"//g;
-	$command .= " -type '".$type."'";
-    }
-
-    if ($format) {
-	$format =~ s/\'//g;
-	$format =~ s/\"//g;
-	$command .= " -format '".$format."'";
-    }
-
-    if ($all == 1) {
-	$command .= " -all";
-    }
+  if ($all == 1) {
+    $command .= " -all";
+  }
 
 #    if ($lw) {
 #	$lw =~ s/\'//g;
@@ -364,7 +377,7 @@ sub purge_seq {
     if ($args{"sequence"}) {
 	my $sequence = $args{"sequence"};
 	chomp $sequence;
-	$tmp_infile = `mktemp $TMP/purge-seq.XXXXXXXXXX`;
+	$tmp_infile = `mktemp $TMP/purge-sequence.XXXXXXXXXX`;
 	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
 	print TMP_IN $sequence;
 	close TMP_IN;
@@ -389,7 +402,7 @@ sub purge_seq {
       $command .= " -format '".$format."'";
     }
 
-    if ($str) {
+    if ($str =~ /\d/) {
 	if ($str == 1 || $str == 2) {
 	    $command .= " -".$str."str";
 	} else {
@@ -491,7 +504,7 @@ sub oligo_analysis {
       $command .= " -noov";
     }
 
-    if ($str) {
+    if ($str =~ /\d/) {
 	if ($str == 1 || $str == 2) {
 	    $command .= " -".$str."str";
 	} else {
@@ -592,7 +605,7 @@ sub dyad_analysis {
       $command .= " -noov";
     }
 
-    if ($str) {
+    if ($str =~ /\d/) {
 	if ($str == 1 || $str == 2) {
 	    $command .= " -".$str."str";
 	} else {
@@ -685,7 +698,7 @@ sub pattern_assembly {
 
   ## Strands
   my $str = $args{"str"};
-  if ($str) {
+  if ($str =~ /\d/) {
     if ($str == 1 || $str == 2) {
       $command .= " -".$str."str";
     } else {
@@ -820,7 +833,7 @@ sub dna_pattern {
       $command .= " -noov";
     }
 
-    if ($str) {
+    if ($str  =~ /\d/) {
 	if ($str == 1 || $str == 2) {
 	    $command .= " -".$str."str";
 	} else {
@@ -900,7 +913,7 @@ sub convert_features {
 
     $command .= " -i '".$tmp_infile."'";
 
-     &run_WS_command($command, $output_choice, "convert-feature");
+     &run_WS_command($command, $output_choice, "convert-features");
 }
 
 ##########
@@ -911,10 +924,46 @@ sub feature_map {
     unless ($output_choice) {
 	$output_choice = 'both';
     }
+
+my $command = $self->feature_map_cmd(%args);
+    &run_WS_command($command, $output_choice);
+
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+        die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $result = `$command`;
+    my $suffix;
+    if ($args{'format'}) {
+        $suffix = ".".$args{'format'};
+    } else {
+        $suffix = ".jpg";
+    }
+    my ($TMP_OUT, $tmp_outfile) = tempfile(feature_map.XXXXXXXXXX, SUFFIX => $suffix, DIR => $TMP);
+    print $TMP_OUT $result;
+    close $TMP_OUT;
+    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.scmbb\.ulb\.ac\.be\/rsat/g;
+#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+    if ($output_choice eq 'server') {
+        return SOAP::Data->name('response' => {'command' => $command, 
+                                               'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+        return SOAP::Data->name('response' => {'command' => $command,
+                                               'client' => $result});
+    } elsif ($output_choice eq 'both') {
+        return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+                                               'command' => $command, 
+                                               'client' => $result});
+    }
+}
+
+sub feature_map_cmd {
+    my ($self, %args) =@_;
+
     if ($args{"features"}) {
 	my $features = $args{"features"};
 	chomp $features;
-	$tmp_infile = `mktemp $TMP/feature_map.XXXXXXXXXX`;
+	$tmp_infile = `mktemp $TMP/feature-map.XXXXXXXXXX`;
 	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
 	print TMP_IN $features;
 	close TMP_IN;
@@ -1091,7 +1140,7 @@ sub feature_map {
 
     $command .= " -i '".$tmp_infile."'";
 
-     &run_WS_command($command, $output_choice, "feature-map");
+    &run_WS_command($command, $output_choice, "feature-map");
 }
 
 ##########
@@ -1131,7 +1180,7 @@ sub footprint_discovery_cmd {
     if ($args{"genes"}) {
 	my $genes = $args{"genes"};
 	chomp $genes;
-	$tmp_infile = `mktemp $TMP/footprint_discovery.XXXXXXXXXX`;
+	$tmp_infile = `mktemp $TMP/footprint-discovery.XXXXXXXXXX`;
 	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
 	print TMP_IN $genes;
 	close TMP_IN;
