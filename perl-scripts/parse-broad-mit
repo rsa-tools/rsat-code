@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-broad-mit,v 1.1 2008/02/18 14:15:27 rsat Exp $
+# $Id: parse-broad-mit,v 1.2 2008/02/19 10:39:24 jvanheld Exp $
 #
 ############################################################
 
@@ -19,13 +19,27 @@ $program_version
 
 =head1 DESCRIPTION
 
-Given a supercontig file, a GTF file and an amino acid file. Create the necessary files  (raw files, feature file, ...) to install an organism in RSAT.
+This script parses genomes provided in the flat file format
+distributed by the BROAD institute of the MIT.  The program takes as
+input a supercontig file, a GTF file and an amino acid file. It
+creates the sequence and feature files (raw files, feature file, ...)
+that are necessary to install an organism in RSAT. After this step,
+the program I<install-organism> should be used to configure the server
+and perform the additional installation steps (oligo and dyad
+calibrations, ...). See RSAT user guide for detailed explanations.
+
+These genomes are available on the BROAD/MT web site:
+
+http://www.broad.mit.edu/tools/data/seq.html
+
+In particular, for the RSAT server, we use it to parse the fungal
+genomes available at:
+
+http://www.broad.mit.edu/annotation/fgi/
 
 =head1 AUTHORS
 
 Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
-
-Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -33,30 +47,49 @@ parser
 
 =head1 USAGE
 
-parse-broad-mit.pl [-v #] -org Organism_name -gtf gtf_file -nuc_seq contig_file -aa protein_file [-aa_remove text_to_remove] [-gtf_remove text_to_remove] [-nuc_remove text_to_remove]
+parse-broad-mit.pl [-v #] -org Organism_name -gtf gtf_file -nuc_seq
+contig_file -aa protein_file [-aa_remove text_to_remove] [-gtf_remove
+text_to_remove] [-nuc_remove text_to_remove]
 
 =head1 INPUT FORMAT
 
 =head2 GTF file 
-   	
-GTF (Gene Transfer Format) is a refinement to GFF that tightens the specification. The first eight GTF fields are the same as GFF. The group field has been expanded into a list of attributes. Each attribute consists of a type/value pair. Attributes must end in a semi-colon, and be separated from any following attribute by exactly one space. 
+
+GTF (Gene Transfer Format) is a refinement to GFF that tightens the
+specification. The first eight GTF fields are the same as GFF. The
+group field has been expanded into a list of attributes. Each
+attribute consists of a type/value pair. Attributes must end in a
+semi-colon, and be separated from any following attribute by exactly
+one space.
 
 For more information, see http://genes.cse.wustl.edu/GTF2.html
 
 =head2 Fasta files
 
-A file containing protein sequences and a file containing nucleic sequences in FASTA format must be given.
+A file containing protein sequences and a file containing nucleic
+sequences in FASTA format must be given.
 
 =head1 OUTPUT FORMAT
 
-The program delivers 
-- a RSAT feature file (cds.tab)
-- a list of contig files in raw format 
-- a protein sequence file in fasta format (organism_name_aa.fasta)
-- a synonym file (cds_names.tab)
-- a contig list file (contigs.txt)
+The program delivers
 
-To install it in RSAT, the user must place all the files in the directory $RSAT/data/genomes/organism_name/genome/, then add the organism.tab file, and use the install-organism command.
+=over
+
+=item a RSAT feature file (cds.tab)
+
+=item a list of contig files in raw format 
+
+=item a protein sequence file in fasta format (organism_name_aa.fasta)
+
+=item a synonym file (cds_names.tab)
+
+=item a contig list file (contigs.txt)
+
+=back
+
+To install it in RSAT, the user must place all the files in the
+directory $RSAT/data/genomes/organism_name/genome/, then add the
+organism.tab file, and use the install-organism command.
 
 =cut
 
@@ -78,7 +111,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -345,8 +378,10 @@ A protein fasta file. Contains the polypetide primary structure of the organism.
 
 =item	B<-gtf_remove>
 
-Generally, the contig names of the gtf file from the Broad institute contains very long name. 
-For example : supercont1.1%20of%20Lodderomyces%20elongisporus.
+Generally, the contig names of the gtf file from the Broad institute
+contains very long name.  For example, the following contig name
+conains %20 characters that should be replaced
+I<supercont1.1%20of%20Lodderomyces%20elongisporus>
 
 To remove it the non necessary string, use the option -gtf_remove iteratively 
 -gtf_remove supercont -gtf_remove %20of%20Lodderomyces%20elongisporus. 
@@ -361,7 +396,8 @@ Regular expression are allowed.
 
 =item	B<-nuc_remove>
 
-Iterative argument. It is used to remove extra annotation on the contig raw files. Regular expression are allowed.
+Iterative argument. It is used to remove extra annotation on the
+contig raw files. Regular expression are allowed.
 
 =cut
 	} elsif ($arg eq "-nuc_remove") {
@@ -464,6 +500,29 @@ __END__
 
 =head1 SEE ALSO
 
+=head2 install-organisms
+
+After ghaving parsed a genome, several additional steps are required
+before this genome is fully supported in RSAT. See RSAT installation
+guide and user guide for detailed explanations about how to install
+additional genomes.
+
+=head2 Parsers for other genome formats
+
+=over
+
+=item parse-genbank.pl
+
+=item parse-embl.pl
+
+=item get-ensembl-genome.pl
+
+=back
+
 =head1 WISH LIST
+
+We wish all the genome files distributed by genome centers would have
+decent names and their content would be 100% compatible with the
+supposed standard :-)
 
 =cut
