@@ -535,7 +535,7 @@ sub CalcConditionalProbabilities {
 ################################################################
 #### increment the counter file for monitoring web access
 sub UpdateCounterFile {
-  &RSAT::server::UpdateCounterFile();
+  &RSAT::server::UpdateCounterFile(@_);
 }
 
 ################################################################
@@ -558,7 +558,7 @@ sub UpdateLogFile {
 #### &DelayedRemoval($file_to_remove, $delay);
 ####
 sub DelayedRemoval {
-  &RSAT::server::DelayedRemoval();
+  &RSAT::server::DelayedRemoval(@_);
 }
 
 # ################################################################
