@@ -1140,7 +1140,8 @@ sub feature_map_cmd {
 
     $command .= " -i '".$tmp_infile."'";
 
-    &run_WS_command($command, $output_choice, "feature-map");
+    return $command;
+#    &run_WS_command($command, $output_choice, "feature-map");
 }
 
 ##########
