@@ -11,10 +11,12 @@ use vars qw(@ISA);
 use File::Temp qw/ tempfile tempdir /;
 
 my $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||;
+$ENV{RSAT} = $RSAT;
 my $SCRIPTS = $RSAT.'/perl-scripts';
 my $TMP = $RSAT.'/public_html/tmp';
 
 unshift (@INC, "../../perl-scripts/lib/");
+require RSAT::util;
 
 =pod
 
@@ -36,12 +38,12 @@ sub retrieve_seq {
     unless ($output_choice) {
 	$output_choice = 'both';
     }
-    my $command = $self->retrieve_seq_cmd(%args);
-    &run_WS_command($command, $output_choice, "retrieve-seq");
-}
+#     my $command = $self->retrieve_seq_cmd(%args);
+#     &run_WS_command($command, $output_choice, "retrieve-seq");
+# }
 
-sub retrieve_seq_cmd {
-    my ($self,%args) = @_;
+# sub retrieve_seq_cmd {
+#     my ($self,%args) = @_;
     my $organism = $args{"organism"};
     my $noorf = $args{"noorf"};
     my $from = $args{"from"};
@@ -139,7 +141,8 @@ sub retrieve_seq_cmd {
 	$command .= " -imp_pos";
     }
 
-    return $command;
+    &run_WS_command($command, $output_choice, "retrieve-seq");
+#    return $command;
 }
 
 ##########
@@ -4128,7 +4131,7 @@ Run a command for the web services.
 
 =cut
 sub run_WS_command {
-  my ($command, $output_choice, $suffix) = @_;
+  my ($command, $output_choice, $method_name) = @_;
   my $result = `$command`;
   my $stderr = `$command 2>&1 1>/dev/null`;
   if ($stderr) {
@@ -4136,7 +4139,10 @@ sub run_WS_command {
   }
   my $tmp_outfile = `mktemp $TMP/$suffix.XXXXXXXXXX`;
   chomp($tmp_outfile);
-  &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile);
+  &UpdateLogFileWS(command=>$command, 
+		   tmp_outfile=>$tmp_outfile,
+		   method_name=>$method_name,
+		   output_choice=>$output_choice);
   open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
   print TMP_OUT $result;
   close TMP_OUT;
@@ -4169,6 +4175,8 @@ sub UpdateLogFileWS {
     chomp($ENV{rsat_site});
   }
   my $log_file = join("", $ENV{RSAT}, "/logs/log-file_", $ENV{rsat_site}, "_WS", sprintf("_%04d_%02d", $year+1900,$month+1));
+
+#  die join("\t", $ENV{RSAT}, $ENV{rsat_site}, $log_file), "\n";
   if (open LOG, ">>".$log_file) {
     #flock(LOG,2);
     $date = &RSAT::util::AlphaDate();
@@ -4177,14 +4185,18 @@ sub UpdateLogFileWS {
                     $date,
                     $ENV{rsat_site},
                     "$ENV{'REMOTE_USER'}\@$ENV{'REMOTE_ADDR'} ($ENV{'REMOTE_HOST'})",
-                    $script_name,
-                    $output_choice,
-                    $user_email,
-                    $message,
+                    $args{method_name},
+                    $args{output_choice},
+#                    $user_email,
+#                    $args{message},
+		    $args{tmp_outfile}, #temporary for debugging
+		    $args{command}, # temporary for debugging
                    ), "\n";
-    print LOG join ("\t", $args{command}, $args{tmp_outfile}), "\n";
+#    print LOG join ("\t", $args{command}, $args{tmp_outfile}), "\n";
     #flock(LOG,8);
     close LOG;
+  } else {
+    die "NOLOG\n";
   }
 }
 
