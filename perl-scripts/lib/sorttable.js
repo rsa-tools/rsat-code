@@ -242,18 +242,30 @@ sorttable = {
   /* sort functions
      each sort function takes two parameters, a and b
      you are comparing a[0] and b[0] */
+  /* Numeric order */
   sort_numeric: function(a,b) {
-    aa = parseFloat(a[0].replace(/[^0-9.-eE]/g,''));
-    if (isNaN(aa)) aa = 0;
-    bb = parseFloat(b[0].replace(/[^0-9.-eE]/g,'')); 
-    if (isNaN(bb)) bb = 0;    
-    return aa-bb;
-  },
+	aa = parseFloat(a[0].replace(/[^0-9.\-eE]/g,''));
+	if (isNaN(aa)) aa = 0;
+	bb = parseFloat(b[0].replace(/[^0-9.\-eE]/g,''));
+	if (isNaN(bb)) bb = 0;
+	return aa-bb;
+    },
+//   sort_numeric: function(a,b) {
+//     aa = parseFloat(a[0].replace(/[^0-9.-eE]/g,''));
+//     if (isNaN(aa)) aa = 0;
+//     bb = parseFloat(b[0].replace(/[^0-9.-eE]/g,'')); 
+//     if (isNaN(bb)) bb = 0;    
+//     return aa-bb;
+//   },
+
+  /* alphabetical order */
   sort_alpha: function(a,b) {
     if (a[0]==b[0]) return 0;
     if (a[0]<b[0]) return -1;
     return 1;
   },
+
+  /* sort dates formatted as ddmm (day first, month after) */
   sort_ddmm: function(a,b) {
     mtch = a[0].match(sorttable.DATE_RE);
     y = mtch[3]; m = mtch[2]; d = mtch[1];
@@ -269,6 +281,8 @@ sorttable = {
     if (dt1<dt2) return -1;
     return 1;
   },
+
+  /* sort dates formatted as mmdd (month first, day after) */
   sort_mmdd: function(a,b) {
     mtch = a[0].match(sorttable.DATE_RE);
     y = mtch[3]; d = mtch[2]; m = mtch[1];
