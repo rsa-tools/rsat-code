@@ -265,6 +265,19 @@
 	R01518<	C00631	
 	</pre>
 	</ul>
+	<ul><b><A NAME="rpairs"></A>Metabolic RPAIR graph</b><br>
+	This is a special case of a metabolic graph that has been constructed from reactant pairs (sub-reactions) taken from KEGG RPAIR
+	and from compounds listed in KEGG LIGAND. In DEMO2, this graph is pre-loaded. If you want to submit yourself
+	such a graph, you have to take care of three points:
+	<ol><li>Most sub-reaction nodes in the RPAIR graph have exclusion groups. These exlcusion groups 
+	consist of sub-reactions that share reactions with the sub-reaction node. Exclusion groups can be given by using the node attribute
+	"Exclusion.Group".</li>
+	<li>On each edge, there is an annotation of the reactant pair class to which it belongs (main, trans, cofac, ligase or leave). 
+	Note that an edge may belong to several classes. The name of this edge attribute is "RPAIRS.Linkage.Type".</li>
+	<li>Finally, you need to specify another weighting scheme, called 'rpairs'. This weighting scheme will take into account the
+	reactant pair classes of the edges as well as the compound degrees.</li>
+	</ol>
+	</ul>
 	<ul><b><A NAME="algorithm"></A>Algorithm</b><br>
 	You can choose between REA (the default, see <a href='help.pathfinder.html#literature'>[1]</a>) or backtracking 
 	developed by Fabian Couche and Didier Croes (see <a href='neat_publications.html'>publications</a>). 
