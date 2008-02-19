@@ -11,7 +11,6 @@ use vars qw(@ISA);
 use File::Temp qw/ tempfile tempdir /;
 
 my $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||;
-# $ENV{RSAT} = $RSAT;
 my $SCRIPTS = $RSAT.'/perl-scripts';
 my $TMP = $RSAT.'/public_html/tmp';
 
@@ -146,31 +145,31 @@ sub retrieve_ensembl_seq {
     unless ($output_choice) {
 	$output_choice = 'both';
     }
-    my $command = $self->retrieve_ensembl_seq_cmd(%args);
-    my $stderr = `$command 2>&1 1>/dev/null`;
-    if ($stderr) {
-	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-    }
-    my $result = `$command`;
-    my $tmp_outfile = `mktemp $TMP/retrieve-ensembl-seq.XXXXXXXXXX`;
-    open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-    print TMP $result;
-    close TMP;
-    if ($output_choice eq 'server') {
-	return SOAP::Data->name('response' => {'command' => $command, 
-					       'server' => $tmp_outfile});
-    } elsif ($output_choice eq 'client') {
-	return SOAP::Data->name('response' => {'command' => $command,
-					       'client' => $result});
-    } elsif ($output_choice eq 'both') {
-	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-					       'command' => $command, 
-					       'client' => $result});
-    }
-}
+#     my $command = $self->retrieve_ensembl_seq_cmd(%args);
+#     my $stderr = `$command 2>&1 1>/dev/null`;
+#     if ($stderr) {
+# 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+#     }
+#     my $result = `$command`;
+#     my $tmp_outfile = `mktemp $TMP/retrieve-ensembl-seq.XXXXXXXXXX`;
+#     open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+#     print TMP $result;
+#     close TMP;
+#     if ($output_choice eq 'server') {
+# 	return SOAP::Data->name('response' => {'command' => $command, 
+# 					       'server' => $tmp_outfile});
+#     } elsif ($output_choice eq 'client') {
+# 	return SOAP::Data->name('response' => {'command' => $command,
+# 					       'client' => $result});
+#     } elsif ($output_choice eq 'both') {
+# 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+# 					       'command' => $command, 
+# 					       'client' => $result});
+#     }
+# }
 
-sub retrieve_ensembl_seq_cmd {
-    my ($self,%args) = @_;
+# sub retrieve_ensembl_seq_cmd {
+#     my ($self,%args) = @_;
     my $organism = $args{"organism"};
     my $ensembl_host = $args{"ensembl_host"};
     my $dbname = $args{"db_name"};
@@ -375,7 +374,8 @@ sub retrieve_ensembl_seq_cmd {
 #	$command .= " -imp_pos";
 #    }
 
-    return $command;
+ &run_WS_command($command, $output_choice, "retrieve-ensembl-seq")
+#    return $command;
 }
 
 ##########
@@ -446,7 +446,7 @@ sub purge_seq {
 
     $command .= " -i '".$tmp_infile."'";
 
-    &run_WS_command($command, $output_choice, "purge_sequence");
+    &run_WS_command($command, $output_choice, "purge-sequence");
 }
 
 ##########
@@ -549,7 +549,7 @@ sub oligo_analysis {
 
     $command .= " -i '".$tmp_infile."'";
 
-    &run_WS_command($command, $output_choice, "oligo_analysis");
+    &run_WS_command($command, $output_choice, "oligo-analysis");
 }
 
 ##########
@@ -675,7 +675,7 @@ sub dyad_analysis {
 
     $command .= " -i '".$tmp_infile."'";
 
-    &run_WS_command($command, $output_choice, "dyad_analysis");
+    &run_WS_command($command, $output_choice, "dyad-analysis");
 }
 
 ##########
@@ -760,7 +760,7 @@ sub pattern_assembly {
     $command .= " -toppat ".$toppat;
   }
 
-    &run_WS_command($command, $output_choice, "pattern_assembly");
+    &run_WS_command($command, $output_choice, "pattern-assembly");
 }
 
 ##########
@@ -883,7 +883,7 @@ sub dna_pattern {
 
     $command .= " -i '".$tmp_infile."'";
 
-    &run_WS_command($command, $output_choice, "dna_pattern");
+    &run_WS_command($command, $output_choice, "dna-pattern");
 }
 
 ##########
@@ -925,7 +925,7 @@ sub convert_features {
 
     $command .= " -i '".$tmp_infile."'";
 
-     &run_WS_command($command, $output_choice, "convert_feature");
+     &run_WS_command($command, $output_choice, "convert-feature");
 }
 
 ##########
@@ -1116,7 +1116,7 @@ sub feature_map {
 
     $command .= " -i '".$tmp_infile."'";
 
-     &run_WS_command($command, $output_choice, "feature_map");
+     &run_WS_command($command, $output_choice, "feature-map");
 }
 
 ##########
@@ -1354,7 +1354,7 @@ sub gene_info {
       $command .= " -feattype '".$args{feattype}."'";
   }
 
-    &run_WS_command($command, $output_choice, "gene_info");
+    &run_WS_command($command, $output_choice, "gene-info");
 }
 
 ##########
@@ -1379,7 +1379,7 @@ sub supported_organisms {
     $command .= " -taxon '".$args{taxon}."'";
   }
 
-  &run_WS_command($command, $output_choice, "supported_organisms");
+  &run_WS_command($command, $output_choice, "supported-organisms");
 }
 
 ##########
@@ -2251,7 +2251,7 @@ sub compare_classes {
     $command .= " -matrix '".$matrix."'";
   }
 
- &run_WS_command($command, $output_choice, "compare_classes");
+ &run_WS_command($command, $output_choice, "compare-classes");
 }
 
 ##########
@@ -2462,7 +2462,7 @@ sub matrix_scan {
       $command .= " -crer_ids";
   }
 
- &run_WS_command($command, $output_choice, "matrix_scan")
+ &run_WS_command($command, $output_choice, "matrix-scan")
 }
 
 ##########
@@ -2549,7 +2549,7 @@ sub matrix_distrib {
     $command .= " -bg_pseudo '".$background_pseudo."'";
   }
 
-  &run_WS_command($command, $output_choice, "matrix_distrib")
+  &run_WS_command($command, $output_choice, "matrix-distrib")
 }
 
 ##########
@@ -2646,7 +2646,7 @@ sub random_seq {
     $command .= " -lf '".$tmp_length."'";
   }
 
- &run_WS_command($command, $output_choice, "random_seq")
+ &run_WS_command($command, $output_choice, "random-seq")
 }
 
 # RSA GRAPH TOOLS
