@@ -279,6 +279,66 @@ parse-genbank.pl -v 1 \
 \end{verbatim}
 \end{footnotesize}
 
+\section{Parsing a genome from the Broad institute (MIT)}
+
+The website \url{http://www.broad.mit.edu/} offers a large collection of
+genomes that are not available on the NCBI website. We wrote a specific parser 
+for the Broad files.
+
+To this, download the following files for the organism of interest : the supercontig file, the protein sequences and the annotation file in the GTF format.
+
+These files contain sometimes too much information that shoud be removed. 
+
+This is an example of the beginning of the fasta file containing the protein traduction. In this file, we should remove 
+everything that follows the protein name.
+\begin{footnotesize}
+\begin{verbatim}
+>LELG_00001 | Lodderomyces elongisporus hypothetical protein (translation) (1085 aa)
+MKYDTAAQLSLINPQTLKGLPIKPFPLSQPVFVQGVNNDTKAITQGVFLDVTVHFISLPA
+ILYLHEQIPVGQVLLGLPFQDAHKLSIGFTDDGDKRELRFRANGNIHKFPIRYDGDSNYH
+IDSFPTVQVSQTVVIPPLSEMLRPAFTGSRASEDDIRYFVDQCAEVSDVFYIKGGDPGRL
+\end{verbatim}
+\end{footnotesize}
+This is an example of the beginning of the fasta file containing the contigs. In this file, we should remove 
+everything that follows the name of the contig. 
+\begin{footnotesize}
+\begin{verbatim}
+>supercontig_1.1 of Lodderomyces elongisporus
+AAGAGCATCGGGCAAATGATGTTTTTCAGTCCATCAATGTGATGGATCTGATAGTTGAAG
+GTCCTGATGAAGTTCAACCATTTGTAAACCCGATTTACAAAGTGTGAATTATCGAGTGGT
+TTATTCATCACAAGGACAAGAGCTTTGTTGGTTGACAGAGATGTTTTGCAGAAAGCCCTT
+AAGGATGGTATTGCCTTGTTCAAGAAGAAACCAGTTGTTACTGAAGTAAATCTGACGACC
+\end{verbatim}
+\end{footnotesize}
+
+
+This is an example of the beginning of the GTF file containing the contigs annotation. We should rename the contig
+name so that it corresponds to the fasta file of contig. To this, we will remove the text in the name of the contig (only keep the supercontig number)
+and add a prefix.
+\begin{footnotesize}
+\begin{verbatim}
+supercont1.1%20of%20Lodderomyces%20elongisporus	LE1_FINAL_GENECALL	start_codon	322	324	.	+	0	gene_id "LELG_00001"; transcript_id "LELT_00001";
+supercont1.1%20of%20Lodderomyces%20elongisporus	LE1_FINAL_GENECALL	stop_codon	3574	3576	.	+	0	gene_id "LELG_00001"; transcript_id "LELT_00001";
+supercont1.1%20of%20Lodderomyces%20elongisporus	LE1_FINAL_GENECALL	exon	322	3576	.	+	.	gene_id "LELG_00001"; transcript_id "LELT_00001";
+supercont1.1%20of%20Lodderomyces%20elongisporus	LE1_FINAL_GENECALL	CDS	322	3573	.	+	0	gene_id "LELG_00001"; transcript_id "LELT_00001";
+\end{verbatim}
+\end{footnotesize}
+We use the parse \program{parse-broad-mit}.
+\begin{footnotesize}
+\begin{verbatim}
+parse-broad-mit.pl -taxid 36914 -org Lodderomyces_elongisporus \
+		   -nuc_seq lodderomyces_elongisporus_1_supercontigs.fasta \
+		   -gtf lodderomyces_elongisporus_1_transcripts.gtf \
+		   -gtf_remove 'supercont' \
+		   -gtf_remove '%20of%20Lodderomyces%20elongisporus' \
+		   -contig_prefix LELG_ -nuc_remove supercontig_ \
+		   -nuc_remove ' of Lodderomyces elongisporus' \
+		   -aa lodderomyces_elongisporus_1_proteins.fasta -aa_remove ' .*'
+\end{verbatim}
+\end{footnotesize}
+
+This will create the raw files, the feature files and the protein sequence file.
+
 \section{Updating the configuration file}
 
 After having parsed the genome, you need to perform one additional
@@ -353,16 +413,28 @@ require calibrated frequencies for the background models. These
 frequencies are calculated automatically with
 \program{install-organism}.
 
+\begin{footnotesize}
+\begin{verbatim}
+install-organism -v 1 -org Debaryomyces_hansenii \
+    -task allup,oligos,dyads,upstream_freq
+\end{verbatim}
+\end{footnotesize}
+
 \textbf{Warning: } this task may require several hours of computation,
 depending on the genome size. For the \RSAT server, we use a PC
-cluster to regularly install and update genomes.
+cluster to regularly install and update genomes. As the \textit{allup} task, is needed by the
+other tasks (oligos,dyads,upstream\_freq), it should be launched directly. The other task then may be run
+on the cluster.
 
 \begin{footnotesize}
 \begin{verbatim}
 install-organism -v 1 -org Debaryomyces_hansenii \
-    -task allup,oligos,dyads,upstream_freq,clean
+    -task allup
+install-organism -v 1 -org Debaryomyces_hansenii \
+    -task oligos,dyads,upstream_freq -batch
 \end{verbatim}
 \end{footnotesize}
+
 
 \section{Installing a genome in your own account}
 
