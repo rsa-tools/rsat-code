@@ -1148,6 +1148,73 @@ sub feature_map_cmd {
 }
 
 ##########
+sub get_orthologs {
+  my ($self, $args_ref) = @_;
+
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+
+  ## List of queries
+  my $query_ref = $args{"query"};
+  my $query = "";
+  if ($query_ref) {
+    my @query = @{$query_ref};
+    foreach $q (@query) {
+	$q =~s/\'//g;
+	$q =~s/\"//g;
+    }
+    $query = " -q '";
+    $query .= join "' -q '", @query;
+    $query .= "'";
+  }
+
+  my $command = "$SCRIPTS/gene-info";
+
+  if ($args{organism}) {
+      $args{organism} =~ s/\'//g;
+      $args{organism} =~ s/\"//g;
+      $command .= " -org '".$args{organism}."'";
+  }
+  if ($args{taxon}) {
+      $args{taxon} =~ s/\'//g;
+      $args{taxon} =~ s/\"//g;
+      $command .= " -taxon '".$args{taxon}."'";
+  }
+  if ($query) {
+    $command .= $query;
+  }
+  if ($args{all} == 1) {
+    $command .= " -all";
+  }
+  if ($args{nogrep} == 1){
+    $command .= " -nogrep";
+  }
+  if ($args{return}) {
+      $args{return} =~ s/\'//g;
+      $args{return} =~ s/\"//g;
+      $command .= " -return '".$args{return}."'";
+  }
+    if ($args{lth}) {
+      $args{lth} =~ s/\'//g;
+      $args{lth} =~ s/\"//g;
+      @_lth = split / /, $args{lth};
+      $command .= " -lth '".$_lth[0]."' '".$_lth[1]."'";
+    }
+
+    if ($args{uth}) {
+      $args{uth} =~ s/\'//g;
+      $args{uth} =~ s/\"//g;
+      @_uth = split / /, $args{uth};
+      $command .= " -uth '".$_uth[0]."' '".$_uth[1]."'";
+    }
+
+    &run_WS_command($command, $output_choice, "get-orthologs");
+}
+
+##########
 sub footprint_discovery {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
