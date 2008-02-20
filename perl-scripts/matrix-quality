@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.49 2008/02/18 20:19:51 jvanheld Exp $
+# $Id: matrix-quality,v 1.50 2008/02/20 01:07:26 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1443,6 +1443,7 @@ sub CompareDistrib {
       $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}.".".$image_format;
       &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       &RSAT::message::Info("Distribution comparison graph", $outfile{distrib_compa}.".".$image_format) if ($main::verbose >= 1);
+      print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
 
       ## Generate the icon
       $icon_options = " -xsize 170 -ysize 120 -o ".$outfile{distrib_compa}."_small.".$image_format;
@@ -1458,6 +1459,7 @@ sub CompareDistrib {
       $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}."_logy.".$image_format;
       &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       &RSAT::message::Info("Distribution comparison graph (log Y)", $outfile{distrib_compa}."_logy.".$image_format) if ($main::verbose >= 1);
+      print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
 
       ## Generate the icon
       $icon_options = " -xsize 170 -ysize 120 -o ".$outfile{distrib_compa}."_logy_small.".$image_format;
@@ -1489,6 +1491,7 @@ sub CompareDistrib {
       $roc_file_opt .= " -yleg1 'other distributions' ";
       &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       &RSAT::message::Info("ROC curve graph", $outfile{distrib_compa}."_roc.".$image_format) if ($main::verbose >= 1);
+      print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
 
       ## Generate the icon for the ROC curve
       $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_small.".$image_format;
@@ -1501,6 +1504,7 @@ sub CompareDistrib {
       $roc_file_opt =~ s/_roc/_roc_xlog/;
       &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       &RSAT::message::Info("ROC curve graph (log X)", $outfile{distrib_compa}."_roc_xlog.".$image_format) if ($main::verbose >= 1);
+      print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
 
       ## Generate the icon for the ROC curve
       $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xlog_small.".$image_format;
@@ -1513,6 +1517,7 @@ sub CompareDistrib {
       $roc_file_opt =~ s/_roc_xlog/_roc_xylog/;
       &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       &RSAT::message::Info("ROC curve graph (log XY)", $outfile{distrib_compa}."_roc_xylog.".$image_format) if ($main::verbose >= 1);
+      print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
 
       ## Generate the icon for the ROC curve
       $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xylog_small.".$image_format;
@@ -1550,6 +1555,7 @@ sub CompareDistrib {
 	$XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
 	$graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{th_distrib_compa}.".".$image_format;
 	&doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
 
 	################################################################
 	## Draw a graph with all the inverse cumulative distributions
@@ -1560,6 +1566,7 @@ sub CompareDistrib {
 	$XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
 	$graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{th_distrib_compa}."_logy.".$image_format;
 	&doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
       }
     }
   }
