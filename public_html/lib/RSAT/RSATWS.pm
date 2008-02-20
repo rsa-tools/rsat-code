@@ -1523,7 +1523,7 @@ sub roc_stats{
   if ($args{total}) {
       $command .= " -total";
   }
-  &run_WS_command($command, $output_choice, "classfreq");
+  &run_WS_command($command, $output_choice, "roc-stats");
 }
 
 ##########
@@ -2535,12 +2535,53 @@ sub random_seq {
 ##########
 
 sub convert_graph {
-  my ($self, $args_ref) = @_;
-  my %args = %$args_ref;
-  my $output_choice = $args{"output"};
-  unless ($output_choice) {
-    $output_choice = 'both';
-  }
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $tmp_outfile = `mktemp $TMP/convert-graph.XXXXXXXXXX`;
+    my $out_format = $args{outformat};
+    $out_format =~ s/\'//g;
+    $out_format =~ s/\'//g;
+    chop $tmp_outfile;
+    system("rm $tmp_outfile");
+    $tmp_outfile .= ".$out_format";
+    
+    
+    
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+#     print TMP_OUT $result;
+#     print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    my $command = $self->convert_graph_cmd(%args);
+    $command .= " -o $tmp_outfile";
+    system $command;
+    my $result = `cat $tmp_outfile`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+
+    }
+
+
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+sub convert_graph_cmd {
+  my ($self, %args) =@_;
+  
   my $command = "$SCRIPTS/convert-graph ";
   
   if ($args{informat}) {
@@ -2619,7 +2660,7 @@ sub convert_graph {
    chomp $tmp_input;
    $command .= " -i '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "convert-graph");
+  return $command;
 }
 
 ##########
