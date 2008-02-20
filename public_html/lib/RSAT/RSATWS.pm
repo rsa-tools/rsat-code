@@ -1157,6 +1157,35 @@ sub get_orthologs {
     $output_choice = 'both';
   }
 
+    my $command = $self->get_orthologs_cmd(%args);
+
+#    my $stderr = `$command 2>&1 1>/dev/null`;
+#    if ($stderr) {
+#        die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+#    }
+    my $result = `$command`;
+    my ($TMP_OUT, $tmp_outfile) = tempfile(get_orthologs.XXXXXXXXXX, DIR => $TMP);
+    print $TMP_OUT $result;
+    close $TMP_OUT;
+
+    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"get-orthologs",output_choice=>$output_choice);
+
+    if ($output_choice eq 'server') {
+        return SOAP::Data->name('response' => {'command' => $command, 
+                                               'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+        return SOAP::Data->name('response' => {'command' => $command,
+                                               'client' => $result});
+    } elsif ($output_choice eq 'both') {
+        return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+                                               'command' => $command, 
+                                               'client' => $result});
+    }
+}
+
+sub get_orthologs_cmd {
+  my ($self, %args) =@_;
+
   ## List of queries
   my $query_ref = $args{"query"};
   my $query = "";
@@ -1211,7 +1240,7 @@ sub get_orthologs {
       $command .= " -uth '".$_uth[0]."' '".$_uth[1]."'";
     }
 
-    &run_WS_command($command, $output_choice, "get-orthologs");
+  return $command;
 }
 
 ##########
