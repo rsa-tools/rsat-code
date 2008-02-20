@@ -1171,7 +1171,7 @@ sub get_orthologs {
     $query .= "'";
   }
 
-  my $command = "$SCRIPTS/gene-info";
+  my $command = "$SCRIPTS/get-orthologs";
 
   if ($args{organism}) {
       $args{organism} =~ s/\'//g;
