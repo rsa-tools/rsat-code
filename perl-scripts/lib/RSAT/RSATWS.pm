@@ -925,8 +925,8 @@ sub feature_map {
 	$output_choice = 'both';
     }
 
-my $command = $self->feature_map_cmd(%args);
-    &run_WS_command($command, $output_choice);
+    my $command = $self->feature_map_cmd(%args);
+#    &run_WS_command($command, $output_choice);
 
     my $stderr = `$command 2>&1 1>/dev/null`;
     if ($stderr) {
@@ -944,6 +944,9 @@ my $command = $self->feature_map_cmd(%args);
     close $TMP_OUT;
     $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.scmbb\.ulb\.ac\.be\/rsat/g;
 #    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+
+    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"feature-map",output_choice=>$output_choice);
+
     if ($output_choice eq 'server') {
         return SOAP::Data->name('response' => {'command' => $command, 
                                                'server' => $tmp_outfile});
@@ -1163,6 +1166,9 @@ sub footprint_discovery {
     close $TMP_OUT;
     $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.scmbb\.ulb\.ac\.be\/rsat/g;
 #    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
+
+    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"footprint-discovery",output_choice=>$output_choice);
+
     if ($output_choice eq 'server') {
 	return SOAP::Data->name('response' => {'command' => $command, 
 					       'server' => $tmp_outfile});
@@ -1527,8 +1533,6 @@ sub roc_stats{
 }
 
 ##########
-
-
 sub classfreq {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1655,8 +1659,6 @@ sub convert_classes {
 }
 
 ##########
-
-
 sub contingency_stats {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1719,8 +1721,6 @@ sub contingency_stats {
 }
 
 ##########
-
-
 sub contingency_table {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -1782,7 +1782,7 @@ sub xygraph {
     $out_format =~ s/\'//g;
     $out_format =~ s/\'//g;
     my $tmp_outfile = `mktemp $TMP/xygraph.XXXXXXXXXX`;
-    chop $tmp_outfile;
+    chomp $tmp_outfile;
     system("rm $tmp_outfile");
     $tmp_outfile .= ".$out_format";
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
@@ -2565,6 +2565,7 @@ sub convert_graph {
 
     }
 
+    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"convert-graph",output_choice=>$output_choice);
 
     if ($output_choice eq 'server') {
 	return SOAP::Data->name('response' => {'command' => $command, 
@@ -2596,7 +2597,6 @@ sub convert_graph_cmd {
    $col_scale =~ s/\"//g;
    $command .= " -ecolors $col_scale";
   }
-
   if ($args{undirected}) {
    $command .= " -undirected";
   }
@@ -2664,8 +2664,6 @@ sub convert_graph_cmd {
 }
 
 ##########
-
-
 sub alter_graph {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -3312,6 +3310,7 @@ sub compare_graphs_cmd {
   return $command;
 }
 
+##########
 sub graph_neighbours {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
@@ -3415,6 +3414,12 @@ sub mcl {
     print TMP_OUT $result;
 #     print TMP_OUT "KEYS ".keys(%args);
     close TMP_OUT;
+
+    &UpdateLogFileWS(command=>$command,
+		     tmp_outfile=>$tmp_outfile,
+		     method_name=>$method_name,
+		     output_choice=>$output_choice);
+
     if ($output_choice eq 'server') {
 	return SOAP::Data->name('response' => {'command' => $command, 
 					       'server' => $tmp_outfile});
@@ -3461,6 +3466,7 @@ sub mcl_cmd {
   return $command;
 }
 
+##########
 sub random_graph {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
