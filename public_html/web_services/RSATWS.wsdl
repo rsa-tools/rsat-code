@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+SGetO<?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="RSATWS.xsl"?>
 <definitions name="RSATWS"
   targetNamespace="urn:RSATWS"
@@ -941,6 +941,11 @@ Default is 'both'.</xsd:documentation>
           <xsd:element name="organism" type="xsd:string" minOccurs="1">
 	    <xsd:annotation>
 	      <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="taxon" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Reference taxon. Orthologs are returned for each supported organism belonging to the reference taxon.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="query" type="xsd:string" minOccurs="1" maxOccurs="unbounded">
