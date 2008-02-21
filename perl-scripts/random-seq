@@ -18,6 +18,7 @@ $sequence_type = "dna";
 		 intergenic=>1,
 		 upstream=>1,
 		 upstream-noorf=>1,
+		 protein=>1,
 		 );
 $supported_bg = sort keys %supported_bg;
 
@@ -151,9 +152,14 @@ for $r (1..$seq_nb) {
   $sequence = "";
   $seq_id = "rand_$r";
   my @comments = ();
-  my $comment = join ("; ", "random sequence $r of $seq_nb",
-		      "length: $current_seq_length",
+  my $comment = join ("; ", "random sequence ".$r."/".$seq_nb,
+		      "type: ".$sequence_type,
+		      "length: ".$current_seq_length,
 		     );
+  if ($background_model) {
+      $comment .= "; bg model: ".$background_model;
+      $comment .= "; organism: ".$organism_name if ($organism_name);
+  }
   push @comments, $comment;
 
   if ($exp_freq_file) {
@@ -279,6 +285,11 @@ sub ReadArguments {
     } elsif ($ARGV[$a] =~ /^-bg/i) {
       $background_model = $ARGV[$a+1];
       $background_model =~ s/ncf/intergenic/;
+      if ($background_model eq "protein") {
+	  $sequence_type = "protein";
+      } else {
+	  $sequence_type = "dna";
+      }
 
       ### organism (for selecting the appropriate expected frequencies)
     } elsif ($ARGV[$a] =~ /^-org/i) {
@@ -331,9 +342,11 @@ OPTIONS
         -lw ##  Line width. A newline character will be inserted in the 
                 sequence every ## bases. Default is 70. 
                 -lw 0 will prevent newline insertion.
+
 	-type	protein|DNA|other
+
 	-seed #	seed for the random generator
-                
+
     PROBABILITIES
 	-a	alphabet
 		must be followed by residue frequencies expressed precisely 
@@ -341,11 +354,11 @@ OPTIONS
 		-a a:t # c:g #
 		ex: 
 		-a a:t 0.3 c:g 0.2
-		
-		The option 
+
+		The option
 		-a yeast
 		will automatically use the residue frequencies from yeast 
-		genome.  
+		genome.
 
 	-expfreq
 		indicate the file that contains expected oligomer 
@@ -354,11 +367,11 @@ OPTIONS
 		frequency file contains tetramers, each base will be 
 		selected randomly with a probability depending on the 3 
 		preceding bases:
-		
+
 		           p(Wj-3,j)
 		p(Bj=B) = -----------
 		          p(Wj-3,j-1)
-		          
+
 		where	Bj	is the base at position j
 			B	is a residue, ie A, C, G or T
 			Wj-3,j-1
@@ -376,28 +389,35 @@ OPTIONS
 		oligonucleotide length, respectively.
 
 		This option is incompatible with the option -expfreq. 
-		
+
 		Type of sequences used as background model for
 		estimating expected oligonucleotide frequencies.
-		
-		Supported models: 
+
+		Supported models:
 		-bg equi
 		    equiprobable residue frequencies (default)
 
-		-bg upstream 
-			 all upstream sequences, allowing overlap with
-		         upstream ORFs. Requires to speciy a model organism.
-
 		-bg upstream-noorf
-			  all upstream sequences, preventing overlap with
-			  upstream ORFs. Requires to speciy a model organism.
+		    all upstream sequences, preventing overlap with
+		    upstream open reading frames (ORFs). Requires to
+		    speciy a model organism.
+
+		-bg upstream
+		    all upstream sequences, allowing overlap with
+		    upstream ORFs. Requires to speciy a model
+		    organism.
 
 		-bg intergenic
-		         intergenic frequencies Whole set of intergenic
-			 regions, including upstream and downstream
-			 sequences. Requires to speciy a model organism.
+		    intergenic frequencies Whole set of intergenic
+		    regions, including upstream and downstream
+		    sequences. Requires to speciy a model organism.
 
-	-org	organism 
+		-bg protein
+		    generate random peptidic sequences using a Markov
+		    chain calibrated on all peptidic sequences of the
+		    selected organism.
+
+	-org	organism
 		This is necessary with the option -bg, to determine
 		which frequency file has to be sued for expected
 		frequency calibration.
