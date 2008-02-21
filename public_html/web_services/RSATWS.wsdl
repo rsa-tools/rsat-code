@@ -343,9 +343,14 @@ Supported: upstream, upstreamL, upstream-noorf, intergenic, input.</xsd:document
 	    <xsd:documentation>Sort oligomers according to overrepresentation if value = 1.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="lth" type="xsd:string" minOccurs="0">
+	<xsd:element name="lth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
 	  <xsd:annotation>
-	    <xsd:documentation>Lower threshold on some parameter. Format='param value'.</xsd:documentation>
+	    <xsd:documentation>Lower threshold on some parameters. Format=list of'parameter value'.</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="uth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+	  <xsd:annotation>
+	    <xsd:documentation>Upper threshold on some parameters. Format=list of 'parameter value'.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
 	<xsd:element name="pseudo" type="xsd:string" minOccurs="0">
@@ -453,14 +458,14 @@ In some other cases, one would also like to detect patterns absent from the sequ
 This is the function of the option -zeroocc.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="lth" type="xsd:string" minOccurs="0">
+	<xsd:element name="lth" type="xsd:string" minOccurs="unbounded">
 	  <xsd:annotation>
-	    <xsd:documentation>Lower threshold on some parameter. Format='param value'.</xsd:documentation>
+	    <xsd:documentation>Lower threshold on some parameters. Format=list of 'parameter value'.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="uth" type="xsd:string" minOccurs="0">
+	<xsd:element name="uth" type="xsd:string" minOccurs="unbounded">
 	  <xsd:annotation>
-	    <xsd:documentation>Upper threshold on some parameter. Format='param value'.</xsd:documentation>
+	    <xsd:documentation>Upper threshold on some parameter. Format=list of 'parameter value'.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
        </xsd:sequence>
@@ -883,14 +888,14 @@ Default is 'both'.</xsd:documentation>
 	      <xsd:documentation>Generate an HTML index with links to the result files. This option is used for the web interface, but can also be convenient to index results, especially when several genes or taxa are analyzed (options -genes, -all_genes, -all_taxa).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="lth" type="xsd:string" minOccurs="0">
+	  <xsd:element name="lth" type="xsd:string" minOccurs="unbounded">
 	    <xsd:annotation>
-	      <xsd:documentation>Lower threshold for dyad-analysis. Format: parameter value.</xsd:documentation>
+	      <xsd:documentation>Lower threshold on some parameters. Format: parameter value.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="uth" type="xsd:string" minOccurs="0">
+	  <xsd:element name="uth" type="xsd:string" minOccurs="unbounded">
 	    <xsd:annotation>
-	      <xsd:documentation>Upper threshold for dyad-analysis. Format: parameter value.</xsd:documentation>
+	      <xsd:documentation>Upper threshold on some parameters. Format: parameter value.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="return" type="xsd:string" minOccurs="0">
@@ -1022,14 +1027,14 @@ Default is 'both'.</xsd:documentation>
             -return query_id,e_value,rank</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="lth" type="xsd:string" minOccurs="0">
+	  <xsd:element name="lth" type="xsd:string" minOccurs="unbounded">
 	    <xsd:annotation>
-	      <xsd:documentation>Lower threshold for dyad-analysis. Format: parameter value.</xsd:documentation>
+	      <xsd:documentation>Lower threshold for dyad-analysis. Format: list of 'parameter value'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="uth" type="xsd:string" minOccurs="0">
+	  <xsd:element name="uth" type="xsd:string" minOccurs="unbounded">
 	    <xsd:annotation>
-	      <xsd:documentation>Upper threshold for dyad-analysis. Format: parameter value.</xsd:documentation>
+	      <xsd:documentation>Upper threshold for dyad-analysis. Format: list of 'parameter value'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	</xsd:sequence>
@@ -1392,7 +1397,7 @@ Default is 'both'.</xsd:documentation>
          <xsd:annotation>
           <xsd:documentation>This file will be used as both reference and query.This is equivalent to -q input_file -r input_file.</xsd:documentation>
          </xsd:annotation>
-        </xsd:element> 
+        </xsd:element>
         <xsd:element name="upper_threshold_field" type="xsd:string" minOccurs="0">
          <xsd:annotation>
           <xsd:documentation>Supported fields: E(QR), E_val, F(!Q!R), F(Q!R), F(Q), F(QR), F(R!Q), F(R), H(Q), H(Q,R), H(Q|R), H(R), H(R|Q), 
@@ -1697,27 +1702,18 @@ For -bgfile, default value is 0.01. If the training sequence length (L) is known
               <xsd:documentation>List of fields to return. Supported fields: sites, rank, limits, normw, bg_model, matrix, freq_matrix, weight_matrix, distrib .</xsd:documentation>
             </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="upper_threshold_field" type="xsd:string" minOccurs="0">
-            <xsd:annotation>
-              <xsd:documentation>Supported fields: E(QR), E_val, F(!Q!R), F(Q!R), F(Q), F(QR), F(R!Q), F(R), H(Q), H(Q,R), H(Q|R), H(R), H(R|Q), 
-I(Q,R), IC, P(QR), P(Q|R), P(R|Q), P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R), dotprod, jac_sim, rank, sig</xsd:documentation>
-            </xsd:annotation>
-	  </xsd:element>
-	  <xsd:element name="upper_threshold_value" type="xsd:float" minOccurs="0">
-            <xsd:annotation>
-              <xsd:documentation>Upper threshold value for a supported field</xsd:documentation>
-            </xsd:annotation>
-	  </xsd:element>
-	  <xsd:element name="lower_threshold_field" type="xsd:string" minOccurs="0">
-            <xsd:annotation>
-              <xsd:documentation>Supported fields: same fields as upper_threshold_field.</xsd:documentation>
-            </xsd:annotation>
-	  </xsd:element>
-	  <xsd:element name="lower_threshold_value" type="xsd:float" minOccurs="0">
-            <xsd:annotation>
-              <xsd:documentation>Lower threshold value for a given field.</xsd:documentation>
-            </xsd:annotation>
-	  </xsd:element>
+	<xsd:element name="lth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+	  <xsd:annotation>
+	    <xsd:documentation>Lower threshold on some parameter. Format=list of 'parameter value'.
+Supported fields: E(QR), E_val, F(!Q!R), F(Q!R), F(Q), F(QR), F(R!Q), F(R), H(Q), H(Q,R), H(Q|R), H(R), H(R|Q), I(Q,R), IC, P(QR), P(Q|R), P(R|Q), P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R), dotprod, jac_sim, rank, sig</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="uth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+	  <xsd:annotation>
+	    <xsd:documentation>Upper threshold on some parameter. Format=list of 'param value'.
+Supported parameters: same as lth.</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
 	  <xsd:element name="both_strand" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>Scan both strands for DNA sequences.</xsd:documentation>
@@ -4066,7 +4062,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
       <operation name="get_orthologs">
          <input name="GetOrthologsRequest" message="tns:get_orthologsRequest"/>
          <output name="GetOrthologsResponse" message="tns:get_orthologsResponse"/>
-         <documentation>Get information about genes.
+         <documentation>Get orthologuous genes.
          </documentation>
       </operation>
       <operation name="gene_info">
@@ -4549,8 +4545,8 @@ This program supports a variety of background models (Bernoulli, Markov chains o
       Olivier Sand (oly@scmbb.ulb.ac.be).
    </documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
-	<soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
-      <!-- soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/ -->
+	<!-- soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/ -->
+      <soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/>
     </port>
   </service>
 </definitions>
