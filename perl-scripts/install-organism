@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.75 2008/01/07 04:27:04 rsat Exp $
+# $Id: install-organism,v 1.76 2008/02/21 10:56:44 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -46,6 +46,7 @@ $supported_for_installation{"filelist"} = 1;
 		   );
 $supported_tasks = join ",", sort (keys %supported_task);
 %task = ();
+$parse_options = "";
 
 ################################################################
 ############################ arguments #########################
@@ -786,6 +787,9 @@ OPTIONS
 		file. The option -genbank allows to overwrite this
 		value.
 
+	-prefid feattype idname
+	        passed to parse-genbank.pl
+
 	-ensembl
 		ENSEMBL directory. Directory containing the ENSEMBL
 		flat files in Genbank format (ext .dat)
@@ -889,6 +893,7 @@ install_organism options
 -syn		synonym table
 -up_from       	distal limit of the upstream regions (e.g. -800 for yeast)
 -up_to		proximal limit of the upstream regions (e.g. -1)
+-prefid feattype idname     passed to parse-genbank.pl
 End_short_help
   close HELP;
   exit;
@@ -946,6 +951,9 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-up_to") {
 	    $up_to = $ARGV[$a+1];
 	    &FatalError(join ("\t", $up_to, "Invalid value for the to parameter (must be integer)")) unless (&IsInteger($up_to));
+
+	} elsif ($ARGV[$a] eq "-prefid") {
+	    $parse_options .= join(" " , " -prefid", $ARGV[$a+1], $ARGV[$a+2]);
 
 	    #### installation dir
 	} elsif ($ARGV[$a] =~ /^-dir/) {
@@ -1375,7 +1383,9 @@ sub ParseGenome {
     } else {
 	&RSAT::error::FatalError("Cannot find a directory $organism_short_name in genbank dir $dir{genbank}" );
     }
-    my $command = "$ENV{RSAT}/perl-scripts/parse-genbank.pl -v 1 -i $dir{source}";
+    my $command = "$ENV{RSAT}/perl-scripts/parse-genbank.pl -v 1";
+    $command .= " -i ".$dir{source};
+    $command .= $parse_options;
     $command .= " -o ".$dir{genome};
     if ($dir{ensembl}) {
 	$command .= " -ext dat";
