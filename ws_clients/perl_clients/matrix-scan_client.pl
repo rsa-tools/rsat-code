@@ -55,6 +55,10 @@ $args{background} = `cat $args{background}`;
 chomp($args{background});
 }
 
+## Convert the uth string into a list
+my @uths = split(",", $args{uth});
+$args{uth} = \@uths;
+
 my $output_choice = $args{output_choice} || 'both';
 
 warn "\nThis demo script scans sequences with one or several position-specific scoring matrices (PSSM) to identify instances of the corresponding motifs (putative sites).\n\n";

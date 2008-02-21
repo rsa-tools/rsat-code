@@ -16,8 +16,8 @@ use Util::Properties;
 warn "\nINFO: This demo script sends a set of sequences to the RSAT web service, and runs dyad-analysis to detect over-represented spaced dyads\n\n";
 
 ## WSDL location
-my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
-#my $server = 'http://localhost/rsat/web_services';
+#my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $server = 'http://localhost/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
 
@@ -38,6 +38,10 @@ my $sequence = `cat $args{sequence}`;
 chomp($sequence);
 
 $args{sequence} = $sequence;
+
+## Convert the lth string into a list
+my @lths = split(",", $args{lth});
+$args{lth} = \@lths;
 
 ## Output option
 my $output_choice = $args{output_choice} || 'both';
@@ -68,6 +72,6 @@ if ($som->fault){  ## Report error if any
 	my $server_file = $results{'server'};
 	my $result = $results{'client'};
 	print "Result file on the server: ".$server_file;
-	print "Discovered oligo(s): \n".$result;
+	print "\nDiscovered oligo(s): \n".$result;
     }
 }

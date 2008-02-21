@@ -11,12 +11,13 @@
 
 use strict;
 use SOAP::WSDL;
-
+#import SOAP::Lite+trace;
 
 warn "\nINFO: This demo script sends a set of sequences to the RSAT web service, and runs oligo-analysis to detect over-represented oligonuclotides\n\n";
 
 ## WSDL location
 my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+#my $server = 'http://localhost/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
 
@@ -39,6 +40,7 @@ AAACGAGCATGAGGGTTACAAAGAACTTCCGTTTCAAAAATGAATATAATCGTACGTTTACCTTGTGGCAGCACTAGCTA
 >NP_013583.1    PHO84; upstream from -800 to -1; size: 800; location: NC_001145.2 25802 26601 R; upstream neighbour: NP_013585.1 (distance: 1128)
 AAAAAAAAAGATTCAATAAAAAAAGAAATGAGATCAAAAAAAAAAAAAATTAAAAAAAAAAAGAAACTAATTTATCAGCCGCTCGTTTATCAACCGTTATTACCAAATTATGAATAAAAAAACCATATTATTATGAAAAGACACAACCGGAAGGGGAGATCACAGACCTTGACCAAGAAAACATGCCAAGAAATGACAGCAATCAGTATTACGCACGTTGGTGCTGTTATAGGCGCCCTATACGTGCAGCATTTGCTCGTAAGGGCCCTTTCAACTCATCTAGCGGCTATGAAGAAAATGTTGCCCGGCTGAAAAACACCCGTTCCTCTCACTGCCGCACCGCCCGATGCCAATTTAATAGTTCCACGTGGACGTGTTATTTCCAGCACGTGGGGCGGAAATTAGCGACGGCAATTGATTATGGTTCGCCGCAGTCCATCGAAATCAGTGAGATCGGTGCAGTTATGCACCAAATGTCGTGTGAAAGGCTTTCCTTATCCCTCTTCTCCCGTTTTGCCTGCTTATTAGCTAGATTAAAAACGTGCGTATTACTCATTAATTAACCGACCTCATCTATGAGCTAATTATTATTCCTTTTTGGCAGCATGATGCAACCACATTGCACACCGGTAATGCCAACTTAGATCCACTTACTATTGTGGCTCGTATACGTATATATATAAGCTCATCCTCATCTCTTGTATAAAGTAAAGTTCTAAGTTCACTTCTAAATTTTATCTTTCCTCATCTCGTAGATCACCAGGGCACACAACAAACAAAACTCCACGAATACAATCCAA';
 
+my $verbosity = 1;
 my $format = 'fasta';  ## The format of input sequences
 my $length = 6;  ## Length of patterns to be discovered
 my $organism = 'Saccharomyces_cerevisiae';  ## Name of the query organism
@@ -47,9 +49,11 @@ my $stats = 'occ,proba,rank';  ## Returned statistics
 my $noov = 1;  ## Do not allow overlapping patterns
 my $str = 2;  ## Search on both strands
 my $sort = 1;  ## Sort the result according to score when value = 1
-my $lth = 'occ_sig 0';  ## Lower limit to score is 0, less significant patterns are not displayed
+my @lth = ('occ_sig 0');
+my @uth = ('rank 3');
 
-my %args = ('output' => $output_choice, 
+my %args = ('output' => $output_choice,
+	    'verbosity' => $verbosity, 
 	    'sequence' => $sequence, 
 	    'format' => $format,
 	    'length' => $length,
@@ -59,7 +63,8 @@ my %args = ('output' => $output_choice,
 	    'noov' => $noov,
 	    'str' => $str,
 	    'sort' => $sort,
-	    'lth' => $lth);
+	    'lth' => \@lth,
+	    'uth' => \@uth);
 
 ## Send request to the server
 print "Sending request to the server $server\n";
