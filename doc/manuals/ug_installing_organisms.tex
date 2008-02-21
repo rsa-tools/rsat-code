@@ -405,7 +405,6 @@ more Mycoplasma_genitalium_stop_codon_frequencies
 \end{verbatim}
 \end{footnotesize}
 
-
 \section{Calibrating oligonucleotide and dyad frequencies with \program{install-organisms}}
 
 The programs \program{oligo-analysis} and \program{dyad-analysis}
@@ -416,25 +415,33 @@ frequencies are calculated automatically with
 \begin{footnotesize}
 \begin{verbatim}
 install-organism -v 1 -org Debaryomyces_hansenii \
-    -task allup,oligos,dyads,upstream_freq
+    -task allup,oligos,dyads,upstream_freq,protein_freq
 \end{verbatim}
 \end{footnotesize}
 
 \textbf{Warning: } this task may require several hours of computation,
 depending on the genome size. For the \RSAT server, we use a PC
-cluster to regularly install and update genomes. As the \textit{allup} task, is needed by the
-other tasks (oligos,dyads,upstream\_freq), it should be launched directly. The other task then may be run
-on the cluster.
+cluster to regularly install and update genomes. As the task
+\textit{allup}, is a prerequisite for the computation of all
+oligonucleotide and dyad frequencies, it should be run directly on the
+main server before computing oligo and dyad frequencies on the nodes
+of the cluster. We will thus proceed in two steps. Note that this
+requires a PC cluster and a proper configuration of the batch
+management program.
 
 \begin{footnotesize}
 \begin{verbatim}
+## Retrieve all upstream sequences
+## Executed directly on the server
 install-organism -v 1 -org Debaryomyces_hansenii \
     -task allup
+
+## Launch a batch queue for computing all oligo and dyad frequencies
+## Executed on the nodes of a cluster
 install-organism -v 1 -org Debaryomyces_hansenii \
-    -task oligos,dyads,upstream_freq -batch
+    -task oligos,dyads,upstream_freq,protein_freq -batch
 \end{verbatim}
 \end{footnotesize}
-
 
 \section{Installing a genome in your own account}
 
