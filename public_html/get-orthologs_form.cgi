@@ -13,7 +13,6 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 use RSAT::Tree;
 
-
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
