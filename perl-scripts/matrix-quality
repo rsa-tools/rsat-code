@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.50 2008/02/20 01:07:26 jvanheld Exp $
+# $Id: matrix-quality,v 1.51 2008/02/21 09:00:03 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -142,7 +142,6 @@ package main;
 		       );
     $supported_tasks = join (",", sort(keys( %supported_tasks)));
     %tasks = ();
-    
 
     ################################################################
     ## Read argument values
@@ -915,58 +914,6 @@ theorical distribution.
 }
 
 ################################################################
-#### Pre-verbose message
-sub PreVerbose {
-  print $main::out "; matrix-quality ";
-  &PrintArguments($main::out);
-}
-
-################################################################
-#### Pre-verbose message
-sub PostVerbose {
-  if (defined(%main::infile)) {
-    print $main::out "; Input files\n";
-    foreach my $key (sort(keys %infile)) {
-      my $value = $infile{$key};
-      #	while (my ($key,$value) = each %main::infile) {
-      printf $main::out ";\t%-29s\t%s\n", $key , $value;
-    }
-  }
-  if (defined(%main::seqfile)) {
-    print $main::out "; Sequence files\n";
-    foreach my $key (sort(keys %seqfile)) {
-      my $value = $seqfile{$key};
-      printf $main::out ";\t%-29s\t%s\n", $key , $value;
-    }
-  }
-  if (defined(%main::outfile)) {
-    print $main::out "; Output files\n";
-    foreach my $key (sort(keys %outfile)) {
-      my $value = $outfile{$key};
-      printf $main::out ";\t%-29s\t%s\n", $key , $value;
-    }
-  }
-  if (defined(%main::dir)) {
-    print $main::out "; Directories\n";
-    foreach my $key (sort(keys %dir)) {
-      my $value = $dir{$key};
-      printf $main::out ";\t%-29s\t%s\n", $key , $value;
-    }
-  }
-
-  if (scalar(@seq_types) > 0) {
-    print $main::out "; Matrix permutations per sequence type\n";
-    foreach my $seq_type (@seq_types) {
-      unless (defined($perm_nb{$seq_type})) {
-	$perm_nb{$seq_type} = 0;
-      }
-      printf $main::out ";\t%-21s\t%d\n", $seq_type , $perm_nb{$seq_type};
-    }
-  }
-}
-
-
-################################################################
 ## Export the sites which were use to build the matrix in a fasta file.
 sub ExportInputSites {
   my ($matrix, $matrix_file) = @_;
@@ -989,13 +936,6 @@ sub ExportInputSites {
   $scanopt{matrix_sites} = "" unless ($scanopt{matrix_sites});
   $scanopt{matrix_sites} .= " -1str"; ## the sites from the matrix itself should be scanned only in the orientation where they were used to build the matrix
   $scanopt{matrix_sites} .= " -uth rank_pm 1"; ## Only the top score has to be taken for the matrix sites
-
-#  ## This is apparently not used anymore ?
-#  my $matrix_scan_cmd = "matrix-scan -v ".$main::verbose;
-#  $matrix_scan_cmd .= " -top_matrices 1";
-#  $matrix_scan_cmd .= " -decimals ".$decimals;
-#  $matrix_scan_cmd .= " -pseudo ".$pseudo_counts;
-#  $matrix_scan_cmd .= " -m ".$matrix_file;
 }
 
 ################################################################
@@ -1477,6 +1417,9 @@ sub CompareDistrib {
 	  $roc_ref = "Forced to use theoretical";
 	}
       }
+
+      &RSAT::message::Debug("ROC reference", $roc_ref, "file_nb=".$file_nb{$roc_ref}, "columne=".$ref_column) if ($main::verbose >= 5);
+
       $ycols = join ",", 2..(scalar(@distrib_files)+2);
       $large_graph_options =~ s/-xsize 800/-xsize 400/;
       $XYgraph_cmd = "XYgraph ".$all_graph_options;
@@ -1600,6 +1543,66 @@ sub PrintTheorScoreDistribution {
   	 if ($main::verbose >= 2);
   &doit($matrix_distrib_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 }
+
+
+################################################################
+#### Pre-verbose message
+sub PreVerbose {
+  print $main::out "; matrix-quality ";
+  &PrintArguments($main::out);
+}
+
+################################################################
+#### Pre-verbose message
+sub PostVerbose {
+  if (defined(%main::infile)) {
+    print $main::out "; Input files\n";
+    foreach my $key (sort(keys %infile)) {
+      my $value = $infile{$key};
+      #	while (my ($key,$value) = each %main::infile) {
+      printf $main::out ";\t%-29s\t%s\n", $key , $value;
+    }
+  }
+  if (defined(%main::seqfile)) {
+    print $main::out "; Sequence files\n";
+    foreach my $key (sort(keys %seqfile)) {
+      my $value = $seqfile{$key};
+      printf $main::out ";\t%-29s\t%s\n", $key , $value;
+    }
+  }
+  if (defined(%main::outfile)) {
+    print $main::out "; Output files\n";
+    foreach my $key (sort(keys %outfile)) {
+      my $value = $outfile{$key};
+      printf $main::out ";\t%-29s\t%s\n", $key , $value;
+    }
+  }
+  if (defined(%main::dir)) {
+    print $main::out "; Directories\n";
+    foreach my $key (sort(keys %dir)) {
+      my $value = $dir{$key};
+      printf $main::out ";\t%-29s\t%s\n", $key , $value;
+    }
+  }
+
+  if (scalar(@seq_types) > 0) {
+    print $main::out "; Matrix permutations per sequence type\n";
+    foreach my $seq_type (@seq_types) {
+      unless (defined($perm_nb{$seq_type})) {
+	$perm_nb{$seq_type} = 0;
+      }
+      printf $main::out ";\t%-21s\t%d\n", $seq_type , $perm_nb{$seq_type};
+    }
+  }
+
+  print $main::out "; Distributions\n";
+  my $f = 0;
+  foreach my $file (@distrib_files) {
+    $f++;
+    printf $main::out ";\t%-21s\t%s\n", $f , $file;
+  }
+}
+
 
 
 __END__
