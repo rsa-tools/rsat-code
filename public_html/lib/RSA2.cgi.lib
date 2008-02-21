@@ -929,24 +929,27 @@ sub PipingFormForSequence {
       $dyad_background_model .= "<INPUT type=\"hidden\" NAME=\"bg_level\" VALUE=\"taxon\">";
       $dyad_background_model .= "<INPUT type=\"hidden\" NAME=\"taxon\" VALUE=".$query->param('taxon').">";
     } else {
-	#### choose background model for oligo-analysis
-	if ($seq_type =~ /upstream/) {
-	    if ($noorf) {
-		$background = "upstream-noorf";
-	    } else {
-		$background = "upstream";
-	    }
+
+      #### choose background model for oligo-analysis
+      if ($seq_type =~ /upstream/) {
+	if ($noorf) {
+	  $background = "upstream-noorf";
 	} else {
-	    $background = "intergenic";
+	  $background = "upstream";
 	}
-	$oligo_background_model = "\n<INPUT type=\"hidden\" NAME=\"background\" VALUE=\"$background\">";
-	$dyad_background_model = $oligo_background_model;
+      } elsif ($seq_type =~ /protein/) {
+	$background = "protein";
+      } else {
+	$background = "upstream-noorf";
+      }
+      $oligo_background_model = "\n<INPUT type=\"hidden\" NAME=\"background\" VALUE=\"$background\">";
+      $dyad_background_model = $oligo_background_model;
     }
 
 
-  print <<End_of_form;
+  print qq|;
 <HR SIZE = 3>
-<table class = 'nextstep'>
+<table class = "nextstep">
 <tr><td colspan = 5><h3>next step</h3></td></tr>
 
 
@@ -964,14 +967,20 @@ sub PipingFormForSequence {
 	<FORM METHOD="POST" ACTION="oligo-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
+        <INPUT type="hidden" NAME="sequence_type" VALUE="$seq_type">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+	<INPUT type="hidden" NAME="background" VALUE="$background">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	$oligo_background_model
-	<INPUT type="submit" value="oligonucleotide analysis">
+	<INPUT type="submit" value="oligo-analysis">
 	</FORM>
 	Over- or under-represented words
     </td>
-
+|;
+    if ($seq_type eq "protein") {
+      print "</tr>";
+    } else {
+    print <<End_of_form;
     <td align=center>
 	<FORM METHOD="POST" ACTION="dyad-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
@@ -1130,8 +1139,8 @@ sub PipingFormForSequence {
 
 </table>
 End_of_form
+    }
 }
-
 
 
 ################################################################
@@ -1146,7 +1155,7 @@ sub PrintGenomeSubsetBgOptions {
 #  print "<ul>";
   print ( "&nbsp;&nbsp;<a href='help.oligo-analysis.html#background'>Sequence type</a> &nbsp;&nbsp;&nbsp;&nbsp;", 
 	  $query->popup_menu(-name=>'background',
-			     -Values=>["upstream","upstream-noorf","intergenic"],
+			     -Values=>["upstream","upstream-noorf","protein"],
 			     -default=>$default{background}));
 
 
