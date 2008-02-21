@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.76 2008/02/21 10:56:44 rsat Exp $
+# $Id: install-organism,v 1.77 2008/02/21 23:08:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -35,6 +35,7 @@ $supported_for_installation{"filelist"} = 1;
 		   oligos=>1,
 		   distrib=>1,
 		   ncf=>1,
+		   protein_freq=>1,
 		   gene_freq=>1,
 		   genome_freq=>1,
 		   upstream_freq=>1,
@@ -164,11 +165,7 @@ $out = &OpenOutputFile($outputfile);
 
 &AllUpstream() if ($task{allup});
 
-for $noov ("-noov", "-ovlp") {
-    for $strands ("-2str", "-1str") {
-	&CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
-    }
-}
+&CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
 
 &CleanUp if ($task{clean});
 
@@ -521,9 +518,10 @@ sub CalcFrequencies {
 
     unless (($task{upstream_freq}) ||
 	    ($task{intergenic_freq}) ||
+	    ($task{protein_freq}) ||
 	    ($task{genome_freq})) {
 
-	&RSAT::error::FatalError("The tasks 'oligos' and 'dyads' require to specify at least one sequence type for computing oligo or dyad frequencies. ", "\n\tYou should add one or several of the following tasks: upstream_freq, intergenic_freq, genome_freq");
+	&RSAT::error::FatalError("The tasks 'oligos' and 'dyads' require to specify at least one sequence type for computing oligo or dyad frequencies. ", "\n\tYou should add one or several of the following tasks: upstream_freq, intergenic_freq, genome_freq, protein_freq");
 
     }
 
@@ -542,7 +540,7 @@ sub CalcFrequencies {
 		    $seq_file = "${organism_short_name}_${seq_type}.fasta";
 		    $seq_format = "fasta";
 		}
-		&RSAT::message::TimeWarn("Calculating upstream oligo and dyad frequencies",$strands, $noov) if ($main::verbose >= 1);
+		&RSAT::message::TimeWarn("Calculating upstream oligo and dyad frequencies") if ($main::verbose >= 1);
 		&CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
 		&CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib} && !($noorf));
 		&CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
@@ -554,7 +552,7 @@ sub CalcFrequencies {
     # calculate oligont frequencies in all intergenic sequences
     if ($task{intergenic_freq}) {
 	$seq_type = "intergenic";
-	&RSAT::message::TimeWarn("Calculating ${seq_type} oligo and dyad frequencies",$strands, $noov) if ($main::verbose >= 1);
+	&RSAT::message::TimeWarn("Calculating ${seq_type} oligo and dyad frequencies") if ($main::verbose >= 1);
 	if ($purged_frequencies) {
 	    $seq_file = "${organism_short_name}_intergenic_segments_purged.fasta";
 	    $seq_format = "fasta";
@@ -594,28 +592,51 @@ sub CalcFrequencies {
 	&CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
     }
 
+    ################################################################
+    # Calculate oligopeptide frequencies in all protein sequences
+    if ($task{protein_freq}) {
+	$seq_type = "protein";
+	$seq_file = "${organism_short_name}_aa.fasta";
+	$seq_format = "fasta";
+	&CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
+    }
+
     chdir $dir{main};
-    
 }
 
 ################################################################
-#### calculate oligonucleotide frequencies for a specified sequence
-#### file
+## Calculate oligonucleotide frequencies for a specified sequence
+## file
 sub CalcOligoFreq {
-    my ($seq_file,$seq_format,$seq_type) = @_;
-    warn join ("\t", "; Calculating oligo frequencies",$seq_file, $seq_format, $seq_type),"\n" if ($main::verbose >= 1);
-    foreach my $oligo_length (@oligo_lengths) {
+  my ($seq_file,$seq_format,$seq_type) = @_;
+  my @current_oligo_lengths = @oligo_lengths;
+  my $oligo_seq_type = "dna";
+  my $residue_type = "nt";
+  my @strands = ("-1str", "-2str");
+  if ($seq_type eq "protein") {
+    @current_oligo_lengths = 1..3;
+    $oligo_seq_type = "prot";
+    $residue_type = "pept";
+    @strands = "";
+  }
+  &RSAT::message::TimeWarn("Calculating oligo frequencies",$seq_file, $seq_format, $seq_type) if ($main::verbose >= 1);
+  for $noov ("-noov", "-ovlp") {
+    for $strands (@strands) {
+      foreach my $oligo_length (@current_oligo_lengths) {
 	$job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
-	$out_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}.freq";
+	$out_file = $dir{oligos}."/".${oligo_length}.${residue_type}."_".${seq_type}."_".${organism_short_name}.${noov}.${strands}.".freq";
 	my $command = "$SCRIPTS/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
 	$command .= " ".$strands;
+	$command .= " -seqtype ".$oligo_seq_type;
 	$command .= " ".$noov;
 	$command .= " -l ".$oligo_length." -type dna ";
 	$command .= " -return freq,occ";
 	$command .= " -o ".$out_file;
 	$command .= "; gzip -f ".$out_file;
 	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
+      }
     }
+  }
 }
 
 ################################################################
