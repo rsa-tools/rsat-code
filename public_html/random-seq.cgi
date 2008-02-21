@@ -83,7 +83,7 @@ if ($query->param('proba') eq "alphabet") {
     $freq{C} = $query->param('Cfreq');
     $freq{T} = $query->param('Tfreq');
     $freq{G} = $query->param('Gfreq');
-    
+
     ## Check the values 
     foreach my $letter (keys %freq) {
 	unless (&IsReal($freq{$letter})) {
@@ -101,15 +101,9 @@ if ($query->param('proba') eq "alphabet") {
     $parameters .= " -expfreq ".$alphabet_file;
     &DelayedRemoval($alphabet_file);
 
-#    $at_freq = $query->param('ATfreq');
-#    $cg_freq = $query->param('CGfreq');
-#    unless ((&IsReal($at_freq))  && (&IsReal($cg_freq))) {
-#	&FatalError("Invalid residue frequencies");
-#    }
-#    $parameters .= " -a a:t $at_freq c:g $cg_freq ";
-
-#### expected frequency estimation ####
-} elsif ($query->param('proba') =~ /upstream/i) {
+## Pre-calibrated Markov chain background models
+} elsif (($query->param('proba') =~ /upstream/i) ||
+	 ($query->param('proba') =~ /protein/i)) {
     ### check organism
     unless ($organism = $query->param('organism')) {
 	&cgiError("You should specify an organism to use upstream frequency calibration");
@@ -117,12 +111,22 @@ if ($query->param('proba') eq "alphabet") {
     unless (defined(%{$supported_organism{$organism}})) {
 	&cgiError("Organism $organism is not supported on this site");
     }
-    $oligo_size = $query->param("oligo_size");
-    unless (&IsNatural($oligo_size)) {
+    if ($query->param('proba') =~ /protein/i) {
+      $oligopept_size = $query->param("oligopept_size");
+      unless (&IsNatural($oligopept_size)) {
+	&cgiError("Invalid oligopeptide length $oligopept_size");
+      }
+      $seq_type = "protein"; ## Used for the piping form
+      $parameters .= " -bg protein -org $organism -ol $oligopept_size -type protein";
+    } else {
+      $oligo_size = $query->param("oligo_size");
+      unless (&IsNatural($oligo_size)) {
 	&cgiError("Invalid oligonucleotide length $oligo_size");
+      }
+      $seq_type = "dna"; ## Used for the piping form
+      $parameters .= " -bg upstream-noorf -org $organism -ol $oligo_size -type dna";
     }
-    $parameters .= " -bg upstream-noorf -org $organism -ol $oligo_size";
-}
+  }
 
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
