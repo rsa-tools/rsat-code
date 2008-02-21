@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: choose-background-model,v 1.4 2008/01/04 02:48:07 jvanheld Exp $
+# $Id: choose-background-model,v 1.5 2008/02/21 23:08:46 jvanheld Exp $
 #
 ############################################################
 
@@ -53,7 +53,9 @@ using Markov chain background model.
 
 =item taxon (option -taxon taxon_name)
 
-=item sequence type (options -bg upstream or -bg upstream-noorf)
+=item sequence type (option -bg)
+
+Supported types: upstream, upstream-noorf, protein
 
 =item strands (-1str or -2str)
 
@@ -73,10 +75,10 @@ util
 =head1 USAGE
 
 choose-background-model -type oligo|dyad -org organism_name [-1str|-2str] \
-  -l oligo_length -bg upstream|upstream-noorf -ovlp|-noov
+  -l oligo_length -bg upstream|upstream-noorf|protein -ovlp|-noov
 
 choose-background-model -type oligo|dyad -taxon taxon_name [-1str|-2str] \
-  -l oligo_length -bg upstream|upstream-noorf -ovlp|-noov
+  -l oligo_length -bg upstream|upstream-noorf|protein -ovlp|-noov
 
 =head1 OUTPUT FORMAT
 
@@ -103,7 +105,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     local $oligo_length;
@@ -130,8 +132,8 @@ package main;
     &RSAT::error::FatalError("You must specify an organism (option -org) or a taxon (option -taxon)") unless (($organism_name)|| ($taxon_name));
     &RSAT::error::FatalError("You must specify the pattern type (option -type oligo|dyad)") unless ($type);
     &RSAT::error::FatalError("You must specify the oligo length (option -l)") unless ($oligo_length);
-    &RSAT::error::FatalError("You must specify the strand (option -1str or -2str)") unless ($str);
-    &RSAT::error::FatalError("You must specify the background type (option -bg upstream|upstream-noorf)") unless ($background);
+    &RSAT::error::FatalError("You must specify the background type (option -bg upstream|upstream-noorf|protein)") unless ($background);
+    &RSAT::error::FatalError("You must specify the strand (option -1str or -2str)") unless (($str) || ($background eq 'protein'));
     &RSAT::error::FatalError("You must specify the overlap  (option -ovlp or -noov)") unless ($overlap);
 
     ################################################################
@@ -279,7 +281,7 @@ This option is mutually exclusive with -org.
 =item B<-bg background>
 
 The type of sequences used to calibrate the background
-model. Supported: upstream, upstream-noorf.
+model. Supported: upstream, upstream-noorf, protein.
 
 The model "upstream" is trained on a set comprising upstream sequences of
 all the genes for the selected organism, with a fixed size.
@@ -289,6 +291,9 @@ upstream of all genes, with the same maximal size as for the option
 "upstream". When a gene is found closer than the upstream limit, the
 sequence is clipped to prevent including coding sequences from the
 upstream neighbout gene.
+
+The model "protein" is calibrated on the complete set of proteins
+translated from all the coding genes of the selected organism.
 
 =cut
 	} elsif ($arg eq "-bg") {
