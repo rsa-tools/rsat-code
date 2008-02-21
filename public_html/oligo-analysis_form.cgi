@@ -82,29 +82,13 @@ foreach $key (keys %default) {
 ### print the form ###
 &RSA_header("oligo-analysis", "form");
 print "<center>";
-print "Analysis of oligonucleotide occurrences in nucleotidic sequences<P>\n";
+print "Analysis of oligomer occurrences in nucleotidic of peptidic sequences<P>\n";
 print "</center>";
 print "<hr>";
 
 &ListDefaultParameters() if ($ENV{rsat_echo} >= 2);
 
 print $query->start_multipart_form(-action=>"oligo-analysis.cgi");
-
-### sequence type
-# print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
-# 		    $query->Tr({-align=>left,-valign=>TOP},
-# 			       [
-# 				$query->td([&SequenceChoice()])
-# 			       ]),
-# 		    $query->Tr({-align=>left,-valign=>TOP},
-# 			       [
-# 				$query->td(["<B><A HREF='help.oligo-analysis.html#sequence_type'>Sequence type</A></B>".
-# 					    $query->popup_menu(-name=>'sequence_type',
-# 							       -Values=>["dna","protein","other"],
-# 							       -default=>$default{sequence_type})
-# 					   ])
-# 			       ])
-# 		 );
 
 print &SequenceChoice();
 print "<b><a href='help.oligo-analysis.html#sequence_type'>Sequence type</a></b>";
@@ -121,12 +105,12 @@ print "<BR>";
 
 
 ################################################################
-## Oligonucleotide counting options
+## Oligomer counting options
 print "<hr>\n";
-print "<b>Oligonucleotide counting mode</b><br>\n";
+print "<b>Oligomer counting mode</b><br>\n";
 
 ### oligo size
-print "<B><A HREF='help.oligo-analysis.html#oligo_length'>Oligonucleotide length</A>&nbsp;</B>\n";
+print "<B><A HREF='help.oligo-analysis.html#oligo_length'>Oligomer length</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'oligo_length',
 			 -Values=>[1,2,3,4,5,6,7,8],
 			 -default=>$default{oligo_length});
@@ -168,16 +152,6 @@ print ("<b><a href=help.oligo-analysis.html#pseudo>Pseudo-weight</a></b> &nbsp;"
 
 print "<hr>\n";
 
-
-#print "<A HREF='help.oligo-analysis.html#exp_freq'><B>Expected frequency</B></A>&nbsp;";
-#print $query->radio_group(-name=>'freq_estimate',
-#			  -Values=>['Equiprobable residues',
-#				    'Residue frequencies from input sequence',
-#				    'Markov Chain (higher order dependencies)',
-#				    'Lexicon partitioning',
-#				    'Oligo frequencies from all intergenic regions'],
-#			  -default=>$default{freq_estimate});
-#print "<BR>";
 
 &OligoReturnTable();
 
