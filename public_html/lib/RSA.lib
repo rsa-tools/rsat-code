@@ -44,7 +44,7 @@ package main;
 ## Name of the expected oligo frequency file, 
 ## given the organism, oligo length and background model
 ##
-## Usage: 
+## Usage:
 ##
 ## For an organism-specific background model
 ##    my $background_file = &ExpectedFreqFile($organism_name, $oligo_length,
@@ -99,27 +99,35 @@ sub ExpectedFreqFile {
 		      'upstream-noorf'=>1,
 		      'intergenic'=>1,
 		      'upstream-rm'=>1,
-		      'upstream-noorf-rm'=>1
+		      'upstream-noorf-rm'=>1,
+		      'protein'=>1
 		     );
   $supported_bg = join ",", sort keys %supported_bg;
   unless ($supported_bg{$background}) {
     &FatalError($background, "is not a supported background model type. Supported: ", $supported_bg);
   }
 
+  ## Residue type
+  my $residue_type;
+  if ($background eq 'protein') {
+    $residue_type = "pept";
+  } else {
+    $residue_type = "nt";
+  }
+
   ## Oligo length
   if ($type eq 'oligo') {
-    &RSAT::error::FatalError($oligo_length, "is not a supported length for oligonucleotides, should be comprised between 1 and 8") 
-      unless (($oligo_length >= 1) && ($oligo_length <= 8));
+    if ($background eq "protein") {
+      &RSAT::error::FatalError($oligo_length, "is not a supported length for oligopeptides, should be comprised between 1 and 3")
+	unless (($oligo_length >= 1) && ($oligo_length <= 3));
+    } else {
+      &RSAT::error::FatalError($oligo_length, "is not a supported length for oligonucleotides, should be comprised between 1 and 8")
+	unless (($oligo_length >= 1) && ($oligo_length <= 8));
+    }
   } elsif ($type eq 'dyad') {
     &RSAT::error::FatalError($oligo_length, "is not a supported length for monads, should be comprised between 1 and 3")
       unless (($oligo_length >= 1) && ($oligo_length <= 3));
   }
-  #     if ($oligo_length < 1) {
-  # 	&RSAT::error::FatalError("Invalid oligonucleotide length : must be >= 1");
-  #     }
-  #     if ($oligo_length > 8) {
-  # 	&RSAT::error::FatalError("Invalid oligonucleotide length : must be <= 8");
-  #     }
 
   $exp_freq_file = $data_dir;
   if ($type eq "dyad") {
@@ -137,18 +145,18 @@ sub ExpectedFreqFile {
     ## ???
     $exp_freq_file .= "_".$org_or_taxon;
     $exp_freq_file .= "_allup500";
-    $exp_freq_file .= $oligo_length."nt";
-    $exp_freq_file .= $str;
+    $exp_freq_file .= $oligo_length.$residue_type;
+    $exp_freq_file .= $str unless ($background eq "protein");
     $exp_freq_file .= $overlap_suffix;
     $exp_freq_file .= "_freq.tab";
 
   } else {
     ## Oligonucleotide frequencies
-    $exp_freq_file .= $oligo_length."nt";
+    $exp_freq_file .= $oligo_length.$residue_type;
     $exp_freq_file .= "_".$background;
     $exp_freq_file .= "_".$org_or_taxon;
     $exp_freq_file .= $overlap_suffix;
-    $exp_freq_file .= $str;
+    $exp_freq_file .= $str unless ($background eq "protein");
     $exp_freq_file .= ".freq";
   }
 
@@ -164,7 +172,7 @@ sub ExpectedFreqFile {
     }
   }
   &RSAT::message::Info("Expected frequency file", $exp_freq_file) if ($main::verbose >= 2);
-  return $exp_freq_file;
+  return($exp_freq_file);
 }
 
 
