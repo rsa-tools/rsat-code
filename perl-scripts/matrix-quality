@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.51 2008/02/21 09:00:03 jvanheld Exp $
+# $Id: matrix-quality,v 1.52 2008/02/21 09:51:18 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -249,14 +249,19 @@ package main;
     $main::outfile{'theoretical_distrib'} = $main::outfile{prefix}."_theor_score_distrib.tab";
     &PrintTheorScoreDistribution($outfile{matrix_tab},$main::outfile{'theoretical_distrib'}) if ($tasks{theor});
 
+    ################################################################
     ## Calculate score distributions in the different input sequence files
 
     ## Calculate the Leave-one-out score distribution for the matrix sites
+    if (($tasks{loo}) || ($tasks{compare})) {
+      $outfile{matrix_sites_loo_distrib} = $outfile{prefix}."_scan_matrix_sites_loo_score_distrib.tab";
+      push @distrib_files, $outfile{matrix_sites_loo_distrib};
+    }
     if ($tasks{loo}) {
       &LOO_scores($matrix, @matrix_scan_options);
     }
 
-    ## Calculate the theorical distribution of LOO partial matrices
+    ## Calculate the theorical distributions of LOO partial matrices
     if ($tasks{theor_loo}) {
     	our @th_distrib_files =();
     	foreach my $partial_matrix (@partial_matrix_files) {
@@ -572,6 +577,9 @@ Do not apply the leave-one-out (LOO) test on the positive sequences.
 =cut
 	} elsif ($arg eq "-noloo") {
 	  $supported_tasks{loo} = 0;
+	  if (defined($tasks{loo})) {
+	    $tasks{loo} = 0;
+	  }
 
 	    ## Skip the matrix permutation step
 =pod
@@ -941,7 +949,7 @@ sub ExportInputSites {
 ################################################################
 ## LOO scoring of the sites Discard one site (the "left out"
 ## site), build a partial matrix with the remaining ones, and
-## score the left out site with the partial matrix. Iterate this
+## score the left-out site with the partial matrix. Iterate this
 ## procedure over all sites.
 sub LOO_scores {
   my ($matrix, @args) = @_;
@@ -951,9 +959,6 @@ sub LOO_scores {
   }
 
   my $seq_type = "matrix_sites_loo";
-
-  $main::outfile{matrix_sites_loo} = $outfile{prefix}."_matrix_sites_loo.tab";
-#  push @distrib_files, $main::outfile{matrix_sites_loo};
 
   &RSAT::message::TimeWarn("LOO scoring of the matrix sites",  $outfile{matrix_sites_loo})
     if ($main::verbose >= 1);
@@ -1047,18 +1052,15 @@ sub LOO_scores {
   print $main::out ";\n";
   close $loo_scores_handle;
 
-  
-  ## Prepare the classfreq command (to extract the distribution from the scores)
+  ## Prepare and run the classfreq command (to extract the distribution from the scores)
   my $classfreq_min = sprintf("%.${decimals}f", $main::Wmin);
   #  my $classfreq_min = POSIX::floor($Wmin*(10^$decimals))/(10^$decimals);
-  $outfile{matrix_sites_loo_distrib} = $outfile{prefix}."_scan_matrix_sites_loo_score_distrib.tab";  
   my $classfreq_cmd = "grep -v '^;' ".$main::outfile{matrix_sites_loo}." | grep -v '^#'";
   $classfreq_cmd .= " | cut -f 8";
   $classfreq_cmd .= " | classfreq -v 1 -ci 0.01";
   $classfreq_cmd .= " -min ".$classfreq_min;
   $classfreq_cmd .= " -o ".$outfile{matrix_sites_loo_distrib};
   &doit($classfreq_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  push @distrib_files, $outfile{matrix_sites_loo_distrib};
 }
 
 
