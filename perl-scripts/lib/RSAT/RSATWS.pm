@@ -465,7 +465,42 @@ sub oligo_analysis {
     my $noov = $args{"noov"};
     my $str = $args{"str"};
     my $sort = $args{"sort"};
-    my $lth = $args{"lth"};
+
+    ## List of lower thresholds
+    my $lth_ref = $args{"lth"};
+    my $lth = "";
+    if ($lth_ref) {
+#      my %lth = %{$lth_ref};
+#      foreach $lt (keys %lth) {
+#	$lt =~s/\'//g;
+#	$lt =~s/\"//g;
+#	$value = $lth{$lt};
+#	$value =~s/\'//g;
+#	$value =~s/\"//g;
+#	$lthreshold .= " -lth ".$lt." ".$value;
+#      }
+      my @lth = @{$lth_ref};
+      foreach $lt (@lth) {
+	$lt =~s/\'//g;
+	$lt =~s/\"//g;
+	@_lt = split / /, $lt;
+	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
+      }
+    }
+
+    ## List of upper thresholds
+    my $uth_ref = $args{"uth"};
+    my $uth = "";
+    if ($uth_ref) {
+      my @uth = @{$uth_ref};
+      foreach $ut (@uth) {
+	$ut =~s/\'//g;
+	$ut =~s/\"//g;
+	@_ut = split / /, $ut;
+	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
+      }
+    }
+
     my $pseudo = $args{'pseudo'};
 
     my $command = "$SCRIPTS/oligo-analysis";
@@ -517,10 +552,11 @@ sub oligo_analysis {
     }
 
     if ($lth) {
-      $lth =~ s/\'//g;
-      $lth =~ s/\"//g;
-      @_lth = split / /, $lth;
-      $command .= " -lth '".$_lth[0]."' '".$_lth[1]."'";
+      $command .= $lth;
+    }
+
+    if ($uth) {
+      $command .= $uth;
     }
 
     if ($pseudo =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
@@ -569,11 +605,35 @@ sub dyad_analysis {
     my $noov = $args{"noov"};
     my $str = $args{"str"};
     my $sort = $args{"sort"};
-    my $lth = $args{"lth"};
-    my $uth = $args{"uth"};
     my $under = $args{"under"};
     my $two_tails = $args{"two_tails"};
     my $zeroocc = $args{"zeroocc"};
+
+    ## List of lower thresholds
+    my $lth_ref = $args{"lth"};
+    my $lth = "";
+    if ($lth_ref) {
+      my @lth = @{$lth_ref};
+      foreach $lt (@lth) {
+	$lt =~s/\'//g;
+	$lt =~s/\"//g;
+	@_lt = split / /, $lt;
+	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
+      }
+    }
+
+    ## List of upper thresholds
+    my $uth_ref = $args{"uth"};
+    my $uth = "";
+    if ($uth_ref) {
+      my @uth = @{$uth_ref};
+      foreach $ut (@uth) {
+	$ut =~s/\'//g;
+	$ut =~s/\"//g;
+	@_ut = split / /, $ut;
+	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
+      }
+    }
 
     my $command = "$SCRIPTS/dyad-analysis";
 
@@ -618,17 +678,11 @@ sub dyad_analysis {
     }
 
     if ($lth) {
-      $lth =~ s/\'//g;
-      $lth =~ s/\"//g;
-      @_lth = split / /, $lth;
-      $command .= " -lth '".$_lth[0]."' '".$_lth[1]."'";
+      $command .= $lth;
     }
 
     if ($uth) {
-      $uth =~ s/\'//g;
-      $uth =~ s/\"//g;
-      @_uth = split / /, $uth;
-      $command .= " -uth '".$_uth[0]."' '".$_uth[1]."'";
+      $command .= $uth;
     }
 
     if ($length) {
@@ -1200,6 +1254,32 @@ sub get_orthologs_cmd {
     $query .= "'";
   }
 
+    ## List of lower thresholds
+    my $lth_ref = $args{"lth"};
+    my $lth = "";
+    if ($lth_ref) {
+      my @lth = @{$lth_ref};
+      foreach $lt (@lth) {
+	$lt =~s/\'//g;
+	$lt =~s/\"//g;
+	@_lt = split / /, $lt;
+	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
+      }
+    }
+
+    ## List of upper thresholds
+    my $uth_ref = $args{"uth"};
+    my $uth = "";
+    if ($uth_ref) {
+      my @uth = @{$uth_ref};
+      foreach $ut (@uth) {
+	$ut =~s/\'//g;
+	$ut =~s/\"//g;
+	@_ut = split / /, $ut;
+	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
+      }
+    }
+
   my $command = "$SCRIPTS/get-orthologs";
 
   if ($args{organism}) {
@@ -1226,18 +1306,12 @@ sub get_orthologs_cmd {
       $args{return} =~ s/\"//g;
       $command .= " -return '".$args{return}."'";
   }
-    if ($args{lth}) {
-      $args{lth} =~ s/\'//g;
-      $args{lth} =~ s/\"//g;
-      @_lth = split / /, $args{lth};
-      $command .= " -lth '".$_lth[0]."' '".$_lth[1]."'";
+    if ($lth) {
+      $command .= $lth;
     }
 
-    if ($args{uth}) {
-      $args{uth} =~ s/\'//g;
-      $args{uth} =~ s/\"//g;
-      @_uth = split / /, $args{uth};
-      $command .= " -uth '".$_uth[0]."' '".$_uth[1]."'";
+    if ($uth) {
+      $command .= $uth;
     }
 
   return $command;
@@ -1315,14 +1389,38 @@ sub footprint_discovery_cmd {
     my $organism = $args{"organism"};
     my $taxon = $args{"taxon"};
     my $index = $args{"index"};
-    my $lth = $args{"lth"};
-    my $uth = $args{"uth"};
     my $stats = $args{"stats"};
     my $to_matrix = $args{"to_matrix"};
     my $bg_model = $args{"bg_model"};
     my $no_filter = $args{"no_filter"};
     my $infer_operons = $args{"infer_operons"};
     my $dist_thr = $args{"dist_thr"};
+
+    ## List of lower thresholds
+    my $lth_ref = $args{"lth"};
+    my $lth = "";
+    if ($lth_ref) {
+      my @lth = @{$lth_ref};
+      foreach $lt (@lth) {
+	$lt =~s/\'//g;
+	$lt =~s/\"//g;
+	@_lt = split / /, $lt;
+	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
+      }
+    }
+
+    ## List of upper thresholds
+    my $uth_ref = $args{"uth"};
+    my $uth = "";
+    if ($uth_ref) {
+      my @uth = @{$uth_ref};
+      foreach $ut (@uth) {
+	$ut =~s/\'//g;
+	$ut =~s/\"//g;
+	@_ut = split / /, $ut;
+	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
+      }
+    }
 
     my $command = "$SCRIPTS/footprint-discovery";
 
@@ -1377,16 +1475,11 @@ sub footprint_discovery_cmd {
     }
 
     if ($lth) {
-      $lth =~ s/\'//g;
-      $lth =~ s/\"//g;
-      $command .= " -lth '".$_lth[0]."' '".$_lth[1]."'";
+      $command .= $lth;
     }
 
     if ($uth) {
-      $uth =~ s/\'//g;
-      $uth =~ s/\"//g;
-      @_uth = split / /, $uth;
-      $command .= " -uth '".$_uth[0]."' '".$_uth[1]."'";
+      $command .= $uth;
     }
 
     if ($stats) {
@@ -2311,16 +2404,42 @@ sub matrix_scan {
   my $markov = $args{"markov"};
   my $background_pseudo = $args{"background_pseudo"};
   my $return_fields = $args{"return_fields"};
-  my $upper_threshold_field = $args{"upper_threshold_field"};
-  my $upper_threshold_value = $args{"upper_threshold_value"};
-  my $lower_threshold_field = $args{"lower_threshold_field"};
-  my $lower_threshold_value = $args{"lower_threshold_value"};
+#  my $upper_threshold_field = $args{"upper_threshold_field"};
+#  my $upper_threshold_value = $args{"upper_threshold_value"};
+#  my $lower_threshold_field = $args{"lower_threshold_field"};
+#  my $lower_threshold_value = $args{"lower_threshold_value"};
   my $both_strand = $args{"both_strand"};
   my $single_strand = $args{"single_strand"};
   my $verbosity = $args{"verbosity"};
   my $origin = $args{"origin"};
   my $decimals = $args{"decimals"};
   my $crer_ids = $args{"crer_ids"};
+
+    ## List of lower thresholds
+    my $lth_ref = $args{"lth"};
+    my $lth = "";
+    if ($lth_ref) {
+      my @lth = @{$lth_ref};
+      foreach $lt (@lth) {
+	$lt =~s/\'//g;
+	$lt =~s/\"//g;
+	@_lt = split / /, $lt;
+	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
+      }
+    }
+
+    ## List of upper thresholds
+    my $uth_ref = $args{"uth"};
+    my $uth = "";
+    if ($uth_ref) {
+      my @uth = @{$uth_ref};
+      foreach $ut (@uth) {
+	$ut =~s/\'//g;
+	$ut =~s/\"//g;
+	@_ut = split / /, $ut;
+	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
+      }
+    }
 
   my $command = "$SCRIPTS/matrix-scan";
 
@@ -2393,21 +2512,12 @@ sub matrix_scan {
       $command .= " -return '".$return_fields."'";
   }
 
-  if ($upper_threshold_field && $upper_threshold_value =~ /\d/)  {
-      $upper_threshold_field =~ s/\'//g;
-      $upper_threshold_field =~ s/\"//g;
-      $upper_threshold_value =~ s/\'//g;
-      $upper_threshold_value =~ s/\"//g;
-      $command .= " -uth '".$upper_threshold_field."' '".$upper_threshold_value."'";
+  if ($lth) {
+    $command .= $lth;
   }
 
-  if ($lower_threshold_field && $lower_threshold_value =~ /\d/) {
-      $lower_threshold_field =~ s/\'//g;
-      $lower_threshold_field =~ s/\"//g;
-      $lower_threshold_value =~ s/\'//g;
-      $lower_threshold_value =~ s/\"//g;
-
-      $command .= " -lth '".$lower_threshold_field."' '".$lower_threshold_value."'";
+  if ($uth) {
+    $command .= $uth;
   }
 
   if ($both_strand  == 1) {
