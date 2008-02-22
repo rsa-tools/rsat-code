@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.54 2008/02/22 01:13:15 jvanheld Exp $
+# $Id: matrix-quality,v 1.55 2008/02/22 01:59:23 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -18,7 +18,8 @@ matrix-quality
 =head1 DESCRIPTION
 
 Evaluate the quality of a Position-Specific Scoring Matrix (PSSM), by
-comparing score distributions obtained with this matrix in various sequence sets. 
+comparing score distributions obtained with this matrix in various
+sequence sets.
 
 The most classical use of the program is to compare score
 distributions between "positive" sequences (e.g. true binding sites
@@ -27,17 +28,17 @@ for the considered transcription factor) and "negative" sequences
 
 =head2 Leave-One-Out test
 
-An important bias can come from an over-fitting of the matrix to the
+An important bias can result from an over-fitting of the matrix to the
 positive set, in case one would use the same sites for building the
 PSSM and for evaluating it. To avoid this bias, the option -loo allows
 to perform a Leave-One-Out (LOO) evaluation of the positive set: one
 sequence (the "left out sequence") is temporarily discarded from the
 positive set, and the remaining sequences are used to build a matrix,
 which is then used to score the left out sequence. The process
-iterates over all the sequences of the positive set. 
-If the left out sequence has one or more "twin" (identical site) in the 
-positive set, they are also temporarily excluded from the positive set 
-and not included in the matrix used to score the left out sequence.
+iterates over all the sequences of the positive set.  If the left out
+sequence has one or more "twin" (identical site) in the positive set,
+they are also temporarily excluded from the positive set and not
+included in the matrix used to score the left out sequence.
 
 This option is only valid when the matrix is specified in a format
 that includes both the matrix and the sites (sequences) that were used
@@ -48,7 +49,8 @@ consensus formats.
 
 =item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
 
-=item with the help of Morgane Thomas-Chollier <morgane@scmbb.ulb.ac.be>
+=item with the help of Morgane Thomas-Chollier
+<morgane@scmbb.ulb.ac.be>, Alejandra Medina-Rivera, an Cei Abreu
 
 =head1 CATEGORY
 
@@ -254,7 +256,7 @@ package main;
     ## Calculate score distributions in the different input sequence files
 
     ## Calculate the Leave-one-out score distribution for the matrix sites
-    if (($tasks{loo}) || ($tasks{compare})) {
+    if (($tasks{loo}) || ($tasks{compare}) || ($tasks{graphs})) {
       $main::outfile{matrix_sites_loo} = $outfile{prefix}."_matrix_sites_loo.tab";
       $outfile{matrix_sites_loo_distrib} = $outfile{prefix}."_scan_matrix_sites_loo_score_distrib.tab";
       push @distrib_files, $outfile{matrix_sites_loo_distrib}; $file_nb{matrix_sites_loo_distrib} = scalar(@distrib_files);
@@ -1269,18 +1271,7 @@ sub PermuteMatrixColumns {
     &RSAT::message::TimeWarn("Permuting matrix columns", $perm_nb_max, "permutations")
       if ($main::verbose >= 1);
 
-#   ## Single file regrouping all the permuted matrices for the positive set
-#   $outfile{'positive_matrix_perm_col_all'} = $outfile{prefix}."_positive_matrix_perm_col_all_".$perm_nb{positive}.".tab";
-#   my $init_matrix_cmd = "rm -f ".$outfile{'positive_matrix_perm_col_all'};
-#   &doit($init_matrix_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-
-#   ## Single file regrouping all the permuted matrices for the negative set
-#   ## (the number of permuted matrices is not always the same as for the positive set)
-#   $outfile{'negative_matrix_perm_col_all'} = $outfile{prefix}."_negative_matrix_perm_col_all_".$perm_nb{negative}.".tab";
-#   $init_matrix_cmd = "rm -f ".$outfile{'negative_matrix_perm_col_all'};
-#   &doit($init_matrix_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-
-  ## Single file regrouping all the permuted matrices for each sequence type 
+  ## Single file regrouping all the permuted matrices for each sequence type
   foreach my $seq_type (sort keys %seqfile) {
    $outfile{$seq_type.'_matrix_perm_col_all'} = $outfile{prefix}."_".$seq_type."_matrix_perm_col_all_".$perm_nb{$seq_type}.".tab";
     $init_matrix_cmd = "rm -f ".$outfile{$seq_type.'_matrix_perm_col_all'};
@@ -1300,18 +1291,6 @@ sub PermuteMatrixColumns {
 	$permute_matrix_cmd .= "; echo '\/\/' >> ".$outfile{$seq_type.'_matrix_perm_col_all'} if ($i < $perm_nb{$seq_type});
       }
     }
-
-#     ## Add the matrix to the list of permuted matrices for the positive set
-#     if ($i <= $perm_nb{positive}) {
-#       $permute_matrix_cmd .= "; cat ".$outfile{'matrix_perm_col_'.$i}." >> ".$outfile{'positive_matrix_perm_col_all'};
-#       $permute_matrix_cmd .= "; echo '\/\/' >> ".$outfile{'positive_matrix_perm_col_all'} if ($i < $perm_nb{positive});
-#     }
-
-#     ## Add the matrix to the list of permuted matrices for the negative set
-#     if ($i <= $perm_nb{negative}) {
-#       $permute_matrix_cmd .= "; cat ".$outfile{'matrix_perm_col_'.$i}." >> ".$outfile{'negative_matrix_perm_col_all'};
-#       $permute_matrix_cmd .= "; echo '\/\/' >> ".$outfile{'negative_matrix_perm_col_all'} if ($i < $perm_nb{negative});
-#     }
 
     ## Execute the command
     &doit($permute_matrix_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix)  if ($tasks{permute});
@@ -1414,20 +1393,19 @@ sub CompareDistrib {
       }
 
 #      &RSAT::message::Debug("ROC reference", $roc_ref, "file_nb=".$file_nb{$roc_ref}, "columne=".$ref_column) if ($main::verbose >= 5);
-
-      print "; File numbers\n";
-      foreach my $key (sort keys %file_nb) {
-	print join ("\t", $key, $file_nb{$key}), "\n";
-      }
-
-      my $f = 0;
-      print "; Distribution files\n";
-      foreach my $file (@distrib_files) {
-	$f++;
-	print join ("\t", $f, $file, $file_nb{$file}), "\n";
-      }
-
+#       ## DEBUG
+#       print "; File numbers\n";
+#       foreach my $key (sort {$file_nb{$a} <=> $file_nb{$b}} keys %file_nb) {
+# 	print join ("\t", $file_nb{$key}, $key), "\n";
+#       }
+#       my $f = 0;
+#       print "; Distribution files\n";
+#       foreach my $file (@distrib_files) {
+# 	$f++;
+# 	print join ("\t", $f, $file), "\n";
+#       }
 #      die "HELLO";
+      ## END OF DEBUG
 
       $ycols = join ",", 2..(scalar(@distrib_files)+2);
       $large_graph_options =~ s/-xsize 800/-xsize 400/;
