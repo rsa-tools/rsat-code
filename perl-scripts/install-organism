@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.77 2008/02/21 23:08:27 jvanheld Exp $
+# $Id: install-organism,v 1.78 2008/02/22 00:07:04 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -617,12 +617,12 @@ sub CalcOligoFreq {
     @current_oligo_lengths = 1..3;
     $oligo_seq_type = "prot";
     $residue_type = "pept";
-    @strands = "";
+    @strands = ("");
   }
-  &RSAT::message::TimeWarn("Calculating oligo frequencies",$seq_file, $seq_format, $seq_type) if ($main::verbose >= 1);
-  for $noov ("-noov", "-ovlp") {
-    for $strands (@strands) {
+  foreach my $noov ("-noov", "-ovlp") {
+    foreach my $strands (@strands) {
       foreach my $oligo_length (@current_oligo_lengths) {
+	&RSAT::message::TimeWarn("Calculating oligo frequencies",$seq_file, $seq_format, $seq_type, "l=".$oligo_length, $noov, $strands) if ($main::verbose >= 1);
 	$job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
 	$out_file = $dir{oligos}."/".${oligo_length}.${residue_type}."_".${seq_type}."_".${organism_short_name}.${noov}.${strands}.".freq";
 	my $command = "$SCRIPTS/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
@@ -643,30 +643,35 @@ sub CalcOligoFreq {
 #### calculate oligonucleotide distribution for a specified sequence
 #### file
 sub CalcOligoDistrib {
-    my ($seq_file,$seq_format,$seq_type) = @_;
-    foreach my $oligo_length (@oligo_lengths) {
+  my ($seq_file,$seq_format,$seq_type) = @_;
+  @strands = ("-1str", "-2str");
+  foreach my $noov ("-noov", "-ovlp") {
+    foreach my $strands (@strands) {
+      foreach my $oligo_length (@oligo_lengths) {
 	$job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
 	#### Calculate occurrence distributions in the sequence file
 	my $distrib_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_distrib.tab";
 	my $command = "$SCRIPTS/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
-		$command .= " ".$strands;
+	$command .= " ".$strands;
 	$command .= " ".$noov;
 	$command .= " -l ".$oligo_length." -type dna";
 	$command .= " -return occ -distrib";
 	$command .= " -o ".$distrib_file;
 	$command .= " ; gzip -f ".$distrib_file;
 	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
-	
+
 	#### Fit a Poisson and a negbin on occurrence distribution
 	foreach my $theor ("negbin", "poisson") {
-	    my $fitting_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_${theor}.tab";
-	    $command = "fit-distribution -v 1 -i ".$distrib_file;
-	    $command .= " -o ".$fitting_file;
-	    $command .= " -distrib ".$theor;
-	    $command .= " ; gzip -f ".$fitting_file;
-	    &doit($command, $dry_run, $die_on_error, $verbose);  
-		}
+	  my $fitting_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_${theor}.tab";
+	  $command = "fit-distribution -v 1 -i ".$distrib_file;
+	  $command .= " -o ".$fitting_file;
+	  $command .= " -distrib ".$theor;
+	  $command .= " ; gzip -f ".$fitting_file;
+	  &doit($command, $dry_run, $die_on_error, $verbose);  
+	}
+      }
     }
+  }
 }
 
 
@@ -674,13 +679,15 @@ sub CalcOligoDistrib {
 #### calculate dyad frequencies for a specified sequence
 #### file
 sub CalcDyadFreq {
-    my ($seq_file,$seq_format,$seq_type) = @_;
-    $min_spacing = 0;
-    $max_spacing = 20;
-    @monad_lengths = (3,2,1);
-#    @monad_lengths = (3);
-
-    foreach $monad_length (@monad_lengths) {
+  my ($seq_file,$seq_format,$seq_type) = @_;
+  $min_spacing = 0;
+  $max_spacing = 20;
+  @monad_lengths = (3,2,1);
+  @strands = ("-1str", "-2str");
+  foreach my $noov ("-noov", "-ovlp") {
+    foreach my $strands (@strands) {
+      foreach my $monad_length (@monad_lengths) {
+	&RSAT::message::TimeWarn("Calculating dyad frequencies",$seq_file, $seq_format, $seq_type, "l=".$monad_length, $noov, $strands) if ($main::verbose >= 1);
 	$job_prefix = ${organism_short_name}."_dyad_".$monad_length;
 	$dyad_file = "dyads_${monad_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}${noov}${strands}";
 	$dyad_file .= ".freq";
@@ -695,9 +702,10 @@ sub CalcDyadFreq {
 	$command .= " -o $dyad_file";
 	$command .= "; gzip -f $dyad_file ";
 	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);
+      }
     }
+  }
 }
-
 
 
 ################################################################
