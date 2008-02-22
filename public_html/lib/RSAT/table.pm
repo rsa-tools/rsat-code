@@ -636,7 +636,7 @@ sub setAlphabet {
     @{$self->{alphabet}} = @new_alphabet;	
 
 #    warn join("\t", "; Alphabet", $self->getAlphabet()), "\n" if ($main::verbose >= 10);
-    
+
     ## update the number of columns
     $self->force_attribute("nrow", scalar(@alphabet));
 } 
@@ -707,9 +707,8 @@ Add a new row and append its symbol to the alphabet.
 =cut
 sub addIndexedRow {
     my ($self, $index, @new_row) = @_;
-
     $self->addRow(@new_row);
-    $self->push_attribute("alphabet", $index);    
+    $self->push_attribute("alphabet", $index);
 }
 
 
