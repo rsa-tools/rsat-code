@@ -1,3 +1,5 @@
+
+
 import RSATWS.OligoAnalysisRequest;
 import RSATWS.OligoAnalysisResponse;
 import RSATWS.PurgeSequenceRequest;
@@ -95,7 +97,9 @@ public class RSATRetrievePurgeOligoClient {
 	            // Sort the result according to score
 	            oligoParams.setSort(1);
 	            // Lower limit to score is 0, less significant patterns are not displayed
-	            oligoParams.setLth("occ_sig 0");
+	            String[] lth_values = {"occ_sig 0"};
+	            oligoParams.setLth(lth_values);
+	            
 	            
 	            /* Call the service */
 	            System.out.println("Oligo-analysis: sending request to the server...");
