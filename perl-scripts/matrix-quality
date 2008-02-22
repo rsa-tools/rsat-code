@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.53 2008/02/21 10:55:33 jvanheld Exp $
+# $Id: matrix-quality,v 1.54 2008/02/22 01:13:15 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -255,6 +255,7 @@ package main;
 
     ## Calculate the Leave-one-out score distribution for the matrix sites
     if (($tasks{loo}) || ($tasks{compare})) {
+      $main::outfile{matrix_sites_loo} = $outfile{prefix}."_matrix_sites_loo.tab";
       $outfile{matrix_sites_loo_distrib} = $outfile{prefix}."_scan_matrix_sites_loo_score_distrib.tab";
       push @distrib_files, $outfile{matrix_sites_loo_distrib}; $file_nb{matrix_sites_loo_distrib} = scalar(@distrib_files);
     }
@@ -1036,7 +1037,7 @@ sub LOO_scores {
     print $loo_scores_handle $score_result;
 
   }
- 
+
   ## Print the LOO parameters in the log file
   print $main::out "; Scanning parameters for sequence type\t", $seq_type, "\n";
   print $main::out "; matrix-scan command\n";
@@ -1049,7 +1050,6 @@ sub LOO_scores {
 
   ## Prepare and run the classfreq command (to extract the distribution from the scores)
   my $classfreq_min = sprintf("%.${decimals}f", $main::Wmin);
-  #  my $classfreq_min = POSIX::floor($Wmin*(10^$decimals))/(10^$decimals);
   my $classfreq_cmd = "grep -v '^;' ".$main::outfile{matrix_sites_loo}." | grep -v '^#'";
   $classfreq_cmd .= " | cut -f 8";
   $classfreq_cmd .= " | classfreq -v 1 -ci 0.01";
@@ -1092,13 +1092,11 @@ sub CalcSequenceDistrib {
   	my $seq_type_scores = $outfile{prefix}."_scan_".$seq_type."_scores.tab";
   	$main::outfile{$seq_type_scores} = $seq_type_scores;
   	$matrix_scan_cmd .= " -o ".$main::outfile{$seq_type_scores};
-  	
   	## launch classfreq on this input file
   	$matrix_scan_cmd .= " ; grep -v '^;' ".$main::outfile{$seq_type_scores}." | grep -v '^#'";
   } else {
   	$matrix_scan_cmd .= " | grep -v '^;' | grep -v '^#'";
   }
-  
   $matrix_scan_cmd .= " | cut -f 8";
   $matrix_scan_cmd .= " | classfreq -v 1 -ci 0.01";
   $matrix_scan_cmd .= " -min ".$classfreq_min;
@@ -1415,7 +1413,7 @@ sub CompareDistrib {
 	}
       }
 
-      &RSAT::message::Debug("ROC reference", $roc_ref, "file_nb=".$file_nb{$roc_ref}, "columne=".$ref_column) if ($main::verbose >= 0);
+#      &RSAT::message::Debug("ROC reference", $roc_ref, "file_nb=".$file_nb{$roc_ref}, "columne=".$ref_column) if ($main::verbose >= 5);
 
       print "; File numbers\n";
       foreach my $key (sort keys %file_nb) {
