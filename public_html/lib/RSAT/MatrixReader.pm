@@ -102,6 +102,7 @@ sub readFromFile {
 
     my $matrix_nb = 0;
     foreach my $matrix (@matrices) {
+
       ## Reassign matrix numbers
       $matrix_nb++;
       $matrix->set_parameter("matrix.nb", $matrix_nb);
@@ -131,6 +132,10 @@ sub readFromFile {
       if ((my $map = $matrix->get_attribute("MAP")) && (my $sites = $matrix->get_attribute("sites"))) {
 	$matrix->set_parameter("MAP.per.site", $map/$sites);
       }
+
+#      &RSAT::message::Debug("Checking matrix parameters", $matrix->get_attribute("matrix.nb"),
+#			    join(":", $matrix->getAlphabet()),
+#			   ) if ($main::verbose >= 0);
 
     }
 
@@ -365,7 +370,7 @@ sub _readFromInfoGibbsFile {
       ## Start a new matrix (an InfoGibbs file contains several matrices)
     } elsif (/^AC\s+(\S+)/) {
       my $accession = $1;
-      &RSAT::message::Info("New matrix", $accession) if ($main::verbose >= 0);
+      &RSAT::message::Info("New matrix", $accession) if ($main::verbose >= 2);
       $current_matrix_nb++;
       $matrix = new RSAT::matrix();
       $matrix->set_parameter("accession", "IG.".$accession);
@@ -382,7 +387,7 @@ sub _readFromInfoGibbsFile {
       $infogibbs_consensus = "";
 
       &RSAT::message::Info("Parsing matrix",  $current_matrix_nb, $matrix->get_attribute("accession")) 
-	if ($main::verbose >= 0);
+	if ($main::verbose >= 2);
       next;
 
       ## Parameters for the current matrix
@@ -859,6 +864,10 @@ sub _readFromConsensusFile {
 	shift @fields unless &main::IsReal($fields[0]);
 	$matrix->addIndexedRow($residue, @fields);
 
+
+#	&RSAT::message::Debug("&_readFromConsensusFile", $residue, "alphabet", join(":", $matrix->getAlphabet()), join ", ", @fields)
+#	  if ($main::verbose >= 0);
+
 	## Sites used to build the matrix
       } elsif (/(\d+)\|(\d+)\s*\:\s*(-){0,1}(\d+)\/(\d+)\s+(\S+)/) {
 	my $site_nb = $1;
@@ -1069,7 +1078,7 @@ sub _readFromTabFile {
 	$matrix->push_attribute("header", @header);
     }
 
-
+    ################################################################
     ## Initialize the matrix list
     my @matrices = ();
     my $matrix = new RSAT::matrix(); 
@@ -1092,19 +1101,18 @@ sub _readFromTabFile {
 
       next if ($line =~ /^;/) ; # skip comment lines
 
-#	&RSAT::message::Debug("line", $l, $line) if ($main::verbose >= 10);
-	## Create a new matrix if required
-	if  ($line =~ /\/\//) {
-	  $matrix = new RSAT::matrix();
-	  $matrix->set_parameter("program", "tab");
-	  push @matrices, $matrix;
-	  $current_matrix_nb++;
-	  $id = $id_prefix."_".$current_matrix_nb;
-	  $matrix->set_attribute("AC", $id);
-	  $matrix->set_attribute("id", $id);
-	  &RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb) if ($main::verbose >= 5);
-	  next;
-	}
+      ## Create a new matrix if required
+      if  ($line =~ /\/\//) {
+	$matrix = new RSAT::matrix();
+	$matrix->set_parameter("program", "tab");
+	push @matrices, $matrix;
+	$current_matrix_nb++;
+	$id = $id_prefix."_".$current_matrix_nb;
+	$matrix->set_attribute("AC", $id);
+	$matrix->set_attribute("id", $id);
+	&RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb) if ($main::verbose >= 5);
+	next;
+      }
 
       if ($line =~ /^\s*(\S+)\s+/) {
 
@@ -1116,7 +1124,6 @@ sub _readFromTabFile {
 
 	## skip the | between residue and numbers
 	shift @fields unless &main::IsReal($fields[0]);
-
 	$matrix->addIndexedRow($residue, @fields);
       }
     }
@@ -1133,7 +1140,6 @@ sub _readFromTabFile {
 	#	&RSAT::message::Debug("initial prior", $residue, $prior) if ($main::verbose >= 10);
       }
       $matrix->setPrior(%tmp_prior);
-      
       if ($main::verbose >= 3) {
 	&RSAT::message::Debug("Read matrix with alphabet", join(":", $matrix->getAlphabet()));
 	&RSAT::message::Debug("Initialized prior as equiprobable", join(":", $matrix->getPrior()));
@@ -1507,7 +1513,6 @@ sub _readFromMotifSamplerFile {
 #	$matrix->force_attribute("ncol", $ncol);
 #	$matrix->treat_null_values();
       }
-#      &RSAT::message::Debug($seq_id,$site_seq, $site_id) if ($main::verbose >= 0);
     }
   }
   return (@matrices);
