@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.61 2008/02/14 18:31:28 rsat Exp $
+# $Id: convert-matrix,v 1.62 2008/02/22 17:38:29 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -48,6 +48,7 @@ local $sort_key = "";
 local $sort_order = "";
 
 local $logo_format = "png";
+local $logo_opt = "";
 
 ## Return type(s)
 @return_fields = ();
@@ -224,7 +225,8 @@ if (scalar(@matrix_files >= 1)) {
     }
 }
 
-## process each matrix
+################################################################
+## Process each matrix
 foreach my $matrix (@matrices) {
     $matrix->set_parameter("pseudo", $pseudo_weight);
     $matrix->set_attribute("equi_pseudo", $equi_pseudo);
@@ -249,23 +251,23 @@ foreach my $matrix (@matrices) {
     }
     ## Generate logo
     if ($return_fields{logo}) {
-    
-    my $basedir ="";
-    if (($logo_dir)&&(-d $logo_dir)){
-    		$basedir = $logo_dir."/";
+	
+	my $basedir ="";
+	if (($logo_dir)&&(-d $logo_dir)){
+	    $basedir = $logo_dir."/";
     	} else {
-    	if ($outfile{output}) {
+	    if ($outfile{output}) {
     		$basedir = dirname($outfile{output});
 	    	$basedir .= "/";
-    		}
+	    }
     	}
 	my $logo_file=$basedir.$matrix->get_attribute("name")."_logo";
 	$matrix->set_attribute("logo_file" => $logo_file);
-    if ($logo_dir){
-      $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir);
-    } else {
-      $matrix->makeLogo($logo_file,\@logo_formats);
-    }
+	if ($logo_dir){
+	    $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt);
+	} else {
+	    $matrix->makeLogo($logo_file,\@logo_formats,"",$logo_opt);
+	}
     }
 }
 
@@ -482,7 +484,7 @@ OPTIONS
 		number of decimals. We recommend to restrict the
 		precision to 2 decimals for the weight, this is
 		generally more than sufficient.
-	
+
 	-perm #
 		Number of permuted matrices to return. Matrix columns are permuted
 		so that the total information content remains identical to the original
@@ -499,10 +501,26 @@ OPTIONS
                 will be in the same directory than the output file (-o ).
                 Several formats can be sepcified at the same time by using comma as separator
                 (eg. -logo_format png,pdf)
-	
+
 	-logo_dir
-		Specifies a directory for the output of the logo file. By default, the logos are exported
-		in the directory from which is called the convert-matrix command.
+		Specifies a directory for the output of the logo
+		file. By default, the logos are exported in the
+		directory from which is called the convert-matrix
+		command.
+
+	-logo_opt 
+
+		Any other option to be passed to seqlogo for
+		generating the logo. This option can be used
+		iteratively to specify multiple options.
+
+		For instance
+		    -logo_opt '-w 12' -logo_opt '-t "CRP matrix" -a'
+		will add the followin options to the commande seqlogo:
+		     -w 12 -t "CRP matrix" -a
+
+		To obtain the list of options supported by seqlogo, type
+			    seqlogo
 
 PRIOR FREQUENCY FILE
 
@@ -763,6 +781,7 @@ convert-matrix options
 -max_profile	Maximal width of the profile histogram 
 -logo_format	logo image format. Supported $supported_logo_formats 
 -logo_dir	specifies a directory to output the logo files
+-logo_opt	options to be passed to seqlogo
 End_short_help
   close HELP;
   exit(0);
@@ -772,165 +791,169 @@ End_short_help
 ################################################################
 ## Read arguments
 sub ReadArguments {
-	foreach my $a (0..$#ARGV) {
-		### verbose ###
-		if ($ARGV[$a] eq "-v") {
-			if (&IsNatural($ARGV[$a+1])) {
-				$verbose = $ARGV[$a+1];
-			} else {
-				$verbose = 1;
-			}
+    foreach my $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	    ### input file 
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### list of input file 
+	} elsif ($ARGV[$a] eq "-mlist") {
+	    $infile{matrix_list} = $ARGV[$a+1];;
+	    
+	    ### Maximal number of matrices to return
+	} elsif ($ARGV[$a] eq "-top") {
+	    $top_matrices = $ARGV[$a+1];
+	    &FatalError(join("\t", $top_matrices, "Invalid value for the option -top. Should be a strictly positive Natural number.")) 
+		unless ((&IsNatural($top_matrices)) && ($top_matrices >= 1));
 
-			### detailed help
-		} elsif ($ARGV[$a] eq "-h") {
-			&PrintHelp();
-      
-			### list of options
-		} elsif ($ARGV[$a] eq "-help") {
-			&PrintOptions();
-      
-			### input file 
-		} elsif ($ARGV[$a] eq "-i") {
-			$infile{input} = $ARGV[$a+1];
-      
-			### list of input file 
-		} elsif ($ARGV[$a] eq "-mlist") {
-			$infile{matrix_list} = $ARGV[$a+1];;
-      
-			### Maximal number of matrices to return
-		} elsif ($ARGV[$a] eq "-top") {
-			$top_matrices = $ARGV[$a+1];
-			&FatalError(join("\t", $top_matrices, "Invalid value for the option -top. Should be a strictly positive Natural number.")) 
-			  unless ((&IsNatural($top_matrices)) && ($top_matrices >= 1));
+	    ## Sort matrices
+	} elsif ($ARGV[$a] eq "-sort") {
+	    $sort_order = lc($ARGV[$a+1]);
+	    unless (($sort_order eq "desc")
+		    || ($sort_order eq "asc")
+		    || ($sort_order eq "alpha")
+		) {
+		&RSAT::error::FatalError($sort_order, "is not a valid sorting order. Supported: desc,asc,alpha.");
+	    }
+	    $sort_key = $ARGV[$a+2];
 
-			## Sort matrices
-		} elsif ($ARGV[$a] eq "-sort") {
-			$sort_order = lc($ARGV[$a+1]);
-			unless (($sort_order eq "desc")
-				|| ($sort_order eq "asc")
-				|| ($sort_order eq "alpha")
-			       ) {
-				&RSAT::error::FatalError($sort_order, "is not a valid sorting order. Supported: desc,asc,alpha.");
-			}
-			$sort_key = $ARGV[$a+2];
+	    ### prior frequency file
+	} elsif ($ARGV[$a] eq "-prior") {
+	    $infile{prior} = $ARGV[$a+1];
+	    
+	    ## bg format
+	} elsif ($ARGV[$a] eq "-bg_format") {
+	    $main::bg_format = lc($ARGV[$a+1]);
+	    &RSAT::error::FatalError(join("\t", $main::bg_format,
+					  "Invalid input format.",
+					  "Supported: ", $main::bg_format))
+		unless ($main::supported_bg_format{$main::bg_format});  
+	    
+	    ##bg_pseudo
+	} elsif ($ARGV[$a] eq "-bg_pseudo") {
+	    $main::bg_pseudo = $ARGV[$a+1];
+	    &RSAT::error::FatalError(join("\t", $main::bg_pseudo,
+					  "Invalid value for bg_pseudo, should be a Real number between 0 and 1."))
+		unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
 
-			### prior frequency file
-		} elsif ($ARGV[$a] eq "-prior") {
-			$infile{prior} = $ARGV[$a+1];
-	
-			## bg format
-		} elsif ($ARGV[$a] eq "-bg_format") {
-			$main::bg_format = lc($ARGV[$a+1]);
-			&RSAT::error::FatalError(join("\t", $main::bg_format,
-						      "Invalid input format.",
-						      "Supported: ", $main::bg_format))
-			  unless ($main::supported_bg_format{$main::bg_format});  
-	
-			##bg_pseudo
-		} elsif ($ARGV[$a] eq "-bg_pseudo") {
-			$main::bg_pseudo = $ARGV[$a+1];
-			&RSAT::error::FatalError(join("\t", $main::bg_pseudo,
-						      "Invalid value for bg_pseudo, should be a Real number between 0 and 1."))
-			  unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
+	    ### output file 
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
 
-			### output file 
-		} elsif ($ARGV[$a] eq "-o") {
-			$outfile{output} = $ARGV[$a+1];
-
-			### return type(s)
-		} elsif ($ARGV[$a] eq "-return") {
-			my $return_fields = $ARGV[$a+1];
-			push @return_fields, split(",", $return_fields);
-
-
-			### input format 
-		} elsif ($ARGV[$a] eq "-from") {
-			$input_format = lc($ARGV[$a+1]);
-			unless ($supported_input_format{$input_format}) {
-				&RSAT::error::FatalError("$input_format\tInvalid input format for matrix\tSupported: $supported_input_formats");
-			}
-		} elsif ($ARGV[$a] eq "-in_format") {
-			&RSAT::message::Warning("The option -in_format is obsolete, please use -from instead.");
-			$input_format = lc($ARGV[$a+1]);
-			unless ($supported_input_format{$input_format}) {
-				&RSAT::error::FatalError("$input_format\tInvalid output format for matrix\tSupported: $supported_input_formats");
-			}
-
-			### Obsolete option for the input format 
-		} elsif ($ARGV[$a] eq "-format") {
-			&RSAT::message::Warning("Option -format is obsolete. Use -in_format instead.");
-			$input_format = $ARGV[$a+1];
-			unless ($supported_input_format{$input_format}) {
-				&RSAT::error::FatalError("$input_format\tInvalid format for input matrix\tSupported: $supported_input_formats");
-			}
-
-			### output format 
-		} elsif ($ARGV[$a] eq "-to") {
-			$output_format = $ARGV[$a+1];
-			unless ($supported_output_format{$output_format}) {
-				&RSAT::error::FatalError("$output_format\tInvalid format for output matrix\tSupported: $supported_output_formats");
-			}
-		} elsif ($ARGV[$a] eq "-out_format") {
-			&RSAT::message::Warning("The option -out_format is obsolete, please use -to instead.");
-			$output_format = $ARGV[$a+1];
-			unless ($supported_output_format{$output_format}) {
-				&RSAT::error::FatalError("$output_format\tInvalid format for output matrix\tSupported: $supported_output_formats");
-			}
-
-			### site format 
-		} elsif ($ARGV[$a] eq "-site_format") {
-			$site_format = $ARGV[$a+1];
-			unless ($supported_site_format{$site_format}) {
-				&RSAT::error::FatalError("$site_format\tInvalid format for sites\tSupported: $supported_site_formats");
-			}
-
-			### pseudo-weight
-		} elsif ($ARGV[$a] eq "-pseudo") {
-			$pseudo_weight = $ARGV[$a+1];
-			unless (&IsReal($pseudo_weight)) {
-				&RSAT::error::FatalError("Invalid pseudo-weight $pseudo_weight. Must be a real value");
-			}
-
-			## Equiprobable distribution of the pseudo-weight
-		} elsif ($ARGV[$a] eq "-equi_pseudo") {
-			$equi_pseudo = 1;
+	    ### return type(s)
+	} elsif ($ARGV[$a] eq "-return") {
+	    my $return_fields = $ARGV[$a+1];
+	    push @return_fields, split(",", $return_fields);
 
 
-			## base for the logarihtms in the weight and info content
-		} elsif ($ARGV[$a] eq "-base") {
-			$info_log_base = $ARGV[$a+1];
-			&RSAT::error::FatalError("base should be a real number") unless (&IsReal($info_log_base));
-			&RSAT::error::FatalError("base should be larger than 1") if ($info_log_base <= 1);
+	    ### input format 
+	} elsif ($ARGV[$a] eq "-from") {
+	    $input_format = lc($ARGV[$a+1]);
+	    unless ($supported_input_format{$input_format}) {
+		&RSAT::error::FatalError("$input_format\tInvalid input format for matrix\tSupported: $supported_input_formats");
+	    }
+	} elsif ($ARGV[$a] eq "-in_format") {
+	    &RSAT::message::Warning("The option -in_format is obsolete, please use -from instead.");
+	    $input_format = lc($ARGV[$a+1]);
+	    unless ($supported_input_format{$input_format}) {
+		&RSAT::error::FatalError("$input_format\tInvalid output format for matrix\tSupported: $supported_input_formats");
+	    }
 
-			### decimals
-		} elsif ($ARGV[$a] eq "-decimals") {
-			$decimals = $ARGV[$a+1];
-			unless (&IsNatural($decimals)) {
-				&RSAT::error::FatalError("Invalid decimals $decimals. Must be a natural value");
-			}
-    
-			### decimals
-		} elsif ($ARGV[$a] eq "-perm") {
-			$perm = $ARGV[$a+1];
-			unless (&IsNatural($perm)) {
-				&RSAT::error::FatalError("Invalid permutation number $perm. Must be a natural value");
-			}
+	    ### Obsolete option for the input format 
+	} elsif ($ARGV[$a] eq "-format") {
+	    &RSAT::message::Warning("Option -format is obsolete. Use -in_format instead.");
+	    $input_format = $ARGV[$a+1];
+	    unless ($supported_input_format{$input_format}) {
+		&RSAT::error::FatalError("$input_format\tInvalid format for input matrix\tSupported: $supported_input_formats");
+	    }
 
-			### max_profile
-		} elsif ($ARGV[$a] eq "-max_profile") {
-			$max_profile = $ARGV[$a+1];
-			unless (&IsNatural($max_profile)) {
-				&RSAT::error::FatalError("Invalid max_profile $max_profile. Must be a natural value");
-			}
+	    ### output format 
+	} elsif ($ARGV[$a] eq "-to") {
+	    $output_format = $ARGV[$a+1];
+	    unless ($supported_output_format{$output_format}) {
+		&RSAT::error::FatalError("$output_format\tInvalid format for output matrix\tSupported: $supported_output_formats");
+	    }
+	} elsif ($ARGV[$a] eq "-out_format") {
+	    &RSAT::message::Warning("The option -out_format is obsolete, please use -to instead.");
+	    $output_format = $ARGV[$a+1];
+	    unless ($supported_output_format{$output_format}) {
+		&RSAT::error::FatalError("$output_format\tInvalid format for output matrix\tSupported: $supported_output_formats");
+	    }
 
-		} elsif ($ARGV[$a] eq "-logo_format") {
-			$logo_formats = $ARGV[$a+1];
-			push @logo_formats, split(",", $logo_formats);
+	    ### site format 
+	} elsif ($ARGV[$a] eq "-site_format") {
+	    $site_format = $ARGV[$a+1];
+	    unless ($supported_site_format{$site_format}) {
+		&RSAT::error::FatalError("$site_format\tInvalid format for sites\tSupported: $supported_site_formats");
+	    }
 
-		} elsif ($ARGV[$a] eq "-logo_dir") {
-			$logo_dir = $ARGV[$a+1];
-		}
+	    ### pseudo-weight
+	} elsif ($ARGV[$a] eq "-pseudo") {
+	    $pseudo_weight = $ARGV[$a+1];
+	    unless (&IsReal($pseudo_weight)) {
+		&RSAT::error::FatalError("Invalid pseudo-weight $pseudo_weight. Must be a real value");
+	    }
+
+	    ## Equiprobable distribution of the pseudo-weight
+	} elsif ($ARGV[$a] eq "-equi_pseudo") {
+	    $equi_pseudo = 1;
+
+
+	    ## base for the logarihtms in the weight and info content
+	} elsif ($ARGV[$a] eq "-base") {
+	    $info_log_base = $ARGV[$a+1];
+	    &RSAT::error::FatalError("base should be a real number") unless (&IsReal($info_log_base));
+	    &RSAT::error::FatalError("base should be larger than 1") if ($info_log_base <= 1);
+
+	    ### decimals
+	} elsif ($ARGV[$a] eq "-decimals") {
+	    $decimals = $ARGV[$a+1];
+	    unless (&IsNatural($decimals)) {
+		&RSAT::error::FatalError("Invalid decimals $decimals. Must be a natural value");
+	    }
+	    
+	    ### decimals
+	} elsif ($ARGV[$a] eq "-perm") {
+	    $perm = $ARGV[$a+1];
+	    unless (&IsNatural($perm)) {
+		&RSAT::error::FatalError("Invalid permutation number $perm. Must be a natural value");
+	    }
+
+	    ### max_profile
+	} elsif ($ARGV[$a] eq "-max_profile") {
+	    $max_profile = $ARGV[$a+1];
+	    unless (&IsNatural($max_profile)) {
+		&RSAT::error::FatalError("Invalid max_profile $max_profile. Must be a natural value");
+	    }
+
+	} elsif ($ARGV[$a] eq "-logo_format") {
+	    $logo_formats = $ARGV[$a+1];
+	    push @logo_formats, split(",", $logo_formats);
+
+	} elsif ($ARGV[$a] eq "-logo_dir") {
+	    $logo_dir = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-logo_opt") {
+	    $logo_opt .= " ".$ARGV[$a+1];
+
 	}
+    }
 }
 
 ################################################################
@@ -970,6 +993,7 @@ sub Verbose {
     }
     }
   
+
 }
 
 
