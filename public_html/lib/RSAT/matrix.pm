@@ -2938,56 +2938,61 @@ sub makeLogo{
   unlink $seqs_file;
 }
 
+################################################################
+## This method is somewat artificial: it prints fake sequences that
+## respect the residue counts of the matrix, in order to generate a
+## logo with seqlogo
 sub seq_from_matrix {
-	my ($self,$dir) = @_;
-	my $nb_col = $self->ncol();
-	my $nb_row = $self->nrow();
-	@matrix = @{$self->{table}};
+  my ($self,$dir) = @_;
+  my $nb_col = $self->ncol();
+  my $nb_row = $self->nrow();
+  @matrix = @{$self->{table}};
 
-	### Check if the sum of all column identical
-	my @col_sum = col_sum($nb_row,$nb_col,@matrix);
-	for my $i (1..$#col_sum) {
-		if ($col_sum[$i-1] != $col_sum[$i]) {
-			&RSAT::error::FatalError("Your matrix column sums must be equal in order to make logo.");
-		}
-	}
-	my $seq_number = shift @col_sum;
+  ### Check if the sum of all column identical
+  my @col_sum = col_sum($nb_row,$nb_col,@matrix);
+  for my $i (1..$#col_sum) {
+    if ($col_sum[$i-1] != $col_sum[$i]) {
+      &RSAT::error::FatalError("Your matrix column sums must be equal in order to make logo.");
+    }
+  }
+  my $seq_number = shift @col_sum;
 
-	my @letters_at_position = ();
-	for my $c (0..$nb_col-1) {
-		my $i=0;
-		foreach my $letter ("A","C","G","T") {
-			$letters_at_position[$c] .= "$letter" x $matrix[$c][$i];
-			$i++;
-		}
-	}
-	## Print sequences
-	my @intermediate = ();
-	for my $false_seq (@letters_at_position) {
-		my @residues = split ("",$false_seq);
-		push @intermediate, \@residues;
-	}
+  my @letters_at_position = ();
+  for my $c (0..$nb_col-1) {
+    my $i=0;
+    foreach my $letter ($self->getAlphabet()) {
+##    foreach my $letter ("A","C","G","T") {
+      $letters_at_position[$c] .= "$letter" x $matrix[$c][$i];
+      $i++;
+    }
+  }
+  ## Print sequences
+  my @intermediate = ();
+  for my $false_seq (@letters_at_position) {
+    my @residues = split ("",$false_seq);
+    push @intermediate, \@residues;
+  }
 
-	my @seqs=();
-	for my $residue (0..$seq_number-1) {
-		my $seq;
-		for my $array (@intermediate) {
-			$seq .=$array->[$residue];
-		}
-		push @seqs, $seq;
-	}
-	&RSAT::message::Info("Inferred sequences from matrix :\n;",join ("\n;\t",@seqs)) if ($main::verbose >= 4);
-	## create a temporary sequence file which will be deleted after logo creation 
-	#	my $tmp_seq_file = "seq.tmp";
-	#$tmp_seq_file = $dir."/".$tmp_seq_file if ($dir);
-	my $tmp_seq_file = $self->get_attribute("logo_file").".tmp";
-	open SEQ, ">".$tmp_seq_file
-	  or die "Can't write to file ".$tmp_seq_file."$!";
-	print SEQ join("\n",@seqs)."\n";
-	close SEQ;
-	&RSAT::message::Debug("Write sequences temporary in ".$tmp_seq_file) if ($main::verbose >= 3);
-#	return @seqs;
-	return ($tmp_seq_file);
+  my @seqs=();
+  for my $residue (0..$seq_number-1) {
+    my $seq;
+    for my $array (@intermediate) {
+      $seq .=$array->[$residue];
+    }
+    push @seqs, $seq;
+  }
+  &RSAT::message::Info("Inferred sequences from matrix :\n;",join ("\n;\t",@seqs)) if ($main::verbose >= 4);
+  ## create a temporary sequence file which will be deleted after logo creation 
+  #	my $tmp_seq_file = "seq.tmp";
+  #$tmp_seq_file = $dir."/".$tmp_seq_file if ($dir);
+  my $tmp_seq_file = $self->get_attribute("logo_file").".tmp";
+  open SEQ, ">".$tmp_seq_file
+    or die "Can't write to file ".$tmp_seq_file."$!";
+  print SEQ join("\n",@seqs)."\n";
+  close SEQ;
+  &RSAT::message::Debug("Write sequences temporary in ".$tmp_seq_file) if ($main::verbose >= 3);
+  #	return @seqs;
+  return ($tmp_seq_file);
 }
 
 
