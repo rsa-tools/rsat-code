@@ -108,7 +108,8 @@ if ($query->param('freq_estimate') =~ /background/i) {
   %supported_background = (
 			   "upstream"=>1,
 			   "upstream-noorf"=>1,
-			   "intergenic"=>1
+			   "intergenic"=>1,
+			   "protein"=>1,
 			  );
   my $background = $query->param("background");
   unless ($supported_background{$background}) {
