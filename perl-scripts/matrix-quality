@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.55 2008/02/22 01:59:23 jvanheld Exp $
+# $Id: matrix-quality,v 1.56 2008/02/23 00:12:03 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1340,8 +1340,8 @@ sub CompareDistrib {
       ## Alternative options for the large graphs and for the icons, respectively
       my $large_graph_options = " -title1 'ROC curve ".$infile{matrix}."'";
       $large_graph_options .= " -title2 ".$outfile{prefix};
-      $large_graph_options .= " -legend";
-      $large_graph_options .= " -xsize 800 -ysize 400";
+      $large_graph_options .= " -legend ";
+      $large_graph_options .= " -xsize 800 -ysize 400 ";
       $large_graph_options .= " -xleg1 'matrix score' ";
       $large_graph_options .= " -yleg1 'Frequency (inverse cumulative) ' ";
 
@@ -1360,7 +1360,7 @@ sub CompareDistrib {
       print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
 
       ## Generate the icon
-      $icon_options = " -xsize 170 -ysize 120 -o ".$outfile{distrib_compa}."_small.".$image_format;
+      $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_small.".$image_format;
       &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
       ################################################################
@@ -1376,7 +1376,7 @@ sub CompareDistrib {
       print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
 
       ## Generate the icon
-      $icon_options = " -xsize 170 -ysize 120 -o ".$outfile{distrib_compa}."_logy_small.".$image_format;
+      $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_logy_small.".$image_format;
       &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       &RSAT::message::Info("Distribution comparison icon (log Y)", $outfile{distrib_compa}."_logy_small.".$image_format) if ($main::verbose >= 1);
 
@@ -1387,25 +1387,12 @@ sub CompareDistrib {
 	if (defined($file_nb{$roc_ref})) {
 	  $ref_column = 2 + $file_nb{$roc_ref};
 	} else {
-	  &RSAT::message::Warning($roc_ref, "Invalid reference distribution for the ROC curve: should be one of the input sequence types, or 'theor'.");
-	  $roc_ref = "Forced to use theoretical";
+	  if ($roc_ref ne "theor") {
+	    &RSAT::message::Warning($roc_ref, "Invalid reference distribution for the ROC curve: should be one of the input sequence types, or 'theor'.");
+	    $roc_ref = "Forced to use theoretical";
+	  }
 	}
       }
-
-#      &RSAT::message::Debug("ROC reference", $roc_ref, "file_nb=".$file_nb{$roc_ref}, "columne=".$ref_column) if ($main::verbose >= 5);
-#       ## DEBUG
-#       print "; File numbers\n";
-#       foreach my $key (sort {$file_nb{$a} <=> $file_nb{$b}} keys %file_nb) {
-# 	print join ("\t", $file_nb{$key}, $key), "\n";
-#       }
-#       my $f = 0;
-#       print "; Distribution files\n";
-#       foreach my $file (@distrib_files) {
-# 	$f++;
-# 	print join ("\t", $f, $file), "\n";
-#       }
-#      die "HELLO";
-      ## END OF DEBUG
 
       $ycols = join ",", 2..(scalar(@distrib_files)+2);
       $large_graph_options =~ s/-xsize 800/-xsize 400/;
