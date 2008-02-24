@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.2 2008/02/24 01:30:36 jvanheld Exp $
+# $Id: compare-matrices,v 1.3 2008/02/24 11:15:40 jvanheld Exp $
 #
 ############################################################
 
@@ -51,12 +51,65 @@ one is compared with each matrix of file2.
 Any PSSM format supported in RSAT (type I<convert-matrix -h> for a
 description).
 
-
-
 =head1 OUTPUT FORMAT
 
 By default, the output format is a tab-delimited file with one row per
 matrix comparison, and one column per statistics.
+
+=head2 ALGORITHM
+
+The program successibely computs one or several (dis)similiraty
+metrics between each matrix of the first input file and each matrix of
+the secnd input file.
+
+Since the matrices are not supposed to be in phase, for each pair of
+matrix, the program tests all possible I<offset> (shift) values
+between the two matrices.
+
+=head1 (DIS)SIMLARITY METRICS
+
+=head2 Euclidian distance (dEucl)
+
+ dEucl = 1/w * SUM{r} SUM{j=1->w1} (F1_{r,j} - F2_{r,j})^2
+
+where symbols are defined as follows
+
+=over
+
+=item I<w>
+
+length of the alignment (depends on the offset between the two
+matrices).
+
+=item I<r>
+
+residue belonging to the alphabet (A,C,G,T for DNA motifs).
+
+=item I<j>
+
+index of a column of the aligned PSSM.
+
+=item I<F1>
+
+frequency of residue r in the jth column of the aligned subset of the
+first matrix (taking the offset into account).
+
+=item I<F2>
+
+frequency of residue r in the jth column of the aligned subset of the
+second matrix (taking the offset into account).
+
+=back
+
+=head1 REFERENCES
+
+=over
+
+=item Pape, U.J., Rahman, S., and Vingron, M. (2008). Natural
+similarity measures between position frequency matrices with an
+application to clustering. Bioinformatics 24 (3) pp. 350-7.
+
+=back
 
 =cut
 
@@ -81,7 +134,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -132,10 +185,10 @@ package main;
   ################################################################
   ## Read input
   @matrices1 = &RSAT::MatrixReader::readFromFile($infile{file1}, $input_format1);
-  &RSAT::message::Warning(scalar(@matrices1), "Matrices loaded from file 1", $infile{file1})
+  &RSAT::message::TimeWarn(scalar(@matrices1), "Matrices loaded from file 1", $infile{file1})
       if ($main::verbose >= 2);
       @matrices2 = &RSAT::MatrixReader::readFromFile($infile{file2}, $input_format2);
-  &RSAT::message::Warning(scalar(@matrices2), "Matrices loaded from file 2", $infile{file2})
+  &RSAT::message::TimeWarn(scalar(@matrices2), "Matrices loaded from file 2", $infile{file2})
       if ($main::verbose >= 2);
 
   ## Calculate the consensus for each matrix
@@ -172,13 +225,23 @@ package main;
   my $m1 = 0;
   foreach my $matrix1 (@matrices1) {
       $m1++;
-      my $m2 = 0;
+      &RSAT::message::TimeWarn("File 1", "Analyzing matrix", $m1."/".scalar(@matrices1)) 
+	if ($main::verbose >= 3);
+
       my $ncol1 = $matrix1->get_attribute("ncol");
       my $nrow1 = $matrix1->get_attribute("nrow");
       my @counts1 = $matrix1->getMatrix();
+      my @crude_freq1 = $matrix1->getCrudeFrequencies();
 
+
+      my $m2 = 0;
       foreach my $matrix2 (@matrices2) {
-	  $m2++;
+	$m2++;
+	&RSAT::message::TimeWarn("Compparing matrices", 
+				 "file1", $m1."/".scalar(@matrices1),
+				 "file2", $m2."/".scalar(@matrices2),
+				)
+	  if ($main::verbose >= 4);
 	  my $ncol2 = $matrix2->get_attribute("ncol");
 	  my $nrow2 = $matrix2->get_attribute("nrow");
 
@@ -187,6 +250,7 @@ package main;
 	      &RSAT::error::FatalError("Input matrices must have the same number of residues rows)", $nrow1, $nrow2);
 	  }
 	  my @counts2 = $matrix2->getMatrix();
+	  my @crude_freq2 = $matrix2->getCrudeFrequencies();
 
 	  ## Compute offsets for sliding one matrix along the othe one
 	  my $offset_min = 1 - $ncol2;
@@ -227,9 +291,9 @@ package main;
 		  my $col1 = $start1+$pos-1;
 		  my $col2 = $start2+$pos-1;
 		  for my $r (0..($nrow1-1)) {
-		      my $n1 = $counts1[$col1-1][$r];
-		      my $n2 = $counts2[$col2-1][$r];
-		      my $diff = abs($n1 - $n2)/$nrow1;
+		      my $f1 = $crude_freq1[$col1-1][$r];
+		      my $f2 = $crude_freq2[$col2-1][$r];
+		      my $diff = $f1 - $f2;
 		      $dEucl += $diff**2;
 		  }
 	      }
@@ -246,7 +310,6 @@ package main;
 	      push (@out_fields, 
 		    $consensus1,
 		    $consensus2) if ($return_field{consensus});
-	      
 	      print $out join("\t", @out_fields) , "\n";
 	  }
       }
