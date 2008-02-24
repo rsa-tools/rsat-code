@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.62 2008/02/22 17:38:29 jvanheld Exp $
+# $Id: convert-matrix,v 1.63 2008/02/24 01:14:49 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -197,7 +197,7 @@ $out = &OpenOutputFile($outfile{output});
 
 ## Read the input matrices and collect all matrices
 if (scalar(@matrix_files >= 1)) {
-    foreach my $matrix_file (@matrix_files) {	
+    foreach my $matrix_file (@matrix_files) {
 	my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format);
 	foreach my $matrix (@matrices_from_file) {
 	    my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
