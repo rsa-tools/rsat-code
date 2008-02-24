@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.1 2008/02/24 01:04:30 jvanheld Exp $
+# $Id: compare-matrices,v 1.2 2008/02/24 01:30:36 jvanheld Exp $
 #
 ############################################################
 
@@ -81,7 +81,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -132,10 +132,10 @@ package main;
   ################################################################
   ## Read input
   @matrices1 = &RSAT::MatrixReader::readFromFile($infile{file1}, $input_format1);
-  &RSAT::message::Warning("Matrices loaded from file 1", scalar(@matrices1)) 
+  &RSAT::message::Warning(scalar(@matrices1), "Matrices loaded from file 1", $infile{file1})
       if ($main::verbose >= 2);
       @matrices2 = &RSAT::MatrixReader::readFromFile($infile{file2}, $input_format2);
-  &RSAT::message::Warning("Matrices loaded from file 2", scalar(@matrices2))
+  &RSAT::message::Warning(scalar(@matrices2), "Matrices loaded from file 2", $infile{file2})
       if ($main::verbose >= 2);
 
   ## Calculate the consensus for each matrix
@@ -190,7 +190,7 @@ package main;
 
 	  ## Compute offsets for sliding one matrix along the othe one
 	  my $offset_min = 1 - $ncol2;
-	  my $offset_max = $ncol1 -1;
+	  my $offset_max = &RSAT::stats::min($ncol1, $ncol2) -1;
 
 	  ## Slide matrix2 along matrix1
 	  foreach my $offset ($offset_min..$offset_max) {
@@ -234,9 +234,9 @@ package main;
 		  }
 	      }
 	      $dEucl = sqrt($dEucl);
-	      $dEucl /= $ali_len; ## Relativize the distance with respect to the column number
+	      $dEucl /= $ali_len if ($ali_len > 0); ## Relativize the distance with respect to the column number
 	      $dEucl = sprintf("%.3f", $dEucl);
-	      
+
 	      ## Print the output
 	      my @out_fields = ($m1, $m2);
 	      push (@out_fields, $offset, $ali_len);
