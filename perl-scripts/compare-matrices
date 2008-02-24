@@ -1,0 +1,491 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: compare-matrices,v 1.1 2008/02/24 01:04:30 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+compare-matrices
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Compare two or more position-specific scoring matrices (PSSM), and
+return various similarity statistics.
+
+=head1 AUTHORS
+
+Jacques.van.Helden@ulb.ac.be
+
+=head1 CATEGORY
+
+=over
+
+=item sequences
+
+=item pattern matching
+
+=item PSSM
+
+=back
+
+=head1 USAGE
+
+compare-matrices -fil1 inputfile1 -fiel2 inputfile2 [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+The user has to specify exactly input files (options I<-file1> and
+I<-file2>), each containing one or several PSSMs. Each matrix of file
+one is compared with each matrix of file2.
+
+Any PSSM format supported in RSAT (type I<convert-matrix -h> for a
+description).
+
+
+
+=head1 OUTPUT FORMAT
+
+By default, the output format is a tab-delimited file with one row per
+matrix comparison, and one column per statistics.
+
+=cut
+
+
+BEGIN {
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+}
+require "RSA.lib";
+use RSAT::matrix;
+use RSAT::MatrixReader;
+use RSAT::stats;
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  my $start_time = &AlphaDate();
+  $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  %main::infile = ();
+  %main::outfile = ();
+
+  $main::verbose = 0;
+#  $main::in = STDIN;
+  $main::out = STDOUT;
+
+
+  ## Return fields
+  my %supported_return_fields = (
+      "consensus"=>1,
+      "ncol"=>1,
+      "dEucl"=>1
+      );
+  my %return_field = %supported_return_fields;
+
+  ## Matrices
+  local @matrices1 = ();
+  local @matrices2 = ();
+
+  ## input formats
+  %supported_input_format = %RSAT::MatrixReader::supported_input_format;
+  $supported_input_formats = join ",", sort keys %supported_input_format;
+  local $input_format1 = "";
+  local $input_format2 = "";
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+  unless (($infile{file1}) && ($infile{file2})) {
+    &RSAT::error::FatalError("You must define two input files (options -file1 and -file2)");
+  }
+
+  unless (($input_format1) && ($input_format2)) {
+    &RSAT::error::FatalError("You must define two input format(s) (option -format, or options -format1 and -format2)");
+  }
+
+
+  ################################################################
+  ## Open output stream
+  $main::out = &OpenOutputFile($main::outfile{output});
+
+  ################################################################
+  ## Read input
+  @matrices1 = &RSAT::MatrixReader::readFromFile($infile{file1}, $input_format1);
+  &RSAT::message::Warning("Matrices loaded from file 1", scalar(@matrices1)) 
+      if ($main::verbose >= 2);
+      @matrices2 = &RSAT::MatrixReader::readFromFile($infile{file2}, $input_format2);
+  &RSAT::message::Warning("Matrices loaded from file 2", scalar(@matrices2))
+      if ($main::verbose >= 2);
+
+  ## Calculate the consensus for each matrix
+  if ($return_field{consensus}) {
+      foreach my $matrix (@matrices1, @matrices2) {
+	  $matrix->calcConsensus();
+      }
+  }
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose);
+
+  ################################################################
+  ## Print the header
+  my @header = ();
+  push (@header, "m1", "m2");
+  push (@header, "offset", "ali_len");
+  push (@header, "start1", "end1", "start2", "end2");
+  push (@header, "ncol1", "ncol2") if ($return_field{ncol});
+  push (@header, "dEucl") if ($return_field{dEucl});
+  push (@header, "consensus1", "consensus2") if ($return_field{consensus});
+
+
+  my $c = 0;
+  foreach my $field (@header) {
+      $c++;
+      print $out join ("\t", ";", $c, $field), "\n";
+  }
+  print $out "#", join("\t", @header), "\n";
+
+  ################################################################
+  ## compare the matrices and print the result
+  my $m1 = 0;
+  foreach my $matrix1 (@matrices1) {
+      $m1++;
+      my $m2 = 0;
+      my $ncol1 = $matrix1->get_attribute("ncol");
+      my $nrow1 = $matrix1->get_attribute("nrow");
+      my @counts1 = $matrix1->getMatrix();
+
+      foreach my $matrix2 (@matrices2) {
+	  $m2++;
+	  my $ncol2 = $matrix2->get_attribute("ncol");
+	  my $nrow2 = $matrix2->get_attribute("nrow");
+
+	  ## Check that both matrices have the same number of rows
+	  unless ($nrow2 == $nrow1) {
+	      &RSAT::error::FatalError("Input matrices must have the same number of residues rows)", $nrow1, $nrow2);
+	  }
+	  my @counts2 = $matrix2->getMatrix();
+
+	  ## Compute offsets for sliding one matrix along the othe one
+	  my $offset_min = 1 - $ncol2;
+	  my $offset_max = $ncol1 -1;
+
+	  ## Slide matrix2 along matrix1
+	  foreach my $offset ($offset_min..$offset_max) {
+
+	      ## Compute aligned matrix positions
+	      my $ali_len = 0;
+	      $ali_len = &RSAT::stats::min(($ncol2 - abs($offset)), $ncol1);
+	      my $end1 = &RSAT::stats::min($ncol1, $ncol1+$offset);
+	      my $start1 = &RSAT::stats::min($ncol1, $end1-$ali_len+1);
+	      my $start2 = &RSAT::stats::max(1- $offset, 1);
+	      my $end2 = &RSAT::stats::min($start2+$ali_len-1, $ncol2);
+
+	      ## Highlight alignment in consensus
+	      $consensus1 = join ("",
+#				  substr($matrix1->get_attribute("consensus.IUPAC"), 0, $start1-1),
+				  substr($matrix1->get_attribute("consensus.IUPAC"), $start1-1, $ali_len),
+				  "."x($start1-1),
+				  "."x($ncol1-$end1)
+#				  substr($matrix1->get_attribute("consensus.IUPAC"), $end1),
+		  );
+	      $consensus2 = join ("",
+#				  substr($matrix2->get_attribute("consensus.IUPAC"), 0, $start2-1),
+				  substr($matrix2->get_attribute("consensus.IUPAC"), $start2-1, $ali_len),
+				  "."x($start2-1),
+				  "."x($ncol2-$end2)
+#				  substr($matrix2->get_attribute("consensus.IUPAC"), $end2),
+		  );
+
+
+	      ## Compute the Euclidian distance between the matrices
+	      ## (cf Tomtom)
+	      my $dEucl = 0;
+	      foreach my $pos (1..$ali_len) {
+		  my $col1 = $start1+$pos-1;
+		  my $col2 = $start2+$pos-1;
+		  for my $r (0..($nrow1-1)) {
+		      my $n1 = $counts1[$col1-1][$r];
+		      my $n2 = $counts2[$col2-1][$r];
+		      my $diff = abs($n1 - $n2)/$nrow1;
+		      $dEucl += $diff**2;
+		  }
+	      }
+	      $dEucl = sqrt($dEucl);
+	      $dEucl /= $ali_len; ## Relativize the distance with respect to the column number
+	      $dEucl = sprintf("%.3f", $dEucl);
+	      
+	      ## Print the output
+	      my @out_fields = ($m1, $m2);
+	      push (@out_fields, $offset, $ali_len);
+	      push (@out_fields, $start1, $end1, $start2, $end2);
+	      push (@out_fields, $ncol1, $ncol2) if ($return_field{ncol});
+	      push (@out_fields, $dEucl) if ($return_field{dEucl});
+	      push (@out_fields, 
+		    $consensus1,
+		    $consensus2) if ($return_field{consensus});
+	      
+	      print $out join("\t", @out_fields) , "\n";
+	  }
+      }
+  }
+
+
+  ################################################################
+  ## Print output
+
+
+  ################################################################
+  ## Finish verbose
+  if ($main::verbose >= 1) {
+    my $done_time = &AlphaDate();
+    print $main::out "; Job started $start_time\n";
+    print $main::out "; Job done    $done_time\n";
+  }
+
+
+  ################################################################
+  ## Close output stream
+  close $main::out if ($main::outfile{output});
+
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  system "pod2text -c $0";
+  exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+    ## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+      if ($arg eq "-v") {
+	if (&IsNatural($arguments[0])) {
+	  $main::verbose = shift(@arguments);
+	} else {
+	  $main::verbose = 1;
+	}
+
+	## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+      } elsif ($arg eq "-h") {
+	&PrintHelp();
+
+	## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+      } elsif ($arg eq "-help") {
+	&PrintOptions();
+
+	## Input files
+=pod
+
+=item B<-file1 matrix_file1>
+
+The first input file containing one or several matrices.
+
+=cut
+      } elsif ($arg eq "-file1") {
+	$main::infile{file1} = shift(@arguments);
+
+=pod
+
+=item B<-file2 matrix_file2>
+
+The second input file containing one or several matrices.
+
+=cut
+      } elsif ($arg eq "-file2") {
+	$main::infile{file2} = shift(@arguments);
+
+	### Input format 
+=pod
+
+=item B<-format matrix_format>
+
+Specify the matrix format for both input files (alternatively, see
+options -format1 and -format2).
+
+=cut
+      } elsif ($arg eq "-format") {
+	$input_format1 = shift(@arguments);
+	$input_format2 = $input_format1;
+	unless ($supported_input_format{$input_format1}) {
+	  &RSAT::error::FatalError("$input_format1\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
+	}
+
+	### Input format for file1 only
+=pod
+
+=item B<-format1 matrix_format1>
+
+Specify the matrix format for the first input file only (requires
+-format2).
+
+=cut
+      } elsif ($arg eq "-format1") {
+	$input_format1 = shift(@arguments);
+	unless ($supported_input_format{$input_format1}) {
+	  &RSAT::error::FatalError("$input_format1\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
+	}
+
+	### Input format for file2 only
+=pod
+
+=item B<-format2 matrix_format2>
+
+Specify the matrix format for the second input file only (requires
+-format1).
+
+=cut
+      } elsif ($arg eq "-format2") {
+	$input_format2 = shift(@arguments);
+	unless ($supported_input_format{$input_format2}) {
+	  &RSAT::error::FatalError("$input_format2\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
+	}
+
+	## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+      } elsif ($arg eq "-o") {
+	$main::outfile{output} = shift(@arguments);
+
+      } else {
+	&FatalError(join("\t", "Invalid option", $arg));
+
+      }
+  }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; compare-matrices ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-6s\t%s\n", $key, $value;
+	}
+    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    
+    print $main::out "; Matrices\n";
+    printf $main::out ";\t%-6s\t%d\t%s\n", "file1", scalar(@matrices1), $infile{file1};
+    printf $main::out ";\t%-6s\t%d\t%s\n", "file2", scalar(@matrices2), $infile{file2};
+    
+
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item B<convert-matrix>
+
+=item B<matrix-scan>
+
+=back
+
+=head1 WISH LIST
+
+=over
+
+=item check and correct the Euclidian distance
+
+=item implement other metrices
+
+=item add comparison of m1 with reverse complement of m2
+
+=back
+
+=cut
