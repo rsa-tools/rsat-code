@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.13 2008/02/25 09:31:20 jvanheld Exp $
+# $Id: compare-matrices,v 1.14 2008/02/25 09:32:32 jvanheld Exp $
 #
 ############################################################
 
@@ -121,7 +121,17 @@ Mean frequency computed over all cells of the second matrix.
 
 Note that our Euclidian distance is relativized by the number of
 aligned columns (I<w>). This differs from the definition provided in
-UJ Pape et al.
+Pape et al. (2008).
+
+=head2 Kullback-Leibler distance (dKL)
+
+ dKL = 1/w * SUM{i=1->r} SUM{j=1->w} (
+                 f1{i,j}*log(f1{i,j}/f2{i,j})
+               + f2{i,j}*log(f2{i,j}/f1{i,j}))
+
+Note that our KL distance is relativized by the number of
+aligned columns (I<w>). This differs from the definition provided in
+Pape et al. (2008).
 
 =head2 Covariance (cov)
 
@@ -132,16 +142,6 @@ UJ Pape et al.
  v1 = 1/n * SUM{i=1->r} SUM{j=1->w} (f1{i,j} - f1m)^2
  v2 = 1/n * SUM{i=1->r} SUM{j=1->w} (f2{i,j} - f2m)^2
  cor = cov/ sqrt(v1*v2)
-
-=head2 Kullback-Leibler distance (dKL)
-
- dKL = 1/w * SUM{i=1->r} SUM{j=1->w} (
-                 f1{i,j}*log(f1{i,j}/f2{i,j})
-               + f2{i,j}*log(f2{i,j}/f1{i,j}))
-
-Note that our KL distance is relativized by the number of
-aligned columns (I<w>). This differs from the definition provided in
-UJ Pape et al.
 
 =head1 REFERENCES
 
@@ -176,7 +176,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
