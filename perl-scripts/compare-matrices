@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.16 2008/02/25 13:58:18 rsat Exp $
+# $Id: compare-matrices,v 1.17 2008/02/25 16:37:22 rsat Exp $
 #
 ############################################################
 
@@ -165,6 +165,7 @@ require "RSA.lib";
 use RSAT::matrix;
 use RSAT::MatrixReader;
 use RSAT::stats;
+use Data::Dumper;
 
 
 
@@ -176,7 +177,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -236,8 +237,8 @@ package main;
 
   ################################################################
   ## Check argument values
-  unless (($infile{file1}) && ($infile{file2})) {
-    &RSAT::error::FatalError("You must define two input files (options -file1 and -file2)");
+  unless ((($infile{file1}) && ($infile{file2})) || (($infile{file1}) && ($infile{mlist2})) || (($infile{mlist1}) && ($infile{file2})) || (($infile{mlist1}) && ($infile{mlist2}))) {
+    &RSAT::error::FatalError("You must define two input files (one combination among options -file1,-file2, mlist1, mlist2)");
   }
 
   unless (($input_format1) && ($input_format2)) {
@@ -270,12 +271,86 @@ package main;
 
   ################################################################
   ## Read input
-  @matrices1 = &RSAT::MatrixReader::readFromFile($infile{file1}, $input_format1);
-  &RSAT::message::TimeWarn(scalar(@matrices1), "Matrices loaded from file 1", $infile{file1})
-      if ($main::verbose >= 2);
+  my @matrices1 = ();
+  my @matrices2 = ();
+  my @matrix_files1 = ();
+  my @matrix_files2 = ();
+  if ($infile{file1}){
+      @matrices1 = &RSAT::MatrixReader::readFromFile($infile{file1}, $input_format1);
+      &RSAT::message::TimeWarn(scalar(@matrices1), "Matrices loaded from file 1", $infile{file1})
+	  if ($main::verbose >= 2);
+  }elsif ($infile{mlist1}){
+      my ($mlist, $input_dir) = &OpenInputFile($infile{mlist1});
+      while (<$mlist>) {
+	  next if (/'^;'/);		# skip comment lines
+	  next if (/'^#'/);		# skip header lines
+	  next if (/'^--'/);	# skip mysql-type comment lines
+	  next unless (/\S/);	# skip empty lines
+	  my @fields = split /\s+/;
+	  my $matrix_file = $fields[0];
+	  push @matrix_files1, $matrix_file;
+      }
+      close $mlist;
+      &RSAT::message::Info("Read matrix list from file", $infile{mlist1}, scalar(@matrix_files1), "matrices") 
+	  if ($main::verbose >= 2);
+      
+
+      if (scalar(@matrix_files1 >= 1)) {
+	  foreach my $matrix_file (@matrix_files1) {
+	      my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format1);
+	      foreach my $matrix (@matrices_from_file) {
+		  my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+		  $matrix_name =~ s/\.\w+$//; ## suppress the extension from the file name
+		  unless (defined($matrix->get_attribute("name"))){
+		      $matrix->set_attribute("name", $matrix_name);
+		  }
+		  push @matrices1, $matrix;
+	      }
+	  }
+      }else{
+	  &RSAT::error::FatalError("The matrix ist must contain at least one matrix file path."); 
+      }
+      
+  }
+  if ($infile{file2}){
       @matrices2 = &RSAT::MatrixReader::readFromFile($infile{file2}, $input_format2);
-  &RSAT::message::TimeWarn(scalar(@matrices2), "Matrices loaded from file 2", $infile{file2})
-      if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn(scalar(@matrices2), "Matrices loaded from file 2", $infile{file2})
+	  if ($main::verbose >= 2);
+  }elsif($infile{mlist2}){
+      my ($mlist, $input_dir) = &OpenInputFile($infile{mlist2});
+      while (<$mlist>) {
+	  next if (/'^;'/);		# skip comment lines
+	  next if (/'^#'/);		# skip header lines
+	  next if (/'^--'/);	# skip mysql-type comment lines
+	  next unless (/\S/);	# skip empty lines
+	  my @fields = split /\s+/;
+	  my $matrix_file = $fields[0];
+	  push @matrix_files2, $matrix_file;
+	  
+      }
+      close $mlist;
+      &RSAT::message::Info("Read matrix list from file", $infile{mlist2}, scalar(@matrix_files1), "matrices") 
+	  if ($main::verbose >= 2);
+      
+      if (scalar(@matrix_files2 >= 1)) {
+	  foreach my $matrix_file (@matrix_files2) {
+	      my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format2);
+	      foreach my $matrix (@matrices_from_file) {
+		  my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+		  $matrix_name =~ s/\.\w+$//; ## suppress the extension from the file name
+		  unless (defined($matrix->get_attribute("name"))){
+		      $matrix->set_attribute("name", $matrix_name);
+		  }
+		  push @matrices2, $matrix;
+	      }
+	  }
+      }else{
+	  &RSAT::error::FatalError("The matrix ist must contain at least one matrix file path."); 
+      }
+      
+  }
+  #######
+
 
   ## Calculate the consensus for each matrix
   if ($return_field{consensus}) {
@@ -291,7 +366,7 @@ package main;
   ################################################################
   ## Print the header
   my @header = ();
-  push (@header, "comp_nb");
+  push (@header, "compa");
   push (@header, "m1", "m2");
   push (@header, "offset", "direct", "ali_len");
   push (@header, "start1", "end1", "start2", "end2");
@@ -304,7 +379,7 @@ package main;
   ## Print a description of the output fields
   if ($main::verbose >= 1) {
       my %description = ();
-      $description{comp_nb} = "number of comparison";
+      $description{compa} = "number of comparison";
       $description{m1} = "matrix number in file 1";
       $description{m2} = "matrix number in file 2";
       $description{offset} = "shift of the second matrix relative to the first matrix (negative:left; positive: right)";
@@ -491,7 +566,7 @@ package main;
 	next unless (&CheckThresholds("cor", $cor)); $cor{$offset} = $cor;
 
 	## Generate the output line
-	my @out_fields = ($comp_nb,$m1, $m2);
+	my @out_fields = ($comp_nb,$matrix1->get_attribute("name"), $matrix2->get_attribute("name"));
 	push (@out_fields, $offset, $direction, $ali_len);
 	push (@out_fields, $start1, $end1, $start2, $end2);
 	push (@out_fields, sprintf("%.5f", $dEucl)) if ($return_field{dEucl});
@@ -647,6 +722,27 @@ The second input file containing one or several matrices.
       } elsif ($arg eq "-file2") {
 	$main::infile{file2} = shift(@arguments);
 
+=pod
+
+=item B<-mlist1 matrix list>
+
+The fisrt input file contaning a list of matrix files (given as paths)
+
+=cut
+      } elsif ($arg eq "-mlist1") {
+	$main::infile{mlist1} = shift(@arguments);
+
+=pod
+
+=item B<-mlist2 matrix list>
+
+The second input file contaning a list of matrix files (given as paths)
+
+=cut
+      } elsif ($arg eq "-mlist2") {
+	$main::infile{mlist2} = shift(@arguments);
+
+
 	### Input format 
 =pod
 
@@ -656,6 +752,8 @@ Specify the matrix format for both input files (alternatively, see
 options -format1 and -format2).
 
 =cut
+
+
       } elsif ($arg eq "-format") {
 	$input_format1 = shift(@arguments);
 	$input_format2 = $input_format1;
