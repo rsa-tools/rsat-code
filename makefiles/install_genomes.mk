@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.32 2008/02/21 23:10:05 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.33 2008/02/25 06:17:07 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -88,6 +88,27 @@ install_one_prokaryote:
 	@echo "${DATE}	Installing prokaryote ${PRO}"
 	@${MAKE} install_one_organism ORG=${PRO}		\
 		NCBI_DIR=${NCBI_DIR}/Bacteria
+
+################################################################
+## Install phages from NCBI
+PHAGE=Enterobacteria_phage_lambda
+PHAGE_DIR=/bio/databases/Phages4rsat
+install_one_phage:
+	@echo
+	@echo "${DATE}	Installing prokaryote ${PHAGE}"
+	@${MAKE} install_one_organism ORG=${PHAGE}		\
+		NCBI_DIR=${PHAGE_DIR}
+
+### All the phage in NCBI genome directory
+PHAGES = `ls -1 ${PHAGE_DIR} | grep _ | sort -u | xargs `
+list_phages:
+	@echo "Phage to install	${PHAGES}"
+
+### Install all phages genomes on RSAT
+install_all_phages:
+	@for pro in ${PHAGES}; do				\
+		${MAKE} install_one_phage PHAGE=$${pro};	\
+	done
 
 ### All the fungi in NCBI genome directory
 NCBI_FUNGI = `ls -1 ${NCBI_DIR}/Fungi | grep _ | grep -v Candida_albicans | sort -u | xargs `
