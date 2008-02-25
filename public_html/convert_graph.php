@@ -127,6 +127,7 @@
     }  
     if (!$soap_error) {
       $response =  $echoed->response;
+//       print_r ($response);
       $command = $response->command;
       $server = $response->server;
       $client = $response->client;

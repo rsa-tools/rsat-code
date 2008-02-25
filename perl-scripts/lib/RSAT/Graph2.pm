@@ -1748,7 +1748,7 @@ sub load_from_gml {
       }
     }
 
-    exit(0);
+    
     
 
     foreach my $edge (@fichier_edge) {
@@ -2268,7 +2268,7 @@ sub get_position {
     &RSAT::message::TimeWarn("Calculating the layout with $fr_layout") if ($main::verbose >= 2);
     my $coordinates = `$command`;
     my @lignes = split /\n/, $coordinates;
-#     system ("rm $tempfile");
+    system ("rm $tempfile");
     foreach my $ligne (@lignes) {
       ## The four first line of the output of fr_layout displays the iterations
       ## of the program and so must no be parsed, so we skip them.

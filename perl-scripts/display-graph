@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.10 2007/12/12 08:12:13 rsat Exp $
+# $Id: display-graph,v 1.11 2008/02/25 10:15:01 rsat Exp $
 #
 ############################################################
 
@@ -123,6 +123,7 @@ package main;
     ## Calculates the layout 
     if ($layout) {
       $graph->get_position();
+      
     }
     ## Calculate the minimum and maximum values of the weight on the edges
     my ($edge_mean, $edge_sd, $edge_min, $edge_max);
@@ -425,6 +426,7 @@ This option must be provided if the input graph is not GML.
 =cut
 	} elsif ($arg eq "-layout") {
 	    $layout = 1;
+	    
 	    
 	    ## Source column
 =pod
