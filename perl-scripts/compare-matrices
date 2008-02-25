@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.8 2008/02/25 01:55:47 jvanheld Exp $
+# $Id: compare-matrices,v 1.9 2008/02/25 01:56:23 jvanheld Exp $
 #
 ############################################################
 
@@ -148,7 +148,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -336,7 +336,7 @@ package main;
       my $offset_min = 1 - $ncol2;
 #      my $offset_max = &RSAT::stats::min($ncol1, $ncol2) -1;
       my $offset_max = $ncol1 - 1;
-      &RSAT::message::Debug("offset range", $offset_min, $offset_max) if ($main::verbose >= 0);
+#      &RSAT::message::Debug("offset range", $offset_min, $offset_max) if ($main::verbose >= 10);
 
 
       ## Prepare output variables
