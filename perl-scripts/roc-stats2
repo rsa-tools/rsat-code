@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: roc-stats2,v 1.7 2007/12/07 08:36:33 jvanheld Exp $
+# $Id: roc-stats2,v 1.8 2008/02/25 10:15:02 rsat Exp $
 #
 ############################################################
 
@@ -456,7 +456,7 @@ package main;
       ## Draw stats as a function of score
       my $cmd = "XYgraph -i ".$main::outfile{output};
       $cmd .= " -title1 'Score distributions'";
-      $cmd .= " -xcol 1 -ycol 7,8,9,1à,11 -xleg1 'score' -lines -pointsize 0 -ymin 0 -ymax 1 -legend";
+      $cmd .= " -xcol 1 -ycol 7,8,9,1ï¿½,11 -xleg1 'score' -lines -pointsize 0 -ymin 0 -ymax 1 -legend";
       $cmd .= "  -ygstep1 0.1 -ygstep2 0.05";
       $cmd .= " -format ".$img_format;
       $cmd .= " -o ".$output_table."_scores.".$img_format;
@@ -780,7 +780,7 @@ negative elements is corrected accordingly.
 =cut
 	} elsif ($arg eq "-total") {
 	  $total_elements = shift (@arguments);
-	  &RSAT::Error::FatalError($total_elements, "Invalid value for the total number of elements. Should be a strictyl positive integer") 
+	  &RSAT::error::FatalError($total_elements, "Invalid value for the total number of elements. Should be a strictyl positive integer") 
 	    unless ((&IsNatural($total_elements)) && ($total_elements > 0));
 
 	} else {
