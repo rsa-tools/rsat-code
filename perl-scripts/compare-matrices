@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.4 2008/02/25 00:09:17 jvanheld Exp $
+# $Id: compare-matrices,v 1.5 2008/02/25 00:36:49 jvanheld Exp $
 #
 ############################################################
 
@@ -68,11 +68,7 @@ between the two matrices.
 
 =head1 (DIS)SIMLARITY METRICS
 
-=head2 Euclidian distance (dEucl)
-
- dEucl = 1/w * SUM{r} SUM{j=1->w1} (F1_{r,j} - F2_{r,j})^2
-
-where symbols are defined as follows
+In the formulae below, symbols are defined as follows
 
 =over
 
@@ -99,7 +95,25 @@ first matrix (taking the offset into account).
 frequency of residue r in the jth column of the aligned subset of the
 second matrix (taking the offset into account).
 
+=head2 Euclidian distance (dEucl)
+
+ dEucl = 1/w * SUM{r} SUM{j=1->w1} (F1_{r,j} - F2_{r,j})^2
+
+Note that our Euclidian distance is relativized by the number of
+aligned columns (I<w>). This differs from the definition provided in
+UJ Pape et al.
+
 =back
+
+=head2 Covariance (cov)
+
+=head2 Coefficient of correlation (cor)
+
+=head2 Kullback-Leibler distance (dKL)
+
+Note that our KL distance is relativized by the number of
+aligned columns (I<w>). This differs from the definition provided in
+UJ Pape et al.
 
 =head1 REFERENCES
 
@@ -134,7 +148,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -147,11 +161,11 @@ package main;
 
   ## Return fields
   my %supported_return_fields = (
+      "dEucl"=>1, ## Euclidian distance
+      "dKL"=>1, ## Kullback-Leibler distance
+      "cor"=>1, ## Coefficient of correlation
+      "cov"=>1, ## Covariance
       "consensus"=>1,
-      "ncol"=>1,
-      "dEucl"=>1,
-      "cor"=>1,
-      "cov"=>1,
       );
   my %return_field = %supported_return_fields; ## Temporary
 
@@ -165,6 +179,7 @@ package main;
 			      offset
 			      ali_len
 			      dEucl
+			      dKL
 			      cov
 			      cor
 			      rank
@@ -205,11 +220,21 @@ package main;
   ## Treat dependencies between fields to compute
 
   ## All return fields should be computed
-  my %calc_field = %return_field; 
+  my %calc_field = %return_field;
+
+  ## All fields having thresholds must be computed
+  foreach my $field (keys %lth) {
+    $calc_field{$field} = 1;
+  }
+  foreach my $field (keys %uth) {
+    $calc_field{$field} = 1;
+  }
+
+  ## The sorting field must be computed
+  $calc_field{$sort_field} = 1;
 
   ## Some fields must be computed as intermediate results for other fields
   $calc_field{cov} = 1 if ($calc_field{cor});
-
 
   ################################################################
   ## Open output stream
@@ -241,8 +266,8 @@ package main;
   push (@header, "m1", "m2");
   push (@header, "offset", "direct", "ali_len");
   push (@header, "start1", "end1", "start2", "end2");
-#  push (@header, "ncol1", "ncol2") if ($return_field{ncol});
   push (@header, "dEucl") if ($return_field{dEucl});
+  push (@header, "dKL") if ($return_field{dKL});
   push (@header, "cov") if ($return_field{cov});
   push (@header, "cor") if ($return_field{cor});
   push (@header, "consensus1", "consensus2") if ($return_field{consensus});
@@ -259,9 +284,8 @@ package main;
       $description{end1} = "End position of the alignment in matrix 1";
       $description{start2} = "Start position of the alignment in matrix 2";
       $description{end2} = "End position of the alignment in matrix 2";
-#      $description{ncol1} = "number of columns in matrix 1";
-#      $description{ncol2} = "number of columns in matrix 2";
       $description{dEucl} = "Euclidian distance";
+      $description{dKL} = "Kullback-Leibler distance";
       $description{cov} = "Covariance";
       $description{cor} = "Coefficient of correlation";
       $description{consensus1} = "IUPAC consensus of matrix 1";
@@ -316,6 +340,7 @@ package main;
       my %cov = (); ## Covariances as a function of the offset
       my %cor = (); ## Correlations
       my %dEucl = (); ## Euclidian distances
+      my %dKL = (); ## Kullback-Leibler distances
       my %out_line = (); ## Output line for each offset value
       my @output_offset = (); ## Offsets passing the thresholds
       my $direction = "D";
@@ -353,6 +378,7 @@ package main;
 	## Compute the Euclidian distance between the matrices
 	## (cf Tomtom)
 	my $dEucl = 0;
+	my $dKL = 0;
 	my $cov = 0;
 	my $cor = 0;
 	my $sum_f1 = 0;
@@ -372,6 +398,13 @@ package main;
 	      $dEucl +=  ($f1 - $f2)**2;
 	    }
 
+	    ## Update sum for Kullback-Leibler distance
+	    if ($calc_field{dKL}) {
+	      if ($f1*$f2 > 0) {
+		$dKL += $f1*log($f1/$f2) + $f2*log($f2/$f1);
+	      }
+	    }
+
 	    ## Update sums for correlations
 	    if (($calc_field{cov}) || ($calc_field{cor})){
 	      $sum_f1 += $f1;
@@ -386,10 +419,16 @@ package main;
 	## Compute Euclidian distance
 	if ($calc_field{dEucl}) {
 	  $dEucl = sqrt($dEucl);
-	  $dEucl /= $ali_len if ($ali_len > 0); ## Relativize the distance with respect to the column number
-	  $dEucl = sprintf("%.3f", $dEucl);
+	  $dEucl /= $ali_len if ($ali_len > 0); ## Relativize Euclidian distance with respect to the column number
 	}
-	next unless (&CheckThresholds("dEucl", $dEucl));
+	next unless (&CheckThresholds("dEucl", $dEucl)); $dEucl{$offset} = $dEucl;
+
+	## Compute Kullback-Leibler distance
+	if ($calc_field{dKL}) {
+	  $dKL /= 2;
+	  $dKL /= $ali_len if ($ali_len > 0); ## Relativize KL distance with respect to the column number
+	}
+	next unless (&CheckThresholds("dKL", $dKL)); $dKL{$offset} = $dKL;
 
 	## Compute coefficient of correlation
 	my $n = 0;
@@ -402,23 +441,15 @@ package main;
 	  $cov = $sum_f1f2/$n - $sum_f2*$sum_f2/$n**2;
 	  $cor = $cov/sqrt($v1*$v2);
 	}
-	next unless (&CheckThresholds("cov", $cov));
-	next unless (&CheckThresholds("cor", $cor));
-
-	## Index fields for sorting the result
-	$dEucl{$offset} = $dEucl;
-	$cov{$offset} = $cov;
-	$cor{$offset} = $cor;
+	next unless (&CheckThresholds("cov", $cov)); $cov{$offset} = $cov;
+	next unless (&CheckThresholds("cor", $cor)); $cor{$offset} = $cor;
 
 	## Generate the output line
 	my @out_fields = ($m1, $m2);
 	push (@out_fields, $offset, $direction, $ali_len);
 	push (@out_fields, $start1, $end1, $start2, $end2);
-	#	      push (@out_fields, $ncol1, $ncol2) if ($return_field{ncol});
-	push (@out_fields, $dEucl) if ($return_field{dEucl});
-	#	      push (@out_fields, $n,
-	#		    sprintf("%.3f\t%.3f\t%.3f", $sum_sq_f1,$sum_sq_f2,$sum_f1f2),
-	#		    sprintf("%.3f\t%.3f\t%.3f", $v1, $v2, $cov)) if ($return_field{cov});
+	push (@out_fields, sprintf("%.5f", $dEucl)) if ($return_field{dEucl});
+	push (@out_fields, sprintf("%.5f", $dKL)) if ($return_field{dKL});
 	push (@out_fields, sprintf("%.4f", $cov)) if ($return_field{cov});
 	push (@out_fields, sprintf("%.4f", $cor)) if ($return_field{cor});
 	push (@out_fields,
@@ -430,12 +461,23 @@ package main;
 
       ## Sort the results
       my @sorted_offset;
+
+	## Euclidian distance is sorted in ascending order
       if ($sort_field eq "dEucl") {
-	@sorted_offset = sort {$dEucl{$b} <=> $dEucl{$a}} @output_offset;
+	@sorted_offset = sort {$dEucl{$a} <=> $dEucl{$b}} @output_offset;
+
+	## Kullback-Leibler distance is sorted in ascending order
+      } elsif ($sort_field eq "dKL") {
+	@sorted_offset = sort {$dKL{$a} <=> $dKL{$b}} @output_offset;
+
+	## covariance is sorted in descending order
       } elsif ($sort_field eq "cov") {
 	@sorted_offset = sort {$cov{$b} <=> $cov{$a}} @output_offset;
+
+	## Correlation is sorted in descending order
       } elsif ($sort_field eq "cor") {
 	@sorted_offset = sort {$cor{$b} <=> $cor{$a}} @output_offset;
+
       } else {
 	@sorted_offset = @output_offset;
       }
@@ -616,6 +658,19 @@ allows to use the command within a pipe.
 =cut
       } elsif ($arg eq "-o") {
 	$main::outfile{output} = shift(@arguments);
+
+	## Sort field
+=pod
+
+=item	B<-sort sort_field>
+
+Field to sort the results.
+
+Supported: dEucl, cor, cov
+
+=cut
+      } elsif ($arg eq "-sort") {
+	$main::sort_field = shift(@arguments);
 
 	## Thresholds
 =pod
