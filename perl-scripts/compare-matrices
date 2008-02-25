@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.14 2008/02/25 09:32:32 jvanheld Exp $
+# $Id: compare-matrices,v 1.15 2008/02/25 12:41:17 rsat Exp $
 #
 ############################################################
 
@@ -40,7 +40,7 @@ Jacques.van.Helden@ulb.ac.be
 
 =head1 USAGE
 
-compare-matrices -fil1 inputfile1 -fiel2 inputfile2 [-o outputfile] [-v #] [...]
+compare-matrices -file1 inputfile1 -file2 inputfile2 [-o outputfile] [-v #] [...]
 
 =head1 INPUT FORMAT
 
@@ -58,7 +58,7 @@ matrix comparison, and one column per statistics.
 
 =head2 ALGORITHM
 
-The program successibely computs one or several (dis)similiraty
+The program successively computs one or several (dis)similiraty
 metrics between each matrix of the first input file and each matrix of
 the secnd input file.
 
@@ -68,7 +68,7 @@ between the two matrices.
 
 =head1 (DIS)SIMLARITY METRICS
 
-In the formulae below, symbols are defined as follows
+In the formula below, symbols are defined as follows
 
 =over
 
@@ -176,7 +176,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -291,6 +291,7 @@ package main;
   ################################################################
   ## Print the header
   my @header = ();
+  push (@header, "comp_nb");
   push (@header, "m1", "m2");
   push (@header, "offset", "direct", "ali_len");
   push (@header, "start1", "end1", "start2", "end2");
@@ -303,6 +304,7 @@ package main;
   ## Print a description of the output fields
   if ($main::verbose >= 1) {
       my %description = ();
+      $description{comp_nb} = "number of comparison";
       $description{m1} = "matrix number in file 1";
       $description{m2} = "matrix number in file 2";
       $description{offset} = "shift of the second matrix relative to the first matrix (negative:left; positive: right)";
@@ -331,6 +333,7 @@ package main;
   ################################################################
   ## compare the matrices and print the result
   my $m1 = 0;
+  my $comp_nb = 0;
   foreach my $matrix1 (@matrices1) {
     $m1++;
     &RSAT::message::TimeWarn("File 1", "Analyzing matrix", $m1."/".scalar(@matrices1)) 
@@ -345,7 +348,7 @@ package main;
     my $m2 = 0;
     foreach my $matrix2 (@matrices2) {
       $m2++;
-      &RSAT::message::TimeWarn("Comparing matrices", 
+       &RSAT::message::TimeWarn("Comparing matrices", 
 			       "file1", $m1."/".scalar(@matrices1),
 			       "file2", $m2."/".scalar(@matrices2),
 			      )
@@ -378,6 +381,7 @@ package main;
 
       ## Slide matrix2 along matrix1
       foreach my $offset ($offset_min..$offset_max) {
+	$comp_nb++;
 	next unless (&CheckThresholds("offset", $offset));
 
 	## Compute aligned matrix positions
@@ -487,7 +491,7 @@ package main;
 	next unless (&CheckThresholds("cor", $cor)); $cor{$offset} = $cor;
 
 	## Generate the output line
-	my @out_fields = ($m1, $m2);
+	my @out_fields = ($comp_nb,$m1, $m2);
 	push (@out_fields, $offset, $direction, $ali_len);
 	push (@out_fields, $start1, $end1, $start2, $end2);
 	push (@out_fields, sprintf("%.5f", $dEucl)) if ($return_field{dEucl});
