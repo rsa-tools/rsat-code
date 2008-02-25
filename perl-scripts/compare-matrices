@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.6 2008/02/25 00:47:33 jvanheld Exp $
+# $Id: compare-matrices,v 1.7 2008/02/25 01:50:02 jvanheld Exp $
 #
 ############################################################
 
@@ -148,7 +148,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -334,7 +334,10 @@ package main;
 
       ## Compute offsets for sliding one matrix along the othe one
       my $offset_min = 1 - $ncol2;
-      my $offset_max = &RSAT::stats::min($ncol1, $ncol2) -1;
+#      my $offset_max = &RSAT::stats::min($ncol1, $ncol2) -1;
+      my $offset_max = $ncol1 - 1;
+      &RSAT::message::Debug("offset range", $offset_min, $offset_max) if ($main::verbose >= 0);
+
 
       ## Prepare output variables
       my %cov = (); ## Covariances as a function of the offset
@@ -347,15 +350,16 @@ package main;
 
       ## Slide matrix2 along matrix1
       foreach my $offset ($offset_min..$offset_max) {
+	next unless (&CheckThresholds("offset", $offset));
 
 	## Compute aligned matrix positions
-	my $ali_len = 0;
-	$ali_len = &RSAT::stats::min(($ncol2 - abs($offset)), $ncol1);
+
+	my $end1 = &RSAT::stats::min($ncol1, $ncol2+$offset);
+	my $start1 = &RSAT::stats::max(1, $offset+1, $end1-$ncol2+1);
+	my $ali_len = $end1-$start1+1;
 	next unless (&CheckThresholds("ali_len", $ali_len));
 
-	my $end1 = &RSAT::stats::min($ncol1, $ncol1+$offset);
-	my $start1 = &RSAT::stats::min($ncol1, $end1-$ali_len+1);
-	my $start2 = &RSAT::stats::max(1- $offset, 1);
+	my $start2 = &RSAT::stats::max(1, 1- $offset);
 	my $end2 = &RSAT::stats::min($start2+$ali_len-1, $ncol2);
 
 	## Highlight alignment in consensus
@@ -373,6 +377,16 @@ package main;
 			    "."x($ncol2-$end2)
 			    #				  substr($matrix2->get_attribute("consensus.IUPAC"), $end2),
 			   );
+
+	&RSAT::message::Debug("offset=".$offset, 
+			      "ali_len=".$ali_len,
+			      "start1=".$start1,
+			      "end1=".$end1,
+			      "start2=".$start2,
+			      "end2=".$end2,
+			      "consensus1=".$consensus1,
+			      "consensus2=".$consensus2,
+			     ) if ($main::verbose >= 0);
 
 
 	## Compute the Euclidian distance between the matrices
@@ -741,9 +755,25 @@ sub Verbose {
 	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
 	}
     }
-    print $main::out "; Number of matrices per file\n";
-    printf $main::out ";\t%-6s\t%d\t%s\n", "file1", scalar(@matrices1), $infile{file1};
-    printf $main::out ";\t%-6s\t%d\t%s\n", "file2", scalar(@matrices2), $infile{file2};
+
+    print $main::out "; Matrices\n";
+    print $main::out join ("\t", ";", "file", "matrix", "ncol", "consensus.IUPAC"),  "\n";
+
+    ## Matrices in the first file
+    my $m1 = 0;
+    foreach my $matrix (@matrices1) {
+      $m1++;
+      print $main::out join ("\t", ";", "file1", $m1, $matrix->get_attribute("ncol"), 
+			     $matrix->get_attribute("consensus.IUPAC")), "\n";
+    }
+
+    ## Matrices in the second file
+    my $m2 = 0;
+    foreach my $matrix (@matrices2) {
+      $m2++;
+      print $main::out join ("\t", ";", "file2", $m2, $matrix->get_attribute("ncol"), 
+			     $matrix->get_attribute("consensus.IUPAC")),  "\n";
+    }
 
     print $main::out "; Thresholds\n";
 }
