@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.9 2008/02/25 01:56:23 jvanheld Exp $
+# $Id: compare-matrices,v 1.10 2008/02/25 09:19:07 jvanheld Exp $
 #
 ############################################################
 
@@ -77,37 +77,61 @@ In the formulae below, symbols are defined as follows
 length of the alignment (depends on the offset between the two
 matrices).
 
+=item I<n>
+
+Number of cells in the matrix
+
 =item I<r>
 
-residue belonging to the alphabet (A,C,G,T for DNA motifs).
+Number of rows in the matrix, which correspond to the number of
+residues in the alphabet (A,C,G,T for DNA motifs).
+
+=item I<i>
+
+Index of a row of the aligned PSSM (corresponds to a residue).
 
 =item I<j>
 
-index of a column of the aligned PSSM.
+Index of a column of the aligned PSSM (corresponds to an aligned
+position).
 
-=item I<F1>
+=item I<F1{i,j}>
 
-frequency of residue r in the jth column of the aligned subset of the
+frequency of residue I<r> in the I<jth> column of the aligned subset of the
 first matrix (taking the offset into account).
 
-=item I<F2>
+=item I<F2{i,j}>
 
 frequency of residue r in the jth column of the aligned subset of the
 second matrix (taking the offset into account).
 
+=item I<F1m>
+
+Mean frequency computed over all cells of the first matrix.
+
+=item I<F2m>
+
+Mean frequency computed over all cells of the second matrix.
+
+=back
+
 =head2 Euclidian distance (dEucl)
 
- dEucl = 1/w * SUM{r} SUM{j=1->w1} (F1_{r,j} - F2_{r,j})^2
+ dEucl = 1/w * SUM{i=1->r} SUM{j=1->w1} (F1_{i,j} - F2_{i,j})^2
 
 Note that our Euclidian distance is relativized by the number of
 aligned columns (I<w>). This differs from the definition provided in
 UJ Pape et al.
 
-=back
-
 =head2 Covariance (cov)
 
+ cov = 1/n * SUM{i=1->r} SUM{j=1->w1} (F1_{i,j} - F1m) * (F2_{i,j} - F2m)
+
 =head2 Coefficient of correlation (cor)
+
+ v1 = 1/n * SUM{i=1->r} SUM{j=1->w1} (F1_{i,j} - F1m)^2
+ v2 = 1/n * SUM{i=1->r} SUM{j=1->w1} (F2_{i,j} - F2m)^2
+ cor = cov/ sqrt(v1*v2)
 
 =head2 Kullback-Leibler distance (dKL)
 
@@ -148,7 +172,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -452,7 +476,7 @@ package main;
 	  $n = $nrow1*$ali_len;
 	  $v1 = $sum_sq_f1/$n - ($sum_f1/$n)**2;
 	  $v2 = $sum_sq_f2/$n - ($sum_f2/$n)**2;
-	  $cov = $sum_f1f2/$n - $sum_f2*$sum_f2/$n**2;
+	  $cov = $sum_f1f2/$n - $sum_f1*$sum_f2/$n**2;
 	  $cor = $cov/sqrt($v1*$v2);
 	}
 	next unless (&CheckThresholds("cov", $cov)); $cov{$offset} = $cov;
