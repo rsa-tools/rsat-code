@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.15 2008/02/25 12:41:17 rsat Exp $
+# $Id: compare-matrices,v 1.16 2008/02/25 13:58:18 rsat Exp $
 #
 ############################################################
 
@@ -176,7 +176,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -396,16 +396,16 @@ package main;
 
 	## Highlight alignment in consensus
 	$consensus1 = join ("",
+			    "."x($start1-1),
 			    #				  substr($matrix1->get_attribute("consensus.IUPAC"), 0, $start1-1),
 			    substr($matrix1->get_attribute("consensus.IUPAC"), $start1-1, $ali_len),
-			    "."x($start1-1),
 			    "."x($ncol1-$end1)
 			    #				  substr($matrix1->get_attribute("consensus.IUPAC"), $end1),
 			   );
 	$consensus2 = join ("",
+			    "."x($start2-1),
 			    #				  substr($matrix2->get_attribute("consensus.IUPAC"), 0, $start2-1),
 			    substr($matrix2->get_attribute("consensus.IUPAC"), $start2-1, $ali_len),
-			    "."x($start2-1),
 			    "."x($ncol2-$end2)
 			    #				  substr($matrix2->get_attribute("consensus.IUPAC"), $end2),
 			   );
