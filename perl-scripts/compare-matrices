@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.5 2008/02/25 00:36:49 jvanheld Exp $
+# $Id: compare-matrices,v 1.6 2008/02/25 00:47:33 jvanheld Exp $
 #
 ############################################################
 
@@ -148,7 +148,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -790,11 +790,15 @@ __END__
 
 =over
 
-=item check and correct the Euclidian distance
-
-=item implement other metrices
+=item implement other metrics
 
 =item add comparison of m1 with reverse complement of m2
+
+=item -table metrics
+
+Export a table with one row per matrix of the file 1, one column per
+matrix of file 2, and where each cell indicates the value of the
+selected (dis)similarity metrics.
 
 =back
 
