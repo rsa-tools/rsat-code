@@ -118,6 +118,7 @@
       $response =  $echoed->response;
 
       $command = $response->command;
+//       echo "COMMAND $command";
       $server = $response->server;
       $client = $response->client;
       $temp_file = explode('/',$server);
