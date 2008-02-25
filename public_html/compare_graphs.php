@@ -120,6 +120,7 @@
                                  'encoding' => SOAP_LITERAL
                                  )
                            );
+    
     # Execute the command
     echo "<pre>";
     $echoed = $client->compare_graphs($parameters);
