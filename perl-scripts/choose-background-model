@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: choose-background-model,v 1.5 2008/02/21 23:08:46 jvanheld Exp $
+# $Id: choose-background-model,v 1.6 2008/02/25 09:09:36 jvanheld Exp $
 #
 ############################################################
 
@@ -74,11 +74,17 @@ util
 
 =head1 USAGE
 
-choose-background-model -type oligo|dyad -org organism_name [-1str|-2str] \
-  -l oligo_length -bg upstream|upstream-noorf|protein -ovlp|-noov
+Organism-specific background models
 
-choose-background-model -type oligo|dyad -taxon taxon_name [-1str|-2str] \
-  -l oligo_length -bg upstream|upstream-noorf|protein -ovlp|-noov
+ choose-background-model -type oligo|dyad|protein \
+      -org organism_name [-1str|-2str] -l oligo_length \
+      -bg upstream|upstream-noorf|protein -ovlp|-noov
+
+Taxon-specific background models
+
+ choose-background-model -type oligo|dyad|protein \
+      -taxon taxon_name [-1str|-2str] -l oligo_length \
+      -bg upstream|upstream-noorf|protein -ovlp|-noov
 
 =head1 OUTPUT FORMAT
 
@@ -105,7 +111,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     local $oligo_length;
@@ -458,9 +464,5 @@ __END__
 =item InfoGibbs
 
 =back
-
-=head1 WISH LIST
-
-=item add an option -taxon, as an alternative to the option -org
 
 =cut
