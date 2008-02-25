@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.7 2008/02/25 01:50:02 jvanheld Exp $
+# $Id: compare-matrices,v 1.8 2008/02/25 01:55:47 jvanheld Exp $
 #
 ############################################################
 
@@ -148,7 +148,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -378,15 +378,15 @@ package main;
 			    #				  substr($matrix2->get_attribute("consensus.IUPAC"), $end2),
 			   );
 
-	&RSAT::message::Debug("offset=".$offset, 
-			      "ali_len=".$ali_len,
-			      "start1=".$start1,
-			      "end1=".$end1,
-			      "start2=".$start2,
-			      "end2=".$end2,
-			      "consensus1=".$consensus1,
-			      "consensus2=".$consensus2,
-			     ) if ($main::verbose >= 0);
+#	&RSAT::message::Debug("offset=".$offset, 
+#			      "ali_len=".$ali_len,
+#			      "start1=".$start1,
+#			      "end1=".$end1,
+#			      "start2=".$start2,
+#			      "end2=".$end2,
+#			      "consensus1=".$consensus1,
+#			      "consensus2=".$consensus2,
+#			     ) if ($main::verbose >= 10);
 
 
 	## Compute the Euclidian distance between the matrices
