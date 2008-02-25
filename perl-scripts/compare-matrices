@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.10 2008/02/25 09:19:07 jvanheld Exp $
+# $Id: compare-matrices,v 1.11 2008/02/25 09:29:11 jvanheld Exp $
 #
 ############################################################
 
@@ -95,21 +95,21 @@ Index of a row of the aligned PSSM (corresponds to a residue).
 Index of a column of the aligned PSSM (corresponds to an aligned
 position).
 
-=item I<F1{i,j}>
+=item I<f1{i,j}>
 
 frequency of residue I<r> in the I<jth> column of the aligned subset of the
 first matrix (taking the offset into account).
 
-=item I<F2{i,j}>
+=item I<f2{i,j}>
 
 frequency of residue r in the jth column of the aligned subset of the
 second matrix (taking the offset into account).
 
-=item I<F1m>
+=item I<f1m>
 
 Mean frequency computed over all cells of the first matrix.
 
-=item I<F2m>
+=item I<f2m>
 
 Mean frequency computed over all cells of the second matrix.
 
@@ -117,7 +117,7 @@ Mean frequency computed over all cells of the second matrix.
 
 =head2 Euclidian distance (dEucl)
 
- dEucl = 1/w * SUM{i=1->r} SUM{j=1->w1} (F1_{i,j} - F2_{i,j})^2
+ dEucl = 1/w * SUM{i=1->r} SUM{j=1->w1} (f1_{i,j} - f2_{i,j})^2
 
 Note that our Euclidian distance is relativized by the number of
 aligned columns (I<w>). This differs from the definition provided in
@@ -125,15 +125,19 @@ UJ Pape et al.
 
 =head2 Covariance (cov)
 
- cov = 1/n * SUM{i=1->r} SUM{j=1->w1} (F1_{i,j} - F1m) * (F2_{i,j} - F2m)
+ cov = 1/n * SUM{i=1->r} SUM{j=1->w1} (f1_{i,j} - f1m) * (f2_{i,j} - f2m)
 
 =head2 Coefficient of correlation (cor)
 
- v1 = 1/n * SUM{i=1->r} SUM{j=1->w1} (F1_{i,j} - F1m)^2
- v2 = 1/n * SUM{i=1->r} SUM{j=1->w1} (F2_{i,j} - F2m)^2
+ v1 = 1/n * SUM{i=1->r} SUM{j=1->w1} (f1_{i,j} - f1m)^2
+ v2 = 1/n * SUM{i=1->r} SUM{j=1->w1} (f2_{i,j} - f2m)^2
  cor = cov/ sqrt(v1*v2)
 
 =head2 Kullback-Leibler distance (dKL)
+
+ dKL = 1/w * SUM{i=1->r} SUM{j=1->w1} (
+                 f1{i,j}*log(f1{i,j}/f2{i,j})
+               + f2{i,j}*log(f2{i,j}/f1{i,j}))
 
 Note that our KL distance is relativized by the number of
 aligned columns (I<w>). This differs from the definition provided in
@@ -172,7 +176,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -844,15 +848,31 @@ __END__
 
 =over
 
-=item implement other metrics
+=item B<Additional metrics>
 
-=item add comparison of m1 with reverse complement of m2
+=over
 
-=item -table metrics
+=item A P-value for the covariance.
+
+=item chi2 P-value (for the sake of comparison).
+
+Note that a condition of applicability of the chi2 P-value is that the
+expected value should be >= 5 for each cell of the matrix. This
+condition is usually not fulfilled for the PSSM we use for motif
+scanning.
+
+=back
+
+=item B<-strand D|R|DS>
+
+Perform comparison with the direct (D), reverse complementary (R) or
+both orientations of the second matrix, relative to the first one.
+
+=item B<-table field>
 
 Export a table with one row per matrix of the file 1, one column per
 matrix of file 2, and where each cell indicates the value of the
-selected (dis)similarity metrics.
+selected field.
 
 =back
 
