@@ -368,18 +368,40 @@ program feature-map. If not, you will see an error message complaining
 about the missing librairies. In such a case, ask your system
 administrator to install the missing modules.
 
-\subsection{Installing third-party programs}
+\section{Further steps}
+
+The installation is now finished, you can start the user's guide. 
+
+In case you would like to install additional genomes that are not
+supported on \RSAT main server, the next chapter indicates yiou how to
+proceed.
+
+\chapter{Installing third-party programs}
 
 The \RSAT distribution only contains the programs developed by Jacques
 van Helden. A few additional programs, developed by third parties, can
-be integrated in the package. In order to obtain these programs,
-please download them from their original site.
+be integrated in the package. All third-party programs may be loacated in the 
+directory \emph{bin} directory of the \RSAT distribution. In order to 
+obtain these programs, please download them from their original site.
 
 In particular, we recommend to install the following programs.
 
 \begin{description}
 \item[\program{vmatch}]: developed by Stefan Kurtz, is used used by the
 program \program{purge-sequences}, for the detection of sequence repeats.
+
+\item[\program{seqlogo}]:  developed by Thomas D. Schneider, is used 
+used by the program \program{convert-matrix} to generate logos. It can 
+be downloaded from $<$http://weblogo.berkeley.edu/$>$. \program{seqlogo} is 
+the command-line version of \program{WebLogo}.
+
+Download the source code archive and uncompress it. Copy the following
+ files to the directory \emph{bin} of your \RSAT distribution: 
+\program{seqlogo, logo.pm, template.pm} and \program{template.eps}.
+
+\program{seqlogo} requires a recent version of \program{gs} (ghostscript) 
+$<$http://www.cs.wisc.edu/\~{}ghost$>$ to create PNG and PDF output, and 
+\program{ImageMagic's convert} $<$http://www.imagemagick.org$>$ to create GIFs.
 
 \item[\program{patser}]: developed by Jerry Hertz, is used for
   matrix-based pattern matching.
@@ -402,6 +424,7 @@ program \program{purge-sequences}, for the detection of sequence repeats.
 Program & author  & URL \\
 \hline
 vmatch & Stefan Kurtz & http://www.vmatch.de/ \\
+seqlogo & Thomas Sneider & http://weblogo.berkeley.edu/ \\
 patser & Jerry Hertz & ftp://ftp.genetics.wustl.edu/pub/stormo/Consensus/ \\
 consensus & Jerry Hertz &  ftp://ftp.genetics.wustl.edu/pub/stormo/Consensus/ \\
 meme & Tim Bailey & http://meme.sdsc.edu/meme/website/meme-download.html \\
@@ -423,13 +446,6 @@ programs and include their binaries path rsa-tools/bin. If you are not
 familiar with the installation of unix programs, ask assistance to
 your system administrator.
 
-\section{Further steps}
-
-The installation is now finished, you can start the user's guide. 
-
-In case you would like to install additional genomes that are not
-supported on \RSAT main server, the next chapter indicates yiou how to
-proceed.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Parsing and installing additional genomes
