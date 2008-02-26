@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.17 2008/02/25 16:37:22 rsat Exp $
+# $Id: compare-matrices,v 1.18 2008/02/26 00:41:21 rsat Exp $
 #
 ############################################################
 
@@ -177,7 +177,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -280,78 +280,16 @@ package main;
       &RSAT::message::TimeWarn(scalar(@matrices1), "Matrices loaded from file 1", $infile{file1})
 	  if ($main::verbose >= 2);
   }elsif ($infile{mlist1}){
-      my ($mlist, $input_dir) = &OpenInputFile($infile{mlist1});
-      while (<$mlist>) {
-	  next if (/'^;'/);		# skip comment lines
-	  next if (/'^#'/);		# skip header lines
-	  next if (/'^--'/);	# skip mysql-type comment lines
-	  next unless (/\S/);	# skip empty lines
-	  my @fields = split /\s+/;
-	  my $matrix_file = $fields[0];
-	  push @matrix_files1, $matrix_file;
-      }
-      close $mlist;
-      &RSAT::message::Info("Read matrix list from file", $infile{mlist1}, scalar(@matrix_files1), "matrices") 
-	  if ($main::verbose >= 2);
-      
-
-      if (scalar(@matrix_files1 >= 1)) {
-	  foreach my $matrix_file (@matrix_files1) {
-	      my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format1);
-	      foreach my $matrix (@matrices_from_file) {
-		  my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
-		  $matrix_name =~ s/\.\w+$//; ## suppress the extension from the file name
-		  unless (defined($matrix->get_attribute("name"))){
-		      $matrix->set_attribute("name", $matrix_name);
-		  }
-		  push @matrices1, $matrix;
-	      }
-	  }
-      }else{
-	  &RSAT::error::FatalError("The matrix ist must contain at least one matrix file path."); 
-      }
-      
+      @matrices1 = &RSAT::MatrixReader::readMatrixFileList(&OpenInputFile($infile{mlist1}), $input_format1);
   }
   if ($infile{file2}){
       @matrices2 = &RSAT::MatrixReader::readFromFile($infile{file2}, $input_format2);
       &RSAT::message::TimeWarn(scalar(@matrices2), "Matrices loaded from file 2", $infile{file2})
 	  if ($main::verbose >= 2);
   }elsif($infile{mlist2}){
-      my ($mlist, $input_dir) = &OpenInputFile($infile{mlist2});
-      while (<$mlist>) {
-	  next if (/'^;'/);		# skip comment lines
-	  next if (/'^#'/);		# skip header lines
-	  next if (/'^--'/);	# skip mysql-type comment lines
-	  next unless (/\S/);	# skip empty lines
-	  my @fields = split /\s+/;
-	  my $matrix_file = $fields[0];
-	  push @matrix_files2, $matrix_file;
-	  
-      }
-      close $mlist;
-      &RSAT::message::Info("Read matrix list from file", $infile{mlist2}, scalar(@matrix_files1), "matrices") 
-	  if ($main::verbose >= 2);
-      
-      if (scalar(@matrix_files2 >= 1)) {
-	  foreach my $matrix_file (@matrix_files2) {
-	      my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format2);
-	      foreach my $matrix (@matrices_from_file) {
-		  my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
-		  $matrix_name =~ s/\.\w+$//; ## suppress the extension from the file name
-		  unless (defined($matrix->get_attribute("name"))){
-		      $matrix->set_attribute("name", $matrix_name);
-		  }
-		  push @matrices2, $matrix;
-	      }
-	  }
-      }else{
-	  &RSAT::error::FatalError("The matrix ist must contain at least one matrix file path."); 
-      }
-      
+      @matrices2 = &RSAT::MatrixReader::readMatrixFileList(&OpenInputFile($infile{mlist2}), $input_format2);
   }
   #######
-
-
   ## Calculate the consensus for each matrix
   if ($return_field{consensus}) {
       foreach my $matrix (@matrices1, @matrices2) {
@@ -423,7 +361,7 @@ package main;
     my $m2 = 0;
     foreach my $matrix2 (@matrices2) {
       $m2++;
-       &RSAT::message::TimeWarn("Comparing matrices", 
+      &RSAT::message::TimeWarn("Comparing matrices", 
 			       "file1", $m1."/".scalar(@matrices1),
 			       "file2", $m2."/".scalar(@matrices2),
 			      )
@@ -566,7 +504,8 @@ package main;
 	next unless (&CheckThresholds("cor", $cor)); $cor{$offset} = $cor;
 
 	## Generate the output line
-	my @out_fields = ($comp_nb,$matrix1->get_attribute("name"), $matrix2->get_attribute("name"));
+#	my @out_fields = ($comp_nb,$matrix1->get_attribute("name"), $matrix2->get_attribute("name"));
+	my @out_fields = ($comp_nb,$m1, $m2);
 	push (@out_fields, $offset, $direction, $ali_len);
 	push (@out_fields, $start1, $end1, $start2, $end2);
 	push (@out_fields, sprintf("%.5f", $dEucl)) if ($return_field{dEucl});
