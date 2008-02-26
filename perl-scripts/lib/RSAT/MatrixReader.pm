@@ -143,6 +143,46 @@ sub readFromFile {
 }
 
 ################################################################
+## read matrices from matrix file list paths
+
+sub readMatrixFileList {
+    my ($mlist, $input_dir,$input_format) = @_;
+    my @matrix_files = ();
+    my @matrices = ();
+    while (<$mlist>) {
+	next if (/'^;'/);		# skip comment lines
+	next if (/'^#'/);		# skip header lines
+	next if (/'^--'/);	# skip mysql-type comment lines
+	next unless (/\S/);	# skip empty lines
+	my @fields = split /\s+/;
+	my $matrix_file = $fields[0];
+	push @matrix_files, $matrix_file;
+
+    }
+    close $mlist;
+    &RSAT::message::Info("Read matrix list from file", $infile{mlist2}, scalar(@matrix_files1), "matrices") 
+      if ($main::verbose >= 2);
+
+    if (scalar(@matrix_files >= 1)) {
+	foreach my $matrix_file (@matrix_files) {
+	    my @matrices_from_file = &readFromFile($matrix_file, $input_format);
+	    foreach my $matrix (@matrices_from_file) {
+		my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+		$matrix_name =~ s/\.\w+$//; ## suppress the extension from the file name
+		unless (defined($matrix->get_attribute("name"))){
+		    $matrix->set_attribute("name", $matrix_name);
+		}
+		push @matrices, $matrix;
+	    }
+	}
+    }else{
+	&RSAT::error::FatalError("The matrix ist must contain at least one matrix file path."); 
+    }
+    return @matrices;
+}
+
+
+################################################################
 =pod
 
 =item _readFromTRANSFACFile($file)
