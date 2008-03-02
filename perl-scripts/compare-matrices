@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.19 2008/03/02 20:31:46 jvanheld Exp $
+# $Id: compare-matrices,v 1.20 2008/03/02 20:33:37 jvanheld Exp $
 #
 ############################################################
 
@@ -196,7 +196,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -553,8 +553,8 @@ package main;
 	next unless (&CheckThresholds("cor", $cor)); $cor{$offset} = $cor;
 
 	## Generate the output line
-#	my @out_fields = ($comp_nb,$matrix1->get_attribute("name"), $matrix2->get_attribute("name"));
-	my @out_fields = ($comp_nb,$m1, $m2);
+#	my @out_fields = ($compa,$matrix1->get_attribute("name"), $matrix2->get_attribute("name"));
+	my @out_fields = ($compa,$m1, $m2);
 	push (@out_fields, $offset, $direction, $ali_len);
 	push (@out_fields, $start1, $end1) if ($return_field{pos});
 	push (@out_fields, $start2, $end2) if ($return_field{pos});
