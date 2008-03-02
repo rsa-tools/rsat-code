@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.18 2008/02/26 00:41:21 rsat Exp $
+# $Id: compare-matrices,v 1.19 2008/03/02 20:31:46 jvanheld Exp $
 #
 ############################################################
 
@@ -77,9 +77,17 @@ In the formula below, symbols are defined as follows
 length of the alignment (depends on the offset between the two
 matrices).
 
+=item I<s1>
+
+Number of sites in the first matrix.
+
+=item I<s2>
+
+Number of sites in the second matrix
+
 =item I<n>
 
-Number of cells in the matrix
+Number of cells in the aligned portion of the matrices.
 
 =item I<r>
 
@@ -122,6 +130,17 @@ Mean frequency computed over all cells of the second matrix.
 Note that our Euclidian distance is relativized by the number of
 aligned columns (I<w>). This differs from the definition provided in
 Pape et al. (2008).
+
+=head2 Relative Euclidian similarity (rsEucl)
+
+A similarity metrics derived from the Euclidian distance.
+
+ rsEucl = (Max(dEucl) - dEucl) / dEucl
+
+where I<Max(dEucl)> is the maximal possible Euclidian distance for the
+current pair of matrices. 
+
+ Max(dEucl) = sqrt(2)
 
 =head2 Kullback-Leibler distance (dKL)
 
@@ -177,7 +196,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -190,12 +209,15 @@ package main;
 
   ## Return fields
   my %supported_return_fields = (
-      "dEucl"=>1, ## Euclidian distance
-      "dKL"=>1, ## Kullback-Leibler distance
-      "cor"=>1, ## Coefficient of correlation
-      "cov"=>1, ## Covariance
-      "consensus"=>1,
-      );
+				 "pos"=>1, ## start and end positions of the alignment relative to the matrices
+				 "dEucl"=>1, ## Euclidian distance
+				 "rsEucl"=>1, ## Euclidian distance
+				 "dKL"=>1, ## Kullback-Leibler distance
+				 "cor"=>1, ## Coefficient of correlation
+				 "cov"=>1, ## Covariance
+				 "consensus"=>1,
+				 "rank"=>1,
+				);
   my %return_field = %supported_return_fields; ## Temporary
 
   ## Sort field
@@ -208,6 +230,7 @@ package main;
 			      offset
 			      ali_len
 			      dEucl
+			      rsEucl
 			      dKL
 			      cov
 			      cor
@@ -237,8 +260,13 @@ package main;
 
   ################################################################
   ## Check argument values
-  unless ((($infile{file1}) && ($infile{file2})) || (($infile{file1}) && ($infile{mlist2})) || (($infile{mlist1}) && ($infile{file2})) || (($infile{mlist1}) && ($infile{mlist2}))) {
-    &RSAT::error::FatalError("You must define two input files (one combination among options -file1,-file2, mlist1, mlist2)");
+#  unless ((($infile{file1}) && ($infile{file2})) ||
+#	  (($infile{file1}) && ($infile{mlist2})) ||
+#	  (($infile{mlist1}) && ($infile{file2})) ||
+#	  (($infile{mlist1}) && ($infile{mlist2}))) {
+  unless ((($infile{file1}) || ($infile{mlist1})) &&
+	  (($infile{file2}) || ($infile{mlist2}))) {
+    &RSAT::error::FatalError("You must define two input files, as one combination among options (-file1 or -mfile1) and (-file2 or -mlist2)");
   }
 
   unless (($input_format1) && ($input_format2)) {
@@ -264,6 +292,7 @@ package main;
 
   ## Some fields must be computed as intermediate results for other fields
   $calc_field{cov} = 1 if ($calc_field{cor});
+  $calc_field{dEucl} = 1 if ($calc_field{rsEucl});
 
   ################################################################
   ## Open output stream
@@ -276,26 +305,39 @@ package main;
   my @matrix_files1 = ();
   my @matrix_files2 = ();
   if ($infile{file1}){
-      @matrices1 = &RSAT::MatrixReader::readFromFile($infile{file1}, $input_format1);
-      &RSAT::message::TimeWarn(scalar(@matrices1), "Matrices loaded from file 1", $infile{file1})
-	  if ($main::verbose >= 2);
-  }elsif ($infile{mlist1}){
-      @matrices1 = &RSAT::MatrixReader::readMatrixFileList(&OpenInputFile($infile{mlist1}), $input_format1);
+    @matrices1 = &RSAT::MatrixReader::readFromFile($infile{file1}, $input_format1);
+    &RSAT::message::TimeWarn(scalar(@matrices1), "Matrices loaded from file 1", $infile{file1})
+      if ($main::verbose >= 2);
+  } elsif ($infile{mlist1}){
+    @matrices1 = &RSAT::MatrixReader::readMatrixFileList(&OpenInputFile($infile{mlist1}), $input_format1);
   }
   if ($infile{file2}){
-      @matrices2 = &RSAT::MatrixReader::readFromFile($infile{file2}, $input_format2);
-      &RSAT::message::TimeWarn(scalar(@matrices2), "Matrices loaded from file 2", $infile{file2})
-	  if ($main::verbose >= 2);
-  }elsif($infile{mlist2}){
-      @matrices2 = &RSAT::MatrixReader::readMatrixFileList(&OpenInputFile($infile{mlist2}), $input_format2);
+    @matrices2 = &RSAT::MatrixReader::readFromFile($infile{file2}, $input_format2);
+    &RSAT::message::TimeWarn(scalar(@matrices2), "Matrices loaded from file 2", $infile{file2})
+      if ($main::verbose >= 2);
+  } elsif($infile{mlist2}){
+    @matrices2 = &RSAT::MatrixReader::readMatrixFileList(&OpenInputFile($infile{mlist2}), $input_format2);
   }
-  #######
-  ## Calculate the consensus for each matrix
-  if ($return_field{consensus}) {
-      foreach my $matrix (@matrices1, @matrices2) {
-	  $matrix->calcConsensus();
-      }
+
+  foreach my $matrix (@matrices1, @matrices2) {
+    ## Calculate the consensus for each matrix
+    $matrix->calcConsensus() if ($return_field{consensus});
+
+    ################################################################
+    ## Compute the number of sites as the maximal sum of counts
+    ## per column. Note that some matrices might have been built
+    ## from sites of varying lengths, so that the col sum is not
+    ## always the same for all the columns
+    my @counts = $matrix->getMatrix();
+    my @counts_per_col = &RSAT::matrix::col_sum($matrix->get_attribute("nrow"), $matrix->get_attribute("ncol"), @counts);
+    my $nsites = &RSAT::stats::max(@counts_per_col);
+    $matrix->set_attribute("nsites", $nsites);
   }
+
+  &RSAT::message::TimeWarn("Starting comparison between",
+			   scalar(@matrices1) , "matrices from file 1 and ",
+			   scalar(@matrices2) , "matrices from file 2.",
+			  ) if ($main::verbose >= 2);
 
   ################################################################
   ## Print verbose
@@ -307,12 +349,14 @@ package main;
   push (@header, "compa");
   push (@header, "m1", "m2");
   push (@header, "offset", "direct", "ali_len");
-  push (@header, "start1", "end1", "start2", "end2");
+  push (@header, "start1", "end1", "start2", "end2") if ($return_field{pos});
   push (@header, "dEucl") if ($return_field{dEucl});
+  push (@header, "rsEucl") if ($return_field{rsEucl});
   push (@header, "dKL") if ($return_field{dKL});
   push (@header, "cov") if ($return_field{cov});
   push (@header, "cor") if ($return_field{cor});
   push (@header, "consensus1", "consensus2") if ($return_field{consensus});
+  push (@header, "rank") if ($return_field{rank});
 
   ## Print a description of the output fields
   if ($main::verbose >= 1) {
@@ -328,12 +372,13 @@ package main;
       $description{start2} = "Start position of the alignment in matrix 2";
       $description{end2} = "End position of the alignment in matrix 2";
       $description{dEucl} = "Euclidian distance";
+      $description{rsEucl} = "relative Euclidian similarity. rsEucl = (max(dEucl) - dEucl)/max(dEucl)";
       $description{dKL} = "Kullback-Leibler distance";
       $description{cov} = "Covariance";
       $description{cor} = "Coefficient of correlation";
       $description{consensus1} = "IUPAC consensus of matrix 1";
       $description{consensus2} = "IUPAC consensus of matrix 2";
-
+      $description{rank} = "Rank fo the alignment for the current pair of matrices";
       print $out "; Column content\n";
       my $c = 0;
       foreach my $field (@header) {
@@ -346,7 +391,7 @@ package main;
   ################################################################
   ## compare the matrices and print the result
   my $m1 = 0;
-  my $comp_nb = 0;
+  my $compa = 0;
   foreach my $matrix1 (@matrices1) {
     $m1++;
     &RSAT::message::TimeWarn("File 1", "Analyzing matrix", $m1."/".scalar(@matrices1)) 
@@ -354,10 +399,7 @@ package main;
 
     my $ncol1 = $matrix1->get_attribute("ncol");
     my $nrow1 = $matrix1->get_attribute("nrow");
-    my @counts1 = $matrix1->getMatrix();
     my @crude_freq1 = $matrix1->getCrudeFrequencies();
-
-
     my $m2 = 0;
     foreach my $matrix2 (@matrices2) {
       $m2++;
@@ -373,7 +415,6 @@ package main;
       unless ($nrow2 == $nrow1) {
 	&RSAT::error::FatalError("Input matrices must have the same number of residues rows)", $nrow1, $nrow2);
       }
-      my @counts2 = $matrix2->getMatrix();
       my @crude_freq2 = $matrix2->getCrudeFrequencies();
 
       ## Compute offsets for sliding one matrix along the othe one
@@ -387,6 +428,7 @@ package main;
       my %cov = (); ## Covariances as a function of the offset
       my %cor = (); ## Correlations
       my %dEucl = (); ## Euclidian distances
+      my %rsEucl = (); ## Euclidian distances
       my %dKL = (); ## Kullback-Leibler distances
       my %out_line = (); ## Output line for each offset value
       my @output_offset = (); ## Offsets passing the thresholds
@@ -394,7 +436,7 @@ package main;
 
       ## Slide matrix2 along matrix1
       foreach my $offset ($offset_min..$offset_max) {
-	$comp_nb++;
+	$compa++;
 	next unless (&CheckThresholds("offset", $offset));
 
 	## Compute aligned matrix positions
@@ -437,6 +479,7 @@ package main;
 	## Compute the Euclidian distance between the matrices
 	## (cf Tomtom)
 	my $dEucl = 0;
+	my $rsEucl = 0;
 	my $dKL = 0;
 	my $cov = 0;
 	my $cor = 0;
@@ -482,6 +525,12 @@ package main;
 	}
 	next unless (&CheckThresholds("dEucl", $dEucl)); $dEucl{$offset} = $dEucl;
 
+	## Compute Euclidian similarity
+	if ($calc_field{rsEucl}) {
+	  my $maxEucl = sqrt(2);
+	  $rsEucl = ($maxEucl - $dEucl) / $maxEucl;
+	}
+
 	## Compute Kullback-Leibler distance
 	if ($calc_field{dKL}) {
 	  $dKL /= 2;
@@ -507,8 +556,10 @@ package main;
 #	my @out_fields = ($comp_nb,$matrix1->get_attribute("name"), $matrix2->get_attribute("name"));
 	my @out_fields = ($comp_nb,$m1, $m2);
 	push (@out_fields, $offset, $direction, $ali_len);
-	push (@out_fields, $start1, $end1, $start2, $end2);
+	push (@out_fields, $start1, $end1) if ($return_field{pos});
+	push (@out_fields, $start2, $end2) if ($return_field{pos});
 	push (@out_fields, sprintf("%.5f", $dEucl)) if ($return_field{dEucl});
+	push (@out_fields, sprintf("%.5f", $rsEucl)) if ($return_field{rsEucl});
 	push (@out_fields, sprintf("%.5f", $dKL)) if ($return_field{dKL});
 	push (@out_fields, sprintf("%.4f", $cov)) if ($return_field{cov});
 	push (@out_fields, sprintf("%.4f", $cor)) if ($return_field{cor});
@@ -526,6 +577,9 @@ package main;
       if ($sort_field eq "dEucl") {
 	@sorted_offset = sort {$dEucl{$a} <=> $dEucl{$b}} @output_offset;
 
+      } elsif ($sort_field eq "rsEucl") {
+	@sorted_offset = sort {$dEucl{$b} <=> $dEucl{$a}} @output_offset;
+
 	## Kullback-Leibler distance is sorted in ascending order
       } elsif ($sort_field eq "dKL") {
 	@sorted_offset = sort {$dKL{$a} <=> $dKL{$b}} @output_offset;
@@ -542,19 +596,32 @@ package main;
 	@sorted_offset = @output_offset;
       }
 
+      ## specific treatment for the rank
+      my %rank = ();
+      if ($calc_field{rank}) {
+	my $rank = 0;
+	foreach my $offset (@sorted_offset) {
+	  $rank++;
+	  $rank{$offset} = $rank;
+	}
+	if (defined($uth{rank})) {
+	  @sorted_offset = @sorted_offset[1..$uth{rank}];
+	}
+	if (defined($lth{rank})) {
+	  @sorted_offset = @sorted_offset[($lth{rank}-1)..$#sorted_offset];
+	}
+      }
+
       ## Print the output
       foreach my $offset (@sorted_offset) {
 	print $out  $out_line{$offset};
-#	print $out "\t", $rank if ($return_field{rank});
+	print $out "\t", $rank{$offset} if ($return_field{rank});
 	print $out "\n";
       }
     }
   }
 
-
-  ################################################################
-  ## Print output
-
+  &RSAT::message::TimeWarn("Matrix comparisons done") if ($main::verbose >= 2);
 
   ################################################################
   ## Finish verbose
@@ -826,13 +893,15 @@ sub Verbose {
     }
 
     print $main::out "; Matrices\n";
-    print $main::out join ("\t", ";", "file", "matrix", "ncol", "consensus.IUPAC"),  "\n";
+    print $main::out join ("\t", ";", "file", "matrix", "ncol", "nsites", "consensus.IUPAC"),  "\n";
 
     ## Matrices in the first file
     my $m1 = 0;
     foreach my $matrix (@matrices1) {
       $m1++;
-      print $main::out join ("\t", ";", "file1", $m1, $matrix->get_attribute("ncol"), 
+      print $main::out join ("\t", ";", "file1", $m1,
+			     $matrix->get_attribute("ncol"),
+			     $matrix->get_attribute("nsites"),
 			     $matrix->get_attribute("consensus.IUPAC")), "\n";
     }
 
@@ -840,7 +909,9 @@ sub Verbose {
     my $m2 = 0;
     foreach my $matrix (@matrices2) {
       $m2++;
-      print $main::out join ("\t", ";", "file2", $m2, $matrix->get_attribute("ncol"), 
+      print $main::out join ("\t", ";", "file2", $m2,
+			     $matrix->get_attribute("ncol"),
+			     $matrix->get_attribute("nsites"),
 			     $matrix->get_attribute("consensus.IUPAC")),  "\n";
     }
 
