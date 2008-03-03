@@ -97,7 +97,27 @@ can be installed with the command \program{cpan}.
 
 \end{description}
 
+\subsection{Other libraries}
 
+Two programs, \program{retrieve-ensembl-seq.pl} and \program{get-ensembl-genome.pl}, require
+the EnsEMBL Perl API and bioperl to work on your machine.
+
+To obtain bioperl:
+
+1) cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login 
+(password is 'cvs')
+
+2) cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout bioperl-live 
+(or cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -d bioperl-branch-1.4 -r branch-1-4 bioperl-live for older branch)
+
+
+To obtain ensembl:
+
+1) cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login 
+(password is 'CVSUSER')
+
+2) cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-ensembl-47 ensembl 
+(you need to adapt the branch number, e.g. 47, as it updates).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
