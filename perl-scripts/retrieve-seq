@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.65 2008/03/04 10:52:37 rsat Exp $
+# $Id: retrieve-seq,v 1.66 2008/03/04 16:02:59 rsat Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -187,6 +187,7 @@ if ($sequence_type eq "random fragments") {
       $organism->LoadSynonyms();
     }
     store $organism, $serial_file;
+    system ("chmod 777 $serial_file");
   }
 }
 
