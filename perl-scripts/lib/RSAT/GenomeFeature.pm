@@ -54,7 +54,7 @@ otherwise.
 
 Usage: $feature->matches($query, $match_description]);
 
-The argument $match_description (boolean) specifies if the queyr has
+The argument $match_description (boolean) specifies if the query has
 to be matched against the feature descrioption, in addition to the
 ID and names. The comparison is case-insensitive. 
 
