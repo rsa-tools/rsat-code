@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.64 2008/01/08 12:20:14 jvanheld Exp $
+# $Id: retrieve-seq,v 1.65 2008/03/04 10:52:37 rsat Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -13,6 +13,10 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 require "RSA.seq.lib";
 require RSAT::organism;
+use Storable qw(store retrieve);
+
+# temporary directory
+my $RSAT = $0; $RSAT =~ s/\/perl-scripts.*//; my $TMP = $RSAT.'/public_html/tmp';
 
 #### initialize parameters
 my $start_time = &AlphaDate();
@@ -166,13 +170,23 @@ if ($sequence_type eq "random fragments") {
 	if ($verbose >= 2);
     
 } else {
-  ### read feature attributes (position, description, ...)
-  $organism->LoadFeatures($annotation_table, $imp_pos);
-  #    $organism->LoadFeatures($annotation_table, $feature_types, $imp_pos);
+  my $serial_org_file = $TMP."/".$organism_name.$imp_pos.".serial";
+  my $serial_org_syn_file = $TMP."/".$organism_name.$imp_pos."syn.serial";
   
-  #### read synonyms
-  unless (($return_all) || ($ids_only)) {
-    $organism->LoadSynonyms();
+  $serial_file = $serial_org_syn_file;
+  if ($ids_only) {
+    $serial_file = $serial_org_file;
+  } 
+  if (-e $serial_file && !$annotation_table && -M $serial_file < 2 && -w $serial_file) {
+    $organism = retrieve $serial_file;
+  } else {
+    ### read feature attributes (position, description, ...)
+    $organism->LoadFeatures($annotation_table, $imp_pos);
+    #### read synonyms
+    unless (($return_all) || ($ids_only)) {
+      $organism->LoadSynonyms();
+    }
+    store $organism, $serial_file;
   }
 }
 
