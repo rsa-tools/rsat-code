@@ -3671,7 +3671,41 @@ sub mcl_cmd {
   }
   return $command;
 }
+##########
+sub parse_psi_xml {
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+  
+  my $command = "$SCRIPTS/parse-psi-xml";
+  if ($args{channels}) {
+   my $channelList = $args{channels};
+   $channelList =~ s/\'//g;
+   $channelList =~ s/\'//g;
+   @channels = split ',', $channelList;
+   foreach my $channel (@channels) {
+     $command .= " -channel $channel";
+   }
+  }
+  if ($args{inputfile}) {
+   my $input_graph = $args{inputfile};
+   chomp $input_graph;
+   my $tmp_input = `mktemp $TMP/random_graph-input-graph.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
+   print TMP_IN $input_graph;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
 
+
+  &run_WS_command($command, $output_choice, "random-graph");
+}
 ##########
 sub random_graph {
   my ($self, $args_ref) = @_;
