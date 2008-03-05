@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.66 2008/03/04 16:02:59 rsat Exp $
+# $Id: retrieve-seq,v 1.67 2008/03/05 14:12:54 rsat Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -172,7 +172,6 @@ if ($sequence_type eq "random fragments") {
 } else {
   my $serial_org_file = $TMP."/".$organism_name.$imp_pos.".serial";
   my $serial_org_syn_file = $TMP."/".$organism_name.$imp_pos."syn.serial";
-  
   $serial_file = $serial_org_syn_file;
   if ($ids_only) {
     $serial_file = $serial_org_file;
