@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-no-objects.pl,v 1.12 2008/03/04 16:02:59 rsat Exp $
+# $Id: get-ensembl-genome-no-objects.pl,v 1.13 2008/03/05 16:39:17 rsat Exp $
 #
 # Time-stamp
 #
@@ -84,8 +84,8 @@ package main;
     local $verbose = 0;
     
     ## Connection to the EnsEMBL MYSQL database
-#    $ensembl_host = 'ensembldb.ensembl.org';
-    $ensembl_host = 'xserve2.scmbb.ulb.ac.be';
+    $ensembl_host = 'ensembldb.ensembl.org';
+#    $ensembl_host = 'xserve2.scmbb.ulb.ac.be';
     $ensembl_user = "anonymous";
     $dbname = '';
     $org = '';
