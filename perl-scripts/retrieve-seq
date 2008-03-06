@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.67 2008/03/05 14:12:54 rsat Exp $
+# $Id: retrieve-seq,v 1.68 2008/03/06 07:47:51 rsat Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -13,7 +13,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 require "RSA.seq.lib";
 require RSAT::organism;
-use Storable qw(store retrieve);
+use Storable qw(nstore retrieve);
 
 # temporary directory
 my $RSAT = $0; $RSAT =~ s/\/perl-scripts.*//; my $TMP = $RSAT.'/public_html/tmp';
@@ -185,7 +185,7 @@ if ($sequence_type eq "random fragments") {
     unless (($return_all) || ($ids_only)) {
       $organism->LoadSynonyms();
     }
-    store $organism, $serial_file;
+    nstore $organism, $serial_file;
     system ("chmod 777 $serial_file");
   }
 }
