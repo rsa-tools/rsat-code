@@ -343,9 +343,14 @@ Supported: upstream, upstreamL, upstream-noorf, intergenic, input.</xsd:document
 	    <xsd:documentation>Sort oligomers according to overrepresentation if value = 1.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="lth" type="xsd:string" minOccurs="0">
+	<xsd:element name="lth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
 	  <xsd:annotation>
-	    <xsd:documentation>Lower threshold on some parameter. Format='param value'.</xsd:documentation>
+	    <xsd:documentation>Lower threshold on some parameters. Format=list of'parameter value'.</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="uth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+	  <xsd:annotation>
+	    <xsd:documentation>Upper threshold on some parameters. Format=list of 'parameter value'.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
 	<xsd:element name="pseudo" type="xsd:string" minOccurs="0">
@@ -453,14 +458,14 @@ In some other cases, one would also like to detect patterns absent from the sequ
 This is the function of the option -zeroocc.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="lth" type="xsd:string" minOccurs="0">
+	<xsd:element name="lth" type="xsd:string" minOccurs="unbounded">
 	  <xsd:annotation>
-	    <xsd:documentation>Lower threshold on some parameter. Format='param value'.</xsd:documentation>
+	    <xsd:documentation>Lower threshold on some parameters. Format=list of 'parameter value'.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="uth" type="xsd:string" minOccurs="0">
+	<xsd:element name="uth" type="xsd:string" minOccurs="unbounded">
 	  <xsd:annotation>
-	    <xsd:documentation>Upper threshold on some parameter. Format='param value'.</xsd:documentation>
+	    <xsd:documentation>Upper threshold on some parameter. Format=list of 'parameter value'.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
        </xsd:sequence>
@@ -818,6 +823,223 @@ Default is 'both'.</xsd:documentation>
 	</xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="FootprintDiscoveryRequest">
+       	<xsd:sequence>
+          <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
+		Default is 'both'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="verbosity" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Level of detail for comments</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="genes" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>A list of genes (one by line).
+	      </xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Name of the file with a list of genes on the server. You need to supply either this parameter or the previous one (genes).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="all_genes" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Automatically analyze all the genes of a query genome, and store each result in a separate folder (the folder name is defined automatically).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="max_genes" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Maximum number of genes to analyze.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="output_prefix" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Prefix for the output files. If the prefix is 	not specified, the program can guess a default prefix, but this is working only if there is a single query gene or query file.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="query" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>A list of genes (referenced array).
+	      </xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="sep_genes" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Search footprints for each query gene separately. The results arestored in a separate folder for each	gene. The folder name is defined automatically.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="organism" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Query organism, to which the query genes belong.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="taxon" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Reference taxon, in which orthologous genes have to be collected.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="index" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Generate an HTML index with links to the result files. This option is used for the web interface, but can also be convenient to index results, especially when several genes or taxa are analyzed (options -genes, -all_genes, -all_taxa).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="lth" type="xsd:string" minOccurs="unbounded">
+	    <xsd:annotation>
+	      <xsd:documentation>Lower threshold on some parameters. Format: parameter value.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="uth" type="xsd:string" minOccurs="unbounded">
+	    <xsd:annotation>
+	      <xsd:documentation>Upper threshold on some parameters. Format: parameter value.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="return" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return fields for dyad-analysis. See dyad_analysis for a list</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="to_matrix" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Convert assembled patterns into position-specific scoring matrices (PSSM). Caution ! This conversion can take time if the sequence set is large and if there are many assemblies.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="bg_model" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Allow the user to choose among alternative background model.
+                                   taxfreq
+                                      Taxon-wide background model, computed by counting dyad frequencies in all the promoters of all the genes of the reference taxon.
+                                   monads
+                                      Expected dyad frequencies are the product of monad frequencies observed in the input sequences.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="no_filter" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Accept all dyads, even if they are not found in the promoter of the query gene, in the query organism.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="infer_operons" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Infer operons in order to retrieve the	promoters of the predicted operon leader genes rather than those located immediately upstream of the orthologs. This method uses a threshold on the intergenic distance.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="dist_thr" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Specify here the intergenic distance threshold in base pairs. Pair of adjacent genes with intergenic distance equal or less than this value are predicted to be within operon. (default : 55).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="GetOrthologsRequest">
+	<xsd:sequence>
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
+		Default is 'both'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="organism" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="taxon" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Reference taxon. Orthologs are returned for each supported organism belonging to the reference taxon.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="query" type="xsd:string" minOccurs="1" maxOccurs="unbounded">
+	    <xsd:annotation>
+	      <xsd:documentation>List of gene(s) for which you want to get orthologs.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="all" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Get orthologs for all the genes of the query organism if value = 1. This option is particularly convenient to extract phylogenetic profiles.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="nogrep" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Disable the pre-filtering with grep if value = 1.This pre-filtering accelerates the selection of hits, but some grep versions do not support the -E option. If this is the case on your operating system, you can still obtain the correct results by inactivating the grep filter.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="return" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Output field(s).
+
+        By default, the output is a two-column file indicating the ID of the
+        gene identified as similar to the query gene, and the name of the
+        reference organism.
+
+        The option -return can be used to specify additional output fields.
+
+        Supported fields:
+
+            ref_id
+                ID of the reference (target) gene
+
+            ref_organism
+                Name of the reference (target) organism
+
+            query_id
+                ID of the query gene
+
+            query_organism
+                Name of the query organism
+
+            ident
+                Percent of identity (a number between 0 and 100)
+
+            ali_len
+                Alignment lengths (in residues)
+
+            mismat
+                Number of mismatches
+
+            gap_open
+                Number of gap openings
+
+            e_value
+                E-value (expected number of false positives)
+
+            bit_sc
+                Bit score
+
+            rank
+                Rank
+
+            s_rank
+                Source rank (rank of the hit for the query organism).
+
+        The option -return can be used iteratively on the same command line
+        to specify several output fields. Another way to specify multiple
+        output fields is to enter them separated by commas.
+
+        Examples:
+
+            -return query_id -return e_value -return rank
+
+            -return query_id,e_value,rank</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="lth" type="xsd:string" minOccurs="unbounded">
+	    <xsd:annotation>
+	      <xsd:documentation>Lower threshold for dyad-analysis. Format: list of 'parameter value'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="uth" type="xsd:string" minOccurs="unbounded">
+	    <xsd:annotation>
+	      <xsd:documentation>Upper threshold for dyad-analysis. Format: list of 'parameter value'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="GeneInfoRequest">
 	<xsd:sequence>
 	  <xsd:element name="output" type="xsd:string" minOccurs="0">
@@ -1030,6 +1252,40 @@ Default is 'both'.</xsd:documentation>
 	      </xsd:sequence>
       </xsd:complexType>
       
+      <xsd:complexType name="RocStatsRequest">
+       <xsd:sequence>
+	  <xsd:element name="inputfile" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>The input file</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="scol" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Column of the input ile containing the score value (default 1).</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="lcol" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Column of the input file containing the status label (default 2).</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="status" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>This option allows to use different labels as synonyms for the pre-defined status (neg and pos) : pos and neg. It can be useful to rename these labels, for compatibility with other programs. For example, it your input file contains annotations of "site" and "non-site", you can use it directly as input with the options. -status site pos -status non-site neg indicates that the label "site" has to be understood as positive, and "non-site" as negative. </xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="total" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Total number of elements in the universe (neg + pos). This option allows to manually specify the total number of elements, in case the input file would not contain the complete data set.</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
+       </xsd:sequence>
+      </xsd:complexType>
+            
+      
+      
+      
+      
       <xsd:complexType name="TextToHtmlRequest">
        <xsd:sequence>
 	  <xsd:element name="inputfile" type="xsd:string" minOccurs="1">
@@ -1141,7 +1397,7 @@ Default is 'both'.</xsd:documentation>
          <xsd:annotation>
           <xsd:documentation>This file will be used as both reference and query.This is equivalent to -q input_file -r input_file.</xsd:documentation>
          </xsd:annotation>
-        </xsd:element> 
+        </xsd:element>
         <xsd:element name="upper_threshold_field" type="xsd:string" minOccurs="0">
          <xsd:annotation>
           <xsd:documentation>Supported fields: E(QR), E_val, F(!Q!R), F(Q!R), F(Q), F(QR), F(R!Q), F(R), H(Q), H(Q,R), H(Q|R), H(R), H(R|Q), 
@@ -1446,27 +1702,18 @@ For -bgfile, default value is 0.01. If the training sequence length (L) is known
               <xsd:documentation>List of fields to return. Supported fields: sites, rank, limits, normw, bg_model, matrix, freq_matrix, weight_matrix, distrib .</xsd:documentation>
             </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="upper_threshold_field" type="xsd:string" minOccurs="0">
-            <xsd:annotation>
-              <xsd:documentation>Supported fields: E(QR), E_val, F(!Q!R), F(Q!R), F(Q), F(QR), F(R!Q), F(R), H(Q), H(Q,R), H(Q|R), H(R), H(R|Q), 
-I(Q,R), IC, P(QR), P(Q|R), P(R|Q), P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R), dotprod, jac_sim, rank, sig</xsd:documentation>
-            </xsd:annotation>
-	  </xsd:element>
-	  <xsd:element name="upper_threshold_value" type="xsd:float" minOccurs="0">
-            <xsd:annotation>
-              <xsd:documentation>Upper threshold value for a supported field</xsd:documentation>
-            </xsd:annotation>
-	  </xsd:element>
-	  <xsd:element name="lower_threshold_field" type="xsd:string" minOccurs="0">
-            <xsd:annotation>
-              <xsd:documentation>Supported fields: same fields as upper_threshold_field.</xsd:documentation>
-            </xsd:annotation>
-	  </xsd:element>
-	  <xsd:element name="lower_threshold_value" type="xsd:float" minOccurs="0">
-            <xsd:annotation>
-              <xsd:documentation>Lower threshold value for a given field.</xsd:documentation>
-            </xsd:annotation>
-	  </xsd:element>
+	<xsd:element name="lth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+	  <xsd:annotation>
+	    <xsd:documentation>Lower threshold on some parameter. Format=list of 'parameter value'.
+Supported fields: E(QR), E_val, F(!Q!R), F(Q!R), F(Q), F(QR), F(R!Q), F(R), H(Q), H(Q,R), H(Q|R), H(R), H(R|Q), I(Q,R), IC, P(QR), P(Q|R), P(R|Q), P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R), dotprod, jac_sim, rank, sig</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="uth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+	  <xsd:annotation>
+	    <xsd:documentation>Upper threshold on some parameter. Format=list of 'param value'.
+Supported parameters: same as lth.</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
 	  <xsd:element name="both_strand" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>Scan both strands for DNA sequences.</xsd:documentation>
@@ -1477,6 +1724,31 @@ I(Q,R), IC, P(QR), P(Q|R), P(R|Q), P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R)
               <xsd:documentation>Single-strand search for DNA sequences.</xsd:documentation>
             </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="verbosity" type="xsd:float" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Level of verbosity (detail in the warning
+	messages during execution)</xsd:documentation>
+            </xsd:annotation>
+	      </xsd:element>
+	        <xsd:element name="origin" type="xsd:float" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Define pos as the origin for the calculation
+	of positions.</xsd:documentation>
+            </xsd:annotation>
+	      </xsd:element>
+	        <xsd:element name="decimals" type="xsd:float" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Number of decimals displayed for the weight
+	score.</xsd:documentation>
+            </xsd:annotation>
+	      </xsd:element>
+	        <xsd:element name="crer_ids" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Assign one separate feature ID per CRER. This
+	option is convenient to distinguish separate
+	CRERs.</xsd:documentation>
+            </xsd:annotation>
+	      </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
 
@@ -2337,7 +2609,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
         </xsd:sequence>
       </xsd:complexType>
 
-<xsd:complexType name="FeatureMapResponse">
+      <xsd:complexType name="FeatureMapResponse">
         <xsd:sequence>
           <xsd:element name="server" type="xsd:string">
             <xsd:annotation>
@@ -2355,6 +2627,46 @@ The output graph will thus consist in the graph induced by all nodes of the firs
             </xsd:annotation>
           </xsd:element>
         </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="FootprintDiscoveryResponse">
+        <xsd:sequence>
+          <xsd:element name="server" type="xsd:string">
+            <xsd:annotation>
+              <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+          <xsd:element name="command" type="xsd:string">
+            <xsd:annotation>
+              <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+          <xsd:element name="client" type="xsd:string">
+            <xsd:annotation>
+              <xsd:documentation>The results.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="GetOrthologsResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
       </xsd:complexType>
 
       <xsd:complexType name="GeneInfoResponse">
@@ -2417,7 +2729,27 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-            
+
+      
+      <xsd:complexType name="RocStatsResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
       
       <xsd:complexType name="XYGraphResponse">
 	      <xsd:sequence>
@@ -2959,6 +3291,38 @@ The output graph will thus consist in the graph induced by all nodes of the firs
         </xsd:complexType>
       </xsd:element>
 
+      <xsd:element name="footprint_discovery">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="request" type="tns:FootprintDiscoveryRequest" />
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="footprint_discoveryResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="response" type="tns:FootprintDiscoveryResponse" />
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="get_orthologs">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:GetOrthologsRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="get_orthologsResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:GetOrthologsResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
       <xsd:element name="gene_info">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -3012,6 +3376,23 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>      
       
+      <xsd:element name="roc_stats">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:RocStatsRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+
+      
+      <xsd:element name="roc_statsResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:RocStatsResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>        
       
       <xsd:element name="classfreq">
 	      <xsd:complexType>
@@ -3121,7 +3502,6 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>     
-          
       
       <xsd:element name="matrix_scan">
 	<xsd:complexType>
@@ -3404,6 +3784,22 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:feature_mapResponse"/>
   </message>
 
+  <message name="footprint_discoveryRequest">
+    <part name="parameters" element="tns:footprint_discovery"/>
+  </message>
+
+  <message name="footprint_discoveryResponse">
+    <part name="output" element="tns:footprint_discoveryResponse"/>
+  </message>
+
+  <message name="get_orthologsRequest">
+    <part name="parameters" element="tns:get_orthologs"/>
+  </message>
+
+  <message name="get_orthologsResponse">
+    <part name="output" element="tns:get_orthologsResponse"/>
+  </message>
+
   <message name="gene_infoRequest">
     <part name="parameters" element="tns:gene_info"/>
   </message>
@@ -3426,6 +3822,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 
   <message name="text_to_htmlResponse">
     <part name="output" element="tns:text_to_htmlResponse"/>
+  </message>  
+  
+  <message name="roc_statsRequest">
+    <part name="parameters" element="tns:roc_stats"/>
+  </message>
+
+  <message name="roc_statsResponse">
+    <part name="output" element="tns:roc_statsResponse"/>
   </message>  
   
   <message name="classfreqRequest">
@@ -3649,6 +4053,18 @@ The output graph will thus consist in the graph induced by all nodes of the firs
          <documentation>
          </documentation>
       </operation>
+      <operation name="footprint_discovery">
+         <input name="FootprintDiscoveryRequest" message="tns:footprint_discoveryRequest"/>
+         <output name="FootprintDiscoveryResponse" message="tns:footprint_discoveryResponse"/>
+         <documentation>
+         </documentation>
+      </operation>
+      <operation name="get_orthologs">
+         <input name="GetOrthologsRequest" message="tns:get_orthologsRequest"/>
+         <output name="GetOrthologsResponse" message="tns:get_orthologsResponse"/>
+         <documentation>Get orthologuous genes.
+         </documentation>
+      </operation>
       <operation name="gene_info">
          <input name="GeneInfoRequest" message="tns:gene_infoRequest"/>
          <output name="GeneInfoResponse" message="tns:gene_infoResponse"/>
@@ -3665,6 +4081,12 @@ The output graph will thus consist in the graph induced by all nodes of the firs
          <input name="TextToHtmlRequest" message="tns:text_to_htmlRequest"/>
          <output name="TextToHtmlResponse" message="tns:text_to_htmlResponse"/>
          <documentation>Converts a tab-delimited file into a HTML table
+         </documentation>
+      </operation>
+      <operation name="roc_stats">
+         <input name="RocStatsRequest" message="tns:roc_statsRequest"/>
+         <output name="RocStatsResponse" message="tns:roc_statsResponse"/>
+         <documentation>This program takes as input a set of scored results associated with validation labels (pos for positive, neg for negative) and computes, for each score value, the derived statistics (Sn, PPV, FPR), which can be further used to draw a ROC curve.
          </documentation>
       </operation>
       <operation name="xygraph">
@@ -3878,6 +4300,24 @@ This program supports a variety of background models (Bernoulli, Markov chains o
              <soap:body use="literal" />
          </output>
       </operation>
+      <operation name="footprint_discovery">
+         <soap:operation soapAction=""/>
+         <input>
+             <soap:body use="literal" />
+         </input>
+         <output>
+             <soap:body use="literal" />
+         </output>
+      </operation>
+      <operation name="get_orthologs">
+         <soap:operation soapAction=""/>
+         <input>
+             <soap:body use="literal" />
+         </input>
+         <output>
+             <soap:body use="literal" />
+         </output>
+      </operation>
       <operation name="gene_info">
          <soap:operation soapAction=""/>
          <input>
@@ -3897,6 +4337,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
          </output>
       </operation>
       <operation name="text_to_html">
+         <soap:operation soapAction=""/>
+         <input>
+             <soap:body use="literal" />
+         </input>
+         <output>
+             <soap:body use="literal" />
+         </output>
+      </operation>
+      <operation name="roc_stats">
          <soap:operation soapAction=""/>
          <input>
              <soap:body use="literal" />
@@ -4096,7 +4545,8 @@ This program supports a variety of background models (Bernoulli, Markov chains o
       Olivier Sand (oly@scmbb.ulb.ac.be).
    </documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
-      <soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
+	<soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
+      <!-- soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/ -->
     </port>
   </service>
 </definitions>

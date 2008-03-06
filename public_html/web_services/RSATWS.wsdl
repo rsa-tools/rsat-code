@@ -1306,6 +1306,31 @@ Default is 'both'.</xsd:documentation>
        </xsd:sequence>
       </xsd:complexType>
       
+      <xsd:complexType name="parsepsixmlRequest">
+       <xsd:sequence>
+	  <xsd:element name="inputfile" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>The psi XML input file that will be converted in a tab file</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="channels" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>A list of evidence channels to filter separated by a comma</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="uth" type="xsd:float" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Upper threshold on the value</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="lth" type="xsd:float" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Lower threshold on the value</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
+       </xsd:sequence>
+      </xsd:complexType>
+      
       <xsd:complexType name="SupportedOrganismsRequest">
        <xsd:sequence>
 	<xsd:element name="output" type="xsd:string" minOccurs="0">
@@ -2729,7 +2754,26 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-
+      
+      <xsd:complexType name="parsepsixmlResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
       
       <xsd:complexType name="RocStatsResponse">
 	<xsd:sequence>
@@ -3365,6 +3409,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
+      
 
 
       
@@ -3375,6 +3420,22 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>      
+      
+      <xsd:element name="parse_psi_xml">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:parsepsixmlRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>     
+      
+      <xsd:element name="parse_psi_xmlResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:parsepsixmlResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>  
       
       <xsd:element name="roc_stats">
 	<xsd:complexType>
@@ -3823,7 +3884,13 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="text_to_htmlResponse">
     <part name="output" element="tns:text_to_htmlResponse"/>
   </message>  
-  
+  <message name="parse_psi_xmlRequest">
+    <part name="parameters" element="tns:parse_psi_xml"/>
+  </message>
+
+  <message name="parse_psi_xmlResponse">
+    <part name="output" element="tns:parse_psi_xmlResponse"/>
+  </message>  
   <message name="roc_statsRequest">
     <part name="parameters" element="tns:roc_stats"/>
   </message>
@@ -4083,6 +4150,12 @@ The output graph will thus consist in the graph induced by all nodes of the firs
          <documentation>Converts a tab-delimited file into a HTML table
          </documentation>
       </operation>
+      <operation name="parse_psi_xml">
+         <input name="parsepsixmlRequest" message="tns:parse_psi_xmlRequest"/>
+         <output name="parsepsixmlResponse" message="tns:parse_psi_xmlResponse"/>
+         <documentation>Converts a psi xml file in a tab delimited file
+         </documentation>
+      </operation>
       <operation name="roc_stats">
          <input name="RocStatsRequest" message="tns:roc_statsRequest"/>
          <output name="RocStatsResponse" message="tns:roc_statsResponse"/>
@@ -4337,6 +4410,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
          </output>
       </operation>
       <operation name="text_to_html">
+         <soap:operation soapAction=""/>
+         <input>
+             <soap:body use="literal" />
+         </input>
+         <output>
+             <soap:body use="literal" />
+         </output>
+      </operation>
+      <operation name="parse_psi_xml">
          <soap:operation soapAction=""/>
          <input>
              <soap:body use="literal" />
