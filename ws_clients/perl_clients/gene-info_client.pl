@@ -34,6 +34,10 @@ $prop->file_name($property_file);
 $prop->load();
 my %args = $prop->prop_list();
 
+## Convert the query string into a list
+my @queries = split(",", $args{query});
+$args{query} = \@queries;
+
 my $output_choice = $args{output_choice} || 'both';
 
 ## Send the request to the server
