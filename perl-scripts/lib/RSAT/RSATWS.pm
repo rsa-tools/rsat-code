@@ -3694,13 +3694,13 @@ sub parse_psi_xml {
    my $uth = $args{uth};
    $uth =~ s/\'//g;
    $uth =~ s/\'//g;
-   $uth .= " -uth $uth";
+   $command .= " -uth $uth";
   }
   if ($args{lth}) {
    my $lth = $args{lth};
    $lth =~ s/\'//g;
    $lth =~ s/\'//g;
-   $lth .= " -lth $lth";
+   $command .= " -lth $lth";
   }
   if ($args{inputfile}) {
    my $input_graph = $args{inputfile};
