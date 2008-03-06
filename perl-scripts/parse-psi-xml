@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-psi-xml,v 1.1 2008/03/05 14:12:54 rsat Exp $
+# $Id: parse-psi-xml,v 1.2 2008/03/06 13:34:38 rsat Exp $
 #
 ############################################################
 
@@ -57,7 +57,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -91,6 +91,8 @@ package main;
 			    );
     my %proteins = (); # Correspondance between the polypeptide  and their id in the XML file
     my @interactions = (); # interaction list
+    $uth = undef; # maximal value threshold
+    $lth = undef; # minimal value threshold
 
     ################################################################
     ## Read argument values
@@ -157,15 +159,21 @@ package main;
     ## Print output
     for (my $i = 0; $i < scalar @interactions; $i++) {
       if (scalar (keys %channels) == 0 || defined ($channels{$experiments{$interactions[$i][3]}})) {
+        if (defined $uth) {
+          next if ($interactions[$i][2] > $uth);
+        }
+        if (defined $lth) {
+          next if ($interactions[$i][2] < $lth);
+        }        
         print $main::out $proteins{$interactions[$i][0]};
         print $main::out "\t";
         print $main::out $proteins{$interactions[$i][1]};
         print $main::out "\t";
         print $main::out $interactions[$i][2];
         print $main::out "\t";
-        print $main::out $experiments{$interactions[$i][3]};
-        print $main::out "\t";
         print $main::out $experiments_colors{$interactions[$i][3]};
+        print $main::out "\t";
+        print $main::out $experiments{$interactions[$i][3]};
         print $main::out "\n";
       }
     }
@@ -277,20 +285,38 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-o") {
 	    $main::outfile{output} = shift(@arguments);
 	    
-	    ## Output file
+	    ## Channel
 =pod
 
-=item	B<-channels>
+=item	B<-channel>
 
 List of evidence channels to filter. For example, in case of parsing the String database, you may select 
 'automated_textmining', 'combined_confidence', 'experimental_interaction_data', 'gene_cooccurence', ...
 If this option is not used, all evidence channels will be taken into account.
 
 =cut
-	} elsif ($arg eq "-channels") {
+	} elsif ($arg eq "-channel") {
 	    $channel = shift(@arguments);
 	    $channels{$channel}++;
+=pod
 
+=item	B<-uth #>
+
+Upper threshold on the value
+
+=cut
+	} elsif ($arg eq "-uth") {
+	    $uth = shift(@arguments);
+=pod
+
+=item	B<-lth #>
+
+Lower threshold on the value
+
+=cut
+	} elsif ($arg eq "-lth") {
+	    $lth = shift(@arguments);
+	
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
@@ -298,11 +324,7 @@ If this option is not used, all evidence channels will be taken into account.
     }
 
 
-=pod
 
-=back
-
-=cut
 
 }
 
