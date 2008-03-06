@@ -8,68 +8,58 @@
   require ('functions.php');
   # log file update
   UpdateLogFile("neat","","");
-  title('string dataset download- results');
+  title('string dataset download - results');
   # Error status
   $error = 0;
   # Get parameters
   $now = date("Ymd_His");
-  $genes = $_REQUEST['genes'];
-  $genes = trim_text($genes);
+  $gene_list = $_REQUEST['genes'];
+  $gene_list = explode("-sep-", $gene_list);
+  $genes = array();
+  for ($i = 0; $i <= count($gene_list); $i++) {
+    $gene = $gene_list[$i];
+    $gene = trim($gene);
+    if ($_REQUEST[$gene] == 1) {
+      $gene = str_replace("_", ".", $gene);
+      array_push ($genes, $gene);
+    } 
+  }
   $organism = $_REQUEST['organism'];
-  $channels = array();
+  $channels = $_REQUEST['channels'];
+  $uth = $_REQUEST['uth'];
+  $lth = $_REQUEST['lth'];
+  if ($uth == "none") {
+    $uth = "";
+  } 
+  if ($lth == "none") {
+    $lth = "";
+  }   
   $file_content_tab = "";
-  if ($_REQUEST['automated_textmining'] != "") {
-    array_push ($channels, 'automated_textmining');
-  }
-  if ($_REQUEST['experimental_interaction_data'] != "") {
-    array_push ($channels, 'experimental_interaction_data');
-  }
-  if ($_REQUEST['gene_cooccurence'] != "") {
-    array_push ($channels, 'gene_cooccurence');
-  }
-  if ($_REQUEST['gene_fusion_events'] != "") {
-    array_push ($channels, 'gene_fusion_events');
-  }
-  if ($_REQUEST['gene_coexpression'] != "") {
-    array_push ($channels, 'gene_coexpression');
-  }
-  if ($_REQUEST['combined_confidence'] != "") {
-    array_push ($channels, 'combined_confidence');
-  }
-  
 
-  
   # WGET COMMAND
-  $gene_list = explode("\n", $genes); 
-  echo "<pre>";
-  print_r ($genes);
-  print_r ($gene_list);
-  echo "</pre>";
-  for ($i = 0; $i < count($gene_list); $i++) {
-    $gene_list[$i] = rtrim ($gene_list[$i]);
-    if ($gene_list[$i] == "") {
-      next;
+  for ($i = 0; $i < count($genes); $i++) {
+    $genes[$i] = rtrim ($genes[$i]);
+    if ($genes[$i] == "") {
+      continue;
     }
-    $temp_file;
-    $temp_command = "mktemp tmp/string.XXXXXX";
-    exec($temp_command, $temp_file);
-    trim($temp_file[0]);
-    $temp_file = $temp_file[0];
-    $wget_command = "wget 'http://stitch.embl.de/api/psi-mi/interactions?identifier=$gene_list[$i]&species=$organism' -O $temp_file";
+    $temp_file = writeTempFile("String", "");
+    $wget_command = "wget 'http://stitch.embl.de/api/psi-mi/interactions?identifier=$genes[$i]&species=$organism' -O $temp_file";
     exec($wget_command);
     $file_content_xml = file_get_contents ($temp_file);
     ## Load the parameters of the program in to an array
     $parameters = array( 
       "request" => array(
         "inputfile"=>$file_content_xml,
-        "channels"=>implode(",", $channels)
+        "channels"=>$channels,
+        "uth"=>$uth,
+        "lth"=>$lth
       )
     );
 
     # Open the SOAP client
     $client = new SoapClient(
-//                        $neat_wsdl,
-"http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS-test.wsdl",
+                       $neat_wsdl,
+// "http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl",
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
@@ -88,9 +78,8 @@
     }
     $response = $echoed->response;
     $server = $response->server;
-    
-    
     $server = rtrim($server);
+    $command = $response->command;
     $file_content_tab_add = storeFile($server);
     $file_content_tab = $file_content_tab.$file_content_tab_add;
   }
@@ -115,46 +104,36 @@
         <TD>
           <FORM METHOD='POST' ACTION='display_graph_form.php'>
             <input type='hidden' NAME='pipe' VALUE='1'>
-            <input type='hidden' NAME='graph_file' VALUE='$server'>
-            <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-            if ($out_format == 'tab') {
-              echo "
+            <input type='hidden' NAME='graph_file' VALUE='$temp_file'>
+            <input type='hidden' NAME='graph_format' VALUE='tab'>
+
               <input type='hidden' NAME='scol' VALUE='1'>
               <input type='hidden' NAME='tcol' VALUE='2'>
               <input type='hidden' NAME='wcol' VALUE='3'>
-              <input type='hidden' NAME='eccol' VALUE='4'>";
-            }
-            echo "
+              <input type='hidden' NAME='eccol' VALUE='4'>
             <INPUT type='submit' value='Display the graph'>
           </form>
         </td>
         <TD>
           <FORM METHOD='POST' ACTION='compare_graphs_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-          if ($out_format == 'tab') {
-            echo "
+          <input type='hidden' NAME='graph_file' VALUE='$temp_file'>
+          <input type='hidden' NAME='graph_format' VALUE='tab'>
             <input type='hidden' NAME='scol' VALUE='1'>
             <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>";
-          }
-          echo "
+            <input type='hidden' NAME='wcol' VALUE='3'>
+
           <INPUT type='submit' value='Compare this graph to another one'>
         </form>
       </td>
       <TD>
         <FORM METHOD='POST' ACTION='random_graph_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-          if ($out_format == 'tab') {
-            echo "
+          <input type='hidden' NAME='graph_file' VALUE='$temp_file'>
+          <input type='hidden' NAME='graph_format' VALUE='tab'>
             <input type='hidden' NAME='scol' VALUE='1'>
             <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>";
-          }
-          echo "
+            <input type='hidden' NAME='wcol' VALUE='3'>
           <INPUT type='submit' value='Randomize this graph'>
         </form>
       </td>
@@ -163,45 +142,33 @@
       <TD>
         <FORM METHOD='POST' ACTION='graph_get_clusters_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-          if ($out_format == 'tab') {
-            echo "
+          <input type='hidden' NAME='graph_file' VALUE='$temp_file'>
+          <input type='hidden' NAME='graph_format' VALUE='tab'>
             <input type='hidden' NAME='scol' VALUE='1'>
             <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>";
-          }
-          echo "
+            <input type='hidden' NAME='wcol' VALUE='3'>
           <INPUT type='submit' value='Map clusters or extract a subnetwork'>
         </form>
       </td>
       <TD>
         <FORM METHOD='POST' ACTION='graph_node_degree_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-          if ($out_format == 'tab') {
-            echo "
+          <input type='hidden' NAME='graph_file' VALUE='$temp_file'>
+          <input type='hidden' NAME='graph_format' VALUE='tab'>
             <input type='hidden' NAME='scol' VALUE='1'>
             <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>";
-          }
-          echo "
+            <input type='hidden' NAME='wcol' VALUE='3'>
           <INPUT type='submit' value='Nodes degrees computation'>
         </form>
       </td>
       <TD>
         <FORM METHOD='POST' ACTION='graph_neighbours_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-          if ($out_format == 'tab') {
-            echo "
+          <input type='hidden' NAME='graph_file' VALUE='$temp_file'>
+          <input type='hidden' NAME='graph_format' VALUE='tab'>
             <input type='hidden' NAME='scol' VALUE='1'>
             <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>";
-          }
-          echo "
+            <input type='hidden' NAME='wcol' VALUE='3'>
           <INPUT type='submit' value='Neighbourhood analysis'>
         </form>
       </td>    
@@ -210,38 +177,30 @@
       <TD>
         <FORM METHOD='POST' ACTION='mcl_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-          if ($out_format == 'tab') {
-            echo "
+          <input type='hidden' NAME='graph_file' VALUE='$temp_file'>
+          <input type='hidden' NAME='graph_format' VALUE='tab'>
             <input type='hidden' NAME='scol' VALUE='1'>
             <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>";
-          }
-          echo "
+            <input type='hidden' NAME='wcol' VALUE='3'>
           <INPUT type='submit' value='MCL Graph clustering'>
         </form>
       </td>
       <TD>
         <FORM METHOD='POST' ACTION='alter_graph_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-          if ($out_format == 'tab') {
-            echo "
+          <input type='hidden' NAME='graph_file' VALUE='$temp_file'>
+          <input type='hidden' NAME='graph_format' VALUE='tab'>
             <input type='hidden' NAME='scol' VALUE='1'>
             <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>";
-          }
-          echo "
+            <input type='hidden' NAME='wcol' VALUE='3'>
           <INPUT type='submit' value='Graph alteration'>
         </form>
       </td>
       <TD>
         <FORM METHOD='POST' ACTION='pathfinder_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$server'>
-          <input type='hidden' NAME='in_format' VALUE='$out_format'>";
+          <input type='hidden' NAME='graph_file' VALUE='$temp_file'>
+          <input type='hidden' NAME='in_format' VALUE='tab'>";
           echo "
           <INPUT type='submit' value='Path Finding'>
         </form>
@@ -251,8 +210,8 @@
         <TD>
           <FORM METHOD='POST' ACTION='visant.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='visant_graph_file' VALUE='$server'>
-          <input type='hidden' NAME='visant_graph_format' VALUE='$out_format'>
+          <input type='hidden' NAME='visant_graph_file' VALUE='$temp_file'>
+          <input type='hidden' NAME='visant_graph_format' VALUE='tab'>
           <input type='hidden' NAME='visant_directed' VALUE='$directed'>";
           echo "
           <INPUT type='submit' value='Load in VisANT'>
