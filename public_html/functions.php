@@ -278,23 +278,7 @@ Function UpdateLogFile($suite ,$script_name, $message) {
     $address = $tutorial_url; 
   } 
   return $address;
-  
 }
+
 ?>
 
-<?php
-  Function readStringOrganisms() {
-    $organisms = file_get_contents("http://string.embl.de/newstring_download/species.v7.1.txt");
-    $lines = explode("\n",$organisms);
-    $array_count = count($lines);
-    for($y=0; $y<$array_count; $y++) {
-      $line = trim($lines[$y]);
-      if (!preg_match("/^\#\#/", $line)) {
-        $linecp = explode("\t", $line);
-        $organism_array[$y][0] = $linecp[0];
-        $organism_array[$y][1] = $linecp[2];
-      }
-    }
-    return $organism_array;
-  }
-?>
