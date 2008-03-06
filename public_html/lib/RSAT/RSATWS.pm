@@ -3690,10 +3690,22 @@ sub parse_psi_xml {
      $command .= " -channel $channel";
    }
   }
+  if ($args{uth}) {
+   my $uth = $args{uth};
+   $uth =~ s/\'//g;
+   $uth =~ s/\'//g;
+   $uth .= " -uth $uth";
+  }
+  if ($args{lth}) {
+   my $lth = $args{lth};
+   $lth =~ s/\'//g;
+   $lth =~ s/\'//g;
+   $lth .= " -lth $lth";
+  }
   if ($args{inputfile}) {
    my $input_graph = $args{inputfile};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/random_graph-input-graph.XXXXXXXXXX`;
+   my $tmp_input = `mktemp $TMP/parse-psi-xml_input.XXXXXXXXXX`;
    open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
    print TMP_IN $input_graph;
    close TMP_IN;
@@ -3704,7 +3716,7 @@ sub parse_psi_xml {
   }
 
 
-  &run_WS_command($command, $output_choice, "random-graph");
+  &run_WS_command($command, $output_choice, "parse-psi-xml");
 }
 ##########
 sub random_graph {
