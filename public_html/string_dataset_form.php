@@ -6,6 +6,7 @@
 <body class="form">
 <?php
   require ('functions.php');
+  require ('string_functions.php');
   title('String dataset download');
   
   $evidence = array('automated_textmining','experimental_interaction_data','gene_cooccurence', 'gene_fusion_events','gene_coexpression', 'combined_confidence');
@@ -15,13 +16,13 @@
     $demo_genes = "GAP1\nMEP2\nMEP1";
   }  
   
-   echo ("<center>Donwload a subgraph from the String database</center>\n");
+   echo ("<center>Download a subgraph from the String database</center>\n");
    echo ("<br>
    STRING is a database of known and predicted protein-protein interactions.
 The interactions include direct (physical) and indirect (functional) associations; they are derived from four sources. STRING quantitatively integrates interaction data from these sources for a large number of organisms, and transfers information between these organisms where applicable. The database currently contains 1,513,782 proteins in 373 species.<br> This program allows you to download a subgraph composed of the neighbours of the genes of the String database.
           \n");
    
-   echo ("<form method='post' action='string_dataset.php' enctype='multipart/form-data'> ");
+   echo ("<form method='post' action='string_names.php' enctype='multipart/form-data'> ");
    
   # LIST OF ORGANISM
   echo("<br>&nbsp;&nbsp;&nbsp;<B>Organism</B><br>");
@@ -39,6 +40,14 @@ The interactions include direct (physical) and indirect (functional) association
   # LIST OF PROTEINS
   echo ("<br><br>&nbsp;&nbsp;&nbsp;<b>Genes</b><br>");
   echo ("<textarea name='genes' rows='6' cols='65'>$demo_genes</textarea><br>");
+  
+  # SIGNIFICANCE THRESHOLD
+  echo ("<br><br>&nbsp;&nbsp;&nbsp;<b>String score threshold (between 0 and 1)</b><br>");
+  echo("  
+    <table>
+    <tr><td><B>Lower threshold</B></td><td><input type = 'text' value = 'none' name='lth' size = 4></input></td></tr>
+    <tr><td><B>Upper threshold</B></td><td><input type = 'text' value = 'none' name='uth' size = 4></input></td></tr>
+    <table>");
   
   # EVIDENCE CHANNELS
   echo ("<br><br>&nbsp;&nbsp;&nbsp;<b>Evidence channel</b><br><br>");

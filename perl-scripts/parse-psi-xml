@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-psi-xml,v 1.2 2008/03/06 13:34:38 rsat Exp $
+# $Id: parse-psi-xml,v 1.3 2008/03/06 16:42:40 rsat Exp $
 #
 ############################################################
 
@@ -57,7 +57,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -147,7 +147,7 @@ package main;
       my $experiment = $interaction->getElementsByTagName("experimentRef");
       $interactions[$i][0] = $id_A;
       $interactions[$i][1] = $id_B;
-      $interactions[$i][2] = $value;
+      $interactions[$i][2] = $value->string_value;
       $interactions[$i][3] = $experiment;
     }
 
