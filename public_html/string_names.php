@@ -52,6 +52,7 @@
     $checked = "checked";
     if ($gene_description[$i][0] == "Not found in STRING") {
       $checked = "";
+      $not_found = 1;
     }
     echo ("<tr>");
     if ($checked != "") {
@@ -69,19 +70,18 @@
   echo "<input type='hidden' NAME='genes' VALUE='$gene_list'>";
   echo "<input type='hidden' NAME='uth' VALUE='$uth'>";
   echo "<input type='hidden' NAME='lth' VALUE='$lth'>";
-  
+  if (count ($gene_description) == 1 && $not_found == 1) {
+    echo ("<h4 align = 'center'>Your query genes did not match any record in STRING.</h4>");
+  } else {
+    echo("  
+      <ul><ul><table class='formbutton'>
+      <TD><input type='submit' name='.submit' value='GO' /></TD>
+      </form>
 
-  
-  
-echo("  
-  <ul><ul><table class='formbutton'>
-  <TD><input type='submit' name='.submit' value='GO' /></TD>
-  </form>
-
-  <TD><B><A HREF='mailto:sylvain-at-scmbb.ulb.ac.be'>MAIL</A></B></TD>
-  </TR></TABLE></ul></ul>
- ");
-
+      <TD><B><A HREF='mailto:sylvain-at-scmbb.ulb.ac.be'>MAIL</A></B></TD>
+      </TR></TABLE></ul></ul>
+   ");
+  }
 ?>
 </body>
 </html>
