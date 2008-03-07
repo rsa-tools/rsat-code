@@ -4,6 +4,10 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 
 require "RSA.lib";
+use Storable qw(nstore retrieve);
+
+# temporary directory
+my $RSAT = $0; $RSAT =~ s/\/perl-scripts.*//; my $TMP = $RSAT.'/public_html/tmp';
 
 ## Initialization
 $start_time = `date`;
@@ -93,8 +97,18 @@ $organism = new RSAT::organism();
 $organism->check_name($organism_name);
 $organism->set_attribute("name", $organism_name);
 $organism->OpenContigs($organism_name, $annotation_table);
-$organism->LoadFeatures($annotation_table);
-$organism->LoadSynonyms();
+### read ORF information
+my $serial_file = $TMP."/".$organism_name."1syn.serial";
+if (-e $serial_file && !$annotation_table && -M $serial_file < 2 && -w $serial_file) {
+  $organism = retrieve $serial_file;
+} else {
+  ### read feature attributes (position, description, ...)
+  
+  $organism->LoadFeatures($annotation_table);
+  $organism->LoadSynonyms();
+  nstore $organism, $serial_file;
+  system ("chmod 777 $serial_file");
+}
 $organism->CalcNeighbourLimits() if ($calc_neighbours);
 
 
