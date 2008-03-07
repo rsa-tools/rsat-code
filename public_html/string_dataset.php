@@ -30,12 +30,17 @@
   $lth = $_REQUEST['lth'];
   if ($uth == "none") {
     $uth = "";
+  } else if (!is_double($uth) || $uth > 1) { 
+    warning("Upper threshold value is not a valid value. Threshold $uth will be ignored.");
+    $uth = "";
   } 
   if ($lth == "none") {
     $lth = "";
-  }   
+  } else if (!is_double($lth) || $lth > 1) { 
+    warning("Upper threshold value is not a valid value. Threshold $lth will be ignored.");
+    $lth = "";
+  } 
   $file_content_tab = "";
-
   # WGET COMMAND
   for ($i = 0; $i < count($genes); $i++) {
     $genes[$i] = rtrim ($genes[$i]);
