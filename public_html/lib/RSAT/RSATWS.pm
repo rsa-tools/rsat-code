@@ -3690,6 +3690,15 @@ sub parse_psi_xml {
      $command .= " -channel $channel";
    }
   }
+  if ($args{interactor_type}) {
+   my $interactor_type_list = $args{interactor_type};
+   $interactor_type_list =~ s/\'//g;
+   $interactor_type_list =~ s/\'//g;
+   @interactor_types = split ',', $interactor_type_list;
+   foreach my $interactor_type (@interactor_types) {
+     $command .= " -interactor_type $interactor_type";
+   }
+  }
   if ($args{uth}) {
    my $uth = $args{uth};
    $uth =~ s/\'//g;
