@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: gene-info,v 1.7 2008/01/25 21:31:58 jvanheld Exp $
+# $Id: gene-info,v 1.8 2008/03/07 15:21:34 rsat Exp $
 #
 # Time-stamp: <2003-07-06 20:30:09 jvanheld>
 #
@@ -16,6 +16,11 @@ require "RSA.lib";
 require RSAT::util;
 require RSAT::organism;
 require RSAT::GenomeFeature;
+use Storable qw(nstore retrieve);
+
+# temporary directory
+my $RSAT = $0; $RSAT =~ s/\/perl-scripts.*//; my $TMP = $RSAT.'/public_html/tmp';
+
 
 $start_time = $date = `date '+%d/%m/%y %H:%M:%S %Z'`;
 
@@ -47,8 +52,16 @@ $out = &RSAT::util::OpenOutputFile($outputfile);
 &Verbose();
 
 ### read ORF information
-$organism->LoadFeatures();
-$organism->LoadSynonyms();
+  my $serial_file = $TMP."/".$organism_name."1syn.serial";
+  if (-e $serial_file && !$annotation_table && -M $serial_file < 2 && -w $serial_file) {
+    $organism = retrieve $serial_file;
+  } else {
+    ### read feature attributes (position, description, ...)
+    $organism->LoadFeatures($annotation_table, $imp_pos);
+    $organism->LoadSynonyms();
+    nstore $organism, $serial_file;
+    system ("chmod 777 $serial_file");
+  }
 
 ################################################################
 #### read query file
