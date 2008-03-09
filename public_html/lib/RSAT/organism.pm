@@ -418,13 +418,6 @@ sub LoadFeatures {
   my $name_index = $self->get_attribute("name_index");
 
   ## Parse feature types
-#  my @feature_types = ();
-#  my %accepted_feature_types = ();
-#  if ($feature_types) {
-#    @feature_types = split ",", $feature_types;
-#  } else {
-#    @feature_types = qw (cds);
-#  }
   my @feature_types = $self->get_attribute("feature_types");
   if (scalar(@feature_types) < 1) {
     @feature_types = qw (cds trna rrna);
@@ -1324,6 +1317,96 @@ sub get_feature_for_name {
     &RSAT::message::Debug("RSAT::organism::get_feature_for_name()", $query, $result)
       if ($main::verbose >= 6);
     return $result;
+}
+
+
+################################################################
+=pod
+
+=item serial_file_name()
+
+Return the name of the file containing the serialized organism.
+
+Usage
+
+ $organism->serial_file_name($imp_pos, $synonyms)
+
+=cut
+
+sub serial_file_name {
+  my ($self, $imp_pos, $synonyms) = @_;
+  my $serial_dir = $ENV{RSAT}."/public_html/tmp";
+  my $serial_file = join ("", $self->get_attribute("name"),
+			  "_imp_pos",$imp_pos,
+			  "_synonyms",$synonyms,
+			  "_",join("_", $self->get_attribute("feature_types")),
+			  ".serial");
+  return ($serial_dir."/".$serial_file);
+}
+
+
+################################################################
+=pod
+
+=item load_and_serialize()
+
+Serialize the organism, i.e. store it as a binary file. The serialized
+organism can be reloaded faster than with the flat files.
+
+=cut
+sub load_and_serialize {
+  use Storable qw(nstore);
+  my ($self, $imp_pos, $synonyms) = @_;
+  $self->LoadFeatures($annotation_table, $imp_pos);
+  $self->LoadSynonyms() if ($synonyms);
+  my $serial_file = $self->serial_file_name($imp_pos, $synonyms);
+  nstore $self, $serial_file;
+  system ("chmod 777 $serial_file");
+  &RSAT::message::TimeWarn("Serialized organism", $organism, $serial_file) 
+    if ($main::verbose >= 0);
+}
+
+################################################################
+=pod
+
+=item is_serialized()
+
+Return 1 if there is an up-to-date serialized version of the organism.
+
+Return zero otherwise, i.e. if either the serialized file either does
+not exist, or is older than the contig file.
+
+=cut
+sub is_serialized {
+  my ($self, $imp_pos, $synonyms) = @_;
+
+  ## Get last modifiction date of the contig file
+  my $organism_name = $self->get_attribute("name");
+  my $ctg_file = join("", $main::supported_organism{$organism_name}->{'data'}, "/genome/","contigs.txt");
+  my ($ctg_dev,$ctg_ino,$ctg_mode,$ctg_nlink,$ctg_uid,$ctg_gid,$ctg_rdev,$ctg_size,
+      $ctg_atime,$ctg_mtime,$ctg_ctime,$ctg_blksize,$ctg_blocks)
+    = stat($ctg_file);
+#  &RSAT::message::Debug("Contig file", $ctg_file, "last modified", $ctg_mtime) if ($main::verbose >= 10);
+
+  ## Get last modifiction date of the serialized file
+  my $serial_file = $self->serial_file_name($imp_pos, $synonyms);
+  my ($serial_dev,$serial_ino,$serial_mode,$serial_nlink,$serial_uid,$serial_gid,$serial_rdev,$serial_size,
+      $serial_atime,$serial_mtime,$serial_ctime,$serial_blksize,$serial_blocks)
+    = stat($serial_file);
+
+  ## Compare modification dates
+  if (-e $serial_file) {
+    if ($serial_mtime > $ctg_mtime) {
+      &RSAT::message::Info("Serialized file is up-to-date", $serial_file) if ($main::verbose >= 0);
+      return (1);
+    } else {
+      &RSAT::message::Info("Serialized file is obsolete", $serial_file) if ($main::verbose >= 0);
+      return (0);
+    }
+  } else {
+      &RSAT::message::Info("Serialized file does not exist", $serial_file) if ($main::verbose >= 0);
+      return (0);
+  }
 }
 
 return 1;
