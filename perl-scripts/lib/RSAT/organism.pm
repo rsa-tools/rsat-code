@@ -1363,7 +1363,7 @@ sub load_and_serialize {
   nstore $self, $serial_file;
   system ("chmod 777 $serial_file");
   &RSAT::message::TimeWarn("Serialized organism", $organism, $serial_file) 
-    if ($main::verbose >= 0);
+    if ($main::verbose >= 3);
 }
 
 ################################################################
@@ -1397,14 +1397,14 @@ sub is_serialized {
   ## Compare modification dates
   if (-e $serial_file) {
     if ($serial_mtime > $ctg_mtime) {
-      &RSAT::message::Info("Serialized file is up-to-date", $serial_file) if ($main::verbose >= 0);
+      &RSAT::message::Info("Serialized file is up-to-date", $serial_file) if ($main::verbose >= 3);
       return (1);
     } else {
-      &RSAT::message::Info("Serialized file is obsolete", $serial_file) if ($main::verbose >= 0);
+      &RSAT::message::Info("Serialized file is obsolete", $serial_file) if ($main::verbose >= 3);
       return (0);
     }
   } else {
-      &RSAT::message::Info("Serialized file does not exist", $serial_file) if ($main::verbose >= 0);
+      &RSAT::message::Info("Serialized file does not exist", $serial_file) if ($main::verbose >= 3);
       return (0);
   }
 }
