@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.68 2008/03/06 07:47:51 rsat Exp $
+# $Id: retrieve-seq,v 1.69 2008/03/09 01:01:44 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -79,27 +79,24 @@ $organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
 
 #### Specify the file containing genome annotations
 if ($annotation_table) {
-$organism->set_attribute("annotation_table", $annotation_table);
-# } else {
-#   $annotation_table = $supported_organism{$organism_name}->{'features'};
-#   $organism->set_attribute("annotation_table", $annotation_table);
+  $organism->set_attribute("annotation_table", $annotation_table);
 }
 
 ################################################################
 #### Specify the input sequence file
 if ($input_sequence_file) {
-    #### manually specified input sequence
-    $organism->set_attribute("input_sequence_file", $input_sequence_file);
-    $organism->set_attribute("input_sequence_format", $input_sequence_format);
-    $organism->OpenContigs($organism_name, $annotation_table, $input_sequence_file, $input_sequence_format);
+  #### manually specified input sequence
+  $organism->set_attribute("input_sequence_file", $input_sequence_file);
+  $organism->set_attribute("input_sequence_format", $input_sequence_format);
+  $organism->OpenContigs($organism_name, $annotation_table, $input_sequence_file, $input_sequence_format);
 } else {
-    if ($organism_name) {
-	#### automatic selection of genome file (and feature file)
-	$organism->OpenContigs($organism_name, $annotation_table, "", "", rm=>$repeat_masked);
-    } else {
-	&RSAT::error::FatalError("You should specify an organism name.", 
-				 "Run the command supported-organism to obtain the list of supported organisms.");
-    }
+  if ($organism_name) {
+    #### automatic selection of genome file (and feature file)
+    $organism->OpenContigs($organism_name, $annotation_table, "", "", rm=>$repeat_masked);
+  } else {
+    &RSAT::error::FatalError("You should specify an organism name.", 
+			     "Run the command supported-organism to obtain the list of supported organisms.");
+  }
 }
 
 #### Default limits (from, to)
@@ -117,16 +114,6 @@ if ($sequence_type eq "upstream") {
 } elsif ($sequence_type eq "downstream") {
     $default{from} = 1;
     $default{to} = 200;
-#} elsif ($sequence_type = "exons") {
-#    unless (defined($supported_organism{$organism_name}->{'exons'})) {
-#	&RSAT::error::FatalError("There is no informationa about introns for organism ", $organism_name, "\n");
-#    }
-#    #### read exons
-#    ($exons) = &OpenInputFile($supported_organism{$organism_name}->{'exons'}) {
-#	while (<$exons>) {
-#	    
-#	}
-#    }
 }
 
 #### check output format ####
@@ -168,25 +155,31 @@ if ($sequence_type eq "random fragments") {
     $genome_len = $ctg_start[$#ctgs+1];
     &RSAT::message::Info("genome length", $genome_len)
 	if ($verbose >= 2);
-    
+
 } else {
-  my $serial_org_file = $TMP."/".$organism_name.$imp_pos.".serial";
-  my $serial_org_syn_file = $TMP."/".$organism_name.$imp_pos."syn.serial";
-  $serial_file = $serial_org_syn_file;
-  if ($ids_only) {
-    $serial_file = $serial_org_file;
-  } 
-  if (-e $serial_file && !$annotation_table && -M $serial_file < 2 && -w $serial_file) {
-    $organism = retrieve $serial_file;
-  } else {
-    ### read feature attributes (position, description, ...)
+
+  ## Specify whether synonyms should be loaded or not
+  my $synonyms = 1;
+  if (($return_all) || ($ids_only)) {
+    $synonyms = 0;
+  }
+
+  ### Load organism from user-specified annotation table
+  if ($annotation_table) {
     $organism->LoadFeatures($annotation_table, $imp_pos);
-    #### read synonyms
-    unless (($return_all) || ($ids_only)) {
-      $organism->LoadSynonyms();
+    $organism->LoadSynonyms() if ($synonyms);
+
+  } else {
+    if ($organism->is_serialized($imp_pos, $synonyms)) {
+      ## Load organism from serialized file
+      my $serial_file = $organism->serial_file_name($imp_pos, $synonyms);
+      $organism = retrieve $serial_file;
+      &RSAT::message::TimeWarn("Retrieved organism", $organism_name, "from serialized file", $serial_file)
+	if ($main::verbose >= 3);
+    } else {
+      ### Load organism from flat files (slower)
+      $organism->load_and_serialize($imp_pos, $synonyms);
     }
-    nstore $organism, $serial_file;
-    system ("chmod 777 $serial_file");
   }
 }
 
