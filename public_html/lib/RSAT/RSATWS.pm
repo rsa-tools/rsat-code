@@ -151,6 +151,134 @@ sub retrieve_seq {
 }
 
 ##########
+sub retrieve_seq_multigenome {
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+  my $noorf = $args{"noorf"};
+  my $from = $args{"from"};
+  my $to = $args{"to"};
+
+  if ($args{"input"}) {
+    my $input = $args{"input"};
+    chomp $input;
+    $tmp_input_file = `mktemp $TMP/retrieve-seq-multigenome.XXXXXXXXXX`;
+    open TMP_IN, ">".$tmp_input_file or die "cannot open temp file ".$tmp_input_file."\n";
+    print TMP_IN $input;
+    close TMP_IN;
+  } elsif ($args{"tmp_input_file"}) {
+    $tmp_input_file = $args{"tmp_input_file"};
+    $tmp_input_file =~ s/\'//g;
+    $tmp_input_file =~ s/\"//g;
+  }
+  chomp $tmp_input_file;
+
+  my $feattype = $args{"feattype"};
+  my $type = $args{"type"};
+  my $format = $args{"format"};
+  my $all = $args{"all"};
+  my $lw = $args{"lw"};
+  my $label = $args{"label"};
+  my $label_sep = $args{"label_sep"};
+  my $nocom = $args{"nocom"};
+  my $repeat = $args{'repeat'};
+  my $imp_pos = $args{'imp_pos'};
+  my $gene_col = $args{'gene_col'};
+  my $org_col = $args{'org_col'};
+
+  my $command = "$SCRIPTS/retrieve-seq-multigenome";
+
+  if ($tmp_input_file) {
+    $command .= " -i '".$tmp_input_file."'";
+  }
+
+  if ($gene_col) {
+      $gene_col =~ s/\'//g;
+      $gene_col =~ s/\"//g;
+      $command .= " -gene_col '".$gene_col."'";
+  }
+
+  if ($org_col) {
+      $org_col =~ s/\'//g;
+      $org_col =~ s/\"//g;
+      $command .= " -org_col '".$org_col."'";
+  }
+
+  if ($noorf == 1) {
+    $command .= " -noorf";
+  }
+
+  if ($from =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $from =~ s/\'//g;
+    $from =~ s/\"//g;
+    $command .= " -from '".$from."'";
+  }
+
+  if ($to =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $to =~ s/\'//g;
+    $to =~ s/\"//g;
+    $command .= " -to '".$to."'";
+  }
+
+  if ($feattype) {
+    $feattype =~ s/\'//g;
+    $feattype =~ s/\"//g;
+    $command .= " -feattype '".$feattype."'";
+  }
+
+  if ($type) {
+    $type =~ s/\'//g;
+    $type =~ s/\"//g;
+    $command .= " -type '".$type."'";
+  }
+
+  if ($format) {
+    $format =~ s/\'//g;
+    $format =~ s/\"//g;
+    $command .= " -format '".$format."'";
+  }
+
+  if ($all == 1) {
+    $command .= " -all";
+  }
+
+  if ($lw) {
+    $lw =~ s/\'//g;
+    $lw =~ s/\"//g;
+    $command .= " -lw '".$lw."'";
+  }
+
+  if ($label) {
+    $label =~ s/\'//g;
+    $label =~ s/\"//g;
+    $command .= " -label '".$label."'";
+  }
+
+  if ($label_sep) {
+    $label_sep =~ s/\'//g;
+    $label_sep =~ s/\"//g;
+    $command .= " -labelsep '".$label_sep."'";
+  }
+
+  if ($nocom == 1) {
+    $command .= " -nocom";
+  }
+
+  if ($repeat == 1) {
+    $command .= " -rm";
+  }
+
+  if ($imp_pos == 1) {
+    $command .= " -imp_pos";
+  }
+
+  &run_WS_command($command, $output_choice, "retrieve-seq-multigenome");
+}
+
+##########
 sub retrieve_ensembl_seq {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
