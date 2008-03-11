@@ -104,6 +104,118 @@ By default, the comment indicates the ORF and upstream sequence coordinates.</xs
 	</xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="RetrieveSequenceMultigenomeRequest">
+        <xsd:annotation>
+	  <xsd:documentation>Parameters for the operation retrieve_seq_multigenome.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
+Default is 'both'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="input" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>The input file is a tab-delimited text files with (at least) the two
+    following columns:
+
+    1. gene ID or name
+      Identifier oor synonyms are supported.
+
+    2. Organism name
+      For the organism name, spaces must be replaced by underscore character
+      (exactly as for retrieve-seq).
+
+    If additional columns are included in the input file, they are ignored.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="tmp_input_file" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Input file on the server.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="all" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Return sequences for all the genes of the organism if value = 1. Incompatible with query.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="noorf" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Prevent overlap with upstream open reading frames (ORF) if value = 1.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="from" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Inferior limit of the region to retrieve. Default is organism dependant (example: Saccharomyces cerevisiae = -800).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="to" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Superior limit of the region to retrieve. Default is '-1'.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="feattype" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Type of genome features to load. Supported: CDS, mRNA, tRNA, rRNA. </xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="type" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation> Sequence type. Supported: upstream, downstream, ORF (unspliced open reading frame).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="format" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, FastA</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="lw" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Line width (0 for whole sequence on one line).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="label" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Field(s) to be used in the sequence label. Multiple fields can be specified, separated by commas. 
+Supported: id, name, organism_name, sequence_type, current_from, current_to, ctg, orf_strand, reg_left, reg_right. 
+Default: name.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="label_sep" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Separator between the label fields. Default: | (pipe character).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="nocom" type="xsd:int" minOccurs="0">
+           <xsd:annotation>
+              <xsd:documentation>No comments if value = 1. Only the identifier and the sequence are returned. 
+By default, the comment indicates the ORF and upstream sequence coordinates.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="repeat" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Use the repeat masked version of the genome if value = 1. Attention: repeated regions are annotated for some genomes only.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="imp_pos" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Admit imprecise positions if value = 1.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="gene_col" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Number of the column containing the gene names/identifiers (default: 1).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="org_col" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Number of the column containing the organisms (default: 2).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="RetrieveEnsemblSequenceRequest">
         <xsd:annotation>
 	  <xsd:documentation>Parameters for the operation retrieve_ensembl_seq.</xsd:documentation>
@@ -2494,6 +2606,26 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="RetrieveSequenceMultigenomeResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="RetrieveEnsemblSequenceResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3207,6 +3339,22 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
+      <xsd:element name="retrieve_seq_multigenome">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:RetrieveSequenceMultigenomeRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="retrieve_seq_multigenomeResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:RetrieveSequenceMultigenomeResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
       <xsd:element name="retrieve_ensembl_seq">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -3781,6 +3929,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:retrieve_seqResponse"/>
   </message>
 
+  <message name="retrieve_seq_multigenomeRequest">
+    <part name="parameters" element="tns:retrieve_seq_multigenome"/>
+  </message>
+
+  <message name="retrieve_seq_multigenomeResponse">
+    <part name="output" element="tns:retrieve_seq_multigenomeResponse"/>
+  </message>
+
   <message name="retrieve_ensembl_seqRequest">
     <part name="parameters" element="tns:retrieve_ensembl_seq"/>
   </message>
@@ -4065,6 +4221,13 @@ The output graph will thus consist in the graph induced by all nodes of the firs
            for list of query genes.
          </documentation>
       </operation>
+      <operation name="retrieve_seq_multigenome">
+         <input name="RetrieveSequenceMultigenomeRequest" message="tns:retrieve_seq_multigenomeRequest"/>
+         <output name="RetrieveSequenceMultigenomeResponse" message="tns:retrieve_seq_multigenomeResponse"/>         
+	 <documentation>Returns upstream, downstream or coding DNA sequences
+           for list of query genes and organisms.
+         </documentation>
+      </operation>
       <operation name="retrieve_ensembl_seq">
          <input name="RetrieveEnsemblSequenceRequest" message="tns:retrieve_ensembl_seqRequest"/>
          <output name="RetrieveEnsemblSequenceResponse" message="tns:retrieve_ensembl_seqResponse"/>         
@@ -4293,6 +4456,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 <!-- 	  RSAT CLASSICAL TOOLS BINDING -->
       <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
       <operation name="retrieve_seq">
+         <soap:operation soapAction=""/>
+         <input>
+             <soap:body use="literal" />
+         </input>
+         <output>
+             <soap:body use="literal" />
+         </output>
+      </operation>
+      <operation name="retrieve_seq_multigenome">
          <soap:operation soapAction=""/>
          <input>
              <soap:body use="literal" />
