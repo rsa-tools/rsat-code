@@ -234,7 +234,8 @@ the program consensus (Hertz), but not by other programs.
 %matrix_separator = ("consensus"=>"\n",
 		     "tab"=>"//", 
 		     "patser"=>"//",
-		     "transfac"=>"//");
+		     "transfac"=>"");
+		     #"transfac"=>"//");
 
 
 $info_log_base = exp(1);
