@@ -1,0 +1,214 @@
+#!/usr/bin/env python
+'''NAME
+        %(progname)s
+
+VERSION
+        %(version)s
+
+AUTHOR
+        Matthieu Defrance <defrance@scmbb.ulb.ac.be>
+
+DESCRIPTION
+        implants motif in DNA sequences
+
+CATEGORY
+        motifs
+        sequences
+
+USAGE        
+        %(usage)s
+
+ARGUMENTS
+    --version             show program's version number and exit
+    -h, --help            show this help message and exit
+    -i #, --input=#       read sequence from # (must be in FASTA format)
+                          if not specified, the standard input is used
+    -o #, --output=#      output results to #
+                          if not specified, the standard output is used
+    -m #, --motif=#       read motif from # (must be in tab format)
+    -s #, --sites=#       read sites from # (one site per line format)
+    --esps=#              set the expected number of site per sequence to #
+    --espp=#              set the expected number of site per position to #
+    
+SEE ALSO
+        random-motif
+        random-sites
+'''
+
+import sys
+import os
+sys.path.insert(1, os.path.join(sys.path[0], 'lib'))
+
+from math import *
+import random
+import bisect
+import optparse
+from pydoc import pager
+from random import choice, randint, shuffle
+from lib import dna
+
+
+def wchoice(l, frequencies):
+    """
+    l -- list
+    frequences -- associated unnormalized frequencies
+    return a weighted choice function
+
+    """
+    assert len(l) == len(frequencies)
+    S = 0.0
+    cdf = []
+    for f in frequencies:
+        S += f
+        cdf += [ S ]
+    return lambda : l[bisect.bisect(cdf, random.random() * S)]
+
+
+def random_site_generator(matrix):
+    choose = []
+    length = len(matrix)
+    for i in range(length):
+        choose += [ wchoice(dna.BASES, matrix[i]) ]
+        
+    while 1:
+        site = ['N'] * length
+        for i in range(length):
+            site[i] = choose[i]()
+        yield ''.join(site)
+
+
+def read_sites(f):
+    sites = []
+    for line in f:
+        if line.startswith(';'):
+            continue
+        sites += [line.strip()]
+    return sites
+
+
+def implant(sitegenerator, l, sequences, esps, espp):
+    labels = []
+    strand = '+'
+    for i in range(len(sequences)):
+        sequence = list(sequences[i])
+        if esps:
+            sitep = esps / (len(sequence)-l+1)
+        else:
+            sitep = espp
+        label = ''
+
+        for p in range(len(sequence)-l+1):
+            if random.random() < sitep:
+                try:
+                    word = sitegenerator.next()
+                except StopIteration:
+                    break
+                label += '[%d\t%s\t%d\t%s]' % (i+1, strand, p, word)
+                sequence[p:p+len(word)] = word
+
+
+        labels += [ '%d %s' %(i+1, label) ]        
+        sequences[i] = ''.join(sequence)
+    return sequences, labels
+
+
+def tab2matrix(f):
+    m = None
+    for line in f:
+        line = line.strip()
+        if line.startswith(';') or line == '':
+            continue
+        if line.startswith('//'):
+            break
+
+        elements = line.split('\t')
+
+        letter = elements[0].strip()[0].upper()
+        if m is None:
+            l = len(elements[1:])
+            m = [ [0.0] * 4 for i in range(l) ]
+        J = dna.LETTER2J[letter]
+        for i in range(len(elements[1:])):
+            m[i][J] = float(elements[i+1])
+
+    return m
+
+
+def main(options, args):
+    sequences = dna.read_fasta(options.input)
+    sequences = [s.lower() for s in sequences]
+
+    if options.sites:
+
+        try:
+            if type(options.sites) is str:
+                f = open(options.sites)
+            else:
+                f = options.motif
+            sites = read_sites(f)
+        except:
+            sys.stderr.write('Error: Can not read sites\n')
+            sys.exit(2)
+
+        l = len(sites[0])
+        sitegenerator = iter(sites)
+
+    elif options.motif:
+        try:
+            matrix = tab2matrix(open(options.motif))
+        except:
+            sys.stderr.write('Error: Can not read motif\n')
+            sys.exit(2)
+        l = len(matrix)
+        sitegenerator = random_site_generator(matrix)
+
+    if type(options.output) is str:
+        options.output = open(options.output, 'w')
+        
+    sequences, labels = implant(sitegenerator, l, sequences, options.esps, options.espp)
+    dna.write_fasta(options.output, sequences, labels)
+
+
+if __name__ == '__main__':
+    USAGE = '''%s -i sequences -s sites [-h]'''
+    VERSION = '1.0'
+    PROG_NAME = os.path.basename(sys.argv[0])
+    
+    parser = optparse.OptionParser(usage=USAGE % PROG_NAME, add_help_option=0, version=VERSION)
+    parser.add_option("-o", "--output", action="store", dest="output", default=sys.stdout)
+    parser.add_option("-i", "--input", action="store", dest="input", metavar="#", help="sequences")
+    parser.add_option("-s", "--sites", action="store", dest="sites", metavar="#", help="sites")
+    parser.add_option("-m", "--motif", action="store", dest="motif", metavar="#", help="motif")
+
+    parser.add_option("--espp", action="store", dest="espp", metavar="#", type="float", default=None, help="expected sites per position")
+    parser.add_option("--esps", action="store", dest="esps", metavar="#", type="float", default=1.0, help="expected sites per sequence")
+
+    parser.add_option("-h", "--help", action="store_true", dest="help")
+
+
+    (options, args) = parser.parse_args()
+
+    if options.help:
+        doc =  globals()['__doc__'] % {'usage' : USAGE % PROG_NAME, 'version' : VERSION, 'progname' : PROG_NAME}
+        print doc
+        #pager(doc)
+        sys.exit(0)
+
+    if not options.input:
+        parser.print_usage()
+        sys.exit()
+
+    if len(sys.argv) == 1:
+        print USAGE % PROG_NAME
+        sys.exit(0)    
+
+
+    main(options, args)
+
+
+
+
+
+
+
+
