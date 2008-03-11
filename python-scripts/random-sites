@@ -1,0 +1,106 @@
+#!/usr/bin/env python
+'''NAME
+        %(progname)s
+
+VERSION
+        %(version)s
+
+AUTHOR
+        Matthieu Defrance <defrance@scmbb.ulb.ac.be>
+
+DESCRIPTION
+        Generates random sites according to a given motif model (PSSM)
+
+CATEGORY
+        PSSM
+        motifs
+
+USAGE        
+        %(usage)s
+
+ARGUMENTS
+    --version             show program's version number and exit
+    -h, --help            show this help message and exit
+    -o #, --output=#      output results to #
+                          if not specified, the standard output is used
+    -i #, --input=#       read motif from #
+                          if not specified, the standard input is used
+    -n #                  number of sites to generate
+
+SEE ALSO
+        implant-sites
+        random-motif
+'''
+import sys
+import os
+import bisect
+import random
+import optparse
+from random import choice, randint, shuffle
+
+sys.path.insert(1, os.path.join(sys.path[0], 'lib'))
+import matrix
+
+LETTER2J = {'A' : 0, 'C' : 1, 'G' : 2, 'T' : 3, 'N' : 4}
+BASES = ['A', 'C', 'G', 'T']
+
+def main(options, args):
+    try:
+        if type(options.motif) is str:
+            f = open(options.motif)
+        else:
+            f = options.motif
+        mymatrix = matrix.tab2matrix(f)
+    except:
+        sys.stderr.write('Error: Can not read motif\n')
+        sys.exit(2)
+
+    generator = matrix.random_site_generator(mymatrix)
+    data = []
+    data += ['; motif.file                   %s\t'   % options.motif]
+    data += ['; motif.length                 %d\t'   % len(mymatrix)]
+    data += ['; number.of.sites              %d\t'   % options.sites]
+    for n in range(options.sites):
+        data += [ generator.next() ]
+    data += [ '' ]
+    
+    if type(options.output) is str:
+        options.output = open(options.output, 'w')
+
+    options.output.write('\n'.join(data))
+
+
+if __name__ == '__main__':
+    USAGE = '''%s [-i motif] -n numberofsites [-h]'''
+    VERSION = '1.0'
+    PROG_NAME = os.path.basename(sys.argv[0])
+    parser = optparse.OptionParser(usage=USAGE % PROG_NAME, add_help_option=0, version=VERSION)
+
+    parser.add_option("-o", "--output", action="store", dest="output", default=sys.stdout)
+    parser.add_option("-m", "--motif", action="store", dest="motif", default=sys.stdin, metavar="#")
+    parser.add_option("-n", "--sites", action="store", dest="sites", type="int", metavar="#")
+    parser.add_option("-h", "--help", action="store_true", dest="help")
+
+    (options, args) = parser.parse_args()
+
+    if options.help:
+        doc =  globals()['__doc__'] % {'usage' : USAGE % PROG_NAME, 'version' : VERSION, 'progname' : PROG_NAME}
+        sys.stdout.write(doc)
+        #pager(doc)
+        sys.exit(0)
+
+    if not options.sites:
+        parser.print_usage()
+        sys.exit()
+
+    main(options, args)
+
+
+
+
+
+
+
+
+
+
