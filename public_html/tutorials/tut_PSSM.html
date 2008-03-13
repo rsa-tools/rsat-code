@@ -41,7 +41,7 @@ href=http://www.gene-regulation.com/pub/databases.html#transfac>TRANSFAC</a>).
 <a name=example></a><h3>Example</h3>
 
 The matrix below was obtained from <a
-href="http://cgsigma.cshl.org/jian" TARGET=_blank> SCPD</a>, the
+href="http://rulai.cshl.edu/SCPD/" TARGET=_blank> SCPD</a>, the
 <i>Saccharomyces cerevisiae</i> promoter database.  
 
 
@@ -143,15 +143,15 @@ which characterize this PSSM.
 
 <ol>
 
-<p><li>Connect <a href="http://cgsigma.cshl.org/jian" target=scpd>
+<p><li>Connect <a href="http://rulai.cshl.edu/SCPD/" target=_blank>
 SCPD</a>, the Saccharomyces cerevisiae promoter database. To access
 the list of sites by factor from the SCPD home page, click on the
-Section "<a target=scpd
-href=http://cgsigma.cshl.org/cgi-bin/jz/getfactorlist>Regulatory
+Section "<a target=_blank
+href=http://rulai.cshl.edu/cgi-bin/SCPD/getfactorlist>Regulatory
 elements and transcriptional factors</a>".
 
-<p><li>Click on the link to <a target=scpd
-href=http://cgsigma.cshl.org/cgi-bin/jz/getfactor?ABF1,BAF1>ABF1</a>,
+<p><li>Click on the link to <a target=_blank
+href=http://rulai.cshl.edu/cgi-bin/SCPD/getfactor?ABF1,BAF1>ABF1</a>,
 and then on the button <b>Get matrix</b>. The following PSSM is
 displayed.
 
@@ -195,7 +195,7 @@ nucleotide information, and not the matrix header.</uL>
 <li>counts
 <li>frequencies
 <li>weights
-<li>information
+<li>info
 <li>margins
 <li>parameters
 </ul>
@@ -240,7 +240,7 @@ given the background model <i>B</i>.
 the binding of the transcription factor, negative weights that it is
 unfavorable.
 
-</ul><h4><i>Information</i></h4><ul> 
+</ul><h4><i>Info</i></h4><ul> 
 
 The information content of each cell of the matrix is calculated by
 multiplying the weight by the frequency. The information content of a
@@ -252,17 +252,26 @@ row (column) is the sum of information contents of its cells.
 </ul><h2>Next steps</h2><ul>
 
 
-<p>PSSM can be used to detect occurrences of a motif in
-sequences. Matrix-based pattern matching will be introduced in the
-tutorial on <a href=tut_patser.html>patser</a>.
+<ol>
 
-<P>Several pattern-discovery programs allow to detect significant
+<p><li>PSSM can be used to detect occurrences of a motif in
+sequences. Matrix-based pattern matching will be introduced in the
+tutorial on <a href=tut_patser.html>patser</a>.</li></p>
+
+<p><li>Since 2008, RSAT includes its own pattern matching
+tool, <a href=matrix-scan.cgi>matrix-scan</a>, for which we will write
+a tutorial as soon as possible. This tool includes all the
+functionalities of patser plus a few more (Markov-chain background
+models, CRM prediction, ...).</li></p>
+
+<p><li>Several pattern-discovery programs allow to detect significant
 motifs represented as PSSM from a set of unaligned sequences. These
 programs have been used to predict regulatory elements in the
 regulatory regions of sets of co-regulated genes. Matrix-based pattern
 discovery will be discussed in the tutorials on the <a
 href=tut_gibbs.html>gibbs sampler</a> and <a
-href=tut_consensus.html>consensus</a>.
+href=tut_consensus.html>consensus</a>.</li></p>
+</ol>
 
 <p>
 You can now come back to the <a href=tutorials.html>tutorial main
