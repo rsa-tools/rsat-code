@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.19 2008/03/10 10:35:26 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.20 2008/03/13 13:58:21 rsat Exp $
 #
 # Time-stamp
 #
@@ -12,6 +12,8 @@ use DBI();
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
+	push (@INC, "/home/rsat/src/ensembl/modules/");
+	push (@INC, "/home/rsat/src/bioperl-live/");
     }
 }
 require "RSA.lib";
