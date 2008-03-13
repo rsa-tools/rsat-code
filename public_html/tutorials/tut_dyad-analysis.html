@@ -54,8 +54,9 @@ analysis of spaced dyads. Nucleic Acids Res. 28(8):1808-18.  <A
 HREF="http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=10734201&dopt=Abstract">Pubmed
 10734201</a>
 <br>
-Free access to the <a
-href="../papers/dyad_analysis_NAR_2000.pdf">PDF file</a>.
+[Free access to
+the <a href="http://nar.oxfordjournals.org/cgi/reprint/28/8/1808">PDF
+file</a>].
 </ul>
 
 
@@ -79,7 +80,7 @@ Retrieve upstream sequences from -800 to -1 for the following yeast
 genes (as you have seen in the <a
 href="tut_retrieve-seq.html">tutorial on sequence retrieval</a>). Make
 sure to <b>inactivate</b> the option <b>prevent overlap with neighbour
-genes</b>. .
+genes</b>.
 
 <pre>
 GAL1
@@ -106,40 +107,39 @@ is their significance ?
 <p>
 Remember that patterns with a significance index (occ_sig) lower than
 1 should not be considered too seriously as putative regulatory
-elements. They are likely to appear once per random sequence. So, when
-an analysis does not return any pattern with a significance > 1, it
-can be considered as a negative answer. 
+elements. They are likely to appear more or less once per random
+sequence set. So, when an analysis does not return any pattern with a
+significance > 1, it can be considered as a negative answer.
 
 <p>
-With the GAL family, the program was thus unable to identify any
-really significant motif in the upstream sequernces of the GAL family.
-This comes from the fact that these genes are regulated by a
-Zn-cluster protein, Gal4p, which binds a spaced dyad. This is
-precisely the type of patterns for which dyad-analysis was designed.
+With the GAL family, <i>oligo-analysis</i> did not detect any pattern
+with a significance higher than 1. The program is thus unable to
+identify any really significant motif in the upstream sequernces of
+the GAL genes.  This comes from the fact that these genes are
+regulated by a Zn-cluster protein, Gal4p, which binds a spaced
+dyad. This is precisely the type of patterns for
+which <i>dyad-analysis</i> has been designed.
 
 <p><li> Click on the icon <b>back</b> of your browser until you come back
 to the page with the upstream sequences you retrieved. This time,
-click on the button <b>dyad-analysis</b> at the bottom of the
-sequences.
+click on the button <b>dyad-analysis</b> in the <b>Next step</b> box.
 
 <p><li> The default parameters are to scan pairs of trinucleotides
-spaced by any length between 0 and 20. These parameters are good to
-scan all possibilities when you have no a priori idea of the
-spacing. 
+spaced by any length between 0 and 20. These parameters are
+appropriate when you have no a priori idea of the spacing, since they
+will evaluate a good range of possible spacing values.
 
 <p>
-Note that the time of calculation is directly proportional to the
-spacing range, and when 21 possible spacings are tested (from 0 to
-20), the processing can take a few tens of seconds to a few minuts,
-depending on the server load. If you just want to do a fast test just
-for this demo, change these parameters : from 8 to 12. But remember
-that in a real context of pattern discovery, all spacings should be
-considered between 0 and 20, because each factor has its own
-spacing. 
+Note that the computation time is directly proportional to the spacing
+range: when 21 possible spacings are tested (from 0 to 20), the
+processing can take a few tens of seconds to a few minuts, depending
+on the server load.
 
 <p><li> Leave all other parameters unchanged and click <b>GO</b>. You
 will have to wait for the answer a bit longer than for
-oligo-analysis. 
+<i>oligo-analysis</i> (it usually takes 20 seconds for this test
+case).
+
 
 </ol>
 
@@ -147,10 +147,11 @@ oligo-analysis.
 <a name=interpret></a><h2>Interpreting the results</h2>
 <ul>
 
-The results of dyad-analysis are displayed in the same way as for
-oligo-analysis.  If you alredy performed the <a
-href=tut_oligo-analysis.html#interpret>tutorial on oligo-analysis</a>,
-you should be able to interpret the results of the dyad-analysis.
+The results of <i>dyad-analysis</i> are displayed in the same format as those of 
+<i>oligo-analysis</i>.  In principle, you should already have
+performed the <a href=tut_oligo-analysis.html#interpret>tutorial on
+oligo-analysis</a>, and you should thus be able to interpret
+the <i>dyad-analysis</i> result page.
 
 <p>
 <ol>
@@ -182,14 +183,16 @@ substitution tends to assemble too mny patterns, so we inactivated it.
 <ul>
 <p>
 <ol>
-<p><li>Analyze the MET family (see <a
-href="tut_retrieve-seq.html">tutorial on sequence retrieval</a>) with
-the dyad detector, and compare the results to those previously
-obtained with oligo-analysis. Discuss the differences. 
+<p><li>Analyze the MET family
+(see <a href="tut_retrieve-seq.html">tutorial on sequence
+retrieval</a>) with the <i>dyad-analysis</i>, and compare the results
+to those previously obtained with <i>oligo-analysis</i>. Discuss the
+differences.
 
-<p><li>Select some families of random genes (<b>random gene selection</b>
-in the left frame), and apply dyad-analysis to discover patterns in
-their upstream regions. Discuss the result.
+<p><li>As a negative control, select some families of random genes
+(tool <b>random gene selection</b> in the menu <b>Genomes and
+genes</b> of the left frame), and apply <i>dyad-analysis</i> to
+discover patterns in their upstream regions. Discuss the result.
 
 <p><li>Until now, we only analyzed "easy" cases, since we used groups of
 genes which are all regulated b the same factor. In reality, we will
@@ -202,15 +205,13 @@ factor as the other ones.
 <p>We tested this with various data sets, but you can experience it
 yourself, for example with the clusters of genes expressed at
 different stages of the cell cycle (Spellman et al., 1998). The
-clusters defined by Spellman and co-workers are available in the <a
-target=_blank
+clusters defined by Spellman and co-workers are available in the
+<a target=_blank
 href=../data/published_data/dyad_analysis_NAR_2000_data/cell_cycle_gene_clusters/>data
-repository</a>.
-
-<p>Select some of these clusterss, and apply the different pattern
-discovery appraoches described in these tutorials to detect putative
-regulatory elements. You can then compare these elements with those
-annotated in <a target=_blank
+repository</a>. Select some of these clusters, and apply the different
+pattern discovery appraoches described in these tutorials to detect
+putative regulatory elements. You can then compare these elements with
+those annotated in <a target=_blank
 href="http://rulai.cshl.edu/SCPD/">SCPD</a>, and evaluate if the
 predicted motifs correspond to binding sites for factors involved in
 the cell cycle.
