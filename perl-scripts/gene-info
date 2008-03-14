@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: gene-info,v 1.8 2008/03/07 15:21:34 rsat Exp $
+# $Id: gene-info,v 1.9 2008/03/14 13:45:48 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:30:09 jvanheld>
 #
@@ -14,6 +14,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 require RSAT::util;
+require RSAT::OrganismManager;
 require RSAT::organism;
 require RSAT::GenomeFeature;
 use Storable qw(nstore retrieve);
@@ -34,13 +35,14 @@ $match_description = 0;
 &ReadArguments();
 
 ################################################################
-#### check parameter values
+## Check parameter values
 
 
 #### organism
+&RSAT::OrganismManager::check_name($organism_name);
+
 my $organism = new RSAT::organism();
 $organism->set_attribute("name", $organism_name);
-$organism->check_name();
 #&CheckOrganism($organism_name);
 
 #### accepted feature types
@@ -52,19 +54,19 @@ $out = &RSAT::util::OpenOutputFile($outputfile);
 &Verbose();
 
 ### read ORF information
-  my $serial_file = $TMP."/".$organism_name."1syn.serial";
-  if (-e $serial_file && !$annotation_table && -M $serial_file < 2 && -w $serial_file) {
-    $organism = retrieve $serial_file;
-  } else {
-    ### read feature attributes (position, description, ...)
-    $organism->LoadFeatures($annotation_table, $imp_pos);
-    $organism->LoadSynonyms();
-    nstore $organism, $serial_file;
-    system ("chmod 777 $serial_file");
-  }
+my $serial_file = $TMP."/".$organism_name."1syn.serial";
+if (-e $serial_file && !$annotation_table && -M $serial_file < 2 && -w $serial_file) {
+  $organism = retrieve $serial_file;
+} else {
+  ### read feature attributes (position, description, ...)
+  $organism->LoadFeatures($annotation_table, $imp_pos);
+  $organism->LoadSynonyms();
+  nstore $organism, $serial_file;
+  system ("chmod 777 $serial_file");
+}
 
 ################################################################
-#### read query file
+#### Read query file
 if (($inputfile) || ($#queries == -1)) {
     ($in, $input_dir) = &OpenInputFile($inputfile);
     while (<$in>) {
@@ -87,22 +89,21 @@ if (($inputfile) || ($#queries == -1)) {
 # if ($match_description) {
 #     %descr = $organism->index_attribute_by_feature("descr");
 # }
-	    
+
 foreach $query (@queries) {
     my $found = 0;
 
     foreach my $feature ($organism->get_attribute("features")) {
-	if ($feature->matches($query, $match_description, $full)) {
-	    $found = 1;
-	    &PrintInfo($query, $feature);
-	}
+      if ($feature->matches($query, $match_description, $full)) {
+	$found = 1;
+	&PrintInfo($query, $feature);
+      }
     }
 
     #### send a warning when the query did not match anything
     unless ($found) {
-	&PrintWarning($query);
+      &PrintWarning($query);
     }
-
 }
 
 
