@@ -5,6 +5,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 require RSAT::Tree;
 require RSAT::TreeNode;
+require RSAT::OrganismManager;
 #use strict;
 
 ## Initialize parameters
@@ -17,13 +18,31 @@ foreach $f (@formats) {
 }
 $formats = join ",", @formats;
 
+## Return fields
+@return_fields = ();
+@supported_return_fields = @RSAT::OrganismManager::supported_org_fields;
+%supported_return_fields = ();
+foreach my $field (@supported_return_fields) {
+    $supported_return_fields{$field} = 1;
+}
+
+#@supported_return_fields = &RSAT::OrganismManager::supported_org_fields();
+$supported_return_fields = join ",", @supported_return_fields;
+#die "HELLLO\t", join(";", @supported_return_fields), "\n";
 
 ## Read arguments
 &ReadArguments();
 
+## Return fields
+if ($out_format = "full") {
+    @return_fields = @supported_return_fields;
+}
+if (scalar(@return_fields) == 0) {
+    @return_fields = ("ID");
+}
+
 ## Open the output stream
 $out = &OpenOutputFile($outfile{output});
-
 
 if (($out_format eq "tree")||($out_format eq "html_tree")) {
     ## Create a tree with the taxonomy
@@ -50,7 +69,8 @@ if (($out_format eq "tree")||($out_format eq "html_tree")) {
     }
     
 } else {
-    print $out &ListSupportedOrganisms($out_format);
+#    print $out &RSAT::OrganismManager::supported_organism_name(1, @return_fields);
+    print $out &ListSupportedOrganisms($out_format, 1, @return_fields);
 }
 
 close $out if ($outfile{output});
@@ -89,9 +109,15 @@ CATEGORY
 
 OPTIONS
 	-h	(must be first argument) display full help message
+
 	-help	(must be first argument) display options
+
 	-format	output format
 		supported: $formats
+
+ 	-return output fields
+		supported: $supported_return_fields
+
         -taxon  root taxon
 
 WISH LIST
@@ -116,6 +142,7 @@ template options
 -o	output file
 -v	verbose
 -format	output format ($formats)
+-return output fields ($supported_return_fields)
 -taxon  root taxon
 End_short_help
   close HELP;
@@ -126,38 +153,51 @@ End_short_help
 ################################################################
 #### Read arguments 
 sub ReadArguments {
-    foreach my $a (0..$#ARGV) {
-	### verbose ###
-	if ($ARGV[$a] eq "-v") {
-	    if (&IsNatural($ARGV[$a+1])) {
-		$verbose = $ARGV[$a+1];
+  foreach my $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
+
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp;
+
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions;
+
+      ### output format
+    } elsif ($ARGV[$a] eq "-format") {
+      $out_format = $ARGV[$a+1];
+      unless ($supported_format{$out_format}) {
+	&RSAT::error::FatalError("Format $out_format is not supported\n");
+      }
+
+      #### return fields
+    } elsif ($ARGV[$a] eq "-return") {
+	chomp($ARGV[$a+1]);
+	my @fields_to_return = split ",", $ARGV[$a+1];
+	foreach $field (@fields_to_return) {
+	    if ($supported_return_fields{$field}) {
+		push @return_fields, $field;
 	    } else {
-		$verbose = 1;
+		&RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
 	    }
-	    
-	    ### detailed help
-	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp;
-	    
-	    ### list of options
-	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions;
-	    
-	    ### output format
-	} elsif ($ARGV[$a] eq "-format") {
-	    $out_format = $ARGV[$a+1];
-	    unless ($supported_format{$out_format}) {
-		&RSAT::error::FatalError("Format $out_format is not supported\n");
-	    }
-	    ### root taxon
-	} elsif ($ARGV[$a] eq "-taxon") {
-	    $root_taxon = $ARGV[$a+1];
-	    
-	    ### output file  
-	} elsif ($ARGV[$a] eq "-o") {
-	    $outfile{output} = $ARGV[$a+1];
-	    
 	}
+
+      ### root taxon
+    } elsif ($ARGV[$a] eq "-taxon") {
+      $root_taxon = $ARGV[$a+1];
+
+      ### output file  
+    } elsif ($ARGV[$a] eq "-o") {
+      $outfile{output} = $ARGV[$a+1];
+
     }
+  }
 }
 
