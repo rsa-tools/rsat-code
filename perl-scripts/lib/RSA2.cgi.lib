@@ -2,7 +2,7 @@
 use CGI;
 
 package main;
-
+require RSAT::OrganismManager;
 
 ################################################################
 ## Load the default parameters for get-orthologs`
@@ -382,7 +382,8 @@ sub OrganismPopUp {
 sub OrganismPopUpString {
     my (@selected_organisms) = @_;
     if (scalar(@selected_organisms) <= 0) {
-	@selected_organisms = &ListSupportedOrganisms("keys");
+##	@selected_organisms = &ListSupportedOrganisms("keys");
+	@selected_organisms = &RSAT::OrganismManager::get_supported_organisms();
     }
     my $organismPopup = "";
     $organismPopup .=  "<B>Organism</B>&nbsp;";
