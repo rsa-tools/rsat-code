@@ -3,7 +3,6 @@
 #require "cgi-lib.pl";
 
 ### CVS: moved ENV{SERVER_ADMIN} to the config file
-
 $main::verbose = 0;
 require "RSA.seq.lib";
 require "RSA.stat.lib";
@@ -12,6 +11,7 @@ require RSAT::contig;
 require RSAT::error;
 require RSAT::util;
 require RSAT::Tree;
+require RSAT::OrganismManager;
 require RSAT::server;
 package main;
 
@@ -704,6 +704,15 @@ sub CheckOrganism {
 ## Return a list of the supported organisms
 ## various formats are supported
 sub ListSupportedOrganisms {
+  my ($out_format, $header, @fields) = @_;
+#  &RSAT::message::Debug("&ListSupportedOrganisms()", "fields", join( ";", @fields)) if ($main::verbose >= 3);
+
+  $out_format = $out_format || "text";
+  $header = $header || 0;
+  return (&RSAT::OrganismManager::supported_organism_table($header, @fields));
+}
+
+sub ListSupportedOrganisms_old {
   my $out_format = $_[0] || "text";
 
   foreach my $key (keys %main::supported_organism) {
@@ -788,8 +797,7 @@ sub ListSupportedOrganisms {
   }
 }
 
-$supported_organisms = &ListSupportedOrganisms();
-
+$supported_organisms = &ListSupportedOrganisms("text", 0, "ID");
 
 ################################################################
 ## Return the list of supported taxa
