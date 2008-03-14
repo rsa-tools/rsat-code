@@ -1,7 +1,7 @@
-#!/usr/bin/perl 
+#!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.47 2007/12/07 08:35:44 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.48 2008/03/14 13:46:43 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -55,18 +55,17 @@ package main;
     $test_files = 2; ## Maximal number of genbank files to parse for a given organism (there is generally one contig per chromosome)
     $test_lines = 10000; ## macimal number of lines to parse per file
 
-    
     %preferred_id = (
-	cds=>protein_id,
-	mrna=>transcript_id,
-	gene=>GeneID,
-	trna=>locus_tag,
-	srna=>locus_tag,
-	rrna=>locus_tag,
-	misc_rna=>locus_tag,
-	scrna=>locus_tag,
-	);
-    
+		     cds=>protein_id,
+		     mrna=>transcript_id,
+		     gene=>GeneID,
+		     trna=>locus_tag,
+		     srna=>locus_tag,
+		     rrna=>locus_tag,
+		     misc_rna=>locus_tag,
+		     scrna=>locus_tag,
+		    );
+
     $features = classes::ClassFactory->new_class(object_type=>"Genbank::Feature", prefix=>"ft_");
 
     $genes = classes::ClassFactory->new_class(object_type=>"Genbank::Gene", prefix=>"gn_");
@@ -427,7 +426,7 @@ OPTIONS
 		internal use at NCBI. However, other databases use
 		distinct IDs.
 
-		For example, 
+		For example,
 		     gene 	   GeneID
 		     gene	   locus_tag
 		     CDS	   protein_id
