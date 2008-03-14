@@ -13,6 +13,7 @@ use RSAT::GenomeFeature;
 use RSAT::Index;
 use RSAT::stats;
 use RSAT::organism;
+use Storable qw(nstore retrieve);
 
 @ISA = qw( RSAT::GenericObject );
 
@@ -64,7 +65,25 @@ directory, upstream length, ...).
 sub load_supported_organisms {
   my ($organism_table) = @_;
   $organism_table = $organism_table || $ENV{RSAT}."/data/".$organism_table_name;
-  &RSAT::message::Warning("Not yet implemented");
+  my ($table_handle) = &RSAT::util::OpenInputFile($organism_table);
+  
+  my @fields = ();
+  my $linecpt = 0;
+  while (my $line = <$table_handle>) {
+    $linecpt++;
+    next if $line =~ /^;/;
+    chomp $line;
+    if ($line =~ /^#/) { # Load header
+      $line =~ s/#//;
+      @fields = split /\t/, $line;
+    } else {
+      @linecp = split /\t/, $line;
+      &RSAT::error::FatalError("Number of fields in the header does not correspond to the number of fields at line $linecpt\n") if (scalar (@linecp) != scalar (@fields));
+      for (my $i = 1; $i < scalar @fields; $i++) {
+        $main::supported_organism{$linecp[0]}->{$fields[$i]} = $linecp[$i];
+      }
+    }
+  }
 }
 
 ################################################################
