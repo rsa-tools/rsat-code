@@ -523,7 +523,7 @@ print "<BR>";
 
 print "</BLOCKQUOTE>\n";
 print ("<INPUT TYPE='radio' NAME='return' VALUE='table'>", 
-       "One row per gene (occurrence counts only, email output recommended)", "<P>\n");
+       "<b>Occurrence table</b>: one row per sequence, one column  per oligo (occurrence counts only, email output recommended)", "<P>\n");
 
 print ("<INPUT TYPE='radio' NAME='return' VALUE='distrib'>", 
        "Pattern count distribubtions, one row per pattern (occurrence counts only, email output recommended)", "<P>\n");
