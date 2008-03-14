@@ -34,7 +34,7 @@ $supported_return_fields = join ",", @supported_return_fields;
 &ReadArguments();
 
 ## Return fields
-if ($out_format = "full") {
+if ($out_format eq "full") {
     @return_fields = @supported_return_fields;
 }
 if (scalar(@return_fields) == 0) {
@@ -67,10 +67,9 @@ if (($out_format eq "tree")||($out_format eq "html_tree")) {
     }else{
 	&RSAT::error::FatalError("Taxon $root_taxon is not supported\n");
     }
-    
 } else {
-#    print $out &RSAT::OrganismManager::supported_organism_name(1, @return_fields);
-    print $out &ListSupportedOrganisms($out_format, 1, @return_fields);
+   print $out &RSAT::OrganismManager::supported_organism_table(1, @return_fields);
+#    print $out &ListSupportedOrganisms($out_format, 1, @return_fields);
 }
 
 close $out if ($outfile{output});
