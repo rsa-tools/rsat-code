@@ -72,7 +72,7 @@ if (($out_format eq "tree")||($out_format eq "html_tree")) {
 #    print $out &ListSupportedOrganisms($out_format, 1, @return_fields);
 }
 
-&RSAT::OrganismManager::export_supported_organisms();
+#&RSAT::OrganismManager::export_supported_organisms();
 
 close $out if ($outfile{output});
 

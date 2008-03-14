@@ -80,7 +80,8 @@ sub export_supported_organisms {
   my ($organism_table, @fields) = @_;
   $organism_table = $organism_table || $ENV{RSAT}."/data/supported_organisms.tab";
   my ($table_handle) = &RSAT::util::OpenOutputFile($organism_table);
-  print $table_handle &supported_organism_table(@fields);
+  print $table_handle &supported_organism_table("header", @fields);
+  &RSAT::message::Info("Exporting table with supported organisms", $organism_table) if ($main::verbose >= 1);
 }
 
 ################################################################
