@@ -93,6 +93,10 @@ print "Result file on the server: \n\t".$server_file;
 $args{output} = "both";
 $args{tmp_infile} = $server_file;
 
+## Convert the lth string into a list
+my @lths = split(",", $args{lth});
+$args{lth} = \@lths;
+
 ## Send request to the server
 print "\nOligo-analysis: sending request to the server\t", $server, "\n";
 $som = $soap->call('oligo_analysis' => 'request' => \%args);
