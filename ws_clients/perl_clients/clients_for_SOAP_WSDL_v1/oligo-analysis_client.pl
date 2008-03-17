@@ -39,6 +39,10 @@ chomp($sequence);
 
 $args{sequence} = $sequence;
 
+## Convert the lth string into a list
+my @lths = split(",", $args{lth});
+$args{lth} = \@lths;
+
 ## Output option
 my $output_choice = $args{output_choice} || 'both';
 
