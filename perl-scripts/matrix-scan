@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.117 2008/01/29 11:48:01 rsat Exp $
+# $Id: matrix-scan,v 1.118 2008/03/18 12:04:23 rsat Exp $
 #
-# Time-stamp: <2008-01-29 12:47:36 jturatsi>
+# Time-stamp: <2008-03-18 12:48:49 jturatsi>
 #
 ############################################################
 ## TO DO: add an option to sort hits either by position or by score
@@ -50,11 +50,15 @@ sites). This program supports a variety of background models
 
 =head1 AUTHORS
 
+=over
+
 =item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
 
 =item Jean Valery Turatsinze <jturatsi@scmbb.ulb.ac.be>
 
 =item Morgane Thomas-Chollier <morgane@scmbb.ulb.ac.be>
+
+=back
 
 =head1 CATEGORY
 
@@ -75,8 +79,6 @@ matrix-scan -m matrixfile [-i inputfile] [-o outputfile] [-v]
 
 =head1 INPUT FORMATS
 
-=over
-
 =head2 Sequence file
 
 All the formats supported in RSAT can be used as input (default: fasta).  
@@ -88,8 +90,6 @@ The matrix format is specified with the option -matrix_format.  Supported :
 tab,cb,consensus,gibbs,meme,assembly. Default : tab.
 
 For a description of these format, see I<convert-matrix -h>
-
-=back
 
 =head1 OUTPUT FORMAT
 
@@ -114,11 +114,11 @@ Thijs et al. (2001).
 The weight of a sequence segment (Ws) is calculated as the log-ratio
 between two probabilities:
 
+=over
+
 =item I<Ws = log[P(S|M)/P(S|B)]>
 
 where
-
-=over
 
 =item I<proba_M = P(S|M)>: 
 
@@ -175,6 +175,7 @@ is the size of the alphabet (A=4 for DNA).
 is the pseudo-count, which is "shared" between residues according to
 their prior frequencies.
 
+=back
 
 =head2 BACKGROUND MODELS
 
@@ -232,6 +233,8 @@ model. The required sequence length increases exponentially with the
 Markov order. This option is thus usually suitable for short order
 models only (-markov 0 to 1).
 
+=back
+
 =head3 Pseudo-frequencies for the background model
 
 The concept of pseuo-count can be extended to B<pseudo-frequencies> for
@@ -249,8 +252,6 @@ available, we introduce the correction in terms of pseudo-frequencies.
 ## Jean Valery & Morgane continuent l'explication
 
 S<P'(r|prefix)=((P(r|prefix) + b/A)/(SUMi[P(i|prefix)]+b)>
-
-=back
 
 =head1 REFERENCES
 
@@ -2563,19 +2564,27 @@ sub Verbose {
 
 
 ################################################################
+
 =pod
+
+=back
 
 =head1 INTERNAL PROCEDURES
 
 =cut
 
 ################################################################
+
 =pod
+
+=over
 
 =item B<score_segment>
 
 Assign a score to a sequence segment and print it if it passes the
 thresholds. Return value is 1 if the segment passed the thresholds.
+
+=back
 
 =cut
 sub score_segment {
@@ -2818,11 +2827,16 @@ my %prior = $bg_model->get_attribute("suffix_proba");
 
 
 ################################################################
+
 =pod
+
+=over
 
 =item B<print_match>
 
 Print the matching site.
+
+=back
 
 =cut
 
@@ -2880,6 +2894,7 @@ sub print_match {
 
 
 ################################################################
+
 =pod
 
 =head1 INTERNAL PROCEDURES
@@ -2887,11 +2902,14 @@ sub print_match {
 =cut
 
 ################################################################
+
 =pod
+
+=over
 
 =item B<score_crer>
 
-Calculate 
+Calculate the score of the crer 
 
 =cut
 sub score_crer {
@@ -3621,6 +3639,8 @@ sub areJobsDone {
 __END__
     
 =pod
+
+=back
 
 =head1 SEE ALSO
 
