@@ -97,10 +97,11 @@ sub ExpectedFreqFile {
   #### check background
   my %supported_bg = ('upstream'=>1,
 		      'upstream-noorf'=>1,
-		      'intergenic'=>1,
 		      'upstream-rm'=>1,
 		      'upstream-noorf-rm'=>1,
-		      'protein'=>1
+		      'protein'=>1,
+		      'intergenic'=>1,
+		      'genomic'=>1,
 		     );
   $supported_bg = join ",", sort keys %supported_bg;
   unless ($supported_bg{$background}) {
