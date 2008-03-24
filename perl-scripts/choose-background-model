@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: choose-background-model,v 1.6 2008/02/25 09:09:36 jvanheld Exp $
+# $Id: choose-background-model,v 1.7 2008/03/24 14:13:32 jvanheld Exp $
 #
 ############################################################
 
@@ -55,7 +55,8 @@ using Markov chain background model.
 
 =item sequence type (option -bg)
 
-Supported types: upstream, upstream-noorf, protein
+Supported types: upstream, upstream-noorf, protein, upstream-rm,
+upstream-noorf-rm
 
 =item strands (-1str or -2str)
 
@@ -78,13 +79,13 @@ Organism-specific background models
 
  choose-background-model -type oligo|dyad|protein \
       -org organism_name [-1str|-2str] -l oligo_length \
-      -bg upstream|upstream-noorf|protein -ovlp|-noov
+      -bg [background] -ovlp|-noov
 
 Taxon-specific background models
 
  choose-background-model -type oligo|dyad|protein \
       -taxon taxon_name [-1str|-2str] -l oligo_length \
-      -bg upstream|upstream-noorf|protein -ovlp|-noov
+      -bg [background] -ovlp|-noov
 
 =head1 OUTPUT FORMAT
 
@@ -111,7 +112,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     local $oligo_length;
@@ -271,8 +272,8 @@ This option is mutually exclusive with -taxon.
 
 Choose a taxon-wide background model.
 
-The taxon has to be supported on RSAT. To obtain a list of
-supported organisms, use the command B<supported-organisms -format full>
+The taxon has to be supported on RSAT. To obtain a list of supported
+organisms, use the command B<supported-organisms -format full>
 
 This option is mutually exclusive with -org.
 
@@ -287,19 +288,59 @@ This option is mutually exclusive with -org.
 =item B<-bg background>
 
 The type of sequences used to calibrate the background
-model. Supported: upstream, upstream-noorf, protein.
+model.
 
-The model "upstream" is trained on a set comprising upstream sequences of
-all the genes for the selected organism, with a fixed size.
+B<Supported background models>
 
-The model "upstream-noorf" is based on a set of non-coding sequences
-upstream of all genes, with the same maximal size as for the option
-"upstream". When a gene is found closer than the upstream limit, the
-sequence is clipped to prevent including coding sequences from the
-upstream neighbout gene.
+=over
 
-The model "protein" is calibrated on the complete set of proteins
-translated from all the coding genes of the selected organism.
+=item I<upstream>
+
+Trained on a set comprising upstream sequences of all the genes for
+the selected organism, with a fixed size.
+
+=item I<upstream-noorf>
+
+Based on a set of non-coding sequences upstream of all genes, with the
+same maximal size as for the option "upstream". When a gene is found
+closer than the upstream limit, the sequence is clipped to prevent
+including coding sequences from the upstream neighbout gene.
+
+=item I<protein>
+
+Calibrated on the complete set of proteins translated from all the
+coding genes of the selected organism.
+
+=item I<upstream-rm> and I<upstream-noorf-rm>
+
+For the organisms imported from EnsEMBL, we also support the models
+upstream-rm and upstream-noorf-rm (repeat masked).
+
+=back
+
+B<Not supported anymore>
+
+The following models were supported in previous versions of RSAT, but
+are not supported anymore, because fr higher organisms it takes too
+long to compute them systematically for all the oligo and dyad
+lengths, and they appear to be not very useful, since they mix various
+sequence types with distinct models (coding, upstream, downstream).
+
+The background files can however still be installed either manually or by
+fiddling around with the options of the program I<install-organism>.
+
+=over
+
+=item I<genomic>
+
+Estimated from the whole genome of the selected organism. 
+
+=item I<intergenic>
+
+Estimated from the whole set of intergenic sequences of the selected
+organism.
+
+=back
 
 =cut
 	} elsif ($arg eq "-bg") {
