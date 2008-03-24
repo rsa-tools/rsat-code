@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.19 2007/10/22 07:49:49 morgane Exp $
+# $Id: convert-background-model,v 1.20 2008/03/24 14:19:46 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -29,11 +29,15 @@ formats will be progressively added.
 
 =head1 AUTHORS
 
+=over
+
 =item Jacques van Helden jvanheld@scmbb.ulb.ac.be
 
 =item Jean Valery Turatsinze jturatsi@scmbb.ulb.ac.be
 
 =item Morgane Thomas-Chollier morgane@scmbb.ulb.ac.be
+
+=back
 
 =head1 CATEGORY
 
@@ -47,9 +51,6 @@ convert-backgound-model [-i inputfile] [-o outputfile] [-v]
 
 B<Note>: some formats are supported for both input and output, but some
 formats are supported only for input or for output.
-
-
-=over
 
 
 =head2 oligos (input/output)
@@ -123,8 +124,6 @@ This output is convenient for understanding the different steps for
 the conversion between oligomer frequencies (oligomer length k=m+1)
 and transition tables.
 
-
-=back
 
 =cut
 
@@ -356,13 +355,13 @@ Same as -h
 	    ## Input file
 =pod
 
-=head2 BACKGROUND MODEL FILE
+=item B<-i input_file>
 
-There are two ways to specify a background model file:
+The input file contains a background model, in any of the supported
+formats.
 
-=head3 B<By giving the path of the file:>
-
-=item B<-i inputfile>
+Alternatively, the background model can be specified by combining the
+options I<-org>, I<-bg>.
 
 If no input file is specified, the standard input is used.  This
 allows to use the command within a pipe.
@@ -374,15 +373,14 @@ allows to use the command within a pipe.
 	    ## Organism
 =pod
 
-=head3 B<By loading a precalculated background model from the RSAT collection>
-
-B<Note:> Specify the format of the background model with '-from' option. Accepted values
-are oligos and dyad.
-
 =item B<-org organism_name>
 
-Specifies an organism, installed in RSAT. To have the list of supported organism in RSAT, type the following
-command: I<supported-organism>
+Specify an organism supported in RSAT, in order to load a background
+model from the pre-computed organism-specific models supported in
+RSAT. This option must be combined with the optin I<-bg>.
+
+B<Note:> Specify the format of the background model with '-from'
+option. Accepted values are oligos and dyad.
 
 =cut
 	} elsif ($arg eq "-org") {
@@ -393,32 +391,10 @@ command: I<supported-organism>
 
 =item B<-bg background model>
 
-Type of sequences used as background model for estimating expected oligonucleotide frequencies.
+Type of sequences used as background model for estimating expected
+oligonucleotide frequencies.
 
-Supported models: 
-
-		-bg upstream 
-			 all upstream sequences, allowing overlap with
-		     upstream ORFs.
-
-		-bg upstream-noorf
-			 all upstream sequences, preventing overlap
-			 with upstream ORFs
-		
-		-bg upstream-rm
-			all upstream sequences, allowing overlap with
-		    upstream ORFs, repeated elements are masked by
-		    N characters
-
-		-bg upstream-noorf
-			all upstream sequences, preventing overlap
-			with upstream ORFs, repeated elements are masked by
-		    N characters
-
-		-bg intergenic
-		     intergenic frequencies 
-			 Whole set of intergenic regions, including
-			 upstream and downstream sequences
+Supported models: see the help of I<choose-background-model>
 
 =cut
 	} elsif ($arg eq "-bg") {
@@ -609,6 +585,11 @@ __END__
 =head1 SEE ALSO
 
 =over
+
+=item B<choose-background-model>
+
+Indicate the file path of pre-computed background models for the
+organisms supported in RSAT.
 
 =item B<seq-proba>
 
