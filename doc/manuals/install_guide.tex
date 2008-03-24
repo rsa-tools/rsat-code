@@ -95,32 +95,50 @@ can be installed with the command \program{cpan}.
   your \RSAT server. Property filesa are also useful to write your own
   perl clients for the Web service interface to \RSAT (RSATWS).
   
-\item[Storable] This module is required to bring persistence to data structures ike organisms. The slow procedure of organisms loading can then be done only once. This library can be easyly installed via CPAN.
-
+\item[Storable] This module is required to bring persistence to data
+  structures ike organisms. The slow procedure of organisms loading
+  can then be done only once. This library can be easyly installed via
+  CPAN.
 
 \end{description}
 
 \subsection{Other libraries}
 
-Two programs, \program{retrieve-ensembl-seq.pl} and \program{get-ensembl-genome.pl}, require
-the EnsEMBL Perl API and bioperl to work on your machine.
+Two programs, \program{retrieve-ensembl-seq.pl} and
+\program{get-ensembl-genome.pl}, require the EnsEMBL Perl API and
+bioperl to work on your machine.
 
 To obtain bioperl:
 
-1) cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login 
-(password is 'cvs')
+\begin{footnotesize}
+\begin{verbatim}
+## Login into the BioPerl CVS server
+cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login
+### (password is 'cvs')
 
-2) cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout bioperl-live 
-(or cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -d bioperl-branch-1.4 -r branch-1-4 bioperl-live for older branch)
 
+## download the current version
+cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout bioperl-live 
 
-To obtain ensembl:
+\end{verbatim}
+\end{footnotesize}
 
-1) cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login 
-(password is 'CVSUSER')
+%% (or cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -d bioperl-branch-1.4 -r branch-1-4 bioperl-live for older branch)
 
-2) cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -r branch-ensembl-47 ensembl 
-(you need to adapt the branch number, e.g. 47, as it updates).
+To obtain EnsEMBL:
+
+\begin{footnotesize}
+\begin{verbatim}
+## Login on the EnsEMBL CVS server
+cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login 
+## (password is 'CVSUSER')
+
+## Download the current version of EnsEMBL
+cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
+  checkout -r branch-ensembl-47 ensembl 
+## (you need to adapt the branch number, e.g. 47, as it updates).
+\end{verbatim}
+\end{footnotesize}
 
 
 Add their path to your PERL5LIB variable.
