@@ -39,10 +39,11 @@ $supported_input_formats = join(",", @supported_input_formats);
 $supported_output_formats = join(",", @supported_output_formats);
 
 %supported_bg = ('upstream'=>1,
-		 'upstream-noorf'=>1,
 		 'upstream-rm'=>1,
+		 'upstream-noorf'=>1,
 		 'upstream-noorf-rm'=>1,
-		 'intergenic'=>1,		 
+		 'intergenic'=>1,
+		 'genomic'=>1,
 		 );
 @supported_bg = sort keys %supported_bg;
 $supported_bg = join(",", @supported_bg);
@@ -1441,11 +1442,12 @@ sub to_prefix_suffix_table {
     ## Print header
     $string .= join ("\t", ";pr\\suf",
 		     @suffix,
-		     "Pref",
-#		     "N(pre)",
+		     "Sum",
+		     "P_prefix",
+
 		    );
     $string .= "\n";
- 
+
     ## Print transition frequencies and sum and proba per prefix
     my %suffix_sum = ();
     my $table_prefix_sum = 0;
@@ -1455,7 +1457,6 @@ sub to_prefix_suffix_table {
 	}
 	$string .= $prefix;
 
- 
 	my $prefix_sum = 0;
 	foreach my $suffix (@suffix) {
 	  my $value =  $self->{$type}->{$prefix}->{$suffix} || 0;
@@ -1478,28 +1479,21 @@ sub to_prefix_suffix_table {
 	  $string .= "\t".$prefix_sum;
 	}
 
+	## Print prefix probabilities
 # 	if($type eq "oligo_freq") {
 # 	  $string .= "\t".$self->{prefix_sum}->{$prefix};
 # 	} elsif($type eq "oligo_freq_pseudo") {
 # 	  $string .= "\t".$self->{prefix_sum_pseudo}->{$prefix};
 # 	} elsif($type eq "oligo_freq_rel") {
-# 	  $string .= "\t".$self->{prefix_proba}->{$prefix};
+	$string .= "\t".$self->{prefix_proba}->{$prefix};
 # 	}
 
 	$string .= "\n";
 
     }
 
-    ## Print suffix probabilities
-#    $string .= sprintf("; %${row_name_len}s", "P(su)");
-##    $string .= "; P(su)";
-#    foreach my $suffix (@suffix) {
-#	$string .= sprintf "\t%.${decimals}f",  $self->{suffix_proba}->{$suffix};
-#    }
-#    $string .= "\n";
-
     ## Print suffix sums
-    $string .= sprintf("; %${row_name_len}s", "Suf");
+    $string .= sprintf("; %-${row_name_len}s", "Sum");
 
     my $table_suffix_sum = 0;
     foreach my $suffix (@suffix) {
@@ -1507,14 +1501,15 @@ sub to_prefix_suffix_table {
       $table_suffix_sum += $suffix_sum;
       if (&RSAT::util::IsNatural($suffix_sum)) {
       	my $print_suffix_sum = sprintf("%.0f",$suffix_sum);  #    	$string .= sprintf "\t%d",  $suffix_sum;
-      	$string .= "\t".$print_suffix_sum;     
+      	$string .= "\t".$print_suffix_sum;
       } elsif (&RSAT::util::IsReal($suffix_sum)) {
-	$string .= sprintf "\t%.${decimals}f",  $suffix_sum;
+	$string .= sprintf "\t%g",  $suffix_sum;
       } else {
 	$string .= "\t".$suffix_sum;
       }
     }
 
+    ## Print the corner sums
     if (&RSAT::util::IsNatural($table_suffix_sum)) {
       my $print_suffix_sum = sprintf("%.0f",$table_suffix_sum);  #   $string .= sprintf "\t%d",  $table_suffix_sum;
  #     &RSAT::message::Debug("table suffix sum","calculated:", $table_suffix_sum,
@@ -1536,6 +1531,13 @@ sub to_prefix_suffix_table {
       $string .= sprintf "%.${decimals}f",  $table_prefix_sum;
     } else {
       $string .= "".$table_prefix_sum;
+    }
+    $string .= "\n";
+
+    ## Print suffix probabilities
+    $string .= sprintf("; %-${row_name_len}s", "P_res");
+    foreach my $suffix (@suffix) {
+      $string .= sprintf "\t%.${decimals}f",  $self->{suffix_proba}->{$suffix};
     }
     $string .= "\n";
 
