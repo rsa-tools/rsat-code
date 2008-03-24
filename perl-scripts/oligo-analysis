@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.133 2008/01/07 01:24:31 jvanheld Exp $
+# $Id: oligo-analysis,v 1.134 2008/03/24 19:05:44 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -24,7 +24,7 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &AlphaDate();
-local $program_version = do { my @r = (q$Revision: 1.133 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.134 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
 local $taxon = 0; ## Specify it the background model is organism-specific or taxon-specific
@@ -37,7 +37,8 @@ local $taxon = 0; ## Specify it the background model is organism-specific or tax
 		 'bernoulli'=>1,
 		 'equi'=>1,
 		 'upstream-rm'=>1,
-		 'upstream-noorf-rm'=>1
+		 'upstream-noorf-rm'=>1,
+		 'protein'=>1
 		 );
 $supported_bg = join ",", sort keys %supported_bg;
 $background_model = "bernoulli";  ## Default background model
@@ -1473,7 +1474,6 @@ sub PrintHeaderLine {
     }
 
     print $out "#", join("\t",@out_col), "\n";
-
 }
 
 
@@ -1571,13 +1571,6 @@ sub Verbose {
 	    printf $out "; %-29s\t%s\n", "nb possible oligomers", $nb_possible_oligo;
 	    printf $out "; %-29s\t%d\n", "oligomers tested for significance", $main::nb_tested_patterns;
 	    printf $out &PrintThresholdValues();
-#	    printf $out "; %-29s\t%s\n", "threshold on occurrences", $lth{occ} if ($lth{occ} > 0);
-#	    printf $out "; %-29s\t%s\n", "threshold on occ sig", $lth{occ_sig} if (defined($lth{occ_sig}));
-#	    printf $out "; %-29s\t%s\n", "threshold on matching seq sig", $mseq_significance_threshold if (defined($mseq_significance_threshold));
-#	    printf $out "; %-29s\t%s\n", "threshold on matching seq.", $lth{mseq} if ($lth{mseq} > 0);
-#	    printf $out "; %-29s\t%s\n", "threshold on occ proba", $uth{occ_P} if ($uth{occ_P} < 1);
-#	    printf $out "; %-29s\t%s\n", "threshold on occ ratio", $ratio_threshold if ($ratio_threshold > 0);
-#	    printf $out "; %-29s\t%s\n", "threshold on match. seq proba", $proba_mseq_threshold if ($proba_mseq_threshold < 1);
 
 	    unless (($return{'table'}) || ($sequence_number > $max_seq_verbose)) {
 		print $out "; Sequences:\n";
@@ -1594,218 +1587,216 @@ sub Verbose {
 ################################################################
 ### Print the result
 sub PrintResult {
-    ### open output file ###
-    if ($verbose >= 2) {
-	&RSAT::message::TimeWarn("Printing output file\t$outputfile");
+  ### open output file ###
+  if ($verbose >= 2) {
+    &RSAT::message::TimeWarn("Printing output file\t$outputfile");
+  }
+
+  #### print verbose
+  &Verbose() if ($verbose >= 1);
+
+  ### sort oligomers in function of significance or alphabetically
+  if ($sort_result) {
+    &RSAT::message::TimeWarn("Sorting oligomers") if ($main::verbose >= 2);
+    ### in priority, sort by occurrence probabilities
+    if ($return{'occ'}) {
+      ### preferred fields for sorting are the most generally reliable
+      if ($return{'zscore'}) {
+	if ($return{'proba'}) {
+	  if ($tail eq "two") {
+	    @sorted_keys = sort {(($patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore}) ||
+				  ($patterns{$b}->{occ_sig} <=>  $patterns{$a}->{occ_sig}))
+			       } keys %patterns;
+	  } else {
+	    #### two-criteria sorting, sig is prioritary, but
+	    #### zscore is useful when the proba reaches
+	    #### calculation limits
+	    @sorted_keys = sort {(($patterns{$b}->{occ_sig} <=>  $patterns{$a}->{occ_sig}) ||
+				  ($patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore}))
+			       } keys %patterns;
+	  }
+	} else {
+	  @sorted_keys = sort {$patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore}} keys %patterns;
+	}
+	$sorted = 1;
+      } elsif ($return{'proba'}) {
+	@sorted_keys = sort {$patterns{$b}->{occ_sig} <=> $patterns{$a}->{occ_sig}} keys %patterns;
+	$sorted = 1;
+      } elsif ($return{'like'}) {
+	@sorted_keys = sort {$patterns{$b}->{occ_lkh} <=> $patterns{$a}->{occ_lkh}} keys %patterns;
+	$sorted = 1;
+      } elsif ($return{'ratio'}) {
+	@sorted_keys = sort {$patterns{$b}->{ratio} <=> $patterns{$a}->{ratio}} keys %patterns;
+	$sorted = 1;
+      } else {
+	@sorted_keys = sort {$patterns{$b}->{occ} <=> $patterns{$a}->{occ}} keys %patterns;
+	$sorted = 1;
+      }
+    } elsif ($return{'mseq'}) {
+      if ($return{'proba'}) {
+	@sorted_keys = sort {$patterns{$b}->{ms_sig} <=>  $patterns{$a}->{ms_sig}} keys %patterns;
+	$sorted = 1;
+      } elsif ($return{'like'}) {
+	@sorted_keys = sort {$patterns{$b}->{ms_lkh} <=>  $patterns{$a}->{ms_lkh}} keys %patterns;
+	$sorted = 1;
+      } else {
+	@sorted_keys = sort {$patterns{$b}->{occ} <=> $patterns{$a}->{mseq}} keys %patterns;
+	$sorted = 1;
+      }
+      ### if no matching sequence request, sort by statistics on occurrences
+    } elsif ($return{'freq'}) {
+      @sorted_keys = sort {$patterns{$b}->{observed_freq} <=> $patterns{$a}->{observed_freq}} keys %patterns;
+      $sorted = 1;
+    }
+  }
+  ### in all the other cases, sort by sequence
+  @sorted_keys = sort keys %patterns unless ($sorted);
+
+  ### Reverse order if one is looking for under-represented patterns
+  if (($tail eq "left") && (!$return{'proba'})) {
+    @sorted_keys = reverse(@sorted_keys);
+  }
+
+  ## Print the header line
+  &PrintHeaderLine();
+
+  ## Calculate rank
+  my $rank = 0;
+  foreach my $pattern_seq (@sorted_keys) {
+    $rank++;
+    $patterns{$pattern_seq}->{'rank'} = $rank;
+    #	&CalcThresholds('rank');
+  }
+
+  ### print result ###
+  foreach my $p (0..$#sorted_keys) {
+    my $rank = $p+1;
+    my $pattern_seq = $sorted_keys[$p];
+
+    ## Thresholds on rank
+    if (defined($lth{rank})) {
+      #	    print join( "\t", $p, $rank, $pattern_seq, $lth{rank}), "\n";
+      next if ($rank < $lth{rank});
+    }
+    if (defined($uth{rank})) {
+      last if ($rank > $uth{rank});
     }
 
-    #### print verbose
-    &Verbose() if ($verbose >= 1);
+    ### oligo sequence and identifier
+    print $out $pattern_seq;
+    print $out "\t", &PatternID($pattern_seq, $sum_rc);
 
-    ### sort oligomers in function of significance or alphabetically
-    if ($sort_result) {
-	### in priority, sort by occurrence probabilities
-	if ($return{'occ'}) {
-	    ### preferred fields for sorting are the most generally reliable
-	    if ($return{'zscore'}){
-		if ($return{'proba'}) {
-		    if ($tail eq "two") {
-			@sorted_keys = sort {(($patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore}) ||
-					      ($patterns{$b}->{occ_sig} <=>  $patterns{$a}->{occ_sig}))
-					    } keys %patterns;
-		    } else {
-			#### two-criteria sorting, sig is prioritary, but
-			#### zscore is useful when the proba reaches
-			#### calculation limits
-			@sorted_keys = sort {(($patterns{$b}->{occ_sig} <=>  $patterns{$a}->{occ_sig}) ||
-					      ($patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore}))
-					    } keys %patterns;
-		    }
-		} else {
-		    @sorted_keys = sort {$patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore}} keys %patterns;
-		}
-		$sorted = 1;
-	    } elsif ($return{'proba'}) {
-		@sorted_keys = sort {$patterns{$b}->{occ_sig} <=> $patterns{$a}->{occ_sig}} keys %patterns;
-		$sorted = 1;
-	    } elsif ($return{'like'}) {
-		@sorted_keys = sort {$patterns{$b}->{occ_lkh} <=> $patterns{$a}->{occ_lkh}} keys %patterns;
-		$sorted = 1;
-	    } elsif ($return{'ratio'}) {
-		@sorted_keys = sort {$patterns{$b}->{ratio} <=> $patterns{$a}->{ratio}} keys %patterns;
-		$sorted = 1;
-	    } else {
-		@sorted_keys = sort {$patterns{$b}->{occ} <=> $patterns{$a}->{occ}} keys %patterns;
-		$sorted = 1;
-	    }
-	} elsif ($return{'mseq'}) {
-	    if ($return{'proba'}) {
-		@sorted_keys = sort {$patterns{$b}->{ms_sig} <=>  $patterns{$a}->{ms_sig}} keys %patterns;
-		$sorted = 1;
-	    } elsif($return{'like'}) {
-		@sorted_keys = sort {$patterns{$b}->{ms_lkh} <=>  $patterns{$a}->{ms_lkh}} keys %patterns;
-		$sorted = 1;
-	    } else {
-		@sorted_keys = sort {$patterns{$b}->{occ} <=> $patterns{$a}->{mseq}} keys %patterns;
-		$sorted = 1;
-	    }
-	    ### if no matching sequence request, sort by statistics on occurrences
-	} elsif ($return{'freq'}) {
-	    @sorted_keys = sort {$patterns{$b}->{observed_freq} <=> $patterns{$a}->{observed_freq}} keys %patterns;
-	    $sorted = 1;
+    ### relative frequencies
+    printf $out "\t%15.13f", $patterns{$pattern_seq}->{observed_freq} if ($return{'freq'});
+    printf $out "\t%15.13f", $patterns{$pattern_seq}->{exp_freq} if ($return{'exp_freq'});
+
+    ### occurrences ###
+    if ($return{'occ'}) {
+      printf $out "\t%d", $patterns{$pattern_seq}->{occ};
+
+      ### expected occurrences
+      if ($return{'exp_freq'}) {
+	if ($patterns{$pattern_seq}->{exp_occ} >= 0.01) {
+	  printf $out "\t%.2f", $patterns{$pattern_seq}->{exp_occ};
+	} else {
+	  printf $out "\t%.2g", $patterns{$pattern_seq}->{exp_occ};
 	}
-    }
-    ### in all the other cases, sort by sequence
-    @sorted_keys = sort keys %patterns unless ($sorted);
+      }
 
-    ### Reverse order if one is looking for under-represented patterns
-    if (($tail eq "left") && (!$return{'proba'})){
-	@sorted_keys = reverse(@sorted_keys);
+      ### occurrence probability
+      if ($return{'proba'}) {
+	if ($patterns{$pattern_seq}->{occ_P} >= 0.0001) {
+	  printf $out "\t%.5f", $patterns{$pattern_seq}->{occ_P};
+	  printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_E};
+	} elsif ($patterns{$pattern_seq}->{occ_P} <= 1e-100) {
+	  printf $out "\t%.0g", $patterns{$pattern_seq}->{occ_P};
+	  printf $out "\t%.0e", $patterns{$pattern_seq}->{occ_E};
+	} else {
+	  printf $out "\t%.2g", $patterns{$pattern_seq}->{occ_P};
+	  printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_E};
+	}
+	#		printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_FWER};
+	printf $out "\t%.2f", $patterns{$pattern_seq}->{occ_sig};
+      }
+    }
+
+    ### rank ###
+    if ($return{'rank'}) {
+      print $out "\t", $patterns{$pattern_seq}->{rank};
+    }
+
+    ### Overlapping occurrences
+    if (($return{occ}) && ($noov eq "-noov")) {
+      $patterns{$pattern_seq}->{overlaps} = 0 if ($patterns{$pattern_seq}->{overlaps} eq "");
+      print $out "\t", $patterns{$pattern_seq}->{overlaps};
+      printf $out "\t%d", $patterns{$pattern_seq}->{forbocc};
+      #	    printf $out "\t%d", $patterns{$pattern_seq}->{notforb};
+    }
+
+    ### zscore and variance estimate
+    if ($return{'zscore'}) {
+      if (&IsReal($patterns{$pattern_seq}->{zscore})) {
+	printf $out "\t%.2f", $patterns{$pattern_seq}->{zscore};
+      } else {
+	printf $out "\t%s", $patterns{$pattern_seq}->{zscore};
+      }
+      printf $out "\t%.3f", $patterns{$pattern_seq}->{exp_var};
     }
 
 
-
-    ## Print the header line
-    &PrintHeaderLine();
-
-    ## Calculate rank
-    my $rank = 0;
-    foreach my $pattern_seq (@sorted_keys) {
-	$rank++;
-	$patterns{$pattern_seq}->{'rank'} = $rank;
-#	&CalcThresholds('rank');
+    ### obs/exp ratio
+    if ($return{'ratio'}) {
+      printf $out "\t%.2f", $patterns{$pattern_seq}->{ratio};
     }
 
-    ### print result ###
-    foreach my $p (0..$#sorted_keys) {
-	my $rank = $p+1;
-	my $pattern_seq = $sorted_keys[$p];
+    ### log likelihood of occurrences
+    printf $out "\t%15.12f", $patterns{$pattern_seq}->{occ_lkh} if ($return{'like'});
 
-	## Thresholds on rank
-	if (defined($lth{rank})) {
-#	    print join( "\t", $p, $rank, $pattern_seq, $lth{rank}), "\n";
-	    next if ($rank < $lth{rank});
+    ### matching sequences ###
+    if ($return{'mseq'}) {
+      print $out "\t", $patterns{$pattern_seq}->{mseq};
+      if ($return{'proba'}) {
+	printf $out "\t%.2f", $patterns{$pattern_seq}->{exp_ms};
+	printf $out "\t%.2f", $patterns{$pattern_seq}->{ems_cor} unless ($noov eq "-noov");
+	if ($patterns{$pattern_seq}->{ms_pro} >= 0.0001) {
+	  printf $out "\t%.5f", $patterns{$pattern_seq}->{ms_pro};
+	  printf $out "\t%.2g", $patterns{$pattern_seq}->{ms_E};
+	} elsif ($patterns{$pattern_seq}->{ms_pro} < 1e-100) {
+	  printf $out "\t%.0g", $patterns{$pattern_seq}->{ms_pro};
+	  printf $out "\t%.0g", $patterns{$pattern_seq}->{ms_E};
+	} else {
+	  printf $out "\t%.2g", $patterns{$pattern_seq}->{ms_pro};
+	  printf $out "\t%.2g", $patterns{$pattern_seq}->{ms_E};
 	}
-	if (defined($uth{rank})) {
-	    next if ($rank > $uth{rank});
-	}
+	printf $out "\t%.1f", $patterns{$pattern_seq}->{ms_sig};
+      }
+      printf $out "\t%7.5f", $patterns{$pattern_seq}->{ms_freq} if ($return{'freq'});
+      printf $out "\t%7.5f", $patterns{$pattern_seq}->{exp_ms}/$sequence_number if ($return{'exp_freq'});
+      printf $out "\t%7.5f", $patterns{$pattern_seq}->{mseq}/$patterns{$pattern_seq}->{exp_ms} if (($return{'ratio'}) && ($patterns{$pattern_seq}->{exp_ms} > 0));
+      printf $out "\t%15.12f", $patterns{$pattern_seq}->{ms_lkh} if ($return{'like'});
 
-	### oligo sequence and identifier
-	print $out $pattern_seq;
-	print $out "\t", &PatternID($pattern_seq, $sum_rc);
-
-	### relative frequencies
-	printf $out "\t%15.13f", $patterns{$pattern_seq}->{observed_freq} if ($return{'freq'});
-	printf $out "\t%15.13f", $patterns{$pattern_seq}->{exp_freq} if ($return{'exp_freq'});
-
-	### occurrences ###
-	if ($return{'occ'}) {
-	    printf $out "\t%d", $patterns{$pattern_seq}->{occ};
-
-	    ### expected occurrences
-	    if ($return{'exp_freq'}) {
-		if ($patterns{$pattern_seq}->{exp_occ} >= 0.01) {
-		    printf $out "\t%.2f", $patterns{$pattern_seq}->{exp_occ};
-		} else {
-		    printf $out "\t%.2g", $patterns{$pattern_seq}->{exp_occ};
-		}
-	    }
-
-	    ### occurrence probability
-	    if ($return{'proba'}) {
-		if ($patterns{$pattern_seq}->{occ_P} >= 0.0001) {
-		    printf $out "\t%.5f", $patterns{$pattern_seq}->{occ_P};
-		    printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_E};
-		} elsif ($patterns{$pattern_seq}->{occ_P} <= 1e-100) {
-		    printf $out "\t%.0g", $patterns{$pattern_seq}->{occ_P};
-		    printf $out "\t%.0e", $patterns{$pattern_seq}->{occ_E};
-		} else {
-		    printf $out "\t%.2g", $patterns{$pattern_seq}->{occ_P};
-		    printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_E};
-		}
-#		printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_FWER};
-		printf $out "\t%.2f", $patterns{$pattern_seq}->{occ_sig};
-	    }
-	}
-
-	### rank ###
-	if ($return{'rank'}) {
-	    print $out "\t", $patterns{$pattern_seq}->{rank};
-	}
-
-	### Overlapping occurrences
-	if (($return{occ}) && ($noov eq "-noov")) {
-	    $patterns{$pattern_seq}->{overlaps} = 0 if ($patterns{$pattern_seq}->{overlaps} eq "");
-	    print $out "\t", $patterns{$pattern_seq}->{overlaps};
-	    printf $out "\t%d", $patterns{$pattern_seq}->{forbocc};
-#	    printf $out "\t%d", $patterns{$pattern_seq}->{notforb};
-	}
-
-	### zscore and variance estimate
-	if ($return{'zscore'}) {
-	    if (&IsReal($patterns{$pattern_seq}->{zscore})) {
-		printf $out "\t%.2f", $patterns{$pattern_seq}->{zscore};
-	    } else {
-		printf $out "\t%s", $patterns{$pattern_seq}->{zscore};
-	    }
-	    printf $out "\t%.3f", $patterns{$pattern_seq}->{exp_var};
-	}
-
-
-	### obs/exp ratio
-	if ($return{'ratio'}) {
-	    printf $out "\t%.2f", $patterns{$pattern_seq}->{ratio};
-	}
-
-	### log likelihood of occurrences
-	printf $out "\t%15.12f", $patterns{$pattern_seq}->{occ_lkh} if ($return{'like'});
-
-	### matching sequences ###
-	if ($return{'mseq'}) {
-	    print $out "\t", $patterns{$pattern_seq}->{mseq};
-	    if ($return{'proba'}) {
-		printf $out "\t%.2f", $patterns{$pattern_seq}->{exp_ms};
-		printf $out "\t%.2f", $patterns{$pattern_seq}->{ems_cor} unless ($noov eq "-noov");
-		if ($patterns{$pattern_seq}->{ms_pro} >= 0.0001) {
-		    printf $out "\t%.5f", $patterns{$pattern_seq}->{ms_pro};
-		    printf $out "\t%.2g", $patterns{$pattern_seq}->{ms_E};
-		} elsif ($patterns{$pattern_seq}->{ms_pro} < 1e-100) {
-		    printf $out "\t%.0g", $patterns{$pattern_seq}->{ms_pro};
-		    printf $out "\t%.0g", $patterns{$pattern_seq}->{ms_E};
-		} else {
-		    printf $out "\t%.2g", $patterns{$pattern_seq}->{ms_pro};
-		    printf $out "\t%.2g", $patterns{$pattern_seq}->{ms_E};
-		}
-		printf $out "\t%.1f", $patterns{$pattern_seq}->{ms_sig};
-	    }
-	    printf $out "\t%7.5f", $patterns{$pattern_seq}->{ms_freq} if ($return{'freq'});
-	    printf $out "\t%7.5f", $patterns{$pattern_seq}->{exp_ms}/$sequence_number if ($return{'exp_freq'});
-	    printf $out "\t%7.5f", $patterns{$pattern_seq}->{mseq}/$patterns{$pattern_seq}->{exp_ms} if (($return{'ratio'}) && ($patterns{$pattern_seq}->{exp_ms} > 0));
-	    printf $out "\t%15.12f", $patterns{$pattern_seq}->{ms_lkh} if ($return{'like'});
-
-	}
-
-	### positions ###
-	if ($return{'pos'}) {
-	    print $out "\t";
-	    for $seq (1..$sequence_number) {
-		for $p (0..$#{$match_pos{$pattern_seq}[$seq]}) {
-		    print $out "$seq:$match_pos{$pattern_seq}[$seq][$p] ";
-		}
-	    }
-	}
-
-	### miscellaneous info
-	printf $out "\t%.5f", $patterns{$pattern_seq}->{ovlp} if ($return{'ovlp'});
-	printf $out "\t%s", $patterns{$pattern_seq}->{fitted} if ($return{'fitted'});
-	printf $out "\t%s", $patterns{$pattern_seq}->{tail} if ($tail="two");
-	printf $out "\t%s", $patterns{$pattern_seq}->{remark} if ($return{'remark'});
-	printf $out "\t%s", $patterns{$pattern_seq}->{segments} if ($return{'segments'});
-
-	### next line
-	print $out "\n";
     }
 
+    ### positions ###
+    if ($return{'pos'}) {
+      print $out "\t";
+      for $seq (1..$sequence_number) {
+	for $p (0..$#{$match_pos{$pattern_seq}[$seq]}) {
+	  print $out "$seq:$match_pos{$pattern_seq}[$seq][$p] ";
+	}
+      }
+    }
+
+    ### miscellaneous info
+    printf $out "\t%.5f", $patterns{$pattern_seq}->{ovlp} if ($return{'ovlp'});
+    printf $out "\t%s", $patterns{$pattern_seq}->{fitted} if ($return{'fitted'});
+    printf $out "\t%s", $patterns{$pattern_seq}->{tail} if (($return{proba}) && ($tail eq "two"));
+    printf $out "\t%s", $patterns{$pattern_seq}->{remark} if ($return{'remark'});
+    printf $out "\t%s", $patterns{$pattern_seq}->{segments} if ($return{'segments'});
+
+    ### next line
+    print $out "\n";
+  }
 
 }
 
