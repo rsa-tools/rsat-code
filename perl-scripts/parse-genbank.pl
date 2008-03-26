@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.48 2008/03/14 13:46:43 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.49 2008/03/26 20:09:52 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -140,7 +140,7 @@ package main;
 	    &RSAT::error::FatalError("Input directory '$dir{input}' does not exist.\n");
 	}
     } 
-    
+
     #### organism name
     unless ($org) {
 	$org = `basename $dir{input}`;
@@ -158,24 +158,16 @@ package main;
 #	chdir ($dir{input});
 	push @genbank_files, glob($dir{input}."/*.${ext}");
 	push @genbank_files, glob($dir{input}."/*.${ext}.gz");
-#	push @genbank_files, glob($dir{input}."/*.${ext}.gz");
 	&RSAT::message::Info("Genbank files found in the directory", join("; ", @genbank_files));
 
 	## If no genbank files were found in the main directory (Bacteria),
 	## search in CHR_* directories (eukaryotes)
 	if (scalar(@genbank_files) < 1) {
-#	    chdir ($dir{input});
 	    push @genbank_files, glob($dir{input}."/CHR*/*.${ext}");
 	    push @genbank_files, glob($dir{input}."/CHR*/*.${ext}.gz");
 	    &RSAT::message::Info("Genbank files found in the CHR_* subdirectories", join("; ", @genbank_files));
 	}
     }
-
-    ## For eukaryotes, the genbank files are in sub-directories corresponding to the chromosomes
-#    if ($#genbank_files < 0) {
-#	push @genbank_files, glob("CHR_*/*.${ext}");
-#	push @genbank_files, glob("CHR_*/*.${ext}.gz");
-#    }
 
     if ($#genbank_files < 0) {
 	system "ls -l";
@@ -184,7 +176,7 @@ package main;
 	warn "; Genbank files\n;\t", join("\n;\t", @genbank_files), "\n" if ($verbose >= 1);
     }
     chdir($dir{main});     #### come back to the starting directory
-    
+
     #### output directory
     unless (defined($dir{output})) {
 	if (($dir{input} =~ /refseq/) ||
@@ -228,7 +220,7 @@ package main;
     if (scalar(@repeats) > 1) {
 	&ExportMaskedSequences() unless ($noseq);
     }
-    
+
     #### write the contig file
     chdir $dir{main};
     $chrom = &OpenOutputFile("$dir{output}/contigs.txt"); # file with contig IDs
@@ -239,7 +231,6 @@ package main;
 			   $contig->get_attribute("form")), "\n";
     }
     close $chrom;
-    
 
 #    $features->index_names();
 #    $genes->index_names();
@@ -250,7 +241,7 @@ package main;
 #    $misc_RNAs->index_names();
 #    $misc_features->index_names();
 #    $CDSs->index_names();
-    
+
     ################################################################
     ### export result in various formats
 #    chdir $dir{output};
@@ -276,7 +267,8 @@ package main;
 
     foreach my $factory_name (@class_factories) {
 	my $class_factory = $$factory_name;
-	warn "; Dumping class $factory_name $class_factory\n" if ($verbose >= 2);
+	&RSAT::message::TimeWarn("Dumping class $factory_name $class_factory") 
+	  if ($verbose >= 1);
 	$suffix = "_$org" unless ($no_suffix);
 	$class_factory->dump_tables($suffix);
 	$class_factory->generate_sql(dir=>"$dir{output}/sql_scripts",
@@ -289,23 +281,11 @@ package main;
 				     full_path=>$full_path
 				     );
     }
-
-#     foreach my $feature ($features->get_objects()) {
-# 	&RSAT::message::Debug ("feature", 
-# 			       $feature->get_attribute("id"),
-# 			       $feature->get_attribute("name"),
-# 			       $feature->get_attribute("type"),
-# 			       $feature->get_attribute("locus_tags"),
-# 			       $feature->get_attribute("GeneID"),
-# 			       ), "\n" if ($verbose >= 10);
-#     }
-    
     &ExportMakefile(@classes);
     &ExportClasses($out_file{features}, $out_format, @classes) if $export{obj};
 
     ## Export protein sequences
     &ExportProteinSequences($CDSs,$org);
-
 
     ###### verbose ######
     if ($verbose) {
@@ -313,8 +293,7 @@ package main;
 	print $out "; Job started $start_time\n";
 	print $out "; Job done    $done_time\n";
     }
-    
-    
+
     ### Report the output directory
     &RSAT::message::Info(join("\t", "Output directory", $dir{output}));
 
@@ -649,31 +628,22 @@ sub ExportProteinSequences {
     my $separator="; ";
     $out_file{pp} = $dir{output}."/".$org."_aa.fasta";
 
-    &RSAT::message::TimeWarn(join ("\t", "; Exporting translated sequences to file", $out_file{pp})) 
+    &RSAT::message::TimeWarn("Exporting translated sequences to file", $out_file{pp})
 	if ($main::verbose >= 1);
-    
+
     open PP, ">$out_file{pp}";
     foreach my $cds ($CDSs->get_objects()) {
 	next unless ($cds);
 	my ($translation) = $cds->get_attribute("translation");	    
 	next unless ($translation =~ /\S+/);
-
-# 	my $id = $data_source;
 	my $id = $cds->get_attribute("id");
 	my $gene = $cds->get_attribute("gene");
 	if (!($gene) || ($gene eq $null)) {
 	    $gene = $id;
 	}
-
-#	my $pp_id = join ($separator, 
-#			  $id,
-#			  $org,
-#			  $gene,
-#			  );
 	my $pp_id = $id;
 
         ## Get CDS description
-
         my $description = join($separator, $org,$id,$gene);
 	$description .= $separator;
 	if ($cds->get_attribute("description")) {
@@ -685,7 +655,7 @@ sub ExportProteinSequences {
         my $pp_description;
         if ($description) {
           $pp_description .= $description;
-        }	    
+        }
         $pp_description .= "; ".join ("|", $cds->get_attribute("names"));
 
         print PP $header, "\n";
