@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: seq-proba,v 1.5 2007/07/25 21:46:15 jvanheld Exp $
+# $Id: seq-proba,v 1.6 2008/03/26 20:10:58 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -431,8 +431,12 @@ __END__
 
 =head1 SEE ALSO
 
+=over
+
 =item convert-background-model
 
 =item matrix-scan
+
+=back
 
 =cut
