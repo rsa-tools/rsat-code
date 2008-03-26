@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.20 2008/03/02 20:33:37 jvanheld Exp $
+# $Id: compare-matrices,v 1.21 2008/03/26 20:12:07 jvanheld Exp $
 #
 ############################################################
 
@@ -72,27 +72,42 @@ In the formula below, symbols are defined as follows
 
 =over
 
+=item I<m1, m2>
+
+Two position-specific scoring matrices.
+
+=item I<w1,w2>
+
+Number of columns of matrices m1 and m2, respectively.
+
+=item I<r>
+
+Number of rows in each matrix, which correspond to the number of
+residues in the alphabet (A,C,G,T for DNA motifs).
+
 =item I<w>
 
-length of the alignment (depends on the offset between the two
-matrices).
+Number of aligned columns between matrices m1 and m2 (depends on the
+offset between the two matrices).
 
-=item I<s1>
+ w <= w1
+ w <= w2
 
-Number of sites in the first matrix.
+=item I<W>
 
-=item I<s2>
+Total length of the alignent between matrices m1 and m2.
 
-Number of sites in the second matrix
+ W = w1 + w2 - w
+
+=item I<s1, s2>
+
+Number of sites in matrices m1 and m2, respectively.
 
 =item I<n>
 
 Number of cells in the aligned portion of the matrices.
 
-=item I<r>
-
-Number of rows in the matrix, which correspond to the number of
-residues in the alphabet (A,C,G,T for DNA motifs).
+ n = w * r
 
 =item I<i>
 
@@ -105,27 +120,23 @@ position).
 
 =item I<f1{i,j}>
 
-frequency of residue I<r> in the I<jth> column of the aligned subset of the
+Frequency of residue I<r> in the I<jth> column of the aligned subset of the
 first matrix (taking the offset into account).
 
 =item I<f2{i,j}>
 
-frequency of residue r in the jth column of the aligned subset of the
+Frequency of residue r in the jth column of the aligned subset of the
 second matrix (taking the offset into account).
 
-=item I<f1m>
+=item I<f1m, f2m>
 
-Mean frequency computed over all cells of the first matrix.
-
-=item I<f2m>
-
-Mean frequency computed over all cells of the second matrix.
+Mean frequency computed over all cells of matrices m1 and m2, respectively.
 
 =back
 
 =head2 Euclidian distance (dEucl)
 
- dEucl = 1/w * SUM{i=1->r} SUM{j=1->w} (f1{i,j} - f2{i,j})^2
+ dEucl = 1/w * sqrt( SUM{i=1->r} SUM{j=1->w} (f1{i,j} - f2{i,j})^2)
 
 Note that our Euclidian distance is relativized by the number of
 aligned columns (I<w>). This differs from the definition provided in
@@ -144,17 +155,21 @@ current pair of matrices.
 
 =head2 Kullback-Leibler distance (dKL)
 
- dKL = 1/w * SUM{i=1->r} SUM{j=1->w} (
-                 f1{i,j}*log(f1{i,j}/f2{i,j})
-               + f2{i,j}*log(f2{i,j}/f1{i,j}))
+As defined in Aerts et al. (2003).
 
-Note that our KL distance is relativized by the number of
-aligned columns (I<w>). This differs from the definition provided in
-Pape et al. (2008).
+ dKL = 1/(2w) * SUM{i=1->r} SUM{j=1->w} (
+                   f1{i,j}*log(f1{i,j}/f2{i,j})
+                   + f2{i,j}*log(f2{i,j}/f1{i,j}))
+
 
 =head2 Covariance (cov)
 
  cov = 1/n * SUM{i=1->r} SUM{j=1->w} (f1{i,j} - f1m) * (f2{i,j} - f2m)
+
+Beware : this covariance has nothing to do with the "natural
+covariance" of Pape (which still need to be implemented here).  What
+we compute here is simply the covariance between the counts in the
+aligned cells of the respective matrices.
 
 =head2 Coefficient of correlation (cor)
 
@@ -164,11 +179,20 @@ Pape et al. (2008).
 
 =head1 REFERENCES
 
+Distances between PSSMs have been treated in many ways. The most
+recent and relevant articles are cited hereafter.
+
 =over
 
 =item Pape, U.J., Rahman, S., and Vingron, M. (2008). Natural
 similarity measures between position frequency matrices with an
 application to clustering. Bioinformatics 24 (3) pp. 350-7.
+
+=item Gupta et al. Quantifying similarity between motifs. Genome Biol
+(2007) vol. 8 (2) pp. R24.
+
+=item Aerts et al. Computational detection of cis -regulatory
+modules. Bioinformatics (2003) vol. 19 Suppl 2 pp. ii5-14
 
 =back
 
@@ -196,7 +220,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -211,7 +235,7 @@ package main;
   my %supported_return_fields = (
 				 "pos"=>1, ## start and end positions of the alignment relative to the matrices
 				 "dEucl"=>1, ## Euclidian distance
-				 "rsEucl"=>1, ## Euclidian distance
+#				 "rsEucl"=>1, ## Euclidian distance
 				 "dKL"=>1, ## Kullback-Leibler distance
 				 "cor"=>1, ## Coefficient of correlation
 				 "cov"=>1, ## Covariance
@@ -445,39 +469,23 @@ package main;
 	my $start1 = &RSAT::stats::max(1, $offset+1, $end1-$ncol2+1);
 	my $ali_len = $end1-$start1+1;
 	next unless (&CheckThresholds("ali_len", $ali_len));
-
 	my $start2 = &RSAT::stats::max(1, 1- $offset);
 	my $end2 = &RSAT::stats::min($start2+$ali_len-1, $ncol2);
 
 	## Highlight alignment in consensus
 	$consensus1 = join ("",
 			    "."x($start1-1),
-			    #				  substr($matrix1->get_attribute("consensus.IUPAC"), 0, $start1-1),
 			    substr($matrix1->get_attribute("consensus.IUPAC"), $start1-1, $ali_len),
 			    "."x($ncol1-$end1)
-			    #				  substr($matrix1->get_attribute("consensus.IUPAC"), $end1),
 			   );
 	$consensus2 = join ("",
 			    "."x($start2-1),
-			    #				  substr($matrix2->get_attribute("consensus.IUPAC"), 0, $start2-1),
 			    substr($matrix2->get_attribute("consensus.IUPAC"), $start2-1, $ali_len),
 			    "."x($ncol2-$end2)
-			    #				  substr($matrix2->get_attribute("consensus.IUPAC"), $end2),
 			   );
-
-#	&RSAT::message::Debug("offset=".$offset, 
-#			      "ali_len=".$ali_len,
-#			      "start1=".$start1,
-#			      "end1=".$end1,
-#			      "start2=".$start2,
-#			      "end2=".$end2,
-#			      "consensus1=".$consensus1,
-#			      "consensus2=".$consensus2,
-#			     ) if ($main::verbose >= 10);
 
 
 	## Compute the Euclidian distance between the matrices
-	## (cf Tomtom)
 	my $dEucl = 0;
 	my $rsEucl = 0;
 	my $dKL = 0;
@@ -521,7 +529,7 @@ package main;
 	## Compute Euclidian distance
 	if ($calc_field{dEucl}) {
 	  $dEucl = sqrt($dEucl);
-	  $dEucl /= $ali_len if ($ali_len > 0); ## Relativize Euclidian distance with respect to the column number
+	  $dEucl /= $ali_len if ($ali_len > 0); ## Relativize Euclidian distance with respect to the number of aligned columns
 	}
 	next unless (&CheckThresholds("dEucl", $dEucl)); $dEucl{$offset} = $dEucl;
 
@@ -534,7 +542,7 @@ package main;
 	## Compute Kullback-Leibler distance
 	if ($calc_field{dKL}) {
 	  $dKL /= 2;
-	  $dKL /= $ali_len if ($ali_len > 0); ## Relativize KL distance with respect to the column number
+	  $dKL /= $ali_len if ($ali_len > 0); ## Relativize KL distance with respect to the number of aligned columns
 	}
 	next unless (&CheckThresholds("dKL", $dKL)); $dKL{$offset} = $dKL;
 
@@ -546,7 +554,7 @@ package main;
 	  $n = $nrow1*$ali_len;
 	  $v1 = $sum_sq_f1/$n - ($sum_f1/$n)**2;
 	  $v2 = $sum_sq_f2/$n - ($sum_f2/$n)**2;
-	  $cov = $sum_f1f2/$n - $sum_f1*$sum_f2/$n**2;
+	  $cov = $sum_f1f2/$n - $sum_f1*$sum_f2/$n**2; ## Warning : this covariance has nothing to do with the "natural covariance" of Pape
 	  $cor = $cov/sqrt($v1*$v2);
 	}
 	next unless (&CheckThresholds("cov", $cov)); $cov{$offset} = $cov;
@@ -964,7 +972,10 @@ __END__
 
 =over
 
-=item A P-value for the covariance.
+=item The "natural covariance", as proposed by Pape et al. (2008).
+
+This metrics measures the covariance between hits of two matrices
+above a given threshold for each of them.
 
 =item chi2 P-value (for the sake of comparison).
 
