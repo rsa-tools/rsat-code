@@ -232,14 +232,23 @@ if ($verbose) {
   print $out ";count: $count\n";
   if ($count > 0) {
     $avg = $sum/$count;
-    $std = sqrt($sumofsquares/$count - $avg*$avg);
+    if ($max > $min) {
+      $var = $sumofsquares/$count - $avg*$avg;
+      ## This is required to avoid errors due to numerical imprecision
+      $var = &max($var, 0);
+      $std = sqrt($var);
+    } else {
+      $std  = 0;
+    }
     if (avg > 1) {
       printf $out ";sum:	%.3f\n", $sum;
       printf $out ";avg:	%.3f\n", $avg;
+      printf $out ";var:	%.3f\n", $var;
       printf $out ";std:	%.3f\n", $std;
     } else {
       printf $out ";sum:	%f\n", $sum;
       printf $out ";avg:	%f\n", $avg;
+      printf $out ";var:	%f\n", $var;
       printf $out ";std:	%f\n", $std;
     }
   }
@@ -282,7 +291,7 @@ NAME
 AUTHORS
 
 	First version dates from July 1997 by Jacques van Helden
-	(jvanheld\@scmbb.ulb.ac.be).
+	(jvhelden\@ulb.ac.be).
 
 	Upgrades in 2007 by Sylvain Brohee (sylvain\@scmbb.ulb.ac.be).
 
