@@ -35,16 +35,23 @@ $parameters .= " -v 1";
 
 ################################################################
 #### patterns
+my $pattern_file = $TMP."/".$tmp_file_name.".pat";
+open PATTERNS, "> ".$pattern_file;
 if ( $query->param('patterns') =~ /\S/) {
-    open QUERY, ">$TMP/$tmp_file_name.pat";
-    print QUERY $query->param('patterns');
-    close QUERY;
-    &DelayedRemoval("$TMP/$tmp_file_name.pat");
-    $parameters .= " -i $TMP/$tmp_file_name.pat";
-#} elsif ($query->param('pattern_file') =~ /\S/) {
+    print PATTERNS $query->param('patterns');
+} elsif ($query->param('pattern_file') =~ /\S/) {
+    ### upload file from the client
+    $upload_data_file = $query->param('pattern_file');
+    $type = $query->uploadInfo($upload_data_file)->{'Content-Type'};
+    while (<$upload_data_file>) {
+	print PATTERNS;
+    }
 } else {
     &cgiError("You should either enter query patterns in the box, or specify a pattern file\n");
-}  
+}
+close PATTERNS;
+&DelayedRemoval($pattern_file);
+$parameters .= " -i ".$pattern_file;
 
 ################################################################
 ####  max number of flanking residues
