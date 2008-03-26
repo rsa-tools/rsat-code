@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.22 2007/01/17 23:33:35 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.23 2008/03/26 20:09:52 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -369,12 +369,10 @@ sub PrintStats {
   }
   
   ### print some stats
-  $alpha_date =  &RSAT::util::AlphaDate();
-  warn (";\n; ", $alpha_date,
-	" printing parsing statistics in file ", 
-	$stat_file, "\n")  
-      if ($verbose >= 1);
-  
+  my $alpha_date =  &RSAT::util::AlphaDate();
+  &RSAT::message::TimeWarn("Printing parsing statistics in file", $stat_file)
+    if ($verbose >= 1);
+
   printf $stats "; Parsing date\t$alpha_date\n";
   $program = join (" ", $main::0, &ArgString());
   printf $stats "; Parsing command\t",$program, "\n";
@@ -390,7 +388,6 @@ sub PrintStats {
 	#@fields = @{$out_fields{$class}} || $class->get_attribute_names;
 	%attr_counts = $class->get_attribute_counts();
 	%attr_types = $class->get_attribute_cardinalities();
-	
 	foreach $attribute ($class->get_attribute_names()) {
 	  $count = $attr_counts{$attribute} || 0;
 	  $type = $attr_types{$attribute} || "NA";
@@ -398,9 +395,7 @@ sub PrintStats {
 	}
       }
     }
-    
   }
-  
   close STATS if ($stat_file);
 }
 
