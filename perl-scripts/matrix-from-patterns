@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.8 2007/12/13 21:38:09 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.9 2008/03/26 20:11:38 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -220,6 +220,7 @@ package main;
     $convert2_cmd .= " -i ".$outfile{sig_sites};
     $convert2_cmd .= " -from feature -to tab";
     $convert2_cmd .= " -return counts,parameters";
+    $convert2_cmd .= " -sort desc information.per.column";
     $convert2_cmd .= " -return sites" if ($return_fields{sites});
     $convert2_cmd .= " -o ".$outfile{count_matrices};
     print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
