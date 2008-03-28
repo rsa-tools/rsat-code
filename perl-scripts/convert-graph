@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.34 2008/01/22 14:42:58 rsat Exp $
+# $Id: convert-graph,v 1.35 2008/03/28 13:40:52 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -85,6 +85,28 @@ humans and computer programs can use. DOT graphs are typically files
 that end with the .dot extension. Like GML, with DOT you can specify a
 lot of feature for the nodes (color, width, label).
 
+=head2 path
+
+The pathway consists in a list of nodes separated by arrows '->' on the same line. Typically, these are
+the output of the NeAT PathFinder algorithm. More than one pathway can be encoded in the pathway files.
+
+=head2 rnsc
+
+rnsc is a graph format format used by Andrew King's Restricted Neighbourhood Search Cluster Algorithm (RNSC) algorithm.
+        
+The RNSC input format is an adjacency list in which each edge appears
+only once.  The vertices are labelled with the integers 0, 1, ..., n-1.
+
+The list of neighbours for vertex v appears as
+
+	v n_1 n_2 ... n_x -1
+
+	
+This file can then be submitted to the RNSC program. 
+In RSAT, however as the nodes present labels in the graph we are working with, the output file will be accompagnied by another file a two column tab delimited file specifying a label for each node id.
+
+More information are available in King et al (2004).
+
 =cut
 
 
@@ -122,12 +144,16 @@ package main;
     ## arc_id_option
     $arc_id_option = 0;
 
+    ## distinct path
+    $distinct_path = 0;
+
     ## Input formats
     local $input_format = "tab";
     %supported_input_format =(
 	tab=>1,
 	gml=>1,
-	adj_matrix=>1
+	adj_matrix=>1,
+	path=>1
     );
     $supported_input_formats = join (",", keys %supported_input_format);
     local $source_col = 1;
@@ -136,6 +162,7 @@ package main;
     local $source_color_col = 0;
     local $target_color_col = 0;
     local $color_col = 0;
+    local $path_col = 1;
     local $edge_width;
 
     ## Output formats
@@ -166,16 +193,25 @@ package main;
 
     ################################################################
     #### check argument values
+    if ($input_format eq "path") {
+      &RSAT::error::FatalError("Input format path is not supported at the moment, this option will soon be available");
+    }
     if ($layout && $output_format ne 'gml') {
       &RSAT::message::Warning("Computation of node position with format", $output_format, "is useless");
-    
     }
     if ($input_format eq 'tab' && $weight_col == 0 && ($edge_colors || $edge_width)) {
       &RSAT::error::FatalError("You must specify a weight column for the computation of the edge color gradient and edge width according to the weight");
     }
-    if ($color_col > 0 && $edge_colors ne 0) {
+    if ($color_col > 0 && $edge_colors != 0) {
       &RSAT::error::FatalError("You must not specify and both a weight gradient color and a edge color column");
     }
+    if ($path_col != 1 && $input_format ne "path") {
+      &RSAT::error::FatalError("Option -pathcol must be used with the path input format");
+    }
+    if ($distinct_path == 1 && $input_format ne "path") {
+      &RSAT::error::FatalError("Option -distinct_path must be used with the path input format");
+    }
+    
     ################################################################
     ## Initialize the graph
     my $graph = new RSAT::Graph2();
@@ -208,7 +244,7 @@ package main;
 
     ################################################################
     ##### read input
-    $graph->graph_from_text($input_format, $main::infile{input}, $source_col, $target_col, $weight_col, $source_color_col, $target_color_col,$color_col, $directed);
+    $graph->graph_from_text($input_format, $main::infile{input}, $source_col, $target_col, $weight_col, $source_color_col, $target_color_col,$color_col, $directed, $path_col, $distinct_path);
     ## Calculates the layout 
     if ($layout) {
       $graph->get_position();
@@ -462,7 +498,18 @@ will be taken into account.
 	    $target_color_col = shift (@arguments);
 	    unless (&IsNatural($target_color_col) && ($target_color_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $target_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
-	    }	    
+	    }
+=item B<-pathcol>
+
+Pathway column. Column containing the pathways (default = 1). 
+By default, the pathway column is seven as it is the case for the output of the PathFinder program.
+
+=cut
+	} elsif ($arg eq "-pathcol") {
+	    $path_col = shift (@arguments);
+	    unless (&IsNatural($path_col) && ($path_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $path_col, "Invalid value for the path column. Must be a strictly positive natural number"));
+	    }	
 
 =item B<-undirected>
 
@@ -520,6 +567,17 @@ Supported : green, blue, red, fire, grey.
 
 =pod
 
+=item B<-distinct_path>
+
+With this option, each pathway of the pathway file will be considered separately.
+
+=cut
+
+	} elsif ($arg eq "-distinct_path") {
+	    $distinct_path = 1;
+
+=pod
+
 =item B<-seed_nodes seed_node_file>
 
 This option is currently implemented only for input format "tab".
@@ -539,7 +597,7 @@ graphs from a set of seed nodes (for each input format).
 	} elsif ($arg eq "-seed_nodes") {
 	    $main::infile{seed_nodes} = shift(@arguments);
 
-
+	    
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
