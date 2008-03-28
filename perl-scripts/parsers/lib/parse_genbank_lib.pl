@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.37 2007/09/18 22:43:21 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.38 2008/03/28 13:40:52 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -775,8 +775,10 @@ sub ParseFeatureNames {
 				   $GeneID
 				   ), "\n" if ($verbose >= 4);
 	    $feature->push_attribute("names", $GeneID);
+	    
+	    
 
-
+	    
 	    ################################################################
 	    ## Some types of notes contain identifiers or synonyms
 	    my @notes = $feature->get_attribute("note");
@@ -796,7 +798,7 @@ sub ParseFeatureNames {
 				   ), "\n" if ($verbose >= 4);
 			$feature->push_attribute("names", $new_name);
 		    }
-		    
+
 		} elsif ($note =~ /synonym:/) {
 		    ## For other genomes there is a note of type 'synonym:' (e.g. Arabidopsis thaliana),
 		    my $synonyms = $';  ##'
@@ -854,10 +856,11 @@ sub ParseFeatureNames {
 			       $new_name
 			       ), "\n" if ($verbose >= 4);
 		    $feature->push_attribute("names", $new_name);
+		    
 		}
 		
-	    }	
-	    
+	    }
+
 	}
     }
 }
@@ -1034,6 +1037,9 @@ sub CreateGenbankFeatures {
     ################################################################
     #### Inherit names from the parent feature
     foreach my $name ($parent_feature->get_attribute("names")) {
+    
+	
+    
       $created_feature->push_attribute("names",$name);
     }
     &RSAT::message::Debug ("\t",  "feature",		   
@@ -1055,11 +1061,19 @@ sub CreateGenbankFeatures {
     my @xrefs = $parent_feature->get_attribute("db_xref");
     $created_feature->set_array_attribute("db_xref", @xrefs);
 
+
+
     &ExtractCrossReferencesForFeature($created_feature);
+    
+    
 	
     ################################################################
     ## Inherit locus tag from parent feature
     my @locus_tags = $parent_feature->get_attribute("locus_tag");
+    
+
+    
+    
     &RSAT::message::Debug( "\t",
 			   "parsed feature", $parent_feature->get_attribute("id"), 
 			   "locus tag", join ";", @locus_tags) if ($main::verbose >= 5);
@@ -1071,6 +1085,8 @@ sub CreateGenbankFeatures {
 			       if ($main::verbose >= 5);
       $created_feature->push_attribute("locus_tags", $locus_tag); 
       $created_feature->push_attribute("names", $locus_tag); 
+      	    		    	    
+	    
     }
 	
     ################################################################
@@ -1182,9 +1198,9 @@ sub CheckObjectNames {
 
     ## Each feature inherits the names of its parent gene
     foreach my $holder (@holders) {
-	
 	&RSAT::message::TimeWarn("Checking object names for class", 
 				 $holder->get_object_type()) if ($main::verbose >= 2);
+				 
 	foreach my $object ($holder->get_objects()) {
 #	  &RSAT::message::Debug("Checking object names for object", 
 #				$holder->get_object_type(), 
@@ -1197,10 +1213,13 @@ sub CheckObjectNames {
 	    ## Make sure that the object has no null name
 	    my $primary_given = 0;
 	    my $primary_name = $object->get_attribute("name");
+	    
 	    if (($primary_name) && ($primary_name ne $main::null)) {
 		$primary_given = 1;
-	    }
-
+		 
+	    } 
+            
+           
 
 	  ## Test different attributes which can be considered as primary name
 	  for my $attribute ("gene", "synonym", "synonyms", "locus_tag", "GeneID", "id") {
@@ -1209,6 +1228,7 @@ sub CheckObjectNames {
 	      if (($name) && ($name ne $main::null)) {
 		#### add gene name to the list of synonyms
 		$object->push_attribute("names", $name);
+
 		unless ($primary_given) {
 		  #### define this name as primary name
 		  $object->set_attribute("name",  $name);
@@ -1414,6 +1434,7 @@ sub InheritGeneNames {
 
     foreach my $feature ($class_holder->get_objects()) {
       my $GeneID = $feature->get_attribute("GeneID");
+      
       if (($GeneID eq "") || ($GeneID eq $main::null)) {
 	&RSAT::message::Warning("No GeneID for feature", $feature->get_attribute("id")) if ($main::verbose >= 1);
       } else {

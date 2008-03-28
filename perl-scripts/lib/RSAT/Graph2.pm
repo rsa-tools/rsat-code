@@ -2053,6 +2053,11 @@ sub graph_from_text {
 	return $self->read_from_table($inputfile, $scol, $tcol, $wcol, $sccol, $tccol, $ecol);
     } elsif ($in_format eq "adj_matrix") {
 	return $self->read_from_adj_matrix($args[0], $args[7]);
+    } elsif ($in_format eq "path") {
+      my $inputfile = $args[0];
+      my $path_col = $args[8];
+      my $distinct_path = $args[9];
+      return $self->read_from_paths($inputfile, $path_col, $distinct_path);
     } else {
 	&RSAT::error::FatalError(join ("\t", $in_format, "Invalid format"));
     }
