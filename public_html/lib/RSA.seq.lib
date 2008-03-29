@@ -1101,7 +1101,6 @@ sub ReadNextSequence {
 		$found = 1;
 					   }
 	} 
-	
 	&RSAT::message::Debug("ReadNextSequence", $next_file, "input directory", $input_dir) 
 	    if ($main::verbose >= 4);
 
@@ -1204,43 +1203,53 @@ sub ReadNextSequence {
 	    }
 	}
 	return ("","");		### when input file has been totally read
-	
-	
+
 	### FastA format ###
     } elsif ($sequence_format eq "fasta") {
 	while (<$SEQ>) {
-#	    die $_;
 	    next if ((/^;/) || (/^\#/) || (/^--/));
-	    if (/^\s*>\s*(\S+)\s*(.*)/) { 
-		## new identifier
-		@comment = ($2);
-		unless ((defined($current_seq_id)) && 
-			($current_seq_id ne "")) { 
-		    ##  first id from the seq file
-		    $current_seq_id = $1;
-		} else  {
-#		    $sequence = &FoldSequence($sequence, 0);
-		    $seq_id = $current_seq_id;
-		    $current_seq_id = $1;
-#		    &CheckFormat($sequence, "raw", $seq_type);
-		    return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-		}
-		
-	    } else {			
-		## sequence continues
+	    if (/^\s*>\s*(\S*)\s*(.*)/) { 
+	      ## new sequence identifier
+	      my $next_id = $1;
+	      unless ($next_id) {
+		## Check that sequence ID is not empty
+		&RSAT::message::Warning("Invalid format for a fasta file: empty sequence identifier.") 
+	      }
+#	      &RSAT::message::Debug("New sequence ID", $next_id) if ($main::verbose >= 5);
+	      $empty_seq_counter++;
+	      $next_id = "unidentifier_seq_".$empty_seq_counter;
+
+	      ## Comments
+	      @comment = ($2);
+
+	      if ((defined($current_seq_id)) && ($current_seq_id ne "")) {
+		## New ID after a previous sequence.  Action: return the
+		## previous sequence and take the new ID for the next
+		## sequence
+		my $seq_id = $current_seq_id;
+		$current_seq_id = $next_id;
+		# &CheckFormat($sequence, "raw", $seq_type);
+		return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+	      } else {
+		##  first id from the seq file
+		$current_seq_id = $next_id;
+	      }
+	    } else {
+		## continuation of the previous sequence: concatenate it
 		$sequence .= $_;
 	    }
 	}
-	unless ($current_seq_id) {
-	    return ("",""); ## when input file has been totally read
-	} else {
+
+	## Return the last sequence after having completely read the file
+	if ($current_seq_id) {
 #	    $sequence = &FoldSequence($sequence, 0);
 	    $seq_id = $current_seq_id;
 	    $current_seq_id = "";
 	    return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+	} else {
+	    return ("","");
 	}
-	
-	
+
         ## ##############################################################
 	## maf format (multiple alignment file)
     } elsif ($sequence_format eq "maf") {
