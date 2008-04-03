@@ -1423,7 +1423,60 @@ sub read_from_table {
     $self->load_from_array(@array);
     return $self;
 }
+######################################################################################
+## Load a graph from a tab-delimited path file (returned by NeAT PathFinder algorithm)
 
+sub read_from_paths {
+
+    my ($self,$inputfile, $path_col, $distinct_path) = @_;
+
+    &RSAT::message::TimeWarn("Loading path(s) from tab file", $inputfile) if ($main::verbose >= 2);
+    ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
+    my $weight = 0;
+    my $default_weight = 1;
+    my @array = ();
+    my $default_node_color = "#000088";
+    my $default_edge_color = "#000044";
+
+    ## Check input parameters
+    unless (&RSAT::util::IsNatural($path_col) && ($path_col > 0)) {
+	&RSAT::error::FatalError(join("\t", $path_col, "Invalid path column secification for paths loading. Should be a strictly positive natural number."));
+    }
+    
+    ## Load the graph
+    $cpt = 0;
+    $path_cpt = 1;
+    my %seen_nodes = ();
+    while (my $line = <$main::in>) {
+      next if ($line =~ /^--/); # Skip mysql-like comments
+      next if ($line =~ /^;/); # Skip RSAT comments
+      next if ($line =~ /^#/); # Skip comments and header
+      next unless ($line =~ /\S/); # Skip empty rows
+      chomp ($line);
+      my @linecp = split "\t", $line;
+      my $path_arrows = $linecp[$path_col-1];
+      &RSAT::error::FatalError("\t","Column $path_col does not column any path in a valid format") if ($path_arrows !~ /\-\>/);
+      my @path = split /\-\>/, $path_arrows;
+      my $path_cpt++;
+      for (my $i = 0; $i < ((scalar @path) -1); $i++) {
+        my $source_node_name = $path[$i];
+        my $target_node_name = $path[$i+1];
+        $source_node_name = join ("_", $path[$i], $path_cpt) if (defined $seen_nodes{$path[$i]} && $distinct_path);
+        $target_node_name = join ("_", $path[$i+1], $path_cpt) if (defined $seen_nodes{$path[$i+1]} && $distinct_path);
+        $array[$cpt][0] = $source_node_name;
+        $array[$cpt][1] = $target_node_name;
+        $array[$cpt][2] = $default_weight;
+        $array[$cpt][3] = $default_node_color;
+        $array[$cpt][4] = $default_node_color;
+        $array[$cpt][5] = $default_edge_color;
+        $seen_nodes{$path[$i]}++;
+#         $seen_nodes{$path[$i+1]}++;
+        $cpt++;
+      } 
+    }
+    $self->load_from_array(@array);
+    return $self;
+}
 ################################################################
 ## Load a graph from a tab delimited adjacency matrix
 
@@ -2056,7 +2109,7 @@ sub graph_from_text {
     } elsif ($in_format eq "path") {
       my $inputfile = $args[0];
       my $path_col = $args[8];
-      my $distinct_path = $args[9];
+      my $distinct_path = $args[9] || 0;
       return $self->read_from_paths($inputfile, $path_col, $distinct_path);
     } else {
 	&RSAT::error::FatalError(join ("\t", $in_format, "Invalid format"));
@@ -2091,6 +2144,8 @@ sub to_text {
     } elsif ($out_format eq "adj_matrix") {
         shift @args;
 	return $self->to_adj_matrix(@args);
+    } elsif ($out_format eq "rnsc") {
+	return $self->to_rnsc(@args);
     } elsif ($out_format eq "node_table") {
 	return $self->to_node_table(@args);
     } else {
@@ -2570,7 +2625,42 @@ sub to_tab {
     }
     return $tab;
 }
+################################################################
+################################################################
+=pod
 
+=item B<to_rnsc()>
+
+Return the graph in the format used by RNSC. This will consist of one string having separator
+'#####NODES_NAME#####'. This string has then to be cut into two files 
+- adjacency table of id
+- list of id and label association
+
+=cut
+sub to_rnsc {
+    
+#     my ($self) = shift;
+#     my @out_neighbours = $self->get_attribute("out_neighbours");
+#     my %nodes_name_id = $self->get_attribute("nodes_name_id");
+#     my $rnsc = "";
+#     # print the adjacency table of label
+#     for (my $i = 0; $i < scalar (@out_neighbours); $i++) {
+#       if (defined $out_neighbours[$i]) {
+#         my @neighbours = @{$out_neighbours[$i]};
+#         $rnsc .= $i." ".join(@neighbours)." -1\n";
+#       }
+#     }
+#     $rnsc .= "#####NODES_NAME#####";
+#     while my ($names, $id) 
+#     
+#     
+#     
+#     
+#     
+#     
+#     
+#     return $rnsc;
+}
 ################################################################
 =pod
 
