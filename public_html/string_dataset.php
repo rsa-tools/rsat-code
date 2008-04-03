@@ -57,7 +57,8 @@
         "inputfile"=>$file_content_xml,
         "channels"=>$channels,
         "uth"=>$uth,
-        "lth"=>$lth
+        "lth"=>$lth,
+        "interactor_type"=>'protein'
       )
     );
 

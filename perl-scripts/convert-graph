@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.36 2008/04/03 10:50:41 rsat Exp $
+# $Id: convert-graph,v 1.37 2008/04/03 11:03:45 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -509,6 +509,7 @@ will be taken into account.
 		&RSAT::error::FatalError(join("\t", $target_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
 	    }
 =pod
+
 =item B<-pathcol>
 
 Pathway column. Column containing the pathways (default = 1). 
