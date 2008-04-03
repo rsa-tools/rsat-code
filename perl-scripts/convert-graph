@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.35 2008/03/28 13:40:52 rsat Exp $
+# $Id: convert-graph,v 1.36 2008/04/03 10:50:41 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -22,7 +22,7 @@ convert-graph
 Convert graphs between different formats. 
 
 In the current state, the only supported input format are 
-tab-delimited file and gml file. Various output format are already supported (dot,
+tab-delimited file, gml file. Various output format are already supported (dot,
 gml, tab, adjacency table).
 
 In the future, there should be as many input as output formats (the
@@ -172,7 +172,8 @@ package main;
 			       gml=>1,
 			       tab=>1,
 			       tab_java=>1,
-			       adj_matrix=>1);
+			       adj_matrix=>1,
+			       rnsc=>1);
 			      
 			       
     $supported_output_formats = join (",", keys %supported_output_format);
@@ -193,9 +194,14 @@ package main;
 
     ################################################################
     #### check argument values
-    if ($input_format eq "path") {
-      &RSAT::error::FatalError("Input format path is not supported at the moment, this option will soon be available");
-    }
+    
+    if ($output_format eq "rnsc") {
+      &RSAT::error::FatalError("RNSC output format : not available yet, will soon be implemented");
+    }  
+    if ($output_format eq "rnsc" && $main::outfile{output} eq "") {
+      &RSAT::error::FatalError("You must specify an output file name without extension with output format rnsc");
+    }    
+
     if ($layout && $output_format ne 'gml') {
       &RSAT::message::Warning("Computation of node position with format", $output_format, "is useless");
     }
@@ -381,7 +387,10 @@ allows to use the command within a pipe.
 =item	B<-o outputfile>
 
 If no output file is specified, the standard output is used.  This
-allows to use the command within a pipe.
+allows to use the command within a pipe. 
+
+For output format rnsc, you must not give the 
+extension of the resulting graph as it will consist of two files (radical.rns and radical_rnsc_labels.tab).
 
 =cut
 	} elsif ($arg eq "-o") {
@@ -499,6 +508,7 @@ will be taken into account.
 	    unless (&IsNatural($target_color_col) && ($target_color_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $target_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
 	    }
+=pod
 =item B<-pathcol>
 
 Pathway column. Column containing the pathways (default = 1). 
