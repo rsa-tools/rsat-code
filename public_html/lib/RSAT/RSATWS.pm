@@ -2982,6 +2982,15 @@ sub convert_graph_cmd {
    $sccol =~ s/\'//g;
    $command .= " -sccol $sccol";
   }
+  if ($args{pathcol}) {
+   my $pathcol = $args{pathcol};
+   $pathcol =~ s/\'//g;
+   $pathcol =~ s/\'//g;
+   $command .= " -pathcol $pathcol";
+  }
+  if ($args{distinct_path}) {
+   $command .= " -distinct_path";
+  }
   if ($args{inputgraph}) {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
