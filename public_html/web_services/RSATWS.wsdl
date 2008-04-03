@@ -1430,6 +1430,11 @@ Default is 'both'.</xsd:documentation>
 	      <xsd:documentation>A list of evidence channels to filter separated by a comma</xsd:documentation>	
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="interactor_type" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>A list of interactor_type to filter (separated by comas) : protein, 'small molecule'</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
 	  <xsd:element name="uth" type="xsd:float" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Upper threshold on the value</xsd:documentation>	
@@ -2036,9 +2041,19 @@ The length file contains two columns : sequence ID (ignored) and sequence length
 	      <xsd:documentation>Specify a column of the input graph that contains the color of the target node (no default).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="pathcol" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Specify the column containing the paths</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
 	  <xsd:element name="undirected" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>The graph is considered as being undirected (useful for the adjacency matrix input and output).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="distinct_path" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>The nodes belonging to different paths are duplicated with this option</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="layout" type="xsd:int" minOccurs="0">
@@ -4799,7 +4814,7 @@ This program supports a variety of background models (Bernoulli, Markov chains o
       Olivier Sand (oly@scmbb.ulb.ac.be).
    </documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
-	<soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/>
+	<soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
       <!-- soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/ -->
     </port>
   </service>
