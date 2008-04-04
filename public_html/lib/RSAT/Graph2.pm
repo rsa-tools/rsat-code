@@ -1470,7 +1470,7 @@ sub read_from_paths {
         $array[$cpt][4] = $default_node_color;
         $array[$cpt][5] = $default_edge_color;
         $seen_nodes{$path[$i]}++;
-#         $seen_nodes{$path[$i+1]}++;
+        $seen_nodes{$path[$i+1]}++ if (($i+1) == (scalar (@path) -1));
         $cpt++;
       } 
     }
