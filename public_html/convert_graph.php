@@ -29,7 +29,12 @@
   }
   $ewidth = $_REQUEST['ewidth'];
   $ecolors = $_REQUEST['ecolors'];
-
+  $distinct_path = $_REQUEST['distinct_path'];
+  
+  if ($distinct_path == 'on') {
+    $distinct_path = 1;
+  }
+  
   if ($ewidth == 'on') {
     $ewidth = 1;
   } else {
@@ -48,6 +53,7 @@
   $ec_col = $_REQUEST['ec_col'];
   $sc_col = $_REQUEST['sc_col'];
   $tc_col = $_REQUEST['tc_col'];
+  $path_col = $_REQUEST['path_col'];
   
   ## If a file and a graph are submitted -> error
   if ($graph != "" && $graph_file != "") {
@@ -73,7 +79,17 @@
     $layout = 0;
     warning("Computing the nodes layout whith output format $out_format is useless");
     
-  }    
+  }
+  ## If distinct path option is used but the input format is not path -> error
+  if ($distinct_path == "1" && $in_format != "path") {
+    $error = 1;
+    error("Distinct path option is only valid for input format <i>path</i>");
+  }
+  ## If the column of the path is not specified -> warning default column is 1
+  if ($path_col == "" && $in_format == "path") {
+    $path_col = 1;
+    warning("You did not specify any column containing the path, default is 1");
+  }
   if (!$error) { 
   
     $graph = trim_text($graph);
@@ -87,6 +103,7 @@
         "inputgraph"=>$graph,
         "scol"=>$s_col,
         "tcol"=>$t_col,
+        "pathcol"=>$path_col,
         "wcol"=>$w_col,
         "ecolors"=>$ecolors,
         "layout"=>$layout,
@@ -94,7 +111,8 @@
         "sccol"=>$sc_col,
         "eccol"=>$ec_col,
         "undirected"=>$undirected,
-        "ewidth"=>$ewidth
+        "ewidth"=>$ewidth,
+        "distinct_path"=>$distinct_path
       )
     );
     # Info message
@@ -130,6 +148,7 @@
       $response =  $echoed->response;
 //       print_r ($response);
       $command = $response->command;
+//       echo "$command";
       $server = $response->server;
       $client = $response->client;
       $server = rtrim ($server);

@@ -277,6 +277,51 @@
    		Submit this id to speed up other path finding jobs on this input graph.</align>";
    }
     echo "<hr>\n";
+    if(strcmp($outputType,'pathsTable') == 0){
+         echo "
+     	To process your result with another tool, click one of the buttons listed below.
+     	<br>
+     	<br>
+ 	  <TABLE CLASS = 'nextstep'>
+  		<TR>
+      	<Th colspan = 3>Next steps</Th>
+    	</TR>
+    	<TR>
+      	<TD>
+       <FORM METHOD='POST' ACTION='convert_graph_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$file_location'>
+          <input type='hidden' NAME='graph_format' VALUE='path'>
+          <input type='hidden' NAME='pathcol' VALUE='7'>";
+          if ($out_format == 'tab') {
+            echo "
+            <input type='hidden' NAME='scol' VALUE='1'>
+            <input type='hidden' NAME='tcol' VALUE='2'>";
+          }
+          echo "
+          <INPUT type='submit' value='Convert the paths table into a graph with paths unified'>
+         </form>
+        </td>
+        <td>
+         <FORM METHOD='POST' ACTION='convert_graph_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$file_location'>
+          <input type='hidden' NAME='graph_format' VALUE='path'>
+          <input type='hidden' NAME='distinct_path' VALUE='on'>
+          <input type='hidden' NAME='pathcol' VALUE='7'>";
+          if ($out_format == 'tab') {
+            echo "
+            <input type='hidden' NAME='scol' VALUE='1'>
+            <input type='hidden' NAME='tcol' VALUE='2'>";
+          }
+          echo "
+          <INPUT type='submit' value='Convert the paths table into a graph with paths separated'>
+         </form>
+        </td>
+        </tr>
+        </table>";
+    
+    }
     if(strcmp($outputType,'pathsUnion') == 0 || strcmp($outputType,'pathsMarked') == 0 || strcmp($outputType,'pathsGraphs') == 0){
      echo "
      	To process your result with another tool, click one of the buttons listed below.
