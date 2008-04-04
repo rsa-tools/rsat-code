@@ -59,6 +59,11 @@
     feature for the nodes (color, width, label). For more information on
     the DOT format, see <a href='http://www.graphviz.org/doc/info/lang.html' target = 'top'>http://www.graphviz.org/doc/info/lang.html</a>
 </ul>
+<ul>
+  The <b>path format</b> consists in a list of nodes separated by arrows '->' on the
+    same line. Typically, these are the output of the NeAT PathFinder
+    algorithm. More than one pathway can be encoded in the pathway files.
+</ul>
 
 
 <h4><A NAME="columns"></A>Column specifications (only for tab-delimited format)</h4>
@@ -77,6 +82,9 @@ Black	#000000
 </pre>
 
 </ul>
+<ul><A NAME="pathcol"></A><b>Path col</b>. Column containing the list of pathways.
+
+</ul>
 <h4><A NAME="undirected"></A>Undirected graph (only for adjacency table format)</h4>
 <ul>Specifies whether the edges must be considered as undirected, i.e.,
 an edge from node A to node B corresponds to an edge from B to A (by
@@ -88,6 +96,11 @@ table.</ul>
 <ul>Calculates the layout according to the Fruchterman and Reingold algorithm. This
 option is only useful for the gml output as the other formats do not
 specify the node position.
+</ul>
+
+<h4><A NAME="distinct"></A>Distinct paths (only for path input format)</h4>
+<ul>With this option, each pathway of the pathway file will be
+        considered separately and nodes belonging to more than one pathway will be duplicated.
 </ul>
 
 <h4><A NAME="ewidth"></A>Edge width computation</h4><ul>

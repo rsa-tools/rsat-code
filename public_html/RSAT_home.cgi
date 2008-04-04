@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.30 2008/02/13 12:47:00 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.31 2008/04/04 09:08:21 rsat Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -207,7 +207,7 @@ print <<EndText;
     </div>
 EndText
 
-@orgs =  &ListSupportedOrganisms("keys");
+@orgs =  &RSAT::OrganismManager::get_supported_organisms();
 print "<H4 align ='center'>", scalar(@orgs) ," organisms supported on <A HREF='$ENV{rsat_www}' target=_top>",$ENV{rsat_www},"</A></H4>\n";
 # print &ListSupportedOrganisms("html_list");
 
