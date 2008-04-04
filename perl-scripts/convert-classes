@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-classes,v 1.8 2007/01/12 00:49:54 jvanheld Exp $
+# $Id: convert-classes,v 1.9 2008/04/04 12:34:41 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -21,7 +21,9 @@ Interconversions between different formats of cluster files.
 
 =head1 AUTHORS
 
-jvanheld@scmbb.ulb.ac.be
+Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
+
+Sylvain Brohée  <sylvain@scmbb.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -68,6 +70,14 @@ probability).
 Erdros-Renyi Mixture of Graphs. format defined by Stephane Robin for
 his ERMG algorithm (submitted).
 
+=head2 rnsc
+
+RNSC format. format defined by Andrew King for his RNSC clustering algorithm. 
+Each line of the file represents a clusters contains a list of integer representing the member. The end of the classification is indicated by '-1'.
+
+To convert from RNSC to another format, two files must thus be given : a cluster file (-i option) and a name file (-names option) which is a two colum tab delimited file containing the name of each corresponding id (See King et al, 2004).
+
+
 
 =cut
 
@@ -110,6 +120,7 @@ package main;
 	mcl=>1,
 	tab=>1,
 	profiles=>1,
+	rnsc=>1
     );
     $supported_input_formats = join (",", keys %supported_input_format);
 
@@ -132,10 +143,15 @@ package main;
 
     ################################################################
     #### check argument values
-
+    if ($input_format eq 'rnsc' && !defined($main::infile{names})) { 
+	&RSAT::message::Warning(join ("\t", "No name file given for RNSC format input format"));
+    }
+    if ($input_format ne 'rnsc' && defined($main::infile{names})) { 
+	&RSAT::message::Warning(join ("\t", "Using -names option with format $input_format is useless"));
+    }
     ################################################################
     ## Read input classes
-    $classification->read_from_file($main::infile{input}, $input_format, %args);
+    $classification->read_from_file($main::infile{input}, $input_format, $main::infile{names}, %args);
 
     ################################################################
     ## Open output stream
@@ -259,7 +275,15 @@ allows to use the command within a pipe.
 =cut
 	} elsif ($arg eq "-o") {
 	    $main::outfile{output} = shift(@arguments);
-	    
+=pod
+
+=item	B<-names file_name>
+
+Two column file specifying the labels of the members of the classification given in the classification file. First column contains the identifier and second column the corresponding label.
+
+=cut
+	} elsif ($arg eq "-names") {
+	    $main::infile{names} = shift(@arguments);	    
 
 	    ### Input format  
 =pod
