@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.32 2008/04/04 16:37:49 rsat Exp $
+# $Id: get-orthologs,v 1.33 2008/04/04 19:37:55 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -199,6 +199,7 @@ package main;
 
     @supported_output_fields = qw(query_name
 				  query_organism
+				  ref_name
 				  ident
 				  ali_len
 				  mismat
@@ -402,9 +403,11 @@ package main;
 			    foreach my $field (@output_fields) {
 				$hit_info .= "\t";
 				if ($field eq "query_name"){
-				    $hit_info .= $is_query{$query_gene};
+				  $hit_info .= $is_query{$query_gene};
+				}elsif($field eq "ref_name"){
+				  $hit_info .= &getName($ref_gene,$ref_organism); ## TEMP
 				}else{
-				    $hit_info .= $fwd_hit->{$field};
+				  $hit_info .= $fwd_hit->{$field};
 				}
 #		  &RSAT::message::Debug("Adding output field", $field, $fwd_hit->{$field}, $hit_info) if ($main::verbose >= 0);
 			    }
@@ -533,7 +536,7 @@ package main;
       }
     }
     if (scalar(@genome_no_hits) > 0) {
-      print $out "; No hits found in genomes :\n";
+      print $out "; No hits found in the following genomes :\n";
       print $out ";\t".join("\n;\t",sort {$a cmp $b} @genome_no_hits). "\n";
     }
     
@@ -564,10 +567,32 @@ package main;
 ################### subroutine definition ######################
 ################################################################
 
+
+################################################################
+## Get name of the ref gene
+sub getName {
+  my ($ref_gene,$ref_organism)= @_;
+  ## Load the ref organism
+  my $organism = new RSAT::organism();
+  $organism->DefineAcceptedFeatureTypes("cds");
+  $organism->check_name($ref_organism);
+  $organism->set_attribute("name", $ref_organism);
+  $organism->OpenContigs($ref_organism);
+  $organism->LoadFeatures();
+  my $feature_index = $organism->get_attribute("name_index");
+  
+  if ($feature_index->contains(uc($ref_gene))) {
+    my $current_feature = $feature_index->get_first_value(uc($ref_gene));
+    my $feature_name = $current_feature->get_attribute("name");
+    return($feature_name);
+  }else{
+    return($main::null);
+  }
+}
+
 ################################################################
 ## Filter the organisms for which a BLAST file exists
 sub FilterOrganismsHavingBlast{
-  &RSAT::message::TimeWarn(join("\t", "Selecting hits in ref organism", $ref_organism)) if ($main::verbose >= 2);      
   my $query_org_dir = $supported_organism{$main::query_organism}->{'data'};
   my $query_org_blast_dir = join("/", $query_org_dir, "blast_hits");
   my @filtered_ref_org=();
