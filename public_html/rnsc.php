@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>NeA-tools - MCL</title>
+   <title>NeA-tools - RNSC</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="results">
@@ -8,7 +8,7 @@
   require ('functions.php');
   # log file update
   UpdateLogFile("neat","","");
-  title('MCL - results');
+  title('RNSC - results');
   # Error status
   $error = 0;
   # Get parameters
@@ -22,8 +22,17 @@
   $graph = $_REQUEST['graph'];
   $s_col = $_REQUEST['s_col'];
   $t_col = $_REQUEST['t_col'];
-  $w_col = $_REQUEST['w_col'];
-  $inflation = $_REQUEST['inflation'];
+  $max_clust = $_REQUEST['max_clust'];
+  $tabulength = $_REQUEST['tabulength'];
+  $tabulist = $_REQUEST['tabulist'];
+  $naive_stop = $_REQUEST['naive_stop'];
+  $scale_stop = $_REQUEST['scale_stop'];
+  $div_freq = $_REQUEST['div_freq'];
+  $shf_div_len = $_REQUEST['shf_div_len'];
+  $exp_nb = $_REQUEST['exp_nb'];
+  
+  
+  
   
   ## If a file and a graph are submitted -> error
   if ($graph != "" && $graph_file != "") {
@@ -56,8 +65,7 @@
   
     # Open the SOAP client
     $client = new SoapClient(
-//                        $neat_wsdl,
-"http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS2.wsdl",
+                       $neat_wsdl,
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
@@ -65,24 +73,27 @@
                                  'encoding' => SOAP_LITERAL
                                  )
                            );
-                           
+                          
+                          
+                          
     ## Convert-graph
-    $cg_parameters =  array( 
+    $cg_parameters = array( 
       "request" => array(
         "inputgraph"=>$graph,
         "informat"=>$in_format,
-        "outformat"=>"tab",
+        "outformat"=>"rnsc",
         "scol"=>$s_col,
-        "tcol"=>$t_col,
-        "wcol"=>$w_col
+        "tcol"=>$t_col
       )
     );
+//     print_r ($cg_parameters);
     # Execute the command 
+    
     $cg_echoed = $client->convert_graph($cg_parameters);
 
     $cg_response = $cg_echoed->response;
     $cg_command = $cg_response->command;
-//     echo ("$cg_command");
+    echo ("$cg_command");
     $cg_server = $cg_response->server;
     $cg_client = $cg_response->client;
     $cg_server = rtrim ($cg_server);
@@ -90,36 +101,48 @@
     $cg_temp_file = end($cg_temp_file);
     $cg_resultURL = $WWW_RSA."/tmp/".$cg_temp_file;    
     
-    ## MCL                           
+    $rnsc_graph = $cg_server.".rnsc";
+    $rnsc_nodes = $cg_server."_node_names.rnsc";
+    
+    ## RNSC                           
     ## Load the parameters of the program in to an array
-    $cg_graph = storeFile($cg_server);
-    $mcl_parameters = array( 
+    $cg_graph = storeFile($rnsc_graph);
+    $cg_nodes = storeFile($rnsc_nodes);
+    $rnsc_parameters = array( 
       "request" => array(
         "inputgraph"=>$cg_graph,
-        "inflation"=>$inflation
+        "max_clust"=>$max_clust,
+        "tabulength"=>$tabulength,
+        "tabulist"=>$tabulist,
+        "naive_stop"=>$aive_stop,
+        "scale_stop"=>$scale_stop,
+        "div_freq"=>$div_freq,
+        "shf_div_len"=>$shf_div_len,
+        "exp_nb"=>$exp_nb
       )
     );
     # Execute the command
-    $mcl_echoed = $client->mcl($mcl_parameters);
+    $rnsc_echoed = $client->rnsc($rnsc_parameters);
 
-    $mcl_response = $mcl_echoed->response;
-    $mcl_command = $mcl_response->command;
-//     echo ("$mcl_command");
-    $mcl_server = $mcl_response->server;
-    $mcl_client = $mcl_response->client;
-    $mcl_server = rtrim ($mcl_server);
-    $mcl_temp_file = explode('/',$mcl_server);
-    $mcl_temp_file = end($mcl_temp_file);
-    $mcl_resultURL = $WWW_RSA."/tmp/".$mcl_temp_file;
+    $rnsc_response = $rnsc_echoed->response;
+    $rnsc_command = $rnsc_response->command;
+    echo ("$rnsc_command");
+    $rnsc_server = $rnsc_response->server;
+    $rnsc_client = $rnsc_response->client;
+    $rnsc_server = rtrim ($rnsc_server);
+    $rnsc_temp_file = explode('/',$rnsc_server);
+    $rnsc_temp_file = end($rnsc_temp_file);
+    $rnsc_resultURL = $WWW_RSA."/tmp/".$rnsc_temp_file;
     # Convert-classes 
     ## Load the parameters of the program in to an array
-    $input_classes = storeFile($mcl_server);
+    $input_classes = storeFile($rnsc_server);
     
     $cc_parameters = array( 
       "request" => array(
         "inputclasses"=>$input_classes,
-        "informat"=>"mcl",
-        "outformat"=>"tab"
+        "informat"=>"rnsc",
+        "outformat"=>"tab",
+        "names"=>$cg_nodes
       )
     );
     # Execute the command
