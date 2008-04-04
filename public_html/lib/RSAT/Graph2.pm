@@ -2654,7 +2654,6 @@ sub to_rnsc {
       my $j = 0;
       for ($j = 0; $j < scalar (@i_neighbours); $j++) {
         last if ($i_neighbours[$j] > $i);
-        print $i_neighbours[$j] ."dont last\n";
       }
       splice (@i_neighbours, 0, $j);
       $rnsc .= $i." ".join (" ",@i_neighbours). " -1\n";
