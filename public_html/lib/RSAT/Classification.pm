@@ -67,15 +67,17 @@ Read the classification from a text file.
 =cut
 
 sub read_from_file {
-    my ($self, $input_file, $input_format, %args) = @_;
+    my ($self, $input_file, $input_format, @args) = @_;
     if ($input_format eq "mcl") {
-	$self->read_mcl($input_file, %args);
+	$self->read_mcl($input_file, @args);
     } elsif ($input_format eq "tab") {
-	$self->read_tab($input_file, %args);
+	$self->read_tab($input_file, @args);
     } elsif ($input_format eq "profiles") {
-	$self->read_profiles($input_file, %args);
+	$self->read_profiles($input_file, @args);
     } elsif ($input_format eq "ermg") {
-	$self->read_ermg($input_file, %args);
+	$self->read_ermg($input_file, @args);
+    } elsif ($input_format eq "rnsc") {
+	$self->read_rnsc($input_file, @args);
     } else {
 	&RSAT::error::FatalError(join ("\t", "Classification::read_from_file", $input_format, "is not a supported input format"));
     }
@@ -117,7 +119,60 @@ sub read_mcl {
     }
 }
 
+################################################################
+=pod
 
+=item B<read_rnsc>
+
+Read the classification from a RNSC output text file.
+
+
+ Title    : read_rnsc
+ Usage    : $classificaion->->read_rnsc($input_file, $input_file_names)
+ Function : Read the Classification from a rnsc text file.
+ Argument : $input_file -> the output of RNSC
+          : $input_file_names -> names of the nodes
+ 
+
+=cut
+
+sub read_rnsc {
+    my ($self, $input_file, $input_file_names) = @_;
+    ($main::in) = &RSAT::util::OpenInputFile($input_file);
+    ($main::names) = &RSAT::util::OpenInputFile($input_file_names) if defined($input_file_names);
+    # Read the nodes names
+    my %id_names = ();
+    if (defined $input_file_names) {
+      while (my $ligne = <$main::names>) {
+        next if ($ligne =~ /^;/);
+        next if ($ligne =~ /^\#/);
+        next unless ($ligne =~ /\S/);
+        chomp $ligne;
+        my @lignecp = split /\t/, $ligne;
+        $id_names{$lignecp[0]} = $lignecp[1]; 
+      }
+    }
+    ## Load the classification
+    my $class_number = 0;
+    while (my $ligne = <$main::in>) {
+      chomp $ligne;
+      my @labels = split / /, $ligne;
+      if ((scalar @labels) > 1) { 
+        $class_number++;
+        my $class_name = "cl_".$class_number;
+        my $class = new RSAT::Family(name=>$class_name);
+        &RSAT::message::Info("Reading", $class, $class_number, $class_name) if ($main::verbose >= 3);
+        foreach my $label (@labels) {
+          if ($label ne "-1") {
+            my $member_name = $label;
+            $member_name = $id_names{$label} if defined($id_names{$label});
+            $class->new_member($member_name);
+          }
+        }
+        $self->push_attribute("classes", $class);
+      }
+  }
+}
 ################################################################
 =pod
 
