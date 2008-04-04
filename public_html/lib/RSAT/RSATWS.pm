@@ -3759,7 +3759,7 @@ sub rnsc {
     my $command = $self->rnsc_cmd(%args);
     my $tmp_outfile = `mktemp $TMP/rnsc-out.XXXXXXXXXX`;
     chomp $tmp_outfile;
-    $command .= "-o $tmp_outfile";
+    $command .= " -o $tmp_outfile";
 #     my $result = `$command`;
     my $stderr = `$command 2>&1 1>/dev/null`;
     system("$command");
@@ -3856,7 +3856,7 @@ sub rnsc_cmd {
    my $shf_div_len = $args{shf_div_len};
    $shf_div_len =~ s/\'//g;
    $shf_div_len =~ s/\'//g;
-   $command .= " -e $shf_div_len";
+   $command .= " -d $shf_div_len";
   }
   return $command;
 }
