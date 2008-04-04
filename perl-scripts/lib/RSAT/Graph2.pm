@@ -2639,27 +2639,31 @@ Return the graph in the format used by RNSC. This will consist of one string hav
 =cut
 sub to_rnsc {
     
-#     my ($self) = shift;
-#     my @out_neighbours = $self->get_attribute("out_neighbours");
-#     my %nodes_name_id = $self->get_attribute("nodes_name_id");
-#     my $rnsc = "";
-#     # print the adjacency table of label
-#     for (my $i = 0; $i < scalar (@out_neighbours); $i++) {
-#       if (defined $out_neighbours[$i]) {
-#         my @neighbours = @{$out_neighbours[$i]};
-#         $rnsc .= $i." ".join(@neighbours)." -1\n";
-#       }
-#     }
-#     $rnsc .= "#####NODES_NAME#####";
-#     while my ($names, $id) 
-#     
-#     
-#     
-#     
-#     
-#     
-#     
-#     return $rnsc;
+    my ($self) = shift;
+    my @out_neighbours = $self->get_attribute("out_neighbours");
+    my @in_neihgbours = $self->get_attribute("in_neighbours");
+    my %nodes_name_id = $self->get_attribute("nodes_name_id");
+    my $rnsc = "";
+    # print the adjacency table of label
+    for (my $i = 0; $i < scalar (keys %nodes_name_id); $i++) {
+      my @i_neighbours = ();
+      @i_neighbours = (@i_neighbours, @{$out_neighbours[$i]}) if (defined $out_neighbours[$i]);
+      @i_neighbours = (@i_neighbours, @{$in_neighbours[$i]}) if (defined $in_neighbours[$i]);
+      @i_neighbours_sorted = sort {$a <=> $b} @i_neighbours;
+      @i_neighbours = @i_neighbours_sorted;
+      my $j = 0;
+      for ($j = 0; $j < scalar (@i_neighbours); $j++) {
+        last if ($i_neighbours[$j] > $i);
+        print $i_neighbours[$j] ."dont last\n";
+      }
+      splice (@i_neighbours, 0, $j);
+      $rnsc .= $i." ".join (" ",@i_neighbours). " -1\n";
+    }
+    $rnsc .= "#####NODES_NAME#####";
+    while (($name, $id) = each %nodes_name_id) {
+     $rnsc .= join("\t", $id, $name)."\n";
+    } 
+    return $rnsc;
 }
 ################################################################
 =pod
