@@ -211,11 +211,11 @@
     }
     if($error == 0){
    		# location of result file on server (absolute path)
-    	$file_location = $result_location . $graphid . $result_suffix;
+    	$file_location = $result_location . $server;
         # content of result file
         $fileContent = storeFile($file_location);
         # html location
-        $file_html_location = $html_location . $graphid . $result_suffix; 
+        $file_html_location = $html_location . $server; 
         # Display the results
     	echo "<align='left'>The result is available as text file at the following URL:<br> ";
     	echo "<a href = '$file_html_location'>$file_html_location</a><br></align>";
