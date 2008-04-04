@@ -11,6 +11,7 @@
   $default_scol = 1;
   $default_tcol = 2;
   $default_wcol = "";
+  $default_pathcol = "";
   $default_layout = "checked";
   $default_ecolors = "";
   $default_ewidth = "";
@@ -26,7 +27,8 @@
   $eccol = $_REQUEST['eccol'];
   $sccol = $_REQUEST['sccol'];  
   $tccol = $_REQUEST['tccol'];
-  
+  $pathcol = $_REQUEST['pathcol'];
+  $distinct_path = $_REQUEST['distinct_path'];
   
   # demo graph
   $demo = $_REQUEST['demo'];
@@ -53,6 +55,7 @@
     <option selected value = 'tab'> tab-delimited format
     <option value = 'adj_matrix'> Adjacency matrix
     <option value = 'gml'> GML format
+    <option value = 'path'> path format
     </select><br>");
   } else {
     echo ": $query_graph_format<br>";
@@ -85,6 +88,8 @@
     <tr><td><B><a href = 'help.convert_graph.html#eccol'>Edge color column</a></B></td><td><input type = 'text' name='ec_col' size = 1></input></td></tr>
     <tr><td><B><a href = 'help.convert_graph.html#sccol'>Source node color column</a></B></td><td><input type = 'text' name='sc_col' size = 1></input></td></tr>
     <tr><td><B><a href = 'help.convert_graph.html#sccol'>Target node color column</a></B></td><td><input type = 'text' name='tc_col' size = 1></input></td></tr>
+    <tr><td><B><a href = 'help.convert_graph.html#sccol'>Path column</a></B></td><td><input type = 'text' name='path_col' value = '$pathcol' size = 1></input> (only for path input format) </td></tr>
+    
     </table>");
   } else {
     info_link("Graph uploaded from the previous treatment", rsat_path_to_url($graph_file));
@@ -101,6 +106,11 @@
   echo("
   <input type='checkbox' name='layout' value='on' $default_layout/>&nbsp;<B><a href = 'help.convert_graph.html#layout'>Calculate the layout of the nodes (only relevant for GML output)</a></B><br>
   <input type='checkbox' name='undirected' value='on' />&nbsp;<B><a href = 'help.convert_graph.html#undirected'>Undirected graph (only relevant for adjacency matrix input and output)</a></B><br>
+  ");
+  if (!$pipe) {
+    echo "<input type='checkbox' name='distinct_path' value='on' />&nbsp;<B><a href = 'help.convert_graph.html#distinctpath'>Distinct paths</a></B>(only for path input format)<br>";
+  }
+  echo ("
   <B><a href = 'help.convert_graph.html#ecolors'>Edge color intensity proportional to the weight</a></B>
   <select name='ecolors'>
   <option $default_ecolors value = 'none'> None
