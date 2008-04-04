@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.37 2008/04/03 11:03:45 rsat Exp $
+# $Id: convert-graph,v 1.38 2008/04/04 11:29:10 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -195,9 +195,7 @@ package main;
     ################################################################
     #### check argument values
     
-    if ($output_format eq "rnsc") {
-      &RSAT::error::FatalError("RNSC output format : not available yet, will soon be implemented");
-    }  
+
     if ($output_format eq "rnsc" && $main::outfile{output} eq "") {
       &RSAT::error::FatalError("You must specify an output file name without extension with output format rnsc");
     }    
@@ -272,7 +270,9 @@ package main;
     ################################################################
     ###### print output
     ### open output streams
-    $main::out = &OpenOutputFile($main::outfile{output});
+    if ($output_format ne "rnsc") {
+      $main::out = &OpenOutputFile($main::outfile{output});
+    }
     if ($output_format eq "tab") {
       $main::verbose_out = $main::out;
     } else {
@@ -280,7 +280,22 @@ package main;
     }
     #### print verbose
     &Verbose() if ($main::verbose);
-    print $out $graph->to_text($output_format, $arc_id_option, $directed, $edge_width);
+    my $output_graph =  $graph->to_text($output_format, $arc_id_option, $directed, $edge_width);
+    
+    if ($output_format ne "rnsc") {
+      print $out $output_graph;
+    } elsif ($output_format eq "rnsc") {
+      # RNSC output file is composed of two files 
+      # a graph file (output.rnsc)
+      # a node names file (output_nodes_names.rnsc)
+      my @rnsc_split = split "#####NODES_NAME#####", $output_graph;
+      my $output_graph_file = $main::outfile{output}.".rnsc";
+      my $output_graph_node_names_file = $main::outfile{output}."_node_names.rnsc";
+      $main::out = &OpenOutputFile($output_graph_file);
+      $main::out_names = &OpenOutputFile($output_graph_node_names_file);
+      print $main::out $rnsc_split[0];
+      print $main::out_names $rnsc_split[1];
+    }
 
     ################################################################
     ###### finish verbose
