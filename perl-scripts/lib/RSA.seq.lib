@@ -1213,11 +1213,11 @@ sub ReadNextSequence {
 	      my $next_id = $1;
 	      unless ($next_id) {
 		## Check that sequence ID is not empty
-		&RSAT::message::Warning("Invalid format for a fasta file: empty sequence identifier.") 
+		&RSAT::message::Warning("Invalid format for a fasta file: empty sequence identifier.");
+		$empty_seq_counter++;
+		$next_id = "unidentifier_seq_".$empty_seq_counter;
 	      }
 #	      &RSAT::message::Debug("New sequence ID", $next_id) if ($main::verbose >= 5);
-	      $empty_seq_counter++;
-	      $next_id = "unidentifier_seq_".$empty_seq_counter;
 
 	      ## Comments
 	      @comment = ($2);
