@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast,v 1.10 2008/02/13 19:10:08 jvanheld Exp $
+# $Id: genome-blast,v 1.11 2008/04/04 14:20:54 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -178,8 +178,9 @@ foreach $db_organism (@db_organisms) {
     }
     $outfile{blast_db}=$dir{blast_db}."/".$db_organism."_db"; 
 
-    &FormatDB() if ($task{formatdb});
-
+    &FormatDB() if (($task{formatdb})&&(! $new_only));
+    my $formatdb=0; # used with the option -new_only
+  
     ## Query organism(s)
     my $q = 0;
     foreach $query_organism (@query_organisms) {
@@ -222,6 +223,9 @@ foreach $db_organism (@db_organisms) {
 	  if (-s $outfile{blast_ranks}) {
 	    &RSAT::message::Warning("BLAST result already exists, skipping", $outfile{blast_ranks}) if ($main::verbose >= 1);
 	    next;
+	  }elsif (($task{formatdb})&&(!$formatdb)){
+	    &FormatDB();
+	    $formatdb=1;
 	  }
 	}
 
