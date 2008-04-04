@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.26 2008/02/07 15:46:19 rsat Exp $
+# $Id: footprint-discovery,v 1.27 2008/04/04 16:37:50 rsat Exp $
 #
 ############################################################
 
@@ -124,7 +124,7 @@ package main;
 
   ################################################################
   ## Initialise parameters
-  $program_version = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.27 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -412,6 +412,7 @@ sub RunFootprintDisco {
   $cmd .= " -taxon ".$taxon;
   $cmd .= " -return query_name,query_organism -return ident -lth ali_len 50 -return e_value -uth e_value 1e-05";
   $cmd .= " -uth rank 1";	## BBH criterion
+  $cmd .= " -only_blast";	## only use genome having blast files
   $cmd .= " -o ".$outfile{orthologs};
   &one_command($cmd);
 #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);

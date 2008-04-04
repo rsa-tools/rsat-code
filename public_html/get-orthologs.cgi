@@ -84,7 +84,8 @@ foreach my $param (@parameters) {
 	$parameters .= " -uth ".$field." ".$value;
     }
 }
-
+## Show only resulst for organisms for which we have a blast file
+$parameters .= " -only_blast";
 
 ## Report the command
 print "<PRE>$command $parameters </PRE>" if ($ENV{rsat_echo} >= 1);
