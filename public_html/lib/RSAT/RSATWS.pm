@@ -1972,6 +1972,18 @@ sub convert_classes {
    chomp $tmp_input;
    $command .= " -i '".$tmp_input."'";
   }
+  if ($args{names}) {
+   my $inputclasses_names = $args{names};
+   chomp $inputclasses_names;
+   my $tmp_input = `mktemp $TMP/convert-classes-input-names.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
+   print TMP_IN $inputclasses_names;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -names '".$tmp_input."'";
+  }
   &run_WS_command($command, $output_choice, "convert-classes");
 }
 
@@ -2882,6 +2894,7 @@ sub convert_graph {
     chop $tmp_outfile;
     system("rm $tmp_outfile");
     $tmp_outfile .= ".$out_format";
+
     
     
     
@@ -3731,6 +3744,129 @@ sub graph_neighbours {
   }
   &run_WS_command($command, $output_choice, "graph-neighbours");
 }
+
+
+
+##########
+sub rnsc {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    
+    my $command = $self->rnsc_cmd(%args);
+    my $tmp_outfile = `mktemp $TMP/rnsc-out.XXXXXXXXXX`;
+    chomp $tmp_outfile;
+    $command .= "-o $tmp_outfile";
+#     my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    system("$command");
+    $result = `cat $tmp_outfile`;
+    
+#     if ($stderr) {
+# 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+#     }
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+#     print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+
+    &UpdateLogFileWS(command=>$command,
+		     tmp_outfile=>$tmp_outfile,
+		     method_name=>$method_name,
+		     output_choice=>$output_choice);
+
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+sub rnsc_cmd {
+  my ($self, %args) =@_;
+  
+  my $command = "/home/rsat/rsa-tools/bin/rnsc";
+  
+  if ($args{inputgraph}) {
+   my $input_graph = $args{inputgraph};
+   chomp $input_graph;
+   my $tmp_input = `mktemp $TMP/rnsc-input.XXXXXXXXXX`;
+   chomp $tmp_input;
+   open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
+   print TMP_IN $input_graph;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -g '".$tmp_input."'";
+  }
+  
+  if ($args{max_clust}) {
+   my $max_clust = $args{max_clust};
+   $max_clust =~ s/\'//g;
+   $max_clust =~ s/\'//g;
+   $command .= " -c $max_clust";
+  }
+  if ($args{tabulist}) {
+   my $tabulist = $args{tabulist};
+   $tabulist =~ s/\'//g;
+   $tabulist =~ s/\'//g;
+   $command .= " -t $tabulist";
+  }
+  if ($args{tabulength}) {
+   my $tabulength = $args{tabulength};
+   $tabulength =~ s/\'//g;
+   $tabulength =~ s/\'//g;
+   $command .= " -T $tabulength";
+  }
+  if ($args{naive_stop}) {
+   my $naive_stop = $args{naive_stop};
+   $naive_stop =~ s/\'//g;
+   $naive_stop =~ s/\'//g;
+   $command .= " -n $naive_stop";
+  }
+  if ($args{scale_stop}) {
+   my $scale_stop = $args{scale_stop};
+   $scale_stop =~ s/\'//g;
+   $scale_stop =~ s/\'//g;
+   $command .= " -N $scale_stop";
+  }
+  if ($args{div_freq}) {
+   my $div_freq = $args{div_freq};
+   $div_freq =~ s/\'//g;
+   $div_freq =~ s/\'//g;
+   $command .= " -D $div_freq";
+  }
+  if ($args{exp_nb}) {
+   my $exp_nb = $args{exp_nb};
+   $exp_nb =~ s/\'//g;
+   $exp_nb =~ s/\'//g;
+   $command .= " -e $exp_nb";
+  }
+  if ($args{shf_div_len}) {
+   my $shf_div_len = $args{shf_div_len};
+   $shf_div_len =~ s/\'//g;
+   $shf_div_len =~ s/\'//g;
+   $command .= " -e $shf_div_len";
+  }
+  return $command;
+}
+
+
+
+
+
+
+
 
 ##########
 sub mcl {
