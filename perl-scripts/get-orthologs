@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.31 2008/02/11 03:19:30 jvanheld Exp $
+# $Id: get-orthologs,v 1.32 2008/04/04 16:37:49 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -249,6 +249,11 @@ package main;
 			       "Use the command supported-organisms -format full to obtain the supported taxonomy."
 			      );
     }
+    if ($only_blast){
+      my (@filtered_ref_org) = &FilterOrganismsHavingBlast();
+#      print "; List of filtered reference organisms\n\t".join("\n\t",@filtered_ref_org)."\n";
+      @main::ref_organisms = (@filtered_ref_org);
+    }
 
     ################################################################
     ## Get taxonomy for ordering results
@@ -341,6 +346,7 @@ package main;
     #### print verbose
     &Verbose() if ($main::verbose >= 1);
 
+    my %genome_hits=();
     ## ##############################################################
     ## Identify BLAST matches
     my $query_org_dir = $supported_organism{$main::query_organism}->{'data'};
@@ -466,6 +472,7 @@ package main;
 	    foreach my $hit (keys %{$bbh->{$query_gene}->{$org}}) {
 	      print $out $bbh->{$query_gene}->{$org}->{$hit},"\n";
 	      $nb_hits++;
+	      $genome_hits{$org}++; # count genomes where hits have been found
 	    }
 	  } else {
 	    next;
@@ -509,14 +516,27 @@ package main;
 #     }
 
 
-    ## Report missing BLAST files
-    if (scalar(@main::missing_blast_files) > 0) {
+    ## Report missing BLAST files (useful for RSAT Admin)
+    if (! $only_blast){
+      if (scalar(@main::missing_blast_files) > 0) {
 	print $out "; Missing BLAST files\n";
 	foreach my $file (@main::missing_blast_files) {
-	    print $out ";\t", $file, "\n";
+	  print $out ";\t", $file, "\n";
 	}
+      }
     }
 
+    ## Report genomes having BLAST files but no hit found 
+    foreach my $org (@ref_organisms) {
+      unless ($genome_hits{$org}){
+	push @genome_no_hits, $org;
+      }
+    }
+    if (scalar(@genome_no_hits) > 0) {
+      print $out "; No hits found in genomes :\n";
+      print $out ";\t".join("\n;\t",sort {$a cmp $b} @genome_no_hits). "\n";
+    }
+    
     ## Report unknown query genes
     if (scalar(@main::unknown_query_genes) > 0) {
 	print $out "; Unknown query genes\n";
@@ -544,6 +564,42 @@ package main;
 ################### subroutine definition ######################
 ################################################################
 
+################################################################
+## Filter the organisms for which a BLAST file exists
+sub FilterOrganismsHavingBlast{
+  &RSAT::message::TimeWarn(join("\t", "Selecting hits in ref organism", $ref_organism)) if ($main::verbose >= 2);      
+  my $query_org_dir = $supported_organism{$main::query_organism}->{'data'};
+  my $query_org_blast_dir = join("/", $query_org_dir, "blast_hits");
+  my @filtered_ref_org=();
+  foreach my $ref_organism (@main::ref_organisms) {
+    my $ref_org_dir = $supported_organism{$ref_organism}->{'data'};
+    my $ref_org_blast_dir = join("/", $ref_org_dir, "blast_hits");
+    ## Check if the BLAST file exists and read it
+    my $blast_file = join("", $query_org_blast_dir,"/","q_",$main::query_organism,"_db_",$ref_organism,"_ranks.tab");
+    my $miss = 0;
+    unless ((-e $blast_file) || (-e $blast_file.".gz")) {
+      $miss = 1;
+      push @main::missing_blast_files, $blast_file;
+      #       unless ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+      # 	      ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+      # 	&RSAT::message::Warning(join("\t", "Missing BLAST file", $blast_file));
+      #      }
+    }
+    my $rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism,"_ranks.tab");
+    unless ((-e $rev_blast_file) || (-e $rev_blast_file.".gz")) {
+      $miss = 1;
+      push @main::missing_blast_files, $rev_blast_file;
+      #       unless ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+      # 	      ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+      # 	&RSAT::message::Warning(join("\t", "Missing BLAST file", $rev_blast_file));
+      #      }
+    }
+    unless($miss){
+      push @filtered_ref_org, $ref_organism;
+    }
+  }
+  return (@filtered_ref_org);
+}
 
 ## ##############################################################
 ## Read one BLAST file, select the hits corresponding to the query genes, and
@@ -556,7 +612,7 @@ sub select_hits{
     push @main::missing_blast_files, $blast_file;
     unless ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
 	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-      &RSAT::message::Warning(join("\t", "Missing BLAST file", $blast_file));
+      &RSAT::message::Warning(join("\t", "SELECT Missing BLAST file", $blast_file));
     }
     return(0);
   }
@@ -957,6 +1013,16 @@ obtain the correct results by inactivating the grep filter.
 	} elsif ($arg eq "-nogrep") {
 	    $main::grep_filtering = 0;
 
+=pod
+
+=item B<-only_blast>
+
+Use only organisms for which blast files exist.
+
+=cut
+
+	} elsif ($arg eq "-only_blast") {
+	    $main::only_blast = 1;
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
