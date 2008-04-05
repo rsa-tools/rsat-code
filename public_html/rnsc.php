@@ -73,9 +73,9 @@
                                  'encoding' => SOAP_LITERAL
                                  )
                            );
-                          
-                          
-                          
+
+
+
     ## Convert-graph
     $cg_parameters = array( 
       "request" => array(
@@ -108,6 +108,7 @@
     ## Load the parameters of the program in to an array
     $cg_graph = storeFile($rnsc_graph);
     $cg_nodes = storeFile($rnsc_nodes);
+    $cg_graph = $cg_graph."\n";
     $rnsc_parameters = array( 
       "request" => array(
         "inputgraph"=>$cg_graph,
@@ -226,6 +227,8 @@
     echo ("<a href = '$xy_resultURL'><img align = 'center' src='$xy_resultURL' width ='50%'></a><br>");
     echo "<br><hr>\n";
     
+    # Input file
+    $input_graph_file = writeTempFile("rnsc_input", $graph);
     
     # Display the results
     echo "The results is available at the following URL ";
@@ -251,12 +254,11 @@
       <TD>
         <FORM METHOD='POST' ACTION='graph_get_clusters_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'\>
-          <input type='hidden' NAME='graph_file' VALUE='$cg_server'\>
+          <input type='hidden' NAME='graph_file' VALUE='$input_graph_file'\>
           <input type='hidden' NAME='cluster_file' VALUE='$cc_server'\>
-          <input type='hidden' NAME='graph_format' value = 'tab'\>
+          <input type='hidden' NAME='graph_format' value = '$in_format'\>
           <input type='hidden' NAME='scol' VALUE='1'\>
           <input type='hidden' NAME='tcol' VALUE='2'\>
-          <input type='hidden' NAME='wcol' VALUE='3'\>
           
           <INPUT type='submit' value='Map those clusters on the network'\>
         </form>
@@ -264,12 +266,11 @@
       <TD>
         <FORM METHOD='POST' ACTION='graph_cluster_membership_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'\>
-          <input type='hidden' NAME='graph_file' VALUE='$cg_server'\>
+          <input type='hidden' NAME='graph_file' VALUE='$input_graph_file'\>
           <input type='hidden' NAME='cluster_file' VALUE='$cc_server'\>
-          <input type='hidden' NAME='graph_format' value = 'tab'\>
+          <input type='hidden' NAME='graph_format' value = '$in_format'\>
           <input type='hidden' NAME='scol' VALUE='1'\>
           <input type='hidden' NAME='tcol' VALUE='2'\>
-          <input type='hidden' NAME='wcol' VALUE='3'\>
           
           <INPUT type='submit' value='Fuzzy clustering'\>
         </form>
