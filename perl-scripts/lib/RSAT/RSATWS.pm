@@ -3759,7 +3759,9 @@ sub rnsc {
     my $command = $self->rnsc_cmd(%args);
     my $tmp_outfile = `mktemp $TMP/rnsc-out.XXXXXXXXXX`;
     chomp $tmp_outfile;
-    $command .= " -o $tmp_outfile";
+    $tmp_logfile = $tmp_outfile.".log";
+    
+    $command .= " -o $tmp_outfile > $tmp_logfile";
 #     my $result = `$command`;
     my $stderr = `$command 2>&1 1>/dev/null`;
     system("$command");
