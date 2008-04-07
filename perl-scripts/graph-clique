@@ -1,0 +1,430 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: graph-clique,v 1.1 2008/04/07 12:11:44 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+graph-clique
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Find all clique of a given size in a graph
+
+=head1 AUTHORS
+
+Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+
+graph-clique [-i inputfile] [-o outputfile] [-v #] -size # [-size #]
+
+=head1 INPUT FORMATS
+
+Graph in GML, TAB or DOT format (to be specified by the -out_format option)
+
+See I<convert-graph> for a description of the supported input graph
+formats. Default format for the input graph: tab.
+
+=head1 OUTPUT FORMAT
+A tab-delimited text file with 2 columns. The first column
+indicates the elements of the clique, the second column the number of the clique. 
+
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+use warnings;
+use re 'eval';
+require "RSA.lib";
+require RSAT::Graph2;
+use RSAT::Family;
+use RSAT::Classification;
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    my $start_time = &AlphaDate();
+    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::out = STDOUT;
+
+    ## Input formats
+    local $input_format = "tab";
+    %supported_input_format =(
+	tab=>1,
+	gml=>1
+    );
+    $supported_input_formats = join (",", keys %supported_input_format);
+    local $source_col = 1;
+    local $target_col = 2;
+    
+    # Size of the cliques
+    local @sizes = ();
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+    if ((scalar(@sizes) == 0)) {
+       &RSAT::error::FatalError("You must use the option -size to specify the size of the cliques you are looking for\n");
+       print scalar(@sizes);
+    }
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Initialize and read the input graph
+    $graph = new RSAT::Graph2();
+    $graph->set_attribute("label", "input graph");
+    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, 0);
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the command
+    # Load the graph in the format required by the function get_cliques (i.e. array of array)
+    my @out_neighbours = $graph->get_attribute("out_neighbours");  # array of out neighbours (see Graph2.pm)
+    my %nodes_id_names = $graph->get_attribute("nodes_id_name");  # hash of nodes id -> name correspondance
+    my @edges = ();
+    my $cpt = 0;
+    
+    for (my $i = 0; $i < scalar @out_neighbours; $i++) {
+      if (defined $out_neighbours[$i]) {
+        my @i_neighbours = @{$out_neighbours[$i]};
+        foreach my $neighbour (@i_neighbours) {
+          $edges[$cpt] = [$i,$neighbour];
+          $cpt++;
+        }
+      }
+    }
+    my $cliques = new RSAT::Classification;
+    $cpt = 1;
+    foreach my $size (@sizes) {
+      my @sizen_cliques = getcliques($size, \@edges);
+      # store the clique of size $size as a classification
+      for (my $i = 0; $i < scalar (@sizen_cliques); $i++) {
+        my $class_name = "clique_".$cpt;
+        my $class = new RSAT::Family(name=>$class_name);
+        my @clique = split " ", $sizen_cliques[$i];
+        for (my $j = 0; $j < $size; $j++) {
+          $member_name = $nodes_id_names{$clique[$j]};
+          $class->new_member($member_name);
+        }
+        $cliques->push_attribute("classes", $class);
+        $cpt++;
+      }
+    }
+    ################################################################
+    ## Print output
+    print $out $cliques->to_text("tab",);
+
+
+    ################################################################
+    ## Finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $main::out "; Job started $start_time\n";
+	print $main::out "; Job done    $done_time\n";
+    }
+
+
+    ################################################################
+    ## Close output stream
+    close $main::out if ($main::outfile{output});
+
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{graph} = shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+	    
+	    ### Input format  
+=pod
+
+=item B<-in_format input_format>
+
+Input format. Supported: tab, gml. By default, the output format is tab.
+
+=cut
+	} elsif ($arg eq "-in_format") {
+	    $input_format = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
+=item B<-scol>
+
+Source column. Column containing the source nodes. 
+
+=cut
+	} elsif ($arg eq "-scol") {
+	    $source_col = shift (@arguments);
+	    unless (&IsNatural($source_col) && ($source_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_col, "Invalid value for the source column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Target column
+=pod
+
+=item B<-tcol>
+
+Target column. Column containing the target nodes. 
+
+=cut
+	} elsif ($arg eq "-tcol") {
+	    $target_col = shift (@arguments);
+	    unless (&IsNatural($target_col) && ($target_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_col, "Invalid value for the target column. Must be a strictly positive natural number"));
+	    }
+		
+		
+	    ### Size of the clique
+=pod
+
+=item B<-size #>
+
+Size of the cliques that are looked for. As K-clique problem is known to be NP-complete, so it is advisable to limit the number of edges according to your predefined threshold, rather than exhaustively searching them. This option can be used multiple times. 
+
+=cut
+	} elsif ($arg eq "-size") {
+	    $this_size = shift(@arguments);
+	    unless (&IsNatural($this_size) && ($this_size > 0)) {
+		&RSAT::error::FatalError(join("\t", $this_size, "Invalid value for the size of the searched clique. Must be a strictly positive natural number"));
+	    }
+	    push @sizes, $this_size;
+		
+		
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; graph-clique ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+# These subroutines were defined in the class Clique.pm developped by Edward Wijaya under the GNU/GPL licence.
+# Description :
+# This module extends Greg Bacon's implementation on clique reduction with regular expression.
+# Originally can be found at: http://home.hiwaay.net/~gbacon/perl/clique.html
+# 
+# The function take clique size (k) and vertices (list of lists) and return all the vertices
+# that form the clique. 
+# 
+# K-clique problem is known to be NP-complete, so it is advisable to limit the number
+# of edges according to your predefined threshold, rather than exhaustively searching them.
+# The module Graph::Clique is available on CPAN at http://search.cpan.org/~ewijaya/Graph-Clique-0.02/
+
+sub getcliques {
+
+     my ($k,$edges) = @_;
+     my @cliques = ();
+     my @vertices = ();
+     
+      @vertices = edges2vertices(@{$edges});
+
+     my   $string = (join ',' => @vertices) .  ';'
+                . (join ',' => map "$_->[0]-$_->[1]", @{$edges});
+
+     my  $regex = '^ .*\b '
+               . join(' , .*\b ' => ('(\d+)') x $k)
+               . '\b .* ;'
+               . "\n";
+
+    for (my $i = 1; $i < $k; $i++) {
+            for (my $j = $i+1; $j <= $k; $j++) {
+                $regex .= '(?= .* \b ' . "\\$i-\\$j" . ' \b)' . "\n";
+            }
+        }
+
+     # Backtrack to regain all the identified k-cliques (Credit Mike Mikero)
+     $regex .= '(?{ push (@cliques, join(" ", map $$_, 1..$k) ) })(?!)';
+     $string =~ /$regex/x; 
+     
+     return sort @cliques;
+}
+
+#----Subroutines -------------------
+sub edges2vertices {
+  my @edges = @_;
+  my %hTemp;
+  my @vertices;
+  
+ my  @aTemp = map{@{$_}} @edges;
+      @hTemp{@aTemp}  = ();
+  @vertices = sort keys %hTemp;   
+  return @vertices;  
+}
+
+sub edges2vertices_slow {
+  #AoA to uniq array;
+
+  my @edges = @_;
+  my @vertices;
+  my @uniqv; 
+  
+   for my $i ( 0 .. $#edges ) {
+               for my $j ( 0 .. $#{$edges[$i]} ) {
+                   push @vertices, $edges[$i][$j];
+               }
+           }
+
+       @uniqv = sort keys %{{map {$_,1} @vertices}};
+    return @uniqv;
+}
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=cut
