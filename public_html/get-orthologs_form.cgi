@@ -22,7 +22,8 @@ $query = new CGI;
 ## Initialize parameters
 
 ## Output fields
-my @output_fields = qw(query_name
+my @output_fields = qw(ref_name
+		       query_name
 		       query_organism
 		       ident
 		       ali_len
@@ -32,6 +33,7 @@ my @output_fields = qw(query_name
 		       bit_sc
 		       rank);
 my %field_description = ();
+$field_description{ref_name} = "Reference gene name";
 $field_description{query_name} = "Query gene name";
 $field_description{query_organism} = "Query organism";
 $field_description{ident} = "Percentage of identity";
@@ -100,7 +102,7 @@ foreach my $field (@output_fields) {
 			   -label=>' ');
     print join "", "<a href='help.get-orthologs.html#",$field,"'>", $field_description{$field}, "</a>\n";
     print "</th>\n";
-    if (($field eq "query_name")||($field eq "query_organism")){
+    if (($field eq "ref_name")||($field eq "query_name")||($field eq "query_organism")){
 	print "<td></td>";
     }else{
 	foreach my $th ("ortho_lth", "ortho_uth") {
