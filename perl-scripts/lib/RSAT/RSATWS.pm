@@ -3114,7 +3114,58 @@ sub alter_graph {
   
   &run_WS_command($command, $output_choice, "alter-graph");
 }
-
+##########
+sub graph_clique {
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+  
+  my $command = "$SCRIPTS/graph-clique";
+  
+  if ($args{informat}) {
+   my $in_format = $args{informat};
+   $in_format =~ s/\'//g;
+   $in_format =~ s/\"//g;
+   $command .= " -in_format $in_format";
+  }
+  if ($args{scol}) {
+   my $scol = $args{scol};
+   $scol =~ s/\'//g;
+   $scol =~ s/\'//g;
+   $command .= " -scol $scol";
+  }
+  if ($args{tcol}) {
+   my $tcol = $args{tcol};
+   $tcol =~ s/\'//g;
+   $tcol =~ s/\'//g;
+   $command .= " -tcol $tcol";
+  }
+  if ($args{inputgraph}) {
+   my $input_graph = $args{inputgraph};
+   chomp $input_graph;
+   my $tmp_input = `mktemp $TMP/alter-graph-input.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
+   print TMP_IN $input_graph;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  if ($args{size}) {
+   my $size_list = $args{size};
+   $size_list =~ s/\'//g;
+   $size_list =~ s/\'//g;
+   @sizes = split ',', $size_list;
+   foreach my $size (@sizes) {
+     $command .= " -size $size";
+   }
+  }  
+  &run_WS_command($command, $output_choice, "graph-clique");
+}
 ##########
 sub display_graph {
     my ($self, $args_ref) = @_;
