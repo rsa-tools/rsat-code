@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-clique,v 1.1 2008/04/07 12:11:44 rsat Exp $
+# $Id: graph-clique,v 1.2 2008/04/08 10:42:30 rsat Exp $
 #
 ############################################################
 
@@ -19,7 +19,7 @@ $program_version
 
 =head1 DESCRIPTION
 
-Find all clique of a given size in a graph
+Find all cliques of (a) given size(s) in a graph
 
 =head1 AUTHORS
 
@@ -35,7 +35,7 @@ graph-clique [-i inputfile] [-o outputfile] [-v #] -size # [-size #]
 
 =head1 INPUT FORMATS
 
-Graph in GML, TAB or DOT format (to be specified by the -out_format option)
+Graph in GML or TAB format (to be specified by the -in_format option)
 
 See I<convert-graph> for a description of the supported input graph
 formats. Default format for the input graph: tab.
@@ -68,7 +68,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
     %main::infile = ();
     %main::outfile = ();
@@ -87,7 +87,7 @@ package main;
     local $target_col = 2;
     
     # Size of the cliques
-    local @sizes = ();
+    local %sizes = ();
 
     ################################################################
     ## Read argument values
@@ -95,10 +95,7 @@ package main;
 
     ################################################################
     ## Check argument values
-    if ((scalar(@sizes) == 0)) {
-       &RSAT::error::FatalError("You must use the option -size to specify the size of the cliques you are looking for\n");
-       print scalar(@sizes);
-    }
+
 
     ################################################################
     ## Open output stream
@@ -116,41 +113,92 @@ package main;
 
     ################################################################
     ## Execute the command
-    # Load the graph in the format required by the function get_cliques (i.e. array of array)
-    my @out_neighbours = $graph->get_attribute("out_neighbours");  # array of out neighbours (see Graph2.pm)
-    my %nodes_id_names = $graph->get_attribute("nodes_id_name");  # hash of nodes id -> name correspondance
-    my @edges = ();
-    my $cpt = 0;
+    my @arcs = $graph->get_attribute("arcs");
+    my %node_name_id = $graph->get_attribute("nodes_name_id");
+    my %arcs_name_id = $graph->get_attribute("arcs_name_id");
+    my @nodes = keys %node_name_id;
+    my @sizes_sorted = ();
+    my $max_size = 32000;
+    if (scalar(keys (%sizes)) != 0) {
+      my @sizes = keys (%sizes);
+      @sizes_sorted = sort {$a <=> $b} @sizes;
+      $max_size = pop @sizes_sorted;
+    }
     
-    for (my $i = 0; $i < scalar @out_neighbours; $i++) {
-      if (defined $out_neighbours[$i]) {
-        my @i_neighbours = @{$out_neighbours[$i]};
-        foreach my $neighbour (@i_neighbours) {
-          $edges[$cpt] = [$i,$neighbour];
-          $cpt++;
+    
+    my @cliques; # Each row of this 2D array contains the list of nodes forming the clique. It is initialize with all cliques of size 2 (all edges)
+    my @cliques_id; # The row i of this 2D array contains the list of indices in @cliques corresponding to cliques of size i
+    my %seen_cliques = (); # Hash of cliques already detected (to avoid redundancy as in n1,n2,n3 and n3,n2,n1, ... The nodes are sorted alphabetically and separated by "_"
+    
+    
+    # Initialization of @cliques with all the edges contained in $graph.
+    for (my $i = 0; $i < scalar (@arcs); $i++) {
+      $cliques[$i][0] = $arcs[$i][0];
+      $cliques[$i][1] = $arcs[$i][1];
+      $cliques_id[2][$i] = $i;
+    }
+    
+    my $found = 1; # This tag equals 1 if the algorithm could find a clique of size $i
+    my $size = 3;
+    while ($found) {
+      &RSAT::message::Info("\t","Looking for cliques of size",$size) if ($main::verbose >= 2);
+      $found = 0;
+      # For all cliques of size $size-1, we look if it exists a node that is linked to all
+      # nodes contained of the clique.
+      my @id_cliques_of_size_n = @{$cliques_id[$size-1]};
+      foreach my $id_clique (@id_cliques_of_size_n) {
+        my @clique_nodes = @{$cliques[$id_clique]};
+        &RSAT::message::Info("\t","Analyzing clique of size",$size-1, join(",", @clique_nodes)) if ($main::verbose >= 4);
+        foreach $node (@nodes) {
+          my $potential_clique = 1; # Tag = 1 while there is a node in @nodes having a connection with the nodes in @clique_nodes
+          my @potential_new_clique = ($node);
+          my $clique_node;
+          my @potential_existing_clique = ($node, @clique_nodes);
+          my $potential_existing_clique_members = join ("_", sort @potential_new_clique);
+          next if (defined ($seen_cliques{$potential_existing_clique_members}));
+          foreach $clique_node (@clique_nodes) {
+            my $arc_id = join ("_",$node, $clique_node,1);
+            my $arc_id_rev = join ("_",$clique_node, $node,1);
+            push @potential_new_clique, $clique_node;
+            $potential_clique = 0 if ((!defined ($arcs_name_id{$arc_id}) && !defined($arcs_name_id{$arc_id_rev})) || ($node eq $clique_node)); 
+            last if (!$potential_clique);
+          }
+          # if we found a node connecting to all nodes of a clique, create a new clique of size n and add it to the index of clique
+          $clique_members = join ("_", sort @potential_new_clique);
+          if ($potential_clique && !defined ($seen_cliques{$clique_members})) {
+            my $nb_cliques = scalar @cliques;
+            foreach my $potential_clique_nodes (@potential_new_clique) {
+              push @{$cliques[$nb_cliques]}, $potential_clique_nodes;
+            }
+            push @{$cliques_id[$size]}, $nb_cliques;
+            &RSAT::message::Info("\t","With node",$node,"found clique of size", $size, join(",",@potential_new_clique),"id", $nb_cliques) if ($main::verbose >= 4);
+            $found = 1; # We found at least a clique of size $size... we can continue
+            $seen_cliques{$clique_members}++;
+          } 
         }
       }
+      if (scalar @sizes == 0 && $found && defined($sizes{$size})) {
+        $requested_sizes{$size}++;
+      }
+      
+      last if ($max_size == $size);
+      $size ++;
     }
-    my $cliques = new RSAT::Classification;
-    $cpt = 1;
-    foreach my $size (@sizes) {
-      my @sizen_cliques = getcliques($size, \@edges);
-      # store the clique of size $size as a classification
-      for (my $i = 0; $i < scalar (@sizen_cliques); $i++) {
-        my $class_name = "clique_".$cpt;
-        my $class = new RSAT::Family(name=>$class_name);
-        my @clique = split " ", $sizen_cliques[$i];
-        for (my $j = 0; $j < $size; $j++) {
-          $member_name = $nodes_id_names{$clique[$j]};
-          $class->new_member($member_name);
+    
+    ################################################################
+    ## Print output
+    print $out join("\t", "#element" ,"cluster")."\n" if ($main::verbose >=1);
+    my $cpt = 1;
+    foreach $size (keys %requested_sizes) {
+      my @id_cliques_of_size_n = @{$cliques_id[$size]};
+      foreach my $id (@id_cliques_of_size_n) {
+        my $cluster_id = "cluster_".$cpt;
+        foreach my $node (@{$cliques[$id]}) {
+          print $out join("\t", $node ,$cluster_id)."\n" if ($main::verbose >=1);
         }
-        $cliques->push_attribute("classes", $class);
         $cpt++;
       }
     }
-    ################################################################
-    ## Print output
-    print $out $cliques->to_text("tab",);
 
 
     ################################################################
@@ -311,7 +359,7 @@ Size of the cliques that are looked for. As K-clique problem is known to be NP-c
 	    unless (&IsNatural($this_size) && ($this_size > 0)) {
 		&RSAT::error::FatalError(join("\t", $this_size, "Invalid value for the size of the searched clique. Must be a strictly positive natural number"));
 	    }
-	    push @sizes, $this_size;
+	    $sizes{$this_size}++;
 		
 		
 	} else {
@@ -350,75 +398,7 @@ sub Verbose {
 }
 
 
-# These subroutines were defined in the class Clique.pm developped by Edward Wijaya under the GNU/GPL licence.
-# Description :
-# This module extends Greg Bacon's implementation on clique reduction with regular expression.
-# Originally can be found at: http://home.hiwaay.net/~gbacon/perl/clique.html
-# 
-# The function take clique size (k) and vertices (list of lists) and return all the vertices
-# that form the clique. 
-# 
-# K-clique problem is known to be NP-complete, so it is advisable to limit the number
-# of edges according to your predefined threshold, rather than exhaustively searching them.
-# The module Graph::Clique is available on CPAN at http://search.cpan.org/~ewijaya/Graph-Clique-0.02/
 
-sub getcliques {
-
-     my ($k,$edges) = @_;
-     my @cliques = ();
-     my @vertices = ();
-     
-      @vertices = edges2vertices(@{$edges});
-
-     my   $string = (join ',' => @vertices) .  ';'
-                . (join ',' => map "$_->[0]-$_->[1]", @{$edges});
-
-     my  $regex = '^ .*\b '
-               . join(' , .*\b ' => ('(\d+)') x $k)
-               . '\b .* ;'
-               . "\n";
-
-    for (my $i = 1; $i < $k; $i++) {
-            for (my $j = $i+1; $j <= $k; $j++) {
-                $regex .= '(?= .* \b ' . "\\$i-\\$j" . ' \b)' . "\n";
-            }
-        }
-
-     # Backtrack to regain all the identified k-cliques (Credit Mike Mikero)
-     $regex .= '(?{ push (@cliques, join(" ", map $$_, 1..$k) ) })(?!)';
-     $string =~ /$regex/x; 
-     
-     return sort @cliques;
-}
-
-#----Subroutines -------------------
-sub edges2vertices {
-  my @edges = @_;
-  my %hTemp;
-  my @vertices;
-  
- my  @aTemp = map{@{$_}} @edges;
-      @hTemp{@aTemp}  = ();
-  @vertices = sort keys %hTemp;   
-  return @vertices;  
-}
-
-sub edges2vertices_slow {
-  #AoA to uniq array;
-
-  my @edges = @_;
-  my @vertices;
-  my @uniqv; 
-  
-   for my $i ( 0 .. $#edges ) {
-               for my $j ( 0 .. $#{$edges[$i]} ) {
-                   push @vertices, $edges[$i][$j];
-               }
-           }
-
-       @uniqv = sort keys %{{map {$_,1} @vertices}};
-    return @uniqv;
-}
 __END__
 
 =pod
