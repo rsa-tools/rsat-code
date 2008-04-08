@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-clique,v 1.2 2008/04/08 10:42:30 rsat Exp $
+# $Id: graph-clique,v 1.3 2008/04/08 11:37:43 rsat Exp $
 #
 ############################################################
 
@@ -68,7 +68,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
     %main::infile = ();
     %main::outfile = ();
@@ -187,14 +187,14 @@ package main;
     
     ################################################################
     ## Print output
-    print $out join("\t", "#element" ,"cluster")."\n" if ($main::verbose >=1);
+    print $out join("\t", "#element" ,"cluster", "size")."\n" if ($main::verbose >=1);
     my $cpt = 1;
     foreach $size (keys %requested_sizes) {
       my @id_cliques_of_size_n = @{$cliques_id[$size]};
       foreach my $id (@id_cliques_of_size_n) {
-        my $cluster_id = "cluster_".$cpt;
+        my $cluster_id = "clique_".$cpt;
         foreach my $node (@{$cliques[$id]}) {
-          print $out join("\t", $node ,$cluster_id)."\n" if ($main::verbose >=1);
+          print $out join("\t", $node ,$cluster_id, $size)."\n" if ($main::verbose >=1);
         }
         $cpt++;
       }
