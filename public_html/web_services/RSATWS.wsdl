@@ -2154,7 +2154,40 @@ This option is only useful for GML output.</xsd:documentation>
 	</xsd:sequence>
       </xsd:complexType>
       
-      
+      <xsd:complexType name="GraphCliqueRequest">
+	<xsd:sequence>
+	  <xsd:element name="informat" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Input format. Supported: tab, gml, adj_matrix.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="inputgraph" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>A graph in the format specified by the informat tag.</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="scol" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Specify a column of the input graph that contains the source nodes for the tab-delimited format (default = 1).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tcol" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Specify a column of the input graph that contains the target nodes for the tab-delimited format (default = 2).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="min_size" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Minimum size of the clique to return.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="max_size" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Maximum size of the clique to return.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>      
       
       <xsd:complexType name="DisplayGraphRequest">
 	      <xsd:sequence>
@@ -2493,17 +2526,19 @@ The mean and standard deviation can then be chosen (-mean and -sd option) or wil
 	<xsd:sequence>
 	  <xsd:element name="inputgraph" type="xsd:string" minOccurs="1">
 	    <xsd:annotation>
-	      <xsd:documentation>A graph in the tab delimited format first column : source node, second column : target node, third column : edge weight</xsd:documentation>	
+	      <xsd:documentation>A graph in the format required by RNSC : an adjacency list in which each edge appears only once.  The vertices are labelled with the integers 0, 1, ..., n-1. The list of neighbours for vertex v appears as
+v n_1 n_2 ... n_x -1
+The input network in the correct format can be produced by the convert-graph program.</xsd:documentation>	
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="max_clust" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>Allow no more than "num" clusters.  "num" must be between 2 and n, 	where n is the number of vertices in the graph.  If the -c option is not specified or an invalid value is given, n clusters are used.</xsd:documentation>
+	      <xsd:documentation>Allow no more than "num" clusters.  "num" must be between 2 and n, 	where n is the number of vertices in the graph.  If this option is not specified or an invalid value is given, n clusters are used.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="tabulength" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>Set the tabu length to "num".  Default value is 1.  Note that when the -T option is used, vertices can appear on the tabu list more than once and moving them is only forbidden when they are on the tabu list more than TabuTol times, where TabuTol is the tabu list tolerance.</xsd:documentation>
+	      <xsd:documentation>Set the tabu length to "num".  Default value is 1.  Note that when the tabulist option is used, vertices can appear on the tabu list more than once and moving them is only forbidden when they are on the tabu list more than TabuTol times, where TabuTol is the tabu list tolerance.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="tabulist" type="xsd:int" minOccurs="0">
@@ -2528,7 +2563,7 @@ The mean and standard deviation can then be chosen (-mean and -sd option) or wil
 	  </xsd:element>
 	  <xsd:element name="div_freq" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>Set the diversification frequency to "num".  Without this option, no diversification will be performed.  If the -d flag is also used, then "num" is the shuffling diversification frequency.  If the -d flag is not used, then "num" is the destructive diversification frequency.  It is recommended that the -d flag is used, because in the fast version of RNSC (i.e. this one), destructive diversification isn't much help.</xsd:documentation>
+	      <xsd:documentation>Set the diversification frequency to "num".  Without this option, no diversification will be performed.  If the shf_div_len flag is also used, then "num" is the shuffling diversification frequency.  If the -d flag is not used, then "num" is the destructive diversification frequency.  It is recommended that the shf_div_len flag is used, because destructive diversification isn't much help.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="shf_div_len" type="xsd:int" minOccurs="0">
@@ -3231,6 +3266,25 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
+      <xsd:complexType name="GraphCliqueResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
       <xsd:complexType name="DisplayGraphResponse">
 	      <xsd:sequence>
 		      <xsd:element name="server" type="xsd:string">
@@ -3881,6 +3935,21 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>      
       
+      <xsd:element name="graph_clique">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:GraphCliqueRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="graph_cliqueResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:GraphCliqueResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>      
       
       <xsd:element name="display_graph">
 	      <xsd:complexType>
@@ -4249,10 +4318,18 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="alter_graphRequest">
     <part name="parameters" element="tns:alter_graph"/>
   </message>
-
   <message name="alter_graphResponse">
     <part name="output" element="tns:alter_graphResponse"/>
-  </message>  
+  </message>
+  <message name="graph_cliqueRequest">
+    <part name="parameters" element="tns:graph_clique"/>
+  </message>
+  <message name="graph_cliqueResponse">
+    <part name="output" element="tns:graph_cliqueResponse"/>
+  </message>
+
+
+
   <message name="display_graphRequest">
 	  <part name="parameters" element="tns:display_graph"/>
   </message>
@@ -4511,6 +4588,12 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 	      <input name="AlterGraphRequest" message="tns:alter_graphRequest"/>
 	      <output name="AlterGraphResponse" message="tns:alter_graphResponse"/>         
 	      <documentation>Alter a graph either by adding or removing edges or nodes
+	      </documentation>
+      </operation>
+      <operation name="graph_clique">
+	      <input name="GraphCliqueRequest" message="tns:graph_cliqueRequest"/>
+	      <output name="GraphCliqueResponse" message="tns:graph_cliqueResponse"/>         
+	      <documentation>Find all cliques of a sizes in a graph
 	      </documentation>
       </operation>
       <operation name="display_graph">
@@ -4826,6 +4909,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 	      </output>
       </operation>
       <operation name="alter_graph">
+	      <soap:operation soapAction=""/>
+	      <input>
+		      <soap:body use="literal" />
+	      </input>
+	      <output>
+		      <soap:body use="literal" />
+	      </output>
+      </operation>
+      <operation name="graph_clique">
 	      <soap:operation soapAction=""/>
 	      <input>
 		      <soap:body use="literal" />

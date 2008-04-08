@@ -66,6 +66,7 @@
     # Open the SOAP client
     $client = new SoapClient(
                        $neat_wsdl,
+// "http://localhost/rsat/web_services/RSATWS2.wsdl",
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
@@ -93,7 +94,6 @@
 
     $cg_response = $cg_echoed->response;
     $cg_command = $cg_response->command;
-    echo ("$cg_command");
     $cg_server = $cg_response->server;
     $cg_client = $cg_response->client;
     $cg_server = rtrim ($cg_server);
@@ -127,7 +127,6 @@
 
     $rnsc_response = $rnsc_echoed->response;
     $rnsc_command = $rnsc_response->command;
-    echo ("$rnsc_command");
     $rnsc_server = $rnsc_response->server;
     $rnsc_client = $rnsc_response->client;
     $rnsc_server = rtrim ($rnsc_server);

@@ -77,7 +77,7 @@
       array_push($l_thr_field, "Q");
       array_push($l_thr_val, $thr);
     } else if ($thr != 'none') {
-      warning("$thr is not a valid query lower threshold");
+      warning("$thr is not a valid query class size lower threshold");
     }
   }
   

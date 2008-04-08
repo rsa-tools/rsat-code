@@ -1629,6 +1629,11 @@ P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R), dotprod, jac_sim, rank, sig</xsd:
          <xsd:annotation>
           <xsd:documentation>Input classes in the format defined by the input_format tag</xsd:documentation>
          </xsd:annotation>
+        </xsd:element>
+        <xsd:element name="names" type="xsd:string" minOccurs="0">
+         <xsd:annotation>
+          <xsd:documentation>Two tab-delimited columns specifying the labels of the members of the classification given in the classification file. First column contains the identifier and second column the corresponding label.</xsd:documentation>
+         </xsd:annotation>
         </xsd:element> 
        </xsd:sequence>
       </xsd:complexType>
@@ -2041,9 +2046,19 @@ The length file contains two columns : sequence ID (ignored) and sequence length
 	      <xsd:documentation>Specify a column of the input graph that contains the color of the target node (no default).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="pathcol" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Specify the column containing the paths</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
 	  <xsd:element name="undirected" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>The graph is considered as being undirected (useful for the adjacency matrix input and output).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="distinct_path" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>The nodes belonging to different paths are duplicated with this option</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="layout" type="xsd:int" minOccurs="0">
@@ -2474,7 +2489,57 @@ The mean and standard deviation can then be chosen (-mean and -sd option) or wil
 	</xsd:sequence>
       </xsd:complexType>      
       
-      
+<xsd:complexType name="RNSCRequest">
+	<xsd:sequence>
+	  <xsd:element name="inputgraph" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>A graph in the format required by RNSC : an adjacency list in which each edge appears only once.  The vertices are labelled with the integers 0, 1, ..., n-1. The list of neighbours for vertex v appears as
+v n_1 n_2 ... n_x -1
+The input network in the correct format can be produced by the convert-graph program.</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="max_clust" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Allow no more than "num" clusters.  "num" must be between 2 and n, 	where n is the number of vertices in the graph.  If this option is not specified or an invalid value is given, n clusters are used.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tabulength" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Set the tabu length to "num".  Default value is 1.  Note that when the tabulist option is used, vertices can appear on the tabu list more than once and moving them is only forbidden when they are on the tabu list more than TabuTol times, where TabuTol is the tabu list tolerance.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tabulist" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Set the tabu list tolerance to "num". Default value is 1.  The tabu list tolerance is the number of times a vertex must appear on the tabu list before moving it is forbidden.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="naive_stop" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Set the naive stopping tolerance to "num".  Default value is 5.  This is the number of steps that the naive scheme will continue without improving the best cost.  If you run the scaled scheme, using a higher naive stopping tolerance isn't likely to improve your results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="scale_stop" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Set the scaled stopping tolerance to "num".  Default value is 5.  This is the number of steps that the scaled scheme will continue without improving the best cost.  Setting the tolerance to 0 will cause the algorithm to skip the scaled scheme.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="exp_nb" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Run "num" experiments.  The best final clustering over all experiments will be written to file.  Default is 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="div_freq" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Set the diversification frequency to "num".  Without this option, no diversification will be performed.  If the shf_div_len flag is also used, then "num" is the shuffling diversification frequency.  If the -d flag is not used, then "num" is the destructive diversification frequency.  It is recommended that the shf_div_len flag is used, because destructive diversification isn't much help.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="shf_div_len" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Set the shuffling diversification length to "num".  That means that the last "num" moves in the diversification period will be diversification moves.  Don't set this to be higher than the diversification frequency.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>         
       
       
       
@@ -3284,8 +3349,28 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    </xsd:annotation>
 	  </xsd:element>
 	</xsd:sequence>
-      </xsd:complexType>      
+      </xsd:complexType>    
       
+      <xsd:complexType name="RNSCResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>      
+            
       
       <xsd:complexType name="RandomGraphResponse">
 	<xsd:sequence>
@@ -3891,6 +3976,23 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
+      <xsd:element name="rnsc">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:RNSCRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="rnscResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:RNSCResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>      
+      
+      
       <xsd:element name="random_graph">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4215,7 +4317,13 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="mclResponse">
     <part name="output" element="tns:mclResponse"/>
   </message>  
-  
+  <message name="rnscRequest">
+    <part name="parameters" element="tns:rnsc"/>
+  </message>
+
+  <message name="rnscResponse">
+    <part name="output" element="tns:rnscResponse"/>
+  </message>    
   
   <portType name="RSATWSPortType">
 <!-- 	  RSAT CLASSICAL TOOLS Porttype -->
@@ -4452,7 +4560,13 @@ This program supports a variety of background models (Bernoulli, Markov chains o
       <operation name="mcl">
 	      <input name="MCLRequest" message="tns:mclRequest"/>
 	      <output name="MCLResponse" message="tns:mclResponse"/>         
-	      <documentation>Find the neihbours up to a certain distance of a collection of seed nodes
+	      <documentation>Clustering via Stijn van Dongen MCL algorithm
+	      </documentation>
+      	   </operation>
+      <operation name="rnsc">
+	      <input name="RNSCRequest" message="tns:rnscRequest"/>
+	      <output name="RNSCResponse" message="tns:rnscResponse"/>         
+	      <documentation>Clustering via Andrew King RNSC algorithm
 	      </documentation>
       	   </operation>	
   </portType>
@@ -4750,6 +4864,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 	      </output>
       </operation>
       <operation name="mcl">
+	      <soap:operation soapAction=""/>
+	      <input>
+		      <soap:body use="literal" />
+	      </input>
+	      <output>
+		      <soap:body use="literal" />
+	      </output>
+      </operation>
+      <operation name="rnsc">
 	      <soap:operation soapAction=""/>
 	      <input>
 		      <soap:body use="literal" />
