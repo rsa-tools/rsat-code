@@ -3143,10 +3143,22 @@ sub graph_clique {
    $tcol =~ s/\'//g;
    $command .= " -tcol $tcol";
   }
+  if ($args{min_size}) {
+   my $min_size = $args{min_size};
+   $min_size =~ s/\'//g;
+   $min_size =~ s/\'//g;
+   $command .= " -min_size $min_size";
+  }
+  if ($args{max_size}) {
+   my $max_size = $args{max_size};
+   $max_size =~ s/\'//g;
+   $max_size =~ s/\'//g;
+   $command .= " -max_size $max_size";
+  }
   if ($args{inputgraph}) {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
-   my $tmp_input = `mktemp $TMP/alter-graph-input.XXXXXXXXXX`;
+   my $tmp_input = `mktemp $TMP/graph-clique-input.XXXXXXXXXX`;
    open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
    print TMP_IN $input_graph;
    close TMP_IN;
@@ -3155,15 +3167,8 @@ sub graph_clique {
    chomp $tmp_input;
    $command .= " -i '".$tmp_input."'";
   }
-  if ($args{size}) {
-   my $size_list = $args{size};
-   $size_list =~ s/\'//g;
-   $size_list =~ s/\'//g;
-   @sizes = split ',', $size_list;
-   foreach my $size (@sizes) {
-     $command .= " -size $size";
-   }
-  }  
+
+    
   &run_WS_command($command, $output_choice, "graph-clique");
 }
 ##########
@@ -3825,10 +3830,11 @@ sub rnsc {
     print TMP_OUT $result;
 #     print TMP_OUT "KEYS ".keys(%args);
     close TMP_OUT;
+    
 
     &UpdateLogFileWS(command=>$command,
 		     tmp_outfile=>$tmp_outfile,
-		     method_name=>$method_name,
+		     method_name=>"RNSC",
 		     output_choice=>$output_choice);
 
     if ($output_choice eq 'server') {
