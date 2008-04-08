@@ -70,10 +70,10 @@ sub new {
     my %arcs_name_id = ();
     my %nodes_color = ();
     my %nodes_label = ();
-    my %node_name_id = ();
-    my %node_id_name = ();
-    my %node_id_xpos = ();
-    my %node_id_ypos = ();
+    my %nodes_name_id = ();
+    my %nodes_id_name = ();
+    my %nodes_id_xpos = ();
+    my %nodes_id_ypos = ();
     # @out_neighbours is a multidimensional array : the index corresponds to the id of the node 
     # @{$out_neighbours[x]} contains a list of the id of the out neighbours of the nodes having id x
     $self->set_array_attribute("out_neighbours", @out_neighbours);
