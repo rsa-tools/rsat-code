@@ -90,10 +90,14 @@
     $path_col = 1;
     warning("You did not specify any column containing the path, default is 1");
   }
+  
   if (!$error) { 
   
     $graph = trim_text($graph);
-    $graph = space_to_tab($graph);
+    if ($in_format != "path") {
+      $graph = space_to_tab($graph);
+    }
+    
 //     echo ("<pre>$graph</pre>");
     ## Load the parameters of the program in to an array
     $parameters = array( 
@@ -148,7 +152,7 @@
       $response =  $echoed->response;
 //       print_r ($response);
       $command = $response->command;
-//       echo "$command";
+      echo "$command";
       $server = $response->server;
       $client = $response->client;
       $server = rtrim ($server);
