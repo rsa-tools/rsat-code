@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>NeA-tools - graph-clique</title>
+   <title>NeA-tools - graph-cliques</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="results">
@@ -8,7 +8,7 @@
   require ('functions.php');
   # log file update
   UpdateLogFile("neat","","");
-  title('graph-clique - results');
+  title('graph-cliques - results');
   # Error status
   $error = 0;
   # Get parameters
@@ -18,9 +18,7 @@
   } else if ($_REQUEST['pipe_graph_file'] != "")  {
     $graph_file = $_REQUEST['pipe_graph_file'];
   }
-  if ($_FILES['seeds_file']['name'] != "") {
-    $seeds_file = uploadFile('seeds_file');
-  }
+
   $now = date("Ymd_His");
   $graph = $_REQUEST['graph'];
   $s_col = $_REQUEST['s_col'];
@@ -84,7 +82,7 @@
                            );
     # Execute the command
     echo "<pre>";
-    $gc_echoed = $soap_client->graph_clique($gc_parameters);
+    $gc_echoed = $soap_client->graph_cliques($gc_parameters);
 
     $gc_response = $gc_echoed->response;
     $gc_command = $gc_response->command;

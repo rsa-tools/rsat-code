@@ -292,13 +292,7 @@
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='graph_file' VALUE='$file_location'>
           <input type='hidden' NAME='graph_format' VALUE='path'>
-          <input type='hidden' NAME='pathcol' VALUE='7'>";
-          if ($out_format == 'tab') {
-            echo "
-            <input type='hidden' NAME='scol' VALUE='1'>
-            <input type='hidden' NAME='tcol' VALUE='2'>";
-          }
-          echo "
+          <input type='hidden' NAME='pathcol' VALUE='7'>
           <INPUT type='submit' value='Convert the paths table into a graph with paths unified'>
          </form>
         </td>
@@ -308,13 +302,7 @@
           <input type='hidden' NAME='graph_file' VALUE='$file_location'>
           <input type='hidden' NAME='graph_format' VALUE='path'>
           <input type='hidden' NAME='distinct_path' VALUE='on'>
-          <input type='hidden' NAME='pathcol' VALUE='7'>";
-          if ($out_format == 'tab') {
-            echo "
-            <input type='hidden' NAME='scol' VALUE='1'>
-            <input type='hidden' NAME='tcol' VALUE='2'>";
-          }
-          echo "
+          <input type='hidden' NAME='pathcol' VALUE='7'>          
           <INPUT type='submit' value='Convert the paths table into a graph with paths separated'>
          </form>
         </td>
