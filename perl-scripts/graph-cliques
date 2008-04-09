@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-clique,v 1.4 2008/04/08 12:42:19 rsat Exp $
+# $Id: graph-cliques,v 1.1 2008/04/09 09:11:34 jvanheld Exp $
 #
 ############################################################
 
@@ -67,7 +67,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
     %main::infile = ();
     %main::outfile = ();
