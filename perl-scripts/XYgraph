@@ -816,7 +816,7 @@ sub GnuPlotEPS {
   if ($tmp_file) {
     unlink $tmp_file;
   }
-  	
+
   ##  use ps2pdf to convert it into a pdf file
   if ($img_format eq "pdf") {
     my $ps2pdf_cmd = "ps2pdf $outputfile $pdf_outputfile";

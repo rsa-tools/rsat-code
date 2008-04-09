@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.34 2008/01/08 16:33:32 jvanheld Exp $
+# $Id: template,v 1.35 2008/04/09 09:14:40 jvanheld Exp $
 #
 ############################################################
 
@@ -23,7 +23,7 @@ Template for writing new perl scripts.
 
 =head1 AUTHORS
 
-jvanheld@scmbb.ulb.ac.be
+Jacques.van.Helden@ulb.ac.be
 
 =head1 CATEGORY
 
@@ -57,7 +57,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.34 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.35 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
