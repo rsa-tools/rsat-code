@@ -2154,7 +2154,7 @@ This option is only useful for GML output.</xsd:documentation>
 	</xsd:sequence>
       </xsd:complexType>
       
-      <xsd:complexType name="GraphCliqueRequest">
+      <xsd:complexType name="GraphCliquesRequest">
 	<xsd:sequence>
 	  <xsd:element name="informat" type="xsd:string" minOccurs="1">
 	    <xsd:annotation>
@@ -3266,7 +3266,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-      <xsd:complexType name="GraphCliqueResponse">
+      <xsd:complexType name="GraphCliquesResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
@@ -3935,18 +3935,18 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>      
       
-      <xsd:element name="graph_clique">
+      <xsd:element name="graph_cliques">
 	<xsd:complexType>
 	  <xsd:sequence>
-	    <xsd:element name="request" type="tns:GraphCliqueRequest" />
+	    <xsd:element name="request" type="tns:GraphCliquesRequest" />
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
 
-      <xsd:element name="graph_cliqueResponse">
+      <xsd:element name="graph_cliquesResponse">
 	<xsd:complexType>
 	  <xsd:sequence>
-	    <xsd:element name="response" type="tns:GraphCliqueResponse" />
+	    <xsd:element name="response" type="tns:GraphCliquesResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>      
@@ -4321,11 +4321,11 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="alter_graphResponse">
     <part name="output" element="tns:alter_graphResponse"/>
   </message>
-  <message name="graph_cliqueRequest">
-    <part name="parameters" element="tns:graph_clique"/>
+  <message name="graph_cliquesRequest">
+    <part name="parameters" element="tns:graph_cliques"/>
   </message>
-  <message name="graph_cliqueResponse">
-    <part name="output" element="tns:graph_cliqueResponse"/>
+  <message name="graph_cliquesResponse">
+    <part name="output" element="tns:graph_cliquesResponse"/>
   </message>
 
 
@@ -4590,10 +4590,10 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 	      <documentation>Alter a graph either by adding or removing edges or nodes
 	      </documentation>
       </operation>
-      <operation name="graph_clique">
-	      <input name="GraphCliqueRequest" message="tns:graph_cliqueRequest"/>
-	      <output name="GraphCliqueResponse" message="tns:graph_cliqueResponse"/>         
-	      <documentation>Find all cliques of a sizes in a graph
+      <operation name="graph_cliques">
+	      <input name="GraphCliquesRequest" message="tns:graph_cliquesRequest"/>
+	      <output name="GraphCliquesResponse" message="tns:graph_cliquesResponse"/>         
+	      <documentation>Find all cliques in a graph
 	      </documentation>
       </operation>
       <operation name="display_graph">
@@ -4917,7 +4917,7 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 		      <soap:body use="literal" />
 	      </output>
       </operation>
-      <operation name="graph_clique">
+      <operation name="graph_cliques">
 	      <soap:operation soapAction=""/>
 	      <input>
 		      <soap:body use="literal" />
