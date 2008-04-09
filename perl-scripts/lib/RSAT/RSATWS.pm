@@ -3115,7 +3115,7 @@ sub alter_graph {
   &run_WS_command($command, $output_choice, "alter-graph");
 }
 ##########
-sub graph_clique {
+sub graph_cliques {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
   my $output_choice = $args{"output"};
@@ -3123,7 +3123,7 @@ sub graph_clique {
     $output_choice = 'both';
   }
   
-  my $command = "$SCRIPTS/graph-clique";
+  my $command = "$SCRIPTS/graph-cliques";
   
   if ($args{informat}) {
    my $in_format = $args{informat};
