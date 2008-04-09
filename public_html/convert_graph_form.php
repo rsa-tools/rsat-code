@@ -58,8 +58,8 @@
     <option value = 'path'> path format
     </select><br>");
   } else {
-    echo ": $query_graph_format<br>";
-    echo "<input type='hidden' NAME='in_format' VALUE='$query_graph_format'>";
+    echo ": $graph_format<br>";
+    echo "<input type='hidden' NAME='in_format' VALUE='$graph_format'>";
   } 
    
   echo("<br>
@@ -102,6 +102,10 @@
     echo "<input type='hidden' NAME='ec_col' VALUE='$eccol'/>\n";
     echo "<input type='hidden' NAME='sc_col' VALUE='$sccol'/>\n";
     echo "<input type='hidden' NAME='tc_col' VALUE='$tccol'/>\n";
+  }
+  if ($graph_format == 'path') {
+    echo "<input type='hidden' NAME='path_col' VALUE='$pathcol'/>\n";
+    echo "<input type='hidden' NAME='distinct_path' VALUE='$distinct_path'/>\n";
   }
   echo("
   <input type='checkbox' name='layout' value='on' $default_layout/>&nbsp;<B><a href = 'help.convert_graph.html#layout'>Calculate the layout of the nodes (only relevant for GML output)</a></B><br>
