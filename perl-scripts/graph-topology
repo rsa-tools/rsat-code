@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-topology,v 1.1 2008/04/10 15:53:06 rsat Exp $
+# $Id: graph-topology,v 1.2 2008/04/10 16:28:54 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -201,7 +201,7 @@ package main;
     print $out join("\t", "#id", "in_deg", "out_deg", "degree", "ktype") if ($directed);
     print $out join("\t", "#id", "degree") if (!$directed);
     if (!$degree_only) {
-      print $out join("\t","btwnes", "closnes");
+      print $out join("\t","\tbtwnes", "closnes");
     }  
     print $out "\n";
     ################################################################
