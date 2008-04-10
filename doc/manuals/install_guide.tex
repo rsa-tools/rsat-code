@@ -460,6 +460,7 @@ $<$http://www.cs.wisc.edu/\~{}ghost$>$ to create PNG and PDF output, and
 \program{MotifSampler} (Gert Thijs),
 \program{gibbs} (Andrew Neuwald).
 
+
 \end{description}
 
 
@@ -491,6 +492,14 @@ In order to add functionalities to \RSAT, install some or all of these
 programs and include their binaries path rsa-tools/bin. If you are not
 familiar with the installation of unix programs, ask assistance to
 your system administrator.
+
+For NeAT, we recommand you to compile the program floydwarshall.c located in the contrib/floydwarshall directory of \RSAT. To this, use this command : 
+
+\begin{verbatim}
+gcc $RSAT/contrib/floydwarshall/floydwarshall.c -o $RSAT/bin/floydwarshall
+\end{verbatim}
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
