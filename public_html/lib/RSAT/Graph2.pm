@@ -105,7 +105,7 @@ sub new {
     $self->force_attribute("real", $real);
     # $maxarc represents the number of time that an arc may be duplicated.
     $self->force_attribute("nb_arc_bw_node", $max_arc);
-    # %nodes_name_id correspondance between the name of an arc and its internal id in the @arcs array.
+    # %arcs_name_id correspondance between the name of an arc and its internal id in the @arcs array.
     # the key of the hash is source_target_x, with x an integer from 1 to $max_arc;
     $self->set_hash_attribute("arcs_name_id", %arcs_name_id);
    
@@ -1421,6 +1421,8 @@ sub read_from_table {
       
     }
     $self->load_from_array(@array);
+   
+    
     return $self;
 }
 ######################################################################################
@@ -2067,6 +2069,11 @@ sub load_from_array {
     # Save the tables
     $self->set_array_attribute("out_neighbours", @out_neighbours);
     $self->set_array_attribute("in_neighbours", @in_neighbours);
+    
+    
+
+    
+    
     $self->set_array_attribute("in_label", @arc_in_label);
     $self->set_array_attribute("out_label", @arc_out_label);
     $self->set_array_attribute("in_color", @arc_in_color);
@@ -2081,6 +2088,7 @@ sub load_from_array {
     
     $self->force_attribute("nb_arc_bw_node", $max_arc_nb);
     
+
 }
 
 ################################################################
@@ -2641,7 +2649,7 @@ sub to_rnsc {
     
     my ($self) = shift;
     my @out_neighbours = $self->get_attribute("out_neighbours");
-    my @in_neihgbours = $self->get_attribute("in_neighbours");
+    my @in_neighbours = $self->get_attribute("in_neighbours");
     my %nodes_name_id = $self->get_attribute("nodes_name_id");
     my $rnsc = "";
     # print the adjacency table of label
@@ -2941,6 +2949,123 @@ sub gaussian_rand {
 }
 
 return 1;
+
+#############################################################
+################################################################
+=pod
+
+=item B<c_topology($arc_id)>
+
+# Calculates the closeness and the betweenness of all nodes.
+# It first runs a C program ($RSAT/bin/floydwarshall) to calculate 
+# the shortest path between all nodes in a network
+
+
+=cut 
+
+sub c_topology {
+  my ($self, $directed) = (shift, shift);
+  my $floydwarshall = $ENV{RSAT}."/bin/floydwarshall";
+#   my $floydwarshall = $ENV{RSAT}."/bin/fw-test";
+  my %nodes_id_name = $self->get_attribute("nodes_id_name");
+  
+  my @out_neighbours = $self->get_attribute("out_neighbours");
+  my @in_neighbours = $self->get_attribute("in_neighbours");
+  my @out_labels = $self->get_attribute("out_label");
+  my @in_labels = $self->get_attribute("in_label");
+  my %betweenness = ();
+  my %distances = ();
+  my %closeness = ();
+  
+  my $real = $self->get_weights();
+  
+#   print join(" ",%nodes_id_name);
+  
+  
+  my $outfile = $main::outfile{output};
+  my $dir = ".";
+  if ($outfile) {
+    my ($outdir, $outfile) = &RSAT::util::SplitFileName($outfile);
+    $dir = $outdir;
+    $dir = "." if ($dir eq "");
+  }
+  $dir .= "/";
+  my $fw_input_file = `mktemp floydwarshall.input.XXXXX`;
+  my $fw_output_file = `mktemp floydwarshall.output.XXXXX`;
+  chomp $fw_input_file;
+  chomp $fw_output_file;
+  my @empty_array = ();
+  for ($i = 0; $i < scalar (keys (%nodes_id_name)); $i++) {
+    push @empty_array, 0;
+  }
+  # Write the adjacency matrix in the format required by $ENV{RSAT}."/bin/floydwarshall
+  open FWINPUTFILE, "> $fw_input_file";
+  print FWINPUTFILE scalar (keys %nodes_id_name)."\n";
+  for (my $i = 0; $i < scalar (keys %nodes_id_name); $i++) {
+    @weight_list = @empty_array;
+    @i_neighbours = ();
+    @i_neighbours = (@i_neighbours, @{$out_neighbours[$i]}) if (defined $out_neighbours[$i]);
+#     print "SOURCE $i OUT :";
+    for (my $j = 0; $j < scalar @i_neighbours; $j++) {
+#       print "$i_neighbours[$j] ";
+      my $neighbour = $i_neighbours[$j];
+      $label = 1;
+      $label = $out_labels[$i][$j] if ($real);
+      $weight_list[$neighbour] = $label;
+      
+    }
+#     print "\n###lala####\n";
+    if (!$directed) {
+      @i_neighbours = ();
+      @i_neighbours = (@i_neighbours, @{$in_neighbours[$i]}) if (defined $in_neighbours[$i]);
+      for (my $j = 0; $j < scalar @i_neighbours; $j++) {
+        my $neighbour = $i_neighbours[$j];
+        $label = 1;
+        $label = $in_labels[$i][$j] if ($real);
+        $weight_list[$neighbour] = $label;
+      }
+    }
+    $weight_list[$i] = 0;
+    print FWINPUTFILE join (" ",@weight_list)."\n";
+  }
+  # Create and launch the command
+  my $fw_command = "$floydwarshall $fw_input_file > $fw_output_file";
+  &RSAT::message::Info("\t", "Computing all shortest paths") if ($main::verbose >= 2);
+  system ("$fw_command");
+  # Read the file computed via the C algorithm
+  open (FWINPUTFILE, $fw_output_file);
+  my $pathnb = 0;
+  my %nodes = ();
+  &RSAT::message::Info("\t", "Computing all closeness and betweenness") if ($main::verbose >= 2);
+
+  while (my $ligne = <FWINPUTFILE>) {
+    next if ($ligne =~ /No route/);
+    my @lignecp = split / /, $ligne;
+    my $source = $nodes_id_name{$lignecp[0]};
+    my $target = $nodes_id_name{$lignecp[1]};
+    my $path = $lignecp[2];
+    my $dist = $lignecp[3]; 
+    my @pathcp = split /,/, $path;
+    for (my $i = 0; $i < scalar @pathcp; $i++) {
+      my $inter_node = $nodes_id_name{$pathcp[$i]};
+      $betweenness{$inter_node}++; 
+    }
+    ${$distances{$source}}[0] += $dist;
+    ${$distances{$source}}[1] ++;
+    $pathnb++;
+    $nodes{$source}++;
+    $nodes{$target}++;
+  }
+  foreach my $node (keys %nodes) {
+    $betweenness{$node} /=  $pathnb;
+    $closeness{$node} = ${$distances{$node}}[0] / ${$distances{$node}}[1];
+  }
+  system ("rm $fw_input_file $fw_output_file");
+  return (\%betweenness, \%closeness);
+}
+
+
+
 
 ################################################################
 =pod
