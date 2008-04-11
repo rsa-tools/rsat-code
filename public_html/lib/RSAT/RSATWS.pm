@@ -3470,6 +3470,124 @@ sub graph_node_degree {
 
 }
 
+
+#################################
+# graph-topology
+
+sub graph_topology {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $tmp_outfile = `mktemp $TMP/graph_topology.XXXXXXXXXX`;
+    chomp $tmp_outfile;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+#     print TMP_OUT $result;
+#     print TMP_OUT "KEYS ".keys(%args);
+    close TMP_OUT;
+    my $command = $self->graph_topology_cmd(%args);
+    $command .= " -o '$tmp_outfile'";
+
+    system $command;
+    my $result = `cat $tmp_outfile`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+
+    }
+
+    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"graph_topology",output_choice=>$output_choice);
+
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+}
+
+
+
+sub graph_topology_cmd {
+  my ($self, %args) = @_;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+  my $command = "$SCRIPTS/graph-topology";
+  
+  if ($args{informat}) {
+   my $in_format = $args{informat};
+   $in_format =~ s/\'//g;
+   $in_format =~ s/\'//g;
+   $command .= " -in_format $in_format";
+  }
+  if ($args{wcol}) {
+   my $wcol = $args{wcol};
+   $wcol =~ s/\'//g;
+   $wcol =~ s/\'//g;
+   $command .= " -wcol $wcol";
+  }
+  if ($args{scol}) {
+   my $scol = $args{scol};
+   $scol =~ s/\'//g;
+   $scol =~ s/\'//g;
+   $command .= " -scol $scol";
+  }
+  if ($args{tcol}) {
+   my $tcol = $args{tcol};
+   $tcol =~ s/\'//g;
+   $tcol =~ s/\'//g;
+   $command .= " -tcol $tcol";
+  }
+  if ($args{all}) {
+   my $tcol = $args{tcol};
+   $command .= " -all";
+  }
+  if ($args{directed}) {
+   $command .= " -directed";
+  }
+  if ($args{'return'}) {
+   my $return = $args{'return'};
+   $tcol =~ s/\'//g;
+   $tcol =~ s/\'//g;
+   $command .= " -return $return";
+  }
+  if ($args{inputgraph}) {
+   my $input_graph = $args{inputgraph};
+   chomp $input_graph;
+   my $tmp_input = `mktemp $TMP/graph-topology-input-graph.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
+   print TMP_IN $input_graph;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  if ($args{nodefile}) {
+   my $nodefile = $args{nodefile};
+   chomp $nodefile;
+   my $tmp_input = `mktemp $TMP/graph-topology-input-nodes.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open clusters temp file ".$tmp_input."\n";
+   print TMP_IN $nodefile;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -nodef '".$tmp_input."'";
+  }
+  return ($command);
+
+}
+
 ##########
 sub graph_cluster_membership {
     my ($self, $args_ref) = @_;

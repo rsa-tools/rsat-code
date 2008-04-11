@@ -152,7 +152,7 @@
       $response =  $echoed->response;
 //       print_r ($response);
       $command = $response->command;
-      echo "$command";
+//       echo "$command";
       $server = $response->server;
       $client = $response->client;
       $server = rtrim ($server);
