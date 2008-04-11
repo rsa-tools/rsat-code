@@ -2990,8 +2990,10 @@ sub c_topology {
     $dir = "." if ($dir eq "");
   }
   $dir .= "/";
-  my $fw_input_file = `mktemp floydwarshall.input.XXXXX`;
-  my $fw_output_file = `mktemp floydwarshall.output.XXXXX`;
+  my $fw_input_file_cmd = "mktemp $dir"."/floydwarshall.input.XXXXX";
+  my $fw_output_file_cmd = "mktemp $dir"."/floydwarshall.output.XXXXX";
+  my $fw_input_file = `$fw_input_file_cmd`;
+  my $fw_output_file = `$fw_output_file_cmd`;
   chomp $fw_input_file;
   chomp $fw_output_file;
   my @empty_array = ();

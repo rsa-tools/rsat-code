@@ -2154,7 +2154,7 @@ This option is only useful for GML output.</xsd:documentation>
 	</xsd:sequence>
       </xsd:complexType>
       
-      <xsd:complexType name="GraphCliqueRequest">
+      <xsd:complexType name="GraphCliquesRequest">
 	<xsd:sequence>
 	  <xsd:element name="informat" type="xsd:string" minOccurs="1">
 	    <xsd:annotation>
@@ -2176,9 +2176,14 @@ This option is only useful for GML output.</xsd:documentation>
 	      <xsd:documentation>Specify a column of the input graph that contains the target nodes for the tab-delimited format (default = 2).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="sizes" type="xsd:string" minOccurs="0">
+	  <xsd:element name="min_size" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>Specify the size of the clique you are looking for. If more than one size is requested, use ',' to separate the values</xsd:documentation>
+	      <xsd:documentation>Minimum size of the clique to return.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="max_size" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Maximum size of the clique to return.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	</xsd:sequence>
@@ -2373,7 +2378,57 @@ Note that the graphs do not specially need to contain actual self-loops, the que
 	</xsd:sequence>
       </xsd:complexType>
       
-     
+      <xsd:complexType name="GraphTopologyRequest">
+	<xsd:sequence>
+	  <xsd:element name="informat" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input format. Supported: tab, gml.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="all" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>The degree of all nodes will be computed.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="return" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>return type : degree, closeness, betweenness. More than one statistics can be returned by separating the fields with ','. To return all implemented statistics, you can use all.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="inputgraph" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>A graph in the format specified by the informat tag.</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="nodefile" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>A file containing the nodes for which you want to know the degree and other statistics.</xsd:documentation>
+	    </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="directed" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Specifies whether the graph is directed or not (i.e. edge A-B corresponds to edge B-A). In this case, the betweenness and the closeness calculation will be rather different. By default the graph is not directed.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="wcol" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Specify a column of the input graph that contains an edge weight or an edge label (default none) for the tab-delimited format.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="scol" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Specify a column of the input graph that contains the source nodes for the tab-delimited format (default = 1).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tcol" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Specify a column of the input graph that contains the target nodes for the tab-delimited format (default = 2).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+      
+      
       <xsd:complexType name="GraphClusterMembershipRequest">
 	<xsd:sequence>
 	  <xsd:element name="informat" type="xsd:string" minOccurs="0">
@@ -3261,7 +3316,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-      <xsd:complexType name="GraphCliqueResponse">
+      <xsd:complexType name="GraphCliquesResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
@@ -3318,6 +3373,26 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
+      <xsd:complexType name="GraphTopologyResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="GraphClusterMembershipResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3930,18 +4005,18 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>      
       
-      <xsd:element name="graph_clique">
+      <xsd:element name="graph_cliques">
 	<xsd:complexType>
 	  <xsd:sequence>
-	    <xsd:element name="request" type="tns:GraphCliqueRequest" />
+	    <xsd:element name="request" type="tns:GraphCliquesRequest" />
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
 
-      <xsd:element name="graph_cliqueResponse">
+      <xsd:element name="graph_cliquesResponse">
 	<xsd:complexType>
 	  <xsd:sequence>
-	    <xsd:element name="response" type="tns:GraphCliqueResponse" />
+	    <xsd:element name="response" type="tns:GraphCliquesResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>      
@@ -3991,6 +4066,23 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
+      
+      <xsd:element name="graph_topology">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:GraphTopologyRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="graph_topologyResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:GraphTopologyResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+      
       <xsd:element name="graph_cluster_membership">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4316,11 +4408,11 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="alter_graphResponse">
     <part name="output" element="tns:alter_graphResponse"/>
   </message>
-  <message name="graph_cliqueRequest">
-    <part name="parameters" element="tns:graph_clique"/>
+  <message name="graph_cliquesRequest">
+    <part name="parameters" element="tns:graph_cliques"/>
   </message>
-  <message name="graph_cliqueResponse">
-    <part name="output" element="tns:graph_cliqueResponse"/>
+  <message name="graph_cliquesResponse">
+    <part name="output" element="tns:graph_cliquesResponse"/>
   </message>
 
 
@@ -4346,6 +4438,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 
   <message name="graph_node_degreeResponse">
     <part name="output" element="tns:graph_node_degreeResponse"/>
+  </message>
+ 
+  <message name="graph_topologyRequest">
+    <part name="parameters" element="tns:graph_topology"/>
+  </message>
+
+  <message name="graph_topologyResponse">
+    <part name="output" element="tns:graph_topologyResponse"/>
   </message>
 
   <message name="graph_cluster_membershipRequest">
@@ -4585,10 +4685,10 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 	      <documentation>Alter a graph either by adding or removing edges or nodes
 	      </documentation>
       </operation>
-      <operation name="graph_clique">
-	      <input name="GraphCliqueRequest" message="tns:graph_cliqueRequest"/>
-	      <output name="GraphCliqueResponse" message="tns:graph_cliqueResponse"/>         
-	      <documentation>Find all cliques of a sizes in a graph
+      <operation name="graph_cliques">
+	      <input name="GraphCliquesRequest" message="tns:graph_cliquesRequest"/>
+	      <output name="GraphCliquesResponse" message="tns:graph_cliquesResponse"/>         
+	      <documentation>Find all cliques in a graph
 	      </documentation>
       </operation>
       <operation name="display_graph">
@@ -4607,6 +4707,11 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 	      <input name="GraphNodeDegreeRequest" message="tns:graph_node_degreeRequest"/>
 	      <output name="GraphNodeDegreeResponse" message="tns:graph_node_degreeResponse"/>         
 	      <documentation>Calculates the in / out / global degree for a selection of seed nodes</documentation>
+      </operation>
+      <operation name="graph_topology">
+	      <input name="GraphTopologyRequest" message="tns:graph_topologyRequest"/>
+	      <output name="GraphTopologyResponse" message="tns:graph_topologyResponse"/>         
+	      <documentation>Calculate the node degree, the closeness and the betweenness of each node and specifies if this node is a seed or a target node.</documentation>
       </operation>
       <operation name="graph_cluster_membership">
 	      <input name="GraphClusterMembershipRequest" message="tns:graph_cluster_membershipRequest"/>
@@ -4912,7 +5017,7 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 		      <soap:body use="literal" />
 	      </output>
       </operation>
-      <operation name="graph_clique">
+      <operation name="graph_cliques">
 	      <soap:operation soapAction=""/>
 	      <input>
 		      <soap:body use="literal" />
@@ -4967,6 +5072,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 	      </output>
       </operation>
       <operation name="graph_node_degree">
+	      <soap:operation soapAction=""/>
+	      <input>
+		      <soap:body use="literal" />
+	      </input>
+	      <output>
+		      <soap:body use="literal" />
+	      </output>
+      </operation>
+      <operation name="graph_topology">
 	      <soap:operation soapAction=""/>
 	      <input>
 		      <soap:body use="literal" />
