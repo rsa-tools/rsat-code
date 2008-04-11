@@ -55,7 +55,7 @@
   <tr><td><input type='checkbox' name='colstats' value='on' $default_colstats/></td><td><B>column-wise statistics</B></td>
   <tr><td><input type='checkbox' name='tables' value='on' /></td><td><B>full tables for each statistics</B></td>
   <tr><td><input type='checkbox' name='margins' value='on' /></td><td><B>marginal statistics besides the tables</B></td>
-  
+  </table>
   
   
   <ul><ul><table class='formbutton'>
