@@ -3000,7 +3000,10 @@ sub c_topology {
   }
   # Write the adjacency matrix in the format required by $ENV{RSAT}."/bin/floydwarshall
   open FWINPUTFILE, "> $fw_input_file";
+  # add the number of nodes
   print FWINPUTFILE scalar (keys %nodes_id_name)."\n";
+  # specifies whether the graph is directed or not
+  print FWINPUTFILE $directed."\n" if ($floydwarshall !~ /ndir/);
   for (my $i = 0; $i < scalar (keys %nodes_id_name); $i++) {
     @weight_list = @empty_array;
     @i_neighbours = ();
@@ -3052,6 +3055,10 @@ sub c_topology {
     }
     ${$distances{$source}}[0] += $dist;
     ${$distances{$source}}[1] ++;
+    if (!$directed) {
+      ${$distances{$target}}[0] += $dist;
+      ${$distances{$target}}[1] ++;
+    }
     $pathnb++;
     $nodes{$source}++;
     $nodes{$target}++;
