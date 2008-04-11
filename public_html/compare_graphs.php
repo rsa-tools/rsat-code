@@ -112,7 +112,7 @@
   
     # Open the SOAP client
     $client = new SoapClient(
-                       $neat_wsdl,
+                      $neat_wsdl,
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
