@@ -2979,8 +2979,7 @@ sub c_topology {
   
   my $real = $self->get_weights();
   
-#   print join(" ",%nodes_id_name);
-  
+#   print join("\n",%nodes_id_name);
   
   my $outfile = $main::outfile{output};
   my $dir = ".";
@@ -3053,7 +3052,8 @@ sub c_topology {
     my @pathcp = split /,/, $path;
     for (my $i = 0; $i < scalar @pathcp; $i++) {
       my $inter_node = $nodes_id_name{$pathcp[$i]};
-      $betweenness{$inter_node}++; 
+      $betweenness{$inter_node}++;
+      $nodes{$inter_node}++;
     }
     ${$distances{$source}}[0] += $dist;
     ${$distances{$source}}[1] ++;
@@ -3066,10 +3066,12 @@ sub c_topology {
     $nodes{$target}++;
   }
   foreach my $node (keys %nodes) {
-    $betweenness{$node} /=  $pathnb;
-    $closeness{$node} = ${$distances{$node}}[0] / ${$distances{$node}}[1];
+    if (defined($betweenness{$node})) {
+      $betweenness{$node} = ($betweenness{$node}/$pathnb);
+    } 
+    $closeness{$node} = (${$distances{$node}}[0] / ${$distances{$node}}[1])  if defined($distances{$node});
   }
-  system ("rm $fw_input_file $fw_output_file");
+#   system ("rm $fw_input_file $fw_output_file");
   return (\%betweenness, \%closeness);
 }
 
