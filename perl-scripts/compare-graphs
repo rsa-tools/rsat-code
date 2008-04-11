@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.46 2008/02/04 17:26:23 rsat Exp $
+# $Id: compare-graphs,v 1.47 2008/04/11 09:57:30 rsat Exp $
 #
 ############################################################
 
@@ -542,7 +542,7 @@ wether it belongs to the intersection or to the query graph only.
 =cut
 	} elsif ($arg eq "-return") {
 	    $return_format = shift(@arguments);
-	    &RSAT::error::FatalError("$return_format\tInvalid input format. Supported: $supported_return_formats")
+	    &RSAT::error::FatalError("$return_format\tInvalid return format. Supported: $supported_return_formats")
 		unless ($supported_return_format{$return_format});
 
 
