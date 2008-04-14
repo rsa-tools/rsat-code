@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.118 2008/03/18 12:04:23 rsat Exp $
+# $Id: matrix-scan,v 1.119 2008/04/14 14:47:50 rsat Exp $
 #
-# Time-stamp: <2008-03-18 12:48:49 jturatsi>
+# Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
 ############################################################
 ## TO DO: add an option to sort hits either by position or by score
@@ -415,6 +415,7 @@ package main;
 
 			      limits=>1, ## Sequence limits (for drawing feature maps)
 			      seq_scores=>1, ## sequence-wise scores
+			      p_score=>1,  ## score as defenined in Bailey 2003
 			      bg_residues=>1, ## composition is atgc of the background model (useful for bg_window)
 			      weight_limits=>1, ## composition is atgc of the background model (useful for bg_window)
 			      
@@ -503,7 +504,15 @@ package main;
     &RSAT::message::Warning("The concept of weight matrix is incompatible with higher order Markov chains. Weight matrix will not be returned.");
     undef($return_fields{weight_matrix});
   }
-  
+
+  ## calculation of p_score requires a threshold on Pval, LogPval or sig
+  if ($return_fields{p_score}){
+  	unless ((defined($uth{pval})) || (defined($lth{pval}))) {
+  		&RSAT::error::FatalError("Computation of p_score requires a pval threshold defined with option -uth pval");
+  	}
+
+    }
+
   ## calculation of CRER requires a threshold on Pval, LogPval or sig
   if ($return_fields{crer}){
   	unless ((defined($uth{pval})) || (defined($lth{pval}))) {
@@ -604,13 +613,21 @@ package main;
     $calc_fields{sites} = 1;
     $calc_fields{pval} = 1;
   }
+
+  if ($return_fields{p_score}) {
+      $calc_fields{sites} = 1;
+      $calc_fields{pval} = 1;
+      $calc_fields{p_score} = 1;
+  }
+  
+
   if ($return_fields{distrib}) {
         $calc_fields{pval} = 1;
   }
   if ($return_fields{crer}){
-   		$calc_fields{sites} = 1;
-    	$calc_fields{pval} = 1;
-   	}
+      $calc_fields{sites} = 1;
+      $calc_fields{pval} = 1;
+  }
 
 
   ## Ensure that all the fields to return are calculated
@@ -860,37 +877,41 @@ package main;
 
   ## Print header
   if ($return_fields{sites}) {
-    print $out "#", join ("\t", 
-			  "seq_id",
-			  "ft_type",
-			  "ft_name",
-			  "strand",
-			  "start",
-			  "end",
-			  "sequence",
-			  "weight",
-			  "proba_M",
-			  "proba_B",
-			 );
-    if ($return_fields{pval}) {
-      print $out "\t", "Pval";
-      print $out "\t", "ln_Pval";
-      print $out "\t", "sig";
-    }
-     if ($return_fields{weight_limits}){
-      	print $out "\t", "Wmin";
-      	print $out "\t", "Wmax";
+      print $out "#", join ("\t", 
+			    "seq_id",
+			    "ft_type",
+			    "ft_name",
+			    "strand",
+			    "start",
+			    "end",
+			    "sequence",
+			    "weight",
+			    "proba_M",
+			    "proba_B",
+			   );
+      
+      if ($return_fields{pval}) {
+	  print $out "\t", "Pval";
+	  print $out "\t", "ln_Pval";
+	  print $out "\t", "sig";
       }
-    if ($return_fields{bg_residues}) {
-      print $out "\t", "a";
-      print $out "\t", "c";
-      print $out "\t", "g";
-      print $out "\t", "t";
-    }
-    print $out "\tnormw" if ($return_fields{normw});
-    print $out "\trank" if ($return_fields{rank});
-    print $out "\trank_pm" if ($return_fields{rank});
-    print $out "\n";
+      
+	  print $out "\t", "p_score" if (defined($uth{pval})&&($return_fields{p_score}));
+      
+      if ($return_fields{weight_limits}){
+	  print $out "\t", "Wmin";
+	  print $out "\t", "Wmax";
+      }
+      if ($return_fields{bg_residues}) {
+	  print $out "\t", "a";
+	  print $out "\t", "c";
+	  print $out "\t", "g";
+	  print $out "\t", "t";
+      }
+      print $out "\tnormw" if ($return_fields{normw});
+      print $out "\trank" if ($return_fields{rank});
+      print $out "\trank_pm" if ($return_fields{rank});
+      print $out "\n";
   }
   
        ## Print header
@@ -1701,7 +1722,7 @@ matrix-scan options
 -bg_pseudo #	pseudo frequency for background model (must be a real between 0 and 1)
 -2str		scan both strands for DNA sequences.
 -1str		single-strand search for DNA sequences.
--return		lists of fields to return. Supported fields: sites, pval, seq_scores, rank, normw,
+-return		lists of fields to return. Supported fields: sites, p_score, pval, seq_scores, rank, normw,
                 limits,weight_limits, distrib, occ_proba, bg_model,bg_residues, matrix, freq_matrix, weight_matrix,crer
 -lth/uth param # : lower/upper threshold on some parameters
 
@@ -2226,7 +2247,7 @@ single-strand search for DNA sequences.
 List of fields to return. 
 
 Supported fields:
-sites,pval,seq_scores,rank,normw,limits,weight_limits,disrib,occ_proba,bg_model,bg_residues,matrix,freq_matrix,weight_matrix,crer
+sites,pval,seq_scores,p_score,rank,normw,limits,weight_limits,disrib,occ_proba,bg_model,bg_residues,matrix,freq_matrix,weight_matrix,crer
 
 =over
 
@@ -2251,6 +2272,12 @@ are calculated in base 10, but this can be modified with the option
 Score each sequence according to Bailey (1998), with the difference
 that, instead of computing the product of P-values, we compute the sum
 of significances.
+
+=item B<p_score:> return the p_score
+
+This score is given by -log(Pval(w)/Pval_tresh). Where Pval(w) is the P-value of the 
+wheight and Pval_tresh the threshold on P-value given by the user.
+ 
 
 =item B<rank:> Rank.
 
@@ -2601,6 +2628,7 @@ sub score_segment {
   ## Calculate segment weight and  normalized weight
   my $score;
   my $normw = $null;
+  my $p_score = $null;
   my $pval = $null;
   my $ln_pval = $null;
   my $sig = $null;
@@ -2632,20 +2660,29 @@ sub score_segment {
 
   }
   
-my %prior = $bg_model->get_attribute("suffix_proba");
+  my %prior = $bg_model->get_attribute("suffix_proba");
   
   if (($proba_M > 0) && ($proba_B > 0)) {
       if ($calc_fields{normw}) {
 	  $normw = sprintf("%6.4f", ($score - $matrix->{Wmin})/($matrix->{Wrange}));
       }
       if (($return_fields{weight_limits})&&($bg_method ne "window")){
-      	$Wmin = $matrix->{Wmin};
-      	$Wmax= $matrix->{Wmax};
-       }
+	  $Wmin = $matrix->{Wmin};
+	  $Wmax= $matrix->{Wmax};
+      }
       if ($calc_fields{pval}) {
 	  if (defined(${$main::pval{$matrix}}{$score})) {
 	      $pval_value = ${$main::pval{$matrix}}{$score};
 	      $pval = sprintf("%.1e", $pval_value);
+#	      $uth{pval} = 0.1;#,"\n";
+	      
+	      ####computing p_scores
+# 	      if (defined($uth{pval})){
+ 	      if ($calc_fields{p_score}){
+		  $p_score = &p_score($uth{pval},$pval_value);
+		  $p_score = sprintf("%.${decimals}f",$p_score);
+	      }
+	      
 	      if ($pval_value > 0) {
 		  $ln_pval = sprintf("%.3f", log($pval_value));
 		  $sig = sprintf("%.3f", -log($pval_value)/$sig_base);
@@ -2795,11 +2832,17 @@ my %prior = $bg_model->get_attribute("suffix_proba");
     $match->force_attribute('score',$score);
     $match->force_attribute('proba_M',$proba_M);
     $match->force_attribute('proba_B',$proba_B);
+
+    if (defined($uth{pval}) && ($return_fields{p_score})) {
+	    $match->force_attribute('p_score',$p_score);
+	}
+
     if ($return_fields{pval}) {
       $match->force_attribute('pval',$pval);
       $match->force_attribute('ln_pval',$ln_pval);
       $match->force_attribute('sig',$sig);
     }
+
     if ($return_fields{weight_limits}){
       $match->force_attribute('wmin',$Wmin);
       $match->force_attribute('wmax',$Wmax);
@@ -2832,6 +2875,24 @@ my %prior = $bg_model->get_attribute("suffix_proba");
 
 =over
 
+=item B<p-score>
+
+Compute the p-score as in Bailey 2003.
+
+=back
+
+=cut
+
+sub p_score{
+    my ($p_val_thresh, $score_pval) = @_;
+    my $pscore = -log($score_pval/$p_val_thresh)/$log_base;
+    return $pscore;
+}
+
+=pod
+
+=over
+
 =item B<print_match>
 
 Print the matching site.
@@ -2852,10 +2913,13 @@ sub print_match {
 		     $match->get_attribute('end'),
 		     $match->get_attribute('description'),
 		     $match->get_attribute('score'),
+		    );
+
 #		     sprintf("%5.2g\t%5.2g",
-		     sprintf("%.1e\t%.1e",
+    print $out join("\t",
+		    sprintf("%.1e\t%.1e",
 			     $match->get_attribute('proba_M'),
-			     $match->get_attribute('proba_B')
+			     $match->get_attribute('proba_B'),
 			     )
 		     );
 #			 "site",
@@ -2869,11 +2933,15 @@ sub print_match {
 #				 $proba_M,
 #				 $proba_B,
 #				)
+
     if ($return_fields{pval}) {
       print $out "\t", $match->get_attribute('pval');
       print $out "\t", $match->get_attribute('ln_pval');
       print $out "\t", $match->get_attribute('sig');
     }
+
+    print $out "\t", $match->get_attribute('p_score') if ($return_fields{p_score});
+
     if ($return_fields{weight_limits}){
       print $out "\t", $match->get_attribute('wmin');
       print $out "\t", $match->get_attribute('wmax');
