@@ -32,7 +32,7 @@
   }
 
   title('graph-topology');
-  echo ("<center>Calculate various node topology statistics : the node degree, the betweenness and the closeness. In directed graph, it specifies whehter the nodes are only source or target nodes.\n");
+  echo ("<center>Calculate various node topology statistics : the node degree, the betweenness and the closeness. In directed graph, it specifies whether the nodes are only source or target nodes.\n");
    echo ("<br>This program was developed by 
 	  <a target=_blank href='http://www.bigre.ulb.ac.be/people/Members/sylvain'>Sylvain Broh&eacute;e</a> and
           <a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.
