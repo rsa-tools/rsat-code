@@ -24,7 +24,7 @@
   $default_exAttrib = "";
   $default_algorithm = "rea";
   $default_metabolic = 0;
-  $demoM_graph_id = 'Pathfinder_tmpGraph_b299d55c-a3b2-497b-bda8-e6608646e639.tab';
+  $demo2_graph_id = 'Pathfinder_tmpGraph_d597cd86-3095-475f-99e7-d70a542d072a.tab';
 
   # variables given within workflow
   $pipe = $_REQUEST['pipe'];
@@ -44,13 +44,13 @@
      $default_targets = $demo_targets;
   }
   
-  # demo metabolic path finding
-  $demoM = $_REQUEST['demoM'];
-  if($demoM == 1){
-    $default_weight = "rpairs";
-    $default_sources = "A01297/A01298";
-    $default_targets = "A04458";
-    $default_rank = 1; 
+  # demo 2 graph
+  $demo2 = $_REQUEST['demo2'];
+  if($demo2 == 1){
+    $default_weight = "none";
+    $default_sources = "MID2";
+    $default_targets = "RLM1/SWI4/SWI6";
+    $default_rank = 5; 
   }
 
   title('Pathfinder');
@@ -65,7 +65,7 @@
   <br>
   <br>");
   if(!$pipe){
-  	if(!$demoM){
+  	if(!$demo2){
   	echo("
   	Enter the network here (tab-delimited* or gml):
   	<br>
@@ -84,8 +84,8 @@
   	<br>
   	<br>");
   	}else{
-  	 echo("The metabolic network has been already uploaded. Its network identifier is: $demoM_graph_id<br>
-  	 <input type='hidden' name='graph_id' value=$demoM_graph_id></input>
+  	 echo("The network has been already uploaded. Its network identifier is: $demo2_graph_id<br>
+  	 <input type='hidden' name='graph_id' value=$demo2_graph_id></input>
   	 ");
   	}
   } else {
@@ -97,19 +97,21 @@
   		of 2,656 edges.<br>
   		The seed nodes are the start and end compound of the <a href='http://biocyc.org/YEAST/NEW-IMAGE?object=HEME-BIOSYNTHESIS-II' target='_blank'>heme biosynthesis II pathway</a> as annotated in BioCyc.<br>
   		This pathway is one of the study cases described in Croes et al., J. Mol. Biol. 356: 222-236 (see our <a href='neat_publications.html '>list of publications</a>.)<br>
-  		Note that for this demo, path finding is done on a smaller, undirected graph without differentially weighting compounds and reactions. Use the <a href='http://www.scmbb.ulb.ac.be/Users/didier/pathfinding/' target='_blank'>metabolic pathfinding tool</a> to find paths in the complete KEGG network.<br>
+  		Note that for this demo, path finding is done on a smaller, undirected graph without differentially weighting compounds and reactions (both receive a weight according to their degree).
+  		Use the <a href='http://rsat.scmbb.ulb.ac.be/metabolicpathfinding/metabolicPathfinder_form.jsp'> Metabolic path finding tool</a> to find paths in the complete KEGG network.<br>
   		The path of first rank corresponds to the annotated heme biosynthesis II pathway. To see the influence of the weighting scheme, you can set the weighting scheme to unit weight and the rank to 1 (for quicker computation). You will obtain an entirely different result.<br><br>");
-  }else if($demoM == 1){
-  demo("The demo network consists of all small molecule compounds and sub-reactions (RPAIRS) stored in <a target='_blank' href='http://www.genome.ad.jp/kegg/ligand.html'>KEGG LIGAND</a> (Release 41.0, January 2007). This undirected network has 7,058 sub-reaction nodes and 4,297 compound nodes
-  connected by 28,232 edges. In a comparative evaluation of metabolic path finding, this network with the default parameters of this demo performed best. 
-  See <a target='_blank' href='http://rsat.scmbb.ulb.ac.be/pathfindingsupplementref/index.html'>here</a> for the results of the evaluation.<br>
-  The source and target sub-reactions are taken from the Arginine biosynthesis pathway in <i>E. coli</i>, which is listed among the reference pathways tested.");
+  }else if($demo2 == 1){
+  demo("In this demo, the network has been already pre-loaded. We use the weighted STRING database network, a network of protein-protein interactions, as demo network. Its weights, which describe edge reliability, have been inverted to describe
+  edge costs. The demo network is part of our <a href='http://rsat.scmbb.ulb.ac.be/rsat/data/published_data/nature_protocols/network_analysis/'>sample data collection</a>. We want to recover a signal
+  transduction pathway known to regulate cell wall integrity in <i>S. cerevisiae</i> (Saito and Tatebayashi, J. Biochem, 2004). This pathway is reported to start with WSC1 or MID2 and to end with RLM1, SWI4 or SWI6. 
+  We will look for the lightest paths connecting MID2 to RLM1/SWI4/SWI6, WSC1 being absent in the demo network. The paths of first rank miss one step (ROM2) and replace MPK1 by KSS1, otherwise they are correct. 
+  ROM2 is missing in the demo network. With improved quality of the protein-protein interaction network used, path finding accuracy is expected to increase.");
   }
    echo("
    <br>
    ");
   	if(!$pipe){
-  	 if(!$demoM){
+  	 if(!$demo2){
         echo("<br>
         <a href='help.pathfinder.html#formats'><b>Input format</b></a>&nbsp;
         <select name='in_format'>
@@ -124,7 +126,7 @@
   		info("Input graph format: ".$requested_in_format);
   		echo "<input type='hidden' NAME='pipe_in_format' VALUE='$requested_in_format'>";
   }
- if(!$demoM){
+ if(!$demo2){
   echo("
    	<br>
    <table>
@@ -145,9 +147,6 @@
    <br>");
    if($pipe && ($requested_in_format == 'gml' || $requested_in_format == 'GML')){
     echo("Please make sure to enter the identifiers (numbers) and not the labels of the nodes. If you are unsure about the node identifiers, check the input graph by clicking on 'Graph uploaded from the previous treatment'.");
-   }
-   if($demoM == 1){
-     echo("Please provide KEGG identifiers of sub-reactions (RPAIR) starting with A or of compounds (starting with C)<br>");
    }
    echo("
    Enter source and target nodes:
@@ -171,7 +170,7 @@
   </h2>
   <br>
   <br>");
-  if(!$demoM){
+  if(!$demo2){
     echo("
     <table>
      <tr><td><B><a href = 'help.pathfinder.html#rank'>Rank</a></B></td>                   <td><input type = 'text' name='rank' value = '$default_rank' size = 10></input></td></tr>
@@ -185,7 +184,7 @@
     <br>");
   }else{
    echo("
-    Default weights have been set (sub-reactions = weighting scheme according to RPAIRS type, compounds = degree)<br>
+    The weights have been already set.
     <br>
     <table>
      <tr><td><B><a href = 'help.pathfinder.html#rank'>Rank</a></B></td><td><input type = 'text' name='rank' value = '$default_rank' size = 10></input></td></tr>
@@ -194,7 +193,7 @@
     <br>
    ");
   }
-  if($advanced && !$demoM){
+  if($advanced){
     echo("
     <h4>Advanced Options
     <a href='help.pathfinder.html#advanced'><img src='images/question-mark-button.jpg' width='15' alt='help'></a>
@@ -257,7 +256,7 @@
   <TD><input type='submit' name='.submit' value='GO' /></TD>
   <TD><B><A HREF='pathfinder_form.php?demo=0'>RESET</A></B></TD>
   <TD><B><A HREF='pathfinder_form.php?demo=1'>DEMO1</A></B></TD>
-  <TD><B><A HREF='pathfinder_form.php?demoM=1'>DEMO2</A></B></TD>
+  <TD><B><A HREF='pathfinder_form.php?demo2=1'>DEMO2</A></B></TD>
   <TD><B><A HREF='pathfinder_form.php?advanced=1'>ADVANCED</A></B></TD>
   </form>
   <TD><B><A HREF='help.pathfinder.html'>MANUAL</A></B></TD>
