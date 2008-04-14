@@ -244,7 +244,7 @@
         </form>
       </td>
       <TD>
-        <FORM METHOD='POST' ACTION='graph_node_degree_form.php'>
+        <FORM METHOD='POST' ACTION='graph_topology_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='graph_file' VALUE='$server'>
           <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
@@ -255,7 +255,7 @@
             <input type='hidden' NAME='wcol' VALUE='3'>";
           }
           echo "
-          <INPUT type='submit' value='Nodes degrees computation'>
+          <INPUT type='submit' value='Graph topology statistics'>
         </form>
       </td>
       <TD>
