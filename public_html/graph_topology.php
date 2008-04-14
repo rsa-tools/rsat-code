@@ -44,7 +44,7 @@
   $return_list = join(",", $return_fields);
   
   $all = $_REQUEST['allnodes'];
-  if ($all == 'allnodes') {
+  if ($all == 'all') {
     $all = 1;
   } else {
     $all = 0;
@@ -90,11 +90,11 @@
     $parameters = array( 
       "request" => array(
         "informat"=>$in_format,
-//         "nodefile"=>$nodes,
+        "nodefile"=>$nodes,
         "inputgraph"=>$graph,
         "scol"=>$s_col,
         "tcol"=>$t_col,
-        "all"=>1,
+        "all"=>$all,
         "return"=>$return_list,
         "directed"=>$directed
       )
@@ -117,9 +117,8 @@
     echo "<pre>";
     $echoed = $soap_client->graph_topology($parameters);
     $response =  $echoed->response;
-    
     $command = $response->command;
-    echo "$command";
+    /*echo*/ "$command";
     $server = $response->server;
     $client = $response->client;
     echo "</pre>";
@@ -127,21 +126,45 @@
     $temp_file = explode('/',$server);
     $temp_file = end($temp_file);
     $resultURL = $WWW_RSA."/tmp/".$temp_file;
-    # Display the results
-    echo "The results is available at the following URL ";
-    echo "<a href = '$resultURL'>$resultURL</a>"; 
-    echo "<hr>\n";
-     
    $graph_topology_result = storeFile($server);
+   # Text-to-html
+   $tth_parameters = array( 
+     "request" => array(
+       "inputfile"=>$graph_topology_result,
+       "chunk"=>1000,
+     )
+   );
+   $tth_echoed = $soap_client->text_to_html($tth_parameters);
+   $tth_response =  $tth_echoed->response;
+   $tth_command = $tth_response->command;
+   $tth_server = $tth_response->server;
+   $tth_client = $tth_response->client;
+   echo "</pre>";
+   $tth_server = rtrim ($tth_server);
+   $tth_temp_file = explode('/',$tth_server);
+   $tth_temp_file = end($tth_temp_file);
+   $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;   
    
+    # Display the results
+    echo "The results is available as text file at the following URL ";
+    echo "<a href = '$resultURL'>$resultURL</a><br>"; 
+    echo "The results is available as HTML page at the following URL ";
+    echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
+    echo "<hr>\n"; 
    
+   if ($nodes != "") {
    
    ### CLASSFREQ + XY-GRAPH (all nodes)
    # classfreq
+   if ($directed) {
+     $classfreq_col = 4;
+   } else {
+     $classfreq_col = 2;
+   }
    $cf_all_parameters = array( 
       "request" => array(
         "inputFile"=>$graph_topology_result,
-        "col"=>4,
+        "col"=>$classfreq_col,
         "classinterval"=>1
       )
     );
@@ -226,7 +249,7 @@
    # classfreq
    $cf_in_parameters = array( 
       "request" => array(
-        "inputFile"=>$graph_node_degree_result,
+        "inputFile"=>$graph_topology_result,
         "col"=>2,
         "classinterval"=>1
       )
@@ -264,7 +287,7 @@
      );
      echo "<pre>";
      $xy_in_echoed = $soap_client->xygraph($xy_in_parameters);
-     $xy_in_response =  $xy_in_echoed->response;
+     $xy_in_response = $xy_in_echoed->response;
      $xy_in_command = $xy_in_response->command;
      $xy_in_server = $xy_in_response->server;
      $xy_in_client = $xy_in_response->client;
@@ -312,7 +335,7 @@
    # classfreq
    $cf_out_parameters = array( 
       "request" => array(
-        "inputFile"=>$graph_node_degree_result,
+        "inputFile"=>$graph_topology_result,
         "col"=>3,
         "classinterval"=>1
       )
@@ -430,5 +453,6 @@
        
      </table>";
    }
+  }
   }
 ?>
