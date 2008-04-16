@@ -67,17 +67,17 @@ Read the classification from a text file.
 =cut
 
 sub read_from_file {
-    my ($self, $input_file, $input_format, @args) = @_;
+    my ($self, $input_file, $input_format, $name_file, %args) = @_;
     if ($input_format eq "mcl") {
-	$self->read_mcl($input_file, @args);
+	$self->read_mcl($input_file, %args);
     } elsif ($input_format eq "tab") {
-	$self->read_tab($input_file, @args);
+	$self->read_tab($input_file, %args);
     } elsif ($input_format eq "profiles") {
-	$self->read_profiles($input_file, @args);
+	$self->read_profiles($input_file, %args);
     } elsif ($input_format eq "ermg") {
-	$self->read_ermg($input_file, @args);
+	$self->read_ermg($input_file, %args);
     } elsif ($input_format eq "rnsc") {
-	$self->read_rnsc($input_file, @args);
+	$self->read_rnsc($input_file, $name_file, %args);
     } else {
 	&RSAT::error::FatalError(join ("\t", "Classification::read_from_file", $input_format, "is not a supported input format"));
     }
@@ -194,7 +194,7 @@ third and classes in the seventh column :
 
 A score column can optionally be specified with the argument score_column. 
 
- Usage :  $classificaion->->read_tab($input_file,score_column=3)
+ Usage :  $classification->->read_tab($input_file,score_column=3)
 
 =cut
 sub read_tab {
