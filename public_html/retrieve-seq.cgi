@@ -49,7 +49,7 @@ if ($query->param('single_multi_org') eq 'multi') {
     $command = "$SCRIPTS/retrieve-seq-multigenome";
 
     &cgiMessage(join("<P>",
-		     "The computation can take a more or less important time depending on the taxon size.",
+		     "The computation can take more or less time depending on the taxon size.",
 		     "If the answer does not appear in due time, use the option <i>output email</i>"));
 } else {
     $command = "$SCRIPTS/retrieve-seq";
