@@ -179,56 +179,16 @@ As the real MIPS complexes network, this randomized network contains 12262 edges
 
 
 \paragraph{Contingency table}
-As already explained in a previous section, having $n$ MIPS complexes and $m$ MCL clusters, the contingency table $T$ is
-a $n \cdot m$ matrix where row $i$ corresponds to the $i^{th}$
-annotated complex, and column $j$ to the $j^{th}$ cluster. The value
-of a cell $T_{i,j}$ indicates the number of proteins found in common
-between complex $i$ and cluster $j$.
 
-The clustering quality will be evaluated from this table by calculating the Sensitivity ($Sn$), the Positive predictive
-value ($PPV$), the row wise separation ($Sep_{r}$) and the cluster separation ($Sep_{c}$).
+See the previous chapter (Graph clustering) for a complete description of a contigency table.
 
 \paragraph{Contingency table metrics}
-  A list of metrics and their value. These will be described in the next section.
+ A list of metrics and their value. These will be described in the next section.
 
 \subsubsection{Metrics description}
+
 \paragraph{Sensitivity, Positive predictive value and geometric accuracy}
-
-For each complex, we can calculate an sensitivity value. This corresponds to the maximal fraction of protein of a complex that are attributed by MCL to the same cluster. $Sn$ measures how well proteins belonging to the same complex are grouped within the same cluster.
-\[Sn_{i.}=\frac{max_{i.}(T_{ij})}{N_i}\]
-where $N_i$ corresponds to the size of the complex.
-
-Moreover, for each cluster $j$, we calculated the Positive Predictive Value ($PPV$) which corresponds to the maximal fraction of a cluster belonging to the same complex. This reflects the ability of this cluster to detect one complex.
-\[PPV_{.j}=\frac{max_{.j}(T_{ij})}{M_j}\]
-where $M_j$ corresponds to the cluster size.
-
-To summarize these values at the level of the confusion table, we calculated the average of these values. 
-First, we calculated their classical mean by averaging all the $PPV_{.j}$ and $Sn_{i.}$ values. We also calculated a weighted mean where the clusters and complexes have a weight proportional to their relative size on the the calculation of the mean.
-
-\[Sn = \frac{\sum_{i=1}^nSn_{i.}}{n}\]
-\[PPV = \frac{\sum_{j=1}^mPPV_{.j}}{m}\]
-\[Sn_w = \frac{\sum_{i=1}^nN_iSn_{i.}}{\sum_{i=1}^nN_i}\]
-\[PPV_w = \frac{\sum_{j=1}^mM_jPPV_{.j}}{\sum_{j=1}^mM_j}\]
-
-Sensitivity and $PPV$ reflect two contradictory tendencies of the clustering. $Sn$ increases when all the proteins of the same complex are grouped in the same cluster and $PPV$ decreases when proteins coming from different complexes are grouped in the same cluster. If all the proteins of the network are grouped in the same cluster, we maximize the $Sn$ but the $PPV$ is almost 0. On the other hand, if each protein is placed in a different cluster, the $PPV$ is maximized  but the sensitivity is very low. A compromise must be found between these two cases by using another statistics. We defined the geometric accuracy as the geometrical mean of the $PPV$ and the $Sn$.
-
-\[Acc_g = \sqrt{PPV \cdot Sn}\]
-
-\paragraph{Separation}
-
-We also defined another metrics called \textit{Separation} ($Sep$). High $Sep$ values indicated a high bidirectionnal correspondance between a cluster and a complex.
-
-The row-wise separation estimates how a complex is isolated from the others. Its maximal value is 1 if this correspondance is perfect, i.e., when all the protein of a complex are grouped in one cluster and if this cluster does not contain any other protein. This maximal value may also be reached when the complex is separated between many clusters containing only members of the complex.
-
-\[Sep_{r_{i.}} = \sum_{j=1}^{m}{(\frac{T_{i,j}}{\sum_{j=1}^{m}{T_{i,j}}} \cdot \frac{T_{i,j}}{\sum_{i=1}^{n}{T_{i,j}}})}\]
-
-The column-wise separation indicates how well a cluster isolates one or more complex from the other clusters. The maximal value 1 indicates that a cluster contains all the elements of one or more complexes.  
-
-\[Sep_{c_{.j}} = \sum_{i=1}^{n}{(\frac{T_{i,j}}{\sum_{j=1}^{m}{T_{i,j}}} \cdot \frac{T_{i,j}}{\sum_{i=1}^{n}{T_{i,j}}})}\]
-
-As for the sensitivity and the $PPV$, for each clustering result, all values of $Sep_{c_{.j}}$ and $Sep_{r_{i.}}$ are averaged over all clusters and all complexes. We then calculate a global separation value by calculating the geometrical mean of the average row wise separation and of the average column wise separation.
-
-\[Sep = \sqrt{Sep_c \cdot Sep_r}\]
+See the previous chapter (Graph clustering) for a complete description of a contigency table.
 
 
 \subsubsection{Score comparaison}
