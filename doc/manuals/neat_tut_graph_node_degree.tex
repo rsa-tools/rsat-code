@@ -34,10 +34,10 @@ proteins \cite{Uetz:2000}.
 
 \begin{enumerate}
 
-\item In the \neat menu, select the command \program{stats on node degrees}. 
+\item In the \neat menu, select the command \program{node topology statistics}. 
 
   In the right panel, you should now see a form entitled
-  ``graph-node-degree''.
+  ``graph-topology''.
 
 \item Click on the button \option{DEMO}. 
 
@@ -45,44 +45,49 @@ proteins \cite{Uetz:2000}.
   set up to their appropriate value for the demonstration, i.e., the degree of all nodes will be computed. 
   At the top of the form, you can read some information about the goal of the
   demo, and the source of the data.
+  
+  As this is a protein - protein interaction graph, we can consider that an interaction between a protein A with a 
+  protein B corresponds to an interaction between protein B and protein A. The graph is thus not directed. 
+  
+  You can uncheck the compution of the closeness and betweenness as these statistics will not be discussed in this section and as this process will increase the computation time.
 
 \item Click on the button \option{GO}. 
 
-  The computation should take less than one minute. On one hand, the result page
-  displays a link to the result file and on the other hand the graphics and raw data of the node degree distribution are also available. These will be discussed in the \textit{Interpretation of the results} section.
+  The computation should take less than one minute. 
+  On one hand, the result page displays a link to the result file and on the other hand the graphics and raw data of the node degree distribution are also available. These will be discussed in the \textit{Interpretation of the results} section.
 
 \end{enumerate}
 
 \subsection{Protocol for the command-line tools}
 
 If you have installed a stand-alone version of the NeAT distribution,
-you can use the program \program{graph-node-degree} on the
+you can use the program \program{graph-topology} on the
 command-line. This requires to be familiar with the Unix shell
 interface. If you don't have the stand-alone tools, you can skip this
 section and read the next section (Interpretation of the results).
 
-We will now describe the use of \program{graph-node-degree} as a command line tool. 
+We will now describe the use of \program{graph-topology} as a command line tool. 
 The two two-hybrid dataset described
 in the previous section may be downloaded at the following address \url{http://rsat.scmbb.ulb.ac.be/rsat/data/neat\_tuto\_data/}. 
 This is the file \file{uetz\_2001.tab}.
 
 \begin{enumerate}
 
-\item The first step consist in applying \program{graph-node-degree} on the two-hybrid dataset. To this, go into the
-directory where you downloaded the file \file{uetz\_2001.tab} and use this command.
+\item The first step consist in applying \program{graph-topology} on the two-hybrid dataset. To this, go into the
+directory where you downloaded the file \file{uetz\_2001.tab} and use this command. 
 	
 	{\color{Blue} \begin{footnotesize} 
 		\begin{verbatim}
-	graph-node-degree -v 1 -i uetz_2001.tab -all -o uetz_2001_degrees.tab
+	graph-topology -v 1 -i uetz_2001.tab -return degree -all -o uetz_2001_degrees.tab
 		\end{verbatim} \end{footnotesize}
 	}		
-The file \file{uetz\_2001\_degrees.tab} is created and contains the in-, out- and global degree of each node of the Uetz \textit{et al} data set.
+The file \file{uetz\_2001\_degrees.tab} is created and contains the degree of each node of the Uetz \textit{et al} data set.
 
-\item In the second step, we will study the degree distribution of the nodes. To this, we use the program \program{classfreq} from the RSAT suite that compute the distribution of a set of number. As the graph we are working with is undirected, we will only compute this degree distribution for the global degree of the nodes which is the fourth column of the file \file{uetz\_2001\_degrees.tab} obtained at the previous step.
+\item In the second step, we will study the degree distribution of the nodes. To this, we use the program \program{classfreq} from the RSAT suite that compute the distribution of a set of number. As the graph we are working with is undirected, we will only compute this degree distribution for the global degree of the nodes which is the second column of the file \file{uetz\_2001\_degrees.tab} obtained in the previous step.
 	
 	{\color{Blue} \begin{footnotesize} 
 		\begin{verbatim}
-	classfreq -i uetz_2001_degrees.tab -v 1 -col 4 -ci 1 -o uetz_2001_degrees_freq.tab
+	classfreq -i uetz_2001_degrees.tab -v 1 -col 2 -ci 1 -o uetz_2001_degrees_freq.tab
 		\end{verbatim} \end{footnotesize}
 	}		
 
@@ -102,18 +107,17 @@ The file \file{uetz\_2001\_degrees.tab} is created and contains the in-, out- an
 
 \subsection{Interpretation of the results}
 
-\subsubsection{graph-node-degree result file}
-Open the resulting file produced by \program{graph-node-degree}. 
+\subsubsection{graph-topology result file}
+Open the resulting file produced by \program{graph-topology}. 
 According to the requested level of verbosity (\option{-v \#} option), the file begins with some lines starting with the '\#' or ';' symbols that contains some information about the graph and the description of the columns.
 
-The results consists in a five column data set.
+The results consists in a two columns data set.
 \begin{enumerate}
  \item Node name
- \item Number of ingoing edges
- \item Number of outgoing edges
- \item Global degree (sum of the second and third columns).
- \item Indicate whether the node only contains outgoing edges (source node) or ingoing edges (target node) or both (intermediate).
+ \item Global degree
 \end{enumerate}
+
+Note that if you used the '-directed' option, the resulting file contains 3 more columns specifying the in-degree, the out-degree and whether the node is only a source node or a target node.
 
 \subsubsection{Node degree distribution}
 Let us first have a look at the node degree distribution data file produced by the \program{classfreq} program (raw data). 
