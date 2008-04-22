@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.119 2008/04/14 14:47:50 rsat Exp $
+# $Id: matrix-scan,v 1.120 2008/04/22 08:56:21 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -2913,10 +2913,7 @@ sub print_match {
 		     $match->get_attribute('end'),
 		     $match->get_attribute('description'),
 		     $match->get_attribute('score'),
-		    );
-
 #		     sprintf("%5.2g\t%5.2g",
-    print $out join("\t",
 		    sprintf("%.1e\t%.1e",
 			     $match->get_attribute('proba_M'),
 			     $match->get_attribute('proba_B'),
