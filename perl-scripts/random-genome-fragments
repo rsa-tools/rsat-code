@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.8 2007/10/19 15:02:57 morgane Exp $
+# $Id: random-genome-fragments,v 1.9 2008/04/22 20:18:42 morgane Exp $
 #
 ############################################################
 
@@ -159,7 +159,7 @@ package main;
 	} else {
     	&RSAT::error::FatalError("You should select an organism.");
 	}
-	
+
 	################################################################
     ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
@@ -226,12 +226,12 @@ package main;
    		} elsif ($main::organism_ens) {
    			##use retrieve-ensembl-seq to get the sequence
    			
-   			my $tmp_out_file =`mktemp retrieve_seq_ensembl.XXXXXX`;
-   			chomp($tmp_out_file);
+   			#my $tmp_out_file =`mktemp retrieve_seq_ensembl.XXXXXX`;
+   			#chomp($tmp_out_file);
    			
    			my $retrieve_seq_cmd = " retrieve-ensembl-seq.pl ";
    			$retrieve_seq_cmd .= " -org ".$main::organism_ens;
-   			$retrieve_seq_cmd .= " -chrom ".$main::ens_chroms{$rand_contig_name}->seq_region_name();;
+   			$retrieve_seq_cmd .= " -chrom ".$main::ens_chroms{$rand_contig_name}->seq_region_name();
    			$retrieve_seq_cmd .= " -left ".$rand_start;
    			$retrieve_seq_cmd .= " -right ".$rand_end;
    			if ($rand_strand eq "D") {
@@ -247,14 +247,21 @@ package main;
    			if ($main::mask_coding) {
    				$retrieve_seq_cmd .= " -maskcoding ";
    			}
-   			$retrieve_seq_cmd .= " -o ".$tmp_out_file;
+   			#$retrieve_seq_cmd .= " -o ".$tmp_out_file;
    			if ($main::local_server){
    				$retrieve_seq_cmd .= " -ensemblhost ".$main::local_server;
    			}
 
    			## run command
-   			system("$retrieve_seq_cmd");
-   			push @main::files2remove, $tmp_out_file;
+   			open (ENSEMBLREQUEST, "$retrieve_seq_cmd |");
+			while (<ENSEMBLREQUEST>){
+				print $main::out $_;
+				}
+			close ENSEMBLREQUEST;
+   			
+   			#print ($retrieve_seq_cmd);
+   			#system("$retrieve_seq_cmd");
+   			#push @main::files2remove, $tmp_out_file;
    			
  
    		}
@@ -262,23 +269,23 @@ package main;
 	################################################################
 	## print ensembl sequences
 	
-	if ($main::organism_ens) {
-		if ($main::outfile{output}) {
-			my $seq_files = join (" ",@main::files2remove);
-			close $main::out;
-			system("cat $seq_files >> $main::outfile{output}");
-			open($main::out, ">> $main::outfile{output}"); #open for write, append
-		} else {
-			foreach my $file (@main::files2remove){
-				open TMP, "<$file"
-					or die "Can't read $file : $!";
-				while (<TMP>){
-					print $main::out $_;
-				}
-				close TMP;
-			}
-		}
-	}
+#	if ($main::organism_ens) {
+#		if ($main::outfile{output}) {
+#			#my $seq_files = join (" ",@main::files2remove);
+#			#close $main::out;
+#			#system("cat $seq_files >> $main::outfile{output}");
+#			#open($main::out, ">> $main::outfile{output}"); #open for write, append
+#		} else {
+#			#foreach my $file (@main::files2remove){
+#			#	open TMP, "<$file"
+#			#		or die "Can't read $file : $!";
+#			#	while (<TMP>){
+#			#		print $main::out $_;
+#			#	}
+#			#	close TMP;
+#			}
+#		}
+#	}
 
     ################################################################
     ## Finish verbose
