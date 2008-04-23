@@ -30,7 +30,7 @@ $parameters = " -v 1 -index ";
 ## Limit the analysis to only the 100 first genes
 #$parameters .= " -max_genes 2 ";
 my $max_genes = 100;
-
+my $max_genename_size = 12;
 ################################################################
 #### Compute the query prefix
 my $query_prefix = "footprints";
@@ -41,6 +41,13 @@ if ($query->param('queries') =~ /\S/) {
     $l++;
     $line =~ s/^\s+//;
     my @fields = split /\s+/, $line;
+    if ($fields[0] =~ /^>[actg]+$/i){ # Avoid fasta sequences
+      &cgiError("Fasta sequences are not valid as input. Please use gene identifiers (eg: YFL021W) or gene names (eg: GAL4, NIL1).<P>\n");
+    }elsif ($fields[0] =~ /^[actg]+$/i){
+      &cgiError("Sequences format are not valid as input. Please use gene identifiers (eg: YFL021W) or gene names (eg: GAL4, NIL1).<P>\n");      
+    }elsif(length($fields[0])>= $max_genename_size){ # put a threshold on the size of the gene name
+      &cgiError("The name of the gene is too long and nay not be valid.<P>\n");
+    }
     push @query_genes,  $fields[0];
   }
 
