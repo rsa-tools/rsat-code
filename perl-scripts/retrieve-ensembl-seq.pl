@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.20 2008/03/13 13:58:21 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.21 2008/04/23 14:05:21 rsat Exp $
 #
 # Time-stamp
 #
@@ -14,6 +14,7 @@ BEGIN {
 	push (@INC, "$`lib/");
 	push (@INC, "/home/rsat/src/ensembl/modules/");
 	push (@INC, "/home/rsat/src/bioperl-live/");
+	push (@INC, "/home/rsat/src/ensembl-compara/modules/");
     }
 }
 require "RSA.lib";
@@ -24,6 +25,7 @@ require RSAT::util;
 use Bio::EnsEMBL::Registry;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::DBSQL::SliceAdaptor;
+use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 ################################################################
 #### main package
 package main;
@@ -57,6 +59,11 @@ package main;
   local $mask_coding = 0;
 
   local $output_file;
+  local $homologs_table;
+
+  local $ortho;
+  local $ortho_type;
+  local $taxon;
 
   ## Connection to the EnsEMBL MYSQL database
   local $ensembl_host = 'ensembldb.ensembl.org';  # db at EBI (use outside SCMBB)
@@ -147,7 +154,7 @@ package main;
 
   local $db = Bio::EnsEMBL::Registry->get_DBAdaptor($org, "core");
 
-#    local $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => $ensembl_host, -user => $ensembl_user, -dbname => $dbname);
+#  local $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => $ensembl_host, -user => $ensembl_user, -dbname => $dbname); ## deprecated
 
     &RSAT::message::Debug("Db", $db) if ($main::verbose >= 3);
 
@@ -159,6 +166,14 @@ package main;
   } else {
     $fh = *STDOUT;
   }
+
+  if ($homologs_table) {
+      $table_handle = 'TAB';
+      open $table_handle, ">".$homologs_table || die "cannot open file ".$homologs_table."\n";
+#  } else {
+#      $table_handle = *STDOUT;
+  }
+
   #### print verbose
   &Verbose() if ($verbose);
 
@@ -290,6 +305,11 @@ package main;
 		$gene = $gene_adaptor -> fetch_by_stable_id($id);
 	    }
 	    &Main($gene);
+
+	    # get-orthologs if wanted
+	    if ($ortho) {
+		&Ortho($gene -> stable_id);
+	    }
 	}
     }
 }
@@ -304,6 +324,8 @@ package main;
   ################################################################
   ###### Close output stream
   close $fh if ($output_file);
+
+  close $table_handle if ($homologs_table);
 
   exit(0);
 }
@@ -433,8 +455,24 @@ sub ReadArguments {
       ### Non coding
     } elsif ($ARGV[$a] eq "-noncoding") {
       $non_coding = 1;
-    }
+
+      ### Orthologs
+  } elsif ($ARGV[$a] eq "-ortho") {
+      $ortho  = 1;
+
+      ### Homology type
+  } elsif ($ARGV[$a] eq "-ortho_type") {
+      $ortho_type  = $ARGV[$a+1];
+
+      ### Taxonomic level
+  } elsif ($ARGV[$a] eq "-taxon") {
+      $taxon  = $ARGV[$a+1];
+
+      ### Homologs table
+  } elsif ($ARGV[$a] eq "-homologs_table") {
+      $homologs_table  = $ARGV[$a+1];
   }
+}
 }
 ################################################################
 #### verbose message
@@ -485,9 +523,10 @@ sub Main {
     &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
     # Export sequence to file
-    print $fh ">$gene_id\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
-    print $fh "$sequence\n";
-
+    if ($sequence) {
+	print $fh ">$gene_id\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+	print $fh "$sequence\n";
+    }
   } else { # feattype = mrna, cds, introns...
     # Get transcripts
     @transcripts = @{$gene->get_all_Transcripts};
@@ -544,8 +583,10 @@ sub Main {
 	&RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	# Export sequence to file
-	print $fh ">$gene_id-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
-	print $fh "$sequence\n";
+	if ($sequence) {
+	    print $fh ">$gene_id-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+	    print $fh "$sequence\n";
+	}
       }
 
       # Introns
@@ -598,8 +639,10 @@ sub Main {
 	    &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	    # Export sequence to file
-	    print $fh ">$gene_id-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand\n";
-	    print $fh "$sequence\n";
+	    if ($sequence) {
+		print $fh ">$gene_id-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand\n";
+		print $fh "$sequence\n";
+	    }
 	  }
 	}
 
@@ -619,8 +662,10 @@ sub Main {
 	  &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	  # Export sequence to file
-	  print $fh ">$gene_id-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand\n";
-	  print $fh "$sequence\n";
+	  if ($sequence) {
+	      print $fh ">$gene_id-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand\n";
+	      print $fh "$sequence\n";
+	  }
 	}
       }
 
@@ -653,8 +698,10 @@ sub Main {
 	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	      # Export sequence to file
-	      print $fh ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand\n";
-	      print $fh "$sequence\n";
+	      if ($sequence) {
+		  print $fh ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand\n";
+		  print $fh "$sequence\n";
+	      }
 	    } elsif ($coding_region_end < $exon_end && $coding_region_end > $exon_start) {
 	      $sequence = &GetSequence($coding_region_end + 1, $exon_end);
 	      my $non_coding_exon_left = $coding_region_end + 1;
@@ -666,8 +713,10 @@ sub Main {
 	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	      # Export sequence to file
-	      print $fh ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand\n";
-	      print $fh "$sequence\n";
+	      if ($sequence) {
+		  print $fh ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand\n";
+		  print $fh "$sequence\n";
+	      }
 	    } elsif ($coding_region_start > $exon_end) {
 	      $sequence = &GetSequence($exon -> start(), $exon -> end());
 	      my $size = ($exon -> end() - $exon -> start()) + 1;
@@ -690,8 +739,10 @@ sub Main {
 	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	      # Export sequence to file
-	      print $fh ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
-	      print $fh "$sequence\n";
+	      if ($sequence) {
+		  print $fh ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
+		  print $fh "$sequence\n";
+	      }
 	    }
 	  } else {
 	    $sequence = &GetSequence($exon -> start(), $exon -> end());
@@ -703,8 +754,10 @@ sub Main {
 	    &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	    # Export sequence to file
-	    print $fh ">$gene_id-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
-	    print $fh "$sequence\n";
+	    if ($sequence) {
+		print $fh ">$gene_id-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
+		print $fh "$sequence\n";
+	    }
 	  }
 	}
       }
@@ -739,10 +792,14 @@ sub Main {
 	&RSAT::message::Debug($utr3_sequence) if ($main::verbose >= 3);
 
 	# Export sequence to file
-	print $fh ">$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_start $rsat_strand\n";
-	print $fh "$utr5_sequence\n";
-	print $fh ">$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_start $rsat_strand\n";
-	print $fh "$utr3_sequence\n";
+	if ($utr5_sequence) {
+	    print $fh ">$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_start $rsat_strand\n";
+	    print $fh "$utr5_sequence\n";
+	}
+	if ($utr3_sequence) {
+	    print $fh ">$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_start $rsat_strand\n";
+	    print $fh "$utr3_sequence\n";
+	}
       }
 
       # CDS
@@ -760,8 +817,10 @@ sub Main {
 	&RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	# Export sequence to file
-	print $fh ">$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
-	print $fh "$sequence\n";
+	if ($sequence) {
+	    print $fh ">$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+	    print $fh "$sequence\n";
+	}
       }
     }
 
@@ -793,8 +852,10 @@ sub Main {
       &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
       # Export sequence to file
-      print $fh ">$gene_id-$ref_transcript\t$gene_id-$ref_transcript; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
-      print $fh "$sequence\n";
+      if ($sequence) {
+	  print $fh ">$gene_id-$ref_transcript\t$gene_id-$ref_transcript; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+	  print $fh "$sequence\n";
+      }
     }
   }
 }
@@ -1039,10 +1100,19 @@ sub GetSequence {
 #      print $repeat_type, "\t", $repeat_class, "\n";
 #    }
     my $mini_slice = $slice_adaptor->fetch_by_region('chromosome', $chromosome -> seq_region_name(), $left, $right);
-    my $masked_slice = $mini_slice->get_repeatmasked_seq();
+
+    eval {
+	my $masked_slice = $mini_slice->get_repeatmasked_seq();
+    };
+    if ($@) {
+	&RSAT::message::Warning("Masking of repeats not available for this homolog");
+    } else {
+	my $masked_slice = $mini_slice->get_repeatmasked_seq();
+
 #    my $masked_slice = $mini_slice->get_repeatmasked_seq([],0,{"repeat_class_Dust" => 0});
 #    my $masked_slice = $mini_slice->get_repeatmasked_seq(['TRF']);
-    $sequence = $masked_slice->seq();
+	$sequence = $masked_slice->seq();
+    }
 #    my $unmasked_seq = $slice->seq();
 #    my $hardmasked_seq = $slice->get_repeatmasked_seq();
 #    my $softmasked_seq = $slice->get_repeatmasked_seq(undef, 1);
@@ -1084,11 +1154,135 @@ sub GetSequence {
       }
     }
   }
-  if ($strand == -1) {
+  if (($strand == -1) && ($sequence)) {
     $sequence = &ReverseComplement($sequence);
   }
   return $sequence;
 }
+
+
+  ################################################################
+  ### Get orthologous sequences
+  sub Ortho {
+
+# 	my $genome_db_adaptor = $registry->get_adaptor(
+#     'Multi', 'compara', 'GenomeDB');
+    
+#     ## featch all
+#     my $all_genome_dbs = $genome_db_adaptor->fetch_all();
+# 	foreach my $this_genome_db (@{$all_genome_dbs}) {
+#   		print $this_genome_db->name, "\n";
+# 	}	
+	
+# 	## fetch by slice example
+# 	my $gene_adaptor_M  = $registry->get_adaptor( 'Mouse', 'Core', 'Gene' );
+# 	#my $gene_id = "OTTMUSG00000018868" ; 	
+# 	my $gene_id_M = "ENSMUSG00000038253";
+# 	my $gene_M = $gene_adaptor_M -> fetch_by_stable_id($gene_id_M);
+# 	my $chromosome_M = $gene_M -> slice;
+	
+# 	my $gdb = $genome_db_adaptor->fetch_by_Slice($chromosome_M);
+# 	print $gdb->name;
+	
+# 	die();
+
+#      if (scalar(@queries) > 1) {
+#	  &RSAT::message::Warning("Only your first query will be treated");
+#      }
+      
+      my $ortho_id = shift;
+      
+      my $compara_dbname = 'Multi';
+#     my $compara_dbname = 'compara'; ## works also...
+      
+      my $ma = Bio::EnsEMBL::Registry->get_adaptor($compara_dbname,'compara','Member');
+
+#     Sample Ids to test
+#     $ortho_id = 'ENSMUSG00000038253';
+#     $ortho_id = 'ENSG00000004059';
+
+      my $member = $ma->fetch_by_source_stable_id('ENSEMBLGENE', $ortho_id);
+      
+      # print out some information about the Member
+      &RSAT::message::Info("# Chrom_name Chrom_start Chrom_end Description Source_name Taxon_id") if ($main::verbose >= 1);
+      &RSAT::message::Info(join (" ", map { $member->$_ } qw(chr_name chr_start chr_end description source_name taxon_id))) if ($main::verbose >= 1);
+      
+      my $compara_taxon = $member->taxon;
+      &RSAT::message::Info("# Common_name; Genus; Species; Organism; Classification") if ($main::verbose >= 1);
+      &RSAT::message::Info(join ("; ", map { $compara_taxon->$_ } qw(common_name genus species binomial classification))) if ($main::verbose >= 1);
+
+      my @taxons = split (/ /, $compara_taxon -> classification);
+      my @limited_taxons;
+
+      if ($taxon) {
+	  foreach $tax (@taxons) {
+	      push(@limited_taxons,$tax);
+	      last if (lc($tax) eq lc($taxon));
+	  }
+      }
+
+      # then you get the homologies where the member is involved
+      my $ha = Bio::EnsEMBL::Registry->get_adaptor($compara_dbname,'compara','Homology');
+      my $homologies = $ha->fetch_all_by_Member($member);
+      # That will return an array reference with all homologies (orthologues, and in some cases paralogues) against other species.
+      # Then for each homology, you get all the Members implicated
+
+      if ($homologs_table) {
+	  print $table_handle "# Gene_id\tOrganism\tGene_description\tHomology_type\tTaxon_level\tPerc_id\tPerc_pos\tPerc_cov\tQuery_gene\tQuery_organism\n";
+      }
+
+      foreach my $homology (@{$homologies}) {
+
+      # You will find different kind of description UBRH, MBRH, MBRH, RHS, YoungParalogues see ensembl-compara/docs/docs/schema_doc.html for more details
+	&RSAT::message::Info("Homology type:",$homology->description,"Taxon:", $homology->subtype) if ($main::verbose >= 1);
+
+	# each homology relation have only 2 members, you should find there the initial member used in the first fetching
+	foreach my $member_attribute (@{$homology->get_all_Member_Attribute}) {
+
+	    # for each Member, you get information on the Member specifically and in relation to the homology relation via Attribute object
+	    my ($member, $attribute) = @{$member_attribute};
+	    &RSAT::message::Info("Gene ID:", $member->stable_id, "Taxon ID:", $member->taxon_id) if ($main::verbose >= 1);
+	    &RSAT::message::Info("Perc. id.:", $attribute->perc_id,"Perc. pos.:",$attribute->perc_pos,"Perc. cov.:",$attribute->perc_cov) if ($main::verbose >= 1);
+
+	    unless ($member->stable_id eq $ortho_id) {
+
+		# Prints all homologs to table if asked for
+		if ($homologs_table) {
+		    print $table_handle join("\t", $member->stable_id, $member->taxon->binomial, $member->description, $homology->description, $homology->subtype, $attribute->perc_id, $attribute->perc_pos, $attribute->perc_cov, $ortho_id, $compara_taxon->binomial,"\n");
+		}
+
+		if ($ortho_type) {
+		    if ($taxon) {
+			foreach $tax (@limited_taxons) {
+			    if (($homology->description =~ /$ortho_type/) && (lc($homology->subtype) eq lc($tax))){
+				$gene = $member->get_Gene;
+				&Main($gene);
+			    }
+			}
+		    } else {
+			if ($homology->description =~ /$ortho_type/) {
+			    $gene = $member->get_Gene;
+			    &Main($gene);
+			}
+		    }
+		} else {
+		    if ($taxon) {
+			foreach $tax (@limited_taxons) {
+			    if (lc($homology->subtype) eq lc($tax)) {
+				$gene = $member->get_Gene;
+				&Main($gene);
+			    }
+			}
+		    } else {
+			$gene = $member->get_Gene;
+			&Main($gene);
+		    }
+		}
+	    }
+	}
+    }
+  }
+
 ################################################################
 #### detailed help message
 sub PrintHelp {
@@ -1125,6 +1319,8 @@ OPTIONS
 
 	-dbname	name of EnsEMBL database
 		(alternative to organism)
+
+        -dbversion 
 
 	-feattype
 		Feature type.
