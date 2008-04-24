@@ -150,6 +150,8 @@
    }
    echo("
    Enter source and target nodes:
+  <br>
+  <font color='#CC6600'>Warning: The source and target node identifiers should match exactly node identifiers of the given network.</font>
   <br>");
   echo("
   <br>
