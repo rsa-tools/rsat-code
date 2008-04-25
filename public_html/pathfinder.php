@@ -2,10 +2,10 @@
 <head>
    <title>NAT Pathfinder</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
-   <style type="text/css">
+      <style type="text/css">
     <!--
-   div.hourglass{position: absolute; top: 80px; left: 400px }
-   div.hide{position: absolute; top: 80px; left: 400px }
+    div.hourglass{position: absolute; top: 80px; left: 400px }
+    div.hide{position: absolute; top: 80px; left: 400px }
    -->
 </style>
 </head>
@@ -204,9 +204,7 @@
        error($fault);
        $error = 1;
     }
-    echo("<div id='hide' class='hide'>
-      <img src='images/hide_hourglass.jpg' height='80' border='0'>
-    </div>");
+    echo("<div id='hide' class='hide'><img src='images/hide_hourglass.jpg' height='60' border='0'></div>");
     ########## Process results ###############
 
     $response =  $echoed->response;
