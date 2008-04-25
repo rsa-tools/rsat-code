@@ -91,7 +91,7 @@ body.info h3, body.info h4 {
 
 }
 
- /* Center of table containing the list of servers  */ 
+ /* Center of table containing the list of servers  */
 
 center.centeredserverlist {
 	margin-top: 10px;
@@ -306,7 +306,7 @@ table.nextstep td, table.nextstep th {
 	padding-right:3px;
 	text-align :center;
 	vertical-align: bottom;
-	
+
 }
 
 table.nextstep th {
@@ -324,7 +324,7 @@ table.title {
 /* 	border-left: 1px solid #cbcbb4; */
 	border: 1px solid #cc6600;
 	margin-bottom : 15px;
-	
+
 }
 
 
@@ -333,7 +333,7 @@ table.title td, table.title th {
 	padding-left:5px;
 	padding-right:5px;
 
-	
+
 }
 
 table.title th {
@@ -349,15 +349,15 @@ table.serverlist {
 	white-space: nowrap;
 	display: inline;
 
-	
-	
+
+
 }
 
 table.serverlist td, table.serverlist tr, table.serverlist th {
 	padding: 0px;
 	font-size: 90%;
 	padding-right: 5px;
-	
+
 
 }
 
@@ -365,3 +365,7 @@ table.serverlist td, table.serverlist tr, table.serverlist th {
 div#serverlist {
   text-align:center;
 }
+
+/* DIV FOR HOURGLASS DISPLAY */
+#hourglass{position: absolute; top: 80px; left: 400px }
+#hide{position: absolute; top: 80px; left: 400px }
