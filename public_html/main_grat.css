@@ -365,7 +365,3 @@ table.serverlist td, table.serverlist tr, table.serverlist th {
 div#serverlist {
   text-align:center;
 }
-
-/* DIV FOR HOURGLASS DISPLAY */
-div#hourglass{position: relative; top: 80px; left: 400px;}
-div#hide{position: relative; top: 80px; left: 400px;}
