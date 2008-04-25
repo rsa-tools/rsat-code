@@ -109,7 +109,7 @@
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
-  
+    flush();
     # Open the SOAP client
     $client = new SoapClient(
                       $neat_wsdl,
