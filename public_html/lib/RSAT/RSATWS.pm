@@ -3111,8 +3111,7 @@ sub alter_graph {
    chomp $tmp_input;
    $command .= " -i '".$tmp_input."'";
   }
-  
-  &run_WS_command($command, $output_choice, "alter-graph");
+  &run_WS_command($command, $output_choice, "alter-graph", $args{outformat});
 }
 ##########
 sub graph_cliques {
@@ -4311,14 +4310,20 @@ Run a command for the web services.
 
 =cut
 sub run_WS_command {
-  my ($command, $output_choice, $method_name) = @_;
+  my ($command, $output_choice, $method_name, $out_format) = @_;
   my $result = `$command`;
   my $stderr = `$command 2>&1 1>/dev/null`;
   if ($stderr) {
     die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
   }
-  my $tmp_outfile = `mktemp $TMP/$method_name.XXXXXXXXXX`;
+  my $tmp_outfile = "";
+  if (defined($out_format) && $out_format ne "") {
+    $tmp_outfile = `mktemp $TMP/$method_name.XXXXXXXXXX.$out_format`;
+  } else {
+    $tmp_outfile = `mktemp $TMP/$method_name.XXXXXXXXXX`;
+  }
   chomp($tmp_outfile);
+
   &UpdateLogFileWS(command=>$command,
 		   tmp_outfile=>$tmp_outfile,
 		   method_name=>$method_name,
