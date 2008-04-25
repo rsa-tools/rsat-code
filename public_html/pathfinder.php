@@ -173,6 +173,7 @@
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
+    flush();
     # Open the SOAP client
     $client = new SoapClient(
                       'http://rsat.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl',
