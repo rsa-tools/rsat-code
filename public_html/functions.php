@@ -281,4 +281,20 @@ Function UpdateLogFile($suite ,$script_name, $message) {
 }
 
 ?>
+<?php
+  Function HourglasOn() {
+  echo("<div id='hourglass' class='hourglass'><img src='images/animated_hourglass.gif' height='50' border='1'></div>");
+}
 
+?>
+<?php
+  Function hourglass($status) {
+  if ($status == "on") {
+    echo("<div id='hourglass' class='hourglass'><img src='images/animated_hourglass.gif' height='50' border='1'></div>");
+    flush();
+  } else {
+    echo("<div id='hide' class='hide'><img src='images/hide_hourglass.jpg'  height='60' border='0'></div>");
+  }
+}
+
+?>
