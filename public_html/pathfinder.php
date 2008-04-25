@@ -2,6 +2,12 @@
 <head>
    <title>NAT Pathfinder</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+   <style type="text/css">
+    <!--
+   div.hourglass{position: absolute; top: 80px; left: 400px }
+   div.hide{position: absolute; top: 80px; left: 400px }
+   -->
+</style>
 </head>
 <body class="results">
 <?php
@@ -173,6 +179,7 @@
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
+    echo("<div id='hourglass' class='hourglass'><img src='images/animated_hourglass.gif' height='50' border='1'></div>");
     flush();
     # Open the SOAP client
     $client = new SoapClient(
@@ -197,7 +204,9 @@
        error($fault);
        $error = 1;
     }
-
+    echo("<div id='hide' class='hide'>
+      <img src='images/hide_hourglass.jpg' height='80' border='0'>
+    </div>");
     ########## Process results ###############
 
     $response =  $echoed->response;

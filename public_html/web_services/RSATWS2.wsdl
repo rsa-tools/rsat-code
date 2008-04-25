@@ -1410,6 +1410,11 @@ Default is 'both'.</xsd:documentation>
 	      <xsd:documentation>Chunk size (when there are many rows, the program splits the table into several HTML tables, to reduce the waiting time on the browser.</xsd:documentation>	
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="no_sort" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>make the output HTML table not sortable.</xsd:documentation>	
+	    </xsd:annotation>
+	  </xsd:element>
 	  <xsd:element name="font" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Use fixed or variable fonts in html. Supported : variable,fixed</xsd:documentation>	
@@ -2387,7 +2392,7 @@ Note that the graphs do not specially need to contain actual self-loops, the que
 	  </xsd:element>
 	  <xsd:element name="all" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>The degree of all nodes will be computed.</xsd:documentation>
+	      <xsd:documentation>The statistics will be computed for all nodes.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="return" type="xsd:string" minOccurs="0">
