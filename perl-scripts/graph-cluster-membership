@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-cluster-membership,v 1.17 2008/04/25 14:57:58 gipsi Exp $
+# $Id: graph-cluster-membership,v 1.18 2008/04/25 14:59:59 gipsi Exp $
 #
 ############################################################
 
@@ -171,7 +171,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     ################################################################
@@ -360,7 +360,7 @@ my $clust2 = $clusters->{'node_cluster'}->{$n2};
 	}
     
     print $main::out ";\tNode-Cluster Membership\n";
-    print $main::out ";\tNodes\Clusters\n";
+    print $main::out ";\tNodes\\Clusters\n";
     foreach my $cluster (@header) {
     	print $main::out "\t","cl_".$cluster;
     }
