@@ -2,6 +2,12 @@
 <head>
    <title>NAT - Pathfinder</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+   <style type="text/css">
+    <!--
+    div.hourglass{position: absolute; top: 80px; left: 500px }
+    div.hide{position: absolute; top: 80px; left: 500px }
+   -->
+</style>
 </head>
 <body class="results">
 <?php
@@ -124,6 +130,7 @@ $graph = rtrim($graph);
     info_link("Graph uploaded from the previous treatment is converted into visML", rsat_path_to_url($graph_location));
     info("Results will appear below");
     echo"<hr>\n";
+    echo("<div id='hourglass' class='hourglass'><img src='images/animated_hourglass.gif' height='50' border='1'></div>");
     flush();
     $client = new SoapClient(
                       'http://rsat.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl',
@@ -144,7 +151,7 @@ $graph = rtrim($graph);
         error($fault);
         $error = 1;
     }
-
+    echo("<div id='hide' class='hide'><img src='images/hide_hourglass.jpg' height='60' border='0'></div>");
 ################ process results ##########################
 
     $response =  $echoed->response;
