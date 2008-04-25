@@ -367,5 +367,5 @@ div#serverlist {
 }
 
 /* DIV FOR HOURGLASS DISPLAY */
-div#hourglass{position: absolute; top: 80px; left: 400px }
-div#hide{position: absolute; top: 80px; left: 400px }
+div#hourglass{position: relative; top: 80px; left: 400px }
+div#hide{position: relative; top: 80px; left: 400px }
