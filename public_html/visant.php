@@ -122,7 +122,10 @@ $graph = rtrim($graph);
       )
     );
     info_link("Graph uploaded from the previous treatment is converted into visML", rsat_path_to_url($graph_location));
-     $client = new SoapClient(
+    info("Results will appear below");
+    echo"<hr>\n";
+    flush();
+    $client = new SoapClient(
                       'http://rsat.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl',
                            array(
                                  'trace' => 1,
