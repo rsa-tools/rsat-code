@@ -2,11 +2,11 @@
 <head>
    <title>Network Analysis Tools - compare-graphs</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
-  <style type="text/css">
-     <!--
-     div.hourglass{position: absolute; top: 80px; left: 400px }
-     div.hide{position: absolute; top: 80px; left: 400px }
-    -->
+      <style type="text/css">
+    <!--
+    div.hourglass{position: absolute; top: 80px; left: 400px }
+    div.hide{position: absolute; top: 80px; left: 400px }
+   -->
 </style>
 </head>
 <body class="results">
@@ -115,8 +115,7 @@
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
-    echo("<div id='hourglass' class='hourglass'><img src='images/animated_hourglass.gif' height='50' border='1'></div>");
-    flush();
+    hourglass("on");
     # Open the SOAP client
     $client = new SoapClient(
                       $neat_wsdl,
@@ -132,9 +131,7 @@
     echo "<pre>";
     $echoed = $client->compare_graphs($parameters);
     echo "</pre>"; 
-    
-        echo("<div id='hide' class='hide'><img src='images/hide_hourglass.jpg' height='60' border='0'></div>");
-
+    hourglass("off");
     $response =  $echoed->response;
     $command = $response->command;
     $server = $response->server;
