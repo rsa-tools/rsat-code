@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.11 2008/02/25 10:15:01 rsat Exp $
+# $Id: display-graph,v 1.12 2008/04/25 07:25:11 rsat Exp $
 #
 ############################################################
 
@@ -19,9 +19,9 @@ Produces the figure of a graph
 
 =head1 AUTHORS
 
-Sylvain Brohée <sylvain@scmbb.ulb.ac.be>
+Sylvain Brohée <sylvain@bigre.ulb.ac.be>
 
-Jacques van Helden <jvanheld@smcbb.ulb.ac.be>
+Jacques van Helden <jvanheld@bigre.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -247,6 +247,10 @@ package main;
       my $p  = new GD::Image ( $max , $max ) ;
       my $white = $p->colorAllocate(255,255,255);
       my $black = $p->colorAllocate(0,0,0);
+      my %colors = ();
+      $colors{"255255255"} = $white;
+      $colors{"000000000"} = $black;
+      
       # make the background transparent and interlaced
       $p->transparent($white);
       $p->interlaced('false');
@@ -269,12 +273,20 @@ package main;
               my $r = hex(substr($edge_color, 1,2));
               my $g = hex(substr($edge_color, 3,2));
               my $b = hex(substr($edge_color, 5,2));
-              my $current_col = $p->colorAllocate($r, $g, $b);
+              my $idcol = join("","$r","$g","$b");
+              my $current_col = $colors{$idcol};
+              if (!defined($current_col)) {
+                $current_col = $p->colorAllocate($r, $g, $b);
+                $colors{"$idcol"} = $current_col;
+              } 
+              
+#               print "$r, $g, $b\n";
               $p->setThickness(1);
               if ($edge_width) {
                 $width = ((($weight-$edge_min)/($edge_max-$edge_min))*6.5)+0.5;
                 $p->setThickness($width);
               }
+#               print "$current_col\n";
               $p->line($source_xpos, $source_ypos, $target_xpos, $target_ypos, $current_col);
             }
           }
