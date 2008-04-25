@@ -193,7 +193,8 @@
             echo "
             <input type='hidden' NAME='scol' VALUE='1'>
             <input type='hidden' NAME='tcol' VALUE='2'>
-            <input type='hidden' NAME='wcol' VALUE='3'>";
+            <input type='hidden' NAME='wcol' VALUE='3'>
+            <input type='hidden' NAME='eccol' VALUE='4'>";
           }
           echo "
           <INPUT type='submit' value='Convert $out_format to another format'>
