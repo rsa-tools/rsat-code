@@ -19,15 +19,16 @@ $supported_output_formats = join (",", (sort keys %supported_output_format));
 $font{variable} = 1;
 
 $chunk = 1000;
+$sorttable = 1;
 
 ################################################################
 ## Read arguments 
 &ReadArguments();
 
-
 ################################################################
 ## Open input file ###
 ($in, $input_dir) = &OpenInputFile($infile{input});
+
 
 
 ################################################################
@@ -38,7 +39,7 @@ $out = &OpenOutputFile($outfile{output});
 ################################################################
 ## Print the header
 if ($out_format eq 'html') {
-  print $out &html_header();
+  print $out &html_header($sorttable);
   &print_verbose_html();
   print &PrintHtmlTable($in, "", "", $chunk, $out, $border);
   print $out &close_table_html();
@@ -114,6 +115,8 @@ OPTIONS
 		chunk size (when there are many rows, the program
 		splits the table into several HTML tables, to reduce
 		the waiting time on the browser.
+	-no_sort
+		make the output HTML table not sortable.
 
 	
 INPUT FORMAT
@@ -138,13 +141,14 @@ sub PrintOptions {
   print HELP <<End_short_help;
 text-to-html options
 ----------------
--h      (must be first argument) display full help message
--help   (must be first argument) display options
--i      input file
--o      output file
--v      verbose
--font	variable
--chunk	chunk size
+-h        (must be first argument) display full help message
+-help     (must be first argument) display options
+-i        input file
+-o        output file
+-v        verbose
+-no_sort  the output table is not sortable
+-font	  variable
+-chunk    chunk size
 End_short_help
   close HELP;
   exit (0);
@@ -197,6 +201,9 @@ sub ReadArguments {
 		unless ($supported_output_format{$out_format}) {
 		  &RSAT::error::FatalError($out_format, "Invalid output format. Supported:", $main::supported_output_formats);
 		}
+		### specifies whether the table must be sorted or not
+	    } elsif ($ARGV[$a] eq "-no_sort") {
+		$sorttable = 0;
 
 		### input file ###
 	    } elsif ($ARGV[$a] eq "-font") {

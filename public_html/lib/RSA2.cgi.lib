@@ -663,11 +663,20 @@ print $query->textfield(-name=>'bg_pseudo',
 ################################################################
 ## Print HTML header
 sub html_header {
+  my $sorttable = shift;
+  if (!defined($sorttable)) {
+    $sorttable = 1;
+  } 
+  # $sorttable is a optional argument. By default, the table contains a 
+  # java script that allows the HTML table 
+  # to be sorted by clicking on the top of the row. 
+  #If $sorttable is equal to 0, then this script will not be included. 
+  #In some cases this has no sense to sort the table.
   my $header = "";
   $header .=  "<html>\n";
   $header .=  "<header>\n";
   $header .=  "<title>$infile{input}</title>\n";
-  $header .= &sorttable_script();
+  $header .= &sorttable_script() if ($sorttable);
   $header .=  "<header>\n";
   $header .=  "<body bgcolor='#ffffff'>\n";
   return $header;
