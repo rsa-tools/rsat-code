@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-cluster-membership,v 1.13 2008/01/30 09:31:53 gipsi Exp $
+# $Id: graph-cluster-membership,v 1.14 2008/04/25 14:05:18 gipsi Exp $
 #
 ############################################################
 
@@ -171,7 +171,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     ################################################################
@@ -199,7 +199,7 @@ package main;
     my $WeightMat= {};
     %main::infile = ();
     %main::outfile = ();
-    $main::verbose = 0;
+    #$main::verbose = 0;
     $main::out = STDOUT;
     $main::norm{stat} = 'weight';
 
