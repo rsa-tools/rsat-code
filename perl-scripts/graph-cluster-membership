@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-cluster-membership,v 1.15 2008/04/25 14:11:19 gipsi Exp $
+# $Id: graph-cluster-membership,v 1.16 2008/04/25 14:40:20 gipsi Exp $
 #
 ############################################################
 
@@ -171,7 +171,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     ################################################################
@@ -230,6 +230,7 @@ package main;
     	chomp $line;	
 	next if ($line =~ /^#/ || $line =~ /^;/);
 	$line =~ s/cluster_//g; # this eliminates the prefix of mcl clusters and leaves only the numeric ID. useful to sort.
+	$line =~ s/cl_//g; # this eliminates the prefix of mcl clusters and leaves only the numeric ID. useful to sort.
 	my @line = split("\t",$line);
 
 	$clusters->{'node_cluster'}->{$line[0]}=$line[1];
@@ -361,7 +362,7 @@ my $clust2 = $clusters->{'node_cluster'}->{$n2};
     
     print $main::out ";\tClusters\n";
     foreach my $cluster (@header) {
-    	print $main::out "\t",$cluster;
+    	print $main::out "\t","cl_".$cluster;
     }
     print $main::out "\n";
     
