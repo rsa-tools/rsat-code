@@ -1795,6 +1795,9 @@ sub text_to_html_cmd {
       $args{font} =~ s/\"//g;
       $command .= " -font '".$args{font}."'";
   }
+  if ($args{no_sort}) {
+      $command .= " -no_sort";
+  }
   return $command;
 }
 
