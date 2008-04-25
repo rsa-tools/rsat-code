@@ -59,6 +59,8 @@ if (exists($options{c})) {
   if ($inflation !~ /^-?\d+\.?\d*$/) {
   die ("$inflation is not a valid inlation value\n");
   }
+} else {
+  die("You must specify an inflation value\n");
 }
 
 # check outputfile
