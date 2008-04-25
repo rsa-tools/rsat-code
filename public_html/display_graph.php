@@ -105,6 +105,7 @@
                            );
     # Execute the command
     # Work with exception catch
+    flush();
     try {
       $echoed = $client->display_graph($parameters);
       $soap_error = 0;
@@ -116,7 +117,6 @@
     } 
     if (!$soap_error) {
       $response =  $echoed->response;
-
       $command = $response->command;
 //       echo "COMMAND $command";
       $server = $response->server;
@@ -125,10 +125,11 @@
       $temp_file = end($temp_file);
       $resultURL = $WWW_RSA."/tmp/".$temp_file;
 
-
+      
       # Display the results 
       echo "The results is available at the following URL ";
-      echo "<a href = '$resultURL'>$resultURL</a>";
+      echo "<a href = '$resultURL'>$resultURL</a><br>";
+      echo "<img src = '$resultURL' width = '50%'>";
    }
  }
 
