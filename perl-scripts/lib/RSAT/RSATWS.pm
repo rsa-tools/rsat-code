@@ -1,3 +1,4 @@
+
 # RSATWS.pm - rsa-tools web services module
 
 package RSATWS;
@@ -1107,39 +1108,46 @@ sub feature_map {
 	$output_choice = 'both';
     }
 
-    my $command = $self->feature_map_cmd(%args);
-#    &run_WS_command($command, $output_choice);
-
-    my $stderr = `$command 2>&1 1>/dev/null`;
-    if ($stderr) {
-        die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-    }
-    my $result = `$command`;
     my $suffix;
     if ($args{'format'}) {
         $suffix = ".".$args{'format'};
     } else {
         $suffix = ".jpg";
     }
-    my ($TMP_OUT, $tmp_outfile) = tempfile(feature_map.XXXXXXXXXX, SUFFIX => $suffix, DIR => $TMP);
-    print $TMP_OUT $result;
-    close $TMP_OUT;
-    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.scmbb\.ulb\.ac\.be\/rsat/g;
+
+    my $command = $self->feature_map_cmd(%args);
+    &run_WS_command($command, $output_choice, "feature_map", $suffix);
+
+#    my $stderr = `$command 2>&1 1>/dev/null`;
+#    if ($stderr) {
+#        die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+#    }
+#    my $result = `$command`;
+#    my $suffix;
+#    if ($args{'format'}) {
+#        $suffix = ".".$args{'format'};
+#    } else {
+#        $suffix = ".jpg";
+#    }
+#    my ($TMP_OUT, $tmp_outfile) = tempfile(feature_map.XXXXXXXXXX, SUFFIX => $suffix, DIR => $TMP);
+#    print $TMP_OUT $result;
+#    close $TMP_OUT;
+#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.scmbb\.ulb\.ac\.be\/rsat/g;
 #    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
 
-    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"feature-map",output_choice=>$output_choice);
+#    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"feature-map",output_choice=>$output_choice);
 
-    if ($output_choice eq 'server') {
-        return SOAP::Data->name('response' => {'command' => $command, 
-                                               'server' => $tmp_outfile});
-    } elsif ($output_choice eq 'client') {
-        return SOAP::Data->name('response' => {'command' => $command,
-                                               'client' => $result});
-    } elsif ($output_choice eq 'both') {
-        return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-                                               'command' => $command, 
-                                               'client' => $result});
-    }
+#    if ($output_choice eq 'server') {
+#        return SOAP::Data->name('response' => {'command' => $command, 
+#                                               'server' => $tmp_outfile});
+#    } elsif ($output_choice eq 'client') {
+#        return SOAP::Data->name('response' => {'command' => $command,
+#                                               'client' => $result});
+#    } elsif ($output_choice eq 'both') {
+#        return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+#                                               'command' => $command, 
+#                                               'client' => $result});
+#    }
 }
 
 sub feature_map_cmd {
@@ -4319,21 +4327,16 @@ sub run_WS_command {
   if ($stderr) {
     die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
   }
-  my $tmp_outfile = "";
-  if (defined($out_format) && $out_format ne "") {
-    $tmp_outfile = `mktemp $TMP/$method_name.XXXXXXXXXX.$out_format`;
-  } else {
-    $tmp_outfile = `mktemp $TMP/$method_name.XXXXXXXXXX`;
-  }
+  my ($TMP_OUT, $tmp_outfile) = tempfile($method_name.".".XXXXXXXXXX, SUFFIX => $out_format, DIR => $TMP);
   chomp($tmp_outfile);
 
   &UpdateLogFileWS(command=>$command,
 		   tmp_outfile=>$tmp_outfile,
 		   method_name=>$method_name,
 		   output_choice=>$output_choice);
-  open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-  print TMP_OUT $result;
-  close TMP_OUT;
+  open $TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+  print $TMP_OUT $result;
+  close $TMP_OUT;
   if ($output_choice eq 'server') {
     return SOAP::Data->name('response' => {'command' => $command,
                                            'server' => $tmp_outfile});
