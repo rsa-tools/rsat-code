@@ -6,6 +6,7 @@
 <body class="results">
 <?php 
   require ('functions.php');
+  
   # log file update
   UpdateLogFile("neat","","");
   title('convert-graph - results');
@@ -123,7 +124,7 @@
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
-  
+    flush();
     # Open the SOAP client
     $client = new SoapClient(
                        $neat_wsdl,
