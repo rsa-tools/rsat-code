@@ -1115,43 +1115,8 @@ sub feature_map {
         $suffix = ".jpg";
     }
 
-    my $command = $self->feature_map_cmd(%args);
-    &run_WS_command($command, $output_choice, "feature_map", $suffix);
-
-#    my $stderr = `$command 2>&1 1>/dev/null`;
-#    if ($stderr) {
-#        die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#    }
-#    my $result = `$command`;
-#    my $suffix;
-#    if ($args{'format'}) {
-#        $suffix = ".".$args{'format'};
-#    } else {
-#        $suffix = ".jpg";
-#    }
-#    my ($TMP_OUT, $tmp_outfile) = tempfile(feature_map.XXXXXXXXXX, SUFFIX => $suffix, DIR => $TMP);
-#    print $TMP_OUT $result;
-#    close $TMP_OUT;
 #    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.scmbb\.ulb\.ac\.be\/rsat/g;
 #    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
-
-#    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"feature-map",output_choice=>$output_choice);
-
-#    if ($output_choice eq 'server') {
-#        return SOAP::Data->name('response' => {'command' => $command, 
-#                                               'server' => $tmp_outfile});
-#    } elsif ($output_choice eq 'client') {
-#        return SOAP::Data->name('response' => {'command' => $command,
-#                                               'client' => $result});
-#    } elsif ($output_choice eq 'both') {
-#        return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-#                                               'command' => $command, 
-#                                               'client' => $result});
-#    }
-}
-
-sub feature_map_cmd {
-    my ($self, %args) =@_;
 
     if ($args{"features"}) {
 	my $features = $args{"features"};
@@ -1333,8 +1298,7 @@ sub feature_map_cmd {
 
     $command .= " -i '".$tmp_infile."'";
 
-    return $command;
-#    &run_WS_command($command, $output_choice, "feature-map");
+    &run_WS_command($command, $output_choice, "feature_map", $suffix);
 }
 
 ##########
