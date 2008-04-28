@@ -2,6 +2,13 @@
 <head>
    <title>NeA-tools - convert-graph</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+   <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+      <style type="text/css">
+    <!--
+    div.hourglass{position: absolute; top: 80px; left: 400px }
+    div.hide{position: absolute; top: 80px; left: 400px }
+   -->
+     </style>
 </head>
 <body class="results">
 <?php 
@@ -41,6 +48,10 @@
     $lth = "";
   } 
   $file_content_tab = "";
+  # Info message
+  info("Results will appear below");
+  echo"<hr>\n";
+  hourglass("on");
   # WGET COMMAND
   for ($i = 0; $i < count($genes); $i++) {
     $genes[$i] = rtrim ($genes[$i]);
@@ -92,9 +103,7 @@
   
   $temp_file = writeTempFile("string", $file_content_tab);
      $resultURL = $WWW_RSA.$temp_file;
-      # Info message
-      info("Results will appear below");
-      echo"<hr>\n";
+hourglass("off");
       # Display the results
       echo "The results is available at the following URL ";
       echo "<a href = '$resultURL'>$resultURL</a>"; 
