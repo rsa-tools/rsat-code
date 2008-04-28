@@ -2446,21 +2446,6 @@ Note that the graphs do not specially need to contain actual self-loops, the que
 	      <xsd:documentation>A graph in the format specified by the informat tag.</xsd:documentation>	
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="wcol" type="xsd:int" minOccurs="0">
-	    <xsd:annotation>
-	      <xsd:documentation>Specify a column of the input graph that contains an edge weight (default none) for the tab-delimited format.</xsd:documentation>
-	    </xsd:annotation>
-	  </xsd:element>
-	  <xsd:element name="scol" type="xsd:int" minOccurs="0">
-	    <xsd:annotation>
-	      <xsd:documentation>Specify a column of the input graph that contains the source nodes for the tab-delimited format (default = 1).</xsd:documentation>
-	    </xsd:annotation>
-	  </xsd:element>
-	  <xsd:element name="tcol" type="xsd:int" minOccurs="0">
-	    <xsd:annotation>
-	      <xsd:documentation>Specify a column of the input graph that contains the target nodes for the tab-delimited format (default = 2).</xsd:documentation>
-	    </xsd:annotation>
-	  </xsd:element>
 	  <xsd:element name="clusters" type="xsd:string" minOccurs="1">
 	    <xsd:annotation>
 	      <xsd:documentation>clustering as a tab-delimited file.</xsd:documentation>	

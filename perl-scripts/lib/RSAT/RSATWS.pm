@@ -1704,52 +1704,18 @@ sub supported_organisms {
 
 ##########
 sub text_to_html {
-    my ($self, $args_ref) = @_;
-    my %args = %$args_ref;
-    my $output_choice = $args{"output"};
-    unless ($output_choice) {
-	$output_choice = 'both';
-    }
-    my $command = $self->text_to_html_cmd(%args);
-    my $result = `$command`;
-    my $stderr = `$command 2>&1 1>/dev/null`;
-    if ($stderr) {
-	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-    }
-    my $tmp_outfile = `mktemp $TMP/text-to-html.XXXXXXXXXX`;
-    chomp $tmp_outfile;
-    system("rm $tmp_outfile");
-    $tmp_outfile .= ".html";
-    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-    print TMP_OUT $result;
-    close TMP_OUT;
-    
-    &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"text-to-html",output_choice=>$output_choice);
-    
-    
-    if ($output_choice eq 'server') {
-      return SOAP::Data->name('response' => {'command' => $command, 
-					     'server' => $tmp_outfile});
-    } elsif ($output_choice eq 'client') {
-      return SOAP::Data->name('response' => {'command' => $command,
-					     'client' => $result});
-    } elsif ($output_choice eq 'both') {
-      return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-					     'command' => $command, 
-					     'client' => $result});
-    }
-}
-
-sub text_to_html_cmd {
-  my ($self, %args) =@_;
-
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
   my $command = "$SCRIPTS/text-to-html";
-
   if ($args{inputfile}) {
    my $input_file = $args{inputfile};
    chomp $input_file;
    my $tmp_input = `mktemp $TMP/text-to-html-input.XXXXXXXXXX`;
-   open TMP_IN, ">".$tmp_input or die "cannot open graph temp file ".$tmp_input."\n";
+   open TMP_IN, ">".$tmp_input or die "cannot open input temp file ".$tmp_input."\n";
    print TMP_IN $input_file;
    close TMP_IN;
    $tmp_input =~ s/\'//g;
@@ -1770,8 +1736,11 @@ sub text_to_html_cmd {
   if ($args{no_sort}) {
       $command .= " -no_sort";
   }
-  return $command;
+  
+  
+  &run_WS_command($command, $output_choice, "text-to-html", "html");
 }
+
 
 ##########
 
@@ -1821,7 +1790,7 @@ sub roc_stats{
   if ($args{total}) {
       $command .= " -total";
   }
-  &run_WS_command($command, $output_choice, "roc-stats");
+  &run_WS_command($command, $output_choice, "roc-stats", "tab");
 }
 
 ##########
@@ -1883,7 +1852,7 @@ sub classfreq {
    chomp $tmp_input;
    $command .= " -i '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "classfreq");
+  &run_WS_command($command, $output_choice, "classfreq", "tab");
 }
 
 ##########
@@ -1898,6 +1867,7 @@ sub convert_classes {
     }
   
   my $command = "$SCRIPTS/convert-classes";
+  my $extension = undef;
   
   if ($args{informat}) {
    my $in_format = $args{informat};
@@ -1910,6 +1880,12 @@ sub convert_classes {
    $out_format =~ s/\'//g;
    $out_format =~ s/\'//g;
    $command .= " -to $out_format";
+   if ($out_format eq 'profiles') {
+     $extension = "tab"
+   } else {
+     $extension = $out_format;
+   }
+
   }
   if ($args{member_col}) {
    my $member_col = $args{member_col};
@@ -1959,7 +1935,7 @@ sub convert_classes {
    chomp $tmp_input;
    $command .= " -names '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "convert-classes");
+  &run_WS_command($command, $output_choice, "convert-classes", $extension);
 }
 
 ##########
@@ -2021,7 +1997,7 @@ sub contingency_stats {
    chomp $tmp_input;
    $command .= " -csizes '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "contingency-stats");
+  &run_WS_command($command, $output_choice, "contingency-stats", "tab");
 }
 
 ##########
@@ -2068,7 +2044,7 @@ sub contingency_table {
    chomp $tmp_input;
    $command .= " -i '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "contingency-table");
+  &run_WS_command($command, $output_choice, "contingency-table", "tab");
 }
 
 ##########
@@ -2437,7 +2413,7 @@ sub compare_classes {
     $command .= " -matrix '".$matrix."'";
   }
 
- &run_WS_command($command, $output_choice, "compare-classes");
+ &run_WS_command($command, $output_choice, "compare-classes", "tab");
 }
 
 ##########
@@ -3086,7 +3062,8 @@ sub alter_graph {
    chomp $tmp_input;
    $command .= " -i '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "alter-graph", $args{outformat});
+  my $extension = $args{outformat} || "tab";
+  &run_WS_command($command, $output_choice, "alter-graph", $extension);
 }
 ##########
 sub graph_cliques {
@@ -3143,7 +3120,7 @@ sub graph_cliques {
   }
 
     
-  &run_WS_command($command, $output_choice, "graph-clique");
+  &run_WS_command($command, $output_choice, "graph-clique", "tab");
 }
 ##########
 sub display_graph {
@@ -3260,6 +3237,7 @@ sub display_graph_cmd {
    chomp $tmp_input;
    $command .= " -i '".$tmp_input."'";
   }
+  
   return $command;
 }
 
@@ -3373,7 +3351,8 @@ sub graph_get_clusters {
    chomp $tmp_input;
    $command .= " -clusters '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "graph-get-clusters");
+  my $extension = $args{outformat} || "tab";
+  &run_WS_command($command, $output_choice, "graph-get-clusters", $extension);
 }
 
 
@@ -3440,7 +3419,7 @@ sub graph_node_degree {
    chomp $tmp_input;
    $command .= " -nodef '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "graph-node-degree");
+  &run_WS_command($command, $output_choice, "graph-node-degree", "tab");
 
 }
 
@@ -3457,6 +3436,8 @@ sub graph_topology {
     }
     my $tmp_outfile = `mktemp $TMP/graph_topology.XXXXXXXXXX`;
     chomp $tmp_outfile;
+    $tmp_outfile.".tab";
+    system ("rm $tmp_outfile");
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
 #     print TMP_OUT $result;
 #     print TMP_OUT "KEYS ".keys(%args);
@@ -3690,6 +3671,10 @@ sub compare_graphs {
     }
     my $tmp_outfile = `mktemp $TMP/compare-graphs-out.XXXXXXXXXX`;
     chomp($tmp_outfile);
+    my $extension = $args{outformat} || "tab";
+    $tmp_outfile .= ".$extension";
+    system ("rm $tmp_outfile");
+    
     my $tmp_comments = $tmp_outfile.".comments";
     # Print the results
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
@@ -3890,7 +3875,7 @@ sub graph_neighbours {
    chomp $tmp_input;
    $command .= " -seedf '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "graph-neighbours");
+  &run_WS_command($command, $output_choice, "graph-neighbours", "tab");
 }
 
 
@@ -4149,7 +4134,7 @@ sub parse_psi_xml {
   }
 
 
-  &run_WS_command($command, $output_choice, "parse-psi-xml");
+  &run_WS_command($command, $output_choice, "parse-psi-xml", "tab");
 }
 ##########
 sub random_graph {
@@ -4272,8 +4257,8 @@ sub random_graph {
    chomp $tmp_input;
    $command .= " -nodefile '".$tmp_input."'";
   }
-  
-  &run_WS_command($command, $output_choice, "random-graph");
+  my $extension = $args{outformat} || "tab";
+  &run_WS_command($command, $output_choice, "random-graph", $extension);
 }
 
 ################################################################
@@ -4291,7 +4276,7 @@ sub run_WS_command {
   if ($stderr) {
     die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
   }
-  my ($TMP_OUT, $tmp_outfile) = tempfile($method_name.".".XXXXXXXXXX, SUFFIX => $out_format, DIR => $TMP);
+  my ($TMP_OUT, $tmp_outfile) = tempfile($method_name.".".XXXXXXXXXX, SUFFIX => ".$out_format", DIR => $TMP);
   chomp($tmp_outfile);
 
   &UpdateLogFileWS(command=>$command,
