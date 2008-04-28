@@ -112,11 +112,34 @@ if ($soap_error!=1) {
     $response =  $echoed->response;
     $command = $response->command;
     $server = $response->server;
-    $client = $response->client;
+    echo ($server);
+    $client_result = $response->client;
     $server = rtrim ($server);
     $temp_file = explode('/',$server);
     $temp_file = end($temp_file);
     $resultURL = $WWW_RSA."/tmp/".$temp_file;
+    # Text-to-html
+    $file = storeFile($server);
+     echo "</pre>"; 
+    $tth_parameters = array( 
+      "request" => array(
+       "inputfile"=>$file,
+       "chunk"=>1000,
+       "no_sort"=>1
+      )
+    );
+    $tth_echoed = $client->text_to_html($tth_parameters);
+    
+    $tth_response =  $tth_echoed->response;
+    $tth_command = $tth_response->command;
+    $tth_server = $tth_response->server;
+    $tth_client = $tth_response->client;
+    echo "</pre>";
+    $tth_server = rtrim ($tth_server);
+    $tth_temp_file = explode('/',$tth_server);
+    $tth_temp_file = end($tth_temp_file);
+    $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;
+  
     #comment_file 
     $comment_file = $server.".comments";
     $comments = storeFile($comment_file);
@@ -127,8 +150,10 @@ if ($soap_error!=1) {
     
 
     # Display the results
-    echo "The result is available at the following URL ";
-    echo "<a href = '$resultURL'>$resultURL</a>"; 
+    echo "The result is available as text file at the following URL ";
+    echo "<a href = '$resultURL'>$resultURL</a><br>"; 
+    echo "The results are available as HTML page at the following URL ";
+    echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
     echo "<hr>\n";
  
   	}
