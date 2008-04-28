@@ -331,7 +331,7 @@
     $tth_parameters = array( 
       "request" => array(
         "inputfile"=>$cc_file,
-        "chunk"=>1000,
+        "chunk"=>1000
       )
     );
     
