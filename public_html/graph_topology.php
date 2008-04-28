@@ -127,7 +127,7 @@
     $server = $response->server;
     $client = $response->client;
     echo "</pre>";
-    hourglass("off");
+    
     $server = rtrim ($server);
     $temp_file = explode('/',$server);
     $temp_file = end($temp_file);
@@ -420,7 +420,7 @@
      $xy_out_temp_file_log = explode('/',$xy_out_server_log);
      $xy_out_temp_file_log = end($xy_out_temp_file_log);
      $xy_out_resultURL_log = "tmp/".$xy_out_temp_file_log;   
-   
+   hourglass("off");
    
      echo "<table>
        <th align = 'center' colspan = 4><b>Global, in- and out- degree distributions</b></th>
