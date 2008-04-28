@@ -1,7 +1,13 @@
 <html>
 <head>
-   <title>NeA-tools - graph-get-clusters</title>
+   <title>NeA-tools - graph-cluster-membership</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+      <style type="text/css">
+    <!--
+    div.hourglass{position: absolute; top: 80px; left: 400px }
+    div.hide{position: absolute; top: 80px; left: 400px }
+   -->
+     </style>
 </head>
 <body class="results">
 <?php 
@@ -86,6 +92,7 @@
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
+    hourglass("on");
   
     # Open the SOAP client
     $client = new SoapClient(
@@ -112,7 +119,6 @@ if ($soap_error!=1) {
     $response =  $echoed->response;
     $command = $response->command;
     $server = $response->server;
-    echo ($server);
     $client_result = $response->client;
     $server = rtrim ($server);
     $temp_file = explode('/',$server);
@@ -148,7 +154,7 @@ if ($soap_error!=1) {
       echo "<hr>";
     }
     
-
+    hourglass("off");
     # Display the results
     echo "The result is available as text file at the following URL ";
     echo "<a href = '$resultURL'>$resultURL</a><br>"; 
