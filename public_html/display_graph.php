@@ -2,6 +2,12 @@
 <head>
    <title>GrA-tools - display-graph</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+      <style type="text/css">
+    <!--
+    div.hourglass{position: absolute; top: 80px; left: 400px }
+    div.hide{position: absolute; top: 80px; left: 400px }
+   -->
+</style>
 </head>
 <body class="results">
 <?php 
@@ -92,6 +98,7 @@
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
+    hourglass("on");
   
     # Open the SOAP client
     $client = new SoapClient(
@@ -124,12 +131,12 @@
       $temp_file = explode('/',$server);
       $temp_file = end($temp_file);
       $resultURL = $WWW_RSA."/tmp/".$temp_file;
-
+       hourglass("off");
       
       # Display the results 
       echo "The results is available at the following URL ";
       echo "<a href = '$resultURL'>$resultURL</a><br>";
-      echo "<img src = '$resultURL' width = '50%'>";
+      echo "<a href = '$resultURL'><img src = '$resultURL' width = '50%'></a>";
    }
  }
 

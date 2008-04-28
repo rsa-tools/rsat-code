@@ -5131,8 +5131,8 @@ This program supports a variety of background models (Bernoulli, Markov chains o
       Olivier Sand (oly@scmbb.ulb.ac.be).
    </documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
-<!-- 	<soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/> -->
-      <soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/>
+	<soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
+<!--       <soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/> -->
     </port>
   </service>
 </definitions>
