@@ -2461,6 +2461,21 @@ Note that the graphs do not specially need to contain actual self-loops, the que
 	      <xsd:documentation>Number of decimals to print for the membership. Note that by selecting this option, the entries of the membership-vectors (rows) won't sum up to 1.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+<xsd:element name="wcol" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Specify a column of the input graph that contains an edge weight or an edge label (default none) for the tab-delimited format.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="scol" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Specify a column of the input graph that contains the source nodes for the tab-delimited format (default = 1).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tcol" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Specify a column of the input graph that contains the target nodes for the tab-delimited format (default = 2).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
       
@@ -5132,7 +5147,7 @@ This program supports a variety of background models (Bernoulli, Markov chains o
    </documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
 	<soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
-      <!-- soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/ -->
+<!--       <soap:address location="http://localhost/rsat/web_services/RSATWS.cgi"/> -->
     </port>
   </service>
 </definitions>

@@ -89,6 +89,7 @@
 	"decimals"=>$decimals,
       )
     );
+    
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
@@ -97,6 +98,7 @@
     # Open the SOAP client
     $client = new SoapClient(
                        $neat_wsdl,
+// "http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS2.wsdl",
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
@@ -163,5 +165,6 @@ if ($soap_error!=1) {
     echo "<hr>\n";
  
   	}
+  	hourglass("off");
   }
 ?>
