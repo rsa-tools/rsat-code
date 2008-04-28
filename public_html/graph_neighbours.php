@@ -2,6 +2,12 @@
 <head>
    <title>NeA-tools - graph-neighbours</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+      <style type="text/css">
+    <!--
+    div.hourglass{position: absolute; top: 80px; left: 400px }
+    div.hide{position: absolute; top: 80px; left: 400px }
+   -->
+   </style>
 </head>
 <body class="results">
 <?php 
@@ -107,6 +113,7 @@
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
+    hourglass("on");
   
     # Open the SOAP client
     $soap_client = new SoapClient(
@@ -147,6 +154,7 @@
     $tth_server = $tth_response->server;
     $tth_client = $tth_response->client;
     echo "</pre>";
+    hourglass("off");
     $tth_server = rtrim ($tth_server);
     $tth_temp_file = explode('/',$tth_server);
     $tth_temp_file = end($tth_temp_file);

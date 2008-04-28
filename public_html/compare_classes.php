@@ -2,6 +2,12 @@
 <head>
    <title>NeA-tools - convert-graph</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+      <style type="text/css">
+    <!--
+    div.hourglass{position: absolute; top: 80px; left: 400px }
+    div.hide{position: absolute; top: 80px; left: 400px }
+   -->
+     </style>
 </head>
 <body class="results">
 <?php 
@@ -301,7 +307,7 @@
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
-  
+    hourglass("on");
     # Open the SOAP client
     $client = new SoapClient(
                        $neat_wsdl,
@@ -347,7 +353,7 @@
     $tth_temp_file = end($tth_temp_file);
     $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;
     
-    
+    hourglass("off");
     # Display the results
     echo "The results are available as text file at the following URL ";
     echo "<a href = '$cc_resultURL'>$cc_resultURL</a><br>"; 

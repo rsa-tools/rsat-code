@@ -2,6 +2,13 @@
 <head>
    <title>NeA-tools - graph-cliques</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+      <style type="text/css">
+    <!--
+    div.hourglass{position: absolute; top: 80px; left: 400px }
+    div.hide{position: absolute; top: 80px; left: 400px }
+   -->
+     </style>
+
 </head>
 <body class="results">
 <?php 
@@ -69,7 +76,7 @@
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
-  
+    hourglass("on");
     # Open the SOAP client
     $soap_client = new SoapClient(
                        $neat_wsdl,
@@ -101,7 +108,7 @@
         "chunk"=>1000,
       )
     );
-    
+
     $tth_echoed = $soap_client->text_to_html($tth_parameters);
 
     $tth_response =  $tth_echoed->response;
@@ -114,7 +121,7 @@
     $tth_temp_file = end($tth_temp_file);
     $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;    
     
-    
+    hourglass("off");
     
     
     

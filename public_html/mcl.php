@@ -2,6 +2,12 @@
 <head>
    <title>NeA-tools - MCL</title>
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+      <style type="text/css">
+    <!--
+    div.hourglass{position: absolute; top: 80px; left: 400px }
+    div.hide{position: absolute; top: 80px; left: 400px }
+   -->
+     </style>
 </head>
 <body class="results">
 <?php 
@@ -53,7 +59,7 @@
     # Info message
     info("Results will appear below");
     echo"<hr>\n";
-  
+     hourglass("on");
     # Open the SOAP client
     $client = new SoapClient(
 //                        $neat_wsdl,
@@ -200,6 +206,7 @@
     $xy_temp_file = end($xy_temp_file);
     $xy_resultURL = $WWW_RSA."/tmp/".$xy_temp_file;
     
+    hourglass("off");
     echo ("<a href = '$xy_resultURL'><img align = 'center' src='$xy_resultURL' width ='50%'></a><br>");
     echo "<br><hr>\n";
     
