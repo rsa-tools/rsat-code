@@ -3554,20 +3554,27 @@ sub graph_cluster_membership {
     my $command = $self->graph_cluster_membership_cmd(%args);
     my $result = `$command`;
     my $stderr = `$command 2>&1 1>/dev/null`;
-    if ($stderr !~ /INFO/ && $stderr !~ /WARNING/) {
+    if ($stderr != "" && $stderr !~ /INFO/ && $stderr !~ /WARNING/) {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
     my $tmp_outfile = `mktemp $TMP/graph-cluster-membership-out.XXXXXXXXXX`;
+    chomp($tmp_outfile);
+    my $prefix = $tmp_outfile;
+    my $tmp_comments = $prefix.".tab.comments";
+    $tmp_outfile = $prefix.".tab";
+    
+    system("rm $tmp_outfile");
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     print TMP_OUT $result;
-    chomp($tmp_outfile);
-    my $tmp_comments = $tmp_outfile.".comments";
+
 #     print TMP_OUT "KEYS ".keys(%args);
     close TMP_OUT;
     # Print the comments
     open COMMENTS_OUT, ">".$tmp_comments or die "cannot open temp file ".$tmp_comments."\n";
     print COMMENTS_OUT $stderr;
     close COMMENTS_OUT;
+    
+    
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"graph-cluster-membership",output_choice=>$output_choice);
     if ($output_choice eq 'server') {
 	return SOAP::Data->name('response' => {'command' => $command, 
