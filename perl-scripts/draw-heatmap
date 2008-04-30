@@ -1,0 +1,425 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: draw-heatmap,v 1.1 2008/04/30 10:59:08 rsat Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+draw-heatmap
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Draw a heatmap from a table
+
+=head1 AUTHORS
+
+sylvain@bigre.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+
+draw-heatmap [-i inputfile] -o outputfile [-v #] [...] -out_format [png|jpeg]
+
+=head1 INPUT FORMAT
+
+A tab delimited table. 
+It may contain a header (starting with a '#' symbol). The cells nlt containing  real values will not be taken into account.
+
+=head1 OUTPUT FORMAT
+
+A heatmap in the specified format.
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+use RSAT::util;
+use GD;
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    my $start_time = &AlphaDate();
+    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+    ## Output formats
+    local $output_format = "ps";
+    %supported_output_format =(
+#     				ps=>1,
+    				png=>1,
+    				jpg=>1,
+    				jpeg=>1
+    			      );			      
+			       
+    $supported_output_formats = join (",", keys %supported_output_format);
+    
+   
+    ## Color gradients
+    local $gradient = "grey";
+    %supported_gradients =(
+			       blue=>1,
+			       green=>1,
+			       red=>1,
+			       grey=>1,
+			       fire=>1);
+			      
+			       
+    $supported_gradients = join (",", keys %supported_gradients);    
+    $rownames = 0;
+
+    $output_format = "png";
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+    ################################################################
+    ## Check argument values
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Read input
+    my $min = 32000;  # min value of the table
+    my $max = -32000; # max value of the table
+    my @header = ();  # header of the table (column names)
+    my @rownames_list = (); #array containing the row names
+    my @table = (); # array containing the values
+    my $max_row_name_length = 0;
+    my $max_header_name_length = 0;
+    
+    my $tablecpt = 0;
+    my $max_row_elements = 0;
+    ($main::in) = &OpenInputFile($main::infile{input});
+    while (my $ligne = <$main::in>) {
+      next if ($ligne =~ /^;/);
+      chomp $ligne;
+      my @lignecp = split /\t/, $ligne;
+      # Parsing of the header line if any
+      if ($ligne =~ /^#/) {
+        $ligne =~ s/^#//;
+        @lignecp = split /\t/, $ligne;
+        for (my $i = 0; $i < scalar @lignecp; $i++) {
+          push @header, $lignecp[$i];
+          if ($max_header_name_length < length ($lignecp[$i])) {
+            $max_header_name_length = length ($lignecp[$i]);
+          }
+        }
+        next;
+      }
+      # Parsing of the table
+      for (my $i = 0; $i < scalar @lignecp; $i++) {
+        my $val = $lignecp[$i];
+        $table[$tablecpt][$i] = $val;
+        if ($rownames && $i == 0) {
+          push @rownames_list, $val;
+          if ($max_row_name_length < length ($val)) {
+            $max_row_name_length = length ($val);
+          }
+          next;
+        }
+        if (&RSAT::util::IsReal($val)) {
+          $min = $val if ($val < $min);
+          $max = $val if ($val > $max);
+        }
+        if ($i > $max_row_elements) {
+          $max_row_elements = $i;
+        }
+      }
+      $tablecpt++;
+    }
+    close $main::in if ($main::infile{input});
+    my $row_name_width = $max_row_name_length *5 || 50;
+    my $header_name_height = $max_header_name_length*10 || 50;
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the command
+    if ($output_format eq "ps" || $output_format eq "eps") {
+      
+    } else {
+      my $p  = new GD::Image (100+(50*$max_row_elements), $header_name_height+(30*($tablecpt+2))) ;
+      my %colors = ();
+      my $white = $p->colorAllocate(255,255,255);
+      my $black = $p->colorAllocate(0,0,0);
+      $colors{"255255255"} = $white;
+      $colors{"000000000"} = $black;
+      $p->interlaced('false');
+      # display header if any
+      if ((scalar @header) > 0) {
+        for (my $i = 0; $i < scalar @header; $i++) {
+          my $xpos = $row_name_width+(50*$i);
+          my $ypos = $header_name_height;
+          my $headeri = $header[$i];
+          $p->stringUp(gdMediumBoldFont,$xpos,$ypos,$headeri,$black)
+        }
+      }
+      
+      # display table
+      my $initj = 0;
+      $initj = 1 if ($rownames);
+      for (my $i = 0; $i < scalar @table; $i ++) {
+        my @row = @{$table[$i]};
+        for (my $j = $initj; $j < scalar @row; $j ++) {
+          my $val = $row[$j];
+          my $current_col = $white;
+          my $textcol = $black;
+          if ($rownames) {
+            my $row_name_xpos = 5;
+            my $row_name_ypos = 5+$header_name_height+(30*$i);
+            $p->string(gdSmallFont, $row_name_xpos,$row_name_ypos, $rownames_list[$i], $textcol);
+          }
+          if (&RSAT::util::IsReal($val)) {
+            my $color = &RSAT::util::getBgColorFromOneScore($val, $min, $max, 0, $gradient);
+            my $r = hex(substr($color, 1,2));
+            my $g = hex(substr($color, 3,2));
+            my $b = hex(substr($color, 5,2));
+            my $idcol = join("","$r","$g","$b");
+            $current_col = $colors{$idcol};
+            if (!defined($current_col)) {
+              $current_col = $p->colorAllocate($r, $g, $b);
+              $colors{"$idcol"} = $current_col;
+            }
+            my $mean = ($min+$max)/2;
+            if ($val > $mean) {
+              $textcol = $white;
+            }
+          }
+          $p->setThickness(1);
+          my $xpos1 = $row_name_width+(50*$j);
+          my $xpos2 = $row_name_width+(50*$j)+50;
+          my $ypos1 = 5+$header_name_height+(30*$i);
+          my $ypos2 = 5+$header_name_height+(30*$i)+30;
+          $p->filledRectangle($xpos1, $ypos1, $xpos2, $ypos2, $current_col);
+          $p->string(gdSmallFont, ($xpos1+5),($ypos1+5), "$val", $textcol);
+        }
+      }
+      binmode STDOUT;
+      my $output_fhandle = &OpenOutputFile($main::outfile{output});
+      if ($output_format eq "jpg" || $output_format eq "jpeg") {
+        print $output_fhandle $p->jpeg();
+      } elsif ($output_format eq "png") {
+        print $output_fhandle $p->png();
+      } 
+      close $output_fhandle;
+    }
+    
+    ################################################################
+    ## Print output
+
+
+    ################################################################
+    ## Finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $main::out "; Job started $start_time\n";
+	print $main::out "; Job done    $done_time\n";
+    }
+
+
+    ################################################################
+    ## Close output stream
+    close $main::out if ($main::outfile{output});
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+
+
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+	    ## Row names
+=pod
+
+=item B<-rownames>
+
+Use this option if the first column contain the row names.
+
+=cut
+	} elsif ($arg eq "-rownames") {
+	    $main::rownames = 1;
+	    
+=item B<-out_format output_format>
+
+Output format. Supported: ps, png, jpeg
+
+=cut 
+	} elsif ($arg eq "-out_format") {
+	    $output_format = shift(@arguments);
+	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
+		unless ($supported_output_format{$output_format});
+=item B<-gradient>
+
+Color of the intensity gradient of the heatmap. Default is grey.
+Supported : green, blue, red, fire, grey. 
+
+=cut
+	} elsif ($arg eq "-gradient") {
+	    $gradient = shift(@arguments);
+	    &RSAT::error::FatalError("$gradient\tInvalid color gradient. Supported: $supported_gradients")
+		unless ($supported_gradients{$gradient});
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; template ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=cut
