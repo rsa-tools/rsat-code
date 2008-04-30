@@ -14,7 +14,7 @@
   require ('functions.php');
   # log file update
   UpdateLogFile("neat","","");
-  title('contigency-stats - results');
+  title('contingency-stats - results');
   # Error status
   $error = 0;
   # Get parameters
