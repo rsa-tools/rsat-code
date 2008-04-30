@@ -46,7 +46,7 @@ sub retrieve_seq {
   ## List of query genes
   my $query_ref = $args{"query"};
   my $query = "";
-  if ($query_ref) {
+  if ($query_ref =~ /ARRAY/) {
     my @query = @{$query_ref};
     foreach $q (@query) {
       $q =~s/\'//g;
@@ -55,7 +55,11 @@ sub retrieve_seq {
     $query = " -q '";
     $query .= join "' -q '", @query;
     $query .= "'";
-  }
+  } else {
+    $query = " -q '";;
+    $query .= $query_ref;
+    $query .= "'";
+}
 
   my $feattype = $args{"feattype"};
   my $type = $args{"type"};
@@ -109,9 +113,11 @@ sub retrieve_seq {
   }
 
   if ($format) {
-    $format =~ s/\'//g;
-    $format =~ s/\"//g;
-    $command .= " -format '".$format."'";
+      $format =~ s/\'//g;
+      $format =~ s/\"//g;
+      $command .= " -format '".$format."'";
+  } else {
+      $format = ".fasta";
   }
 
   if ($all == 1) {
@@ -148,7 +154,7 @@ sub retrieve_seq {
     $command .= " -imp_pos";
   }
 
-  &run_WS_command($command, $output_choice, "retrieve-seq");
+  &run_WS_command($command, $output_choice, "retrieve-seq", $format);
 }
 
 ##########
@@ -299,7 +305,7 @@ sub retrieve_ensembl_seq {
   ## List of query genes
   my $query_ref = $args{"query"};
   my $query = "";
-  if ($query_ref) {
+  if ($query_ref =~/ARRAY/) {
     my @query = @{$query_ref};
     foreach $q (@query) {
       $q =~s/\'//g;
@@ -308,7 +314,11 @@ sub retrieve_ensembl_seq {
     $query = " -q '";
     $query .= join "' -q '", @query;
     $query .= "'";
-  }
+  } else {
+    $query = " -q '";;
+    $query .= $query_ref;
+    $query .= "'";
+}
 
   my $feattype = $args{"feattype"};
   my $type = $args{"type"};
@@ -529,7 +539,9 @@ sub purge_seq {
       $format =~ s/\'//g;
       $format =~ s/\"//g;
       $command .= " -format '".$format."'";
-    }
+  } else {
+      $format = ".fasta";
+  }
 
     if ($str =~ /\d/) {
 	if ($str == 1 || $str == 2) {
@@ -563,7 +575,7 @@ sub purge_seq {
 
     $command .= " -i '".$tmp_infile."'";
 
-    &run_WS_command($command, $output_choice, "purge-sequence");
+    &run_WS_command($command, $output_choice, "purge-sequence", $format);
 }
 
 ##########
@@ -598,7 +610,7 @@ sub oligo_analysis {
     ## List of lower thresholds
     my $lth_ref = $args{"lth"};
     my $lth = "";
-    if ($lth_ref) {
+    if ($lth_ref =~ /ARRAY/) {
 #      my %lth = %{$lth_ref};
 #      foreach $lt (keys %lth) {
 #	$lt =~s/\'//g;
@@ -615,12 +627,16 @@ sub oligo_analysis {
 	@_lt = split / /, $lt;
 	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
       }
-    }
+    } else {
+    $lth = " -lth '";;
+    $lth .= $lth_ref;
+    $lth .= "'";
+}
 
     ## List of upper thresholds
     my $uth_ref = $args{"uth"};
     my $uth = "";
-    if ($uth_ref) {
+    if ($uth_ref =~ /ARRAY/) {
       my @uth = @{$uth_ref};
       foreach $ut (@uth) {
 	$ut =~s/\'//g;
@@ -628,7 +644,11 @@ sub oligo_analysis {
 	@_ut = split / /, $ut;
 	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
       }
-    }
+    } else {
+    $uth = " -uth '";;
+    $uth .= $uth_ref;
+    $uth .= "'";
+}
 
     my $pseudo = $args{'pseudo'};
 
@@ -702,7 +722,7 @@ sub oligo_analysis {
 
     $command .= " -i '".$tmp_infile."'";
 
-    &run_WS_command($command, $output_choice, "oligo-analysis");
+    &run_WS_command($command, $output_choice, "oligo-analysis", ".tab");
 }
 
 ##########
@@ -741,7 +761,7 @@ sub dyad_analysis {
     ## List of lower thresholds
     my $lth_ref = $args{"lth"};
     my $lth = "";
-    if ($lth_ref) {
+    if ($lth_ref =~ /ARRAY/) {
       my @lth = @{$lth_ref};
       foreach $lt (@lth) {
 	$lt =~s/\'//g;
@@ -749,12 +769,16 @@ sub dyad_analysis {
 	@_lt = split / /, $lt;
 	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
       }
-    }
+    } else {
+    $lth = " -lth '";;
+    $lth .= $lth_ref;
+    $lth .= "'";
+}
 
     ## List of upper thresholds
     my $uth_ref = $args{"uth"};
     my $uth = "";
-    if ($uth_ref) {
+    if ($uth_ref =~ /ARRAY/) {
       my @uth = @{$uth_ref};
       foreach $ut (@uth) {
 	$ut =~s/\'//g;
@@ -762,7 +786,11 @@ sub dyad_analysis {
 	@_ut = split / /, $ut;
 	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
       }
-    }
+    } else {
+    $uth = " -uth '";;
+    $uth .= $uth_ref;
+    $uth .= "'";
+}
 
     my $command = "$SCRIPTS/dyad-analysis";
 
@@ -846,7 +874,7 @@ sub dyad_analysis {
 
     $command .= " -i '".$tmp_infile."'";
 
-    &run_WS_command($command, $output_choice, "dyad-analysis");
+    &run_WS_command($command, $output_choice, "dyad-analysis", ".tab");
 }
 
 ##########
@@ -1343,7 +1371,7 @@ sub get_orthologs_cmd {
   ## List of queries
   my $query_ref = $args{"query"};
   my $query = "";
-  if ($query_ref) {
+  if ($query_ref =~ /ARRAY/) {
     my @query = @{$query_ref};
     foreach $q (@query) {
 	$q =~s/\'//g;
@@ -1352,12 +1380,16 @@ sub get_orthologs_cmd {
     $query = " -q '";
     $query .= join "' -q '", @query;
     $query .= "'";
-  }
+  } else {
+    $query = " -q '";;
+    $query .= $query_ref;
+    $query .= "'";
+}
 
     ## List of lower thresholds
     my $lth_ref = $args{"lth"};
     my $lth = "";
-    if ($lth_ref) {
+    if ($lth_ref =~ /ARRAY/) {
       my @lth = @{$lth_ref};
       foreach $lt (@lth) {
 	$lt =~s/\'//g;
@@ -1365,12 +1397,16 @@ sub get_orthologs_cmd {
 	@_lt = split / /, $lt;
 	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
       }
-    }
+    } else {
+    $lth = " -lth '";;
+    $lth .= $lth_ref;
+    $lth .= "'";
+}
 
     ## List of upper thresholds
     my $uth_ref = $args{"uth"};
     my $uth = "";
-    if ($uth_ref) {
+    if ($uth_ref =~ /ARRAY/) {
       my @uth = @{$uth_ref};
       foreach $ut (@uth) {
 	$ut =~s/\'//g;
@@ -1378,7 +1414,11 @@ sub get_orthologs_cmd {
 	@_ut = split / /, $ut;
 	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
       }
-    }
+    } else {
+    $uth = " -uth '";;
+    $uth .= $uth_ref;
+    $uth .= "'";
+}
 
   my $command = "$SCRIPTS/get-orthologs";
 
@@ -1469,7 +1509,7 @@ sub footprint_discovery_cmd {
     ## List of query genes
     my $query_ref = $args{"query"};
     my $query = "";
-    if ($query_ref) {
+    if ($query_ref =~ /ARRAY/) {
 	my @query = @{$query_ref};
 	foreach $q (@query) {
 	    $q =~s/\'//g;
@@ -1478,7 +1518,11 @@ sub footprint_discovery_cmd {
 	$query = " -q '";
 	$query .= join "' -q '", @query;
 	$query .= "'";
-    }
+    } else {
+    $query = " -q '";;
+    $query .= $query_ref;
+    $query .= "'";
+}
 
 
     my $verbosity = $args{"verbosity"};
@@ -1499,7 +1543,7 @@ sub footprint_discovery_cmd {
     ## List of lower thresholds
     my $lth_ref = $args{"lth"};
     my $lth = "";
-    if ($lth_ref) {
+    if ($lth_ref =~ /ARRAY/) {
       my @lth = @{$lth_ref};
       foreach $lt (@lth) {
 	$lt =~s/\'//g;
@@ -1507,12 +1551,16 @@ sub footprint_discovery_cmd {
 	@_lt = split / /, $lt;
 	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
       }
-    }
+    } else {
+    $lth = " -lth '";;
+    $lth .= $lth_ref;
+    $lth .= "'";
+}
 
     ## List of upper thresholds
     my $uth_ref = $args{"uth"};
     my $uth = "";
-    if ($uth_ref) {
+    if ($uth_ref =~ /ARRAY/) {
       my @uth = @{$uth_ref};
       foreach $ut (@uth) {
 	$ut =~s/\'//g;
@@ -1520,7 +1568,11 @@ sub footprint_discovery_cmd {
 	@_ut = split / /, $ut;
 	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
       }
-    }
+    } else {
+    $uth = " -uth '";;
+    $uth .= $uth_ref;
+    $uth .= "'";
+}
 
     my $command = "$SCRIPTS/footprint-discovery";
 
@@ -1638,7 +1690,7 @@ sub gene_info {
   ## List of queries
   my $query_ref = $args{"query"};
   my $query = "";
-  if ($query_ref) {
+  if ($query_ref =~ /ARRAY/) {
     my @query = @{$query_ref};
     foreach $q (@query) {
 	$q =~s/\'//g;
@@ -1646,6 +1698,10 @@ sub gene_info {
     }
     $query = " -q '";
     $query .= join "' -q '", @query;
+    $query .= "'";
+  } else {
+    $query = " -q '";;
+    $query .= $query_ref;
     $query .= "'";
   }
 
@@ -1674,7 +1730,7 @@ sub gene_info {
       $command .= " -feattype '".$args{feattype}."'";
   }
 
-    &run_WS_command($command, $output_choice, "gene-info");
+    &run_WS_command($command, $output_choice, "gene-info", ".tab");
 }
 
 ##########
@@ -1738,7 +1794,7 @@ sub text_to_html {
   }
   
   
-  &run_WS_command($command, $output_choice, "text-to-html", "html");
+  &run_WS_command($command, $output_choice, "text-to-html", ".html");
 }
 
 
@@ -1790,7 +1846,7 @@ sub roc_stats{
   if ($args{total}) {
       $command .= " -total";
   }
-  &run_WS_command($command, $output_choice, "roc-stats", "tab");
+  &run_WS_command($command, $output_choice, "roc-stats", ".tab");
 }
 
 ##########
@@ -1852,7 +1908,7 @@ sub classfreq {
    chomp $tmp_input;
    $command .= " -i '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "classfreq", "tab");
+  &run_WS_command($command, $output_choice, "classfreq", ".tab");
 }
 
 ##########
@@ -1935,7 +1991,7 @@ sub convert_classes {
    chomp $tmp_input;
    $command .= " -names '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "convert-classes", $extension);
+  &run_WS_command($command, $output_choice, "convert-classes", ".$extension");
 }
 
 ##########
@@ -1997,7 +2053,7 @@ sub contingency_stats {
    chomp $tmp_input;
    $command .= " -csizes '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "contingency-stats", "tab");
+  &run_WS_command($command, $output_choice, "contingency-stats", ".tab");
 }
 
 ##########
@@ -2044,7 +2100,7 @@ sub contingency_table {
    chomp $tmp_input;
    $command .= " -i '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "contingency-table", "tab");
+  &run_WS_command($command, $output_choice, "contingency-table", ".tab");
 }
 
 ##########
@@ -2413,7 +2469,7 @@ sub compare_classes {
     $command .= " -matrix '".$matrix."'";
   }
 
- &run_WS_command($command, $output_choice, "compare-classes", "tab");
+ &run_WS_command($command, $output_choice, "compare-classes", ".tab");
 }
 
 ##########
@@ -2509,7 +2565,7 @@ sub matrix_scan {
     ## List of lower thresholds
     my $lth_ref = $args{"lth"};
     my $lth = "";
-    if ($lth_ref) {
+    if ($lth_ref =~ /ARRAY/) {
       my @lth = @{$lth_ref};
       foreach $lt (@lth) {
 	$lt =~s/\'//g;
@@ -2517,12 +2573,16 @@ sub matrix_scan {
 	@_lt = split / /, $lt;
 	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
       }
-    }
+    } else {
+    $lth = " -lth '";;
+    $lth .= $lth_ref;
+    $lth .= "'";
+}
 
     ## List of upper thresholds
     my $uth_ref = $args{"uth"};
     my $uth = "";
-    if ($uth_ref) {
+    if ($uth_ref =~ /ARRAY/) {
       my @uth = @{$uth_ref};
       foreach $ut (@uth) {
 	$ut =~s/\'//g;
@@ -2530,7 +2590,11 @@ sub matrix_scan {
 	@_ut = split / /, $ut;
 	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
       }
-    }
+    } else {
+    $uth = " -uth '";;
+    $uth .= $uth_ref;
+    $uth .= "'";
+}
 
   my $command = "$SCRIPTS/matrix-scan";
 
@@ -2641,7 +2705,7 @@ sub matrix_scan {
       $command .= " -crer_ids";
   }
 
- &run_WS_command($command, $output_choice, "matrix-scan")
+ &run_WS_command($command, $output_choice, ".matrix-scan")
 }
 
 ##########
@@ -2728,7 +2792,7 @@ sub matrix_distrib {
     $command .= " -bg_pseudo '".$background_pseudo."'";
   }
 
-  &run_WS_command($command, $output_choice, "matrix-distrib")
+  &run_WS_command($command, $output_choice, ".matrix-distrib")
 }
 
 ##########
@@ -2825,7 +2889,7 @@ sub random_seq {
     $command .= " -lf '".$tmp_length."'";
   }
 
- &run_WS_command($command, $output_choice, "random-seq")
+ &run_WS_command($command, $output_choice, ".random-seq")
 }
 
 # RSAT GRAPH TOOLS
@@ -3063,7 +3127,7 @@ sub alter_graph {
    $command .= " -i '".$tmp_input."'";
   }
   my $extension = $args{outformat} || "tab";
-  &run_WS_command($command, $output_choice, "alter-graph", $extension);
+  &run_WS_command($command, $output_choice, "alter-graph", ".$extension");
 }
 ##########
 sub graph_cliques {
@@ -3120,7 +3184,7 @@ sub graph_cliques {
   }
 
     
-  &run_WS_command($command, $output_choice, "graph-clique", "tab");
+  &run_WS_command($command, $output_choice, "graph-clique", ".tab");
 }
 ##########
 sub display_graph {
@@ -3352,7 +3416,7 @@ sub graph_get_clusters {
    $command .= " -clusters '".$tmp_input."'";
   }
   my $extension = $args{outformat} || "tab";
-  &run_WS_command($command, $output_choice, "graph-get-clusters", $extension);
+  &run_WS_command($command, $output_choice, "graph-get-clusters", ".$extension");
 }
 
 
@@ -3419,7 +3483,7 @@ sub graph_node_degree {
    chomp $tmp_input;
    $command .= " -nodef '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "graph-node-degree", "tab");
+  &run_WS_command($command, $output_choice, "graph-node-degree", ".tab");
 
 }
 
@@ -3882,7 +3946,7 @@ sub graph_neighbours {
    chomp $tmp_input;
    $command .= " -seedf '".$tmp_input."'";
   }
-  &run_WS_command($command, $output_choice, "graph-neighbours", "tab");
+  &run_WS_command($command, $output_choice, "graph-neighbours", ".tab");
 }
 
 
@@ -4141,7 +4205,7 @@ sub parse_psi_xml {
   }
 
 
-  &run_WS_command($command, $output_choice, "parse-psi-xml", "tab");
+  &run_WS_command($command, $output_choice, "parse-psi-xml", ".tab");
 }
 ##########
 sub random_graph {
@@ -4265,7 +4329,7 @@ sub random_graph {
    $command .= " -nodefile '".$tmp_input."'";
   }
   my $extension = $args{outformat} || "tab";
-  &run_WS_command($command, $output_choice, "random-graph", $extension);
+  &run_WS_command($command, $output_choice, "random-graph", ".$extension");
 }
 
 ################################################################
@@ -4283,7 +4347,7 @@ sub run_WS_command {
   if ($stderr) {
     die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
   }
-  my ($TMP_OUT, $tmp_outfile) = tempfile($method_name.".".XXXXXXXXXX, SUFFIX => ".$out_format", DIR => $TMP);
+  my ($TMP_OUT, $tmp_outfile) = tempfile($method_name.".".XXXXXXXXXX, SUFFIX => "$out_format", DIR => $TMP);
   chomp($tmp_outfile);
 
   &UpdateLogFileWS(command=>$command,
