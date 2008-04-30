@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.47 2008/04/11 09:57:30 rsat Exp $
+# $Id: compare-graphs,v 1.48 2008/04/30 14:07:16 rsat Exp $
 #
 ############################################################
 
@@ -105,13 +105,21 @@ package main;
 			       tab=>1,
     );
     $supported_output_formats = join (",", keys %supported_output_format);
-
+    
 
     ################################################################
+    ## Supported edge types
+    local %supported_edge_types = 
+                        (R => 1,
+                         QR => 1,
+                         Q =>1);
+    local $supported_edge_types = join (",",keys (%supported_edge_types));
+    
+    
+    
     ## Default colors for arcs
     local %arc_colors = (R=>"#9932cc",  # arcs belonging to R not Q;  violet
 		      QR=>"#00BB00", # arcs at the intersection ; green
-#		      QR=>"#228b22", # arcs at the intersection ; green
 		      Q=>"#ff0000",  # arcs belonging to Q not R; red
 		     );
 
@@ -681,6 +689,27 @@ Weight column of query graph for tab-delimited input. Column containing the weig
 	    unless (&IsNatural($weight_col_Q) && ($weight_col_Q > 0)) {
 		&RSAT::error::FatalError(join("\t", $weight_col_Q, "Invalid value for the weight column. Must be a strictly positive natural number"));
 	    }
+=pod
+
+=item B<-col edge_type #RGBcode>
+
+When computing the union of two graphs. This option allows to specify the colors of the edges belonging to the
+intersection, query graph and reference graph.
+
+By default, the edges belonging to the intersection are green, the query only edges are red and the reference only edges are violet.
+
+Example -col R '#9370DB' -col Q '#ff6a6a' -col QR '#00ff00'
+
+=cut
+	} elsif ($arg eq "-col") {
+	    $edge_type = shift (@arguments);
+	    $col = shift (@arguments);
+	    # Check if edge_type is Q, QR or R
+	    &RSAT::error::FatalError(join("\t", $edge_type, "Invalid key for the edge type. Suported edge types : $supported_edge_types")) if (!defined($supported_edge_types{$edge_type}));
+	    # Check if col is a valid color
+	    &RSAT::error::FatalError(join("\t", $col, "Not a valid color in RGB code.")) if ($col !~ /\#([0-9A-Fa-f]{3,6})\b/);
+	    $arc_colors{$edge_type} = $col;
+	    
 	    
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
@@ -742,12 +771,8 @@ sub intersect {
 	  my $source_node_label = $nodes_label{$source_intern_id} || $source_name;
 	  my $target_node_color = $nodes_color{$target_intern_id} || "#000088";
 	  my $target_node_label = $nodes_label{$target_intern_id} || $target_name;
-
-	  ## NOTE DE JACQUES: j'ai invers� les param�tres de la ligne
-	  ## suivante, car il retournait le poids du graphe R quand on
-	  ## lui demandait celui de Q. Verifiez si c'est OK
-#          my $weight = &calculate_weight($arcs_g1[$i][2], $arcs_g2[$arc_intern_id_g2][2]);
           my $weight = &calculate_weight($arcs_g2[$arc_intern_id_g2][2], $arcs_g1[$i][2]);
+          
 	  my $arc_label = $weight;
           my $arc_color = $arcs_g2[$arc_intern_id_g2][3];
           $inter_graph_array[$arccpt][0] = $source_name;
