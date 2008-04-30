@@ -7,7 +7,7 @@
     div.hourglass{position: absolute; top: 80px; left: 400px }
     div.hide{position: absolute; top: 80px; left: 400px }
    -->
-</style>
+     </style>
 </head>
 <body class="results">
 <?php 
