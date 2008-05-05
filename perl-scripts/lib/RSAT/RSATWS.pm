@@ -3305,6 +3305,114 @@ sub display_graph_cmd {
   return $command;
 }
 
+
+
+######################
+##########
+sub draw_heatmap {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->draw_heatmap_cmd(%args);
+    ## IMAGE OUTPUT FORMAT RECUPERATION
+    my $out_format = $args{outformat};
+    $out_format =~ s/\'//g;
+    $out_format =~ s/\'//g;
+    my $tmp_outfile = `mktemp $TMP/draw-heatmap.XXXXXXXXXX`;
+    chop $tmp_outfile;
+    system("rm $tmp_outfile");
+    $tmp_outfile .= ".$out_format";
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    close TMP_OUT;
+    $command .= " -o $tmp_outfile";
+    system $command;
+    my $result = `cat $tmp_outfile`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+
+        &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"draw-heatmap",output_choice=>$output_choice);
+
+    if ($output_choice eq 'server') {
+	return SOAP::Data->name('response' => {'command' => $command, 
+					       'server' => $tmp_outfile});
+    } elsif ($output_choice eq 'client') {
+	return SOAP::Data->name('response' => {'command' => $command,
+					       'client' => $result});
+    } elsif ($output_choice eq 'both') {
+	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
+					       'command' => $command, 
+					       'client' => $result});
+    }
+     
+}
+
+sub draw_heatmap_cmd {
+  my ($self, %args) =@_;
+  
+  my $command = "$SCRIPTS/draw-heatmap";
+  
+  if ($args{no_text}) {
+   $command .= " -notext";
+  }
+  if ($args{rownames}) {
+   $command .= " -rownames";
+  }
+  if ($args{outformat}) {
+   my $out_format = $args{outformat};
+   $out_format =~ s/\'//g;
+   $out_format =~ s/\'//g;
+   $command .= " -out_format $out_format";
+  }
+  if ($args{min}) {
+   my $min = $args{min};
+   $min =~ s/\'//g;
+   $min =~ s/\'//g;
+   $command .= " -min $min";
+  }
+  if ($args{max}) {
+   my $max = $args{max};
+   $max =~ s/\'//g;
+   $max =~ s/\'//g;
+   $command .= " -max $max";
+  }
+  if ($args{col_width}) {
+   my $col_width = $args{col_width};
+   $col_width =~ s/\'//g;
+   $col_width =~ s/\'//g;
+   $command .= " -col_width $col_width";
+  }
+  if ($args{row_height}) {
+   my $row_height = $args{row_height};
+   $row_height =~ s/\'//g;
+   $row_height =~ s/\'//g;
+   $command .= " -row_height $row_height";
+  }
+  if ($args{inputfile}) {
+   my $input_file = $args{inputfile};
+   chomp $input_file;
+   my $tmp_input = `mktemp $TMP/draw-heatmap-input.XXXXXXXXXX`;
+   open TMP_IN, ">".$tmp_input or die "cannot open temp file ".$tmp_input."\n";
+   print TMP_IN $input_file;
+   close TMP_IN;
+   $tmp_input =~ s/\'//g;
+   $tmp_input =~ s/\"//g;
+   chomp $tmp_input;
+   $command .= " -i '".$tmp_input."'";
+  }
+  
+  return $command;
+}
+
+
+
+
+
 ##########
 # sub graph_get_clusters {
 #     my ($self, $args_ref) = @_;
