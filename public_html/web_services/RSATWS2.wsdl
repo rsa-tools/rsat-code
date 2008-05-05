@@ -2260,6 +2260,62 @@ This option is only useful for GML output.</xsd:documentation>
 		      </xsd:element>
 	      </xsd:sequence>
       </xsd:complexType>
+      <xsd:complexType name="DrawHeatmap">
+	      <xsd:sequence>
+		      <xsd:element name="outformat" type="xsd:string" minOccurs="1">
+			      <xsd:annotation>
+				      <xsd:documentation>Output format. Supported: png, jpeg.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="inputfile" type="xsd:string" minOccurs="1">
+			      <xsd:annotation>
+				      <xsd:documentation>A graph in the format specified by the informat tag.</xsd:documentation>	
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="row_names" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>
+					      		Use this option if the first column contain the row names.
+				      </xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="no_text" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>
+					      	Using this option, the values are not written in the cells of the
+				      </xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="col_width" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>
+        				Width of the columns (in pixel). If the row height is to small, the label of the heatmap will not be indicated. (Default : 50 px)
+				      </xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="row_height" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>
+        				Height of the rows (in pixel). If the row height is to small, the label of the heatmap will not be indicated. (Default : 30 px)
+				      </xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="min" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>
+					Minimal value of the heatmap. By default, this value is the minimal value of the input file. If the specified value is larger than the minimal value of the heatmap, then the minimal value of the heatmap will be used as minimal value.				      </xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="max" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation> 
+					      Maximal value of the heatmap. By default, this value is the maximal value of the input file. If the specified value is smaller than the maximal value of the heatmap, then the maximal value of the heatmap will be used as maximal value.
+				      </xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+	      </xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="CompareGraphsRequest">
 	<xsd:sequence>
 	  <xsd:element name="Qinformat" type="xsd:string" minOccurs="0">
@@ -3374,6 +3430,25 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 		      </xsd:element>
 	      </xsd:sequence>
       </xsd:complexType>
+      <xsd:complexType name="DrawHeatmapResponse">
+	      <xsd:sequence>
+		      <xsd:element name="server" type="xsd:string">
+			      <xsd:annotation>
+				      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="command" type="xsd:string">
+			      <xsd:annotation>
+				      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="client" type="xsd:string">
+			      <xsd:annotation>
+				      <xsd:documentation>The results.</xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+	      </xsd:sequence>
+      </xsd:complexType>
       <xsd:complexType name="GraphNodeDegreeResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -4055,6 +4130,20 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 		      </xsd:sequence>
 	      </xsd:complexType>
       </xsd:element>
+      <xsd:element name="draw_heatmap">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="request" type="tns:DrawHeatmapRequest" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="draw_heatmapResponse">
+	      <xsd:complexType>
+		      <xsd:sequence>
+			      <xsd:element name="response" type="tns:DrawHeatmapResponse" />
+		      </xsd:sequence>
+	      </xsd:complexType>
+      </xsd:element>
       <xsd:element name="compare_graphs">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4444,6 +4533,13 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="display_graphResponse">
 	  <part name="output" element="tns:display_graphResponse"/>
   </message>
+  <message name="draw_heatmapRequest">
+	  <part name="parameters" element="tns:draw_heatmap"/>
+  </message>
+  
+  <message name="draw_heatmapResponse">
+	  <part name="output" element="tns:draw_heatmapResponse"/>
+  </message>
   <message name="compare_graphsRequest">
     <part name="parameters" element="tns:compare_graphs"/>
   </message>
@@ -4714,6 +4810,12 @@ This program supports a variety of background models (Bernoulli, Markov chains o
       <operation name="display_graph">
 	      <input name="DisplayGraphRequest" message="tns:display_graphRequest"/>
 	      <output name="DisplayGraphResponse" message="tns:display_graphResponse"/>         
+	      <documentation>Produces the figure of a graph
+	      </documentation>
+      </operation>
+      <operation name="draw_heatmap">
+	      <input name="DrawHeatmapRequest" message="tns:draw_heatmapRequest"/>
+	      <output name="DrawHeatmapResponse" message="tns:draw_heatmapResponse"/>         
 	      <documentation>Produces the figure of a graph
 	      </documentation>
       </operation>
@@ -5047,6 +5149,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
 	      </output>
       </operation>
       <operation name="display_graph">
+	      <soap:operation soapAction=""/>
+	      <input>
+		      <soap:body use="literal" />
+	      </input>
+	      <output>
+		      <soap:body use="literal" />
+	      </output>
+      </operation>
+      <operation name="draw_heatmap">
 	      <soap:operation soapAction=""/>
 	      <input>
 		      <soap:body use="literal" />
