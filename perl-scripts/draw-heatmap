@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: draw-heatmap,v 1.1 2008/04/30 10:59:08 rsat Exp $
+# $Id: draw-heatmap,v 1.2 2008/05/05 09:34:44 rsat Exp $
 #
 ############################################################
 
@@ -23,7 +23,7 @@ Draw a heatmap from a table
 
 =head1 AUTHORS
 
-sylvain@bigre.ulb.ac.be
+Sylvain Brohee <sylvain@bigre.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -64,7 +64,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -99,11 +99,26 @@ package main;
     $rownames = 0;
 
     $output_format = "png";
+    
+    # Maximal and minimal values
+    $main::min_val = undef;
+    $main::max_val = undef;
+    # Col width and row height
+    $main::col_width = 50;
+    $main::row_height = 30;
+    $main::no_text = 0;
     ################################################################
     ## Read argument values
     &ReadArguments();
     ################################################################
     ## Check argument values
+    if (!$main::outfile{output}) {
+      &RSAT::error::FatalError("You must specify an output file with the -o option");
+    }
+    if (!$main::infile{input}) {
+      &RSAT::error::FatalError("You must specify an input file with the -i option");
+    }    
+    
 
     ################################################################
     ## Open output stream
@@ -118,6 +133,7 @@ package main;
     my @table = (); # array containing the values
     my $max_row_name_length = 0;
     my $max_header_name_length = 0;
+
     
     my $tablecpt = 0;
     my $max_row_elements = 0;
@@ -160,18 +176,24 @@ package main;
       $tablecpt++;
     }
     close $main::in if ($main::infile{input});
-    my $row_name_width = $max_row_name_length *5 || 50;
-    my $header_name_height = $max_header_name_length*10 || 50;
+    my $row_name_width = $max_row_name_length *5 || $col_width;
+    my $header_name_height = $max_header_name_length*10 || $col_width;
+    
+    ## attribution of the minimal and maximal value if specified as arguments
+    $min = $min_val if (defined $min_val && $min_val <= $min);
+    $max = $max_val if (defined $max_val && $max_val >= $max);
+    
+    
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
 
     ################################################################
     ## Execute the command
-    if ($output_format eq "ps" || $output_format eq "eps") {
+    if ($output_format eq "ps") {
       
     } else {
-      my $p  = new GD::Image (100+(50*$max_row_elements), $header_name_height+(30*($tablecpt+2))) ;
+      my $p  = new GD::Image (100+($col_width*$max_row_elements), $header_name_height+($row_height*($tablecpt+2))) ;
       my %colors = ();
       my $white = $p->colorAllocate(255,255,255);
       my $black = $p->colorAllocate(0,0,0);
@@ -181,7 +203,7 @@ package main;
       # display header if any
       if ((scalar @header) > 0) {
         for (my $i = 0; $i < scalar @header; $i++) {
-          my $xpos = $row_name_width+(50*$i);
+          my $xpos = $row_name_width+($col_width*$i);
           my $ypos = $header_name_height;
           my $headeri = $header[$i];
           $p->stringUp(gdMediumBoldFont,$xpos,$ypos,$headeri,$black)
@@ -199,7 +221,7 @@ package main;
           my $textcol = $black;
           if ($rownames) {
             my $row_name_xpos = 5;
-            my $row_name_ypos = 5+$header_name_height+(30*$i);
+            my $row_name_ypos = 5+$header_name_height+($row_height*$i);
             $p->string(gdSmallFont, $row_name_xpos,$row_name_ypos, $rownames_list[$i], $textcol);
           }
           if (&RSAT::util::IsReal($val)) {
@@ -219,12 +241,12 @@ package main;
             }
           }
           $p->setThickness(1);
-          my $xpos1 = $row_name_width+(50*$j);
-          my $xpos2 = $row_name_width+(50*$j)+50;
-          my $ypos1 = 5+$header_name_height+(30*$i);
-          my $ypos2 = 5+$header_name_height+(30*$i)+30;
+          my $xpos1 = $row_name_width+($col_width*$j);
+          my $xpos2 = $row_name_width+($col_width*$j)+$col_width;
+          my $ypos1 = 5+$header_name_height+($row_height*$i);
+          my $ypos2 = 5+$header_name_height+($row_height*$i)+$row_height;
           $p->filledRectangle($xpos1, $ypos1, $xpos2, $ypos2, $current_col);
-          $p->string(gdSmallFont, ($xpos1+5),($ypos1+5), "$val", $textcol);
+          $p->string(gdSmallFont, ($xpos1+5),($ypos1+5), "$val", $textcol) if ($col_width >= 30 && !$no_text);
         }
       }
       binmode STDOUT;
@@ -327,8 +349,7 @@ Same as -h
 
 =item B<-i inputfile>
 
-If no input file is specified, the standard input is used.  This
-allows to use the command within a pipe.
+Input file name. This option is mandatory.
 
 =cut
 	} elsif ($arg eq "-i") {
@@ -341,8 +362,7 @@ allows to use the command within a pipe.
 
 =item	B<-o outputfile>
 
-If no output file is specified, the standard output is used.  This
-allows to use the command within a pipe.
+Name of the output file. This option is mandatory.
 
 =cut
 	} elsif ($arg eq "-o") {
@@ -357,6 +377,17 @@ Use this option if the first column contain the row names.
 =cut
 	} elsif ($arg eq "-rownames") {
 	    $main::rownames = 1;
+	    
+	    ## text
+=pod
+
+=item B<-no_text>
+
+Using this option, the values are not written in the cells of the heatmap.
+
+=cut
+	} elsif ($arg eq "-no_text") {
+	    $main::no_text = 1;
 	    
 =item B<-out_format output_format>
 
@@ -377,7 +408,55 @@ Supported : green, blue, red, fire, grey.
 	    $gradient = shift(@arguments);
 	    &RSAT::error::FatalError("$gradient\tInvalid color gradient. Supported: $supported_gradients")
 		unless ($supported_gradients{$gradient});
+		
+=item B<-col_width #>
 
+Width of the columns (in pixel). 
+
+If the row height is to small, the label of the heatmap will not be indicated. (Default : 50 px)
+
+=cut
+	} elsif ($arg eq "-col_width") {
+	    $col_width = shift (@arguments);
+	    unless (&IsNatural($col_width) && ($col_width > 0)) {
+		&RSAT::error::FatalError(join("\t", $col_width, "Invalid value for the column width. Must be a strictly positive natural number. If the column width is to small, the label of the heatmap will not be indicated."));
+	    }
+	    
+=item B<-row_height #>
+
+Height of the rows (in pixel). 
+
+If the row height is to small, the label of the heatmap will not be indicated. (Default : 30 px)
+
+=cut
+	} elsif ($arg eq "-row_height") {
+	    $row_height = shift (@arguments);
+	    unless (&IsNatural($row_height) && ($row_height > 0)) {
+		&RSAT::error::FatalError(join("\t", $row_height, "Invalid value for the row height. Must be a strictly positive natural number. If the row height is to small, the label of the heatmap will not be indicated."));
+	    }
+
+=item B<-min #>
+
+Minimal value of the heatmap. By default, this value is the minimal value of the input file. If the specified value is larger than the minimal value of the heatmap, then the minimal value of the heatmap will be used as minimal value.
+
+=cut
+	} elsif ($arg eq "-min") {
+	    $min_val = shift (@arguments);
+	    unless (&RSAT::util::IsReal($min_val)) {
+		&RSAT::error::FatalError(join("\t", $min_val, "Invalid value for the minimal value. Must be a real number."));
+	    }
+	    
+=item B<-max #>
+
+Maximal value of the heatmap. By default, this value is the maximal value of the input file. If the specified value is smaller than the maximal value of the heatmap, then the maximal value of the heatmap will be used as maximal value.
+
+=cut
+	} elsif ($arg eq "-max") {
+	    $max_val = shift (@arguments);
+	    unless (&RSAT::util::IsReal($max_val)) {
+		&RSAT::error::FatalError(join("\t", $max_val, "Invalid value for the maximal value. Must be a real number."));
+	    }
+	    
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
