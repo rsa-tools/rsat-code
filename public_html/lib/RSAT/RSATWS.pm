@@ -3312,6 +3312,9 @@ sub display_graph_cmd {
 sub draw_heatmap {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
+    
+    open TEMP, ">/home/rsat/rsa-tools/public_html/tmp/newtest";
+    print TEMP join ("", %args);
 
     my $output_choice = $args{"output"};
     unless ($output_choice) {
@@ -3319,11 +3322,11 @@ sub draw_heatmap {
     }
     my $command = $self->draw_heatmap_cmd(%args);
     ## IMAGE OUTPUT FORMAT RECUPERATION
-    my $out_format = $args{outformat};
+    my $out_format = $args{outformat} || "png";
     $out_format =~ s/\'//g;
     $out_format =~ s/\'//g;
     my $tmp_outfile = `mktemp $TMP/draw-heatmap.XXXXXXXXXX`;
-    chop $tmp_outfile;
+    chomp $tmp_outfile;
     system("rm $tmp_outfile");
     $tmp_outfile .= ".$out_format";
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
@@ -3353,14 +3356,14 @@ sub draw_heatmap {
 }
 
 sub draw_heatmap_cmd {
-  my ($self, %args) =@_;
+  my ($self, %args) = @_;
   
   my $command = "$SCRIPTS/draw-heatmap";
   
   if ($args{no_text}) {
    $command .= " -notext";
   }
-  if ($args{rownames}) {
+  if ($args{row_names}) {
    $command .= " -rownames";
   }
   if ($args{outformat}) {
