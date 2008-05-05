@@ -2260,7 +2260,7 @@ This option is only useful for GML output.</xsd:documentation>
 		      </xsd:element>
 	      </xsd:sequence>
       </xsd:complexType>
-      <xsd:complexType name="DrawHeatmap">
+      <xsd:complexType name="DrawHeatmapRequest">
 	      <xsd:sequence>
 		      <xsd:element name="outformat" type="xsd:string" minOccurs="1">
 			      <xsd:annotation>
@@ -4816,7 +4816,7 @@ This program supports a variety of background models (Bernoulli, Markov chains o
       <operation name="draw_heatmap">
 	      <input name="DrawHeatmapRequest" message="tns:draw_heatmapRequest"/>
 	      <output name="DrawHeatmapResponse" message="tns:draw_heatmapResponse"/>         
-	      <documentation>Produces the figure of a graph
+	      <documentation>Produces the figure of a heatmap
 	      </documentation>
       </operation>
       <operation name="compare_graphs">
