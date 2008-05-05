@@ -126,6 +126,13 @@ if ($soap_error!=1) {
     $temp_file = explode('/',$server);
     $temp_file = end($temp_file);
     $resultURL = $WWW_RSA."/tmp/".$temp_file;
+    #comment_file 
+    $comment_file = $server.".comments";
+    $comments = storeFile($comment_file);
+    if ($comments != "") {
+      warning($comments);
+      echo "<hr>";
+    }
     # Text-to-html
     $file = storeFile($server);
      echo "</pre>"; 
@@ -148,23 +155,40 @@ if ($soap_error!=1) {
     $tth_temp_file = end($tth_temp_file);
     $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;
   
-    #comment_file 
-    $comment_file = $server.".comments";
-    $comments = storeFile($comment_file);
-    if ($comments != "") {
-      warning($comments);
-      echo "<hr>";
-    }
+    # Draw heatmap
+//      echo "</pre>"; 
+//     $dh_parameters = array( 
+//       "request" => array(
+//        "row_names"=>1,
+//        "inputfile"=>$file,
+//        "outformat"=>"png"
+//       )
+//     );
+//     $dh_echoed = $client->draw_heatmap($dh_parameters);
+//     
+//     $dh_response = $dh_echoed->response;
+//     $dh_command = $dh_response->command;
+//     echo "$dh_command";
+//     $dh_server = $dh_response->server;
+//     $dh_client = $dh_response->client;
+//     echo "</pre>";
+//     $dh_server = rtrim ($dh_server);
+//     $dh_temp_file = explode('/',$dh_server);
+//     $dh_temp_file = end($dh_temp_file);
+//     $dh_resultURL = $WWW_RSA."/tmp/".$dh_temp_file;
+    
     
     hourglass("off");
     # Display the results
-    echo "The result is available as text file at the following URL ";
+    echo "The result are available as text file at the following URL ";
     echo "<a href = '$resultURL'>$resultURL</a><br>"; 
     echo "The results are available as HTML page at the following URL ";
     echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
+//     echo "The results are available as PNG heatmap page at the following URL ";
+//     echo "<a href = '$dh_resultURL'>$dh_resultURL</a><br>"; 
     echo "<hr>\n";
  
   	}
-  	hourglass("off");
+  	
   }
 ?>
