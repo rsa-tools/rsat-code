@@ -15,7 +15,7 @@ ARCHIVE=rsa-tools/${ARCHIVE_PREFIX}
 
 ## Archive with tar
 #TAR_EXCLUDE=-X CVS '*~' 
-TAR_CREATE =tar ${TAR_EXCLUDE} -cpvf ${ARCHIVE}.tar rsa-tools/RSA.config.default 
+TAR_CREATE =tar ${TAR_EXCLUDE} -cpvf ${ARCHIVE}.tar rsa-tools/RSA.config.default rsa-tools/RSAT_config_default.props
 TAR =tar ${TAR_EXCLUDE} -rpvf ${ARCHIVE}.tar 
 
 ################################################################
@@ -41,6 +41,7 @@ clean_emacs_bk:
 POST_CMD=
 TAR_ROOT=..
 DISTRIB_FILES= rsa-tools/perl-scripts					\
+	rsa-tools/RSA.config.default					\
 	rsa-tools/RSA.config.default					\
 	rsa-tools/public_html/data/supported_organisms_template.txt	\
 	rsa-tools/makefiles						\
