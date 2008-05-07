@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-cluster-membership,v 1.19 2008/04/25 15:01:18 gipsi Exp $
+# $Id: graph-cluster-membership,v 1.20 2008/05/07 14:22:46 rsat Exp $
 #
 ############################################################
 
@@ -171,7 +171,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     ################################################################
@@ -273,7 +273,7 @@ package main;
     # Check that all nodes of the clusters are in the graph and initialize the membership of node to clusters. Here the node is the node name.
     foreach my $node (keys %{$clusters->{'node_cluster'}}) {
     	unless (defined $nodes_name_id{$node}) {
-	    &RSAT::error::FatalError("Incongruency between graph and cluster files: Node $node is in clusters but not in graph");
+	    &RSAT::error::FatalError("Incongruence between graph and cluster files: Node $node is in clusters but not in graph");
 	}
     	foreach my $cluster (keys %{$clusters->{'cluster_node'}}) {
 	   $WeightMat->{$node}->{$cluster} = 0;
@@ -360,7 +360,7 @@ my $clust2 = $clusters->{'node_cluster'}->{$n2};
 	}
     
     print $main::out ";\tNode-Cluster Membership\n";
-    print $main::out ";Nodes\\Clusters\n";
+    print $main::out ";Nodes\\Clusters\n#";
     foreach my $cluster (@header) {
     	print $main::out "\t","cl_".$cluster;
     }
