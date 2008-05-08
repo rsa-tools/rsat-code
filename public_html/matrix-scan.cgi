@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.18 2008/01/29 11:29:36 morgane Exp $
+# $Id: matrix-scan.cgi,v 1.19 2008/05/08 09:45:19 morgane Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -318,6 +318,7 @@ sub ReadMatrixScanParameters {
   ################################################################
   ## Return crer
   if ($query->param('analysis_type') eq "analysis_crer") {
+  	$parameters .= " -n score ";
     my @return_fields = qw(crer normw limits);
     foreach my $field (@return_fields) {
       if ($query->param("return_".$field) eq "on") {
