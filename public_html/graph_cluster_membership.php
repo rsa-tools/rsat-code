@@ -135,57 +135,85 @@ if ($soap_error!=1) {
     }
     # Text-to-html
     $file = storeFile($server);
+    # echo "</pre>"; 
+    #$tth_parameters = array( 
+    #  "request" => array(
+     #  "inputfile"=>$file,
+     #  "chunk"=>1000,
+     #  "no_sort"=>1
+    #  )
+   # );
+  #  $tth_echoed = $client->text_to_html($tth_parameters);
+    
+    #$tth_response =  $tth_echoed->response;
+    #$tth_command = $tth_response->command;
+   # $tth_server = $tth_response->server;
+   # $tth_client = $tth_response->client;
+    #echo "</pre>";
+    #$tth_server = rtrim ($tth_server);
+   # $tth_temp_file = explode('/',$tth_server);
+   # $tth_temp_file = end($tth_temp_file);
+   # $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;
+  
+    # Draw heatmap (low resolution)
      echo "</pre>"; 
-    $tth_parameters = array( 
+    $ldh_parameters = array( 
       "request" => array(
+       "row_names"=>1,
        "inputfile"=>$file,
-       "chunk"=>1000,
-       "no_sort"=>1
+       "outformat"=>"png",
+       "col_width"=>"10",
+       "row_height"=>"10",
+//        "html"=>1,
+       "header"=>1
       )
     );
-    $tth_echoed = $client->text_to_html($tth_parameters);
-    
-    $tth_response =  $tth_echoed->response;
-    $tth_command = $tth_response->command;
-    $tth_server = $tth_response->server;
-    $tth_client = $tth_response->client;
+    $ldh_echoed = $client->draw_heatmap($ldh_parameters);
+    $ldh_response = $ldh_echoed->response;
+    $ldh_command = $ldh_response->command;
+    $ldh_server = $ldh_response->server;
+    $ldh_client = $ldh_response->client;
     echo "</pre>";
-    $tth_server = rtrim ($tth_server);
-    $tth_temp_file = explode('/',$tth_server);
-    $tth_temp_file = end($tth_temp_file);
-    $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;
+    $ldh_server = rtrim ($ldh_server);
+    $ldh_temp_file = explode('/',$ldh_server);
+    $ldh_temp_file = end($ldh_temp_file);
+    $ldh_resultURL = $WWW_RSA."/tmp/".$ldh_temp_file;
+    $ldh_resultURL_map = $WWW_RSA."/tmp/".$ldh_temp_file.".html";
+    
+    # Draw heatmap (high resolution)
+     echo "</pre>"; 
+    $hdh_parameters = array( 
+      "request" => array(
+       "row_names"=>1,
+       "inputfile"=>$file,
+       "outformat"=>"png",
+       "header"=>1
+      )
+    );
+    $hdh_echoed = $client->draw_heatmap($hdh_parameters);
+    $hdh_response = $hdh_echoed->response;
+    $hdh_command = $hdh_response->command;
+    $hdh_server = $hdh_response->server;
+    $hdh_client = $hdh_response->client;
+    echo "</pre>";
+    $hdh_server = rtrim ($hdh_server);
+    $hdh_temp_file = explode('/',$hdh_server);
+    $hdh_temp_file = end($hdh_temp_file);
+    $hdh_resultURL = $WWW_RSA."/tmp/".$hdh_temp_file;  
   
-    # Draw heatmap
-//      echo "</pre>"; 
-//     $dh_parameters = array( 
-//       "request" => array(
-//        "row_names"=>1,
-//        "inputfile"=>$file,
-//        "outformat"=>"png"
-//       )
-//     );
-//     $dh_echoed = $client->draw_heatmap($dh_parameters);
-//     
-//     $dh_response = $dh_echoed->response;
-//     $dh_command = $dh_response->command;
-//     echo "$dh_command";
-//     $dh_server = $dh_response->server;
-//     $dh_client = $dh_response->client;
-//     echo "</pre>";
-//     $dh_server = rtrim ($dh_server);
-//     $dh_temp_file = explode('/',$dh_server);
-//     $dh_temp_file = end($dh_temp_file);
-//     $dh_resultURL = $WWW_RSA."/tmp/".$dh_temp_file;
-    
-    
+  
     hourglass("off");
     # Display the results
     echo "The result are available as text file at the following URL ";
     echo "<a href = '$resultURL'>$resultURL</a><br>"; 
-    echo "The results are available as HTML page at the following URL ";
-    echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
-//     echo "The results are available as PNG heatmap page at the following URL ";
-//     echo "<a href = '$dh_resultURL'>$dh_resultURL</a><br>"; 
+    #echo "The results are available as HTML page at the following URL ";
+    #echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
+    echo "<hr>";
+    info ("Depending on the web browser, and of the number of clusters and nodes, images might not be viewable as the dimension of the figure are too large. In this case, right click (save as) and open it with an other visualization tool");
+    echo "The results are available as PNG heatmap page at the following URL ";
+    echo "<a href = '$ldh_resultURL'>$ldh_resultURL</a> (low resolution)<br> "; 
+    echo "The results are available as PNG heatmap page at the following URL ";
+    echo "<a href = '$hdh_resultURL'>$hdh_resultURL</a> (high resolution).<br>"; 
     echo "<hr>\n";
  
   	}
