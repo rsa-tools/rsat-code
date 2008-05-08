@@ -94,6 +94,16 @@ $default_decimals = 2;
   echo ("<br><br><form method='post' action='graph_cluster_membership.php' enctype='multipart/form-data'>
   <b>Membership Matrix<br>
   &nbsp;&nbsp;&nbsp;<a href = 'help.graph_cluster_membership.html#stats'><B>Stat</B></a>&nbsp;");
+  if ($demo) {
+    echo ("  
+    <select name='stat'>
+    <option selected value = 'edge'> edge
+    <option value = 'reledge'> relative edge
+    <option value = 'weight'> weight
+    <option value = 'relw'> relative weight
+    </select> <br><br>");
+  }
+  else {
     echo ("  
     <select name='stat'>
     <option selected value = 'weight'> weight
@@ -101,7 +111,7 @@ $default_decimals = 2;
     <option value = 'edge'> edge
 <option value = 'reledge'> relative edge
     </select> <br><br>");
-
+ }
   echo ("<table>
       <tr><td><B><a href = 'help.graph_cluster_membership.html#decimals'>Number of Decimals</a></B></td><td><input type = 'text' name='decimals' value = '$default_decimals' size = 1></input></td></tr>
 ");
