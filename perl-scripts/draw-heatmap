@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: draw-heatmap,v 1.3 2008/05/08 10:16:18 rsat Exp $
+# $Id: draw-heatmap,v 1.4 2008/05/08 12:39:09 rsat Exp $
 #
 ############################################################
 
@@ -64,7 +64,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -125,7 +125,14 @@ package main;
     ################################################################
     ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
-
+    $main::outhtml = &OpenOutputFile($main::outfile{htmlmap}) if (defined $main::outfile{htmlmap});
+    
+    ################################################################
+    ## If HTML map required, initialization
+    my $html_source = "<html><header><title>Draw Heatmap</title></header><body>";
+    $html_source .= "<img src = '".$main::outfile{output}."' usemap = '#map' border = 1>";
+    $html_source .= "<map name = 'map'>";
+    
     ################################################################
     ## Read input
     my $min = 32000;  # min value of the table
@@ -184,7 +191,6 @@ package main;
     ## attribution of the minimal and maximal value if specified as arguments
     $min = $min_val if (defined $min_val && $min_val <= $min);
     $max = $max_val if (defined $max_val && $max_val >= $max);
-    ## coordinates of the vertical lines
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
@@ -243,7 +249,6 @@ package main;
               $textcol = $white;
             }
           }
-          
           my $xpos1 = $row_name_width+($col_width*$j);
           my $xpos2 = $row_name_width+($col_width*$j)+$col_width;
           my $ypos1 = 5+$header_name_height+($row_height*$i);
@@ -259,9 +264,17 @@ package main;
             $p->line($vline_x,$vline_topy,$vline_x,$vline_bottomy, $black);
             $p->setThickness(1);
           }
-          
-          
-
+          if ($main::outfile{htmlmap}) {
+            my $cell_content = "$val (";
+            if ((scalar @rownames_list) > 0) {
+              $cell_content .= "Row $rownames_list[$i];";
+            }
+            if ((scalar @header) > 0) {
+              $cell_content .= "Col $header[$j]";
+            }
+            $cell_content .= ")";
+            $html_source .= "<area shape = 'rect' coords = '$xpos1,$ypos1,$xpos2,$ypos2' title = '$cell_content'>";
+          }
         }
         if ($lines) {
           # Add horizontal lines
@@ -287,7 +300,11 @@ package main;
     
     ################################################################
     ## Print output
-
+    if (defined ($main::outfile{htmlmap})) {
+      $html_source .= "</map>";
+      $html_source .= "</HTML>";
+      print $main::outhtml $html_source;
+    }
 
     ################################################################
     ## Finish verbose
@@ -393,6 +410,22 @@ Name of the output file. This option is mandatory.
 =cut
 	} elsif ($arg eq "-o") {
 	    $main::outfile{output} = shift(@arguments);
+	    
+	    
+
+
+	    ## HTML MAP
+=pod
+
+=item	B<-html html_map_file>
+
+If a HTML map file is defined, draw-heatmap then produces a HTML file that loads the 
+the HEATMAP. Moreover, each of the cell is defined so that when the mouse is over in
+a web browser, the user get the name of row, of the column and the value of the cell.
+
+=cut
+	} elsif ($arg eq "-html") {
+	    $main::outfile{htmlmap} = shift(@arguments);
 	    ## Row names
 =pod
 
