@@ -3372,6 +3372,12 @@ sub draw_heatmap_cmd {
    $out_format =~ s/\'//g;
    $command .= " -out_format $out_format";
   }
+  if ($args{gradient}) {
+   my $gradient = $args{gradient};
+   $gradient =~ s/\'//g;
+   $gradient =~ s/\'//g;
+   $command .= " -gradient $gradient";
+  }
   if ($args{min}) {
    my $min = $args{min};
    $min =~ s/\'//g;
