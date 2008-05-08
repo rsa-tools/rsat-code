@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.21 2008/04/23 14:05:21 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.22 2008/05/08 12:43:38 rsat Exp $
 #
 # Time-stamp
 #
@@ -64,6 +64,8 @@ package main;
   local $ortho;
   local $ortho_type;
   local $taxon;
+
+  local $common_name = '';
 
   ## Connection to the EnsEMBL MYSQL database
   local $ensembl_host = 'ensembldb.ensembl.org';  # db at EBI (use outside SCMBB)
@@ -293,6 +295,12 @@ package main;
 		$gene = $gene_adaptor -> fetch_by_stable_id($gene_id);
 	    }
 	    &Main($gene);
+
+	    # get-orthologs if wanted
+            if ($ortho) {
+                &Ortho($gene -> stable_id);
+            }
+
 	}
     } else {
 	foreach my $id (@queries) {
@@ -524,7 +532,7 @@ sub Main {
 
     # Export sequence to file
     if ($sequence) {
-	print $fh ">$gene_id\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+	print $fh ">$common_name-$gene_id\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
 	print $fh "$sequence\n";
     }
   } else { # feattype = mrna, cds, introns...
@@ -584,7 +592,7 @@ sub Main {
 
 	# Export sequence to file
 	if ($sequence) {
-	    print $fh ">$gene_id-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+	    print $fh ">$common_name-$gene_id-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
 	    print $fh "$sequence\n";
 	}
       }
@@ -640,7 +648,7 @@ sub Main {
 
 	    # Export sequence to file
 	    if ($sequence) {
-		print $fh ">$gene_id-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand\n";
+		print $fh ">$common_name-$gene_id-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand\n";
 		print $fh "$sequence\n";
 	    }
 	  }
@@ -663,7 +671,7 @@ sub Main {
 
 	  # Export sequence to file
 	  if ($sequence) {
-	      print $fh ">$gene_id-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand\n";
+	      print $fh ">$common_name-$gene_id-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand\n";
 	      print $fh "$sequence\n";
 	  }
 	}
@@ -699,7 +707,7 @@ sub Main {
 
 	      # Export sequence to file
 	      if ($sequence) {
-		  print $fh ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand\n";
+		  print $fh ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand\n";
 		  print $fh "$sequence\n";
 	      }
 	    } elsif ($coding_region_end < $exon_end && $coding_region_end > $exon_start) {
@@ -714,7 +722,7 @@ sub Main {
 
 	      # Export sequence to file
 	      if ($sequence) {
-		  print $fh ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand\n";
+		  print $fh ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand\n";
 		  print $fh "$sequence\n";
 	      }
 	    } elsif ($coding_region_start > $exon_end) {
@@ -727,7 +735,7 @@ sub Main {
 	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	      # Export sequence to file
-	      print $fh ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
+	      print $fh ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
 	      print $fh "$sequence\n";
 	    } elsif ($coding_region_end < $exon_start) {
 	      $sequence = &GetSequence($exon -> start(), $exon -> end());
@@ -740,7 +748,7 @@ sub Main {
 
 	      # Export sequence to file
 	      if ($sequence) {
-		  print $fh ">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
+		  print $fh ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
 		  print $fh "$sequence\n";
 	      }
 	    }
@@ -755,7 +763,7 @@ sub Main {
 
 	    # Export sequence to file
 	    if ($sequence) {
-		print $fh ">$gene_id-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
+		print $fh ">$common_name-$gene_id-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
 		print $fh "$sequence\n";
 	    }
 	  }
@@ -793,11 +801,11 @@ sub Main {
 
 	# Export sequence to file
 	if ($utr5_sequence) {
-	    print $fh ">$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_start $rsat_strand\n";
+	    print $fh ">$common_name-$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_start $rsat_strand\n";
 	    print $fh "$utr5_sequence\n";
 	}
 	if ($utr3_sequence) {
-	    print $fh ">$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_start $rsat_strand\n";
+	    print $fh ">$common_name-$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_start $rsat_strand\n";
 	    print $fh "$utr3_sequence\n";
 	}
       }
@@ -818,7 +826,7 @@ sub Main {
 
 	# Export sequence to file
 	if ($sequence) {
-	    print $fh ">$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+	    print $fh ">$common_name-$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
 	    print $fh "$sequence\n";
 	}
       }
@@ -853,7 +861,7 @@ sub Main {
 
       # Export sequence to file
       if ($sequence) {
-	  print $fh ">$gene_id-$ref_transcript\t$gene_id-$ref_transcript; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+	  print $fh ">$common_name-$gene_id-$ref_transcript\t$gene_id-$ref_transcript; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
 	  print $fh "$sequence\n";
       }
     }
@@ -1245,6 +1253,10 @@ sub GetSequence {
 	    &RSAT::message::Info("Perc. id.:", $attribute->perc_id,"Perc. pos.:",$attribute->perc_pos,"Perc. cov.:",$attribute->perc_cov) if ($main::verbose >= 1);
 
 	    unless ($member->stable_id eq $ortho_id) {
+
+		$common_name = $member->taxon->common_name;
+		$common_name =~ s/\s+/_/g;
+		&RSAT::message::Info("Common name:", $common_name) if ($main::verbose >= 1);
 
 		# Prints all homologs to table if asked for
 		if ($homologs_table) {
