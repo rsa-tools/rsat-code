@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: draw-heatmap,v 1.2 2008/05/05 09:34:44 rsat Exp $
+# $Id: draw-heatmap,v 1.3 2008/05/08 10:16:18 rsat Exp $
 #
 ############################################################
 
@@ -64,7 +64,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -107,6 +107,8 @@ package main;
     $main::col_width = 50;
     $main::row_height = 30;
     $main::no_text = 0;
+    # draw line 
+    $main::lines = 0;
     ################################################################
     ## Read argument values
     &ReadArguments();
@@ -182,8 +184,7 @@ package main;
     ## attribution of the minimal and maximal value if specified as arguments
     $min = $min_val if (defined $min_val && $min_val <= $min);
     $max = $max_val if (defined $max_val && $max_val >= $max);
-    
-    
+    ## coordinates of the vertical lines
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
@@ -197,6 +198,8 @@ package main;
       my %colors = ();
       my $white = $p->colorAllocate(255,255,255);
       my $black = $p->colorAllocate(0,0,0);
+      $p->setThickness(1);
+      
       $colors{"255255255"} = $white;
       $colors{"000000000"} = $black;
       $p->interlaced('false');
@@ -240,13 +243,36 @@ package main;
               $textcol = $white;
             }
           }
-          $p->setThickness(1);
+          
           my $xpos1 = $row_name_width+($col_width*$j);
           my $xpos2 = $row_name_width+($col_width*$j)+$col_width;
           my $ypos1 = 5+$header_name_height+($row_height*$i);
           my $ypos2 = 5+$header_name_height+($row_height*$i)+$row_height;
           $p->filledRectangle($xpos1, $ypos1, $xpos2, $ypos2, $current_col);
           $p->string(gdSmallFont, ($xpos1+5),($ypos1+5), "$val", $textcol) if ($col_width >= 30 && !$no_text);
+          # put the lines only when computing the last row
+          if ($lines && $i == (scalar(@table)-1)) {
+            $p->setThickness(2);
+            $vline_x = $xpos2;
+            $vline_topy = $header_name_height;
+            $vline_bottomy = $ypos2;
+            $p->line($vline_x,$vline_topy,$vline_x,$vline_bottomy, $black);
+            $p->setThickness(1);
+          }
+          
+          
+
+        }
+        if ($lines) {
+          # Add horizontal lines
+          $p->setThickness(2);
+          $hline_leftx = $row_name_width;
+          $hline_leftx += $col_width  if ($rownames);
+          $hline_y = 5+$header_name_height+($row_height*$i)+$row_height;
+          $hline_rightx = $row_name_width+($col_width*scalar(@row))+$col_width;
+          $hline_rightx -= $col_width  if ($rownames);
+          $p->line($hline_leftx,$hline_y,$hline_rightx,$hline_y, $black);
+          $p->setThickness(1);
         }
       }
       binmode STDOUT;
@@ -456,6 +482,13 @@ Maximal value of the heatmap. By default, this value is the maximal value of the
 	    unless (&RSAT::util::IsReal($max_val)) {
 		&RSAT::error::FatalError(join("\t", $max_val, "Invalid value for the maximal value. Must be a real number."));
 	    }
+=item B<-lines>
+
+Add black vertical and horizontal separations lines between the cells of the heatmap
+
+=cut
+	} elsif ($arg eq "-lines") {
+	    $lines = 1;
 	    
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
@@ -475,7 +508,7 @@ Maximal value of the heatmap. By default, this value is the maximal value of the
 ################################################################
 ## Verbose message
 sub Verbose {
-    print $main::out "; template ";
+    print $main::out "; draw-heatmap ";
     &PrintArguments($main::out);
     printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
     if (defined(%main::infile)) {
