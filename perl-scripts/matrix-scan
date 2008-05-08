@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.120 2008/04/22 08:56:21 morgane Exp $
+# $Id: matrix-scan,v 1.121 2008/05/08 10:18:26 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -860,8 +860,16 @@ package main;
   
   ## get shortest matrix size
   my @sorted_array = sort {$a <=> $b} (values(%matrix_sizes));
-  local $shortest_matrix_size = shift (@sorted_array);
-  local $longest_matrix_size = pop (@sorted_array);
+  local $shortest_matrix_size;
+  local $longest_matrix_size;
+  ## case where only one matrix
+  if (scalar(@sorted_array) == 1){
+  	$longest_matrix_size = $sorted_array[0];
+  	$shortest_matrix_size = $longest_matrix_size;
+  } else {
+  	$shortest_matrix_size = shift (@sorted_array);
+  	$longest_matrix_size = pop (@sorted_array);
+  }
   
   ################################################################
   ## Calculate th pval distribution
