@@ -3207,7 +3207,11 @@ sub display_graph {
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     close TMP_OUT;
     $command .= " -o $tmp_outfile";
+    
     system $command;
+    
+    
+    
     my $result = `cat $tmp_outfile`;
     my $stderr = `$command 2>&1 1>/dev/null`;
     if ($stderr) {
@@ -3331,8 +3335,11 @@ sub draw_heatmap {
     $tmp_outfile .= ".$out_format";
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     close TMP_OUT;
+    my $tmp_outfile_html = $tmp_outfile.".html";
     $command .= " -o $tmp_outfile";
-    system $command;
+    if ($args {html}) {
+      $command .= " -html $tmp_outfile_html";
+    }
     my $result = `cat $tmp_outfile`;
     my $stderr = `$command 2>&1 1>/dev/null`;
     if ($stderr) {
