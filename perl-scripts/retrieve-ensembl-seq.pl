@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.22 2008/05/08 12:43:38 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.23 2008/05/10 13:24:07 rsat Exp $
 #
 # Time-stamp
 #
@@ -654,7 +654,7 @@ sub Main {
 	  }
 	}
 
-	if ($first_intron) {
+	if ($first_intron && $i != 0) {
 
 	  &RSAT::message::Info ("First intron:") if ($main::verbose >= 1);
 	  &RSAT::message::Info (join("\t", "# ID", "Start", "End")) if ($main::verbose >= 1);
