@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.27 2008/04/04 16:37:50 rsat Exp $
+# $Id: footprint-discovery,v 1.28 2008/05/12 22:26:32 jvanheld Exp $
 #
 ############################################################
 
@@ -124,7 +124,7 @@ package main;
 
   ################################################################
   ## Initialise parameters
-  $program_version = do { my @r = (q$Revision: 1.27 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.28 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -383,6 +383,7 @@ sub RunFootprintDisco {
   $cmd = "$SCRIPTS/retrieve-seq ";
   $cmd .= " -org ".$organism_name;
   $cmd .= " -i ".$outfile{genes};
+  $cmd .= " -noorf";
   $cmd .= " -o ".$outfile{query_seq};
   &one_command($cmd);
 #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
