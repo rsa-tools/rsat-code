@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.22 2008/04/25 13:42:18 jvanheld Exp $
+# $Id: compare-matrices,v 1.23 2008/05/14 01:53:30 jvanheld Exp $
 #
 ############################################################
 
@@ -101,9 +101,10 @@ Total length of the alignent between matrices m1 and m2.
 
  W = w1 + w2 - w
 
-=head2 Relative length
 
-A measure of the mutual overlap between the alligned matrices.
+=item Relative length
+
+A measure of the mutual overlap between the aligned matrices.
 
 Wr = w / W
 
@@ -236,7 +237,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
