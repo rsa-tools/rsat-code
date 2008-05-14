@@ -542,7 +542,7 @@ print $query->hidden(-name=>'matrix_format',-default=>'transfac');
 print $query->hidden(-name=>'consensus_as_name',-default=>'');
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
-print $query->submit(-label=>"DEMO 1");
+print $query->submit(-label=>"DEMO 1 (sites)");
 print "</B></TD>";
 print $query->end_form;
 
@@ -566,7 +566,7 @@ print $query->hidden(-name=>'consensus_as_name',-default=>'');
 print $query->hidden(-name=>'crer_ids',-default=>'CHECKED');
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
-print $query->submit(-label=>"DEMO 2");
+print $query->submit(-label=>"DEMO 2 (CRERs)");
 print "</B></TD>\n";
 print $query->end_form;
 
@@ -589,7 +589,7 @@ print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
 print $query->hidden(-name=>'uth_occ_sig_rank',-default=>1);
 print $query->hidden(-name=>'lth_occ_score',-default=>5);
-print $query->submit(-label=>"DEMO 3");
+print $query->submit(-label=>"DEMO 3 (over-representation)");
 print "</B></TD>\n";
 print $query->end_form;
 
