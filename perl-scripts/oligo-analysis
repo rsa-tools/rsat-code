@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.134 2008/03/24 19:05:44 jvanheld Exp $
+# $Id: oligo-analysis,v 1.135 2008/05/14 22:36:05 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -24,7 +24,7 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &AlphaDate();
-local $program_version = do { my @r = (q$Revision: 1.134 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.135 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
 local $taxon = 0; ## Specify it the background model is organism-specific or taxon-specific
@@ -165,8 +165,6 @@ if ($method eq "Markov chain") {
 	&RSAT::error::FatalError("invalid Markov order $Markov_order");
     }
 }
-
-
 
 ### check input format
 &CheckInputSeqFormat($in_format);
