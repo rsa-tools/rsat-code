@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-distrib,v 1.10 2008/01/24 02:32:00 jvanheld Exp $
+# $Id: matrix-distrib,v 1.11 2008/05/14 22:34:02 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -23,6 +23,8 @@ bernoulli as well as markov-chain background models.
 
 =head1 AUTHORS
 
+=over
+
 =item Jacques van Helden jvanheld@scmbb.ulb.ac.be
 
 =item Jean Valery Turatsinze jturatsi@scmbb.ulb.ac.be
@@ -31,19 +33,23 @@ bernoulli as well as markov-chain background models.
 
 =item With the help of Matthieu de France defrance@scmbb.ulb.ac.be
 
+=back
+
 =head1 CATEGORY
+
+=over
 
 =item util
 
 =item PSSM
+
+=back
 
 =head1 USAGE
 
 matrix-distrib [-i matrixfile] [-bgfile bgfile][-o outputfile] [-v]
 
 =head1 INPUT FORMATS
-
-=over
 
 =head2 Matrix file
 
@@ -59,13 +65,11 @@ oligo-analysis, MotifSampler, meme. Default is: oligo-analysis.
 
 For a description of available format, see I<convert-backgound-model -h>
 
-=back
-
 =head1 OUTPUT FORMAT
 
 The output is a tab-delimited file with the following columns:
 
-=over 
+=over
 
 =item 1	weight:      	log-likelihood score: w=P(S|M)/P(S|B)
 
