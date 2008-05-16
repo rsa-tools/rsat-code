@@ -161,7 +161,8 @@ print "<BR>\n";
 print $query->checkbox(-name=>'rm',
   		       -checked=>$default{rm},
   		       -label=>'');
-print "&nbsp;<A HREF='help.retrieve-seq.html#rm'><B>Mask repeats (only valid for organisms with annotated repeats)</B></A>";
+print "&nbsp;<A HREF='help.retrieve-seq.html#rm'><B>Mask repeats</B></A>";
+print "&nbsp;<A HREF='help.retrieve-seq.html#rm_list'><B>(only valid for organisms with annotated repeats)</B></A>";
 print "<BR>\n";
 
 ### allows for imprecise postions
