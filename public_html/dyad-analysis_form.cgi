@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.18 2008/01/30 12:49:12 rsat Exp $
+# $Id: dyad-analysis_form.cgi,v 1.19 2008/05/17 19:10:43 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -111,8 +111,13 @@ print "&nbsp;<A HREF='help.dyad-analysis.html#purge'><B>purge sequences (highly 
 print "<BR>";
 print "<HR width=550 align=left>\n";
 
-### oligo size
-print "<B><A HREF='help.dyad-analysis.html#oligo_size'>Oligonucleotide size</A>&nbsp;</B>\n";
+################################################################
+## Dyad counting options
+print "<hr>\n";
+print "<b>Dyad counting mode</b><br>\n";
+
+### Monad length
+print "<B><A HREF='help.dyad-analysis.html#oligo_size'>Monad length</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'oligo_size',
 			 -Values=>[3..3],
 			 -default=>$default{oligo_size});
