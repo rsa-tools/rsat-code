@@ -24,6 +24,7 @@
   $default_exAttrib = "";
   $default_algorithm = "rea";
   $default_metabolic = 0;
+  $default_email='';
   $demo2_graph_id = 'Pathfinder_tmpGraph_d597cd86-3095-475f-99e7-d70a542d072a.tab';
 
   # variables given within workflow
@@ -250,6 +251,11 @@
   <option value = 'pathsGraphs'>each path as a separated component of a single graph</option>
   <option value = 'pathsUnion'>paths unified into one graph</option>
   </select>
+  </td></tr>
+  <tr><td>
+  <B><a href = 'help.pathfinder.html#email'>Email (optional)</a></B>
+  </td><td>
+  <input type='text' name='email' value='$default_email' size='50'></input>
   </td></tr>
   </table>
   <br>

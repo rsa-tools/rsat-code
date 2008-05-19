@@ -26,7 +26,6 @@
   # server-related params
   $result_location = "/home/rsat/rsa-tools/public_html/tmp/";
   $html_location = "http://rsat.scmbb.ulb.ac.be/rsat/tmp/";
-  $result_suffix = "_Result.txt";
   $sylvain_input_format = "tab";
   $sylvain_input_graph = "";
 
@@ -60,6 +59,7 @@
   $minLength = $_REQUEST['minLength'];
   $exAttrib = $_REQUEST['exAttrib'];
   $metabolic = $_REQUEST['metabolic']; 
+  $email = $_REQUEST['email'];
 
   ############ Check input ########################
 
@@ -175,14 +175,17 @@
     	'storeInputGraph'=>$store_graph,
     	'returnType'=>$return_type
       )
-    );
-    # Info message
-    info("Results will appear below");
-    echo"<hr>\n";
-    echo("<div id='hourglass' class='hourglass'><img src='images/animated_hourglass.gif' height='50' border='1'></div>");
-    flush();
-    # Open the SOAP client
-    $client = new SoapClient(
+    );    
+    
+    if($email == ""){
+        # Info message
+        info("Results will appear below");
+        echo"<hr>\n";
+        echo("<div id='hourglass' class='hourglass'><img src='images/animated_hourglass.gif' height='50' border='1'></div>");
+        flush();
+
+         # Open the SOAP client
+        $client = new SoapClient(
                       'http://rsat.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl',
                            array(
                                  'trace' => 1,
@@ -191,19 +194,20 @@
                                  'encoding' => SOAP_LITERAL
                                  )
                            );
-    # Execute the command
-    $functions = $client->__getFunctions();
-    $types = $client->__getTypes();
-    # info(print_r($parameters));
-    # info(print_r($functions));
- 	# info(print_r($types));
- 	try{
+        # Execute the command
+        $functions = $client->__getFunctions();
+        $types = $client->__getTypes();
+        # info(print_r($parameters));
+        # info(print_r($functions));
+ 	    # info(print_r($types));
+ 	  try{
         $echoed = $client->pathfinding($parameters);
-    }catch(SoapFault $fault){
-       echo("The following error occurred:");
-       error($fault);
-       $error = 1;
-    }
+        }catch(SoapFault $fault){
+        echo("The following error occurred:");
+        error($fault);
+        $error = 1;
+        }
+        
     echo("<div id='hide' class='hide'><img src='images/hide_hourglass.jpg' height='60' border='0'></div>");
     ########## Process results ###############
 
@@ -257,7 +261,7 @@
     	echo "<align='left'>The result is available as HTML page at the following URL:<br> ";
     	echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>";
     	echo "You can sort the rows according to a selected column by clicking on the header entry of that column.<br></align>";
-    	}
+    	} # end pathsTable
     	# in case of tab-format, truncate nodes to make it readable by Sylvain Brohee's tools
     	if(strcmp($out_format,'flat') == 0){
     		if(ereg(';ARCS',$fileContent)){
@@ -267,23 +271,23 @@
     		}
     	}else{
     		$sylvain_input_graph = $fileContent;
-   		 }
+   	    }
     	# remove leading or trailing white spaces or end of lines
     	$sylvain_input_graph = ltrim($sylvain_input_graph,"\n");
     	$sylvain_input_graph = rtrim($sylvain_input_graph,"\n");
     	$sylvain_input_graph = ltrim($sylvain_input_graph);
     	$sylvain_input_graph = rtrim($sylvain_input_graph);
 
-	# generate temp file
-	 $tempFileName = tempnam($result_location,"Pathfinder_tmpGraph_");
-	 $fh = fopen($tempFileName, 'w') or die("Can't open file $tempFileName");
-	 fwrite($fh, $sylvain_input_graph);
-	 fclose($fh);
+	   # generate temp file
+	   $tempFileName = tempnam($result_location,"Pathfinder_tmpGraph_");
+	   $fh = fopen($tempFileName, 'w') or die("Can't open file $tempFileName");
+	   fwrite($fh, $sylvain_input_graph);
+	   fclose($fh);
 
-   if($store_graph) {
-   		echo "<br><align='left'>Your stored input graph has the id:<br> $graphid<br>
-   		Submit this id to speed up other path finding jobs on this input graph.</align>";
-   }
+        if($store_graph) {
+   		   echo "<br><align='left'>Your stored input graph has the id:<br> $graphid<br>
+   		   Submit this id to speed up other path finding jobs on this input graph.</align>";
+        }
     echo "<hr>\n";
     if(strcmp($outputType,'pathsTable') == 0){
          echo "
@@ -472,9 +476,66 @@
        </td>
      </tr>
    </table>";
-  		}
-  	}
-  }
+  		} # if output type is a graph
+  	  } # path finding error
+  	  # send result via email
+      }else{
+      
+        $pathfinderParams = array(
+     	'source'=>$sources,
+     	'target'=>$targets,
+     	'graphString'=>$graph,
+     	'tmpInGraphFile'=>$tmpGraphFile,
+        'inFormat'=>$in_format,
+        'outFormat'=>$out_format,
+    	'directed'=>$directed,
+    	'metabolic'=>$metabolic,
+    	'exclusionAttr'=>$exAttrib,
+    	'nodeIntegers'=>$nodeIntegers,
+    	'weight'=>$weight,
+    	'algorithm'=>$algorithm,
+    	'rank'=>$rank,
+    	'maxWeight'=>$maxWeight,
+    	'maxLength'=>$maxLength,
+    	'minLength'=>$minLength,
+    	'outputType'=>$outputType,
+    	'storeInputGraph'=>$store_graph,
+    	'returnType'=>$return_type
+         );    
+
+        $mixedRequest = array("PathfinderRequest"=>$pathfinderParams,"GraphConverterRequest"=>NULL, "MetabolicGraphConstructorRequest"=>NULL);
+        $requestArray = array(0=>$mixedRequest);
+        $emailParams = array("request" => array(
+                'email'=>$email,
+                'requestArray'=>$requestArray
+            )
+        );
+        # Open the SOAP client
+        $emailclient = new SoapClient(
+                      'http://rsat.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl',
+                           array(
+                                 'trace' => 1,
+                                 'soap_version' => SOAP_1_1,
+                                 'style' => SOAP_DOCUMENT,
+                                 'encoding' => SOAP_LITERAL
+                                 )
+                           );
+ 	   try{
+ 	      $functions = $emailclient->__getFunctions();
+          $types = $emailclient->__getTypes();
+ 	      # info(print_r($emailParams));
+ 	      # info(print_r($types));
+          $echoed = $emailclient->workflow($emailParams);
+        }catch(SoapFault $fault){
+            echo("The following error occurred:");
+            error($fault);
+            $error = 1;
+        }
+        if($error == 0){
+            info("After computation has finished, the result will be sent to the specified email address: ".$email);
+        }
+    } # end send by email
+} # input param error
 ?>
 </body>
 </html>
