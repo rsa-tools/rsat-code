@@ -356,8 +356,9 @@
 	<ol>
 	<li>Runtime depends strongly on the size of the graph and the number of paths asked. A timeout of 10 minutes has been set.<br>
 	We tested REA on metabolic graphs up to 44,000 arcs. With degree weighting scheme and paths requested up to second rank, the algorithm usually completed within one minute.
-	Be aware that for unit weighting scheme, runtime can be much longer, because many more paths of equal weight may exist. The timeout set may not be sufficient in these cases
-	and we plan a larger timeout in combination with email notification later on.
+	Be aware that for unit weighting scheme, runtime can be much longer, because many more paths of equal weight may exist.
+	In this case, the runtime may exceed the server timeout.
+	Whenever a timeout occurs, you might try to repeat the search with your email address set. This will circumvent the server timeout.
 	</li>
 	</ol>
 	</ul>
