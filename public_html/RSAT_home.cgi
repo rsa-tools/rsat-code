@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.31 2008/04/04 09:08:21 rsat Exp $
+# $Id: RSAT_home.cgi,v 1.32 2008/05/21 00:42:16 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -87,6 +87,9 @@ print <<EndText;
     
     <TD><A HREF="links.html"><B>
     Links</B></A></TD>
+    
+    <TD><A HREF="distrib/index.html"><B>
+    Download</B></A></TD>
     
     </tr>
     </table>
