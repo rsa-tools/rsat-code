@@ -295,5 +295,25 @@ Function UpdateLogFile($suite ,$script_name, $message) {
     echo("<div id='hide' class='hide'><img src='images/hide_hourglass.jpg' height='60' border='0'></div>");
   }
 }
+?>
+
+<?php
+  function urlfilesize($url,$thereturn) {
+    if (substr($url,0,4)=='http') {
+      $x = array_change_key_case(get_headers($url, 1),CASE_LOWER);
+      $x = $x['content-length'];
+    }
+    else {
+      $x = @filesize($url); }
+      if (!$thereturn) { 
+        return $x ; 
+      }
+      elseif($thereturn == 'mb') { 
+        return round($x / (1024*1024),2) ; 
+      }
+      elseif($thereturn == 'kb') { 
+        return round($x / (1024),2) ; 
+      }
+  }
 
 ?>

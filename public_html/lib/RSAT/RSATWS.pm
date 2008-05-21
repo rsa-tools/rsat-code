@@ -47,19 +47,19 @@ sub retrieve_seq {
   my $query_ref = $args{"query"};
   my $query = "";
   if ($query_ref =~ /ARRAY/) {
-    my @query = @{$query_ref};
-    foreach $q (@query) {
-      $q =~s/\'//g;
-      $q =~s/\"//g;
-    }
-    $query = " -q '";
-    $query .= join "' -q '", @query;
-    $query .= "'";
-  } else {
-    $query = " -q '";;
-    $query .= $query_ref;
-    $query .= "'";
-}
+      my @query = @{$query_ref};
+      foreach $q (@query) {
+	  $q =~s/\'//g;
+	  $q =~s/\"//g;
+      }
+      $query = " -q '";
+      $query .= join "' -q '", @query;
+      $query .= "'";
+  } elsif ($query_ref) {
+      $query = " -q '";
+      $query .= $query_ref;
+      $query .= "'";
+  }
 
   my $feattype = $args{"feattype"};
   my $type = $args{"type"};
@@ -314,7 +314,7 @@ sub retrieve_ensembl_seq {
     $query = " -q '";
     $query .= join "' -q '", @query;
     $query .= "'";
-  } else {
+  } elsif ($query_ref) {
     $query = " -q '";;
     $query .= $query_ref;
     $query .= "'";
@@ -627,11 +627,10 @@ sub oligo_analysis {
 	@_lt = split / /, $lt;
 	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
       }
-    } else {
-    $lth = " -lth '";;
-    $lth .= $lth_ref;
-    $lth .= "'";
-}
+    } elsif ($lth_ref) {
+	@_lt = split / /, $lth_ref;
+	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
+    }
 
     ## List of upper thresholds
     my $uth_ref = $args{"uth"};
@@ -644,11 +643,10 @@ sub oligo_analysis {
 	@_ut = split / /, $ut;
 	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
       }
-    } else {
-    $uth = " -uth '";;
-    $uth .= $uth_ref;
-    $uth .= "'";
-}
+    } elsif ($uth_ref) {
+	@_ut = split / /, $uth_ref;
+	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
+    }
 
     my $pseudo = $args{'pseudo'};
 
@@ -769,11 +767,10 @@ sub dyad_analysis {
 	@_lt = split / /, $lt;
 	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
       }
-    } else {
-    $lth = " -lth '";;
-    $lth .= $lth_ref;
-    $lth .= "'";
-}
+    } elsif ($lth_ref) {
+	@_lt = split / /, $lth_ref;
+	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
+    }
 
     ## List of upper thresholds
     my $uth_ref = $args{"uth"};
@@ -786,11 +783,10 @@ sub dyad_analysis {
 	@_ut = split / /, $ut;
 	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
       }
-    } else {
-    $uth = " -uth '";;
-    $uth .= $uth_ref;
-    $uth .= "'";
-}
+    } elsif ($uth_ref) {
+	@_ut = split / /, $uth_ref;
+	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
+    }
 
     my $command = "$SCRIPTS/dyad-analysis";
 
@@ -1380,7 +1376,7 @@ sub get_orthologs_cmd {
     $query = " -q '";
     $query .= join "' -q '", @query;
     $query .= "'";
-  } else {
+  } elsif ($query_ref) {
     $query = " -q '";;
     $query .= $query_ref;
     $query .= "'";
@@ -1397,11 +1393,10 @@ sub get_orthologs_cmd {
 	@_lt = split / /, $lt;
 	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
       }
-    } else {
-    $lth = " -lth '";;
-    $lth .= $lth_ref;
-    $lth .= "'";
-}
+    } elsif ($lth_ref) {
+	@_lt = split / /, $lth_ref;
+        $lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
+    }
 
     ## List of upper thresholds
     my $uth_ref = $args{"uth"};
@@ -1414,10 +1409,9 @@ sub get_orthologs_cmd {
 	@_ut = split / /, $ut;
 	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
       }
-    } else {
-    $uth = " -uth '";;
-    $uth .= $uth_ref;
-    $uth .= "'";
+    } elsif ($uth_ref) {
+	@_ut = split / /, $uth_ref;
+        $uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
 }
 
   my $command = "$SCRIPTS/get-orthologs";
@@ -1518,7 +1512,7 @@ sub footprint_discovery_cmd {
 	$query = " -q '";
 	$query .= join "' -q '", @query;
 	$query .= "'";
-    } else {
+    } elsif ($query_ref) {
     $query = " -q '";;
     $query .= $query_ref;
     $query .= "'";
@@ -1551,11 +1545,10 @@ sub footprint_discovery_cmd {
 	@_lt = split / /, $lt;
 	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
       }
-    } else {
-    $lth = " -lth '";;
-    $lth .= $lth_ref;
-    $lth .= "'";
-}
+    } elsif ($lth_ref) {
+	@_lt = split / /, $lth_ref;
+        $lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
+    }
 
     ## List of upper thresholds
     my $uth_ref = $args{"uth"};
@@ -1569,10 +1562,9 @@ sub footprint_discovery_cmd {
 	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
       }
     } else {
-    $uth = " -uth '";;
-    $uth .= $uth_ref;
-    $uth .= "'";
-}
+	@_ut = split / /, $uth_ref;
+	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
+    }
 
     my $command = "$SCRIPTS/footprint-discovery";
 
@@ -1699,7 +1691,7 @@ sub gene_info {
     $query = " -q '";
     $query .= join "' -q '", @query;
     $query .= "'";
-  } else {
+  } elsif ($query_ref) {
     $query = " -q '";;
     $query .= $query_ref;
     $query .= "'";
@@ -2573,10 +2565,9 @@ sub matrix_scan {
 	@_lt = split / /, $lt;
 	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
       }
-    } else {
-    $lth = " -lth '";;
-    $lth .= $lth_ref;
-    $lth .= "'";
+    } elsif ($lth_ref) {
+	@_lt = split / /, $lth_ref;
+	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
 }
 
     ## List of upper thresholds
@@ -2590,11 +2581,10 @@ sub matrix_scan {
 	@_ut = split / /, $ut;
 	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
       }
-    } else {
-    $uth = " -uth '";;
-    $uth .= $uth_ref;
-    $uth .= "'";
-}
+    } elsif ($uth_ref) {
+	@_ut = split / /, $uth_ref;
+	$uth .= " -uth '".$_ut[0]."' '".$_ut[1]."'";
+    }
 
   my $command = "$SCRIPTS/matrix-scan";
 

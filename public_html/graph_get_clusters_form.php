@@ -70,9 +70,9 @@
     echo "<input type='hidden' NAME='t_col' VALUE='$tcol'>";
     echo "<input type='hidden' NAME='w_col' VALUE='$wcol'>";
   }
-      
+  echo("<br><input type='checkbox' name='induced' value='on' />&nbsp;<B><a href = 'help.graph_get_clusters.html#induced'>Network induction</a></B>");
   echo("<br>
-  </select><br><br><b>Clusters (or nodes for induction)</b><br>");
+  </select><br><br><b>Clusters (or list of nodes in case of induced graph)</b><br>");
   if ($cluster_file == "") {
     echo("
     <textarea name='clusters' rows='6' cols='65'>$demo_clusters</textarea>
@@ -85,7 +85,7 @@
   }
   
   echo("
-  <B><a href = 'help.compare_graphs.html#return'>Output</B></a>&nbsp;<select name='return'>
+  <B><a href = 'help.compare_graphs.html#return'>Output type</B></a>&nbsp;<select name='return'>
   <option value = 'table'> node-cluster connections
   <option selected value = 'clusters'> intra-cluster edges
   <option value = 'graph'> annotated graph (all edges)
@@ -102,7 +102,6 @@
   ## This option is useful to duplicate nodes belonging to more than one cluster but for the moment
   ## this option does not work anymore (-distinct)
   #echo("<input type='checkbox' name='distinct' value='on' />&nbsp;<B><a href = 'help.convert_graph.html#distinct'>Duplicate the nodes belonging to more than one cluster</a></B><br>");
-  echo("<input type='checkbox' name='induced' value='on' />&nbsp;<B><a href = 'help.graph_get_clusters.html#induced'>Induce the graph with the nodes of the cluster file</a></B><br>");
   echo ("
   <ul><ul><table class='formbutton'>
   <TD><input type='submit' name='.submit' value='GO' /></TD>

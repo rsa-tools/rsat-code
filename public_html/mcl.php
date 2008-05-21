@@ -255,7 +255,7 @@
           <input type='hidden' NAME='tcol' VALUE='2'\>
           <input type='hidden' NAME='wcol' VALUE='3'\>
           
-          <INPUT type='submit' value='Fuzzy clustering'\>
+          <INPUT type='submit' value='Cluster membership'\>
         </form>
       </td> 
    ";  

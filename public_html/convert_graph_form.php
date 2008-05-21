@@ -80,15 +80,15 @@
     <input type='file' name='graph_file' size='45' /><br>
     &nbsp;&nbsp;&nbsp;
   
-    <br><a href = 'help.convert_graph.html#columns'>Column specification (only relevant for tab-delimited input)</a><br>
+    <br><a href = 'help.convert_graph.html#columns'><B>Column specification (only relevant for tab-delimited input)</b></a><br>
     <table>
-    <tr><td><B><a href = 'help.convert_graph.html#scol'>Source node</a></B></td><td><input type = 'text' name='s_col' value = '$default_scol' size = 1></input></td></tr>
-    <tr><td><B><a href = 'help.convert_graph.html#scol'>Target node</a></B></td><td><input type = 'text' name='t_col' value = '$default_tcol' size = 1></input></td></tr>
-    <tr><td><B><a href = 'help.convert_graph.html#wcol'>Weight or label column</a></B></td><td><input type = 'text' name='w_col' size = 1 value = '$default_wcol'></input></td></tr>
-    <tr><td><B><a href = 'help.convert_graph.html#eccol'>Edge color column</a></B></td><td><input type = 'text' name='ec_col' size = 1></input></td></tr>
-    <tr><td><B><a href = 'help.convert_graph.html#sccol'>Source node color column</a></B></td><td><input type = 'text' name='sc_col' size = 1></input></td></tr>
-    <tr><td><B><a href = 'help.convert_graph.html#sccol'>Target node color column</a></B></td><td><input type = 'text' name='tc_col' size = 1></input></td></tr>
-    <tr><td><B><a href = 'help.convert_graph.html#sccol'>Path column</a></B></td><td><input type = 'text' name='path_col' value = '$pathcol' size = 1></input> (only for path input format) </td></tr>
+    <tr><td><B><a href = 'help.convert_graph.html#scol'>Source</a></B></td><td><input type = 'text' name='s_col' value = '$default_scol' size = 1></input></td></tr>
+    <tr><td><B><a href = 'help.convert_graph.html#scol'>Target</a></B></td><td><input type = 'text' name='t_col' value = '$default_tcol' size = 1></input></td></tr>
+    <tr><td><B><a href = 'help.convert_graph.html#wcol'>Weight or label</a></B></td><td><input type = 'text' name='w_col' size = 1 value = '$default_wcol'></input></td></tr>
+    <tr><td><B><a href = 'help.convert_graph.html#eccol'>Edge color</a></B></td><td><input type = 'text' name='ec_col' size = 1></input></td></tr>
+    <tr><td><B><a href = 'help.convert_graph.html#sccol'>Source node color</a></B></td><td><input type = 'text' name='sc_col' size = 1></input></td></tr>
+    <tr><td><B><a href = 'help.convert_graph.html#sccol'>Target node color</a></B></td><td><input type = 'text' name='tc_col' size = 1></input></td></tr>
+    <tr><td><B><a href = 'help.convert_graph.html#sccol'>Path/a></B></td><td><input type = 'text' name='path_col' value = '$pathcol' size = 1></input> (only for path input format) </td></tr>
     
     </table>");
   } else {
