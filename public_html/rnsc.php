@@ -278,7 +278,7 @@
           <input type='hidden' NAME='scol' VALUE='1'\>
           <input type='hidden' NAME='tcol' VALUE='2'\>
           
-          <INPUT type='submit' value='Fuzzy clustering'\>
+          <INPUT type='submit' value='Cluster membership'\>
         </form>
       </td> 
    ";  

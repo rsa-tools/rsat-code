@@ -203,17 +203,20 @@ if ($soap_error!=1) {
   
   
     hourglass("off");
+    $lowres_size = urlfilesize($ldh_resultURL, "mb");
+    $highres_size = urlfilesize($hdh_resultURL, "mb");
+    
+    
     # Display the results
-    echo "The result are available as text file at the following URL ";
-    echo "<a href = '$resultURL'>$resultURL</a><br>"; 
+    echo "The membership table (text file) is available at the following URL";
+    echo "<a href = '$resultURL'>$resultURL</a><br>";
     #echo "The results are available as HTML page at the following URL ";
     #echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
     echo "<hr>";
     info ("Depending on the web browser, and of the number of clusters and nodes, images might not be viewable as the dimension of the figure are too large. In this case, right click (save as) and open it with an other visualization tool");
-    echo "The results are available as PNG heatmap page at the following URL ";
-    echo "<a href = '$ldh_resultURL'>$ldh_resultURL</a> (low resolution)<br> "; 
-    echo "The results are available as PNG heatmap page at the following URL ";
-    echo "<a href = '$hdh_resultURL'>$hdh_resultURL</a> (high resolution).<br>"; 
+    echo "The heat map is available at the folllowing URL<br>";
+    echo "&nbsp;&nbsp;low resolution ($lowres_size Mb) <a href = '$ldh_resultURL'>$ldh_resultURL</a>.<br>"; 
+    echo "&nbsp;&nbsp;high resolution ($highres_size Mb) <a href = '$hdh_resultURL'>$hdh_resultURL</a>.<br>"; 
     echo "<hr>\n";
  
   	}
