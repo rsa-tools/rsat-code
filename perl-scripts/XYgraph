@@ -23,9 +23,6 @@ use GD;
 $img_format = $ENV{rsat_img_format} || "png";
 $supported_formats = join (",", keys %supported_format); 
 
-
-
-
 ################################################################
 ##### initialize default parameters #####
 $start_time = `date`;
@@ -710,9 +707,7 @@ sub GnuPlotEPS {
     $gnuplot_cmd .= "set datafile commentschars '!;%'\n";
     $gnuplot_cmd .= "set key autotitle columnheader samplen 1\n";	
   }
-	
 
-	
   ## colors
   &GnuplotPalette();
 
@@ -737,20 +732,18 @@ sub GnuPlotEPS {
   push @color_list, $red_191;
   push @color_list, $blue_128;
   push @color_list, $cyan_096;
-	    
   push @color_list, $blue_096;
   push @color_list, $red_096;
   push @color_list, $blue_064;
   push @color_list, $gray_064;
-	
+
   ## monochrome
   if ($monochrome) {
     foreach my $i (0..$#color_list) {
       $color_list[$i] = "black";
     }
   }
-	
-	
+
   ## symbols
   if ($symbols) {
     foreach my $i (0..$#color_list) {
@@ -771,8 +764,8 @@ sub GnuPlotEPS {
       $gnuplot_cmd .= $cmd."\n";
     }
   }
-	
-  ## plot 	
+
+  ## plot
   $gnuplot_cmd .= "plot ";
   foreach my $k (0..$#y_col_list) {
 
@@ -783,7 +776,7 @@ sub GnuPlotEPS {
     } else {
       $gnuplot_cmd .= "points";
     }
-		
+
     ## end line
     if ($k == $#y_col_list) {
       $gnuplot_cmd .= "\n";
@@ -812,7 +805,7 @@ sub GnuPlotEPS {
     print ";Job started $start_time";
     print ";Job done    ", `date`;
   }
-  	
+
   if ($tmp_file) {
     unlink $tmp_file;
   }
@@ -820,8 +813,8 @@ sub GnuPlotEPS {
   ##  use ps2pdf to convert it into a pdf file
   if ($img_format eq "pdf") {
     my $ps2pdf_cmd = "ps2pdf $outputfile $pdf_outputfile";
+
     ## Execute the command
-				
     ## if ps2pdf not found, will try to use use pstopdf
     my $stderr = `$ps2pdf_cmd 2>&1 1>/dev/null`;
     if ($stderr) {
@@ -932,7 +925,6 @@ sub AssignColors {
 	push @color_list, $red_191;
 	push @color_list, $blue_128;
 	push @color_list, $cyan_096;
-	    
 	push @color_list, $blue_096;
 	push @color_list, $red_096;
 	push @color_list, $blue_064;
@@ -1389,7 +1381,7 @@ sub CalcLimits {
   $min_x_value = "ND";
   $max_y_value = "ND";
   $min_y_value = "ND";
-    
+
   ## Calculate max and min X values
   $min_x_value = &checked_min(@X_values);
   $max_x_value = &checked_max(@X_values);
@@ -1401,18 +1393,17 @@ sub CalcLimits {
     $max_x_value *= 2;
     $min_x_value /= 2;
   }
-    
+
   ## Calculate max and min Y values
   for $series (0..$#y_col_list) {
     $min_y_value = &checked_min($min_y_value,@{$Y_values[$series]});
     $max_y_value = &checked_max($max_y_value,@{$Y_values[$series]});
-	
   }
   if ($max_y_value == $min_y_value) {
     $max_y_value *= 2;
     $min_y_value /= 2;
   }
-    
+
   unless ((&IsReal($max_y_value)) &&
 	  (&IsReal($min_y_value))) {
     &RSAT::error::FatalError("\tError: Y axis data (column ", join(",", @y_col_list),
@@ -1442,7 +1433,7 @@ sub CalcLimits {
     $x_axis_min = &min($x_axis_min, $y_axis_min);
     $y_axis_min = &min($x_axis_min, $y_axis_max);
   }
-    
+
   ## Automatic grid size
   if ($x_grid_step1 eq "") {
     ($x_grid_min, $x_grid_step1,$x_grid_max) = &AutoGrid($x_axis_min,$x_axis_max);
@@ -1450,8 +1441,6 @@ sub CalcLimits {
   if ($y_grid_step1 eq "") {
     ($y_grid_min, $y_grid_step1,$y_grid_max) = &AutoGrid($y_axis_min,$y_axis_max);
   }
-    
-
 
   #### graph dimensions
   $top = $border;
@@ -1466,7 +1455,7 @@ sub CalcLimits {
   $bottom = $top + $y_axis_size;
   $graph_x_size = $right + $border + $legend_size + $point_size + 20;
   $graph_y_size = $bottom + $border + $y_scale_border + 2*$small_font_height + 6;
-    
+
   ### scale ###
   if ($x_axis_max > $x_axis_min) {
     $x_scale = $x_axis_size/($x_axis_max - $x_axis_min);
@@ -1478,15 +1467,14 @@ sub CalcLimits {
   } else {
     $y_scale = $y_axis_size;
   }
-}  
-
+}
 
 ################################################################
 ## Initialize HTML map 
 sub InitHTMLmap {
   $max_map_elements = 5000;
   $href = ShortFileName($inputfile);
-    
+
   ###### header of the HTML file #####
   print "<HTML>\n";
   print "<HEAD>\n";
