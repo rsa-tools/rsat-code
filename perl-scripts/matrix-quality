@@ -1,11 +1,12 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.56 2008/02/23 00:12:03 jvanheld Exp $
+# $Id: matrix-quality,v 1.57 2008/05/21 00:45:37 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
+
 
 #use strict;
 
@@ -47,10 +48,23 @@ consensus formats.
 
 =head1 AUTHORS
 
+=over
+
 =item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
 
-=item with the help of Morgane Thomas-Chollier
-<morgane@scmbb.ulb.ac.be>, Alejandra Medina-Rivera, an Cei Abreu
+with help of
+
+=over
+
+=item Morgane Thomas-Chollier <morgane@scmbb.ulb.ac.be>
+
+=item Alejandra Medina-Rivera (CCG, Mexico) 
+
+=item Cei Abreu (Sanger Institute, UK)
+
+=back
+
+=back
 
 =head1 CATEGORY
 
@@ -102,6 +116,7 @@ package main;
     $seq_format = "fasta";
     $matrix_format = "consensus";
     $decimals = 2;
+    $class_interval = 1/(10**$decimals);
     %perm_nb = (); ## Number of permutations per sequence set
     $perm_separate_distrib = 0; ## Calcualte the distribution for each permuted matrix separately
     $loo_rm_twin = 1; ## Also exclude twin sites in the loo procedure.
@@ -149,6 +164,10 @@ package main;
     ################################################################
     ## Read argument values
     &ReadArguments();
+
+    ## Class interval for classfreq
+    $class_interval = 1/(10**$decimals);
+#    $class_interval = 10^-$decimals;
 
     ################################################################
     ## Check argument values
@@ -241,7 +260,7 @@ package main;
     &ExportTabMatrix($matrix);
 
     ## Shuffle the columns of the matrix (permutation test)
-    local $perm_nb_max = &RSAT::stats::checked_max(values %perm_nb);
+    local $perm_nb_max = &RSAT::stats::checked_max(0, values %perm_nb);
     print "; Number of permutations\n";
     foreach my $seq_type (@seq_types) {
 	print join("\t", $seq_type, $perm_nb{$seq_type} || 0, $seqfile{$seq_type}), "\n";
@@ -481,8 +500,8 @@ distribution tables and graphs.
 
 The option -ms is only valid with the file formats which contain both
 the matrix and its sites (e.g. consensus, MotifSampler, meme). The
-format of the matrix+site file can be specified with the
-option '-matrix_format'.
+format of the matrix+site file can be specified with the option
+'-matrix_format'.
 
 If the matrix and its sites are only available in separate files, an
 equivalent effect can be obtained by combining the options "-m
@@ -813,6 +832,12 @@ Image format for the plots (ROC curve, score profiles, ...).
 To display the supported formats, type the following command:
 XYgraph -h.
 
+Multiple image formats can be specified either by using iteratively
+the option, or by separating them by commas.
+
+Example:
+   -img_format png,pdf
+
 =cut
 	} elsif ($arg eq "-img_format") {
 	    $image_format = shift(@arguments);
@@ -886,6 +911,12 @@ Draw the graphs with distrib comparisons
 
 	    ## Other options
 =pod
+
+=item B<Background model>
+
+I<matrix-distrib> requires to specify a background model, which will
+be passed to I<matrix-distrib> and I<matrix-scan>. This background model
+can be specified with the same options as for I<matrix-scan>.
 
 =item B<Other options>
 
@@ -978,7 +1009,6 @@ sub LOO_scores {
     my $partial_matrix_name = $matrix->get_attribute("name");
     $partial_matrix_name .= "_leftout_".$lo_site_nb;
 
-
     my $partial_matrix = new RSAT::matrix();
     $partial_matrix->init();
     $partial_matrix->set_attribute("name", $partial_matrix_name);
@@ -988,10 +1018,13 @@ sub LOO_scores {
     $partial_matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
     push @partial_matrices, $partial_matrix;
     for my $j (0..$#sites) {
-      next if ($j == $i) ; ## Leave out the ith site
- 	  if ($loo_rm_twin) {
- 	  	next if ($sites[$j] eq $sites[$i]); ## exclude "twin" site : exclude sites identical to the ith leftout site
- 	  }
+      next if ($j == $i) ; ## Discard the ith site (curently left out)
+
+      ## Discard "twin" sites : exclude sites identical to the ith leftout site
+      if ($loo_rm_twin) {
+	next if ($sites[$j] eq $sites[$i]); 
+      }
+
       $partial_matrix->add_site(lc($sites[$j]));
     }
     $partial_matrix->treat_null_values();
@@ -1054,7 +1087,7 @@ sub LOO_scores {
   my $classfreq_min = sprintf("%.${decimals}f", $main::Wmin);
   my $classfreq_cmd = "grep -v '^;' ".$main::outfile{matrix_sites_loo}." | grep -v '^#'";
   $classfreq_cmd .= " | cut -f 8";
-  $classfreq_cmd .= " | classfreq -v 1 -ci 0.01";
+  $classfreq_cmd .= " | classfreq -v 1 -ci ".$class_interval;
   $classfreq_cmd .= " -min ".$classfreq_min;
   $classfreq_cmd .= " -o ".$outfile{matrix_sites_loo_distrib};
   &doit($classfreq_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -1087,20 +1120,20 @@ sub CalcSequenceDistrib {
 
   ## Prepare the classfreq command (to extract the distribution from the scores)
   my $classfreq_min = sprintf("%.${decimals}f", $main::Wmin);
-  
+
   ## in case matrix-scan scores need to be kept
   if ($main::export_hits) {
-  	## store matrix-scan result in a file
-  	my $seq_type_scores = $outfile{prefix}."_scan_".$seq_type."_scores.tab";
-  	$main::outfile{$seq_type_scores} = $seq_type_scores;
-  	$matrix_scan_cmd .= " -o ".$main::outfile{$seq_type_scores};
-  	## launch classfreq on this input file
-  	$matrix_scan_cmd .= " ; grep -v '^;' ".$main::outfile{$seq_type_scores}." | grep -v '^#'";
+    ## store matrix-scan result in a file
+    my $seq_type_scores = $outfile{prefix}."_scan_".$seq_type."_scores.tab";
+    $main::outfile{$seq_type_scores} = $seq_type_scores;
+    $matrix_scan_cmd .= " -o ".$main::outfile{$seq_type_scores};
+    ## launch classfreq on this input file
+    $matrix_scan_cmd .= " ; grep -v '^;' ".$main::outfile{$seq_type_scores}." | grep -v '^#'";
   } else {
-  	$matrix_scan_cmd .= " | grep -v '^;' | grep -v '^#'";
+    $matrix_scan_cmd .= " | grep -v '^;' | grep -v '^#'";
   }
   $matrix_scan_cmd .= " | cut -f 8";
-  $matrix_scan_cmd .= " | classfreq -v 1 -ci 0.01";
+  $matrix_scan_cmd .= " | classfreq -v 1 -ci ".$class_interval;
   $matrix_scan_cmd .= " -min ".$classfreq_min;
   $matrix_scan_cmd .= " -o ".$outfile{$seq_type};
 
@@ -1231,7 +1264,7 @@ sub ScoreDistrib {
   my $classfreq_cmd = "classfreq -v 1 ";
   $classfreq_cmd .= " -i ".$main::outfile{$seq_type."_distrib_score_tmp"};
   $classfreq_cmd .= " -min ".$classfreq_min;
-  $classfreq_cmd .= " -ci 0.01 ";
+  $classfreq_cmd .= " -ci  ".$class_interval;
   $classfreq_cmd .= " -max ".$Wmax;
   $classfreq_cmd .= " -o ".$outfile{$seq_type."_distrib"};
 
