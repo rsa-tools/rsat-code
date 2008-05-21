@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.63 2008/02/24 01:14:49 jvanheld Exp $
+# $Id: convert-matrix,v 1.64 2008/05/21 00:43:59 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -47,9 +47,6 @@ local $bg_model = new RSAT::MarkovModel();
 local $sort_key = "";
 local $sort_order = "";
 
-local $logo_format = "png";
-local $logo_opt = "";
-
 ## Return type(s)
 @return_fields = ();
 %supported_return_type = (
@@ -91,6 +88,8 @@ $bg_format = "oligo-analysis";
 $supported_bg_formats = join ",", sort keys %supported_bg_format;
 
 ## logo formats
+local $logo_format = "png";
+local $logo_opt = "";
 @logo_formats=();
 %supported_logo_format =  ('png'=>1,
 			  "eps"=>1,
