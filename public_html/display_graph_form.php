@@ -29,7 +29,10 @@
   # demo graph
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
-    $demo_graph = $uetz;
+    $demo_graph = $string_database_clustered_mapped;
+    $demo_wcol = 3;
+    $demo_eccol = 4;
+    $demo_ewidth = "checked";
   }
 
   title('display-graph');
@@ -75,7 +78,7 @@
   </select><br><br>");
   if (!$pipe) {
     if ($demo) {
-      demo("This demonstration graph is the yeast two-hybrid dataset produced by <a target = 'top' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?db=pubmed&uid=10688190&cmd=showdetailview&indexed=google'>Uetz et al (2001)</a>. It consists in 865 interactions between 926 proteins.");
+      demo("This demonstration graph consists in the set of clusters extracted by the <a href = 'http://micans.org/mcl/' target = '_blank'>MCL clustering algorithm</a> from a subset of the <a href = 'http://string.embl.de/' target = '_blank'>String database</a>(database evidence channel) with inflation 1.8. It consists in 9991 interactions between 1231 proteins. Each edge color corresponds to a different MCL computed cluster. As the graph is weighted the width of the edges will be proportional to the weight.");
     }
     echo ("<textarea name='graph' rows='6' cols='65'>$demo_graph</textarea>
     <br>Upload graph from file : <br>
@@ -84,10 +87,10 @@
     <table>
     <tr><td><B><a href = 'help.display_graph.html#scol'>Source node</a></B></td><td><input type = 'text' name='s_col' value = '$default_scol' size = 1></input></td></tr>
     <tr><td><B><a href = 'help.display_graph.html#scol'>Target node</a></B></td><td><input type = 'text' name='t_col' value = '$default_tcol' size = 1></input></td></tr>
-    <tr><td><B><a href = 'help.display_graph.html#wcol'>Weight or label column</a></B></td><td><input type = 'text' name='w_col' size = 1></input></td></tr>
-    <tr><td><B><a href = 'help.display_graph.html#eccol'>Edge color column</a></B></td><td><input type = 'text' name='ec_col' size = 1></input></td></tr>
-    <tr><td><B><a href = 'help.display_graph.html#sccol'>Source node color column</a></B></td><td><input type = 'text' name='sc_col' size = 1></input></td></tr>
-    <tr><td><B><a href = 'help.display_graph.html#sccol'>Target node color column</a></B></td><td><input type = 'text' name='tc_col' size = 1></input></td></tr>
+    <tr><td><B><a href = 'help.display_graph.html#wcol'>Weight or label </a></B></td><td><input type = 'text' name='w_col' value = '$demo_wcol' size = 1></input></td></tr>
+    <tr><td><B><a href = 'help.display_graph.html#eccol'>Edge color</a></B></td><td><input type = 'text' name='ec_col' value = '$demo_eccol' size = 1></input></td></tr>
+    <tr><td><B><a href = 'help.display_graph.html#sccol'>Source node color</a></B></td><td><input type = 'text' name='sc_col' size = 1></input></td></tr>
+    <tr><td><B><a href = 'help.display_graph.html#sccol'>Target node color</a></B></td><td><input type = 'text' name='tc_col' size = 1></input></td></tr>
     </table>");
   } else {
     info_link("Graph uploaded from the previous treatment", rsat_path_to_url($graph_file));
@@ -103,7 +106,7 @@
   }
   echo ("
   <input type='checkbox' name='layout' value='on' $default_layout/>&nbsp;<B><a href = 'help.display_graph.html#layout'>Calculate the layout of the nodes (mandatory for all input formats except GML)</a></B><br>
-    <input type='checkbox' $demo_ewidth name='ewidth' value='on' />&nbsp;<B><a href = 'help.display_graph.html#ewidth'>Edge width proportional to the weight of the edges</a></B><br>
+  <input type='checkbox' $demo_ewidth name='ewidth' value='on' />&nbsp;<B><a href = 'help.display_graph.html#ewidth'>Edge width proportional to the weight of the edges</a></B><br>
 
   <ul><ul><table class='formbutton'>
   <TD><input type='submit' name='.submit' value='GO' /></TD>
