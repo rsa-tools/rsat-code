@@ -35,7 +35,7 @@ $checked{$default{pseudo_prior}} = "CHECKED";
 $default{bg_pseudo} = "0.01";
 $default{bg_format}="oligo-analysis";
 $default{decimals} = "1";
-$default{crer_ids} = "CHECKED";
+$default{crer_ids} = "";
 
 
 ## Return fields
@@ -563,7 +563,7 @@ print $query->hidden(-name=>'return_rank',-default=>'');
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'matrix_format',-default=>'transfac');
 print $query->hidden(-name=>'consensus_as_name',-default=>'');
-print $query->hidden(-name=>'crer_ids',-default=>'CHECKED');
+print $query->hidden(-name=>'crer_ids',-default=>'');
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
 print $query->submit(-label=>"DEMO 2 (CRERs)");
