@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.32 2008/05/21 00:42:16 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.33 2008/05/23 08:29:13 morgane Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -104,6 +104,13 @@ print <<EndText;
     programs specifically designed for the detection of regulatory
     signals in non-coding sequences.
 
+	 <P> <font color='red'>New !</font> The <b> recent developments </b> made in RSAT are presented in the  
+	 <a target=_blank
+      href=http://nar.oxfordjournals.org/cgi/content/full/gkn304><b>NAR Web server issue 2008</b></a> <a target=_blank
+      href=http://nar.oxfordjournals.org/cgi/screenpdf/gkn304v1>[Free PDF]</a>
+    </p>
+
+<!-- >
     <P> <font color='red'>New !</font> The <b>RSAT lookup</b> has been
       reshaped by <a target=_blank
       href=http://www.scmbb.ulb.ac.be/Users/morgane/>Morgane
@@ -113,10 +120,12 @@ print <<EndText;
 
     </p>
 
+
     <P>
       <font color='red'>New !</font> For bioinformaticians, RSAT tools
       are now also available as <a href=web_services.html><b>Web Services</b></a>. 
     </p>
+        -->
 
     <P> This website is free and open to all users.
    </p> 
