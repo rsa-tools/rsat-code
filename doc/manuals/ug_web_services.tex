@@ -1,32 +1,169 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Running web services with RSAT
+%% Running Web Services with RSAT
 
-\chapter{Using RSAT web services}
+\chapter{Using RSAT Web Services}
 
 \section{Introduction}
 
-\RSAT facilities can be used as web services (\concept{WS}),
+\RSAT facilities can be used as Web Services (\concept{WS}),
 i.e. external developers (you) can integrate \RSAT methods in their
-own code. An important advantage of web services is that they are
+own code. An important advantage of Web Services is that they are
 using a standard communication interface between client and server
 (e.g. WSDL/SOAP), for which libraries exist in various languages
 (Perl, Python, java).
 
-We explain below how to implement a WS client in Perl for \RSAT
+We explain below how to implement WS clients in Perl, Java and Python for \RSAT
 programs.
 
-\section{Requirements}
+\section{Examples of WS clients in Perl with SOAP::WSDL 2.00 (or above)}
 
-Before using a WS client, You need to install the Perl modules
-\program{SOAP::Lite} and \program{SOAP::WSDL}. Perl modules can be
-installed with the program \program{cpan}, but for this you need root
+\subsection{Requirements}
+
+Before using such WS clients, You need to install the
+\program{Module::Build::Compat} and the \program{SOAP::WSDL} Perl modules. These Perl modules can be
+installed with the program \program{cpan}. When required, you will be prompted
+to install dependency modules for \program{SOAP::WSDL}. For all this you need root
+privileges. If this is not your case, please ask your system administrator to install them for you.
+
+The other thing you need is the RSATWS library that you can download from the
+following website:
+
+\url{http://rsat.ulb.ac.be/rsat/web_services/WSDL_2}
+
+Unzip and place it in the same directory as your clients.
+
+\subsection{Retrieving sequences from RSATWS}
+
+The following example is a script to retrieve the start codons of
+three Escherichia coli genes. It uses \program{retrieve-seq} to do
+so. The various parameters are passed as a hash table to the
+method. If there is an error, it will be displayed, otherwise the
+result is displayed, toghether with the full command generated on the
+server and the name of the temporary file created on the server to
+hold the result localy. This file is useful when one wants to feed
+another program with that output, whithout paying the cost of a
+useless data transport back and forth between the server and the
+client.
+
+\begin{footnotesize}
+\begin{verbatim}
+#!/usr/bin/perl -w
+# retrieve-seq_client_soap-wsdl.pl - Client retrieve-seq using the SOAP::WSDL
+#module
+
+################################################################
+##
+## This script runs a simple demo of the web service inerface to the
+## RSAT tool retrieve-seq. It sends a request to the server for
+## obtaining the start codons of 3 E.coli genes.
+##
+################################################################
+
+use strict;
+use SOAP::WSDL;
+use lib 'RSATWS';
+use MyInterfaces::RSATWebServices::RSATWSPortType;
+
+warn ``\nThis demo script retrieves the start codons for a set of query
+genes\n\n'';
+
+## WSDL location
+my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+
+## Service call
+my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
+
+## Output option
+my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
+
+## Retrieve-seq parameters
+my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
+my @gene = (``metA'', ``metB'', ``metC'');  ## List of query genes
+my $all = 0;  ## the -all option (other accepted value = 1). This option is
+incompatible with the query list @gene (above)
+my $noorf = 1;  ## Clip sequences to avoid upstream ORFs
+my $from = 0;  ## Start position of the sequence
+my $to = 2;  ## End position of the sequence
+my $feattype = '';  ## The -feattype option value is  not specified, the
+default is used
+my $type = '';  ## The -type option value; other example:'-type downstream'
+my $format = '';  ## The -format option value. We use the default (fasta), but
+other formats could be specified, for example 'multi'
+my $lw = 0;  ## Line width. 0 means all on one line
+my $label = 'id,name';  ## Choice of label for the retrieved sequence(s)
+my $label_sep = '';  ## Choice of separator for the label(s) of the retrieved
+sequence(s)
+my $nocom = 0;  ## Other possible value = 1, to get sequence(s) whithout
+comments
+my $repeat =  0;  ## Other possible value = 1, to have annotated repeat
+regions masked
+my $imp_pos = 0;  ## Admit imprecise position (value = 1 to do so)
+
+my %args = (
+            'output' => $output_choice,
+            'organism' => $organism,
+            'query' => \@gene,  ## An array in a hash has to be referenced
+            (always?)
+            'noorf' => $noorf,
+            'from' => $from,
+            'to' => $to,
+            'feattype' => $feattype,
+            'type' => $type,
+            'format' => $format,
+            'lw' => $lw,
+            'label' => $label,
+            'label_sep' => $label_sep,
+            'nocom' => $nocom,
+            'repeat' => $repeat,
+            'imp_pos' => $imp_pos
+            );
+
+## Send the request to the server
+print ``Sending request to the server $server\n'';
+my $som = $soap->retrieve_seq({'request' => \%args});
+
+## Get the result
+unless ($som) {
+        printf ``A fault (%s) occured: %s\n'', $som->get_faultcode(),
+			  %$som->get_faultstring();
+} else {
+        my $results = $som->get_response();
+
+    ## Report the remote command
+    my $command = $results -> get_command();
+    print ``Command used on the server: ``.$command, ``\n'';
+
+    ## Report the result
+    if ($output_choice eq 'server') {
+                my $server_file = $results -> get_server();
+                print ``Result file on the server: ``.$server_file;
+   } elsif ($output_choice eq 'client') {
+                my $result = $results -> get_client();
+                print ``Retrieved sequence(s): \n''.$result;
+   } elsif ($output_choice eq 'both') {
+                my $server_file = $results -> get_server();
+                my $result = $results -> get_client();
+                print ``Result file on the server: ``.$server_file.''\n'';
+                print ``Retrieved sequence(s): \n''.$result;
+    }
+}
+\end{verbatim}
+\end{footnotesize}
+
+\section{Examples of WS clients in Perl with SOAP::WSDL 1.27 (or below)}
+
+Some of you are maybe already using perl WS clients with an older version
+of \program{SOAP::WSDL} and would like to stick to it. We show hereafter some simple examples of clients written in
+perl and using such version of the module. The presented code
+as well as other can be downloaded from \url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services.html}
+
+\subsection{Requirements}
+
+- \program{SOAP::Lite}
+- \program{SOAP::WSDL}, version 1.27 or below.
+These Perl modules can be installed with the program \program{cpan}, but for this you need root
 privileges. If this is not your case, please ask your system
 administrator to install them for you.
-
-\section{Examples of WS client in Perl}
-
-We show hereafter some simple examples of clients written in perl. The presented code
-as well as other can be downloaded from \url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services.html}
 
 \subsection{Getting gene-info from RSATWS}
 
@@ -145,7 +282,7 @@ We saw above that the command \command{gene-info} can be called with
 various options. The description of the available options can be found
 in the documentation of the RSATWS web services at the following URL.
 
-\url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services/RSATWS\_documentation.pdf}
+\url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services/RSATWS\_documentation.xml}
 
 \subsection{Retrieving sequences from RSATWS}
 
@@ -632,12 +769,12 @@ property file. Examples of property files are in the sub-directory
 sure you edit it according to your system.
 
 \subsection{Other tools in RSATWS}
-Following the examples above or using the code that is avilable for download
+Following the examples above or using the code that is available for download
 from \url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services.html},
 you can easily access the other RSA Tools for which Web Services have been
 implemented. You will find all you need to know about the tools (parameters,
 etc.) in the documentation
-(\url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services/RSATWS\_documentation.pdf}).
+(\url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services/RSATWS\_documentation.xml}).
 
 \section{Examples of WS client in java}
 First, you need to generate the libraries. There are tools, like Axis, which do it from the WSDL document. These usually take the URL of that document as one of their parameters. In our case, it is there:
