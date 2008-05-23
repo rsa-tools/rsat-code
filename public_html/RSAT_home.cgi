@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.33 2008/05/23 08:29:13 morgane Exp $
+# $Id: RSAT_home.cgi,v 1.34 2008/05/23 08:51:24 morgane Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -109,23 +109,6 @@ print <<EndText;
       href=http://nar.oxfordjournals.org/cgi/content/full/gkn304><b>NAR Web server issue 2008</b></a> <a target=_blank
       href=http://nar.oxfordjournals.org/cgi/screenpdf/gkn304v1>[Free PDF]</a>
     </p>
-
-<!-- >
-    <P> <font color='red'>New !</font> The <b>RSAT lookup</b> has been
-      reshaped by <a target=_blank
-      href=http://www.scmbb.ulb.ac.be/Users/morgane/>Morgane
-      Thomas-Chollier</a> and <a target=_blank
-      href=http://www.scmbb.ulb.ac.be/Users/sylvain/>Sylvain
-      Broh&eacute;e</a>.
-
-    </p>
-
-
-    <P>
-      <font color='red'>New !</font> For bioinformaticians, RSAT tools
-      are now also available as <a href=web_services.html><b>Web Services</b></a>. 
-    </p>
-        -->
 
     <P> This website is free and open to all users.
    </p> 
