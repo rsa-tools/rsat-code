@@ -130,7 +130,7 @@ and
   ## OUTPUT SPECIFICATION
 
   echo("
-  <B><a href = 'help.compare_graphs.html#return'>Output</B></a>&nbsp;<select name='return'>
+  <B><a href = 'help.compare_graphs.html#return'>Output type</B></a>&nbsp;<select name='return'>
   <option selected value = 'union'> union
   <option value = 'intersection'> intersection
   <option value = 'difference'> difference
