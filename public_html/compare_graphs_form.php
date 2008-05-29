@@ -147,14 +147,14 @@ and
   ## Weight/label on the edges
   echo ("
   <B><a href = 'help.compare_graphs.html#outweights'>Weight/label on the edges of the output graph</a></B></a>&nbsp;<select name='outweight'>
-  <option value = 'Q'> weight (label) of the query
-  <option value = 'R'> weight (label) of the reference
+  <option value = 'Q'> weight / label of the query
+  <option value = 'R'> weight / label of the reference
   <option value = 'sum'> sum of the weights
   <option value = 'mean'> arithmetic mean of the weights
   <option value = 'mean.g'> geometrical mean of the weights
   <option value = 'min'> min of the weights
   <option value = 'max'> max of the weights
-  <option selected value = 'Q::R'> weights of query and reference
+  <option selected value = 'Q::R'> weights / label of query and reference
   </select><br><br>");
   ## Directed graph
   echo("

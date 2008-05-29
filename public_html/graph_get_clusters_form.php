@@ -70,7 +70,6 @@
     echo "<input type='hidden' NAME='t_col' VALUE='$tcol'>";
     echo "<input type='hidden' NAME='w_col' VALUE='$wcol'>";
   }
-  echo("<br><input type='checkbox' name='induced' value='on' />&nbsp;<B><a href = 'help.graph_get_clusters.html#induced'>Network induction</a></B>");
   echo("<br>
   </select><br><br><b>Clusters (or list of nodes in case of induced graph)</b><br>");
   if ($cluster_file == "") {
