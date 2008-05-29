@@ -2267,6 +2267,11 @@ This option is only useful for GML output.</xsd:documentation>
 				      <xsd:documentation>Output format. Supported: png, jpeg.</xsd:documentation>
 			      </xsd:annotation>
 		      </xsd:element>
+		      <xsd:element name="html" type="xsd:int" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation>Returns an HTML file that load the heatmap. The name of this file is the name of the output file on the server with the html extension </xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
 		      <xsd:element name="inputfile" type="xsd:string" minOccurs="1">
 			      <xsd:annotation>
 				      <xsd:documentation>A graph in the format specified by the informat tag.</xsd:documentation>	
@@ -2311,6 +2316,13 @@ This option is only useful for GML output.</xsd:documentation>
 				      <xsd:documentation> 
 					      Maximal value of the heatmap. By default, this value is the maximal value of the input file. If the specified value is smaller than the maximal value of the heatmap, then the maximal value of the heatmap will be used as maximal value.
 				      </xsd:documentation>
+			      </xsd:annotation>
+		      </xsd:element>
+		      <xsd:element name="gradient" type="xsd:string" minOccurs="0">
+			      <xsd:annotation>
+				      <xsd:documentation> 
+					Color of the intensity gradient of the heatmap. Default is grey.
+        				Supported : green, blue, red, fire, grey.				      </xsd:documentation>
 			      </xsd:annotation>
 		      </xsd:element>
 	      </xsd:sequence>
