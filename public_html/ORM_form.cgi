@@ -218,9 +218,9 @@ print '<br />';
 #print "</ul>";
 
 
-#### Markov chain model
-#print ("<p><INPUT TYPE='radio' NAME='freq_estimate' VALUE='Markov Chain (higher order dependencies)' $checked{'Markov Chain (higher order dependencies)'}>", 
-#       "Markov Chain (higher order dependencies)");
+#### Markov model
+#print ("<p><INPUT TYPE='radio' NAME='freq_estimate' VALUE='Markov Model (higher order dependencies)' $checked{'Markov Model (higher order dependencies)'}>", 
+#       "Markov Model (higher order dependencies)");
 
 #print "order &nbsp;";
 #print $query->textfield(-name=>'markov_order',
@@ -247,7 +247,7 @@ print "<HR width=550 align=left>\n";
 #print $query->radio_group(-name=>'freq_estimate',
 #			  -Values=>['Equiprobable residues',
 #				    'Residue frequencies from input sequence',
-#				    'Markov Chain (higher order dependencies)',
+#				    'Markov Model (higher order dependencies)',
 #				    'Lexicon partitioning',
 #				    'Oligo frequencies from all intergenic regions'],
 #			  -default=>$default{freq_estimate});
