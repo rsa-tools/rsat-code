@@ -163,7 +163,7 @@ if ($query->param('freq_estimate') =~ /background/i) {
   $freq_option = " -bg bernoulli";
 
 } elsif ($query->param('freq_estimate') =~ /markov/i) {
-  ## Markov chain calibrated on input sequences
+  ## Markov model calibrated on input sequences
   $freq_option = " -markov";
   if (&IsNatural($query->param('markov_order'))) {
     $freq_option .= " ".$query->param('markov_order');

@@ -343,7 +343,7 @@ print $query->hidden(-name=>'xgstep2',-default=>'none');
 
 print $query->hidden(-name=>'ycol',-default=>'2,3,4,5');
 print $query->hidden(-name=>'yleg1',-default=>'z-score');
-print $query->hidden(-name=>'yleg2',-default=>'(Markov chains, different orders)');
+print $query->hidden(-name=>'yleg2',-default=>'(Markov models, different orders)');
 print $query->hidden(-name=>'ymin',-default=>'auto');
 print $query->hidden(-name=>'ymax',-default=>'auto');
 print $query->hidden(-name=>'ysize',-default=>'400');

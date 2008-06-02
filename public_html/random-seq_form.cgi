@@ -45,7 +45,7 @@ foreach $key (keys %default) {
 
 ### head
 print "<CENTER>";
-print "Generate random DNA or protein sequences according to various probabilistic models<br>(independently distributed residues or Markov chains)<P>\n";
+print "Generate random DNA or protein sequences according to various probabilistic models<br>(independently distributed residues or Markov models)<P>\n";
 print "</CENTER>";
 
 
@@ -91,7 +91,7 @@ print "<h2><a href='help.random-seq.html#alphabet'>Background model</a></h2>";
 
 print "<ul>";
 
-print "<b>Organism-specific Markov chain</b> (Note: oligomer length = Markov order + 1)<br>";
+print "<b>Organism-specific Markov model</b> (Note: oligomer length = Markov order + 1)<br>";
 
 print "<UL>";
 &OrganismPopUp();
