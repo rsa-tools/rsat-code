@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: infer-operon,v 1.6 2006/11/15 21:29:34 jvanheld Exp $
+# $Id: infer-operon,v 1.7 2008/06/02 07:37:12 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -42,6 +42,8 @@ threshold t=55).
 The algorithm is based on three simple rules, depending on the
 relative orientation of the adjacent genes.
 
+=over
+
 =item Rule 1: divergently transcribed genes
 
 If the gene found upstream of a query gene is transcribed in the
@@ -66,6 +68,8 @@ the same operon (dist <= thredhold) or not (dist > threshold). If they
 are predicted to be in distinct operon, the upstream gene is labelled
 as operon trailer, and the downstream gene as leader of the next
 operon.
+
+=back
 
 =head1 AUTHORS
 
@@ -820,12 +824,14 @@ __END__
 
 =head1 SEE ALSO
 
+=over
+
 =item retrieve-seq
 
 =item neighbour-genes
 
 =item add-gene-info
 
-
+=back
 
 =cut
