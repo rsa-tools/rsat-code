@@ -37,7 +37,6 @@ $default{bg_format}="oligo-analysis";
 $default{decimals} = "1";
 $default{crer_ids} = "";
 
-
 ## Return fields
 ## matches
 $default{return_sites} = "CHECKED";
@@ -117,10 +116,16 @@ $default{uth_occ_sig_rank} = "3";
 # [-lp <Determine lower-threshold score from a maximum ln(p-value)>]
 
 
+### print the form ###
+&RSA_header("matrix-scan");
+
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
   if ($query->param($key)) {
     $default{$key} = $query->param($key);
+  }
+  if ($query->param($key) =~ /checked/i) {
+    $checked{$key} = "CHECKED";
   }
   if ($key eq "bg_method"){
   	$checked{$query->param($key)} = "CHECKED";
@@ -131,10 +136,6 @@ foreach $key (keys %default) {
 }
 
 &ReadMatrixFromFile();
-
-### print the form ###
-&RSA_header("matrix-scan");
-#&ListParameters;
 
 ### head
 print "<CENTER>";
@@ -815,6 +816,9 @@ print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";
 
+&ListParameters() if ($ENV{rsat_echo} >= 2);
+&ListDefaultParameters() if ($ENV{rsat_echo} >= 2);
+
 print $query->end_html;
 
 exit(0);
@@ -833,21 +837,21 @@ sub ReturnTable {
   @return_fields_matches = qw(sites pval rank );
   foreach my $field (@return_fields_matches) {
     $boxes_matches .= $query->checkbox(-name=>'return_'.$field,
-				       -checked=>$default{'return_'.$field},
+				       -CHECKED=>$default{'return_'.$field},
 				       -label=>' '.$field.' ');
   }
   $boxes_matches .= "<BR/>";
   @return_fields_matches = qw( limits normw);
   foreach my $field (@return_fields_matches) {
     $boxes_matches .= $query->checkbox(-name=>'return_'.$field,
-				       -checked=>$default{'return_'.$field},
+				       -CHECKED=>$default{'return_'.$field},
 				       -label=>' '.$field.' ');
   }
   $boxes_matches .= "<BR/>";
   @return_fields_matches = qw(weight_limits bg_residues);
   foreach my $field (@return_fields_matches) {
     $boxes_matches .= $query->checkbox(-name=>'return_'.$field,
-				       -checked=>$default{'return_'.$field},
+				       -CHECKED=>$default{'return_'.$field},
 				       -label=>' '.$field.' ');
     $boxes_matches .= "<BR/>";
   }
@@ -858,14 +862,14 @@ sub ReturnTable {
   @return_fields_occ = qw(distrib);
   foreach my $field (@return_fields_occ) {
     $boxes_occ .= $query->checkbox(-name=>'return_'.$field,
-				   -checked=>$default{'return_'.$field},
+				   -CHECKED=>$default{'return_'.$field},
 				   -label=>' '.$field.' ');
   }
   $boxes_occ .= "<BR/>";
   @return_fields_occ = qw(occ_proba);
   foreach my $field (@return_fields_occ) {
     $boxes_occ .= $query->checkbox(-name=>'return_'.$field,
-				   -checked=>$default{'return_'.$field},
+				   -CHECKED=>$default{'return_'.$field},
 				   -label=>' '.$field.' ');
   }
 
@@ -879,35 +883,33 @@ sub ReturnTable {
   @return_fields_crer = qw(crer normw);
   foreach my $field (@return_fields_crer) {
     $boxes_crer .= $query->checkbox(-name=>'return_'.$field,
-				    -checked=>$default{'return_'.$field},
+				    -CHECKED=>$default{'return_'.$field},
 				    -label=>' '.$field.' ');
   }
   $boxes_crer .= "<BR/>";
   @return_fields_crer = qw(limits);
   foreach my $field (@return_fields_crer) {
     $boxes_crer .= $query->checkbox(-name=>'return_'.$field,
-				    -checked=>$default{'return_'.$field},
+				    -CHECKED=>$default{'return_'.$field},
 				    -label=>' '.$field.' ');
   }
   @return_fields_crer = qw(crer_sites);
   foreach my $field (@return_fields_crer) {
     $boxes_crer .= $query->checkbox(-name=>'return_'.$field,
-				    -checked=>$default{'return_'.$field},
+				    -CHECKED=>$default{'return_'.$field},
 				    -label=>' '."sites".' ');
   }
   $boxes_crer .= "<BR/>";
   $boxes_crer .= $query->checkbox(-name=>'crer_ids',
-				    -checked=>$default{crer_ids},
-				    -label=>' '."crer-specific identifier".' ');
-
-
+				  -CHECKED=>$default{crer_ids},
+				  -label=>' '."crer-specific identifiers".' ');
 
   ### Return fields
   my $boxes_add = "";
   @return_fields_add = qw(matrix freq_matrix weight_matrix bg_model);
   foreach my $field (@return_fields_add) {
     $boxes_add.= $query->checkbox(-name=>'return_'.$field,
-				  -checked=>$default{'return_'.$field},
+				  -CHECKED=>$default{'return_'.$field},
 				  -label=>' '.$field.' ');
   }
 

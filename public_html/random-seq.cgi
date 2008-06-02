@@ -101,7 +101,7 @@ if ($query->param('proba') eq "alphabet") {
     $parameters .= " -expfreq ".$alphabet_file;
     &DelayedRemoval($alphabet_file);
 
-## Pre-calibrated Markov chain background models
+## Pre-calibrated Markov models
 } elsif (($query->param('proba') =~ /upstream/i) ||
 	 ($query->param('proba') =~ /protein/i)) {
     ### check organism

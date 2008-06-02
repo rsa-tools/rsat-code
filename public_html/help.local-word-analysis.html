@@ -115,7 +115,11 @@ Various probabilistic models can be used to estimate the expected frequency of e
 </ul>
 </li>
 <li>
-<b>Markov chain :</b> expected word (oligonucleotide) frequencies are calculated on the basis of the subword frequencies observed in the input sequence set. This calculation takes into account the higher order dependencies between neighboring residues. For example, with a markov chain of order 4 :
+<b>Markov models:</b> expected word (oligonucleotide) frequencies are
+calculated on the basis of the subword frequencies observed in the
+input sequence set. This calculation takes into account the higher
+order dependencies between neighboring residues. For example, with a
+markov chain of order 4 :
 <blockquote>
 <pre>
 P(GATAAC) = P(GATAA) * P(C|GATAA) = P(GATAA) * P(ATAAC) / P(ATAA)
