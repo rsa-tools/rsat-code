@@ -10,9 +10,15 @@
 ################################################################
 
 use strict;
-use SOAP::WSDL;
+use SOAP::WSDL; ## Requires version 2.0 or later of SOAP::WSDL
 use lib 'RSATWS';
 use MyInterfaces::RSATWebServices::RSATWSPortType;
+
+## Check SOAP::WSDL version
+my $soap_version = $SOAP::WSDL::VERSION;
+if ($soap_version =~ /^v1./) {
+  die "ERROR: this script requires the Perl module SOAP::WSDL version 2.0 or later\n";
+}
 
 warn "\nThis demo script retrieves the start codons for a set of query genes\n\n";
 
