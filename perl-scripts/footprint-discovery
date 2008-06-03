@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.28 2008/05/12 22:26:32 jvanheld Exp $
+# $Id: footprint-discovery,v 1.29 2008/06/03 11:01:16 rsat Exp $
 #
 ############################################################
 
@@ -124,7 +124,7 @@ package main;
 
   ################################################################
   ## Initialise parameters
-  $program_version = do { my @r = (q$Revision: 1.28 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.29 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -306,6 +306,7 @@ sub RunFootprintDisco {
   $genes = &OpenOutputFile($outfile{genes});
 
   ## Specify other file names
+  $outfile{leader_qgenes} = $outfile{prefix}."_leader_query_genes.tab";
   $outfile{orthologs} = $outfile{prefix}."_ortho_bbh.tab";
   $outfile{query_seq} = $outfile{prefix}."_query_seq.fasta";
   $outfile{filter_dyads} = $outfile{prefix}."_filter_dyads.tab";
@@ -378,16 +379,34 @@ sub RunFootprintDisco {
   &Verbose() if ($verbose);
 
   ################################################################
+  ## Get predicted leader genes of the query genes
+  if ($infer_operons) {
+    &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{leader_qgenes}) if ($verbose >= 1);
+    $cmd = "$SCRIPTS/get-leader-multigenome ";
+    $cmd .= " -i ".$outfile{genes};
+    $cmd .= " -o ".$outfile{leader_qgenes};
+    $cmd .= " -uth interg_dist ".$dist_thr;
+    &one_command($cmd);
+#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &IndexOneFile("leader query genes", $outfile{leader_qgenes}) if ($create_index);
+  }
+
+  ################################################################
   ## Retrieve promoters of the query organism
   &RSAT::message::TimeWarn("Retrieving promoter sequences for query genes", $outfile{query_seq}) if ($verbose >= 1);
   $cmd = "$SCRIPTS/retrieve-seq ";
   $cmd .= " -org ".$organism_name;
-  $cmd .= " -i ".$outfile{genes};
+  if ($infer_operons){
+    $cmd .= " -i ".$outfile{leader_qgenes};
+  }else{
+    $cmd .= " -i ".$outfile{genes};
+  }
   $cmd .= " -noorf";
   $cmd .= " -o ".$outfile{query_seq};
   &one_command($cmd);
 #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("query sequence", $outfile{query_seq}) if ($create_index);
+
 
   ################################################################
   ## Detect all dyads in promoters of query genes for dyad filtering
