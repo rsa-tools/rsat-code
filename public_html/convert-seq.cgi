@@ -17,7 +17,7 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/convert-seq";
-$tmp_file_name = sprintf "convert-seq.%s", &AlphaDate;
+$tmp_file_name = sprintf "convert-seq.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
@@ -32,32 +32,34 @@ $query = new CGI;
 #### read parameters ####
 $parameters = "";
 
-################################################################
-## sequence file
-($sequence_file,$sequence_format) = &GetSequenceFile();
-
-#### matrix-scan parameters
-$parameters .= " -i $sequence_file -from $sequence_format";
-
-
-##### output format #####
-$out_format = lc($query->param('output_format'));
-$parameters .= " -to $out_format ";
-
-
 ### sequence file
 #($sequence_file,$out_format) = &GetSequenceFile();
 #$parameters .= " -i $sequence_file -format $out_format";
 
 ##### input sequence file #####
-unless ($query->param('sequence') =~ /\S/) {
-    &cgiError("The sequence box should not be empty.");
-}
-open INSEQ, ">$TMP/$tmp_file_name";
-print INSEQ $query->param('sequence');
-close INSEQ;
-$parameters .= " -i $TMP/$tmp_file_name ";
-&DelayedRemoval("$TMP/$tmp_file_name");
+#unless ($query->param('sequence') =~ /\S/) {
+#    &cgiError("The sequence box should not be empty.");
+#}
+#open INSEQ, ">$TMP/$tmp_file_name";
+#print INSEQ $query->param('sequence');
+#close INSEQ;
+#$parameters .= " -i $TMP/$tmp_file_name ";
+#&DelayedRemoval("$TMP/$tmp_file_name");
+
+################################################################
+## sequence file
+($in_sequence_file,$sequence_format) = &GetSequenceFile();
+
+&cgiWarning("in sequence = ".$in_sequence_file);
+
+#### matrix-scan parameters
+$parameters .= " -i $in_sequence_file -from $sequence_format";
+&DelayedRemoval("$in_sequence_file");
+
+##### output format #####
+$out_format = lc($query->param('output_format'));
+$parameters .= " -to $out_format ";
+
 
 ##### add reverse-complement #####
 if ($query->param('addrc')) {
@@ -85,6 +87,7 @@ if (($query->param('output') =~ /display/i) ||
     }
 
     print '<H4>Result</H4>';
+
     ### open the sequence file on the server
     $sequence_file = "$TMP/$tmp_file_name.res";
     if (open MIRROR, ">$sequence_file") {
@@ -110,7 +113,6 @@ if (($query->param('output') =~ /display/i) ||
 
     ### prepare data for piping
     &PipingFormForSequence();
-    
     print "<HR SIZE = 3>";
 
 #} elsif 
