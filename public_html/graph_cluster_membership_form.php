@@ -6,7 +6,7 @@
 <body class="form">
 <?php
   require ('functions.php');
-  require ('demo_dataset.php');
+//   require ('demo_dataset.php');
   # variable definition
   $default_scol = 1;
   $default_tcol = 2;
@@ -16,8 +16,9 @@ $default_decimals = 2;
   # demo graph
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
-    $demo_graph = $gavin2006;
-    $demo_clusters = $gavin_clusters_mcl_2_1;
+    $demo_graph = storeFile("demo_files/protein_interactions_gavin_2006.tab");
+    $demo_clusters = storeFile("demo_files/gavin_mcl_clusters_inf2.1.tab");
+
   }
   # PIPE VALUES
   $pipe = $_REQUEST['pipe'];

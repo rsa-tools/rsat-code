@@ -29,7 +29,7 @@
   # demo graph
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
-    $demo_graph = $string_database_clustered_mapped;
+    $demo_graph = storeFile("demo_files/string_coexpression_mcl_clusters.tab");
     $demo_wcol = 3;
     $demo_eccol = 4;
     $demo_ewidth = "checked";
