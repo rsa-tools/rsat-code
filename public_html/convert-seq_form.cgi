@@ -31,7 +31,9 @@ $default{sequence_format} = "fasta";
 $default{sequence} = "";
 $default{output_format}="fasta";
 $default{addrc}="";
-$default{line_width}="60";
+$default{line_width}=60;
+$default{short_action}="no treatment";
+$default{short_size}=30;
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -58,13 +60,31 @@ print $query->start_multipart_form(-action=>"convert-seq.cgi");
 print "<hr>";
 &DisplaySequenceChoice();
 
-						  
-print  "<BR>\n";
+print "<hr>";
+print "<h4>Sequence processing</h4>";
+
+## Short sequences
+print "<B><A HREF='help.convert-seq.html'>Short sequences</A></B>&nbsp;";
+print $query->popup_menu(-name=>'short_action',
+			 -Values=>['no treatment',
+				   'mask',
+				   'skip'],
+			 -default=>$default{short_action});
+print "&nbsp;"x2, "<B><A HREF='help.convert-seq.html'>min size</A></b>\n";
+print $query->textfield(-name=>'short_size',
+			-default=>$default{short_size},
+			-size=>3);
 
 
-print "<HR/>";
-### Output bg format
-print "<BR>";
+## Add reverse complement
+print "<br/>";
+print $query->checkbox(-name=>'addrc',
+		       -checked=>$default{addrc},
+		       -label=>'');
+print "<B><A HREF='help.convert-seq.html'>Add reverse complement</A></b>\n";
+
+### Output format
+print "<hr>";
 
 print "<B><A HREF='help.convert-seq.html'>Output format</A></B>&nbsp;";
 print $query->popup_menu(-name=>'output_format',
@@ -74,18 +94,10 @@ print $query->popup_menu(-name=>'output_format',
 				   "tab",
 				   'multi'],
 			 -default=>$default{output_format});
-print "<BR/>\n";
-print "<B><A HREF='help.convert-seq.html'>Line width</A></b>\n";
+print "&nbsp;"x2, "<B><A HREF='help.convert-seq.html'>Line width</A></b>\n";
 print $query->textfield(-name=>'line_width',
 			-default=>$default{line_width},
-			-size=>2);
-
-print "<br/>";
-print $query->checkbox(-name=>'addrc',
-		       -checked=>$default{addrc},
-		       -label=>'');
-
-print "<B><A HREF='help.convert-seq.html'>Add reverse complement</A></b>\n";
+			-size=>3);
 
 ################################################################
 ### send results by email or display on the browser
