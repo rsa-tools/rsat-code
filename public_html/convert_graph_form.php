@@ -6,7 +6,7 @@
 <body class="form">
 <?php
   require ('functions.php');
-  require ('demo_dataset.php');
+//   require ('demo_dataset.php');
   # variable definition
   $default_scol = 1;
   $default_tcol = 2;
@@ -33,7 +33,7 @@
   # demo graph
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
-    $demo_graph = $string_yeast_coex_550;
+    $demo_graph = storeFile("demo_files/string_yeast_gene_coexpression_names_gt_550.tab");
     $demo_ecolors = "selected";
     $demo_ewidth = "checked";
     $default_ecolors = "";

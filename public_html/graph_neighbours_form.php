@@ -25,7 +25,7 @@
   # demo graph
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
-    $demo_graph = $gavin_names;
+    $demo_graph = storeFile("demo_files/protein_interactions_gavin_2006_names.tab");
     $demo_nodes = $gavin_names_nodes;
     $selection_nodes_selected = 'checked';
     $all_nodes_selected = '';
