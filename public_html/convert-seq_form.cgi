@@ -29,7 +29,7 @@ my $input_formats = join (",",@supported_input_formats);
 $default{output}="display";
 $default{sequence_format} = "fasta";
 $default{sequence} = "";
-$default{output_format}="raw";
+$default{output_format}="fasta";
 $default{addrc}="";
 $default{line_width}="60";
 
@@ -68,26 +68,25 @@ print "<BR>";
 
 print "<B><A HREF='help.convert-seq.html'>Output format</A></B>&nbsp;";
 print $query->popup_menu(-name=>'output_format',
-			 -Values=>['fasta', 
-							      'ig',
-							      'wconsensus',
-							      'raw',
-							      'ncbi',
-							      "tab",
-							      'multi'],
+			 -Values=>['fasta',
+				   'wconsensus',
+				   'raw',
+				   "tab",
+				   'multi'],
 			 -default=>$default{output_format});
 print "<BR/>\n";
 print "<B><A HREF='help.convert-seq.html'>Line width</A></b>\n";
 print $query->textfield(-name=>'line_width',
 			-default=>$default{line_width},
 			-size=>2);
-			
-print "<br/>";			
+
+print "<br/>";
 print $query->checkbox(-name=>'addrc',
 		       -checked=>$default{addrc},
 		       -label=>'');
 
-print "<B><A HREF='help.convert-seq.html'>Add reverse complement</A></b>\n";		       
+print "<B><A HREF='help.convert-seq.html'>Add reverse complement</A></b>\n";
+
 ################################################################
 ### send results by email or display on the browser
 print "<p>\n";
@@ -126,7 +125,7 @@ GTCAAGGAGAAAAAACTATA
 print "<TD><B>";
 print $query->hidden(-name=>'sequence',-default=>$demo);
 print $query->hidden(-name=>'sequence_format',-default=>'fasta');
-print $query->hidden(-name=>'output_format',-default=>"raw");
+print $query->hidden(-name=>'output_format',-default=>"wconsensus");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
