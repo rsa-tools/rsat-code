@@ -6,7 +6,7 @@
 <body class="form">
 <?php
   require ('functions.php');
-  require ('demo_dataset.php');
+//   require ('demo_dataset.php');
   # variable definition
   $default_scol = 1;
   $default_tcol = 2;
@@ -16,7 +16,7 @@
   # demo graph
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
-    $demo_graph = $uetz;
+    $demo_graph = storeFile("demo_files/protein_interactions_uetz.tab");
     $demo_random_type = "selected";
     $default_random_type = "";
   }
