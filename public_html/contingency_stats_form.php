@@ -19,7 +19,7 @@
   # demo graph
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
-    $demo_matrix = $gavin_cc_mips;
+    $demo_matrix = storeFile("demo_files/gavin_mcl_clusters_inf2.1_cc_mips_complexes_matrix.tab");
     $pipe = 0;
     $demo_comment = "This contingency table consists in the comparaison between <a href = 'http://micans.org/mcl/' target = 'top'>MCL</a> obtained clusters applied on the <a target = '_blank' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=16429126&ordinalpos=1&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum'>Gavin <i>et al</i> (2006)</a> co-immunoprecipitation dataset (inflation 1.8) and the complexes described in the <a target = '_blank' href = 'http://mips.gsf.de/'>MIPS database</a>.";
   }
