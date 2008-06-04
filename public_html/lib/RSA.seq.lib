@@ -1030,7 +1030,6 @@ sub CheckFormat {
 ##         $seq_type
 ##         $mask (accepted values: "upper" or "lower"). Mask upper or lowercases by replacing them by N
 sub ReadNextSequence {
-    
     my ($SEQ, $sequence_format, $input_dir, $seq_type, $mask, %args) = @_;
     $sequence_format = lc($sequence_format);
 
@@ -1042,7 +1041,7 @@ sub ReadNextSequence {
     local $sequence = "";
     local $seq_id = "";
     local @comments = ();
-    
+
     ### single raw file ###
     if ($sequence_format eq "raw") {
       if (defined($inputfile)) {
@@ -1054,7 +1053,7 @@ sub ReadNextSequence {
       } else {
 	$seq_id = "seq";
       };
-      
+
       $sequence = "";
       while (<$SEQ>) {
 	next if ((/^;/) || (/^\#/) || (/^--/));
@@ -1068,7 +1067,7 @@ sub ReadNextSequence {
       } else {
 	return ("","");
       }
-      
+
 	#### multi: several raw sequences in the same file, separated by a newline
     } elsif ($sequence_format eq "multi") {
 	$seq_counter++;
@@ -1415,24 +1414,31 @@ sub ReadNextSequence {
 ##    $seq_id: identifier of the sequence
 ##    $mask (accepted values: "upper" or "lower"). Mask upper or lowercases by replacing them by N
 sub ReturnSequence {
-    my ($sequence, $seq_id, $mask, @comments) = @_;
-    $sequence = &FoldSequence($sequence, 0);
-    if ($mask) {
-	&CheckMask($mask);
-	if ($mask eq "lower") {
-	    $sequence =~ s/[a-z]/n/g;
-	} elsif ($mask eq "upper") {	
-	    $sequence =~ s/[A-Z]/N/g;
-	}
+  my ($sequence, $seq_id, $mask, @comments) = @_;
+  $sequence = &FoldSequence($sequence, 0);
+  if ($mask) {
+    &CheckMask($mask);
+    if ($mask eq "lower") {
+      $sequence =~ s/[a-z]/n/g;
+    } elsif ($mask eq "upper") {	
+      $sequence =~ s/[A-Z]/N/g;
+    } elsif ($mask eq "non-dna") {
+      $sequence =~ s/[^acgt\|]/n/gi;
+#    } else {
+#      $sequence =~ s/\-/n/;
+#      $sequence =~ s/\./n/;
     }
-    return($sequence, $seq_id, @comments);
-} 
+  }
+  return($sequence, $seq_id, @comments);
+}
 
 ################################################################
 ## Check that the mask case option is valid
 sub CheckMask {
     my ($mask) = @_;
-    my %supported_mask = ("lower"=>1, "upper"=>1);
+    my %supported_mask = ("lower"=>1,
+			  "upper"=>1,
+			  "non-dna"=>1);
     my $supported_mask = join(",", sort (keys(%supported_mask)));
     unless ($supported_mask{$mask}) {
 	&RSAT::error::FatalError(join("\t", $mask, "Invalid value for the mask parameter. Supported", $supported_mask));
