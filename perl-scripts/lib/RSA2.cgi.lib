@@ -49,7 +49,7 @@ sub PrintOrthoSelectionSection {
 
   #### choice of the organism
   print "<b>Query </b>";
- &OrganismPopUp(@supported_orthologs);
+  &OrganismPopUp(@supported_orthologs);
 
   ################################################################
   ### gene queries
@@ -80,7 +80,7 @@ sub PrintOrthoSelectionSection {
 sub ListParameters {
   my($cgi_query) = $_[0];
   @param = $query->param;
-  print "<H3>CGI query parameters</H3>";
+  print "<h4>CGI query parameters</h4>";
   print "<ul><table>\n";
   foreach my $key (@param) {
     print "<tr>";
@@ -98,7 +98,7 @@ sub ListParameters {
 ## This method should be called from the *_form.cgi scripts
 sub ListDefaultParameters {
   @param = $query->param;
-  print "<b>Default parameter values</b>";
+  print "<h4>Default parameter values</h4>";
   print "<ul><table>\n";
   foreach my $key (sort keys %main::default) {
     print "<tr>";
@@ -193,7 +193,7 @@ sub SequenceChoice {
     my $sequenceChoiceString = "";
     $sequenceChoiceString .=  "<B>Sequence</B>";
     #$sequenceChoiceString .=  "<UL>\n";
-    
+    my $sequence_file = "";
     if ($sequence_file = $query->param(sequence_file)) {
 	### sequence file is already on the server machine 
 	### (piped from a previous script)
@@ -224,7 +224,8 @@ sub SequenceChoice {
 	$sequenceChoiceString .=  $query->popup_menu(-name=>'mask',
 						    -Values=>['none', 
 							      'upper',
-							      'lower'],
+							      'lower',
+							      'non-dna'],
 						    -default=>"none");
 	$sequenceChoiceString .=  "<BR>\n";
 
@@ -246,8 +247,7 @@ sub SequenceChoice {
 
     }
     $sequenceChoiceString .=  "<BR>\n";
-    
-    
+
     #$sequenceChoiceString .=  "</UL>\n";
     return $sequenceChoiceString;
 }
@@ -270,6 +270,7 @@ sub GetSequenceFile {
   my $add_rc = $args{add_rc} || 0;
   my $no_format = $args{no_format} || 0;
   my $skip_short = $args{skip_short} || 0;
+  my $sequence_file = "";
 
   ### sequence file format
   my $sequence_format = lc($query->param("sequence_format"));
@@ -280,7 +281,7 @@ sub GetSequenceFile {
   unless ($sequence_file = $query->param('sequence_file')) { 
     ### sequence file already on the server side
     ### create a new temporary sequence file
-    $sequence_file = "$TMP/$tmp_file_name.seq"; 
+    $sequence_file = "$TMP/$tmp_file_name.seq";
 
     ### upload sequence file from the client side
     $upload_file = $query->param('uploaded_file');
@@ -356,7 +357,7 @@ sub GetSequenceFile {
     ## Execute the sequence conversion
     system($convert_seq_command);
 
-    #print "<PRE>$convert_seq_command</PRE>\n";
+    print "<PRE>$convert_seq_command</PRE>\n";
     &DelayedRemoval($converted_seq_file);
     $sequence_file = $converted_seq_file;
     $sequence_format = $required_format;
@@ -549,7 +550,7 @@ if ($params{title_choose}){
 
 if ($params{markov}) {
 #### Markov order
-print ("<b><a href=help.matrix-scan.html#markov_order>Markov Chain order</a></b> &nbsp;");
+print ("<b><a href=help.matrix-scan.html#markov_order>Markov order</a></b> &nbsp;");
 print $query->popup_menu(-name=>'markov_order',
 			 -Values=>[0..7],
 			 -default=>$default{markov_order});
@@ -1190,9 +1191,9 @@ sub PrintOligoBackgroundOptions {
 
   print ("<br><b>Estimate from input sequence</b>");
 
-  ## Markov chain model
-  print ("<br><input type='radio' NAME='freq_estimate' VALUE='Markov Chain (higher order dependencies)' $checked{'Markov Chain (higher order dependencies)'}>", 
-	 "Markov Chain (higher order dependencies)");
+  ## Markov model
+  print ("<br><input type='radio' NAME='freq_estimate' VALUE='Markov model (higher order dependencies)' $checked{'Markov model (higher order dependencies)'}>", 
+	 "Markov model (higher order dependencies)");
 
   print "&nbsp;&nbsp;order &nbsp;";
   print $query->textfield(-name=>'markov_order',
