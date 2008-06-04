@@ -219,15 +219,6 @@ sub SequenceChoice {
 							      "tab",
 							      'multi'],
 						    -default=>$sequence_format);
-	#### Mask option
-	$sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Mask</A></B>&nbsp;";
-	$sequenceChoiceString .=  $query->popup_menu(-name=>'mask',
-						    -Values=>['none', 
-							      'upper',
-							      'lower',
-							      'non-dna'],
-						    -default=>"none");
-	$sequenceChoiceString .=  "<BR>\n";
 
 	### text area to copy-paste the sequence
 	$sequenceChoiceString .=  "Paste your sequence in the box below<BR>\n";
@@ -246,10 +237,19 @@ sub SequenceChoice {
 	$sequenceChoiceString .=  "<BR>\n";
 
     }
+
+    #### Mask option
+    $sequenceChoiceString .=  "<BR><B><A HREF='help.formats.html'>Mask</A></B>&nbsp;";
+    $sequenceChoiceString .=  $query->popup_menu(-name=>'mask',
+						 -Values=>['none', 
+							   'upper',
+							   'lower',
+							   'non-dna'],
+						 -default=>"none");
     $sequenceChoiceString .=  "<BR>\n";
 
     #$sequenceChoiceString .=  "</UL>\n";
-    return $sequenceChoiceString;
+    return($sequenceChoiceString);
 }
 
 
@@ -1130,12 +1130,21 @@ sub PipingFormForSequence {
     </th>
 
     <td align=center>
+	<FORM METHOD="POST" ACTION="convert-seq_form.cgi">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="submit" value="convert sequence">
+	</FORM>
+	Format inter-conversions + mask short fragments.
+    </td>
+
+    <td align=center>
 	<FORM METHOD="POST" ACTION="purge-sequence_form.cgi">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="purge sequence">
 	</FORM>
-	Mask redundant fragments. 
+	Mask redundant fragments.
     </td>
 
     <td align=center>
