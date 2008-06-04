@@ -55,6 +55,10 @@ $args{background} = `cat $args{background}`;
 chomp($args{background});
 }
 
+## Convert the lth string into a list
+my @lths = split(",", $args{lth});
+$args{lth} = \@lths;
+
 ## Convert the uth string into a list
 my @uths = split(",", $args{uth});
 $args{uth} = \@uths;
