@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.27 2007/12/07 08:35:44 jvanheld Exp $
+# $Id: convert-seq,v 1.28 2008/06/04 08:01:11 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -243,7 +243,7 @@ USAGE
 	          -id identifier
                   -from inputformat -to outputformat
                   [-lw line_width]
-	
+
 OPTIONS
 	-v #	verbose level
 
@@ -255,6 +255,9 @@ OPTIONS
 		Mask lower or uppercases, respecively, i.e. replace
 		selected case by N characters.
 
+	-noempty
+		Remove empty sequences from the set (same as -skip_short 1)
+
 	-mask_short min_seq_len
 		Mask (replace by N characters) sequences shorter than
 		the specified length. This can be useful to discard
@@ -263,20 +266,14 @@ OPTIONS
 		where short intergenic sequences generally correspond
 		to intra-operon segments.
 
-	-skip_short min_seq_len
-		Skip sequences shorter than the specified length. These
-		sequences are not returned at all in the output. This can be
-		useful to discard short intergenic segments from the pattern
-		discovery step, especially when working with bacterial
-		genomes, where short intergenic sequences generally correspond
-		to intra-operon segments.
-
-	-noempty
-		Remove empty sequences from the set (same as -skip_short 1)
+	-skip_short min_seq_len 
+		Skip sequences shorter than the specified length. Same
+		functionality as -mask_short, except that short
+		sequences are not returned at all in the output.
 
 	-skip_long max_seq_len
 		Skip sequences longer than the specified length. These
-		sequences are not returned at all in the output. 
+		sequences are not returned at all in the output.
 
 	-o outputfile
 		if not specified, the standard output is used.
@@ -301,8 +298,8 @@ OPTIONS
 
 	-uc	lowercase. the sequence is printed in uppercase.
 
-	-dna	convert any non-acgt character into "n" 
-		This is to filter out partly speciied nucleotides.
+	-dna	convert any non-acgt character into "n" characters.
+		This is to filter out partly specified nucleotides.
 
  	-dotmask
 		convert masked characters into dots. 
@@ -327,7 +324,7 @@ SUPPORTED FORMATS
     OUTPUT $accepted_output_string
 	
 EXAMPLES
-	convert-seq -i myseq.IG -from IG -to FASTA -o myseq.FASTA
+	convert-seq -i myseq.multi -from multi -to FASTA -o myseq.FASTA
 
 End_of_help
   close HELP;
