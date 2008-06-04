@@ -50,7 +50,7 @@ $parameters = "";
 ## sequence file
 ($in_sequence_file,$sequence_format) = &GetSequenceFile();
 
-&cgiWarning("in sequence = ".$in_sequence_file);
+#&cgiWarning("in sequence = ".$in_sequence_file);
 
 #### matrix-scan parameters
 $parameters .= " -i $in_sequence_file -from $sequence_format";
