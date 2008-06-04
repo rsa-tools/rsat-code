@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence.cgi,v 1.8 2007/12/07 08:15:45 jvanheld Exp $
+# $Id: purge-sequence.cgi,v 1.9 2008/06/04 08:02:59 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 00:38:45 jvanheld>
 #
@@ -44,13 +44,13 @@ $query = new CGI;
 # read parameters
 #
 
-### sequence file ####
-($sequence_file,$sequence_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>0);
-$parameters = " -i $sequence_file ";
+### Input sequence file ####
+($in_sequence_file,$sequence_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>0);
+$parameters = " -i $in_sequence_file ";
 
-$result_file = "$TMP/$tmp_file_name.res";
-#$parameters .= " -o $result_file ";
-#&DelayedRemoval($result_file);
+$sequence_file = "$TMP/$tmp_file_name.res";
+#$parameters .= " -o $sequence_file ";
+#&DelayedRemoval($sequence_file);
     
 
 #### add reverse complement
@@ -116,11 +116,14 @@ if (($query->param('output') =~ /display/i) ||
 	       "<a href=${result_URL}>${result_URL}</a>",
 	       "\n");
     }
-    
+
     ### prepare data for piping
-    &PipingForm();
-    
+    &PipingFormForSequence();
     print "<HR SIZE = 3>";
+#    ### prepare data for piping
+#    &PipingForm();
+
+    print "<hr size = 3>";
 
 #} elsif ($query->param('output') =~ /server/i) {
 #    &ServerOutput("$command $parameters", $query->param('user_email'));
@@ -157,7 +160,7 @@ sub PipingForm {
 
     <TD>
 	<FORM METHOD="POST" ACTION="oligo-analysis_form.cgi">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$result_file">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="oligonucleotide analysis">
 	</FORM>
@@ -165,7 +168,7 @@ sub PipingForm {
 
     <TD>
 	<FORM METHOD="POST" ACTION="dyad-analysis_form.cgi">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$result_file">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="dyad analysis">
 	</FORM>
@@ -173,7 +176,7 @@ sub PipingForm {
 
     <TD>
 	<FORM METHOD="POST" ACTION="consensus_form.cgi">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$result_file">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="consensus">
 	</FORM>
@@ -181,7 +184,7 @@ sub PipingForm {
 
     <TD>
 	<FORM METHOD="POST" ACTION="gibbs_form.cgi">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$result_file">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="gibbs sampler">
 	</FORM>
@@ -199,7 +202,7 @@ sub PipingForm {
 
     <TD>
 	<FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$result_file">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="dna-pattern (IUPAC)">
 	</FORM>
@@ -208,7 +211,7 @@ sub PipingForm {
     <TD VALIGN=BOTTOM ALIGN=CENTER>
         <b><font color=red>New</a></b>
         <FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
-        <INPUT type="hidden" NAME="sequence_file" VALUE="$result_file">
+        <INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
         <INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
         <INPUT type="submit" value="matrix-scan (matrices)">
         </FORM>
@@ -217,7 +220,7 @@ sub PipingForm {
 
     <TD>
 	<FORM METHOD="POST" ACTION="patser_form.cgi">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$result_file">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="patser (matrices)";
 	</FORM>
