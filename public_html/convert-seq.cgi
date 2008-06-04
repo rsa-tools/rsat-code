@@ -56,17 +56,27 @@ $parameters = "";
 $parameters .= " -i $in_sequence_file -from $sequence_format";
 &DelayedRemoval("$in_sequence_file");
 
-##### output format #####
-$out_format = lc($query->param('output_format'));
-$parameters .= " -to $out_format ";
+## Short sequence treatment
+my $short_action = lc($query->param('short_action'));
+if (($short_action eq "mask") || ($short_action eq "skip")) {
+  $parameters .= " -".$short_action."_short ";
+  if (&IsNatural($query->param('short_size'))) {
+    $parameters .= $query->param('short_size');
+  } else {
+    &FatalError("Minimal sequence size must be a strictly positive Integer number");
+  }
+}
 
-
-##### add reverse-complement #####
+## add reverse-complement
 if ($query->param('addrc')) {
     $parameters .= " -addrc ";
 }
 
-##### line width #####
+## output format
+$out_format = lc($query->param('output_format'));
+$parameters .= " -to $out_format ";
+
+## line width
 if ($query->param('line_width') =~ /\d+/) {
     $parameters .= " -lw ".$query->param('line_width');
 }
