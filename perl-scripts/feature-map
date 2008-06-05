@@ -115,7 +115,7 @@ if ($#label_keys >= 0) {
 ## Handles (symbols or dots) require a sufficient map thickness
 if (($draw_dots) || ($draw_symbols)) {
   if ((&IsNatural($map_thick)) && ($map_thick < 60)) {
-    &RSAT::error::FatalError("Feature handles (dots or symbools) required a sufficient map thickness (at least 60 pixels)");
+    &RSAT::error::FatalError("Feature handles (dots or symbools) require a sufficient map thickness (at least 60 pixels). Please increase the thickness, or avoid the -symbol and -dot options");
   }
 }
 
