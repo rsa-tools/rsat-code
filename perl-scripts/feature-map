@@ -31,7 +31,8 @@ $supported_formats = join (",", keys %supported_format);
 ## General parameters
 $map_names = 1; ## Print map names
 $legend = 0; ## Draw legend box
-
+$draw_handles = 0;
+$draw_dots = 0;
 
 #### font sizes ####
 $small_font_width = 6;
@@ -110,6 +111,13 @@ if ($#label_keys >= 0) {
   $side_labels = 1 unless ($box_labels);
 }
 
+################################################################
+## Handles (symbols or dots) require a sufficient map thickness
+if (($draw_dots) || ($draw_symbols)) {
+  if ((&IsNatural($map_thick)) && ($map_thick < 60)) {
+    &RSAT::error::FatalError("Feature handles (dots or symbools) required a sufficient map thickness (at least 60 pixels)");
+  }
+}
 
 ################################################################
 ## Read Data 
@@ -118,7 +126,7 @@ if ($#label_keys >= 0) {
 &ReadSequenceLengths($sequence_file, $sequence_format) if ($sequence_file);
 
 ################################################################
-## Calculate map dimensions 
+## Calculate map dimensions
 &CalcDimensions();
 
 
@@ -835,7 +843,7 @@ sub PixelPos {
 ################################################################
 #### Calculate map dimensions
 sub CalcDimensions {
-    warn "; Calculating map dimensions\n" if ($main::verbose >= 2);
+    &RSAT::message::Info("Calculating map dimensions") if ($main::verbose >= 2);
 
     $nb_of_maps = $#map_list +1;
     $max_pos = "ND";
@@ -993,7 +1001,7 @@ sub CalcDimensions {
 	}
 	$graph_y_size += $large_font_height + 8 unless ($title eq ""); #### title
 	$graph_y_size = &max($graph_y_size , $legend_bottom + $y_border);
-	
+
     } else { ### vertical map
 	#### Y dimensions ####
 	$map_start = $y_border;
@@ -1003,7 +1011,6 @@ sub CalcDimensions {
 	    $map_start += $large_font_height + 8; #### title
 	}
 	$box_top = $map_start - 4 - $small_font_height - 8 - $large_font_height;
-	
 	$map_end = $map_start + $map_length;
 	$graph_y_size = $map_end + $small_font_height + 4;
 	$graph_y_size += $y_border;
