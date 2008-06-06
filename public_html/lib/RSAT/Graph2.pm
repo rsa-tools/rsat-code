@@ -1714,6 +1714,7 @@ sub load_from_gml {
 
     while (my $line = <$main::in>) {
       chomp($line);
+      next if ($line =~ /^#/);
       $line .= " ";
       $line =~ s/\t/ /g;
       $fichier .= $line;
@@ -2554,7 +2555,7 @@ sub to_gml {
       my $edge_color = $arcs[$j][3];
       my $source_id = $nodes_name_id{$source_name};
       my $target_id = $nodes_name_id{$target_name};
-      $edge_label =~ s/^\s*//;
+      $edge_label =~ s/^\s*// if (defined ($edge_label));
       my $edge_width= 2;
       if ($edge_width_calc) {
         $edge_width = ((($edge_label-$min)/($max+1-$min))*6.5)+0.5;
