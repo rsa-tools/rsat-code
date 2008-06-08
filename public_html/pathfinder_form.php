@@ -44,14 +44,14 @@
      $default_sources = $demo_sources;
      $default_targets = $demo_targets;
   }
-  
+
   # demo 2 graph
   $demo2 = $_REQUEST['demo2'];
   if($demo2 == 1){
     $default_weight = "none";
     $default_sources = "MID2";
     $default_targets = "RLM1/SWI4/SWI6";
-    $default_rank = 5; 
+    $default_rank = 5;
   }
 
   title('Pathfinder');
@@ -104,8 +104,8 @@
   }else if($demo2 == 1){
   demo("In this demo, the network has been already pre-loaded. We use the weighted STRING database network, a network of protein-protein interactions, as demo network. Its weights, which describe edge reliability, have been inverted to describe
   edge costs. The demo network is part of our <a href='http://rsat.scmbb.ulb.ac.be/rsat/data/published_data/nature_protocols/network_analysis/'>sample data collection</a>. We want to recover a signal
-  transduction pathway known to regulate cell wall integrity in <i>S. cerevisiae</i> (Saito and Tatebayashi, J. Biochem, 2004). This pathway is reported to start with WSC1 or MID2 and to end with RLM1, SWI4 or SWI6. 
-  We will look for the lightest paths connecting MID2 to RLM1/SWI4/SWI6, WSC1 being absent in the demo network. The paths of first rank miss one step (ROM2) and replace MPK1 by KSS1, otherwise they are correct. 
+  transduction pathway known to regulate cell wall integrity in <i>S. cerevisiae</i> (Saito and Tatebayashi, J. Biochem, 2004). This pathway is reported to start with WSC1 or MID2 and to end with RLM1, SWI4 or SWI6.
+  We will look for the lightest paths connecting MID2 to RLM1/SWI4/SWI6, WSC1 being absent in the demo network. The paths of first rank miss one step (ROM2) and replace MPK1 by KSS1, otherwise they are correct.
   ROM2 is missing in the demo network. With improved quality of the protein-protein interaction network used, path finding accuracy is expected to increase.");
   }
    echo("
@@ -234,28 +234,39 @@
   <a href='help.pathfinder.html#output'><img src='images/question-mark-button.jpg' width='15' alt='help'></a>
   </h2>
   <br><br>
+ <a href='help.pathfinder.html#output'><b>Output format&nbsp;&nbsp;</b>
+  <br><br>
+  <table><tr>
+  <td>Table: <input type='radio' name='outputchoice' value='pathsTable'></td>
+  </tr><tr>
+  <td>Graph: <input type='radio' name='outputchoice' value='outputgraph'></td>
+  	<table>
+  	<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+  	    <td>Graph format:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  	         <select name='out_format'>
+  			 <option selected value = 'flat'>tab-delimited format</option>
+  			 <option value = 'GML'>GML format</option>
+             </select>
+  	    </td>
+  	</tr>
+  	<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+  	    <td>Graph output type:
+  	    <select name='outputType'>
+        <option selected value = 'pathsGraphs'>each path as a separated component of a single graph</option>
+        <option value = 'pathsUnion'>paths unified into one graph</option>
+        <option value = 'pathsMarked'>input graph with paths highlighted</option>
+         </select>
+  	</td>
+  	</tr>
+  	</table>
+  </tr>
+  </table>
+  <br><br>
   <table>
-  <tr>
-  <td><a href='help.pathfinder.html#formats'><b>Output format&nbsp;&nbsp;</b></a></td><td>
-   <select name='out_format'>
-  <option selected value = 'flat'>tab-delimited format</option>
-  <option value = 'GML'>GML format</option>
-  </select>
-  </td></tr>
-  <tr><td>
-  <B><a href = 'help.pathfinder.html#output'>Output type</a></B>
-  </td><td>
-   <select name='outputType'>
-  <option selected value = 'pathsTable'>table of paths</option>
-  <option value = 'pathsMarked'>input graph with paths highlighted</option>
-  <option value = 'pathsGraphs'>each path as a separated component of a single graph</option>
-  <option value = 'pathsUnion'>paths unified into one graph</option>
-  </select>
-  </td></tr>
   <tr><td>
   <B><a href = 'help.pathfinder.html#email'>Email (optional)</a></B>
   </td><td>
-  <input type='text' name='email' value='$default_email' size='50'></input>
+  <input type='text' name='email' value='$default_email' size='30'></input>
   </td></tr>
   </table>
   <br>
