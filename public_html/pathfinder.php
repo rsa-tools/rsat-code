@@ -49,6 +49,7 @@
   $nodeIntegers = $default_nodeIntegers;
   $algorithm =  $default_algorithm;
   $rank = $_REQUEST['rank'];
+  $outputchoice = $_REQUEST['outputchoice'];
   $outputType =   $_REQUEST['outputType'];
   $store_graph = $_REQUEST['store_graph'];
   $return_type = $default_returnType;
@@ -84,6 +85,11 @@
     $metabolic = 1;
   }else{
     $metabolic = 0;
+  }
+  
+  ## check outputType
+  if($outputchoice == 'pathsTable'){
+    $outputType = $outputchoice;
   }
 
   ## convert format names
