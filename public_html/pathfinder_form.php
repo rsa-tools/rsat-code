@@ -38,7 +38,7 @@
   # demo graph
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
-     $demo_graph = $scer_biocyc;
+     $demo_graph = storeFile("demo_files/Scer_biocyc.tab");
      $demo_sources = "GLY";
      $demo_targets = "PROTOHEME";
      $default_sources = $demo_sources;
