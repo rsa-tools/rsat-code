@@ -6,7 +6,6 @@
 <body class="form">
 <?
   require ('functions.php');
-  require ('Scer_biocyc.php');
 
   // default variables
   $default_in_format = "";
