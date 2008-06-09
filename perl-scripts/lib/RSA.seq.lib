@@ -1206,7 +1206,7 @@ sub ReadNextSequence {
 	### FastA format ###
     } elsif ($sequence_format eq "fasta") {
 	while (<$SEQ>) {
-	    next if ((/^;/) || (/^\#/) || (/^--/));
+	    next if ((/^;/) || (/^\#/));
 	    if (/^\s*>\s*(\S*)\s*(.*)/) { 
 	      ## new sequence identifier
 	      my $next_id = $1;
