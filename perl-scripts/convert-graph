@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.38 2008/04/04 11:29:10 rsat Exp $
+# $Id: convert-graph,v 1.39 2008/06/09 10:38:40 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -416,7 +416,7 @@ extension of the resulting graph as it will consist of two files (radical.rns an
 
 =item B<-from input_format>
 
-Input format. Supported: tab, gml
+Input format. Supported: tab, gml, adj_matrix, path
 
 =cut
 	} elsif ($arg eq "-from") {
@@ -429,7 +429,7 @@ Input format. Supported: tab, gml
 
 =item B<-to output_format>
 
-Output format. Supported: tab, dot, gml
+Output format. Supported: tab, dot, gml, adj_matrix, rnsc
 
 =cut 
 	} elsif ($arg eq "-to") {
