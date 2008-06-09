@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-topology,v 1.4 2008/04/11 22:41:25 rsat Exp $
+# $Id: graph-topology,v 1.5 2008/06/09 10:38:40 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -13,7 +13,7 @@
 
 =head1 NAME
 
-graph-node-degree
+graph-topology
 
 =head1 DESCRIPTION
 
@@ -472,7 +472,7 @@ Node file format: the first word of each row specifies one node. The rest of the
 
 =item B<-all>
 
-Look for the degree of all nodes. 
+Compute topological parameters for all nodes.
 
 =cut
 	} elsif ($arg eq "-all") {
