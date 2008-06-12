@@ -136,7 +136,7 @@
       # Display the results 
       echo "The results is available at the following URL ";
       echo "<a href = '$resultURL'>$resultURL</a><br>";
-      echo "<a href = '$resultURL'><img src = '$resultURL' width = '50%'></a>";
+      echo "<a href = '$resultURL'><img src = '$resultURL' width = '50%'></a><br>Click on the icon to display the high-resolution image";
    }
  }
 
