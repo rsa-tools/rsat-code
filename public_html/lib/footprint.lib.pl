@@ -1,0 +1,537 @@
+################################################################
+## Library for functions shared by footprint detection programs
+## - footprint-discovery
+## - footprint-scan
+
+%supported_tasks =  (operons=>1,
+		     query_seq=>1,
+		     filter_dyads=>1,
+		     orthologs=>1,
+		     ortho_seq=>1,
+		     purge=>1,
+		     all=>1,
+		    );
+%task = ();
+
+################################################################
+## Treat one command, by either executing it, or concatenating it for
+## further batch processing
+sub one_command {
+  my ($cmd) = @_;
+  if ($main::batch) {
+    $main::batch_cmd .= " ; $cmd";
+  } else {
+    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+  }
+}
+
+
+################################################################
+## Check all parameters required for footprint analysis (discovery or
+## scanning).
+sub CheckFootprintParameters {
+
+  ## If all tasks are requested or if no task is defined, execute all
+  ## tasks.
+  if ((scalar(keys(%task)) == 0) || ($task{all})){
+    foreach my $task (keys %supported_tasks) {
+#      &RSAT::message::Debug("Auto adding task", $task);
+      $task{$task} = 1;
+    }
+  }
+  &RSAT::message::Info("Tasks: ", join (";", keys %task)) if ($main::verbose >= 0);
+
+  ## Check taxon
+  &RSAT::error::FatalError("You must specify a taxon (option -taxon)")
+    unless ($taxon);
+  my @organisms = &CheckTaxon($taxon);
+
+  ## Check organism
+  &RSAT::error::FatalError("You must specify a organism (option -org)")
+    unless ($organism_name);
+  $organism = new RSAT::organism();
+  $organism->check_name($organism_name);
+  $organism->set_attribute("name", $organism_name);
+
+  ################################################################
+  ## Read query genes from input file
+  if ($all_genes) {
+    if (defined($supported_organism{$organism_name})) {
+      $infile{genes} = $supported_organism{$organism_name}->{'data'};
+      $infile{genes} .= "/genome/cds.tab";
+    } else {
+      &RSAT::error::FatalError("Organism", $organism_name, "is not supported");
+    }
+  }
+
+  if ($infile{genes}) {
+    my ($in) = &OpenInputFile($infile{genes});
+    while (<$in>) {
+      next if (/^--/); ## Skip mysql-type comment lines
+      next if (/^;/); ## Skip comment lines
+      next if (/^#/); ## Skip header lines
+      next unless (/\S/); ## Skip empty lines
+      chomp;
+      my @fields = split /\s+/;
+      my $query = shift @fields;
+      push @query_genes, $query;
+    }
+    close $in;
+  }
+
+
+  ################################################################
+  ## Check query genes
+  if (scalar(@query_genes) ==0) {
+    &RSAT::error::FatalError("You must specify at least one query gene (options -q or -i)");
+  }
+
+  ## Get maximum number of genes if limited
+  if ($max_genes){
+    if (scalar(@query_genes)>$max_genes){
+      &RSAT::message::Warning("The analysis has been limited to the first ", $max_genes,"genes");
+      @query_genes= splice(@query_genes,0,$max_genes);
+      &RSAT::message::Warning(join("\t","Query genes:",@query_genes)) if ($main::verbose >= 2);
+    }
+  }
+
+}
+
+################################################################
+## Check dependency between a task and a list of files
+sub CheckDependency {
+  my ($task, @files_types) = @_;
+  foreach my $type (@files_types) {
+    my $file = $outfile{$type};
+    if (-e $file) {
+      &RSAT::message::Info("Checked existence of ", $type, "file required for task", $task, "file", $file)
+	if ($main::verbose >= 0);
+    } else {
+      &RSAT::message::Info("Missing", $type, "file required for task", $task, "file", $file)
+    }
+  }
+}
+
+################################################################
+## Define a query prefix for the title of the feature map and for
+## automatic output file specification
+sub GetQueryPrefix {
+  my $query_prefix;
+  if (scalar(@current_query_genes) == 1) {
+    $query_prefix = $current_query_genes[0];
+  } elsif (scalar(@current_query_genes) <= 10) {
+    $query_prefix = join "_", @current_query_genes;
+  } elsif ($outfile{prefix}) {
+    $query_prefix = `basename $outfile{prefix}`;
+    chomp($query_prefix);
+  } elsif ($infile{genes}) {
+    $query_prefix = `basename $infile{genes} .tab`;
+  }
+  &RSAT::message::Warning("Query prefix", $query_prefix) if ($main::verbose >= 2);
+  return ($query_prefix);
+}
+
+
+################################################################
+## Output prefix is mandatory
+## If not specified by the user, define it automatically
+## If genes are to be analyzed separately, also define output prefix automatically
+sub GetOutfilePrefix {
+  if (($sep_genes)
+      || ($outfile{prefix} eq "")) {
+    if ($query_prefix) {
+      if ($bg_model) {
+	$outfile{prefix} = join( "/", "footprints", $taxon, $organism_name, $query_prefix, $bg_model,
+				 join ("_", $query_prefix, $organism_name, $taxon, $bg_model));
+      } else {
+	$outfile{prefix} = join( "/", "footprints", $taxon, $organism_name, $query_prefix,
+				 join ("_", $query_prefix, $organism_name, $taxon));
+      }
+      &RSAT::message::Warning("Automatic definition of the output prefix", $outfile{prefix});
+    } else {
+      &RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
+    }
+  }
+  return ($outfile{prefix});
+}
+
+
+################################################################
+## Initialize output directory + output files
+sub InitOutput {
+
+  ## Create output directory if required
+  $dir{output} = `dirname $outfile{prefix}`;
+  chomp($dir{output});
+  &RSAT::util::CheckOutDir($dir{output});
+
+    ## Open output stream for the log file
+  $outfile{log} = $outfile{prefix}."_log.txt";
+  $out = &OpenOutputFile($outfile{log});
+
+  ## File for storing the list of query gene names
+  $outfile{genes} = $outfile{prefix}."_query_genes.tab";
+  $genes = &OpenOutputFile($outfile{genes});
+
+  ## Specify other file names
+  $outfile{orthologs} = $outfile{prefix}."_ortho_bbh.tab";
+  $outfile{query_seq} = $outfile{prefix}."_query_seq.fasta";
+  if ($infer_operons) {
+    $outfile{leader_qgenes} = $outfile{prefix}."_leader_query_genes.tab";
+    $promoter = "leaders";
+  } else {
+    $promoter = "ortho";
+  }
+  $outfile{bbh} = $outfile{prefix}."_".$promoter."_bbh.tab";
+  $outfile{seq} = $outfile{prefix}."_".$promoter."_seq.fasta";
+  $outfile{purged} = $outfile{prefix}."_".$promoter."_seq_purged.fasta";
+}
+
+
+
+################################################################
+## Read the options that are common to footprint detection programs.
+sub ReadFootprintOptions {
+
+      ## Verbosity
+
+=pod
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+  if ($arg eq "-v") {
+    if (&IsNatural($arguments[0])) {
+      $main::verbose = shift(@arguments);
+    } else {
+      $main::verbose = 1;
+    }
+
+    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+  } elsif ($arg eq "-h") {
+    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+  } elsif ($arg eq "-help") {
+    &PrintOptions();
+
+=pod
+
+=item B<-batch>
+
+Generate one command per query gene, and post it on the queue of a PC
+cluster.
+
+=cut
+  } elsif ($arg eq "-batch") {
+    $main::batch = 1;
+
+
+    ## Dry run
+=pod
+
+=item B<-dry>
+
+Dry run: print the commands but do not execute them.
+
+=cut
+  } elsif ($arg eq "-dry") {
+    $main::dry = 1;;
+
+
+=item B<-genes>
+
+Specify a file containing a list of genes. Multiple genes can also be
+specified by using iteratively the option -q.
+
+=cut
+  } elsif ($arg eq "-genes") {
+    $main::infile{genes} = shift(@arguments);
+
+=pod
+
+=item B<-all_genes>
+
+Automatically analyze all the genes of a query genome, and store each
+result in a separate folder (the folder name is defined
+automatically).
+
+=cut
+  } elsif ($arg eq "-all_genes") {
+    $main::all_genes = 1;
+
+=pod
+
+=item B<-max_genes>
+
+Maximal number of genes to analyze.
+
+=cut
+  } elsif ($arg eq "-max_genes") {
+    $main::max_genes = shift(@arguments);
+
+	    ## Output prefix
+=pod
+
+=item	B<-o output_prefix>
+
+Prefix for the output files.
+
+If the prefix is not specified, the program can guess a default
+prefix, but this is working only if there is a single query gene or
+query file.
+
+=cut
+  } elsif ($arg eq "-o") {
+    $main::outfile{prefix} = shift(@arguments);
+
+    ## Organism
+=pod
+
+=item	B<-org query_organism>
+
+Query organism, to which the query genes belong.
+
+=cut
+  } elsif ($arg eq "-org") {
+    $main::organism_name = shift(@arguments);
+
+    ## Taxon
+=pod
+
+=item	B<-taxon reference_taxon>
+
+Reference taxon, in which orthologous genes have to be collected.
+
+=cut
+  } elsif ($arg eq "-taxon") {
+    $main::taxon = shift(@arguments);
+
+
+    ## Query gene
+=pod
+
+=item	B<-q query>
+
+Query gene.
+
+This option can be used iteratively on the command line to specify
+multiple genes.
+
+=cut
+  } elsif ($arg eq "-q") {
+    push @main::query_genes, shift(@arguments);
+
+=pod
+
+
+=pod
+
+=item B<-sep_genes>
+
+Search footprints for each query gene separately. The results are
+stored in a separate folder for each gene. The folder name is defined
+automatically.
+
+By default, when several query genes are specified, the program
+collects orthologs and analyzes their promoters altogether. The option
+I<-sep> allows to automatize the detection of footprint in a set of
+genes that will be treated separately.
+
+=cut
+  } elsif ($arg eq "-sep_genes") {
+    $main::sep_genes = 1;
+
+	  ## infer operons
+=pod
+
+=item B<-infer_operons>
+
+Infer operons in order to retrieve the promoters of the predicted
+operon leader genes rather than those located immediately upstream of
+the orthologs. This method uses a threshold on the intergenic distance.
+
+=cut
+
+	} elsif ($arg eq "-infer_operons") {
+	  $main::infer_operons = 1;
+
+    ## Create HTML Index
+=pod
+
+=item B<-index>
+
+Generate an HTML index with links to the result files. This option is
+used for the web interface, but can also be convenient to index
+results, especially when several genes or taxa are analyzed (options
+-genes, -all_genes, -all_taxa).
+
+=cut
+  } elsif ($arg eq "-index") {
+    $main::create_index = 1;
+  } else {
+    return(0); ## No option was found
+  }
+
+  return(1);
+
+=pod
+
+=back
+
+=cut
+
+}
+
+
+################################################################
+## Open file for the HTML index
+sub OpenIndex {
+  $outfile{index} = $outfile{prefix}."_index.html";
+  $index_list{$query_prefix} = $outfile{index};
+  $index = &OpenOutputFile($outfile{index});
+  print $index "<html>\n";
+  print $index "<head><title>", join (" ", $query_prefix, $taxon, $organism_name, $bg_model), "</title></head>\n";
+  print $index "<body>\n";
+  print $index "<hr size=4 color='#000088'>";
+  print $index "<h1 align=center>Footprint discovery result</h1>";
+  print $index "<h2 align=center>", join (" ", $query_prefix, $taxon, "<i>".$organism_name."</i>", $bg_model), "</h2>\n";
+  print $index "<hr size=2 color='#000088'>";
+  print $index "<blockquote>";
+  print $index "<table cellspacing=0 cellpadding=3 border=0>\n";
+  &IndexOneFile("log", $outfile{log});
+  &IndexOneFile("input", $infile{genes}) if (($infile{genes}) && !($sep_genes));
+}
+
+################################################################
+## Predict operon leader genes of the query genes
+sub InferQueryOperons {
+  &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{leader_qgenes}) if ($main::verbose >= 1);
+  &CheckDependency("operons", genes);
+  $cmd = "$SCRIPTS/get-leader-multigenome ";
+  $cmd .= " -i ".$outfile{genes};
+  $cmd .= " -o ".$outfile{leader_qgenes};
+  $cmd .= " -uth interg_dist ".$dist_thr;
+  &one_command($cmd) if ($task{operons});
+  #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+  &IndexOneFile("leader query genes", $outfile{leader_qgenes}) if ($create_index);
+}
+
+
+################################################################
+## Retrieve promoters of the query organism
+sub RetrieveQueryPromoters {
+  &RSAT::message::TimeWarn("Retrieving promoter sequences for query genes", $outfile{query_seq}) if ($main::verbose >= 1);
+  $cmd = "$SCRIPTS/retrieve-seq ";
+  $cmd .= " -org ".$organism_name;
+  if ($infer_operons) {
+    &CheckDependency("query_seq", "leader_qgenes");
+    $cmd .= " -i ".$outfile{leader_qgenes};
+  } else {
+    &CheckDependency("query_seq", "genes");
+    $cmd .= " -i ".$outfile{genes};
+  }
+  $cmd .= " -noorf";
+  $cmd .= " -o ".$outfile{query_seq};
+  &one_command($cmd) if ($task{query_seq});
+  #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+  &IndexOneFile("query sequence", $outfile{query_seq}) if ($create_index);
+}
+
+################################################################
+## Detect all dyads in promoters of query genes for dyad filtering
+sub ComputeFilterDyads {
+  &RSAT::message::TimeWarn("Computing filter dyads", $outfile{filter_dyads}) if ($main::verbose >= 1);
+  &CheckDependency("filter", "query_seq");
+  $cmd = "$SCRIPTS/dyad-analysis -v 1 -return occ -lth occ 1";
+  $cmd .= " -i ".$outfile{query_seq};
+  $cmd .= " -l 3 -sp 0-20";
+  $cmd .= " ".$strands;
+  $cmd .= " ".$noov;
+  $cmd .= " -o ".$outfile{filter_dyads};
+  &one_command($cmd) if ($task{filter_dyads});
+  #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+  &IndexOneFile("filter dyads", $outfile{filter_dyads}) if ($create_index);
+}
+
+################################################################
+## Identify ortholog genes
+sub GetOrthologs {
+  &RSAT::message::TimeWarn("Getting orthologs", $outfile{orthologs}) if ($main::verbose >= 1);
+  &CheckDependency("orthologs", "genes");
+  $cmd = "$SCRIPTS/get-orthologs";
+  $cmd .= " -i ".$outfile{genes};
+  $cmd .= " -org ".$organism_name;
+  $cmd .= " -taxon ".$taxon;
+  $cmd .= " -return query_name,query_organism -return ident -lth ali_len 50 -return e_value -uth e_value 1e-05";
+  $cmd .= " -uth rank 1";	## BBH criterion
+  $cmd .= " -only_blast";	## only use genome having blast files
+  $cmd .= " -o ".$outfile{orthologs};
+  &one_command($cmd) if ($task{orthologs});
+  #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+  &IndexOneFile("orthologs", $outfile{orthologs}) if ($create_index);
+}
+
+################################################################
+## Predict operon leader genes for the orthologous genes
+sub InferOrthoOperons {
+  &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{bbh}) if ($main::verbose >= 1);
+  &CheckDependency("operons", "orthologs");
+  $cmd = "$SCRIPTS/get-leader-multigenome ";
+  $cmd .= " -i ".$outfile{orthologs};
+  $cmd .= " -o ".$outfile{bbh};
+  $cmd .= " -uth interg_dist ".$dist_thr;
+  &one_command($cmd) if ($task{operons});
+  #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+  &IndexOneFile("leader genes", $outfile{bbh}) if ($create_index);
+}
+
+
+################################################################
+## Retrieve sequences from orthologs
+sub RetrieveOrthoSeq {
+  &RSAT::message::TimeWarn("Retrieving promoter sequences of orthologs", $outfile{seq}) if ($main::verbose >= 1);
+  &CheckDependency("ortho_seq", "bbh");
+  $cmd = "$SCRIPTS/retrieve-seq-multigenome -ids_only";
+  $cmd .= " -i ".$outfile{bbh};
+  $cmd .= " -noorf";
+  $cmd .= " -o ".$outfile{seq};
+  &one_command($cmd) if ($task{ortho_seq});
+  #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+  &IndexOneFile("$promoter sequences", $outfile{seq}) if ($create_index);
+}
+
+
+
+################################################################
+## Purge sequences
+sub PurgeOrthoSeq {
+  &RSAT::message::TimeWarn("Purging promoter sequences of orthologs", $outfile{purged}) if ($main::verbose >= 1);
+  &CheckDependency("purge", "seq");
+  $cmd = "$SCRIPTS/purge-sequence";
+  $cmd .= " -i ".$outfile{seq};
+  $cmd .= " -ml 30 -mis 0 -mask_short 30";
+  $cmd .= " ".$strands;
+  $cmd .= " -o ".$outfile{purged};
+  &one_command($cmd) if ($task{purge});
+#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+  &IndexOneFile("purged sequences", $outfile{purged}) if ($create_index);
+}
+
+1;

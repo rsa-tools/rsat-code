@@ -1,0 +1,387 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: footprint-scan,v 1.1 2008/06/12 18:14:36 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+footprint-scan
+
+=head1 DESCRIPTION
+
+Scan promoters of orthologous genes with one or several
+position-specific scoring matrices (PSSM) in order to detect conserved
+hits.
+
+=head1 AUTHORS
+
+Jacques.van.Helden@ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+
+footprint-scan [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require "footprint.lib.pl";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Initialise parameters
+  my $start_time = &AlphaDate();
+  $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
+
+  %main::infile = ();
+  %main::outfile = ();
+
+  $main::verbose = 0;
+  $main::in = STDIN;
+  $main::out = STDOUT;
+
+  ## Parameters for promoter retrieval
+  local $taxon;			## Reference taxon
+  local $organism_name;		## Query organism
+  local @query_genes = ();	## list of query genes
+  local $infer_operons = 0;     ## Infer operon leader genes
+  local $dist_thr = 55;	        ## Distance threshold for operon inference
+  local $all_genes = 0;         ## Analyze all the genes of the query organism
+  local $sep_genes = 0;	        ## Analyze each gene separately
+  local $max_genes = undef;     ## Analyze a restricted number of genes
+  local $query_prefix;
+
+  ## Matrix scanning parameters
+  local @matrix_files = ();
+  local $strands = "-2str"; ## Strands for pattern matching
+  $supported_tasks{scan} = 1;
+  $supported_tasks{map} = 1;
+
+  ## DEBUG ## 
+#  $task{scan} = 1;
+#  $task{map} = 1;
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  ################################################################
+  ## Check argument values
+
+  ## Check parameters for footprint analysis
+  &CheckFootprintParameters();
+
+  ################################################################
+  ## Analyze query genes separately or altogether
+  if ($sep_genes) {
+    foreach my $current_gene (@query_genes) {
+      &RunFootprintScan($current_gene);
+    }
+  } else {
+    &RunFootprintScan(@query_genes);
+  }
+
+  ################################################################
+  ## Open output stream
+  $main::out = &OpenOutputFile($main::outfile{output});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose);
+
+  ################################################################
+  ## Execute the command
+
+  ################################################################
+  ## Print output
+
+
+  ################################################################
+  ## Finish verbose
+  if ($main::verbose >= 1) {
+    my $done_time = &AlphaDate();
+    print $main::out "; Job started $start_time\n";
+    print $main::out "; Job done    $done_time\n";
+  }
+
+
+  ################################################################
+  ## Close output stream
+  close $main::out if ($main::outfile{output});
+
+
+  ################################################################
+  ## Report the index files
+  if ($create_index) {
+    if ($main::verbose >= 2) {
+      print ("; Index files\n");
+      foreach my $key (sort keys %index_list) {
+	print join ("\t", ";", $key, $index_list{$key}), "\n";
+      }
+    }
+  }
+
+  exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+#    system "pod2text -c $0";
+    system "cat $0 $ENV{RSAT}/perl-scripts/lib/footprint.lib.pl | pod2text -c";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  local $arg;
+  local @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+=pod
+
+=head1 OPTIONS
+
+=cut
+
+    ## Read the options that are common to all footprint-detection programs
+    if (&ReadFootprintOptions()) {
+      next;
+
+	    ## Matrix file
+
+=pod
+
+=over 4
+
+=item B<-m matrixfile>
+
+Matrix file. 
+
+This argument can be used iteratively to scan the sequence with
+multiple matrices.
+
+=cut
+    } elsif ($arg eq "-m") {
+      push @matrix_files, shift(@arguments);
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+    }
+  }
+
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; footprint-scan ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+
+################################################################
+## Run footprint scan flow chart for one or several query genes
+sub RunFootprintScan {
+  local (@current_query_genes) = @_;
+
+  local $start_time = &AlphaDate();
+  local $batch_cmd = "";
+  local $out = "";
+  local $genes = "";
+
+
+  ################################################################
+  ## Initialize output directory + output files
+  local $query_prefix = &GetQueryPrefix();
+  $outfile{prefix} = &GetOutfilePrefix();
+  &InitOutput();
+
+  ## Output files for matrix-scan
+  $outfile{sites} = $outfile{prefix}."_sites";
+  $outfile{occ_hits} = $outfile{prefix}."_over";
+
+  ################################################################
+  ## Open file to the HTML index
+  &OpenIndex() if ($create_index);
+
+  ################################################################
+  ## Print query genes in the gene file
+  foreach my $gene (@current_query_genes) {
+    print $genes $gene, "\t", $organism_name, "\n";
+  }
+  &IndexOneFile("genes", $outfile{genes}) if ($create_index);
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($verbose);
+
+  ################################################################
+  ## Identify ortholog genes
+  &GetOrthologs();
+
+  ################################################################
+  ## Predict operon leader genes for the orthologous genes
+  &InferOrthoOperons() if ($infer_operons);
+
+  ################################################################
+  ## Retrieve sequences from orthologs
+  &RetrieveOrthoSeq();
+
+  ################################################################
+  ## Purge sequences
+  &PurgeOrthoSeq();
+
+  ################################################################
+  ## Send the command to a batch queue (e.g. PC cluster)
+  if ($batch) {
+    &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
+  }
+
+
+
+  ################################################################
+  ## Scan the promoters of one group of orhtologous genes with one
+  ## position-specific scoring matrix
+
+  ## Matrix-scan parameters
+  local $strands = "-2str"; ## Strands for pattern discovery and pattern matching
+  local $matrix_dir="data/matrices";
+  local $matrix_file = $matrix_dir."/PHO4_matrix.tab";
+  local $matrix_format = "tab";
+  local %lth = ();
+  $lth{score} = 5;
+  local %uth = ();
+  $uth{Pval} = "1e-3";
+  local $pseudo=1;
+  local $mkv = 1;
+  local $img_format = "png";
+
+  ################################################################
+  ## Scan sequences with PSSM to locate sites
+  my $scan_cmd = "matrix-scan -v 1 ";
+  $scan_cmd .= " -i ".$outfile{seq};
+  $scan_cmd .= " -seq_format fasta";
+  $scan_cmd .= " -m ".$matrix_file;
+  $scan_cmd .= " -matrix_format ".$matrix_format;
+  foreach my $key (keys(%lth)) {
+    $scan_cmd .= " -lth ".$key." ".$lth{$key};
+  }
+  foreach my $key (keys(%uth)) {
+    $scan_cmd .= " -uth ".$key." ".$uth{$key};
+  }
+  $scan_cmd .= " -return limits,sites,rank";
+  $scan_cmd .= " ".$strands;
+  $scan_cmd .= " -origin -0";
+  $scan_cmd .= " -pseudo ".$pseudo;
+  $scan_cmd .= " -bginput -markov ".$mkv;
+  $scan_cmd .= " -o ".$outfile{sites}.".tab";
+  &one_command($scan_cmd) if ($task{scan});
+
+  ################################################################
+  ## Draw a feature map with the detected sites
+  my $map_cmd = "feature-map -i ".$outfile{sites}.".tab";
+  $map_cmd .= " -scalebar -legend";
+  $map_cmd .= " -xsize 800 -scorethick";
+  $map_cmd .= " -title 'matrix hits in ".$taxon." promoters'";
+  $map_cmd .= " -format ".$img_format;
+  $map_cmd .= " -o ".$outfile{sites}.".".$img_format;
+  &one_command($map_cmd) if ($task{map});
+
+
+  ################################################################
+  ## Finish verbose
+  if ($verbose >= 1) {
+    my $done_time = &AlphaDate();
+    print $out "; Job started $start_time\n";
+    print $out "; Job done    $done_time\n";
+  }
+
+  ################################################################
+  ## Close output stream
+  close $out if ($outfile{log});
+  close $genes if ($outfile{genes});
+  if ($create_index) {
+    print $index "</table>\n";
+    print $index "</blockquote>";
+    print $index "<hr size=2 color='#000088'>";
+    print $index "</body>";
+    print $index "</html>";
+    close $index;
+  }
+
+
+  ################################################################
+  ## Add one file to the index file
+  sub IndexOneFile {
+    my ($name, $file, %args) = @_;
+    $short_file = `basename $file`;
+    print $index "<tr valign=top>\n";
+    print $index "<td>", $name, "</td>\n<td><a href=".$short_file.">".$short_file."</a></td>\n";
+    if ($args{image}) {
+      #    print $index "<td><a href=".$short_file."><img width=100 src=".$short_file."></a></td>\n";
+      print $index "</tr><tr><td colspan=\"2\">(Click on image below)</td></tr><tr><td colspan=\"2\"><a href=".$short_file."><img width=\"100%\" src=".$short_file."></a></td>\n";
+    }
+    print $index ("</tr>\n\n");
+  }
+}
+
+__END__
