@@ -1857,7 +1857,7 @@ For -bgfile, default value is 0.01. If the training sequence length (L) is known
 	<xsd:element name="lth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
 	  <xsd:annotation>
 	    <xsd:documentation>Lower threshold on some parameter. Format=list of 'parameter value'.
-Supported fields: E(QR), E_val, F(!Q!R), F(Q!R), F(Q), F(QR), F(R!Q), F(R), H(Q), H(Q,R), H(Q|R), H(R), H(R|Q), I(Q,R), IC, P(QR), P(Q|R), P(R|Q), P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R), dotprod, jac_sim, rank, sig</xsd:documentation>
+Supported fields: score, pval, eval, sig, normw, proba_M, proba_B, rank, crer_sites, crer_size, occ, occ_sum, inv_cum, exp_occ, occ_pval, occ_eval, occ_sig, occ_sig_rank</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
 	<xsd:element name="uth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
@@ -1876,19 +1876,19 @@ Supported parameters: same as lth.</xsd:documentation>
               <xsd:documentation>Single-strand search for DNA sequences.</xsd:documentation>
             </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="verbosity" type="xsd:float" minOccurs="0">
+	  <xsd:element name="verbosity" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>Level of verbosity (detail in the warning
 	messages during execution)</xsd:documentation>
             </xsd:annotation>
 	      </xsd:element>
-	        <xsd:element name="origin" type="xsd:float" minOccurs="0">
+	        <xsd:element name="origin" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>Define pos as the origin for the calculation
 	of positions.</xsd:documentation>
             </xsd:annotation>
 	      </xsd:element>
-	        <xsd:element name="decimals" type="xsd:float" minOccurs="0">
+	        <xsd:element name="decimals" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>Number of decimals displayed for the weight
 	score.</xsd:documentation>
