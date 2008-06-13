@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.1 2008/06/12 18:14:36 jvanheld Exp $
+# $Id: footprint-scan,v 1.2 2008/06/13 00:11:21 jvanheld Exp $
 #
 ############################################################
 
@@ -50,8 +50,6 @@ BEGIN {
 require "RSA.lib";
 require "footprint.lib.pl";
 
-
-
 ################################################################
 ## Main package
 package main;
@@ -60,7 +58,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -84,8 +82,20 @@ package main;
   ## Matrix scanning parameters
   local @matrix_files = ();
   local $strands = "-2str"; ## Strands for pattern matching
-  $supported_tasks{scan} = 1;
-  $supported_tasks{map} = 1;
+  $supported_task{scan} = 1;
+  $supported_task{map} = 1;
+  local $pseudo = 1;
+  local $bg_pseudo = 0.05;
+  local $strands = "-2str"; ## Strands for pattern discovery and pattern matching
+  local $matrix_dir="data/matrices";
+  local $matrix_file = $matrix_dir."/PHO4_matrix.tab";
+  local $matrix_format = "tab";
+  local $markov = 1;
+  local $img_format = "png";
+  local %lth = ();
+  $lth{score} = 5;
+  local %uth = ();
+  $uth{Pval} = "1e-3";
 
   ## DEBUG ## 
 #  $task{scan} = 1;
@@ -100,6 +110,57 @@ package main;
 
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
+  
+  ################################################################
+  ## Check parameters for matrix-scan
+  local $ms_parameters = " -v 1";
+  if (defined($main::infile{bg})) {
+    $ms_parameters .= " -bgfile ".$main::infile{bg};
+  } elsif ($bg_method eq "input") {
+    $ms_parameters .= " -bginput ";
+    if (defined($markov)) {
+      $ms_parameters .= " -markov ".$markov;
+    } else {
+      &RSAT::error::FatalError("The option -bginput requires o specify a Markov model (option -markov)");
+    }
+  } else {
+    &RSAT::error::FatalError("You must define a background model using either -bgfile or -bginput ");
+  }
+
+  ## Matrix file and format
+  &RSAT::error::FatalError("You must specify a matrix file (option -m)") unless (scalar(@matrix_files) > 0);
+  foreach my $file (@matrix_files) {
+    $ms_parameters .= " -m ".$file;
+  }
+  &RSAT::error::FatalError("You must specify the matrix format (option -matrix_format)") unless (defined($matrix_format));
+  $ms_parameters .= " -matrix_format ".$matrix_format;
+
+  ## Sequence format
+  $ms_parameters .= " -seq_format fasta";
+
+  ## Thresholds
+  foreach my $key (keys(%lth)) {
+    $ms_parameters .= " -lth ".$key." ".$lth{$key};
+  }
+  foreach my $key (keys(%uth)) {
+    $ms_parameters .= " -uth ".$key." ".$uth{$key};
+  }
+
+  ## Return fields
+  $ms_parameters .= " -return limits,sites,rank";
+
+  ## Strands
+  $ms_parameters .= " ".$strands;
+
+  ## Origin for the positions
+  $ms_parameters .= " -origin -0";
+
+  ## Pseudo-count for the matrix
+  $ms_parameters .= " -pseudo ".$pseudo;
+
+  ## Pseudo-frequency for the background model
+  $ms_parameters .= " -bg_pseudo ".$bg_pseudo;
+
 
   ################################################################
   ## Analyze query genes separately or altogether
@@ -208,6 +269,108 @@ multiple matrices.
     } elsif ($arg eq "-m") {
       push @matrix_files, shift(@arguments);
 
+
+	    ## Matrix format
+=pod
+
+=item B<-matrix_format matrix_format>
+
+Matrix format. Default is tab.
+
+=cut
+	} elsif ($arg eq "-matrix_format") {
+	    $main::matrix_format = lc(shift(@arguments));
+
+	    ## Pseudo-count for the PSSM
+=pod
+
+=item B<-pseudo #>
+
+Pseudo-count for the matrix (default: 1). See matrix-scan for details.
+
+=cut
+	} elsif ($arg eq "-pseudo") {
+	    $main::pseudo = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::pseudo,
+					  "Invalid value for pseudo count. Must be a real value."))
+		unless (&IsReal($main::pseudo));
+
+		##bg file
+=pod
+
+=item B<-bgfile background_file>
+
+ Background model file.
+
+=cut
+	} elsif ($arg eq "-bgfile") {
+	    $main::infile{bg} = shift(@arguments);
+
+	  ## Background calculated from the input sequence set
+=pod
+
+=item B<-bginput>
+
+Calculate background model from the input sequence set.
+
+=cut
+	} elsif ($arg eq "-bginput") {
+	  &RSAT::error::FatalError("Options -bgfile and -bginput  are mutually exclusive") if (defined($infile{bg}));
+	  $main::bg_method = "input";
+	  &RSAT::error::FatalError("The options -bginput and -bgfile are mutually exclusive.")
+		if defined($main::infile{bg});
+
+	  ## Calculate background model from the input sequence
+=pod
+
+=item B<-markov>
+
+Order of the markov chain for the background model. 
+
+This option is incompatible with the option -bgfile. 
+
+=cut
+	} elsif ($arg eq "-markov") {
+	    $main::markov = shift(@arguments);
+	    &RSAT::error::FatalError("Markov order must be a natural number.") 
+		unless &RSAT::util::IsNatural($main::markov);
+	    &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
+		if defined($infile{bg});
+
+
+=item B<-bg_pseudo #>
+
+Pseudo frequency for the background model. Value must be a real
+between 0 and 1.
+
+If this option is not specified, the pseudo-frequency value depends on
+the background calculation.
+
+For -bginput and -window, the pseudo frequency is automatically
+calculated from the length (L) of the sequence following this formula:
+
+  sqrt(L)/(L+sqrt(L))
+
+For -bgfile, default value is 0.01. 
+
+In other cases, if the length (L) of the training sequence is known
+(e.g. all promoters for the considered organism), the value can be set
+manually by using the option -bg_pseudo. In such case, the background
+pseudo-frequency might be set, as suggested by Thijs et al., to the
+following value:
+
+  sqrt(L)/(L+sqrt(L))
+
+
+=cut
+	} elsif ($arg eq "-bg_pseudo") {
+	    $main::bg_pseudo = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::bg_pseudo,
+					  "Invalid format for bg_pseudo, should be a Real number between 0 and 1."))
+		unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
+		$main::bg_pseudo_user_specified = 1;
+
+
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
     }
@@ -296,48 +459,22 @@ sub RunFootprintScan {
     &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
   }
 
-
-
   ################################################################
   ## Scan the promoters of one group of orhtologous genes with one
   ## position-specific scoring matrix
 
-  ## Matrix-scan parameters
-  local $strands = "-2str"; ## Strands for pattern discovery and pattern matching
-  local $matrix_dir="data/matrices";
-  local $matrix_file = $matrix_dir."/PHO4_matrix.tab";
-  local $matrix_format = "tab";
-  local %lth = ();
-  $lth{score} = 5;
-  local %uth = ();
-  $uth{Pval} = "1e-3";
-  local $pseudo=1;
-  local $mkv = 1;
-  local $img_format = "png";
-
   ################################################################
   ## Scan sequences with PSSM to locate sites
-  my $scan_cmd = "matrix-scan -v 1 ";
+  &CheckDependency("scan", "seq");
+  my $scan_cmd = "matrix-scan";
+  $scan_cmd .= $ms_parameters;
   $scan_cmd .= " -i ".$outfile{seq};
-  $scan_cmd .= " -seq_format fasta";
-  $scan_cmd .= " -m ".$matrix_file;
-  $scan_cmd .= " -matrix_format ".$matrix_format;
-  foreach my $key (keys(%lth)) {
-    $scan_cmd .= " -lth ".$key." ".$lth{$key};
-  }
-  foreach my $key (keys(%uth)) {
-    $scan_cmd .= " -uth ".$key." ".$uth{$key};
-  }
-  $scan_cmd .= " -return limits,sites,rank";
-  $scan_cmd .= " ".$strands;
-  $scan_cmd .= " -origin -0";
-  $scan_cmd .= " -pseudo ".$pseudo;
-  $scan_cmd .= " -bginput -markov ".$mkv;
   $scan_cmd .= " -o ".$outfile{sites}.".tab";
   &one_command($scan_cmd) if ($task{scan});
 
   ################################################################
   ## Draw a feature map with the detected sites
+  &CheckDependency("map", "sites");
   my $map_cmd = "feature-map -i ".$outfile{sites}.".tab";
   $map_cmd .= " -scalebar -legend";
   $map_cmd .= " -xsize 800 -scorethick";
