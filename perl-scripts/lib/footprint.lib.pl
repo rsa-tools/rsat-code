@@ -3,7 +3,7 @@
 ## - footprint-discovery
 ## - footprint-scan
 
-%supported_tasks =  (operons=>1,
+%supported_task =  (operons=>1,
 		     query_seq=>1,
 		     filter_dyads=>1,
 		     orthologs=>1,
@@ -34,7 +34,7 @@ sub CheckFootprintParameters {
   ## If all tasks are requested or if no task is defined, execute all
   ## tasks.
   if ((scalar(keys(%task)) == 0) || ($task{all})){
-    foreach my $task (keys %supported_tasks) {
+    foreach my $task (keys %supported_task) {
 #      &RSAT::message::Debug("Auto adding task", $task);
       $task{$task} = 1;
     }
@@ -84,6 +84,8 @@ sub CheckFootprintParameters {
   ## Check query genes
   if (scalar(@query_genes) ==0) {
     &RSAT::error::FatalError("You must specify at least one query gene (options -q or -i)");
+  } else {
+    &RSAT::message::Info("Number of query genes", scalar(@query_genes)) if ($main::verbose >= 1);
   }
 
   ## Get maximum number of genes if limited
@@ -174,15 +176,18 @@ sub InitOutput {
   $genes = &OpenOutputFile($outfile{genes});
 
   ## Specify other file names
-  $outfile{orthologs} = $outfile{prefix}."_ortho_bbh.tab";
-  $outfile{query_seq} = $outfile{prefix}."_query_seq.fasta";
+  $outfile{orthologs} = $outfile{prefix}."_ortho_bbh.tab"; ## orthologs of the query gene(s)
+  $outfile{query_seq} = $outfile{prefix}."_query_seq.fasta"; ## Upstream sequence(s) of the query gene(s)
+
+  ## type of promoter: either use directly the promoter of each query
+  ## gene (ortho) or of the predicted operon leader gene
   if ($infer_operons) {
-    $outfile{leader_qgenes} = $outfile{prefix}."_leader_query_genes.tab";
+    $outfile{leader_qgenes} = $outfile{prefix}."_leader_query_genes.tab"; ## Leader genes of the operons containing query genes
     $promoter = "leaders";
   } else {
     $promoter = "ortho";
   }
-  $outfile{bbh} = $outfile{prefix}."_".$promoter."_bbh.tab";
+  $outfile{bbh} = $outfile{prefix}."_".$promoter."_bbh.tab"; ##
   $outfile{seq} = $outfile{prefix}."_".$promoter."_seq.fasta";
   $outfile{purged} = $outfile{prefix}."_".$promoter."_seq_purged.fasta";
 }
@@ -371,6 +376,37 @@ the orthologs. This method uses a threshold on the intergenic distance.
 
 	} elsif ($arg eq "-infer_operons") {
 	  $main::infer_operons = 1;
+
+
+=pod
+
+=item B<-task>
+
+Specify a subset of tasks to be executed.
+
+By default, the program runs all necessary tasks. However, in some
+cses, it can be useful to select one or several tasks to be executed
+separately. For instance, after having collected all the promoter
+sequences of ortholog genes, one might desire to run the pattern
+detection with various parameter values without having to retrieve the
+same sequences each time.
+
+Beware: task selection requires expertise, because most tasks depends
+on the prior execution of some other tasks in the workflow. Selecting
+tasks before their prerequisite tasks have been completed will provoke
+fatal errors.
+
+=cut
+    } elsif ($arg eq "-task") {
+      my @requested_tasks = split ",", shift (@arguments);
+      foreach my $task (@requested_tasks) {
+	next unless $task;
+	if ($supported_task{$task}) {
+	  $task{$task} = 1;
+	} else {
+	  &RSAT::error::FatalError("Unsupported task '$task'. \n\tSupported: $supported_task");
+	}
+      }
 
     ## Create HTML Index
 =pod
