@@ -4,14 +4,15 @@
 ## - footprint-scan
 
 %supported_task =  (operons=>1,
-		     query_seq=>1,
-		     filter_dyads=>1,
-		     orthologs=>1,
-		     ortho_seq=>1,
-		     purge=>1,
-		     all=>1,
+		    query_seq=>1,
+		    orthologs=>1,
+		    ortho_seq=>1,
+		    purge=>1,
+		    all=>1,
 		    );
 %task = ();
+$supported_tasks = join (",", keys %supported_task);
+local $all_genes = 0;         ## Analyze all the genes of the query organism
 
 ################################################################
 ## Treat one command, by either executing it, or concatenating it for
@@ -21,7 +22,8 @@ sub one_command {
   if ($main::batch) {
     $main::batch_cmd .= " ; $cmd";
   } else {
-    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
+    print $out ("; ", &AlphaDate(), "\n", $cmd, "\n\n") if ($main::verbose >= 1);
+    &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   }
 }
 
@@ -112,7 +114,7 @@ sub CheckDependency {
     my $file = $outfile{$type};
     if ((-e $file) || (-e $file.".gz")){
       &RSAT::message::Info("Checked existence of ", $type, "file required for task", $task, "file", $file)
-	if ($main::verbose >= 2);
+	if ($main::verbose >= 3);
       return(1);
     } else {
       &RSAT::error::FatalError("Missing", $type, "file required for task", $task, "file", $file)
@@ -135,7 +137,7 @@ sub GetQueryPrefix {
   } elsif ($infile{genes}) {
     $query_prefix = `basename $infile{genes} .tab`;
   }
-  &RSAT::message::Warning("Query prefix", $query_prefix) if ($main::verbose >= 2);
+  &RSAT::message::Info("Query prefix", $query_prefix) if ($main::verbose >= 3);
   return ($query_prefix);
 }
 
@@ -155,7 +157,7 @@ sub GetOutfilePrefix {
 	$outfile{prefix} = join( "/", "footprints", $taxon, $organism_name, $query_prefix,
 				 join ("_", $query_prefix, $organism_name, $taxon));
       }
-      &RSAT::message::Info("Automatic definition of the output prefix", $outfile{prefix});
+      &RSAT::message::Info("Automatic definition of the output prefix", $outfile{prefix}) if ($main::verbose >= 3);
     } else {
       &RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
     }
@@ -297,6 +299,33 @@ Maximal number of genes to analyze.
   } elsif ($arg eq "-max_genes") {
     $main::max_genes = shift(@arguments);
 
+
+=pod
+
+=item B<-skip #>
+
+Skip the first # genes (useful for quick testing and for resuming
+interrupted tasks).
+
+=cut
+
+  } elsif ($arg eq "-skip") {
+    $main::skip = shift(@arguments);
+    &RSAT::error::FatalError("Invalid number with option -skip\t$skip") unless &IsNatural($skip);
+
+=pod
+
+=item B<-last #>
+
+Stop after having treated the first # genes (useful for quick
+testing).
+
+=cut
+
+  } elsif ($arg eq "-last") {
+    $main::last = shift(@arguments);
+    &RSAT::error::FatalError("Invalid number with option -last\t$last") unless &IsNatural($last);
+
 	    ## Output prefix
 =pod
 
@@ -410,7 +439,7 @@ fatal errors.
 	if ($supported_task{$task}) {
 	  $task{$task} = 1;
 	} else {
-	  &RSAT::error::FatalError("Unsupported task '$task'. \n\tSupported: $supported_task");
+	  &RSAT::error::FatalError("Task '$task' is not supported. \n\tSupported: $supported_tasks");
 	}
       }
 
@@ -465,7 +494,7 @@ sub OpenIndex {
 ## Predict operon leader genes of the query genes
 sub InferQueryOperons {
   &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{leader_qgenes}) if ($main::verbose >= 1);
-  &CheckDependency("operons", genes);
+  &CheckDependency("operons", "genes");
   $cmd = "$SCRIPTS/get-leader-multigenome ";
   $cmd .= " -i ".$outfile{genes};
   $cmd .= " -o ".$outfile{leader_qgenes};
@@ -523,8 +552,11 @@ sub GetOrthologs {
   $cmd .= " -i ".$outfile{genes};
   $cmd .= " -org ".$organism_name;
   $cmd .= " -taxon ".$taxon;
-  $cmd .= " -return query_name,query_organism -return ident -lth ali_len 50 -return e_value -uth e_value 1e-05";
+  $cmd .= " -return query_name,query_organism -return ident";
   $cmd .= " -uth rank 1";	## BBH criterion
+  $cmd .= " -lth ali_len 50";
+  $cmd .= " -uth e_value 1e-05";
+  $cmd .= " -return e_value";
   $cmd .= " -only_blast";	## only use genome having blast files
   $cmd .= " -o ".$outfile{orthologs};
   &one_command($cmd);
@@ -585,19 +617,36 @@ sub PurgeOrthoSeq {
 ################################################################
 ## Detect over-representation of matching occurrecnes (hits) of the motif
 sub OccurrenceSig {
+  if ($task{occ_sig}) {
+    &RSAT::message::TimeWarn("Testing over-representation of hits", $outfile{occ_sig}) if ($main::verbose >= 1);
+    &CheckDependency("occ_sig", "purged");
+    my $hits_cmd = "matrix-scan";
+    $hits_cmd .= $ms_parameters;
+    $hits_cmd .= " -return distrib,occ_proba,rank -sort_distrib";
+    #  $hits_cmd .= " -lth inv_cum 1 -lth occ_sig 0 -uth occ_sig_rank 1";
+    $hits_cmd .= " -i ".$outfile{purged};
+    $hits_cmd .= " -o ".$outfile{occ_sig};
+    $hits_cmd .= $occ_sig_opt;
+    &one_command($hits_cmd);
+  }
   &IndexOneFile("occ sig", $outfile{occ_sig}) if ($create_index);
-  return(0) unless ($task{occ_sig});
-  &RSAT::message::TimeWarn("Testing over-representation of hits", $outfile{occ_sig}) if ($main::verbose >= 1);
-  &CheckDependency("occ_sig", "purged");
-  my $hits_cmd = "matrix-scan";
-  $hits_cmd .= $ms_parameters;
-  $hits_cmd .= " -return distrib,occ_proba,rank -sort_distrib";
-#  $hits_cmd .= " -lth inv_cum 1 -lth occ_sig 0 -uth occ_sig_rank 1";
-  $hits_cmd .= " -i ".$outfile{purged};
-  $hits_cmd .= " -o ".$outfile{occ_sig};
-  $hits_cmd .= $occ_sig_opt;
-  &one_command($hits_cmd);
 }
+
+################################################################
+## Collect info for the synthetic table
+sub GetTopSig {
+  &CheckDependency("synthesis", "occ_sig");
+  my $top_cmd = "grep -v '^;' $outfile{occ_sig} | grep -v '^#' | awk '\$12==1'";
+  my $top_sig_row = `$top_cmd`;
+  if ($top_sig_row) {
+    my @fields = split "\t", $top_sig_row;
+    $top_sig{$current_gene} = $fields[10];;
+    $top_score{$current_gene} = $fields[1];
+    $top_sig_row{$current_gene} = join ("\t", @fields[0..10]);
+#    &RSAT::message::Debug("Top sig", $current_gene, $top_sig{$current_gene}, "score", $top_score{$current_gene}) if ($main::verbose >= 5);
+  }
+}
+
 
 ################################################################
 ## Scan sequences with PSSM to locate sites
