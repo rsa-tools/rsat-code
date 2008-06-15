@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.2 2008/06/13 00:11:21 jvanheld Exp $
+# $Id: footprint-scan,v 1.3 2008/06/15 17:34:41 jvanheld Exp $
 #
 ############################################################
 
@@ -58,7 +58,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -82,6 +82,7 @@ package main;
   ## Matrix scanning parameters
   local @matrix_files = ();
   local $strands = "-2str"; ## Strands for pattern matching
+  $supported_task{occ_sig} = 1;
   $supported_task{scan} = 1;
   $supported_task{map} = 1;
   local $pseudo = 1;
@@ -93,9 +94,8 @@ package main;
   local $markov = 1;
   local $img_format = "png";
   local %lth = ();
-  $lth{score} = 5;
   local %uth = ();
-  $uth{Pval} = "1e-3";
+  local $occ_sig_opt = "";
 
   ## DEBUG ## 
 #  $task{scan} = 1;
@@ -110,7 +110,7 @@ package main;
 
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
-  
+
   ################################################################
   ## Check parameters for matrix-scan
   local $ms_parameters = " -v 1";
@@ -135,6 +135,9 @@ package main;
   &RSAT::error::FatalError("You must specify the matrix format (option -matrix_format)") unless (defined($matrix_format));
   $ms_parameters .= " -matrix_format ".$matrix_format;
 
+  ## Matrix suffix
+  &RSAT::error::FatalError("You must specify a matrix suffix (option -matrix_suffix)") unless (defined($matrix_suffix));
+
   ## Sequence format
   $ms_parameters .= " -seq_format fasta";
 
@@ -145,9 +148,6 @@ package main;
   foreach my $key (keys(%uth)) {
     $ms_parameters .= " -uth ".$key." ".$uth{$key};
   }
-
-  ## Return fields
-  $ms_parameters .= " -return limits,sites,rank";
 
   ## Strands
   $ms_parameters .= " ".$strands;
@@ -260,7 +260,7 @@ sub ReadArguments {
 
 =item B<-m matrixfile>
 
-Matrix file. 
+Matrix file. This argument is mandatory.
 
 This argument can be used iteratively to scan the sequence with
 multiple matrices.
@@ -275,11 +275,26 @@ multiple matrices.
 
 =item B<-matrix_format matrix_format>
 
-Matrix format. Default is tab.
+Matrix format. Default is tab. This argument is mandatory.
 
 =cut
 	} elsif ($arg eq "-matrix_format") {
 	    $main::matrix_format = lc(shift(@arguments));
+
+	    ## Matrix suffix
+=pod
+
+=item B<-matrix_suffix matrix_suffix>
+
+Matrix suffix. This argument is mandatory.
+
+The matrix suffix will be concatenated to the output prefix, in order
+to maintain separate output files for distinct analyses performed on
+the same promoter sequences.
+
+=cut
+	} elsif ($arg eq "-matrix_suffix") {
+	    $main::matrix_suffix = shift(@arguments);
 
 	    ## Pseudo-count for the PSSM
 =pod
@@ -300,7 +315,7 @@ Pseudo-count for the matrix (default: 1). See matrix-scan for details.
 
 =item B<-bgfile background_file>
 
- Background model file.
+Background model file.
 
 =cut
 	} elsif ($arg eq "-bgfile") {
@@ -371,6 +386,33 @@ following value:
 		$main::bg_pseudo_user_specified = 1;
 
 
+=pod
+
+=item B<-occ_sig_opt>
+
+Additional options passed to matrix-scan for the test of 
+over-representation of matrix hits.
+
+Examples:
+
+To return only the "best" score for each gene
+   -occ_sig_opt '-uth rank 1'
+
+To analyze the distribution only above a weight threshold of 7.
+   -occ_sig_opt '-lth score 7'
+
+To analyze the distribution for sites having a P-value threshold of 1e-3.
+   -occ_sig_opt '-uth pval 1e-3'
+
+Note: the argument passed to matrix-scan is delimited by single
+quotes, and can thus not contain any quote.
+
+=cut
+
+	} elsif ($arg eq "-occ_sig_opt") {
+	    my $new_occ_sig_opt = shift(@arguments);
+	    $occ_sig_opt .= " ".$new_occ_sig_opt;
+
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
     }
@@ -414,13 +456,15 @@ sub RunFootprintScan {
 
   ################################################################
   ## Initialize output directory + output files
-  local $query_prefix = &GetQueryPrefix();
+  local $query_prefix = &GetQueryPrefix(); ## Automatic name for the query gene file
   $outfile{prefix} = &GetOutfilePrefix();
   &InitOutput();
 
   ## Output files for matrix-scan
-  $outfile{sites} = $outfile{prefix}."_sites";
-  $outfile{occ_hits} = $outfile{prefix}."_over";
+  $outfile{matrix_prefix} = $outfile{prefix}."_".$matrix_suffix;
+  $outfile{occ_sig} = $outfile{matrix_prefix}."_occ_sig.tab";
+  $outfile{sites} = $outfile{matrix_prefix}."_sites.tab";
+  $outfile{map} = $outfile{matrix_prefix}."_sites.".$img_format;
 
   ################################################################
   ## Open file to the HTML index
@@ -463,26 +507,12 @@ sub RunFootprintScan {
   ## Scan the promoters of one group of orhtologous genes with one
   ## position-specific scoring matrix
 
-  ################################################################
-  ## Scan sequences with PSSM to locate sites
-  &CheckDependency("scan", "seq");
-  my $scan_cmd = "matrix-scan";
-  $scan_cmd .= $ms_parameters;
-  $scan_cmd .= " -i ".$outfile{seq};
-  $scan_cmd .= " -o ".$outfile{sites}.".tab";
-  &one_command($scan_cmd) if ($task{scan});
+  ## Estimate over-representation in hits for all threshold values
+  &OccurrenceSig();
 
-  ################################################################
-  ## Draw a feature map with the detected sites
-  &CheckDependency("map", "sites");
-  my $map_cmd = "feature-map -i ".$outfile{sites}.".tab";
-  $map_cmd .= " -scalebar -legend";
-  $map_cmd .= " -xsize 800 -scorethick";
-  $map_cmd .= " -title 'matrix hits in ".$taxon." promoters'";
-  $map_cmd .= " -format ".$img_format;
-  $map_cmd .= " -o ".$outfile{sites}.".".$img_format;
-  &one_command($map_cmd) if ($task{map});
-
+  ## Scan sequences to detect hits
+  &OrthoScan();
+  &OrthoMap();
 
   ################################################################
   ## Finish verbose
@@ -504,7 +534,6 @@ sub RunFootprintScan {
     print $index "</html>";
     close $index;
   }
-
 
   ################################################################
   ## Add one file to the index file
