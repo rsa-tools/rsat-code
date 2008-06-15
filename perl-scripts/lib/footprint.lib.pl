@@ -103,13 +103,19 @@ sub CheckFootprintParameters {
 ## Check dependency between a task and a list of files
 sub CheckDependency {
   my ($task, @files_types) = @_;
+
+  ## in batch mode, the check should not be done since the previous
+  ## tasks have not yet been ran
+  return(0) if ($batch);
+
   foreach my $type (@files_types) {
     my $file = $outfile{$type};
-    if (-e $file) {
+    if ((-e $file) || (-e $file.".gz")){
       &RSAT::message::Info("Checked existence of ", $type, "file required for task", $task, "file", $file)
-	if ($main::verbose >= 0);
+	if ($main::verbose >= 2);
+      return(1);
     } else {
-      &RSAT::message::Info("Missing", $type, "file required for task", $task, "file", $file)
+      &RSAT::error::FatalError("Missing", $type, "file required for task", $task, "file", $file)
     }
   }
 }
@@ -149,7 +155,7 @@ sub GetOutfilePrefix {
 	$outfile{prefix} = join( "/", "footprints", $taxon, $organism_name, $query_prefix,
 				 join ("_", $query_prefix, $organism_name, $taxon));
       }
-      &RSAT::message::Warning("Automatic definition of the output prefix", $outfile{prefix});
+      &RSAT::message::Info("Automatic definition of the output prefix", $outfile{prefix});
     } else {
       &RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
     }
@@ -167,7 +173,7 @@ sub InitOutput {
   chomp($dir{output});
   &RSAT::util::CheckOutDir($dir{output});
 
-    ## Open output stream for the log file
+  ## Open output stream for the log file
   $outfile{log} = $outfile{prefix}."_log.txt";
   $out = &OpenOutputFile($outfile{log});
 
@@ -509,6 +515,8 @@ sub ComputeFilterDyads {
 ################################################################
 ## Identify ortholog genes
 sub GetOrthologs {
+  &IndexOneFile("orthologs", $outfile{orthologs}) if ($create_index);
+  return(0) unless ($task{orthologs});
   &RSAT::message::TimeWarn("Getting orthologs", $outfile{orthologs}) if ($main::verbose >= 1);
   &CheckDependency("orthologs", "genes");
   $cmd = "$SCRIPTS/get-orthologs";
@@ -519,38 +527,39 @@ sub GetOrthologs {
   $cmd .= " -uth rank 1";	## BBH criterion
   $cmd .= " -only_blast";	## only use genome having blast files
   $cmd .= " -o ".$outfile{orthologs};
-  &one_command($cmd) if ($task{orthologs});
+  &one_command($cmd);
   #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
-  &IndexOneFile("orthologs", $outfile{orthologs}) if ($create_index);
 }
 
 ################################################################
 ## Predict operon leader genes for the orthologous genes
 sub InferOrthoOperons {
+  &IndexOneFile("leader genes", $outfile{bbh}) if ($create_index);
+  return(0) unless ($task{operons});
   &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{bbh}) if ($main::verbose >= 1);
   &CheckDependency("operons", "orthologs");
   $cmd = "$SCRIPTS/get-leader-multigenome ";
   $cmd .= " -i ".$outfile{orthologs};
   $cmd .= " -o ".$outfile{bbh};
   $cmd .= " -uth interg_dist ".$dist_thr;
-  &one_command($cmd) if ($task{operons});
+  &one_command($cmd);
   #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
-  &IndexOneFile("leader genes", $outfile{bbh}) if ($create_index);
 }
 
 
 ################################################################
 ## Retrieve sequences from orthologs
 sub RetrieveOrthoSeq {
+  &IndexOneFile("$promoter sequences", $outfile{seq}) if ($create_index);
+  return(0) unless ($task{ortho_seq});
   &RSAT::message::TimeWarn("Retrieving promoter sequences of orthologs", $outfile{seq}) if ($main::verbose >= 1);
   &CheckDependency("ortho_seq", "bbh");
   $cmd = "$SCRIPTS/retrieve-seq-multigenome -ids_only";
   $cmd .= " -i ".$outfile{bbh};
   $cmd .= " -noorf";
   $cmd .= " -o ".$outfile{seq};
-  &one_command($cmd) if ($task{ortho_seq});
+  &one_command($cmd);
   #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
-  &IndexOneFile("$promoter sequences", $outfile{seq}) if ($create_index);
 }
 
 
@@ -558,6 +567,8 @@ sub RetrieveOrthoSeq {
 ################################################################
 ## Purge sequences
 sub PurgeOrthoSeq {
+  &IndexOneFile("purged sequences", $outfile{purged}) if ($create_index);
+  return(0) unless ($task{purge});
   &RSAT::message::TimeWarn("Purging promoter sequences of orthologs", $outfile{purged}) if ($main::verbose >= 1);
   &CheckDependency("purge", "seq");
   $cmd = "$SCRIPTS/purge-sequence";
@@ -565,9 +576,59 @@ sub PurgeOrthoSeq {
   $cmd .= " -ml 30 -mis 0 -mask_short 30";
   $cmd .= " ".$strands;
   $cmd .= " -o ".$outfile{purged};
-  &one_command($cmd) if ($task{purge});
+  &one_command($cmd);
 #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
-  &IndexOneFile("purged sequences", $outfile{purged}) if ($create_index);
 }
+
+
+
+################################################################
+## Detect over-representation of matching occurrecnes (hits) of the motif
+sub OccurrenceSig {
+  &IndexOneFile("occ sig", $outfile{occ_sig}) if ($create_index);
+  return(0) unless ($task{occ_sig});
+  &RSAT::message::TimeWarn("Testing over-representation of hits", $outfile{occ_sig}) if ($main::verbose >= 1);
+  &CheckDependency("occ_sig", "purged");
+  my $hits_cmd = "matrix-scan";
+  $hits_cmd .= $ms_parameters;
+  $hits_cmd .= " -return distrib,occ_proba,rank -sort_distrib";
+#  $hits_cmd .= " -lth inv_cum 1 -lth occ_sig 0 -uth occ_sig_rank 1";
+  $hits_cmd .= " -i ".$outfile{purged};
+  $hits_cmd .= " -o ".$outfile{occ_sig};
+  $hits_cmd .= $occ_sig_opt;
+  &one_command($hits_cmd);
+}
+
+################################################################
+## Scan sequences with PSSM to locate sites
+sub OrthoScan {
+  &IndexOneFile("sites", $outfile{sites}) if ($create_index);
+  return(0) unless ($task{scan});
+  &RSAT::message::TimeWarn("Scannig sequences to detect sites", $outfile{sites}) if ($main::verbose >= 1);
+  &CheckDependency("scan", "seq");
+  my $scan_cmd = "matrix-scan";
+  $scan_cmd .= $ms_parameters;
+  $scan_cmd .= " -return limits,sites,rank";
+  $scan_cmd .= " -i ".$outfile{seq};
+  $scan_cmd .= " -o ".$outfile{sites};
+  &one_command($scan_cmd);
+}
+
+################################################################
+## Draw a feature map with the detected sites
+sub OrthoMap {
+  &IndexOneFile("map", $outfile{map}) if ($create_index);
+  return(0) unless ($task{map});
+  &RSAT::message::TimeWarn("Drawing feature map", $outfile{map}) if ($main::verbose >= 1);
+  &CheckDependency("map", "sites");
+  my $map_cmd = "feature-map -i ".$outfile{sites};
+  $map_cmd .= " -scalebar -legend";
+  $map_cmd .= " -xsize 800 -scorethick";
+  $map_cmd .= " -title 'matrix hits in ".$taxon." promoters'";
+  $map_cmd .= " -format ".$img_format;
+  $map_cmd .= " -o ".$outfile{map};
+  &one_command($map_cmd);
+}
+
 
 1;
