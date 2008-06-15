@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.6 2008/06/15 23:08:01 jvanheld Exp $
+# $Id: footprint-scan,v 1.7 2008/06/15 23:11:39 jvanheld Exp $
 #
 ############################################################
 
@@ -58,7 +58,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -602,7 +602,6 @@ sub RunFootprintScan {
   ################################################################
   ## Send the command to a batch queue (e.g. PC cluster)
   if ($batch) {
-    die "BATCH CMD\t", "'", $batch_cmd, "'\n";
     &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
   }
 
