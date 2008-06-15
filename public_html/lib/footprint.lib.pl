@@ -495,7 +495,7 @@ sub OpenIndex {
 sub InferQueryOperons {
   &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{leader_qgenes}) if ($main::verbose >= 1);
   &CheckDependency("operons", "genes");
-  $cmd = "$SCRIPTS/get-leader-multigenome ";
+  my $cmd = "$SCRIPTS/get-leader-multigenome ";
   $cmd .= " -i ".$outfile{genes};
   $cmd .= " -o ".$outfile{leader_qgenes};
   $cmd .= " -uth interg_dist ".$dist_thr;
@@ -509,7 +509,7 @@ sub InferQueryOperons {
 ## Retrieve promoters of the query organism
 sub RetrieveQueryPromoters {
   &RSAT::message::TimeWarn("Retrieving promoter sequences for query genes", $outfile{query_seq}) if ($main::verbose >= 1);
-  $cmd = "$SCRIPTS/retrieve-seq ";
+  my $cmd = "$SCRIPTS/retrieve-seq ";
   $cmd .= " -org ".$organism_name;
   if ($infer_operons) {
     &CheckDependency("query_seq", "leader_qgenes");
@@ -530,7 +530,7 @@ sub RetrieveQueryPromoters {
 sub ComputeFilterDyads {
   &RSAT::message::TimeWarn("Computing filter dyads", $outfile{filter_dyads}) if ($main::verbose >= 1);
   &CheckDependency("filter", "query_seq");
-  $cmd = "$SCRIPTS/dyad-analysis -v 1 -return occ -lth occ 1";
+  my $cmd = "$SCRIPTS/dyad-analysis -v 1 -return occ -lth occ 1";
   $cmd .= " -i ".$outfile{query_seq};
   $cmd .= " -l 3 -sp 0-20";
   $cmd .= " ".$strands;
@@ -548,7 +548,7 @@ sub GetOrthologs {
   return(0) unless ($task{orthologs});
   &RSAT::message::TimeWarn("Getting orthologs", $outfile{orthologs}) if ($main::verbose >= 1);
   &CheckDependency("orthologs", "genes");
-  $cmd = "$SCRIPTS/get-orthologs";
+  my $cmd = "$SCRIPTS/get-orthologs";
   $cmd .= " -i ".$outfile{genes};
   $cmd .= " -org ".$organism_name;
   $cmd .= " -taxon ".$taxon;
@@ -570,7 +570,7 @@ sub InferOrthoOperons {
   return(0) unless ($task{operons});
   &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{bbh}) if ($main::verbose >= 1);
   &CheckDependency("operons", "orthologs");
-  $cmd = "$SCRIPTS/get-leader-multigenome ";
+  my $cmd = "$SCRIPTS/get-leader-multigenome ";
   $cmd .= " -i ".$outfile{orthologs};
   $cmd .= " -o ".$outfile{bbh};
   $cmd .= " -uth interg_dist ".$dist_thr;
@@ -586,7 +586,7 @@ sub RetrieveOrthoSeq {
   return(0) unless ($task{ortho_seq});
   &RSAT::message::TimeWarn("Retrieving promoter sequences of orthologs", $outfile{seq}) if ($main::verbose >= 1);
   &CheckDependency("ortho_seq", "bbh");
-  $cmd = "$SCRIPTS/retrieve-seq-multigenome -ids_only";
+  my $cmd = "$SCRIPTS/retrieve-seq-multigenome -ids_only";
   $cmd .= " -i ".$outfile{bbh};
   $cmd .= " -noorf";
   $cmd .= " -o ".$outfile{seq};
@@ -603,7 +603,7 @@ sub PurgeOrthoSeq {
   return(0) unless ($task{purge});
   &RSAT::message::TimeWarn("Purging promoter sequences of orthologs", $outfile{purged}) if ($main::verbose >= 1);
   &CheckDependency("purge", "seq");
-  $cmd = "$SCRIPTS/purge-sequence";
+  my $cmd = "$SCRIPTS/purge-sequence";
   $cmd .= " -i ".$outfile{seq};
   $cmd .= " -ml 30 -mis 0 -mask_short 30";
   $cmd .= " ".$strands;
@@ -617,19 +617,18 @@ sub PurgeOrthoSeq {
 ################################################################
 ## Detect over-representation of matching occurrecnes (hits) of the motif
 sub OccurrenceSig {
-  if ($task{occ_sig}) {
-    &RSAT::message::TimeWarn("Testing over-representation of hits", $outfile{occ_sig}) if ($main::verbose >= 1);
-    &CheckDependency("occ_sig", "purged");
-    my $hits_cmd = "matrix-scan";
-    $hits_cmd .= $ms_parameters;
-    $hits_cmd .= " -return distrib,occ_proba,rank -sort_distrib";
-    #  $hits_cmd .= " -lth inv_cum 1 -lth occ_sig 0 -uth occ_sig_rank 1";
-    $hits_cmd .= " -i ".$outfile{purged};
-    $hits_cmd .= " -o ".$outfile{occ_sig};
-    $hits_cmd .= $occ_sig_opt;
-    &one_command($hits_cmd);
-  }
   &IndexOneFile("occ sig", $outfile{occ_sig}) if ($create_index);
+  return(0) unless ($task{occ_sig});
+  &RSAT::message::TimeWarn("Testing over-representation of hits", $outfile{occ_sig}) if ($main::verbose >= 1);
+  &CheckDependency("occ_sig", "purged");
+  my $hits_cmd = "matrix-scan";
+  $hits_cmd .= $ms_parameters;
+  $hits_cmd .= " -return distrib,occ_proba,rank -sort_distrib";
+  #  $hits_cmd .= " -lth inv_cum 1 -lth occ_sig 0 -uth occ_sig_rank 1";
+  $hits_cmd .= " -i ".$outfile{purged};
+  $hits_cmd .= " -o ".$outfile{occ_sig};
+  $hits_cmd .= $occ_sig_opt;
+  &one_command($hits_cmd);
 }
 
 ################################################################
