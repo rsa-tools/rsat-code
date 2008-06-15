@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.4 2008/06/15 22:36:52 jvanheld Exp $
+# $Id: footprint-scan,v 1.5 2008/06/15 22:59:56 jvanheld Exp $
 #
 ############################################################
 
@@ -58,7 +58,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -552,12 +552,6 @@ sub RunFootprintScan {
   &PurgeOrthoSeq();
 
   ################################################################
-  ## Send the command to a batch queue (e.g. PC cluster)
-  if ($batch) {
-    &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
-  }
-
-  ################################################################
   ## Scan the promoters of one group of orhtologous genes with one
   ## position-specific scoring matrix
 
@@ -603,6 +597,14 @@ sub RunFootprintScan {
     }
     print $index ("</tr>\n\n");
   }
+
+
+  ################################################################
+  ## Send the command to a batch queue (e.g. PC cluster)
+  if ($batch) {
+    &doit($batch_cmd, $dry, $die_on_error, $verbose, 1, $job_prefix);
+  }
+
 }
 
 __END__
