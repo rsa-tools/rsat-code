@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.3 2008/06/15 17:34:41 jvanheld Exp $
+# $Id: footprint-scan,v 1.4 2008/06/15 22:36:52 jvanheld Exp $
 #
 ############################################################
 
@@ -58,7 +58,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -68,13 +68,16 @@ package main;
   $main::in = STDIN;
   $main::out = STDOUT;
 
+  local $no_die = 1; ## Don't die when a problem occurs
+  local $skip = 0;
+  local $last = 0;
+
   ## Parameters for promoter retrieval
   local $taxon;			## Reference taxon
   local $organism_name;		## Query organism
   local @query_genes = ();	## list of query genes
   local $infer_operons = 0;     ## Infer operon leader genes
   local $dist_thr = 55;	        ## Distance threshold for operon inference
-  local $all_genes = 0;         ## Analyze all the genes of the query organism
   local $sep_genes = 0;	        ## Analyze each gene separately
   local $max_genes = undef;     ## Analyze a restricted number of genes
   local $query_prefix;
@@ -82,9 +85,6 @@ package main;
   ## Matrix scanning parameters
   local @matrix_files = ();
   local $strands = "-2str"; ## Strands for pattern matching
-  $supported_task{occ_sig} = 1;
-  $supported_task{scan} = 1;
-  $supported_task{map} = 1;
   local $pseudo = 1;
   local $bg_pseudo = 0.05;
   local $strands = "-2str"; ## Strands for pattern discovery and pattern matching
@@ -97,9 +97,12 @@ package main;
   local %uth = ();
   local $occ_sig_opt = "";
 
-  ## DEBUG ## 
-#  $task{scan} = 1;
-#  $task{map} = 1;
+  ## Supported-tasks adde to those of footprint.lib.pl
+  $supported_task{occ_sig} = 1;
+  $supported_task{scan} = 1;
+  $supported_task{map} = 1;
+  $supported_task{synthesis} = 1;
+  $supported_tasks = join (",", keys %supported_task);
 
   ################################################################
   ## Read argument values
@@ -107,6 +110,12 @@ package main;
 
   ################################################################
   ## Check argument values
+
+  #### Organism
+  &RSAT::OrganismManager::check_name($organism_name);
+  my $organism = new RSAT::organism();
+  $organism->set_attribute("name", $organism_name);
+  $organism->check_name($organism_name);
 
   ## Check parameters for footprint analysis
   &CheckFootprintParameters();
@@ -161,30 +170,75 @@ package main;
   ## Pseudo-frequency for the background model
   $ms_parameters .= " -bg_pseudo ".$bg_pseudo;
 
-
   ################################################################
   ## Analyze query genes separately or altogether
   if ($sep_genes) {
-    foreach my $current_gene (@query_genes) {
-      &RunFootprintScan($current_gene);
+    $outfile{synthesis} = join( "/", "footprints", $taxon, $organism_name,
+				join ("_", $matrix_suffix,  $organism_name, $taxon, "synthesis"));
+    $outfile{synthesis_tab} = $outfile{synthesis}.".tab";
+    $outfile{synthesis_html} = $outfile{synthesis}.".html";
+    my $g = 0;
+    my $gene_nb = scalar(@query_genes);
+    local $current_gene;
+    foreach $current_gene (@query_genes) {
+      $g++;
+      if (($skip > 0) && ($g <= $skip)) {
+	&RSAT::message::Info("Skipping gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 2);
+	next;
+      }
+      if (($last > 0) && ($g >= $last)) {
+	&RSAT::message::Info("Last gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 2);
+	last;
+      }
+      &RSAT::message::TimeWarn("Analysing gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 1);
+      eval {
+	&RunFootprintScan($current_gene);
+      };
+      if ($@) {
+	if ($no_die) {
+	  ## Catch error and report in in log file
+	  print $out join("\t", "ERROR", $current_gene, $@);
+	  &RSAT::message::Warning("ERROR", $current_gene, $@);
+	} else {
+	  &RSAT::error::FatalError($@);
+	}
+      }
     }
+
+    ## Create the synthetic table
+    if ($task{synthesis}) {
+
+      ## Open the file for the synthetic table
+      my ($syn) = &OpenOutputFile($outfile{synthesis_tab});
+
+      ## Grep the header from the last occ_sig file
+      my $header = `grep '^#' $outfile{occ_sig}`;
+      $header =~ s/occ_sig_rank/gene_rank/;
+      $header =~ s/^#//;
+      print $syn join("\t", "#gene", $header);
+
+      my $g = 0;
+      foreach my $gene (sort {$top_sig{$b} <=> $top_sig{$a}} keys %top_sig) {
+	$g++;
+	print $syn join("\t", $gene, $top_sig_row{$gene}, $g), "\n";
+      }
+
+      ## Generate the HTML table
+      my $html_cmd = "add-gene-info -org ".$organism_name;
+      $html_cmd .= " -i ".$outfile{synthesis_tab};
+      $html_cmd .= " -info name,descr,upstr_neighb_name";
+      $html_cmd .= " | text-to-html -chunk 1000 -font variable";
+      $html_cmd .= " -o ".$outfile{synthesis_html};
+      &doit($html_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+    }
+
   } else {
     &RunFootprintScan(@query_genes);
   }
 
   ################################################################
-  ## Open output stream
-  $main::out = &OpenOutputFile($main::outfile{output});
-
-  ################################################################
   ## Print verbose
   &Verbose() if ($main::verbose);
-
-  ################################################################
-  ## Execute the command
-
-  ################################################################
-  ## Print output
 
 
   ################################################################
@@ -509,6 +563,7 @@ sub RunFootprintScan {
 
   ## Estimate over-representation in hits for all threshold values
   &OccurrenceSig();
+  &GetTopSig() if (($task{synthesis}) && !($batch));
 
   ## Scan sequences to detect hits
   &OrthoScan();
