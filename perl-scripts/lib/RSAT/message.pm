@@ -69,7 +69,7 @@ Print a warning message in HTML format (STDOUT)
 =cut
 sub cgiWarning {
     my $warning_message = join "<P>", @_;
-    my $warning_color = "#aa0000";
+    my $warning_color = "#FFAA00";
     &cgiMessage($warning_message, "Warning", $warning_color);
 }
 
@@ -122,7 +122,7 @@ Print a message in HTML format (STDOUT)
 =cut
 sub cgiMessage {
     my ($message, $message_type, $color) = @_;
-    $color = "#00BB00" unless ($color);
+    $color = "#00BB00" unless ($color); ## PROBLEM: THIS COLOR IS NOW IGNORED -> EITHER SUPPRESS OR RESTORE
     $message_type = "information" unless ($message_type);
     print  "<h4 >$message_type</h4>",
 	    "<blockquote class='",lc($message_type),"'>",

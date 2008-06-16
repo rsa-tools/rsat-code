@@ -3006,7 +3006,9 @@ sub c_topology {
   print FWINPUTFILE scalar (keys %nodes_id_name)."\n";
   # specifies whether the graph is directed or not
   print FWINPUTFILE $directed."\n" if ($floydwarshall !~ /ndir/);
-  for (my $i = 0; $i < scalar (keys %nodes_id_name); $i++) {
+  my $node_nb = scalar (keys %nodes_id_name);
+  for (my $i = 0; $i < $node_nb; $i++) {
+    &RSAT::message::Info("Computing topology for node", $i."/".$node_nb) if ($main::verbose >= 3);
     @weight_list = @empty_array;
     @i_neighbours = ();
     @i_neighbours = (@i_neighbours, @{$out_neighbours[$i]}) if (defined $out_neighbours[$i]);
