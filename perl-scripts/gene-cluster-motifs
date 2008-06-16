@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.236 2008/01/08 12:32:07 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.237 2008/06/16 09:55:16 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.236 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.237 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -2138,14 +2138,11 @@ sub SyntheticTable {
   print $syn "<title>",$table_suffix, "</title>","\n";
   print $syn "<body>\n";
   print $syn "<h1>".$table_suffix."</h1>\n";
-   
   print $syn join( "\n",
 		   "<pre>",
 		   $verbose_message,
 		   "</pre>"
 		 ), "\n";
-   
-   
   print $syn "<table border=1>\n";
 
   ################################################################
