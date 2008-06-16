@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.7 2008/06/15 23:11:39 jvanheld Exp $
+# $Id: footprint-scan,v 1.8 2008/06/16 09:37:08 jvanheld Exp $
 #
 ############################################################
 
@@ -58,7 +58,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -72,7 +72,7 @@ package main;
   local $skip = 0;
   local $last = 0;
 
-  ## Parameters for promoter retrieval
+  ## parameters for promoter retrieval
   local $taxon;			## Reference taxon
   local $organism_name;		## Query organism
   local @query_genes = ();	## list of query genes
@@ -190,7 +190,7 @@ package main;
 	&RSAT::message::Info("Last gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 2);
 	last;
       }
-      &RSAT::message::TimeWarn("Analysing gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn("Analyzing gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 1);
       eval {
 	&RunFootprintScan($current_gene);
       };
@@ -211,16 +211,25 @@ package main;
       ## Open the file for the synthetic table
       my ($syn) = &OpenOutputFile($outfile{synthesis_tab});
 
-      ## Grep the header from the last occ_sig file
-      my $header = `grep '^#' $outfile{occ_sig}`;
-      $header =~ s/occ_sig_rank/gene_rank/;
-      $header =~ s/^#//;
-      print $syn join("\t", "#gene", $header);
-
       my $g = 0;
+      my $occ_sig_header = "";
       foreach my $gene (sort {$top_sig{$b} <=> $top_sig{$a}} keys %top_sig) {
 	$g++;
-	print $syn join("\t", $gene, $top_sig_row{$gene}, $g), "\n";
+
+	## Grep the header for the synthesis
+	unless ($occ_sig_header) {
+	  $occ_sig_header = `grep '^#' $occ_sig_file{$gene}`;
+	  chomp $occ_sig_header;
+	  $occ_sig_header =~ s/occ_sig_rank/gene_rank/;
+	  $occ_sig_header =~ s/^#//;
+	  print $syn join("\t", "#gene", $occ_sig_header, "file"), "\n";
+	}
+
+	## Compute a HTML link
+	my $link = join("", "<a href='", $occ_sig_file{$gene}, "'>[tab]</a>");
+
+	## Print the table
+	print $syn join("\t", $gene, $top_sig_row{$gene}, $g, $link), "\n";
       }
 
       ## Generate the HTML table
