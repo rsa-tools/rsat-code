@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.8 2008/06/16 09:37:08 jvanheld Exp $
+# $Id: footprint-scan,v 1.9 2008/06/16 09:54:52 jvanheld Exp $
 #
 ############################################################
 
@@ -58,7 +58,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -210,6 +210,8 @@ package main;
 
       ## Open the file for the synthetic table
       my ($syn) = &OpenOutputFile($outfile{synthesis_tab});
+      my $syn_dir = `dirname $outfile{synthesis_tab}`;
+      chomp($syn_dir);
 
       my $g = 0;
       my $occ_sig_header = "";
@@ -226,7 +228,11 @@ package main;
 	}
 
 	## Compute a HTML link
-	my $link = join("", "<a href='", $occ_sig_file{$gene}, "'>[tab]</a>");
+	my $sig_file = $occ_sig_file{$gene};
+	$sig_file =~ s|${syn_dir}/||g;
+	my $link = join("", "<a href='", $sig_file, "'>[sig]</a>");
+	&RSAT::message::Debug("SYNTHESIS DIR", $syn_dir, $sig_file, $link) if ($main::verbose >= 0);
+
 
 	## Print the table
 	print $syn join("\t", $gene, $top_sig_row{$gene}, $g, $link), "\n";
@@ -236,7 +242,7 @@ package main;
       my $html_cmd = "add-gene-info -org ".$organism_name;
       $html_cmd .= " -i ".$outfile{synthesis_tab};
       $html_cmd .= " -info name,descr,upstr_neighb_name";
-      $html_cmd .= " | text-to-html -chunk 1000 -font variable";
+      $html_cmd .= " | text-to-html -chunk 7000 -font variable";
       $html_cmd .= " -o ".$outfile{synthesis_html};
       &doit($html_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
     }
