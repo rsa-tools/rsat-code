@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.35 2008/04/09 09:14:40 jvanheld Exp $
+# $Id: template,v 1.36 2008/06/16 09:35:50 jvanheld Exp $
 #
 ############################################################
 
@@ -37,6 +37,10 @@ template [-i inputfile] [-o outputfile] [-v #] [...]
 
 =head1 OUTPUT FORMAT
 
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
 =cut
 
 
@@ -57,7 +61,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.35 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.36 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -241,11 +245,3 @@ sub Verbose {
 
 
 __END__
-
-=pod
-
-=head1 SEE ALSO
-
-=head1 WISH LIST
-
-=cut
