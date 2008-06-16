@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.9 2008/06/16 09:54:52 jvanheld Exp $
+# $Id: footprint-scan,v 1.10 2008/06/16 20:52:50 jvanheld Exp $
 #
 ############################################################
 
@@ -58,7 +58,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -92,13 +92,16 @@ package main;
   local $matrix_file = $matrix_dir."/PHO4_matrix.tab";
   local $matrix_format = "tab";
   local $markov = 1;
-  local $img_format = "png";
+  local $map_format = "png";
+  local $plot_format = "png";
   local %lth = ();
   local %uth = ();
   local $occ_sig_opt = "";
+  local $scan_opt = "";
 
   ## Supported-tasks adde to those of footprint.lib.pl
   $supported_task{occ_sig} = 1;
+  $supported_task{occ_sig_graph} = 1;
   $supported_task{scan} = 1;
   $supported_task{map} = 1;
   $supported_task{synthesis} = 1;
@@ -321,8 +324,6 @@ sub ReadArguments {
     if (&ReadFootprintOptions()) {
       next;
 
-	    ## Matrix file
-
 =pod
 
 =over 4
@@ -335,11 +336,11 @@ This argument can be used iteratively to scan the sequence with
 multiple matrices.
 
 =cut
+
     } elsif ($arg eq "-m") {
       push @matrix_files, shift(@arguments);
 
 
-	    ## Matrix format
 =pod
 
 =item B<-matrix_format matrix_format>
@@ -347,10 +348,10 @@ multiple matrices.
 Matrix format. Default is tab. This argument is mandatory.
 
 =cut
-	} elsif ($arg eq "-matrix_format") {
-	    $main::matrix_format = lc(shift(@arguments));
 
-	    ## Matrix suffix
+    } elsif ($arg eq "-matrix_format") {
+      $main::matrix_format = lc(shift(@arguments));
+
 =pod
 
 =item B<-matrix_suffix matrix_suffix>
@@ -362,10 +363,9 @@ to maintain separate output files for distinct analyses performed on
 the same promoter sequences.
 
 =cut
-	} elsif ($arg eq "-matrix_suffix") {
-	    $main::matrix_suffix = shift(@arguments);
+    } elsif ($arg eq "-matrix_suffix") {
+      $main::matrix_suffix = shift(@arguments);
 
-	    ## Pseudo-count for the PSSM
 =pod
 
 =item B<-pseudo #>
@@ -373,13 +373,12 @@ the same promoter sequences.
 Pseudo-count for the matrix (default: 1). See matrix-scan for details.
 
 =cut
-	} elsif ($arg eq "-pseudo") {
-	    $main::pseudo = shift(@arguments);
-	    &RSAT::error::FatalError(join("\t", $main::pseudo,
-					  "Invalid value for pseudo count. Must be a real value."))
-		unless (&IsReal($main::pseudo));
+    } elsif ($arg eq "-pseudo") {
+      $main::pseudo = shift(@arguments);
+      &RSAT::error::FatalError(join("\t", $main::pseudo,
+				    "Invalid value for pseudo count. Must be a real value."))
+	unless (&IsReal($main::pseudo));
 
-		##bg file
 =pod
 
 =item B<-bgfile background_file>
@@ -387,10 +386,9 @@ Pseudo-count for the matrix (default: 1). See matrix-scan for details.
 Background model file.
 
 =cut
-	} elsif ($arg eq "-bgfile") {
-	    $main::infile{bg} = shift(@arguments);
+    } elsif ($arg eq "-bgfile") {
+      $main::infile{bg} = shift(@arguments);
 
-	  ## Background calculated from the input sequence set
 =pod
 
 =item B<-bginput>
@@ -398,13 +396,12 @@ Background model file.
 Calculate background model from the input sequence set.
 
 =cut
-	} elsif ($arg eq "-bginput") {
-	  &RSAT::error::FatalError("Options -bgfile and -bginput  are mutually exclusive") if (defined($infile{bg}));
-	  $main::bg_method = "input";
-	  &RSAT::error::FatalError("The options -bginput and -bgfile are mutually exclusive.")
-		if defined($main::infile{bg});
+    } elsif ($arg eq "-bginput") {
+      &RSAT::error::FatalError("Options -bgfile and -bginput  are mutually exclusive") if (defined($infile{bg}));
+      $main::bg_method = "input";
+      &RSAT::error::FatalError("The options -bginput and -bgfile are mutually exclusive.")
+	if defined($main::infile{bg});
 
-	  ## Calculate background model from the input sequence
 =pod
 
 =item B<-markov>
@@ -414,13 +411,12 @@ Order of the markov chain for the background model.
 This option is incompatible with the option -bgfile. 
 
 =cut
-	} elsif ($arg eq "-markov") {
-	    $main::markov = shift(@arguments);
-	    &RSAT::error::FatalError("Markov order must be a natural number.") 
-		unless &RSAT::util::IsNatural($main::markov);
-	    &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
-		if defined($infile{bg});
-
+    } elsif ($arg eq "-markov") {
+      $main::markov = shift(@arguments);
+      &RSAT::error::FatalError("Markov order must be a natural number.") 
+	unless &RSAT::util::IsNatural($main::markov);
+      &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
+	if defined($infile{bg});
 
 =item B<-bg_pseudo #>
 
@@ -447,13 +443,12 @@ following value:
 
 
 =cut
-	} elsif ($arg eq "-bg_pseudo") {
-	    $main::bg_pseudo = shift(@arguments);
-	    &RSAT::error::FatalError(join("\t", $main::bg_pseudo,
-					  "Invalid format for bg_pseudo, should be a Real number between 0 and 1."))
-		unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
-		$main::bg_pseudo_user_specified = 1;
-
+    } elsif ($arg eq "-bg_pseudo") {
+      $main::bg_pseudo = shift(@arguments);
+      &RSAT::error::FatalError(join("\t", $main::bg_pseudo,
+				    "Invalid format for bg_pseudo, should be a Real number between 0 and 1."))
+	unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
+      $main::bg_pseudo_user_specified = 1;
 
 =pod
 
@@ -477,10 +472,40 @@ Note: the argument passed to matrix-scan is delimited by single
 quotes, and can thus not contain any quote.
 
 =cut
+    } elsif ($arg eq "-occ_sig_opt") {
+      my $new_occ_sig_opt = shift(@arguments);
+      $occ_sig_opt .= " ".$new_occ_sig_opt;
 
-	} elsif ($arg eq "-occ_sig_opt") {
-	    my $new_occ_sig_opt = shift(@arguments);
-	    $occ_sig_opt .= " ".$new_occ_sig_opt;
+=pod
+
+=item B<plot_format>
+
+Format for the occurrence plots (occurrence frequencies, occurrence sinificance).
+Supported: all formats supported by the program XYgraph
+
+=cut
+    } elsif ($arg eq "-plot_format") {
+      $main::plot_format = shift(@arguments);
+
+=pod
+
+=item B<-scan_opt>
+
+Additional options passed to matrix-scan for site detection and
+feature-map drawing.
+
+Examples:
+
+Scan sequences with an upper threshold of 0.001 on pval.
+   -scan_opt '-uth pval 0.001'
+
+Note: the argument passed to matrix-scan is delimited by single
+quotes, and can thus not contain any quote.
+
+=cut
+    } elsif ($arg eq "-scan_opt") {
+      my $new_scan_opt = shift(@arguments);
+      $scan_opt .= " ".$new_scan_opt;
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
@@ -532,8 +557,10 @@ sub RunFootprintScan {
   ## Output files for matrix-scan
   $outfile{matrix_prefix} = $outfile{prefix}."_".$matrix_suffix;
   $outfile{occ_sig} = $outfile{matrix_prefix}."_occ_sig.tab";
+  $outfile{occ_freq_graph} = $outfile{matrix_prefix}."_occ_freq.".$plot_format;
+  $outfile{occ_sig_graph} = $outfile{matrix_prefix}."_occ_sig.".$plot_format;
   $outfile{sites} = $outfile{matrix_prefix}."_sites.tab";
-  $outfile{map} = $outfile{matrix_prefix}."_sites.".$img_format;
+  $outfile{map} = $outfile{matrix_prefix}."_sites.".$map_format;
 
   ################################################################
   ## Open file to the HTML index
@@ -572,6 +599,7 @@ sub RunFootprintScan {
 
   ## Estimate over-representation in hits for all threshold values
   &OccurrenceSig();
+  &OccurrenceSigGraph();
   &GetTopSig() if (($task{synthesis}) && !($batch));
 
   ## Scan sequences to detect hits
