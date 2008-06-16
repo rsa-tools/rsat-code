@@ -676,6 +676,7 @@ sub OccurrenceSigGraph {
   $cmd .= " -lines -legend ";
   $cmd .= " -format ".$plot_format;
   $cmd .= " -o ".$outfile{occ_sig_graph};
+  $cmd .= " ".$occ_sig_graph_opt;
   &one_command($cmd);
 }
 
