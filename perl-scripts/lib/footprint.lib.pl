@@ -447,6 +447,18 @@ fatal errors.
 	}
       }
 
+=pod
+
+=item B<map_format>
+
+Format for the feature map. 
+Supported: all formats supported by the program feature-map
+
+=cut
+    } elsif ($arg eq "-map_format") {
+      $main::map_format = shift(@arguments);
+
+
     ## Create HTML Index
 =pod
 
@@ -625,14 +637,46 @@ sub OccurrenceSig {
   return(0) unless ($task{occ_sig});
   &RSAT::message::TimeWarn("Testing over-representation of hits", $outfile{occ_sig}) if ($main::verbose >= 1);
   &CheckDependency("occ_sig", "purged");
-  my $hits_cmd = "matrix-scan";
-  $hits_cmd .= $ms_parameters;
-  $hits_cmd .= " -return distrib,occ_proba,rank -sort_distrib";
-  #  $hits_cmd .= " -lth inv_cum 1 -lth occ_sig 0 -uth occ_sig_rank 1";
-  $hits_cmd .= " -i ".$outfile{purged};
-  $hits_cmd .= " -o ".$outfile{occ_sig};
-  $hits_cmd .= $occ_sig_opt;
-  &one_command($hits_cmd);
+  my $cmd = "matrix-scan";
+  $cmd .= $ms_parameters;
+  $cmd .= " -return distrib,occ_proba,rank -sort_distrib";
+  #  $cmd .= " -lth inv_cum 1 -lth occ_sig 0 -uth occ_sig_rank 1";
+  $cmd .= " -i ".$outfile{purged};
+  $cmd .= " -o ".$outfile{occ_sig};
+  $cmd .= $occ_sig_opt;
+  &one_command($cmd);
+}
+
+################################################################
+## Draw a graph with occurrence significance profiles
+sub OccurrenceSigGraph {
+  &IndexOneFile("occ freq graph", $outfile{occ_freq_graph}) if ($create_index);
+  &IndexOneFile("occ sig graph", $outfile{occ_sig_graph}) if ($create_index);
+
+  return(0) unless ($task{occ_sig_graph});
+
+  &RSAT::message::TimeWarn("Graph with over-representation of hits", $outfile{occ_freq_graph}) if ($main::verbose >= 1);
+  &CheckDependency("occ_sig_graph", "occ_sig");
+
+  ## Occ frequency graph
+  my $cmd = "sort -n -k 2 $outfile{occ_sig} | XYgraph";
+  $cmd .= " -xcol 2 -xleg1 'Weight score' -xsize 800 -xgstep1 1 -xgstep2 0.5";
+  $cmd .= " -ycol 5,8 -yleg1 'Gene numbers' -ylog 10";
+  $cmd .= " -title 'matrix ".$matrix_suffix." ; gene ".$current_gene."'";
+  $cmd .= " -lines -legend ";
+  $cmd .= " -format ".$plot_format;
+  $cmd .= " -o ".$outfile{occ_freq_graph};
+  &one_command($cmd);
+
+  ## Occ significance graph
+  my $cmd = "sort -n -k 2 $outfile{occ_sig} | XYgraph";
+  $cmd .= " -xcol 2 -xleg1 'Weight score' -xsize 800  -xgstep1 1 -xgstep2 0.5";
+  $cmd .= " -ycol 11 -yleg1 'Binomial significance of hits'";
+  $cmd .= " -title 'matrix ".$matrix_suffix." ; gene ".$current_gene."'";
+  $cmd .= " -lines -legend ";
+  $cmd .= " -format ".$plot_format;
+  $cmd .= " -o ".$outfile{occ_sig_graph};
+  &one_command($cmd);
 }
 
 ################################################################
@@ -664,6 +708,7 @@ sub OrthoScan {
   $scan_cmd .= " -return limits,sites,rank";
   $scan_cmd .= " -i ".$outfile{seq};
   $scan_cmd .= " -o ".$outfile{sites};
+  $scan_cmd .= " ".$scan_opt;
   &one_command($scan_cmd);
 }
 
@@ -674,13 +719,13 @@ sub OrthoMap {
   return(0) unless ($task{map});
   &RSAT::message::TimeWarn("Drawing feature map", $outfile{map}) if ($main::verbose >= 1);
   &CheckDependency("map", "sites");
-  my $map_cmd = "feature-map -i ".$outfile{sites};
-  $map_cmd .= " -scalebar -legend";
-  $map_cmd .= " -xsize 800 -scorethick";
-  $map_cmd .= " -title 'matrix hits in ".$taxon." promoters'";
-  $map_cmd .= " -format ".$img_format;
-  $map_cmd .= " -o ".$outfile{map};
-  &one_command($map_cmd);
+  my $cmd = "feature-map -i ".$outfile{sites};
+  $cmd .= " -scalebar -legend";
+  $cmd .= " -xsize 800 -scorethick";
+  $cmd .= " -title 'matrix hits in ".$taxon." promoters'";
+  $cmd .= " -format ".$map_format;
+  $cmd .= " -o ".$outfile{map};
+  &one_command($cmd);
 }
 
 
