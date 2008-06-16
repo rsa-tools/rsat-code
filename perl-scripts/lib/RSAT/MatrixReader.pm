@@ -42,7 +42,7 @@ formats.
 			   'infogibbs'=>1,
 			   'motifsampler'=>1,
 			  );
-
+$supported_input_formats = join ",", keys %supported_input_formats;
 
 ################################################################
 =pod
