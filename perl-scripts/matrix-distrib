@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-distrib,v 1.11 2008/05/14 22:34:02 jvanheld Exp $
+# $Id: matrix-distrib,v 1.12 2008/06/16 09:35:25 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -417,7 +417,6 @@ Same as -h
 =cut
 	} elsif ($arg eq "-help") {
 	    &PrintOptions();
-	    
 
 	    ## Input file
 =pod
@@ -462,8 +461,8 @@ allows to use the command within a pipe.
 =cut
 	} elsif ($arg eq "-o") {
 	    $main::outfile{output} = shift(@arguments);
-	    
-	    ## Input format
+
+	    ## Matrix format
 =pod
 
 =item B<-matrix_format matrix_format>
@@ -475,9 +474,8 @@ Matrix format. Default is tab.
 	    $main::matrix_format = lc(shift(@arguments));
 	    &RSAT::error::FatalError(join("\t", $main::matrix_format,
 					  "Invalid input format.",
-					  "Supported: ", $main::matrix_format))
+					  "Supported: ", $main::supported_matrix_formats))
 		unless ($main::supported_matrix_format{$main::matrix_format});
-
 
 	    ## Pseudo-frequency for the PSSM
 =pod
@@ -504,7 +502,7 @@ Pseudo-count for the matrix (default: 1). See matrix-scan for details.
 	} elsif ($arg eq "-bgfile") {
 	    $main::infile{bgfile} = shift(@arguments);
 
-	    ## Input format
+	    ## Background model format
 =pod
 
 =item B<-bg_format matrix_format>
@@ -519,9 +517,8 @@ Pseudo-count for the matrix (default: 1). See matrix-scan for details.
 					  "Invalid input format.",
 					  "Supported: ", $main::bg_format))
 		unless ($main::supported_bg_format{$main::bg_format});    
-       
 
-	    ## Pseudo-frequency 
+	    ## Pseudo-frequency for the background model
 =pod
 
 =item B<-bg_pseudo #>
