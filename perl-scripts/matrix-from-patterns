@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.9 2008/03/26 20:11:38 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.10 2008/06/16 21:03:33 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -222,6 +222,7 @@ package main;
     $convert2_cmd .= " -return counts,parameters";
     $convert2_cmd .= " -sort desc information.per.column";
     $convert2_cmd .= " -return sites" if ($return_fields{sites});
+    $convert2_cmd .= " -return logo" if ($return_fields{logo});
     $convert2_cmd .= " -o ".$outfile{count_matrices};
     print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
     &doit($scan_cmd.$convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -429,6 +430,17 @@ The sites are exported in fasta format, after each count matrix.
 =cut
 	} elsif ($arg eq "-sites") {
 	    $return_fields{sites} = 1;
+
+	    ## Return logos
+=pod
+
+=item	B<-logo>
+
+Export the sequence logos representing the count matrix. 
+
+=cut
+	} elsif ($arg eq "-logo") {
+	    $return_fields{logo} = 1;
 
 =pod
 
