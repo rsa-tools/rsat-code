@@ -643,6 +643,7 @@ sub GetTopSig {
   my $top_sig_row = `$top_cmd`;
   if ($top_sig_row) {
     my @fields = split "\t", $top_sig_row;
+    $occ_sig_file{$current_gene} = $outfile{occ_sig};
     $top_sig{$current_gene} = $fields[10];;
     $top_score{$current_gene} = $fields[1];
     $top_sig_row{$current_gene} = join ("\t", @fields[0..10]);
