@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: gene-info,v 1.9 2008/03/14 13:45:48 jvanheld Exp $
+# $Id: gene-info,v 1.10 2008/06/16 09:15:30 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:30:09 jvanheld>
 #
@@ -40,7 +40,6 @@ $match_description = 0;
 
 #### organism
 &RSAT::OrganismManager::check_name($organism_name);
-
 my $organism = new RSAT::organism();
 $organism->set_attribute("name", $organism_name);
 #&CheckOrganism($organism_name);
@@ -53,12 +52,12 @@ $out = &RSAT::util::OpenOutputFile($outputfile);
 
 &Verbose();
 
-### read ORF information
+### Read ORF information
 my $serial_file = $TMP."/".$organism_name."1syn.serial";
 if (-e $serial_file && !$annotation_table && -M $serial_file < 2 && -w $serial_file) {
   $organism = retrieve $serial_file;
 } else {
-  ### read feature attributes (position, description, ...)
+  ### Read feature attributes (position, description, ...)
   $organism->LoadFeatures($annotation_table, $imp_pos);
   $organism->LoadSynonyms();
   nstore $organism, $serial_file;

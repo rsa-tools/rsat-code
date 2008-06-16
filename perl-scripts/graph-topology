@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-topology,v 1.5 2008/06/09 10:38:40 rsat Exp $
+# $Id: graph-topology,v 1.6 2008/06/16 09:15:53 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -23,9 +23,9 @@ Calculate the node degree, the closeness and the betweenness of each node and sp
 
 =over
 
-=item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
+=item Jacques van Helden <jvanheld@bigre.ulb.ac.be>
 
-=item Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
+=item Sylvain Brohee <sylvain@bigre.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -123,28 +123,35 @@ package main;
      if (scalar(keys %return_fields) == 0) {
       &RSAT::error::FatalError("You did not specify the output format");
     }
-    
+
     ################################################################
     ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
 
     ################################################################
     ## Read input graph
+    &RSAT::message::TimeWarn("Reading input graph") if ($main::verbose >= 2);
     $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, $weight_col);
     my %betweeness_table = ();
     my %closeness_table = ();
+
+
+    ################################################################
+    ## Compute closeness and betweenness
     if ($return_fields{'closeness'} || $return_fields{'betweenness'}) {
+      &RSAT::message::TimeWarn("Computing graph topoogy") if ($main::verbose >= 2);
       my ($betweennessRef, $closenessRef) = $graph->c_topology($directed);
       %betweeness_table = %{$betweennessRef};
       %closeness_table = %{$closenessRef};
     }
-    
+
 
     ################################################################
     ## Build the list of seed nodes
 
     ## Use all nodes as seeds
     if ($all_seeds) {
+      &RSAT::message::TimeWarn("Getting all nodes (to be used as seeds)") if ($main::verbose >= 2);
       @seed_names = $graph->get_nodes();
       &RSAT::message::TimeWarn("Using all",scalar(@seed_names), "nodes of the graph as seeds") if ($main::verbose >= 2);
       ## Put the name of each node in the list
@@ -236,7 +243,9 @@ package main;
     my @in_neighbours = $graph->get_attribute("in_neighbours");
     my %nodes_name_id = $graph->get_attribute("nodes_name_id");
     foreach my $node (sort (keys %seed_names_list)) {
+      &RSAT::message::Info("Computing degree for node", $node) if ($main::verbose >= 3);
       # calculate the degree
+
       # parameter initialization
       my $in_deg = 0;
       my $degree = 0;
@@ -263,7 +272,9 @@ package main;
   	  $ktype = "target";
         }
       }
+
       # Exporting the results
+      &RSAT::message::TimeWarn("Exporting the results") if ($main::verbose >= 2);
       my @values = ($node);
       if ($return_fields{'degree'} && $directed) {
         push @values, $in_deg;
@@ -273,17 +284,18 @@ package main;
       } elsif ($return_fields{'degree'} && !$directed) {
         push @values, $degree;
       }
+
       if ($return_fields{'closeness'}) {
         my $closeness = $closeness_table{$node} || "NA";
         push @values, $closeness
-        
-      } 
+      }
+
       if ($return_fields{'betweenness'}) {
         my $betweenness = $betweeness_table{$node} || "NA";
         push @values, $betweenness;
       }
       print $out (join "\t", @values);
-      print $out "\n";      
+      print $out "\n";
     }
     ################################################################
     ## Finish verbose
