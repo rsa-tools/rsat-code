@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.121 2008/05/08 10:18:26 morgane Exp $
+# $Id: matrix-scan,v 1.122 2008/06/16 09:15:08 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -418,7 +418,6 @@ package main;
 			      p_score=>1,  ## score as defenined in Bailey 2003
 			      bg_residues=>1, ## composition is atgc of the background model (useful for bg_window)
 			      weight_limits=>1, ## composition is atgc of the background model (useful for bg_window)
-			      
 			      crer=>1, ## Cis Regulatory element Enriched Region => CRER)
 
 			      distrib=>1, ## Dataset-wise distribution of scores
@@ -446,9 +445,9 @@ package main;
   local $die_on_error = 1;
   local $job_prefix = "matrix-scan";
   local $batchmode = 0;
-  
+
   &ReadArguments();
-    
+
   ################################################################
   #### check argument values
   &RSAT::error::FatalError("You must specify the method for background estimation (an option among -bgfile, -bginput, -window)") unless ($bg_method);
@@ -457,14 +456,14 @@ package main;
   #################################################################
   ## Batch option
   $batch=1 if ($cluster != 0);
-  
+
   if ($batch) {
   		local @temp_fasta_files;
   		local @temp_output_files;
-  		
+
 		### open output stream
  		$main::out = &OpenOutputFile($main::outfile{output});
-  		
+
   		&Verbose() if ($main::verbose);
   		&runInBatch();
   
@@ -571,7 +570,6 @@ package main;
     $return_fields{crer} = 1;
   }
 
-   
   ## Background distribution is required for the distrib probabilities
   if ($return_fields{occ_proba}) {
     $return_fields{distrib} = 1;
@@ -619,7 +617,6 @@ package main;
       $calc_fields{pval} = 1;
       $calc_fields{p_score} = 1;
   }
-  
 
   if ($return_fields{distrib}) {
         $calc_fields{pval} = 1;
@@ -848,7 +845,6 @@ package main;
 
 	push @matrices, $matrix;
 	$matrix_sizes{$matrix->get_attribute("name")} = $matrix->get_attribute("ncol");
-	
 	&RSAT::message::TimeWarn("Read matrix", 
 				 scalar(@matrices), 
 				 $matrix->get_attribute("name"),
@@ -857,7 +853,7 @@ package main;
       }
     }
   }
-  
+
   ## get shortest matrix size
   my @sorted_array = sort {$a <=> $b} (values(%matrix_sizes));
   local $shortest_matrix_size;
@@ -870,7 +866,7 @@ package main;
   	$shortest_matrix_size = shift (@sorted_array);
   	$longest_matrix_size = pop (@sorted_array);
   }
-  
+
   ################################################################
   ## Calculate th pval distribution
   if (($calc_fields{pval})&&($bg_method ne "window")) {
@@ -2107,23 +2103,33 @@ priors, except for the -window option where equipseudo is default.
 	} elsif ($arg eq "-equi_pseudo") {
 	    $main::equi_pseudo = 1;
 
-	## Origin
+	## Pseudo-frequency for the bacground model
+
 =pod
 
 
 =item B<-bg_pseudo #>
 
-Pseudo frequency for the background models. Value must be a real
+Pseudo frequency for the background model. Value must be a real
 between 0 and 1.
 
 If this option is not specified, the pseudo-frequency value depends on
 the background calculation.
 
-For -bginput and -window, the pseudo frequency is automatically calculated with the length (L) of the sequence following this formula : 
-square-root of L divided by L+squareroot of L
+For -bginput and -window, the pseudo frequency is automatically
+calculated from the length (L) of the sequence following this formula:
 
-For -bgfile, default value is 0.01. If the training sequence length (L) is known, the value can be set by -bg_pseudo option to
-square-root of L divided by L+squareroot of L.
+  sqrt(L)/(L+sqrt(L))
+
+For -bgfile, default value is 0.01. 
+
+In other cases, if the length (L) of the training sequence is known
+(e.g. all promoters for the considered organism), the value can be set
+manually by using the option -bg_pseudo. In such case, the background
+pseudo-frequency might be set, as suggested by Thijs et al., to the
+following value:
+
+  sqrt(L)/(L+sqrt(L))
 
 
 =cut
@@ -2133,6 +2139,7 @@ square-root of L divided by L+squareroot of L.
 					  "Invalid format for bg_pseudo, should be a Real number between 0 and 1."))
 		unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
 		$main::bg_pseudo_user_specified = 1;
+
 =pod
 
 =item B<-origin pos>
@@ -3346,7 +3353,7 @@ sub PrintScoreDistrib {
 		   "occ_Pval",
 		   "occ_Eval",
 		   "occ_sig",
-		   "rank",
+		   "occ_sig_rank",
 		  );
   }
   print $out "#", join  ("\t", @header), "\n";
@@ -3363,12 +3370,11 @@ sub PrintScoreDistrib {
       } keys %{$score_distrib->{$matrix_name}};
       &RSAT::message::Info("Sorting distribution by occ_pval") if ($main::verbose >= 4);
     }
-      
+
     #	@sorted_scores = sort {$a <=> $b} keys(%{$pval{$matrix}});
-      
     my $occ_sig_rank = 0;
     foreach my $score (@sorted_scores) {
-	
+
       ## Calculate occ_sig_rank and check thresholds on occ_sig_rank
       $occ_sig_rank++;
       if ((defined($lth{occ_sig_rank})) && ($occ_sig_rank < $lth{occ_sig_rank})) {
@@ -3379,7 +3385,6 @@ sub PrintScoreDistrib {
 	delete($score_distrib->{$matrix_name}->{$score});
 	next;
       }
-	
       my $occ = $score_distrib->{$matrix_name}->{$score}->{occ};
       my $occ_cum = $score_distrib->{$matrix_name}->{$score}->{occ_cum};
       my $inv_cum = $null;
