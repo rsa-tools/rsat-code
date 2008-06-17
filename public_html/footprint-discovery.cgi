@@ -118,7 +118,9 @@ if ($query->param('leaders')) {
 }
 
 ## Dyad filter
-if (!$query->param('dyads_filter')) {
+if ($query->param('dyads_filter')) {
+  $parameters .= " -filter";
+} else {
   $parameters .= " -no_filter";
 }
 
