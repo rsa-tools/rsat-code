@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.26 2007/12/26 03:02:08 jvanheld Exp $
+# $Id: random-graph,v 1.27 2008/06/17 11:57:42 rsat Exp $
 #
 ############################################################
 
@@ -32,7 +32,7 @@ random-graph [-node #] [-edge #] [-o outputfile] [-n #] [-self] [-duplicated] [-
 
 =head1 INPUT FORMAT
 
-A graph (in TAB or GML format) to be mixed or whose nodes have to be used to create a random graph from scratch.
+A graph (in TAB or GML format) to be shuffled or whose nodes have to be used to create a random graph from scratch.
 
 A list of nodes (-nodefile) may also be given as input file.
 
@@ -279,7 +279,7 @@ package main;
         my $weights_ref = \@weights;
         $rdm = $graph->create_random_graph($nodes_ref, $req_nodes, $req_edges, $self, $duplicated, $directed, $max_degree, $single, $mean, $sd, $normal, $col_conservation, $weights_ref, $source_nodes_ref, $target_nodes_ref);
       } elsif ($random_type eq 'node_degree') {
-        $rdm = $graph->randomize($self, $duplicated, $directed,$iter);
+        $rdm = $graph->randomize($self, $duplicated, $directed, $iter);
       } elsif ($random_type eq 'node_degree_distrib') {
         $rdm = $graph->random_graph_degree_distrib();
       }
@@ -425,7 +425,7 @@ From scratch, builds a graph totally at random. You may specify the nodes names 
 
 ER (Erdos-Renyii randomization), corresponds to the randomization of a input graph, keeping the nodes and the number of edges but changing its characteristics (node degree, clustering coefficient, ...). If you specify a weight column for the input graph, the weights of the output graph will be computed according to these values following the normal distribution (considering the weight distribution of the original graph). If nor the weight column is specified nor the wished mean and standard deviation of the weights  of the edges of the output graph, no weight will be added.
 
-With the node_degree randomization type, each node will keep the same degree that in the input graph (edge randomization).
+With the node_degree randomization type, each node will keep the same degree that in the input graph (edge randomization). Shuffling the edges in a graph often create duplicate edges, this is why re-shuffles the duplicated edges a given number of times. This number of time can be specified with the -iter option. So even if the -duplicate option is not specified, there might be some remaining duplicated edges but this number is minimized by random-graph.
 
 With the node_degree_distrib randomization type, the global distribution of node degree will remain the same as in the input graph but the deree of each individual will be changed.
 
@@ -506,19 +506,19 @@ Number of requested edges.
 	    ##  number of nodes
 =pod
 
-
 =item B<-nodefile #>
-
+ 
 Specification of a file containing node names. This file must be in the tab-delimited format.
 The first word of each line will be considered as a name
+
 =cut
 	} elsif ($arg eq "-nodefile") {
           $main::infile{nodefile} = shift(@arguments);
-          
-	    ## File containing nodes name
+          ## File containing nodes name
+	   
 =pod
 
-.=item B<-nodes #>
+=item B<-nodes #>
 
 Number of requested nodes
 
@@ -558,9 +558,10 @@ This argument can only be used with the scratch and ER randomization type and mu
 	    }   
 
 =pod
+
 =item B<-iter #>
 
-Number of iteration for the randomization procedure (default = 300).
+Number of iterations for the randomization procedure (default = 300).
 This option can only be used with the node degree randomisation type.
 
 =cut
