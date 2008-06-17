@@ -318,7 +318,7 @@ sub randomize {
         ## last shuffling, a  60d of the number of the remaining arcs to shuffle ((scalar(@arcs_to_shuffle))/60))
         ## are removed from the already shuffled arcs (@rdm_graph_array) and added to the 
         ## arcs that need to be shuffled again 
-        ## the arcs are removed from the %seen hash
+        ## these arcs are also removed from the %seen hash
         $non_decreasing_count++;
         if ($non_decreasing_count >= 20 && $val < scalar(@rdm_graph_array)) {
           my @to_remove = @rdm_graph_array[0..$val-1];
