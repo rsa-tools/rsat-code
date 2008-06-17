@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.35 2008/06/17 22:40:19 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.36 2008/06/17 22:41:48 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -101,7 +101,7 @@ print <<EndText;
     <P>
 
 <p><font size=2><font color=red><blink>WARNING</blink></font> <font
-color="blue">For reasons of maintenance, the RSAT and NeAT servers
+color="blue">For reasons of maintenance, the RSAT and NeAT servers in Brussels (Belgium)
 will be down during a few hours on monday June 23. The RSAT mirrors in
 other countries will still be active (see the links below). </font></font></p>
 
