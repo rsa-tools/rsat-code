@@ -42,6 +42,7 @@ sub PrintOrthoSelectionSection {
 			       Bacillus_subtilis
 			       Brucella_melitensis
 			       Escherichia_coli_K12
+			       Rhizobium_etli_CFN_42
 			       Saccharomyces_cerevisiae
 			       Salmonella_typhimurium_LT2
 			       Salmonella_typhi
