@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.13 2008/06/18 16:18:39 jvanheld Exp $
+# $Id: footprint-scan,v 1.14 2008/06/18 22:32:55 jvanheld Exp $
 #
 ############################################################
 
@@ -58,7 +58,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -99,6 +99,7 @@ package main;
   local $occ_sig_opt = "";
   local $occ_sig_graph_opt = "";
   local $scan_opt = "";
+  local $map_opt = "";
 
   ## Supported-tasks adde to those of footprint.lib.pl
   $supported_task{occ_sig} = 1;
@@ -540,6 +541,30 @@ quotes, and can thus not contain any quote.
     } elsif ($arg eq "-scan_opt") {
       my $new_scan_opt = shift(@arguments);
       $scan_opt .= " ".$new_scan_opt;
+
+=pod
+
+=item B<-map_opt>
+
+Additional options passed to feature-map for feature-map drawing.
+
+Examples:
+
+Change the thickness of the maps
+   -map_opt '-mapthick 12'
+
+Write the weight score above each site (also activate the auto
+adjustment of map thickness to ensure there is enough space for
+drawing the labels).
+   -map_opt '-label score -mapthick auto'
+
+Note: the argument passed to matrix-scan is delimited by single
+quotes, and can thus not contain any quote.
+
+=cut
+    } elsif ($arg eq "-map_opt") {
+      my $new_map_opt = shift(@arguments);
+      $map_opt .= " ".$new_map_opt;
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
