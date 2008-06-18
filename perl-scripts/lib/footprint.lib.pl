@@ -712,13 +712,13 @@ sub OrthoScan {
   return(0) unless ($task{scan});
   &RSAT::message::TimeWarn("Scannig sequences to detect sites", $outfile{sites}) if ($main::verbose >= 1);
   &CheckDependency("scan", "seq");
-  my $scan_cmd = "matrix-scan";
-  $scan_cmd .= $ms_parameters;
-  $scan_cmd .= " -return limits,sites,rank";
-  $scan_cmd .= " -i ".$outfile{seq};
-  $scan_cmd .= " -o ".$outfile{sites};
-  $scan_cmd .= " ".$scan_opt;
-  &one_command($scan_cmd);
+  my $cmd = "matrix-scan";
+  $cmd .= $ms_parameters;
+  $cmd .= " -return limits,sites,rank";
+  $cmd .= " -i ".$outfile{seq};
+  $cmd .= " -o ".$outfile{sites};
+  $cmd .= " ".$scan_opt;
+  &one_command($cmd);
 }
 
 ################################################################
@@ -730,10 +730,11 @@ sub OrthoMap {
   &CheckDependency("map", "sites");
   my $cmd = "feature-map -i ".$outfile{sites};
   $cmd .= " -scalebar -legend";
-  $cmd .= " -xsize 800 -scorethick";
+  $cmd .= " -xsize 800 -scorethick -minscore 0";
   $cmd .= " -title 'matrix hits in ".$taxon." promoters'";
   $cmd .= " -format ".$map_format;
   $cmd .= " -o ".$outfile{map};
+  $cmd .= " ".$map_opt;
   &one_command($cmd);
 }
 
