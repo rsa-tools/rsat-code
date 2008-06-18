@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.11 2008/06/16 21:30:00 jvanheld Exp $
+# $Id: footprint-scan,v 1.12 2008/06/18 15:50:20 jvanheld Exp $
 #
 ############################################################
 
@@ -58,7 +58,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -232,14 +232,25 @@ package main;
 	}
 
 	## Compute a HTML link
-	my $sig_file = $occ_sig_file{$gene};
-	$sig_file =~ s|${syn_dir}/||g;
-	my $link = join("", "<a href='", $sig_file, "'>[sig]</a>");
-#	&RSAT::message::Debug("SYNTHESIS DIR", $syn_dir, $sig_file, $link) if ($main::verbose >= 10);
+	my $links = "";
+	if (-e $occ_sig_file{$gene}) {
+	  my $file = $occ_sig_file{$gene}; $file =~ s|${syn_dir}/||g;
+	  $links .= join("", "<a href='", $file, "'>[sig]</a>");
+	}
+	if (-e $occ_sig_graph_file{$gene}) {
+	  my $file = $occ_sig_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
+	  $links .= join("", " <a href='", $file, "'>[sigplot]</a>");
+	}
+	if (-e $occ_freq_graph_file{$gene}) {
+	  my $file = $occ_freq_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
+	  $links .= join("", " <a href='", $file, "'>[freqplot]</a>");
+	}
+
+#	&RSAT::message::Debug("SYNTHESIS DIR", $syn_dir, $sig_file, $links) if ($main::verbose >= 10);
 
 
 	## Print the table
-	print $syn join("\t", $gene, $top_sig_row{$gene}, $g, $link), "\n";
+	print $syn join("\t", $gene, $top_sig_row{$gene}, $g, $links), "\n";
       }
 
       ## Generate the HTML table

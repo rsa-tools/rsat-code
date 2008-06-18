@@ -689,6 +689,8 @@ sub GetTopSig {
   if ($top_sig_row) {
     my @fields = split "\t", $top_sig_row;
     $occ_sig_file{$current_gene} = $outfile{occ_sig};
+    $occ_freq_graph_file{$current_gene} = $outfile{occ_freq_graph};
+    $occ_sig_graph_file{$current_gene} = $outfile{occ_sig_graph};
     $top_sig{$current_gene} = $fields[10];;
     $top_score{$current_gene} = $fields[1];
     $top_sig_row{$current_gene} = join ("\t", @fields[0..10]);
