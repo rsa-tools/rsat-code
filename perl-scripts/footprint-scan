@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.12 2008/06/18 15:50:20 jvanheld Exp $
+# $Id: footprint-scan,v 1.13 2008/06/18 16:18:39 jvanheld Exp $
 #
 ############################################################
 
@@ -58,7 +58,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -233,17 +233,24 @@ package main;
 
 	## Compute a HTML link
 	my $links = "";
-	if (-e $occ_sig_file{$gene}) {
+	if ((defined($occ_sig_file{$gene})) && (-e $occ_sig_file{$gene})) {
 	  my $file = $occ_sig_file{$gene}; $file =~ s|${syn_dir}/||g;
-	  $links .= join("", "<a href='", $file, "'>[sig]</a>");
+	  $links .= join("", " <a href='", $file, "'>[sig]</a>");
 	}
-	if (-e $occ_sig_graph_file{$gene}) {
+	if ((defined($occ_sig_graph_file{$gene})) && (-e $occ_sig_graph_file{$gene})) {
+#	if (-e $occ_sig_graph_file{$gene}) {
 	  my $file = $occ_sig_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
 	  $links .= join("", " <a href='", $file, "'>[sigplot]</a>");
 	}
-	if (-e $occ_freq_graph_file{$gene}) {
+	if ((defined($occ_freq_graph_file{$gene})) && (-e $occ_freq_graph_file{$gene})) {
+#	if (-e $occ_freq_graph_file{$gene}) {
 	  my $file = $occ_freq_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
 	  $links .= join("", " <a href='", $file, "'>[freqplot]</a>");
+	}
+	if ((defined($map_file{$gene})) && (-e $map_file{$gene})) {
+#	if (-e $map_file{$gene}) {
+	  my $file = $map_file{$gene}; $file =~ s|${syn_dir}/||g;
+	  $links .= join("", " <a href='", $file, "'>[map]</a>");
 	}
 
 #	&RSAT::message::Debug("SYNTHESIS DIR", $syn_dir, $sig_file, $links) if ($main::verbose >= 10);
