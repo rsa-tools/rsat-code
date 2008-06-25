@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.36 2008/06/17 22:41:48 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.37 2008/06/25 12:54:41 rsat Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -99,11 +99,6 @@ print <<EndText;
     <tr >
     <td>
     <P>
-
-<p><font size=2><font color=red><blink>WARNING</blink></font> <font
-color="blue">For reasons of maintenance, the RSAT and NeAT servers in Brussels (Belgium)
-will be down during a few hours on monday June 23. The RSAT mirrors in
-other countries will still be active (see the links below). </font></font></p>
 
     Welcome to <b>Regulatory Sequence Analysis Tools</b>
     (<B>RSAT</B>). This web site provides a series of modular computer
