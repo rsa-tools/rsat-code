@@ -152,7 +152,7 @@
       $soap_error = 0;
     } catch (Exception $soap_exception) {
       echo ("<pre>");
-      echo "Error : \n",  $soap_exception->getMessage(), "\n";
+      echo "Error : \n\t",  $soap_exception->getMessage(), "\n";
       echo ("</pre>");
       $soap_error = 1;
     }  
