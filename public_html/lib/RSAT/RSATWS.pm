@@ -2912,13 +2912,14 @@ sub convert_graph {
     system $command;
     my $result = `cat $tmp_outfile`;
     my $stderr = `$command 2>&1 1>/dev/null`;
+
     if ($stderr) {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
 
     }
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"convert-graph",output_choice=>$output_choice);
-
+    
     if ($output_choice eq 'server') {
 	return SOAP::Data->name('response' => {'command' => $command, 
 					       'server' => $tmp_outfile});
@@ -2926,6 +2927,9 @@ sub convert_graph {
 	return SOAP::Data->name('response' => {'command' => $command,
 					       'client' => $result});
     } elsif ($output_choice eq 'both') {
+          open TRUC, ">/home/rsat/rsa-tools/public_html/tmp/truc.brol";
+    print TRUC "$result";
+    close TRUC;  
 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
 					       'command' => $command, 
 					       'client' => $result});
