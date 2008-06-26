@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.23 2008/05/14 01:53:30 jvanheld Exp $
+# $Id: compare-matrices,v 1.24 2008/06/26 23:17:22 jvanheld Exp $
 #
 ############################################################
 
@@ -189,12 +189,18 @@ aligned cells of the respective matrices.
  v2 = 1/n * SUM{i=1->r} SUM{j=1->w} (f2{i,j} - f2m)^2
  cor = cov/ sqrt(v1*v2)
 
-=head2 Corrected correlation (cor_Wr)
+=head2 Normalized correlation (Ncor)
 
 This is the coefficient of correlation, corrected for the relative
 alignment length (I<Wr>).
 
- cor_Wr = cor * Wr
+ Ncor = cor * Wr
+
+This correction is particularly important to avoid selecting spurious
+alignments between short fragments of the flanks of the matrices
+(e.g. single-column alignments). For this reasons, I<Ncor> generall
+gives a better estimation of motif similarity than I<cor>, and we
+recommend it as similarity score.
 
 =head1 REFERENCES
 
@@ -237,7 +243,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -276,7 +282,7 @@ package main;
 			      dKL
 			      cov
 			      cor
-			      cor_Wr
+			      Ncor
 			      rank
 			     );
   $supported_thresholds = join ",", @supported_thresholds;
@@ -397,7 +403,7 @@ package main;
   push (@header, "rsEucl") if ($return_field{rsEucl});
   push (@header, "dKL") if ($return_field{dKL});
   push (@header, "cov") if ($return_field{cov});
-  push (@header, "cor", "cor_Wr") if ($return_field{cor});
+  push (@header, "cor", "Ncor") if ($return_field{cor});
   push (@header, "consensus1", "consensus2") if ($return_field{consensus});
   push (@header, "rank") if ($return_field{rank});
 
@@ -421,7 +427,7 @@ package main;
       $description{dKL} = "Kullback-Leibler distance";
       $description{cov} = "Covariance";
       $description{cor} = "Coefficient of correlation";
-      $description{cor_Wr} = "Aligned fraction corrected correlation. cor_Wr = cor * Wr";
+      $description{Ncor} = "Aligned fraction corrected correlation. Ncor = cor * Wr";
       $description{consensus1} = "IUPAC consensus of matrix 1";
       $description{consensus2} = "IUPAC consensus of matrix 2";
       $description{rank} = "Rank fo the alignment for the current pair of matrices";
@@ -474,7 +480,7 @@ package main;
       ## Prepare output variables
       my %cov = (); ## Covariances as a function of the offset
       my %cor = (); ## Correlations
-      my %cor_Wr = (); ## Correlations
+      my %Ncor = (); ## Correlations
       my %dEucl = (); ## Euclidian distances
       my %rsEucl = (); ## Euclidian distances
       my %dKL = (); ## Kullback-Leibler distances
@@ -517,7 +523,7 @@ package main;
 	my $dKL = 0;
 	my $cov = 0;
 	my $cor = 0;
-	my $cor_Wr = 0;
+	my $Ncor = 0;
 	my $sum_f1 = 0;
 	my $sum_f2 = 0;
 	my $sum_f1f2 = 0;
@@ -605,7 +611,7 @@ package main;
 	  } else {
 	    $cor = $cov/sqrt($v1*$v2);
 	  }
-	  $cor_Wr = $cor * $Wr;
+	  $Ncor = $cor * $Wr;
 #  	  &RSAT::message::Debug("n=".$n,
 # 				"sum_f1=".$sum_f1,
 # 				"sum_f2=".$sum_f2,
@@ -615,17 +621,17 @@ package main;
 # 				"v2=".$v2,
 # 				"cov=".$cov,
 # 				"cor=".$cor,
-# 				"cor_Wr=".$cor_Wr,
+# 				"Ncor=".$Ncor,
 # 			       ) if ($main::verbose >= 10);
 	}
 	next unless (&CheckThresholds("cov", $cov));
 	next unless (&CheckThresholds("cor", $cor));
-	next unless (&CheckThresholds("cor_Wr", $cor_Wr));
+	next unless (&CheckThresholds("Ncor", $Ncor));
 
 	## Index values for sorting
 	$cov{$offset} = $cov;
 	$cor{$offset} = $cor;
-	$cor_Wr{$offset} = $cor_Wr;
+	$Ncor{$offset} = $Ncor;
 
 	## Generate the output line
 #	my @out_fields = ($compa,$matrix1->get_attribute("name"), $matrix2->get_attribute("name"));
@@ -639,7 +645,7 @@ package main;
 	push (@out_fields, sprintf("%.4f", $cov)) if ($return_field{cov});
 	if ($return_field{cor}) {
 	  push (@out_fields, sprintf("%.4f", $cor));
-	  push (@out_fields, sprintf("%.4f", $cor_Wr));
+	  push (@out_fields, sprintf("%.4f", $Ncor));
 	}
 	push (@out_fields,
 	      $consensus1,
@@ -670,6 +676,10 @@ package main;
       } elsif ($sort_field eq "cor") {
 	@sorted_offset = sort {$cor{$b} <=> $cor{$a}} @output_offset;
 
+	## Correlation is sorted in descending order
+      } elsif ($sort_field eq "Ncor") {
+	@sorted_offset = sort {$Ncor{$b} <=> $Ncor{$a}} @output_offset;
+
       } else {
 	@sorted_offset = @output_offset;
       }
@@ -683,7 +693,7 @@ package main;
 	  $rank{$offset} = $rank;
 	}
 	if (defined($uth{rank})) {
-	  @sorted_offset = @sorted_offset[1..$uth{rank}];
+	  @sorted_offset = @sorted_offset[0..($uth{rank}-1)];
 	}
 	if (defined($lth{rank})) {
 	  @sorted_offset = @sorted_offset[($lth{rank}-1)..$#sorted_offset];
@@ -894,7 +904,7 @@ allows to use the command within a pipe.
 
 Field to sort the results.
 
-Supported: dEucl, cor, cov
+Supported: dEucl, rsEucl, dKL, cov, cor, Ncor.
 
 =cut
       } elsif ($arg eq "-sort") {
