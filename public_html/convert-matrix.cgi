@@ -48,14 +48,18 @@ $parameters .= " -i $matrix_file";
 
 
 ################################################################
-## pseudo-counts and weights are mutually exclusive
+## Compute reverse complement
+if ($query->param('rc')) {
+  $parameters .= " -rc";
+}
+
+################################################################
+## Pseudo-counts
 if (&IsReal($query->param('pseudo_counts'))) {
     $parameters .= " -pseudo ".$query->param('pseudo_counts');
 } else {
     &FatalError("Pseudo-count should be a real number");
 }
-
- 
 if ($query->param('pseudo_distribution') eq "equi_pseudo") {
     $parameters .= " -equi_pseudo ";
 }
@@ -73,7 +77,6 @@ if (&IsInteger($query->param('decimals'))) {
 if (&IsInteger($query->param('perm'))) {
     $parameters .= " -perm ".$query->param('perm');
 }
-  
 
 
 ################################################################
