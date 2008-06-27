@@ -42,6 +42,7 @@ $default{pseudo_weight}=1;
 $default{margins}="checked";
 $default{max_profile}=10;
 $default{decimals}=1;
+$default{rc} = "";
 $default{perm} = 0;
 $default{pseudo_prior} = "pseudo_prior";
 $checked{$default{pseudo_prior}} = "CHECKED";
@@ -146,6 +147,13 @@ print $query->popup_menu(-name=>'decimals',
 			 -Values=>['0',
 				   '1','2'],
 			 -default=>$default{decimals});
+
+#### Compute reverse complement
+print "<BR>\n";
+print $query->checkbox(-name=>"rc",
+		       -checked=>$default{rc},
+		       -label=>'');
+print "<B><A HREF='help.convert-matrix.html#rc'>Compute reverse complement</A></b>\n";
 
 #### permutations
 print "<BR>\n";
