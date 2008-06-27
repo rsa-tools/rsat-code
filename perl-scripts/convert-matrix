@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.64 2008/05/21 00:43:59 jvanheld Exp $
+# $Id: convert-matrix,v 1.65 2008/06/27 00:21:02 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -227,6 +227,9 @@ if (scalar(@matrix_files >= 1)) {
 ################################################################
 ## Process each matrix
 foreach my $matrix (@matrices) {
+
+    $matrix->reverse_complement() if ($rc);
+
     $matrix->set_parameter("pseudo", $pseudo_weight);
     $matrix->set_attribute("equi_pseudo", $equi_pseudo);
     #  $matrix->push_attribute("parameters", "pseudo");
@@ -492,6 +495,9 @@ OPTIONS
 	-max_profile
 		Maximal width of the profile histogram (units = number
 		of characters).
+
+	-rc
+		Convert the matrix to its reverse complement.
 
 	-logo_format
 		Format for logo image file. supported : $supported_logo_formats (default:png).
@@ -778,6 +784,7 @@ convert-matrix options
 -decimals	number of decimals digits to print for real matrices
 -perm		number of permuted matrices to return.
 -max_profile	Maximal width of the profile histogram 
+-rc		Convert the matrix to its reverse complement.
 -logo_format	logo image format. Supported $supported_logo_formats 
 -logo_dir	specifies a directory to output the logo files
 -logo_opt	options to be passed to seqlogo
@@ -941,6 +948,13 @@ sub ReadArguments {
 		&RSAT::error::FatalError("Invalid max_profile $max_profile. Must be a natural value");
 	    }
 
+	    ## Compute reverse complement
+
+	    ## Equiprobable distribution of the pseudo-weight
+	} elsif ($ARGV[$a] eq "-rc") {
+	    $rc = 1;
+
+	    ## Export logos
 	} elsif ($ARGV[$a] eq "-logo_format") {
 	    $logo_formats = $ARGV[$a+1];
 	    push @logo_formats, split(",", $logo_formats);
