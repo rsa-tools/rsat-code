@@ -2997,6 +2997,58 @@ sub seq_from_matrix {
 }
 
 
+=pod
+
+=item B<reverse_complement>
+
+Compute the reverse complement of the PSSM
+
+Usage: $matrix->reverse_complment();
+
+=cut
+sub reverse_complement {
+  my ($self) = @_;
+  my @ori_matrix = $self->getMatrix();
+  my @rc_matrix = ();
+  my $nrow = $self->nrow();
+  my $ncol = $self->ncol();
+  my @alphabet = $self->getAlphabet();
+
+  ## Index rows by residue
+  my %row = ();
+  foreach my $r (0..$#alphabet) {
+    $row{lc($alphabet[$r])} = $r;
+  }
+
+  ## Reverse complement residues
+  my %rc = ('a'=>'t',
+	   'c'=>'g',
+	   'g'=>'c',
+	   't'=>'a');
+
+  ## reverse each row (residue)
+  foreach my $r (0..($nrow-1)) {
+    my $res = lc($alphabet[$r]);
+    my $rc = $rc{$res};
+    my $rc_row = $row{$rc};
+    foreach my $c (0..($ncol-1)) {
+      my $rc_col= $ncol-1-$c;
+      my $occ = $ori_matrix[$c][$r];
+      $rc_matrix[$rc_col][$rc_row] = $ori_matrix[$c][$r];
+    }
+    $self->setMatrix ($nrow, $ncol, @rc_matrix);
+  }
+
+  ## Update the dependent tables
+  if (($self->get_attribute("frequencies_specified")) || ($self->get_attribute("crudeFrequencies_specified"))) {
+    $self->calcFrequencies();
+  }
+  $self->calcWeights() if ($self->get_attribute("weights_specified"));
+  $self->calcInformation() if ($self->get_attribute("information_specified"));
+  $self->calcConsensus() if ($self->get_attribute("consensus_specified"));
+}
+
+
 return 1;
 
 
