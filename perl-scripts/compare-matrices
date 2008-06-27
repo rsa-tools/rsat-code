@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.24 2008/06/26 23:17:22 jvanheld Exp $
+# $Id: compare-matrices,v 1.25 2008/06/27 05:38:07 jvanheld Exp $
 #
 ############################################################
 
@@ -243,7 +243,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -301,7 +301,7 @@ package main;
   $supported_input_formats = join ",", sort keys %supported_input_format;
   local $input_format1 = "";
   local $input_format2 = "";
-
+  local $strands = "D";
 
   ################################################################
   ## Read argument values
@@ -360,12 +360,32 @@ package main;
   } elsif ($infile{mlist1}){
     @matrices1 = &RSAT::MatrixReader::readMatrixFileList(&OpenInputFile($infile{mlist1}), $input_format1);
   }
+
   if ($infile{file2}){
     @matrices2 = &RSAT::MatrixReader::readFromFile($infile{file2}, $input_format2);
     &RSAT::message::TimeWarn(scalar(@matrices2), "Matrices loaded from file 2", $infile{file2})
       if ($main::verbose >= 2);
   } elsif($infile{mlist2}){
     @matrices2 = &RSAT::MatrixReader::readMatrixFileList(&OpenInputFile($infile{mlist2}), $input_format2);
+  }
+
+  ################################################################
+  ## Reverse complements
+  if ($strands =~ /R/) {
+    &RSAT::message::Info("Computing reverse complement for the matrices of the first file.") if ($main::verbose >= 0);
+    foreach my $matrix (@matrices2) {
+      $matrix->reverse_complement();
+      $matrix->set_attribute("direction", "R");
+    }
+    if ($strands eq "DR") {
+      if ($infile{file2}){
+	push @matrices2, &RSAT::MatrixReader::readFromFile($infile{file2}, $input_format2);
+	&RSAT::message::TimeWarn(scalar(@matrices2), "Matrices loaded from file 2", $infile{file2})
+	  if ($main::verbose >= 2);
+      } elsif ($infile{mlist2}){
+	push @matrices2, &RSAT::MatrixReader::readMatrixFileList(&OpenInputFile($infile{mlist2}), $input_format2);
+      }
+    }
   }
 
   foreach my $matrix (@matrices1, @matrices2) {
@@ -470,7 +490,7 @@ package main;
       }
       my @crude_freq2 = $matrix2->getCrudeFrequencies();
 
-      ## Compute offsets for sliding one matrix along the othe one
+      ## Compute offsets for sliding one matrix along the other one
       my $offset_min = 1 - $ncol2;
 #      my $offset_max = &RSAT::stats::min($ncol1, $ncol2) -1;
       my $offset_max = $ncol1 - 1;
@@ -486,7 +506,7 @@ package main;
       my %dKL = (); ## Kullback-Leibler distances
       my %out_line = (); ## Output line for each offset value
       my @output_offset = (); ## Offsets passing the thresholds
-      my $direction = "D";
+      my $direction = $matrix2->get_attribute("direction") || "D";
 
       ## Slide matrix2 along matrix1
       foreach my $offset ($offset_min..$offset_max) {
@@ -896,6 +916,45 @@ allows to use the command within a pipe.
 =cut
       } elsif ($arg eq "-o") {
 	$main::outfile{output} = shift(@arguments);
+
+=pod
+
+=item B<-DR>
+
+Perform comparisons on both direct (D) and reverse complementary (R)
+matrices.
+
+=cut
+	} elsif ($arg eq "-DR") {
+	    $main::strands = "DR";
+
+=pod
+
+=item B<-R>
+
+Perform comparisons on the reverse complementary (R) "strand" only
+
+(all matrices of the second matrix file are converted to the reverse
+complementary matrix).
+
+This option is useful to detect reverse complementary palindromic
+motifs (e.g. motif with consensus tCAGswwsGTGa): the corresponding
+matrix is correlated to its own reverse complement.
+
+=cut
+	} elsif ($arg eq "-R") {
+	    $main::strands = "R";
+
+=pod
+
+=item B<-D>
+
+Perform comparisons on the direct (D) strand only.
+
+=cut
+	} elsif ($arg eq "-D") {
+	    $main::strands = "D";
+
 
 	## Sort field
 =pod
