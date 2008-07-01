@@ -855,14 +855,14 @@ sub CalcNeighbourLimits {
       }
       $neighb_left_size = &RSAT::stats::max(0, $left{$gene} - $neighb_left_limit -1);
 
-      if (($left_candidate) && ($left_candidate ne $null)) {
+      if (($left_candidate) && ($left_candidate ne $main::null)) {
 	$left_id = $left_candidate->get_attribute("id");
 	$left_geneid = $left_candidate->get_attribute("geneid");
 	$left_name = $left_candidate->get_attribute("name");
       } else {
-	$left_id = $null;
-	$left_geneid = $null;
-	$left_name = $null;
+	$left_id = $main::null;
+	$left_geneid = $main::null;
+	$left_name = $main::null;
       }
 #      &RSAT::message::Debug("Identified left neighbour", $rn,
 # 			    $left_id,
@@ -1022,14 +1022,14 @@ sub CalcNeighbourLimits {
       }
       $neighb_right_size = &RSAT::stats::max(0, $neighb_right_limit - $right{$gene} -1);
 
-      if (($right_candidate) && ($right_candidate ne $null)) {
+      if (($right_candidate) && ($right_candidate ne $main::null)) {
 	$right_id = $right_candidate->get_attribute("id");
 	$right_geneid = $right_candidate->get_attribute("geneid");
 	$right_name = $right_candidate->get_attribute("name");
       } else {
-	$right_id = $null;
-	$right_geneid = $null;
-	$right_name = $null;
+	$right_id = $main::null;
+	$right_geneid = $main::null;
+	$right_name = $main::null;
       }
 #      &RSAT::message::Debug("Identified right neighbour", $rn,
 # 			    $right_id,
