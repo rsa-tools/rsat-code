@@ -728,7 +728,7 @@ sub CalcNeighbourLimits {
       ## Find the first gene having a different GeneId as the current gene. 
       ## This is required when there are multiple transcripts per gene (e.g. alternative splicing)
       if (($gene_id) &&
-	  ($gene_id != $main::null)) {
+	  ($gene_id ne $main::null)) {
 	while (($ln >= 0) && ($gene_id eq $left_candidate->get_attribute("geneid"))) {
 #	  &RSAT::message::Debug("Skipping feature",$ln, $left_candidate->get_attribute("id"),
 #				"with same GeneId", $gene_id,
@@ -896,7 +896,7 @@ sub CalcNeighbourLimits {
       ## Find the first gene having a different GeneId as the current gene. 
       ## This is required when there are multiple transcripts per gene (e.g. alternative splicing)
       if (($gene_id) &&
-	  ($gene_id != $main::null)) {
+	  ($gene_id ne $main::null)) {
 	while (($rn <= $#left_sorted_genes) && ($gene_id eq $right_candidate->get_attribute("geneid"))) {
 #	  &RSAT::message::Debug("Skipping feature",$rn, $right_candidate->get_attribute("id"),
 #				"with same GeneId", $gene_id,
