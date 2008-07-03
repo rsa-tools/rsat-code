@@ -1666,8 +1666,73 @@ sub footprint_discovery_cmd {
     return $command;
 }
 
+##########
+sub infer_operon {
+    my ($self, $args_ref) = @_;
 
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
 
+  ## List of queries
+  my $query_ref = $args{"query"};
+  my $query = "";
+  if ($query_ref =~ /ARRAY/) {
+    my @query = @{$query_ref};
+    foreach $q (@query) {
+	$q =~s/\'//g;
+	$q =~s/\"//g;
+    }
+    $query = " -q '";
+    $query .= join "' -q '", @query;
+    $query .= "'";
+  } elsif ($query_ref) {
+    $query = " -q '";;
+    $query .= $query_ref;
+    $query .= "'";
+  }
+
+  my $command = "$SCRIPTS/infer-operon";
+
+    if ($args{verbosity}) {
+      $args{verbosity} =~ s/\'//g;
+      $args{verbosity} =~ s/\"//g;
+      $command .= " -v '".$args{verbosity}."'";
+    }
+
+  if ($args{organism}) {
+      $args{organism} =~ s/\'//g;
+      $args{organism} =~ s/\"//g;
+      $command .= " -org '".$args{organism}."'";
+  }
+  if ($query) {
+    $command .= $query;
+  }
+  if ($args{all} == 1) {
+    $command .= " -all";
+  }
+  if ($args{distance} =~ /\d/){
+      $args{distance} =~ s/\'//g;
+      $args{distance} =~ s/\"//g;
+    $command .= " -dist '".$args{distance}."'";
+  }
+  if ($args{return}) {
+      $args{return} =~ s/\'//g;
+      $args{return} =~ s/\"//g;
+      $command .= " -return '".$args{return}."'";
+  }
+  if ($args{"tmp_infile"}) {
+    $tmp_infile = $args{"tmp_infile"};
+    $tmp_infile =~ s/\'//g;
+    $tmp_infile =~ s/\"//g;
+    chomp $tmp_infile;
+    $command .= " -i '".$tmp_infile."'";
+  }
+
+    &run_WS_command($command, $output_choice, "infer-operon", ".tab");
+}
 
 ##########
 sub gene_info {
