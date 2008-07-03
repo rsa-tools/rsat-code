@@ -136,7 +136,7 @@ def mean(values):
 def var(values):
     m = mean(values)
     return sum( [(x-m)**2 for x in values] ) / float(len(values)-1)
-
+    #return sum( [(x-m)**2 for x in values] ) / float(len(values))
 
 def mean_var(values):
     """
