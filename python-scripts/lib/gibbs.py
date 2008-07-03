@@ -40,7 +40,7 @@ def wchoice(l, frequencies):
 # TRACE
 #
 ########################################
-cli.TRACE = 1
+#cli.TRACE = 0
 DIR = ''
 traceic = cli.Trace('ic')
 #trace2 = Trace('score')
@@ -381,7 +381,7 @@ def run_EM(motif, sites, max_iteration, score, EM):
 
 maxIC = 2.0
 
-T = 0.95
+#T = 0.95
 def run_gibbs(motif, sites, max_iteration, score, EM):
     global taboo, tabooCount, T, allsites, ICs, maxchoosen, maxIC
 

@@ -28,7 +28,7 @@ ARGUMENTS
 SEE ALSO
         random-sites
         implant-sites
-
+        
 '''
 import sys
 import os
@@ -54,7 +54,6 @@ def motif_generator(length, conservation):
             else:
                 shuffle(low)
                 probs = low
-
         else:
             conservation = float(conservation)
             probs = [conservation] + [(1-conservation)/3.0] * 3
@@ -93,7 +92,7 @@ if __name__ == '__main__':
 
     if options.help:
         doc =  globals()['__doc__'] % {'usage' : USAGE % PROG_NAME, 'version' : VERSION, 'progname' : PROG_NAME}
-        print doc
+        sys.stdout.write(doc)
         #pager(doc)
         sys.exit(0)
     if not options.length:
@@ -108,16 +107,6 @@ if __name__ == '__main__':
         except:
             parser.error('invalid conservation')
 
-
-
     main(options, args)
-
-
-
-
-
-
-
-
 
 

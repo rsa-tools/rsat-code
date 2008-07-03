@@ -22,6 +22,19 @@ import re
 import dna
 
 
+TYPE = {
+'info-gibbs'    : '.info',
+'GAME'          : '.game',
+'MEME'          : '.meme',
+'AlignAce'      : '.alignace',
+'BioProspector' : '.bioprospector',
+'Gibbs'         : '.gibbs',
+'MotifSampler'  : '.motifsampler',
+'words'         : '.words',
+}
+
+EXT = dict([(TYPE[name], name) for name in TYPE])
+
 ########################################
 #                                      #
 # PARSERS
@@ -32,6 +45,11 @@ def info_gibbs(data):
     return [(p[0], p[1], int(p[2]), p[3]) for p in predicted_motif]
 
 
+def words(data):
+    predicted_motif = re.findall(r'([ACGT]+)', data)
+    return [(0, '+', 0, p) for p in predicted_motif]
+
+
 def GAME(data):
     predicted_motif = re.findall(r'>([\w\d]+)\s+([+-])(\d+)\n([ACGTacgt]+)', data)
     return [(p[0], p[1], int(p[2])-1, p[3]) for p in predicted_motif]
@@ -39,7 +57,10 @@ def GAME(data):
 
 def MEME(data):
     BLOKS = re.findall(r'^BL.+?$(.*?)^//$', data,  re.MULTILINE | re.DOTALL)
-    predicted_motif = re.findall(r'(\d+)\s+\(\s+(\d+)\)\s([ACGT]+)\s+(\d)', BLOKS[0])
+    if len(BLOKS) == 0:
+        return []
+
+    predicted_motif = re.findall(r'([\d\w]+)\s+\(\s+(\d+)\)\s([ACGT]+)\s+(\d)', BLOKS[0])
 
     motif = []
     for m in predicted_motif:
@@ -56,16 +77,20 @@ def MotifSampler(data):
     for motifstr in data.split('#'):
         if not motifstr.startswith('id'):
             continue
-        ic  = float(re.findall(r'ic: (\d+\.\d+)', motifstr)[0])
-        llr = float(re.findall(r'll: (\d+\.\d+)', motifstr)[0])
-        motif = re.findall(r'(\d+).*?(\d+).*([+-]).*site "([ACGT]+)"', motifstr)
+        try:
+            #ic  = float(re.findall(r'ic: (\d+\.\d+)', motifstr)[0])
+            llr = float(re.findall(r'll: (\d+\.\d+)', motifstr)[0])
+        except IndexError: #-inf case
+            continue
+            
+        motif = re.findall(r'([\d\w]+)\s+MotifSampler.*?(\d+).*([+-]).*site "([ACGT]+)"', motifstr)
 
         for i in range(len(motif)):
             site = list(motif[i])
             site[1], site[2] = site[2], site[1]
             site[2] = int(site[2])-1
             motif[i] = tuple(site)
-        motifs += [(ic, motif)]
+        motifs += [(llr, motif)]
 
     motifs.sort()
     if len(motifs) == 0:
@@ -79,10 +104,10 @@ def Gibbs(data):
     if len(MOTIF) == 0:
         return []
 
-    predicted_motif = re.findall(r'(\d+),\s+([12])\s+(\d+)\s+[acgt]*\s+([ACGT]+)', MOTIF[0])
+    predicted_motif = re.findall(r'(\d+),\s+(\d+)\s+(\d+)\s+[acgt]*\s+([ACGT]+).*?([FR])', MOTIF[0])
     motif = []
     for m in predicted_motif:
-        if m[1] == '1':
+        if m[4] == 'F':
             strand = '+'
         else:
             strand = '-'
@@ -93,6 +118,8 @@ def Gibbs(data):
 
 def AlignAce(data):
     MOTIF = re.findall(r'^Motif 1$(.*?)^MAP.+$', data,  re.MULTILINE | re.DOTALL)
+    if len(MOTIF) == 0:
+        return []
     predicted_motif = re.findall(r'([ACGT]+)\s+(\d+)\s+(\d+)\s+(\d+)', MOTIF[0])
 
     motif = []
@@ -109,7 +136,7 @@ def AlignAce(data):
 
 
 def BioProspector(data):
-    predicted_motif = re.findall(r'>(\d+)\s+len \d+\s+site\s+#1\s+([rf])\s+(\d+)\s+([ACGT]+)', data)
+    predicted_motif = re.findall(r'>([\d\w]+)\s+len \d+\s+site\s+#\d+\s+([rf])\s+(\d+)\s+([ACGT]+)', data)
     motif = []
     for m in predicted_motif:
         if m[1] == 'f':
@@ -126,10 +153,34 @@ def known_sites(data):
     return [(p[0], p[1], int(p[2]), p[3]) for p in known_motif]
 
 
+def parse_words(filename, format='auto'):
+    '''return list of predicted sites (words only)
+    optional format -- string BioProspector, GAME, MEME
+    '''
+    return [site[3] for site in parse(filename, format)]
+
+
+def parse(filename, format='auto'):
+    '''return list of predicted sites
+    optional format -- string BioProspector, GAME, MEME
+    '''
+    if format == 'auto':
+        format = EXT.get('.'+filename.split('.')[-1], '')
+
+    if format not in TYPE.keys():
+        sys.stderr.write('WARNING: unknonw file extension or unsupported format\n')
+        return []
+
+    format = format.replace('-', '_')    
+    converter = globals()[format]
+    data = open(filename).read()
+    predicted_motif = converter(data)
+    return predicted_motif
+
 
 ########################################
 #                                      #
-# Stats
+# STATS
 #                                      #
 ########################################
 def true_positive(known_motif, predicted_motif, distance=0):
@@ -169,13 +220,15 @@ def stats(knownfile, predictedfile, format, distance):
         PPV = 0.0
     else:
         PPV = TP / float(predicted)
-    Se = TP / float(real)
-    if PPV == 0 and Se == 0:
+    Sn = TP / float(real)
+    PC = TP / float(predicted + real - TP)
+
+    if PPV == 0 and Sn == 0:
         F = 0.0
     else:
-        F = 2 * PPV * Se / (PPV + Se)
+        F = 2 * PPV * Sn / (PPV + Sn)
 
-    R = {'real' : real, 'predicted' : predicted, 'TP' : TP, 'PPV' : PPV, 'Se' : Se, 'F': F}
+    R = {'real' : real, 'predicted' : predicted, 'TP' : TP, 'PPV' : PPV, 'Sn' : Sn, 'F': F, 'PC': PC}
     return R
 
 
