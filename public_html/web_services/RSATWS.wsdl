@@ -1152,6 +1152,69 @@ Default is 'both'.</xsd:documentation>
 	</xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="InferOperonRequest">
+	<xsd:sequence>
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
+		Default is 'both'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="organism" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="query" type="xsd:string" minOccurs="1" maxOccurs="unbounded">
+	    <xsd:annotation>
+	      <xsd:documentation>List of gene(s) for which you want to infer the operon.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Name of the file with query genes on the server. You need to supply either this parameter or the previous one (query).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="all" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Infer operons for all the genes of the query organism if value = 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="distance" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Distance threshold.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="return" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>List of fields to return.
+
+        Supported fields:
+        leader,trailer,operon,query,q_info,up_info,down_info
+
+        leader
+            Predicted operon leader.
+
+        trailer
+            Predicted operon trailer.
+
+        operon
+            Full composition of the operon. The names of member genes are
+            separated by a semi-column ";".
+
+        q_info
+            Detailed info on the query gene(s).
+
+        up_info
+            Detailed info on the upstream gene.
+
+        down_info
+            Detailed info on the downstream gene.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="GeneInfoRequest">
 	<xsd:sequence>
 	  <xsd:element name="output" type="xsd:string" minOccurs="0">
@@ -3067,6 +3130,26 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="InferOperonResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="GeneInfoResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3834,6 +3917,22 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
+      <xsd:element name="infer_operon">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:InferOperonRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="infer_operonResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:InferOperonResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
       <xsd:element name="gene_info">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4399,6 +4498,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:get_orthologsResponse"/>
   </message>
 
+  <message name="infer_operonRequest">
+    <part name="parameters" element="tns:infer_operon"/>
+  </message>
+
+  <message name="infer_operonResponse">
+    <part name="output" element="tns:infer_operonResponse"/>
+  </message>
+
   <message name="gene_infoRequest">
     <part name="parameters" element="tns:gene_info"/>
   </message>
@@ -4706,6 +4813,12 @@ The output graph will thus consist in the graph induced by all nodes of the firs
          <documentation>Get orthologuous genes.
          </documentation>
       </operation>
+      <operation name="infer_operon">
+         <input name="InferOperonRequest" message="tns:infer_operonRequest"/>
+         <output name="InferOperonResponse" message="tns:infer_operonResponse"/>
+         <documentation>Infer operon.
+         </documentation>
+      </operation>
       <operation name="gene_info">
          <input name="GeneInfoRequest" message="tns:gene_infoRequest"/>
          <output name="GeneInfoResponse" message="tns:gene_infoResponse"/>
@@ -4989,6 +5102,15 @@ This program supports a variety of background models (Bernoulli, Markov chains o
          </output>
       </operation>
       <operation name="get_orthologs">
+         <soap:operation soapAction=""/>
+         <input>
+             <soap:body use="literal" />
+         </input>
+         <output>
+             <soap:body use="literal" />
+         </output>
+      </operation>
+      <operation name="infer_operon">
          <soap:operation soapAction=""/>
          <input>
              <soap:body use="literal" />
