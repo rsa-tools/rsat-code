@@ -3,7 +3,7 @@
 dist
 
 :DESC:
-statistical toos
+statistical functions
 -Poisson
 -Binomial
 
