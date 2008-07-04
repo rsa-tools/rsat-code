@@ -432,7 +432,7 @@ Default is 'both'.</xsd:documentation>
 	<xsd:element name="background" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>Background model: Type of sequences used as background model for estimating expected oligonucleotide frequencies. 
-Supported: upstream, upstreamL, upstream-noorf, intergenic, input.</xsd:documentation>
+Supported: upstream, upstream-noorf, upstream-noorf-rm, intergenic, input.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
 	<xsd:element name="stats" type="xsd:string" minOccurs="0">
@@ -1858,25 +1858,77 @@ Default is 'both'.</xsd:documentation>
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="sequence_file" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+	  <xsd:element name="sequence" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
             <xsd:annotation>
-              <xsd:documentation>Sequence file - all the formats supported in RSAT can be used as input (default: fasta)</xsd:documentation>
+              <xsd:documentation>Sequence(s) to scan - all the formats supported in RSAT can be used as input (default: fasta)</xsd:documentation>
             </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="matrix_file" type="xsd:string" minOccurs="0">
+	<xsd:element name="tmp_sequence_infile" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>Name of the file with input sequence(s) on the server. You need to supply either this parameter or the previous one (sequence).</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	  <xsd:element name="matrix" type="xsd:string" minOccurs="0">
             <xsd:annotation>
-              <xsd:documentation>The matrix file is specified with the option "matrix_format" (see below) Default format: tab.</xsd:documentation>
+              <xsd:documentation>Matrix/ces to scan with. The matrix format is specified with the option "matrix_format" (see below) Default format: tab.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	<xsd:element name="tmp_matrix_infile" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>Name of the file with input matrix/ces on the server. You need to supply either this parameter or the previous one (matrix).</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	  <xsd:element name="sequence_format" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Supported fields: fasta (default), IG (Intelligenetics), WC (wconsensus), raw.</xsd:documentation>
             </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="matrix_format" type="xsd:string" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>Supported fields: tab, cb, consensus, gibbs, meme, assembly.</xsd:documentation>
             </xsd:annotation>
-	  </xsd:element> 
-	  <xsd:element name="matrix_list" type="xsd:string" minOccurs="0">
+	  </xsd:element>
+	  <xsd:element name="n_treatment" type="xsd:string" minOccurs="0">
             <xsd:annotation>
-              <xsd:documentation>Indicate a file containing a list of matrices to be used for scanning the region. This facilitates the scanning of a sequence with a library of matrices (e.g. all the matrices from RegulonDB or TRANSFAC) 
-Format: the matrix list file is a text file. The first word of each row is suppose to indicate a file name. Any further information on the same row is ignored.</xsd:documentation>
+              <xsd:documentation>Treatment of N characters. These characters
+              are often used in DNA
+        sequences to represent undefined or masked nucleotides.
+
+        skip
+            N-containing regions are skipped.
+
+        score
+            N-containing regions are scored. The probability of an N is 1
+            for both the background model and the matrix. The N residues
+            will thus contribute neither positively nor negatively to the
+            weight score of the N-containing fragment. This option can be
+            useful to detect sites which are at the border of N-containing
+            regions, or in cases there are isolated N in the sequences.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="consensus_name" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Use the motif (degenerate) consensus as matrix name.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="pseudo" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Pseudo-count for the matrix (default: 1).
+
+        The pseudo-count reflects the possibility that residues that were
+        not (yet) observed in the model might however be valid for future
+        observations. The pseudo-count is used to compute the corrected
+        residue frequencies..</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="equi_pseudo" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>If this option is called, the pseudo-weight is distributed in an
+        equiprobable way between residues.
+
+        By default, the pseudo-weight is distributed proportionally to
+        residue priors, except for the -window option where equipseudo is
+        default.</xsd:documentation>
             </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="top_matrices" type="xsd:int" minOccurs="0">
@@ -1884,9 +1936,27 @@ Format: the matrix list file is a text file. The first word of each row is suppo
               <xsd:documentation>Only scan with the top # matrices per matrix file. This option is valid for some file formats containing multiple matrices where top matrices are generally more informative.</xsd:documentation>
             </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="background_model" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Background model is a tab-delimited specification of oligonucleotide frequencies.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_background_infile" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Background model file (tab-delimited specification of oligonucleotide frequencies) on the server.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="organism" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>To use a precalculated background model from
+              RSAT, choose the organism corresponding to the background model. Works with background and markov options.</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
 	  <xsd:element name="background" type="xsd:string" minOccurs="0">
             <xsd:annotation>
-              <xsd:documentation>Background model file is a tab-delimited file containing the specification of oligonucleotide frequencies.</xsd:documentation>
+              <xsd:documentation>To use a precalculated background model from RSAT. Works with organism and markov options.
+	      Type of sequences used as background model for estimating expected oligonucleotide frequencies. 
+		Supported: upstream, upstream-noorf, upstream-noorf-rm, intergenic</xsd:documentation>
             </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="background_input" type="xsd:int" minOccurs="0">
@@ -1929,14 +1999,9 @@ Supported fields: score, pval, eval, sig, normw, proba_M, proba_B, rank, crer_si
 Supported parameters: same as lth.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	  <xsd:element name="both_strand" type="xsd:int" minOccurs="0">
+	  <xsd:element name="str" type="xsd:int" minOccurs="0">
             <xsd:annotation>
-              <xsd:documentation>Scan both strands for DNA sequences.</xsd:documentation>
-            </xsd:annotation>
-	  </xsd:element>
-	  <xsd:element name="single_strand" type="xsd:int" minOccurs="0">
-            <xsd:annotation>
-              <xsd:documentation>Single-strand search for DNA sequences.</xsd:documentation>
+              <xsd:documentation>Scan 1 or 2 strands for DNA sequences.</xsd:documentation>
             </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="verbosity" type="xsd:int" minOccurs="0">
@@ -1945,10 +2010,12 @@ Supported parameters: same as lth.</xsd:documentation>
 	messages during execution)</xsd:documentation>
             </xsd:annotation>
 	      </xsd:element>
-	        <xsd:element name="origin" type="xsd:int" minOccurs="0">
+	        <xsd:element name="origin" type="xsd:string" minOccurs="0">
             <xsd:annotation>
-              <xsd:documentation>Define pos as the origin for the calculation
-	of positions.</xsd:documentation>
+              <xsd:documentation>Define the origin for the calculation of positions.
+	-origin -0 defines the end of each sequence as the origin. The
+        matching positions are then negative values, providing the distance
+        between the match and the end of the sequence.</xsd:documentation>
             </xsd:annotation>
 	      </xsd:element>
 	        <xsd:element name="decimals" type="xsd:int" minOccurs="0">
