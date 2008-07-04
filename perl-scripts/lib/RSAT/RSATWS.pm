@@ -2564,43 +2564,41 @@ sub matrix_scan {
 #   my ($self,%args) = @_;
 
   #creation d'un fichier temporaire qui sera integre dans la commande
-  if ($args{"sequence_file"}) {
-    my $sequence = $args{"sequence_file"};
+  if ($args{"sequence"}) {
+    my $sequence = $args{"sequence"};
     chomp $sequence;
-    $tmp_sequence_file = `mktemp $TMP/matscan-sequence_file.XXXXXXXXXX`;
-    open TMP_IN, ">".$tmp_sequence_file or die "cannot open temp file ".$tmp_sequence_file."\n";
+    $tmp_sequence_infile = `mktemp $TMP/matscan-sequence.XXXXXXXXXX`;
+    open TMP_IN, ">".$tmp_sequence_infile or die "cannot open temp file ".$tmp_sequence_infile."\n";
     print TMP_IN $sequence;
     close TMP_IN;
+  } elsif ($args{tmp_sequence_infile}){
+      $tmp_sequence_infile = $args{"tmp_sequence_infile"};
   }
+  chomp $tmp_sequence_infile;
 
   #idem
-  if ($args{"matrix_file"}) {
-      my $input_matrix = $args{"matrix_file"};
+  if ($args{"matrix"}) {
+      my $input_matrix = $args{"matrix"};
       chomp $input_matrix;
-      $tmp_input_matrix = `mktemp $TMP/matscan-matrix_file.XXXXXXXXXX`;
-      open TMP_IN, ">".$tmp_input_matrix or die "cannot open temp file ".$tmp_input_matrix."\n";
+      $tmp_matrix_infile = `mktemp $TMP/matscan-matrix.XXXXXXXXXX`;
+      open TMP_IN, ">".$tmp_matrix_infile or die "cannot open temp file ".$tmp_matrix_infile."\n";
       print TMP_IN $input_matrix;
       close TMP_IN;
+  } elsif ($args{tmp_matrix_infile}){
+      $tmp_matrix_infile = $args{"tmp_matrix_infile"};
   }
+  chomp $tmp_matrix_infile;
+  
+#  if ($args{"matrix_list"}) {
+#      my $input_list = $args{"matrix_list"};
+#      chomp $input_list;
+#      $tmp_input_list = `mktemp $TMP/matscan-matrix_list.XXXXXXXXXX`;
+#      open TMP_IN, ">".$tmp_input_list or die "cannot open temp file ".$tmp_input_list."\n";
+#      print TMP_IN $input_list;
+#      close TMP_IN;
+#  }
 
-  if ($args{"matrix_list"}) {
-      my $input_list = $args{"matrix_list"};
-      chomp $input_list;
-      $tmp_input_list = `mktemp $TMP/matscan-matrix_list.XXXXXXXXXX`;
-      open TMP_IN, ">".$tmp_input_list or die "cannot open temp file ".$tmp_input_list."\n";
-      print TMP_IN $input_list;
-      close TMP_IN;
-  }
-
-  if ($args{"background"}) {
-      my $background = $args{"background"};
-      chomp $background;
-      $tmp_background = `mktemp $TMP/matscan-background.XXXXXXXXXX`;
-      open TMP_IN, ">".$tmp_background or die "cannot open temp file ".$tmp_background ."\n";
-      print TMP_IN $background;
-      close TMP_IN; 
-  }
-
+  my $sequence_format = $args{"sequence_format"}; 
   my $matrix_format = $args{"matrix_format"}; 
   my $top_matrices = $args{"top_matrices"};
   my $background_input = $args{"background_input"};
@@ -2608,12 +2606,7 @@ sub matrix_scan {
   my $markov = $args{"markov"};
   my $background_pseudo = $args{"background_pseudo"};
   my $return_fields = $args{"return_fields"};
-#  my $upper_threshold_field = $args{"upper_threshold_field"};
-#  my $upper_threshold_value = $args{"upper_threshold_value"};
-#  my $lower_threshold_field = $args{"lower_threshold_field"};
-#  my $lower_threshold_value = $args{"lower_threshold_value"};
-  my $both_strand = $args{"both_strand"};
-  my $single_strand = $args{"single_strand"};
+  my $str = $args{"str"};
   my $verbosity = $args{"verbosity"};
   my $origin = $args{"origin"};
   my $decimals = $args{"decimals"};
@@ -2653,19 +2646,25 @@ sub matrix_scan {
 
   my $command = "$SCRIPTS/matrix-scan";
 
- #pas d'utilite directe de "nettoyage" de la commande sauf si l'on rajoute un elsif...
-  if ($tmp_sequence_file) {
-      $tmp_sequence_file =~ s/\'//g;
-      $tmp_sequence_file =~ s/\"//g;
-      chomp $tmp_sequence_file;
-      $command .= " -i '".$tmp_sequence_file."'";
+  if ($tmp_sequence_infile) {
+      $tmp_sequence_infile =~ s/\'//g;
+      $tmp_sequence_infile =~ s/\"//g;
+      chomp $tmp_sequence_infile;
+      $command .= " -i '".$tmp_sequence_infile."'";
   }
 
-  if ($tmp_input_matrix) {
-      $tmp_input_matrix =~ s/\'//g;
-      $tmp_input_matrix =~ s/\"//g;
-      chomp $tmp_input_matrix;
-      $command .= " -m '".$tmp_input_matrix."'";
+  if ($tmp_matrix_infile) {
+      $tmp_matrix_infile =~ s/\'//g;
+      $tmp_matrix_infile =~ s/\"//g;
+      chomp $tmp_matrix_infile;
+      $command .= " -m '".$tmp_matrix_infile."'";
+  }
+
+  if ($sequence_format) {
+      $sequence_format =~ s/\'//g;
+      $sequence_format=~ s/\"//g;
+      chomp $sequence_format;
+      $command .= " -seq_format '".$sequence_format."'";
   }
 
   if ($matrix_format) {
@@ -2675,11 +2674,31 @@ sub matrix_scan {
       $command .= " -matrix_format '".$matrix_format."'";
   }
 
-  if ($tmp_input_list) {
-      $tmp_input_list =~ s/\'//g;
-      $tmp_input_list =~ s/\"//g;
-      $command .= " -mlist '".$tmp_input_list."'";
+  if ($args{"n_treatment"} eq "score" || $args{"n_treatment"} eq "skip") {
+      $command .= " -n ".$args{"n_treatment"};
+  } else {
+      die "n_treatment value must be score or skip";
   }
+
+  if ($args{"consensus_name"} == 1 ) {
+      $command .= " -consensus_name";
+  }
+
+  if ($args{"pseudo"} =~ /\d/) {
+      $args{"pseudo"}  =~ s/\'//g;
+      $args{"pseudo"} =~ s/\"//g;
+      $command .= " -pseudo '".$args{"pseudo"}."'";
+  }
+
+if ($args{"equi_pseudo"} == 1 ) {
+      $command .= " -equi_pseudo";
+  }
+
+#  if ($tmp_input_list) {
+#      $tmp_input_list =~ s/\'//g;
+#      $tmp_input_list =~ s/\"//g;
+#      $command .= " -mlist '".$tmp_input_list."'";
+# }
 
   if ($top_matrices ) {
       $top_matrices  =~ s/\'//g;
@@ -2687,14 +2706,29 @@ sub matrix_scan {
       $command .= " -top_matrices '".$top_matrices."'";
   }
 
-  if ($tmp_background) {
-      $tmp_background  =~ s/\'//g;
-      $tmp_background  =~ s/\"//g;
-      chomp $tmp_background;
-      $command .= " -bgfile '".$tmp_background."'";
+  if ($args{"background_model"}) {
+      my $background = $args{"background_model"};
+      chomp $background;
+      $tmp_background_infile = `mktemp $TMP/matscan-background.XXXXXXXXXX`;
+      open TMP_IN, ">".$tmp_background_infile or die "cannot open temp file ".$tmp_background_infile ."\n";
+      print TMP_IN $background;
+      close TMP_IN; 
+  } elsif ($args{"tmp_background_infile"}) {
+      $tmp_background_infile = $args{"tmp_background_infile"};
+      chomp $tmp_background_infile;
+  } elsif ($args{"organism"} && $args{"background"} && $args{"markov"}){
+      $tmp_background_infile = "/home/rsat/rsa-tools/data/genomes/".$args{"organism"}."/oligo-frequencies/".($args{"markov"}+1)."nt_".$args{"background"}."_".$args{"organism"}."-ovlp-1str.freq.gz";
+      chomp $tmp_background_infile;
   }
 
-  if ($background_input == 1 ) {
+  if ($tmp_background_infile) {
+      $tmp_background_infile  =~ s/\'//g;
+      $tmp_background_infile  =~ s/\"//g;
+      chomp $tmp_background_infile;
+      $command .= " -bgfile '".$tmp_background_infile."'";
+  }
+
+ if ($background_input == 1 ) {
       $command .= " -bginput";
   }
 
@@ -2730,13 +2764,13 @@ sub matrix_scan {
     $command .= $uth;
   }
 
-  if ($both_strand  == 1) {
-      $command .= " -2str";
+  if ($str =~ /\d/) {
+      if ($str == 1 || $str == 2) {
+	  $command .= " -".$str."str";
+      } else {
+	  die "str value must be 1 or 2";
+      }
   }
-
-  if ($single_strand == 1) {
-       $command .= " -1str";
-   }
 
   if ($verbosity =~ /\d/) {
       $verbosity =~ s/\'//g;
