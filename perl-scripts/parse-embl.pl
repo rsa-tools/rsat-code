@@ -1,7 +1,7 @@
-#!/usr/bin/perl 
+#!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.18 2007/12/07 08:35:44 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.19 2008/07/04 06:12:10 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -14,9 +14,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 push @INC, "$ENV{RSAT}/perl-scripts/parsers/";
 require "lib/load_classes.pl";
-#require "lib/util.pl";
 require "lib/parsing_util.pl";
-#require "classes/Genbank_classes.pl";
 
 
 ################################################################
@@ -208,7 +206,7 @@ package main;
     ### initial directory
     $dir{main} = `pwd`; #### remember working directory
     chomp($dir{main});
-    
+
     local $data_source = "embl";
     local %infile = ();
     local %out_file = ();
@@ -225,7 +223,6 @@ package main;
     $schema="embl";
     $user="embl";
     $password="embl";
-    
 
 #    my $genes = classes::ClassFactory->new_class(object_type=>"EMBL::Gene",
 #						 prefix=>"gene_");
@@ -240,7 +237,6 @@ package main;
 				   name
 				   names
 				   ));
-    
 
     #### Contig
     local $contigs = classes::ClassFactory->new_class(object_type=>"EMBL::Contig",prefix=>"ctg_");
@@ -253,7 +249,6 @@ package main;
 				 length
 				 description
 				 ));
-    
 
     ## Specific feature types
     local $CDSs = classes::ClassFactory->new_class(object_type=>"EMBL::CDS",prefix=>"cds_", source=>$data_source);
@@ -278,7 +273,7 @@ package main;
 			      db_xref
 			      introns
 			      exons
-			      
+
 			      EC_number
 
 			      codon_start
@@ -295,7 +290,7 @@ package main;
 			      locus_tag
 			      sub_strain
 			      bound_moiety
-			
+
 			      db_xref_exp
 			      ); 
     $features->set_out_fields(@feature_out_fields);
@@ -318,16 +313,16 @@ package main;
 		    EMBL::tRNA
 		    EMBL::rRNA
   );
-    
+
     #### working directory
     $wd = `pwd`;
     chomp($wd);
-    
+
     &ReadArguments();
-    
+
     ################################################################
     #### check argument values ####
-    
+
     #### input directory
     unless (defined($dir{input})) {
 	&RSAT::error::FatalError("You must specify the input directory.\n");
@@ -340,7 +335,7 @@ package main;
     unless (defined($org)) {
 	$org = `basename $dir{input}`;
 	chomp($org);
-	warn "; Auto selection of organism name\t$org\n" if ($main::verbose >= 1);
+	&RSAT::message::Info("Auto selection of organism name", $org) if ($main::verbose >= 1);
     }
 
     #### find embl files in the input directory
@@ -348,10 +343,11 @@ package main;
     @embl_files =();
     push @embl_files, glob("*.embl");
     push @embl_files, glob("*.embl.Z");
+    push @embl_files, glob("*.embl.gz");
     if ($#embl_files < 0) {
 	&RSAT::error::FatalError("There is no embl file in the input directory $dir{input}\n");
     } else {
-	warn "; EMBL files\n;\t", join("\n;\t", @embl_files), "\n" if ($main::verbose >= 1);
+	&RSAT::message::Info("EMBL files\n;\t", join("\n;\t", @embl_files)) if ($main::verbose >= 1);
     }
     #### come back to the starting directory
     chdir($wd);
@@ -944,14 +940,14 @@ sub ParseEMBLFile {
 		    last;
 		}
 	    }
-	    
+
 	    #### organism taxonomy
 	    if ($organism) {
 		$taxonomy = &trim($taxonomy);
 		$taxonomy =~ s/\.$//;
 		$organism->set_attribute("taxonomy", $taxonomy);
 	    }
-	} 
+	}
 
 
 	#### start reading features
