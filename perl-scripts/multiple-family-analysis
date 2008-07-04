@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.237 2008/06/16 09:55:16 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.238 2008/07/04 05:55:24 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.237 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.238 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -51,6 +51,7 @@ package main;
   @batch_commands = ();	       ## Set of commands to run in batch mode
   #$batch_script = ""; ## Script collecting the commands to be run on the same node of the PC cluster
   $min_genes = 1;		## Min number of genes per family
+  $max_genes = -1;		## Min number of genes per family
   $rel_w = 1;	  ## Threshold on relative weight for compare-patterns
   $sliding_window_size = 0; 
   $die_on_error = 1;
@@ -448,25 +449,6 @@ package main;
   my %family_to_delete = ();
   @families = sort (keys (%family));
 
-  ## Apply the options -skip (suppress first families) 
-  if ($skip > 0) {
-    for my $f (1..$skip) {
-      $family_name = $families[$f-1];
-      $family_to_delete{$family_name}++;
-      &RSAT::message::Debug("Skipping first family", $f, $family_name) if ($verbose >= 2);
-    }
-  }
-  ## Apply the options -last (suppress last families)
-  if ($last > 0) {
-    &RSAT::message::Debug("Skipping families after", $last, scalar(@families)) if ($verbose >= 2);
-    for my $f ($last..$#families) {
-      $family_name = $families[$f-1];
-      $family_to_delete{$family_name}++;
-      #    delete $family{$family_name};
-      &RSAT::message::Debug("Skipping last family", $f, $family_name) if ($verbose >= 2);
-    }
-  }
-
 
   ## Check minimum number of genes
   foreach my $family_name (@families) {    
@@ -477,7 +459,13 @@ package main;
 			      $gene_nb." genes",
 			      "< min = ".$min_genes), "\n" if ($verbose >= 1);
       $family_to_delete{$family_name}++;
-      #    delete $family{$family_name};
+    }
+    if (($max_genes >= 0) && ($gene_nb > $max_genes)) {
+      &RSAT::message::Warning("Removing family", 
+			      $fam_count, $family_name,
+			      $gene_nb." genes",
+			      "> max = ".$max_genes), "\n" if ($verbose >= 1);
+      $family_to_delete{$family_name}++;
     }
   }
 
@@ -496,7 +484,6 @@ package main;
       unless ($selected{$family_name}) {
 	$family_to_delete{$family_name}++;
       }
-      #    delete $family{$family_name} unless ($selected{$family_name});
     }
   }
 
@@ -509,6 +496,39 @@ package main;
 
   &RSAT::message::Info(join("\t", "Remaining families after filtering", scalar(@families))) if ($verbose >= 1);
 
+  ################################################################
+  ## Skip the first or last families if required
+  if (($skip > 0) || ($last > 0)) {
+
+    ## Apply the options -skip (suppress first families) 
+    if ($skip > 0) {
+      for my $f (1..$skip) {
+	$family_name = $families[$f-1];
+	$family_to_delete{$family_name}++;
+	&RSAT::message::Debug("Skipping first family", $f, $family_name) if ($verbose >= 2);
+      }
+    }
+
+    ## Apply the options -last (suppress last families)
+    if ($last > 0) {
+      &RSAT::message::Debug("Skipping families after", $last, scalar(@families)) if ($verbose >= 2);
+      for my $f ($last..$#families) {
+	$family_name = $families[$f-1];
+	$family_to_delete{$family_name}++;
+	&RSAT::message::Debug("Skipping last family", $f, $family_name) if ($verbose >= 2);
+      }
+    }
+
+    ## Update the list of families
+    foreach my $family_name (keys(%family_to_delete)) {
+      delete $family{$family_name};
+      &RSAT::message::Warning("Deleted family", $family_name) if ($verbose >= 2);
+    }
+    @families = sort keys %family;
+
+    &RSAT::message::Info(join("\t", "Remaining families after options -first and -last", scalar(@families))) if ($verbose >= 1);
+  }
+
   ## Set all the file names
   &SetFileNames();
 
@@ -519,7 +539,6 @@ package main;
 
   #### verbose
   $verbose_message = &Verbose() if ($verbose >= 1);
-
 
   ################################################################
   ### perform analysis
@@ -1318,12 +1337,12 @@ sub OligoAnalysis {
    }
 
    ## Merge the results obtained with different oligo lengths
-#   my $merge_command = &MergeOligoLengths();
-#   push @oligo_commands, $merge_command;
+   my $merge_command = &MergeOligoLengths();
+   push @oligo_commands, $merge_command;
 
    ## Assemble the merged patterns
-#   my $assemble_command = &AssembleOligos();
-#   push @oligo_commands, $assemble_command;
+   my $assemble_command = &AssembleOligos();
+   push @oligo_commands, $assemble_command;
 
    if ($batch) {
        push @main::batch_commands, @oligo_commands;
@@ -1541,7 +1560,7 @@ sub DrawFeatureMap {
    if ($htmaps) {
 	$command .= " -htmap > $htmap_file ";
    };
-   
+
    if ($batch) {
        push @main::batch_commands, $command;
    } else {
@@ -2038,7 +2057,7 @@ sub SyntheticTable {
     $table[$row{genes}][$col] = "<a href='../".$family{$family_name}->{family_file}."'>";
     $table[$row{genes}][$col] .= join " ", @{$family{$family_name}->{members}};
     $table[$row{genes}][$col] .= "</a>";
-	
+
     ### known patterns
     if ($known_sites_provided) {
       $table[$row{known}][$col] = "";
@@ -2275,7 +2294,7 @@ sub IndexMatrix {
 	 $table[$row][$col] .= "<br><font color=red>No matrix could be found in the result file</font>\n";
        }
    } else {
-       $table[$row][$col] =  "<a href=".$matrix_file."><font color=red>File not found</font></a><br>\n";
+       $table[$row][$col] =  "<a href=".$base.$matrix_file."><font color=red>File not found</font></a><br>\n";
        &RSAT::message::Warning("File not found. Skipped.", $program, $matrix_file);
    }
 }
@@ -2475,13 +2494,13 @@ sub IndexPatterns {
 	   @patterns = &ReadPatterns($assembly_file);
        }
    } else {
-	$table[$row][$col] = "<a href=".$assembly_file."><font color=red>File not found</font></a><br>\n";
+	$table[$row][$col] = "<a href=".$base.$assembly_file."><font color=red>File not found</font></a><br>\n";
 	$pwd = `pwd`;
-	&RSAT::message::Warning($pwd, "Family $family_name", "assembly file ", $pattern_file, " does not exist. Skipped.")
+	&RSAT::message::Warning($pwd, "Family $family_name", "assembly file ", $assembly_file, " does not exist. Skipped.")
 	  if ($verbose >= 1);
 	return;
    }
-   
+
    if ($error) {
 	$table[$row][$col] = "<font color=red>$error</font>\n";
    } else {
@@ -3011,7 +3030,11 @@ OPTIONS
 
 	-mingenes #
 		minimal number of genes per family. Families with less
-		than this number are skiped.
+		than this number are skipped.
+
+	-maxgenes #
+		maximal number of genes per family. Families with more
+		than this number are skipped.
 
    Sequence retrieval options
 	-org	organism
@@ -3479,6 +3502,10 @@ sub ReadArguments {
       ### min number of genes
     } elsif ($ARGV[$a] eq "-mingenes") {
       $min_genes = $ARGV[$a+1];
+
+      ### max number of genes
+    } elsif ($ARGV[$a] eq "-maxgenes") {
+      $max_genes = $ARGV[$a+1];
 
       ### max number of patterns to assemble
     } elsif ($ARGV[$a] eq "-toppat") {
