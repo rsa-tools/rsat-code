@@ -23,11 +23,11 @@ my %no_sort_of :ATTR(:get<no_sort>);
 my %font_of :ATTR(:get<font>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        inputfile
+    [ qw(        inputfile
         chunk
         no_sort
         font
+
     ) ],
     {
         'inputfile' => \%inputfile_of,
@@ -40,6 +40,13 @@ __PACKAGE__->_factory(
         'chunk' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'no_sort' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'font' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'inputfile' => 'inputfile',
+        'chunk' => 'chunk',
+        'no_sort' => 'no_sort',
+        'font' => 'font',
     }
 );
 
@@ -79,11 +86,15 @@ methods:
 
 =item * inputfile
 
+
 =item * chunk
+
 
 =item * no_sort
 
+
 =item * font
+
 
 
 

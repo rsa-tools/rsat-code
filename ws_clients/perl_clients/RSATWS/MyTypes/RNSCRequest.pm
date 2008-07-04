@@ -28,8 +28,7 @@ my %div_freq_of :ATTR(:get<div_freq>);
 my %shf_div_len_of :ATTR(:get<shf_div_len>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        inputgraph
+    [ qw(        inputgraph
         max_clust
         tabulength
         tabulist
@@ -38,6 +37,7 @@ __PACKAGE__->_factory(
         exp_nb
         div_freq
         shf_div_len
+
     ) ],
     {
         'inputgraph' => \%inputgraph_of,
@@ -60,6 +60,18 @@ __PACKAGE__->_factory(
         'exp_nb' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'div_freq' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'shf_div_len' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'inputgraph' => 'inputgraph',
+        'max_clust' => 'max_clust',
+        'tabulength' => 'tabulength',
+        'tabulist' => 'tabulist',
+        'naive_stop' => 'naive_stop',
+        'scale_stop' => 'scale_stop',
+        'exp_nb' => 'exp_nb',
+        'div_freq' => 'div_freq',
+        'shf_div_len' => 'shf_div_len',
     }
 );
 
@@ -99,21 +111,30 @@ methods:
 
 =item * inputgraph
 
+
 =item * max_clust
+
 
 =item * tabulength
 
+
 =item * tabulist
+
 
 =item * naive_stop
 
+
 =item * scale_stop
+
 
 =item * exp_nb
 
+
 =item * div_freq
 
+
 =item * shf_div_len
+
 
 
 

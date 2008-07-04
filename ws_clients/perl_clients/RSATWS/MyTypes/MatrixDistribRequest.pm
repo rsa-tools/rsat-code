@@ -28,8 +28,7 @@ my %decimals_of :ATTR(:get<decimals>);
 my %background_format_of :ATTR(:get<background_format>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         matrix_file
         tmp_matrix_file
         matrix_format
@@ -38,6 +37,7 @@ __PACKAGE__->_factory(
         background_pseudo
         decimals
         background_format
+
     ) ],
     {
         'output' => \%output_of,
@@ -60,6 +60,18 @@ __PACKAGE__->_factory(
         'background_pseudo' => 'SOAP::WSDL::XSD::Typelib::Builtin::float',
         'decimals' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'background_format' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'output' => 'output',
+        'matrix_file' => 'matrix_file',
+        'tmp_matrix_file' => 'tmp_matrix_file',
+        'matrix_format' => 'matrix_format',
+        'matrix_pseudo' => 'matrix_pseudo',
+        'background' => 'background',
+        'background_pseudo' => 'background_pseudo',
+        'decimals' => 'decimals',
+        'background_format' => 'background_format',
     }
 );
 
@@ -99,21 +111,30 @@ methods:
 
 =item * output
 
+
 =item * matrix_file
+
 
 =item * tmp_matrix_file
 
+
 =item * matrix_format
+
 
 =item * matrix_pseudo
 
+
 =item * background
+
 
 =item * background_pseudo
 
+
 =item * decimals
 
+
 =item * background_format
+
 
 
 

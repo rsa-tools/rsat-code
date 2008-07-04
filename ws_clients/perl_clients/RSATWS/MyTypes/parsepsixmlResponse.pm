@@ -22,10 +22,10 @@ my %command_of :ATTR(:get<command>);
 my %client_of :ATTR(:get<client>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        server
+    [ qw(        server
         command
         client
+
     ) ],
     {
         'server' => \%server_of,
@@ -36,6 +36,12 @@ __PACKAGE__->_factory(
         'server' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'command' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'client' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'server' => 'server',
+        'command' => 'command',
+        'client' => 'client',
     }
 );
 
@@ -75,9 +81,12 @@ methods:
 
 =item * server
 
+
 =item * command
 
+
 =item * client
+
 
 
 

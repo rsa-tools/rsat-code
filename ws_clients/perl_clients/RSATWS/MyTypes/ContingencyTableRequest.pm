@@ -24,12 +24,12 @@ my %margin_of :ATTR(:get<margin>);
 my %null_of :ATTR(:get<null>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        inputfile
+    [ qw(        inputfile
         col1
         col2
         margin
         null
+
     ) ],
     {
         'inputfile' => \%inputfile_of,
@@ -44,6 +44,14 @@ __PACKAGE__->_factory(
         'col2' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'margin' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'null' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'inputfile' => 'inputfile',
+        'col1' => 'col1',
+        'col2' => 'col2',
+        'margin' => 'margin',
+        'null' => 'null',
     }
 );
 
@@ -83,13 +91,18 @@ methods:
 
 =item * inputfile
 
+
 =item * col1
+
 
 =item * col2
 
+
 =item * margin
 
+
 =item * null
+
 
 
 

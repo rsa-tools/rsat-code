@@ -38,8 +38,7 @@ my %xcol_of :ATTR(:get<xcol>);
 my %ycol_of :ATTR(:get<ycol>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        inputFile
+    [ qw(        inputFile
         format
         title1
         title2
@@ -58,6 +57,7 @@ __PACKAGE__->_factory(
         xlog
         xcol
         ycol
+
     ) ],
     {
         'inputFile' => \%inputFile_of,
@@ -100,6 +100,28 @@ __PACKAGE__->_factory(
         'xlog' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'xcol' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'ycol' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'inputFile' => 'inputFile',
+        'format' => 'format',
+        'title1' => 'title1',
+        'title2' => 'title2',
+        'lines' => 'lines',
+        'legend' => 'legend',
+        'header' => 'header',
+        'xleg1' => 'xleg1',
+        'xleg2' => 'xleg2',
+        'yleg1' => 'yleg1',
+        'yleg2' => 'yleg2',
+        'xmax' => 'xmax',
+        'ymax' => 'ymax',
+        'xmin' => 'xmin',
+        'ymin' => 'ymin',
+        'ylog' => 'ylog',
+        'xlog' => 'xlog',
+        'xcol' => 'xcol',
+        'ycol' => 'ycol',
     }
 );
 
@@ -139,41 +161,60 @@ methods:
 
 =item * inputFile
 
+
 =item * format
+
 
 =item * title1
 
+
 =item * title2
+
 
 =item * lines
 
+
 =item * legend
+
 
 =item * header
 
+
 =item * xleg1
+
 
 =item * xleg2
 
+
 =item * yleg1
+
 
 =item * yleg2
 
+
 =item * xmax
+
 
 =item * ymax
 
+
 =item * xmin
+
 
 =item * ymin
 
+
 =item * ylog
+
 
 =item * xlog
 
+
 =item * xcol
 
+
 =item * ycol
+
 
 
 

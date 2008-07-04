@@ -24,12 +24,12 @@ my %status_of :ATTR(:get<status>);
 my %total_of :ATTR(:get<total>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        inputfile
+    [ qw(        inputfile
         scol
         lcol
         status
         total
+
     ) ],
     {
         'inputfile' => \%inputfile_of,
@@ -44,6 +44,14 @@ __PACKAGE__->_factory(
         'lcol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'status' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'total' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'inputfile' => 'inputfile',
+        'scol' => 'scol',
+        'lcol' => 'lcol',
+        'status' => 'status',
+        'total' => 'total',
     }
 );
 
@@ -83,13 +91,18 @@ methods:
 
 =item * inputfile
 
+
 =item * scol
+
 
 =item * lcol
 
+
 =item * status
 
+
 =item * total
+
 
 
 

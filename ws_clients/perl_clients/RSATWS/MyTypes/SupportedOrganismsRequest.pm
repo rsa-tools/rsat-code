@@ -22,10 +22,10 @@ my %format_of :ATTR(:get<format>);
 my %taxon_of :ATTR(:get<taxon>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         format
         taxon
+
     ) ],
     {
         'output' => \%output_of,
@@ -36,6 +36,12 @@ __PACKAGE__->_factory(
         'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'format' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'taxon' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'output' => 'output',
+        'format' => 'format',
+        'taxon' => 'taxon',
     }
 );
 
@@ -75,9 +81,12 @@ methods:
 
 =item * output
 
+
 =item * format
 
+
 =item * taxon
+
 
 
 
