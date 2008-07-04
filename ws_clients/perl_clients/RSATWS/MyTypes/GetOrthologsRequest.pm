@@ -28,8 +28,7 @@ my %lth_of :ATTR(:get<lth>);
 my %uth_of :ATTR(:get<uth>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         organism
         taxon
         query
@@ -38,6 +37,7 @@ __PACKAGE__->_factory(
         return
         lth
         uth
+
     ) ],
     {
         'output' => \%output_of,
@@ -60,6 +60,18 @@ __PACKAGE__->_factory(
         'return' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'lth' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'uth' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'output' => 'output',
+        'organism' => 'organism',
+        'taxon' => 'taxon',
+        'query' => 'query',
+        'all' => 'all',
+        'nogrep' => 'nogrep',
+        'return' => 'return',
+        'lth' => 'lth',
+        'uth' => 'uth',
     }
 );
 
@@ -99,21 +111,30 @@ methods:
 
 =item * output
 
+
 =item * organism
+
 
 =item * taxon
 
+
 =item * query
+
 
 =item * all
 
+
 =item * nogrep
+
 
 =item * return
 
+
 =item * lth
 
+
 =item * uth
+
 
 
 

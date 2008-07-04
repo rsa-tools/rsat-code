@@ -34,8 +34,7 @@ my %directed_of :ATTR(:get<directed>);
 my %self_of :ATTR(:get<self>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        Qinformat
+    [ qw(        Qinformat
         Rinformat
         outformat
         outweight
@@ -50,6 +49,7 @@ __PACKAGE__->_factory(
         return
         directed
         self
+
     ) ],
     {
         'Qinformat' => \%Qinformat_of,
@@ -84,6 +84,24 @@ __PACKAGE__->_factory(
         'return' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'directed' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'self' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'Qinformat' => 'Qinformat',
+        'Rinformat' => 'Rinformat',
+        'outformat' => 'outformat',
+        'outweight' => 'outweight',
+        'Rinputgraph' => 'Rinputgraph',
+        'Qinputgraph' => 'Qinputgraph',
+        'Qwcol' => 'Qwcol',
+        'Qscol' => 'Qscol',
+        'Qtcol' => 'Qtcol',
+        'Rwcol' => 'Rwcol',
+        'Rscol' => 'Rscol',
+        'Rtcol' => 'Rtcol',
+        'return' => 'return',
+        'directed' => 'directed',
+        'self' => 'self',
     }
 );
 
@@ -123,33 +141,48 @@ methods:
 
 =item * Qinformat
 
+
 =item * Rinformat
+
 
 =item * outformat
 
+
 =item * outweight
+
 
 =item * Rinputgraph
 
+
 =item * Qinputgraph
+
 
 =item * Qwcol
 
+
 =item * Qscol
+
 
 =item * Qtcol
 
+
 =item * Rwcol
+
 
 =item * Rscol
 
+
 =item * Rtcol
+
 
 =item * return
 
+
 =item * directed
 
+
 =item * self
+
 
 
 

@@ -24,12 +24,12 @@ my %from_of :ATTR(:get<from>);
 my %to_of :ATTR(:get<to>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         sequence
         tmp_infile
         from
         to
+
     ) ],
     {
         'output' => \%output_of,
@@ -44,6 +44,14 @@ __PACKAGE__->_factory(
         'tmp_infile' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'from' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'to' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'output' => 'output',
+        'sequence' => 'sequence',
+        'tmp_infile' => 'tmp_infile',
+        'from' => 'from',
+        'to' => 'to',
     }
 );
 
@@ -83,13 +91,18 @@ methods:
 
 =item * output
 
+
 =item * sequence
+
 
 =item * tmp_infile
 
+
 =item * from
 
+
 =item * to
+
 
 
 

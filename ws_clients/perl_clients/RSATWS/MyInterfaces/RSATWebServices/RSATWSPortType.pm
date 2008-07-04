@@ -13,6 +13,8 @@ sub START {
     $_[0]->set_proxy('http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi') if not $_[2]->{proxy};
     $_[0]->set_class_resolver('MyTypemaps::RSATWebServices')
         if not $_[2]->{class_resolver};
+
+    $_[0]->set_prefix($_[2]->{use_prefix}) if exists $_[2]->{use_prefix};
 }
 
 sub retrieve_seq {
@@ -304,6 +306,31 @@ sub get_orthologs {
             namespace       => '',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::get_orthologs )],
+        },
+        header => {
+            
+        },
+        headerfault => {
+            
+        }
+    }, $body, $header);
+}
+
+
+sub infer_operon {
+    my ($self, $body, $header) = @_;
+    die "infer_operon must be called as object method (\$self is <$self>)" if not blessed($self);
+    return $self->SUPER::call({
+        operation => 'infer_operon',
+        soap_action => '',
+        style => 'document',
+        body => {
+            
+
+           'use'            => 'literal',
+            namespace       => '',
+            encodingStyle   => '',
+            parts           =>  [qw( MyElements::infer_operon )],
         },
         header => {
             
@@ -790,6 +817,31 @@ sub display_graph {
 }
 
 
+sub draw_heatmap {
+    my ($self, $body, $header) = @_;
+    die "draw_heatmap must be called as object method (\$self is <$self>)" if not blessed($self);
+    return $self->SUPER::call({
+        operation => 'draw_heatmap',
+        soap_action => '',
+        style => 'document',
+        body => {
+            
+
+           'use'            => 'literal',
+            namespace       => '',
+            encodingStyle   => '',
+            parts           =>  [qw( MyElements::draw_heatmap )],
+        },
+        header => {
+            
+        },
+        headerfault => {
+            
+        }
+    }, $body, $header);
+}
+
+
 sub compare_graphs {
     my ($self, $body, $header) = @_;
     die "compare_graphs must be called as object method (\$self is <$self>)" if not blessed($self);
@@ -1047,6 +1099,7 @@ MyInterfaces::RSATWebServices::RSATWSPortType - SOAP Interface for the RSATWebSe
  $response = $interface->feature_map();
  $response = $interface->footprint_discovery();
  $response = $interface->get_orthologs();
+ $response = $interface->infer_operon();
  $response = $interface->gene_info();
  $response = $interface->supported_organisms();
  $response = $interface->text_to_html();
@@ -1066,6 +1119,7 @@ MyInterfaces::RSATWebServices::RSATWSPortType - SOAP Interface for the RSATWebSe
  $response = $interface->alter_graph();
  $response = $interface->graph_cliques();
  $response = $interface->display_graph();
+ $response = $interface->draw_heatmap();
  $response = $interface->compare_graphs();
  $response = $interface->graph_neighbours();
  $response = $interface->mcl();
@@ -1429,6 +1483,23 @@ Get orthologuous genes.
   },,
  );
 
+=head3 infer_operon
+
+Infer operon. 
+
+ $interface->infer_operon( {
+    request =>  { # MyTypes::InferOperonRequest
+      output =>  $some_value, # string
+      organism =>  $some_value, # string
+      query =>  $some_value, # string
+      tmp_infile =>  $some_value, # string
+      all =>  $some_value, # int
+      distance =>  $some_value, # int
+      return =>  $some_value, # string
+    },
+  },,
+ );
+
 =head3 gene_info
 
 Get information about genes. 
@@ -1658,9 +1729,9 @@ Scan sequences with one or several position-specific scoring matrices (PSSM) to 
       uth =>  $some_value, # string
       both_strand =>  $some_value, # int
       single_strand =>  $some_value, # int
-      verbosity =>  $some_value, # float
-      origin =>  $some_value, # float
-      decimals =>  $some_value, # float
+      verbosity =>  $some_value, # int
+      origin =>  $some_value, # int
+      decimals =>  $some_value, # int
       crer_ids =>  $some_value, # int
     },
   },,
@@ -1795,6 +1866,26 @@ Produces the figure of a graph
   },,
  );
 
+=head3 draw_heatmap
+
+Produces the figure of a heatmap 
+
+ $interface->draw_heatmap( {
+    request =>  { # MyTypes::DrawHeatmapRequest
+      outformat =>  $some_value, # string
+      html =>  $some_value, # int
+      inputfile =>  $some_value, # string
+      row_names =>  $some_value, # int
+      no_text =>  $some_value, # int
+      col_width =>  $some_value, # int
+      row_height =>  $some_value, # int
+      min =>  $some_value, # int
+      max =>  $some_value, # int
+      gradient =>  $some_value, # string
+    },
+  },,
+ );
+
 =head3 compare_graphs
 
 Computes the union / difference or intersection of two graphs 
@@ -1918,6 +2009,9 @@ Map a clustering result onto a graph, and compute the membership degree between 
       clusters =>  $some_value, # string
       stat =>  $some_value, # string
       decimals =>  $some_value, # int
+      wcol =>  $some_value, # int
+      scol =>  $some_value, # int
+      tcol =>  $some_value, # int
     },
   },,
  );
@@ -1973,6 +2067,6 @@ Generate random graphs either from scratch of from an existing graph using diffe
 
 =head1 AUTHOR
 
-Generated by SOAP::WSDL on Fri Apr 25 14:03:43 2008
+Generated by SOAP::WSDL on Fri Jul  4 12:07:23 2008
 
 =cut

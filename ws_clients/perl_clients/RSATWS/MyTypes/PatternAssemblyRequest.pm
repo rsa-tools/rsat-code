@@ -30,8 +30,7 @@ my %maxpat_of :ATTR(:get<maxpat>);
 my %toppat_of :ATTR(:get<toppat>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         input
         tmp_infile
         verbosity
@@ -42,6 +41,7 @@ __PACKAGE__->_factory(
         maxcl
         maxpat
         toppat
+
     ) ],
     {
         'output' => \%output_of,
@@ -68,6 +68,20 @@ __PACKAGE__->_factory(
         'maxcl' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'maxpat' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'toppat' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'output' => 'output',
+        'input' => 'input',
+        'tmp_infile' => 'tmp_infile',
+        'verbosity' => 'verbosity',
+        'score_col' => 'score_col',
+        'str' => 'str',
+        'maxfl' => 'maxfl',
+        'subst' => 'subst',
+        'maxcl' => 'maxcl',
+        'maxpat' => 'maxpat',
+        'toppat' => 'toppat',
     }
 );
 
@@ -107,25 +121,36 @@ methods:
 
 =item * output
 
+
 =item * input
+
 
 =item * tmp_infile
 
+
 =item * verbosity
+
 
 =item * score_col
 
+
 =item * str
+
 
 =item * maxfl
 
+
 =item * subst
+
 
 =item * maxcl
 
+
 =item * maxpat
 
+
 =item * toppat
+
 
 
 

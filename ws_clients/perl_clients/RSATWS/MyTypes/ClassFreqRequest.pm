@@ -26,14 +26,14 @@ my %from_of :ATTR(:get<from>);
 my %to_of :ATTR(:get<to>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        inputFile
+    [ qw(        inputFile
         classinterval
         col
         min
         max
         from
         to
+
     ) ],
     {
         'inputFile' => \%inputFile_of,
@@ -52,6 +52,16 @@ __PACKAGE__->_factory(
         'max' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'from' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'to' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'inputFile' => 'inputFile',
+        'classinterval' => 'classinterval',
+        'col' => 'col',
+        'min' => 'min',
+        'max' => 'max',
+        'from' => 'from',
+        'to' => 'to',
     }
 );
 
@@ -91,17 +101,24 @@ methods:
 
 =item * inputFile
 
+
 =item * classinterval
+
 
 =item * col
 
+
 =item * min
+
 
 =item * max
 
+
 =item * from
 
+
 =item * to
+
 
 
 

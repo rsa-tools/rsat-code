@@ -39,8 +39,7 @@ my %infer_operons_of :ATTR(:get<infer_operons>);
 my %dist_thr_of :ATTR(:get<dist_thr>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         verbosity
         genes
         tmp_infile
@@ -60,6 +59,7 @@ __PACKAGE__->_factory(
         no_filter
         infer_operons
         dist_thr
+
     ) ],
     {
         'output' => \%output_of,
@@ -104,6 +104,29 @@ __PACKAGE__->_factory(
         'no_filter' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'infer_operons' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'dist_thr' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'output' => 'output',
+        'verbosity' => 'verbosity',
+        'genes' => 'genes',
+        'tmp_infile' => 'tmp_infile',
+        'all_genes' => 'all_genes',
+        'max_genes' => 'max_genes',
+        'output_prefix' => 'output_prefix',
+        'query' => 'query',
+        'sep_genes' => 'sep_genes',
+        'organism' => 'organism',
+        'taxon' => 'taxon',
+        'index' => 'index',
+        'lth' => 'lth',
+        'uth' => 'uth',
+        'return' => 'return',
+        'to_matrix' => 'to_matrix',
+        'bg_model' => 'bg_model',
+        'no_filter' => 'no_filter',
+        'infer_operons' => 'infer_operons',
+        'dist_thr' => 'dist_thr',
     }
 );
 
@@ -143,43 +166,63 @@ methods:
 
 =item * output
 
+
 =item * verbosity
+
 
 =item * genes
 
+
 =item * tmp_infile
+
 
 =item * all_genes
 
+
 =item * max_genes
+
 
 =item * output_prefix
 
+
 =item * query
+
 
 =item * sep_genes
 
+
 =item * organism
+
 
 =item * taxon
 
+
 =item * index
+
 
 =item * lth
 
+
 =item * uth
+
 
 =item * return
 
+
 =item * to_matrix
+
 
 =item * bg_model
 
+
 =item * no_filter
+
 
 =item * infer_operons
 
+
 =item * dist_thr
+
 
 
 

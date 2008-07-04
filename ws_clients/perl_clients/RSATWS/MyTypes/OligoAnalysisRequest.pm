@@ -34,8 +34,7 @@ my %uth_of :ATTR(:get<uth>);
 my %pseudo_of :ATTR(:get<pseudo>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         verbosity
         sequence
         tmp_infile
@@ -50,6 +49,7 @@ __PACKAGE__->_factory(
         lth
         uth
         pseudo
+
     ) ],
     {
         'output' => \%output_of,
@@ -84,6 +84,24 @@ __PACKAGE__->_factory(
         'lth' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'uth' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'pseudo' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'output' => 'output',
+        'verbosity' => 'verbosity',
+        'sequence' => 'sequence',
+        'tmp_infile' => 'tmp_infile',
+        'format' => 'format',
+        'length' => 'length',
+        'organism' => 'organism',
+        'background' => 'background',
+        'stats' => 'stats',
+        'noov' => 'noov',
+        'str' => 'str',
+        'sort' => 'sort',
+        'lth' => 'lth',
+        'uth' => 'uth',
+        'pseudo' => 'pseudo',
     }
 );
 
@@ -123,33 +141,48 @@ methods:
 
 =item * output
 
+
 =item * verbosity
+
 
 =item * sequence
 
+
 =item * tmp_infile
+
 
 =item * format
 
+
 =item * length
+
 
 =item * organism
 
+
 =item * background
+
 
 =item * stats
 
+
 =item * noov
+
 
 =item * str
 
+
 =item * sort
+
 
 =item * lth
 
+
 =item * uth
 
+
 =item * pseudo
+
 
 
 

@@ -33,8 +33,7 @@ my %add_edges_of :ATTR(:get<add_edges>);
 my %rm_edges_of :ATTR(:get<rm_edges>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        informat
+    [ qw(        informat
         outformat
         inputgraph
         wcol
@@ -48,6 +47,7 @@ __PACKAGE__->_factory(
         rm_nodes
         add_edges
         rm_edges
+
     ) ],
     {
         'informat' => \%informat_of,
@@ -80,6 +80,23 @@ __PACKAGE__->_factory(
         'rm_nodes' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'add_edges' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'rm_edges' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'informat' => 'informat',
+        'outformat' => 'outformat',
+        'inputgraph' => 'inputgraph',
+        'wcol' => 'wcol',
+        'scol' => 'scol',
+        'tcol' => 'tcol',
+        'directed' => 'directed',
+        'duplicate' => 'duplicate',
+        'self' => 'self',
+        'target' => 'target',
+        'add_nodes' => 'add_nodes',
+        'rm_nodes' => 'rm_nodes',
+        'add_edges' => 'add_edges',
+        'rm_edges' => 'rm_edges',
     }
 );
 
@@ -119,31 +136,45 @@ methods:
 
 =item * informat
 
+
 =item * outformat
+
 
 =item * inputgraph
 
+
 =item * wcol
+
 
 =item * scol
 
+
 =item * tcol
+
 
 =item * directed
 
+
 =item * duplicate
+
 
 =item * self
 
+
 =item * target
+
 
 =item * add_nodes
 
+
 =item * rm_nodes
+
 
 =item * add_edges
 
+
 =item * rm_edges
+
 
 
 

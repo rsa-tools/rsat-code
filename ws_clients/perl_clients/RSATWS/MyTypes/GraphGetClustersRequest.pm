@@ -29,8 +29,7 @@ my %distinct_of :ATTR(:get<distinct>);
 my %induced_of :ATTR(:get<induced>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        informat
+    [ qw(        informat
         return
         outformat
         inputgraph
@@ -40,6 +39,7 @@ __PACKAGE__->_factory(
         tcol
         distinct
         induced
+
     ) ],
     {
         'informat' => \%informat_of,
@@ -64,6 +64,19 @@ __PACKAGE__->_factory(
         'tcol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'distinct' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'induced' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'informat' => 'informat',
+        'return' => 'return',
+        'outformat' => 'outformat',
+        'inputgraph' => 'inputgraph',
+        'clusters' => 'clusters',
+        'wcol' => 'wcol',
+        'scol' => 'scol',
+        'tcol' => 'tcol',
+        'distinct' => 'distinct',
+        'induced' => 'induced',
     }
 );
 
@@ -103,23 +116,33 @@ methods:
 
 =item * informat
 
+
 =item * return
+
 
 =item * outformat
 
+
 =item * inputgraph
+
 
 =item * clusters
 
+
 =item * wcol
+
 
 =item * scol
 
+
 =item * tcol
+
 
 =item * distinct
 
+
 =item * induced
+
 
 
 

@@ -35,8 +35,7 @@ my %th_of :ATTR(:get<th>);
 my %return_of :ATTR(:get<return>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         sequence
         tmp_infile
         format
@@ -52,6 +51,7 @@ __PACKAGE__->_factory(
         sort
         th
         return
+
     ) ],
     {
         'output' => \%output_of,
@@ -88,6 +88,25 @@ __PACKAGE__->_factory(
         'sort' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'th' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'return' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'output' => 'output',
+        'sequence' => 'sequence',
+        'tmp_infile' => 'tmp_infile',
+        'format' => 'format',
+        'subst' => 'subst',
+        'pattern' => 'pattern',
+        'pattern_file' => 'pattern_file',
+        'tmp_pattern_file' => 'tmp_pattern_file',
+        'id' => 'id',
+        'origin' => 'origin',
+        'noov' => 'noov',
+        'score' => 'score',
+        'str' => 'str',
+        'sort' => 'sort',
+        'th' => 'th',
+        'return' => 'return',
     }
 );
 
@@ -127,35 +146,51 @@ methods:
 
 =item * output
 
+
 =item * sequence
+
 
 =item * tmp_infile
 
+
 =item * format
+
 
 =item * subst
 
+
 =item * pattern
+
 
 =item * pattern_file
 
+
 =item * tmp_pattern_file
+
 
 =item * id
 
+
 =item * origin
+
 
 =item * noov
 
+
 =item * score
+
 
 =item * str
 
+
 =item * sort
+
 
 =item * th
 
+
 =item * return
+
 
 
 
