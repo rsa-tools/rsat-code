@@ -33,8 +33,7 @@ my %oligo_length_of :ATTR(:get<oligo_length>);
 my %length_file_of :ATTR(:get<length_file>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         sequence_length
         repetition
         format
@@ -48,6 +47,7 @@ __PACKAGE__->_factory(
         organism
         oligo_length
         length_file
+
     ) ],
     {
         'output' => \%output_of,
@@ -80,6 +80,23 @@ __PACKAGE__->_factory(
         'organism' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'oligo_length' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'length_file' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'output' => 'output',
+        'sequence_length' => 'sequence_length',
+        'repetition' => 'repetition',
+        'format' => 'format',
+        'line_width' => 'line_width',
+        'type' => 'type',
+        'seed' => 'seed',
+        'alphabet' => 'alphabet',
+        'expfreq' => 'expfreq',
+        'tmp_expfreq_file' => 'tmp_expfreq_file',
+        'bg_model' => 'bg_model',
+        'organism' => 'organism',
+        'oligo_length' => 'oligo_length',
+        'length_file' => 'length_file',
     }
 );
 
@@ -119,31 +136,45 @@ methods:
 
 =item * output
 
+
 =item * sequence_length
+
 
 =item * repetition
 
+
 =item * format
+
 
 =item * line_width
 
+
 =item * type
+
 
 =item * seed
 
+
 =item * alphabet
+
 
 =item * expfreq
 
+
 =item * tmp_expfreq_file
+
 
 =item * bg_model
 
+
 =item * organism
+
 
 =item * oligo_length
 
+
 =item * length_file
+
 
 
 

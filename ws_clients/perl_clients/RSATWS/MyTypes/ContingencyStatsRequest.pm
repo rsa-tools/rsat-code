@@ -24,12 +24,12 @@ my %rsizes_of :ATTR(:get<rsizes>);
 my %csizes_of :ATTR(:get<csizes>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        inputfile
+    [ qw(        inputfile
         decimals
         return
         rsizes
         csizes
+
     ) ],
     {
         'inputfile' => \%inputfile_of,
@@ -44,6 +44,14 @@ __PACKAGE__->_factory(
         'return' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'rsizes' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'csizes' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'inputfile' => 'inputfile',
+        'decimals' => 'decimals',
+        'return' => 'return',
+        'rsizes' => 'rsizes',
+        'csizes' => 'csizes',
     }
 );
 
@@ -83,13 +91,18 @@ methods:
 
 =item * inputfile
 
+
 =item * decimals
+
 
 =item * return
 
+
 =item * rsizes
 
+
 =item * csizes
+
 
 
 

@@ -35,14 +35,18 @@ Class::Std::initialize();
 my %request_of :ATTR(:get<request>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        request
+    [ qw(        request
+
     ) ],
     {
         'request' => \%request_of,
     },
     {
         'request' => 'MyTypes::TextToHtmlRequest',
+    },
+    {
+
+        'request' => 'request',
     }
 );
 

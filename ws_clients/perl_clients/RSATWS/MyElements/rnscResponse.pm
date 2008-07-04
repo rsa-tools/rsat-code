@@ -35,14 +35,18 @@ Class::Std::initialize();
 my %response_of :ATTR(:get<response>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        response
+    [ qw(        response
+
     ) ],
     {
         'response' => \%response_of,
     },
     {
         'response' => 'MyTypes::RNSCResponse',
+    },
+    {
+
+        'response' => 'response',
     }
 );
 

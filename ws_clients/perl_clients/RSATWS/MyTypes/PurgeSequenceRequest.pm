@@ -28,8 +28,7 @@ my %delete_of :ATTR(:get<delete>);
 my %mask_short_of :ATTR(:get<mask_short>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         sequence
         tmp_infile
         format
@@ -38,6 +37,7 @@ __PACKAGE__->_factory(
         str
         delete
         mask_short
+
     ) ],
     {
         'output' => \%output_of,
@@ -60,6 +60,18 @@ __PACKAGE__->_factory(
         'str' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'delete' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'mask_short' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'output' => 'output',
+        'sequence' => 'sequence',
+        'tmp_infile' => 'tmp_infile',
+        'format' => 'format',
+        'match_length' => 'match_length',
+        'mismatch' => 'mismatch',
+        'str' => 'str',
+        'delete' => 'delete',
+        'mask_short' => 'mask_short',
     }
 );
 
@@ -99,21 +111,30 @@ methods:
 
 =item * output
 
+
 =item * sequence
+
 
 =item * tmp_infile
 
+
 =item * format
+
 
 =item * match_length
 
+
 =item * mismatch
+
 
 =item * str
 
+
 =item * delete
 
+
 =item * mask_short
+
 
 
 

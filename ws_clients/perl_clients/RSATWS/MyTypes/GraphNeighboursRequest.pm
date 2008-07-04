@@ -29,8 +29,7 @@ my %tcol_of :ATTR(:get<tcol>);
 my %steps_of :ATTR(:get<steps>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        informat
+    [ qw(        informat
         all
         stats
         self
@@ -40,6 +39,7 @@ __PACKAGE__->_factory(
         scol
         tcol
         steps
+
     ) ],
     {
         'informat' => \%informat_of,
@@ -64,6 +64,19 @@ __PACKAGE__->_factory(
         'scol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'tcol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'steps' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'informat' => 'informat',
+        'all' => 'all',
+        'stats' => 'stats',
+        'self' => 'self',
+        'inputgraph' => 'inputgraph',
+        'seedfile' => 'seedfile',
+        'wcol' => 'wcol',
+        'scol' => 'scol',
+        'tcol' => 'tcol',
+        'steps' => 'steps',
     }
 );
 
@@ -103,23 +116,33 @@ methods:
 
 =item * informat
 
+
 =item * all
+
 
 =item * stats
 
+
 =item * self
+
 
 =item * inputgraph
 
+
 =item * seedfile
+
 
 =item * wcol
 
+
 =item * scol
+
 
 =item * tcol
 
+
 =item * steps
+
 
 
 

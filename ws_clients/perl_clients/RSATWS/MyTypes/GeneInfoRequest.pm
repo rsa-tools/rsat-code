@@ -26,14 +26,14 @@ my %descr_of :ATTR(:get<descr>);
 my %feattype_of :ATTR(:get<feattype>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         organism
         query
         full
         noquery
         descr
         feattype
+
     ) ],
     {
         'output' => \%output_of,
@@ -52,6 +52,16 @@ __PACKAGE__->_factory(
         'noquery' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'descr' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'feattype' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'output' => 'output',
+        'organism' => 'organism',
+        'query' => 'query',
+        'full' => 'full',
+        'noquery' => 'noquery',
+        'descr' => 'descr',
+        'feattype' => 'feattype',
     }
 );
 
@@ -91,17 +101,24 @@ methods:
 
 =item * output
 
+
 =item * organism
+
 
 =item * query
 
+
 =item * full
+
 
 =item * noquery
 
+
 =item * descr
 
+
 =item * feattype
+
 
 
 

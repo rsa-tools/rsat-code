@@ -42,8 +42,7 @@ my %first_intron_of :ATTR(:get<first_intron>);
 my %non_coding_of :ATTR(:get<non_coding>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         organism
         ensembl_host
         db_name
@@ -66,6 +65,7 @@ __PACKAGE__->_factory(
         all_transcripts
         first_intron
         non_coding
+
     ) ],
     {
         'output' => \%output_of,
@@ -116,6 +116,32 @@ __PACKAGE__->_factory(
         'all_transcripts' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'first_intron' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'non_coding' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'output' => 'output',
+        'organism' => 'organism',
+        'ensembl_host' => 'ensembl_host',
+        'db_name' => 'db_name',
+        'query' => 'query',
+        'all' => 'all',
+        'noorf' => 'noorf',
+        'nogene' => 'nogene',
+        'from' => 'from',
+        'to' => 'to',
+        'feattype' => 'feattype',
+        'type' => 'type',
+        'chromosome' => 'chromosome',
+        'left' => 'left',
+        'right' => 'right',
+        'strand' => 'strand',
+        'features' => 'features',
+        'feat_format' => 'feat_format',
+        'mask_coding' => 'mask_coding',
+        'repeat' => 'repeat',
+        'all_transcripts' => 'all_transcripts',
+        'first_intron' => 'first_intron',
+        'non_coding' => 'non_coding',
     }
 );
 
@@ -155,49 +181,72 @@ methods:
 
 =item * output
 
+
 =item * organism
+
 
 =item * ensembl_host
 
+
 =item * db_name
+
 
 =item * query
 
+
 =item * all
+
 
 =item * noorf
 
+
 =item * nogene
+
 
 =item * from
 
+
 =item * to
+
 
 =item * feattype
 
+
 =item * type
+
 
 =item * chromosome
 
+
 =item * left
+
 
 =item * right
 
+
 =item * strand
+
 
 =item * features
 
+
 =item * feat_format
+
 
 =item * mask_coding
 
+
 =item * repeat
+
 
 =item * all_transcripts
 
+
 =item * first_intron
 
+
 =item * non_coding
+
 
 
 

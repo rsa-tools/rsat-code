@@ -35,8 +35,7 @@ my %repeat_of :ATTR(:get<repeat>);
 my %imp_pos_of :ATTR(:get<imp_pos>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         organism
         query
         all
@@ -52,6 +51,7 @@ __PACKAGE__->_factory(
         nocom
         repeat
         imp_pos
+
     ) ],
     {
         'output' => \%output_of,
@@ -88,6 +88,25 @@ __PACKAGE__->_factory(
         'nocom' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'repeat' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'imp_pos' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'output' => 'output',
+        'organism' => 'organism',
+        'query' => 'query',
+        'all' => 'all',
+        'noorf' => 'noorf',
+        'from' => 'from',
+        'to' => 'to',
+        'feattype' => 'feattype',
+        'type' => 'type',
+        'format' => 'format',
+        'lw' => 'lw',
+        'label' => 'label',
+        'label_sep' => 'label_sep',
+        'nocom' => 'nocom',
+        'repeat' => 'repeat',
+        'imp_pos' => 'imp_pos',
     }
 );
 
@@ -127,35 +146,51 @@ methods:
 
 =item * output
 
+
 =item * organism
+
 
 =item * query
 
+
 =item * all
+
 
 =item * noorf
 
+
 =item * from
+
 
 =item * to
 
+
 =item * feattype
+
 
 =item * type
 
+
 =item * format
+
 
 =item * lw
 
+
 =item * label
+
 
 =item * label_sep
 
+
 =item * nocom
+
 
 =item * repeat
 
+
 =item * imp_pos
+
 
 
 

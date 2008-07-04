@@ -47,8 +47,7 @@ my %tmp_sequence_file_of :ATTR(:get<tmp_sequence_file>);
 my %sequence_format_of :ATTR(:get<sequence_format>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         features
         tmp_infile
         format
@@ -76,6 +75,7 @@ __PACKAGE__->_factory(
         select
         tmp_sequence_file
         sequence_format
+
     ) ],
     {
         'output' => \%output_of,
@@ -136,6 +136,37 @@ __PACKAGE__->_factory(
         'select' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'tmp_sequence_file' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'sequence_format' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'output' => 'output',
+        'features' => 'features',
+        'tmp_infile' => 'tmp_infile',
+        'format' => 'format',
+        'from' => 'from',
+        'to' => 'to',
+        'title' => 'title',
+        'label' => 'label',
+        'symbol' => 'symbol',
+        'dot' => 'dot',
+        'mlen' => 'mlen',
+        'mapthick' => 'mapthick',
+        'mspacing' => 'mspacing',
+        'origin' => 'origin',
+        'legend' => 'legend',
+        'scalebar' => 'scalebar',
+        'scalestep' => 'scalestep',
+        'scorethick' => 'scorethick',
+        'maxscore' => 'maxscore',
+        'minscore' => 'minscore',
+        'maxfthick' => 'maxfthick',
+        'minfthick' => 'minfthick',
+        'htmap' => 'htmap',
+        'mono' => 'mono',
+        'orientation' => 'orientation',
+        'select' => 'select',
+        'tmp_sequence_file' => 'tmp_sequence_file',
+        'sequence_format' => 'sequence_format',
     }
 );
 
@@ -175,59 +206,87 @@ methods:
 
 =item * output
 
+
 =item * features
+
 
 =item * tmp_infile
 
+
 =item * format
+
 
 =item * from
 
+
 =item * to
+
 
 =item * title
 
+
 =item * label
+
 
 =item * symbol
 
+
 =item * dot
+
 
 =item * mlen
 
+
 =item * mapthick
+
 
 =item * mspacing
 
+
 =item * origin
+
 
 =item * legend
 
+
 =item * scalebar
+
 
 =item * scalestep
 
+
 =item * scorethick
+
 
 =item * maxscore
 
+
 =item * minscore
+
 
 =item * maxfthick
 
+
 =item * minfthick
+
 
 =item * htmap
 
+
 =item * mono
+
 
 =item * orientation
 
+
 =item * select
+
 
 =item * tmp_sequence_file
 
+
 =item * sequence_format
+
 
 
 

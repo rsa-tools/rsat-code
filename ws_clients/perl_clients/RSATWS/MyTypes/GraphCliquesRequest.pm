@@ -25,13 +25,13 @@ my %min_size_of :ATTR(:get<min_size>);
 my %max_size_of :ATTR(:get<max_size>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        informat
+    [ qw(        informat
         inputgraph
         scol
         tcol
         min_size
         max_size
+
     ) ],
     {
         'informat' => \%informat_of,
@@ -48,6 +48,15 @@ __PACKAGE__->_factory(
         'tcol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'min_size' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'max_size' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'informat' => 'informat',
+        'inputgraph' => 'inputgraph',
+        'scol' => 'scol',
+        'tcol' => 'tcol',
+        'min_size' => 'min_size',
+        'max_size' => 'max_size',
     }
 );
 
@@ -87,15 +96,21 @@ methods:
 
 =item * informat
 
+
 =item * inputgraph
+
 
 =item * scol
 
+
 =item * tcol
+
 
 =item * min_size
 
+
 =item * max_size
+
 
 
 

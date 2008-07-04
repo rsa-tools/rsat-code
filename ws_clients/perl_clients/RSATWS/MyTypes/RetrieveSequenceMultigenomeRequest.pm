@@ -37,8 +37,7 @@ my %gene_col_of :ATTR(:get<gene_col>);
 my %org_col_of :ATTR(:get<org_col>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         input
         tmp_input_file
         all
@@ -56,6 +55,7 @@ __PACKAGE__->_factory(
         imp_pos
         gene_col
         org_col
+
     ) ],
     {
         'output' => \%output_of,
@@ -96,6 +96,27 @@ __PACKAGE__->_factory(
         'imp_pos' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'gene_col' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'org_col' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'output' => 'output',
+        'input' => 'input',
+        'tmp_input_file' => 'tmp_input_file',
+        'all' => 'all',
+        'noorf' => 'noorf',
+        'from' => 'from',
+        'to' => 'to',
+        'feattype' => 'feattype',
+        'type' => 'type',
+        'format' => 'format',
+        'lw' => 'lw',
+        'label' => 'label',
+        'label_sep' => 'label_sep',
+        'nocom' => 'nocom',
+        'repeat' => 'repeat',
+        'imp_pos' => 'imp_pos',
+        'gene_col' => 'gene_col',
+        'org_col' => 'org_col',
     }
 );
 
@@ -135,39 +156,57 @@ methods:
 
 =item * output
 
+
 =item * input
+
 
 =item * tmp_input_file
 
+
 =item * all
+
 
 =item * noorf
 
+
 =item * from
+
 
 =item * to
 
+
 =item * feattype
+
 
 =item * type
 
+
 =item * format
+
 
 =item * lw
 
+
 =item * label
+
 
 =item * label_sep
 
+
 =item * nocom
+
 
 =item * repeat
 
+
 =item * imp_pos
+
 
 =item * gene_col
 
+
 =item * org_col
+
 
 
 

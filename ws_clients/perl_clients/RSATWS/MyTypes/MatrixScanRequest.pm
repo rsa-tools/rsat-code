@@ -39,8 +39,7 @@ my %decimals_of :ATTR(:get<decimals>);
 my %crer_ids_of :ATTR(:get<crer_ids>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         sequence_file
         matrix_file
         matrix_format
@@ -60,6 +59,7 @@ __PACKAGE__->_factory(
         origin
         decimals
         crer_ids
+
     ) ],
     {
         'output' => \%output_of,
@@ -100,10 +100,33 @@ __PACKAGE__->_factory(
         'uth' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'both_strand' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'single_strand' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
-        'verbosity' => 'SOAP::WSDL::XSD::Typelib::Builtin::float',
-        'origin' => 'SOAP::WSDL::XSD::Typelib::Builtin::float',
-        'decimals' => 'SOAP::WSDL::XSD::Typelib::Builtin::float',
+        'verbosity' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'origin' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'decimals' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'crer_ids' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'output' => 'output',
+        'sequence_file' => 'sequence_file',
+        'matrix_file' => 'matrix_file',
+        'matrix_format' => 'matrix_format',
+        'matrix_list' => 'matrix_list',
+        'top_matrices' => 'top_matrices',
+        'background' => 'background',
+        'background_input' => 'background_input',
+        'background_window' => 'background_window',
+        'markov' => 'markov',
+        'background_pseudo' => 'background_pseudo',
+        'return_fields' => 'return_fields',
+        'lth' => 'lth',
+        'uth' => 'uth',
+        'both_strand' => 'both_strand',
+        'single_strand' => 'single_strand',
+        'verbosity' => 'verbosity',
+        'origin' => 'origin',
+        'decimals' => 'decimals',
+        'crer_ids' => 'crer_ids',
     }
 );
 
@@ -143,43 +166,63 @@ methods:
 
 =item * output
 
+
 =item * sequence_file
+
 
 =item * matrix_file
 
+
 =item * matrix_format
+
 
 =item * matrix_list
 
+
 =item * top_matrices
+
 
 =item * background
 
+
 =item * background_input
+
 
 =item * background_window
 
+
 =item * markov
+
 
 =item * background_pseudo
 
+
 =item * return_fields
+
 
 =item * lth
 
+
 =item * uth
+
 
 =item * both_strand
 
+
 =item * single_strand
+
 
 =item * verbosity
 
+
 =item * origin
+
 
 =item * decimals
 
+
 =item * crer_ids
+
 
 
 
@@ -209,9 +252,9 @@ Constructor. The following data structure may be passed to new():
    uth =>  $some_value, # string
    both_strand =>  $some_value, # int
    single_strand =>  $some_value, # int
-   verbosity =>  $some_value, # float
-   origin =>  $some_value, # float
-   decimals =>  $some_value, # float
+   verbosity =>  $some_value, # int
+   origin =>  $some_value, # int
+   decimals =>  $some_value, # int
    crer_ids =>  $some_value, # int
  },
 

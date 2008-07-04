@@ -30,8 +30,7 @@ my %tccol_of :ATTR(:get<tccol>);
 my %layout_of :ATTR(:get<layout>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        informat
+    [ qw(        informat
         outformat
         ewidth
         inputgraph
@@ -42,6 +41,7 @@ __PACKAGE__->_factory(
         sccol
         tccol
         layout
+
     ) ],
     {
         'informat' => \%informat_of,
@@ -68,6 +68,20 @@ __PACKAGE__->_factory(
         'sccol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'tccol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'layout' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'informat' => 'informat',
+        'outformat' => 'outformat',
+        'ewidth' => 'ewidth',
+        'inputgraph' => 'inputgraph',
+        'wcol' => 'wcol',
+        'scol' => 'scol',
+        'tcol' => 'tcol',
+        'eccol' => 'eccol',
+        'sccol' => 'sccol',
+        'tccol' => 'tccol',
+        'layout' => 'layout',
     }
 );
 
@@ -107,25 +121,36 @@ methods:
 
 =item * informat
 
+
 =item * outformat
+
 
 =item * ewidth
 
+
 =item * inputgraph
+
 
 =item * wcol
 
+
 =item * scol
+
 
 =item * tcol
 
+
 =item * eccol
+
 
 =item * sccol
 
+
 =item * tccol
 
+
 =item * layout
+
 
 
 

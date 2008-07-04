@@ -37,8 +37,7 @@ my %lth_of :ATTR(:get<lth>);
 my %uth_of :ATTR(:get<uth>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         sequence
         tmp_infile
         format
@@ -56,6 +55,7 @@ __PACKAGE__->_factory(
         zeroocc
         lth
         uth
+
     ) ],
     {
         'output' => \%output_of,
@@ -96,6 +96,27 @@ __PACKAGE__->_factory(
         'zeroocc' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'lth' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'uth' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'output' => 'output',
+        'sequence' => 'sequence',
+        'tmp_infile' => 'tmp_infile',
+        'format' => 'format',
+        'length' => 'length',
+        'spacing' => 'spacing',
+        'organism' => 'organism',
+        'background' => 'background',
+        'stats' => 'stats',
+        'type' => 'type',
+        'noov' => 'noov',
+        'str' => 'str',
+        'sort' => 'sort',
+        'under' => 'under',
+        'two_tails' => 'two_tails',
+        'zeroocc' => 'zeroocc',
+        'lth' => 'lth',
+        'uth' => 'uth',
     }
 );
 
@@ -135,39 +156,57 @@ methods:
 
 =item * output
 
+
 =item * sequence
+
 
 =item * tmp_infile
 
+
 =item * format
+
 
 =item * length
 
+
 =item * spacing
+
 
 =item * organism
 
+
 =item * background
+
 
 =item * stats
 
+
 =item * type
+
 
 =item * noov
 
+
 =item * str
+
 
 =item * sort
 
+
 =item * under
+
 
 =item * two_tails
 
+
 =item * zeroocc
+
 
 =item * lth
 
+
 =item * uth
+
 
 
 
