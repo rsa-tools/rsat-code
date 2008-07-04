@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.78 2008/02/22 00:07:04 jvanheld Exp $
+# $Id: install-organism,v 1.79 2008/07/04 06:10:14 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -610,6 +610,7 @@ sub CalcFrequencies {
 sub CalcOligoFreq {
   my ($seq_file,$seq_format,$seq_type) = @_;
   my @current_oligo_lengths = @oligo_lengths;
+#  my @current_oligo_lengths = (6);
   my $oligo_seq_type = "dna";
   my $residue_type = "nt";
   my @strands = ("-1str", "-2str");
