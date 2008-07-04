@@ -1514,8 +1514,10 @@ sub ReadArguments {
 	    ### axis size (in pixels) ###
 	} elsif (($ARGV[$a] eq "-mlen") && (&IsNatural($ARGV[$a+1]))){
 	    $map_length = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-mapthick") && (&IsNatural($ARGV[$a+1]))){
+
+	} elsif (($ARGV[$a] eq "-mapthick") && ((&IsNatural($ARGV[$a+1]))) || ($ARGV[$a+1] eq "auto")){
 	    $map_thick = $ARGV[$a+1];
+
 	} elsif (($ARGV[$a] eq "-mspacing") && (&IsNatural($ARGV[$a+1]))){
 	    $map_spacing = $ARGV[$a+1];
 
