@@ -22,14 +22,20 @@ my %inputgraph_of :ATTR(:get<inputgraph>);
 my %clusters_of :ATTR(:get<clusters>);
 my %stat_of :ATTR(:get<stat>);
 my %decimals_of :ATTR(:get<decimals>);
+my %wcol_of :ATTR(:get<wcol>);
+my %scol_of :ATTR(:get<scol>);
+my %tcol_of :ATTR(:get<tcol>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        informat
+    [ qw(        informat
         inputgraph
         clusters
         stat
         decimals
+        wcol
+        scol
+        tcol
+
     ) ],
     {
         'informat' => \%informat_of,
@@ -37,6 +43,9 @@ __PACKAGE__->_factory(
         'clusters' => \%clusters_of,
         'stat' => \%stat_of,
         'decimals' => \%decimals_of,
+        'wcol' => \%wcol_of,
+        'scol' => \%scol_of,
+        'tcol' => \%tcol_of,
     },
     {
         'informat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -44,6 +53,20 @@ __PACKAGE__->_factory(
         'clusters' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'stat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'decimals' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'wcol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'scol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'tcol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'informat' => 'informat',
+        'inputgraph' => 'inputgraph',
+        'clusters' => 'clusters',
+        'stat' => 'stat',
+        'decimals' => 'decimals',
+        'wcol' => 'wcol',
+        'scol' => 'scol',
+        'tcol' => 'tcol',
     }
 );
 
@@ -83,13 +106,27 @@ methods:
 
 =item * informat
 
+
 =item * inputgraph
+
 
 =item * clusters
 
+
 =item * stat
 
+
 =item * decimals
+
+
+=item * wcol
+
+
+=item * scol
+
+
+=item * tcol
+
 
 
 
@@ -108,6 +145,9 @@ Constructor. The following data structure may be passed to new():
    clusters =>  $some_value, # string
    stat =>  $some_value, # string
    decimals =>  $some_value, # int
+   wcol =>  $some_value, # int
+   scol =>  $some_value, # int
+   tcol =>  $some_value, # int
  },
 
 

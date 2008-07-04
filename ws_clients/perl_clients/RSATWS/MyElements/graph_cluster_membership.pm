@@ -35,14 +35,18 @@ Class::Std::initialize();
 my %request_of :ATTR(:get<request>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        request
+    [ qw(        request
+
     ) ],
     {
         'request' => \%request_of,
     },
     {
         'request' => 'MyTypes::GraphClusterMembershipRequest',
+    },
+    {
+
+        'request' => 'request',
     }
 );
 
@@ -90,6 +94,9 @@ Constructor. The following data structure may be passed to new():
      clusters =>  $some_value, # string
      stat =>  $some_value, # string
      decimals =>  $some_value, # int
+     wcol =>  $some_value, # int
+     scol =>  $some_value, # int
+     tcol =>  $some_value, # int
    },
  },
 

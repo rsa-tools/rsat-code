@@ -24,12 +24,12 @@ my %uth_of :ATTR(:get<uth>);
 my %lth_of :ATTR(:get<lth>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        inputfile
+    [ qw(        inputfile
         channels
         interactor_type
         uth
         lth
+
     ) ],
     {
         'inputfile' => \%inputfile_of,
@@ -44,6 +44,14 @@ __PACKAGE__->_factory(
         'interactor_type' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'uth' => 'SOAP::WSDL::XSD::Typelib::Builtin::float',
         'lth' => 'SOAP::WSDL::XSD::Typelib::Builtin::float',
+    },
+    {
+
+        'inputfile' => 'inputfile',
+        'channels' => 'channels',
+        'interactor_type' => 'interactor_type',
+        'uth' => 'uth',
+        'lth' => 'lth',
     }
 );
 
@@ -83,13 +91,18 @@ methods:
 
 =item * inputfile
 
+
 =item * channels
+
 
 =item * interactor_type
 
+
 =item * uth
 
+
 =item * lth
+
 
 
 

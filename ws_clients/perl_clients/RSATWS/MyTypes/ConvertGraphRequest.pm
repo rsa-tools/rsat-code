@@ -34,8 +34,7 @@ my %layout_of :ATTR(:get<layout>);
 my %ewidth_of :ATTR(:get<ewidth>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        informat
+    [ qw(        informat
         ecolors
         outformat
         inputgraph
@@ -50,6 +49,7 @@ __PACKAGE__->_factory(
         distinct_path
         layout
         ewidth
+
     ) ],
     {
         'informat' => \%informat_of,
@@ -84,6 +84,24 @@ __PACKAGE__->_factory(
         'distinct_path' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'layout' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'ewidth' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'informat' => 'informat',
+        'ecolors' => 'ecolors',
+        'outformat' => 'outformat',
+        'inputgraph' => 'inputgraph',
+        'wcol' => 'wcol',
+        'scol' => 'scol',
+        'tcol' => 'tcol',
+        'eccol' => 'eccol',
+        'sccol' => 'sccol',
+        'tccol' => 'tccol',
+        'pathcol' => 'pathcol',
+        'undirected' => 'undirected',
+        'distinct_path' => 'distinct_path',
+        'layout' => 'layout',
+        'ewidth' => 'ewidth',
     }
 );
 
@@ -123,33 +141,48 @@ methods:
 
 =item * informat
 
+
 =item * ecolors
+
 
 =item * outformat
 
+
 =item * inputgraph
+
 
 =item * wcol
 
+
 =item * scol
+
 
 =item * tcol
 
+
 =item * eccol
+
 
 =item * sccol
 
+
 =item * tccol
+
 
 =item * pathcol
 
+
 =item * undirected
+
 
 =item * distinct_path
 
+
 =item * layout
 
+
 =item * ewidth
+
 
 
 

@@ -28,8 +28,7 @@ my %scol_of :ATTR(:get<scol>);
 my %tcol_of :ATTR(:get<tcol>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        informat
+    [ qw(        informat
         all
         return
         inputgraph
@@ -38,6 +37,7 @@ __PACKAGE__->_factory(
         wcol
         scol
         tcol
+
     ) ],
     {
         'informat' => \%informat_of,
@@ -60,6 +60,18 @@ __PACKAGE__->_factory(
         'wcol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'scol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'tcol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'informat' => 'informat',
+        'all' => 'all',
+        'return' => 'return',
+        'inputgraph' => 'inputgraph',
+        'nodefile' => 'nodefile',
+        'directed' => 'directed',
+        'wcol' => 'wcol',
+        'scol' => 'scol',
+        'tcol' => 'tcol',
     }
 );
 
@@ -99,21 +111,30 @@ methods:
 
 =item * informat
 
+
 =item * all
+
 
 =item * return
 
+
 =item * inputgraph
+
 
 =item * nodefile
 
+
 =item * directed
+
 
 =item * wcol
 
+
 =item * scol
 
+
 =item * tcol
+
 
 
 

@@ -27,8 +27,7 @@ my %inputclasses_of :ATTR(:get<inputclasses>);
 my %names_of :ATTR(:get<names>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        informat
+    [ qw(        informat
         outformat
         member_col
         class_col
@@ -36,6 +35,7 @@ __PACKAGE__->_factory(
         min_score
         inputclasses
         names
+
     ) ],
     {
         'informat' => \%informat_of,
@@ -56,6 +56,17 @@ __PACKAGE__->_factory(
         'min_score' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'inputclasses' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'names' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'informat' => 'informat',
+        'outformat' => 'outformat',
+        'member_col' => 'member_col',
+        'class_col' => 'class_col',
+        'score_col' => 'score_col',
+        'min_score' => 'min_score',
+        'inputclasses' => 'inputclasses',
+        'names' => 'names',
     }
 );
 
@@ -95,19 +106,27 @@ methods:
 
 =item * informat
 
+
 =item * outformat
+
 
 =item * member_col
 
+
 =item * class_col
+
 
 =item * score_col
 
+
 =item * min_score
+
 
 =item * inputclasses
 
+
 =item * names
+
 
 
 

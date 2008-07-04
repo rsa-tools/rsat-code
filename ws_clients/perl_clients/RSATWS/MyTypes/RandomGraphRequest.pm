@@ -36,8 +36,7 @@ my %col_conservation_of :ATTR(:get<col_conservation>);
 my %normal_of :ATTR(:get<normal>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        informat
+    [ qw(        informat
         outformat
         inputgraph
         random_type
@@ -54,6 +53,7 @@ __PACKAGE__->_factory(
         duplicate
         col_conservation
         normal
+
     ) ],
     {
         'informat' => \%informat_of,
@@ -92,6 +92,26 @@ __PACKAGE__->_factory(
         'duplicate' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'col_conservation' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'normal' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'informat' => 'informat',
+        'outformat' => 'outformat',
+        'inputgraph' => 'inputgraph',
+        'random_type' => 'random_type',
+        'wcol' => 'wcol',
+        'scol' => 'scol',
+        'tcol' => 'tcol',
+        'edges' => 'edges',
+        'degree' => 'degree',
+        'nodes' => 'nodes',
+        'mean' => 'mean',
+        'sd' => 'sd',
+        'directed' => 'directed',
+        'no_single' => 'no_single',
+        'duplicate' => 'duplicate',
+        'col_conservation' => 'col_conservation',
+        'normal' => 'normal',
     }
 );
 
@@ -131,37 +151,54 @@ methods:
 
 =item * informat
 
+
 =item * outformat
+
 
 =item * inputgraph
 
+
 =item * random_type
+
 
 =item * wcol
 
+
 =item * scol
+
 
 =item * tcol
 
+
 =item * edges
+
 
 =item * degree
 
+
 =item * nodes
+
 
 =item * mean
 
+
 =item * sd
+
 
 =item * directed
 
+
 =item * no_single
+
 
 =item * duplicate
 
+
 =item * col_conservation
 
+
 =item * normal
+
 
 
 

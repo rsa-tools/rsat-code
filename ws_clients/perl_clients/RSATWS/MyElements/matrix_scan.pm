@@ -35,14 +35,18 @@ Class::Std::initialize();
 my %request_of :ATTR(:get<request>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        request
+    [ qw(        request
+
     ) ],
     {
         'request' => \%request_of,
     },
     {
         'request' => 'MyTypes::MatrixScanRequest',
+    },
+    {
+
+        'request' => 'request',
     }
 );
 
@@ -101,9 +105,9 @@ Constructor. The following data structure may be passed to new():
      uth =>  $some_value, # string
      both_strand =>  $some_value, # int
      single_strand =>  $some_value, # int
-     verbosity =>  $some_value, # float
-     origin =>  $some_value, # float
-     decimals =>  $some_value, # float
+     verbosity =>  $some_value, # int
+     origin =>  $some_value, # int
+     decimals =>  $some_value, # int
      crer_ids =>  $some_value, # int
    },
  },

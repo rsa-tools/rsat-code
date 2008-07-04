@@ -21,9 +21,9 @@ my %inputgraph_of :ATTR(:get<inputgraph>);
 my %inflation_of :ATTR(:get<inflation>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        inputgraph
+    [ qw(        inputgraph
         inflation
+
     ) ],
     {
         'inputgraph' => \%inputgraph_of,
@@ -32,6 +32,11 @@ __PACKAGE__->_factory(
     {
         'inputgraph' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'inflation' => 'SOAP::WSDL::XSD::Typelib::Builtin::float',
+    },
+    {
+
+        'inputgraph' => 'inputgraph',
+        'inflation' => 'inflation',
     }
 );
 
@@ -71,7 +76,9 @@ methods:
 
 =item * inputgraph
 
+
 =item * inflation
+
 
 
 

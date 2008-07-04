@@ -33,8 +33,7 @@ my %triangle_of :ATTR(:get<triangle>);
 my %matrix_of :ATTR(:get<matrix>);
 
 __PACKAGE__->_factory(
-    [ qw(
-        output
+    [ qw(        output
         ref_classes
         query_classes
         return_fields
@@ -48,6 +47,7 @@ __PACKAGE__->_factory(
         distinct
         triangle
         matrix
+
     ) ],
     {
         'output' => \%output_of,
@@ -80,6 +80,23 @@ __PACKAGE__->_factory(
         'distinct' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'triangle' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'matrix' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+    },
+    {
+
+        'output' => 'output',
+        'ref_classes' => 'ref_classes',
+        'query_classes' => 'query_classes',
+        'return_fields' => 'return_fields',
+        'score_column' => 'score_column',
+        'input_classes' => 'input_classes',
+        'upper_threshold_field' => 'upper_threshold_field',
+        'upper_threshold_value' => 'upper_threshold_value',
+        'lower_threshold_field' => 'lower_threshold_field',
+        'lower_threshold_value' => 'lower_threshold_value',
+        'sort' => 'sort',
+        'distinct' => 'distinct',
+        'triangle' => 'triangle',
+        'matrix' => 'matrix',
     }
 );
 
@@ -119,31 +136,45 @@ methods:
 
 =item * output
 
+
 =item * ref_classes
+
 
 =item * query_classes
 
+
 =item * return_fields
+
 
 =item * score_column
 
+
 =item * input_classes
+
 
 =item * upper_threshold_field
 
+
 =item * upper_threshold_value
+
 
 =item * lower_threshold_field
 
+
 =item * lower_threshold_value
+
 
 =item * sort
 
+
 =item * distinct
+
 
 =item * triangle
 
+
 =item * matrix
+
 
 
 
