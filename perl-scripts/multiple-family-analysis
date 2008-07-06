@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.244 2008/07/06 20:03:32 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.245 2008/07/06 20:06:44 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.244 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.245 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -436,13 +436,13 @@ package main;
     }
 
     ### Read family file
-    &RSAT::message::TimeWarn("Reading gene groups") if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("Reading gene families") if ($main::verbose >= 1);
     if ($org_fam) {
       %family = &ReadClasses($family_file, 0);
     } else {
       %family = &ReadClasses($family_file, 1, $organism);
     }
-
+    &RSAT::message::Info("Gene families read", scalar(keys(%family))) if ($main::verbose >= 1);
   }
 
   ################################################################
