@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.245 2008/07/06 20:06:44 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.246 2008/07/06 20:18:54 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.245 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.246 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -498,7 +498,7 @@ package main;
   }
   @families = sort keys %family;
 
-  &RSAT::message::TimeWarn("Remaining families after filtering", scalar(@families)) if ($verbose >= 1);
+  &RSAT::message::Info("Remaining families after filtering", scalar(@families)) if ($verbose >= 1);
 
   ################################################################
   ## Skip the first or last families if required
@@ -531,7 +531,7 @@ package main;
     }
     @families = sort keys %family;
 
-    &RSAT::message::Info(join("\t", "Remaining families after options -first and -last", scalar(@families))) if ($verbose >= 1);
+    &RSAT::message::Info(join("\t", "Remaining families after applying options -first and -last", scalar(@families))) if ($verbose >= 1);
   }
 
   ## Set all the file names
