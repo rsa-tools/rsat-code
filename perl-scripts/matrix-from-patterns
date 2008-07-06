@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.10 2008/06/16 21:03:33 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.11 2008/07/06 19:51:20 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -254,8 +254,8 @@ package main;
     ## Close output stream
     close $log if ($outfile{output});
 
-    &RSAT::message::TimeWarn("matrix-from-pattern log file", $outfile{log})
-      if ($main::verbose >= 1);
+    &RSAT::message::Info("matrix-from-pattern log file", $outfile{log})
+      if ($main::verbose >= 2);
 
     exit(0);
 }
