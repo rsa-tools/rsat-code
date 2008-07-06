@@ -87,7 +87,7 @@ sub readFromFile {
     ################################################################
     ## Check that there was at least one matrix in the file
     if (scalar(@matrices) == 0) {
-      &RSAT::message::Warning("File",  $file, "does not contain any matrix in", $format , "format");
+      &RSAT::message::Warning("File",  $file, "does not contain any matrix in", $format , "format") if ($main::verbose >= 1);
     }  else {
       &RSAT::message::Info("Read ".scalar(@matrices)." matrices from file ", $file) if ($main::verbose >= 3);
     }
@@ -941,10 +941,10 @@ sub _readFromConsensusFile {
 
   ##Check if there was at least one matrix obtained after final cycle
   unless ($final_cycle) {
-    &RSAT::message::Warning("This file does not contain the \"FINAL CYCLE\" header");
+    &RSAT::message::Warning("This file does not contain the \"FINAL CYCLE\" header") if ($main::verbose >= 2);
   } 
   unless (scalar(@matrices) > 0) {
-    &RSAT::message::Warning("This file does not contain any final cycle matrix");
+    &RSAT::message::Warning("This file does not contain any final cycle matrix") if ($main::verbose >= 2);
   }
 
   close $in if ($file);
@@ -1785,13 +1785,41 @@ Parameters
 =cut
 sub SortMatrices {
   my ($sort_key, $sort_order, @matrices) = @_;
+  my $nb_matrices = scalar(@matrices);
 
   ## Check if there is at least one matrix
-  if (scalar(@matrices) > 0) {
-    ## Check if the first matrix has the sort key as attribute
-    my $first_matrix = $matrices[0];
-    if ($first_matrix->get_attribute($sort_key)) {
-      &RSAT::message::Info("Sorting", scalar(@matrices), "matrices by", $sort_order, $sort_key) if ($main::verbose >= 2);
+  if ($nb_matrices > 0) {
+
+    ## Check that all matrices have the sort key as attribute
+    my %key_value = ();
+    my $attr_not_found = 0;
+    my $not_real = 0;
+    foreach my $matrix (@matrices) {
+      if (my $value = $matrix->get_attribute($sort_key)) {
+	$key_value{$matrix} = $value;
+	unless (&RSAT::util::IsReal($value)) {
+	  &RSAT::message::Debug("&RSAT::MatirxReader::SortMatrices()", "matrix", $matrix->get_attribute("id"), 
+				"Non-real attribute", $sort_key, "value", $value) if ($main::verbose >= 2);
+	  $not_real++;
+	}
+      } else {
+	$attr_not_found++;
+      }
+    }
+
+    if ($attr_not_found > 0) {
+      &RSAT::message::Warning("Cannot sort matrices by", $sort_key,
+			      "because this attribute is missing in", $attr_not_found."/".$nb_matrices, "matrices")
+	if ($main::verbose >= 0);
+    } elsif ($not_real > 0) {
+      &RSAT::message::Warning("Cannot sort matrices by", $sort_key,
+			      "because this attribute has non real values in", $not_real."/".$nb_matrices, "matrices")
+	if ($main::verbose >= 0);
+    } else {
+      #    ## Check if the first matrix has the sort key as attribute
+      #    my $first_matrix = $matrices[0];
+      #    if ($first_matrix->get_attribute($sort_key)) {
+      &RSAT::message::Info("Sorting", $nb_matrices, "matrices by", $sort_order, $sort_key) if ($main::verbose >= 2);
 
       ## Sort matrices
       if ($sort_order eq "desc") {
@@ -1806,15 +1834,12 @@ sub SortMatrices {
       } else {
 	&RSAT::error::FatalError($sort_order, "is not a valid sorting order. Supported: desc,asc,alpha.");
       }
-    } else {
-      &RSAT::message::Warning("Cannot sort matrices by", $sort_key, "because this parameter is not defined for these matrices.")
-	if ($main::verbose >= 0);
     }
   }
 
-  ## Check sorting (dbugging)
+  ## Check sorting (debugging)
   if ($main::verbose >= 4) {
-    &RSAT::message::Info("Sorted", scalar(@matrices), "matrices by", $sort_order, $sort_key);
+    &RSAT::message::Info("Sorted", $nb_matrices, "matrices by", $sort_order, $sort_key);
     my $m = 0;
     foreach my $matrix (@matrices) {
       $m++;
