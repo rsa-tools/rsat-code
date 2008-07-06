@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.238 2008/07/04 05:55:24 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.239 2008/07/06 08:06:34 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.238 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.239 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -2255,10 +2255,14 @@ sub IndexMatrix {
 #       &ConvertMatrix($matrix_file, $program);
        my @matrices = &ReadMatrices($family_name, $matrix_file, %args);
 
-       $table[$row][$col] .= "<a href=".$base.$family_dir.">".$family_name."</a>\n";
-       $table[$row][$col] .= "<a href=".$base.$matrix_file.">[".$program."]</a>\n";
-       $table[$row][$col] .= "<a href=".$base.$matrix_file.".tab>[tab]</a>\n";
-       $table[$row][$col] .= "<a href=".$base.$matrix_dir.">[dir]</a>\n";
+       $table[$row][$col] .= &LinkToFile($family_dir, $family_name, $base);
+#       $table[$row][$col] .= "<a href=".$base.$family_dir.">".$family_name."</a>\n";
+       $table[$row][$col] .= &LinkToFile($matrix_dir, "dir", $base);
+#       $table[$row][$col] .= "<a href=".$base.$matrix_dir.">[dir]</a>\n";
+       $table[$row][$col] .= &LinkToFile($matrix_file, $program, $base);
+#       $table[$row][$col] .= "<a href=".$base.$matrix_file.">[".$program."]</a>\n";
+       $table[$row][$col] .= &LinkToFile($matrix_file.".tab", "tab", $base);
+#       $table[$row][$col] .= "<a href=".$base.$matrix_file.".tab>[tab]</a>\n";
 #       $table[$row][$col] .= "<a href=".$base.$pattern_file.".".${IMG_FORMAT}.">[".${IMG_FORMAT}."]</a>\n";
 #       if ($htmaps) {
 #	   $table[$row][$col] .= "<a href=".$base.$pattern_file.".html>[html]</a>\n";
@@ -2454,6 +2458,22 @@ sub IndexMotifSampler {
 
 
 ################################################################
+## Add a link to one file in the synthetic table
+sub LinkToFile {
+  my ($file, $label, $base) = @_;
+  my $link = '';
+  if (-e $file) {
+    $link = "<a href='".$base.$file."'>[".$label."]</a>\n";
+  } else {
+    $link = "<font color='#FFBBBB'>[".$label."]</font>";
+  }
+#  my $pwd = `pwd`; chomp $pwd;
+#  &RSAT::message::Debug("&LinkToFile", $file, $label, $base, $pwd);
+  return($link);
+}
+
+
+################################################################
 ## Index the patterns discovered for the HTML synthetic table
 sub IndexPatterns {
    my ($family_name, $row, $col, %args) = @_;
@@ -2505,32 +2525,47 @@ sub IndexPatterns {
 	$table[$row][$col] = "<font color=red>$error</font>\n";
    } else {
 	@sorted_patterns = sort { $score{$b} <=> $score{$a} } @patterns;
-	$table[$row][$col] .= "<a href=".$base.$family_dir.">".$family_name."</a>\n";
-	$table[$row][$col] .= "<a href=".$base.$pattern_dir.">[dir]</a>\n";
-	$table[$row][$col] .= "<a href=".$base.$pattern_file.">[".$type."]</a>\n";
+	$table[$row][$col] .= &LinkToFile($family_dir, $family_name, $base);
+#	$table[$row][$col] .= "<a href=".$base.$family_dir.">".$family_name."</a>\n";
+	$table[$row][$col] .= &LinkToFile($pattern_dir, $type, $base);
+#	$table[$row][$col] .= "<a href=".$base.$pattern_dir.">[dir]</a>\n";
+	$table[$row][$col] .= &LinkToFile($pattern_file, "tab", $base);
+#	$table[$row][$col] .= "<a href=".$base.$pattern_file.">[".$type."]</a>\n";
 #	$table[$row][$col] .= "<a href=".$base.$pattern_file.">[patt]</a>\n";
-	$table[$row][$col] .= "<a href=".$base.$assembly_file.">[asmb]</a>\n";
-	$table[$row][$col] .= "<a href=".$base.$pattern_file.".".${IMG_FORMAT}.">[map]</a>\n";
+	$table[$row][$col] .= &LinkToFile($assembly_file, "asmb", $base);
+#	$table[$row][$col] .= "<a href=".$base.$assembly_file.">[asmb]</a>\n";
+	$table[$row][$col] .= &LinkToFile($pattern_file.".".$IMG_FORMAT, "map", $base);
+#	$table[$row][$col] .= "<a href=".$base.$pattern_file.".".${IMG_FORMAT}.">[map]</a>\n";
 	if ($htmaps) {
-	    $table[$row][$col] .= "<a href=".$base.$pattern_file.".html>[html]</a>\n";
+	  $table[$row][$col] .= &LinkToFile($pattern_file.".html", "html", $base);
+#	  $table[$row][$col] .= "<a href=".$base.$pattern_file.".html>[html]</a>\n";
 	}
-
-	$table[$row][$col] .= "<a href=".$base.$pssm_file."_sig_matrices.txt>[sig matrix]</a>\n";
-	$table[$row][$col] .= "<a href=".$base.$pssm_file."_count_matrices.txt>[count matrix]</a>\n";
-	$table[$row][$col] .= "<a href=".$base.$pssm_file.".${IMG_FORMAT}>[scan map]</a>\n";
+	$table[$row][$col] .= &LinkToFile($pssm_file."_sig_matrices.txt", "sig matrix", $base);
+	$table[$row][$col] .= &LinkToFile($pssm_file."_count_matrices.txt", "PSSM", $base);
+	$table[$row][$col] .= &LinkToFile($pssm_file.".".$IMG_FORMAT, "scan map", $base);
+#	$table[$row][$col] .= "<a href=".$base.$pssm_file."_sig_matrices.txt>[sig matrix]</a>\n";
+#	$table[$row][$col] .= "<a href=".$base.$pssm_file."_count_matrices.txt>[count matrix]</a>\n";
+#	$table[$row][$col] .= "<a href=".$base.$pssm_file.".${IMG_FORMAT}>[scan map]</a>\n";
 
 #	if ($task{validate}) {
-	$table[$row][$col] .= "<a href=".$base.$validation_file.">[matches]</a>\n";
-	$table[$row][$col] .= "<a href=".$base.$validation_table_weight_file.">[match_weight]</a>\n";
-	$table[$row][$col] .= "<a href=".$base.$validation_table_relw_file.">[match_relw]</a>\n";
+	$table[$row][$col] .= &LinkToFile($validation_file, "matches", $base);
+#	$table[$row][$col] .= "<a href=".$base.$validation_file.">[matches]</a>\n";
+	$table[$row][$col] .= &LinkToFile($validation_table_weight_file, "match_weight", $base);
+#	$table[$row][$col] .= "<a href=".$base.$validation_table_weight_file.">[match_weight]</a>\n";
+	$table[$row][$col] .= &LinkToFile($validation_table_relw_file, "match_relw", $base);
+#	$table[$row][$col] .= "<a href=".$base.$validation_table_relw_file.">[match_relw]</a>\n";
 #	}
 
 	$table[$row][$col] .= "<table>\n";
-	$table[$row][$col] .="<tr><td align=right>max.score</td><td>".$max_score{$type}{$family_name}."</td></tr>\n";
+	if ($max_score{$type}{$family_name}) {
+	  $table[$row][$col] .="<tr><td align=right>max.score</td><td>".$max_score{$type}{$family_name}."</td></tr>\n";
+	} else {
+	  $table[$row][$col] .= "<tr><td>no pattern</td></tr>\n";
+	}
 	$table[$row][$col] .="</table>\n";
 	$table[$row][$col] .= "<table>\n";
 	$table[$row][$col] .= "<TR>\n";
-	
+
 	### print oligo sequence
 	$table[$row][$col] .= "<TD>\n";
 	for $p (@sorted_patterns) {
@@ -2543,7 +2578,7 @@ sub IndexPatterns {
 	    $table[$row][$col] .= "<BR>" unless ($p == $#sorted_patterns);
 	}
 	$table[$row][$col] .= "</TD>\n";
-	
+
 	### print reverse complementary oligo
 	if ($strands eq "-2str") {
 	    $table[$row][$col] .= "<TD>\n";
@@ -2559,7 +2594,7 @@ sub IndexPatterns {
 	    }
 	    $table[$row][$col] .= "</TD>\n";
 	}
-	
+
 	### print pattern scores
 	$table[$row][$col] .= "<TD><a href=".$map_link.">\n";
 	for $p (@sorted_patterns) {
@@ -2570,8 +2605,6 @@ sub IndexPatterns {
 	}
 	$table[$row][$col] .= "</A></TD>\n";
 
-	
-	
 	### print matching patterns
 	if ($known_sites_provided) {
 	    $table[$row][$col] .= "<TD>\n";
@@ -2590,11 +2623,13 @@ sub IndexPatterns {
 	    }
 	    $table[$row][$col] .= "</TD>\n";
 	}
-	
 	$table[$row][$col] .= "</TR>\n";
 	$table[$row][$col] .= "</TABLE>\n";
    }
 }
+
+
+
 
 ################################################################
 #### Draw feature maps
