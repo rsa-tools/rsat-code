@@ -1121,24 +1121,24 @@ sub _readFromTabFile {
     ################################################################
     ## Initialize the matrix list
     my @matrices = ();
-    my $matrix = new RSAT::matrix(); 
+    my $matrix = new RSAT::matrix();
     $matrix->set_parameter("program", "tab");
     $matrix->set_parameter("matrix.nb", $current_matrix_nb);
-   push @matrices, $matrix;
+    push @matrices, $matrix;
     my $current_matrix_nb = 1;
-#    my $id = $file."_".$current_matrix_nb;
+    #    my $id = $file."_".$current_matrix_nb;
     my $id_prefix = $file || "matrix";
     my $id = $id_prefix."_".$current_matrix_nb;
     $matrix->set_attribute("AC", $id);
     $matrix->set_attribute("id", $id);
     my $l = 0;
+    my $matrix_found = 0;
     while ($line = <$in>) {
       $l++;
       next unless ($line =~ /\S/); ## Skip empty lines
       chomp($line); ## Suppress newline
       $line =~ s/\r//; ## Suppress carriage return
       $line =~ s/\s+/\t/g; ## Replace spaces by tabulation
-
       next if ($line =~ /^;/) ; # skip comment lines
 
       ## Create a new matrix if required
@@ -1155,7 +1155,7 @@ sub _readFromTabFile {
       }
 
       if ($line =~ /^\s*(\S+)\s+/) {
-
+	$matrix_found = 1; ## There is at least one matrix row in the file
 	my @fields = split /\t/, $line;
 
 
@@ -1169,22 +1169,25 @@ sub _readFromTabFile {
     }
     close $in if ($file);
 
-
     ## Initialize prior as equiprobable alphabet
-    foreach my $matrix (@matrices) {
-      my @alphabet = $matrix->getAlphabet();
-      my %tmp_prior = ();
-      my $prior = 1/scalar(@alphabet);
-      foreach my $residue (@alphabet) {
-	$tmp_prior{$residue} = $prior;
-	#	&RSAT::message::Debug("initial prior", $residue, $prior) if ($main::verbose >= 10);
+    if ($matrix_found) {
+      foreach my $matrix (@matrices) {
+	my @alphabet = $matrix->getAlphabet();
+	my %tmp_prior = ();
+	my $prior = 1/scalar(@alphabet);
+	foreach my $residue (@alphabet) {
+	  $tmp_prior{$residue} = $prior;
+	  #	&RSAT::message::Debug("initial prior", $residue, $prior) if ($main::verbose >= 10);
+	}
+	$matrix->setPrior(%tmp_prior);
+	if ($main::verbose >= 3) {
+	  &RSAT::message::Debug("Read matrix with alphabet", join(":", $matrix->getAlphabet()));
+	  &RSAT::message::Debug("Initialized prior as equiprobable", join(":", $matrix->getPrior()));
+	  &RSAT::message::Debug("Matrix size", $matrix->nrow()." rows",  $matrix->ncol()." columns");
+	}
       }
-      $matrix->setPrior(%tmp_prior);
-      if ($main::verbose >= 3) {
-	&RSAT::message::Debug("Read matrix with alphabet", join(":", $matrix->getAlphabet()));
-	&RSAT::message::Debug("Initialized prior as equiprobable", join(":", $matrix->getPrior()));
-	&RSAT::message::Debug("Matrix size", $matrix->nrow()." rows",  $matrix->ncol()." columns");
-      }
+    } else {
+      @matrices = ();
     }
 
     return (@matrices);
