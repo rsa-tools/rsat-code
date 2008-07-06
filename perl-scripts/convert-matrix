@@ -4,17 +4,17 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.66 2008/07/06 12:15:58 jvanheld Exp $
+# $Id: convert-matrix,v 1.67 2008/07/06 20:12:15 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
 ############################################################
 #use strict;
 BEGIN {
-    if ($0 =~ /([^(\/)]+)$/) {
-	push (@INC, "$`lib/");
-    }
-    require "RSA.lib";
+  if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+  }
+  require "RSA.lib";
 }
 use RSAT::MarkovModel;
 use RSAT::matrix;
@@ -68,7 +68,6 @@ $supported_return_fields = join ",", sort keys %supported_return_type;
 ## input formats
 %supported_input_format = %RSAT::MatrixReader::supported_input_format;
 $supported_input_formats = join ",", sort keys %supported_input_format;
-
 
 ## output formats
 %supported_output_format = %RSAT::matrix::supported_output_format;
@@ -285,12 +284,14 @@ foreach my $matrix (@matrices) {
     if ((defined($top_matrices)) && ($m > $top_matrices)) {
 	last;
     }
-    
     &RSAT::message::Info("Exporting matrix", $m."/".scalar(@matrices))
-      if ($main::verbose >= 3);	
-    
+      if ($main::verbose >= 3);
+
     if ($m > 1) {
+      my $fields = join ('', keys (%return_fields));
+      unless ($fields eq "logo") {
 	print $out $RSAT::matrix::matrix_separator{$output_format}, "\n";
+      }
     }
     if ($main::verbose >= 1) {
 	print $out  ";\n; MATRIX ", $m."/".scalar(@matrices), " : " , $matrix->get_attribute("name"), "\n;\n";
@@ -325,7 +326,7 @@ NAME
 	convert-matrix
 
         1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
-	
+
 USAGE
         convert-matrix [-i inputfile] [-o outputfile] [-v]
 
@@ -363,7 +364,7 @@ OPTIONS
 	-i inputfile
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
-		
+
 	-mlist matrix_list
 		Indicate a file containing a list of matrices to be used 
 		for scanning the region. This facilitates the scanning of 
@@ -372,7 +373,7 @@ OPTIONS
 		Format: the matrix list file is a text file. The first word of each
 		row is suppose to indicate a file name. Any further information on the
 		same row is ignored.
-		
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
@@ -1005,8 +1006,6 @@ sub Verbose {
 	printf $main::out ";\t\t%s\t%.5f\n", $residue, $bg_prior{$residue};
     }
     }
-  
-
 }
 
 
@@ -1014,120 +1013,114 @@ sub Verbose {
 ## Export one matrix
 sub ExportMatrix {
   my ($matrix) = @_;
-#  $matrix->readFromFile($infile{input}, $input_format);
+  #  $matrix->readFromFile($infile{input}, $input_format);
   if ($infile{prior}) {
     $matrix->setPrior(%prior);
   }
-  
-  
-   ## Return parameters
-  if ($perm) { 	
-    	&RSAT::message::Info("permutating matrix")
-		if ($main::verbose >= 3);
-		
-		## permute matrix
-  		for my $i (1..$perm) {
 
-			if ($i > 1) {
-      			print $out $RSAT::matrix::matrix_separator{$output_format}, "\n";
-    		}
-    		
-    		##permute the matrix
-    		$matrix->permute_columns();	
-    		
-    		## print result
-    		print $out "; permutation $i/$perm\n" if ($verbose >=1);
+  ## Return parameters
+  if ($perm) {
+    &RSAT::message::Info("permutating matrix")
+      if ($main::verbose >= 3);
 
-  			print $out $matrix->toString(sep=>"\t",
-					 type=>"perm_columns",
-					 format=>"tab",
-					 pipe=>"" ## We suppress the pipe for permute-table
-					);
-  			} 		
+    ## permute matrix
+    for my $i (1..$perm) {
+
+      if ($i > 1) {
+	print $out $RSAT::matrix::matrix_separator{$output_format}, "\n";
+      }
+
+      ##permute the matrix
+      $matrix->permute_columns();
+
+      ## print result
+      print $out "; permutation $i/$perm\n" if ($verbose >=1);
+
+      print $out $matrix->toString(sep=>"\t",
+				   type=>"perm_columns",
+				   format=>"tab",
+				   pipe=>"" ## We suppress the pipe for permute-table
+				  );
+    }
   } else {
 
-
-  ## Print the counts matrix
-  if ($return_fields{counts}) {
-    print $out $matrix->toString(sep=>"\t",
-					 type=>"counts",
-					 format=>$output_format,
-					);
-  }
-
-  ## Calculate frequency matrix
-  if ($return_fields{frequencies}) {
-    $matrix->calcFrequencies();
-    print $out $matrix->toString(col_width=>($decimals+4), 
-					 decimals=>$decimals, 
-					 type=>"frequencies",
-					 format=>$output_format);
-  }
-
-  ## Calculate weight matrix
-  if ($return_fields{weights}) {
-    $matrix->calcWeights();
-    print $out $matrix->toString(col_width=>($decimals+4), 
-					 decimals=>$decimals, 
-					 type=>"weights",
-					 format=>$output_format);
-  }
-  
-  
-  ## Print the profile matrix
-  if ($return_fields{profile}) {
-    print $out $matrix->toString(sep=>"\t",
-					 type=>"profile",
-					 format=>$output_format,
-					);
-  }
-
-  ## Calculate information content matrix
-  if ($return_fields{info}) {
-    $matrix->calcInformation();
-    print $out $matrix->toString(col_width=>($decimals+4), 
-					 decimals=>$decimals, 
-					 type=>"information",
-					 format=>$output_format);
-  }
-
-
-  ## Return sites
-  if ($return_fields{sites}) {
-    print $out "; Sites\t",$matrix->get_attribute("sites"),"\n" if ($main::verbose >= 1);
-    my $s = 0;
-    my @site_ids = $matrix->get_attribute("site_ids");
-    foreach my $site_seq ($matrix->get_attribute("sequences")) {
-      $s++;
-      my $site_id =  $site_ids[$s-1] || $s;
-      &PrintNextSequence($out, $site_format, 0, $site_seq, $site_id);
-#      print $out $s, "\t\\", $site_seq, "\\\n";
+    ## Print the counts matrix
+    if ($return_fields{counts}) {
+      print $out $matrix->toString(sep=>"\t",
+				   type=>"counts",
+				   format=>$output_format,
+				  );
     }
-  }
 
-  ## Calculate consensus
-  if ($return_fields{consensus}) {
-    $matrix->calcConsensus();
-    print $out $matrix->toString(type=>'consensus');
-  }
+    ## Calculate frequency matrix
+    if ($return_fields{frequencies}) {
+      $matrix->calcFrequencies();
+      print $out $matrix->toString(col_width=>($decimals+4), 
+				   decimals=>$decimals, 
+				   type=>"frequencies",
+				   format=>$output_format);
+    }
 
-  ## Return parameters
-  if ($return_fields{parameters}) {
-    $matrix->calcConsensus();
-    print $out $matrix->toString(type=>"parameters");
-  }
+    ## Calculate weight matrix
+    if ($return_fields{weights}) {
+      $matrix->calcWeights();
+      print $out $matrix->toString(col_width=>($decimals+4), 
+				   decimals=>$decimals, 
+				   type=>"weights",
+				   format=>$output_format);
+    }
 
-  ## Return parameters
-  if ($return_fields{logo}) {
-    if ($main::verbose >= 1) {
-      foreach my $logo_format (@logo_formats){
-	print $out  "; logo file:" , $matrix->get_attribute("logo_file").".".$logo_format, "\n";
+    ## Print the profile matrix
+    if ($return_fields{profile}) {
+      print $out $matrix->toString(sep=>"\t",
+				   type=>"profile",
+				   format=>$output_format,
+				  );
+    }
+
+    ## Calculate information content matrix
+    if ($return_fields{info}) {
+      $matrix->calcInformation();
+      print $out $matrix->toString(col_width=>($decimals+4), 
+				   decimals=>$decimals, 
+				   type=>"information",
+				   format=>$output_format);
+    }
+
+
+    ## Return sites
+    if ($return_fields{sites}) {
+      print $out "; Sites\t",$matrix->get_attribute("sites"),"\n" if ($main::verbose >= 1);
+      my $s = 0;
+      my @site_ids = $matrix->get_attribute("site_ids");
+      foreach my $site_seq ($matrix->get_attribute("sequences")) {
+	$s++;
+	my $site_id =  $site_ids[$s-1] || $s;
+	&PrintNextSequence($out, $site_format, 0, $site_seq, $site_id);
+	#      print $out $s, "\t\\", $site_seq, "\\\n";
       }
     }
 
-  }
-  
-  
+    ## Calculate consensus
+    if ($return_fields{consensus}) {
+      $matrix->calcConsensus();
+      print $out $matrix->toString(type=>'consensus');
+    }
+
+    ## Return parameters
+    if ($return_fields{parameters}) {
+      $matrix->calcConsensus();
+      print $out $matrix->toString(type=>"parameters");
+    }
+
+    ## Return parameters
+    if ($return_fields{logo}) {
+      if ($main::verbose >= 1) {
+	foreach my $logo_format (@logo_formats) {
+	  print $out  "; logo file:" , $matrix->get_attribute("logo_file").".".$logo_format, "\n";
+	}
+      }
+    }
   }
 
   ## Return weight distribution
