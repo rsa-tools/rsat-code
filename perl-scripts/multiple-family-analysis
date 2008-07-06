@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.241 2008/07/06 12:14:27 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.242 2008/07/06 19:16:21 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.241 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.242 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -415,7 +415,7 @@ package main;
     ## Family file
   } else {
     ### read gene name and identifiers
-    &RSAT::message::TimeWarn("Reading ORF information") 
+    &RSAT::message::TimeWarn("Reading ORF information")
       if ($verbose >= 1);
     #### Check organism name
     if ($organism_name) {
@@ -448,27 +448,29 @@ package main;
   @families = sort (keys (%family));
 
 
-  ## Check minimum number of genes
-  foreach my $family_name (@families) {    
+  ## Check minimum and maximum number of genes
+  &RSAT::message::Info("Checking min and max number of genes") if ($main::verbose >= 1);
+  foreach my $family_name (@families) {
     my $gene_nb = scalar(@{$family{$family_name}->{members}});
     if ($gene_nb < $min_genes) {
       &RSAT::message::Warning("Removing family", 
 			      $fam_count, $family_name,
 			      $gene_nb." genes",
-			      "< min = ".$min_genes), "\n" if ($verbose >= 1);
+			      "< min = ".$min_genes), "\n" if ($verbose >= 2);
       $family_to_delete{$family_name}++;
     }
     if (($max_genes >= 0) && ($gene_nb > $max_genes)) {
       &RSAT::message::Warning("Removing family", 
 			      $fam_count, $family_name,
 			      $gene_nb." genes",
-			      "> max = ".$max_genes), "\n" if ($verbose >= 1);
+			      "> max = ".$max_genes), "\n" if ($verbose >= 2);
       $family_to_delete{$family_name}++;
     }
   }
 
   ## Check selected families
-  if (scalar(@selected) > 0) {
+  if (scalar(@selected) > 0) { 
+    &RSAT::message::Info("Selecting user-defined families") if ($main::verbose >= 1);
     my %selected = ();
     foreach my $family_name (@selected) {
       $selected{$family_name}++;
@@ -500,6 +502,7 @@ package main;
 
     ## Apply the options -skip (suppress first families) 
     if ($skip > 0) {
+      &RSAT::message::Info("Skipping", $skip, "first families") if ($main::verbose >= 1);
       for my $f (1..$skip) {
 	$family_name = $families[$f-1];
 	$family_to_delete{$family_name}++;
@@ -509,7 +512,7 @@ package main;
 
     ## Apply the options -last (suppress last families)
     if ($last > 0) {
-      &RSAT::message::Debug("Skipping families after", $last, scalar(@families)) if ($verbose >= 2);
+      &RSAT::message::Debug("Skipping last", $last, "families", (scalar(@families)-$last)) if ($verbose >= 2);
       for my $f ($last..$#families) {
 	$family_name = $families[$f-1];
 	$family_to_delete{$family_name}++;
@@ -1136,7 +1139,7 @@ sub SetFileNames {
 ################################################################
 #### retrieve upstream sequences
 sub UpstreamSequences {
-    &RSAT::message::TimeWarn ("Retrieving upstream sequences for family ".$family_name, $organism_name) if ($verbose >= 1);
+    &RSAT::message::TimeWarn ("Retrieving upstream sequences for family ".$family_name, $organism_name) if ($verbose >= 2);
     my $command;
     if ($taxon) {
 	$command = "get-orthologs";
@@ -1169,7 +1172,7 @@ sub UpstreamSequences {
 }
 
 sub UpstreamSequencesEnsEMBL {
-    &RSAT::message::TimeWarn ("Retrieving upstream sequences for family ".$family_name, $organism_name) if ($verbose >= 1);
+    &RSAT::message::TimeWarn ("Retrieving upstream sequences for family ".$family_name, $organism_name) if ($verbose >= 2);
     $organism_name =~ s/_EnsEMBL//;
     my $command;
     $command = "retrieve-ensembl-seq.pl";
@@ -1195,7 +1198,7 @@ sub UpstreamSequencesEnsEMBL {
 ################################################################
 #### Purge input sequences
 sub PurgeSequences {
-   &RSAT::message::TimeWarn("Purging sequences for family\t".$family_name) if ($verbose >= 1);
+   &RSAT::message::TimeWarn("Purging sequences for family\t".$family_name) if ($verbose >= 2);
 
    ## Remove sequences of length 0
    $command = "convert-seq -dna -from fasta -to fasta -lw 0 -skip_short 1";
@@ -1316,14 +1319,14 @@ sub CalcOligoOptions {
 sub OligoAnalysis {
   &RSAT::message::TimeWarn("Analyzing oligonucleotides for family $family_name",
 			   "min len: $min_oligo_len",
-			   "max len: $max_oligo_len") if ($verbose >= 1);
+			   "max len: $max_oligo_len") if ($verbose >= 2);
   my $dir = "${family_name}/oligos_${family_name}";
    
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
    &RSAT::error::FatalError( "Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch)  || ($dry_run) || ($dry_run) || (-r $family{$family_name}->{input_seq_file}));
   
    ## initialize the oligo file
-#    system "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);
+#    system "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >= 2);
 
    ## Analyze all oligo lengths
    my @oligo_commands = ();
@@ -1358,16 +1361,17 @@ sub MergeOligoLengths {
 			   "max len:".$max_oligo_len,
 			   $family{$family_name}->{oligo_file}) if ($verbose >= 0);
   my $dir = "${family_name}/oligos_${family_name}";
-  
+
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
    &RSAT::error::FatalError("Cannot read file ".$family{$family_name}->{input_seq_file}) unless (($batch) || ($dry_run) ||(-r $family{$family_name}->{input_seq_file}));
 
-   ## initialize the oligo file
-   my @merge_commands = "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);    
-   for $oligo_len ($min_oligo_len..$max_oligo_len) {
-	($command, $oligo_file) = &CalcOligoOptions($oligo_len);
-	push @merge_commands, "cat ".$oligo_file." >> ".$family{$family_name}->{oligo_file};
-   }
+  ## initialize the oligo file
+#  my @merge_commands = "echo '' > $family{$family_name}->{oligo_file}";
+  my @merge_commands = "rm -f ".$family{$family_name}->{oligo_file};
+  for $oligo_len ($min_oligo_len..$max_oligo_len) {
+    ($command, $oligo_file) = &CalcOligoOptions($oligo_len);
+    push @merge_commands, "cat ".$oligo_file." >> ".$family{$family_name}->{oligo_file};
+  }
 
    my $merge_command = join "; \\\n", @merge_commands;
    if ($task{oligos}) {
@@ -1388,14 +1392,14 @@ sub AssembleOligos {
   &RSAT::message::TimeWarn("Merging oligonucleotides for family ".$family_name,
 			   "min len: ".$min_oligo_len,
 			   "max len:".$max_oligo_len,
-			   $family{$family_name}->{oligo_file}) if ($verbose >= 1);
+			   $family{$family_name}->{oligo_file}) if ($verbose >= 2);
   my $dir = "${family_name}/oligos_${family_name}";
 
   chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
   &RSAT::error::FatalError("Cannot read file ".$family{$family_name}->{input_seq_file}) unless (($batch) || ($dry_run) ||(-r $family{$family_name}->{input_seq_file}));
 
   #    ## initialize the oligo file
-  #    my @assemble_commands = "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);    
+  #    my @assemble_commands = "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >= 2);    
   #    for $oligo_len ($min_oligo_len..$max_oligo_len) {
   # 	($command, $oligo_file) = &CalcOligoOptions($oligo_len);
   # 	push @assemble_commands, "cat ".$oligo_file." >> ".$family{$family_name}->{oligo_file};
@@ -1409,7 +1413,6 @@ sub AssembleOligos {
   $assembly_command .= " -i ".$family{$family_name}->{oligo_file};
   $assembly_command .= " -o ".$family{$family_name}->{oligo_assembly_file};
   push @assemble_commands, $assembly_command;
-
 
   ### extract PSSM from assembled patterns
   #    &RSAT::message::TimeWarn("Matrix from oligo patterns", $family{$family_name}->{oligo_pssm_file}) 
@@ -1453,7 +1456,7 @@ sub MatchPatterns {
    &RSAT::message::Info("Matching patterns",
 			"\n;\t", $oligo_file,
 			"\n;\t", $feature_file,
-		       )  if ($verbose >= 1);
+		       )  if ($verbose >= 2);
 
    $origin = "-0";
    my $command = "dna-pattern -i ".$family{$family_name}->{seq_file};
@@ -1493,7 +1496,7 @@ sub ScanSequences {
    &RSAT::message::Info("Scaning sequences with matrix",
 			"\n;\t", $matrix_file,
 			"\n;\t", $feature_file,
-		       )  if ($verbose >= 1);
+		       )  if ($verbose >= 2);
 
    $origin = "-0";
    my $command = "matrix-scan -v 1 -bginput -markov 1 -i ".$family{$family_name}->{seq_file};
@@ -1539,7 +1542,7 @@ sub DrawFeatureMap {
 			"\n;\t", $feature_file,
 			"\n;\t", $fmap_file,
 			"\n;\t", $htmap_file,
-		       )  if ($verbose >= 1);
+		       )  if ($verbose >= 2);
 
    ## feature-map drawing
    if ($family{$family_name}->{calib_length}) {
@@ -1572,7 +1575,7 @@ sub DyadAnalysis {
 			   "monad length: $monad_length",
 			   "min_sp: $min_sp",
 			   "max_sp: $max_sp",
-			  ) if ($verbose >= 1);
+			  ) if ($verbose >= 2);
   $dir = "${family_name}/dyads_${family_name}";
   chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{input_seq_file}));
@@ -1627,7 +1630,7 @@ sub MatrixFromPatterns {
 
   my $pssm_dir = `dirname $pssm_file`;
   chomp($pssm_dir);
-  $command = "convert-matrix -from tab -to tab -return logo -logo_format png";
+  $command .= "; convert-matrix -from tab -to tab -return logo -logo_format png";
   $command .= " -logo_dir ".$pssm_dir;
   $command .= " -i ".$pssm_file."_count_matrices.txt";
 
@@ -1641,7 +1644,7 @@ sub MergePatterns {
   &RSAT::message::TimeWarn("Merging oligonucleotides and dyads for family ",
 			   $family_name,
 			   $family{$family_name}->{merged_file}
-			  ) if ($verbose >= 1);
+			  ) if ($verbose >= 2);
    my $dir = "${family_name}/merged_${family_name}";
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
    my $command = "cat $family{$family_name}->{oligo_file}";
@@ -1668,8 +1671,8 @@ sub MergePatterns {
 ################################################################
 #### draw feature-map for the result of merged oligonucleotides and dyads
 sub DrawMergedFeatureMap {
-  &RSAT::message::TimeWarn("Drawing feature-map with results of merged oligonucleotides and dyads for family $family_name")
-    if ($verbose >= 1);
+  &RSAT::message::TimeWarn("Drawing feature-map with results of merged oligonucleotides and dyads for family", $family_name)
+    if ($verbose >= 2);
   ### pattern matching
   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
   $fmap_file = $family{$family_name}->{merged_file}.".${IMG_FORMAT}";
@@ -1718,7 +1721,7 @@ sub DrawMergedFeatureMap {
 ################################################################
 ## Run Gert Thijs' MotifSampler
 sub MotifSampler {
-  &RSAT::message::TimeWarn ("Running MotifSampler for family $family_name") if ($verbose >= 1);
+  &RSAT::message::TimeWarn ("Running MotifSampler for family $family_name") if ($verbose >= 2);
   ## Check output directory
   my $dir = $family{$family_name}->{MotifSampler_dir};
   chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
@@ -2024,8 +2027,12 @@ sub SyntheticTable {
     $table[$row][0] = "<B>$header</B>";
   }
   my $col = 0;
-   
+
+  my $f = 0;
+  my $nb_fam = scalar(@families);
   foreach my $family_name (@families) {
+    $f++;
+    &RSAT::message::TimeWarn("Indexing result files for family", $f."/".$nb_fam, $family_name) if ($verbose >= 2);
     my @members = @{$family{$family_name}->{members}};
     $gene_nb = scalar(@members);
 
@@ -2034,12 +2041,11 @@ sub SyntheticTable {
       &RSAT::message::Warning("Skipping family", 
 			      $fam_count, $family_name,
 			      $gene_nb." genes",
-			      "< min = ".$min_genes), "\n" if ($verbose >= 1);
+			      "< min = ".$min_genes), "\n" if ($verbose >= 2);
       next;
     }
 
     $col++;
-
     #### Index columns associated to each family
     $column{$family_name} = $col;
 
@@ -2262,8 +2268,8 @@ sub IndexConsensus {
 ##  Read a matrix and generate a summary for the synthetic table
 sub IndexMatrix {
    my ($family_name, $row, $col, %args) = @_;
-   my $program = $args{program};
 
+   my $program = $args{program};
    my $base = "../";
    my $matrix_file = $args{matrix_file};
    my $program = $args{program};
@@ -2272,6 +2278,8 @@ sub IndexMatrix {
    $family_dir =~ s|/+|/|g;
    my $matrix_dir = $family_dir.$program."_".$family_name."/";
    my $map_link = $base.$matrix_file;
+
+   &RSAT::message::Info("Indexing matrices from", $program, "family", $family_name, $matrix_file) if ($main::verbose >= 3);
 
    if (-e $matrix_file) {
      $table[$row][$col] .= &LinkToFile($family_dir, $family_name, $base);
@@ -2327,7 +2335,7 @@ sub IndexMatrix {
      }
    } else {
      $table[$row][$col] =  "<a href=".$base.$matrix_file."><font color=red>File not found</font></a><br>\n";
-     &RSAT::message::Warning("File not found. Skipped.", $program, $matrix_file);
+     &RSAT::message::Warning("File not found. Skipped.", $program, $matrix_file) if ($main::verbose >= 3);
    }
 }
 
@@ -2374,7 +2382,7 @@ sub ReadMatrices {
   my ($family_name, $matrix_file, %args) = @_;
 
   my $program = $args{program};
-  &RSAT::message::TimeWarn("Indexing matrix from", $program, "family", $family_name, $matrix_file, $row, $col) if ($verbose >= 2);
+  &RSAT::message::TimeWarn("Reading matrices from", $program, "family", $family_name, $matrix_file, $row, $col) if ($verbose >= 2);
 
   ## If the matrix has already been loaded, return the indexed matrix
   if ($matrix_by_file{$matrix_file}) {
@@ -2402,7 +2410,7 @@ sub ReadMatrices {
 	$matrix->calcConsensus();
 	$matrix->calcInformation();
 	#	  if ($@) {
-	#	    &RSAT::message::Warning("Matrix file does no contain a valid matrix. Skipped.", $program, $matrix_file) if ($verbose >= 1);
+	#	    &RSAT::message::Warning("Matrix file does no contain a valid matrix. Skipped.", $program, $matrix_file) if ($verbose >= 2);
 	#	    &RSAT::message::Debug(join "\n", $@) if ($verbose >= 0);
 	#	    return(undef);
 	#	  } else {
@@ -2442,12 +2450,12 @@ sub ReadMatrices {
       if (scalar(@matrices) > 0) {
 	return(@matrices);
       } else {
-	&RSAT::message::Warning("Matrix file does no contain any valid matrix. Skipped.", $program, $matrix_file) if ($verbose >= 1);
+	&RSAT::message::Warning("Matrix file does no contain any valid matrix. Skipped.", $program, $matrix_file) if ($verbose >= 3);
 	return()
       }
 
     } else {
-      &RSAT::message::Warning("File not found. Skipped.", $program, $matrix_file) if ($verbose >= 1);
+      &RSAT::message::Warning("File not found. Skipped.", $program, $matrix_file) if ($verbose >= 3);
       return();
     }
   }
@@ -2542,9 +2550,8 @@ sub IndexPatterns {
        }
    } else {
 	$table[$row][$col] = "<a href=".$base.$assembly_file."><font color=red>File not found</font></a><br>\n";
-	$pwd = `pwd`;
-	&RSAT::message::Warning($pwd, "Family $family_name", "assembly file ", $assembly_file, " does not exist. Skipped.")
-	  if ($verbose >= 1);
+	&RSAT::message::Warning("Family $family_name", "assembly file ", $assembly_file, " does not exist. Skipped.")
+	  if ($verbose >= 3);
 	return;
    }
 
@@ -2675,7 +2682,7 @@ sub IndexPatterns {
 ################################################################
 #### Draw feature maps
 sub DrawDyadFeatureMap {
-   &RSAT::message::TimeWarn( "Drawing feature-map with results of dyad-analysis for family $family_name") if ($verbose >= 1);
+   &RSAT::message::TimeWarn( "Drawing feature-map with results of dyad-analysis for family $family_name") if ($verbose >= 2);
    &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
 
    ## pattern matching
@@ -2850,7 +2857,7 @@ sub AnalyzeFamilies {
 	  &RSAT::message::Warning ("Skipping family", 
 				   $fam_count, $family_name,
 				   $gene_nb." genes",
-				   "< min = ".$min_genes) if ($verbose >= 1);
+				   "< min = ".$min_genes) if ($verbose >= 2);
 	    next;
 	}
 
@@ -2861,7 +2868,7 @@ sub AnalyzeFamilies {
 
 	&RSAT::message::TimeWarn("\n; Treating family ", $family_name," (".$fam_count."/".$fam_nb.")", 
 				 $gene_nb." genes", $organism_name)
-	    if ($verbose >=1);
+	  if ($verbose >= 1);
 
 	### retrieve upstream sequences of the family
 	&UpstreamSequences() if ($task{upstream});
@@ -2979,7 +2986,7 @@ sub AnalyzeFamilies {
 		
 	### delete upstream sequence file
        if ($task{clean}) {
-	   &RSAT::message::TimeWarn("Cleaning files from the hard drive for family $family_name") if ($verbose >=1);
+	   &RSAT::message::TimeWarn("Cleaning files from the hard drive for family $family_name") if ($verbose >= 2);
 	   foreach my $file ($family{$family_name}->{seq_file},
 			     $family{$family_name}->{seq_file_purged},
 			     $family{$family_name}->{merged_ft_file},
@@ -3965,7 +3972,7 @@ sub ExportSQL {
   my $f = 0;
   foreach my $family_name (@families) {
     $f++;
-    &RSAT::message::TimeWarn("Generating SQL for family", $f."/".scalar(@families), $family_name) if ($verbose >= 1);
+    &RSAT::message::TimeWarn("Generating SQL for family", $f."/".scalar(@families), $family_name) if ($verbose >= 2);
 
     #### general family attributes
     my $family_object = $family_factory->new_object(id=>$run_prefix."_".$family_name);
@@ -4198,7 +4205,7 @@ sub ReadSequenceList {
 ## Validate the pattern discovery results by comparing discovered patterns to
 ## known sites
 sub Validate {
-   &RSAT::message::Info( ";\n; Validating discovered patterns") if ($verbose >=1);
+   &RSAT::message::Info( ";\n; Validating discovered patterns") if ($verbose >= 1);
    if ($task{validate_oligos}) {
        $pattern_type = 'oligo';
        $pattern_suffix = $oligo_suffix;
@@ -4302,13 +4309,13 @@ sub Validate {
 
        my @members = @{$family{$family_name}->{members}};
        $gene_nb = scalar(@members);
-       
+
        ## Check minimum number of genes
        if ($gene_nb < $min_genes) {
 	   &RSAT::message::Warning("Skipping family", 
 				   $f, $family_name,
 				   $gene_nb." genes",
-				   "< min = ".$min_genes), "\n" if ($verbose >= 1);
+				   "< min = ".$min_genes), "\n" if ($verbose >= 2);
 	   next;
        }
 
@@ -4322,7 +4329,7 @@ sub Validate {
 			    "known sites", 
 			    $family{$family_name}->{known_sites}, 
 			    "Number of sites", 
-			    scalar(@sites)) if ($verbose >= 1);
+			    scalar(@sites)) if ($verbose >= 2);
        
        $known_handle = &OpenOutputFile($family{$family_name}->{known_sites});
        foreach my $s (0..$#sites) {
@@ -4529,7 +4536,7 @@ sub ValidateOneResult {
 ################################################################
 ## Database comparison
 sub DatabaseMatch {
-    &RSAT::message::Info( ";\n; Comparison of discovered patterns to database of known sites") if ($verbose >=1);
+    &RSAT::message::Info( ";\n; Comparison of discovered patterns to database of known sites") if ($verbose >= 1);
    if ($task{db_match_oligos}) {
        $pattern_type = 'oligo';
        $pattern_suffix = $oligo_suffix;
@@ -4554,7 +4561,7 @@ sub DatabaseMatch {
    foreach my $family_name (@families) {
        $f++;
        &RSAT::message::Info("Matching patterns discovered for family ".$f."/".scalar(@families), 
-			    $family_name) if ($verbose >= 1);
+			    $family_name) if ($verbose >= 2);
        
        my $pattern_file = $family{$family_name}->{$pattern_type."_file"};
 
@@ -4613,7 +4620,7 @@ sub DatabaseMatch {
 ################################################################
 ## Distribution of significance
 sub SigDistrib {
-    &RSAT::message::Info( ";\n; Significance distribution of discovered patterns") if ($verbose >=1);
+    &RSAT::message::Info( ";\n; Significance distribution of discovered patterns") if ($verbose >= 1);
     if ($task{sig_distrib_oligos}) {
 	$pattern_type = 'oligo';
 	$pattern_suffix = $oligo_suffix;
@@ -4658,7 +4665,7 @@ sub SigDistrib {
 	    &RSAT::message::Warning("Skipping family", 
 				    $fc, $family_name,
 				    $gene_nb." genes",
-				    "< min = ".$min_genes), "\n" if ($verbose >= 1);
+				    "< min = ".$min_genes), "\n" if ($verbose >= 2);
 	    next;
 	}
 
@@ -4789,13 +4796,13 @@ sub SigDistrib {
 ## INDEX one sequence length per family
 sub CalcCalibrationLengths {
    my %calib_lengths = ();
-   &RSAT::message::TimeWarn("Calculating sequence lengths") if ($verbose >=1);
+   &RSAT::message::TimeWarn("Calculating sequence lengths") if ($verbose >= 1);
    foreach my $family_name (@families) {
 	$fam_count++;
 
 #	&CheckSkip($fam_count,$family_name);
 #	&CheckLast($fam_count);
-	
+
 	## Calculate sequence lengths
 	&RSAT::message::Info( join("\t", "", "Calculating sequence lengths for family",
 				   $fam_count."/".scalar(@families),
@@ -4806,7 +4813,7 @@ sub CalcCalibrationLengths {
 	my $command = "sequence-lengths -i ".$family{$family_name}->{seq_file};
 	$command .= " -o ".$family{$family_name}->{seq_len_file};
 	&doit($command, $dry_run, $die_on_error, $verbose);
-	
+
 	## Index sequence lengths
 	my ($in, $indir) = &OpenInputFile($family{$family_name}->{seq_len_file});
 	while (<$in>) {
@@ -4830,8 +4837,8 @@ sub CalcCalibrationLengths {
 	close $in;
 	$calib_lengths{$family{$family_name}->{calib_length}}++;
 	&RSAT::message::TimeWarn("Calibration length for family ", $fam_count."/".scalar(@families), $family_name, 
-				 $family{$family_name}->{total_length}) if ($verbose >= 1);
-   }  
+				 $family{$family_name}->{total_length}) if ($verbose >= 2);
+   }
    my @calib_lengths = sort {$a <=> $b } keys %calib_lengths;
    &RSAT::message::Info("Calibration lengths", join( ";", @calib_lengths)) if ($verbose >= 1);
    return @calib_lengths;
@@ -4895,7 +4902,7 @@ sub CalibrationPrefix {
 ## Generate report fiels for the motif disovery competition 2004
 sub MDCreport {
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir{mdc_report});
-   &RSAT::message::TimeWarn("Generating MCD report\t".$outfile{results}) if ($verbose >=1);
+   &RSAT::message::TimeWarn("Generating MCD report\t".$outfile{results}) if ($verbose >= 1);
 
    ################################################################
    ## Open a file for the report of results
@@ -4926,7 +4933,7 @@ sub MDCreport {
    foreach $family_name (@families) {
 	$fam_count++;
 #	if ($fam_count <= $skip) {
-#	    warn "; Skipping family\t$fam_count\t$family_name\n" if ($verbose >= 1);
+#	    warn "; Skipping family\t$fam_count\t$family_name\n" if ($verbose >= 3);
 #	    next;
 #	}
 
@@ -4936,7 +4943,7 @@ sub MDCreport {
 	    &RSAT::message::Warning("No manual selection: file does not exist $selection_file") if ($verbose >= 0);
 	    next;
 	}
-	&RSAT::message::Info("Pattern file for the report",  $selection_file) if ($verbose >= 1);
+	&RSAT::message::Info("Pattern file for the report",  $selection_file) if ($verbose >= 2);
 
 	my $selection_ft_prefix =  $family{$family_name}->{oligo_selection};
 	my $feature_file = $selection_ft_prefix.".ft";
@@ -5031,7 +5038,7 @@ sub MDCreport {
 
    close $parameters;
 
-   &RSAT::message::TimeWarn("Generated report\t", $outfile{results}) if ($verbose >=1);
+   &RSAT::message::TimeWarn("Generated report\t", $outfile{results}) if ($verbose >= 1);
 }
 
 
@@ -5077,15 +5084,15 @@ sub ReadAssemblyFile {
       $pattern->force_attribute("type", $type);
       $max_score{$family_name} = &max($max_score{$family_name}, $score{$pattern});
       $max_score{$pattern_type}{$family_name} = &max($max_score{$pattern_type}{$family_name}, $score{$pattern});
-      &RSAT::message::Debug("Pattern\t", $_,
-			    "\n", join("\t", $family_name, 
-				       $pattern->get_attribute('sequence'),
-				       $pattern->get_attribute('rc'),
-				       $pattern->get_attribute('score'),
-				       $pattern->get_attribute('type'),
-				       $score{$pattern},
-				       $max_score{$family_name},
-				      )) if ($verbose >= 10);
+#      &RSAT::message::Debug("Pattern\t", $_,
+#			    "\n", join("\t", $family_name, 
+#				       $pattern->get_attribute('sequence'),
+#				       $pattern->get_attribute('rc'),
+#				       $pattern->get_attribute('score'),
+#				       $pattern->get_attribute('type'),
+#				       $score{$pattern},
+#				       $max_score{$family_name},
+#				      )) if ($verbose >= 10);
 			  }
   }
   close $pattern_handle;
@@ -5099,7 +5106,7 @@ sub ReadAssemblyFile {
 ## sequence length
 sub CalibrateOligos {
    my @calib_lengths = @_;
-   &RSAT::message::TimeWarn("Calibrating oligonucleotide occurrences") if ($verbose >=1);
+   &RSAT::message::TimeWarn("Calibrating oligonucleotide occurrences") if ($verbose >= 1);
 
    ### Analyse upstream occurrence distributions for each sequence length
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir{calib1});
@@ -5110,10 +5117,10 @@ sub CalibrateOligos {
 	## retrieve all upstream sequence if required
 	my $allup_file = $dir{calib1}."/tmp_all_up_".$calib_length.".fasta";
 	if (-e $allup_file) {
-	    &RSAT::message::Info("All upstream sequence file already exists. Skipping retrieval", $allup_file) if ($verbose >= 1);
+	    &RSAT::message::Info("All upstream sequence file already exists. Skipping retrieval", $allup_file) if ($verbose >= 2);
 	} else {
 	    $command = "retrieve-seq -imp_pos -org $organism_name -all -from -$calib_length -to -1 -o $allup_file";
-	    &RSAT::message::TimeWarn("Retrieving all upstream sequences", $allup_file) if ($verbose >= 1);
+	    &RSAT::message::TimeWarn("Retrieving all upstream sequences", $allup_file) if ($verbose >= 2);
 ### This should not be done in batch, since the calibrate-oligo commands will be distributed over the nodes of the cluster
 #	    if ($batch) {
 #		push @main::batch_commands, $command;
@@ -5140,7 +5147,7 @@ sub CalibrateOligos {
 
 	    ## Calculate occurrence distributions
 	    $command = "oligo-analysis -v 3 -l $oligo_len $noov $strands  -i $allup_file -return occ -distrib -o $distrib_file";
-	    &RSAT::message::TimeWarn( "Analysing ",$oligo_len."nt distributions",$distrib_file) if ($verbose >= 1);
+	    &RSAT::message::TimeWarn( "Analysing ",$oligo_len."nt distributions",$distrib_file) if ($verbose >= 2);
 	    if ($batch) {
 		push @main::batch_commands, $command;
 	    } else {
@@ -5207,7 +5214,7 @@ sub CalibrateOligosN {
 		
 	&RSAT::message::Info($family_name, "Calibrating oligo occurrences with ",$gene_nb, 
 			     "random gene selections","upstream length", $seq_len)
-	  if ($verbose >= 1);
+	  if ($verbose >= 2);
 	my $command = "calibrate-oligos -v 1";
 	$command  .= " -r ".$calibN_repet." -sn ".$gene_nb." -ol ".$oligo_len." -sl ".$seq_len;
 	my $calibN_task = "all,clean_oligos";
