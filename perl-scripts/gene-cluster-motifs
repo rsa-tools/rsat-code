@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.239 2008/07/06 08:06:34 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.240 2008/07/06 09:29:29 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.239 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.240 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -1750,6 +1750,7 @@ sub Gibbs {
 
   $gibbs_command .= "; ";
   $gibbs_command .= &ConvertMatrixCommand($family{$family_name}->{gibbs_file}, "gibbs");
+#  $gibbs_command = &ConvertMatrixCommand($family{$family_name}->{gibbs_file}, "gibbs");
 
   if ($batch) {
     push @main::batch_commands, $gibbs_command;
@@ -1835,7 +1836,8 @@ sub MEME {
     $meme_command = "(".$meme_command.") >& meme_log.txt";
   }
   $meme_command .= "; ";
-  $meme_command .= &ConvertMatrixCommand($family{$family_name}->{meme_file}, "meme");
+#  $meme_command .= &ConvertMatrixCommand($family{$family_name}->{meme_file}, "meme");
+  $meme_command = &ConvertMatrixCommand($family{$family_name}->{meme_file}, "meme");
 
   if ($batch) {
     push @main::batch_commands, $meme_command;
@@ -2248,31 +2250,29 @@ sub IndexMatrix {
    my $matrix_dir = $family_dir.$program."_".$family_name."/";
    my $map_link = $base.$matrix_file;
 
-   ## This piece of code has to be evaluated because it can raise an
-   ## error, if the output file does not contain any matrix. This is
-   ## the case for some output files of consensus, due to a bug.
    if (-e $matrix_file) {
-#       &ConvertMatrix($matrix_file, $program);
-       my @matrices = &ReadMatrices($family_name, $matrix_file, %args);
+     $table[$row][$col] .= &LinkToFile($family_dir, $family_name, $base);
+     $table[$row][$col] .= &LinkToFile($matrix_dir, "dir", $base);
+     $table[$row][$col] .= &LinkToFile($matrix_file, $program, $base);
+     $table[$row][$col] .= &LinkToFile($matrix_file.".tab", "tab", $base);
+     $matrix_result = "";
 
-       $table[$row][$col] .= &LinkToFile($family_dir, $family_name, $base);
-#       $table[$row][$col] .= "<a href=".$base.$family_dir.">".$family_name."</a>\n";
-       $table[$row][$col] .= &LinkToFile($matrix_dir, "dir", $base);
-#       $table[$row][$col] .= "<a href=".$base.$matrix_dir.">[dir]</a>\n";
-       $table[$row][$col] .= &LinkToFile($matrix_file, $program, $base);
-#       $table[$row][$col] .= "<a href=".$base.$matrix_file.">[".$program."]</a>\n";
-       $table[$row][$col] .= &LinkToFile($matrix_file.".tab", "tab", $base);
-#       $table[$row][$col] .= "<a href=".$base.$matrix_file.".tab>[tab]</a>\n";
-#       $table[$row][$col] .= "<a href=".$base.$pattern_file.".".${IMG_FORMAT}.">[".${IMG_FORMAT}."]</a>\n";
-#       if ($htmaps) {
-#	   $table[$row][$col] .= "<a href=".$base.$pattern_file.".html>[html]</a>\n";
-#       }
-#       if ($matrix) {
-#	   &RSAT::message::Debug("IndexMatrix", $matrix, 
-#				 $matrix->get_attribute("id"),
-#				 $matrix->get_attribute("input_file"),
-#				) if ($verbose >= 10);
-       $matrix_result = "";
+     ################################################################
+     ## If the logos exist, include them in the synthetic table
+     my $logo_expr = $matrix_file;
+     $logo_expr =~ s/\.tab//;
+     $logo_expr .= '*_logo.png';
+     my @logo_files = glob ($logo_expr);
+     if (scalar(@logo_files) >= 1) {
+       &RSAT::message::Debug("LOGO", $logo_expr, "FILES", @logo_files) if ($main::verbose >= 3);
+       foreach my $logo (@logo_files) {
+	 $table[$row][$col] .= "<br><a href='".$base.$logo."'><img src='".$base.$logo."' height=100></a>\n";
+       }
+
+       ################################################################
+       ## If not, write the first matrix
+     } else {
+       my @matrices = &ReadMatrices($family_name, $matrix_file, %args);
        if (scalar(@matrices) > 0) {
 	 my $m = 0;
 	 foreach my $matrix (@matrices) {
@@ -2297,12 +2297,12 @@ sub IndexMatrix {
        } else {
 	 $table[$row][$col] .= "<br><font color=red>No matrix could be found in the result file</font>\n";
        }
+     }
    } else {
-       $table[$row][$col] =  "<a href=".$base.$matrix_file."><font color=red>File not found</font></a><br>\n";
-       &RSAT::message::Warning("File not found. Skipped.", $program, $matrix_file);
+     $table[$row][$col] =  "<a href=".$base.$matrix_file."><font color=red>File not found</font></a><br>\n";
+     &RSAT::message::Warning("File not found. Skipped.", $program, $matrix_file);
    }
 }
-
 
 ################################################################
 ## Convert a PSSM to tab-delimited format
@@ -2317,6 +2317,7 @@ sub ConvertMatrixCommand {
   $command .= " -from ".$program;
   $command .= " -to tab";
   $command .= " -return counts,parameters";
+  $command .= " -return logo -logo_format png";
   $command .= " -i ".$matrix_file;
   my $sort_key = $pssm_sort_key{$program};
   my $sort_order = $pssm_sort_order{$program};
@@ -2324,7 +2325,6 @@ sub ConvertMatrixCommand {
     $command .= " -sort ".$sort_order." ".$sort_key;
   }
   $command .= " -o ".$matrix_file.".tab";
-
   &RSAT::message::Warning("Converting matrix", $command) if ($verbose >= 2);
   return $command;
 }
