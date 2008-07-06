@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.242 2008/07/06 19:16:21 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.243 2008/07/06 19:23:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.242 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.243 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -94,6 +94,8 @@ package main;
 			 validate_dyads
 
 			 pssm
+			 oligos_pssm
+			 dyads_pssm
 
 			 ormbg
 			 orm
@@ -2892,6 +2894,17 @@ sub AnalyzeFamilies {
 	  &AssembleOligos() if ($task{assemble_oligos});
 	}
 
+	## Convert oligos to PSSM
+	if ($task{oligos_pssm}) {
+	  my $pssm_command = &MatrixFromPatterns($family{$family_name}->{oligo_assembly_file},
+						 $family{$family_name}->{oligo_pssm_file}, "oligos");
+	  if ($main::batch) {
+	    push @main::batch_commands, $pssm_command;
+	  } else {
+	    &doit($pssm_command, $dry_run, $die_on_error, $verbose);
+	  }
+	}
+
 	if ($task{oligo_maps}) {
 	  ### feature-maps of oligonucleotide occurrences
 	  &MatchPatterns($family{$family_name}->{oligo_file},
@@ -2909,6 +2922,17 @@ sub AnalyzeFamilies {
 
 	### dyad analysis
 	&DyadAnalysis() if ($task{dyads});
+
+	## Convert dyads to PSSM
+	if ($task{dyads_pssm}) {
+	  my $pssm_command = &MatrixFromPatterns($family{$family_name}->{dyad_assembly_file},
+						 $family{$family_name}->{dyad_pssm_file}, "dyads");
+	  if ($main::batch) {
+	    push @main::batch_commands, $pssm_command;
+	  } else {
+	    &doit($pssm_command, $dry_run, $die_on_error, $verbose);
+	  }
+	}
 
 	### dyad feature-maps
 	if ($task{dyad_maps}) {
