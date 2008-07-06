@@ -2951,29 +2951,37 @@ sub seq_from_matrix {
 
   ### Check if the sum of all column identical
   my @col_sum = col_sum($nb_row,$nb_col,@matrix);
-  for my $i (1..$#col_sum) {
-    if ($col_sum[$i-1] != $col_sum[$i]) {
-      &RSAT::error::FatalError("Your matrix column sums must be equal in order to make logo.");
-    }
+  my $max_col_sum = &RSAT::stats::max(@col_sum);
+  my @null_residues = ();
+  for my $i (0..$#col_sum) {
+    $null_residues[$i] = $max_col_sum - $col_sum[$i];
+#    if ($null_residues[$i] > 0) {
+#      &RSAT::message::Warning("The sums of counts per column must all be equal in order to make logo.");
+#    }
   }
-  my $seq_number = shift @col_sum;
+  my $seq_number = $max_col_sum;
 
-  my @letters_at_position = ();
+  ################################################################
+  ## Create a vector of sequences representing the letters per column
+  my @letters_at_column = ();
+  my $null_residue = ".";
   for my $c (0..$nb_col-1) {
     my $i=0;
     foreach my $letter ($self->getAlphabet()) {
-##    foreach my $letter ("A","C","G","T") {
-      $letters_at_position[$c] .= "$letter" x $matrix[$c][$i];
+      ##    foreach my $letter ("A","C","G","T") {
+      $letters_at_column[$c] .= $letter x $matrix[$c][$i];
       $i++;
     }
+    $letters_at_column[$c] .= $null_residue x $null_residues[$c];
+#    &RSAT::message::Debug("&seq_from_matrix()", "Column-letters", $letters_at_column[$c]) if ($main::verbose >= 4);
   }
+
   ## Print sequences
   my @intermediate = ();
-  for my $false_seq (@letters_at_position) {
+  for my $false_seq (@letters_at_column) {
     my @residues = split ("",$false_seq);
     push @intermediate, \@residues;
   }
-
   my @seqs=();
   for my $residue (0..$seq_number-1) {
     my $seq;
@@ -2982,13 +2990,13 @@ sub seq_from_matrix {
     }
     push @seqs, $seq;
   }
-  &RSAT::message::Info("Inferred sequences from matrix :\n;",join ("\n;\t",@seqs)) if ($main::verbose >= 4);
+  &RSAT::message::Debug("Fake sequences from matrix :\n;",join ("\n;\t",@seqs)) if ($main::verbose >= 4);
   ## create a temporary sequence file which will be deleted after logo creation 
   #	my $tmp_seq_file = "seq.tmp";
   #$tmp_seq_file = $dir."/".$tmp_seq_file if ($dir);
   my $tmp_seq_file = $self->get_attribute("logo_file").".tmp";
   open SEQ, ">".$tmp_seq_file
-    or die "Can't write to file ".$tmp_seq_file."$!";
+    || &RSAT::error::FatalError("&RSAT::matrix::seq_from_matrix()", "Can't write file ".$tmp_seq_file."$!");
   print SEQ join("\n",@seqs)."\n";
   close SEQ;
   &RSAT::message::Debug("Write sequences temporary in ".$tmp_seq_file) if ($main::verbose >= 3);
