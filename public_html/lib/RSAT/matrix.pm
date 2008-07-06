@@ -559,11 +559,18 @@ sub setMatrix {
 ################################################################
 =pod
 
-=item toString(format=>$matrix_format, %args)
+=item toString(%args)
 
 Return a string description of the matrix in the same format as Jerry
 Hertz programs. Additional parameters are also exported as comments,
 when the verbosity is > 0.
+
+Examples:
+
+ toString(format=>'tab', type=>parameters)
+
+ toString(format=>'tab', type=>counts, sep=' ', col_width=4)
+
 
 =over
 
@@ -581,7 +588,7 @@ to_MotifSampler, to_TRANSFAC), depending on the chosen output format.
 =cut
 sub toString {
     my ($self, %args) = @_;
-    my $output_format = $args{format} || "patser";
+    my $output_format = $args{format} || "tab";
     $output_format = lc($output_format);
     if (($output_format eq "patser") || ($output_format eq "tab")) {
       return $self->to_patser(%args);
@@ -774,7 +781,8 @@ sub to_patser {
 			frequencies=>1,
 			weights=>1,
 			information=>1,
-			parameters=>1
+			parameters=>1,
+			consensus=>1
 			);
     &main::FatalError("Invalid matrix type $type") unless $supported_types{$type};
 
@@ -808,6 +816,10 @@ sub to_patser {
     if ($type eq "parameters") {
       my @information = $self->getInformation();
       $to_print .= $self->_printParameters($to_print);
+
+    } elsif ($type eq "consensus") {
+      $to_print .= "; consensus\t".$self->get_attribute("consensus.IUPAC")."\n";
+      $to_print .= "; consensus.rc\t".$self->get_attribute("consensus.IUPAC.rc")."\n";
 
       ################################################################
       ## Print a profile (vertical matrix with consensus on the right side)
@@ -2925,10 +2937,14 @@ sub makeLogo{
   my ($self,$logo_file,$logo_formats,$logo_tmp_dir, $logo_options) = @_;
   my (@logo_formats) = @{$logo_formats};
   my ($seqs_file) =$self->seq_from_matrix($logo_tmp_dir);
+  my $ncol = $self->ncol();
   foreach my $logo_format (@logo_formats){
     my $logo_cmd = $ENV{RSAT}."/bin/seqlogo ";
     $logo_cmd.= "-f ".$seqs_file;
     $logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -e -k 1";
+    $logo_cmd .= " -w ".$ncol unless ($logo_options =~ /\-w /);
+    $logo_cmd .= " -h 5 " unless ($logo_options =~ /\-h /);
+    $logo_cmd .= " -e -M";
     $logo_cmd .= " ".$logo_options;
     $logo_cmd .= " -o ". $logo_file;
     #	$logo_cmd .= " -t ".$self->get_attribute("name");
