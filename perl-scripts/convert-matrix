@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.65 2008/06/27 00:21:02 jvanheld Exp $
+# $Id: convert-matrix,v 1.66 2008/07/06 12:15:58 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -1108,7 +1108,7 @@ sub ExportMatrix {
   ## Calculate consensus
   if ($return_fields{consensus}) {
     $matrix->calcConsensus();
-    print $out "; consensus\t", $matrix->get_attribute("consensus.IUPAC"), "\n";
+    print $out $matrix->toString(type=>'consensus');
   }
 
   ## Return parameters
