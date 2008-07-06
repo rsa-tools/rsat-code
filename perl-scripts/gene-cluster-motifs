@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.243 2008/07/06 19:23:32 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.244 2008/07/06 20:03:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.243 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.244 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -416,11 +416,12 @@ package main;
     &ReadSequenceList();
     ## Family file
   } else {
-    ### read gene name and identifiers
-    &RSAT::message::TimeWarn("Reading ORF information")
-      if ($verbose >= 1);
+
     #### Check organism name
     if ($organism_name) {
+      ### read gene name and identifiers
+      &RSAT::message::TimeWarn("Reading ORF information")
+	if ($verbose >= 1);
       $organism = new RSAT::organism();
       $organism->check_name($organism_name);
       $organism->set_attribute("name", $organism_name);
@@ -435,6 +436,7 @@ package main;
     }
 
     ### Read family file
+    &RSAT::message::TimeWarn("Reading gene groups") if ($main::verbose >= 1);
     if ($org_fam) {
       %family = &ReadClasses($family_file, 0);
     } else {
@@ -451,7 +453,7 @@ package main;
 
 
   ## Check minimum and maximum number of genes
-  &RSAT::message::Info("Checking min and max number of genes") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Checking min and max number of genes") if ($main::verbose >= 1);
   foreach my $family_name (@families) {
     my $gene_nb = scalar(@{$family{$family_name}->{members}});
     if ($gene_nb < $min_genes) {
@@ -496,7 +498,7 @@ package main;
   }
   @families = sort keys %family;
 
-  &RSAT::message::Info(join("\t", "Remaining families after filtering", scalar(@families))) if ($verbose >= 1);
+  &RSAT::message::TimeWarn("Remaining families after filtering", scalar(@families)) if ($verbose >= 1);
 
   ################################################################
   ## Skip the first or last families if required
@@ -2811,7 +2813,7 @@ sub CheckParameters {
     ## Threshold on occurrence significance
     unless ((defined($lth{occ_sig})) || ($lth{occ_sig} eq $null)){
 	$lth{occ_sig} = 0;
-	&RSAT::message::Warning("Lower threshold on occ_sig automatically set to 0 for oligo-analysis and dyad-analysis.") 
+	&RSAT::message::Info("Lower threshold on occ_sig automatically set to 0 for oligo-analysis and dyad-analysis.") 
 	    if ($verbose >= 1);
     } 
 
@@ -2868,7 +2870,7 @@ sub AnalyzeFamilies {
 	   &RSAT::message::TimeWarn("Organism name", $organism_name);
        }
 
-	&RSAT::message::TimeWarn("\n; Treating family ", $family_name," (".$fam_count."/".$fam_nb.")", 
+	&RSAT::message::TimeWarn("Treating family ", $family_name," (".$fam_count."/".$fam_nb.")", 
 				 $gene_nb." genes", $organism_name)
 	  if ($verbose >= 1);
 
