@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.240 2008/07/06 09:29:29 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.241 2008/07/06 12:14:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.240 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.241 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -144,8 +144,6 @@ package main;
 			);
   $supported_sort_keys  = join ",", sort keys %supported_sort_key;
 
-  ## Maximum number of matrices per family in the synthetic table
-  $max_matrices = 1;
 
   ## Background models for string-based pattern discovery
   %supported_background = (
@@ -195,7 +193,7 @@ package main;
   ## Default matrix-based pattern discovery options
   $matrix_width = 16;
   $expected_sites_per_gene = 2;
-  $nmotifs = 5;
+  $nmotifs = 3;
   $seed = undef;
   $matrix_pseudo = 1;
 
@@ -1387,57 +1385,56 @@ sub MergeOligoLengths {
 ################################################################
 ### Merge the results of oligo-analysis for different oligo lengths
 sub AssembleOligos {
-   &RSAT::message::TimeWarn("Merging oligonucleotides for family ".$family_name,
-			    "min len: ".$min_oligo_len,
-			    "max len:".$max_oligo_len,
-			    $family{$family_name}->{oligo_file}) if ($verbose >= 1);
-   my $dir = "${family_name}/oligos_${family_name}";
+  &RSAT::message::TimeWarn("Merging oligonucleotides for family ".$family_name,
+			   "min len: ".$min_oligo_len,
+			   "max len:".$max_oligo_len,
+			   $family{$family_name}->{oligo_file}) if ($verbose >= 1);
+  my $dir = "${family_name}/oligos_${family_name}";
 
-   chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
-   &RSAT::error::FatalError("Cannot read file ".$family{$family_name}->{input_seq_file}) unless (($batch) || ($dry_run) ||(-r $family{$family_name}->{input_seq_file}));
+  chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
+  &RSAT::error::FatalError("Cannot read file ".$family{$family_name}->{input_seq_file}) unless (($batch) || ($dry_run) ||(-r $family{$family_name}->{input_seq_file}));
 
-#    ## initialize the oligo file
-#    my @assemble_commands = "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);    
-#    for $oligo_len ($min_oligo_len..$max_oligo_len) {
-# 	($command, $oligo_file) = &CalcOligoOptions($oligo_len);
-# 	push @assemble_commands, "cat ".$oligo_file." >> ".$family{$family_name}->{oligo_file};
-#    }
+  #    ## initialize the oligo file
+  #    my @assemble_commands = "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);    
+  #    for $oligo_len ($min_oligo_len..$max_oligo_len) {
+  # 	($command, $oligo_file) = &CalcOligoOptions($oligo_len);
+  # 	push @assemble_commands, "cat ".$oligo_file." >> ".$family{$family_name}->{oligo_file};
+  #    }
 
-   ### pattern assembly
-   &RSAT::message::TimeWarn("Assembling oligo patterns", $family{$family_name}->{oligo_assembly_file}) 
-       if ($verbose >= 2);
-   my $assembly_command = "pattern-assembly -v 1";
-   $assembly_command .= " -maxfl 1 -toppat ".$toppat." -subst 1 ".$strands;
-   $assembly_command .= " -i ".$family{$family_name}->{oligo_file};
-   $assembly_command .= " -o ".$family{$family_name}->{oligo_assembly_file};
-   push @assemble_commands, $assembly_command;
+  ### pattern assembly
+  &RSAT::message::TimeWarn("Assembling oligo patterns", $family{$family_name}->{oligo_assembly_file}) 
+    if ($verbose >= 2);
+  my $assembly_command = "pattern-assembly -v 1";
+  $assembly_command .= " -maxfl 1 -toppat ".$toppat." -subst 1 ".$strands;
+  $assembly_command .= " -i ".$family{$family_name}->{oligo_file};
+  $assembly_command .= " -o ".$family{$family_name}->{oligo_assembly_file};
+  push @assemble_commands, $assembly_command;
 
-   ### extract PSSM from pattern assembly
-#   my $pssm_command = "convert-matrix -v 1 ";
-#   $pssm_command .= " -i ".$family{$family_name}->{oligo_assembly_file};
-#   $pssm_command .= " -from assembly -out_format patser -return counts,profile,parameters";
-#   $pssm_command .= " -o ".$family{$family_name}->{oligo_pssm_file};
-#   push @assemble_commands, $pssm_command;
 
-   &RSAT::message::TimeWarn("Matrix from oligo patterns", $family{$family_name}->{oligo_pssm_file}) 
-       if ($verbose >= 2);
-   my $pssm_command = "matrix-from-patterns -v 1 ";
-   $pssm_command .= " -seq ".$family{$family_name}->{seq_file};
-   $pssm_command .= " -asmb ".$family{$family_name}->{oligo_assembly_file};
-   $pssm_command .= " -bginput -markov 0 ";
-   $pssm_command .= " -o ".$family{$family_name}->{oligo_pssm_file};
-   push @assemble_commands, $pssm_command if ($task{pssm});
+  ### extract PSSM from assembled patterns
+  #    &RSAT::message::TimeWarn("Matrix from oligo patterns", $family{$family_name}->{oligo_pssm_file}) 
+  #        if ($verbose >= 2);
+  #    my $pssm_command = "matrix-from-patterns -v 1 ";
+  #    $pssm_command .= " -seq ".$family{$family_name}->{seq_file};
+  #    $pssm_command .= " -asmb ".$family{$family_name}->{oligo_assembly_file};
+  #    $pssm_command .= " -bginput -markov 0 ";
+  #    $pssm_command .= " -o ".$family{$family_name}->{oligo_pssm_file};
+  if ($task{pssm}) {
+    $pssm_command = &MatrixFromPatterns($family{$family_name}->{oligo_assembly_file},
+				   $family{$family_name}->{oligo_pssm_file}, "oligos");
+  }
+  push @assemble_commands, $pssm_command if ($task{pssm});
 
-   my $assemble_command = join "; \\\n", @assemble_commands;
-   if ($task{oligos}) {
-       return $assemble_command;
-   } else {
-       if ($batch) {
-	   push @main::batch_commands, @assemble_commands;
-       } else {
-	   &doit($assemble_command, $dry_run, 0, $verbose);
-       }
-   }
+  my $assemble_command = join "; \\\n", @assemble_commands;
+  if ($task{oligos}) {
+    return $assemble_command;
+  } else {
+    if ($batch) {
+      push @main::batch_commands, @assemble_commands;
+    } else {
+      &doit($assemble_command, $dry_run, 0, $verbose);
+    }
+  }
 }
 
 
@@ -1571,53 +1568,71 @@ sub DrawFeatureMap {
 ################################################################
 ### dyad analysis
 sub DyadAnalysis {
-    &RSAT::message::TimeWarn("Analyzing dyads for family $family_name",
-			     "monad length: $monad_length",
-			     "min_sp: $min_sp",
-			     "max_sp: $max_sp",
-	) if ($verbose >= 1);
-    $dir = "${family_name}/dyads_${family_name}";
-    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
-    &RSAT::error::FatalError("Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{input_seq_file}));
-    $command = "dyad-analysis";
-    $command .= " -return occ,proba,rank,zscore,ratio";
-    $command .= " -i ".$family{$family_name}->{input_seq_file};
-    $command .= " -format ".$seq_format;
-    $command .= " -o ".$family{$family_name}->{dyad_file};
-    $command .= " ".$dyad_options;
-    $command .= " -org ".$organism_name if ($org_fam);
+  &RSAT::message::TimeWarn("Analyzing dyads for family $family_name",
+			   "monad length: $monad_length",
+			   "min_sp: $min_sp",
+			   "max_sp: $max_sp",
+			  ) if ($verbose >= 1);
+  $dir = "${family_name}/dyads_${family_name}";
+  chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
+  &RSAT::error::FatalError("Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{input_seq_file}));
+  $command = "dyad-analysis";
+  $command .= " -return occ,proba,rank,zscore,ratio";
+  $command .= " -i ".$family{$family_name}->{input_seq_file};
+  $command .= " -format ".$seq_format;
+  $command .= " -o ".$family{$family_name}->{dyad_file};
+  $command .= " ".$dyad_options;
+  $command .= " -org ".$organism_name if ($org_fam);
 
-   if ($mask) {
-       $command .= " -mask ".$mask;
-   }
+  if ($mask) {
+    $command .= " -mask ".$mask;
+  }
 
-   ### pattern assembly
-   &RSAT::message::TimeWarn("Assembling dyad patterns", $family{$family_name}->{dyad_assembly_file}) 
-       if ($verbose >= 2);
-   $command .= "; pattern-assembly -v 1";
-   $command .=  " -maxfl 1 -toppat ".$toppat;
-   $command .=  " ".${strands};
-   $command .= " -i ".$family{$family_name}->{dyad_file};
-   $command .= " -o ".$family{$family_name}->{dyad_assembly_file};
+  ### pattern assembly
+  &RSAT::message::TimeWarn("Assembling dyad patterns", $family{$family_name}->{dyad_assembly_file}) 
+    if ($verbose >= 2);
+  $command .= "; pattern-assembly -v 1";
+  $command .=  " -maxfl 1 -toppat ".$toppat;
+  $command .=  " ".${strands};
+  $command .= " -i ".$family{$family_name}->{dyad_file};
+  $command .= " -o ".$family{$family_name}->{dyad_assembly_file};
 
-   ### extract PSSM from pattern assembly
-    if ($task{pssm}) {
-	&RSAT::message::TimeWarn("Matrix from dyad patterns", $family{$family_name}->{dyad_pssm_file}) 
-	    if ($verbose >= 2);
-	$command .= "; matrix-from-patterns -v 1 ";
-	$command .= " -seq ".$family{$family_name}->{seq_file};
-	$command .= " -asmb ".$family{$family_name}->{dyad_assembly_file};
-	$command .= " -bginput -markov 0 ";
-	$command .= " -o ".$family{$family_name}->{dyad_pssm_file};
-    }
+  ### extract PSSM from assembled patterns
+  #    $command = "echo TEST";
+  if ($task{pssm}) {
+    $command .= "; ";
+    $command .= &MatrixFromPatterns($family{$family_name}->{dyad_assembly_file},
+				   $family{$family_name}->{dyad_pssm_file}, "dyads");
+  }
 
-   if ($batch) {
-       push @main::batch_commands, $command;
-   } else {
-       &doit($command, $dry_run, $die_on_error, $verbose);
-   }
+  if ($batch) {
+    push @main::batch_commands, $command;
+  } else {
+    &doit($command, $dry_run, $die_on_error, $verbose);
+  }
 }
 
+
+################################################################
+## Convert assembled patterns (dyads, oligos) into PSSMs
+sub MatrixFromPatterns {
+  my ($assembly_file, $pssm_file, $type) = @_;
+  &RSAT::message::TimeWarn("Matrix from patterns", $type, $pssm_file)
+    if ($verbose >= 2);
+  my $command = "matrix-from-patterns -v 1 ";
+  $command .= " -seq ".$family{$family_name}->{seq_file};
+  $command .= " -asmb ".$assembly_file;
+  $command .= " -bginput -markov 0 ";
+  $command .= " -o ".$pssm_file;
+
+  my $pssm_dir = `dirname $pssm_file`;
+  chomp($pssm_dir);
+  $command = "convert-matrix -from tab -to tab -return logo -logo_format png";
+  $command .= " -logo_dir ".$pssm_dir;
+  $command .= " -i ".$pssm_file."_count_matrices.txt";
+
+  return ($command);
+}
 
 ################################################################
 ## Merge patterns detected by oligo-analysis and dyad-analysis
@@ -1836,8 +1851,8 @@ sub MEME {
     $meme_command = "(".$meme_command.") >& meme_log.txt";
   }
   $meme_command .= "; ";
-#  $meme_command .= &ConvertMatrixCommand($family{$family_name}->{meme_file}, "meme");
-  $meme_command = &ConvertMatrixCommand($family{$family_name}->{meme_file}, "meme");
+  $meme_command .= &ConvertMatrixCommand($family{$family_name}->{meme_file}, "meme");
+#  $meme_command = &ConvertMatrixCommand($family{$family_name}->{meme_file}, "meme");
 
   if ($batch) {
     push @main::batch_commands, $meme_command;
@@ -2033,19 +2048,20 @@ sub SyntheticTable {
     unless (-d $dir) {
       &RSAT::message::Warning ("Cannot find directory $dir\n");
     }
-	
+
     ### family number
     $table[$row{f}][$col] = "<B>$col</B>";
-	
+
     ### family name
     $table[$row{family}][$col] = "<B><a href='../".$family_name."'>".$family_name."</a></B>";
-	
+
     #### number of genes
-    $table[$row{size}][$col] = scalar(@{$family{$family_name}->{members}});
-	
+    my $members = scalar(@{$family{$family_name}->{members}});
+    $table[$row{size}][$col] = $members;
+#    $table[$row{size}][$col] = scalar(@{$family{$family_name}->{members});
+
     #### sequence length
     if ($seq_length_calculated) {
-      my $members = scalar(@{$family{$family_name}->{members}});
       if ($members > 0) {
 	$family{$family_name}->{avg_length} = $family{$family_name}->{total_length}/$members;
       } else {
@@ -2056,8 +2072,15 @@ sub SyntheticTable {
     }
 
     ### list of genes
+    my $max_members = 15; ## Mac number of members to display
     $table[$row{genes}][$col] = "<a href='../".$family{$family_name}->{family_file}."'>";
-    $table[$row{genes}][$col] .= join " ", @{$family{$family_name}->{members}};
+    if ($members <= $max_members) {
+      $table[$row{genes}][$col] .= join " ", @{$family{$family_name}->{members}};
+    } else {
+      my $diff = $members - $max_members;
+      $table[$row{genes}][$col] .= join " ", @{$family{$family_name}->{members}}[0..($max_members-1)];
+      $table[$row{genes}][$col] .= "<br> + ".$diff." other genes";
+    }
     $table[$row{genes}][$col] .= "</a>";
 
     ### known patterns
@@ -2257,46 +2280,50 @@ sub IndexMatrix {
      $table[$row][$col] .= &LinkToFile($matrix_file.".tab", "tab", $base);
      $matrix_result = "";
 
+
      ################################################################
-     ## If the logos exist, include them in the synthetic table
-     my $logo_expr = $matrix_file;
-     $logo_expr =~ s/\.tab//;
-     $logo_expr .= '*_logo.png';
-     my @logo_files = glob ($logo_expr);
-     if (scalar(@logo_files) >= 1) {
-       &RSAT::message::Debug("LOGO", $logo_expr, "FILES", @logo_files) if ($main::verbose >= 3);
-       foreach my $logo (@logo_files) {
-	 $table[$row][$col] .= "<br><a href='".$base.$logo."'><img src='".$base.$logo."' height=100></a>\n";
+     ## If not, write the first matrix
+     my @matrices = &ReadMatrices($family_name, $matrix_file, %args);
+     if (scalar(@matrices) > 0) {
+       my $max_matrices = 5; ## Maximum number of matrices per family in the synthetic table
+       my $m = 0;
+       foreach my $matrix (@matrices) {
+	 $m++;
+	 $matrix_result .= "; MATRIX ".$m."/".scalar(@matrices)."\n";
+	 if ($m > $max_matrices) {
+	   my $remaining = scalar(@matrices) - $m + 1;
+	   $matrix_result .= ";\n; ... and ".$remaining." more matrices in the file.\n";
+	   last;
+	 }
+	 &RSAT::message::Debug($family_name, "Indexing matrix", $m."/".scalar(@matrices),$program)
+	   if ($verbose >= 3);
+	 #	   $matrix_result .= $matrix->toString(sep=>" ", col_width=>4, type=>"counts");
+	 #$matrix_result .= $matrix->toString(type=>"parameters");
+	 $matrix_result .= $matrix->toString(type=>"consensus");
        }
+       $table[$row][$col] .= "<table cellpadding=3>\n";
+       $table[$row][$col] .= "<TR>\n";
+       $table[$row][$col] .= "<td colspan=2><pre>";
+       $table[$row][$col] .= $matrix_result;
+       $table[$row][$col] .= "</pre></td>\n";
+       $table[$row][$col] .= "</TR>\n";
+       $table[$row][$col] .= "</table>\n";
 
        ################################################################
-       ## If not, write the first matrix
-     } else {
-       my @matrices = &ReadMatrices($family_name, $matrix_file, %args);
-       if (scalar(@matrices) > 0) {
-	 my $m = 0;
-	 foreach my $matrix (@matrices) {
-	   $m++;
-	   if ($m > $max_matrices) {
-	     my $remaining = scalar(@matrices) - $m + 1;
-	     $matrix_result .= ";\n; ... and ".$remaining." more matrices in the file.\n";
-	     last;
-	   }
-	   &RSAT::message::Debug($family_name, "Indexing matrix", $m."/".scalar(@matrices),$program)
-	     if ($verbose >= 3);
-	   $matrix_result .= $matrix->toString(sep=>" ", col_width=>4, type=>"counts");
-	   $matrix_result .= $matrix->toString(type=>"parameters");
+       ## If the logos exist, include them in the synthetic table
+       my $logo_expr = $matrix_file;
+       $logo_expr =~ s/\.tab//;
+       $logo_expr .= '*_logo.png';
+       my @logo_files = glob ($logo_expr);
+       if (scalar(@logo_files) >= 1) {
+	 &RSAT::message::Debug("LOGO", $logo_expr, "FILES", @logo_files) if ($main::verbose >= 3);
+	 foreach my $logo (@logo_files) {
+	   $table[$row][$col] .= "<br><a href='".$base.$logo."'><img src='".$base.$logo."' height=100></a>\n";
 	 }
-	 $table[$row][$col] .= "<table cellpadding=3>\n";
-	 $table[$row][$col] .= "<TR>\n";
-	 $table[$row][$col] .= "<td colspan=2><pre>";
-	 $table[$row][$col] .= $matrix_result;
-	 $table[$row][$col] .= "</pre></td>\n";
-	 $table[$row][$col] .= "</TR>\n";
-	 $table[$row][$col] .= "</table>\n";
-       } else {
-	 $table[$row][$col] .= "<br><font color=red>No matrix could be found in the result file</font>\n";
        }
+
+     } else {
+       $table[$row][$col] .= "<br><font color=red>No matrix could be found in the result file</font>\n";
      }
    } else {
      $table[$row][$col] =  "<a href=".$base.$matrix_file."><font color=red>File not found</font></a><br>\n";
@@ -2626,6 +2653,20 @@ sub IndexPatterns {
 	$table[$row][$col] .= "</TR>\n";
 	$table[$row][$col] .= "</TABLE>\n";
    }
+
+
+   ################################################################
+   ## If  logos exist, include them in the synthetic table
+   my $logo_expr = $pattern_file;
+   $logo_expr =~ s/\.tab//;
+   $logo_expr .= '*_logo.png';
+   my @logo_files = glob ($logo_expr);
+   if (scalar(@logo_files) >= 1) {
+     &RSAT::message::Debug("LOGO", $logo_expr, "FILES", @logo_files) if ($main::verbose >= 3);
+     foreach my $logo (@logo_files) {
+       $table[$row][$col] .= "<br><a href='".$base.$logo."'><img src='".$base.$logo."' height=100></a>\n";
+     }
+   }
 }
 
 
@@ -2852,9 +2893,11 @@ sub AnalyzeFamilies {
 	    &DrawFeatureMap($family{$family_name}->{oligo_file});
 
 	  ## scan sequences with the PSSM built from significant oligos
-	  &ScanSequences($family{$family_name}->{oligo_pssm_file}."_count_matrices.txt","tab",
-			 $family{$family_name}->{oligo_pssm_file}," -uth Pval 0.00025");
-	  &DrawFeatureMap($family{$family_name}->{oligo_pssm_file});
+	  if (-e $family{$family_name}->{oligo_pssm_file}."_count_matrices.txt","tab") {
+	    &ScanSequences($family{$family_name}->{oligo_pssm_file}."_count_matrices.txt","tab",
+			   $family{$family_name}->{oligo_pssm_file}," -uth Pval 0.00025");
+	    &DrawFeatureMap($family{$family_name}->{oligo_pssm_file});
+	  }
 	}
 
 	### dyad analysis
@@ -2863,10 +2906,13 @@ sub AnalyzeFamilies {
 	### dyad feature-maps
 	if ($task{dyad_maps}) {
 	  &DrawDyadFeatureMap();
+
 	  ## scan sequences with the PSSM built from significant dyads
-	  &ScanSequences($family{$family_name}->{dyad_pssm_file}."_count_matrices.txt","tab",
-			 $family{$family_name}->{dyad_pssm_file}," -uth Pval 0.00025");
-	  &DrawFeatureMap($family{$family_name}->{dyad_pssm_file});
+	  if (-e $family{$family_name}->{dyad_pssm_file}."_count_matrices.txt","tab") {
+	    &ScanSequences($family{$family_name}->{dyad_pssm_file}."_count_matrices.txt","tab",
+			   $family{$family_name}->{dyad_pssm_file}," -uth Pval 0.00025");
+	    &DrawFeatureMap($family{$family_name}->{dyad_pssm_file});
+	  }
 	}
 
 	### Jerry Hertz' consensus
