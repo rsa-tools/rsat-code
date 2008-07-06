@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.48 2008/04/30 14:07:16 rsat Exp $
+# $Id: compare-graphs,v 1.49 2008/07/06 12:16:34 rsat Exp $
 #
 ############################################################
 
@@ -31,7 +31,6 @@ Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
 util
 
 =head1 USAGE
-    
  compare-graphs  [-v #] -Q query_graph_file -R reference_graph_file \
    [-in_format_R tab|gml] [-in_format_Q tab|gml] \
    [-scol_R #] [-tcol_R #] [-wcol_R #] \
@@ -310,9 +309,9 @@ package main;
     if ($main::verbose >= 1 && $main::out ne "STDOUT") {
       &RSAT::message::Info("$message");
     }
+
     ################################################################
     ## Execute the command
-    
     my $return_graph;
     if ($return_format eq "intersection" || $return_format eq "R.and.Q" || $return_format eq "Q.and.R") {
       $return_graph = &intersect($R_graph, $Q_graph);
@@ -327,10 +326,11 @@ package main;
     } elsif ($return_format eq "Q.and.R+Q" || $return_format eq "R.and.Q+Q" || $return_format eq "intersection+Q" ) {
       $return_graph = &union($R_graph, $Q_graph, "-r");
     }
+
     ################################################################
     ## Print output
     print $main::out $return_graph->to_text($output_format, $arc_id_option);
-    
+
     ################################################################
     ## Finish verbose
     if ($main::verbose >= 1) {
@@ -342,13 +342,11 @@ package main;
 	print $this_out "; Job started $start_time\n";
 	print $this_out "; Job done    $done_time\n";
     }
-    
-     
+
     ################################################################
     ## Close output stream
     close $main::out if ($main::outfile{output});
-    
-    
+
     exit(0);
 }
 
@@ -553,8 +551,6 @@ wether it belongs to the intersection or to the query graph only.
 	    &RSAT::error::FatalError("$return_format\tInvalid return format. Supported: $supported_return_formats")
 		unless ($supported_return_format{$return_format});
 
-
-			    
 	    ## Outweight option
 =pod
 
