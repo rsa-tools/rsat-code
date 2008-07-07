@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.19 2008/07/04 06:12:10 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.20 2008/07/07 20:47:36 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -218,6 +218,7 @@ package main;
     %feature_out_fields = (); #### index of feature out fields, for checking extra fields
     %feature_extra_fields = (); #### index of feature out fields, for checking extra fields
 
+
     #### SQL options
     $host= $default{'host'};
     $schema="embl";
@@ -384,14 +385,12 @@ package main;
     ################################################################
     #### Postprocessing : we interpret the features to extract more information
     #### check some feature attributes (name, description, ...)
-
     &RSAT::message::TimeWarn("Processing features") if ($main::verbose >= 1);
     my $organism_name = $org; #### first guess
     my $contig = "";
     foreach my $class_holder (@feature_holders) {
-      
+      &RSAT::message::TimeWarn("Processing features of class", $class_holder->get_object_type()) if ($main::verbose >= 1);
       foreach $feature ($class_holder->get_objects()) {
-	
 	################################################################
 	## The organism name is annotated in the feature of type
 	## "source"
@@ -400,7 +399,7 @@ package main;
 	  if (($organism_name) && ($organism_name ne $null)) {
 	    &CreateOrganism($organisms, $organism_name);
 	  }
-	  
+
 	  $contig = $feature->get_attribute("contig");
 	  my @xrefs = $feature->get_attribute("db_xref");
 	  foreach my $xref (@xrefs) {
@@ -416,60 +415,61 @@ package main;
 	  $feature->set_attribute("organism", $organism_name);
 	  #	   $feature->force_attribute("contig", $contig);
 	}
-	
-	
-        ### use gene attribute as name
+
+        ### Add gene attribute as name
 	my @gene = $feature->get_attribute("gene");
+	push @gene, $feature->get_attribute("Gene"); ## In some files, the attribute "gene" starts with an uppercase
+#	&RSAT::message::Debug( "Gene name(s)", $feature->get_attribute("type"), "id=".$feature->get_attribute('id'), "gene", join(";", @gene)) if ($main::verbose >= 5);
 	if (scalar(@gene) >= 1) {
 	  foreach my $gene (@gene) {
+#	    &RSAT::message::Debug( "Adding gene name", $gene, $feature->get_attribute("type"), $feature->get_attribute('id')) if ($main::verbose >= 5);
 	    if ($feature->get_attribute("type") eq "CDS") {
 	      $feature->push_attribute("names",$gene);
 	    } else {
 	      $feature->push_attribute("names",$gene." ".$feature->get_attribute("type"));
 	    }
 	  }
+
 	  ## Use gene name as main ID for the CDS 
 	  ## (this is just a first guess, it will be replaced by protein_id or locus_tag if these are defined)
 	  if ($gene[0] =~ /(\S+)/) {
 	    $feature->force_attribute('id', $1);
 	  }
 	}
-	
+
 	#	## Use attribute "accession" as main ID if there is one
 	#	my $accession = $feature->get_attribute("accession");
 	#	if ($accession =~ /(\S+)/) {
 	#	    $feature->force_attribute('id', $1);
 	#	}
-	
-	
+
 	### add protein_id as valid name
 	@protein_ids = $feature->get_attribute("protein_id");
 	if ($#protein_ids >= 0) {
 	  foreach my $id (@protein_ids) {
 	    $feature->push_attribute("names",$id);
 	  }
-	  
+
 	  ## Use protein_id as main ID for the CDS
 	  ## (this is just a second guess, it will be replaced by locus_tag if it is defined)
 	  if ($protein_ids[0] =~ /(\S+)/) {
 	    $feature->force_attribute('id', $1);
 	  }
 	}
-	
+
 	### add locus_tag as valid name
 	@locus_tags = $feature->get_attribute("locus_tag");
 	if ($#locus_tags >= 0) {
 	  foreach my $id (@locus_tags) {
 	    $feature->push_attribute("names",$id);
 	  }
-	  
+
 	  ## Use locus_tag as main ID if there is one
 	  if ($locus_tags[0] =~ /(\S+)/) {
 	    $feature->force_attribute('id', $1);
 	  }
 	}
-	
-	
+
 	#### add SWISS-PROT/Uniprot/TrEMBL ID as valid name
 	my @xrefs = $feature->get_attribute("db_xref");
 	my $gi = "";
@@ -516,11 +516,10 @@ package main;
 				$xref), "\n");
 	  }
 	}
-	
       }
-      
+
       ## Specify the GeneID (required for retrieve-seq)
-      &RSAT::message::TimeWarn("Specifying GeneIDs") if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn("Specifying GeneIDs for class", $class_holder->get_object_type()) if ($main::verbose >= 2);
       foreach my $feature ($class_holder->get_objects()) {
 	$feature->set_attribute("GeneID", $feature->get_attribute("id"));
 	#	&RSAT::message::Debug("Using ID as GeneID for feature", $feature->get_attribute("id"),$feature->get_attribute("GeneID")) if ($main::verbose >= 10);
@@ -609,11 +608,12 @@ OPTIONS
 	-noseq  do not export sequences in .raw files
 	-source	data source (default: $data_source)
 
+
    Options for the automaticaly generated SQL scripts
 	-schema database schema (default: $schema)
 	-host	database host (default: $host)
 	-user	database user (default: $user)
-	-password	
+	-password
 		database password (default: $password)
 
 INPUT FILE
@@ -714,6 +714,7 @@ parse-embl options
 -source	data source (default: $data_source)
 -v	verbose
 -org	organism name
+-prefid preferred ID for a given feature type
 -schema database schema (default: $schema)
 -host	database host (default: $host)
 -user	database user (default: $user)
@@ -836,7 +837,6 @@ sub ParseEMBLFile {
 #	|| die "Error: cannot open input file $input_file.\n";
 
     #### initialize parsing variables
-    my $l = 0; #### line counter
     my $in_FT = 0; #### flag to indicate whether we are reading a feature
 #    my $in_feature = 0;
 #    my $in_cds = 0;
@@ -846,15 +846,20 @@ sub ParseEMBLFile {
     my $organism_name = "";
     my $organism;
 
+    ################################################################
     #### parse the file
+    my $l = 0; #### line counter
     while (my $line = <$file>) {
 	$l++;
 	if (($test) && ($l > $test_lines)) {
 	    warn "Test: stopping at line $l\n";
-	    last; 
+	    last;
+	}
+	if (($main::verbose >= 1) && ($l%10000 == 0)) {
+	  &RSAT::message::TimeWarn("Parsed", $l, "lines");
 	}
 
-	warn $line if ($main::verbose >= 10);
+#	warn $line if ($main::verbose >= 10);
 	chomp $line;
 	next unless ($line =~ /\S/);
 
@@ -882,9 +887,9 @@ sub ParseEMBLFile {
 		}
 	    }
         }
-	
+
+	#### contig ID line
 	if  ($line =~ /^ID\s+(\S+)\s*/) {
-	    #### contig ID line
 	    my $contig_id = $1;
 	    $contig_id =~ s/\;$//;
 	    if ($contig_id =~ /unknown/i) {
@@ -894,7 +899,7 @@ sub ParseEMBLFile {
 	    } else {
 	      $contig = $contigs->new_object(id=>$contig_id);
 	    }
-	    &RSAT::message::Info("line", $l, "New contig", $contig->get_attribute("id")) if ($main::verbose >= 0);
+	    &RSAT::message::Info("line", $l, "New contig", $contig->get_attribute("id")) if ($main::verbose >= 2);
 	    my $contig_description = "$'"; 
 	    $contig->set_attribute("description",$contig_description);
 	    $contig->set_attribute("file",$input_file);
@@ -904,7 +909,7 @@ sub ParseEMBLFile {
 		$contig->set_attribute("length", $1);
 	    }
 
-	    #### contig form
+	    #### contig form (circular or linear)
 	    if ($contig_description =~ /circular/i) {
 		$contig->set_attribute("form", "circular");
 	    } else {
@@ -1009,7 +1014,7 @@ sub ParseEMBLFile {
 	    $current_feature = $class_holder->new_object(%args);
 	    $feature_count++;
 	    &RSAT::message::Debug( "file", $input_file, "line", $l, "feature", $feature_count, $feature_type) 
-	      if ($main::verbose >= 2);
+	      if ($main::verbose >= 3);
 	    $current_feature->set_attribute("type",$feature_type);
 	    $current_feature->set_attribute("contig",$contig->get_attribute("id"));
 #	    $current_feature->set_attribute("organism",$organism_name);
