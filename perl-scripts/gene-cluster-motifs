@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.247 2008/07/07 00:58:40 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.248 2008/07/07 20:44:21 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.247 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.248 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -168,6 +168,7 @@ package main;
   $htmaps=0;
   $draw_maps=1;
   $scalestep = 100; 
+  $img_format = $ENV{rsat_img_format} || "png";
 
   ## retrieve-seq options
   $noorf = "-noorf"; 
@@ -761,7 +762,7 @@ sub SetFileNames {
 	$family{$family_name}->{dyad_pssm_file} = $family{$family_name}->{dyad_file}."_pssm";
 	$family{$family_name}->{dyad_ft_prefix} = $family{$family_name}->{dyad_file};
 	$family{$family_name}->{dyad_ft_file} = $family{$family_name}->{dyad_ft_prefix}.".ft";	
-	$family{$family_name}->{fmap_file} = $family{$family_name}->{dyad_file}.".${IMG_FORMAT}";
+	$family{$family_name}->{fmap_file} = $family{$family_name}->{dyad_file}.".".$img_format;
 	$family{$family_name}->{htmap_file} = $family{$family_name}->{dyad_file}.".html";
         $family{$family_name}->{dyad_vs_known} = $family{$family_name}->{dyad_file}."__vs__known_relw".$rel_w.".tab";
         $family{$family_name}->{dyad_vs_known_weight_table} = $family{$family_name}->{dyad_file}."__vs__known_weight_table.tab";
@@ -1540,7 +1541,7 @@ sub DrawFeatureMap {
    ### pattern matching
    &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
    $feature_file = $fmap_prefix.".ft";
-   $fmap_file = $fmap_prefix.".".$IMG_FORMAT;
+   $fmap_file = $fmap_prefix.".".$img_format;
    $htmap_file = $fmap_prefix.".html";
    &RSAT::message::Info("Drawing feature-map",
 			"\n;\t", $feature_file,
@@ -1554,6 +1555,7 @@ sub DrawFeatureMap {
 	$to = -1;
    }
    $command = "feature-map -i ".$feature_file;
+   $command .= " -format ".$img_format;
    $command .= " -minfthick 2";
    $command .= " -scalebar -scalestep $scalestep -legend ";
    $command .= " -title '".$title."'";
@@ -1680,7 +1682,7 @@ sub DrawMergedFeatureMap {
     if ($verbose >= 2);
   ### pattern matching
   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
-  $fmap_file = $family{$family_name}->{merged_file}.".${IMG_FORMAT}";
+  $fmap_file = $family{$family_name}->{merged_file}.".".$img_format;
   $htmap_file = $family{$family_name}->{merged_file}.".html";
   $origin = "-0";
   my $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{merged_file} -origin $origin -N 4 -return sites,limits ";
@@ -1701,7 +1703,9 @@ sub DrawMergedFeatureMap {
     $from =  $family{$family_name}->{calib_length};
     $to = -1;
   }
-  $command = " feature-map -i $family{$family_name}->{merged_ft_file} -scalebar -scalestep $scalestep -legend ";
+  $command = " feature-map -i ".$family{$family_name}->{merged_ft_file};
+  $command .= " -scalebar -scalestep $scalestep -legend";
+  $command .= " -format ".$img_format;
   $command .= " -title ";
   $command .= &ShortFileName($family{$family_name}->{merged_ft_file});
   #   $command .= " -from $from" if (defined($from));
@@ -2029,7 +2033,7 @@ sub SyntheticTable {
   $row{MotifSampler} = $row++;
   $row_num = $row-1;
   while (($header,$row) = each %row) {
-    $table[$row][0] = "<B>$header</B>";
+    $table[$row][0] = "<b>$header</B>";
   }
   my $col = 0;
 
@@ -2061,20 +2065,26 @@ sub SyntheticTable {
     }
 
     ### family number
-    $table[$row{f}][$col] = "<B>$col</B>";
+    $table[$row{f}][$col] = "<b>$col</B>";
 
     ### family name
-    $table[$row{family}][$col] = "<B><a href='../".$family_name."'>".$family_name."</a></B>";
+    if (($fam_link_prefix) || ($fam_link_suffix)) {
+	$table[$row{family}][$col] = "<b><a href='".$fam_link_prefix.$family_name.$fam_link_suffix."'>".$family_name."</a></b>";
+    } else {
+	$table[$row{family}][$col] = "<b><a href='../".$family_name."'>".$family_name."</a></B>";
+    }
 
     #### number of genes
-    my $members = scalar(@{$family{$family_name}->{members}});
-    $table[$row{size}][$col] = $members;
+    my $max_genes_to_list = 30; ## Max number of genes per family to list in the synthetic table
+    my @genes = @{$family{$family_name}->{members}};
+    my $genes = scalar(@genes);
+    $table[$row{size}][$col] = $genes;
 #    $table[$row{size}][$col] = scalar(@{$family{$family_name}->{members});
 
     #### sequence length
     if ($seq_length_calculated) {
-      if ($members > 0) {
-	$family{$family_name}->{avg_length} = $family{$family_name}->{total_length}/$members;
+      if ($genes > 0) {
+	$family{$family_name}->{avg_length} = $family{$family_name}->{total_length}/$genes;
       } else {
 	$family{$family_name}->{avg_length} = "NA";
       }
@@ -2083,16 +2093,27 @@ sub SyntheticTable {
     }
 
     ### list of genes
-    my $max_members = 15; ## Mac number of members to display
-    $table[$row{genes}][$col] = "<a href='../".$family{$family_name}->{family_file}."'>";
-    if ($members <= $max_members) {
-      $table[$row{genes}][$col] .= join " ", @{$family{$family_name}->{members}};
+    if (($gene_link_prefix) || ($gene_link_suffix)) {
+	$table[$row{genes}][$col] = "";
+	foreach my $g (0..&RSAT::stats::min($#genes, $max_genes_to_list)) {
+	    $genes[$g] = "<a href='".$gene_link_prefix.$genes[$g].$gene_link_suffix."'>".$genes[$g]."</a>";
+	}
     } else {
-      my $diff = $members - $max_members;
-      $table[$row{genes}][$col] .= join " ", @{$family{$family_name}->{members}}[0..($max_members-1)];
-      $table[$row{genes}][$col] .= "<br> + ".$diff." other genes";
+	$table[$row{genes}][$col] = "<a href='../".$family{$family_name}->{family_file}."'>";
     }
-    $table[$row{genes}][$col] .= "</a>";
+    if ($genes <= $max_genes_to_list) {
+	$table[$row{genes}][$col] .= join(" ", @genes);
+    } else {
+	my $diff = $genes - $max_genes_to_list;
+	$table[$row{genes}][$col] .= join(" ", @genes[0..($max_genes_to_list-1)]);
+	if (($gene_link_prefix) || ($gene_link_suffix)) {
+	    $table[$row{genes}][$col] .= "<a href='../".$family{$family_name}->{family_file}."'>";
+	}
+	$table[$row{genes}][$col] .= "<p> + ".$diff." other genes</p>";
+    }
+    if (($gene_link_prefix) || ($gene_link_suffix)) {
+	$table[$row{genes}][$col] .= "</a>";
+    }
 
     ### known patterns
     if ($known_sites_provided) {
@@ -2573,18 +2594,18 @@ sub IndexPatterns {
 #	$table[$row][$col] .= "<a href=".$base.$pattern_file.">[patt]</a>\n";
 	$table[$row][$col] .= &LinkToFile($assembly_file, "asmb", $base);
 #	$table[$row][$col] .= "<a href=".$base.$assembly_file.">[asmb]</a>\n";
-	$table[$row][$col] .= &LinkToFile($pattern_file.".".$IMG_FORMAT, "map", $base);
-#	$table[$row][$col] .= "<a href=".$base.$pattern_file.".".${IMG_FORMAT}.">[map]</a>\n";
+	$table[$row][$col] .= &LinkToFile($pattern_file.".".$img_format, "map", $base);
+#	$table[$row][$col] .= "<a href=".$base.$pattern_file.".".$img_format.">[map]</a>\n";
 	if ($htmaps) {
 	  $table[$row][$col] .= &LinkToFile($pattern_file.".html", "html", $base);
 #	  $table[$row][$col] .= "<a href=".$base.$pattern_file.".html>[html]</a>\n";
 	}
 	$table[$row][$col] .= &LinkToFile($pssm_file."_sig_matrices.txt", "sig matrix", $base);
 	$table[$row][$col] .= &LinkToFile($pssm_file."_count_matrices.txt", "PSSM", $base);
-	$table[$row][$col] .= &LinkToFile($pssm_file.".".$IMG_FORMAT, "scan map", $base);
+	$table[$row][$col] .= &LinkToFile($pssm_file.".".$img_format, "scan map", $base);
 #	$table[$row][$col] .= "<a href=".$base.$pssm_file."_sig_matrices.txt>[sig matrix]</a>\n";
 #	$table[$row][$col] .= "<a href=".$base.$pssm_file."_count_matrices.txt>[count matrix]</a>\n";
-#	$table[$row][$col] .= "<a href=".$base.$pssm_file.".${IMG_FORMAT}>[scan map]</a>\n";
+#	$table[$row][$col] .= "<a href=".$base.$pssm_file.".$img_format>[scan map]</a>\n";
 
 #	if ($task{validate}) {
 	$table[$row][$col] .= &LinkToFile($validation_file, "matches", $base);
@@ -2608,7 +2629,7 @@ sub IndexPatterns {
 	### print oligo sequence
 	$table[$row][$col] .= "<TD>\n";
 	for $p (@sorted_patterns) {
-	    $table[$row][$col] .= "<B>" if ($p->get_attribute("score") >= 1);
+	    $table[$row][$col] .= "<b>" if ($p->get_attribute("score") >= 1);
 	    my $sequence = $p->get_attribute("sequence"); 
 	    $compressed = &compress_pattern($sequence, "n");
 	    $compressed =~ s/N/n/g;
@@ -2622,7 +2643,7 @@ sub IndexPatterns {
 	if ($strands eq "-2str") {
 	    $table[$row][$col] .= "<TD>\n";
 	    for $p (@sorted_patterns) {
-		$table[$row][$col] .= "<B>" if ($p->get_attribute("score") >= 1);
+		$table[$row][$col] .= "<b>" if ($p->get_attribute("score") >= 1);
 #		my $sequence =  $p->get_attribute("rc");
 		my $rc =  &SmartRC($p->get_attribute("sequence"));
 		$compressed = &compress_pattern($rc, "n");
@@ -2637,7 +2658,7 @@ sub IndexPatterns {
 	### print pattern scores
 	$table[$row][$col] .= "<TD><a href=".$map_link.">\n";
 	for $p (@sorted_patterns) {
-	    $table[$row][$col] .= "<B>" if ($p->get_attribute("score") >= 1);
+	    $table[$row][$col] .= "<b>" if ($p->get_attribute("score") >= 1);
 	    $table[$row][$col] .= $p->get_attribute("score");
 	    $table[$row][$col] .= "</B>" if ($p->get_attribute("score") >= 1);
 	    $table[$row][$col] .= "<BR>" unless ($p == $#sorted_patterns);
@@ -3380,6 +3401,27 @@ OPTIONS
 	        sort key for the synthetic table
 		Supported: $supported_sort_keys
 
+  Options for the HTML synthesis table
+    -fam_link_pref prefix
+    -fam_link_pref suffix
+       prefix and suffix to put before and before family names in
+       order to build a specific HTML hyperlink for each family name.
+
+       Example (with prefix only): 
+         -fam_link_pref 'http://amigo.geneontology.org/cgi-bin/amigo/term-details.cgi?term=GO:'
+	will replace the family name 0003997 by a link of the type
+	  <a href=http://amigo.geneontology.org/cgi-bin/amigo/term-details.cgi?term=GO:0003997>0003997</a>
+
+    -gene_link_pref prefix
+    -gene_link_pref suffix
+       prefix and suffix to put before and before family names in
+       order to build a specific HTML hyperlink for each gene name.
+
+       Example (with prefix only):
+         -gene_link_pref 'http://db.yeastgenome.org/cgi-bin/locus.pl?locus='
+	   will create a link from the gene YBR093C to the URL
+	   http://db.yeastgenome.org/cgi-bin/locus.pl?locus=YBR093C
+
   Options for the automaticaly generated SQL scripts
 	-schema database schema (default: $schema)
 	-host	database host (default: $host)
@@ -3733,6 +3775,20 @@ sub ReadArguments {
       #### transpose synthetic table
     } elsif ($ARGV[$a] =~ /^-transp/) {
       $transpose = 1;
+
+      #### family link prefix
+    } elsif ($ARGV[$a] =~ /^-fam_link_pref/) {
+      $fam_link_prefix = $ARGV[$a+1];
+      #### family link suffix
+    } elsif ($ARGV[$a] =~ /^-fam_link_suff/) {
+      $fam_link_suffix = $ARGV[$a+1];
+
+      #### gene link prefix
+    } elsif ($ARGV[$a] =~ /^-gene_link_pref/) {
+      $gene_link_prefix = $ARGV[$a+1];
+      #### gene link suffix
+    } elsif ($ARGV[$a] =~ /^-gene_link_suff/) {
+      $gene_link_suffix = $ARGV[$a+1];
 
       #### sort key
     } elsif ($ARGV[$a] =~ /^-sort/) {
@@ -5296,6 +5352,7 @@ multiple-family-analysis options
 -purge_ml	min matching length for purge-sequence
 -purge_mis	max number of mismatches for purge-sequence
 -mingenes	minimal number of genes per family
+-maxgenes	maximal number of genes per family
 -from		upstream region left limit
 -to		upstream region right limit
 -noorf		exclude upstream ORFs from upstream sequences
@@ -5368,6 +5425,12 @@ multiple-family-analysis options
 
 ## Database comparison
 -db             file containing a list of known sites (from a database)
+
+## Synthetic table
+-fam_link_pref  prefix to build a HTML link for the family names
+-fam_link_suff  suffix to build a HTML link for the family names
+-gene_link_pref  prefix to build a HTML link for the gene names
+-gene_link_suff  suffix to build a HTML link for the gene names
 
 ## Database
 -schema		database schema (default: $schema)
