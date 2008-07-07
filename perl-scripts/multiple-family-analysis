@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.246 2008/07/06 20:18:54 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.247 2008/07/07 00:58:40 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.246 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.247 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -1634,6 +1634,7 @@ sub MatrixFromPatterns {
 
   my $pssm_dir = `dirname $pssm_file`;
   chomp($pssm_dir);
+#  $command = "echo DEBUG LOGOS";
   $command .= "; convert-matrix -from tab -to tab -return logo -logo_format png";
   $command .= " -logo_dir ".$pssm_dir;
   $command .= " -i ".$pssm_file."_count_matrices.txt";
