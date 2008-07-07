@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.49 2008/03/26 20:09:52 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.50 2008/07/07 20:48:07 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -27,15 +27,11 @@ package main;
 {
     #### initialise parameters ####
     my $start_time = &AlphaDate();
-    
     local %infile = ();
     local %outfile = ();
-
-    
     local $verbose = 0;
     local $in = STDIN;
     local $out = STDOUT;
-
     local $single_name = 1;
 
     ################################################################
@@ -50,7 +46,6 @@ package main;
     $user="rsat";
     $password="rsat";
     $full_path = 0;
-    
     $test = 0; 
     $test_files = 2; ## Maximal number of genbank files to parse for a given organism (there is generally one contig per chromosome)
     $test_lines = 10000; ## macimal number of lines to parse per file
