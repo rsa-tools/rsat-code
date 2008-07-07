@@ -90,11 +90,20 @@ Constructor. The following data structure may be passed to new():
  {
    request =>  { # MyTypes::MatrixScanRequest
      output =>  $some_value, # string
-     sequence_file =>  $some_value, # string
-     matrix_file =>  $some_value, # string
+     sequence =>  $some_value, # string
+     tmp_sequence_infile =>  $some_value, # string
+     matrix =>  $some_value, # string
+     tmp_matrix_infile =>  $some_value, # string
+     sequence_format =>  $some_value, # string
      matrix_format =>  $some_value, # string
-     matrix_list =>  $some_value, # string
+     n_treatment =>  $some_value, # string
+     consensus_name =>  $some_value, # string
+     pseudo =>  $some_value, # int
+     equi_pseudo =>  $some_value, # int
      top_matrices =>  $some_value, # int
+     background_model =>  $some_value, # string
+     tmp_background_infile =>  $some_value, # string
+     organism =>  $some_value, # string
      background =>  $some_value, # string
      background_input =>  $some_value, # int
      background_window =>  $some_value, # int
@@ -103,10 +112,9 @@ Constructor. The following data structure may be passed to new():
      return_fields =>  $some_value, # string
      lth =>  $some_value, # string
      uth =>  $some_value, # string
-     both_strand =>  $some_value, # int
-     single_strand =>  $some_value, # int
+     str =>  $some_value, # int
      verbosity =>  $some_value, # int
-     origin =>  $some_value, # int
+     origin =>  $some_value, # string
      decimals =>  $some_value, # int
      crer_ids =>  $some_value, # int
    },
