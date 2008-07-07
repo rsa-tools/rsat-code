@@ -16,7 +16,9 @@ my $SCRIPTS = $RSAT.'/perl-scripts';
 my $TMP = $RSAT.'/public_html/tmp';
 
 unshift (@INC, "../../perl-scripts/lib/");
+
 require RSAT::util;
+#require "RSA.lib";
 
 =pod
 
@@ -1044,7 +1046,7 @@ sub dna_pattern {
 	if ($str == 1 || $str == 2) {
 	    $command .= " -".$str."str";
 	} else {
-	    die "str value must 1 or 2";
+	    die "str value must be 1 or 2";
 	}
     }
 
@@ -2715,10 +2717,23 @@ if ($args{"equi_pseudo"} == 1 ) {
       close TMP_IN; 
   } elsif ($args{"tmp_background_infile"}) {
       $tmp_background_infile = $args{"tmp_background_infile"};
-      chomp $tmp_background_infile;
-  } elsif ($args{"organism"} && $args{"background"} && $args{"markov"}){
-      $tmp_background_infile = "/home/rsat/rsa-tools/data/genomes/".$args{"organism"}."/oligo-frequencies/".($args{"markov"}+1)."nt_".$args{"background"}."_".$args{"organism"}."-ovlp-1str.freq.gz";
-      chomp $tmp_background_infile;
+  } elsif ($args{"background"} && ($args{"markov"} =~ /\d/)){
+      $oligo_length = $args{"markov"} + 1;
+      if ($args{"organism"}) {
+
+## sub not found => HELP, Jacques!
+#	  $tmp_background_infile = &ExpectedFreqFile($args{"organism"}, $oligo_length, $args{"background"},
+#			    str=>'-1str',noov=>'-ovlp',type=>'oligo', warn=>0, taxon=>0);
+	  $tmp_background_infile = "/home/rsat/rsa-tools/data/genomes/".$args{"organism"}."/oligo-frequencies/".$oligo_length."nt_".$args{"background"}."_".$args{"organism"}."-ovlp-1str.freq.gz";
+
+## Only noov taxon bckgds available at the moment => useless
+#      } elsif ($args{"taxon"}) {
+#	  $tmp_background_infile = &ExpectedFreqFile($args{"taxon"}, $oligo_length, $args{"background"},
+#					       str=>'-1str',noov=>'-ovlp',type=>'oligo', warn=>0, taxon=>1);
+#	  $tmp_background_infile = ;
+      } else {
+	  die "You must provide either an organism or a taxon name";
+      }
   }
 
   if ($tmp_background_infile) {
@@ -2738,7 +2753,7 @@ if ($args{"equi_pseudo"} == 1 ) {
       $command .= " -window '".$background_window."'";
   }
 
-  if ($markov =~ /\d/) {
+  if (($markov =~ /\d/) && !$args{"background"}) {
       $markov  =~ s/\'//g;
       $markov =~ s/\"//g;
       $command .= " -markov '".$markov."'";
