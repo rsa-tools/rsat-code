@@ -2050,7 +2050,7 @@ sub segment_proba {
 	my $prefix = substr($segment,0,$order);
 	my @prefix_residues = split //,$prefix;
 	my $prefix_proba = 1;
-	
+
 	## calculation of the prefix probability
 	for my $c (0..$#prefix_residues) {
 	    my $letter =  $prefix_residues[$c];
