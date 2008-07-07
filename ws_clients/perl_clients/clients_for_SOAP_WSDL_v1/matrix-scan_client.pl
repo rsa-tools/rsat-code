@@ -35,24 +35,19 @@ $prop->file_name($property_file);
 $prop->load();
 my %args = $prop->prop_list();
 
-if ($args{sequence_file}) {
-$args{sequence_file} = `cat $args{sequence_file}`;
-chomp($args{sequence_file});
+if ($args{sequence}) {
+$args{sequence} = `cat $args{sequence}`;
+chomp($args{sequence});
 }
 
-if ($args{matrix_file}) {
-$args{matrix_file} = `cat $args{matrix_file}`;
-chomp($args{matrix_file});
+if ($args{matrix}) {
+$args{matrix} = `cat $args{matrix}`;
+chomp($args{matrix});
 }
 
-if ($args{matrix_list}) {
-$args{matrix_list} = `cat $args{matrix_list}`;
-chomp($args{matrix_list});
-}
-
-if ($args{background}) {
-$args{background} = `cat $args{background}`;
-chomp($args{background});
+if ($args{background_model}) {
+$args{background_model} = `cat $args{background_model}`;
+chomp($args{background_model});
 }
 
 ## Convert the lth string into a list
@@ -88,11 +83,11 @@ if ($som->fault){ ## Report error if any
 	print "Result file on the server: ".$server_file;
     } elsif ($output_choice eq 'client') {
 	my $result = $results{'client'};
-	print "Matrix scan(s): \n".$result;
+	print "\nMatrix scan(s): \n".$result;
     } elsif ($output_choice eq 'both') {
 	my $server_file = $results{'server'};
 	my $result = $results{'client'};
 	print "Result file on the server: ".$server_file;
-	print "Matrix scan(s): \n".$result;
+	print "\nMatrix scan(s): \n".$result;
     }
 }
