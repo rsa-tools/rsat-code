@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.23 2008/05/10 13:24:07 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.24 2008/07/08 16:04:49 rsat Exp $
 #
 # Time-stamp
 #
@@ -184,10 +184,10 @@ package main;
 
   local $slice_adaptor = $db->get_sliceAdaptor();
 
-  # Left and right limits
+  ## Left and right limits
   if ($left_limit && $right_limit && $chrom) {
     local $chromosome = $slice_adaptor -> fetch_by_region('chromosome', $chrom);
-    # Get sequence (repeat masked or not)
+    ## Get sequence (repeat masked or not)
     $sequence = &GetSequence($left_limit, $right_limit);
     my $size = $right_limit - $left_limit + 1;
 
@@ -207,7 +207,7 @@ package main;
     print $fh ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
     print $fh "$sequence\n";
 
-  # Feature file
+  ## Feature file
   } elsif ($ft_file) {
     open FEAT, $ft_file;
     my $ft_name;
@@ -220,11 +220,11 @@ package main;
 	($ft_id, $ft_type, $ft_name, $chrom, $left_limit, $right_limit, $strand, @other_comments) = split (/\t/,$line);
       }
 
-      # Extract only chromosome number if necessary
+      ## Extract only chromosome number if necessary
       $chrom =~ s/chromosome:[\w\.]*?://;
       $chrom =~ s/:.*//;
 
-      # Tranforms strand in ensembl format
+      ## Tranforms strand in ensembl format
       $strand =~ s/F/1/;
       $strand =~ s/R/-1/;
       $strand =~ s/D/1/;
@@ -234,7 +234,7 @@ package main;
       $strand =~ s/</-1/;
 
       local $chromosome = $slice_adaptor -> fetch_by_region('chromosome', $chrom);
-      # Get sequence (repeat masked or not)
+      ## Get sequence (repeat masked or not)
       $sequence = &GetSequence($left_limit, $right_limit);
       my $size = $right_limit - $left_limit + 1;
 
@@ -254,7 +254,7 @@ package main;
       }
       &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
-      # Export sequence to file
+      ## Export sequence to file
       if ($ft_id) {
 	print $fh ">$ft_id\t$ft_id; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
       } else {
@@ -263,23 +263,33 @@ package main;
       print $fh  "$sequence\n";
     }
 
-    # All genes
+  ## All genes
   } elsif ($all) {
-    my @slices = @{$slice_adaptor->fetch_all("chromosome")};
-    foreach my $slice (@slices) {
-      my @genes = @{$slice->get_all_Genes()};
-      foreach my $gene (@genes) {
-	&Main($gene);
+      ## from one chromosome
+      if ($chrom) {
+	  my $slice = $slice_adaptor -> fetch_by_region('chromosome', $chrom);
+	  my @genes = @{$slice->get_all_Genes()};
+	  foreach my $gene (@genes) {
+	      &Main($gene);
+	  }
+      ## From all chromosomes
+      } else {
+	  my @slices = @{$slice_adaptor->fetch_all("chromosome")};
+	  foreach my $slice (@slices) {
+	      my @genes = @{$slice->get_all_Genes()};
+	      foreach my $gene (@genes) {
+		  &Main($gene);
+	      }
+	  }
       }
-    }
-    # Query
+  ## Query
   } else {
 #    my $gene_id = "CG40293"; #gene on D strand
 #    my $gene_id = "CG18001"; #gene on R strand
 #    @genes = @{$gene_adaptor->fetch_all_by_external_name('BRCA2')};
 
     my $gene_adaptor = $db->get_GeneAdaptor();
-    # Input file
+    ## Input file of query IDs
     if ($query_file) {
 	open IN, $query_file;
 	while ($line = <IN>) {
@@ -294,14 +304,15 @@ package main;
 		my $gene_id = $line;
 		$gene = $gene_adaptor -> fetch_by_stable_id($gene_id);
 	    }
-	    &Main($gene);
-
-	    # get-orthologs if wanted
+	    ## get-orthologs if wanted
             if ($ortho) {
                 &Ortho($gene -> stable_id);
-            }
-
+	    ## or not
+            } else {
+		&Main($gene);
+	    }
 	}
+    ## List of query IDs
     } else {
 	foreach my $id (@queries) {
 	    my $gene;
@@ -312,11 +323,12 @@ package main;
 	    } else {
 		$gene = $gene_adaptor -> fetch_by_stable_id($id);
 	    }
-	    &Main($gene);
-
-	    # get-orthologs if wanted
+	    ## get-orthologs if wanted
 	    if ($ortho) {
 		&Ortho($gene -> stable_id);
+	    ## or not
+	    } else {
+		&Main($gene);
 	    }
 	}
     }
@@ -496,6 +508,10 @@ sub Main {
   my $gene_name = $gene -> external_name();
   unless ($gene_name) {
     $gene_name = "";
+  }
+
+  unless ($common_name) {
+      $common_name = $org;
   }
 
   local $chromosome = $gene -> slice;
@@ -1219,6 +1235,12 @@ sub GetSequence {
       &RSAT::message::Info("# Common_name; Genus; Species; Organism; Classification") if ($main::verbose >= 1);
       &RSAT::message::Info(join ("; ", map { $compara_taxon->$_ } qw(common_name genus species binomial classification))) if ($main::verbose >= 1);
 
+      $common_name = $member->taxon->common_name;
+      $common_name =~ s/\s+/_/g;
+
+      $gene = $member->get_Gene;
+      &Main($gene);
+
       my @taxons = split (/ /, $compara_taxon -> classification);
       my @limited_taxons;
 
@@ -1307,23 +1329,23 @@ USAGE
 			[-o outpufile] -q query_orf | -i query file | -all
 
 DESCRIPTION
-	Returns upstream, downstream, intronic, exonic or UTR  DNA sequences for list of query
+	Returns upstream, downstream, intronic, exonic or UTR  DNA sequences for a list of query
 	genes.
 
 CATEGORY
 	genomics
 	sequences
 
-REMARK  Requires local instal of the EnsEMBL Perl API (see http://www.ensembl.org/info/software/api_installation.html)
+REMARK  Requires local instal of the EnsEMBL Perl Core and Compara APIs (see http://www.ensembl.org/info/using/api/api_installation.html)
 
 OPTIONS
 	-org organism
-	        No caps, underscore between words (eg 'homo_sapiens')
+	        underscore between words (eg 'homo_sapiens')
 
 	        If this option is not used, the option -dbname must be used
 	         instead.
 
-	        (type 'supported-organism | grep EnsEMBL' to obtain the list of supported
+	        (type 'supported-organisms | grep EnsEMBL' to obtain the list of supported
 	         organisms)
 
         -ensemblhost
@@ -1332,7 +1354,8 @@ OPTIONS
 	-dbname	name of EnsEMBL database
 		(alternative to organism)
 
-        -dbversion 
+        -dbversion
+	        version of ensembl database (example: 47)
 
 	-feattype
 		Feature type.
@@ -1395,12 +1418,22 @@ OPTIONS
 
         -right  Right limit of sequence to retrieve
 
-        -strand Strand of seauence to retrieve when using -left and -right. Values: 1, -1
+        -strand Strand of sequence to retrieve when using -left and -right. Values: 1, -1
 
         -ftfile Feature file
 
         -ftfileformat
                 Feature file format. Supported: ft, gft
+
+	-ortho  Retrieve homologous sequences from EnsEMBL Compara databases
+
+	-ortho_type Type
+                Filter on homology type. (example: ortholog, ortholog_one2one)
+
+        -homologs_table File name
+                Prints homology info to a tab delimited file
+
+        -taxon Taxon  Filter on taxonomic level (example: Mammalia)
 
 End_help
     close HELP;
@@ -1437,6 +1470,11 @@ retrieve-seq options
 -strand         strand of seauence to retrieve when using -left and -right. Values: 1, -1
 -ftfile         feature file
 -ftfileformat   feature file format. Supported: ft, gft
+-ortho          retrieve homologous sequences from EnsEMBL Compara databases
+-ortho_type     homology type to filter on
+-homologs_table file on which to print homology info
+-taxon          taxonomic level to filter on
+
 End_short_help
   close HELP;
   exit;
