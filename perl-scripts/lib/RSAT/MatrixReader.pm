@@ -330,16 +330,39 @@ sub _readFromTRANSFACFile {
 
 }
 
+
 ################################################################
 =pod
 
 =item _readFromInfoGibbsFile($file)
 
-Read a matrix from a result file from InfoGibbs. This method is called
-by the method C<readFromFile($file, "InfoGibbs")>.
+Read a matrix from a result file from I<info-gibbs> (implementation by
+Matthieu Defrance, 2008). This method is called by the method
+C<readFromFile($file, "InfoGibbs")>.
 
 =cut
 sub _readFromInfoGibbsFile {
+  my ($file) = @_;
+  &RSAT::message::Info ("Reading matrices from info-gibbs file", $file) if ($main::verbose >= 3);
+  return _readFromTabFile($file);
+}
+
+################################################################
+=pod
+
+=item _readFromOldInfoGibbsFile($file)
+
+Read a matrix from a result file from InfoGibbs (implementation by
+Gregory Gathy, 2007). This method is called by the method
+C<readFromFile($file, "InfoGibbs")>.
+
+This format was a customized version of the TRANSFAC format, developed
+for the Master thesis of Gregory Gathy. The program is not supported
+anymore, it has been replaced by Matthieu Defrance's implementation
+I<info-gibbs>.
+
+=cut
+sub _readFromOldInfoGibbsFile {
   my ($file) = @_;
   &RSAT::message::Info ("Reading matrices from InfoGibbs file", $file) if ($main::verbose >= 3);
 
