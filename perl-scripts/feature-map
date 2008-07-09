@@ -1541,8 +1541,8 @@ NAME
 	1997-2008 by Jacques van Helden
 
 DESCRIPTION
-        draws a graphical map of regulatory features in a series of 
-        DNA sequences.
+        Draws a graphical map of features (e.g. results of pattern
+        matching) in a set of sequences.
 
 CATEGORY
 	drawing
