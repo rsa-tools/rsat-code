@@ -750,9 +750,9 @@ sub PrintHtmlTable {
 	s|$ENV{RSAT}/(public_html/)*||g; #### avoid exposing the full path through the web interface
 
 	if ($autolink) {
-	  s|(http://\S+)|<a href="$1">$1</a>|g;
-	  s|(ftp://\S+)|<a href="$1">$1</a>|g;
-	  s|(\S+\@\S+)|<a href=mailto:$1>$1</a>|g;
+	  s|(http://[\w\d+\.\-\/\?\&\=]+)|<a href="$1">$1</a>|g;
+	  s|(ftp://[\w\d+\.\-\/\?\&\=]+)|<a href="$1">$1</a>|g;
+	  s|([\w\d\.\-]+\@[\w\d\.\-]+)|<a href=mailto:$1>$1</a>|g;
 	}
 
 	if ($mirror) {
