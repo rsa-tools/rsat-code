@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.250 2008/07/09 19:32:10 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.251 2008/07/09 19:49:37 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.250 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.251 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -1839,7 +1839,7 @@ sub infogibbs {
   $infogibbs_command .= " > ".$family{$family_name}->{infogibbs_file};
 
   $infogibbs_command .= "; ";
-  $infogibbs_command .= &ConvertMatrixCommand($family{$family_name}->{infogibbs_file}, "tab");
+  $infogibbs_command .= &ConvertMatrixCommand($family{$family_name}->{infogibbs_file}, "infogibbs");
 
   if ($batch) {
     push @main::batch_commands, $infogibbs_command;
