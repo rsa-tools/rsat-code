@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.34 2008/06/04 05:03:53 jvanheld Exp $
+# $Id: get-orthologs,v 1.35 2008/07/09 23:38:52 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -17,9 +17,9 @@ get-orthologs
 
 =head1 DESCRIPTION
 
-Given a gene or a list of genes from a query organism, and a reference taxon,
-this programs returns the orthologs of the query gene\(s\) in all the organisms
-belonging to the reference taxon.
+Return orthologs or paralogs for a set of gene of a given organism
+(query organism) in all organisms belonging to a given taxon
+(reference taxon).
 
 =head1 AUTHORS
 

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-seq-multigenome,v 1.5 2007/03/02 14:20:11 rsat Exp $
+# $Id: retrieve-seq-multigenome,v 1.6 2008/07/09 23:38:52 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -16,7 +16,7 @@ retrieve-seq-multigenome
 
 =head1 DESCRIPTION
 
-Retrieve sequences from multiple genomes. 
+Retrieves sequences from multiple genomes.
 
 =head1 AUTHORS
 

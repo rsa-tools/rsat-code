@@ -297,8 +297,8 @@ AUTHORS
 
 DESCRIPTION
 
-	This script takes as input a set of numbers (real or integers)
-	and computes their distribution. 
+	Computes frequency distribution of numerical values found in a
+	column of a tab-delimited text file.
 
 	Class intervals can be specified as a fixed value (-ci #) or
 	automatically derived from the data.

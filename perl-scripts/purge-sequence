@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.28 2007/12/07 08:36:47 jvanheld Exp $
+# $Id: purge-sequence,v 1.29 2008/07/09 23:38:52 jvanheld Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -149,7 +149,7 @@ NAME
 	purge-sequence
 
         1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
-	
+
 USAGE
         purge-sequence [-i inputfile] [-o outputfile] [-v] [-2str | -1str]
 

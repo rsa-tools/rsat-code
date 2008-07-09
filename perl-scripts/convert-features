@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.9 2007/11/23 07:33:03 jvanheld Exp $
+# $Id: convert-features,v 1.10 2008/07/09 23:38:52 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -115,9 +115,8 @@ NAME
 	convert-features
 
         2002 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
-	
-DESCRIPTION
 
+DESCRIPTION
 	Interconversions between various formats of feature
 	description.
 

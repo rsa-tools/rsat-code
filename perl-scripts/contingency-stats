@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: contingency-stats,v 1.9 2007/01/18 15:51:30 jvanheld Exp $
+# $Id: contingency-stats,v 1.10 2008/07/09 23:38:52 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -17,14 +17,14 @@ contingency-stats
 
 =head1 DESCRIPTION
 
-This programs takes as input a contingency table, and calculates
-various matching statistics between the rows and columns. The
+Takes as input a contingency table, and calculates various matching
+statistics between the rows and columns (Sn, PPV, Acc, ...). The
 description of these statistics can be found in Brohee and van Helden,
 2006.
 
 =head1 AUTHORS
 
-jvanheld@scmbb.ulb.ac.be
+Jacques van Helden <jvhelden@ulb.ac.be>
 
 =head1 CATEGORY
 
