@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.249 2008/07/08 13:46:31 defrance Exp $
+# $Id: multiple-family-analysis,v 1.250 2008/07/09 19:32:10 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.249 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.250 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -1455,7 +1455,7 @@ sub MatchPatterns {
 
    ### pattern matching
    &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
-   $feature_file = $fmap_prefix.".ft";
+   my $feature_file = $fmap_prefix.".ft";
    &RSAT::message::Info("Matching patterns",
 			"\n;\t", $oligo_file,
 			"\n;\t", $feature_file,
@@ -1495,7 +1495,7 @@ sub ScanSequences {
 
    ### pattern matching
    &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
-   $feature_file = $fmap_prefix.".ft";
+   my $feature_file = $fmap_prefix.".ft";
    &RSAT::message::Info("Scaning sequences with matrix",
 			"\n;\t", $matrix_file,
 			"\n;\t", $feature_file,
@@ -1538,7 +1538,7 @@ sub DrawFeatureMap {
 
    ### pattern matching
    &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
-   $feature_file = $fmap_prefix.".ft";
+   my $feature_file = $fmap_prefix.".ft";
    $fmap_file = $fmap_prefix.".".$img_format;
    $htmap_file = $fmap_prefix.".html";
    &RSAT::message::Info("Drawing feature-map",
@@ -1564,6 +1564,10 @@ sub DrawFeatureMap {
    if ($htmaps) {
 	$command .= " -htmap > $htmap_file ";
    };
+
+   ## Delete the feature file to save disk space (the feature space
+   ## occupy half od the result directory)
+   $command .= "; rm -f ".$feature_file;
 
    if ($batch) {
        push @main::batch_commands, $command;
@@ -1685,7 +1689,7 @@ sub DrawMergedFeatureMap {
   $origin = "-0";
   my $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{merged_file} -origin $origin -N 4 -return sites,limits ";
   $command .= " | features-from-dnapat -o $family{$family_name}->{merged_ft_file} ";
-  
+
   if ($batch) {
     push @main::batch_commands, $command;
   } else {
@@ -1695,7 +1699,7 @@ sub DrawMergedFeatureMap {
       return;
     }
   }
-  
+
   ## feature-map drawing
   if  ($family{$family_name}->{calib_length}) {
     $from =  $family{$family_name}->{calib_length};
@@ -1715,7 +1719,7 @@ sub DrawMergedFeatureMap {
 
   ## Delete the feature file to save disk space (the feature space
   ## occupy half od the result directory)
-  $command = "; rm -f ".$family{$family_name}->{merged_ft_file};
+  $command .= "; rm -f ".$family{$family_name}->{merged_ft_file};
 
   if ($batch) {
     push @main::batch_commands, $command;
@@ -2194,7 +2198,7 @@ sub SyntheticTable {
 
     ################################################################
     #### Index results of infogibbs
-    &IndexinfoGibbs($family_name, $row{infogibbs}, $col, matrix_file=>$family{$family_name}->{infogibbs_file});
+    &IndexInfoGibbs($family_name, $row{infogibbs}, $col, matrix_file=>$family{$family_name}->{infogibbs_file});
 
     ################################################################
     #### Index results of meme
@@ -2499,7 +2503,7 @@ sub IndexAlignACE {
 
 ################################################################
 ## Index the matrix from infogibbs file
-sub Indexinfogibbs {
+sub IndexInfoGibbs {
    &IndexMatrix(@_, program=>"infogibbs");
 }
 
