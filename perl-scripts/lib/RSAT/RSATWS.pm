@@ -2206,9 +2206,9 @@ sub xygraph {
 
 sub xygraph_cmd {
   my ($self, %args) =@_;
-  
+
   my $command = "$SCRIPTS/XYgraph";
-  
+
   if ($args{format}) {
    my $format = $args{format};
    $format =~ s/\'//g;
