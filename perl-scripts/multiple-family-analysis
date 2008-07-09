@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.251 2008/07/09 19:49:37 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.252 2008/07/09 21:06:26 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.251 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.252 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -195,7 +195,7 @@ package main;
 
   ## Default matrix-based pattern discovery options
   $matrix_width = 16;
-  $expected_sites_per_gene = 2;
+  $expected_sites_per_seq = 2;
   $nmotifs = 3;
   $seed = undef;
   $matrix_pseudo = 1;
@@ -220,7 +220,7 @@ package main;
   $pssm_sort_order{MotifSampler} = 'desc';
 
   ## Default MEME options
-  $MEME_optiont{text} = ""; push @MEME_options, "text";	## Ouptut format = text
+  $MEME_options{text} = ""; push @MEME_options, "text";	## Ouptut format = text
   $MEME_optiont{dna} = ""; push @MEME_options, "dna"; ## Sequence type == dna
   $MEME_options{mod} = "anr"; push @MEME_options, "mod"; ## Accept any number of occurrences per sequence
   $MEME_options{minw} = 6; push @MEME_options, "minw"; ## Minimal motif width
@@ -262,8 +262,18 @@ package main;
   ## Default infogibbs options
   $pssm_sort_key{infogibbs} = 'total.information';
   $pssm_sort_order{infogibbs} = 'desc';
-  $infogibbs_e = 20;
-  $infogibbs_g = 1;
+  $infogibbs_g = 1; ## Matthieu: a quoi sert cette option ?
+
+  ## Default infogiggs options
+  %infogibbs_options = ();
+  $infogibbs_options{v} = 1; push @infogibbs_options, "v"; ## Verbosity
+#  $infogibbs_options{l} = $matrix_width; push @infogibbs_options, "l"; ## Motif length is defined with option -width
+#  $infogibbs_options{m} = $nmotifs; push @infogibbs_options, "m"; ## Number of motifs to return is defined with option -nmotifs
+#  $infogibbs_options{e} = $expected_sites_per_seq; push @infogibbs_options, "e"; ## Expected number of sites per sequence is defined with option -sps
+#  $infogibbs_options{s} = $strand; push @infogibbs_options, "s"; ## Strand(s) is defined with option -1str or -2str
+  $infogibbs_options{n} = 1000; push @infogibbs_options, "n"; ## Number of iterations
+  $infogibbs_options{d} = 5; push @infogibbs_options, "d"; ## Minimal distance between 2 motif occurrences
+  $infogibbs_options{nrun} = 3; push @infogibbs_options, "nrun"; ## Number of runs per motif
 
   ## Comparison between discovered and known motifs
   $known_site_file = "";
@@ -690,17 +700,17 @@ sub SetFileNames {
 	$ormbg_options .= " --markov_order=".$ORM_markov_order;
 	$ormbg_suffix .= "_m".$ORM_markov_order;
     }
-    
+
     ## Background model file
     $dir{ormbg} = "bg_models/orm_models";
     my $ormbg_file = $dir{ormbg}."/".$ormbg_suffix;
     $ormbg_options .= " --output=".$ormbg_file;
-    
+
     foreach my $family_name (@families) {
 	my $gene_nb = scalar(@{$family{$family_name}->{members}});
 #	warn join ("\t", "Number of genes", $family_name, $gene_nb), "\n";
 
-	$expected_sites = $gene_nb*$expected_sites_per_gene;	
+	my $expected_sites = $gene_nb*$expected_sites_per_seq;
 	$family{$family_name}->{family_file} = $family_name."/".$family_name."_".$feature_types.".fam";
 	$family{$family_name}->{known_site_file} = $family_name."/".$family_name."_known_sites";
 
@@ -789,7 +799,7 @@ sub SetFileNames {
 	my @gibbs_widths = ();
 	my @gibbs_expected_sites = ();
 	my $gene_nb = scalar(@{$family{$family_name}->{members}});
-	my $expected_sites = $gene_nb*$expected_sites_per_gene;
+	my $expected_sites = $gene_nb*$expected_sites_per_seq;
 	for my $i (1..$nmotifs) {
 	  push @gibbs_widths, $matrix_width;
 	  push @gibbs_expected_sites, $expected_sites;
@@ -838,8 +848,8 @@ sub SetFileNames {
 
 	## Expected number of sites
 	my $gene_nb = scalar(@{$family{$family_name}->{members}});
-	$expected_sites = $gene_nb*$expected_sites_per_gene;
-	$AlignACE_options .= " -expect ".$expected_sites;
+	my $expected_sites = $gene_nb*$expected_sites_per_seq;
+	$alignace_options .= " -expect ".$expected_sites;
 	$AlignACE_suffix .= "-n".$expected_sites;
 
 	## background fractional GC content of input sequence (0.38)
@@ -860,7 +870,7 @@ sub SetFileNames {
 
 	################################################################
 	## infogibbs
-	## Gregory Gathy & Matthieu Defrance
+	## version developed by Matthieu Defrance
 	my $infogibbs_options = "";
 	my $infogibbs_suffix = "";
 
@@ -871,11 +881,34 @@ sub SetFileNames {
 	$infogibbs_options .= " -l ".$matrix_width;
 	$infogibbs_suffix .= "-l".$matrix_width;
 
-    ## Expected number of sites
+	## Expected number of sites
 	my $gene_nb = scalar(@{$family{$family_name}->{members}});
-	$expected_sites = $gene_nb*$expected_sites_per_gene;
-	$infogibbs_options .= " -w ".$expected_sites;
-	$infogibbs_suffix .= "-w".$expected_sites;
+	$infogibbs_options .= " -e ".$expected_sites_per_seq;
+	$infogibbs_suffix .= "-e".$expected_sites_per_seq;
+
+	## Strand
+	$infogibbs_suffix .= $strand;
+	if ($strand = "-2str") {
+	  $infogibbs_options .= " -s +- ";
+	} else {
+	  $infogibbs_options .= " -s + ";
+	}
+
+	## Number of motifs is not yet implemented
+#	$infogibbs_options .= " -m ".$nmotifs;
+#	$infogibbs_suffix .= "-m".$nmotifs;
+
+	## Add other options
+	foreach my $option (@infogibbs_options) {
+	  if (length($option) == 1) {
+	    $infogibbs_options .= " -".$option." ".$infogibbs_options{$option};
+	  } elsif (length($option) > 1) {
+	    $infogibbs_options .= " --".$option." ".$infogibbs_options{$option};
+	  }
+	  unless ($option eq "bfile") {
+	    $infogibbs_suffix .= "_".$option.$infogibbs_options{$option};
+	  }
+	}
 
 	## Amplification factor
 #	$infogibbs_options .= " -e ".$infogibbs_e;
@@ -920,7 +953,7 @@ sub SetFileNames {
 
 	## prior
 	$MS_options .= " -p ".$MS_p;
-	$MS_suffix .= "-p".$MS_p;	 
+	$MS_suffix .= "-p".$MS_p;
 
 	## Maximal number of motif instances per sequence. (default unset = 0)
 	$MS_options .= " -M ".$MS_M;
@@ -1818,23 +1851,13 @@ sub AlignACE {
 }
 
 ################################################################
-## infogibbs (developed by Gregory Gathy & Matthieu Defrance) 
+## infogibbs (developed by Matthieu Defrance)
 sub infogibbs {
   chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{infogibbs_dir});
-
-  if ($strand = "-2str") {
-    $addrc = " -s +-";
-  }else{
-    $addrc = " -s +";      
-  }
 
   ## This can be useful in case the file is compressed, and to covert
   ## n characters (masked nucleotide) into dots
   my $infogibbs_command = "";
-#  $infogibbs_command .= "convert-seq ";
-#  $infogibbs_command .= " -from fasta -to fasta -dotmask";
-#  $infogibbs_command .= " -i ".$family{$family_name}->{input_seq_file};
-#  $infogibbs_command .= " -o ".$family{$family_name}->{infogibbs_input_seq_file}." ; ";
   $infogibbs_command .= "info-gibbs ".$family{$family_name}->{infogibbs_options};
   $infogibbs_command .= " > ".$family{$family_name}->{infogibbs_file};
 
@@ -3363,7 +3386,7 @@ OPTIONS
    Matrix-based pattern discovery options (consensus, gibbs, AlignACE, meme, MotifSampler, infogibbs)
        -width  matrix width (default $matrix_width)
        -sps	expected number of sites per sequence
-		(default $expected_sites_per_gene)
+		(default $expected_sites_per_seq)
        -nmotifs number of motifs to discover per sequence set (family)
 
    Gibbs sampler (Neuwald, 1995)
@@ -3372,9 +3395,7 @@ OPTIONS
    AlignACE (Roth, 1998)
 	-seed	 seed number for the random generator
 
-   info-gibbs (Defrance, 2008)
-
-   MotifSampler (Thijs, 200X)
+   MotifSampler (Thijs, 2001)
 	-MS_b	backgound file
 	-MS_p	prior probability of 1 motif copy (default $MS_p)
 	-MS_M   Maximal number of motif instances per sequence. (default $MS_M; unset=0)
@@ -3389,6 +3410,11 @@ OPTIONS
    	-MEME_minw	minimum motif width (default $MEME_minw)
    	-MEME_maxw	maximum motif widht (default $MEME_maxw)
 	-MEME_bfile     name of background Markov model file
+
+   info-gibbs options (Defrance, 2008)
+	Any option starting with -infogibbs_ will be passed to info-gibbs.
+	The list of supported options can be obtained with the command
+	    info-gibbs -h
 
    Output options
 	-transp	transpose synthetic result table (columns become rows)
@@ -3518,7 +3544,7 @@ TASK DESCRIPTION
    purge	Purge upstream sequences for the family.
 		(purge-sequences)
 
-   calibrate    
+   calibrate
    		Perform a word-specific calibration of expected
 		frequencies, by calculating oligonucleotide
 		distributions in the whole genome set of upstream
@@ -3695,7 +3721,7 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-width") {
       $matrix_width = $ARGV[$a+1];
     } elsif ($ARGV[$a] eq "-sps") {
-      $expected_sites_per_gene = $ARGV[$a+1];
+      $expected_sites_per_seq = $ARGV[$a+1];
     } elsif ($ARGV[$a] eq "-nmotifs") {
       $nmotifs = $ARGV[$a+1];
       $MEME_options{nmotifs} = $nmotifs;
@@ -3715,6 +3741,37 @@ sub ReadArguments {
       my $value =  $ARGV[$a+1];
       push @MEME_options, $option unless (defined($MEME_options{$option}));
       $MEME_options{$option} = $value;
+
+      ### info-gibbs options
+    } elsif ($ARGV[$a] =~ /-infogibbs_(\S+)/) {
+      my $option = $1;
+      my $value =  $ARGV[$a+1];
+
+      ## Replace long option name by short option name if defined
+      $option =~ s/^verbosity$/v/;
+      $option =~ s/^length$/l/;
+      $option =~ s/^strand$/s/;
+      $option =~ s/^iter$/n/;
+      $option =~ s/^words$/w/;
+      $option =~ s/^expected$/e/;
+      $option =~ s/^motifs$/m/;
+      #      $option =~ s/^bgfile$/b/;
+      $option =~ s/^dmin$/d/;
+
+      ## Avoid redundant parameters
+      if ($option eq "s") {
+	&RSAT::error::FatalError("info-gibbs option: Strand should be defined with options -2str|-1str");
+      } elsif ($option eq "i") {
+	&RSAT::error::FatalError("info-gibbs option: Input file is automaticaly specified by multiple-family-analysis");
+      } elsif ($option eq "l") {
+	&RSAT::error::FatalError("info-gibbs option: Matrix width should be defined with option -w");
+      } elsif ($option eq "m") {
+	&RSAT::error::FatalError("info-gibbs option: Number of motifs width should be defined with option -nmotif");
+      } elsif ($option eq "e") {
+	&RSAT::error::FatalError("info-gibbs option: Expected number of sites per sequence should be defined with option -sps");
+      }
+      push @infogibbs_options, $option unless (defined($infogibbs_options{$option}));
+      $infogibbs_options{$option} = $value;
 
       ### ORM options
     } elsif ($ARGV[$a] =~ /-(ORM_\S+)/) {
@@ -5389,7 +5446,7 @@ multiple-family-analysis options
 
 ## General options for matrix-based pattern discovery
 -width		matrix width (default $matrix_width)
--sps		expected number of sites per sequence (default $expected_sites_per_gene)
+-sps		expected number of sites per sequence (default $expected_sites_per_seq)
 -nmotifs	number of motifs to discover per sequence set (family)
 
 ## Gibbs sampler (Neuwald, 1995)
@@ -5398,10 +5455,7 @@ multiple-family-analysis options
 ## AlignACE (Roth, 1998)
 -seed		seed number for the random generator
 
-## infogibbs (Gathy, 2007)
--seed		seed number for the random generator
-
-## MotifSampler (Thijs, 2000)
+## MotifSampler (Thijs, 2001)
 -MS_b		backgound file
 -MS_p		prior probability of 1 motif copy (default $MS_p)
 -MS_M   	Maximal number of motif instances per sequence. (default $MS_M; unset=0)
@@ -5409,10 +5463,14 @@ multiple-family-analysis options
 -MS_x		allowed overlap between different motifs. (default $MS_x)
 -MS_r		number of times the MotifSampler should be repeated (default = $MS_r).
 
-## MEME options (Bailey)
+## MEME options (Bailey, 1994)
 -MEME_minw	minimum motif width (default $MEME_minw)
 -MEME_maxw	maximum motif width (default $MEME_maxw)
 -MEME_bfile     name of background Markov model file
+-MEME_XXX	any other MEME option (XXX) can be passed by appending it to the prefix -MEME_
+
+## infogibbs options (Defrance, 2008)
+-infogibbs_XXX	any other infogibbs option (XXX) can be passed by appending it to the prefix -infogibbs_
 
 ## Validation
 -known		file containing a list of known sites/motifs
