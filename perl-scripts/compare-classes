@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.47 2007/11/17 21:15:37 jvanheld Exp $
+# $Id: compare-classes,v 1.48 2008/07/09 23:38:52 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -451,11 +451,17 @@ NAME
         2002 by Joseph Tran and Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 
 DESCRIPTION
-        Compare two class files (the query file and the reference
-        file). Each class of the query file is compared to each
-        class of the reference file. The number of common elements is
-        reported, as well as the probability to observe at least this
-        number of common elements by chance alone.
+
+        Compare two class/cluster files (the query file and the
+        reference file) and report the intersection between each pair
+        of classes/clusters + some statistics about this intersection
+        (hypergeometric P-value, E-value, ...).
+
+	Typical applications are comparisons between: 
+	1) co-expression clusters and functional or GO classes.
+	2) regulons and GO classes
+	3) Genes presenting similar motifs and regulons
+	4) ...
 
 CATEGORY
         util,stat

@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.28 2008/06/04 08:01:11 jvanheld Exp $
+# $Id: convert-seq,v 1.29 2008/07/09 23:38:52 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -229,10 +229,12 @@ NAME
 	convert-seq
 
         v1.0, 1997 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
-	
+
 DESCRIPTION
 	Converts sequences between different formats. Optionally, also
-	returns the reverse-complement of the input sequences.
+	returns the reverse-complement of the input sequences, or
+	perform some cleaning operations (skip short sequences,
+	suppress Ns, ...).
 
 CATEGORY
 	util

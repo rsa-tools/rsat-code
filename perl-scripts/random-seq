@@ -315,13 +315,13 @@ sub PrintHelp {
     print HELP <<End_of_help;
 NAME
 	random-seq
-	
+
 USAGE
 	random-seq -l seqlength [-v] [-o outputfile]
-	
+
 DESCRIPTION
 	Generates random sequences according to different
-	probabilistic models, including Markov chains.
+	probabilistic models (Bernoulli, Markov chains).
 
 CATEGORY
 	sequences

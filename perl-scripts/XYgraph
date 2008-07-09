@@ -1569,11 +1569,10 @@ NAME
 	1997-98 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 
 DESCRIPTION
-	Draws a XY graph with the numbers of the 2 first columns of 
-	input file and exports this graph as a GIF file. 
-	
-CATEGORY
-	drawing
+	Draws a XY plot using the numeric values in selected columns
+	of a tab-delimited file.
+
+CATEGORY drawing
 
 USAGE
 	XYgraph [-i inputfile] [-o outputfile] [-v] 
@@ -1584,8 +1583,7 @@ USAGE
 		[-xsize #][-ysize #] [-ycol #,#,#]
 		[-lines][-legend][-header] [-histo|-fhisto] 
                 [-xgstep1 #][-ygstep1 #][-xgstep2 #][-ygstep2 #]
-		
-	
+
 OPTIONS
 	-i inputfile    The input file should contain columns with 
 			numeric data.
