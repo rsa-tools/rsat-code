@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: contingency-table,v 1.4 2007/12/14 16:23:01 rsat Exp $
+# $Id: contingency-table,v 1.5 2008/07/09 23:38:52 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -16,7 +16,8 @@ contingency-table
 
 =head1 DESCRIPTION
 
-Create a contingency table from a two-column file.
+Create a contingency table by counting the joint occurrences between
+values of 2 columns of a tab-delimited text file.
 
 =head1 AUTHORS
 

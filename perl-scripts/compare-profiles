@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.17 2008/03/02 20:25:42 jvanheld Exp $
+# $Id: compare-profiles,v 1.18 2008/07/09 23:38:52 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -32,9 +32,9 @@ compare-profiles
 
 =head1 DESCRIPTION
 
-Compare profiles between rows of a tab-delimited profile matrix. The
+Compare all pairs of rows of a tab-delimited profile matrix. The
 profiles should be expressed as discrete variables: either binary
-(presence-absence), or integer (pattern counts).  
+(presence-absence), or integer (pattern counts).
 
 A typical application is the comparison of phylogenetic profiles
 (Pellegrini et al. , 1999).
