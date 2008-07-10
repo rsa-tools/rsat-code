@@ -84,7 +84,7 @@ def motif2fullstr(motif, sequences, bg, strand='+'):
 
     str = []
     str += ['; prior                        \t' + 'a:%.4f|c:%.4f|g:%.4f|t:%.4f' % tuple(bg.priori) ]
-    str += ['; log.likelihood.ratio         \t%.3f' % (matrix.llr(words, mymatrix, bg.priori)) ]
+    #str += ['; log.likelihood.ratio         \t%.3f' % (matrix.llr(words, mymatrix, bg.priori)) ]
     str += ['; total.information            \t%.3f' % (IC) ]
     str += ['; information.per.column       \t%.3f' % (IC / l) ]
     str += ['; sites                        \t%d' % len(motif) ]
@@ -448,8 +448,8 @@ def run_gibbs(motif, sites, max_iteration, score, EM):
         #if  random.random() < 0.01:
         motif = shift(motif, sites)
 
-        current_llr = matrix.llr(motif.words(), motif.matrix(), motif.bg.priori)
-
+        #current_llr = matrix.llr(motif.words(), motif.matrix(), motif.bg.priori)
+        current_llr = 0.0
         ic = motif.IC()
         if ic >= best_ic:
             bestmotif = motif.copy()
