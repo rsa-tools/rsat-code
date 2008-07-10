@@ -167,9 +167,9 @@ sub SplitFileName {
     my $short_file_name = $full_file_name;
     my $dir = "";
     if ($full_file_name =~ /[^(\/)]+$/) {
-	$dir = $`;
-	$short_file_name = $&;
-#	$dir =~ s|/$||; #### suppress the trailing /
+      $dir = $`;
+      $short_file_name = $&;
+      #	$dir =~ s|/$||; #### suppress the trailing /
     }
     return ($dir, $short_file_name);
 }
