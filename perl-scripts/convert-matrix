@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.67 2008/07/06 20:12:15 jvanheld Exp $
+# $Id: convert-matrix,v 1.68 2008/07/11 08:29:27 morgane Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -565,7 +565,7 @@ INPUT/OUTPUT FORMATS
         patser, the pattern-matching program developed by Jerry Hertz.
 
         This is actually the same format as tab (described above), but
-        the only return filed is the count matrix.
+        the only return field is the count matrix.
 
     assembly (input)
 	Output file from the program pattern-assembly. One assembly
