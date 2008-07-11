@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.122 2008/06/16 09:15:08 jvanheld Exp $
+# $Id: matrix-scan,v 1.123 2008/07/11 08:40:07 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -108,7 +108,7 @@ segment.
 
 The segment score (weight) is calculated according to the theory
 developed by Jerry Hertz and Gary Stormo (1999), but with the
-capability to use Markov chain-based background models, as prposed by
+capability to use Markov chain-based background models, as proposed by
 Thijs et al. (2001).
 
 The weight of a sequence segment (Ws) is calculated as the log-ratio
@@ -150,7 +150,7 @@ description of PSSM formats.
 Relative frequencies can be corrected by a pseudo-count (b) to reduce
 the bias due to the small number of observations.
 
-The pseudo-count an be shared either in an equiprobable way,
+The pseudo-count can be shared either in an equiprobable way,
 
   S<F''ij=(Nij + b/A)/[SUMi(Nij)+b]>
 
@@ -230,17 +230,17 @@ around the considered segment. The model is thus updated at each
 scanned position. This model is called "adaptive". Note that the
 sliding window must be large enough to train the local Markov
 model. The required sequence length increases exponentially with the
-Markov order. This option is thus usually suitable for short order
+Markov order. This option is thus usually suitable for low order
 models only (-markov 0 to 1).
 
 =back
 
 =head3 Pseudo-frequencies for the background model
 
-The concept of pseuo-count can be extended to B<pseudo-frequencies> for
+The concept of pseudo-count can be extended to B<pseudo-frequencies> for
 the background model, in order to increase the robustness of BG models
 when the training sequence set is too small. This is particularly
-important for the adaptie models, which are trained on relatively
+important for the adaptive models, which are trained on relatively
 short sliding windows (a few hundreds of bases).
 
 The reason for using pseudo-frequencies rather than pseudo-counts is
@@ -1687,7 +1687,7 @@ package main;
 ################################################################
 #### display full help message 
 sub PrintHelp {
-    system "pod2text -c $0";
+    system "pod2text -c $0 ";
     exit()
 }
 
@@ -2277,7 +2277,7 @@ The site-wise P-value estimates the significance of the weight
 associated to each site. It is computed from the matrix, according to
 the probabilities described in Staden (1989), Bailey (1998).
 
-In addition to the P-value, the program export a columns with the
+In addition to the P-value, the program exports a column with the
 significance, defined as sig = -log(P-value). By default, logarithms
 are calculated in base 10, but this can be modified with the option
 -base.
@@ -2348,7 +2348,7 @@ the binomial distribution (Aerts et al., 2003).
 
 Example of CRER search: -return crer -uth pval 0.0001 -lth crer_size 20 -uth crer_size 200 
 
- => the returned CRER lengths are between 20 and 200bp, and are constructed withhits having a pval less than 0.0001
+ => the returned CRER lengths are between 20 and 200bp, and are constructed with hits having a pval less than 0.0001
 
 =item B<distrib> Score distribution.
 
