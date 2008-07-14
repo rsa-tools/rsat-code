@@ -259,7 +259,7 @@ def score_93(motif, sites):
 
 I = 0
 
-T = 0.90
+#T = 0.90
 
 def score_llr(motif, sequences, bg, sites):
     global I, T
@@ -350,9 +350,6 @@ def sample(motif, sites, score, EM):
 def random_site(sites):
     return random.choice(list(sites))
 
-taboo = set()
-tabooCount = 0
-
 def run_EM(motif, sites, max_iteration, score, EM):
     bestIC = motif.IC()
     for i in range(max_iteration):
@@ -391,32 +388,22 @@ def run_gibbs(motif, sites, max_iteration, score, EM):
     bestmotif = motif
 
     info = cli.Info(max_iteration, verbosity=4)
-
     allsites = sites
     while iteration < max_iteration:
         iteration += 1
-
 
         #sites.difference_update(motif)
         lastIC = motif.IC()
         site = random_site(motif)
         motif.remove(site)        
 
-        m = tuple(sorted(list(motif)))
-        if m in taboo:
-            tabooCount += 1
-        taboo.add(m)
-
-
         noov_sites = no_overlapping(sites, motif)
         #newite = sample(motif, noov_sites, score, EM)
         f = sample(motif, noov_sites, score, EM)
 
-
         newite = f()
         #for x in range(len(motif)):
         #    motif.pop()
-
 
 
         #sites.add(site)
@@ -433,17 +420,14 @@ def run_gibbs(motif, sites, max_iteration, score, EM):
             else:
                 motif.add(site)
 
-
-        """
-        for x in range(N):
+        #multi update 
+        for x in range(N-1):
             oldsite = motif.pop()
             newsite2 = f()
             if newsite2 not in motif:
                 motif.add(newsite2)
             else:
                 motif.add(oldsite)
-        """
-
 
         #if  random.random() < 0.01:
         motif = shift(motif, sites)
@@ -455,19 +439,12 @@ def run_gibbs(motif, sites, max_iteration, score, EM):
             bestmotif = motif.copy()
             best_ic = ic
 
-        #motif = bestmotif.copy()
-
-        #
-        #
         
-        def PT(IC, T):
-            return exp(IC/T) / sum([exp(IC/T) for IC in ICs])
+        #def PT(IC, T):
+        #    return exp(IC/T) / sum([exp(IC/T) for IC in ICs])
 
 
         IC = ic #* len(motif)           
-        #ICs.add(IC)
-
-        #T = 0.9
 
         '''
 
@@ -482,26 +459,9 @@ def run_gibbs(motif, sites, max_iteration, score, EM):
             T = T1
         '''
 
-        #T = 3.0
-        deltaIC = ic - lastIC
-        
-        #temps = [0.5,0.6,0.8,0.9,1.0]
 
-        #probs = [PT(IC, t) for t in temps]
-        #T = wchoice(temps, probs)
-        
-        #if abs(deltaIC) > 0.01:
-        #    EM = 1
-        #else:
-        #    EM = 0
-        #if random.random() < 0.1:
-
-        #T = 0.9
-        # exp down T
-        #T = exp(0.8* (-iteration/float(max_iteration)))
-
-        traceic.writeln('%.2f\t%.2f\t%.3f' % (ic, best_ic, T), 1)
-        info('ic=%.2f bestic=%.2f t=%.4f llr=%.3f' % (ic, best_ic, T, current_llr/N) )
+        #traceic.writeln('%.2f\t%.2f\t%.3f' % (ic, best_ic, T), 1)
+        info('ic=%.2f bestIC=%.2f t=%.4f llr=%.3f' % (ic, best_ic, T, current_llr/N) )
 
     return bestmotif
 
