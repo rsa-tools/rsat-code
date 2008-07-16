@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.68 2008/07/11 08:29:27 morgane Exp $
+# $Id: convert-matrix,v 1.69 2008/07/16 16:41:54 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -200,11 +200,12 @@ if (scalar(@matrix_files >= 1)) {
 	foreach my $matrix (@matrices_from_file) {
 	    my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
 #	    $matrix_name = basename($matrix_file);
-	    $matrix_name =~ s/\.\w+$//; ## suppress the extension from the file name
+#	    $matrix_name =~ s/\.\w+$//; ## suppress the extension from the file name
+	    $matrix_name =~ s/\.${input_format}$//; ## suppress the extension from the file name if it corresponds to the matrix format
 	    unless (defined($matrix->get_attribute("name"))){
 		$matrix->set_attribute("name", $matrix_name);
 	    }
-	    ## if we have maore than one matrix in the same file a number is added to the attribute "name"
+	    ## if we have more than one matrix in the same file a number is added to the attribute "name"
 	    if (scalar(@matrices_from_file) > 1) {
 		$matrix->force_attribute("name" => $matrix_name."_".$matrix->get_attribute("matrix.nb"));
 	    }
@@ -215,7 +216,8 @@ if (scalar(@matrix_files >= 1)) {
     my @matrices_from_file = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format);
     foreach my $matrix (@matrices_from_file) {
 	my ($matrix_name) = &RSAT::util::ShortFileName($infile{input});
-	$matrix_name =~ s/\.\w+$//; ## suppress the extension from the file name
+#	$matrix_name =~ s/\.\w+$//; ## suppress the extension from the file name
+	$matrix_name =~ s/\.${input_format}$//; ## suppress the extension from the file name if it corresponds to the matrix format
 	unless (defined($matrix->get_attribute("name"))){
 	    $matrix->set_attribute("name", $matrix_name);
 	}
@@ -252,7 +254,6 @@ foreach my $matrix (@matrices) {
     }
     ## Generate logo
     if ($return_fields{logo}) {
-	
 	my $basedir ="";
 	if (($logo_dir)&&(-d $logo_dir)){
 	    $basedir = $logo_dir."/";
