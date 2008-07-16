@@ -2944,13 +2944,13 @@ sub makeLogo{
     $logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -e -k 1";
     $logo_cmd .= " -w ".$ncol unless ($logo_options =~ /\-w /);
     $logo_cmd .= " -h 5 " unless ($logo_options =~ /\-h /);
-    $logo_cmd .= " -e -M";
+#    $logo_cmd .= " -e -M";
     $logo_cmd .= " ".$logo_options;
     $logo_cmd .= " -o ". $logo_file;
     #	$logo_cmd .= " -t ".$self->get_attribute("name");
-    &RSAT::message::Info("Logo cmd :".$logo_cmd) if ($main::verbose >= 4);
+    &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 3);
     system "$logo_cmd";
-    &RSAT::message::Info("Seq logo exported to file ".$logo_file.".".$logo_format) if ($main::verbose >= 2);
+    &RSAT::message::Info("Seq logo exported to file", $logo_file.".".$logo_format) if ($main::verbose >= 2);
   }
   unlink $seqs_file;
 }
@@ -3015,7 +3015,7 @@ sub seq_from_matrix {
     || &RSAT::error::FatalError("&RSAT::matrix::seq_from_matrix()", "Can't write file ".$tmp_seq_file."$!");
   print SEQ join("\n",@seqs)."\n";
   close SEQ;
-  &RSAT::message::Debug("Write sequences temporary in ".$tmp_seq_file) if ($main::verbose >= 3);
+  &RSAT::message::Debug("Writing fake sequences in temporary file".$tmp_seq_file) if ($main::verbose >= 3);
   #	return @seqs;
   return ($tmp_seq_file);
 }
