@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.22 2008/01/22 14:42:58 rsat Exp $
+# $Id: graph-get-clusters,v 1.23 2008/07/17 10:07:27 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -471,16 +471,17 @@ package main;
           print $out join("\t",  ";","2","target","target node"), "\n";
           print $out join("\t",  ";","3","label","arc label"), "\n";
           print $out join("\t",  ";","4","color","arc color"), "\n";
-          print $out join("\t",  ";","5","#s","number of clusters where source node is present"), "\n";
-          print $out join("\t",  ";","6","#t","number of clusters where target node is present"), "\n";
-          print $out join("\t",  ";","7","#st","number of clusters where both source node and target node are present"), "\n";
-          print $out join("\t",  ";","8","#s!t","number of clusters where only source node is present"), "\n";
-          print $out join("\t",  ";","9","#!st","number of clusters where only target node is present"), "\n";
-          print $out join("\t",  ";","10","cl_s","clusters where source node is present"), "\n";
-          print $out join("\t",  ";","11","cl_t","clusters where target node is present"), "\n";
-          print $out join("\t",  ";","12","cl_st","clusters where both source node and target node are present"), "\n";
-          print $out join("\t",  ";","13","cl_s!t","clusters where only source node is present"), "\n";
-          print $out join("\t",  ";","14","cl_!st","clusters where only target node is present"), "\n";
+          print $out join("\t",  ";","5","type","arc type"), "\n";
+          print $out join("\t",  ";","6","#s","number of clusters where source node is present"), "\n";
+          print $out join("\t",  ";","7","#t","number of clusters where target node is present"), "\n";
+          print $out join("\t",  ";","8","#st","number of clusters where both source node and target node are present"), "\n";
+          print $out join("\t",  ";","9","#s!t","number of clusters where only source node is present"), "\n";
+          print $out join("\t",  ";","10","#!st","number of clusters where only target node is present"), "\n";
+          print $out join("\t",  ";","11","cl_s","clusters where source node is present"), "\n";
+          print $out join("\t",  ";","12","cl_t","clusters where target node is present"), "\n";
+          print $out join("\t",  ";","13","cl_st","clusters where both source node and target node are present"), "\n";
+          print $out join("\t",  ";","14","cl_s!t","clusters where only source node is present"), "\n";
+          print $out join("\t",  ";","15","cl_!st","clusters where only target node is present"), "\n";
         }
         print $out $cluster_graph->to_text($output_format);
       }
