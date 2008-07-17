@@ -8,7 +8,7 @@ use RSAT::GenericObject;
 use RSAT::error;
 use RSAT::util;
 use RSAT::Index;
-@ISA = qw( RSAT::GenericObject );
+
 
 ### class attributes
 @ISA = qw( RSAT::GenericObject );
@@ -37,7 +37,7 @@ Read the graph from a tab-delimited text file.
 
  Title    : read_from_obo
  Usage    : $graph->read_from_obo($input_file)
- Function : Read the graph from a obo text file.
+ Function : Read the classification from an obo text file.
  Returns  : void
 
 =cut

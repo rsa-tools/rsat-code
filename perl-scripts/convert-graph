@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.39 2008/06/09 10:38:40 rsat Exp $
+# $Id: convert-graph,v 1.40 2008/07/17 10:07:27 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -164,6 +164,8 @@ package main;
     local $color_col = 0;
     local $path_col = 1;
     local $edge_width;
+    local $min_value = undef;
+    local $max_value = undef;
 
     ## Output formats
     local $output_format = "gml";
@@ -191,6 +193,7 @@ package main;
     $supported_edge_colors = join (",", keys %supported_edge_colors);    
     
     &ReadArguments();
+    
 
     ################################################################
     #### check argument values
@@ -209,13 +212,14 @@ package main;
     if ($color_col > 0 && $edge_colors != 0) {
       &RSAT::error::FatalError("You must not specify and both a weight gradient color and a edge color column");
     }
+    if (!($edge_colors || $edge_width) && ($min_value || $max_value)) {
+      &RSAT::error::FatalError("Min value and max value are only useful when computing the edge width or the edge color (-ewidth or -ecolors options)");
+    }
+    
     if ($path_col != 1 && $input_format ne "path") {
       &RSAT::error::FatalError("Option -pathcol must be used with the path input format");
     }
-    if ($distinct_path == 1 && $input_format ne "path") {
-      &RSAT::error::FatalError("Option -distinct_path must be used with the path input format");
-    }
-    
+
     ################################################################
     ## Initialize the graph
     my $graph = new RSAT::Graph2();
@@ -259,7 +263,6 @@ package main;
       my $real = $graph->get_attribute("real");
       if ($real eq "null") {
          ($mean, $sd, $min, $max) = $graph->weight_properties();
-         
          ## If one weight at least is not a real number, the weights cannot be computed
       }
       if (!$real) {
@@ -267,6 +270,7 @@ package main;
         $edge_width = 0;
       }
     }
+    
     ################################################################
     ###### print output
     ### open output streams
@@ -280,7 +284,7 @@ package main;
     }
     #### print verbose
     &Verbose() if ($main::verbose);
-    my $output_graph =  $graph->to_text($output_format, $arc_id_option, $directed, $edge_width);
+    my $output_graph = $graph->to_text($output_format, $arc_id_option, $directed, $edge_width, $min_value, $max_value);
     
     if ($output_format ne "rnsc") {
       print $out $output_graph;
@@ -590,6 +594,30 @@ Supported : green, blue, red, fire, grey.
 	    $edge_colors = shift(@arguments);
 	    &RSAT::error::FatalError("$edge_colors\tInvalid color gradient. Supported: $supported_edge_colors")
 		unless ($supported_edge_colors{$edge_colors});
+
+=item B<-min #>
+
+Minimal value for computing the color gradient and the edge width. By default, this value is the minimal value of the input file. If the specified value is larger than the minimal value of the graph, then the minimal value of the heatmap will be used as minimal value.
+
+=cut
+	} elsif ($arg eq "-min") {
+	    $min_value = shift (@arguments);
+	    unless (&RSAT::util::IsReal($min_value)) {
+		&RSAT::error::FatalError(join("\t", $min_value, "Invalid value for the minimal value. Must be a real number."));
+	    }
+	    
+=item B<-max #>
+
+Maximal value for computing the color gradient and the edge width. By default, this value is the maximal value of the input file. If the specified value is smaller than the maximal value of the graph, then the maximal value of the graph will be used as maximal value.
+
+=cut
+	} elsif ($arg eq "-max") {
+	    $max_value = shift (@arguments);
+	    unless (&RSAT::util::IsReal($max_value)) {
+		&RSAT::error::FatalError(join("\t", $max_value, "Invalid value for the maximal value. Must be a real number."));
+	    }
+
+
 
 =pod
 
