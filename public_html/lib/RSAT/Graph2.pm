@@ -1317,7 +1317,7 @@ sub node_by_id {
 }
 
 ################################################################
-## Load a graph from a tab-delimted text file
+## Load a graph from a tab-delimited text file
 sub read_from_table {
 
     my ($self, $inputfile, $source_col, $target_col, $weight_col,$source_color_col, $target_color_col, $edge_color_col) = @_;
@@ -1967,6 +1967,10 @@ sub load_from_array {
         my @weights = map $_->[ 2 ], @array;
         ($mean, $sd, $min, $max) = $self->weight_properties(@weights);
       }
+      # if $main:$min_value a,d $main:max_value are defined in convert-graph
+      # then use these value as minimum or maximum to compute the edge color gradient
+      $min = $main::min_value if (defined $main::min_value && $main::min_value <= $min);
+      $max = $main::max_value if (defined $main::max_value && $main::max_value >= $max);      
     }
     
 
@@ -2486,7 +2490,7 @@ Return the graph in gml format.
 
 =cut
 sub to_gml {
-    my ($self) = @_;
+    my ($self, $edge_width,$min_value, $max_value) = @_;
     my $gml = "";
     my %nodes_id_xpos = $self->get_attribute("nodes_id_xpos");
     my %nodes_id_ypos = $self->get_attribute("nodes_id_ypos");
@@ -2503,7 +2507,10 @@ sub to_gml {
     my $edge_width_calc = 0;
     if ($min ne "null" && $max ne "null" && $main::edge_width) {
       $edge_width_calc = 1;
-      
+      ## attribution of the minimal and maximal value if specified as arguments
+      $min = $min_value if (defined $min_value && $min_value <= $min);
+      $max = $max_value if (defined $max_value && $max_value >= $max);
+#       print "MIN $min_value $min\n";
     } 
     
     
