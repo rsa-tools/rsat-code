@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.24 2008/07/08 16:04:49 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.25 2008/07/17 16:35:11 rsat Exp $
 #
 # Time-stamp
 #
@@ -270,7 +270,7 @@ package main;
 	  my $slice = $slice_adaptor -> fetch_by_region('chromosome', $chrom);
 	  my @genes = @{$slice->get_all_Genes()};
 	  foreach my $gene (@genes) {
-	      &Main($gene);
+	      &Main($gene, $org);
 	  }
       ## From all chromosomes
       } else {
@@ -278,7 +278,7 @@ package main;
 	  foreach my $slice (@slices) {
 	      my @genes = @{$slice->get_all_Genes()};
 	      foreach my $gene (@genes) {
-		  &Main($gene);
+		  &Main($gene, $org);
 	      }
 	  }
       }
@@ -296,9 +296,9 @@ package main;
 	    my $gene;
 	    $line =~s/\t//;
 	    chomp($line);
-	    if ($line =~ /ENST/) {
+	    if (($line =~ /ENST/) || ($line =~ /ENS...T/)) {
 		$gene = $gene_adaptor -> fetch_by_transcript_stable_id($line);
-	    } elsif ($line =~ /ENSP/) {
+	    } elsif (($line =~ /ENSP/) || ($line =~ /ENS...P/)) {
 		$gene = $gene_adaptor -> fetch_by_translation_stable_id($line);
 	    } else {
 		my $gene_id = $line;
@@ -306,29 +306,29 @@ package main;
 	    }
 	    ## get-orthologs if wanted
             if ($ortho) {
-                &Ortho($gene -> stable_id);
+                &Ortho($gene->stable_id);
 	    ## or not
             } else {
-		&Main($gene);
+		&Main($gene, $org);
 	    }
 	}
     ## List of query IDs
     } else {
 	foreach my $id (@queries) {
 	    my $gene;
-	    if ($id =~ /ENST/) {
+	    if (($id =~ /ENST/) || ($id =~ /ENS...T/)) {
 		$gene = $gene_adaptor -> fetch_by_transcript_stable_id($id);
-	    } elsif ($id =~ /ENSP/) {
+	    } elsif (($id =~ /ENSP/) || ($id =~ /ENS...P/)) {
 		$gene = $gene_adaptor -> fetch_by_translation_stable_id($id);
 	    } else {
 		$gene = $gene_adaptor -> fetch_by_stable_id($id);
 	    }
 	    ## get-orthologs if wanted
 	    if ($ortho) {
-		&Ortho($gene -> stable_id);
+		&Ortho($gene->stable_id);
 	    ## or not
 	    } else {
-		&Main($gene);
+		&Main($gene, $org);
 	    }
 	}
     }
@@ -503,18 +503,26 @@ sub Verbose {
 ################################################################
 ### Get sequence(s) relative to a feature
 sub Main {
-  my ($gene) = @_;
+  my ($gene, $main_org) = @_;
   my $gene_id = $gene -> stable_id();
+
+  $db = Bio::EnsEMBL::Registry->get_DBAdaptor($main_org, "core");
+  $slice_adaptor = Bio::EnsEMBL::Registry->get_adaptor($main_org, 'Core', 'Slice');
+
+#  my $gene_adaptor = Bio::EnsEMBL::Registry->get_adaptor($org, "core", "Gene");
+#  my $gene = $gene_adaptor->fetch_by_stable_id($gene_id);
+
   my $gene_name = $gene -> external_name();
   unless ($gene_name) {
     $gene_name = "";
   }
 
   unless ($common_name) {
-      $common_name = $org;
+      $common_name = $main_org;
   }
 
   local $chromosome = $gene -> slice;
+  local $coord_sys  = $chromosome->coord_system()->name();
   my $chromosome_name = $chromosome -> name();
 
   my $gene_start = $gene -> start();
@@ -891,7 +899,7 @@ sub GetLimits {
   if ($type eq "upstream" && $strand == 1) {
     if ($nogene || $noorf) {
       # Get expanded slice and identify closest neighbour
-      $expanded_slice = $slice_adaptor->fetch_by_region('chromosome', $chromosome -> seq_region_name(), $start + $from, $end);
+      $expanded_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome -> seq_region_name(), $start + $from, $end);
       $closest_neighbour_limit = &GetNeighbours($gene_id, $start, $end, $expanded_slice);
 
       &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 1);
@@ -900,7 +908,7 @@ sub GetLimits {
 #    if (($nogene || $noorf) && $closest_neighbour_limit > $start + $from) {
     if (($nogene || $noorf) && $closest_neighbour_limit > $start + $from && $closest_neighbour_limit < $start) {
       $left = $closest_neighbour_limit + 1;
-    }else {
+    } else {
       $left = $start + $from;
     }
     $right = $start + $to;
@@ -924,7 +932,7 @@ sub GetLimits {
     $left = $end - $to;
     if ($nogene || $noorf) {
       # Get expanded slice and identify closest neighbour
-      $expanded_slice = $slice_adaptor->fetch_by_region('chromosome', $chromosome -> seq_region_name(), $start, $end - $from);
+      $expanded_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome -> seq_region_name(), $start, $end - $from);
       $closest_neighbour_limit = &GetNeighbours($gene_id, $start, $end, $expanded_slice);
 
       &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 1);
@@ -956,7 +964,7 @@ sub GetLimits {
     $left = $end + $from;
     if ($nogene || $noorf) {
       # Get expanded slice and identify closest neighbour
-      $expanded_slice = $slice_adaptor->fetch_by_region('chromosome', $chromosome -> seq_region_name(), $start, $end + $to);
+      $expanded_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome -> seq_region_name(), $start, $end + $to);
       $closest_neighbour_limit = &GetNeighbours($gene_id, $start, $end, $expanded_slice);
 
       &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 1);
@@ -987,7 +995,7 @@ sub GetLimits {
   } elsif ($type eq "downstream" && $strand == -1) {
     if ($nogene || $noorf) {
       # Get expanded slice and identify closest neighbour
-      $expanded_slice = $slice_adaptor->fetch_by_region('chromosome', $chromosome -> seq_region_name(), $start - $to, $end);
+      $expanded_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome -> seq_region_name(), $start - $to, $end);
       $closest_neighbour_limit = &GetNeighbours($gene_id, $start, $end, $expanded_slice);
 
       &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 1);
@@ -1123,7 +1131,8 @@ sub GetSequence {
 #      my $repeat_class = $repeat_consensus->repeat_class();
 #      print $repeat_type, "\t", $repeat_class, "\n";
 #    }
-    my $mini_slice = $slice_adaptor->fetch_by_region('chromosome', $chromosome -> seq_region_name(), $left, $right);
+
+    my $mini_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome -> seq_region_name(), $left, $right);
 
     eval {
 	my $masked_slice = $mini_slice->get_repeatmasked_seq();
@@ -1141,42 +1150,42 @@ sub GetSequence {
 #    my $hardmasked_seq = $slice->get_repeatmasked_seq();
 #    my $softmasked_seq = $slice->get_repeatmasked_seq(undef, 1);
   }
-  if ($mask_coding) {
-    my $retrieved_slice = $slice_adaptor->fetch_by_region('chromosome', $chromosome -> seq_region_name(), $left, $right);
-    my $transcript_adaptor = $db->get_TranscriptAdaptor();
-    my @retrieved_transcripts = @{$transcript_adaptor->fetch_all_by_Slice($retrieved_slice)};
-    foreach $retrieved_transcript (@retrieved_transcripts) {
-      my @retrieved_exons = @{$retrieved_transcript->get_all_translateable_Exons};
-      foreach my $retrieved_exon (@retrieved_exons) {
-	&RSAT::message::Info ("Translateable exon start: ".$retrieved_exon->start()."\tTranslateable exon end: ".$retrieved_exon->end()."\tTranslateable exon strand: ".$retrieved_exon->strand()) if ($main::verbose >= 1);
-	my $coding_length = $retrieved_exon->end() - $retrieved_exon->start() + 1;
-	my $masking;
-	if ($retrieved_exon->seq_region_start() >= $left && $retrieved_exon->seq_region_end() <= $right) {
-	  foreach (1..$coding_length) {
-	    $masking .= "N";
+  if ($mask_coding) {     
+      my $retrieved_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome -> seq_region_name(), $left, $right);
+      my $transcript_adaptor = $db->get_TranscriptAdaptor();
+      my @retrieved_transcripts = @{$transcript_adaptor->fetch_all_by_Slice($retrieved_slice)};
+      foreach $retrieved_transcript (@retrieved_transcripts) {
+	  my @retrieved_exons = @{$retrieved_transcript->get_all_translateable_Exons};
+	  foreach my $retrieved_exon (@retrieved_exons) {
+	      &RSAT::message::Info ("Translateable exon start: ".$retrieved_exon->start()."\tTranslateable exon end: ".$retrieved_exon->end()."\tTranslateable exon strand: ".$retrieved_exon->strand()) if ($main::verbose >= 1);
+	      my $coding_length = $retrieved_exon->end() - $retrieved_exon->start() + 1;
+	      my $masking;
+	      if ($retrieved_exon->seq_region_start() >= $left && $retrieved_exon->seq_region_end() <= $right) {
+		  foreach (1..$coding_length) {
+		      $masking .= "N";
+		  }
+		  substr($sequence, $retrieved_exon->start() - 1, $coding_length) = $masking;
+	      } elsif ($retrieved_exon->seq_region_start() < $left && $retrieved_exon->seq_region_end() >= $left && $retrieved_exon->seq_region_end() <= $right) {
+		  $coding_length = $retrieved_exon->end();
+		  foreach (1..$coding_length) {
+		      $masking .= "N";
+		  }
+		  substr($sequence, 0, $coding_length) = $masking;
+	      } elsif ($retrieved_exon->seq_region_start() >= $left && $retrieved_exon->seq_region_start() <= $right && $retrieved_exon->seq_region_end() > $right) {
+		  $coding_length = $right - $retrieved_exon->seq_region_start() + 1;
+		  foreach (1..$coding_length) {
+		      $masking .= "N";
+		  }
+		  substr($sequence, $retrieved_exon->start() - 1, $coding_length) = $masking;
+	      } elsif ($retrieved_exon->seq_region_start() < $left && $retrieved_exon->seq_region_end() > $right) {
+		  $coding_length = $right - $left + 1;
+		  foreach (1..$coding_length) {
+		      $masking .= "N";
+		  }
+		  substr($sequence, 0, $coding_length) = $masking;
+	      }
 	  }
-	  substr($sequence, $retrieved_exon->start() - 1, $coding_length) = $masking;
-	} elsif ($retrieved_exon->seq_region_start() < $left && $retrieved_exon->seq_region_end() >= $left && $retrieved_exon->seq_region_end() <= $right) {
-	  $coding_length = $retrieved_exon->end();
-	  foreach (1..$coding_length) {
-	    $masking .= "N";
-	  }
-	  substr($sequence, 0, $coding_length) = $masking;
-	} elsif ($retrieved_exon->seq_region_start() >= $left && $retrieved_exon->seq_region_start() <= $right && $retrieved_exon->seq_region_end() > $right) {
-	  $coding_length = $right - $retrieved_exon->seq_region_start() + 1;
-	  foreach (1..$coding_length) {
-	    $masking .= "N";
-	  }
-	  substr($sequence, $retrieved_exon->start() - 1, $coding_length) = $masking;
-	} elsif ($retrieved_exon->seq_region_start() < $left && $retrieved_exon->seq_region_end() > $right) {
-	  $coding_length = $right - $left + 1;
-	  foreach (1..$coding_length) {
-	    $masking .= "N";
-	  }
-	  substr($sequence, 0, $coding_length) = $masking;
-	}
       }
-    }
   }
   if (($strand == -1) && ($sequence)) {
     $sequence = &ReverseComplement($sequence);
@@ -1238,8 +1247,9 @@ sub GetSequence {
       $common_name = $member->taxon->common_name;
       $common_name =~ s/\s+/_/g;
 
-      $gene = $member->get_Gene;
-      &Main($gene);
+      my $gene = $member->get_Gene;
+      &Main($gene, $org);
+#      &Main($ortho_id, $org);
 
       my @taxons = split (/ /, $compara_taxon -> classification);
       my @limited_taxons;
@@ -1284,38 +1294,38 @@ sub GetSequence {
 		if ($homologs_table) {
 		    print $table_handle join("\t", $member->stable_id, $member->taxon->binomial, $member->description, $homology->description, $homology->subtype, $attribute->perc_id, $attribute->perc_pos, $attribute->perc_cov, $ortho_id, $compara_taxon->binomial,"\n");
 		}
-
+		
 		if ($ortho_type) {
 		    if ($taxon) {
 			foreach $tax (@limited_taxons) {
 			    if (($homology->description =~ /$ortho_type/) && (lc($homology->subtype) eq lc($tax))){
-				$gene = $member->get_Gene;
-				&Main($gene);
+				my $gene = $member->get_Gene;
+				&Main($gene, $member->taxon->binomial);
 			    }
 			}
 		    } else {
 			if ($homology->description =~ /$ortho_type/) {
-			    $gene = $member->get_Gene;
-			    &Main($gene);
+			    my $gene = $member->get_Gene;
+			    &Main($gene, $member->taxon->binomial);
 			}
 		    }
 		} else {
 		    if ($taxon) {
 			foreach $tax (@limited_taxons) {
 			    if (lc($homology->subtype) eq lc($tax)) {
-				$gene = $member->get_Gene;
-				&Main($gene);
+				my $gene = $member->get_Gene;
+				&Main($gene, $member->taxon->binomial);
 			    }
 			}
 		    } else {
-			$gene = $member->get_Gene;
-			&Main($gene);
+			my $gene = $member->get_Gene;
+			&Main($gene, $member->taxon->binomial);
 		    }
 		}
 	    }
 	}
-    }
-  }
+      }
+}
 
 ################################################################
 #### detailed help message
