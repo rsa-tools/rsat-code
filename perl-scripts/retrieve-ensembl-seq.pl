@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.25 2008/07/17 16:35:11 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.26 2008/07/18 10:07:48 rsat Exp $
 #
 # Time-stamp
 #
@@ -12,9 +12,6 @@ use DBI();
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
-	push (@INC, "/home/rsat/src/ensembl/modules/");
-	push (@INC, "/home/rsat/src/bioperl-live/");
-	push (@INC, "/home/rsat/src/ensembl-compara/modules/");
     }
 }
 require "RSA.lib";
@@ -530,7 +527,10 @@ sub Main {
   $strand = $gene -> strand();
 
   my $description = $gene -> description();
-
+  unless ($description) {
+      $description = "no description";
+  }
+  
   my $rsat_strand;
   if ($strand == 1) {
     $rsat_strand = "D";
@@ -1286,13 +1286,20 @@ sub GetSequence {
 
 	    unless ($member->stable_id eq $ortho_id) {
 
+		$bin_name = $member->taxon->binomial;
+		$bin_name =~ s/\s+/_/g;
+
 		$common_name = $member->taxon->common_name;
-		$common_name =~ s/\s+/_/g;
+		if ($common_name) {
+		    $common_name =~ s/\s+/_/g;
+		} else {
+		    $common_name = $bin_name;
+		}
 		&RSAT::message::Info("Common name:", $common_name) if ($main::verbose >= 1);
 
 		# Prints all homologs to table if asked for
 		if ($homologs_table) {
-		    print $table_handle join("\t", $member->stable_id, $member->taxon->binomial, $member->description, $homology->description, $homology->subtype, $attribute->perc_id, $attribute->perc_pos, $attribute->perc_cov, $ortho_id, $compara_taxon->binomial,"\n");
+		    print $table_handle join("\t", $member->stable_id, $bin_name, $member->description, $homology->description, $homology->subtype, $attribute->perc_id, $attribute->perc_pos, $attribute->perc_cov, $ortho_id, $compara_taxon->binomial,"\n");
 		}
 		
 		if ($ortho_type) {
@@ -1300,13 +1307,13 @@ sub GetSequence {
 			foreach $tax (@limited_taxons) {
 			    if (($homology->description =~ /$ortho_type/) && (lc($homology->subtype) eq lc($tax))){
 				my $gene = $member->get_Gene;
-				&Main($gene, $member->taxon->binomial);
+				&Main($gene, $bin_name);
 			    }
 			}
 		    } else {
 			if ($homology->description =~ /$ortho_type/) {
 			    my $gene = $member->get_Gene;
-			    &Main($gene, $member->taxon->binomial);
+			    &Main($gene, $bin_name);
 			}
 		    }
 		} else {
@@ -1314,12 +1321,12 @@ sub GetSequence {
 			foreach $tax (@limited_taxons) {
 			    if (lc($homology->subtype) eq lc($tax)) {
 				my $gene = $member->get_Gene;
-				&Main($gene, $member->taxon->binomial);
+				&Main($gene, $bin_name);
 			    }
 			}
 		    } else {
 			my $gene = $member->get_Gene;
-			&Main($gene, $member->taxon->binomial);
+			&Main($gene, $bin_name);
 		    }
 		}
 	    }
