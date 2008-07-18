@@ -9,27 +9,32 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
+use DBI();
+
 ### Read the CGI query
 $query = new CGI;
 
 ### default values for filling the form
-$default{sequence_format} = "fasta";
+#$default{sequence_format} = "fasta";
 #$default{seq_label} = "gene identifier + organism + gene name";
-$default{seq_label} = "gene name";
-$default{organism} = "Saccharomyces cerevisiae";
+#$default{seq_label} = "gene name";
+$default{organism} = "Homo sapiens";
 $default{rm} = "";
-$default{noorf} = "checked";
-$default{imp_pos} = "checked";
-$default{from} = "default";
-$default{to} = "default";
+$default{noorf} = "";
+#$default{imp_pos} = "checked";
+$default{from} = "-2000";
+$default{to} = "-1";
 $default{genes} = "selection";
 $default{gene_selection} = "";
 $default{sequence_type} = "upstream";
-$default{feattype} = "CDS";
+$default{feattype} = "mRNA";
+$default{alltranscripts} = "";
 $default{single_multi_org} = "single";
-$default{ids_only} = "";
+# $default{ids_only} = "";
 # $default{gene_col} = 1;
 # $default{org_col} = 2;
+$default{taxon_selection} = "";
+$default{homology_selection} = "";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -53,6 +58,52 @@ print $query->start_multipart_form(-action=>"retrieve-ensembl-seq.cgi");
 
 #print "<FONT FACE='Helvetica'>";
 
+#### Query organism list
+my @selected_organisms;
+
+my $dbh = DBI->connect("DBI:mysql:host=ensembldb.ensembl.org", "anonymous", "", {'RaiseError' => 1});
+my $sth = $dbh->prepare("SHOW DATABASES");
+$sth->execute();
+my $previous_org = "bogus";
+while (my $ref = $sth->fetchrow_hashref()) {
+    if ($ref->{'Database'} =~ /_core_\d+/) {
+	$dbversion = $ref->{'Database'};
+	$dbversion =~ s/.+_core_//;
+	$dbversion =~ s/_.+//;
+	$ref->{'Database'} =~s/_core_.+//;
+	if ($ref->{'Database'} ne $previous_org) {
+	    push @selected_organisms, $ref->{'Database'};
+	    $previous_org = $ref->{'Database'};
+	}
+
+    }
+}
+$sth->finish();
+$dbh->disconnect();
+
+my $organismPopup = "";
+$organismPopup .=  "<BR/><B>Query organism</B>&nbsp;";
+$organismPopup .=  "<SELECT NAME='organism'>\n";
+foreach my $org (@selected_organisms) {
+    $name = ucfirst($org);
+    $name =~s/_/ /;
+    if ((lc($org) eq lc($default{organism})) ||
+	(lc($name) eq lc($default{organism}))) {
+	$organismPopup .=  "<OPTION SELECTED VALUE='$org'>$name\n";
+    } else {
+	$organismPopup .=  "<OPTION VALUE='$org'>$name\n";
+    }
+}
+$organismPopup .=  "</SELECT>";
+
+print $organismPopup;
+
+#### Database version
+print "&nbsp;"x4;
+print "<A HREF='http://www.ensembl.org'>EnsEMBL</A> database version: <B>";
+print $dbversion;
+print "</B><BR/>\n";
+
 #### Single organism
 if ($default{single_multi_org} eq 'single') {
     $CHECKED = "checked";
@@ -63,8 +114,7 @@ print ("<INPUT TYPE='radio' NAME='single_multi_org' VALUE='single' $CHECKED>",
        "<A HREF=help.retrieve-ensembl-seq.html#single_org>",
        "<b>Single organism</b>",
        "</A>\n");
-print "&nbsp;"x4, &OrganismPopUpString();
-print "<p>\n";
+print "<BR/>";
 
 #### Multiple organisms
 if ($default{single_multi_org} eq 'multi') {
@@ -73,140 +123,137 @@ if ($default{single_multi_org} eq 'multi') {
     $CHECKED = "";
 }
 print ("<INPUT TYPE='radio' NAME='single_multi_org' VALUE='multi' $CHECKED>", 
-       "<A HREF=help.retrieve-seq.html#multi_org>",
+       "<A HREF=help.retrieve-ensembl-seq.html#multi_org>",
        "<b>Multiple organisms</b>",
        "</a>\n"
       );
 
-# ### Gene/organism columns
-# print "&nbsp;"x10;
-# print "<B><A HREF='help.retrieve-seq.html#gene_col'>Gene column</A></B>&nbsp;\n";
-# print $query->textfield(-name=>'gene_col',
-# 			-default=>$default{gene_col},
-# 			-size=>5);
+print "&nbsp;"x10;
+print "<B>Optional filters</B>";
+print "&nbsp;"x4;
 
-# print "&nbsp;&nbsp;";
-# print "<B><A HREF='help.retrieve-seq.html#org_col'>Organism column</A></B>&nbsp;\n";
-# print $query->textfield(-name=>'org_col',
-# 			-default=>$default{org_col},
-# 			-size=>5);
-# print "<BR>\n";
+#### Taxon
+#print "<p>";
+print "<B><A HREF='help.retrieve-ensembl-seq.html#taxon'>Taxon</A></B>&nbsp;";
+#print "<BR/>\n";
+print $query->textfield(-name=>'taxon_selection',
+		       -default=>$default{taxon_selection},
+		       -size=>20);
 
-
-## &OrganismPopUp;
+#### Homology type
+#print "<p>";
+print "&nbsp;"x4;
+print "<B><A HREF='help.retrieve-ensembl-seq.html#homology'>Homology type</A></B>&nbsp;";
+#print "<BR/>\n";
+print $query->textfield(-name=>'homology_selection',
+		       -default=>$default{homology_selection},
+		       -size=>20);
 
 ### query (gene list)
 print "<p>";
-print "<B><A HREF='help.retrieve-seq.html#genes'>Genes</A></B>&nbsp;";
-print $query->radio_group(-name=>'genes',
-			  -values=>['all','selection'],
-			  -default=>$default{genes});
+print "<B><A HREF='help.retrieve-ensembl-seq.html#genes'>EnsEMBL IDs (gene, transcript or protein IDs)</A></B>&nbsp;";
+#print $query->radio_group(-name=>'genes',
+#			  -values=>['all','selection'],
+#			  -default=>$default{genes});
 
-print "<BR>\n";
-print "<UL>\n";
+print "<BR/>\n";
+#print "<UL>\n";
 
 print $query->textarea(-name=>'gene_selection',
 		       -default=>$default{gene_selection},
 		       -rows=>6,
 		       -columns=>65);
 ### option to upload a file with the gene list from the client machine 
-print "<BR>Upload gene list from file<BR>\n";
+print "<BR>Upload gene list (EnsEMBL IDs) from file<BR>\n";
 print $query->filefield(-name=>'uploaded_file',
 			-default=>'',
 			-size=>45,
 			-maxlength=>200);
 
 ## IDs only
-print "<br>", $query->checkbox(-name=>'ids_only',
-			       -checked=>$default{ids_only},
-			       -label=>'');
-print "<a href=help.retrieve-seq.html#ids_only>Query contains only IDs (no synonyms)</a>";
+#print "<br>", $query->checkbox(-name=>'ids_only',
+#			       -checked=>$default{ids_only},
+#			       -label=>'');
+#print "<a href=help.retrieve-seq.html#ids_only>Query contains only IDs (no synonyms)</a>";
 
 print "</UL>\n";
-print "<BR>\n";
+print "<BR/>\n";
 
-#### feature type
-print "<B><A HREF='help.retrieve-seq.html#feattype'>Feature type</A></B>&nbsp;";
+#### Reference feature
+print "<B><A HREF='help.retrieve-seq.html#feattype'>Reference feature</A></B>&nbsp;";
 print $query->radio_group(-name=>'feattype',
-			  -values=>[@supported_feature_types],
+			  -values=>['gene','mRNA','CDS','introns','first intron','exons','non-coding exons'],
 			  -default=>$default{feattype});
+print "<BR/>\n";
+
+### All transcripts
+print $query->checkbox(-name=>'alltranscripts',
+  		       -checked=>$default{alltranscripts},
+  		       -label=>'');
+print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#alltranscripts'><B>Retrieve sequence relative to each alternative transcript (with mRNA reference)</B></A>";
 print "<BR>\n";
 
 ### sequence type
-print "<B><A HREF='help.retrieve-seq.html#sequence_type'>Sequence type</A></B>&nbsp;";
+print "<B><A HREF='help.retrieve-ensembl-seq.html#sequence_type'>Sequence type</A></B>&nbsp;";
 print $query->popup_menu(-name=>'sequence_type',
-			 -Values=>['upstream','downstream','ORFs (unspliced)'],
+			 -Values=>['upstream','downstream', 'selected feature'],
 			 -default=>$default{sequence_type});
+print "&nbsp;"x4;
 
 ### from to
-print "<B><A HREF='help.retrieve-seq.html#from_to'>From</A></B>&nbsp;\n";
+print "<B><A HREF='help.retrieve-ensembl-seq.html#from_to'>From</A></B>&nbsp;\n";
 print $query->textfield(-name=>'from',
 			-default=>$default{from},
 			-size=>5);
 
 print "&nbsp;&nbsp;";
-print "<B><A HREF='help.retrieve-seq.html#from_to'>To</A></B>&nbsp;\n";
+print "<B><A HREF='help.retrieve-ensembl-seq.html#from_to'>To</A></B>&nbsp;\n";
 print $query->textfield(-name=>'to',
 			-default=>$default{to},
 			-size=>5);
 print "<BR>\n";
 
-### prevent ORF overlap
-print $query->checkbox(-name=>'noorf',
-  		       -checked=>$default{noorf},
-  		       -label=>'');
-print "&nbsp;<A HREF='help.retrieve-seq.html#noorf'><B>Prevent overlap with neighbour genes (noorf)</B></A>";
+### prevent overlap
+print "<B><A HREF='help.retrieve-ensembl-seq.html#prevent_overlap'>Prevent overlap with</A></B>&nbsp;";
+print $query->popup_menu(-name=>'prevent_overlap',
+			 -Values=>['none','ORF','gene'],
+			 -default=>$default{prevent_overlap});
 print "<BR>\n";
+
+### prevent ORF overlap
+#print $query->checkbox(-name=>'noorf',
+#  		       -checked=>$default{noorf},
+#  		       -label=>'');
+#print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#noorf'><B>Prevent overlap with neighbour orfs (noorf)</B></A>";
+#print "<BR>\n";
+
+### prevent gene overlap
+#print $query->checkbox(-name=>'nogene',
+#  		       -checked=>$default{nogene},
+#  		       -label=>'');
+#print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#nogene'><B>Prevent overlap with neighbour genes (nogene)</B></A>";
+#print "<BR>\n";
 
 ### Repeat masking
 print $query->checkbox(-name=>'rm',
   		       -checked=>$default{rm},
   		       -label=>'');
-print "&nbsp;<A HREF='help.retrieve-seq.html#rm'><B>Mask repeats</B></A>";
-print "&nbsp;<A HREF='help.retrieve-seq.html#rm_list'><B>(only valid for organisms with annotated repeats)</B></A>";
+print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#rm'><B>Mask repeats</B></A>";
+print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#rm_list'><B>(only valid for organisms with annotated repeats)</B></A>";
 print "<BR>\n";
 
-### allows for imprecise postions
-print $query->checkbox(-name=>'imp_pos',
-  		       -checked=>$default{imp_pos},
+### Mask coding
+print $query->checkbox(-name=>'maskcoding',
+  		       -checked=>$default{maskcoding},
   		       -label=>'');
-print "&nbsp;<A HREF='help.retrieve-seq.html#imp_pos'><B>Admit imprecise positions</A></B>";
+print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#maskcoding'><B>Mask coding sequence</B></A>";
 print "<BR>\n";
-
-### sequence format 
-print "<B><A HREF='help.retrieve-seq.html#formats'>Sequence format</A></B>&nbsp;";
-print $query->popup_menu(-name=>'format',
-			 -Values=>['fasta', 
-				   'IG',
-				   'wconsensus',
-				   'multi'],
-			 -default=>$default{sequence_format});
-print "<BR>\n";
-
-### sequence label
-print "<B><A HREF='help.retrieve-seq.html#seq_label'>Sequence label</A></B>&nbsp;";
-print $query->popup_menu(-name=>'seq_label',
-			 -Values=>['gene identifier', 
-				   'gene name',
-				   'gene identifier + name',
-				   'gene identifier + organism + gene name',
-				   'full identifier'
-				   ],
-			 -default=>$default{seq_label});
-print "<BR>\n";
-
-## Pass the taxon from get-orthologs for the further programs
-if ($query->param('taxon')) {
-  print $query->hidden(-name=>'taxon',-default=>$query->param('taxon'));
-}
 
 ### send results by email or display on the browser
 &SelectOutput("server");
 
 ### data for the demo 
-#@demo_genes = qw ( MET1 MET2 MET3 MET6 MET14 MET19 MET25 MET30 MUP3
-#		    SAM1 SAM2);
-@demo_genes = qw (DAL5 GAP1 MEP1 MEP2 PUT4 MEP3 DAL80);
+@demo_genes = qw (ENSG00000139618 ENSG00000138411);
 $demo_genes = join "\n", @demo_genes;
 
 
@@ -217,11 +264,11 @@ print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
-print $query->start_multipart_form(-action=>"retrieve-seq_form.cgi");
+print $query->start_multipart_form(-action=>"retrieve-ensembl-seq_form.cgi");
 print "<TD><B>";
 print $query->hidden(-name=>'gene_selection',-default=>$demo_genes);
-print $query->hidden(-name=>'organism',-default=>"Saccharomyces cerevisiae");
-print $query->hidden(-name=>'from',-default=>"-800");
+print $query->hidden(-name=>'organism',-default=>"Homo sapiens");
+print $query->hidden(-name=>'from',-default=>"-2000");
 print $query->hidden(-name=>'to',-default=>"-1");
 # $ENV{rsat_www} = 	'http://rsat.scmbb.ulb.ac.be/rsat/';
 print $query->hidden(-name=>'noorf',-default=>"");
@@ -230,10 +277,10 @@ print "</B></TD>\n";
 print $query->end_form;
 
 
-#print "<TD><B><A HREF='demo.retrieve-seq.html'>DEMO</A></B></TD>\n";
-print "<TD><B><A HREF='help.retrieve-seq.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_retrieve-seq.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
+#print "<TD><B><A HREF='demo.retrieve-ensembl-seq.html'>DEMO</A></B></TD>\n";
+print "<TD><B><A HREF='help.retrieve-ensembl-seq.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A HREF='tutorials/tut_retrieve-ensembl-seq.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 #print "</FONT>\n";
