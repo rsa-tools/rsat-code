@@ -274,12 +274,12 @@ Default is 'both'.</xsd:documentation>
           </xsd:element>
 	  <xsd:element name="feattype" type="xsd:string" minOccurs="0">
             <xsd:annotation>
-              <xsd:documentation>Type of genome features to load. Supported: CDS, mRNA, tRNA, rRNA. </xsd:documentation>
+              <xsd:documentation>Type of genome features to load. Supported: Gene, CDS, mRNA, intron, exon. </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	  <xsd:element name="type" type="xsd:string" minOccurs="0">
             <xsd:annotation>
-              <xsd:documentation> Sequence type. Supported: upstream, downstream, ORF (unspliced open reading frame).</xsd:documentation>
+              <xsd:documentation> Sequence type. Supported: upstream, downstream.</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	  <xsd:element name="chromosome" type="xsd:string" minOccurs="0">
@@ -335,6 +335,21 @@ Default is 'both'.</xsd:documentation>
 	  <xsd:element name="non_coding" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>With feattype exon, get only non-coding (part of) exons if value = 1.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="ortho" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Get orthologuous sequences if value = 1.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="taxon" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Filter on taxonomic level when collecting orthologs (e.g. Murinae)</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="homology_type" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Filter on homology type when collecting orthologs (e.g. ortholog_one2one)</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	</xsd:sequence>
