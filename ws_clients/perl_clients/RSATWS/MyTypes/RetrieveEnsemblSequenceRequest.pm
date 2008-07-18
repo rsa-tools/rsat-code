@@ -40,6 +40,9 @@ my %repeat_of :ATTR(:get<repeat>);
 my %all_transcripts_of :ATTR(:get<all_transcripts>);
 my %first_intron_of :ATTR(:get<first_intron>);
 my %non_coding_of :ATTR(:get<non_coding>);
+my %ortho_of :ATTR(:get<ortho>);
+my %taxon_of :ATTR(:get<taxon>);
+my %homology_type_of :ATTR(:get<homology_type>);
 
 __PACKAGE__->_factory(
     [ qw(        output
@@ -65,6 +68,9 @@ __PACKAGE__->_factory(
         all_transcripts
         first_intron
         non_coding
+        ortho
+        taxon
+        homology_type
 
     ) ],
     {
@@ -91,6 +97,9 @@ __PACKAGE__->_factory(
         'all_transcripts' => \%all_transcripts_of,
         'first_intron' => \%first_intron_of,
         'non_coding' => \%non_coding_of,
+        'ortho' => \%ortho_of,
+        'taxon' => \%taxon_of,
+        'homology_type' => \%homology_type_of,
     },
     {
         'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -116,6 +125,9 @@ __PACKAGE__->_factory(
         'all_transcripts' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'first_intron' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'non_coding' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'ortho' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'taxon' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'homology_type' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
     },
     {
 
@@ -142,6 +154,9 @@ __PACKAGE__->_factory(
         'all_transcripts' => 'all_transcripts',
         'first_intron' => 'first_intron',
         'non_coding' => 'non_coding',
+        'ortho' => 'ortho',
+        'taxon' => 'taxon',
+        'homology_type' => 'homology_type',
     }
 );
 
@@ -248,6 +263,15 @@ methods:
 =item * non_coding
 
 
+=item * ortho
+
+
+=item * taxon
+
+
+=item * homology_type
+
+
 
 
 =back
@@ -283,6 +307,9 @@ Constructor. The following data structure may be passed to new():
    all_transcripts =>  $some_value, # int
    first_intron =>  $some_value, # int
    non_coding =>  $some_value, # int
+   ortho =>  $some_value, # int
+   taxon =>  $some_value, # string
+   homology_type =>  $some_value, # string
  },
 
 
