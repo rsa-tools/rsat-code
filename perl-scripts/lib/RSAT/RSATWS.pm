@@ -339,6 +339,9 @@ sub retrieve_ensembl_seq {
   my $left = $args{"left"};
   my $right =$args{"right"};
   my $strand = $args{"strand"};
+  my $ortho = $args{"ortho"};
+  my $taxon = $args{"taxon"};
+  my $homology_type = $args{"homology_type"};
 
   if ($args{"features"}) {
     my $features = $args{"features"};
@@ -498,6 +501,22 @@ sub retrieve_ensembl_seq {
 	$feat_format =~ s/\'//g;
 	$feat_format =~ s/\"//g;
 	$command .= " -ftfileformat '".$feat_format."'";
+    }
+
+   if ($ortho == 1) {
+	$command .= " -ortho";
+    }
+
+    if ($taxon) {
+	$taxon =~ s/\'//g;
+	$taxon =~ s/\"//g;
+	$command .= " -taxon '".$taxon."'";
+    }
+
+    if ($homology_type) {
+	$homology_type =~ s/\'//g;
+	$homology_type =~ s/\"//g;
+	$command .= " -ortho_type '".$homology_type."'";
     }
 
 #    if ($imp_pos == 1) {
