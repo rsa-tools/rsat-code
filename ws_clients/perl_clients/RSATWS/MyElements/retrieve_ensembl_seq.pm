@@ -112,6 +112,9 @@ Constructor. The following data structure may be passed to new():
      all_transcripts =>  $some_value, # int
      first_intron =>  $some_value, # int
      non_coding =>  $some_value, # int
+     ortho =>  $some_value, # int
+     taxon =>  $some_value, # string
+     homology_type =>  $some_value, # string
    },
  },
 
