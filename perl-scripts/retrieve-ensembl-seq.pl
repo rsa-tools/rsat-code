@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.26 2008/07/18 10:07:48 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.27 2008/07/22 14:31:13 rsat Exp $
 #
 # Time-stamp
 #
@@ -12,6 +12,12 @@ use DBI();
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
+#	push (@INC, $ENV{ensembl});
+#	push (@INC, $ENV{compara});
+#	push (@INC, $ENV{bioperl});
+	push (@INC, '/home/rsat/src/ensembl/modules');
+	push (@INC, '/home/rsat/src/ensembl-compara/modules');
+	push (@INC, '/home/rsat/src/bioperl-live');
     }
 }
 require "RSA.lib";
@@ -65,7 +71,8 @@ package main;
   local $common_name = '';
 
   ## Connection to the EnsEMBL MYSQL database
-  local $ensembl_host = 'ensembldb.ensembl.org';  # db at EBI (use outside SCMBB)
+  local $ensembl_host = $ENV{ensembl_host};
+#  local $ensembl_host = 'ensembldb.ensembl.org';  # db at EBI (use outside SCMBB)
 #  local $ensembl_host = 'xserve2.scmbb.ulb.ac.be';  # Local db (use inside SCMBB)
   local $ensembl_user = "anonymous";
   local $dbname = '';
