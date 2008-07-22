@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.27 2008/07/22 14:31:13 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.28 2008/07/22 16:49:27 rsat Exp $
 #
 # Time-stamp
 #
@@ -12,12 +12,6 @@ use DBI();
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
-#	push (@INC, $ENV{ensembl});
-#	push (@INC, $ENV{compara});
-#	push (@INC, $ENV{bioperl});
-	push (@INC, '/home/rsat/src/ensembl/modules');
-	push (@INC, '/home/rsat/src/ensembl-compara/modules');
-	push (@INC, '/home/rsat/src/bioperl-live');
     }
 }
 require "RSA.lib";
@@ -26,9 +20,9 @@ require RSAT::util;
 
 ## EnsEMBL libraries
 use Bio::EnsEMBL::Registry;
-use Bio::EnsEMBL::DBSQL::DBAdaptor;
-use Bio::EnsEMBL::DBSQL::SliceAdaptor;
-use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
+#use Bio::EnsEMBL::DBSQL::DBAdaptor;
+#use Bio::EnsEMBL::DBSQL::SliceAdaptor;
+#use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 ################################################################
 #### main package
 package main;
