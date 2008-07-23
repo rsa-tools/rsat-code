@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.31 2008/07/23 15:54:47 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.32 2008/07/23 16:22:13 rsat Exp $
 #
 # Time-stamp
 #
@@ -124,6 +124,9 @@ package main;
       }
       $sth->finish();
       $dbh->disconnect();
+      unless ($dbname) {
+	  die "Error: there is no organism named $org in the EnsEMBL database. Use the command supported-organisms-ensembl to obtain a full list of supported organisms.\n";
+      }
   } else {  # get organism name from dbname
       $org = $dbname;
       $org =~s/_core_.+//;
