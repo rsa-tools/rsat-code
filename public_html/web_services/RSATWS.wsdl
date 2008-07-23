@@ -337,6 +337,13 @@ Default is 'both'.</xsd:documentation>
               <xsd:documentation>With feattype exon, get only non-coding (part of) exons if value = 1.</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
+	  <xsd:element name="line_width" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>A newline character will be inserted in the 
+                sequence every ## bases. 0 will prevent newline
+                insertion. This is the default value</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
 	  <xsd:element name="ortho" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>Get orthologuous sequences if value = 1.</xsd:documentation>
