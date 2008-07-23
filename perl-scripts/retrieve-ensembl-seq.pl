@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.29 2008/07/22 16:57:48 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.30 2008/07/23 13:03:41 rsat Exp $
 #
 # Time-stamp
 #
@@ -12,20 +12,21 @@ use DBI();
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
-	push (@INC, "/home/rsat/src/ensembl/modules");
-	push (@INC, "/home/rsat/src/ensembl-compara/modules");
-	push (@INC, "/home/rsat/src/bioperl-live");
     }
 }
 require "RSA.lib";
 require "RSA.seq.lib";
 require RSAT::util;
+push (@INC, $ENV{bioperl});
+push (@INC, $ENV{ensembl});
+push (@INC, $ENV{compara});
 
 ## EnsEMBL libraries
-use Bio::EnsEMBL::Registry;
+require Bio::EnsEMBL::Registry;
 #use Bio::EnsEMBL::DBSQL::DBAdaptor;
 #use Bio::EnsEMBL::DBSQL::SliceAdaptor;
 #use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
+
 ################################################################
 #### main package
 package main;
@@ -57,6 +58,7 @@ package main;
   local $ft_file;
   local $ft_file_format = "gft";
   local $mask_coding = 0;
+  local $lw = 0;
 
   local $output_file;
   local $homologs_table;
@@ -199,19 +201,28 @@ package main;
       $rsat_strand = "R";
     }
 
-    &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
-    &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
-    &RSAT::message::Debug(">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand") if ($main::verbose >= 3);
-    &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
+    my $fasta_header = ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand";
+
+    &PrintSequence($sequence, $fasta_header);
+
+#    $sequence = &FoldSequence($sequence, $lw);
+
+#    &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+#    &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
+#    &RSAT::message::Debug(">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand") if ($main::verbose >= 3);
+#    &RSAT::message::Debug($fasta_header) if ($main::verbose >= 3);
+#    &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
     # Export sequence to file
-    print $fh ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
-    print $fh "$sequence\n";
+#    print $fh ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
+#    print $fh "$fasta_header\n";
+#    print $fh "$sequence\n";
 
   ## Feature file
   } elsif ($ft_file) {
     open FEAT, $ft_file;
     my $ft_name;
+    my $fasta_header;
     while ($line = <FEAT>) {
       chomp($line);
       next if (($line =~/^[#|;]/)||($line eq ""));
@@ -246,22 +257,30 @@ package main;
 	$rsat_strand = "R";
       }
 
-      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
-      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
       if ($ft_id) {
-	&RSAT::message::Debug(">$ft_id\t$ft_id; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand") if ($main::verbose >= 3);
+	  $fasta_header = ">$ft_id\t$ft_id; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand";
       } else {
-	&RSAT::message::Debug(">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand") if ($main::verbose >= 3);
+	  $fasta_header = ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand";
       }
-      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
+
+      &PrintSequence($sequence, $fasta_header);
+
+#      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+#      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
+#      if ($ft_id) {
+#	&RSAT::message::Debug(">$ft_id\t$ft_id; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand") if ($main::verbose >= 3);
+#      } else {
+#	&RSAT::message::Debug(">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand") if ($main::verbose >= 3);
+#      }
+#      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
       ## Export sequence to file
-      if ($ft_id) {
-	print $fh ">$ft_id\t$ft_id; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
-      } else {
-	print $fh ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
-      }
-      print $fh  "$sequence\n";
+#      if ($ft_id) {
+#	print $fh ">$ft_id\t$ft_id; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
+#      } else {
+#	print $fh ">$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand\n";
+#      }
+#      print $fh  "$sequence\n";
     }
 
   ## All genes
@@ -477,6 +496,10 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-noncoding") {
       $non_coding = 1;
 
+      ### Line width
+    } elsif ($ARGV[$a] eq "-lw") {
+      $lw = $ARGV[$a+1];
+
       ### Orthologs
   } elsif ($ARGV[$a] eq "-ortho") {
       $ortho  = 1;
@@ -553,16 +576,20 @@ sub Main {
     $sequence = &GetSequence($left, $right);
     my $size = $new_to - $new_from + 1;
 
-    &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
-    &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
-    &RSAT::message::Debug(">$gene_id\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
-    &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
+    my $fasta_header = ">$common_name-$gene_id\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+
+    &PrintSequence ($sequence, $fasta_header);
+
+#    &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+#    &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
+#    &RSAT::message::Debug(">$gene_id\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
+#    &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
     # Export sequence to file
-    if ($sequence) {
-	print $fh ">$common_name-$gene_id\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
-	print $fh "$sequence\n";
-    }
+#    if ($sequence) {
+#	print $fh ">$common_name-$gene_id\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+#	print $fh "$sequence\n";
+#    }
   } else { # feattype = mrna, cds, introns...
     # Get transcripts
     @transcripts = @{$gene->get_all_Transcripts};
@@ -612,17 +639,20 @@ sub Main {
 	$sequence = &GetSequence($left, $right);
 	my $size = $new_to - $new_from + 1;
 
+	my $fasta_header = ">$common_name-$gene_id-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
 
-	&RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
-	&RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
-	&RSAT::message::Debug(">$gene_id-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
-	&RSAT::message::Debug($sequence) if ($main::verbose >= 3);
+	&PrintSequence ($sequence, $fasta_header);
+
+#	&RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+#	&RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
+#	&RSAT::message::Debug(">$gene_id-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
+#	&RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	# Export sequence to file
-	if ($sequence) {
-	    print $fh ">$common_name-$gene_id-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
-	    print $fh "$sequence\n";
-	}
+#	if ($sequence) {
+#	    print $fh ">$common_name-$gene_id-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+#	    print $fh "$sequence\n";
+#	}
       }
 
       # Introns
@@ -669,16 +699,20 @@ sub Main {
 	    $sequence = &GetSequence($intron -> start(), $intron -> end());
 	    my $size = ($intron -> end() - $intron -> start()) + 1;
 
-	    &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
-	    &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
-	    &RSAT::message::Debug(">$gene_id-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand") if ($main::verbose >= 3);
-	    &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
+	    my $fasta_header = ">$common_name-$gene_id-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand";
+
+	    &PrintSequence ($sequence, $fasta_header);
+
+#	    &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+#	    &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
+#	    &RSAT::message::Debug(">$gene_id-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand") if ($main::verbose >= 3);
+#	    &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	    # Export sequence to file
-	    if ($sequence) {
-		print $fh ">$common_name-$gene_id-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand\n";
-		print $fh "$sequence\n";
-	    }
+#	    if ($sequence) {
+#		print $fh ">$common_name-$gene_id-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand\n";
+#		print $fh "$sequence\n";
+#	    }
 	  }
 	}
 
@@ -691,17 +725,20 @@ sub Main {
 	  $sequence = &GetSequence($start1, $end1);
 	  my $size = ($end1 - $start1) + 1;
 
+	  my $fasta_header = ">$common_name-$gene_id-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand";
 
-	  &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
-	  &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
-	  &RSAT::message::Debug(">$gene_id-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand") if ($main::verbose >= 3);
-	  &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
+	  &PrintSequence ($sequence, $fasta_header);
+
+#	  &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+#	  &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
+#	  &RSAT::message::Debug(">$gene_id-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand") if ($main::verbose >= 3);
+#	  &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	  # Export sequence to file
-	  if ($sequence) {
-	      print $fh ">$common_name-$gene_id-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand\n";
-	      print $fh "$sequence\n";
-	  }
+#	  if ($sequence) {
+#	      print $fh ">$common_name-$gene_id-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand\n";
+#	      print $fh "$sequence\n";
+#	  }
 	}
       }
 
@@ -728,72 +765,92 @@ sub Main {
 	      my $non_coding_exon_right = $coding_region_start - 1;
 	      my $size = $coding_region_start - $exon -> start();
 
-	      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
-	      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
-	      &RSAT::message::Debug(">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand") if ($main::verbose >= 3);
-	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
+	      my $fasta_header = ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand";
+
+	      &PrintSequence ($sequence, $fasta_header);
+
+#	      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+#	      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
+#	      &RSAT::message::Debug(">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand") if ($main::verbose >= 3);
+#	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	      # Export sequence to file
-	      if ($sequence) {
-		  print $fh ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand\n";
-		  print $fh "$sequence\n";
-	      }
+#	      if ($sequence) {
+#		  print $fh ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand\n";
+#		  print $fh "$sequence\n";
+#	      }
 	    } elsif ($coding_region_end < $exon_end && $coding_region_end > $exon_start) {
 	      $sequence = &GetSequence($coding_region_end + 1, $exon_end);
 	      my $non_coding_exon_left = $coding_region_end + 1;
 	      my $size = $exon -> end() - $coding_region_end;
 
-	      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
-	      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
-	      &RSAT::message::Debug(">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand") if ($main::verbose >= 3);
-	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
+	      my $fasta_header = ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand";
+
+	      &PrintSequence ($sequence, $fasta_header);
+
+#	      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+#	      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
+#	      &RSAT::message::Debug(">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand") if ($main::verbose >= 3);
+#	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	      # Export sequence to file
-	      if ($sequence) {
-		  print $fh ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand\n";
-		  print $fh "$sequence\n";
-	      }
+#	      if ($sequence) {
+#		  print $fh ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand\n";
+#		  print $fh "$sequence\n";
+#	      }
 	    } elsif ($coding_region_start > $exon_end) {
 	      $sequence = &GetSequence($exon -> start(), $exon -> end());
 	      my $size = ($exon -> end() - $exon -> start()) + 1;
 
-	      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
-	      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
-	      &RSAT::message::Debug(">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand") if ($main::verbose >= 3);
-	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
+	      my $fasta_header = ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
+
+	      &PrintSequence ($sequence, $fasta_header);
+
+#	      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+#	      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
+#	      &RSAT::message::Debug(">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand") if ($main::verbose >= 3);
+#	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	      # Export sequence to file
-	      print $fh ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
-	      print $fh "$sequence\n";
+#	      print $fh ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
+#	      print $fh "$sequence\n";
 	    } elsif ($coding_region_end < $exon_start) {
 	      $sequence = &GetSequence($exon -> start(), $exon -> end());
 	      my $size = ($exon -> end() - $exon -> start()) + 1;
 
-	      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
-	      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
-	      &RSAT::message::Debug(">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand") if ($main::verbose >= 3);
-	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
+	      my $fasta_header = ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
+
+	      &PrintSequence ($sequence, $fasta_header);
+
+#	      &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+#	      &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
+#	      &RSAT::message::Debug(">$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand") if ($main::verbose >= 3);
+#	      &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	      # Export sequence to file
-	      if ($sequence) {
-		  print $fh ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
-		  print $fh "$sequence\n";
-	      }
+#	      if ($sequence) {
+#		  print $fh ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
+#		  print $fh "$sequence\n";
+#	      }
 	    }
 	  } else {
 	    $sequence = &GetSequence($exon -> start(), $exon -> end());
 	    my $size = ($exon -> end() - $exon -> start()) + 1;
 
-	    &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
-	    &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
-	    &RSAT::message::Debug(">$gene_id-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand") if ($main::verbose >= 3);
-	    &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
+	    my $fasta_header = ">$common_name-$gene_id-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
+
+	    &PrintSequence ($sequence, $fasta_header);
+
+#	    &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+#	    &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
+#	    &RSAT::message::Debug(">$gene_id-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand") if ($main::verbose >= 3);
+#	    &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	    # Export sequence to file
-	    if ($sequence) {
-		print $fh ">$common_name-$gene_id-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
-		print $fh "$sequence\n";
-	    }
+#	    if ($sequence) {
+#		print $fh ">$common_name-$gene_id-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand\n";
+#		print $fh "$sequence\n";
+#	    }
 	  }
 	}
       }
@@ -820,22 +877,30 @@ sub Main {
 	my $utr5_size = $utr5_end - $utr5_start + 1;
 	my $utr3_size = $utr3_end - $utr3_start + 1;
 
-	&RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
-	&RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
-	&RSAT::message::Debug(">$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_end $rsat_strand") if ($main::verbose >= 3);
-	&RSAT::message::Debug($utr5_sequence) if ($main::verbose >= 3);
-	&RSAT::message::Debug(">$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_end $rsat_strand") if ($main::verbose >= 3);
-	&RSAT::message::Debug($utr3_sequence) if ($main::verbose >= 3);
+	my $utr5_fasta_header = ">$common_name-$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_start $rsat_strand";
+
+	    &PrintSequence ($utr5_sequence, $utr5_fasta_header);
+
+	my $utr3_fasta_header = ">$common_name-$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_start $rsat_strand";
+
+	    &PrintSequence ($utr3_sequence, $utr3_fasta_header);
+
+#	&RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+#	&RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
+#	&RSAT::message::Debug(">$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_end $rsat_strand") if ($main::verbose >= 3);
+#	&RSAT::message::Debug($utr5_sequence) if ($main::verbose >= 3);
+#	&RSAT::message::Debug(">$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_end $rsat_strand") if ($main::verbose >= 3);
+#	&RSAT::message::Debug($utr3_sequence) if ($main::verbose >= 3);
 
 	# Export sequence to file
-	if ($utr5_sequence) {
-	    print $fh ">$common_name-$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_start $rsat_strand\n";
-	    print $fh "$utr5_sequence\n";
-	}
-	if ($utr3_sequence) {
-	    print $fh ">$common_name-$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_start $rsat_strand\n";
-	    print $fh "$utr3_sequence\n";
-	}
+#	if ($utr5_sequence) {
+#	    print $fh ">$common_name-$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_start $rsat_strand\n";
+#	    print $fh "$utr5_sequence\n";
+#	}
+#	if ($utr3_sequence) {
+#	    print $fh ">$common_name-$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_start $rsat_strand\n";
+#	    print $fh "$utr3_sequence\n";
+#	}
       }
 
       # CDS
@@ -847,16 +912,20 @@ sub Main {
 	my $size = $new_to - $new_from + 1;
 	my $cds_id = $transcript -> translation() -> stable_id();
 
-	&RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
-	&RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
-	&RSAT::message::Debug(">$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
-	&RSAT::message::Debug($sequence) if ($main::verbose >= 3);
+	my $fasta_header = ">$common_name-$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+
+	&PrintSequence ($sequence, $fasta_header);
+
+#	&RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+#	&RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
+#	&RSAT::message::Debug(">$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand") if ($main::verbose >= 3);
+#	&RSAT::message::Debug($sequence) if ($main::verbose >= 3);
 
 	# Export sequence to file
-	if ($sequence) {
-	    print $fh ">$common_name-$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
-	    print $fh "$sequence\n";
-	}
+#	if ($sequence) {
+#	    print $fh ">$common_name-$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand\n";
+#	    print $fh "$sequence\n";
+#	}
       }
     }
 
@@ -1338,6 +1407,24 @@ sub GetSequence {
       }
 }
 
+################################################################
+#### Print sequence to file
+sub PrintSequence {
+    my ($sequence, $fasta_header) = @_;
+
+    $sequence = &FoldSequence($sequence, $lw);
+
+    &RSAT::message::Debug("Sequence:") if ($main::verbose >= 3 && !$rm);
+    &RSAT::message::Debug("Repeat masked sequence:") if ($main::verbose >= 3 && $rm);
+    &RSAT::message::Debug($fasta_header) if ($main::verbose >= 3);
+    &RSAT::message::Debug($sequence) if ($main::verbose >= 3);
+
+    # Export sequence to file
+    if ($sequence) {
+	print $fh "$fasta_header\n";
+	print $fh "$sequence\n";
+    }
+}
 ################################################################
 #### detailed help message
 sub PrintHelp {

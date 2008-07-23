@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.20 2008/02/07 00:17:23 rsat Exp $
+# $Id: server.mk,v 1.21 2008/07/23 13:03:41 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -30,14 +30,14 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 RSAT_SERVER = rsat@rsat.scmbb.ulb.ac.be:rsa-tools
 MAMAZE = jvanheld@164.15.109.52:rsa-tools
 MERLIN = jvanheld@merlin.scmbb.ulb.ac.be:rsa-tools
-FLYCHIP = jvanheld@flychip.org.uk:rsa-tools
-CIFN = jvanheld@itzamna.ccg.unam.mx:rsa-tools
+#FLYCHIP = jvanheld@flychip.org.uk:rsa-tools
+CCG = jvanheld@kayab.ccg.unam.mx:rsa-tools
 PORTPIN = rsat@portpin.univ-mrs.fr:rsa-tools
 LIV = jvanheld@liv.bmc.uu.se:rsa-tools
 TORONTO=jvanheld@ws03.ccb.sickkids.ca:rsa-tools
 MILLIWAYS=jvanheld@milliways.bi.up.ac.za:rsa-tools
-MIRROR_SERVERS = ${MAMAZE} ${MERLIN} ${LIV} ${FLYCHIP} ${TORONTO} ${CIFN}  ${PORTPIN}
-LOG_SERVERS= ${LIV} ${FLYCHIP} ${TORONTO} ${CIFN} ${MILLIWAYS} ${RSAT_SERVER}  ${PORTPIN}
+MIRROR_SERVERS = ${MAMAZE} ${MERLIN} ${LIV} ${TORONTO} ${CCG}  ${PORTPIN}
+LOG_SERVERS= ${LIV} ${TORONTO} ${CCG} ${MILLIWAYS} ${RSAT_SERVER}  ${PORTPIN}
 
 ################################################################
 ## distribution
@@ -128,7 +128,7 @@ from_ucmb:
 FOLDERS=data 
 from_cifn:
 	@for folder in ${FOLDERS}; do \
-		${RSYNC} jvanheld@${CIFN}:rsa-tools/$${folder}/* ./$${folder} ; \
+		${RSYNC} jvanheld@${CCG}:rsa-tools/$${folder}/* ./$${folder} ; \
 	done
 
 SRC=perl-scripts
