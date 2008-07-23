@@ -1,5 +1,5 @@
-
-# RSATWS.pm - rsa-tools web services module
+############################################################
+## RSATWS.pm - rsa-tools web services module
 
 package RSATWS;
 
@@ -11,13 +11,25 @@ use vars qw(@ISA);
 
 use File::Temp qw/ tempfile tempdir /;
 
-my $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||;
-my $SCRIPTS = $RSAT.'/perl-scripts';
-my $TMP = $RSAT.'/public_html/tmp';
-
 unshift (@INC, "../../perl-scripts/lib/");
 
 require RSAT::util;
+require RSAT::server;
+require RSAT::TaskManager;
+
+&main::InitRSAT();
+
+
+#my $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||;
+my $RSAT = $ENV{RSAT};
+unless ($RSAT) {
+    $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||; ## Guess RSAT path from module full name
+#    $RSAT = join(";","ENV", keys(%ENV));
+}
+my $SCRIPTS = $RSAT.'/perl-scripts';
+my $TMP = $RSAT.'/public_html/tmp';
+
+
 #require "RSA.lib";
 
 =pod
@@ -326,7 +338,7 @@ sub retrieve_ensembl_seq {
   my $type = $args{"type"};
 # my $format = $args{"format"};
   my $all = $args{"all"};
-# my $lw = $args{"lw"};
+  my $lw = $args{"lw"};
 # my $label = $args{"label"};
 # my $label_sep = $args{"label_sep"};
 # my $nocom = $args{"nocom"};
@@ -425,11 +437,11 @@ sub retrieve_ensembl_seq {
     $command .= " -all";
   }
 
-#    if ($lw) {
-#	$lw =~ s/\'//g;
-#	$lw =~ s/\"//g;
-#	$command .= " -lw '".$lw."'";
-#    }
+    if ($lw) {
+	$lw =~ s/\'//g;
+	$lw =~ s/\"//g;
+	$command .= " -lw '".$lw."'";
+    }
 
 #    if ($label) {
 #	$label =~ s/\'//g;
@@ -1363,7 +1375,7 @@ sub get_orthologs {
 #        die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
 #    }
     my $result = `$command`;
-    my ($TMP_OUT, $tmp_outfile) = tempfile(get_orthologs.XXXXXXXXXX, DIR => $TMP);
+    my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile(get_orthologs.XXXXXXXXXX, DIR => $TMP);
     print $TMP_OUT $result;
     close $TMP_OUT;
 
@@ -1486,7 +1498,7 @@ sub footprint_discovery {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
     my $result = `$command`;
-    my ($TMP_OUT, $tmp_outfile) = tempfile(footprint_discovery.XXXXXXXXXX, DIR => $TMP);
+    my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile(footprint_discovery.XXXXXXXXXX, DIR => $TMP);
     print $TMP_OUT $result;
     close $TMP_OUT;
     $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.scmbb\.ulb\.ac\.be\/rsat/g;
@@ -4593,18 +4605,30 @@ Run a command for the web services.
 =cut
 sub run_WS_command {
   my ($command, $output_choice, $method_name, $out_format) = @_;
-  my $result = `$command`;
-  my $stderr = `$command 2>&1 1>/dev/null`;
-  if ($stderr) {
-    die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-  }
-  my ($TMP_OUT, $tmp_outfile) = tempfile($method_name.".".XXXXXXXXXX, SUFFIX => "$out_format", DIR => $TMP);
+  my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile($method_name.".".XXXXXXXXXX, SUFFIX => "$out_format", DIR => $TMP);
   chomp($tmp_outfile);
-
   &UpdateLogFileWS(command=>$command,
 		   tmp_outfile=>$tmp_outfile,
 		   method_name=>$method_name,
 		   output_choice=>$output_choice);
+  
+  if ($output_choice eq 'email') {
+      ## Execute the command and send the result URL by email
+      my $email_address = 'jvhelden@ulb.ac.be';
+      &RSAT::TaskManager::EmailTheResult($command, $email_address, $tmp_outfile, title=>join("RSATWS", $method_name));
+      return SOAP::Data->name('response' => {'command' => $command,
+					     'server' => $tmp_outfile});
+      
+  }
+
+  ## Execute the command on the server
+  my $result = `$command`;
+  my $stderr = `$command 2>&1 1>/dev/null`;
+  
+  if ($stderr) {
+      die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+  }
+
   open $TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
   print $TMP_OUT $result;
   close $TMP_OUT;
@@ -4620,6 +4644,13 @@ sub run_WS_command {
                                            'client' => $result});
   }
 }
+
+################################################################
+## Run the command on the server and send an email when the task is done
+sub email_command {
+
+}
+
 
 ################################################################
 =pod
