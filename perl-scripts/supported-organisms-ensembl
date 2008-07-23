@@ -1,0 +1,33 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: supported-organisms-ensembl,v 1.1 2008/07/23 16:23:07 rsat Exp $
+#
+# Time-stamp
+#
+############################################################
+
+use strict;
+
+use DBI();
+
+my $dbh = DBI->connect("DBI:mysql:host=ensembldb.ensembl.org", "anonymous", "", {'RaiseError' => 1});
+my $sth = $dbh->prepare("SHOW DATABASES");
+$sth->execute();
+my $dbversion;
+my $previous_org = "bogus";
+while (my $ref = $sth->fetchrow_hashref()) {
+    if ($ref->{'Database'} =~ /_core_\d+/) {
+	$dbversion = $ref->{'Database'};
+	$dbversion =~ s/.+_core_//;
+	$dbversion =~ s/_.+//;
+	$ref->{'Database'} =~s/_core_.+//;
+	if ($ref->{'Database'} ne $previous_org) {
+	    print $ref->{'Database'}, "\n";
+	    $previous_org = $ref->{'Database'};
+	}
+    }
+}
+print "EnsEMBL database version : ", $dbversion, "\n";
+$sth->finish();
+$dbh->disconnect();
