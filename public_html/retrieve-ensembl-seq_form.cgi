@@ -180,9 +180,9 @@ print "</UL>\n";
 print "<BR/>\n";
 
 #### Reference feature
-print "<B><A HREF='help.retrieve-seq.html#feattype'>Reference feature</A></B>&nbsp;";
+print "<B><A HREF='help.retrieve-seq.html#feattype'>Feature type</A></B>&nbsp;";
 print $query->radio_group(-name=>'feattype',
-			  -values=>['gene','mRNA','CDS','introns','first intron','exons','non-coding exons'],
+			  -values=>['gene','mRNA','CDS','introns','first intron','exons','non-coding exons','UTR'],
 			  -default=>$default{feattype});
 print "<BR/>\n";
 
@@ -246,7 +246,7 @@ print "<BR>\n";
 print $query->checkbox(-name=>'maskcoding',
   		       -checked=>$default{maskcoding},
   		       -label=>'');
-print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#maskcoding'><B>Mask coding sequence</B></A>";
+print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#maskcoding'><B>Mask coding sequences</B></A>";
 print "<BR>\n";
 
 ### send results by email or display on the browser
