@@ -156,6 +156,9 @@ if (lc($query->param('maskcoding')) eq "on") {
     $mask_coding = 1;
 }
 
+### Line width
+my $lw = 60;
+
 #print  "<PRE><B>Command :</B> $command $parameters</PRE><P>" if ($ENV{rsat_echo} >= 1);
 
 
@@ -173,6 +176,7 @@ my %args = (
             'type' => $sequence_type,
             'repeat' => $rm,
             'mask_coding' => $mask_coding,
+#            'line_width' => $lw,
             'ortho' => $ortho,
             'taxon' => $taxon,
             'homology_type' => $homology_type
