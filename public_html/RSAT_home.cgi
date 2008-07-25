@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.38 2008/07/25 12:03:05 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.39 2008/07/25 12:05:55 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -189,12 +189,16 @@ print <<EndText;
 
 </tr><tr>
 
+  <td>
+
   <TD ALIGN=CENTER>
   <A HREF="http://af.boku.ac.at:4080/rsa-tools/" target="_top">
   <B>Vienna - Austria</B><BR>
   <IMG SRC="images/cambridge.jpg" HEIGHT=80 BORDER=0><BR>
   http://af.boku.ac.at:4080/rsa-tools/</A>
   </TD>
+
+  <td>
 
 <!--
 </tr><tr>
