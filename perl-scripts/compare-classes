@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.48 2008/07/09 23:38:52 jvanheld Exp $
+# $Id: compare-classes,v 1.49 2008/07/25 05:55:20 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -643,9 +643,9 @@ PROBABILITIES
                 n       population size
 
     HYPERGEOMETRIC
-                       q     i  q-i     q
+                               q     i  q-i     q
         P_value = P(X >= c) = SUM ( C  C     / C  )
-                      i=c    r  n-r     n
+                              i=c    r  n-r     n
 
     BINOMIAL
 
@@ -1660,8 +1660,13 @@ sub PrintOneComparison {
   ## Dot product
   if ($return_fields{dotprod}) {
     printf $out "\t%7g", $current_compa{dotprod};
-    printf $out "\t%7g", log($current_compa{dotprod})/$log2;
-    printf $out "\t%d", log($current_compa{dotprod})/$log2;
+    if ($current_compa{dotprod} > 0) {
+      printf $out "\t%7g", log($current_compa{dotprod})/$log2;
+      printf $out "\t%d", log($current_compa{dotprod})/$log2;
+    } else {
+      printf $out "\t-Inf";
+      printf $out "\t-Inf";
+    }
     printf $out "\t%7g", sqrt($current_compa{dotprod});
     printf $out "\t%7g", $current_compa{prodrts};
   }
