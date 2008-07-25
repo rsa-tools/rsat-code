@@ -236,7 +236,7 @@
  <a href='help.pathfinder.html#output'><b>Output format&nbsp;&nbsp;</b>
   <br><br>
   <table><tr>
-  <td>Table: <input type='radio' name='outputchoice' value='pathsTable'></td>
+  <td>Table: <input type='radio' name='outputchoice' value='pathsTable' checked='checked'></td>
   </tr><tr>
   <td>Graph: <input type='radio' name='outputchoice' value='outputgraph'></td>
   	<table>
