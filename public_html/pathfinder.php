@@ -139,7 +139,7 @@
   if ($graph_file != "" && $graph == "") {
     $graph = storeFile($graph_file);
   }
-
+  
   ## put the content of the graph id into graph
   if($graph_id != "" && $graph == ""){
   	$graph = $graph_id;
@@ -156,7 +156,7 @@
     if(strcmp($out_format,'flat') == 0){
         $graph = spaces_to_tab($graph,2);
     }
-   
+       
    ########## Launch the client ###############
 
     $parameters = array(
