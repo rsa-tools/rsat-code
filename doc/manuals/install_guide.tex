@@ -102,23 +102,28 @@ can be installed with the command \program{cpan}.
 
 \end{description}
 
-\subsection{Other libraries}
+\subsection{Additional libraries to access EnsEMBL genomes}
 
 Two programs, \program{retrieve-ensembl-seq.pl} and
 \program{get-ensembl-genome.pl}, require the EnsEMBL Perl API and
-bioperl to work on your machine.
+bioperl to work on your machine. 
 
 To obtain bioperl:
 
 \begin{footnotesize}
 \begin{verbatim}
+## For this example, we install Bioperl and EnsEMBL libraries in $RSAT/lib
+## but you can install it in some other place
+mkdir -p $RSAT/lib
+cd $RSAT/lib
+
 ## Login into the BioPerl CVS server
 cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login
 ### (password is 'cvs')
 
-
 ## download the current version
-cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout bioperl-live 
+cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl \
+  checkout bioperl-live 
 
 \end{verbatim}
 \end{footnotesize}
@@ -137,14 +142,33 @@ cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
 cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
   checkout -r branch-ensembl-47 ensembl 
 ## (you need to adapt the branch number, e.g. 47, as it updates).
+
+## Download the current version of the EnsEMBL module for comparative genomics
+cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
+  checkout -r branch-ensembl-47 ensembl-compara
+## (you need to adapt the branch number, e.g. 47, as it updates).
 \end{verbatim}
 \end{footnotesize}
 
+Adapt the 3 following lines in the RSAT configuration file
+\file{RSAT\_config.props} to specify the actual path of the bioperl
+and ensembl libraries on your computer.
 
-Add their path to your PERL5LIB variable.
-Example in bash:
-export PERL5LIB=${PERL5LIB}:${HOME}/src/bioperl-live
-export PERL5LIB=${PERL5LIB}:${HOME}/src/ensembl/modules
+\begin{footnotesize}
+\begin{verbatim}
+ensembl=/home/rsat/rsa-tools/lib/ensembl/modules
+compara=/home/rsat/rsa-tools/lib/ensembl-compara/modules
+bioperl=/home/rsat/rsa-tools/lib/bioperl-live
+\end{verbatim}
+\end{footnotesize}
+
+The EnsEMBL libraries also require the SQL client Perl module
+\file{DBD::mysql}, which can be installed with cpan (for this you need
+root privileges).
+
+Detailed information about the EnsEMBL libraries can be obtained on
+the EnsEMBL web site
+(\footnote{\url{http://www.ensembl.org/info/using/api/api\_installation.html}}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Installation
