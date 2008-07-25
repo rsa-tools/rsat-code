@@ -7,6 +7,7 @@ body {
 	text-align: justify;
 	background: #ffffff;
 	margin-right: 20px;
+	background: #0D73A7 url(images/bullet2-normal.gif) no-repeat 7px 7px;
 }
 
 body.info {
@@ -55,6 +56,11 @@ h2 {
 
 hr {
 	border: 1px dotted #2D282E;
+	height: 1px;
+}
+
+hr.solid {
+	border: 1px solid #2D282E;
 	height: 1px;
 }
 
@@ -302,7 +308,7 @@ table.nextstep {
 	width : 90%;
 	color: #2D282E;
 /*	border-spacing: px;*/
-/* 	background-color: #FFFFFF; */
+/*	background-color: #FF0000;*/
 	background-color: #D6EEFA;
 }
 
