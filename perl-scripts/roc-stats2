@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: roc-stats2,v 1.8 2008/02/25 10:15:02 rsat Exp $
+# $Id: roc-stats2,v 1.9 2008/07/29 19:43:15 jvanheld Exp $
 #
 ############################################################
 
@@ -25,12 +25,11 @@ validation labels (pos for positive, neg for negative) and computes,
 for each score value, the derived statistics (Sn, PPV, FPR), which can
 be further used to draw a ROC curve.
 
-=head1 AUTHOR
+=head1 AUTHORS
 
-Adapted from rekin's janky's program roc-stats by Jacques van Helden
-<jvanheld@scmbb.ulb.ac.be>
+=item Rekin' Janky <rekins@scmbb.ulb.ac.be>
 
-(this is a cross-validation)
+=item Jacques van Helden <jvhelden@ulb.ac.be>
 
 =head1 CATEGORY
 
