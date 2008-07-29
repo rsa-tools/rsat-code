@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.49 2008/07/25 05:55:20 jvanheld Exp $
+# $Id: compare-classes,v 1.50 2008/07/29 19:44:01 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -74,8 +74,8 @@ $supported_multi_cor = join (",", sort(keys (%supported_multi_cor)));
     'jac_sim'=>'jac_sim',
 
     'dotprod'=>'dotprod',
-    'dp_bits'=>'dotprod',
-    'log2_dp'=>'dotprod',
+    'rDPbits'=>'dotprod',
+    'DPbits'=>'dotprod',
     'sqrt_dp'=>'dotprod',
     'prodrts'=>'dotprod',
 
@@ -1490,8 +1490,8 @@ sub PrintHeader {
     ## Dot product
     if ($return_fields{dotprod}) {
       push @header_fields, "dotprod" ;
-      push @header_fields, "log2_dp" ;
-      push @header_fields, "dp_bits" ;
+      push @header_fields, "DPbits" ;
+      push @header_fields, "rDPbits" ;
       push @header_fields, "sqrt_dp" ;
       push @header_fields, "prodrts" ;
     }
@@ -2025,8 +2025,8 @@ sub DescribeFields {
     $field_description{'P(R|Q)'} = "Probability of R given Q. P(R|Q) = F(QR)/F(Q)";
     $field_description{'jac_sim'}  = "Jaccard' similarity. jac_sim = intersection/union = (Q and R)/(Q or R)";
     $field_description{'dotprod'}  = "Dot product (using the score column)";
-    $field_description{'log2_dp'}  = "Log2 of the dot product";
-    $field_description{'dp_bits'}  = "dp_bits = round(log2_dp). The log2 of the dot product is rounded to obtain an integer value";
+    $field_description{'DPbits'}  = "Log2 of the dot product";
+    $field_description{'rDPbits'}  = "rDPbits = round(DPbits). The log2 of the dot product is rounded to obtain an integer value";
     $field_description{'sqrt_dp'}  = "Square root of the dot product";
     $field_description{'prodrts'}  = "Sum of the sqrt of products. This is a sort of dot product but the sqrt of each pairwise product is taken before summing.";
     $field_description{'E(QR)'}  = "Expected number of elements in the intersection";
