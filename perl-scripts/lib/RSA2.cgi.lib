@@ -47,6 +47,7 @@ sub PrintOrthoSelectionSection {
 			       Saccharomyces_cerevisiae
 			       Salmonella_typhimurium_LT2
 			       Salmonella_typhi
+			       Yersinia_pestis_KIM
 			      );
 
   #### choice of the organism
