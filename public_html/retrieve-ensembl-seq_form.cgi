@@ -61,7 +61,16 @@ print $query->start_multipart_form(-action=>"retrieve-ensembl-seq.cgi");
 #### Query organism list
 my @selected_organisms;
 
-my $dbh = DBI->connect("DBI:mysql:host=ensembldb.ensembl.org", "anonymous", "", {'RaiseError' => 1});
+eval {
+	my $dbh = DBI->connect("DBI:mysql:host=ensembldb.ensembl.org;mysql_connect_timeout=10", "anonymous", "", {'RaiseError' => 1});
+};
+
+if ($@) {
+	print "<p><font size=2 color=red>No answer from the EnsEMBL database ; server may be down. Try again later...</font></p>".$query->end_html;
+	exit(0);
+} else {
+
+my $dbh = DBI->connect("DBI:mysql:host=ensembldb.ensembl.org", "anonymous", "", {'RaiseError' => 0});
 my $sth = $dbh->prepare("SHOW DATABASES");
 $sth->execute();
 my $previous_org = "bogus";
@@ -288,4 +297,4 @@ print "</TR></TABLE></UL></UL>\n";
 print $query->end_html;
 
 exit(0);
-
+}
