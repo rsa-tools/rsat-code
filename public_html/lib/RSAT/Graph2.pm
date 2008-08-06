@@ -1747,7 +1747,7 @@ sub load_from_gml {
           my @label_cp = split /.*label /, $node;
           $node_label = $label_cp[1];
           $node_label = substr($node_label, 1, index($node_label, "\" "));
-          $node_label =~ s/\"//;
+          $node_label =~ s/\"$//;
         }
         if ($self->{seed_nodes} && !$self->{seed_index}->{$node_label}) {
           $discarded_nodes{$node_id}++;
@@ -1831,7 +1831,7 @@ sub load_from_gml {
           my @label_cp = split /.*label /, $edge;
           $label_edge = $label_cp[1];
           $label_edge = substr($label_edge,1, index($label_edge, "\" "));
-          $label_edge =~ s/\"//;
+          $label_edge =~ s/\"$//;
         }
 # COLOR EDGE
         if ($edge =~ /fill/) {
