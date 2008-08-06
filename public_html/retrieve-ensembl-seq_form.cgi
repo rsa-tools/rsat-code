@@ -35,6 +35,7 @@ $default{single_multi_org} = "single";
 # $default{org_col} = 2;
 $default{taxon_selection} = "";
 $default{homology_selection} = "";
+$default{header_org} = "scientific";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -199,7 +200,7 @@ print "<BR/>\n";
 print $query->checkbox(-name=>'alltranscripts',
   		       -checked=>$default{alltranscripts},
   		       -label=>'');
-print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#alltranscripts'><B>Retrieve sequence relative to each alternative transcript (with mRNA reference)</B></A>";
+print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#alltranscripts'><B>Retrieve sequence relative to each alternative transcript (with mRNA feature type)</B></A>";
 print "<BR>\n";
 
 ### sequence type
@@ -256,6 +257,13 @@ print $query->checkbox(-name=>'maskcoding',
   		       -checked=>$default{maskcoding},
   		       -label=>'');
 print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#maskcoding'><B>Mask coding sequences</B></A>";
+print "<BR>\n";
+
+### Organism in header
+print "<B><A HREF='help.retrieve-ensembl-seq.html#header_org'>Organism name in sequence header</A></B>&nbsp;";
+print $query->popup_menu(-name=>'header_org',
+			 -Values=>['scientific','common','none'],
+			 -default=>$default{prevent_overlap});
 print "<BR>\n";
 
 ### send results by email or display on the browser
