@@ -338,7 +338,7 @@ sub retrieve_ensembl_seq {
   my $type = $args{"type"};
 # my $format = $args{"format"};
   my $all = $args{"all"};
-  my $lw = $args{"lw"};
+  my $lw = $args{"line_width"};
 # my $label = $args{"label"};
 # my $label_sep = $args{"label_sep"};
 # my $nocom = $args{"nocom"};
@@ -354,6 +354,7 @@ sub retrieve_ensembl_seq {
   my $ortho = $args{"ortho"};
   my $taxon = $args{"taxon"};
   my $homology_type = $args{"homology_type"};
+  my $header_org = $args{"header_organism"};
 
   if ($args{"features"}) {
     my $features = $args{"features"};
@@ -529,6 +530,12 @@ sub retrieve_ensembl_seq {
 	$homology_type =~ s/\'//g;
 	$homology_type =~ s/\"//g;
 	$command .= " -ortho_type '".$homology_type."'";
+    }
+
+    if ($header_org) {
+	$header_org =~ s/\'//g;
+	$header_org =~ s/\"//g;
+	$command .= " -header_org '".$header_org."'";
     }
 
 #    if ($imp_pos == 1) {
