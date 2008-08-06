@@ -359,6 +359,12 @@ Default is 'both'.</xsd:documentation>
               <xsd:documentation>Filter on homology type when collecting orthologs (e.g. ortholog_one2one)</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
+	  <xsd:element name="header_organism" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Type of organism name to use in the fasta header (scientific, common or none).
+                                 Default is scientific. Common name is only accessible with -ortho.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
 
