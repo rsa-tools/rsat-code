@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.36 2008/07/29 19:44:31 jvanheld Exp $
+# $Id: get-orthologs,v 1.37 2008/08/06 07:06:06 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -79,6 +79,7 @@ query gene for this pair of organisms.
 
 =item 6. s_rank	reference <- query rank
 
+Reciprocal rank.
 Rank of this query gene among all those matching the same reference
 (target) gene for this pair of organisms.
 
