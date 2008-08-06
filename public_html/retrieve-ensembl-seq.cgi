@@ -156,6 +156,12 @@ if (lc($query->param('maskcoding')) eq "on") {
     $mask_coding = 1;
 }
 
+### header organism name
+my $header_org = '';
+if ($query->param('header_org')) {
+    $header_org = $query->param('header_org');
+}
+
 ### Line width
 my $lw = 60;
 
@@ -176,10 +182,11 @@ my %args = (
             'type' => $sequence_type,
             'repeat' => $rm,
             'mask_coding' => $mask_coding,
-#            'line_width' => $lw,
+            'line_width' => $lw,
             'ortho' => $ortho,
             'taxon' => $taxon,
-            'homology_type' => $homology_type
+            'homology_type' => $homology_type,
+            'header_organism' => $header_org
     );
 
 #### execute the command #####
