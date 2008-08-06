@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.32 2008/07/23 16:22:13 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.33 2008/08/06 14:49:34 rsat Exp $
 #
 # Time-stamp
 #
@@ -68,6 +68,8 @@ package main;
   local $taxon;
 
   local $common_name = '';
+  local $header = 'scientific';
+  local $header_org = '';
 
   ## Connection to the EnsEMBL MYSQL database
   local $ensembl_host = $ENV{ensembl_host};
@@ -204,7 +206,13 @@ package main;
       $rsat_strand = "R";
     }
 
-    my $fasta_header = ">$org-$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand";
+    if ($header eq 'none') {
+	$header_org = '';
+    } else {
+	$header_org = $org."-";
+    }
+
+    my $fasta_header = ">$header_org$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand";
 
     &PrintSequence($sequence, $fasta_header);
 
@@ -247,10 +255,16 @@ package main;
 	$rsat_strand = "R";
       }
 
-      if ($ft_id) {
-	  $fasta_header = ">$org-$ft_id\t$ft_id; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand";
+      if ($header eq 'none') {
+	  $header_org = '';
       } else {
-	  $fasta_header = ">$org-$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand";
+	  $header_org = $org."-";
+      }
+
+      if ($ft_id) {
+	  $fasta_header = ">$header_org$ft_id\t$ft_id; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand";
+      } else {
+	  $fasta_header = ">$header_org$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand";
       }
 
       &PrintSequence($sequence, $fasta_header);
@@ -488,6 +502,10 @@ sub ReadArguments {
       ### Homologs table
   } elsif ($ARGV[$a] eq "-homologs_table") {
       $homologs_table  = $ARGV[$a+1];
+
+      ### Header organism
+  }  elsif ($ARGV[$a] eq "-header_org") {
+      $header  = $ARGV[$a+1];
   }
 }
 }
@@ -516,6 +534,14 @@ sub Main {
 
   unless ($common_name) {
       $common_name = $main_org;
+  }
+
+  if ($header eq 'common') {
+      $header_org = $common_name."-";
+  } elsif ($header eq 'scientific') {
+      $header_org = $main_org."-";
+  } elsif ($header eq 'none') {
+      $header_org = '';
   }
 
   local $chromosome = $gene -> slice;
@@ -549,7 +575,7 @@ sub Main {
     $sequence = &GetSequence($left, $right);
     my $size = $new_to - $new_from + 1;
 
-    my $fasta_header = ">$common_name-$gene_id\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+    my $fasta_header = ">$header_org$gene_id\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
 
     &PrintSequence ($sequence, $fasta_header);
 
@@ -602,7 +628,7 @@ sub Main {
 	$sequence = &GetSequence($left, $right);
 	my $size = $new_to - $new_from + 1;
 
-	my $fasta_header = ">$common_name-$gene_id-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+	my $fasta_header = ">$header_org$gene_id-$transcript_id\t$gene_id-$transcript_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
 
 	&PrintSequence ($sequence, $fasta_header);
       }
@@ -651,7 +677,7 @@ sub Main {
 	    $sequence = &GetSequence($intron -> start(), $intron -> end());
 	    my $size = ($intron -> end() - $intron -> start()) + 1;
 
-	    my $fasta_header = ">$common_name-$gene_id-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand";
+	    my $fasta_header = ">$header_org$gene_id-$transcript_id-$i\t$gene_id-$transcript_id-$i; from 1 to $size; size: $size; location: $chromosome_name $intron_start $intron_end $rsat_strand";
 
 	    &PrintSequence ($sequence, $fasta_header);
 	  }
@@ -666,7 +692,7 @@ sub Main {
 	  $sequence = &GetSequence($start1, $end1);
 	  my $size = ($end1 - $start1) + 1;
 
-	  my $fasta_header = ">$common_name-$gene_id-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand";
+	  my $fasta_header = ">$header_org$gene_id-$intron1_id\t$gene_id-$intron1_id; from 1 to $size; size: $size; location: $chromosome_name $start1 $end1 $rsat_strand";
 
 	  &PrintSequence ($sequence, $fasta_header);
 	}
@@ -695,7 +721,7 @@ sub Main {
 	      my $non_coding_exon_right = $coding_region_start - 1;
 	      my $size = $coding_region_start - $exon -> start();
 
-	      my $fasta_header = ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand";
+	      my $fasta_header = ">$header_org$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $non_coding_exon_right $rsat_strand";
 
 	      &PrintSequence ($sequence, $fasta_header);
 
@@ -704,7 +730,7 @@ sub Main {
 	      my $non_coding_exon_left = $coding_region_end + 1;
 	      my $size = $exon -> end() - $coding_region_end;
 
-	      my $fasta_header = ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand";
+	      my $fasta_header = ">$header_org$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $non_coding_exon_left $exon_end $rsat_strand";
 
 	      &PrintSequence ($sequence, $fasta_header);
 
@@ -712,7 +738,7 @@ sub Main {
 	      $sequence = &GetSequence($exon -> start(), $exon -> end());
 	      my $size = ($exon -> end() - $exon -> start()) + 1;
 
-	      my $fasta_header = ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
+	      my $fasta_header = ">$header_org$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
 
 	      &PrintSequence ($sequence, $fasta_header);
 
@@ -720,7 +746,7 @@ sub Main {
 	      $sequence = &GetSequence($exon -> start(), $exon -> end());
 	      my $size = ($exon -> end() - $exon -> start()) + 1;
 
-	      my $fasta_header = ">$common_name-$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
+	      my $fasta_header = ">$header_org$gene_id-$exon_id-non_coding\t$gene_id-$exon_id-non_coding; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
 
 	      &PrintSequence ($sequence, $fasta_header);
 	    }
@@ -728,7 +754,7 @@ sub Main {
 	    $sequence = &GetSequence($exon -> start(), $exon -> end());
 	    my $size = ($exon -> end() - $exon -> start()) + 1;
 
-	    my $fasta_header = ">$common_name-$gene_id-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
+	    my $fasta_header = ">$header_org$gene_id-$exon_id\t$gene_id-$exon_id; from 1 to $size; size: $size; location: $chromosome_name $exon_start $exon_end $rsat_strand";
 
 	    &PrintSequence ($sequence, $fasta_header);
 	  }
@@ -757,11 +783,11 @@ sub Main {
 	my $utr5_size = $utr5_end - $utr5_start + 1;
 	my $utr3_size = $utr3_end - $utr3_start + 1;
 
-	my $utr5_fasta_header = ">$common_name-$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_start $rsat_strand";
+	my $utr5_fasta_header = ">$header_org$gene_id-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_start $rsat_strand";
 
 	&PrintSequence ($utr5_sequence, $utr5_fasta_header);
 
-	my $utr3_fasta_header = ">$common_name-$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_start $rsat_strand";
+	my $utr3_fasta_header = ">$header_org$gene_id-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_start $rsat_strand";
 	
 	&PrintSequence ($utr3_sequence, $utr3_fasta_header);
       }
@@ -775,7 +801,7 @@ sub Main {
 	my $size = $new_to - $new_from + 1;
 	my $cds_id = $transcript -> translation() -> stable_id();
 
-	my $fasta_header = ">$common_name-$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+	my $fasta_header = ">$header_org$gene_id-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
 
 	&PrintSequence ($sequence, $fasta_header);
       }
@@ -803,7 +829,7 @@ sub Main {
 	$ref_transcript = $five_primest_id;
       }
 
-      my $fasta_header = ">$common_name-$gene_id-$ref_transcript\t$gene_id-$ref_transcript; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+      my $fasta_header = ">$header_org$gene_id-$ref_transcript\t$gene_id-$ref_transcript; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
 
       &PrintSequence ($sequence, $fasta_header);
     }
@@ -1388,6 +1414,9 @@ OPTIONS
 
         -taxon Taxon  Filter on taxonomic level (example: Mammalia)
 
+	-header_org   Type of organism name to use in the fasta header (scientific, common or none).
+		      Default is scientific. Common name is only accessible with -ortho.
+
 End_help
     close HELP;
     exit;
@@ -1427,6 +1456,7 @@ retrieve-seq options
 -ortho_type     homology type to filter on
 -homologs_table file on which to print homology info
 -taxon          taxonomic level to filter on
+-header_org     type of organism name to use in the fasta header (common, scientific or none)
 
 End_short_help
   close HELP;
