@@ -28,6 +28,7 @@ $default{genes} = "selection";
 $default{gene_selection} = "";
 $default{sequence_type} = "upstream";
 $default{feattype} = "mRNA";
+$default{feature} = "gene";
 $default{alltranscripts} = "";
 $default{single_multi_org} = "single";
 # $default{ids_only} = "";
@@ -189,24 +190,25 @@ print $query->filefield(-name=>'uploaded_file',
 print "</UL>\n";
 print "<BR/>\n";
 
-#### Reference feature
-print "<B><A HREF='help.retrieve-seq.html#feattype'>Feature type</A></B>&nbsp;";
-print $query->radio_group(-name=>'feattype',
-			  -values=>['gene','mRNA','CDS','introns','first intron','exons','non-coding exons','UTR'],
-			  -default=>$default{feattype});
-print "<BR/>\n";
+print "<P><B>Choose the type of sequence to retrieve:</B></P>";
 
-### All transcripts
-print $query->checkbox(-name=>'alltranscripts',
-  		       -checked=>$default{alltranscripts},
-  		       -label=>'');
-print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#alltranscripts'><B>Retrieve sequence relative to each alternative transcript (with mRNA feature type)</B></A>";
-print "<BR>\n";
+print "<TABLE border=1>\n";
+print "<TR align='center'>\n";
+print "<TD>\n";
+print "<B>Upstream or downstream sequence</B>";
+print "</TD>\n";
+print "<TD>\n";
+print "<B>Feature sequence</B>";
+print "</TD>\n";
+print "</TR>\n";
+print "<TR valign='top'>\n";
+print "<TD>\n";
+
 
 ### sequence type
 print "<B><A HREF='help.retrieve-ensembl-seq.html#sequence_type'>Sequence type</A></B>&nbsp;";
 print $query->popup_menu(-name=>'sequence_type',
-			 -Values=>['upstream','downstream', 'selected feature'],
+			 -Values=>['upstream','downstream'],
 			 -default=>$default{sequence_type});
 print "&nbsp;"x4;
 
@@ -223,8 +225,22 @@ print $query->textfield(-name=>'to',
 			-size=>5);
 print "<BR>\n";
 
+#### Reference feature
+print "<B><A HREF='help.retrieve-seq.html#feattype'>Relative to feature</A></B>&nbsp;";
+print $query->radio_group(-name=>'feattype',
+			  -values=>['gene','mRNA','CDS'],
+			  -default=>$default{feattype});
+print "<BR/>\n";
+
+### All transcripts
+print $query->checkbox(-name=>'alltranscripts',
+  		       -checked=>$default{alltranscripts},
+  		       -label=>'');
+print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#alltranscripts'><B>Retrieve sequence relative to each alternative transcript (with mRNA feature)</B></A>";
+print "<BR>\n";
+
 ### prevent overlap
-print "<B><A HREF='help.retrieve-ensembl-seq.html#prevent_overlap'>Prevent overlap with</A></B>&nbsp;";
+print "<B><A HREF='help.retrieve-ensembl-seq.html#prevent_overlap'>Prevent overlap with neighbouring</A></B>&nbsp;";
 print $query->popup_menu(-name=>'prevent_overlap',
 			 -Values=>['none','ORF','gene'],
 			 -default=>$default{prevent_overlap});
@@ -243,6 +259,21 @@ print "<BR>\n";
 #  		       -label=>'');
 #print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#nogene'><B>Prevent overlap with neighbour genes (nogene)</B></A>";
 #print "<BR>\n";
+
+print "</TD>\n";
+
+print "<TD>\n";
+
+#### Feature to retrieve
+print "<B><A HREF='help.retrieve-seq.html#feature'>Feature to retrieve</A></B>&nbsp;";
+print $query->popup_menu(-name=>'feature',
+			  -values=>['gene','introns','first intron','exons','non-coding exons','UTR'],
+			  -default=>$default{feature});
+print "<BR/>\n";
+print "</TD>\n";
+
+print "</TR>\n";
+print "</TABLE>\n";
 
 ### Repeat masking
 print $query->checkbox(-name=>'rm',
