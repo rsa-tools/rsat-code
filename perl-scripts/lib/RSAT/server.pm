@@ -134,6 +134,7 @@ sub ReadProperties {
 	  my $value = $'; #'
 	  my $key = $`; #`
 	  $ENV{$key} = $value;
+	  $server::config{$key} = $value;
 	  #        &RSAT::message::Info("Site config", sprintf("%-15s\t%s\t%s", $key, $ENV{$key})) if ($main::verbose >= 10);
 	}
       }
