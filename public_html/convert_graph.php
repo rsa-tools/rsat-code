@@ -54,7 +54,12 @@
   } 
 
   $undirected = $_REQUEST['undirected'];
-  $directed = !$undirected;
+  if ($undirected == 'on') {
+    $undirected = 1;
+    $directed = 0;
+  }
+
+
   $s_col = $_REQUEST['s_col'];
   $t_col = $_REQUEST['t_col'];
   $w_col = $_REQUEST['w_col'];
