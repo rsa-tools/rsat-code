@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.33 2008/08/06 14:49:34 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.34 2008/08/07 14:25:00 rsat Exp $
 #
 # Time-stamp
 #
@@ -569,13 +569,21 @@ sub Main {
   &RSAT::message::Info (join("\t", $gene_id, $gene_name, $chromosome_name, $gene_start, $gene_end, $rsat_strand, $description)) if ($main::verbose >= 1);
 
   if ($feattype eq "gene") {
-    my ($left, $right) = &GetLimits($gene_id, $gene_start, $gene_end);
+      my $sequence;
+      my $fasta_header;
+      my $size;
+      if ($type eq "feature") {
+	  $sequence = &GetSequence($gene_start, $gene_end);
+	  $size = $gene_end - $gene_start + 1;
+	  $fasta_header = ">$header_org$gene_id-$gene_name\t$gene_id; size: $size; location: $chromosome_name $gene_start $gene_end $rsat_strand";
+      } else {
+	  my ($left, $right) = &GetLimits($gene_id, $gene_start, $gene_end);
 
-    # Get sequence (repeat masked or not)
-    $sequence = &GetSequence($left, $right);
-    my $size = $new_to - $new_from + 1;
-
-    my $fasta_header = ">$header_org$gene_id\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+	  # Get sequence (repeat masked or not)
+	  $sequence = &GetSequence($left, $right);
+	  $size = $new_to - $new_from + 1;
+	  $fasta_header = ">$header_org$gene_id-$gene_name\t$gene_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+      }
 
     &PrintSequence ($sequence, $fasta_header);
 
