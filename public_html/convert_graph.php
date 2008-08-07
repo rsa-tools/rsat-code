@@ -105,13 +105,13 @@
   }
   
   if (!$error) { 
-  
+//       echo ("<pre>$graph</pre>");
     $graph = trim_text($graph);
     if ($in_format != "path") {
       $graph = space_to_tab($graph);
     }
     
-//     echo ("<pre>$graph</pre>");
+
     ## Load the parameters of the program in to an array
     $parameters = array( 
       "request" => array(

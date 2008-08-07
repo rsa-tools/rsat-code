@@ -100,7 +100,7 @@ Function trim_text($text) {
    $lines = explode("\n",$text);
    $array_count = count($lines);
    for($y=0; $y<$array_count; $y++) {
-     $trimmed_text .= trim($lines[$y])."\n";
+     $trimmed_text .= rtrim($lines[$y])."\n";
    }
    return $trimmed_text;
 }
