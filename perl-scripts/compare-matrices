@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.25 2008/06/27 05:38:07 jvanheld Exp $
+# $Id: compare-matrices,v 1.26 2008/08/07 13:02:55 jvanheld Exp $
 #
 ############################################################
 
@@ -243,7 +243,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -301,7 +301,7 @@ package main;
   $supported_input_formats = join ",", sort keys %supported_input_format;
   local $input_format1 = "";
   local $input_format2 = "";
-  local $strands = "D";
+  local $strands = "DR";
 
   ################################################################
   ## Read argument values
@@ -371,6 +371,13 @@ package main;
 
   ################################################################
   ## Reverse complements
+
+  ## TEMPORARY: if the comparison is DR, te input file 1 is read
+  ## twice: the first reading is converted to reverse complement, and
+  ## the second reading used for direct "strand". This should be
+  ## changed because it means that the R and D comparisons are
+  ## considered as separate comparisons, and the score ranking applies
+  ## to them separately rather than altogether.
   if ($strands =~ /R/) {
     &RSAT::message::Info("Computing reverse complement for the matrices of the first file.") if ($main::verbose >= 0);
     foreach my $matrix (@matrices2) {
@@ -924,37 +931,59 @@ allows to use the command within a pipe.
 Perform comparisons on both direct (D) and reverse complementary (R)
 matrices.
 
+This is the default option for matrix orientations.
+
 =cut
 	} elsif ($arg eq "-DR") {
 	    $main::strands = "DR";
 
-=pod
-
-=item B<-R>
-
-Perform comparisons on the reverse complementary (R) "strand" only
-
-(all matrices of the second matrix file are converted to the reverse
-complementary matrix).
-
-This option is useful to detect reverse complementary palindromic
-motifs (e.g. motif with consensus tCAGswwsGTGa): the corresponding
-matrix is correlated to its own reverse complement.
-
-=cut
-	} elsif ($arg eq "-R") {
-	    $main::strands = "R";
 
 =pod
 
 =item B<-D>
 
-Perform comparisons on the direct (D) strand only.
+Perform comparisons on the direct (D) orientation only (the reverse
+complementary matrices are not taken into consideration).
+
+By default, comparisons are performed in both orientations.
 
 =cut
 	} elsif ($arg eq "-D") {
 	    $main::strands = "D";
 
+=pod
+
+=item B<-R>
+
+Perform comparisons on the reverse complementary (R) orientation only
+(all matrices of the second matrix file are converted to the reverse
+complementary matrix, and their original orientation is NOT taken into
+consideration).
+
+This option is useful to answer very particular questions, for example
+to detect reverse complementary palindromic motifs (e.g., a motif with
+consensus tCAGswwsGTGa is reverse complementary palindromic). When a
+motif is reverse complementary palindromic, the matrix is correlated
+to its own reverse complement.
+
+I<Remark about a frequent misconception of biological palindromes>
+
+Reverse complementary palindroms are frequent in DNA signals
+(e.g. transcription factor binding sites, restriction sites, ...)
+because they correspond to a rotational symmetry in the 3D
+structure. Such symmetrical motifs are often characteristic of sites
+recognized by homodimeric complexes.
+
+By contrast, simple string-based palindromes (e.g. CAGTTGAC) have
+absolutely no special interest in molecular biology because they are
+not symmetrical with any respect. The apparent symetry is an artifact
+of the string representation, but the corresponding molecule has
+neither rotational nor translational symmetry.
+
+
+=cut
+	} elsif ($arg eq "-R") {
+	    $main::strands = "R";
 
 	## Sort field
 =pod
