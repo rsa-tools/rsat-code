@@ -98,10 +98,15 @@ if ($query->param('uploaded_file')) {
 
 ### feature type
 my $feattype = '';
-my $first_intron = 0;
-my $non_coding = 0;
 if ($query->param('feattype')) {
     $feattype = $query->param('feattype');
+}
+
+### feature
+my $first_intron = 0;
+my $non_coding = 0;
+if ($query->param('feature')) {
+    $feattype = $query->param('feature');
     if ($feattype eq 'first intron') {
 	$feattype = 'intron';
 	$first_intron = 1;
