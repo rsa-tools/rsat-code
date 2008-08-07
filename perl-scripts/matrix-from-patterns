@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.11 2008/07/06 19:51:20 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.12 2008/08/07 13:35:58 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -21,7 +21,7 @@ Extract one or several position-specific scoring matrices (PSSM) from
 a set of sequences, using a seeds a set of patterns (the output of
 oligo-analysis or dyad-analysis).
 
-The program proceeds in two steps: 
+The program proceeds in two steps:
 
 1) A B<significance matrix> is built by assembling the patterns (with
 I<pattern assembly>), and converting each assembly to a
@@ -125,7 +125,9 @@ package main;
 
     ## Parameters for matrix-scan
     local $seq_format = "fasta";
-    local $scan_parameters = " -uth Pval 1e-4";
+    local %uth;
+    $uth{Pval} = 1e-4;
+    local $scan_parameters = "";
 
     ## Parameters for the &doit() command
     $dry = 0;
@@ -139,6 +141,11 @@ package main;
 
     ################################################################
     ## Check argument values
+
+    ## matrix-scan parameters
+    unless ($scan_parameters) {
+      $scan_parameters = " -uth Pval ".$uth{Pval};
+    }
 
     ## The output prefix is mandatory
     &RSAT::error::FatalError("You must specify the output prefix (option -o)")
@@ -444,10 +451,23 @@ Export the sequence logos representing the count matrix.
 
 =pod
 
-=item B<all other arguments>
+=item B<-scan_param>
 
-All other arguments are passed to matrix-scan (which will raise an
-error if these arguments are not supported).
+The next argument is passed to matrix-scan (this will raise an error
+if these arguments are not supported).
+
+Example:
+  -scan_param '-uth Pval 1e-3 -uth rank 40'
+will only return the 40 top ranking sites, with a maximal Pvalue of
+1e-3.
+
+Any other parameter supported by matrix-scan can be passed in the same
+way. The option can be used iteratively on a command line to add up
+various parameters. Example:
+  -scan_param '-uth Pval 1e-3' -scan_param '-uth rank 40' [...]
+
+If not parameters are specified, the Pval is set to 1e-4 by default,
+without limit on the number of sites.
 
 =cut
 	} else {
