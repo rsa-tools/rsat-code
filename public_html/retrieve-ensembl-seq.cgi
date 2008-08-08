@@ -102,24 +102,39 @@ if ($query->param('feattype')) {
     $feattype = $query->param('feattype');
 }
 
-### feature
-my $first_intron = 0;
-my $non_coding = 0;
-if ($query->param('feature')) {
-    $feattype = $query->param('feature');
-    if ($feattype eq 'first intron') {
-	$feattype = 'intron';
-	$first_intron = 1;
-    } elsif ($feattype eq 'non-coding exon') {
-	$feattype = 'exon';
-	$non_coding = 1;
-    }
-}
-
 ### sequence type
 my $sequence_type = '';
 if ($query->param('sequence_type')) {
     $sequence_type = $query->param('sequence_type');
+}
+
+### feature
+my $feature = '';
+my $first_intron = 0;
+my $non_coding = 0;
+if ($query->param('feature')) {
+    $feature = $query->param('feature');
+    if ($feature eq 'gene') {
+	$feattype = 'gene';
+	$sequence_type = 'feature';
+    } elsif ($feature eq 'intron') {
+	$feattype = 'intron';
+	$sequence_type = 'feature';
+    } elsif ($feature eq 'first intron') {
+	$feattype = 'intron';
+	$sequence_type = 'feature';
+	$first_intron = 1;
+    } elsif ($feature eq 'exon') {
+	$feattype = 'exon';
+	$sequence_type = 'feature';
+    } elsif ($feature eq 'non-coding exon') {
+	$feattype = 'exon';
+	$sequence_type = 'feature';
+	$non_coding = 1;
+    } elsif ($feature eq 'UTR') {
+	$feattype = 'utr';
+	$sequence_type = 'feature';
+    }
 }
 
 ### all transcripts
