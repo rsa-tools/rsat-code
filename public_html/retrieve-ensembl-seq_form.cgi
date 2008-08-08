@@ -28,7 +28,7 @@ $default{genes} = "selection";
 $default{gene_selection} = "";
 $default{sequence_type} = "upstream";
 $default{feattype} = "mRNA";
-$default{feature} = "gene";
+$default{feature} = "";
 $default{alltranscripts} = "";
 $default{single_multi_org} = "single";
 # $default{ids_only} = "";
@@ -54,9 +54,7 @@ print "Returns upstream, downstream, intronic, exonic or UTR sequences for a lis
 print "Program developed by <A HREF='mailto:oly\@bigre.ulb.ac.be (Olivier Sand)'>Olivier Sand</A> with the help of <A HREF='mailto:morgane\@bigre.ulb.ac.be (Morgane Thomas-Chollier)'>Morgane Thomas-Chollier</A><P>";
 print "</CENTER>";
 
-
 print $query->start_multipart_form(-action=>"retrieve-ensembl-seq.cgi");
-
 
 #print "<FONT FACE='Helvetica'>";
 
@@ -192,9 +190,9 @@ print "<BR/>\n";
 
 print "<P><B>Choose the type of sequence to retrieve:</B></P>";
 
-print "<TABLE border=1>\n";
+print "<TABLE class='simpleform'>\n";
 print "<TR align='center'>\n";
-print "<TD>\n";
+print "<TD class='left'>\n";
 print "<B>Upstream or downstream sequence</B>";
 print "</TD>\n";
 print "<TD>\n";
@@ -202,7 +200,7 @@ print "<B>Feature sequence</B>";
 print "</TD>\n";
 print "</TR>\n";
 print "<TR valign='top'>\n";
-print "<TD>\n";
+print "<TD class='left'>\n";
 
 
 ### sequence type
@@ -267,7 +265,7 @@ print "<TD>\n";
 #### Feature to retrieve
 print "<B><A HREF='help.retrieve-seq.html#feature'>Feature to retrieve</A></B>&nbsp;";
 print $query->popup_menu(-name=>'feature',
-			  -values=>['gene','introns','first intron','exons','non-coding exons','UTR'],
+			  -values=>['','gene','introns','first intron','exons','non-coding exons','UTR'],
 			  -default=>$default{feature});
 print "<BR/>\n";
 print "</TD>\n";
