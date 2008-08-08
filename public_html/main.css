@@ -384,16 +384,20 @@ div#serverlist {
 table.simpleform {
 	margin: 10px 20px 20px;
 	#color: #333333;
-	border-left: 1px solid #cbcbb4;
-	border-top: 1px solid #cbcbb4;
+#	border-left: 1px solid #cbcbb4;
+#	border-top: 1px solid #cbcbb4;
 	border-spacing: 0px;
 }
 
 table.simpleform td,table.simpleform th {
 	#font-size: 70%;
-	border-right: 1px solid #cbcbb4;
-	border-bottom: 1px solid #cbcbb4;
+#	border-right: 1px solid #cbcbb4;
+#	border-bottom: 1px solid #cbcbb4;
 	padding: 2px 10px;
 	#background-color: #F6E6CA;
 }
 
+table.simpleform td.left {
+   border-right: 2px solid #cbcbb4;
+   padding: 2px 10px;
+}
