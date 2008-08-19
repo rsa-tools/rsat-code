@@ -598,12 +598,12 @@ In some other cases, one would also like to detect patterns absent from the sequ
 This is the function of the option -zeroocc.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="lth" type="xsd:string" minOccurs="unbounded">
+	<xsd:element name="lth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
 	  <xsd:annotation>
 	    <xsd:documentation>Lower threshold on some parameters. Format=list of 'parameter value'.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="uth" type="xsd:string" minOccurs="unbounded">
+	<xsd:element name="uth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
 	  <xsd:annotation>
 	    <xsd:documentation>Upper threshold on some parameter. Format=list of 'parameter value'.</xsd:documentation>
 	  </xsd:annotation>
@@ -1028,12 +1028,12 @@ Default is 'both'.</xsd:documentation>
 	      <xsd:documentation>Generate an HTML index with links to the result files. This option is used for the web interface, but can also be convenient to index results, especially when several genes or taxa are analyzed (options -genes, -all_genes, -all_taxa).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="lth" type="xsd:string" minOccurs="unbounded">
+	  <xsd:element name="lth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
 	    <xsd:annotation>
 	      <xsd:documentation>Lower threshold on some parameters. Format: parameter value.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="uth" type="xsd:string" minOccurs="unbounded">
+	  <xsd:element name="uth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
 	    <xsd:annotation>
 	      <xsd:documentation>Upper threshold on some parameters. Format: parameter value.</xsd:documentation>
 	    </xsd:annotation>
@@ -1167,12 +1167,12 @@ Default is 'both'.</xsd:documentation>
             -return query_id,e_value,rank</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="lth" type="xsd:string" minOccurs="unbounded">
+	  <xsd:element name="lth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
 	    <xsd:annotation>
 	      <xsd:documentation>Lower threshold for dyad-analysis. Format: list of 'parameter value'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="uth" type="xsd:string" minOccurs="unbounded">
+	  <xsd:element name="uth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
 	    <xsd:annotation>
 	      <xsd:documentation>Upper threshold for dyad-analysis. Format: list of 'parameter value'.</xsd:documentation>
 	    </xsd:annotation>
