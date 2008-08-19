@@ -4640,15 +4640,18 @@ sub run_WS_command {
   print $TMP_OUT $result;
   close $TMP_OUT;
   if ($output_choice eq 'server') {
-    return SOAP::Data->name('response' => {'command' => $command,
-                                           'server' => $tmp_outfile});
+      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outfile),
+							       SOAP::Data->name('command' => $command)))
+	  ->attr({'xmlns' => ''});
   } elsif ($output_choice eq 'client') {
-    return SOAP::Data->name('response' => {'command' => $command,
-                                           'client' => $result});
+      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('command' => $command),
+							       SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
   } elsif ($output_choice eq 'both') {
-    return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-                                           'command' => $command,
-                                           'client' => $result});
+      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $tmp_outfile),
+							       SOAP::Data->name('command' => $command),
+							       SOAP::Data->name('client' => $result)))
+	  ->attr({'xmlns' => ''});
   }
 }
 
