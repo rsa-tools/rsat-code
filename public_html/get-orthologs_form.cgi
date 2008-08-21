@@ -31,7 +31,9 @@ my @output_fields = qw(ref_name
 		       gap_open
 		       e_value
 		       bit_sc
-		       rank);
+		       rank
+		       s_rank
+		     );
 my %field_description = ();
 $field_description{ref_name} = "Reference gene name";
 $field_description{query_name} = "Query gene name";
@@ -43,7 +45,7 @@ $field_description{gap_open} = "Number of gap openings";
 $field_description{e_value} = "E-value";
 $field_description{bit_sc} = "Bit score";
 $field_description{rank} = "Rank";
-#$field_description{s_rank} = "target rank";
+$field_description{s_rank} = "Reciprocal rank";
 
 
 ################################################################
