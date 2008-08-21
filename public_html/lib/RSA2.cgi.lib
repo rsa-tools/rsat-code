@@ -16,7 +16,7 @@ sub LoadGetOrthoDefault {
   $default{ortho_lth_ali_len} = 50;
   $default{ortho_uth_e_value} = 1e-5;
   $default{ortho_uth_rank} = 1;
-  #$default{ortho_uth_s_rank} = 1;
+  $default{ortho_uth_s_rank} = 1;
   $default{return_ident} = "checked";
   $default{return_ali_len} = "";
   $default{return_mismat} = "";
