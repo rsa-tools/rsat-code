@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.37 2008/08/06 07:06:06 jvanheld Exp $
+# $Id: get-orthologs,v 1.38 2008/08/22 17:22:43 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -315,13 +315,22 @@ package main;
     ## load the query organism
     foreach my $query (@main::query_genes) {
 	if ($feature_index->contains(uc($query))) {
-	    my $current_feature = $feature_index->get_first_value(uc($query));
+	  
+# 	    my $current_feature = $feature_index->get_first_value(uc($query));
+# 	    my $feature_id = $current_feature->get_attribute("id");
+# # 	    $is_query{uc($feature_id)} = $query;
+# 	    $is_query{$feature_id} = $query;
+# #	    $is_query{$feature_id)} = uc($query);
+# 	    $query_gene_id{$query} = $feature_id;
+	  
+	  # changed by RJ to allow multiple ids by gene name
+	  undef %saw;
+	  foreach my $current_feature ( grep(!$saw{$_}++, $feature_index->get_values(uc($query)))){
 	    my $feature_id = $current_feature->get_attribute("id");
-# 	    $is_query{uc($feature_id)} = $query;
 	    $is_query{$feature_id} = $query;
-#	    $is_query{$feature_id)} = uc($query);
-	    $query_gene_id{$query} = $feature_id;
-	    &RSAT::message::Warning("query gene", $query, $feature_id) if ($main::verbose >= 3); 
+	    push @{$query_gene_id{$query}}, $feature_id;
+	    &RSAT::message::Warning("query gene", $query, $feature_id) if ($main::verbose >= 3);
+	  }
 	} else {
 	    push @unknown_query_genes, $query;
 	    &RSAT::message::Warning(join("\t", "Unknown query gene", $query));
@@ -1091,7 +1100,7 @@ sub Verbose {
 	print $main::out join("\t", 
 			      ";",
 			      $query,
-			      $query_gene_id{$query}
+			      @{$query_gene_id{$query}}
 			     ), "\n";
       }
     }
