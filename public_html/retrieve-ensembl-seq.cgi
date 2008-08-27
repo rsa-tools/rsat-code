@@ -102,38 +102,41 @@ if ($query->param('feattype')) {
     $feattype = $query->param('feattype');
 }
 
-### sequence type
-my $sequence_type = '';
-if ($query->param('sequence_type')) {
-    $sequence_type = $query->param('sequence_type');
+### sequence position
+my $sequence_position = '';
+if ($query->param('sequence_position')) {
+    $sequence_position = $query->param('sequence_position');
 }
 
-### feature
-my $feature = '';
+### sequence type
+my $sequence_type = '';
+my $type = '';
 my $first_intron = 0;
 my $non_coding = 0;
-if ($query->param('feature')) {
-    $feature = $query->param('feature');
-    if ($feature eq 'gene') {
+if ($query->param('sequence_type')) {
+    $sequence_type = $query->param('sequence_type');
+    if ($sequence_type eq 'upstream/downstream') {
+	$type = $sequence_position;
+    } elsif ($sequence_type eq 'gene') {
 	$feattype = 'gene';
-	$sequence_type = 'feature';
-    } elsif ($feature eq 'intron') {
+	$type = 'feature';
+    } elsif ($sequence_type eq 'intron') {
 	$feattype = 'intron';
-	$sequence_type = 'feature';
-    } elsif ($feature eq 'first intron') {
+	$type = 'feature';
+    } elsif ($sequence_type eq 'first intron') {
 	$feattype = 'intron';
-	$sequence_type = 'feature';
+	$type = 'feature';
 	$first_intron = 1;
-    } elsif ($feature eq 'exon') {
+    } elsif ($sequence_type eq 'exon') {
 	$feattype = 'exon';
-	$sequence_type = 'feature';
-    } elsif ($feature eq 'non-coding exon') {
+	$type = 'feature';
+    } elsif ($sequence_type eq 'non-coding exon') {
 	$feattype = 'exon';
-	$sequence_type = 'feature';
+	$type = 'feature';
 	$non_coding = 1;
-    } elsif ($feature eq 'UTR') {
+    } elsif ($sequence_type eq 'UTR') {
 	$feattype = 'utr';
-	$sequence_type = 'feature';
+	$type = 'feature';
     }
 }
 
@@ -199,7 +202,7 @@ my %args = (
             'all_transcripts' => $all_transcripts,
             'first_intron' => $first_intron,
             'non_coding' => $non_coding,
-            'type' => $sequence_type,
+            'type' => $type,
             'repeat' => $rm,
             'mask_coding' => $mask_coding,
             'line_width' => $lw,
@@ -232,22 +235,23 @@ if (($query->param('output') =~ /display/i) ||
 
 	## Report the remote command
 	my $command = $results -> get_command();
+	$command =~ s|$ENV{RSAT}/perl-scripts/||;
 	print "Command used on the server: ".$command, "\n";
 	## Report the result
 	$server_file = $results -> get_server();
 	$result = $results -> get_client();
     }
 
-    print "<PRE>";
-    print $result;
-    print "</PRE>";
-
     if ($query->param('output') =~ /server/i) {
 	my $server_file_name = basename($server_file);
 	$result_URL = "$ENV{rsat_www}/tmp/$server_file_name";
-	print ("The result is available at the following URL: ", "\n<br>",
+	print ("<p>The result is available at the following URL: ", "\n",
 	       "<a href=${result_URL}>${result_URL}</a>",
 	       "<p>\n");
+    } elsif ($query->param('output') =~ /display/i) {
+	print "<PRE>";
+	print $result;
+	print "</PRE>";
     }
 
     ### prepare data for piping
