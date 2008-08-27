@@ -26,9 +26,9 @@ $default{from} = "-2000";
 $default{to} = "-1";
 $default{genes} = "selection";
 $default{gene_selection} = "";
-$default{sequence_type} = "upstream";
+$default{sequence_position} = "upstream";
 $default{feattype} = "mRNA";
-$default{feature} = "";
+$default{sequence_type} = "upstream/downstream";
 $default{alltranscripts} = "";
 $default{single_multi_org} = "single";
 # $default{ids_only} = "";
@@ -50,7 +50,7 @@ foreach $key (keys %default) {
 
 ### head
 print "<CENTER>";
-print "Returns upstream, downstream, intronic, exonic or UTR sequences for a list of genes from the EnsEMBL database. <P>\n";
+print "Returns upstream, downstream, intronic, exonic, UTR or gene sequences for a list of genes from the EnsEMBL database. <P>\n";
 print "Program developed by <A HREF='mailto:oly\@bigre.ulb.ac.be (Olivier Sand)'>Olivier Sand</A> with the help of <A HREF='mailto:morgane\@bigre.ulb.ac.be (Morgane Thomas-Chollier)'>Morgane Thomas-Chollier</A><P>";
 print "</CENTER>";
 
@@ -188,26 +188,59 @@ print $query->filefield(-name=>'uploaded_file',
 print "</UL>\n";
 print "<BR/>\n";
 
-print "<P><B>Choose the type of sequence to retrieve:</B></P>";
+# print "<P><B>Choose the type of sequence to retrieve:</B></P>";
 
 print "<TABLE class='simpleform'>\n";
 print "<TR align='center'>\n";
 print "<TD class='left'>\n";
-print "<B>Upstream or downstream sequence</B>";
+print "<B>Type of sequence to retrieve</B>";
 print "</TD>\n";
 print "<TD>\n";
-print "<B>Feature sequence</B>";
+print "<B>Options for upstream or downstream sequence</B>";
 print "</TD>\n";
 print "</TR>\n";
 print "<TR valign='top'>\n";
+
 print "<TD class='left'>\n";
 
-
-### sequence type
+#### Sequence to retrieve
 print "<B><A HREF='help.retrieve-ensembl-seq.html#sequence_type'>Sequence type</A></B>&nbsp;";
 print $query->popup_menu(-name=>'sequence_type',
+			  -values=>['upstream/downstream','gene','introns','first intron','exons','non-coding exons','UTR'],
+			  -default=>$default{sequence_type});
+print "<BR/>\n";
+
+### Repeat masking
+print $query->checkbox(-name=>'rm',
+  		       -checked=>$default{rm},
+  		       -label=>'');
+print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#rm'><B>Mask repeats</B></A>";
+print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#rm_list'><B>(only valid for organisms with annotated repeats)</B></A>";
+print "<BR>\n";
+
+### Mask coding
+print $query->checkbox(-name=>'maskcoding',
+  		       -checked=>$default{maskcoding},
+  		       -label=>'');
+print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#maskcoding'><B>Mask coding sequences</B></A>";
+print "<BR>\n";
+
+### Organism in header
+print "<B><A HREF='help.retrieve-ensembl-seq.html#header_org'>Organism name in sequence header</A></B>&nbsp;";
+print $query->popup_menu(-name=>'header_org',
+			 -Values=>['scientific','common','none'],
+			 -default=>$default{prevent_overlap});
+print "<BR>\n";
+
+print "</TD>\n";
+
+print "<TD>\n";
+
+### sequence position
+print "<B><A HREF='help.retrieve-ensembl-seq.html#sequence_position'>Sequence position</A></B>&nbsp;";
+print $query->popup_menu(-name=>'sequence_position',
 			 -Values=>['upstream','downstream'],
-			 -default=>$default{sequence_type});
+			 -default=>$default{sequence_position});
 print "&nbsp;"x4;
 
 ### from to
@@ -224,7 +257,7 @@ print $query->textfield(-name=>'to',
 print "<BR>\n";
 
 #### Reference feature
-print "<B><A HREF='help.retrieve-seq.html#feattype'>Relative to feature</A></B>&nbsp;";
+print "<B><A HREF='help.retrieve-ensembl-seq.html#feattype'>Relative to feature</A></B>&nbsp;";
 print $query->radio_group(-name=>'feattype',
 			  -values=>['gene','mRNA','CDS'],
 			  -default=>$default{feattype});
@@ -260,40 +293,8 @@ print "<BR>\n";
 
 print "</TD>\n";
 
-print "<TD>\n";
-
-#### Feature to retrieve
-print "<B><A HREF='help.retrieve-seq.html#feature'>Feature to retrieve</A></B>&nbsp;";
-print $query->popup_menu(-name=>'feature',
-			  -values=>['','gene','introns','first intron','exons','non-coding exons','UTR'],
-			  -default=>$default{feature});
-print "<BR/>\n";
-print "</TD>\n";
-
 print "</TR>\n";
 print "</TABLE>\n";
-
-### Repeat masking
-print $query->checkbox(-name=>'rm',
-  		       -checked=>$default{rm},
-  		       -label=>'');
-print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#rm'><B>Mask repeats</B></A>";
-print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#rm_list'><B>(only valid for organisms with annotated repeats)</B></A>";
-print "<BR>\n";
-
-### Mask coding
-print $query->checkbox(-name=>'maskcoding',
-  		       -checked=>$default{maskcoding},
-  		       -label=>'');
-print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#maskcoding'><B>Mask coding sequences</B></A>";
-print "<BR>\n";
-
-### Organism in header
-print "<B><A HREF='help.retrieve-ensembl-seq.html#header_org'>Organism name in sequence header</A></B>&nbsp;";
-print $query->popup_menu(-name=>'header_org',
-			 -Values=>['scientific','common','none'],
-			 -default=>$default{prevent_overlap});
-print "<BR>\n";
 
 ### send results by email or display on the browser
 &SelectOutput("server");
