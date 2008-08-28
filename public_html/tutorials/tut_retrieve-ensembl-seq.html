@@ -1,0 +1,127 @@
+<html>
+<head>
+   <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <title>RSA-tools - tutorials - retrieve-ensembl-seq</title>
+<link rel="stylesheet" type="text/css" href = "../main.css" media="screen">
+</head>
+<body class="info">
+<blockquote>
+
+
+<center>
+<h2><a href="../RSAT_home.cgi">RSA-tools</a> - 
+<a href="tutorials.html">Tutorials</a> - 
+<a href="../retrieve-ensembl-seq_form.cgi">retrieve-ensembl-seq</a>
+</h2>
+</center>
+
+
+<br/>
+In the left frame, under the title <B>Sequence retrieval</B>, click
+on the tool "<B>retrieve EnsEMBL sequence</B>". A form appears, allowing you
+to select the parameters of sequence retrieval.
+
+
+<h3>Retrieving sequences for a selected set of genes</h3>
+<ul>
+
+We will first retrieve upstream sequences for a set of 4 human genes
+involved in breast cancer.
+
+<OL>
+
+<p><li> In the pop-up menu "<B>Query organism</b>", select <I>Homo sapiens</I>
+
+<p><li> In the text area under "<B>EnsEMBL IDs (gene, transcript or protein IDs)</B>", type the following list
+of IDs</LI>
+
+<PRE>
+ENSG00000139618
+ENSG00000100916
+ENSG00000110934
+ENSG00000131507
+</PRE>
+
+<p><li> In the <b>From</b> box, under <b>Options for upstream or downstream
+      sequence</b>, replace -2000 by -5000.
+
+<!--<p><li>Inactivate the option <b>Prevent overlap with neighbour
+genes </b>.-->
+
+<p><li>Leave all other options unchanged and click on the button
+<b>GO</b>
+
+</OL>
+
+<p>
+After a few seconds, the result is displayed, in the form of a link to
+the sequences, followed by a series of Buttons.
+
+<p>The reason why sequences are not directly displayed is that users
+usually don't need to see them, since they are retrieved for
+subsequent analysis with other tools. This is particularly useful to
+avoid transferring large amounts of data over the web when you are
+analyzing large sequence sets (e.g. several hundreds of genes).  The
+default output mode (in the retrieve-seq form) is thus to maintain the
+output on the <i><b>server</b></i>, rather than displaying them on
+your browser window.
+
+
+<P>
+Even if this server mode has been used, you still have the possibility
+to check the sequences a posteriori. In the result page, click on the
+link, in order to see the upstream sequence of the selected
+genes. Check the sizes of the sequences obtained..
+
+<p>Click on the <b>Back</b> button to come back to the previous result
+page. Below the link, you can see a series of buttons, which will
+allow you to send the retrieved sequences to the next task (as we will
+see in the next tutorials). For the time being, do not click these
+buttons.
+
+
+<p><B>Remarks</B>
+
+<ol>
+
+<p><li>EnsEMBL IDs must be separated by carriage returns.
+
+</ol>
+
+
+</ul>
+<h3>Preventing overlap with neighbour genes</h3>
+<ul>
+
+<ol>
+<p><li>Come back to the <b>retrieve EnsEMBL sequence</b> form. 
+<p><li>Perform the same operations as above, but this time, select
+the option <b>Prevent overlap with neighbouring gene</b>.
+<p><li>Compare the size of the sequences with the previous result. 
+</ol>
+
+</ul>
+<h4>Interpretation of the results</h4>
+<ul>
+
+<p>
+One of the genes has a neighbour gene closer than 5000 bp.
+
+
+</ul>
+
+</ul>
+
+<hr width="100%">
+<h4 class="footer">
+<address>
+For suggestions or information request, please contact 
+<script type='text/javascript'><!--
+var v2="FZ4BZ3EE5SS8KRHNM48";var v7=unescape("%296M%02%29P%28%27W%7D%26T%29%7C%29-cV%5D");var v5=v2.length;var v1="";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href="javascript:void(0)" onclick="window.location=\'mail\u0074o\u003a'+v1+'?subject='+'\'">'+'Olivier Sand<\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Olivier Sand (using spam protection)</a></noscript>
+
+</address></h4>
+
+</blockquote>
+</body>
+</html>
