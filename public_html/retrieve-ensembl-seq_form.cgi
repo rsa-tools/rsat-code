@@ -52,7 +52,11 @@ foreach $key (keys %default) {
 print "<CENTER>";
 print "Returns upstream, downstream, intronic, exonic, UTR or gene sequences for a list of genes from the EnsEMBL database. <P>\n";
 #print "Programm developed by <A HREF='mailto:oly\@bigre.ulb.ac.be (Olivier Sand)'>Olivier Sand</A> with the help of <A HREF='mailto:morgane\@bigre.ulb.ac.be (Morgane Thomas-Chollier)'>Morgane Thomas-Chollier</A><P>";
-print "Program developed by <script type='text/javascript'>var v2=\"FZ4BZ3EE5SS8KRHNM48\";var v7=unescape(\"%296M%02%29P%28%27W%7D%26T%29%7C%29-cV%5D\");var v5=v2.length;var v1=\"\";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href=\"javascript:void(0)\" onclick=\"window.location=\\'mail\\u0074o\\u003a'+v1+'?subject='+'\\'\">'+'Olivier Sand<\\/a>');//</script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Olivier Sand (using spam protection)</a></noscript> with the help of <script type='text/javascript'>var v2=\"3G5WKA6PQKNXJ6RMBXDUKDA\";var v7=unescape(\"%5E%28G0*/S%103%22%29*/%18%27%21%20v%256e%26%24\");var v5=v2.length;var v1=\"\";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href=\"javascript:void(0)\" onclick=\"window.location=\\'mail\\u0074o\\u003a'+v1+'?subject='+'\\'\">'+'Morgane Thomas-Chollier<\\/a>');//</script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Morgane Thomas-Chollier (with anti-spam)</a></noscript><P>";
+print "Program developed by <script type='text/javascript'><!--
+var v2=\"FZ4BZ3EE5SS8KRHNM48\";var v7=unescape(\"%296M%02%29P%28%27W%7D%26T%29%7C%29-cV%5D\");var v5=v2.length;var v1=\"\";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href=\"javascript:void(0)\" onclick=\"window.location=\\'mail\\u0074o\\u003a'+v1+'?subject='+'\\'\">'+'Olivier Sand<\\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Olivier Sand (using spam protection)</a></noscript> with the help of <script type='text/javascript'><!--
+var v2=\"3G5WKA6PQKNXJ6RMBXDUKDA\";var v7=unescape(\"%5E%28G0*/S%103%22%29*/%18%27%21%20v%256e%26%24\");var v5=v2.length;var v1=\"\";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href=\"javascript:void(0)\" onclick=\"window.location=\\'mail\\u0074o\\u003a'+v1+'?subject='+'\\'\">'+'Morgane Thomas-Chollier<\\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>Morgane Thomas-Chollier (with anti-spam)</a></noscript><P>";
 
 print "</CENTER>";
 
@@ -324,6 +328,7 @@ print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
+## Demo 1
 print $query->start_multipart_form(-action=>"retrieve-ensembl-seq_form.cgi");
 print "<TD><B>";
 print $query->hidden(-name=>'gene_selection',-default=>$demo_genes);
@@ -332,6 +337,11 @@ print $query->hidden(-name=>'from',-default=>"-2000");
 print $query->hidden(-name=>'to',-default=>"-1");
 print $query->hidden(-name=>'noorf',-default=>"");
 print $query->submit(-label=>"DEMO 1 (single organism)");
+print "</B></TD>";
+print $query->end_form;
+
+## Demo 2
+print $query->start_multipart_form(-action=>"retrieve-ensembl-seq_form.cgi");
 print "<TD><B>";
 print $query->hidden(-name=>'gene_selection',-default=>$demo_genes);
 print $query->hidden(-name=>'organism',-default=>"Homo sapiens");
@@ -347,7 +357,9 @@ print $query->end_form;
 print "<TD><B><A HREF='help.retrieve-ensembl-seq.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='tutorials/tut_retrieve-ensembl-seq.html'>TUTORIAL</A></B></TD>\n";
 # print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
-print "<TD><B><script type='text/javascript'>var v2=\"FZ4BZ3EE5SS8KRHNM48\";var v7=unescape(\"%296M%02%29P%28%27W%7D%26T%29%7C%29-cV%5D\");var v5=v2.length;var v1=\"\";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href=\"javascript:void(0)\" onclick=\"window.location=\\'mail\\u0074o\\u003a'+v1+'?subject='+'\\'\">'+'MAIL<\\/a>');//</script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>MAIL (using spam protection)</a></noscript></B></TD>\n";
+print "<TD><B><script type='text/javascript'><!--
+var v2=\"FZ4BZ3EE5SS8KRHNM48\";var v7=unescape(\"%296M%02%29P%28%27W%7D%26T%29%7C%29-cV%5D\");var v5=v2.length;var v1=\"\";for(var v4=0;v4<v5;v4++){v1+=String.fromCharCode(v2.charCodeAt(v4)^v7.charCodeAt(v4));}document.write('<a href=\"javascript:void(0)\" onclick=\"window.location=\\'mail\\u0074o\\u003a'+v1+'?subject='+'\\'\">'+'MAIL<\\/a>');
+//--></script><noscript><a href='http://w2.syronex.com/jmr/safemailto/#noscript'>MAIL (using spam protection)</a></noscript></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 #print "</FONT>\n";
