@@ -313,7 +313,7 @@ print "</TABLE>\n";
 print "<B>Output</B>&nbsp;";
 print $query->radio_group(-name=>'output',
 			  -values=>["server","display"],
-			  -default=>"server");
+			  -default=>"display");
 print "<BR>\n";
 print "<BR>\n";
 
