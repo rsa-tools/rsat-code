@@ -113,7 +113,9 @@ print $organismPopup;
 print "&nbsp;"x4;
 print "<A HREF='http://www.ensembl.org'>EnsEMBL</A> database version: <B>";
 print $dbversion;
-print "</B><BR/>\n";
+print "<BR/><BR/>\n";
+print "Remark: Due to a firewall problem, we still connect to EnsEMBL version 47 for the moment. But as soon as this is fixed, the program will connect to the latest version\n";
+print "</B><BR/><BR/>\n";
 
 #### Single organism
 if ($default{single_multi_org} eq 'single') {
@@ -299,7 +301,16 @@ print "</TR>\n";
 print "</TABLE>\n";
 
 ### send results by email or display on the browser
-&SelectOutput("server");
+# &SelectOutput("server");
+
+### leave results on the server or display in the browser
+print "<B>Output</B>&nbsp;";
+print $query->radio_group(-name=>'output',
+			  -values=>["server","display"],
+			  -default=>"server");
+print "<BR>\n";
+print "<BR>\n";
+
 
 ### data for the demo 
 @demo_genes = qw (ENSG00000139618 ENSG00000138411);
@@ -319,7 +330,6 @@ print $query->hidden(-name=>'gene_selection',-default=>$demo_genes);
 print $query->hidden(-name=>'organism',-default=>"Homo sapiens");
 print $query->hidden(-name=>'from',-default=>"-2000");
 print $query->hidden(-name=>'to',-default=>"-1");
-# $ENV{rsat_www} = 	'http://rsat.scmbb.ulb.ac.be/rsat/';
 print $query->hidden(-name=>'noorf',-default=>"");
 print $query->submit(-label=>"DEMO 1 (single organism)");
 print "<TD><B>";
@@ -329,14 +339,11 @@ print $query->hidden(-name=>'single_multi_org',-default=>"multi");
 print $query->hidden(-name=>'taxon_selection',-default=>"Mammalia");
 print $query->hidden(-name=>'from',-default=>"-2000");
 print $query->hidden(-name=>'to',-default=>"-1");
-# $ENV{rsat_www} = 	'http://rsat.scmbb.ulb.ac.be/rsat/';
 print $query->hidden(-name=>'noorf',-default=>"");
 print $query->submit(-label=>"DEMO 2 (multiple organisms)");
 print "</B></TD>\n";
 print $query->end_form;
 
-
-#print "<TD><B><A HREF='demo.retrieve-ensembl-seq.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.retrieve-ensembl-seq.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='tutorials/tut_retrieve-ensembl-seq.html'>TUTORIAL</A></B></TD>\n";
 # print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
