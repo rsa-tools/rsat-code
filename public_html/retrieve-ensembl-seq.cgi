@@ -31,7 +31,7 @@ $tmp_file_name = sprintf "retrieve-ensembl-seq.%s", &AlphaDate();
 $query = new CGI;
 
 
-$ENV{rsat_echo}=2;
+# $ENV{rsat_echo}=2;
 
 
 ### print the header
