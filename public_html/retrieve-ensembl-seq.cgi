@@ -223,7 +223,7 @@ if (($query->param('output') =~ /display/i) ||
     my $som = $soap->retrieve_ensembl_seq({'request' => \%args});
 
     ### print the result ### 
-    &PipingWarning();
+#    &PipingWarning();
 
     print '<H4>Result</H4>';
 
@@ -255,7 +255,7 @@ if (($query->param('output') =~ /display/i) ||
     }
 
     ### prepare data for piping
-    &PipingFormForSequence();
+#    &PipingFormForSequence();
 
     print "<HR SIZE = 3>";
 
