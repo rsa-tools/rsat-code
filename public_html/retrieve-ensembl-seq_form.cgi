@@ -60,6 +60,8 @@ var v2=\"3G5WKA6PQKNXJ6RMBXDUKDA\";var v7=unescape(\"%5E%28G0*/S%103%22%29*/%18%
 
 print "</CENTER>";
 
+print "<b>Remark: If you want to retrieve sequences from an organism that is not in the <a href='http://www.ensembl.org'>EnsEMBL</a> database, you can use the <a href='retrieve-seq_form.cgi'>retrieve-seq</a> program instead</b><p>\n";
+
 print $query->start_multipart_form(-action=>"retrieve-ensembl-seq.cgi");
 
 #print "<FONT FACE='Helvetica'>";
