@@ -321,7 +321,17 @@ print $query->hidden(-name=>'from',-default=>"-2000");
 print $query->hidden(-name=>'to',-default=>"-1");
 # $ENV{rsat_www} = 	'http://rsat.scmbb.ulb.ac.be/rsat/';
 print $query->hidden(-name=>'noorf',-default=>"");
-print $query->submit(-label=>"DEMO");
+print $query->submit(-label=>"DEMO 1 (single organism)");
+print "<TD><B>";
+print $query->hidden(-name=>'gene_selection',-default=>$demo_genes);
+print $query->hidden(-name=>'organism',-default=>"Homo sapiens");
+print $query->hidden(-name=>'single_multi_org',-default=>"multi");
+print $query->hidden(-name=>'taxon_selection',-default=>"Mammalia");
+print $query->hidden(-name=>'from',-default=>"-2000");
+print $query->hidden(-name=>'to',-default=>"-1");
+# $ENV{rsat_www} = 	'http://rsat.scmbb.ulb.ac.be/rsat/';
+print $query->hidden(-name=>'noorf',-default=>"");
+print $query->submit(-label=>"DEMO 2 (multiple organisms)");
 print "</B></TD>\n";
 print $query->end_form;
 
