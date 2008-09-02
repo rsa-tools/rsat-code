@@ -18,7 +18,7 @@ Installation guide}
 	Jacques van Helden \\
 	\email{jvhelden@ulb.ac.be} \\
 	\url{http://www.bigre.ulb.ac.be/Users/jvanheld/} \\
-	\bigre 
+	\bigre
 }
 
 
@@ -94,7 +94,7 @@ can be installed with the command \program{cpan}.
   files, which are used to specify the site-specific configuration of
   your \RSAT server. Property filesa are also useful to write your own
   perl clients for the Web service interface to \RSAT (RSATWS).
-  
+
 \item[Storable] This module is required to bring persistence to data
   structures ike organisms. The slow procedure of organisms loading
   can then be done only once. This library can be easyly installed via
@@ -106,7 +106,7 @@ can be installed with the command \program{cpan}.
 
 Two programs, \program{retrieve-ensembl-seq.pl} and
 \program{get-ensembl-genome.pl}, require the EnsEMBL Perl API and
-bioperl to work on your machine. 
+bioperl to work on your machine.
 
 To obtain bioperl:
 
@@ -123,7 +123,7 @@ cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login
 
 ## download the current version
 cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl \
-  checkout bioperl-live 
+  checkout bioperl-live
 
 \end{verbatim}
 \end{footnotesize}
@@ -135,12 +135,12 @@ To obtain EnsEMBL:
 \begin{footnotesize}
 \begin{verbatim}
 ## Login on the EnsEMBL CVS server
-cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login 
+cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
 ## (password is 'CVSUSER')
 
 ## Download the current version of EnsEMBL
 cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-  checkout -r branch-ensembl-47 ensembl 
+  checkout -r branch-ensembl-47 ensembl
 ## (you need to adapt the branch number, e.g. 47, as it updates).
 
 ## Download the current version of the EnsEMBL module for comparative genomics
@@ -323,7 +323,7 @@ how to proceed, ask your system administrator.
 
 In addition to the programs, the installation of rsa-tools requires
 the creation of a few directories for storing data, access logs (for
-the web server), and temporary files.  
+the web server), and temporary files.
 
 The distribution includes a series of make scripts which will
 facilitate this step. You just need go to the rsa-tools directory, and
@@ -346,12 +346,12 @@ directory.
 Copy this file to create your own config file \file{RSAT\_config.props}.
 
 \begin{verbatim}
-cp RSAT_config_default.props RSAT_config.props 
+cp RSAT_config_default.props RSAT_config.props
 \end{verbatim}
 
 You need to edit this file and specify the parameters of your local
 configuration. In particular, it is essential to specify the variable
-RSAT, which specifies the RSAT main directory. 
+RSAT, which specifies the RSAT main directory.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -368,14 +368,14 @@ RSAT, which specifies the RSAT main directory.
 \section{Testing the access to perl scripts}
 
 From now on, you should be able to use the perl scripts from the
-command line. To test this, run: 
+command line. To test this, run:
 
 \begin{verbatim}
 random-seq -help
 \end{verbatim}
 
 This should display the on-line help for the random sequence
-generator. 
+generator.
 
 \begin{verbatim}
 random-seq -l 200 -r 4 -a a:t 0.3 c:g 0.2
@@ -411,7 +411,7 @@ retrieve all the start codons with the following options :
 \begin{verbatim}
 retrieve-seq -org Saccharomyces_cerevisiae \
         -type upstream -from 0 -to +2 -all \
-        -format wc -nocomment 
+        -format wc -nocomment
 \end{verbatim}
 
 This should return a set of 3 bp sequences, mostly ATG (in the case of
@@ -420,7 +420,7 @@ This should return a set of 3 bp sequences, mostly ATG (in the case of
 \section{Testing the graphical scripts}
 
 \RSAT includes two graphical tools, \program{feature-map} and
-\program{XYgraph}. These tools require the following  perl modules: 
+\program{XYgraph}. These tools require the following  perl modules:
 
 \begin{description}
 \item[GD.pm] Interface to Gd Graphics Library.
@@ -440,7 +440,7 @@ administrator to install the missing modules.
 
 \section{Further steps}
 
-The installation is now finished, you can start the user's guide. 
+The installation is now finished, you can start the user's guide.
 
 In case you would like to install additional genomes that are not
 supported on \RSAT main server, the next chapter indicates yiou how to
@@ -450,8 +450,8 @@ proceed.
 
 The \RSAT distribution only contains the programs developed by Jacques
 van Helden. A few additional programs, developed by third parties, can
-be integrated in the package. All third-party programs may be loacated in the 
-directory \emph{bin} directory of the \RSAT distribution. In order to 
+be integrated in the package. All third-party programs may be loacated in the
+directory \emph{bin} directory of the \RSAT distribution. In order to
 obtain these programs, please download them from their original site.
 
 In particular, we recommend to install the following programs.
@@ -460,17 +460,17 @@ In particular, we recommend to install the following programs.
 \item[\program{vmatch}]: developed by Stefan Kurtz, is used used by the
 program \program{purge-sequences}, for the detection of sequence repeats.
 
-\item[\program{seqlogo}]:  developed by Thomas D. Schneider, is used 
-used by the program \program{convert-matrix} to generate logos. It can 
-be downloaded from $<$http://weblogo.berkeley.edu/$>$. \program{seqlogo} is 
+\item[\program{seqlogo}]:  developed by Thomas D. Schneider, is used
+used by the program \program{convert-matrix} to generate logos. It can
+be downloaded from $<$http://weblogo.berkeley.edu/$>$. \program{seqlogo} is
 the command-line version of \program{WebLogo}.
 
 Download the source code archive and uncompress it. Copy the following
- files to the directory \emph{bin} of your \RSAT distribution: 
+ files to the directory \emph{bin} of your \RSAT distribution:
 \program{seqlogo, logo.pm, template.pm} and \program{template.eps}.
 
-\program{seqlogo} requires a recent version of \program{gs} (ghostscript) 
-$<$http://www.cs.wisc.edu/\~{}ghost$>$ to create PNG and PDF output, and 
+\program{seqlogo} requires a recent version of \program{gs} (ghostscript)
+$<$http://www.cs.wisc.edu/\~{}ghost$>$ to create PNG and PDF output, and
 \program{ImageMagic's convert} $<$http://www.imagemagick.org$>$ to create GIFs.
 
 \item[\program{patser}]: developed by Jerry Hertz, is used for
@@ -478,7 +478,7 @@ $<$http://www.cs.wisc.edu/\~{}ghost$>$ to create PNG and PDF output, and
 
 \item[matrix-based pattern discovery]: several other pattern discovery
   programs have been embedded in the \RSAT program
-  \program{multiple-family-analysis}: 
+  \program{multiple-family-analysis}:
 \program{consensus} (Jerry Hertz),
 \program{meme} (Tim Bailey),
 \program{MotifSampler} (Gert Thijs),
@@ -517,13 +517,18 @@ programs and include their binaries path rsa-tools/bin. If you are not
 familiar with the installation of unix programs, ask assistance to
 your system administrator.
 
-For NeAT, we recommand you to compile the program floydwarshall.c located in the contrib/floydwarshall directory of \RSAT. To this, use this command : 
+For NeAT, we recommend you to compile the program floydwarshall.c located in the contrib/floydwarshall directory of \RSAT. To this, use this command :
 
 \begin{verbatim}
 gcc $RSAT/contrib/floydwarshall/floydwarshall.c -o $RSAT/bin/floydwarshall
 \end{verbatim}
 
-
+For Pathfinder in NeAT, we recommend you to download the
+Pathfinder stand-alone package from the Pathfinder manual page
+and to follow the installation steps outlined in this package.
+Note that Metabolic pathfinder is not available as stand-alone tool,
+but its functionality can easily be obtained with Pathfinder and the
+metabolic graphs in the NeAT sample data section.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
