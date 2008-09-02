@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.30 2008/06/17 22:16:36 rsat Exp $
+# $Id: footprint-discovery,v 1.31 2008/09/02 15:25:50 rsat Exp $
 #
 ############################################################
 
@@ -124,7 +124,7 @@ package main;
 
   ################################################################
   ## Initialise parameters
-  $program_version = do { my @r = (q$Revision: 1.30 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.31 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -152,6 +152,8 @@ package main;
   local $to_matrix = 0;		## Convert assembled dyads into PSSM
   local $sep_genes = 0;		## Analyze each gene separately
   local $max_genes = undef;	## Analyze a limited number of genes
+
+  local $supported_organism;
 
   ## Options for the &doit() command;
   local $dry = 0; ## Do not run the command, just echo them as warning
