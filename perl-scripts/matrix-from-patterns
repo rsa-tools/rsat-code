@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.13 2008/09/02 21:49:34 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.14 2008/09/02 21:58:38 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -118,7 +118,8 @@ package main;
     ## Parameters for pattern-assembly
     local $asmb_maxfl = 1;
     local $asmb_subst = 1;
-    local $asmb_maxcl = 50;
+    local $asmb_max_size = 50;
+    local $asmb_max_nb = 5;
     local $asmb_maxpat = 100;
 
     ## Parameters for convert-matrix
@@ -189,7 +190,8 @@ package main;
       $assembly_cmd .= " -maxfl ".$asmb_maxfl;
       $assembly_cmd .= " -subst ".$asmb_subst;
       $assembly_cmd .= " -maxpat ".$asmb_maxpat;
-      $assembly_cmd .= " -max_asmb_size ".$asmb_maxcl;
+      $assembly_cmd .= " -max_asmb_size ".$asmb_max_size;
+      $assembly_cmd .= " -max_asmb_nb ".$asmb_max_nb;
       $assembly_cmd .= " -o ".$outfile{assembly};
       print $log "; patterns -> assemblies\n", $assembly_cmd, "\n";
       &doit($assembly_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -376,6 +378,29 @@ dyad-analysis.
 	  &RSAT::error::FatalError("Options -asmb and -pl are mutually exclusive") 
 	    if (defined($infile{assembly}));
 	  $infile{patterns} = shift(@arguments);
+
+
+	  ## Max number of assemblies
+=pod
+
+=item B<-max_asmb_nb>
+
+This parameter is passed to pattern-assembly, to indicate the maximal
+number of assemblies to return. 
+
+Since each assembly is then converted into a PSSM by
+matrix-from-pattern, this option also indicates the maximal number of
+matrices to return.
+
+Note that when matrix-from-patterns is fed with pre-assembled patterns
+(option -asmb instead of -pl), the option -max_asmb_nb is not working.
+
+=cut
+	} elsif ($arg eq "-max_asmb_nb") {
+	  &RSAT::error::FatalError("Options -asmb and -max_asmb_nb are mutually exclusive")
+	    if (defined($infile{assembly}));
+	  $max_asmb_nb = shift(@arguments);
+
 
 	    ## Assembly file
 =pod
