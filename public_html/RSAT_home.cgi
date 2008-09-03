@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.40 2008/07/25 12:26:04 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.41 2008/09/03 14:26:51 rsat Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -104,6 +104,8 @@ print <<EndText;
     (<B>RSAT</B>). This web site provides a series of modular computer
     programs specifically designed for the detection of regulatory
     signals in non-coding sequences.
+
+    <P> <font color='red'>New !</font> <a href="RSSAT.xml">RSS feed available</a>: get RSAT latest news directly in your favorite RSS reader !</p>
 
 	 <P> <font color='red'>New !</font> The <b> recent developments </b> made in RSAT are presented in the  
 	 <a target=_blank
