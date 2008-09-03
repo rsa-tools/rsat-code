@@ -18,6 +18,13 @@ img {
 	float: left;
 }
 
+img.rss {
+    display: block;
+    margin-left: 70px;
+    margin-right: 70px;
+    margin-bottom: 5px;
+}
+
 /* CONTENT   */
 #content {
 	width: 160px;
