@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: draw-heatmap,v 1.4 2008/05/08 12:39:09 rsat Exp $
+# $Id: draw-heatmap,v 1.5 2008/09/03 11:53:47 rsat Exp $
 #
 ############################################################
 
@@ -64,7 +64,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -200,7 +200,7 @@ package main;
     if ($output_format eq "ps") {
       
     } else {
-      my $p  = new GD::Image (100+($col_width*$max_row_elements), $header_name_height+($row_height*($tablecpt+2))) ;
+      my $p  = new GD::Image (100+$row_name_width+($col_width*$max_row_elements), $header_name_height+($row_height*($tablecpt+2))) ;
       my %colors = ();
       my $white = $p->colorAllocate(255,255,255);
       my $black = $p->colorAllocate(0,0,0);
