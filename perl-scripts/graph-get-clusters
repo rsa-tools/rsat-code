@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.23 2008/07/17 10:07:27 rsat Exp $
+# $Id: graph-get-clusters,v 1.24 2008/09/04 11:20:56 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -276,13 +276,13 @@ package main;
 	      my $scolor = $nodes_color{$source_node_id};
 	      my $tcolor = $nodes_color{$target_node_id};
 	      $arc_color = $arcs[$i][3];
-	      if (!$induced) {
+	      if (!$induced && !$color_col) {
 	        $arc_color = $cluster_color{$scluster};
 	        if (!defined($arc_color)) {
 	          $arc_color = $cluster_colors[scalar(keys(%cluster_color)) % scalar(@cluster_colors)];
 	          $cluster_color{$scluster} = $arc_color;
 	        }
-	      } 
+	      }
 	      if ($distinct) {
 	        my $arc_key = $source_node."_arc_".$target_node;
 	        my $edge_other_cluster = $edge_cluster{$arc_key};
@@ -371,7 +371,8 @@ package main;
         my %tclusters = ();
         my %stclusters = ();
         my $intra_cluster = "inter_cluster";
-        my $arc_color = "#C0C0C0";
+        my $arc_color = "#C0C0C0"; 
+        $arc_color = $arcs[$i][3] if ($color_col);
         foreach my $scluster (@source_clusters) {
           $sclusters{$scluster}++;
           foreach my $tcluster (@target_clusters) {
@@ -386,10 +387,12 @@ package main;
               $common_clusters++;
               $stclusters{$tcluster}++;
               $intra_cluster = "intra_cluster";
-	      $arc_color = $cluster_color{$scluster};
-	      if (!defined($arc_color)) {
-	        $arc_color = $cluster_colors[scalar(keys(%cluster_color)) % scalar(@cluster_colors)];
-	        $cluster_color{$scluster} = $arc_color;
+              if (!$color_col) {
+	        $arc_color = $cluster_color{$scluster};
+	        if (!defined($arc_color)) {
+	          $arc_color = $cluster_colors[scalar(keys(%cluster_color)) % scalar(@cluster_colors)];
+	          $cluster_color{$scluster} = $arc_color;
+	        }
 	      }
             }
           }
@@ -633,7 +636,7 @@ cannot deal with such arcs. You should maybe use yEd for a more exact visualizat
 
 =item B<-eccol>
 
-Edge color column. Column containing the color of the edges (RGB). (no default)
+Edge color column. Column containing the color of the edges (RGB). (no default). If this option is not specified, the program will use different colors for each intra-cluster edge belonging a different cluster. Inter-cluster edges (-return graph option) are light grey.
 
 =cut
 	} elsif ($arg eq "-eccol") {
