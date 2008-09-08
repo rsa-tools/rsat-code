@@ -901,8 +901,9 @@ sub to_patser {
 	push @col_min, &main::min(@col_min);
 	$to_print .= $self->_printMatrixRow("; ".$prefix_letter.".min", @col_min);
       }
+      $to_print .=  $matrix_terminator{$output_format}."\n";
     }
-    $to_print .=  $matrix_terminator{$output_format}."\n";
+    
 
     return $to_print;
 }
