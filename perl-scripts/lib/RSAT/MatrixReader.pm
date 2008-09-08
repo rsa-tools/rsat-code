@@ -1156,6 +1156,7 @@ sub _readFromTabFile {
     $matrix->set_attribute("id", $id);
     my $l = 0;
     my $matrix_found = 0;
+    my $new_matrix = 0;
     while ($line = <$in>) {
       $l++;
       next unless ($line =~ /\S/); ## Skip empty lines
@@ -1166,6 +1167,7 @@ sub _readFromTabFile {
 
       ## Create a new matrix if required
       if  ($line =~ /\/\//) {
+      	$new_matrix = 0; # tgis is to track the end of file...
 	$matrix = new RSAT::matrix();
 	$matrix->set_parameter("program", "tab");
 	push @matrices, $matrix;
@@ -1178,6 +1180,7 @@ sub _readFromTabFile {
       }
 
       if ($line =~ /^\s*(\S+)\s+/) {
+	$new_matrix = 1;
 	$matrix_found = 1; ## There is at least one matrix row in the file
 	my @fields = split /\t/, $line;
 
@@ -1194,6 +1197,11 @@ sub _readFromTabFile {
 
     ## Initialize prior as equiprobable alphabet
     if ($matrix_found) {
+    	if ($new_matrix == 0) {
+	    # eliminate empty matrix at the end
+	    pop(@matrices);
+	    $current_matrix_nb--;
+	}
       foreach my $matrix (@matrices) {
 	my @alphabet = $matrix->getAlphabet();
 	my %tmp_prior = ();
