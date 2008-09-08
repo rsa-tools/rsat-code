@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.23 2008/03/26 20:09:52 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.24 2008/09/08 13:41:24 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -457,7 +457,7 @@ sub ParsePositions {
 	    next;
 	}
 	my $coord = $null;
-	my $chomosome = $null;
+	my $chromosome = $null;
 	my $chrom_pos = $null;
 	my $strand = $null;
 	my $start_pos = $null;
