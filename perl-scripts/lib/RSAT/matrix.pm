@@ -231,11 +231,11 @@ the program consensus (Hertz), but not by other programs.
 			   );
 
 ## Separator between matrices for multi-matrix files
-%matrix_separator = ("consensus"=>"\n",
+%matrix_terminator = ("consensus"=>"\n",
 		     "tab"=>"//", 
 		     "patser"=>"//",
-		     "transfac"=>"");
-		     #"transfac"=>"//");
+		     #"transfac"=>"");
+		     "transfac"=>"//");
 
 
 $info_log_base = exp(1);
@@ -614,6 +614,9 @@ Converts the matrix into a string in TRANSFAC format.
 sub to_TRANSFAC {
     my ($self, %args) = @_;
     my $to_print = "";
+   
+    my $output_format = $args{format};
+    $output_format = lc($output_format);
 
     ## Accession number
     my $accession = $self->get_attribute("accession") ||  $self->get_attribute("AC") || $self->get_attribute("name");
@@ -655,7 +658,8 @@ sub to_TRANSFAC {
     $to_print .= "XX\n";
 
     ## End of record
-    $to_print .= "//\n";
+    $to_print .=  $matrix_terminator{$output_format}."\n";
+
 }
 
 
@@ -703,7 +707,7 @@ sub to_consensus {
   $string .= join ("", "ln(p-value) = ",  $self->get_attribute("ln.Pval") || "NA",
 		   "   ", "p-value = ",  $self->get_attribute("P-value") || "NA", "\n");
 
-  ## Extrazct the E-value from the matrix
+  ## Extract the E-value from the matrix
   my $E_value = $self->get_attribute("exp") || $self->get_attribute("E-value");
   unless (defined($E_value)) {
     $E_value = "NA";
@@ -764,6 +768,10 @@ Output matrix format
 sub to_patser {
     my ($self, %args) = @_;
     my $to_print = "";
+
+
+    my $output_format = $args{format} || 'tab';
+    $output_format = lc($output_format);
 
     ## Separator between row names (residues) and matrix content
     my $pipe =  "|";
@@ -894,6 +902,8 @@ sub to_patser {
 	$to_print .= $self->_printMatrixRow("; ".$prefix_letter.".min", @col_min);
       }
     }
+    $to_print .=  $matrix_terminator{$output_format}."\n";
+
     return $to_print;
 }
 

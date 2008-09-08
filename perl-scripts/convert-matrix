@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.69 2008/07/16 16:41:54 jvanheld Exp $
+# $Id: convert-matrix,v 1.70 2008/09/08 14:04:11 gipsi Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -290,9 +290,9 @@ foreach my $matrix (@matrices) {
 
     if ($m > 1) {
       my $fields = join ('', keys (%return_fields));
-      unless ($fields eq "logo") {
-	print $out $RSAT::matrix::matrix_separator{$output_format}, "\n";
-      }
+     # unless ($fields eq "logo") {
+	#print $out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
+      #}
     }
     if ($main::verbose >= 1) {
 	print $out  ";\n; MATRIX ", $m."/".scalar(@matrices), " : " , $matrix->get_attribute("name"), "\n;\n";
@@ -1027,9 +1027,9 @@ sub ExportMatrix {
     ## permute matrix
     for my $i (1..$perm) {
 
-      if ($i > 1) {
-	print $out $RSAT::matrix::matrix_separator{$output_format}, "\n";
-      }
+     # if ($i > 1) {
+	#print $out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
+      #}
 
       ##permute the matrix
       $matrix->permute_columns();
