@@ -131,6 +131,9 @@ $parameters .= " -matrix_format ".$input_format;
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
 ### execute the command ###
+
+my $error_found = 0; # catch an error if occurs, and then prevent from drawing the graphs
+
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
     	
@@ -154,10 +157,15 @@ if (($query->param('output') =~ /display/i) ||
     while (<RESULT>) {
 	print "$_" unless ($query->param('output') =~ /server/i);
 	print MIRROR $_ if ($mirror);
+	if ($_ =~ /Error<\/h4><blockquote/ ){
+		$error_found = 1;
+	}	
     }
     print "</PRE>";
     close RESULT;
     close MIRROR if ($mirror);
+    
+  
 
     if ($query->param('output') =~ /server/i) {
 	$result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
@@ -166,8 +174,12 @@ if (($query->param('output') =~ /display/i) ||
 	       "<p>\n");
     }
     print "<hr/>";
-
+    
+   if (($error_found)&&($query->param('output') =~ /server/i)){
+    	 &RSAT::error::FatalError("Error has occured, check output file.");
+    }
     ## prepare figures
+    unless($error_found){
     my $XYgraph_command = "$SCRIPTS/XYgraph";
 
     my $graph_file1 = "$tmp_file_name"."_1.png";
@@ -187,6 +199,8 @@ if (($query->param('output') =~ /display/i) ||
     ### prepare data for piping
     &PipingForm();
     print "<HR SIZE = 3>";
+    
+    }
 
 } else {
     &EmailTheResult("$command $parameters", $query->param('user_email'));
