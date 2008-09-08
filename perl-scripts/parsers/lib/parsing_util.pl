@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.25 2008/09/08 14:48:12 rsat Exp $
+# $Id: parsing_util.pl,v 1.26 2008/09/08 16:02:19 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -495,21 +495,20 @@ sub ParsePositions {
 	}
 
 	################################################################
-	#### genes accross replication origin (circular genomes)
-	if ($coord =~ /^join\(([\>\<]{0,1}\d+)\.\.([\>\<]{0,1}\d+),([\>\<]{0,1}\d+)\.\.([\>\<]{0,1}\d+)\)$/) {
+	#### split exons or treat genes accross replication origin (circular genomes)
+	if ($coord =~ /^join\(/) { ### exons or genes accross replication origin (circular genomes)
 	    $coord =~ s/^join\(//;
 	    $coord =~ s/\)$//;
 
-	    $start_pos = $1;
-	    $end_pos = $4;
+	    #### genes accross replication origin (circular genomes)
+	    if ($coord =~ /^([\>\<]{0,1}\d+)\.\.([\>\<]{0,1}\d+),(1)\.\.([\>\<]{0,1}\d+)$/) {
+		$start_pos = $1;
+		$end_pos = $4;
 
-	}
+		warn (join ("\t", "DEBUG", "ParsePositions", $position, , "\n", "chrom_pos", $chrom_pos, "\n", "coord", $strand, $coord, $start_pos, $end_pos, "\n")) if ($main::verbose >= 1);
 
-	################################################################
-	#### split exons
-	if ($coord =~ /^join\(/) { ### exons
-	    $coord =~ s/^join\(//;
-	    $coord =~ s/\)$//;
+	    #### exons
+	    } else {
 
 	    #### multiple segments
 	    my @exons = split ",", $coord;
@@ -537,6 +536,9 @@ sub ParsePositions {
 		$intron .= $exon_starts[$e+1] -1;
 		$feature->push_attribute("introns", $intron);
 	    }
+
+
+	}
 
 	} else {
 	    #### a single segment
