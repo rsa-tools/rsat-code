@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.57 2008/05/21 00:45:37 jvanheld Exp $
+# $Id: matrix-quality,v 1.58 2008/09/08 14:04:33 gipsi Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1321,7 +1321,8 @@ sub PermuteMatrixColumns {
     foreach my $seq_type (sort keys %seqfile) {
       if ($i <= $perm_nb{$seq_type}) {
 	$permute_matrix_cmd .= "; cat ".$outfile{'matrix_perm_col_'.$i}." >> ".$outfile{$seq_type.'_matrix_perm_col_all'};
-	$permute_matrix_cmd .= "; echo '\/\/' >> ".$outfile{$seq_type.'_matrix_perm_col_all'} if ($i < $perm_nb{$seq_type});
+	# not necesary anymore after '//' terminator included in tab format
+	#$permute_matrix_cmd .= "; echo '\/\/' >> ".$outfile{$seq_type.'_matrix_perm_col_all'} if ($i < $perm_nb{$seq_type});
       }
     }
 

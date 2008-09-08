@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.123 2008/07/11 08:40:07 morgane Exp $
+# $Id: matrix-scan,v 1.124 2008/09/08 14:04:22 gipsi Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1406,7 +1406,8 @@ package main;
   my $m = 0;
   if ($return_fields{matrix}) {
     foreach my $matrix (@matrices) {
-      $m++; print $out "//\n" if ($m >= 1);
+    	$m++; 
+    	#print $out "//\n" if ($m >= 1);
       print $out ";\n; Count matrix\t", $matrix->get_attribute("name"), "\n";
       print $out $matrix->toString(col_width=>(7), decimals=>0, type=>"counts",format=>"tab", comment_string=>";");
     }
@@ -1415,7 +1416,8 @@ package main;
   ## Return frequency matrices
   if ($return_fields{freq_matrix}) {
     foreach my $matrix (@matrices) {
-      $m++; print $out "//\n" if ($m >= 1);
+      $m++; 
+      #print $out "//\n" if ($m >= 1);
       print $out ";\n; Frequency matrix\t", $matrix->get_attribute("name"), "\n";
       print $out $matrix->toString(col_width=>(7), decimals=>3, type=>"frequencies",format=>"tab", comment_string=>";");
     }
@@ -1424,7 +1426,8 @@ package main;
   ## Return weight matrices
   if ($return_fields{weight_matrix}) {
     foreach my $matrix (@matrices) {
-      $m++; print $out "//\n" if ($m >= 1);
+      $m++; 
+      #print $out "//\n" if ($m >= 1);
       print $out ";\n; Weight matrix\t", $matrix->get_attribute("name"), "\n";
       print $out $matrix->toString(col_width=>(7), decimals=>3, type=>"weights", format=>"tab", comment_string=>";");
     }
