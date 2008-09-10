@@ -560,12 +560,14 @@ sub LoadFeatures {
 	}
       }
 
-      ## Check if left position is lower than right position.
+      ## Except for circular chromosomes,
+      ## check if left position is lower than right position.
       ## If this is not the case, swap the two values.
       ## Left > right can occur if the genome has been exported with
-      ## start and end positions rather than lft and right.
-      unless ($left < $right) {
-	&RSAT::message::Warning("left should be smaller than right position specification in in  feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+      ## start and end positions rather than left and right
+      ## or for a feature accross the replication origin on circular genomes.
+      unless (($left < $right) || ($circular = 1)) {
+	&RSAT::message::Warning("left should be smaller than right position specification in feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
 	my $tmp = $left;
 	$left = $right;
 	$right = $tmp;
@@ -745,7 +747,7 @@ sub CalcNeighbourLimits {
       &RSAT::message::Debug("Calculating left neighbour for gene", $g, $gene->get_attribute("id"), $gene_id) 
 	if ($main::verbose >= 5);
 
-      ## Iterate until the left neighbout is identified
+      ## Iterate until the left neighbour is identified
       do {
 
 	&RSAT::message::Debug("contig", $ctg, "gene",
