@@ -1,0 +1,87 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+	<head>
+		<title>
+			RSA-tools: info-gibbs manual
+		</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<link rel="stylesheet" type="text/css" href="main.css" media="screen">
+	</head>
+<body class="info">
+<center>
+<h2>
+    <a href="RSAT_home.cgi">RSA-tools</a> - <a href="info-gibbs_form.cgi">info-gibbs</a> manual
+</h2>
+</center>
+
+<h4>Name</h4>
+<blockquote>
+    <p>
+        info-gibbs
+    </p>
+    <p>
+        2008 by Matthieu Defrance
+    </p>
+</blockquote>
+
+<h4>Description</h4>
+<blockquote>
+    Search for motifs that have maximal information content in a set of sequences.
+</blockquote>
+
+<h4>Options</h4>
+<blockquote>
+<p>
+<a name="sequence" id="sequence"></a> <b>Input sequence:</b><br />
+The sequence that will be analyzed. Multiple sequences can be entered at once with several <a href="help.formats.html">sequence formats</a>.
+</p>
+<p>
+<a name="sequence_format" id="sequence_format"></a> <b>Format:</b><br />
+Input sequence format. <a href="help.formats.html">Various standards</a> are supported.
+</p>
+<p>
+<a name="sequence_type" id="sequence_type"></a> <b>Sequence type:</b><br />
+Only A, C, G, and T residues are accepted. oligomers that contain undefined (N) or partly defined (IUPAC code) nucleotides are discarded from the countings.
+</p>
+<p>
+<a name="purge" id="purge"></a> <b>Purge sequences (highly recommended)</b><br />
+When checked, large duplicated regions (&gt;= 40 bp alignment with less than 3 mismatches) are filtered out before analysis. Purging is essential for any pattern discovery process, to avoid a bias due to non-independence of sequences. Purging is performed with the programs <tt>mkvtree</tt> and <tt>vmatch</tt> developed by <a href="http://www.zbh.uni-hamburg.de/kurtz">Stefan Kurtz</a> (<a href="mailto:kurtz@zbh.uni-hamburg.de">kurtz@zbh.uni-hamburg.de</a>).
+</p>
+<p>
+<a name="add_rc" id="add_rc"></a> <b>add reverse complement:</b> (single or both strands)<br />
+By selecting "add reverse complement", the occurrences of the motif are searched on both strands. This allows to detect elements which act in an orientation-insensitive way (as is generally the case for yeast upstream elements).
+</p>
+
+<p>
+<a name="info-gibbs_length" id="info-gibbs_length"></a> <b>Matrix length:</b><br />
+The analysis can be performed with:
+<ul>
+	<li>fixed size of any size between 2 and 32. For the detection of regulatory sites, we recommend starting with an analysis of motifs of length comprise between 6 and 16.
+	</li>
+	<li>spaced motifs (dyads) with 2 monads of any size between 1 and 16 separated by a spacing. The spacing is the number of bases between the end of the first element (monad) and the start of the second one.
+	A single integer value means that the spacing is fixed (example from=10 to=10). Variable spacing can be introduced by entering the from and to values. For example from 8 to 12 means that all occurrences of the dyad with a spacing between 8 and 12 will be counted together and their significance estimated globally. Warning, this is different from scanning one by one the spacing values 8, 9, 10, 11 and 12.
+	 </li>
+</ul>
+</p>
+<p>
+<a name="expected_number" id="expected_number"></a> <b>Expected number of matches:</b><br />
+This option allow to specify the number of the motif occurrences that are expected to be found in the input sequences.
+</p>
+<p>
+<a name="number_of_motifs" id="number_of_motifs"></a> <b>Number of motif to extract:</b><br />
+This option allows to search for more than one motif in the input sequences.
+</p>
+<p>
+<a name="number_of_motifs" id="number_of_motifs"></a> <b>Maximum number of iterations:</b><br />
+This option allows to set the maximal number of iteration of the algorithm.
+</p>
+<p>
+<a name="number_of_motifs" id="number_of_motifs"></a> <b>Number of runs:</b><br />
+Due to its stochastic behavior info-gibbs can return different results each time it is run. The core algorithm should be repeated a sufficient number of times in order to produce useful results.    
+</p>
+
+
+</blockquote>
+
+</body>
+</html>
