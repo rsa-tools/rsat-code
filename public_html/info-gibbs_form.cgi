@@ -96,14 +96,11 @@ print $query->textfield(-name=>'iter',
 print "<br />\n";
 
 ### nrun
-print "<a href=\"help.info-gibbs.html#motifs\">Number of runs</a>\n";
+print "<a href=\"help.info-gibbs.html#runs\">Number of runs</a>\n";
 print $query->textfield(-name=>'nrun',
 		  -default=>$default{nrun},
 		  -size=>5);
 print "<br />\n";
-
-
-
 
 
 ### send results by email or display on the browser
@@ -222,7 +219,7 @@ print $query->end_form;
 #print "<TD><B><A HREF='demo.gibbs.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.info-gibbs.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='tutorials/tut_info-gibbs.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
+#print "<TD><B><A HREF='mailto:defrance\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";
