@@ -15,6 +15,7 @@ Simple statistical utilities
 # IMPORTS
 #-------------------------------------------------------------------------------
 from math import *
+from copy import copy
 #-------------------------------------------------------------------------------
 # IMPORTS
 
@@ -130,19 +131,40 @@ def multi(x, func, *args):
 
 
 def mean(values):
-    return sum(values) / float(len(values))
+    if len(values) == 0:
+        return 0.0
+    else:
+        return sum(values) / float(len(values))
 
 
 def var(values):
-    m = mean(values)
-    return sum( [(x-m)**2 for x in values] ) / float(len(values)-1)
-    #return sum( [(x-m)**2 for x in values] ) / float(len(values))
+    if len(values) == 0:
+        return 0.0
+    else:
+        m = mean(values)
+        #return sum( [(x-m)**2 for x in values] ) / float(len(values)-1)
+        return sum( [(x-m)**2 for x in values] ) / float(len(values))
+
 
 def mean_var(values):
     """
     return tuple mean and var
     """
     return mean(values), var(values)
+
+
+def median(numbers):
+   "Return the median of the list of numbers."
+   # Sort the list and take the middle element.
+   n = len(numbers)
+   if n == 0:
+       return 0.0
+   copy = numbers[:] # So that "numbers" keeps its original order
+   copy.sort()
+   if n & 1:         # There is an odd number of elements
+      return copy[n / 2]
+   else:
+      return (copy[n / 2 - 1] + copy[n / 2]) / 2
 
 
 def table(v, binFunc=None):
