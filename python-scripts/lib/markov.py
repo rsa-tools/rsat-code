@@ -211,7 +211,7 @@ class MMError(MM):
 
     """
     def __P(self, word):
-        """return Prob of word in model
+        """return P(word) in model
         """
         # MM0
         if self.order == 0:
@@ -229,7 +229,7 @@ class MMError(MM):
 
     def P(self, word, NExtension=(1,1)):
         """
-        You can set NExtension with set_NExtension for all prob computation
+        NExtension can be set with set_NExtension
         """
         if word.find('N') == -1:
             return super(MMError, self).P(word)

@@ -333,7 +333,6 @@ def get_node(node, code):
 ##############################################################################
 class SuffixTree(object):
     """
-    one store position when depth = maxDepth
     """
     def __init__(self, maxDepth=4, overlapping=False, maxIUPAC=1, NExtension=(1,1), storePosition=False):
         assert(NExtension[0] >= 1)
