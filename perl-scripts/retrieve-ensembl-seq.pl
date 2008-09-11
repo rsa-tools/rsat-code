@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.35 2008/09/11 14:45:07 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.36 2008/09/11 20:09:40 rsat Exp $
 #
 # Time-stamp
 #
@@ -301,7 +301,7 @@ package main;
 	open IN, $query_file;
 	while ($line = <IN>) {
 	    my @genes;
-	    $line =~s/\t//;
+	    $line =~s/\t.*//;
 	    chomp($line);
 	    if (($line =~ /ENST\d/) || ($line =~ /ENS...T/)) {
 		push(@genes, $gene_adaptor -> fetch_by_transcript_stable_id($line));
