@@ -26,7 +26,8 @@
 
 <h4>Description</h4>
 <blockquote>
-    Search for motifs that have maximal information content in a set of sequences.
+    info-gibbs is matrix-based pattern discovery software that is based on a Gibbs sampling strategy.
+    Given a set of sequences and a motif length it searches for the motif that has the maximal relative entropy or information content.
 </blockquote>
 
 <h4>Options</h4>
@@ -54,13 +55,15 @@ By selecting "add reverse complement", the occurrences of the motif are searched
 
 <p>
 <a name="length" id="length"></a> <b>Matrix length:</b><br />
-The analysis can be performed with:
+The length of the motif.
+For the detection of regulatory sites, we recommend starting with an analysis with a length comprise between 6 and 16.
+<!-- The analysis can be performed with:
 <ul>
-	<li>fixed size of any size between 2 and 32. For the detection of regulatory sites, we recommend starting with an analysis of motifs of length comprise between 6 and 16.
-	</li>
-	<li>spaced motifs (dyads) with 2 monads of any size between 1 and 16 separated by a spacing. The spacing is the number of bases between the end of the first element (monad) and the start of the second one.
-	A single integer value means that the spacing is fixed (example from=10 to=10). Variable spacing can be introduced by entering the from and to values. For example from 8 to 12 means that all occurrences of the dyad with a spacing between 8 and 12 will be counted together and their significance estimated globally. Warning, this is different from scanning one by one the spacing values 8, 9, 10, 11 and 12.
-	 </li>
+    <li>fixed size of any size between 2 and 32. For the detection of regulatory sites, we recommend starting with an analysis of motifs of length comprise between 6 and 16.
+    </li>
+    <li>spaced motifs (dyads) with 2 monads of any size between 1 and 16 separated by a spacing. The spacing is the number of bases between the end of the first element (monad) and the start of the second one.
+    A single integer value means that the spacing is fixed (example from=10 to=10). Variable spacing can be introduced by entering the from and to values. For example from 8 to 12 means that all occurrences of the dyad with a spacing between 8 and 12 will be counted together and their significance estimated globally. Warning, this is different from scanning one by one the spacing values 8, 9, 10, 11 and 12.
+     </li> -->
 </ul>
 </p>
 <p>
