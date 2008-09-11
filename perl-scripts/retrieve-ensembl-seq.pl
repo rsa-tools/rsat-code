@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.34 2008/08/07 14:25:00 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.35 2008/09/11 14:45:07 rsat Exp $
 #
 # Time-stamp
 #
@@ -37,7 +37,7 @@ package main;
   my $start_time = &AlphaDate();
 
   local $verbose = 0;
-  local $feattype = "mrna";    # other values: Gene, Intron, Exon, CDS and UTR
+  local $feattype = "mrna";    # other values: gene, intron, exon, cds and utr
   local $type = "upstream";
   local $from = -800;
   local $to = -1;
@@ -300,42 +300,62 @@ package main;
     if ($query_file) {
 	open IN, $query_file;
 	while ($line = <IN>) {
-	    my $gene;
+	    my @genes;
 	    $line =~s/\t//;
 	    chomp($line);
-	    if (($line =~ /ENST/) || ($line =~ /ENS...T/)) {
-		$gene = $gene_adaptor -> fetch_by_transcript_stable_id($line);
-	    } elsif (($line =~ /ENSP/) || ($line =~ /ENS...P/)) {
-		$gene = $gene_adaptor -> fetch_by_translation_stable_id($line);
+	    if (($line =~ /ENST\d/) || ($line =~ /ENS...T/)) {
+		push(@genes, $gene_adaptor -> fetch_by_transcript_stable_id($line));
+	    } elsif (($line =~ /ENSP\d/) || ($line =~ /ENS...P/)) {
+		push(@genes, $gene_adaptor -> fetch_by_translation_stable_id($line));
+	    } elsif (($line =~ /ENSG\d/) || ($line =~ /ENS...G/)) {
+#		my $gene_id = $line;
+		push(@genes,$gene_adaptor -> fetch_by_stable_id($line));
 	    } else {
-		my $gene_id = $line;
-		$gene = $gene_adaptor -> fetch_by_stable_id($gene_id);
+		if ($gene_adaptor -> fetch_by_stable_id($line)) {
+		    push(@genes,$gene_adaptor -> fetch_by_stable_id($line));
+		} else {
+		    @genes = @{$gene_adaptor -> fetch_all_by_external_name($line)};
+		}
 	    }
-	    ## get-orthologs if wanted
-            if ($ortho) {
-                &Ortho($gene->stable_id);
-	    ## or not
-            } else {
-		&Main($gene, $org);
+
+	    foreach my $gene (@genes) {
+		## get-orthologs if wanted
+		if ($ortho) {
+		    &Ortho($gene->stable_id);
+		    ## or not
+		} else {
+		    &Main($gene, $org);
+		}
 	    }
 	}
+	close IN;
+
     ## List of query IDs
     } else {
 	foreach my $id (@queries) {
-	    my $gene;
-	    if (($id =~ /ENST/) || ($id =~ /ENS...T/)) {
-		$gene = $gene_adaptor -> fetch_by_transcript_stable_id($id);
-	    } elsif (($id =~ /ENSP/) || ($id =~ /ENS...P/)) {
-		$gene = $gene_adaptor -> fetch_by_translation_stable_id($id);
+	    my @genes = ();
+	    if (($id =~ /ENST\d/) || ($id =~ /ENS...T/)) {
+		push (@genes, $gene_adaptor -> fetch_by_transcript_stable_id($id));
+	    } elsif (($id =~ /ENSP\d/) || ($id =~ /ENS...P/)) {
+		push (@genes, $gene_adaptor -> fetch_by_translation_stable_id($id));
+	    } elsif (($id =~ /ENSG\d/) || ($id =~ /ENS...G/)) {
+		push (@genes, $gene_adaptor -> fetch_by_stable_id($id));
 	    } else {
-		$gene = $gene_adaptor -> fetch_by_stable_id($id);
+		if ($gene_adaptor -> fetch_by_stable_id($id)) {
+		push(@genes,$gene_adaptor -> fetch_by_stable_id($id));
+		} else {
+		    @genes = @{$gene_adaptor -> fetch_all_by_external_name($id)};
+		}
 	    }
-	    ## get-orthologs if wanted
-	    if ($ortho) {
-		&Ortho($gene->stable_id);
-	    ## or not
-	    } else {
-		&Main($gene, $org);
+
+	    foreach my $gene (@genes) {
+		## get-orthologs if wanted
+		if ($ortho) {
+		    &Ortho($gene->stable_id);
+		    ## or not
+		} else {
+		    &Main($gene, $org);
+		}
 	    }
 	}
     }
