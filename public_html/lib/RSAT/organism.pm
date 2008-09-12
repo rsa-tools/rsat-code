@@ -779,8 +779,14 @@ sub CalcNeighbourLimits {
 		$gene->set_attribute("left_neighbour", $left_candidate);
 		$gene->set_attribute("left_neighb_id", $left_candidate->get_attribute("id"));
 		$gene->set_attribute("left_neighb_name", $left_candidate->get_attribute("name"));
-		$gene->set_attribute("left_limit", $left_candidate->get_attribute("left"));
-		$gene->set_attribute("left_size", $left{$gene} -1 + $contig_length - $left_candidate->get_attribute("right"));
+		$gene->set_attribute("left_limit", $left_candidate->get_attribute("right"));
+		if ($right{$gene} < $left{$gene}) {
+		    ## gene overlaps replication origin
+		    $neighb_left_size = &RSAT::stats::max(0, $left{$gene} - $neighb_left_limit -1);
+		    $gene->set_attribute("left_size", $neighb_left_size);
+		} else {
+		    $gene->set_attribute("left_size", $left{$gene} -1 + $contig_length - $left_candidate->get_attribute("right"));
+		}
 		next;
 	    } else {
 
@@ -800,9 +806,14 @@ sub CalcNeighbourLimits {
 	    }
 
 	} elsif (($right{$left_candidate} <= $right{$gene}) && ($left{$left_candidate} >= $left{$gene})) {
-	  ## candidate left neighour gene is completely embedded in current gene -> select the next left candidate
-	  $ln--;
-	  $left_candidate = $right_sorted_genes[$ln];
+	    if (($contig_seq{$ctg}->get_attribute("circular")) && ($right{$left_candidate} < $left{$left_candidate})) {
+		## candidate gene is accross replication origin of circular contig
+		$found = 1;
+	    } else {
+		## candidate left neighour gene is completely embedded in current gene -> select the next left candidate
+		$ln--;
+		$left_candidate = $right_sorted_genes[$ln];
+	    }
 	  &RSAT::message::Debug("genomic feature",
 				$ln,
 				$left_candidate->get_attribute("geneid"),
@@ -843,7 +854,6 @@ sub CalcNeighbourLimits {
 				   $left{$gene},
 				   $right{$gene},
 				  );
-	  ## TO DO: treat circular chromosomes
 	}
       } until (($ln < 0) || ($found));
 
@@ -915,14 +925,14 @@ sub CalcNeighbourLimits {
       &RSAT::message::Debug("Calculating right neighbour for gene", $g, $gene->get_attribute("id"), $gene_id) 
 	if ($main::verbose >= 5);
 
-      ## Iterate until the left neighbout is identified
+      ## Iterate until the right neighbour is identified
       do {
 
 	&RSAT::message::Debug("contig", $ctg, "gene",
 			      "g=".$g,
 			      "geneId=".$gene->get_attribute("geneid"),
 			      "name=".$gene->get_attribute("name"),
-			      "candidate left neighbour",
+			      "candidate right neighbour",
 			      "ln=".$rn,
 			      "GeneID:".$right_candidate->get_attribute("geneid"),
 			      "name=".$right_candidate->get_attribute("name"),
@@ -941,6 +951,7 @@ sub CalcNeighbourLimits {
 	    ## Check if the contig is circular
 	    if ($contig_seq{$ctg}->get_attribute("circular")) {
 		$right_candidate = $left_sorted_genes[0];
+
 		&RSAT::message::Info("Circular contig", $ctg, 
 					"rightmost feature", $g, $gene->get_attribute("id"),
 					"right neighbour", $right_candidate->get_attribute("id")) if ($main::verbose >= 2);
@@ -948,7 +959,13 @@ sub CalcNeighbourLimits {
 		$gene->set_attribute("right_neighb_id", $right_candidate->get_attribute("id"));
 		$gene->set_attribute("right_neighb_name", $right_candidate->get_attribute("name"));
 		$gene->set_attribute("right_limit", $right_candidate->get_attribute("left"));
-		$gene->set_attribute("right_size", $contig_length - $right{$gene}+$right_candidate->get_attribute("left")-1);
+		if ($right{$gene} < $left{$gene}) {
+		    ## gene overlaps replication origin
+		    $neighb_right_size = &RSAT::stats::max(0, $neighb_right_limit-$right{$gene}-1);
+		    $gene->set_attribute("right_size", $neighb_right_size);
+		} else {
+		    $gene->set_attribute("right_size", $contig_length - $right{$gene}+$right_candidate->get_attribute("left")-1);
+		}
 		next;
 	    } else {
 
@@ -968,18 +985,22 @@ sub CalcNeighbourLimits {
 	    }
 
 	} elsif (($left{$right_candidate} >= $left{$gene}) && ($right{$right_candidate} <= $right{$gene})) {
-	  ## candidate right neighour gene is completely embedded in current gene -> select the next left candidate
-	  $rn++;
-	  $right_candidate = $left_sorted_genes[$rn];
-	  &RSAT::message::Debug("genomic feature",
-				$rn,
-				$right_candidate->get_attribute("geneid"),
-				$right_candidate->get_attribute("name"),
-				"is embedded in genomic feature", $g,
-				$gene->get_attribute("geneid"),
-				$gene->get_attribute("name"),
-			       ) if ($main::verbose >= 4);
-
+	    if (($contig_seq{$ctg}->get_attribute("circular")) && ($right{$right_candidate} < $left{$right_candidate})) {
+		## candidate gene is accross replication origin of circular contig
+		$found = 1;
+	    } else {
+		## candidate right neighour gene is completely embedded in current gene -> select the next left candidate
+		$rn++;
+		$right_candidate = $left_sorted_genes[$rn];
+		&RSAT::message::Debug("genomic feature",
+				      $rn,
+				      $right_candidate->get_attribute("geneid"),
+				      $right_candidate->get_attribute("name"),
+				      "is embedded in genomic feature", $g,
+				      $gene->get_attribute("geneid"),
+				      $gene->get_attribute("name"),
+				      ) if ($main::verbose >= 4);
+	    }
 
 	} elsif ($left{$right_candidate} <= $right{$gene}) {
 	  $found = 1;
@@ -998,7 +1019,6 @@ sub CalcNeighbourLimits {
 
 	} elsif ($left{$right_candidate} > $right{$gene}) {
 	  $found = 1;
-
 	} else {
 	  &RSAT::error::FatalError("Untreated case for the identification of right neighbours",
 				   "right candidate", $rn,
@@ -1014,7 +1034,7 @@ sub CalcNeighbourLimits {
 	}
       } until (($rn > $#left_sorted_genes) || ($found));
 
-	## Once the left neighbour has been found, annotate it in the current gene
+	## Once the right neighbour has been found, annotate it in the current gene
       if ($found) {
 	$neighb_right_limit = $left{$right_candidate};
       } elsif ($rn < 0) {
@@ -1119,7 +1139,7 @@ sub CalcNeighbourLimits {
     for my $g (0..$#right_sorted_genes) {
       my $gene = $right_sorted_genes[$g];
       my $un;			## upstream neighbour index
-      my $dn;			## upstream neighbour index
+      my $dn;			## downstream neighbour index
 
       if ($gene->get_attribute("strand") eq "R") {
 
