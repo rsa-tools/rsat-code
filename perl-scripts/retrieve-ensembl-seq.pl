@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.36 2008/09/11 20:09:40 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.37 2008/09/14 21:12:50 rsat Exp $
 #
 # Time-stamp
 #
@@ -1065,6 +1065,7 @@ sub GetNeighbours {
     } elsif ($noorf) {    # neighbour limits are closest CDS limits
       my @transcripts = @{$neighbour_gene->get_all_Transcripts};
       foreach my $transcript(@transcripts) {
+       if ($transcript->coding_region_start() && $transcript->coding_region_end()) {
 	my $coding_region_start = $transcript->coding_region_start();
 	my $coding_region_end = $transcript->coding_region_end();
 	if (($strand == 1 && $type eq "upstream") || ($strand == -1 && $type eq "downstream")) {
@@ -1082,6 +1083,7 @@ sub GetNeighbours {
 	    $closest_neighbour_limit = $coding_region_start;
 	  }
 	}
+       }
       }
     }
   }
