@@ -54,23 +54,27 @@ supported organisms, indicated by the pop-up menu <b>Query organism</b>.
 Allows to filter on a given taxonomic level (example: Mammalia).
 </ul><ul><A NAME="homology"></A>
 <h4>Homology type</h4>
-Allows to filter on an homology type (example: ortholog, ortholog_one2one).
+Allows to filter on a Compara homology type, as
+ortholog_one2one, ortholog_one2many, etc. Use orthologs to get all types of
+orthologs but not paralogs.
 </ul>
 </ul>
 </ul>
 
 <A NAME="genes"></A>
-<h3>EnsEMBL IDs</h3>
+<h3>Query IDs</h3>
 
 Two options are proposed
 <p>
 <ul>
-<li>EnsEMBL IDs list typed directly in the text area. Several queries can be entered simultaneously, separated by carriage returns.</li>
+<li>IDs list typed directly in the text area. Several queries can be entered simultaneously, separated by carriage returns.</li>
 <li>Click on the <B>Browse...</B> button to select a text file on your
   computer that contains the list of EnsEMBL IDs.</li>
 </ul>
-<P>These IDs can be gene (ex: ENSG00000139618), transcript (ENST00000380152)
-  or protein (ENSP00000369497) IDs from EnsEMBL.
+<P>These IDs can be EnsEMBL gene (ex: ENSG00000139618), transcript (ENST00000380152)
+  or protein (ENSP00000369497) IDs, IDs from other databases (Uniprot,
+  RefSeq, Flybase, SGD...). EnsEMBL transcript and protein IDs are
+  automatically converted to gene IDs and then treated as a gene query.
 
 <A NAME="sequence_type"></A>
 <h3>Type of sequence</h3>

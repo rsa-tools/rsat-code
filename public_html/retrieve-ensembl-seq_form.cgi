@@ -164,13 +164,17 @@ print $query->textfield(-name=>'taxon_selection',
 print "&nbsp;"x4;
 print "<B><A HREF='help.retrieve-ensembl-seq.html#homology'>Homology type</A></B>&nbsp;";
 #print "<BR/>\n";
-print $query->textfield(-name=>'homology_selection',
-		       -default=>$default{homology_selection},
-		       -size=>20);
+print $query->popup_menu(-name=>'homology_selection',
+			 -Values=>['all','orthologs','ortholog_one2one','ortholog_one2many','ortholog_many2many','apparent_ortholog_one2one','paralogs','within_species_paralog','between_species_paralog'],
+			 -default=>$default{all});
+
+#print $query->textfield(-name=>'homology_selection',
+#		       -default=>$default{homology_selection},
+#		       -size=>20);
 
 ### query (gene list)
 print "<p>";
-print "<B><A HREF='help.retrieve-ensembl-seq.html#genes'>EnsEMBL IDs (gene, transcript or protein IDs)</A></B>&nbsp;";
+print "<B><A HREF='help.retrieve-ensembl-seq.html#genes'>Gene, transcript or protein IDs</A></B>&nbsp;";
 #print $query->radio_group(-name=>'genes',
 #			  -values=>['all','selection'],
 #			  -default=>$default{genes});
