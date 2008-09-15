@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.50 2007/12/07 09:21:21 jvanheld Exp $
+# $Id: dna-pattern,v 1.51 2008/09/15 11:11:08 morgane Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -225,9 +225,14 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
 	    $expression = $pattern->get_attribute("sequence");
 	    $expression =~ tr/a-z/A-Z/;
 	    $pattern_length = length($expression);
-	    $D_regular_expression = &IUPAC_to_regular($expression);
-	    $R_regular_expression = &ReverseComplement($D_regular_expression);
-	    $RC_pattern = &ReverseComplement($expression);
+	    unless ($noIUPAC){
+	    	$D_regular_expression = &IUPAC_to_regular($expression);
+	    	$R_regular_expression = &ReverseComplement($D_regular_expression);
+	    	$RC_pattern = &ReverseComplement($expression);
+	    } else {
+	    	$D_regular_expression = $expression;
+	    	$R_regular_expression = $expression;
+	    	}
 	    
 	    $match_count = 0;
 	    #### palindromic patterns are searched only  on one strand 
@@ -241,6 +246,7 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
 		    &IUPACsearch();
 		}
 	    } else { 
+
 		#### search on direct strand
 		if ($strands_to_search =~ /D/) {
 		    $regular_expression = $D_regular_expression;
@@ -328,6 +334,7 @@ sub RegExpSearch {
 	    } keys %pat_hash;
     foreach my $regular_pattern (@keys) {
 	$seq_to_crop = $current_seq;
+print ("pattern: ".$regular_pattern."\n");	
 	while ($seq_to_crop =~ /($regular_pattern)(.*)/i) {
 #	    &RSAT::message::Debug("Matching pattern", $regular_pattern, $seq_to_crop) if ($main::verbose >= 10);
 	    $match_count++;
@@ -780,6 +787,10 @@ sub ReadArguments {
 	    #### the pattern file contains no identifier
 	} elsif ($arg eq "-noid") {
 	    $noid = 1;
+	    
+	    	    #### the pattern file contains no identifier
+	} elsif ($arg eq "-noIUPAC") {
+	    $noIUPAC = 1;
 	    
 	    ################################################################
 	    #### sequence file
