@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.51 2008/09/15 11:11:08 morgane Exp $
+# $Id: dna-pattern,v 1.52 2008/09/15 11:22:10 morgane Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -334,7 +334,6 @@ sub RegExpSearch {
 	    } keys %pat_hash;
     foreach my $regular_pattern (@keys) {
 	$seq_to_crop = $current_seq;
-print ("pattern: ".$regular_pattern."\n");	
 	while ($seq_to_crop =~ /($regular_pattern)(.*)/i) {
 #	    &RSAT::message::Debug("Matching pattern", $regular_pattern, $seq_to_crop) if ($main::verbose >= 10);
 	    $match_count++;
