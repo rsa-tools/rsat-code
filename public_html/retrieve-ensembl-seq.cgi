@@ -64,7 +64,15 @@ if ($query->param('taxon_selection')) {
 ### homology type
 my $homology_type = '';
 if ($query->param('homology_selection')) {
-    $homology_type = $query->param('homology_selection');
+    if ($query->param('homology_selection') eq 'all') {
+	$homology_type = '';
+    } elsif ($query->param('homology_selection') eq 'orthologs') {
+	$homology_type = 'ortholog';
+    } elsif ($query->param('homology_selection') eq 'paralogs') {
+	$homology_type = 'paralog';
+    } else {
+	$homology_type = $query->param('homology_selection');
+    }
 }
 
 #### queries ####
