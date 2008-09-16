@@ -27,6 +27,7 @@ $default{limits} = 'checked';
 $default{counts} = '';
 $default{table} = '';
 $default{stats} = '';
+$default{notacgt} = '';
 
 $default{noov} = "on";
 $default{flanking} = "4";
@@ -131,7 +132,16 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 			       '',
 			       ''
 			       ]),
-
+			    ## notacgt
+				CGI::td({-align=>left,-valign=>MIDDLE},
+			      [
+			       '',
+			       $query->checkbox(-name=>'notacgt',
+						-checked=>$default{notacgt},
+						-label=>' non ACGT characters'),
+			       '',
+			       ''
+			       ]),
 		      CGI::td({-align=>left,-valign=>MIDDLE},
 			      [
 			       '',

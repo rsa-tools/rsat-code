@@ -79,6 +79,11 @@ if ($query->param('match_positions')) {
 if ($query->param('limits')) {
   $parameters .= " -return limits";
 }
+
+### return sequence limits
+if ($query->param('notacgt')) {
+  $parameters .= " -return notacgt";
+}
   
 
 ### return match count ###
@@ -173,26 +178,24 @@ sub PipingForm {
     ### prepare data for piping
     $title = $query->param("title");
     $title =~ s/\"/\'/g;
-    print <<End_of_form;
-<HR SIZE = 3>
-<H4>Next step</H4>
-<CENTER>
-
-<TABLE>
-<TR><TD>
-
-</TD>
-<TD>
+    print <<End_of_form;    
+    <TABLE class='nextstep'>
+<TR>
+  <TD>
+    <H3>Next step</H3>
+  </TD>
+  </tr>
+  <tr>
+  <TD>
 <FORM METHOD="POST" ACTION="feature-map_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
 <INPUT type="hidden" NAME="feature_file" VALUE="$result_file">
 <INPUT type="hidden" NAME="format" VALUE="dna-pattern">
 <INPUT type="hidden" NAME="fill_form" VALUE="on">
 <INPUT type="submit" VALUE="feature map">
-</FORM>
-</TD>
+    </FORM>
+  </TD>
 </TR>
-</TABLE>
-</CENTER>
+</table>
 End_of_form
 }
