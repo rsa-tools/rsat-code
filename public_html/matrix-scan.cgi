@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.19 2008/05/08 09:45:19 morgane Exp $
+# $Id: matrix-scan.cgi,v 1.20 2008/09/16 09:27:58 morgane Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -397,6 +397,6 @@ sub PipingForm {
     </FORM>
   </TD>
 </TR>
-</CENTER>
+</table>
 End_of_form
 }
