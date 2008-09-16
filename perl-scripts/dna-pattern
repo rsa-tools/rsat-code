@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.53 2008/09/16 07:18:01 morgane Exp $
+# $Id: dna-pattern,v 1.54 2008/09/16 09:13:10 morgane Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -34,6 +34,7 @@ $search_method = "regexp";
 %supported_return_fields = (
     sites=>1,
     limits=>1,
+    notacgt=>1,
     counts=>1,
     ct=>1,
     table=>1,
@@ -114,6 +115,7 @@ unless (($allowed_subst eq "") || (&IsNatural($allowed_subst))) {
 			  pattern_id=>$pattern_id,
 			  pattern_seq=>$pattern_seq,
 			  );
+
 @patterns = sort {$b->get_attribute("score") <=> $a->get_attribute("score")} @patterns;
 
 
@@ -216,6 +218,27 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
     
     ## Print sequence limits
     &PrintSequenceLimits($sequence_id, $sequence_length, $orig_pos) if ($return_fields{limits});
+    
+    ## Search for characters that do not correspond to ATGC
+   if ($return_fields{notacgt}){
+   		$pattern = new RSAT::pattern(id=>"notACGT",
+						description=>"notACGT",
+						sequence=>"[^ACGT]+",
+						score=>"1",
+					       );
+		$regular_expression = $pattern->get_attribute("sequence");
+		$regular_expression =~ tr/a-z/A-Z/;
+	    $pattern_length = length($regular_expression);
+	    $strand = "D";
+	    my $initial_noov = $no_overlap;
+	    unless ($initial_noov){
+	    	$no_overlap = 1;
+	    	}
+   		&RegExpSearch($current_seq, $regular_expression);
+   		unless ($initial_noov){
+	    	$no_overlap = 0;
+	    	}
+   }
 
     if ($search_method eq "sliding window") {
 	&SlidingWindowSearch();
@@ -1368,9 +1391,9 @@ ARGUMENTS
                allow # substitutions. 
 	-noIUPAC	
 		The pattern is considered as a standard regular expression. 
-		It is convinient to look for masked sequences represented
+		It is convenient to specifically search for masked sequences represented
 		by "N" characters in sequences:
-		ie : dna-pattern -i your_sequence_file -p "N+" -noov -1str 
+		ie : dna-pattern -i your_sequence_file -p "N+" -noov -1str -noIUPAC
 	-sc #	
 		score column
 
@@ -1413,6 +1436,10 @@ ARGUMENTS
 
 		-return limits: return start and end positions for each
 		    input sequence
+		    
+		-return notacgt: return positions for characters that
+		do not correspond not standard nucleotides (ACGT) eg: N, X and 
+		degenerate nucleotides from IUPAC code (eg: W, K)
 
 		-return counts: return the count of matches per
 		    sequence.  
