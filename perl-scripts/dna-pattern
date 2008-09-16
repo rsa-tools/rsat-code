@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.52 2008/09/15 11:22:10 morgane Exp $
+# $Id: dna-pattern,v 1.53 2008/09/16 07:18:01 morgane Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -681,6 +681,7 @@ dna-pattern options
 -i		sequence file. 
 -mask upper|lower	mask upper- or lowercases, respectively
 -subst		allowed substitutions
+-noIUPAC	the pattern is considered as a standard regular expression. 
 -sc		score column
 -o		output file.
 -format		input format (raw, filelist or IG)
@@ -1365,7 +1366,11 @@ ARGUMENTS
 
 	-subst #
                allow # substitutions. 
-
+	-noIUPAC	
+		The pattern is considered as a standard regular expression. 
+		It is convinient to look for masked sequences represented
+		by "N" characters in sequences:
+		ie : dna-pattern -i your_sequence_file -p "N+" -noov -1str 
 	-sc #	
 		score column
 
