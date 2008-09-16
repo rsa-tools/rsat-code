@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.37 2008/09/14 21:12:50 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.38 2008/09/16 16:27:06 rsat Exp $
 #
 # Time-stamp
 #
@@ -729,8 +729,8 @@ sub Main {
       my $coding_region_start = $transcript->coding_region_start();
       my $coding_region_end = $transcript->coding_region_end();
 
-      &RSAT::message::Info ("Coding region start: $coding_region_start") if ($main::verbose >= 1);
-      &RSAT::message::Info ("Coding region end: $coding_region_end") if ($main::verbose >= 1);
+      &RSAT::message::Info ("Coding region start: $coding_region_start") if ($main::verbose >= 1 && $coding_region_start);
+      &RSAT::message::Info ("Coding region end: $coding_region_end") if ($main::verbose >= 1 && $coding_region_end);
 
       # Exons
       if ($feattype eq "exon") {
@@ -1031,7 +1031,11 @@ sub GetNeighbours {
       $neighbour_name = "";
     }
 
-    # This is for debug only
+    my $neighbour_description = $neighbour_gene->description();
+    unless ($neighbour_description) {
+	$neighbour_description = "";
+    }
+
     my $neighbour_strand = $neighbour_gene->seq_region_strand();
     if ($neighbour_strand == 1) {
       $neighbour_strand = "D";
@@ -1041,7 +1045,7 @@ sub GetNeighbours {
     my $neighbour_start = $neighbour_gene -> seq_region_start();
     my $neighbour_end = $neighbour_gene -> seq_region_end();
 
-    &RSAT::message::Info (join("\t", $neighbour_gene->stable_id(), $neighbour_name, $chromosome -> name(), $neighbour_start, $neighbour_end, $neighbour_strand, $neighbour_gene->description())) if ($main::verbose >= 1);
+    &RSAT::message::Info (join("\t", $neighbour_gene->stable_id(), $neighbour_name, $chromosome -> name(), $neighbour_start, $neighbour_end, $neighbour_strand, $neighbour_description)) if ($main::verbose >= 1);
 
     #Find closest neighbour limit
     if ($nogene) {    # neighbour limits are closest gene limits
@@ -1131,7 +1135,7 @@ sub GetSequence {
       foreach $retrieved_transcript (@retrieved_transcripts) {
 	  my @retrieved_exons = @{$retrieved_transcript->get_all_translateable_Exons};
 	  foreach my $retrieved_exon (@retrieved_exons) {
-	      &RSAT::message::Info ("Translateable exon start: ".$retrieved_exon->start()."\tTranslateable exon end: ".$retrieved_exon->end()."\tTranslateable exon strand: ".$retrieved_exon->strand()) if ($main::verbose >= 1);
+#	      &RSAT::message::Info ("Translateable exon start: ".$retrieved_exon->start()."\tTranslateable exon end: ".$retrieved_exon->end()."\tTranslateable exon strand: ".$retrieved_exon->strand()) if ($main::verbose >= 1);
 	      my $coding_length = $retrieved_exon->end() - $retrieved_exon->start() + 1;
 	      my $masking;
 	      if ($retrieved_exon->seq_region_start() >= $left && $retrieved_exon->seq_region_end() <= $right) {
@@ -1229,7 +1233,7 @@ sub GetSequence {
       my @limited_taxons;
 
       if ($taxon) {
-	  foreach $tax (@taxons) {
+	  foreach my $tax (@taxons) {
 	      push(@limited_taxons,$tax);
 	      last if (lc($tax) eq lc($taxon));
 	  }
@@ -1278,7 +1282,7 @@ sub GetSequence {
 		
 		if ($ortho_type) {
 		    if ($taxon) {
-			foreach $tax (@limited_taxons) {
+			foreach my $tax (@limited_taxons) {
 			    if (($homology->description =~ /$ortho_type/) && (lc($homology->subtype) eq lc($tax))){
 				my $gene = $member->get_Gene;
 				&Main($gene, $bin_name);
@@ -1292,7 +1296,7 @@ sub GetSequence {
 		    }
 		} else {
 		    if ($taxon) {
-			foreach $tax (@limited_taxons) {
+			foreach my $tax (@limited_taxons) {
 			    if (lc($homology->subtype) eq lc($tax)) {
 				my $gene = $member->get_Gene;
 				&Main($gene, $bin_name);
