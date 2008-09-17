@@ -147,23 +147,27 @@ print ("<INPUT TYPE='radio' NAME='single_multi_org' VALUE='multi' $CHECKED>",
        "</a>\n"
       );
 
-print "&nbsp;"x10;
+print "&nbsp;"x8;
 print "<B>Optional filters</B>";
 print "&nbsp;"x4;
 
+#### Homology type
+print "<B><A HREF='help.retrieve-ensembl-seq.html#homology'>Homology type</A></B>&nbsp;";
+print $query->popup_menu(-name=>'homology_selection',
+			 -Values=>['all','orthologs','ortholog_one2one','ortholog_one2many','ortholog_many2many','apparent_ortholog_one2one','paralogs','within_species_paralog','between_species_paralog'],
+			 -default=>$default{homology_selection});
+
 #### Taxon
+print "&nbsp;"x4;
+# print " ";
 print "<B><A HREF='help.retrieve-ensembl-seq.html#taxon'>Taxon</A></B>&nbsp;";
 print $query->textfield(-name=>'taxon_selection',
 		       -default=>$default{taxon_selection},
 		       -size=>20);
 
-#### Homology type
-#print "&nbsp;"x4;
-print " ";
-print "<B><A HREF='help.retrieve-ensembl-seq.html#homology'>Homology type</A></B>&nbsp;";
-print $query->popup_menu(-name=>'homology_selection',
-			 -Values=>['all','orthologs','ortholog_one2one','ortholog_one2many','ortholog_many2many','apparent_ortholog_one2one','paralogs','within_species_paralog','between_species_paralog'],
-			 -default=>$default{homology_selection});
+print "<BR>";
+print "&nbsp"x6;
+print "<font color=red>(Can be time-consuming)</font>";
 
 ### query (gene list)
 print "<p>";
