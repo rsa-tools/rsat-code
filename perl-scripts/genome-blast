@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast,v 1.11 2008/04/04 14:20:54 rsat Exp $
+# $Id: genome-blast,v 1.12 2008/09/17 07:33:02 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -690,23 +690,20 @@ sub BlastAndRank {
 	    $rank++;
 #	&RSAT::message::Debug("Hit rank", $query, $rank, $hit) if ($main::verbose >= 10);
 	    $hit->set_attribute("s_rank", $rank);
-	    
 	    ## Index best hits
 	    if ($rank == 1) {
 		$best_hit{$hit->get_attribute("query")} = $hit->get_attribute("subject");
 	    }
-	    
 	}
 	&RSAT::message::Info(join ("\t", "Sorted hits for query", $query, scalar(@hits))) if ($main::verbose >= 3);
     }
-    
-    
+
     ###### Print the result
     &RSAT::message::Info("Printing the result") if ($main::verbose >= 1);
     my @header = join "\t", @output_columns;
     &RSAT::message::Info(join("\t", "Ranked BLAST hits", $outfile{blast_ranks})) if ($main::verbose >= 1);
     $output = &OpenOutputFile($outfile{blast_ranks});
-    print $output join ("\t", "query_organism", "db_organism", @header, "q_rank", "s_rank"), "\n";
+    print $output join ("\t", "query_organism", "db_organism", @header), "\n";
 
 
     foreach my $blast_hit ($blast_hits->get_objects()) {
@@ -715,13 +712,10 @@ sub BlastAndRank {
 	    next if 
 	    push @fields, $blast_hit->get_attribute($col);
 	}
-	
-#	if ($task{rank}) {
 	print $output join("\t",
 			   $query_organism,
 			   $db_organism,
 			   @fields), "\n";
-#	}
 #	if (($task{bbh}) &&
 #	    ($blast_hit->get_attribute("q_rank")==1) &&
 #	    ($blast_hit->get_attribute("s_rank")==1)) {
@@ -741,7 +735,19 @@ __END__
 
 =head1 SEE ALSO
 
+=over
+
+=item B<get-orthologs>
+
+The program I<get-orthologs> uses as input the BLAST similarity tables
+computed by genome-blast.
+
+
+=back
+
 =head1 WISH LIST
+
+=over
 
 =item B<-reciprocal>
 
@@ -749,5 +755,6 @@ Run blastall in both direction, i.e. after having blasted query
 organism against database organism, blast database organism against
 taxon organism. This option is useless when dbtaxon == qtaxon.
 
+=back
 
 =cut
