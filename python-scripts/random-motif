@@ -39,7 +39,6 @@ from random import choice, randint, shuffle
 sys.path.insert(1, os.path.join(sys.path[0], 'lib'))
 import matrix
 
-
 def motif_generator(length, conservation):
     high = [0.91, 0.03, 0.03, 0.03]
     low =  [0.55, 0.15, 0.15, 0.15]
@@ -73,32 +72,27 @@ def main(options, args):
     
     if type(options.output) is str:
         options.output = open(options.output, 'w')
-
     options.output.write('\n'.join(data))
-
 
 if __name__ == '__main__':
     USAGE = '''%s -l motiflength [-c conservation] [-h]'''
     VERSION = '1.0'
     PROG_NAME = os.path.basename(sys.argv[0])
     parser = optparse.OptionParser(usage=USAGE % PROG_NAME, add_help_option=0, version=VERSION)
-
     parser.add_option("-o", "--output", action="store", dest="output", default=sys.stdout)
     parser.add_option("-l", "--length", action="store", dest="length", type="int", metavar="#", help="motif length")
     parser.add_option("-c", "--conserv", action="store", dest="conservation", type="str", default="0.91", metavar="#", help="dominant base conservation")
     parser.add_option("-h", "--help", action="store_true", dest="help")
-
+    parser.add_option("--debug", action="store_true", dest="debug")  
     (options, args) = parser.parse_args()
 
     if options.help:
         doc =  globals()['__doc__'] % {'usage' : USAGE % PROG_NAME, 'version' : VERSION, 'progname' : PROG_NAME}
         sys.stdout.write(doc)
-        #pager(doc)
         sys.exit(0)
     if not options.length:
         parser.print_usage()
         sys.exit()
-
     if options.conservation != 'low':
         try:
             c = float(options.conservation)
@@ -106,7 +100,10 @@ if __name__ == '__main__':
                 raise
         except:
             parser.error('invalid conservation')
-
-    main(options, args)
-
-
+    try:
+        main(options, args)
+    except:
+        if options.debug:
+            raise
+        else:
+            sys.stderr.write('Error while running\n')

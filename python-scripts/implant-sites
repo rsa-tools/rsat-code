@@ -9,7 +9,7 @@ AUTHOR
         Matthieu Defrance <defrance@scmbb.ulb.ac.be>
 
 DESCRIPTION
-        implants motif in DNA sequences
+        implants sites in DNA sequences
 
 CATEGORY
         motifs
@@ -25,10 +25,10 @@ ARGUMENTS
                           if not specified, the standard input is used
     -o #, --output=#      output results to #
                           if not specified, the standard output is used
-    -m #, --motif=#       read motif from # (must be in tab format)
     -s #, --sites=#       read sites from # (one site per line format)
-    --esps=#              set the expected number of site per sequence to #
-    --espp=#              set the expected number of site per position to #
+    -m #, --motif=#       read motif from # (must be in tab format) and use auto-generated sites
+    --esps=#              set the expected number of sites per sequence to #
+    --espp=#              set the expected number of sites per position to #
     
 SEE ALSO
         random-motif
@@ -37,16 +37,15 @@ SEE ALSO
 
 import sys
 import os
-sys.path.insert(1, os.path.join(sys.path[0], 'lib'))
-
 from math import *
 import random
 import bisect
 import optparse
 from pydoc import pager
 from random import choice, randint, shuffle
-from lib import dna
 
+sys.path.insert(1, os.path.join(sys.path[0], 'lib'))
+from lib import dna
 
 def wchoice(l, frequencies):
     """
@@ -142,7 +141,10 @@ def main(options, args):
 
         try:
             if type(options.sites) is str:
-                f = open(options.sites)
+                try:
+                    f = open(options.sites)
+                except IOError:
+                    sys.stderr.write('Can not open file \'%s\'' % open.sites)
             else:
                 f = options.motif
             sites = read_sites(f)
@@ -179,32 +181,30 @@ if __name__ == '__main__':
     parser.add_option("-i", "--input", action="store", dest="input", metavar="#", help="sequences")
     parser.add_option("-s", "--sites", action="store", dest="sites", metavar="#", help="sites")
     parser.add_option("-m", "--motif", action="store", dest="motif", metavar="#", help="motif")
-
     parser.add_option("--espp", action="store", dest="espp", metavar="#", type="float", default=None, help="expected sites per position")
     parser.add_option("--esps", action="store", dest="esps", metavar="#", type="float", default=1.0, help="expected sites per sequence")
-
     parser.add_option("-h", "--help", action="store_true", dest="help")
-
+    parser.add_option("--debug", action="store_true", dest="debug") 
 
     (options, args) = parser.parse_args()
 
     if options.help:
         doc =  globals()['__doc__'] % {'usage' : USAGE % PROG_NAME, 'version' : VERSION, 'progname' : PROG_NAME}
         print doc
-        #pager(doc)
         sys.exit(0)
-
     if not options.input:
         parser.print_usage()
         sys.exit()
-
     if len(sys.argv) == 1:
         print USAGE % PROG_NAME
         sys.exit(0)    
-
-
-    main(options, args)
-
+    try:
+        main(options, args)
+    except:
+        if options.debug:
+            raise
+        else:
+            sys.stderr.write('Error while running\n')
 
 
 
