@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.252 2008/07/09 21:06:26 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.253 2008/09/17 14:31:58 defrance Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.252 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.253 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -97,7 +97,6 @@ package main;
 			 oligos_pssm
 			 dyads_pssm
 
-			 ormbg
 			 orm
 			 assemble_orm
 			 orm_maps
@@ -232,19 +231,17 @@ package main;
 
   #$MEME_options{bfile}="";
 
-  ## Default ORM options
-  $ormbg_options = "";		    ## must be global
-  $ormbg_suffix = "";		    ## must be global
-  $ORM_lth_width = 100;	## Minimal window width for variable window size
-  $ORM_uth_wrank = 1;		     ## Max rank per word
-  $ORM_uth_rank=50;		     ## max rank (all words)
-  $ORM_lth_occ_sig=0;	  ## lower thresold on occurrence significance
-  #$ORM_fixedsizewindow=0; ## Fixed window size
-  $ORM_overlap=0; ## Allow overlapping occurrences for self-overlapping words
-  $ORM_strand="+-";		   ## Strands
-  $ORM_word_length=6;		   ## Word length
-  $ORM_window=100;	       ## Window size for the background model
-  $ORM_markov_order=-1;	      ## markov order for the background model
+  ## Default orm options
+  $orm_lth_width = 10;	## Minimal window width for variable window size
+  $orm_uth_wrank = 1;		     ## Max rank per word
+  $orm_uth_rank=50;		     ## max rank (all words)
+  $orm_lth_occ_sig=0;	  ## lower thresold on occurrence significance
+  #$orm_fixedsizewindow=0; ## Fixed window size
+  $orm_overlap=0; ## Allow overlapping occurrences for self-overlapping words
+  $orm_strand="+-";		   ## Strands
+  $orm_word_length=6;		   ## Word length
+  $orm_window=100;	       ## Window size for the background model
+  $orm_markov_order=-1;	      ## markov order for the background model
 
   ## Default consensus options
   $pssm_sort_key{consensus} = 'cons.ln.Eval';
@@ -663,49 +660,6 @@ sub SetFileNames {
 #    if (&IsReal($lth{ms_sig})) {$oligo_suffix .= "_mssig".$lth{ms_sig} ; }
     $oligo_suffix .= $noov;
 
-
-    ################################################################
-    ## Options for ormbg (calculate bckground model for orm)
-
-    $ormbg_options = "";
-    $ormbg_suffix = "";
-
-    ## Word length
-    $ormbg_options .= " --word_length=".$ORM_word_length;
-    $ormbg_suffix .= "_w".$ORM_word_length;
-
-    ## Location
-    my $ORM_location = $from.":".$to;
-    $ormbg_options .= " --location=".$ORM_location;
-    $ormbg_suffix .= $from."_".$to;
-
-    ## Window size
-    $ormbg_options .= " --window=".$ORM_window;
-    $ormbg_suffix .= "_W".$ORM_window;
-
-    ## Strand
-    $ormbg_options .= " --strand=".$ORM_strand;
-    $ormbg_suffix .= $ORM_strand;
-
-    ## Self-overlapping words
-    if ($ORM_overlap) {
-	$ormbg_options .= " --overlap";
-	$ormbg_suffix .= "-ovlp";
-    } else {
-	$ormbg_suffix .= "-noov";
-    }
-
-    ## Markov model
-    if ($ORM_markov_order >= 0) {
-	$ormbg_options .= " --markov_order=".$ORM_markov_order;
-	$ormbg_suffix .= "_m".$ORM_markov_order;
-    }
-
-    ## Background model file
-    $dir{ormbg} = "bg_models/orm_models";
-    my $ormbg_file = $dir{ormbg}."/".$ormbg_suffix;
-    $ormbg_options .= " --output=".$ormbg_file;
-
     foreach my $family_name (@families) {
 	my $gene_nb = scalar(@{$family{$family_name}->{members}});
 #	warn join ("\t", "Number of genes", $family_name, $gene_nb), "\n";
@@ -1026,36 +980,60 @@ sub SetFileNames {
 	$family{$family_name}->{meme_suffix} = $meme_suffix;
 
 	################################################################
-	## ORM
+	## orm
+
 	my $orm_options = "";
 
-
-	##
-	## Options for ormbg
-#	$ormbg_suffix .= $organism_name;
-
 	## Options for orm
-	my $orm_suffix = $ormbg_suffix;
+	my $orm_suffix = "";
 
-	## Location
-	$orm_options .= " --location=".$ORM_location;
+    ## Word length
+    $orm_options .= " --length=".$orm_word_length;
+    $orm_suffix .= "_w".$orm_word_length;
+
+    ## Location
+    #my $orm_location = $from.":".$to;
+    #$orm_options .= " --location=".$orm_location;
+    #$orm_suffix .= $from."_".$to;
+
+    ## Window size
+    $orm_options .= " --window=".$orm_window;
+    $orm_suffix .= "_W".$orm_window;
+
+    ## Strand
+    $orm_options .= " --strand=".$orm_strand;
+    $orm_suffix .= $orm_strand;
+
+    ## Self-overlapping words
+    if ($orm_overlap) {
+	    $orm_options .= " --overlap";
+	    $orm_suffix .= "-ovlp";
+    } else {
+	    $orm_suffix .= "-noov";
+    }
+
+    ## Markov model
+    if ($orm_markov_order >= 0) {
+	    $orm_options .= " --markov=".$orm_markov_order;
+	    $orm_suffix .= "_m".$orm_markov_order;
+    }
 
 	## Number of top motifs
-	$orm_options .= " -u rank ".$ORM_uth_rank;
-	$orm_suffix .= "_rank".$ORM_uth_rank;
+	$orm_options .= " --max=rank ".$orm_uth_rank;
+	$orm_suffix .= "_rank".$orm_uth_rank;
 
 	## Occurrence significance
-	$orm_options .= " -d occ_sig ".$ORM_lth_occ_sig;
-	$orm_suffix .= "_occ_sig".$ORM_lth_occ_sig;
+	$orm_options .= " --min=occ_sig ".$orm_lth_occ_sig;
+	$orm_suffix .= "_occ_sig".$orm_lth_occ_sig;
 	$orm_options .= " --sort=-occ_sig";
 
 	## Window width
-	$orm_options .= " -d width ".$ORM_lth_width;
-	$orm_suffix .= "_minwidth".$ORM_lth_width;
+	$orm_options .= " --min=width ".$orm_lth_width;
+	$orm_suffix .= "_minwidth".$orm_lth_width;
 
 	## Word rank
-	$orm_options .= " -u w_rank ".$ORM_uth_wrank;
-	$orm_suffix .= "_wrank".$ORM_uth_wrank;
+	$orm_options .= " --max=w_rank ".$orm_uth_wrank;
+	$orm_suffix .= "_wrank".$orm_uth_wrank;
 
 	## Fixed window size
 #	if ($ORM_fixedsizewindow) {
@@ -1065,9 +1043,6 @@ sub SetFileNames {
 
 	## input file
 	$orm_options .= " --input=".$family{$family_name}->{input_seq_file};
-
-
-	$orm_options .= " --background=".$ormbg_file;
 
 	## Output file
 	$family{$family_name}->{orm_dir} = ${family_name}."/"."orm_".${family_name};
@@ -1909,9 +1884,9 @@ sub orm {
   if ($ENV{ORM}) {
     $orm_command = $ENV{ORM};
   } else {
-    $orm_command = "orm.py";
+    $orm_command = "orm";
   }
-  $orm_command .= " -v1 ".$family{$family_name}->{orm_options};
+  $orm_command .= " -v 1 ".$family{$family_name}->{orm_options};
   if ($task{assemble_orm}) {
     &RSAT::message::TimeWarn("Assembling orm patterns", $family{$family_name}->{orm_assembly_file}) 
       if ($verbose >= 2);
@@ -1935,35 +1910,6 @@ sub orm {
   } else {
     &doit($orm_command, $dry_run, 0, $verbose);
   }
-}
-
-################################################################
-## Run ormbg program 
-sub ormbg {
-  chdir($dir{output}); &RSAT::util::CheckOutDir($dir{ormbg});
-
-  #### retrieve upstream sequences
-  $ormbg_command = "retrieve-seq -all -imp_pos -type upstream -org ".$organism_name;
-  $ormbg_command .= " -noorf " if ($noorf);
-  $ormbg_command .= " -from $from" if (defined($from));
-  $ormbg_command .= " -to $to " if (defined($to));
-  $ormbg_command .= " -label id,name ";
-  $ormbg_command .= " -feattype $feature_types " if ($feature_types);
-  $ormbg_command .= " -format fasta";
-
-  ## ormbg command
-  if ($ENV{ORMBG}) {
-    $ormbg_command .= " | " .$ENV{ORMBG};
-  } else {
-    $ormbg_command .= " | ormbg.py";
-  }
-  $ormbg_command .= " -v 1 ".$ormbg_options;
-
-  #   if ($batch) {
-  #       push @main::batch_commands, $ormbg_command;
-  #   } else {
-  &doit($ormbg_command, $dry_run, $die_on_error, $verbose);
-  #   }
 }
 
 
@@ -2889,9 +2835,6 @@ sub AnalyzeFamilies {
 #	}
 	$seq_length_calculated = 1;
    }
-
-   ### Calculate background model for orm
-   &ormbg() if ($task{ormbg});
 
    foreach $family_name (@families) {
 #       @main::batch_commands = ();
