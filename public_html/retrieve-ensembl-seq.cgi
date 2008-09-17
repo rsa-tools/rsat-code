@@ -227,11 +227,14 @@ if (($query->param('output') =~ /display/i) ||
     ## Service call
     my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
 
+    ## Avoid timeout
+    $soap->get_transport()->timeout(600); 
+
     ## Send the request to the server
     my $som = $soap->retrieve_ensembl_seq({'request' => \%args});
 
     ### print the result ### 
-#    &PipingWarning();
+    &PipingWarning();
 
     print '<H4>Result</H4>';
 
@@ -246,7 +249,8 @@ if (($query->param('output') =~ /display/i) ||
 	$command =~ s|$ENV{RSAT}/perl-scripts/||;
 	print "Command used on the server: ".$command, "\n";
 	## Report the result
-	$server_file = $results -> get_server();
+#	$server_file = $results -> get_server();
+	$sequence_file = $results -> get_server();
 	$result = $results -> get_client();
     }
 
@@ -263,7 +267,8 @@ if (($query->param('output') =~ /display/i) ||
     }
 
     ### prepare data for piping
-#    &PipingFormForSequence();
+    $out_format = 'fasta';    
+    &PipingFormForSequence();
 
     print "<HR SIZE = 3>";
 
