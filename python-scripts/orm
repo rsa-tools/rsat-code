@@ -386,7 +386,7 @@ def main(args, options):
     # output
     #
     ##
-    if options.output is str:
+    if type(options.output) is str:
         output = open(options.output, mode='w')
     else:
         output = options.output
