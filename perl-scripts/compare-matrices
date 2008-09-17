@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.26 2008/08/07 13:02:55 jvanheld Exp $
+# $Id: compare-matrices,v 1.27 2008/09/17 07:31:39 jvanheld Exp $
 #
 ############################################################
 
@@ -243,7 +243,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.27 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -974,12 +974,15 @@ because they correspond to a rotational symmetry in the 3D
 structure. Such symmetrical motifs are often characteristic of sites
 recognized by homodimeric complexes.
 
-By contrast, simple string-based palindromes (e.g. CAGTTGAC) have
-absolutely no special interest in molecular biology because they are
-not symmetrical with any respect. The apparent symetry is an artifact
-of the string representation, but the corresponding molecule has
-neither rotational nor translational symmetry.
+By contrast, simple string-based palindromes (e.g. CAGTTGAC) no
+absolutely not correspond to any symmetry on the biochemical point of
+view, because the 3D structure of the corresponding double helix is
+not symmetrical. The apparent symetry is an artifact of the string
+representation, but the corresponding molecule has neither rotational
+nor translational symmetry.
 
+DNA signals can either be symmetrical (reverse complementary
+palindromes, tandem repeats) or asymmetrical.
 
 =cut
 	} elsif ($arg eq "-R") {
