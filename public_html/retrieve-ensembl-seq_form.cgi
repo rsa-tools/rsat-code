@@ -35,7 +35,7 @@ $default{single_multi_org} = "single";
 # $default{gene_col} = 1;
 # $default{org_col} = 2;
 $default{taxon_selection} = "";
-$default{homology_selection} = "";
+$default{homology_selection} = "orthologs";
 $default{header_org} = "scientific";
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -152,25 +152,18 @@ print "<B>Optional filters</B>";
 print "&nbsp;"x4;
 
 #### Taxon
-#print "<p>";
 print "<B><A HREF='help.retrieve-ensembl-seq.html#taxon'>Taxon</A></B>&nbsp;";
-#print "<BR/>\n";
 print $query->textfield(-name=>'taxon_selection',
 		       -default=>$default{taxon_selection},
 		       -size=>20);
 
 #### Homology type
-#print "<p>";
-print "&nbsp;"x4;
+#print "&nbsp;"x4;
+print " ";
 print "<B><A HREF='help.retrieve-ensembl-seq.html#homology'>Homology type</A></B>&nbsp;";
-#print "<BR/>\n";
 print $query->popup_menu(-name=>'homology_selection',
 			 -Values=>['all','orthologs','ortholog_one2one','ortholog_one2many','ortholog_many2many','apparent_ortholog_one2one','paralogs','within_species_paralog','between_species_paralog'],
-			 -default=>$default{all});
-
-#print $query->textfield(-name=>'homology_selection',
-#		       -default=>$default{homology_selection},
-#		       -size=>20);
+			 -default=>$default{homology_selection});
 
 ### query (gene list)
 print "<p>";
