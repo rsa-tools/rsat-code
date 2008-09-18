@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.253 2008/09/17 14:31:58 defrance Exp $
+# $Id: gene-cluster-motifs,v 1.254 2008/09/18 09:57:39 defrance Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.253 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.254 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -96,6 +96,7 @@ package main;
 			 pssm
 			 oligos_pssm
 			 dyads_pssm
+			 orm_pssm
 
 			 orm
 			 assemble_orm
@@ -235,7 +236,7 @@ package main;
   $orm_lth_width = 10;	## Minimal window width for variable window size
   $orm_uth_wrank = 1;		     ## Max rank per word
   $orm_uth_rank=50;		     ## max rank (all words)
-  $orm_lth_occ_sig=0;	  ## lower thresold on occurrence significance
+  $orm_lth_occ_sig= 0;	  ## lower thresold on occurrence significance
   #$orm_fixedsizewindow=0; ## Fixed window size
   $orm_overlap=0; ## Allow overlapping occurrences for self-overlapping words
   $orm_strand="+-";		   ## Strands
@@ -989,7 +990,7 @@ sub SetFileNames {
 
     ## Word length
     $orm_options .= " --length=".$orm_word_length;
-    $orm_suffix .= "_w".$orm_word_length;
+    $orm_suffix .= "w".$orm_word_length;
 
     ## Location
     #my $orm_location = $from.":".$to;
@@ -1002,7 +1003,11 @@ sub SetFileNames {
 
     ## Strand
     $orm_options .= " --strand=".$orm_strand;
-    $orm_suffix .= $orm_strand;
+	if ($orm_strand eq "+-"){
+    	$orm_suffix .= "-2str";
+	} else {
+    	$orm_suffix .= "-1str";		
+	}
 
     ## Self-overlapping words
     if ($orm_overlap) {
@@ -1887,6 +1892,7 @@ sub orm {
     $orm_command = "orm";
   }
   $orm_command .= " -v 1 ".$family{$family_name}->{orm_options};
+
   if ($task{assemble_orm}) {
     &RSAT::message::TimeWarn("Assembling orm patterns", $family{$family_name}->{orm_assembly_file}) 
       if ($verbose >= 2);
@@ -1898,13 +1904,13 @@ sub orm {
     ### extract PSSM from pattern assembly
     &RSAT::message::TimeWarn("Matrix from orm patterns", $family{$family_name}->{orm_pssm_file}) 
       if ($verbose >= 2);
-    $orm_command = "matrix-from-patterns -v 1 ";
+    $orm_command .= "; matrix-from-patterns -v 1 ";
     $orm_command .= " -seq ".$family{$family_name}->{seq_file};
     $orm_command .= " -asmb ".$family{$family_name}->{orm_assembly_file};
     $orm_command .= " -bginput -markov 0 ";
     $orm_command .= " -o ".$family{$family_name}->{orm_pssm_file};
   }
-
+	#print $orm_command."\n";
   if ($batch) {
     push @main::batch_commands, $orm_command;
   } else {
@@ -2986,6 +2992,18 @@ sub AnalyzeFamilies {
 	### orm
 	&orm() if ($task{orm});
 
+	## Convert orm assembly to PSSM
+	if ($task{orm_pssm}) {
+	  my $pssm_command = &MatrixFromPatterns($family{$family_name}->{orm_assembly_file},
+						 $family{$family_name}->{orm_pssm_file}, "orm");
+	  if ($main::batch) {
+	    push @main::batch_commands, $pssm_command;
+	  } else {
+	    &doit($pssm_command, $dry_run, $die_on_error, $verbose);
+	  }
+	}
+
+
 	### orm feature-maps
 	if ($task{orm_maps}) {
 	    &MatchPatterns($family{$family_name}->{orm_file},
@@ -3316,11 +3334,11 @@ OPTIONS
 		name of a file containing the expected frequencies for
 		dyad-analysis.
 
-   ORM-specific options
+   orm-specific options
 
-	ORM is a pattern discovery program developed by Matthieu
+	orm is a pattern discovery program developed by Matthieu
 	Defrance. It should be installed in the contribution dir:
-		    $RSAT/python-scripts/ORM/orm.py
+		    $RSAT/python-scripts/orm.py
 
 	orm.py detects windows containing over-represented words, by
 	comparison with the background model. More information can be found
