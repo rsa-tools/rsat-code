@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.39 2008/09/19 10:45:08 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.40 2008/09/19 11:02:59 rsat Exp $
 #
 # Time-stamp
 #
@@ -209,7 +209,7 @@ package main;
     if ($header eq 'none') {
 	$header_org = '';
     } else {
-	$header_org = $org."-";
+	$header_org = ucfirst($org)."-";
     }
 
     my $fasta_header = ">$header_org$chrom-$left_limit-$right_limit\t$chrom-$left_limit-$right_limit; from 1 to $size; size: $size; location: $chrom $left_limit $right_limit $rsat_strand";
@@ -258,7 +258,7 @@ package main;
       if ($header eq 'none') {
 	  $header_org = '';
       } else {
-	  $header_org = $org."-";
+	  $header_org = ucfirst($org)."-";
       }
 
       if ($ft_id) {
@@ -559,7 +559,7 @@ sub Main {
   if ($header eq 'common') {
       $header_org = $common_name."-";
   } elsif ($header eq 'scientific') {
-      $header_org = $main_org."-";
+      $header_org = ucfirst($main_org)."-";
   } elsif ($header eq 'none') {
       $header_org = '';
   }
