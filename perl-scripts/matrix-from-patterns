@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.14 2008/09/02 21:58:38 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.15 2008/09/24 16:33:43 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -118,8 +118,8 @@ package main;
     ## Parameters for pattern-assembly
     local $asmb_maxfl = 1;
     local $asmb_subst = 1;
-    local $asmb_max_size = 50;
-    local $asmb_max_nb = 5;
+    local $max_asmb_size = 50;
+    local $max_asmb_nb = 5;
     local $asmb_maxpat = 100;
 
     ## Parameters for convert-matrix
@@ -144,8 +144,9 @@ package main;
     ## Check argument values
 
     ## matrix-scan parameters
-    unless ($scan_parameters) {
-      $scan_parameters = " -uth Pval ".$uth{Pval};
+    ## The upstream threshold on Pval MUST be defined (if not, all sites can be taken, resulting in a meaningless matrix)
+    unless ($scan_parameters =~ /-uth Pval/) {
+      $scan_parameters = " -uth Pval ".$uth{Pval}." ".$scan_parameters;
     }
 
     ## The output prefix is mandatory
@@ -190,8 +191,8 @@ package main;
       $assembly_cmd .= " -maxfl ".$asmb_maxfl;
       $assembly_cmd .= " -subst ".$asmb_subst;
       $assembly_cmd .= " -maxpat ".$asmb_maxpat;
-      $assembly_cmd .= " -max_asmb_size ".$asmb_max_size;
-      $assembly_cmd .= " -max_asmb_nb ".$asmb_max_nb;
+      $assembly_cmd .= " -max_asmb_size ".$max_asmb_size;
+      $assembly_cmd .= " -max_asmb_nb ".$max_asmb_nb;
       $assembly_cmd .= " -o ".$outfile{assembly};
       print $log "; patterns -> assemblies\n", $assembly_cmd, "\n";
       &doit($assembly_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -203,6 +204,7 @@ package main;
     my $convert_cmd = "${SCRIPTS}/convert-matrix -v 1 -i ".$outfile{assembly};
     $convert_cmd .= " -from assembly";
     $convert_cmd .= " -return counts,parameters";
+    $convert_cmd .= " -top ".$max_asmb_nb;
     $convert_cmd .= " -o ".$outfile{sig_matrices};
     print $log "; assemblies -> significance matrices\n", $convert_cmd, "\n";
     &doit($convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -386,7 +388,7 @@ dyad-analysis.
 =item B<-max_asmb_nb>
 
 This parameter is passed to pattern-assembly, to indicate the maximal
-number of assemblies to return. 
+number of assemblies to return.
 
 Since each assembly is then converted into a PSSM by
 matrix-from-pattern, this option also indicates the maximal number of
@@ -397,8 +399,8 @@ Note that when matrix-from-patterns is fed with pre-assembled patterns
 
 =cut
 	} elsif ($arg eq "-max_asmb_nb") {
-	  &RSAT::error::FatalError("Options -asmb and -max_asmb_nb are mutually exclusive")
-	    if (defined($infile{assembly}));
+#	  &RSAT::error::FatalError("Options -asmb and -max_asmb_nb are mutually exclusive")
+#	    if (defined($infile{assembly}));
 	  $max_asmb_nb = shift(@arguments);
 
 
