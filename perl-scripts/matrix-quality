@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.58 2008/09/08 14:04:33 gipsi Exp $
+# $Id: matrix-quality,v 1.59 2008/09/24 16:37:34 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -196,7 +196,7 @@ package main;
       }
     }
     if (($tasks{theor}) || ($tasks{theor_loo})) {
-      &RSAT::error::FatalError("You must define a background model file, with either option -bgfile or -th_prior")
+      &RSAT::error::FatalError("You must define a background model file for the theoretical distribution, with either option -bgfile or -th_prior")
 	unless ($infile{th_prior});
     }
 

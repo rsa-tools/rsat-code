@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.124 2008/09/08 14:04:22 gipsi Exp $
+# $Id: matrix-scan,v 1.125 2008/09/24 16:34:24 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1769,15 +1769,12 @@ End_short_help
 #### Read arguments 
 sub ReadArguments {
     my $arg = "";
-    
     my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
-    
 
     while ($arg = shift (@arguments)) {
 
 	## Verbosity
 =pod
-	    
 
 =head1 OPTIONS
 
@@ -2198,14 +2195,14 @@ decimals).
 
 	    ## Thresholds
 =pod
-    
+
 =item	B<-lth param lower_threshold>
 
 =item	B<-uth param upper_threshold>
 
 Threshold on some parameter (-lth: lower, -uth: upper threshold). 
 
-Supported threshold fields for the matches : score, pval, eval, sig, normw, proba_M, proba_B, rank , crer_sites , crer_size
+Supported threshold fields for the matches : score pval eval sig normw proba_M proba_B rank crer_sites crer_size
 
 Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ occ_pval occ_eval occ_sig occ_sig_rank
 
