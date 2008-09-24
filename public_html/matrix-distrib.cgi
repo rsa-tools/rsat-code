@@ -66,7 +66,6 @@ $parameters .= " -m $matrix_file";
   } else {
     &FatalError("Decimals should be an integer number");
 }
-  
 
 
 ################################################################
@@ -116,7 +115,7 @@ $parameters .= " -matrix_format ".$input_format;
     } else {
       &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
     }
-		
+
   } else {
     &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
   }
