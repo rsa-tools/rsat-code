@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.61 2008/07/09 23:38:52 jvanheld Exp $
+# $Id: dyad-analysis,v 1.62 2008/09/24 12:22:06 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -17,7 +17,7 @@ require "RSA.disco.lib";
 #### Initialise parameters
 local $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 local %default_return_fields = (occ=>1,proba=>1);
-local $timeout = 900;
+local $timeout = 0; ## This is principally for the Web server
 local @alphabet = ("a","c","g","t"); ## For &all_oligos()
 
 #### background models

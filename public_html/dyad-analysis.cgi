@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.30 2008/01/14 02:32:45 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.31 2008/09/24 12:22:06 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -42,9 +42,12 @@ $query = new CGI;
 &UpdateLogFile;
 
 #### read parameters ####
-$parameters = " -v 1 -sort -timeout 3600 ";
-#$parameters = " -v 1 -sort -return proba,rank -timeout 3600 ";
+$parameters = " -v 1 -sort";
 
+################################################################
+## Timeout prevents over-utilization of the server when large files are analyzed
+## After 1h of computation, the dyad-anlysis process is killed 
+$parameters .= " -timeout 3600 ";
 
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
@@ -56,6 +59,7 @@ if ($purge) {
 } else {
     $command= "$dyad_analysis_command -i $sequence_file  ";
 }
+
 
 ### sequence file
 #($sequence_file,$sequence_format) = &GetSequenceFile();
