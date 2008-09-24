@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.41 2008/09/03 14:26:51 rsat Exp $
+# $Id: RSAT_home.cgi,v 1.42 2008/09/24 12:19:40 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -105,13 +105,22 @@ print <<EndText;
     programs specifically designed for the detection of regulatory
     signals in non-coding sequences.
 
-    <P> <font color='red'>New !</font> <a href="RSSAT.xml">RSS feed available</a>: get RSAT latest news directly in your favorite RSS reader !</p>
+    <p> <font color='red'>New !</font> Four articles explaining how to
+    use RSAT and NeAT published in <a
+    target=_top href='http://www.nature.com/nprot/journal/v3/n10/index.html'><b>Nature
+    Protocols</b></a> (Sept 2008) </p>
 
-	 <P> <font color='red'>New !</font> The <b> recent developments </b> made in RSAT are presented in the  
-	 <a target=_blank
-      href=http://nar.oxfordjournals.org/cgi/content/full/gkn304><b>NAR Web server issue 2008</b></a> <a target=_blank
-      href=http://nar.oxfordjournals.org/cgi/screenpdf/gkn304v1>[Free PDF]</a>
-    </p>
+    <P> <font color='red'>New !</font> <a
+    href="RSSAT.xml">RSS feed available</a>: get RSAT latest news
+    directly in your favorite RSS reader !  (Sept 2008)</p>
+
+	 <P> <font color='red'>New !</font> The <b> recent
+	 developments </b> made in RSAT are presented in the <a
+	 target=_blank
+	 href=http://nar.oxfordjournals.org/cgi/content/full/gkn304><b>NAR
+	 Web server issue 2008</b></a> <a target=_blank
+	 href=http://nar.oxfordjournals.org/cgi/screenpdf/gkn304v1>[Free
+	 PDF]</a>  (July 2008)</p>
 
     <P> This website is free and open to all users.
    </p> 
