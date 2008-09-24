@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-distrib,v 1.12 2008/06/16 09:35:25 jvanheld Exp $
+# $Id: matrix-distrib,v 1.13 2008/09/24 16:31:54 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -144,12 +144,11 @@ package main;
   $bg_format = "oligo-analysis";
   %supported_bg_format = $bg_model->get_supported_input_formats();
   #   $supported_bg_formats = join (",", keys %supported_bg_format);
-    
+
   ## matrix formats
   $matrix_format = "tab";
   %supported_matrix_format = %RSAT::MatrixReader::supported_input_format;
-  #	$supported_matrix_formats = join ",", sort keys %supported_matrix_format;
-  
+  $supported_matrix_formats = join ",", sort keys %supported_matrix_format;
 
   %main::infile = ();
   %main::outfile = ();
