@@ -542,6 +542,7 @@ pattern-assembly options
 -sc		score column
 -maxfl #	maximum flanking segment size (default $max_flanking). 
 -subst #	maximum allowed substitutions (default $max_subst).
+-max_asmb_nb #	maximal number of assemblies (default: $max_asmb_nb)
 -max_asmb_size #	maximal assembly size, i.e. number of patterns per assembly (default: $max_asmb_size)
 -maxpat #	maximum number of allowed patterns
 -toppat #	maximum number of patterns to assemble
