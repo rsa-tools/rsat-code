@@ -18,13 +18,13 @@ sub LoadGetOrthoDefault {
   $default{ortho_uth_rank} = 1;
   $default{ortho_uth_s_rank} = 1;
   $default{return_ident} = "checked";
-  $default{return_ali_len} = "";
+  $default{return_ali_len} = "checked";
   $default{return_mismat} = "";
   $default{return_gap_open} = "";
   $default{return_e_value} = "checked";
   $default{return_bit_sc} = "";
-  $default{return_rank} = "";
-  #$default{return_s_rank} = "";
+  $default{return_rank} = "checked";
+  $default{return_s_rank} = "checked";
 }
 
 ################################################################
