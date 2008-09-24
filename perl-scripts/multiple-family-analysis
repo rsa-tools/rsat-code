@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.254 2008/09/18 09:57:39 defrance Exp $
+# $Id: multiple-family-analysis,v 1.255 2008/09/24 16:38:19 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.254 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.255 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -163,6 +163,8 @@ package main;
   ## input files
   $family_file = "";
   $sequence_file_list = "";
+  $all_sequences_file = "";
+  $all_seq_format = "fasta"; ## Sequence format for the input sequences (onlyt useful in combination with the option -seq)
 
   ## feature-map options
   $htmaps=0;
@@ -173,7 +175,7 @@ package main;
   ## retrieve-seq options
   $noorf = "-noorf"; 
   $repeat_masked = 0;
-  $seq_format = "fasta";
+  $seq_format = "fasta"; ## Sequence format for the output files (upstream and purged sequences)
   $seq_dir = "";
   $seq_ext = "fasta";
 
@@ -423,20 +425,26 @@ package main;
   if ($sequence_file_list) {
     $task{upstream} = 0; 
     &ReadSequenceList();
-    ## Family file
+    
   } else {
+  ## Read families
 
     #### Check organism name
     if ($organism_name) {
       ### read gene name and identifiers
       &RSAT::message::TimeWarn("Reading ORF information")
 	if ($verbose >= 1);
+      ## initialize the organism, which will be used both for identifying features and for choosing  background models
       $organism = new RSAT::organism();
       $organism->check_name($organism_name);
       $organism->set_attribute("name", $organism_name);
-      $organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
-      $organism->LoadFeatures($annotation_table);
-      $organism->LoadSynonyms();
+
+      ## Load the features of the organism in order to identify the genes
+      unless ($all_sequences_file) {
+	  $organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
+	  $organism->LoadFeatures($annotation_table);
+	  $organism->LoadSynonyms();
+      }
 
     } elsif ($org_fam) {
       &RSAT::message::Info("Organisms will be read from the second column of the family file") if ($verbose >= 1);
@@ -446,13 +454,15 @@ package main;
 
     ### Read family file
     &RSAT::message::TimeWarn("Reading gene families") if ($main::verbose >= 1);
-    if ($org_fam) {
+    if (($org_fam) || ($all_sequences_file)) {
       %family = &ReadClasses($family_file, 0);
     } else {
       %family = &ReadClasses($family_file, 1, $organism);
     }
     &RSAT::message::Info("Gene families read", scalar(keys(%family))) if ($main::verbose >= 1);
   }
+
+
 
   ################################################################
   ## Delete some families depending on the options
@@ -1152,9 +1162,26 @@ sub SetFileNames {
 ##################### SUBROUTINE DEFINITION ####################
 
 
+## ##############################################################
+## Store the sequences for one family if sequences have been proided
+## with the option -all_seq
+sub StoreSequences  {
+    my @members = @{$family{$family_name}->{members}};
+    $out = &OpenOutputFile($family{$family_name}->{seq_file});
+    foreach my $member (@members) {
+	if (defined($all_sequences{lc($member)})) {
+	    &PrintNextSequence($out, $seq_format, 0, $current_seq, $current_id);
+	} else {
+	    &RSAT::message::Warning("No sequence with ID", $member,"in  file", $all_sequences_file);
+	}
+    }
+    close $out;
+    &RSAT::message::Warning($family_name, "Stored sequence in file", $family{$family_name}->{seq_file}) if ($main::verbose >= 0);
+}
+
 ################################################################
 #### retrieve upstream sequences
-sub UpstreamSequences {
+sub RetrieveUpstreamSequences {
     &RSAT::message::TimeWarn ("Retrieving upstream sequences for family ".$family_name, $organism_name) if ($verbose >= 2);
     my $command;
     if ($taxon) {
@@ -1187,7 +1214,7 @@ sub UpstreamSequences {
     }
 }
 
-sub UpstreamSequencesEnsEMBL {
+sub RetrieveUpstreamSequencesEnsEMBL {
     &RSAT::message::TimeWarn ("Retrieving upstream sequences for family ".$family_name, $organism_name) if ($verbose >= 2);
     $organism_name =~ s/_EnsEMBL//;
     my $command;
@@ -1426,6 +1453,7 @@ sub AssembleOligos {
     if ($verbose >= 2);
   my $assembly_command = "pattern-assembly -v 1";
   $assembly_command .= " -maxfl 1 -toppat ".$toppat." -subst 1 ".$strands;
+  $assembly_command .= " -max_asmb_nb ".$nmotifs;
   $assembly_command .= " -i ".$family{$family_name}->{oligo_file};
   $assembly_command .= " -o ".$family{$family_name}->{oligo_assembly_file};
   push @assemble_commands, $assembly_command;
@@ -1618,6 +1646,7 @@ sub DyadAnalysis {
   $command .= "; pattern-assembly -v 1";
   $command .=  " -maxfl 1 -toppat ".$toppat;
   $command .=  " ".${strands};
+  $command .= " -max_asmb_nb ".$nmotifs;
   $command .= " -i ".$family{$family_name}->{dyad_file};
   $command .= " -o ".$family{$family_name}->{dyad_assembly_file};
 
@@ -1647,6 +1676,7 @@ sub MatrixFromPatterns {
   $command .= " -seq ".$family{$family_name}->{seq_file};
   $command .= " -asmb ".$assembly_file;
   $command .= " -bginput -markov 0 ";
+  $command .= " -max_asmb_nb ".$nmotifs;
   $command .= " -o ".$pssm_file;
 
   my $pssm_dir = `dirname $pssm_file`;
@@ -1898,6 +1928,7 @@ sub orm {
       if ($verbose >= 2);
     $orm_command .= "; pattern-assembly -v 1";
     $orm_command .= " -maxfl 1 -subst 1 -toppat ".$toppat." ".$strands;
+    $orm_command .= " -max_asmb_nb ".$nmotifs;
     $orm_command .= " -i ".$family{$family_name}->{orm_file};
     $orm_command .= " -o ".$family{$family_name}->{orm_assembly_file};
 
@@ -1908,6 +1939,7 @@ sub orm {
     $orm_command .= " -seq ".$family{$family_name}->{seq_file};
     $orm_command .= " -asmb ".$family{$family_name}->{orm_assembly_file};
     $orm_command .= " -bginput -markov 0 ";
+#    $orm_command .= " -max_asmb_nb ".$nmotifs;
     $orm_command .= " -o ".$family{$family_name}->{orm_pssm_file};
   }
 	#print $orm_command."\n";
@@ -2842,6 +2874,12 @@ sub AnalyzeFamilies {
 	$seq_length_calculated = 1;
    }
 
+   
+   ## Read all sequences from an input file and create the family-specific sequence files
+   if (($task{upstream}) && ($all_sequences_file)) {
+       &ReadAllSequences();
+   }
+
    foreach $family_name (@families) {
 #       @main::batch_commands = ();
 
@@ -2871,10 +2909,16 @@ sub AnalyzeFamilies {
 	  if ($verbose >= 1);
 
 	### retrieve upstream sequences of the family
-	&UpstreamSequences() if ($task{upstream});
+	if ($task{upstream}) {
+	    if ($all_sequences_file) {
+		&StoreSequences();	
+	    } else {
+		&RetrieveUpstreamSequences();
+	    }
+	}
 
 	### retrieve upstream sequences of the family
-	&UpstreamSequencesEnsEMBL() if ($task{upstream_ensembl});
+	&RetrieveUpstreamSequencesEnsEMBL() if ($task{upstream_ensembl});
 
 	### purge upstream sequences of the family
 	&PurgeSequences() if ($task{purge});
@@ -3129,11 +3173,23 @@ OPTIONS
 		Mask lower or uppercases, respecively, i.e. replace
 		selected case by N characters.
 
-	-seq	input sequences (incompatible with -i)
+	-seq_list
+	        List of input sequences files (incompatible with -i)
 		This option allows to specify a file containing a list
 		of sequence files. The first word of each line must
 		specify the path of a sequence file. Each sequence
 		file must be in fasta format.
+
+	-all_seq
+		A single file containing all the sequences. 
+		This option is convenient to analyze for example
+		results of ChIP-chip experiments, where there is one
+		particular sequence associated to each probe.
+		Mutually incompatible with -seq_list. 
+
+	-all_seq_format
+		Input sequence format. This option is useful only in
+		combination with the option -all_seq.
 
 	-skip # skip the first # data sets when performing the
 		analyses (this si useful when the program has been
@@ -3609,6 +3665,21 @@ sub ReadArguments {
       $skip = $ARGV[$a+1];
       &RSAT::error::FatalError("Invalid number with option -skip\t$skip") unless &IsNatural($skip);
 
+      ### sequence file list
+    } elsif ($ARGV[$a] eq "-seq_list") {
+      $sequence_file_list = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-seq") {
+	&RSAT::message::Warning("Option -seq is obsolete, you should use the option -seq_list.");
+	$sequence_file_list = $ARGV[$a+1];
+
+      ### Single file with all sequences
+    } elsif ($ARGV[$a] eq "-all_seq") {
+      $all_sequences_file = $ARGV[$a+1];
+
+      ### input sequence format
+    } elsif ($ARGV[$a] eq "-all_seq_format") {
+      $all_seq_format = $ARGV[$a+1];
+
       ### stop after some data sets
     } elsif ($ARGV[$a] eq "-last") {
       &FatalError("The option -last is incompatible with the option -select") if (scalar(@selected) > 0);
@@ -3620,10 +3691,6 @@ sub ReadArguments {
       &FatalError("The option -delete is incompatible with the option -last") if ($last > 0);
       &FatalError("The option -delete is incompatible with the option -skip") if ($skip > 0);
       push (@selected, (split ",", $ARGV[$a+1]));
-
-      ### sequence file list
-    } elsif ($ARGV[$a] eq "-seq") {
-      $sequence_file_list = $ARGV[$a+1];
 
       ## mask
     } elsif ($ARGV[$a] eq "-mask") {
@@ -4206,6 +4273,22 @@ sub ExportSQL {
   }
   &ExportMakefile("analysis", "family", "pattern");
   $dir{output} = $dir{output_bk};
+}
+
+
+## ##############################################################
+## Read all sequences (option -all_seq)
+sub ReadAllSequences {
+    &RSAT::message::TimeWarn("Reading ALL sequences from file", $all_sequences_file, "format", $all_seq_format);
+    my %all_sequences = ();
+    ($in, $input_dir) = &OpenInputFile($all_sequences_file);
+    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $all_seq_format, $input_dir, "",$mask, %args)) &&
+	   (($current_seq ne "") || ($current_id ne ""))) {
+	$seq_nb++;
+	&RSAT::message::TimeWarn("Read sequence", $seq_nb) if (($main::verbose >= 0) && ($seq_nb%1000 ==0));
+	$all_sequences{lc($current_id)} = $current_seq;
+    }
+    close $in;
 }
 
 ## ##############################################################
@@ -5343,7 +5426,9 @@ multiple-family-analysis options
 -v		verbose
 -i		family file (incompatible with -seq)
 -mask upper|lower	mask upper- or lowercases, respectively
--seq		sequence file (incompatible with -i)
+-seq_list	sequence file list (incompatible with -i)
+-all_seq	single file containing all the sequences
+-all_seq_format	input sequence format.
 -maindir	main directory (by default, the working directory is used
 -outdir		output directory
 -skip #		skip the # first data sets
