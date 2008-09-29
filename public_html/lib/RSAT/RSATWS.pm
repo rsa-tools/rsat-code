@@ -1508,7 +1508,7 @@ sub footprint_discovery {
     my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile(footprint_discovery.XXXXXXXXXX, DIR => $TMP);
     print $TMP_OUT $result;
     close $TMP_OUT;
-#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.scmbb\.ulb\.ac\.be\/rsat/g;
+    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.scmbb\.ulb\.ac\.be\/rsat/g;
 #    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"footprint-discovery",output_choice=>$output_choice);
