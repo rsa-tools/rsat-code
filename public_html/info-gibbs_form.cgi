@@ -79,7 +79,7 @@ print $query->textfield(-name=>'expected',
 print "<br />\n";
 
 ### motifs
-print "<a href=\"help.info-gibbs.html#motifs\">Number of motif to extract</a>\n";
+print "<a href=\"help.info-gibbs.html#motifs\">Number of motifs to extract</a>\n";
 print $query->textfield(-name=>'motifs',
 		  -default=>$default{motifs},
 		  -size=>5);
@@ -218,7 +218,7 @@ print $query->end_form;
 
 #print "<TD><B><A HREF='demo.gibbs.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.info-gibbs.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_info-gibbs.html'>TUTORIAL</A></B></TD>\n";
+#print "<TD><B><A HREF='tutorials/tut_info-gibbs.html'>TUTORIAL</A></B></TD>\n";
 #print "<TD><B><A HREF='mailto:defrance\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
