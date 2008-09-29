@@ -86,7 +86,7 @@ if (&IsNatural($query->param('motifs'))) {
 ### additional parameters
 #$parameters .= '--EM=0 --strand=+';
 #print "<pre>command: info-gibbs $parameters\n</pre>" if ($ENV{rsat_echo} >=1);
-print "<pre>$command $parameters\n</pre>" if ($ENV{rsat_echo} >=1);
+#print "<pre>$command $parameters\n</pre>" if ($ENV{rsat_echo} >=1);
 
 if ($query->param('output') eq "display") {  
     &PipingWarning();
@@ -94,6 +94,8 @@ if ($query->param('output') eq "display") {
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
     $matrix_file = "$TMP/$tmp_file_name.matrix";
+    #print("$command $parameters\n");
+
     
     system "$command $parameters > $result_file";
     #print "<pre>$command $parameters > $result_file</pre>";
