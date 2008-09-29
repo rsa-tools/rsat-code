@@ -74,9 +74,9 @@
     $graph = trim_text($graph);
     ## Load the parameters of the program in to an array
 
-    echo "<pre> 
-    $graph
-    </pre>";
+//     echo "<pre> 
+//     $graph
+//     </pre>";
     $parameters = array( 
       "request" => array(
       "informat"=>$in_format,
