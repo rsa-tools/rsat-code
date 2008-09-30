@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.40 2008/09/19 11:02:59 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.41 2008/09/30 20:37:36 rsat Exp $
 #
 # Time-stamp
 #
@@ -79,6 +79,7 @@ package main;
   local $dbname = '';
   local $org = '';
   local $dbversion = '';
+  local $port = '';
 
   ################################################################
   ## Read arguments
@@ -110,13 +111,21 @@ package main;
   }
 
   ################################################################
+  ## Get ensembl mysql port from db version
+  if ($dbversion && ($dbversion < '48')) {
+      $port = '3306';
+  } else {
+      $port = '5306';
+  }
+  
+  ################################################################
   ## If option -org is used, connect to ensembldb to get list of 
   ## databases and pick the latest one corresponding to chosen organism
   if ($org) {
       &RSAT::message::TimeWarn (join("\t", "Connecting EnsEMBL to get the dbname for organism ", $org, 
 				     "host=".$ensembl_host, 
 				     "user=".$ensembl_user )) if ($main::verbose >= 1);
-      my $dbh = DBI->connect("DBI:mysql:host=$ensembl_host", "$ensembl_user", "", {'RaiseError' => 1});
+      my $dbh = DBI->connect("DBI:mysql:host=$ensembl_host:port=$port", "$ensembl_user", "", {'RaiseError' => 1});
       my $sth = $dbh->prepare("SHOW DATABASES");
       $sth->execute();
       while (my $ref = $sth->fetchrow_hashref()) {
@@ -160,6 +169,7 @@ package main;
 				   -host => $ensembl_host,
 				   -user => $ensembl_user,
 				   -db_version => $dbversion,
+                                   -port => $port,
 				   -verbose => "0" );
 
   local $db = Bio::EnsEMBL::Registry->get_DBAdaptor($org, "core");

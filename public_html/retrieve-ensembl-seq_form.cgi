@@ -70,7 +70,7 @@ print $query->start_multipart_form(-action=>"retrieve-ensembl-seq.cgi");
 my @selected_organisms;
 
 eval {
-	my $dbh = DBI->connect("DBI:mysql:host=ensembldb.ensembl.org;mysql_connect_timeout=10", "anonymous", "", {'RaiseError' => 1});
+	my $dbh = DBI->connect("DBI:mysql:host=ensembldb.ensembl.org:port=5306;mysql_connect_timeout=10", "anonymous", "", {'RaiseError' => 1});
 };
 
 if ($@) {
@@ -78,7 +78,8 @@ if ($@) {
 	exit(0);
 } else {
 
-my $dbh = DBI->connect("DBI:mysql:host=ensembldb.ensembl.org", "anonymous", "", {'RaiseError' => 0});
+# my $dbh = DBI->connect("DBI:mysql:host=ensembldb.ensembl.org", "anonymous", "", {'RaiseError' => 0});
+my $dbh = DBI->connect("DBI:mysql:host=ensembldb.ensembl.org:port=5306", "anonymous", "", {'RaiseError' => 0});
 my $sth = $dbh->prepare("SHOW DATABASES");
 $sth->execute();
 my $previous_org = "bogus";
@@ -119,8 +120,8 @@ print $organismPopup;
 print "&nbsp;"x4;
 print "<A HREF='http://www.ensembl.org'>EnsEMBL</A> database version: <B>";
 print $dbversion;
-print "<BR/><BR/>\n";
-print "Remark: Due to a firewall problem, we still connect to EnsEMBL version 47 for the moment. But as soon as this is fixed, the program will connect to the latest version\n";
+# print "<BR/><BR/>\n";
+# print "Remark: Due to a firewall problem, we still connect to EnsEMBL version 47 for the moment. But as soon as this is fixed, the program will connect to the latest version\n";
 print "</B><BR/><BR/>\n";
 
 #### Single organism
