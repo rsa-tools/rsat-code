@@ -169,7 +169,7 @@ sub PipingForm {
 <form method="post" action="convert-matrix_form.cgi">
 <input type="hidden" name="title" value="$title">
 <input type="hidden" name="matrix_file" value="$result_file">
-<input type="hidden" name="matrix_format" value="gibbs">
+<input type="hidden" name="matrix_format" value="tab">
 <input type="submit" value="convert-matrix">
 </form>
 </td>
