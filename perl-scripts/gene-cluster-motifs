@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.255 2008/09/24 16:38:19 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.256 2008/10/02 09:33:56 defrance Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.255 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.256 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -1031,8 +1031,16 @@ sub SetFileNames {
     if ($orm_markov_order >= 0) {
 	    $orm_options .= " --markov=".$orm_markov_order;
 	    $orm_suffix .= "_m".$orm_markov_order;
-    }
+    } elsif ($exp_freq_file{oligos}) {
+          ## Convert relative path in absolute path
+         unless ($exp_freq_file{oligos} =~ /^\//) {
+         $exp_freq_file{oligos} = $dir{main}."/".$exp_freq_file{oligos};
 
+         }
+        $orm_options .= " --bgoligo=". $exp_freq_file{oligos};
+            
+        }
+    
 	## Number of top motifs
 	$orm_options .= " --max=rank ".$orm_uth_rank;
 	$orm_suffix .= "_rank".$orm_uth_rank;
@@ -3394,7 +3402,7 @@ OPTIONS
 
 	orm is a pattern discovery program developed by Matthieu
 	Defrance. It should be installed in the contribution dir:
-		    $RSAT/python-scripts/orm.py
+		    $RSAT/python-scripts/orm
 
 	orm.py detects windows containing over-represented words, by
 	comparison with the background model. More information can be found
