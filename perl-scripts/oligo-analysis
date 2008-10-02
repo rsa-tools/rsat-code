@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.135 2008/05/14 22:36:05 jvanheld Exp $
+# $Id: oligo-analysis,v 1.136 2008/10/02 21:59:45 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -24,7 +24,7 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &AlphaDate();
-local $program_version = do { my @r = (q$Revision: 1.135 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.136 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
 local $taxon = 0; ## Specify it the background model is organism-specific or taxon-specific
@@ -2585,53 +2585,9 @@ ARGUMENTS
                 index of matching sequences is higher than or equal to \#.
 
 INPUT FORMATS
-	raw	The input file should contain raw sequences without any
-                comment or other text. Tabs (\\t), blank spaces and newline
-                characters (\\n) are accepted (they will be automatically
-                removed before analysis). The sequence must be terminated by
-                a newline character.
-
-	multi	same as raw except than each new line is considered to contain
- 		a new independent sequence in raw format.
-
-	filelist
-		file list. Each line of the input file contains the
-		name of a file containing a single sequence.
-
-	fasta	FastA format.
-
-	IG	IntelliGenetics format.
- 		The first non-comment line must be the sequence identifier
-		(a single word without spaces).
-		The sequence follows the identifier line identifier. It can
-                include spaces, tabs or newlines, that will be removed for
-                sequence analysis.
-                The end of one sequence is indicated by termination character:
-		1 for linear, 2 for circular sequences.
-		A single file may contain several sequences.
-
-		EXAMPLE of IG suite:
-
-		; sequence of the region upstream from NIL1
-	        ; Locus GAT1
- 	        ; ORF YFL021W  coord:   6 95964 97496
- 	        ; upstream region size: 100
- 	        ; upstream region coord:        6 95864 95963
- 	        GAT1
- 	        ACAGAGCAACAATAATAACAGCACTATGAGTCGCACACTT
-  	        GCGGTGCCCGGCCCAGCCACATATATATAGGTGTGTGCCA
-  	        CTCCCGGCCCCGGTATTAGC
-  	        1
- 	        ; sequence of the region upstream from PUT4
-                ; Locus PUT4
-                ; ORF YOR348C  coord:   15 988773 986890
-                ; upstream region size: 100
-                ; upstream region coord:        15 988873 988774
-                PUT4
-                GGGTTTGTGTTCCTCTTCCTTTCCTTTTTTTTTCTCTCTT
-                CCCTTCCAGTTTCTTTTATTCTTTGCTGTTTCGAAGAATC
-                ACACCATCAATGAATAAATC
-                1
+      All the input formats supported by convert-seq are also
+      supported by oligo-analysis. For a description of those formats, type
+      		convert-seq -h
 
 PROBABILITIES
 
@@ -2714,9 +2670,9 @@ PROBABILITIES
 		the left tail of the distribution, which represents the
 		probability of having less than k occurrences :
 
-			               occ-1
-			    P(<=occ) =  SUM P(i)
-			                i=0
+			                 occ-1
+			    P(X<=occ) =  SUM P(i)
+			                 i=0
 
 		The option -under does not affect the other statistics
 		(zscore, loglikelihood). For z-score, the negative
@@ -2790,7 +2746,7 @@ PROBABILITIES
 
 	The significance indexes are calculated as follows:
 
-	      Sig_occ = -log10(E-value);
+	      sig_occ = -log10(E-value);
 
 	This index is very convenient to interpret : highest values
 	correspond to the most exceptional patterns.
@@ -2827,61 +2783,100 @@ PROBABILITIES
 	J Biomol Struct & Dynamics 5:1013-1026):
 		var_occ = exp_occ(2*Kov - 1 - (2*w+1)*exp_freq)
 
-	In random sequences, Z-scores are normally distributed. The probability
-	to observe a given number of occurrences can thus be read in the
-	normal table from any book of statistics.
+	In random sequences of *infinite* size, occurrence counts tend
+	towards a normal distribution. This has justified the use of
+	Z-score in some publications, but it also presents strong
+	disadvantages (see below). In short, you should generaly use
+	the binomial proba (-return proba) rather than the Z-score.
 
-	Advantages of the Z-score:
-	- Z-score corrects the bias due to self-overlapping of a word, which
-	  often leads to overestimate the overrepresentation of such words
-	  (eg AAAAAA, TATATA).
-	- its calculation is very fast.
-	  This is especially critical when analyzing
-	  very big sequences (whole genomes), where the expected oligont
-	  occurrences are very high (and binomial calculation very slow).
-	- Z-score provides a way to detect both over- and under-represented
-	  patterns.
+	Comparison between the Z-score and the binomial probability
+	-----------------------------------------------------------
+	I implemented the Z-score in 2000, for a particular article
+	(analysis of yeast downstream sequences) because at that time
+	my method for computing binomial was slow (time was increasing
+	quadratically with occurrence number) and imprecise (precision
+	was restricted to ~1e-15). In the mean time, I implemented an
+	efficient (linear) and precise (1e-300) version of the
+	binomial, so that the Z-score does not present any advantage
+	anymore. It presents several flaws that are described below
+	for the people who would like to know more about the choice of
+	a scoring statistics.
 
-	Disadvantages:
-	- the use of Z-score assumes that the sequences are infinite
+	- The use of Z-score statistics measures the distance between
+          each observation and the mean of the population, in
+          standardized units (i.e. counting the number of standard
+          deviations that separates each observation from the mean).
+          
+	- The Z-score is commonly interpreted by converting Z values
+          to a P-values, by reference to a Gaussian distribution. This
+          is however generally NOT valid for word counts in
+          sequences. The Z-score has been used in some publications to
+          detect over-represented words, with the underlying
+          assumption that it provides a reasonable approximation for
+          the binomial. This assumption is however generally NOT
+          valid. The convergence of the binomial towards the Gaussian
+          requires very large sequences (so that the expected number
+          of occurrences for each word is >> 10). However, even in the
+          cases where the sequences are very large (e.g. entire
+          genomes), the convergence between the binomial and Z-score
+          distributions concerns the center of the distribution, but
+          the tails remain well separated (you need to plot them on a
+          Y log graph to see this effect). And the problem is that,
+          when we detect over- or under-represented motifs, we are
+          precisely considering the tails of the distribution, not its
+          center. Thus, the Z-score should generally be avoided.
 
-	Recommended thresholds:
-	=======================
-	strand	w	P(>=oc)	z-score
-	-------------------------------
-	1str	3	0.98437	2.155
-	1str	4	0.00609	2.66
-	1str	5	0.99902	3.095
-	1str	6	0.99976	3.49
-	1str	7	0.99994	3.83
-	1str	8	0.99998	4.1
+	- An advantage of the Z-score is that one can introduce two
+	  separate parameters for the mean and standard deviation,
+	  which enables a correction for the bias due to word
+	  self-overlap (eg AAAAAA, TATATA). Self-overlap of a word
+	  provokes an aggregative dispersion, with a higher variance
+	  than the binomial/Poisson distributions. If uncorrected, the
+	  increased variance leads to an overestimation of the over-
+	  and under-representation. 
 
-	2str	3
-	2str	4
-	2str	5
-	2str	6	0.99952	3.30
-	2str	7
-	2str	8
+	  Note that for the binomial statistics, the bias is corrected
+	  by using the option -noov (discard overlapping occurrences
+	  of the same word).
 
-EXAMPLE
+	- Its calculation is very fast.  This is especially critical
+	  when analyzing very big sequences (whole genomes), where the
+	  expected oligont occurrences are very high (binomial
+	  calculation is slower but not catastrophically so).
+
+	- Z-score provides a way to detect both over- and
+	  under-represented patterns. Note that the binomial
+	  probability can also detect both over- and under-represented
+	  motifs (options -under and -two_tails).
+
+	- Multitesting correction: The Z-score can be misleading,
+  	  because it has to be interpreted in terms of
+  	  multi-tests. So, the same value of Z-score (say 5) can have
+  	  very different E-values if you are considering 3-mers,
+  	  5-mers or 10-mers. With the binomial distribution, the
+  	  program oligo-analysis returns not only a P-value, but also
+  	  an E-value (correction on the P-value to account for
+  	  multi-testing) and a sig index.
+
+
+EXAMPLES OF UTILISATION
 	oligo-analysis \
-		 -i $ENV{RSAT}/data/Saccharomyces_cerevisiae/genome/Contigs_Saccharomyces_cerevisiae.tab \
+		 -i $RSAT/data/Saccharomyces_cerevisiae/genome/contigs.txt \
 		 -format filelist -l 6 -occ \
                  -freq -o hexanucleotides.occ_and_freq -v
 
 	will return a list of all hexanucleotides found in yeast genome, with
 	the number of occurrences and relative frequency for each one.
 
+	There are many ways to use oligo-analysis. The best way to
+	familiarize yourself with its use is 
+	1) to follow the tutorial on the Web site;
+	2) to read the user manual for the command line utilization of
+ 	   the tools.
+
 WEB VERSION
 	oligo-analysis can be used via internet at the following site:
-	http://www.scmbb.ulb.ac.be/bioinformatics/rsa-tools/
-
-HISTORY
-	1997	June	starting the oligo-analysis project
-	1997	sept	calculation of the sig index
-	1998	-	Markov chain (k-1 order)
-	1998	-	z-score calculation with overlap coefficient
-	1999	March	Markov chain of any order between 1 and k-1
+	http://rsat.ulb.ac.be/rsat/
 End_of_help
   close HELP;
   exit(0);
