@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.29 2008/07/09 23:38:52 jvanheld Exp $
+# $Id: convert-seq,v 1.30 2008/10/02 22:00:13 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -24,7 +24,9 @@ $dotmask = 0;
 $accepted_input_string = join "\n\t\t\t", "", sort(keys %accepted_input_seq);
 $accepted_output_string = join "\n\t\t\t", "", sort(keys %accepted_output_seq); 
 
-%args=();
+%args=(id_column=>1,
+	seq_column=>2,
+	comment_col=>0);
 
 &ReadArguments();
 
@@ -284,6 +286,19 @@ OPTIONS
 	-from   input format
 		    Supported input formats : $accepted_input_string
 
+	-id_col	   
+		column containing sequence identifiers in tab format
+		(default: $args{id_column}).
+
+	-seq_col	   
+		column containing sequence sequences in tab format
+		(default: $args{seq_column}).
+
+	-comment_col	   
+		column containing sequence comments (sequence
+		description) in tab format (default:
+		$args{comment_column}).
+
         -to     output format
 		    Supported output formats : $accepted_output_string
 
@@ -322,9 +337,58 @@ OPTIONS
 
 SUPPORTED FORMATS
     INPUT $accepted_input_string
-	
+
     OUTPUT $accepted_output_string
-	
+
+FORMAT DESCRIPTION
+	raw	The input file should contain raw sequences without any
+                comment or other text. Tabs (\\t), blank spaces and newline
+                characters (\\n) are accepted (they will be automatically
+                removed before analysis). The sequence must be terminated by
+                a newline character.
+
+	multi	same as raw except than each new line is considered to contain
+ 		a new independent sequence in raw format.
+
+	filelist
+		file list. Each line of the input file contains the
+		name of a file containing a single sequence.
+
+	fasta	FastA format.
+
+	IG	IntelliGenetics format.
+ 		The first non-comment line must be the sequence identifier
+		(a single word without spaces).
+		The sequence follows the identifier line identifier. It can
+                include spaces, tabs or newlines, that will be removed for
+                sequence analysis.
+                The end of one sequence is indicated by termination character:
+		1 for linear, 2 for circular sequences.
+		A single file may contain several sequences.
+
+		EXAMPLE of IG suite:
+
+		; sequence of the region upstream from NIL1
+	        ; Locus GAT1
+ 	        ; ORF YFL021W  coord:   6 95964 97496
+ 	        ; upstream region size: 100
+ 	        ; upstream region coord:        6 95864 95963
+ 	        GAT1
+ 	        ACAGAGCAACAATAATAACAGCACTATGAGTCGCACACTT
+  	        GCGGTGCCCGGCCCAGCCACATATATATAGGTGTGTGCCA
+  	        CTCCCGGCCCCGGTATTAGC
+  	        1
+ 	        ; sequence of the region upstream from PUT4
+                ; Locus PUT4
+                ; ORF YOR348C  coord:   15 988773 986890
+                ; upstream region size: 100
+                ; upstream region coord:        15 988873 988774
+                PUT4
+                GGGTTTGTGTTCCTCTTCCTTTCCTTTTTTTTTCTCTCTT
+                CCCTTCCAGTTTCTTTTATTCTTTGCTGTTTCGAAGAATC
+                ACACCATCAATGAATAAATC
+                1
+
 EXAMPLES
 	convert-seq -i myseq.multi -from multi -to FASTA -o myseq.FASTA
 
@@ -349,6 +413,9 @@ consvert-seq options
 -noempty		Remove empty sequences from the set (same as -skip_short 1)
 -o			outputfile
 -from			input format (see below for accepted formats)
+-id_col			column containing the ID in tab-delimted format
+-seq_col		column containing the sequence in tab-delimted format
+-comment_col		column containing comments (sequence description) in tab-delimted format
 -to			output format (see below for accepted formats)
 -lw #			line width. 
 -addrc			add the reverse complement of each input sequence
