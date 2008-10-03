@@ -50,6 +50,10 @@ $default{bg_pseudo} = "0.01";
 $default{bg_format}="oligo-analysis";
 $default{bg_method}="from_matrix";
 $checked{$default{bg_method}} = "CHECKED";
+$default{logo}="";
+$default{error_bar}="";
+$default{small_correc}="";
+$default{stretch}="";
 
 
 &ReadMatrixFromFile();
@@ -120,13 +124,34 @@ print "<BR>\n";
 #### Return fields
 print "<p><B><A HREF='help.convert-matrix.html#return'>Return fields</A> (only valid with output format 'tab')</B>&nbsp;<br>\n";
 my $i = 0;
-foreach my $stat qw(counts frequencies weights info margins consensus parameters profile logo) {
+foreach my $stat qw(counts frequencies weights info margins consensus parameters profile) {
     print $query->checkbox(-name=>$stat,
 			   -checked=>$default{$stat},
 			   -label=>'');
     print "&nbsp;<A HREF='help.convert-matrix.html#",$stat,"'><B>", $stat, "</B></A>\n";
     print "<br>\n";
 }
+
+print $query->checkbox(-name=>'logo',
+			   -checked=>$default{logo},
+			   -label=>'');
+    print "&nbsp;<A HREF='help.convert-matrix.html#logo'><B>", logo, "</B></A>\n";
+    print "&nbsp;&nbsp; (<b>options</b>:";
+ print $query->checkbox(-name=>'error_bar',
+			   -checked=>$default{error_bar},
+			   -label=>'Error bar');    
+  
+   print $query->checkbox(-name=>'small_correc',
+			   -checked=>$default{small_correc},
+			   -label=>'Small sample correction');    
+			   
+	   print $query->checkbox(-name=>'stretch',
+			   -checked=>$default{stretch},
+			   -label=>'Stretching of logos to entire length'); 
+  
+  
+    print ")<br>\n";
+ 
 
 
 ## Pseudo weight
