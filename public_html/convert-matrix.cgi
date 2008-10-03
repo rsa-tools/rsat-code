@@ -150,6 +150,16 @@ foreach my $stat qw (counts frequencies weights info consensus parameters profil
 		if ($stat eq "logo"){
 			 $parameters .= " -v 1 -logo_dir $ENV{RSAT}/public_html/tmp ";
 			 $parameters .= " -logo_format png,pdf ";
+			 # seqlogo options
+			 if ($query->param("error_bar")){
+			 	$parameters .= " -logo_opt '-e' ";
+			 }
+			 if ($query->param("small_correc")){
+			 	$parameters .= " -logo_opt '-M' ";
+			 }
+			 if ($query->param("stretch")){
+			 	$parameters .= " -logo_opt '-S' ";
+			 }
 		}
     }
 }
