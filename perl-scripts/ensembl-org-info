@@ -37,7 +37,7 @@ local $ensembl_user = "anonymous";
 local $dbname = '';
 local $org = '';
 local $dbversion = '';
-#local $port = '';
+local $port = '5306';
 
   ################################################################
   ## Read arguments
@@ -46,7 +46,7 @@ local $dbversion = '';
 
   ### verbose ###
   if ($verbose >= 1) {
-    print "; retrieve-ensembl-seq ";
+    print "; ensembl-org-info ";
 #    &PrintArguments;
     print "\n";
   }
@@ -58,7 +58,7 @@ local $dbversion = '';
       &RSAT::message::TimeWarn (join("\t", "Connecting EnsEMBL to get the dbname for organism ", $org, 
 				     "host=".$ensembl_host, 
 				     "user=".$ensembl_user )) if ($main::verbose >= 1);
-      my $dbh = DBI->connect("DBI:mysql:host=$ensembl_host:port=5306", "$ensembl_user", "", {'RaiseError' => 1});
+      my $dbh = DBI->connect("DBI:mysql:host=$ensembl_host:port=$port", "$ensembl_user", "", {'RaiseError' => 1});
       my $sth = $dbh->prepare("SHOW DATABASES");
       $sth->execute();
       while (my $ref = $sth->fetchrow_hashref()) {
@@ -86,7 +86,7 @@ local $dbversion = '';
   &RSAT::message::Info (join("\t", "dbversion", $dbversion)) if ($main::verbose >= 1);
 
   ################################################################
-  ## Open a new connection to EnsEMBL database, but this time we specify the DB name
+  ## Open a new connection to EnsEMBL database, but this time we specify the DB version
     &RSAT::message::TimeWarn("Connecting EnsEMBL to retrieve the organism", 
 			     "host=".$ensembl_host,
 			     "user=".$ensembl_user,
@@ -99,7 +99,7 @@ local $dbversion = '';
 				   -host => $ensembl_host,
 				   -user => $ensembl_user,
 				   -db_version => $dbversion,
-                                   -port => '5306',
+                                   -port => $port,
 				   -verbose => "0" );
 
 local $db = Bio::EnsEMBL::Registry->get_DBAdaptor($org, "core");
@@ -107,13 +107,29 @@ local $db = Bio::EnsEMBL::Registry->get_DBAdaptor($org, "core");
 local $slice_adaptor = $db->get_sliceAdaptor();
 
 my @slices = @{$slice_adaptor->fetch_all("chromosome")};
-my @slice_names;
-foreach my $slice (@slices) {
-  my $slice_name = $slice -> name();
-  push @slice_names, $slice_name;
-}
+#my @slices = @{$slice_adaptor->fetch_all("toplevel")};
 
-print join ("\n", @slice_names),"\n";
+if (@slices) {
+    my @slice_names;
+#    my $slice_type;
+    my $build;
+    foreach my $slice (@slices) {
+	my $slice_name = $slice -> name();
+#	print "Slice name : ".$slice_name."\n";
+	my @slice = split ':', $slice_name;
+#	$slice_type = $slice[0];
+	$build = $slice[1];
+	push @slice_names, $slice[2];
+    }
+
+#    print "Slice type : ".$slice_type."\n";
+    print "Build : ".$build."\n";
+    print "Chromosomes : ";
+    my @sorted_slice_names = sort @slice_names;
+    print join (",", @sorted_slice_names),"\n";
+} else {
+    print "Scaffold only, no chromosomes yet\n";
+}
 
   ################################################################
   ### Open output stream
