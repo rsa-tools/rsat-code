@@ -236,12 +236,16 @@ if (($query->param('output') =~ /display/i) ||
     ### print the result ### 
     &PipingWarning();
 
-    print '<H4>Result</H4>';
-
     ## Get the result
     unless ($som) {
-	print "A fault ".$som->get_faultcode()." occured: ". $som->get_faultstring()."\n";
+	print '<H4>Error</H4>';
+	my $error_message = $som->get_faultstring();
+	$error_message =~ s/command/\<BR\>Command/;
+#	$error_message =~ s/command.*//;
+	print $error_message;
+#	print "A fault ".$som->get_faultcode()." occured: ". $som->get_faultstring()."\n";
     } else {
+	print '<H4>Result</H4>';
 	my $results = $som->get_response();
 
 	## Report the remote command
