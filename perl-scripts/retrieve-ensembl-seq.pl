@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.41 2008/09/30 20:37:36 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.42 2008/10/08 14:38:16 rsat Exp $
 #
 # Time-stamp
 #
@@ -329,12 +329,16 @@ package main;
 	    }
 
 	    foreach my $gene (@genes) {
-		## get-orthologs if wanted
-		if ($ortho) {
-		    &Ortho($gene->stable_id);
-		    ## or not
+		if ($gene) {
+		    ## get-orthologs if wanted
+		    if ($ortho) {
+			&Ortho($gene->stable_id);
+			## or not
+		    } else {
+			&Main($gene, $org);
+		    }
 		} else {
-		    &Main($gene, $org);
+		    &RSAT::message::Warning (join("\t", "No sequence for query", $line, "Check validity of your query"));
 		}
 	    }
 	}
@@ -359,18 +363,22 @@ package main;
 	    }
 
 	    foreach my $gene (@genes) {
-		## get-orthologs if wanted
-		if ($ortho) {
-		    &Ortho($gene->stable_id);
-		    ## or not
+		if ($gene) {
+		    ## get-orthologs if wanted
+		    if ($ortho) {
+			&Ortho($gene->stable_id);
+			## or not
+		    } else {
+			&Main($gene, $org);
+		    }
 		} else {
-		    &Main($gene, $org);
+		    &RSAT::message::Warning (join("\t", "No sequence for query", $id, "Check validity of your query"));
 		}
 	    }
 	}
     }
 }
-	       
+
   ################################################################
   ###### finish verbose
     if ($verbose >= 1) {
