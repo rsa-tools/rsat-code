@@ -564,6 +564,17 @@ sub GnuPlotEPS {
   } else {
     die("No input data !!!");
   }
+  
+  #export color file
+  if ($colorexportfile){
+  	#output file
+  	($outcolor) = &OpenOutputFile($colorexportfile);
+  	
+  	#get the column headers
+    $header = `head -n 1 $input_data_file`;
+    chomp($header);
+    @header_list = split ('\t',$header);
+  }
 	
   ## check if .pdf format
   if ($img_format eq "pdf") {
@@ -707,8 +718,33 @@ sub GnuPlotEPS {
     $gnuplot_cmd .= "set datafile commentschars '!;%'\n";
     $gnuplot_cmd .= "set key autotitle columnheader samplen 1\n";	
   }
-
-  ## colors
+  
+  ## colors 
+  if ($colorfile){
+  	
+  	%colors_headers = ();
+  	@color_list = ();
+  	
+  	#open colorfile
+  	 ($colorsfromfile) = &OpenInputFile($colorfile);
+    while (<$colorsfromfile>) {
+      if ($_=~/(.*)\t(.*)/){
+      	$colors_headers{$1}=$2;
+      }
+    }
+    close $colorsfromfile;
+    
+    #get the column headers
+    $header = `head -n 1 $input_data_file`;
+    chomp($header);
+    @header_list = split ('\t',$header);
+    foreach my $h (@header_list){
+    	if ($colors_headers{$h}){
+    		push @color_list, $colors_headers{$h};
+    	}
+    }
+  } else {
+  
   &GnuplotPalette();
 
   @color_list = ();
@@ -743,7 +779,8 @@ sub GnuPlotEPS {
       $color_list[$i] = "black";
     }
   }
-
+ }
+ 
   ## symbols
   if ($symbols) {
     foreach my $i (0..$#color_list) {
@@ -756,6 +793,7 @@ sub GnuPlotEPS {
     }
   }
   $gnuplot_cmd .= "set style increment user\n";	
+
 
   ## additional user-specified commands
   if ($gp_supp_commands) {
@@ -770,22 +808,30 @@ sub GnuPlotEPS {
   foreach my $k (0..$#y_col_list) {
 
     $gnuplot_cmd .= " '".$input_data_file."' using ".($x_col+1).":".($y_col_list[$k]+1)." with ";
+
     ## draw lines
     if (($lines eq "1") || ($lines[$y_col_list[$k]])) {
       $gnuplot_cmd .= "lines";
     } else {
       $gnuplot_cmd .= "points";
     }
-
+    
     ## end line
     if ($k == $#y_col_list) {
       $gnuplot_cmd .= "\n";
     } else {
       $gnuplot_cmd .= ",";
     }
+    
+    ##export color file
+    if ($colorexportfile){
+    	 print $outcolor $header_list[$y_col_list[$k]]."\t".$color_list[$k]."\n";
+    }
   }
+  
+  close $outcolor if ($outcolor);
   $gnuplot_cmd .= "EOF\n";
-  #print $gnuplot_cmd;
+#  print $gnuplot_cmd;
   ## Execute the command
   &doit($gnuplot_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   	
@@ -1552,6 +1598,8 @@ XYgraph options
 -symbols	represent points by symbols
 -htmap		HTML map
 -lc		label column
+-colors	colorfile (eps and pdf only)
+-export_colors export a color file
 -gp		gnuplot additional commands
 End_of_options
     close SHORTHELP;
@@ -1702,6 +1750,29 @@ OPTIONS
 	-lc	label column
 		this column contains the label associated to each point
 		(this info is used when the -htmap option is active).
+	-colors colorfile
+		Only working with eps and pdf formats (Gnuplot program)
+		Provide a file containing curve-specific colors.
+                The file contains 2 columns
+                1) column identifier (header of the column of the input file)
+                2) Gnuplot RGB colorname and/or RGB hexadecimal constant #RRGGBB
+                Example:
+					theoretical	salmon
+					random	dark-green
+					matrix_sites	#000000
+					matrix_sites_permuted	skyblue
+
+                will assign the "salmon"" color to the curve drawn from the
+                column having the header "theoretical" in the input file.
+                To get the complete list of Gnuplot RGB colorname, type "gnuplot" in the terminal
+                and then type "show palette colornames".
+    -export_colors color_file
+    	Only working with eps and pdf formats
+    	Export the curve-specific colors in a separate file
+    	as a color file. This file can then be re-used to
+    	specify the same colors for other XY plots
+    	(option -colors)
+    
 	-gp	gnuplot additional commands
 		Gnuplot (http://www.gnuplot.info/) is used to generate graphs in eps format.
 		Additional gnuplot commands can be specified, separated by commas.
@@ -1936,6 +2007,12 @@ sub ReadArguments {
     } elsif (($ARGV[$a] eq "-lc") && (&IsNatural($ARGV[$a+1]))) {
       $label_col = $ARGV[$a+1];
 
+	} elsif ($ARGV[$a] eq "-colors") {
+      $colorfile = $ARGV[$a+1];
+    
+    } elsif ($ARGV[$a] eq "-export_colors") {
+      $colorexportfile = $ARGV[$a+1];
+      
     } elsif ($ARGV[$a] eq "-gp") {
       $gp_supp_commands = $ARGV[$a+1];
 
