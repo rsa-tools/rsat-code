@@ -1766,12 +1766,12 @@ OPTIONS
                 column having the header "theoretical" in the input file.
                 To get the complete list of Gnuplot RGB colorname, type "gnuplot" in the terminal
                 and then type "show palette colornames".
-    -export_colors color_file
-    	Only working with eps and pdf formats
-    	Export the curve-specific colors in a separate file
-    	as a color file. This file can then be re-used to
-    	specify the same colors for other XY plots
-    	(option -colors)
+	-export_colors color_file
+		Only working with eps and pdf formats
+		Export the curve-specific colors in a separate file
+		as a color file. This file can then be re-used to
+		specify the same colors for other XY plots
+		(option -colors)
     
 	-gp	gnuplot additional commands
 		Gnuplot (http://www.gnuplot.info/) is used to generate graphs in eps format.
