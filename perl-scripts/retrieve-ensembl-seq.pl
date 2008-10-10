@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.43 2008/10/10 11:34:11 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.44 2008/10/10 16:06:33 rsat Exp $
 #
 # Time-stamp
 #
@@ -343,7 +343,7 @@ package main;
 		    }
 		}
 	    } else {
-		&RSAT::message::Warning (join("\t", "No sequence for query", $id, "Check validity of your query"));
+		&RSAT::message::Warning (join("\t", "No sequence for query", $line, "Check validity of your query"));
 	    }
 	}
 	close IN;
@@ -1255,15 +1255,15 @@ sub GetSequence {
       &Main($gene, $org);
 #      &Main($ortho_id, $org);
 
-      my @taxons = split (/ /, $compara_taxon -> classification);
-      my @limited_taxons;
+#      my @taxons = split (/ /, $compara_taxon -> classification);
+#      my @limited_taxons;
 
-      if ($taxon) {
-	  foreach my $tax (@taxons) {
-	      push(@limited_taxons,$tax);
-	      last if (lc($tax) eq lc($taxon));
-	  }
-      }
+#      if ($taxon) {
+#	  foreach my $tax (@taxons) {
+#	      push(@limited_taxons,$tax);
+#	      last if (lc($tax) eq lc($taxon));
+#	  }
+#      }
 
       # then you get the homologies where the member is involved
       my $ha = Bio::EnsEMBL::Registry->get_adaptor($compara_dbname,'compara','Homology');
@@ -1274,6 +1274,8 @@ sub GetSequence {
       if ($homologs_table) {
 	  print $table_handle "# Gene_id\tOrganism\tGene_description\tHomology_type\tTaxon_level\tPerc_id\tPerc_pos\tPerc_cov\tQuery_gene\tQuery_organism\n";
       }
+
+      my $taxon_filter_flag = 0;
 
       foreach my $homology (@{$homologies}) {
 
@@ -1301,6 +1303,9 @@ sub GetSequence {
 		}
 		&RSAT::message::Info("Common name:", $common_name) if ($main::verbose >= 1);
 
+		my @homolog_classification = split (/ /, $member->taxon->classification);
+		&RSAT::message::Debug (join(" ", "Homolog classification :", @homolog_classification)) if ($main::verbose >= 3);
+
 		# Prints all homologs to table if asked for
 		if ($homologs_table) {
 		    print $table_handle join("\t", $member->stable_id, $bin_name, $member->description, $homology->description, $homology->subtype, $attribute->perc_id, $attribute->perc_pos, $attribute->perc_cov, $ortho_id, $compara_taxon->binomial,"\n");
@@ -1308,10 +1313,17 @@ sub GetSequence {
 		
 		if ($ortho_type) {
 		    if ($taxon) {
-			foreach my $tax (@limited_taxons) {
-			    if (($homology->description =~ /$ortho_type/) && (lc($homology->subtype) eq lc($tax))){
-				my $gene = $member->get_Gene;
-				&Main($gene, $bin_name);
+			if (($homology->description =~ /$ortho_type/) && (lc($taxon) eq lc($homology->subtype))) {
+			    $taxon_filter_flag = 1;
+			    my $gene = $member->get_Gene;
+			    &Main($gene, $bin_name);
+			} else {
+			    foreach my $tax (@homolog_classification) {
+				if (($homology->description =~ /$ortho_type/) && (lc($taxon) eq lc($tax))){
+				    $taxon_filter_flag = 1;
+				    my $gene = $member->get_Gene;
+				    &Main($gene, $bin_name);
+				}
 			    }
 			}
 		    } else {
@@ -1322,10 +1334,17 @@ sub GetSequence {
 		    }
 		} else {
 		    if ($taxon) {
-			foreach my $tax (@limited_taxons) {
-			    if (lc($homology->subtype) eq lc($tax)) {
-				my $gene = $member->get_Gene;
-				&Main($gene, $bin_name);
+			if (lc($taxon) eq lc($homology->subtype)) {
+			    $taxon_filter_flag = 1;
+			    my $gene = $member->get_Gene;
+			    &Main($gene, $bin_name);
+			} else {
+			    foreach my $tax (@homolog_classification) {
+				if (lc($taxon) eq lc($tax)) {
+				    $taxon_filter_flag = 1;
+				    my $gene = $member->get_Gene;
+				    &Main($gene, $bin_name);
+				}
 			    }
 			}
 		    } else {
@@ -1335,6 +1354,9 @@ sub GetSequence {
 		}
 	    }
 	}
+      }
+      if ($taxon && ($taxon_filter_flag == 0)) {
+	  &RSAT::message::Warning (join("\t", "None of the homologs matches your taxonomic filter", $taxon, "Are you sure of its validity?"));
       }
 }
 
