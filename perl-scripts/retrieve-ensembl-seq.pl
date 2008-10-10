@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.42 2008/10/08 14:38:16 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.43 2008/10/10 11:34:11 rsat Exp $
 #
 # Time-stamp
 #
@@ -328,18 +328,22 @@ package main;
 		}
 	    }
 
-	    foreach my $gene (@genes) {
-		if ($gene) {
-		    ## get-orthologs if wanted
-		    if ($ortho) {
-			&Ortho($gene->stable_id);
-			## or not
+	    if (@genes) {
+		foreach my $gene (@genes) {
+		    if ($gene) {
+			## get-orthologs if wanted
+			if ($ortho) {
+			    &Ortho($gene->stable_id);
+			    ## or not
+			} else {
+			    &Main($gene, $org);
+			}
 		    } else {
-			&Main($gene, $org);
+			&RSAT::message::Warning (join("\t", "No sequence for query", $line, "Check validity of your query"));
 		    }
-		} else {
-		    &RSAT::message::Warning (join("\t", "No sequence for query", $line, "Check validity of your query"));
 		}
+	    } else {
+		&RSAT::message::Warning (join("\t", "No sequence for query", $id, "Check validity of your query"));
 	    }
 	}
 	close IN;
@@ -356,24 +360,28 @@ package main;
 		push (@genes, $gene_adaptor -> fetch_by_stable_id($id));
 	    } else {
 		if ($gene_adaptor -> fetch_by_stable_id($id)) {
-		push(@genes,$gene_adaptor -> fetch_by_stable_id($id));
+		    push(@genes,$gene_adaptor -> fetch_by_stable_id($id));
 		} else {
 		    @genes = @{$gene_adaptor -> fetch_all_by_external_name($id)};
 		}
 	    }
 
-	    foreach my $gene (@genes) {
-		if ($gene) {
-		    ## get-orthologs if wanted
-		    if ($ortho) {
-			&Ortho($gene->stable_id);
-			## or not
+	    if (@genes) {
+		foreach my $gene (@genes) {
+		    if ($gene) {
+			## get-orthologs if wanted
+			if ($ortho) {
+			    &Ortho($gene->stable_id);
+			    ## or not
+			} else {
+			    &Main($gene, $org);
+			}
 		    } else {
-			&Main($gene, $org);
+			&RSAT::message::Warning (join("\t", "No sequence for query", $id, "Check validity of your query"));
 		    }
-		} else {
-		    &RSAT::message::Warning (join("\t", "No sequence for query", $id, "Check validity of your query"));
 		}
+	    } else {
+		&RSAT::message::Warning (join("\t", "No sequence for query", $id, "Check validity of your query"));
 	    }
 	}
     }
