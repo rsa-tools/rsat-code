@@ -142,22 +142,23 @@ sub PipingForm {
 <h3>next step</h3>
 </td>
 </tr><tr>
+<!--
 <td valign="bottom" align="center">
 <form method="post" action="patser_form.cgi">
 <input type="hidden" name="title" value="$title">
-<input type="hidden" name="matrix_file" value="$matrix_file">
-<input type="hidden" name="matrix_format" value="consensus">
+<input type="hidden" name="matrix_file" value="$result_file">
+<input type="hidden" name="matrix_format" value="tab">
 <input type="hidden" name="sequence_file" value="$sequence_file">
 <input type="hidden" name="sequence_format" value="$sequence_format">
 <input type="submit" value="pattern matching (patser)">
 </form>
 </td>
-
+-->
 <td valign="bottom" align="center">
 <b><font color=red>new</a></b>
 <form method="POST" action="matrix-scan_form.cgi">
 <input type="hidden" name="title" value="$title">
-<input type="hidden" name="matrix_file" value="$matrix_file">
+<input type="hidden" name="matrix_file" value="$result_file">
 <input type="hidden" name="matrix_format" value="tab">
 <input type="hidden" name="sequence_file" value="$sequence_file">
 <input type="hidden" name="sequence_format" value="fasta">
