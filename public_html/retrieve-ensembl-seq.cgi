@@ -259,7 +259,7 @@ if (($query->param('output') =~ /display/i) ||
     }
 
     if ($query->param('output') =~ /server/i) {
-	my $server_file_name = basename($server_file);
+	my $server_file_name = basename($sequence_file);
 	$result_URL = "$ENV{rsat_www}/tmp/$server_file_name";
 	print ("<p>The result is available at the following URL: ", "\n",
 	       "<a href=${result_URL}>${result_URL}</a>",
