@@ -254,7 +254,7 @@ if (($query->param('output') =~ /display/i) ||
 	print "Command used on the server: ".$command, "\n";
 	## Report the result
 #	$server_file = $results -> get_server();
-	$sequence_file = $results -> get_server();
+	$sequence_file = $results -> get_server();     ## variable name has to be '$sequence_file' for PipingFormForSequence subroutine
 	$result = $results -> get_client();
     }
 
