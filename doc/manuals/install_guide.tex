@@ -64,7 +64,7 @@ calls to unix system commands.
 
 \subsection{Perl language}
 
-The programs in \RSAT are written in perl. Version 5.1 or
+Most of the programs in \RSAT are written in perl. Version 5.1 or
 later is recommended.
 
 \subsection{Perl modules}
@@ -170,6 +170,11 @@ Detailed information about the EnsEMBL libraries can be obtained on
 the EnsEMBL web site
 (\footnote{\url{http://www.ensembl.org/info/using/api/api\_installation.html}}).
 
+\subsection{Python language}
+
+Some of the programs in \RSAT are written in python. Version 2.4 or
+later is recommended.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Installation
 \chapter{Obtaining \RSAT distribution}
@@ -249,6 +254,15 @@ The \texttt{.tar.gz} file can be uncompressed with the command
 tar -xpzf rsa-tools_yyyymmdd.tar.gz
 \end{verbatim}
 
+\section{Compiling info-gibbs}
+Some of the tools available in \RSAT (info-gibbs) are written in the C/C++. The distribution only contains the sources of these tools.
+To compile info-gibbs, \verb|cd| to the \verb|contrib/info-gibbs| directory and run
+\begin{verbatim}
+make all
+ln -s info-gibbs ../../bin/info-gibbs
+\end{verbatim}
+
+
 \section{Adding \RSAT to your path}
 
 \begin{enumerate}
@@ -283,19 +297,21 @@ command:
 setenv RSAT /home/rsat/rsa-tools
 \end{verbatim}
 
-\item Add the path of the \RSAT perl scripts and binaries to your
+\item Add the path of the \RSAT \ perl scripts, python scripts and binaries to your
   path.
 
 If your shell is bash:
 \begin{verbatim}
 export PATH=${PATH}:${RSAT}/bin
 export PATH=${PATH}:${RSAT}/perl-scripts
+export PATH=${PATH}:${RSAT}/python-scripts
 \end{verbatim}
 
 If your shell is csh or tcsh:
 \begin{verbatim}
 set path=($path $RSAT/bin)
 set path=($path $RSAT/perl-scripts)
+set path=($path $RSAT/python-scripts)
 rehash
 \end{verbatim}
 
