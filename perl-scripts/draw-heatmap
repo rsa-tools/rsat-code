@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: draw-heatmap,v 1.6 2008/10/20 13:52:06 morgane Exp $
+# $Id: draw-heatmap,v 1.7 2008/10/20 13:54:57 morgane Exp $
 #
 ############################################################
 
@@ -24,7 +24,8 @@ Draw a heatmap from a table
 =head1 AUTHORS
 
 Sylvain Brohee <sylvain@bigre.ulb.ac.be>
-with the help of Morgane Thomas-Chollier for Chaos representation <morgane@bigre.ulb.ac.be>
+
+With the help of Morgane Thomas-Chollier for Chaos representation <morgane@bigre.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -67,7 +68,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -494,6 +495,7 @@ Name of the output file. This option is mandatory.
 If a HTML map file is defined, draw-heatmap then produces a HTML file that loads the 
 the HEATMAP. Moreover, each of the cell is defined so that when the mouse is over in
 a web browser, the user get the name of row, of the column and the value of the cell.
+For CHAOS game representation, the word corresponding to the cell and its associated value are given.
 
 =cut
 	} elsif ($arg eq "-html") {
