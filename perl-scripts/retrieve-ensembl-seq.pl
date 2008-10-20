@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.47 2008/10/20 10:42:09 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.48 2008/10/20 11:35:56 rsat Exp $
 #
 # Time-stamp
 #
@@ -905,15 +905,19 @@ sub Main {
       # CDS
       if ($feattype eq 'cds') {
 	my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $coding_region_start, $coding_region_end);
-
-	# Output sequence
-	$sequence = &GetSequence($left, $right);
-	my $size = $new_to - $new_from + 1;
 	my $cds_id = $transcript -> translation() -> stable_id();
 
-	my $fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+	$seq_limits{$cds_id} = [$left, $right];
 
-	&PrintSequence ($sequence, $fasta_header);
+	unless ($uniq_seqs) {
+	    # Output sequence
+	    $sequence = &GetSequence($left, $right);
+	    my $size = $new_to - $new_from + 1;
+
+	    my $fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-$cds_id\t$gene_id-$transcript_id-$cds_id; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+
+	    &PrintSequence ($sequence, $fasta_header);
+	}
       }
     }
 
@@ -946,45 +950,46 @@ sub Main {
   }
 
   ## Unique seqs
-#  if ($uniq_seqs && (($feattype eq 'mrna' && $all_transcripts) || $feattype ne 'mrna'))) {
   if ($uniq_seqs) {
-#  print Dumper(\%seq_limits);
+      if (($feattype eq 'mrna' && !$all_transcripts) || ($feattype eq 'gene')) {
+	  &RSAT::message::Warning("The option -uniqseqs does not apply in those conditions");
+      } else {
+	  # Sort retrieved sequences by left limits
+	  my @ordered_seqs;
+	  foreach $value (sort {$seq_limits{$a}[0] <=> $seq_limits{$b}[0] } keys %seq_limits) {
+	      push @ordered_seqs, $value;
+	  }
 
-    # Sort retrieved sequences by left limits
-    my @ordered_seqs;
-    foreach $value (sort {$seq_limits{$a}[0] <=> $seq_limits{$b}[0] } keys %seq_limits) {
-	push @ordered_seqs, $value;
-    }
+	  # Initialisation
+	  $new_seq_index = 1;
+	  %new_seq_limits = ();
+	  $new_seq_limits{$new_seq_index} = [$seq_limits{$ordered_seqs[0]}[0], $seq_limits{$ordered_seqs[0]}[1]];
 
-    # Initialisation
-    $new_seq_index = 1;
-    %new_seq_limits = ();
-    $new_seq_limits{$new_seq_index} = [$seq_limits{$ordered_seqs[0]}[0], $seq_limits{$ordered_seqs[0]}[1]];
+	  # Seaarch unique sequences
+	  foreach $seq (@ordered_seqs) {
+	      if ($seq_limits{$seq}[0] <= $new_seq_limits{$new_seq_index}[1] + 1) {
+		  if ($seq_limits{$seq}[1] > $new_seq_limits{$new_seq_index}[1]) {
+		      $new_seq_limits{$new_seq_index}[1] = $seq_limits{$seq}[1];
+		  }
+	      } else {
+		  $new_seq_index++;
+		  $new_seq_limits{$new_seq_index} = [$seq_limits{$seq}[0], $seq_limits{$seq}[1]];
+	      }
+	  }
 
-    # Seaarch unique sequences
-    foreach $seq (@ordered_seqs) {
-	if ($seq_limits{$seq}[0] <= $new_seq_limits{$new_seq_index}[1] + 1) {
-	    if ($seq_limits{$seq}[1] > $new_seq_limits{$new_seq_index}[1]) {
-		$new_seq_limits{$new_seq_index}[1] = $seq_limits{$seq}[1];
-	    }
-	} else {
-	    $new_seq_index++;
-	    $new_seq_limits{$new_seq_index} = [$seq_limits{$seq}[0], $seq_limits{$seq}[1]];
-	}
-    }
+	  # print Dumper(\%new_seq_limits);
 
-#  print Dumper(\%new_seq_limits);
-
-    # Get and print unique sequences
-    foreach $value (keys(%new_seq_limits)) {
-	$sequence = &GetSequence($new_seq_limits{$value}[0], $new_seq_limits{$value}[1]);
-	$size = $new_seq_limits{$value}[1] - $new_seq_limits{$value}[0] + 1;
-	unless ($feattype eq 'mrna') {
-	    $type = '';
-	}
-	my $fasta_header = ">$header_org$gene_id-$gene_name-$value\t$gene_id-$value; $feattype $type unique sequence; size: $size; location: $chromosome_name $new_seq_limits{$value}[0] $new_seq_limits{$value}[1] $rsat_strand";
-	&PrintSequence ($sequence, $fasta_header);
-    }
+	  # Get and print unique sequences
+	  foreach $value (keys(%new_seq_limits)) {
+	      $sequence = &GetSequence($new_seq_limits{$value}[0], $new_seq_limits{$value}[1]);
+	      $size = $new_seq_limits{$value}[1] - $new_seq_limits{$value}[0] + 1;
+	      unless ($feattype eq 'mrna' || $feattype eq 'cds') {
+		  $type = '';
+	      }
+	      my $fasta_header = ">$header_org$gene_id-$gene_name-$value\t$gene_id-$value; $feattype $type unique sequence; size: $size; location: $chromosome_name $new_seq_limits{$value}[0] $new_seq_limits{$value}[1] $rsat_strand";
+	      &PrintSequence ($sequence, $fasta_header);
+	  }
+      }
   }
 
 }
