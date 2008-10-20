@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: draw-heatmap,v 1.7 2008/10/20 13:54:57 morgane Exp $
+# $Id: draw-heatmap,v 1.8 2008/10/20 19:33:14 morgane Exp $
 #
 ############################################################
 
@@ -68,7 +68,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -172,7 +172,7 @@ package main;
     ################################################################
     ## If HTML map required, initialization
     my $html_source = "<html><header><title>Draw Heatmap</title></header><body>";
-    $html_source .= "<img src = '".$main::outfile{output}."' usemap = '#map' border = 1>";
+    $html_source .= "<img src = '".$main::outfile{output}."' usemap = '#map' border = 0>";
     $html_source .= "<map name = 'map'>";
     
     ################################################################
