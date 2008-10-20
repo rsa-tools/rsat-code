@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.46 2008/10/17 20:14:20 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.47 2008/10/20 10:42:09 rsat Exp $
 #
 # Time-stamp
 #
@@ -949,14 +949,19 @@ sub Main {
 #  if ($uniq_seqs && (($feattype eq 'mrna' && $all_transcripts) || $feattype ne 'mrna'))) {
   if ($uniq_seqs) {
 #  print Dumper(\%seq_limits);
+
+    # Sort retrieved sequences by left limits
     my @ordered_seqs;
     foreach $value (sort {$seq_limits{$a}[0] <=> $seq_limits{$b}[0] } keys %seq_limits) {
 	push @ordered_seqs, $value;
     }
+
+    # Initialisation
     $new_seq_index = 1;
     %new_seq_limits = ();
     $new_seq_limits{$new_seq_index} = [$seq_limits{$ordered_seqs[0]}[0], $seq_limits{$ordered_seqs[0]}[1]];
 
+    # Seaarch unique sequences
     foreach $seq (@ordered_seqs) {
 	if ($seq_limits{$seq}[0] <= $new_seq_limits{$new_seq_index}[1] + 1) {
 	    if ($seq_limits{$seq}[1] > $new_seq_limits{$new_seq_index}[1]) {
@@ -970,9 +975,14 @@ sub Main {
 
 #  print Dumper(\%new_seq_limits);
 
+    # Get and print unique sequences
     foreach $value (keys(%new_seq_limits)) {
 	$sequence = &GetSequence($new_seq_limits{$value}[0], $new_seq_limits{$value}[1]);
-	my $fasta_header = ">$header_org$gene_id-$gene_name\t$gene_id; unique sequence; location: $chromosome_name $rsat_strand";
+	$size = $new_seq_limits{$value}[1] - $new_seq_limits{$value}[0] + 1;
+	unless ($feattype eq 'mrna') {
+	    $type = '';
+	}
+	my $fasta_header = ">$header_org$gene_id-$gene_name-$value\t$gene_id-$value; $feattype $type unique sequence; size: $size; location: $chromosome_name $new_seq_limits{$value}[0] $new_seq_limits{$value}[1] $rsat_strand";
 	&PrintSequence ($sequence, $fasta_header);
     }
   }
