@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: draw-heatmap,v 1.5 2008/09/03 11:53:47 rsat Exp $
+# $Id: draw-heatmap,v 1.6 2008/10/20 13:52:06 morgane Exp $
 #
 ############################################################
 
@@ -24,6 +24,7 @@ Draw a heatmap from a table
 =head1 AUTHORS
 
 Sylvain Brohee <sylvain@bigre.ulb.ac.be>
+with the help of Morgane Thomas-Chollier for Chaos representation <morgane@bigre.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -52,6 +53,8 @@ BEGIN {
 }
 require "RSA.lib";
 use RSAT::util;
+use Data::Dumper;
+use RSAT::Chaos;
 use GD;
 
 
@@ -64,7 +67,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -109,6 +112,9 @@ package main;
     $main::no_text = 0;
     # draw line 
     $main::lines = 0;
+    #chaos
+    $main::chaos = 0;
+    
     ################################################################
     ## Read argument values
     &ReadArguments();
@@ -121,6 +127,41 @@ package main;
       &RSAT::error::FatalError("You must specify an input file with the -i option");
     }    
     
+    ## chaos table: no text, no lines, square cells
+    if ($chaos){
+    	 $main::no_text = 1;
+    	 $main::lines = 0;
+    	 my $user_col = 0; ## user specified col
+    	 my $user_row = 0; ## user specified row
+    	 if ($col_width != 50){
+    	 	$user_col = 1;
+    	 }
+    	 if ($row_height != 30){
+    	 	$user_row = 1;
+    	 }
+    	 
+    	 if ($user_col){
+    	 	## user has specified both col and row => keep the largest one
+    	 	if ($user_row){
+    	 		if ($main::col_width > $main::row_height){
+    				$main::row_height = $main::col_width;
+    			} else {
+    				$main::col_width = $main::row_height;
+    			}
+    	 	} else {
+    	 	## user has specified only col
+    	 		$main::row_height = $main::col_width;
+    	 	}
+    	 ## user has specified only row
+    	 } elsif ($user_row){
+    	 	$main::col_width = $main::row_height; 
+    	 ## user has specified nothing
+    	 } elsif ($main::col_width > $main::row_height){
+    		$main::row_height = $main::col_width;
+    	} else {
+    		$main::col_width = $main::row_height;
+    	}
+    }
 
     ################################################################
     ## Open output stream
@@ -209,13 +250,38 @@ package main;
       $colors{"255255255"} = $white;
       $colors{"000000000"} = $black;
       $p->interlaced('false');
+      
+      ## CHAOS
+      if ($chaos){
+      	# print chaos ATGC angles
+      	$p->string(gdMediumBoldFont,$row_name_width-7,$header_name_height-7,"C",$black);
+      	$p->string(gdMediumBoldFont,$row_name_width-7,$header_name_height+($row_height*$tablecpt),"A",$black);
+      	$p->string(gdMediumBoldFont,$row_name_width+($col_width*$tablecpt)+2,$header_name_height-7,"G",$black);
+      	$p->string(gdMediumBoldFont,$row_name_width+($col_width*$tablecpt)+2,$header_name_height+($row_height*$tablecpt),"T",$black);
+      
+      ## calculate chaos word positions if html
+      	if ($main::outfile{htmlmap}){
+      		our $w_length = log($max_row_elements + 1) / log(2);
+      		%main::oligo_freq = ();
+      		## generate all possible words
+      		&generate_words($w_length);
+
+			##	calculate position of Chaos Table
+  			$main::chaos_table = new RSAT::Chaos();
+  			$main::chaos_table->init_mapping_table();
+   			$main::chaos_table->init_chaos_table($w_length);
+   			@main::chaos = $main::chaos_table->get_chaos_table("word",\%main::oligo_freq);
+
+      	}
+      }
+      
       # display header if any
       if ((scalar @header) > 0) {
         for (my $i = 0; $i < scalar @header; $i++) {
           my $xpos = $row_name_width+($col_width*$i);
           my $ypos = $header_name_height;
           my $headeri = $header[$i];
-          $p->stringUp(gdMediumBoldFont,$xpos,$ypos,$headeri,$black)
+          $p->stringUp(gdMediumBoldFont,$xpos,$ypos,$headeri,$black);
         }
       }
       
@@ -265,14 +331,20 @@ package main;
             $p->setThickness(1);
           }
           if ($main::outfile{htmlmap}) {
-            my $cell_content = "$val (";
-            if ((scalar @rownames_list) > 0) {
-              $cell_content .= "Row $rownames_list[$i];";
-            }
-            if ((scalar @header) > 0) {
-              $cell_content .= "Col $header[$j]";
-            }
-            $cell_content .= ")";
+          	my $cell_content;
+          	if ($chaos){
+          		my $value2print = sprintf "%.3e", $val;         		
+          		$cell_content = uc($main::chaos[$i][$j])." : ". $value2print;
+          	} else {
+           	 	$cell_content = "$val (";
+            	if ((scalar @rownames_list) > 0) {
+              	$cell_content .= "Row $rownames_list[$i];";
+            	}
+            	if ((scalar @header) > 0) {
+              	$cell_content .= "Col $header[$j]";
+            	}
+            	$cell_content .= ")";
+          	}	
             $html_source .= "<area shape = 'rect' coords = '$xpos1,$ypos1,$xpos2,$ypos2' title = '$cell_content'>";
           }
         }
@@ -522,6 +594,16 @@ Add black vertical and horizontal separations lines between the cells of the hea
 =cut
 	} elsif ($arg eq "-lines") {
 	    $lines = 1;
+
+=item B<-chaos>
+
+The heatmap is a CHAOS Game Representation. This option enables to label the angles
+of the figure with the nucleotide letters, activates -no_text, and col_width equals row_height
+to obtain squares. see I<chaos-table> for details on CHAOS Game Representation.
+
+=cut
+	} elsif ($arg eq "-chaos") {
+	    $chaos = 1;
 	    
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
@@ -556,6 +638,37 @@ sub Verbose {
 	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
 	}
     }
+}
+
+
+################################################################
+## Generate all possible words of a given length
+sub generate_words {
+	our $w_length = shift;	
+	my @alphabet = qw(A C G T);
+	
+	foreach my $previous_word (keys(%main::oligo_freq)){
+		delete $main::oligo_freq{$previous_word};
+		foreach my $residue (@alphabet){
+			my $new_word = $previous_word.$residue;
+			$main::oligo_freq{$new_word} = 1;
+		}
+	}
+	
+	my @all_words = (keys(%main::oligo_freq));
+	unless (@all_words){
+		foreach my $residue (@alphabet){
+			$main::oligo_freq{$residue} = 1;
+		}
+		@all_words = (keys(%main::oligo_freq));
+	}
+	
+	my $curr_length = length($all_words[0]);
+
+	## stop condition
+	unless ($curr_length eq $w_length) {
+			&generate_words($w_length);	
+		}
 }
 
 
