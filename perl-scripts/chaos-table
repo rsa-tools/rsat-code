@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chaos-table,v 1.1 2008/10/20 13:50:12 morgane Exp $
+# $Id: chaos-table,v 1.2 2008/10/20 13:52:06 morgane Exp $
 #
 # Time-stamp: <2008-10-17 17:41:48 morgane>
 #
@@ -63,7 +63,7 @@ it returns the path to the frequency_file
           
 chaos-table -i frequency_file -return freq -o chaosfile 
 
-draw-heatmap -i chaosfile -o outputfile -out_format [png|jpeg] -no_text
+draw-heatmap -i chaosfile -o outputfile -out_format [png|jpeg] -chaos -col_width 50 -html output.html
 
 
 
@@ -124,7 +124,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
 	## MarkovModel
