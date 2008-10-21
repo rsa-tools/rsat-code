@@ -149,9 +149,15 @@ if ($query->param('sequence_type')) {
 }
 
 ### all transcripts
-my $all_transcripts = 0;
-if (lc($query->param('alltranscripts')) eq 'on') {
-    $all_transcripts = 1;
+my $all_transcripts = 1;
+#if (lc($query->param('alltranscripts')) eq 'on') {
+#    $all_transcripts = 1;
+#}
+
+### unique sequence
+my $uniqseqs = 0;
+if (lc($query->param('uniqseqs')) eq 'on') {
+    $uniqseqs = 1;
 }
 
 ### limits ###
@@ -208,6 +214,7 @@ my %args = (
             'to' => $to,
             'feattype' => $feattype,
             'all_transcripts' => $all_transcripts,
+            'unique_sequences' => $uniqseqs,
             'first_intron' => $first_intron,
             'non_coding' => $non_coding,
             'type' => $type,
