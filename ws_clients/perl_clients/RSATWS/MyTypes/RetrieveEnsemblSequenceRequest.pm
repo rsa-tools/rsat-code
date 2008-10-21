@@ -38,11 +38,14 @@ my %feat_format_of :ATTR(:get<feat_format>);
 my %mask_coding_of :ATTR(:get<mask_coding>);
 my %repeat_of :ATTR(:get<repeat>);
 my %all_transcripts_of :ATTR(:get<all_transcripts>);
+my %unique_sequences_of :ATTR(:get<unique_sequences>);
 my %first_intron_of :ATTR(:get<first_intron>);
 my %non_coding_of :ATTR(:get<non_coding>);
+my %line_width_of :ATTR(:get<line_width>);
 my %ortho_of :ATTR(:get<ortho>);
 my %taxon_of :ATTR(:get<taxon>);
 my %homology_type_of :ATTR(:get<homology_type>);
+my %header_organism_of :ATTR(:get<header_organism>);
 
 __PACKAGE__->_factory(
     [ qw(        output
@@ -66,11 +69,14 @@ __PACKAGE__->_factory(
         mask_coding
         repeat
         all_transcripts
+        unique_sequences
         first_intron
         non_coding
+        line_width
         ortho
         taxon
         homology_type
+        header_organism
 
     ) ],
     {
@@ -95,11 +101,14 @@ __PACKAGE__->_factory(
         'mask_coding' => \%mask_coding_of,
         'repeat' => \%repeat_of,
         'all_transcripts' => \%all_transcripts_of,
+        'unique_sequences' => \%unique_sequences_of,
         'first_intron' => \%first_intron_of,
         'non_coding' => \%non_coding_of,
+        'line_width' => \%line_width_of,
         'ortho' => \%ortho_of,
         'taxon' => \%taxon_of,
         'homology_type' => \%homology_type_of,
+        'header_organism' => \%header_organism_of,
     },
     {
         'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -123,11 +132,14 @@ __PACKAGE__->_factory(
         'mask_coding' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'repeat' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'all_transcripts' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'unique_sequences' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'first_intron' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'non_coding' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'line_width' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'ortho' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'taxon' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'homology_type' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'header_organism' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
     },
     {
 
@@ -152,11 +164,14 @@ __PACKAGE__->_factory(
         'mask_coding' => 'mask_coding',
         'repeat' => 'repeat',
         'all_transcripts' => 'all_transcripts',
+        'unique_sequences' => 'unique_sequences',
         'first_intron' => 'first_intron',
         'non_coding' => 'non_coding',
+        'line_width' => 'line_width',
         'ortho' => 'ortho',
         'taxon' => 'taxon',
         'homology_type' => 'homology_type',
+        'header_organism' => 'header_organism',
     }
 );
 
@@ -257,10 +272,16 @@ methods:
 =item * all_transcripts
 
 
+=item * unique_sequences
+
+
 =item * first_intron
 
 
 =item * non_coding
+
+
+=item * line_width
 
 
 =item * ortho
@@ -270,6 +291,9 @@ methods:
 
 
 =item * homology_type
+
+
+=item * header_organism
 
 
 
@@ -305,11 +329,14 @@ Constructor. The following data structure may be passed to new():
    mask_coding =>  $some_value, # int
    repeat =>  $some_value, # int
    all_transcripts =>  $some_value, # int
+   unique_sequences =>  $some_value, # int
    first_intron =>  $some_value, # int
    non_coding =>  $some_value, # int
+   line_width =>  $some_value, # int
    ortho =>  $some_value, # int
    taxon =>  $some_value, # string
    homology_type =>  $some_value, # string
+   header_organism =>  $some_value, # string
  },
 
 

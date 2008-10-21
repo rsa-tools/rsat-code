@@ -110,11 +110,14 @@ Constructor. The following data structure may be passed to new():
      mask_coding =>  $some_value, # int
      repeat =>  $some_value, # int
      all_transcripts =>  $some_value, # int
+     unique_sequences =>  $some_value, # int
      first_intron =>  $some_value, # int
      non_coding =>  $some_value, # int
+     line_width =>  $some_value, # int
      ortho =>  $some_value, # int
      taxon =>  $some_value, # string
      homology_type =>  $some_value, # string
+     header_organism =>  $some_value, # string
    },
  },
 
