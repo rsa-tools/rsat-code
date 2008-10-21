@@ -28,7 +28,7 @@ sub retrieve_seq {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::retrieve_seq )],
         },
@@ -53,7 +53,7 @@ sub retrieve_seq_multigenome {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::retrieve_seq_multigenome )],
         },
@@ -78,7 +78,7 @@ sub retrieve_ensembl_seq {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::retrieve_ensembl_seq )],
         },
@@ -103,7 +103,7 @@ sub purge_seq {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::purge_seq )],
         },
@@ -128,7 +128,7 @@ sub oligo_analysis {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::oligo_analysis )],
         },
@@ -153,7 +153,7 @@ sub dyad_analysis {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::dyad_analysis )],
         },
@@ -178,7 +178,7 @@ sub pattern_assembly {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::pattern_assembly )],
         },
@@ -203,7 +203,7 @@ sub dna_pattern {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::dna_pattern )],
         },
@@ -228,7 +228,7 @@ sub convert_features {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::convert_features )],
         },
@@ -253,7 +253,7 @@ sub feature_map {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::feature_map )],
         },
@@ -278,7 +278,7 @@ sub footprint_discovery {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::footprint_discovery )],
         },
@@ -303,7 +303,7 @@ sub get_orthologs {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::get_orthologs )],
         },
@@ -328,7 +328,7 @@ sub infer_operon {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::infer_operon )],
         },
@@ -353,7 +353,7 @@ sub gene_info {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::gene_info )],
         },
@@ -378,7 +378,7 @@ sub supported_organisms {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::supported_organisms )],
         },
@@ -403,7 +403,7 @@ sub text_to_html {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::text_to_html )],
         },
@@ -428,7 +428,7 @@ sub parse_psi_xml {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::parse_psi_xml )],
         },
@@ -453,7 +453,7 @@ sub roc_stats {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::roc_stats )],
         },
@@ -478,7 +478,7 @@ sub classfreq {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::classfreq )],
         },
@@ -503,7 +503,7 @@ sub xygraph {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::xygraph )],
         },
@@ -528,7 +528,7 @@ sub convert_seq {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::convert_seq )],
         },
@@ -553,7 +553,7 @@ sub compare_classes {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::compare_classes )],
         },
@@ -578,7 +578,7 @@ sub convert_classes {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::convert_classes )],
         },
@@ -603,7 +603,7 @@ sub contingency_stats {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::contingency_stats )],
         },
@@ -628,7 +628,7 @@ sub contingency_table {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::contingency_table )],
         },
@@ -653,7 +653,7 @@ sub matrix_scan {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::matrix_scan )],
         },
@@ -678,7 +678,7 @@ sub matrix_distrib {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::matrix_distrib )],
         },
@@ -703,7 +703,7 @@ sub random_seq {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::random_seq )],
         },
@@ -728,7 +728,7 @@ sub convert_graph {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::convert_graph )],
         },
@@ -753,7 +753,7 @@ sub alter_graph {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::alter_graph )],
         },
@@ -778,7 +778,7 @@ sub graph_cliques {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::graph_cliques )],
         },
@@ -803,7 +803,7 @@ sub display_graph {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::display_graph )],
         },
@@ -828,7 +828,7 @@ sub draw_heatmap {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::draw_heatmap )],
         },
@@ -853,7 +853,7 @@ sub compare_graphs {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::compare_graphs )],
         },
@@ -878,7 +878,7 @@ sub graph_neighbours {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::graph_neighbours )],
         },
@@ -903,7 +903,7 @@ sub mcl {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::mcl )],
         },
@@ -928,7 +928,7 @@ sub rnsc {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::rnsc )],
         },
@@ -953,7 +953,7 @@ sub graph_node_degree {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::graph_node_degree )],
         },
@@ -978,7 +978,7 @@ sub graph_topology {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::graph_topology )],
         },
@@ -1003,7 +1003,7 @@ sub graph_cluster_membership {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::graph_cluster_membership )],
         },
@@ -1028,7 +1028,7 @@ sub graph_get_clusters {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::graph_get_clusters )],
         },
@@ -1053,7 +1053,7 @@ sub random_graph {
             
 
            'use'            => 'literal',
-            namespace       => '',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
             encodingStyle   => '',
             parts           =>  [qw( MyElements::random_graph )],
         },
@@ -1256,11 +1256,14 @@ Returns upstream, downstream or coding DNA sequences for list of query genes (in
       mask_coding =>  $some_value, # int
       repeat =>  $some_value, # int
       all_transcripts =>  $some_value, # int
+      unique_sequences =>  $some_value, # int
       first_intron =>  $some_value, # int
       non_coding =>  $some_value, # int
+      line_width =>  $some_value, # int
       ortho =>  $some_value, # int
       taxon =>  $some_value, # string
       homology_type =>  $some_value, # string
+      header_organism =>  $some_value, # string
     },
   },,
  );
@@ -1339,7 +1342,7 @@ Analysis of the statistical significance of all the spaced dyads of a given size
 
 =head3 pattern_assembly
 
- 
+Assemble a set of oligonucleotides or dyads into groups of overlapping patterns (assemblies). 
 
  $interface->pattern_assembly( {
     request =>  { # MyTypes::PatternAssemblyRequest
@@ -1386,7 +1389,7 @@ Searches all occurrences of a pattern within DNA sequences.
 
 =head3 convert_features
 
- 
+Interconversions between various formats of feature description. 
 
  $interface->convert_features( {
     request =>  { # MyTypes::ConvertFeaturesRequest
@@ -1401,7 +1404,7 @@ Searches all occurrences of a pattern within DNA sequences.
 
 =head3 feature_map
 
- 
+Draws a graphical map of features (e.g. results of pattern matching) in a set of sequences. 
 
  $interface->feature_map( {
     request =>  { # MyTypes::FeatureMapRequest
@@ -1439,7 +1442,7 @@ Searches all occurrences of a pattern within DNA sequences.
 
 =head3 footprint_discovery
 
- 
+Detect phylogenetic footprints by applying dyad-analysis in promoters of a set of orthologous genes. 
 
  $interface->footprint_discovery( {
     request =>  { # MyTypes::FootprintDiscoveryRequest
@@ -1769,7 +1772,7 @@ Returns the theoretical distribution of matrix weight within the defined backgro
 
 =head3 random_seq
 
-Generates random sequences. 
+Generates random sequences.
 
  $interface->random_seq( {
     request =>  { # MyTypes::RandomSequenceRequest
@@ -1793,7 +1796,7 @@ Generates random sequences.
 
 =head3 convert_graph
 
-Convert graphs between different formats 
+Convert graphs between different formats
 
  $interface->convert_graph( {
     request =>  { # MyTypes::ConvertGraphRequest
@@ -1818,7 +1821,7 @@ Convert graphs between different formats
 
 =head3 alter_graph
 
-Alter a graph either by adding or removing edges or nodes 
+Alter a graph either by adding or removing edges or nodes
 
  $interface->alter_graph( {
     request =>  { # MyTypes::AlterGraphRequest
@@ -1842,7 +1845,7 @@ Alter a graph either by adding or removing edges or nodes
 
 =head3 graph_cliques
 
-Find all cliques in a graph 
+Find all cliques in a graph
 
  $interface->graph_cliques( {
     request =>  { # MyTypes::GraphCliquesRequest
@@ -1858,7 +1861,7 @@ Find all cliques in a graph
 
 =head3 display_graph
 
-Produces the figure of a graph 
+Produces the figure of a graph
 
  $interface->display_graph( {
     request =>  { # MyTypes::DisplayGraphRequest
@@ -1879,7 +1882,7 @@ Produces the figure of a graph
 
 =head3 draw_heatmap
 
-Produces the figure of a heatmap 
+Produces the figure of a heatmap
 
  $interface->draw_heatmap( {
     request =>  { # MyTypes::DrawHeatmapRequest
@@ -1899,7 +1902,7 @@ Produces the figure of a heatmap
 
 =head3 compare_graphs
 
-Computes the union / difference or intersection of two graphs 
+Computes the union / difference or intersection of two graphs
 
  $interface->compare_graphs( {
     request =>  { # MyTypes::CompareGraphsRequest
@@ -1924,7 +1927,7 @@ Computes the union / difference or intersection of two graphs
 
 =head3 graph_neighbours
 
-Find the neihbours up to a certain distance of a collection of seed nodes 
+Find the neihbours up to a certain distance of a collection of seed nodes
 
  $interface->graph_neighbours( {
     request =>  { # MyTypes::GraphNeighboursRequest
@@ -1944,7 +1947,7 @@ Find the neihbours up to a certain distance of a collection of seed nodes
 
 =head3 mcl
 
-Clustering via Stijn van Dongen MCL algorithm 
+Clustering via Stijn van Dongen MCL algorithm
 
  $interface->mcl( {
     request =>  { # MyTypes::MCLRequest
@@ -1956,7 +1959,7 @@ Clustering via Stijn van Dongen MCL algorithm
 
 =head3 rnsc
 
-Clustering via Andrew King RNSC algorithm 
+Clustering via Andrew King RNSC algorithm
 
  $interface->rnsc( {
     request =>  { # MyTypes::RNSCRequest
@@ -2029,7 +2032,7 @@ Map a clustering result onto a graph, and compute the membership degree between 
 
 =head3 graph_get_clusters
 
-Compares a graph with a classification/clustering file. 
+Compares a graph with a classification/clustering file.
 
  $interface->graph_get_clusters( {
     request =>  { # MyTypes::GraphGetClustersRequest
@@ -2049,7 +2052,7 @@ Compares a graph with a classification/clustering file.
 
 =head3 random_graph
 
-Generate random graphs either from scratch of from an existing graph using different randomization models 
+Generate random graphs either from scratch of from an existing graph using different randomization models
 
  $interface->random_graph( {
     request =>  { # MyTypes::RandomGraphRequest
@@ -2078,6 +2081,6 @@ Generate random graphs either from scratch of from an existing graph using diffe
 
 =head1 AUTHOR
 
-Generated by SOAP::WSDL on Fri Jul 18 21:14:04 2008
+Generated by SOAP::WSDL on Tue Oct 21 17:38:25 2008
 
 =cut
