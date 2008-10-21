@@ -324,7 +324,12 @@ Default is 'both'.</xsd:documentation>
           </xsd:element>
 	  <xsd:element name="all_transcripts" type="xsd:int" minOccurs="0">
             <xsd:annotation>
-              <xsd:documentation>Get sequences for all transcript of genes. Use purge-sequence if you do pattern discovery afterwards if value = 1.</xsd:documentation>
+              <xsd:documentation>Get sequences for all transcript of genes if value = 1. Combine with unique_sequences option if you do pattern discovery afterwards.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="unique_sequences" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>When getting sequences for all transcripts of genes, keep only non-redundant fragments if value = 1.</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	  <xsd:element name="first_intron" type="xsd:int" minOccurs="0">
