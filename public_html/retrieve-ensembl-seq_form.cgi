@@ -29,7 +29,8 @@ $default{gene_selection} = "";
 $default{sequence_position} = "upstream";
 $default{feattype} = "mRNA";
 $default{sequence_type} = "upstream/downstream";
-$default{alltranscripts} = "";
+#$default{alltranscripts} = "";
+$default{uniqseqs} = "";
 $default{single_multi_org} = "single";
 # $default{ids_only} = "";
 # $default{gene_col} = 1;
@@ -237,6 +238,13 @@ print $query->checkbox(-name=>'maskcoding',
 print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#maskcoding'><B>Mask coding sequences</B></A>";
 print "<BR>\n";
 
+### Unique sequences
+print $query->checkbox(-name=>'uniqseqs',
+  		       -checked=>$default{uniqseqs},
+  		       -label=>'');
+print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#uniqseqs'><B>Avoid redundant sequences due to alternative transcripts</B></A>";
+print "<BR>\n";
+
 ### Organism in header
 print "<B><A HREF='help.retrieve-ensembl-seq.html#header_org'>Organism name in sequence header</A></B>&nbsp;";
 print $query->popup_menu(-name=>'header_org',
@@ -276,11 +284,11 @@ print $query->radio_group(-name=>'feattype',
 print "<BR/>\n";
 
 ### All transcripts
-print $query->checkbox(-name=>'alltranscripts',
-  		       -checked=>$default{alltranscripts},
-  		       -label=>'');
-print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#alltranscripts'><B>Retrieve sequence relative to each alternative transcript (with mRNA feature)</B></A>";
-print "<BR>\n";
+#print $query->checkbox(-name=>'alltranscripts',
+#  		       -checked=>$default{alltranscripts},
+#  		       -label=>'');
+#print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#alltranscripts'><B>Retrieve sequence relative to each alternative transcript (with mRNA feature)</B></A>";
+#print "<BR>\n";
 
 ### prevent overlap
 print "<B><A HREF='help.retrieve-ensembl-seq.html#prevent_overlap'>Prevent overlap with neighbouring</A></B>&nbsp;";
