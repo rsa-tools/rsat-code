@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.48 2008/10/20 11:35:56 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.49 2008/10/21 12:29:23 oly Exp $
 #
 # Time-stamp
 #
@@ -176,7 +176,7 @@ package main;
 
   local $db = Bio::EnsEMBL::Registry->get_DBAdaptor($org, "core");
 
-#  local $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => $ensembl_host, -user => $ensembl_user, -dbname => $dbname); ## deprecated
+# local $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => $ensembl_host, -user => $ensembl_user, -dbname => $dbname); ## deprecated
 
     &RSAT::message::Debug("Db", $db) if ($main::verbose >= 3);
 
@@ -929,23 +929,33 @@ sub Main {
       my $ref_transcript;
 
       if ($strand == 1) {
-	my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $three_primest_start, $five_primest_end);
+#	if ($five_primest_end <= $three_primest_start) {
+#		&RSAT::message::Warning ("Gene $gene_id has disjoint alternative transcripts; use -alltranscripts");
+#	} else {
+		my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $three_primest_start, $five_primest_end);
+#	}
       } else {
-	my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $five_primest_end, $three_primest_start);
+#	if ($three_primest_start <= $five_primest_end) {
+#		&RSAT::message::Warning ("Gene $gene_id has disjoint alternative transcripts; use -alltranscripts");
+#	} else {
+		my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $five_primest_end, $three_primest_start);
+#	}
       }
 
-      # Output sequence
-      $sequence = &GetSequence($left, $right);
-      my $size = $new_to - $new_from + 1;
-      if ($type eq "upstream") {
-	$ref_transcript = $three_primest_id;
-      } else {
-	$ref_transcript = $five_primest_id;
-      }
+#      unless (($strand == 1 && $five_primest_end <= $three_primest_start) || ($strand == -1 && $three_primest_start <= $five_primest_end)) {
+        # Output sequence
+        $sequence = &GetSequence($left, $right);
+        my $size = $new_to - $new_from + 1;
+        if ($type eq "upstream") {
+	  $ref_transcript = $three_primest_id;
+        } else {
+	  $ref_transcript = $five_primest_id;
+        }
 
-      my $fasta_header = ">$header_org$gene_id-$gene_name-$ref_transcript\t$gene_id-$ref_transcript; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
+        my $fasta_header = ">$header_org$gene_id-$gene_name-$ref_transcript\t$gene_id-$ref_transcript; $type from $new_from to $new_to; size: $size; location: $chromosome_name $left $right $rsat_strand";
 
-      &PrintSequence ($sequence, $fasta_header);
+        &PrintSequence ($sequence, $fasta_header);
+#      }
     }
   }
 
@@ -1412,7 +1422,7 @@ sub GetSequence {
 
 		# Prints all homologs to table if asked for
 		if ($homologs_table) {
-		    print $table_handle join("\t", $member->stable_id, $bin_name, $member->description, $homology->description, $homology->subtype, $attribute->perc_id, $attribute->perc_pos, $attribute->perc_cov, $ortho_id, $compara_taxon->binomial,"\n");
+		    print $table_handle join("\t", $member->stable_id, $bin_name, $member->description, $homology->description, $homology->subtype, $attribute->perc_id, $attribute->perc_pos, $attribute->perc_cov, $ortho_id, $compara_taxon->binomial, "\n");
 		}
 		
 		if ($ortho_type) {
