@@ -345,6 +345,7 @@ sub retrieve_ensembl_seq {
   my $repeat = $args{'repeat'};
   my $mask_coding = $args{"mask_coding"};
   my $all_transcripts = $args{"all_transcripts"};
+  my $uniqseqs = $args{"unique_sequences"};
   my $first_intron = $args{"first_intron"};
   my $non_coding = $args{"non_coding"};
   my $chrom = $args{"chromosome"};
@@ -468,9 +469,14 @@ sub retrieve_ensembl_seq {
 	$command .= " -maskcoding";
     }
 
-   if ($all_transcriptd == 1) {
+   if ($all_transcripts == 1) {
 	$command .= " -alltranscripts";
     }
+
+   if ($uniqseqs == 1) {
+	$command .= " -uniqseqs";
+    }
+
 
    if ($first_intron == 1) {
 	$command .= " -firstintron";
