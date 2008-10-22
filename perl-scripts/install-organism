@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.79 2008/07/04 06:10:14 jvanheld Exp $
+# $Id: install-organism,v 1.80 2008/10/22 16:33:55 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -40,6 +40,7 @@ $supported_for_installation{"filelist"} = 1;
 		   genome_freq=>1,
 		   upstream_freq=>1,
 		   intergenic_freq=>1,
+                   ensembl_freq=>1,
 		   dyads=>1,
 		   clean=>1,
 		   phylogeny=>1,
@@ -48,6 +49,7 @@ $supported_for_installation{"filelist"} = 1;
 $supported_tasks = join ",", sort (keys %supported_task);
 %task = ();
 $parse_options = "";
+$source = "";
 
 ################################################################
 ############################ arguments #########################
@@ -302,9 +304,13 @@ sub UpdateConfig {
     $new_org_config .= "\$supported_organism{'$organism_short_name'}->{'name'} = \"$organism_full_name\";\n";
     $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'data'} = \"$dir{install}\";\n";
     $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'last_update'} = \"".$install_date."\";\n";
-    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'features'} = \"$outfile{features}\";\n";
-    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'genome'} = \"$outfile{genome}\";\n";
-    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'seq_format'} = \"filelist\";\n";
+    if ($source eq 'ensembl') {
+	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'source'} = \"$source\";\n";
+    } else {
+	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'features'} = \"$outfile{features}\";\n";
+	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'genome'} = \"$outfile{genome}\";\n";
+	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'seq_format'} = \"filelist\";\n";
+    }
     $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'taxonomy'} = \"$taxonomy\";\n";
     if (defined($outfile{synonyms})) {
 	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'synonyms'} = \"$outfile{synonyms}\";\n";
@@ -321,8 +327,10 @@ sub UpdateConfig {
 		$up_from=-400;
 	    } elsif ($taxonomy =~ /^Eukaryota; Fungi/) {
 		$up_from=-800;
+	    } elsif ($taxonomy =~ /^Eukaryota;Metazoa/) {
+		$up_from=-2000;
 	    } else {
-		$up_from=-1000;;
+		$up_from=-1000;
 	    }
 	}
     }
@@ -547,6 +555,43 @@ sub CalcFrequencies {
 	    }
 	}
     }
+
+    if ($task{ensembl_freq}) {
+
+    unless (defined($up_from)) {
+	if (defined($supported_organism{$organism_short_name}->{'up_from'})) {
+	    $up_from = $supported_organism{$organism_short_name}->{'up_from'};;
+	}
+    }
+    
+    unless (defined($up_to)) {
+	if (defined($supported_organism{$organism_short_name}->{'up_to'})) {
+	    $up_to = $supported_organism{$organism_short_name}->{'up_to'};
+	}
+    }
+
+	foreach my $masking (@masking_modes) {
+#	    foreach my $noorf ("-noorf", "") {
+	        foreach my $maskcoding ("-maskcoding") {
+		    foreach my $type ("upstream_mrna") {
+			$seq_type = "${type}${up_from}${up_to}${maskcoding}${masking}";
+#		    if ($purged_frequencies) {
+#			$seq_file = "${organism_short_name}_${seq_type}_purged.fasta";
+#			$seq_format = "fasta";
+#		    } else {
+			$seq_file = "${organism_short_name}_${seq_type}.fasta";
+			$seq_format = "fasta";
+#		    }
+		    &RSAT::message::TimeWarn("Calculating upstream oligo and dyad frequencies") if ($main::verbose >= 1);
+		    &CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
+#		    &CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib} && !($noorf));
+#		    &CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
+		}
+	    }
+#	}
+    }
+}
+
 
     ################################################################
     # calculate oligont frequencies in all intergenic sequences
@@ -996,6 +1041,10 @@ sub ReadArguments {
 	    #### ENSEMBL dir
 	} elsif ($ARGV[$a] =~ /^-ensembl/) {
 	    $dir{ensembl} = $ARGV[$a+1];
+
+	    #### Sequence source
+	} elsif ($ARGV[$a] eq "-source") {
+	    $source = $ARGV[$a+1];
 
 	    #### Batch mode
 	} elsif ($ARGV[$a] eq "-batch") {
