@@ -35,6 +35,9 @@ package main;
 
 &InitRSAT();
 
+## Load the list of supported organisms
+&RSAT::OrganismManager::load_supported_organisms();
+
 ############################################################################
 ##################### PERL SUBROUTINE DEFINITION ###########################
 ############################################################################
