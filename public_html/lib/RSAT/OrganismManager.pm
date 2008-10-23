@@ -61,10 +61,19 @@ sub supported_org_fields {
 Load the list of supported organisms with their parameters (taxon,
 directory, upstream length, ...).
 
+This command can be called several times in order to load several
+lists of supported organisms stored in separate tables.
+
 =cut
 sub load_supported_organisms {
   my ($organism_table) = @_;
   $organism_table = $organism_table || $ENV{RSAT}."/data/".$organism_table_name;
+
+  unless (-e $organism_table) {
+      &RSAT::message::Warning("The tabular file with the list of supported organism cannot be read");
+      &RSAT::message::Warning("Missing file",  $organism_table);
+      return();
+  }
   my ($table_handle) = &RSAT::util::OpenInputFile($organism_table);
   
   my @fields = ();
