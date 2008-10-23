@@ -26,12 +26,14 @@ foreach my $field (@supported_return_fields) {
     $supported_return_fields{$field} = 1;
 }
 
-#@supported_return_fields = &RSAT::OrganismManager::supported_org_fields();
 $supported_return_fields = join ",", @supported_return_fields;
 #die "HELLLO\t", join(";", @supported_return_fields), "\n";
 
 ## Read arguments
 &ReadArguments();
+
+## Load the list of supported organisms
+#&RSAT::OrganismManager::load_supported_organisms();
 
 ## Return fields
 if ($out_format eq "full") {
@@ -69,10 +71,17 @@ if (($out_format eq "tree")||($out_format eq "html_tree")) {
     }
 } else {
    print $out &RSAT::OrganismManager::supported_organism_table(1, @return_fields);
-#    print $out &ListSupportedOrganisms($out_format, 1, @return_fields);
 }
 
-#&RSAT::OrganismManager::export_supported_organisms();
+################################################################
+## If it does not exist yet, create a table with the supported
+## organisms
+## This should run only once per server, and then be suppressed.
+unless (-e $ENV{RSAT}."/data/supported_organisms.tab") {
+  &RSAT::OrganismManager::export_supported_organisms();
+  &RSAT::message::Warning("Exported tab-delimited file with supported organisms",$ENV{RSAT}."/data/supported_organisms.tab");
+  &RSAT::message::Warning("You should now suppress from RSA.config the loading of the previous file",$ENV{RSAT}."/data/supported_organisms.pl");
+}
 
 close $out if ($outfile{output});
 
