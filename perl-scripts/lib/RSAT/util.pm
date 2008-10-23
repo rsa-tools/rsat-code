@@ -479,6 +479,7 @@ sub doit {
     my $job_name = $job;
     $job_name =~ s/\//_/g;
     my $job_log = $wd."/".$job.".log";
+
     ## Send the command to a batch queue on a PC cluster The default
     ## values are for internal use in the SCMBB, but alternative values
     ## can be specified by specifying the environment variables
@@ -488,7 +489,6 @@ sub doit {
     my $qsub_manager=$ENV{QSUB_MANAGER} || "sge";
     $selected_nodes = " -l nodes=1:k2.6 ";
     my $qsub_cmd;
-
 
     ################################################################
     ## Choose the queue manager depending on the local configuration
