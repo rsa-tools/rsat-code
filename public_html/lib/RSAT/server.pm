@@ -3,8 +3,6 @@ package RSAT::server;
 require RSAT::util;
 require RSAT::message;
 
-
-
 ################################################################
 #### increment the counter file for monitoring web access
 sub UpdateCounterFile {
@@ -186,7 +184,6 @@ sub InitRSAT {
 
   &ReadProperties();
   &ReadConfig();
-
 
   ## Directories
   $main::BIN = "$ENV{RSAT}/bin";

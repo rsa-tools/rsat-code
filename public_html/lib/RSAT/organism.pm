@@ -13,7 +13,9 @@ use RSAT::GenomeFeature;
 use RSAT::Index;
 use RSAT::stats;
 
+
 @ISA = qw( RSAT::GenericObject );
+
 
 =pod
 
