@@ -1,4 +1,5 @@
-import RSATWS.RSATWSPortTypeProxy;
+import RSATWS.RSATWSPortType;
+import RSATWS.RSATWebServicesLocator;
 import RSATWS.SupportedOrganismsRequest;
 import RSATWS.SupportedOrganismsResponse;
 
@@ -12,7 +13,8 @@ public class RSATSupportedOrganismClient {
 		 try
 	        {
 			 	/* Get the location of the service */
-			 	RSATWSPortTypeProxy proxy = new RSATWSPortTypeProxy();
+			 	RSATWebServicesLocator service = new RSATWebServicesLocator();
+			 	RSATWSPortType proxy = service.getRSATWSPortType();
 
 	         	            
 	            /* prepare the parameters */

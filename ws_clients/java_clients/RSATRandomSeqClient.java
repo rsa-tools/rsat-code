@@ -1,5 +1,6 @@
 
-import RSATWS.RSATWSPortTypeProxy;
+import RSATWS.RSATWSPortType;
+import RSATWS.RSATWebServicesLocator;
 import RSATWS.RandomSequenceRequest;
 import RSATWS.RandomSequenceResponse;
 
@@ -13,7 +14,8 @@ public class RSATRandomSeqClient {
 		 try
 	        {
 			 	/* Get the location of the service */
-			 	RSATWSPortTypeProxy proxy = new RSATWSPortTypeProxy();
+			 	RSATWebServicesLocator service = new RSATWebServicesLocator();
+			 	RSATWSPortType proxy = service.getRSATWSPortType();
 
 	         	            
 	            /* prepare the parameters */

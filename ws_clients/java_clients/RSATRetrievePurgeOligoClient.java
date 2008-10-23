@@ -4,7 +4,8 @@ import RSATWS.OligoAnalysisRequest;
 import RSATWS.OligoAnalysisResponse;
 import RSATWS.PurgeSequenceRequest;
 import RSATWS.PurgeSequenceResponse;
-import RSATWS.RSATWSPortTypeProxy;
+import RSATWS.RSATWSPortType;
+import RSATWS.RSATWebServicesLocator;
 import RSATWS.RetrieveSequenceRequest;
 import RSATWS.RetrieveSequenceResponse;
 
@@ -27,7 +28,8 @@ public class RSATRetrievePurgeOligoClient {
 			 	String organism = "Saccharomyces_cerevisiae";
 			 	
 			 	/* Get the location of the service */
-			 	RSATWSPortTypeProxy proxy = new RSATWSPortTypeProxy();
+			 	RSATWebServicesLocator service = new RSATWebServicesLocator();
+			 	RSATWSPortType proxy = service.getRSATWSPortType();
 
 	
 			 	/** Retrieve-seq part **/
