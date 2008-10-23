@@ -21,7 +21,7 @@ use Storable qw(nstore retrieve);
 ## Class variables
 
 ## Fields for supported organisms
-our @supported_org_fields = qw(ID name data last_update taxonomy up_from up_to);
+our @supported_org_fields = qw(ID name data last_update taxonomy up_from up_to genome seq_format);
 
 ## Name of the table containing the list of supported organisms
 our $organism_table_name = "supported_organisms.tab";
@@ -109,7 +109,7 @@ sub export_supported_organisms {
 =item B<supported_organism_table>
 
 Return a string with a tab-delimited table containing one row per
-organism and one column per parameter.
+organism and one column per field (feature of an organism).
 
 Usage:
 
@@ -123,7 +123,7 @@ sub supported_organism_table {
   ## Default fields
   if (scalar(@fields) == 0) {
 #    @fields = qw(name data last_update features genome seq_format taxonomy synonyms up_from up_to);
-    @fields = qw(name data last_update taxonomy up_from up_to);
+    @fields = qw(ID name data last_update taxonomy up_from up_to genome seq_format);
   }
 
   ## Check if the requested fields are supported
