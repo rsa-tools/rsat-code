@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.20 2008/09/16 09:27:58 morgane Exp $
+# $Id: matrix-scan.cgi,v 1.21 2008/10/24 08:16:33 morgane Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -80,10 +80,10 @@ if ($query->param('output') eq "display") {
 
   print "<HR SIZE = 3>";
 
-} elsif ($query->param('output') =~ /server/i) {
-  &ServerOutput("$command $parameters", $query->param('user_email'));
+#} elsif ($query->param('output') =~ /server/i) {
+  #&ServerOutput("$command ", $query->param('user_email'));
 } else {
-  &EmailTheResult("$command $parameters", $query->param('user_email'));
+  &EmailTheResult("$command ", $query->param('user_email'));
 }
 
 
@@ -374,29 +374,4 @@ sub ReadMatrixScanParameters {
     }
   }
  
-}
-
-
-## Prepare data for piping
-sub PipingForm {
-  print <<End_of_form;
-<TABLE class='nextstep'>
-<TR>
-  <TD>
-    <H3>Next step</H3>
-  </TD>
-  </tr>
-  <tr>
-  <TD>
-    <FORM METHOD="POST" ACTION="feature-map_form.cgi">
-    <INPUT type="hidden" NAME="feature_file" VALUE="$result_file">
-    <INPUT type="hidden" NAME="format" VALUE="feature-map">
-    <INPUT type="hidden" NAME="handle" VALUE="none">
-    <INPUT type="hidden" NAME="fill_form" VALUE="on">
-    <INPUT type="submit" value="feature map">
-    </FORM>
-  </TD>
-</TR>
-</table>
-End_of_form
 }
