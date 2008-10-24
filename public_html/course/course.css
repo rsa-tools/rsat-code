@@ -1,0 +1,117 @@
+/* BODY  */
+body {
+       font-family: Verdana, Helvetica, Arial, sans-serif;
+       font-size: 11px;
+       margin-top: 2px;
+       margin-left: 20px;
+       margin-right: 10px;
+       text-align: left;
+       background: #FFFFFF;
+       }
+
+/* Links  */
+
+A:link,A:visited {
+                   color: #0D73A7;
+                   background: transparent;
+                   text-decoration: none;
+                   }
+
+A:active {
+           color: #ff0000;
+           background: transparent;
+           text-decoration: none
+           }
+
+A:hover {
+          text-decoration: underline;
+          color: #cc6600;
+          }
+
+/* Text  */
+
+h1 {
+     font-size:20px;
+/*     color: #002266;*/
+     text-align: center;
+     color: #DDEEFF;
+     background-color: #115588;
+     margin-left: 0px;
+     margin-right: 0px;
+     padding-top: 10px;
+     padding-bottom: 10px;
+     }
+
+h2 {
+     /* 	text-align: center; */
+     font-size: 16px;
+     color: #002266;
+     text-align: left;
+     margin-left: 0px;
+     padding-left: 0px;
+     }
+
+h3 {
+     /* 	text-align: center; */
+     font-size: 13px;
+     color: #002266;
+     font-weight: bold;
+     text-align: left;
+     margin-left: 0px;
+     }
+
+h4 {
+     /* 	text-align: center; */
+     font-size: 11px;
+     color: #002266;
+     font-weight: bold;
+     text-align: left;
+     margin-left: 0px;
+     }
+
+hr {
+     border: 0px dotted #2D282E;
+     color: #115588;
+     background-color: #115588;
+     height: 2px;
+     }
+
+hr.solid {
+           border: 0px dotted #2D282E;
+           color: #115588;
+           background-color: #115588;
+           height: 5px;
+           }
+
+pre,tt {
+         font-size: 12px;
+         }
+
+
+
+/* TABLE */
+
+table {
+        margin: 0px 0px 0px;
+        color: #000000;
+        border-left: 1px solid #cbcbb4;
+        border-top: 1px solid #cbcbb4;
+        border-spacing: 0px;
+        }
+
+table th {
+           font-size: 11px;
+           border-right: 1px solid #cbcbb4;
+           border-bottom: 1px solid #cbcbb4;
+           padding: 2px 10px;
+           background-color: #AACCFF;
+           }
+
+table td {
+           font-size: 11px;
+           border-right: 1px solid #cbcbb4;
+           border-bottom: 1px solid #cbcbb4;
+           padding: 2px 10px;
+           background-color: #DDEEFF;
+           }
+
