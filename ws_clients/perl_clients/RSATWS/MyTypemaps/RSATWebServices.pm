@@ -219,6 +219,7 @@ our $typemap_1 = {
                'footprint_discovery/request/organism' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
                'purge_seqResponse/response/command' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
                'matrix_distrib/request/background' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+               'feature_map/request/sequence' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
                'pattern_assembly/request/str' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
                'graph_cluster_membership/request/tcol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
                'random_seqResponse/response/client' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',

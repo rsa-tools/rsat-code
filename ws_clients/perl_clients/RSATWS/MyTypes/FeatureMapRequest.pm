@@ -20,6 +20,9 @@ Class::Std::initialize();
 my %output_of :ATTR(:get<output>);
 my %features_of :ATTR(:get<features>);
 my %tmp_infile_of :ATTR(:get<tmp_infile>);
+my %sequence_of :ATTR(:get<sequence>);
+my %tmp_sequence_file_of :ATTR(:get<tmp_sequence_file>);
+my %sequence_format_of :ATTR(:get<sequence_format>);
 my %format_of :ATTR(:get<format>);
 my %from_of :ATTR(:get<from>);
 my %to_of :ATTR(:get<to>);
@@ -43,13 +46,14 @@ my %htmap_of :ATTR(:get<htmap>);
 my %mono_of :ATTR(:get<mono>);
 my %orientation_of :ATTR(:get<orientation>);
 my %select_of :ATTR(:get<select>);
-my %tmp_sequence_file_of :ATTR(:get<tmp_sequence_file>);
-my %sequence_format_of :ATTR(:get<sequence_format>);
 
 __PACKAGE__->_factory(
     [ qw(        output
         features
         tmp_infile
+        sequence
+        tmp_sequence_file
+        sequence_format
         format
         from
         to
@@ -73,14 +77,15 @@ __PACKAGE__->_factory(
         mono
         orientation
         select
-        tmp_sequence_file
-        sequence_format
 
     ) ],
     {
         'output' => \%output_of,
         'features' => \%features_of,
         'tmp_infile' => \%tmp_infile_of,
+        'sequence' => \%sequence_of,
+        'tmp_sequence_file' => \%tmp_sequence_file_of,
+        'sequence_format' => \%sequence_format_of,
         'format' => \%format_of,
         'from' => \%from_of,
         'to' => \%to_of,
@@ -104,13 +109,14 @@ __PACKAGE__->_factory(
         'mono' => \%mono_of,
         'orientation' => \%orientation_of,
         'select' => \%select_of,
-        'tmp_sequence_file' => \%tmp_sequence_file_of,
-        'sequence_format' => \%sequence_format_of,
     },
     {
         'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'features' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'tmp_infile' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'sequence' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'tmp_sequence_file' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'sequence_format' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'format' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'from' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'to' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
@@ -134,14 +140,15 @@ __PACKAGE__->_factory(
         'mono' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'orientation' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'select' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
-        'tmp_sequence_file' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
-        'sequence_format' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
     },
     {
 
         'output' => 'output',
         'features' => 'features',
         'tmp_infile' => 'tmp_infile',
+        'sequence' => 'sequence',
+        'tmp_sequence_file' => 'tmp_sequence_file',
+        'sequence_format' => 'sequence_format',
         'format' => 'format',
         'from' => 'from',
         'to' => 'to',
@@ -165,8 +172,6 @@ __PACKAGE__->_factory(
         'mono' => 'mono',
         'orientation' => 'orientation',
         'select' => 'select',
-        'tmp_sequence_file' => 'tmp_sequence_file',
-        'sequence_format' => 'sequence_format',
     }
 );
 
@@ -211,6 +216,15 @@ methods:
 
 
 =item * tmp_infile
+
+
+=item * sequence
+
+
+=item * tmp_sequence_file
+
+
+=item * sequence_format
 
 
 =item * format
@@ -282,12 +296,6 @@ methods:
 =item * select
 
 
-=item * tmp_sequence_file
-
-
-=item * sequence_format
-
-
 
 
 =back
@@ -303,6 +311,9 @@ Constructor. The following data structure may be passed to new():
    output =>  $some_value, # string
    features =>  $some_value, # string
    tmp_infile =>  $some_value, # string
+   sequence =>  $some_value, # string
+   tmp_sequence_file =>  $some_value, # string
+   sequence_format =>  $some_value, # string
    format =>  $some_value, # string
    from =>  $some_value, # int
    to =>  $some_value, # int
@@ -326,8 +337,6 @@ Constructor. The following data structure may be passed to new():
    mono =>  $some_value, # int
    orientation =>  $some_value, # string
    select =>  $some_value, # string
-   tmp_sequence_file =>  $some_value, # string
-   sequence_format =>  $some_value, # string
  },
 
 
