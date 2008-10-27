@@ -92,6 +92,9 @@ Constructor. The following data structure may be passed to new():
      output =>  $some_value, # string
      features =>  $some_value, # string
      tmp_infile =>  $some_value, # string
+     sequence =>  $some_value, # string
+     tmp_sequence_file =>  $some_value, # string
+     sequence_format =>  $some_value, # string
      format =>  $some_value, # string
      from =>  $some_value, # int
      to =>  $some_value, # int
@@ -115,8 +118,6 @@ Constructor. The following data structure may be passed to new():
      mono =>  $some_value, # int
      orientation =>  $some_value, # string
      select =>  $some_value, # string
-     tmp_sequence_file =>  $some_value, # string
-     sequence_format =>  $some_value, # string
    },
  },
 
