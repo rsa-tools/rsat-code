@@ -1200,6 +1200,18 @@ sub feature_map {
     }
     chomp $tmp_infile;
 
+    if ($args{"sequence"}) {
+	my $sequence = $args{"sequence"};
+	chomp $sequence;
+	$tmp_sequence_file = `mktemp $TMP/feature-map.XXXXXXXXXX`;
+	open TMP_IN, ">".$tmp_sequence_file or die "cannot open temp file ".$tmp_sequence_file."\n";
+	print TMP_IN $sequence;
+	close TMP_IN;
+    } elsif ($args{"tmp_sequence_file"}) {
+	$tmp_sequence_file = $args{"tmp_sequence_file"};
+    }
+    chomp $tmp_sequence_file;
+
     my $format = $args{"format"};
     my $from = $args{"from"};
     my $to = $args{"to"};
@@ -1223,7 +1235,6 @@ sub feature_map {
     my $mono = $args{"mono"};
     my $orientation = $args{"orientation"};
     my $select = $args{"select"};
-    my $tmp_sequence_file = $args{'tmp_sequence_file'};
     my $sequence_format = $args{'sequence_format'};
 
     my $command = "$SCRIPTS/feature-map";
