@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.50 2008/10/21 15:17:59 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.51 2008/10/27 16:33:48 rsat Exp $
 #
 # Time-stamp
 #
@@ -781,8 +781,12 @@ sub Main {
 	my $coding_region_start = $transcript->coding_region_start();
 	my $coding_region_end = $transcript->coding_region_end();
 
-	&RSAT::message::Info ("Coding region start: $coding_region_start") if ($main::verbose >= 1 && $coding_region_start);
-	&RSAT::message::Info ("Coding region end: $coding_region_end") if ($main::verbose >= 1 && $coding_region_end);
+	if (($coding_region_start) && ($coding_region_end)) {
+	    &RSAT::message::Info ("Coding region start: $coding_region_start") if ($main::verbose >= 1);
+	    &RSAT::message::Info ("Coding region end: $coding_region_end") if ($main::verbose >= 1);
+	} else {
+	    &RSAT::message::Warning ("Gene $gene_id has no coding region");
+	}
 
 	# Exons
 	if ($feattype eq "exon") {
@@ -795,7 +799,7 @@ sub Main {
 		&RSAT::message::Info (join("\t", "# ID", "Start", "End")) if ($main::verbose >= 1);
 		&RSAT::message::Info (join("\t", $exon_id, $exon_start, $exon_end)) if ($main::verbose >= 1);
 
-		if ($non_coding) {
+		if (($non_coding) && ($coding_region_start) && ($coding_region_end) ) {
 		    if ($coding_region_start > $exon_start && $coding_region_start < $exon_end) {
 
 			$seq_limits{$exon_id} = [$exon_start, $coding_region_start - 1];
@@ -866,7 +870,7 @@ sub Main {
 	}
 
 	# UTR
-	if ($feattype eq "utr") {
+	if (($feattype eq "utr") && ($coding_region_start) && ($coding_region_end)) {
 	    my $utr5_start;
 	    my $utr5_end;
 	    my $utr3_start;
@@ -906,7 +910,7 @@ sub Main {
 	}
 
 	# CDS
-	if ($feattype eq 'cds') {
+	if (($feattype eq 'cds') && ($coding_region_start) && ($coding_region_end)) {
 	    my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $coding_region_start, $coding_region_end);
 	    my $cds_id = $transcript -> translation() -> stable_id();
 
