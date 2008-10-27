@@ -832,9 +832,24 @@ Default is 'both'.</xsd:documentation>
 	  </xsd:element>
 	  <xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>Name of the file with input sequence on the server. You need to supply either this parameter or the previous one (features).</xsd:documentation>
+	      <xsd:documentation>Name of the file with input features on the server (workflow usage). You need to supply either this parameter or the previous one (features).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="sequence" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input sequence(s).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_sequence_file" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Reference sequence file on the server (workflow usage)</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="sequence_format" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Format of reference sequence file on the server.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
 	  <xsd:element name="format" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Output image format. Supported: png,jpg,ps,gif (default = jpg)</xsd:documentation>
@@ -953,16 +968,6 @@ Default is 'both'.</xsd:documentation>
               <xsd:documentation> Only display the features whose ID is in the provided id_list.
 		The id_list contains one or several IDs, separated by commas.IDs may be embraced in single quotes to allow multiple words within the IDs. Commas and single quotes are not allowed within an ID.
 		Example:-select 'gataag','gattag' only displays features identified by gataag or gattag.</xsd:documentation>
-            </xsd:annotation>
-          </xsd:element>
-	  <xsd:element name="tmp_sequence_file" type="xsd:string" minOccurs="0">
-            <xsd:annotation>
-              <xsd:documentation>Reference sequence file on the server (workflow usage)</xsd:documentation>
-            </xsd:annotation>
-          </xsd:element>
-	  <xsd:element name="sequence_format" type="xsd:string" minOccurs="0">
-            <xsd:annotation>
-              <xsd:documentation>Format of reference sequence file on the server (workflow usage)</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	</xsd:sequence>
