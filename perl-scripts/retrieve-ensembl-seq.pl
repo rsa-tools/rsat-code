@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.51 2008/10/27 16:33:48 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.52 2008/10/28 15:24:26 rsat Exp $
 #
 # Time-stamp
 #
@@ -875,14 +875,28 @@ sub Main {
 	    my $utr5_end;
 	    my $utr3_start;
 	    my $utr3_end;
+	    my $utr5_flag = 0;
+	    my $utr3_flag = 0;
 	    if ($strand == 1) {
 		$utr5_start = $transcript_start;
 		$utr5_end = $coding_region_start - 1;
+		unless ($transcript_start == $coding_region_start) {
+		    $utr5_flag = 1;
+		}
 		$utr3_start = $coding_region_end + 1;
 		$utr3_end = $transcript_end;
+		unless ($transcript_end == $coding_region_end) {
+		    $utr3_flag = 1;
+		}
 	    } else {
+		unless ($transcript_start == $coding_region_start) {
+		    $utr3_flag = 1;
+		}
 		$utr3_start = $transcript_start;
 		$utr3_end = $coding_region_start - 1;
+		unless ($transcript_end == $coding_region_end) {
+		    $utr5_flag = 1;
+		}
 		$utr5_start = $coding_region_end + 1;
 		$utr5_end = $transcript_end;
 	    }
@@ -890,22 +904,26 @@ sub Main {
 	    my $utr5_id = $transcript_id."-5prime_UTR";
 	    my $utr3_id = $transcript_id."-3prime_UTR";
 
-	    $seq_limits{$utr5_id} = [$utr5_start, $utr5_end];
-	    $seq_limits{$utr3_id} = [$utr3_start, $utr3_end];
+	    if ($utr5_flag == 1) {
+		$seq_limits{$utr5_id} = [$utr5_start, $utr5_end];
+	    }
+	    if ($utr3_flag == 1) {
+		$seq_limits{$utr3_id} = [$utr3_start, $utr3_end];
+	    }
 
 	    unless ($uniq_seqs) {
-		$utr5_sequence = &GetSequence($utr5_start, $utr5_end);
-		$utr3_sequence = &GetSequence($utr3_start, $utr3_end);
-		my $utr5_size = $utr5_end - $utr5_start + 1;
-		my $utr3_size = $utr3_end - $utr3_start + 1;
-
-		my $utr5_fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_end $rsat_strand";
-
-		&PrintSequence ($utr5_sequence, $utr5_fasta_header);
-
-		my $utr3_fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_end $rsat_strand";
-	
-		&PrintSequence ($utr3_sequence, $utr3_fasta_header);
+		if ($utr5_flag == 1) {
+		    $utr5_sequence = &GetSequence($utr5_start, $utr5_end);
+		    my $utr5_size = $utr5_end - $utr5_start + 1;
+		    my $utr5_fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_end $rsat_strand";
+		    &PrintSequence ($utr5_sequence, $utr5_fasta_header);
+		}
+		if ($utr3_flag == 1) {
+		    $utr3_sequence = &GetSequence($utr3_start, $utr3_end);
+		    my $utr3_size = $utr3_end - $utr3_start + 1;
+		    my $utr3_fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_end $rsat_strand";
+		    &PrintSequence ($utr3_sequence, $utr3_fasta_header);
+		}
 	    }
 	}
 
@@ -1272,14 +1290,15 @@ sub GetSequence {
 #    my $hardmasked_seq = $slice->get_repeatmasked_seq();
 #    my $softmasked_seq = $slice->get_repeatmasked_seq(undef, 1);
   }
-  if ($mask_coding) {     
+  if ($mask_coding) {
       my $retrieved_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome -> seq_region_name(), $left, $right);
       my $transcript_adaptor = $db->get_TranscriptAdaptor();
       my @retrieved_transcripts = @{$transcript_adaptor->fetch_all_by_Slice($retrieved_slice)};
       foreach $retrieved_transcript (@retrieved_transcripts) {
 	  my @retrieved_exons = @{$retrieved_transcript->get_all_translateable_Exons};
 	  foreach my $retrieved_exon (@retrieved_exons) {
-#	      &RSAT::message::Info ("Translateable exon start: ".$retrieved_exon->start()."\tTranslateable exon end: ".$retrieved_exon->end()."\tTranslateable exon strand: ".$retrieved_exon->strand()) if ($main::verbose >= 1);
+	      &RSAT::message::Info ("Translateable exon start: ".$retrieved_exon->start()."\tTranslateable exon end: ".$retrieved_exon->end()."\tTranslateable exon strand: ".$retrieved_exon->strand()) if ($main::verbose >= 5);
+	      &RSAT::message::Info ("Translateable exon start: ".$retrieved_exon->seq_region_start()."\tTranslateable exon end: ".$retrieved_exon->seq_region_end()) if ($main::verbose >= 5);
 	      my $coding_length = $retrieved_exon->end() - $retrieved_exon->start() + 1;
 	      my $masking;
 	      if ($retrieved_exon->seq_region_start() >= $left && $retrieved_exon->seq_region_end() <= $right) {
