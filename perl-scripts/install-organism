@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.80 2008/10/22 16:33:55 rsat Exp $
+# $Id: install-organism,v 1.81 2008/10/28 15:59:05 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -527,9 +527,10 @@ sub CalcFrequencies {
     unless (($task{upstream_freq}) ||
 	    ($task{intergenic_freq}) ||
 	    ($task{protein_freq}) ||
-	    ($task{genome_freq})) {
+	    ($task{genome_freq}) ||
+	    ($task{ensembl_freq})) {
 
-	&RSAT::error::FatalError("The tasks 'oligos' and 'dyads' require to specify at least one sequence type for computing oligo or dyad frequencies. ", "\n\tYou should add one or several of the following tasks: upstream_freq, intergenic_freq, genome_freq, protein_freq");
+	&RSAT::error::FatalError("The tasks 'oligos' and 'dyads' require to specify at least one sequence type for computing oligo or dyad frequencies. ", "\n\tYou should add one or several of the following tasks: upstream_freq, intergenic_freq, genome_freq, protein_freq, ensembl_freq");
 
     }
 
@@ -570,11 +571,15 @@ sub CalcFrequencies {
 	}
     }
 
-	foreach my $masking (@masking_modes) {
+#	foreach my $masking (@masking_modes) {
+#	foreach my $masking ("-rm") {
 #	    foreach my $noorf ("-noorf", "") {
 	        foreach my $maskcoding ("-maskcoding") {
-		    foreach my $type ("upstream_mrna") {
-			$seq_type = "${type}${up_from}${up_to}${maskcoding}${masking}";
+#		    foreach my $type ("upstream_mrna") {
+#		    foreach my $type ("intron") {
+		    foreach my $type ("firstintron") {
+#			$seq_type = "${type}${up_from}${up_to}${maskcoding}${masking}";
+			$seq_type = "${type}${maskcoding}${masking}";
 #		    if ($purged_frequencies) {
 #			$seq_file = "${organism_short_name}_${seq_type}_purged.fasta";
 #			$seq_format = "fasta";
@@ -587,7 +592,7 @@ sub CalcFrequencies {
 #		    &CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib} && !($noorf));
 #		    &CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
 		}
-	    }
+#	    }
 #	}
     }
 }
