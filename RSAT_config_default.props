@@ -28,7 +28,7 @@ www_rsa=http://rsat.scmbb.ulb.ac.be/rsat/
 rsat_ws=http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl
 
 ## URL used by the RSAT Web services to give Web access to temporary files
-rsat_ws_tmp=http://rsat.scmbb.ulb.ac.be/rsa-tools/tmp
+rsat_ws_tmp=http://rsat.scmbb.ulb.ac.be/rsat/tmp
 
 ## Default image format
 rsat_img_format=png
