@@ -105,7 +105,7 @@ can be installed with the command \program{cpan}.
 \subsection{Additional libraries to access EnsEMBL genomes}
 
 Two programs, \program{retrieve-ensembl-seq.pl} and
-\program{get-ensembl-genome.pl}, require the EnsEMBL Perl API and
+\program{get-ensembl-genome.pl}, require two EnsEMBL Perl APIs and
 bioperl to work on your machine.
 
 To obtain bioperl:
@@ -162,9 +162,23 @@ bioperl=/home/rsat/rsa-tools/lib/bioperl-live
 \end{verbatim}
 \end{footnotesize}
 
+You also need to define the url of the ensembl database in that configuration file:
+
+\begin{footnotesize}
+\begin{verbatim}
+## EnsEMBL host
+## Used by the EnsEMBL-accessing tools (retrieve-ensembl-seq,
+## get-ensembl-genome).
+## URL of the server for the EnsEMBL DB. By default, the
+## main ensembl server is called, but a local server can be specified.
+ensembl_host=ensembldb.ensembl.org
+\end{verbatim}
+\end{footnotesize}
+
 The EnsEMBL libraries also require the SQL client Perl module
-\file{DBD::mysql}, which can be installed with cpan (for this you need
-root privileges).
+\file{DBD::mysql}, as well as \file{DBI}, which can be installed with cpan (for this you need
+root privileges), and MySQL. To access EnsEMBL versions above 47, you need
+port 5306 to be opened.
 
 Detailed information about the EnsEMBL libraries can be obtained on
 the EnsEMBL web site
