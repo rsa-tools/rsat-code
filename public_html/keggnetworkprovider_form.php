@@ -21,7 +21,7 @@
   # demo
   $demo = $_REQUEST['demo'];
   if ($demo == 1) {
-     $demo_organisms = "atu/atc";
+     $demo_organisms = "dsba/dsmi/dspd/spo/sce";
      $default_organisms = $demo_organisms;
   }
 
@@ -33,7 +33,15 @@
   <h2>1. Input <a href='help.keggnetworkprovider.html#input'><img src='images/question-mark-button.jpg' width='15' alt='help'></a>
   </h2>
   <br>
-  <br>
+  <br>");
+  if($demo == 1){
+  	demo("To demonstrate the KEGG network provider, we are constructing the metabolic network from five yeast species:<br>
+  	dsba (Saccharomyces bayanus), dsmi (Saccharomyces mikatae), dspd (Saccharomyces paradoxus), spo (Schizosaccharomyces pombe)
+  	 and sce (Saccharomyces cerevisiae).
+  	  <input type='hidden' name='organisms' value='$default_organisms'></input>
+  	");
+  }else{
+  echo("
   <table>
   <tr><td>
          Enter KEGG abbreviations for organisms, separated by '/' in text field below (e.g. eco/sce/reference):
@@ -63,11 +71,13 @@
     AND/OR<br>
     Upload a file which contains one reaction KEGG identifier by line:
     </td></tr>
-    <tr><td>  
+    <tr><td>
           <input type='file' name='reactions_file' size='45' />
     </td></tr>
   </table>
-  <br>
+  <br>");
+  }
+  echo("
    <br>
    <hr>
    <h2>2. Options
@@ -87,9 +97,9 @@
          <tr><td><B>directed network</B><input type='checkbox' name='directed' value='on'></input></td></tr>
          <tr><td><B>RPAIR network</B>&nbsp;&nbsp;&nbsp;<input type='checkbox' name='rpair' value='on'></input></td></tr>
          <tr><td><br></td></tr>
-         <tr><td><b>Optional:</b> Select attributes from the menu below. Note that additional attributes to the default ones will slow down the network construction.<br> 
+         <tr><td><b>Optional:</b> Select attributes from the menu below. Note that additional attributes to the default ones will slow down the network construction.<br>
          Note also that you can select more than one additional attribute by pushing the Shift key.<br>
-         <select multiple='yes' name='attributes'>
+         <select multiple name='attributes[]'>
              <option selected value=''>default</option>
              <option value='ECNumber' >EC numbers</option>
              <option value='Label'>Label</option>

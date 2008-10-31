@@ -75,6 +75,7 @@ $excludedreactions = $_REQUEST['excludedreactions'];
 $excludedrpairclasses = $_REQUEST['excludedrpairclasses'];
 $directed = $_REQUEST['directed'];
 $rpairs = $_REQUEST['rpair'];
+# name of parameter in form is attributes[]
 $attribs = $_REQUEST['attributes'];
 $out_format = $_REQUEST['outFormat'];
 $email = $_REQUEST['email'];
