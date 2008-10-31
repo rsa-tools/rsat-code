@@ -357,6 +357,20 @@ if($attribs){
       }
     # send results by email
     }else{
+        $parameters = array(
+        'organismNames'=>$organisms,
+        'organismFile'=>$organisms_file,
+        'reactionIds'=>$reactions,
+        'reactionFile'=>$reactions_file,
+    	'directed'=>$directed,
+    	'graphType'=>$rpairs,
+    	'attributes'=>$selected_attribs,
+    	'outFormat'=>$out_format,
+    	'excludeCompounds'=>$excludedcompounds,
+    	'excludeReactions'=>$excludedreactions,
+    	'excludeRPairClasses'=>$excludedrpairclasses,
+    	'returnType'=>$return_type
+    	);
 	   $mixedRequest = array("MetabolicGraphConstructorRequest"=>$parameters,"GraphConverterRequest"=>NULL, "PathfinderRequest"=>NULL,"PathwayinferenceRequest"=>NULL);
         $requestArray = array(0=>$mixedRequest);
         $emailParams = array("request" => array(
