@@ -27,7 +27,7 @@
 
 <ul>
     The KEGG network provider allows the construction of bipartite metabolic networks specific to a set of organisms. 
-    The networks are constructed from KEGG KGML files (KEGG version 46.0). Compounds and reactions are represented
+    The networks are constructed from <a href="http://www.genome.jp/kegg/xml/" target="_blank">KEGG KGML</a> files (KEGG version 46.0). Compounds and reactions are represented
     as separate node sets.<br> 
     It is also possible to filter the network in order to exclude certain reactions, compounds or reactant pair classes.  
     In addition, compounds and reactions in the constructed networks can be annotated with their label or EC number.<br>
@@ -39,13 +39,13 @@
 <h4><a name="input">Input</a></h4>
 <ul>
 	<li>KEGG organism abbreviations<br>
-		Organisms present in KEGG can be specified by their KEGG three-letter code. If you want to specify more than one organism,
-		you can separate organism codes by '/' (e.g. eco/sce).
+		Organisms present in KEGG can be specified by their KEGG abbreviation. If you want to specify more than one organism,
+		you can separate organism identifiers by '/' (e.g. eco/sce).
 		Note that the reference pathways can be requested with 'reference'.
-		The list of KEGG organisms and their three-letter codes is available <a href="Kegg_organisms_list.txt">here</a>.
+		The list of KEGG organisms and their abbreviations in KEGG is available <a href="Kegg_organisms_list.txt">here</a>.
 	</li>
 	<li>KEGG organism file<br>
-		Instead of or in addition to specifying organisms manually, a file with organism three-letter codes can be up-loaded. The file contains
+		Instead of or in addition to specifying organisms manually, a file with organism KEGG abbreviations can be up-loaded. The file contains
 		one organism code on each line. Comment lines in the file should be preceded by '#'.
 	</li>
 	<li>KEGG reactions<br>
@@ -119,7 +119,7 @@
 
 <h4><A NAME="next">Next steps panel</a></h4>
 	<ul>The next steps panel allows you to input the result of KEGG network provider into one of the listed tools without copy-pasting
-	the result into that tool. The next steps panel will only appear if you request a graph output.
+	the result into that tool. The next steps panel will only appear if you choose gml or tab-delimited as network format.
 	</ul>
 
 
