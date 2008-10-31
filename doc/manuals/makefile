@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: makefile,v 1.10 2008/02/09 17:06:49 jvanheld Exp $
+# $Id: makefile,v 1.11 2008/10/31 19:52:13 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 15:13:34 jvanheld>
 #
@@ -13,11 +13,10 @@ MAKE=make -s
 RM=rm -f
 
 TEX_FILES = \
-	test.tex \
-	neat_tutorial.tex \
 	rsat_web_server.tex \
 	install_guide.tex \
-	tutorial_shell_rsat.tex
+	tutorial_shell_rsat.tex \
+	neat_tutorial.tex 
 
 INCLUDE_TEX_FILES = \
 	rsat_latex_commands.tex
