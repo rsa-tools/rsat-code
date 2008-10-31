@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: seq-proba,v 1.6 2008/03/26 20:10:58 jvanheld Exp $
+# $Id: seq-proba,v 1.7 2008/10/31 19:52:02 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -295,7 +295,7 @@ allows to use the command within a pipe.
 	    ## Sequence format
 =pod
 
-=item B<-format seq_format>
+=item B<-seq_format seq_format>
 
 Sequence format.
 
@@ -436,6 +436,17 @@ __END__
 =item convert-background-model
 
 =item matrix-scan
+
+
+=back
+
+=head1 WISH LIST
+
+=over
+
+=item Support sequences with IUPAC letters
+
+This should be relatively easy to implement.
 
 =back
 
