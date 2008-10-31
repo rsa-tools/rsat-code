@@ -265,8 +265,7 @@ if (($query->param('output') =~ /display/i) ||
 #	    $server_file = $results -> get_server();
 	    $sequence_file = $results -> get_server();     ## variable name has to be '$sequence_file' for PipingFormForSequence subroutine
 	} else {
-	    my $TMP = $ENV{RSAT}.'/public_html/tmp';
-	    $sequence_file = `mktemp $TMP/retrieve-ensembl-seq.XXXXXXXXXX`;
+	    $sequence_file = `mktemp $ENV{rsat_tmp}/retrieve-ensembl-seq.XXXXXXXXXX`;
 	    open TMP_IN, ">".$sequence_file or die "cannot open temp file ".$sequence_file."\n";
 	    print TMP_IN $result;
 	    close TMP_IN;
