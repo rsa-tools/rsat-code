@@ -49,7 +49,7 @@
   <tr><td>
         <input type='text' name='organisms' value='$default_organisms' size=100></input>
    </td></tr>
-   <tr><td>Check<a href='demo_files/Kegg_organisms_list.txt'> here</a> for organism abbreviations.</td></tr>
+   <tr><td>Check<a href='data/KEGG/Kegg_organisms_list.txt'> here</a> for organism abbreviations.</td></tr>
    <tr><td>
         AND/OR<br>
         Upload a file which contains one organism KEGG identifier by line:
