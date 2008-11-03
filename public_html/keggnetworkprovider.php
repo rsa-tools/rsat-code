@@ -14,23 +14,21 @@
 require ('functions.php');
 # log file update thanks to Sylvain
 UpdateLogFile("neat","","");
-# Sylvain's upload function modified to accept upload location and to return file name without path
+# Sylvain's upload function modified to accept upload location
 Function uploadFileToGivenLocation($file, $location) {
-	require ('functions.php');
-    $repertoireDestination = $location;
     $nomDestination = $_FILES[$file]["name"];
     $now = date("Ymd_His");
     $nomDestination = $nomDestination.$now;
 
     if (is_uploaded_file($_FILES[$file]['tmp_name'])) {
-        if (rename($_FILES[$file]['tmp_name'], $repertoireDestination.$nomDestination)) {
+        if (rename($_FILES[$file]['tmp_name'], $location.$nomDestination)) {
         } else {
-            echo "Could not move $_FILES[$file]['tmp_name']"." check that $repertoireDestination exists<br>";
+            echo "Could not move $_FILES[$file]['tmp_name']"." check that $location exists<br>";
         }
     } else {
        echo "File ".$_FILES[$file]['tmp_name']." could not be uploaded<br>";
     }
-    return $nomDestination;
+    return $location.$nomDestination;
 }
 
 title('Results KEGG network provider');
@@ -65,10 +63,17 @@ $html_location = "http://rsat.scmbb.ulb.ac.be/rsat/tmp/";
 $organisms = $_REQUEST['organisms'];
 if ($_FILES['organisms_file']['name'] != "") {
     $organisms_file = uploadFileToGivenLocation('organisms_file',$result_location);
+    if($organisms_file != ""){
+        # file is readable for everyone, but writable for owner only
+    	chmod($organisms_file,644);
+    }
 }
 $reactions = $_REQUEST['reactions'];
 if ($_FILES['reactions_file']['name'] != "") {
     $reactions_file = uploadFileToGivenLocation('reactions_file',$result_location);
+     if($reactions_file != ""){
+    	chmod($reactions_file,644);
+    }
 }
 $excludedcompounds = $_REQUEST['excludedcompounds'];
 $excludedreactions = $_REQUEST['excludedreactions'];
@@ -95,8 +100,8 @@ if ($directed == 'on') {
   }
 
 # separate file names from path
-# $organisms_file = basename($organisms_file);
-# $reactions_file = basename($reactions_file);
+$organisms_file = basename($organisms_file);
+$reactions_file = basename($reactions_file);
 
 # load attribs from multiple select form
 if($attribs){
