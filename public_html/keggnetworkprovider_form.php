@@ -47,8 +47,9 @@
          Enter KEGG abbreviations for organisms, separated by '/' in text field below (e.g. eco/sce/reference):
   </td></tr>
   <tr><td>
-        <input type='text' name='organisms' value='$default_organisms' size=100></input>&nbsp;&nbsp;&nbsp;Check<a href='Kegg_organisms_list.txt'> here</a> for organism abbreviations.
+        <input type='text' name='organisms' value='$default_organisms' size=100></input>
    </td></tr>
+   <tr><td>Check<a href='published_data/Kegg_organisms_list.txt'> here</a> for organism abbreviations.</td></tr>
    <tr><td>
         AND/OR<br>
         Upload a file which contains one organism KEGG identifier by line:
