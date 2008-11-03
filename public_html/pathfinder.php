@@ -509,7 +509,7 @@
     	'returnType'=>$return_type
          );    
 
-        $mixedRequest = array("PathfinderRequest"=>$pathfinderParams,"GraphConverterRequest"=>NULL, "MetabolicGraphConstructorRequest"=>NULL);
+        $mixedRequest = array("PathfinderRequest"=>$pathfinderParams,"GraphConverterRequest"=>NULL, "MetabolicGraphConstructorRequest"=>NULL,"PathwayinferenceRequest"=>NULL);
         $requestArray = array(0=>$mixedRequest);
         $emailParams = array("request" => array(
                 'email'=>$email,
