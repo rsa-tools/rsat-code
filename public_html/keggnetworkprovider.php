@@ -52,6 +52,7 @@ $tab_java = 1;
 $selected_attribs = "";
 $fileContent = "";
 $sylvain_input_graph = "";
+$graph_type = "";
 
 # server-related params
 $result_location = "/home/rsat/rsa-tools/public_html/tmp/";
@@ -252,15 +253,27 @@ if($attribs){
        </td>
      </tr>
      <tr>
-     	<TD>
-        <FORM METHOD='POST' ACTION='pathfinder_form.php'>
+       <td>";
+       if($rpairs == 's'){
+       	$graph_type="subreactiongraph";
+       }else{
+       	$graph_type="reactiongraph";
+       }
+       if($directed == 1){
+          $directed = "on";
+       }else{
+          $directed = "";
+       }
+       echo "
+        <FORM METHOD='POST' ACTION='http://rsat.scmbb.ulb.ac.be/metabolicpathfinding/metabolicPathfinder_form.jsp'>
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='graph_file' VALUE='$file_location'>
-          <input type='hidden' NAME='in_format' VALUE='$out_format'>";
-          echo "
-          <INPUT type='submit' value='Do path finding on this graph'>
+          <input type='hidden' NAME='graph_format' VALUE='$out_format'>
+          <input type='hidden' NAME='graph_type' VALUE='$graph_type'>
+          <input type='hidden' NAME='directed' VALUE='$directed'>
+          <INPUT type='submit' value='Find metabolic paths in this graph'>
          </form>
-        </td>
+       </td>
        <TD>
          <FORM METHOD='POST' ACTION='graph_get_clusters_form.php'>
            <input type='hidden' NAME='pipe' VALUE='1'>
@@ -352,6 +365,14 @@ if($attribs){
           <INPUT type='submit' value='Randomize this graph'>
          </form>
        </td>
+       <TD>
+        <FORM METHOD='POST' ACTION='pathfinder_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$file_location'>
+          <input type='hidden' NAME='in_format' VALUE='$out_format'>
+          <INPUT type='submit' value='Do path finding on this graph'>
+         </form>
+        </td>
      </tr>
    		</table>");
 		}else{
