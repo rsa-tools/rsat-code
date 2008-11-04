@@ -1060,7 +1060,7 @@ sub _readFromAssemblyFile {
       my $pattern_id = $pattern."|";
       $pattern =~ s/\./n/g;
       $pattern_rc =~ s/\./n/g;
-#      &RSAT::message::Debug("ASSEMBLY LINE", $l, $pattern, $pattern_rc, $score) if ($main::verbose >= 5);
+     &RSAT::message::Debug("ASSEMBLY LINE", $l, $pattern, $pattern_rc, $score) if ($main::verbose >= 5);
       $matrix->add_site(lc($pattern), score=>$score, id=>$pattern_id, max_score=>1);
 
       ## New site from a single-strand assembly
