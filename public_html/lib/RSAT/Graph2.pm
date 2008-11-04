@@ -395,16 +395,33 @@ This supports multi-edges ($duplicated = 1) or not ($duplicated = 0)
 and self loops ($self_loops = 1) or not ($self_loops = 0) A weight is
 calculated according to the normal distribution and the $mean and $sd
 value given as argument.
-@source_nodes and @target_nodes contain the  source nodes and the target nodes of the original
-graph respectively (if exists), if the $column boolean is set to 1, then source node will remain
-source node and target node will remain target nodes (useful for bipartite graphs).
 
-
-
+@source_nodes and @target_nodes contain the source nodes and the
+target nodes of the original graph respectively (if exists), if the
+$column boolean is set to 1, then source node will remain source node
+and target node will remain target nodes (useful for bipartite
+graphs).
 
 =cut
 sub create_random_graph {
-  my ($self, $nodes_ref, $req_nodes, $req_edges, $self_loops, $duplicated, $directed, $max_degree, $single, $mean, $sd, $normal, $column, $weights_ref, $source_nodes_ref, $target_nodes_ref) = @_;
+  my ($self,
+      $nodes_ref,
+      $req_nodes,
+      $req_edges,
+      $self_loops,
+      $duplicated,
+      $directed,
+      $max_degree,
+      $single,
+      $mean,
+      $sd,
+      $normal,
+      $column,
+      $weights_ref,
+      $source_nodes_ref,
+      $target_nodes_ref,
+      $node_prefix,
+      $edge_prefix) = @_;
   my $rdm_graph = new RSAT::Graph2();
   my @rdm_graph_array = ();
   my $max_arc_number = 10000000;
@@ -414,6 +431,8 @@ sub create_random_graph {
   my $req_source_nodes = $req_nodes;
   my $req_target_nodes = $req_nodes;
   my @labels = @{$weights_ref}; 
+  $node_prefix = "" unless defined($node_prefix);
+  $edge_prefix = "" unless defined($egde_prefix);
 
   ## creation of the list of nodes
   if (scalar(@nodes) > 0) {
@@ -431,9 +450,10 @@ sub create_random_graph {
     }
   } else {
     for (my $i = 1; $i <= $req_nodes; $i++) {
-      push @source_nodes, "n_".$i;
-      push @target_nodes, "n_".$i;
-      push @nodes, "n_".$i;
+      my $node_id = $node_prefix."n".$i;
+      push @source_nodes, $node_id;
+      push @target_nodes, $node_id;
+      push @nodes, $node_id;
     }
   }
   if ($column) {
@@ -465,7 +485,7 @@ sub create_random_graph {
   my @random_source = 0 .. ($req_source_nodes-1);
   my @random_target = 0 .. ($req_target_nodes-1);
   @random_source = &shuffle(@random_source);
-  
+
   for (my $i = 0; $i < $req_source_nodes; $i++) {
     @random_target = &shuffle(@random_target);
     for (my $j = 0; $j < $req_target_nodes; $j++) {
@@ -531,8 +551,8 @@ sub create_random_graph {
       }
       my $source = $possible_source[$random_edges[$i]];
       my $target = $possible_target[$random_edges[$i]];
-      my $label = join("_", $source, $target);
-      my $cpt = scalar(@rdm_graph_array); ## nombre d'arcs dans le tableau
+      my $label = $edge_prefix.$source."_".$target;
+      my $cpt = scalar(@rdm_graph_array); ## Number of arcs in the table
       if ($mean ne 'null' && $sd ne 'null' && $normal) {
         $label = &gaussian_rand();
         $label = ($label * $sd) + $mean;
