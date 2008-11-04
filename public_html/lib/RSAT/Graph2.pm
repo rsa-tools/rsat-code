@@ -444,6 +444,7 @@ sub create_random_graph {
   if (!$duplicated) { 
     if (!$directed && !$self_loops) {
       $max_arc_number = ($req_nodes*($req_nodes-1))/2;
+#       print "REQ NODES".$req_nodes."\n";
     } elsif ($directed && $self_loops) {
       $max_arc_number = ($req_nodes*$req_nodes);
     } elsif ($directed && !$self_loops) {
@@ -1532,7 +1533,9 @@ sub read_from_adj_matrix {
       chomp ($line);
       my @linecp = split "\t", $line;
       if ($nodes_id_name{$cpt} ne $linecp[0]) {
+        
         &RSAT::error::FatalError("\t", "Rows and columns are not in the same order");
+        
       }
       $cpt++;
       for (my $i = 1; $i < scalar (@linecp); $i++) {
