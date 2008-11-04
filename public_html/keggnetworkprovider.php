@@ -260,9 +260,9 @@ if($attribs){
        	$graph_type="reactiongraph";
        }
        if($directed == 1){
-          $directed = "on";
+          $directed = "true";
        }else{
-          $directed = "";
+          $directed = "false";
        }
        echo "
         <FORM METHOD='POST' ACTION='http://rsat.scmbb.ulb.ac.be/metabolicpathfinding/metabolicPathfinder_form.jsp'>
