@@ -1,0 +1,88 @@
+\chapter{KEGG network provider}
+
+\section{Introduction}
+
+% what can you do with the tool
+KEGG network provider allows you to extract metabolic networks from KEGG that are specific to a set of organisms.
+In addition, you can exclude certain compounds or reactions from these networks.
+
+% competing tools
+A range of tools works with KGML files. Click on ``Manual -> Related tools'' to see a selection of them.
+KEGG network provider differs from these tools by allowing also the extraction of RPAIR networks and by supporting
+filtering of compounds, reactions and RPAIR classes.
+
+KEGG network provider itself has no network analysis or visualization functions,
+but you can use a NeAT tool (a choice of them will appear upon termination of network construction)
+or any other graph analysis tool that reads gml, VisML or dot format for these purposes.
+
+For visualization of KEGG networks, you can use iPATH, KGML-ED or metaSHARK.
+Yanasquare and Pathway Hunter Tool offer organism-specific KEGG network construction in combination
+with analysis functions.
+
+% side compounds
+It should be noted that KEGG annotators omitted side compounds in the KGML files. Thus, certain molecules
+(such as CO2, ATP or ADP) might be absent from the metabolic networks extracted from these files.
+
+\section{Yeast metabolic network construction}
+
+\subsection{Study case}
+
+Our study case consists in the construction of a metabolic network from several yeast species. We will construct a filtered
+and an unfiltered version of this network and compare metabolic path finding results.
+
+\subsection{Protocol for the web server}
+
+\begin{enumerate}
+
+\item In the \neat  menu, select the entry \program{Download organism-specific networks from KEGG}.
+
+  In the right panel, you should now see a form entitled
+  ``KEGG network provider''.
+
+\item Click on the button \option{DEMO} located at the bottom of the form.
+
+  The KEGG network provider form has now loaded the organism identifiers of five yeast species.
+
+\item Click the checkbox \option{directed network} to construct a directed metabolic network.
+
+\item Click on the button \option{GO}.
+
+  The network extraction should not take more than one minute.
+  Then, a link to the extracted network is displayed.
+  In addition (for formats \textit{tab-delimited} and \textit{gml}), the Next step panel should appear.
+
+\item Click on the button ``Find metabolic paths in this graph'' in the Next step panel. This button opens the
+Metabolic pathfinder with the yeast network pre-loaded.
+
+\item Enter C00025 (L-Glutamate) as source node and C00148 (L-Proline) as target node.
+
+\end{enumerate}
+
+To see how results change with modified weight, you can repeat steps 1 and 2.
+In the metabolic path finding form, select Reaction graph instead of Subreaction graph (which is selected by default) and
+follow step 3 to 5. You will notice in the seed node selection form that the reaction identifiers are no longer mapped to
+reactant pairs.
+
+\subsection{Protocol for the command-line tools}
+
+You may download a command line version of the KEGG network provider, which also includes the path finding tool.
+Check the manual of the KEGG network provider (). \\
+
+\subsection{Interpretation of the results}
+
+
+
+
+\subsection{Summary}
+
+
+\subsection{Troubleshooting}
+
+\begin{enumerate}
+
+\item An empty graph (with zero nodes and edges) is returned.
+Make sure that the entered organism identifiers are valid in KEGG.
+They should consist of three to four letters only. If in doubt,
+check in the provided KEGG organism list.
+
+\end{enumerate}
