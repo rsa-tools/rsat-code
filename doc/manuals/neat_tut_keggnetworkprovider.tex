@@ -15,11 +15,9 @@ KEGG network provider itself has no network analysis or visualization functions,
 but you can use a NeAT tool (a choice of them will appear upon termination of network construction)
 or any other graph analysis tool that reads gml, VisML or dot format for these purposes.
 
-For visualization of KEGG networks, you can use \href{http://pathways.embl.de/index.html}{iPATH},
-\href{http://kgml-ed.ipk-gatersleben.de/Introduction.html}{KGML-ED} or
-\href{http://bioinformatics.leeds.ac.uk:8080/shark/user}{metaSHARK}.
-\href{http://yana.bioapps.biozentrum.uni-wuerzburg.de/}{Yanasquare} and
-\href{http://pht.tu-bs.de/PHT/}{Pathway Hunter Tool} offer
+For visualization of KEGG networks, you can use iPATH \cite{ipath}, KGML-ED \cite{kgmled} or
+metaSHARK \cite{metashark}.
+Yanasquare \cite{yana} and Pathway Hunter Tool \cite{pht} offer
 organism-specific KEGG network construction in combination
 with analysis functions.
 
@@ -113,7 +111,7 @@ metabolic networks. It is assumed that you have installed the required command-l
 
 		{\color{Blue} \begin{footnotesize}
 		\begin{verbatim}
-		java graphtools.algorithms.Pathfinder -g eco_metabolic_network_directed.txt -f tab -s C00049 -t C00047 -r 1 -y con -b \
+		java graphtools.algorithms.Pathfinder -g eco_metabolic_network_directed.txt -f tab -s C00049 -t C00047 -r 1 -y con -b
 		 -n -c -e ExclusionAttribute -T pathsUnion -O gml -o lysinebiosyn_eco.gml
 		\end{verbatim} \end{footnotesize}
 		}
@@ -133,7 +131,7 @@ metabolic networks. It is assumed that you have installed the required command-l
 
 		{\color{Blue} \begin{footnotesize}
 		\begin{verbatim}
-		java graphtools.algorithms.Pathfinder -g sce_metabolic_network_directed.txt -f tab -s C00049 -t C00047 -r 1 -y con -b \
+		java graphtools.algorithms.Pathfinder -g sce_metabolic_network_directed.txt -f tab -s C00049 -t C00047 -r 1 -y con -b
 		 -n -c -e ExclusionAttribute -T pathsUnion -O gml -o lysinebiosyn_sce.gml
 		\end{verbatim} \end{footnotesize}
 		}
@@ -155,8 +153,10 @@ alpha-aminoadipoyl-S-acyl enzyme associated to EC number 1.2.1.31). \\
 For comparison purposes, we have chosen the same start and end compound for both metabolic networks, but it should
 be noted that lysine biosynthesis in \textit{S. cerevisiae} starts from 2-oxoglutarate.
 
-The lysine biosynthesis KEGG map for yeast \href{http://www.genome.ad.jp/dbget-bin/get_pathway?org_name=sce&mapno=00300}{here}.
-The one for \textit{E. coli} is available \href{http://www.genome.ad.jp/dbget-bin/get_pathway?org_name=eco&mapno=00300}{here}.
+The lysine biosynthesis KEGG map for yeast is available at: http://www.genome.ad.jp/dbget-bin/get_pathway?org_name=sce&mapno=00300
+
+
+The one for \textit{E. coli} is available at: http://www.genome.ad.jp/dbget-bin/get_pathway?org_name=eco&mapno=00300
 
 
 \subsection{Summary}
