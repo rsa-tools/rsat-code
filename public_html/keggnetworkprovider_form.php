@@ -44,7 +44,7 @@
   echo("
   <table>
   <tr><td>
-         Enter KEGG abbreviations for organisms, separated by '/' in text field below (e.g. eco/sce/reference):
+         Enter KEGG abbreviations for organisms, separated by '/' in text field below (e.g. eco/ecp/ecs):
   </td></tr>
   <tr><td>
         <input type='text' name='organisms' value='$default_organisms' size=100></input>
