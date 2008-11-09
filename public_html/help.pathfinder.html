@@ -240,13 +240,19 @@
 	and the given exclusion attribute. The "ObjectType" attribute has two values: one for compound nodes ("Compound") and one for reaction nodes ("Reaction").
 	In addition, the graph is directed.<br>
 	This definition follows from our experience that metabolic graphs should be represented as directed, bipartite graphs, where
-	direct and reverse direction of a reaction are mutually exclusive (see <a href='neat_publications.html'>publications</a>).<br>
+	forward and reverse direction of a reaction are mutually exclusive (see <a href='neat_publications.html'>publications</a>).<br>
+	<ul>
+	<li><b>Tab-delimited metabolic graphs</b><br>
 	In a tab-delimited file, you should set the "ObjectType" column as second column after the node identifiers and the exclusion attribute column as third column.
-	Don't set column headers and leave the "Exclusion attribute" option blank.<br>
-	In GML format, you should use the "ObjectType" attribute and an exclusion attribute, whose name should be specified with the "Exclusion attribute" option.<br>
+	Don't set column headers and leave the "Exclusion attribute" option blank.</li>
+	<li><b>GML metabolic graphs</b><br>
+	In GML format, you should use the "ObjectType" attribute and an exclusion attribute, whose name should be
+	specified with the "Exclusion attribute" option.</li>
+	<li><b>Purpose of the attributes</b><br>
 	The "ObjectType" attribute changes the behaviour of the "degree" weight policy: Nodes with "Reaction" as value of "ObjectType" receive
 	a weight of one, whereas nodes with "Compound" as value receive a weight according to their degree.<br>
-	<br>
+	The exclusion attribute causes forward and reverse direction of a reaction to be treated as mutually exclusive.<li>
+	<li><b>Exclusion attribute values for REA algorithm</b><br>
 	For REA, the exclusion attribute values should be given as follows:<br>
 	<ol>
 	<li>A compound should have the same string as identifier and exclusion attribute value.</li>
@@ -254,6 +260,8 @@
       - direct reactions have an identifier composed of exclusion attribute and the direct reaction symbol (i.e. ">")<br>
       - reverse reactions have an identifier composed of exclusion attribute and the reverse reaction symbol (i.e. "<") <br></li>
 	</ol>
+	</li>
+	<li><b>Example of a metabolic graph</b><br>
 	Here is a small example for a metabolic graph in tab-delimited format:
 	<pre>
 	; small example for a metabolic graph
@@ -269,22 +277,15 @@
 	C00631	R01518>
 	R01518<	C00631
 	</pre>
-	</ul>
-	<ul><b><A NAME="rpairs"></A>Metabolic RPAIR graph</b><br>
+	</li>
+	<li><b><A NAME="rpairs"></A>Metabolic RPAIR graph</b><br>
 	This is a special case of a metabolic graph that has been constructed from reactant pairs (sub-reactions) taken from KEGG RPAIR
 	and from compounds listed in KEGG LIGAND. You can find paths in pre-loaded graphs by using the
-	<a href="http://rsat.scmbb.ulb.ac.be/metabolicpathfinding/metabolicPathfinder_form.jsp">metabolic path finder</a>.
-	If you want to submit yourself such a graph, you have to take care of three points:
-	<ol><li>Most sub-reaction nodes in the RPAIR graph have exclusion groups. These exlcusion groups
-	consist of sub-reactions that share reactions with the sub-reaction node. Exclusion groups can be given by using the node attribute
-	"Exclusion.Group".</li>
-	<li>On each edge, there is an annotation of the reactant pair class to which it belongs (main, trans, cofac, ligase or leave).
-	Note that an edge may belong to several classes. The name of this edge attribute is "RPAIRS.Linkage.Type".</li>
-	<li>Finally, you need to specify another weighting scheme, called 'rpairs'. This weighting scheme will take into account the
-	reactant pair classes of the edges as well as the compound degrees.</li>
-	</ol>
+	<a href="http://rsat.scmbb.ulb.ac.be/metabolicpathfinding/metabolicPathfinder_form.jsp">metabolic path finder</a>, which
+	also allows you to submit custom metabolic RPAIR graphs.</li>
 	</ul>
-	<ul><b><A NAME="algorithm"></A>Algorithm</b><br>
+	<br>
+	<b><A NAME="algorithm"></A>Algorithm</b><br>
 	You can choose between REA (the default, see <a href='help.pathfinder.html#literature'>[1]</a>) or backtracking
 	developed by Fabian Couche and Didier Croes (see <a href='neat_publications.html'>publications</a>).
 	<font color='red'>You can use backtracking only on metabolic graphs and only with a pre-defined weighting scheme.
@@ -297,8 +298,14 @@
 	<b>Preface</b><br>
 	In general, result files are stored no longer than three days on the server,
 	so make sure you download them on time, if you need them.<br>
-	Pathfinder unifies all paths of equal weight into one path! Thus, one path
-	does not need to be linear. <br>
+	Pathfinder unifies all paths of equal weight into one pathway. Thus, a pathway
+	does not need to be linear.
+	<br>
+	Because Pathfinder treats paths of equal weight as one pathway, the option "rank"
+	is interpreted as the requested maximal weight level. Pathfinder attempts to find as many
+	weight levels (with any number of paths belonging to a given weight level)
+	as ranks have been specified.
+	<br>
 	Of course, if less than the requested number of paths
 	is present in the graph, Pathfinder cannot return these paths.<br>
 	If a graph is requested as Output type, the nodes have values for the
@@ -311,7 +318,7 @@
 	<li>
 	<b>table of paths</b><br>
 	Pathfinder returns the requested number of lightest paths ranked according to their weight in a table.
-	No further processing of this table is possible.
+	The table can be converted into a graph.
 	</li>
 	<li>
 	<b>input graph with paths highlighted</b><br>
@@ -324,6 +331,7 @@
 	Pathfinder returns the requested number of paths as separated
 	components of one graph in the desired output format (gml or tab-delimited). The graph can be
 	input of further analsysis steps.
+	Note that each component merges all paths of equal weight.
 	</li>
 	<li>
 	<b>paths unified into one graph</b><br>
