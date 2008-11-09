@@ -115,8 +115,8 @@
         echo("<br>
         <a href='help.pathfinder.html#formats'><b>Input format</b></a>&nbsp;
         <select name='in_format'>
-        <option selected value = 'flat'> tab-delimited format
-        <option value = 'gml'> GML format
+        <option selected value = 'flat'> tab-delimited format</option>
+        <option value = 'gml'> GML format</option>
         </select>
         <br>");
         }else{
