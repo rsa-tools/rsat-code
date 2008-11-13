@@ -104,7 +104,7 @@ with BLAT (http://genome.ucsc.edu/cgi-bin/hgBlat). Requires internet connection.
 =item B<-wait #>:  Optional. To be used with get_pos task. The time between 2 BLAT requests must be greater than 15 seconds.
 Specify the waiting time in seconds  (e.g. 600 for 10 minutes). Default is  15 sec.
 
-=item B<-add_flank #>:  Optional. To be used with target_region task. 
+=item B<-add_flanks #>:  Optional. To be used with target_region task. 
 Length of sequence to be added at the left and right side of the region defined with target_region task.
 eg. -add_length 200.
 
@@ -225,11 +225,11 @@ my %tasks2run = ();
 GetOptions(
 	"help"          => \$help,
 	"i=s"           => \$xmlInputFile,
-	"v:s"			=> \$verbose,
+	"v:s"		=> \$verbose,
 	"get_pos"     	=> \$get_pos, # for backward compatibility
-	"wait:s"		=> \$wait,
-	"task:s" 		=> \$tasks,
-	"add_length:s"	=> \$add_length
+	"wait:s"	=> \$wait,
+	"task:s" 	=> \$tasks,
+	"add_flanks:s"	=> \$add_length
 	);
 	
 ###############################################
