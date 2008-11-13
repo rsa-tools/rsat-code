@@ -38,9 +38,13 @@ This parser makes use of the XML::LibXML, LWP and LWP::UserAgent libraries.
 
 =head1 AUTHORS
 
+=over
+
 =item Jean Valery Turatsinze <jturatsi@scmbb.ulb.ac.be>
 
 =item Morgane Thomas-Chollier <morgane@scmbb.ulb.ac.be>
+
+=back
 
 =head1 CATEGORY
 
@@ -174,13 +178,21 @@ of TFBS located on the target region. These positions are relative to the target
 
 =item 15 - pubmedID
 
+=back
+
 =head3 TRANSCRIPTION FACTOR BINDING SITE and REGULATORY REGION
+
+=over
 
 =item 16 - sequence
 
 =item 17 - seqWithFlank
 
+=back
+
 =head3 REGULATORY POLYMORPHISM and REGULATORY HAPLOTYPE
+
+=over
 
 =item 16 - referenceSequence
 
@@ -188,7 +200,7 @@ of TFBS located on the target region. These positions are relative to the target
 
 
 =back
- 
+
 =cut
 
 my $help;
