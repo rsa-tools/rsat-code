@@ -1341,7 +1341,7 @@ sub node_by_id {
 ## Load a graph from a tab-delimited text file
 sub read_from_table {
 
-    my ($self, $inputfile, $source_col, $target_col, $weight_col,$source_color_col, $target_color_col, $edge_color_col) = @_;
+    my ($self, $inputfile, $source_col, $target_col, $weight_col,$source_color_col, $target_color_col, $edge_color_col, $source_xpos_col, $source_ypos_col, $target_xpos_col, $target_ypos_col) = @_;
 
     &RSAT::message::TimeWarn("Loading graph from tab file", $inputfile) if ($main::verbose >= 2);
     ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
@@ -1369,6 +1369,18 @@ sub read_from_table {
     }
     unless (&RSAT::util::IsNatural($edge_color_col) && ($edge_color_col > 0)) {
       undef $edge_color_col;
+    }
+    unless (&RSAT::util::IsNatural($source_xpos_col) && ($source_xpos_col > 0)) {
+      undef $source_xpos_col;
+    }
+    unless (&RSAT::util::IsNatural($source_ypos_col) && ($source_ypos_col > 0)) {
+      undef $source_ypos_col;
+    }
+    unless (&RSAT::util::IsNatural($target_xpos_col) && ($target_xpos_col > 0)) {
+      undef $target_xpos_col;
+    }
+    unless (&RSAT::util::IsNatural($target_ypos_col) && ($target_ypos_col > 0)) {
+      undef $target_ypos_col;
     }
     
     ## Load the graph
@@ -1438,12 +1450,56 @@ sub read_from_table {
           &RSAT::message::Warning("No edge color in column $default_edge_color on line $linecpt");# if ($main::verbose >= 1);
         }
       }
-      $cpt++;
+      # Source node X position 
+      $array[$cpt][6] = undef;
       
+      if (defined($source_xpos_col)) {
+        if (defined($linecp[$source_xpos_col-1])) {
+          $array[$cpt][6] = $linecp[$source_xpos_col-1];
+        } else {
+          &RSAT::message::Warning("No valid X position for source node in column $source_xpos_col on line $linecpt");# if ($main::verbose >= 1);
+        }
+      }
+      # Source node Y position 
+      $array[$cpt][7] = undef;
+      if (defined($source_ypos_col)) {
+        if (defined($linecp[$source_ypos_col-1])) {
+          $array[$cpt][7] = $linecp[$source_ypos_col-1];
+        } else {
+          &RSAT::message::Warning("No valid Y position for source node in column $source_ypos_col on line $linecpt");# if ($main::verbose >= 1);
+        }
+      }
+      # target node X position 
+      $array[$cpt][8] = undef;
+      if (defined($target_xpos_col)) {
+        if (defined($linecp[$target_xpos_col-1])) {
+          $array[$cpt][8] = $linecp[$target_xpos_col-1];
+        } else {
+          &RSAT::message::Warning("No valid X position for target node in column $target_xpos_col on line $linecpt");# if ($main::verbose >= 1);
+        }
+      }
+      # target node Y position 
+      $array[$cpt][9] = undef;
+      if (defined($target_ypos_col)) {
+        if (defined($linecp[$target_ypos_col-1])) {
+          $array[$cpt][9] = $linecp[$target_ypos_col-1];
+        } else {
+          &RSAT::message::Warning("No valid Y position for target node in column $target_ypos_col on line $linecpt");# if ($main::verbose >= 1);
+        }
+      }
+      $cpt++;
     }
-    $self->load_from_array(@array);
-   
     
+#     for (my $i = 0; $i < scalar @array; $i++) {
+#       for (my $j = 0; $j <= 9; $j++) {
+#         print $array[$i][$j]." ";
+#       }
+#       print "\n";
+#     }
+    
+    
+    
+    $self->load_from_array(@array);
     return $self;
 }
 ######################################################################################
@@ -1946,6 +2002,12 @@ Read the graph from a array
 	col4 = source color
 	col5 = target color
 	col6 = arc color
+	col7 = source xpos
+	col8 = source ypos
+	col9 = target xpos
+	col10 = target ypos
+
+The four columns specifying the nodes position must not all be filled. In case the position is not a real value, the value is replaced by a random value.
 
 
  Title    : load_from_array
@@ -1967,15 +2029,12 @@ sub load_from_array {
     my @arc_out_color = $self->get_attribute("out_color");
     my @arcs = $self->get_attribute("arcs");
     my %arcs_name_id = $self->get_attribute("arcs_name_id");
-    
     my %nodes_name_id = $self->get_attribute("nodes_name_id");
     my %nodes_id_name = $self->get_attribute("nodes_id_name");
     my %nodes_color = $self->get_attribute("nodes_color");
     my %nodes_label = $self->get_attribute("nodes_label");
-    
     my $max_arc_nb = $self->get_attribute("nb_arc_bw_node");
     my ($mean, $sd, $min, $max);
-     
     my $nodecpt = 0;
     my $arccpt = 0;
     
@@ -2016,6 +2075,11 @@ sub load_from_array {
 	my $source_color = $array[$l][3];
 	my $target_color = $array[$l][4];
 	my $edge_color = $array[$l][5];
+	my $source_xpos = $array[$l][6];
+	my $source_ypos = $array[$l][7];
+	my $target_xpos = $array[$l][8];
+	my $target_ypos = $array[$l][9];
+	
 	
 	## Source node
 	my $source_node_index = $nodes_name_id{$source_name};
@@ -2026,6 +2090,13 @@ sub load_from_array {
 	    $nodes_label{$source_node_index} = $node_label;
 	    $nodes_name_id{$source_name} = $nodecpt;
 	    $nodes_id_name{$nodecpt} = $source_name;
+	    
+	    
+	    
+	    $source_xpos = $nodecpt*10 if (!defined($source_xpos) || !&RSAT::util::IsReal($source_xpos));
+	    $source_ypos = $nodecpt*10 if (!defined($source_ypos) || !&RSAT::util::IsReal($source_ypos));
+	    $nodes_id_xpos{$nodecpt} = $source_xpos;
+            $nodes_id_ypos{$nodecpt} = $source_ypos;
 	    $nodecpt++;
 	    &RSAT::message::Info(join("\t", "Created source node", 
 				      $source_name,
@@ -2045,6 +2116,10 @@ sub load_from_array {
 	    $nodes_label{$target_node_index} = $node_label;
 	    $nodes_name_id{$target_name} = $nodecpt;
 	    $nodes_id_name{$nodecpt} = $target_name;
+	    $target_xpos = $nodecpt*10 if (!defined($target_xpos) || !&RSAT::util::IsReal($target_xpos));
+	    $target_ypos = $nodecpt*10 if (!defined($target_ypos) || !&RSAT::util::IsReal($target_ypos));
+	    $nodes_id_xpos{$nodecpt} = $target_xpos;
+            $nodes_id_ypos{$nodecpt} = $target_ypos;
 	    $nodecpt++;
 	    &RSAT::message::Info(join("\t", "Created target node", 
 				      $target_name,
@@ -2113,6 +2188,9 @@ sub load_from_array {
     $self->set_hash_attribute("nodes_color", %nodes_color);
     $self->set_hash_attribute("nodes_label", %nodes_label);
     $self->set_hash_attribute("arcs_name_id", %arcs_name_id);
+    $self->set_hash_attribute("nodes_id_xpos", %nodes_id_xpos);
+    $self->set_hash_attribute("nodes_id_ypos", %nodes_id_ypos);    
+    
     
     $self->force_attribute("nb_arc_bw_node", $max_arc_nb);
     
@@ -2139,13 +2217,19 @@ sub graph_from_text {
         my $sccol = $args[4] || 0;
         my $tccol = $args[5] || 0;
         my $ecol = $args[6] || 0;
-	return $self->read_from_table($inputfile, $scol, $tcol, $wcol, $sccol, $tccol, $ecol);
+        my $sxcol = $args[7] || 0;
+        my $sycol = $args[8] || 0;
+        my $txcol = $args[9] || 0;
+        my $tycol = $args[10] || 0;
+        
+        
+	return $self->read_from_table($inputfile, $scol, $tcol, $wcol, $sccol, $tccol, $ecol, $sxcol, $sycol, $txcol, $tycol);
     } elsif ($in_format eq "adj_matrix") {
-	return $self->read_from_adj_matrix($args[0], $args[7]);
+	return $self->read_from_adj_matrix($args[0], $args[11]);
     } elsif ($in_format eq "path") {
       my $inputfile = $args[0];
-      my $path_col = $args[8];
-      my $distinct_path = $args[9] || 0;
+      my $path_col = $args[12];
+      my $distinct_path = $args[13] || 0;
       return $self->read_from_paths($inputfile, $path_col, $distinct_path);
     } else {
 	&RSAT::error::FatalError(join ("\t", $in_format, "Invalid format"));
