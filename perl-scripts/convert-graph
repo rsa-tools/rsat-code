@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.40 2008/07/17 10:07:27 rsat Exp $
+# $Id: convert-graph,v 1.41 2008/11/18 11:50:59 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -161,6 +161,10 @@ package main;
     local $weight_col = 0;
     local $source_color_col = 0;
     local $target_color_col = 0;
+    local $target_xpos_col = 0;
+    local $target_ypos_col = 0;
+    local $source_xpos_col = 0;
+    local $source_ypos_col = 0;
     local $color_col = 0;
     local $path_col = 1;
     local $edge_width;
@@ -252,7 +256,7 @@ package main;
 
     ################################################################
     ##### read input
-    $graph->graph_from_text($input_format, $main::infile{input}, $source_col, $target_col, $weight_col, $source_color_col, $target_color_col,$color_col, $directed, $path_col, $distinct_path);
+    $graph->graph_from_text($input_format, $main::infile{input}, $source_col, $target_col, $weight_col, $source_color_col, $target_color_col,$color_col, $source_xpos_col, $source_ypos_col, $target_xpos_col, $target_ypos_col, $distinct_path, $directed, $path_col);
     ## Calculates the layout 
     if ($layout) {
       $graph->get_position();
@@ -527,6 +531,70 @@ will be taken into account.
 	    unless (&IsNatural($target_color_col) && ($target_color_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $target_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
 	    }
+	    
+=pod
+
+=item B<-source_xpos_col>
+
+Column containing the X position of the source node (no default)
+
+A node can only have X position. If in the file, the position of the node changes, only the first defined
+will be taken into account.
+
+=cut
+	} elsif ($arg eq "-source_xpos_col") {
+	    $source_xpos_col = shift (@arguments);
+	    unless (&IsNatural($source_xpos_col) && ($source_xpos_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_xpos_col, "Invalid value for the source X position column. Must be a strictly positive natural number"));
+	    }	    
+	    
+=pod
+
+=item B<-target_xpos_col>
+
+Column containing the X position of the target node (no default)
+
+A node can only have X position. If in the file, the position of the node changes, only the first defined
+will be taken into account.
+
+=cut
+	} elsif ($arg eq "-target_xpos_col") {
+	    $target_xpos_col = shift (@arguments);
+	    unless (&IsNatural($target_xpos_col) && ($target_xpos_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_xpos_col, "Invalid value for the target X position column. Must be a strictly positive natural number"));
+	    }	    	    
+	    
+	    
+=item B<-source_ypos_col>
+
+Column containing the Y position of the source node (no default)
+
+A node can only have Y position. If in the file, the position of the node changes, only the first defined
+will be taken into account.
+
+=cut
+	} elsif ($arg eq "-source_ypos_col") {
+	    $source_ypos_col = shift (@arguments);
+	    unless (&IsNatural($source_ypos_col) && ($source_ypos_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_ypos_col, "Invalid value for the source Y position column. Must be a strictly positive natural number"));
+	    }	    
+	    
+=pod
+
+=item B<-target_ypos_col>
+
+Column containing the Y position of the target node (no default)
+
+A node can only have y position. If in the file, the position of the node changes, only the first defined
+will be taken into account.
+
+=cut
+	} elsif ($arg eq "-target_ypos_col") {
+	    $target_ypos_col = shift (@arguments);
+	    unless (&IsNatural($target_ypos_col) && ($target_ypos_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_ypos_col, "Invalid value for the target Y position column. Must be a strictly positive natural number"));
+	    }	    	    
+	    
 =pod
 
 =item B<-pathcol>
@@ -594,6 +662,11 @@ Supported : green, blue, red, fire, grey.
 	    $edge_colors = shift(@arguments);
 	    &RSAT::error::FatalError("$edge_colors\tInvalid color gradient. Supported: $supported_edge_colors")
 		unless ($supported_edge_colors{$edge_colors});
+
+
+
+
+
 
 =item B<-min #>
 
