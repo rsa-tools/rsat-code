@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.29 2008/11/04 13:53:49 jvanheld Exp $
+# $Id: random-graph,v 1.30 2008/11/18 11:50:59 rsat Exp $
 #
 ############################################################
 
@@ -21,6 +21,7 @@ according to different randomization procedure.
 =head1 AUTHORS
 
 Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
+Jacques van Helden <Jacques.van.Helden@ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -161,6 +162,10 @@ package main;
 
     ################################################################
     ## Check argument values
+    if ($req_nodes > 0 && defined($main::infile{nodefile})) {
+      &RSAT::error::FatalError("When creating a graph from scratch with a set of nodes, you must not specify the number of requested nodes");
+    }
+    
     if ($req_nodes == 0 && !defined($main::infile{nodefile}) && !$main::infile{input}) {
        &RSAT::error::FatalError("When using no starting graph, you must specify the number of requested edges (-edges)");
     }
@@ -243,6 +248,7 @@ package main;
 	}
       }
       close $node_handle;
+      $req_nodes = scalar @nodes;
     }
     
     ############################################################################
