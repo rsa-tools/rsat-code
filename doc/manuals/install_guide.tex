@@ -189,6 +189,10 @@ the EnsEMBL web site
 Some of the programs in \RSAT are written in python. Version 2.4 or
 later is recommended.
 
+\subsection{Java language}
+
+Some of the NeAT tools are written in Java. Java Runtime Environment 5 or higher is recommended.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Installation
 \chapter{Obtaining \RSAT distribution}
@@ -311,14 +315,15 @@ command:
 setenv RSAT /home/rsat/rsa-tools
 \end{verbatim}
 
-\item Add the path of the \RSAT \ perl scripts, python scripts and binaries to your
-  path.
+\item Add the path of the \RSAT \ perl scripts, python scripts and binaries to your path. In addition, add java jar files
+to your classpath.
 
 If your shell is bash:
 \begin{verbatim}
 export PATH=${PATH}:${RSAT}/bin
 export PATH=${PATH}:${RSAT}/perl-scripts
 export PATH=${PATH}:${RSAT}/python-scripts
+export CLASSPATH=${CLASSPATH}:${CLASSPATH}/java/lib/NeAT_javatools.jar
 \end{verbatim}
 
 If your shell is csh or tcsh:
@@ -326,6 +331,7 @@ If your shell is csh or tcsh:
 set path=($path $RSAT/bin)
 set path=($path $RSAT/perl-scripts)
 set path=($path $RSAT/python-scripts)
+set classpath=($classpath $RSAT/java/lib/NeAT_javatools.jar)
 rehash
 \end{verbatim}
 
@@ -382,7 +388,6 @@ cp RSAT_config_default.props RSAT_config.props
 You need to edit this file and specify the parameters of your local
 configuration. In particular, it is essential to specify the variable
 RSAT, which specifies the RSAT main directory.
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Downloading genomes from RSAT main server
@@ -557,13 +562,28 @@ For NeAT, we recommend you to compile the program floydwarshall.c located in the
 gcc $RSAT/contrib/floydwarshall/floydwarshall.c -o $RSAT/bin/floydwarshall
 \end{verbatim}
 
-For Pathfinder in NeAT, we recommend you to download the
-Pathfinder stand-alone package from the Pathfinder manual page
-and to follow the installation steps outlined in this package.
-Note that Metabolic pathfinder is not available as stand-alone tool,
-but its functionality can easily be obtained with Pathfinder and the
-metabolic graphs in the NeAT sample data section.
+In addition, the contributed programs REA and kWalks need to be installed.
 
+To install kWalks, type:
+
+\begin{verbatim}
+cd $RSAT/contrib/kwalks
+tar xzvf kwalks.tgz
+cd src
+make
+\end{verbatim}
+
+The KWALKS_ROOT variable in the RSAT config file should point to $RSAT/contrib/kwalks/bin
+
+To install REA, type:
+
+\begin{verbatim}
+cd $RSAT/contrib/REA
+tar xzvf REA.tgz
+make
+\end{verbatim}
+
+The REA_ROOT variable in the RSAT config file should point to $RSAT/contrib/REA
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Parsing and installing additional genomes
