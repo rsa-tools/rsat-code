@@ -1,0 +1,3 @@
+JUNG is licensed and made freely available under the Berkeley Software Distribution (BSD) license.
+
+See http://www.freebsd.org/copyright/license.html
