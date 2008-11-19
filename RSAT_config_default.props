@@ -60,6 +60,10 @@ neat_supported=1
 ## on the new neat_ws server
 neat_ws=http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl
 
+## URL for java-based NeAT web services. The same remark as above holds,
+## please check the RSAT web server install guide.
+neat_java_ws=http://rsat.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl
+
 ################################################################
 ## Directories for programs developed by third parties
 
