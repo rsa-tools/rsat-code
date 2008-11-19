@@ -53,6 +53,9 @@
     $default_rank = 5;
   }
 
+  $host = parse_url($WWW_RSA,PHP_URL_HOST);
+  $metabolic_pathfinder_location = 'http://'.$host.'/metabolicpathfinding/metabolicPathfinder_form.jsp';
+
   title('Pathfinder');
   echo ("<center>Do multiple-to-multiple end path finding. Click on <a href='help.pathfinder.html'><img src='images/question-mark-button.jpg' width='15' alt='help'></a> for help.<br>
   Web service and interface by <a href='mailto:kfaust@ulb.ac.be'>Karoline Faust</a>.
@@ -98,11 +101,11 @@
   		The seed nodes are the start and end compound of the <a href='http://biocyc.org/YEAST/NEW-IMAGE?object=HEME-BIOSYNTHESIS-II' target='_blank'>heme biosynthesis II pathway</a> as annotated in BioCyc.<br>
   		This pathway is one of the study cases described in Croes et al., J. Mol. Biol. 356: 222-236 (see our <a href='neat_publications.html '>list of publications</a>.)<br>
   		Note that for this demo, path finding is done on a smaller, undirected graph without differentially weighting compounds and reactions (both receive a weight according to their degree).
-  		Use the <a href='http://rsat.scmbb.ulb.ac.be/metabolicpathfinding/metabolicPathfinder_form.jsp'> Metabolic path finding tool</a> to find paths in the complete KEGG network.<br>
+  		Use the <a href='$metabolic_pathfinder_location'> Metabolic path finding tool</a> to find paths in the complete KEGG network.<br>
   		The path of first rank corresponds to the annotated heme biosynthesis II pathway. To see the influence of the weighting scheme, you can set the weighting scheme to unit weight and the rank to 1 (for quicker computation). You will obtain an entirely different result.<br><br>");
   }else if($demo2 == 1){
   demo("In this demo, the network has been already pre-loaded. We use the weighted STRING database network, a network of protein-protein interactions, as demo network. Its weights, which describe edge reliability, have been inverted to describe
-  edge costs. The demo network is part of our <a href='http://rsat.scmbb.ulb.ac.be/rsat/data/published_data/nature_protocols/network_analysis/'>sample data collection</a>. We want to recover a signal
+  edge costs. The demo network is part of our <a href='$WWW_RSA/data/published_data/nature_protocols/network_analysis/'>sample data collection</a>. We want to recover a signal
   transduction pathway known to regulate cell wall integrity in <i>S. cerevisiae</i> (Saito and Tatebayashi, J. Biochem, 2004). This pathway is reported to start with WSC1 or MID2 and to end with RLM1, SWI4 or SWI6.
   We will look for the lightest paths connecting MID2 to RLM1/SWI4/SWI6, WSC1 being absent in the demo network. The paths of first rank miss one step (ROM2) and replace MPK1 by KSS1, otherwise they are correct.
   ROM2 is missing in the demo network. With improved quality of the protein-protein interaction network used, path finding accuracy is expected to increase.");
