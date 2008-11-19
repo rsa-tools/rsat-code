@@ -55,8 +55,10 @@ $sylvain_input_graph = "";
 $graph_type = "";
 
 # server-related params
-$result_location = "/home/rsat/rsa-tools/public_html/tmp/";
-$html_location = "http://rsat.scmbb.ulb.ac.be/rsat/tmp/";
+$result_location = $tmp.'/';
+$html_location = $WWW_RSA.'/tmp/';
+$host= parse_url($WWW_RSA,PHP_URL_HOST);
+$metabolicpathfinder_location = 'http://'.$host.'/metabolicpathfinding/metabolicPathfinder_form.jsp';
 
 ############## prepare parameters ##########################
 
@@ -136,7 +138,7 @@ if($attribs){
     	echo("<div id='hourglass' class='hourglass'><img src='images/animated_hourglass.gif' height='50' border='1'></div>");
     	flush();
     	$client = new SoapClient(
-                      'http://rsat.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl',
+                      $neat_java_wsdl,
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
@@ -172,6 +174,7 @@ if($attribs){
     	if(strcmp($out_format,'tab') == 0 || strcmp($out_format,'gml') == 0){
         	# location of result file
         	$file_location = $result_location . $server;
+
             # content of result file
         	$fileContent = storeFile($file_location);
 
@@ -265,7 +268,7 @@ if($attribs){
           $directed = "false";
        }
        echo "
-        <FORM METHOD='POST' ACTION='http://rsat.scmbb.ulb.ac.be/metabolicpathfinding/metabolicPathfinder_form.jsp'>
+        <FORM METHOD='POST' ACTION='$metabolicpathfinder_location'>
           <input type='hidden' NAME='pipe' VALUE='1'>
           <input type='hidden' NAME='graph_file' VALUE='$file_location'>
           <input type='hidden' NAME='graph_format' VALUE='$out_format'>
@@ -406,7 +409,7 @@ if($attribs){
         );
         # Open the SOAP client
         $emailclient = new SoapClient(
-                      'http://rsat.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl',
+                      $neat_java_wsdl,
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
