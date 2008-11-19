@@ -26,8 +26,8 @@ $return_type="server";
 $error = 0;
 $tmpGraphFile = "";
 # server-related params
-$result_location = "/home/rsat/rsa-tools/public_html/tmp/";
-$html_location = "http://rsat.scmbb.ulb.ac.be/rsat/tmp/";
+$result_location = $tmp.'/';
+$html_location = $WWW_RSA.'/tmp/';
 # visant address
 $address = "http://visant.bu.edu:8080/vserver/DAI?command=link&location=";
 
@@ -133,7 +133,7 @@ $graph = rtrim($graph);
     echo("<div id='hourglass' class='hourglass'><img src='images/animated_hourglass.gif' height='50' border='1'></div>");
     flush();
     $client = new SoapClient(
-                      'http://rsat.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl',
+                      $neat_java_wsdl,
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
