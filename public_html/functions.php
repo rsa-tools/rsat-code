@@ -134,7 +134,7 @@ Function load_props($props) {
 
   # LOAD PROPERTIES
   $properties = load_props($rsat_main."/RSAT_config.props");
-  $tmp = $properties[rsa_tmp];
+  $tmp = $properties[rsat_tmp];
   $WWW_RSA = $properties[www_rsa];
   $log_name = $properties[rsat_site];
   $neat_wsdl = $properties[neat_ws];
