@@ -24,8 +24,8 @@
   $tab_java = 1;
   $tmpGraphFile = "";
   # server-related params
-  $result_location = "/home/rsat/rsa-tools/public_html/tmp/";
-  $html_location = "http://rsat.scmbb.ulb.ac.be/rsat/tmp/";
+  $result_location = $tmp.'/';
+  $html_location = $WWW_RSA.'/tmp/';
   $sylvain_input_format = "tab";
   $sylvain_input_graph = "";
 
@@ -59,7 +59,7 @@
   $maxLength = $_REQUEST['maxLength'];
   $minLength = $_REQUEST['minLength'];
   $exAttrib = $_REQUEST['exAttrib'];
-  $metabolic = $_REQUEST['metabolic']; 
+  $metabolic = $_REQUEST['metabolic'];
   $email = $_REQUEST['email'];
 
   ############ Check input ########################
@@ -80,13 +80,13 @@
   } else {
     $directed = 0;
   }
-  
+
   if($metabolic == 'on'){
     $metabolic = 1;
   }else{
     $metabolic = 0;
   }
-  
+
   ## check outputType
   if($outputchoice == 'pathsTable'){
     $outputType = $outputchoice;
@@ -139,7 +139,7 @@
   if ($graph_file != "" && $graph == "") {
     $graph = storeFile($graph_file);
   }
-  
+
   ## put the content of the graph id into graph
   if($graph_id != "" && $graph == ""){
   	$graph = $graph_id;
@@ -150,13 +150,13 @@
     $error = 1;
     error("You must submit an input graph");
   }
-  
+
   if (!$error) {
     # convert two spaces in a row into a tab delimiter
     if(strcmp($out_format,'flat') == 0){
         $graph = spaces_to_tab($graph,2);
     }
-       
+
    ########## Launch the client ###############
 
     $parameters = array(
@@ -181,8 +181,8 @@
     	'storeInputGraph'=>$store_graph,
     	'returnType'=>$return_type
       )
-    );    
-    
+    );
+
     if($email == ""){
         # Info message
         info("Results will appear below");
@@ -192,7 +192,7 @@
 
          # Open the SOAP client
         $client = new SoapClient(
-                      'http://rsat.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl',
+                      $neat_java_wsdl,
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
@@ -213,7 +213,7 @@
         error($fault);
         $error = 1;
         }
-        
+
     echo("<div id='hide' class='hide'><img src='images/hide_hourglass.jpg' height='60' border='0'></div>");
     ########## Process results ###############
 
@@ -233,7 +233,7 @@
         # content of result file
         $fileContent = storeFile($file_location);
         # html location
-        $file_html_location = $html_location . $server; 
+        $file_html_location = $html_location . $server;
         # Display the results
     	echo "<align='left'>The result is available as text file at the following URL:<br> ";
     	echo "<a href = '$file_html_location'>$file_html_location</a><br></align>";
@@ -320,13 +320,13 @@
           <input type='hidden' NAME='graph_file' VALUE='$file_location'>
           <input type='hidden' NAME='graph_format' VALUE='path'>
           <input type='hidden' NAME='distinct_path' VALUE='on'>
-          <input type='hidden' NAME='pathcol' VALUE='7'>          
+          <input type='hidden' NAME='pathcol' VALUE='7'>
           <INPUT type='submit' value='Convert the paths table into a graph with paths separated'>
          </form>
         </td>
         </tr>
         </table>";
-    
+
     }
     if(strcmp($outputType,'pathsUnion') == 0 || strcmp($outputType,'pathsMarked') == 0 || strcmp($outputType,'pathsGraphs') == 0){
      echo "
@@ -359,7 +359,7 @@
           <input type='hidden' NAME='visant_graph_file' VALUE='$file_location'>
           <input type='hidden' NAME='visant_graph_format' VALUE='$sylvain_input_format'>
           <input type='hidden' NAME='visant_directed' VALUE='$directed'>
-          <input type='hidden' NAME='tab_java' VALUE='$tab_java'> 
+          <input type='hidden' NAME='tab_java' VALUE='$tab_java'>
           <INPUT type='submit' value='Display the graph with VisANT'>
          </form>
         </td>
@@ -486,7 +486,7 @@
   	  } # path finding error
   	  # send result via email
       }else{
-      
+
         $pathfinderParams = array(
      	'source'=>$sources,
      	'target'=>$targets,
@@ -507,7 +507,7 @@
     	'outputType'=>$outputType,
     	'storeInputGraph'=>$store_graph,
     	'returnType'=>$return_type
-         );    
+         );
 
         $mixedRequest = array("PathfinderRequest"=>$pathfinderParams,"GraphConverterRequest"=>NULL, "MetabolicGraphConstructorRequest"=>NULL,"PathwayinferenceRequest"=>NULL);
         $requestArray = array(0=>$mixedRequest);
@@ -518,7 +518,7 @@
         );
         # Open the SOAP client
         $emailclient = new SoapClient(
-                      'http://rsat.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl',
+                           $neat_java_wsdl,
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
