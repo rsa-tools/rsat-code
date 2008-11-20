@@ -1,0 +1,74 @@
+\documentclass{book}
+%\documentstyle[makeidx]{book}
+\makeindex
+\include{rsat_latex_commands}
+
+\begin{document}
+
+\title{Network Analysis Tools \\
+Web server installation}
+
+\author{
+	Sylvain Broh\'ee \\
+	\email{sbrohee@ulb.ac.be} \\
+        \and \\
+	Karoline Faust \\
+	\email{kfaust@ulb.ac.be} \\
+        \and \\
+	Jacques van Helden \\
+	\email{jvhelden@ulb.ac.be}\\
+        \\
+        \\
+        \bigre
+}
+
+
+\maketitle
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{Description}
+
+This documents describes the installation procedure for the web server
+of the \textbf{Network Analysis Tools} (\neat).
+
+It assumes that you already installed the perl scripts and the
+genomes, as described in the \RSAT installation guide.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Web server installation
+
+\section{Installing a local web server}
+
+As the Regulatory Sequence Analysis Tools, \neat includes a web server, which
+offers a user-friendly interface for biologists. The main server is
+available for academic users at \url{http://rsat.ulb.ac.be/neat/}. A
+few additional mirrors have been installed in different countries.
+
+\subsection{Web server pages}
+
+The web pages are located in the directory
+\file{rsa-tools/public\_html}. This directory contains both the HTML help
+pages, and the PHP and CGI scripts.
+
+\subsection{Apache modules}
+
+The \neat interface mainly relies on PHP and CGI (only for the roc-stats tool). 
+These modules should be installed on the web server, and activated in the Apache configuration files. 
+The installation and configuration of CGI is described in manual of the web server of \RSAT.
+
+\subsubsection{PHP module for Mac OSX}
+
+If your server is running under Mac OSX, you need to install a recent
+version (at least v5) of the php module, which can be found at the following site. 
+\url{href=http://www.entropy.ch/software/macosx/php/}
+%Karoline, if you find something to add as a MAC specialist, you're welcome!
+
+\subsubsection{PHP module for LINUX}
+
+Generally, PHP5 is included with the Linux distribution or can easyly be installed using the installer (YAST, YUM, etc). Take care that the PHP5 Module for Apache 2.0 (apache2-mod_php5) is installed. 
+
+PHP5 can also be installed manually from the PHP website (\textit{http://www.php.net/downloads.php}).
+
