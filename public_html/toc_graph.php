@@ -93,11 +93,12 @@ onclick="toggleMenu("106")" id="heading106">Information</div>
 	<div id="menu106" class="menu_collapsible">
 	<a class="menu_item" href="images/NeAT_flowchart.png" target="tools">Site map</a>
 	<a class="menu_item" href="tutorials/neat_tutorial.pdf" target="tools">Tutorial</a>
-	<a class="menu_item" href="
-	<? php
-	$WWW_RSA
-	?>
-	/data/published_data/nature_protocols/network_analysis/" target="tools">Sample data</a>
+	<a class="menu_item"
+<? php
+require ('functions.php');
+echo href='$WWW_RSA/data/published_data/nature_protocols/network_analysis/'"
+?>
+	target="tools">Sample data</a>
 	<a class="menu_item" href="$WWW_RSA/demo_files/" target="tools">Files used in DEMO</a>
 	<a class="menu_item" href="neat_credits.html" target="tools">Credits</a>
 	<a class="menu_item" href="neat_publications.html" target="tools">Publications</a>
