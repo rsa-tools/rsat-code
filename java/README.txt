@@ -163,7 +163,9 @@ In the same directory, it also creates a folder to store organism-specific metab
 The rpairs.tab file required for some options can be found in $RSAT/java/misc
 In the same directory, the list of supported KEGG organisms (in KGML modus) is stored.
 
-The options -a, -r, -R and the DB modus of MetabolicGraphProvider are not available.
+The options -a, -r, -R and the DB modus of MetabolicGraphProvider are only available
+if metabolic_db data have been installed.
+Check the NeAT web server install guide for installation of postgres and metabolic_db.
 
 2.7.2. Pathwayinference
 
@@ -171,7 +173,7 @@ The program "compSteiner" relying on Klein and Ravi's algorithm and implemented 
 
 2.7.3. GraphAnnotator
 
-The GraphAnnotator tool is not available.
+The GraphAnnotator tool is only available if metabolic_db data have been installed.
 
 
 3. Disclaimer
@@ -187,6 +189,10 @@ KWalks has been developped mainly by Pierre Dupont and Jerome Callut [7].
 MetabolicGraphProvider makes use of data stored in KEGG [8].
 For the use of KEGG data, see: http://www.genome.jp/kegg/legal.html
 
+The postgres backup file metabolicdb_dump_13_Oct_2008.backup contains data taken
+from KEGG and MetaCyc [9].
+For the use of MetaCyc data, see: http://biocyc.org/download-flatfiles.shtml
+
 For licenses of individual jar files see the licenses directory.
 
 4. Literature/Links
@@ -200,3 +206,4 @@ For licenses of individual jar files see the licenses directory.
 [6] http://www.scmbb.ulb.ac.be/amaze/
 [7] P. Dupont, J. Callut, G. Dooms, J.-N. Monette and Y. Deville (2006) Relevant subgraph extraction from random walks in a graph . Research Report UCL/FSA/INGI RR 2006-07.
 [8] Kanehisa, M., Araki, M., Goto, S., Hattori, M., Hirakawa, M., Itoh, M., Katayama, T., Kawashima, S., Okuda, S., Tokimatsu, T., and Yamanishi, Y.; KEGG for linking genomes to life and the environment. Nucleic Acids Res. 36, D480-D484 (2008).
+[9] Caspi, R., Foerster, H., Fulcher, C. A., Kaipa, P., Krummenacker, M., Latendresse, M., Paley, S., Rhee, S. Y., Shearer, A. G., Tissier, C., Walk, T. C., Zhang, P. & Karp, P. D. (2008). The MetaCyc Database of metabolic pathways and enzymes and the BioCyc collection of Pathway/Genome Databases. Nucleic Acids Res36, D623-D631.
