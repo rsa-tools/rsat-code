@@ -6,6 +6,8 @@ package RSATWS;
 use SOAP::Lite;
 use SOAP::WSDL;
 
+use IPC::Open3;
+
 use vars qw(@ISA);
 @ISA = qw(SOAP::Server::Parameters);
 
@@ -4646,12 +4648,25 @@ sub run_WS_command {
   }
 
   ## Execute the command on the server
-  my $result = `$command`;
-  my $stderr = `$command 2>&1 1>/dev/null`;
+#  my $result = `$command`;
+#  my $stderr = `$command 2>&1 1>/dev/null`;
 
-  if ($stderr =~ 'Use of uninitialized value') {
-      $stderr = '';
+  local(*HIS_IN, *HIS_OUT, *HIS_ERR);
+  my $childpid = open3(*HIS_IN, *HIS_OUT, *HIS_ERR, $command);
+  my @outlines = <HIS_OUT>;    # Read till EOF.
+  my @errlines = <HIS_ERR>;    # XXX: block potential if massive
+
+  my $result = join('', @outlines);
+  my $stderr;
+
+  foreach my $errline(@errlines) {
+      unless ($errline =~ 'Use of uninitialized value') {
+	  $stderr .= $errline;
+      }
   }
+
+  close HIS_OUT;
+  close HIS_ERR;
 
   if ($stderr) {
       die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
