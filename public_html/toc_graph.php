@@ -22,7 +22,7 @@
 
 <div class=\"menu\">
 <div class=\"menu_heading_open\"
-onclick=\"toggleMenu(\"100\")\" id=\"heading100\">Networks</div>
+onclick=\"toggleMenu('100')\" id=\"heading100\">Networks</div>
 <div id=\"menu100\">
 	<a class=\"menu_item\" href=\"compare_graphs_form.php\" target=\"tools\">Network comparison</a>
 	<a class=\"menu_item\" href=\"graph_topology_form.php\" target=\"tools\">Node topology statistics</a>
@@ -35,7 +35,7 @@ onclick=\"toggleMenu(\"100\")\" id=\"heading100\">Networks</div>
 </div>
 <div class=\"menu\">
 <div class=\"menu_heading_open\"
-onclick=\"toggleMenu(\"101\")\" id=\"heading101\">Path finding</div>
+onclick=\"toggleMenu('101')\" id=\"heading101\">Path finding</div>
 <div id=\"menu101\">
         <a class=\"menu_item\" href=\"pathfinder_form.php\" target=\"tools\">k-shortest path
 finding </a>
@@ -47,7 +47,7 @@ finding </a>
 
 <div class=\"menu\">
 <div class=\"menu_heading_open\"
-onclick=\"toggleMenu(\"102\")\" id=\"heading102\">Clusters</div>
+onclick=\"toggleMenu('102')\" id=\"heading102\">Clusters</div>
 <div id=\"menu102\">
 	<a class=\"menu_item\" href=\"compare_classes_form.php\" target=\"tools\">Compare classes/clusters</a>
 	<a class=\"menu_item\" href=\"contingency_stats_form.php\" target=\"tools\">Contingency stats</a>
@@ -56,7 +56,7 @@ onclick=\"toggleMenu(\"102\")\" id=\"heading102\">Clusters</div>
 
 <div class=\"menu\">
 <div class=\"menu_heading_open\"
-onclick=\"toggleMenu(\"103\")\" id=\"heading103\">Clusters/Networks</div>
+onclick=\"toggleMenu('103')\" id=\"heading103\">Clusters/Networks</div>
 <div id=\"menu103\">
 	<a class=\"menu_item\" href=\"graph_clique_form.php\" target=\"tools\">Find cliques</a>
 	<a class=\"menu_item\" href=\"mcl_form.php\" target=\"tools\">MCL clustering</a>
@@ -69,7 +69,7 @@ onclick=\"toggleMenu(\"103\")\" id=\"heading103\">Clusters/Networks</div>
 
 <div class=\"menu\">
 <div class=\"menu_heading_open\"
-onclick=\"toggleMenu(\"104\")\" id=\"heading104\">Roc curves</div>
+onclick=\"toggleMenu('104')\" id=\"heading104\">Roc curves</div>
 <div id=\"menu104\">
 	<a class=\"menu_item\" href=\"roc-stats_form.cgi\" target=\"tools\">ROC curves and stats</a>
 
@@ -78,7 +78,7 @@ onclick=\"toggleMenu(\"104\")\" id=\"heading104\">Roc curves</div>
 
 <div class=\"menu\">
 <div class=\"menu_heading_open\"
-onclick=\"toggleMenu(\"105\")\" id=\"heading105\">Dataset download</div>
+onclick=\"toggleMenu('105')\" id=\"heading105\">Dataset download</div>
 <div id=\"menu105\">
 	<a class=\"menu_item\" href=\"string_dataset_form.php\" target=\"tools\">Download a subgraph from STRING</a>
 	<a class=\"menu_item\" href=\"keggnetworkprovider_form.php\" target=\"tools\">Download organism-specific networks from KEGG</a>
@@ -87,8 +87,8 @@ onclick=\"toggleMenu(\"105\")\" id=\"heading105\">Dataset download</div>
 
 <div class=\"menu\">
 <div class=\"menu_heading_open\"
-onclick=\"toggleMenu(\"106\")\" id=\"heading106\">Information</div>
-	<div id=\"menu106\" class=\"menu_collapsible\">
+onclick=\"toggleMenu('106')\" id=\"heading106\">Information</div>
+	<div id=\"menu106\">
 	<a class=\"menu_item\" href=\"images/NeAT_flowchart.png\" target=\"tools\">Site map</a>
 	<a class=\"menu_item\" href=\"tutorials/neat_tutorial.pdf\" target=\"tools\">Tutorial</a>
 	<a class=\"menu_item\" href=\"$WWW_RSA/data/published_data/nature_protocols/network_analysis/\"
