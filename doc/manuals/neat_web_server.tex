@@ -55,20 +55,202 @@ pages, and the PHP and CGI scripts.
 
 \subsection{Apache modules}
 
-The \neat interface mainly relies on PHP and CGI (only for the roc-stats tool). 
-These modules should be installed on the web server, and activated in the Apache configuration files. 
+The \neat interface mainly relies on PHP and CGI (only for the roc-stats tool).
+These modules should be installed on the web server, and activated in the Apache configuration files.
 The installation and configuration of CGI is described in manual of the web server of \RSAT.
 
 \subsubsection{PHP module for Mac OSX}
 
 If your server is running under Mac OSX, you need to install a recent
-version (at least v5) of the php module, which can be found at the following site. 
+version (at least v5) of the php module, which can be found at the following site.
 \url{href=http://www.entropy.ch/software/macosx/php/}
 %Karoline, if you find something to add as a MAC specialist, you're welcome!
 
 \subsubsection{PHP module for LINUX}
 
-Generally, PHP5 is included with the Linux distribution or can easyly be installed using the installer (YAST, YUM, etc). Take care that the PHP5 Module for Apache 2.0 (apache2-mod_php5) is installed. 
+Generally, PHP5 is included with the Linux distribution or can easyly be installed using the installer (YAST, YUM, etc). Take care that the PHP5 Module for Apache 2.0 (apache2-mod_php5) is installed.
 
 PHP5 can also be installed manually from the PHP website (\textit{http://www.php.net/downloads.php}).
 
+\subsection{Tomcat}
+
+A part of \neat is using axis web services, JSP and Java servlet pages and needs Tomcat
+or an equivalent servlet engine to run.
+Tomcat can be easily installed on SUSE with yast and is
+usually located in \file{/usr/share/tomcat} after installation.
+On MacOS, it is already installed by default.
+Make sure to install at least Tomcat version 5.
+We noticed however that Tomcat version 6 is more stable.
+We will refer from now on to the Tomcat root directory as \$CATALINA\_HOME.
+
+\subsubsection{Configuration of Tomcat}
+If you would like to use the Tomcat manager, make sure to configure the file
+tomcat-users.xml located in \$CATALINA\_HOME/conf.
+
+Add a manager role with a special login and password, e.g.
+\begin{verbatim}
+<tomcat-users>
+  <role rolename="tomcat"/>
+  <role rolename="manager"/>
+  <user username="tomcat" password="tomcat" roles="tomcat"/>
+  <user username="metheadmin" password="mysecretpassword" roles="manager"/>
+</tomcat-users>
+\end{verbatim}
+
+Make sure that tomcat-users.xml cannot be read by anyone else than tomcat or root.\\
+
+By default, Tomcat takes a lot of memory. You can reduce this amount by
+modifying the file tomcat.conf in \$CATALINA\_HOME/conf.
+Outcomment and adjust the variable JAVA\_OPTS as follows:\\
+JAVA\_OPTS="-Xmx250m"\\
+
+You can start Tomcat on SUSE with\\
+ \textit{/etc/init.d/tomcat6 start}\\
+and stop it with\\
+ \textit{/etc/init.d/tomcat6 stop}\\
+
+More advice for the installation and configuration of Tomcat on unix systems
+can be found at: \textit{http://linux-sxs.org/internet\_serving/book1.html}
+
+\subsubsection{Mod\_jk}
+Mod\_jk forwards requests for defined contexts from Apache to Tomcat.
+Users that have a strict firewall configuration blocking the Tomcat port
+will be able to access the web services through the Apache default port.
+
+To install and configure mod\_jk, you can follow the steps below:
+
+\begin{enumerate}
+\item Install the mod\_jk module from \file{http://tomcat.apache.org/connectors-doc/}
+      or via installation systems like yast.
+      \pagebreak
+\item In the Apache configuration folder
+(e.g. \file{/etc/apache2/conf.d}), add two configuration files: workers.properties and tomcat.conf
+\item Content of workers.properties
+\begin{verbatim}
+  # Define 1 real worker using ajp13
+    # this coud be al list in the format
+    # worker.list=worker1, worker2, worker3, worker4
+    worker.list=worker1
+    # Set properties for worker1 (ajp13)
+    worker.worker1.type=ajp13
+    worker.worker1.host=localhost
+    worker.worker1.port=8009
+\end{verbatim}
+\item Content of tomcat.conf
+\begin{verbatim}
+    # Update this path to match your modules location
+    LoadModule jk_module /usr/lib/apache2/mod_jk.so
+    # Where to find workers.properties
+    # Update this path to match your conf directory location
+    JkWorkersFile /etc/apache2/conf.d/workers.properties
+    # Where to put jk shared memory
+    # Update this path to match your local log directory
+    # JkShmFile /var/log/apache2/mod_jk.shm
+    # Where to put jk logs
+    # Update this path to match your logs directory location
+    JkLogFile /var/log/apache2/mod_jk.log
+    # Set the jk log level [debug/error/info]
+    JkLogLevel error
+    # Send everything for context to worker named worker1 (ajp13)
+    JKMount /be.ac.ulb.bigre.graphtools.server/* worker1
+    JKMount /metabolicpathfinding/* worker1
+\end{verbatim}
+\item Reload Apache (on SUSE \file{/etc/init.d/apache2} reload).
+\end{enumerate}
+
+\subsubsection{Preparation of folders for Tomcat}
+In Linux, a tomcat user is created if Tomcat is installed via yast. Make sure
+that this user has read, write and execution rights for the following folders:\\
+\file{\$RSAT/contrib/REA}\\
+\file{\$RSAT/contrib/kwalks/bin}\\
+\file{\$RSAT/public\_html/data/KEGG}\\
+\file{\$RSAT/public\_html/data/Stored\_networks}\\
+
+If any of these folders does not yet exist, create them.
+
+For installation of REA and kwalks see the section on third-party programs in
+the RSAT install guide.
+
+\subsection{Installation of Java tools server}
+The graphtools server contains the java web services of NeAT. It is stored as a war file
+in \file{\$RSAT/java/web}
+
+Either place the war file \textit{be.ac.ulb.bigre.graphtools.server.war} in
+\$CATALINA\_HOME/webapps and then start Tomcat or use the Tomcat manager\\
+ (\file{http://localhost:8080/manager/html})
+ to deploy the war file.
+
+Go to \file{\$CATALINA\_HOME/webapps/be.ac.ulb.bigre.graphtools.server/WEB-INF}, open
+\textit{serverConfig.txt} and set the value of RSAT\_ROOT to the value of \$RSAT.
+
+You are done. You may read the section "Configuration remarks" for additional information.
+If you want to install the metabolic pathfinder, continue with section "Metabolic Pathfinder".
+
+\subsubsection{Configuration remarks}
+
+The directory \file{\$RSAT/public\_html/data/Stored\_networks}
+allows to store graph files for longer time
+(remember that \file{\$RSAT/public\_html/tmp} should be cleaned regularly).
+
+Organism-specific KGML files are
+placed in \file{\$RSAT/public\_html/data/KEGG} in a folder with the KEGG organism name (e.g. sce).
+You may place KGML folders for organisms yourself or you may let the program download
+required KGML files on the fly. The default KGML version might be outdated
+(check KEGG Release Notes for the correct version). To update the KGML version,\\
+go to \file{\$CATALINA\_HOME/webapps/be.ac.ulb.bigre.graphtools.server/WEB-INF}, open
+\textit{serverConfig.txt} and modify the value of the variable KGML\_VERSION.
+
+\subsection{Metabolic Pathfinder}
+After successful installation of the Java web services, you may install metabolic pathfinder,
+which is a client of the pathfinder web service.
+
+\subsubsection{Requirements of metabolic pathfinder}
+
+Metabolic pathfinder has a number of additional requirements.
+It needs dot, which can be obtained freely from \textit{http://www.graphviz.org/}.
+Dot is needed to draw graphs.\\
+
+It also needs postgres (version 8.2 or later) to store KEGG data.
+Alternatively, KEGG data could be accessed via its API,
+but this takes much longer than accessing locally stored data.
+Postgres can be obtained freely from
+\textit{http://www.postgresql.org/}.
+For MacOS, you can use Darwinports to install postgres. On SUSE, you may
+install it with yast (install postgresql and postgresql-server).\\
+
+On SUSE, you may start the postgres server with
+\textit{/etc/init.d/postgresql start}. On MacOS, you may start the postgres server
+using a command similar to\\
+\textit{pg\_ctl -D /usr/local/pgsql/data/ -l logfile start}.\\
+
+The KEGG data is packaged as a postgres backup file located in\\
+\file{\$RSAT/java/misc/metabolicdb\_dump\_13\_Oct\_2008.backup},
+which can be loaded into postgres as follows:
+\begin{enumerate}
+\item Start postgres by typing the following on command line:\\
+\textit{psql -U postgres}
+\item In postgres, do:\\
+\textit{create database "metabolic\_database" with owner "karoline" encoding='UTF8';}
+\item Quit postgres and type on command line:\\
+\textit{pg\_restore -d metabolic\_database metabolicdb\_dump\_13\_Oct\_2008.backup}
+\end{enumerate}
+
+\subsubsection{Installation of metabolic pathfinder}
+Either place the war file \textit{metabolicpathfinding.war} located
+in \file{\$RSAT/java/web} in\\
+\$CATALINA\_HOME/webapps and then start
+Tomcat or use the Tomcat manager to deploy the war file.
+
+\subsubsection{Configuration of metabolic pathfinder}
+Go to the folder
+\file{\$CATALINA\_HOME/webapps/metabolicpathfinding/WEB-INF}.
+
+Run the configuration script with the following command:\\
+\textit{./configureWebxml.pl}
+
+Open the web.xml file and set the variable "dotpath" to the location
+of the dot binary, e.g. \file{/usr/bin/dot}
+
+Finally, reload the metabolic pathfinding web application using the Tomcat manager.
+
+\end{document}
