@@ -39,7 +39,7 @@ onclick=\"toggleMenu(\"101\")\" id=\"heading101\">Path finding</div>
 <div id=\"menu101\">
         <a class=\"menu_item\" href=\"pathfinder_form.php\" target=\"tools\">k-shortest path
 finding </a>
-<a class=\"menu_item\" target=\"tools\" href='http://$host/metabolicpathfinding/metabolicPathfinder_form.jsp'>Metabolic path finding</a>
+<a class=\"menu_item\" target=\"tools\" href=\"http://$host/metabolicpathfinding/metabolicPathfinder_form.jsp\">Metabolic path finding</a>
 </div>
 <!--  pathway inference will go here later on -->
 </div>
@@ -86,14 +86,14 @@ onclick=\"toggleMenu(\"105\")\" id=\"heading105\">Dataset download</div>
 </div>
 
 <div class=\"menu\">
-<div class=\"menu_heading_closed\"
+<div class=\"menu_heading_open\"
 onclick=\"toggleMenu(\"106\")\" id=\"heading106\">Information</div>
 	<div id=\"menu106\" class=\"menu_collapsible\">
 	<a class=\"menu_item\" href=\"images/NeAT_flowchart.png\" target=\"tools\">Site map</a>
 	<a class=\"menu_item\" href=\"tutorials/neat_tutorial.pdf\" target=\"tools\">Tutorial</a>
-	<a class=\"menu_item\" href='$WWW_RSA/data/published_data/nature_protocols/network_analysis/'
+	<a class=\"menu_item\" href=\"$WWW_RSA/data/published_data/nature_protocols/network_analysis/\"
 	target=\"tools\">Sample data</a>
-	<a class=\"menu_item\" href='$WWW_RSA/demo_files/' target=\"tools\">Files used in DEMO</a>
+	<a class=\"menu_item\" href=\"$WWW_RSA/demo_files/\" target=\"tools\">Files used in DEMO</a>
 	<a class=\"menu_item\" href=\"neat_credits.html\" target=\"tools\">Credits</a>
 	<a class=\"menu_item\" href=\"neat_publications.html\" target=\"tools\">Publications</a>
 	<a class=\"menu_item\" href=\"distrib/index.html\" target=\"tools\">Distribution</a>
