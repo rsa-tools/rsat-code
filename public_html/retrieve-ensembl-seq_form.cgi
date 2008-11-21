@@ -85,7 +85,8 @@ my $sth = $dbh->prepare("SHOW DATABASES");
 $sth->execute();
 my $previous_org = "bogus";
 while (my $ref = $sth->fetchrow_hashref()) {
-    if ($ref->{'Database'} =~ /_core_\d+/) {
+#    if ($ref->{'Database'} =~ /_core_\d+/) {
+    if ($ref->{'Database'} =~ /_core_50/) { ##########TEMPORARY##############
 	$dbversion = $ref->{'Database'};
 	$dbversion =~ s/.+_core_//;
 	$dbversion =~ s/_.+//;
@@ -329,7 +330,8 @@ print "<BR>\n";
 
 
 ### data for the demo 
-@demo_genes = qw (ENSG00000139618 ENSG00000138411);
+# @demo_genes = qw (ENSG00000139618 ENSG00000138411);
+@demo_genes = qw (ENSG00000139618);
 $demo_genes = join "\n", @demo_genes;
 
 
