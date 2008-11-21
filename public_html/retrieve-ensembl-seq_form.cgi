@@ -85,8 +85,8 @@ my $sth = $dbh->prepare("SHOW DATABASES");
 $sth->execute();
 my $previous_org = "bogus";
 while (my $ref = $sth->fetchrow_hashref()) {
-#    if ($ref->{'Database'} =~ /_core_\d+/) {
-    if ($ref->{'Database'} =~ /_core_50/) { ##########TEMPORARY##############
+    if ($ref->{'Database'} =~ /_core_\d+/) {
+#    if ($ref->{'Database'} =~ /_core_50/) { ##########TEMPORARY##############
 	$dbversion = $ref->{'Database'};
 	$dbversion =~ s/.+_core_//;
 	$dbversion =~ s/_.+//;
