@@ -96,7 +96,7 @@ onclick="toggleMenu("106")" id="heading106">Information</div>
 	<a class="menu_item"
 <? php
 require ('functions.php');
-echo href='$WWW_RSA/data/published_data/nature_protocols/network_analysis/'"
+echo "href='$WWW_RSA/data/published_data/nature_protocols/network_analysis/'"
 ?>
 	target="tools">Sample data</a>
 	<a class="menu_item" href="$WWW_RSA/demo_files/" target="tools">Files used in DEMO</a>
