@@ -1413,11 +1413,10 @@ sub get_orthologs {
   close HIS_OUT;
   close HIS_ERR;
 
-#    my $stderr = `$command 2>&1 1>/dev/null`;
 #    if ($stderr) {
 #        die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
 #    }
-#    my $result = `$command`;
+
     my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile(get_orthologs.XXXXXXXXXX, DIR => $TMP);
     print $TMP_OUT $result;
     close $TMP_OUT;
