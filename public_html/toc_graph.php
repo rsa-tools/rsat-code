@@ -1,3 +1,7 @@
+<?php
+  require ('functions.php');
+  $host= parse_url($WWW_RSA,PHP_URL_HOST);
+  echo("
 <HTML>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
@@ -6,12 +10,6 @@
 		<script src="RSAT_menu.js" type="text/javascript"></script>
 	</head>
 	<body>
-
-<?php
-  require ('functions.php');
-  $host= parse_url($WWW_RSA,PHP_URL_HOST);
-?>
-
 <ul id="tabmenu" class="rsat">
   <li><a href="index.html" target="_top">RSAT</a></li>
   <li><a class="active" href="index_neat.html" target="_top">NeAT</a></li>
@@ -41,7 +39,7 @@ onclick="toggleMenu("101")" id="heading101">Path finding</div>
 <div id="menu101">
         <a class="menu_item" href="pathfinder_form.php" target="tools">k-shortest path
 finding </a>
-<a class="menu_item" target="tools" href="http://$host/metabolicpathfinding/metabolicPathfinder_form.jsp">Metabolic path finding</a>
+<a class="menu_item" target="tools" href='http://$host/metabolicpathfinding/metabolicPathfinder_form.jsp'>Metabolic path finding</a>
 </div>
 <!--  pathway inference will go here later on -->
 </div>
@@ -93,13 +91,9 @@ onclick="toggleMenu("106")" id="heading106">Information</div>
 	<div id="menu106" class="menu_collapsible">
 	<a class="menu_item" href="images/NeAT_flowchart.png" target="tools">Site map</a>
 	<a class="menu_item" href="tutorials/neat_tutorial.pdf" target="tools">Tutorial</a>
-	<a class="menu_item"
-<? php
-require ('functions.php');
-echo "href='$WWW_RSA/data/published_data/nature_protocols/network_analysis/'"
-?>
+	<a class="menu_item" href='$WWW_RSA/data/published_data/nature_protocols/network_analysis/'
 	target="tools">Sample data</a>
-	<a class="menu_item" href="$WWW_RSA/demo_files/" target="tools">Files used in DEMO</a>
+	<a class="menu_item" href='$WWW_RSA/demo_files/' target="tools">Files used in DEMO</a>
 	<a class="menu_item" href="neat_credits.html" target="tools">Credits</a>
 	<a class="menu_item" href="neat_publications.html" target="tools">Publications</a>
 	<a class="menu_item" href="distrib/index.html" target="tools">Distribution</a>
@@ -113,7 +107,7 @@ echo "href='$WWW_RSA/data/published_data/nature_protocols/network_analysis/'"
 <a href="mailto:sylvain-at-scmbb.ulb.ac.be">Sylvain Broh&eacute;e</a>
 </h3>
 </h4>
-
 </div>
 </body>
-</html>
+</html>");
+?>
