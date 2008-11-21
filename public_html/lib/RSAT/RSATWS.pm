@@ -1396,11 +1396,28 @@ sub get_orthologs {
 
     my $command = $self->get_orthologs_cmd(%args);
 
+  local(*HIS_IN, *HIS_OUT, *HIS_ERR);
+  my $childpid = open3(*HIS_IN, *HIS_OUT, *HIS_ERR, $command);
+  my @outlines = <HIS_OUT>;    # Read till EOF.
+  my @errlines = <HIS_ERR>;    # XXX: block potential if massive
+
+  my $result = join('', @outlines);
+  my $stderr;
+
+  foreach my $errline(@errlines) {
+      unless ($errline =~ 'Use of uninitialized value') {
+	  $stderr .= $errline;
+      }
+  }
+
+  close HIS_OUT;
+  close HIS_ERR;
+
 #    my $stderr = `$command 2>&1 1>/dev/null`;
 #    if ($stderr) {
 #        die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
 #    }
-    my $result = `$command`;
+#    my $result = `$command`;
     my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile(get_orthologs.XXXXXXXXXX, DIR => $TMP);
     print $TMP_OUT $result;
     close $TMP_OUT;
@@ -1519,11 +1536,29 @@ sub footprint_discovery {
 	$output_choice = 'both';
     }
     my $command = $self->footprint_discovery_cmd(%args);
-    my $stderr = `$command 2>&1 1>/dev/null`;
+
+    local(*HIS_IN, *HIS_OUT, *HIS_ERR);
+    my $childpid = open3(*HIS_IN, *HIS_OUT, *HIS_ERR, $command);
+    my @outlines = <HIS_OUT>;    # Read till EOF.
+    my @errlines = <HIS_ERR>;    # XXX: block potential if massive
+
+    my $result = join('', @outlines);
+    my $stderr;
+
+    foreach my $errline(@errlines) {
+	unless ($errline =~ 'Use of uninitialized value') {
+	    $stderr .= $errline;
+	}
+    }
+
+    close HIS_OUT;
+    close HIS_ERR;
+
+#    my $stderr = `$command 2>&1 1>/dev/null`;
     if ($stderr) {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
-    my $result = `$command`;
+#    my $result = `$command`;
     my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile(footprint_discovery.XXXXXXXXXX, DIR => $TMP);
     print $TMP_OUT $result;
     close $TMP_OUT;
@@ -2391,60 +2426,36 @@ sub convert_seq {
     unless ($output_choice) {
 	$output_choice = 'both';
     }
-    my $command = $self->convert_seq_cmd(%args);
-    my $result = `$command`;
-    my $stderr = `$command 2>&1 1>/dev/null`;
-    if ($stderr) {
-	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+
+    if ($args{"sequence"}) {
+	my $sequence = $args{"sequence"};
+	chomp $sequence;
+	$tmp_infile = `mktemp $TMP/convert-seq.XXXXXXXXXX`;
+	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
+	print TMP_IN $sequence;
+	close TMP_IN;
+    } elsif ($args{"tmp_infile"}) {
+	$tmp_infile = $args{"tmp_infile"};
+	$tmp_infile =~ s/\'//g;
+	$tmp_infile =~ s/\"//g;
     }
-    my $tmp_outfile = `mktemp $TMP/convert-seq.XXXXXXXXXX`;
-    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
-    print TMP_OUT $result;
-    close TMP_OUT;
-    if ($output_choice eq 'server') {
-	return SOAP::Data->name('response' => {'command' => $command, 
-					       'server' => $tmp_outfile});
-    } elsif ($output_choice eq 'client') {
-	return SOAP::Data->name('response' => {'command' => $command,
-					       'client' => $result});
-    } elsif ($output_choice eq 'both') {
-	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
-					       'command' => $command, 
-					       'client' => $result});
+    chomp $tmp_infile;
+    my $command = "$SCRIPTS/convert-seq";
+
+    if ($args{from}) {
+	$args{from} =~ s/\'//g;
+	$args{from} =~ s/\"//g;
+	$command .= " -from '".$args{from}."'";
     }
-}
+    if ($args{to}) {
+	$args{to} =~ s/\'//g;
+	$args{to} =~ s/\"//g;
+	$command .= " -to '".$args{to}."'";
+    }
 
-sub convert_seq_cmd {
-  my ($self, %args) =@_;
-  if ($args{"sequence"}) {
-    my $sequence = $args{"sequence"};
-    chomp $sequence;
-    $tmp_infile = `mktemp $TMP/convert-seq.XXXXXXXXXX`;
-    open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
-    print TMP_IN $sequence;
-    close TMP_IN;
-  } elsif ($args{"tmp_infile"}) {
-    $tmp_infile = $args{"tmp_infile"};
-    $tmp_infile =~ s/\'//g;
-    $tmp_infile =~ s/\"//g;
-  }
-  chomp $tmp_infile;
-  my $command = "$SCRIPTS/convert-seq";
-
-  if ($args{from}) {
-      $args{from} =~ s/\'//g;
-      $args{from} =~ s/\"//g;
-      $command .= " -from '".$args{from}."'";
-  }
-  if ($args{to}) {
-      $args{to} =~ s/\'//g;
-      $args{to} =~ s/\"//g;
-      $command .= " -to '".$args{to}."'";
-  }
-
-  $command .= " -i '".$tmp_infile."'";
-
-  return $command;
+    $command .= " -i '".$tmp_infile."'";
+    
+    &run_WS_command($command, $output_choice, "convert-seq");
 }
 
 ##########
