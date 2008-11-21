@@ -4648,7 +4648,11 @@ sub run_WS_command {
   ## Execute the command on the server
   my $result = `$command`;
   my $stderr = `$command 2>&1 1>/dev/null`;
-  
+
+  if ($stderr =~ 'Use of uninitialized value') {
+      $stderr = '';
+  }
+
   if ($stderr) {
       die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
   }
