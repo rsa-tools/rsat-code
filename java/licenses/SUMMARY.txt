@@ -1,16 +1,26 @@
 SUMMARY LICENSES
 ################
 
-NeAT_javatools.jar merges a number of jar files, which are licensed as listed below.
+NeAT_javatools.jar and the war files merge a number of jar files,
+which are licensed as listed below.
+
+The jar files are needed for data storage and access (postgresql, hibernate and its dependent jars),
+web services (axis and its dependent jars) as well as graph conversion (gxl, jung) and
+general utilities (commons-logging, commons-collections).
 
 The following libraries are covered by LICENSE.apache provided in the licenses directory:
+ant.jar
+antlr-2.7.6.jar
+axis.jar
 commons-collections-2.1.1.jar
 commons-discovery-0.2.jar
 commons-logging-1.0.4.jar
 log4j-1.2.14.jar
 jaxrpc.jar
+saaj.jar
 xml-apis.jar
 xmlrpc-2.0.jar
+xmlsec-1.4.1.jar
 
 The following libraries are covered by LICENSE.asm provided in the licenses directory:
 asm-attrs.jar
@@ -26,6 +36,8 @@ jacc-1_0-fr.jar
 c3p0-0.9.1.jar is covered by LICENSE.c3p0 (GNU Lesser General Public License) in the licenses directory.
 
 colt-1.2.0.jar is covered by LICENSE.colt in the licenses directory.
+
+cos.jar is covered by LICENSE.cos in the LICENSES directory.
 
 concurrent-1.3.0.jar see the section: Notes on page http://gee.cs.oswego.edu/dl/classes/EDU/oswego/cs/dl/util/concurrent/intro.html for license information.
 
@@ -48,6 +60,10 @@ jdbc2_0-stdext.jar is covered by LICENSE.jdbc2_0-stdext (Sun Microsystems) in th
 jung-1.7.6.jar is covered by LICENSE.jung (BSD) in the licenses directory.
 
 postgresql-8.2-504.jdbc3.jar is covered by LICENSE.postgres in the licenses directory.
+
+sax2.jar is covered by LICENSE.sax in the LICENSES directory.
+
+wsdl4j-1.5.1.jar is covered by LICENSE.wsdl4j in the LICENSES directory.
 
 xerces-2.7.1.jar is covered by the LICENSE.xerces (Apache License) in the licenses directory.
 
