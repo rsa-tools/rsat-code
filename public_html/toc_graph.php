@@ -86,9 +86,9 @@ onclick=\"toggleMenu('105')\" id=\"heading105\">Dataset download</div>
 </div>
 
 <div class=\"menu\">
-<div class=\"menu_heading_open\"
+<div class=\"menu_heading_closed\"
 onclick=\"toggleMenu('106')\" id=\"heading106\">Information</div>
-	<div id=\"menu106\">
+	<div id=\"menu106\"  class=\"menu_collapsible\">
 	<a class=\"menu_item\" href=\"images/NeAT_flowchart.png\" target=\"tools\">Site map</a>
 	<a class=\"menu_item\" href=\"tutorials/neat_tutorial.pdf\" target=\"tools\">Tutorial</a>
 	<a class=\"menu_item\" href=\"$WWW_RSA/data/published_data/nature_protocols/network_analysis/\"
