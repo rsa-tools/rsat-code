@@ -322,19 +322,26 @@ sub retrieve_ensembl_seq {
   my $query_ref = $args{"query"};
   my $query = "";
   if ($query_ref =~/ARRAY/) {
-    my @query = @{$query_ref};
-    foreach $q (@query) {
-      $q =~s/\'//g;
-      $q =~s/\"//g;
-    }
-    $query = " -q '";
-    $query .= join "' -q '", @query;
-    $query .= "'";
+      my @query = @{$query_ref};
+      foreach $q (@query) {
+	  $q =~s/\'//g;
+	  $q =~s/\"//g;
+      }
+      $query = " -q '";
+      $query .= join "' -q '", @query;
+      $query .= "'";
   } elsif ($query_ref) {
-    $query = " -q '";;
-    $query .= $query_ref;
-    $query .= "'";
-}
+      $query = " -q '";;
+      $query .= $query_ref;
+      $query .= "'";
+  }
+
+  if ($args{"tmp_infile"}) {
+      $tmp_infile = $args{"tmp_infile"};
+      $tmp_infile =~ s/\'//g;
+      $tmp_infile =~ s/\"//g;
+      chomp $tmp_infile;
+  }
 
   my $feattype = $args{"feattype"};
   my $type = $args{"type"};
@@ -364,7 +371,7 @@ sub retrieve_ensembl_seq {
     my $features = $args{"features"};
     chomp $features;
     $tmp_ft_file = `mktemp $TMP/retrieve-ensembl-seq.XXXXXXXXXX`;
-    open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
+    open TMP_IN, ">".$tmp_ft_infile or die "cannot open temp file ".$tmp_ft_infile."\n";
     print TMP_IN $feature;
     close TMP_IN;
   } elsif ($args{"tmp_ft_file"}) {
@@ -442,11 +449,11 @@ sub retrieve_ensembl_seq {
     $command .= " -all";
   }
 
-    if ($lw) {
-	$lw =~ s/\'//g;
-	$lw =~ s/\"//g;
-	$command .= " -lw '".$lw."'";
-    }
+  if ($lw) {
+      $lw =~ s/\'//g;
+      $lw =~ s/\"//g;
+      $command .= " -lw '".$lw."'";
+  }
 
 #    if ($label) {
 #	$label =~ s/\'//g;
@@ -556,6 +563,10 @@ sub retrieve_ensembl_seq {
 #    if ($imp_pos == 1) {
 #	$command .= " -imp_pos";
 #    }
+
+  if ($args{"tmp_infile"}) {
+      $command .= " -i '".$tmp_infile."'";
+  }
 
  &run_WS_command($command, $output_choice, "retrieve-ensembl-seq")
 }
