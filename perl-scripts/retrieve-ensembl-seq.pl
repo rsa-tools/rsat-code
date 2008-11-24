@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.52 2008/10/28 15:24:26 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.53 2008/11/24 10:25:49 rsat Exp $
 #
 # Time-stamp
 #
@@ -47,7 +47,7 @@ package main;
   local $rm = 0;
   local $all_transcripts = 0;
   local $first_intron = 0;
-#  local $utr = "all";    # other values: 5prime and 3prime
+  local $utr = "all";    # other values: 5prime and 3prime
   local $non_coding = 0;
   local $all = 0;
   local $query_file;
@@ -524,8 +524,8 @@ sub ReadArguments {
       $first_intron = 1;
 
       ### UTRs
-#    } elsif ($ARGV[$a] eq "-utr") {
-#      $utr = $ARGV[$a+1];
+    } elsif ($ARGV[$a] eq "-utr") {
+      $utr = $ARGV[$a+1];
 
       ### Non coding
     } elsif ($ARGV[$a] eq "-noncoding") {
@@ -904,21 +904,21 @@ sub Main {
 	    my $utr5_id = $transcript_id."-5prime_UTR";
 	    my $utr3_id = $transcript_id."-3prime_UTR";
 
-	    if ($utr5_flag == 1) {
+	    if (($utr5_flag == 1) && (($utr eq 'all') || ($utr eq '5prime'))) {
 		$seq_limits{$utr5_id} = [$utr5_start, $utr5_end];
 	    }
-	    if ($utr3_flag == 1) {
+	    if (($utr3_flag == 1) && (($utr eq 'all') || ($utr eq '3prime'))) {
 		$seq_limits{$utr3_id} = [$utr3_start, $utr3_end];
 	    }
 
 	    unless ($uniq_seqs) {
-		if ($utr5_flag == 1) {
+		if (($utr5_flag == 1) && (($utr eq 'all') || ($utr eq '5prime'))) {
 		    $utr5_sequence = &GetSequence($utr5_start, $utr5_end);
 		    my $utr5_size = $utr5_end - $utr5_start + 1;
 		    my $utr5_fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-5prime_UTR\t$gene_id-$transcript_id-5prime_UTR; from 1 to $utr5_size; size: $utr5_size; location: $chromosome_name $utr5_start $utr5_end $rsat_strand";
 		    &PrintSequence ($utr5_sequence, $utr5_fasta_header);
 		}
-		if ($utr3_flag == 1) {
+		if (($utr3_flag == 1) && (($utr eq 'all') || ($utr eq '3prime'))) {
 		    $utr3_sequence = &GetSequence($utr3_start, $utr3_end);
 		    my $utr3_size = $utr3_end - $utr3_start + 1;
 		    my $utr3_fasta_header = ">$header_org$gene_id-$gene_name-$transcript_id-3prime_UTR\t$gene_id-$transcript_id-3prime_UTR; from 1 to $utr3_size; size: $utr3_size; location: $chromosome_name $utr3_start $utr3_end $rsat_strand";
