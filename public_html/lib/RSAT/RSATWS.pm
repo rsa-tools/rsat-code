@@ -350,6 +350,7 @@ sub retrieve_ensembl_seq {
   my $uniqseqs = $args{"unique_sequences"};
   my $first_intron = $args{"first_intron"};
   my $non_coding = $args{"non_coding"};
+  my $utr = $args{"utr"};
   my $chrom = $args{"chromosome"};
   my $left = $args{"left"};
   my $right =$args{"right"};
@@ -487,6 +488,12 @@ sub retrieve_ensembl_seq {
    if ($non_coding == 1) {
 	$command .= " -noncoding";
     }
+
+  if ($utr) {
+      $utr =~ s/\'//g;
+      $utr =~ s/\"//g;
+      $command .= " -utr '".$utr."'";
+  }
 
     if ($chrom) {
 	$chrom =~ s/\'//g;
