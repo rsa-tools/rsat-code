@@ -244,9 +244,14 @@ Default is 'both'.</xsd:documentation>
           </xsd:element>
 	  <xsd:element name="query" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
             <xsd:annotation>
-              <xsd:documentation>A list of query genes.</xsd:documentation>
+              <xsd:documentation>A list of query genes. You need to supply either this parameter or the next one (tmp_infile).</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
+	<xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation> Name of the file with list of genes on the server. You need to supply either this parameter or the previous one (query).</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
 	  <xsd:element name="all" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>Return sequences for all the genes of the organism if value = 1. Incompatible with query.</xsd:documentation>
