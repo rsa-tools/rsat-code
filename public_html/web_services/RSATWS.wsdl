@@ -342,6 +342,11 @@ Default is 'both'.</xsd:documentation>
               <xsd:documentation>With feattype exon, get only non-coding (part of) exons if value = 1.</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
+	  <xsd:element name="utr" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>With feattype UTR, get only 5prime or 3prime UTR (default is all UTRs).</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
 	  <xsd:element name="line_width" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>A newline character will be inserted in the 

@@ -220,7 +220,7 @@ print "<TD class='left'>\n";
 #### Sequence to retrieve
 print "<B><A HREF='help.retrieve-ensembl-seq.html#sequence_type'>Sequence type</A></B>&nbsp;";
 print $query->popup_menu(-name=>'sequence_type',
-			  -values=>['upstream/downstream','gene','intron','first intron','exon','non-coding exon','UTR'],
+			  -values=>['upstream/downstream','gene','intron','first intron','exon','non-coding exon','UTRs', '5prime UTR', '3prime UTR'],
 			  -default=>$default{sequence_type});
 print "<BR/>\n";
 
