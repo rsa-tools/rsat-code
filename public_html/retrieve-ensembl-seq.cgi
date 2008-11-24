@@ -121,6 +121,7 @@ my $sequence_type = '';
 my $type = '';
 my $first_intron = 0;
 my $non_coding = 0;
+my $utr = 'all';
 if ($query->param('sequence_type')) {
     $sequence_type = $query->param('sequence_type');
     if ($sequence_type eq 'upstream/downstream') {
@@ -142,9 +143,17 @@ if ($query->param('sequence_type')) {
 	$feattype = 'exon';
 	$type = 'feature';
 	$non_coding = 1;
-    } elsif ($sequence_type eq 'UTR') {
+    } elsif ($sequence_type eq 'UTRs') {
 	$feattype = 'utr';
 	$type = 'feature';
+    } elsif ($sequence_type eq '5prime UTR') {
+	$feattype = 'utr';
+	$type = 'feature';
+	$utr = '5prime';
+    } elsif ($sequence_type eq '3prime UTR') {
+	$feattype = 'utr';
+	$type = 'feature';
+	$utr = '3prime';
     }
 }
 
@@ -218,6 +227,7 @@ my %args = (
             'first_intron' => $first_intron,
             'non_coding' => $non_coding,
             'type' => $type,
+            'utr' => $utr,
             'repeat' => $rm,
             'mask_coding' => $mask_coding,
             'line_width' => $lw,
