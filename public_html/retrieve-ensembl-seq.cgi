@@ -77,21 +77,20 @@ if ($query->param('homology_selection')) {
 
 #### queries ####
 my @gene_selection = ();
+$gene_list_file = "${TMP}/${tmp_file_name}.genes";
 if ($query->param('uploaded_file')) {
     $upload_file = $query->param('uploaded_file');
-#    $gene_list_file = "${TMP}/${tmp_file_name}.genes";
 #    if ($upload_file =~ /\.gz$/) {
 #	$gene_list_file .= ".gz";
 #    }
     $type = $query->uploadInfo($upload_file)->{'Content-Type'};
-#    open SEQ, ">$gene_list_file" ||
-#	&cgiError("Cannot store gene list file in temporary directory");
+    open QUERY, ">$gene_list_file" || &cgiError("Cannot store gene list file in temporary directory");
     while (<$upload_file>) {
-#	print SEQ;
 	chomp;
-	push @gene_selection, $_;
+	print QUERY;
+#	push @gene_selection, $_;
     }
-#    close SEQ;
+    close QUERY;
     
 } else {
     my $gene_selection = $query->param('gene_selection');
@@ -99,6 +98,11 @@ if ($query->param('uploaded_file')) {
     $gene_selection =~ s/\n\n/\n/g;
     if ($gene_selection =~ /\S/) {
 	@gene_selection = split ("\n", $gene_selection);
+	open QUERY, ">$gene_list_file" || &cgiError("Cannot store gene list file in temporary directory");;
+	foreach my $row (@gene_selection) {
+	    print QUERY $row, "\n";
+	}
+	close QUERY;
     } else {
 	&cgiError("You should enter at least one gene identifier in the query box..");
     }
@@ -216,7 +220,8 @@ my $lw = 60;
 
 my %args = (
             'organism' => $organism,
-            'query' => \@gene_selection,
+#            'query' => \@gene_selection,
+            'tmp_infile' => $gene_list_file,
             'noorf' => $noorf,
             'nogene' => $nogene,
             'from' => $from,
