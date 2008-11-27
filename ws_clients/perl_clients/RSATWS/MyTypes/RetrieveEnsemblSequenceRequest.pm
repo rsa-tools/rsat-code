@@ -22,6 +22,7 @@ my %organism_of :ATTR(:get<organism>);
 my %ensembl_host_of :ATTR(:get<ensembl_host>);
 my %db_name_of :ATTR(:get<db_name>);
 my %query_of :ATTR(:get<query>);
+my %tmp_infile_of :ATTR(:get<tmp_infile>);
 my %all_of :ATTR(:get<all>);
 my %noorf_of :ATTR(:get<noorf>);
 my %nogene_of :ATTR(:get<nogene>);
@@ -41,6 +42,7 @@ my %all_transcripts_of :ATTR(:get<all_transcripts>);
 my %unique_sequences_of :ATTR(:get<unique_sequences>);
 my %first_intron_of :ATTR(:get<first_intron>);
 my %non_coding_of :ATTR(:get<non_coding>);
+my %utr_of :ATTR(:get<utr>);
 my %line_width_of :ATTR(:get<line_width>);
 my %ortho_of :ATTR(:get<ortho>);
 my %taxon_of :ATTR(:get<taxon>);
@@ -53,6 +55,7 @@ __PACKAGE__->_factory(
         ensembl_host
         db_name
         query
+        tmp_infile
         all
         noorf
         nogene
@@ -72,6 +75,7 @@ __PACKAGE__->_factory(
         unique_sequences
         first_intron
         non_coding
+        utr
         line_width
         ortho
         taxon
@@ -85,6 +89,7 @@ __PACKAGE__->_factory(
         'ensembl_host' => \%ensembl_host_of,
         'db_name' => \%db_name_of,
         'query' => \%query_of,
+        'tmp_infile' => \%tmp_infile_of,
         'all' => \%all_of,
         'noorf' => \%noorf_of,
         'nogene' => \%nogene_of,
@@ -104,6 +109,7 @@ __PACKAGE__->_factory(
         'unique_sequences' => \%unique_sequences_of,
         'first_intron' => \%first_intron_of,
         'non_coding' => \%non_coding_of,
+        'utr' => \%utr_of,
         'line_width' => \%line_width_of,
         'ortho' => \%ortho_of,
         'taxon' => \%taxon_of,
@@ -116,6 +122,7 @@ __PACKAGE__->_factory(
         'ensembl_host' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'db_name' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'query' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'tmp_infile' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'all' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'noorf' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'nogene' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
@@ -135,6 +142,7 @@ __PACKAGE__->_factory(
         'unique_sequences' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'first_intron' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'non_coding' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'utr' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'line_width' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'ortho' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'taxon' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -148,6 +156,7 @@ __PACKAGE__->_factory(
         'ensembl_host' => 'ensembl_host',
         'db_name' => 'db_name',
         'query' => 'query',
+        'tmp_infile' => 'tmp_infile',
         'all' => 'all',
         'noorf' => 'noorf',
         'nogene' => 'nogene',
@@ -167,6 +176,7 @@ __PACKAGE__->_factory(
         'unique_sequences' => 'unique_sequences',
         'first_intron' => 'first_intron',
         'non_coding' => 'non_coding',
+        'utr' => 'utr',
         'line_width' => 'line_width',
         'ortho' => 'ortho',
         'taxon' => 'taxon',
@@ -222,6 +232,9 @@ methods:
 
 
 =item * query
+
+
+=item * tmp_infile
 
 
 =item * all
@@ -281,6 +294,9 @@ methods:
 =item * non_coding
 
 
+=item * utr
+
+
 =item * line_width
 
 
@@ -313,6 +329,7 @@ Constructor. The following data structure may be passed to new():
    ensembl_host =>  $some_value, # string
    db_name =>  $some_value, # string
    query =>  $some_value, # string
+   tmp_infile =>  $some_value, # string
    all =>  $some_value, # int
    noorf =>  $some_value, # int
    nogene =>  $some_value, # int
@@ -332,6 +349,7 @@ Constructor. The following data structure may be passed to new():
    unique_sequences =>  $some_value, # int
    first_intron =>  $some_value, # int
    non_coding =>  $some_value, # int
+   utr =>  $some_value, # string
    line_width =>  $some_value, # int
    ortho =>  $some_value, # int
    taxon =>  $some_value, # string
