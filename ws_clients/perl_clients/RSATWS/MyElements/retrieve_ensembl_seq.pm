@@ -94,6 +94,7 @@ Constructor. The following data structure may be passed to new():
      ensembl_host =>  $some_value, # string
      db_name =>  $some_value, # string
      query =>  $some_value, # string
+     tmp_infile =>  $some_value, # string
      all =>  $some_value, # int
      noorf =>  $some_value, # int
      nogene =>  $some_value, # int
@@ -113,6 +114,7 @@ Constructor. The following data structure may be passed to new():
      unique_sequences =>  $some_value, # int
      first_intron =>  $some_value, # int
      non_coding =>  $some_value, # int
+     utr =>  $some_value, # string
      line_width =>  $some_value, # int
      ortho =>  $some_value, # int
      taxon =>  $some_value, # string
