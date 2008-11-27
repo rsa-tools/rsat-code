@@ -1,0 +1,1120 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: matrix-symmetry,v 1.1 2008/11/27 01:08:29 amedina Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+matrix-symmetry
+
+=head1 VERSION
+
+0.1
+
+=head1 DESCRIPTION
+
+Program to detect motif symmetry based un PSSMs.
+
+=head1 AUTHORS
+
+Alejandra Medina-Rivera
+amedina@lcg.unam.mx
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+
+matrix-symmetry [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+Matrix in an accepted format.
+
+=head1 OUTPUT FORMAT
+Symmetry report.
+
+DR -> ->
+IR -> <-
+
+=head1 DESCRIPTION
+Symmetry of Protein Binding Motifs.
+
+This program implemetns two  methodologies to elucidate the structure of
+ a Protein Binding Motifs (PBM) in this case resumed in the PSSM. 
+
+=head1  1) Matrix structure based on matrix similarity distances.
+
+
+We use the  Normalized correlation (Ncor) to calculate the similarity between tow matrices (see compare-matrices for more details) since using this information we can detect internal structure of a motif.
+Tandem repeats can be detected by measuring distance between a matrix and the same matrix with increasing values of shift. 
+Inverted repeats can be detected by comparing a matrix with its reverse complement, (RC), using various shift values. For the RC, the central position might either be considered, or not, because some motifs have an odd number of columns. 
+The smallest distance value is taken as the internal structure of the motif, when ever is impossible to detect a specific symmetry we annotate this motif as having non internal structure.
+
+=head1  2) Matrix structure based on splitting matrix by information content
+
+
+The objective is to determine the symmetry of the certain matrix (TF binding motif), whether it has a direct repeat or an invert repeat.
+In order to do so, we apply a methodology based on the actual matrix matching methodologies using some logical criteria, in our method we split the matrix into two minor matrixes then we look for matches of these matrixes in a random sequence and see if the matches overlap between each minor matrix and in which strand they overlap. If in an overlap the two matrixes match on the same strand they are supposed to be a direct repeat, if they match on different strands they are treated as invert repeat.
+
+We compare both methodologies, to increase the confidence for each symmetry annotation, since there are some factors with sites having different inner structures due to specific protein-protein interactions on the site.
+
+Once we determine the symmetry of the motif we map over each reported binding site the specific coordinates of the repeats. This was done using an alignment algorithm adequated for the problem. For this we compare the binding site sequence with itself and with its reverse complement by offsets of different sizes and we took the longer alignment.
+
+NOTES:
+Whenever the symmetry motif detection methodologies diverge in a decision we report the result from the splitting matrix method and mark the level of uncertainty.
+The symmetry of each binding site we report the longest direct repeat and the longest invert repeat and the longest of both is taken as the correct inner symmetry of the site.
+
+
+=head1 SEE ALSO
+
+split-matrix
+
+
+=head1 WISH LIST
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+use RSAT::MarkovModel;
+use RSAT::matrix;
+use RSAT::MatrixReader;
+use File::Basename;
+use Data::Dumper;
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    my $start_time = &AlphaDate();
+    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    #$program_version = "0.1";
+    
+    ################################################################
+    ## Matrix parammeters
+    $l= 1000000 ;
+    $decimals = 2;
+    $pseudo_weight = 1;
+    $pseudo_counts=1;
+    $equi_pseudo = 0;
+    $sep="\t";
+    $null = "NA";
+    #$perm = 0;
+    $symmetry="compare"; 
+    $mv_dir="";
+    $scanopt = ();
+
+    local %infile = ();
+    local %outfile = ();
+    local @matrix_files = ();
+    local $matrix_format = "";
+    local $verbose = 0;
+    local $out = STDOUT;
+    local $info_log_base = exp(1);
+
+    ################################################################
+    ## Methods to Detect Symmetry 
+    
+    %supported_symmetry_method = (
+	"compare"=>1,
+	"split"=>1,
+	);
+    $supported_symmetry_methods = join ",", sort keys %supported_symmetry_method;
+    
+    ## Split option
+    ## If "split" is the selected method, the -split option has to be specified
+    %supported_split_option = (
+	"half"=>1,
+	"information"=>1,
+	);
+    $supported_split_options = join ",", sort keys %supported_split_option;
+ 
+    ## Return option
+   
+    @return_fields = ();
+    %supported_return_type = (
+	"splited_matrices"=>1,
+	"comparisons"=>1,
+	);
+    
+    $supported_return_fields = join ",", sort keys %supported_return_type;
+    
+   ## input formats
+    %supported_input_format = %RSAT::MatrixReader::supported_input_format;
+    $supported_input_formats = join ",", sort keys %supported_input_format;
+#    local $strands="DR";
+    
+
+    ## INPUT/ OUTPUT parameters
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+#    $main::in = STDIN;
+ #   $main::out = STDOUT;
+
+   #  ## Parameters for the &doit() command
+#     $dry = 0;
+#     $die_on_error = 1;
+#     $job_prefix = "matrix-quality";
+#     $batch = 0;
+
+    ################################################################
+    ## Read argument values
+
+    &ReadArguments();
+    &RSAT::message::Debug("read aguments done") if ($main::verbose >= 5);
+
+    ################################################################
+    ## Check argument values
+    
+
+    ## Input format    
+    unless ($matrix_format) {
+	&RSAT::error::FatalError("You should specify the input matrix format.");
+    }
+    
+    ## Method to detect symmetry
+    unless ($symmetry) { &RSAT::error::FatalError("You should specify the method for symmetry detection.");
+    }
+
+    ## return type(s)
+    
+    local %return_fields = ();
+    if (scalar(@return_fields)) {
+	foreach my $format (@return_fields) {
+	    if ($supported_return_type{$format}) {
+		$return_fields{$format}++;
+	    } else {
+		&RSAT::error::FatalError("Invalid return type $format. Supported: ".$supported_return_fields);
+	    }
+	}
+    }
+    
+    ## If the selected method to detect symetry is "split", select the method to split the matrix
+    if ($symmetry eq "split") {
+	&RSAT::error::FatalError("You should specify the split option to be used." )  unless ($split) ;
+	&RSAT::error::FatalError("You should specify the organism to calculate the random sequence") unless ($org);
+	&RSAT::error::FatalError("You should specify the type of sequences used as background model to calculate the random sequence") unless ($bg_type);
+    }
+	
+
+    ## Matrix provided with -i option
+    
+    if ($infile{input}) {
+	push @matrix_files, $infile{input}; 
+	&RSAT::message::Debug("matrix file", $infile{input}) if ($main::verbose >= 5); 
+    }
+
+   ## Matrix list has been provided
+  
+    if ($infile{matrix_list}) {
+	my ($mlist, $input_dir) = &OpenInputFile($infile{matrix_list});
+	while (<$mlist>) {
+	    next if (/'^;'/);		# skip comment lines
+	    next if (/'^#'/);		# skip header lines
+	    next if (/'^--'/);	# skip mysql-type comment lines
+	    next unless (/\S/);	# skip empty lines
+	    my @fields = split /\s+/;
+	    my $matrix_file = $fields[0];
+	    push @matrix_files, $matrix_file;
+	}
+	close $mlist;
+	&RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
+    }
+    
+## Check that there is at least one input matrix
+## At least one matrix is file is mandatory
+    unless (scalar(@matrix_files >= 1)) {
+	&RSAT::error::FatalError("You must specify at least one matrix file.(option -i or -mlist)");
+    }
+   
+    ################################################################
+    ## Open output stream
+    my $out_aux=  $main::outfile{output};
+    my @out_dir=split(/\//,$out_aux);
+   
+    if (scalar (@out_dir) >1){
+	pop (@out_dir);
+	$mv_dir=join("/",@out_dir);
+	system ("mkdir -p $mv_dir ") unless (-s $mv_dir); 
+    }
+    else {
+	$mv_dir=".";
+    }
+    
+    $main::outfile{output}.="_".$symmetry  if ($symmetry eq "compare") ;
+    $main::outfile{output}.="_".$symmetry."_".$split  if ($symmetry eq "split");
+    
+    $main::out = &OpenOutputFile($main::outfile{output});
+ 
+    	
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+    
+    
+    ################################################################
+    ## Process all matrices 
+
+    foreach my $matrix_file ( @matrix_files) {
+
+	################################################################
+	## Read input matrix.
+
+	&RSAT::message::Debug("matrix format", $matrix_format) if ($main::verbose >= 5);  
+	my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
+	
+	################################################################
+	## Check that there is at least one input matrix
+	unless (scalar(@matrix_files >= 1)) {
+	    &RSAT::error::FatalError("You must specify at least one matrix file.");
+	}
+	
+	
+	## Check the number of parsed matrices
+	if (scalar(@matrices) > 1) {
+	    &RSAT::message::Warning("File",  $matrix_file, 
+				    "contains ".scalar(@matrices)." matrices. ",
+				    "Only the first one will be evaluated.");
+	}
+	
+	local $matrix =shift @matrices;
+	$matrix->set_attribute("pseudo", $pseudo_counts);
+	$matrix->set_attribute("equi_pseudo", $equi_pseudo);
+	$matrix->set_attribute("decimals", $decimals);
+	$matrix->set_attribute("file", $matrix_file);
+	$matrix->force_attribute("sep", $sep);
+	# $matrix->force_attribute("col_width", $col_width);
+	$matrix->force_attribute("margins", $return_fields{margins});
+	$matrix->setInfoLogBase($info_log_base);
+	$matrix->set_parameter("bg_markov_order", 0);
+	local ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+	$matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
+	$matrix->set_attribute("name", $matrix_name);
+	local ($Wmin, $Wmax)  = $matrix->weight_range();
+	
+	
+	&RSAT::message::Info("Matrix weight range", $Wmin, $Wmax) if ($main::verbose >= 2); 
+
+	
+	################################################################
+	## Detect Symmetry methods
+	
+	##  Comparisons
+	
+	&CompareMethod($matrix)  if ($symmetry eq "compare");
+	
+	## Split Matrix, detected sites similarities
+	
+	&SplitMethod($matrix)  if ($symmetry eq "split");
+	
+    }
+  
+    
+    ################################################################
+    ## Finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $main::out "; Job started $start_time\n";
+	print $main::out "; Job done    $done_time\n";
+    }
+	
+    ################################################################
+    ## Close output stream
+    close $main::out if ($main::outfile{output});
+    
+    
+    exit(0);
+    
+}
+
+
+
+
+
+
+
+
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 10;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Matrix file
+=pod
+
+=item B<-i matrix_file>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+	   
+	    ## Matrix list
+=pod
+
+=item B<-mlist matrix_list>
+Indicate a file containing a list of matrices.
+Format: the matrix list file is a text file. The first word of each
+row is suppose to indicate a file name. Any further information on the
+same row is ignored.
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-mlist") {
+	    $main::infile{matrix_list} = shift(@arguments);
+           
+ ## Matrix format
+=pod
+
+=item B<-matrix_format matrix_format>
+
+Format of the matrix file.
+See convert-matrix for more delais
+
+=cut
+	} elsif ($arg eq "-matrix_format") {
+	    $matrix_format = shift(@arguments);
+             &RSAT::error::FatalError($matrix_format,
+				     "Invalid maytix format",
+				     "Supported: ", $main::supported_input_formats)
+	      unless ($main::supported_input_format{$matrix_format}); 
+ 
+
+## Report symmetry  
+
+=pod
+
+=item B<-symmetry symmetry >
+
+Method used to detect inner symmetry in a PSSM.
+Available methods: 
+
+-Compare: This mathod consists in compare the matrix to itself and with its reverse complement.
+
+-Split: The matrix is divided in tow if possible, this tow halfs are used to scan a random sequence,
+hits overlaps are dettected. Overlped hits in the same side of the sequence indicate a DR,
+otherwise an IR.
+
+=cut
+	} elsif ($arg eq "-symmetry") {
+	  $main::symmetry = shift (@arguments);
+          &RSAT::error::FatalError($main::symmetry,
+				     "Invalid symmetry detection method.",
+				     "Supported: ", $main::supported_symmetry_methods)
+	      unless ($main::supported_symmetry_method{$main::symmetry}); 
+
+  ## Split matrix option
+=pod
+
+=item B<-split split>
+
+Split Options.
+If the selected method to detect symetry is "split", select the method to split the matrix.
+$main::supported_split_options
+
+=cut
+	} elsif ($arg eq "-split") {
+	   $main::split = shift(@arguments);  
+             ## Check background input format
+	    &RSAT::error::FatalError($main::split,
+				     "Invalid option.",
+				     "-split is not compatible with symmetry detection method ",
+                                     $main::symmetry)
+	      if ( $main::symmetry eq "compare"); 
+             
+            &RSAT::error::FatalError($main::split,
+				     "Invalid split option.",
+				     "Supported: ", $main::supported_split_options)
+	      unless ($main::supported_split_option{$main::split}); 
+
+## Pseudo weight
+=pod
+
+=item B<-pseudo pseudo_counts>
+
+Pseudo-weight. Used for matrix-scan command.
+=cut
+	} elsif ($arg eq "-pseudo") {
+	    $main::pseudo_counts = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::pseudo_counts, 
+					  "Invalid value for a pseudo-weight. Must be a positive real number."))
+		unless ((&RSAT::util::IsReal($main::pseudo_counts) )
+			&& ($main::pseudo_counts >= 0)); 
+
+
+     ## Specific scanning options for the splited matrix method
+=pod
+
+=item B<-scanopt  "option1 option2 ...">
+
+Specific options for matrix-scan.  These options are added at the
+end of the matrix-scan command for scanning the random sequence.
+
+Standar options: -2str -bginfile -lth score 2  -return sites,pval
+
+are mandatory.
+
+=cut
+       } elsif ($arg eq "-scanopt") { 
+	  $main::scanopt = " ".shift(@arguments);
+
+
+## Number of decimals for computing scores
+=pod
+
+=item B<-decimals #>
+
+Number of decimals for computing weight scores (default 2).
+This arguments is passed to matrix-scan.
+
+=cut
+
+	} elsif ($arg eq "-decimals") {
+
+	  $main::decimals = shift(@arguments);
+	  &RSAT::error::FatalError("The number of decimals must be a natural number") unless &IsNatural($main::decimals); 
+ 
+
+
+   
+ ## Type of sequences to use to calculate the Background model for the random-sequence program
+=pod
+
+=item B<-bg>
+
+Type of sequences to calculate the Background model for the randome sequences used with splited matrices.
+
+=cut
+	} elsif ($arg eq "-bg") {
+	  	  $main::bg_type = shift(@arguments);
+
+
+## Length of the randome sequences
+=pod
+
+=item B<-l>
+
+Length of the random sequence.
+Default is set in 10000.
+The time will increase according to the size of the random sequence.
+
+=cut
+	} elsif ($arg eq "-l") {
+	  	  $main::l = shift(@arguments);
+                  &RSAT::error::FatalError("The length of random sequence must be a natural number") unless &IsNatural($main::l); 
+                  
+	  
+## Organism for random sequence 
+=pod
+
+=item B<-org #>
+
+Selected Organism, this option is passed to the progam random-sequence. 
+
+=cut
+
+	} elsif ($arg eq "-org") {
+
+	  $main::org = shift(@arguments);
+         
+	 
+  ## Return option
+=pod
+
+=item B<-return return>
+
+Return Options separted by comas:
+splited_matrices
+comparisons
+=cut
+
+
+	} elsif ($arg eq "-return") {
+	    my $return_fields = shift(@arguments); 
+	    push @return_fields, split(",", $return_fields);
+
+
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used. 
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; matrix-symmetry";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+################################################################
+## Detect symmetry based in PSSM comparisons
+################################################################
+## Script to detect symmetry of matrices using matrix comparinson with 
+## compare-matrices
+## Detection is made comparing:
+## 1) Matrix vs itself in offset to detect Direct repeat structure
+## 2) Matrix vs Inverted Reverse Complement of it self in offset to detect Directi repeat structure.
+##
+## The similarity between matrices is qualyfied using Ncor
+
+sub CompareMethod {
+    my ($matrix) = @_;
+    my $matrix_file= $matrix -> get_attribute("file") ;
+    my $matrix_name = $matrix -> get_attribute("name");
+
+    #die "Matrix info   $matrix_format   $matrix_name   $matrix_file \n";
+    ################################################################
+    ## Call subrutines for comparisons and invert matrix
+
+   ################
+    ## Sends: ID, path to matrix, type of the matrix. 
+    ##  Receives: Boolean variable classifying Direct Repeats and the score used for this decision   
+    my ($DirectRepeat, $DR_dist, $length_DR, $DR_rep1, $DR_rep2) = &SelfCompare($matrix_name,$matrix_file,$matrix_format);
+    
+    print join(" ", $DirectRepeat, $DR_dist, $length_DR, $DR_rep1, $DR_rep2)."\n";
+    
+    ################
+    ## Sends: ID(factor), path to matrix, type of the matrix, path to Inverted matrix to be used 
+    ##  Receives: Boolean variable classifying Direct Repeats and the score used for this decision 
+    my ($InvertRepeat, $IR_dist, $length_IR, $IR_rep1, $IR_rep2 ) = &InvCompare($matrix_name,$matrix_file,$matrix_format);
+    
+    my $rep_pos1= (split(/-/,$IR_rep1))[0];
+    my $rep_pos2= (split(/-/,$IR_rep2))[-1];
+
+   # die print "$rep_pos1   $rep_pos2";
+   ################
+    ## Sometimes one matrix can be classfied in bouth classes, the decision is made based on the lower score obtained 
+    ## In the outfile this decision y marked by * 
+    ## If a matrix is not classified is marked as "Non internal structure'
+    if($DirectRepeat &&  $InvertRepeat){
+	print $matrix_name." Deciding by Diference in distance \n Direct ".$DR_dist."\n Invert ".$IR_dist."\n";
+	#print CLASS $factor." Uneable to decide \n\n";
+	if ($DR_dist > $IR_dist){
+	    print $matrix_name." Found Internal motif structure:  Direct repeat \n";
+	    print $out $matrix_name."\tDirect repeat*\t".$DR_dist."\t".$length."\nPossition of repeats ".$DR_rep1." ".$DR_rep2."\n";   
+	}
+	else {
+	    print $matrix_name." Found Internal motif structure: Invert repeat\n\n";
+	    print $out $matrix_name."\tInvert repeat*\t".$IR_dist."\t".$length."\nPossition of repeats between ".$rep_pos1." ".$rep_pos2."\n"; 
+	}
+    }elsif ($DirectRepeat){
+	print $matrix_name." Found Internal motif structure:  Direct repeat \n\n";
+	print $out $matrix_name."\tDirect repeat\t".$DR_dist."\t".$length."\nPossition of repeats ".$DR_rep1." ".$DR_rep2."\n"; 
+    }elsif ($InvertRepeat){
+	print $matrix_name." Found Internal motif structure: Invert repeat\n\n";
+	print $out $matrix_name."\tInvert repeat\t".$IR_dist."\t".$length."\n";
+    }else{
+	print $matrix_name." Non Internal motif structure found \n\n";
+	print $out $matrix_name."\tNot detected\t"."NA"."\t".$length."\nPossition of repeats between  ".$rep_pos1." ".$rep_pos2."\n"; 
+    }
+    
+
+}
+
+sub SelfCompare {
+    ###########
+    ### Recives TF name path to the matrix, and format of it.
+    my ($matrix_name, $matrix_file, $matrix_format) = @_;
+    
+    ################
+    ### Compare matrices parameters
+    
+    my $V=$main::verbose;
+        
+    ## Generate the compare-matrix command with all parameters, executes the command and stores the output in a variable
+    ## command valid for version of september 2008
+    my $comp_command = "compare-matrices ";
+    $comp_command .= " -v $V -file1 $matrix_file -file2 $matrix_file  -format $matrix_format -D";
+    my $self_comp=`$comp_command`;
+    
+    ## Difine Variables
+    my $distance_method="Ncor";
+    my %Distances=();
+    print $self_comp;
+    #die "Test 2";
+    my $end_offset=0;
+    my $avoid_start=0;
+    my $length=0;
+   
+    ############
+    ## return result of compare-matrix
+    if ($return_fields{"comparisons"}){	
+	my $out_dir_comp= $main::out_dir."/comparisons";
+	my $out_comp = $out_dir_comp."/".$matrix_name."_direct.txt";
+	system ("mkdir -p $out_dir_comp ") unless (-s $out_dir_comp );
+	my $comps_h = &OpenOutputFile($out_comp);
+	print $comps_h $self_comp;
+	&RSAT::message::Info(" Self comparisson stored at  ", $out_comp ) if ($verbose >= 1);
+    }
+    
+	
+    ## Read compare-matrix output 
+    foreach my $line (split /\n/,$self_comp) {
+	next if ($line =~/^\;/);  ## ignore comments
+	next if ($line =~/^\#/);
+	#print $line."\n"; <STDIN>;
+
+	##  Evaluation line
+	my ($compa,$mi, $m2 ,$offset,$direct, 
+	    $ali_len,$rel_alin, $start1, $end1, 
+	    $start2, $end2,$dEucl,$dKL, $cov, $cor,
+	    $Ncor,$consensus1, $consensus2, $rank)  =   split(/\t+/,$line);
+	
+	###
+	## Recover specifi method evaluation
+	my $method_value="";
+	if ($distance_method eq "Ncor"){
+	    $method_value=$Ncor;
+	    #die "Ncor $Ncor";
+	}
+	elsif ($distance_method eq "dKL"){
+	    $method_value=$dKL;
+	}
+
+	## This control is use to avoid recovering again the matrix comparison 
+	## and to ignore zeros due to the comparison of very few nucleotides. 
+	## Since is the same matrix, the comparison is symmetric
+	if ($method_value==0 && $avoid_start==6){
+	    $end_offset=1;  
+	}
+	next if ($end_offset);
+	unless ($length){
+	    $length=$end2;
+	}
+	if ($avoid_start<6 && $method_value==0  ){
+	    #$length= $end2;
+	    $avoid_start++;
+	    next;
+	}
+	## Values for distances are stores in an array
+	print join(" ", "distnance",$method_value,"length of DR",$rank,"positions of the repeat",$start1,"-",$end1,"and",$start2,"-",$end2,"\n");
+	#die $rank;
+	$Distances{$rank}=[$method_value,$length, $start1."-".$end1, $start2."-".$end2];
+    }
+
+    ## Evaluates  the distances to make a classification
+    my @ordered=sort{
+	my ($method_value_b, $length_b, @o_b) = @{$Distances{$b}};
+	my ($method_value_a, $length_a, @o_a) = @{$Distances{$a}};
+	return	$method_value_b <=> $method_value_a ||
+	    $length_b <=> $length_a;
+    } keys(%Distances);
+
+
+    if ($distance_method eq "Ncor"){
+	my ($method_value,$length,$rep1, $rep2) =@{$Distances{$ordered[1]}};
+	warn "minimal disntance ".$method_value;
+	#die;
+	warn "length ". $length;
+	if ($method_value>=0.1){ ## This value has been taken based in the analysis of factors recognized in RegulonDB as Direct Repeats
+	    return (1,$method_value, $length, $rep1, $rep2);
+	}
+	return (0,$method_value,$length,$rep1, $rep2);
+    }
+    elsif ($distance_method eq "dKL"){
+	my ($method_value,$length,$rep1, $rep2) =@{$Distances{$ordered[-1]}};	
+	
+	#warn "minimal disntance ".$method_value;
+	#die;
+# warn "length ". $length;
+	if ($method_value<=0.1){ ## This value has been taken based in the analysis of factors recognized in RegulonDB as Direct Repeats
+	   
+	    return (1,$method_value, $length, $rep1, $rep2);
+	}
+	return (0,$method_value,$length,$rep1, $rep2);
+    }
+   
+
+}
+
+
+sub InvCompare{ 
+    ###########
+    ### Recives TF name path to the matrix, format of it, and inverted matrix .
+    my ($matrix_name,$matrix_file,$matrix_format)=@_;
+
+    ################
+    ## Set Variables
+   # my $type2="consensus";
+    my $V=1;
+    
+    ## Generate the compare-matrix command with all parameters and stores it in a variable 
+    my $comp_command = "compare-matrices ";
+    $comp_command .= " -v $V -file1 $matrix_file -file2 $matrix_file  -format1 $matrix_format -format2 $matrix_format -R";
+    my $self_comp=`$comp_command`;
+   
+    ############
+    ## return result of compare-matrix
+    if ($return_fields{"comparisons"}){	
+	my $out_dir_comp= $main::out_dir."/comparisons";
+	my $out_comp = $out_dir_comp."/".$matrix_name."_invert.txt";
+	system ("mkdir -p $out_dir_comp ") unless (-s $out_dir_comp );
+	my $comps_h = &OpenOutputFile($out_comp);
+	print $comps_h $self_comp;
+	&RSAT::message::Info(" Self comparisson stored at  ", $out_comp ) if ($verbose >= 1);
+    }
+    
+     ## Difine Variables
+    my $distance_method="Ncor";
+    my %Distances=();
+    print $self_comp;
+    #die "Test 2";
+    my $end_offset=0;
+    my $avoid_start=0;
+    my $length=0;
+
+    ## Read compare-matrix output 
+    foreach my $line (split /\n/,$self_comp) {
+	next if ($line =~/^\;/);  ## ignore comments
+	next if ($line =~/^\#/);
+	#print $line."\n"; <STDIN>;
+
+	##  Evaluation line
+	my ($compa,$mi, $m2 ,$offset,$direct, 
+	    $ali_len,$rel_alin, $start1, $end1, 
+	    $start2, $end2,$dEucl,$dKL, $cov, $cor,
+	    $Ncor,$consensus1, $consensus2, $rank)  =   split(/\t+/,$line);
+	
+	###
+	## Recover specifi method evaluation
+	my $method_value="";
+	if ($distance_method eq "Ncor"){
+	    $method_value=$Ncor;
+	    #die "Ncor $Ncor";
+	}
+	elsif ($distance_method eq "dKL"){
+	    $method_value=$dKL;
+	}
+
+	## This control is use to avoid recovering again the matrix comparison 
+	## and to ignore zeros due to the comparison of very few nucleotides. 
+	## Since is the same matrix, the comparison is symmetric
+	if ($method_value==0 && $avoid_start==6){
+	    $end_offset=1;  
+	}
+	next if ($end_offset);
+	unless ($length){
+	    $length=$end2;
+	}
+	if ($avoid_start<6 && $method_value==0  ){
+	    #$length= $end2;
+	    $avoid_start++;
+	    next;
+	}
+	## Values for distances are stores in an array
+	print join(" ", "distnance",$method_value,"length of IR",$rank,"positions of the repeat",$start1,"-",$end1,"and",$start2,"-",$end2,"\n");
+	#die $rank;
+	$Distances{$rank}=[$method_value,$length, $start1."-".$end1, $start2."-".$end2];
+    }
+
+    ## Evaluates  the distances to make a classification
+    my @ordered=sort{
+	my ($method_value_a, $length_a, @o_a) = @{$Distances{$a}};
+	my ($method_value_b, $length_b, @o_b) = @{$Distances{$b}};
+	return	$method_value_b <=> $method_value_a ||
+	    $length_a <=> $length_b;
+    } keys(%Distances);
+
+
+    if ($distance_method eq "Ncor"){
+	my ($method_value,$length,$rep1, $rep2) =@{$Distances{$ordered[0]}};
+	warn "minimal disntance ".$method_value;
+	#die;
+	warn "length ". $length;
+	if ($method_value>=0.1){ ## This value has been taken based in the analysis of factors recognized in RegulonDB as Direct Repeats
+	    return (1,$method_value, $length, $rep1, $rep2);
+	}
+	return (0,$method_value,$length,$rep1, $rep2);
+    }
+    elsif ($distance_method eq "dKL"){
+	my ($method_value,$length,$rep1, $rep2) =@{$Distances{$ordered[-1]}};	
+	
+	#warn "minimal disntance ".$method_value;
+	#die;
+# warn "length ". $length;
+	if ($method_value<=0.1){ ## This value has been taken based in the analysis of factors recognized in RegulonDB as Direct Repeats
+	    return (1,$method_value, $length, $rep1, $rep2);
+	}
+	return (0,$method_value,$length,$rep1, $rep2);
+    }
+   
+
+}
+
+
+
+################################################################
+## Detect symmetry based on splited PSSMs
+################################################################
+## Script to detect symmetry of matrices 
+## 1) Matrix is splitted 
+## 2) Two parts are used to scan a random sequence
+## 3) Hits are comapred to
+## The similarity between matrices is qualyfied using Kullback-Leibler distance (dKL)
+## this distance measure gives a wider range of velues, making it easy to separate the desierd values
+## decide if the matrix has an internal strcuture
+
+
+sub SplitMethod {
+    my ($matrix) = @_;
+    my $matrix_file= $matrix -> get_attribute("file") ;
+    my $matrix_name = $matrix -> get_attribute("name");
+    my $V=$main::verbose-1;
+    ## Generate the split-matrix command with all parameters and stores it in a variable
+    my $temp_dir="./temp_split";
+    my $split_command = "split-matrix ";
+    $split_command .= " -v $V -i $matrix_file -matrix_format $matrix_format -split $split -return counts -o $temp_dir ";
+    my $splited=`($split_command)`;
+   
+    ## Read split-matrix output 
+    my (@Fragments, @Original_pos)=();
+    #my $i=0;
+    foreach my $line (split /\n/,$splited) {
+
+	next unless (($line =~ /OutFile/) || ($line =~ /Possition/));
+	chomp $line;
+#	print $line;<STDIN>;
+	push ( @Fragments,      (split(/ /,$line ))[-1]    ) if ($line =~ /OutFile/) ;
+	push ( @Original_pos,   (split(/ /,$line ))[-1]    ) if ($line =~ /Possition/) ;
+	
+    }
+    
+    ################################################################
+    ## Generate random sequence 
+    my $ol = 2;
+    my $seq_format = " fasta ";
+    my $random_seq_file= $temp_dir."/random_".$l.".txt";
+    my $random_command= "random-seq -v $V " ;
+    $random_command .= " -l $l -n 1  " ;
+    $random_command .= " -bg $bg_type -org $org -ol $ol ";
+    $random_command .= " -format $seq_format ";
+    $random_command .= " -o $random_seq_file ";
+    
+    &RSAT::message::Info("Retrieve random sequence if length ",$l,"\n", $random_command) if ($verbose >= 2);
+    
+    system("$random_command");
+    
+    ################################################################
+    ## matrix-scan command
+    
+    my ($half_matrix1, $half_matrix2)=@Fragments;
+    
+    my $out=$temp_dir."/matrix_scan_for_two_matrices.txt ";
+    my $pseudo = $main::pseudo_weight;
+    my $str= "-2str";
+    my $mv = 1;
+    my $lth= "score 2";
+    my $return_ms="sites,pval";
+    my $ms_command = "matrix-scan  -v $V ";    
+    $ms_command .= " -m $half_matrix1 -m $half_matrix2 ";
+    $ms_command .= "  -pseudo $pseudo -decimals $main::decimals ";
+    $ms_command .= " $str  -bginput -markov  $mv ";
+    $ms_command .= " -return  $return_ms -lth $lth ";
+    $ms_command .= " -i $random_seq_file -seq_format fasta ";
+    $ms_command .= " $scanopt  " if ($scanopt);
+
+    &RSAT::message::Info("Run matrix-scan with both matrices on the random sequence ", $ms_command) if ($verbose >= 2);
+    
+    $ms_result = `$ms_command`;
+    
+    ## Parammeters to analyse matrix-scan results 
+    my $prev_pos_2=0;
+    my $prev_m_name="";
+    my $min_weight=2;
+    my $overlap=3;
+    my $prev_strand="";
+    my $Invert_count=0;
+    my $Direct_count=0;
+    
+    foreach my $line (split /\n/, $ms_result) {
+	#print $line."\n";	
+	next if($line=~ /^\W/);
+	next if($line=~ /^;/);
+	my ( $m_name, $strand, $pos_1, $pos_2, $weight)=(split/\t/,$line)[2,3,4,5,7];
+	#print join ("\t",$m_name, $strand, $pos_1, $pos_2, $weight,"\n" ) if ($main::verbose >= 4); #<STDIN>;
+	next if( $weight < $min_weight);
+
+	if( ($prev_pos_2 - $pos_1) >= $overlap){
+	    if($m_name ne $prev_m_name){
+		if($strand ne $prev_strand){
+		    $Invert_count ++ ;
+		     &RSAT::message::Info("Found one expected overlap for an IR \n"," Number of IRs: ", $Invert_count) if ($verbose >= 2);
+		}else{
+		    $Direct_count ++ ;
+		    &RSAT::message::Info("Found one expected overlap for a DR \n"," Number of DRs: ", $Direct_count) if ($verbose >= 2);
+	
+		}
+	    }
+	} 
+	
+
+	$prev_m_name=$m_name;
+	$prev_strand=$strand;
+	$prev_pos_2=$pos_2;
+
+    }
+
+    my $sym ="";
+    my $ratio="NA";
+ 
+    $sym = "Invert repeat" unless ($Direct_count);
+    $sym = "Direct repeat" unless ($Invert_count);
+
+    my $aux1_length= ((split(/-/,$Original_pos[0]))[1]) -  ((split(/-/,$Original_pos[0]))[0] );
+    my $aux2_length=((split(/-/,$Original_pos[1]))[1]) -  ((split(/-/,$Original_pos[1]))[0] );
+
+    my $length=min ($aux1_length, $aux2_length);
+    
+    unless ($sym){
+	$ratio=$Invert_count/$Direct_count; #my $mv_dir= $main::$mv_dir;
+	
+	$ratio>1 ? ($ratio>1.2? ($sym="Invert repeat"):($sym="Invert repeat*")) : ($ratio<0.8? ($sym="Direct repeat" ) :( $sym="Direct repeat*"));
+    }
+
+    if ($sym =~ /Direct repeat/ ){
+	    print $matrix_name." Found Internal motif structure:  Direct repeat \n";
+	    print $main::out join ("\t",$matrix_name,$sym,$ratio, $length,"\nPossition of repeats ",@Original_pos,"\n");   
+	}
+    elsif ($sym =~ /Invert repeat/) {
+	print $matrix_name." Found Internal motif structure: Invert repeat \n";
+	print $main::out join ("\t",$matrix_name,$sym,$ratio,$length,"\nPossition of repeats between ",@Original_pos,"\n"); 
+    }
+
+    if ($return_fields{"splited_matrices"}){
+	system ("cp -rf  $temp_dir/$matrix_name $main::mv_dir ");
+	
+	&RSAT::message::Info(" Splited matrix are stored at ", $main::mv_dir."/".$matrix_name) if ($verbose >= 1);
+    }
+    system ("rm -fr $temp_dir") ;
+  
+}
+
+
+
+
+
+
+__END__
