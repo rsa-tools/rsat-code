@@ -188,7 +188,7 @@
     echo "</pre>";
     # classfreq 
     $cf_inputfile =  storeFile($ct_server);
-    $cf_echoed = $client->contingency_table($cf_parameters);
+//     $cf_echoed = $client->contingency_table($cf_parameters);
     $cf_parameters = array(
       "request" => array(
         "inputFile" => $cf_inputfile,
