@@ -164,7 +164,7 @@
     echo "</pre>";
     # classfreq 
     $cf_inputfile =  storeFile($ct_server);
-    $cf_echoed = $client->contingency_table($cf_parameters);
+//     $cf_echoed = $client->contingency_table($cf_parameters);
     $cf_parameters = array(
       "request" => array(
         "inputFile" => $cf_inputfile,
@@ -206,6 +206,7 @@
     $xy_temp_file = end($xy_temp_file);
     $xy_resultURL = $WWW_RSA."/tmp/".$xy_temp_file;
     
+
     hourglass("off");
     echo ("<a href = '$xy_resultURL'><img align = 'center' src='$xy_resultURL' width ='50%'></a><br>");
     echo "<br><hr>\n";
