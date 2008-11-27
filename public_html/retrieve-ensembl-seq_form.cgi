@@ -187,7 +187,7 @@ print $query->textarea(-name=>'gene_selection',
 		       -rows=>6,
 		       -columns=>65);
 ### option to upload a file with the gene list from the client machine 
-print "<BR>Upload gene list (EnsEMBL IDs) from file<BR>\n";
+print "<BR>Upload gene list from file<BR>\n";
 print $query->filefield(-name=>'uploaded_file',
 			-default=>'',
 			-size=>45,
