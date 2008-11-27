@@ -2268,6 +2268,7 @@ sub contingency_table {
    chomp $tmp_input;
    $command .= " -i '".$tmp_input."'";
   }
+  open FILE, ">/home/rsat/rsa-tools/public_html/tmp/brol.truc3";
   &run_WS_command($command, $output_choice, "contingency-table", ".tab");
 }
 
@@ -3126,7 +3127,7 @@ sub convert_graph {
 	return SOAP::Data->name('response' => {'command' => $command,
 					       'client' => $result});
     } elsif ($output_choice eq 'both') {
-          open TRUC, ">/home/rsat/rsa-tools/public_html/tmp/truc.brol";
+#           open TRUC, ">/home/rsat/rsa-tools/public_html/tmp/truc.brol";
     print TRUC "$result";
     close TRUC;  
 	return SOAP::Data->name('response' => {'server' => $tmp_outfile,
