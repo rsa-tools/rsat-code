@@ -1423,9 +1423,11 @@ sub get_orthologs {
   my $stderr;
 
   foreach my $errline(@errlines) {
+      ## Some errors and RSAT warnings are not considered as fatal errors
       unless (($errline =~ 'Use of uninitialized value') || ($errline =~'WARNING')) {
 	  $stderr .= $errline;
       }
+      ## RSAT warnings are added at the end of results
       if ($errline =~'WARNING') {
 	  $result .= $errline;
       }
@@ -1566,14 +1568,16 @@ sub footprint_discovery {
     my $stderr;
 
     foreach my $errline(@errlines) {
+	## Some errors and RSAT warnings are not considered as fatal errors
 	unless (($errline =~ 'Use of uninitialized value') || ($errline =~'WARNING')) {
 	    $stderr .= $errline;
 	}
+	## RSAT warnings are added at the end of results
 	if ($errline =~'WARNING') {
 	    $result .= $errline;
 	}
     }
-
+    
     close HIS_OUT;
     close HIS_ERR;
 
@@ -4695,9 +4699,11 @@ sub run_WS_command {
   my $stderr;
 
   foreach my $errline(@errlines) {
+      ## Some errors and RSAT warnings are not considered as fatal errors
       unless (($errline =~ 'Use of uninitialized value') || ($errline =~'WARNING')) {
 	  $stderr .= $errline;
       }
+      ## RSAT warnings are added at the end of results
       if ($errline =~'WARNING') {
 	  $result .= $errline;
       }
