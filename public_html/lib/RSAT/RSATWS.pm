@@ -1423,8 +1423,11 @@ sub get_orthologs {
   my $stderr;
 
   foreach my $errline(@errlines) {
-      unless ($errline =~ 'Use of uninitialized value') {
+      unless (($errline =~ 'Use of uninitialized value') || ($errline =~'WARNING')) {
 	  $stderr .= $errline;
+      }
+      if ($errline =~'WARNING') {
+	  $result .= $errline;
       }
   }
 
@@ -1563,8 +1566,11 @@ sub footprint_discovery {
     my $stderr;
 
     foreach my $errline(@errlines) {
-	unless ($errline =~ 'Use of uninitialized value') {
+	unless (($errline =~ 'Use of uninitialized value') || ($errline =~'WARNING')) {
 	    $stderr .= $errline;
+	}
+	if ($errline =~'WARNING') {
+	    $result .= $errline;
 	}
     }
 
@@ -4689,8 +4695,11 @@ sub run_WS_command {
   my $stderr;
 
   foreach my $errline(@errlines) {
-      unless ($errline =~ 'Use of uninitialized value') {
+      unless (($errline =~ 'Use of uninitialized value') || ($errline =~'WARNING')) {
 	  $stderr .= $errline;
+      }
+      if ($errline =~'WARNING') {
+	  $result .= $errline;
       }
   }
 
