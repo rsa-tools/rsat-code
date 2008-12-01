@@ -4777,7 +4777,7 @@ sub UpdateLogFileWS {
     #flock(LOG,8);
     close LOG;
   } else {
-    die "NOLOG\n";
+    die "Cannot write the webservice LOG file to $log_file, check permission\n";
   }
 }
 
