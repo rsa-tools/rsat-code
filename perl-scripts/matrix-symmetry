@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-symmetry,v 1.1 2008/11/27 01:08:29 amedina Exp $
+# $Id: matrix-symmetry,v 1.2 2008/12/01 22:21:01 amedina Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     #$program_version = "0.1";
     
     ################################################################
@@ -265,16 +265,18 @@ package main;
     $main::outfile{output}.="_".$symmetry."_".$split  if ($symmetry eq "split");
     
     $main::out = &OpenOutputFile($main::outfile{output});
- 
+   
     	
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
-    
+     
+    my $out_header= ";".join("\t","matrix_name","symmetry","symmetry_measure","length","repeat1","repeat2")."\n";
+    print $main::out "$out_header";
     
     ################################################################
     ## Process all matrices 
-
+    
     foreach my $matrix_file ( @matrix_files) {
 
 	################################################################
@@ -313,7 +315,10 @@ package main;
 	local ($Wmin, $Wmax)  = $matrix->weight_range();
 	
 	
-	&RSAT::message::Info("Matrix weight range", $Wmin, $Wmax) if ($main::verbose >= 2); 
+	&RSAT::message::Info("Matrix weight range", $Wmin, $Wmax) if ($main::verbose >= 2);
+	
+	#$local $matrix_name=$matrix->get_attribute("name",)
+	&RSAT::message::Info("Processing",$matrix_name) if ($main::verbose >= 0);
 
 	
 	################################################################
@@ -327,6 +332,8 @@ package main;
 	
 	&SplitMethod($matrix)  if ($symmetry eq "split");
 	
+	  
+	print STDOUT "\n";
     }
   
     
@@ -341,8 +348,7 @@ package main;
     ################################################################
     ## Close output stream
     close $main::out if ($main::outfile{output});
-    
-    
+  
     exit(0);
     
 }
@@ -396,7 +402,7 @@ Level of verbosity (detail in the warning messages during execution)
 	    if (&IsNatural($arguments[0])) {
 		$main::verbose = shift(@arguments);
 	    } else {
-		$main::verbose = 10;
+		$main::verbose = 1;
 	    }
 
 	    ## Help message
@@ -714,21 +720,21 @@ sub CompareMethod {
 	#print CLASS $factor." Uneable to decide \n\n";
 	if ($DR_dist > $IR_dist){
 	    print $matrix_name." Found Internal motif structure:  Direct repeat \n";
-	    print $out $matrix_name."\tDirect repeat*\t".$DR_dist."\t".$length."\nPossition of repeats ".$DR_rep1." ".$DR_rep2."\n";   
+	    print $out join ("/t",$matrix_name,"Direct repeat*",$DR_dist,$length,$DR_rep1,$DR_rep2)."\n";   
 	}
 	else {
 	    print $matrix_name." Found Internal motif structure: Invert repeat\n\n";
-	    print $out $matrix_name."\tInvert repeat*\t".$IR_dist."\t".$length."\nPossition of repeats between ".$rep_pos1." ".$rep_pos2."\n"; 
+	    print $out join("\t",$matrix_name,"Invert repeat*",$IR_dist,$length,$rep_pos1,$rep_pos2)."\n"; 
 	}
     }elsif ($DirectRepeat){
 	print $matrix_name." Found Internal motif structure:  Direct repeat \n\n";
-	print $out $matrix_name."\tDirect repeat\t".$DR_dist."\t".$length."\nPossition of repeats ".$DR_rep1." ".$DR_rep2."\n"; 
+	print $out join ("\t",$matrix_name,"Direct repeat",$DR_dist,$length,$DR_rep1,$DR_rep2)."\n"; 
     }elsif ($InvertRepeat){
 	print $matrix_name." Found Internal motif structure: Invert repeat\n\n";
-	print $out $matrix_name."\tInvert repeat\t".$IR_dist."\t".$length."\n";
+	print $out join ("\t",$matrix_name,"Invert repeat",$IR_dist,$length,$rep_pos1,$rep_pos2)."\n";
     }else{
-	print $matrix_name." Non Internal motif structure found \n\n";
-	print $out $matrix_name."\tNot detected\t"."NA"."\t".$length."\nPossition of repeats between  ".$rep_pos1." ".$rep_pos2."\n"; 
+	print $matrix_name." None Internal motif structure found \n\n";
+	print $out join ("\t",$matrix_name,"Not detected","NA","NA","NA","NA")."\n"; 
     }
     
 
@@ -982,7 +988,7 @@ sub SplitMethod {
     my ($matrix) = @_;
     my $matrix_file= $matrix -> get_attribute("file") ;
     my $matrix_name = $matrix -> get_attribute("name");
-    my $V=$main::verbose-1;
+    my $V=max(1,$main::verbose-1);
     ## Generate the split-matrix command with all parameters and stores it in a variable
     my $temp_dir="./temp_split";
     my $split_command = "split-matrix ";
@@ -1002,6 +1008,14 @@ sub SplitMethod {
 	
     }
     
+    unless (@Fragments){
+
+	print $matrix_name." None Internal motif structure found \n\n";
+	print $out join ("\t",$matrix_name,"Not detected","NA","NA","NA","NA")."\n"; 
+	return ();
+	
+    }
+
     ################################################################
     ## Generate random sequence 
     my $ol = 2;
@@ -1096,17 +1110,18 @@ sub SplitMethod {
 
     if ($sym =~ /Direct repeat/ ){
 	    print $matrix_name." Found Internal motif structure:  Direct repeat \n";
-	    print $main::out join ("\t",$matrix_name,$sym,$ratio, $length,"\nPossition of repeats ",@Original_pos,"\n");   
+	    print $main::out join ("\t",$matrix_name,$sym,$ratio, $length,@Original_pos)."\n";   
 	}
     elsif ($sym =~ /Invert repeat/) {
 	print $matrix_name." Found Internal motif structure: Invert repeat \n";
-	print $main::out join ("\t",$matrix_name,$sym,$ratio,$length,"\nPossition of repeats between ",@Original_pos,"\n"); 
+	print $main::out join ("\t",$matrix_name,$sym,$ratio,$length,@Original_pos)."\n"; 
     }
+    
 
     if ($return_fields{"splited_matrices"}){
 	system ("cp -rf  $temp_dir/$matrix_name $main::mv_dir ");
 	
-	&RSAT::message::Info(" Splited matrix are stored at ", $main::mv_dir."/".$matrix_name) if ($verbose >= 1);
+	&RSAT::message::Info(" Splited matrix is stored at ", $main::mv_dir."/".$matrix_name) if ($verbose >= 1);
     }
     system ("rm -fr $temp_dir") ;
   
