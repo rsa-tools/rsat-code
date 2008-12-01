@@ -2,9 +2,8 @@
 %\documentstyle[makeidx]{book}
 \makeindex
 \include{rsat_latex_commands}
-
+\usepackage{url}
 \begin{document}
-
 \title{Network Analysis Tools \\
 Web server installation}
 
@@ -29,17 +28,18 @@ Web server installation}
 \tableofcontents
 \newpage
 
-\section{Description}
+\section*{Description}
 
-This documents describes the installation procedure for the web server
+This document describes the installation procedure for the web server
 of the \textbf{Network Analysis Tools} (\neat).
 
 It assumes that you already installed the perl scripts and the
-genomes, as described in the \RSAT installation guide.
+genomes, as described in the \RSAT installation guide and that it is 
+working properly on the command line and as webserver. To this, please refer to the \RSAT webserver install guide.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Web server installation
-
+\chapter{Web server installation}
 \section{Installing a local web server}
 
 As the Regulatory Sequence Analysis Tools, \neat includes a web server, which
@@ -55,22 +55,52 @@ pages, and the PHP and CGI scripts.
 
 \subsection{Apache modules}
 
-The \neat interface mainly relies on PHP and CGI (only for the roc-stats tool).
-These modules should be installed on the web server, and activated in the Apache configuration files.
+The \neat interface mainly relies on PHP (and CGI only for the roc-stats tool). 
+These modules should be installed on the web server, and activated in the Apache configuration files. 
 The installation and configuration of CGI is described in manual of the web server of \RSAT.
+
+To perform the following steps, you might dipose of the administrator permissions.
 
 \subsubsection{PHP module for Mac OSX}
 
 If your server is running under Mac OSX, you need to install a recent
-version (at least v5) of the php module, which can be found at the following site.
-\url{href=http://www.entropy.ch/software/macosx/php/}
-%Karoline, if you find something to add as a MAC specialist, you're welcome!
+version (at least v5) of the php module, which can be found at the following site. 
+\url{http://www.entropy.ch/software/macosx/php/}
+
+%Karoline, if you find something to add as a Mac specialist, you're welcome!
 
 \subsubsection{PHP module for LINUX}
 
-Generally, PHP5 is included with the Linux distribution or can easyly be installed using the installer (YAST, YUM, etc). Take care that the PHP5 Module for Apache 2.0 (apache2-mod_php5) is installed.
+Generally, PHP5 is included with the Linux distribution or can easyly be installed using the installer (YAST, YUM, etc). Take care that the PHP5 Module for Apache 2.0 (apache2-mod\_php5) is installed. 
 
-PHP5 can also be installed manually from the PHP website (\textit{http://www.php.net/downloads.php}).
+PHP5 can also be installed manually from the PHP website (\url{http://www.php.net/downloads.php}).
+
+\subsubsection{Modification of php.ini}
+In order for the server to work with \neat, you have to edit the file \file{php.ini} which is the main configuration file of PHP. Depending on your PHP installation, this file might be in different directory. In computers running Suse 10.3, this file is in the \url{/etc/php5/apache2/} directory. In this file, you must modify the following fields accordingly.
+
+\begin{footnotesize} 
+\begin{verbatim}
+soap.wsdl_cache_enabled=0
+max_execution_time = 2400    
+max_input_time = 6000	;
+memory_limit = 600M      
+error_reporting  =  E_ALL & ~E_NOTICE
+post_max_size = 300M
+upload_max_filesize = 200M
+default_socket_timeout = 3000
+upload_tmp_dir = "/tmp/php/"
+\end{verbatim} 
+\end{footnotesize}
+
+You must change permissions so that the directory \url{/tmp/php/} for temporary upload is writable by eveverybody. To this please type 
+
+\begin{footnotesize} 
+\begin{verbatim}
+mkdir /tmp/php
+chmod 777 php
+\end{verbatim} 
+\end{footnotesize}
+
 
 \subsection{Tomcat}
 
@@ -252,5 +282,60 @@ Open the web.xml file and set the variable "dotpath" to the location
 of the dot binary, e.g. \file{/usr/bin/dot}
 
 Finally, reload the metabolic pathfinding web application using the Tomcat manager.
+
+
+When this is done, you have to restart the apache web server with the following command.
+
+\begin{footnotesize} 
+\begin{verbatim}
+/etc/init.d/apache2 restart
+\end{verbatim}
+\end{footnotesize}
+
+
+\subsection{Web services}
+
+\subsubsection{Edit the WSDL file}
+The web interface consists in web services that are called by the PHP web pages. Your computer must thus act as web service server. 
+
+Firt, edit the file \file{RSATWS.wsdl} located in the \url{\$RSAT/public_html/web_services/} directory. At the very end of the file, the line
+
+\begin{footnotesize} 
+\begin{verbatim}
+ <soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
+\end{verbatim}
+\end{footnotesize}
+
+must be replaced by 
+
+\begin{footnotesize} 
+\begin{verbatim}
+ <soap:address location="url_of_the_cgi_file_on_your_server"/>
+\end{verbatim}
+\end{footnotesize}
+
+The URL can be \url{http://127.0.0.1/rsa-tools/web_services/RSATWS.cgi}.
+
+\subsubsection{Edit the \neat config file}
+
+Edit the \file{RSAT\_config.props} present in the main RSAT directory and edit the following fields so that they correspond to your local configuration.
+
+\begin{footnotesize} 
+\begin{verbatim}
+neat_supported=1
+neat_ws=web link to the WSDL file on your computer (e.g. http://127.0.0.1/rsa-tools/web_services/RSATWS.wsdl)
+\end{verbatim}
+\end{footnotesize}
+
+\subsubsection{Change permissions of the temporary files and log files directories}
+
+The directories \url{\$RSAT/public_html/logs/} and \url{\$RSAT/public_html/tmp/} must be writable. So, change the permissions
+
+\begin{footnotesize} 
+\begin{verbatim}
+chmod 777 \$RSAT/public_html/logs/
+chmod 777 \$RSAT/public_html/tmp/
+\end{verbatim}
+\end{footnotesize}
 
 \end{document}
