@@ -630,6 +630,9 @@ sub to_TRANSFAC {
     unless ($id) {
 	$id = $self->get_attribute("id");
     }
+    unless ($id) {
+	$id = $accession;
+    }
     if ($id) {
       $to_print .= "ID  ".$id."\n";
       $to_print .= "XX\n";
