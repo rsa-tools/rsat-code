@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: split-matrix,v 1.1 2008/11/27 01:07:40 amedina Exp $
+# $Id: split-matrix,v 1.2 2008/12/01 22:20:04 amedina Exp $
 #
 ############################################################
 
@@ -88,7 +88,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     $decimals = 1;
@@ -652,7 +652,7 @@ sub Split_Matrix{
 
 	foreach $col_info (@info_sum) { ## Read each column information content
 	    $i++;
-	    #print "columnn info $col_info ";
+	    print "columnn info $col_info ";
 	    if($col_info>$information_per_column){ ## Detect columns with info greater than the media
 		$max++;                              ## of the matrix
 	    }
@@ -665,14 +665,24 @@ sub Split_Matrix{
 	    if( ($detect_min==-2 ) && ($cut1==0) ){ ## Detect if there is a section of 
 		$cut1=$i-1;  ## several positions with low info, here the first section of the matrix
 		$max=0;   ## is selected, and max is reseted to cero to look afeter a second section
-		#print "cut1 $cut1\n";
+		print "cut1 $cut1\n";
 	    }
-	    if( ($col_info>$information_per_column) 
-		&& ($info_sum[$i]>$information_per_column) ## this condition might work better 
-		&& ($cut1>0) ) {
-		$cut2=$i-2;  ##Select de second section
-		#print "cut2 $cut2\n";
-		last;
+	    if ($info_sum[$i]){
+		if( ($col_info>$information_per_column) 
+		    && ($info_sum[$i]>$information_per_column) ## this condition might work better 
+		    && ($cut1>0) ) {
+		    $cut2=$i-2;  ##Select de second section
+		    print "cut2 $cut2\n";
+		    last;
+		}
+	    }
+	    else {
+		if( ($col_info>$information_per_column) 		
+		    && ($cut1>0) ) {
+		    $cut2=$i-2;  ##Select de second section
+		    print "cut2 $cut2\n";
+		    last;
+		}
 	    }
 	}
 	
@@ -696,7 +706,8 @@ sub Split_Matrix{
 
 	    
 	}else{
-	    print "Matrix $matrix_name Can't be splited by significant change in information content\n";
+	    print $main::out "Matrix $matrix_name Can't be splited by significant change in information content\n";
+	    return ();
 	}
 	
     }	
