@@ -1,13 +1,11 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.41 2008/11/18 11:50:59 rsat Exp $
+# $Id: convert-graph,v 1.42 2008/12/02 12:31:16 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
-
-## CVS: implemented the option -seed_nodes
 
 ## use strict;
 
@@ -228,31 +226,6 @@ package main;
     ## Initialize the graph
     my $graph = new RSAT::Graph2();
     $graph->set_attribute("label", "graph");
-
-    ################################################################
-    ## Read the seed nodes
-    if ($infile{seed_nodes}) {
-      my @seed_nodes = ();
-      &RSAT::message::TimeWarn("Loading seed nodes from file", $main::infile{seed_nodes}) if ($main::verbose >= 2);
-      ($seed_handle) = &OpenInputFile($main::infile{seed_nodes});
-      my $l = 0;
-      while (<$seed_handle>) {
-	$l++;
-	next if (/^;/); ## Skip comment lines
-	next if (/^#/); ## Skip header lines
-	next unless (/\S/); ## Skip empty lines
-	chomp();
-	my ($id) = split /\s+/;
-	if ($id) {
-	  push @seed_nodes, $id;
-	} else {
-	  &RSAT::message::Warning("File", $infile{clusters}, "Line", $l, "starts with spaces. Skipped");
-	}
-      }
-      close $seed_handle;
-      &RSAT::message::TimeWarn("Seed nodes loaded", scalar(@seed_nodes)) if ($main::verbose >= 2);
-      $graph->set_seed_nodes(@seed_nodes);
-    }
 
     ################################################################
     ##### read input
@@ -702,27 +675,6 @@ With this option, each pathway of the pathway file will be considered separately
 
 	} elsif ($arg eq "-distinct_path") {
 	    $distinct_path = 1;
-
-=pod
-
-=item B<-seed_nodes seed_node_file>
-
-This option is currently implemented only for input format "tab".
-
-Select a subgraph induced by a set of seed nodes. When this option is
-used, the program only reads arcs whose ends (source and target) are
-both members of the seed node set.
-
-Seed nodes are specified in a text file. The first word of each row is
-considered as an identifier for a seed node.
-
-Note that the graph-get-clusters program also allows to induce 
-graphs from a set of seed nodes (for each input format).
-
-=cut
-
-	} elsif ($arg eq "-seed_nodes") {
-	    $main::infile{seed_nodes} = shift(@arguments);
 
 	    
 	} else {
