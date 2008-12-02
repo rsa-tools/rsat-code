@@ -2056,11 +2056,20 @@ sub load_from_array {
     my $nodecpt = 0;
     my $arccpt = 0;
     
-    # if $main::edge_colors is defined in convert-graph
+    # if $main::edge_colors (color gradient) or $main::edge_width is defined in convert-graph
     # then, extract the third column of the array of edges 
     # that contains the weight and 
-    # that it does not contain not real values
-    if ($main::edge_colors) {
+    # that it does not contain not real values.
+    # However check first that there is more than one weight.
+    # If there is less than 2 edges, $main::edge_colors and $main::edge_width are set to 0
+    if (scalar @arcs < 2 && ($main::edge_colors || $main::edge_width)) {
+      $main::edge_colors = 0;
+      $main::edge_width = 0;
+      &RSAT::message::Warning("The graph has less than 2 edges. -ewidth and -ecolors options will be ignored");
+    }
+    
+    
+    if ($main::edge_colors || $main::edge_width) {
       $edge_weight_colors = $main::edge_colors;
       my $real = $self->get_weights();
       if ($real) {
