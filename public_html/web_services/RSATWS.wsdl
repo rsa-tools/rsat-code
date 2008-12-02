@@ -2900,6 +2900,11 @@ The input network in the correct format can be produced by the convert-graph pro
 	      <xsd:documentation>Input graph. Supported: tab, gml.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="direction" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Direction of the neighbours (default all). Supported: in, out, all. This option cannot be used with the stat output and when specifying the number of steps</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
 	  <xsd:element name="all" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>The neighbours of all nodes will be searched.</xsd:documentation>
