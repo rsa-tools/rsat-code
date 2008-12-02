@@ -76,8 +76,8 @@
     echo("<hr><table>
   <tr><td  colspan = 2><b><a href = 'help.graph_topology.html#return_fields'>Return fields</a></b></td><td></td></tr>
   <tr><td><input type='checkbox' name='degree' value='on' $default_degree/></td><td><B>Degree</B></td></tr>
-  <tr><td><input type='checkbox' name='betweenness' value='on' $default_betweenness/></td><td><B>Closeness</B></td><td rowspan = 2><b>Warning</b> May be time consumming depending on the number of nodes of the graph</td></tr>
-  <tr><td><input type='checkbox' name='closeness' value='on' $default_closeness/></td><td><B>Betweenness</B></td><tr>
+  <tr><td><input type='checkbox' name='betweenness' value='on' $default_betweenness/></td><td><B>Betweenness</B></td><td rowspan = 2><b>Warning</b> May be time consumming depending on the number of nodes of the graph</td></tr>
+  <tr><td><input type='checkbox' name='closeness' value='on' $default_closeness/></td><td><B>Closeness</B></td><tr>
   </table><br>");
   
  echo("
