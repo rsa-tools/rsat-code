@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-neighbours,v 1.16 2007/08/30 09:02:10 rsat Exp $
+# $Id: graph-neighbours,v 1.17 2008/12/02 15:24:48 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -75,7 +75,13 @@ package main;
     $all_seeds = 0; ## Use all nodes as seeds
     $steps = 1;
     $self_included = 0;
-
+    $direction = "all";
+    %supported_direction = (
+	all=>1,
+	out=>1,
+	in=>1
+    );
+    $supported_directions = join (",", keys %supported_direction);
     ################################################################
     ## Initialize the graph
     $graph = new RSAT::Graph2();
@@ -116,6 +122,15 @@ package main;
     }
     if ($stats && $self_included == 1) {
       &RSAT::error::FatalError("-stats option cannot be used with -self option")
+    }
+    if ($direction ne "all" && $self_included) {
+      &RSAT::error::FatalError("You cannot choose the -direction $direction option when including self nodes")
+    }
+    if ($direction ne "all" && $stats) {
+      &RSAT::error::FatalError("You cannot choose the -direction $direction option with the -stats output format")
+    }
+    if ($direction ne "all" && $steps > 1) {
+      &RSAT::error::FatalError("You cannot choose the -direction $direction option with a number of steps higher than one")
     }
     ################################################################
     ## Open output stream
@@ -205,7 +220,9 @@ package main;
         for (my $i = 0; $i < scalar(@neighbours); $i++) {
           if (defined(@{$neighbours[$i]})) {
             my @neighbours_array = @{$neighbours[$i]};
-            print $out join("\t", @neighbours_array[0..$range])."\n";
+            if (($direction eq "all") || ($direction ne "all" && $neighbours_array[3] eq $direction)) {
+              print $out join("\t", @neighbours_array[0..$range])."\n";
+            }
           }
         }
       } else {
@@ -456,11 +473,27 @@ Include each node in its neighborhood, with a distance of 0, even if
 there is no self-loop at this node. This allows to extract the node
 together with its neighborhood, rather than the neighborhood only
 (default).
-This option cannot be used with the -stats option.
+
 
 =cut
 	} elsif ($arg eq "-self") {
 	    $main::self_included = 1;
+
+=pod
+
+=item B<-direction>
+
+Returns only the in or the out neighbours. The accepted values are all, in or out (default all). 
+
+This option cannot be used with the -stats option, -self and with a number of steps higher than 1. 
+
+=cut
+	} elsif ($arg eq "-direction") {
+	    $main::direction = shift(@arguments);
+	    &RSAT::error::FatalError("$direction\tInvalid neighbours directions. Supported: $supported_directions")
+		unless ($supported_direction{$direction});
+
+
 
 	    ## Output file
 =pod
