@@ -47,7 +47,7 @@
     <option value = 'gml'> GML format
     </select><br><br>");
   } else {
-    echo ": $graph_format<br>";
+    
     echo "<input type='hidden' NAME='in_format' VALUE='$graph_format'>";
   }
   echo("&nbsp;&nbsp;&nbsp;<a href = 'help.graph_neighbours.html#out_format'><B>Output format</B></a>");
@@ -81,6 +81,14 @@
     echo "<input type='hidden' NAME='t_col' VALUE='$tcol'/>\n";
     echo "<input type='hidden' NAME='w_col' VALUE='$wcol'/>\n";
   }
+    echo("<a href = 'help.graph_neighbours.html#direction'><B>Direction of the neighbourhood</B></a>");
+    echo ("
+    &nbsp;<select name='direction'>
+    <option selected value = 'all'> All directions
+    <option value = 'out'> Out neighbours
+    <option value = 'in'> In neighbours
+    </select><br><br>");
+
   echo("<br><br><input type='checkbox' name='self' value='on' checked/>&nbsp;<B><a href = 'help.display_graph.html#layout'>Include each node in its neighborhood (with a distance of zero)</a></B><br>");
 
   echo("<hr>
