@@ -4250,7 +4250,7 @@ sub graph_neighbours {
    my $direction = $args{direction};
    $direction =~ s/\'//g;
    $direction =~ s/\'//g;
-   $command .= " -dir $direction";
+   $command .= " -direction $direction";
   }
   if ($args{self}) {
    my $self = $args{self};

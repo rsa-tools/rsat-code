@@ -37,6 +37,7 @@
   $steps = $_REQUEST['steps'];
   $all = $_REQUEST['allseeds'];
   $self = $_REQUEST['self'];
+  $direction = $_REQUEST['direction'];
   if ($all == 'all') {
     $all = 1;
   } else {
@@ -47,7 +48,7 @@
   } else {
     $self = 0;
   }
-    
+
   ## If a file and a graph are submitted -> error
   if ($graph != "" && $graph_file != "") {
     $error = 1;
@@ -62,6 +63,21 @@
   if ($stats == 1 && $self == 1) {
     $error = 1;
     error("The 'one line per seed format' cannot be computed with seed node inclusion");
+  }
+  ## If the direction is specified and the stat output is requested -> error
+  if ($stats == 1 && $direction != "all") {
+    $error = 1;
+    error("You cannot specify the direction with the 'one line per seed format'");
+  }
+  ## If the direction is specified and the stat output is requested -> error
+  if ($self == 1 && $direction != "all") {
+    $error = 1;
+    error("You cannot specify the direction of the neighbours when including each seed node in its neighbourhood");
+  }
+  ## If the direction is specified and the number of step is larger than 1
+  if ($direction != "all" && $steps > 1) {
+    $error = 1;
+    error("You cannot specify the direction when looking for neighbours at a distance larger than 1 step.");
   }
   ## No specification of the source and target columns
   if ($in_format == "tab" && $s_col == "" && $t_col == "") {
@@ -107,7 +123,8 @@
         "all"=>$all,
         "stats"=>$stats,
         "self"=>$self,
-        "steps"=>$steps
+        "steps"=>$steps,
+        "direction"=>$direction
       )
     );
     # Info message
@@ -117,7 +134,8 @@
   
     # Open the SOAP client
     $soap_client = new SoapClient(
-                       $neat_wsdl,
+//                        $neat_wsdl,
+"http://127.0.0.1/rsat/web_services/RSATWS2.wsdl",
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
