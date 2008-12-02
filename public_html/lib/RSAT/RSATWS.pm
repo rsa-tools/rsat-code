@@ -4246,6 +4246,12 @@ sub graph_neighbours {
    my $stats = $args{stats};
    $command .= " -stats";
   }
+  if ($args{direction}) {
+   my $direction = $args{direction};
+   $direction =~ s/\'//g;
+   $direction =~ s/\'//g;
+   $command .= " -dir $direction";
+  }
   if ($args{self}) {
    my $self = $args{self};
    $command .= " -self";
