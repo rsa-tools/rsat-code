@@ -527,7 +527,6 @@ sub create_random_graph {
 	next;
       }
       if ($max_degree > 0 && exists($degree{$source}) && exists($degree{$target})) {
-        print "lala";
 	if ($degree{$source} > ($max_degree-1)) {
 	  next;
 	}
