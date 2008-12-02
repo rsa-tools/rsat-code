@@ -419,8 +419,8 @@
      $xy_out_server_log = rtrim ($xy_out_server_log);
      $xy_out_temp_file_log = explode('/',$xy_out_server_log);
      $xy_out_temp_file_log = end($xy_out_temp_file_log);
-     $xy_out_resultURL_log = "tmp/".$xy_out_temp_file_log;   
-   hourglass("off");
+     $xy_out_resultURL_log = "tmp/".$xy_out_temp_file_log;
+     hourglass("off");
    
      echo "<table>
        <th align = 'center' colspan = 4><b>Global, in- and out- degree distributions</b></th>
