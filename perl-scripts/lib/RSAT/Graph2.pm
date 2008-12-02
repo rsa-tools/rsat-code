@@ -385,16 +385,33 @@ sub randomize {
 =pod
 
 =item B<create_random_graph()> 
-Usage : $graph->create_random_graph(@nodes, $req_nodes, $req_edges, $self_loops, $duplicated, $directed, $max_degree, $mean, $sd);
+Usage : $graph->create_random_graph(
+      $nodes_ref,
+      $req_nodes,
+      $req_edges,
+      $self_loops,
+      $duplicated,
+      $directed,
+      $max_degree,
+      $single,
+      $mean,
+      $sd,
+      $normal,
+      $column,
+      $weights_ref,
+      $source_nodes_ref,
+      $target_nodes_ref,
+      $node_prefix,
+      $edge_prefix);
 
 
 Create a random graph from the nodes in @nodes having $req_nodes nodes
 of maximum degree $max_degree and $req_edges edges.
 
 This supports multi-edges ($duplicated = 1) or not ($duplicated = 0)
-and self loops ($self_loops = 1) or not ($self_loops = 0) A weight is
-calculated according to the normal distribution and the $mean and $sd
-value given as argument.
+and self loops ($self_loops = 1) or not ($self_loops = 0). A weight is
+calculated according to the normal distribution if the $mean and $sd
+value are given as argument.
 
 @source_nodes and @target_nodes contain the source nodes and the
 target nodes of the original graph respectively (if exists), if the
@@ -431,8 +448,9 @@ sub create_random_graph {
   my $req_source_nodes = $req_nodes;
   my $req_target_nodes = $req_nodes;
   my @labels = @{$weights_ref}; 
-  $node_prefix = "" unless defined($node_prefix);
-  $edge_prefix = "" unless defined($egde_prefix);
+  $node_prefix = "" if (!defined($node_prefix));
+  $edge_prefix = "" if (!defined($egde_prefix));
+
 
   ## creation of the list of nodes
   if (scalar(@nodes) > 0) {
@@ -485,11 +503,11 @@ sub create_random_graph {
   my @random_source = 0 .. ($req_source_nodes-1);
   my @random_target = 0 .. ($req_target_nodes-1);
   @random_source = &shuffle(@random_source);
-
   for (my $i = 0; $i < $req_source_nodes; $i++) {
     @random_target = &shuffle(@random_target);
+    
     for (my $j = 0; $j < $req_target_nodes; $j++) {
-      my $source_index = $random_source[$j%($req_source_nodes)];
+      my $source_index = $random_source[$i%($req_source_nodes)];
       my $target_index = $random_target[$j%($req_target_nodes)];
       my $source = $source_nodes[$source_index];
       my $target = $target_nodes[$target_index];
@@ -509,6 +527,7 @@ sub create_random_graph {
 	next;
       }
       if ($max_degree > 0 && exists($degree{$source}) && exists($degree{$target})) {
+        print "lala";
 	if ($degree{$source} > ($max_degree-1)) {
 	  next;
 	}
