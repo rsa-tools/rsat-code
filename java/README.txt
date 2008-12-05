@@ -161,7 +161,7 @@ If MetabolicGraphProvider is run in KGML modus, it downloads KGML files into the
 In the same directory, it also creates a folder to store organism-specific metabolic graphs for later use.
 
 The rpairs.tab file required for some options can be found in $RSAT/java/misc
-In the same directory, the list of supported KEGG organisms (in KGML modus) is stored.
+In the same directory, the lists of supported KEGG organisms (for KGML modus and DB modus) are stored.
 
 The options -a, -r, -R and the DB modus of MetabolicGraphProvider are only available
 if metabolic_db data have been installed.
@@ -169,11 +169,20 @@ Check the NeAT web server install guide for installation of postgres and metabol
 
 2.7.2. Pathwayinference
 
-The program "compSteiner" relying on Klein and Ravi's algorithm and implemented by Nadja Betzler is not freely distributed, thus algorithms 'compSteiner' and 'steinerhybrid' are not available. All other algorithms are available with this distribution.
+The program "compSteiner" relying on Klein and Ravi's algorithm and implemented by Nadja Betzler is not freely distributed,
+thus algorithms 'compSteiner' and 'steinerhybrid' are not available. All other algorithms are available with this distribution.
 
 2.7.3. GraphAnnotator
 
 The GraphAnnotator tool is only available if metabolic_db data have been installed.
+
+2.8. Usage of clients with remote web services
+-----------------------------------------------
+
+The PHP/JSP clients can use remote web services. This avoids installing the web services locally.
+In this case, copy the file Kegg_organisms_list.txt in the $RSAT/java/misc directory into the directory
+$RSAT/data/KEGG. In the folder $RSAT/data/KEGG, create a file kgmlVersion.txt, which contains as only entry
+the KEGG PATHWAY version used, e.g. 46.0.
 
 
 3. Disclaimer

@@ -1,0 +1,815 @@
+##########################################################################
+# List of KEGG organisms supported in KGML modus
+# (depends on KEGG PATHWAY version, please update list if needed)
+# KEGG PATHWAY version: 46.0
+##########################################################################
+aae	Aquifex aeolicus
+aau	Arthrobacter aurescens
+aav	Acidovorax avenae
+aba	Acidobacteria bacterium
+abm	Acinetobacter baumannii SDF
+abo	Alcanivorax borkumensis
+abu	Arcobacter butzleri
+aby	Acinetobacter baumannii AYE
+acb	Acinetobacter baumannii
+ace	Acidothermus cellulolyticus
+aci	Acinetobacter sp. ADP1
+acl	Acholeplasma laidlawii
+acr	Acidiphilium cryptum JF-5
+ade	Anaeromyxobacter dehalogenans
+aeh	Alkalilimnicola ehrlichei
+afm	Aspergillus fumigatus
+afu	Archaeoglobus fulgidus
+afw	Anaeromyxobacter sp. Fw109-5
+aga	Anopheles gambiae (mosquito)
+ago	Ashbya gossypii (Eremothecium gossypii)
+aha	Aeromonas hydrophila
+ajs	Acidovorax sp. JS42
+ama	Anaplasma marginale
+amr	Acaryochloris marina
+amt	Alkaliphilus metalliredigens
+ana	Anabaena sp. PCC7120
+ang	Aspergillus niger
+ani	Aspergillus nidulans
+aoe	Alkaliphilus oremlandii
+aor	Aspergillus oryzae
+ape	Aeropyrum pernix
+aph	Anaplasma phagocytophilum
+apj	Actinobacillus pleuropneumoniae serovar 3 JL03
+apl	Actinobacillus pleuropneumoniae
+art	Arthrobacter sp. FB24
+asa	Aeromonas salmonicida
+asu	Actinobacillus succinogenes
+atc	Agrobacterium tumefaciens C58 (Cereon)
+ath	Arabidopsis thaliana (thale cress)
+atu	Agrobacterium tumefaciens C58 (UWash/Dupont)
+ava	Anabaena variabilis
+ayw	Phytoplasma AYWB
+azc	Azorhizobium caulinodans
+azo	Azoarcus sp. BH72
+baa	Bacillus anthracis A2012
+bab	Buchnera aphidicola Bp
+bac	Burkholderia ambifaria MC40-6
+bad	Bifidobacterium adolescentis
+baf	Borrelia afzelii
+bam	Burkholderia cepacia
+ban	Bacillus anthracis Ames
+bar	Bacillus anthracis Ames 0581
+bas	Buchnera aphidicola Sg
+bat	Bacillus anthracis Sterne
+bay	Bacillus amyloliquefaciens
+bba	Bdellovibrio bacteriovorus
+bbk	Bartonella bacilliformis
+bbr	Bordetella bronchiseptica
+bbt	Bradyrhizobium sp. BTAi1
+bbu	Borrelia burgdorferi
+bca	Bacillus cereus ATCC 10987
+bcc	Buchnera aphidicola Cc
+bce	Bacillus cereus ATCC 14579
+bch	Burkholderia cenocepacia HI2424
+bci	Baumannia cicadellinicola
+bcl	Bacillus clausii
+bcm	Burkholderia cenocepacia MC0-3
+bcn	Burkholderia cenocepacia AU1054
+bcs	Brucella canis
+bcy	Bacillus cereus subsp. cytotoxis NVH 391-98
+bcz	Bacillus cereus ZK
+bfl	Candidatus Blochmannia floridanus
+bfr	Bacteroides fragilis YCH46
+bfs	Bacteroides fragilis NCTC9343
+bga	Borrelia garinii
+bha	Bacillus halodurans
+bhe	Bartonella henselae
+bja	Bradyrhizobium japonicum
+bld	Bacillus licheniformis DSM13
+bli	Bacillus licheniformis ATCC 14580
+blo	Bifidobacterium longum
+bma	Burkholderia mallei ATCC 23344
+bmb	Brucella abortus
+bme	Brucella melitensis
+bmf	Brucella melitensis biovar Abortus
+bml	Burkholderia mallei NCTC 10229
+bmn	Burkholderia mallei NCTC 10247
+bms	Brucella suis
+bmt	Brucella suis ATCC 23445
+bmu	Burkholderia multivorans
+bmv	Burkholderia mallei SAVP1
+bov	Brucella ovis
+bpa	Bordetella parapertussis
+bpd	Burkholderia pseudomallei 668
+bpe	Bordetella pertussis
+bpl	Burkholderia pseudomallei 1106a
+bpm	Burkholderia pseudomallei 1710b
+bpn	Candidatus Blochmannia pennsylvanicus
+bps	Burkholderia pseudomallei K96243
+bpt	Bordetella petrii
+bpu	Bacillus pumilus
+bqu	Bartonella quintana
+bra	Bradyrhizobium sp. ORS278
+bsu	Bacillus subtilis
+bta	Bos taurus (cow)
+bte	Burkholderia thailandensis
+bth	Bacteroides thetaiotaomicron
+btk	Bacillus thuringiensis 97-27
+btl	Bacillus thuringiensis Al Hakam
+btr	Bartonella tribocorum
+buc	Buchnera aphidicola APS
+bur	Burkholderia sp. 383
+bvi	Burkholderia vietnamiensis
+bvu	Bacteroides vulgatus
+bwe	Bacillus weihenstephanensis
+bxe	Burkholderia xenovorans
+cab	Chlamydophila abortus
+cac	Clostridium acetobutylicum
+cak	Caulobacter sp. K31
+cal	Candida albicans
+cau	Chloroflexus aurantiacus
+cba	Clostridium botulinum A ATCC 19397
+cbb	Clostridium botulinum B1
+cbd	Coxiella burnetii Dugway 5J108-111
+cbe	Clostridium beijerinckii
+cbf	Clostridium botulinum F
+cbh	Clostridium botulinum A Hall
+cbl	Clostridium botulinum A3 Loch Maree
+cbo	Clostridium botulinum A
+cbs	Coxiella burnetii RSA 331
+cbu	Coxiella burnetii RSA 493
+cca	Chlamydophila caviae
+cch	Chlorobium chlorochromatii
+cco	Campylobacter concisus 13826
+ccr	Caulobacter crescentus
+ccv	Campylobacter curvus
+cdf	Clostridium difficile
+cdi	Corynebacterium diphtheriae
+cef	Corynebacterium efficiens
+cel	Caenorhabditis elegans (nematode)
+cfa	Canis familiaris (dog)
+cfe	Chlamydophila felis
+cff	Campylobacter fetus
+cgb	Corynebacterium glutamicum ATCC 13032 (Bielefeld)
+cgl	Corynebacterium glutamicum ATCC 13032 (Kyowa Hakko)
+cgr	Candida glabrata
+cgt	Corynebacterium glutamicum R
+cha	Campylobacter hominis ATCC BAA-381
+cho	Cryptosporidium hominis
+chu	Cytophaga hutchinsonii
+chy	Carboxydothermus hydrogenoformans
+cjd	Campylobacter jejuni subsp. doylei 269.97
+cje	Campylobacter jejuni NCTC11168
+cjj	Campylobacter jejuni 81-176
+cjk	Corynebacterium jeikeium
+cjr	Campylobacter jejuni RM1221
+cju	Campylobacter jejuni 81116
+ckl	Clostridium kluyveri
+cko	Citrobacter koseri ATCC BAA-895
+cma	Caldivirga maquilingensis
+cme	Cyanidioschyzon merolae
+cmi	Clavibacter michiganensis
+cms	Clavibacter michiganensis subsp. sepedonicus
+cmu	Chlamydia muridarum
+cnb	Cryptococcus neoformans B-3501A
+cne	Cryptococcus neoformans JEC21
+cno	Clostridium novyi
+cpa	Chlamydophila pneumoniae AR39
+cpe	Clostridium perfringens 13
+cpf	Clostridium perfringens ATCC 13124
+cph	Chlorobium phaeobacteroides
+cpj	Chlamydophila pneumoniae J138
+cpn	Chlamydophila pneumoniae CWL029
+cpr	Clostridium perfringens SM101
+cps	Colwellia psychrerythraea
+cpt	Chlamydophila pneumoniae TW183
+cpv	Cryptosporidium parvum
+cpy	Clostridium phytofermentans
+cre	Chlamydomonas reinhardtii
+crp	Candidatus Carsonella ruddii
+csa	Chromohalobacter salexigens
+csc	Caldicellulosiruptor saccharolyticus
+cta	Chlamydia trachomatis serovar A
+ctb	Chlamydia trachomatis 434/Bu
+ctc	Clostridium tetani E88
+cte	Chlorobaculum tepidum
+cth	Clostridium thermocellum
+ctl	Chlamydia trachomatis L2b/UCH-1/proctitis
+ctr	Chlamydia trachomatis serovar D
+cur	Corynebacterium urealyticum
+cvi	Chromobacterium violaceum
+cya	Cyanobacteria Yellowstone A-Prime
+cyb	Cyanobacteria Yellowstone B-Prime
+cyt	Cyanothece sp. ATCC 51142
+daag	Aedes aegypti (yellow fever mosquito)
+dac	Delftia acidovorans
+dame	Apis mellifera (honey bee)
+dar	Dechloromonas aromatica
+dau	Candidatus Desulforudis audaxviator
+dbmo	Bombyx mori (silkmoth)
+dbmy	Brugia malayi (filaria)
+dcbr	Caenorhabditis briggsae
+dcin	Ciona intestinalis (sea squirt)
+ddan	Drosophila ananassae
+dde	Desulfovibrio desulfuricans
+dder	Drosophila erecta
+ddgr	Drosophila grimshawi
+ddi	Dictyostelium discoideum
+ddmo	Drosophila mojavensis
+ddpe	Drosophila persimilis
+ddse	Drosophila sechellia
+ddsi	Drosophila simulans
+ddvi	Drosophila virilis
+ddwi	Drosophila willistoni
+ddya	Drosophila yakuba
+deb	Dehalococcoides sp. BAV1
+decb	Equus caballus (horse)
+deh	Dehalococcoides sp. CBDB1
+det	Dehalococcoides ethenogenes
+dfru	Fugu rubripes (Japanese puffer fish)
+dge	Deinococcus geothermalis
+dha	Debaryomyces hansenii
+dkwa	Kluyveromyces waltii
+dme	Drosophila melanogaster (fruit fly)
+dno	Dichelobacter nodosus
+dol	Candidatus Desulfococcus oleovorans
+dola	Oryzias latipes (Japanese medaka)
+dota	Ostreococcus tauri
+dpch	Phanerochaete chrysosporium
+dpkn	Plasmodium knowlesi
+dpo	Drosophila pseudoobscura
+dpop	Populus trichocarpa (black cottonwood)
+dps	Desulfotalea psychrophila
+dptm	Paramecium tetraurelia
+dra	Deinococcus radiodurans
+dre	Danio rerio (zebrafish)
+drm	Desulfotomaculum reducens
+dsba	Saccharomyces bayanus
+dsh	Dinoroseobacter shibae
+dsmi	Saccharomyces mikatae
+dspd	Saccharomyces paradoxus
+dsy	Desulfitobacterium hafniense
+dtni	Tetraodon nigroviridis (green spotted puffer)
+dtps	Thalassiosira pseudonana
+dvl	Desulfovibrio vulgaris DP4
+dvu	Desulfovibrio vulgaris Hildenborough
+dvvi	Vitis vinifera (wine grape)
+eacp	Allium cepa (onion) (EST)
+eath	Arabidopsis thaliana (thale cress) (EST)
+eba	Azoarcus sp. EbN1
+ebna	Brassica napus (rape) (EST)
+ebvl	Beta vulgaris (beet) (EST)
+eca	Erwinia carotovora
+ecan	Capsicum annuum (chile pepper) (EST)
+ecc	Escherichia coli CFT073 (UPEC)
+ecd	Escherichia coli DH10B
+ece	Escherichia coli O157 EDL933 (EHEC)
+ech	Ehrlichia chaffeensis
+eci	Escherichia coli UTI89 (UPEC)
+ecj	Escherichia coli K-12 W3110
+ecm	Escherichia coli SECEC
+ecn	Ehrlichia canis
+eco	Escherichia coli K-12 MG1655
+ecp	Escherichia coli 536 (UPEC)
+ecs	Escherichia coli O157 Sakai (EHEC)
+ecsi	Citrus sinensis (Valencia orange) (EST)
+ecsv	Ciona savignyi (EST)
+ecu	Encephalitozoon cuniculi
+ecv	Escherichia coli APEC O1
+ecw	Escherichia coli E24377A
+ecx	Escherichia coli HS
+eees	Euphorbia esula (spurge) (EST)
+efa	Enterococcus faecalis
+efar	Festuca arundinacea (tall fescue) (EST)
+egar	Gossypium arboreum (cotton) (EST)
+eghi	Gossypium hirsutum (upland cotton) (EST)
+egma	Glycine max (soybean) (EST)
+egra	Gossypium raimondii (EST)
+ehan	Helianthus annuus (sunflower) (EST)
+ehi	Entamoeba histolytica
+ehvu	Hordeum vulgare (barley) (EST)
+eini	Ipomoea nil (Japanese morning glory) (EST)
+eli	Erythrobacter litoralis
+elja	Lotus japonicus (lotus) (EST)
+elpe	Lactuca perennis (blue lettuce) (EST)
+elsi	Lactuca saligna (willowleaf lettuce) (EST)
+elst	Lactuca sativa (lettuce) (EST)
+elvi	Lactuca virosa (wild lettuce) (EST)
+emec	Manihot esculent (tapioca) (EST)
+emte	Molgula tectiformis (EST)
+emtr	Medicago truncatula (barrel medic) (EST)
+enbe	Nicotiana benthamiana (EST)
+ent	Enterobacter sp. 638
+enta	Nicotiana tabacum (tabacco) (EST)
+eosa	Oryza sativa (rice) (EST)
+eosi	Oryza sativa indica (Indian rice) (EST)
+eosj	Oryza sativa japonica (Japanese rice) (EST)
+epgl	Picea glauca (white spruce) (EST)
+epop	Populus trichocarpa (black cottonwood) (EST)
+eppa	Physcomitrella patens (EST)
+eppi	Pinus pinaster (maritime pine) (EST)
+eppp	Physcomitrella patens subsp. patens (EST)
+epps	Prunus persica (peach) (EST)
+epsi	Picea sitchensis (sitka spruce) (EST)
+epta	Pinus taeda (loblolly pine) (EST)
+eptp	Populus tremula (European aspen) (EST)
+erg	Ehrlichia ruminantium Gardel
+eru	Ehrlichia ruminantium Welgevonden (South Africa)
+erw	Ehrlichia ruminantium Welgevonden (France)
+esa	Enterobacter sakazakii
+esbi	Sorghum bicolor (sorghum) (EST)
+esi	Exiguobacterium sibiricum
+esja	Schistosoma japonicum (fluke) (EST)
+esly	Solanum lycopersicum (tomato) (EST)
+esof	Saccharum officinarum (sugarcane) (EST)
+espp	Sorghum propinquum (EST)
+espu	Strongylocentrotus purpuratus (purple sea urchin) (EST)
+estu	Solanum tuberosum (potato) (EST)
+etae	Triticum aestivum (wheat) (EST)
+evvi	Vitis vinifera (wine grape) (EST)
+ezel	Zinnia elegans (zinnia) (EST)
+ezma	Zea mays (maize) (EST)
+fal	Frankia alni
+fgr	Fusarium graminearum
+fjo	Flavobacterium johnsoniae
+fma	Finegoldia magna
+fno	Fervidobacterium nodosum
+fnu	Fusobacterium nucleatum
+fph	Francisella philomiragia
+fps	Flavobacterium psychrophilum
+fra	Frankia sp. CcI3
+fre	Frankia sp. EAN1pec
+fta	Francisella tularensis subsp. holarctica FTA
+ftf	Francisella tularensis subsp. tularensis FSC 198
+fth	Francisella tularensis subsp. holarctica OSU18
+ftl	Francisella tularensis subsp. holarctica LVS
+ftn	Francisella tularensis subsp. novicida U112
+ftu	Francisella tularensis subsp. tularensis SCHU S4
+ftw	Francisella tularensis subsp. tularensis WY96-3418
+gbe	Granulobacter bethesdensis
+gdi	Gluconacetobacter diazotrophicus
+gfo	Gramella forsetii
+gga	Gallus gallus (chicken)
+gka	Geobacillus kaustophilus
+gme	Geobacter metallireducens
+gox	Gluconobacter oxydans
+gsu	Geobacter sulfurreducens
+gtn	Geobacillus thermodenitrificans
+gur	Geobacter uraniumreducens
+gvi	Gloeobacter violaceus
+hac	Helicobacter acinonychis
+hal	Halobacterium sp. NRC-1
+har	Herminiimonas arsenicoxydans
+hau	Herpetosiphon aurantiacus
+hbu	Hyperthermus butylicus
+hch	Hahella chejuensis
+hdu	Haemophilus ducreyi
+hha	Halorhodospira halophila
+hhe	Helicobacter hepaticus
+hin	Haemophilus influenzae (serotype d)
+hip	Haemophilus influenzae PittEE
+hiq	Haemophilus influenzae PittGG
+hit	Haemophilus influenzae 86-028NP (nontypeable)
+hma	Haloarcula marismortui
+hmo	Heliobacterium modesticaldum
+hne	Hyphomonas neptunium
+hpa	Helicobacter pylori HPAG1
+hpj	Helicobacter pylori J99
+hpy	Helicobacter pylori 26695
+hsa	Homo sapiens (human)
+hsl	Halobacterium salinarum R1
+hsm	Haemophilus somnus 2336
+hso	Haemophilus somnus
+hwa	Haloquadratum walsbyi
+iho	Ignicoccus hospitalis
+ilo	Idiomarina loihiensis
+jan	Jannaschia sp. CCS1
+kcr	Candidatus Korarchaeum cryptofilum
+kla	Kluyveromyces lactis
+kpn	Klebsiella pneumoniae
+kra	Kineococcus radiotolerans
+lac	Lactobacillus acidophilus
+lbj	Leptospira borgpetersenii JB197
+lbl	Leptospira borgpetersenii L550
+lbr	Lactobacillus brevis
+lbu	Lactobacillus delbrueckii ATCC BAA-365
+lca	Lactobacillus casei
+lch	Leptothrix cholodnii
+lci	Leuconostoc citreum
+ldb	Lactobacillus delbrueckii ATCC 11842
+lga	Lactobacillus gasseri
+lhe	Lactobacillus helveticus
+lic	Leptospira interrogans serovar Copenhageni
+lil	Leptospira interrogans serovar lai
+lin	Listeria innocua
+lip	Lawsonia intracellularis
+ljo	Lactobacillus johnsonii
+lla	Lactococcus lactis subsp. lactis IL1403
+llc	Lactococcus lactis subsp. cremoris SK11
+llm	Lactococcus lactis subsp. cremoris MG1363
+lma	Leishmania major
+lme	Leuconostoc mesenteroides
+lmf	Listeria monocytogenes F2365
+lmo	Listeria monocytogenes EGD-e
+lpc	Legionella pneumophila Corby
+lpf	Legionella pneumophila Lens
+lpl	Lactobacillus plantarum
+lpn	Legionella pneumophila Philadelphia 1
+lpp	Legionella pneumophila Paris
+lre	Lactobacillus reuteri
+lsa	Lactobacillus sakei
+lsl	Lactobacillus salivarius
+lsp	Lysinibacillus sphaericus
+lwe	Listeria welshimeri SLCC5334
+lxx	Leifsonia xyli xyli CTCB07
+maa	Mycoplasma agalactiae
+mab	Mycobacterium abscessus ATCC 19977T
+mac	Methanosarcina acetivorans
+mae	Methanococcus aeolicus
+mag	Magnetospirillum magneticum
+maq	Marinobacter aquaeolei
+mar	Microcystis aeruginosa
+mav	Mycobacterium avium 104
+mba	Methanosarcina barkeri
+mbb	Mycobacterium bovis BCG Pasteur 1173P2
+mbn	Candidatus Methanoregula boonei
+mbo	Mycobacterium bovis AF2122/97
+mbr	Monosiga brevicollis
+mbu	Methanococcoides burtonii
+mca	Methylococcus capsulatus
+mcc	Macaca mulatta (rhesus monkey)
+mcp	Mycoplasma capricolum
+mdo	Monodelphis domestica (opossum)
+mem	Methanoculleus marisnigri
+mes	Mesorhizobium sp. BNC1
+met	Methylobacterium sp. 4-46
+mex	Methylobacterium extorquens
+mfa	Methylobacillus flagellatus
+mfl	Mesoplasma florum
+mga	Mycoplasma gallisepticum
+mge	Mycoplasma genitalium
+mgi	Mycobacterium gilvum
+mgl	Malassezia globosa
+mgm	Magnetococcus sp. MC-1
+mgr	Magnaporthe grisea
+mhj	Mycoplasma hyopneumoniae J
+mhp	Mycoplasma hyopneumoniae 7448
+mhu	Methanospirillum hungatei
+mhy	Mycoplasma hyopneumoniae 232
+mja	Methanococcus jannaschii
+mjl	Mycobacterium sp. JLS
+mka	Methanopyrus kandleri
+mkm	Mycobacterium sp. KMS
+mla	Methanocorpusculum labreanum
+mle	Mycobacterium leprae
+mlo	Mesorhizobium loti
+mma	Methanosarcina mazei
+mmc	Mycobacterium sp. MCS
+mmo	Mycoplasma mobile
+mmp	Methanococcus maripaludis S2
+mmq	Methanococcus maripaludis C5
+mmr	Maricaulis maris
+mms	Minibacterium massiliensis
+mmu	Mus musculus (mouse)
+mmw	Marinomonas sp. MWYL1
+mmx	Methanococcus maripaludis C6
+mmy	Mycoplasma mycoides
+mmz	Methanococcus maripaludis C7
+mpa	Mycobacterium avium paratuberculosis
+mpe	Mycoplasma penetrans
+mpn	Mycoplasma pneumoniae
+mpt	Methylibium petroleiphilum
+mpu	Mycoplasma pulmonis
+mra	Mycobacterium tuberculosis H37Ra
+mrd	Methylobacterium radiotolerans
+mse	Metallosphaera sedula
+msi	Methanobrevibacter smithii ATCC 35061
+msm	Mycobacterium smegmatis
+mst	Methanosphaera stadtmanae
+msu	Mannheimia succiniciproducens
+msy	Mycoplasma synoviae
+mta	Moorella thermoacetica
+mtc	Mycobacterium tuberculosis CDC1551
+mtf	Mycobacterium tuberculosis F11
+mth	Methanobacterium thermoautotrophicum
+mtp	Methanosaeta thermophila
+mtu	Mycobacterium tuberculosis H37Rv
+mul	Mycobacterium ulcerans
+mva	Mycobacterium vanbaalenii
+mvn	Methanococcus vannielii
+mxa	Myxococcus xanthus
+nar	Novosphingobium aromaticivorans
+nca	Nocardioides sp. JS614
+ncr	Neurospora crassa
+neq	Nanoarchaeum equitans
+net	Nitrosomonas eutropha
+neu	Nitrosomonas europaea
+nfa	Nocardia farcinica
+ngo	Neisseria gonorrhoeae
+nha	Nitrobacter hamburgensis
+nis	Nitratiruptor sp. SB155-2
+nma	Neisseria meningitidis Z2491 (serogroup A)
+nmc	Neisseria meningitidis FAM18
+nme	Neisseria meningitidis MC58 (serogroup B)
+nmn	Neisseria meningitidis 053442
+nmr	Nitrosopumilus maritimus
+nmu	Nitrosospira multiformis
+noc	Nitrosococcus oceani
+nph	Natronomonas pharaonis
+nse	Neorickettsia sennetsu
+nve	Nematostella vectensis (sea anemone)
+nwi	Nitrobacter winogradskyi
+oan	Ochrobactrum anthropi
+oih	Oceanobacillus iheyensis
+olu	Ostreococcus lucimarinus
+ooe	Oenococcus oeni
+osa	Oryza sativa japonica (Japanese rice)
+ots	Orientia tsutsugamushi
+pab	Pyrococcus abyssi
+pac	Propionibacterium acnes
+pae	Pseudomonas aeruginosa PAO1
+pai	Pyrobaculum aerophilum
+pap	Pseudomonas aeruginosa PA7
+par	Psychrobacter arcticum
+pas	Pyrobaculum arsenaticum
+pat	Pseudoalteromonas atlantica
+pau	Pseudomonas aeruginosa UCBPP-PA14
+pca	Pelobacter carbinolicus
+pcl	Pyrobaculum calidifontis
+pcr	Psychrobacter cryohalolentis
+pcu	Candidatus Protochlamydia amoebophila
+pde	Paracoccus denitrificans
+pdi	Parabacteroides distasonis
+pen	Pseudomonas entomophila
+pfa	Plasmodium falciparum
+pfl	Pseudomonas fluorescens Pf-5
+pfo	Pseudomonas fluorescens PfO-1
+pfu	Pyrococcus furiosus
+pgi	Porphyromonas gingivalis
+pha	Pseudoalteromonas haloplanktis
+pho	Pyrococcus horikoshii
+pic	Pichia stipitis
+pin	Psychromonas ingrahamii
+pis	Pyrobaculum islandicum
+pla	Parvibaculum lavamentivorans
+plt	Pelodictyon luteolum
+plu	Photorhabdus luminescens
+pma	Prochlorococcus marinus SS120
+pmb	Prochlorococcus marinus AS9601
+pmc	Prochlorococcus marinus MIT 9515
+pme	Prochlorococcus marinus NATL1A
+pmf	Prochlorococcus marinus MIT 9303
+pmg	Prochlorococcus marinus MIT 9301
+pmh	Prochlorococcus marinus MIT 9215
+pmi	Prochlorococcus marinus MIT9312
+pmj	Prochlorococcus marinus MIT 9211
+pmm	Prochlorococcus marinus MED4
+pmn	Prochlorococcus marinus NATL2A
+pmo	Petrotoga mobilis
+pmt	Prochlorococcus marinus MIT9313
+pmu	Pasteurella multocida
+pmy	Pseudomonas mendocina
+pna	Polaromonas naphthalenivorans
+pne	Polynucleobacter necessarius
+pnu	Polynucleobacter sp. QLW-P1DMWA-1
+pol	Polaromonas sp. JS666
+poy	Phytoplasma OY
+ppd	Pelobacter propionicus
+ppe	Pediococcus pentosaceus
+ppf	Pseudomonas putida F1
+ppg	Pseudomonas putida GB-1
+ppp	Physcomitrella patens subsp. patens
+ppr	Photobacterium profundum
+ppu	Pseudomonas putida KT2440
+ppw	Pseudomonas putida W619
+prw	Psychrobacter sp. PRwf-1
+psa	Pseudomonas stutzeri
+psb	Pseudomonas syringae pv. syringae B728a
+psp	Pseudomonas syringae pv. phaseolicola 1448A
+pst	Pseudomonas syringae pv. tomato DC3000
+pth	Pelotomaculum thermopropionicum
+pto	Picrophilus torridus
+ptr	Pan troglodytes (chimpanzee)
+pub	Candidatus Pelagibacter ubique
+pvi	Prosthecochloris vibrioformis
+pyo	Plasmodium yoelii
+rak	Rickettsia akari Hartford
+rba	Rhodopirellula baltica
+rbe	Rickettsia bellii
+rbo	Rickettsia bellii OSU 85-389
+rca	Roseiflexus castenholzii DSM13941
+rci	Uncultured methanogenic archaeon RC-I
+rcm	Rickettsia canadensis McKiel
+rco	Rickettsia conorii
+rde	Roseobacter denitrificans
+reh	Ralstonia eutropha H16
+ret	Rhizobium etli
+reu	Ralstonia eutropha JMP134
+rfe	Rickettsia felis
+rfr	Rhodoferax ferrireducens
+rha	Rhodococcus sp. RHA1
+rle	Rhizobium leguminosarum
+rma	Candidatus Ruthia magnifica
+rme	Ralstonia metallidurans
+rms	Rickettsia massiliae
+rno	Rattus norvegicus (rat)
+rpa	Rhodopseudomonas palustris CGA009
+rpb	Rhodopseudomonas palustris HaA2
+rpc	Rhodopseudomonas palustris BisB18
+rpd	Rhodopseudomonas palustris BisB5
+rpe	Rhodopseudomonas palustris BisA53
+rpr	Rickettsia prowazekii
+rri	Rickettsia rickettsii
+rrj	Rickettsia rickettsii Iowa
+rrs	Roseiflexus sp. RS-1
+rru	Rhodospirillum rubrum
+rsa	Renibacterium salmoninarum
+rsh	Rhodobacter sphaeroides ATCC 17029
+rso	Ralstonia solanacearum
+rsp	Rhodobacter sphaeroides 2.4.1
+rsq	Rhodobacter sphaeroides ATCC 17025
+rty	Rickettsia typhi
+rxy	Rubrobacter xylanophilus
+saa	Staphylococcus aureus USA300
+sab	Staphylococcus aureus RF122
+sac	Staphylococcus aureus COL
+sae	Staphylococcus aureus Newman
+sag	Streptococcus agalactiae 2603 (serotype V)
+sah	Staphylococcus aureus JH1
+sai	Sulfolobus acidocaldarius
+saj	Staphylococcus aureus JH9
+sak	Streptococcus agalactiae A909 (serotype Ia)
+sal	Sphingopyxis alaskensis
+sam	Staphylococcus aureus MW2
+san	Streptococcus agalactiae NEM316 (serotype III)
+sao	Staphylococcus aureus NCTC8325
+saq	Salinispora arenicola
+sar	Staphylococcus aureus MRSA252
+sas	Staphylococcus aureus MSSA476
+sat	Syntrophus aciditrophicus
+sau	Staphylococcus aureus N315
+sav	Staphylococcus aureus Mu50
+saw	Staphylococcus aureus Mu3
+sax	Staphylococcus aureus USA300 TCH1516
+saz	Shewanella amazonensis
+sbl	Shewanella baltica OS155
+sbm	Shewanella baltica OS185
+sbn	Shewanella baltica OS195
+sbo	Shigella boydii
+sce	Saccharomyces cerevisiae
+scl	Sorangium cellulosum
+sco	Streptomyces coelicolor
+sde	Saccharophagus degradans
+sdn	Shewanella denitrificans
+sdy	Shigella dysenteriae
+sec	Salmonella enterica serovar Choleraesuis
+sen	Saccharopolyspora erythraea
+sep	Staphylococcus epidermidis ATCC 12228
+ser	Staphylococcus epidermidis RP62A
+ses	Salmonella enterica subsp. arizonae
+sfl	Shigella flexneri 301 (serotype 2a)
+sfr	Shewanella frigidimarina
+sfu	Syntrophobacter fumaroxidans
+sfv	Shigella flexneri 8401 (serotype 5b)
+sfx	Shigella flexneri 2457T (serotype 2a)
+sgl	Sodalis glossinidius
+sgo	Streptococcus gordonii
+sha	Staphylococcus haemolyticus
+she	Shewanella sp. MR-4
+shl	Shewanella halifaxensis
+shm	Shewanella sp. MR-7
+shn	Shewanella sp. ANA-3
+shw	Shewanella sp. W3-18-1
+sil	Silicibacter pomeroyi
+sit	Silicibacter sp. TM1040
+slo	Shewanella loihica
+sma	Streptomyces avermitilis
+smd	Sinorhizobium medicae
+sme	Sinorhizobium meliloti
+smg	Candidatus Sulcia muelleri
+smr	Staphylothermus marinus
+smu	Streptococcus mutans
+son	Shewanella oneidensis
+spa	Streptococcus pyogenes MGAS10394 (serotype M6)
+spb	Streptococcus pyogenes MGAS6180 (serotype M28)
+spc	Shewanella putrefaciens
+spd	Streptococcus pneumoniae D39
+spe	Serratia proteamaculans
+spf	Streptococcus pyogenes Manfredo (serotype M5)
+spg	Streptococcus pyogenes MGAS315 (serotype M3)
+sph	Streptococcus pyogenes MGAS10270 (serotype M3)
+spi	Streptococcus pyogenes MGAS10750 (serotype M3)
+spj	Streptococcus pyogenes MGAS2096 (serotype M3)
+spk	Streptococcus pyogenes MGAS9429 (serotype M3)
+spl	Shewanella pealeana
+spm	Streptococcus pyogenes MGAS8232 (serotype M18)
+spn	Streptococcus pneumoniae TIGR4
+spo	Schizosaccharomyces pombe
+spq	Salmonella enterica serovar Paratyphi B
+spr	Streptococcus pneumoniae R6
+sps	Streptococcus pyogenes SSI-1 (serotype M3)
+spt	Salmonella enterica serovar Paratyphi A
+spu	Strongylocentrotus purpuratus (purple sea urchin)
+spv	Streptococcus pneumoniae Hungary19A 6
+spy	Streptococcus pyogenes SF370 (serotype M1)
+spz	Streptococcus pyogenes MGAS5005 (serotype M1)
+sru	Salinibacter ruber
+ssa	Streptococcus sanguinis
+ssc	Sus scrofa (pig)
+sse	Shewanella sediminis
+ssn	Shigella sonnei
+sso	Sulfolobus solfataricus
+ssp	Staphylococcus saprophyticus
+ssu	Streptococcus suis 05ZYH33
+ssv	Streptococcus suis 98HAH33
+stc	Streptococcus thermophilus CNRZ1066
+ste	Streptococcus thermophilus LMD-9
+sth	Symbiobacterium thermophilum
+stl	Streptococcus thermophilus LMG18311
+stm	Salmonella typhimurium LT2
+sto	Sulfolobus tokodaii
+stp	Salinispora tropica
+stt	Salmonella enterica serovar Typhi Ty2
+sty	Salmonella enterica serovar Typhi CT18
+sun	Sulfurovum sp. NBC37-1
+sus	Solibacter usitatus
+swd	Shewanella woodyi ATCC51908
+swi	Sphingomonas wittichii
+swo	Syntrophomonas wolfei
+syc	Synechococcus elongatus PCC6301
+syd	Synechococcus sp. CC9605
+sye	Synechococcus sp. CC9902
+syf	Synechococcus elongatus PCC7942
+syg	Synechococcus sp. CC9311
+syn	Synechocystis sp. PCC6803
+syp	Synechococcus sp. PCC7002
+syr	Synechococcus sp. RCC307
+syw	Synechococcus sp. WH8102
+syx	Synechococcus sp. WH7803
+tac	Thermoplasma acidophilum
+tan	Theileria annulata
+tbd	Thiobacillus denitrificans
+tbr	Trypanosoma brucei
+tcr	Trypanosoma cruzi
+tcx	Thiomicrospira crunogena
+tde	Treponema denticola
+tdn	Thiomicrospira denitrificans
+tel	Thermosynechococcus elongatus
+ter	Trichodesmium erythraeum
+tet	Tetrahymena thermophila
+tex	Thermoanaerobacter sp. X514
+tfu	Thermobifida fusca
+tko	Thermococcus kodakaraensis
+tle	Thermotoga lettingae
+tma	Thermotoga maritima
+tme	Thermosipho melanesiensis
+tne	Thermoproteus neutrophilus
+tpa	Treponema pallidum
+tpd	Thermoanaerobacter pseudethanolicus
+tpe	Thermofilum pendens
+tpt	Thermotoga petrophila
+tpv	Theileria parva
+tte	Thermoanaerobacter tengcongensis
+tth	Thermus thermophilus HB27
+ttj	Thermus thermophilus HB8
+tva	Trichomonas vaginalis
+tvo	Thermoplasma volcanium
+twh	Tropheryma whipplei Twist
+tws	Tropheryma whipplei TW08/27
+uma	Ustilago maydis
+upa	Ureaplasma parvum
+uur	Ureaplasma urealyticum
+vch	Vibrio cholerae O1
+vco	Vibrio cholerae O395
+vei	Verminephrobacter eiseniae
+vfi	Vibrio fischeri
+vha	Vibrio harveyi
+vok	Candidatus Vesicomyosocius okutanii
+vpa	Vibrio parahaemolyticus
+vvu	Vibrio vulnificus CMCP6
+vvy	Vibrio vulnificus YJ016
+wbm	Wolbachia wBm
+wbr	Wigglesworthia glossinidia
+wol	Wolbachia wMel
+wsu	Wolinella succinogenes
+xac	Xanthomonas axonopodis
+xau	Xanthobacter autotrophicus
+xcb	Xanthomonas campestris pv. campestris 8004
+xcc	Xanthomonas campestris pv. campestris ATCC 33913
+xcv	Xanthomonas campestris pv. vesicatoria
+xfa	Xylella fastidiosa 9a5c
+xfm	Xylella fastidiosa M12
+xft	Xylella fastidiosa Temecula1
+xla	Xenopus laevis (African clawed frog)
+xom	Xanthomonas oryzae MAFF311018
+xoo	Xanthomonas oryzae KACC10331
+xtr	Xenopus tropicalis (western clawed frog)
+yen	Yersinia enterocolitica
+yli	Yarrowia lipolytica
+ypa	Yersinia pestis Antiqua
+ype	Yersinia pestis CO92
+ypg	Yersinia pestis Angola
+ypi	Yersinia pseudotuberculosis IP31758
+ypk	Yersinia pestis KIM
+ypm	Yersinia pestis Mediaevails
+ypn	Yersinia pestis Nepal516
+ypp	Yersinia pestis Pestoides
+yps	Yersinia pseudotuberculosis IP32953
+ypy	Yersinia pseudotuberculosis YPIII
+zmo	Zymomonas mobilis

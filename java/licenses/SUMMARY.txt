@@ -11,6 +11,7 @@ Pathfinding.jar
 north_graph_core.jar
 be_ac_ulb_scmbb_shortestpath_core.jar
 be_ac_ulb_scmbb_snow_graph_core.jar
+be_ac_ulb_scmbb_snow_data_core.jar
 be_ac_ulb_scmbb_snow_protege_owl_libbiopax.jar
 be_ac_ulb_bigre_pathwayinference_core.jar
 be_ac_ulb_bigre_metabolicdatabase.jar
