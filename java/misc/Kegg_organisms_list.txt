@@ -1,6 +1,5 @@
 ##########################################################################
 # List of KEGG organisms supported in KGML modus
-# (depends on KEGG PATHWAY version, please update list if needed)
 # KEGG PATHWAY version: 46.0
 ##########################################################################
 aae	Aquifex aeolicus
