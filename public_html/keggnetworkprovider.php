@@ -42,6 +42,7 @@ $excludedreactions = "";
 $excludedrpairclasses = "";
 $directed = 0;
 $rpairs = 0;
+$keepIrre = 0;
 $attribs = "";
 $out_format = "";
 $return_type="server";
@@ -122,6 +123,7 @@ if($attribs){
         'reactionIds'=>$reactions,
         'reactionFile'=>$reactions_file,
     	'directed'=>$directed,
+    	'keepIrreversible'=>$keepIrre,
     	'graphType'=>$rpairs,
     	'attributes'=>$selected_attribs,
     	'outFormat'=>$out_format,
