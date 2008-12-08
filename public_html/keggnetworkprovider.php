@@ -174,6 +174,11 @@ if($attribs){
     	$server = $response->server;
     	$client = $response->client;
 
+    	if(ereg('KEGG organisms or custom reactions or both have to be specified',$server)){
+    		$error = 1;
+    		error("$server");
+    	}
+
     	if($error == 0){
         	 # Display the results
     		echo("<align='left'>The result is available as text file at the following URL:<br><br>
