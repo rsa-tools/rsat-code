@@ -28,7 +28,7 @@
 
 <ul>
     The KEGG network provider allows the construction of bipartite metabolic networks specific to a set of organisms. 
-    The networks are constructed from <a href="http://www.genome.jp/kegg/xml/" target="_blank">KEGG KGML</a> files (KEGG version 46.0). Compounds and reactions are represented
+    The networks are constructed from <a href="http://www.genome.jp/kegg/xml/" target="_blank">KEGG KGML</a> files. Compounds and reactions are represented
     as separate node sets.<br> 
     It is also possible to filter the network in order to exclude certain reactions, compounds or reactant pair classes.  
     In addition, compounds and reactions in the constructed networks can be annotated with their label or EC number.<br>
@@ -80,6 +80,13 @@
 	By default, undirected metabolic networks are constructed. However, in metabolic pathfinding, it is useful to represent
 	reactions by separate nodes for the forward and reverse direction respectively. If "directed network" is selected, 
 	the constructed network is directed, but contains for each forward reaction direction its reverse.
+	</li>
+	<li>Keep irreversible reactions<br>
+	By default, irreversible reactions are converted into reversible ones. If you would like
+	to keep the irreversible reactions, select this option. Note that it will only be effective
+	in directed networks and that a reaction might be carried out in different directions in 
+	different organisms (resulting in a reversible presentation of this reaction after merging of the metabolic
+	networks of these organisms).
 	</li>
 	<li>RPAIR network<br>
 	For the description of RPAIR networks see the metabolic Pathfinder help.
