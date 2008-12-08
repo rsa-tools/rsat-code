@@ -17,6 +17,8 @@
   $default_excludedrpairclasses = "";
   $default_out_format = "";
   $default_email='';
+  $kgmlVersionFile = $rsat_main.'/public_html/data/KEGG/kgmlVersion.txt';
+  $kgmlVersion = storeFile($kgmlVersionFile);
 
   # demo
   $demo = $_REQUEST['demo'];
@@ -26,7 +28,7 @@
   }
 
   title('KEGG network provider');
-  echo ("<center>Obtain organism-specific KEGG networks from KEGG PATHWAY version 46.0. Click on <a href='help.keggnetworkprovider.html'><img src='images/question-mark-button.jpg' width='15' alt='help'></a> for help.<br>
+  echo ("<center>Obtain organism-specific KEGG networks from KEGG PATHWAY version $kgmlVersion. Click on <a href='help.keggnetworkprovider.html'><img src='images/question-mark-button.jpg' width='15' alt='help'></a> for help.<br>
   Web service and interface by Karoline Faust.</center>\n");
   echo ("<form method='post' action='keggnetworkprovider.php' enctype='multipart/form-data'>
   <hr>
@@ -96,6 +98,7 @@
   <br>
     <table>
          <tr><td><B>directed network</B><input type='checkbox' name='directed' value='on'></input></td></tr>
+         <tr><td><B>keep irreversible reactions</B><input type='checkbox' name='keepIrre' value='on'></input></td></tr>
          <tr><td><B>RPAIR network</B>&nbsp;&nbsp;&nbsp;<input type='checkbox' name='rpair' value='on'></input></td></tr>
          <tr><td><br></td></tr>
          <tr><td><b>Optional:</b> Select attributes from the menu below. Note that additional attributes to the default ones will slow down the network construction.<br>
