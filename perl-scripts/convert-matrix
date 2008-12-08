@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.71 2008/09/17 07:32:03 jvanheld Exp $
+# $Id: convert-matrix,v 1.72 2008/12/08 10:12:34 morgane Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -379,7 +379,9 @@ OPTIONS
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
 
-	-prior prior frequency file
+	-prior [deprecated, use -bgfile] prior frequency file
+	
+	-bgfile [deprecated] prior frequency file
 		File indicating prior residue frequencies
 		If no prior frequency file is specified, prior
 		frequencies are read from the input file. In case this
@@ -777,7 +779,8 @@ convert-matrix options
 -return		return type(s). Supported: $supported_return_fields
 -sort desc|asc|alpha key     Sort matrices according to the specified key.
 -top		maximal number of matrices to return. 
--prior 		background model (prior frequency file)
+-prior [deprecated, use -bgfile] 		background model (prior frequency file)
+-bgfile		background model (prior frequency file)
 -bg_format	background model format. Supported: $supported_bg_formats
 -bg_pseudo	pseudo-frequency for background model. (default:$bg_model->{bg_pseudo})
 -pseudo		pseudo-weight (default: $pseudo_weight)
@@ -843,6 +846,9 @@ sub ReadArguments {
 
 	    ### prior frequency file
 	} elsif ($ARGV[$a] eq "-prior") {
+	    $infile{prior} = $ARGV[$a+1];
+	
+	} elsif ($ARGV[$a] eq "-bgfile") {
 	    $infile{prior} = $ARGV[$a+1];
 	    
 	    ## bg format
