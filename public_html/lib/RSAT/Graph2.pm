@@ -2273,7 +2273,7 @@ sub graph_from_text {
 
 Return the graph in various format.
 
-Supported formats: dot, gml, gdl, tab
+Supported formats: dot, gml, tab, rnsc, tab_numeric
 
 =cut
 sub to_text {
@@ -2293,6 +2293,8 @@ sub to_text {
 	return $self->to_adj_matrix(@args);
     } elsif ($out_format eq "rnsc") {
 	return $self->to_rnsc(@args);
+    } elsif ($out_format eq "tab_numeric") {
+	return $self->to_tab_numeric(@args);
     } elsif ($out_format eq "node_table") {
 	return $self->to_node_table(@args);
     } else {
@@ -2814,6 +2816,33 @@ sub to_rnsc {
     } 
     return $rnsc;
 }
+
+################################################################
+################################################################
+=pod
+
+=item B<to_tab_numeric()>
+
+Return a two columns string. This will consist of one string having separator
+'#####NODES_NAME#####'. Before this separator, the nodes names are replaced by their numerical id (two-column tab delimited graph file). In the second part, the string consists in a list of id and their label association.
+
+=cut
+sub to_tab_numeric {
+    
+    my ($self) = shift;
+    my @arcs = $self->get_attribute("arcs");
+    my %nodes_name_id = $self->get_attribute("nodes_name_id");
+    my $output = "";
+    for (my $i = 0; $i < scalar @arcs; $i++) {
+      $output .= join "\t", $nodes_name_id{$arcs[$i][0]}, $nodes_name_id{$arcs[$i][1]}."\n";
+    }
+    $output .= "#####NODES_NAME#####";
+    while (($name, $id) = each %nodes_name_id) {
+     $output .= join("\t", $id, $name)."\n";
+    } 
+    return $output;
+}
+
 ################################################################
 =pod
 
