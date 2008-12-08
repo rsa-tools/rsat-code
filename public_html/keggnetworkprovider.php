@@ -97,6 +97,12 @@ if ($directed == 'on') {
     $directed = 0;
 }
 
+if ($keepIrre == 'on') {
+    $keepIrre = 1;
+} else {
+    $keepIrre = 0;
+}
+
   if($rpairs == 'on'){
     $rpairs = 's';
   }else{
