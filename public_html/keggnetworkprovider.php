@@ -83,6 +83,7 @@ $excludedcompounds = $_REQUEST['excludedcompounds'];
 $excludedreactions = $_REQUEST['excludedreactions'];
 $excludedrpairclasses = $_REQUEST['excludedrpairclasses'];
 $directed = $_REQUEST['directed'];
+$keepIrre = $_REQUEST['keepIrre'];
 $rpairs = $_REQUEST['rpair'];
 # name of parameter in form is attributes[]
 $attribs = $_REQUEST['attributes'];
