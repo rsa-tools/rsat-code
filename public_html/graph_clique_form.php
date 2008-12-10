@@ -29,14 +29,13 @@
   }
 
   title('graph-cliques');
-  echo ("<center>Extract al cliques from a graph\n");
+  echo ("<center>Extract all maximal cliques from a graph. It is based on a reimplementation of the <a href = 'http://portal.acm.org/citation.cfm?doid=362342.362367' target = '_blank'>Bron-Kerbosch algorithm (1973)</a> by <a href = 'http://www.springerlink.com/content/v53r2538u0565144/' target = '_blank'>Johnston (1975)</a>\n");
    echo ("<br>This program was developed by 
 	  <a target=_blank href=http://www.bigre.ulb.ac.be/Users/sylvain/>Sylvain Broh&eacute;e</a> and
           <a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.
   
           </center>\n");
-   echo ("<b>Warning!</b> This program may be very slow depending on the size of the graph" 
-   );
+
 
   echo ("<form method='post' action='graph_clique.php' enctype='multipart/form-data'>
   &nbsp;&nbsp;&nbsp;<a href = 'help.graph_clique.html#formats'><B>Input format</B></a>");
@@ -79,8 +78,7 @@
     echo "<input type='hidden' NAME='t_col' VALUE='$tcol'/>\n";
   }
   echo ("<a href = 'help.graph_clique.html#min_size'><b>Minimum size of the cliques</b></a> <input type = 'text' name='min_size' value = '' size = 1></input><br>");
-  echo ("<a href = 'help.graph_clique.html#max_size'><b>Maximum size of the cliques</b></a> <input type = 'text' name='max_size' value = '' size = 1></input>");
-
+  
   echo ("
   <ul><ul><table class='formbutton'>
   <TD><input type='submit' name='.submit' value='GO' /></TD>
