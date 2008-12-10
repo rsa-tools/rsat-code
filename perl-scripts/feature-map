@@ -3,11 +3,6 @@ BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push @INC, "$`lib/";
     }
-#    push @INC, "$ENV{RSAT}/extlib/arch/";
-#    if ($config_site eq "uppsala") {
-#	use lib ('/home/jvanheld/rsa-tools/perl-scripts/lib',  
-#		 '/home/jvanheld/rsa-tools/perl-scripts/lib/arch');
-#    }
 }
 
 require "RSA.lib";
@@ -510,8 +505,9 @@ sub DrawLegend {
 		    $handle_color =  $color_list[$i%($#symbol_list+1)];
 #		    $handle_color = $black;
 		} elsif ($draw_dots) {
-		    $handle_color =  $color_list[$i%($#symbol_list+1)];
-		    $handle_symbol = "filled_circle";
+##		  $rect_color = $color_list[$i%($#color_list+1)];
+		  $handle_color =  $rect_color; ##$color_list[$i%($#symbol_list+1)];
+		  $handle_symbol = "filled_circle";
 		}
 		$handle_top = $legend_y + 2 + ($small_font_height - $handle_length)/2;
 		$handle_bottom = $handle_top + $handle_length;
