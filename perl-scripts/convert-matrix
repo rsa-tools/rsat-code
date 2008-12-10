@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.72 2008/12/08 10:12:34 morgane Exp $
+# $Id: convert-matrix,v 1.73 2008/12/10 11:47:40 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -100,14 +100,14 @@ $supported_logo_formats = join ",", sort keys %supported_logo_format;
 &ReadArguments();
 
 ################################################################
-#### check argument values ####
+## Check argument values ####
 
 ## Input format
 unless ($input_format) {
     &RSAT::error::FatalError("You should specify the input matrix format.");
 }
 
-## Matrix provided with -i option
+## Matrix provided with option -i
 if ($infile{input}) {
     push @matrix_files, $infile{input};
 }
@@ -132,6 +132,8 @@ if ($infile{matrix_list}) {
 unless (scalar(@matrix_files >= 1)) {
     # &RSAT::error::FatalError("You must specify at least one matrix file.(option -i or -mlist)");
 }
+
+&RSAT::message::Info(scalar(@matrix_files), "input matrix files") if ($main::verbose >= 2);
 
 ## return type(s)
 local %return_fields = ();
@@ -810,15 +812,15 @@ sub ReadArguments {
 	    } else {
 		$verbose = 1;
 	    }
-	    
+
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
 	    &PrintHelp();
-	    
+
 	    ### list of options
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions();
-	    
+
 	    ### input file 
 	} elsif ($ARGV[$a] eq "-i") {
 	    $infile{input} = $ARGV[$a+1];
