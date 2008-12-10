@@ -160,13 +160,13 @@ if ($ftcol_file) {
   &ExportFtColors();
 }
 
-## Scale bar 
+## Scale bar
 if ($scalebar) {
   &DrawScaleBar();
 }
 
 
-## Draw the maps 
+## Draw the maps
 &DrawMaps();
 
 ## Save the image file 
@@ -177,6 +177,7 @@ if ($img_format eq "gif") {
     print $out $image->jpeg;
 } elsif ($img_format eq "png") {
     print $out $image->png;
+
 } elsif ($img_format eq "ps") {
     $image->output($outputfile);
 } else {
