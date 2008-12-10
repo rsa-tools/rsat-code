@@ -45,7 +45,6 @@ sub new {
     my ($class, $graph_x_size, $graph_y_size, %args) = @_;
     my $self = bless {
     }, $class;
-    
     my $landscape = 0;
 #    if ($graph_x_size > $graph_y_size) { $landscape=1 ; }
 
@@ -65,16 +64,6 @@ sub new {
     return $self;
 }
 
-################################################################
-=pod
-
-=item new()
-
-Create a new image. This object is a wrapper around a
-PostScript::Simple object. All arguments are passed to
-PostScript::Simple creator.
-
-=cut
 
 ################################################################
 =pod
@@ -133,7 +122,7 @@ sub line {
 
 
 ################################################################
-=pod 
+=pod
 
 =item arc()
 
@@ -313,8 +302,18 @@ Print the output in a ps file
 
 sub output {
     my ($self, $outputfile) = @_;
-
-    $self::image->output($outputfile);
+    if ($outputfile) {
+      $self::image->output($outputfile);
+    } else {
+      $page = $self::image->_builddocument($self, "title");
+      foreach $i (@$page) {
+	if (ref($i) eq "SCALAR") {
+	  print STDOUT $$i;
+	} else {
+	  print STDOUT $i;
+	}
+      }
+    }
 }
 
 return 1;
