@@ -31,7 +31,6 @@
   $s_col = $_REQUEST['s_col'];
   $t_col = $_REQUEST['t_col'];
   $min_size = $_REQUEST['min_size'];
-  $max_size = $_REQUEST['max_size'];
     
   ## If a file and a graph are submitted -> error
   if ($graph != "" && $graph_file != "") {
@@ -68,8 +67,7 @@
         "inputgraph"=>$graph,
         "scol"=>$s_col,
         "tcol"=>$t_col,
-        "min_size"=>$min_size,
-        "max_size"=>$max_size
+        "min_size"=>$min_size
         
       )
     );
