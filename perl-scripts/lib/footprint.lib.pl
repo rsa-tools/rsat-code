@@ -26,7 +26,7 @@ sub one_command {
       $main::batch_cmd = "$cmd";
     }
   } else {
-    print $out ("; ", &AlphaDate(), "\n", $cmd, "\n\n") if ($main::verbose >= 1);
+    print $out ("; ", &AlphaDate(), "\n", $cmd, "\n\n") if ($main::verbose >= 2);
     &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   }
 }
@@ -91,7 +91,7 @@ sub CheckFootprintParameters {
   if (scalar(@query_genes) ==0) {
     &RSAT::error::FatalError("You must specify at least one query gene (options -q or -i)");
   } else {
-    &RSAT::message::Info("Number of query genes", scalar(@query_genes)) if ($main::verbose >= 1);
+    &RSAT::message::Info("Number of query genes", scalar(@query_genes)) if ($main::verbose >= 2);
   }
 
   ## Get maximum number of genes if limited
@@ -118,7 +118,7 @@ sub CheckDependency {
     my $file = $outfile{$type};
     if ((-e $file) || (-e $file.".gz")){
       &RSAT::message::Info("Checked existence of ", $type, "file required for task", $task, "file", $file)
-	if ($main::verbose >= 3);
+	if ($main::verbose >= 2);
       return(1);
     } else {
       &RSAT::error::FatalError("Missing", $type, "file required for task", $task, "file", $file)
@@ -141,7 +141,7 @@ sub GetQueryPrefix {
   } elsif ($infile{genes}) {
     $query_prefix = `basename $infile{genes} .tab`;
   }
-  &RSAT::message::Info("Query prefix", $query_prefix) if ($main::verbose >= 3);
+  &RSAT::message::Info("Query prefix", $query_prefix) if ($main::verbose >= 2);
   return ($query_prefix);
 }
 
@@ -161,7 +161,7 @@ sub GetOutfilePrefix {
 	$outfile{prefix} = join( "/", "footprints", $taxon, $organism_name, $query_prefix,
 				 join ("_", $query_prefix, $organism_name, $taxon));
       }
-      &RSAT::message::Info("Automatic definition of the output prefix", $outfile{prefix}) if ($main::verbose >= 3);
+      &RSAT::message::Info("Automatic definition of the output prefix", $outfile{prefix}) if ($main::verbose >= 2);
     } else {
       &RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
     }
@@ -509,7 +509,7 @@ sub OpenIndex {
 ################################################################
 ## Predict operon leader genes of the query genes
 sub InferQueryOperons {
-  &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{leader_qgenes}) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{leader_qgenes}) if ($main::verbose >= 2);
   &CheckDependency("operons", "genes");
   my $cmd = "$SCRIPTS/get-leader-multigenome ";
   $cmd .= " -i ".$outfile{genes};
@@ -524,7 +524,7 @@ sub InferQueryOperons {
 ################################################################
 ## Retrieve promoters of the query organism
 sub RetrieveQueryPromoters {
-  &RSAT::message::TimeWarn("Retrieving promoter sequences for query genes", $outfile{query_seq}) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Retrieving promoter sequences for query genes", $outfile{query_seq}) if ($main::verbose >= 2);
   my $cmd = "$SCRIPTS/retrieve-seq ";
   $cmd .= " -org ".$organism_name;
   if ($infer_operons) {
@@ -544,7 +544,7 @@ sub RetrieveQueryPromoters {
 ################################################################
 ## Detect all dyads in promoters of query genes for dyad filtering
 sub ComputeFilterDyads {
-  &RSAT::message::TimeWarn("Computing filter dyads", $outfile{filter_dyads}) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Computing filter dyads", $outfile{filter_dyads}) if ($main::verbose >= 2);
   &CheckDependency("filter", "query_seq");
   my $cmd = "$SCRIPTS/dyad-analysis -v 1 -return occ -lth occ 1";
   $cmd .= " -i ".$outfile{query_seq};
@@ -562,7 +562,7 @@ sub ComputeFilterDyads {
 sub GetOrthologs {
   &IndexOneFile("orthologs", $outfile{orthologs}) if ($create_index);
   return(0) unless ($task{orthologs});
-  &RSAT::message::TimeWarn("Getting orthologs", $outfile{orthologs}) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Getting orthologs", $outfile{orthologs}) if ($main::verbose >= 2);
   &CheckDependency("orthologs", "genes");
   my $cmd = "$SCRIPTS/get-orthologs";
   $cmd .= " -i ".$outfile{genes};
@@ -584,7 +584,7 @@ sub GetOrthologs {
 sub InferOrthoOperons {
   &IndexOneFile("leader genes", $outfile{bbh}) if ($create_index);
   return(0) unless ($task{operons});
-  &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{bbh}) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{bbh}) if ($main::verbose >= 2);
   &CheckDependency("operons", "orthologs");
   my $cmd = "$SCRIPTS/get-leader-multigenome ";
   $cmd .= " -i ".$outfile{orthologs};
@@ -600,7 +600,7 @@ sub InferOrthoOperons {
 sub RetrieveOrthoSeq {
   &IndexOneFile("$promoter sequences", $outfile{seq}) if ($create_index);
   return(0) unless ($task{ortho_seq});
-  &RSAT::message::TimeWarn("Retrieving promoter sequences of orthologs", $outfile{seq}) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Retrieving promoter sequences of orthologs", $outfile{seq}) if ($main::verbose >= 2);
   &CheckDependency("ortho_seq", "bbh");
   my $cmd = "$SCRIPTS/retrieve-seq-multigenome -ids_only";
   $cmd .= " -i ".$outfile{bbh};
@@ -617,7 +617,7 @@ sub RetrieveOrthoSeq {
 sub PurgeOrthoSeq {
   &IndexOneFile("purged sequences", $outfile{purged}) if ($create_index);
   return(0) unless ($task{purge});
-  &RSAT::message::TimeWarn("Purging promoter sequences of orthologs", $outfile{purged}) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Purging promoter sequences of orthologs", $outfile{purged}) if ($main::verbose >= 2);
   &CheckDependency("purge", "seq");
   my $cmd = "$SCRIPTS/purge-sequence";
   $cmd .= " -i ".$outfile{seq};
@@ -635,7 +635,7 @@ sub PurgeOrthoSeq {
 sub OccurrenceSig {
   &IndexOneFile("occ sig", $outfile{occ_sig}) if ($create_index);
   return(0) unless ($task{occ_sig});
-  &RSAT::message::TimeWarn("Testing over-representation of hits", $outfile{occ_sig}) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Testing over-representation of hits", $outfile{occ_sig}) if ($main::verbose >= 2);
   &CheckDependency("occ_sig", "purged");
   my $cmd = "matrix-scan";
   $cmd .= $ms_parameters;
@@ -655,7 +655,7 @@ sub OccurrenceSigGraph {
 
   return(0) unless ($task{occ_sig_graph});
 
-  &RSAT::message::TimeWarn("Graph with over-representation of hits", $outfile{occ_freq_graph}) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Graph with over-representation of hits", $outfile{occ_freq_graph}) if ($main::verbose >= 2);
   &CheckDependency("occ_sig_graph", "occ_sig");
 
   ## Occ frequency graph
@@ -669,7 +669,7 @@ sub OccurrenceSigGraph {
   &one_command($cmd);
 
   ## Occ significance graph
-  my $cmd = "sort -n -k 2 $outfile{occ_sig} | XYgraph";
+  $cmd = "sort -n -k 2 $outfile{occ_sig} | XYgraph";
   $cmd .= " -xcol 2 -xleg1 'Weight score' -xsize 800  -xgstep1 1 -xgstep2 0.5";
   $cmd .= " -ycol 11 -yleg1 'Binomial significance of hits'";
   $cmd .= " -title 'matrix ".$matrix_suffix." ; gene ".$current_gene."'";
@@ -710,7 +710,7 @@ sub GetTopSig {
 sub OrthoScan {
   &IndexOneFile("sites", $outfile{sites}) if ($create_index);
   return(0) unless ($task{scan});
-  &RSAT::message::TimeWarn("Scannig sequences to detect sites", $outfile{sites}) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Scannig sequences to detect sites", $outfile{sites}) if ($main::verbose >= 2);
   &CheckDependency("scan", "seq");
   my $cmd = "matrix-scan";
   $cmd .= $ms_parameters;
@@ -726,7 +726,7 @@ sub OrthoScan {
 sub OrthoMap {
   &IndexOneFile("map", $outfile{map}) if ($create_index);
   return(0) unless ($task{map});
-  &RSAT::message::TimeWarn("Drawing feature map", $outfile{map}) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Drawing feature map", $outfile{map}) if ($main::verbose >= 2);
   &CheckDependency("map", "sites");
   my $cmd = "feature-map -i ".$outfile{sites};
   $cmd .= " -scalebar -legend";
