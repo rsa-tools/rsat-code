@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-cliques,v 1.1 2008/04/09 09:11:34 jvanheld Exp $
+# $Id: graph-cliques,v 1.2 2008/12/10 11:09:19 rsat Exp $
 #
 ############################################################
 
@@ -11,7 +11,7 @@
 
 =head1 NAME
 
-graph-clique
+graph-cliques2
 
 =head1 VERSION
 
@@ -67,7 +67,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
     %main::infile = ();
     %main::outfile = ();
@@ -105,7 +105,7 @@ package main;
     ## Initialize and read the input graph
     $graph = new RSAT::Graph2();
     $graph->set_attribute("label", "input graph");
-    $graph->graph_from_text($input_format,$main::infile{graph}, $source_col, $target_col, 0);
+    $graph->graph_from_text($input_format, $main::infile{graph}, $source_col, $target_col, 0);
 
     ################################################################
     ## Print verbose
@@ -113,83 +113,15 @@ package main;
 
     ################################################################
     ## Execute the command
-    my @arcs = $graph->get_attribute("arcs");
-    my %node_name_id = $graph->get_attribute("nodes_name_id");
-    my %arcs_name_id = $graph->get_attribute("arcs_name_id");
-    my @nodes = keys %node_name_id;
-    
-    my @cliques; # Each row of this 2D array contains the list of nodes forming the clique. It is initialize with all cliques of size 2 (all edges)
-    my @cliques_id; # The row i of this 2D array contains the list of indices in @cliques corresponding to cliques of size i
-    my %seen_cliques = (); # Hash of cliques already detected (to avoid redundancy as in n1,n2,n3 and n3,n2,n1, ... The nodes are sorted alphabetically and separated by "_"
-    my $maximal_size_clique = 2;
-    
-    # Initialization of @cliques with all the edges contained in $graph.
-    for (my $i = 0; $i < scalar (@arcs); $i++) {
-      $cliques[$i][0] = $arcs[$i][0];
-      $cliques[$i][1] = $arcs[$i][1];
-      $cliques_id[2][$i] = $i;
-    }
-    
-    my $found = 1; # This tag equals 1 if the algorithm could find a clique of size $i
-    my $size = 3;
-    while ($found) {
-      &RSAT::message::Info("\t","Looking for cliques of size",$size) if ($main::verbose >= 2);
-      $found = 0;
-      # For all cliques of size $size-1, we look if it exists a node that is linked to all
-      # nodes contained of the clique.
-      my @id_cliques_of_size_n = @{$cliques_id[$size-1]};
-      foreach my $id_clique (@id_cliques_of_size_n) {
-        my @clique_nodes = @{$cliques[$id_clique]};
-        &RSAT::message::Info("\t","Analyzing clique of size",$size-1, join(",", @clique_nodes)) if ($main::verbose >= 4);
-        foreach $node (@nodes) {
-          my $potential_clique = 1; # Tag = 1 while there is a node in @nodes having a connection with the nodes in @clique_nodes
-          my @potential_new_clique = ($node);
-          my $clique_node;
-          my @potential_existing_clique = ($node, @clique_nodes);
-          my $potential_existing_clique_members = join ("_", sort @potential_new_clique);
-          next if (defined ($seen_cliques{$potential_existing_clique_members}));
-          foreach $clique_node (@clique_nodes) {
-            my $arc_id = join ("_",$node, $clique_node,1);
-            my $arc_id_rev = join ("_",$clique_node, $node,1);
-            push @potential_new_clique, $clique_node;
-            $potential_clique = 0 if ((!defined ($arcs_name_id{$arc_id}) && !defined($arcs_name_id{$arc_id_rev})) || ($node eq $clique_node)); 
-            last if (!$potential_clique);
-          }
-          # if we found a node connecting to all nodes of a clique, create a new clique of size n and add it to the index of clique
-          $clique_members = join ("_", sort @potential_new_clique);
-          if ($potential_clique && !defined ($seen_cliques{$clique_members})) {
-            my $nb_cliques = scalar @cliques;
-            foreach my $potential_clique_nodes (@potential_new_clique) {
-              push @{$cliques[$nb_cliques]}, $potential_clique_nodes;
-            }
-            push @{$cliques_id[$size]}, $nb_cliques;
-            &RSAT::message::Info("\t","With node",$node,"found clique of size", $size, join(",",@potential_new_clique),"id", $nb_cliques) if ($main::verbose >= 4);
-            $found = 1; # We found at least a clique of size $size... we can continue
-            $seen_cliques{$clique_members}++;
-            $maximal_size_clique = $size;
-          } 
-        }
-      }
-      
-      last if ($max_size == $size);
-      $size ++;
-      
-    }
-    
-    ################################################################
-    ## Print output
+    our %nodes_id_name = $graph->get_attribute("nodes_id_name");
+    our @out_neighbours = $graph->get_attribute("out_neighbours");
+    our @in_neighbours = $graph->get_attribute("in_neighbours");
+    my %empty = ();
+    our %neighbours = ();
+    our $clique_nb = 1;
     print $out join("\t", "#element" ,"cluster", "size")."\n";
-    my $cpt = 1;
-    for ($size = $min_size; $size <= $maximal_size_clique; $size++) {
-      my @id_cliques_of_size_n = @{$cliques_id[$size]};
-      foreach my $id (@id_cliques_of_size_n) {
-        my $cluster_id = "clique_".$cpt;
-        foreach my $node (@{$cliques[$id]}) {
-          print $out join("\t", $node ,$cluster_id, $size)."\n";
-        }
-        $cpt++;
-      }
-    }
+    &cliques(\%empty, \%nodes_id_name, \%nodes_id_name);
+    
 
 
     ################################################################
@@ -225,6 +157,89 @@ sub PrintHelp {
 ## Display short help message
 sub PrintOptions {
     &PrintHelp();
+}
+
+############################################################################################################"
+## Calculate the cliques. This is a recursive function described in Johnston H.C. (1975) and based on the 
+## Bron-Kerbosch algorithm (1973). 
+## The call to the function is done with references to three sets represented by references to hashes
+## 1) Empty set
+## 2) Set containing all nodes
+## 3) Set containing all nodes
+
+sub cliques {
+  my ($combination_ref, $intersection_ref, $possible_ref) = @_;
+  my %combination = %{$combination_ref};
+  my %possible = %{$possible_ref};
+  my %intersection = %{$intersection_ref};
+  if (scalar (keys (%intersection)) == 0) {
+    print_clique (\%combination);
+  } else {
+    ## The efficiency of the algorithm can be improved
+    ## by adaptings the &calculate function
+    my $set_ref = &calculate(\%possible);
+    my %set = %{$set_ref};
+    while (scalar (keys (%set)) > 0) {
+      my @set_elem = sort keys %set;
+      my $i = $set_elem[0];
+      delete $set{$i};
+      delete $possible{$i};
+      my %combination_new = %combination;
+      $combination_new{$i}++;
+      my $neighbours_i_ref = &get_neighbours($i);
+      my %neighbours_i = %{$neighbours_i_ref};
+      my %intersection_new = ();
+      my %possible_new = ();
+      foreach my $neighbour (keys %neighbours_i) {
+        $intersection_new{$neighbour}++ if (defined $intersection{$neighbour});
+        $possible_new{$neighbour}++ if (defined $possible{$neighbour});
+      }
+      &cliques(\%combination_new,  \%intersection_new, \%possible_new);
+    }
+  }
+}
+# Simple version of the calculate function. See Johnston (1975) for a
+# more efficient implementation
+sub calculate {
+  my $possible_ref = shift;
+  return $possible_ref;
+}
+
+# Return the numerical id of a node specified by its numerical id
+sub get_neighbours {
+  my $id = shift;
+  my $neighbours_node_ref;
+  if (defined $neighbours{$id}) {
+    $neighbours_node_ref = $neighbours{$id};
+  } else {
+    my %neighbours_node = ();
+    if (defined $out_neighbours[$id]) {
+      for (my $i = 0; $i < scalar @{$out_neighbours[$id]}; $i++) {
+        $neighbours_node{$out_neighbours[$id][$i]}++;
+      }
+    }
+    if (defined $in_neighbours[$id]) {
+      for (my $i = 0; $i < scalar @{$in_neighbours[$id]}; $i++) {
+        $neighbours_node{$in_neighbours[$id][$i]}++;
+      }
+    }
+    $neighbours_node_ref = \%neighbours_node;
+    $neighbours{$id} = $neighbours_node_ref;
+  }
+  return $neighbours_node_ref;
+}
+
+sub print_clique {
+  my $combination_ref = shift;
+  my %combination = %{$combination_ref};
+  my $size = scalar (keys %combination);
+  if ($size >= $min_size && $size <= $max_size) {
+    foreach my $elem (keys %combination) {
+      print $main::out join "\t", $nodes_id_name{$elem}, "clique_".$clique_nb, $size;
+      print $main::out "\n";
+    }
+    $clique_nb++;
+  }
 }
 
 ################################################################
@@ -381,7 +396,7 @@ Maximum size of the clique to return
 ################################################################
 ## Verbose message
 sub Verbose {
-    print $main::out "; graph-clique ";
+    print $main::out "; graph-cliques2 ";
     &PrintArguments($main::out);
     printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
     if (defined(%main::infile)) {
