@@ -2364,11 +2364,6 @@ This option is only useful for GML output.</xsd:documentation>
 	      <xsd:documentation>Minimum size of the clique to return.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	  <xsd:element name="max_size" type="xsd:int" minOccurs="0">
-	    <xsd:annotation>
-	      <xsd:documentation>Maximum size of the clique to return.</xsd:documentation>
-	    </xsd:annotation>
-	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>      
       
