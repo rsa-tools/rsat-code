@@ -865,7 +865,6 @@ method C<readFromFile($file, "consensus")>.
 sub _readFromConsensusFile {
   my ($file) = @_;
   &RSAT::message::Info ("Reading matrix from consensus file", $file) if ($main::verbose >= 3);
-  
   #    ($in, $dir) = &main::OpenInputFile($file);
   
   ## open input stream
@@ -884,6 +883,7 @@ sub _readFromConsensusFile {
   my $final_cycle = 0;
   while (<$in>) {
     $l++;
+#    &RSAT::message::Debug("line", $l, $_) if ($main::verbose >= 5);
     next unless (/\S/);
     s/\r//;
     chomp();
