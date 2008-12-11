@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.54 2008/12/11 15:07:15 oly Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.55 2008/12/11 17:47:51 oly Exp $
 #
 # Time-stamp
 #
@@ -1386,7 +1386,9 @@ sub GetSequence {
       &RSAT::message::Info(join ("; ", map { $compara_taxon->$_ } qw(common_name genus species binomial classification))) if ($main::verbose >= 1);
 
       $common_name = $member->taxon->common_name;
-      $common_name =~ s/\s+/_/g;
+      if ($common_name) {
+	$common_name =~ s/\s+/_/g;
+      }
 
       my $gene = $member->get_Gene;
       &Main($gene, $org);
@@ -1421,6 +1423,7 @@ sub GetSequence {
       foreach my $dba (@{$dbas[0]}) {
 	my @all_species = @{$dba->all_species()};
 	if ($all_species[0] =~ '_') { # there are not only organism names (multi, Ancestor species)
+	  chomp $all_species[0];
 	  push @species, $all_species[0];
 	}
       }
@@ -1430,10 +1433,11 @@ sub GetSequence {
       # Get classifications
       local %classifications;
       foreach $bestiole (@species2) {
-	my $meta_container = Bio::EnsEMBL::Registry->get_adaptor( $bestiole, 'Core', 'MetaContainer');
+	chomp $bestiole;
+	my $meta_container = Bio::EnsEMBL::Registry->get_adaptor($bestiole, 'Core', 'MetaContainer');
 	my $_species = $meta_container->get_Species();
 	my %info = %{$_species};
-	$classifications{$bestiole} = @{$info{'classification'}};
+	$classifications{$bestiole} = [@{$info{'classification'}}];
       }
 ########################################################
 
@@ -1463,10 +1467,10 @@ sub GetSequence {
 		}
 		&RSAT::message::Info("Common name:", $common_name) if ($main::verbose >= 1);
 
-#		my @homolog_classification = split (/ /, $member->taxon->classification);
-		my @homolog_classification = $classifications{'$bin_name'};
-
-		&RSAT::message::Debug (join(" ", "Homolog classification :", @homolog_classification)) if ($main::verbose >= 1);
+#		my @homolog_classification = split (/ /, $member->taxon->classification); # this is too slow
+		my $classif_name = lc($bin_name);
+		my @homolog_classification = @{$classifications{$classif_name}};
+		&RSAT::message::Debug (join(" ", "Homolog classification :", @homolog_classification)) if ($main::verbose >= 3);
 
 		# Prints all homologs to table if asked for
 		if ($homologs_table) {
