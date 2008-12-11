@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.53 2008/11/24 10:25:49 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.54 2008/12/11 15:07:15 oly Exp $
 #
 # Time-stamp
 #
@@ -119,7 +119,7 @@ package main;
   } else {
       $port = '5306';
   }
-  
+
   ################################################################
   ## If option -org is used, connect to ensembldb to get list of 
   ## databases and pick the latest one corresponding to chosen organism
@@ -144,7 +144,7 @@ package main;
       $org = $dbname;
       $org =~s/_core_.+//;
   }
-  
+
   &RSAT::message::Info (join("\t", "dbname = ", $dbname)) if ($main::verbose >= 1);
 
   ################################################################
@@ -154,9 +154,9 @@ package main;
       $dbversion =~ s/($org)_core_//;
       $dbversion =~ s/_.+//;
   }
-  
+
   &RSAT::message::Info (join("\t", "dbversion", $dbversion)) if ($main::verbose >= 1);
-  
+
   ################################################################
   ## Open a new connection to EnsEMBL database, but this time we specify the DB name
     &RSAT::message::TimeWarn("Connecting EnsEMBL to retrieve the organism", 
@@ -1341,34 +1341,34 @@ sub GetSequence {
 
 # 	my $genome_db_adaptor = $registry->get_adaptor(
 #     'Multi', 'compara', 'GenomeDB');
-    
+
 #     ## featch all
 #     my $all_genome_dbs = $genome_db_adaptor->fetch_all();
 # 	foreach my $this_genome_db (@{$all_genome_dbs}) {
 #   		print $this_genome_db->name, "\n";
-# 	}	
-	
+# 	}
+
 # 	## fetch by slice example
 # 	my $gene_adaptor_M  = $registry->get_adaptor( 'Mouse', 'Core', 'Gene' );
-# 	#my $gene_id = "OTTMUSG00000018868" ; 	
+# 	#my $gene_id = "OTTMUSG00000018868" ;
 # 	my $gene_id_M = "ENSMUSG00000038253";
 # 	my $gene_M = $gene_adaptor_M -> fetch_by_stable_id($gene_id_M);
 # 	my $chromosome_M = $gene_M -> slice;
-	
+
 # 	my $gdb = $genome_db_adaptor->fetch_by_Slice($chromosome_M);
 # 	print $gdb->name;
-	
+
 # 	die();
 
 #      if (scalar(@queries) > 1) {
 #	  &RSAT::message::Warning("Only your first query will be treated");
 #      }
-      
+
       my $ortho_id = shift;
-      
+
       my $compara_dbname = 'Multi';
 #     my $compara_dbname = 'compara'; ## works also...
-      
+
       my $ma = Bio::EnsEMBL::Registry->get_adaptor($compara_dbname,'compara','Member');
 
 #     Sample Ids to test
@@ -1376,11 +1376,11 @@ sub GetSequence {
 #     $ortho_id = 'ENSG00000004059';
 
       my $member = $ma->fetch_by_source_stable_id('ENSEMBLGENE', $ortho_id);
-      
+
       # print out some information about the Member
       &RSAT::message::Info("# Chrom_name Chrom_start Chrom_end Description Source_name Taxon_id") if ($main::verbose >= 1);
       &RSAT::message::Info(join (" ", map { $member->$_ } qw(chr_name chr_start chr_end description source_name taxon_id))) if ($main::verbose >= 1);
-      
+
       my $compara_taxon = $member->taxon;
       &RSAT::message::Info("# Common_name; Genus; Species; Organism; Classification") if ($main::verbose >= 1);
       &RSAT::message::Info(join ("; ", map { $compara_taxon->$_ } qw(common_name genus species binomial classification))) if ($main::verbose >= 1);
@@ -1414,6 +1414,29 @@ sub GetSequence {
 
       my $taxon_filter_flag = 0;
 
+########################################################
+## Get classifications for all EnsEMBL organisms at once
+      my @dbas = Bio::EnsEMBL::Registry->get_all_DBAdaptors();
+      my @species;
+      foreach my $dba (@{$dbas[0]}) {
+	my @all_species = @{$dba->all_species()};
+	if ($all_species[0] =~ '_') { # there are not only organism names (multi, Ancestor species)
+	  push @species, $all_species[0];
+	}
+      }
+      # Sort because some species come several time
+      %hash = map { $_ => 1 } @species;
+      @species2 = sort keys %hash;
+      # Get classifications
+      local %classifications;
+      foreach $bestiole (@species2) {
+	my $meta_container = Bio::EnsEMBL::Registry->get_adaptor( $bestiole, 'Core', 'MetaContainer');
+	my $_species = $meta_container->get_Species();
+	my %info = %{$_species};
+	$classifications{$bestiole} = @{$info{'classification'}};
+      }
+########################################################
+
       foreach my $homology (@{$homologies}) {
 
       # You will find different kind of description UBRH, MBRH, MBRH, RHS, YoungParalogues see ensembl-compara/docs/docs/schema_doc.html for more details
@@ -1440,14 +1463,16 @@ sub GetSequence {
 		}
 		&RSAT::message::Info("Common name:", $common_name) if ($main::verbose >= 1);
 
-		my @homolog_classification = split (/ /, $member->taxon->classification);
-		&RSAT::message::Debug (join(" ", "Homolog classification :", @homolog_classification)) if ($main::verbose >= 3);
+#		my @homolog_classification = split (/ /, $member->taxon->classification);
+		my @homolog_classification = $classifications{'$bin_name'};
+
+		&RSAT::message::Debug (join(" ", "Homolog classification :", @homolog_classification)) if ($main::verbose >= 1);
 
 		# Prints all homologs to table if asked for
 		if ($homologs_table) {
 		    print $table_handle join("\t", $member->stable_id, $bin_name, $member->description, $homology->description, $homology->subtype, $attribute->perc_id, $attribute->perc_pos, $attribute->perc_cov, $ortho_id, $compara_taxon->binomial, "\n");
 		}
-		
+
 		if ($ortho_type) {
 		    if ($taxon) {
 			if (($homology->description =~ /$ortho_type/) && (lc($taxon) eq lc($homology->subtype))) {
