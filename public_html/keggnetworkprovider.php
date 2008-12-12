@@ -406,6 +406,7 @@ if($attribs){
         'reactionIds'=>$reactions,
         'reactionFile'=>$reactions_file,
     	'directed'=>$directed,
+    	'keepIrreversible'=>$keepIrre,
     	'graphType'=>$rpairs,
     	'attributes'=>$selected_attribs,
     	'outFormat'=>$out_format,
