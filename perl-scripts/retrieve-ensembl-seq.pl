@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.55 2008/12/11 17:47:51 oly Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.56 2008/12/12 15:18:57 rsat Exp $
 #
 # Time-stamp
 #
@@ -1416,30 +1416,49 @@ sub GetSequence {
 
       my $taxon_filter_flag = 0;
 
-########################################################
-## Get classifications for all EnsEMBL organisms at once
-      my @dbas = Bio::EnsEMBL::Registry->get_all_DBAdaptors();
-      my @species;
-      foreach my $dba (@{$dbas[0]}) {
-	my @all_species = @{$dba->all_species()};
-	if ($all_species[0] =~ '_') { # there are not only organism names (multi, Ancestor species)
-	  chomp $all_species[0];
-	  push @species, $all_species[0];
-	}
+      ## Get classifications for all EnsEMBL organisms at once
+      my %classifications;
+      if ($taxon) {
+	  ## Get species names - 'new' way
+#	  my @dbas = Bio::EnsEMBL::Registry->get_all_DBAdaptors();
+#	  my @species_;
+#	  foreach my $dba (@{$dbas[0]}) {
+#	      my @all_species = @{$dba->all_species()};
+#	      if ($all_species[0] =~ '_') { # there are not only organism names (multi, Ancestor species)
+#		  chomp $all_species[0];
+#		  push @species_, $all_species[0];
+#	      }
+#	  }
+	  # Sort because some species come several time
+#	  my %hash = map { $_ => 1 } @species_;
+#	  my @species = sort keys %hash;
+
+	  ## Get species names - 'old' way
+	  my @species;
+	  my $dbh = DBI->connect("DBI:mysql:host=ensembldb.ensembl.org:port=5306", "anonymous", "", {'RaiseError' => 0});
+	  my $sth = $dbh->prepare("SHOW DATABASES");
+	  $sth->execute();
+	  my $previous_org = "init";
+	  while (my $ref = $sth->fetchrow_hashref()) {
+	      if ($ref->{'Database'} =~ /_core_\d+/) {
+		  $ref->{'Database'} =~ s/_core_.+//;
+		  if ($ref->{'Database'} ne $previous_org) {
+		      push @species, $ref->{'Database'};
+		      $previous_org = $ref->{'Database'};
+		  }
+	      }
+	  }
+	  $sth->finish();
+	  $dbh->disconnect();
+
+	  # Get classifications
+	  foreach my $beast (@species) {
+	      my $meta_container = Bio::EnsEMBL::Registry->get_adaptor($beast, 'Core', 'MetaContainer');
+	      my $_species = $meta_container->get_Species();
+	      my %info = %{$_species};
+	      $classifications{$beast} = [@{$info{'classification'}}];
+	  }
       }
-      # Sort because some species come several time
-      %hash = map { $_ => 1 } @species;
-      @species2 = sort keys %hash;
-      # Get classifications
-      local %classifications;
-      foreach $bestiole (@species2) {
-	chomp $bestiole;
-	my $meta_container = Bio::EnsEMBL::Registry->get_adaptor($bestiole, 'Core', 'MetaContainer');
-	my $_species = $meta_container->get_Species();
-	my %info = %{$_species};
-	$classifications{$bestiole} = [@{$info{'classification'}}];
-      }
-########################################################
 
       foreach my $homology (@{$homologies}) {
 
@@ -1467,10 +1486,13 @@ sub GetSequence {
 		}
 		&RSAT::message::Info("Common name:", $common_name) if ($main::verbose >= 1);
 
-#		my @homolog_classification = split (/ /, $member->taxon->classification); # this is too slow
-		my $classif_name = lc($bin_name);
-		my @homolog_classification = @{$classifications{$classif_name}};
-		&RSAT::message::Debug (join(" ", "Homolog classification :", @homolog_classification)) if ($main::verbose >= 3);
+		my @homolog_classification;
+		if ($taxon) {
+#		    @homolog_classification = split (/ /, $member->taxon->classification); # this is too slow
+		    my $classif_name = lc($bin_name);
+		    @homolog_classification = @{$classifications{$classif_name}};
+		    &RSAT::message::Debug (join(" ", "Homolog classification :", @homolog_classification)) if ($main::verbose >= 3);
+		}
 
 		# Prints all homologs to table if asked for
 		if ($homologs_table) {
