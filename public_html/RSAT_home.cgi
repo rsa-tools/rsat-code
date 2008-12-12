@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.42 2008/09/24 12:19:40 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.43 2008/12/12 12:41:20 morgane Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -104,6 +104,9 @@ print <<EndText;
     (<B>RSAT</B>). This web site provides a series of modular computer
     programs specifically designed for the detection of regulatory
     signals in non-coding sequences.
+    
+     <P> <font color='red'>New !</font> <a
+    href="http://www.bigre.ulb.ac.be/forums/"><b>RSAT Forum </b>now available</a>  (December 2008)</p>
 
     <p> <font color='red'>New !</font> Four articles explaining how to
     use RSAT and NeAT published in <a
