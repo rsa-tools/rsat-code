@@ -6,6 +6,17 @@
         <link>http://rsat.bigre.ulb.ac.be/rsat/</link>
         <description>Regulatory Sequence Analysis Tools - News and Updates</description>
 
+
+	    <item>
+            <title>A forum for RSAT</title>
+            <link>http://rsat.bigre.ulb.ac.be/rsat/</link>
+            <guid isPermaLink="false">rss7</guid>
+            <description><![CDATA[
+A <b>forum</b> is available to discuss RSAT programs, report bugs and get in contact with the developers. The Forum is accessible in the Menu <b>"Help>Forum"</b>.
+           ]]></description>
+            <pubDate>Fri, 12 Dec 2008 12:30:00 GMT</pubDate>
+     </item>
+
 	<item>
             <title>utr option in retrieve-ensembl-seq</title>
             <link>http://rsat.bigre.ulb.ac.be/rsat/retrieve-ensembl-seq_form.cgi</link>
