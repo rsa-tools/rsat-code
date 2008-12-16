@@ -167,6 +167,11 @@ img.rss {
 	margin-bottom: 10px;
 }
 
+.menu_collapsible_display {
+	display: block;
+	margin-bottom: 10px;
+}
+
 .menu_item {
 	display: block;
 	background: #0D73A7 url(images/bullet2-normal.gif) no-repeat 7px 7px;
