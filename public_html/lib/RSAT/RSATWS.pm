@@ -4667,6 +4667,33 @@ sub random_graph {
 }
 
 ################################################################
+sub monitor {
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $ticket = $args{"ticket"};
+  my $grep = `ps aux | grep $ticket`;
+  if ($grep) {
+      return SOAP::Data->name('response' => {'status' => 'Running'});
+  } else {
+      return SOAP::Data->name('response' => {'status' => 'Done'});
+  }
+}
+################################################################
+sub get_result {
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $ticket = $args{"ticket"};
+  my $tmp_outfile = $TMP."/".$ticket;
+  my $result = '';
+  open $TMP_OUT, $tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+  while (my $line = <$TMP_OUT>) {
+      $result .= $line;
+  }
+  close $TMP_OUT;
+  return SOAP::Data->name('response' => {'client' => $result,
+      'server' => $tmp_outfile});
+}
+################################################################
 =pod
 
 =item B<run_WS_command>
@@ -4690,6 +4717,15 @@ sub run_WS_command {
       return SOAP::Data->name('response' => {'command' => $command,
 					     'server' => $tmp_outfile});
       
+  }
+
+  if ($output_choice eq 'ticket') {
+      my $result = `$command > $tmp_outfile &`;
+      my $ticket = $tmp_outfile;
+      $ticket =~ s/$TMP\///;
+      return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $ticket),
+							       SOAP::Data->name('command' => $command)))
+	  ->attr({'xmlns' => ''});
   }
 
   ## Execute the command on the server
