@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.43 2008/12/12 12:41:20 morgane Exp $
+# $Id: RSAT_home.cgi,v 1.44 2008/12/16 07:06:37 morgane Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -67,8 +67,8 @@ print <<EndText;
     <TD><A HREF="intro.html"><B>
     Introduction</B></A></TD>
     
-    <TD><A HREF="FAQ.html"><B>
-    FAQ</B></A></TD>
+    <TD><A HREF="http://www.bigre.ulb.ac.be/forums/"><B>
+    Forum</B></A><font color='red'> (New)</font></TD>
     
     <TD><A HREF="tutorials/tutorials.html"><B>
     Tutorials</B></A></TD>
@@ -81,9 +81,6 @@ print <<EndText;
     
     <TD><A HREF="data/"><B>
     Data</B></A></TD>
-    
-    <TD><A HREF="change_history.html"><B>
-    Change history</B></A></TD>
     
     <TD><A HREF="links.html"><B>
     Links</B></A></TD>
