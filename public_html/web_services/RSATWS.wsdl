@@ -11,7 +11,7 @@
 
   <types>
     <xsd:schema targetNamespace="urn:RSATWS" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-<!-- RSAT CLASSICAL TOOLS REQUESTS -->
+<!-- RSA TOOLS REQUESTS -->
       <xsd:complexType name="RetrieveSequenceRequest">
         <xsd:annotation>
 	  <xsd:documentation>Parameters for the operation retrieve_seq.</xsd:documentation>
@@ -1832,15 +1832,6 @@ P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R), dotprod, jac_sim, rank, sig</xsd:
        </xsd:sequence>
       </xsd:complexType>
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
       <xsd:complexType name="MatrixDistribRequest">
 	<xsd:annotation>
 	  <xsd:documentation>Parameters for the operation matrix distrib</xsd:documentation>
@@ -2171,7 +2162,7 @@ The length file contains two columns : sequence ID (ignored) and sequence length
 	</xsd:sequence>
       </xsd:complexType>
 
-<!-- RSAT GRAPH TOOLS REQUESTS -->
+<!-- NeA TOOLS REQUESTS -->
       <xsd:complexType name="ConvertGraphRequest">
 	<xsd:sequence>
 	  <xsd:element name="informat" type="xsd:string" minOccurs="1">
@@ -2673,8 +2664,7 @@ Note that the graphs do not specially need to contain actual self-loops, the que
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-      
-      
+
       <xsd:complexType name="GraphClusterMembershipRequest">
 	<xsd:sequence>
 	  <xsd:element name="informat" type="xsd:string" minOccurs="0">
@@ -2815,8 +2805,6 @@ The mean and standard deviation can then be chosen (-mean and -sd option) or wil
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-
-      
       
 <xsd:complexType name="MCLRequest">
 	<xsd:sequence>
@@ -2884,9 +2872,6 @@ The input network in the correct format can be produced by the convert-graph pro
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>         
-      
-      
-      
       
       <xsd:complexType name="GraphNeighboursRequest">
 	<xsd:sequence>
@@ -3004,7 +2989,30 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-      <!-- RSAT CLASSICAL TOOLS Response -->
+
+<!-- GENERAL UTILITY TOOLS REQUESTS -->
+      <xsd:complexType name="MonitorRequest">
+	<xsd:sequence>
+	  <xsd:element name="ticket" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Ticket of a job
+	      submitted with its output_choice set to 'ticket'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="GetResultRequest">
+	<xsd:sequence>
+	  <xsd:element name="ticket" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Ticket of a job submitted with its output_choice set to 'ticket'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
+<!-- RSA TOOLS RESPONSES -->
       <xsd:complexType name="RetrieveSequenceResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3165,8 +3173,8 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:sequence>
       </xsd:complexType>
 
-<xsd:complexType name="ConvertFeaturesResponse">
-        <xsd:sequence>
+      <xsd:complexType name="ConvertFeaturesResponse">
+	<xsd:sequence>
           <xsd:element name="server" type="xsd:string">
             <xsd:annotation>
               <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
@@ -3304,8 +3312,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-      
-      
+
       <xsd:complexType name="TextToHtmlResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3367,43 +3374,45 @@ The output graph will thus consist in the graph induced by all nodes of the firs
       </xsd:complexType>
       
       <xsd:complexType name="XYGraphResponse">
-	      <xsd:sequence>
-		      <xsd:element name="server" type="xsd:string">
-			      <xsd:annotation>
-				      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
-			      </xsd:annotation>
-		      </xsd:element>
-		      <xsd:element name="command" type="xsd:string">
-			      <xsd:annotation>
-				      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
-			      </xsd:annotation>
-		      </xsd:element>
-		      <xsd:element name="client" type="xsd:string">
-			      <xsd:annotation>
-				      <xsd:documentation>The results.</xsd:documentation>
-			      </xsd:annotation>
-		      </xsd:element>
-	      </xsd:sequence>
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
       </xsd:complexType>
+
       <xsd:complexType name="ClassFreqResponse">
-	      <xsd:sequence>
-		      <xsd:element name="server" type="xsd:string">
-			      <xsd:annotation>
-				      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
-			      </xsd:annotation>
-		      </xsd:element>
-		      <xsd:element name="command" type="xsd:string">
-			      <xsd:annotation>
-				      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
-			      </xsd:annotation>
-		      </xsd:element>
-		      <xsd:element name="client" type="xsd:string">
-			      <xsd:annotation>
-				      <xsd:documentation>The results.</xsd:documentation>
-			      </xsd:annotation>
-		      </xsd:element>
-	      </xsd:sequence>
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
       </xsd:complexType>
+
       <xsd:complexType name="ConvertSeqResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3503,6 +3512,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>          
+
       <xsd:complexType name="MatrixScanResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3563,7 +3573,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:sequence>
       </xsd:complexType>
 
-<!-- RSAT GRAPH TOOL RESPONSE -->
+<!-- NeA TOOLS RESPONSES -->
       <xsd:complexType name="ConvertGraphResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3602,6 +3612,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
+
       <xsd:complexType name="GraphCliquesResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3621,44 +3632,47 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
+
       <xsd:complexType name="DisplayGraphResponse">
-	      <xsd:sequence>
-		      <xsd:element name="server" type="xsd:string">
-			      <xsd:annotation>
-				      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
-			      </xsd:annotation>
-		      </xsd:element>
-		      <xsd:element name="command" type="xsd:string">
-			      <xsd:annotation>
-				      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
-			      </xsd:annotation>
-		      </xsd:element>
-		      <xsd:element name="client" type="xsd:string">
-			      <xsd:annotation>
-				      <xsd:documentation>The results.</xsd:documentation>
-			      </xsd:annotation>
-		      </xsd:element>
-	      </xsd:sequence>
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
       </xsd:complexType>
+
       <xsd:complexType name="DrawHeatmapResponse">
-	      <xsd:sequence>
-		      <xsd:element name="server" type="xsd:string">
-			      <xsd:annotation>
-				      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
-			      </xsd:annotation>
-		      </xsd:element>
-		      <xsd:element name="command" type="xsd:string">
-			      <xsd:annotation>
-				      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
-			      </xsd:annotation>
-		      </xsd:element>
-		      <xsd:element name="client" type="xsd:string">
-			      <xsd:annotation>
-				      <xsd:documentation>The results.</xsd:documentation>
-			      </xsd:annotation>
-		      </xsd:element>
-	      </xsd:sequence>
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
       </xsd:complexType>
+
       <xsd:complexType name="GraphNodeDegreeResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3678,6 +3692,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
+
       <xsd:complexType name="GraphTopologyResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3757,7 +3772,6 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:sequence>
       </xsd:complexType>
 
-      
       <xsd:complexType name="MCLResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3797,8 +3811,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>      
-            
-      
+
       <xsd:complexType name="RandomGraphResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3839,7 +3852,34 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:sequence>
       </xsd:complexType>
 
-<!-- RSA CLASSICAL TOOLS -->
+<!-- GENERAL UTILITY TOOLS RESPONSES -->
+      <xsd:complexType name="MonitorResponse">
+	<xsd:sequence>
+	  <xsd:element name="status" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Return status (running or done) of a job
+	      submitted with its output_choice set to 'ticket'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="GetResultResponse">
+	<xsd:sequence>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Return result of job submitted with its output_choice set to 'ticket'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
+<!-- RSA TOOLS MAIN ELEMENTS -->
       <xsd:element name="retrieve_seq">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4072,8 +4112,6 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
-
-      
       <xsd:element name="supported_organismsResponse">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4081,8 +4119,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
-      
-      
+
       <xsd:element name="text_to_html">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4090,10 +4127,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
-      
 
-
-      
       <xsd:element name="text_to_htmlResponse">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4126,8 +4160,6 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
-
-      
       <xsd:element name="roc_statsResponse">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4137,12 +4169,13 @@ The output graph will thus consist in the graph induced by all nodes of the firs
       </xsd:element>        
       
       <xsd:element name="classfreq">
-	      <xsd:complexType>
-		      <xsd:sequence>
-			      <xsd:element name="request" type="tns:ClassFreqRequest" />
-		      </xsd:sequence>
-	      </xsd:complexType>
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:ClassFreqRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
       </xsd:element>
+
       <xsd:element name="classfreqResponse">
 	      <xsd:complexType>
 		      <xsd:sequence>
@@ -4157,13 +4190,15 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 		      </xsd:sequence>
 	      </xsd:complexType>
       </xsd:element>
+
       <xsd:element name="xygraphResponse">
-	      <xsd:complexType>
-		      <xsd:sequence>
-			      <xsd:element name="response" type="tns:XYGraphResponse" />
-		      </xsd:sequence>
-	      </xsd:complexType>
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:XYGraphResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
       </xsd:element>      
+
       <xsd:element name="convert_seq">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4211,8 +4246,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>      
-      
-      
+
       <xsd:element name="contingency_stats">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4293,7 +4327,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</xsd:complexType>
       </xsd:element>
 
-      <!-- RSAT GRAPH TOOLS -->
+<!-- NeA TOOLS MAIN ELEMENTS -->
       <xsd:element name="convert_graph">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4480,8 +4514,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>      
-      
-      
+
       <xsd:element name="random_graph">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4512,11 +4545,45 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    <xsd:element name="response" type="tns:GraphGetClustersResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
-      </xsd:element> 
+      </xsd:element>
+
+<!-- GENERAL UTILITY TOOLS MAIN ELEMENTS -->
+      <xsd:element name="monitor">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:MonitorRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="monitorResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:MonitorResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="get_result">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:GetResultRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="get_resultResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:GetResultResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
     </xsd:schema>
   </types>
 
-<!-- RSAT CLASSICAL TOOLS MESSAGE -->
+<!-- RSA TOOLS MESSAGES -->
   <message name="retrieve_seqRequest">
     <part name="parameters" element="tns:retrieve_seq"/>
   </message>
@@ -4737,11 +4804,10 @@ The output graph will thus consist in the graph induced by all nodes of the firs
     <part name="output" element="tns:random_seqResponse"/>
   </message>
 
-  <!-- RSAT GRAPH TOOLS MESSAGE -->
+<!-- NeA TOOLS MESSAGES -->
   <message name="convert_graphRequest">
     <part name="parameters" element="tns:convert_graph"/>
   </message>
-
   <message name="convert_graphResponse">
     <part name="output" element="tns:convert_graphResponse"/>
   </message>
@@ -4757,96 +4823,89 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="graph_cliquesResponse">
     <part name="output" element="tns:graph_cliquesResponse"/>
   </message>
-
-
-
   <message name="display_graphRequest">
 	  <part name="parameters" element="tns:display_graph"/>
   </message>
-  
   <message name="display_graphResponse">
 	  <part name="output" element="tns:display_graphResponse"/>
   </message>
   <message name="draw_heatmapRequest">
 	  <part name="parameters" element="tns:draw_heatmap"/>
   </message>
-  
   <message name="draw_heatmapResponse">
 	  <part name="output" element="tns:draw_heatmapResponse"/>
   </message>
   <message name="compare_graphsRequest">
     <part name="parameters" element="tns:compare_graphs"/>
   </message>
-
   <message name="compare_graphsResponse">
     <part name="output" element="tns:compare_graphsResponse"/>
   </message>
-
   <message name="graph_node_degreeRequest">
     <part name="parameters" element="tns:graph_node_degree"/>
   </message>
-
   <message name="graph_node_degreeResponse">
     <part name="output" element="tns:graph_node_degreeResponse"/>
   </message>
- 
   <message name="graph_topologyRequest">
     <part name="parameters" element="tns:graph_topology"/>
   </message>
-
   <message name="graph_topologyResponse">
     <part name="output" element="tns:graph_topologyResponse"/>
   </message>
-
   <message name="graph_cluster_membershipRequest">
     <part name="parameters" element="tns:graph_cluster_membership"/>
   </message>
-
   <message name="graph_cluster_membershipResponse">
     <part name="output" element="tns:graph_cluster_membershipResponse"/>
   </message>  
-  
   <message name="random_graphRequest">
     <part name="parameters" element="tns:random_graph"/>
   </message>
-
   <message name="random_graphResponse">
     <part name="output" element="tns:random_graphResponse"/>
   </message>
-
   <message name="graph_get_clustersRequest">
     <part name="parameters" element="tns:graph_get_clusters"/>
   </message>
-
   <message name="graph_get_clustersResponse">
     <part name="output" element="tns:graph_get_clustersResponse"/>
   </message>
-
   <message name="graph_neighboursRequest">
     <part name="parameters" element="tns:graph_neighbours"/>
   </message>
-
   <message name="graph_neighboursResponse">
     <part name="output" element="tns:graph_neighboursResponse"/>
   </message>
-
   <message name="mclRequest">
     <part name="parameters" element="tns:mcl"/>
   </message>
-
   <message name="mclResponse">
     <part name="output" element="tns:mclResponse"/>
   </message>  
   <message name="rnscRequest">
     <part name="parameters" element="tns:rnsc"/>
   </message>
-
   <message name="rnscResponse">
     <part name="output" element="tns:rnscResponse"/>
-  </message>    
-  
+  </message>
+
+<!-- GENERAL UTILITY TOOLS MESSAGES -->
+  <message name="monitorRequest">
+    <part name="parameters" element="tns:monitor"/>
+  </message>
+  <message name="monitorResponse">
+    <part name="output" element="tns:monitorResponse"/>
+  </message>
+  <message name="get_resultRequest">
+    <part name="parameters" element="tns:get_result"/>
+  </message>
+  <message name="get_resultResponse">
+    <part name="output" element="tns:get_resultResponse"/>
+  </message>
+
   <portType name="RSATWSPortType">
-<!-- 	  RSAT CLASSICAL TOOLS Porttype -->
+<!-- RSA TOOLS PORTTYPES -->
       <operation name="retrieve_seq">
 	 <documentation>Returns upstream, downstream or coding DNA sequences
            for list of query genes.
@@ -5027,7 +5086,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
          <output name="RandomSequenceResponse" message="tns:random_seqResponse"/>
       </operation>
 
-      <!-- 	  RSAT GRAPH TOOLS Porttype -->
+<!-- NeA TOOLS PORTTYPES -->
       <operation name="convert_graph">
 	      <documentation>Convert graphs between different formats</documentation>
 	      <input name="ConvertGraphRequest" message="tns:convert_graphRequest"/>
@@ -5096,14 +5155,26 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	      <output name="MCLResponse" message="tns:mclResponse"/>         
       	   </operation>
       <operation name="rnsc">
-	      <documentation>Clustering via Andrew King RNSC algorithm</documentation>
-	      <input name="RNSCRequest" message="tns:rnscRequest"/>
-	      <output name="RNSCResponse" message="tns:rnscResponse"/>         
-      	   </operation>	
+	<documentation>Clustering via Andrew King RNSC algorithm</documentation>
+	<input name="RNSCRequest" message="tns:rnscRequest"/>
+	<output name="RNSCResponse" message="tns:rnscResponse"/>         
+      </operation>
+
+<!-- GENERAL UTILITY TOOLS PORTTYPES -->
+      <operation name="monitor">
+	<documentation>Monitoring the status of a job</documentation>
+	<input name="MonitorRequest" message="tns:monitorRequest"/>
+	<output name="MonitorResponse" message="tns:monitorResponse"/>         
+      </operation>
+      <operation name="get_result">
+	<documentation>Get result of a job</documentation>
+	<input name="GetResultRequest" message="tns:get_resultRequest"/>
+	<output name="GetResultResponse" message="tns:get_resultResponse"/>         
+      </operation>
   </portType>
   
   <binding name="RSATWSBinding" type="tns:RSATWSPortType">
-    <!-- 	  RSAT CLASSICAL TOOLS BINDING -->
+<!-- RSA TOOLS BINDINGS -->
     <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
     <operation name="retrieve_seq">
       <soap:operation soapAction=""/>
@@ -5357,7 +5428,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
         <soap:body use="literal" />
       </output>
     </operation>
-    <!-- 	  RSAT GRAPH TOOLS BINDING -->
+<!-- NeA TOOLS BINDINGS -->
     <operation name="convert_graph">
       <soap:operation soapAction=""/>
       <input name="ConvertGraphRequest">
@@ -5481,6 +5552,26 @@ The output graph will thus consist in the graph induced by all nodes of the firs
         <soap:body use="literal" />
       </input>
       <output name="RandomGraphResponse">
+        <soap:body use="literal" />
+      </output>
+    </operation>
+
+<!-- GENERAL UTILITY TOOLS BINDINGS -->
+    <operation name="monitor">
+      <soap:operation soapAction=""/>
+      <input name="MonitorRequest">
+        <soap:body use="literal" />
+      </input>
+      <output name="MonitorResponse">
+        <soap:body use="literal" />
+      </output>
+    </operation>
+    <operation name="get_result">
+      <soap:operation soapAction=""/>
+      <input name="GetResultRequest">
+        <soap:body use="literal" />
+      </input>
+      <output name="GetResultResponse">
         <soap:body use="literal" />
       </output>
     </operation>
