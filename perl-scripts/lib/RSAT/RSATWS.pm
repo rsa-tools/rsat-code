@@ -4671,7 +4671,8 @@ sub monitor {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
   my $ticket = $args{"ticket"};
-  my $grep = `ps aux | grep $ticket`;
+  $ticket =~ s/.*\.//;
+  my $grep = `ps aux | grep $ticket | grep -v 'grep' | grep -v monitor`;
   if ($grep) {
       return SOAP::Data->name('response' => {'status' => 'Running'});
   } else {
@@ -4691,7 +4692,7 @@ sub get_result {
   }
   close $TMP_OUT;
   return SOAP::Data->name('response' => {'client' => $result,
-      'server' => $tmp_outfile});
+					 'server' => $tmp_outfile});
 }
 ################################################################
 =pod
@@ -4720,7 +4721,9 @@ sub run_WS_command {
   }
 
   if ($output_choice eq 'ticket') {
-      my $result = `$command > $tmp_outfile &`;
+      $command .= " -o ".$tmp_outfile;
+#      my $result = `$command > $tmp_outfile &`;
+      my $result = `$command > /dev/null &`;
       my $ticket = $tmp_outfile;
       $ticket =~ s/$TMP\///;
       return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $ticket),
