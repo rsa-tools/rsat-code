@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.44 2008/12/08 15:04:14 rsat Exp $
+# $Id: convert-graph,v 1.45 2008/12/19 08:29:15 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -101,13 +101,13 @@ The list of neighbours for vertex v appears as
 
 	
 This file can then be submitted to the RNSC program. 
-In NeAT, however as the nodes present labels in the graph we are working with, the output file will be accompagnied by a two column tab delimited file specifying a label for each node id.
+In NeAT, however as the nodes present labels in the graph we are working with, the output file will be accompagnied by a two column tab delimited file specifying a label for each node id. For this reason, you must only submit the prefix of both output files.
 
 More information are available in King et al (2004).
 
 =head2 tab_numeric
 
-Exports a tab delimited file in a tab-delimited format with numerical ids required by some programs (e.g. MFfinder, Milo et al, 2002). The output file is accompagnied by another file specifying a label for each node id.
+Exports a tab delimited file in a tab-delimited format with numerical ids required by some programs (e.g. MFfinder, Milo et al, 2002 or FANMOD, Wernicke 2006). The output file is accompagnied by another file specifying a label for each node id. For this reason, you must only submit the prefix of both output files.
 
 =cut
 
@@ -433,6 +433,8 @@ Input format. Supported: tab, gml, adj_matrix, path
 =item B<-to output_format>
 
 Output format. Supported: tab, dot, gml, adj_matrix, rnsc, tab_numeric
+
+For rnsc and tab_numeric output (see above), you must submit an output prefix as two output files are returned.
 
 =cut 
 	} elsif ($arg eq "-to") {

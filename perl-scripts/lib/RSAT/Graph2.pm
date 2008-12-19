@@ -2834,11 +2834,11 @@ sub to_tab_numeric {
     my %nodes_name_id = $self->get_attribute("nodes_name_id");
     my $output = "";
     for (my $i = 0; $i < scalar @arcs; $i++) {
-      $output .= join "\t", $nodes_name_id{$arcs[$i][0]}, $nodes_name_id{$arcs[$i][1]}."\n";
+      $output .= join "\t", (($nodes_name_id{$arcs[$i][0]})+1), (($nodes_name_id{$arcs[$i][1]})+1)."\n";
     }
     $output .= "#####NODES_NAME#####";
     while (($name, $id) = each %nodes_name_id) {
-     $output .= join("\t", $id, $name)."\n";
+     $output .= join("\t", ($id+1), $name)."\n";
     } 
     return $output;
 }
