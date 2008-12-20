@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.70 2008/06/16 09:35:38 jvanheld Exp $
+# $Id: retrieve-seq,v 1.71 2008/12/20 07:33:04 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -273,7 +273,7 @@ foreach my  $query (@queries) {
 
     $query = &trim($query); ### make sure there are no leading or trailing spaces
 
-     &RSAT::message::Info(join("\t", "Searching query", $q, $query)) if ($main::verbose >= 3);
+     &RSAT::message::Info("Searching query", $q, $query) if ($main::verbose >= 3);
 
     #### check the validity of the query
     my $current_feature;
@@ -291,7 +291,7 @@ foreach my  $query (@queries) {
 	push @warnings, $warn_message;
 	next;
     }
-    
+
     local $id = $current_feature->get_attribute("id");
     local $name = $current_feature->get_attribute("name");
     local $ctg = $current_feature->get_attribute("ctg");
@@ -471,10 +471,11 @@ foreach my  $query (@queries) {
 
     ### substring retrieval
     &RSAT::message::Debug(
-	  "query: ".$query, 
-	  "id: ".$id, 
-	  "ctg: ".$ctg, 
-	  "orf_left:".$orf_left, 
+	  "query: ".$query,
+	  "id: ".$id,
+	  "ctg: ".$ctg,
+	  "contig: ".$contig{$ctg},
+	  "orf_left:".$orf_left,
 	  "orf_right: ".$orf_right, 
 	  "orf_strand: ".$orf_strand,
 	  "current_from: ".$current_from,
@@ -483,12 +484,11 @@ foreach my  $query (@queries) {
 	  "reg_right: ".$reg_right,
 	  "reg_size: ".$reg_size,
 	 )
-	if ($main::verbose >= 3); 
+	if ($main::verbose >= 3);
     if ($reg_left <= $reg_right) {
-	$current_seq = $contig{$ctg}->get_sequence($reg_left,$reg_right,$orf_strand);
-#	$current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
+      $current_seq = $contig{$ctg}->get_sequence($reg_left,$reg_right,$orf_strand);
+      #	$current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
     } else {
-	
 	$current_seq = "";
     }
     $current_seq = uc($current_seq);
