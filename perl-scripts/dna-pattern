@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.54 2008/09/16 09:13:10 morgane Exp $
+# $Id: dna-pattern,v 1.55 2008/12/20 07:30:56 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -1212,7 +1212,7 @@ sub MatchingStatistics {
 sub CountTable {
 
     ## Print the header of the count table
-    print $out ";seq";
+    print $out "#seq";
     print $out "\t", "rank" if ($return_fields{rank});	
     print $out "\t", "score" if ($return_fields{scores}); 
     print $out "\t", "total" if ($return_fields{rowsum}); 
