@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.33 2008/01/07 02:10:52 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.34 2008/12/20 07:30:21 jvanheld Exp $
 #
 ############################################################
 
@@ -977,5 +977,18 @@ for pattern discovery with I<dyad-analysis>.
 
 Oligo and dyad frequencies can be converted into background model for
 third parties pattern detection programs (MEME, MotifSampler).
+
+=head1 WISH LIST
+
+=head2 -org_list
+
+An option to build a model from a file with a list of organisms.
+
+Typically, one can give as input the file resulting from get-ortholog.
+
+If a file contains several times the same organism, this organisms
+should have a different weight.
+
+Another possibility: weight organisms as a function of sequence sizes.
 
 =cut
