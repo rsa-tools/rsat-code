@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.50 2008/07/07 20:48:07 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.51 2008/12/20 07:32:12 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -61,32 +61,37 @@ package main;
 		     scrna=>locus_tag,
 		    );
 
+    %org_specific_preferred_id = ('Arabidopsis_thaliana'=>'logus_tag');
+
+    ## Initialize class factories for each feature type
     $features = classes::ClassFactory->new_class(object_type=>"Genbank::Feature", prefix=>"ft_");
-
     $genes = classes::ClassFactory->new_class(object_type=>"Genbank::Gene", prefix=>"gn_");
-
     $mRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::mRNA", prefix=>"mRNA_");
-
     $scRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::scRNA", prefix=>"scRNA_");
-
     $tRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::tRNA", prefix=>"tRNA_");
-    
     $rRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::rRNA", prefix=>"rRNA");
-
     $repeat_regions = classes::ClassFactory->new_class(object_type=>"Genbank::repeat_region", prefix=>"rep_");
-
     $misc_RNAs = classes::ClassFactory->new_class(object_type=>"Genbank::misc_RNA", prefix=>"misc_RNA");
-
     $misc_features = classes::ClassFactory->new_class(object_type=>"Genbank::misc_feature", prefix=>"misc_feature");
-
     $CDSs = classes::ClassFactory->new_class(object_type=>"Genbank::CDS", prefix=>"cds_");
-
     $sources = classes::ClassFactory->new_class(object_type=>"Genbank::Source", prefix=>"src_");
-
     $contigs = classes::ClassFactory->new_class(object_type=>"Genbank::Contig", prefix=>"ctg_");
-
     $organisms = classes::ClassFactory->new_class(object_type=>"Genbank::Organism", prefix=>"org_");
+    @classes = qw( Genbank::Feature
+		   Genbank::Contig
+		   Genbank::Organism
+		   Genbank::Gene
+		   Genbank::CDS
+		   Genbank::mRNA 
+		   Genbank::scRNA 
+		   Genbank::tRNA 
+		   Genbank::rRNA 
+		   Genbank::repeat_region
+		   Genbank::misc_RNA 
+		   Genbank::misc_feature 
+		   Genbank::Source);
 
+    ## Default output fields
     $features->set_out_fields(qw(id 
 				 type
 				 name
@@ -106,25 +111,14 @@ package main;
 				 exons
 				 EC_number
 				 ));
-    
-    @classes = qw( Genbank::Feature
-		   Genbank::Contig
-		   Genbank::Organism
-		   Genbank::Gene
-		   Genbank::CDS
-		   Genbank::mRNA 
-		   Genbank::scRNA 
-		   Genbank::tRNA 
-		   Genbank::rRNA 
-		   Genbank::repeat_region
-		   Genbank::misc_RNA 
-		   Genbank::misc_feature 
-		   Genbank::Source);
-    
-    &ReadArguments();
-    
+
+
     ################################################################
-    #### check argument values ####
+    ## Read arguments of the command line
+    &ReadArguments();
+
+    ################################################################
+    #### Check argument values ####
 
     #### input directory
     unless (($inputfiles) || (defined($dir{input}))) {
@@ -142,6 +136,21 @@ package main;
 	chomp($org);
 	warn "; Auto selection of organism name\t$org\n" if ($verbose >= 1);
     }
+
+    ## treat organism-specific preferred IDs
+    if (defined($org_specific_preferred_id{$org})) {
+      %preferred_id = (
+		       cds=>$org_specific_preferred_id{$org},
+		       mrna=>$org_specific_preferred_id{$org},
+		       gene=>GeneID,
+		       trna=>$org_specific_preferred_id{$org},
+		       srna=>$org_specific_preferred_id{$org},
+		       rrna=>$org_specific_preferred_id{$org},
+		       misc_rna=>$org_specific_preferred_id{$org},
+		       scrna=>$org_specific_preferred_id{$org},
+		      );
+    }
+
 
     ### initial directory
     $dir{main} = `pwd`; #### remember working directory
