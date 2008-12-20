@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.31 2008/09/02 15:25:50 rsat Exp $
+# $Id: footprint-discovery,v 1.32 2008/12/20 07:34:08 jvanheld Exp $
 #
 ############################################################
 
@@ -105,6 +105,41 @@ Janky R, van Helden J (2008). Evaluation of phylogenetic footprint
 discovery for the prediction of bacterial cis-regulatory elements. BMC
 Bioinformatics, in press.
 
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item get-orthologs
+
+=item dyad-analysis
+
+=back
+
+=head1 WISH LIST
+
+
+The following options are not yet implemented, but this should be done
+soon.
+
+=over
+
+=item B<-taxa>
+
+Specify a file containing a list of taxa, each of which will be
+analyzed separately. The results are stored in a separate folder for
+each taxon. The folder name is defined automatically.
+
+=item B<-all_taxa>
+
+Automatically analyze all the taxa, and store each result in a
+separate folder (the folder name is defined automatically).
+
+
+=back
+
 =cut
 
 
@@ -114,6 +149,7 @@ BEGIN {
   }
 }
 require "RSA.lib";
+require "footprint.lib.pl";
 
 
 
@@ -124,36 +160,48 @@ package main;
 
   ################################################################
   ## Initialise parameters
-  $program_version = do { my @r = (q$Revision: 1.31 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#  %supported_organism = ();
+  $program_version = do { my @r = (q$Revision: 1.32 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
   %main::outfile = ();
 
+  local $skip = 0;
+  local $last = 0;
 
+  ## Dyad-analysis parameters
   local $dyad_return_fields = "occ,proba,rank";	## Default return fields for dyad-analysis
   local @dyad_return_fields = (); ## User-specified return fields for dyad-analysis
+
   local $create_index = 0; ## Create an HTML file with index to the other result files
   local %index_list = (); ## List of index files (there can be several indexes with the option -sep_genes)
   local $verbose = 0;		## Verbosity
-  local $in = STDIN;
-  local $taxon;			## Reference taxon
-  local $organism_name;		## Query organism
-  local @query_genes = ();	## list of query genes
-  local $img_format = "png";	## Image format
-  local $strands = "-2str"; ## Strands for pattern discovery and pattern matching
   local $noov = "-noov";     ## Treatment of self-overlapping patterns
   local $filter = 1; ## Only report dyads present in the query promoter
   local $bg_model = "taxfreq"; ## Background model for pattern discovery (Supported:taxfreq or monads)
+  local $to_matrix = 0;		## Convert assembled dyads into PSSM
   local %lth = (occ=>1,occ_sig=>0); ## Lower thresholds
   local %uth = (rank=>50);	    ## Upper thresholds
-  local $infer_operons = 0;	    ## Infer operon leader genes
-  local $dist_thr = 55;	    ## DIstance threshold for operon inference
-  local $to_matrix = 0;		## Convert assembled dyads into PSSM
-  local $sep_genes = 0;		## Analyze each gene separately
-  local $max_genes = undef;	## Analyze a limited number of genes
+  local $strands = "-2str"; ## Strands for pattern discovery and pattern matching
 
-  local $supported_organism;
+  $supported_task{filter_dyads} = 1;
+  $supported_task{dyads} = 1;
+  $supported_task{map} = 1;
+#  $supported_tasks = join (",", keys %supported_task);
+
+  ## Parameters for promoter retrieval
+  local $taxon;			## Reference taxon
+  local $organism_name;		## Query organism
+  local @query_genes = ();	## list of query genes
+  local $infer_operons = 0;     ## Infer operon leader genes
+  local $dist_thr = 55;	        ## Distance threshold for operon inference
+  local $sep_genes = 0;	        ## Analyze each gene separately
+  local $promoter = "ortho";    ## Alternatively: leader when the option "infer operons" is active
+#  local $all_genes = 0;         ## Analyze all the genes of the query organism
+#  local $max_genes = undef;     ## Analyze a restricted number of genes
+
+#  local $supported_organism;
 
   ## Options for the &doit() command;
   local $dry = 0; ## Do not run the command, just echo them as warning
@@ -162,6 +210,10 @@ package main;
   local $job_prefix = "footprint_disco";
   local $cmd;
 
+
+  local $map_format = "png";	## Image format
+
+
   ################################################################
   ## Read argument values
   &ReadArguments();
@@ -169,60 +221,19 @@ package main;
   ################################################################
   ## Check argument values
 
-  ## Check taxon
-  &RSAT::error::FatalError("You must specify a taxon (option -taxon)")
-    unless ($taxon);
-  my @organisms = &CheckTaxon($taxon);
-
-  ## Check organism
-  &RSAT::error::FatalError("You must specify a organism (option -org)")
-    unless ($organism_name);
-  $organism = new RSAT::organism();
-  $organism->check_name($organism_name);
-  $organism->set_attribute("name", $organism_name);
-
-  ################################################################
-  ## Read query genes from input file
-  if ($all_genes) {
-    $infile{genes} = $supported_organism{$organism_name}->{'data'};
-    $infile{genes} .= "/genome/cds.tab";
-  }
-
-  if ($infile{genes}) {
-    ($in) = &OpenInputFile($infile{genes});
-    while (<$in>) {
-      next if (/^--/); ## Skip mysql-type comment lines
-      next if (/^;/); ## Skip comment lines
-      next if (/^#/); ## Skip header lines
-      next unless (/\S/); ## Skip empty lines
-      chomp;
-      my @fields = split /\s+/;
-      my $query = shift @fields;
-      push @query_genes, $query;
-    }
-    close $in;
-  }
-
-
-  ################################################################
-  ## Check query genes
-  if (scalar(@query_genes) ==0) {
-    &RSAT::error::FatalError("You must specify at least one query gene (options -q or -i)");
-  }
-
-  ## Get maximum number of genes if limited
-  if ($max_genes){
-    if (scalar(@query_genes)>$max_genes){
-      &RSAT::message::Warning("The analysis has been limited to the first ", $max_genes,"genes");
-      @query_genes= splice(@query_genes,0,$max_genes);
-      &RSAT::message::Warning(join("\t","Query genes:",@query_genes)) if ($main::verbose >= 2);
-    }
-  }
+  ## Check parameters for footprint analysis
+  &CheckFootprintParameters();
 
   ################################################################
   ## Analyze query genes separately or altogether
   if ($sep_genes) {
+    my $g = 0;
+    my $gene_nb = scalar(@query_genes);
     foreach my $current_gene (@query_genes) {
+      $g++;
+      &RSAT::message::TimeWarn("Analysing gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 2);
+      next if (($skip > 0) && ($g <= $skip));
+      last if (($last > 0) && ($g >= $last));
       &RunFootprintDisco($current_gene);
     }
   } else {
@@ -247,110 +258,52 @@ package main;
 ################################################################
 
 
-sub one_command {
-  my ($cmd) = @_;
-  if ($main::batch) {
-    $main::batch_cmd .= " ; $cmd";
-  } else {
-    print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  }
-}
-
 ################################################################
 ## Run footprint discovery flow chart for one or several query genes
 sub RunFootprintDisco {
-  my (@current_query_genes) = @_;
+  local (@current_query_genes) = @_;
 
   local $start_time = &AlphaDate();
   local $batch_cmd = "";
+  local $out = "";
+  local $genes = "";
 
 
   ################################################################
-  ## Define a query prefix for the title of the feature map and for
-  ## automatic output file specification
-  my $query_prefix;
-  if (scalar(@current_query_genes) == 1) {
-    $query_prefix = $current_query_genes[0];
-  } elsif (scalar(@current_query_genes) <= 10) {
-    $query_prefix = join "_", @current_query_genes;
-  } elsif ($outfile{prefix}) {
-    $query_prefix = `basename $outfile{prefix}`;
-    chomp($query_prefix);
-  } elsif ($infile{genes}) {
-    $query_prefix = `basename $infile{genes} .tab`;
-  }
-  &RSAT::message::Warning("Query prefix", $query_prefix) if ($main::verbose >= 2);
+  ## Initialize output directory + output files
+  local $query_prefix = &GetQueryPrefix();
+  $outfile{prefix} = &GetOutfilePrefix();
+#  $outfile{prefix} .= "_".$bg_model;
+  &InitOutput();
 
-  ## Output prefix is mandatory
-  ## If not specified by the user, define it automatically
-  ## If genes are to be analyzed separately, also define output prefix automatically
-  if (($sep_genes) || ($outfile{prefix} eq "")) {
-    if ($query_prefix) {
-      $outfile{prefix} = join( "/", "footprints", $taxon, $organism_name, $query_prefix, $bg_model, 
-			       join ("_", $query_prefix, $organism_name, $taxon, $bg_model));
-      &RSAT::message::Warning("Automatic definition of the output prefix", $outfile{prefix});
-    } else {
-      &RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
-    }
-  }
-
-  ## Create output directory if required
-  $dir{output} = `dirname $outfile{prefix}`;
-  chomp($dir{output});
-  &RSAT::util::CheckOutDir($dir{output});
-
-  ## Open output stream for the log file
-  $outfile{log} = $outfile{prefix}."_log.txt";
-  $out = &OpenOutputFile($outfile{log});
-
-  ## File for storing the list of query gene names
-  $outfile{genes} = $outfile{prefix}."_query_genes.tab";
-  $genes = &OpenOutputFile($outfile{genes});
-
-  ## Specify other file names
-  $outfile{leader_qgenes} = $outfile{prefix}."_leader_query_genes.tab";
-  $outfile{orthologs} = $outfile{prefix}."_ortho_bbh.tab";
-  $outfile{query_seq} = $outfile{prefix}."_query_seq.fasta";
+  ## Output files for dyad-analysis
   $outfile{filter_dyads} = $outfile{prefix}."_filter_dyads.tab";
-  if ($infer_operons) {
-    $promoter = "leaders";
-  } else {
-    $promoter = "ortho"; 
-  }
-  $outfile{bbh} = $outfile{prefix}."_".$promoter."_bbh.tab";
-  $outfile{seq} = $outfile{prefix}."_".$promoter."_seq.fasta";
-  $outfile{purged} = $outfile{prefix}."_".$promoter."_seq_purged.fasta";
   $outfile{dyad_prefix} = $outfile{prefix}."_".$promoter."_dyads_3nt_sp0-20".$strands.$noov."_".$bg_model."_sig".$lth{occ_sig};
   $outfile{dyads} = $outfile{dyad_prefix}.".tab";
   $outfile{dyads_html} = $outfile{dyad_prefix}.".html";
   $outfile{asmb} = $outfile{dyad_prefix}.".asmb";
-  $outfile{map} = $outfile{dyad_prefix}.".".${img_format};
+  $outfile{map} = $outfile{dyad_prefix}.".".${map_format};
   if ($to_matrix) {
     $outfile{pssm_prefix} = $outfile{dyad_prefix}."_pssm";
     $outfile{sig_PSSM} = $outfile{pssm_prefix}."_sig_matrices.txt";
     $outfile{count_PSSM} = $outfile{pssm_prefix}."_count_matrices.txt";
   }
 
-  ## HTML index
-  if ($create_index) {
-    $outfile{index} = $outfile{prefix}."_index.html";
-    $index_list{$query_prefix} = $outfile{index};
-    $index = &OpenOutputFile($outfile{index});
-    print $index "<html>\n";
-    print $index "<head><title>", join (" ", $query_prefix, $taxon, $organism_name, $bg_model), "</title></head>\n";
-    print $index "<body>\n";
-    print $index "<hr size=4 color='#000088'>";
-    print $index "<h1 align=center>Footprint discovery result</h1>";
-    print $index "<h2 align=center>", join (" ", $query_prefix, $taxon, "<i>".$organism_name."</i>", $bg_model), "</h2>\n";
-    print $index "<hr size=2 color='#000088'>";
-    print $index "<blockquote>";
-    print $index "<table cellspacing=0 cellpadding=3 border=0>\n";
-    &IndexOneFile("log", $outfile{log});
-    &IndexOneFile("input", $infile{genes}) if (($infile{genes}) && !($sep_genes));
+  ## Report all outfile names
+  if ($main::verbose >= 5) {
+    foreach my $key (sort keys %outfile) {
+      &RSAT::message::Debug("outfile", $key, "'".$outfile{$key}."'");
+    }
   }
 
+  ################################################################
+  ## Open file to the HTML index
+  &OpenIndex() if ($create_index);
 
-  ## Background model file
+  ################################################################
+  ## Parameters for dyad-analysis
+
+  ## Background model file for dyad-analysis
   if ($bg_model eq "taxfreq") {
     $infile{bg_model} = &ExpectedFreqFile($taxon,
 					  3,
@@ -370,6 +323,7 @@ sub RunFootprintDisco {
     $dyad_return_fields = join ",", @dyad_return_fields;
   }
 
+  ################################################################
   ## Print query genes in the gene file
   foreach my $gene (@current_query_genes) {
     print $genes $gene, "\t", $organism_name, "\n";
@@ -380,106 +334,38 @@ sub RunFootprintDisco {
   ## Print verbose
   &Verbose() if ($verbose);
 
-  ################################################################
-  ## Get predicted leader genes of the query genes
-  if ($infer_operons) {
-    &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{leader_qgenes}) if ($verbose >= 1);
-    $cmd = "$SCRIPTS/get-leader-multigenome ";
-    $cmd .= " -i ".$outfile{genes};
-    $cmd .= " -o ".$outfile{leader_qgenes};
-    $cmd .= " -uth interg_dist ".$dist_thr;
-    &one_command($cmd);
-#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-    &IndexOneFile("leader query genes", $outfile{leader_qgenes}) if ($create_index);
+  ## Predict operon leader genes of the query genes
+  &InferQueryOperons() if ($infer_operons);
+
+  ## Dyad filter tasks
+  unless ($nofilter) {
+    ## Retrieve promoters of the query organism
+    &RetrieveQueryPromoters();
+
+    ## Detect all dyads in promoters of query genes for dyad filtering
+    &ComputeFilterDyads();
   }
 
   ################################################################
-  ## Retrieve promoters of the query organism
-  &RSAT::message::TimeWarn("Retrieving promoter sequences for query genes", $outfile{query_seq}) if ($verbose >= 1);
-  $cmd = "$SCRIPTS/retrieve-seq ";
-  $cmd .= " -org ".$organism_name;
-  if ($infer_operons){
-    $cmd .= " -i ".$outfile{leader_qgenes};
-  }else{
-    $cmd .= " -i ".$outfile{genes};
-  }
-  $cmd .= " -noorf";
-  $cmd .= " -o ".$outfile{query_seq};
-  &one_command($cmd);
-#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  &IndexOneFile("query sequence", $outfile{query_seq}) if ($create_index);
-
+  ## Identify ortholog genes
+  &GetOrthologs();
 
   ################################################################
-  ## Detect all dyads in promoters of query genes for dyad filtering
-  if (!$nofilter) {
-    &RSAT::message::TimeWarn("Computing filter dyads", $outfile{filter_dyads}) if ($verbose >= 1);
-    $cmd = "$SCRIPTS/dyad-analysis -v 1 -return occ -lth occ 1";
-    $cmd .= " -i ".$outfile{query_seq};
-    $cmd .= " -l 3 -sp 0-20";
-    $cmd .= " ".$strands;
-    $cmd .= " ".$noov;
-    $cmd .= " -o ".$outfile{filter_dyads};
-  &one_command($cmd);
-#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-    &IndexOneFile("filter dyads", $outfile{filter_dyads}) if ($create_index);
-  }
-
-  ################################################################
-  ## get orthologs
-  &RSAT::message::TimeWarn("Getting orthologs", $outfile{orthologs}) if ($verbose >= 1);
-  $cmd = "$SCRIPTS/get-orthologs";
-  $cmd .= " -i ".$outfile{genes};
-  $cmd .= " -org ".$organism_name;
-  $cmd .= " -taxon ".$taxon;
-  $cmd .= " -return query_name,query_organism -return ident -lth ali_len 50 -return e_value -uth e_value 1e-05";
-  $cmd .= " -uth rank 1";	## BBH criterion
-  $cmd .= " -only_blast";	## only use genome having blast files
-  $cmd .= " -o ".$outfile{orthologs};
-  &one_command($cmd);
-#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  &IndexOneFile("orthologs", $outfile{orthologs}) if ($create_index);
-
-
-  ################################################################
-  ## Get predicted leader genes
-  if ($infer_operons) {
-    &RSAT::message::TimeWarn("Get leaders of query genes (d<=".$dist_thr."bp)", $outfile{bbh}) if ($verbose >= 1);
-    $cmd = "$SCRIPTS/get-leader-multigenome ";
-    $cmd .= " -i ".$outfile{orthologs};
-    $cmd .= " -o ".$outfile{bbh};
-    $cmd .= " -uth interg_dist ".$dist_thr;
-  &one_command($cmd);
-#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-    &IndexOneFile("leader genes", $outfile{bbh}) if ($create_index);
-  }
+  ## Predict operon leader genes for the orthologous genes
+  &InferOrthoOperons() if ($infer_operons);
 
   ################################################################
   ## Retrieve sequences from orthologs
-  &RSAT::message::TimeWarn("Retrieving promoter sequences of orthologs", $outfile{seq}) if ($verbose >= 1);
-  $cmd = "$SCRIPTS/retrieve-seq-multigenome -ids_only";
-  $cmd .= " -i ".$outfile{bbh};
-  $cmd .= " -noorf";
-  $cmd .= " -o ".$outfile{seq};
-  &one_command($cmd);
-#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  &IndexOneFile("$promoter sequences", $outfile{seq}) if ($create_index);
+  &RetrieveOrthoSeq();
 
   ################################################################
   ## Purge sequences
-  &RSAT::message::TimeWarn("Purging promoter sequences of orthologs", $outfile{purged}) if ($verbose >= 1);
-  $cmd = "$SCRIPTS/purge-sequence";
-  $cmd .= " -i ".$outfile{seq};
-  $cmd .= " -ml 30 -mis 0 -mask_short 30";
-  $cmd .= " ".$strands;
-  $cmd .= " -o ".$outfile{purged};
-  &one_command($cmd);
-#  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  &IndexOneFile("purged sequences", $outfile{purged}) if ($create_index);
+  &PurgeOrthoSeq();
 
   ################################################################
   ## Discover over-represented dyads in promoters of orthologous genes
   &RSAT::message::TimeWarn("Detecting phylogenetic footprints", $outfile{dyads}) if ($verbose >= 1);
+  &CheckDependency("dyads", "purged");
   $cmd = "$SCRIPTS/dyad-analysis -v 1 ";
   $cmd .= " -return ".$dyad_return_fields;
   if ($bg_model eq "taxfreq") {
@@ -502,33 +388,37 @@ sub RunFootprintDisco {
   $cmd .= " ".$noov;
   $cmd .= " -sort";
   $cmd .= " -o ".$outfile{dyads};
-  &one_command($cmd);
+  &one_command($cmd) if ($task{dyads});
 #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("dyads", $outfile{dyads}) if ($create_index);
 
   ## Generate a HTML table with the discovered dyads
+  &CheckDependency("dyads_html", "dyads");
   $cmd = "$SCRIPTS/text-to-html";
   $cmd .= " -i ".$outfile{dyads};
   $cmd .= " -font variable -chunk 1000";
   $cmd .= " -o ".$outfile{dyads_html};
-  &one_command($cmd);
+  &one_command($cmd) if ($task{dyads});
 #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("dyads [htm]", $outfile{dyads_html}) if ($create_index);
 
   ################################################################
   ## Assemble significant dyads
   &RSAT::message::TimeWarn("Assembling significant dyads", $outfile{asmb}) if ($verbose >= 1);
+  &CheckDependency("asmb", "dyads");
   $cmd = "$SCRIPTS/pattern-assembly -v 1";
   $cmd .= " -i ".$outfile{dyads};
   $cmd .= " -subst 0 -maxfl 1 -toppat 50";
   $cmd .= " -o ".$outfile{asmb};
-  &one_command($cmd);
+  &one_command($cmd) if ($task{dyads});
 #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("assembled dyads", $outfile{asmb}) if ($create_index);
 
   ################################################################
   ## Generate a feature-map of the discovered dyads
   my $map_title = join "; ", $taxon, $organism_name, $query_prefix;
+  &CheckDependency("map", "dyads");
+  &CheckDependency("map", "seq");
   &RSAT::message::TimeWarn("Generating feature map", $outfile{map}) if ($verbose >= 1);
   $cmd = "$SCRIPTS/dna-pattern -return limits,sites -origin -0 -N 4";
   $cmd .= " -pl ".$outfile{dyads};
@@ -536,11 +426,11 @@ sub RunFootprintDisco {
   $cmd .= " | $SCRIPTS/convert-features -from dnapat -to ft";
   $cmd .= " | $SCRIPTS/feature-map";
   $cmd .= " -title '".$map_title."'";
-  $cmd .= " -format ".$img_format;
+  $cmd .= " -format ".$map_format;
   $cmd .= " -scalebar -legend";
   $cmd .= " -scorethick";
   $cmd .= " -o ".$outfile{map};
-  &one_command($cmd);
+  &one_command($cmd) if ($task{map});
 #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
   &IndexOneFile("feature map", $outfile{map}, image=>1) if ($create_index);
 
@@ -548,6 +438,8 @@ sub RunFootprintDisco {
   ## Convert assembled dyads into a position-specific scoring matrix
   if ($to_matrix) {
     &RSAT::message::TimeWarn("Converting assembled dyads into PSSM", $outfile{pssm}) if ($verbose >= 1);
+    &CheckDependency("pssm", "asmb");
+    &CheckDependency("pssm", "seq");
     $cmd = "$SCRIPTS/matrix-from-patterns -v 1";
     $cmd .= " -seq ".$outfile{seq};
     $cmd .= " -asmb ".$outfile{asmb};
@@ -608,8 +500,9 @@ sub RunFootprintDisco {
 ################################################################
 ## Display full help message 
 sub PrintHelp {
-    system "pod2text -c $0";
-    exit()
+#    system "pod2text -c $0";
+    system "cat $0 $ENV{RSAT}/perl-scripts/lib/footprint.lib.pl | pod2text -c";
+    exit(0);
 }
 
 ################################################################
@@ -621,196 +514,25 @@ sub PrintOptions {
 ################################################################
 ## Read arguments 
 sub ReadArguments {
-    my $arg;
-    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
-    while (scalar(@arguments) >= 1) {
-      $arg = shift (@arguments);
-	## Verbosity
+
 =pod
 
 =head1 OPTIONS
 
+=cut
+  local $arg;
+  local @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+
+    if (&ReadFootprintOptions()) {
+      next;
+
+      ### Lower threshold
+
+=pod
+
 =over 4
-
-=item B<-v #>
-
-Level of verbosity (detail in the warning messages during execution)
-
-=cut
-  if ($arg eq "-v") {
-	    if (&IsNatural($arguments[0])) {
-		$main::verbose = shift(@arguments);
-	    } else {
-		$main::verbose = 1;
-	    }
-
-	    ## Help message
-=pod
-
-=item B<-h>
-
-Display full help message
-
-=cut
-	} elsif ($arg eq "-h") {
-	    &PrintHelp();
-
-	    ## List of options
-=pod
-
-=item B<-help>
-
-Same as -h
-
-=cut
-	} elsif ($arg eq "-help") {
-	    &PrintOptions();
-
-=pod
-
-=item B<-batch>
-
-Generate one command per query gene, and post it on the queue of a PC
-cluster.
-
-=cut
-	} elsif ($arg eq "-batch") {
-	    $main::batch = 1;
-
-
-	    ## Dry run
-=pod
-
-=item B<-dry>
-
-Dry run: print the commands but do not execute them.
-
-=cut
-	} elsif ($arg eq "-dry") {
-	    $main::dry = 1;;
-
-
-=item B<-genes>
-
-Specify a file containing a list of genes. Multiple genes can also be
-specified by using iteratively the option -q.
-
-=cut
-	} elsif ($arg eq "-genes") {
-	  $main::infile{genes} = shift(@arguments);
-
-=pod
-
-=item B<-all_genes>
-
-Automatically analyze all the genes of a query genome, and store each
-result in a separate folder (the folder name is defined
-automatically).
-
-=cut
-	} elsif ($arg eq "-all_genes") {
-	  $main::all_genes = 1;
-
-=pod
-
-=item B<-max_genes>
-
-Maximal number of genes to analyze.
-
-=cut
-	} elsif ($arg eq "-max_genes") {
-	  $main::max_genes = shift(@arguments);
-
-	    ## Output prefix
-=pod
-
-=item	B<-o output_prefix>
-
-Prefix for the output files.
-
-If the prefix is not specified, the program can guess a default
-prefix, but this is working only if there is a single query gene or
-query file.
-
-=cut
-	} elsif ($arg eq "-o") {
-	    $main::outfile{prefix} = shift(@arguments);
-
-	    ## Query gene
-=pod
-
-=item	B<-q query>
-
-Query gene.
-
-This option can be used iteratively on the command line to specify
-multiple genes.
-
-=cut
-	} elsif ($arg eq "-q") {
-	  push @main::query_genes, shift(@arguments);
-
-=pod
-
-
-=pod
-
-=item B<-sep_genes>
-
-Search footprints for each query gene separately. The results are
-stored in a separate folder for each gene. The folder name is defined
-automatically.
-
-By default, when several query genes are specified, the program
-collects orthologs and analyzes their promoters altogether. The option
-I<-sep> allows to automatize the detection of footprint in a set of
-genes that will be treated separately.
-
-=cut
-	} elsif ($arg eq "-sep_genes") {
-	    $main::sep_genes = 1;
-
-	    ## Organism
-=pod
-
-=item	B<-org query_organism>
-
-Query organism, to which the query genes belong.
-
-=cut
-	} elsif ($arg eq "-org") {
-	  $main::organism_name = shift(@arguments);
-
-	    ## Taxon
-=pod
-
-=item	B<-taxon reference_taxon>
-
-Reference taxon, in which orthologous genes have to be collected.
-
-=cut
-	} elsif ($arg eq "-taxon") {
-	  $main::taxon = shift(@arguments);
-
-
-
-         ## Create HTML Index
-=pod
-
-=item B<-index>
-
-Generate an HTML index with links to the result files. This option is
-used for the web interface, but can also be convenient to index
-results, especially when several genes or taxa are analyzed (options
--genes, -all_genes, -all_taxa).
-
-=cut
-
-	} elsif ($arg eq "-index") {
-	  $main::create_index = 1;
-
-	    ### Lower threshold
-=pod
 
 =item B<-lth field value>
 
@@ -820,12 +542,13 @@ See the manual of dyad-analysis for a description of the fields on
 which a threshold can be imposed.
 
 =cut
-	} elsif ($arg eq "-lth") {
-	    my $thr_field = shift (@arguments);
-	    my $thr_value =  shift (@arguments);
-	    $main::lth{$thr_field} = $thr_value;
+    } elsif ($arg eq "-lth") {
+      my $thr_field = shift (@arguments);
+      my $thr_value =  shift (@arguments);
+      $main::lth{$thr_field} = $thr_value;
 
-	    ### Upper threshold
+      ### Upper threshold
+
 =pod
 
 =item B<-uth field value>
@@ -836,12 +559,11 @@ See the manual of dyad-analysis for a description of the fields on
 which a threshold can be imposed.
 
 =cut
-	} elsif ($arg eq "-uth") {
-	  my $thr_field = shift (@arguments);
-	  my $thr_value =  shift (@arguments);
-	  $main::uth{$thr_field} = $thr_value;
+    } elsif ($arg eq "-uth") {
+      my $thr_field = shift (@arguments);
+      my $thr_value =  shift (@arguments);
+      $main::uth{$thr_field} = $thr_value;
 
-	  ## Return fields for dyad-analysis
 =pod
 
 =item B<-return dyad_return_fields>
@@ -857,8 +579,8 @@ Type I<dyad-analysis -help> to obtain the list of supported return
 fields.
 
 =cut
-	} elsif ($arg eq "-return") {
-	  push @dyad_return_fields, shift (@arguments);
+    } elsif ($arg eq "-return") {
+      push @dyad_return_fields, shift (@arguments);
 
 =pod
 
@@ -869,8 +591,8 @@ Convert assembled patterns into position-specific scoring matrices
 is large and if there are many assemblies.
 
 =cut
-	} elsif ($arg eq "-to_matrix") {
-	  $main::to_matrix = 1;
+    } elsif ($arg eq "-to_matrix") {
+      $main::to_matrix = 1;
 
 
 	    ## Background model
@@ -897,8 +619,8 @@ observed in the input sequences.
 =back
 
 =cut
-	} elsif ($arg eq "-bg_model") {
-	  $main::bg_model = shift(@arguments);
+    } elsif ($arg eq "-bg_model") {
+      $main::bg_model = shift(@arguments);
 
 	  ## Dyads filtering
 
@@ -910,9 +632,8 @@ Only accept dyads found in the promoter of the query gene, in the
 query organism. (option selected by default)
 
 =cut
-
-	} elsif ($arg eq "-filter") {
-	  $main::filter = 1;
+    } elsif ($arg eq "-filter") {
+      $main::filter = 1;
 
 =pod
 
@@ -923,23 +644,9 @@ query gene, in the query organism. (will cancel -filter option if selected)
 
 =cut
 
-	} elsif ($arg eq "-no_filter") {
-	  $main::nofilter = 1;
-	  
-	  ## infer operons
+    } elsif ($arg eq "-no_filter") {
+      $main::nofilter = 1;
 
-=pod
-
-=item B<-infer_operons>
-
-Infer operons in order to retrieve the promoters of the predicted
-operon leader genes rather than those located immediately upstream of
-the orthologs. This method uses a threshold on the intergenic distance.
-
-=cut
-
-	} elsif ($arg eq "-infer_operons") {
-	  $main::infer_operons = 1;
 
 =pod
 
@@ -948,22 +655,13 @@ the orthologs. This method uses a threshold on the intergenic distance.
 Specify here the intergenic distance threshold in base pairs. Pair of adjacent genes with intergenic distance equal or less than this value are predicted to be within operon. (default : 55)
 
 =cut
+    } elsif ($arg eq "-dist_thr") {
+      $main::dist_thr = shift(@arguments);
 
-	} elsif ($arg eq "-dist_thr") {
-	  $main::dist_thr = shift(@arguments);
-
-	} else {
-	    &FatalError(join("\t", "Invalid option", $arg));
-
-	}
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
     }
-
-
-=pod
-
-=back
-
-=cut
+  }
 
 }
 
@@ -1020,38 +718,4 @@ sub Verbose {
 
 __END__
 
-=pod
 
-=head1 SEE ALSO
-
-=over
-
-=item get-orthologs
-
-=item dyad-analysis
-
-=back
-
-=head1 WISH LIST
-
-
-The following options are not yet implemented, but this should be done
-soon.
-
-=over
-
-=item B<-taxa>
-
-Specify a file containing a list of taxa, each of which will be
-analyzed separately. The results are stored in a separate folder for
-each taxon. The folder name is defined automatically.
-
-=item B<-all_taxa>
-
-Automatically analyze all the taxa, and store each result in a
-separate folder (the folder name is defined automatically).
-
-
-=back
-
-=cut
