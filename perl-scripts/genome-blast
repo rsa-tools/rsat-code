@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast,v 1.12 2008/09/17 07:33:02 jvanheld Exp $
+# $Id: genome-blast,v 1.13 2009/01/08 11:12:58 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -618,6 +618,14 @@ sub BlastAndRank {
     ## Run the blastall command
     my $blast_command="blastall -M ".$blast_matrix." -p blastp -d ".$outfile{blast_db}." -i ".$infile{query_org_fasta}." -m 8 -e 0.00001";
     &RSAT::message::TimeWarn(join("\t", "Running blastall", $blast_command)) if ($main::verbose >= 1);
+
+    # Print the blast output table (useful for debugging)
+    #     ( my $blastfile = $outfile{blast_ranks} ) =~ s/_ranks.*/_blast.tab/g;
+    #     $blast_command .= " > $blastfile";
+    #     &RSAT::message::TimeWarn(join("\t", "Running blastall", $blast_command)) if ($main::verbose >= 1);
+    #     `$blast_command`;
+    #     open(BLAST, $blastfile);
+    
     open BLAST, $blast_command." |";
 
     ## ##############################################################
