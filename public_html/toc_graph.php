@@ -90,7 +90,7 @@ onclick=\"toggleMenu('105')\" id=\"heading105\">Dataset download</div>
 onclick=\"toggleMenu('106')\" id=\"heading106\">Help</div>
 	<div id=\"menu106\"  class=\"menu_collapsible\">
 	<a class=\"menu_item\" href=\"images/NeAT_flowchart.png\" target=\"tools\">Site map</a>
-	<a class=\"menu_item\" href=\"tutorials/neat_tutorial.pdf\" target=\"tools\">Tutorial</a>
+	<a class=\"menu_item\" href=\"neat_tutorial.html\" target=\"tools\">Tutorial</a>
 	<a class=\"menu_item_last\" href=\"http://www.bigre.ulb.ac.be/forums/\" target=\"tools\">Contact & Forum</a>
 	</div>
 </div>
