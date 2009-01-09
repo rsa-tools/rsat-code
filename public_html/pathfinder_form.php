@@ -152,15 +152,16 @@
     echo("Please make sure to enter the identifiers (numbers) and not the labels of the nodes. If you are unsure about the node identifiers, check the input graph by clicking on 'Graph uploaded from the previous treatment'.");
    }
    echo("
+  <font color='#006400'>Info: Matching of provided identifiers to identifiers of nodes in the network is case-insensitive.</font>
+   <br>
+   <br>
    Enter source and target nodes:
-  <br>
-  <font color='#CC6600'>Warning: The source and target node identifiers should match exactly node identifiers of the given network.</font>
   <br>");
   echo("
   <br>
   <table>
-     <tr><td>Source nodes&nbsp;&nbsp;</td>        <td><input type='text' name='sources' value='$default_sources' size=100></input></td></tr>
-     <tr><td>Target nodes</td>          <td><input type= 'text' name='targets' value='$default_targets' size=100></input></td></tr>
+     <tr><td>Source nodes&nbsp;&nbsp;</td> <td><input type='text' name='sources' value='$default_sources' size=100></input></td></tr>
+     <tr><td>Target nodes</td><td><input type= 'text' name='targets' value='$default_targets' size=100></input></td></tr>
   </table>
   <br>
   <b>Or</b> upload a batch file:
@@ -184,7 +185,11 @@
                 <option value = 'unit'>unit weight</option>
                 <option value = 'none'>as given in input graph</option>
                 <option selected value = 'con'>degree of nodes as weight</option>
-                </select>
+               </select>
+        </td></tr>
+         <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path weight</a></B></td> <td><input type='text' NAME='maxWeight' VALUE='$default_maxWeight'></input></td></tr>
+         <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path length</a></B></td> <td><input type='text' name='maxLength' value='$default_maxLength'></input></td></tr>
+         <tr><td><B><a href = 'help.pathfinder.html#sconstraints'>Minimal path length</a></B></td> <td><input type='text' name='minLength' value='$default_minLength'></input></td></tr>
         </table>
     <br>");
   }else{
@@ -205,9 +210,6 @@
     </h4>
     <br>
     <table>
-         <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path weight</a></B></td> <td><input type='text' NAME='maxWeight' VALUE='$default_maxWeight'></input></td></tr>
-         <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path length</a></B></td> <td><input type='text' name='maxLength' value='$default_maxLength'></input></td></tr>
-         <tr><td><B><a href = 'help.pathfinder.html#sconstraints'>Minimal path length</a></B></td> <td><input type='text' name='minLength' value='$default_minLength'></input></td></tr>
           <tr><td><B><a href = 'help.pathfinder.html#exclusion'>Exclusion attribute</a></B></td> <td><input type='text' name='exAttrib' value='$default_exAttrib'></input></td></tr>
            <tr><td><B><a href = 'help.pathfinder.html#metabolic'>Metabolic</a></B></td> <td><input type='checkbox' name='metabolic' value='on'></input></td></tr>
          <tr><td><font color='#CC6600'>Warning: Backtracking is only available for metabolic graphs!</font></td></tr>
@@ -221,9 +223,6 @@
     <br>
     ");
   }else{
-    echo "<input type='hidden' NAME='maxWeight' VALUE='$default_maxWeight'>";
-    echo "<input type='hidden' NAME='maxLength' VALUE='$default_maxLength'>";
-    echo "<input type='hidden' NAME='minLength' VALUE='$default_minLength'>";
     echo "<input type='hidden' NAME='exAttrib' VALUE='$default_exAttrib'>";
     echo "<input type='hidden' NAME='metabolic' VALUE='$default_metabolic'>";
     echo "<input type='hidden' NAME='algorithm' VALUE='$default_algorithm'>";
