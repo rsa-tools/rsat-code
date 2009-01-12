@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.73 2008/12/10 11:47:40 jvanheld Exp $
+# $Id: convert-matrix,v 1.74 2009/01/12 11:17:59 jturatsi Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -256,6 +256,14 @@ foreach my $matrix (@matrices) {
     }
     ## Generate logo
     if ($return_fields{logo}) {
+
+	### Check if seqlogo is installed on the machine
+	my $seqlogo_path = `which seqlogo`;
+	unless ($seqlogo_path) {
+	    &RSAT::error::FatalError("The program seqlogo is apparently not installed on your computer, or is not included in your path. 
+Please follow the instructions in the RSAT installation guide.");
+	}
+
 	my $basedir ="";
 	if (($logo_dir)&&(-d $logo_dir)){
 	    $basedir = $logo_dir."/";
