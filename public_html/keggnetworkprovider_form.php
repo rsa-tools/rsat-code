@@ -145,7 +145,7 @@
   <TD><B><A HREF='help.keggnetworkprovider.html'>MANUAL</A></B></TD>
     <TD><B><A target = '_blank' HREF='".checkNeatTutorial("tutorials/neat_tutorial/KEGG_network_provider.html")."'>TUTORIAL</A></B></TD>
   <TD><B><A HREF='mailto:kfaust@ulb.ac.be'>MAIL</A></B></TD>
-  <TD><B><A HREF='help.keggnetworkprovider.html#webservice'>WSDL</A></B></TD>
+  <TD><B><A HREF='neat_webservices.php'>WSDL</A></B></TD>
   </TR></TABLE></ul></ul>");
 ?>
 </body>
