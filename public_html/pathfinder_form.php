@@ -285,7 +285,7 @@
   <TD><B><A HREF='help.pathfinder.html'>MANUAL</A></B></TD>
   <TD><B><A target = '_blank' HREF='".checkNeatTutorial("tutorials/neat_tutorial/Path_finding.html")."'>TUTORIAL</A></B></TD>
   <TD><B><A HREF='mailto:kfaust@ulb.ac.be'>MAIL</A></B></TD>
-   <TD><B><A HREF='help.pathfinder.html#webservice'>WSDL</A></B></TD>
+   <TD><B><A HREF='neat_webservices.php'>WSDL</A></B></TD>
   </TR></TABLE></ul></ul>");
 ?>
 </body>
