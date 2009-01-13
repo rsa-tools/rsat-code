@@ -198,6 +198,9 @@
     <br>
     <table>
      <tr><td><B><a href = 'help.pathfinder.html#rank'>Rank</a></B></td><td><input type = 'text' name='rank' value = '$default_rank' size = 10></input></td></tr>
+   	 <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path weight</a></B></td> <td><input type='text' NAME='maxWeight' VALUE='$default_maxWeight'></input></td></tr>
+     <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path length</a></B></td> <td><input type='text' name='maxLength' value='$default_maxLength'></input></td></tr>
+     <tr><td><B><a href = 'help.pathfinder.html#sconstraints'>Minimal path length</a></B></td> <td><input type='text' name='minLength' value='$default_minLength'></input></td></tr>
    </table>
    <input type='hidden' name='weight' value=$default_weight></input>
     <br>
