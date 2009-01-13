@@ -103,7 +103,7 @@ onclick=\"toggleMenu('107')\" id=\"heading107\">Information</div>
 	<a class=\"menu_item\" href=\"distrib/index.html\" target=\"tools\">Distribution</a>
 	<a class=\"menu_item\" href=\"neat_credits.html\" target=\"tools\">Credits</a>
 	<a class=\"menu_item\" href=\"neat_links.html\" target=\"tools\">Links</a>
-	<a class=\"menu_item\" href=\"web_services.html\" target=tools>Web services</a>
+	<a class=\"menu_item\" href=\"neat_webservices.php\" target=tools>Web services</a>
 	</div>
 </div>
 
