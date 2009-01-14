@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.22 2009/01/14 10:25:21 morgane Exp $
+# $Id: matrix-scan.cgi,v 1.23 2009/01/14 11:54:58 morgane Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -84,6 +84,7 @@ if ($query->param('output') eq "display") {
 	print ("The raw result file is available at the following URL: ",
 	       "<a href=${result_URL}>${result_URL}</a>",
 	       "<p><hr/>\n");
+	$genes = `grep -v '^;' $result_file | grep -v '^#' | cut -f 1 | sort -u `;
 
   &PipingForm() unless ($query->param("analysis_type") eq "analysis_occ");
 
@@ -103,16 +104,16 @@ exit(0);
 
 sub PipingForm {
   ### prepare data for piping
-  print <<End_of_form;
+print <<End_of_form;
 <CENTER>
-<TABLE class='nextstep'>
+<TABLE class="nextstep">
 <TR>
-  <TD>
+  <TD colspan=2>
     <H3>Next step</H3>
   </TD>
   </TR>
   <TR>
-  <TD>
+  <TD valign=top>
     <FORM METHOD="POST" ACTION="feature-map_form.cgi">
     <INPUT type="hidden" NAME="feature_file" VALUE="$result_file">
     <INPUT type="hidden" NAME="format" VALUE="feature-map">
@@ -121,10 +122,20 @@ sub PipingForm {
     <INPUT type="submit" value="feature map">
     </FORM>
   </TD>
+  <TD>
+    <FORM METHOD="POST" ACTION="gene-info_form.cgi">
+    <INPUT type="hidden" NAME="queries" VALUE="$genes">
+    <INPUT type="submit" value="gene information"> Specify the source organism of the scanned sequences<br/>
+End_of_form
+	&OrganismPopUp;
+	print '
+    
+    </FORM>
+  </TD>
 </TR>
 </TABLE>
-</CENTER>
-End_of_form
+</CENTER>';
+#End_of_form
 }
 
 
