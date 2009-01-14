@@ -86,7 +86,7 @@ onclick=\"toggleMenu('105')\" id=\"heading105\">Data</div>
 	<a class=\"menu_separator\">Sample data</a>
 	<a class=\"menu_item\" href=\"$WWW_RSA/demo_files/\" target=\"tools\">DEMO data</a>
 	<a class=\"menu_item\" href=\"$WWW_RSA/data/published_data/nature_protocols/network_analysis/\"
-	target=\"tools\">Other data</a>
+	target=\"tools\">Nature protocol data</a>
 </div>
 </div>
 
