@@ -78,11 +78,25 @@ onclick=\"toggleMenu('104')\" id=\"heading104\">Roc curves</div>
 
 <div class=\"menu\">
 <div class=\"menu_heading_open\"
-onclick=\"toggleMenu('105')\" id=\"heading105\">Dataset download</div>
+onclick=\"toggleMenu('105')\" id=\"heading105\">Data</div>
 <div id=\"menu105\">
+	<a class=\"menu_separator\">Collect data from external servers</a>
 	<a class=\"menu_item\" href=\"string_dataset_form.php\" target=\"tools\">Download a subgraph from STRING</a>
 	<a class=\"menu_item\" href=\"keggnetworkprovider_form.php\" target=\"tools\">Download organism-specific networks from KEGG</a>
+	<a class=\"menu_separator\">Sample data</a>
+	<a class=\"menu_item\" href=\"$WWW_RSA/demo_files/\" target=\"tools\">DEMO data</a>
+	<a class=\"menu_item\" href=\"$WWW_RSA/data/published_data/nature_protocols/network_analysis/\"
+	target=\"tools\">Other data</a>
 </div>
+</div>
+
+<div class=\"menu\">
+<div class=\"menu_heading_closed\"
+onclick=\"toggleMenu('108')\" id=\"heading108\">Web services</div>
+	<div id=\"menu108\"  class=\"menu_collapsible\">
+		<a class=\"menu_item\" href=\"neat_webservices.php\" target=tools>Documentation and clients</a>
+		<a class=\"menu_item\" href=\"neat_workflows.php\" target=tools>Taverna workflows</a>
+	</div>
 </div>
 
 <div class=\"menu\">
@@ -103,17 +117,6 @@ onclick=\"toggleMenu('107')\" id=\"heading107\">Information</div>
 	<a class=\"menu_item\" href=\"distrib/index.html\" target=\"tools\">Distribution</a>
 	<a class=\"menu_item\" href=\"neat_credits.html\" target=\"tools\">Credits</a>
 	<a class=\"menu_item\" href=\"neat_links.html\" target=\"tools\">Links</a>
-	<a class=\"menu_item\" href=\"neat_webservices.php\" target=tools>Web services</a>
-	</div>
-</div>
-
-<div class=\"menu\">
-<div class=\"menu_heading_closed\"
-onclick=\"toggleMenu('108')\" id=\"heading108\">Data</div>
-	<div id=\"menu108\"  class=\"menu_collapsible\">
-	<a class=\"menu_item\" href=\"$WWW_RSA/data/published_data/nature_protocols/network_analysis/\"
-	target=\"tools\">Sample data</a>
-	<a class=\"menu_item\" href=\"$WWW_RSA/demo_files/\" target=\"tools\">Files used in DEMO</a>
 	</div>
 </div>
 
