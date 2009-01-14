@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.21 2008/10/24 08:16:33 morgane Exp $
+# $Id: matrix-scan.cgi,v 1.22 2009/01/14 10:25:21 morgane Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -67,14 +67,23 @@ if ($query->param('output') eq "display") {
   unless ($query->param('table')) {
     &PipingWarning() unless ($query->param("analysis_type") eq "analysis_occ");
   }
-
+  
+ 
   ### Print the result on Web page
   $result_file =  "$TMP/$tmp_file_name.ft";
+  
   open RESULT, "$command |";
 
   print "<PRE>";
   &PrintHtmlTable(RESULT, $result_file, true);
   print "</PRE>";
+  
+  print "<HR SIZE = 3>";
+  
+   $result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.ft";
+	print ("The raw result file is available at the following URL: ",
+	       "<a href=${result_URL}>${result_URL}</a>",
+	       "<p><hr/>\n");
 
   &PipingForm() unless ($query->param("analysis_type") eq "analysis_occ");
 
@@ -96,11 +105,13 @@ sub PipingForm {
   ### prepare data for piping
   print <<End_of_form;
 <CENTER>
-<TABLE>
+<TABLE class='nextstep'>
 <TR>
   <TD>
     <H3>Next step</H3>
   </TD>
+  </TR>
+  <TR>
   <TD>
     <FORM METHOD="POST" ACTION="feature-map_form.cgi">
     <INPUT type="hidden" NAME="feature_file" VALUE="$result_file">
