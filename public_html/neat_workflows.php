@@ -61,10 +61,47 @@ In this workflow, the following steps are performed:
 <p/><li>
 <a href=\"web_services/taverna/Neat_example_input.xml\"><b>Download Sample Input</b></a></li>
 (The sample input consists of the two yeast two-hybrid data sets from Uetz et al, 2001 and Ito et al, 2002,
-which are also available in the <a href=\"http://$host/rsat/demo_files/\">DEMO file</a> section.)
+which are also available in the <a href=\"demo_files/\">DEMO data</a> section.)
 </ul>
 </td>
+</tr>
+</table>
 
+<h3> How to identify biologically relevant clusters in biological networks?</h3>
+
+This workflow forms a part of the Nature protocol presenting NeAT. In the first step,
+we extract clusters from a yeast-specific network obtained
+from <a href=\"http://string.embl.de/\" target=\"_blank\">STRING</a>.
+Next, these clusters are compared to
+<a href=\"http://mips.gsf.de/\" target=\"_blank\">MIPS</a> complexes,
+which comprise known physical interactions between proteins.
+We end up with a list that gives for each MIPS cluster the score of its overlap with
+clusters obtained from the STRING network.
+
+<table class=\"normal\" border=0 >
+<tr>
+<td align=\"\">
+<p/>
+<a href=\"web_services/taverna/NeAT_Nature_Protocol_workflow.png\">
+<img src=\"web_services/taverna/NeAT_Nature_Protocol_workflow.png\" width=100>
+</a>
+</td>
+<td valign=\"top\">
+In this workflow, the following steps are performed:
+<p/>	     - first, clusters are extracted from the input network using <a href=\"mcl_form.php\">MCL</a>.
+<p/>	     - second, the clusters are compared to known protein complexes obtained from MIPS
+               with <a href=\"compare_classes_form.php\">compare_classes</a>
+<p/>
+
+<p/> ---
+<p/><ul><li>
+<a href=\"web_services/taverna/NeAT_Nature_Protocol_workflow.xml\"><b>Download Workflow File (SCUFL)</b></a></li>
+<p/><li>
+<a href=\"web_services/taverna/NeAT_Nature_Protocol_workflow_data.xml\"><b>Download Sample Input</b></a></li>
+(The sample input consists of the STRING yeast network and the MIPS classes, both available
+in the  <a href=\"http://$host/rsat/data/published_data/nature_protocols/network_analysis/\">Nature protocol data</a> section.)
+</ul>
+</td>
 </tr>
 </table>
 
