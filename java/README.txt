@@ -176,15 +176,6 @@ thus algorithms 'compSteiner' and 'steinerhybrid' are not available. All other a
 
 The GraphAnnotator tool is only available if metabolic_db data have been installed.
 
-2.8. Usage of clients with remote web services
------------------------------------------------
-
-The PHP/JSP clients can use remote web services. This avoids installing the web services locally.
-In this case, copy the file Kegg_organisms_list.txt in the $RSAT/java/misc directory into the directory
-$RSAT/data/KEGG. In the folder $RSAT/data/KEGG, create a file kgmlVersion.txt, which contains as only entry
-the KEGG PATHWAY version used, e.g. 46.0.
-
-
 3. Disclaimer
 =============
 
