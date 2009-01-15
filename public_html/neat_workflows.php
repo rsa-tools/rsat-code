@@ -105,6 +105,36 @@ in the  <a href=\"http://$host/rsat/data/published_data/nature_protocols/network
 </tr>
 </table>
 
+<h3> How to find paths in organism-specific metabolic networks?</h3>
+
+Path finding in organism-specific metabolic networks allows to detect
+pathway variants that are specific to an organism or to a set of related organisms.
+<a href=\"http://www.genome.jp/kegg/pathway.html\" target=\"_blank\">KEGG PATHWAY</a>
+is a database that offers organism-specific metabolic information.
+
+<table class=\"normal\" border=0 >
+<tr>
+<td align=\"\">
+<p/>
+<a href=\"web_services/taverna/Neat_pathfinding_workflow.png\">
+<img src=\"web_services/taverna/Neat_pathfinding_workflow.png\" width=100>
+</a>
+</td>
+<td valign=\"top\">
+In this workflow, the following steps are performed:
+<p/>	     - first, an organism-specific metabolic network is constructed using the <a href=\"keggnetworkprovider_form.php\">KEGG network provider</a>
+<p/>	     - second, paths are found in this network using <a href=\"pathfinder_form.php\">Pathfinder</a>
+<p/>
+
+<p/> ---
+<p/><ul><li>
+<a href=\"web_services/taverna/Neat_pathfinding_workflow.xml\"><b>Download Workflow File (SCUFL)</b></a></li>
+<p/>
+</ul>
+</td>
+</tr>
+</table>
+
 <HR WIDTH=\"100%\">
 
 </blockquote>
