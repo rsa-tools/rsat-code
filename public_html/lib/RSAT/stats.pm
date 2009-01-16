@@ -264,7 +264,6 @@ sub LogToEng {
     my ($log) = @_;
     my $base = 10;
     my $log_base = log($base);
-
     $log /= log(10);
     $eng = 10**(1+$log - int($log));
     $eng .= "e";
@@ -663,7 +662,7 @@ sub sum_of_poisson {
 
 
 ################################################################
-### Hypergeometric formula. 
+### Hypergeometric formula.
 ###
 ### Usage:
 ###     $proba = &hypergeometric($m, $n, $k, $x)
@@ -682,7 +681,8 @@ sub sum_of_poisson {
 ###              Cn
 ###
 ### For efficiency reasons, the hypergeometric is calculated with the
-### recursive formula.
+### recursive formula (Note that the formula is recursive, but the
+### computation is iterative).
 ###
 ###                       (m - x + 1) (k - x + 1)
 ###  P(X = x) = P(X=x-1) ------------------------
@@ -704,27 +704,17 @@ sub hypergeometric {
 
     my $w = $n - $m; ### white balls in the urn
 
-    #### some verbosity
-#     warn join ( "\t", 
-#  		"Hypergeometric", 
-#  		"m=$m",
-#  		"w=$w",
-#  		"n=$n",
-#  		"k=$k",
-#  		"x=$x",
-# 		"depth=$args{depth}"
-# 	      ), "\n" if ($main::verbose >= 6);
-
     ### error if too high recursion depth
-    my $max_depth = 10; 
+    my $max_depth = 10;
     $args{depth} = $args{depth} || 0;
     if ($args{depth} > $max_depth) {
 	&RSAT::error::FatalError("Hypergeometric, recursion reached depth limit $max_depth\n");
     }
-    
-    #### initilization
+
+    #### initialization
     my $to;
     my $proba = 0;
+    my $log_proba = 0;
 
     #### sum of hypergeometrics
     if (defined($args{to})) {
@@ -733,18 +723,32 @@ sub hypergeometric {
 	$to = $x;
     }
 
+    #### some verbosity
+     warn join ( "\t", 
+  		"Hypergeometric", 
+  		"m=$m",
+  		"w=$w",
+  		"n=$n",
+  		"k=$k",
+  		"x=$x",
+ 		"depth=$args{depth}",
+ 		"to=".$to,
+ 		"check=$args{check}",
+ 		"prev=$args{previous_value}"
+ 	      ), "\n" if ($main::verbose >= 6);
+
     #### incompatible parameter values
     if ($k > $n) {
-	&RSAT::error::FatalError("Sample ($k) cannot be larger than number of balls in the urn ($n)");	
+	&RSAT::error::FatalError("Sample ($k) cannot be larger than number of balls in the urn ($n)");
     }
     if ($m > $n) {
-	&RSAT::error::FatalError("Number of black balls in the urn ($m) cannot be larger than number of balls in the urn ($n)");	
+	&RSAT::error::FatalError("Number of black balls in the urn ($m) cannot be larger than number of balls in the urn ($n)");
     }
     if ($w > $n) {
-	&RSAT::error::FatalError("Number of white balls in the urn ($m) cannot be larger than number of balls in the urn ($n)");	
+	&RSAT::error::FatalError("Number of white balls in the urn ($m) cannot be larger than number of balls in the urn ($n)");
     }
     if ($x > $k) {
-	&RSAT::error::FatalError("Number of black balls in the sample ($x) cannot be larger than sample size ($k)");	
+	&RSAT::error::FatalError("Number of black balls in the sample ($x) cannot be larger than sample size ($k)");
     }
     if ($x < 0) {
 	&RSAT::error::FatalError( "Number of black balls in the sample ($x) must be strictly positive\n");
@@ -755,7 +759,7 @@ sub hypergeometric {
     #### &hypergeometric(..., check=>1)
     if ($x > $m) {
 	if ($args{check}) {
-	    &RSAT::error::FatalError("Number of black balls in the sample ($x) cannot be larger than number of black balls in the urn ($m)");	
+	    &RSAT::error::FatalError("Number of black balls in the sample ($x) cannot be larger than number of black balls in the urn ($m)");
 	} else {
 	    return(0);
 	}
@@ -764,123 +768,143 @@ sub hypergeometric {
 	if ($args{check}) {
 	    &RSAT::error::FatalError(join( "", "Number of white balls in the sample (",
 					   $k-$x,
-					   ") cannot be larger than number of white balls in the urn (", 
-					   $w, 
-					   ")"));	
+					   ") cannot be larger than number of white balls in the urn (",
+					   $w,
+					   ")"));
 	} else {
 	    return(0);
 	}
     }
 
-
-    
-# 	$Id: stats.pm,v 1.7 2007/06/17 21:46:16 jvanheld Exp $	
-
-    #### initialization
+#    warn "HERE WE START\n";
+    ################################################################
+    ## Initialization: compute the first non-null value
     if (defined($args{previous_value})) {
 	#### a single recursion is sufficient
 #	die;
-	$log_proba = log($args{previous_value});
-	warn "Previous value\t", $log_proba, "\n" if ($main::verbose >= 6);
-	$start = $x;
+      my $prev=$args{previous_value};
+      $log_proba = log($args{previous_value});
+      warn "Recursion from previous value\t", $prev, "log=".$log_proba,  "\n" if ($main::verbose >= 6);
+      $start = $x;
 
     } elsif ($w < $k) {
+      ## If the number of non-marked balls ($w) is lower than the size
+      ## of the selection ($k), there will be at least $k - $m marked
+      ## balls in the selection ($x >= $min_x = $k - $m) -> the proba
+      ## of all values from 0 to ($min_x - 1) is null.
 
-	if ($m >= $k) {
-	    my $proba = &hypergeometric($w, $n , $k, $k - $x, depth=>$args{depth}+1);
-	    if ($proba == 0) {
-		return (0);
-	    } else {
-		$log_proba = log($proba);
-		$start = $x+1;
-	    }
-	} else {
-	    $min_x = $k - $w;
+#       if ($m >= $k) {
+# 	## If the number of marked balls ($m) is higher than or equal to the size of the selection ($k)
+# 	##  it is more efficient to temporarily invert the white and black balls
+# 	#	  &RSAT::error::FatalError($k, $x, $k-$x);
+# 	&RSAT::message::Debug ("inverting marked and non-marked elements for computational efficiency") if ($main::verbose >= 5);
+# 	my $proba = &hypergeometric($w, $n , $k, $k - $x, depth=>$args{depth}+1);
+# 	if ($proba == 0) {
+# 	  return (0);
+# 	} else {
+# 	  $log_proba = log($proba);
+# 	  $start = $x+1;
+# 	}
 
-	    
+#       } else {
 
-	    $log_proba = 0;
-# 	    for my $i (($min_x + 1)..$k) {
-# 		$log_proba += log($i)
-# 	    }
- 	    for my $i (($n - $k + 1)..$n) {
- 		$log_proba -= log($i)
-		}
-# 	    for my $i (($w - $k + $min_x + 1)..$w) {
-# 		$log_proba += log($i)
-# 	    }
- 	    for my $i (1..$min_x) {
- 		$log_proba -= log($i)
-		}
- 	    for my $i (($m - $min_x + 1)..$m) {
- 		$log_proba += log($i)
-		}
- 	    for my $i (($k - $min_x + 1)..$k) {
- 		$log_proba += log($i)
-		}
- 	    for my $i (($w -$k + $min_x + 1)..$w) {
- 		$log_proba += log($i)
-		}
-	    $start = $min_x + 1;
+	$min_x = $k - $w;
+	$log_proba = 0;
+	# 	    for my $i (($min_x + 1)..$k) {
+	# 		$log_proba += log($i)
+	# 	    }
+	for my $i (($n - $k + 1)..$n) {
+	  $log_proba -= log($i)
 	}
+	# 	    for my $i (($w - $k + $min_x + 1)..$w) {
+	# 		$log_proba += log($i)
+	# 	    }
+	for my $i (1..$min_x) {
+	  $log_proba -= log($i)
+	}
+	for my $i (($m - $min_x + 1)..$m) {
+	  $log_proba += log($i)
+	}
+	for my $i (($k - $min_x + 1)..$k) {
+	  $log_proba += log($i)
+	}
+	for my $i (($w -$k + $min_x + 1)..$w) {
+	  $log_proba += log($i)
+	}
+	$start = $min_x + 1;
+#      }
 
     } else {
-	#### calculate value for 0 successes
-	$log_proba = 0;
-	for my $i (($w - $k + 1)..($n - $m)) {
-	    $log_proba += log($i);
-	}
-	for my $i (($n - $k + 1)..$n) {
-	    $log_proba -= log($i);
-	}
-	$start = 1;
-    }
-
-    #### recursive calculation
-    if ($start <= $x) {
-	for my $i ($start..$x) {
-	    $log_proba += log($m - $i + 1);
-	    $log_proba -= log($i);
-	    $log_proba += log($k - $i + 1);
-	    $log_proba -= log($w - $k + $i);
-	}
+      #### calculate value for 0 successes
+      $log_proba = 0;
+      for my $i (($w - $k + 1)..($n - $m)) {
+	$log_proba += log($i);
+      }
+      for my $i (($n - $k + 1)..$n) {
+	$log_proba -= log($i);
+      }
+      $start = 1;
     }
     $proba = &LogToEng($log_proba);
+    #    warn "HERE WE PASS\n";
+    warn join ( "\t",
+		"\tInit value",
+		"depth=".$args{depth},
+		"Start=".$start,
+		"x=".$x,
+		# 		    "to=".$to,
+		"p=".$proba,
+		"CDF=".$proba,
+		"log(p)=".$log_proba
+	      ), "\n" if ($main::verbose >= 6);
 
-    #### recursive calculation
-    for my $i ($x + 1..$to) {
-	$last_proba = $proba;
-# 	warn join ( "\t", 
-# 		    "Hypergeometric", 
-# 		    "m=$m",
-# 		    "w=$w",
-# 		    "n=$n",
-# 		    "k=$k",
-# 		    "i=$i",
-# 		    "to=$to",
-# 		    "depth=$args{depth}",
-# 		    "last_proba=$proba"
-# 		  ), "\n" if ($main::verbose >= 6);
+    ################################################################
+    #### recursive calculation of the hypergeometric density for $x
+    #### (if cumulative, $x is the first value of the sum)
+    if ($start <= $x) {
+      for my $i ($start..$x) {
 	$log_proba += log($m - $i + 1);
 	$log_proba -= log($i);
 	$log_proba += log($k - $i + 1);
 	$log_proba -= log($w - $k + $i);
-	$proba += &LogToEng($log_proba);
-# 	warn join ( "\t", 
-# 		    "Hypergeometric", 
-# 		    "m=$m",
-# 		    "w=$w",
-# 		    "n=$n",
-# 		    "k=$k",
-# 		    "i=$i",
-# 		    "to=$to",
-# 		    "depth=$args{depth}",
-# 		    "log(p)=$log_proba",
-# 		    "proba=$proba"
-# 		  ), "\n" if ($main::verbose >= 6);
-	last if (($proba == $last_proba) && ($proba >0)); ### beyond precision limit, it is worthless adding more elements
+      }
+      $proba = &LogToEng($log_proba);
+      warn join ( "\t",
+		  "\tFrom value",
+		  "depth=".$args{depth},
+		  "start=".$start,
+		  "x=".$x,
+		  # 		    "to=".$to,
+		  "p=".$proba,
+		  "CDF=".$proba,
+		  "log(p)=".$log_proba
+		), "\n" if ($main::verbose >= 6);
     }
+    #    warn "HERE WE GO\n";
 
+    ################################################################
+    ## If $to > $x (cumulative density has to be computed),
+    ## pursue the recursive computation and add up the values to the sum
+    for my $i (($x + 1)..$to) {
+      my $last_proba = $proba; ## for the stopping condition: stop computing when adding up does not change the result anymore
+      $log_proba += log($m - $i + 1);
+      $log_proba -= log($i);
+      $log_proba += log($k - $i + 1);
+      $log_proba -= log($w - $k + $i);
+      my $new_proba = &LogToEng($log_proba);
+      $proba = $last_proba + $new_proba;
+      warn join ( "\t",
+		  "\tInterm value",
+		  "depth=".$args{depth},
+		  "i=".$i,
+		  # 		    "to=".$to,
+		  "last_CFD=".$last_proba,
+		  "p=".$new_proba,
+		  "CDF=".$proba,
+#		  "log(p)=".$log_proba,
+		), "\n" if ($main::verbose >= 6);
+      last if (($proba == $last_proba) && ($proba >0)); ### beyond precision limit, it is worthless adding more elements
+    }
     $proba = &min($proba, 1); ### floating point calculation errors
 
 #     warn join ( "\t", 
@@ -917,7 +941,7 @@ sub hypergeometric {
 sub sum_of_hypergeometrics {
     my ($m, $n, $k, $from, $to) = @_;
 
-    #### minimum number of successes
+    #### minimum number of ùmarked balls in the selection
     if ($n - $m - $k < 0) {
 	$min_x = $k + $m - $n;
     } else {
@@ -925,13 +949,11 @@ sub sum_of_hypergeometrics {
     }
     $from = &max($from, $min_x);
 
-    
-    #### maximum number of successes
+    #### maximum number of marked balls in the selection
     $to = &min($to,$m);
 
-    
     warn join( "\t", "sum_of_hypergeometrics", "m=$m", "n=$n", "k=$k", "from=$from", "to=$to", "min_x=$min_x"), "\n" if ($main::verbose >= 6);
-    
+
     if ($min_x > $to) {
 	return(0);
     } else {
