@@ -116,10 +116,12 @@ $organisms_file = basename($organisms_file);
 $reactions_file = basename($reactions_file);
 
 # load attribs from multiple select form
-if($attribs){
+if($compoundattribs){
  foreach ($compoundattribs as $t){
  	$selected_attribs .= $t."/";
  }
+}
+if($reactionattribs){
  foreach ($reactionattribs as $t){
  	$selected_attribs .= $t."/";
  }
