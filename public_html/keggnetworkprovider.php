@@ -86,7 +86,8 @@ $directed = $_REQUEST['directed'];
 $keepIrre = $_REQUEST['keepIrre'];
 $rpairs = $_REQUEST['rpair'];
 # name of parameter in form is attributes[]
-$attribs = $_REQUEST['attributes'];
+$compoundattribs = $_REQUEST['compoundattributes'];
+$reactionattribs = $_REQUEST['reactionattributes'];
 $out_format = $_REQUEST['outFormat'];
 $email = $_REQUEST['email'];
 
@@ -98,7 +99,7 @@ if ($directed == 'on') {
     $directed = 0;
 }
 
-if ($keepIrre == 'on') {
+if ($keepIrre == 'true') {
     $keepIrre = 1;
 } else {
     $keepIrre = 0;
@@ -116,10 +117,16 @@ $reactions_file = basename($reactions_file);
 
 # load attribs from multiple select form
 if($attribs){
- foreach ($attribs as $t){
+ foreach ($compoundattribs as $t){
  	$selected_attribs .= $t."/";
- 	}
+ }
+ foreach ($reactionattribs as $t){
+ 	$selected_attribs .= $t."/";
+ }
 }
+
+# add single quotes to organism string to allow to read in full species names containing blank fields
+$organisms = "'".$organisms."'";
 
 ############## call metabolicgraphconstruction web service #################
 
