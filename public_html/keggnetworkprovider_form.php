@@ -28,7 +28,7 @@
   }
 
   title('KEGG network provider');
-  echo ("<center>Obtain organism-specific KEGG networks from KEGG PATHWAY version $kgmlVersion. Click on <a href='help.keggnetworkprovider.html'><img src='images/question-mark-button.jpg' width='15' alt='help'></a> for help.<br>
+  echo ("<center>Obtain organism-specific KEGG networks from <a href=\"http://www.genome.ad.jp/kegg/pathway.html\" target=\"_blank\">KEGG PATHWAY</a> version $kgmlVersion. Click on <a href='help.keggnetworkprovider.html'><img src='images/question-mark-button.jpg' width='15' alt='help'></a> for help.<br>
   Web service and interface by Karoline Faust.</center>\n");
   echo ("<form method='post' action='keggnetworkprovider.php' enctype='multipart/form-data'>
   <hr>
@@ -46,12 +46,15 @@
   echo("
   <table>
   <tr><td>
-         Enter KEGG abbreviations for organisms, separated by '/' in text field below (e.g. eco/ecp/ecs):
+         Enter full species names as given in KEGG or KEGG abbreviations for organisms, separated by '/' in text field below.<br>
+         Example 1: eco/ecp/ecs<br>
+         Example 2: Saccharomyces cerevisiae/Saccharomyces bayanus/spo<br>
+         Example 3: reference<br>
+         <a href='data/KEGG/Kegg_organisms_list.txt'><b>Click here for the full list of KEGG organism names and abbreviations</b></a>
   </td></tr>
   <tr><td>
         <input type='text' name='organisms' value='$default_organisms' size=100></input>
    </td></tr>
-   <tr><td>Check<a href='data/KEGG/Kegg_organisms_list.txt'> here</a> for organism abbreviations.</td></tr>
    <tr><td>
         AND/OR<br>
         Upload a file which contains one organism KEGG identifier by line:
@@ -97,19 +100,45 @@
   <br>
   <br>
     <table>
-         <tr><td><B>directed network</B><input type='checkbox' name='directed' value='on'></input></td></tr>
-         <tr><td><B>keep irreversible reactions</B><input type='checkbox' name='keepIrre' value='on'></input></td></tr>
+         <tr><td><B>Directed network</B><input type='checkbox' name='directed' value='on'></input></td></tr>
          <tr><td><B>RPAIR network</B>&nbsp;&nbsp;&nbsp;<input type='checkbox' name='rpair' value='on'></input></td></tr>
+         <tr><td><b>Reaction treatment:<b><br>
+         <table>
+         	<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>all reactions reversible&nbsp;&nbsp;&nbsp;
+         	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+         	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+         	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+         	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+         	<input type='radio' name='keepIrre' value='false' checked='checked'></input></td></tr>
+         	<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>keep irreversible reactions (only possible in directed networks!)
+         	<input type='radio' name='keepIrre' value='true'></input></td></tr>
+         </table>
+         </td></tr>
          <tr><td><br></td></tr>
-         <tr><td><b>Optional:</b> Select attributes from the menu below. Note that additional attributes to the default ones will slow down the network construction.<br>
+         <tr><td><b>Optional:</b> The network is constructed with some
+         <a href='help.keggnetworkprovider.html#attributes'>default attributes</a>.
+         You can add more attributes by selecting them from the menus below, but be aware that
+         this will slow down the network construction.
          Note also that you can select more than one additional attribute by pushing the Shift key.<br>
-         <select multiple name='attributes[]'>
-             <option selected value=''>default</option>
-             <option value='ECNumber' >EC numbers</option>
-             <option value='Label'>Label</option>
-             <option value='Equation'>Reaction equation (not for RPAIR network)</option>
-             <option value='FORMULA'>Compound formula</option>
+         <table>
+         <tr>
+         <td>Compound attributes<br>
+         <select multiple name='compoundattributes[]'>
+             <option value='Label'>Name</option>
+             <option value='FORMULA'>Formula</option>
          </select>
+         </td>
+         <td>
+         &nbsp;&nbsp;
+         </td>
+         <td>Reaction/RPAIR attributes<br>
+         <select multiple name='reactionattributes[]'>
+             <option value='ECNumber' >EC numbers</option>
+             <option value='Equation'>Equation (not for RPAIR network)</option>
+         </select>
+         </td>
+         </tr>
+         </table>
          </td></tr>
     </table>
   <br>
