@@ -39,16 +39,17 @@
 
 <h4><a name="input">Input</a></h4>
 <ul>
-	<li>KEGG organism abbreviations<br>
-		Organisms present in KEGG can be specified by their KEGG abbreviation. If you want to specify more than one organism,
-		you can separate organism identifiers by '/' (e.g. eco/sce).
-		Note that the reference pathways can be requested with 'reference'. The reference pathways cover all organism-specific
+	<li>KEGG organism identifiers<br>
+		Organisms present in KEGG can be specified by their KEGG abbreviation or full species name as given in KEGG. 
+		Note that the species name may also include the strain, e.g. Bacillus anthracis A2012.
+		If you want to specify more than one organism, you can separate organism identifiers by '/' (e.g. eco/Saccharomyces cerevisiae).
+		Note that the reference pathways can be requested with 'reference'. The reference pathways merge all organism-specific
 		pathways.
 		The list of KEGG organisms and their abbreviations in KEGG is available <a href="data/KEGG/Kegg_organisms_list.txt">here</a>.
 	</li>
 	<li>KEGG organism file<br>
-		Instead of or in addition to specifying organisms manually, a file with organism KEGG abbreviations can be up-loaded. The file contains
-		one organism code on each line. Comment lines in the file should be preceded by '#'.
+		Instead of or in addition to specifying organisms manually, a file with KEGG organisms can be up-loaded. The file contains
+		one organism (KEGG identifier or species name) on each line. Comment lines in the file should be preceded by '#'.
 	</li>
 	<li>KEGG reactions<br>
 		In addition to or instead of KEGG organisms, KEGG reactions can be specified. The graph will be constructed from the
@@ -81,33 +82,42 @@
 	reactions by separate nodes for the forward and reverse direction respectively. If "directed network" is selected, 
 	the constructed network is directed, but contains for each forward reaction direction its reverse.
 	</li>
-	<li>Keep irreversible reactions<br>
+	<li>RPAIR network<br>
+	For the description of RPAIR networks see the metabolic Pathfinder help.
+	If "RPAIR network" is selected, a metabolic network containing reactant pairs instead of reactions is constructed.
+	</li>
+	<li>Reaction treatment<br>
 	By default, irreversible reactions are converted into reversible ones. If you would like
 	to keep the irreversible reactions, select this option. Note that it will only be effective
 	in directed networks and that a reaction might be carried out in different directions in 
 	different organisms (resulting in a reversible presentation of this reaction after merging of the metabolic
 	networks of these organisms).
 	</li>
-	<li>RPAIR network<br>
-	For the description of RPAIR networks see the metabolic Pathfinder help.
-	If "RPAIR network" is selected, a metabolic network containing reactant pairs instead of reactions is constructed.
-	</li>
-	<li>Attributes<br>
-	A number of attributes can be set on the nodes of the metabolic network. By default, the following attributes are set:<br>
+	<li><a name="attributes">Attributes</a><br>
+	<b>By default</b>, the following attributes are set:<br>
 		<ul>
 		<li>ObjectType: The ObjectType allows to differentiate between reaction and compound nodes.</li>
 		<li>ExclusionAttribute: Forward and reverse direction of the same reaction share a common value for the ExclusionAttribute,
 		which allows to treat them as mutually exclusive.</li>
+		<li>ENZYME (reaction network only): Enzymes catalysing the reaction as provided in the KGML file.
+		Note that because of the N:N relationship between reaction and reactant pair, it is not straightforward to 
+		set this attribute on reactant pairs. Note also that the reference pathways do not provide enzyme names, as they are
+		organism-independent.</li>
 		<li>Exclusion.Group (RPAIR network only): Its value is a set of all reactant pairs sharing a common reaction with the given reactant pair.</li>
 		<li>RPAIRS.Linkage.Type (RPAIR network only): It has as its value the set of RPAIR classes to which a given reactant pair - compound interaction belongs.</li>
 		</ul>
-		<br>
-		In addition, the following attributes can be set:
-		<ul>
-		 <li>EC numbers: The EC numbers associated to the KEGG reaction or reactant pair.</li>
-		 <li>Label: The name of a KEGG compound.</li>
-		 <li>Reaction equation: The equation of a KEGG reaction (not available for reactant pairs).</li>
-		 <li>Formula: The formula of KEGG compounds.</li>
+		<b>Optionally</b>, the following attributes can be set in addition:
+		<ul><i>Compounds</i><br>
+		 <li>Name: The name of a KEGG compound.</li>
+		 <li>Formula: The formula of a KEGG compound.</li>
+		 <i>Reactions</i><br>
+		 <li>Equation (reaction network only): The equation of a KEGG reaction.</li>
+		 <li>EC numbers: The EC numbers associated to a KEGG reaction or reactant pair.</li>
+		 Note that the optional attributes are set with the help of a relational database storing KEGG data, 
+		 as the KGML files do not provide compound names, formulas or reaction equations. The reaction equation is especially useful
+		 to see the side compounds, which are omitted in the KGML files.
+		 EC numbers are also set with the help of this database rather than from the KGML files, since the relationship
+		 between reactant pairs and EC numbers is not contained in the KGML files.
 		</ul>
 	</li>
 </ul>
