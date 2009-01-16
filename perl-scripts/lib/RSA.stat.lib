@@ -644,6 +644,9 @@ sub sum_of_poisson {
 ###   $p = &hypergeometric($m, $n, $k, $from, to=>$to);
 ###
 sub hypergeometric {
+  return &RSAT::stats::hypergeometric(@_);
+
+  ## OLD CODE
     my($m, $n, $k, $x, %args) = @_;
 
     my $w = $n - $m; ### white balls in the urn
@@ -718,7 +721,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: RSA.stat.lib,v 1.29 2007/03/04 09:53:02 jvanheld Exp $	
+# 	$Id: RSA.stat.lib,v 1.30 2009/01/16 16:38:50 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
