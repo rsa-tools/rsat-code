@@ -24,7 +24,7 @@ Class for the maipulation of taxonomic trees in RSAT.
     
 =head1 AUTHOR
 
-Email rekins@scmbb.ulb.ac.be
+Email rekins@bigre.ulb.ac.be
 
 =cut
 

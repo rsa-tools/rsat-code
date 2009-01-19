@@ -6,7 +6,7 @@ RSAT::TreeNode - A Tree object
 
 =head1 AUTHOR
 
-Email rekins@scmbb.ulb.ac.be
+Email rekins@bigre.ulb.ac.be
 
 =cut
 
