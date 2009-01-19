@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.33 2008/02/25 06:17:07 rsat Exp $
+# $Id: install_genomes.mk,v 1.34 2009/01/19 22:44:26 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -139,6 +139,7 @@ OTHER_FUNGI=					\
 	Uncinocarpus_reesii			\
 	Ustilago_maydis
 
+### List the Fungi in the NCBI directory
 FUNGI= ${NCBI_FUNGI} ${OTHER_FUNGI}
 list_fungi:
 	@echo "Fungi to install	${FUNGI}"
@@ -157,6 +158,27 @@ install_one_fungus:
 	@echo "${DATE}	Installing fungus ${FUNGUS}"
 	@${MAKE} install_one_organism ORG=${FUNGUS}		\
 		NCBI_DIR=${NCBI_DIR}/Fungi 
+
+### List the Protozoa in the NCBI directory
+NCBI_PROTOZOA = `ls -1 ${NCBI_DIR}/Protozoa | grep _ | sort -u | xargs `
+PROTOZOA=${NCBI_PROTOZOA}
+list_protozoa:
+	@echo "Protozoa to install	${PROTOZOA}"
+
+
+### Install all protozoa genomes on RSAT
+install_all_protozoa:
+	@for proto in ${PROTOZOA}; do				\
+		${MAKE} install_one_proto PROTO=$${proto} ;	\
+	done
+
+PROTO=Plasmodium_falciparum
+### Install a single proto genome
+install_one_proto:
+	@echo
+	@echo "${DATE}	Installing proto ${PROTO}"
+	@${MAKE} install_one_organism ORG=${PROTO}		\
+		NCBI_DIR=${NCBI_DIR}/Protozoa 
 
 ### Parse one organism
 parse_organism:
