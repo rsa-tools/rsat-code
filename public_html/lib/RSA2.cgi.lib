@@ -147,7 +147,7 @@ sub RSA_header {
   ### print the header of the result page
   print $query->start_html(-title=>"RSA-tools : $title",
 			   -class => "$css_body_class",
-			   -author=>'jvanheld@scmbb.ulb.ac.be',
+			   -author=>'jvanheld@bigre.ulb.ac.be',
 			   -style => { 	-src => "$ENV{rsat_www}/main.css",
                              	       	-type => 'text/css',
                              		-media => 'screen' });
