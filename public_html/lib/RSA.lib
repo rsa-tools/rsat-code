@@ -24,7 +24,7 @@ package main;
 ####                            RSA.lib                                 ####
 ####                                                                    ####
 #### Regulatory Sequence Analysis Tools (RSA-tools)
-####  Project started in 1997 by Jacques van Helden (jvanheld@scmbb.ulb.ac.be)
+####  Project started in 1997 by Jacques van Helden (jvanheld@bigre.ulb.ac.be)
 ####  a Perl library with diverse procedures
 ####  used by rsa-tools perl scripts
 
