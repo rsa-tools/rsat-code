@@ -481,7 +481,7 @@ sub doit {
     my $job_log = $wd."/".$job.".log";
 
     ## Send the command to a batch queue on a PC cluster The default
-    ## values are for internal use in the SCMBB, but alternative values
+    ## values are for internal use in the BiGRe laboratory, but alternative values
     ## can be specified by specifying the environment variables
     ## CLUSTER_QUEUE and CLUSTER_MASTER
     my $cluster_queue = $ENV{CLUSTER_QUEUE} || "short";
@@ -494,11 +494,11 @@ sub doit {
     ## Choose the queue manager depending on the local configuration
     if ($qsub_manager eq "torque") {
       ## qsub command functionning using Torque
-      my $cluster_master=$ENV{CLUSTER_MASTER} || "arthur.scmbb.ulb.ac.be"; ## for torque only
+      my $cluster_master=$ENV{CLUSTER_MASTER} || "arthur.bigre.ulb.ac.be"; ## for torque only
       $qsub_cmd = "qsub ".$selected_nodes." -m ".$batch_mail." -q ".$cluster_master." -N ${job} -j oe -o ${job}.log ${job}";
 
     } else {
-      ## qsub command functionning using Sun Grid Engine (SCMBB)
+      ## qsub command functionning using Sun Grid Engine (BiGRe)
       $qsub_cmd = join(" ", "qsub", 
 		       "-m",$batch_mail,
 		       "-q ", $cluster_queue, 
