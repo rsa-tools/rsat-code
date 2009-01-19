@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.51 2008/12/20 07:32:12 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.52 2009/01/19 22:46:09 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -431,6 +431,7 @@ OPTIONS
 		Examples of utilization
 			 -prefid cds protein_id
 			 -prefid cds transcript_id
+			 -prefid cds locus_tag
 		     
    Options for the automaticaly generated SQL scripts
 	-schema database schema (default: $schema)

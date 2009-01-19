@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.81 2008/10/28 15:59:05 rsat Exp $
+# $Id: install-organism,v 1.82 2009/01/19 22:47:59 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -571,13 +571,14 @@ sub CalcFrequencies {
 	}
     }
 
-#	foreach my $masking (@masking_modes) {
+	foreach my $masking (@masking_modes) {
 #	foreach my $masking ("-rm") {
 #	    foreach my $noorf ("-noorf", "") {
 	        foreach my $maskcoding ("-maskcoding") {
 #		    foreach my $type ("upstream_mrna") {
 #		    foreach my $type ("intron") {
-		    foreach my $type ("firstintron") {
+#		    foreach my $type ("firstintron") {
+		    foreach my $type ("utr") {
 #			$seq_type = "${type}${up_from}${up_to}${maskcoding}${masking}";
 			$seq_type = "${type}${maskcoding}${masking}";
 #		    if ($purged_frequencies) {
@@ -593,7 +594,7 @@ sub CalcFrequencies {
 #		    &CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
 		}
 #	    }
-#	}
+	}
     }
 }
 
@@ -767,7 +768,7 @@ sub PrintHelp {
 NAME
 	install-organism
 
-        2001 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        2001 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 USAGE
         install-organism -org organism_name

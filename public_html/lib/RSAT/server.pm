@@ -170,7 +170,7 @@ sub ReadConfig {
 	    }
     }
   } else {
-    &RSAT::error::FatalError("Error: problem when opening config file. Please contact jvanheld\@scmbb.ulb.ac.be");
+    &RSAT::error::FatalError("Error: problem when opening config file. Please contact jvanheld\@bigre.ulb.ac.be");
   }
 }
 
@@ -210,7 +210,7 @@ sub InitRSAT {
   }
   $main::HTML = "$ENV{RSAT}/public_html"; 
   $main::WWW_TMP = "$ENV{rsat_www}/tmp";
-  #$ENV{SERVER_ADMIN} = "jvanheld\@scmbb.ulb.ac.be";
+  #$ENV{SERVER_ADMIN} = "jvanheld\@bigre.ulb.ac.be";
   $main::LOGS = "$ENV{RSAT}/logs";
   $main::counter_file = "$LOGS/count-file";
   my ($sec, $min, $hour,$day,$month,$year) = localtime(time);
