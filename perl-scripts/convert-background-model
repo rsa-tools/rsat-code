@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.20 2008/03/24 14:19:46 jvanheld Exp $
+# $Id: convert-background-model,v 1.21 2009/01/20 08:56:52 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -419,16 +419,31 @@ Markov chain order for the background model.
 					  "Invalid value for -markov, should be an integer."))
 		unless ((&IsInteger($main::markov_order))&& ($main::markov_order >= 0));
 
-		 ## Overlapping order
+		 ## no overlap
 =pod
 
 =item B<-noov>
 
-No overlapping. See I<oligo-analysis> for more details on this option
+Prevent overlap between successive occurrences of self-overlpping words.
+
+See I<oligo-analysis> for more details on this option
 
 =cut
 	} elsif ($arg eq "-noov") {
 	    $main::noov = "-noov";
+  
+		 ## overlap
+=pod
+
+=item B<-ovlp>
+
+Count overlapping occurrences of self-overlpping words.
+
+See I<oligo-analysis> for more details on this option
+
+=cut
+	} elsif ($arg eq "-ovlp") {
+	    $main::noov = "-ovlp";
   
 		 ## 1str
 =pod
