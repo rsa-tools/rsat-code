@@ -67,8 +67,8 @@ For the detection of regulatory sites, we recommend starting with a length compr
 </ul>
 </p>
 <p>
-<a name="expected" id="expected"></a> <b>Expected number of matches:</b><br />
-This option allow to specify the number of the motif occurrences that are expected to be found in the input sequences.
+<a name="expected" id="expected"></a> <b>Expected number of matches per sequences:</b><br />
+This option allow to specify the number of the motif occurrences that are expected to be found in each of the input sequences.
 </p>
 <p>
 <a name="motifs" id="motifs"></a> <b>Number of motif to extract:</b><br />
@@ -82,6 +82,12 @@ This option allows to set the maximal number of iteration of the algorithm.
 <a name="runs" id="runs"></a> <b>Number of runs:</b><br />
 Due to its stochastic behavior info-gibbs can return different results each time it is run. The core algorithm should be repeated a sufficient number of times in order to produce useful results.    
 </p>
+
+<p>
+<a name="runs" id="background"></a> <b>Number of runs:</b><br />
+The background model used to compute expected frequencies can be computed from input sequences or loaded form a predefined Markov model. In this later case, a target organism and a Markov order should be selected.
+</p>
+
 
 
 </blockquote>

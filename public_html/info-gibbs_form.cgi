@@ -25,11 +25,12 @@ $default{sequence_format} = "fasta";
 $default{sequence_file} = "";
 $default{upload_file} = "";
 $default{length} = 8;
-$default{expected} = 10;
+$default{expected} = 1.0;
 $default{motifs} = 1;
-$default{nrun} = 2;
+$default{nrun} = 5;
 $default{iter} = 2000;
 $default{add_rc} = "checked";
+$default{bg_order} = 3;
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -71,7 +72,7 @@ print $query->textfield(-name=>'length',
 print "<br />\n";
 
 ### expected number of matches
-print "<a href=\"help.info-gibbs.html#expected\">Expected number of matches</a>\n";
+print "<a href=\"help.info-gibbs.html#expected\">Expected number of matches per sequence</a>\n";
 print $query->textfield(-name=>'expected',
 		  -default=>$default{expected},
 		  -size=>5);
@@ -103,6 +104,18 @@ print $query->textfield(-name=>'nrun',
 print "<br />\n";
 
 
+## Background model
+print "<br />\n";
+print "<a href=\"help.info-gibbs.html#background\">Background model</a>\n";
+print "<br />\n";
+print '<input type="radio" checked="checked" value="input" name="freq_estimate"/><b>Estimated from input sequences</b><br />';
+&PrintGenomeSubsetBgOptions();
+print "<ul>";
+print "&nbsp;&nbsp;<b>Markov background order</b> \n";
+print $query->popup_menu(-name=>'bg_order',
+			 -Values=>[0,1,2,3,4,5],
+			 -default=>$default{bg_order});
+print "</ul>";
 ### send results by email or display on the browser
 print "<hr width=\"550\" align=\"left\"></hr>\n";
 &SelectOutput;
@@ -204,7 +217,7 @@ print "<TD><B>";
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>"fasta");
 print $query->hidden(-name=>'length',-default=>"16");
-print $query->hidden(-name=>'expected',-default=>"16");
+print $query->hidden(-name=>'expected',-default=>"1.0");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
