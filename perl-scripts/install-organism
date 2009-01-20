@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.82 2009/01/19 22:47:59 rsat Exp $
+# $Id: install-organism,v 1.83 2009/01/20 08:55:48 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -448,20 +448,20 @@ sub AllUpstream {
 	    my $seq_type = "upstream${noorf}${masking}";
 	    my $seq_file = "$dir{genome}/${organism_short_name}_${seq_type}.fasta";
 	    my $format = "fasta";
-	    
+
 	    #### retrieve intergenic sequences
 	    my $command = "retrieve-seq ${noorf} ${masking} -format $format";
 	    $command .= " -type upstream -all -org $organism_short_name ";
 	    $command .= " -all -o $seq_file\n\n";
 	    &doit($command, $dry_run, $die_on_error, $verbose);
-	    
+
 	    #### draw sequence length distributions
 	    &SeqLengthDistribution($seq_file, $format, $seq_type, 50) if ($noorf);
-	    
+
 	    #### compress sequence file
 	    $command = "gzip -f $seq_file";
 	    &doit($command, $dry_run, $die_on_error, $verbose);
-	    
+
 	    #### purge sequences
 	    &PurgeSequences($seq_file) if ($purged_frequencies);
 	}
@@ -497,7 +497,8 @@ sub SeqLengthDistribution {
     $command .= " -yleg1 'frequency'";
     $command .= " -title1 '".$organism_full_name."'";
     $command .= " -title2 'length distribution of ${seq_type} sequences'";
-    $command .= " -o ${organism_short_name}_${seq_type}_segments_lengths.${img_format}";
+    $command .= " -format ".$img_format;
+    $command .= " -o ${organism_short_name}_${seq_type}_segments_lengths.".$img_format;
     &doit($command, $dry_run, $die_on_error, $verbose);
 }
 
@@ -943,6 +944,9 @@ OPTIONS
 	-rm	calibrate oligo and dyad frequncies on repeat masked
 		sequences, in addition to the non-masked sequences.
 
+	-img_format
+		image format for the graphs of sequence length distribution
+
 End_of_help
     close HELP;
     exit(0);
@@ -975,6 +979,7 @@ install_organism options
 -up_from       	distal limit of the upstream regions (e.g. -800 for yeast)
 -up_to		proximal limit of the upstream regions (e.g. -1)
 -prefid feattype idname     passed to parse-genbank.pl
+-img_format	 image format for the graphs of sequence length distribution
 End_short_help
   close HELP;
   exit;
@@ -1072,6 +1077,10 @@ sub ReadArguments {
 		    &RSAT::error::FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
 		}
 	    }
+
+	    ### image format
+	  } elsif ($ARGV[$a] eq "-img_format") {
+	    $img_format = lc($ARGV[$a+1]);
 
 	    #### local configuration file specified with an environment variable
 	} elsif ($ARGV[$a] =~ /^-local/) {
