@@ -66,8 +66,12 @@ if (&IsNatural($query->param('length'))) {
 }
 
 ### expected number of matches
+# if (&IsNatural($query->param('expected'))) {
+#     $parameters .= '--words='.$query->param('expected')." ";
+# }
+
 if (&IsNatural($query->param('expected'))) {
-    $parameters .= '--words='.$query->param('expected')." ";
+    $parameters .= '--expected='.$query->param('expected')." ";
 }
 
 if (&IsNatural($query->param('iter'))) {
@@ -81,8 +85,69 @@ if (&IsNatural($query->param('motifs'))) {
     $parameters .= '--motifs='.$query->param('motifs')." ";
 }
 
+if ($query->param('freq_estimate') =~ /background/i) {
+    if (&IsNatural($query->param('bg_order'))) {
+        $oligo_length = $query->param('bg_order') + 1;
+    }
+    $oligo_length = 3 + 1; # MM3
+    
+    %supported_background = (
+			      "upstream"=>1,
+			      "upstream-noorf"=>1,
+			      "intergenic"=>1
+			      );
+
+	### check organism
+	unless ($organism = $query->param('organism')) {
+	    &cgiError("You should specify an organism to use intergenic frequency calibration");
+	}
+	unless (defined(%{$supported_organism{$organism}})) {
+	    &cgiError("Organism $org is not supported on this site");
+	}
+	my $background = $query->param("background");
+	unless ($supported_background{$background}) {
+	    &cgiError("$background is not supported as background model");
+	}
+    ### Taxon-specific background model
+    if ($query->param('bg_level') eq 'taxon') {
+      unless ($taxon = $query->param('taxon')) {
+        &cgiError("You should specify an taxon to use intergenic frequency calibration");
+      }
+      &CheckTaxon($taxon);
+      $organism = $taxon;
+    }
+
+    #$exp_freq_file = "$ENV{RSAT}/data/genomes/$organism/oligo-frequencies/" . "$oligo_length" . "nt_" . "$background" . "_" . "$organism$overlap$strand.freq.gz";
+    $exp_freq_file = &ExpectedFreqFile($organism, $oligo_length, $background, type=>$oligotype, noov=>$overlap, str=>$strand, taxon=>$taxon);
+    $convert_bg_cmd = "$SCRIPTS/convert-background-model -from oligo-analysis -to MotifSampler -i $exp_freq_file -o ${TMP}/$tmp_file_name.bg";
+    #print "$convert_bg_cmd";
+    system "$convert_bg_cmd";
+    $parameters .= "--bgfile=${TMP}/$tmp_file_name.bg ";
+    #print $exp_freq_file;
+	#$freq_option = " -bg $background -org $organism";
+	#$freq_option = " --bgoligo=$exp_freq_file.gz";
 
 
+# } elsif ($query->param('freq_estimate') =~ /upload/i) {
+#     $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
+#     $upload_freq_file = $query->param('upload_freq_file');
+#     if ($upload_freq_file) {
+#       ## Support compressed .gz files
+#       if ($upload_freq_file =~ /\.gz$/) {
+#   $exp_freq_file .= ".gz";
+#       }
+#       $type = $query->uploadInfo($upload_freq_file)->{'Content-Type'};
+#       open FREQ, ">$exp_freq_file" ||
+#   &cgiError("Cannot store expected frequency file in temp dir.");
+#       while (<$upload_freq_file>) {
+#   print FREQ;
+#       }
+#       close FREQ;
+#       $freq_option = " --bgoligo=$exp_freq_file";
+#     } else {
+#       &FatalError ("If you want to upload an expected frequency file, you should specify the location of this file on your hard drive with the Browse button");
+#     }
+}
 ### additional parameters
 #$parameters .= '--EM=0 --strand=+';
 #print "<pre>command: info-gibbs $parameters\n</pre>" if ($ENV{rsat_echo} >=1);
@@ -93,9 +158,8 @@ if ($query->param('output') eq "display") {
 
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
-    $matrix_file = "$TMP/$tmp_file_name.matrix";
+    #$matrix_file = "$TMP/$tmp_file_name.matrix";
     #print("$command $parameters\n");
-
     
     system "$command $parameters > $result_file";
     #print "<pre>$command $parameters > $result_file</pre>";
@@ -116,7 +180,7 @@ if ($query->param('output') eq "display") {
     &PipingForm();
   
     &DelayedRemoval($result_file);
-    &DelayedRemoval($matrix_file);
+    #&DelayedRemoval($matrix_file);
 
     print "<hr size=\"3\">";
 } elsif ($query->param('output') =~ /server/i) {
@@ -171,6 +235,7 @@ sub PipingForm {
 <input type="hidden" name="title" value="$title">
 <input type="hidden" name="matrix_file" value="$result_file">
 <input type="hidden" name="matrix_format" value="tab">
+<input type="hidden" name="logo" value="on" checked="checked">
 <input type="submit" value="convert-matrix">
 </form>
 </td>
