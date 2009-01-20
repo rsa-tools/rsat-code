@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: draw-heatmap,v 1.9 2009/01/20 08:56:28 jvanheld Exp $
+# $Id: draw-heatmap,v 1.10 2009/01/20 10:14:55 morgane Exp $
 #
 ############################################################
 
@@ -33,7 +33,7 @@ util
 
 =head1 USAGE
 
-draw-heatmap [-i inputfile] -o outputfile [-v #] [...] -out_format [png|jpeg]
+draw-heatmap [-i inputfile] -o outputfile [-v #] [-chaos] [...] -out_format [png|jpeg]
 
 =head1 INPUT FORMAT
 
@@ -57,6 +57,7 @@ use RSAT::util;
 use Data::Dumper;
 use RSAT::Chaos;
 use GD;
+use File::Spec;
 
 
 
@@ -68,7 +69,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -171,9 +172,10 @@ package main;
     
     ################################################################
     ## If HTML map required, initialization
-    my $html_source = "<html><header><title>Draw Heatmap</title></header><body>";
-    $html_source .= "<img src = '".$main::outfile{output}."' usemap = '#map' border = 0>";
-    $html_source .= "<map name = 'map'>";
+    my $html_source = "<html><header><title>Draw Heatmap</title></header><body>\n";
+    ## get the absolute path of the output image
+    $html_source .= "<img src = '".File::Spec->rel2abs($main::outfile{output})."' usemap = '#map' border = 0>\n";
+    $html_source .= "<map name = 'map'>\n";
     
     ################################################################
     ## Read input
@@ -346,7 +348,7 @@ package main;
             	}
             	$cell_content .= ")";
           	}	
-            $html_source .= "<area shape = 'rect' coords = '$xpos1,$ypos1,$xpos2,$ypos2' title = '$cell_content'>";
+            $html_source .= "<area shape = 'rect' coords = '$xpos1,$ypos1,$xpos2,$ypos2' title = '$cell_content'>\n";
           }
         }
         if ($lines) {
@@ -374,8 +376,8 @@ package main;
     ################################################################
     ## Print output
     if (defined ($main::outfile{htmlmap})) {
-      $html_source .= "</map>";
-      $html_source .= "</HTML>";
+      $html_source .= "</map>\n";
+      $html_source .= "</HTML>\n";
       print $main::outhtml $html_source;
     }
 
