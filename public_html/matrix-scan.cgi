@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.23 2009/01/14 11:54:58 morgane Exp $
+# $Id: matrix-scan.cgi,v 1.24 2009/01/20 09:34:33 morgane Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -266,11 +266,15 @@ sub ReadMatrixScanParameters {
   ################################################################
   ## Return sites
   if ($query->param('analysis_type') eq "analysis_sites") {
-    my @return_fields = qw(sites pval rank normw limits weight_limits bg_residues);
+    my @return_fields = qw(sites pval rank normw weight_limits bg_residues);
     foreach my $field (@return_fields) {
       if ($query->param("return_".$field) eq "on") {
 	$parameters .= " -return ".$field;
       }
+    }
+    
+     if ($query->param("return_site_limits") eq "on") {
+      $parameters .= " -return limits";
     }
 
     ## thresholds
@@ -341,12 +345,16 @@ sub ReadMatrixScanParameters {
   ## Return crer
   if ($query->param('analysis_type') eq "analysis_crer") {
   	$parameters .= " -n score ";
-    my @return_fields = qw(crer normw limits);
+    my @return_fields = qw(crer normw);
     foreach my $field (@return_fields) {
       if ($query->param("return_".$field) eq "on") {
 	$parameters .= " -return ".$field;
       }
     }
+    if ($query->param("return_crer_limits") eq "on") {
+      $parameters .= " -return limits";
+    }
+    
     if ($query->param("return_crer_sites") eq "on") {
       $parameters .= " -return sites";
     }
