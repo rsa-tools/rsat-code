@@ -41,7 +41,7 @@ $default{crer_ids} = "";
 ## matches
 $default{return_sites} = "CHECKED";
 $default{return_pval} = "CHECKED";
-$default{return_limits} = "CHECKED";
+$default{return_site_limits} = "CHECKED";
 $default{return_rank} = "CHECKED";
 $default{return_normw} = "";
 $default{return_bg_residues} = "";
@@ -55,6 +55,7 @@ $default{return_occ_proba} = "CHECKED";
 $default{sort_distrib} ="occ_sig";
 
 $default{return_crer} = "CHECKED";
+$default{return_crer_limits} = "CHECKED";
 $default{return_crer_sites} = "";
 
 $default{analysis_type} = "analysis_sites";
@@ -841,11 +842,13 @@ sub ReturnTable {
 				       -label=>' '.$field.' ');
   }
   $boxes_matches .= "<BR/>";
-  @return_fields_matches = qw( limits normw);
+  @return_fields_matches = qw( site_limits normw);
   foreach my $field (@return_fields_matches) {
+  		my $display_field = $field;
+  		$display_field =~ s/site_//;
     $boxes_matches .= $query->checkbox(-name=>'return_'.$field,
 				       -CHECKED=>$default{'return_'.$field},
-				       -label=>' '.$field.' ');
+				       -label=>' '.$display_field.' ');
   }
   $boxes_matches .= "<BR/>";
   @return_fields_matches = qw(weight_limits bg_residues);
@@ -887,11 +890,13 @@ sub ReturnTable {
 				    -label=>' '.$field.' ');
   }
   $boxes_crer .= "<BR/>";
-  @return_fields_crer = qw(limits);
+  @return_fields_crer = qw(crer_limits);
   foreach my $field (@return_fields_crer) {
+  	  	my $display_field = $field;
+  		$display_field =~ s/crer_//;
     $boxes_crer .= $query->checkbox(-name=>'return_'.$field,
 				    -CHECKED=>$default{'return_'.$field},
-				    -label=>' '.$field.' ');
+				    -label=>' '.$display_field.' ');
   }
   @return_fields_crer = qw(crer_sites);
   foreach my $field (@return_fields_crer) {
