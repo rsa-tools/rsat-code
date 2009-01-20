@@ -1440,7 +1440,7 @@ sub to_prefix_suffix_table {
 			    $type) if ($main::verbose >= 3);
 
     ## Print header
-    $string .= join ("\t", ";pr\\suf",
+    $string .= join ("\t", "#pr\\suf",
 		     @suffix,
 		     "Sum",
 		     "P_prefix",
