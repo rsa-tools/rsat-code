@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: draw-heatmap,v 1.8 2008/10/20 19:33:14 morgane Exp $
+# $Id: draw-heatmap,v 1.9 2009/01/20 08:56:28 jvanheld Exp $
 #
 ############################################################
 
@@ -68,7 +68,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -124,10 +124,10 @@ package main;
     if (!$main::outfile{output}) {
       &RSAT::error::FatalError("You must specify an output file with the -o option");
     }
-    if (!$main::infile{input}) {
-      &RSAT::error::FatalError("You must specify an input file with the -i option");
-    }    
-    
+#    if (!$main::infile{input}) {
+#      &RSAT::error::FatalError("You must specify an input file with the -i option");
+#    }
+
     ## chaos table: no text, no lines, square cells
     if ($chaos){
     	 $main::no_text = 1;
