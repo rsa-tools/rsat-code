@@ -20,6 +20,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ### intialization
 $feature_map_command = "$SCRIPTS/feature-map ";
 $tmp_file_name = sprintf "feature-map.%s", &AlphaDate;
+$tmp_color_file = sprintf "color-file.%s", &AlphaDate();
 
 $features_from_swissprot_cmd = "$SCRIPTS/features-from-swissprot";
 $features_from_msf_cmd = "$SCRIPTS/features-from-msf";
@@ -189,6 +190,19 @@ if ($#selected_ids >= 0) {
     unless ($selected{'*all*'}) {
 	$parameters .= " -select $id_selection ";
     }
+}
+
+## color file ##
+if ($query->param('color_file')) {
+    $color_file = "$TMP/$tmp_color_file.ft";
+    open COLOR, ">$color_file";
+    $upload_color_file = $query->param('color_file');
+	while (<$upload_color_file>) {
+	    print COLOR;
+	}
+	close COLOR;
+	
+	$parameters .= " -colors $color_file ";
 }
 
 ### data file ####
