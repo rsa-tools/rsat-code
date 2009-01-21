@@ -119,6 +119,7 @@ print $query->textfield(-name=>'title',
 			-maxlength=>80);
 
 print "<BR>\n";
+print "<div id='grey_background'>\n";
 print $query->checkbox(-name=>'legend',
 		       -checked=>'checked',
 		       -label=>'');
@@ -184,19 +185,28 @@ print $query->textfield(-name=>'mspacing',
 			-default=>$default{spacing},
 			-size=>5);
 
-print "<BR>\n";
+print "</div><BR>\n";
+print "<div id='grey_background'>\n";
 print "<B><A HREF='help.feature-map.html#palette'>Color palette</A></B>&nbsp;&nbsp;&nbsp;&nbsp";
 print $query->popup_menu(-name=>'palette',
 			 -Values=>['color','monochrome'],
 			 -default=>'color');
 
+print "<B><A HREF='help.feature-map.html#color_file'>&nbsp;&nbsp;";
+print "Color File ";
+print "</A></B>&nbsp;";
+print $query->filefield(-name=>'color_file',
+			-size=>10);
+
+print "<BR>\n";
 print "<B><A HREF='help.feature-map.html#bgcolor'>Background color (R,G,B)</A></B>&nbsp;&nbsp;&nbsp;&nbsp";
 print $query->textfield(-name=>'bgcolor',
 			-default=>'220,220,220',
 			-size=>11);
 
 
-print "<BR>\n";
+print "</div><BR>\n";
+print "<div id='grey_background'>\n";
 print "<B><A HREF='help.feature-map.html#handle'>Feature handle</A></B>&nbsp;&nbsp;&nbsp;&nbsp";
 print $query->popup_menu(-name=>'handle',
 			 -Values=>['color dot','symbol','none'],
@@ -261,7 +271,7 @@ print "&nbsp;&nbsp;&nbsp;";
 
 
 ## Image format
-print "<BR>\n";
+print "</div><BR>\n";
 print "<B><A HREF='help.feature-map.html#img_format'>Image format</A></B>&nbsp;&nbsp;&nbsp;&nbsp";
 print $query->popup_menu(-name=>'img_format',
 			 -Values=>['jpg','png','ps'],

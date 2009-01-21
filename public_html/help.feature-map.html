@@ -148,6 +148,23 @@ feature identifier (e.g. each pattern). The monochrome palette is
 convenient for printing feature maps on a balck and white printer, and
 to avoid publication costs for color pictures.<p>
 
+<a name=color_file></a>
+<b>Color file</b><br>
+Provide a file containing feature-specific colors.
+<br>The file contains 2 columns:
+<br>                1) Feature identifier
+<br>               2) Red,Green,Blue intensity in a scale from 0 to 255.
+ <br>This example will assign the red color to all features identified
+                as "Met4p", dark green to features "Pho4p", and very
+                dark blue to features identified as "Met31p".
+ <table align=center cellspacing=5>
+<tr><td><font size=-1>Met4p</font></td><td><font size=-1><font color=#FF0000>255,0,0</font></td></tr>
+<tr><td><font size=-1>Pho4p</font></td><td><font size=-1><font color=#006600>0,128,0</font></td></tr>
+<tr><td><font size=-1>Met31p</font></td><td><font size=-1><font color=#0000CC>0,0,64</font></font></td></tr>
+</table>
+
+<p>
+
 <a name=bgcolor></a>
 <b>Background color (R,G,B)</b><br> Specify the color of the
 background color. Colors are specified with three numbers from 0 to

@@ -173,6 +173,27 @@ input {
 	margin-left:5px;
 }
 
+#grey_border {
+	border-color: #CCCCCC;
+	border-style: dotted;
+	border-width: 2;
+	width:500;
+	}
+
+#grey_background {
+	background-color: #CCCCCC;
+	width:500;
+	}
+
+#blue_background {
+	background-color: #D6EEFA;
+	width:500;
+	}
+#tangerine_background {
+	background-color: #F6E6CA;
+	width:500;
+	}
+
 
 /* results pages  */
 
