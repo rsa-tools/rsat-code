@@ -543,19 +543,21 @@ exit(0);
 ################################################################
 ## Generate the graph with GnuPlot and export it in eps format
 sub GnuPlotEPS {
-	
+
   ## check that an input file exists
   if (!$inputfile) {
     ($in, $input_dir) = &OpenInputFile($inputfile);
     our $tmp_file = "tmp_gnuplot_for_input.tab";
     my ($out) = &OpenOutputFile($tmp_file);
     while (<$in>) {
+      next if (/^;/); # skip comment lines
+      next if (/^#/); # skip header line
       print $out $_;
     }
     close $out;
     close $in;
   }
-	
+
   my $input_data_file;
   if ($inputfile) {
     $input_data_file = $inputfile;
@@ -564,37 +566,37 @@ sub GnuPlotEPS {
   } else {
     die("No input data !!!");
   }
-  
+
   #export color file
   if ($colorexportfile){
   	#output file
   	($outcolor) = &OpenOutputFile($colorexportfile);
-  	
+
   	#get the column headers
     $header = `head -n 1 $input_data_file`;
     chomp($header);
     @header_list = split ('\t',$header);
   }
-	
+
   ## check if .pdf format
   if ($img_format eq "pdf") {
     ## will first write a temporary eps file and then use ps2pdf to convert it into a pdf file
     our $pdf_outputfile = $outputfile;
     $outputfile = "tmp_gnuplot_eps_for_pdf.eps";
   }
-	
+
   $gnuplot_cmd = "gnuplot << EOF\n";
   ## fonts
   $gnuplot_cmd .= "small='Arial,9'\n";
   $gnuplot_cmd .= "big='Arial,11'\n";
-	
+
   ## color
   if ($monochrome) {
     $color = "color";
   } else {
     $color = "";
   }
-	
+
   ## plot size ##
 
   ## size in gnuplot eps format is not in pixel but in inches.
@@ -606,13 +608,11 @@ sub GnuPlotEPS {
   if (($x_axis_size)&&($y_axis_size)) {
     my $ratio = $y_axis_size/$x_axis_size;
     $gnuplot_cmd .= "set size ratio '".$ratio."'\n";
-  } 
+  }
 
-	
   ## output file
   $gnuplot_cmd .= "set output '".$outputfile."'\n";
 
-	
   ## title
   if ($title1) {
     $title = '';
@@ -623,7 +623,7 @@ sub GnuPlotEPS {
     $title =~ s/_/-/g;
     $gnuplot_cmd .= 'set title "'.$title.'" font big'."\n";
   }
-	
+
   ## labels
   if ($x_legend1) {
     $x_legend = "";
@@ -696,7 +696,7 @@ sub GnuPlotEPS {
     }
     $gnuplot_cmd .= "set yrange [".$y_axis_min.":".$y_axis_max."]\n";	
   }
-	
+
   ## log
   if ($xlog) {
     $gnuplot_cmd .= "set logscale x ".$x_log_base."\n";
@@ -705,7 +705,6 @@ sub GnuPlotEPS {
     $gnuplot_cmd .= "set logscale y ".$y_log_base."\n";
   }
 
-	
   ## legend (key box)
   if (($header)||($legend)) {
     $gnuplot_cmd .= "set key outside right top vertical Left reverse enhanced nobox\n";	
@@ -1285,13 +1284,17 @@ sub ReadData {
 	&RSAT::message::Info(join("\t", "Legend fields\t", join (";", @legend_fields))) if ($main::verbose >= 1);
 
 	### calculate legend width ###
-	$legend_length = 0;
-	for $series (0..$#y_col_list) {
-	  $new_length = length($legend_fields[$y_col_list[$series]]);
-	  $legend_length = &checked_max($legend_length,$new_length);
+	if ($legend) {
+	  $legend_length = 0;
+	  for $series (0..$#y_col_list) {
+	    $new_length = length($legend_fields[$y_col_list[$series]]);
+	    $legend_length = &checked_max($legend_length,$new_length);
+	  }
+	  $legend_size = $legend_length * $small_font_width + $point_size + 20;
+	  &RSAT::message::Info("Legend length", $legend_length, "size", $legend_size) if ($main::verbose >= 1);
+	} else {
+	  $legend_size = 0;
 	}
-	$legend_size = $legend_length * $small_font_width + $point_size + 20;
-	&RSAT::message::Info("Legend length", $legend_length, "size", $legend_size) if ($main::verbose >= 1);
       }
       next if ($new_data_line =~ /^;/);	   ## Comment line
       if ($new_data_line =~ /\t/) { # if column delimiter is the tab character
@@ -1501,6 +1504,9 @@ sub CalcLimits {
   $bottom = $top + $y_axis_size;
   $graph_x_size = $right + $border + $legend_size + $point_size + 20;
   $graph_y_size = $bottom + $border + $y_scale_border + 2*$small_font_height + 6;
+
+#  &RSAT::error::FatalError($x_axis_size, $left, $border, $right, $legend_size, $graph_x_size);
+
 
   ### scale ###
   if ($x_axis_max > $x_axis_min) {
