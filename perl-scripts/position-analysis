@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.34 2006/08/27 23:08:17 jvanheld Exp $
+# $Id: position-analysis,v 1.35 2009/01/22 09:44:36 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -22,7 +22,7 @@ $class_interval = 20;
 $in_format = "fasta";
 $strands = "1str";
 $group_rc = 0;
-$image_format = $IMG_FORMAT; ### By default, take the image format defined in the RSAT config file
+$img_format = $ENV{rsat_img_format} || "png";
 $XYgraph_command = "$SCRIPTS/XYgraph";
 $log_base = log(10);
 
@@ -31,6 +31,8 @@ $start_time = &RSAT::util::AlphaDate();
 $sequence_number = 0;
 
 $max_seq_length = 0;
+$last = 0; ## max number of sequences to treat (for quick testing)
+$max_graphs = 0; #  maximal number of graphs to export
 
 $nb_possible_pos = 0;
 $sum_seq_length = 0;
@@ -38,7 +40,7 @@ $no_check = 0;
 $no_filter = 0;
 $no_filter_graphs = 0;
 
-%supported_seq_type = ("DNA"=>1,
+%supported_seq_type = ("dna"=>1,
 		       "any"=>1);
 $supported_seq_types = sort keys %supported_seq_type;
 $seq_type = "any";
@@ -170,15 +172,26 @@ if ($return{'graph'}) {
     print INDEX "<TH>Occ</TH>\n";
     print INDEX "<TH>Chi2</TH>\n";
     print INDEX "<TH>Rank</TH>\n";
+    print INDEX "<TH>Eval</TH>\n";
+    print INDEX "<TH>Sig</TH>\n";
     print INDEX "</TR>\n";
     close INDEX;
 
     #### generate one graph for each oligo
+    my $graphs_done = 0;
     foreach my $oligo_seq (@sorted_keys) {
 	next unless (&IsReal($pattern{$oligo_seq}->{chi_square}) || ($no_filter_graphs));
+
+	$graphs_done++;
+	if (($max_graphs > 0) && ($graphs_done > $max_graphs)) {
+	    &RSAT::message::Warning("Exported $graphs_done graphs");
+	    last;
+	}
+
 	my $score = "NA";
-	my $graph_file_name = join("", $oligo_seq, "_ci", $class_interval, "_", $strands, "_pos_distrib.", 
-				   ".",$image_format);
+	my $Eval = sprintf "%.1g", $pattern{$oligo_seq}->{Eval};
+	my $sig = sprintf "%.2f", $pattern{$oligo_seq}->{sig};
+	my $graph_file_name = join("", $oligo_seq, "_ci", $class_interval, "_", $strands, "_pos_distrib.",$img_format);
 	my $xmax = ($max_class+1) * $class_interval;
 	my $title2 = $pattern{$oligo_seq}->{in_bound_occ}." occurrences";
 	$title2 .= ", class interval=$class_interval";
@@ -190,7 +203,9 @@ if ($return{'graph'}) {
 	  } else {
 	    $score = $pattern{$oligo_seq}->{chi_square};
 	  }
-	  $title2 .= ", score = $score";
+	  $title2 .= "; chi2 = $score";
+	  $title2 .= "; Eval=".$Eval;
+	  $title2 .= "; sig=".$sig;
 	}
 
 	my $command = "$XYgraph_command -o $dir{graphs}/$graph_file_name";
@@ -200,21 +215,24 @@ if ($return{'graph'}) {
 	$command .= " -xleg1 'position' -yleg1 'class frequency' ";
 	$command .= " -ymin 0 -xmin $class_min[0] -xmax $class_max[$max_class] ";
 	$command .= " -xgstep2 $class_interval -xsize 600";
+	$command .= " -format ".$img_format;
 	print "; $command\n" if ($main::verbose >= 2);
-# 	open XY, "| $command";
-# 	print XY ";class\tocc_$oligo_seq\texp_$oligo_seq\n"; ### header line
-# 	foreach my $class ($min_class..$max_class) {
-# 	    print XY "$class_center{$class}\t";
-# 	    print XY "$class_freq{$oligo_seq}{$class}\t";
-# 	    print XY "$exp_occ{$oligo_seq}{$class}\n";
-# 	}
+ 	open XY, "| $command";
+ 	print XY ";class\tocc_$oligo_seq\texp_$oligo_seq\n"; ### header line
+ 	foreach my $class ($min_class..$max_class) {
+ 	    print XY "$class_center{$class}\t";
+ 	    print XY "$class_freq{$oligo_seq}{$class}\t";
+ 	    print XY "$exp_occ{$oligo_seq}{$class}\n";
+ 	}
 	close XYgraph;
 	open INDEX, ">>$index_file";
 	print INDEX "<tr>\n";
 	print INDEX "<td><A HREF=\"$rel_dir{graphs}/$graph_file_name\">$oligo_seq</A></td>\n";
-	print INDEX "<td>$pattern{$oligo_seq}->{in_bound_occ}</td>\n";
-	print INDEX "<td>$score</td>\n";
-	print INDEX "<td>$pattern{$oligo_seq}->{rank}</td>\n";
+	print INDEX "<td>", $pattern{$oligo_seq}->{in_bound_occ}, "</td>\n";
+	print INDEX "<td>", $score, "</td>\n";
+	print INDEX "<td>", $pattern{$oligo_seq}->{rank}, "</td>\n";
+	print INDEX "<td>", $Eval, "</td>\n";
+	print INDEX "<td>", $sig, "</td>\n";
 	print INDEX "</tr>\n";
 	close INDEX;
       }
@@ -321,7 +339,12 @@ sub ReadSequence {
 
 	$sequence_number++;
 
-	### remove tabs and blank spaces ###    
+	if (($last > 0) && ($sequence_number > $last)) {
+	    &RSAT::message::Warning("Stopeed after $last sequences (option -last was used)");
+	    last;
+	}
+
+	### remove tabs and blank spaces ###
 	$current_seq = &FoldSequence($current_seq,0);
 
 	### statistics about sequences ###
@@ -345,7 +368,7 @@ sub ReadSequence {
 				       "len=".$seq_length[$sequence_number],
 				       "last_pos=".$last_pos,
 				       "ref_pos=".$ref_pos,
-				      )) if ($main::verbose >= 3);
+				      )) if (($main::verbose >= 3) || (($main::verbose >= 2) && ($sequence_number%50==0)));
 
 	#### count oligonucleotides ####
 	my $offset = 0;
@@ -440,8 +463,10 @@ sub ReadSequence {
 	$max_seq_length = &max($max_seq_length, $seq_length[$s]);
 
 	&RSAT::message::Debug($s, $seq_length[$s], $sum_seq_length, $nb_possible_pos) if ($main::verbose >= 4);
+
+
     }
-    &RSAT::message::TimeWarn(join("\t", "Finished reading sequence. Number of patterns", scalar(keys %pattern))) 
+    &RSAT::message::TimeWarn(join("\t", "Finished reading sequences. Number of patterns", scalar(keys %pattern))) 
       if ($main::verbose >= 2);
 
 }
@@ -558,6 +583,13 @@ sub CalcChi {
 	  $pattern{$oligo_seq}->{sig} = -log($pattern{$oligo_seq}->{Eval})/$log_base;
 	}
 
+	#### check threshold on occurrences
+	if (defined($low_thr{'sig'})) {
+	  if ($pattern{$oligo_seq}->{sig} < $low_thr{'sig'}) {
+	    delete $pattern{$oligo_seq}->{occ};
+	    next;
+	  }
+	}
 
 	#### chek or not the applicability condition for the chi2
 	if ($no_check) {
@@ -653,6 +685,18 @@ OPTIONS
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
 
+	-seqtype dna|any
+		  Sequence type
+	-last #
+	      Stop after # sequences (for quick testing)
+
+	      The possibility to limit the analysis to a few sequences
+	      (e.g.50 of the input file can be useful for fine-tuing
+	      the options and ensuring that the result will appear as
+	      requested. Note that this option should not be used for
+	      the final analysis, since the significance drastically
+	      depends on the number of input sequences.
+
 	-mask upper|lower
 		Mask lower or uppercases, respecively, i.e. replace
 		selected case by N characters.
@@ -706,14 +750,19 @@ OPTIONS
 				sorting criterion
 		several fields can be entered, separated by commas
 
-	-lth #	lower threshold on chi2
+	-lth_chi #	lower threshold on chi2
 		return only words with a chi2 value > #
+
+	-lth_sig #	lower threshold on significance
+		return only words with a sig value > #
 
 	-oth #	lower threshold on occurrences
 		return only words with a number of occurrences > #
 
 	-rth #	upper threshold on rank
 		return maximum # words
+
+	-max_graphs #	maximal number of graphs to export
 
 	-pl pattern_file
 		A file containing a selection of patterns.  The
@@ -787,6 +836,8 @@ position-analysis options
 -h		display complete help message
 -help		display this list of options
 -i		input file
+-seqtype       sequence type (dna|any)
+-last #	      Stop after # sequences (for quick testing)
 -mask upper|lower	mask upper- or lowercases, respectively
 -format		input sequence format
 -o 		output file
@@ -800,9 +851,11 @@ position-analysis options
 -noov		no overlap
 -sort		sort oligonucleotides according to the score
 -return		chi,distrib,exp,graph,rank
--lth		lower threshold on chi2
+-lth_chi	lower threshold on chi2
+-lth_sig	lower threshold on significance
 -oth		lower threshold on occurrences
 -rth		lower threshold on rank
+-max_graphs #	maximal number of graphs to export
 -pl		pattern list
 -origin		origin (-0 to calculate positions relative to sequence end)
 -img_format	image format (this parameter is passed to XYgraph)
@@ -888,13 +941,21 @@ sub ReadArguments {
 	    $no_overlap = 1;
 	    
 	    ### lower threshold on chi square
-	} elsif ($ARGV[$a] =~ /^-lth/) { 
+	} elsif ($ARGV[$a] =~ /^-lth_chi/) { 
 	    $low_thr{'chi'} = $ARGV[$a+1];
 	    $return{'chi'} = 1;
 	    unless (($low_thr{'chi'} >= 0) && (&IsReal($low_thr{'chi'}))) {
 		&RSAT::error::FatalError("Threshold on chi2 must be a positive number") ;
 	    }
-	    
+
+	    ### lower threshold on significance
+	  } elsif ($ARGV[$a] =~ /^-lth_sig/) {
+	    $low_thr{'sig'} = $ARGV[$a+1];
+	    $return{'sig'} = 1;
+	    unless (&IsReal($low_thr{'sig'})) {
+	      &RSAT::error::FatalError("Threshold on sig must be a Real number") ;
+	    }
+
 	    ### lower threshold on occurrences
 	} elsif ($ARGV[$a] =~ /^-oth/) { 
 	    $low_thr{'occ'} = $ARGV[$a+1];
@@ -929,12 +990,28 @@ sub ReadArguments {
 		    $return{'rank'} = 1;
 		}
 	    }
+
+	    
 	    
 	    #### sequence type
 	} elsif ($ARGV[$a] =~ /^-seqtype/i) {
-	    $seq_type = $ARGV[$a+1];
+	    $seq_type = lc($ARGV[$a+1]);
 	    unless ($supported_seq_type{$seq_type}) {
 		&RSAT::error::FatalError("$seq_type is not a supported sequence type. Supported: $supported_seq_types");
+	    }
+
+	    #### last
+	} elsif ($ARGV[$a] =~ /^-last/i) {
+	    $last = lc($ARGV[$a+1]);
+	    unless ((&IsNatural($last)) && ($last > 1)) {
+		&RSAT::error::FatalError("$last is not a valid value for -last. Must be a strictly positive Natural number.");
+	    }
+
+	    #### max number of graphs
+	} elsif ($ARGV[$a] =~ /^-max_graphs/i) {
+	    $max_graphs = lc($ARGV[$a+1]);
+	    unless ((&IsNatural($max_graphs)) && ($max_graphs > 1)) {
+		&RSAT::error::FatalError("$max_graphs is not a valid value for the option -max_graphs. Must be a strictly positive Natural number.");
 	    }
 
 	    ### do not check applicability condition for the chi2
@@ -965,7 +1042,7 @@ sub ReadArguments {
 	    }
 	    
 	} elsif ($ARGV[$a] eq "-img_format") {
-	    $image_format = $ARGV[$a+1];
+	    $img_format = $ARGV[$a+1];
 
 	    ### min and max positions
 	} elsif (($ARGV[$a] eq "-minpos") && (&IsInteger($ARGV[$a+1]))) {
