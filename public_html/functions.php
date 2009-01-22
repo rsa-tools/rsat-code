@@ -206,7 +206,7 @@ Function spaces_to_tab($string, $num) {
 # its URL on the RSAT webserver
 # For example : /home/rsat/rsa-tool/public_html/tmp/brol.truc
 # will be converted to
-# http://rsat.scmbb.ulb.ac.be/rsat/tmp/brol.truc
+# http://rsat.ulb.ac.be/rsat/tmp/brol.truc
 Function rsat_path_to_url ($file_name) {
     global $WWW_RSA;
     $temp_file = explode('/',$file_name);
