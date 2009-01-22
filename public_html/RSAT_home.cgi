@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.44 2008/12/16 07:06:37 morgane Exp $
+# $Id: RSAT_home.cgi,v 1.45 2009/01/22 09:43:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -152,10 +152,10 @@ print <<EndText;
 <tr align=center valign=bottom>
 
   <td>
-  <A HREF="http://rsat.scmbb.ulb.ac.be/rsat/" target="_top">
+  <A HREF="http://rsat.ulb.ac.be/rsat/" target="_top">
   <B>Brussels - Belgium</B><BR>
   <IMG SRC="images/manneken_pis.jpg" HEIGHT=80 BORDER=0><BR>
-  http://rsat.scmbb.ulb.ac.be/rsat/</A>
+  http://rsat.ulb.ac.be/rsat/</A>
   </TD>
 
   <TD ALIGN=CENTER>
