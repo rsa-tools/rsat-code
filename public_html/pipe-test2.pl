@@ -11,8 +11,8 @@
 ##
 ################################################################
 
-## http://rsat.scmbb.ulb.ac.be/rsat/pipe-test2.pl/q?taxonomy_id=83333&ensembl_gene_id=YKR034W,YJR152W,YKR039W,YGR121C,YNL142W,YPR138C,YOR348C
-## http://rsat.scmbb.ulb.ac.be/rsat/pipe-test2.pl/q?taxonomy_id=9606&ensembl_gene_id=ENSG00000067646
+## http://rsat.ulb.ac.be/rsat/pipe-test2.pl/q?taxonomy_id=83333&ensembl_gene_id=YKR034W,YJR152W,YKR039W,YGR121C,YNL142W,YPR138C,YOR348C
+## http://rsat.ulb.ac.be/rsat/pipe-test2.pl/q?taxonomy_id=9606&ensembl_gene_id=ENSG00000067646
 
 #use strict;
 use SOAP::WSDL;
@@ -30,7 +30,7 @@ require "RSA2.cgi.lib";
 
 ## Service location
 #my $server = 'http://localhost/rsat/web_services';
-my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
 
@@ -136,7 +136,7 @@ my %results = %$results_ref;  ## Dereference the result hash table
 $server_file = $results{'server'};
 }
 
-my $file_link = "http://rsat.scmbb.ulb.ac.be/rsat/tmp/".basename($server_file);
+my $file_link = "http://rsat.ulb.ac.be/rsat/tmp/".basename($server_file);
 print "<br/><b>Retrieved sequence(s):</b> <a href='".$file_link."'>".$file_link."</a><br/>";
 
 my $sequence_file = $server_file;
@@ -162,7 +162,7 @@ my %results = %$results_ref;  ## Dereference the result hash table
 $server_file = $results{'server'};
 }
 
-$file_link = "http://rsat.scmbb.ulb.ac.be/rsat/tmp/".basename($server_file);
+$file_link = "http://rsat.ulb.ac.be/rsat/tmp/".basename($server_file);
 print "<br/><b>Purged sequence(s):</b> <a href='".$file_link."'>".$file_link."</a><br/>";
 
 #################################################
@@ -212,7 +212,7 @@ if ($som->fault){  ## Report error if any
 #    print $results{'client'},"<br/>";
 }
 
-$file_link = "http://rsat.scmbb.ulb.ac.be/rsat/tmp/".basename($server_file);
+$file_link = "http://rsat.ulb.ac.be/rsat/tmp/".basename($server_file);
 print "<br/><b>Oligos:</b> <a href='".$file_link."'>".$file_link."</a><br/>";
 
 ###############################
@@ -266,7 +266,7 @@ if ($som->fault){  ## Report error if any
 #    print $result;
 #    print "</PRE>";
 #    print "<b>Command:</b> ".$results{'command'}."<br/>";
-    $file_link = "http://rsat.scmbb.ulb.ac.be/rsat/tmp/".basename($server_file);
+    $file_link = "http://rsat.ulb.ac.be/rsat/tmp/".basename($server_file);
     print "<br/><b>Feature(s):</b> <a href='".$file_link."'>".$file_link."</a><br/>";    
 }
 
@@ -294,7 +294,7 @@ if ($som->fault){  ## Report error if any
     $server_file = $results{'server'};
     my $result = $results{'client'};
 #    print "<b>Command:</b> ".$results{'command'}."<br/>";
-    $file_link = "http://rsat.scmbb.ulb.ac.be/rsat/tmp/".basename($server_file);
+    $file_link = "http://rsat.ulb.ac.be/rsat/tmp/".basename($server_file);
     print "<br/><b>Converted features:</b> <a href='".$file_link."'>".$file_link."</a><br/>";    
 }
 
@@ -345,7 +345,7 @@ if ($som->fault){  ## Report error if any
     my $result = $results{'client'};
 #    print "<b>Command:</b> ".$results{'command'}."<br/>";
     print "<br/><b>Feature map:</b><br/>";
-    $file_link = "http://rsat.scmbb.ulb.ac.be/rsat/tmp/".basename($server_file);
+    $file_link = "http://rsat.ulb.ac.be/rsat/tmp/".basename($server_file);
     print "<img src='".$file_link."'/>";
 #    print "<br/><b>Feature map:</b> <a href='".$file_link."'>".$file_link."</a><br/>";    
 }
