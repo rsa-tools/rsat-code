@@ -1164,6 +1164,8 @@ sub _readFromTabFile {
       $line =~ s/\r//; ## Suppress carriage return
       $line =~ s/\s+/\t/g; ## Replace spaces by tabulation
       next if ($line =~ /^;/) ; # skip comment lines
+      $line =~ s/\[//g; ## Suppress [ and ] (present in the tab format of Jaspar and Pazar databases)
+      $line =~ s/\]//g; ## Suppress [ and ] (present in the tab format of Jaspar and Pazar databases)
 
       ## Create a new matrix if required
       if  ($line =~ /\/\//) {
