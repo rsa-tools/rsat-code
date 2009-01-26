@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.45 2008/12/19 08:29:15 rsat Exp $
+# $Id: convert-graph,v 1.46 2009/01/26 09:10:45 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -244,11 +244,11 @@ package main;
     ## Check that there is more than one edge if the -ecolor and -ewidth options are used
     ## If not, the option(s) is (are) inactivated
     if ($edge_width || $edge_colors) {
-      &RSAT::message::Warning("The graph has less than 2 edges. -ewidth and -ecolors options will be ignored");
       my $number_of_arcs = scalar $graph->get_attribute("arcs");
       if ($number_of_arcs <= 1) {
         $edge_width = 0;
         $edge_colors = 0;
+        &RSAT::message::Warning("The graph has less than 2 edges. -ewidth and -ecolors options will be ignored");
       }
     }
     
