@@ -62,8 +62,8 @@
      hourglass("on");
     # Open the SOAP client
     $client = new SoapClient(
-//                        $neat_wsdl,
-"http://rsat.ulb.ac.be/rsat/web_services/RSATWS2.wsdl",
+                       $neat_wsdl,
+// "http://rsat.ulb.ac.be/rsat/web_services/RSATWS.wsdl",
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
