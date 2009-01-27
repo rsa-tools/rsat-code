@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.74 2009/01/12 11:17:59 jturatsi Exp $
+# $Id: convert-matrix,v 1.75 2009/01/27 15:33:41 rsat Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -24,6 +24,8 @@ use Data::Dumper;
 
 #### initialise parameters ####
 my $start_time = &AlphaDate();
+local $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
+$seqlogo_path = &trim($seqlogo_path);
 $decimals = 1;
 $pseudo_weight = 1;
 $equi_pseudo = 0;
@@ -184,6 +186,21 @@ if ($return_fields{logo}) {
   }else{
     @logo_formats = ($logo_format);
   }
+
+  ## Check that seqlogo is installed at the expected location
+  if (-e $seqlogo_path) {
+      if(-x $seqlogo_path) {
+	&RSAT::message::Debug("seqlogo path", $seqlogo_path) if ($main::verbose >= 4);
+      } else {
+	  &RSAT::message::Warning("Cannot execute the program seqlogo", 
+				  $seqlogo_path);
+	  $seqlogo_path="";
+      }
+  } else {
+      &RSAT::message::Warning("Cannot generate logos because the program seqlogo is not found in the expected path", 
+			      $seqlogo_path);
+	  $seqlogo_path="";
+  }
 }
 
 ################################################################
@@ -255,15 +272,7 @@ foreach my $matrix (@matrices) {
 	$matrix->calcGCcontent();
     }
     ## Generate logo
-    if ($return_fields{logo}) {
-
-	### Check if seqlogo is installed on the machine
-	my $seqlogo_path = `which seqlogo`;
-	unless ($seqlogo_path) {
-	    &RSAT::error::FatalError("The program seqlogo is apparently not installed on your computer, or is not included in your path. 
-Please follow the instructions in the RSAT installation guide.");
-	}
-
+    if (($return_fields{logo}) && ($seqlogo_path)) {
 	my $basedir ="";
 	if (($logo_dir)&&(-d $logo_dir)){
 	    $basedir = $logo_dir."/";
