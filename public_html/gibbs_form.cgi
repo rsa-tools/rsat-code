@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs_form.cgi,v 1.5 2007/10/26 11:45:23 rsat Exp $
+# $Id: gibbs_form.cgi,v 1.6 2009/01/27 23:23:29 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:18 jvanheld>
 #
@@ -43,7 +43,7 @@ print "<CENTER>\n";
 print "Matrix-based pattern discovery using GIBBS<BR>\n";
 print "Extract shared motifs from a set of unaligned sequences<BR>\n";
 print "Program developed by <A HREF='mailto:neuwald\@cshl.org (Andrew Neuwald)'>Andrew Neuwald</A><BR>\n";
-print "Web interface by <A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>Jacques van Helden</A>).\n";
+print "Web interface by <A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>Jacques van Helden</A>.\n";
 print "</CENTER>\n";
 
 
