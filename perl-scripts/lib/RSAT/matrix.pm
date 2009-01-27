@@ -2953,8 +2953,16 @@ sub makeLogo{
   my ($seqs_file) =$self->seq_from_matrix($logo_tmp_dir);
   my $ncol = $self->ncol();
   foreach my $logo_format (@logo_formats){
-    my $logo_cmd = $ENV{RSAT}."/bin/seqlogo ";
-    $logo_cmd.= "-f ".$seqs_file;
+    my $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
+    $seqlogo_path = &RSAT::util::trim($seqlogo_path);
+    unless (-e $seqlogo_path) {
+	&RSAT::message::Warning("Cannot generate the sequence logo because the program seqlogo is not found in the expected path", 
+				$seqlogo_path, 
+				"Please install seqlogo in the recommended location.");
+	return;
+    }
+    my $logo_cmd = $seqlogo_path;
+    $logo_cmd.= " -f ".$seqs_file;
     $logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -e -k 1";
     $logo_cmd .= " -w ".$ncol unless ($logo_options =~ /\-w /);
     $logo_cmd .= " -h 5 " unless ($logo_options =~ /\-h /);
