@@ -485,7 +485,7 @@ sub GetMatrix {
 my $consensus = shift;
 print "<B>Matrix (or matrices)</B>\n";
 print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
-print "<A HREF='help.matrix-scan.html'><B>Format</B></a>&nbsp;";
+print "<A HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
 
 #### matrix format 
 print $query->popup_menu(-name=>'matrix_format',
@@ -500,8 +500,7 @@ print $query->popup_menu(-name=>'matrix_format',
 				   'clustal',
 				   'assembly',
 				   'cluster-buster',
-				   'feature',
-				   'infogibbs'
+				   'feature'
 				  ],
 			 -default=>$default{matrix_format});
 
