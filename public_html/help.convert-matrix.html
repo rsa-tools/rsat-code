@@ -24,14 +24,14 @@ var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24
 
 </ul><h4>Description</h4><ul>
 
-<p> Read a position-specific scoring matrix (PSSM) from different
-formats, and exports it in a format that can be used by the matrix
-matching program patser (Hertz et al, 1999).
+<p> Performs inter-conversions between various formats of
+	position-specific scoring matrices (PSSM).
 
-<p> The program also converts the original matrix to return different
-position-specific scores (weight, frequencies, information contents),
-general statistics (E-value, total information content), and synthetic
-descriptions (consensus).
+<p> The program also performs a statistical analysis of the
+	original matrix to provide different position-specific scores
+	(weight, frequencies, information contents), general
+	statistics (E-value, total information content), and synthetic
+	descriptions (consensus).
 
 <p>PSSM can be used to represent the binding specificity of a transcription
 factor or the conserved residues of a protein domain.</p>
@@ -41,9 +41,125 @@ amino-acid depending on the sequence type).  Each column corresponds
 to one position in the alignment.  The value within each cell
 represents the frequency of each residue at each position.</p>
 
-</ul><h4>Output formats</h4><ul>
+
+</ul><h4>INPUT/OUTPUT FORMATS</h4>
+<p>
+Some formats are supported only for input, others for
+    output. There are more formats accepted for input, because the
+    general use of this program is to convert a PSSM obtained from a
+    database (e.g. TRANSFAC) or a pattern-discovery program
+    (e.g. consensus, gibbs, meme, MotifSampler, ...) and obtain a
+    matrix either for scanning (with matrix-scan) or for computing
+    statistical parameters (see the return fields below).
+    
+  <p>
+  <ul>
+  <li> <strong> 
+    tab (input/output)</strong> </li>
+	tab-delimited file. One row per residue, one column per
+	position. The first column of each row indicates the residue,
+	the following columns give the frequency of that residue
+	at the corresponding position of the matrix.
+<p>
+        The tab format accepts a user-specific set of return fields
+        (option -return), proviging different statistics on the matrix
+        (counts, frequencies, weights, information, other parameters:
+        see description below).
+<pre>     
+; MET4 matrix, from Gonze et al. (2005). Bioinformatics 21, 3490-500.
+A |   7   9   0   0  16   0   1   0   0  11   6   9   6   1   8
+C |   5   1   4  16   0  15   0   0   0   3   5   5   0   2   0
+G |   4   4   1   0   0   0  15   0  16   0   3   0   0   2   0
+T |   0   2  11   0   0   1   0  16   0   2   2   2  10  11   8
+//
+</pre>
+        
+ <li> <strong> 
+    patser (output)</strong> </li>
+        This format can be used as input to scan sequences with
+        patser, the pattern-matching program developed by Jerry Hertz.
+<p>
+        This is actually the same format as tab (described above), but
+        the only return field is the count matrix.
+
+  <li> <strong>    assembly (input)</strong> </li>
+	Output file from the program pattern-assembly. One assembly
+	file can contain zero, one or several assemblies. Each
+	assembly is converted to a position-specific scoring matrix by
+	taking, for each residue at each position, the score of the
+	most significant pattern (oligonucleotide) containing that
+	residue in this position of the assembly.
+
+ <li> <strong>     consensus (input/output)</strong> </li>
+	Output file from consensus, the pattern-discovery program
+	developed by Jerry Hertz (Hertz et al., Comput Appl Biosci,
+	1990:6, 81-92). This file contains one or several matrices, +
+	additional information on the parameters used for pattern
+	discovery (e.g. prior residue frequencies).
+
+  <li> <strong>    gibbs (input)</strong> </li>
+	Output file from gibbs, the pattern-discovery program
+	developed by Andrew Neuwald (Lawrence et al. Science, 1993:
+	262, 208-214; Neuwald, et al. Protein Sci, 1995: 4, 1618-1632)
+
+  <li> <strong>    meme (input)</strong> </li>
+	Output file from MEME, the pattern-discovery program developed by
+	tim Bailey.This file contains one or several matrices, +
+	additional information on the parameters used for pattern
+	discovery (e.g. prior residue frequencies).
+
+  <li> <strong>    MotifSampler (input/output)</strong> </li>
+	Output file from MotifSampler, the pattern-discovery program
+	developed by Gert Thijs (Thijs et al. Bioinformatics, 2001:17,
+	1113-1122).
+
+  <li> <strong>    TRANSFAC (input/output)</strong> </li>
+        Format used in the TRANSFAC database;
+        (<a href='http://www.gene-regulation.com/pub/databases.html'>http://www.gene-regulation.com/pub/databases.html</a>)
+
+  <li> <strong>    InfoGibbs (input)</strong> </li>
+        Output file from InfoGibbs.
+<p>
+        InfoGibbs is a gibbs sampler based on the optimization of the
+        information content of the matrix (rather than the weight of
+        the sampled segments). InfoGibbs is currently under
+        development in the RSAT team (Matthieu Defrance and Grégory Gathy, unpublished).
+
+  <li> <strong>    cb (input)</strong> </li>
+	Cluster-Buster output file (usual extention .cb). The header
+	line starts with a > (like in fasta format). The matrix is
+	then printed "vertically" on the following lines: each column
+	corresponds to one residue, and each row to a position in the
+	alignment.
+
+   <li> <strong>   feature (input)</strong> </li>
+        Output file from convert-features. 
+
+        This format allows to obtain a PSSM from a list of (supposedly
+        pre-aligned) sites. These sites can themselves have been
+        collected by scanning sequences with a matrix (matrix-scan) or
+        by searching string-based patterns in a sequence
+        (dna-pattern). 
+
+        Converting features to matrices can for example be useful for
+        iterative refinment of a matrix (colecting sites from a
+        matrix, and building a matrix from those sites).
+
+        Another application is to detect oligomers or dyads in a
+        sequence set, and build a matrix from these.
+
+  <li> <strong>    clustal (input)</strong> </li>
+	The popular multiple alignemnt program clustalw. 
+    
+    
+    
+  </ul>  
+    
+    
+
+</ul><h4>RETURN FIELDS FOR THE TAB-DELIMITED OUTPUT FORMAT</h4><ul>
 <dl>
-<dt><strong><a name="item_alignment"></a>alignment</strong><br />
+<dt><strong><a name="item_alignment"></a>counts</strong><br />
 </dt>
 <dd>
 Each cell of the matrix indicates the number of occurrences of the
