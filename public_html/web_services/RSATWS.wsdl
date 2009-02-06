@@ -673,19 +673,24 @@ However, if the input file has been generated with oligo-analysis or dyad-analys
 	      <xsd:documentation>Maximum allowed substitutions. Default is 0.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-          <xsd:element name="maxcl" type="xsd:int" minOccurs="0">
+          <xsd:element name="max_asmb_nb" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Maximum number of assemblies. Default is 0 (no limit).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="max_asmb_size" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Maximum assembly size, i.e. number of patterns per assembly. Default is 50.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
           <xsd:element name="maxpat" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>Maximum number of allowed patterns. If the number of patterns exceeds this value, the program issues a fatal error. Default: no limit.</xsd:documentation>
+	      <xsd:documentation>Maximum number of allowed patterns. If the number of patterns exceeds this value, the program issues a fatal error. Default is 0 (no limit). Not compatible with toppat option.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
           <xsd:element name="toppat" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>Maximum number of patterns to analyze. If the number of patterns exceeds this value, the program selects a subset of them, , starting from the top of the. Default: 100.</xsd:documentation>
+	      <xsd:documentation>Maximum number of patterns to analyze. If the number of patterns in the input exceeds this value, the assembly is restricted with the top patterns only. Default: 100. Not compatible with maxpat option.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	</xsd:sequence>
