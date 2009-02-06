@@ -354,9 +354,7 @@ Default is 'both'.</xsd:documentation>
           </xsd:element>
 	  <xsd:element name="line_width" type="xsd:int" minOccurs="0">
             <xsd:annotation>
-              <xsd:documentation>A newline character will be inserted in the 
-                sequence every ## bases. 0 will prevent newline
-                insertion. This is the default value</xsd:documentation>
+              <xsd:documentation>A newline character will be inserted in the sequence every ## bases. 0 will prevent newline insertion. This is the default value</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	  <xsd:element name="ortho" type="xsd:int" minOccurs="0">
@@ -377,7 +375,7 @@ Default is 'both'.</xsd:documentation>
 	  <xsd:element name="header_organism" type="xsd:string" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>Type of organism name to use in the fasta header (scientific, common or none).
-                                 Default is scientific. Common name is only accessible with -ortho.</xsd:documentation>
+ Default is scientific. Common name is only accessible with -ortho.</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	</xsd:sequence>
@@ -524,6 +522,11 @@ Supported: upstream, upstream-noorf, upstream-noorf-rm, intergenic, input.</xsd:
 Default is 'both'.</xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
+	<xsd:element name="verbosity" type="xsd:int" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>Verbosity.</xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
 	<xsd:element name="sequence" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>Input sequence. You need to supply either this parameter or the next one (tmp_infile).</xsd:documentation>
@@ -631,7 +634,7 @@ This is the function of the option -zeroocc.</xsd:documentation>
 	  <xsd:element name="output" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
-		Default is 'both'.</xsd:documentation>
+Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
           <xsd:element name="input" type="xsd:string" minOccurs="0">
@@ -651,7 +654,8 @@ This is the function of the option -zeroocc.</xsd:documentation>
 	  </xsd:element>
           <xsd:element name="score_col" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>Score column. Column of the input file that contains the scores. if not specified, patterns are incorporated according to their order in the input file. However, if the input file has been generated with oligo-analysis or dyad-analysis with a verbosity >= 1, pattern-assembly detects the occ_sig column in the file header and uses this column as score column.</xsd:documentation>
+	      <xsd:documentation>Score column. Column of the input file that contains the scores. if not specified, patterns are incorporated according to their order in the input file.
+However, if the input file has been generated with oligo-analysis or dyad-analysis with a verbosity >= 1, pattern-assembly detects the occ_sig column in the file header and uses this column as score column.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
           <xsd:element name="str" type="xsd:int" minOccurs="0">
@@ -822,22 +826,22 @@ Default is 'both'.</xsd:documentation>
           <xsd:element name="output" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
-		Default is 'both'.</xsd:documentation>
+Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="features" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>a list of features (ORFs, regulatory sites). Each feature is represented by a single line, which should	provide the following information:
-		Input file columns:
-		1. map label (eg gene name)
-		2. feature type
-		3. feature identifier (ex: GATAbox, Abf1_site)
-		4. strand (D for Direct, R for Reverse),
-		5. feature start position
-		6. feature end position
-		7. (optional) description 
-		8. (optional) score
-		The standard input format assumes that these topics are provided in this order, separated by tabs. Start and end positions can be positive or negative.</xsd:documentation>
+Input file columns:
+	1. map label (eg gene name)
+	2. feature type
+	3. feature identifier (ex: GATAbox, Abf1_site)
+	4. strand (D for Direct, R for Reverse),
+	5. feature start position
+	6. feature end position
+	7. (optional) description 
+	8. (optional) score
+The standard input format assumes that these topics are provided in this order, separated by tabs. Start and end positions can be positive or negative.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
@@ -883,13 +887,13 @@ Default is 'both'.</xsd:documentation>
 	  <xsd:element name="label" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Define the info to display for each feature. Valid keys are: id, strand, descr (feature descritption), pos (feature start and end positions).
-		Several keys can be entered separated by commas without space. ex: -label pos,id. (default = id).</xsd:documentation>
+Several keys can be entered separated by commas without space. ex: -label pos,id. (default = id).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="symbol" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Associates a graphical symbol (i.e. rectangle, circle, buterfly, ...) to each feature. This is convenient to distinguish the features on black and white printings.
-		Mutually exclusive with the -dot option.</xsd:documentation>
+Mutually exclusive with the -dot option.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="dot" type="xsd:int" minOccurs="0">
@@ -904,7 +908,8 @@ Default is 'both'.</xsd:documentation>
 	  </xsd:element>
           <xsd:element name="mapthick" type="xsd:int" minOccurs="0">
             <xsd:annotation>
-              <xsd:documentation>Map thickness.Thickness refers to either width (for vertical maps) or height (horizintal maps). This parameter allows to change the thickness allocated to each map. This is useful when labels are too large. Default is 150.</xsd:documentation>
+              <xsd:documentation>Map thickness.Thickness refers to either width (for vertical maps) or height (horizintal maps). This parameter allows to change the thickness allocated to each map.
+This is useful when labels are too large. Default is 150.</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	  <xsd:element name="mspacing" type="xsd:int" minOccurs="0">
@@ -959,8 +964,8 @@ Default is 'both'.</xsd:documentation>
           </xsd:element>
 	  <xsd:element name="htmap" type="xsd:int" minOccurs="0">
             <xsd:annotation>
-	      <xsd:documentation>HTML map.An HTML document is automatically generated, which includes the feature map GIF file as an HTML map.
-		In other words,this document displays a figure with sensitive areas. Each time the mouse is positioned above a feature, information about this particuliar feature is displayed at the bottom of the browser window.</xsd:documentation>
+	      <xsd:documentation>HTML map. An HTML document is automatically generated, which includes the feature map GIF file as an HTML map.
+ In other words, this document displays a figure with sensitive areas. Each time the mouse is positioned above a feature, information about this particuliar feature is displayed at the bottom of the browser window.</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	  <xsd:element name="mono" type="xsd:int" minOccurs="0">
@@ -976,8 +981,8 @@ Default is 'both'.</xsd:documentation>
 	  <xsd:element name="select" type="xsd:string" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation> Only display the features whose ID is in the provided id_list.
-		The id_list contains one or several IDs, separated by commas.IDs may be embraced in single quotes to allow multiple words within the IDs. Commas and single quotes are not allowed within an ID.
-		Example:-select 'gataag','gattag' only displays features identified by gataag or gattag.</xsd:documentation>
+The id_list contains one or several IDs, separated by commas.IDs may be embraced in single quotes to allow multiple words within the IDs. Commas and single quotes are not allowed within an ID.
+Example: -select 'gataag','gattag' only displays features identified by gataag or gattag.</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	</xsd:sequence>
@@ -988,7 +993,7 @@ Default is 'both'.</xsd:documentation>
           <xsd:element name="output" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
-		Default is 'both'.</xsd:documentation>
+Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="verbosity" type="xsd:int" minOccurs="0">
@@ -1019,7 +1024,7 @@ Default is 'both'.</xsd:documentation>
 	  </xsd:element>
 	  <xsd:element name="output_prefix" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>Prefix for the output files. If the prefix is 	not specified, the program can guess a default prefix, but this is working only if there is a single query gene or query file.</xsd:documentation>
+	      <xsd:documentation>Prefix for the output files. If the prefix is not specified, the program can guess a default prefix, but this is working only if there is a single query gene or query file.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="query" type="xsd:string" minOccurs="0">
@@ -1045,7 +1050,8 @@ Default is 'both'.</xsd:documentation>
 	  </xsd:element>
 	  <xsd:element name="index" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>Generate an HTML index with links to the result files. This option is used for the web interface, but can also be convenient to index results, especially when several genes or taxa are analyzed (options -genes, -all_genes, -all_taxa).</xsd:documentation>
+	      <xsd:documentation>Generate an HTML index with links to the result files.
+This option is used for the web interface, but can also be convenient to index results, especially when several genes or taxa are analyzed (options -genes, -all_genes, -all_taxa).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="lth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
@@ -1065,15 +1071,16 @@ Default is 'both'.</xsd:documentation>
 	  </xsd:element>
           <xsd:element name="to_matrix" type="xsd:int" minOccurs="0">
             <xsd:annotation>
-              <xsd:documentation>Convert assembled patterns into position-specific scoring matrices (PSSM). Caution ! This conversion can take time if the sequence set is large and if there are many assemblies.</xsd:documentation>
+              <xsd:documentation>Convert assembled patterns into position-specific scoring matrices (PSSM).
+Caution ! This conversion can take time if the sequence set is large and if there are many assemblies.</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	  <xsd:element name="bg_model" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Allow the user to choose among alternative background model.
-                                   taxfreq
+                                 - taxfreq
                                       Taxon-wide background model, computed by counting dyad frequencies in all the promoters of all the genes of the reference taxon.
-                                   monads
+                                 - monads
                                       Expected dyad frequencies are the product of monad frequencies observed in the input sequences.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1084,12 +1091,14 @@ Default is 'both'.</xsd:documentation>
           </xsd:element>
 	  <xsd:element name="infer_operons" type="xsd:int" minOccurs="0">
             <xsd:annotation>
-              <xsd:documentation>Infer operons in order to retrieve the	promoters of the predicted operon leader genes rather than those located immediately upstream of the orthologs. This method uses a threshold on the intergenic distance.</xsd:documentation>
+              <xsd:documentation>Infer operons in order to retrieve the promoters of the predicted operon leader genes rather than those located immediately upstream of the orthologs.
+This method uses a threshold on the intergenic distance.</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	  <xsd:element name="dist_thr" type="xsd:int" minOccurs="0">
             <xsd:annotation>
-              <xsd:documentation>Specify here the intergenic distance threshold in base pairs. Pair of adjacent genes with intergenic distance equal or less than this value are predicted to be within operon. (default : 55).</xsd:documentation>
+              <xsd:documentation>Specify here the intergenic distance threshold in base pairs.
+Pair of adjacent genes with intergenic distance equal or less than this value are predicted to be within operon. (default : 55).</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	</xsd:sequence>
@@ -1100,7 +1109,7 @@ Default is 'both'.</xsd:documentation>
 	  <xsd:element name="output" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
-		Default is 'both'.</xsd:documentation>
+Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
           <xsd:element name="organism" type="xsd:string" minOccurs="1">
@@ -1125,66 +1134,30 @@ Default is 'both'.</xsd:documentation>
 	  </xsd:element>
 	  <xsd:element name="nogrep" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>Disable the pre-filtering with grep if value = 1.This pre-filtering accelerates the selection of hits, but some grep versions do not support the -E option. If this is the case on your operating system, you can still obtain the correct results by inactivating the grep filter.</xsd:documentation>
+	      <xsd:documentation>Disable the pre-filtering with grep if value = 1.
+This pre-filtering accelerates the selection of hits, but some grep versions do not support the -E option.
+If this is the case on your operating system, you can still obtain the correct results by inactivating the grep filter.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="return" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Output field(s).
-
-        By default, the output is a two-column file indicating the ID of the
-        gene identified as similar to the query gene, and the name of the
-        reference organism.
-
-        The option -return can be used to specify additional output fields.
-
-        Supported fields:
-
-            ref_id
-                ID of the reference (target) gene
-
-            ref_organism
-                Name of the reference (target) organism
-
-            query_id
-                ID of the query gene
-
-            query_organism
-                Name of the query organism
-
-            ident
-                Percent of identity (a number between 0 and 100)
-
-            ali_len
-                Alignment lengths (in residues)
-
-            mismat
-                Number of mismatches
-
-            gap_open
-                Number of gap openings
-
-            e_value
-                E-value (expected number of false positives)
-
-            bit_sc
-                Bit score
-
-            rank
-                Rank
-
-            s_rank
-                Source rank (rank of the hit for the query organism).
-
-        The option -return can be used iteratively on the same command line
-        to specify several output fields. Another way to specify multiple
-        output fields is to enter them separated by commas.
-
-        Examples:
-
-            -return query_id -return e_value -return rank
-
-            -return query_id,e_value,rank</xsd:documentation>
+By default, the output is a two-column file indicating the ID of the gene identified as similar to the query gene, and the name of the reference organism.
+The option -return can be used to specify additional output fields.
+Supported fields:
+       - ref_id: ID of the reference (target) gene
+       - ref_organism: Name of the reference (target) organism
+       - query_id: ID of the query gene
+       - query_organism: Name of the query organism
+       - ident: Percent of identity (a number between 0 and 100)
+       - ali_len: Alignment lengths (in residues)
+       - mismat: Number of mismatches
+       - gap_open: Number of gap openings
+       - e_value: E-value (expected number of false positives)
+       - bit_sc: Bit score
+       - rank: Rank
+       - s_rank: Source rank (rank of the hit for the query organism).
+Several output fields can be entered separated by commas.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="lth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
@@ -1205,7 +1178,7 @@ Default is 'both'.</xsd:documentation>
 	  <xsd:element name="output" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
-		Default is 'both'.</xsd:documentation>
+Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
           <xsd:element name="organism" type="xsd:string" minOccurs="1">
@@ -1236,28 +1209,13 @@ Default is 'both'.</xsd:documentation>
 	  <xsd:element name="return" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>List of fields to return.
-
-        Supported fields:
-        leader,trailer,operon,query,q_info,up_info,down_info
-
-        leader
-            Predicted operon leader.
-
-        trailer
-            Predicted operon trailer.
-
-        operon
-            Full composition of the operon. The names of member genes are
-            separated by a semi-column ";".
-
-        q_info
-            Detailed info on the query gene(s).
-
-        up_info
-            Detailed info on the upstream gene.
-
-        down_info
-            Detailed info on the downstream gene.</xsd:documentation>
+Supported fields: leader,trailer,operon,query,q_info,up_info,down_info
+       - leader: Predicted operon leader.
+       - trailer: Predicted operon trailer.
+       - operon: Full composition of the operon. The names of member genes are separated by a semi-column ";".
+       - q_info: Detailed info on the query gene(s).
+       - up_info: Detailed info on the upstream gene.
+       - down_info: Detailed info on the downstream gene.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	</xsd:sequence>
@@ -1268,7 +1226,7 @@ Default is 'both'.</xsd:documentation>
 	  <xsd:element name="output" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
-		Default is 'both'.</xsd:documentation>
+Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
           <xsd:element name="organism" type="xsd:string" minOccurs="1">
@@ -2085,7 +2043,7 @@ Supported parameters: same as lth.</xsd:documentation>
 	  </xsd:element>
 	  <xsd:element name="matrix" type="xsd:string" minOccurs="1">
 	    <xsd:annotation>
-	      <xsd:documentation>Matrix (or features) you want to convert.</xsd:documentation>
+	      <xsd:documentation>Matrix (or assembly or features) you want to convert.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="background_format" type="xsd:string" minOccurs="0">
@@ -2110,25 +2068,24 @@ Supported parameters: same as lth.</xsd:documentation>
 	  </xsd:element>
 	  <xsd:element name="return" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>Return type (matrix content). Supported: consensus, counts, frequencies, info, information, logo, margins, parameters, profile, sites, wdistrib, weights.</xsd:documentation>
+	      <xsd:documentation>Result type (matrix content). Supported: consensus, counts, frequencies, info, information, logo, margins, parameters, profile, sites, wdistrib, weights.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="sort" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>desc|asc|alpha sort_key. Sort matrices according to the specified attribute (sort_key). The sorting can be done on numerical values, either in descending (desc) or ascending (asc) order. It can also be done in alphabetical order (alpha).
-                The key must be one of the numeric parameters of the matrices (e.g. information.content, E-value, ...).
-                This option is convenient, for example, to sort matrices from MotifSampler according to their information content:
-                        -sort desc MS.ic.</xsd:documentation>
+	      <xsd:documentation>desc | asc | alpha sort_key.
+Sort matrices according to the specified attribute (sort_key). The sorting can be done on numerical values, either in descending (desc) or ascending (asc) order.
+It can also be done in alphabetical order (alpha).
+The key must be one of the numeric parameters of the matrices (e.g. information.content, E-value, ...).
+This option is convenient, for example, to sort matrices from MotifSampler according to their information content:
+        -sort desc MS.ic.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="top" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Maximal number of matrices to return. 
-                Some of the input formats can contain several matrices
-                in a single file (e.g. consensus, meme,
-                MotifSampler). By default, all the matrices are parsed
-                and exported. The option -top allows to restrict the
-                number of matrices to be exported.</xsd:documentation>
+Some of the input formats can contain several matrices in a single file (e.g. consensus, meme, MotifSampler).
+By default, all the matrices are parsed and exported. The option -top allows to restrict the number of matrices to be exported.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="pseudo" type="xsd:float" minOccurs="0">
@@ -2138,41 +2095,28 @@ Supported parameters: same as lth.</xsd:documentation>
 	  </xsd:element>
 	  <xsd:element name="equi_pseudo" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>If value is 1, the pseudo-weight is
-                distributed in an equiprobable way between residues.
-                By default, the pseudo-weight is distributed
-                proportionally to residue priors.</xsd:documentation>
+	      <xsd:documentation>If value is 1, the pseudo-weight is distributed in an equiprobable way between residues.
+By default, the pseudo-weight is distributed proportionally to residue priors.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="base" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>Base for the logarithms used in the scores involving a
-              log-likelihood (weight and information
-              content). Default: exp(1) (natural logarithms).
-
-              A common alternative to natural logarithms is to use
-              logarithms in base 2, in which case the information
-              content is computed in bits..</xsd:documentation>
+	      <xsd:documentation>Base for the logarithms used in the scores involving a log-likelihood (weight and information content). Default: exp(1) (natural logarithms).
+A common alternative to natural logarithms is to use logarithms in base 2, in which case the information content is computed in bits..</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="decimals" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>Number of decimals to print for real matrices
-                (frequencies, weights, information) or to compute
-                score distributions.
-
-                Warning: for the computation of score distributions,
-                the computing time increases exponentially with the
-                number of decimals. We recommend to restrict the
-                precision to 2 decimals for the weight, this is
-                generally more than sufficient.</xsd:documentation>
+	      <xsd:documentation>Number of decimals to print for real matrices (frequencies, weights, information) or to compute score distributions.
+Warning: for the computation of score distributions, the computing time increases exponentially with the number of decimals.
+We recommend to restrict the precision to 2 decimals for the weight, this is generally more than sufficient.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="perm" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>Number of permuted matrices to return. Matrix columns are permuted
-                so that the total information content remains identical to the original
-                matrix. Note that the output format for permuted matrix is tab.</xsd:documentation>
+	      <xsd:documentation>Number of permuted matrices to return.
+Matrix columns are permuted so that the total information content remains identical to the original matrix.
+Note that the output format for permuted matrix is tab.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="max_profile" type="xsd:int" minOccurs="0">
@@ -5234,7 +5178,8 @@ The output graph will thus consist in the graph induced by all nodes of the firs
         <output name="MatrixScanResponse" message="tns:matrix_scanResponse"/>
       </operation>
       <operation name="convert_matrix">
-	<documentation>Performs inter-conversions between various formats of position-specific scoring matrices (PSSM). The program also performs a statistical analysis of the original matrix to provide different position-specific scores (weight, frequencies, information contents), general statistics (E-value, total information content), and synthetic descriptions (consensus).
+	<documentation>Performs inter-conversions between various formats of position-specific scoring matrices (PSSM).
+The program also performs a statistical analysis of the original matrix to provide different position-specific scores (weight, frequencies, information contents), general statistics (E-value, total information content), and synthetic descriptions (consensus).
 	</documentation>
         <input name="ConvertMatrixRequest" message="tns:convert_matrixRequest"/>
         <output name="ConvertMatrixResponse" message="tns:convert_matrixResponse"/>
