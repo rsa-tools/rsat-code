@@ -2073,18 +2073,133 @@ Supported parameters: same as lth.</xsd:documentation>
 	</xsd:sequence>
       </xsd:complexType>
 
+      <xsd:complexType name="ConvertMatrixRequest">
+        <xsd:annotation>
+	  <xsd:documentation>Parameters for the operation convert_matrix.</xsd:documentation>
+        </xsd:annotation>
+	<xsd:sequence>
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. Default is 'both'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="matrix" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Matrix (or features) you want to convert.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="background_format" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Format for the background model (prior) files. Supported: oligo-analysis, MotifSampler, meme, dyads.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="background_pseudo" type="xsd:float" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Pseudo frequency for the background models. Value must be a real between 0 and 1 (default: 0.01).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="from" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input matrix format. Supported: alignace, assembly, cb, clustal, consensus, feature, gibbs, infogibbs, meme, motifsampler, tab, transfac.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="to" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Output matrix format. Supported: consensus, patser, tab, transfac.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="return" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type (matrix content). Supported: consensus, counts, frequencies, info, information, logo, margins, parameters, profile, sites, wdistrib, weights.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="sort" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>desc|asc|alpha sort_key. Sort matrices according to the specified attribute (sort_key). The sorting can be done on numerical values, either in descending (desc) or ascending (asc) order. It can also be done in alphabetical order (alpha).
+                The key must be one of the numeric parameters of the matrices (e.g. information.content, E-value, ...).
+                This option is convenient, for example, to sort matrices from MotifSampler according to their information content:
+                        -sort desc MS.ic.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="top" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Maximal number of matrices to return. 
+                Some of the input formats can contain several matrices
+                in a single file (e.g. consensus, meme,
+                MotifSampler). By default, all the matrices are parsed
+                and exported. The option -top allows to restrict the
+                number of matrices to be exported.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="pseudo" type="xsd:float" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>pseudo-weight used for the calculation of the weight matrix (default: 1).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="equi_pseudo" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>If value is 1, the pseudo-weight is
+                distributed in an equiprobable way between residues.
+                By default, the pseudo-weight is distributed
+                proportionally to residue priors.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="base" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Base for the logarithms used in the scores involving a
+              log-likelihood (weight and information
+              content). Default: exp(1) (natural logarithms).
+
+              A common alternative to natural logarithms is to use
+              logarithms in base 2, in which case the information
+              content is computed in bits..</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="decimals" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Number of decimals to print for real matrices
+                (frequencies, weights, information) or to compute
+                score distributions.
+
+                Warning: for the computation of score distributions,
+                the computing time increases exponentially with the
+                number of decimals. We recommend to restrict the
+                precision to 2 decimals for the weight, this is
+                generally more than sufficient.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="perm" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Number of permuted matrices to return. Matrix columns are permuted
+                so that the total information content remains identical to the original
+                matrix. Note that the output format for permuted matrix is tab.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="max_profile" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Maximal width of the profile histogram (units = number of characters).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="rc" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Convert the matrix to its reverse complement if value = 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
+
       <xsd:complexType name="RandomSequenceRequest">
         <xsd:annotation>
 	  <xsd:documentation>Parameters for the operation random_seq.</xsd:documentation>
         </xsd:annotation>
 	<xsd:sequence>
-	 <xsd:element name="output" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. 
 Default is 'both'.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-         <xsd:element name="sequence_length" type="xsd:int" minOccurs="0">
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="sequence_length" type="xsd:int" minOccurs="0">
 	   <xsd:annotation>
 	     <xsd:documentation>Length of sequence to generate.</xsd:documentation>
 	   </xsd:annotation>
@@ -3532,6 +3647,26 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
+
+      <xsd:complexType name="ConvertMatrixResponse">
+	<xsd:sequence>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The stand-alone command executed on the server.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>The results.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
+      </xsd:complexType>
       
        <xsd:complexType name="MatrixDistribResponse">
 	<xsd:sequence>
@@ -4294,6 +4429,22 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
+
+      <xsd:element name="convert_matrix">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:ConvertMatrixRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="convert_matrixResponse">
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:ConvertMatrixResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
+      </xsd:element>
       
          <xsd:element name="matrix_distrib">
 	<xsd:complexType>
@@ -4787,6 +4938,14 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="matrix_scanResponse">
     <part name="output" element="tns:matrix_scanResponse"></part>
   </message>
+
+  <message name="convert_matrixRequest">
+    <part name="parameters" element="tns:convert_matrix"></part>
+  </message>
+
+  <message name="convert_matrixResponse">
+    <part name="output" element="tns:convert_matrixResponse"></part>
+  </message>
   
    <message name="matrix_distribRequest">
     <part name="parameters" element="tns:matrix_distrib"></part>
@@ -5073,6 +5232,12 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	</documentation>
         <input name="MatrixScanRequest" message="tns:matrix_scanRequest"/>
         <output name="MatrixScanResponse" message="tns:matrix_scanResponse"/>
+      </operation>
+      <operation name="convert_matrix">
+	<documentation>Performs inter-conversions between various formats of position-specific scoring matrices (PSSM). The program also performs a statistical analysis of the original matrix to provide different position-specific scores (weight, frequencies, information contents), general statistics (E-value, total information content), and synthetic descriptions (consensus).
+	</documentation>
+        <input name="ConvertMatrixRequest" message="tns:convert_matrixRequest"/>
+        <output name="ConvertMatrixResponse" message="tns:convert_matrixResponse"/>
       </operation>
       <operation name="matrix_distrib">
 	<documentation>Returns the theoretical distribution of matrix weight within the defined background model.
@@ -5407,6 +5572,15 @@ The output graph will thus consist in the graph induced by all nodes of the firs
         <soap:body use="literal" />
       </input>
       <output name="MatrixScanResponse">
+        <soap:body use="literal" />
+      </output>
+    </operation>
+    <operation name="convert_matrix">
+      <soap:operation soapAction=""/>
+      <input name="ConvertMatrixRequest">
+        <soap:body use="literal" />
+      </input>
+      <output name="ConvertMatrixResponse">
         <soap:body use="literal" />
       </output>
     </operation>

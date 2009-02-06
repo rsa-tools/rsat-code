@@ -2909,6 +2909,137 @@ if ($args{"equi_pseudo"} == 1 ) {
 }
 
 ##########
+sub convert_matrix {
+  my ($self, $args_ref) = @_;
+  my %args = %$args_ref;
+  my $output_choice = $args{"output"};
+  unless ($output_choice) {
+    $output_choice = 'both';
+  }
+
+  if ($args{"matrix"}) {
+      my $input_matrix = $args{"matrix"};
+      chomp $input_matrix;
+      $tmp_matrix_infile = `mktemp $TMP/convert-matrix.XXXXXXXXXX`;
+      open TMP_IN, ">".$tmp_matrix_infile or die "cannot open temp file ".$tmp_matrix_infile."\n";
+      print TMP_IN $input_matrix;
+      close TMP_IN;
+  } elsif ($args{tmp_matrix_infile}){
+      $tmp_matrix_infile = $args{"tmp_matrix_infile"};
+  }
+  chomp $tmp_matrix_infile;
+
+  my $background_format = $args{"background_format"};
+  my $background_pseudo = $args{"background_pseudo"};
+  my $from = $args{"from"};
+  my $to = $args{"to"};
+  my $return = $args{"return"};
+  my $sort = $args{"sort"};
+  my $top = $args{"top"};
+  my $pseudo = $args{"pseudo"};
+  my $equi_pseudo = $args{"equi_pseudo"};
+  my $base = $args{"base"};
+  my $decimals = $args{"decimals"};
+  my $perm = $args{"perm"};
+  my $max_profile = $args{"max_profile"};
+  my $rc = $args{"rc"};
+#  my $logo_format = $args{"logo_format"};
+#  my $logo_dir = $args{"logo_dir"};
+#  my $logo_opt = $args{"logo_opt"};
+
+  my $command = "$SCRIPTS/convert-matrix";
+
+  if ($tmp_matrix_infile) {
+      $tmp_matrix_infile =~ s/\'//g;
+      $tmp_matrix_infile =~ s/\"//g;
+      chomp $tmp_matrix_infile;
+      $command .= " -i '".$tmp_matrix_infile."'";
+  }
+
+  if ($background_format) {
+    $background_format  =~ s/\'//g;
+    $background_format  =~ s/\"//g;
+    $command .= " -bg_format '".$background_format."'";
+  }
+
+  if ($background_pseudo =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $background_pseudo =~ s/\'//g;
+    $background_pseudo =~ s/\"//g;
+    $command .= " -bg_pseudo '".$background_pseudo."'";
+  }
+
+  if ($from) {
+    $from =~ s/\'//g;
+    $from =~ s/\"//g;
+    $command .= " -from '".$from."'";
+  }
+
+  if ($to) {
+    $to =~ s/\'//g;
+    $to =~ s/\"//g;
+    $command .= " -to '".$to."'";
+  }
+
+  if ($return) {
+    $return  =~ s/\'//g;
+    $return =~ s/\"//g;
+    $command .= " -return '".$return."'";
+  }
+
+  if ($sort) {
+    $sort =~ s/\'//g;
+    $sort =~ s/\"//g;
+    $command .= " -sort '".$sort."'";
+  }
+
+  if ($top =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $top =~ s/\'//g;
+    $top =~ s/\"//g;
+    $command .= " -top '".$top."'";
+  }
+
+  if ($pseudo =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $pseudo =~ s/\'//g;
+    $pseudo =~ s/\"//g;
+    $command .= " -pseudo '".$pseudo."'";
+  }
+
+  if ($equi_pseudo == 1) {
+    $command .= " -equi_pseudo";
+  }
+
+  if ($base =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $base =~ s/\'//g;
+    $base =~ s/\"//g;
+    $command .= " -base '".$base."'";
+  }
+
+  if ($decimals =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $decimals =~ s/\'//g;
+    $decimals =~ s/\"//g;
+    $command .= " -decimals '".$decimals."'";
+  }
+
+  if ($perm =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $perm =~ s/\'//g;
+    $perm =~ s/\"//g;
+    $command .= " -perm '".$perm."'";
+  }
+
+  if ($max_profile =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
+    $max_profile =~ s/\'//g;
+    $max_profile =~ s/\"//g;
+    $command .= " -max_profile '".$max_profile."'";
+  }
+
+  if ($rc == 1) {
+    $command .= " -rc";
+  }
+
+ &run_WS_command($command, $output_choice, ".convert-matrix")
+}
+
+##########
 sub matrix_distrib {
   my ($self, $args_ref) = @_;
   my %args = %$args_ref;
