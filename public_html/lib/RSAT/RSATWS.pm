@@ -1007,11 +1007,17 @@ sub pattern_assembly {
     $command .= " -subst ".$subst;
   }
 
+  ## Max number of assemblies
+  my $max_asmb_nb = $args{max_asmb_nb};
+  if ($max_asmb_nb =~ /^\d+$/) {
+    $command .= " -max_asmb_nb ".$max_asmb_nb;
+  }
+
   ## Max assembly size (number of patterns per cluster)
-  my $maxcl = $args{maxcl};
-  if ($maxcl =~ /^\d+$/) {
+  my $max_asmb_size = $args{max_asmb_size};
+  if ($max_asmb_size =~ /^\d+$/) {
 #  if (&IsNatural($maxcl)) {
-    $command .= " -maxcl ".$maxcl;
+    $command .= " -max_asmb_size ".$max_asmb_size;
   }
 
   ## Max number of patterns in total
