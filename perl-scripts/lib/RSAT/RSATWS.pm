@@ -808,6 +808,7 @@ sub dyad_analysis {
 	$tmp_infile = $args{"tmp_infile"};
     }
     chomp $tmp_infile;
+    my $verbosity = $args{'verbosity'};
     my $format = $args{"format"};
     my $length = $args{"length"};
     my $spacing = $args{"spacing"};
@@ -855,6 +856,12 @@ sub dyad_analysis {
     }
 
     my $command = "$SCRIPTS/dyad-analysis";
+
+    if ($verbosity) {
+      $verbosity =~ s/\'//g;
+      $verbosity =~ s/\"//g;
+      $command .= " -v '".$verbosity."'";
+    }
 
     if ($format) {
       $format =~ s/\'//g;
