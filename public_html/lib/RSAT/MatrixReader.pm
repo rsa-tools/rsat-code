@@ -1,4 +1,4 @@
-###############################################################
+##############################################################
 #
 # Class MatrixReader
 #
@@ -1162,6 +1162,7 @@ sub _readFromTabFile {
       next unless ($line =~ /\S/); ## Skip empty lines
       chomp($line); ## Suppress newline
       $line =~ s/\r//; ## Suppress carriage return
+      $line =~ s/(^.)\|/$1\t\|/; ## Add missing tab after residue
       $line =~ s/\s+/\t/g; ## Replace spaces by tabulation
       next if ($line =~ /^;/) ; # skip comment lines
       $line =~ s/\[//g; ## Suppress [ and ] (present in the tab format of Jaspar and Pazar databases)
