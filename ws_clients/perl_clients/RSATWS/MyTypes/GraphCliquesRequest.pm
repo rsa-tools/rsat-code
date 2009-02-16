@@ -22,7 +22,6 @@ my %inputgraph_of :ATTR(:get<inputgraph>);
 my %scol_of :ATTR(:get<scol>);
 my %tcol_of :ATTR(:get<tcol>);
 my %min_size_of :ATTR(:get<min_size>);
-my %max_size_of :ATTR(:get<max_size>);
 
 __PACKAGE__->_factory(
     [ qw(        informat
@@ -30,7 +29,6 @@ __PACKAGE__->_factory(
         scol
         tcol
         min_size
-        max_size
 
     ) ],
     {
@@ -39,7 +37,6 @@ __PACKAGE__->_factory(
         'scol' => \%scol_of,
         'tcol' => \%tcol_of,
         'min_size' => \%min_size_of,
-        'max_size' => \%max_size_of,
     },
     {
         'informat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -47,7 +44,6 @@ __PACKAGE__->_factory(
         'scol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'tcol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'min_size' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
-        'max_size' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
     },
     {
 
@@ -56,7 +52,6 @@ __PACKAGE__->_factory(
         'scol' => 'scol',
         'tcol' => 'tcol',
         'min_size' => 'min_size',
-        'max_size' => 'max_size',
     }
 );
 
@@ -109,9 +104,6 @@ methods:
 =item * min_size
 
 
-=item * max_size
-
-
 
 
 =back
@@ -129,7 +121,6 @@ Constructor. The following data structure may be passed to new():
    scol =>  $some_value, # int
    tcol =>  $some_value, # int
    min_size =>  $some_value, # int
-   max_size =>  $some_value, # int
  },
 
 
