@@ -4835,8 +4835,26 @@ sub get_result {
       $result .= $line;
   }
   close $TMP_OUT;
-  return SOAP::Data->name('response' => {'client' => $result,
-					 'server' => $tmp_outfile});
+  my $error_file = $TMP."/".$ticket.".err";
+  my $stderr;
+  if (-s $error_file) {
+      open ERROR, "$error_file";
+      while (<ERROR>) {
+	  unless (($_ =~ 'Use of uninitialized value') || ($_ =~ '^;') || ($_ =~ 'there is a difference in the software release')) {
+	      $stderr .= $_;
+	  }
+	  ## RSAT warnings are added at the end of results
+	  if ($_ =~'WARNING') {
+	      $result .= "\n".$_;
+	  }
+      }
+  }
+  if ($stderr) {
+      die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr");
+  } else {
+      return SOAP::Data->name('response' => {'client' => $result,
+					     'server' => $tmp_outfile});
+  }
 }
 ################################################################
 =pod
@@ -4865,11 +4883,12 @@ sub run_WS_command {
   }
 
   if ($output_choice eq 'ticket') {
-      $command .= " -o ".$tmp_outfile;
-#      my $result = `$command > $tmp_outfile &`;
-      my $result = `$command > /dev/null &`;
+#      $command .= " -v 1 -o ".$tmp_outfile;
       my $ticket = $tmp_outfile;
       $ticket =~ s/$TMP\///;
+      my $error_file = $tmp_outfile.".err";
+#      `$command 1>/dev/null 2>$error_file &`;
+      `$command 1>$tmp_outfile 2>$error_file &`;
       return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $ticket),
 							       SOAP::Data->name('command' => $command)))
 	  ->attr({'xmlns' => ''});
@@ -4889,7 +4908,7 @@ sub run_WS_command {
 
   foreach my $errline(@errlines) {
       ## Some errors and RSAT warnings are not considered as fatal errors
-      unless (($errline =~ 'Use of uninitialized value') || ($errline =~ 'WARNING') || ($errline =~ 'there is a difference in the software release')) {
+      unless (($errline =~ 'Use of uninitialized value') || ($errline =~ '^;') || ($errline =~ 'there is a difference in the software release')) {
 	  $stderr .= $errline;
       }
       ## RSAT warnings are added at the end of results
