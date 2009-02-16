@@ -1,0 +1,233 @@
+package MyTypes::ConvertMatrixRequest;
+use strict;
+use warnings;
+
+
+our $XML_ATTRIBUTE_CLASS;
+undef $XML_ATTRIBUTE_CLASS;
+
+sub __get_attr_class {
+    return $XML_ATTRIBUTE_CLASS;
+}
+
+use Class::Std::Fast::Storable constructor => 'none';
+use base qw(SOAP::WSDL::XSD::Typelib::ComplexType);
+
+Class::Std::initialize();
+
+{ # BLOCK to scope variables
+
+my %output_of :ATTR(:get<output>);
+my %matrix_of :ATTR(:get<matrix>);
+my %background_format_of :ATTR(:get<background_format>);
+my %background_pseudo_of :ATTR(:get<background_pseudo>);
+my %from_of :ATTR(:get<from>);
+my %to_of :ATTR(:get<to>);
+my %return_of :ATTR(:get<return>);
+my %sort_of :ATTR(:get<sort>);
+my %top_of :ATTR(:get<top>);
+my %pseudo_of :ATTR(:get<pseudo>);
+my %equi_pseudo_of :ATTR(:get<equi_pseudo>);
+my %base_of :ATTR(:get<base>);
+my %decimals_of :ATTR(:get<decimals>);
+my %perm_of :ATTR(:get<perm>);
+my %max_profile_of :ATTR(:get<max_profile>);
+my %rc_of :ATTR(:get<rc>);
+
+__PACKAGE__->_factory(
+    [ qw(        output
+        matrix
+        background_format
+        background_pseudo
+        from
+        to
+        return
+        sort
+        top
+        pseudo
+        equi_pseudo
+        base
+        decimals
+        perm
+        max_profile
+        rc
+
+    ) ],
+    {
+        'output' => \%output_of,
+        'matrix' => \%matrix_of,
+        'background_format' => \%background_format_of,
+        'background_pseudo' => \%background_pseudo_of,
+        'from' => \%from_of,
+        'to' => \%to_of,
+        'return' => \%return_of,
+        'sort' => \%sort_of,
+        'top' => \%top_of,
+        'pseudo' => \%pseudo_of,
+        'equi_pseudo' => \%equi_pseudo_of,
+        'base' => \%base_of,
+        'decimals' => \%decimals_of,
+        'perm' => \%perm_of,
+        'max_profile' => \%max_profile_of,
+        'rc' => \%rc_of,
+    },
+    {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'matrix' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'background_format' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'background_pseudo' => 'SOAP::WSDL::XSD::Typelib::Builtin::float',
+        'from' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'to' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'return' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'sort' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'top' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'pseudo' => 'SOAP::WSDL::XSD::Typelib::Builtin::float',
+        'equi_pseudo' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'base' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'decimals' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'perm' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'max_profile' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'rc' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+    },
+    {
+
+        'output' => 'output',
+        'matrix' => 'matrix',
+        'background_format' => 'background_format',
+        'background_pseudo' => 'background_pseudo',
+        'from' => 'from',
+        'to' => 'to',
+        'return' => 'return',
+        'sort' => 'sort',
+        'top' => 'top',
+        'pseudo' => 'pseudo',
+        'equi_pseudo' => 'equi_pseudo',
+        'base' => 'base',
+        'decimals' => 'decimals',
+        'perm' => 'perm',
+        'max_profile' => 'max_profile',
+        'rc' => 'rc',
+    }
+);
+
+} # end BLOCK
+
+
+
+
+
+
+
+1;
+
+
+=pod
+
+=head1 NAME
+
+MyTypes::ConvertMatrixRequest
+
+=head1 DESCRIPTION
+
+Perl data type class for the XML Schema defined complexType
+ConvertMatrixRequest from the namespace urn:RSATWS.
+
+Parameters for the operation convert_matrix.
+
+
+
+
+=head2 PROPERTIES
+
+The following properties may be accessed using get_PROPERTY / set_PROPERTY
+methods:
+
+=over
+
+=item * output
+
+
+=item * matrix
+
+
+=item * background_format
+
+
+=item * background_pseudo
+
+
+=item * from
+
+
+=item * to
+
+
+=item * return
+
+
+=item * sort
+
+
+=item * top
+
+
+=item * pseudo
+
+
+=item * equi_pseudo
+
+
+=item * base
+
+
+=item * decimals
+
+
+=item * perm
+
+
+=item * max_profile
+
+
+=item * rc
+
+
+
+
+=back
+
+
+=head1 METHODS
+
+=head2 new
+
+Constructor. The following data structure may be passed to new():
+
+ { # MyTypes::ConvertMatrixRequest
+   output =>  $some_value, # string
+   matrix =>  $some_value, # string
+   background_format =>  $some_value, # string
+   background_pseudo =>  $some_value, # float
+   from =>  $some_value, # string
+   to =>  $some_value, # string
+   return =>  $some_value, # string
+   sort =>  $some_value, # string
+   top =>  $some_value, # int
+   pseudo =>  $some_value, # float
+   equi_pseudo =>  $some_value, # int
+   base =>  $some_value, # string
+   decimals =>  $some_value, # int
+   perm =>  $some_value, # int
+   max_profile =>  $some_value, # int
+   rc =>  $some_value, # int
+ },
+
+
+
+
+=head1 AUTHOR
+
+Generated by SOAP::WSDL
+
+=cut
+
