@@ -94,7 +94,6 @@ Constructor. The following data structure may be passed to new():
      scol =>  $some_value, # int
      tcol =>  $some_value, # int
      min_size =>  $some_value, # int
-     max_size =>  $some_value, # int
    },
  },
 

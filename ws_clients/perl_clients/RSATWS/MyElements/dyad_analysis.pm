@@ -90,6 +90,7 @@ Constructor. The following data structure may be passed to new():
  {
    request =>  { # MyTypes::DyadAnalysisRequest
      output =>  $some_value, # string
+     verbosity =>  $some_value, # int
      sequence =>  $some_value, # string
      tmp_infile =>  $some_value, # string
      format =>  $some_value, # string

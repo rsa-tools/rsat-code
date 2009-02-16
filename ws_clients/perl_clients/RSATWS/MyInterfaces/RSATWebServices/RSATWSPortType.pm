@@ -10,7 +10,7 @@ require MyTypemaps::RSATWebServices
     if not MyTypemaps::RSATWebServices->can('get_class');
 
 sub START {
-    $_[0]->set_proxy('http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi') if not $_[2]->{proxy};
+    $_[0]->set_proxy('http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi') if not $_[2]->{proxy};
     $_[0]->set_class_resolver('MyTypemaps::RSATWebServices')
         if not $_[2]->{class_resolver};
 
@@ -667,6 +667,31 @@ sub matrix_scan {
 }
 
 
+sub convert_matrix {
+    my ($self, $body, $header) = @_;
+    die "convert_matrix must be called as object method (\$self is <$self>)" if not blessed($self);
+    return $self->SUPER::call({
+        operation => 'convert_matrix',
+        soap_action => '',
+        style => 'document',
+        body => {
+            
+
+           'use'            => 'literal',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
+            encodingStyle   => '',
+            parts           =>  [qw( MyElements::convert_matrix )],
+        },
+        header => {
+            
+        },
+        headerfault => {
+            
+        }
+    }, $body, $header);
+}
+
+
 sub matrix_distrib {
     my ($self, $body, $header) = @_;
     die "matrix_distrib must be called as object method (\$self is <$self>)" if not blessed($self);
@@ -1067,6 +1092,56 @@ sub random_graph {
 }
 
 
+sub monitor {
+    my ($self, $body, $header) = @_;
+    die "monitor must be called as object method (\$self is <$self>)" if not blessed($self);
+    return $self->SUPER::call({
+        operation => 'monitor',
+        soap_action => '',
+        style => 'document',
+        body => {
+            
+
+           'use'            => 'literal',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
+            encodingStyle   => '',
+            parts           =>  [qw( MyElements::monitor )],
+        },
+        header => {
+            
+        },
+        headerfault => {
+            
+        }
+    }, $body, $header);
+}
+
+
+sub get_result {
+    my ($self, $body, $header) = @_;
+    die "get_result must be called as object method (\$self is <$self>)" if not blessed($self);
+    return $self->SUPER::call({
+        operation => 'get_result',
+        soap_action => '',
+        style => 'document',
+        body => {
+            
+
+           'use'            => 'literal',
+            namespace       => 'http://schemas.xmlsoap.org/wsdl/soap/',
+            encodingStyle   => '',
+            parts           =>  [qw( MyElements::get_result )],
+        },
+        header => {
+            
+        },
+        headerfault => {
+            
+        }
+    }, $body, $header);
+}
+
+
 
 
 1;
@@ -1113,6 +1188,7 @@ MyInterfaces::RSATWebServices::RSATWSPortType - SOAP Interface for the RSATWebSe
  $response = $interface->contingency_stats();
  $response = $interface->contingency_table();
  $response = $interface->matrix_scan();
+ $response = $interface->convert_matrix();
  $response = $interface->matrix_distrib();
  $response = $interface->random_seq();
  $response = $interface->convert_graph();
@@ -1129,17 +1205,19 @@ MyInterfaces::RSATWebServices::RSATWSPortType - SOAP Interface for the RSATWebSe
  $response = $interface->graph_cluster_membership();
  $response = $interface->graph_get_clusters();
  $response = $interface->random_graph();
+ $response = $interface->monitor();
+ $response = $interface->get_result();
 
 
 
 =head1 DESCRIPTION
 
 SOAP Interface for the RSATWebServices web service
-located at http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi.
+located at http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi.
 
 =head1 SERVICE RSATWebServices
 
-Web services for the Regulatory Sequence Analysis Tools (RSAT). Tools developed by Jacques van Helden (jvanheld@scmbb.ulb.ac.be), SOAP/WSDL interface developed by Olivier Sand (oly@scmbb.ulb.ac.be). 
+Web services for the Regulatory Sequence Analysis Tools (RSAT). Tools developed by Jacques van Helden (jvanheld@bigre.ulb.ac.be), SOAP/WSDL interface developed by Olivier Sand (oly@bigre.ulb.ac.be). 
 
 =head2 Port RSATWSPortType
 
@@ -1321,6 +1399,7 @@ Analysis of the statistical significance of all the spaced dyads of a given size
  $interface->dyad_analysis( {
     request =>  { # MyTypes::DyadAnalysisRequest
       output =>  $some_value, # string
+      verbosity =>  $some_value, # int
       sequence =>  $some_value, # string
       tmp_infile =>  $some_value, # string
       format =>  $some_value, # string
@@ -1356,7 +1435,8 @@ Assemble a set of oligonucleotides or dyads into groups of overlapping patterns 
       str =>  $some_value, # int
       maxfl =>  $some_value, # int
       subst =>  $some_value, # int
-      maxcl =>  $some_value, # int
+      max_asmb_nb =>  $some_value, # int
+      max_asmb_size =>  $some_value, # int
       maxpat =>  $some_value, # int
       toppat =>  $some_value, # int
     },
@@ -1754,6 +1834,32 @@ Scan sequences with one or several position-specific scoring matrices (PSSM) to 
   },,
  );
 
+=head3 convert_matrix
+
+Performs inter-conversions between various formats of position-specific scoring matrices (PSSM). The program also performs a statistical analysis of the original matrix to provide different position-specific scores (weight, frequencies, information contents), general statistics (E-value, total information content), and synthetic descriptions (consensus). 
+
+ $interface->convert_matrix( {
+    request =>  { # MyTypes::ConvertMatrixRequest
+      output =>  $some_value, # string
+      matrix =>  $some_value, # string
+      background_format =>  $some_value, # string
+      background_pseudo =>  $some_value, # float
+      from =>  $some_value, # string
+      to =>  $some_value, # string
+      return =>  $some_value, # string
+      sort =>  $some_value, # string
+      top =>  $some_value, # int
+      pseudo =>  $some_value, # float
+      equi_pseudo =>  $some_value, # int
+      base =>  $some_value, # string
+      decimals =>  $some_value, # int
+      perm =>  $some_value, # int
+      max_profile =>  $some_value, # int
+      rc =>  $some_value, # int
+    },
+  },,
+ );
+
 =head3 matrix_distrib
 
 Returns the theoretical distribution of matrix weight within the defined background model. 
@@ -1857,7 +1963,6 @@ Find all cliques in a graph
       scol =>  $some_value, # int
       tcol =>  $some_value, # int
       min_size =>  $some_value, # int
-      max_size =>  $some_value, # int
     },
   },,
  );
@@ -1935,6 +2040,7 @@ Find the neihbours up to a certain distance of a collection of seed nodes
  $interface->graph_neighbours( {
     request =>  { # MyTypes::GraphNeighboursRequest
       informat =>  $some_value, # string
+      direction =>  $some_value, # string
       all =>  $some_value, # int
       stats =>  $some_value, # int
       self =>  $some_value, # int
@@ -2080,10 +2186,32 @@ Generate random graphs either from scratch of from an existing graph using diffe
   },,
  );
 
+=head3 monitor
+
+Monitoring the status of a job
+
+ $interface->monitor( {
+    request =>  { # MyTypes::MonitorRequest
+      ticket =>  $some_value, # string
+    },
+  },,
+ );
+
+=head3 get_result
+
+Get result of a job
+
+ $interface->get_result( {
+    request =>  { # MyTypes::GetResultRequest
+      ticket =>  $some_value, # string
+    },
+  },,
+ );
+
 
 
 =head1 AUTHOR
 
-Generated by SOAP::WSDL on Mon Nov 24 13:03:59 2008
+Generated by SOAP::WSDL on Fri Feb  6 17:30:07 2009
 
 =cut

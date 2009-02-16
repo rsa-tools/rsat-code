@@ -90,6 +90,7 @@ Constructor. The following data structure may be passed to new():
  {
    request =>  { # MyTypes::GraphNeighboursRequest
      informat =>  $some_value, # string
+     direction =>  $some_value, # string
      all =>  $some_value, # int
      stats =>  $some_value, # int
      self =>  $some_value, # int
