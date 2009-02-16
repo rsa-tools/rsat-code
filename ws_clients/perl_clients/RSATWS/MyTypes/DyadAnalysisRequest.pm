@@ -18,6 +18,7 @@ Class::Std::initialize();
 { # BLOCK to scope variables
 
 my %output_of :ATTR(:get<output>);
+my %verbosity_of :ATTR(:get<verbosity>);
 my %sequence_of :ATTR(:get<sequence>);
 my %tmp_infile_of :ATTR(:get<tmp_infile>);
 my %format_of :ATTR(:get<format>);
@@ -38,6 +39,7 @@ my %uth_of :ATTR(:get<uth>);
 
 __PACKAGE__->_factory(
     [ qw(        output
+        verbosity
         sequence
         tmp_infile
         format
@@ -59,6 +61,7 @@ __PACKAGE__->_factory(
     ) ],
     {
         'output' => \%output_of,
+        'verbosity' => \%verbosity_of,
         'sequence' => \%sequence_of,
         'tmp_infile' => \%tmp_infile_of,
         'format' => \%format_of,
@@ -79,6 +82,7 @@ __PACKAGE__->_factory(
     },
     {
         'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'verbosity' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'sequence' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'tmp_infile' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'format' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -100,6 +104,7 @@ __PACKAGE__->_factory(
     {
 
         'output' => 'output',
+        'verbosity' => 'verbosity',
         'sequence' => 'sequence',
         'tmp_infile' => 'tmp_infile',
         'format' => 'format',
@@ -155,6 +160,9 @@ methods:
 =over
 
 =item * output
+
+
+=item * verbosity
 
 
 =item * sequence
@@ -221,6 +229,7 @@ Constructor. The following data structure may be passed to new():
 
  { # MyTypes::DyadAnalysisRequest
    output =>  $some_value, # string
+   verbosity =>  $some_value, # int
    sequence =>  $some_value, # string
    tmp_infile =>  $some_value, # string
    format =>  $some_value, # string
