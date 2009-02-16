@@ -25,7 +25,8 @@ my %score_col_of :ATTR(:get<score_col>);
 my %str_of :ATTR(:get<str>);
 my %maxfl_of :ATTR(:get<maxfl>);
 my %subst_of :ATTR(:get<subst>);
-my %maxcl_of :ATTR(:get<maxcl>);
+my %max_asmb_nb_of :ATTR(:get<max_asmb_nb>);
+my %max_asmb_size_of :ATTR(:get<max_asmb_size>);
 my %maxpat_of :ATTR(:get<maxpat>);
 my %toppat_of :ATTR(:get<toppat>);
 
@@ -38,7 +39,8 @@ __PACKAGE__->_factory(
         str
         maxfl
         subst
-        maxcl
+        max_asmb_nb
+        max_asmb_size
         maxpat
         toppat
 
@@ -52,7 +54,8 @@ __PACKAGE__->_factory(
         'str' => \%str_of,
         'maxfl' => \%maxfl_of,
         'subst' => \%subst_of,
-        'maxcl' => \%maxcl_of,
+        'max_asmb_nb' => \%max_asmb_nb_of,
+        'max_asmb_size' => \%max_asmb_size_of,
         'maxpat' => \%maxpat_of,
         'toppat' => \%toppat_of,
     },
@@ -65,7 +68,8 @@ __PACKAGE__->_factory(
         'str' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'maxfl' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'subst' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
-        'maxcl' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'max_asmb_nb' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'max_asmb_size' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'maxpat' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'toppat' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
     },
@@ -79,7 +83,8 @@ __PACKAGE__->_factory(
         'str' => 'str',
         'maxfl' => 'maxfl',
         'subst' => 'subst',
-        'maxcl' => 'maxcl',
+        'max_asmb_nb' => 'max_asmb_nb',
+        'max_asmb_size' => 'max_asmb_size',
         'maxpat' => 'maxpat',
         'toppat' => 'toppat',
     }
@@ -143,7 +148,10 @@ methods:
 =item * subst
 
 
-=item * maxcl
+=item * max_asmb_nb
+
+
+=item * max_asmb_size
 
 
 =item * maxpat
@@ -172,7 +180,8 @@ Constructor. The following data structure may be passed to new():
    str =>  $some_value, # int
    maxfl =>  $some_value, # int
    subst =>  $some_value, # int
-   maxcl =>  $some_value, # int
+   max_asmb_nb =>  $some_value, # int
+   max_asmb_size =>  $some_value, # int
    maxpat =>  $some_value, # int
    toppat =>  $some_value, # int
  },

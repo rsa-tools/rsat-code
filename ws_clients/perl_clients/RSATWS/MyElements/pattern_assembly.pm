@@ -97,7 +97,8 @@ Constructor. The following data structure may be passed to new():
      str =>  $some_value, # int
      maxfl =>  $some_value, # int
      subst =>  $some_value, # int
-     maxcl =>  $some_value, # int
+     max_asmb_nb =>  $some_value, # int
+     max_asmb_size =>  $some_value, # int
      maxpat =>  $some_value, # int
      toppat =>  $some_value, # int
    },
