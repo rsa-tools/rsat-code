@@ -4890,12 +4890,13 @@ sub run_WS_command {
   }
 
   if ($output_choice eq 'ticket') {
-#      $command .= " -v 1 -o ".$tmp_outfile;
+      $command .= " -o ".$tmp_outfile; ## -o must be used for monitor method to work
       my $ticket = $tmp_outfile;
       $ticket =~ s/$TMP\///;
       my $error_file = $tmp_outfile.".err";
       # Both stdout (1) and stderr (2) need to be redirected to allow background (&) mode
-      `$command 1>$tmp_outfile 2>$error_file &`;
+#      `$command 1>$tmp_outfile 2>$error_file &`;
+      `$command &>$error_file &`;
       return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $ticket),
 							       SOAP::Data->name('command' => $command)))
 	  ->attr({'xmlns' => ''});
