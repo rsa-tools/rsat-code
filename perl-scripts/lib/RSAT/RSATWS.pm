@@ -4873,13 +4873,20 @@ sub run_WS_command {
 		   method_name=>$method_name,
 		   output_choice=>$output_choice);
   
-  if ($output_choice eq 'email') {
+  if ($output_choice =~ /(\S+\@\S+)/) {
       ## Execute the command and send the result URL by email
-      my $email_address = 'jvhelden@ulb.ac.be';
-      &RSAT::TaskManager::EmailTheResult($command, $email_address, $tmp_outfile, title=>join("RSATWS", $method_name));
+      my $email_address = $output_choice;
+      my $delay = "72 hours";
+      my $result_URL = $tmp_outfile;
+      $result_URL =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
+      &email_command($command, $email_address, $tmp_outfile, join(" ", "[RSATWS]", $method_name), $result_URL, $delay);
+      my $response = "The server is now processing your request.\n"; 
+      $response .= "Once it will be finished, the result will become available at the following URL\n";
+      $response .= "\t$result_URL\n";
+      $response .= "When the result will be ready, you will be notified at your email address ($email_address).\n";
+      $response .= "The result file will remain on the server for $delay.\n";;
       return SOAP::Data->name('response' => {'command' => $command,
-					     'server' => $tmp_outfile});
-      
+					     'client' => $response});
   }
 
   if ($output_choice eq 'ticket') {
@@ -4887,7 +4894,7 @@ sub run_WS_command {
       my $ticket = $tmp_outfile;
       $ticket =~ s/$TMP\///;
       my $error_file = $tmp_outfile.".err";
-#      `$command 1>/dev/null 2>$error_file &`;
+      # Both stdout (1) and stderr (2) need to be redirected to allow background (&) mode
       `$command 1>$tmp_outfile 2>$error_file &`;
       return SOAP::Data->name('response' => \SOAP::Data->value(SOAP::Data->name('server' => $ticket),
 							       SOAP::Data->name('command' => $command)))
@@ -4946,10 +4953,18 @@ sub run_WS_command {
 ################################################################
 ## Run the command on the server and send an email when the task is done
 sub email_command {
+    my ($command, $email_address, $tmp_outfile, $title, $result_URL, $delay) = @_;
+    
+    my $email_message = "Your result is available at the following URL:\n\t$result_URL";
+    $email_message .= "\nThe result file will remain there for $delay.";
+
+    my $mail_command = "mail -s \'".$title."\'";
+
+    my $email_command =  "($command &>$tmp_outfile; ";
+    $email_command .= "echo \"$email_message\" | $mail_command $email_address) &"; 
+    system $email_command;
 
 }
-
-
 ################################################################
 =pod
 
