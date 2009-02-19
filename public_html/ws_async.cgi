@@ -21,54 +21,49 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $query = new CGI;
 
+### Print the result page
+### print the header
+my $header = $query->param('title')." result";
+&RSA_header($header, 'results');
+
+&ListParameters() if ($ENV{rsat_echo} >= 2);
+
+&PrintPage($query->param('title'), $query->param('ticket'), $query->param('submit_time'));
+
 my $status = &JobStatus($query->param('ticket'));
 
-$sleepTime;
-if ($query->param('sleep_time')) {
-	$sleepTime = $query->param('sleep_time');
-	if ($sleepTime > 100){
-		$sleepTime = 100;
-	}
-} else {
-	$sleepTime = 10;
+my $sleepTime = 10;
+
+while ($status eq 'Running') {
+    sleep($sleepTime);
+    $sleepTime += 5;
+    if ($sleepTime > 100){
+	$sleepTime = 100;
+    }
+    $status = &JobStatus($query->param('ticket'));
 }
 
-if ($status eq 'Running') {
 
-	### Print the waiting page
-	my $css_body_class = "form";
-	my $title = $query->param('title');
-	print $query->header();
-	print $query->start_html(-title=>"RSA-tools : $title",
-			   -class => "$css_body_class",
-			   -author=>'jvanheld@bigre.ulb.ac.be',
-			   -style => { 	-src => "$ENV{rsat_www}/main.css",
-                             	       	-type => 'text/css',
-                             		-media => 'screen' });
-	
-	&PrintPage();
+&GetResult($query->param('ticket'));
 
-	sleep($sleepTime);
+print $query->end_html;
 
-	print '<script type="text/javascript" language="JavaScript">
-	//submit form
-	document.form1.submit();
-	</script>';
-	print $query->end_html . "\n";       
+exit(0);
 
-} else {
+sub PrintPage {
+    my ($title,$ticket,$submit_time) = @_;
 
-	### Print the result page
-	### print the header
-	my $header = $query->param('title')." result";
-	&RSA_header($header, 'results');
-
-	&ListParameters() if ($ENV{rsat_echo} >= 2);
-
-	&GetResult($query->param('ticket'));
-	print $query->end_html;
-
-	exit(0);
+    print $query->h2('Processing your ' . $title .' request...'). "\n";
+    print "<hr/>";
+    print '<TABLE>' . "\n";
+    print "<tr><th>Job ID</th><td>" . $ticket . "</td></tr>\n";
+#    print "<tr><th>Status</th><td>Running</td><td><img src='images/loader.gif'/></tr>\n";
+    print "<tr><th>Submitted at </th><td>".$submit_time."</td></tr>\n";
+    print "</TABLE>\n"; 
+    print "<hr/>";
+#    print "<h2>The RSAT servers are working for you, take a break with the latest strips from 
+#     <a href='http://www.phdcomics.com/' target=_blank> PHD Comics </a> !</h2>";
+#    print '<iframe width="800" height="400" src="http://www.rss-info.com/rss2.php?integration=if&windowopen=1&rss=http%3A%2F%2Fwww.phdcomics.com%2Fgradfeed_justcomics.php&number=10&width=800&ifbgcol=FFFFFF&bordercol=D0D0D0&textbgcol=F0F0F0&rssbgcol=F0F0F0&showrsstitle=1&showtext=1" frameborder=0></iframe>';
 }
 
 sub JobStatus {
@@ -88,13 +83,14 @@ sub JobStatus {
 
 	## Report the status
 	my $status = $response -> get_status();
+
 	return $status;
     }
 }
 
 sub GetResult {
-    my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
     my $ticket = shift;
+    my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
 
     my %args = (
 	'ticket' => $ticket
@@ -151,44 +147,4 @@ sub GetResult {
 
     print "<HR SIZE = 3>";
 
-}
-
-sub PrintPage {
-    my @params = $query->param();
-
-    print $query->h2('Processing your ' . $query->param('title') .' request'). "\n";
-    print "<hr/>";
-    print '<TABLE>' . "\n";
-    print "<tr><th>Job ID</th><td>" . $query->param('ticket') . "</td></tr>\n";
-    print "<tr><th>Status</th><td>Running</td><td><img src='images/loader.gif'/></tr>\n";
-    print "<tr><th>Submitted at </th><td>".$query->param('submit_time')."</td></tr>\n";
-    print "<tr><th>Current time </th><td>".&current_time()."</td></tr>\n";
-    print "</TABLE>\n"; 
-    print "<p>This page will be automatically updated in ".$sleepTime." seconds</p>";
-    print "<hr/>";
-    print "<h2>The RSAT servers are working for you, take a break with the latest strips from 
-     <a href='http://www.phdcomics.com/' target=_blank> PHD Comics </a> !</h2>";
-    print '<iframe width="800" height="400" src="http://www.rss-info.com/rss2.php?integration=if&windowopen=1&rss=http%3A%2F%2Fwww.phdcomics.com%2Fgradfeed_justcomics.php&number=10&width=800&ifbgcol=FFFFFF&bordercol=D0D0D0&textbgcol=F0F0F0&rssbgcol=F0F0F0&showrsstitle=1&showtext=1" frameborder=0></iframe>';
-
-    print '<FORM name="form1" id="form1" method="POST" action="ws_async.cgi">';
-    foreach my $parameter (sort @params) {
-        print ' <INPUT type="hidden" name="'.$parameter.'" value="'.$query->param($parameter).'">';  
-    }
-    $sleepTime += 5;
-    print ' <INPUT type="hidden" name="sleep_time" value="'.$sleepTime.'">';
-    print '</FORM>';
-}
-
-sub current_time {
-	my @months = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
-	my @weekDays = qw(Sun Mon Tue Wed Thu Fri Sat Sun);
-	my ($second, $minute, $hour, $dayOfMonth, $month, $yearOffset, $dayOfWeek, $dayOfYear, $daylightSavings) = localtime();
-	my $year = 1900 + $yearOffset;
-	if ($second <10) {
-		$second = "0".$second;
-	}
-	if ($minute <10) {
-		$minute = "0".$minute;
-	}
-	return("$hour:$minute:$second, $weekDays[$dayOfWeek] $months[$month] $dayOfMonth, $year");
 }
