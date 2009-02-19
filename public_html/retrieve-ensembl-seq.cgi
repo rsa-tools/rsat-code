@@ -30,16 +30,8 @@ $tmp_file_name = sprintf "retrieve-ensembl-seq.%s", &AlphaDate();
 ### Read the CGI query
 $query = new CGI;
 
-
-# $ENV{rsat_echo}=2;
-
-
-### print the header
-&RSA_header("retrieve-ensembl-seq result", 'results');
-
-
 #### update log file ####
-&UpdateLogFile();
+#&UpdateLogFile();
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
@@ -217,7 +209,6 @@ my $lw = 60;
 
 #print  "<PRE><B>Command :</B> $command $parameters</PRE><P>" if ($ENV{rsat_echo} >= 1);
 
-
 my %args = (
             'organism' => $organism,
 #            'query' => \@gene_selection,
@@ -242,76 +233,141 @@ my %args = (
             'header_organism' => $header_org
     );
 
+# $ENV{rsat_echo}=2;
+
+### print the header
+&RSA_header("retrieve-ensembl-seq result", 'results');
+
 #### execute the command #####
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
 
+    $args{'output'} = 'ticket';
+
+    my ($ticket, $command) = &Retrieve(%args);
+
+    @months = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
+    @weekDays = qw(Sun Mon Tue Wed Thu Fri Sat Sun);
+    ($second, $minute, $hour, $dayOfMonth, $month, $yearOffset, $dayOfWeek, $dayOfYear, $daylightSavings) = localtime();
+    $year = 1900 + $yearOffset;
+    if ($second <10) {
+	$second = "0".$second;	
+    }
+    if ($minute <10) {
+	$minute = "0".$minute;	
+    }
+    my $submit_time = "$hour:$minute:$second, $weekDays[$dayOfWeek] $months[$month] $dayOfMonth, $year";
+
+    ### Print the result page
+#    my $css_body_class = "form";
+#    my $title = $query->param('title');
+##    print $query->header();
+##    print $query->start_html(
+##	-title=>"RSA-tools : $title",
+#	-class => "$css_body_class",
+##	-author=>'jvanheld@bigre.ulb.ac.be',
+#	-style => { 	-src => "$ENV{rsat_www}/main.css",
+#			-type => 'text/css',
+#			-media => 'screen' }
+##	);
+
+    ### transfer to the result page via a hidden form### 
+    print '<FORM name="send2result" id="send2result" method="POST" action="ws_async.cgi">';
+    print ' <INPUT type="hidden" name="output" value="'.$query->param('output').'">';  
+    print ' <INPUT type="hidden" name="ticket" value="'.$ticket.'">';  
+    print ' <INPUT type="hidden" name="command" value="'.$command.'">';  
+    print ' <INPUT type="hidden" name="title" value="retrieve-ensembl-seq">';
+    print ' <INPUT type="hidden" name="submit_time" value="'.$submit_time.'">';    
+    print '</FORM>';
+    print '<script type="text/javascript" language="JavaScript">
+		//submit form
+		document.send2result.submit();
+	</script>';
+
+} elsif ($query->param('output') =~ /email/i) {
+    ### Print the notification page
+#    my $css_body_class = "form";
+#    my $title = $query->param('title');
+#    print $query->header();
+#    print $query->start_html(
+#	-title=>"RSA-tools : $title",
+#	-class => "$css_body_class",
+#	-author=>'jvanheld@bigre.ulb.ac.be',
+#	-style => { 	-src => "$ENV{rsat_www}/main.css",
+#			-type => 'text/css',
+#			-media => 'screen' }
+#	);
+    $args{'output'} = $query->param('user_email');
+    my $notification = &Retrieve(%args);
+    $notification =~ s|(http://\S+)|<a href=$1>$1</a>|gm;
+    &Info($notification);
+}
+
+print $query->end_html . "\n";    
+
+exit(0);
+
+
+sub Retrieve {
+    my %args = @_;
+
     ## Service call
     my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
 
-    ## Avoid timeout
-    $soap->get_transport()->timeout(600); 
-
     ## Send the request to the server
     my $som = $soap->retrieve_ensembl_seq({'request' => \%args});
+    
+    ## get the ticket
+    my $results = $som->get_response();
 
-    ### print the result ### 
-    &PipingWarning();
-
-    ## Get the result
-    unless ($som) {
-	print '<H4>Error</H4>';
-	my $error_message = $som->get_faultstring();
-	$error_message =~ s/command/\<BR\>Command/;
-#	$error_message =~ s/command.*//;
-	print $error_message;
-#	print "A fault ".$som->get_faultcode()." occured: ". $som->get_faultstring()."\n";
-    } else {
-	print '<H4>Result</H4>';
-	my $results = $som->get_response();
-
+    if ($args{'output'} eq 'ticket') {
 	## Report the remote command
 	my $command = $results -> get_command();
-	$command =~ s|$ENV{RSAT}/perl-scripts/||;
-	print "Command used on the server: ".$command, "\n";
-	## Report the result
-	$result = $results -> get_client();
-	if ($ENV{rsat_ws_tmp} =~ /ulb\.ac\.be/) {
-#	    $server_file = $results -> get_server();
-	    $sequence_file = $results -> get_server();     ## variable name has to be '$sequence_file' for PipingFormForSequence subroutine
-	} else {
-	    $sequence_file = `mktemp $ENV{rsat_tmp}/retrieve-ensembl-seq.XXXXXXXXXX`;
-	    open TMP_IN, ">".$sequence_file or die "cannot open temp file ".$sequence_file."\n";
-	    print TMP_IN $result;
-	    close TMP_IN;
-	}
+	my $ticket = $results -> get_server();
+	return $ticket, $command;
+    } else {
+	my $notification = $results -> get_client();
+	return $notification;
     }
-
-    if ($query->param('output') =~ /server/i) {
-	my $server_file_name = basename($sequence_file);
-	$result_URL = "$ENV{rsat_ws_tmp}/$server_file_name";
-	print ("<p>The result is available at the following URL: ", "\n",
-	       "<a href=${result_URL}>${result_URL}</a>",
-	       "<p>\n");
-    } elsif ($query->param('output') =~ /display/i) {
-	print "<PRE>";
-	print $result;
-	print "</PRE>";
-    }
-
-    ### prepare data for piping
-    $out_format = 'fasta';    
-    &PipingFormForSequence();
-
-    print "<HR SIZE = 3>";
-
 }
-#} elsif 
-#    &ServerOutput("$command $parameters", $query->param('user_email'));
-#} else {
-#    &EmailTheResult("$command $parameters", $query->param('user_email'));
-#}
 
-print $query->end_html;
+# sub PrintPage {
+#     my ($title,$ticket,$submit_time) = @_;
 
-exit(0);
+#     print $query->h2('Processing your ' . $title .' request'). "\n";
+#     print "<hr/>";
+#     print '<TABLE>' . "\n";
+#     print "<tr><th>Job ID</th><td>" . $ticket . "</td></tr>\n";
+#     print "<tr><th>Status</th><td>Running</td><td><img src='images/loader.gif'/></tr>\n";
+#     print "<tr><th>Submitted at </th><td>".$submit_time."</td></tr>\n";
+#     print "</TABLE>\n"; 
+#     print "<hr/>";
+#     print "<h2>The RSAT servers are working for you, take a break with the latest strips from 
+#      <a href='http://www.phdcomics.com/' target=_blank> PHD Comics </a> !</h2>";
+#     print '<iframe width="800" height="400" src="http://www.rss-info.com/rss2.php?integration=if&windowopen=1&rss=http%3A%2F%2Fwww.phdcomics.com%2Fgradfeed_justcomics.php&number=10&width=800&ifbgcol=FFFFFF&bordercol=D0D0D0&textbgcol=F0F0F0&rssbgcol=F0F0F0&showrsstitle=1&showtext=1" frameborder=0></iframe>';
+# }
+
+# sub JobStatus {
+#     my $ticket = shift;
+#     my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
+
+#     my %args = (
+# 	'ticket' => $ticket
+# 	);
+
+#     my $som = $soap->monitor({'request' => \%args});
+
+# #    print "<h1>SOM= $som</h1>";
+
+#     unless ($som) {
+# 	printf "A fault (%s) occured: %s\n", $som->get_faultcode(), $som->get_faultstring();
+#     } else {
+# 	my $response = $som->get_response();
+
+# 	## Report the status
+# 	my $status = $response -> get_status();
+
+# 	return $status;
+#     }
+# }
+
