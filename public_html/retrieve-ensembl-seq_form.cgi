@@ -323,11 +323,13 @@ print "</TABLE>\n";
 ### leave results on the server or display in the browser
 print "<B>Output</B>&nbsp;";
 print $query->radio_group(-name=>'output',
-			  -values=>["server","display"],
+			  -values=>["server","display","email"],
 			  -default=>"display");
-print "<BR>\n";
-print "<BR>\n";
 
+print "&nbsp;&nbsp;";
+print $query->textfield(-name=>'user_email',
+			-size=>30);
+print "<BR>\n";
 
 ### data for the demo 
 # @demo_genes = qw (ENSG00000139618 ENSG00000138411);
