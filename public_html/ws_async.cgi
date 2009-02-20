@@ -142,7 +142,10 @@ sub GetResult {
     }
 
     ### prepare data for piping
-    $out_format = 'fasta';    
+    $out_format = 'fasta';
+    if ($query->param('organism_name')) {
+	$organism_name = $query->param('organism_name');
+    }
     &PipingFormForSequence();
 
     print "<HR SIZE = 3>";
