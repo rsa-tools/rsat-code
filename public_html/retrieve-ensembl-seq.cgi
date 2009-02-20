@@ -39,7 +39,7 @@ $query = new CGI;
 ## Single or multi-genome query
 
 #### organism
-my $organism = $query->param('organism');
+my $organism_name = $query->param('organism');
 
 #### Ortho
 my $ortho = 0;
@@ -210,7 +210,7 @@ my $lw = 60;
 #print  "<PRE><B>Command :</B> $command $parameters</PRE><P>" if ($ENV{rsat_echo} >= 1);
 
 my %args = (
-            'organism' => $organism,
+            'organism' => $organism_name,
 #            'query' => \@gene_selection,
             'tmp_infile' => $gene_list_file,
             'noorf' => $noorf,
@@ -271,13 +271,14 @@ if (($query->param('output') =~ /display/i) ||
 #			-media => 'screen' }
 ##	);
 
-    ### transfer to the result page via a hidden form### 
+    ### transfer to the result page via a hidden form###
     print '<FORM name="send2result" id="send2result" method="POST" action="ws_async.cgi">';
-    print ' <INPUT type="hidden" name="output" value="'.$query->param('output').'">';  
-    print ' <INPUT type="hidden" name="ticket" value="'.$ticket.'">';  
-    print ' <INPUT type="hidden" name="command" value="'.$command.'">';  
+    print ' <INPUT type="hidden" name="output" value="'.$query->param('output').'">';
+    print ' <INPUT type="hidden" name="ticket" value="'.$ticket.'">';
+    print ' <INPUT type="hidden" name="command" value="'.$command.'">';
     print ' <INPUT type="hidden" name="title" value="retrieve-ensembl-seq">';
-    print ' <INPUT type="hidden" name="submit_time" value="'.$submit_time.'">';    
+    print ' <INPUT type="hidden" name="submit_time" value="'.$submit_time.'">';
+    print ' <INPUT type="hidden" name="organism_name" value="'.$organism_name.'">';
     print '</FORM>';
     print '<script type="text/javascript" language="JavaScript">
 		//submit form
