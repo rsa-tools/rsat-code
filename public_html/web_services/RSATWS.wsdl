@@ -22,8 +22,7 @@
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -49,7 +48,8 @@ Default is 'both'.</xsd:documentation>
           </xsd:element>
 	  <xsd:element name="from" type="xsd:int" minOccurs="0">
             <xsd:annotation>
-              <xsd:documentation>Inferior limit of the region to retrieve. Default is organism dependant (example: Saccharomyces cerevisiae = -800).</xsd:documentation>
+              <xsd:documentation>Inferior limit of the region to retrieve.
+Default is organism dependant (example: Saccharomyces cerevisiae = -800).</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	  <xsd:element name="to" type="xsd:int" minOccurs="0">
@@ -97,7 +97,8 @@ By default, the comment indicates the ORF and upstream sequence coordinates.</xs
           </xsd:element>
 	  <xsd:element name="repeat" type="xsd:int" minOccurs="0">
             <xsd:annotation>
-              <xsd:documentation>Use the repeat masked version of the genome if value = 1. Attention: repeated regions are annotated for some genomes only.</xsd:documentation>
+              <xsd:documentation>Use the repeat masked version of the genome if value = 1.
+Warning: repeated regions are annotated for some genomes only.</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	  <xsd:element name="imp_pos" type="xsd:int" minOccurs="0">
@@ -117,8 +118,7 @@ By default, the comment indicates the ORF and upstream sequence coordinates.</xs
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -228,8 +228,7 @@ By default, the comment indicates the ORF and upstream sequence coordinates.</xs
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -396,8 +395,7 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -453,8 +451,7 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -501,7 +498,8 @@ Supported: upstream, upstream-noorf, upstream-noorf-rm, intergenic, input.</xsd:
 	  </xsd:element>
 	  <xsd:element name="noov" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>No overlapping of oligos allowed if value = 1. Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).</xsd:documentation>
+	      <xsd:documentation>No overlapping of oligos allowed if value = 1.
+Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="str" type="xsd:int" minOccurs="0">
@@ -541,8 +539,7 @@ Supported: upstream, upstream-noorf, upstream-noorf-rm, intergenic, input.</xsd:
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -662,8 +659,7 @@ This is the function of the option -zeroocc.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -740,8 +736,7 @@ Default: 100. Not compatible with maxpat option.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -792,7 +787,8 @@ Default is 'both'.</xsd:documentation>
 	  </xsd:element>
 	  <xsd:element name="noov" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>No overlapping of oligos allowed if value = 1. Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).</xsd:documentation>
+	      <xsd:documentation>No overlapping of oligos allowed if value = 1.
+Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="score" type="xsd:int" minOccurs="0">
@@ -828,7 +824,8 @@ Supported fields: colsum,counts,ct,limits,profiles,rank,rowsum,scores,sites,stat
     table: return the count of pattern matches per sequence in the form of a table.  (one line per sequence, one column per pattern)
     colsum: (together with -return table) prints an extra column with the total occurrences per sequence
     rowsum: (together with -return table) prints an extra row with total occurrences per pattern
-    total: (together with -return table) prints an extra column with the total occurrences per sequence and an extra row with total occurrences per pattern.  (amounts to combine -colsum and -rowsum)
+    total: (together with -return table) prints an extra column with the total occurrences per sequence and 
+          an extra row with total occurrences per pattern.  (amounts to combine -colsum and -rowsum)
     stats: return matching statistics
     profiles: return matching profiles with sliding windows.</xsd:documentation>
 	    </xsd:annotation>
@@ -845,8 +842,7 @@ Supported fields: colsum,counts,ct,limits,profiles,rank,rowsum,scores,sites,stat
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -882,8 +878,7 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1057,8 +1052,7 @@ Example: -select 'gataag','gattag' only displays features identified by gataag o
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1179,8 +1173,7 @@ Pair of adjacent genes with intergenic distance equal or less than this value ar
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1251,8 +1244,7 @@ Several output fields can be entered separated by commas.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1302,8 +1294,7 @@ Supported fields: leader,trailer,operon,query,q_info,up_info,down_info
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1346,8 +1337,7 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1399,8 +1389,7 @@ and of class frequencies (In contrast with the -min option).
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1515,8 +1504,7 @@ Several columns can be specified by -ycol #,#,#. A range of columns can be speci
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1558,8 +1546,7 @@ This option allows to manually specify the total number of elements, in case the
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1592,8 +1579,7 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1634,8 +1620,7 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1661,8 +1646,7 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1698,8 +1682,7 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1787,8 +1770,7 @@ P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R), dotprod, jac_sim, rank, sig</xsd:
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1845,8 +1827,7 @@ First column contains the identifier and second column the corresponding label.<
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1887,8 +1868,7 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1939,8 +1919,7 @@ The row size file must contain one row per row of the contingency table, and two
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -1996,8 +1975,7 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -2173,8 +2151,7 @@ The matching positions are then negative values, providing the distance between 
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -2278,8 +2255,7 @@ Note that the output format for permuted matrix is tab.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -2368,8 +2344,7 @@ The length file contains two columns : sequence ID (ignored) and sequence length
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -2481,8 +2456,7 @@ This value can only be computed for the GML output. All weights in the column in
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -2565,8 +2539,7 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -2604,8 +2577,7 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -2676,8 +2648,7 @@ This option must be provided if the input graph is not GML.
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -2743,8 +2714,7 @@ Supported : green, blue, red, fire, grey.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -2837,8 +2807,7 @@ it would or not be acceptable for the considered input graphs to contain self-lo
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -2886,8 +2855,7 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -2948,8 +2916,7 @@ By default the graph is not directed.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -3002,8 +2969,7 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -3109,8 +3075,7 @@ The mean and standard deviation can then be chosen (-mean and -sd option) or wil
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -3134,8 +3099,7 @@ Default is 'both'.</xsd:documentation>
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -3160,7 +3124,8 @@ on the tabu list more than once and moving them is only forbidden when they are 
 	  </xsd:element>
 	  <xsd:element name="tabulist" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>Set the tabu list tolerance to "num". Default value is 1.  The tabu list tolerance is the number of times a vertex must appear on the tabu list before moving it is forbidden.</xsd:documentation>
+	      <xsd:documentation>Set the tabu list tolerance to "num". Default value is 1.
+The tabu list tolerance is the number of times a vertex must appear on the tabu list before moving it is forbidden.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="naive_stop" type="xsd:int" minOccurs="0">
@@ -3183,13 +3148,15 @@ Setting the tolerance to 0 will cause the algorithm to skip the scaled scheme.</
 	  <xsd:element name="div_freq" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Set the diversification frequency to "num". Without this option, no diversification will be performed.
-If the shf_div_len flag is also used, then "num" is the shuffling diversification frequency.  If the -d flag is not used, then "num" is the destructive diversification frequency.
+If the shf_div_len flag is also used, then "num" is the shuffling diversification frequency.
+If the -d flag is not used, then "num" is the destructive diversification frequency.
 It is recommended that the shf_div_len flag is used, because destructive diversification isn't much help.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="shf_div_len" type="xsd:int" minOccurs="0">
 	    <xsd:annotation>
-	      <xsd:documentation>Set the shuffling diversification length to "num".  That means that the last "num" moves in the diversification period will be diversification moves.  Don't set this to be higher than the diversification frequency.</xsd:documentation>
+	      <xsd:documentation>Set the shuffling diversification length to "num". That means that the last "num" moves in the diversification period will be diversification moves.
+Don't set this to be higher than the diversification frequency.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	</xsd:sequence>
@@ -3201,8 +3168,7 @@ It is recommended that the shf_div_len flag is used, because destructive diversi
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -3271,8 +3237,7 @@ This allows to extract the node together with its neighborhood, rather than the 
 	    <xsd:annotation>
 	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
-'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
- retrieve the result when it is done, is returned to the client).
+'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
@@ -3335,8 +3300,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="ticket" type="xsd:string" minOccurs="1">
 	    <xsd:annotation>
-	      <xsd:documentation>Ticket of a job
-	      submitted with its output_choice set to 'ticket'.</xsd:documentation>
+	      <xsd:documentation>Ticket of a job submitted with its output_choice set to 'ticket'.                                                                                                                                                                                                 </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	</xsd:sequence>
@@ -3346,7 +3310,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="ticket" type="xsd:string" minOccurs="1">
 	    <xsd:annotation>
-	      <xsd:documentation>Ticket of a job submitted with its output_choice set to 'ticket'.</xsd:documentation>
+	      <xsd:documentation>Ticket of a job submitted with its output_choice set to 'ticket'.                                                                                                                                                                                                 </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	</xsd:sequence>
@@ -3357,7 +3321,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3377,7 +3341,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3397,7 +3361,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3417,7 +3381,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3437,7 +3401,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3457,7 +3421,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3477,7 +3441,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
         <xsd:sequence>
           <xsd:element name="server" type="xsd:string">
             <xsd:annotation>
-              <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
           <xsd:element name="command" type="xsd:string">
@@ -3497,7 +3461,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3517,7 +3481,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
           <xsd:element name="server" type="xsd:string">
             <xsd:annotation>
-              <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
           <xsd:element name="command" type="xsd:string">
@@ -3537,7 +3501,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
         <xsd:sequence>
           <xsd:element name="server" type="xsd:string">
             <xsd:annotation>
-              <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
           <xsd:element name="command" type="xsd:string">
@@ -3557,7 +3521,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
         <xsd:sequence>
           <xsd:element name="server" type="xsd:string">
             <xsd:annotation>
-              <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
           <xsd:element name="command" type="xsd:string">
@@ -3577,7 +3541,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3597,7 +3561,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3617,7 +3581,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3637,7 +3601,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3657,7 +3621,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3677,7 +3641,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3697,7 +3661,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3717,7 +3681,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3737,7 +3701,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3757,7 +3721,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3777,7 +3741,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
    	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3797,7 +3761,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
    	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3817,7 +3781,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
    	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3837,7 +3801,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
    	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3857,7 +3821,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3877,7 +3841,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3897,7 +3861,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3917,7 +3881,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3938,7 +3902,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3957,7 +3921,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3977,7 +3941,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -3997,7 +3961,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -4017,7 +3981,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -4037,7 +4001,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -4057,7 +4021,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -4077,7 +4041,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -4097,7 +4061,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -4117,7 +4081,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -4137,7 +4101,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -4157,7 +4121,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -4177,7 +4141,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -4197,7 +4161,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	  <xsd:element name="command" type="xsd:string">
@@ -4218,7 +4182,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	<xsd:sequence>
 	  <xsd:element name="status" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Return status (running or done) of a job submitted with its output_choice set to 'ticket'.</xsd:documentation>
+	      <xsd:documentation>Return status (running or done) of a job submitted with its output_choice set to 'ticket'.                                                                                                                                                                                      </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	</xsd:sequence>
@@ -4233,7 +4197,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
-	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.</xsd:documentation>
+	      <xsd:documentation>Location of the result file on the server. This can be used as input for a further request.                                                                                                                                                                                    </xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
 	</xsd:sequence>
