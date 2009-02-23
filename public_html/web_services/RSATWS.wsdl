@@ -253,11 +253,11 @@ Default is 'both'.</xsd:documentation>
               <xsd:documentation>A list of query genes. You need to supply either this parameter or the next one (tmp_infile).</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
-	<xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation> Name of the file with list of genes on the server. You need to supply either this parameter or the previous one (query).</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
+	  <xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation> Name of the file with list of genes on the server. You need to supply either this parameter or the previous one (query).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
 	  <xsd:element name="all" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>Return sequences for all the genes of the organism if value = 1. Incompatible with query.</xsd:documentation>
@@ -401,46 +401,46 @@ Accepted values: 'server' (result is stored on a file on the server), 'client' (
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	<xsd:element name="sequence" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Sequence to purge. You need to supply either this parameter or the next one (tmp_infile).</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation> Name of the file with input sequence on the server. You need to supply either this parameter or the previous one (sequence).</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="format" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, FastA.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="match_length" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Minimal match length. Default is 40.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="mismatch" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Number of mismatches allowed. Default is 3.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="str" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Discard duplications on the direct strand only (1) or on the reverse complement as well (2). Default is 2.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="delete" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Delete repeats instead of masking them if value = 1.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="mask_short" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Mask (replace by N characters) sequences shorter than the specified length.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
+	  <xsd:element name="sequence" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Sequence to purge. You need to supply either this parameter or the next one (tmp_infile).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation> Name of the file with input sequence on the server. You need to supply either this parameter or the previous one (sequence).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="format" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, FastA.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="match_length" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Minimal match length. Default is 40.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="mismatch" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Number of mismatches allowed. Default is 3.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="str" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Discard duplications on the direct strand only (1) or on the reverse complement as well (2). Default is 2.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="delete" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Delete repeats instead of masking them if value = 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="mask_short" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Mask (replace by N characters) sequences shorter than the specified length.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
        </xsd:sequence>
       </xsd:complexType>
 
@@ -458,78 +458,78 @@ Accepted values: 'server' (result is stored on a file on the server), 'client' (
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	<xsd:element name="verbosity" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Verbosity.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="sequence" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Input sequence. You need to supply either this parameter or the next one (tmp_infile).</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Name of the file with input sequence on the server. You need to supply either this parameter or the previous one (sequence).</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="format" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Input sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, fasta. Default is fasta.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="length" type="xsd:int" minOccurs="1">
-	  <xsd:annotation>
-	    <xsd:documentation>Oligomer length.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="organism" type="xsd:string" minOccurs="1">
-	  <xsd:annotation>
-	    <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="background" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Background model: Type of sequences used as background model for estimating expected oligonucleotide frequencies. 
+	  <xsd:element name="verbosity" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Verbosity.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="sequence" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input sequence. You need to supply either this parameter or the next one (tmp_infile).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Name of the file with input sequence on the server. You need to supply either this parameter or the previous one (sequence).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="format" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, fasta. Default is fasta.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="length" type="xsd:int" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Oligomer length.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="organism" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="background" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Background model: Type of sequences used as background model for estimating expected oligonucleotide frequencies. 
 Supported: upstream, upstream-noorf, upstream-noorf-rm, intergenic, input.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="stats" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>List of statistics to return. Supported:occ, mseq, freq, proba, ratio, zscore, like, pos, rank.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="noov" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>No overlapping of oligos allowed if value = 1. Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="str" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Oligonucleotide occurrences found on both stands are summed (2) or not (1). Default is 2.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="sort" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Sort oligomers according to overrepresentation if value = 1.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="lth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
-	  <xsd:annotation>
-	    <xsd:documentation>Lower threshold on some parameters. Format=list of'parameter value'.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="uth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
-	  <xsd:annotation>
-	    <xsd:documentation>Upper threshold on some parameters. Format=list of 'parameter value'.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="pseudo" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Pseudo-weight. Must be a real value between 0 and 1.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-       </xsd:sequence>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="stats" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>List of statistics to return. Supported:occ, mseq, freq, proba, ratio, zscore, like, pos, rank.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="noov" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>No overlapping of oligos allowed if value = 1. Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="str" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Oligonucleotide occurrences found on both stands are summed (2) or not (1). Default is 2.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="sort" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Sort oligomers according to overrepresentation if value = 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="lth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+	    <xsd:annotation>
+	      <xsd:documentation>Lower threshold on some parameters. Format=list of'parameter value'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="uth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+	    <xsd:annotation>
+	      <xsd:documentation>Upper threshold on some parameters. Format=list of 'parameter value'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="pseudo" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Pseudo-weight. Must be a real value between 0 and 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
       </xsd:complexType>
 
       <xsd:complexType name="DyadAnalysisRequest">
@@ -546,56 +546,56 @@ Accepted values: 'server' (result is stored on a file on the server), 'client' (
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	<xsd:element name="verbosity" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Verbosity.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="sequence" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Input sequence. You need to supply either this parameter or the next one (tmp_infile).</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Name of the file with input sequence on the server. 
+	  <xsd:element name="verbosity" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Verbosity.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="sequence" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input sequence. You need to supply either this parameter or the next one (tmp_infile).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Name of the file with input sequence on the server. 
 You need to supply either this parameter or the previous one (sequence).</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="format" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Input sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, fasta. Default is fasta.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="length" type="xsd:int" minOccurs="1">
-	  <xsd:annotation>
-	    <xsd:documentation>Dyad length.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="spacing" type="xsd:string" minOccurs="1">
-	  <xsd:annotation>
-	    <xsd:documentation>Spacing between elements of the dyads.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="organism" type="xsd:string" minOccurs="1">
-	  <xsd:annotation>
-	    <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="background" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Background model: Type of sequences used as background model for estimating expected oligonucleotide frequencies. 
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="format" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, fasta. Default is fasta.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="length" type="xsd:int" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Dyad length.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="spacing" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Spacing between elements of the dyads.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="organism" type="xsd:string" minOccurs="1">
+	    <xsd:annotation>
+	      <xsd:documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="background" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Background model: Type of sequences used as background model for estimating expected oligonucleotide frequencies. 
 Supported: upstream, upstreamL, upstream-noorf, intergenic, input.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="stats" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>List of statistics to return. Supported: occ, mseq, freq, proba, ratio, zscore, like, pos, rank.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="type" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>dyad_type (dr | ir | rep | any) 
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="stats" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>List of statistics to return. Supported: occ, mseq, freq, proba, ratio, zscore, like, pos, rank.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="type" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>dyad_type (dr | ir | rep | any) 
 In order to fasten execution, the program can be asked to restrict its analysis to symmetric dyads. 
 Four types are accepted: 
 	dr - direct repeats: the second element is the same as the first one; 
@@ -603,54 +603,54 @@ Four types are accepted:
 	rep - repeats: direct and inverted repeats are evaluated. 
 	any - (default) 
 When selecting the option any, the analysis is performed on all non-symmetric dyads as well.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="noov" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>No overlapping of dyads allowed if value = 1. 
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="noov" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>No overlapping of dyads allowed if value = 1. 
 Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="str" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Dyad occurrences found on both stands are summed (2) or not (1). Default is 2.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="sort" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Sort dyads according to overrepresentation if value = 1.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="under" type="xsd:int" minOccurs="0">
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="str" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Dyad occurrences found on both stands are summed (2) or not (1). Default is 2.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="sort" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Sort dyads according to overrepresentation if value = 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="under" type="xsd:int" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>Detect under-represented instead of over-represented dyads (left tail significance test) if value = 1.</xsd:documentation>
 	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="two_tails" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Detect under-represented and over-represented dyads (two-fail significance test) if value = 1.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="zeroocc" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Report also dyads with zero occurrences (provided they fit the other thresholds) if value = 1. 
+	  </xsd:element>
+	  <xsd:element name="two_tails" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Detect under-represented and over-represented dyads (two-fail significance test) if value = 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="zeroocc" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Report also dyads with zero occurrences (provided they fit the other thresholds) if value = 1. 
 By default, the program reports only patterns present in the sequence. 
 If the left tail or two-tail test is applied, patterns with zero occurrences are automatically taken into account. 
 In some other cases, one would also like to detect patterns absent from the sequence. 
 This is the function of the option -zeroocc.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="lth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
-	  <xsd:annotation>
-	    <xsd:documentation>Lower threshold on some parameters. Format=list of 'parameter value'.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="uth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
-	  <xsd:annotation>
-	    <xsd:documentation>Upper threshold on some parameter. Format=list of 'parameter value'.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-       </xsd:sequence>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="lth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+	    <xsd:annotation>
+	      <xsd:documentation>Lower threshold on some parameters. Format=list of 'parameter value'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="uth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
+	    <xsd:annotation>
+	      <xsd:documentation>Upper threshold on some parameter. Format=list of 'parameter value'.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
       </xsd:complexType>
 
       <xsd:complexType name="PatternAssemblyRequest">
@@ -745,132 +745,132 @@ Accepted values: 'server' (result is stored on a file on the server), 'client' (
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-	<xsd:element name="sequence" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Input sequence. You need to supply either this parameter or the next one (tmp_infile).</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Name of the file with input sequence on the server. You need to supply either this parameter or the previous one (sequence).</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="format" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Input sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, fasta. Default is fasta.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="subst" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Number of substitutions allowed.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="pattern" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Pattern to match. Use this option or the 'pattern_file' option</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="pattern_file" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>File with patterns to match. Use this option or the 'pattern' option</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="tmp_pattern_file" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>File located on the server with patterns to match (workflow usage).</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="id" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Pattern identifier.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="origin" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Origin for the calculation of positions (0 for end of sequence).</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="noov" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>No overlapping of oligos allowed if value = 1. Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="score" type="xsd:int" minOccurs="0">
-	<xsd:annotation>
-	<xsd:documentation>Score column. Column of the pattern file which contains the score</xsd:documentation>
-	</xsd:annotation>
-	</xsd:element>
-	<xsd:element name="str" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Oligonucleotide occurrences found on both stands are summed (2) or not (1). Default is 2.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="sort" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Sort oligomers according to overrepresentation if value = 1.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	<xsd:element name="th" type="xsd:int" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>Threshold on match count.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-	 <xsd:element name="return" type="xsd:string" minOccurs="0">
-	  <xsd:annotation>
-	    <xsd:documentation>List of fields to return. Multiple fields can be entered separated by commas.
+	  <xsd:element name="sequence" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input sequence. You need to supply either this parameter or the next one (tmp_infile).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Name of the file with input sequence on the server. You need to supply either this parameter or the previous one (sequence).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="format" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, fasta. Default is fasta.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="subst" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Number of substitutions allowed.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="pattern" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Pattern to match. Use this option or the 'pattern_file' option</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="pattern_file" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>File with patterns to match. Use this option or the 'pattern' option</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_pattern_file" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>File located on the server with patterns to match (workflow usage).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="id" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Pattern identifier.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="origin" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Origin for the calculation of positions (0 for end of sequence).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="noov" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>No overlapping of oligos allowed if value = 1. Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="score" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Score column. Column of the pattern file which contains the score</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="str" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Oligonucleotide occurrences found on both stands are summed (2) or not (1). Default is 2.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="sort" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Sort oligomers according to overrepresentation if value = 1.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="th" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Threshold on match count.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="return" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>List of fields to return. Multiple fields can be entered separated by commas.
 Supported fields: colsum,counts,ct,limits,profiles,rank,rowsum,scores,sites,stats,table,total.
-  -return sites:   return match positions (default)
-  -return limits: return start and end positions for each input sequence
-  -return counts: return the count of matches per sequence.  
-  -return rank: return the rank of the sequence (this is especially useful in combination with the option -sort).
-  -return score: return a score per sequence, computed by summing the scores of the matching patterns.
-  -return ct:    same as '-return counts', except that it returns the sum of matches in all the files of the sequence file list, instead of the count within each separate file.
-  -return table: return the count of pattern matches per sequence in the form of a table.  (one line per sequence, one column per pattern)
-  -return colsum (together with -return table) prints an extra column with the total occurrences per sequence
-  -return rowsum (together with -return table) prints an extra row with total occurrences per pattern
-  -return total (together with -return table) prints an extra column with the total occurrences per sequence and an extra row with total occurrences per pattern.  (amounts to combine -colsum and -rowsum)
-  -return stats return matching statistics
-  -return profiles return matching profiles with sliding windows.</xsd:documentation>
-	  </xsd:annotation>
-	</xsd:element>
-       </xsd:sequence>
+    sites: return match positions (default)
+    limits: return start and end positions for each input sequence
+    counts: return the count of matches per sequence
+    rank: return the rank of the sequence (this is especially useful in combination with the option -sort)
+    score: return a score per sequence, computed by summing the scores of the matching patterns
+    ct: same as '-return counts', except that it returns the sum of matches in all the files of the sequence file list, instead of the count within each separate file
+    table: return the count of pattern matches per sequence in the form of a table.  (one line per sequence, one column per pattern)
+    colsum: (together with -return table) prints an extra column with the total occurrences per sequence
+    rowsum: (together with -return table) prints an extra row with total occurrences per pattern
+    total: (together with -return table) prints an extra column with the total occurrences per sequence and an extra row with total occurrences per pattern.  (amounts to combine -colsum and -rowsum)
+    stats: return matching statistics
+    profiles: return matching profiles with sliding windows.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
       </xsd:complexType>
 
       <xsd:complexType name="ConvertFeaturesRequest">
         <xsd:annotation>
 	  <xsd:documentation>Parameters for the operation convert_features.</xsd:documentation>
         </xsd:annotation>
-       <xsd:sequence>
-	 <xsd:element name="output" type="xsd:string" minOccurs="0">
-	   <xsd:annotation>
-	     <xsd:documentation>Return type.
+	<xsd:sequence>
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Return type.
 Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client),
 'both' (result is stored on the server and transferred to the client), and ticket (an identifier, allowing to monitor the job status and
  retrieve the result when it is done, is returned to the client).
 Default is 'both'.</xsd:documentation>
-	   </xsd:annotation>
-	 </xsd:element>
-         <xsd:element name="input" type="xsd:string" minOccurs="0">
-	   <xsd:annotation>
-	     <xsd:documentation>Input data</xsd:documentation>
-	   </xsd:annotation>
-	 </xsd:element>
-	 <xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
-	   <xsd:annotation>
-	     <xsd:documentation>Input file on the server (workflow usage)</xsd:documentation>
-	   </xsd:annotation>
-	 </xsd:element>
-	 <xsd:element name="from" type="xsd:string" minOccurs="0">
-	   <xsd:annotation>
-	     <xsd:documentation>Input format. Supported: dnapat,ft,gft,gff3,gff.</xsd:documentation>
-	   </xsd:annotation>
-	 </xsd:element>
-	 <xsd:element name="to" type="xsd:string" minOccurs="0">
-	   <xsd:annotation>
-	     <xsd:documentation>Output format. Supported: dnapat,ft,gft,gff3,gff.</xsd:documentation>
-	   </xsd:annotation>
-	 </xsd:element>
-       </xsd:sequence>
+	    </xsd:annotation>
+	  </xsd:element>
+          <xsd:element name="input" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input data</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input file on the server (workflow usage)</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="from" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Input format. Supported: dnapat,ft,gft,gff3,gff.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="to" type="xsd:string" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Output format. Supported: dnapat,ft,gft,gff3,gff.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	</xsd:sequence>
       </xsd:complexType>
 
       <xsd:complexType name="FeatureMapRequest">
@@ -3412,7 +3412,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-      
+
       <xsd:complexType name="PurgeSequenceResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3432,7 +3432,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-      
+
       <xsd:complexType name="OligoAnalysisResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3452,7 +3452,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-      
+
       <xsd:complexType name="DyadAnalysisResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3672,7 +3672,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-      
+
       <xsd:complexType name="parsepsixmlResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3692,7 +3692,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-      
+
       <xsd:complexType name="RocStatsResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3712,7 +3712,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-      
+
       <xsd:complexType name="XYGraphResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3772,7 +3772,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
- 
+
       <xsd:complexType name="CompareClassesResponse">
    	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3792,7 +3792,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-      
+
       <xsd:complexType name="ConvertClassesResponse">
    	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3812,7 +3812,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-      
+
       <xsd:complexType name="ContingencyStatsResponse">
    	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3832,7 +3832,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
-      
+
       <xsd:complexType name="ContingencyTableResponse">
    	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -3851,7 +3851,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    </xsd:annotation>
 	  </xsd:element>
 	</xsd:sequence>
-      </xsd:complexType>          
+      </xsd:complexType>
 
       <xsd:complexType name="MatrixScanResponse">
 	<xsd:sequence>
@@ -4092,6 +4092,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:element>
 	</xsd:sequence>
       </xsd:complexType>
+
       <xsd:complexType name="CompareGraphsResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -4150,8 +4151,8 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    </xsd:annotation>
 	  </xsd:element>
 	</xsd:sequence>
-      </xsd:complexType>    
-      
+      </xsd:complexType>
+
       <xsd:complexType name="RNSCResponse">
 	<xsd:sequence>
 	  <xsd:element name="server" type="xsd:string">
@@ -4170,7 +4171,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    </xsd:annotation>
 	  </xsd:element>
 	</xsd:sequence>
-      </xsd:complexType>      
+      </xsd:complexType>
 
       <xsd:complexType name="RandomGraphResponse">
 	<xsd:sequence>
@@ -4493,24 +4494,24 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    <xsd:element name="response" type="tns:TextToHtmlResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
-      </xsd:element>      
-      
+      </xsd:element>
+
       <xsd:element name="parse_psi_xml">
 	<xsd:complexType>
 	  <xsd:sequence>
 	    <xsd:element name="request" type="tns:parsepsixmlRequest" />
 	  </xsd:sequence>
 	</xsd:complexType>
-      </xsd:element>     
-      
+      </xsd:element>
+
       <xsd:element name="parse_psi_xmlResponse">
 	<xsd:complexType>
 	  <xsd:sequence>
 	    <xsd:element name="response" type="tns:parsepsixmlResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
-      </xsd:element>  
-      
+      </xsd:element>
+
       <xsd:element name="roc_stats">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4525,8 +4526,8 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    <xsd:element name="response" type="tns:RocStatsResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
-      </xsd:element>        
-      
+      </xsd:element>
+
       <xsd:element name="classfreq">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4536,18 +4537,19 @@ The output graph will thus consist in the graph induced by all nodes of the firs
       </xsd:element>
 
       <xsd:element name="classfreqResponse">
-	      <xsd:complexType>
-		      <xsd:sequence>
-			      <xsd:element name="response" type="tns:ClassFreqResponse" />
-		      </xsd:sequence>
-	      </xsd:complexType>
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:ClassFreqResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
       </xsd:element>
+
       <xsd:element name="xygraph">
-	      <xsd:complexType>
-		      <xsd:sequence>
-			      <xsd:element name="request" type="tns:XYGraphRequest" />
-		      </xsd:sequence>
-	      </xsd:complexType>
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:XYGraphRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
       </xsd:element>
 
       <xsd:element name="xygraphResponse">
@@ -4556,7 +4558,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    <xsd:element name="response" type="tns:XYGraphResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
-      </xsd:element>      
+      </xsd:element>
 
       <xsd:element name="convert_seq">
 	<xsd:complexType>
@@ -4604,7 +4606,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    <xsd:element name="response" type="tns:ConvertClassesResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
-      </xsd:element>      
+      </xsd:element>
 
       <xsd:element name="contingency_stats">
 	<xsd:complexType>
@@ -4620,8 +4622,8 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    <xsd:element name="response" type="tns:ContingencyStatsResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
-      </xsd:element>     
-      
+      </xsd:element>
+
       <xsd:element name="contingency_table">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4636,8 +4638,8 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    <xsd:element name="response" type="tns:ContingencyTableResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
-      </xsd:element>     
-      
+      </xsd:element>
+
       <xsd:element name="matrix_scan">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4669,8 +4671,8 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
-      
-         <xsd:element name="matrix_distrib">
+
+      <xsd:element name="matrix_distrib">
 	<xsd:complexType>
 	  <xsd:sequence>
 	    <xsd:element name="request" type="tns:MatrixDistribRequest" />
@@ -4718,7 +4720,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
-      
+
       <xsd:element name="alter_graph">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4733,8 +4735,8 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    <xsd:element name="response" type="tns:AlterGraphResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
-      </xsd:element>      
-      
+      </xsd:element>
+
       <xsd:element name="graph_cliques">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4749,36 +4751,40 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    <xsd:element name="response" type="tns:GraphCliquesResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
-      </xsd:element>      
-      
+      </xsd:element>
+
       <xsd:element name="display_graph">
-	      <xsd:complexType>
-		      <xsd:sequence>
-			      <xsd:element name="request" type="tns:DisplayGraphRequest" />
-		      </xsd:sequence>
-	      </xsd:complexType>
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:DisplayGraphRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
       </xsd:element>
+
       <xsd:element name="display_graphResponse">
-	      <xsd:complexType>
-		      <xsd:sequence>
-			      <xsd:element name="response" type="tns:DisplayGraphResponse" />
-		      </xsd:sequence>
-	      </xsd:complexType>
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:DisplayGraphResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
       </xsd:element>
+
       <xsd:element name="draw_heatmap">
-	      <xsd:complexType>
-		      <xsd:sequence>
-			      <xsd:element name="request" type="tns:DrawHeatmapRequest" />
-		      </xsd:sequence>
-	      </xsd:complexType>
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="request" type="tns:DrawHeatmapRequest" />
+	  </xsd:sequence>
+	</xsd:complexType>
       </xsd:element>
+
       <xsd:element name="draw_heatmapResponse">
-	      <xsd:complexType>
-		      <xsd:sequence>
-			      <xsd:element name="response" type="tns:DrawHeatmapResponse" />
-		      </xsd:sequence>
-	      </xsd:complexType>
+	<xsd:complexType>
+	  <xsd:sequence>
+	    <xsd:element name="response" type="tns:DrawHeatmapResponse" />
+	  </xsd:sequence>
+	</xsd:complexType>
       </xsd:element>
+
       <xsd:element name="compare_graphs">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4810,7 +4816,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
-      
+
       <xsd:element name="graph_topology">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4826,7 +4832,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
-      
+
       <xsd:element name="graph_cluster_membership">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4842,6 +4848,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
+
       <xsd:element name="graph_neighbours">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4849,15 +4856,15 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	  </xsd:sequence>
 	</xsd:complexType>
       </xsd:element>
-      
+
       <xsd:element name="graph_neighboursResponse">
 	<xsd:complexType>
 	  <xsd:sequence>
 	    <xsd:element name="response" type="tns:GraphNeighboursResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
-      </xsd:element>      
-      
+      </xsd:element>
+
       <xsd:element name="mcl">
 	<xsd:complexType>
 	  <xsd:sequence>
@@ -4888,7 +4895,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 	    <xsd:element name="response" type="tns:RNSCResponse" />
 	  </xsd:sequence>
 	</xsd:complexType>
-      </xsd:element>      
+      </xsd:element>
 
       <xsd:element name="random_graph">
 	<xsd:complexType>
@@ -5085,36 +5092,40 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 
   <message name="text_to_htmlResponse">
     <part name="output" element="tns:text_to_htmlResponse"/>
-  </message>  
+  </message>
+
   <message name="parse_psi_xmlRequest">
     <part name="parameters" element="tns:parse_psi_xml"/>
   </message>
 
   <message name="parse_psi_xmlResponse">
     <part name="output" element="tns:parse_psi_xmlResponse"/>
-  </message>  
+  </message>
+
   <message name="roc_statsRequest">
     <part name="parameters" element="tns:roc_stats"/>
   </message>
 
   <message name="roc_statsResponse">
     <part name="output" element="tns:roc_statsResponse"/>
-  </message>  
+  </message>
   
   <message name="classfreqRequest">
-	  <part name="parameters" element="tns:classfreq"/>
+    <part name="parameters" element="tns:classfreq"/>
   </message>
   
   <message name="classfreqResponse">
-	  <part name="output" element="tns:classfreqResponse"/>
+    <part name="output" element="tns:classfreqResponse"/>
   </message>
+
   <message name="xygraphRequest">
-	  <part name="parameters" element="tns:xygraph"/>
+    <part name="parameters" element="tns:xygraph"/>
   </message>
-  
+
   <message name="xygraphResponse">
-	  <part name="output" element="tns:xygraphResponse"/>
+    <part name="output" element="tns:xygraphResponse"/>
   </message>
+
   <message name="convert_seqRequest">
     <part name="parameters" element="tns:convert_seq"/>
   </message>
@@ -5137,24 +5148,24 @@ The output graph will thus consist in the graph induced by all nodes of the firs
 
   <message name="convert_classesResponse">
     <part name="output" element="tns:convert_classesResponse"/>
-  </message>  
-  
+  </message>
+
   <message name="contingency_statsRequest">
     <part name="parameters" element="tns:contingency_stats"/>
   </message>
 
   <message name="contingency_statsResponse">
     <part name="output" element="tns:contingency_statsResponse"/>
-  </message>   
-  
+  </message>
+
   <message name="contingency_tableRequest">
     <part name="parameters" element="tns:contingency_table"/>
   </message>
 
   <message name="contingency_tableResponse">
     <part name="output" element="tns:contingency_tableResponse"/>
-  </message>   
-  
+  </message>
+
   <message name="matrix_scanRequest">
     <part name="parameters" element="tns:matrix_scan"></part>
   </message>
@@ -5170,8 +5181,8 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="convert_matrixResponse">
     <part name="output" element="tns:convert_matrixResponse"></part>
   </message>
-  
-   <message name="matrix_distribRequest">
+
+  <message name="matrix_distribRequest">
     <part name="parameters" element="tns:matrix_distrib"></part>
   </message>
 
@@ -5191,84 +5202,111 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="convert_graphRequest">
     <part name="parameters" element="tns:convert_graph"/>
   </message>
+
   <message name="convert_graphResponse">
     <part name="output" element="tns:convert_graphResponse"/>
   </message>
+
   <message name="alter_graphRequest">
     <part name="parameters" element="tns:alter_graph"/>
   </message>
+
   <message name="alter_graphResponse">
     <part name="output" element="tns:alter_graphResponse"/>
   </message>
+
   <message name="graph_cliquesRequest">
     <part name="parameters" element="tns:graph_cliques"/>
   </message>
+
   <message name="graph_cliquesResponse">
     <part name="output" element="tns:graph_cliquesResponse"/>
   </message>
+
   <message name="display_graphRequest">
 	  <part name="parameters" element="tns:display_graph"/>
   </message>
+
   <message name="display_graphResponse">
 	  <part name="output" element="tns:display_graphResponse"/>
   </message>
+
   <message name="draw_heatmapRequest">
 	  <part name="parameters" element="tns:draw_heatmap"/>
   </message>
+
   <message name="draw_heatmapResponse">
 	  <part name="output" element="tns:draw_heatmapResponse"/>
   </message>
+
   <message name="compare_graphsRequest">
     <part name="parameters" element="tns:compare_graphs"/>
   </message>
+
   <message name="compare_graphsResponse">
     <part name="output" element="tns:compare_graphsResponse"/>
   </message>
+
   <message name="graph_node_degreeRequest">
     <part name="parameters" element="tns:graph_node_degree"/>
   </message>
+
   <message name="graph_node_degreeResponse">
     <part name="output" element="tns:graph_node_degreeResponse"/>
   </message>
+
   <message name="graph_topologyRequest">
     <part name="parameters" element="tns:graph_topology"/>
   </message>
+
   <message name="graph_topologyResponse">
     <part name="output" element="tns:graph_topologyResponse"/>
   </message>
+
   <message name="graph_cluster_membershipRequest">
     <part name="parameters" element="tns:graph_cluster_membership"/>
   </message>
+
   <message name="graph_cluster_membershipResponse">
     <part name="output" element="tns:graph_cluster_membershipResponse"/>
-  </message>  
+  </message>
+
   <message name="random_graphRequest">
     <part name="parameters" element="tns:random_graph"/>
   </message>
+
   <message name="random_graphResponse">
     <part name="output" element="tns:random_graphResponse"/>
   </message>
+
   <message name="graph_get_clustersRequest">
     <part name="parameters" element="tns:graph_get_clusters"/>
   </message>
+
   <message name="graph_get_clustersResponse">
     <part name="output" element="tns:graph_get_clustersResponse"/>
   </message>
+
   <message name="graph_neighboursRequest">
     <part name="parameters" element="tns:graph_neighbours"/>
   </message>
+
   <message name="graph_neighboursResponse">
     <part name="output" element="tns:graph_neighboursResponse"/>
   </message>
+
   <message name="mclRequest">
     <part name="parameters" element="tns:mcl"/>
   </message>
+
   <message name="mclResponse">
     <part name="output" element="tns:mclResponse"/>
-  </message>  
+  </message>
+
   <message name="rnscRequest">
     <part name="parameters" element="tns:rnsc"/>
   </message>
+
   <message name="rnscResponse">
     <part name="output" element="tns:rnscResponse"/>
   </message>
@@ -5277,12 +5315,15 @@ The output graph will thus consist in the graph induced by all nodes of the firs
   <message name="monitorRequest">
     <part name="parameters" element="tns:monitor"/>
   </message>
+
   <message name="monitorResponse">
     <part name="output" element="tns:monitorResponse"/>
   </message>
+
   <message name="get_resultRequest">
     <part name="parameters" element="tns:get_result"/>
   </message>
+
   <message name="get_resultResponse">
     <part name="output" element="tns:get_resultResponse"/>
   </message>
@@ -5310,26 +5351,17 @@ The output graph will thus consist in the graph induced by all nodes of the firs
       <output name="PurgeSequenceResponse" message="tns:purge_seqResponse"/>
     </operation>
     <operation name="oligo_analysis">
-      <documentation>Analysis of the statistical significance of all the oligomers
-	of a given size in a sequence. Commonly used to detect
-	over-represented oligonucleotides in a set of promoter
-	sequences.</documentation>
+      <documentation>Analysis of the statistical significance of all the oligomers of a given size in a sequence. Commonly used to detect over-represented oligonucleotides in a set of promoter sequences.</documentation>
       <input name="OligoAnalysisRequest" message="tns:oligo_analysisRequest"/>
       <output name="OligoAnalysisResponse" message="tns:oligo_analysisResponse"/>
     </operation>
     <operation name="dyad_analysis">
-      <documentation>Analysis of the statistical significance of all the
-	spaced dyads
-	of a given size in a sequence. Commonly used to detect
-	over-represented spaced dyads in a set of promoter
-	sequences.</documentation>
+      <documentation>Analysis of the statistical significance of all the spaced dyads of a given size in a sequence. Commonly used to detect over-represented spaced dyads in a set of promoter sequences.</documentation>
       <input name="DyadAnalysisRequest" message="tns:dyad_analysisRequest"/>
       <output name="DyadAnalysisResponse" message="tns:dyad_analysisResponse"/>
     </operation>
     <operation name="pattern_assembly">
-      <documentation>
-	Assemble a set of oligonucleotides or dyads into groups of
-        overlapping patterns (assemblies).</documentation>
+      <documentation>Assemble a set of oligonucleotides or dyads into groups of overlapping patterns (assemblies).</documentation>
       <input name="PatternAssemblyRequest" message="tns:pattern_assemblyRequest"/>
       <output name="PatternAssemblyResponse" message="tns:pattern_assemblyResponse"/>
     </operation>
@@ -5429,8 +5461,7 @@ The output graph will thus consist in the graph induced by all nodes of the firs
       <output name="MatrixScanResponse" message="tns:matrix_scanResponse"/>
     </operation>
     <operation name="convert_matrix">
-      <documentation>Performs inter-conversions between various formats of position-specific scoring matrices (PSSM).
-The program also performs a statistical analysis of the original matrix to provide different position-specific scores (weight, frequencies, information contents), general statistics (E-value, total information content), and synthetic descriptions (consensus).</documentation>
+      <documentation>Performs inter-conversions between various formats of position-specific scoring matrices (PSSM). The program also performs a statistical analysis of the original matrix to provide different position-specific scores (weight, frequencies, information contents), general statistics (E-value, total information content), and synthetic descriptions (consensus).</documentation>
       <input name="ConvertMatrixRequest" message="tns:convert_matrixRequest"/>
       <output name="ConvertMatrixResponse" message="tns:convert_matrixResponse"/>
     </operation>
@@ -5516,7 +5547,7 @@ The program also performs a statistical analysis of the original matrix to provi
       <input name="RNSCRequest" message="tns:rnscRequest"/>
       <output name="RNSCResponse" message="tns:rnscResponse"/>
     </operation>
-    
+
     <!-- GENERAL UTILITY TOOLS PORTTYPES -->
     <operation name="monitor">
       <documentation>Monitoring the status of a job</documentation>
@@ -5794,7 +5825,8 @@ The program also performs a statistical analysis of the original matrix to provi
         <soap:body use="literal" />
       </output>
     </operation>
-<!-- NeA TOOLS BINDINGS -->
+
+    <!-- NeA TOOLS BINDINGS -->
     <operation name="convert_graph">
       <soap:operation soapAction=""/>
       <input name="ConvertGraphRequest">
@@ -5922,7 +5954,7 @@ The program also performs a statistical analysis of the original matrix to provi
       </output>
     </operation>
 
-<!-- GENERAL UTILITY TOOLS BINDINGS -->
+    <!-- GENERAL UTILITY TOOLS BINDINGS -->
     <operation name="monitor">
       <soap:operation soapAction=""/>
       <input name="MonitorRequest">
@@ -5944,15 +5976,10 @@ The program also performs a statistical analysis of the original matrix to provi
   </binding>
 
   <service name="RSATWebServices">
-    <documentation>
-      Web services for the Regulatory Sequence Analysis Tools (RSAT).
-      Tools developed by Jacques van Helden
-      (jvanheld@bigre.ulb.ac.be), SOAP/WSDL interface developed by
-      Olivier Sand (oly@bigre.ulb.ac.be).
-   </documentation>
+    <documentation>Web services for the Regulatory Sequence Analysis Tools (RSAT). Tools developed by Jacques van Helden (jvanheld@bigre.ulb.ac.be), SOAP/WSDL interface developed by Olivier Sand (oly@bigre.ulb.ac.be).</documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
       <soap:address location="http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
-<!--      <soap:address location="http://127.0.0.1/rsat/web_services/RSATWS.cgi"/> -->
+      <!-- <soap:address location="http://127.0.0.1/rsat/web_services/RSATWS.cgi"/> -->
     </port>
   </service>
 </definitions>
