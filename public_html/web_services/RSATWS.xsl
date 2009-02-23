@@ -60,7 +60,7 @@ xmlns:html='http://www.w3.org/1999/xhtml'>
                 <table width='100%' cellpadding='5' border='0' rules='none' frame='void' >
                     <tr align='left' valign='top'>
                         <th width='200' align='left' valign='top'><font size='4' color='#888888'>Method</font></th>
-                        <th align='left' valign='top'><font size='4' color='#222288'><xsl:value-of select='@name'/></font></th>
+                        <td align='left' valign='top'><font size='4' color='#222288'><xsl:value-of select='@name'/></font></td>
                     </tr>
                     <tr align='left' valign='top'>
                         <th align='left' valign='top'><font color='#888888' size='3'>Description</font></th>
