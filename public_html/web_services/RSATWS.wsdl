@@ -2099,6 +2099,12 @@ If the training sequence length (L) is known, the value can be set by -bg_pseudo
               <xsd:documentation>List of fields to return. Supported fields: sites, rank, limits, normw, bg_model, matrix, freq_matrix, weight_matrix, distrib .</xsd:documentation>
             </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="sort_distrib" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+              <xsd:documentation>Sort score distribution by decreasing value of significance, if value = 1.
+By default, the score distributions are sorted by score (weight).</xsd:documentation>
+            </xsd:annotation>
+	  </xsd:element>
 	<xsd:element name="lth" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
 	  <xsd:annotation>
 	    <xsd:documentation>Lower threshold on some parameter. Format=list of 'parameter value'.
