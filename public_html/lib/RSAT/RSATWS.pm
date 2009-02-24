@@ -2722,6 +2722,7 @@ sub matrix_scan {
   my $origin = $args{"origin"};
   my $decimals = $args{"decimals"};
   my $crer_ids = $args{"crer_ids"};
+  my $sort_distrib = $args{"sort_distrib"};
 
     ## List of lower thresholds
     my $lth_ref = $args{"lth"};
@@ -2737,7 +2738,7 @@ sub matrix_scan {
     } elsif ($lth_ref) {
 	@_lt = split / /, $lth_ref;
 	$lth .= " -lth '".$_lt[0]."' '".$_lt[1]."'";
-}
+    }
 
     ## List of upper thresholds
     my $uth_ref = $args{"uth"};
@@ -2878,6 +2879,10 @@ if ($args{"equi_pseudo"} == 1 ) {
       $return_fields =~ s/\'//g;
       $return_fields =~ s/\"//g;
       $command .= " -return '".$return_fields."'";
+  }
+
+  if ($args{"sort_distrib"} == 1 ) {
+      $command .= " -sort_distrib";
   }
 
   if ($lth) {
