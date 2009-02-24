@@ -74,6 +74,7 @@ sub ExpectedFreqFile {
   } else { 
     $overlap_suffix = "-ovlp";
   }
+  
 
   #### Check organism or taxon
   my $data_dir = "";
@@ -83,7 +84,8 @@ sub ExpectedFreqFile {
     $data_dir .= "/taxon_frequencies/".$org_or_taxon."/";
     $data_dir =~ s/\s/_/g;
   } else {
-    &CheckOrganism($org_or_taxon);
+#    &CheckOrganism($org_or_taxon);
+    &CheckOrganismName($org_or_taxon);
     $data_dir = $supported_organism{$org_or_taxon}->{'data'};
     $data_dir .= "/oligo-frequencies/";
   }
@@ -104,8 +106,23 @@ sub ExpectedFreqFile {
 		      'upstream-noorf-rm'=>1,
 		      'protein'=>1,
 		      'intergenic'=>1,
-		      'genomic'=>1,
+		      'genomic'=>1
 		     );
+
+  my @sequence_types = ('upstream_mRNA-2000-1','upstream_CDS-2000-1','firstintron','intron','utr');
+  my @maskcoding = ('-maskcoding');
+#  my @noorf = ('-noorf','-nogene','');
+  my @maskrepeats = ('-rm','');
+
+  foreach my $sequence_type(@sequence_types) {
+      foreach my $maskcod(@maskcoding) {
+	  foreach my $maskrep(@maskrepeats) {
+	      my $bg_type = $sequence_type.$maskcod.$maskrep;
+		  $supported_bg{$bg_type} = 1; 
+	  }
+      }
+  }
+
   $supported_bg = join ",", sort keys %supported_bg;
   unless ($supported_bg{$background}) {
     &FatalError($background, "is not a supported background model type. Supported: ", $supported_bg);
