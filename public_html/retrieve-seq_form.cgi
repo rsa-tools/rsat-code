@@ -139,6 +139,7 @@ print $query->popup_menu(-name=>'sequence_type',
 			 -default=>$default{sequence_type});
 
 ### from to
+print "&nbsp;&nbsp;";
 print "<B><A HREF='help.retrieve-seq.html#from_to'>From</A></B>&nbsp;\n";
 print $query->textfield(-name=>'from',
 			-default=>$default{from},
