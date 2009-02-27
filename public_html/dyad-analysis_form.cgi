@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.19 2008/05/17 19:10:43 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.20 2009/02/27 14:52:58 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -85,10 +85,11 @@ foreach $key (keys %default) {
 &RSA_header("dyad-analysis", "form");
 
 ### head
-print "<CENTER>";
+print "<center>";
 print "Analysis of spaced dyads in a set of DNA sequences<P>\n";
-print "</CENTER>";
-
+print "</center>";
+print "<b>Reference</b>: van Helden, J., Rios, A. F. and Collado-Vides, J. (2000). Discovering regulatory elements in non-coding sequences by analysis of spaced dyads. Nucleic Acids Res 28, 1808-18.<p>\n";
+print "<hr>";
 print $query->start_multipart_form(-action=>"dyad-analysis.cgi");
 
 #print "<FONT FACE='Helvetica'>";
