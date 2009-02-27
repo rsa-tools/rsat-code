@@ -48,15 +48,19 @@ print q {
 
    Calculates the positional distribution of oligonucleotides in a set
    of sequences, and detects those which significantly discard from a
-   homogeneous distribution.
+   homogeneous distribution.</p>
 
    <b>Warning</b>: this program is useful for large data sets (some
-   hundreds or thousands of sequences), pre-aaligned on some signal
-   (e.g. start codon).
+   hundreds or thousands of sequences), pre-aligned on some signal
+   (e.g. start codon).</p>
+
+   <b>Reference</b>: van Helden, J., del Olmo, M. and Perez-Ortin,
+   J. E. (2000). Statistical analysis of yeast genomic downstream
+   sequences reveals putative polyadenylation signals. Nucleic Acids
+   Res 28, 1000-10.<p>
 
 };
-
-print "<HR>";
+print "<hr>";
 
 #&ListParameters;
 
@@ -220,7 +224,7 @@ print $query->checkbox(-name=>'sort',
 
 print "<HR width=550 align=left>\n";
 
-print "<font color=red><B>Warning !</B>position-analysis is time-consuming. We recommend email output.</font><BR>\n";
+print "<font color=red><B>Warning!</B> position-analysis is time-consuming. We recommend email output.</font><BR>\n";
 
 
 ### send results by email or display on the browser
