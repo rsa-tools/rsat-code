@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %informat_of :ATTR(:get<informat>);
 my %outformat_of :ATTR(:get<outformat>);
 my %member_col_of :ATTR(:get<member_col>);
@@ -27,7 +28,8 @@ my %inputclasses_of :ATTR(:get<inputclasses>);
 my %names_of :ATTR(:get<names>);
 
 __PACKAGE__->_factory(
-    [ qw(        informat
+    [ qw(        output
+        informat
         outformat
         member_col
         class_col
@@ -38,6 +40,7 @@ __PACKAGE__->_factory(
 
     ) ],
     {
+        'output' => \%output_of,
         'informat' => \%informat_of,
         'outformat' => \%outformat_of,
         'member_col' => \%member_col_of,
@@ -48,6 +51,7 @@ __PACKAGE__->_factory(
         'names' => \%names_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'informat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'outformat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'member_col' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -59,6 +63,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'informat' => 'informat',
         'outformat' => 'outformat',
         'member_col' => 'member_col',
@@ -104,6 +109,9 @@ methods:
 
 =over
 
+=item * output
+
+
 =item * informat
 
 
@@ -140,6 +148,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::ConvertClassesRequest
+   output =>  $some_value, # string
    informat =>  $some_value, # string
    outformat =>  $some_value, # string
    member_col =>  $some_value, # string

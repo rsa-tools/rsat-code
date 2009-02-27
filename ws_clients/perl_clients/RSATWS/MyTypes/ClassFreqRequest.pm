@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %inputFile_of :ATTR(:get<inputFile>);
 my %classinterval_of :ATTR(:get<classinterval>);
 my %col_of :ATTR(:get<col>);
@@ -26,7 +27,8 @@ my %from_of :ATTR(:get<from>);
 my %to_of :ATTR(:get<to>);
 
 __PACKAGE__->_factory(
-    [ qw(        inputFile
+    [ qw(        output
+        inputFile
         classinterval
         col
         min
@@ -36,6 +38,7 @@ __PACKAGE__->_factory(
 
     ) ],
     {
+        'output' => \%output_of,
         'inputFile' => \%inputFile_of,
         'classinterval' => \%classinterval_of,
         'col' => \%col_of,
@@ -45,6 +48,7 @@ __PACKAGE__->_factory(
         'to' => \%to_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'inputFile' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'classinterval' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'col' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -55,6 +59,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'inputFile' => 'inputFile',
         'classinterval' => 'classinterval',
         'col' => 'col',
@@ -99,6 +104,9 @@ methods:
 
 =over
 
+=item * output
+
+
 =item * inputFile
 
 
@@ -132,6 +140,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::ClassFreqRequest
+   output =>  $some_value, # string
    inputFile =>  $some_value, # string
    classinterval =>  $some_value, # string
    col =>  $some_value, # string

@@ -1217,7 +1217,7 @@ located at http://rsat.ulb.ac.be/rsat/web_services/RSATWS.cgi.
 
 =head1 SERVICE RSATWebServices
 
-Web services for the Regulatory Sequence Analysis Tools (RSAT). Tools developed by Jacques van Helden (jvanheld@bigre.ulb.ac.be), SOAP/WSDL interface developed by Olivier Sand (oly@bigre.ulb.ac.be). 
+Web services for the Regulatory Sequence Analysis Tools (RSAT). Tools developed by Jacques van Helden (jvanheld@bigre.ulb.ac.be), SOAP/WSDL interface developed by Olivier Sand (oly@bigre.ulb.ac.be).
 
 =head2 Port RSATWSPortType
 
@@ -1255,7 +1255,7 @@ hash refs. See the respective class' documentation for additional information.
 
 =head3 retrieve_seq
 
-Returns upstream, downstream or coding DNA sequences for list of query genes. 
+Returns upstream, downstream or coding DNA sequences for list of query genes.
 
  $interface->retrieve_seq( {
     request =>  { # MyTypes::RetrieveSequenceRequest
@@ -1281,7 +1281,7 @@ Returns upstream, downstream or coding DNA sequences for list of query genes.
 
 =head3 retrieve_seq_multigenome
 
-Returns upstream, downstream or coding DNA sequences for list of query genes and organisms. 
+Returns upstream, downstream or coding DNA sequencesfor list of query genes and organisms.
 
  $interface->retrieve_seq_multigenome( {
     request =>  { # MyTypes::RetrieveSequenceMultigenomeRequest
@@ -1309,7 +1309,7 @@ Returns upstream, downstream or coding DNA sequences for list of query genes and
 
 =head3 retrieve_ensembl_seq
 
-Returns upstream, downstream or coding DNA sequences for list of query genes (in EnsEMBL database). 
+Returns upstream, downstream or coding DNA sequences for list of query genes (in EnsEMBL database).
 
  $interface->retrieve_ensembl_seq( {
     request =>  { # MyTypes::RetrieveEnsemblSequenceRequest
@@ -1369,7 +1369,7 @@ Mask repeated fragments of an input sequence.
 
 =head3 oligo_analysis
 
-Analysis of the statistical significance of all the oligomers of a given size in a sequence. Commonly used to detect over-represented oligonucleotides in a set of promoter sequences. 
+Analysis of the statistical significance of all the oligomers of a given size in a sequence. Commonly used to detect over-represented oligonucleotides in a set of promoter sequences.
 
  $interface->oligo_analysis( {
     request =>  { # MyTypes::OligoAnalysisRequest
@@ -1394,7 +1394,7 @@ Analysis of the statistical significance of all the oligomers of a given size in
 
 =head3 dyad_analysis
 
-Analysis of the statistical significance of all the spaced dyads of a given size in a sequence. Commonly used to detect over-represented spaced dyads in a set of promoter sequences. 
+Analysis of the statistical significance of all the spaced dyads of a given size in a sequence. Commonly used to detect over-represented spaced dyads in a set of promoter sequences.
 
  $interface->dyad_analysis( {
     request =>  { # MyTypes::DyadAnalysisRequest
@@ -1423,7 +1423,7 @@ Analysis of the statistical significance of all the spaced dyads of a given size
 
 =head3 pattern_assembly
 
-Assemble a set of oligonucleotides or dyads into groups of overlapping patterns (assemblies). 
+Assemble a set of oligonucleotides or dyads into groups of overlapping patterns (assemblies).
 
  $interface->pattern_assembly( {
     request =>  { # MyTypes::PatternAssemblyRequest
@@ -1445,7 +1445,7 @@ Assemble a set of oligonucleotides or dyads into groups of overlapping patterns 
 
 =head3 dna_pattern
 
-Searches all occurrences of a pattern within DNA sequences. 
+Searches all occurrences of a pattern within DNA sequences.
 
  $interface->dna_pattern( {
     request =>  { # MyTypes::DnaPatternRequest
@@ -1471,7 +1471,7 @@ Searches all occurrences of a pattern within DNA sequences.
 
 =head3 convert_features
 
-Interconversions between various formats of feature description. 
+Interconversions between various formats of feature description.
 
  $interface->convert_features( {
     request =>  { # MyTypes::ConvertFeaturesRequest
@@ -1486,7 +1486,7 @@ Interconversions between various formats of feature description.
 
 =head3 feature_map
 
-Draws a graphical map of features (e.g. results of pattern matching) in a set of sequences. 
+Draws a graphical map of features (e.g. results of pattern matching) in a set of sequences.
 
  $interface->feature_map( {
     request =>  { # MyTypes::FeatureMapRequest
@@ -1525,7 +1525,7 @@ Draws a graphical map of features (e.g. results of pattern matching) in a set of
 
 =head3 footprint_discovery
 
-Detect phylogenetic footprints by applying dyad-analysis in promoters of a set of orthologous genes. 
+Detect phylogenetic footprints by applying dyad-analysis in promoters of a set of orthologous genes.
 
  $interface->footprint_discovery( {
     request =>  { # MyTypes::FootprintDiscoveryRequest
@@ -1555,7 +1555,7 @@ Detect phylogenetic footprints by applying dyad-analysis in promoters of a set o
 
 =head3 get_orthologs
 
-Get orthologuous genes. 
+Get orthologuous genes.
 
  $interface->get_orthologs( {
     request =>  { # MyTypes::GetOrthologsRequest
@@ -1574,7 +1574,7 @@ Get orthologuous genes.
 
 =head3 infer_operon
 
-Infer operon. 
+Infer operon.
 
  $interface->infer_operon( {
     request =>  { # MyTypes::InferOperonRequest
@@ -1591,7 +1591,7 @@ Infer operon.
 
 =head3 gene_info
 
-Get information about genes. 
+Get information about genes.
 
  $interface->gene_info( {
     request =>  { # MyTypes::GeneInfoRequest
@@ -1608,7 +1608,7 @@ Get information about genes.
 
 =head3 supported_organisms
 
-Converts a tab-delimited file into an HTML table. 
+List RSAT suppported organisms.
 
  $interface->supported_organisms( {
     request =>  { # MyTypes::SupportedOrganismsRequest
@@ -1621,10 +1621,11 @@ Converts a tab-delimited file into an HTML table.
 
 =head3 text_to_html
 
-Converts a tab-delimited file into a HTML table 
+Converts a tab-delimited file into a HTML table
 
  $interface->text_to_html( {
     request =>  { # MyTypes::TextToHtmlRequest
+      output =>  $some_value, # string
       inputfile =>  $some_value, # string
       chunk =>  $some_value, # int
       no_sort =>  $some_value, # int
@@ -1635,10 +1636,11 @@ Converts a tab-delimited file into a HTML table
 
 =head3 parse_psi_xml
 
-Converts a psi xml file in a tab delimited file 
+Converts a psi xml file in a tab delimited file
 
  $interface->parse_psi_xml( {
     request =>  { # MyTypes::parsepsixmlRequest
+      output =>  $some_value, # string
       inputfile =>  $some_value, # string
       channels =>  $some_value, # string
       interactor_type =>  $some_value, # string
@@ -1650,10 +1652,11 @@ Converts a psi xml file in a tab delimited file
 
 =head3 roc_stats
 
-This program takes as input a set of scored results associated with validation labels (pos for positive, neg for negative) and computes, for each score value, the derived statistics (Sn, PPV, FPR), which can be further used to draw a ROC curve. 
+Computes, from a set of scored results associated with validation labels, the derived statistics (Sn, PPV, FPR), which can be further used to draw a ROC curve.
 
  $interface->roc_stats( {
     request =>  { # MyTypes::RocStatsRequest
+      output =>  $some_value, # string
       inputfile =>  $some_value, # string
       scol =>  $some_value, # int
       lcol =>  $some_value, # int
@@ -1665,10 +1668,11 @@ This program takes as input a set of scored results associated with validation l
 
 =head3 classfreq
 
-This script takes a group of numbers (real or integers) and outputs their distribution among classes. 
+This script takes a group of numbers (real or integers) and outputs their distribution among classes.
 
  $interface->classfreq( {
     request =>  { # MyTypes::ClassFreqRequest
+      output =>  $some_value, # string
       inputFile =>  $some_value, # string
       classinterval =>  $some_value, # string
       col =>  $some_value, # string
@@ -1682,10 +1686,11 @@ This script takes a group of numbers (real or integers) and outputs their distri
 
 =head3 xygraph
 
-Plot a graph and export it. 
+Plot a graph and export it.
 
  $interface->xygraph( {
     request =>  { # MyTypes::XYGraphRequest
+      output =>  $some_value, # string
       inputFile =>  $some_value, # string
       format =>  $some_value, # string
       title1 =>  $some_value, # string
@@ -1711,7 +1716,7 @@ Plot a graph and export it.
 
 =head3 convert_seq
 
-Converts a sequence between two formats (e.g. fasta -> raw). 
+Converts a sequence between two formats (e.g. fasta -> raw).
 
  $interface->convert_seq( {
     request =>  { # MyTypes::ConvertSeqRequest
@@ -1726,7 +1731,7 @@ Converts a sequence between two formats (e.g. fasta -> raw).
 
 =head3 compare_classes
 
-Compare two class files(the query file and the reference file). Each class of the query file is compared to each class of the reference file. The number of common elements is reported, as well as the probability to observe at least this number of common elements by chance alone. 
+Compare two class files(the query file and the reference file). Each class of the query file is compared to each class of the reference file. The number of common elements is reported, as well as the probability to observe at least this number of common elements by chance alone.
 
  $interface->compare_classes( {
     request =>  { # MyTypes::CompareClassesRequest
@@ -1750,10 +1755,11 @@ Compare two class files(the query file and the reference file). Each class of th
 
 =head3 convert_classes
 
-Interconversions between different formats of cluster files. 
+Interconversions between different formats of cluster files.
 
  $interface->convert_classes( {
     request =>  { # MyTypes::ConvertClassesRequest
+      output =>  $some_value, # string
       informat =>  $some_value, # string
       outformat =>  $some_value, # string
       member_col =>  $some_value, # string
@@ -1768,10 +1774,11 @@ Interconversions between different formats of cluster files.
 
 =head3 contingency_stats
 
-This programs takes as input a contingency table, and calculates various matching statistics between the rows and columns. The description of these statistics can be found in Brohee and van Helden (2006). 
+This programs takes as input a contingency table, and calculates various matching statistics between the rows and columns. The description of these statistics can be found in Brohee and van Helden (2006).
 
  $interface->contingency_stats( {
     request =>  { # MyTypes::ContingencyStatsRequest
+      output =>  $some_value, # string
       inputfile =>  $some_value, # string
       decimals =>  $some_value, # int
       return =>  $some_value, # string
@@ -1783,10 +1790,11 @@ This programs takes as input a contingency table, and calculates various matchin
 
 =head3 contingency_table
 
-Create a contingency table from a two-column file. 
+ Create a contingency table from a two-column file.
 
  $interface->contingency_table( {
     request =>  { # MyTypes::ContingencyTableRequest
+      output =>  $some_value, # string
       inputfile =>  $some_value, # string
       col1 =>  $some_value, # int
       col2 =>  $some_value, # int
@@ -1798,7 +1806,7 @@ Create a contingency table from a two-column file.
 
 =head3 matrix_scan
 
-Scan sequences with one or several position-specific scoring matrices (PSSM) to identify instances of the corresponding motifs(putative sites). This program supports a variety of background models (Bernoulli, Markov chains of any order). 
+Scan sequences with one or several position-specific scoring matrices (PSSM) to identify instances of the corresponding motifs(putative sites). This program supports a variety of background models (Bernoulli, Markov chains of any order).
 
  $interface->matrix_scan( {
     request =>  { # MyTypes::MatrixScanRequest
@@ -1823,6 +1831,7 @@ Scan sequences with one or several position-specific scoring matrices (PSSM) to 
       markov =>  $some_value, # int
       background_pseudo =>  $some_value, # float
       return_fields =>  $some_value, # string
+      sort_distrib =>  $some_value, # int
       lth =>  $some_value, # string
       uth =>  $some_value, # string
       str =>  $some_value, # int
@@ -1836,7 +1845,7 @@ Scan sequences with one or several position-specific scoring matrices (PSSM) to 
 
 =head3 convert_matrix
 
-Performs inter-conversions between various formats of position-specific scoring matrices (PSSM). The program also performs a statistical analysis of the original matrix to provide different position-specific scores (weight, frequencies, information contents), general statistics (E-value, total information content), and synthetic descriptions (consensus). 
+Performs inter-conversions between various formats of position-specific scoring matrices (PSSM). The program also performs a statistical analysis of the original matrix to provide different position-specific scores (weight, frequencies, information contents), general statistics (E-value, total information content), and synthetic descriptions (consensus).
 
  $interface->convert_matrix( {
     request =>  { # MyTypes::ConvertMatrixRequest
@@ -1862,7 +1871,7 @@ Performs inter-conversions between various formats of position-specific scoring 
 
 =head3 matrix_distrib
 
-Returns the theoretical distribution of matrix weight within the defined background model. 
+Returns the theoretical distribution of matrix weight within the defined background model.
 
  $interface->matrix_distrib( {
     request =>  { # MyTypes::MatrixDistribRequest
@@ -1909,6 +1918,7 @@ Convert graphs between different formats
 
  $interface->convert_graph( {
     request =>  { # MyTypes::ConvertGraphRequest
+      output =>  $some_value, # string
       informat =>  $some_value, # string
       ecolors =>  $some_value, # string
       outformat =>  $some_value, # string
@@ -1924,6 +1934,10 @@ Convert graphs between different formats
       distinct_path =>  $some_value, # int
       layout =>  $some_value, # int
       ewidth =>  $some_value, # int
+      target_xpos_col =>  $some_value, # int
+      target_ypos_col =>  $some_value, # int
+      source_xpos_col =>  $some_value, # int
+      source_ypos_col =>  $some_value, # int
     },
   },,
  );
@@ -1934,6 +1948,7 @@ Alter a graph either by adding or removing edges or nodes
 
  $interface->alter_graph( {
     request =>  { # MyTypes::AlterGraphRequest
+      output =>  $some_value, # string
       informat =>  $some_value, # string
       outformat =>  $some_value, # string
       inputgraph =>  $some_value, # string
@@ -1958,6 +1973,7 @@ Find all cliques in a graph
 
  $interface->graph_cliques( {
     request =>  { # MyTypes::GraphCliquesRequest
+      output =>  $some_value, # string
       informat =>  $some_value, # string
       inputgraph =>  $some_value, # string
       scol =>  $some_value, # int
@@ -1973,6 +1989,7 @@ Produces the figure of a graph
 
  $interface->display_graph( {
     request =>  { # MyTypes::DisplayGraphRequest
+      output =>  $some_value, # string
       informat =>  $some_value, # string
       outformat =>  $some_value, # string
       ewidth =>  $some_value, # int
@@ -1994,6 +2011,7 @@ Produces the figure of a heatmap
 
  $interface->draw_heatmap( {
     request =>  { # MyTypes::DrawHeatmapRequest
+      output =>  $some_value, # string
       outformat =>  $some_value, # string
       html =>  $some_value, # int
       inputfile =>  $some_value, # string
@@ -2014,6 +2032,7 @@ Computes the union / difference or intersection of two graphs
 
  $interface->compare_graphs( {
     request =>  { # MyTypes::CompareGraphsRequest
+      output =>  $some_value, # string
       Qinformat =>  $some_value, # string
       Rinformat =>  $some_value, # string
       outformat =>  $some_value, # string
@@ -2039,6 +2058,7 @@ Find the neihbours up to a certain distance of a collection of seed nodes
 
  $interface->graph_neighbours( {
     request =>  { # MyTypes::GraphNeighboursRequest
+      output =>  $some_value, # string
       informat =>  $some_value, # string
       direction =>  $some_value, # string
       all =>  $some_value, # int
@@ -2060,6 +2080,7 @@ Clustering via Stijn van Dongen MCL algorithm
 
  $interface->mcl( {
     request =>  { # MyTypes::MCLRequest
+      output =>  $some_value, # string
       inputgraph =>  $some_value, # string
       inflation =>  $some_value, # float
     },
@@ -2072,6 +2093,7 @@ Clustering via Andrew King RNSC algorithm
 
  $interface->rnsc( {
     request =>  { # MyTypes::RNSCRequest
+      output =>  $some_value, # string
       inputgraph =>  $some_value, # string
       max_clust =>  $some_value, # int
       tabulength =>  $some_value, # int
@@ -2091,6 +2113,7 @@ Calculates the in / out / global degree for a selection of seed nodes
 
  $interface->graph_node_degree( {
     request =>  { # MyTypes::GraphNodeDegreeRequest
+      output =>  $some_value, # string
       informat =>  $some_value, # string
       all =>  $some_value, # int
       inputgraph =>  $some_value, # string
@@ -2108,6 +2131,7 @@ Calculate the node degree, the closeness and the betweenness of each node and sp
 
  $interface->graph_topology( {
     request =>  { # MyTypes::GraphTopologyRequest
+      output =>  $some_value, # string
       informat =>  $some_value, # string
       all =>  $some_value, # int
       return =>  $some_value, # string
@@ -2127,6 +2151,7 @@ Map a clustering result onto a graph, and compute the membership degree between 
 
  $interface->graph_cluster_membership( {
     request =>  { # MyTypes::GraphClusterMembershipRequest
+      output =>  $some_value, # string
       informat =>  $some_value, # string
       inputgraph =>  $some_value, # string
       clusters =>  $some_value, # string
@@ -2145,6 +2170,7 @@ Compares a graph with a classification/clustering file.
 
  $interface->graph_get_clusters( {
     request =>  { # MyTypes::GraphGetClustersRequest
+      output =>  $some_value, # string
       informat =>  $some_value, # string
       return =>  $some_value, # string
       outformat =>  $some_value, # string
@@ -2165,6 +2191,7 @@ Generate random graphs either from scratch of from an existing graph using diffe
 
  $interface->random_graph( {
     request =>  { # MyTypes::RandomGraphRequest
+      output =>  $some_value, # string
       informat =>  $some_value, # string
       outformat =>  $some_value, # string
       inputgraph =>  $some_value, # string
@@ -2212,6 +2239,6 @@ Get result of a job
 
 =head1 AUTHOR
 
-Generated by SOAP::WSDL on Fri Feb  6 17:30:07 2009
+Generated by SOAP::WSDL on Tue Feb 24 09:35:47 2009
 
 =cut

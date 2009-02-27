@@ -89,6 +89,7 @@ Constructor. The following data structure may be passed to new():
 
  {
    request =>  { # MyTypes::DrawHeatmapRequest
+     output =>  $some_value, # string
      outformat =>  $some_value, # string
      html =>  $some_value, # int
      inputfile =>  $some_value, # string

@@ -89,6 +89,7 @@ Constructor. The following data structure may be passed to new():
 
  {
    request =>  { # MyTypes::ContingencyTableRequest
+     output =>  $some_value, # string
      inputfile =>  $some_value, # string
      col1 =>  $some_value, # int
      col2 =>  $some_value, # int

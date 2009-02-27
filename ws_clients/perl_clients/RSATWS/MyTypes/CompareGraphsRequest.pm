@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %Qinformat_of :ATTR(:get<Qinformat>);
 my %Rinformat_of :ATTR(:get<Rinformat>);
 my %outformat_of :ATTR(:get<outformat>);
@@ -34,7 +35,8 @@ my %directed_of :ATTR(:get<directed>);
 my %self_of :ATTR(:get<self>);
 
 __PACKAGE__->_factory(
-    [ qw(        Qinformat
+    [ qw(        output
+        Qinformat
         Rinformat
         outformat
         outweight
@@ -52,6 +54,7 @@ __PACKAGE__->_factory(
 
     ) ],
     {
+        'output' => \%output_of,
         'Qinformat' => \%Qinformat_of,
         'Rinformat' => \%Rinformat_of,
         'outformat' => \%outformat_of,
@@ -69,6 +72,7 @@ __PACKAGE__->_factory(
         'self' => \%self_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'Qinformat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'Rinformat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'outformat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -87,6 +91,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'Qinformat' => 'Qinformat',
         'Rinformat' => 'Rinformat',
         'outformat' => 'outformat',
@@ -138,6 +143,9 @@ The following properties may be accessed using get_PROPERTY / set_PROPERTY
 methods:
 
 =over
+
+=item * output
+
 
 =item * Qinformat
 
@@ -196,6 +204,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::CompareGraphsRequest
+   output =>  $some_value, # string
    Qinformat =>  $some_value, # string
    Rinformat =>  $some_value, # string
    outformat =>  $some_value, # string

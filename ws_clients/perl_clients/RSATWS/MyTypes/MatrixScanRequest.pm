@@ -38,6 +38,7 @@ my %background_window_of :ATTR(:get<background_window>);
 my %markov_of :ATTR(:get<markov>);
 my %background_pseudo_of :ATTR(:get<background_pseudo>);
 my %return_fields_of :ATTR(:get<return_fields>);
+my %sort_distrib_of :ATTR(:get<sort_distrib>);
 my %lth_of :ATTR(:get<lth>);
 my %uth_of :ATTR(:get<uth>);
 my %str_of :ATTR(:get<str>);
@@ -68,6 +69,7 @@ __PACKAGE__->_factory(
         markov
         background_pseudo
         return_fields
+        sort_distrib
         lth
         uth
         str
@@ -99,6 +101,7 @@ __PACKAGE__->_factory(
         'markov' => \%markov_of,
         'background_pseudo' => \%background_pseudo_of,
         'return_fields' => \%return_fields_of,
+        'sort_distrib' => \%sort_distrib_of,
         'lth' => \%lth_of,
         'uth' => \%uth_of,
         'str' => \%str_of,
@@ -129,6 +132,7 @@ __PACKAGE__->_factory(
         'markov' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'background_pseudo' => 'SOAP::WSDL::XSD::Typelib::Builtin::float',
         'return_fields' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'sort_distrib' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'lth' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'uth' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'str' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
@@ -160,6 +164,7 @@ __PACKAGE__->_factory(
         'markov' => 'markov',
         'background_pseudo' => 'background_pseudo',
         'return_fields' => 'return_fields',
+        'sort_distrib' => 'sort_distrib',
         'lth' => 'lth',
         'uth' => 'uth',
         'str' => 'str',
@@ -192,7 +197,7 @@ MyTypes::MatrixScanRequest
 Perl data type class for the XML Schema defined complexType
 MatrixScanRequest from the namespace urn:RSATWS.
 
-Parameters for the operation matrix scan
+Parameters for the operation matrix_scan
 
 
 
@@ -267,6 +272,9 @@ methods:
 =item * return_fields
 
 
+=item * sort_distrib
+
+
 =item * lth
 
 
@@ -321,6 +329,7 @@ Constructor. The following data structure may be passed to new():
    markov =>  $some_value, # int
    background_pseudo =>  $some_value, # float
    return_fields =>  $some_value, # string
+   sort_distrib =>  $some_value, # int
    lth =>  $some_value, # string
    uth =>  $some_value, # string
    str =>  $some_value, # int

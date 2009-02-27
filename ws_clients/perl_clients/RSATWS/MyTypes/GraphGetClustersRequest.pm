@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %informat_of :ATTR(:get<informat>);
 my %return_of :ATTR(:get<return>);
 my %outformat_of :ATTR(:get<outformat>);
@@ -29,7 +30,8 @@ my %distinct_of :ATTR(:get<distinct>);
 my %induced_of :ATTR(:get<induced>);
 
 __PACKAGE__->_factory(
-    [ qw(        informat
+    [ qw(        output
+        informat
         return
         outformat
         inputgraph
@@ -42,6 +44,7 @@ __PACKAGE__->_factory(
 
     ) ],
     {
+        'output' => \%output_of,
         'informat' => \%informat_of,
         'return' => \%return_of,
         'outformat' => \%outformat_of,
@@ -54,6 +57,7 @@ __PACKAGE__->_factory(
         'induced' => \%induced_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'informat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'return' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'outformat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -67,6 +71,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'informat' => 'informat',
         'return' => 'return',
         'outformat' => 'outformat',
@@ -114,6 +119,9 @@ methods:
 
 =over
 
+=item * output
+
+
 =item * informat
 
 
@@ -156,6 +164,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::GraphGetClustersRequest
+   output =>  $some_value, # string
    informat =>  $some_value, # string
    return =>  $some_value, # string
    outformat =>  $some_value, # string

@@ -89,6 +89,7 @@ Constructor. The following data structure may be passed to new():
 
  {
    request =>  { # MyTypes::XYGraphRequest
+     output =>  $some_value, # string
      inputFile =>  $some_value, # string
      format =>  $some_value, # string
      title1 =>  $some_value, # string

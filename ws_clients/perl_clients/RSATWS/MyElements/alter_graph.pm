@@ -89,6 +89,7 @@ Constructor. The following data structure may be passed to new():
 
  {
    request =>  { # MyTypes::AlterGraphRequest
+     output =>  $some_value, # string
      informat =>  $some_value, # string
      outformat =>  $some_value, # string
      inputgraph =>  $some_value, # string

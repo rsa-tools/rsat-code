@@ -89,6 +89,7 @@ Constructor. The following data structure may be passed to new():
 
  {
    request =>  { # MyTypes::MCLRequest
+     output =>  $some_value, # string
      inputgraph =>  $some_value, # string
      inflation =>  $some_value, # float
    },

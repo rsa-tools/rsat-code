@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %informat_of :ATTR(:get<informat>);
 my %outformat_of :ATTR(:get<outformat>);
 my %inputgraph_of :ATTR(:get<inputgraph>);
@@ -36,7 +37,8 @@ my %col_conservation_of :ATTR(:get<col_conservation>);
 my %normal_of :ATTR(:get<normal>);
 
 __PACKAGE__->_factory(
-    [ qw(        informat
+    [ qw(        output
+        informat
         outformat
         inputgraph
         random_type
@@ -56,6 +58,7 @@ __PACKAGE__->_factory(
 
     ) ],
     {
+        'output' => \%output_of,
         'informat' => \%informat_of,
         'outformat' => \%outformat_of,
         'inputgraph' => \%inputgraph_of,
@@ -75,6 +78,7 @@ __PACKAGE__->_factory(
         'normal' => \%normal_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'informat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'outformat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'inputgraph' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -95,6 +99,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'informat' => 'informat',
         'outformat' => 'outformat',
         'inputgraph' => 'inputgraph',
@@ -148,6 +153,9 @@ The following properties may be accessed using get_PROPERTY / set_PROPERTY
 methods:
 
 =over
+
+=item * output
+
 
 =item * informat
 
@@ -212,6 +220,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::RandomGraphRequest
+   output =>  $some_value, # string
    informat =>  $some_value, # string
    outformat =>  $some_value, # string
    inputgraph =>  $some_value, # string

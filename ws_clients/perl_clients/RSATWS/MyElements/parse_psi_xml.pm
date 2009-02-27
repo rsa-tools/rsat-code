@@ -89,6 +89,7 @@ Constructor. The following data structure may be passed to new():
 
  {
    request =>  { # MyTypes::parsepsixmlRequest
+     output =>  $some_value, # string
      inputfile =>  $some_value, # string
      channels =>  $some_value, # string
      interactor_type =>  $some_value, # string

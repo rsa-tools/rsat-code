@@ -77,7 +77,7 @@ MyTypes::ConvertFeaturesRequest
 Perl data type class for the XML Schema defined complexType
 ConvertFeaturesRequest from the namespace urn:RSATWS.
 
-
+Parameters for the operation convert_features.
 
 
 
