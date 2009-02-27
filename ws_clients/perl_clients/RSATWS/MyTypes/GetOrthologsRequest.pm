@@ -97,7 +97,7 @@ MyTypes::GetOrthologsRequest
 Perl data type class for the XML Schema defined complexType
 GetOrthologsRequest from the namespace urn:RSATWS.
 
-
+Parameters for the operation get_orthologs.
 
 
 

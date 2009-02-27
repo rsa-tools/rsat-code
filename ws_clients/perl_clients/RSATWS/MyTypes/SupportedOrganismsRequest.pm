@@ -67,7 +67,7 @@ MyTypes::SupportedOrganismsRequest
 Perl data type class for the XML Schema defined complexType
 SupportedOrganismsRequest from the namespace urn:RSATWS.
 
-
+Parameters for the operation supported_organisms.
 
 
 

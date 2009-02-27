@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %informat_of :ATTR(:get<informat>);
 my %direction_of :ATTR(:get<direction>);
 my %all_of :ATTR(:get<all>);
@@ -30,7 +31,8 @@ my %tcol_of :ATTR(:get<tcol>);
 my %steps_of :ATTR(:get<steps>);
 
 __PACKAGE__->_factory(
-    [ qw(        informat
+    [ qw(        output
+        informat
         direction
         all
         stats
@@ -44,6 +46,7 @@ __PACKAGE__->_factory(
 
     ) ],
     {
+        'output' => \%output_of,
         'informat' => \%informat_of,
         'direction' => \%direction_of,
         'all' => \%all_of,
@@ -57,6 +60,7 @@ __PACKAGE__->_factory(
         'steps' => \%steps_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'informat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'direction' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'all' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
@@ -71,6 +75,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'informat' => 'informat',
         'direction' => 'direction',
         'all' => 'all',
@@ -119,6 +124,9 @@ methods:
 
 =over
 
+=item * output
+
+
 =item * informat
 
 
@@ -164,6 +172,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::GraphNeighboursRequest
+   output =>  $some_value, # string
    informat =>  $some_value, # string
    direction =>  $some_value, # string
    all =>  $some_value, # int

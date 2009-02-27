@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %informat_of :ATTR(:get<informat>);
 my %ecolors_of :ATTR(:get<ecolors>);
 my %outformat_of :ATTR(:get<outformat>);
@@ -32,9 +33,14 @@ my %undirected_of :ATTR(:get<undirected>);
 my %distinct_path_of :ATTR(:get<distinct_path>);
 my %layout_of :ATTR(:get<layout>);
 my %ewidth_of :ATTR(:get<ewidth>);
+my %target_xpos_col_of :ATTR(:get<target_xpos_col>);
+my %target_ypos_col_of :ATTR(:get<target_ypos_col>);
+my %source_xpos_col_of :ATTR(:get<source_xpos_col>);
+my %source_ypos_col_of :ATTR(:get<source_ypos_col>);
 
 __PACKAGE__->_factory(
-    [ qw(        informat
+    [ qw(        output
+        informat
         ecolors
         outformat
         inputgraph
@@ -49,9 +55,14 @@ __PACKAGE__->_factory(
         distinct_path
         layout
         ewidth
+        target_xpos_col
+        target_ypos_col
+        source_xpos_col
+        source_ypos_col
 
     ) ],
     {
+        'output' => \%output_of,
         'informat' => \%informat_of,
         'ecolors' => \%ecolors_of,
         'outformat' => \%outformat_of,
@@ -67,8 +78,13 @@ __PACKAGE__->_factory(
         'distinct_path' => \%distinct_path_of,
         'layout' => \%layout_of,
         'ewidth' => \%ewidth_of,
+        'target_xpos_col' => \%target_xpos_col_of,
+        'target_ypos_col' => \%target_ypos_col_of,
+        'source_xpos_col' => \%source_xpos_col_of,
+        'source_ypos_col' => \%source_ypos_col_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'informat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'ecolors' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'outformat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -84,9 +100,14 @@ __PACKAGE__->_factory(
         'distinct_path' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'layout' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'ewidth' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'target_xpos_col' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'target_ypos_col' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'source_xpos_col' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'source_ypos_col' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
     },
     {
 
+        'output' => 'output',
         'informat' => 'informat',
         'ecolors' => 'ecolors',
         'outformat' => 'outformat',
@@ -102,6 +123,10 @@ __PACKAGE__->_factory(
         'distinct_path' => 'distinct_path',
         'layout' => 'layout',
         'ewidth' => 'ewidth',
+        'target_xpos_col' => 'target_xpos_col',
+        'target_ypos_col' => 'target_ypos_col',
+        'source_xpos_col' => 'source_xpos_col',
+        'source_ypos_col' => 'source_ypos_col',
     }
 );
 
@@ -138,6 +163,9 @@ The following properties may be accessed using get_PROPERTY / set_PROPERTY
 methods:
 
 =over
+
+=item * output
+
 
 =item * informat
 
@@ -184,6 +212,18 @@ methods:
 =item * ewidth
 
 
+=item * target_xpos_col
+
+
+=item * target_ypos_col
+
+
+=item * source_xpos_col
+
+
+=item * source_ypos_col
+
+
 
 
 =back
@@ -196,6 +236,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::ConvertGraphRequest
+   output =>  $some_value, # string
    informat =>  $some_value, # string
    ecolors =>  $some_value, # string
    outformat =>  $some_value, # string
@@ -211,6 +252,10 @@ Constructor. The following data structure may be passed to new():
    distinct_path =>  $some_value, # int
    layout =>  $some_value, # int
    ewidth =>  $some_value, # int
+   target_xpos_col =>  $some_value, # int
+   target_ypos_col =>  $some_value, # int
+   source_xpos_col =>  $some_value, # int
+   source_ypos_col =>  $some_value, # int
  },
 
 

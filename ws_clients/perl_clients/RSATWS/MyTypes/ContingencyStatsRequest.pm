@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %inputfile_of :ATTR(:get<inputfile>);
 my %decimals_of :ATTR(:get<decimals>);
 my %return_of :ATTR(:get<return>);
@@ -24,7 +25,8 @@ my %rsizes_of :ATTR(:get<rsizes>);
 my %csizes_of :ATTR(:get<csizes>);
 
 __PACKAGE__->_factory(
-    [ qw(        inputfile
+    [ qw(        output
+        inputfile
         decimals
         return
         rsizes
@@ -32,6 +34,7 @@ __PACKAGE__->_factory(
 
     ) ],
     {
+        'output' => \%output_of,
         'inputfile' => \%inputfile_of,
         'decimals' => \%decimals_of,
         'return' => \%return_of,
@@ -39,6 +42,7 @@ __PACKAGE__->_factory(
         'csizes' => \%csizes_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'inputfile' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'decimals' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'return' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -47,6 +51,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'inputfile' => 'inputfile',
         'decimals' => 'decimals',
         'return' => 'return',
@@ -89,6 +94,9 @@ methods:
 
 =over
 
+=item * output
+
+
 =item * inputfile
 
 
@@ -116,6 +124,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::ContingencyStatsRequest
+   output =>  $some_value, # string
    inputfile =>  $some_value, # string
    decimals =>  $some_value, # int
    return =>  $some_value, # string

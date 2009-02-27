@@ -89,6 +89,7 @@ Constructor. The following data structure may be passed to new():
 
  {
    request =>  { # MyTypes::TextToHtmlRequest
+     output =>  $some_value, # string
      inputfile =>  $some_value, # string
      chunk =>  $some_value, # int
      no_sort =>  $some_value, # int

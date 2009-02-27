@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %informat_of :ATTR(:get<informat>);
 my %all_of :ATTR(:get<all>);
 my %inputgraph_of :ATTR(:get<inputgraph>);
@@ -26,7 +27,8 @@ my %scol_of :ATTR(:get<scol>);
 my %tcol_of :ATTR(:get<tcol>);
 
 __PACKAGE__->_factory(
-    [ qw(        informat
+    [ qw(        output
+        informat
         all
         inputgraph
         nodefile
@@ -36,6 +38,7 @@ __PACKAGE__->_factory(
 
     ) ],
     {
+        'output' => \%output_of,
         'informat' => \%informat_of,
         'all' => \%all_of,
         'inputgraph' => \%inputgraph_of,
@@ -45,6 +48,7 @@ __PACKAGE__->_factory(
         'tcol' => \%tcol_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'informat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'all' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'inputgraph' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -55,6 +59,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'informat' => 'informat',
         'all' => 'all',
         'inputgraph' => 'inputgraph',
@@ -99,6 +104,9 @@ methods:
 
 =over
 
+=item * output
+
+
 =item * informat
 
 
@@ -132,6 +140,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::GraphNodeDegreeRequest
+   output =>  $some_value, # string
    informat =>  $some_value, # string
    all =>  $some_value, # int
    inputgraph =>  $some_value, # string

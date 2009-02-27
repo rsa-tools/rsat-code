@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %inputfile_of :ATTR(:get<inputfile>);
 my %scol_of :ATTR(:get<scol>);
 my %lcol_of :ATTR(:get<lcol>);
@@ -24,7 +25,8 @@ my %status_of :ATTR(:get<status>);
 my %total_of :ATTR(:get<total>);
 
 __PACKAGE__->_factory(
-    [ qw(        inputfile
+    [ qw(        output
+        inputfile
         scol
         lcol
         status
@@ -32,6 +34,7 @@ __PACKAGE__->_factory(
 
     ) ],
     {
+        'output' => \%output_of,
         'inputfile' => \%inputfile_of,
         'scol' => \%scol_of,
         'lcol' => \%lcol_of,
@@ -39,6 +42,7 @@ __PACKAGE__->_factory(
         'total' => \%total_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'inputfile' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'scol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'lcol' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
@@ -47,6 +51,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'inputfile' => 'inputfile',
         'scol' => 'scol',
         'lcol' => 'lcol',
@@ -89,6 +94,9 @@ methods:
 
 =over
 
+=item * output
+
+
 =item * inputfile
 
 
@@ -116,6 +124,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::RocStatsRequest
+   output =>  $some_value, # string
    inputfile =>  $some_value, # string
    scol =>  $some_value, # int
    lcol =>  $some_value, # int

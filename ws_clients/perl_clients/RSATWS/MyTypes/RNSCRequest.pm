@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %inputgraph_of :ATTR(:get<inputgraph>);
 my %max_clust_of :ATTR(:get<max_clust>);
 my %tabulength_of :ATTR(:get<tabulength>);
@@ -28,7 +29,8 @@ my %div_freq_of :ATTR(:get<div_freq>);
 my %shf_div_len_of :ATTR(:get<shf_div_len>);
 
 __PACKAGE__->_factory(
-    [ qw(        inputgraph
+    [ qw(        output
+        inputgraph
         max_clust
         tabulength
         tabulist
@@ -40,6 +42,7 @@ __PACKAGE__->_factory(
 
     ) ],
     {
+        'output' => \%output_of,
         'inputgraph' => \%inputgraph_of,
         'max_clust' => \%max_clust_of,
         'tabulength' => \%tabulength_of,
@@ -51,6 +54,7 @@ __PACKAGE__->_factory(
         'shf_div_len' => \%shf_div_len_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'inputgraph' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'max_clust' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'tabulength' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
@@ -63,6 +67,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'inputgraph' => 'inputgraph',
         'max_clust' => 'max_clust',
         'tabulength' => 'tabulength',
@@ -109,6 +114,9 @@ methods:
 
 =over
 
+=item * output
+
+
 =item * inputgraph
 
 
@@ -148,6 +156,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::RNSCRequest
+   output =>  $some_value, # string
    inputgraph =>  $some_value, # string
    max_clust =>  $some_value, # int
    tabulength =>  $some_value, # int

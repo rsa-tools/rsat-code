@@ -89,6 +89,7 @@ Constructor. The following data structure may be passed to new():
 
  {
    request =>  { # MyTypes::RocStatsRequest
+     output =>  $some_value, # string
      inputfile =>  $some_value, # string
      scol =>  $some_value, # int
      lcol =>  $some_value, # int
