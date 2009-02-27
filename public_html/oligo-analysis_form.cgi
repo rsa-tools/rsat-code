@@ -84,6 +84,7 @@ foreach $key (keys %default) {
 print "<center>";
 print "Analysis of oligomer occurrences in nucleotidic of peptidic sequences<P>\n";
 print "</center>";
+print "<b>Reference</b>: van Helden, J., Andre, B. and Collado-Vides, J. (1998). Extracting regulatory sites from the upstream region of yeast genes by computational analysis of oligonucleotide frequencies. J Mol Biol 281, 827-42.<p>";
 print "<hr>";
 
 &ListDefaultParameters() if ($ENV{rsat_echo} >= 2);
