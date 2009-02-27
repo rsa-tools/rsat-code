@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs.cgi,v 1.19 2007/12/07 08:15:45 jvanheld Exp $
+# $Id: gibbs.cgi,v 1.20 2009/02/27 14:53:52 jvanheld Exp $
 #
 # Time-stamp: <2003-05-13 11:30:48 jvanheld>
 #
@@ -27,7 +27,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = "$BIN/gibbs";
 #$convert_matrix_command = "$SCRIPTS/matrix-from-gibbs";
-$convert_matrix_command = "$SCRIPTS/convert-matrix -from gibbs -return counts";
+$convert_matrix_command = "$SCRIPTS/convert-matrix -from gibbs -to tab -return counts";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $tmp_file_name = sprintf "gibbs.%s", &AlphaDate;
 
@@ -133,7 +133,7 @@ sub PipingForm {
 <FORM METHOD="POST" ACTION="patser_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
 <INPUT type="hidden" NAME="matrix_file" VALUE="$matrix_file">
-<INPUT type="hidden" NAME="matrix_format" VALUE="consensus">
+<INPUT type="hidden" NAME="matrix_format" VALUE="tab">
 <INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 <INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
 <INPUT type="submit" value="pattern matching (patser)">
@@ -145,7 +145,7 @@ sub PipingForm {
 <FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
 <INPUT type="hidden" NAME="matrix_file" VALUE="$matrix_file">
-<INPUT type="hidden" NAME="matrix_format" VALUE="gibbs">
+<INPUT type="hidden" NAME="matrix_format" VALUE="tab">
 <INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 <INPUT type="hidden" NAME="sequence_format" VALUE="fasta">
 <INPUT type="submit" value="pattern matching (matrix-scan)">
