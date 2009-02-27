@@ -2,10 +2,8 @@
 
 use strict;
 use SOAP::WSDL; ## Requires version 2.0 or later of SOAP::WSDL
-use lib 'RSATWS_test';
+use lib 'RSATWS';
 use MyInterfaces::RSATWebServices::RSATWSPortType;
-
-warn "\nThis demo script retrieves the start codons for a set of query genes\n\n";
 
 ## WSDL location
 my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
