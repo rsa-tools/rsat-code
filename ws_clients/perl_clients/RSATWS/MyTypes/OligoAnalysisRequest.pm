@@ -127,7 +127,7 @@ MyTypes::OligoAnalysisRequest
 Perl data type class for the XML Schema defined complexType
 OligoAnalysisRequest from the namespace urn:RSATWS.
 
-
+Parameters for the operation oligo_analysis.
 
 
 

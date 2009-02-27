@@ -97,7 +97,7 @@ MyTypes::MatrixDistribRequest
 Perl data type class for the XML Schema defined complexType
 MatrixDistribRequest from the namespace urn:RSATWS.
 
-Parameters for the operation matrix distrib
+Parameters for the operation matrix_distrib
 
 
 

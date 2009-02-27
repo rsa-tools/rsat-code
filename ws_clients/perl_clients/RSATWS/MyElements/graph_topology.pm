@@ -89,6 +89,7 @@ Constructor. The following data structure may be passed to new():
 
  {
    request =>  { # MyTypes::GraphTopologyRequest
+     output =>  $some_value, # string
      informat =>  $some_value, # string
      all =>  $some_value, # int
      return =>  $some_value, # string

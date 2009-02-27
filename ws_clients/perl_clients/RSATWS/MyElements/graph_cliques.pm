@@ -89,6 +89,7 @@ Constructor. The following data structure may be passed to new():
 
  {
    request =>  { # MyTypes::GraphCliquesRequest
+     output =>  $some_value, # string
      informat =>  $some_value, # string
      inputgraph =>  $some_value, # string
      scol =>  $some_value, # int

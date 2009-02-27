@@ -89,6 +89,7 @@ Constructor. The following data structure may be passed to new():
 
  {
    request =>  { # MyTypes::ConvertClassesRequest
+     output =>  $some_value, # string
      informat =>  $some_value, # string
      outformat =>  $some_value, # string
      member_col =>  $some_value, # string

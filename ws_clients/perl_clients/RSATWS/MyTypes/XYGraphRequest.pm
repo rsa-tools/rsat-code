@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %inputFile_of :ATTR(:get<inputFile>);
 my %format_of :ATTR(:get<format>);
 my %title1_of :ATTR(:get<title1>);
@@ -38,7 +39,8 @@ my %xcol_of :ATTR(:get<xcol>);
 my %ycol_of :ATTR(:get<ycol>);
 
 __PACKAGE__->_factory(
-    [ qw(        inputFile
+    [ qw(        output
+        inputFile
         format
         title1
         title2
@@ -60,6 +62,7 @@ __PACKAGE__->_factory(
 
     ) ],
     {
+        'output' => \%output_of,
         'inputFile' => \%inputFile_of,
         'format' => \%format_of,
         'title1' => \%title1_of,
@@ -81,6 +84,7 @@ __PACKAGE__->_factory(
         'ycol' => \%ycol_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'inputFile' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'format' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'title1' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -103,6 +107,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'inputFile' => 'inputFile',
         'format' => 'format',
         'title1' => 'title1',
@@ -158,6 +163,9 @@ The following properties may be accessed using get_PROPERTY / set_PROPERTY
 methods:
 
 =over
+
+=item * output
+
 
 =item * inputFile
 
@@ -228,6 +236,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::XYGraphRequest
+   output =>  $some_value, # string
    inputFile =>  $some_value, # string
    format =>  $some_value, # string
    title1 =>  $some_value, # string

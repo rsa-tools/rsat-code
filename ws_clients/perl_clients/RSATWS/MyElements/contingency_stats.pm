@@ -89,6 +89,7 @@ Constructor. The following data structure may be passed to new():
 
  {
    request =>  { # MyTypes::ContingencyStatsRequest
+     output =>  $some_value, # string
      inputfile =>  $some_value, # string
      decimals =>  $some_value, # int
      return =>  $some_value, # string

@@ -132,7 +132,7 @@ MyTypes::DnaPatternRequest
 Perl data type class for the XML Schema defined complexType
 DnaPatternRequest from the namespace urn:RSATWS.
 
-
+Parameters for the operation dna_pattern.
 
 
 

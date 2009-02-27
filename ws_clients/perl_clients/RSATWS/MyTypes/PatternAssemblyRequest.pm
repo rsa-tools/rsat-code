@@ -112,7 +112,7 @@ MyTypes::PatternAssemblyRequest
 Perl data type class for the XML Schema defined complexType
 PatternAssemblyRequest from the namespace urn:RSATWS.
 
-
+Parameters for the operation pattern_assembly.
 
 
 

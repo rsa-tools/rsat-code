@@ -17,24 +17,29 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %inputgraph_of :ATTR(:get<inputgraph>);
 my %inflation_of :ATTR(:get<inflation>);
 
 __PACKAGE__->_factory(
-    [ qw(        inputgraph
+    [ qw(        output
+        inputgraph
         inflation
 
     ) ],
     {
+        'output' => \%output_of,
         'inputgraph' => \%inputgraph_of,
         'inflation' => \%inflation_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'inputgraph' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'inflation' => 'SOAP::WSDL::XSD::Typelib::Builtin::float',
     },
     {
 
+        'output' => 'output',
         'inputgraph' => 'inputgraph',
         'inflation' => 'inflation',
     }
@@ -74,6 +79,9 @@ methods:
 
 =over
 
+=item * output
+
+
 =item * inputgraph
 
 
@@ -92,6 +100,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::MCLRequest
+   output =>  $some_value, # string
    inputgraph =>  $some_value, # string
    inflation =>  $some_value, # float
  },

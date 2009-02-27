@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %informat_of :ATTR(:get<informat>);
 my %all_of :ATTR(:get<all>);
 my %return_of :ATTR(:get<return>);
@@ -28,7 +29,8 @@ my %scol_of :ATTR(:get<scol>);
 my %tcol_of :ATTR(:get<tcol>);
 
 __PACKAGE__->_factory(
-    [ qw(        informat
+    [ qw(        output
+        informat
         all
         return
         inputgraph
@@ -40,6 +42,7 @@ __PACKAGE__->_factory(
 
     ) ],
     {
+        'output' => \%output_of,
         'informat' => \%informat_of,
         'all' => \%all_of,
         'return' => \%return_of,
@@ -51,6 +54,7 @@ __PACKAGE__->_factory(
         'tcol' => \%tcol_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'informat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'all' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'return' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -63,6 +67,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'informat' => 'informat',
         'all' => 'all',
         'return' => 'return',
@@ -109,6 +114,9 @@ methods:
 
 =over
 
+=item * output
+
+
 =item * informat
 
 
@@ -148,6 +156,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::GraphTopologyRequest
+   output =>  $some_value, # string
    informat =>  $some_value, # string
    all =>  $some_value, # int
    return =>  $some_value, # string

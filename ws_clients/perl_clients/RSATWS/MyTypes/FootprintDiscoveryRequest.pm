@@ -152,7 +152,7 @@ MyTypes::FootprintDiscoveryRequest
 Perl data type class for the XML Schema defined complexType
 FootprintDiscoveryRequest from the namespace urn:RSATWS.
 
-
+Parameters for the operation footprint_discovery.
 
 
 

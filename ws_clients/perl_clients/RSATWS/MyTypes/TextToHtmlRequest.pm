@@ -17,25 +17,29 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %inputfile_of :ATTR(:get<inputfile>);
 my %chunk_of :ATTR(:get<chunk>);
 my %no_sort_of :ATTR(:get<no_sort>);
 my %font_of :ATTR(:get<font>);
 
 __PACKAGE__->_factory(
-    [ qw(        inputfile
+    [ qw(        output
+        inputfile
         chunk
         no_sort
         font
 
     ) ],
     {
+        'output' => \%output_of,
         'inputfile' => \%inputfile_of,
         'chunk' => \%chunk_of,
         'no_sort' => \%no_sort_of,
         'font' => \%font_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'inputfile' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'chunk' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'no_sort' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
@@ -43,6 +47,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'inputfile' => 'inputfile',
         'chunk' => 'chunk',
         'no_sort' => 'no_sort',
@@ -84,6 +89,9 @@ methods:
 
 =over
 
+=item * output
+
+
 =item * inputfile
 
 
@@ -108,6 +116,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::TextToHtmlRequest
+   output =>  $some_value, # string
    inputfile =>  $some_value, # string
    chunk =>  $some_value, # int
    no_sort =>  $some_value, # int

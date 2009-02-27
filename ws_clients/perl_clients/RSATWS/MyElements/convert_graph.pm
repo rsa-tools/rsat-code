@@ -89,6 +89,7 @@ Constructor. The following data structure may be passed to new():
 
  {
    request =>  { # MyTypes::ConvertGraphRequest
+     output =>  $some_value, # string
      informat =>  $some_value, # string
      ecolors =>  $some_value, # string
      outformat =>  $some_value, # string
@@ -104,6 +105,10 @@ Constructor. The following data structure may be passed to new():
      distinct_path =>  $some_value, # int
      layout =>  $some_value, # int
      ewidth =>  $some_value, # int
+     target_xpos_col =>  $some_value, # int
+     target_ypos_col =>  $some_value, # int
+     source_xpos_col =>  $some_value, # int
+     source_ypos_col =>  $some_value, # int
    },
  },
 
