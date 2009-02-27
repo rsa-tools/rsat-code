@@ -89,6 +89,7 @@ Constructor. The following data structure may be passed to new():
 
  {
    request =>  { # MyTypes::CompareGraphsRequest
+     output =>  $some_value, # string
      Qinformat =>  $some_value, # string
      Rinformat =>  $some_value, # string
      outformat =>  $some_value, # string

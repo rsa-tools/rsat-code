@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %informat_of :ATTR(:get<informat>);
 my %inputgraph_of :ATTR(:get<inputgraph>);
 my %clusters_of :ATTR(:get<clusters>);
@@ -27,7 +28,8 @@ my %scol_of :ATTR(:get<scol>);
 my %tcol_of :ATTR(:get<tcol>);
 
 __PACKAGE__->_factory(
-    [ qw(        informat
+    [ qw(        output
+        informat
         inputgraph
         clusters
         stat
@@ -38,6 +40,7 @@ __PACKAGE__->_factory(
 
     ) ],
     {
+        'output' => \%output_of,
         'informat' => \%informat_of,
         'inputgraph' => \%inputgraph_of,
         'clusters' => \%clusters_of,
@@ -48,6 +51,7 @@ __PACKAGE__->_factory(
         'tcol' => \%tcol_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'informat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'inputgraph' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'clusters' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -59,6 +63,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'informat' => 'informat',
         'inputgraph' => 'inputgraph',
         'clusters' => 'clusters',
@@ -104,6 +109,9 @@ methods:
 
 =over
 
+=item * output
+
+
 =item * informat
 
 
@@ -140,6 +148,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::GraphClusterMembershipRequest
+   output =>  $some_value, # string
    informat =>  $some_value, # string
    inputgraph =>  $some_value, # string
    clusters =>  $some_value, # string

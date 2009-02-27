@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %inputfile_of :ATTR(:get<inputfile>);
 my %col1_of :ATTR(:get<col1>);
 my %col2_of :ATTR(:get<col2>);
@@ -24,7 +25,8 @@ my %margin_of :ATTR(:get<margin>);
 my %null_of :ATTR(:get<null>);
 
 __PACKAGE__->_factory(
-    [ qw(        inputfile
+    [ qw(        output
+        inputfile
         col1
         col2
         margin
@@ -32,6 +34,7 @@ __PACKAGE__->_factory(
 
     ) ],
     {
+        'output' => \%output_of,
         'inputfile' => \%inputfile_of,
         'col1' => \%col1_of,
         'col2' => \%col2_of,
@@ -39,6 +42,7 @@ __PACKAGE__->_factory(
         'null' => \%null_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'inputfile' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'col1' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'col2' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
@@ -47,6 +51,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'inputfile' => 'inputfile',
         'col1' => 'col1',
         'col2' => 'col2',
@@ -77,7 +82,7 @@ MyTypes::ContingencyTableRequest
 Perl data type class for the XML Schema defined complexType
 ContingencyTableRequest from the namespace urn:RSATWS.
 
-Parameters for the operation contingency-table.
+Parameters for the operation contingency_table.
 
 
 
@@ -88,6 +93,9 @@ The following properties may be accessed using get_PROPERTY / set_PROPERTY
 methods:
 
 =over
+
+=item * output
+
 
 =item * inputfile
 
@@ -116,6 +124,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::ContingencyTableRequest
+   output =>  $some_value, # string
    inputfile =>  $some_value, # string
    col1 =>  $some_value, # int
    col2 =>  $some_value, # int

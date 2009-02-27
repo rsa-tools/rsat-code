@@ -197,7 +197,7 @@ MyTypes::FeatureMapRequest
 Perl data type class for the XML Schema defined complexType
 FeatureMapRequest from the namespace urn:RSATWS.
 
-
+Parameters for the operation feature_map.
 
 
 

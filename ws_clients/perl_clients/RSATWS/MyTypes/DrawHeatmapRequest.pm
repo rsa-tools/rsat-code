@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %outformat_of :ATTR(:get<outformat>);
 my %html_of :ATTR(:get<html>);
 my %inputfile_of :ATTR(:get<inputfile>);
@@ -29,7 +30,8 @@ my %max_of :ATTR(:get<max>);
 my %gradient_of :ATTR(:get<gradient>);
 
 __PACKAGE__->_factory(
-    [ qw(        outformat
+    [ qw(        output
+        outformat
         html
         inputfile
         row_names
@@ -42,6 +44,7 @@ __PACKAGE__->_factory(
 
     ) ],
     {
+        'output' => \%output_of,
         'outformat' => \%outformat_of,
         'html' => \%html_of,
         'inputfile' => \%inputfile_of,
@@ -54,6 +57,7 @@ __PACKAGE__->_factory(
         'gradient' => \%gradient_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'outformat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'html' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'inputfile' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -67,6 +71,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'outformat' => 'outformat',
         'html' => 'html',
         'inputfile' => 'inputfile',
@@ -114,6 +119,9 @@ methods:
 
 =over
 
+=item * output
+
+
 =item * outformat
 
 
@@ -156,6 +164,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::DrawHeatmapRequest
+   output =>  $some_value, # string
    outformat =>  $some_value, # string
    html =>  $some_value, # int
    inputfile =>  $some_value, # string

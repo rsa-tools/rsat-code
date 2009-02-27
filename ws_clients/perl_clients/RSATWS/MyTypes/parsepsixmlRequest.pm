@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %inputfile_of :ATTR(:get<inputfile>);
 my %channels_of :ATTR(:get<channels>);
 my %interactor_type_of :ATTR(:get<interactor_type>);
@@ -24,7 +25,8 @@ my %uth_of :ATTR(:get<uth>);
 my %lth_of :ATTR(:get<lth>);
 
 __PACKAGE__->_factory(
-    [ qw(        inputfile
+    [ qw(        output
+        inputfile
         channels
         interactor_type
         uth
@@ -32,6 +34,7 @@ __PACKAGE__->_factory(
 
     ) ],
     {
+        'output' => \%output_of,
         'inputfile' => \%inputfile_of,
         'channels' => \%channels_of,
         'interactor_type' => \%interactor_type_of,
@@ -39,6 +42,7 @@ __PACKAGE__->_factory(
         'lth' => \%lth_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'inputfile' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'channels' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'interactor_type' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -47,6 +51,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'inputfile' => 'inputfile',
         'channels' => 'channels',
         'interactor_type' => 'interactor_type',
@@ -89,6 +94,9 @@ methods:
 
 =over
 
+=item * output
+
+
 =item * inputfile
 
 
@@ -116,6 +124,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::parsepsixmlRequest
+   output =>  $some_value, # string
    inputfile =>  $some_value, # string
    channels =>  $some_value, # string
    interactor_type =>  $some_value, # string

@@ -89,6 +89,7 @@ Constructor. The following data structure may be passed to new():
 
  {
    request =>  { # MyTypes::ClassFreqRequest
+     output =>  $some_value, # string
      inputFile =>  $some_value, # string
      classinterval =>  $some_value, # string
      col =>  $some_value, # string

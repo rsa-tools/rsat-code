@@ -110,6 +110,7 @@ Constructor. The following data structure may be passed to new():
      markov =>  $some_value, # int
      background_pseudo =>  $some_value, # float
      return_fields =>  $some_value, # string
+     sort_distrib =>  $some_value, # int
      lth =>  $some_value, # string
      uth =>  $some_value, # string
      str =>  $some_value, # int

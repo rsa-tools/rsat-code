@@ -89,6 +89,7 @@ Constructor. The following data structure may be passed to new():
 
  {
    request =>  { # MyTypes::RNSCRequest
+     output =>  $some_value, # string
      inputgraph =>  $some_value, # string
      max_clust =>  $some_value, # int
      tabulength =>  $some_value, # int

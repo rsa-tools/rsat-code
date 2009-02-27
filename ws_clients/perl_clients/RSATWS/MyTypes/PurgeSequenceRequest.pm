@@ -97,7 +97,7 @@ MyTypes::PurgeSequenceRequest
 Perl data type class for the XML Schema defined complexType
 PurgeSequenceRequest from the namespace urn:RSATWS.
 
-
+Parameters for the operation purge_sequence.
 
 
 

@@ -17,6 +17,7 @@ Class::Std::initialize();
 
 { # BLOCK to scope variables
 
+my %output_of :ATTR(:get<output>);
 my %informat_of :ATTR(:get<informat>);
 my %outformat_of :ATTR(:get<outformat>);
 my %ewidth_of :ATTR(:get<ewidth>);
@@ -30,7 +31,8 @@ my %tccol_of :ATTR(:get<tccol>);
 my %layout_of :ATTR(:get<layout>);
 
 __PACKAGE__->_factory(
-    [ qw(        informat
+    [ qw(        output
+        informat
         outformat
         ewidth
         inputgraph
@@ -44,6 +46,7 @@ __PACKAGE__->_factory(
 
     ) ],
     {
+        'output' => \%output_of,
         'informat' => \%informat_of,
         'outformat' => \%outformat_of,
         'ewidth' => \%ewidth_of,
@@ -57,6 +60,7 @@ __PACKAGE__->_factory(
         'layout' => \%layout_of,
     },
     {
+        'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'informat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'outformat' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'ewidth' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
@@ -71,6 +75,7 @@ __PACKAGE__->_factory(
     },
     {
 
+        'output' => 'output',
         'informat' => 'informat',
         'outformat' => 'outformat',
         'ewidth' => 'ewidth',
@@ -119,6 +124,9 @@ methods:
 
 =over
 
+=item * output
+
+
 =item * informat
 
 
@@ -164,6 +172,7 @@ methods:
 Constructor. The following data structure may be passed to new():
 
  { # MyTypes::DisplayGraphRequest
+   output =>  $some_value, # string
    informat =>  $some_value, # string
    outformat =>  $some_value, # string
    ewidth =>  $some_value, # int
