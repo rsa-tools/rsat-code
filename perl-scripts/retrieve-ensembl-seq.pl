@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.56 2008/12/12 15:18:57 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.57 2009/03/02 16:48:46 rsat Exp $
 #
 # Time-stamp
 #
@@ -80,7 +80,7 @@ package main;
   local $ensembl_user = "anonymous";
   local $dbname = '';
   local $org = '';
-  local $dbversion = '';
+  local $dbversion = '52';
   local $port = '';
 
   ################################################################
@@ -1440,7 +1440,8 @@ sub GetSequence {
 	  $sth->execute();
 	  my $previous_org = "init";
 	  while (my $ref = $sth->fetchrow_hashref()) {
-	      if ($ref->{'Database'} =~ /_core_\d+/) {
+#	      if ($ref->{'Database'} =~ /_core_\d+/) {
+	      if ($ref->{'Database'} =~ /_core_$dbversion/) {
 		  $ref->{'Database'} =~ s/_core_.+//;
 		  if ($ref->{'Database'} ne $previous_org) {
 		      push @species, $ref->{'Database'};
