@@ -289,93 +289,238 @@ print $query->end_form;
 
 ### data for the demo 
 print $query->start_multipart_form(-action=>"feature-map_form.cgi");
-$demo_data = "PHO5	dnapat	acgtgc|gcacgt	R	438	443	ACGTGC	4.37
-PHO8	dnapat	acgtgc|gcacgt	D	268	273	ACGTGC	4.37
-PHO11	dnapat	acgtgc|gcacgt	R	586	591	ACGTGC	4.37
-PHO81	dnapat	acgtgc|gcacgt	D	458	463	ACGTGC	4.37
-PHO81	dnapat	acgtgc|gcacgt	D	794	799	ACGTGC	4.37
-PHO81	dnapat	acgtgc|gcacgt	R	456	461	ACGTGC	4.37
-PHO84	dnapat	acgtgc|gcacgt	D	242	247	ACGTGC	4.37
-PHO84	dnapat	acgtgc|gcacgt	D	540	545	ACGTGC	4.37
-PHO84	dnapat	acgtgc|gcacgt	R	213	218	ACGTGC	4.37
-PHO84	dnapat	acgtgc|gcacgt	R	386	391	ACGTGC	4.37
-PHO5	dnapat	acgtgg|ccacgt	D	549	554	ACGTGG	2.84
-PHO8	dnapat	acgtgg|ccacgt	R	266	271	ACGTGG	2.84
-PHO11	dnapat	acgtgg|ccacgt	D	519	524	ACGTGG	2.84
-PHO11	dnapat	acgtgg|ccacgt	R	384	389	ACGTGG	2.84
-PHO81	dnapat	acgtgg|ccacgt	D	86	91	ACGTGG	2.84
-PHO84	dnapat	acgtgg|ccacgt	D	366	371	ACGTGG	2.84
-PHO84	dnapat	acgtgg|ccacgt	D	388	393	ACGTGG	2.84
-PHO84	dnapat	acgtgg|ccacgt	R	364	369	ACGTGG	2.84
-PHO5	dnapat	cgcacg|cgtgcg	D	218	223	CGCACG	1.50
-PHO8	dnapat	cgcacg|cgtgcg	R	73	78	CGCACG	1.50
-PHO11	dnapat	cgcacg|cgtgcg	D	585	590	CGCACG	1.50
-PHO81	dnapat	cgcacg|cgtgcg	R	459	464	CGCACG	1.50
-PHO84	dnapat	cgcacg|cgtgcg	D	212	217	CGCACG	1.50
-PHO84	dnapat	cgcacg|cgtgcg	R	541	546	CGCACG	1.50
-PHO5	dnapat	ctgcac|gtgcag	D	29	34	CTGCAC	1.77
-PHO5	dnapat	ctgcac|gtgcag	D	411	416	CTGCAC	1.77
-PHO5	dnapat	ctgcac|gtgcag	D	461	466	CTGCAC	1.77
-PHO8	dnapat	ctgcac|gtgcag	R	270	275	CTGCAC	1.77
-PHO8	dnapat	ctgcac|gtgcag	R	390	395	CTGCAC	1.77
-PHO81	dnapat	ctgcac|gtgcag	D	671	676	CTGCAC	1.77
-PHO84	dnapat	ctgcac|gtgcag	R	244	249	CTGCAC	1.77
-PHO84	dnapat	ctgcac|gtgcag	R	457	462	CTGCAC	1.77
-PHO5	dnapat	tgccaa|ttggca	D	469	474	TGCCAA	2.57
-PHO5	dnapat	tgccaa|ttggca	D	610	615	TGCCAA	2.57
-PHO5	dnapat	tgccaa|ttggca	R	36	41	TGCCAA	2.57
-PHO5	dnapat	tgccaa|ttggca	R	538	543	TGCCAA	2.57
-PHO5	dnapat	tgccaa|ttggca	R	638	643	TGCCAA	2.57
-PHO11	dnapat	tgccaa|ttggca	D	597	602	TGCCAA	2.57
-PHO11	dnapat	tgccaa|ttggca	D	663	668	TGCCAA	2.57
-PHO81	dnapat	tgccaa|ttggca	R	287	292	TGCCAA	2.57
-PHO84	dnapat	tgccaa|ttggca	D	184	189	TGCCAA	2.57
-PHO84	dnapat	tgccaa|ttggca	D	348	353	TGCCAA	2.57
-PHO84	dnapat	tgccaa|ttggca	D	634	639	TGCCAA	2.57
-PHO84	dnapat	tgccaa|ttggca	R	598	603	TGCCAA	2.57
-PHO5	dnapat	cacgtg|cacgtg	D	548	553	CACGTG	1.79
-PHO5	dnapat	cacgtg|cacgtg	R	548	553	CACGTG	1.79
-PHO8	dnapat	cacgtg|cacgtg	D	267	272	CACGTG	1.79
-PHO8	dnapat	cacgtg|cacgtg	R	267	272	CACGTG	1.79
-PHO11	dnapat	cacgtg|cacgtg	D	518	523	CACGTG	1.79
-PHO11	dnapat	cacgtg|cacgtg	R	518	523	CACGTG	1.79
-PHO81	dnapat	cacgtg|cacgtg	D	457	462	CACGTG	1.79
-PHO81	dnapat	cacgtg|cacgtg	R	457	462	CACGTG	1.79
-PHO84	dnapat	cacgtg|cacgtg	D	365	370	CACGTG	1.79
-PHO84	dnapat	cacgtg|cacgtg	D	387	392	CACGTG	1.79
-PHO84	dnapat	cacgtg|cacgtg	R	365	370	CACGTG	1.79
-PHO84	dnapat	cacgtg|cacgtg	R	387	392	CACGTG	1.79
-PHO5	dnapat	cccacg|cgtggg	D	197	202	CCCACG	0.45
-PHO5	dnapat	cccacg|cgtggg	R	550	555	CCCACG	0.45
-PHO11	dnapat	cccacg|cgtggg	R	300	305	CCCACG	0.45
-PHO11	dnapat	cccacg|cgtggg	R	520	525	CCCACG	0.45
-PHO84	dnapat	cccacg|cgtggg	R	389	394	CCCACG	0.45
-PHO5	dnapat	aacgtg|cacgtt	D	77	82	AACGTG	0.22
-PHO5	dnapat	aacgtg|cacgtt	R	439	444	AACGTG	0.22
-PHO8	dnapat	aacgtg|cacgtt	D	421	426	AACGTG	0.22
-PHO11	dnapat	aacgtg|cacgtt	R	385	390	AACGTG	0.22
-PHO81	dnapat	aacgtg|cacgtt	D	793	798	AACGTG	0.22
-PHO84	dnapat	aacgtg|cacgtt	D	539	544	AACGTG	0.22
-PHO84	dnapat	aacgtg|cacgtt	R	214	219	AACGTG	0.22
-PHO5	dnapat	aaacgt|acgttt	D	76	81	AAACGT	0.79
-PHO5	dnapat	aaacgt|acgttt	D	695	700	AAACGT	0.79
-PHO5	dnapat	aaacgt|acgttt	R	440	445	AAACGT	0.79
-PHO8	dnapat	aaacgt|acgttt	D	420	425	AAACGT	0.79
-PHO8	dnapat	aaacgt|acgttt	D	700	705	AAACGT	0.79
-PHO8	dnapat	aaacgt|acgttt	R	702	707	AAACGT	0.79
-PHO11	dnapat	aaacgt|acgttt	D	672	677	AAACGT	0.79
-PHO11	dnapat	aaacgt|acgttt	R	386	391	AAACGT	0.79
-PHO81	dnapat	aaacgt|acgttt	D	792	797	AAACGT	0.79
-PHO81	dnapat	aaacgt|acgttt	R	54	59	AAACGT	0.79
-PHO84	dnapat	aaacgt|acgttt	D	538	543	AAACGT	0.79
+$demo_data = "MET8		SEQ_START	DR	-463	-463	-	0.00
+MET8		SEQ_END	DR	-1	-1	-	0.00
+MET8		cacgtg|cacgtg	DR	-209	-204	atttCACGTGttat	9.02
+MET8		acgtga|tcacgt	R	-210	-205	taacACGTGAaatt	4.86
+MET8		aactgt|acagtt	R	-270	-265	acggAACTGTttga	0.64
+MET8		agtcat|atgact	R	-151	-146	ccgtAGTCATcgga	0.60
+MET8		tagtca|tgacta	DR	-363	-358	aaccTAGTCAattg	0.47
+MET8		tagtca|tgacta	R	-150	-145	cccgTAGTCAtcgg	0.47
+MET32		SEQ_START	DR	-547	-547	-	0.00
+MET32		SEQ_END	DR	-1	-1	-	0.00
+MET32		cacgtg|cacgtg	DR	-378	-373	catgCACGTGacat	9.02
+MET32		acgtga|tcacgt	DR	-377	-372	atgcACGTGAcatt	4.86
+MET32		ccacag|ctgtgg	DR	-326	-321	tacgCCACAGttta	3.69
+MET32		gccaca|tgtggc	DR	-327	-322	gtacGCCACAgttt	3.41
+MET32		actgtg|cacagt	R	-325	-320	ataaACTGTGgcgt	2.69
+MET32		cgtgca|tgcacg	R	-380	-375	gtcaCGTGCAtgtt	1.43
+MET32		aactgt|acagtt	R	-324	-319	tataAACTGTggcg	0.64
+MET32		tagtca|tgacta	DR	-527	-522	atacTAGTCAaaga	0.47
+MET32		cgtgac|gtcacg	DR	-376	-371	tgcaCGTGACattt	0.30
+MET32		acgtgc|gcacgt	R	-379	-374	tgtcACGTGCatgt	0.11
+MET18		SEQ_START	DR	-568	-568	-	0.00
+MET18		SEQ_END	DR	-1	-1	-	0.00
+MET18		acgtga|tcacgt	R	-490	-485	taggACGTGActgg	4.86
+MET18		gccaca|tgtggc	R	-392	-387	gacaGCCACAcagg	3.41
+MET18		cgtgca|tgcacg	DR	-101	-96	tttaCGTGCAatga	1.43
+MET18		aactgt|acagtt	R	-415	-410	atagAACTGTagaa	0.64
+MET18		agccac|gtggct	R	-391	-386	cgacAGCCACacag	0.34
+MET18		cgtgac|gtcacg	R	-491	-486	aggaCGTGACtggt	0.30
+MET18		acgtgc|gcacgt	DR	-102	-97	ttttACGTGCaatg	0.11
+MET18		gactca|tgagtc	R	-278	-273	ctttGACTCAttga	0.05
+MET30		SEQ_START	DR	-177	-177	-	0.00
+MET30		SEQ_END	DR	-1	-1	-	0.00
+MET30		cacgtg|cacgtg	DR	-177	-172	CACGTGatcg	9.02
+MET30		acgtga|tcacgt	DR	-176	-171	cACGTGAtcgg	4.86
+MET30		ccacag|ctgtgg	DR	-162	-157	gaagCCACAGtttg	3.69
+MET30		gccaca|tgtggc	DR	-163	-158	ggaaGCCACAgttt	3.41
+MET30		actgtg|cacagt	R	-161	-156	gcaaACTGTGgctt	2.69
+MET30		aactgt|acagtt	R	-160	-155	cgcaAACTGTggct	0.64
+MET30		agccac|gtggct	DR	-164	-159	gggaAGCCACagtt	0.34
+MET30		cgcgca|tgcgcg	R	-154	-149	tctcCGCGCAaact	0.26
+MET28		SEQ_START	DR	-489	-489	-	0.00
+MET28		SEQ_END	DR	-1	-1	-	0.00
+MET28		cacgtg|cacgtg	DR	-219	-214	agtgCACGTGactt	9.02
+MET28		acgtga|tcacgt	DR	-218	-213	gtgcACGTGActta	4.86
+MET28		ccacag|ctgtgg	DR	-284	-279	gatgCCACAGttgt	3.69
+MET28		ccacag|ctgtgg	DR	-153	-148	aacaCCACAGtttt	3.69
+MET28		gccaca|tgtggc	DR	-285	-280	agatGCCACAgttg	3.41
+MET28		actgtg|cacagt	DR	-488	-483	gACTGTGataa	2.69
+MET28		actgtg|cacagt	R	-283	-278	cacaACTGTGgcat	2.69
+MET28		actgtg|cacagt	R	-152	-147	caaaACTGTGgtgt	2.69
+MET28		cgtgca|tgcacg	DR	-389	-384	ctgcCGTGCAaaaa	1.43
+MET28		cgtgca|tgcacg	R	-221	-216	gtcaCGTGCActca	1.43
+MET28		aactgt|acagtt	R	-282	-277	ccacAACTGTggca	0.64
+MET28		aactgt|acagtt	R	-151	-146	ccaaAACTGTggtg	0.64
+MET28		agtcat|atgact	R	-82	-77	tcttAGTCATtggc	0.60
+MET28		tagtca|tgacta	R	-81	-76	ttctTAGTCAttgg	0.47
+MET28		cgtgac|gtcacg	DR	-217	-212	tgcaCGTGACttat	0.30
+MET28		acgtgc|gcacgt	R	-220	-215	agtcACGTGCactc	0.11
+MET28		gactca|tgagtc	R	-103	-98	ccttGACTCAcgcc	0.05
+MET6		SEQ_START	DR	-687	-687	-	0.00
+MET6		SEQ_END	DR	-1	-1	-	0.00
+MET6		cacgtg|cacgtg	DR	-533	-528	acatCACGTGcaca	9.02
+MET6		cacgtg|cacgtg	DR	-495	-490	atttCACGTGactt	9.02
+MET6		acgtga|tcacgt	DR	-494	-489	tttcACGTGActta	4.86
+MET6		acgtga|tcacgt	R	-534	-529	gtgcACGTGAtgtg	4.86
+MET6		acgtga|tcacgt	R	-496	-491	agtcACGTGAaata	4.86
+MET6		ccacag|ctgtgg	DR	-650	-645	tttcCCACAGccat	3.69
+MET6		ccacag|ctgtgg	DR	-510	-505	aaagCCACAGgaaa	3.69
+MET6		ccacag|ctgtgg	R	-304	-299	actaCCACAGtttt	3.69
+MET6		gccaca|tgtggc	DR	-540	-535	tcacGCCACAtcac	3.41
+MET6		gccaca|tgtggc	DR	-511	-506	aaaaGCCACAggaa	3.41
+MET6		actgtg|cacagt	DR	-305	-300	caaaACTGTGgtag	2.69
+MET6		actgtg|cacagt	DR	-269	-264	gagaACTGTGaatg	2.69
+MET6		cgtgca|tgcacg	DR	-531	-526	atcaCGTGCAcatt	1.43
+MET6		cgtgca|tgcacg	DR	-381	-376	cgaaCGTGCAaaag	1.43
+MET6		aactgt|acagtt	DR	-306	-301	gcaaAACTGTggta	0.64
+MET6		aactgt|acagtt	DR	-270	-265	tgagAACTGTgaat	0.64
+MET6		agtcat|atgact	DR	-353	-348	ctagAGTCATcgca	0.60
+MET6		agtcat|atgact	DR	-344	-339	tcgcAGTCATggca	0.60
+MET6		agtcat|atgact	DR	-297	-292	tggtAGTCATagct	0.60
+MET6		tagtca|tgacta	DR	-298	-293	gtggTAGTCAtagc	0.47
+MET6		agccac|gtggct	DR	-512	-507	taaaAGCCACagga	0.34
+MET6		cgtgac|gtcacg	DR	-493	-488	ttcaCGTGACttac	0.30
+MET6		acgtgc|gcacgt	DR	-532	-527	catcACGTGCacat	0.11
+MET6		acgtgc|gcacgt	DR	-382	-377	gcgaACGTGCaaaa	0.11
+MET10		SEQ_START	DR	-338	-338	-	0.00
+MET10		SEQ_END	DR	-1	-1	-	0.00
+MET10		cacgtg|cacgtg	DR	-249	-244	acacCACGTGagct	9.02
+MET10		cacgtg|cacgtg	DR	-231	-226	gaagCACGTGacca	9.02
+MET10		acgtga|tcacgt	DR	-248	-243	caccACGTGAgctt	4.86
+MET10		acgtga|tcacgt	DR	-230	-225	aagcACGTGAccac	4.86
+MET10		ccacag|ctgtgg	DR	-212	-207	caccCCACAGgtgt	3.69
+MET10		gccaca|tgtggc	R	-205	-200	aaaaGCCACAcctg	3.41
+MET10		agtcat|atgact	DR	-150	-145	ccatAGTCATcttc	0.60
+MET10		tagtca|tgacta	DR	-151	-146	cccaTAGTCAtctt	0.47
+MET10		agccac|gtggct	R	-204	-199	aaaaAGCCACacct	0.34
+MET10		cgtgac|gtcacg	DR	-229	-224	agcaCGTGACcaca	0.30
+MET10		acgtgc|gcacgt	R	-232	-227	ggtcACGTGCttct	0.11
+MET10		gactca|tgagtc	DR	-179	-174	aaaaGACTCAttca	0.05
+MET13		SEQ_START	DR	-380	-380	-	0.00
+MET13		SEQ_END	DR	-1	-1	-	0.00
+MET13		ccacag|ctgtgg	DR	-115	-110	aatgCCACAGcttg	3.69
+MET13		ccacag|ctgtgg	DR	-30	-25	accaCCACAGttac	3.69
+MET13		gccaca|tgtggc	DR	-116	-111	taatGCCACAgctt	3.41
+MET13		actgtg|cacagt	DR	-277	-272	atagACTGTGaata	2.69
+MET13		actgtg|cacagt	R	-29	-24	agtaACTGTGgtgg	2.69
+MET13		aactgt|acagtt	R	-28	-23	tagtAACTGTggtg	0.64
+MET13		agtcat|atgact	DR	-302	-297	gtttAGTCATtcta	0.60
+MET13		tagtca|tgacta	DR	-303	-298	cgttTAGTCAttct	0.47
+MET13		gactca|tgagtc	DR	-251	-246	ctttGACTCAaatt	0.05
+MET3		SEQ_START	DR	-800	-800	-	0.00
+MET3		SEQ_END	DR	-1	-1	-	0.00
+MET3		cacgtg|cacgtg	DR	-377	-372	aggtCACGTGacca	9.02
+MET3		cacgtg|cacgtg	DR	-360	-355	aagtCACGTGtaat	9.02
+MET3		acgtga|tcacgt	DR	-376	-371	ggtcACGTGAccag	4.86
+MET3		acgtga|tcacgt	R	-378	-373	ggtcACGTGAcctt	4.86
+MET3		acgtga|tcacgt	R	-361	-356	ttacACGTGActtt	4.86
+MET3		ccacag|ctgtgg	DR	-515	-510	gggtCCACAGatat	3.69
+MET3		ccacag|ctgtgg	DR	-253	-248	aaagCCACAGtttt	3.69
+MET3		gccaca|tgtggc	DR	-254	-249	caaaGCCACAgttt	3.41
+MET3		actgtg|cacagt	R	-252	-247	taaaACTGTGgctt	2.69
+MET3		cgtgca|tgcacg	DR	-318	-313	ctgtCGTGCAcact	1.43
+MET3		aactgt|acagtt	R	-251	-246	gtaaAACTGTggct	0.64
+MET3		aactgt|acagtt	R	-78	-73	tcacAACTGTtacg	0.64
+MET3		agccac|gtggct	DR	-255	-250	acaaAGCCACagtt	0.34
+MET3		cgtgac|gtcacg	DR	-375	-370	gtcaCGTGACcaga	0.30
+MET3		cgtgac|gtcacg	R	-379	-374	gtcaCGTGACcttt	0.30
+MET3		cgtgac|gtcacg	R	-362	-357	tacaCGTGACtttt	0.30
+MET3		cgcgca|tgcgcg	DR	-412	-407	ccaaCGCGCAtcct	0.26
+MET14		SEQ_START	DR	-800	-800	-	0.00
+MET14		SEQ_END	DR	-1	-1	-	0.00
+MET14		cacgtg|cacgtg	DR	-228	-223	atttCACGTGatca	9.02
+MET14		acgtga|tcacgt	DR	-227	-222	tttcACGTGAtcaa	4.86
+MET14		acgtga|tcacgt	R	-229	-224	gatcACGTGAaatt	4.86
+MET14		gccaca|tgtggc	R	-192	-187	cattGCCACAtttt	3.41
+MET14		cgtgca|tgcacg	R	-268	-263	aaagCGTGCAgcta	1.43
+MET14		aactgt|acagtt	R	-336	-331	aagcAACTGTattc	0.64
+MET14		agtcat|atgact	R	-159	-154	ttgaAGTCATattg	0.60
+MET14		agccac|gtggct	DR	-207	-202	tacaAGCCACctca	0.34
+MET14		gactca|tgagtc	DR	-167	-162	gaacGACTCAatat	0.05
+MET1		SEQ_START	DR	-702	-702	-	0.00
+MET1		SEQ_END	DR	-1	-1	-	0.00
+MET1		cacgtg|cacgtg	DR	-268	-263	tatgCACGTGacat	9.02
+MET1		acgtga|tcacgt	DR	-267	-262	atgcACGTGAcatt	4.86
+MET1		actgtg|cacagt	DR	-224	-219	ataaACTGTGaacg	2.69
+MET1		cgtgca|tgcacg	R	-270	-265	gtcaCGTGCAtaat	1.43
+MET1		aactgt|acagtt	DR	-406	-401	tcgcAACTGTagaa	0.64
+MET1		aactgt|acagtt	DR	-225	-220	aataAACTGTgaac	0.64
+MET1		cgtgac|gtcacg	DR	-266	-261	tgcaCGTGACatta	0.30
+MET1		acgtgc|gcacgt	R	-269	-264	tgtcACGTGCataa	0.11
+MET1		gactca|tgagtc	DR	-214	-209	aacgGACTCAtaat	0.05
+MET1		gactca|tgagtc	R	-428	-423	gttgGACTCAgaga	0.05
+MET17		SEQ_START	DR	-800	-800	-	0.00
+MET17		SEQ_END	DR	-1	-1	-	0.00
+MET17		cacgtg|cacgtg	DR	-300	-295	atggCACGTGaagc	9.02
+MET17		acgtga|tcacgt	DR	-299	-294	tggcACGTGAagct	4.86
+MET17		ccacag|ctgtgg	R	-274	-269	accaCCACAGttcc	3.69
+MET17		actgtg|cacagt	DR	-275	-270	gggaACTGTGgtgg	2.69
+MET17		actgtg|cacagt	DR	-219	-214	gaaaACTGTGtaac	2.69
+MET17		aactgt|acagtt	DR	-276	-271	ggggAACTGTggtg	0.64
+MET17		aactgt|acagtt	DR	-220	-215	tgaaAACTGTgtaa	0.64
+MET17		agtcat|atgact	R	-645	-640	aaatAGTCATctaa	0.60
+MET17		agtcat|atgact	R	-258	-253	aattAGTCATttgc	0.60
+MET17		tagtca|tgacta	DR	-244	-239	aagtTAGTCAaggc	0.47
+MET17		tagtca|tgacta	R	-644	-639	gaaaTAGTCAtcta	0.47
+MET17		tagtca|tgacta	R	-257	-252	taatTAGTCAtttg	0.47
+MET17		acgtgc|gcacgt	R	-301	-296	cttcACGTGCcatt	0.11
+MET2		SEQ_START	DR	-481	-481	-	0.00
+MET2		SEQ_END	DR	-1	-1	-	0.00
+MET2		cacgtg|cacgtg	DR	-353	-348	ttttCACGTGatgc	9.02
+MET2		acgtga|tcacgt	DR	-352	-347	tttcACGTGAtgcg	4.86
+MET2		acgtga|tcacgt	R	-354	-349	catcACGTGAaaat	4.86
+MET2		gccaca|tgtggc	DR	-326	-321	aggcGCCACAcatt	3.41
+MET2		agtcat|atgact	DR	-454	-449	cactAGTCATgaaa	0.60
+MET2		agtcat|atgact	DR	-274	-269	actaAGTCATgtta	0.60
+MET2		tagtca|tgacta	DR	-455	-450	gcacTAGTCAtgaa	0.47
+MET2		tagtca|tgacta	DR	-76	-71	ttttTAGTCAcagg	0.47
+MET2		agccac|gtggct	R	-378	-373	ggggAGCCACtaac	0.34
+MET4		SEQ_START	DR	-800	-800	-	0.00
+MET4		SEQ_END	DR	-1	-1	-	0.00
+MET4		cacgtg|cacgtg	DR	-330	-325	taatCACGTGcgcg	9.02
+MET4		acgtga|tcacgt	R	-331	-326	gcgcACGTGAttaa	4.86
+MET4		gccaca|tgtggc	DR	-264	-259	tcggGCCACAcaag	3.41
+MET4		actgtg|cacagt	DR	-10	-5	ttccACTGTGaacg	2.69
+MET4		cgtgca|tgcacg	R	-695	-690	tgtgCGTGCAtgta	1.43
+MET4		cgtgca|tgcacg	R	-681	-676	tgcgCGTGCAtgta	1.43
+MET4		aactgt|acagtt	DR	-76	-71	cgtcAACTGTttag	0.64
+MET4		agtcat|atgact	R	-566	-561	ggttAGTCATcgct	0.60
+MET4		tagtca|tgacta	DR	-111	-106	atatTAGTCAactc	0.47
+MET4		tagtca|tgacta	R	-565	-560	aggtTAGTCAtcgc	0.47
+MET4		cgcgca|tgcgcg	DR	-677	-672	tgcaCGCGCAtgac	0.26
+MET4		cgcgca|tgcgcg	R	-583	-578	ccgaCGCGCAggaa	0.26
+MET4		cgcgca|tgcgcg	R	-326	-321	taccCGCGCAcgtg	0.26
+MET4		acgtgc|gcacgt	DR	-329	-324	aatcACGTGCgcgg	0.11
+MET22		SEQ_START	DR	-215	-215	-	0.00
+MET22		SEQ_END	DR	-1	-1	-	0.00
+MET22		cacgtg|cacgtg	DR	-135	-130	atatCACGTGttgc	9.02
+MET22		acgtga|tcacgt	R	-136	-131	caacACGTGAtatt	4.86
+MET22		gccaca|tgtggc	DR	-92	-87	ccatGCCACAtata	3.41
+MET22		agtcat|atgact	R	-155	-150	tctgAGTCATtcgc	0.60
+MET22		cgcgca|tgcgcg	R	-162	-157	cattCGCGCAtttc	0.26
+MET22		gactca|tgagtc	DR	-153	-148	gaatGACTCAgacg	0.05
+MET7		SEQ_START	DR	-250	-250	-	0.00
+MET7		SEQ_END	DR	-1	-1	-	0.00
+MET7		cgcgca|tgcgcg	DR	-190	-185	tcgtCGCGCAtatt	0.26
+MET31		SEQ_START	DR	-161	-161	-	0.00
+MET31		SEQ_END	DR	-1	-1	-	0.00
+MET31		actgtg|cacagt	R	-25	-20	atcgACTGTGtata	2.69
+MET12		SEQ_START	DR	-384	-384	-	0.00
+MET12		SEQ_END	DR	-1	-1	-	0.00
+MET12		ccacag|ctgtgg	R	-214	-209	atagCCACAGtcaa	3.69
+MET12		gccaca|tgtggc	R	-213	-208	tataGCCACAgtca	3.41
+MET12		actgtg|cacagt	DR	-215	-210	attgACTGTGgcta	2.69
+MET12		agccac|gtggct	R	-212	-207	ctatAGCCACagtc	0.34
+MET16		SEQ_START	DR	-443	-443	-	0.00
+MET16		SEQ_END	DR	-1	-1	-	0.00
+MET16		cacgtg|cacgtg	DR	-178	-173	atttCACGTGgcta	9.02
+MET16		acgtga|tcacgt	R	-179	-174	agccACGTGAaatg	4.86
+MET16		gccaca|tgtggc	DR	-157	-152	aaaaGCCACAacat	3.41
+MET16		agtcat|atgact	R	-149	-144	gctgAGTCATgttg	0.60
+MET16		agccac|gtggct	DR	-158	-153	gaaaAGCCACaaca	0.34
+MET16		agccac|gtggct	R	-175	-170	tactAGCCACgtga	0.34
+MET16		cgcgca|tgcgcg	R	-361	-356	tcagCGCGCAttaa	0.26
+MET16		gactca|tgagtc	DR	-147	-142	acatGACTCAgcaa	0.05
 ";
 print "<TD><B>";
 print $query->hidden(-name=>'data',-default=>$demo_data);
-print $query->hidden(-name=>'title',-default=>'Motifs discovered in upstream sequences of 5 PHO genes');
+print $query->hidden(-name=>'title',-default=>'Motifs discovered in upstream sequences of 19 MET genes');
 print $query->hidden(-name=>'scalestep',-default=>'50');
-print $query->hidden(-name=>'from',-default=>'0');
-print $query->hidden(-name=>'to',-default=>'801');
-print $query->hidden(-name=>'origin',-default=>'801');
+print $query->hidden(-name=>'from',-default=>'-800');
+print $query->hidden(-name=>'to',-default=>'0');
+print $query->hidden(-name=>'origin',-default=>'0');
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
