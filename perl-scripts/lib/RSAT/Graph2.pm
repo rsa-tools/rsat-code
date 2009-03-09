@@ -1526,7 +1526,7 @@ sub read_from_table {
 sub read_from_paths {
 
     my ($self,$inputfile, $path_col, $distinct_path) = @_;
-
+    $path_col = 7;
     &RSAT::message::TimeWarn("Loading path(s) from tab file", $inputfile) if ($main::verbose >= 2);
     ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
     my $weight = 0;
@@ -1552,7 +1552,7 @@ sub read_from_paths {
       chomp ($line);
       my @linecp = split "\t", $line;
       my $path_arrows = $linecp[$path_col-1];
-      &RSAT::error::FatalError("\t","Column $path_col does not column any path in a valid format") if ($path_arrows !~ /\-\>/);
+      &RSAT::error::FatalError("\t","Column $path_col does not contain any path in a valid format") if ($path_arrows !~ /\-\>/);
       my @path = split /\-\>/, $path_arrows;
       my $path_cpt++;
       for (my $i = 0; $i < ((scalar @path) -1); $i++) {
@@ -2062,10 +2062,11 @@ sub load_from_array {
     # that it does not contain not real values.
     # However check first that there is more than one weight.
     # If there is less than 2 edges, $main::edge_colors and $main::edge_width are set to 0
-    if (scalar @arcs < 2 && ($main::edge_colors || $main::edge_width)) {
+    if (scalar @array < 2 && ($main::edge_colors || $main::edge_width)) {
       $main::edge_colors = 0;
       $main::edge_width = 0;
       &RSAT::message::Warning("The graph has less than 2 edges. -ewidth and -ecolors options will be ignored");
+#       print "merde";
     }
     
     
@@ -2434,6 +2435,7 @@ sub get_position {
   my $nodes_nb = scalar keys %nodes_name_id;
   my $layout_size = 1000;
   my $outfile = $main::outfile{output};
+
   my $dir = ".";
   if ($outfile) {
     my ($outdir, $outfile) = &RSAT::util::SplitFileName($outfile);
@@ -2460,6 +2462,7 @@ sub get_position {
     ## As we may work with large graphs, this function creates a temporary file
     ## where the edges are stored.
     ## This file is then removed.
+    
     my $arcs_list = "";
     my $tempfilecmd = "mktemp $dir"."graph_fr.XXXXXXXXXX";
     my $tempfile = `$tempfilecmd`; 
@@ -2472,6 +2475,7 @@ sub get_position {
       $target =~ s/ /####space####/g;
       $arcs_list .= join(" ",$source, $target, "\n");
     }
+
     print TMP $arcs_list;
     my $command = "cat $tempfile | $fr_layout --iterations 400 $layout_size $layout_size";
     &RSAT::message::TimeWarn("Calculating the layout with $fr_layout") if ($main::verbose >= 2);
@@ -2495,6 +2499,7 @@ sub get_position {
   }
   $self->set_hash_attribute("nodes_id_xpos", %nodes_id_xpos);
   $self->set_hash_attribute("nodes_id_ypos", %nodes_id_ypos);
+
 }
 
 # ################################################################
