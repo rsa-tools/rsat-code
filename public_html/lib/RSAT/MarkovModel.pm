@@ -45,6 +45,21 @@ $supported_output_formats = join(",", @supported_output_formats);
 		 'intergenic'=>1,
 		 'genomic'=>1,
 		 );
+
+my @sequence_types = ('upstream_mRNA','upstream_CDS','firstintron','intron','utr');
+my @maskcoding = ('-maskcoding');
+#  my @noorf = ('-noorf','-nogene','');
+my @maskrepeats = ('-rm','');
+
+foreach my $sequence_type(@sequence_types) {
+    foreach my $maskcod(@maskcoding) {
+	foreach my $maskrep(@maskrepeats) {
+	    my $bg_type = $sequence_type.$maskcod.$maskrep;
+	    $supported_bg{$bg_type} = 1; 
+	}
+    }
+}
+
 @supported_bg = sort keys %supported_bg;
 $supported_bg = join(",", @supported_bg);
 
