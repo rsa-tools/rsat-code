@@ -109,7 +109,7 @@ sub ExpectedFreqFile {
 		      'genomic'=>1
 		     );
 
-  my @sequence_types = ('upstream_mRNA-2000-1','upstream_CDS-2000-1','firstintron','intron','utr');
+  my @sequence_types = ('upstream_mRNA','upstream_CDS','firstintron','intron','utr');
   my @maskcoding = ('-maskcoding');
 #  my @noorf = ('-noorf','-nogene','');
   my @maskrepeats = ('-rm','');
