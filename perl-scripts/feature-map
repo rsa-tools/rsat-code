@@ -1840,19 +1840,35 @@ sub PrintHTMLmap {
 	<INPUT TYPE=hidden NAME="feature_file" VALUE="$inputfile">
 	<INPUT TYPE=hidden NAME="mlen" SIZE=5 VALUE=$map_length>
 	<INPUT TYPE=hidden NAME="mspacing" SIZE=5 VALUE=$map_spacing>
+	<INPUT TYPE=hidden NAME="mapthick" VALUE=$map_thick>
 EndZoomForm
     if ($horizontal_map) {
         print "\t<INPUT TYPE=hidden NAME=\"orientation\" VALUE=\"Horizontal\">\n";
     } else {
         print "\t<INPUT TYPE=hidden NAME=\"orientation\" VALUE=\"Vertical\">\n";
     }
+    
+    if ($map_names){
+    	print "\t<INPUT TYPE=hidden NAME=\"seq_names\" VALUE=on>\n";
+    }
+    
     if ($legend) {
-	print "\t<INPUT TYPE=hidden NAME=\"scalebar\" VALUE=on>\n";
+	print "\t<INPUT TYPE=hidden NAME=\"legend\" VALUE=on>\n";
     }
     if ($scalebar) {
-	print "\t<INPUT TYPE=hidden NAME=\"legend\" VALUE=on>\n";
-	print "\t<INPUT TYPE=hidden SIZE=5 NAME=\"scalebarstep\" VALUE=\"auto\">\n";
+		print "\t<INPUT TYPE=hidden NAME=\"scalebar\" VALUE=on>\n";
+		if ($scale_bar_step > 0){
+    		print "\t<INPUT TYPE=hidden NAME=\"scalestep\" VALUE=$scale_bar_step>\n";
+    	}
+		else {
+			print "\t<INPUT TYPE=hidden SIZE=5 NAME=\"scalestep\" VALUE=\"auto\">\n";
+		}
     }
+    
+     if ($score_thick){
+    	print "\t<INPUT TYPE=hidden NAME=\"scorethick\" VALUE=on>\n";
+    }
+    
     if ($draw_dots) {
 	print "\t<INPUT TYPE=hidden NAME=\"handle\" VALUE=\"color dot\">\n";
     } elsif ($draw_symbols) {
