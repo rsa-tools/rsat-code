@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.256 2008/10/02 09:33:56 defrance Exp $
+# $Id: gene-cluster-motifs,v 1.257 2009/03/10 12:22:23 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.256 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.257 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -171,10 +171,12 @@ package main;
   $draw_maps=1;
   $scalestep = 100; 
   $img_format = $ENV{rsat_img_format} || "png";
+  $origin = "-0";
 
   ## retrieve-seq options
   $noorf = "-noorf"; 
   $repeat_masked = 0;
+  $seq_type = "upstream";
   $seq_format = "fasta"; ## Sequence format for the output files (upstream and purged sequences)
   $seq_dir = "";
   $seq_ext = "fasta";
@@ -270,7 +272,7 @@ package main;
 #  $infogibbs_options{l} = $matrix_width; push @infogibbs_options, "l"; ## Motif length is defined with option -width
 #  $infogibbs_options{m} = $nmotifs; push @infogibbs_options, "m"; ## Number of motifs to return is defined with option -nmotifs
 #  $infogibbs_options{e} = $expected_sites_per_seq; push @infogibbs_options, "e"; ## Expected number of sites per sequence is defined with option -sps
-#  $infogibbs_options{s} = $strand; push @infogibbs_options, "s"; ## Strand(s) is defined with option -1str or -2str
+#  $infogibbs_options{s} = $strands; push @infogibbs_options, "s"; ## Strand(s) is defined with option -1str or -2str
   $infogibbs_options{n} = 1000; push @infogibbs_options, "n"; ## Number of iterations
   $infogibbs_options{d} = 5; push @infogibbs_options, "d"; ## Minimal distance between 2 motif occurrences
   $infogibbs_options{nrun} = 3; push @infogibbs_options, "nrun"; ## Number of runs per motif
@@ -852,8 +854,8 @@ sub SetFileNames {
 	$infogibbs_suffix .= "-e".$expected_sites_per_seq;
 
 	## Strand
-	$infogibbs_suffix .= $strand;
-	if ($strand = "-2str") {
+	$infogibbs_suffix .= $strands;
+	if ($strands eq "-2str") {
 	  $infogibbs_options .= " -s +- ";
 	} else {
 	  $infogibbs_options .= " -s + ";
@@ -908,7 +910,7 @@ sub SetFileNames {
 	}
 
 	## strand
-	if ($strand eq "-1str") {
+	if ($strands eq "-1str") {
 	    $MS_options .= " -s 0";
 	    $MS_suffix .= "-s0";
 	} else {
@@ -1207,7 +1209,7 @@ sub RetrieveUpstreamSequences {
 	$command .= " -i ".$family{$family_name}->{family_file};
 	$command .= " -org ". $organism_name;
     }
-    $command .= " -imp_pos -type upstream";
+    $command .= " -imp_pos -type ".$seq_type;
     $command .= " -noorf " if ($noorf);
     $command .= " -rm " if ($repeat_masked);
     $command .= " -o ".$family{$family_name}->{seq_file};
@@ -1510,11 +1512,11 @@ sub MatchPatterns {
 			"\n;\t", $feature_file,
 		       )  if ($verbose >= 2);
 
-   $origin = "-0";
    my $command = "dna-pattern -i ".$family{$family_name}->{seq_file};
    $command .= " -format ".$seq_format;
    $command .= " -pl ".$oligo_file;
    $command .= " -origin ".$origin;
+   $command .= " ".$strands;
    $command .= " -return sites,limits ";
    $command .= $options;
    $command .= " | features-from-dnapat -o ".$feature_file;
@@ -1550,7 +1552,6 @@ sub ScanSequences {
 			"\n;\t", $feature_file,
 		       )  if ($verbose >= 2);
 
-   $origin = "-0";
    my $command = "matrix-scan -v 1 -bginput -markov 1 -i ".$family{$family_name}->{seq_file};
    $command .= " -seq_format ".$seq_format;
    $command .= " -matrix_format ".$matrix_format;
@@ -1737,8 +1738,14 @@ sub DrawMergedFeatureMap {
   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
   $fmap_file = $family{$family_name}->{merged_file}.".".$img_format;
   $htmap_file = $family{$family_name}->{merged_file}.".html";
-  $origin = "-0";
-  my $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{merged_file} -origin $origin -N 4 -return sites,limits ";
+  my $command = "dna-pattern";
+  $command .= " -i ".$family{$family_name}->{seq_file};
+  $command .= " -format ".$seq_format;
+  $command .= " -pl ".$family{$family_name}->{merged_file};
+  $command .= " -origin ".$origin;
+  $command .= " -N 4";
+  $command .= " -return sites,limits ";
+  $command .= " ".$strands;
   $command .= " | features-from-dnapat -o $family{$family_name}->{merged_ft_file} ";
 
   if ($batch) {
@@ -1813,7 +1820,7 @@ sub Gibbs {
   chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{gibbs_dir});
 
 
-  if ($strand = "-2str") {
+  if ($strands eq "-2str") {
     $addrc = " -addrc";
   }
   ## This can be useful in case the file is compressed
@@ -1845,7 +1852,7 @@ sub Gibbs {
 sub AlignACE {
   chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{AlignACE_dir});
 
-  if ($strand = "-2str") {
+  if ($strands eq "-2str") {
     $addrc = " -addrc";
   }
 
@@ -2729,8 +2736,14 @@ sub DrawDyadFeatureMap {
    &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
 
    ## pattern matching
-   $origin = "-0";
-   my $command = "dna-pattern -pl $family{$family_name}->{dyad_file} -format $seq_format -i $family{$family_name}->{seq_file} -origin $origin -N 4 -return sites,limits ";
+   my $command = "dna-pattern";
+   $command .= " -pl $family{$family_name}->{dyad_file}";
+   $command .= " -format $seq_format";
+   $command .= " -i $family{$family_name}->{seq_file}";
+   $command .= " -origin $origin";
+   $command .= " -N 4";
+   $command .= " -return sites,limits ";
+   $command .= " ".$strands;
    $command .= "| features-from-dnapat -o $family{$family_name}->{dyad_ft_file} ";
    if ($batch) {
        push @main::batch_commands, $command;
@@ -3264,6 +3277,9 @@ OPTIONS
        -feattype
 		feature type (e.g. CDS, mRNA)
 
+	-seq_type
+	       sequence type (upstream, downstream, ORF)
+
         -size_names
                 Use the old naming system (obsolete, only for backward
                 compatibility). In the old naming system, file names
@@ -3397,6 +3413,18 @@ OPTIONS
 	-dyad_exp_freq
 		name of a file containing the expected frequencies for
 		dyad-analysis.
+
+   feature-map options
+   	-origin	 #
+		Origin for pattern matching positions, that will
+		determine the way patterns are displayed on the
+		feature-maps (default: -0, i.e. negative coordinates).
+		This parameter is passed to dna-pattern and matrix-scan.
+
+	-scalestep
+		Distance between the vertical ticks on the scale bar
+		of the feature maps.
+		This parameter is passed to feature-map.
 
    orm-specific options
 
@@ -3753,6 +3781,12 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-maxsp") {
       $max_sp = $ARGV[$a+1];;
 
+      ## feature-map parameters
+    } elsif ($ARGV[$a] eq "-origin") {
+      $origin = $ARGV[$a+1];;
+    } elsif ($ARGV[$a] eq "-scalestep") {
+      $scalestep = $ARGV[$a+1];;
+
       ### matrix-based pattern discovery
     } elsif ($ARGV[$a] eq "-width") {
       $matrix_width = $ARGV[$a+1];
@@ -3949,6 +3983,10 @@ sub ReadArguments {
 	  &RSAT::error::FatalError("$type invalid feature type. Supported: $supported_feature_types");
 	}
       }
+
+      #### sequence types
+    } elsif ($ARGV[$a] eq "-seq_type") {
+      $seq_type = $ARGV[$a+1];
 
       #### expected frequency file for dyad-analysis 
     } elsif ($ARGV[$a] =~ /^-dyad_exp_freq/) {
@@ -4370,8 +4408,7 @@ sub ReadSequenceList {
    &RSAT::message::Info("Reading family members from input sequence files") if ($verbose >= 1);
    foreach my $family_name (@families) {
        my ($in, $input_dir) =  &OpenInputFile($family{$family_name}->{seq_file});
-       my $seq_type = "dna";
-       while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $seq_format, $input_dir, $seq_type, $mask)) &&
+       while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $seq_format, $input_dir, 'dna', $mask)) &&
 	      (($current_seq) || ($current_id))) {
            $family{$family_name}->new_member($current_id);
            &RSAT::message::Info (join ("\t", 
@@ -5465,6 +5502,7 @@ multiple-family-analysis options
 -rm		use repeat masked version of the genome
 -orfov		do not exclude upstream ORFs from upstream sequences
 -feattype	feature type for sequence retrieval (e.g. CDS, mRNA)
+-seq_type       sequence type (upstream, downstream, ORF)
 
 ## Parameters for oligo-analysis and dyad-analysis
 -1str   	strand-sensitive analysis
@@ -5497,6 +5535,10 @@ multiple-family-analysis options
 -transp		transpose synthetic result table (columns become rows)
 -sort		sort key (supported: $supported_sort_keys)
 -dyad_exp_freq	expected frequencies for dyad-analysis
+
+## feature-map options
+-origin #       origin for dna-pattern, matrix-scan and feature-maps
+-scalestep #	scale steps for the feature maps.
 
 ## General options for matrix-based pattern discovery
 -width		matrix width (default $matrix_width)
