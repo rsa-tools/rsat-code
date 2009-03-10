@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.57 2009/03/02 16:48:46 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.58 2009/03/10 08:34:06 rsat Exp $
 #
 # Time-stamp
 #
@@ -80,7 +80,7 @@ package main;
   local $ensembl_user = "anonymous";
   local $dbname = '';
   local $org = '';
-  local $dbversion = '52';
+  local $dbversion = '';
   local $port = '';
 
   ################################################################
