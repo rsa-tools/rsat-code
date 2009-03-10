@@ -20,10 +20,6 @@ require "cgi-lib.pl";
 $XYgraph_command = "$SCRIPTS/XYgraph";
 $tmp_file_name = sprintf "XYgraph.%s", &AlphaDate();
 
-
-## dfault parameters
-$image_format = $ENV{rsat_img_format} || "png";
-
 ### Read the CGI query
 $query = new CGI;
 
@@ -79,9 +75,6 @@ if ($accepted_bg{$query->param('bg')}) {
 if ($query->param('xcol')) {
     $parameters .= " -xcol ".$query->param('xcol');
 }
-if ($query->param('xlog')) {
-    $parameters .= " -xlog ";
-}
 if ($query->param('xleg1')) {
     $parameters .= " -xleg1 \"".$query->param('xleg1')."\"";
 }
@@ -103,13 +96,13 @@ if (&IsReal($query->param('xgstep2'))) {
 if ($query->param('xsize')) {
     $parameters .= " -xsize ".$query->param('xsize');
 }
+if (&IsReal($query->param('xlog'))) {
+    $parameters .= " -xlog ".$query->param('xlog');
+}
 
 ### Y axis parameters ###
 if ($query->param('ycol')) {
     $parameters .= " -ycol ".$query->param('ycol');
-}
-if ($query->param('ylog')) {
-    $parameters .= " -ylog ";
 }
 if ($query->param('yleg1')) {
     $parameters .= " -yleg1 \"".$query->param('yleg1')."\"";
@@ -131,6 +124,9 @@ if (&IsReal($query->param('ygstep2'))) {
 }
 if ($query->param('ysize')) {
     $parameters .= " -ysize ".$query->param('ysize');
+}
+if (&IsReal($query->param('ylog'))) {
+    $parameters .= " -ylog ".$query->param('ylog');
 }
 
 ################################################################
@@ -171,9 +167,10 @@ if ($query->param('data_file') =~ /\S/) {
 $parameters .= " -i $data_file ";
 
 ### graph file ###
+$image_format = $query->param('format') || $ENV{rsat_img_format} || "png";
 $graph_file = "$tmp_file_name.${image_format}";
+$parameters .= " -format ".$image_format;
 $parameters .= " -o $TMP/$graph_file ";
-
 
 if ($query->param('htmap')) {
     $htmap = 1;

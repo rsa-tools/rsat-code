@@ -393,6 +393,18 @@ $to_matrix_scan
 </FORM>
 </TD>
 
+<td valign=bottom align=center>
+<FORM METHOD="POST" ACTION="XYgraph_form.cgi">
+<INPUT type="hidden" NAME="title1" VALUE="oligo-analysis result">
+<INPUT type="hidden" NAME="title2" VALUE="$title">
+<INPUT type="hidden" NAME="XYgraph_file" VALUE="$result_file">
+<INPUT type="hidden" NAME="xcol" VALUE="5">
+<INPUT type="hidden" NAME="xleg1" VALUE="expected occurrences">
+<INPUT type="hidden" NAME="ycol" VALUE="4">
+<INPUT type="hidden" NAME="yleg1" VALUE="observed occurrences">
+<INPUT type="submit" VALUE="XY graph">
+</FORM>
+</TD>
 
 </TR>
 </TABLE>
