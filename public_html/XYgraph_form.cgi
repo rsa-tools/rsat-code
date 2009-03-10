@@ -24,6 +24,7 @@ $default{legend} = 'checked';
 $default{htmap} = 'checked';
 $default{label_col} = 1;
 $default{symbols} = 'checked';
+$default{format} = $ENV{rsat_img_format} || "png";
 
 ## X axis options
 $default{xcol} = 1;
@@ -32,6 +33,7 @@ $default{xleg2} = "";
 $default{xgstep1} = "auto";
 $default{xgstep2} = "auto";
 $default{xsize} = 500;
+$default{xlog} = "none";
 $default{xmax} = "auto";
 $default{xmin} = "auto";
 
@@ -39,9 +41,10 @@ $default{xmin} = "auto";
 $default{ycol} = 2;
 $default{yleg1} = "";
 $default{yleg2} = "";
-$default{ygstep1} = "";
-$default{ygstep2} = "";
+$default{ygstep1} = "auto";
+$default{ygstep2} = "auto";
 $default{ysize} = 500;
+$default{ylog} = "none";
 $default{ymax} = "auto";
 $default{ymin} = "auto";
 
@@ -94,21 +97,21 @@ print "<hr>\n";
 print "<P><B>Graph options</B><br>\n";
 
 ## first title
-print "<br>First Title", "&nbsp;"x5;
+print "<br>First Title", "&nbsp;"x2;
 print $query->textfield(-name=>'title',
 			-default=>$default{title},
 			-size=>50,
 			-maxlength=>80);
 
 ## second title
-print "<br>Second Title", "&nbsp;"x5;
+print "<br>Second Title", "&nbsp;"x2;
 print $query->textfield(-name=>'title2',
 			-default=>$default{title2},
 			-size=>50,
 			-maxlength=>80);
 
 ## point size
-print "<br>Point size", "&nbsp;"x5;
+print "<br>Point size", "&nbsp;"x2;
 print $query->textfield(-name=>'pointsize',
 			-default=>$default{pointsize},
 			-size=>50,
@@ -119,6 +122,12 @@ print "<br>Background color";
 print $query->popup_menu(-name=>'bg',
 			 -Values=>["white","black","blue","gray"],
 			 -default=>$default{bg});
+
+## Image format
+print "Format";
+print $query->popup_menu(-name=>'format',
+			 -Values=>["jpg","png","eps","pdf"],
+			 -default=>$default{format});
 
 print "<br>";
 ## draw lines to join points
@@ -151,50 +160,57 @@ print "<hr>\n";
 print "<br><B>X axis</B><br>\n";
 
 ## xcol
-print "<br>Data column for X axis", "&nbsp;"x5;
+print "<br>Data column for X axis", "&nbsp;"x2;
 print $query->textfield(-name=>'xcol',
 			-default=>$default{xcol},
 			-size=>5,
 			);
 
 ## xsize
-print "&nbsp;"x5, "Size (pixels)", "&nbsp;"x5;
+print "&nbsp;"x2, "Size (pixels)", "&nbsp;"x2;
 print $query->textfield(-name=>'xsize',
 			-default=>$default{xsize},
 			-size=>5,
 			);
 
+## Logarithmic scale for the X axis
+print "&nbsp;"x2, "Log base", "&nbsp;"x2;
+print $query->textfield(-name=>'xlog',
+			-default=>$default{xlog},
+			-size=>4,
+			);
+
 ## X labels
-print "<br>First label", "&nbsp;"x5;
+print "<br>First label", "&nbsp;"x2;
 print $query->textfield(-name=>'xleg1',
 			-default=>$default{xleg1},
 			-size=>40,
 			);
-print "<br>Second label", "&nbsp;"x5;
+print "<br>Second label", "&nbsp;"x2;
 print $query->textfield(-name=>'xleg2',
 			-default=>$default{xleg2},
 			-size=>40,
 			);
 
 ## xmin
-print "<br>Min value", "&nbsp;"x5;
+print "<br>Min value", "&nbsp;"x2;
 print $query->textfield(-name=>'xmin',
 			-default=>$default{xmin},
 			-size=>5,
 			);
 ## xmax
-print "&nbsp;"x5, "Max value", "&nbsp;"x5;
+print "&nbsp;"x2, "Max value", "&nbsp;"x2;
 print $query->textfield(-name=>'xmax',
 			-default=>$default{xmax},
 			-size=>5,
 			);
 ## X grid
-print "<br>First grid step", "&nbsp;"x5;
+print "<br>First grid step", "&nbsp;"x2;
 print $query->textfield(-name=>'xgstep1',
 			-default=>$default{xgstep1},
 			-size=>5,
 			);
-print "&nbsp;"x5,"Second grid step", "&nbsp;"x5;
+print "&nbsp;"x2,"Second grid step", "&nbsp;"x2;
 print $query->textfield(-name=>'xgstep2',
 			-default=>$default{xgstep2},
 			-size=>5,
@@ -207,50 +223,57 @@ print "<hr>\n";
 print "<br><B>Y axis</B><br>\n";
 
 ## ycol
-print "<br>Data columns for Y axis (e.g. 4,5,7)", "&nbsp;"x5;
+print "<br>Data columns for Y axis (e.g. 4,5,7)", "&nbsp;"x2;
 print $query->textfield(-name=>'ycol',
 			-default=>$default{ycol},
 			-size=>5,
 			);
 
 ## ysize
-print "&nbsp;"x5, "Size (pixels)", "&nbsp;"x5;
+print "&nbsp;"x2, "Size (pixels)", "&nbsp;"x2;
 print $query->textfield(-name=>'ysize',
 			-default=>$default{ysize},
 			-size=>5,
 			);
 
+## Logarithmic scale for the Y axis
+print "&nbsp;"x2, "Log base", "&nbsp;"x2;
+print $query->textfield(-name=>'ylog',
+			-default=>$default{ylog},
+			-size=>4,
+			);
+
 ## Y labels
-print "<br>First label", "&nbsp;"x5;
+print "<br>First label", "&nbsp;"x2;
 print $query->textfield(-name=>'yleg1',
 			-default=>$default{yleg1},
 			-size=>40,
 			);
-print "<br>Second label", "&nbsp;"x5;
+print "<br>Second label", "&nbsp;"x2;
 print $query->textfield(-name=>'yleg2',
 			-default=>$default{yleg2},
 			-size=>40,
 			);
 
 ## ymin
-print "<br>Min value", "&nbsp;"x5;
+print "<br>Min value", "&nbsp;"x2;
 print $query->textfield(-name=>'ymin',
 			-default=>$default{ymin},
 			-size=>5,
 			);
 ## ymax
-print "&nbsp;"x5, "Max value", "&nbsp;"x5;
+print "&nbsp;"x2, "Max value", "&nbsp;"x2;
 print $query->textfield(-name=>'ymax',
 			-default=>$default{ymax},
 			-size=>5,
 			);
 ## Y grid
-print "<br>First grid step", "&nbsp;"x5;
+print "<br>First grid step", "&nbsp;"x2;
 print $query->textfield(-name=>'ygstep1',
 			-default=>$default{ygstep1},
 			-size=>5,
 			);
-print  "&nbsp;"x5,"Second grid step", "&nbsp;"x5;
+print  "&nbsp;"x2,"Second grid step", "&nbsp;"x2;
 print $query->textfield(-name=>'ygstep2',
 			-default=>$default{ygstep2},
 			-size=>5,
