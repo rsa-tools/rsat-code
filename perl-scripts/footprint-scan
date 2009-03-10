@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.14 2008/06/18 22:32:55 jvanheld Exp $
+# $Id: footprint-scan,v 1.15 2009/03/10 13:22:05 jvanheld Exp $
 #
 ############################################################
 
@@ -16,8 +16,9 @@ footprint-scan
 =head1 DESCRIPTION
 
 Scan promoters of orthologous genes with one or several
-position-specific scoring matrices (PSSM) in order to detect conserved
-hits.
+position-specific scoring matrices (PSSM) in order to detect motifs
+showing a higher number of hits than expected by chance
+(over-represented motifs).
 
 =head1 AUTHORS
 
@@ -25,7 +26,11 @@ Jacques.van.Helden@ulb.ac.be
 
 =head1 CATEGORY
 
-util
+=over
+
+=item comparative genomics
+
+=back
 
 =head1 USAGE
 
@@ -33,9 +38,155 @@ footprint-scan [-i inputfile] [-o outputfile] [-v #] [...]
 
 =head1 INPUT FORMAT
 
+=head2 Query gene(s)
+
+The analysis can be performed either on a single gene, or or several
+genes separately (option -sep_genes), or on a group of genes
+altogether.
+
+Query genes can be entered on the command line (option -q) or in a
+text file (option-genes). Alternatively, teh option -all_genes will
+run the analysis on all the genes of a genome.
+
+=head2 Position-specific scoring matrices (PSSMs)
+
+I<footprint-scan> requires a collection of (at least one)
+position-specific scoring matrices (PSSM). 
+
+All the format supported by I<matrix-scan> can be used to enter the
+matrices. However, we recommend to use the TRANSFAC format, which
+supports multiple matrices (we usually want tos can promoters with a
+full collection of matrices), and associates an identifier with each
+matrix (e.g. the name of the transcription factor).
+
+=head3 Example of TRANSFAC format
+
+The following example shows a text file describing two matrices,
+representing the binding motifs annotated in RegulonDB for AgaR and
+AraC, respectively. Motifs must be separated by a line containing a
+double slash (//).
+
+The complete file can be downloaded from RegulonDB
+(http://regulondb.ccg.unam.mx/).
+
+ AC  ECK12_ECK120012515_AgaR.24
+ XX
+ ID  ECK12_ECK120012515_AgaR.24
+ XX
+ P0       A     T     C     G
+ 1        5     0     1     5
+ 2        6     1     4     0
+ 3        4     0     5     2
+ 4        5     4     0     2
+ 5        4     6     0     1
+ 6        1     5     3     2
+ 7        0     2     8     1
+ 8        4     1     1     5
+ 9        4     5     1     1
+ 10       3     8     0     0
+ 11       5     6     0     0
+ 12       1     8     1     1
+ 13       2     0     4     5
+ 14       4     5     2     0
+ 15       3     8     0     0
+ 16       3     8     0     0
+ 17       0     2     9     0
+ 18       0     2     2     7
+ 19       3     7     1     0
+ 20       4     7     0     0
+ 21       3     8     0     0
+ 22       3     4     0     4
+ 23       3     4     0     4
+ 24       3     4     3     1
+ 25       3     8     0     0
+ XX
+ //
+ AC  ECK12_ECK120012316_AraC.18
+ XX
+ ID  ECK12_ECK120012316_AraC.18
+ XX
+ P0       A     T     C     G
+ 1        0    10     0     3
+ 2        7     4     1     1
+ 3        0     6     5     2
+ 4        2     2     3     6
+ 5        0     0     6     7
+ 6        9     0     0     4
+ 7        0     2     9     2
+ 8        2     7     3     1
+ 9        9     3     0     1
+ 10       7     4     0     2
+ 11       4     8     0     1
+ 12       3     3     5     2
+ 13       2    10     0     1
+ 14       2     7     1     3
+ 15       6     1     6     0
+ 16       0    11     2     0
+ 17       1     0     3     9
+ 18       1     5     5     2
+ 19       5     2     0     6
+ XX
+ //
+
+
 =head1 OUTPUT FORMAT
 
+The result comprises several files for the orthologs, upstream
+sequences, matrix-scan results, feature-maps. By default, a directory
+is created for each query gene, with a name indicating the parameters:
+
+ footprints/[taxon]/[Organism]/[gene]
+
+Alternatively, the output folder can be specified manually with the
+option I<-o>.
+
+=head1 EXAMPLES OF UTILIZATION
+
+=head2 Detecting trans-acting factors for single gene, with a collection of known motifs
+
+Let us assume that we have a collection of PSSMs annotated for a given
+organism (e.g. the matrices for all the I<Escherichia coli>
+transcription factors annotated in RegulonDB). We would likt to scan
+the promoters of orthologs of a given gene, in order to predict the
+transcription factors that might be involved in its regulation. The
+program will count the hits for each matrix, and report those showing
+a significant enrichment in the promoters of its orthologs.
+
+In this example, we use a slightly higher verbosity than usually (-v
+2) in order to keep track of the progress of the analysis. This also
+reports the commands that are executed, and allows us to examine all
+their parameters.
+
+ footprint-scan -v 2  -org Escherichia_coli_K12 \
+    -taxon Enterobacteriales -q sodA -q lexA -q araC \
+    -bgfile ${RSAT}/data/taxon_frequencies/Enterobacteriales/dyads_3nt_sp0-20_upstream-noorf_Enterobacteriales-noov-1str.freq.gz \
+    -m RegulonDB_matrices_transfac_format.txt \
+    -matrix_format transfac \
+    -matrix_suffix RegulonDB \
+    -sep_genes
+
+ footprint-scan -v 2  -org Escherichia_coli_K12 \
+    -taxon Enterobacteriales -q sodA  \
+    -bgfile ${RSAT}/data/taxon_frequencies/Enterobacteriales/dyads_3nt_sp0-20_upstream-noorf_Enterobacteriales-noov-1str.freq.gz \
+    -m RegulonDB_matrices.tab \
+    -matrix_format tab \
+    -matrix_suffix RegulonDB \
+    -sep_genes
+
+
+=head2 Detecting all putative target genes for a given transcription factor
+
+
+
+
 =head1 SEE ALSO
+
+=head2 footprint-discovery
+
+The difference betsween I<footprint-scan> and I<footprint-discovery>
+is that I<footprint-scan> requires prior knowledge of the motifs (in
+the form of position-specific matrices), whereas
+I<footprint-discovery> perfoms I<ab initio> motif discovery.
 
 =head1 WISH LIST
 
@@ -58,7 +209,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -348,7 +499,7 @@ sub ReadArguments {
 
 =over 4
 
-=item B<-m matrixfile>
+=item B<-m matrix_file>
 
 Matrix file. This argument is mandatory.
 
@@ -378,9 +529,23 @@ Matrix format. Default is tab. This argument is mandatory.
 
 Matrix suffix. This argument is mandatory.
 
+The matrix suffix indicates the nature of the matrix file. For
+example, if your matrix file contains a single matrix for a
+transcription factor (say LexA), you can indicate it with
+
+ -matrix_suffix LexA
+
+whereas if your matrix files contains all the matrices from the
+RegulonDB database, you can specify
+
+ -matrix_suffix RegulonDB
+
 The matrix suffix will be concatenated to the output prefix, in order
 to maintain separate output files for distinct analyses performed on
-the same promoter sequences.
+the same promoter sequences. For example, if you run successively the
+analysis with the matrix LexA, and then with the matrix CRP, you don't
+want to loose the results of the first scanning when running the
+second scanning.
 
 =cut
     } elsif ($arg eq "-matrix_suffix") {
@@ -513,7 +678,7 @@ quotes, and can thus not contain any quote.
 
 =pod
 
-=item B<plot_format>
+=item B<-plot_format>
 
 Format for the occurrence plots (occurrence frequencies, occurrence sinificance).
 Supported: all formats supported by the program XYgraph
