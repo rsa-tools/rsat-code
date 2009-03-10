@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.71 2008/12/20 07:33:04 jvanheld Exp $
+# $Id: retrieve-seq,v 1.72 2009/03/10 12:09:21 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -192,6 +192,7 @@ if ($noorf) {
 ################################################################
 # Query ORFs
 #
+&RSAT::message::TimeWarn("Reading query genes") if ($main::verbose >= 2);
 
 #### retrieve all
 if ($return_all) {
@@ -225,6 +226,7 @@ if ($random_orfs > 0) {
 } elsif (@queries == ()) {
     #### read queries
     ($in, $input_dir) = &OpenInputFile($query_file);
+    &RSAT::message::Info("Reading query genes from file", $query_file) if ($main::verbose >= 2);
     while (<$in>) {
 	next if ((/^;/) || (/^\#/) || (/^--/));
 	next if (/^--/);
@@ -234,6 +236,8 @@ if ($random_orfs > 0) {
     }
     close $in;
 }
+&RSAT::message::Info(scalar(@queries), "query genes") if ($main::verbose >= 2);
+
 if ($#queries <0) {
     &RSAT::error::FatalError("You should enter at least one valid query.");
 }
