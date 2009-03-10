@@ -248,29 +248,45 @@ Same as -h
   } elsif ($arg eq "-help") {
     &PrintOptions();
 
+    ## Organism
 =pod
 
-=item B<-batch>
+=item	B<-org query_organism>
 
-Generate one command per query gene, and post it on the queue of a PC
-cluster.
+Query organism, to which the query genes belong.
 
 =cut
-  } elsif ($arg eq "-batch") {
-    $main::batch = 1;
+  } elsif ($arg eq "-org") {
+    $main::organism_name = shift(@arguments);
 
-
-    ## Dry run
+    ## Taxon
 =pod
 
-=item B<-dry>
+=item	B<-taxon reference_taxon>
 
-Dry run: print the commands but do not execute them.
+Reference taxon, in which orthologous genes have to be collected.
 
 =cut
-  } elsif ($arg eq "-dry") {
-    $main::dry = 1;;
+  } elsif ($arg eq "-taxon") {
+    $main::taxon = shift(@arguments);
 
+
+    ## Query gene
+=pod
+
+=item	B<-q query>
+
+Query gene.
+
+This option can be used iteratively on the command line to specify
+multiple genes.
+
+=cut
+  } elsif ($arg eq "-q") {
+    push @main::query_genes, shift(@arguments);
+
+
+=pod
 
 =item B<-genes>
 
@@ -345,45 +361,29 @@ query file.
   } elsif ($arg eq "-o") {
     $main::outfile{prefix} = shift(@arguments);
 
-    ## Organism
+
 =pod
 
-=item	B<-org query_organism>
+=item B<-batch>
 
-Query organism, to which the query genes belong.
+Generate one command per query gene, and post it on the queue of a PC
+cluster.
 
 =cut
-  } elsif ($arg eq "-org") {
-    $main::organism_name = shift(@arguments);
+  } elsif ($arg eq "-batch") {
+    $main::batch = 1;
 
-    ## Taxon
+
+    ## Dry run
 =pod
 
-=item	B<-taxon reference_taxon>
+=item B<-dry>
 
-Reference taxon, in which orthologous genes have to be collected.
+Dry run: print the commands but do not execute them.
 
 =cut
-  } elsif ($arg eq "-taxon") {
-    $main::taxon = shift(@arguments);
-
-
-    ## Query gene
-=pod
-
-=item	B<-q query>
-
-Query gene.
-
-This option can be used iteratively on the command line to specify
-multiple genes.
-
-=cut
-  } elsif ($arg eq "-q") {
-    push @main::query_genes, shift(@arguments);
-
-=pod
-
+  } elsif ($arg eq "-dry") {
+    $main::dry = 1;;
 
 =pod
 
@@ -449,10 +449,11 @@ fatal errors.
 
 =pod
 
-=item B<map_format>
+=item B<-map_format>
 
-Format for the feature map. 
-Supported: all formats supported by the program feature-map
+Format for the feature map.
+
+Supported: any format supported by the program feature-map.
 
 =cut
     } elsif ($arg eq "-map_format") {
