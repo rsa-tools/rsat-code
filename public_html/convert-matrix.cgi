@@ -39,13 +39,16 @@ my $parameters;
 ################################################################
 #### Matrix specification
 $matrix_file = "$TMP/$tmp_file_name.input";
-open MAT, "> $matrix_file";
-print MAT $query->param('matrix');
-close MAT;
-&DelayedRemoval($matrix_file);
-
-$parameters .= " -i $matrix_file";
-
+if ($query->param('matrix')) {
+    open MAT, "> $matrix_file";
+    print MAT $query->param('matrix');
+    close MAT;
+    &DelayedRemoval($matrix_file);
+    
+    $parameters .= " -i $matrix_file";
+} else {
+    &RSAT::error::FatalError('You did not enter any data in the matrix box');
+}
 
 ################################################################
 ## Compute reverse complement
