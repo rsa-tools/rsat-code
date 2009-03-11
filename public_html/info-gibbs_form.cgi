@@ -24,13 +24,17 @@ $default{sequence} = "";
 $default{sequence_format} = "fasta";
 $default{sequence_file} = "";
 $default{upload_file} = "";
-$default{length} = 8;
+$default{length} = 12;
 $default{expected} = 1.0;
 $default{motifs} = 1;
 $default{nrun} = 5;
-$default{iter} = 2000;
+$default{iter} = 1000;
 $default{add_rc} = "checked";
 $default{bg_order} = 3;
+$default{background} = "upstream-noorf";
+$default{bg_level} = "organism";
+$default{organism} = "Saccharomyces cerevisiae";
+$default{taxon} = "Fungi";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -72,7 +76,7 @@ print $query->textfield(-name=>'length',
 print "<br />\n";
 
 ### expected number of matches
-print "<a href=\"help.info-gibbs.html#expected\">Expected number of matches per sequence</a>\n";
+print "<a href=\"help.info-gibbs.html#expected\">Expected number of sites per sequence</a>\n";
 print $query->textfield(-name=>'expected',
 		  -default=>$default{expected},
 		  -size=>5);
@@ -216,7 +220,7 @@ AGAAAGAGTTACACCGTCACCACTTCCGTGCACTGTATAAAAATCCTATACTGTACGTATCGACAGTTTA
 print "<TD><B>";
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>"fasta");
-print $query->hidden(-name=>'length',-default=>"16");
+print $query->hidden(-name=>'length',-default=>"20");
 print $query->hidden(-name=>'expected',-default=>"1.0");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
@@ -225,8 +229,8 @@ print $query->end_form;
 
 #print "<TD><B><A HREF='demo.gibbs.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.info-gibbs.html'>MANUAL</A></B></TD>\n";
-#print "<TD><B><A HREF='tutorials/tut_info-gibbs.html'>TUTORIAL</A></B></TD>\n";
-#print "<TD><B><A HREF='mailto:defrance\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='tutorials/tut_info-gibbs.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:defrance\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";

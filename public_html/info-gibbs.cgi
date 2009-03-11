@@ -35,10 +35,10 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("info-gibbs result", "results");
-#&ListParameters;
+&ListParameters() if ($ENV{rsat_echo} >=2);
 
 #### update log file ####
-&UpdateLogFile;
+&UpdateLogFile();
 
 ################################################################
 #
@@ -149,9 +149,9 @@ if ($query->param('freq_estimate') =~ /background/i) {
 #     }
 }
 ### additional parameters
-#$parameters .= '--EM=0 --strand=+';
-#print "<pre>command: info-gibbs $parameters\n</pre>" if ($ENV{rsat_echo} >=1);
-#print "<pre>$command $parameters\n</pre>" if ($ENV{rsat_echo} >=1);
+#$parameters .= ' --EM=0';
+$parameters .= ' --finalcycle';
+print "<pre>$command $parameters\n</pre>" if ($ENV{rsat_echo} >=1);
 
 if ($query->param('output') eq "display") {  
     &PipingWarning();
