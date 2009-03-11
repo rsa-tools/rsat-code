@@ -346,6 +346,7 @@ sub to_text {
     my ($self, $format, $null) = @_;
     $null = "" unless (defined($null));
 
+
     if ($format eq "fasta") {
       return $self->to_fasta();
     }
