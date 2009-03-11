@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.38 2008/08/22 17:22:43 rsat Exp $
+# $Id: get-orthologs,v 1.39 2009/03/11 20:47:41 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1144,5 +1144,29 @@ tables that are used by I<get-orthologs>.
 The program I<footprint-discovery> is a flow chart that combines
 I<get-orthologs> with other programs in order to discover conserved
 elements in promoters of orthologous genes.
+
+=head1 WISH LIST
+
+=head2 option -return hit_profiles
+
+This option returns statistics about the number of hits per gene
+rather than the compete listing of matching genes in the reference
+taxon.
+
+=head3 Output format
+
+When the option I<hit_stats> is activated, the program returns a table
+with one row per query gene, one column per genome of the refence
+taxon, and each cell indicates the number of hits.
+
+=head2 option -return hit_profile_sum
+
+Add a column to hit profiles, with the sum of hits.
+
+=head2 option -return eval_profiles
+
+Same as -return hit_profiles, but the cells of the output matrix
+indicate the E-value of the best hit from the query organism to the
+reference genome.
 
 =cut
