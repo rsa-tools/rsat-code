@@ -969,7 +969,7 @@ sub PipingFormForSequence {
     }
 
 
-  print qq|;
+  print qq|
 <HR SIZE = 3>
 <table class = "nextstep">
 <tr><td colspan = 5><h3>next step</h3></td></tr>
@@ -1052,15 +1052,17 @@ sub PipingFormForSequence {
 	</font>
     </th>
 
+
     <td align=center>
-	<FORM METHOD="POST" ACTION="consensus_form.cgi">
+	<FORM METHOD="POST" ACTION="info-gibbs_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="consensus">
+	<INPUT type="submit" value="info-gibbs">
 	</FORM>
-	Greedy algorithm
+	<b><font color=red>New !</font></b>
+	Gibbs sampling <br>(Defrance, 2009)
     </td>
 
     <td align=center>
@@ -1069,11 +1071,21 @@ sub PipingFormForSequence {
         <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="gibbs sampler">
+	<INPUT type="submit" value="gibbs">
 	</FORM>
-	Gibbs sampling (1995 version)
+	Gibbs sampling <br>(Neuwald, 1995)
     </td>
 
+    <td align=center>
+	<FORM METHOD="POST" ACTION="consensus_form.cgi">
+	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
+        <INPUT type="hidden" NAME="taxon" VALUE="$taxon">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="submit" value="consensus">
+	</FORM>
+	Greedy algorithm <br>(Hertz, 1990)
+    </td>
 </tr>
 
 <tr valign="top" align="center">
