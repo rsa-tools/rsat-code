@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs_form.cgi,v 1.6 2009/01/27 23:23:29 jvanheld Exp $
+# $Id: gibbs_form.cgi,v 1.7 2009/03/11 18:52:59 rsat Exp $
 #
 # Time-stamp: <2003-07-11 15:08:18 jvanheld>
 #
@@ -80,9 +80,9 @@ print $query->textfield(-name=>'length',
 		  -size=>5);
 print "<BR>\n";
 
-### expected number of matches
+### expected number of sites
 print "<B><A HREF='help.gibbs.html#expected'>\n";
-print "Expected number of matches</A>\n";
+print "Expected number of sites</A>\n";
 print $query->textfield(-name=>'expected',
 		  -default=>$default{expected},
 		  -size=>5);
