@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.27 2007/12/07 08:15:45 jvanheld Exp $
+# $Id: patser.cgi,v 1.28 2009/03/13 03:30:59 rsat Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -27,8 +27,6 @@ require "patser.lib.pl";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = $BIN."/patser";
-$matrix_from_transfac_command = $SCRIPTS."/matrix-from-transfac";
-$matrix_from_gibbs_command = $SCRIPTS."/matrix-from-gibbs";
 #$convert_seq_command = $SCRIPTS."/convert-seq";
 $features_from_patser_cmd = $SCRIPTS."/features-from-patser -v 1";
 $add_yeast_link_command = $SCRIPTS."/add-yeast-link";
