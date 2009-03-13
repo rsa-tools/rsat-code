@@ -487,7 +487,7 @@ sub doit {
     my $cluster_queue = $ENV{CLUSTER_QUEUE} || "short";
     my $batch_mail=$ENV{BATCH_MAIL} || "a";
     my $qsub_manager=$ENV{QSUB_MANAGER} || "sge";
-    $selected_nodes = " -l nodes=1:k2.6 ";
+    my $selected_nodes =$ENV{NODES} || " -l nodes=1:k2.6 ";
     my $qsub_cmd;
 
     ################################################################
