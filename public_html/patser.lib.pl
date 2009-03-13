@@ -57,7 +57,8 @@ sub DisplayPatserOptions {
     
     #### matrix format
     print $query->popup_menu(-name=>'matrix_format',
-			     -Values=>['consensus',
+			     -Values=>['tab', 
+				       'consensus',
 				       'gibbs',
 				       'transfac'
 				       ],
@@ -241,6 +242,11 @@ sub DisplayPatserOptions {
 # read patser parameters
 #
 sub ReadPatserParameters {
+    $matrix_format = lc($query->param('matrix_format'));
+    $matrix_from_transfac_command = $SCRIPTS."/matrix-from-transfac";
+    $matrix_from_gibbs_command = $SCRIPTS."/matrix-from-gibbs";
+    
+    $convert_matrix_command = $SCRIPTS."/convert-matrix -from ".$matrix_format." -to tab -return counts";
 
     #### alphabet
     my $alphabet = $query->param('alphabet') || " a:t c:g ";
@@ -255,8 +261,9 @@ sub ReadPatserParameters {
 
     $matrix_file = "$TMP/$tmp_file_name.matrix";
 
-    $matrix_format = lc($query->param('matrix_format'));
-    if ($matrix_format =~ /transfac/i) {
+    if ($matrix_format =~ /tab/i) {
+	open MAT, "| $convert_matrix_command | grep -v '\/\/' | perl -pe 's|\t|   |g' > $matrix_file";
+    } elsif ($matrix_format =~ /transfac/i) {
 	open MAT, "| $matrix_from_transfac_command > $matrix_file";
     } elsif ($matrix_format =~ /gibbs/i) {
 	open MAT, "| $matrix_from_gibbs_command > $matrix_file";
