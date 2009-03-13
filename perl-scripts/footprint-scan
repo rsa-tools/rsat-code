@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.15 2009/03/10 13:22:05 jvanheld Exp $
+# $Id: footprint-scan,v 1.16 2009/03/13 03:19:38 jvanheld Exp $
 #
 ############################################################
 
@@ -190,6 +190,39 @@ I<footprint-discovery> perfoms I<ab initio> motif discovery.
 
 =head1 WISH LIST
 
+=head2 Revise the manual
+
+The manual is still very incomplete, Jacques van Helden needs to
+revise and complete it.
+
+=head2 Support as Web services
+
+On the basis of the existing Web service for footprint-discovery.
+
+=head2 Web interface
+
+Alejandra Medina-Rivera will implement the Web interface.  It would be
+more convenient to program the Web page after the Web services, in
+order to benefit ffrom the support of Web services (including the
+token). To be checked with Morgane Thomas-Chollier & Olivier Sand.
+
+=head2 Tutorial
+
+It would be worth preparing a tutorial (or a chapter in Methods in
+Molecular Biology) to explain in detail the interpretation of the
+result.
+
+The tutorial could cover the 3 interfaces (command-line, Web services
+and Web form).
+
+=head2 Motif co-occurrences
+
+After having detected the motifs in the different sequences, analyze
+their co-occurrences in order to report the factors having sites in
+the same sequences (putatively interacting factors). Actually , this
+option should be implemented in matrix-scan rather than
+footprint-scan, because it applies to any type of analysis.
+
 =cut
 
 
@@ -209,7 +242,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
