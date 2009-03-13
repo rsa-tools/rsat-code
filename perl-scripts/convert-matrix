@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.77 2009/03/11 09:08:55 rsat Exp $
+# $Id: convert-matrix,v 1.78 2009/03/13 13:45:12 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -212,36 +212,37 @@ $out = &OpenOutputFile($outfile{output});
 ##### print output ######
 &Verbose if ($verbose);
 
+
 ## Read the input matrices and collect all matrices
 if (scalar(@matrix_files >= 1)) {
-    foreach my $matrix_file (@matrix_files) {
-	my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format);
-	foreach my $matrix (@matrices_from_file) {
-	    my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
-#	    $matrix_name = basename($matrix_file);
-#	    $matrix_name =~ s/\.\w+$//; ## suppress the extension from the file name
-	    $matrix_name =~ s/\.${input_format}$//; ## suppress the extension from the file name if it corresponds to the matrix format
-	    unless (defined($matrix->get_attribute("name"))){
-		$matrix->set_attribute("name", $matrix_name);
-	    }
-	    ## if we have more than one matrix in the same file a number is added to the attribute "name"
-	    if (scalar(@matrices_from_file) > 1) {
-		$matrix->force_attribute("name" => $matrix_name."_".$matrix->get_attribute("matrix.nb"));
-	    }
-	    push @matrices, $matrix;
-	}
-    }
-} else {
-    my @matrices_from_file = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format);
+  $m = 0;
+  foreach my $matrix_file (@matrix_files) {
+    my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format);
     foreach my $matrix (@matrices_from_file) {
-	my ($matrix_name) = &RSAT::util::ShortFileName($infile{input});
-#	$matrix_name =~ s/\.\w+$//; ## suppress the extension from the file name
-	$matrix_name =~ s/\.${input_format}$//; ## suppress the extension from the file name if it corresponds to the matrix format
-	unless (defined($matrix->get_attribute("name"))){
-	    $matrix->set_attribute("name", $matrix_name);
-	}
-	push @matrices, $matrix;
+      $m++;
+      &SetMatrixName($matrix, $m, $matrix_file, $input_format);
+      #       my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+#       #	    $matrix_name = basename($matrix_file);
+#       #	    $matrix_name =~ s/\.\w+$//; ## suppress the extension from the file name
+#       $matrix_name =~ s/\.${input_format}$//; ## suppress the extension from the file name if it corresponds to the matrix format
+#       unless (defined($matrix->get_attribute("name"))){
+# 	$matrix->set_attribute("name", $matrix_name);
+#       }
+#       ## if we have more than one matrix in the same file a number is added to the attribute "name"
+#       if (scalar(@matrices_from_file) > 1) {
+# 	$matrix->force_attribute("name" => $matrix_name."_".$matrix->get_attribute("matrix.nb"));
+#       }
+      push @matrices, $matrix;
     }
+  }
+} else {
+  my @matrices_from_file = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format);
+  my $m = 0;
+  foreach my $matrix (@matrices_from_file) {
+    $m++;
+    &SetMatrixName($matrix, $m, "", $input_format);
+    push @matrices, $matrix;
+  }
 }
 
 ################################################################
@@ -1035,6 +1036,37 @@ sub Verbose {
     }
 }
 
+################################################################
+## Choose the name of a matrix
+sub SetMatrixName {
+  my ($matrix, $m, $matrix_file, $input_format) = @_;
+  my $matrix_name;
+  my $matrix_ac = $matrix->get_attribute("accession");
+  my $matrix_id = $matrix->get_attribute("id");
+  if ($matrix_ac) {
+    $matrix_name = $matrix_ac;
+  } elsif ($matrix_file) {
+    $matrix_name = &RSAT::util::ShortFileName($matrix_file);
+    $matrix_name =~ s/\.${input_format}$//; ## suppress the extension from the file name if it corresponds to the matrix format
+    if (scalar(@matrices) > 0) {
+      $matrix_name .= "_m".$m;
+    }
+  } else {
+    $matrix_name = "matrix";
+    if (scalar(@matrices) > 0) {
+      $matrix_name .= "_m".$m;
+    }
+  }
+  unless (defined($matrix->get_attribute("name"))){
+    $matrix->set_attribute("name", $matrix_name);
+  }
+  &RSAT::message::Info($m,
+		       "name=".$matrix->get_attribute("name"),
+		       "id=".$matrix->get_attribute("id"),
+		       "format=".$input_format,
+		       "file=".$matrix_file,
+		      ) if ($main::verbose >= 5);
+}
 
 ################################################################
 ## Export one matrix
