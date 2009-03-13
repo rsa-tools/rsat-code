@@ -98,39 +98,38 @@ my $bg_method = $query->param('bg_method');
 if ($bg_method eq "from_matrix") {
 
 } elsif ($bg_method eq "bgfile") {
-    ## Select pre-computed background file in RSAT genome directory
-    my $organism_name = $query->param("organism");
-    my $noov = "ovlp";
-    my $background_model = $query->param("background");
-    my $oligo_length = 1;
-    $bg_file = &ExpectedFreqFile($organism_name,
-				 $oligo_length, $background_model,
-				 noov=>$noov, str=>"-1str");
-    $parameters .= " -bgfile ".$bg_file;
-    
+  ## Select pre-computed background file in RSAT genome directory
+  my $organism_name = $query->param("organism");
+  my $noov = "ovlp";
+  my $background_model = $query->param("background");
+  my $oligo_length = 1;
+  $bg_file = &ExpectedFreqFile($organism_name,
+			       $oligo_length, $background_model,
+			       noov=>$noov, str=>"-1str");
+  $parameters .= " -bgfile ".$bg_file;
+
 } elsif ($bg_method =~ /upload/i) {
-    ## Upload user-specified background file
-    my $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
-    my $upload_bgfile = $query->param('upload_bgfile');
-    if ($upload_bgfile) {
-	if ($upload_bgfile =~ /\.gz$/) {
-	    $bgfile .= ".gz";
-	}
-	my $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
-	open BGFILE, ">$bgfile" ||
-	    &cgiError("Cannot store background file in temp dir.");
-	while (<$upload_bgfile>) {
-	    print BGFILE;
-	}
-	close BGFILE;
-	$parameters .= " -bgfile $bgfile";
-	$parameters .= " -bg_format ".$query->param('bg_format');
-    } else {
-	&FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
+  ## Upload user-specified background file
+  my $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
+  my $upload_bgfile = $query->param('upload_bgfile');
+  if ($upload_bgfile) {
+    if ($upload_bgfile =~ /\.gz$/) {
+      $bgfile .= ".gz";
     }
-    
+    my $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
+    open BGFILE, ">$bgfile" ||
+      &cgiError("Cannot store background file in temp dir.");
+    while (<$upload_bgfile>) {
+      print BGFILE;
+    }
+    close BGFILE;
+    $parameters .= " -bgfile $bgfile";
+    $parameters .= " -bg_format ".$query->param('bg_format');
+  } else {
+    &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
+  }
 } else {
-    &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
+  &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
 }
 
 ################################################################
@@ -148,23 +147,23 @@ $parameters .= " -to ".$output_format;
 ## Return fields
 my @return_fields = ();
 foreach my $stat qw (counts frequencies weights info consensus parameters profile margins logo) {
-    if ($query->param($stat)) {
-		push @return_fields, $stat;
-		if ($stat eq "logo"){
-			 $parameters .= " -v 1 -logo_dir $ENV{RSAT}/public_html/tmp ";
-			 $parameters .= " -logo_format png,pdf ";
-			 # seqlogo options
-			 if ($query->param("error_bar")){
-			 	$parameters .= " -logo_opt '-e' ";
-			 }
-			 if ($query->param("small_correc")){
-			 	$parameters .= " -logo_opt '-M' ";
-			 }
-			 if ($query->param("stretch")){
-			 	$parameters .= " -logo_opt '-S' ";
-			 }
-		}
+  if ($query->param($stat)) {
+    push @return_fields, $stat;
+    if ($stat eq "logo"){
+      $parameters .= " -v 1 -logo_dir $ENV{RSAT}/public_html/tmp ";
+      $parameters .= " -logo_format png,pdf ";
+      # seqlogo options
+      if ($query->param("error_bar")){
+	$parameters .= " -logo_opt '-e' ";
+      }
+      if ($query->param("small_correc")){
+	$parameters .= " -logo_opt '-M' ";
+      }
+      if ($query->param("stretch")){
+	$parameters .= " -logo_opt '-S' ";
+      }
     }
+  }
 }
 
 if ($output_format eq 'tab') {
@@ -188,11 +187,11 @@ if ($query->param('output') eq "display") {
  #   open RESULT, "$command $parameters |";
   &doit("$command $parameters"); ## DEBUG test
   open RESULT, "$result_file";  ## DEBUG
-    
-    print '<H4>Result</H4>';
-    print '<PRE>';
-    while (<RESULT>) {
-#	s|${TMP}/||g;
+
+  print '<H4>Result</H4>';
+  print '<PRE>';
+  while (<RESULT>) {
+    #	s|${TMP}/||g;
       #	s|${BIN}/||g;
       next if ($_ =~ /logo file:(.*)\.pdf$/);
       if ($_ =~ /logo file:(.*)\.png$/){
