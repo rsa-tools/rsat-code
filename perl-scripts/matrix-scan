@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.125 2008/09/24 16:34:24 jvanheld Exp $
+# $Id: matrix-scan,v 1.126 2009/03/13 03:08:54 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -3731,6 +3731,34 @@ __END__
 =item I<feature-map>
 
 =back
+
+=head1 WISH LIST
+
+=head2 Hit table
+
+Export a table with one row per input sequence, one column per matrix,
+where the value of a cell I<h_{i,j}> indicates the number of hits for
+matrix I<j> in sequence I<i>.
+
+=head2 Co-occurrence table
+
+Return a m x m table (where m is the number of input matrices) where
+the value of a cell I<c_{i,j}> indicates the number of input sequences
+having at least one site for matrix I<M_i> and on site for matrix
+I<M_j>.
+
+The goal is to detect pairs of co-occuring motifs in order to predict
+putatively interacting transcription factors. The motifs do not need
+to be individually over-represented, what matters here is that they
+are foudn together more frequently than expected by chance. The
+significance of the co-occurrences is computed using the
+hypergeometric function.
+
+This option is distinct from the CRER detection. Motif co-occurrences
+typically applies to the analysis of large number of small sequences
+(e.g. all the promoters of a gien microbe), in order to detect pairs
+of transcription factors whose putative target genes show a
+significant overlap.
 
 =cut
 
