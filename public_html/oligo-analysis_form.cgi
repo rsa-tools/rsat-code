@@ -14,6 +14,7 @@ $query = new CGI;
 
 ### default values for filling the form
 $default{organism} = "Saccharomyces cerevisiae";
+$default{taxon} = "Fungi";
 $default{title} = "";
 $default{sequence} = "";
 $default{sequence_format} = "fasta";
