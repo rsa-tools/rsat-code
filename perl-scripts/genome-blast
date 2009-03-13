@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast,v 1.13 2009/01/08 11:12:58 rsat Exp $
+# $Id: genome-blast,v 1.14 2009/03/13 01:29:36 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -19,25 +19,206 @@ genome-blast
 
 =head1 DESCRIPTION
 
-Run blastall to compare all protein sequences between a query organism and a
-reference organism (db_organism).
+Use BLAST to compare all protein sequences between a query organism
+and a reference organism (db_organism).
 
-The blast result is exported as a tab-delimited file, contining one row per
-hit. This hit table cis in turn processed to rank the hits and identify the
-bidirectional best hits (BBH).
+The BLAST result is exported as a tab-delimited file, contining one
+row per hit. This hit table is post-processed to rank the hits and
+identify the bidirectional best hits (BBH).
 
 =head1 CATEGORY
 
 util
 
-=head1 USAGE
-    
-genome-blast -q query_organism -db db_organism [-i inputfile] [-o outputfile] [-v #]
-
 =head1 INPUT FORMAT
+
+This program requires the complete set of protein sequences of the
+query and reference genomes. The protein sequence files must be in
+fasta format (.fasta or .fasta.gz), with the file name assigned by the
+RSAT program install-genome.
 
 =head1 OUTPUT FORMAT
 
+The output format is a set of tab-delimited files (one per pairwise
+genome comparison). 
+
+The first 14 columns correspond to the BLAST
+tab-delimited output (directly obtained with the option -m 8).
+
+=over
+
+=item 1. query_organism
+
+Name of the query organism, i.e. the organism for which each protein
+is used as a query for BLAST.
+
+=item 2. db_organism
+
+Name of the query organism, i.e. the organism against which the query
+protein will be matched. 
+
+The BLAST formatting of the proteome of the db organism has to be done
+before the search is started. Formatting is done with the option
+I<-task format>.
+
+=item 3. query
+
+The ID of the gene coding for the query protein in the query organism.
+
+Although the matching is performed at the protein level, the table
+returns the corresponding genes, because the goal is to idenfity pairs
+of homologous genes.
+
+=item 4. subject
+
+The ID of the gene in the db organism whose product matched the query
+protein. The name "subject" corresponds to the blast nomenclature, to
+indicate the protein of the database that was matched by the query
+protein.
+
+=item 5. ident
+
+Percentage of identity.
+
+=item 6. ali_len
+
+Total length of the alignment.
+
+=item 7. mismat
+
+Number of mismatches in the alignment.
+
+=item 8. gap_open
+
+Number of gap openings in the alignment. 
+
+=item 9. q_start
+
+Starting position of the aligned segment in the query protein.
+
+=item 10. q_end
+
+Ending position of the aligned segment in the query protein.
+
+=item 11. s_start
+
+Starting position of the aligned segment in the matched protein (the
+"subject", according to BLAST nomenclature).
+
+=item 12. s_end
+
+Ending position of the aligned segment in the matched protein (the
+"subject", according to BLAST nomenclature).
+
+=item 13. e_value
+
+E-value of the alignment.
+
+=item 14. bit_sc
+
+Bit score of the alignment.
+
+=item 15. q_rank (post-processing)
+
+Query rank: rank of the hit among all the hits found for the current
+query protein in the database genome.
+
+=item 16. s_rank (post-processing)
+
+Database rank: rank of the hit among all the hits found for the
+current database (subject) protein in the database genome.
+
+=back
+
+=head1 SPACE REQUIREMENT
+
+The BLAST tables are compressed (.gz) to save space, but the
+genome-wide comparisons occupy an important disk space. As a rough
+estimation, each pairwise genome comparison requires a space of
+~250Mb.
+
+There are currently (March 2009) more than 1000 bacterial
+genomes. Matching all against all qould require a disk space of
+1000*1000*250Mb = 250Tb. The RSAT server is not able tosupport the
+all-against-all comparison.
+
+=head1 USAGE
+
+=head2 First step: formatting the database organism
+
+genome-blast -q query_organism -db db_organism -task formatdb
+
+  genome-blast -q Escherichia_coli_K12 -db Bacillus_subtilis -task formatdb
+
+The query organism is simply ignore for this task.
+
+=head2 Even better: formatting all database organisms for a given taxon
+
+If you want to blast one or several query genomes against several
+database genomes (which is usually the case), a much more convenient
+way to proceed is run the formatdb task with the option -dbtaxon.
+
+genome-blast -q query_organism -dbtaxon db_taxon -task formatdb
+
+ genome-blast -q Escherichia_coli_K12 -dbtaxon Bacteria -task formatdb
+
+=head2 Matching a query genome against a single database genome
+
+Each comparison has to be performed in both direction, in order to
+identify the reciprocal hits (used to infer orthology).
+
+ genome-blast -q organism_1 -db organism_2 -task blastall
+ genome-blast -db organism_2 -db organism_1 -task blastall
+
+Example:
+ genome-blast -q Escherichia_coli_K12 -db Bacillus_subtilis -task blastall
+ genome-blast -db Escherichia_coli_K12 -q Bacillus_subtilis -task blastall
+
+The formatdb step has to be done before running blastall. Note that
+both taks can be requested in a single command, in which case formatdb
+is run before blastall.
+
+ genome-blast -q Escherichia_coli_K12 -db Bacillus_subtilis -task formatdb,blastall
+ genome-blast -db Escherichia_coli_K12 -q Bacillus_subtilis -task formatdb,blastall
+
+=head2 Matching a query genome against all genomes of a given taxon
+
+ genome-blast -q query_organism -dbtaxon db_taxon -task blastall
+ genome-blast -db query_organism -qtaxon db_taxon -task blastall
+
+ genome-blast -q Escherichia_coli_K12 -dbtaxon Bacteria -task blastall
+ genome-blast -db Escherichia_coli_K12 -qtaxon Bacteria -task blastall
+
+=head2 Running taxon-wide comparisons on a PC cluster
+
+Beware, each BLAST comparison can take several minutes. In 2009, there
+are more than 1000 available Bacterial genomes and this number
+increases exponentially with time. It is thus generally recommended to
+run taxon-wide comparisons on a PC cluster, by using the option
+I<-batch>.
+
+ genome-blast -q Escherichia_coli_K12 -dbtaxon Bacteria -task blastall -batch
+ genome-blast -db Escherichia_coli_K12 -qtaxon Bacteria -task blastall -batch
+
+=head2 Matching a taxon against another taxon
+
+The options -dbtaxon and -qtaxon can be used to match all genomes of a
+given taxon (the query taxon) against all genomes of another taxon
+(the database taxon).
+
+Beware, with 1000 Bacterial genomes (available in the beginning of
+2009), an all-against-all comparison would represent 10^6 genome
+comparisons.
+
+Example: matching all Fungi against all Bacteria
+ genome-blast -qtaxon Fungi -dbtaxon Bacteria -task blastall -batch
+ genome-blast -qtaxon bacteria -dbtaxon Fungi -task blastall -batch
+
+Example: matching all Fungi against all Fungi
+ genome-blast -qtaxon Fungi -dbtaxon Fungi -task blastall -batch
+
+In the latter case, there is no need to run the reciprocal blast,
+since the query yaxon is the same as the database taxon.
 
 =cut
 
