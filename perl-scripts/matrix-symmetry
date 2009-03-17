@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-symmetry,v 1.5 2009/03/13 03:07:25 jvanheld Exp $
+# $Id: matrix-symmetry,v 1.6 2009/03/17 19:41:01 amedina Exp $
 #
 ############################################################
 
@@ -15,7 +15,7 @@ matrix-symmetry
 
 =head1 VERSION
 
-0.1
+1.04
 
 =head1 DESCRIPTION
 
@@ -129,7 +129,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     #$program_version = "0.1";
 
     ################################################################
@@ -363,7 +363,6 @@ package main;
 
 	  print STDOUT "\n";
 	}
-    }
 
     ################################################################
     ## Finish verbose
@@ -711,22 +710,23 @@ sub ComputeNormalizedCorrelation {
     my ($matrix) = @_;
     my $matrix_file= $matrix -> get_attribute("file") ;
     my $matrix_name = $matrix -> get_attribute("name");
+    my $matrix_width=$matrix -> get_attribute("ncol");
 
-    #die "Matrix info   $matrix_format   $matrix_name   $matrix_file \n";
+    #die "Matrix info   $matrix_format   $matrix_name   $matrix_file   $matrix_width \n";
     ################################################################
     ## Call subrutines for comparisons and invert matrix
 
    ################
     ## Sends: ID, path to matrix, type of the matrix. 
     ##  Receives: Boolean variable classifying Direct Repeats and the score used for this decision   
-    my ($DirectRepeat, $DR_dist, $length_DR, $DR_rep1, $DR_rep2) = &SelfCompare($matrix_name,$matrix_file,$matrix_format);
+    my ($DirectRepeat, $DR_dist, $length_DR, $DR_rep1, $DR_rep2) = &SelfCompare($matrix_name,$matrix_file,$matrix_format,$matrix_width);
     
     &RSAT::message::Info("Direct Repeat Information:",join(" ", $DirectRepeat, $DR_dist, $length_DR, $DR_rep1, $DR_rep2) ) if ($main::verbose >= 2);
 
     ################
     ## Sends: ID(factor), path to matrix, type of the matrix, path to Inverted matrix to be used 
     ##  Receives: Boolean variable classifying Direct Repeats and the score used for this decision 
-    my ($InvertRepeat, $IR_dist, $length_IR, $IR_rep1, $IR_rep2 ) = &InvCompare($matrix_name,$matrix_file,$matrix_format);
+    my ($InvertRepeat, $IR_dist, $length_IR, $IR_rep1, $IR_rep2 ) = &InvCompare($matrix_name,$matrix_file,$matrix_format,$matrix_width);
    
     &RSAT::message::Info("Inverted Repeat Information", join(" ",$InvertRepeat, $IR_dist, $length_IR, $IR_rep1, $IR_rep2 ) ) if ($main::verbose >= 2);
 
@@ -766,7 +766,7 @@ sub ComputeNormalizedCorrelation {
 	print $out join ("\t",$matrix_name,"Invert repeat",$IR_dist,$length_IR,$IR_rep1,$IR_rep2)."\n";
     }else{
 	&RSAT::message::Info($matrix_name." None Internal motif structure found");
-	&RSAT::message::Info(("\t",$matrix_name,"Not detected","NA","NA","NA","NA")."\n");
+	&RSAT::message::Info( join("\t",$matrix_name,"Not detected","NA","NA","NA","NA")."\n");
 
 	print $out join ("\t",$matrix_name,"Not detected","NA","NA","NA","NA")."\n"; 
     }
@@ -778,7 +778,7 @@ sub ComputeNormalizedCorrelation {
 sub SelfCompare {
     ###########
     ### Recives TF name path to the matrix, and format of it.
-    my ($matrix_name, $matrix_file, $matrix_format) = @_;
+    my ($matrix_name, $matrix_file, $matrix_format,$matrix_width) = @_;
     
     ################
     ### Compare matrices parameters
@@ -799,7 +799,7 @@ sub SelfCompare {
     my $end_offset=0;
     my $avoid_start=0;
     my $length=0;
-   
+    my $method_condition;
     ############
     ## return result of compare-matrix
     if ($return_fields{"comparisons"}){	
@@ -823,29 +823,35 @@ sub SelfCompare {
 	    $ali_len,$rel_alin, $start1, $end1, 
 	    $start2, $end2,$dEucl,$dKL, $cov, $cor,
 	    $Ncor,$consensus1, $consensus2, $rank)  =   split(/\t+/,$line);
-	
+
+	last if ( (($matrix_width/2)+1) < $end1);
+
 	###
 	## Recover specifi method evaluation
 	my $method_value="";
 	if ($distance_method eq "Ncor"){
 	    $method_value=$Ncor;
-	    #die "Ncor $Ncor";
+	    $method_condition=1;
 	}
 	elsif ($distance_method eq "dKL"){
 	    $method_value=$dKL;
+	    $method_condition=0;
 	}
 
 	## This control is use to avoid recovering again the matrix comparison 
 	## and to ignore zeros due to the comparison of very few nucleotides. 
 	## Since is the same matrix, the comparison is symmetric
-	if ($method_value==0 && $avoid_start==6){
+
+	if ($method_value==$method_condition && $avoid_start==6){
 	    $end_offset=1;  
 	}
 	next if ($end_offset);
-	unless ($length){
-	    $length=$end2;
-	}
-	if ($avoid_start<6 || $method_value==0  ){
+
+	#unless ($length){
+	#    $length=$end1;
+	#}
+	
+	if ($avoid_start<6 || $method_value==$method_condition  ){
 	    #$length= $end2;
 	    $avoid_start++;
 	    next;
@@ -853,10 +859,11 @@ sub SelfCompare {
 	## Values for distances are stored in an array
 	&RSAT::message::Debug (join(" ", "distance",$method_value,"length of DR",$rank,"positions of the repeat",$start1,"-",$end1,"and",$start2,"-",$end2)) if ( $main::verbose >= 5);
 	#die $rank;
-	$Distances{$rank}=[$method_value,$length, $start1."-".$end1, $start2."-".$end2];
+	$Distances{$rank}=[$method_value,$ali_len, $start1."-".$end1, $start2."-".$end2];
     }
 
     ## Evaluates  the distances to make a classification
+   
     my @ordered=sort{
 	my ($method_value_b, $length_b, @o_b) = @{$Distances{$b}};
 	my ($method_value_a, $length_a, @o_a) = @{$Distances{$a}};
@@ -864,9 +871,10 @@ sub SelfCompare {
 	    $length_b <=> $length_a;
     } keys(%Distances);
 
-
+   
     if ($distance_method eq "Ncor"){
 	my ($method_value,$length,$rep1, $rep2) =@{$Distances{$ordered[1]}};
+	return (0,"NULL","NULL","NULL", "NULL") unless $method_value;
 	&RSAT::message::Debug ( "minimal disntance ".$method_value) if ($main::verbose >= 5);
 	#die;
 	&RSAT::message::Debug ("length ". $length)if ($main::verbose >= 5);
@@ -898,7 +906,7 @@ sub SelfCompare {
 sub InvCompare{ 
     ###########
     ### Recives TF name path to the matrix, format of it, and inverted matrix .
-    my ($matrix_name,$matrix_file,$matrix_format)=@_;
+    my ($matrix_name,$matrix_file,$matrix_format,$matrix_width)=@_;
 
     ################
     ## Set Variables
@@ -909,7 +917,8 @@ sub InvCompare{
     my $comp_command = "compare-matrices ";
     $comp_command .= " -v $V -file1 $matrix_file -file2 $matrix_file  -format1 $matrix_format -format2 $matrix_format -R";
     my $self_comp=`$comp_command`;
-   
+    my $method_condition;
+    
     ############
     ## return result of compare-matrix
     if ($return_fields{"comparisons"}){	
@@ -941,41 +950,50 @@ sub InvCompare{
 	    $ali_len,$rel_alin, $start1, $end1, 
 	    $start2, $end2,$dEucl,$dKL, $cov, $cor,
 	    $Ncor,$consensus1, $consensus2, $rank)  =   split(/\t+/,$line);
-	
+
+	###
+	##avoid the repetition of the same coparison
+	last if ($rank > $matrix_width);
 	###
 	## Recover specifi method evaluation
 	my $method_value="";
 	if ($distance_method eq "Ncor"){
 	    $method_value=$Ncor;
 	    #die "Ncor $Ncor";
+	    $method_condition=1;
 	}
 	elsif ($distance_method eq "dKL"){
 	    $method_value=$dKL;
+	    $method_condition=0;
 	}
 
 	## This control is use to avoid recovering again the matrix comparison 
 	## and to ignore zeros due to the comparison of very few nucleotides. 
 	## Since is the same matrix, the comparison is symmetric
-	if ($method_value==0 && $avoid_start==6){
+	if ($method_value==$method_condition && $avoid_start==6){
 	    $end_offset=1;  
 	}
 	next if ($end_offset);
-	unless ($length){
-	    $length=$end2;
-	}
-	if ($avoid_start<6 || $method_value==0  ){
+	#unless ($length){
+	 #   $length=$ali_len;
+	#}
+	if ($avoid_start<6 || $method_value==$method_condition  ){
 	    #$length= $end2;
 	    $avoid_start++;
 	    next;
 	}
+	
 	## Values for distances are stores in an array
-	&RSAT::message::Debug  (join(" ", "distnance",$method_value,"length of IR",$rank,"positions of the repeat",$start1,"-",$end1,"and",$start2,"-",$end2 )) if ($main::verbose >= 5);
-	#die $rank;
-	local $middel_pos = &RSAT::util::round( ($end1- $start1)/2 );
-	local $local_rep1= $start1."-".($start1+$middel_pos) ;
-	local $local_rep2=($start1+$middel_pos+1)."-".$end1 ;
-	&RSAT::message::Debug  (join(" ",$method_value,$length, $local_rep1, $local_rep2)) if  ($main::verbose >= 5);
-	$Distances{$rank}=[$method_value,$length, $local_rep1, $local_rep2];
+	&RSAT::message::Debug  (join(" ", "distance",$method_value,"length of IR",$rank,"positions of the repeat",$start1,"-",$end1,"and",$start2,"-",$end2 )) if ($main::verbose >= 5);
+	
+	my $middel_pos = &RSAT::util::round( ($end1- $start1)/2 );
+	my $local_rep1= $start1."-".($start1+$middel_pos) ;
+	my $local_rep2=($start1+$middel_pos+1)."-".$end1 ;
+
+	my $length = $middel_pos # length of the repeat
+
+	&RSAT::message::Debug  (join(" ",$method_value,$middel_pos, $local_rep1, $local_rep2)) if  ($main::verbose >= 5);
+	$Distances{$rank}=[$method_value,$middel_pos, $local_rep1, $local_rep2];
     }
     
     ## Evaluates  the distances to make a classification
@@ -989,6 +1007,7 @@ sub InvCompare{
 
     if ($distance_method eq "Ncor"){
 	my ($method_value,$length,$rep1, $rep2) =@{$Distances{$ordered[0]}};
+	return (0,"NULL","NULL","NULL", "NULL") unless $method_value;
 	&RSAT::message::Debug ("minimal distance ".$method_value) if ($main::verbose >= 5 );
 	#die;
 	&RSAT::message::Debug ( "length ". $length ) if ($main::verbose >= 5 );
