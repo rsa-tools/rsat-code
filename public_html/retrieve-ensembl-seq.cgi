@@ -80,6 +80,7 @@ if ($query->param('uploaded_file')) {
     while (<$upload_file>) {
 	chomp;
 	print QUERY;
+	print QUERY "\n";
 #	push @gene_selection, $_;
     }
     close QUERY;
