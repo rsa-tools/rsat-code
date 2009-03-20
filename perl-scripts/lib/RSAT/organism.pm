@@ -568,7 +568,7 @@ sub LoadFeatures {
       ## Left > right can occur if the genome has been exported with
       ## start and end positions rather than left and right
       ## or for a feature accross the replication origin on circular genomes.
-      unless (($left < $right) || ($circular = 1)) {
+      unless (($left < $right) || ($contig_seq{$ctg}->get_attribute("circular") == 1)) {
 	&RSAT::message::Warning("left should be smaller than right position specification in feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
 	my $tmp = $left;
 	$left = $right;
