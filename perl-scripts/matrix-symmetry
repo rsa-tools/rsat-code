@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-symmetry,v 1.6 2009/03/17 19:41:01 amedina Exp $
+# $Id: matrix-symmetry,v 1.7 2009/03/24 01:03:20 amedina Exp $
 #
 ############################################################
 
@@ -15,7 +15,7 @@ matrix-symmetry
 
 =head1 VERSION
 
-1.04
+1.7
 
 =head1 DESCRIPTION
 
@@ -125,13 +125,13 @@ use Data::Dumper;
 ## Main package
 package main;
 {
-
+    
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     #$program_version = "0.1";
-
+    
     ################################################################
     ## Matrix parammeters
     $l= 100000; ## Default length for the random sequence
@@ -170,7 +170,25 @@ package main;
 	"information"=>1,
 	);
     $supported_split_options = join ",", sort keys %supported_split_option;
- 
+    
+    ## Threshold parameters
+    local %th = ();		# lower threshold values
+    
+    
+    @supported_thresholds = qw (
+			      Ncor
+			      split_IR
+                              split_DR 
+			     );
+    $supported_thresholds = join ",", @supported_thresholds;
+    %supported_threshold = ();
+    foreach my $thr (@supported_thresholds) {
+	$supported_threshold{lc($thr)} = 1;
+    }
+    
+    $th{"Ncor"}=0.1;
+    $th{"split_IR"}=1.2;
+    $th{"split_DR"}=0.8;
     ## Return option
    
     @return_fields = ();
@@ -205,8 +223,11 @@ package main;
     ## Read argument values
 
     &ReadArguments();
-    &RSAT::message::Debug("read aguments done") if ($main::verbose >= 5);
-
+    &RSAT::message::Info("read aguments done") if ($main::verbose >= 5);
+   
+    
+    
+    
     ################################################################
     ## Check argument values
     
@@ -217,7 +238,8 @@ package main;
     }
     
     ## Method to detect symmetry
-    unless ($symmetry_method) { &RSAT::error::FatalError("You should specify the method for symmetry detection.");
+    unless ($symmetry_method) {
+	&RSAT::error::FatalError("You should specify the method for symmetry detection.");
     }
 
     ## return type(s)
@@ -233,13 +255,24 @@ package main;
 	}
     }
     
-    ## If the selected method to detect symetry is "split", select the method to split the matrix
+    ## If the selected method to detect symmetry is "split", select the method to split the matrix
     if ($symmetry_method eq "split") {
 	&RSAT::error::FatalError("You should specify the split option to be used." )  unless ($split) ;
 	&RSAT::error::FatalError("You should specify the organism to calculate the random sequence") unless ($org);
 	&RSAT::error::FatalError("You should specify the type of sequences used as background model to calculate the random sequence") unless ($bg_type);
     }
+    
+     &RSAT::message::Info(join("\t","Symmetry method", $symmetry_method)) if ($main::verbose >= 1);
+    
+    if ($verbose >= 1){ 
+	if ($symmetry_method ne "split"){
+	    &RSAT::message::Info(join("\t","Threshold for symmetry evaluation", $th{$symmetry_method})) ;
+	}elsif ($symmetry_method eq "split") {
+	    &RSAT::message::Info(join("\t","Threshold for IR symmetry evaluation", $th{"split_IR"})) ;
+	    &RSAT::message::Info(join("\t","Threshold for DR symmetry evaluation", $th{"split_DR"})) ;
+	}
 	
+    }
 
     ## Matrix provided with -i option
     
@@ -263,7 +296,7 @@ package main;
 	}
 	close $mlist;
 	&RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
-    }
+    }	
     
 ## Check that there is at least one input matrix
 ## At least one matrix is file is mandatory
@@ -339,10 +372,11 @@ package main;
 	  $matrix->set_parameter("bg_markov_order", 0);
 	  local $matrix_name = $matrix->get_attribute("accession");
 #	  die $matrix_name, "\n";
-	  if ($matrix_name eq "") {
-	    ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
-	    $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
-	    $matrix_name .= "_".$m;
+	  #if ($matrix_name eq "") {
+	  unless ($matrix_name){
+	      ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+	      $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
+	      $matrix_name .= "_".$m;
 	  }
 	  $matrix->set_attribute("name", $matrix_name);
 	  local ($Wmin, $Wmax)  = $matrix->weight_range();
@@ -363,7 +397,7 @@ package main;
 
 	  print STDOUT "\n";
 	}
-
+    }
     ################################################################
     ## Finish verbose
     if ($main::verbose >= 1) {
@@ -501,7 +535,7 @@ See convert-matrix for more delais
 Method used to detect inner symmetry in a PSSM.
 Available methods: 
 
-"-symmetry compare": This method consists in compare the matrix to itself and with its reverse complement.
+"-symmetry Ncor": This method consists in compare the matrix to itself and with its reverse complement.
 
 "-symmetry split": The matrix is divided in tow if possible, this tow halfs are used to scan a random sequence,
 hits overlaps are dettected. Overlped hits in the same side of the sequence indicate a DR,
@@ -509,11 +543,57 @@ otherwise an IR.
 
 =cut
 	} elsif ($arg eq "-symmetry") {
-	  $main::symmetry = shift (@arguments);
-          &RSAT::error::FatalError($main::symmetry,
+	  $main::symmetry_method = shift (@arguments);
+          &RSAT::error::FatalError($main::symmetry_method,
 				     "Invalid symmetry detection method.",
 				     "Supported: ", $main::supported_symmetry_methods)
-	      unless ($main::supported_symmetry_method{$main::symmetry}); 
+	      unless ($main::supported_symmetry_method{$main::symmetry_method}); 
+
+  
+
+	## Thresholds
+=pod
+
+=item	B<-th param symmetry_threshold>
+
+
+
+Threshold on some parameter (-th: threshold). 
+
+Supported threshold fields : Ncor, split_IR, split_DR
+
+The defult threshold for Ncor is set on 0.1, when the Ncor value for the matrix comparison is above this threshold the corresponding symmetry is reported. This value has been set based on data from E.coli Transcription Factor binding motifs.
+
+Whith the I<split> method, symmetry detection is based on the overlap of hits obtained from the scanning of a random sequence.
+If the PSSM contains a Direct Repeat, the number of overlaped hits on the same side of the string is expected to be higher than the number of ovelaped hits in opposite sides of the string, and if the PSSM contains an Inverted Repeat it would be otherwise.
+
+The number of overlaped hits is counted for both categories, symmetry detection is based on the ratio between this counts.
+
+   ratio=#IR/#DR.
+
+By default:
+
+ -IR will be reported if (#IR/#DR) > 1.2
+ -DR will be reported if (#IR/#DR) < 0.8 
+
+If 0.8 < ratio < 1.2, no symmetry prediction will be reported. 
+Default values are based on the analysis of PSSMs for the Transcriptional Factors of E. coli.
+
+
+=cut
+
+	    ### Lower threshold
+	} elsif ($arg eq "-th") {
+	    my $thr_field = lc(shift(@arguments));
+	    my $thr_value =  shift(@arguments);
+	    unless ($supported_threshold{$thr_field}) {
+		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+	    }
+	    &RSAT::error::FatalError($thr_value, "Invalid value for symmetry  threshold. Should be a real number. ") 
+	      unless (&RSAT::util::IsReal($thr_value));
+	    $th{$thr_field} = $thr_value;
+
+	  
 
   ## Split matrix option
 =pod
@@ -522,18 +602,19 @@ otherwise an IR.
 
 Split Options.
 If the selected method to detect symetry is "split", select the method to split the matrix.
+
 "-split half"
 "-split information"
 
 =cut
 	} elsif ($arg eq "-split") {
 	   $main::split = shift(@arguments);  
-             ## Check background input format
+             ## Check compatibility
 	    &RSAT::error::FatalError($main::split,
 				     "Invalid option.",
 				     "-split is not compatible with symmetry detection method ",
-                                     $main::symmetry)
-	      if ( $main::symmetry eq "Ncor"); 
+                                     $main::symmetry_method)
+	      if ( $main::symmetry_method eq "Ncor"); 
 
             &RSAT::error::FatalError($main::split,
 				     "Invalid split option.",
@@ -792,14 +873,16 @@ sub SelfCompare {
     my $self_comp=`$comp_command`;
     
     ## Difine Variables
-    my $distance_method="Ncor";
+    my $distance_method=$main::symmetry_method;
     my %Distances=();
    # print $self_comp;
     #die "Test 2";
     my $end_offset=0;
     my $avoid_start=0;
     my $length=0;
-    my $method_condition;
+    my ($method_condition);
+    my $method_threshold=$main::th{$distance_method};
+
     ############
     ## return result of compare-matrix
     if ($return_fields{"comparisons"}){	
@@ -832,6 +915,7 @@ sub SelfCompare {
 	if ($distance_method eq "Ncor"){
 	    $method_value=$Ncor;
 	    $method_condition=1;
+	    
 	}
 	elsif ($distance_method eq "dKL"){
 	    $method_value=$dKL;
@@ -878,7 +962,7 @@ sub SelfCompare {
 	&RSAT::message::Debug ( "minimal disntance ".$method_value) if ($main::verbose >= 5);
 	#die;
 	&RSAT::message::Debug ("length ". $length)if ($main::verbose >= 5);
-	if ($method_value>=0.1){ ## This value has been taken based in the analysis of factors recognized in RegulonDB as Direct Repeats
+	if ($method_value>=$method_threshold){ ## This value has been taken based in the analysis of factors recognized in RegulonDB as Direct Repeats
 	    &RSAT::message::Debug (join("-",1,$method_value, $length, $rep1, $rep2)) if ($main::verbose >= 5) ;
 	    return (1,$method_value, $length, $rep1, $rep2);
 	}
@@ -893,7 +977,7 @@ sub SelfCompare {
 	#warn "minimal disntance ".$method_value;
 	#die;
 # warn "length ". $length;
-	if ($method_value<=0.1){ ## This value has been taken based in the analysis of factors recognized in RegulonDB as Direct Repeats
+	if ($method_value<=$method_threshold){ ## This value has been taken based in the analysis of factors recognized in RegulonDB as Direct Repeats
      
 	    return (1,$method_value, $length, $rep1, $rep2);
 	}
@@ -912,13 +996,15 @@ sub InvCompare{
     ## Set Variables
    # my $type2="consensus";
     my $V=0;
-    
+    my $distance_method=$main::symmetry_method;
+
     ## Generate the compare-matrix command with all parameters and stores it in a variable 
     my $comp_command = "compare-matrices ";
     $comp_command .= " -v $V -file1 $matrix_file -file2 $matrix_file  -format1 $matrix_format -format2 $matrix_format -R";
     my $self_comp=`$comp_command`;
     my $method_condition;
-    
+    my $method_threshold=$main::th{$distance_method};
+   
     ############
     ## return result of compare-matrix
     if ($return_fields{"comparisons"}){	
@@ -931,7 +1017,7 @@ sub InvCompare{
     }
     
      ## Difine Variables
-    my $distance_method="Ncor";
+   
     my %Distances=();
     #print $self_comp;
     #die "Test 2";
@@ -965,6 +1051,7 @@ sub InvCompare{
 	elsif ($distance_method eq "dKL"){
 	    $method_value=$dKL;
 	    $method_condition=0;
+	    $method_threshold=0.1;
 	}
 
 	## This control is use to avoid recovering again the matrix comparison 
@@ -1012,7 +1099,7 @@ sub InvCompare{
 	#die;
 	&RSAT::message::Debug ( "length ". $length ) if ($main::verbose >= 5 );
 	
-	if ($method_value>=0.1){ ## This value has been taken based in the analysis of factors recognized in RegulonDB as Direct Repeats
+	if ($method_value>=$method_threshold){ ## This value has been taken based in the analysis of factors recognized in RegulonDB as Direct Repeats
 	    return (1,$method_value, $length, $rep1, $rep2);
 	}
 	return (0,$method_value,$length,$rep1, $rep2);
@@ -1023,7 +1110,7 @@ sub InvCompare{
 	#warn "minimal disntance ".$method_value;
 	#die;
 # warn "length ". $length;
-	if ($method_value<=0.1){ ## This value has been taken based in the analysis of factors recognized in RegulonDB as Direct Repeats
+	if ($method_value<=$method_threshold){ ## This value has been taken based in the analysis of factors recognized in RegulonDB as Direct Repeats
 	    return (1,$method_value, $length, $rep1, $rep2);
 	}
 	return (0,$method_value,$length,$rep1, $rep2);
@@ -1133,10 +1220,10 @@ sub SplitMethod {
 	    if($m_name ne $prev_m_name){
 		if($strand ne $prev_strand){
 		    $Invert_count ++ ;
-		     &RSAT::message::Info("Found one expected overlap for an IR \n"," Number of IRs: ", $Invert_count) if ($verbose >= 2);
+		     &RSAT::message::Debug("Found one expected overlap for an IR \n"," Number of IRs: ", $Invert_count) if ($verbose >= 8);
 		}else{
 		    $Direct_count ++ ;
-		    &RSAT::message::Info("Found one expected overlap for a DR \n"," Number of DRs: ", $Direct_count) if ($verbose >= 2);
+		    &RSAT::message::Debug("Found one expected overlap for a DR \n"," Number of DRs: ", $Direct_count) if ($verbose >= 8);
 	
 		}
 	    }
@@ -1159,11 +1246,17 @@ sub SplitMethod {
     my $aux2_length=((split(/-/,$Original_pos[1]))[1]) -  ((split(/-/,$Original_pos[1]))[0] );
 
     my $length=min ($aux1_length, $aux2_length);
+
+
+    my $threshold_ratio_IR=$main::th{"split_IR"};    
+    my $threshold_ratio_DR=$main::th{"split_DR"};
+
+
     
     unless ($sym){
 	$ratio=$Invert_count/$Direct_count; #my $mv_dir= $main::$mv_dir;
 	
-	$ratio>1 ? ($ratio>1.2? ($sym="Invert repeat"):($sym="Invert repeat*")) : ($ratio<0.8? ($sym="Direct repeat" ) :( $sym="Direct repeat*"));
+	$ratio>1 ? ($ratio>$threshold_ratio_IR? ($sym="Invert repeat"):($sym="Invert repeat*")) : ($ratio<$threshold_ratio_DR? ($sym="Direct repeat" ) :( $sym="Direct repeat*"));
     }
 
     if ($sym =~ /Direct repeat/ ){
