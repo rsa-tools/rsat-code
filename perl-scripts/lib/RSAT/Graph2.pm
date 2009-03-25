@@ -2339,6 +2339,9 @@ sub to_dot {
       my $source = $arcs[$i][0];
       my $target = $arcs[$i][1];
       my $label = $arcs[$i][2];
+      if ($label eq $source."_".$target) {
+        $label = "";
+      } 
       $dot .=  join ("", "\"", $source, "\" -- \"", $target, "\" [label=\"", $label,"\"]", "\n");
     }
     
