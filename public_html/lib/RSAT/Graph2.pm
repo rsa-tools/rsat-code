@@ -1436,7 +1436,7 @@ sub read_from_table {
       if ($weight && $array[$cpt][1] ne "###NANODE###") {
         if (defined ($linecp[$weight_col-1])) {
           $array[$cpt][2] = $linecp[$weight_col-1];
-          $array[$cpt][2] =~ s/^\s*//;
+          $array[$cpt][2] =~ s/^\s*//; # remove ending space
          } else {
            &RSAT::message::Warning("No label or weight in column $weight_col on line $linecpt");# if ($main::verbose >= 1);
          }
@@ -2316,11 +2316,23 @@ sub to_dot {
     my ($self) = @_;    
     my @nodes = $self->get_nodes();
     my @arcs = $self->get_attribute("arcs");
+    my $min = $self->get_attribute("min_weight");
+    my $max = $self->get_attribute("max_weight");    
+    
+    my $edge_width_calc = 0;
+    if ($min ne "null" && $max ne "null" && $main::edge_width) {
+      $edge_width_calc = 1;
+      ## attribution of the minimal and maximal value if specified as arguments
+      $min = $min_value if (defined $min_value && $min_value <= $min);
+      $max = $max_value if (defined $max_value && $max_value >= $max);
+#       print "MIN $min_value $min\n";
+    }     
+    
     
     #print "NODES @nodes\n\n";
     my $dot = "graph G {\n";
     $dot .= "overlap=scale;\n";
-    $dot .= "size=\"7,10\";\n";
+    $dot .= "size=\"36,40\";\n";
 
     foreach my $node (@nodes) {
       my $nodeid = $self->node_by_name($node);
@@ -2339,10 +2351,15 @@ sub to_dot {
       my $source = $arcs[$i][0];
       my $target = $arcs[$i][1];
       my $label = $arcs[$i][2];
+      my $color = $arcs[$i][3];
       if ($label eq $source."_".$target) {
         $label = "";
-      } 
-      $dot .=  join ("", "\"", $source, "\" -- \"", $target, "\" [label=\"", $label,"\"]", "\n");
+      }
+      my $edge_width= 2;
+      if ($edge_width_calc) {
+        $edge_width = ((($label-$min)/($max+1-$min))*6.5)+0.5;
+      }
+      $dot .=  join ("", "\"", $source, "\" -- \"", $target, "\" [label=\"\", weight=\"$label\", color=\"$color\"]", "\n");
     }
     
     $dot .= "}\n";
@@ -2697,7 +2714,7 @@ sub to_gml {
 	$gml .= "\t"."]\n";
 # 	print "noeud $label\n";
     }
-    ## Export arcs
+    ## Export edges
     &RSAT::message::Info("Exporting edges") if ($main::verbose >= 3);
     for (my $j = 0; $j < scalar(@arcs); $j++) {
       my $source_name = $arcs[$j][0];
