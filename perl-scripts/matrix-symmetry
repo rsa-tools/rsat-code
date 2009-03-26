@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-symmetry,v 1.7 2009/03/24 01:03:20 amedina Exp $
+# $Id: matrix-symmetry,v 1.8 2009/03/26 01:05:40 amedina Exp $
 #
 ############################################################
 
@@ -58,7 +58,7 @@ IR -> <-
 I<matrix-symmetry> implements two alternative methodologies to detect
 symmetries within a PSSM.
 
-=head3  1) Normalized corelation (Ncor)
+=head3  1) Normalized correlation (Ncor)
 
 This approach relies on the normalized correlation defined in (and
 computed by) I<compare-matrices>.
@@ -129,7 +129,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     #$program_version = "0.1";
     
     ################################################################
@@ -564,7 +564,7 @@ Supported threshold fields : Ncor, split_IR, split_DR
 
 The defult threshold for Ncor is set on 0.1, when the Ncor value for the matrix comparison is above this threshold the corresponding symmetry is reported. This value has been set based on data from E.coli Transcription Factor binding motifs.
 
-Whith the I<split> method, symmetry detection is based on the overlap of hits obtained from the scanning of a random sequence.
+With the I<split> method, symmetry detection is based on the overlap of hits obtained from the scanning of a random sequence.
 If the PSSM contains a Direct Repeat, the number of overlaped hits on the same side of the string is expected to be higher than the number of ovelaped hits in opposite sides of the string, and if the PSSM contains an Inverted Repeat it would be otherwise.
 
 The number of overlaped hits is counted for both categories, symmetry detection is based on the ratio between this counts.
@@ -676,7 +676,7 @@ This arguments is passed to matrix-scan.
 
 =item B<-bg>
 
-Type of sequences to calculate the Background model for the randome sequences used with splited matrices.
+Type of sequences to calculate the Background model for the randome sequences used with splited matrices. This file is mandatory.
 
 =cut
 	} elsif ($arg eq "-bg") {
@@ -823,28 +823,28 @@ sub ComputeNormalizedCorrelation {
 	print $matrix_name." Deciding by Diference in distance \n Direct ".$DR_dist."\n Invert ".$IR_dist."\n";
 	#print CLASS $factor." Uneable to decide \n\n";
 	if ($DR_dist > $IR_dist){
-	    &RSAT::message::Info($matrix_name." Found Internal motif structure:  Direct repeat") if ($main::verbose >= 2) ;
-	    &RSAT::message::Info(join ("\t",$matrix_name,"Direct repeat",$DR_dist,$length_DR, $DR_rep1,$DR_rep2)."\n") if($main::verbose >= 2) ;
+	    &RSAT::message::Info($matrix_name." Found Internal motif structure:  Direct_repeat") if ($main::verbose >= 2) ;
+	    &RSAT::message::Info(join ("\t",$matrix_name,"Direct_repeat",$DR_dist,$length_DR, $DR_rep1,$DR_rep2)."\n") if($main::verbose >= 2) ;
 
-	    print $out join ("\t",$matrix_name,"Direct repeat*",$DR_dist,$length_DR,$DR_rep1,$DR_rep2)."\n";   
+	    print $out join ("\t",$matrix_name,"Direct_repeat*",$DR_dist,$length_DR,$DR_rep1,$DR_rep2)."\n";   
 	}
 	else {
-	    &RSAT::message::Info( $matrix_name." Found Internal motif structure: Invert repeat") if ($main::verbose >= 2);
-	    &RSAT::message::Info(join ("\t",$matrix_name,"Invert repeat",$IR_dist,$length_IR,$IR_rep1,$IR_rep2)."\n") if ($main::verbose>=2);
+	    &RSAT::message::Info( $matrix_name." Found Internal motif structure: Invert_repeat") if ($main::verbose >= 2);
+	    &RSAT::message::Info(join ("\t",$matrix_name,"Invert_repeat",$IR_dist,$length_IR,$IR_rep1,$IR_rep2)."\n") if ($main::verbose>=2);
 
-	    print $out join("\t", $matrix_name, "Invert repeat*",$IR_dist,$length_DR,$IR_rep1,$IR_rep2)."\n"; 
+	    print $out join("\t", $matrix_name, "Invert_repeat*",$IR_dist,$length_DR,$IR_rep1,$IR_rep2)."\n"; 
 	}
     }elsif ($DirectRepeat){
-	&RSAT::message::Info($matrix_name." Found Internal motif structure:  Direct repeat") if ($main::verbose >= 2);
-	&RSAT::message::Info(join ("\t",$matrix_name,"Direct repeat",$DR_dist,$length_DR,$DR_rep1,$DR_rep2)."\n") if($main::verbose >= 2) ;
+	&RSAT::message::Info($matrix_name." Found Internal motif structure:  Direct_repeat") if ($main::verbose >= 2);
+	&RSAT::message::Info(join ("\t",$matrix_name,"Direct_repeat",$DR_dist,$length_DR,$DR_rep1,$DR_rep2)."\n") if($main::verbose >= 2) ;
 
-	print $out join ("\t",$matrix_name,"Direct repeat",$DR_dist,$length_DR,$DR_rep1,$DR_rep2)."\n"; 
+	print $out join ("\t",$matrix_name,"Direct_repeat",$DR_dist,$length_DR,$DR_rep1,$DR_rep2)."\n"; 
 
     }elsif ($InvertRepeat){
-	&RSAT::message::Info( $matrix_name." Found Internal motif structure: Invert repeat") if ($main::verbose >= 2);
-	&RSAT::message::Info(join ("\t",$matrix_name,"Invert repeat",$IR_dist,$length_IR,$IR_rep1,$IR_rep2)."\n") if ($main::verbose>=2);
+	&RSAT::message::Info( $matrix_name." Found Internal motif structure: Invert_repeat") if ($main::verbose >= 2);
+	&RSAT::message::Info(join ("\t",$matrix_name,"Invert_repeat",$IR_dist,$length_IR,$IR_rep1,$IR_rep2)."\n") if ($main::verbose>=2);
 
-	print $out join ("\t",$matrix_name,"Invert repeat",$IR_dist,$length_IR,$IR_rep1,$IR_rep2)."\n";
+	print $out join ("\t",$matrix_name,"Invert_repeat",$IR_dist,$length_IR,$IR_rep1,$IR_rep2)."\n";
     }else{
 	&RSAT::message::Info($matrix_name." None Internal motif structure found");
 	&RSAT::message::Info( join("\t",$matrix_name,"Not detected","NA","NA","NA","NA")."\n");
@@ -1239,8 +1239,8 @@ sub SplitMethod {
     my $sym ="";
     my $ratio="NA";
  
-    $sym = "Invert repeat" unless ($Direct_count);
-    $sym = "Direct repeat" unless ($Invert_count);
+    $sym = "Invert_repeat" unless ($Direct_count);
+    $sym = "Direct_repeat" unless ($Invert_count);
 
     my $aux1_length= ((split(/-/,$Original_pos[0]))[1]) -  ((split(/-/,$Original_pos[0]))[0] );
     my $aux2_length=((split(/-/,$Original_pos[1]))[1]) -  ((split(/-/,$Original_pos[1]))[0] );
@@ -1256,15 +1256,15 @@ sub SplitMethod {
     unless ($sym){
 	$ratio=$Invert_count/$Direct_count; #my $mv_dir= $main::$mv_dir;
 	
-	$ratio>1 ? ($ratio>$threshold_ratio_IR? ($sym="Invert repeat"):($sym="Invert repeat*")) : ($ratio<$threshold_ratio_DR? ($sym="Direct repeat" ) :( $sym="Direct repeat*"));
+	$ratio>1 ? ($ratio>$threshold_ratio_IR? ($sym="Invert_repeat"):($sym="Invert_repeat*")) : ($ratio<$threshold_ratio_DR? ($sym="Direct_repeat" ) :( $sym="Direct_repeat*"));
     }
 
-    if ($sym =~ /Direct repeat/ ){
-	    print $matrix_name." Found Internal motif structure:  Direct repeat \n";
+    if ($sym =~ /Direct_repeat/ ){
+	    print $matrix_name." Found Internal motif structure:  Direct_repeat \n";
 	    print $main::out join ("\t",$matrix_name,$sym,$ratio, $length,@Original_pos)."\n";   
 	}
-    elsif ($sym =~ /Invert repeat/) {
-	print $matrix_name." Found Internal motif structure: Invert repeat \n";
+    elsif ($sym =~ /Invert_repeat/) {
+	print $matrix_name." Found Internal motif structure: Invert_repeat \n";
 	print $main::out join ("\t",$matrix_name,$sym,$ratio,$length,@Original_pos)."\n"; 
     }
     
