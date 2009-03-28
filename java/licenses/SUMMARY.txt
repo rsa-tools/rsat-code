@@ -15,6 +15,7 @@ be_ac_ulb_scmbb_snow_data_core.jar
 be_ac_ulb_scmbb_snow_protege_owl_libbiopax.jar
 be_ac_ulb_bigre_pathwayinference_core.jar
 be_ac_ulb_bigre_metabolicdatabase.jar
+be_ac_ulb_bigre_keggclient.jar
 graphtools.jar
 
 

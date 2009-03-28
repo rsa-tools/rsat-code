@@ -6,7 +6,7 @@
 %
 % Author: Karoline Faust
 %
-% Last modification: 18/11/2008
+% Last modification: 26/03/2009
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -54,8 +54,53 @@ You can do so by specifying the -Xmx option.
 Example:
 java -Xmx800m graphtools.algorithms.Pathfinder -h
 
-2.5. Test path finding
-----------------------
+2.5. Update files in misc directory
+-------------------------------------
+All files in the $RSAT/java/misc directory can be updated using the graphtools.
+
+************* Kegg_organisms_list.txt *************
+Usage:
+This file is displayed in the KEGG network provider web interface.
+Location:
+The updated file should replace the file located at $RSAT/data/KEGG.
+Update:
+A list of organisms supported by the current KEGG PATHWAY version
+can be obtained using the -O option of the MetabolicGraphProvider,
+which queries KEGG via its API.
+
+************* rpairs.tab *************
+Usage:
+This file is used by the MetabolicGraphProvider and its client, the
+KEGG network provider, to generate RPAIR networks.
+Location:
+The updated file should replace the file located at $RSAT/data/KEGG.
+Update:
+The recent version of the KEGG LIGAND reaction file can be downloaded
+and the list of rpairs can be generated from it using the -p option of the KeggLigandDataManager.
+
+************* metabolicdb_dump_day_month_year.backup *************
+Usage:
+This file contains the metabolic database, which is used by the MetabolicGraphProvider and
+the metabolic Pathfinder web application.
+Location:
+The file should be loaded into a postgres database. See the NeAT web server install guide for details.
+Update:
+Current KEGG LIGAND data can be parsed into a postgres metabolic database using
+the KeggLigandDataManager options -A, -l and -z.
+
+************* preloadedNetworks.tgz *************
+Usage:
+This file contains the networks that are used by the metabolic Pathfinder web application.
+Location:
+The updated networks should replace the networks located at $RSAT/data/Stored_networks.
+Update:
+The preloaded networks for the metabolic pathfinder can be generated with
+the KeggLigandDataManager options -M, -S and -T.
+
+2.6. Tests
+----------
+
+************* Path finding *************
 
 You can try the following to test your installation:
 java graphtools.algorithms.Pathfinder -g $RSAT/public_html/demo_files/yeast_string_database_graph_converted_weights.tab -f flat -s RAS2 -t TEC1 -U -c -r 2
@@ -75,8 +120,7 @@ RAS2    TEC1    9       9       8.75    8       RAS2    CDC42   STE20   STE5    
 
 If it takes too long, specify a temp directory (option -p). This will greatly speed up path finding the next time you run it on the same graph.
 
-2.6. Test pathway inference
----------------------------
+************* Pathway inference *************
 
 Type the following:
 java graphtools.algorithms.Pathwayinference -g $RSAT/public_html/demo_files/Ecoli_metabolic_network.tab -f flat -b -s 'R02412>/R02412<#R00986>/R00986<#R01715>/R01715<' -y con -o aromatic_amino_acid_biosynthesis.txt
@@ -161,11 +205,11 @@ If MetabolicGraphProvider is run in KGML modus, it downloads KGML files into the
 In the same directory, it also creates a folder to store organism-specific metabolic graphs for later use.
 
 The rpairs.tab file required for some options can be found in $RSAT/java/misc
-In the same directory, the lists of supported KEGG organisms (for KGML modus and DB modus) are stored.
+In the same directory, the lists of supported KEGG organisms (for KGML modus) are stored.
 
 The options -a, -r, -R and the DB modus of MetabolicGraphProvider are only available
-if metabolic_db data have been installed.
-Check the NeAT web server install guide for installation of postgres and metabolic_db.
+if the metabolic database has been installed.
+Check the NeAT web server install guide for installation of postgres and the metabolic database.
 
 2.7.2. Pathwayinference
 
@@ -174,7 +218,7 @@ thus algorithms 'compSteiner' and 'steinerhybrid' are not available. All other a
 
 2.7.3. GraphAnnotator
 
-The GraphAnnotator tool is only available if metabolic_db data have been installed.
+The GraphAnnotator tool is only functional if the metabolic database has been installed.
 
 3. Disclaimer
 =============
@@ -189,7 +233,7 @@ KWalks has been developped mainly by Pierre Dupont and Jerome Callut [7].
 MetabolicGraphProvider makes use of data stored in KEGG [8].
 For the use of KEGG data, see: http://www.genome.jp/kegg/legal.html
 
-The postgres backup file metabolicdb_dump_13_Oct_2008.backup contains data taken
+The postgres backup file metabolicdb_dump_day_month_year.backup contains data taken
 from KEGG and MetaCyc [9].
 For the use of MetaCyc data, see: http://biocyc.org/download-flatfiles.shtml
 
