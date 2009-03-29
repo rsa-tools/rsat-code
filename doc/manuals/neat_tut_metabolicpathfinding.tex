@@ -29,11 +29,14 @@ Main reactant pairs connect main compounds and should be traversed preferentiall
 
 % rpair graphs
 The KEGG RPAIR annotation is integrated by construction of the undirected RPAIR network, which consists of 7,058 reactant pairs,
-4,297 compounds and 14,116 edges. Alternatively, two other networks are available: the directed reaction network evaluated in
+4,297 compounds and 14,116 edges for KEGG version 41.0. Alternatively, two other networks are available: the directed reaction network evaluated in
 \cite{croes06} and an undirected reaction-specific RPAIR network, in which each reaction is divided in its reactant pairs.\\
+
+Note that in more recent KEGG versions, identifiers of reactant pairs start with RP instead of A.\\
 
 % what will be covered in this chapter
 In this chapter, we will recover the aldosterone pathway using the RPAIR and the reaction network respectively.
+Note that the study case was carried out with data from KEGG LIGAND version 41.0. Results might differ for more recent KEGG versions.
 
 \section{Enumerating metabolic pathways between compounds, reactions or enzymes}
 
@@ -83,18 +86,36 @@ its start and end reaction.
 
 \end{enumerate}
 
-To see how results change with modified weight, you can repeat steps 1 and 2.
-In the metabolic path finding form, select Reaction graph instead of Subreaction graph (which is selected by default) and
+To see how results change with the choice of the graph, you can repeat steps 1 and 2.
+In the metabolic path finding form, select Reaction graph instead of RPAIR graph (which is selected by default) and
 follow step 3 to 5. You will notice in the seed node selection form that the reaction identifiers are no longer mapped to
 reactant pairs.
 
 \subsection{Protocol for the command-line tools}
 
+This section assumes that you have installed the RSAT/NeAT command line tools.
+
 The metabolic pathfinder is a web application on top of Pathfinder.
 You may run metabolic path finding on command line by launching the Pathfinder command line tool on
-the RPAIR and reaction networks, which are provided in the Data section of NeAT.
-A more detailed explanation can be found in the metabolic pathfinder manual
-(section Metabolic path finding on command line).\\
+the RPAIR and reaction networks, which are provided in the KEGG graph repository reachable from the metabolic
+pathfinder manual page.
+
+Type the following command in one line to find paths in the RPAIR network:
+	{\color{Blue} \begin{footnotesize}
+		\begin{verbatim}
+	java -Xmx800m graphtools.algorithms.Pathfinder -g RPAIRGraph_allRPAIRs_undirected.txt -f flat
+	     -s 'A02437' -t 'A02894' -b -y rpairs
+	\end{verbatim} \end{footnotesize}
+	}
+
+To repeat path finding in the reaction network, type in one line:
+
+{\color{Blue} \begin{footnotesize}
+		\begin{verbatim}
+	java -Xmx800m graphtools.algorithms.Pathfinder -g ReactionGraph_directed.txt -d -f flat
+	     -s 'R02724>/R02724<' -t 'R03263>/R03263<' -b -y con
+	\end{verbatim} \end{footnotesize}
+	}
 
 \subsection{Interpretation of the results}
 
