@@ -91,9 +91,6 @@ then follow steps 4 to 10 as described above.
 
 \subsection{Protocol for the command-line tools}
 
-You may download the command line version of the KEGG network provider, which also includes the path finding tool,
-from the manual page of the KEGG network provider (section: standalone tool). \\
-
 The command-line version of this tutorial is restricted to the \textit{E. coli} and \textit{S. cerevisiae}
 metabolic networks. It is assumed that you have installed the required command-line tools.
 
@@ -111,8 +108,8 @@ metabolic networks. It is assumed that you have installed the required command-l
 
 		{\color{Blue} \begin{footnotesize}
 		\begin{verbatim}
-		java graphtools.algorithms.Pathfinder -g eco_metabolic_network_directed.txt -f tab -s C00049 -t C00047 -r 1 -y con -b
-		 -n -c -e ExclusionAttribute -T pathsUnion -O gml -o lysinebiosyn_eco.gml
+		java graphtools.algorithms.Pathfinder -g eco_metabolic_network_directed.txt -f tab -s C00049
+		-t C00047 -r 1 -d -y con -b -T pathsUnion -O gml -o lysinebiosyn_eco.gml
 		\end{verbatim} \end{footnotesize}
 		}
 
@@ -131,8 +128,8 @@ metabolic networks. It is assumed that you have installed the required command-l
 
 		{\color{Blue} \begin{footnotesize}
 		\begin{verbatim}
-		java graphtools.algorithms.Pathfinder -g sce_metabolic_network_directed.txt -f tab -s C00049 -t C00047 -r 1 -y con -b
-		 -n -c -e ExclusionAttribute -T pathsUnion -O gml -o lysinebiosyn_sce.gml
+		java graphtools.algorithms.Pathfinder -g sce_metabolic_network_directed.txt -f tab -s C00049
+		-t C00047 -d -r 1 -y con -b -T pathsUnion -O gml -o lysinebiosyn_sce.gml
 		\end{verbatim} \end{footnotesize}
 		}
 
