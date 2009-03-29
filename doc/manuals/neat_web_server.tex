@@ -201,10 +201,13 @@ If any of these folders does not yet exist, create them.
 For installation of REA and kwalks see the section on third-party programs in
 the RSAT install guide.
 
-\subsection{Installation of Java tools server}
+\subsection{Java tools server}
 
-The graphtools server contains the java web services of NeAT. It is stored as a war file
-in \file{\$RSAT/java/web}
+The graphtools server contains the java web services of NeAT.
+
+\subsubsection{Installation of Java tools server}
+
+The graphtools server is stored as a war file in \file{\$RSAT/java/web}.
 
 Either place the war file \textit{be.ac.ulb.bigre.graphtools.server.war} in
 \$CATALINA\_HOME/webapps and then start Tomcat or use the Tomcat manager\\
@@ -227,15 +230,38 @@ If you want to install the metabolic pathfinder, continue with section "Metaboli
 
 The directory \file{\$RSAT/public\_html/data/Stored\_networks}
 allows to store graph files for longer time
-(remember that \file{\$RSAT/public\_html/tmp} should be cleaned regularly).
+(remember that \file{\$RSAT/public\_html/tmp} should be cleaned regularly).\\
 
-Organism-specific KGML files are placed in \file{\$RSAT/public\_html/data/KEGG}
+Note that the Kegg network provider accesses the metabolic database to add attributes
+such as compound name or EC number to networks.
+In order to install the database, see the installation of the metabolic pathfinder.
+The name of this database, its IP address, its owner and password may be modified.
+These parameters may be set in \textit{serverConfig.txt}
+located at \file{\$CATALINA\_HOME/webapps/be.ac.ulb.bigre.graphtools.server/WEB-INF}.
+
+\subsubsection{Update the KEGG network provider}
+
+The KEGG network provider places organism-specific KGML files in \file{\$RSAT/public\_html/data/KEGG}
 in a folder with the KEGG organism name (e.g. sce).
 You may place KGML folders for organisms yourself or you may let the program download
-required KGML files on the fly. The default KGML version might be outdated
-(check KEGG Release Notes for the correct version). To update the KGML version,\\
+required KGML files on the fly. In the latter case, make sure that the KGML version is set correctly.
+To change the KGML version displayed in the web interface,\\
 go to \file{\$CATALINA\_HOME/webapps/be.ac.ulb.bigre.graphtools.server/WEB-INF}, open
-\textit{serverConfig.txt} and modify the value of the variable KGML\_VERSION.
+\textit{serverConfig.txt} and modify the value of the parameter KGML\_VERSION.\\
+
+The Kegg network provider queries a metabolic database in order to annotate the network
+with certain compound and reaction attributes.
+To install and update the metabolic database, use the KeggLigandDataManager command line tool.
+For details, type:
+\textit{java graphtools.parser.KeggLigandDataManager -h}\\
+
+The KEGG network provider is also using the file rpairs.tab located in \file{\$RSAT/data/KEGG}
+to convert reaction into RPAIR graphs. To update this file, use the KeggLigandDataManager command line tool.\\
+
+Finally, the KEGG network provider displays a list of KEGG organisms. To obtain the
+organism list for the recent KEGG version, use the MetabolicGraphProvider command line
+tool. For details on this tool, type: \textit{java graphtools.util.MetabolicGraphProvider -h}
+Place the updated list in the folder \file{\$RSAT/data/KEGG} to replace the old list.
 
 \subsection{Metabolic Pathfinder}
 After successful installation of the Java web services, you may install metabolic pathfinder,
@@ -267,9 +293,10 @@ which can be loaded into postgres as follows:
 \item Start postgres by typing the following on command line:\\
 \textit{psql -U postgres}
 \item In postgres, do:\\
-\textit{create database "metabolic\_database" with owner "karoline" encoding='UTF8';}
+\textit{create user metabolic with password 'metabolic';}\\
+\textit{create database "metabolicdb" with owner "metabolic" encoding='UTF8';}
 \item Quit postgres and type on command line:\\
-\textit{pg\_restore -d metabolic\_database metabolicdb\_dump\_day\_month\_year.backup}
+\textit{pg\_restore -d metabolicdb metabolicdb\_dump\_day\_month\_year.backup}
 \end{enumerate}
 
 \subsubsection{Installation of metabolic pathfinder}
@@ -289,6 +316,32 @@ Open the web.xml file and set the variable "dotpath" to the location
 of the dot binary, e.g. \file{/usr/bin/dot}
 
 Finally, reload the metabolic pathfinding web application using the Tomcat manager.
+
+\subsubsection{Update of metabolic pathfinder}
+The metabolic pathfinder contains by default data from KEGG version 41.0.
+In order to update it, you can follow the steps below:
+
+\begin{enumerate}
+
+\item Load KEGG LIGAND compound and reaction file into the metabolic database.
+      The command line tool \textit{KeggLigandDataManager} can be used for this.
+      If present, delete previous KEGG data in the database. You may change the name,
+      the location, owner and password of the metabolic database. In this case, change the
+      default values in the web.xml file located at\\
+      \file{\$CATALINA\_HOME/webapps/metabolicpathfinding/WEB-INF}.
+
+\item Generate the preloaded networks with the \textit{KeggLigandDataManager} command line tool.
+      Place those networks in \file{\$RSAT/data/Stored\_networks} replacing the old ones.
+
+\item In point 2, example networks have been generated as well.\\
+      Copy them to
+      \file{\$CATALINA\_HOME/webapps/metabolicpathfinding/networks}, replacing the old ones.
+
+\item Set the parameter \textit{keggVersion} in the web.xml file to the updated KEGG version.
+
+\item Reload the metabolicpathfinding web application in tomcat.
+
+\end{enumerate}
 
 \subsection{Web services}
 
