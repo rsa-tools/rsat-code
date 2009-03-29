@@ -19,8 +19,8 @@
   # Error status
   $error = 0;
   # default params
-  $default_nodeIntegers = 0;
   $default_returnType = "server";
+  $algorithm = "rea";
   $tab_java = 1;
   $tmpGraphFile = "";
   # server-related params
@@ -36,6 +36,8 @@
   $out_format = $_REQUEST['out_format'];
   $sources = $_REQUEST['sources'];
   $targets = $_REQUEST['targets'];
+  $to_exclude = $_REQUEST['exclude'];
+  $to_include = $_REQUEST['include'];
   if ($_FILES['batch_file']['name'] != "") {
     $batch_file = uploadFile('batch_file');
   }
@@ -46,8 +48,6 @@
   $graph_id = $_REQUEST['graph_id'];
   $directed = $_REQUEST['directed'];
   $weight = $_REQUEST['weight'];
-  $nodeIntegers = $default_nodeIntegers;
-  $algorithm =  $default_algorithm;
   $rank = $_REQUEST['rank'];
   $outputchoice = $_REQUEST['outputchoice'];
   $outputType =   $_REQUEST['outputType'];
@@ -170,10 +170,11 @@
     	'directed'=>$directed,
     	'metabolic'=>$metabolic,
     	'exclusionAttr'=>$exAttrib,
-    	'nodeIntegers'=>$nodeIntegers,
     	'weight'=>$weight,
     	'algorithm'=>$algorithm,
     	'rank'=>$rank,
+    	'nodesPresent'=>$to_include,
+    	'nodesAbsent'=>$to_exclude,
     	'maxWeight'=>$maxWeight,
     	'maxLength'=>$maxLength,
     	'minLength'=>$minLength,
@@ -497,10 +498,11 @@
     	'directed'=>$directed,
     	'metabolic'=>$metabolic,
     	'exclusionAttr'=>$exAttrib,
-    	'nodeIntegers'=>$nodeIntegers,
     	'weight'=>$weight,
     	'algorithm'=>$algorithm,
     	'rank'=>$rank,
+    	'nodesPresent'=>$to_include,
+    	'nodesAbsent'=>$to_exclude,
     	'maxWeight'=>$maxWeight,
     	'maxLength'=>$maxLength,
     	'minLength'=>$minLength,
