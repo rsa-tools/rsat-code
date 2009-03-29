@@ -12,6 +12,8 @@
   $default_out_format = "";
   $default_sources = "";
   $default_targets = "";
+  $default_exclude = "";
+  $default_include = "";
   $default_graph = "";
   $default_graph_id = "";
   $default_rank = 5;
@@ -100,7 +102,7 @@
   		of 2,656 edges.<br>
   		The seed nodes are the start and end compound of the <a href='http://biocyc.org/YEAST/NEW-IMAGE?object=HEME-BIOSYNTHESIS-II' target='_blank'>heme biosynthesis II pathway</a> as annotated in BioCyc.<br>
   		This pathway is one of the study cases described in Croes et al., J. Mol. Biol. 356: 222-236 (see our <a href='neat_publications.html '>list of publications</a>.)<br>
-  		Note that for this demo, path finding is done on a smaller, undirected graph without differentially weighting compounds and reactions (both receive a weight according to their degree).
+  		Note that for this demo, path finding is done on a smaller, undirected graph without differentially weighting compounds and reactions (both receive a weight according to their degree). To find paths in directed metabolic networks with mutually exclusive reaction directions, check the advanced options of the Pathfinder tool.
   		Use the <a href='$metabolic_pathfinder_location'> Metabolic path finding tool</a> to find paths in the complete KEGG network.<br>
   		The path of first rank corresponds to the annotated heme biosynthesis II pathway. To see the influence of the weighting scheme, you can set the weighting scheme to unit weight and the rank to 1 (for quicker computation). You will obtain an entirely different result.<br><br>");
   }else if($demo2 == 1){
@@ -187,6 +189,8 @@
                 <option selected value = 'con'>degree of nodes as weight</option>
                </select>
         </td></tr>
+         <tr><td><B><a href = 'help.pathfinder.html#constraints'>Identifiers of nodes to exclude</a></B></td> <td><input type='text' NAME='exclude' VALUE='$default_exclude'></input></td></tr>
+     <tr><td><B><a href = 'help.pathfinder.html#constraints'>Identifiers of nodes to include</a></B></td> <td><input type='text' NAME='include' VALUE='$default_include'></input></td></tr>
          <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path weight</a></B></td> <td><input type='text' NAME='maxWeight' VALUE='$default_maxWeight'></input></td></tr>
          <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path length</a></B></td> <td><input type='text' name='maxLength' value='$default_maxLength'></input></td></tr>
          <tr><td><B><a href = 'help.pathfinder.html#sconstraints'>Minimal path length</a></B></td> <td><input type='text' name='minLength' value='$default_minLength'></input></td></tr>
@@ -198,6 +202,8 @@
     <br>
     <table>
      <tr><td><B><a href = 'help.pathfinder.html#rank'>Rank</a></B></td><td><input type = 'text' name='rank' value = '$default_rank' size = 10></input></td></tr>
+     <tr><td><B><a href = 'help.pathfinder.html#constraints'>Identifiers of nodes to exclude</a></B></td> <td><input type='text' NAME='exclude' VALUE='$default_exclude'></input></td></tr>
+     <tr><td><B><a href = 'help.pathfinder.html#constraints'>Identifiers of nodes to include</a></B></td> <td><input type='text' NAME='include' VALUE='$default_include'></input></td></tr>
    	 <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path weight</a></B></td> <td><input type='text' NAME='maxWeight' VALUE='$default_maxWeight'></input></td></tr>
      <tr><td><B><a href = 'help.pathfinder.html#constraints'>Maximal path length</a></B></td> <td><input type='text' name='maxLength' value='$default_maxLength'></input></td></tr>
      <tr><td><B><a href = 'help.pathfinder.html#sconstraints'>Minimal path length</a></B></td> <td><input type='text' name='minLength' value='$default_minLength'></input></td></tr>

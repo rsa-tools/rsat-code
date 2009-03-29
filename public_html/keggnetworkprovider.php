@@ -85,7 +85,7 @@ $excludedrpairclasses = $_REQUEST['excludedrpairclasses'];
 $directed = $_REQUEST['directed'];
 $keepIrre = $_REQUEST['keepIrre'];
 $rpairs = $_REQUEST['rpair'];
-# name of parameter in form is attributes[]
+# name of parameter in form is compoundattributes[] and reactionattributes[]
 $compoundattribs = $_REQUEST['compoundattributes'];
 $reactionattribs = $_REQUEST['reactionattributes'];
 $out_format = $_REQUEST['outFormat'];
@@ -126,9 +126,6 @@ if($reactionattribs){
  	$selected_attribs .= $t."/";
  }
 }
-
-# add single quotes to organism string to allow to read in full species names containing blank fields
-$organisms = "'".$organisms."'";
 
 ############## call metabolicgraphconstruction web service #################
 
