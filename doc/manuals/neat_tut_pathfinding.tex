@@ -25,7 +25,7 @@ Whether weights are used and how they are set has to be decided depending on the
 
 % what will be covered in this chapter
 In this chapter, we will demonstrate path finding on the example of metabolic networks. We will work on a network assembled
-from all metabolic pathways annotated for the yeast \textit{S. cerevisiae} in BioCyc (Release 10.6). We will also show
+from all metabolic pathways annotated for the yeast \textit{S. cerevisiae} in BioCyc (Release 10.6) \cite{biocyc}. We will also show
 the influence of the weighting scheme on path finding results.
 
 \section{Computing the k shortest paths in weighted networks}
@@ -36,7 +36,9 @@ the influence of the weighting scheme on path finding results.
 The yeast network constructed from BioCyc data consists of 1,185 nodes and 2,656 edges.
 It has been obtained by unifying 171 metabolic pathways. Note that this network is bipartite, which means that it is made up of
 two different node types: reactions and compounds. An edge never connects two nodes of the same type. For the tutorial, we choose
-to represent the metabolic data as undirected network.
+to represent the metabolic data as undirected network. Note that higher accuracies can be achieved by representing metabolic
+data by directed networks that contain for each reaction its direct and reverse direction, which are treated as mutually exclusive.
+See the advanced options of the Pathfinder tool for mutual exclusion of reactions in directed metabolic networks.
 
 % pathway
 We will recover the heme biosynthesis II pathway given its start and end compound, namely glycine and protoheme. First, we will
@@ -74,9 +76,23 @@ To see how results change with modified weight, you can repeat steps 1 and 2. Be
 % to be skipped for web tutorial
 \subsection{Protocol for the command-line tools}
 
-You can download the Pathfinder command-line tool from the Pathfinder manual page (section standalone tool).
-The use of Pathfinder on command-line requires to be familiar with the Unix shell interface.
-The README provided by the Pathfinder command-line tool explains how to install and run the tool.
+This section assumes that you have installed the RSAT/NeAT command line tools.
+
+You can find the demo network Scer\_biocyc.tab in \$RSAT/public\_html/demo\_files.
+
+Type the following command to enumerate paths up to the 5th rank in the weighted network:
+	{\color{Blue} \begin{footnotesize}
+		\begin{verbatim}
+	java -Xmx800m graphtools.algorithms.Pathfinder -g Scer_biocyc.tab -f tab -s gly -t protoheme -y con
+	\end{verbatim} \end{footnotesize}
+	}
+
+To find paths in the unweighted network, type:
+	{\color{Blue} \begin{footnotesize}
+		\begin{verbatim}
+	java -Xmx800m graphtools.algorithms.Pathfinder -g Scer_biocyc.tab -f tab -s gly -t protoheme -y unit -r 1
+	\end{verbatim} \end{footnotesize}
+	}
 
 \subsection{Interpretation of the results}
 
