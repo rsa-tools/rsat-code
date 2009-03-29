@@ -20,6 +20,7 @@
   $error = 0;
   # default params
   $default_returnType = "server";
+  $default_attribs = "";
   $algorithm = "rea";
   $tab_java = 1;
   $tmpGraphFile = "";
@@ -175,6 +176,7 @@
     	'rank'=>$rank,
     	'nodesPresent'=>$to_include,
     	'nodesAbsent'=>$to_exclude,
+    	'attribs'=>$default_attribs,
     	'maxWeight'=>$maxWeight,
     	'maxLength'=>$maxLength,
     	'minLength'=>$minLength,
@@ -498,6 +500,7 @@
     	'directed'=>$directed,
     	'metabolic'=>$metabolic,
     	'exclusionAttr'=>$exAttrib,
+    	'attribs'=>$default_attribs,
     	'weight'=>$weight,
     	'algorithm'=>$algorithm,
     	'rank'=>$rank,
