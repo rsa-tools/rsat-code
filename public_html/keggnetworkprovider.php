@@ -294,6 +294,8 @@ if($reactionattribs){
           <input type='hidden' NAME='graph_format' VALUE='$out_format'>
           <input type='hidden' NAME='graph_type' VALUE='$graph_type'>
           <input type='hidden' NAME='directed' VALUE='$directed'>
+          <input type='hidden' NAME='irreversible' VALUE='$keepIrre'>
+          <input type='hidden' NAME='organisms' VALUE='$organisms'>
           <INPUT type='submit' value='Find metabolic paths in this graph'>
          </form>
        </td>
