@@ -185,6 +185,11 @@ input {
 	width:500;
 	}
 
+#div_background {
+	background-color: #CCCCCC;
+	width:700;
+	}
+
 #blue_background {
 	background-color: #D6EEFA;
 	width:500;
