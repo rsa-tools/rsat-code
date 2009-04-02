@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.29 2008/07/09 23:38:52 jvanheld Exp $
+# $Id: purge-sequence,v 1.30 2009/04/02 23:49:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -71,6 +71,7 @@ $tmp_file = "tmp_".$basename.".fasta";
 #$command = "cd $TMP ; ";
 $command = " $convert_seq_command -from $in_format -to fasta -o ${TMP}/$tmp_file -noempty ";
 $command .= " -mask_short ".$mask_short if ($mask_short);
+$command .= " -dna " if ($dna);
 $command .= " -i $dir{input}/$basename" if ($inputfile);
 &doit($command, $dry_run, $die_on_error, $verbose);
 
@@ -287,6 +288,10 @@ sub ReadArguments {
 	    ### mismatches
 	} elsif (($ARGV[$a] eq "-mis") && (&IsInteger($ARGV[$a+1]))) {
 	    $mismatches = $ARGV[$a+1];
+
+	    ## mask non-DNA code
+	} elsif ($ARGV[$a] eq "-dna") {
+	    $dna = 1;
 
 	    ## mask short sequences
 	} elsif ($ARGV[$a] eq "-mask_short") {
