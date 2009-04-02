@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.31 2008/09/24 12:22:06 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.32 2009/04/02 23:49:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -55,7 +55,9 @@ $purge = $query->param('purge');
 if ($purge) {
     #### purge sequence option
 #    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format | $dyad_analysis_command ";
-    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format -o $sequence_file.purged; $dyad_analysis_command -i $sequence_file.purged ";
+    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format -o $sequence_file.purged ";
+    $command .= " -dna" if (lc($query->param('sequence_type')) eq "dna");
+    $command .= "; $dyad_analysis_command -i $sequence_file.purged ";
 } else {
     $command= "$dyad_analysis_command -i $sequence_file  ";
 }
