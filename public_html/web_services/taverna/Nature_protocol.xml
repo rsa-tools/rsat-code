@@ -3,7 +3,7 @@
   <s:workflowdescription lsid="urn:lsid:net.sf.taverna:wfDefinition:c8de3275-5e37-4a3b-945b-fac109810377" author="" title="Nature_protocol" />
   <s:processor name="Nested_Workflow">
     <s:workflow>
-      <s:xscufllocation>file:/C:/Documents%20and%20Settings/Eric/Bureau/clean/RSAT_retrieve_purge_oligo_DNAPattern_conver_feature_pattern_assembly.xml</s:xscufllocation>
+      <s:xscufllocation>http://rsat.bigre.ulb.ac.be/rsat/web_services/taverna/RSAT_retrieve_purge_oligo_DNAPattern_conver_feature_pattern_assembly.xml</s:xscufllocation>
     </s:workflow>
   </s:processor>
   <s:link source="background" sink="Nested_Workflow:background" />
