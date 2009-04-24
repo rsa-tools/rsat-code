@@ -548,9 +548,9 @@ sub create_random_graph {
         last;
       }
     }
-    if (!$duplicated) {
+    if (!$duplicated || $k > (50*$req_edges)) {
       last;
-    }
+    } 
   }
   &RSAT::message::Info("\t",scalar(@possible_target) ,"potential edges created.") if ($main::verbose >= 3);
   ## In case the maximum degree specification prevented to create enough edges : error.
