@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.31 2009/04/24 13:33:02 sylvain Exp $
+# $Id: random-graph,v 1.32 2009/04/24 13:45:02 sylvain Exp $
 #
 ############################################################
 
@@ -697,6 +697,7 @@ Only compatible with ER randomization of a graph. Source and target nodes stay s
 	} elsif ($arg eq "-col_conservation") {
 	    $col_conservation = 1;
 =pod
+
 =item B<-self>
 
 Allows self loops (by default, self loops are not allowed)
