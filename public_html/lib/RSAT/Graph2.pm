@@ -479,7 +479,7 @@ sub create_random_graph {
     $req_target_nodes = scalar(@target_nodes);
   }
   ## Computation of the maximum number of edges
-  if (!$duplicated) { 
+  if (!$duplicated) {
     if (!$directed && !$self_loops) {
       $max_arc_number = ($req_nodes*($req_nodes-1))/2;
 #       print "REQ NODES".$req_nodes."\n";
@@ -503,53 +503,54 @@ sub create_random_graph {
   my @random_source = 0 .. ($req_source_nodes-1);
   my @random_target = 0 .. ($req_target_nodes-1);
   @random_source = &shuffle(@random_source);
-  for (my $i = 0; $i < $req_source_nodes; $i++) {
-    @random_target = &shuffle(@random_target);
-    
-    for (my $j = 0; $j < $req_target_nodes; $j++) {
-      my $source_index = $random_source[$i%($req_source_nodes)];
-      my $target_index = $random_target[$j%($req_target_nodes)];
-      my $source = $source_nodes[$source_index];
-      my $target = $target_nodes[$target_index];
-      my $label = join("_", $source, $target);
-      my $inv_label = join("_", $target, $source);
+  for (my $dup = 0; $dup <= 5; $dup++) {
+    for (my $i = 0; $i < $req_source_nodes; $i++) {
+      @random_target = &shuffle(@random_target);
+      for (my $j = 0; $j < $req_target_nodes; $j++) {
+        my $source_index = $random_source[$i%($req_source_nodes)];
+        my $target_index = $random_target[$j%($req_target_nodes)];
+        my $source = $source_nodes[$source_index];
+        my $target = $target_nodes[$target_index];
+        my $label = join("_", $source, $target);
+        my $inv_label = join("_", $target, $source);
 
-      if (($source eq $target) && !$self_loops) {
-	next;
-      }
-      if (exists($seen{$label}) && !$duplicated) {
-	next;
-      }
-      if ((exists($seen{$label}) || exists($seen{$inv_label})) && !$directed && !$duplicated) {
-	next;
-      } 
-      if ((exists($seen{$label}) && exists($seen{$inv_label})) && !$duplicated) {
-	next;
-      }
-      if ($max_degree > 0 && exists($degree{$source}) && exists($degree{$target})) {
-	if ($degree{$source} > ($max_degree-1)) {
+        if (($source eq $target) && !$self_loops) {
 	  next;
-	}
-	if ($degree{$target} > ($max_degree-1)) {
+        }
+        if (exists($seen{$label}) && !$duplicated) {
 	  next;
-	}
+        }
+        if ((exists($seen{$label}) || exists($seen{$inv_label})) && !$directed && !$duplicated) {
+	  next;
+        } 
+        if ((exists($seen{$label}) && exists($seen{$inv_label})) && !$duplicated) {
+	  next;
+        }
+        if ($max_degree > 0 && exists($degree{$source}) && exists($degree{$target})) {
+	  if ($degree{$source} > ($max_degree-1)) {
+	    next;
+	  }
+	  if ($degree{$target} > ($max_degree-1)) {
+	    next;
+	  }
+        }
+        $degree{$source}++;
+        $degree{$target}++;
+        $seen{$label}++;
+        push @possible_source, $source;
+        push @possible_target, $target;
+        $k++;
+        if (($k % 100000 == 0) && ($main::verbose >= 3)) {
+	  &RSAT::message::psWarn("\t","$k" ,"potential edges created.");
+        }
       }
-      $degree{$source}++;
-      $degree{$target}++;
-      $seen{$label}++;
-      push @possible_source, $source;
-      push @possible_target, $target;
-      $k++;
-      if (($k % 100000 == 0) && ($main::verbose >= 3)) {
-	&RSAT::message::psWarn("\t","$k" ,"potential edges created.");
+      if ($k > (50*$req_edges) || $k > $max_arc_number) {
+        last;
       }
     }
-    if ($k > (50*$req_edges) || $k > $max_arc_number) {
+    if (!$duplicated) {
       last;
     }
-  }
-  if ($duplicated) {
-    @possible_target = &shuffle(@possible_target)
   }
   &RSAT::message::Info("\t",scalar(@possible_target) ,"potential edges created.") if ($main::verbose >= 3);
   ## In case the maximum degree specification prevented to create enough edges : error.
@@ -1107,7 +1108,7 @@ sub create_node {
       $label = $node_name;
     }
     if (!defined($color) || $color eq "") {
-      $color = "#000088";
+      $color = "#66CCFF";
     }
     $nodes_name_id{$node_name} = $numId;
     $nodes_id_name{$numId} = $node_name;
@@ -1144,7 +1145,7 @@ sub create_arc {
       $label = $source_node_name."_".$target_node_name;
     }
     if (!defined($color) || $color eq "") {
-      $color = "#000044";
+      $color = "#66FFFF";
     }
     my $source_node_index = $self->node_by_name($source_node_name);
     my $target_node_index = $self->node_by_name($target_node_name);
@@ -1366,8 +1367,8 @@ sub read_from_table {
     my $weight = 0;
     my $default_weight = 1;
     my @array = ();
-    my $default_node_color = "#000088";
-    my $default_edge_color = "#000044";
+    my $default_node_color = "#66CCFF";
+    my $default_edge_color = "#66FFFF";
 
     ## Check input parameters
     unless (&RSAT::util::IsNatural($source_col) && ($source_col > 0)) {
@@ -1532,8 +1533,8 @@ sub read_from_paths {
     my $weight = 0;
     my $default_weight = 1;
     my @array = ();
-    my $default_node_color = "#000088";
-    my $default_edge_color = "#000044";
+    my $default_node_color = "#66CCFF";
+    my $default_edge_color = "#66FFFF";
 
     ## Check input parameters
     unless (&RSAT::util::IsNatural($path_col) && ($path_col > 0)) {
@@ -1592,8 +1593,8 @@ sub read_from_adj_matrix {
     my $weight = 0;
     my $default_weight = 1;
     my @array = ();
-    my $default_node_color = "#000088";
-    my $default_edge_color = "#000044";
+    my $default_node_color = "#66CCFF";
+    my $default_edge_color = "#66FFFF";
     my %edge_list = ();
     my %nodes_id_name = ();
     my %nodes_name_id = ();
@@ -1829,7 +1830,7 @@ sub load_from_gml {
         $node =~ s/edge.*\[.*//;
         my $node_id =  "NA#";
         my $node_label = "NA#";
-        my $node_color  = "#000088";
+        my $node_color  = "#66CCFF";
         my $node_xpos = "NA#";
         my $node_ypos = "NA#";
 # NODE ID
@@ -1909,7 +1910,7 @@ sub load_from_gml {
         my $source_edge =  "NA#";
         my $target_edge = "NA#";
         my $label_edge  = "NA#";
-        my $color_edge = "#000044";
+        my $color_edge = "#66FFFF";
     
 # SOURCE EDGE
         if ($edge =~ /source/) {
@@ -2341,7 +2342,7 @@ sub to_dot {
       #print "NODEID"." ".$node." ".$nodeid." ".$color." ".$label."\n";
       $dot .= join("", 
 		   "\"", $node, "\"",  
-		   " [color=\"$color\"",
+		   " [style=filled, color=\"$color\"",
 		   ",label=\"$label",
 		   "\"]",
 		   "\n");

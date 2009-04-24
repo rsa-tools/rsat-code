@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.30 2008/11/18 11:50:59 rsat Exp $
+# $Id: random-graph,v 1.31 2009/04/24 13:33:02 sylvain Exp $
 #
 ############################################################
 
@@ -102,7 +102,7 @@ package main;
     # do not allow self loops
     $self = 0;
     
-    # maxium degree
+    # maximum degree
     $max_degree = -1;
     
     # duplicated edges
