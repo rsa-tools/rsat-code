@@ -247,7 +247,7 @@ print "&nbsp;<A HREF='help.retrieve-ensembl-seq.html#uniqseqs'><B>Avoid redundan
 print "<BR>\n";
 
 ### Organism in header
-print "<B><A HREF='help.retrieve-ensembl-seq.html#header_org'>Organism name in sequence header</A></B>&nbsp;";
+print "<B><A HREF='help.retrieve-ensembl-seq.html#header_org'>Organism name in sequence fasta header</A></B>&nbsp;";
 print $query->popup_menu(-name=>'header_org',
 			 -Values=>['scientific','common','none'],
 			 -default=>$default{prevent_overlap});
