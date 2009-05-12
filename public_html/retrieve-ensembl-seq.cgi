@@ -30,9 +30,14 @@ $tmp_file_name = sprintf "retrieve-ensembl-seq.%s", &AlphaDate();
 ### Read the CGI query
 $query = new CGI;
 
+### print the header
+&RSA_header("retrieve-ensembl-seq result", 'results');
+#print $query->header();
+
 #### update log file ####
 #&UpdateLogFile();
 
+# $ENV{rsat_echo}=2;
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
 ################################################################
@@ -233,11 +238,6 @@ my %args = (
             'homology_type' => $homology_type,
             'header_organism' => $header_org
     );
-
-# $ENV{rsat_echo}=2;
-
-### print the header
-&RSA_header("retrieve-ensembl-seq result", 'results');
 
 #### execute the command #####
 if (($query->param('output') =~ /display/i) ||
