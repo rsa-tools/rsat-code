@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.84 2009/03/13 03:32:06 rsat Exp $
+# $Id: install-organism,v 1.85 2009/05/13 13:05:41 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -49,7 +49,7 @@ $supported_for_installation{"filelist"} = 1;
 $supported_tasks = join ",", sort (keys %supported_task);
 %task = ();
 $parse_options = "";
-$source = "";
+$source = "PÄF";
 
 ################################################################
 ############################ arguments #########################
@@ -231,131 +231,165 @@ sub Verbose {
     printf $out ";    %-25s\t%s\n", "feature table", $outfile{features};
     printf $out ";    %-25s\t%s\n", "synonyms", $outfile{synonyms};
     printf $out ";    %-25s\t%s\n", "file to update", $config_to_update;
-    
 }
 
 
 ################################################################
-#### update configuration file
+## Update configuration file
 sub UpdateConfig {
-    my $comment_previous_config = 0;
-    if ($local_config) {
-	$config_to_update = $ENV{'RSA_LOCAL_CONFIG'} ;
+
+  ### read taxonomy from the parsing result
+  local $organism_table = $dir{install}."/genome/organism.tab";
+  ($org_handle) = &OpenInputFile($organism_table);
+  my $taxonomy_field = 2;
+  local $taxonomy = "<NA>";
+  while (<$org_handle>) {
+    chomp;
+    next unless (/\S/);
+    if (/^-- field\s+(\d)	taxonomy/) {
+      $taxonomy_field = $1;
+    } elsif (/^--/) {
+      next;
     } else {
-	$config_to_update = "$ENV{RSAT}/data/supported_organisms.pl";
+      if (defined($taxonomy_field)) {
+	@fields = split "\t";
+	$id = $fields[0];
+	$taxonomy = $fields[$taxonomy_field - 1];
+	&RSAT::message::Info (join("\t", "Parsed taxonomy from organism.tab", "Id",$id, "Taxonomy", $taxonomy));
+      } else {
+	&Warning("Cannot read taxonomy in file $organism_table\n");
+      }
     }
+  }
+  close $org_handle;
 
-    if (defined($supported_organism{$organism_short_name}->{'genome'})) {
-	&RSAT::message::Warning(join("\t", $organism_short_name, "already defined in the config file",
-		  "the previous config will be commented"));
-    }
+  ### installation date
+  local $install_date = `date '+%Y/%m/%d %H:%M:%S'`;
+  chomp $install_date;
 
-    ### read taxonomy from the parsing result
-    $organism_table = $dir{install}."/genome/organism.tab";
-
-    ($org_handle) = &OpenInputFile($organism_table);
-    $taxonomy_field = 2;
-    while (<$org_handle>) {
-	chomp;
-	next unless (/\S/);
-	if (/^-- field\s+(\d)	taxonomy/) {
-	    $taxonomy_field = $1;
-	} elsif (/^--/) {
-	    next;
-	} else {
-	    if (defined($taxonomy_field)) {
-		@fields = split "\t";
-		$id = $fields[0];
-		$taxonomy = $fields[$taxonomy_field - 1];
-		&RSAT::message::Info (join("\t", "Parsed taxonomy from organism.tab", "Id",$id, "Taxonomy", $taxonomy));
-	    } else {
-		&Warning("Cannot read taxonomy in file $organism_table\n");
-	    }
-	}
-    }
-    close $org_handle;
-    
-
-    #### read previous config
-    open CONFIG, $config_to_update;
-    while ($line = <CONFIG>) {
-	chomp $line;
-	last if ($line =~ /return/);
-	if (($line =~ /supported_organism\{\'$organism_short_name\'\}/) && ($line !~ /^\#/)) {
-	    #### comment the previous config
-	    if ($comment_previous_config) {
-		$previous_config .= "# ${line} # reinstalled on\t${date}\n";
-	    }
-	} else {
-	    $previous_config .= $line."\n";
-	}
-    }
-    close CONFIG;
-    
-    #### write new config
-    warn ";\n; Updating config file\t$config_to_update\n" if ($verbose >= 1);
-    open CONFIG, ">$config_to_update" 
-	|| die "Error: cannot write config file $config_to_update\n";
-    print CONFIG $previous_config;
-    
-    ### installation date
-    $install_date = `date '+%Y/%m/%d %H:%M:%S'`;
-    chomp $install_date;
-
-    my $new_org_config = 	 "\n#### $organism_short_name\t$organism_full_name\t$install_date\n";
-    $new_org_config .= "\$supported_organism{'$organism_short_name'}->{'name'} = \"$organism_full_name\";\n";
-    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'data'} = \"$dir{install}\";\n";
-    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'last_update'} = \"".$install_date."\";\n";
-    if ($source eq 'ensembl') {
-	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'source'} = \"$source\";\n";
+  #### default limits of upstream region for retrieve-seq
+  unless (defined($up_from)) {
+    if (defined($supported_organism{$organism_short_name}->{'up_from'})) {
+      $up_from = $supported_organism{$organism_short_name}->{'up_from'};;
     } else {
-	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'features'} = \"$outfile{features}\";\n";
-	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'genome'} = \"$outfile{genome}\";\n";
-	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'seq_format'} = \"filelist\";\n";
+      if (($taxonomy =~ /^Bacteria/) || ($taxonomy =~ /^Archaea/)) {
+	$up_from=-400;
+      } elsif ($taxonomy =~ /^Viruses/) {
+	$up_from=-400;
+      } elsif ($taxonomy =~ /^Eukaryota; Fungi/) {
+	$up_from=-800;
+      } elsif ($taxonomy =~ /^Eukaryota;Metazoa/) {
+	$up_from=-2000;
+      } else {
+	$up_from=-1000;
+      }
     }
-    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'taxonomy'} = \"$taxonomy\";\n";
-    if (defined($outfile{synonyms})) {
-	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'synonyms'} = \"$outfile{synonyms}\";\n";
+  }
+  unless (defined($up_to)) {
+    if (defined($supported_organism{$organism_short_name}->{'up_to'})) {
+      $up_to = $supported_organism{$organism_short_name}->{'up_to'};
+    } else {
+      $up_to = -1;
     }
+  }
+  &RSAT::message::Info(join("\t", "Upstream region limits from", $up_from, "to", $up_to));
 
-    #### default limits of upstream region for retrieve-seq
-    unless (defined($up_from)) {
-	if (defined($supported_organism{$organism_short_name}->{'up_from'})) {
-	    $up_from = $supported_organism{$organism_short_name}->{'up_from'};;
-	} else {
-	    if (($taxonomy =~ /^Bacteria/) || ($taxonomy =~ /^Archaea/)) {
-		$up_from=-400;
-	    } elsif ($taxonomy =~ /^Viruses/) {
-		$up_from=-400;
-	    } elsif ($taxonomy =~ /^Eukaryota; Fungi/) {
-		$up_from=-800;
-	    } elsif ($taxonomy =~ /^Eukaryota;Metazoa/) {
-		$up_from=-2000;
-	    } else {
-		$up_from=-1000;
-	    }
-	}
-    }
-    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_from'} = ".$up_from.";\n";
-    
-    unless (defined($up_to)) {
-	if (defined($supported_organism{$organism_short_name}->{'up_to'})) {
-	    $up_to = $supported_organism{$organism_short_name}->{'up_to'};
-	} else {
-	    $up_to = -1;
-	}
-    }
-    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_to'} = ".$up_to.";\n";
-    &RSAT::message::Info(join("\t", "Upstream region limits from", $up_from, "to", $up_to));
+  ## 2009/05/13: The old perl config file should not be used anymore,
+  ## but is still exported for the sake of backward compatibility
+  &UpdateConfigPerl();
 
-    #### replace absolute paths by relative paths
-#   $new_org_config =~ s|$ENV{RSAT}\/|\$ENV\{RSAT\}\/|g;
-    $new_org_config =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|g;
-    $new_org_config =~ s|\/\/|/|g;
+  ## Since 2009/05/13
+  &UpdateConfigTab();
+}
 
-    print CONFIG $new_org_config;
-    print CONFIG "\nreturn 1;\n";
-    close CONFIG;
+################################################################
+## Update the perl config file
+sub UpdateConfigPerl {
+  my $comment_previous_config = 0;
+  if ($local_config) {
+    $config_to_update = $ENV{'RSA_LOCAL_CONFIG'} ;
+  } else {
+    $config_to_update = "$ENV{RSAT}/data/supported_organisms.pl";
+  }
+
+  ## Check if the organism was already installed before
+  if (defined($supported_organism{$organism_short_name}->{'genome'})) {
+    &RSAT::message::Warning(join("\t", $organism_short_name, "already defined in the config file",
+				 "the previous config will be commented"));
+  }
+
+  #### read previous config
+  open CONFIG, $config_to_update;
+  while ($line = <CONFIG>) {
+    chomp $line;
+    last if ($line =~ /return/);
+    if (($line =~ /supported_organism\{\'$organism_short_name\'\}/) && ($line !~ /^\#/)) {
+      #### comment the previous config
+      if ($comment_previous_config) {
+	$previous_config .= "# ${line} # reinstalled on\t${date}\n";
+      }
+    } else {
+	$previous_config .= $line."\n";
+      }
+  }
+  close CONFIG;
+
+  #### write new config
+  warn ";\n; Updating config file\t$config_to_update\n" if ($verbose >= 1);
+  open CONFIG, ">$config_to_update" 
+    || die "Error: cannot write config file $config_to_update\n";
+  print CONFIG $previous_config;
+  my $new_org_config = 	 "\n#### $organism_short_name\t$organism_full_name\t$install_date\n";
+  $new_org_config .= "\$supported_organism{'$organism_short_name'}->{'name'} = \"$organism_full_name\";\n";
+  $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'data'} = \"$dir{install}\";\n";
+  $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'last_update'} = \"".$install_date."\";\n";
+  $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'source'} = \"$source\";\n";
+  ## OLIVIER SAND SHOULD CHEXK IF THIS RESTRICTION FOR ensembl IS STILL VALID
+  unless ($source eq 'ensembl') {
+    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'features'} = \"$outfile{features}\";\n";
+    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'genome'} = \"$outfile{genome}\";\n";
+    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'seq_format'} = \"filelist\";\n";
+  }
+  $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'taxonomy'} = \"$taxonomy\";\n";
+  if (defined($outfile{synonyms})) {
+    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'synonyms'} = \"$outfile{synonyms}\";\n";
+  }
+  $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_from'} = ".$up_from.";\n";
+  $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_to'} = ".$up_to.";\n";
+
+  #### Replace absolute paths by relative paths
+  ##   $new_org_config =~ s|$ENV{RSAT}\/|\$ENV\{RSAT\}\/|g;
+  $new_org_config =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|g;
+  $new_org_config =~ s|\/\/|/|g;
+
+  print CONFIG $new_org_config;
+  print CONFIG "\nreturn 1;\n";
+  close CONFIG;
+}
+
+################################################################
+## Update the tab-delimited file 
+sub UpdateConfigTab {
+  ## Update the hash variable for the new organism
+  $supported_organism{$organism_short_name}->{'name'} = $organism_full_name;
+  $supported_organism{$organism_short_name}->{'data'} = $dir{install};
+  $supported_organism{$organism_short_name}->{'last_update'} = $install_date;
+  $supported_organism{$organism_short_name}->{'source'} = $source;
+  ## OLIVIER SAND SHOULD CHEXK IF THIS RESTRICTION FOR ensembl IS STILL VALID
+  unless ($source eq 'ensembl') {
+    $supported_organism{$organism_short_name}->{'features'} = $outfile{features};
+    $supported_organism{$organism_short_name}->{'genome'} = $outfile{genome};
+    $supported_organism{$organism_short_name}->{'seq_format'} = "filelist";
+  }
+  $supported_organism{$organism_short_name}->{'taxonomy'} = $taxonomy;
+  if (defined($outfile{synonyms})) {
+    $supported_organism{$organism_short_name}->{'synonyms'} = $outfile{synonyms};
+  }
+  $supported_organism{$organism_short_name}->{'up_to'} = $up_to;
+  $supported_organism{$organism_short_name}->{'up_from'} = $up_from;
+
+    ## Export the updated table of supported organisms
+    &RSAT::OrganismManager::export_supported_organisms();
 
 #    &RSAT::message::Debug("new_org_config", $new_org_config) if ($main::verbose >= 0);
 }
@@ -1019,7 +1053,7 @@ sub ReadArguments {
 	    ### data source
 	} elsif ($ARGV[$a] eq "-source") {
 	    $source = lc($ARGV[$a+1]);
-	    
+
 	    ### organism
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_short_name = $ARGV[$a+1];
@@ -1488,7 +1522,7 @@ sub ParseGenome {
 	$command .= " -org ".$organism_short_name;
     }
     if ($source) {
-	$command .= " -source $source";
+	$command .= " -source '$source'";
     }
     &doit($command, $dry_run, $die_on_error, $verbose);
 }
