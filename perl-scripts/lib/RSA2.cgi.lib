@@ -244,7 +244,7 @@ sub SequenceChoice {
     #### Mask option
     $sequenceChoiceString .=  "<BR><B><A HREF='help.formats.html'>Mask</A></B>&nbsp;";
     $sequenceChoiceString .=  $query->popup_menu(-name=>'mask',
-						 -Values=>['none', 
+						 -Values=>['none',
 							   'upper',
 							   'lower',
 							   'non-dna'],
