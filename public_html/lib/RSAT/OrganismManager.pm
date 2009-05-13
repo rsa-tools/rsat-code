@@ -1,6 +1,6 @@
 ###############################################################
 #
-# Class to handle organisms supported in RSAT
+# Class to handle organisms supporte in RSAT
 #
 
 package RSAT::OrganismManager;
@@ -21,10 +21,13 @@ use Storable qw(nstore retrieve);
 ## Class variables
 
 ## Fields for supported organisms
-our @supported_org_fields = qw(ID name data last_update taxonomy up_from up_to genome seq_format);
+our @supported_org_fields = qw(ID name data last_update taxonomy up_from up_to genome seq_format source);
 
 ## Name of the table containing the list of supported organisms
 our $organism_table_name = "supported_organisms.tab";
+
+## Null value for undefined fields
+our $null = "<NA>";
 
 =pod
 
@@ -75,21 +78,21 @@ sub load_supported_organisms {
       return();
   }
   my ($table_handle) = &RSAT::util::OpenInputFile($organism_table);
-  
   my @fields = ();
-  my $linecpt = 0;
+  my @values = ();
+  my $l = 0;
   while (my $line = <$table_handle>) {
-    $linecpt++;
+    $l++;
     next if $line =~ /^;/;
     chomp $line;
     if ($line =~ /^#/) { # Load header
       $line =~ s/#//;
       @fields = split /\t/, $line;
     } else {
-      @linecp = split /\t/, $line;
-      &RSAT::error::FatalError("Number of fields in the header does not correspond to the number of fields at line $linecpt\n") if (scalar (@linecp) != scalar (@fields));
+      @values = split /\t/, $line;
+      &RSAT::error::FatalError("Number of fields in the header does not correspond to the number of fields at line", $l, "\n") if (scalar (@values) != scalar (@fields));
       for (my $i = 1; $i < scalar @fields; $i++) {
-        $main::supported_organism{$linecp[0]}->{$fields[$i]} = $linecp[$i];
+        $main::supported_organism{$values[0]}->{$fields[$i]} = $values[$i];
       }
     }
   }
@@ -109,7 +112,8 @@ sub export_supported_organisms {
   $organism_table = $organism_table || $ENV{RSAT}."/data/supported_organisms.tab";
   my ($table_handle) = &RSAT::util::OpenOutputFile($organism_table);
   print $table_handle &supported_organism_table("header", @fields);
-  &RSAT::message::Info("Exporting table with supported organisms", $organism_table) if ($main::verbose >= 1);
+  &RSAT::message::Warning("Make sure that the file RSA.config does not load the old format file",$ENV{RSAT}."/data/supported_organisms.pl");
+  &RSAT::message::Info("Exported table with supported organisms", $organism_table) if ($main::verbose >= 1);
 }
 
 ################################################################
@@ -132,7 +136,8 @@ sub supported_organism_table {
   ## Default fields
   if (scalar(@fields) == 0) {
 #    @fields = qw(name data last_update features genome seq_format taxonomy synonyms up_from up_to);
-    @fields = qw(ID name data last_update taxonomy up_from up_to genome seq_format);
+#    @fields = qw(ID name data last_update taxonomy up_from up_to genome seq_format);
+    @fields = @supported_org_fields;
   }
 
   ## Check if the requested fields are supported
@@ -159,7 +164,12 @@ sub supported_organism_table {
     $main::supported_organism{$org}->{'ID'} = $org;
     my @values = ();
     foreach my $field (@fields) {
-      push @values, $main::supported_organism{$org}->{$field};
+      if (defined($main::supported_organism{$org}->{$field})) {
+	push @values, $main::supported_organism{$org}->{$field};
+      } else {
+	push @values, $null;
+	&RSAT::message::Warning("Field", $field, "has no value for organism", $org);
+      }
     }
     my $row = join ("\t", @values);
 #    &RSAT::message::Debug($org, $row) if ($main::verbose >= 3);
