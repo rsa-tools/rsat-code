@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.52 2009/01/19 22:46:09 rsat Exp $
+# $Id: parse-genbank.pl,v 1.53 2009/05/13 13:25:28 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -77,6 +77,7 @@ package main;
     $sources = classes::ClassFactory->new_class(object_type=>"Genbank::Source", prefix=>"src_");
     $contigs = classes::ClassFactory->new_class(object_type=>"Genbank::Contig", prefix=>"ctg_");
     $organisms = classes::ClassFactory->new_class(object_type=>"Genbank::Organism", prefix=>"org_");
+
     @classes = qw( Genbank::Feature
 		   Genbank::Contig
 		   Genbank::Organism
@@ -111,6 +112,7 @@ package main;
 				 exons
 				 EC_number
 				 ));
+    $organisms->set_out_fields(qw(id taxonomy source));
 
 
     ################################################################
