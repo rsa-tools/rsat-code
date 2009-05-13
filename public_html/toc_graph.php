@@ -113,6 +113,7 @@ onclick=\"toggleMenu('106')\" id=\"heading106\">Help</div>
 <div class=\"menu_heading_closed\"
 onclick=\"toggleMenu('107')\" id=\"heading107\">Information</div>
 	<div id=\"menu107\"  class=\"menu_collapsible\">
+	<a class=\"menu_item\" href=\"neat_intro.html\" target=\"tools\">Introduction</a>
 	<a class=\"menu_item\" href=\"neat_publications.html\" target=\"tools\">Publications</a>
 	<a class=\"menu_item\" href=\"distrib/index.html\" target=\"tools\">Distribution</a>
 	<a class=\"menu_item\" href=\"neat_credits.html\" target=\"tools\">Credits</a>
