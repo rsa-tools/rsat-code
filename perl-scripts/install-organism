@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.85 2009/05/13 13:05:41 jvanheld Exp $
+# $Id: install-organism,v 1.86 2009/05/13 13:19:01 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -49,7 +49,10 @@ $supported_for_installation{"filelist"} = 1;
 $supported_tasks = join ",", sort (keys %supported_task);
 %task = ();
 $parse_options = "";
-$source = "PÄF";
+
+$null = "<NULL>"; ## NULL value
+$source = "NCBI";
+$taxonomy = $null;
 
 ################################################################
 ############################ arguments #########################
@@ -242,7 +245,6 @@ sub UpdateConfig {
   local $organism_table = $dir{install}."/genome/organism.tab";
   ($org_handle) = &OpenInputFile($organism_table);
   my $taxonomy_field = 2;
-  local $taxonomy = "<NA>";
   while (<$org_handle>) {
     chomp;
     next unless (/\S/);
@@ -1052,7 +1054,7 @@ sub ReadArguments {
 
 	    ### data source
 	} elsif ($ARGV[$a] eq "-source") {
-	    $source = lc($ARGV[$a+1]);
+	    $source = $ARGV[$a+1];
 
 	    ### organism
 	} elsif ($ARGV[$a] eq "-org") {
@@ -1516,14 +1518,14 @@ sub ParseGenome {
     my $command = "$ENV{RSAT}/perl-scripts/parse-genbank.pl -v 1";
     $command .= " -i ".$dir{source};
     $command .= $parse_options;
-    $command .= " -o ".$dir{genome};
     if ($dir{ensembl}) {
 	$command .= " -ext dat";
 	$command .= " -org ".$organism_short_name;
     }
-    if ($source) {
-	$command .= " -source '$source'";
-    }
+#    if ($source ne $null) {
+      $command .= " -source '$source'";
+#    }
+    $command .= " -o ".$dir{genome};
     &doit($command, $dry_run, $die_on_error, $verbose);
 }
 
