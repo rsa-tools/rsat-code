@@ -89,6 +89,8 @@ sub load_supported_organisms {
       $line =~ s/#//;
       @fields = split /\t/, $line;
     } else {
+      $line =~ s/\$ENV\{RSAT\}/$ENV{RSAT}/g;
+      $line =~ s|//|/|g;
       @values = split /\t/, $line;
       &RSAT::error::FatalError("Number of fields in the header does not correspond to the number of fields at line", $l, "\n") if (scalar (@values) != scalar (@fields));
       for (my $i = 1; $i < scalar @fields; $i++) {
@@ -131,6 +133,8 @@ Usage:
 =cut
 sub supported_organism_table {
   my ($header, @fields) = @_;
+  my $table = "";
+
 #  &RSAT::message::Debug("&RSAT::OrganismManager::supported_organism_table()", "fields", join( ";", @fields)) if ($main::verbose >= 3);
 
   ## Default fields
@@ -152,7 +156,6 @@ sub supported_organism_table {
   }
 
   ## Add the header row
-  my $table = "";
   if ($header) {
     $table .= "#";
     $table .= join ("\t", @fields);
@@ -165,7 +168,9 @@ sub supported_organism_table {
     my @values = ();
     foreach my $field (@fields) {
       if (defined($main::supported_organism{$org}->{$field})) {
-	push @values, $main::supported_organism{$org}->{$field};
+	my $value = $main::supported_organism{$org}->{$field};
+	$value =~ s/$ENV{RSAT}/\$ENV\{RSAT\}/;
+	push @values, $value;
       } else {
 	push @values, $null;
 	&RSAT::message::Warning("Field", $field, "has no value for organism", $org);
