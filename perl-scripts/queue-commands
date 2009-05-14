@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: queue-commands,v 1.2 2008/02/18 20:20:15 jvanheld Exp $
+# $Id: queue-commands,v 1.3 2009/05/14 13:01:22 rsat Exp $
 #
 ############################################################
 
@@ -89,6 +89,14 @@ package main;
   ################################################################
   ## Open output stream
   $main::out = &OpenOutputFile($main::outfile{output});
+
+  ## Print the cluster parameters in the output
+  if ($main::verbose >= 1) {
+    print $main::out "; CLUSTER PARAMETERS:\n";
+    foreach my $param qw (CLUSTER_QUEUE BATCH_MAIL QSUB_MANAGER NODES) {
+      printf $main::out ";\t%-15s\t%s\n", $param,  $ENV{$param};
+    }
+  }
 
   ################################################################
   ## Read input
@@ -223,6 +231,33 @@ correctness.
 	} elsif ($arg eq "-n") {
 	    $main::dry_run = 1;
 
+=pod
+
+=item B<-queue>
+
+Choose the queue where the jobs will be sent.
+
+=cut
+	} elsif ($arg eq "-queue") {
+	    $ENV{CLUSTER_QUEUE} = shift(@arguments);
+
+
+=item B<-nodes>
+
+Restrict the executions to selected nodes of the cluster. Multiple
+nodes can be specified separated by commas, or by using iteratively
+the option -nodes.
+
+The option is simply passed to the queue manager. It has thus to
+conform to the options of the local queue manager.
+
+ Example (for the sge queue manager):
+  -nodes '-l nodes=1:k2.6'
+
+=cut
+	} elsif ($arg eq "-nodes") {
+	    $ENV{NODES} = shift(@arguments);
+
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
@@ -263,5 +298,7 @@ __END__
 =pod
 
 =head1 SEE ALSO
+
+=head1 WISH LIST
 
 =cut
