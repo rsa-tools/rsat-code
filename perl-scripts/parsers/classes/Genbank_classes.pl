@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: Genbank_classes.pl,v 1.12 2007/09/18 22:43:21 jvanheld Exp $
+# $Id: Genbank_classes.pl,v 1.13 2009/05/14 11:04:44 jvanheld Exp $
 #
 # Time-stamp: <2003-08-09 00:37:11 jvanheld>
 #
@@ -31,7 +31,8 @@ package Genbank::Organism; ### for parsing genbank files
   %_attribute_count = ();
   %_attribute_cardinality = (id=>"SCALAR",
 			     names=>"ARRAY",
-			     taxonomy=>"SCALAR"
+			     taxonomy=>"SCALAR",
+			     source=>"SCALAR"
 			     );
 }
 
