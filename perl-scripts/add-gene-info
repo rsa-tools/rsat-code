@@ -2,8 +2,8 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-
 require "RSA.lib";
+
 use Storable qw(nstore retrieve);
 
 # temporary directory
@@ -15,6 +15,7 @@ $calc_neighbours = 0;
 $info_before = 0;
 @ORF_column = ();
 $null = "<NULL>";
+
 
 @supported_info_types = qw(id ctg strand left right name descr names 
                            upstr_neighb_name upstr_neighb_id upstr_limit upstr_size
