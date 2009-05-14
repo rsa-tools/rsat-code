@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank.pl,v 1.12 2004/04/02 00:26:15 jvanheld Exp $
+# $Id: parse_genbank.pl,v 1.13 2009/05/14 11:03:42 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 15:41:54 jvanheld>
 #
@@ -136,16 +136,14 @@ package main;
     }
 
     ### output fields for contigs
-    $contigs->set_out_fields(qw(id	
+    $contigs->set_out_fields(qw(id
 				organism
 				type
 				length
-				form	
+				form
 				genbank_file
-				
-				));
-    
-    
+			       ));
+
     #### output directory
     &CheckOutputDir();
     chdir $dir{output};
