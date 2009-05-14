@@ -729,7 +729,7 @@ sub ListSupportedOrganisms {
 
   $out_format = $out_format || "text";
   $header = $header || 0;
-  return (&RSAT::OrganismManager::supported_organism_table($header, @fields));
+  return (&RSAT::OrganismManager::supported_organism_table($header, 0,  @fields));
 }
 
 sub ListSupportedOrganisms_old {
