@@ -81,6 +81,7 @@ sub load_supported_organisms {
   my @fields = ();
   my @values = ();
   my $l = 0;
+
   while (my $line = <$table_handle>) {
     $l++;
     next if $line =~ /^;/;
@@ -89,12 +90,21 @@ sub load_supported_organisms {
       $line =~ s/#//;
       @fields = split /\t/, $line;
     } else {
-      $line =~ s/\$ENV\{RSAT\}/$ENV{RSAT}/g;
-      $line =~ s|//|/|g;
+#      $line =~ s|\$ENV\{RSAT\}|BOUM|g;
+#      my $tmp = $ENV{RSAT};
+      #      &RSAT::error::FatalError($tmp, $ENV{RSAT});
+      #      $line =~ s|\$ENV\{RSAT\}|$tmp|g;
+      #      $line =~ s|\/+|\/|g;
       @values = split /\t/, $line;
       &RSAT::error::FatalError("Number of fields in the header does not correspond to the number of fields at line", $l, "\n") if (scalar (@values) != scalar (@fields));
       for (my $i = 1; $i < scalar @fields; $i++) {
-        $main::supported_organism{$values[0]}->{$fields[$i]} = $values[$i];
+	my $field = $fields[$i];
+	my $value = $values[$i];
+	$value =~ s|\$ENV\{RSAT\}|$ENV{RSAT}|;
+#	if ($value =~ /^\$ENV\{RSAT\}/) {
+#	  $value = $ENV{RSAT}; #"/".$'; ## '
+#	}
+       $main::supported_organism{$values[0]}->{$field} = $value;
       }
     }
   }
@@ -113,7 +123,7 @@ sub export_supported_organisms {
   my ($organism_table, @fields) = @_;
   $organism_table = $organism_table || $ENV{RSAT}."/data/supported_organisms.tab";
   my ($table_handle) = &RSAT::util::OpenOutputFile($organism_table);
-  print $table_handle &supported_organism_table("header", @fields);
+  print $table_handle &supported_organism_table("header", 1, @fields);
   &RSAT::message::Warning("Make sure that the file RSA.config does not load the old format file",$ENV{RSAT}."/data/supported_organisms.pl");
   &RSAT::message::Info("Exported table with supported organisms", $organism_table) if ($main::verbose >= 1);
 }
@@ -128,11 +138,11 @@ organism and one column per field (feature of an organism).
 
 Usage:
 
- &RSAT::OrganismManager::supported_organism_table($header, @fields)
+ &RSAT::OrganismManager::supported_organism_table($header, $relative_path, @fields)
 
 =cut
 sub supported_organism_table {
-  my ($header, @fields) = @_;
+  my ($header,$relative_path,  @fields) = @_;
   my $table = "";
 
 #  &RSAT::message::Debug("&RSAT::OrganismManager::supported_organism_table()", "fields", join( ";", @fields)) if ($main::verbose >= 3);
@@ -169,7 +179,10 @@ sub supported_organism_table {
     foreach my $field (@fields) {
       if (defined($main::supported_organism{$org}->{$field})) {
 	my $value = $main::supported_organism{$org}->{$field};
-	$value =~ s/$ENV{RSAT}/\$ENV\{RSAT\}/;
+	if ($relative_path) {
+	  $value =~ s|$ENV{RSAT}|\$ENV\{RSAT\}\/|;
+	  $value =~ s|\/+|\/|g;
+	}
 	push @values, $value;
       } else {
 	push @values, $null;
