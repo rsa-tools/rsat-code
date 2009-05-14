@@ -480,14 +480,32 @@ sub doit {
     $job_name =~ s/\//_/g;
     my $job_log = $wd."/".$job.".log";
 
-    ## Send the command to a batch queue on a PC cluster The default
-    ## values are for internal use in the BiGRe laboratory, but alternative values
-    ## can be specified by specifying the environment variables
-    ## CLUSTER_QUEUE and CLUSTER_MASTER
-    my $cluster_queue = $ENV{CLUSTER_QUEUE} || "short";
+
+
+    ################################################################
+    ## Check that the cluster parameters are well defined before
+    ## trying to send jobs to a PC cluster
+
+    ## Cluster queue manager
+    unless ($ENV{QSUB_MANAGER}) {
+      $ENV{QSUB_MANAGER} = "sge";
+      &RSAT::message::Warning("Cluster queue manager not defined, using the  default value 'sge'.") if ($main::verbose >= 1);
+    }
+    my $qsub_manager=$ENV{QSUB_MANAGER};
+
+    ## Cluster queue
+    unless ($ENV{CLUSTER_QUEUE}) {
+      &RSAT::error::FatalError("In order to send jobs to a PC cluster, you need to define an environment variable CLUSTER_QUEUE.");
+    }
+    my $cluster_queue = $ENV{CLUSTER_QUEUE};
+
+    ## Treatment of the user feed-back
     my $batch_mail=$ENV{BATCH_MAIL} || "a";
-    my $qsub_manager=$ENV{QSUB_MANAGER} || "sge";
-    my $selected_nodes =$ENV{NODES} || " -l nodes=1:k2.6 ";
+
+    ## optional: restrict the jobs to selected nodes
+    my $selected_nodes =$ENV{NODES};
+#    my $selected_nodes =$ENV{NODES} || " -l nodes=1:k2.6 "; ##
+
     my $qsub_cmd;
 
     ################################################################
