@@ -1,11 +1,14 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.17 2003/11/17 00:28:41 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.18 2009/05/14 11:04:17 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:53:00 jvanheld>
 #
 ############################################################
+
+################################################################
+## THIS SCRIPT IS NOT FUNCTIONAL ANYMORE? IT HAS TO BE CHECKED
 
 ### type parse_kegg.pl -h for info
 
@@ -166,7 +169,6 @@ $out_file{stats} = "$dir{output}/kegg.stats.txt";
 $out_file{errors} = "$dir{output}/kegg.errors.txt";
 open ERR, ">$out_file{errors}" || die "Error: cannot write error report fle $$out_file{errors}\n";
 
-
 #### check input files
 foreach $key (keys %data_file) {
     if (-e $data_file{$key}) {
@@ -185,7 +187,7 @@ foreach $key (keys %data_file) {
 	    $in_file{$key} = "| head -1000 ";
 	}
     } else {
-	die "Error: $key data file $data_file{$key} does not exist\n";
+	warn "Warning: $key data file $data_file{$key} does not exist\n";
     }
 }
 
@@ -194,21 +196,22 @@ foreach $key (keys %data_file) {
 $in_file{reaction2ec} = "uncompress -c ".$dir{KEGG}."/ligand/reaction.tar.Z | tar -xpOf - | cut -d ':' -f 1,2 | sort -u |";
 
 ### default verbose message
-&DefaultVerbose if ($verbose >= 1);
+&DefaultVerbose() if ($verbose >= 1);
 
 ### instantiate class factories
 $compounds = classes::ClassFactory->new_class(object_type=>"classes::Compound",
-					   prefix=>"comp_");
+					      prefix=>"comp_");
 $reactions = classes::ClassFactory->new_class(object_type=>"KEGG::Reaction",
-					   prefix=>"rctn_");
+					      prefix=>"rctn_");
 $reactants = classes::ClassFactory->new_class(object_type=>"KEGG::Reactant",
-					   prefix=>"rctt_");
+					      prefix=>"rctt_");
 $ecs = classes::ClassFactory->new_class(object_type=>"classes::ECSet",
-				     prefix=>"ec_");
+					prefix=>"ec_");
 $pathways = classes::ClassFactory->new_class(object_type=>"KEGG::Pathway",
-					  prefix=>"pthw_");
+					     prefix=>"pthw_");
 $genericPathways = classes::ClassFactory->new_class(object_type=>"KEGG::GenericPathway",
-						 prefix=>"gptw_");
+						    prefix=>"gptw_");
+
 #  $compounds->generate_sql(schema=>$schema,
 #  			 user=>$user,
 #  			 password=>$password,
@@ -333,12 +336,12 @@ AUTHOR
 
 OPTIONS	
 $generic_option_message
-	-react additional_reaction_file
+	-add_react additional_reaction_file
 	       Specify a file containing additional reactions. This
 	       file must be exactly in the same format as the flat
 	       file containing KEGG reactions.
 
-	-comp additional_compound_file
+	-add_comp additional_compound_file
 	       Specify a file containing additional compounds. This
 	       file must be exactly in the same format as the flat
 	       file containing KEGG compounds.
@@ -360,13 +363,23 @@ sub ReadArguments {
     for $a (0..$#ARGV) {
 	&ReadGenericOptions($a);
 
-	### additional reactions
+	### Manual specification of the reaction file reactions
 	if ($ARGV[$a] eq "-react") {
+	    $main::data_file{reactions} = $ARGV[$a+1];
+	}
+
+	### Manual specification of the compounds
+	if ($ARGV[$a] eq "-comp") {
+	    $main::data_file{compounds} = $ARGV[$a+1];
+	}
+
+	### additional reactions
+	if ($ARGV[$a] eq "-add_react") {
 	    $main::in_file{additional_reactions} = $ARGV[$a+1];
 	}
 
 	### additional compounds
-	if ($ARGV[$a] eq "-comp") {
+	if ($ARGV[$a] eq "-add_comp") {
 	    $main::in_file{additional_compounds} = $ARGV[$a+1];
 	}
     }
