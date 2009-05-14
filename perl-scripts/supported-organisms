@@ -89,7 +89,7 @@ if (($out_format eq "tree")||($out_format eq "html_tree")) {
 	&RSAT::error::FatalError("Taxon $root_taxon is not supported\n");
     }
 } else {
-   print $out &RSAT::OrganismManager::supported_organism_table(1, @return_fields);
+   print $out &RSAT::OrganismManager::supported_organism_table(1, 0, @return_fields); ## Export the table with header and absolute paths
 }
 
 close $out if ($outfile{output});
