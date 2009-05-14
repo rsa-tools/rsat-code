@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.86 2009/05/13 13:19:01 jvanheld Exp $
+# $Id: install-organism,v 1.87 2009/05/14 11:52:26 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -107,6 +107,18 @@ unless ($organism_full_name) {
     }
 }
 
+
+if ($task{oligos} || $task{dyads}) {
+    unless (($task{upstream_freq}) ||
+	    ($task{intergenic_freq}) ||
+	    ($task{protein_freq}) ||
+	    ($task{genome_freq}) ||
+	    ($task{ensembl_freq})) {
+	
+	&RSAT::error::FatalError("The tasks 'oligos' and 'dyads' require to specify at least one sequence type among the following. ", 
+				 "\n\tupstream_freq,intergenic_freq,genome_freq,protein_freq,ensembl_freq");
+    }
+}
 
 ################################################################
 ## Input directory
@@ -432,9 +444,13 @@ sub CreatePhylogeny {
 	$taxonomy =~ s|\,|.|g; ## Not fatal, but usually not found in folder names.
 	$taxonomy =~ s|\:|.|g; ## Not fatal, but usually not found in folder names.
 	my $dir = $ENV{RSAT}."/data/phylogeny/".$taxonomy;
-	warn "; Taxonomy directory\t", $dir, "\n" if ($main::verbose >= 1);
+	$dir =~ s|//|/|g;
+	&RSAT::message::Info("Taxonomy directory", $dir) if ($main::verbose >= 1);
 	&RSAT::util::CheckOutDir($dir);
-	&doit("cd $dir; ln -s $dir{install} .",0,0,$verbose);
+	my ($org_dir) = &ShortFileName($dir{install});
+	&RSAT::message::Info("Organism directory", $org_dir) if ($main::verbose >= 1);
+	&RSAT::message::Info("Link to directory", $dir{install}) if ($main::verbose >= 1);
+	&doit("cd $dir; rm $org_dir; ln -s $dir{install} .",0,0,$verbose);
     } else {
 	&RSAT::error::FatalError("Cannot identify taxonomy in table ".$organism_table);
     }
@@ -562,17 +578,7 @@ sub PurgeSequences {
 ### 
 sub CalcFrequencies { 
 #    my ($seq_file, $seq_format, $seq_type) = ();
-
-    unless (($task{upstream_freq}) ||
-	    ($task{intergenic_freq}) ||
-	    ($task{protein_freq}) ||
-	    ($task{genome_freq}) ||
-	    ($task{ensembl_freq})) {
-
-	&RSAT::error::FatalError("The tasks 'oligos' and 'dyads' require to specify at least one sequence type for computing oligo or dyad frequencies. ", "\n\tYou should add one or several of the following tasks: upstream_freq, intergenic_freq, genome_freq, protein_freq, ensembl_freq");
-
-    }
-
+    
     chdir $dir{oligos};
 
     ################################################################
