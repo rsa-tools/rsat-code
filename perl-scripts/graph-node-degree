@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-node-degree,v 1.9 2007/08/30 09:02:10 rsat Exp $
+# $Id: graph-node-degree,v 1.10 2009/05/14 11:06:33 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -26,6 +26,8 @@ Calculate the node degree of each node and specifies if this node is a seed or a
 =item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
 
 =item Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
+
+=back
 
 =head1 CATEGORY
 
