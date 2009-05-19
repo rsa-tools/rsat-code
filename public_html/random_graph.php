@@ -32,6 +32,7 @@
   $sd = $_REQUEST['stddev'];
   $nodes = $_REQUEST['nodes'];
   $edges = $_REQUEST['edges'];
+  $self = $_REQUEST['self'];
   $normal = $_REQUEST['normal'];
   $duplicate = $_REQUEST['duplicate'];
   $col_conservation = $_REQUEST['col_conservation'];
@@ -42,6 +43,9 @@
   }
   if ($col_conservation == 'on') {
     $col_conservation = 1;
+  }
+  if ($self == 'on') {
+    $self = 1;
   }
   if ($no_single == 'on') {
     $no_single = 1;
@@ -112,7 +116,8 @@
         "duplicate"=>$duplicate,
         "nodes"=>$nodes,
         "edges"=>$edges,
-        "random_type"=>$random_type
+        "random_type"=>$random_type,
+	"self"=>$self
       )
     );
     # Info message

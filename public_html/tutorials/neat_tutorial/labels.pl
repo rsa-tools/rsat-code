@@ -6,6 +6,10 @@ $key = q/cite_VanDongenPHD2000/;
 $external_labels{$key} = "$URL/" . q|Bibliography.html|; 
 $noresave{$key} = "$nosave";
 
+$key = q/cite_biocyc/;
+$external_labels{$key} = "$URL/" . q|Bibliography.html|; 
+$noresave{$key} = "$nosave";
+
 $key = q/cite_Mering2007/;
 $external_labels{$key} = "$URL/" . q|Bibliography.html|; 
 $noresave{$key} = "$nosave";
