@@ -155,14 +155,14 @@ Study case</A>
 <P>
 In this demonstration, we will use the approach developped in [<A
  HREF="Bibliography.html#Brohee2006">2</A>] where we evaluated the performances of different graph clustering algorithms. Graph clustering algorithms allow to retrieve in a graph the groups of nodes that contain more connections between them than with the rest of the nodes of the graph. Clustering algorithms are often used in biology in order to extract coherent groups of nodes from networks (complexes detection (e.g. see [<A
- HREF="Bibliography.html#Sharan2007">28</A>,<A
- HREF="Bibliography.html#Krogan2006">18</A>,<A
+ HREF="Bibliography.html#Sharan2007">29</A>,<A
+ HREF="Bibliography.html#Krogan2006">19</A>,<A
  HREF="Bibliography.html#Brohee2006">2</A>,<A
- HREF="Bibliography.html#Pereira-Leal2004">23</A>]), protein families detection [<A
- HREF="Bibliography.html#Enright2002">6</A>], co-expressed genes detection in co-expression networks (e.g see [<A
- HREF="Bibliography.html#Lattimore2005">19</A>]), ...). The NeAT web server proposes the <B><I>MCL</I></B> (<I>Markov Cluster algorithm</I>) clustering algorithm developped by Stijn van Dongen [<A
- HREF="Bibliography.html#VanDongenPHD2000">31</A>,<A
- HREF="Bibliography.html#Enright2002">6</A>]. To follow the command-line tools instructions, you should have  MCL installed on your computer (available at http://micans.org/mcl/).
+ HREF="Bibliography.html#Pereira-Leal2004">24</A>]), protein families detection [<A
+ HREF="Bibliography.html#Enright2002">7</A>], co-expressed genes detection in co-expression networks (e.g see [<A
+ HREF="Bibliography.html#Lattimore2005">20</A>]), ...). The NeAT web server proposes the <B><I>MCL</I></B> (<I>Markov Cluster algorithm</I>) clustering algorithm developped by Stijn van Dongen [<A
+ HREF="Bibliography.html#VanDongenPHD2000">32</A>,<A
+ HREF="Bibliography.html#Enright2002">7</A>]. To follow the command-line tools instructions, you should have  MCL installed on your computer (available at http://micans.org/mcl/).
 
 <P>
 MCL simulates a flow on the graph by
@@ -178,14 +178,14 @@ value for clustering protein interaction networks is 1.8.
 
 <P>
 We will use an artificial interaction network created from the complexes annotated in the MIPS database by creating an edge between all the nodes belonging to the same complex [<A
- HREF="Bibliography.html#Mewes2007">22</A>]. This network contains 12262 edges between 1095 nodes. We will then use the MCL clustering algorithm on this network, on a little altered network, on a highly altered network and finally on a randomized network. 
+ HREF="Bibliography.html#Mewes2007">23</A>]. This network contains 12262 edges between 1095 nodes. We will then use the MCL clustering algorithm on this network, on a little altered network, on a highly altered network and finally on a randomized network. 
 
 <P>
 We will then compare these clusters to the MIPS complexes and estimate how well MCL can retrieve protein complexes from a protein-protein interaction and the influence of the noise on the results.
 
 <P>
 In this example, we will only use random alteration, i.e., the edges that are removed are randomly chosen. This is done to mimick what happens really in biological experiments where some inter-relationships between the nodes (genes, proteins, metabolites, ...) may not be discovered (false negatives) or are erroneously discovered (false positives). However the <B><I>alter-graph</I></B> program also allows to alterate the network with targeted attack on user-selected nodes. In their study, Spirin and Mirny [<A
- HREF="Bibliography.html#Spirin2003">29</A>] showed the affect of node targeted attacks on clustering results.
+ HREF="Bibliography.html#Spirin2003">30</A>] showed the affect of node targeted attacks on clustering results.
 
 <P>
 
@@ -596,7 +596,7 @@ Note that with a random graph, we would have a separation of 0.15 but an unweigh
 <!--End of Navigation Panel-->
 <ADDRESS>
 RSAT
-2008-11-05
+2009-03-29
 </ADDRESS>
 </BODY>
 </HTML>
