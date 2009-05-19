@@ -95,6 +95,7 @@
   </tr></table>
   <br>
   <input type='checkbox' name='duplicate' value='on' />&nbsp;<B><a href = 'help.random_graph.html#duplicate'>Allow duplicated edges</a></B><br>
+  <input type='checkbox' name='self' value='on' />&nbsp;<B><a href = 'help.random_graph.html#self'>Allow self loops</a></B><br>
   <input type='checkbox' name='col_conservation' value='on' />&nbsp;<B><a href = 'help.random_graph.html#col_conservation'>Source and target nodes stay source and target nodes in the randomized graph (only for ER randomization type)</a></B><br>
   <input type='checkbox' name='no_single' value='on' />&nbsp;<B><a href = 'help.random_graph.html#no_single'>Prevent the graph from containing nodes with no neighbour (only for ER randomization type)</a></B><br>
   <ul><ul><table class='formbutton'>
