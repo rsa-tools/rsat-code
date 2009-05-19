@@ -119,8 +119,8 @@ behaviour is desired or not. In metabolic networks, we are less interested in pa
 those paths are often not biological relevant. For instance, we can bypass the glycolysis pathway by connecting glucose
 via ADP to 3-Phosphoglycerate. To avoid finding irrelevant pathways like this one,
 we tested different strategies and concluded that using a weighted network gave the best results [<A
- HREF="Bibliography.html#croes05">4</A>],[<A
- HREF="Bibliography.html#croes06">5</A>].
+ HREF="Bibliography.html#croes05">5</A>],[<A
+ HREF="Bibliography.html#croes06">6</A>].
 In a weighted network, not the shortest, but the lightest paths are searched. Hub nodes receive large weights, making them
 less likely to appear in a solution path.
 <BR>
@@ -128,7 +128,8 @@ Whether weights are used and how they are set has to be decided depending on the
 
 <P>
 In this chapter, we will demonstrate path finding on the example of metabolic networks. We will work on a network assembled
-from all metabolic pathways annotated for the yeast <I>S. cerevisiae</I> in BioCyc (Release 10.6). We will also show
+from all metabolic pathways annotated for the yeast <I>S. cerevisiae</I> in BioCyc (Release 10.6) [<A
+ HREF="Bibliography.html#biocyc">3</A>]. We will also show
 the influence of the weighting scheme on path finding results.
 
 <P>
@@ -147,7 +148,9 @@ Study case</A>
 The yeast network constructed from BioCyc data consists of 1,185 nodes and 2,656 edges.
 It has been obtained by unifying 171 metabolic pathways. Note that this network is bipartite, which means that it is made up of
 two different node types: reactions and compounds. An edge never connects two nodes of the same type. For the tutorial, we choose
-to represent the metabolic data as undirected network.
+to represent the metabolic data as undirected network. Note that higher accuracies can be achieved by representing metabolic
+data by directed networks that contain for each reaction its direct and reverse direction, which are treated as mutually exclusive.
+See the advanced options of the Pathfinder tool for mutual exclusion of reactions in directed metabolic networks.
 
 <P>
 We will recover the heme biosynthesis II pathway given its start and end compound, namely glycine and protoheme. First, we will
@@ -207,9 +210,24 @@ Protocol for the command-line tools</A>
 </H2>
 
 <P>
-You can download the Pathfinder command-line tool from the Pathfinder manual page (section standalone tool).
-The use of Pathfinder on command-line requires to be familiar with the Unix shell interface.
-The README provided by the Pathfinder command-line tool explains how to install and run the tool.
+This section assumes that you have installed the RSAT/NeAT command line tools.
+
+<P>
+You can find the demo network Scer_biocyc.tab in $RSAT/public_html/demo_files.
+
+<P>
+Type the following command to enumerate paths up to the 5th rank in the weighted network:
+	
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	java -Xmx800m graphtools.algorithms.Pathfinder -g Scer_biocyc.tab -f tab -s gly -t protoheme -y con
+</PRE><FONT COLOR="#0000ff"></FONT>
+
+<P>
+To find paths in the unweighted network, type:
+	
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	java -Xmx800m graphtools.algorithms.Pathfinder -g Scer_biocyc.tab -f tab -s gly -t protoheme -y unit -r 1
+</PRE><FONT COLOR="#0000ff"></FONT>
 
 <P>
 
@@ -339,7 +357,7 @@ When searching for paths with the "unit" weighting scheme in large networks, the
 <!--End of Navigation Panel-->
 <ADDRESS>
 RSAT
-2008-11-05
+2009-03-29
 </ADDRESS>
 </BODY>
 </HTML>

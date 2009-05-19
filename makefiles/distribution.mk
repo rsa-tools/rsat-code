@@ -26,7 +26,7 @@ manuals:
 
 ## Install manuals on the RSAT Web server
 publish_manuals:
-	rsync -rtupvl -e ssh doc/manuals/*.pdf rsat@rsat.scmbb.ulb.ac.be:rsa-tools/public_html/distrib/
+	rsync -rtupvl -e ssh doc/manuals/*.pdf rsat@rsat.bigre.ulb.ac.be:rsa-tools/public_html/distrib/
 
 
 ################################################################
@@ -84,7 +84,7 @@ zip_archive:
 ################################################################
 ## Publish the tar archive of the whole distribution
 PUB_LOGIN=jvanheld
-PUB_SERVER=rsat.scmbb.ulb.ac.be
+PUB_SERVER=rsat.bigre.ulb.ac.be
 PUB_DIR=/home/jvanheld/public_html/rsat_distrib/
 PUB_FORMAT=tar.gz
 publish:
@@ -99,5 +99,5 @@ tar_wsclients:
 	@echo ${TAR_WSCLIENTS}
 
 publish_tar_wsclients:
-	 rsync -ruptvl -e ssh ${TAR_WSCLIENTS} rsat@rsat.scmbb.ulb.ac.be:rsa-tools/public_html/web_services/
+	 rsync -ruptvl -e ssh ${TAR_WSCLIENTS} rsat@rsat.bigre.ulb.ac.be:rsa-tools/public_html/web_services/
 

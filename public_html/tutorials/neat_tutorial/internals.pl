@@ -6,6 +6,10 @@ $key = q/cite_VanDongenPHD2000/;
 $ref_files{$key} = "$dir".q|Bibliography.html|; 
 $noresave{$key} = "$nosave";
 
+$key = q/cite_biocyc/;
+$ref_files{$key} = "$dir".q|Bibliography.html|; 
+$noresave{$key} = "$nosave";
+
 $key = q/cite_Mering2007/;
 $ref_files{$key} = "$dir".q|Bibliography.html|; 
 $noresave{$key} = "$nosave";

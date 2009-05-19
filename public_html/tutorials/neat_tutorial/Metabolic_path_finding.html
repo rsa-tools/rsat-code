@@ -119,14 +119,14 @@ from substrates to products [<A
  HREF="Bibliography.html#Arita2003">1</A>]. This strategy is also applied in the Pathway Hunter Tool available at http://pht.tu-bs.de/PHT/.
 Other tools rely on rules to avoid hub nodes, e.g. the pathway prediction system at UMBBD (http://umbbd.msi.umn.edu/predict/).
 Didier Croes et al. used weighted graphs to avoid highly connected nodes [<A
- HREF="Bibliography.html#croes05">4</A>],[<A
- HREF="Bibliography.html#croes06">5</A>].
+ HREF="Bibliography.html#croes05">5</A>],[<A
+ HREF="Bibliography.html#croes06">6</A>].
 The functionality of Didier Croes' tool is covered by the metabolic pathfinder (with the weighted reaction network).
 <BR>
 <P>
 Metabolic pathfinder relies on a mixed strategy: On the one hand, it makes use of weighted graphs to avoid irrelevant
 hub nodes and on the other hand, it integrates KEGG RPAIR annotation [<A
- HREF="Bibliography.html#Kotera2004">17</A>] to favor for each traversed
+ HREF="Bibliography.html#Kotera2004">18</A>] to favor for each traversed
 reaction main over side compounds.
 KEGG RPAIR is a database that divides reactions into reactant pairs (substrate-product pairs) and classifies the reactant
 pairs according to their role in the reaction. For instance, the cofac reactant pair A00001 couples NADP+ with NADPH.
@@ -134,12 +134,16 @@ Main reactant pairs connect main compounds and should be traversed preferentiall
 <BR>
 <P>
 The KEGG RPAIR annotation is integrated by construction of the undirected RPAIR network, which consists of 7,058 reactant pairs,
-4,297 compounds and 14,116 edges. Alternatively, two other networks are available: the directed reaction network evaluated in
+4,297 compounds and 14,116 edges for KEGG version 41.0. Alternatively, two other networks are available: the directed reaction network evaluated in
 [<A
- HREF="Bibliography.html#croes06">5</A>] and an undirected reaction-specific RPAIR network, in which each reaction is divided in its reactant pairs.
+ HREF="Bibliography.html#croes06">6</A>] and an undirected reaction-specific RPAIR network, in which each reaction is divided in its reactant pairs.
+<BR>
+<P>
+Note that in more recent KEGG versions, identifiers of reactant pairs start with RP instead of A.
 <BR>
 <P>
 In this chapter, we will recover the aldosterone pathway using the RPAIR and the reaction network respectively.
+Note that the study case was carried out with data from KEGG LIGAND version 41.0. Results might differ for more recent KEGG versions.
 
 <P>
 
@@ -221,8 +225,8 @@ If you set <TT>Output format</TT> in the metabolic pathfinder form to ``Graph'',
 </OL>
 
 <P>
-To see how results change with modified weight, you can repeat steps 1 and 2.
-In the metabolic path finding form, select Reaction graph instead of Subreaction graph (which is selected by default) and
+To see how results change with the choice of the graph, you can repeat steps 1 and 2.
+In the metabolic path finding form, select Reaction graph instead of RPAIR graph (which is selected by default) and
 follow step 3 to 5. You will notice in the seed node selection form that the reaction identifiers are no longer mapped to
 reactant pairs.
 
@@ -233,12 +237,32 @@ Protocol for the command-line tools</A>
 </H2>
 
 <P>
+This section assumes that you have installed the RSAT/NeAT command line tools.
+
+<P>
 The metabolic pathfinder is a web application on top of Pathfinder.
 You may run metabolic path finding on command line by launching the Pathfinder command line tool on
-the RPAIR and reaction networks, which are provided in the Data section of NeAT.
-A more detailed explanation can be found in the metabolic pathfinder manual
-(section Metabolic path finding on command line).
-<BR>
+the RPAIR and reaction networks, which are provided in the KEGG graph repository reachable from the metabolic
+pathfinder manual page.
+
+<P>
+Type the following command in one line to find paths in the RPAIR network:
+	
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	java -Xmx800m graphtools.algorithms.Pathfinder -g RPAIRGraph_allRPAIRs_undirected.txt -f flat
+	     -s 'A02437' -t 'A02894' -b -y rpairs
+</PRE><FONT COLOR="#0000ff"></FONT>
+
+<P>
+To repeat path finding in the reaction network, type in one line:
+
+<P>
+
+<FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
+	java -Xmx800m graphtools.algorithms.Pathfinder -g ReactionGraph_directed.txt -d -f flat
+	     -s 'R02724&gt;/R02724&lt;' -t 'R03263&gt;/R03263&lt;' -b -y con
+</PRE><FONT COLOR="#0000ff"></FONT>
+
 <P>
 
 <H2><A NAME="SECTION001024000000000000000">
@@ -473,7 +497,7 @@ This may occur when requesting a large number of paths with the reactant subreac
 <!--End of Navigation Panel-->
 <ADDRESS>
 RSAT
-2008-11-05
+2009-03-29
 </ADDRESS>
 </BODY>
 </HTML>
