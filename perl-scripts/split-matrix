@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: split-matrix,v 1.2 2008/12/01 22:20:04 amedina Exp $
+# $Id: split-matrix,v 1.3 2009/05/19 22:05:22 rsat Exp $
 #
 ############################################################
 
@@ -36,29 +36,32 @@ util
 split-matrix [-i inputfile] [-o outputfile] [-v #] [...]
 
 =head1 INPUT FORMAT
-                          
-The user has to specify exactly input file (options I<-file1>), 
-containing one PSSMs. The matrix of the file                         
-is splited at the middel possition or based on informational conttent.                                                  
-                                                  
-=head1 OUTPUT FORMAT
-                                                                                   
-The user has to specify exactly input files (options I<-file1> ), each containing one or several PSSMs. Each matrix of file                     
-one is compared with each matrix of fle2.                                                 
- 
-=head1 DESCRIPTION
-Split Methods.
 
- We split the matrix into two minor matrixes using tow approaches:
- 
+The user has to specify exactly input file (options I<-file1>),
+containing one PSSMs. The matrix of the file is splited at the middel
+possition or based on informational conttent.  =head1 OUTPUT FORMAT
+The user has to specify exactly input files (options I<-file1> ), each
+containing one or several PSSMs. Each matrix of file one is compared
+with each matrix of fle2.  =head1 DESCRIPTION Split Methods.
+
+We split the matrix into two minor matrixes using tow approaches:
+
 1) At the middle.
 
-xs2) Following the distribution of informational content on each column of the matrix. 
-Motifs with internal symmetry usually have two groups of highly conserved residues (high informational content) separated by a central region of residues with lower conservation (low informational content). 
-This method looks after this tow groups of residues with high informational content separated by a central region of low informational content. 
+2) Following the distribution of informational content on each column
+   of the matrix.
 
-One residue (column) has a high informational content if this is higher than the reported media of the informational content of all columns (information per column). 
-              
+Motifs with internal symmetry usually have two groups of highly
+conserved residues (high informational content) separated by a central
+region of residues with lower conservation (low informational
+content).  This method looks after this tow groups of residues with
+high informational content separated by a central region of low
+informational content.
+
+One residue (column) has a high informational content if this is
+higher than the reported media of the informational content of all
+columns (information per column).
+
 =head1 SEE ALSO
 
 =head1 WISH LIST
@@ -88,7 +91,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     $decimals = 1;
