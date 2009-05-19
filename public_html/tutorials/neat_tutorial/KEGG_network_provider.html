@@ -91,7 +91,7 @@ Introduction</A>
 
 <P>
 KEGG network provider allows you to extract metabolic networks from KEGG [<A
- HREF="Bibliography.html#Kanehisa2008">14</A>] that are specific to a set of organisms.
+ HREF="Bibliography.html#Kanehisa2008">15</A>] that are specific to a set of organisms.
 In addition, you can exclude certain compounds or reactions from these networks.
 
 <P>
@@ -106,13 +106,13 @@ or any other graph analysis tool that reads gml, VisML or dot format for these p
 
 <P>
 For visualization of KEGG networks, you can use iPATH [<A
- HREF="Bibliography.html#ipath">21</A>], KGML-ED [<A
- HREF="Bibliography.html#kgmled">16</A>] or
+ HREF="Bibliography.html#ipath">22</A>], KGML-ED [<A
+ HREF="Bibliography.html#kgmled">17</A>] or
 metaSHARK [<A
- HREF="Bibliography.html#metashark">11</A>].
+ HREF="Bibliography.html#metashark">12</A>].
 Yanasquare [<A
- HREF="Bibliography.html#yana">26</A>] and Pathway Hunter Tool [<A
- HREF="Bibliography.html#pht">25</A>] offer
+ HREF="Bibliography.html#yana">27</A>] and Pathway Hunter Tool [<A
+ HREF="Bibliography.html#pht">26</A>] offer
 organism-specific KEGG network construction in combination
 with analysis functions.
 
@@ -124,12 +124,12 @@ It should be noted that KEGG annotators omitted side compounds in the KGML files
 It is also worth noting that constructing metabolic networks from KGML files produces networks of much lower quality
 than those obtained by manual metabolic reconstruction. In manual reconstruction, several resources are taken into account,
 such as the biochemical literature, databases and genome annotations (e.g. [<A
- HREF="Bibliography.html#Foerster2003">7</A>]). This is why
+ HREF="Bibliography.html#Foerster2003">8</A>]). This is why
 the metabolism of only a few organisms has been manually reconstructed so far.
 <BR>
 In automatically reconstructed networks, reactions might not be balanced and compounds might occur more
 than once with different identifiers (see e.g. [<A
- HREF="Bibliography.html#Poolman2006">24</A>] for annotation problems in KEGG).
+ HREF="Bibliography.html#Poolman2006">25</A>] for annotation problems in KEGG).
 For the purpose of path finding the automatically reconstructed metabolic networks may still be of interest.
 
 <P>
@@ -171,7 +171,7 @@ In the right panel, you should now see a form entitled
 <P>
 The KEGG network provider form has now loaded the organism identifiers of five yeast species. As explained
   in the form, the species concerned are: <I>Saccharomyces bayanus</I>, <I>Saccharomyces mikatae</I>,
-  textitSaccharomyces paradoxus, <I>Schizosaccharomyces pombe</I> and <I>Saccharomyces cerevisiae</I>.
+  <I>Saccharomyces paradoxus</I>, <I>Schizosaccharomyces pombe</I> and <I>Saccharomyces cerevisiae</I>.
 
 <P>
 </LI>
@@ -201,7 +201,7 @@ Metabolic pathfinder with the yeast network pre-loaded.
 
 <P>
 </LI>
-<LI>In section <B>Output</B>, select Graph as output with ``paths unified into one graph''
+<LI>In section <B>Output</B>, select <TT>Graph</TT> as output with ``paths unified into one graph''
 
 <P>
 </LI>
@@ -230,11 +230,7 @@ Protocol for the command-line tools</A>
 </H2>
 
 <P>
-You may download the command line version of the KEGG network provider, which also includes the path finding tool,
-from the manual page of the KEGG network provider (section: standalone tool). 
-<BR>
-<P>
-In the command-line version of this tutorial, we restrict ourselves to the <I>E. coli</I> and <I>S. cerevisiae</I>
+The command-line version of this tutorial is restricted to the <I>E. coli</I> and <I>S. cerevisiae</I>
 metabolic networks. It is assumed that you have installed the required command-line tools.
 
 <P>
@@ -255,8 +251,8 @@ metabolic networks. It is assumed that you have installed the required command-l
 <P>
 
 <FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
-		java graphtools.algorithms.Pathfinder -g eco_metabolic_network_directed.txt -f tab -s C00049 -t C00047 -r 1 -y con -b
-		 -n -c -e ExclusionAttribute -T pathsUnion -O gml -o lysinebiosyn_eco.gml
+		java graphtools.algorithms.Pathfinder -g eco_metabolic_network_directed.txt -f tab -s C00049
+		-t C00047 -r 1 -d -y con -b -T pathsUnion -O gml -o lysinebiosyn_eco.gml
 </PRE><FONT COLOR="#0000ff"></FONT>
 
 <P>
@@ -280,8 +276,8 @@ metabolic networks. It is assumed that you have installed the required command-l
 <P>
 
 <FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
-		java graphtools.algorithms.Pathfinder -g sce_metabolic_network_directed.txt -f tab -s C00049 -t C00047 -r 1 -y con -b
-		 -n -c -e ExclusionAttribute -T pathsUnion -O gml -o lysinebiosyn_sce.gml
+		java graphtools.algorithms.Pathfinder -g sce_metabolic_network_directed.txt -f tab -s C00049
+		-t C00047 -d -r 1 -y con -b -T pathsUnion -O gml -o lysinebiosyn_sce.gml
 </PRE><FONT COLOR="#0000ff"></FONT>
 
 <P>
@@ -310,13 +306,19 @@ but recovers otherwise the reference pathway correctly (ignoring the intermediat
 alpha-aminoadipoyl-S-acyl enzyme associated to EC number 1.2.1.31). 
 <BR>
 For comparison purposes, we have chosen the same start and end compound for both metabolic networks, but it should
-be noted that lysine biosynthesis in <I>S. cerevisiae</I> starts from 2-oxoglutarate.
+be noted that the reference lysine biosynthesis pathway in <I>S. cerevisiae</I> starts from 2-oxoglutarate.
 
 <P>
-The lysine biosynthesis KEGG map for yeast is available at: http://www.genome.ad.jp/dbget-bin/get_pathway?org_name=sce&amp;mapno=00300
+The lysine biosynthesis KEGG map for yeast is available at:
+<PRE>
+http://www.genome.ad.jp/dbget-bin/get_pathway?org_name=sce&amp;mapno=00300
+</PRE>
 
 <P>
-The one for <I>E. coli</I> is available at: http://www.genome.ad.jp/dbget-bin/get_pathway?org_name=eco&amp;mapno=00300
+The one for <I>E. coli</I> is available at:
+<PRE>
+http://www.genome.ad.jp/dbget-bin/get_pathway?org_name=eco&amp;mapno=00300
+</PRE>
 
 <P>
 
@@ -378,7 +380,7 @@ check in the provided KEGG organism list.
 <!--End of Navigation Panel-->
 <ADDRESS>
 RSAT
-2008-11-05
+2009-03-29
 </ADDRESS>
 </BODY>
 </HTML>
