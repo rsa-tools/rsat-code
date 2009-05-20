@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.28 2009/05/20 11:42:39 amedina Exp $
+# $Id: compare-matrices,v 1.29 2009/05/20 13:19:37 amedina Exp $
 #
 ############################################################
 
@@ -243,7 +243,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.28 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.29 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -269,6 +269,8 @@ package main;
 
   ## Sort field
   local $sort_field = "offset";
+
+  $main::show_matrix_name=0;
 
   ## Threshold parameters
   local %lth = ();		# lower threshold values
@@ -394,31 +396,36 @@ package main;
       }
     }
   }
-
+  my $count_m=0;
   foreach my $matrix (@matrices1, @matrices2) {
-    ## Calculate the consensus for each matrix
-    $matrix->calcConsensus() if ($return_field{consensus});
-
-    ################################################################
-    ## Compute the number of sites as the maximal sum of counts
-    ## per column. Note that some matrices might have been built
-    ## from sites of varying lengths, so that the col sum is not
-    ## always the same for all the columns
-    my @counts = $matrix->getMatrix();
-    my @counts_per_col = &RSAT::matrix::col_sum($matrix->get_attribute("nrow"), $matrix->get_attribute("ncol"), @counts);
-    my $nsites = &RSAT::stats::max(@counts_per_col);
-    $matrix->set_attribute("nsites", $nsites);
+      $count_m ++;
+      ## Calculate the consensus for each matrix
+      $matrix->calcConsensus() if ($return_field{consensus});
+      
+      ################################################################
+      ## Compute the number of sites as the maximal sum of counts
+      ## per column. Note that some matrices might have been built
+      ## from sites of varying lengths, so that the col sum is not
+      ## always the same for all the columns
+      my @counts = $matrix->getMatrix();
+      my @counts_per_col = &RSAT::matrix::col_sum($matrix->get_attribute("nrow"), $matrix->get_attribute("ncol"), @counts);
+      my $nsites = &RSAT::stats::max(@counts_per_col);
+      $matrix->set_attribute("nsites", $nsites);
+      my $matrix_name = $matrix->get_attribute("name");
+      unless (defined($matrix_name)){     
+	  $matrix_name=set_attribute("name","matrix1.".$count_m);
+      } 
   }
-
+  
   &RSAT::message::TimeWarn("Starting comparison between",
 			   scalar(@matrices1) , "matrices from file 1 and ",
 			   scalar(@matrices2) , "matrices from file 2.",
-			  ) if ($main::verbose >= 2);
-
+      ) if ($main::verbose >= 2);
+  
   ################################################################
   ## Print verbose
   &Verbose() if ($main::verbose);
-
+  
   ################################################################
   ## Print the header
   my @header = ();
@@ -433,7 +440,7 @@ package main;
   push (@header, "cor", "Ncor") if ($return_field{cor});
   push (@header, "consensus1", "consensus2") if ($return_field{consensus});
   push (@header, "rank") if ($return_field{rank});
-
+  
   ## Print a description of the output fields
   if ($main::verbose >= 1) {
       my %description = ();
@@ -461,184 +468,186 @@ package main;
       print $out "; Column content\n";
       my $c = 0;
       foreach my $field (@header) {
-	$c++;
-	printf $out ";\t%d\t%-13s\t%s\n", $c, $field, $description{$field};
+	  $c++;
+	  printf $out ";\t%d\t%-13s\t%s\n", $c, $field, $description{$field};
       }
-    }
+  }
   print $out "#", join("\t", @header), "\n";
-
+  
   ################################################################
   ## compare the matrices and print the result
   my $m1 = 0;
   my $compa = 0;
   foreach my $matrix1 (@matrices1) {
-    $m1++;
-    &RSAT::message::TimeWarn("File 1", "Analyzing matrix", $m1."/".scalar(@matrices1)) 
-      if ($main::verbose >= 3);
-
-    my $ncol1 = $matrix1->get_attribute("ncol");
-    my $nrow1 = $matrix1->get_attribute("nrow");
-    my @crude_freq1 = $matrix1->getCrudeFrequencies();
-    my @corrected_freq1 = $matrix1->getFrequencies();
-    my $m2 = 0;
-    foreach my $matrix2 (@matrices2) {
-      $m2++;
-      &RSAT::message::TimeWarn("Comparing matrices", 
-			       "file1", $m1."/".scalar(@matrices1),
-			       "file2", $m2."/".scalar(@matrices2),
-			      )
-	if ($main::verbose >= 4);
-      my $ncol2 = $matrix2->get_attribute("ncol");
-      my $nrow2 = $matrix2->get_attribute("nrow");
-
-      ## Check that both matrices have the same number of rows
-      unless ($nrow2 == $nrow1) {
-	&RSAT::error::FatalError("Input matrices must have the same number of residues rows)", $nrow1, $nrow2);
-      }
-      my @crude_freq2 = $matrix2->getCrudeFrequencies();
-
-      ## Compute offsets for sliding one matrix along the other one
-      my $offset_min = 1 - $ncol2;
+      $m1++;
+      &RSAT::message::TimeWarn("File 1", "Analyzing matrix", $m1."/".scalar(@matrices1))  if ($main::verbose >= 3);
+      
+      my $ncol1 = $matrix1->get_attribute("ncol");
+      my $nrow1 = $matrix1->get_attribute("nrow");
+      my @crude_freq1 = $matrix1->getCrudeFrequencies();
+      my @corrected_freq1 = $matrix1->getFrequencies();
+      my $matrix1_name = $matrix1 ->get_attribute("name");
+      my $m2 = 0;
+      
+      foreach my $matrix2 (@matrices2) {
+	  $m2++;
+	  &RSAT::message::TimeWarn("Comparing matrices", 
+				   "file1", $m1."/".scalar(@matrices1),
+				   "file2", $m2."/".scalar(@matrices2),
+	      )
+	      if ($main::verbose >= 4);
+	  my $matrix2_name = $matrix2-> get_attribute("name");
+	  my $ncol2 = $matrix2->get_attribute("ncol");
+	  my $nrow2 = $matrix2->get_attribute("nrow");
+	  
+	  ## Check that both matrices have the same number of rows
+	  unless ($nrow2 == $nrow1) {
+	      &RSAT::error::FatalError("Input matrices must have the same number of residues rows)", $nrow1, $nrow2);
+	  }
+	  my @crude_freq2 = $matrix2->getCrudeFrequencies();
+	  
+	  ## Compute offsets for sliding one matrix along the other one
+	  my $offset_min = 1 - $ncol2;
 #      my $offset_max = &RSAT::stats::min($ncol1, $ncol2) -1;
-      my $offset_max = $ncol1 - 1;
+	  my $offset_max = $ncol1 - 1;
 #      &RSAT::message::Debug("offset range", $offset_min, $offset_max) if ($main::verbose >= 10);
-
-
-      ## Prepare output variables
-      my %cov = (); ## Covariances as a function of the offset
-      my %cor = (); ## Correlations
-      my %Ncor = (); ## Correlations
-      my %dEucl = (); ## Euclidian distances
-      my %rsEucl = (); ## Euclidian distances
-      my %dKL = (); ## Kullback-Leibler distances
-      my %out_line = (); ## Output line for each offset value
-      my @output_offset = (); ## Offsets passing the thresholds
-      my $direction = $matrix2->get_attribute("direction") || "D";
-
-      ## Slide matrix2 along matrix1
-      foreach my $offset ($offset_min..$offset_max) {
-	$compa++;
-	next unless (&CheckThresholds("offset", $offset));
-
-	## Compute aligned matrix positions
-
-	my $end1 = &RSAT::stats::min($ncol1, $ncol2+$offset);
-	my $start1 = &RSAT::stats::max(1, $offset+1, $end1-$ncol2+1);
-	my $w = $end1-$start1+1;
-	my $total_len = $ncol1 + $ncol2 - $w;
-	my $Wr = $w / $total_len;
-	next unless (&CheckThresholds("w", $w));
-	my $start2 = &RSAT::stats::max(1, 1- $offset);
-	my $end2 = &RSAT::stats::min($start2+$w-1, $ncol2);
-
-	## Highlight alignment in consensus
-	$consensus1 = join ("",
-			    "."x($start1-1),
-			    substr($matrix1->get_attribute("consensus.IUPAC"), $start1-1, $w),
-			    "."x($ncol1-$end1)
-			   );
-	$consensus2 = join ("",
-			    "."x($start2-1),
-			    substr($matrix2->get_attribute("consensus.IUPAC"), $start2-1, $w),
-			    "."x($ncol2-$end2)
-			   );
-
-
-	## Compute the Euclidian distance between the matrices
-	my $dEucl = 0;
-	my $rsEucl = 0;
-	my $dKL = 0;
-	my $cov = 0;
-	my $cor = 0;
-	my $Ncor = 0;
-	my $sum_f1 = 0;
-	my $sum_f2 = 0;
-	my $sum_f1f2 = 0;
-	my $sum_sq_f1 = 0;
-	my $sum_sq_f2 = 0;
-	foreach my $pos (1..$w) {
-	  my $col1 = $start1+$pos-1;
-	  my $col2 = $start2+$pos-1;
-	  for my $r (0..($nrow1-1)) {
-	    my $f1 = $crude_freq1[$col1-1][$r];
-	    my $f2 = $crude_freq2[$col2-1][$r];
-
-	    ## Update sums for correlations
-	    if (($calc_field{cov}) || ($calc_field{cor})){
-	      $sum_f1 += $f1;
-	      $sum_f2 += $f2;
-	      $sum_sq_f1 += $f1**2;
-	      $sum_sq_f2 += $f2**2;
-	      $sum_f1f2 += $f1*$f2;
-	    }
-
-	    ## Update sum for Euclidian distance
-	    if ($calc_field{dEucl}) {
-	      $dEucl +=  ($f1 - $f2)**2;
-	    }
-
-	    ## Update sum for Kullback-Leibler distance
-	    if ($calc_field{dKL}) {
-	      next if ($dKL eq "Inf");
-
-	      if ($f1*$f2 > 0) {
-		$dKL += $f1*log($f1/$f2) + $f2*log($f2/$f1);
-
-	      } elsif (($f1 > 0) || ($f2 > 0)) {
-		## The KL distance is infinite if one of the values is 0 and the other not !!!
-		$dKL = "Inf";
-		&RSAT::message::Warning("The Kullback-Leibler distance is infinite ") if ($main::verbose >= 3);
-	      }
-	    }
-
+	  
+	  
+	  ## Prepare output variables
+	  my %cov = (); ## Covariances as a function of the offset
+	  my %cor = (); ## Correlations
+	  my %Ncor = (); ## Correlations
+	  my %dEucl = (); ## Euclidian distances
+	  my %rsEucl = (); ## Euclidian distances
+	  my %dKL = (); ## Kullback-Leibler distances
+	  my %out_line = (); ## Output line for each offset value
+	  my @output_offset = (); ## Offsets passing the thresholds
+	  my $direction = $matrix2->get_attribute("direction") || "D";
+	  
+	  ## Slide matrix2 along matrix1
+	  foreach my $offset ($offset_min..$offset_max) {
+	      $compa++;
+	      next unless (&CheckThresholds("offset", $offset));
+	      
+	      ## Compute aligned matrix positions
+	      
+	      my $end1 = &RSAT::stats::min($ncol1, $ncol2+$offset);
+	      my $start1 = &RSAT::stats::max(1, $offset+1, $end1-$ncol2+1);
+	      my $w = $end1-$start1+1;
+	      my $total_len = $ncol1 + $ncol2 - $w;
+	      my $Wr = $w / $total_len;
+	      next unless (&CheckThresholds("w", $w));
+	      my $start2 = &RSAT::stats::max(1, 1- $offset);
+	      my $end2 = &RSAT::stats::min($start2+$w-1, $ncol2);
+	      
+	      ## Highlight alignment in consensus
+	      $consensus1 = join ("",
+				  "."x($start1-1),
+				  substr($matrix1->get_attribute("consensus.IUPAC"), $start1-1, $w),
+				  "."x($ncol1-$end1)
+		  );
+	      $consensus2 = join ("",
+				  "."x($start2-1),
+				  substr($matrix2->get_attribute("consensus.IUPAC"), $start2-1, $w),
+				  "."x($ncol2-$end2)
+		  );
+	      
+	      
+	      ## Compute the Euclidian distance between the matrices
+	      my $dEucl = 0;
+	      my $rsEucl = 0;
+	      my $dKL = 0;
+	      my $cov = 0;
+	      my $cor = 0;
+	      my $Ncor = 0;
+	      my $sum_f1 = 0;
+	      my $sum_f2 = 0;
+	      my $sum_f1f2 = 0;
+	      my $sum_sq_f1 = 0;
+	      my $sum_sq_f2 = 0;
+	      foreach my $pos (1..$w) {
+		  my $col1 = $start1+$pos-1;
+		  my $col2 = $start2+$pos-1;
+		  for my $r (0..($nrow1-1)) {
+		      my $f1 = $crude_freq1[$col1-1][$r];
+		      my $f2 = $crude_freq2[$col2-1][$r];
+		      
+		      ## Update sums for correlations
+		      if (($calc_field{cov}) || ($calc_field{cor})){
+			  $sum_f1 += $f1;
+			  $sum_f2 += $f2;
+			  $sum_sq_f1 += $f1**2;
+			  $sum_sq_f2 += $f2**2;
+			  $sum_f1f2 += $f1*$f2;
+		      }
+		      
+		      ## Update sum for Euclidian distance
+		      if ($calc_field{dEucl}) {
+			  $dEucl +=  ($f1 - $f2)**2;
+		      }
+		      
+		      ## Update sum for Kullback-Leibler distance
+		      if ($calc_field{dKL}) {
+			  next if ($dKL eq "Inf");
+			  
+			  if ($f1*$f2 > 0) {
+			      $dKL += $f1*log($f1/$f2) + $f2*log($f2/$f1);
+			      
+			  } elsif (($f1 > 0) || ($f2 > 0)) {
+			      ## The KL distance is infinite if one of the values is 0 and the other not !!!
+			      $dKL = "Inf";
+			      &RSAT::message::Warning("The Kullback-Leibler distance is infinite ") if ($main::verbose >= 3);
+			  }
+		      }
+		      
 #	    &RSAT::message::Debug("offset=".$offset, "pos=".$pos, "row=".$r, "f1=".$f1, "f2=".$f2, 
 #				  "sum_f1=".$sum_f1,
 #				  "dKL=", $dKL,
 #				  "dEucl=", $dEucl,
 #				 )
 #		  if ($main::verbose >= 10);
+		      
+		  }
+	      }
+	      
+	      ## Compute Euclidian distance
+	      if ($calc_field{dEucl}) {
+		  $dEucl = sqrt($dEucl);
+		  $dEucl /= $w if ($w > 0); ## Relativize Euclidian distance with respect to the number of aligned columns
+		  next unless (&CheckThresholds("dEucl", $dEucl)); $dEucl{$offset} = $dEucl;
+	      }
 
-	  }
-	}
+	      ## Compute Euclidian similarity
+	      if ($calc_field{rsEucl}) {
+		  my $maxEucl = sqrt(2);
+		  $rsEucl = ($maxEucl - $dEucl) / $maxEucl;
+	      }
 
-	## Compute Euclidian distance
-	if ($calc_field{dEucl}) {
-	  $dEucl = sqrt($dEucl);
-	  $dEucl /= $w if ($w > 0); ## Relativize Euclidian distance with respect to the number of aligned columns
-	  next unless (&CheckThresholds("dEucl", $dEucl)); $dEucl{$offset} = $dEucl;
-	}
+	      ## Compute Kullback-Leibler distance
+	      if ($calc_field{dKL}) {
+		  unless ($dKL eq "Inf") {
+		      $dKL /= 2;
+		      $dKL /= $w if ($w > 0); ## Relativize KL distance with respect to the number of aligned columns
+		      next unless (&CheckThresholds("dKL", $dKL)); $dKL{$offset} = $dKL;
+		      $dKL = sprintf("%.5f", $dKL);
+		  }
+	      }
 
-	## Compute Euclidian similarity
-	if ($calc_field{rsEucl}) {
-	  my $maxEucl = sqrt(2);
-	  $rsEucl = ($maxEucl - $dEucl) / $maxEucl;
-	}
-
-	## Compute Kullback-Leibler distance
-	if ($calc_field{dKL}) {
-	  unless ($dKL eq "Inf") {
-	    $dKL /= 2;
-	    $dKL /= $w if ($w > 0); ## Relativize KL distance with respect to the number of aligned columns
-	    next unless (&CheckThresholds("dKL", $dKL)); $dKL{$offset} = $dKL;
-	    $dKL = sprintf("%.5f", $dKL);
-	  }
-	}
-
-	## Compute coefficient of correlation
-	my $n = 0; ## Number of matrix cells in the alignment
-	my $v1 = 0; ## Variance of the first matrix
-	my $v2 = 0; ## Variance of the second matrix
-	if (($calc_field{cov}) || ($calc_field{cor})){
-	  $n = $nrow1*$w;
-	  $v1 = $sum_sq_f1/$n - ($sum_f1/$n)**2;
-	  $v2 = $sum_sq_f2/$n - ($sum_f2/$n)**2;
-	  $cov = $sum_f1f2/$n - $sum_f1*$sum_f2/($n**2); ## Warning : this covariance has nothing to do with the "natural covariance" of Pape
-	  if ($cov == 0) {
-	    $cor = 0;
-	  } else {
-	    $cor = $cov/sqrt($v1*$v2);
-	  }
-	  $Ncor = $cor * $Wr;
+	      ## Compute coefficient of correlation
+	      my $n = 0; ## Number of matrix cells in the alignment
+	      my $v1 = 0; ## Variance of the first matrix
+	      my $v2 = 0; ## Variance of the second matrix
+	      if (($calc_field{cov}) || ($calc_field{cor})){
+		  $n = $nrow1*$w;
+		  $v1 = $sum_sq_f1/$n - ($sum_f1/$n)**2;
+		  $v2 = $sum_sq_f2/$n - ($sum_f2/$n)**2;
+		  $cov = $sum_f1f2/$n - $sum_f1*$sum_f2/($n**2); ## Warning : this covariance has nothing to do with the "natural covariance" of Pape
+		  if ($cov == 0) {
+		      $cor = 0;
+		  } else {
+		      $cor = $cov/sqrt($v1*$v2);
+		  }
+		  $Ncor = $cor * $Wr;
 #  	  &RSAT::message::Debug("n=".$n,
 # 				"sum_f1=".$sum_f1,
 # 				"sum_f2=".$sum_f2,
@@ -650,94 +659,100 @@ package main;
 # 				"cor=".$cor,
 # 				"Ncor=".$Ncor,
 # 			       ) if ($main::verbose >= 10);
-	}
-	next unless (&CheckThresholds("cov", $cov));
-	next unless (&CheckThresholds("cor", $cor));
+	      }
+	      next unless (&CheckThresholds("cov", $cov));
+	      next unless (&CheckThresholds("cor", $cor));
 	next unless (&CheckThresholds("Ncor", $Ncor));
-
-	## Index values for sorting
-	$cov{$offset} = $cov;
-	$cor{$offset} = $cor;
-	$Ncor{$offset} = $Ncor;
-
-	## Generate the output line
+	      
+	      ## Index values for sorting
+	      $cov{$offset} = $cov;
+	      $cor{$offset} = $cor;
+	      $Ncor{$offset} = $Ncor;
+	      
+	      ## Generate the output line
 #	my @out_fields = ($compa,$matrix1->get_attribute("name"), $matrix2->get_attribute("name"));
-	my @out_fields = ($compa,$m1, $m2);
-	push (@out_fields, $offset, $direction, $w, sprintf("%.4f", $Wr));
-	push (@out_fields, $start1, $end1) if ($return_field{pos});
-	push (@out_fields, $start2, $end2) if ($return_field{pos});
-	push (@out_fields, sprintf("%.5f", $dEucl)) if ($return_field{dEucl});
-	push (@out_fields, sprintf("%.5f", $rsEucl)) if ($return_field{rsEucl});
-	push (@out_fields, $dKL) if ($return_field{dKL});
-	push (@out_fields, sprintf("%.4f", $cov)) if ($return_field{cov});
-	if ($return_field{cor}) {
-	  push (@out_fields, sprintf("%.4f", $cor));
-	  push (@out_fields, sprintf("%.4f", $Ncor));
-	}
-	push (@out_fields,
-	      $consensus1,
-	      $consensus2) if ($return_field{consensus});
-	push @output_offset, $offset;
-	$out_line{$offset} =  join("\t", @out_fields);
+	      my @out_fields = ($compa);
+	      if ($main::show_matrix_name){
+		  push (@out_fields,$matrix1_name, $matrix2_name);
+	      }
+	      else{
+		  push (@out_fields, $m1, $m2);
+	      }
+	      push (@out_fields, $offset, $direction, $w, sprintf("%.4f", $Wr));
+	      push (@out_fields, $start1, $end1) if ($return_field{pos});
+	      push (@out_fields, $start2, $end2) if ($return_field{pos});
+	      push (@out_fields, sprintf("%.5f", $dEucl)) if ($return_field{dEucl});
+	      push (@out_fields, sprintf("%.5f", $rsEucl)) if ($return_field{rsEucl});
+	      push (@out_fields, $dKL) if ($return_field{dKL});
+	      push (@out_fields, sprintf("%.4f", $cov)) if ($return_field{cov});
+	      if ($return_field{cor}) {
+		  push (@out_fields, sprintf("%.4f", $cor));
+		  push (@out_fields, sprintf("%.4f", $Ncor));
+	      }
+	      push (@out_fields,
+		    $consensus1,
+		    $consensus2) if ($return_field{consensus});
+	      push @output_offset, $offset;
+	      $out_line{$offset} =  join("\t", @out_fields);
+	  }
+	  
+	  ## Sort the results
+	  my @sorted_offset;
+	  
+	  ## Euclidian distance is sorted in ascending order
+	  if ($sort_field eq "dEucl") {
+	      @sorted_offset = sort {$dEucl{$a} <=> $dEucl{$b}} @output_offset;
+	      
+	  } elsif ($sort_field eq "rsEucl") {
+	      @sorted_offset = sort {$dEucl{$b} <=> $dEucl{$a}} @output_offset;
+	      
+	      ## Kullback-Leibler distance is sorted in ascending order
+	  } elsif ($sort_field eq "dKL") {
+	      @sorted_offset = sort {$dKL{$a} <=> $dKL{$b}} @output_offset;
+	      
+	      ## covariance is sorted in descending order
+	  } elsif ($sort_field eq "cov") {
+	      @sorted_offset = sort {$cov{$b} <=> $cov{$a}} @output_offset;
+	      
+	      ## Correlation is sorted in descending order
+	  } elsif ($sort_field eq "cor") {
+	      @sorted_offset = sort {$cor{$b} <=> $cor{$a}} @output_offset;
+	      
+	      ## Correlation is sorted in descending order
+	  } elsif ($sort_field eq "Ncor") {
+	      @sorted_offset = sort {$Ncor{$b} <=> $Ncor{$a}} @output_offset;
+	      
+	  } else {
+	      @sorted_offset = @output_offset;
+	  }
+	  
+	  ## specific treatment for the rank
+	  my %rank = ();
+	  if ($calc_field{rank}) {
+	      my $rank = 0;
+	      foreach my $offset (@sorted_offset) {
+		  $rank++;
+		  $rank{$offset} = $rank;
+	      }
+	      if (defined($uth{rank})) {
+		  @sorted_offset = @sorted_offset[0..($uth{rank}-1)];
+	      }
+	      if (defined($lth{rank})) {
+		  @sorted_offset = @sorted_offset[($lth{rank}-1)..$#sorted_offset];
+	      }
+	  }
+	  
+	  ## Print the output
+	  foreach my $offset (@sorted_offset) {
+	      print $out  $out_line{$offset};
+	      print $out "\t", $rank{$offset} if ($return_field{rank});
+	      print $out "\n";
+	  }
       }
-
-      ## Sort the results
-      my @sorted_offset;
-
-	## Euclidian distance is sorted in ascending order
-      if ($sort_field eq "dEucl") {
-	@sorted_offset = sort {$dEucl{$a} <=> $dEucl{$b}} @output_offset;
-
-      } elsif ($sort_field eq "rsEucl") {
-	@sorted_offset = sort {$dEucl{$b} <=> $dEucl{$a}} @output_offset;
-
-	## Kullback-Leibler distance is sorted in ascending order
-      } elsif ($sort_field eq "dKL") {
-	@sorted_offset = sort {$dKL{$a} <=> $dKL{$b}} @output_offset;
-
-	## covariance is sorted in descending order
-      } elsif ($sort_field eq "cov") {
-	@sorted_offset = sort {$cov{$b} <=> $cov{$a}} @output_offset;
-
-	## Correlation is sorted in descending order
-      } elsif ($sort_field eq "cor") {
-	@sorted_offset = sort {$cor{$b} <=> $cor{$a}} @output_offset;
-
-	## Correlation is sorted in descending order
-      } elsif ($sort_field eq "Ncor") {
-	@sorted_offset = sort {$Ncor{$b} <=> $Ncor{$a}} @output_offset;
-
-      } else {
-	@sorted_offset = @output_offset;
-      }
-
-      ## specific treatment for the rank
-      my %rank = ();
-      if ($calc_field{rank}) {
-	my $rank = 0;
-	foreach my $offset (@sorted_offset) {
-	  $rank++;
-	  $rank{$offset} = $rank;
-	}
-	if (defined($uth{rank})) {
-	  @sorted_offset = @sorted_offset[0..($uth{rank}-1)];
-	}
-	if (defined($lth{rank})) {
-	  @sorted_offset = @sorted_offset[($lth{rank}-1)..$#sorted_offset];
-	}
-      }
-
-      ## Print the output
-      foreach my $offset (@sorted_offset) {
-	print $out  $out_line{$offset};
-	print $out "\t", $rank{$offset} if ($return_field{rank});
-	print $out "\n";
-      }
-    }
   }
-
+  
   &RSAT::message::TimeWarn("Matrix comparisons done") if ($main::verbose >= 2);
-
+  
   ################################################################
   ## Finish verbose
   if ($main::verbose >= 1) {
@@ -987,6 +1002,19 @@ palindromes, tandem repeats) or asymmetrical.
 =cut
 	} elsif ($arg eq "-R") {
 	    $main::strands = "R";
+       
+
+        ## Matrix ID
+=pod
+
+=item B<-matrix_id #>
+By default (0) an authomatic matrix ID is generated and printed in the out field. 
+To use the file name as matrix ID set this option to 1.
+   -matrix_id 1
+=cut
+      } elsif ($arg eq "-matrix_id") {
+	$main::show_matrix_name = shift(@arguments);
+
 
 	## Sort field
 =pod
