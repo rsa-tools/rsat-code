@@ -160,7 +160,7 @@ sub readMatrixFileList {
 
     }
     close $mlist;
-    &RSAT::message::Info("Read matrix list from file", $infile{mlist2}, scalar(@matrix_files1), "matrices") 
+    &RSAT::message::Info("Read matrix list from file", $main::infile{mlist2}, scalar(@matrix_files), "matrices") 
       if ($main::verbose >= 2);
 
     if (scalar(@matrix_files >= 1)) {
