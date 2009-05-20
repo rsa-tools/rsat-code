@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.27 2008/09/17 07:31:39 jvanheld Exp $
+# $Id: compare-matrices,v 1.28 2009/05/20 11:42:39 amedina Exp $
 #
 ############################################################
 
@@ -243,7 +243,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.27 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.28 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -379,7 +379,7 @@ package main;
   ## considered as separate comparisons, and the score ranking applies
   ## to them separately rather than altogether.
   if ($strands =~ /R/) {
-    &RSAT::message::Info("Computing reverse complement for the matrices of the first file.") if ($main::verbose >= 0);
+    &RSAT::message::Info("Computing reverse complement for the matrices of the second file.") if ($main::verbose >= 0);
     foreach my $matrix (@matrices2) {
       $matrix->reverse_complement();
       $matrix->set_attribute("direction", "R");
@@ -858,7 +858,7 @@ The fisrt input file contaning a list of matrix files (given as paths)
 =item B<-mlist2 matrix list>
 
 The second input file contaning a list of matrix files (given as paths)
-
+The reverse complement is computed for this set of matrices.
 =cut
       } elsif ($arg eq "-mlist2") {
 	$main::infile{mlist2} = shift(@arguments);
