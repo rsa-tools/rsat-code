@@ -424,7 +424,7 @@ the orthologs. This method uses a threshold on the intergenic distance.
 Specify a subset of tasks to be executed.
 
 By default, the program runs all necessary tasks. However, in some
-cses, it can be useful to select one or several tasks to be executed
+cases, it can be useful to select one or several tasks to be executed
 separately. For instance, after having collected all the promoter
 sequences of ortholog genes, one might desire to run the pattern
 detection with various parameter values without having to retrieve the
@@ -434,6 +434,10 @@ Beware: task selection requires expertise, because most tasks depends
 on the prior execution of some other tasks in the workflow. Selecting
 tasks before their prerequisite tasks have been completed will provoke
 fatal errors.
+
+Avilable Tasks:
+-For all footprint programs: operons, quiery_seq, orthologs, ortho_seq, purge, all
+-For footprint-scan: occ_sig, occ_sig_graph, scan, map, synthesis
 
 =cut
     } elsif ($arg eq "-task") {
