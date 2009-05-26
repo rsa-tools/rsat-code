@@ -42,7 +42,7 @@ open RESULT, "$command $parameters | awk '{print \$0\"\t<a href=$ENV{rsat_www}/d
 ### Print result on the web page
 #$result_file = "$TMP/$tmp_file_name.res";
 print "<CENTER>\n";
-&PrintHtmlTable(RESULT, $result_file, false, 1000);
+&PrintHtmlTable(RESULT, $result_file, false, 10000);
 print "</CENTER>\n";
 
 close(RESULT);
