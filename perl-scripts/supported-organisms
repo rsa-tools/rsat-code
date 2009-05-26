@@ -36,14 +36,26 @@ $supported_return_fields = join ",", @supported_return_fields;
 ################################################################
 ## If it does not exist yet, create a table with the supported
 ## organisms
-## This is a ricky way to fix the transition from the Perl-script-based loading to the tab-delimited text file-based loding. 
-## In principe this piece of code should run only once per server, and then be suppressed.
+##
+## This is a tricky way to fix the transition from the
+## Perl-script-based loading to the tab-delimited text file-based
+## loding.  In principe this piece of code should run only once per
+## server, and then be suppressed.
+
 unless (-e $ENV{RSAT}."/data/supported_organisms.tab") {
+  &RSAT::message::Warning("supported_organisms.tab is missing, regenerating from the .pl files");
 
   ## Load organisms from the (obsolete) Perl file supported_organisms.pl
   my $perl_organisms = $ENV{RSAT}."/data/supported_organisms.pl";
-  if (-e $perl_organisms) {
-    require $perl_organisms;
+  if (-e $perl_organisms) { 
+    &RSAT::message::Warning("Loading organisms from file", $perl_organisms);
+   require $perl_organisms;
+  }
+
+  my $perl_organisms_ensembl = $ENV{RSAT}."/data/supported_mammals.pl";
+  if (-e $perl_organisms_ensembl) {
+    &RSAT::message::Warning("Loading organisms from file", $perl_organisms_ensembl);
+    require $perl_organisms_ensembl;
   }
 
   ## Export organism table in tab format for future queries
