@@ -42,7 +42,8 @@ my $TMP = $RSAT.'/public_html/tmp';
 
 =head1 DESCRIPTION
 
-Documentation for this module is at http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS_documentation.xml
+Documentation for this module is at
+  http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS_documentation.xml
 
 =cut
 
@@ -4770,6 +4771,10 @@ sub random_graph {
   if ($args{directed}) {
    my $directed = $args{directed};
    $command .= " -directed";
+  }
+  if ($args{self}) {
+   my $self = $args{self};
+   $command .= " -self";
   }
   if ($args{no_single}) {
    my $no_single = $args{no_single};
