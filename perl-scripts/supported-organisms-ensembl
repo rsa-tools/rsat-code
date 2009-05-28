@@ -1,21 +1,25 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: supported-organisms-ensembl,v 1.2 2008/10/02 10:35:53 rsat Exp $
+# $Id: supported-organisms-ensembl,v 1.3 2009/05/28 10:32:27 rsat Exp $
 #
 # Time-stamp
 #
 ############################################################
 
 use strict;
-
 use DBI();
+
+## Read arguments
+&ReadArguments();
+
 
 my $dbh = DBI->connect("DBI:mysql:host=ensembldb.ensembl.org:port=5306", "anonymous", "", {'RaiseError' => 1});
 my $sth = $dbh->prepare("SHOW DATABASES");
 $sth->execute();
 my $dbversion;
 my $previous_org = "bogus";
+
 while (my $ref = $sth->fetchrow_hashref()) {
     if ($ref->{'Database'} =~ /_core_\d+/) {
 	$dbversion = $ref->{'Database'};
@@ -23,11 +27,119 @@ while (my $ref = $sth->fetchrow_hashref()) {
 	$dbversion =~ s/_.+//;
 	$ref->{'Database'} =~s/_core_.+//;
 	if ($ref->{'Database'} ne $previous_org) {
-	    print $ref->{'Database'}, "\n";
+	    print ucfirst($ref->{'Database'}), "\n";
 	    $previous_org = $ref->{'Database'};
 	}
     }
 }
-print "EnsEMBL database version : ", $dbversion, "\n";
+
+print "; EnsEMBL database version : ", $dbversion, "\n";
+
 $sth->finish();
 $dbh->disconnect();
+
+################################################################
+##################### SUBROUTINE DEFINITION ####################
+################################################################
+
+################################################################
+#### Display full help message
+sub PrintHelp {
+  open HELP, "| less";
+  print HELP <<End_of_help;
+NAME
+	supported-organisms-ensembl
+
+        2008 by Olivier Sand (oly\@bigre.ulb.ac.be)
+
+USAGE
+        supported-organisms-ensembl
+
+AUTHOR
+	oly\@bigre.ulb.ac.be
+
+DESCRIPTION
+	Returns the list of Ensembl organisms supported on this site of
+	Regulatory Sequence Analysis Tools.
+
+CATEGORY
+	genomics
+	administration
+
+OPTIONS
+	-h	(must be first argument) display full help message
+
+	-help	(must be first argument) display options
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### Display short help message #####
+sub PrintOptions {
+  open HELP, "| less";
+  print HELP <<End_short_help;
+template options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+  foreach my $a (0..$#ARGV) {
+    ### verbose ###
+#    if ($ARGV[$a] eq "-v") {
+#      if (&IsNatural($ARGV[$a+1])) {
+#	$verbose = $ARGV[$a+1];
+#      } else {
+#	$verbose = 1;
+#      }
+
+      ### detailed help
+#    } elsif ($ARGV[$a] eq "-h") {
+     if ($ARGV[$a] eq "-h") {
+      &PrintHelp;
+
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions;
+
+      ### output format
+#    } elsif ($ARGV[$a] eq "-format") {
+#      $out_format = $ARGV[$a+1];
+#      unless ($supported_format{$out_format}) {
+#	&RSAT::error::FatalError("Format $out_format is not supported\n");
+#      }
+
+      #### return fields
+#    } elsif ($ARGV[$a] eq "-return") {
+#	chomp($ARGV[$a+1]);
+#	my @fields_to_return = split ",", $ARGV[$a+1];
+#	foreach $field (@fields_to_return) {
+#	    if ($supported_return_fields{$field}) {
+#		push @return_fields, $field;
+#	    } else {
+#		&RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+#	    }
+#	}
+
+      ### root taxon
+#    } elsif ($ARGV[$a] eq "-taxon") {
+#      $root_taxon = $ARGV[$a+1];
+
+      ### output file  
+#    } elsif ($ARGV[$a] eq "-o") {
+#      $outfile{output} = $ARGV[$a+1];
+
+    }
+  }
+}
