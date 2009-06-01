@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.18 2009/06/01 17:51:54 amedina Exp $
+# $Id: footprint-scan,v 1.19 2009/06/01 18:41:27 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -468,7 +468,7 @@ crer_pval
   ## Matrix suffix
   &RSAT::error::FatalError("You must specify a matrix suffix (option -matrix_suffix)") unless (defined($matrix_suffix));
   
-  $matrix_suffix.= "_infer-operons_" if ($infer_operons);
+  $matrix_suffix.= "_infer-operons" if ($infer_operons);
   
   ## Sequence format
   $ms_parameters .= " -seq_format fasta";
