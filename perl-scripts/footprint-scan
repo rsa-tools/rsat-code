@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.17 2009/05/25 14:41:34 amedina Exp $
+# $Id: footprint-scan,v 1.18 2009/06/01 17:51:54 amedina Exp $
 #
 ############################################################
 
@@ -22,7 +22,13 @@ showing a higher number of hits than expected by chance
 
 =head1 AUTHORS
 
-Jacques.van.Helden@ulb.ac.be
+=over
+
+=item Jacques.van. Helden <Jacques.van.Helden@ulb.ac.be>
+
+=item Alejandra Medina-Rivera  <amedina@lcg.unam.mx>
+
+=back
 
 =head1 CATEGORY
 
@@ -176,8 +182,27 @@ their parameters.
 
 =head2 Detecting all putative target genes for a given transcription factor
 
+Given a PSSM we would like detect new putative binding sites for a
+given Transcription Factor. The usual approach would be to retrieve
+all upstream region sequences of the organism of interest and then
+search for high scored sites with matrix-scan, althougth to have a
+high score in one sequence doesn’t mean is a real binding site.
+ 
+As we know sequences with a functional relevance migth be conserved
+througth some branches of phylogeny. So we expect binding sites with a
+functional rele- vance to be conserved in a group of close othologous
+sequences.  footprint-scan can search for putative bindign sites in
+the hole set of up- stream regions of an organism while evaluating if
+the detected binding sites are conserved (over-represented) in the
+respective orthologous sequences.
 
-
+ footprint-scan -v 2  -org Escherichia_coli_K12 \
+    -taxon Enterobacteriales -all_genes \
+    -bgfile ${RSAT}/data/taxon_frequencies/Enterobacteriales/dyads_3nt_sp0-20_upstream-noorf_Enterobacteriales-noov-1str.freq.gz \
+    -m MetJ_Regulon_matrix.tab \
+    -matrix_format tab \
+    -matrix_suffix RegulonDB \
+    -sep_genes
 
 =head1 SEE ALSO
 
@@ -242,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -442,7 +467,9 @@ crer_pval
 
   ## Matrix suffix
   &RSAT::error::FatalError("You must specify a matrix suffix (option -matrix_suffix)") unless (defined($matrix_suffix));
-
+  
+  $matrix_suffix.= "_infer-operons_" if ($infer_operons);
+  
   ## Sequence format
   $ms_parameters .= " -seq_format fasta";
 
@@ -469,8 +496,9 @@ crer_pval
   ################################################################
   ## Analyze query genes separately or altogether
   if ($sep_genes) {
+      
       $outfile{synthesis} = join( "/", "footprints", $taxon, $organism_name,
-				  join ("_", $matrix_suffix,  $organism_name, $taxon, "synthesis"));
+				  join ("_", $matrix_suffix,  $organism_name, $taxon ,"synthesis"));
       $outfile{synthesis_tab} = $outfile{synthesis}.".tab";
       $outfile{synthesis_html} = $outfile{synthesis}.".html";
       my $g = 0;
@@ -508,7 +536,7 @@ crer_pval
 	  my ($syn) = &OpenOutputFile($outfile{synthesis_tab});
 	  my $syn_dir = `dirname $outfile{synthesis_tab}`;
 	  chomp($syn_dir);
-
+	  my $img_hight=120;
 	  my $g = 0;
 	  my $occ_sig_header = "";
 	  foreach my $gene (sort {$top_sig{$b} <=> $top_sig{$a}} keys %top_sig) {
@@ -532,12 +560,14 @@ crer_pval
 	      if ((defined($occ_sig_graph_file{$gene})) && (-e $occ_sig_graph_file{$gene})) {
 #	if (-e $occ_sig_graph_file{$gene}) {
 		  my $file = $occ_sig_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
+		  $links .= join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'></a>");
 		  $links .= join("", " <a href='", $file, "'>[sigplot]</a>");
+		  #$links .= join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'>[sigplot]</a>");
 	      }
 	      if ((defined($occ_freq_graph_file{$gene})) && (-e $occ_freq_graph_file{$gene})) {
 #	if (-e $occ_freq_graph_file{$gene}) {
 		  my $file = $occ_freq_graph_file{$gene}; $file =~ s|${syn_dir}/||g;
-		  $links .= join("", " <a href='", $file, "'>[freqplot]</a>");
+		  $links .= join("", " <a href='", $file, "'>","<img  src='",$file,"'height='",$img_hight,"'>[freqplot]</a>");
 	      }
 	      if ((defined($map_file{$gene})) && (-e $map_file{$gene})) {
 #	if (-e $map_file{$gene}) {
