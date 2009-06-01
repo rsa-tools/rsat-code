@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-symmetry,v 1.8 2009/03/26 01:05:40 amedina Exp $
+# $Id: matrix-symmetry,v 1.9 2009/06/01 17:51:54 amedina Exp $
 #
 ############################################################
 
@@ -129,7 +129,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     #$program_version = "0.1";
     
     ################################################################
@@ -176,8 +176,9 @@ package main;
     
     
     @supported_thresholds = qw (
-			      Ncor
-			      split_IR
+			      Ncor_IR
+			      Ncor_DR
+			      Split_IR
                               split_DR 
 			     );
     $supported_thresholds = join ",", @supported_thresholds;
@@ -186,7 +187,8 @@ package main;
 	$supported_threshold{lc($thr)} = 1;
     }
     
-    $th{"Ncor"}=0.1;
+    $th{"Ncor_DR"}=0.1;
+    $th{"Ncor_IR"}=0.1;
     $th{"split_IR"}=1.2;
     $th{"split_DR"}=0.8;
     ## Return option
@@ -560,9 +562,9 @@ otherwise an IR.
 
 Threshold on some parameter (-th: threshold). 
 
-Supported threshold fields : Ncor, split_IR, split_DR
+Supported threshold fields : Ncor_IR, Ncor_DR, split_IR, split_DR
 
-The defult threshold for Ncor is set on 0.1, when the Ncor value for the matrix comparison is above this threshold the corresponding symmetry is reported. This value has been set based on data from E.coli Transcription Factor binding motifs.
+The defult threshold for Ncor_IR is set on 0.1 and for Ncor_DR is set on 0.8 when the Normalized correlation value for the matrix comparison is above this threshold the corresponding symmetry is reported. This value has been set based on data from E.coli Transcription Factor binding motifs.
 
 With the I<split> method, symmetry detection is based on the overlap of hits obtained from the scanning of a random sequence.
 If the PSSM contains a Direct Repeat, the number of overlaped hits on the same side of the string is expected to be higher than the number of ovelaped hits in opposite sides of the string, and if the PSSM contains an Inverted Repeat it would be otherwise.
@@ -822,7 +824,7 @@ sub ComputeNormalizedCorrelation {
     if($DirectRepeat &&  $InvertRepeat){
 	print $matrix_name." Deciding by Diference in distance \n Direct ".$DR_dist."\n Invert ".$IR_dist."\n";
 	#print CLASS $factor." Uneable to decide \n\n";
-	if ($DR_dist > $IR_dist){
+	if ($DR_dist > ($IR_dist - 0.06)){
 	    &RSAT::message::Info($matrix_name." Found Internal motif structure:  Direct_repeat") if ($main::verbose >= 2) ;
 	    &RSAT::message::Info(join ("\t",$matrix_name,"Direct_repeat",$DR_dist,$length_DR, $DR_rep1,$DR_rep2)."\n") if($main::verbose >= 2) ;
 
@@ -881,7 +883,7 @@ sub SelfCompare {
     my $avoid_start=0;
     my $length=0;
     my ($method_condition);
-    my $method_threshold=$main::th{$distance_method};
+    my $method_threshold=$main::th{"Ncor_DR"};
 
     ############
     ## return result of compare-matrix
@@ -948,16 +950,23 @@ sub SelfCompare {
 
     ## Evaluates  the distances to make a classification
    
+#     my @ordered=sort{
+# 	my ($method_value_b, $length_b, @o_b) = @{$Distances{$b}};
+# 	my ($method_value_a, $length_a, @o_a) = @{$Distances{$a}};
+# 	return	$method_value_b <=> $method_value_a ||
+# 	    $length_b <=> $length_a;
+#     } keys(%Distances);
+    
     my @ordered=sort{
-	my ($method_value_b, $length_b, @o_b) = @{$Distances{$b}};
 	my ($method_value_a, $length_a, @o_a) = @{$Distances{$a}};
+	my ($method_value_b, $length_b, @o_b) = @{$Distances{$b}};
 	return	$method_value_b <=> $method_value_a ||
-	    $length_b <=> $length_a;
+	    $length_a <=> $length_b;
     } keys(%Distances);
-
-   
+    
+    
     if ($distance_method eq "Ncor"){
-	my ($method_value,$length,$rep1, $rep2) =@{$Distances{$ordered[1]}};
+	my ($method_value,$length,$rep1, $rep2) =@{$Distances{$ordered[0]}};
 	return (0,"NULL","NULL","NULL", "NULL") unless $method_value;
 	&RSAT::message::Debug ( "minimal disntance ".$method_value) if ($main::verbose >= 5);
 	#die;
@@ -1003,7 +1012,7 @@ sub InvCompare{
     $comp_command .= " -v $V -file1 $matrix_file -file2 $matrix_file  -format1 $matrix_format -format2 $matrix_format -R";
     my $self_comp=`$comp_command`;
     my $method_condition;
-    my $method_threshold=$main::th{$distance_method};
+    my $method_threshold=$main::th{"Ncor_IR"};
    
     ############
     ## return result of compare-matrix
@@ -1088,7 +1097,7 @@ sub InvCompare{
 	my ($method_value_a, $length_a, @o_a) = @{$Distances{$a}};
 	my ($method_value_b, $length_b, @o_b) = @{$Distances{$b}};
 	return	$method_value_b <=> $method_value_a ||
-	    $length_a <=> $length_b;
+	  $length_a <=> $length_b;
     } keys(%Distances);
 
 
