@@ -436,8 +436,14 @@ tasks before their prerequisite tasks have been completed will provoke
 fatal errors.
 
 Avilable Tasks:
--For all footprint programs: operons, quiery_seq, orthologs, ortho_seq, purge, all
--For footprint-scan: occ_sig, occ_sig_graph, scan, map, synthesis
+
+=over
+
+=item For all footprint programs: operons, quiery_seq, orthologs, ortho_seq, purge, all
+
+=item For footprint-scan: occ_sig, occ_sig_graph, scan, map, synthesis
+
+=back
 
 =cut
     } elsif ($arg eq "-task") {

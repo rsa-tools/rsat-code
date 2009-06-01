@@ -12,7 +12,8 @@ rsat_server_admin=your.mail@your.mail.server
 rsat_site=your_site_name
 
 ## Main RSAT directory
-RSAT=/home/rsat/rsa-tools
+#RSAT=/home/rsat/rsa-tools
+RSAT=/Users/amedina/local/rsa-tools
 
 ## Directory for storing temporary file (for stand-alone scripts + web server + web services)
 rsat_tmp=/home/rsat/rsa-tools/public_html/tmp
