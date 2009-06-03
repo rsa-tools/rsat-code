@@ -213,8 +213,13 @@ external users is the compressed archive. If you are not member of the
 BiGRe laboratory, please skip the section \textit{Installation from
   the CVS repository}.
 
-\section{Installation from the CVS repository}
+\section{Donwloading \RSAT from the CVS server}
 
+\textbf{Warning:} we currently cannot manage user profiles in our CVS
+server, so the \RSAT code is still distributed as a compressed
+archive. Please skip this section if you downloaded a compessed
+archive from the Web server (a file named
+\file{rsa-tools\_2009XXXX.tar.gz}, where XXXXXX indicates the date).
 
 \subsection{CVS configuration}
 
@@ -244,7 +249,7 @@ tools from the server (you need to replace \texttt{[mylogin]} by the
 login name you received when signing the \RSAT license).
 
 \begin{verbatim}
-cvs -d [mylogin]@cvs.scmbb.ulb.ac.be:/cvs/rsat co rsa-tools
+cvs -d [mylogin]@cvs.bigre.ulb.ac.be:/cvs/rsat co rsa-tools
 \end{verbatim}
 
 This will create a directory \file{rsa-tools} on your computer, and
