@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.19 2009/06/01 18:41:27 amedina Exp $
+# $Id: footprint-scan,v 1.20 2009/06/03 14:19:25 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -345,7 +345,7 @@ crer_pval
   %main::supported_threshold = ();
   
   foreach my $thr (@supported_thresholds) {
-      if($thr eq 'score'){print "ahhhh$thr-\n";}
+     # if($thr eq 'score'){print "ahhhh$thr-\n";}
       $main::supported_threshold{$thr} = 1;
   }
   
