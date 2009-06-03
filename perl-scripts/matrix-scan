@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.126 2009/03/13 03:08:54 jvanheld Exp $
+# $Id: matrix-scan,v 1.127 2009/06/03 05:12:18 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -877,23 +877,29 @@ package main;
 
   ################################################################
   #### print verbose
-  &Verbose() if ($main::verbose);
+  &Verbose() if ($main::verbose >= 1);
 
   ## Print header
   if ($return_fields{sites}) {
-      print $out "#", join ("\t", 
-			    "seq_id",
-			    "ft_type",
-			    "ft_name",
-			    "strand",
-			    "start",
-			    "end",
-			    "sequence",
-			    "weight",
-			    "proba_M",
-			    "proba_B",
-			   );
-      
+    my @out_fields =  qw(seq_id
+			 ft_type
+			 ft_name
+			 strand
+			 start
+			 end
+			 sequence
+			 weight
+			 proba_M
+			 proba_B);
+    if ($verbose >= 1) {
+      my $f=0;
+      print $out "; Output columns\n";
+      foreach my $field (@out_fields) {
+	$f++;
+	print $out join("\t", ";", $f, $field), "\n";
+      }
+    }
+      print $out "#", join ("\t", @out_fields);
       if ($return_fields{pval}) {
 	  print $out "\t", "Pval";
 	  print $out "\t", "ln_Pval";
