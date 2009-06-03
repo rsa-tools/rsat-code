@@ -142,7 +142,7 @@ sub ReadProperties {
 
 
 ################################################################
-## ## Read Perl config files
+## Read Perl config files
 sub ReadConfig {
   if ($0 =~ /([^(\/)]+)$/) {
     my $config_file;
@@ -154,6 +154,8 @@ sub ReadConfig {
       &RSAT::error::FatalError("Cannot find the config file", "RSA.config", "from dir", $`);
     }
     require $config_file;
+
+    ## Read user-defined local configuration if defined
     if ($ENV{'RSA_LOCAL_CONFIG'}) {
       if (-e $ENV{'RSA_LOCAL_CONFIG'}) {
 	if (-r $ENV{'RSA_LOCAL_CONFIG'}) {
@@ -176,6 +178,26 @@ sub ReadConfig {
 
 
 ################################################################
+## Load additional genomes, locally installed in user's account
+sub LoadLocalOrganisms {
+  ## TO BE IMPLEMENTED
+  ## - load the organisms from a tab-delimited file
+  ## - check that the organisms ar esuppored by get-orthologs
+
+  if ($ENV{'RSAT_LOCAL_ORGANISMS'}) {
+    if (-e $ENV{'RSAT_LOCAL_ORGANISMS'}) {
+      if (-r $ENV{'RSAT_LOCAL_ORGANISMS'}) {
+	&RSAT::message::Warning("LOADING OF LOCAL ORGANISMS STILL HAS TO BE IMPLEMENTED. IGNORED.");
+      } else {
+	&RSAT::message::Warning(";WARNING: cannot read local config file ", $ENV{'RSAT_LOCAL_ORGANISMS'})
+      }
+    } else {
+      &RSAT::message::Warning(";WARNING: local config file does not exist ", $ENV{'RSAT_LOCAL_ORGANISMS'})
+    }
+  }
+}
+
+################################################################
 ## Initialize the global variables required for RSAT
 ## MANY OF THESE VARIABLES ARE OBSOLETE
 ## THIS SHOULD BE CLEANED WHEN I FIND TIME TO DO IT
@@ -184,6 +206,7 @@ sub InitRSAT {
 
   &ReadProperties();
   &ReadConfig();
+  &LoadLocalOrganisms();
 
   ## Directories
   $main::BIN = "$ENV{RSAT}/bin";
