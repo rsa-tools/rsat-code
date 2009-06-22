@@ -60,6 +60,11 @@ $small_font_height = 8;
 $large_font_width = 8;
 $large_font_height = 16;
 
+
+#### Condition for  highligth lines ####
+$hline=0;
+$viline=0;
+
 &ReadArguments();
 
 ## check arguments compatibility 
@@ -355,6 +360,7 @@ $image->line($left, $bottom, $left, $top, $axis_color);
 $image->line($left, $bottom, $right, $bottom, $axis_color);
 
 
+
 #### draw highlight box ####
 unless ($hbox_left eq ""){
   $image->filledRectangle($hbox_left, $hbox_top, $hbox_right, $hbox_bottom, $highlight_box_color);
@@ -458,6 +464,19 @@ for $series (0..$#y_col_list) {
     $prev_y = $y;
   }				# for p
 }				# for series
+
+### draw hline
+if ($hline){
+    $image->line($left, $hline_pos, $right, $hline_pos, $hline_color);
+}
+
+## draw hline
+if ( $vline){
+    	print "$vline $vline_color $vline_pos $axis_color \n
+$vline_pos, $bottom, $vline_pos, $top, $blue_128
+" ; <STDIN>;
+    $image->line($vline_pos, -$bottom, $vline_pos, $top, $blue_128);
+}
 
 #### draw graph legends and titles ####
 $title1_x_pos = ($graph_x_size - $large_font_width * length($title1))/2;
@@ -902,8 +921,13 @@ sub AssignColors {
     @color_list = ();
     if ($bg eq "black") {
       $bg_color = $black;
-      $grid1_color = $gray_150;
-      $grid2_color = $gray_064;
+      
+      #$grid1_color = $gray_150;
+      #$grid2_color = $gray_064;
+      
+      $grid1_color = $gray_175;
+      $grid2_color = $gray_245;
+      
       $text_color = $white;
       $axis_color = $white;
       if ($monochrome) {
@@ -938,13 +962,13 @@ sub AssignColors {
       $text_color = $black;
       $axis_color = $black;
       if ($bg eq "gray") {
-	$bg_color = $gray_200;
+	$bg_color = $gray_245;
 	$grid1_color = $white;
-	$grid2_color = $gray_225;
+	$grid2_color = $gray_200;
       } else {
 	$bg_color = $white;
 	$grid1_color = $gray_175;
-	$grid2_color = $gray_225;
+	$grid2_color = $gray_245;
       }
       if ($monochrome) {
 	push(@color_list, $black);
@@ -974,6 +998,7 @@ sub AssignColors {
 	push @color_list, $red_096;
 	push @color_list, $blue_064;
 	push @color_list, $gray_064;
+	push @colir_list, $gray_245;
       }
     }
 
@@ -1191,7 +1216,8 @@ sub StandardPalette {
   $gray_150 = $image->colorAllocate(150,150,150);
   $gray_175 = $image->colorAllocate(175,175,175);
   $gray_200 = $image->colorAllocate(200,200,200);
-  $gray_225 = $image->colorAllocate(225,225,225);
+  $gray_225 = $image->colorAllocate(225,225,225); 
+  $gray_245 = $image->colorAllocate(245,245,245);
 
   ### yellow series
   $yellow = $image->colorAllocate(255,255,0);
@@ -1607,6 +1633,8 @@ XYgraph options
 -colors	colorfile (eps and pdf only)
 -export_colors export a color file
 -gp		gnuplot additional commands
+-vline          vertical line       
+-hline          horozontal line
 End_of_options
     close SHORTHELP;
 }
@@ -1768,7 +1796,7 @@ OPTIONS
 					matrix_sites	#000000
 					matrix_sites_permuted	skyblue
 
-                will assign the "salmon"" color to the curve drawn from the
+                will assign the "salmon" color to the curve drawn from the
                 column having the header "theoretical" in the input file.
                 To get the complete list of Gnuplot RGB colorname, type "gnuplot" in the terminal
                 and then type "show palette colornames".
@@ -1783,7 +1811,17 @@ OPTIONS
 		Gnuplot (http://www.gnuplot.info/) is used to generate graphs in eps format.
 		Additional gnuplot commands can be specified, separated by commas.
 		e.g. -gp 'set size ratio 0.5'
-WEB VERSION
+    
+	-hline Draw an horizontal line on the indicated
+		 possition. This helps to mark some relevant positions on the
+		 graph.
+		 -hline '#0088FF' 0
+    
+	-vline Draw a vertical line on the indicated possition. This
+		 helps to mark some relevant positions on the graph.
+		 -vline '#0088FF' 0
+
+Web VERSION
 	http://www.scmbb.ulb.ac.be/bioinformatics/rsa-tools/
 
 End_of_Help
@@ -2009,9 +2047,23 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-htmap") {
       $HTML_map = 1;
 
-      ### label column
+
+      ### HTML map ###
+    } elsif ($ARGV[$a] eq "-hline") {
+	$hline=1;
+	$hline_color =  $ARGV[$a+1]; 
+	$hline_pos =  $ARGV[$a+2];
+	
+	### HTML map ###
+    } elsif ($ARGV[$a] eq "-vline") {
+	$vline=1;
+	$vline_color =  $ARGV[$a+1];
+	$vline_pos =  $ARGV[$a+2];
+	print "$vline $vline_color $vline_pos \n" ; <STDIN>;
+	
+	### label column
     } elsif (($ARGV[$a] eq "-lc") && (&IsNatural($ARGV[$a+1]))) {
-      $label_col = $ARGV[$a+1];
+	$label_col = $ARGV[$a+1];
 
 	} elsif ($ARGV[$a] eq "-colors") {
       $colorfile = $ARGV[$a+1];
@@ -2043,6 +2095,7 @@ sub GnuplotPalette {
   $gray_175 = "gray70";
   $gray_200 = "gray80";
   $gray_225 = "gray90";
+  $gray_245 = "gray90";
 
   ### yellow series
   $yellow = "yellow";
