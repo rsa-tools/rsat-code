@@ -1,6 +1,5 @@
 <?php
   require ('functions.php');
-  $host= parse_url($WWW_RSA,PHP_URL_HOST);
   echo("
 <HTML>
 	<head>
@@ -39,7 +38,7 @@ onclick=\"toggleMenu('101')\" id=\"heading101\">Path finding</div>
 <div id=\"menu101\">
         <a class=\"menu_item\" href=\"pathfinder_form.php\" target=\"tools\">k-shortest path
 finding </a>
-<a class=\"menu_item\" target=\"tools\" href=\"http://$host/metabolicpathfinding/metabolicPathfinder_form.jsp\">Metabolic path finding</a>
+<a class=\"menu_item\" target=\"tools\" href=\"$neat_java_host/metabolicpathfinding/metabolicPathfinder_form.jsp\">Metabolic path finding</a>
 </div>
 <!--  pathway inference will go here later on -->
 </div>

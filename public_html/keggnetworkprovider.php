@@ -58,8 +58,8 @@ $graph_type = "";
 # server-related params
 $result_location = $tmp.'/';
 $html_location = $WWW_RSA.'/tmp/';
-$host= parse_url($WWW_RSA,PHP_URL_HOST);
-$metabolicpathfinder_location = 'http://'.$host.'/metabolicpathfinding/metabolicPathfinder_form.jsp';
+# $host= parse_url($WWW_RSA,PHP_URL_HOST);
+$metabolicpathfinder_location = $neat_java_host.'/metabolicpathfinding/metabolicPathfinder_form.jsp';
 
 ############## prepare parameters ##########################
 

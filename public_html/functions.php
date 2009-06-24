@@ -79,7 +79,7 @@
     Function writeTempFile($prefix, $data) {
       $temp_command = "mktemp tmp/$prefix.XXXXX";
       exec($temp_command, $temp_file);
-      
+
       $temp_file = $temp_file[0];
       $temp_file = trim_text($temp_file);
       $temp_file = trim($temp_file);
@@ -139,6 +139,9 @@ Function load_props($props) {
   $log_name = $properties[rsat_site];
   $neat_wsdl = $properties[neat_ws];
   $neat_java_wsdl = $properties[neat_java_ws];
+  # host may include tomcat port
+  $neat_java_host = str_replace("be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl","",$neat_java_wsdl);
+  $neat_java_remote_wsdl = $neat_java_host . "be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithmsNeAT.wsdl";
   # LOG
   $year = date("Y");
   $month = date("m");
@@ -276,8 +279,8 @@ Function UpdateLogFile($suite ,$script_name, $message) {
   $pdf_tutorial = $WWW_RSA.'/tutorials/neat_tutorial.pdf';
   $address = $pdf_tutorial;
   if (file_exists($tutorial_url)) {
-    $address = $tutorial_url; 
-  } 
+    $address = $tutorial_url;
+  }
   return $address;
 }
 
@@ -306,14 +309,14 @@ Function UpdateLogFile($suite ,$script_name, $message) {
     }
     else {
       $x = @filesize($url); }
-      if (!$thereturn) { 
-        return $x ; 
+      if (!$thereturn) {
+        return $x ;
       }
-      elseif($thereturn == 'mb') { 
-        return round($x / (1024*1024),2) ; 
+      elseif($thereturn == 'mb') {
+        return round($x / (1024*1024),2) ;
       }
-      elseif($thereturn == 'kb') { 
-        return round($x / (1024),2) ; 
+      elseif($thereturn == 'kb') {
+        return round($x / (1024),2) ;
       }
   }
 
