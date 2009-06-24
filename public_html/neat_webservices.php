@@ -38,14 +38,14 @@ tasks</b>.
     href=\"$host/rsat/web_services/RSATWS.wsdl\">http://$host/rsat/web_services/RSATWS.wsdl</a>
 	<br>
 	For java-based NeAT tools (Pathfinder, Metabolic pathfinder, KEGG network provider), the WSDL is located at<br>
-    <a href=\"http://$host/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithmsNeAT.wsdl\">http://$host/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithmsNeAT.wsdl</a>
+    <a href=\"$host/rsat/web_services/GraphAlgorithmsNeAT.wsdl\">http://$host/rsat/web_services/GraphAlgorithmsNeAT.wsdl</a>
   </li>
   </p>
 
   <p><li><b>Documentation of Web Services</b><br>
   Full <a href=\"http://$host/rsat/web_services/RSATWS_documentation.xml\">
   description</a> of the available Web Services and their options.<br>
-  Full <a href=\"http://$host/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms_documentation.xml\">
+  Full <a href=\"$host/rsat/web_services/GraphAlgorithms_documentation.xml\">
   description</a> of java-based NeAT Web Services.
   </li>
   </p>
