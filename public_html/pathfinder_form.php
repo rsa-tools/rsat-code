@@ -55,8 +55,8 @@
     $default_rank = 5;
   }
 
-  $host = parse_url($WWW_RSA,PHP_URL_HOST);
-  $metabolic_pathfinder_location = 'http://'.$host.'/metabolicpathfinding/metabolicPathfinder_form.jsp';
+  # $host = parse_url($WWW_RSA,PHP_URL_HOST);
+  $metabolic_pathfinder_location = $neat_java_host.'/metabolicpathfinding/metabolicPathfinder_form.jsp';
 
   title('Pathfinder');
   echo ("<center>Do multiple-to-multiple end path finding. Click on <a href='help.pathfinder.html'><img src='images/question-mark-button.jpg' width='15' alt='help'></a> for help.<br>
