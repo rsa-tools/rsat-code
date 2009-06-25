@@ -467,15 +467,27 @@ for $series (0..$#y_col_list) {
 
 ### draw hline
 if ($hline){
-    $image->line($left, $hline_pos, $right, $hline_pos, $hline_color);
+	  $hline_color_new = $orange if ($hline_color eq "orange");
+      $hline_color_new = $red if ($hline_color eq "red");
+      $hline_color_new = $blue if ($hline_color eq "blue");
+      $hline_color_new = $green if ($hline_color eq "green");
+      $hline_color_new = $violet if ($hline_color eq "violet");
+       
+      $hline_pos_new = &YPixelPos($hline_pos); 
+      $image->line($left, $hline_pos_new, $right, $hline_pos_new, $hline_color_new);
+   
 }
 
-## draw hline
-if ( $vline){
-    	print "$vline $vline_color $vline_pos $axis_color \n
-$vline_pos, $bottom, $vline_pos, $top, $blue_128
-" ; <STDIN>;
-    $image->line($vline_pos, -$bottom, $vline_pos, $top, $blue_128);
+## draw vline
+if ($vline){
+      $vline_color_new = $orange if ($vline_color eq "orange");
+      $vline_color_new = $red if ($vline_color eq "red");
+      $vline_color_new = $blue if ($vline_color eq "blue");
+      $vline_color_new = $green if ($vline_color eq "green");
+      $vline_color_new = $violet if ($vline_color eq "violet");
+      
+      $vline_pos_new = $left + ($vline_pos-$x_axis_min)*$x_scale;
+      $image->line($vline_pos_new, $bottom, $vline_pos_new, $top, $vline_color_new);
 }
 
 #### draw graph legends and titles ####
@@ -811,6 +823,16 @@ sub GnuPlotEPS {
     }
   }
   $gnuplot_cmd .= "set style increment user\n";	
+  
+  ## hline and vline
+  if ($hline){
+  	$gnuplot_cmd .= "set arrow from graph 0, ".$hline_pos." to graph 1, ".$hline_pos." nohead lt -1 lw 1.2 lc rgb '".$hline_color."'\n";
+  }
+  if ($vline){
+  	$gnuplot_cmd .= "set arrow from ".$vline_pos.", graph 0  to ".$vline_pos.",graph 1 nohead lt -1 lw 1.2 lc rgb '".$vline_color."'\n";
+  }
+  
+  
 
 
   ## additional user-specified commands
@@ -1812,14 +1834,25 @@ OPTIONS
 		Additional gnuplot commands can be specified, separated by commas.
 		e.g. -gp 'set size ratio 0.5'
     
-	-hline Draw an horizontal line on the indicated
-		 possition. This helps to mark some relevant positions on the
-		 graph.
-		 -hline '#0088FF' 0
+	-hline Draw an horizontal line on the indicated position. 
+		This helps to mark some relevant positions on the graph.
+		The following colors are currently supported:
+			red, blue, green, violet, orange
+		For eps and pdf format, all Gnuplot RGB colorname are supported
+		e.g. salmon, dark-green ...
+		 
+		 -hline red 0
+		 will draw a red line at the y position 0
     
-	-vline Draw a vertical line on the indicated possition. This
-		 helps to mark some relevant positions on the graph.
-		 -vline '#0088FF' 0
+	-vline Draw a vertical line on the indicated position. 
+		This helps to mark some relevant positions on the graph.
+		The following colors are currently supported:
+			red, blue, green, violet, orange
+		For eps and pdf format, all Gnuplot RGB colorname are supported
+		e.g. salmon, dark-green ...
+			
+		 -vline green 0
+		 will draw a green line at the x position 0
 
 Web VERSION
 	http://www.scmbb.ulb.ac.be/bioinformatics/rsa-tools/
@@ -2048,18 +2081,19 @@ sub ReadArguments {
       $HTML_map = 1;
 
 
-      ### HTML map ###
+      ### hline ###
     } elsif ($ARGV[$a] eq "-hline") {
 	$hline=1;
 	$hline_color =  $ARGV[$a+1]; 
 	$hline_pos =  $ARGV[$a+2];
+	&RSAT::error::FatalError("-hline option necessitates 2 arguments") unless defined($ARGV[$a+2]);
 	
-	### HTML map ###
+	### vline ###
     } elsif ($ARGV[$a] eq "-vline") {
 	$vline=1;
 	$vline_color =  $ARGV[$a+1];
 	$vline_pos =  $ARGV[$a+2];
-	print "$vline $vline_color $vline_pos \n" ; <STDIN>;
+	&RSAT::error::FatalError("-vline option necessitates 2 arguments") unless defined($ARGV[$a+2]);
 	
 	### label column
     } elsif (($ARGV[$a] eq "-lc") && (&IsNatural($ARGV[$a+1]))) {
