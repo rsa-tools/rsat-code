@@ -227,6 +227,7 @@ the program consensus (Hertz), but not by other programs.
 			    "transfac"=>1,
 			    "tab"=>1,
 			    "consensus"=>1,
+			    "cluster-buster" =>1,
 #			    "logo"=>1
 			   );
 
@@ -596,6 +597,8 @@ sub toString {
 #      return $self->to_Motifsampler(%args);
     } elsif ($output_format eq "transfac") {
       return $self->to_TRANSFAC(%args);
+     } elsif ($output_format eq "cluster-buster") {
+      return $self->to_cb(%args);
     } elsif ($output_format eq "consensus") {
       return $self->to_consensus(%args);
     } else {
@@ -911,8 +914,61 @@ sub to_patser {
     return $to_print;
 }
 
+################################################################
+=pod
+
+=item to_cb(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_string)
+
+Return a string description of the matrix in the same format as Cluster-Buster or TRAP (Vingron's lab). 
+Additional parameters are also exported as comments,when the verbosity is > 0.
+
+Supported parameters:
+
+=over
+
+=item comment_string
+
+A character or string to print before each row of the matrix.
 
 
+=item format
+
+Output matrix format
+
+=back
+
+=cut
+sub to_cb {
+	
+	my ($self, %args) = @_;
+    my $to_print = "";
+   
+    my $output_format = $args{format};
+    $output_format = lc($output_format);
+
+    ## name
+    my $name = $self->get_attribute("name") ||  $self->get_attribute("AC") || $self->get_attribute("accession")
+    || $self->get_attribute("identifier") || $self->get_attribute("id");
+    
+     $to_print .= ">".$name."\t/name=".$name."\n";
+    
+
+    ## count matrix
+    my @matrix = $self->getMatrix();
+    my $ncol = $self->ncol();
+    my $nrow = $self->nrow();
+    for my $c (1..$ncol) {
+      for my $r (1..$nrow) {
+	my $occ = $matrix[$c-1][$r-1];
+	$to_print .= $occ;
+	$to_print .= "\t";
+      }
+      $to_print .= "\n";
+    }
+
+    ## End of record
+   return $to_print;
+}
 
 ################################################################
 =pod

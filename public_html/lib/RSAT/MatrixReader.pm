@@ -78,8 +78,6 @@ sub readFromFile {
 	@matrices = _readFromMEMEFile($file);
     } elsif (lc($format) eq "feature") {
 	@matrices = _readFromFeatureFile($file);
-    } elsif (lc($format) eq "clustal") {
-	@matrices = _readFromClustalFile($file);
     } else {
 	&main::FatalError("&RSAT::matrix::readFromFile", "Invalid format for reading matrix\t$format");
     }
@@ -329,6 +327,7 @@ sub _readFromTRANSFACFile {
   return @matrices;
 
 }
+
 
 
 ################################################################
@@ -1167,6 +1166,7 @@ sub _readFromTabFile {
       next if ($line =~ /^;/) ; # skip comment lines
       $line =~ s/\[//g; ## Suppress [ and ] (present in the tab format of Jaspar and Pazar databases)
       $line =~ s/\]//g; ## Suppress [ and ] (present in the tab format of Jaspar and Pazar databases)
+      $line =~ s/://g; ## Suppress : (present in the tab format of Uniprobe databases)
 
       ## Create a new matrix if required
       if  ($line =~ /\/\//) {
