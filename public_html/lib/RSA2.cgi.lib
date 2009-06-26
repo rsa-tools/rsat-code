@@ -148,6 +148,8 @@ sub RSA_header {
   print $query->start_html(-title=>"RSA-tools : $title",
 			   -class => "$css_body_class",
 			   -author=>'jvanheld@bigre.ulb.ac.be',
+			   -script=>{-type=>'text/javascript',
+                                   -src=>'RSAT_menu.js'},
 			   -style => { 	-src => "$ENV{rsat_www}/main.css",
                              	       	-type => 'text/css',
                              		-media => 'screen' });
@@ -511,11 +513,28 @@ print $query->checkbox(-name=>'consensus_as_name',
 }
 #### text area to enter the matrix
 print "<BR>\n";
+print "<div><div style='float:left;'>";
 print $query->textarea(-name=>'matrix',
 		       -default=>$default{matrix},
 		       -rows=>4,
 		       -columns=>60);
 
+print '</div><div class="menu"><font color=#FF0000>New!</font>
+<div class="menu_heading_closed"
+onclick="toggleMenu(';
+print "'98'";
+print ')" id="heading98"> -> Where to find matrices ?</div>
+<div id="menu98" class="menu_collapsible">
+	<a class="menu_item" href="http://www.pazar.info/" target="_blank">PAZAR</a>
+	<a class="menu_item" href="http://the_brain.bwh.harvard.edu/uniprobe/" target="_blank">UniProbe</a>
+	<a class="menu_item" href="http://www.gene-regulation.com/pub/databases.html" target="_blank">Transfac</a>
+	<a class="menu_item" href="http://jaspar.cgb.ki.se/" target="_blank">Jaspar</a>
+</div>
+</div>
+</div>
+</div>
+<div style="clear:both;"></div>
+';
 
 #### pseudo-counts
 print "<BR>\n";
