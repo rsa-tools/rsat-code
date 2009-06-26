@@ -832,6 +832,7 @@ sub to_patser {
       $to_print .= $self->_printParameters($to_print);
 
     } elsif ($type eq "consensus") {
+    	print Dumper($self);
       $to_print .= "; consensus\t".$self->get_attribute("consensus.IUPAC")."\n";
       $to_print .= "; consensus.rc\t".$self->get_attribute("consensus.IUPAC.rc")."\n";
 
@@ -950,9 +951,25 @@ sub to_cb {
     my $name = $self->get_attribute("name") ||  $self->get_attribute("AC") || $self->get_attribute("accession")
     || $self->get_attribute("identifier") || $self->get_attribute("id");
     
-     $to_print .= ">".$name."\t/name=".$name."\n";
-    
+     $to_print .= ">".$name." ";
+     	
+    ## other information in the header:
+    #name
+    $to_print .= "/name=".$name." ";
+    #information content
+    my @information = $self->getInformation();
+    $to_print .= "/info=".sprintf("%.3f",$self->get_attribute("total.information"))." ";   
+    #gc content
+    $self->calcGCcontent();
+    $to_print .= "/gc_content=".sprintf("%.3f",$self->get_attribute("G+C.content.crude.freq"))." "; 
+    #consensus
+    $self->calcConsensus();
+    $to_print .= "/consensus=".uc($self->get_attribute("consensus.IUPAC"))." "; 
+    #size
+    $to_print .= "/size=".$self->get_attribute("ncol")." ";
 
+	$to_print .= "\n";
+	
     ## count matrix
     my @matrix = $self->getMatrix();
     my $ncol = $self->ncol();
