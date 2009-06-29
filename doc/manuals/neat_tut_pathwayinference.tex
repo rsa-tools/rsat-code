@@ -25,20 +25,18 @@ Results described in this tutorial have been obtained with KEGG RPAIR version 49
 
 \item In the \neat  menu, select the entry \program{Pathwayinference}.
 
-\item Copy-paste the gene names below in the seed nodes text field:
-<pre>
-Met3
-Met14
-Met16
-Met5
-Met10
-Met17
+\item Copy-paste the gene names below in the seed nodes text field:\\
+Met3\\
+Met14\\
+Met16\\
+Met5\\
+Met10\\
+Met17\\
 Met6
-<\pre>
 
-\item Select "Genes/enzymes" as identifier type.
+\item Select "Genes/Enzymes" as identifier type.
 
-\item In the text field "Genes/enzymes are from organism" type sce, the KEGG abbreviation for \textit{Saccharomyces cerevisiae}.
+\item In the text field "Genes/Enzymes are from organism" type sce, the KEGG abbreviation for \textit{Saccharomyces cerevisiae}.
 
 \item Push the \option{GO} button.
 
@@ -67,7 +65,6 @@ For the study case, we recommend you to choose "Treat each group member as a sep
 Push \option{GO}. In a few minutes, the result page will be displayed.
 
 
-
 \subsection{Protocol for the command-line tools}
 
 This section assumes that you have installed the RSAT/NeAT command line tools.
@@ -82,7 +79,8 @@ Type the following command in one line:
 {\color{Blue} \begin{footnotesize}
 		\begin{verbatim}
 java -Xmx800m graphtools.algorithms.Pathwayinference -g RPAIRGraph_allRPAIRs_undirected.txt -f flat
-	     -s 'RP00016#RP00182/RP00647/RP00561/RP00143#RP00960#RP04049/RP00096#RP00168#RP04532/RP00003/RP00446/RP00946#RP00857/RP04474/RP00050#RP04533'
+	     -s 'RP00016#RP00182/RP00647/RP00561/RP00143#RP00960#RP04049/RP00096#RP00168#
+	     RP04532/RP00003/RP00446/RP00946#RP00857/RP04474/RP00050#RP04533'
 	     -b -y con -P -u -x 0.05
 	\end{verbatim} \end{footnotesize}
 	}
@@ -90,12 +88,10 @@ java -Xmx800m graphtools.algorithms.Pathwayinference -g RPAIRGraph_allRPAIRs_und
 \subsection{Interpretation of the results}
 
 The resulting sub-network contains the pathway given in \cite{vanHelden01}. The reaction catalysed by
-the MET5 enzyme (which was not found in KEGG) has been correctly inferred.
+the Met5 enzyme (which was not found in KEGG) has been correctly inferred.
 
-The pathway described in the example is:\\
+The pathway described in the study case unites the sulfur assimilation and methionine biosynthesis pathways. It consists of the following steps: \\
 Sulfate 2.7.7.4 Adenylyl sulfate 2.7.1.25 3'phosphoadenylylsulfate 1.8.99.4 sulfite 1.8.1.2 sulfide (alias hydrogen sulfide) 4.2.99.10 Homocysteine 2.1.1.14 L-Methionine\\
-
-It unites the sulfur assimilation and methionine biosynthesis pathways.
 
 The matching part of the inferred pathway is:\\
 \textbf{RP00960} Adenylyl sulfate RP05930 Sulfite \textbf{RP00168} Hydrogen sulfide RP01406 L-Homocysteine \textbf{RP0096}\\
@@ -112,16 +108,78 @@ This example demonstrated that given a set of differentially expressed genes fro
 micro-array data and a metabolic network, it is possible to infer a metabolic pathway
 that might be affected by altered expression of the query genes.
 
-\subsection{Summary}
+\section{Summary}
 
-Pathwayinference is a very flexible tool that can work on any kind of biological network
+Pathwayinference allows extraction of sub-networks from larger networks given a set of seed nodes. The web application
+is tailored to metabolic networks, but non-metabolic networks can be processed as well.
 
+\section{Strengths and Weaknesses of the approach}
 
-\subsection{Strengths and Weaknesses of the approach}
+\subsection{Strengths}
 
+\begin{enumerate}
+\item Sub-network extraction can be applied to any biological network.
 
-\subsubsection{Strengths}
+\item It can discover unknown pathways consisting of known components.
 
-\subsubsection{Weaknesses}
+\item It can be fine-tuned to favor certain nodes. For instance, in a global metabolic network,
+      reactions/compounds known to occur in certain species might receive a weight much lower than other nodes,
+      to favor extraction of species-specific sub-networks.
 
-\subsection{Troubleshooting}
+\item Groups of seed nodes can be specified to reflect AND/OR relationships between seeds.
+
+\item The web application allows metabolic pathway inference given compounds, reactions, reactant pairs, EC numbers or gene identifiers
+      as seeds in metabolic networks extracted from the two major metabolic databases KEGG \cite{Kanehisa2008} and MetaCyc \cite{biocyc}.
+
+\item Metabolic sub-network extraction has been validated on 71 metabolic pathways extracted from MetaCyc.
+\end{enumerate}
+
+\subsection{Weaknesses}
+
+\begin{enumerate}
+
+\item In general, the accuracy of pathway inference depends on the quality of the given network and the number of seeds available.
+
+\item It is not possible to infer other than trivial cycles. Consequently, cyclic and spiral-shaped metabolic pathways can only be partly
+inferred.
+
+\item In the densely connected region of metabolic networks, metabolic pathway inference cannot well distinguish alternative pathways
+without a large number of seed nodes.
+
+\item The algorithms are too time-consuming to estimate p-values by computing a score distribution (where the score would be the sub-network weight)
+for randomly chosen seed nodes on the fly. We envisage to pre-compute these distributions for the pre-loaded networks.
+
+\end{enumerate}
+
+\section{Troubleshooting}
+
+\begin{enumerate}
+
+\item Pathwayinference parameter error.
+
+	You provided insufficient or invalid parameters. Please check the pathwayinference manual page.
+
+\item You did not specify enough valid seed node groups! Pathwayinference needs at least two valid seed node groups.
+
+	For the pre-loaded metabolic networks from KEGG and MetaCyc, each seed
+	is mapped to data (e.g. compound/reaction identifiers, EC numbers) from these two databases.
+	If the seeds do not map anything, they are considered to be invalid.
+	At least two valid seed groups are needed to infer a network.
+
+\item The node with identifier ID is not part of the input graph.
+
+	Make sure that your input network contains the node with given identifier.
+
+\item There are seeds that exclude each other mutually between groups!
+
+	Your seed nodes have been mapped to reactant pairs belonging to different groups. At least one of these groups contains
+	a reactant pair that is mutual exclusive to a reactant pair in another group (that is both reactant pairs belong to the
+	same reaction). You may choose another group treatment, as for example:
+	"Keep groups but merge overlapping groups and groups with inter-group exclusive reactant pairs.".
+
+\item Pathwayinference failed to extract a subgraph.
+
+    None of the seed node groups could be connected to any other seed node group. Each might belong to a
+    separate component of the input network.
+
+\end{enumerate}
