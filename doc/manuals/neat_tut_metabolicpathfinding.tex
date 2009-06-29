@@ -148,41 +148,44 @@ Second ranked paths:\\
 
 \textbf{R02724$>$} Oxidized adrenal ferredoxin R02725$<$ Reduced adrenal ferredoxin R03262$>$ 18-Hydroxycorticosterone \textbf{R03263$>$}
 
-\subsection{Summary}
+\section{Summary}
 
 Metabolic path finder provides k shortest path finding in metabolic networks constructed from KEGG LIGAND and KEGG RPAIR.
 The metabolic path finder is coupled with a mirror of the KEGG database to allow quick identification of partial compound
 names and to annotate results.
 
-\subsection{Strengths and Weaknesses of the approach}
+\section{Strengths and Weaknesses of the approach}
 
-\subsubsection{Strengths}
+\subsection{Strengths}
 The metabolic path finder has the following benefits compared to other metabolic path finding tools:
 \begin{enumerate}
 
 \item It has been extensively evaluated on 55 reference pathways from three organisms.
 
-\item It supports compounds, reactions, reactant pairs and enzymes as seed nodes.
+\item It supports compounds, reactions, reactant pairs and EC numbers as seed nodes.
 
 \item It can handle sets of start and end nodes.
 
 \end{enumerate}
 
-\subsubsection{Weaknesses}
+\subsection{Weaknesses}
 The metabolic path finding tool has the following weaknesses:
 
 \begin{enumerate}
 
 \item RPAIR does not cover all compounds in KEGG. Thus, the RPAIR network is less comprehensive than the reaction network.
 
-\item The metabolic path finder cannot infer directions of reactions in pathways.
+\item By default, the metabolic path finder cannot infer directions of reactions in pathways because of
+the way the networks were constructed (being undirected or treating all reactions as reversible).
+However, custom metabolic networks may contain irreversible reactions and
+it is therefore possible to infer directed pathways from custom networks.
 
-\item The metabolic path finder cannot infer cyclic pathways or pathways in which the same enzymes act repeatedly on a growing chain.
+\item The metabolic path finder can only partly infer cyclic pathways or pathways in which the same enzymes act repeatedly on a growing chain.
 
 \end{enumerate}
 
 
-\subsection{Troubleshooting}
+\section{Troubleshooting}
 
 \begin{enumerate}
 
