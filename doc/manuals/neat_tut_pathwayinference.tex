@@ -128,8 +128,15 @@ is tailored to metabolic networks, but non-metabolic networks can be processed a
 
 \item Groups of seed nodes can be specified to reflect AND/OR relationships between seeds.
 
-\item The web application allows metabolic pathway inference given compounds, reactions, reactant pairs, EC numbers or gene identifiers
-      as seeds in metabolic networks extracted from the two major metabolic databases KEGG \cite{Kanehisa2008} and MetaCyc \cite{biocyc}.
+\item The web application allows to infer metabolic pathways
+      in metabolic networks extracted from the two major metabolic
+      databases KEGG \cite{Kanehisa2008} and MetaCyc \cite{biocyc}.
+
+\item For metabolic networks from MetaCyc or KEGG, the web application supports compounds, reactions, reactant pairs, EC numbers or gene identifiers
+      as seed nodes and handles the required mapping of these seeds to reactions, reactant pairs and compounds.
+
+\item For metabolic networks from MetaCyc or KEGG, the web application performs a
+      mapping of the inferred sub-network to known pathways stored MetaCyc or KEGG respectively.
 
 \item Metabolic sub-network extraction has been validated on 71 metabolic pathways extracted from MetaCyc.
 \end{enumerate}
@@ -148,6 +155,8 @@ without a large number of seed nodes.
 
 \item The algorithms are too time-consuming to estimate p-values by computing a score distribution (where the score would be the sub-network weight)
 for randomly chosen seed nodes on the fly. We envisage to pre-compute these distributions for the pre-loaded networks.
+
+\item Only one sub-network is suggested. We envisage to compute a list of them ranked by their weight.
 
 \end{enumerate}
 
