@@ -4,7 +4,7 @@
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="form">
-<?
+<?php
   require ('functions.php');
 
   // default variables
@@ -244,7 +244,7 @@
   <a href='help.pathfinder.html#output'><img src='images/question-mark-button.jpg' width='15' alt='help'></a>
   </h2>
   <br><br>
- <a href='help.pathfinder.html#output'><b>Output format&nbsp;&nbsp;</b>
+ <a href='help.pathfinder.html#output'><b>Output format&nbsp;&nbsp;</a></b>
   <br><br>
   <table><tr>
   <td>Table: <input type='radio' name='outputchoice' value='pathsTable' checked='checked'></td>
