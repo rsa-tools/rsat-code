@@ -34,13 +34,14 @@ onclick=\"toggleMenu('100')\" id=\"heading100\">Networks</div>
 </div>
 <div class=\"menu\">
 <div class=\"menu_heading_open\"
-onclick=\"toggleMenu('101')\" id=\"heading101\">Path finding</div>
+onclick=\"toggleMenu('101')\" id=\"heading101\">Path finding and pathway inference</div>
 <div id=\"menu101\">
         <a class=\"menu_item\" href=\"pathfinder_form.php\" target=\"tools\">k-shortest path
 finding </a>
 <a class=\"menu_item\" target=\"tools\" href=\"$neat_java_host/metabolicpathfinding/metabolicPathfinder_form.jsp\">Metabolic path finding</a>
+<a class=\"menu_item\" target=\"tools\" href=\"$neat_java_host/metabolicpathfinding/pathwayinference_form.jsp\">Pathwayinference</a>
 </div>
-<!--  pathway inference will go here later on -->
+
 </div>
 
 
