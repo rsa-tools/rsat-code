@@ -1,8 +1,12 @@
-# LaTeX2HTML 2002-2-1 (1.70)
+# LaTeX2HTML 2002-2-1 (1.71)
 # Associate labels original text with physical files.
 
 
 $key = q/cite_VanDongenPHD2000/;
+$external_labels{$key} = "$URL/" . q|Bibliography.html|; 
+$noresave{$key} = "$nosave";
+
+$key = q/cite_vanHelden01/;
 $external_labels{$key} = "$URL/" . q|Bibliography.html|; 
 $noresave{$key} = "$nosave";
 
@@ -11,6 +15,10 @@ $external_labels{$key} = "$URL/" . q|Bibliography.html|;
 $noresave{$key} = "$nosave";
 
 $key = q/cite_Mering2007/;
+$external_labels{$key} = "$URL/" . q|Bibliography.html|; 
+$noresave{$key} = "$nosave";
+
+$key = q/cite_kegggrah/;
 $external_labels{$key} = "$URL/" . q|Bibliography.html|; 
 $noresave{$key} = "$nosave";
 
@@ -51,6 +59,10 @@ $external_labels{$key} = "$URL/" . q|Bibliography.html|;
 $noresave{$key} = "$nosave";
 
 $key = q/cite_Ito:2001/;
+$external_labels{$key} = "$URL/" . q|Bibliography.html|; 
+$noresave{$key} = "$nosave";
+
+$key = q/cite_Spellman98/;
 $external_labels{$key} = "$URL/" . q|Bibliography.html|; 
 $noresave{$key} = "$nosave";
 
@@ -118,20 +130,20 @@ $key = q/cite_croes05/;
 $external_labels{$key} = "$URL/" . q|Bibliography.html|; 
 $noresave{$key} = "$nosave";
 
+$key = q/cite_Poolman2006/;
+$external_labels{$key} = "$URL/" . q|Bibliography.html|; 
+$noresave{$key} = "$nosave";
+
 $key = q/cite_Mewes2007/;
 $external_labels{$key} = "$URL/" . q|Bibliography.html|; 
 $noresave{$key} = "$nosave";
 
-$key = q/cite_Poolman2006/;
+$key = q/cite_metashark/;
 $external_labels{$key} = "$URL/" . q|Bibliography.html|; 
 $noresave{$key} = "$nosave";
 
 $key = q/eq:hypergeometric_density/;
 $external_labels{$key} = "$URL/" . q|Comparisons_between_network.html|; 
-$noresave{$key} = "$nosave";
-
-$key = q/cite_metashark/;
-$external_labels{$key} = "$URL/" . q|Bibliography.html|; 
 $noresave{$key} = "$nosave";
 
 $key = q/cite_kgmled/;
@@ -145,7 +157,7 @@ $noresave{$key} = "$nosave";
 1;
 
 
-# LaTeX2HTML 2002-2-1 (1.70)
+# LaTeX2HTML 2002-2-1 (1.71)
 # labels from external_latex_labels array.
 
 

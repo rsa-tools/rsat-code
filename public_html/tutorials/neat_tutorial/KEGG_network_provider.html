@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
 
-<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
 original version by:  Nikos Drakos, CBLU, University of Leeds
 * revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
 * with significant contributions from:
@@ -18,38 +18,38 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 
 <LINK REL="STYLESHEET" HREF="neat_tutorial.css">
 
-<LINK REL="next" HREF="Recapitulative_exercises.html">
+<LINK REL="next" HREF="Pathway_inference.html">
 <LINK REL="previous" HREF="Metabolic_path_finding.html">
 <LINK REL="up" HREF="neat_tutorial.html">
-<LINK REL="next" HREF="Recapitulative_exercises.html">
+<LINK REL="next" HREF="Pathway_inference.html">
 </HEAD>
 
 <BODY >
 <!--Navigation Panel-->
-<A NAME="tex2html447"
-  HREF="Recapitulative_exercises.html">
+<A NAME="tex2html471"
+  HREF="Pathway_inference.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
- SRC="file:/usr/share/latex2html/icons/next.png"></A> 
-<A NAME="tex2html443"
+ SRC="file:/opt/local/share/lib/latex2html/icons/next.png"></A> 
+<A NAME="tex2html467"
   HREF="neat_tutorial.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
- SRC="file:/usr/share/latex2html/icons/up.png"></A> 
-<A NAME="tex2html437"
+ SRC="file:/opt/local/share/lib/latex2html/icons/up.png"></A> 
+<A NAME="tex2html461"
   HREF="Metabolic_path_finding.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
- SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
-<A NAME="tex2html445"
+ SRC="file:/opt/local/share/lib/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html469"
   HREF="Contents.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
- SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+ SRC="file:/opt/local/share/lib/latex2html/icons/contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html448"
-  HREF="Recapitulative_exercises.html">Recapitulative exercises</A>
-<B> Up:</B> <A NAME="tex2html444"
+<B> Next:</B> <A NAME="tex2html472"
+  HREF="Pathway_inference.html">Pathway inference</A>
+<B> Up:</B> <A NAME="tex2html468"
   HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
-<B> Previous:</B> <A NAME="tex2html438"
+<B> Previous:</B> <A NAME="tex2html462"
   HREF="Metabolic_path_finding.html">Metabolic path finding</A>
- &nbsp; <B>  <A NAME="tex2html446"
+ &nbsp; <B>  <A NAME="tex2html470"
   HREF="Contents.html">Contents</A></B> 
 <BR>
 <BR>
@@ -58,24 +58,26 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 <A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
 
 <UL>
-<LI><A NAME="tex2html449"
+<LI><A NAME="tex2html473"
   HREF="KEGG_network_provider.html#SECTION001110000000000000000">Introduction</A>
-<LI><A NAME="tex2html450"
+<LI><A NAME="tex2html474"
   HREF="KEGG_network_provider.html#SECTION001120000000000000000">Construction of yeast and E. coli metabolic networks</A>
 <UL>
-<LI><A NAME="tex2html451"
+<LI><A NAME="tex2html475"
   HREF="KEGG_network_provider.html#SECTION001121000000000000000">Study case</A>
-<LI><A NAME="tex2html452"
+<LI><A NAME="tex2html476"
   HREF="KEGG_network_provider.html#SECTION001122000000000000000">Protocol for the web server</A>
-<LI><A NAME="tex2html453"
+<LI><A NAME="tex2html477"
   HREF="KEGG_network_provider.html#SECTION001123000000000000000">Protocol for the command-line tools</A>
-<LI><A NAME="tex2html454"
+<LI><A NAME="tex2html478"
   HREF="KEGG_network_provider.html#SECTION001124000000000000000">Interpretation of the results</A>
-<LI><A NAME="tex2html455"
-  HREF="KEGG_network_provider.html#SECTION001125000000000000000">Summary</A>
-<LI><A NAME="tex2html456"
-  HREF="KEGG_network_provider.html#SECTION001126000000000000000">Troubleshooting</A>
-</UL></UL>
+</UL>
+<BR>
+<LI><A NAME="tex2html479"
+  HREF="KEGG_network_provider.html#SECTION001130000000000000000">Summary</A>
+<LI><A NAME="tex2html480"
+  HREF="KEGG_network_provider.html#SECTION001140000000000000000">Troubleshooting</A>
+</UL>
 <!--End of Table of Child-Links-->
 <HR>
 
@@ -114,7 +116,8 @@ Yanasquare [<A
  HREF="Bibliography.html#yana">27</A>] and Pathway Hunter Tool [<A
  HREF="Bibliography.html#pht">26</A>] offer
 organism-specific KEGG network construction in combination
-with analysis functions.
+with analysis functions. With [<A
+ HREF="Bibliography.html#kegggrah">36</A>], you can construct KEGG metabolic networks in R.
 
 <P>
 It should be noted that KEGG annotators omitted side compounds in the KGML files. Thus, certain molecules
@@ -322,9 +325,9 @@ http://www.genome.ad.jp/dbget-bin/get_pathway?org_name=eco&amp;mapno=00300
 
 <P>
 
-<H2><A NAME="SECTION001125000000000000000">
+<H1><A NAME="SECTION001130000000000000000">
 Summary</A>
-</H2>
+</H1>
 
 <P>
 The study case demonstrated that different organisms may employ different metabolic pathways for the synthesis or
@@ -333,9 +336,9 @@ specific to a selected set of organisms.
 
 <P>
 
-<H2><A NAME="SECTION001126000000000000000">
+<H1><A NAME="SECTION001140000000000000000">
 Troubleshooting</A>
-</H2>
+</H1>
 
 <P>
 
@@ -352,35 +355,35 @@ check in the provided KEGG organism list.
 <P>
 <HR>
 <!--Navigation Panel-->
-<A NAME="tex2html447"
-  HREF="Recapitulative_exercises.html">
+<A NAME="tex2html471"
+  HREF="Pathway_inference.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
- SRC="file:/usr/share/latex2html/icons/next.png"></A> 
-<A NAME="tex2html443"
+ SRC="file:/opt/local/share/lib/latex2html/icons/next.png"></A> 
+<A NAME="tex2html467"
   HREF="neat_tutorial.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
- SRC="file:/usr/share/latex2html/icons/up.png"></A> 
-<A NAME="tex2html437"
+ SRC="file:/opt/local/share/lib/latex2html/icons/up.png"></A> 
+<A NAME="tex2html461"
   HREF="Metabolic_path_finding.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
- SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
-<A NAME="tex2html445"
+ SRC="file:/opt/local/share/lib/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html469"
   HREF="Contents.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
- SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
+ SRC="file:/opt/local/share/lib/latex2html/icons/contents.png"></A>  
 <BR>
-<B> Next:</B> <A NAME="tex2html448"
-  HREF="Recapitulative_exercises.html">Recapitulative exercises</A>
-<B> Up:</B> <A NAME="tex2html444"
+<B> Next:</B> <A NAME="tex2html472"
+  HREF="Pathway_inference.html">Pathway inference</A>
+<B> Up:</B> <A NAME="tex2html468"
   HREF="neat_tutorial.html">Network Analysis Tools (NeAT)</A>
-<B> Previous:</B> <A NAME="tex2html438"
+<B> Previous:</B> <A NAME="tex2html462"
   HREF="Metabolic_path_finding.html">Metabolic path finding</A>
- &nbsp; <B>  <A NAME="tex2html446"
+ &nbsp; <B>  <A NAME="tex2html470"
   HREF="Contents.html">Contents</A></B> 
 <!--End of Navigation Panel-->
 <ADDRESS>
-RSAT
-2009-03-29
+Karoline Faust
+2009-07-01
 </ADDRESS>
 </BODY>
 </HTML>
