@@ -4,7 +4,7 @@
    <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
 </head>
 <body class="form">
-<?
+<?php
   require ('functions.php');
 
   // default variables
