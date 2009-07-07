@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.20 2009/06/03 14:19:25 amedina Exp $
+# $Id: footprint-scan,v 1.21 2009/07/07 21:52:30 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -403,6 +403,8 @@ crer_pval
 -colors
 -export_colors
 -gp
+-vline
+-hline
 );
   
   my $supported_graph_thresholds = join ",", @supported_graph_thresholds;
@@ -412,7 +414,11 @@ crer_pval
       $main::supported_graph_threshold{$thrg} = 1;
   }
   
+  ## info_lines Ocurrence Significance graph
+  ## by default lines are not drawn 
+  $main::draw_info_lines=0;
   
+
   ## Supported-tasks added to those of footprint.lib.pl
   $supported_task{occ_sig} = 1;
   $supported_task{occ_sig_graph} = 1;
@@ -854,6 +860,23 @@ quotes, and can thus not contain any quote.
 
 =pod
 
+=item B<-info_lines>
+
+Set of informative lines for the occurrence significance graph, this includes:
+
+ - ' hline violet 0 ' line showing the significance zero line.
+ - ' vline violet 0 ' line showing the score zero value 
+ - ' vline red sig_max ' the sig_max (score with the maximal
+ significance) value is extracted from the occurrence significance
+ table taken only for those score values grater than zero
+
+=cut
+	} elsif ($arg eq "-info_lines") {
+    $main::draw_info_lines=1;
+    &RSAT::message::Info("Informative lines for ocurrence significance graph will be drawn ");
+
+=pod
+
 =item B<-occ_sig_graph_opt>
 
 Additional options passed to XYgraph for drawing the
@@ -868,7 +891,7 @@ and can thus not contain any quote.
     my $new_occ_sig_graph_opt = shift(@arguments);
     $occ_sig_graph_opt .= " ".$new_occ_sig_graph_opt;
     my $th_graph_field = (split(/ +/, $new_occ_sig_graph_opt ))[0];
-    &RSAT::error::FatalError(join", " ,$th_graph_field, "is not a supported thres hold field for XYgraph.")   unless (  $main::supported_graph_threshold{$th_graph_field} );
+    &RSAT::error::FatalError(join", " ,$th_graph_field, "is not a supported threshold field for XYgraph.")   unless (  $main::supported_graph_threshold{$th_graph_field} );
 
 =pod
 
@@ -1023,7 +1046,7 @@ sub RunFootprintScan {
     &OccurrenceSig();
     &OccurrenceSigGraph();
     &GetTopSig() if (($task{synthesis}) && !($batch));
-
+    #&OccurrenceSigGraph();
 ## Scan sequences to detect hits
     &OrthoScan();
     &OrthoMap();
