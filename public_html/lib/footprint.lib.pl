@@ -669,6 +669,7 @@ sub OccurrenceSigGraph {
   &RSAT::message::TimeWarn("Graph with over-representation of hits", $outfile{occ_freq_graph}) if ($main::verbose >= 2);
   &CheckDependency("occ_sig_graph", "occ_sig");
 
+
   ## Occ frequency graph
   my $cmd = "sort -n -k 2 $outfile{occ_sig} | XYgraph";
   $cmd .= " -xcol 2 -xleg1 'Weight score' -xsize 800 -xgstep1 1 -xgstep2 0.5";
@@ -677,8 +678,10 @@ sub OccurrenceSigGraph {
   $cmd .= " -lines -legend ";
   $cmd .= " -format ".$plot_format;
   $cmd .= " -o ".$outfile{occ_freq_graph};
+
   &one_command($cmd);
 
+  
   ## Occ significance graph
   $cmd = "sort -n -k 2 $outfile{occ_sig} | XYgraph";
   $cmd .= " -xcol 2 -xleg1 'Weight score' -xsize 800  -xgstep1 1 -xgstep2 0.5";
@@ -687,6 +690,27 @@ sub OccurrenceSigGraph {
   $cmd .= " -lines -legend ";
   $cmd .= " -format ".$plot_format;
   $cmd .= " -o ".$outfile{occ_sig_graph};
+  
+  ##  info lines
+  if ($main::draw_info_lines){
+      
+      $cmd .= " -hline violet 0 "; #line showing the significance zero line.
+      $cmd .= " -vline violet 0 " ; # line showing the score zero value 
+      
+      #Calculate the positive score wirh maximal significance
+      my $tab="\t";
+      my $new_line="\n"; 
+      my $top_sig_cmd = "grep -v '^;' $outfile{occ_sig} | grep -v '^#' | perl -ane 'if(\$F[1]>0) {print join(\"\t\",\@F).\"\n\" }' | head -n 1";
+      my $top_sig_pos_score_row = `$top_sig_cmd`;
+      if ($top_sig_pos_score_row) {
+	  my @fields = split "\t", $top_sig_pos_score_row;
+	  my $sig_max = $fields[1];
+	  $cmd .= " -vline red ". $sig_max   ;       
+   
+      } 
+  }
+  
+  ## options added  from comand line
   $cmd .= " ".$occ_sig_graph_opt;
   &one_command($cmd);
 }
