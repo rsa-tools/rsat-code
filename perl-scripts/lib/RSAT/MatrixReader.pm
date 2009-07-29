@@ -1268,11 +1268,13 @@ sub _readFromClusterBusterFile {
       ## Create a new matrix if required
       if  ($line =~ /^\>(\S*)/) {
 	my $name = $1;
+	if ($line =~ /\/name=(\S*)/) { $name = $1;}
 	$matrix = new RSAT::matrix();
 	$matrix->set_parameter("program", "clusterbuster");
 	$ncol = 0;
 	if ($name) {
 	  $matrix->set_attribute("name", $name);
+	  $matrix->set_attribute("accession", $name);
 	}
 	push @matrices, $matrix;
 	$current_matrix_nb++;
