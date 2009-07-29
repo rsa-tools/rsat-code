@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.87 2009/05/14 11:52:26 rsat Exp $
+# $Id: install-organism,v 1.88 2009/07/29 04:30:27 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -31,6 +31,7 @@ $supported_for_installation{"filelist"} = 1;
 		   config=>1,
 		   start_stop=>1,
 		   allup=>1,
+		   seq_len_distrib=>1,
 		   genome_segments=>1,
 		   oligos=>1,
 		   distrib=>1,
@@ -476,7 +477,7 @@ sub IntergenicSegments {
 	my $seq_file = "$dir{genome}/${organism_short_name}_${seq_type}_segments.wc";
 
 	#### draw sequence length distributions
-	&SeqLengthDistribution($seq_file, "wc", $seq_type, 50);
+	&SeqLengthDistribution($seq_file, "wc", $seq_type, 50) if ($task{seq_len_distrib});
 	
 	#### compress sequence file
 	$command = "gzip -f $seq_file";
@@ -510,7 +511,7 @@ sub AllUpstream {
 	    &doit($command, $dry_run, $die_on_error, $verbose);
 
 	    #### draw sequence length distributions
-	    &SeqLengthDistribution($seq_file, $format, $seq_type, 50) if ($noorf);
+	    &SeqLengthDistribution($seq_file, $format, $seq_type, 50) if (($noorf) && ($task{seq_len_distrib}));
 
 	    #### compress sequence file
 	    $command = "gzip -f $seq_file";
@@ -543,7 +544,9 @@ sub SeqLengthDistribution {
     $command .= " -o ${organism_short_name}_${seq_type}_segments_lengths.tab";
     $command .= "; cut -f 2 ${organism_short_name}_${seq_type}_segments_lengths.tab ";
     $command .= "| classfreq -ci $ci -v -from $classfreq_from";
-    $command .= "| XYgraph -xcol 3 -ycol 7,8,9 -lines -xmin $classfreq_from";
+    $command .= " -o ${organism_short_name}_${seq_type}_segments_lengths.tab";
+    $command .= "; XYgraph -i ${organism_short_name}_${seq_type}_segments_lengths.tab";
+    $command .= " -xcol 3 -ycol 7,8,9 -lines -xmin $classfreq_from";
     $command .= " -ymin 0 -ymax 1  -xsize 600 -ysize 400 -legend";
     $command .= " -xgtask1 100 -xgtask2 250 -ygtask1 0.1";
     $command .= " -xlog 2" if( ($seq_type eq "intergenic") || ($seq_type eq "gene"));
