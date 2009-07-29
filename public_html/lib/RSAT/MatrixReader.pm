@@ -30,7 +30,7 @@ formats.
 ## Class variables
 %supported_input_format = (
 			   'tab'=>1,
-			   'cb'=>1,
+			   'cluster-buster'=>1,
 			   'feature'=>1,
 			   'assembly'=>1,
 			   'consensus'=>1,
@@ -70,7 +70,7 @@ sub readFromFile {
 	@matrices = _readFromAlignACEFile($file);
     } elsif (lc($format) eq "tab") {
 	@matrices = _readFromTabFile($file, %args);
-    } elsif (lc($format) eq "cb") {
+    } elsif (lc($format) eq "cluster-buster") {
 	@matrices = _readFromClusterBusterFile($file, %args);
     } elsif (lc($format) eq "motifsampler") {
 	@matrices = _readFromMotifSamplerFile($file);
