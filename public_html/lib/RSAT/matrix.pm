@@ -832,7 +832,6 @@ sub to_patser {
       $to_print .= $self->_printParameters($to_print);
 
     } elsif ($type eq "consensus") {
-    	print Dumper($self);
       $to_print .= "; consensus\t".$self->get_attribute("consensus.IUPAC")."\n";
       $to_print .= "; consensus.rc\t".$self->get_attribute("consensus.IUPAC.rc")."\n";
 
