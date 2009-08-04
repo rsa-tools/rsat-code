@@ -43,6 +43,21 @@
     exists from node <i>B</i> to node <i>A</i>. A directed matrix is asymmetrical. By
     default, convert-graph considers the graphs as undirected but if the
     graph you use is undirected, you can use the undirected option.
+    For NeAT, 
+    <ul>
+	<li>all columns must be separated by a tab</li> 
+	<li>first row of the matrix must contain the names of the nodes and start by a tab character</li>
+	<li>all the other rows must start by the names of the node for this column</li>
+    </ul>
+    <pre>
+# some comments
+; some other comments
+	a	b	c	d
+a	1	0	0	0
+b	1	0	1	0
+c	1	0	0	1
+d	1	1	0	0
+     </pre>
 </ul><ul>
     The <b>GML format</b> allows to specify the location, the color, the label and the
     width of the nodes and of the edges. A GML file is made up of pairs of a
