@@ -18,13 +18,13 @@ my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
 my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
 
 ## Output option
-my $output_choice = 'ticket';  ## Accepted values: 'server', 'client', 'both'
+my $output_choice = 'client';  ## Accepted values: 'server', 'client', 'both'
 
 ## Retrieve-seq parameters
-#my $organism = 'Homo_sapiens';  ## Name of the query organism
-my $organism = 'Ciona_intestinalis';  ## Name of the query organism
-#my @gene = ("ENSG00000139618", "ENSG00000138411");  ## List of query genes
-my @gene = ("ENSCING00000006669");  ## List of query genes
+my $organism = 'Homo_sapiens';  ## Name of the query organism
+#my $organism = 'Ciona_intestinalis';  ## Name of the query organism
+my @gene = ("ENSG00000139618", "ENSG00000138411");  ## List of query genes
+#my @gene = ("ENSCING00000006669");  ## List of query genes
 my $alltranscripts = 1;  ## the -all option (other accepted value = 1). This option is incompatible with the query list @gene (above)
 my $noorf = 0;  ## Clip sequences to avoid upstream ORFs
 my $from = -2000;  ## Start position of the sequence
