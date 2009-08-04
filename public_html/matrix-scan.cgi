@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.24 2009/01/20 09:34:33 morgane Exp $
+# $Id: matrix-scan.cgi,v 1.25 2009/08/04 21:19:45 rsat Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -53,6 +53,11 @@ $parameters .= " -i $sequence_file -seq_format $sequence_format";
 if ($query->param('vertically_print')) {
   $parameters .= " -p";
 }
+
+
+################################################################
+## Treatment of N characters
+$parameters .= ' -n score';
 
 $command .= " $parameters";
 
