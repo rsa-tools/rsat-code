@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.32 2008/12/20 07:34:08 jvanheld Exp $
+# $Id: footprint-discovery,v 1.33 2009/08/04 23:51:15 jvanheld Exp $
 #
 ############################################################
 
@@ -28,9 +28,9 @@ Adapted from the procedure described in Janky & van Helden (2008).
 
 =over
 
-=item rekins@scmbb.ulb.ac.be
+=item Rekin's Janky <rekins@bigre.ulb.ac.be>
 
-=item jacques.van.helden@ulb.ac.be
+=item Jacques van Helden <jacques.van.helden@ulb.ac.be>
 
 =back
 
@@ -46,6 +46,29 @@ footprint-discovery [-i inputfile] -o [output_prefix] \
      -taxon \
      -q query_gene [-q query_gene2 ...] \
      [-v #] [...]
+
+
+=head2 EXAMPLES
+
+=head2 single-gene footprint discovery
+
+Discover conserved motifs in the promoters of the orthologs of lexA in
+Enterobacteriales.
+
+ footprint-discovery  -v 1 -index -org Escherichia_coli_K12 -taxon Enterobacteriales \
+		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
+		-return occ,proba,rank -filter -index \
+		-to_matrix -bg_model taxfreq -q lexA
+
+=head2 footprint discovery for all genes of a genome
+
+Iterate footprint discovery for each gene separately.
+
+ footprint-discovery  -v 1 -index -org Escherichia_coli_K12 -taxon Enterobacteriales \
+		-lth occ 1 -lth occ_sig 0 -uth rank 50 \
+		-return occ,proba,rank -filter -index \
+		-to_matrix -bg_model taxfreq -all_genes -sep_genes
+
 
 =head1 INPUT FORMAT
 
@@ -161,7 +184,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.32 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.33 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -231,12 +254,13 @@ package main;
     my $gene_nb = scalar(@query_genes);
     foreach my $current_gene (@query_genes) {
       $g++;
-      &RSAT::message::TimeWarn("Analysing gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Analyzing gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 1);
       next if (($skip > 0) && ($g <= $skip));
       last if (($last > 0) && ($g >= $last));
       &RunFootprintDisco($current_gene);
     }
   } else {
+    &RSAT::message::TimeWarn("Analyzing a group of ",scalar(@query_genes)," genes", join(";", @query_genes)) if ($main::verbose >= 1);
     &RunFootprintDisco(@query_genes);
   }
 
@@ -364,7 +388,7 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Discover over-represented dyads in promoters of orthologous genes
-  &RSAT::message::TimeWarn("Detecting phylogenetic footprints", $outfile{dyads}) if ($verbose >= 1);
+  &RSAT::message::TimeWarn("Running dyad-analysis", $outfile{dyads}) if ($verbose >= 2);
   &CheckDependency("dyads", "purged");
   $cmd = "$SCRIPTS/dyad-analysis -v 1 ";
   $cmd .= " -return ".$dyad_return_fields;
@@ -404,7 +428,7 @@ sub RunFootprintDisco {
 
   ################################################################
   ## Assemble significant dyads
-  &RSAT::message::TimeWarn("Assembling significant dyads", $outfile{asmb}) if ($verbose >= 1);
+  &RSAT::message::TimeWarn("Assembling significant dyads", $outfile{asmb}) if ($verbose >= 2);
   &CheckDependency("asmb", "dyads");
   $cmd = "$SCRIPTS/pattern-assembly -v 1";
   $cmd .= " -i ".$outfile{dyads};
@@ -419,7 +443,7 @@ sub RunFootprintDisco {
   my $map_title = join "; ", $taxon, $organism_name, $query_prefix;
   &CheckDependency("map", "dyads");
   &CheckDependency("map", "seq");
-  &RSAT::message::TimeWarn("Generating feature map", $outfile{map}) if ($verbose >= 1);
+  &RSAT::message::TimeWarn("Generating feature map", $outfile{map}) if ($verbose >= 2);
   $cmd = "$SCRIPTS/dna-pattern -return limits,sites -origin -0 -N 4";
   $cmd .= " -pl ".$outfile{dyads};
   $cmd .= " -format fasta -i ".$outfile{seq};
@@ -437,7 +461,7 @@ sub RunFootprintDisco {
   ################################################################
   ## Convert assembled dyads into a position-specific scoring matrix
   if ($to_matrix) {
-    &RSAT::message::TimeWarn("Converting assembled dyads into PSSM", $outfile{pssm}) if ($verbose >= 1);
+    &RSAT::message::TimeWarn("Converting assembled dyads into PSSM", $outfile{pssm}) if ($verbose >= 2);
     &CheckDependency("pssm", "asmb");
     &CheckDependency("pssm", "seq");
     $cmd = "$SCRIPTS/matrix-from-patterns -v 1";
