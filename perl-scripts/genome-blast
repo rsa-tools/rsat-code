@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast,v 1.14 2009/03/13 01:29:36 jvanheld Exp $
+# $Id: genome-blast,v 1.15 2009/08/04 06:12:24 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -811,12 +811,17 @@ sub BlastAndRank {
 
     ## ##############################################################
     ## Read the blast output and rank the hits
-    my $blast_header = <BLAST>; ## Skip header line
-    chomp($blast_header);
-    $blast_header =~ s/\r//;
     my $h = 0; ## Initialize hit number
     my $l = 1; ## Initialize line number (in the BLAST file, taking the header into account)
+#    my $blast_header;
+#    my $treat_blast_header=0;
     while (<BLAST>) {
+#	if ($treat_blast_header) {
+#	    $blast_header = $_; ## Skip header line
+#	    chomp($blast_header);
+#	    $blast_header =~ s/\r//;
+#	}
+
 	$l++; ## line number in the BLAST file
 	chomp();
 	s/\r//;
