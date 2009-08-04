@@ -6,7 +6,7 @@ MAKEFILE=${RSAT}/makefiles/change_cvs.mk
 ## Change the CVS configuration for all directories
 
 OLD_LOGIN=`logname`
-OLD_SERVER=cvs.scmbb.ulb.ac.be
+OLD_SERVER=www.bigre.ulb.ac.be
 OLD_ROOT=/cvs/rsat
 OLD_CONNECT=${OLD_LOGIN}\@${OLD_SERVER}:${OLD_ROOT}
 
