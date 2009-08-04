@@ -26,7 +26,7 @@ sub one_command {
       $main::batch_cmd = "$cmd";
     }
   } else {
-    print $out ("; ", &AlphaDate(), "\n", $cmd, "\n\n") if ($main::verbose >= 2);
+    print $out ("; ", &AlphaDate(), "\n", $cmd, "\n\n") if ($main::verbose >= 3);
     &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   }
 }
@@ -45,7 +45,7 @@ sub CheckFootprintParameters {
       $task{$task} = 1;
     }
   }
-  &RSAT::message::Info("Tasks: ", join (";", keys %task)) if ($main::verbose >= 0);
+  &RSAT::message::Info("Footprint analysis tasks: ", join (";", keys %task)) if ($main::verbose >= 1);
 
   ## Check taxon
   &RSAT::error::FatalError("You must specify a taxon (option -taxon)")
@@ -118,7 +118,7 @@ sub CheckDependency {
     my $file = $outfile{$type};
     if ((-e $file) || (-e $file.".gz")){
       &RSAT::message::Info("Checked existence of ", $type, "file required for task", $task, "file", $file)
-	if ($main::verbose >= 2);
+	if ($main::verbose >= 3);
       return(1);
     } else {
       &RSAT::error::FatalError("Missing", $type, "file required for task", $task, "file", $file)
@@ -387,6 +387,22 @@ Dry run: print the commands but do not execute them.
   } elsif ($arg eq "-dry") {
     $main::dry = 1;;
 
+    ## Don't die on error
+=pod
+
+=item B<-nodie>
+
+Do not die in case a sub-program returns an error.  
+
+The option -nodie allows you to circumvent problems with specific
+sub-tasks, but this is not recommended because the results may be
+incomplete.
+
+=cut
+
+} elsif ($arg eq "-nodie") {
+  $main::die_on_error = 0;
+
 =pod
 
 =item B<-sep_genes>
@@ -633,6 +649,7 @@ sub PurgeOrthoSeq {
   &RSAT::message::TimeWarn("Purging promoter sequences of orthologs", $outfile{purged}) if ($main::verbose >= 2);
   &CheckDependency("purge", "seq");
   my $cmd = "$SCRIPTS/purge-sequence";
+  $cmd .= " -nodie" if ($die_on_error == 0);
   $cmd .= " -i ".$outfile{seq};
   $cmd .= " -ml 30 -mis 0 -mask_short 30";
   $cmd .= " ".$strands;

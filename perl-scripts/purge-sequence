@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.31 2009/05/06 09:01:28 jvanheld Exp $
+# $Id: purge-sequence,v 1.32 2009/08/04 23:50:24 jvanheld Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -25,7 +25,6 @@ $outputfile = "";
 $match_len = 40;
 $mismatches = 3;
 $in_format = "fasta";
-
 $verbose = 0;
 $dry_run = 0;
 $die_on_error = 1;
@@ -202,6 +201,11 @@ OPTIONS
 		where short intergenic sequences generally correspond
 		to intra-operon segments.
 
+	-nodie
+		The perl script purge-sequence does not die in case
+         	the encapsulated programs (mkvtree, vmatch) return an
+         	error message.
+
 End_of_help
   close HELP;
   exit;
@@ -292,6 +296,10 @@ sub ReadArguments {
 	    ## mask non-DNA code
 	} elsif ($ARGV[$a] eq "-dna") {
 	    $dna = 1;
+
+	    ## mask non-DNA code
+	} elsif ($ARGV[$a] eq "-nodie") {
+	    $die_on_error = 0;
 
 	    ## mask short sequences
 	} elsif ($ARGV[$a] eq "-mask_short") {
