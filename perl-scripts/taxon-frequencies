@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.34 2008/12/20 07:30:21 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.35 2009/08/04 21:26:04 jvanheld Exp $
 #
 ############################################################
 
@@ -16,6 +16,24 @@ taxon-frequencies
 =head1 DESCRIPTION
 
 Calculate taxon-wide oligo and dyad frequencies.
+
+=head1 USAGE
+
+I<taxon-frequencies> has many options, we just describe here the usual
+way to apply it.
+
+=head2 compute all models (oligos, dyads) for a given taxon, and install them in the RSAT directory
+
+This requires to have write access on the RSAT directory. It is
+important to use the option -install, because otherwise all the models
+are simply displayed on the terminal (STOUT).
+
+taxon-frequencies -v 1 -taxon Mollicutes -all_models -install
+
+=head2 compute a single model and store it in a local file
+
+taxon-frequencies -v 1 -taxon Mollicutes -type dyad -ml 3 > Mollicutes_dyads_3nt_sp0-20_freq.tab
+
 
 =head1 AUTHORS
 
