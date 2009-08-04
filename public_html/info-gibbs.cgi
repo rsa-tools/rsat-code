@@ -149,8 +149,8 @@ if ($query->param('freq_estimate') =~ /background/i) {
 #     }
 }
 ### additional parameters
-#$parameters .= ' --EM=0';
-$parameters .= ' --finalcycle';
+
+#$parameters .= ' --finalcycle';
 print "<pre>$command $parameters\n</pre>" if ($ENV{rsat_echo} >=1);
 
 if ($query->param('output') eq "display") {  
