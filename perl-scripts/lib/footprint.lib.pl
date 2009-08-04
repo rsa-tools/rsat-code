@@ -141,7 +141,7 @@ sub GetQueryPrefix {
   } elsif ($infile{genes}) {
     $query_prefix = `basename $infile{genes} .tab`;
   }
-  &RSAT::message::Info("Query prefix", $query_prefix) if ($main::verbose >= 2);
+  &RSAT::message::Info("Query prefix", join("","'", $query_prefix, "'")) if ($main::verbose >= 2);
   return ($query_prefix);
 }
 
@@ -152,6 +152,7 @@ sub GetQueryPrefix {
 ## If genes are to be analyzed separately, also define output prefix automatically
 sub GetOutfilePrefix {
   if (($sep_genes)
+      || (!defined($outfile{prefix}))
       || ($outfile{prefix} eq "")) {
     if ($query_prefix) {
       if ($bg_model) {
@@ -308,6 +309,7 @@ automatically).
 =cut
   } elsif ($arg eq "-all_genes") {
     $main::all_genes = 1;
+    $main::sep_genes = 1;
 
 =pod
 
