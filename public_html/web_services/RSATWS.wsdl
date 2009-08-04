@@ -3033,6 +3033,11 @@ Default is 'both'.</xsd:documentation>
 	      <xsd:documentation>Number of requested nodes (for scratch randomization type).</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
+	  <xsd:element name="self" type="xsd:int" minOccurs="0">
+	    <xsd:annotation>
+	      <xsd:documentation>Allows self loops (by default, self loops are not allowed)</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
 	  <xsd:element name="mean" type="xsd:float" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Mean value on the weight of the arcs.
