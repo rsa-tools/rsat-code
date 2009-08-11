@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.21 2009/07/07 21:52:30 amedina Exp $
+# $Id: footprint-scan,v 1.22 2009/08/11 19:28:05 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -457,9 +457,16 @@ crer_pval
 	  $ms_parameters .= " -markov ".$markov;
       } else {
 	  &RSAT::error::FatalError("The option -bginput requires o specify a Markov model (option -markov)");
-      }
+      } 
+  } elsif ($bg_method eq "window") {
+      $ms_parameters .= " -window ". $main::window_size ." " ;
+      if (defined($markov)) {
+	  $ms_parameters .= " -markov ".$markov;
+      } else {
+	  &RSAT::error::FatalError("The option -bginput requires o specify a Markov model (option -markov)");
+      }       
   } else {
-      &RSAT::error::FatalError("You must define a background model using either -bgfile or -bginput ");
+      &RSAT::error::FatalError("You must define a background model using either -bgfile , -window or -bginput ");
   }
 
   ## Matrix file and format
@@ -788,6 +795,33 @@ This option is incompatible with the option -bgfile.
 		unless &RSAT::util::IsNatural($main::markov);
 	    &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
 		if defined($infile{bg});
+=pod
+
+=item B<-window>
+
+Size of the sliding window for the background model calculation.
+When this option is specified, the matrix pseudo-count is equally
+distributed.
+
+The background model is calculated locally at each step of the scan,
+by computing transition frequencies from a sliding window centred
+around the considered segment. The model is thus updated at each
+scanned position. This model is called "adaptive". Note that the
+sliding window must be large enough to train the local Markov model.
+The required sequence length increases exponentially with the Markov
+order. This option is thus usually suitable for low order models
+only (-markov 0 to 1).
+
+This option is incompatible with the option -bgfile. 
+
+=cut
+	} elsif ($arg eq "-window") { 
+            &RSAT::error::FatalError("Options -bgfile and -window  are mutually exclusive") if (defined($infile{bg})); 
+            &RSAT::error::FatalError("Options -bginput and -window  are mutually exclusive") if ($main::bg_method eq "input");
+	    $main::bg_method = "window"; 
+            $main::window_size = shift(@arguments);
+	    &RSAT::error::FatalError("The options -window and -bgfile are mutually exclusive.") 
+		if defined($infile{bg}); 
 
 =pod
 
@@ -864,9 +898,9 @@ quotes, and can thus not contain any quote.
 
 Set of informative lines for the occurrence significance graph, this includes:
 
- - ' hline violet 0 ' line showing the significance zero line.
- - ' vline violet 0 ' line showing the score zero value 
- - ' vline red sig_max ' the sig_max (score with the maximal
+ '-hline violet 0 ' line showing the significance zero line.
+ '-vline violet 0 ' line showing the score zero value 
+ '-vline red sig_max ' the sig_max (score with the maximal
  significance) value is extracted from the occurrence significance
  table taken only for those score values grater than zero
 
