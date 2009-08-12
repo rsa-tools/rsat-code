@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.22 2009/08/11 19:28:05 amedina Exp $
+# $Id: footprint-scan,v 1.23 2009/08/12 23:23:13 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -280,7 +280,7 @@ package main;
   local $no_die = 1; ## Don't die when a problem occurs
   local $skip = 0;
   local $last = 0;
-
+  $main::window_size=200; #default length of window size based on nature protocol
   ## parameters for promoter retrieval
   local $taxon;			## Reference taxon
   local $organism_name;		## Query organism
@@ -820,6 +820,7 @@ This option is incompatible with the option -bgfile.
             &RSAT::error::FatalError("Options -bginput and -window  are mutually exclusive") if ($main::bg_method eq "input");
 	    $main::bg_method = "window"; 
             $main::window_size = shift(@arguments);
+	    &RSAT::error::FatalError("Window size must be a natural number.") unless &RSAT::util::IsNatural($main::window_size)
 	    &RSAT::error::FatalError("The options -window and -bgfile are mutually exclusive.") 
 		if defined($infile{bg}); 
 
