@@ -54,12 +54,15 @@ $selected_attribs = "";
 $fileContent = "";
 $sylvain_input_graph = "";
 $graph_type = "";
+$customgraphdb = "";
+$symmetric = "true";
 
 # server-related params
 $result_location = $tmp.'/';
 $html_location = $WWW_RSA.'/tmp/';
 # $host= parse_url($WWW_RSA,PHP_URL_HOST);
 $metabolicpathfinder_location = $neat_java_host.'/metabolicpathfinding/metabolicPathfinder_form.jsp';
+$pathwayinference_location = $neat_java_host.'/metabolicpathfinding/pathwayinference_form.jsp';
 
 ############## prepare parameters ##########################
 
@@ -188,8 +191,9 @@ if($reactionattribs){
     	if($error == 0){
         	 # Display the results
     		echo("<align='left'>The result is available as text file at the following URL:<br><br>
-    		<a href='$html_location$server'>$html_location$server</a></align><br><br>");
-
+    		<a href='$html_location$server'>$html_location$server</a><br><br>
+    		The result has been generated with command:<br>
+			$command</align><br><br>");
     	# next step panel only available for graphs in gml or tab-delimited format
     	if(strcmp($out_format,'tab') == 0 || strcmp($out_format,'gml') == 0){
         	# location of result file
@@ -279,13 +283,18 @@ if($reactionattribs){
        <td>";
        if($rpairs == 's'){
        	$graph_type="subreactiongraph";
+       	$customgraphdb = "keggrpair";
        }else{
        	$graph_type="reactiongraph";
+       	$customgraphdb = "keggreaction";
        }
        if($directed == 1){
           $directed = "true";
        }else{
           $directed = "false";
+       }
+       if($keepIrre == 1){
+       	  $symmetric = "false";
        }
        echo "
         <FORM METHOD='POST' ACTION='$metabolicpathfinder_location'>
@@ -297,6 +306,20 @@ if($reactionattribs){
           <input type='hidden' NAME='irreversible' VALUE='$keepIrre'>
           <input type='hidden' NAME='organisms' VALUE='$organisms'>
           <INPUT type='submit' value='Find metabolic paths in this graph'>
+         </form>
+       </td>
+       <td>
+       <FORM METHOD='POST' ACTION='$pathwayinference_location'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$file_location'>
+          <input type='hidden' NAME='graph_format' VALUE='$out_format'>
+          <input type='hidden' NAME='directed' VALUE='$directed'>
+          <input type='hidden' NAME='metabolic' VALUE='true'>
+          <input type='hidden' NAME='symmetric' VALUE='$symmetric'>
+          <input type='hidden' NAME='irreversible' VALUE='$keepIrre'>
+           <input type='hidden' NAME='customgraphdb' VALUE='$customgraphdb'>
+          <input type='hidden' NAME='organisms' VALUE='$organisms'>
+          <INPUT type='submit' value='Infer a pathway from this graph'>
          </form>
        </td>
        <TD>
@@ -313,21 +336,6 @@ if($reactionattribs){
           echo "
           <INPUT type='submit' value='Map clusters or extract a subnetwork'>
         </form>
-       </td>
-       <TD>
-       <FORM METHOD='POST' ACTION='graph_node_degree_form.php'>
-          <input type='hidden' NAME='pipe' VALUE='1'>
-          <input type='hidden' NAME='graph_file' VALUE='$tempFileName'>
-          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
-          if ($out_format == 'tab') {
-            echo "
-             <input type='hidden' NAME='scol' VALUE='1'>
-             <input type='hidden' NAME='tcol' VALUE='2'>
-             <input type='hidden' NAME='wcol' VALUE='3'>";
-           }
-           echo "
-          <INPUT type='submit' value='Node degree computation'>
-         </form>
        </td>
      </tr>
      <tr>
@@ -375,6 +383,21 @@ if($reactionattribs){
       </td>
      </tr>
      <tr>
+       <TD>
+       <FORM METHOD='POST' ACTION='graph_node_degree_form.php'>
+          <input type='hidden' NAME='pipe' VALUE='1'>
+          <input type='hidden' NAME='graph_file' VALUE='$tempFileName'>
+          <input type='hidden' NAME='graph_format' VALUE='$out_format'>";
+          if ($out_format == 'tab') {
+            echo "
+             <input type='hidden' NAME='scol' VALUE='1'>
+             <input type='hidden' NAME='tcol' VALUE='2'>
+             <input type='hidden' NAME='wcol' VALUE='3'>";
+           }
+           echo "
+          <INPUT type='submit' value='Node degree computation'>
+         </form>
+       </td>
       <TD>
         <FORM METHOD='POST' ACTION='random_graph_form.php'>
           <input type='hidden' NAME='pipe' VALUE='1'>

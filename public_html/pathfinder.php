@@ -237,6 +237,12 @@
         $fileContent = storeFile($file_location);
         # html location
         $file_html_location = $html_location . $server;
+        # Display warning if required
+        if(ereg('maximal path number',$client)){
+        	echo("<font color='red'>Warning: Path enumeration had to be interrupted, because too many paths were found. Paths might have been missed!</font>");
+        }else if(ereg('time out',$client)){
+        	echo("<font color='red'>Warning: Path enumeration was interrupted by a time out. Paths might have been missed!</font>");
+        }
         # Display the results
     	echo "<align='left'>The result is available as text file at the following URL:<br> ";
     	echo "<a href = '$file_html_location'>$file_html_location</a><br></align>";
@@ -269,7 +275,9 @@
     	$tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;
     	echo "<align='left'>The result is available as HTML page at the following URL:<br> ";
     	echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>";
-    	echo "You can sort the rows according to a selected column by clicking on the header entry of that column.<br></align>";
+    	echo "You can sort the rows according to a selected column by clicking on the header entry of that column.<br>";
+    	echo "The result has been generated with command:<br><br>";
+    	echo "$command</align><br><br>";
     	} # end pathsTable
     	# in case of tab-format, truncate nodes to make it readable by Sylvain Brohee's tools
     	if(strcmp($out_format,'flat') == 0){

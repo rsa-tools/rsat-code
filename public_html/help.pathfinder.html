@@ -197,8 +197,8 @@
 <h4><a name="options"></a>Options</h4>
 
 	<ul><A NAME="rank"></A><b>Rank</b><br>
-	This option specifies how many paths should be found. If for example rank is set to three,
-	Pathfinder attempts to find three paths of increasing weight, unifying paths of equal weight into one.
+	This option specifies how many paths should be found in terms of weight levels. If for example rank is set to three,
+	Pathfinder attempts to find three increasing weight levels, where each weight level may contain several paths.
 	</ul>
 	<ul><A NAME="weight"></A><b>Weight</b><br>
 	Three options are available.<br>
@@ -336,10 +336,9 @@
 	</li>
 	<li>
 	<b>each path as a separated component of a single graph</b><br>
-	Pathfinder returns the requested number of paths as separated
+	Pathfinder returns the requested number of weight levels (see <a href="help.pathfinder.html#rank">rank</a>) as separated
 	components of one graph in the desired output format (gml or tab-delimited). The graph can be
-	input of further analsysis steps.
-	Note that each component merges all paths of equal weight.
+	input of further analsysis steps. Each component merges all paths of equal weight.
 	</li>
 	<li>
 	<b>paths unified into one graph</b><br>
