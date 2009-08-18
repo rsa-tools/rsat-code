@@ -13,6 +13,7 @@
 <h4>Content</h4>
 <ul>
 <li><a href='help.keggnetworkprovider.html#description'>Description</a></li>
+<li><a href='help.keggnetworkprovider.html#disclaimer'>Disclaimer</a></li>
 <li><a href='help.keggnetworkprovider.html#input'>Input</a></li>
 <li><a href='help.keggnetworkprovider.html#options'>Options</a></li>
 <li><a href='help.keggnetworkprovider.html#output'>Output</a></li>
@@ -25,16 +26,20 @@
 </ul>
 
 <h4><a name="description">Description</a></h4>
-
 <ul>
     The KEGG network provider allows the construction of bipartite metabolic networks specific to a set of organisms. 
     The networks are constructed from <a href="http://www.genome.jp/kegg/xml/" target="_blank">KEGG KGML</a> files. Compounds and reactions are represented
     as separate node sets.<br> 
     It is also possible to filter the network in order to exclude certain reactions, compounds or reactant pair classes.  
     In addition, compounds and reactions in the constructed networks can be annotated with their label or EC number.<br>
-    It is of note that KGML files do not list the side compounds of reactions. These will consequently be missing
-    from the constructed metabolic network as well.
+    <font color="red"><b>Note that KGML files do not list the side compounds of reactions. These will consequently be missing
+    from the constructed metabolic network as well.</b></font>
     <br>
+</ul>
+
+<h4><a name="disclaimer">Disclaimer</a></h4>
+<ul>
+  For the use of KEGG PATHWAY data, see the <a href="http://www.genome.jp/kegg/legal.html" target="_blank">KEGG licence</a>   
 </ul>
 
 <h4><a name="input">Input</a></h4>
@@ -156,6 +161,7 @@
 <ul>
 	This list provides links to tools for the visualization/extraction/analysis of KEGG metabolic networks:
 	<ul> 
+	<li><a href="http://www.bioconductor.org/packages/2.4/bioc/html/KEGGgraph.html" target="_blank">KEGGgraph</a> parse KEGG PATHWAY in R and Bioconductor (R package)</li>
 	<li><a href="http://yana.bioapps.biozentrum.uni-wuerzburg.de/" target="_blank">Yanasquare</a> construct metabolic networks from  KEGG for elementary mode analysis (stand alone)</li>
 	<li><a href="http://pht.tu-bs.de/PHT/" target="_blank">Pathway Hunter Tool</a> analyze topology and obtain organism-specific KEGG networks (web tool)</li>
 	<li><a href="http://kgml-ed.ipk-gatersleben.de/Introduction.html" target="_blank">KGML-ED</a> navigate, visualize and edit pathways in KGML format (Java web start)</li>
