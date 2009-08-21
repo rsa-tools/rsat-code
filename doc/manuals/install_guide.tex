@@ -281,14 +281,6 @@ The \texttt{.tar.gz} file can be uncompressed with the command
 tar -xpzf rsa-tools_yyyymmdd.tar.gz
 \end{verbatim}
 
-\section{Compiling info-gibbs}
-Some of the tools available in \RSAT (info-gibbs) are written in the C/C++. The distribution only contains the sources of these tools.
-To compile info-gibbs, \verb|cd| to the \verb|contrib/info-gibbs| directory and run
-\begin{verbatim}
-make all
-ln -s info-gibbs ../../bin/info-gibbs
-\end{verbatim}
-
 
 \section{Adding \RSAT to your path}
 
@@ -397,6 +389,50 @@ cp RSAT_config_default.props RSAT_config.props
 You need to edit this file and specify the parameters of your local
 configuration. In particular, it is essential to specify the variable
 RSAT, which specifies the RSAT main directory.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Compile C/C++ programs
+
+\section{Compiling C/C++ programs}
+
+Some of the tools available in \RSAT (info-gibbs) are written in the
+C/C++. The distribution only contains the sources of these tools,
+because the binaries are operating system-dependent. The programs can
+be compiled in a very easy way.
+
+\begin{verbatim}
+cd ${RSAT}
+make -f makefiles/compilation.mk compile_all
+\end{verbatim}
+
+This will compile and install the following programs in the \RSAT
+directory.
+
+\begin{itemize}
+\item[info-gibbs] a gibbs sampling algorithm based on optimization of
+  the the information content of the motif.
+\item[count-words] an efficient algorithm for counting word
+  occurrences in DNA sequences. This program is much faster than
+  \program{oligo-analysis}, but it only returns the occurrences and
+  frequencies, whereas oligo-analysis returns over-representation
+  statistics and supports many additional
+  options. \program{count-words} is routinely used to compute word
+  frequencies in large genome sequences, for calibrating the Markov
+  models used by \program{oligo-analysis}.
+\end{itemize}
+
+
+% To compile info-gibbs.
+% \verb|cd| to the \verb|contrib/info-gibbs|
+% directory and run
+
+% \begin{verbatim}
+% cd ${RSAT}/contrib/info-gibbs
+% make all
+% ln -s info-gibbs ${RSAT}/bin/info-gibbs
+% \end{verbatim}
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Downloading genomes from RSAT main server
