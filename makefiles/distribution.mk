@@ -45,12 +45,15 @@ clean_emacs_bk:
 ## Create tar and zip archives of the whole distribution
 POST_CMD=
 TAR_ROOT=..
-DISTRIB_FILES= rsa-tools/perl-scripts					\
-	rsa-tools/RSA.config.default					\
-	rsa-tools/RSA.config.default					\
-	rsa-tools/public_html/data/supported_organisms_template.txt	\
-	rsa-tools/makefiles						\
-	rsa-tools/doc/manuals/*.pdf
+DISTRIB_FILES=rsa-tools/perl-scripts	\
+	rsa-tools/RSA.config.default	\
+	rsa-tools/RSA.config.default	\
+	rsa-tools/makefiles		\
+	rsa-tools/doc/manuals/*.pdf	\
+	rsa-tools/python-scripts 	\
+	rsa-tools/contrib/count-words  	\
+	rsa-tools/contrib/info-gibbs
+
 _fill_archive:
 	(cd ${TAR_ROOT};						\
 	for f in ${DISTRIB_FILES}; do			\
