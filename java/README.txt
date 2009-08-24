@@ -103,7 +103,7 @@ the KeggLigandDataManager options -M, -S and -T.
 ************* Path finding *************
 
 You can try the following to test your installation:
-java graphtools.algorithms.Pathfinder -g $RSAT/public_html/demo_files/yeast_string_database_graph_converted_weights.tab -f flat -s RAS2 -t TEC1 -U -c -r 2
+java graphtools.algorithms.Pathfinder -g $RSAT/public_html/demo_files/yeast_string_database_graph_converted_weights.tab -f flat -s RAS2 -t TEC1 -r 2
 
 After a few seconds (depending on your computing power), the following should be listed:
 
