@@ -84,8 +84,8 @@ foreach $key (keys %default) {
 &RSA_header("oligo-analysis", "form");
 print "<center>";
 print "Analysis of oligomer occurrences in nucleotidic of peptidic sequences<P>\n";
+print "Reference: <a target='_blank' href='http://www.ncbi.nlm.nih.gov/pubmed/9719638'>van Helden, J., Andr&eacute;, B. and Collado-Vides, J. (1998). . J Mol Biol 281, 827-42.</a><p>";
 print "</center>";
-print "<b>Reference</b>: van Helden, J., Andre, B. and Collado-Vides, J. (1998). Extracting regulatory sites from the upstream region of yeast genes by computational analysis of oligonucleotide frequencies. J Mol Biol 281, 827-42.<p>";
 print "<hr>";
 
 &ListDefaultParameters() if ($ENV{rsat_echo} >= 2);
