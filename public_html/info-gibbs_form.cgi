@@ -47,7 +47,8 @@ foreach $key (keys %default) {
 &RSA_header("info-gibbs", "form");
 print '<style><!-- textarea {height: 100px; width: 510px;}--></style>';
 print "<center>\n";
-print "Matrix-based pattern discovery using Gibbs sampling<br />\n";
+print "Matrix-based pattern discovery using Gibbs sampling\n";
+print "<br>Reference: <a target='_blank' href=\"http://www.ncbi.nlm.nih.gov/pubmed/19689955\">Defrance & van Helden, Bioinformatics 2009</a>.</a>";
 print "</center>\n";
 
 
