@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.61 2009/08/04 21:26:47 jvanheld Exp $
+# $Id: matrix-quality,v 1.62 2009/09/04 14:34:49 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -27,9 +27,16 @@ distributions between "positive" sequences (e.g. true binding sites
 for the considered transcription factor) and "negative" sequences
 (e.g. intergenic sequences between convergently transcribed genes).
 
-=head2 Leave-One-Out test
+=head2 Positive set : annotated binding sites
 
-An important bias can result from an over-fitting of the matrix to the
+The typical positive set is a collection of sites that have been shown
+(with experimental methods) to bind the transcription factor of
+interest.
+
+=head3 Leave-One-Out test
+
+An important bias of evaluation (and a frequent trap in published
+articles) can result from an over-fitting of the matrix to the
 positive set, in case one would use the same sites for building the
 PSSM and for evaluating it. To avoid this bias, the option -loo allows
 to perform a Leave-One-Out (LOO) evaluation of the positive set: one
@@ -46,23 +53,51 @@ that includes both the matrix and the sites (sequences) that were used
 to build this matrix. This is the case for matrices in MEME or
 consensus formats.
 
+=head2 Negative set
+
+It is sometimes difficult to find a good negative set, i.e. a
+collection of sequences which supposedly do not contain any binding
+site for the transcription factor of interest. 
+
+=head3 Random selection of biological sequences
+
+One possibility is to select a random set of genome fragments
+(e.g. use I<random-genes> to select promoters of 100 randomly selected
+genes). However, some of these randomly selected sequences might
+contain effective binding sites for the transcripton factor.
+
+=head3 Artificial sequences
+
+Another possiblity is to generate artificial sequences according to
+some background model (uing I<random-seq>), but there is always a risk
+that for model to be an over-simplification of the real sequences.
+
+=head3 Biological sequences scanned with column-permuted matrices
+
+Yet another approach to perform the negative test os to scan
+biological sequences (e.g. upstream regions of 100 randomly picked
+genes) with column-permuted matrices. The advantage of this approach
+is that the sequences are realistic, but the permuted matrices
+hopefully do not correspond to any actual motif, and their empirical
+distribution observed in the test sequences is thus supposed to fit
+the theoretcial distribution.
+
+This approach may however pose problem in the specific case of
+weak-complexity motifs (e.g. CCGCCC, AATTTT), since many permutations
+will give motifs that are similar, if not equal, to the original
+motif.
+
 =head1 AUTHORS
 
 =over
 
-=item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
+=item Jacques van Helden <jvanheld@bigre.ulb.ac.be>
 
-with help of
+=item Morgane Thomas-Chollier <morgane@bigre.ulb.ac.be>
 
-=over
-
-=item Morgane Thomas-Chollier <morgane@scmbb.ulb.ac.be>
-
-=item Alejandra Medina-Rivera (CCG, Mexico) 
+=item Alejandra Medina-Rivera (CCG, Mexico)
 
 =item Cei Abreu (Sanger Institute, UK)
-
-=back
 
 =back
 
@@ -233,7 +268,6 @@ package main;
     ################################################################
     ## Read input matrix.
     my $matrix_file = $infile{matrix};
-
     my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
 
     ## Check the number of parsed matrices
@@ -294,7 +328,6 @@ package main;
     		push (@th_distrib_files, $distrib_outfile);
     	}
     }
-
 
     ## Other sequence files
     foreach my $seq_type (@seq_types) {
@@ -484,7 +517,7 @@ Matrix file.
 	} elsif ($arg eq "-m") {
  	  &RSAT::error::FatalError("Options -ms and -m are mutually incompatible.") 
 	    if ($main::infile{matrix_sites});
-	  &RSAT::error::FatalError("You are not allowed to specify several matrices.") 
+	  &RSAT::error::FatalError("You are not allowed to specify several matrices.")
 	    if ($main::infile{matrix});
 	  $main::infile{matrix} = shift(@arguments);
 
@@ -528,33 +561,7 @@ Format of the matrix file.
 	} elsif ($arg eq "-matrix_format") {
 	    $matrix_format = shift(@arguments);
 
-# 	    ## File containing the positive sequence set
-# =pod
-
-# =item B<-pos positive_seq_file>
-
-# File containing the positive sequence set.
-
-# =cut
-# 	} elsif ($arg eq "-pos") {
-# 	  &RSAT::error::FatalError("Options -pos and -ms are mutually incompatible.") 
-# 	    if ($main::infile{matrix_sites});
-# 	  $main::seqfile{positive} = shift(@arguments);
-# 	  push @seq_types, "positive";
-
-# 	    ## File containing the negative sequence set
-# =pod
-
-# =item B<-neg neg_seq_file>
-
-# File containing the negative sequence set.
-
-# =cut
-# 	} elsif ($arg eq "-negative") {
-# 	    $main::seqfile{negative} = shift(@arguments);
-#          push @seq_types, "negative";
-
-	    ## File containing a sequence set of a specific type
+	    ## File containing a sequence set of a given type
 =pod
 
 =item B<-seq seq_type seq_file>
@@ -568,7 +575,7 @@ leend of the plots), and the second next argument the file name.
 	 my $seq_type = shift(@arguments);
 	 $main::seqfile{$seq_type} =
 	   shift(@arguments);
-         push @seq_types, $seq_type;
+         push @main::seq_types, $seq_type;
 
 	    ## Sequence-specific scanning options
 =pod
@@ -737,8 +744,8 @@ details).
 
 =item B<-decimals #>
 
-Number of decimals for computing weight scores (default 2).
-This arguments is passed to matrix-scan and matrix-distrib.
+Number of decimals for computing weight scores (default 2).  This
+arguments is passed to I<matrix-scan> and I<matrix-distrib>.
 
 =cut
 	} elsif ($arg eq "-decimals") {
@@ -770,7 +777,7 @@ Scores of the positive sequence set.
 
 =item B<-graph_option 'option1 options2 ...'>
 
-Specify options that will be passed to the program XYgraph for
+Specify options that will be passed to the program I<XYgraph> for
 generating the distribution curves. Beware: if an option requires to
 be followed by a value (ex -xsize 1000), you have to embrace the
 option and its value in quotes.
@@ -805,7 +812,7 @@ Reference distribution for the ROC curve.
 
 =item B<-roc_option 'option1 options2 ...'>
 
-Specify options that will be passed to the program XYgraph for
+Specify options that will be passed to the program I<XYgraph> for
 generating the ROC curves. Beware: if an option requires to
 be followed by a value (ex -xsize 1000), you have to embrace the
 option and its value in quotes.
@@ -920,7 +927,7 @@ can be specified with the same options as for I<matrix-scan>.
 
 =item B<Other options>
 
-All the other options are automatically passed to matrix-scan, in
+All the other options are automatically passed to I<matrix-scan>, in
 order to specify the scanning parameters (strands, background model,
 ...).
 
@@ -957,7 +964,7 @@ sub ExportInputSites {
 
   $main::outfile{matrix_sites} = $outfile{prefix}."_matrix_sites.fasta";
   $main::seqfile{matrix_sites} = $main::outfile{matrix_sites} if ($infile{matrix_sites});
-  push @seq_types, "matrix_sites";
+  push @main::seq_types, "matrix_sites";
   &RSAT::message::TimeWarn("Exporting matrix sites to file", $outfile{matrix_sites}) 
     if ($main::verbose >= 1);
   my $site_handler = &OpenOutputFile($outfile{matrix_sites});
@@ -971,7 +978,7 @@ sub ExportInputSites {
 
   ## Specific options for scanning matrix sites
   $scanopt{matrix_sites} = "" unless ($scanopt{matrix_sites});
-  $scanopt{matrix_sites} .= " -1str"; ## the sites from the matrix itself should be scanned only in the orientation where they were used to build the matrix
+  $scanopt{matrix_sites} .= " -1str"; ## the sites from the matrix itself should be scanned only in the orientation used to build the matrix
   $scanopt{matrix_sites} .= " -uth rank_pm 1"; ## Only the top score has to be taken for the matrix sites
 }
 
@@ -1623,9 +1630,17 @@ __END__
 
 =item B<matrix-scan>
 
+Called by I<matrix-quality> for scanning the different sets (positive,
+negative) with the input matrix.
+
 =item B<matrix-distrib>
 
+Called by I<matrix-quality> for computing the theoretical
+distribution of scores.
+
 =item B<convert-matrix>
+
+Called by I<mateix-quality> to generate column-permuted matrices.
 
 =back
 
@@ -1640,7 +1655,8 @@ drive (see Lucia Nikolaia).
 
 =item B<-index>
 
-Generate a HTML index pointing towards the different files generated by <i>matrix-quality/i>.
+Generate a HTML index pointing towards the different files generated
+by I<matrix-quality>.
 
 =back
 
