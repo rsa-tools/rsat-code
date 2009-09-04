@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-distrib,v 1.13 2008/09/24 16:31:54 jvanheld Exp $
+# $Id: matrix-distrib,v 1.14 2009/09/04 14:34:22 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -504,7 +504,7 @@ Pseudo-count for the matrix (default: 1). See matrix-scan for details.
 	    ## Background model format
 =pod
 
-=item B<-bg_format matrix_format>
+=item B<-bg_format background_format>
 
         Supported formats: all the input formats supported by
         convert-background-model.
