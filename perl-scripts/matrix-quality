@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.62 2009/09/04 14:34:49 jvanheld Exp $
+# $Id: matrix-quality,v 1.63 2009/09/04 15:44:33 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -87,6 +87,81 @@ weak-complexity motifs (e.g. CCGCCC, AATTTT), since many permutations
 will give motifs that are similar, if not equal, to the original
 motif.
 
+=head1 HOW TO USE THIS PROGRAM ?
+
+Let us be frank, this program can do many things, but requires a bit
+of expertise. A good strategy to get familiar with its multiple
+results is to start runing the simplest possible analysis, and
+progressively adding the more advanced tasks. 
+
+We propose hereafter a step-by-step schedule of utilization, where
+subsequent tasks are progressively added.
+
+We assume here that the user disposes of a PSSM in a format that
+includes both the matrix and the aligned sites used to compute the
+matrix (e.g. MEME format). Beware, the sites actually incorporated in
+the matrix may differ frfom the collection of sites used as input for
+the matrix-building program. For instance, if you use MEME (with the
+option -zoops) to build a matrix from a collection of annotated TFBS,
+some sites may be incorporated in the matrix, and some other
+skipped. We use hereafter the expression B<"matrix sites"> to refer to
+the sites used in the alignment from which the residues frequencies of
+the matrix were computed.
+
+=head2 Comparing the scores of the matrix sites to the theoretical
+distribution
+
+ matrix-quality -v 1 -ms my_matrix.meme -matrix_format meme \
+   -noloo -perm matrix_sites 0 -bgfile my_background.txt \
+   -o my_matrix_quality
+
+This will produce the simplest possible analysis: computing the score
+distribution of the matrix sites, and comparing it to the theoretical
+distribution.
+
+Beware: the score distribution of matrix sites is fake. Indeed, those
+are the very stes that were used to build the matrix. Each site partly
+contributed to the matrix scores (weights) that will serve to score
+it. There is thus a problem of over-fitting: we train a matrix with
+some data, and we evaluate the matrix with the same data.
+
+=head2 Assessing matrix sites with a Leave-One-Out (LOO) procedure
+
+To circumvent the problem of over-fitting mentioned above, we have
+need to perform the Leave-One-Out (LOO) procedure. Actually,
+I<matrix-scan> automatically runs the leave-one-out test by
+default. The reason why it was not done in the previous section is
+because we used the option -noloo, for the only purpose of
+illustrating the problem of overfitting. We will now run
+I<matrix-scan> in the normal way, without inactivating the LOO
+procedure.
+
+ matrix-quality -v 1 -ms my_matrix.meme -matrix_format meme \
+   -perm matrix_sites 0 -bgfile my_background.txt \
+   -o my_matrix_quality
+
+The result distributions now contain 3 curves: 
+
+=over
+
+=item theory
+
+The theoretical
+distribution of scores, computing according to the background model;
+
+=item matrix_sites
+
+The score distribution of the matrix sites (which is biased by the
+fact that these sites were used to build the matrix).
+
+=item matrix_sites_loo
+
+This is the distribution of scores for the matrix sites, evaluated
+with the LOO procedure.
+
+=back
+
+
 =head1 AUTHORS
 
 =over
@@ -154,6 +229,7 @@ package main;
     $class_interval = 1/(10**$decimals);
     %perm_nb = (); ## Number of permutations per sequence set
     $perm_separate_distrib = 0; ## Calcualte the distribution for each permuted matrix separately
+    $noloo = 0; # Inactivate the leave-one-out test and all the related outputs
     $loo_rm_twin = 1; ## Also exclude twin sites in the loo procedure.
     $pseudo_counts = 1;
     $bg_format = "oligos";
@@ -309,24 +385,26 @@ package main;
     ## Calculate score distributions in the different input sequence files
 
     ## Calculate the Leave-one-out score distribution for the matrix sites
-    if (($tasks{loo}) || ($tasks{compare}) || ($tasks{graphs})) {
-      $main::outfile{matrix_sites_loo} = $outfile{prefix}."_matrix_sites_loo.tab";
-      $outfile{matrix_sites_loo_distrib} = $outfile{prefix}."_scan_matrix_sites_loo_score_distrib.tab";
-      push @distrib_files, $outfile{matrix_sites_loo_distrib}; $file_nb{matrix_sites_loo_distrib} = scalar(@distrib_files);
-    }
-    if ($tasks{loo}) {
-      &LOO_scores($matrix, @matrix_scan_options);
-    }
+    unless ($noloo) {
+      if (($tasks{loo}) || ($tasks{compare}) || ($tasks{graphs})) {
+	$main::outfile{matrix_sites_loo} = $outfile{prefix}."_matrix_sites_loo.tab";
+	$outfile{matrix_sites_loo_distrib} = $outfile{prefix}."_scan_matrix_sites_loo_score_distrib.tab";
+	push @distrib_files, $outfile{matrix_sites_loo_distrib}; $file_nb{matrix_sites_loo_distrib} = scalar(@distrib_files);
+      }
+      if ($tasks{loo}) {
+	&LOO_scores($matrix, @matrix_scan_options);
+      }
 
-    ## Calculate the theorical distributions of LOO partial matrices
-    if ($tasks{theor_loo}) {
+      ## Calculate the theorical distributions of LOO partial matrices
+      if ($tasks{theor_loo}) {
     	our @th_distrib_files =();
     	foreach my $partial_matrix (@partial_matrix_files) {
-    		my $distrib_outfile = $partial_matrix;
-    		$distrib_outfile =~ s/\.tab/\_theor_score_distrib\.tab/;
-    		&PrintTheorScoreDistribution($partial_matrix,$distrib_outfile);
-    		push (@th_distrib_files, $distrib_outfile);
+	  my $distrib_outfile = $partial_matrix;
+	  $distrib_outfile =~ s/\.tab/\_theor_score_distrib\.tab/;
+	  &PrintTheorScoreDistribution($partial_matrix,$distrib_outfile);
+	  push (@th_distrib_files, $distrib_outfile);
     	}
+      }
     }
 
     ## Other sequence files
@@ -600,10 +678,7 @@ Do not apply the leave-one-out (LOO) test on the positive sequences.
 
 =cut
 	} elsif ($arg eq "-noloo") {
-	  $supported_tasks{loo} = 0;
-	  if (defined($tasks{loo})) {
-	    $tasks{loo} = 0;
-	  }
+	  $main::noloo = 1;
 
 	    ## Skip the matrix permutation step
 =pod
@@ -1483,48 +1558,50 @@ sub CompareDistrib {
       &RSAT::message::Info("ROC curve icon (log XY)", $outfile{distrib_compa}."_roc_xylog_small.".$image_format) if ($main::verbose >= 1);
 
 
-      if ($tasks{theor_loo}) {
+      unless ($noloo) {
+	if ($tasks{theor_loo}) {
 
-	$outfile{th_distrib_compa} = $outfile{prefix}."_theorical_score_distrib_compa";
+	  $outfile{th_distrib_compa} = $outfile{prefix}."_theorical_score_distrib_compa";
 
-	################################################################
-    	## Compare the theorical distributions
-    	my $distrib_compa_cmd = "compare-scores ";
-    	$distrib_compa_cmd .= " -numeric";
-    	$distrib_compa_cmd .= " -sc 4";	# score column for the theoretical distribution
-    	$distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_";
-    	$distrib_compa_cmd .= " -suppress .tab";
-    	$distrib_compa_cmd .= " -o ".$outfile{th_distrib_compa}.".tab";
-    	$distrib_compa_cmd .= " -files ";
-    	$distrib_compa_cmd .= join(" ", $main::outfile{'theoretical_distrib'}, @th_distrib_files);
-    	&doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	  ################################################################
+	  ## Compare the theorical distributions
+	  my $distrib_compa_cmd = "compare-scores ";
+	  $distrib_compa_cmd .= " -numeric";
+	  $distrib_compa_cmd .= " -sc 4";	# score column for the theoretical distribution
+	  $distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_";
+	  $distrib_compa_cmd .= " -suppress .tab";
+	  $distrib_compa_cmd .= " -o ".$outfile{th_distrib_compa}.".tab";
+	  $distrib_compa_cmd .= " -files ";
+	  $distrib_compa_cmd .= join(" ", $main::outfile{'theoretical_distrib'}, @th_distrib_files);
+	  &doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
-	################################################################
-	## draw a graph with the theorical distributions of partial and complete matrix
-	## General options for all the graphs below
-    	$all_graph_options =~ s/$outfile{distrib_compa}/$outfile{th_distrib_compa}/g; 
+	  ################################################################
+	  ## draw a graph with the theorical distributions of partial and complete matrix
+	  ## General options for all the graphs below
+	  $all_graph_options =~ s/$outfile{distrib_compa}/$outfile{th_distrib_compa}/g; 
 
-    	################################################################
-	## Draw a graph with all the inverse cumulative distributions
-    	my $XYgraph_cmd = "XYgraph ".$all_graph_options;
-    	my $ycols = join ",", 2..(scalar(@th_distrib_files)+2);
-    	$XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
-    	$XYgraph_cmd .= " -ymin 0  -ymax 1 ";
-	$XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-	$graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{th_distrib_compa}.".".$image_format;
-	&doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
+	  ################################################################
+	  ## Draw a graph with all the inverse cumulative distributions
+	  my $XYgraph_cmd = "XYgraph ".$all_graph_options;
+	  my $ycols = join ",", 2..(scalar(@th_distrib_files)+2);
+	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
+	  $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+	  $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+	  $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{th_distrib_compa}.".".$image_format;
+	  &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	  print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
 
-	################################################################
-	## Draw a graph with all the inverse cumulative distributions
-	## and a logarithmic Y axis
-	$XYgraph_cmd = "XYgraph ".$all_graph_options;
-	$XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
-	$XYgraph_cmd .= " -ymax 1 -ylog 10";
-	$XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-	$graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{th_distrib_compa}."_logy.".$image_format;
-	&doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
+	  ################################################################
+	  ## Draw a graph with all the inverse cumulative distributions
+	  ## and a logarithmic Y axis
+	  $XYgraph_cmd = "XYgraph ".$all_graph_options;
+	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
+	  $XYgraph_cmd .= " -ymax 1 -ylog 10";
+	  $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
+	  $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{th_distrib_compa}."_logy.".$image_format;
+	  &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	  print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
+	}
       }
     }
   }
