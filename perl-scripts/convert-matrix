@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.79 2009/06/25 16:34:50 morgane Exp $
+# $Id: convert-matrix,v 1.80 2009/09/04 14:33:46 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -546,7 +546,7 @@ OPTIONS
 
 		For instance
 		    -logo_opt '-w 12' -logo_opt '-t "CRP matrix" -a'
-		will add the followin options to the commande seqlogo:
+		will add the following options to the commande seqlogo:
 		     -w 12 -t "CRP matrix" -a
 
 		To obtain the list of options supported by seqlogo, type
