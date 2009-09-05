@@ -2035,6 +2035,7 @@ sub ReadColors {
 	next if (/^\#/); ## Skip header lines
 	next if (/^;/); ## Skip comment lines
 	chomp();
+	s/\s+/\t/;
 	my @fields = split(/\t/);
 	my $id = shift(@fields);
 	unless ($id) {
