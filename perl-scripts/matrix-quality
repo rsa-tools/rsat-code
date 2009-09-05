@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.63 2009/09/04 15:44:33 jvanheld Exp $
+# $Id: matrix-quality,v 1.64 2009/09/05 09:47:35 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -343,7 +343,8 @@ package main;
 
     ################################################################
     ## Read input matrix.
-    my $matrix_file = $infile{matrix};
+    local $matrix_file = $infile{matrix};
+    &RSAT::message::TimeWarn("Reading matrix", $matrix_file) if ($main::verbose >= 1);
     my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
 
     ## Check the number of parsed matrices
@@ -371,11 +372,11 @@ package main;
 
     ## Shuffle the columns of the matrix (permutation test)
     local $perm_nb_max = &RSAT::stats::checked_max(0, values %perm_nb);
-    print "; Number of permutations\n";
+    print "; Sequence sets (name, permutations, file)\n";
     foreach my $seq_type (@seq_types) {
 	print join("\t", $seq_type, $perm_nb{$seq_type} || 0, $seqfile{$seq_type}), "\n";
     }
-    &PermuteMatrixColumns() if ($perm_nb_max > 0);
+    &PermuteMatrixColumns() if ($tasks{permute}) && (($perm_nb_max > 0));
 
     ## Calculate theoretical distribution of probabilities
     $main::outfile{'theoretical_distrib'} = $main::outfile{prefix}."_theor_score_distrib.tab";
@@ -938,7 +939,7 @@ Example:
 =item B<-task tasks>
 
 List of tasks to perform. If this option is not specified, all the
-tasks are performed. 
+tasks are performed.
 
 Note that some tasks depend on other ones. This option should thus be
 used with caution, by experimented users only.
@@ -1182,7 +1183,7 @@ sub CalcSequenceDistrib {
   my ($sequence_file, $matrix_file, $matrix_format, $seq_type, @args) = @_;
 
   ## Define the output file for the current sequence type
-  $main::outfile{$seq_type} = $outfile{prefix}."_scan_".$seq_type."_score_distrib.tab";  
+  $main::outfile{$seq_type} = $outfile{prefix}."_scan_".$seq_type."_score_distrib.tab";
 
 
   ## Prepare the matrix-scan command
@@ -1383,12 +1384,12 @@ sub ExportTabMatrix {
 ## Export the matrix in tab-delimited format. This will be used
 ## for permuting the matrix.
 sub PermuteMatrixColumns {
-    &RSAT::message::TimeWarn("Permuting matrix columns", $perm_nb_max, "permutations")
-      if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Permuting matrix columns", $perm_nb_max, "permutations")
+    if ($main::verbose >= 1);
 
   ## Single file regrouping all the permuted matrices for each sequence type
   foreach my $seq_type (sort keys %seqfile) {
-   $outfile{$seq_type.'_matrix_perm_col_all'} = $outfile{prefix}."_".$seq_type."_matrix_perm_col_all_".$perm_nb{$seq_type}.".tab";
+    $outfile{$seq_type.'_matrix_perm_col_all'} = $outfile{prefix}."_".$seq_type."_matrix_perm_col_all_".$perm_nb{$seq_type}.".tab";
     $init_matrix_cmd = "rm -f ".$outfile{$seq_type.'_matrix_perm_col_all'};
     &doit($init_matrix_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
   }
@@ -1418,14 +1419,13 @@ sub PermuteMatrixColumns {
 ## Compare the score distribution files
 sub CompareDistrib {
   my ($score_column, @distrib_files) = @_;
-  
+
   $outfile{distrib_compa} = $outfile{prefix}."_score_distrib_compa";
-  
-  
+
   if ($tasks{compare}) {
     &RSAT::message::TimeWarn("Comparing score distributions",  $outfile{distrib_compa}) 
       if ($main::verbose >= 1);
-    
+
     ################################################################
     ## Compare the distributions
     my $distrib_compa_cmd = "compare-scores ";
@@ -1443,7 +1443,7 @@ sub CompareDistrib {
 
 
   if ($tasks{graphs}) {
-    &RSAT::message::TimeWarn("Generating comparison graphs") 
+    &RSAT::message::TimeWarn("Generating comparison graphs")
       if ($main::verbose >= 1);
 
     ## Generate the graphs for each image format
@@ -1454,8 +1454,8 @@ sub CompareDistrib {
       $all_graph_options .= " -format ".$image_format." -lines -pointsize 0";
 
       ## Alternative options for the large graphs and for the icons, respectively
-      my $large_graph_options = " -title1 'ROC curve ".$infile{matrix}."'";
-      $large_graph_options .= " -title2 ".$outfile{prefix};
+      my $large_graph_options = " -title1 '".$matrix_name."'";
+#      $large_graph_options .= " -title2 ".$outfile{prefix};
       $large_graph_options .= " -legend ";
       $large_graph_options .= " -xsize 800 -ysize 400 ";
       $large_graph_options .= " -xleg1 'matrix score' ";
@@ -1472,7 +1472,7 @@ sub CompareDistrib {
       $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
       $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}.".".$image_format;
       &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-      &RSAT::message::Info("Distribution comparison graph", $outfile{distrib_compa}.".".$image_format) if ($main::verbose >= 1);
+      &RSAT::message::Info("Distribution comparison graph", $outfile{distrib_compa}.".".$image_format) if ($main::verbose >= 2);
       print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
 
       ## Generate the icon
@@ -1488,13 +1488,15 @@ sub CompareDistrib {
       $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
       $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}."_logy.".$image_format;
       &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-      &RSAT::message::Info("Distribution comparison graph (log Y)", $outfile{distrib_compa}."_logy.".$image_format) if ($main::verbose >= 1);
+      &RSAT::message::Info("Distribution comparison graph (log Y)", $outfile{distrib_compa}."_logy.".$image_format) 
+	if ($main::verbose >= 2);
       print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
 
       ## Generate the icon
       $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_logy_small.".$image_format;
       &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-      &RSAT::message::Info("Distribution comparison icon (log Y)", $outfile{distrib_compa}."_logy_small.".$image_format) if ($main::verbose >= 1);
+      &RSAT::message::Info("Distribution comparison icon (log Y)", $outfile{distrib_compa}."_logy_small.".$image_format) 
+	if ($main::verbose >= 2);
 
       ################################################################
       ## Draw a ROC curve
@@ -1520,43 +1522,56 @@ sub CompareDistrib {
       $XYgraph_cmd .= " -ymax 1 ";
       $XYgraph_cmd .= " -xmax 1 ";
       my $roc_file_opt = $large_graph_options.$roc_options." -o ".$outfile{distrib_compa}."_roc.".$image_format;
-      $roc_file_opt .= " -xleg1 'Reference set : ".$roc_ref."' ";
-      $roc_file_opt .= " -yleg1 'other distributions' ";
-      &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-      &RSAT::message::Info("ROC curve graph", $outfile{distrib_compa}."_roc.".$image_format) if ($main::verbose >= 1);
-      print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
-
-      ## Generate the icon for the ROC curve
-      $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_small.".$image_format;
-      &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-      &RSAT::message::Info("ROC curve icon", $outfile{distrib_compa}."_roc_small.".$image_format) if ($main::verbose >= 1);
+      $roc_file_opt .= " -xleg1 'FPR (Reference = ".$roc_ref.")' ";
+      $roc_file_opt .= " -yleg1 'Site Sn + other distributions' ";
 
       ################################################################
-      ## Draw a ROC curve with xlog
+      ## Draw a ROC curve with non-logarithmic axes
+      ## Beware: this curve is generally not informative, so I inactivate this drawing.
+      ## In case it would appear useful for some purpose, I would add an option "-ROC_nolog"
+      my $ROC_nolog = 0;
+      if ($ROC_nolog) {
+	&doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	&RSAT::message::Info("ROC curve graph", $outfile{distrib_compa}."_roc.".$image_format) if ($main::verbose >= 2);
+	print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
+
+	## Generate the icon for the ROC curve
+	$icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_small.".$image_format;
+	&doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	&RSAT::message::Info("ROC curve icon", $outfile{distrib_compa}."_roc_small.".$image_format) if ($main::verbose >= 2);
+      }
+
+      ################################################################
+      ## Draw a ROC curve with xlog This is the relevant way to
+      ## display the ROC curve with pattern matching, because we are
+      ## only interested in the low FPR values (< 10-3), which are not
+      ## visible on the non-log representations.
       $XYgraph_cmd =~ s/XYgraph/XYgraph -xlog 10/;
       $roc_file_opt =~ s/_roc/_roc_xlog/;
       &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-      &RSAT::message::Info("ROC curve graph (log X)", $outfile{distrib_compa}."_roc_xlog.".$image_format) if ($main::verbose >= 1);
+      &RSAT::message::Info("ROC curve graph (log X)", $outfile{distrib_compa}."_roc_xlog.".$image_format) if ($main::verbose >= 2);
       print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
 
       ## Generate the icon for the ROC curve
       $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xlog_small.".$image_format;
       &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-      &RSAT::message::Info("ROC curve icon (log X)", $outfile{distrib_compa}."_roc_xlog_small.".$image_format) if ($main::verbose >= 1);
+      &RSAT::message::Info("ROC curve icon (log X)", $outfile{distrib_compa}."_roc_xlog_small.".$image_format) if ($main::verbose >= 2);
 
       ################################################################
       ## Draw a ROC curve with xylog
-      $XYgraph_cmd =~ s/XYgraph/XYgraph -ylog 10/;
-      $roc_file_opt =~ s/_roc_xlog/_roc_xylog/;
-      &doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-      &RSAT::message::Info("ROC curve graph (log XY)", $outfile{distrib_compa}."_roc_xylog.".$image_format) if ($main::verbose >= 1);
-      print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
+      my $ROC_xylog = 0;
+      if ($ROC_xylog) {
+	$XYgraph_cmd =~ s/XYgraph/XYgraph -ylog 10/;
+	$roc_file_opt =~ s/_roc_xlog/_roc_xylog/;
+	&doit($XYgraph_cmd.$roc_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	&RSAT::message::Info("ROC curve graph (log XY)", $outfile{distrib_compa}."_roc_xylog.".$image_format) if ($main::verbose >= 2);
+	print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
 
-      ## Generate the icon for the ROC curve
-      $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xylog_small.".$image_format;
-      &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-      &RSAT::message::Info("ROC curve icon (log XY)", $outfile{distrib_compa}."_roc_xylog_small.".$image_format) if ($main::verbose >= 1);
-
+	## Generate the icon for the ROC curve
+	$icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xylog_small.".$image_format;
+	&doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	&RSAT::message::Info("ROC curve icon (log XY)", $outfile{distrib_compa}."_roc_xylog_small.".$image_format) if ($main::verbose >= 2);
+      }
 
       unless ($noloo) {
 	if ($tasks{theor_loo}) {
