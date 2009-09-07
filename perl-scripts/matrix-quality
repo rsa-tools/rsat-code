@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.64 2009/09/05 09:47:35 jvanheld Exp $
+# $Id: matrix-quality,v 1.65 2009/09/07 07:56:26 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -372,9 +372,9 @@ package main;
 
     ## Shuffle the columns of the matrix (permutation test)
     local $perm_nb_max = &RSAT::stats::checked_max(0, values %perm_nb);
-    print "; Sequence sets (name, permutations, file)\n";
+    print $main::out "; Sequence sets (name, permutations, file)";
     foreach my $seq_type (@seq_types) {
-	print join("\t", $seq_type, $perm_nb{$seq_type} || 0, $seqfile{$seq_type}), "\n";
+      print $main::out join("\t", ";", $seq_type, $perm_nb{$seq_type} || 0, $seqfile{$seq_type}), "\n";
     }
     &PermuteMatrixColumns() if ($tasks{permute}) && (($perm_nb_max > 0));
 
@@ -1116,11 +1116,11 @@ sub LOO_scores {
     my $partial_matrix_file = $outfile{prefix}."_partial_matrix_".$lo_site_nb.".tab";
     push @partial_matrix_files,  $partial_matrix_file;
     if ($main::verbose >= 1) {
-		my @partial_matrix_sites = $partial_matrix->get_attribute("sequences");
-		printf $main::out (";\t%s\t%d sites\t%s\n", 
-				   $partial_matrix_name, 
-				   scalar(@partial_matrix_sites), 
-				   $partial_matrix_file);
+      my @partial_matrix_sites = $partial_matrix->get_attribute("sequences");
+      printf $main::out (";\t%s\t%d sites\t%s\n",
+			 $partial_matrix_name,
+			 scalar(@partial_matrix_sites),
+			 $partial_matrix_file);
     }
 
     &RSAT::message::Info("Exporting partial matrix to file", $partial_matrix_file) if ($main::verbose >= 3);
@@ -1157,13 +1157,12 @@ sub LOO_scores {
   }
 
   ## Print the LOO parameters in the log file
-  print $main::out "; Scanning parameters for sequence type\t", $seq_type, "\n";
-  print $main::out "; matrix-scan command\n";
+  print $main::out "\n; ", &AlphaDate(), "\trunning matrix-scan\n";
   printf $main::out ";\t%-22s\t%s\n", "Sequence type", $seq_type;
   if (defined($main::scanopt{$seq_type})) {
       printf $main::out ";\t%-22s\t%s\n", "Type-specific options", $scanopt{$seq_type};
   }
-  print $main::out ";\n";
+  print $main::out "\n";
   close $loo_scores_handle;
 
   ## Prepare and run the classfreq command (to extract the distribution from the scores)
@@ -1185,13 +1184,14 @@ sub CalcSequenceDistrib {
   ## Define the output file for the current sequence type
   $main::outfile{$seq_type} = $outfile{prefix}."_scan_".$seq_type."_score_distrib.tab";
 
+  ## TO CHECK: is it faster to run matrix-distrib than matrix-scan | classfreq ?
 
   ## Prepare the matrix-scan command
   &RSAT::message::TimeWarn("Scoring sequences of type", $seq_type,  $outfile{$seq_type}) 
     if ($main::verbose >= 1);
   my $matrix_scan_cmd = "matrix-scan -v ".$main::verbose;
   $matrix_scan_cmd .= " -decimals ".$decimals;
-  $matrix_scan_cmd .= " -top_matrices 1";
+#  $matrix_scan_cmd .= " -top_matrices 1"; ## We cannot restrict to the top matrix, because the permutation test involves several matrices (one per permutation)
   $matrix_scan_cmd .= " -i ".$sequence_file;
   $matrix_scan_cmd .= " -m ".$matrix_file;
   $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
@@ -1221,15 +1221,14 @@ sub CalcSequenceDistrib {
   $matrix_scan_cmd .= " -o ".$outfile{$seq_type};
 
   ## Print the complete command in the log file
-  print $main::out "; Scanning parameters for sequence type\t", $seq_type, "\n";
-  print $main::out "; matrix-scan command\n";
+  print $main::out "\n; ", &AlphaDate(), "\trunning  matrix-scan\n";
   printf $main::out ";\t%-22s\t%s\n", "Sequence type", $seq_type;
   printf $main::out ";\t%-22s\t%s\n", "Sequence file", $sequence_file;
   if (defined($main::scanopt{$seq_type})) {
       printf $main::out ";\t%-22s\t%s\n", "Type-specific options", $scanopt{$seq_type};
   }
   printf $main::out ";%-22s\n%s\n", "Command:", $matrix_scan_cmd;
-  print $main::out ";\n";
+  print $main::out "\n";
 
 
   ## Execute the command
