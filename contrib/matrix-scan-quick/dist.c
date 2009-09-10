@@ -32,11 +32,20 @@ void values_add(values_t *values, double value)
 
 void values_print(values_t *values)
 {
-    printf("#score\tocc\n");
     int i;
+    int total = 0;
     for (i = 0; i < values->size; i++)
     {
-        if (values->data[i] > 0)
-            printf("%.4f\t%d\n", values->min + i * values->e, values->data[i]);
+        total += values->data[i];
+    }
+
+    fprintf(stdout, "#score\tocc\tcco\tccdf\n");
+    int cum = 0;
+    for (i = 0; i < values->size; i++)
+    {
+        if (values->data[i] <= 0)
+            continue;
+        printf("%.4f\t%d\t%d\t%.6f\n", values->min + i * values->e, values->data[i], total - cum, (total - cum) / (double) total);
+        cum += values->data[i];
     }
 }
