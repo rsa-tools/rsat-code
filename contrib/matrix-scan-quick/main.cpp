@@ -52,6 +52,10 @@ void help()
 "\n"
 "DESCRIPTION\n"
 "        Faster and limited version of matrix-scan.\n"
+"        This program takes as input a matrix and a sequence file, \n"
+"        and returns either the matching positions (default), or the\n"
+"        full distribution of scores observed in the whole sequence\n"
+"        (option -distrib).\n"
 "\n"
 "CATEGORY\n"
 "        sequences\n"
@@ -74,7 +78,12 @@ void help()
 "    see convert-background-model for details.\n"
 "\n"
 "OUTPUT FORMAT\n"
+"  Matches (default):\n"
 "    The output is a tab-delimited file, with one row per match.\n"
+"\n"
+"  Distribution (option -distrib):\n"
+"    The output is a tab-delimited file, with one row per weight\n"
+"    score.\n"
 "\n"
 "SCORING SCHEME\n"
 "    See matrix-scan -h for details.\n"
@@ -209,7 +218,7 @@ int main(int argc, char *argv[])
 
     if (matfile == NULL)
     {
-        ERROR("At least a matrix and DNA sequences must be provied");
+        ERROR("You should specify at least a matrix file and a DNA sequence file");
     }
     Array matrix;
     read_matrix(matrix, matfile);
