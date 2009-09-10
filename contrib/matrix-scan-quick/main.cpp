@@ -193,8 +193,11 @@ int main(int argc, char *argv[])
         {
             ASSERT(argc > i + 1, "-t requires a number");
             theshold = atof(argv[++i]);
-        } 
-        
+        }
+        else
+        {
+            ERROR("invalid option %s", argv[i]);
+        }
     }
 
     if (argc <= 1)

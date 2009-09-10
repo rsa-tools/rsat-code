@@ -1,4 +1,5 @@
 #include "markov.h"
+#include "utils.h"
 
 #define SNF               1
 #define OLIGO_FREQUENCY   2
@@ -51,8 +52,8 @@ int load_inclusive(Markov &m, string filename)
     f.open(filename.c_str());
     if (!f) 
     {
-        cerr << "Unable to open file '" << filename << "'" << endl;
-        exit(1);
+        ERROR("unable to open '%s'", filename.c_str());
+        return 0;
     }
     string line;
     char const *buffer;
@@ -61,6 +62,14 @@ int load_inclusive(Markov &m, string filename)
     int s = 0;
     int t = 0;
     float val[4];
+    
+    getline(f, line);
+    if (strncmp(line.c_str(), "#INCLUSive", 10) != 0)
+    {
+        f.close();
+        return 0;
+    }
+    
     while (getline(f, line))
     {
         buffer = line.c_str();
