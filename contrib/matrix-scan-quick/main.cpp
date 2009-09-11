@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            ERROR("invalid option %s", argv[i]);
+            WARNING("invalid option %s", argv[i]);
         }
     }
 
