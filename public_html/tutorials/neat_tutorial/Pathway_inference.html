@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
 
-<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
 original version by:  Nikos Drakos, CBLU, University of Leeds
 * revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
 * with significant contributions from:
@@ -29,19 +29,19 @@ original version by:  Nikos Drakos, CBLU, University of Leeds
 <A NAME="tex2html491"
   HREF="Bibliography.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
- SRC="file:/opt/local/share/lib/latex2html/icons/next.png"></A> 
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
 <A NAME="tex2html487"
   HREF="neat_tutorial.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
- SRC="file:/opt/local/share/lib/latex2html/icons/up.png"></A> 
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
 <A NAME="tex2html481"
   HREF="KEGG_network_provider.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
- SRC="file:/opt/local/share/lib/latex2html/icons/prev.png"></A> 
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
 <A NAME="tex2html489"
   HREF="Contents.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
- SRC="file:/opt/local/share/lib/latex2html/icons/contents.png"></A>  
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
 <BR>
 <B> Next:</B> <A NAME="tex2html492"
   HREF="Bibliography.html">Bibliography</A>
@@ -158,7 +158,7 @@ Met6
 
 <P>
 </LI>
-<LI>In the text field "Genes/Enzymes are from organism" type sce, the KEGG abbreviation for <I>Saccharomyces cerevisiae</I>.
+<LI>In the text field "Genes are from organism" type sce, the KEGG abbreviation for <I>Saccharomyces cerevisiae</I>.
 
 <P>
 </LI>
@@ -178,20 +178,13 @@ to its corresponding reactions in KEGG, which have in turn be mapped to their co
 <P>
 You can now select how to deal with the groups. This is a sensitive choice that strongly
 affects the inferred pathway and which depends on your data.
-In case of reactant pairs, it is usually not recommended to keep the groups, because
-they might contain mutually exclusive reactant pairs (that is reactant pairs belonging to the same reaction).
-We prevent pathwayinference in these cases, to avoid the same reaction occurring more than once in the resulting sub-network.
-Instead, the groups can be re-arranged such that mutually exclusive reactant pairs are joined.
-The original groups in this case are replaced by groups that reflect
-"possible catalytic mechanisms" enabled by the given enzymes.
-<BR>
 In general, if you keep the original groups, you assume implicitely that only
 a subset of the reactions associated to the given gene will be active in the pathway.
-If you think that all reactions associated to a gene might be active, choose "Treat each group member as a separate group." or,
-in case of reactant pairs, choose "Treat each group member as a separate group, but ignore group members that occur more than once and merge exclusive reactant pairs into groups.".
-<BR>
+If you think that all reactions associated to a gene might be active,
+choose "Treat each group member as a separate group" (the default treatment).
+
 <P>
-For the study case, we recommend you to choose "Treat each group member as a separate group, but ignore group members that occur more than once and merge exclusive reactant pairs into groups.".
+For the study case, we recommend you to keep the default.
 
 <P>
 Push <TT>GO</TT>. In a few minutes, the result page will be displayed.
@@ -209,17 +202,17 @@ This section assumes that you have installed the RSAT/NeAT command line tools.
 Pathwayinference is a web application that calls the pathwayinference web service.
 You can use the Pathwayinference command line tool on the networks provided in the
 network repository (check the Pathwayinference Manual for this) to reproduce
-results obtained with the web application on command line. Note that the mapping of genes to reactions
-and re-grouping of seeds can only be done via the web application.
+results obtained with the web application on command line.
+Note that the mapping of genes to reactions and group treatment can only be done via the web application.
 
 <P>
 Type the following command in one line:
 
 <FONT COLOR="#0000ff"> </FONT><FONT COLOR="#0000ff"></FONT><PRE>
-java -Xmx800m graphtools.algorithms.Pathwayinference -g RPAIRGraph_allRPAIRs_undirected.txt -f flat
+java -Xmx800m graphtools.algorithms.Pathwayinference -g RPAIRGraph_allRPAIRs_undirected.txt
 	     -s 'RP00016#RP00182/RP00647/RP00561/RP00143#RP00960#RP04049/RP00096#RP00168#
 	     RP04532/RP00003/RP00446/RP00946#RP00857/RP04474/RP00050#RP04533'
-	     -b -y con -P -u -x 0.05
+	     -f flat -b -y con -P -u -x 0.05
 </PRE><FONT COLOR="#0000ff"></FONT>
 
 <P>
@@ -229,9 +222,14 @@ Interpretation of the results</A>
 </H2>
 
 <P>
-The resulting sub-network contains the pathway given in [<A
- HREF="Bibliography.html#vanHelden01">34</A>]. The reaction catalysed by
-the Met5 enzyme (which was not found in KEGG) has been correctly inferred.
+The resulting sub-network contains a large part of the pathway given in [<A
+ HREF="Bibliography.html#vanHelden01">34</A>].
+Note that the chosen algorithm (kWalks in combination with Takahashi &amp; Matsuyama) may return one
+from a set of solutions, so your solution may deviate from the one described here.
+Despite of this disadvantage, Takahashi &amp; Matsuyama in combination with kWalks
+is the default algorithm, because it performed best in our evaluation.
+If your result deviates from the one described below,
+repeat the inference with the algorithm "repetitive REA".
 
 <P>
 The pathway described in the study case unites the sulfur assimilation and methionine biosynthesis pathways. It consists of the following steps: 
@@ -239,15 +237,20 @@ The pathway described in the study case unites the sulfur assimilation and methi
 Sulfate 2.7.7.4 Adenylyl sulfate 2.7.1.25 3'phosphoadenylylsulfate 1.8.99.4 sulfite 1.8.1.2 sulfide (alias hydrogen sulfide) 4.2.99.10 Homocysteine 2.1.1.14 L-Methionine
 <BR>
 <P>
-The matching part of the inferred pathway is:
-<BR><B>RP00960</B> Adenylyl sulfate RP05930 Sulfite <B>RP00168</B> Hydrogen sulfide RP01406 L-Homocysteine <B>RP0096</B>
+The matching parts of the inferred pathway are:
+<BR>
+<P>
+<B>RP00016</B> 3'-Phosphoadenylyl sulfate <B>RP00446</B> Adenylyl sulfate <B>RP00960</B>
+<BR>
+and
+<BR><B>RP00960</B> Sulfite <B>RP00168</B> Hydrogen sulfide RP01406 L-Homocysteine <B>RP00096</B>
 <BR>
 Seeds are printed in bold.
 
 <P>
 In addition, the inferred pathway contains a branch that leads
-from Adenylylselenate via 3'-Phosphoadenylylselenate, Selenite and hydrogen selenide to selenocysteine.
-This branch mirrors sulfur incorporation, but instead of sulfur, selenium is incorporated into Homocysteine.
+from 3'-Phosphoadenylylselenate to Adenylylselenate.
+This branch mirrors sulfur incorporation, but instead of sulfur, selenium is incorporated.
 <BR>
 <P>
 The presence of both the selenium and sulfur incorporation pathways in the inferred sub-network
@@ -336,8 +339,7 @@ Weaknesses</A>
 
 <P>
 </LI>
-<LI>It is not possible to infer other than trivial cycles. Consequently, cyclic and spiral-shaped metabolic pathways can only be partly
-inferred.
+<LI>Spiral-shaped metabolic pathways such as fatty acid biosynthesis can only be partly inferred.
 
 <P>
 </LI>
@@ -386,17 +388,7 @@ For the pre-loaded metabolic networks from KEGG and MetaCyc, each seed
 <LI>The node with identifier ID is not part of the input graph.
 
 <P>
-Make sure that your input network contains the node with given identifier.
-
-<P>
-</LI>
-<LI>There are seeds that exclude each other mutually between groups!
-
-<P>
-Your seed nodes have been mapped to reactant pairs belonging to different groups. At least one of these groups contains
-	a reactant pair that is mutual exclusive to a reactant pair in another group (that is both reactant pairs belong to the
-	same reaction). You may choose another group treatment, as for example:
-	"Keep groups but merge overlapping groups and groups with inter-group exclusive reactant pairs.".
+Make sure that your input network contains the node with the given identifier.
 
 <P>
 </LI>
@@ -404,7 +396,8 @@ Your seed nodes have been mapped to reactant pairs belonging to different groups
 
 <P>
 None of the seed node groups could be connected to any other seed node group. Each might belong to a
-    separate component of the input network.
+    separate component of the input network or mutual exclusion (in RPAIR networks) might prevent the connection of
+    the seed groups.
 
 <P>
 </LI>
@@ -417,19 +410,19 @@ None of the seed node groups could be connected to any other seed node group. Ea
 <A NAME="tex2html491"
   HREF="Bibliography.html">
 <IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
- SRC="file:/opt/local/share/lib/latex2html/icons/next.png"></A> 
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
 <A NAME="tex2html487"
   HREF="neat_tutorial.html">
 <IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
- SRC="file:/opt/local/share/lib/latex2html/icons/up.png"></A> 
+ SRC="file:/usr/share/latex2html/icons/up.png"></A> 
 <A NAME="tex2html481"
   HREF="KEGG_network_provider.html">
 <IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
- SRC="file:/opt/local/share/lib/latex2html/icons/prev.png"></A> 
+ SRC="file:/usr/share/latex2html/icons/prev.png"></A> 
 <A NAME="tex2html489"
   HREF="Contents.html">
 <IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
- SRC="file:/opt/local/share/lib/latex2html/icons/contents.png"></A>  
+ SRC="file:/usr/share/latex2html/icons/contents.png"></A>  
 <BR>
 <B> Next:</B> <A NAME="tex2html492"
   HREF="Bibliography.html">Bibliography</A>
@@ -441,8 +434,8 @@ None of the seed node groups could be connected to any other seed node group. Ea
   HREF="Contents.html">Contents</A></B> 
 <!--End of Navigation Panel-->
 <ADDRESS>
-Karoline Faust
-2009-07-01
+RSAT
+2009-09-04
 </ADDRESS>
 </BODY>
 </HTML>
