@@ -55,6 +55,13 @@ extern char* COMMAND_LINE;
     }                                                   \
 } 
 
+#define WARNING(...)                 \
+{                                    \
+    fprintf(stderr, "WARNING ");     \
+    fprintf(stderr, __VA_ARGS__);    \
+    fprintf(stderr, "\n");           \
+}
+
 #define ERROR(...)                   \
 {                                    \
     fprintf(stderr, "ERROR ");       \
