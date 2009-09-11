@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.45 2009/01/22 09:43:32 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.46 2009/09/11 20:52:44 rsat Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -246,7 +246,8 @@ Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)</i>
 </H4>
 EndAddress
 
-print "</blockquote>";
+print "</blockquote>\n";
+&google_analytics_tag();
 print $query->end_html, "\n";
 
 exit(0);

@@ -5,6 +5,23 @@ package main;
 require RSAT::OrganismManager;
 
 ################################################################
+## Print a tag for Google Analytics, a tool for monitoring the access to the
+## Web site.
+sub google_analytics_tag {
+    print <<EndGATag
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+var pageTracker = _gat._getTracker("UA-10629344-1");
+pageTracker._trackPageview();
+} catch(err) {}</script>
+EndGATag
+}
+
+################################################################
 ## Load the default parameters for get-orthologs`
 sub LoadGetOrthoDefault {
   $default{organism} = "Escherichia_coli_K12";
