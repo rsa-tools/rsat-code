@@ -3022,8 +3022,9 @@ Return the logo from the matrix
 sub makeLogo{
   my ($self,$logo_file,$logo_formats,$logo_tmp_dir, $logo_options) = @_;
   my (@logo_formats) = @{$logo_formats};
-  my ($seqs_file) =$self->seq_from_matrix($logo_tmp_dir);
+  my ($seqs_file,$seq_number) =$self->seq_from_matrix($logo_tmp_dir);
   my $ncol = $self->ncol();
+  my $x_axis_legend = $seq_number." sites aligned";
   foreach my $logo_format (@logo_formats){
     my $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
     $seqlogo_path = &RSAT::util::trim($seqlogo_path);
@@ -3037,6 +3038,7 @@ sub makeLogo{
     $logo_cmd.= " -f ".$seqs_file;
     $logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -e -k 1";
     $logo_cmd .= " -w ".$ncol unless ($logo_options =~ /\-w /);
+    $logo_cmd .= " -x '$x_axis_legend'";
     $logo_cmd .= " -h 5 " unless ($logo_options =~ /\-h /);
 #    $logo_cmd .= " -e -M";
     $logo_cmd .= " ".$logo_options;
@@ -3111,7 +3113,7 @@ sub seq_from_matrix {
   close SEQ;
   &RSAT::message::Debug("Writing fake sequences in temporary file".$tmp_seq_file) if ($main::verbose >= 3);
   #	return @seqs;
-  return ($tmp_seq_file);
+  return ($tmp_seq_file,$seq_number);
 }
 
 
