@@ -52,10 +52,6 @@ void help()
 "\n"
 "DESCRIPTION\n"
 "        Faster and limited version of matrix-scan.\n"
-"        This program takes as input a matrix and a sequence file, \n"
-"        and returns either the matching positions (default), or the\n"
-"        full distribution of scores observed in the whole sequence\n"
-"        (option -distrib).\n"
 "\n"
 "CATEGORY\n"
 "        sequences\n"
@@ -78,12 +74,7 @@ void help()
 "    see convert-background-model for details.\n"
 "\n"
 "OUTPUT FORMAT\n"
-"  Matches (default):\n"
 "    The output is a tab-delimited file, with one row per match.\n"
-"\n"
-"  Distribution (option -distrib):\n"
-"    The output is a tab-delimited file, with one row per weight\n"
-"    score.\n"
 "\n"
 "SCORING SCHEME\n"
 "    See matrix-scan -h for details.\n"
@@ -91,8 +82,11 @@ void help()
 "ARGUMENTS\n"
 "    -h, --help            show this help message and exit.\n"
 "\n"
-"    -i #                  read sequence from # (must be in FASTA format).\n"
+"    -i #                  read sequence from filename # (FASTA format).\n"
 "                          if not specified, the standard input is used.\n"
+"\n"
+"    -o #                  print the output to filename #.\n"
+"                          if not specified, the standard output is used.\n"
 "\n"
 "    -m #                  read the matrix # (must be in tab format).\n"
 " \n"
@@ -105,10 +99,11 @@ void help()
 "\n"
 "    -t #                  only capture site with a score >= #.\n"
 "\n"
-"    -distrib              output the weight score distribution.\n"
+"    -return distrib       output the weight score distribution.\n"
 "\n"
-"    -e #                  precision parameter for the -distrib option.\n"
-"                          use -e 0.1 to compute the distribution with 1 decimal.\n"
+"    -return site          output the list of sites (default).\n"
+"\n"
+"    -decimals #           precision parameter for the -return distrib option\n"
 "\n"
    );
 }
@@ -122,6 +117,7 @@ int main(int argc, char *argv[])
 {
     VERBOSITY = 0;
 
+    char *outfile = NULL;
     char *seqfile = NULL;
     char *bgfile  = NULL;
     char *matfile = NULL;
@@ -129,6 +125,7 @@ int main(int argc, char *argv[])
     int rc = TRUE;
     double precision = 0.1;
     double theshold = -1000.0;
+    FILE *fout;
 
     // // construct command line string
     // string cmdline = "";
@@ -169,6 +166,11 @@ int main(int argc, char *argv[])
             ASSERT(argc > i + 1, "-i requires a filename");
             seqfile = argv[++i];
         } 
+        else if (strcmp(argv[i], "-o") == 0) 
+        {
+            ASSERT(argc > i + 1, "-o requires a filename");
+            outfile = argv[++i];
+        } 
         else if (strcmp(argv[i], "-m") == 0) 
         {
             ASSERT(argc > i + 1, "-m requires a filename");
@@ -177,11 +179,22 @@ int main(int argc, char *argv[])
         else if (strcmp(argv[i], "-bgfile") == 0) 
         {
             ASSERT(argc > i + 1, "-bgfile requires a filename");
-            bgfile= argv[++i];
+            bgfile = argv[++i];
         } 
-        else if (strcmp(argv[i], "-distrib") == 0) 
+        else if (strcmp(argv[i], "-return") == 0) 
         {
-            distrib = TRUE;
+            ASSERT(argc > i + 1, "-return requires name");
+            char *roption = argv[++i];
+            if (strcmp(roption, "distrib") == 0)
+                distrib = TRUE;
+            // TODO: add more options
+        } 
+        else if (strcmp(argv[i], "-decimals") == 0) 
+        {
+            ASSERT(argc > i + 1, "-decimals requires a number");
+            int decimals = atoi(argv[++i]);
+            precision = pow(10.0, -decimals);
+            ASSERT(precision >= 0.0001 && precision <= 10, "invalid precision");
         } 
         else if (strcmp(argv[i], "-e") == 0) 
         {
@@ -206,6 +219,14 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    // output
+    if (outfile == NULL)
+        fout = stdout;
+    else
+        fout = fopen(outfile, "w");
+    
+    ASSERT(fout != NULL, "invalid output");
+
     // set bg model
     Markov markov;
     if (bgfile != NULL)
@@ -223,6 +244,7 @@ int main(int argc, char *argv[])
     {
         ERROR("You should specify at least a matrix file and a DNA sequence file");
     }
+    
     Array matrix;
     read_matrix(matrix, matfile);
     matrix.transform2logfreq(markov);
@@ -245,7 +267,7 @@ int main(int argc, char *argv[])
     fasta_reader_t *reader = new_fasta_reader(fp);
 
     if (!distrib)
-        fprintf(stdout, "#seq_id\tft_type\tft_name\tstrand\tstart\tend\tsequence\tweight\n");
+        fprintf(fout, "#seq_id\tft_type\tft_name\tstrand\tstart\tend\tsequence\tweight\n");
     
     // scan all sequences
     int s = 1;
@@ -255,12 +277,12 @@ int main(int argc, char *argv[])
         if (seq == NULL)
             break;
 
-        scan_seq(seq, s++, matrix, markov, values, theshold, rc);
+        scan_seq(fout, seq, s++, matrix, markov, values, theshold, rc);
         free_seq(seq);
     }
     
     if (distrib)
-        values_print(values);
+        values_print(fout, values);
 
     //scan(raw_sequences, sequences, matrix, markov, rc);
 
