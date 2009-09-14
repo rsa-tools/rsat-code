@@ -52,12 +52,12 @@ int word_is_valid(seq_t *seq, int start, int l)
 //         // if (W >= threshold)
 //         //     values_add(values, W);
 //         // if (W > 0)
-//         fprintf(stdout, "W=%.3f\n", W);
+//         fprintf(fout, "W=%.3f\n", W);
 //     }
 //     return 1;
 // }
 
-int scan_seq(seq_t *seq, int s, Array &matrix, Markov &bg, values_t *values, double threshold, int rc)
+int scan_seq(FILE *fout, seq_t *seq, int s, Array &matrix, Markov &bg, values_t *values, double threshold, int rc)
 {
     int l = matrix.J;
     seq_t *seqrc = NULL;
@@ -80,7 +80,7 @@ int scan_seq(seq_t *seq, int s, Array &matrix, Markov &bg, values_t *values, dou
         else
         {
             const char *seqstr = "?";
-            fprintf(stdout, "%d\t%s\t%s\t%c\t%d\t%d\t%s\t%.3f\n", s, "site", "matrix", 'D', i + 1, i + l, seqstr, W);
+            fprintf(fout, "%d\t%s\t%s\t%c\t%d\t%d\t%s\t%G\n", s, "site", "matrix", 'D', i + 1, i + l, seqstr, W);
         }
 
         if (!rc)
@@ -96,7 +96,7 @@ int scan_seq(seq_t *seq, int s, Array &matrix, Markov &bg, values_t *values, dou
         else
         {
             const char *seqrcstr = "?";
-            fprintf(stdout, "%d\t%s\t%s\t%c\t%d\t%d\t%s\t%.3f\n", s, "site", "matrix", 'R', i + 1, i + l, seqrcstr, Wrc);
+            fprintf(fout, "%d\t%s\t%s\t%c\t%d\t%d\t%s\t%G\n", s, "site", "matrix", 'R', i + 1, i + l, seqrcstr, Wrc);
         }
     }
     

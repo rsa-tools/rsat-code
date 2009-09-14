@@ -30,22 +30,33 @@ void values_add(values_t *values, double value)
     values->data[i] += 1;
 }
 
-void values_print(values_t *values)
+void values_print(FILE *fout, values_t *values)
 {
     int i;
+
+    // find [a,b]
+    i = 0;
+    while (values->data[i] == 0)
+        i++;
+    int a = i;
+    i = values->size;
+    while (values->data[i] == 0)
+        i--;
+    int b = i;
+
+    // total
     int total = 0;
-    for (i = 0; i < values->size; i++)
+    for (i = a; i <= b; i++)
     {
         total += values->data[i];
     }
-
-    fprintf(stdout, "#score\tocc\tcco\tccdf\n");
+    
+    // print
+    fprintf(fout, "#score\tocc\tco\tcco\tccdf\n");
     int cum = 0;
-    for (i = 0; i < values->size; i++)
+    for (i = a; i <= b; i++)
     {
-        if (values->data[i] <= 0)
-            continue;
-        printf("%.4f\t%d\t%d\t%.6f\n", values->min + i * values->e, values->data[i], total - cum, (total - cum) / (double) total);
+        fprintf(fout, "%G\t%d\t%d\t%d\t%G\n", values->min + i * values->e, values->data[i], cum, total - cum, (total - cum) / (double) total);
         cum += values->data[i];
     }
 }
