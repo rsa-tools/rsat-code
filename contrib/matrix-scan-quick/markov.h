@@ -19,6 +19,8 @@ using namespace std;
 #include <string>
 #include <cmath>
 
+#include "utils.h"
+
 #define ALPHABET_SIZE 4
 #define ALPHABET "ACGT"
 
