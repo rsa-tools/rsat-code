@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.66 2009/09/11 23:28:33 jvanheld Exp $
+# $Id: matrix-quality,v 1.67 2009/09/15 05:23:22 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -235,7 +235,7 @@ package main;
     $bg_format = "oligos";
     $bg_model = new RSAT::MarkovModel();
 
-    $distrib_score_col = 4; ## Column containing the cCDF (complementary cumulative density function) in the output of the command matrix-distrib-quick -distrib
+    $distrib_score_col = 5; ## Column containing the cCDF (complementary cumulative density function) in the output of the command matrix-distrib-quick -distrib
 
     %dir = ();
     @seq_types = (); ## Sequence types
@@ -274,13 +274,16 @@ package main;
     $supported_tasks = join (",", sort(keys( %supported_tasks)));
     %tasks = ();
 
+    ## The C command matrix-scan-quick is MUCH faster than
+    ## matrix-scan. If it is supported on this machine, use it !
+    $quick_cmd = `which matrix-scan-quick`;
+
     ################################################################
     ## Read argument values
     &ReadArguments();
 
     ## Class interval for classfreq
     $class_interval = 1/(10**$decimals);
-#    $class_interval = 10^-$decimals;
 
     ################################################################
     ## Check argument values
@@ -896,12 +899,12 @@ be followed by a value (ex -xsize 1000), you have to embrace the
 option and its value in quotes.
 
   Example
-   -roc_option '-gstep1 0.1 -gstep2 0.02'
+   -roc_option '-ygstep1 0.1 -ygstep2 0.02'
 
 This option can be used iteratively on a command line.
 
   Example
-   -roc_option '-gstep1 0.1' -roc_option '-gstep2 0.02'
+   -roc_option '-ygstep1 0.1' -roc_option '-ygstep2 0.02'
 
 =cut
 	} elsif ($arg eq "-roc_option") {
@@ -1043,7 +1046,7 @@ sub ExportInputSites {
   $main::outfile{matrix_sites} = $outfile{prefix}."_matrix_sites.fasta";
   $main::seqfile{matrix_sites} = $main::outfile{matrix_sites} if ($infile{matrix_sites});
   push @main::seq_types, "matrix_sites";
-  &RSAT::message::TimeWarn("Exporting matrix sites to file", $outfile{matrix_sites}) 
+  &RSAT::message::TimeWarn("Exporting matrix sites", $outfile{matrix_sites}) 
     if ($main::verbose >= 1);
   my $site_handler = &OpenOutputFile($outfile{matrix_sites});
   my $site_nb = 0; 
@@ -1084,11 +1087,22 @@ sub LOO_scores {
   my @partial_matrices = ();
 
   for my $i (0..$#sites) {
+
+
     ## Select the left out site
     my $lo_site_nb = $i+1;
     my $lo_site = $sites[$i];
     my $lo_site_id = $matrix->get_attribute("name");
     $lo_site_id .= "_site_".$lo_site_nb;
+
+
+    my $lo_site_file = $outfile{prefix}."_leftout_site_".$lo_site_nb.".fasta";
+    $lo_site_handle = &OpenOutputFile($lo_site_file);
+    my $lo_site_fasta = ">".$lo_site_id."\n";
+    $lo_site_fasta .= $lo_site."\n";
+    print $lo_site_handle $lo_site_fasta;
+    &RSAT::message::TimeWarn("Leftout site", $lo_site_nb."/".scalar(@sites), $lo_site_id, $lo_site, $lo_site_file) if ($main::verbose >= 0);
+    close $lo_site_handle;
 
     ## Build a partial matrix with the other sites
     my $partial_matrix_name = $matrix->get_attribute("name");
@@ -1107,12 +1121,13 @@ sub LOO_scores {
 
       ## Discard "twin" sites : exclude sites identical to the ith leftout site
       if ($loo_rm_twin) {
-	next if ($sites[$j] eq $sites[$i]); 
+	next if ($sites[$j] eq $sites[$i]);
       }
 
       $partial_matrix->add_site(lc($sites[$j]));
     }
     $partial_matrix->treat_null_values();
+    &RSAT::message::TimeWarn("Built partial matrix", $lo_site_nb."/".scalar(@sites)) if ($main::verbose >= 0);
 
     ## Save the partial matrix in a file
     my $partial_matrix_file = $outfile{prefix}."_partial_matrix_".$lo_site_nb.".tab";
@@ -1124,8 +1139,6 @@ sub LOO_scores {
 			 scalar(@partial_matrix_sites),
 			 $partial_matrix_file);
     }
-
-    &RSAT::message::Info("Exporting partial matrix to file", $partial_matrix_file) if ($main::verbose >= 3);
     $partial_matrix_handle = &OpenOutputFile($partial_matrix_file);
     $tmp_verbose = $verbose;
     $verbose = 0;
@@ -1135,27 +1148,41 @@ sub LOO_scores {
 							  );
     $verbose = $tmp_verbose;
     close $partial_matrix_handle;
+    &RSAT::message::TimeWarn("Exported partial matrix to file", $partial_matrix_file) if ($main::verbose >= 0);
 
     ## Score the left out site with the partial matrix
-    my $matrix_scan_cmd = "echo $lo_site | matrix-scan -v ".$main::verbose;
+    my $matrix_scan_cmd = "";
+    if ($quick_cmd) {
+      $matrix_scan_cmd .= "matrix-scan-quick";
+    } else {
+      $matrix_scan_cmd .= "matrix-scan";
+      $matrix_scan_cmd .= " -seq_format fasta";
+      $matrix_scan_cmd .= " -top_matrices 1";
+      $matrix_scan_cmd .= " -matrix_format tab";
+      $matrix_scan_cmd .= " -uth rank 1";
+    }
+#    $matrix_scan_cmd .= " -v ".$main::verbose; ## no verbose needed here
+    $matrix_scan_cmd .= " -i ".$lo_site_file;
     $matrix_scan_cmd .= " -decimals ".$decimals;
-    $matrix_scan_cmd .= " -top_matrices 1";
-    $matrix_scan_cmd .= " -seq_format raw";
     $matrix_scan_cmd .= " -m ".$partial_matrix_file;
-    $matrix_scan_cmd .= " -matrix_format tab";
-    $matrix_scan_cmd .= " -return sites -1str -uth rank 1";
+    $matrix_scan_cmd .= " -return sites";
+    $matrix_scan_cmd .= " -1str";
     $matrix_scan_cmd .= join(" ", "", @args);
     if (defined($main::scanopt{$seq_type})) {
       $matrix_scan_cmd .= " ".$main::scanopt{$seq_type};
-  	}
+    }
     if ($i > 0) {
       $matrix_scan_cmd .= " | grep -v '^;'";
       $matrix_scan_cmd .= " | grep -v '^#'";
     }
-    &RSAT::message::Info("LOO command",  ($i+1)."/".scalar(@sites), $matrix_scan_cmd) if ($main::verbose >= 2);
+    if ($quick_cmd) {
+      ## Select the top ranking score
+      $matrix_scan_cmd .= " | sort -rn -k 8 | head -1";
+    }
+    &RSAT::message::TimeWarn("LOO command",  ($i+1)."/".scalar(@sites), $matrix_scan_cmd) if ($main::verbose >= 9);
     my $score_result = `$matrix_scan_cmd`;
     print $loo_scores_handle $score_result;
-
+    &RSAT::message::TimeWarn("LOO scored site",  ($i+1)."/".scalar(@sites)) if ($main::verbose >= 0);
   }
 
   ## Print the LOO parameters in the log file
@@ -1168,13 +1195,16 @@ sub LOO_scores {
   close $loo_scores_handle;
 
   ## Prepare and run the classfreq command (to extract the distribution from the scores)
+  &RSAT::message::TimeWarn("Computing LOO distribution") if ($main::verbose >= 0);
   my $classfreq_min = sprintf("%.${decimals}f", $main::Wmin);
   my $classfreq_cmd = "grep -v '^;' ".$main::outfile{matrix_sites_loo}." | grep -v '^#'";
   $classfreq_cmd .= " | cut -f 8";
   $classfreq_cmd .= " | classfreq -v 1 -ci ".$class_interval;
   $classfreq_cmd .= " -min ".$classfreq_min;
-  $classfreq_cmd .= " -o ".$outfile{matrix_sites_loo_distrib};
+  $classfreq_cmd .= " | cut -f 1,4,5,6,9"; ## This ensures compatibility with the columns of matrix-scan-quick -distrib
+  $classfreq_cmd .= " > ".$outfile{matrix_sites_loo_distrib};
   &doit($classfreq_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &RSAT::message::TimeWarn("Computed LOO distribution") if ($main::verbose >= 0);
 }
 
 
@@ -1191,9 +1221,6 @@ sub CalcSequenceDistrib {
   &RSAT::message::TimeWarn("\tScanning options for ".$seq_type,  $scanopt{$seq_type})
     if (($main::verbose >= 1) && (defined($main::scanopt{$seq_type})));
 
-  ## The C command matrix-scan-quick is MUCH faster than
-  ## matrix-scan. If it is supported on this machine, use it !
-  my $quick_cmd = `which matrix-scan-quick`;
 
   my $matrix_scan_cmd = "";
   if (($quick_cmd) && ## Check that the matrix-scan-quick command is supported on this computer
@@ -1215,11 +1242,11 @@ sub CalcSequenceDistrib {
 
     ## Prepare the matrix-scan command
     $matrix_scan_cmd = "matrix-scan-quick -v 1";
-    #    $matrix_scan_cmd .= " -e ".(1/10^-$decimals);
+    $matrix_scan_cmd .= " -e ".$class_interval;
     $matrix_scan_cmd .= " -i ".$sequence_file;
     $matrix_scan_cmd .= " -m ".$matrix_file_tab;
     $matrix_scan_cmd .= join(" ", "", @args);
-    $matrix_scan_cmd .= " -distrib";
+    $matrix_scan_cmd .= " -return distrib";
     $matrix_scan_cmd .= " > ".$outfile{$seq_type};
 
   } else {
@@ -1257,11 +1284,11 @@ sub CalcSequenceDistrib {
     $matrix_scan_cmd .= " | cut -f 8";
     $matrix_scan_cmd .= " | classfreq -v 1 -ci ".$class_interval;
     $matrix_scan_cmd .= " -min ".$classfreq_min;
-    $matrix_scan_cmd .= " | cut -f 1,4,6,9"; ## This ensures compatibility with the columns of matrix-scan-quick -distrib
+    $matrix_scan_cmd .= " | cut -f 1,4,5,6,9"; ## This ensures compatibility with the columns of matrix-scan-quick -distrib
     $matrix_scan_cmd .= " > ".$outfile{$seq_type};
   }
 
-  &RSAT::message::Info("Scanning to compute distribution", $matrix_scan_cmd) if ($main::verbose >= 0);
+#  &RSAT::message::Info("Scanning to compute distribution", $matrix_scan_cmd) if ($main::verbose >= 0);
   ## Print the complete command in the log file
   print $main::out "\n; ", &AlphaDate(), "\tComputing score distribution\n";
   printf $main::out ";\t%-22s\t%s\n", "Sequence type", $seq_type;
@@ -1393,7 +1420,8 @@ sub ScoreDistrib {
   $classfreq_cmd .= " -min ".$classfreq_min;
   $classfreq_cmd .= " -ci  ".$class_interval;
   $classfreq_cmd .= " -max ".$Wmax;
-  $classfreq_cmd .= " -o ".$outfile{$seq_type."_distrib"};
+  $classfreq_cmd .= " | cut -f 1,4,5,6,9"; ## This ensures compatibility with the columns of matrix-scan-quick -distrib
+  $classfreq_cmd .= " > ".$outfile{$seq_type."_distrib"};
 
   ## Execute the command
   &doit($classfreq_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -1470,7 +1498,7 @@ sub CompareDistrib {
     &RSAT::message::TimeWarn("Comparing score distributions",  $outfile{distrib_compa})
       if ($main::verbose >= 1);
     &RSAT::message::Info(join("\n;\t", "distrib_files", @distrib_files))
-      if ($main::verbose >= 0);
+      if ($main::verbose >= 2);
 
     ################################################################
     ## Compare the distributions
@@ -1496,7 +1524,7 @@ sub CompareDistrib {
 
       ## General options for all the graphs below
       my $all_graph_options = " -i ".$outfile{distrib_compa}.".tab";
-      $all_graph_options .= " -format ".$image_format." -lines -pointsize 1";
+      $all_graph_options .= " -format ".$image_format." -lines -pointsize 0";
 
       ## Alternative options for the large graphs and for the icons, respectively
       my $large_graph_options = " -title1 '".$matrix_name."'";
@@ -1514,6 +1542,7 @@ sub CompareDistrib {
       my $ycols = join ",", 2..(scalar(@distrib_files)+2);
       $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
       $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+      $XYgraph_cmd .= " -xgstep1 5 -xgstep2 1";
       $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
       $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}.".".$image_format;
       &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -1529,6 +1558,7 @@ sub CompareDistrib {
       ## and a logarithmic Y axis
       $XYgraph_cmd = "XYgraph ".$all_graph_options;
       $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
+      $XYgraph_cmd .= " -xgstep1 5 -xgstep2 1";
       $XYgraph_cmd .= " -ymax 1 -ylog 10";
       $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
       $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}."_logy.".$image_format;
@@ -1562,6 +1592,7 @@ sub CompareDistrib {
       $XYgraph_cmd = "XYgraph ".$all_graph_options;
       $XYgraph_cmd .= " -xcol ".$ref_column;
       $XYgraph_cmd .= " -ycol ".$ycols;
+      $XYgraph_cmd .= " -ygstep1 0.1 -ygstep2 0.02";
       # $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
       # $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
       $XYgraph_cmd .= " -ymax 1 ";
@@ -1672,11 +1703,10 @@ sub CompareDistrib {
 ################################################################
 ## Calculate score distribution
 sub PrintTheorScoreDistribution {
-  my $matrix_tab_file = shift;
-  my $out_file = shift;
+  my ($matrix_tab_file,  $out_file) = @_;
 
-  &RSAT::message::TimeWarn("Calculating matrix theorical distribution") 
-    if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Calculating theorical distribution for matrix", $matrix_tab_file)
+    if ($main::verbose >= 1);
 
   my $matrix_distrib_cmd = "matrix-distrib -v 1 ";
   $matrix_distrib_cmd .= " -m ".$matrix_tab_file;
