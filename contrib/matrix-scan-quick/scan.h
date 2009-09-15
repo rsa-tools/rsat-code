@@ -16,6 +16,7 @@ using namespace std;
 #include <vector>
 #include <string>
 
+#include "utils.h"
 #include "markov.h"
 #include "matrix.h"
 #include "seq.h"

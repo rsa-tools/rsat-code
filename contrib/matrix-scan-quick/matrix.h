@@ -15,6 +15,7 @@ using namespace std;
 #include <sstream>
 #include <cmath>
 
+#include "utils.h"
 #include "markov.h"
 
 struct Array 
