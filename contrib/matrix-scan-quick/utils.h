@@ -14,6 +14,8 @@ using namespace std;
 #include <iostream>
 #include <sstream>
 #include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
 
 extern int VERBOSITY;
 extern int VERSION;
