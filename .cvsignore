@@ -4,6 +4,7 @@ RSA.config
 public_html/logs/count_file
 .DS_Store
 */.DS_Store
+*/*/.DS_Store
 data
 logs
 tmp
