@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.53 2009/05/13 13:25:28 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.54 2009/09/15 12:28:19 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -641,7 +641,7 @@ sub ExportProteinSequences {
     open PP, ">$out_file{pp}";
     foreach my $cds ($CDSs->get_objects()) {
 	next unless ($cds);
-	my ($translation) = $cds->get_attribute("translation");	    
+	my ($translation) = $cds->get_attribute("translation");
 	next unless ($translation =~ /\S+/);
 	my $id = $cds->get_attribute("id");
 	my $gene = $cds->get_attribute("gene");
