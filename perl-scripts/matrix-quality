@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.67 2009/09/15 05:23:22 jvanheld Exp $
+# $Id: matrix-quality,v 1.68 2009/09/18 12:44:56 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -230,6 +230,7 @@ package main;
     %perm_nb = (); ## Number of permutations per sequence set
     $perm_separate_distrib = 0; ## Calcualte the distribution for each permuted matrix separately
     $noloo = 0; # Inactivate the leave-one-out test and all the related outputs
+    $noicon = 0; # Inactivate the generation of icons (small version of the graphs for galleries)
     $loo_rm_twin = 1; ## Also exclude twin sites in the loo procedure.
     $pseudo_counts = 1;
     $bg_format = "oligos";
@@ -381,7 +382,7 @@ package main;
     foreach my $seq_type (@seq_types) {
       print $main::out join("\t", ";", $seq_type, $perm_nb{$seq_type} || 0, $seqfile{$seq_type}), "\n";
     }
-    &PermuteMatrixColumns() if ($tasks{permute}) && (($perm_nb_max > 0));
+    &PermuteMatrixColumns() if ($perm_nb_max > 0);
 
     ## Calculate theoretical distribution of probabilities
     $main::outfile{'theoretical_distrib'} = $main::outfile{prefix}."_theor_score_distrib.tab";
@@ -486,11 +487,11 @@ package main;
       $clean_partial_cmd .= join (" ", @th_distrib_files);
       &doit($clean_partial_cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
     }
-    
+
     ################################################################
     ###### Clean some temporary files
-    
-    ## Remove the temporary distribution files    
+
+    ## Remove the temporary distribution files
     if (scalar(@temporary_distrib_files) > 0) {
     	my $clean_partial_cmd = "rm -f ";
     	$clean_partial_cmd .= join (" ", @temporary_distrib_files);
@@ -736,6 +737,18 @@ Skip the step of drawing comparison graphs.
 =cut
 	} elsif ($arg eq "-nograph") {
 	  $supported_tasks{nographs} = 0;
+
+=pod
+
+=item B<-noicon>
+
+Do not generate the small graphs (icons) used for the galleries in the
+indexes.
+
+=cut
+	} elsif ($arg eq "-noicon") {
+	  $main::noicon = 1;
+
 
 	    ## keep matrix-scan scores
 =pod
@@ -1550,8 +1563,10 @@ sub CompareDistrib {
       print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
 
       ## Generate the icon
-      $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_small.".$image_format;
-      &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      unless ($noicon) {
+	$icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_small.".$image_format;
+	&doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+      }
 
       ################################################################
       ## Draw a graph with all the inverse cumulative distributions
@@ -1568,10 +1583,12 @@ sub CompareDistrib {
       print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
 
       ## Generate the icon
-      $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_logy_small.".$image_format;
-      &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-      &RSAT::message::Info("Distribution comparison icon (log Y)", $outfile{distrib_compa}."_logy_small.".$image_format) 
-	if ($main::verbose >= 2);
+      unless ($noicon) {
+	$icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_logy_small.".$image_format;
+	&doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	&RSAT::message::Info("Distribution comparison icon (log Y)", $outfile{distrib_compa}."_logy_small.".$image_format) 
+	  if ($main::verbose >= 2);
+      }
 
       ################################################################
       ## Draw a ROC curve
@@ -1612,9 +1629,11 @@ sub CompareDistrib {
 	print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
 
 	## Generate the icon for the ROC curve
-	$icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_small.".$image_format;
-	&doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	&RSAT::message::Info("ROC curve icon", $outfile{distrib_compa}."_roc_small.".$image_format) if ($main::verbose >= 2);
+	unless ($noicon) {
+	  $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_small.".$image_format;
+	  &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	  &RSAT::message::Info("ROC curve icon", $outfile{distrib_compa}."_roc_small.".$image_format) if ($main::verbose >= 2);
+	}
       }
 
       ################################################################
@@ -1629,9 +1648,11 @@ sub CompareDistrib {
       print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
 
       ## Generate the icon for the ROC curve
-      $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xlog_small.".$image_format;
-      &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-      &RSAT::message::Info("ROC curve icon (log X)", $outfile{distrib_compa}."_roc_xlog_small.".$image_format) if ($main::verbose >= 2);
+      unless ($noicon) {
+	$icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xlog_small.".$image_format;
+	&doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	&RSAT::message::Info("ROC curve icon (log X)", $outfile{distrib_compa}."_roc_xlog_small.".$image_format) if ($main::verbose >= 2);
+      }
 
       ################################################################
       ## Draw a ROC curve with xylog
@@ -1644,9 +1665,11 @@ sub CompareDistrib {
 	print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$roc_file_opt, "\n";
 
 	## Generate the icon for the ROC curve
-	$icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xylog_small.".$image_format;
-	&doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	&RSAT::message::Info("ROC curve icon (log XY)", $outfile{distrib_compa}."_roc_xylog_small.".$image_format) if ($main::verbose >= 2);
+	unless ($noicon) {
+	  $icon_options = " -xsize 120 -ysize 120 -o ".$outfile{distrib_compa}."_roc_xylog_small.".$image_format;
+	  &doit($XYgraph_cmd.$icon_options, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	  &RSAT::message::Info("ROC curve icon (log XY)", $outfile{distrib_compa}."_roc_xylog_small.".$image_format) if ($main::verbose >= 2);
+	}
       }
 
       unless ($noloo) {
