@@ -20,7 +20,7 @@ typedef struct
     double max;
 } values_t;
 
-values_t *new_values(int min, int max, double e);
+values_t *new_values(double min, double max, double e);
 
 void free_values(values_t *values);
 

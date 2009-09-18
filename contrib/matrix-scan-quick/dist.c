@@ -1,12 +1,12 @@
 #include "dist.h"
 
-values_t *new_values(int min, int max, double e)
+values_t *new_values(double min, double max, double e)
 {
     values_t *values = (values_t *) malloc(sizeof(values_t));
-    values->size = (int) (max - min) / e;
     values->min = min;
     values->max = max;
     values->e = e;
+    values->size = (int) values->e + (values->max - values->min) / values->e;
     values->data = (int *) malloc(sizeof(int) * values->size);
     int i;
     for (i = 0; i < values->size; i++)
@@ -23,10 +23,11 @@ void free_values(values_t *values)
 
 void values_add(values_t *values, double value)
 {
+    //DEBUG("value=%G max=%G", value, values->max);
     ASSERT(value > values->min && value < values->max, "score out of range");
     //value = MAX(MIN(value, values->max), values->min);
     int i = (int) ((value - values->min) / values->e);
-    assert(i >= 0 && i < values->size);
+    ASSERT(i >= 0 && i < values->size, "score out of table range");
     values->data[i] += 1;
 }
 
@@ -36,13 +37,16 @@ void values_print(FILE *fout, values_t *values)
 
     // find [a,b]
     i = 0;
-    while (values->data[i] == 0)
+    while (i < values->size - 1 && values->data[i] == 0)
         i++;
     int a = i;
     i = values->size;
-    while (values->data[i] == 0)
+    while (i > 0 && values->data[i] == 0)
         i--;
     int b = i;
+    
+    // DEBUG("a=%d b=%d", a, b);
+    assert(a >= 0 && b >= 0 && a < values->size && b < values->size);
 
     // total
     int total = 0;
