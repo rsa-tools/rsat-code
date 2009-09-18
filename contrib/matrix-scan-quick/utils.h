@@ -76,10 +76,10 @@ extern char* COMMAND_LINE;
 #define DEBUG(...)                    \
 {                                     \
     if (VERBOSITY >= 0) {             \
-        fprintf(stdout, "[DEBUG] ");  \
-        fprintf(stdout, __VA_ARGS__); \
-        fprintf(stdout, "\n");        \
-        fflush(stdout);               \
+        fprintf(stderr, "[DEBUG] ");  \
+        fprintf(stderr, __VA_ARGS__); \
+        fprintf(stderr, "\n");        \
+        fflush(stderr);               \
     }                                 \
 }
 

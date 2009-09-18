@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
     // values (distrib)
     values_t *values = NULL;
     if (distrib)
-        values = new_values(-1000, 1000, precision);
+        values = new_values(-1000, 10000.0, precision);
 
     // sequences
     FILE *fp;
