@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.69 2009/09/21 12:09:22 jvanheld Exp $
+# $Id: matrix-quality,v 1.70 2009/09/21 21:19:55 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -228,7 +228,7 @@ package main;
     $decimals = 2;
     $class_interval = 1/(10**$decimals);
     %perm_nb = (); ## Number of permutations per sequence set
-    $perm_separate_distrib = 0; ## Calcualte the distribution for each permuted matrix separately
+    $perm_separate_distrib = 1; ## Calculate the distribution for each permuted matrix separately
     $noloo = 0; # Inactivate the leave-one-out test and all the related outputs
     $noicon = 0; # Inactivate the generation of icons (small version of the graphs for galleries)
     $loo_rm_twin = 1; ## Also exclude twin sites in the loo procedure.
@@ -420,13 +420,16 @@ package main;
 
       ## Score sequences with the permuted matrices
       if (($seqfile{$seq_type}) && ($perm_nb{$seq_type} > 0)) {
+
+
 	## Calculate the merged distribution for permuted matrices
-	my $perm_suffix = $seq_type."_perm_col_1-".$perm_nb{$seq_type};
-	if (defined($scanopt{$seq_type})) {
-	  $scanopt{$perm_suffix} = $scanopt{$seq_type};
-	  $scanopt{$perm_suffix} .= " -top_matrices ".$perm_nb{$seq_type}; ## Select the type-specific number of permutations
-	}
-	&CalcSequenceDistrib($seqfile{$seq_type}, $outfile{$seq_type.'_matrix_perm_col_all'}, "tab", $perm_suffix,   @matrix_scan_options) ;
+	## THIS IS NOT SUPPORTED ANYMORE SINCE matrix-scan-quick ONLY ACCEPTS ONE MATRIX
+#	my $perm_suffix = $seq_type."_perm_col_1-".$perm_nb{$seq_type};
+#	if (defined($scanopt{$seq_type})) {
+#	  $scanopt{$perm_suffix} = $scanopt{$seq_type};
+#	  $scanopt{$perm_suffix} .= " -top_matrices ".$perm_nb{$seq_type}; ## Select the type-specific number of permutations
+#	}
+#	&CalcSequenceDistrib($seqfile{$seq_type}, $outfile{$seq_type.'_matrix_perm_col_all'}, "tab", $perm_suffix,   @matrix_scan_options) ;
 
 	## Calculate the separate distributions for each permuted matrix
 	## (this highlights the variability but the graph is noisy)
@@ -435,7 +438,7 @@ package main;
 	    $perm_suffix = $seq_type."_perm_col_".$i;
 	    if (defined($scanopt{$seq_type})) {
 	      $scanopt{$perm_suffix} = $scanopt{$seq_type};
-	      $scanopt{$perm_suffix} .= " -top_matrices 1"; ## Select a single matrix
+#	      $scanopt{$perm_suffix} .= " -top_matrices 1"; ## Select a single matrix
 	    }
 	    &CalcSequenceDistrib($seqfile{$seq_type}, $outfile{'matrix_perm_col_'.$i}, "tab", $perm_suffix,   @matrix_scan_options) ;
 	  }
@@ -785,6 +788,13 @@ Calculate the distributions for each permuted matrix separately. This
 provides an estimate of the variability between permutations, but the
 resulting graph is less readable, because of the multiplicity of
 curves.
+
+B<Note:> the option to merge permutations (I<-perm_merged>) has been
+disactivated since we swapped from matrix-scan to
+matrix-scan-quick. The option I<-perm_sep> is thus currently the only
+mode of presentation. We still need to implement the merging of the
+distributions, in order to re-activate the option -perm_merged (see
+with list).
 
 =cut
 	} elsif ($arg eq "-perm_sep") {
@@ -1849,7 +1859,7 @@ distribution of scores.
 
 =item B<convert-matrix>
 
-Called by I<mateix-quality> to generate column-permuted matrices.
+Called by I<matrix-quality> to generate column-permuted matrices.
 
 =back
 
@@ -1866,6 +1876,13 @@ drive (see Lucia Nikolaia).
 
 Generate a HTML index pointing towards the different files generated
 by I<matrix-quality>.
+
+=item B<-perm_merged>
+
+Merge the permutations in order to obtain a more robust distribution
+of the permuted matrices. The figure is more readable than with the
+option -perm_sep (default), but does not reflect the variability
+between the different permutations.
 
 =back
 
