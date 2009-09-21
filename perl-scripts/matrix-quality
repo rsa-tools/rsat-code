@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.68 2009/09/18 12:44:56 jvanheld Exp $
+# $Id: matrix-quality,v 1.69 2009/09/21 12:09:22 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -253,14 +253,13 @@ package main;
     $job_prefix = "matrix-quality";
     $batch = 0;
 
-    ## User-specified options added to XYgraph for the distribution curves
+    ## User-specified options added to XYgraph for the graphs (ROC and distribution curves)
     $graph_options = " ";
+    $roc_options = " ";
+    $distrib_options = " ";
 
     ## Reference distribution for the ROC curve
     $roc_ref = "theor";
-
-    ## User-specified options added to XYgraph for the ROC curves
-    $roc_options = " ";
 
     ## Tasks
     %supported_tasks = (
@@ -866,7 +865,7 @@ Scores of the positive sequence set.
 	} elsif ($arg eq "-o") {
 	    $main::outfile{prefix} = shift(@arguments);
 
-	    ## Options for the distribution curves
+	    ## Options for the graphs
 =pod
 
 =item B<-graph_option 'option1 options2 ...'>
@@ -887,6 +886,7 @@ This option can be used iteratively on a command line.
 =cut
 	} elsif ($arg eq "-graph_option") {
 	  $graph_options .= " ".shift @arguments;
+
 
 	  ## Reference distribution for the ROC curve
 =pod
@@ -923,6 +923,22 @@ This option can be used iteratively on a command line.
 	} elsif ($arg eq "-roc_option") {
 	  $main::roc_options .= " ".shift @arguments;
 
+	    ## Options for the drawing the distributions
+=pod
+
+=item B<-distrib_option 'option1 options2 ...'>
+
+Specify options that will be passed to the program I<XYgraph> for
+generating the distribution curves (not the ROC). Beware: if an option
+requires to be followed by a value (ex -xsize 1000), you have to
+embrace the option and its value in quotes.
+
+  Example
+   -distrib_option '-xmin -35 -xmax 20'
+
+=cut
+	} elsif ($arg eq "-distrib_options") {
+	  $main::distrib_options .= " ".shift @arguments;
 
 	    ## Image format
 =pod
@@ -1549,6 +1565,9 @@ sub CompareDistrib {
 
       my $icon_options;
 
+#	  die "HELLO\n", $main::distrib_options, "\n";
+
+
       ################################################################
       ## Draw a graph with all the inverse cumulative distributions
       my $XYgraph_cmd = "XYgraph ".$all_graph_options;
@@ -1557,7 +1576,7 @@ sub CompareDistrib {
       $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
       $XYgraph_cmd .= " -xgstep1 5 -xgstep2 1";
       $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-      $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}.".".$image_format;
+      $graph_file_opt = $large_graph_options." ".$graph_options." ".$distrib_options." -o ".$outfile{distrib_compa}.".".$image_format;
       &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       &RSAT::message::Info("Distribution comparison graph", $outfile{distrib_compa}.".".$image_format) if ($main::verbose >= 2);
       print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
@@ -1576,7 +1595,7 @@ sub CompareDistrib {
       $XYgraph_cmd .= " -xgstep1 5 -xgstep2 1";
       $XYgraph_cmd .= " -ymax 1 -ylog 10";
       $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-      $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{distrib_compa}."_logy.".$image_format;
+      $graph_file_opt = $large_graph_options." ".$graph_options." ".$distrib_options." -o ".$outfile{distrib_compa}."_logy.".$image_format;
       &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       &RSAT::message::Info("Distribution comparison graph (log Y)", $outfile{distrib_compa}."_logy.".$image_format) 
 	if ($main::verbose >= 2);
@@ -1701,7 +1720,7 @@ sub CompareDistrib {
 	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
 	  $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
 	  $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-	  $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{th_distrib_compa}.".".$image_format;
+	  $graph_file_opt = $large_graph_options." ".$graph_options." ".$distrib_options." -o ".$outfile{th_distrib_compa}.".".$image_format;
 	  &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 	  print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
 
@@ -1712,7 +1731,7 @@ sub CompareDistrib {
 	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
 	  $XYgraph_cmd .= " -ymax 1 -ylog 10";
 	  $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-	  $graph_file_opt = $large_graph_options.$graph_options." -o ".$outfile{th_distrib_compa}."_logy.".$image_format;
+	  $graph_file_opt = $large_graph_options." ".$graph_options." ".$distrib_options." -o ".$outfile{th_distrib_compa}."_logy.".$image_format;
 	  &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 	  print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
 	}
