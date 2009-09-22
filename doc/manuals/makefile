@@ -1,9 +1,8 @@
-
 .SUFFIXES: .tex .dvi .log .aux .toc .pdf .ps .view .xdvi .html
 
 ############################################################
 #
-# $Id: makefile,v 1.11 2008/10/31 19:52:13 jvanheld Exp $
+# $Id: makefile,v 1.12 2009/09/22 23:15:22 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 15:13:34 jvanheld>
 #
