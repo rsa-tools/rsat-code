@@ -116,8 +116,8 @@ To obtain bioperl:
 
 \begin{footnotesize}
 \begin{verbatim}
-## For this example, we install Bioperl and EnsEMBL libraries in $RSAT/lib
-## but you can install it in some other place
+## For this example, we install Bioperl and EnsEMBL libraries 
+## in $RSAT/lib, but you can install it in some other place
 mkdir -p $RSAT/lib
 cd $RSAT/lib
 
@@ -230,16 +230,22 @@ variable.
 if your shell is tcsh, add the following line to the \file{.cshrc}
 file in your home directory.
 
+\begin{footnotesize}
 \begin{verbatim}
 setenv CVS_RSH ssh
 \end{verbatim}
+\end{footnotesize}
+
 
 If your shell is bash, add the following line to the \file{.bashrc}
 file in your home directory.
 
+\begin{footnotesize}
 \begin{verbatim}
 export CVS_RSH=ssh
 \end{verbatim}
+\end{footnotesize}
+
 
 
 \subsection{Obtaining a first version of \RSAT programs}
@@ -248,9 +254,12 @@ The following command should be used the first time you retrieve the
 tools from the server (you need to replace \texttt{[mylogin]} by the
 login name you received when signing the \RSAT license).
 
+\begin{footnotesize}
 \begin{verbatim}
 cvs -d [mylogin]@cvs.bigre.ulb.ac.be:/cvs/rsat co rsa-tools
 \end{verbatim}
+\end{footnotesize}
+
 
 This will create a directory \file{rsa-tools} on your computer, and
 store the programs in it. Note that at this stage the programs are not
@@ -263,10 +272,13 @@ Once the tools have been retrieved, you can obtain updates very
 easily. For this, you need to change your directory to the rsa-tools
 directory, and use the \texttt{cvs} command in the following way.
 
+\begin{footnotesize}
 \begin{verbatim}
 cd rsa-tools
 cvs update -d
 \end{verbatim}
+\end{footnotesize}
+
 
 
 \section{Installation from a compressed archive}
@@ -277,10 +289,13 @@ distributed \texttt{tar} format.
 The \texttt{.tar.gz} file can be uncompressed with the command
 \program{tar}, which are part of the default unix installation.
 
+\begin{footnotesize}
 \begin{verbatim}
 tar -xpzf rsa-tools_yyyymmdd.tar.gz
 \end{verbatim}
+\end{footnotesize}
 
+\chapter{Initializing \RSAT}
 
 \section{Adding \RSAT to your path}
 
@@ -292,42 +307,59 @@ tar -xpzf rsa-tools_yyyymmdd.tar.gz
   The way to create an environment variable depends on your shell. To
   know you shell, you can type
 
+\begin{footnotesize}
 \begin{verbatim}
 echo $SHELL
 \end{verbatim}
+\end{footnotesize}
+
 
 Now, if we assume that \RSAT have been installed in the directory
 
+\begin{footnotesize}
 \begin{verbatim}
 /home/rsat/rsa-tools
 \end{verbatim}
+\end{footnotesize}
+
 
 you should type the following command.
 
 If your shell is bash:
+\begin{footnotesize}
 \begin{verbatim}
 export RSAT=/home/rsat/rsa-tools
 \end{verbatim}
+\end{footnotesize}
+
 
 If your shell is csh or tcsh, you need to type a slightly different
 command:
 
+\begin{footnotesize}
 \begin{verbatim}
 setenv RSAT /home/rsat/rsa-tools
 \end{verbatim}
+\end{footnotesize}
 
-\item Add the path of the \RSAT \ perl scripts, python scripts and binaries to your path. In addition, add java jar files
-to your classpath.
+
+\item Add the path of the \RSAT \ perl scripts, python scripts and
+  binaries to your path. In addition, add java jar files to your
+  classpath.
 
 If your shell is bash:
+\begin{footnotesize}
 \begin{verbatim}
 export PATH=${PATH}:${RSAT}/bin
 export PATH=${PATH}:${RSAT}/perl-scripts
 export PATH=${PATH}:${RSAT}/python-scripts
 export CLASSPATH=${CLASSPATH}:${RSAT}/java/lib/NeAT_javatools.jar
 \end{verbatim}
+\end{footnotesize}
+
 
 If your shell is csh or tcsh:
+\begin{footnotesize}
 \begin{verbatim}
 set path=($path $RSAT/bin)
 set path=($path $RSAT/perl-scripts)
@@ -335,6 +367,8 @@ set path=($path $RSAT/python-scripts)
 set classpath=($classpath $RSAT/java/lib/NeAT_javatools.jar)
 rehash
 \end{verbatim}
+\end{footnotesize}
+
 
 (the \texttt{rehash} command updates the list of executable programs)
 
@@ -366,15 +400,18 @@ The distribution includes a series of make scripts which will
 facilitate this step. You just need go to the rsa-tools directory, and
 start the appropriate make file.
 
+\begin{footnotesize}
 \begin{verbatim}
 cd rsa-tools
 make -f makefiles/init_RSAT.mk init
 \end{verbatim}
+\end{footnotesize}
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Config file
-\section{Configuring \RSAT for utilization on the command line}
+\section{Adapting \RSAT \  local configuration}
 
 The \RSAT distribution comes with a template configuration file named
 \file{RSAT\_config\_default.props} and located in the \file{rsa-tools}
@@ -382,9 +419,12 @@ directory.
 
 Copy this file to create your own config file \file{RSAT\_config.props}.
 
+\begin{footnotesize}
 \begin{verbatim}
 cp RSAT_config_default.props RSAT_config.props
 \end{verbatim}
+\end{footnotesize}
+
 
 You need to edit this file and specify the parameters of your local
 configuration. In particular, it is essential to specify the variable
@@ -392,18 +432,20 @@ RSAT, which specifies the RSAT main directory.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Compile C/C++ programs
+\section{Compiling C programs in \RSAT}
 
-\section{Compiling C/C++ programs}
+Some of the tools available in \RSAT (info-gibbs, matrix-scan-quick,
+count-words) are written in the C. The distribution only contains
+the sources of these tools, because the binaries are operating
+system-dependent. The programs can be compiled in a very easy way.
 
-Some of the tools available in \RSAT (info-gibbs) are written in the
-C/C++. The distribution only contains the sources of these tools,
-because the binaries are operating system-dependent. The programs can
-be compiled in a very easy way.
-
+\begin{footnotesize}
 \begin{verbatim}
 cd ${RSAT}
 make -f makefiles/init_RSAT.mk compile_all
 \end{verbatim}
+\end{footnotesize}
+
 
 This will compile and install the following programs in the directory
 \file{\$RSAT/bin}. 
@@ -412,15 +454,20 @@ The installation directory can be changed by redefining the BIN
 variable. For instance, you can type the following command to install
 the compiled programs in \file{/usr/local/bin}.
 
+\begin{footnotesize}
 \begin{verbatim}
 cd ${RSAT}
 make -f makefiles/init_RSAT.mk compile_all BIN=/usr/local/bin
 \end{verbatim}
+\end{footnotesize}
+
 
 \begin{itemize}
-\item[info-gibbs] a gibbs sampling algorithm based on optimization of
-  the the information content of the motif.
-\item[count-words] an efficient algorithm for counting word
+\item \program{info-gibbs}: a gibbs sampling algorithm based on
+  optimization of the the information content of the motif
+  \cite{Defrance:2009}.
+
+\item \program{count-words}: an efficient algorithm for counting word
   occurrences in DNA sequences. This program is much faster than
   \program{oligo-analysis}, but it only returns the occurrences and
   frequencies, whereas oligo-analysis returns over-representation
@@ -428,12 +475,13 @@ make -f makefiles/init_RSAT.mk compile_all BIN=/usr/local/bin
   options. \program{count-words} is routinely used to compute word
   frequencies in large genome sequences, for calibrating the Markov
   models used by \program{oligo-analysis}.
-\item[matrix-scan-quick] an efficient algorithm for scanning sequences
-  with a position-specific scoring matrix. As its name indicates,
-  \program{matrix-scan-quick} is \emph{much} faster than the Perl
-  script \program{matrix-scan}, but presents reduced functionalities
-  (only computes the weight, returns either a list of sites or the
-  weight score distribution).
+
+\item \program{matrix-scan-quick}: an efficient algorithm for scanning
+  sequences with a position-specific scoring matrix. As its name
+  indicates, \program{matrix-scan-quick} is \emph{much} faster than
+  the Perl script \program{matrix-scan}, but presents reduced
+  functionalities (only computes the weight, returns either a list of
+  sites or the weight score distribution).
 \end{itemize}
 
 
@@ -460,32 +508,98 @@ make -f makefiles/init_RSAT.mk compile_all BIN=/usr/local/bin
 % Tests for the command line tools
 \chapter{Testing the command-line tools}
 
-\section{Testing the access to perl scripts}
+\section{Testing the access to the programs}
+
+\subsection{Perl scripts}
 
 From now on, you should be able to use the perl scripts from the
 command line. To test this, run:
 
+\begin{footnotesize}
 \begin{verbatim}
 random-seq -help
 \end{verbatim}
+\end{footnotesize}
+
 
 This should display the on-line help for the random sequence
 generator.
 
+\begin{footnotesize}
 \begin{verbatim}
 random-seq -l 200 -r 4 -a a:t 0.3 c:g 0.2
 \end{verbatim}
+\end{footnotesize}
 
-Should generate a random sequence.
+Should generate a random sequence of 200 nucleotides, with approximate
+proportions of 60\% A/T and 40\% G/C.
+
+
+\subsection{Testing Perl graphical librairies}
+
+\RSAT includes some graphical tools (\program{feature-map} and
+\program{XYgraph}), which require a proper installation of Perl
+modules.
+
+\begin{description}
+\item[GD.pm] Interface to Gd Graphics Library.
+\item[PostScript::Simple]  Produce PostScript files from Perl.
+\end{description}
+
+To test if these modules are available on your machine, type.
+
+\begin{footnotesize}
+\begin{verbatim}
+feature-map -help
+\end{verbatim}
+\end{footnotesize}
+
+If the modules are available, you should see the help message of the
+program feature-map. If not, you will see an error message complaining
+about the missing librairies. In such a case, ask your system
+administrator to install the missing modules.
+
+\subsection{Python scripts}
+
+From 2009 releases, the \RSAT distribution includes some Python
+scripts. To test that they are running correctly, you can try.
+
+\begin{footnotesize}
+\begin{verbatim}
+random-motif  -l 10 -c 0.85 -N 20
+\end{verbatim}
+\end{footnotesize}
+
+This command will generate a 20-columns position-specific scoring
+matrix (PSSM) with 85\% conservation of one residue in each column.
+
+\subsection{C programs}
+
+You can test the correct installation of the C programs with the
+following command.
+
+\begin{footnotesize}
+\begin{verbatim}
+random-seq -l 1000 -a a:t 0.4 c:g 0.1 | count-words -l 2 -v 1 -2str
+\end{verbatim}
+\end{footnotesize}
+
+The first program (\program{random-seq}) is a Perl script, which
+generates a random sequence. The output is directly piped to the C
+program \program{count-words}, which computes the frequencies and
+occurrences of each dinucleotide.
 
 \section{Testing genome installation}
 
 We will now test if the genomes are correctly installed. You can
 obtain the list of supported organisms with the command:
 
+\begin{footnotesize}
 \begin{verbatim}
 supported-organisms
 \end{verbatim}
+\end{footnotesize}
+
 
 If this command returns no result, it means that genomes were either
 not installed, or not correctly configured. In such a case, check the
@@ -496,42 +610,27 @@ Once you can obtain the list of installed organisms, try to retrieve
 some upstream sequences. You can first read the list of options for the
 \program{retrieve-seq} program.
 
+\begin{footnotesize}
 \begin{verbatim}
 retrieve-seq -help
 \end{verbatim}
+\end{footnotesize}
+
 
 Select an organism (say \org{Saccharomyces cerevisiae}), and
 retrieve all the start codons with the following options :
 
+\begin{footnotesize}
 \begin{verbatim}
 retrieve-seq -org Saccharomyces_cerevisiae \
         -type upstream -from 0 -to +2 -all \
         -format wc -nocomment
 \end{verbatim}
+\end{footnotesize}
+
 
 This should return a set of 3 bp sequences, mostly ATG (in the case of
 \org{Saccharomyces cerevisiae} at least)
-
-\section{Testing the graphical scripts}
-
-\RSAT includes two graphical tools, \program{feature-map} and
-\program{XYgraph}. These tools require the following  perl modules:
-
-\begin{description}
-\item[GD.pm] Interface to Gd Graphics Library.
-\item[PostScript::Simple]  Produce PostScript files from Perl.
-\end{description}
-
-To test if these modules are available on your machine, type.
-
-\begin{verbatim}
-feature-map -help
-\end{verbatim}
-
-If the modules are available, you should see the help message of the
-program feature-map. If not, you will see an error message complaining
-about the missing librairies. In such a case, ask your system
-administrator to install the missing modules.
 
 \section{Further steps}
 
@@ -541,17 +640,20 @@ In case you would like to install additional genomes that are not
 supported on \RSAT main server, the next chapter indicates yiou how to
 proceed.
 
-\chapter{Compiling C programs of \RSAT}
-
-%% TO BE WRITTEN BY MATTHIEU DEFRANCE
 
 \chapter{Installing third-party programs}
 
-The \RSAT distribution only contains the programs developed by Jacques
-van Helden. A few additional programs, developed by third parties, can
-be integrated in the package. All third-party programs may be loacated in the
-directory \emph{bin} directory of the \RSAT distribution. In order to
-obtain these programs, please download them from their original site.
+\section{complementary programs for the analysis of regulatory
+  sequences}
+
+The \RSAT distribution only contains the programs developed by the
+\RSAT \ team. 
+
+A few additional programs, developed by third parties, can be
+integrated in the package. All third-party programs may be loacated in
+the directory \emph{bin} directory of the \RSAT distribution. In order
+to obtain these programs, please download them from their original
+site.
 
 In particular, we recommend to install the following programs.
 
@@ -607,7 +709,7 @@ gibbs & Andrew Neuwald & ftp://ftp.ncbi.nih.gov/pub/neuwald/gibbs9\_95/ \\
   which are complementary to the \RSAT package.}
 \end{table}
 
-I particularly recommend the installation of \program{mkvtree} and
+We particularly recommend the installation of \program{mkvtree} and
 \program{vmatch} (Stefan Kurtz), because these programs are used by
 the program purge-seq to discard redundant sequence fragments.
 
@@ -616,39 +718,66 @@ programs and include their binaries path rsa-tools/bin. If you are not
 familiar with the installation of unix programs, ask assistance to
 your system administrator.
 
-For NeAT, we recommend you to compile the program floydwarshall.c located in the contrib/floydwarshall directory of \RSAT. To this, use this command :
 
+\section{Recommended programs for the Network Analysis Tools (NeAT)}
+
+
+For the Network Analysis Tools (NeAT), we recommend to install the
+following programs, which offer complementary functionalities for the
+analysis of networks/graphs.
+
+Some programs come in the contrib directory of the \RSAT
+distribution. Some others have to be downloaded from their original
+distribution site.
+
+To compile the program \program{floydwarshall} located in the
+\file{contrib/floydwarshall} directory of \RSAT, use this command :
+
+\begin{footnotesize}
 \begin{verbatim}
 gcc $RSAT/contrib/floydwarshall/floydwarshall.c -o $RSAT/bin/floydwarshall
 \end{verbatim}
+\end{footnotesize}
+
 
 In addition, the contributed programs REA and kWalks need to be installed.
 
 To install kWalks, type:
 
+\begin{footnotesize}
 \begin{verbatim}
 cd $RSAT/contrib/kwalks
 tar xzvf kwalks.tgz
 cd src
 make
 \end{verbatim}
+\end{footnotesize}
 
-The KWALKS\_ROOT variable in the RSAT config file should point to \$RSAT/contrib/kwalks/bin
+
+The KWALKS\_ROOT variable in the RSAT config file should point to
+\$RSAT/contrib/kwalks/bin
 
 To install REA, type:
 
+\begin{footnotesize}
 \begin{verbatim}
 cd $RSAT/contrib/REA
 tar xzvf REA.tgz
 make
 \end{verbatim}
+\end{footnotesize}
 
-The REA\_ROOT variable in the RSAT config file should point to \$RSAT/contrib/REA
+The REA\_ROOT variable in the RSAT config file should point to
+\$RSAT/contrib/REA
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Parsing and installing additional genomes
 
 \input{ug_installing_organisms.tex}
+
+% Bibliography is not working yet. I have to debug
+\bibliographystyle{plain}
+\bibliography{rsat_bibliography}
 
 \end{document}
 
