@@ -6,7 +6,7 @@ values_t *new_values(double min, double max, double e)
     values->min = min;
     values->max = max;
     values->e = e;
-    values->size = (int) values->e + (values->max - values->min) / values->e;
+    values->size = (int) (values->e + (values->max - values->min) / values->e);
     values->data = (int *) malloc(sizeof(int) * values->size);
     int i;
     for (i = 0; i < values->size; i++)
