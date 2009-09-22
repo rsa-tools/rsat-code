@@ -34,9 +34,12 @@ which is part of linux distribution. \program{wget} is a ``web
 aspirator'', which allows to downlaod whole directories from ftp and
 http sites. You can check if the program is installed on your machine.
 
+\begin{footnotesize}
 \begin{verbatim}
 wget -help
 \end{verbatim}
+\end{footnotesize}
+
 
 This command should return the help pages for \program{wget}.  If you
 obtain an error message (``command not found''), you need to ask your
@@ -59,7 +62,7 @@ preferred model organism: the yeast \textit{Saccharomyces cerevisiae}.
 The makefile script \file{makefiles\/init\_RSAT.mk} includes a target to
 install and configure a single organism on your RSAT site. 
 
-\begin{small}
+\begin{footnotesize}
 \begin{verbatim}
 cd $RSAT
 
@@ -71,23 +74,26 @@ make -f makefiles/init_RSAT.mk download_one_genome ORG=Saccharomyces_cerevisiae
 make -f makefiles/init_RSAT.mk configure_one_genome ORG=Saccharomyces_cerevisiae
 
 \end{verbatim}
-\end{small}
+\end{footnotesize}
 
 You can now check if the configuration file has been correctly updated
 by typing the command.
 
+\begin{footnotesize}
 \begin{verbatim}
 supported-organisms
 \end{verbatim}
+\end{footnotesize}
+
 
 In principle, the following information should be displayed on your
 terminal.
 
-\begin{small}
+\begin{footnotesize}
 \begin{verbatim}
     Saccharomyces_cerevisiae   Saccharomyces cerevisiae
 \end{verbatim}
-\end{small}
+\end{footnotesize}
 
 \subsubsection{Importing another organism}
 
@@ -95,7 +101,7 @@ You can now proceed exactly in th same way to install any organism of
 your choice. For example, if you want to install Escherichia coli K12?
 you can run the ffollowing commands.
 
-\begin{small}
+\begin{footnotesize}
 \begin{verbatim}
 cd \$RSAT
 
@@ -109,5 +115,5 @@ make -f makefiles/init_RSAT.mk configure_one_genome ORG=Escherichia_coli_K12
 ## Check that the new genome has bee added to the list of supported organisms
 supported-organisms
 \end{verbatim}
-\end{small}
+\end{footnotesize}
 
