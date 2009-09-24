@@ -157,14 +157,23 @@ struct Markov
         }
     }
 
+    double logPBernoulli(char *word, int l)
+    {
+        double s = 0.0;
+        for (int i = 0; i < l; i++)
+            s += logpriori[(int) word[i]];
+        return s;
+    }
+
     double logP(char *word, int len)
     {
         if (order == 0)
         {
-            p = 0.0;
+            double p = 0.0;
             for (int i = 0; i < len; i++)
                 //p += log(priori[(int) word[i]]);
                 p += logpriori[(int) word[i]];
+            return p;
         }
         else
         {
@@ -176,8 +185,8 @@ struct Markov
                 prefix = word2index(&word[i-order], order);
                 p += log(T[prefix][suffix]);
             }
+            return p;
         }
-        return p;
     }
 
     // double P(char *word, int len)
