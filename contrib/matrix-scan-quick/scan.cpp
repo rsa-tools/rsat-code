@@ -63,13 +63,19 @@ int scan_seq(FILE *fout, seq_t *seq, int s, Array &matrix, Markov &bg, values_t 
     seq_t *seqrc = NULL;
     if (rc)
         seqrc = new_seq_rc(seq);
+
     int maxpos = seq->size - l;
     int i;
     for (i = 0; i <= maxpos; i++)
     {
         if (!word_is_valid(seq, i, l))
             continue;
-        double W = matrix.logP(&seq->data[i]) - bg.logP(&seq->data[i], l);
+        double W;
+        if (bg.order == 0)
+            W = matrix.logP(&seq->data[i]) - bg.logPBernoulli(&seq->data[i], l);
+        else
+            W = matrix.logP(&seq->data[i]) - bg.logP(&seq->data[i], l);
+
         if (W < threshold)
             continue;
 
@@ -86,7 +92,12 @@ int scan_seq(FILE *fout, seq_t *seq, int s, Array &matrix, Markov &bg, values_t 
         if (!rc)
             continue;
 
-        double Wrc = matrix.logP(&seqrc->data[maxpos - i]) - bg.logP(&seqrc->data[maxpos - i], l);
+        double Wrc;
+        if (bg.order == 0)
+            Wrc = matrix.logP(&seqrc->data[maxpos - i]) - bg.logPBernoulli(&seqrc->data[maxpos - i], l);
+        else
+            Wrc = matrix.logP(&seqrc->data[maxpos - i]) - bg.logP(&seqrc->data[maxpos - i], l);
+
         if (Wrc < threshold)
             continue;
         if (values != NULL)
