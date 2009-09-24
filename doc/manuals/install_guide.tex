@@ -33,7 +33,10 @@ Installation guide}
 \section{Description}
 
 This documents describes the installation procedure for the software
-package \textbf{Regulatory Sequence Analysis Tools} (\RSAT).
+suite \textbf{Regulatory Sequence Analysis Tools} (\RSAT), which
+offers several dozens of tools to detect cis-regulatory elements in
+DNA sequences
+\cite{Thomas-Chollier:2008:W119-27,vanHelden:2003:3593-6,vanHelden:2000:177-87}.
 
 \section{Requirements}
 
@@ -100,19 +103,33 @@ can be installed with the command \program{cpan}.
   can then be done only once. This library can be easyly installed via
   CPAN.
 
-\item[XML::LibXML] This module is required for parsing and writing XML and uses the 
-XML::Parser::Expat library. It is necessary for some RSAT applications.
+\item[XML::LibXML] This module is required for parsing and writing XML
+  and uses the XML::Parser::Expat library. It is necessary for some
+  RSAT applications.
 
+\item[DBD:mysql and DBI] those two libraries are required by the
+  program \program{retrieve-ensembl-seq} in order to access the
+  ENSEMBL database.
 
 \end{description}
 
 \subsection{Additional libraries to access EnsEMBL genomes}
 
-Two programs, \program{retrieve-ensembl-seq.pl} and
-\program{get-ensembl-genome.pl}, require two EnsEMBL Perl APIs and
-bioperl to work on your machine.
+Since 2009, a series of \RSAT programs support a direct access to the
+EnsEMBL database in order to ensure a convenient access to genomes
+from higher organisms \cite{Sand:2009}.
 
-To obtain bioperl:
+\begin{itemize}
+\item \program{supported-organisms-ensembl}
+\item \program{ensembl-org-info}
+\item \program{retrieve-ensembl-seq.pl} 
+\item \program{get-ensembl-genome.pl}
+\end{itemize}
+
+Those programs require to install a few Perl libraries as well as a
+MySQL client on your machine. 
+
+To obtain BioPerl:
 
 \begin{footnotesize}
 \begin{verbatim}
@@ -144,13 +161,13 @@ cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
 
 ## Download the current version of EnsEMBL
 cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-  checkout -r branch-ensembl-47 ensembl
-## (you need to adapt the branch number, e.g. 47, as it updates).
+  checkout -r branch-ensembl-55 ensembl
+## (you need to adapt the branch number, e.g. 55, as it updates).
 
 ## Download the current version of the EnsEMBL module for comparative genomics
 cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-  checkout -r branch-ensembl-47 ensembl-compara
-## (you need to adapt the branch number, e.g. 47, as it updates).
+  checkout -r branch-ensembl-55 ensembl-compara
+## (you need to adapt the branch number, e.g. 55, as it updates).
 \end{verbatim}
 \end{footnotesize}
 
@@ -180,9 +197,16 @@ ensembl_host=ensembldb.ensembl.org
 \end{footnotesize}
 
 The EnsEMBL libraries also require the SQL client Perl module
-\file{DBD::mysql}, as well as \file{DBI}, which can be installed with cpan (for this you need
-root privileges), and MySQL. To access EnsEMBL versions above 47, you need
-port 5306 to be opened.
+\file{DBD::mysql}, as well as \file{DBI}, which can be installed with
+\program{cpan} (for this you need root privileges). Note that the
+installation of the CPAN module DBD:mysql requires a prior
+installation of a MySQL client on your machine
+(\url{http://dev.mysql.com/downloads/}).
+
+To access EnsEMBL versions above 47, you need port 5306 to be opened
+on your machine. This might require to consult the system
+administrator of your network in order to ensure that the Firewall
+accepts this port.
 
 Detailed information about the EnsEMBL libraries can be obtained on
 the EnsEMBL web site
