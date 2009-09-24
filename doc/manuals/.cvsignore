@@ -1,2 +1,8 @@
-.DS_Storetest.idx
-test.log
+.DS_Store
+*.idx
+*.log
+*.bbl
+*.blg
+*.dvi
+*.toc
+*.aux
