@@ -3024,7 +3024,7 @@ sub makeLogo{
   my (@logo_formats) = @{$logo_formats};
   my ($seqs_file,$seq_number) =$self->seq_from_matrix($logo_tmp_dir);
   my $ncol = $self->ncol();
-  my $x_axis_legend = $seq_number." sites aligned";
+  my $x_axis_legend = $seq_number." sites";
   foreach my $logo_format (@logo_formats){
     my $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
     $seqlogo_path = &RSAT::util::trim($seqlogo_path);
