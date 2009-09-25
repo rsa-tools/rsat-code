@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.71 2009/09/25 07:47:55 jvanheld Exp $
+# $Id: matrix-quality,v 1.72 2009/09/25 13:44:17 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -465,7 +465,7 @@ package main;
 	my ($image) = @_;
 	my $short_image = &RSAT::util::ShortFileName($image);
 	my $image_format = "png";
-	print $index "<p><a href='",$short_image.".".$image_format,"'><img border=1 src='",$short_image.".".$image_format, "'></a></p>\n\n";
+	print $index "<a href='",$short_image.".".$image_format,"'><img border=1 src='",$short_image.".".$image_format, "'></a>\n\n";
       }
 
       sub list_one_file {
@@ -498,6 +498,7 @@ package main;
       print $index "\n<h3>Figures</h3>\n";
       print $index "\n<h4>Matrix logo</h4>\n";
       &index_one_image($outfile{prefix}."_logo");
+      &index_one_image($outfile{prefix}."_rc_logo");
       print $index "\n<h4>Complementary cumulative distributions</h4>\n";
       &index_one_image($outfile{distrib_compa});
       print $index "\n<h4>Complementary cumulative distributions (logarithmic Y axis)</h4>\n";
@@ -1586,6 +1587,7 @@ sub ExportMatrixInfo {
   my ($matrix) = @_;
 
   $outfile{matrix_info} = $outfile{prefix}."_matrix_info.txt";
+  $outfile{matrix_rc} = $outfile{prefix}."_rc";
 
   &RSAT::message::TimeWarn("Exporting matrix information",  $outfile{matrix_info})
     if ($main::verbose >= 1);
@@ -1596,6 +1598,27 @@ sub ExportMatrixInfo {
   $cmd .= " -bgfile ".$infile{bg_file};
   $cmd .= " -bg_format ".$bg_format;
   $cmd .= " -return counts,frequencies,weights,info,parameters,profile,sites,logo";
+  $cmd .= " -logo_format png -logo_opt '-e -M -t ".$matrix_name."'";
+  &doit($cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+
+  ## Generate reverse complement
+  $cmd = "convert-matrix";
+  $cmd .= " -i ".$matrix_file;
+  $cmd .= " -from ".$matrix_format;
+  $cmd .= " -to tab -o ".$outfile{matrix_rc};
+  $cmd .= " -bgfile ".$infile{bg_file};
+  $cmd .= " -bg_format ".$bg_format;
+  $cmd .= " -return counts";
+  &doit($cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+
+  ## Generate logo for the reverse complement
+  $cmd = "convert-matrix -rc";
+  $cmd .= " -i ".$outfile{matrix_rc};
+  $cmd .= " -from tab";
+  $cmd .= " -to tab -o ".$outfile{matrix_rc}.".tab";
+  $cmd .= " -bgfile ".$infile{bg_file};
+  $cmd .= " -bg_format ".$bg_format;
+  $cmd .= " -return counts,logo";
   $cmd .= " -logo_format png -logo_opt '-e -M -t ".$matrix_name."'";
   &doit($cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
 }
