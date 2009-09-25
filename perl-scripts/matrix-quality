@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.70 2009/09/21 21:19:55 jvanheld Exp $
+# $Id: matrix-quality,v 1.71 2009/09/25 07:47:55 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -270,6 +270,7 @@ package main;
 			permute=>1, ## Scan sequences with permuted matrices
 			compare=>1, ## Compare distributions between the various input files
 			graphs=>1, ## Draw the graphs with distrib comparisons
+			index=>1, ## Index results in a HTML file
 		       );
     $supported_tasks = join (",", sort(keys( %supported_tasks)));
     %tasks = ();
@@ -304,8 +305,8 @@ package main;
 
     ## Background model file is mandatory
     foreach my $i (0..$#matrix_scan_options) {
-      if (($matrix_scan_options[$i] eq "-bgfile") && (!$main::infile{th_prior})) {
-	$infile{th_prior} = $matrix_scan_options[$i+1];
+      if (($matrix_scan_options[$i] eq "-bgfile") && (!$main::infile{bg_file})) {
+	$infile{bg_file} = $matrix_scan_options[$i+1];
       }
       if ($matrix_scan_options[$i] eq "-bg_pseudo") {
 	$main::bg_pseudo = $matrix_scan_options[$i+1]
@@ -313,13 +314,14 @@ package main;
     }
     if (($tasks{theor}) || ($tasks{theor_loo})) {
       &RSAT::error::FatalError("You must define a background model file for the theoretical distribution, with either option -bgfile or -th_prior")
-	unless ($infile{th_prior});
+	unless ($infile{bg_file});
     }
 
     ## Output prefix is mandatory
     &RSAT::error::FatalError("You must define a prefix for the output files with the option -o")
       unless ($outfile{prefix});
     $outfile{log} = $main::outfile{prefix}."_log.txt";
+    $outfile{index} = $main::outfile{prefix}."_index.html";
 
     ## Create output directory if required
     $dir{output} = `dirname $outfile{prefix}`;
@@ -339,15 +341,15 @@ package main;
 
     ################################################################
     ### Read background model to use for theorical distribution
-    if ($main::infile{th_prior}){
-      $bg_model->load_from_file($main::infile{th_prior},$bg_format);
+    if ($main::infile{bg_file}){
+      $bg_model->load_from_file($main::infile{bg_file},$bg_format);
     }
     if (defined($main::bg_pseudo)){
       $bg_model->force_attribute("bg_pseudo" => $bg_pseudo);
     }
 
     ################################################################
-    ## Read input matrix.
+    ## Read input matrix
     local $matrix_file = $infile{matrix};
     &RSAT::message::TimeWarn("Reading matrix", $matrix_file) if ($main::verbose >= 1);
     my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
@@ -365,7 +367,7 @@ package main;
     local ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
     $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
     $matrix->set_attribute("name", $matrix_name);
-    $matrix->setMarkovModel($bg_model) if ($main::infile{th_prior}) ;
+    $matrix->setMarkovModel($bg_model) if ($main::infile{bg_file}) ;
     local ($Wmin, $Wmax)  = $matrix->weight_range();
     &RSAT::message::Info("Matrix weight range", $Wmin, $Wmax) if ($main::verbose >= 2);
 
@@ -374,6 +376,9 @@ package main;
 
     ## Export the matrix in tab-delimited format
     &ExportTabMatrix($matrix);
+
+    ## Export the matrix in tab-delimited format with additional information + the logos
+    &ExportMatrixInfo($matrix);
 
     ## Shuffle the columns of the matrix (permutation test)
     local $perm_nb_max = &RSAT::stats::checked_max(0, values %perm_nb);
@@ -453,6 +458,81 @@ package main;
     &PostVerbose() if ($main::verbose);
 
     ################################################################
+    ## Index results in a HTML file
+    if ($tasks{index}) {
+
+      sub index_one_image {
+	my ($image) = @_;
+	my $short_image = &RSAT::util::ShortFileName($image);
+	my $image_format = "png";
+	print $index "<p><a href='",$short_image.".".$image_format,"'><img border=1 src='",$short_image.".".$image_format, "'></a></p>\n\n";
+      }
+
+      sub list_one_file {
+	my ($description, @files) = @_;
+	print $index "<tr>";
+	print $index "<td>", $description,"</td>\n";
+	foreach my $file (@files) {
+	  my $short_file = &RSAT::util::ShortFileName($file);
+	  print $index "<td><a href='",$short_file,"'>", $short_file,"</a></td>\n";
+	}
+	print $index "</tr>\n\n";
+      }
+      &RSAT::message::Info("Index file", $outfile{index});
+
+      local $index = &OpenOutputFile($outfile{index});
+      print $index "<html>\n";
+      print $index "<head>\n";
+      print $index "<title>matrix-quality result: ",$matrix_name,"</title>\n";
+      print $index "</head>\n\n";
+      print $index "<body>\n\n";
+
+      ## Print the command
+      print $index "<h1>matrix-quality result: ",$matrix_name,"</h1>\n\n";
+      print $index "<b>Command:</b>\n";
+      print $index "<pre>matrix-quality ";
+      &PrintArguments($index);
+      print $index "</pre>";
+
+      ## Display the distributions
+      print $index "\n<h3>Figures</h3>\n";
+      print $index "\n<h4>Matrix logo</h4>\n";
+      &index_one_image($outfile{prefix}."_logo");
+      print $index "\n<h4>Complementary cumulative distributions</h4>\n";
+      &index_one_image($outfile{distrib_compa});
+      print $index "\n<h4>Complementary cumulative distributions (logarithmic Y axis)</h4>\n";
+      &index_one_image($outfile{distrib_compa}."_logy");
+      print $index "\n<h4>ROC curve (logarithmic X axis)</h4>\n";
+      &index_one_image($outfile{distrib_compa}."_roc_xlog");
+
+      ## Type the matrix information
+      print $index "\n<h3>Matrix information</h3>\n";
+      print $index "<pre>\n";
+      print $index `cat $outfile{matrix_info}`;
+      print $index "</pre>\n";
+
+      ## List the output files
+      print $index "\n<h3>Result files</h3>\n";
+      print $index "<p><table border=1 cellpadding=3 cellpsacing=3>";
+      &list_one_file("Output directory", ".");
+      &list_one_file("Matrix info", $outfile{matrix_info});
+      &list_one_file("Matrix in tab format", $outfile{matrix_tab});
+      &list_one_file("Theoretical distribution", $outfile{theoretical_distrib});
+      &list_one_file("Score distrubutions", $outfile{distrib_compa}.".tab");
+      &list_one_file("Matrix site sequences", $seqfile{matrix_sites});
+      &list_one_file("Matrix sites LOO scores", $outfile{matrix_sites_loo});
+      foreach my $seq_type (@seq_types) {
+	&list_one_file($seq_type, $outfile{$seq_type});
+      }
+      &list_one_file("Log file", $outfile{log});
+      print $index "</table>";
+
+      ## Close the file
+      print $index "</body></html>\n";
+      close $main::index;
+    }
+
+    ################################################################
     ###### finish verbose
     if ($main::verbose >= 1) {
 	my $done_time = &AlphaDate();
@@ -504,6 +584,7 @@ package main;
     if ($main::verbose >= 1) {
       &RSAT::message::Info("Output directory", $dir{output});
       &RSAT::message::Info("Log file", $outfile{log});
+      &RSAT::message::Info("Index file", $outfile{index});
     }
 
     exit(0);
@@ -839,7 +920,7 @@ details).
 
 =cut
 	} elsif ($arg eq "-th_prior") {
-		$main::infile{th_prior} = shift(@arguments);
+		$main::infile{bg_file} = shift(@arguments);
 
 
 		## Number of decimals for computing scores
@@ -967,7 +1048,7 @@ Example:
 
 =cut
 	} elsif ($arg eq "-img_format") {
-	    $image_format = shift(@arguments);
+	    my $image_format = shift(@arguments);
 	    my @tmp_img_formats = split(',',$image_format);
 	    if (scalar(@tmp_img_formats)>0) {
 	    	foreach my $f (@tmp_img_formats) {
@@ -982,8 +1063,8 @@ Example:
 
 =item B<-task tasks>
 
-List of tasks to perform. If this option is not specified, all the
-tasks are performed.
+Specify one or several tasks to be run. If this option is not
+specified, all the tasks are run.
 
 Note that some tasks depend on other ones. This option should thus be
 used with caution, by experimented users only.
@@ -1019,6 +1100,13 @@ Compare distributions between the various input files
 =item B<graphs>
 
 Draw the graphs with distrib comparisons
+
+=item B<index>
+
+Index the results in a HTML file.  The index lists the output files
+and displays the main graphs (distribution curves and ROC curve). In
+order to be correctly indexed, the graphs have to be generated in png
+format.
 
 =back
 
@@ -1492,6 +1580,28 @@ sub ExportTabMatrix {
 
 
 ################################################################
+## Export the matrix in tab-delimited format with additional
+## information + the logos.
+sub ExportMatrixInfo {
+  my ($matrix) = @_;
+
+  $outfile{matrix_info} = $outfile{prefix}."_matrix_info.txt";
+
+  &RSAT::message::TimeWarn("Exporting matrix information",  $outfile{matrix_info})
+    if ($main::verbose >= 1);
+  my $cmd = "convert-matrix -v 1";
+  $cmd .= " -i ".$matrix_file;
+  $cmd .= " -from ".$matrix_format;
+  $cmd .= " -to tab -o ".$outfile{matrix_info};
+  $cmd .= " -bgfile ".$infile{bg_file};
+  $cmd .= " -bg_format ".$bg_format;
+  $cmd .= " -return counts,frequencies,weights,info,parameters,profile,sites,logo";
+  $cmd .= " -logo_format png -logo_opt '-e -M -t ".$matrix_name."'";
+  &doit($cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
+}
+
+
+################################################################
 ## Export the matrix in tab-delimited format. This will be used
 ## for permuting the matrix.
 sub PermuteMatrixColumns {
@@ -1584,7 +1694,7 @@ sub CompareDistrib {
       my $ycols = join ",", 2..(scalar(@distrib_files)+2);
       $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
       $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
-      $XYgraph_cmd .= " -xgstep1 5 -xgstep2 1";
+      $XYgraph_cmd .= " -xgstep1 5 -xgstep2 1 -ygstep1 0.1 -ygstep2 0.02";
       $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
       $graph_file_opt = $large_graph_options." ".$graph_options." ".$distrib_options." -o ".$outfile{distrib_compa}.".".$image_format;
       &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -1764,7 +1874,7 @@ sub PrintTheorScoreDistribution {
   $matrix_distrib_cmd .= " -m ".$matrix_tab_file;
   $matrix_distrib_cmd .= " -matrix_format tab";
   $matrix_distrib_cmd .= " -pseudo ".$main::pseudo_counts;
-  $matrix_distrib_cmd .= " -bgfile ".$main::infile{th_prior};
+  $matrix_distrib_cmd .= " -bgfile ".$main::infile{bg_file};
   $matrix_distrib_cmd .= " -bg_format ".$main::bg_format;
   if (defined($main::bg_pseudo)){
   	$matrix_distrib_cmd .= " -bg_pseudo ".$main::bg_pseudo;
@@ -1872,17 +1982,17 @@ Called by I<matrix-quality> to generate column-permuted matrices.
 Check why under some conditions matrix-scan can fill up 500Gb of hard
 drive (see Lucia Nikolaia).
 
-=item B<-index>
-
-Generate a HTML index pointing towards the different files generated
-by I<matrix-quality>.
-
 =item B<-perm_merged>
 
 Merge the permutations in order to obtain a more robust distribution
 of the permuted matrices. The figure is more readable than with the
 option -perm_sep (default), but does not reflect the variability
 between the different permutations.
+
+=item B<-th_prior>
+
+This option should better be removed, so the user has to specify the
+bg file with the option -bgfile. To check.
 
 =back
 
