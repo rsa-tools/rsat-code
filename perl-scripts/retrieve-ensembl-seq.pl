@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.58 2009/03/10 08:34:06 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.59 2009/09/28 15:09:54 oly Exp $
 #
 # Time-stamp
 #
@@ -616,9 +616,9 @@ sub Main {
     $rsat_strand = "R";
   }
 
-  &RSAT::message::Info ("Gene:") if ($main::verbose >= 1);
-  &RSAT::message::Info (join("\t", "# ID", "Name", "Contig", "Start", "End", "Strand", "Description")) if ($main::verbose >= 1);
-  &RSAT::message::Info (join("\t", $gene_id, $gene_name, $chromosome_name, $gene_start, $gene_end, $rsat_strand, $description)) if ($main::verbose >= 1);
+  &RSAT::message::Info ("Gene:") if ($main::verbose >= 2);
+  &RSAT::message::Info (join("\t", "# ID", "Name", "Contig", "Start", "End", "Strand", "Description")) if ($main::verbose >= 2);
+  &RSAT::message::Info (join("\t", $gene_id, $gene_name, $chromosome_name, $gene_start, $gene_end, $rsat_strand, $description)) if ($main::verbose >= 2);
 
   if ($feattype eq "gene") {
       my $sequence;
@@ -663,9 +663,9 @@ sub Main {
 	my $transcript_start = $transcript -> start();
 	my $transcript_end = $transcript -> end();
 
-	&RSAT::message::Info ("Transcript:") if ($main::verbose >= 1);
-	&RSAT::message::Info (join("\t", "# ID", "Start", "End")) if ($main::verbose >= 1);
-	&RSAT::message::Info (join("\t", $transcript_id, $transcript_start, $transcript_end)) if ($main::verbose >= 1);
+	&RSAT::message::Info ("Transcript:") if ($main::verbose >= 2);
+	&RSAT::message::Info (join("\t", "# ID", "Start", "End")) if ($main::verbose >= 2);
+	&RSAT::message::Info (join("\t", $transcript_id, $transcript_start, $transcript_end)) if ($main::verbose >= 2);
 
 	# Find all transcripts minimal limits
 	if ($strand == 1 && $transcript_start > $three_primest_start) {
@@ -718,9 +718,9 @@ sub Main {
 		my $intron_end = $intron -> end();
 		my $intron_id = $transcript_id."-".$i;
 
-		&RSAT::message::Info ("Intron:") if ($main::verbose >= 1);
-		&RSAT::message::Info (join("\t", "# ID", "Start", "End")) if ($main::verbose >= 1);
-		&RSAT::message::Info (join("\t", $intron_id, $intron_start, $intron_end)) if ($main::verbose >= 1);
+		&RSAT::message::Info ("Intron:") if ($main::verbose >= 2);
+		&RSAT::message::Info (join("\t", "# ID", "Start", "End")) if ($main::verbose >= 2);
+		&RSAT::message::Info (join("\t", $intron_id, $intron_start, $intron_end)) if ($main::verbose >= 2);
 
 		if ($first_intron) {
 		    if ($strand == 1) {
@@ -757,9 +757,9 @@ sub Main {
 
 	    if ($first_intron && $i != 0) {
 
-		&RSAT::message::Info ("First intron:") if ($main::verbose >= 1);
-		&RSAT::message::Info (join("\t", "# ID", "Start", "End")) if ($main::verbose >= 1);
-		&RSAT::message::Info (join("\t", $intron1_id, $start1, $end1)) if ($main::verbose >= 1);
+		&RSAT::message::Info ("First intron:") if ($main::verbose >= 2);
+		&RSAT::message::Info (join("\t", "# ID", "Start", "End")) if ($main::verbose >= 2);
+		&RSAT::message::Info (join("\t", $intron1_id, $start1, $end1)) if ($main::verbose >= 2);
 
 		$seq_limits{$intron1_id} = [$start1, $end1];
 
@@ -782,8 +782,8 @@ sub Main {
 	my $coding_region_end = $transcript->coding_region_end();
 
 	if (($coding_region_start) && ($coding_region_end)) {
-	    &RSAT::message::Info ("Coding region start: $coding_region_start") if ($main::verbose >= 1);
-	    &RSAT::message::Info ("Coding region end: $coding_region_end") if ($main::verbose >= 1);
+	    &RSAT::message::Info ("Coding region start: $coding_region_start") if ($main::verbose >= 2);
+	    &RSAT::message::Info ("Coding region end: $coding_region_end") if ($main::verbose >= 2);
 	} else {
 	    &RSAT::message::Warning ("Gene $gene_id has no coding region");
 	}
@@ -795,9 +795,9 @@ sub Main {
 		my $exon_start = $exon -> start();
 		my $exon_end = $exon -> end();
 
-		&RSAT::message::Info ("Exon") if ($main::verbose >= 1);
-		&RSAT::message::Info (join("\t", "# ID", "Start", "End")) if ($main::verbose >= 1);
-		&RSAT::message::Info (join("\t", $exon_id, $exon_start, $exon_end)) if ($main::verbose >= 1);
+		&RSAT::message::Info ("Exon") if ($main::verbose >= 2);
+		&RSAT::message::Info (join("\t", "# ID", "Start", "End")) if ($main::verbose >= 2);
+		&RSAT::message::Info (join("\t", $exon_id, $exon_start, $exon_end)) if ($main::verbose >= 2);
 
 		if (($non_coding) && ($coding_region_start) && ($coding_region_end) ) {
 		    if ($coding_region_start > $exon_start && $coding_region_start < $exon_end) {
@@ -948,8 +948,8 @@ sub Main {
 
     if ($feattype eq 'mrna' && !$all_transcripts) {
 
-	&RSAT::message::Info ("Three_primest transcript start: $three_primest_start") if ($main::verbose >= 1);
-	&RSAT::message::Info ("Five_primest transcript end: $five_primest_end") if ($main::verbose >= 1);
+	&RSAT::message::Info ("Three_primest transcript start: $three_primest_start") if ($main::verbose >= 2);
+	&RSAT::message::Info ("Five_primest transcript end: $five_primest_end") if ($main::verbose >= 2);
 
 	my $ref_transcript;
 
@@ -1036,7 +1036,7 @@ sub GetLimits {
       $expanded_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome -> seq_region_name(), $start + $from, $end);
       $closest_neighbour_limit = &GetNeighbours($gene_id, $start, $end, $expanded_slice);
 
-      &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 1);
+      &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 2);
 
     }
 #    if (($nogene || $noorf) && $closest_neighbour_limit > $start + $from) {
@@ -1069,7 +1069,7 @@ sub GetLimits {
       $expanded_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome -> seq_region_name(), $start, $end - $from);
       $closest_neighbour_limit = &GetNeighbours($gene_id, $start, $end, $expanded_slice);
 
-      &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 1);
+      &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 2);
 
     }
 #    if (($nogene || $noorf) && $closest_neighbour_limit < $end - $from) {
@@ -1101,7 +1101,7 @@ sub GetLimits {
       $expanded_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome -> seq_region_name(), $start, $end + $to);
       $closest_neighbour_limit = &GetNeighbours($gene_id, $start, $end, $expanded_slice);
 
-      &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 1);
+      &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 2);
 
     }
 #    if (($nogene || $noorf) && $closest_neighbour_limit < $end + $to) {
@@ -1132,7 +1132,7 @@ sub GetLimits {
       $expanded_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome -> seq_region_name(), $start - $to, $end);
       $closest_neighbour_limit = &GetNeighbours($gene_id, $start, $end, $expanded_slice);
 
-      &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 1);
+      &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 2);
 
     }
 #    if (($nogene || $noorf) && $closest_neighbour_limit > $start - $to) {
@@ -1181,8 +1181,8 @@ sub GetNeighbours {
   # Get neighbour genes
   my @neighbour_genes = @{$expanded_slice->get_all_Genes()};
 
-  &RSAT::message::Info ("Neighbour gene(s):") if ($main::verbose >= 1);
-  &RSAT::message::Info (join("\t", "# ID", "Name", "Contig", "Start", "End", "Strand", "Description")) if ($main::verbose >= 1);
+  &RSAT::message::Info ("Neighbour gene(s):") if ($main::verbose >= 2);
+  &RSAT::message::Info (join("\t", "# ID", "Name", "Contig", "Start", "End", "Strand", "Description")) if ($main::verbose >= 2);
 
   foreach my $neighbour_gene(@neighbour_genes) {
     if ($neighbour_gene->stable_id() eq $gene_id) {    # the query gene itself is in the expanded slice
@@ -1207,25 +1207,41 @@ sub GetNeighbours {
     my $neighbour_start = $neighbour_gene -> seq_region_start();
     my $neighbour_end = $neighbour_gene -> seq_region_end();
 
-    &RSAT::message::Info (join("\t", $neighbour_gene->stable_id(), $neighbour_name, $chromosome -> name(), $neighbour_start, $neighbour_end, $neighbour_strand, $neighbour_description)) if ($main::verbose >= 1);
+    &RSAT::message::Info (join("\t", $neighbour_gene->stable_id(), $neighbour_name, $chromosome -> name(), $neighbour_start, $neighbour_end, $neighbour_strand, $neighbour_description)) if ($main::verbose >= 2);
 
     #Find closest neighbour limit
     if ($nogene) {    # neighbour limits are closest gene limits
       if ($strand == 1 && $type eq "upstream") {
 	if ($neighbour_gene->seq_region_end() > $closest_neighbour_limit) {
+	 if ($neighbour_gene->seq_region_end() < $start + $to) {
 	  $closest_neighbour_limit = $neighbour_gene->seq_region_end();
+	 } elsif (($neighbour_gene->seq_region_start() < $start + $to) && ($neighbour_gene->seq_region_end() >= $start + $to)) {
+	  $closest_neighbour_limit = $start + $to;
+	 }
 	}
       } elsif ($strand == 1 && $type eq "downstream") {
 	if ($neighbour_gene->seq_region_start() < $closest_neighbour_limit) {
+	 if ($neighbour_gene->seq_region_start() > $end - $to) {
 	  $closest_neighbour_limit = $neighbour_gene->seq_region_start();
+	 } elsif (($neighbour_gene->seq_region_start() <= $end - $to) && ($neighbour_gene->seq_region_end() > $end - $to)) {
+	  $closest_neighbour_limit = $end - $to;
+	 }
 	}
       } elsif ($strand == -1 && $type eq "upstream") {
 	if ($neighbour_gene->seq_region_start() < $closest_neighbour_limit) {
+	 if ($neighbour_gene->seq_region_start() > $end - $to) {
 	  $closest_neighbour_limit = $neighbour_gene->seq_region_start();
+	 } elsif (($neighbour_gene->seq_region_start() <= $end - $to) && ($neighbour_gene->seq_region_end() > $end - $to)) {
+	  $closest_neighbour_limit = $end - $to;
+	 }
 	}
       } elsif ($strand == -1 && $type eq "downstream") {
 	if ($neighbour_gene->seq_region_end() > $closest_neighbour_limit) {
+	 if ($neighbour_gene->seq_region_end() < $start + $to) {
 	  $closest_neighbour_limit = $neighbour_gene->seq_region_end();
+	 } elsif (($neighbour_gene->seq_region_start() < $start + $to) && ($neighbour_gene->seq_region_end() >= $start + $to)) {
+	  $closest_neighbour_limit = $start + $to;
+	 }
 	}
       }
     } elsif ($noorf) {    # neighbour limits are closest CDS limits
@@ -1241,12 +1257,20 @@ sub GetNeighbours {
 	  $coding_region_end = $coding_region_end + $start - abs($to) - 1;
 	}
 	  if ($coding_region_end > $closest_neighbour_limit) {
+	   if ($coding_region_end < $start + $to) {
 	    $closest_neighbour_limit = $coding_region_end;
+	   } elsif (($coding_region_start < $start + $to) && ($coding_region_end >= $start + $to)) {
+	    $closest_neighbour_limit = $start + $to;
+	   }
 	  }
 	} elsif (($strand == 1 && $type eq "downstream") || ($strand == -1 && $type eq "upstream")) {
 	  $coding_region_start = $coding_region_start + $start - 1;
 	  if ($coding_region_start < $closest_neighbour_limit) {
+	   if ($coding_region_start > $end - $to) {
 	    $closest_neighbour_limit = $coding_region_start;
+	   } elsif (($coding_region_start <= $end - $to) && ($coding_region_end > $end - $to)) {
+	    $closest_neighbour_limit = $end - $to;
+	   }
 	  }
 	}
        }
