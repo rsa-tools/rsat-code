@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.73 2009/09/27 06:44:00 jvanheld Exp $
+# $Id: matrix-quality,v 1.74 2009/09/28 12:18:16 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -334,6 +334,12 @@ package main;
     }
     &RSAT::message::Info("Image formats for graphs: ".join (",", sort(@image_formats))) if ($main::verbose >= 2);
 
+    ## Permutation number for each sequence type
+    foreach my $seq_type (@seq_types) {
+      unless (defined($perm_nb{$seq_type})) {
+	$perm_nb{$seq_type} = 0;
+      }
+    }
     ################################################################
     ### open output stream
     $main::out = &OpenOutputFile($outfile{log});
@@ -424,7 +430,9 @@ package main;
       &CalcSequenceDistrib($seqfile{$seq_type}, $matrix_file, $matrix_format, $seq_type,   @matrix_scan_options) ;
 
       ## Score sequences with the permuted matrices
-      if (($seqfile{$seq_type}) && ($perm_nb{$seq_type} > 0)) {
+      if (($seqfile{$seq_type}) &&
+	  (defined($perm_nb{$seq_type})) &&
+	  ($perm_nb{$seq_type} > 0)) {
 
 
 	## Calculate the merged distribution for permuted matrices
@@ -1646,7 +1654,7 @@ sub PermuteMatrixColumns {
 
     ## Add the matrix to the list of permuted matrices for the different sequence sets
     foreach my $seq_type (sort keys %seqfile) {
-      if ($i <= $perm_nb{$seq_type}) {
+      if (defined($perm_nb{$seq_type}) && ($i <= $perm_nb{$seq_type})) {
 	$permute_matrix_cmd .= "; cat ".$outfile{'matrix_perm_col_'.$i}." >> ".$outfile{$seq_type.'_matrix_perm_col_all'};
 	# not necesary anymore after '//' terminator included in tab format
 	#$permute_matrix_cmd .= "; echo '\/\/' >> ".$outfile{$seq_type.'_matrix_perm_col_all'} if ($i < $perm_nb{$seq_type});
@@ -1955,9 +1963,6 @@ sub PostVerbose {
   if (scalar(@seq_types) > 0) {
     print $main::out "; Matrix permutations per sequence type\n";
     foreach my $seq_type (@seq_types) {
-      unless (defined($perm_nb{$seq_type})) {
-	$perm_nb{$seq_type} = 0;
-      }
       printf $main::out ";\t%-21s\t%d\n", $seq_type , $perm_nb{$seq_type};
     }
   }
