@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.72 2009/03/10 12:09:21 jvanheld Exp $
+# $Id: retrieve-seq,v 1.73 2009/09/29 08:23:51 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -228,9 +228,8 @@ if ($random_orfs > 0) {
     ($in, $input_dir) = &OpenInputFile($query_file);
     &RSAT::message::Info("Reading query genes from file", $query_file) if ($main::verbose >= 2);
     while (<$in>) {
-	next if ((/^;/) || (/^\#/) || (/^--/));
-	next if (/^--/);
-	if ((/(\S+)/) && !(/^;/)) {
+	next if ((/^;/) || (/^\#/) || (/^--/)); ## Skip comment and header lines
+	if (/(\S+)/) {
 	    push @queries, $1;
 	}
     }
