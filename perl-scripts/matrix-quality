@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.74 2009/09/28 12:18:16 jvanheld Exp $
+# $Id: matrix-quality,v 1.75 2009/09/29 19:07:03 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -971,9 +971,10 @@ Scores of the positive sequence set.
 =item B<-graph_option 'option1 options2 ...'>
 
 Specify options that will be passed to the program I<XYgraph> for
-generating the distribution curves. Beware: if an option requires to
-be followed by a value (ex -xsize 1000), you have to embrace the
-option and its value in quotes.
+generating the distributions and the ROC curves.
+
+Beware: if an option requires to be followed by a value (ex -xsize
+1000), you have to embrace the option and its value in quotes.
 
   Example
    -graph_option '-size 800 -title "LexA matrix" -bg blue'
@@ -984,7 +985,7 @@ This option can be used iteratively on a command line.
    -graph_option '-xsize 1000' -graph_option '-title "LexA matrix"'
 
 =cut
-	} elsif ($arg eq "-graph_option") {
+	} elsif ($arg =~ /^-graph_option/) {
 	  $graph_options .= " ".shift @arguments;
 
 
@@ -1007,9 +1008,10 @@ Reference distribution for the ROC curve.
 =item B<-roc_option 'option1 options2 ...'>
 
 Specify options that will be passed to the program I<XYgraph> for
-generating the ROC curves. Beware: if an option requires to
-be followed by a value (ex -xsize 1000), you have to embrace the
-option and its value in quotes.
+generating the ROC curves (ot the distribution curves). 
+
+Beware: if an option requires to be followed by a value (ex -xsize
+1000), you have to embrace the option and its value in quotes.
 
   Example
    -roc_option '-ygstep1 0.1 -ygstep2 0.02'
@@ -1029,15 +1031,16 @@ This option can be used iteratively on a command line.
 =item B<-distrib_option 'option1 options2 ...'>
 
 Specify options that will be passed to the program I<XYgraph> for
-generating the distribution curves (not the ROC). Beware: if an option
-requires to be followed by a value (ex -xsize 1000), you have to
-embrace the option and its value in quotes.
+generating the distribution curves (not the ROC curves).
+
+Beware: if an option requires to be followed by a value (ex -xsize
+1000), you have to embrace the option and its value in quotes.
 
   Example
    -distrib_option '-xmin -35 -xmax 20'
 
 =cut
-	} elsif ($arg eq "-distrib_options") {
+	} elsif ($arg =~ /^-distrib_option/) {
 	  $main::distrib_options .= " ".shift @arguments;
 
 	    ## Image format
@@ -1705,6 +1708,7 @@ sub CompareDistrib {
       ## General options for all the graphs below
       my $all_graph_options = " -i ".$outfile{distrib_compa}.".tab";
       $all_graph_options .= " -format ".$image_format." -lines -pointsize 0";
+      $all_graph_options .= " ".$graph_options;
 
       ## Alternative options for the large graphs and for the icons, respectively
       my $large_graph_options = " -title1 '".$matrix_name."'";
@@ -1727,7 +1731,7 @@ sub CompareDistrib {
       $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
       $XYgraph_cmd .= " -xgstep1 5 -xgstep2 1 -ygstep1 0.1 -ygstep2 0.02";
       $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-      $graph_file_opt = $large_graph_options." ".$graph_options." ".$distrib_options." -o ".$outfile{distrib_compa}.".".$image_format;
+      $graph_file_opt = $large_graph_options." ".$distrib_options." -o ".$outfile{distrib_compa}.".".$image_format;
       &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       &RSAT::message::Info("Distribution comparison graph", $outfile{distrib_compa}.".".$image_format) if ($main::verbose >= 2);
       print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
@@ -1746,7 +1750,7 @@ sub CompareDistrib {
       $XYgraph_cmd .= " -xgstep1 5 -xgstep2 1";
       $XYgraph_cmd .= " -ymax 1 -ylog 10";
       $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-      $graph_file_opt = $large_graph_options." ".$graph_options." ".$distrib_options." -o ".$outfile{distrib_compa}."_logy.".$image_format;
+      $graph_file_opt = $large_graph_options." ".$distrib_options." -o ".$outfile{distrib_compa}."_logy.".$image_format;
       &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
       &RSAT::message::Info("Distribution comparison graph (log Y)", $outfile{distrib_compa}."_logy.".$image_format) 
 	if ($main::verbose >= 2);
@@ -1871,7 +1875,7 @@ sub CompareDistrib {
 	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
 	  $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
 	  $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-	  $graph_file_opt = $large_graph_options." ".$graph_options." ".$distrib_options." -o ".$outfile{th_distrib_compa}.".".$image_format;
+	  $graph_file_opt = $large_graph_options." ".$distrib_options." -o ".$outfile{th_distrib_compa}.".".$image_format;
 	  &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 	  print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
 
@@ -1882,7 +1886,7 @@ sub CompareDistrib {
 	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
 	  $XYgraph_cmd .= " -ymax 1 -ylog 10";
 	  $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
-	  $graph_file_opt = $large_graph_options." ".$graph_options." ".$distrib_options." -o ".$outfile{th_distrib_compa}."_logy.".$image_format;
+	  $graph_file_opt = $large_graph_options." ".$distrib_options." -o ".$outfile{th_distrib_compa}."_logy.".$image_format;
 	  &doit($XYgraph_cmd.$graph_file_opt, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 	  print $main::out ";\n; XYgraph command\n", $XYgraph_cmd.$graph_file_opt, "\n";
 	}
