@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.61 2009/09/29 06:46:14 jvanheld Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.62 2009/09/29 06:48:58 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -315,12 +315,13 @@ package main;
     if ($query_file) {
       &RSAT::message::Info("Reading queries from query file", $query_file) if ($main::verbose >= 0);
       my ($in, $input_dir) = &OpenInputFile($query_file);
-       while ($line = <$in>) {
-	 next if ((/^;/) || (/^\#/) || (/^--/)); ## Skip comment and header lines
-	 if (/(\S+)/) {
-	   push @queries, $1;
-	 }
-       }
+      while ($line = <$in>) {
+	next if ((/^;/) || (/^\#/) || (/^--/)); ## Skip comment and header lines
+	if (/(\S+)/) {
+	  push @queries, $1;
+	}
+      }
+      close $in;
     }
 
 ###      open IN, $query_file;
@@ -360,7 +361,7 @@ package main;
 # 	  &RSAT::message::Warning (join("\t", "No sequence for query", $line, "Check validity of your query"));
 # 	}
 #       }
-      close $in;
+#      close $in;
 
     ## Treat the list of queries
     foreach my $id (@queries) {
