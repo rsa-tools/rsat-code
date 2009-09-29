@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.63 2009/09/29 07:44:03 jvanheld Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.64 2009/09/29 07:47:02 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -313,7 +313,7 @@ package main;
 
     ## Read queries from input file
     if ($query_file) {
-      &RSAT::message::Info("Reading queries from query file", $query_file) if ($main::verbose >= 0);
+      &RSAT::message::Info("Reading queries from query file", $query_file) if ($main::verbose >= 1);
       my ($in, $input_dir) = &OpenInputFile($query_file);
       while (<$in>) {
 	next if ((/^;/) || (/^\#/) || (/^--/)); ## Skip comment and header lines
