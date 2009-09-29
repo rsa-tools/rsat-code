@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.60 2009/09/29 05:13:33 jvanheld Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.61 2009/09/29 06:46:14 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -302,92 +302,99 @@ package main;
 	      }
 	  }
       }
-  ## Query
+
+  ## List of queries
   } else {
 #    my $gene_id = "CG40293"; #gene on D strand
 #    my $gene_id = "CG18001"; #gene on R strand
 #    @genes = @{$gene_adaptor->fetch_all_by_external_name('BRCA2')};
 
     my $gene_adaptor = $db->get_GeneAdaptor();
-    ## Input file of query IDs
+
+    ## Read queries from input file
     if ($query_file) {
       &RSAT::message::Info("Reading queries from query file", $query_file) if ($main::verbose >= 0);
       my ($in, $input_dir) = &OpenInputFile($query_file);
-#      open IN, $query_file;
-      while ($line = <$in>) {
-	my @genes;
-	$line =~s/\t.*//;
-	chomp($line);
-	if (($line =~ /ENST\d/) || ($line =~ /ENS...T/)) {
-	  push(@genes, $gene_adaptor -> fetch_by_transcript_stable_id($line));
-	} elsif (($line =~ /ENSP\d/) || ($line =~ /ENS...P/)) {
-	  push(@genes, $gene_adaptor -> fetch_by_translation_stable_id($line));
-	} elsif (($line =~ /ENSG\d/) || ($line =~ /ENS...G/)) {
-	  #		my $gene_id = $line;
-	  push(@genes,$gene_adaptor -> fetch_by_stable_id($line));
-	} else {
-	  if ($gene_adaptor -> fetch_by_stable_id($line)) {
-	    push(@genes,$gene_adaptor -> fetch_by_stable_id($line));
-	  } else {
-	    @genes = @{$gene_adaptor -> fetch_all_by_external_name($line)};
-	  }
-	}
-	close $in;
+       while ($line = <$in>) {
+	 next if ((/^;/) || (/^\#/) || (/^--/)); ## Skip comment and header lines
+	 if (/(\S+)/) {
+	   push @queries, $1;
+	 }
+       }
+    }
 
-	if (@genes) {
-	  foreach my $gene (@genes) {
-	    if ($gene) {
-	      ## get-orthologs if wanted
-	      if ($ortho) {
-		&Ortho($gene->stable_id);
-		## or not
-	      } else {
-		&Main($gene, $org);
-	      }
-	    } else {
-	      &RSAT::message::Warning (join("\t", "No sequence for query", $line, "Check validity of your query"));
-	    }
-	  }
+###      open IN, $query_file;
+#       while ($line = <$in>) {
+# 	my @genes;
+# 	$line =~s/\t.*//;
+# 	chomp($line);
+# 	if (($line =~ /ENST\d/) || ($line =~ /ENS...T/)) {
+# 	  push(@genes, $gene_adaptor -> fetch_by_transcript_stable_id($line));
+# 	} elsif (($line =~ /ENSP\d/) || ($line =~ /ENS...P/)) {
+# 	  push(@genes, $gene_adaptor -> fetch_by_translation_stable_id($line));
+# 	} elsif (($line =~ /ENSG\d/) || ($line =~ /ENS...G/)) {
+# 	  #		my $gene_id = $line;
+# 	  push(@genes,$gene_adaptor -> fetch_by_stable_id($line));
+# 	} else {
+# 	  if ($gene_adaptor -> fetch_by_stable_id($line)) {
+# 	    push(@genes,$gene_adaptor -> fetch_by_stable_id($line));
+# 	  } else {
+# 	    @genes = @{$gene_adaptor -> fetch_all_by_external_name($line)};
+# 	  }
+# 	}
+# 	if (@genes) {
+# 	  foreach my $gene (@genes) {
+# 	    if ($gene) {
+# 	      ## get-orthologs if wanted
+# 	      if ($ortho) {
+# 		&Ortho($gene->stable_id);
+# 		## or not
+# 	      } else {
+# 		&Main($gene, $org);
+# 	      }
+# 	    } else {
+# 	      &RSAT::message::Warning (join("\t", "No sequence for query", $line, "Check validity of your query"));
+# 	    }
+# 	  }
+# 	} else {
+# 	  &RSAT::message::Warning (join("\t", "No sequence for query", $line, "Check validity of your query"));
+# 	}
+#       }
+      close $in;
+
+    ## Treat the list of queries
+    foreach my $id (@queries) {
+      my @genes = ();
+      if (($id =~ /ENST\d/) || ($id =~ /ENS...T/)) {
+	push (@genes, $gene_adaptor -> fetch_by_transcript_stable_id($id));
+      } elsif (($id =~ /ENSP\d/) || ($id =~ /ENS...P/)) {
+	push (@genes, $gene_adaptor -> fetch_by_translation_stable_id($id));
+      } elsif (($id =~ /ENSG\d/) || ($id =~ /ENS...G/)) {
+	push (@genes, $gene_adaptor -> fetch_by_stable_id($id));
+      } else {
+	if ($gene_adaptor -> fetch_by_stable_id($id)) {
+	  push(@genes,$gene_adaptor -> fetch_by_stable_id($id));
 	} else {
-	  &RSAT::message::Warning (join("\t", "No sequence for query", $line, "Check validity of your query"));
+	  @genes = @{$gene_adaptor -> fetch_all_by_external_name($id)};
 	}
       }
 
-      ## List of query IDs
-    } else {
-      foreach my $id (@queries) {
-	my @genes = ();
-	if (($id =~ /ENST\d/) || ($id =~ /ENS...T/)) {
-	  push (@genes, $gene_adaptor -> fetch_by_transcript_stable_id($id));
-	} elsif (($id =~ /ENSP\d/) || ($id =~ /ENS...P/)) {
-	  push (@genes, $gene_adaptor -> fetch_by_translation_stable_id($id));
-	} elsif (($id =~ /ENSG\d/) || ($id =~ /ENS...G/)) {
-	  push (@genes, $gene_adaptor -> fetch_by_stable_id($id));
-	} else {
-	  if ($gene_adaptor -> fetch_by_stable_id($id)) {
-	    push(@genes,$gene_adaptor -> fetch_by_stable_id($id));
-	  } else {
-	    @genes = @{$gene_adaptor -> fetch_all_by_external_name($id)};
-	  }
-	}
-
-	if (@genes) {
-	  foreach my $gene (@genes) {
-	    if ($gene) {
-	      ## get-orthologs if wanted
-	      if ($ortho) {
-		&Ortho($gene->stable_id);
-		## or not
-	      } else {
-		&Main($gene, $org);
-	      }
+      if (@genes) {
+	foreach my $gene (@genes) {
+	  if ($gene) {
+	    ## get-orthologs if wanted
+	    if ($ortho) {
+	      &Ortho($gene->stable_id);
+	      ## or not
 	    } else {
-	      &RSAT::message::Warning (join("\t", "No sequence for query", $id, "Check validity of your query"));
+	      &Main($gene, $org);
 	    }
+	  } else {
+	    &RSAT::message::Warning (join("\t", "No sequence for query", $id, "Check validity of your query"));
 	  }
-	} else {
-	  &RSAT::message::Warning (join("\t", "No sequence for query", $id, "Check validity of your query"));
 	}
+      } else {
+	&RSAT::message::Warning (join("\t", "No sequence for query", $id, "Check validity of your query"));
       }
     }
 }
