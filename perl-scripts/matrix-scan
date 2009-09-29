@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.127 2009/06/03 05:12:18 jvanheld Exp $
+# $Id: matrix-scan,v 1.128 2009/09/29 14:03:09 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -491,6 +491,47 @@ package main;
   		exit(0);
   }
   
+  
+  ################################################################
+  ## Load the matrix list if specified
+  if ($infile{matrix_thresholds}) {
+  	
+	%matrix_thr = (); # list of matrices for which we put a threshold
+  	
+    my ($mthr, $input_dir) = &OpenInputFile($main::infile{matrix_thresholds});
+    while (<$mthr>) {
+      next if (/'^;'/);		# skip comment lines
+      next if (/'^#'/);		# skip header lines
+      next if (/'^--'/);	# skip mysql-type comment lines
+      next unless (/\S/);	# skip empty lines
+
+      my @fields = split /\s+/;
+      my $matrix_name = $fields[0];
+      my $thr_param = lc($fields[1]);
+      my $thr_field = lc($fields[2]);
+      my $thr_value = lc($fields[3]);
+      
+	unless ($supported_threshold{$thr_field}) {
+		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+	    }
+	&RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ") 
+	      unless (&RSAT::util::IsReal($thr_value));
+	
+	$matrix_thr{$matrix_name} = 1;
+	if ($thr_param eq 'lth'){
+		$lth{$thr_field}->{$matrix_name} = $thr_value;
+	}elsif ($thr_param eq 'uth'){
+		$uth{$thr_field}->{$matrix_name} = $thr_value;
+	} else {
+		&RSAT::error::FatalError($thr_param, "Invalid parameter for a threshold (only uth and lth allowed). Check your threshold input file.") 
+	}
+    
+    }
+    close $mthr;
+    &RSAT::message::Info("Read matrix threshold list from file", $infile{matrix_thresholds}) if ($main::verbose >= 2);
+  }
+  
+  #########################################
 
   ## normw is incompatible with sliding windows
   if (($return_fields{normw}) && ($bg_method eq "window")) {
@@ -666,6 +707,8 @@ package main;
     close $mlist;
     &RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
   }
+  
+ 
 
   ################################################################
   ## Check that there is at least one input matrix
@@ -799,6 +842,12 @@ package main;
 	  }
 	  $matrix->force_attribute("name", $matrix_name);
 	}
+	## check matrix name with thresholds
+	foreach my $thr_matrix_name (keys (%matrix_thr)){
+		if ($matrix->get_attribute("name") eq $thr_matrix_name){
+			delete $matrix_thr{$thr_matrix_name};
+		}
+	}
 	
 	## Check that the matrix width is smaller than markov order + 1
 	my $matrix_width = $matrix->ncol();
@@ -852,7 +901,12 @@ package main;
 				) if ($main::verbose >= 3);
       }
     }
-  }
+  } 
+  
+  ## check the thresholds for the matrices
+  foreach my $thr_matrix_name (keys (%matrix_thr)){
+		&RSAT::message::Warning("$thr_matrix_name does not correspond to any input matrix. Check your threshold file.");
+	} 
 
   ## get shortest matrix size
   my @sorted_array = sort {$a <=> $b} (values(%matrix_sizes));
@@ -1268,6 +1322,7 @@ package main;
 			$crer->force_attribute('rank', $rank);
 
 			next if ((defined($lth{rank})) && ($rank < $lth{rank}));
+			#next if ((defined($lth{rank})) && (&check_thresholds("rank", $rank);
 			&print_crer($crer);
 			last if ((defined($uth{rank})) && ($rank >= $uth{rank}));
       }
@@ -1312,16 +1367,21 @@ package main;
 	my $matrix_name = $match->get_attribute("feature_name");
 	$rank_pm{$matrix_name}++;
 	$match->force_attribute('rank_pm', $rank_pm{$matrix_name});
-	next if ((defined($lth{rank_pm})) && ($rank_pm{$matrix_name} < $lth{rank_pm}));
-	next if ((defined($uth{rank_pm})) && ($rank_pm{$matrix_name} > $uth{rank_pm}));
-
+	
+	next if ((defined($lth{rank_pm}->{$matrix_name})&&($rank_pm{$matrix_name} < $lth{rank_pm}->{$matrix_name}))
+	||(defined($lth{rank_pm}->{"all_matrices"})&&($rank_pm{$matrix_name} < $lth{rank_pm}->{"all_matrices"})));
+	next if ((defined($uth{rank_pm}->{$matrix_name})&&($rank_pm{$matrix_name} > $uth{rank_pm}->{$matrix_name}))
+	||(defined($uth{rank_pm}->{"all_matrices"})&&($rank_pm{$matrix_name} > $uth{rank_pm}->{"all_matrices"})));
+	
 	## Compute a sequence-specific rank
 	$rank++;
 	$match->force_attribute('rank', $rank);
 
-	next if ((defined($lth{rank})) && ($rank < $lth{rank}));
+	next if ((defined($lth{rank}->{$matrix_name})&&($rank < $lth{rank}->{$matrix_name}))
+	||(defined($lth{rank}->{"all_matrices"})&&($rank < $lth{rank}->{"all_matrices"})));
 	&print_match($match);
-	last if ((defined($uth{rank})) && ($rank >= $uth{rank}));
+	last if ((defined($uth{rank}->{$matrix_name})&&($rank >= $uth{rank}->{$matrix_name}))
+	||(defined($uth{rank}->{"all_matrices"})&&($rank >= $uth{rank}->{"all_matrices"})));
       }
     }
   }
@@ -1739,11 +1799,12 @@ matrix-scan options
                 limits,weight_limits, distrib, occ_proba, bg_model,bg_residues, matrix, freq_matrix, weight_matrix,crer
 -lth/uth param # : lower/upper threshold on some parameters
 
-		Supported thresholds fields for the matches: score, pval, eval, 
-		sig, normw, proba_M, proba_B, rank, crer_size, crer_sites
+		Supported thresholds fields for the matches: score, pval,
+		sig, normw, proba_M, proba_B, rank, crer_sig, crer_pval, crer_sites, crer_size
 
 		Supported thresholds fields for score distributions: occ, occ_sum, 
 		inv_cum, exp_occ, occ_pval, occ_eval, occ_sig, occ_sig_rank
+-mth		matrix-specific threshold file
 -crer_ids	Assign one separate feature ID per CRER. This option is convenient to distinguish separate CRERs,
                 but it can be heavy for feature-map legends, especially when many CRERs are detected.
 -sort_distrib	sort score distributions by decreasing values of significance. 
@@ -2208,7 +2269,7 @@ decimals).
 
 Threshold on some parameter (-lth: lower, -uth: upper threshold). 
 
-Supported threshold fields for the matches : score pval eval sig normw proba_M proba_B rank crer_sites crer_size
+Supported threshold fields for the matches : score pval sig normw proba_M proba_B rank crer_sig crer_pval crer_sites crer_size
 
 Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ occ_pval occ_eval occ_sig occ_sig_rank
 
@@ -2223,7 +2284,7 @@ Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ 
 	    }
 	    &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ") 
 	      unless (&RSAT::util::IsReal($thr_value));
-	    $lth{$thr_field} = $thr_value;
+	    $lth{$thr_field}->{'all_matrices'} = $thr_value;
 
 	    ### Upper threshold
 	} elsif ($arg eq "-uth") {
@@ -2234,7 +2295,37 @@ Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ 
 	    }
 	    &RSAT::error::FatalError($thr_value, "Invalid value for an upper threshold. Should be a real number. ") 
 	      unless (&RSAT::util::IsReal($thr_value));
-	    $uth{$thr_field} = $thr_value;
+	    $uth{$thr_field}->{'all_matrices'} = $thr_value;
+
+	    ## Matrix_thresholds file
+=pod
+
+=item B<-mth matrix_threshold_file>
+
+Matrix-specific thresholds. 
+
+Indicate a file containing a list of thresholds to be used for scanning
+the region. This enables to use distinct thresholds for each input matrix. 
+
+Format: the list of thresholds is a text file with four fields (separated by spaces or tabulations). 
+The first column is the matrix name, the second is the threshold parameter (uth or lth), the third is the threshold field and the fourth is the threshold value.
+Refer to -lth and -uth options help for the full list of supported threshold fields. Various threshold fields and parameters (uth and lth) can be combined for each matrix.
+
+Example:
+
+=over 8
+
+=item  MET_matrices.1	lth	score	8
+
+=item  MET_matrices.2	lth	score	0
+
+=item  MET_matrices.2	uth	pval	0.0001
+
+=back
+
+=cut
+	} elsif ($arg eq "-mth") {
+	    $main::infile{matrix_thresholds} = shift(@arguments);
 
 
 	    ## Scan both strands
@@ -2591,20 +2682,28 @@ sub Verbose {
 
     ## Thresholds
     my %th_keys = (%lth, %uth);
-    print $main::out "; Thresholds\tlower\tupper\n";
+    print $main::out "; Matrix\tThresholds\tlower\tupper\n";
     foreach $f (sort keys %th_keys) {
-	printf $main::out ";\t%-14s", $f;
-	if (defined($lth{$f})) {
-	    printf $main::out "\t%-5g", $lth{$f};
-	} else {
-	    print $main::out "\t", $null;
-	}
-	if (defined($uth{$f})) {
-	    printf $main::out "\t%-5g", $uth{$f};
-	} else {
-	    print $main::out "\t", $null;
-	}
-	print $main::out "\n";
+
+    	my @matrices_lth = sort keys (%{$lth{$f}});
+    	my @matrices_uth = sort keys (%{$uth{$f}});
+    	my @matrices = (@matrices_lth, @matrices_uth);
+    	#lth    		
+    	foreach my $m (@matrices){
+    		printf $main::out ";\t%-5s", $m;
+    		printf $main::out "\t%-5s", $f;
+    		if (defined($lth{$f}->{$m})) {
+    			printf $main::out "\t%-5g", $lth{$f}->{$m};
+    		} else {
+		    print $main::out "\t", $null;
+			}
+			if (defined($uth{$f}->{$m})) {
+    			printf $main::out "\t%-5g", $uth{$f}->{$m};
+    		} else {
+		    print $main::out "\t", $null;
+			}
+			print $main::out "\n";
+    	}
     }
 
 
@@ -2742,7 +2841,7 @@ sub score_segment {
   	#push(@{$crer_seed_pval{$matrix_name}->{$strand}},$pval);
   	#push(@{$crer_seed_weights{$matrix_name}->{$strand}},$score);
   	#push(@{$crer_seed_weights{$matrix_name}->{'normw'}->{$strand}},$normw) if ($calc_fields{normw});
-  	unless (&check_thresholds("pval", $pval)) {$is_hit = 0;}
+  	unless (&check_thresholds("pval", $pval,$matrix_name)) {$is_hit = 0;}
    	if ($is_hit) {
   		push(@{$crer_seed_hits{$matrix_name}->{$strand}},1);
   		push(@{$crer_seed_pval{$matrix_name}->{$strand}},$pval);
@@ -2760,14 +2859,14 @@ sub score_segment {
   my $calc_window_pval = 1;
   
   ## Perform the threshold filtering only after having added the score to the disribution
-  unless (&check_thresholds("proba_m", $proba_M)) {return(0) ; $calc_window_pval = 0; }
-  unless (&check_thresholds("proba_b", $proba_B)) {return(0) ; $calc_window_pval = 0; }
-  unless (&check_thresholds("pval_value", $pval_value)) {return(0) ; $calc_window_pval = 0; }
-  unless (&check_thresholds("pval", $pval)) {return(0) ; $calc_window_pval = 0;  }
-  unless (&check_thresholds("ln_pval", $ln_pval)) {return(0) ; $calc_window_pval = 0; }
-  unless (&check_thresholds("sig", $sig)) {return(0) ; $calc_window_pval = 0; $is_hit = 0;}
-  unless (&check_thresholds("score", $score)) {return(0) ; $calc_window_pval = 0; }
-  unless (&check_thresholds("normw", $normw)) {return(0) ; $calc_window_pval = 0; }
+  unless (&check_thresholds("proba_m", $proba_M,$matrix_name)) {return(0) ; $calc_window_pval = 0; }
+  unless (&check_thresholds("proba_b", $proba_B,$matrix_name)) {return(0) ; $calc_window_pval = 0; }
+  unless (&check_thresholds("pval_value", $pval_value,$matrix_name)) {return(0) ; $calc_window_pval = 0; }
+  unless (&check_thresholds("pval", $pval,$matrix_name)) {return(0) ; $calc_window_pval = 0;  }
+  unless (&check_thresholds("ln_pval", $ln_pval,$matrix_name)) {return(0) ; $calc_window_pval = 0; }
+  unless (&check_thresholds("sig", $sig,$matrix_name)) {return(0) ; $calc_window_pval = 0; $is_hit = 0;}
+  unless (&check_thresholds("score", $score,$matrix_name)) {return(0) ; $calc_window_pval = 0; }
+  unless (&check_thresholds("normw", $normw,$matrix_name)) {return(0) ; $calc_window_pval = 0; }
 
   
 
@@ -3238,15 +3337,23 @@ Check the lower and upper threshold for a given hit.
 
 =cut
 sub check_thresholds {
-    my ($key, $value) = @_;
-    
-    if ((defined($lth{$key})) && 
-	(($value eq $null) || ($value < $lth{$key}))
+    my ($key, $value,$matrix_name) = @_;
+        
+    ## check if matrix-specific threshold
+    my $matrix_thr = "";
+    if ((defined($lth{$key}->{$matrix_name}))||(defined($uth{$key}->{$matrix_name}))){
+    	$matrix_thr = $matrix_name;
+    } elsif ((defined($lth{$key}->{"all_matrices"}))||(defined($uth{$key}->{"all_matrices"}))) {
+    	$matrix_thr = 'all_matrices';
+    } 
+  #  print "\n $key $value $matrix_thr \n";
+    if ((defined($lth{$key}->{$matrix_thr})) && 
+	(($value eq $null) || ($value < $lth{$key}->{$matrix_thr}))
        ) {
 	return 0;
     }
-    if ((defined($uth{$key})) && 
-	(($value eq $null) || ($value > $uth{$key}))
+    if ((defined($uth{$key}->{$matrix_thr})) && 
+	(($value eq $null) || ($value > $uth{$key}->{$matrix_thr}))
        ) {
 	return 0;
     }
