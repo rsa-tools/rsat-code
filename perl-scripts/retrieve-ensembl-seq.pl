@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.62 2009/09/29 06:48:58 jvanheld Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.63 2009/09/29 07:44:03 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -207,7 +207,7 @@ package main;
 
   ## Left and right limits
   if ($left_limit && $right_limit && $chrom) {
-    local $chromosome = $slice_adaptor -> fetch_by_region('chromosome', $chrom);
+    local $chromosome = $slice_adaptor -> fetch_by_regiong('chromosome', $chrom);
     ## Get sequence (repeat masked or not)
     $sequence = &GetSequence($left_limit, $right_limit);
     my $size = $right_limit - $left_limit + 1;
@@ -315,7 +315,7 @@ package main;
     if ($query_file) {
       &RSAT::message::Info("Reading queries from query file", $query_file) if ($main::verbose >= 0);
       my ($in, $input_dir) = &OpenInputFile($query_file);
-      while ($line = <$in>) {
+      while (<$in>) {
 	next if ((/^;/) || (/^\#/) || (/^--/)); ## Skip comment and header lines
 	if (/(\S+)/) {
 	  push @queries, $1;
@@ -375,6 +375,8 @@ package main;
       } else {
 	if ($gene_adaptor -> fetch_by_stable_id($id)) {
 	  push(@genes,$gene_adaptor -> fetch_by_stable_id($id));
+#	} elsif ($gene_adaptor -> fetch_by_dbID($id)) {
+#	  push(@genes,$gene_adaptor -> fetch_by_dbID($id));
 	} else {
 	  @genes = @{$gene_adaptor -> fetch_all_by_external_name($id)};
 	}
