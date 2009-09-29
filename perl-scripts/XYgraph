@@ -110,6 +110,21 @@ if (($img_format eq "eps")||($img_format eq "pdf")) {
   }
 }
 
+
+################################################################
+# Load user-specified colors from a file
+%header_colors = ();
+if ($colorfile) {
+  my ($colorsfromfile) = &OpenInputFile($colorfile);
+  while (<$colorsfromfile>) {
+    if ($_=~/(.*)\t(.*)/){
+      $header_colors{$1}=$2;
+    }
+  }
+  close $colorsfromfile;
+}
+
+################################################################
 ## use gnuplot if format is eps
 if (($img_format eq "eps")||($img_format eq "pdf")){
   &GnuPlotEPS();
@@ -265,9 +280,9 @@ if ($main::verbose >= 2) {
   print $y_col_list[$#y_col_list]+1, "\n";
   print ";	Y data legend(s) ";
   for $series (0..$#y_col_list-1) {
-    print "$legend_fields[$y_col_list[$series]], ";
+    print "$header_fields[$y_col_list[$series]], ";
   }
-  print "$legend_fields[$y_col_list[$#y_col_list]]\n";
+  print "$header_fields[$y_col_list[$#y_col_list]]\n";
 
   print ";	min y value	$min_y_value\n";
   print ";	max y value	$max_y_value\n";
@@ -367,12 +382,27 @@ unless ($hbox_left eq ""){
 }
 
 
+## Assign a color to each series
+@series_color = ();
+for $series (0..$#y_col_list) {
+  my $series_name = $header_fields[$y_col_list[$series]];
+  if (defined($header_colors{$series_name})) {
+    my ($R, $G, $B) = split (",", $header_colors{$series_name});
+    $series_color[$series] = $image->colorAllocate($R,$G,$B);
+    &RSAT::message::Debug("series:".$series, "column:".$y_col_list[$series], "color:".$series_color[$series], "$R,$G$,$B", $series_name);
+
+  } else {
+    $series_color[$series] = $color_list[$series%($#color_list+1)];
+  }
+}
+
 #### draw dots ####
 for $series (0..$#y_col_list) {
   $prev_x = "ND";
   $prev_y = "ND";
-  $current_color = $color_list[$series%($#color_list+1)];
+  my $current_color = $series_color[$series];
   $current_symbol =  $symbol_list[$series%($#symbol_list+1)];
+
 
   for $p (0..$#X_values) {
     if (($X_values[$p] eq "ND") || ($Y_values[$series][$p] eq "ND")) {
@@ -399,7 +429,7 @@ for $series (0..$#y_col_list) {
       $y = &YPixelPos($Y_values[$series][$p]);
 
       ### check whether next point lies in the highlight box ###
-      if (($hbox_left ne "") && 
+      if (($hbox_left ne "") &&
 	  ($x >= $hbox_left) &&
 	  ($x <= $hbox_right) &&
 	  ($y >= $hbox_top) &&
@@ -430,7 +460,7 @@ for $series (0..$#y_col_list) {
 		     $current_color);
 	  #          $image->arc($x,$y,$point_size,$point_size,0,360,$current_color);
 	  if (($HTML_map) && ($p < $max_map_elements)) {
-	    my $series_legend = $legend_fields[$y_col_list[$series]];
+	    my $series_legend = $header_fields[$y_col_list[$series]];
 
 	    my $point_label = $data_lines[$p];
 	    $point_label =~ s/\'/prime/g;
@@ -527,9 +557,10 @@ if ($legend) {
   $series = 0; 
   $legend_y_pos = 0;
   while ($series <= $#y_col_list) {
-    $current_color = $color_list[$series%($#color_list+1)];
+    my $legend_text = $header_fields[$y_col_list[$series]];
+    $current_color = $series_color[$series];
+#    $current_color = $color_list[$series%($#color_list+1)];
     $current_symbol =  $symbol_list[$series%($#symbol_list+1)];
-    my $legend_text = $legend_fields[$y_col_list[$series]];
     if ($legend_text) {
       &RSAT::message::Debug("Legend item", "series", $series, "column", $y_col_list[$series], "legend text", $legend_text) if ($main::verbose >= 2);
       $legend_y_pos = $top + $series*$line_spacing;
@@ -748,33 +779,33 @@ sub GnuPlotEPS {
     $gnuplot_cmd .= "set datafile commentschars '!;%'\n";
     $gnuplot_cmd .= "set key autotitle columnheader samplen 1\n";	
   }
-  
+
   ## colors 
   if ($colorfile){
-  	
-  	%colors_headers = ();
-  	@color_list = ();
-  	
-  	#open colorfile
-  	 ($colorsfromfile) = &OpenInputFile($colorfile);
-    while (<$colorsfromfile>) {
-      if ($_=~/(.*)\t(.*)/){
-      	$colors_headers{$1}=$2;
-      }
-    }
-    close $colorsfromfile;
-    
+    @color_list = ();
+
+## JvH moved this to the begin of the script in order to support color file for bitmap formats as well
+#     # Read colors from color file
+#     %header_colors = ();
+#     ($colorsfromfile) = &OpenInputFile($colorfile);
+#     while (<$colorsfromfile>) {
+#       if ($_=~/(.*)\t(.*)/){
+#       	$header_colors{$1}=$2;
+#       }
+#     }
+#     close $colorsfromfile;
+
     #get the column headers
     $header = `head -n 1 $input_data_file`;
     chomp($header);
     @header_list = split ('\t',$header);
     foreach my $h (@header_list){
-    	if ($colors_headers{$h}){
-    		push @color_list, $colors_headers{$h};
+    	if ($header_colors{$h}){
+    		push @color_list, $header_colors{$h};
     	}
     }
   } else {
-  
+
   &GnuplotPalette();
 
   @color_list = ();
@@ -810,7 +841,7 @@ sub GnuPlotEPS {
     }
   }
  }
- 
+
   ## symbols
   if ($symbols) {
     foreach my $i (0..$#color_list) {
@@ -823,7 +854,7 @@ sub GnuPlotEPS {
     }
   }
   $gnuplot_cmd .= "set style increment user\n";	
-  
+
   ## hline and vline
   if ($hline){
   	$gnuplot_cmd .= "set arrow from graph 0, ".$hline_pos." to graph 1, ".$hline_pos." nohead lt -1 lw 1.2 lc rgb '".$hline_color."'\n";
@@ -831,9 +862,6 @@ sub GnuPlotEPS {
   if ($vline){
   	$gnuplot_cmd .= "set arrow from ".$vline_pos.", graph 0  to ".$vline_pos.",graph 1 nohead lt -1 lw 1.2 lc rgb '".$vline_color."'\n";
   }
-  
-  
-
 
   ## additional user-specified commands
   if ($gp_supp_commands) {
@@ -855,26 +883,26 @@ sub GnuPlotEPS {
     } else {
       $gnuplot_cmd .= "points";
     }
-    
+
     ## end line
     if ($k == $#y_col_list) {
       $gnuplot_cmd .= "\n";
     } else {
       $gnuplot_cmd .= ",";
     }
-    
+
     ##export color file
     if ($colorexportfile){
-    	 print $outcolor $header_list[$y_col_list[$k]]."\t".$color_list[$k]."\n";
+      print $outcolor $header_list[$y_col_list[$k]]."\t".$color_list[$k]."\n";
     }
   }
-  
+
   close $outcolor if ($outcolor);
   $gnuplot_cmd .= "EOF\n";
 #  print $gnuplot_cmd;
   ## Execute the command
   &doit($gnuplot_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-  	
+
   if ($verbose) {
     print "; XYgraph";
     foreach $a (@ARGV) {
@@ -1020,7 +1048,7 @@ sub AssignColors {
 	push @color_list, $red_096;
 	push @color_list, $blue_064;
 	push @color_list, $gray_064;
-	push @colir_list, $gray_245;
+	push @color_list, $gray_245;
       }
     }
 
@@ -1323,19 +1351,19 @@ sub ReadData {
       $l++; 
       if (($header) && ($l == 1) || ($new_data_line =~ /^#/)) {
 	#### read legend ####
-	$legend_line = $new_data_line;
-	$legend_line =~ s/^;//; ## Suppress leading comment char
-	unless ($legend_line =~ /\t/) {	# if there are no tabs,
-	  $legend_line =~ s/ {1,}/\t/g;	# single or multiple spaces are considered as a singlew tab
+	$header_line = $new_data_line;
+	$header_line =~ s/^;//; ## Suppress leading comment char
+	unless ($header_line =~ /\t/) {	# if there are no tabs,
+	  $header_line =~ s/ {1,}/\t/g;	# single or multiple spaces are considered as a singlew tab
 	}
-	@legend_fields = split(/[\t\n\r]/, $legend_line);
-	&RSAT::message::Info(join("\t", "Legend fields\t", join (";", @legend_fields))) if ($main::verbose >= 1);
+	@header_fields = split(/[\t\n\r]/, $header_line);
+	&RSAT::message::Info(join("\t", "Legend fields\t", join (";", @header_fields))) if ($main::verbose >= 1);
 
 	### calculate legend width ###
 	if ($legend) {
 	  $legend_length = 0;
 	  for $series (0..$#y_col_list) {
-	    $new_length = length($legend_fields[$y_col_list[$series]]);
+	    $new_length = length($header_fields[$y_col_list[$series]]);
 	    $legend_length = &checked_max($legend_length,$new_length);
 	  }
 	  $legend_size = $legend_length * $small_font_width + $point_size + 20;
@@ -1421,7 +1449,7 @@ sub ReadData {
       ### read legend
       if ($header) {
 	$line_legend = shift @data_fields; ### take first word as legend
-	$legend_fields[$line_nb] =  $line_legend;
+	$header_fields[$line_nb] =  $line_legend;
 	$legend_length = &checked_max($legend_length,length($line_legend));
 	$legend_size = $legend_length * $small_font_width + $point_size + 20;
       }
@@ -1670,7 +1698,7 @@ sub PrintHelp {
 NAME
 	XYgraph
 
-	1997-98 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+	1997-98 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 
 DESCRIPTION
 	Draws a XY plot using the numeric values in selected columns
@@ -1780,11 +1808,13 @@ OPTIONS
 			device (screen).  
 			#,#,#,# are the coordinates of the highlighted 
 			box in pixels (left, top, right, bottom respectively).
+
 	-tbox #,#,#.#   Threshold box. All points located within these 
 			thresholds are highlighted, and the corresponding data
 			are printed on the standard output device (screen).  
 			#,#,#,# are in units of X and Y data 
 			(low_x, high_x, low_y, high_y respectively).
+
 	-bg bg_color	background color. 
 			The following colors are currently supported:
 			- white (default),
@@ -1793,6 +1823,7 @@ OPTIONS
 			- black.
 			The foreground colors are automatically adapted to 
 			provide a good contrast with the bg color.
+
 	-mono		monochrome. All dots are drawn in black, and a 
 			specific symbol is associated to each.
 
@@ -1803,9 +1834,11 @@ OPTIONS
 		Each time the mouse is positioned above a point of the XYgraphs, 
 		information about this particuliar point is displayed 
 		at the bottom of the browser window.
+
 	-lc	label column
 		this column contains the label associated to each point
 		(this info is used when the -htmap option is active).
+
 	-colors colorfile
 		Only working with eps and pdf formats (Gnuplot program)
 		Provide a file containing curve-specific colors.
@@ -1822,40 +1855,41 @@ OPTIONS
                 column having the header "theoretical" in the input file.
                 To get the complete list of Gnuplot RGB colorname, type "gnuplot" in the terminal
                 and then type "show palette colornames".
+
 	-export_colors color_file
 		Only working with eps and pdf formats
 		Export the curve-specific colors in a separate file
 		as a color file. This file can then be re-used to
 		specify the same colors for other XY plots
 		(option -colors)
-    
+
 	-gp	gnuplot additional commands
 		Gnuplot (http://www.gnuplot.info/) is used to generate graphs in eps format.
 		Additional gnuplot commands can be specified, separated by commas.
 		e.g. -gp 'set size ratio 0.5'
-    
+
 	-hline Draw an horizontal line on the indicated position. 
 		This helps to mark some relevant positions on the graph.
 		The following colors are currently supported:
 			red, blue, green, violet, orange
 		For eps and pdf format, all Gnuplot RGB colorname are supported
 		e.g. salmon, dark-green ...
-		 
+
 		 -hline red 0
 		 will draw a red line at the y position 0
-    
+
 	-vline Draw a vertical line on the indicated position. 
 		This helps to mark some relevant positions on the graph.
 		The following colors are currently supported:
 			red, blue, green, violet, orange
 		For eps and pdf format, all Gnuplot RGB colorname are supported
 		e.g. salmon, dark-green ...
-			
+
 		 -vline green 0
 		 will draw a green line at the x position 0
 
 Web VERSION
-	http://www.scmbb.ulb.ac.be/bioinformatics/rsa-tools/
+	http://rsat.ulb.ac.be/rsat/
 
 End_of_Help
   close HELP;
