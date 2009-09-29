@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.64 2009/09/29 07:47:02 jvanheld Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.65 2009/09/29 20:53:48 rsat Exp $
 #
 # Time-stamp
 #
@@ -787,7 +787,7 @@ sub Main {
 	    }
 
 	    if ($i == 0) {
-		&RSAT::message::Warning ("Gene $gene_id has no intron");
+		&RSAT::message::Warning ("Gene $gene_id - transcript $transcript_id has no intron");
 	    }
 	}
 
@@ -798,7 +798,7 @@ sub Main {
 	    &RSAT::message::Info ("Coding region start: $coding_region_start") if ($main::verbose >= 2);
 	    &RSAT::message::Info ("Coding region end: $coding_region_end") if ($main::verbose >= 2);
 	} else {
-	    &RSAT::message::Warning ("Gene $gene_id has no coding region");
+	    &RSAT::message::Warning ("Gene $gene_id - transcript $transcript_id has no coding region");
 	}
 
 	# Exons
