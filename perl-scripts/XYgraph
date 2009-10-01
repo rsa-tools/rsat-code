@@ -387,9 +387,19 @@ unless ($hbox_left eq ""){
 for $series (0..$#y_col_list) {
   my $series_name = $header_fields[$y_col_list[$series]];
   if (defined($header_colors{$series_name})) {
-    my ($R, $G, $B) = split (",", $header_colors{$series_name});
+    my $color_string = $header_colors{$series_name};
+    my ($R, $G, $B) = ();
+    if ($color_string =~ /^\d+\,\d+\,\d+$/) {
+      ($R,$G,$B) = split (",", $header_colors{$series_name});
+    } elsif ($color_string =~ /^#\S{6}$/) { 
+      ($R,$G,$B) = &RSAT::util::hex2rgb($color_string);
+    } else {
+      &RSAT::message::Warning("series:".$series, "Invalid color specification", $color_string);
+      return();
+    }
+
     $series_color[$series] = $image->colorAllocate($R,$G,$B);
-    &RSAT::message::Debug("series:".$series, "column:".$y_col_list[$series], "color:".$series_color[$series], "$R,$G$,$B", $series_name);
+    &RSAT::message::Debug("series:".$series, "column:".$y_col_list[$series], "color:".$series_color[$series], $color_string, "$R,$G,$B", $series_name) if ($main::verbose >= 2);
 
   } else {
     $series_color[$series] = $color_list[$series%($#color_list+1)];
