@@ -446,6 +446,23 @@ sub rgb2hex{
   return $hex;
 }
 
+######################################################
+## Convert hexadecimal code (#RRGGBB) to RGB colors (R, G, B) where
+## each channel is a number between 0 and 255
+sub hex2rgb {
+  my($hex_color)=@_;
+  my ($r,$g,$b) = ();
+  if ($hex_color =~ /^#(\S\S)(\S\S)(\S\S)$/) {
+    $r = hex($1);
+    $g = hex($2);
+    $b = hex($3);
+  } else {
+    &RSAT::error::FatalError("&RSAT::util::hex2rgb", $hex_color, "is not a valid hexadecimal color specification (format: #RRGGBB)");
+  }
+
+  return ($r,$g,$b);
+}
+
 
 ################################################################
 ## echo a command and send it to the system
