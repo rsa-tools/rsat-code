@@ -62,7 +62,7 @@ if (lc($query->param("add_rc")) eq "on") {
 
 ### matrix length
 if (&IsNatural($query->param('length'))) {
-    $parameters .= ' --width=' . $query->param('length')." ";
+    $parameters .= ' -w ' . $query->param('length')." ";
 }
 
 ### expected number of matches
@@ -71,7 +71,7 @@ if (&IsNatural($query->param('length'))) {
 # }
 
 if (&IsNatural($query->param('expected'))) {
-    $parameters .= '----mean_sps='.$query->param('expected')." ";
+    $parameters .= '--mean_sps='.$query->param('expected')." ";
 }
 
 if (&IsNatural($query->param('iter'))) {
