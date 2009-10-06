@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.65 2009/09/29 20:53:48 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.66 2009/10/06 15:39:21 rsat Exp $
 #
 # Time-stamp
 #
@@ -207,7 +207,7 @@ package main;
 
   ## Left and right limits
   if ($left_limit && $right_limit && $chrom) {
-    local $chromosome = $slice_adaptor -> fetch_by_regiong('chromosome', $chrom);
+    local $chromosome = $slice_adaptor -> fetch_by_region('chromosome', $chrom);
     ## Get sequence (repeat masked or not)
     $sequence = &GetSequence($left_limit, $right_limit);
     my $size = $right_limit - $left_limit + 1;
