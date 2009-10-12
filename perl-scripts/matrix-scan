@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.128 2009/09/29 14:03:09 morgane Exp $
+# $Id: matrix-scan,v 1.129 2009/10/12 11:30:33 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -558,8 +558,11 @@ package main;
   	unless ((defined($uth{pval})) || (defined($lth{pval}))) {
   		&RSAT::error::FatalError("Detection of CRER requires a pval threshold defined with option -uth pval");
   	}
+  	if ($infile{matrix_thresholds}) {
+  		&RSAT::error::FatalError("Detection of CRER is incompatible with the -mth option. Use -lth or -uth");
+  	}
   	if (defined($uth{crer_size})){
-  		$crer_seed_init = $uth{crer_size};
+  		$crer_seed_init = $uth{crer_size}->{"all_matrices"};
   	}
   }
   
@@ -1321,10 +1324,10 @@ package main;
 			$rank++;
 			$crer->force_attribute('rank', $rank);
 
-			next if ((defined($lth{rank})) && ($rank < $lth{rank}));
+			next if ((defined($lth{rank}->{'all_matrices'})) && ($rank < $lth{rank}->{'all_matrices'}));
 			#next if ((defined($lth{rank})) && (&check_thresholds("rank", $rank);
 			&print_crer($crer);
-			last if ((defined($uth{rank})) && ($rank >= $uth{rank}));
+			last if ((defined($uth{rank}->{'all_matrices'})) && ($rank >= $uth{rank}->{'all_matrices'}));
       }
     }
 
@@ -3099,7 +3102,7 @@ Calculate the score of the crer
 =cut
 sub score_crer {
   my ($last_hit, $seq_id, $sub_window_end,$pos,$crer_seed) = @_;
-  	my $hit_p = $uth{pval} || $lth{pval};
+  	my $hit_p = $uth{pval}->{'all_matrices'} || $lth{pval}->{'all_matrices'};
      
      my @strands = ();
      push @strands,"D";
@@ -3138,10 +3141,9 @@ sub score_crer {
      	
      	## update sums
      	$hit_sum += $crer_sum_hits[$k];
-     	
-     	unless (&check_thresholds("crer_size", $sub_window_length)) {next; }
-     	
- 	
+ 
+     	unless (&check_thresholds("crer_size", $sub_window_length,"all_matrices")) {next; }	
+
      	foreach my $matrix (keys(%crer_seed_hits)){
      		foreach my $strand (@strands){
      		##weight sum
@@ -3156,7 +3158,7 @@ sub score_crer {
       	#########################################################
 		## calculate over-represantation sig with Binomiale
 		
-		unless (&check_thresholds("crer_sites", $hit_sum)) {next; }
+		unless (&check_thresholds("crer_sites", $hit_sum, "all_matrices")) {next; }
 		
 		## nb of trials (takes into account the end of sequence where some positions are not scored with all matrices if they do not have the same width)
 		my $n = 0;
@@ -3189,8 +3191,8 @@ sub score_crer {
 		  $crer_sig = sprintf("%.3f", -log($crer_pval)/$sig_base);
 	      }
 	    
-	    unless (&check_thresholds("crer_pval", $crer_pval)) {next; }
-	    unless (&check_thresholds("crer_sig", $crer_sig)) {next; }
+	    unless (&check_thresholds("crer_pval", $crer_pval,"all_matrices")) {next; }
+	    unless (&check_thresholds("crer_sig", $crer_sig,"all_matrices")) {next; }
  
      	##prepare output (ft format)
      	my $strand_binon = "D";
@@ -3338,7 +3340,12 @@ Check the lower and upper threshold for a given hit.
 =cut
 sub check_thresholds {
     my ($key, $value,$matrix_name) = @_;
-        
+
+	## check if the key is specified in the uth/lth tables
+	if ((!defined($lth{$key})) &&(!defined($uth{$key}))) {
+		return 1;
+	}
+
     ## check if matrix-specific threshold
     my $matrix_thr = "";
     if ((defined($lth{$key}->{$matrix_name}))||(defined($uth{$key}->{$matrix_name}))){
@@ -3346,7 +3353,7 @@ sub check_thresholds {
     } elsif ((defined($lth{$key}->{"all_matrices"}))||(defined($uth{$key}->{"all_matrices"}))) {
     	$matrix_thr = 'all_matrices';
     } 
-  #  print "\n $key $value $matrix_thr \n";
+
     if ((defined($lth{$key}->{$matrix_thr})) && 
 	(($value eq $null) || ($value < $lth{$key}->{$matrix_thr}))
        ) {
