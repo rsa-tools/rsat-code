@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.23 2009/08/12 23:23:13 amedina Exp $
+# $Id: footprint-scan,v 1.24 2009/10/12 19:42:40 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -820,9 +820,8 @@ This option is incompatible with the option -bgfile.
             &RSAT::error::FatalError("Options -bginput and -window  are mutually exclusive") if ($main::bg_method eq "input");
 	    $main::bg_method = "window"; 
             $main::window_size = shift(@arguments);
-	    &RSAT::error::FatalError("Window size must be a natural number.") unless &RSAT::util::IsNatural($main::window_size)
-	    &RSAT::error::FatalError("The options -window and -bgfile are mutually exclusive.") 
-		if defined($infile{bg}); 
+	    &RSAT::error::FatalError("Window size must be a natural number.") unless &RSAT::util::IsNatural($main::window_size);
+	    &RSAT::error::FatalError("The options -window and -bgfile are mutually exclusive.") if (defined($infile{bg})); 
 
 =pod
 
