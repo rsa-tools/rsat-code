@@ -19,7 +19,8 @@ string_buffer_t *new_string_buffer()
 
 inline void string_buffer_set_char(string_buffer_t *buffer, char c, int position)
 {
-    if (position >= buffer->allocated_size) {
+    if (position >= buffer->allocated_size) 
+    {
         buffer->allocated_size += 1024;
         buffer->data = (char *) realloc(buffer->data, sizeof(char) * buffer->allocated_size);
     }
