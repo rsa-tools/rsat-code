@@ -20,7 +20,8 @@ static int main_buffer_pos = 0;
 
 inline char get_char(FILE *fp)
 {
-    if (main_buffer_pos >= MAIN_BUFFER_SIZE) {
+    if (main_buffer_pos >= MAIN_BUFFER_SIZE) 
+    {
         int read_size = fread(main_buffer, 1, MAIN_BUFFER_SIZE, fp);
         if (read_size != MAIN_BUFFER_SIZE)
             main_buffer[read_size] = EOF;
@@ -33,17 +34,20 @@ int fasta_next(string_buffer_t *buffer, FILE *fp)
 {
     // read header
     char c;
-    do {
+    do 
+    {
         c = get_char(fp);
     } while (c != EOF && c != '\n');
 
     // read sequence
     int i = 0;
-    do {
+    do 
+    {
         c = get_char(fp);
         if (c == EOF)
           break;
-        if (c != '\n' && c != '>') {
+        if (c != '\n' && c != '>') 
+        {
           STRING_BUFFER_REALLOC(buffer, i + 1);
           buffer->data[i++] = c;
           buffer->current_size = i;
@@ -60,34 +64,6 @@ int fasta_next(string_buffer_t *buffer, FILE *fp)
     else
         return FALSE;
 }
-
-// int fasta_next(string_buffer_t *buffer, FILE *fp)
-// {
-//     // read header
-//     char c;
-//     do {
-//       c = getc(fp);
-//     } while (c != EOF && c != '\n');
-// 
-//     // read sequence
-//     int i = 0;
-//     do {
-//       c = getc(fp);
-//       if (c == EOF)
-//           break;
-//       if (c != '\n' && c != '>')
-//           string_buffer_set_char(buffer, c, i++);
-//     } while (c != '>');
-// 
-//     string_buffer_set_char(buffer, '\0', i);
-// 
-//     if (c == '>')
-//         return TRUE;
-//     else
-//         return FALSE;
-// }
-
-
 // ===========================================================================
 // =                            Count oligos
 // ===========================================================================
@@ -120,8 +96,10 @@ inline int oligo2int(char *string, int pos, int length)
     int value = 0;
     int S = 1;
     int i;
-    for (i = length - 1; i >= 0; i--) {
-        switch (string[pos + i]) {
+    for (i = length - 1; i >= 0; i--) 
+    {
+        switch (string[pos + i]) 
+        {
         case 'A':
         case 'a':
             value += S * 0;
@@ -151,8 +129,10 @@ inline int oligo2int_rc(char *string, int pos, int length)
     int value = 0;
     int S = 1;
     int i;
-    for (i = 0; i < length; i++) {
-        switch (string[pos + i]) {
+    for (i = 0; i < length; i++) 
+    {
+        switch (string[pos + i]) 
+        {
         case 'A':
         case 'a':
             value += S * 3;
@@ -177,7 +157,8 @@ inline int oligo2int_rc(char *string, int pos, int length)
     return value;
 }
 
-void count_occ(long *count_table, long *last_position, long *overlapping_occ, char *string, int oligo_length, int add_rc, int noov, int grouprc)
+void count_occ(long *count_table, long *last_position, long *overlapping_occ, char *string, \
+                int oligo_length, int add_rc, int noov, int grouprc)
 {
     if (noov)
         init_last_position_array(last_position, oligo_length);
@@ -188,11 +169,13 @@ void count_occ(long *count_table, long *last_position, long *overlapping_occ, ch
     int index_r = -1;  // reverse strand
     
     int string_size = (int) strlen(string);
-    for (i = 0; i < string_size - oligo_length + 1; i++) {
+    for (i = 0; i < string_size - oligo_length + 1; i++) 
+    {
 
             // compute index
             index = index_f = oligo2int(string, i, oligo_length);
-            if (add_rc) {
+            if (add_rc) 
+            {
                 index_r = oligo2int_rc(string, i, oligo_length);
                 index = MIN(index, index_r);
             }
@@ -204,7 +187,8 @@ void count_occ(long *count_table, long *last_position, long *overlapping_occ, ch
             position_count++;
             
             // overlapping occurrences
-            if (noov && last_position[index] + oligo_length - 1 >= i) {
+            if (noov && last_position[index] + oligo_length - 1 >= i) 
+            {
                 overlapping_occ[index]++;
                 if (add_rc && !grouprc)
                     overlapping_occ[MAX(index_r, index_f)]++;
@@ -232,7 +216,8 @@ void print_header(FILE *output_fp, int oligo_length, int noov, int argc, char *a
     // print command line        
     fprintf(output_fp, "; ");
     int i;
-    for (i = 0; i < argc; i++) {
+    for (i = 0; i < argc; i++) 
+    {
         fprintf(output_fp, "%s ", argv[i]);            
     }
     fprintf(output_fp, "\n");
@@ -247,7 +232,8 @@ void print_header(FILE *output_fp, int oligo_length, int noov, int argc, char *a
         ";    4    occ    occurrences\n"
     );
 
-    if (noov) {
+    if (noov) 
+    {
         fprintf(output_fp, 
             ";    5    ovl_occ    overlapping occurrences\n"
         );
@@ -268,32 +254,45 @@ void print_count_array(FILE *output_fp, long *count_array, long *overlapping_occ
         oligo_buffer[i] = letter[0];
     // header
     if (overlapping_occ)
-        fprintf(output_fp, "#seq\tid\tobserved_freq\tocc\tovl_occ\n");
+        fprintf(output_fp, "#seq\tidentifier\tobserved_freq\tocc\tovl_occ\n");
     else
-        fprintf(output_fp, "#seq\tid\tobserved_freq\tocc\n");
+        fprintf(output_fp, "#seq\tidentifier\tobserved_freq\tocc\n");
 
     k = 0;
-    for (i = 0; i < size; i++) {
-        if (count_array[i] != 0) {
+    for (i = 0; i < size; i++) 
+    {
+        if (count_array[i] != 0) 
+        {
             // special case for overlapping_occ
-            if (overlapping_occ) {
+            if (overlapping_occ) 
+            {
                 fprintf(output_fp, "%s\t%s\t%.13f\t%d\t%d\n", \
                 oligo_buffer, oligo_buffer, count_array[i] / (double) position_count, (int) count_array[i], (int) overlapping_occ[i]);
-            } else {
+            } 
+            else 
+            {
                 fprintf(output_fp, "%s\t%s\t%.13f\t%d\n", \
                 oligo_buffer, oligo_buffer, count_array[i] / (double) position_count, (int) count_array[i]);
             }
         }
-        for (k = oligo_length - 1; k >= 0; k--) {
-            if (oligo_buffer[k] == 't') {
+        for (k = oligo_length - 1; k >= 0; k--) 
+        {
+            if (oligo_buffer[k] == 't') 
+            {
                 oligo_buffer[k] = 'a';
-            } else if (oligo_buffer[k] == 'a') {
+            } 
+            else if (oligo_buffer[k] == 'a') 
+            {
                 oligo_buffer[k] = 'c';
                 break;
-            } else if (oligo_buffer[k] == 'c') {
+            } 
+            else if (oligo_buffer[k] == 'c') 
+            {
                 oligo_buffer[k] = 'g';
                 break;
-            } else if (oligo_buffer[k] == 'g') {
+            } 
+            else if (oligo_buffer[k] == 'g') 
+            {
                 oligo_buffer[k] = 't';
                 break;
             }
@@ -301,7 +300,8 @@ void print_count_array(FILE *output_fp, long *count_array, long *overlapping_occ
     }
 }
 
-void count_in_file(FILE *input_fp, FILE *output_fp, int oligo_length, int add_rc, int noov, int grouprc, int argc, char *argv[])
+void count_in_file(FILE *input_fp, FILE *output_fp, int oligo_length, int add_rc, \
+    int noov, int grouprc, int argc, char *argv[])
 {
     long *count = new_count_array(oligo_length);
     long *last_position = NULL;
@@ -309,24 +309,23 @@ void count_in_file(FILE *input_fp, FILE *output_fp, int oligo_length, int add_rc
     position_count = 0;
     total_count = 0;
  
-    if (noov) {
+    if (noov) 
+    {
         last_position = new_count_array(oligo_length);
         overlapping_occ = new_count_array(oligo_length);
     }
         
     string_buffer_t *buffer = new_string_buffer();
     int end = FALSE;
-    do {
+    do 
+    {
         end = fasta_next(buffer, input_fp);
         count_occ(count, last_position, overlapping_occ, buffer->data, oligo_length, add_rc, noov, grouprc);
     } while (end != FALSE);
 
     print_header(output_fp, oligo_length, noov, argc, argv);
-
     print_count_array(output_fp, count, overlapping_occ, oligo_length, add_rc);
     free(count);
     free(last_position);
     free_string_buffer(buffer);
 }
-
-
