@@ -26,7 +26,8 @@ double pbinom(int n, int N, double p)
     
     double S = 0.0; // sum P(x >= n)
     int x;
-    for (x = 1; x <= N; x++) {
+    for (x = 1; x <= N; x++) 
+    {
         logbin += log(N - x + 1) - log(x) + logp - logq;
         if (x >= n)
             S += exp(logbin);
