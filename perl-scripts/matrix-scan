@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.135 2009/10/14 06:17:08 jvanheld Exp $
+# $Id: matrix-scan,v 1.136 2009/10/14 13:20:48 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -367,6 +367,9 @@ package main;
   local %uth = ();		# upper threshold values for all matrices
   local %lth_matrix = ();       # matrix-specific lower threshold values
   local %uth_matrix = ();       # matrix-specific upper threshold values
+  local %lth_file = ();       # threshold values in the mth file
+  local %uth_file = ();       # threshold values in the mth file
+ 
   @supported_thresholds = qw ( 
 			      score
 			      normw
@@ -486,7 +489,43 @@ package main;
   		exit(0);
   }
   
-  
+  ################################################################
+  ## Load the matrix-specific threshols if specified
+  if ($infile{matrix_thresholds}) {
+    %matrix_thr = (); # list of matrices for which we put a threshold
+    my ($mthr, $input_dir) = &OpenInputFile($main::infile{matrix_thresholds});
+    while (<$mthr>) {
+      next if (/^;/);		# skip comment lines
+      next if (/^#/);		# skip header lines
+      next if (/^--/);		# skip mysql-type comment lines
+      next unless (/\S/);	# skip empty lines
+      my @fields = split /\s+/;
+      my $matrix_name = $fields[0];
+      my $thr_param = lc($fields[1]);
+      my $thr_field = lc($fields[2]);
+      my $thr_value = lc($fields[3]);
+      unless ($supported_threshold{$thr_field}) {
+	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+      }
+      &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ") 
+	unless (&RSAT::util::IsReal($thr_value));
+      $matrix_thr{$matrix_name} = 1;
+      $matrix_thr_val->{$matrix_name}->{$thr_field}->{$thr_param} = $thr_value; ## For the verbosity
+      if ($thr_param eq 'lth'){
+	#$lth_matrix->{$matrix_name}->{$thr_field} = $thr_value;
+	$lth_file{$thr_field} = $thr_value;
+	
+      }elsif ($thr_param eq 'uth'){
+	#$uth_matrix->{$matrix_name}->{$thr_field} = $thr_value;
+	$uth_file{$thr_field} = $thr_value;
+      } else {
+	&RSAT::error::FatalError($thr_param, "Invalid parameter for a threshold (only uth and lth allowed). Check your threshold input file.") 
+      }
+    }
+    close $mthr;
+    &RSAT::message::Info("Read matrix threshold list from file", $infile{matrix_thresholds}) if ($main::verbose >= 2);
+  }
+  %matrices_mth = %matrix_thr;
   
   #########################################
 
@@ -504,7 +543,7 @@ package main;
 
   ## calculation of p_score requires a threshold on Pval, LogPval or sig
   if ($return_fields{p_score}){
-  	unless ((defined($uth{pval})) || (defined($lth{pval}))) {
+  	unless ((defined($uth{pval})||(defined($uth_file{pval}))) || (defined($lth{pval})||(defined($lth_file{pval})))) {
 	    &RSAT::error::FatalError("Computation of p_score requires a pval threshold defined with option -uth pval");
   	}
 
@@ -519,7 +558,7 @@ package main;
   		&RSAT::error::FatalError("Detection of CRER is incompatible with the -mth option. Use -lth or -uth");
   	}
   	if (defined($uth{crer_size})){
-  		$crer_seed_init = $uth{crer_size}->{"all_matrices"};
+  		$crer_seed_init = $uth{crer_size};
   	}
   }
   
@@ -555,10 +594,12 @@ package main;
     $return_fields{sites} = 1;
   }
 
-  if ((defined($uth{normw})) || (defined($lth{normw}))) {
+  if ((defined($uth{normw})) || (defined($lth{normw}|| 
+  	  (defined($uth_file{normw})) || (defined($lth_file{normw}))))) {
     $return_fields{normw} = 1;
   }
-  if ((defined($uth{pval})) || (defined($lth{pval}))) {
+  if ((defined($uth{pval})) || (defined($lth{pval})) || 
+  	  (defined($uth_file{pval})) || (defined($lth_file{pval}))) {
     $return_fields{pval} = 1;
   }
   if ((defined($uth{rank})) || (defined($lth{rank})) ||
@@ -801,10 +842,11 @@ package main;
 	  }
 	  $matrix->force_attribute("name", $matrix_name);
 	}
+
 	## check matrix name with thresholds
-	foreach my $thr_matrix_name (keys (%matrix_thr)){
+	foreach my $thr_matrix_name (keys (%matrices_mth)){
 		if ($matrix->get_attribute("name") eq $thr_matrix_name){
-			delete $matrix_thr{$thr_matrix_name};
+			delete $matrices_mth{$thr_matrix_name};
 		}
 	}
 	
@@ -870,8 +912,8 @@ package main;
   foreach my $key (keys %lth) {
       my $thr_value = $lth{$key};
       foreach my $matrix (@matrices) {
-	  my $matrix_name = $matrix->get_attribute("name");
-	  $lth_matrix->{$matrix_name}->{$key} = $thr_value;
+	  	my $matrix_name = $matrix->get_attribute("name");
+	  	$lth_matrix->{$matrix_name}->{$key} = $thr_value;
       }
   }
   foreach my $key (keys %uth) {
@@ -882,47 +924,32 @@ package main;
       }
   }
 
-
   ################################################################
-  ## Load the matrix-specific threshols if specified
+  ## Assign the specific thresholds read in the threshold file
   if ($infile{matrix_thresholds}) {
-    %matrix_thr = (); # list of matrices for which we put a threshold
-    my ($mthr, $input_dir) = &OpenInputFile($main::infile{matrix_thresholds});
-    while (<$mthr>) {
-      next if (/'^;'/);		# skip comment lines
-      next if (/'^#'/);		# skip header lines
-      next if (/'^--'/);	# skip mysql-type comment lines
-      next unless (/\S/);	# skip empty lines
 
-      my @fields = split /\s+/;
-      my $matrix_name = $fields[0];
-      my $thr_param = lc($fields[1]);
-      my $thr_field = lc($fields[2]);
-      my $thr_value = lc($fields[3]);
-      unless ($supported_threshold{$thr_field}) {
-	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
-      }
-      &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ") 
-	unless (&RSAT::util::IsReal($thr_value));
-      $matrix_thr{$matrix_name} = 1;
-      $matrix_thr_val->{$matrix_name}->{$thr_field}->{$thr_param} = $thr_value; ## For the verbosity
-      if ($thr_param eq 'lth'){
-	$lth_matrix->{$matrix_name}->{$thr_field} = $thr_value;
-      }elsif ($thr_param eq 'uth'){
-	$uth_matrix->{$matrix_name}->{$thr_field} = $thr_value;
-      } else {
-	&RSAT::error::FatalError($thr_param, "Invalid parameter for a threshold (only uth and lth allowed). Check your threshold input file.") 
-      }
-    }
-    close $mthr;
-    &RSAT::message::Info("Read matrix threshold list from file", $infile{matrix_thresholds}) if ($main::verbose >= 2);
-  }
-
-  ## check the thresholds for the matrices
-  foreach my $thr_matrix_name (keys (%matrix_thr)){
+  ## check that matrices name given in the file are actual matrices
+  foreach my $thr_matrix_name (keys (%matrices_mth)){
       &RSAT::message::Warning("$thr_matrix_name does not correspond to any input matrix. Check your threshold file.");
+  	  delete $matrix_thr{$thr_matrix_name}; #remove this unfound matrix from the list of matrices
   } 
-
+  ## replace the global thresholds by specific thresholds
+  foreach my $matrix_name (sort keys %matrix_thr) {
+  	foreach my $thr_field (sort keys %{$matrix_thr_val->{$matrix_name}}) {
+  		if (defined($matrix_thr_val->{$matrix_name}->{$thr_field}->{'lth'})) {
+  			my $thr_value = $matrix_thr_val->{$matrix_name}->{$thr_field}->{'lth'};
+  			$lth_matrix->{$matrix_name}->{$thr_field} = $thr_value;
+  		}
+  		if (defined($matrix_thr_val->{$matrix_name}->{$thr_field}->{'uth'})) {
+  			my $thr_value = $matrix_thr_val->{$matrix_name}->{$thr_field}->{'uth'};
+  			$uth_matrix->{$matrix_name}->{$thr_field} = $thr_value;
+  		}
+  	}
+  }
+  }
+  
+  
+  
   ## get shortest matrix size
   my @sorted_array = sort {$a <=> $b} (values(%matrix_sizes));
   local $shortest_matrix_size;
@@ -1336,10 +1363,10 @@ package main;
 			$rank++;
 			$crer->force_attribute('rank', $rank);
 
-			next if ((defined($lth{rank}->{'all_matrices'})) && ($rank < $lth{rank}->{'all_matrices'}));
+			next if ((defined($lth{rank})) && ($rank < $lth{rank}));
 			#next if ((defined($lth{rank})) && (&check_thresholds("rank", $rank);
 			&print_crer($crer);
-			last if ((defined($uth{rank}->{'all_matrices'})) && ($rank >= $uth{rank}->{'all_matrices'}));
+			last if ((defined($uth{rank})) && ($rank >= $uth{rank}));
       }
     }
 
@@ -1398,8 +1425,10 @@ package main;
 #	next if ((defined($lth_matrix->{$matrix_name}->{rank})&&($rank < $lth_matrix->{$matrix_name}->{rank}))
 #		 ||(defined($lth{rank}->{"all_matrices"})&&($rank < $lth{rank}->{"all_matrices"})));
 	&print_match($match);
-	last if ((defined($uth{rank}->{$matrix_name})&&($rank >= $uth{rank}->{$matrix_name}))
-	||(defined($uth{rank}->{"all_matrices"})&&($rank >= $uth{rank}->{"all_matrices"})));
+	
+	last if (($uth_matrix->{$matrix_name}->{rank})&&($rank >= $uth_matrix->{$matrix_name}->{rank}));
+#	last if ((defined($uth{rank}->{$matrix_name})&&($rank >= $uth{rank}->{$matrix_name}))
+#	||(defined($uth{rank}->{"all_matrices"})&&($rank >= $uth{rank}->{"all_matrices"})));
       }
     }
   }
@@ -2913,7 +2942,7 @@ sub score_segment {
 
   
 
-  #    &RSAT::message::Debug("match", $seq_id, $score, $pval, $ln_pval, $sig_base, $sig) if ($main::verbose >= 10);
+   # &RSAT::message::Debug("match", $seq_id, $score, $pval, $ln_pval, $sig_base, $sig) if ($main::verbose >= 10);
 
   ## Calculate information
   #    my $info = $score * $proba_B;
@@ -3142,7 +3171,7 @@ Calculate the score of the crer
 =cut
 sub score_crer {
   my ($last_hit, $seq_id, $sub_window_end,$pos,$crer_seed) = @_;
-  	my $hit_p = $uth{pval}->{'all_matrices'} || $lth{pval}->{'all_matrices'};
+  	my $hit_p = $uth{pval} || $lth{pval};
      
      my @strands = ();
      push @strands,"D";
@@ -3154,12 +3183,14 @@ sub score_crer {
      return(0) if ($hit_sum == 0) ; ## do not proceed to calculations if the last position is 0
      
      &RSAT::message::Debug("CRER: last position",$pos,"relative to seed window", $last_hit) if ($main::verbose >= 10);
+     my $first_matrix_name;
      
      ## initiate other sums with hit of last position
      my $weight_sum = 0;
      my $pval_prod = 1;
      my $normw_sum = 0 if ($calc_fields{normw}); 
      foreach my $matrix (keys(%crer_seed_hits)){
+     	$first_matrix_name = $matrix;
      	foreach my $strand (@strands){
      		##weight sum
      		$weight_sum += $crer_seed_weights{$matrix}->{$strand}->[$last_hit] if (defined($crer_seed_weights{$matrix}->{$strand}->[$last_hit]));
@@ -3182,7 +3213,7 @@ sub score_crer {
      	## update sums
      	$hit_sum += $crer_sum_hits[$k];
  
-     	unless (&check_thresholds("crer_size", $sub_window_length,"all_matrices")) {next; }	
+     	unless (&check_thresholds("crer_size", $sub_window_length,$first_matrix_name)) {next; }	
 
      	foreach my $matrix (keys(%crer_seed_hits)){
      		foreach my $strand (@strands){
@@ -3198,7 +3229,7 @@ sub score_crer {
       	#########################################################
 		## calculate over-represantation sig with Binomiale
 		
-		unless (&check_thresholds("crer_sites", $hit_sum, "all_matrices")) {next; }
+		unless (&check_thresholds("crer_sites", $hit_sum,$first_matrix_name)) {next; }
 		
 		## nb of trials (takes into account the end of sequence where some positions are not scored with all matrices if they do not have the same width)
 		my $n = 0;
@@ -3231,8 +3262,8 @@ sub score_crer {
 		  $crer_sig = sprintf("%.3f", -log($crer_pval)/$sig_base);
 	      }
 	    
-	    unless (&check_thresholds("crer_pval", $crer_pval,"all_matrices")) {next; }
-	    unless (&check_thresholds("crer_sig", $crer_sig,"all_matrices")) {next; }
+	    unless (&check_thresholds("crer_pval", $crer_pval,$first_matrix_name)) {next; }
+	    unless (&check_thresholds("crer_sig", $crer_sig,$first_matrix_name)) {next; }
  
      	##prepare output (ft format)
      	my $strand_binon = "D";
