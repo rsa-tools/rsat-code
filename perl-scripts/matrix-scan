@@ -1,22 +1,13 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.129 2009/10/12 11:30:33 morgane Exp $
+# $Id: matrix-scan,v 1.130 2009/10/14 03:45:54 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
 ############################################################
 ## TO DO: add an option to sort hits either by position or by score
-## DONE: add a pseudo-weight to the bg model (for the time being, it only affects the matrix)
 ## TO DO: improve the rank output: calcualte a rank per sequence + a total rank + a rank per matrix+sequence
-
-## TO DO: REGION SCORE
-## - report scores for regions of width W
-## - first step: table with W columns x  M rows 
-## - compute at each position a region score for a fixed width
-## - report the region score profile in a tab-delimited file (multi-score feature-map format)
-##        - contig, start, end, strand, scores: nhits, Pval product, weight sum, score de Helge Roider, .... (see other scores in module finding programs)
-## - report enlarged regions
 
 ## use strict;
 BEGIN {
@@ -57,6 +48,8 @@ sites). This program supports a variety of background models
 =item Jean Valery Turatsinze <jturatsi@scmbb.ulb.ac.be>
 
 =item Morgane Thomas-Chollier <morgane@scmbb.ulb.ac.be>
+
+=item Matthieu Defrance <defrance@bigre.ulb.ac.be>
 
 =back
 
@@ -370,8 +363,10 @@ package main;
   #    local $out = STDOUT;
     
   ## Threshold parameters
-  local %lth = ();		# lower threshold values
-  local %uth = ();		# upper threshold values
+  local %lth = ();		# lower threshold values for all matrices
+  local %uth = ();		# upper threshold values for all matrices
+  local %lth_matrix = ();       # matrix-specific lower threshold values
+  local %uth_matrix = ();       # matrix-specific upper threshold values
   @supported_thresholds = qw ( 
 			      score
 			      normw
@@ -492,44 +487,6 @@ package main;
   }
   
   
-  ################################################################
-  ## Load the matrix list if specified
-  if ($infile{matrix_thresholds}) {
-  	
-	%matrix_thr = (); # list of matrices for which we put a threshold
-  	
-    my ($mthr, $input_dir) = &OpenInputFile($main::infile{matrix_thresholds});
-    while (<$mthr>) {
-      next if (/'^;'/);		# skip comment lines
-      next if (/'^#'/);		# skip header lines
-      next if (/'^--'/);	# skip mysql-type comment lines
-      next unless (/\S/);	# skip empty lines
-
-      my @fields = split /\s+/;
-      my $matrix_name = $fields[0];
-      my $thr_param = lc($fields[1]);
-      my $thr_field = lc($fields[2]);
-      my $thr_value = lc($fields[3]);
-      
-	unless ($supported_threshold{$thr_field}) {
-		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
-	    }
-	&RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ") 
-	      unless (&RSAT::util::IsReal($thr_value));
-	
-	$matrix_thr{$matrix_name} = 1;
-	if ($thr_param eq 'lth'){
-		$lth{$thr_field}->{$matrix_name} = $thr_value;
-	}elsif ($thr_param eq 'uth'){
-		$uth{$thr_field}->{$matrix_name} = $thr_value;
-	} else {
-		&RSAT::error::FatalError($thr_param, "Invalid parameter for a threshold (only uth and lth allowed). Check your threshold input file.") 
-	}
-    
-    }
-    close $mthr;
-    &RSAT::message::Info("Read matrix threshold list from file", $infile{matrix_thresholds}) if ($main::verbose >= 2);
-  }
   
   #########################################
 
@@ -548,7 +505,7 @@ package main;
   ## calculation of p_score requires a threshold on Pval, LogPval or sig
   if ($return_fields{p_score}){
   	unless ((defined($uth{pval})) || (defined($lth{pval}))) {
-  		&RSAT::error::FatalError("Computation of p_score requires a pval threshold defined with option -uth pval");
+	    &RSAT::error::FatalError("Computation of p_score requires a pval threshold defined with option -uth pval");
   	}
 
     }
@@ -714,11 +671,10 @@ package main;
  
 
   ################################################################
-  ## Check that there is at least one input matrix
+  ## Check that there is at least one input matrix file
   unless (scalar(@matrix_files >= 1)) {
     &RSAT::error::FatalError("You must specify at least one matrix file.");
   }
-
 
   ################################################################
   ### open output stream
@@ -906,10 +862,74 @@ package main;
     }
   } 
   
+
+  ################################################################
+  ## Assign generic thresholds to each matrix This is done before
+  ## reading the matrix-specific thresholds, so that the specific
+  ## threshold will replace the generic ones.
+  foreach my $key (keys %lth) {
+      my $thr_value = $lth{$key};
+      foreach my $matrix (@matrices) {
+	  my $matrix_name = $matrix->get_attribute("name");
+	  $lth_matrix->{$matrix_name}->{$key} = $thr_value;
+      }
+  }
+  foreach my $key (keys %uth) {
+      my $thr_value = $uth{$key};
+      foreach my $matrix (@matrices) {
+	  my $matrix_name = $matrix->get_attribute("name");
+	  $uth_matrix->{$matrix_name}->{$key} = $thr_value;
+      }
+  }
+
+
+  ################################################################
+  ## Load the matrix-specific threshols if specified
+  if ($infile{matrix_thresholds}) {
+  	
+    %matrix_thr = (); # list of matrices for which we put a threshold
+  	
+    my ($mthr, $input_dir) = &OpenInputFile($main::infile{matrix_thresholds});
+    while (<$mthr>) {
+      next if (/'^;'/);		# skip comment lines
+      next if (/'^#'/);		# skip header lines
+      next if (/'^--'/);	# skip mysql-type comment lines
+      next unless (/\S/);	# skip empty lines
+
+      my @fields = split /\s+/;
+      my $matrix_name = $fields[0];
+      my $thr_param = lc($fields[1]);
+      my $thr_field = lc($fields[2]);
+      my $thr_value = lc($fields[3]);
+      
+	unless ($supported_threshold{$thr_field}) {
+		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+	    }
+	&RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ") 
+	      unless (&RSAT::util::IsReal($thr_value));
+	
+	$matrix_thr{$matrix_name} = 1;
+#	if ($thr_param eq 'lth'){
+#	    $lth{$thr_field}->{$matrix_name} = $thr_value;
+#	}elsif ($thr_param eq 'uth'){
+#	    $uth{$thr_field}->{$matrix_name} = $thr_value;
+	if ($thr_param eq 'lth'){
+	    $lth_matrix->{$matrix_name}->{$thr_field} = $thr_value;
+	}elsif ($thr_param eq 'uth'){
+	    $uth_matrix->{$matrix_name}->{$thr_field} = $thr_value;
+	} else {
+		&RSAT::error::FatalError($thr_param, "Invalid parameter for a threshold (only uth and lth allowed). Check your threshold input file.") 
+	}
+    
+    }
+    close $mthr;
+    &RSAT::message::Info("Read matrix threshold list from file", $infile{matrix_thresholds}) if ($main::verbose >= 2);
+  }
+
   ## check the thresholds for the matrices
   foreach my $thr_matrix_name (keys (%matrix_thr)){
-		&RSAT::message::Warning("$thr_matrix_name does not correspond to any input matrix. Check your threshold file.");
-	} 
+      &RSAT::message::Warning("$thr_matrix_name does not correspond to any input matrix. Check your threshold file.");
+  } 
 
   ## get shortest matrix size
   my @sorted_array = sort {$a <=> $b} (values(%matrix_sizes));
@@ -1370,18 +1390,21 @@ package main;
 	my $matrix_name = $match->get_attribute("feature_name");
 	$rank_pm{$matrix_name}++;
 	$match->force_attribute('rank_pm', $rank_pm{$matrix_name});
-	
-	next if ((defined($lth{rank_pm}->{$matrix_name})&&($rank_pm{$matrix_name} < $lth{rank_pm}->{$matrix_name}))
-	||(defined($lth{rank_pm}->{"all_matrices"})&&($rank_pm{$matrix_name} < $lth{rank_pm}->{"all_matrices"})));
-	next if ((defined($uth{rank_pm}->{$matrix_name})&&($rank_pm{$matrix_name} > $uth{rank_pm}->{$matrix_name}))
-	||(defined($uth{rank_pm}->{"all_matrices"})&&($rank_pm{$matrix_name} > $uth{rank_pm}->{"all_matrices"})));
-	
+
+	next if ((defined($lth_matrix->{$matrix_name}->{rank_pm})) && ($rank_pm{$matrix_name} < $lth_matrix->{$matrix_name}->{rank_pm}));
+	next if ((defined($uth_matrix->{$matrix_name}->{rank_pm})) && ($rank_pm{$matrix_name} > $uth_matrix->{$matrix_name}->{rank_pm}));
+#	next if ((defined($lth_matrix->{$matrix_name}->{rank_pm}) && ($rank_pm{$matrix_name} < $lth_matrix->{$matrix_name}->{rank_pm}))
+#		  ||(defined($lth{rank_pm}) && ($rank_pm{$matrix_name} < $lth{rank_pm})));
+#	next if ((defined($uth_matrix->{$matrix_name}->{rank_pm})&&($rank_pm{$matrix_name} > $uth_matrix->{$matrix_name}->{rank_pm}))
+#		 ||(defined($uth{rank_pm})&&($rank_pm{$matrix_name} > $uth{rank_pm})));
+
 	## Compute a sequence-specific rank
 	$rank++;
 	$match->force_attribute('rank', $rank);
 
-	next if ((defined($lth{rank}->{$matrix_name})&&($rank < $lth{rank}->{$matrix_name}))
-	||(defined($lth{rank}->{"all_matrices"})&&($rank < $lth{rank}->{"all_matrices"})));
+		 next if ((defined($lth_matrix->{$matrix_name}->{rank})) && ($rank < $lth_matrix->{$matrix_name}->{rank}));
+#	next if ((defined($lth_matrix->{$matrix_name}->{rank})&&($rank < $lth_matrix->{$matrix_name}->{rank}))
+#		 ||(defined($lth{rank}->{"all_matrices"})&&($rank < $lth{rank}->{"all_matrices"})));
 	&print_match($match);
 	last if ((defined($uth{rank}->{$matrix_name})&&($rank >= $uth{rank}->{$matrix_name}))
 	||(defined($uth{rank}->{"all_matrices"})&&($rank >= $uth{rank}->{"all_matrices"})));
@@ -1512,6 +1535,7 @@ package main;
   ## Report score distribution
   if ($return_fields{distrib}) {
 
+
     ################################################################
     ##  Calculate cumulative frequencies
     &RSAT::message::TimeWarn("Calculating cumulative frequencies") if ($main::verbose >= 2);
@@ -1528,9 +1552,11 @@ package main;
 	}
 	$cum_sum{$matrix_name} += $score_distrib->{$matrix_name}->{$score}->{occ};
 	$score_distrib->{$matrix_name}->{$score}->{occ_cum} = $cum_sum{$matrix_name};
-	#	  &RSAT::message::Debug($matrix, "score", $score, "cum_sum", $cum_sum{$matrix_name}) if ($main::verbose >= 10);
+#	&RSAT::message::Debug("cum freq", $matrix_name, "score", $score, "cum_sum", $cum_sum{$matrix_name}) if ($main::verbose >= 10);
       }
     }
+
+
 
     ################################################################
     ## Calculate inverse cumulative frequencies
@@ -1552,6 +1578,7 @@ package main;
     ## after having computed the cumulative and inverse umulative
     ## frequencies
     &check_distrib_thresholds('score');
+
 
     ################################################################
     ## Check thresholds on occurrences
@@ -1642,11 +1669,13 @@ package main;
 			       );
 	    $nb_of_tests++;
 	  }
-	  &RSAT::message::Debug("Calculated significance", $matrix_name, $score, 
-				$x, $hit_p, $score_distrib->{$matrix_name}->{$score}->{occ_pval})
-	    if ($main::verbose >= 3);
-	  if (($main::verbose >= 2) && (($s % 50) == 0)) {
-	    &RSAT::message::psWarn("Calculated significance for matrix", , $matrix_name, "score", $s) 
+	  if ($main::verbose >= 3) {
+	      if (($s % 50) == 0) {
+		  &RSAT::message::psWarn("Calculated significance for matrix", , $matrix_name, "score", $s) ;
+	      } else {
+		  &RSAT::message::Debug("Calculated significance", $matrix_name, $score, 
+					$x, $hit_p, $score_distrib->{$matrix_name}->{$score}->{occ_pval})
+	      }
 	  }
 	}
       }
@@ -1776,8 +1805,8 @@ matrix-scan options
 -i		sequence file
 -seq_format     sequence format (default: fasta). Supported format: all format supported by convert-seq
 -n [skip|score]	Treatment of N characters.
-		skip: N-containing regions are skipped
-		score: N-containing rgions are scored. 
+		skip:  sites that contain N characters are skipped
+		score: sites that contain N characters are scored
 -mask [upper|lower] Mask lower or uppercases, respectively, i.e replace selected case by N characters.
 -origin pos	Define pos as the origin for the calculatin of positions
 -o		outputfile
@@ -1805,23 +1834,20 @@ matrix-scan options
 		Supported thresholds fields for the matches: score, pval,
 		sig, normw, proba_M, proba_B, rank, crer_sig, crer_pval, crer_sites, crer_size
 
-		Supported thresholds fields for score distributions: occ, occ_sum, 
+		Supported thresholds fields for score distributions: occ, occ_sum,
 		inv_cum, exp_occ, occ_pval, occ_eval, occ_sig, occ_sig_rank
 -mth		matrix-specific threshold file
--crer_ids	Assign one separate feature ID per CRER. This option is convenient to distinguish separate CRERs,
-                but it can be heavy for feature-map legends, especially when many CRERs are detected.
+-crer_ids	Assign one separate feature ID per CRER. 
 -sort_distrib	sort score distributions by decreasing values of significance. 
-                (Default: score distibutions are sorted by score (weight)) 
--bg_distrib	File specifying the background score distribution used to estimate prior
-                probabilities with the option -return occ_proba.
-
--base #		Base for the logarithms used in the score involving a log-likelihood (Default: exp(1))
--recursive	Run matrix-scan separately for each sequence.
--batch #	Dispatch matrix-scan jobs on a cluster. Number of sequences to be analyzed by job (= on each node of the cluster)
+-bg_distrib	File specifying the background score distribution for option -return occ_proba.
+-base #		Base for the logarithms (Default: exp(1))
+-recursive 	Run matrix-scan separately for each sequence.
+-batch #        Dispatch matrix-scan jobs on a cluster. Number of sequences
+       		to be analyzed by job (= on each node of the cluster)
 
 
-For details about all these options and return fields 
-see full help (matrix-scan -h)
+For details about all these options and return fields see full help
+(matrix-scan -h)
 
 End_short_help
     close HELP;
@@ -2287,7 +2313,7 @@ Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ 
 	    }
 	    &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ") 
 	      unless (&RSAT::util::IsReal($thr_value));
-	    $lth{$thr_field}->{'all_matrices'} = $thr_value;
+	    $lth{$thr_field} = $thr_value;
 
 	    ### Upper threshold
 	} elsif ($arg eq "-uth") {
@@ -2298,7 +2324,7 @@ Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ 
 	    }
 	    &RSAT::error::FatalError($thr_value, "Invalid value for an upper threshold. Should be a real number. ") 
 	      unless (&RSAT::util::IsReal($thr_value));
-	    $uth{$thr_field}->{'all_matrices'} = $thr_value;
+	    $uth{$thr_field} = $thr_value;
 
 	    ## Matrix_thresholds file
 =pod
@@ -2307,12 +2333,20 @@ Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ 
 
 Matrix-specific thresholds. 
 
-Indicate a file containing a list of thresholds to be used for scanning
-the region. This enables to use distinct thresholds for each input matrix. 
+Specify a file containing a list of thresholds to be used for scanning
+the region. This enables to use distinct thresholds for each input
+matrix.
 
-Format: the list of thresholds is a text file with four fields (separated by spaces or tabulations). 
-The first column is the matrix name, the second is the threshold parameter (uth or lth), the third is the threshold field and the fourth is the threshold value.
-Refer to -lth and -uth options help for the full list of supported threshold fields. Various threshold fields and parameters (uth and lth) can be combined for each matrix.
+Format: the list of thresholds is a text file with four columns
+(separated by spaces or tabulations) indicating the following fields.
+ 1.  matrix name
+ 2. threshold parameter (uth or lth), 
+ 3. threshold field 
+ 4. threshold value.  
+
+The same list of fields is supported as for the options -lth and
+-uth. Various threshold fields and parameters (uth and lth) can be
+combined for each matrix.
 
 Example:
 
@@ -3341,31 +3375,20 @@ Check the lower and upper threshold for a given hit.
 sub check_thresholds {
     my ($key, $value,$matrix_name) = @_;
 
-	## check if the key is specified in the uth/lth tables
-	if ((!defined($lth{$key})) &&(!defined($uth{$key}))) {
-		return 1;
-	}
-
-    ## check if matrix-specific threshold
-    my $matrix_thr = "";
-    if ((defined($lth{$key}->{$matrix_name}))||(defined($uth{$key}->{$matrix_name}))){
-    	$matrix_thr = $matrix_name;
-    } elsif ((defined($lth{$key}->{"all_matrices"}))||(defined($uth{$key}->{"all_matrices"}))) {
-    	$matrix_thr = 'all_matrices';
-    } 
-
-    if ((defined($lth{$key}->{$matrix_thr})) && 
-	(($value eq $null) || ($value < $lth{$key}->{$matrix_thr}))
-       ) {
+    if ((defined($lth_matrix->{$matrix_name}->{$key})) && 
+	(($value eq $null) || ($value < $lth_matrix->{$matrix_name}->{$key}))
+	) {
 	return 0;
     }
-    if ((defined($uth{$key}->{$matrix_thr})) && 
-	(($value eq $null) || ($value > $uth{$key}->{$matrix_thr}))
-       ) {
+    if ((defined($uth_matrix->{$matrix_name}->{$key})) && 
+	(($value eq $null) || ($value > $uth_matrix->{$matrix_name}->{$key}))
+	) {
 	return 0;
     }
     return 1;
 }
+
+
 
 ################################################################
 =pod
@@ -3379,6 +3402,10 @@ distribution.
 sub check_distrib_thresholds {
   my ($key) = @_;
   $key = lc($key); ## case-insensitive keys
+
+
+#    my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrices[0]->get_attribute("name")}};
+#    &RSAT::message::Debug(scalar(@sorted_scores), "sorted scores", "from ".&min(@sorted_scores), "to ".&max(@sorted_scores)) if ($main::verbose >= 0);
 
   ## Check lower thresholds
   if (defined($lth{$key})) {
@@ -3401,6 +3428,11 @@ sub check_distrib_thresholds {
 			  scalar(keys %{$score_distrib->{$matrix_name}})) if ($main::verbose >= 2);
     }
   }
+
+
+#  @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrices[0]->get_attribute("name")}};
+#    &RSAT::message::Debug(scalar(@sorted_scores), "sorted scores", "from ".&min(@sorted_scores), "to ".&max(@sorted_scores)) if ($main::verbose >= 0);
+#    die("HELLO");
 
   ## Check upper thresholds
   if (defined($uth{$key})) {
