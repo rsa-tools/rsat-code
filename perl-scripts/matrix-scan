@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.132 2009/10/14 04:16:20 jvanheld Exp $
+# $Id: matrix-scan,v 1.133 2009/10/14 04:21:55 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -2731,16 +2731,16 @@ sub Verbose {
     if ($infile{matrix_thresholds}) {
       print $main::out "; Matrix\tThresholds\tlower\tupper\n";
       foreach my $m (sort keys %matrix_thr) {
-	foreach my $f (sort keys %{$matrix_thr_values->{$m}}) {
+	foreach my $f (sort keys %{$matrix_thr_val->{$m}}) {
 	  printf $main::out ";\t%-5s", $m;
 	  printf $main::out "\t%-5s", $f;
-	  if (defined($matrix_thr_fields->{$m}->{$f}->{'lth'})) {
-	    printf $main::out "\t%-5g", $matrix_thr_fields->{$m}->{$f}->{'lth'};
+	  if (defined($matrix_thr_val->{$m}->{$f}->{'lth'})) {
+	    printf $main::out "\t%-5g", $matrix_thr_val->{$m}->{$f}->{'lth'};
 	  } else {
 	    print $main::out "\t", $null;
 	  }
-	  if (defined($matrix_thr_fields->{$m}->{$f}->{'uth'})) {
-	    printf $main::out "\t%-5g", $matrix_thr_fields->{$m}->{$f}->{'lth'};
+	  if (defined($matrix_thr_val->{$m}->{$f}->{'uth'})) {
+	    printf $main::out "\t%-5g", $matrix_thr_val->{$m}->{$f}->{'uth'};
 	  } else {
 	    print $main::out "\t", $null;
 	  }
