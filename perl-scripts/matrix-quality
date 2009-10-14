@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.75 2009/09/29 19:07:03 jvanheld Exp $
+# $Id: matrix-quality,v 1.76 2009/10/14 06:16:49 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -219,6 +219,7 @@ package main;
     #### Initialise parameters
     my $start_time = &AlphaDate();
     @image_formats = ();
+    $image_formats = "";
     @distrib_files = ();
     %file_nb = ();
     @matrix_scan_options = ();
@@ -332,6 +333,7 @@ package main;
     unless (scalar(@image_formats)>0) {
     	push (@image_formats,"png");
     }
+    $image_formats = join ",", @image_formats; ## For the logo
     &RSAT::message::Info("Image formats for graphs: ".join (",", sort(@image_formats))) if ($main::verbose >= 2);
 
     ## Permutation number for each sequence type
@@ -1609,7 +1611,8 @@ sub ExportMatrixInfo {
   $cmd .= " -bgfile ".$infile{bg_file};
   $cmd .= " -bg_format ".$bg_format;
   $cmd .= " -return counts,frequencies,weights,info,parameters,profile,sites,logo";
-  $cmd .= " -logo_format png -logo_opt '-e -M -t ".$matrix_name."'";
+  $cmd .= " -logo_format ".$image_formats;
+  $cmd .= " -logo_opt '-e -M -t ".$matrix_name."'";
   &doit($cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
 
   ## Generate reverse complement
@@ -1630,7 +1633,8 @@ sub ExportMatrixInfo {
   $cmd .= " -bgfile ".$infile{bg_file};
   $cmd .= " -bg_format ".$bg_format;
   $cmd .= " -return counts,logo";
-  $cmd .= " -logo_format png -logo_opt '-e -M -t ".$matrix_name."_rc'";
+  $cmd .= " -logo_format ".$image_formats;
+  $cmd .= " -logo_opt '-e -M -t ".$matrix_name."_rc'";
   &doit($cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
 }
 
