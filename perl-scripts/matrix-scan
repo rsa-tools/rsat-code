@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.130 2009/10/14 03:45:54 jvanheld Exp $
+# $Id: matrix-scan,v 1.131 2009/10/14 04:14:41 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -43,11 +43,11 @@ sites). This program supports a variety of background models
 
 =over
 
-=item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
+=item Jacques van Helden <jvanheld@bigre.ulb.ac.be>
 
-=item Jean Valery Turatsinze <jturatsi@scmbb.ulb.ac.be>
+=item Jean Valery Turatsinze <jturatsi@bigre.ulb.ac.be>
 
-=item Morgane Thomas-Chollier <morgane@scmbb.ulb.ac.be>
+=item Morgane Thomas-Chollier <morgane@bigre.ulb.ac.be>
 
 =item Matthieu Defrance <defrance@bigre.ulb.ac.be>
 
@@ -886,9 +886,7 @@ package main;
   ################################################################
   ## Load the matrix-specific threshols if specified
   if ($infile{matrix_thresholds}) {
-  	
     %matrix_thr = (); # list of matrices for which we put a threshold
-  	
     my ($mthr, $input_dir) = &OpenInputFile($main::infile{matrix_thresholds});
     while (<$mthr>) {
       next if (/'^;'/);		# skip comment lines
@@ -901,26 +899,20 @@ package main;
       my $thr_param = lc($fields[1]);
       my $thr_field = lc($fields[2]);
       my $thr_value = lc($fields[3]);
-      
-	unless ($supported_threshold{$thr_field}) {
-		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
-	    }
-	&RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ") 
-	      unless (&RSAT::util::IsReal($thr_value));
-	
-	$matrix_thr{$matrix_name} = 1;
-#	if ($thr_param eq 'lth'){
-#	    $lth{$thr_field}->{$matrix_name} = $thr_value;
-#	}elsif ($thr_param eq 'uth'){
-#	    $uth{$thr_field}->{$matrix_name} = $thr_value;
-	if ($thr_param eq 'lth'){
-	    $lth_matrix->{$matrix_name}->{$thr_field} = $thr_value;
-	}elsif ($thr_param eq 'uth'){
-	    $uth_matrix->{$matrix_name}->{$thr_field} = $thr_value;
-	} else {
-		&RSAT::error::FatalError($thr_param, "Invalid parameter for a threshold (only uth and lth allowed). Check your threshold input file.") 
-	}
-    
+      unless ($supported_threshold{$thr_field}) {
+	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+      }
+      &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ") 
+	unless (&RSAT::util::IsReal($thr_value));
+      $matrix_thr{$matrix_name} = 1;
+      $matrix_thr->{$matrix_name}->{$thr_field}->{$thr_param} = $thr_value;
+      if ($thr_param eq 'lth'){
+	$lth_matrix->{$matrix_name}->{$thr_field} = $thr_value;
+      }elsif ($thr_param eq 'uth'){
+	$uth_matrix->{$matrix_name}->{$thr_field} = $thr_value;
+      } else {
+	&RSAT::error::FatalError($thr_param, "Invalid parameter for a threshold (only uth and lth allowed). Check your threshold input file.") 
+      }
     }
     close $mthr;
     &RSAT::message::Info("Read matrix threshold list from file", $infile{matrix_thresholds}) if ($main::verbose >= 2);
@@ -2717,33 +2709,45 @@ sub Verbose {
     }
 
 
-    ## Thresholds
+    ## Generic thresholds
     my %th_keys = (%lth, %uth);
-    print $main::out "; Matrix\tThresholds\tlower\tupper\n";
-    foreach $f (sort keys %th_keys) {
-
-    	my @matrices_lth = sort keys (%{$lth{$f}});
-    	my @matrices_uth = sort keys (%{$uth{$f}});
-    	my @matrices = (@matrices_lth, @matrices_uth);
-    	#lth    		
-    	foreach my $m (@matrices){
-    		printf $main::out ";\t%-5s", $m;
-    		printf $main::out "\t%-5s", $f;
-    		if (defined($lth{$f}->{$m})) {
-    			printf $main::out "\t%-5g", $lth{$f}->{$m};
-    		} else {
-		    print $main::out "\t", $null;
-			}
-			if (defined($uth{$f}->{$m})) {
-    			printf $main::out "\t%-5g", $uth{$f}->{$m};
-    		} else {
-		    print $main::out "\t", $null;
-			}
-			print $main::out "\n";
-    	}
+    print $main::out "; Thresholds\tlower\tupper\n";
+    foreach $key (sort keys %th_keys) {
+      printf $main::out ";\t%-6s", $key;
+      if (defined($lth{$key})) {
+	printf $main::out "\t%-5g", $lth{$key};
+      } else {
+	print $main::out "\t", $null;
+      }
+      if (defined($uth{$key})) {
+	printf $main::out "\t%-5g", $uth{$key};
+      } else {
+	print $main::out "\t", $null;
+      }
+      print $main::out "\n";
     }
 
-
+    ## Matrix-specific thresholds
+    if ($infile{matrix_thresholds}) {
+      print $main::out "; Matrix\tThresholds\tlower\tupper\n";
+      foreach my $m (sort keys %matrix_thr) {
+	foreach my $f (sort keys %{$matrix_thr_fields->{$m}}) {
+	  printf $main::out ";\t%-5s", $m;
+	  printf $main::out "\t%-5s", $f;
+	  if (defined($matrix_thr_fields->{$m}->{$f}->{'lth'})) {
+	    printf $main::out "\t%-5g", $matrix_thr_fields->{$m}->{$f}->{'lth'};
+	  } else {
+	    print $main::out "\t", $null;
+	  }
+	  if (defined($matrix_thr_fields->{$m}->{$f}->{'uth'})) {
+	    printf $main::out "\t%-5g", $matrix_thr_fields->{$m}->{$f}->{'lth'};
+	  } else {
+	    print $main::out "\t", $null;
+	  }
+	  print $main::out "\n";
+	}
+      }
+    }
 }
 
 
@@ -3404,9 +3408,6 @@ sub check_distrib_thresholds {
   $key = lc($key); ## case-insensitive keys
 
 
-#    my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrices[0]->get_attribute("name")}};
-#    &RSAT::message::Debug(scalar(@sorted_scores), "sorted scores", "from ".&min(@sorted_scores), "to ".&max(@sorted_scores)) if ($main::verbose >= 0);
-
   ## Check lower thresholds
   if (defined($lth{$key})) {
     &RSAT::message::TimeWarn("Checking lower threshold on score distibution", 
@@ -3429,14 +3430,9 @@ sub check_distrib_thresholds {
     }
   }
 
-
-#  @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrices[0]->get_attribute("name")}};
-#    &RSAT::message::Debug(scalar(@sorted_scores), "sorted scores", "from ".&min(@sorted_scores), "to ".&max(@sorted_scores)) if ($main::verbose >= 0);
-#    die("HELLO");
-
   ## Check upper thresholds
   if (defined($uth{$key})) {
-    &RSAT::message::TimeWarn("Checking upper threshold on score distibution", 
+    &RSAT::message::TimeWarn("Checking upper threshold on score distibution",
 			     $key, $uth{$key}) if ($main::verbose >= 2);
     foreach my $matrix (@matrices) {
       my $matrix_name = $matrix->get_attribute("name");
