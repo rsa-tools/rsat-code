@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.133 2009/10/14 04:21:55 jvanheld Exp $
+# $Id: matrix-scan,v 1.134 2009/10/14 04:22:51 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -596,7 +596,7 @@ package main;
 	$exp_score_distrib->{$matrix_name}->{$score}->{occ_prior} = $freq_inv_cum;
 #	&RSAT::message::Debug("Loading bg distrib", $matrix_name, $score,
 #			      $exp_score_distrib->{$matrix_name}->{$score}->{occ_prior}) 
-#	  if ($main::verbose >= 0);
+#	  if ($main::verbose >= 10);
       }
       close $in;
     }
@@ -707,7 +707,7 @@ package main;
     $bg_model->load_from_file($infile{bg}, $bg_in_format);
     $bg_model->check_missing_transitions();
 
-    #      &RSAT::message::Debug($bg_model->to_string($bg_out_format)) if ($main::verbose >= 0);
+    #      &RSAT::message::Debug($bg_model->to_string($bg_out_format)) if ($main::verbose >= 10);
   } elsif ($main::markov >= 0) {
     $bg_model->set_attribute("order", $main::markov);
     if (($main::window >= 0) && ($main::window < $main::markov+1)) {
@@ -1274,7 +1274,7 @@ package main;
       		for (my $k=($pos-1) ;  $k >= 0 ;  $k--){
      			if ($crer_sum_hits[$k] != 0){
      				$last_hits{$k} = $pos - ($crer_seed - $k) +1; ## store last hit + corresponding absolute position
-     				#&RSAT::message::Debug("First seed:", "hit in position", $pos - ($crer_seed - $k) +1,"position relative to seed", $k) if ($main::verbose >= 0);
+     				#&RSAT::message::Debug("First seed:", "hit in position", $pos - ($crer_seed - $k) +1,"position relative to seed", $k) if ($main::verbose >= 10);
      			}
       		}  	
       ## only update each border of the seed
@@ -1409,7 +1409,7 @@ package main;
   ################################################################
   ## Print sequence-size statistics
   if ($return_fields{seq_scores}) {
-    &RSAT::message::TimeWarn("Printing scores per sequence") if ($main::verbose >= 0);
+    &RSAT::message::TimeWarn("Printing scores per sequence") if ($main::verbose >= 2);
     print $out join("\t", "seq_id", "length", "scored", "matches", "w_sum", "sig_sum", "sig_rank"), "\n";
     my @sorted_sequences = sort (keys %{$sequence_scores});
       @sorted_sequences = sort {$sequence_scores->{$b}->{sig_sum} <=> $sequence_scores->{$a}->{sig_sum}} @sorted_sequences;
@@ -1603,7 +1603,7 @@ package main;
 				    $matrix_name, $score, $prior) if ($main::verbose >= 5);
 	    } else {
 	      &RSAT::message::Warning("The  bg distrib file does not contain prior probability for matrix",
-				    $matrix_name, "with score", $score) if ($main::verbose >= 0);
+				    $matrix_name, "with score", $score) if ($main::verbose >= 1);
 	    }
 	  } else {
 	    $prior = ${$main::pval{$matrix}}{$score};
@@ -3175,7 +3175,7 @@ sub score_crer {
      	next if ($crer_sum_hits[$k] == 0);
      	
      	my $sub_window_length = $last_hit - $k + 1;   
-     	#&RSAT::message::Debug("subwindow length",$sub_window_length) if ($main::verbose >= 0);
+     	#&RSAT::message::Debug("subwindow length",$sub_window_length) if ($main::verbose >= 10);
      	
      	## update sums
      	$hit_sum += $crer_sum_hits[$k];
