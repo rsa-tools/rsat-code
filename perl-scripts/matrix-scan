@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.134 2009/10/14 04:22:51 jvanheld Exp $
+# $Id: matrix-scan,v 1.135 2009/10/14 06:17:08 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -2711,20 +2711,22 @@ sub Verbose {
 
     ## Generic thresholds
     my %th_keys = (%lth, %uth);
-    print $main::out "; Thresholds\tlower\tupper\n";
-    foreach $key (sort keys %th_keys) {
-      printf $main::out ";\t%-6s", $key;
-      if (defined($lth{$key})) {
-	printf $main::out "\t%-5g", $lth{$key};
-      } else {
-	print $main::out "\t", $null;
+    if (scalar(keys(%th_keys)) > 0) {
+      print $main::out "; Thresholds\tlower\tupper\n";
+      foreach $key (sort keys %th_keys) {
+	printf $main::out ";\t%-6s", $key;
+	if (defined($lth{$key})) {
+	  printf $main::out "\t%-5g", $lth{$key};
+	} else {
+	  print $main::out "\t", $null;
+	}
+	if (defined($uth{$key})) {
+	  printf $main::out "\t%-5g", $uth{$key};
+	} else {
+	  print $main::out "\t", $null;
+	}
+	print $main::out "\n";
       }
-      if (defined($uth{$key})) {
-	printf $main::out "\t%-5g", $uth{$key};
-      } else {
-	print $main::out "\t", $null;
-      }
-      print $main::out "\n";
     }
 
     ## Matrix-specific thresholds
