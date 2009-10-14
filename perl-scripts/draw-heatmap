@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: draw-heatmap,v 1.10 2009/01/20 10:14:55 morgane Exp $
+# $Id: draw-heatmap,v 1.11 2009/10/14 06:16:12 jvanheld Exp $
 #
 ############################################################
 
@@ -25,7 +25,9 @@ Draw a heatmap from a table
 
 Sylvain Brohee <sylvain@bigre.ulb.ac.be>
 
-With the help of Morgane Thomas-Chollier for Chaos representation <morgane@bigre.ulb.ac.be>
+With the help of Morgane Thomas-Chollier <morgane@bigre.ulb.ac.be> for
+Chaos representation
+
 
 =head1 CATEGORY
 
@@ -37,8 +39,10 @@ draw-heatmap [-i inputfile] -o outputfile [-v #] [-chaos] [...] -out_format [png
 
 =head1 INPUT FORMAT
 
-A tab delimited table. 
-It may contain a header (starting with a '#' symbol). The cells nlt containing  real values will not be taken into account.
+A tab delimited table.
+
+It may contain a header (starting with a '#' symbol). The cells nlt
+containing real values will not be taken into account.
 
 =head1 OUTPUT FORMAT
 
@@ -69,7 +73,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -79,17 +83,15 @@ package main;
     $main::in = STDIN;
     $main::out = STDOUT;
     ## Output formats
-    local $output_format = "ps";
+    local $output_format = "png";
     %supported_output_format =(
-#     				ps=>1,
-    				png=>1,
-    				jpg=>1,
-    				jpeg=>1
-    			      );			      
-			       
+#			       ps=>1, ## NOT SUPPORTED YET
+			       png=>1,
+			       jpg=>1,
+			       jpeg=>1
+    			      );
     $supported_output_formats = join (",", keys %supported_output_format);
-    
-   
+
     ## Color gradients
     local $gradient = "grey";
     %supported_gradients =(
@@ -242,7 +244,12 @@ package main;
     ################################################################
     ## Execute the command
     if ($output_format eq "ps") {
-      
+
+      ## Comment by JvH: apparently there has been some intention to
+      ## support the ps format, but the code has not been implemented
+      ## yet. I added the error message to avoid having an empty case.
+      &RSAT::error::FatalError("Postscript format is not supported yet.");
+
     } else {
       my $p  = new GD::Image (100+$row_name_width+($col_width*$max_row_elements), $header_name_height+($row_height*($tablecpt+2))) ;
       my %colors = ();
@@ -473,8 +480,6 @@ Input file name. This option is mandatory.
 	} elsif ($arg eq "-i") {
 	    $main::infile{input} = shift(@arguments);
 
-
-
 	    ## Output file
 =pod
 
@@ -485,19 +490,18 @@ Name of the output file. This option is mandatory.
 =cut
 	} elsif ($arg eq "-o") {
 	    $main::outfile{output} = shift(@arguments);
-	    
-	    
-
 
 	    ## HTML MAP
 =pod
 
 =item	B<-html html_map_file>
 
-If a HTML map file is defined, draw-heatmap then produces a HTML file that loads the 
-the HEATMAP. Moreover, each of the cell is defined so that when the mouse is over in
-a web browser, the user get the name of row, of the column and the value of the cell.
-For CHAOS game representation, the word corresponding to the cell and its associated value are given.
+If a HTML map file is defined, draw-heatmap then produces a HTML file
+that loads the HEATMAP. Moreover, each of the cell is defined so that
+when the mouse is over in a web browser, the user get the name of row,
+of the column and the value of the cell.  For CHAOS game
+representation, the word corresponding to the cell and its associated
+value are given.
 
 =cut
 	} elsif ($arg eq "-html") {
@@ -523,16 +527,21 @@ Using this option, the values are not written in the cells of the heatmap.
 =cut
 	} elsif ($arg eq "-no_text") {
 	    $main::no_text = 1;
-	    
+
+=pod
+
 =item B<-out_format output_format>
 
-Output format. Supported: ps, png, jpeg
+Output format. Supported: png,jpeg
 
 =cut 
 	} elsif ($arg eq "-out_format") {
 	    $output_format = shift(@arguments);
 	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
 		unless ($supported_output_format{$output_format});
+
+=pod
+
 =item B<-gradient>
 
 Color of the intensity gradient of the heatmap. Default is grey.
@@ -543,7 +552,9 @@ Supported : green, blue, red, fire, grey.
 	    $gradient = shift(@arguments);
 	    &RSAT::error::FatalError("$gradient\tInvalid color gradient. Supported: $supported_gradients")
 		unless ($supported_gradients{$gradient});
-		
+
+=pod
+
 =item B<-col_width #>
 
 Width of the columns (in pixel). 
@@ -556,12 +567,15 @@ If the row height is to small, the label of the heatmap will not be indicated. (
 	    unless (&IsNatural($col_width) && ($col_width > 0)) {
 		&RSAT::error::FatalError(join("\t", $col_width, "Invalid value for the column width. Must be a strictly positive natural number. If the column width is to small, the label of the heatmap will not be indicated."));
 	    }
-	    
+
+=pod
+
 =item B<-row_height #>
 
 Height of the rows (in pixel). 
 
-If the row height is to small, the label of the heatmap will not be indicated. (Default : 30 px)
+If the row height is to small, the label of the heatmap will not be
+indicated. (Default : 30 px)
 
 =cut
 	} elsif ($arg eq "-row_height") {
@@ -570,9 +584,14 @@ If the row height is to small, the label of the heatmap will not be indicated. (
 		&RSAT::error::FatalError(join("\t", $row_height, "Invalid value for the row height. Must be a strictly positive natural number. If the row height is to small, the label of the heatmap will not be indicated."));
 	    }
 
+=pod
+
 =item B<-min #>
 
-Minimal value of the heatmap. By default, this value is the minimal value of the input file. If the specified value is larger than the minimal value of the heatmap, then the minimal value of the heatmap will be used as minimal value.
+Minimal value of the heatmap. By default, this value is the minimal
+value of the input file. If the specified value is larger than the
+minimal value of the heatmap, then the minimal value of the heatmap
+will be used as minimal value.
 
 =cut
 	} elsif ($arg eq "-min") {
@@ -580,10 +599,16 @@ Minimal value of the heatmap. By default, this value is the minimal value of the
 	    unless (&RSAT::util::IsReal($min_val)) {
 		&RSAT::error::FatalError(join("\t", $min_val, "Invalid value for the minimal value. Must be a real number."));
 	    }
+
+
+=pod
 	    
 =item B<-max #>
 
-Maximal value of the heatmap. By default, this value is the maximal value of the input file. If the specified value is smaller than the maximal value of the heatmap, then the maximal value of the heatmap will be used as maximal value.
+Maximal value of the heatmap. By default, this value is the maximal
+value of the input file. If the specified value is smaller than the
+maximal value of the heatmap, then the maximal value of the heatmap
+will be used as maximal value.
 
 =cut
 	} elsif ($arg eq "-max") {
@@ -591,6 +616,9 @@ Maximal value of the heatmap. By default, this value is the maximal value of the
 	    unless (&RSAT::util::IsReal($max_val)) {
 		&RSAT::error::FatalError(join("\t", $max_val, "Invalid value for the maximal value. Must be a real number."));
 	    }
+
+=pod
+
 =item B<-lines>
 
 Add black vertical and horizontal separations lines between the cells of the heatmap
@@ -599,11 +627,15 @@ Add black vertical and horizontal separations lines between the cells of the hea
 	} elsif ($arg eq "-lines") {
 	    $lines = 1;
 
+
+=pod
+
 =item B<-chaos>
 
-The heatmap is a CHAOS Game Representation. This option enables to label the angles
-of the figure with the nucleotide letters, activates -no_text, and col_width equals row_height
-to obtain squares. see I<chaos-table> for details on CHAOS Game Representation.
+The heatmap is a CHAOS Game Representation. This option enables to
+label the angles of the figure with the nucleotide letters, activates
+-no_text, and col_width equals row_height to obtain squares. see
+I<chaos-table> for details on CHAOS Game Representation.
 
 =cut
 	} elsif ($arg eq "-chaos") {
@@ -682,6 +714,37 @@ __END__
 
 =head1 SEE ALSO
 
+=head2 convert-background-model
+
+Heatmaps can be used to provide an intuitive feeling of Markovian
+background models provided as transition matrices. Such models can be
+obtained with the command.
+
+ convert-background-model -i model.tab -from oligos -to transitions \
+   | cut -f 1-5 | heatmap -out_format png -min 0 -max 1 \
+      -o model_transition_heatmap.png
+
+
 =head1 WISH LIST
+
+=over
+
+=item B<-out_format>
+
+Add support for ps and pdf formats>
+
+=item B<-title 'My title text'>
+
+Display a title on the top side of the image.
+
+=item B<-xlab 'X label'>
+
+Display the label along the X axis of the image.
+
+=item B<-ylab 'Y label'>
+
+Display the label along the Y axis of the image.
+
+=back
 
 =cut
