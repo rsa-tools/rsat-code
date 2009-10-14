@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.131 2009/10/14 04:14:41 jvanheld Exp $
+# $Id: matrix-scan,v 1.132 2009/10/14 04:16:20 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -905,7 +905,7 @@ package main;
       &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ") 
 	unless (&RSAT::util::IsReal($thr_value));
       $matrix_thr{$matrix_name} = 1;
-      $matrix_thr->{$matrix_name}->{$thr_field}->{$thr_param} = $thr_value;
+      $matrix_thr_val->{$matrix_name}->{$thr_field}->{$thr_param} = $thr_value; ## For the verbosity
       if ($thr_param eq 'lth'){
 	$lth_matrix->{$matrix_name}->{$thr_field} = $thr_value;
       }elsif ($thr_param eq 'uth'){
@@ -2731,7 +2731,7 @@ sub Verbose {
     if ($infile{matrix_thresholds}) {
       print $main::out "; Matrix\tThresholds\tlower\tupper\n";
       foreach my $m (sort keys %matrix_thr) {
-	foreach my $f (sort keys %{$matrix_thr_fields->{$m}}) {
+	foreach my $f (sort keys %{$matrix_thr_values->{$m}}) {
 	  printf $main::out ";\t%-5s", $m;
 	  printf $main::out "\t%-5s", $f;
 	  if (defined($matrix_thr_fields->{$m}->{$f}->{'lth'})) {
