@@ -2511,6 +2511,7 @@ sub calcTheorScoreDistribBernoulli {
   ## the matrix width.
   my $decimals = $self->get_attribute("decimals");
   my $score_format = "%.${decimals}f";
+  my $score_format_calc = "%.".(${decimals}+3)."f";
 
   my @scores = $self->getFrequencies();
 
@@ -2573,12 +2574,12 @@ sub calcTheorScoreDistribBernoulli {
       my $curr_score = log($suffix_freq_M/$suffix_proba_B)/$info_log_denominator; # Beware here, log is ln !!!
 
       ## discretisation of the scores
-      $curr_score = sprintf($score_format, $curr_score);
+      $curr_score = sprintf($score_format_calc, $curr_score);
 
-#      &RSAT::message::Debug("letter",$suffix,"score",$curr_score) if ($main::verbose >= 5);
+ #     &RSAT::message::Debug("letter",$suffix,"score",$curr_score) if ($main::verbose >= 5);
 
       for my $prev_score (keys %score_proba) {
-	my $current_score = sprintf($score_format, $prev_score + $curr_score);
+	my $current_score = sprintf($score_format_calc, $prev_score + $curr_score);
 	$current_score_proba{$current_score} += $score_proba{$prev_score}*$bg_suffix_proba{$suffix};
       }
     }
@@ -2586,6 +2587,13 @@ sub calcTheorScoreDistribBernoulli {
     %score_proba = %current_score_proba;
   }
 
+# round the scores to the user-chosen decimals
+my %score_proba_decimals;
+for my $score (keys %score_proba) {
+	my $score_decimals = sprintf($score_format,$score);
+	$score_proba_decimals{$score_decimals} += $score_proba{$score};
+	}
+%score_proba = %score_proba_decimals;
 
 #    my @row = &RSAT::matrix::get_column($c+1, $nrow, @matrix);
 #    my @row_scores = &RSAT::matrix::get_column($c+1, $nrow, @scores);
@@ -2721,6 +2729,7 @@ sub calcTheorScoreDistribMarkov {
   ## the matrix width.
   my $decimals = $self->get_attribute("decimals");
   my $score_format = "%.${decimals}f";
+  my $score_format_calc = "%.".(${decimals}+1)."f";
 
   ################################################################
   ## For Markov models, we don't work with a weight matirx, but we
@@ -2785,7 +2794,7 @@ sub calcTheorScoreDistribMarkov {
     }
 
     ## discretisation of the scores
-    $score_init = sprintf($score_format, $score_init);
+    $score_init = sprintf($score_format_calc, $score_init);
 
     ## proba
     if ($distrib_proba{$score_init}->{$initial_prefix}) {
@@ -2823,7 +2832,7 @@ sub calcTheorScoreDistribMarkov {
 	## score
 	my $curr_score = log($suffix_freq_M/$suffix_transition_B)/$info_log_denominator; # Beware here, log is ln !!!
 	## discretisation of the scores
-	$curr_score = sprintf($score_format, $curr_score);
+	$curr_score = sprintf($score_format_calc, $curr_score);
 
 	&RSAT::message::Debug("$prefix->$suffix","curr_score = log( $suffix_freq_M / $suffix_transition_B ) = $curr_score") 
 	  if ($main::verbose >= 10);
@@ -2833,7 +2842,7 @@ sub calcTheorScoreDistribMarkov {
 
 	    ## new scores for this position
 	    my $sum_score = $curr_score + $prev_score;
-	    $sum_score = sprintf($score_format, $sum_score);
+	    $sum_score = sprintf($score_format_calc, $sum_score);
 
 	    ## proba
 	    ## summing (in fact, multiplying) with proba of previous state (AND)
@@ -2877,6 +2886,14 @@ foreach my $score (keys (%distrib_proba)) {
 }
 
 &RSAT::message::Debug("proba sum", $proba_sum) if ($main::verbose >= 10);
+
+# round the scores to the user-chosen decimals
+my %score_proba_decimals;
+for my $score (keys %score_proba) {
+	my $score_decimals = sprintf($score_format,$score);
+	$score_proba_decimals{$score_decimals} += $score_proba{$score};
+	}
+%score_proba = %score_proba_decimals;
 
   ## Calculate the sorted list of score values
   my $score_proba_cum = 0;
