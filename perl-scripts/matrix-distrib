@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-distrib,v 1.14 2009/09/04 14:34:22 jvanheld Exp $
+# $Id: matrix-distrib,v 1.15 2009/10/19 19:34:03 morgane Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -299,7 +299,7 @@ package main;
     my $ln_pval = $null;
     my $log_P = $null;
     my $sig = $null;
-    if (defined($weight_proba{$weight})) {
+    if (defined($weight_proba{$weight})&&($weight_proba{$weight} ne $null)) {
       $weight_proba = sprintf("%.1e", $weight_proba{$weight});
     }
     if (defined($weight_proba_cum{$weight})) {
