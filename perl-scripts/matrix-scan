@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.136 2009/10/14 13:20:48 morgane Exp $
+# $Id: matrix-scan,v 1.137 2009/10/19 12:47:06 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -2838,19 +2838,23 @@ sub score_segment {
 			       "\nsize of matrix array:", scalar(@residue_proba_M)))  
       if (scalar(@residue_proba_M) != scalar(@residue_proba_B)); 
 
+	my $segment_weight = log($proba_M/$proba_B)/$log_base;
+	$score = sprintf("%.${decimals}f", $segment_weight);
+	$score =~ s/^-(0\.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
 
-  for my $i (0..$#residue_proba_M) {
-      $proba_R_M = $residue_proba_M[$i]; ## residue proba under the matrix
-      $proba_R_B = $residue_proba_B[$i]; ##residue proba under background
-
-      my $residue_weight = log($proba_R_M/$proba_R_B)/$log_base;
-      $residue_weight = sprintf("%.${decimals}f", $residue_weight);
-      
-      $score += $residue_weight;
-      $score =~ s/^-(0\.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
-      $score = sprintf("%.${decimals}f",$score);
-
-  }
+## algo to return exact same scores as for p-values calculation
+#  for my $i (0..$#residue_proba_M) {
+#      $proba_R_M = $residue_proba_M[$i]; ## residue proba under the matrix
+#      $proba_R_B = $residue_proba_B[$i]; ##residue proba under background
+#
+#      my $residue_weight = log($proba_R_M/$proba_R_B)/$log_base;
+#      $residue_weight = sprintf("%.${decimals}f", $residue_weight);
+#      
+#      $score += $residue_weight;
+#      $score =~ s/^-(0\.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
+#      $score = sprintf("%.${decimals}f",$score);
+#
+#  }
   
   my %prior = $bg_model->get_attribute("suffix_proba");
   
