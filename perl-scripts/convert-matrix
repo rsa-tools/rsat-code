@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.80 2009/09/04 14:33:46 jvanheld Exp $
+# $Id: convert-matrix,v 1.81 2009/10/19 04:56:12 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -137,7 +137,7 @@ unless (scalar(@matrix_files >= 1)) {
 
 &RSAT::message::Info(scalar(@matrix_files), "input matrix files") if ($main::verbose >= 2);
 
-## return type(s)
+## Check return type(s)
 local %return_fields = ();
 unless (scalar(@return_fields)) {
     if ((lc($output_format ) eq "transfac") ||
@@ -147,11 +147,22 @@ unless (scalar(@return_fields)) {
 	&RSAT::error::FatalError("You should define at least one return type");
   }
 }
-foreach my $format (@return_fields) {
-    if ($supported_return_type{$format}) {
-	$return_fields{$format}++;
+
+## Permutations are only compatible with -return counts
+if ($perm) {
+  foreach my $field (@return_fields) {
+    unless ($field eq "counts") {
+      &RSAT::error::FatalError("The option -perm is only compatible with -return counts");
+    }
+  }
+}
+
+
+foreach my $field (@return_fields) {
+    if ($supported_return_type{$field}) {
+	$return_fields{$field}++;
     } else {
-	&RSAT::error::FatalError("Invalid return type $format. Supported: ".$supported_return_fields);
+	&RSAT::error::FatalError("Invalid return type $field. Supported: ".$supported_return_fields);
     }
 }
 
