@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.138 2009/10/20 07:21:02 jvanheld Exp $
+# $Id: matrix-scan,v 1.139 2009/10/20 15:08:34 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -533,13 +533,13 @@ package main;
   ## normw is incompatible with sliding windows
   if (($return_fields{normw}) && ($bg_method eq "window")) {
     &RSAT::message::Warning("The normw computation cannot be done with a sliding window. Normw will not be returned.");
-    undef($return_fields{normw});
+    delete($return_fields{normw});
   }
 
   ## weight_matrix is incompatible with orders > 0
   if (($return_fields{weight_matrix}) && ($markov > 0)) {
     &RSAT::message::Warning("The concept of weight matrix is incompatible with higher order Markov chains. Weight matrix will not be returned.");
-    undef($return_fields{weight_matrix});
+    delete($return_fields{weight_matrix});
   }
 
   ## calculation of p_score requires a threshold on Pval, LogPval or sig
@@ -571,12 +571,12 @@ package main;
    	unless (defined(%lth) || defined(%uth)){
    		if ($return_fields{pval}){
    			&RSAT::message::Warning("Calculating P-values for -window background model requires a lot of computing time. Specify a threshold with -lth or -uth. P-val will not be returned.");
-    		undef($return_fields{pval});
+    		delete($return_fields{pval});
     		$return_fields{sites} = 1;
    		}
    		if ($return_fields{weight_limits}){
    			&RSAT::message::Warning("Calculating Weight limits for -window background model requires a lot of computing time. Specify a threshold with -lth or -uth. Weight limits will not be returned.");
-    		undef($return_fields{weight_limits});
+    		delete($return_fields{weight_limits});
     		$return_fields{sites} = 1;
    		}
    	}
@@ -595,8 +595,8 @@ package main;
     $return_fields{sites} = 1;
   }
 
-  if ((defined($uth{normw})) || (defined($lth{normw}|| 
-  	  (defined($uth_file{normw})) || (defined($lth_file{normw}))))) {
+ if ((defined($uth{normw})) || (defined($lth{normw})) || 
+ 	  (defined($uth_file{normw})) || (defined($lth_file{normw}))) {
     $return_fields{normw} = 1;
   }
   if ((defined($uth{pval})) || (defined($lth{pval})) || 
