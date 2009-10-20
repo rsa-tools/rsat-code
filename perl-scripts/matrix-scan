@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.137 2009/10/19 12:47:06 morgane Exp $
+# $Id: matrix-scan,v 1.138 2009/10/20 07:21:02 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -74,13 +74,14 @@ matrix-scan -m matrixfile [-i inputfile] [-o outputfile] [-v]
 
 =head2 Sequence file
 
-All the formats supported in RSAT can be used as input (default: fasta).  
+All the formats supported in RSAT can be used as input (default:
+fasta).
 
 
 =head2 Matrix file
 
-The matrix format is specified with the option -matrix_format.  Supported :
-tab,cb,consensus,gibbs,meme,assembly. Default : tab.
+The matrix format is specified with the option -matrix_format.
+Supported : tab,cb,consensus,gibbs,meme,assembly. Default : tab.
 
 For a description of these format, see I<convert-matrix -h>
 
@@ -708,8 +709,6 @@ package main;
     close $mlist;
     &RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
   }
-  
- 
 
   ################################################################
   ## Check that there is at least one input matrix file
@@ -758,14 +757,15 @@ package main;
 				    ") must be larger than Markov order + 1 (",
 				    $main::markov."+1)."));
     }
-    
-    	## bg window : calculate bg pseudo frequency
-    	if ($bg_method ne "input") {
-    		unless ($bg_pseudo_user_specified) {
-     			$main::bg_pseudo = sqrt($main::window)/(sqrt($main::window) + $main::window);
-     			&RSAT::message::Debug("window length: ", $main::window,"bg pseudo-frequency calculated:",$main::bg_pseudo) if ($main::verbose >= 3);
-      		}
-    	}
+
+    ## bg window : calculate bg pseudo frequency
+    if ($bg_method ne "input") {
+      unless ($bg_pseudo_user_specified) {
+	$main::bg_pseudo = sqrt($main::window)/(sqrt($main::window) + $main::window);
+	&RSAT::message::Debug("window length: ", $main::window,"bg pseudo-frequency calculated:",$main::bg_pseudo) 
+	  if ($main::verbose >= 3);
+      }
+    }
 
     ## TO DO: read the sequences once to determine prior frequencies, in
     ## order to set the pseudo-weight distribution
@@ -793,7 +793,8 @@ package main;
       #calculate pseudo
       unless ($bg_pseudo_user_specified) {
      	$main::bg_pseudo = sqrt($input_seq_length)/(sqrt($input_seq_length) + $input_seq_length);
-     	&RSAT::message::Debug("sequence length: ", $input_seq_length,"bg pseudo-frequency calculated:",$main::bg_pseudo) if ($main::verbose >= 3);
+     	&RSAT::message::Debug("sequence length: ", $input_seq_length,"bg pseudo-frequency calculated:",$main::bg_pseudo) 
+	  if ($main::verbose >= 3);
       	}
     }
   } else {
@@ -823,13 +824,14 @@ package main;
 	$matrix->set_attribute("file", $matrix_file);
 	$matrix->set_attribute("n_treatment", $n_treatment);
 	$matrix->index_alphabet();
-	
+
 	## Use the matrix consensus as name
 	if ($consensus_name) {
 	  $matrix->calcConsensus();
 	  my $consensus = $matrix->get_attribute("consensus.IUPAC");
 	  if ($consensus) {
-	    &RSAT::message::Warning("Using consensus as name", $consensus) if ($main::verbose >= 3);
+	    &RSAT::message::Warning("Using consensus as name", $consensus) 
+	      if ($main::verbose >= 3);
 	    $matrix->force_attribute("name", $consensus);
 	  }
 	} elsif ($matrix->get_attribute("accession")) {
@@ -2470,9 +2472,12 @@ matrix in the same sequence (-uth rank_pm 3).
 
 =item B<normw:> normalized weights.
 
-Normailzed weights are calculated according to Thijs' formula : normw
-= (W -Wmin)/(Wmax - Wmin). Note that Wmin and Wmax are approximated
-using a Bernoulli model, for reasons of commputational efficiency.
+Normalized weights are calculated according to Thijs' formula :
+
+  normw = (W -Wmin)/(Wmax - Wmin)
+
+Note that Wmin and Wmax are approximated using a Bernoulli model, for
+reasons of commputational efficiency.
 
 
 =item B<limits:> limits (start, end) of the input sequences. 
@@ -2482,28 +2487,33 @@ lengths.
 
 =item B<weight_limits:> Wmin and Wmax. 
 
-For each site, returns the minimal and maximal weight. This is useful with
-adaptative background models.
+For each site, returns the minimal and maximal weight. This is useful
+with adaptative background models.
 
 =item B<crer>
 
-Return Cis-Regulatory elements Enriched-Regions. 
+Return Cis-Regulatory elements Enriched-Regions (CRER).
 
-Calculate the statistical significance of the number of hits in windows of
-variable sizes. The number of hits is the sum of matches above a predefined threshold
-set on hits p-values, for all matrices and on both strands (if -2str). The maximum size
-for a CRER is defined by the option -crer_max.
+Calculate the statistical significance of the number of hits in
+windows of variable sizes. The number of hits is the sum of matches
+above a predefined threshold set on hits p-values, for all matrices
+and on both strands (if -2str). The maximum size for a CRER is defined
+by the option -crer_max.
 
-The prior probability to find an instance of the motif is the same for all matrices,
-and corresponds to the chosen pval threshold. Within a region of maximal CRER size,
-subwindows are defined between each hits, and the observed number of matches in
-a subwindow is the sum of hits above the threshold. The significance of the
-observed number of matches in a subwindow is estimated by calculating a P-value using
-the binomial distribution (Aerts et al., 2003).
+The prior probability to find an instance of the motif is the same for
+all matrices, and corresponds to the chosen pval threshold. Within a
+region of maximal CRER size, subwindows are defined between each hits,
+and the observed number of matches in a subwindow is the sum of hits
+above the threshold. The significance of the observed number of
+matches in a subwindow is estimated by calculating a P-value using the
+binomial distribution (Aerts et al., 2003).
 
-Example of CRER search: -return crer -uth pval 0.0001 -lth crer_size 20 -uth crer_size 200 
+Example of CRER search: 
 
- => the returned CRER lengths are between 20 and 200bp, and are constructed with hits having a pval less than 0.0001
+ -return crer -uth pval 0.0001 -lth crer_size 20 -uth crer_size 200
+
+ => the returned CRER lengths are between 20 and 200bp, and are
+ constructed with hits having a pval lower than 0.0001.
 
 =item B<distrib> Score distribution.
 
@@ -2860,7 +2870,11 @@ sub score_segment {
   
   if (($proba_M > 0) && ($proba_B > 0)) {
       if ($calc_fields{normw}) {
+	if ($bg_method eq "window") {
+	  $normw = "NA";
+	} else {
 	  $normw = sprintf("%6.4f", ($score - $matrix->{Wmin})/($matrix->{Wrange}));
+	}
       }
       if (($return_fields{weight_limits})&&($bg_method ne "window")){
 	  $Wmin = $matrix->{Wmin};
@@ -3252,7 +3266,7 @@ sub score_crer {
 			$n += $length;
 		}
      	$n *= 2 if ($main::both_strands);
-  	
+
      	my $crer_pval = &sum_of_binomials($hit_p, ## prior probabilty
 				$n,	## Number of trials
 				$hit_sum,	## Min number of successes
@@ -3260,14 +3274,14 @@ sub score_crer {
 			       );
 		$nb_of_binom_tests{$seq_id}++;
 		$sum_binom_tests++;
-	    
-	    my $crer_sig = "Inf";
-	    if ($crer_pval > 0) {
-		  $crer_sig = sprintf("%.3f", -log($crer_pval)/$sig_base);
-	      }
-	    
-	    unless (&check_thresholds("crer_pval", $crer_pval,$first_matrix_name)) {next; }
-	    unless (&check_thresholds("crer_sig", $crer_sig,$first_matrix_name)) {next; }
+
+	my $crer_sig = "Inf";
+	if ($crer_pval > 0) {
+	  $crer_sig = sprintf("%.3f", -log($crer_pval)/$sig_base);
+	}
+
+	unless (&check_thresholds("crer_pval", $crer_pval,$first_matrix_name)) {next; }
+	unless (&check_thresholds("crer_sig", $crer_sig,$first_matrix_name)) {next; }
  
      	##prepare output (ft format)
      	my $strand_binon = "D";
