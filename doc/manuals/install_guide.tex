@@ -113,105 +113,6 @@ can be installed with the command \program{cpan}.
 
 \end{description}
 
-\subsection{Additional libraries to access EnsEMBL genomes}
-
-Since 2009, a series of \RSAT programs support a direct access to the
-EnsEMBL database in order to ensure a convenient access to genomes
-from higher organisms \cite{Sand:2009}.
-
-\begin{itemize}
-\item \program{supported-organisms-ensembl}
-\item \program{ensembl-org-info}
-\item \program{retrieve-ensembl-seq.pl} 
-\item \program{get-ensembl-genome.pl}
-\end{itemize}
-
-Those programs require to install a few Perl libraries as well as a
-MySQL client on your machine. 
-
-To obtain BioPerl:
-
-\begin{footnotesize}
-\begin{verbatim}
-## For this example, we install Bioperl and EnsEMBL libraries 
-## in $RSAT/lib, but you can install it in some other place
-mkdir -p $RSAT/lib
-cd $RSAT/lib
-
-## Login into the BioPerl CVS server
-cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login
-### (password is 'cvs')
-
-## download the current version
-cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl \
-  checkout bioperl-live
-
-\end{verbatim}
-\end{footnotesize}
-
-%% (or cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -d bioperl-branch-1.4 -r branch-1-4 bioperl-live for older branch)
-
-To obtain EnsEMBL:
-
-\begin{footnotesize}
-\begin{verbatim}
-## Login on the EnsEMBL CVS server
-cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
-## (password is 'CVSUSER')
-
-## Download the current version of EnsEMBL
-cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-  checkout -r branch-ensembl-56 ensembl
-## (you need to adapt the branch number, e.g. 56, as it updates).
-
-## Download the current version of the EnsEMBL module for comparative genomics
-cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
-  checkout -r branch-ensembl-56 ensembl-compara
-## (you need to adapt the branch number, e.g. 56, as it updates).
-\end{verbatim}
-\end{footnotesize}
-
-Adapt the 3 following lines in the RSAT configuration file
-\file{RSAT\_config.props} to specify the actual path of the bioperl
-and ensembl libraries on your computer.
-
-\begin{footnotesize}
-\begin{verbatim}
-ensembl=/home/rsat/rsa-tools/lib/ensembl/modules
-compara=/home/rsat/rsa-tools/lib/ensembl-compara/modules
-bioperl=/home/rsat/rsa-tools/lib/bioperl-live
-\end{verbatim}
-\end{footnotesize}
-
-You also need to define the url of the ensembl database in that configuration file:
-
-\begin{footnotesize}
-\begin{verbatim}
-## EnsEMBL host
-## Used by the EnsEMBL-accessing tools (retrieve-ensembl-seq,
-## get-ensembl-genome).
-## URL of the server for the EnsEMBL DB. By default, the
-## main ensembl server is called, but a local server can be specified.
-ensembl_host=ensembldb.ensembl.org
-\end{verbatim}
-\end{footnotesize}
-
-The EnsEMBL libraries also require the SQL client Perl module
-\file{DBD::mysql}, as well as \file{DBI}, which can be installed with
-\program{cpan} (for this you need root privileges). Note that the
-installation of the CPAN module DBD:mysql requires a prior
-installation of a MySQL client on your machine
-(\url{http://dev.mysql.com/downloads/}).
-
-To access EnsEMBL versions above 47, you need port 5306 to be opened
-on your machine. This might require to consult the system
-administrator of your network in order to ensure that the Firewall
-accepts this port.
-
-Detailed information about the EnsEMBL libraries can be obtained on
-the EnsEMBL web site
-(\footnote{\url{http://www.ensembl.org/info/using/api/api\_installation.html}}).
-
 \subsection{Python language}
 
 Some of the programs in \RSAT are written in python. Version 2.4 or
@@ -518,6 +419,105 @@ make -f makefiles/init_RSAT.mk compile_all BIN=/usr/local/bin
 % make all
 % ln -s info-gibbs ${RSAT}/bin/info-gibbs
 % \end{verbatim}
+
+\subsection{Additional libraries to access EnsEMBL genomes}
+
+Since 2009, a series of \RSAT programs support a direct access to the
+EnsEMBL database in order to ensure a convenient access to genomes
+from higher organisms \cite{Sand:2009}.
+
+\begin{itemize}
+\item \program{supported-organisms-ensembl}
+\item \program{ensembl-org-info}
+\item \program{retrieve-ensembl-seq.pl} 
+\item \program{get-ensembl-genome.pl}
+\end{itemize}
+
+Those programs require to install a few Perl libraries as well as a
+MySQL client on your machine. 
+
+To obtain BioPerl:
+
+\begin{footnotesize}
+\begin{verbatim}
+## For this example, we install Bioperl and EnsEMBL libraries 
+## in $RSAT/lib, but you can install it in some other place
+mkdir -p $RSAT/lib
+cd $RSAT/lib
+
+## Login into the BioPerl CVS server
+cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login
+### (password is 'cvs')
+
+## download the current version
+cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl \
+  checkout bioperl-live
+
+\end{verbatim}
+\end{footnotesize}
+
+%% (or cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -d bioperl-branch-1.4 -r branch-1-4 bioperl-live for older branch)
+
+To obtain EnsEMBL:
+
+\begin{footnotesize}
+\begin{verbatim}
+## Login on the EnsEMBL CVS server
+cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
+## (password is 'CVSUSER')
+
+## Download the current version of EnsEMBL
+cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
+  checkout -r branch-ensembl-56 ensembl
+## (you need to adapt the branch number, e.g. 56, as it updates).
+
+## Download the current version of the EnsEMBL module for comparative genomics
+cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
+  checkout -r branch-ensembl-56 ensembl-compara
+## (you need to adapt the branch number, e.g. 56, as it updates).
+\end{verbatim}
+\end{footnotesize}
+
+Adapt the 3 following lines in the RSAT configuration file
+\file{RSAT\_config.props} to specify the actual path of the bioperl
+and ensembl libraries on your computer.
+
+\begin{footnotesize}
+\begin{verbatim}
+ensembl=/home/rsat/rsa-tools/lib/ensembl/modules
+compara=/home/rsat/rsa-tools/lib/ensembl-compara/modules
+bioperl=/home/rsat/rsa-tools/lib/bioperl-live
+\end{verbatim}
+\end{footnotesize}
+
+You also need to define the url of the ensembl database in that configuration file:
+
+\begin{footnotesize}
+\begin{verbatim}
+## EnsEMBL host
+## Used by the EnsEMBL-accessing tools (retrieve-ensembl-seq,
+## get-ensembl-genome).
+## URL of the server for the EnsEMBL DB. By default, the
+## main ensembl server is called, but a local server can be specified.
+ensembl_host=ensembldb.ensembl.org
+\end{verbatim}
+\end{footnotesize}
+
+The EnsEMBL libraries also require the SQL client Perl module
+\file{DBD::mysql}, as well as \file{DBI}, which can be installed with
+\program{cpan} (for this you need root privileges). Note that the
+installation of the CPAN module DBD:mysql requires a prior
+installation of a MySQL client on your machine
+(\url{http://dev.mysql.com/downloads/}).
+
+To access EnsEMBL versions above 47, you need port 5306 to be opened
+on your machine. This might require to consult the system
+administrator of your network in order to ensure that the Firewall
+accepts this port.
+
+Detailed information about the EnsEMBL libraries can be obtained on
+the EnsEMBL web site
+(\footnote{\url{http://www.ensembl.org/info/using/api/api\_installation.html}}).
 
 
 
