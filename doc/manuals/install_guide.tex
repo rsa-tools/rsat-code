@@ -84,7 +84,7 @@ can be installed with the command \program{cpan}.
 \item[PostScript::Simple] Produce PostScript files from Perl. Used by
   \program{feature-map}.
 
-\item[Math::CDF] Is used to calculate some probability distribution
+\item[Math::CDF] is used to calculate some probability distribution
   functions. In particular, it is used by the program
   \program{position-analysis} to calculate the P-value of the
   chi2. Note that this librairy is currently restricted to a precision
@@ -93,23 +93,25 @@ can be installed with the command \program{cpan}.
   \$RSAT/perl-scripts/lib/RSAT/stats.pm) which reaches a precision of
   1e-300.
 
-\item[Util::Properties] This module is required to load property
-  files, which are used to specify the site-specific configuration of
-  your \RSAT server. Property filesa are also useful to write your own
-  perl clients for the Web service interface to \RSAT (RSATWS).
+\item[Util::Properties] is required to load property files, which are
+  used to specify the site-specific configuration of your \RSAT
+  server. Property filesa are also useful to write your own perl
+  clients for the Web service interface to \RSAT (RSATWS).
 
-\item[Storable] This module is required to bring persistence to data
-  structures ike organisms. The slow procedure of organisms loading
-  can then be done only once. This library can be easyly installed via
-  CPAN.
+\item[Storable] is required to bring persistence to data structures
+  ike organisms. The slow procedure of organisms loading can then be
+  done only once. This library can be easyly installed via CPAN.
 
-\item[XML::LibXML] This module is required for parsing and writing XML
-  and uses the XML::Parser::Expat library. It is necessary for some
-  RSAT applications.
+\item[XML::LibXML] is required for parsing and writing XML and uses
+  the XML::Parser::Expat library. It is necessary for some RSAT
+  applications.
 
 \item[DBD:mysql and DBI] those two libraries are required by the
   program \program{retrieve-ensembl-seq} in order to access the
   ENSEMBL database.
+
+\item[SOAP::WSDL] is required for the Web services. It allows to write
+  Perl scripts to run \RSAT queries on a remote server.
 
 \end{description}
 
