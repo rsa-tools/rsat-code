@@ -38,7 +38,7 @@ JOB=`mktemp ${JOB_PREFIX}.XXXXXX`
 ## CCG configuration:  MASTER=kayab.ccg.unam.mx QUEUE=default QUEUE_MANAGER=torque
 QUEUE_MANAGER=sge
 QUEUE=medium
-MASTER=arthur.scmbb.ulb.ac.be
+MASTER=cluster
 CLUSTER_ADDRESS=${QUEUE}@${MASTER}
 command_queue:
 	${MAKE} command_queue_${QUEUE_MANAGER}

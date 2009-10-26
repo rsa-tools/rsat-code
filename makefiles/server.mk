@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.21 2008/07/23 13:03:41 rsat Exp $
+# $Id: server.mk,v 1.22 2009/10/26 15:49:40 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -27,9 +27,9 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 
 ################################################################
 # Mirrors
-RSAT_SERVER = rsat@rsat.scmbb.ulb.ac.be:rsa-tools
+RSAT_SERVER = rsat@rsat.ulb.ac.be:rsa-tools
 MAMAZE = jvanheld@164.15.109.52:rsa-tools
-MERLIN = jvanheld@merlin.scmbb.ulb.ac.be:rsa-tools
+MERLIN = jvanheld@merlin.bigre.ulb.ac.be:rsa-tools
 #FLYCHIP = jvanheld@flychip.org.uk:rsa-tools
 CCG = jvanheld@kayab.ccg.unam.mx:rsa-tools
 PORTPIN = rsat@portpin.univ-mrs.fr:rsa-tools
