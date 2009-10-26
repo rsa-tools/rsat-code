@@ -17,7 +17,7 @@ use MyInterfaces::RSATWebServices::RSATWSPortType;
 warn "\nThis demo script retrieves the start codons for a set of query genes\n\n";
 
 ## WSDL location
-my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
 
 ## Service call
 my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
