@@ -739,7 +739,7 @@ report_headers:
 	@echo ">name of contact" > ${RESULT_FILE}
 	@echo "Jacques van Helden" >> ${RESULT_FILE}
 	@echo ">email" >> ${RESULT_FILE}
-	@echo "jvanheld@scmbb.ulb.ac.be" >> ${RESULT_FILE}
+	@echo "jvanheld@bigre.ulb.ac.be" >> ${RESULT_FILE}
 	@echo ">program name" >> ${RESULT_FILE}
 	@echo "multiple-family-analyis" >> ${RESULT_FILE}
 	@cp ${RESULT_FILE} ${PARAM_FILE}
@@ -817,13 +817,13 @@ to_do:
 ## ##############################################################
 ## publish some directory on the web site
 
-PUBLISH_SITE=jvanheld@www.scmbb.ulb.ac.be:public_html/motif_discovery_competition_2003/
+PUBLISH_SITE=jvanheld@www.bigre.ulb.ac.be:public_html/motif_discovery_competition_2003/
 PUBLISH_DIR=evaluation
 publish_eval:
 	${RSYNC} --exclude '*~' ${PUBLISH_DIR} ${PUBLISH_SITE}
 
 TO_PUBLISH=file_index.html
-#PUBLISH_SERVER=jvanheld@rsat.scmbb.ulb.ac.be:
+#PUBLISH_SERVER=jvanheld@rsat.ulb.ac.be:
 PUBLISH_SITE=${PUBLISH_SERVER}${PUBLISH_DIR}
 PUBLISH_DIR=/home/jvanheld/rsa-tools/public_html/data/motif_discovery_competition
 publish:

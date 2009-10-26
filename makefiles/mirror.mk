@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.44 2009/07/29 07:01:01 rsat Exp $
+# $Id: mirror.mk,v 1.45 2009/10/26 15:49:40 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -9,7 +9,7 @@
 include ${RSAT}/makefiles/util.mk
 
 RSA=${HOME}/rsa-tools
-RSA_SERVER=rsat.scmbb.ulb.ac.be
+RSA_SERVER=rsat.ulb.ac.be
 RSA_SERVER_DIR=rsa-tools
 RSA_SERVER_LOGIN=rsat
 
@@ -28,7 +28,7 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 ################################################################
 #
 # Server
-RSAT_SERVER = ${RSA_SERVER_LOGIN}@rsat.scmbb.ulb.ac.be:/home/rsat/rsa-tools
+RSAT_SERVER = ${RSA_SERVER_LOGIN}@rsat.ulb.ac.be:/home/rsat/rsa-tools
 
 SERVER=${RSAT_SERVER}
 
@@ -142,11 +142,11 @@ data_from_server:
 
 ## Synchronize the list of supported organisms from the server to the mirror
 supported_from_server:
-	rsync -ruptvl -e ssh rsat@rsat.scmbb.ulb.ac.be:rsa-tools/data/supported'*' data/
+	rsync -ruptvl -e ssh rsat@rsat.ulb.ac.be:rsa-tools/data/supported'*' data/
 
 ################################################################
 ## Use wget to synchronize this mirror from the main server
-RSAT_HTTP=http://rsat.scmbb.scmbb.ulb.ac.be/rsat/
+RSAT_HTTP=http://rsat.ulb.ac.be/rsat/
 ORG=Mycoplasma_genitalium
 wget_one_org:
 	wget -rNL -P data/genomes/ ${RSAT_HTTP}/data/genomes/${ORG} --cut-dirs=3 -nH
@@ -171,5 +171,5 @@ clean_tmp:
 	@echo "Before cleaning	" `du -sk public_html/tmp`
 	find ${RSA}/public_html/tmp/ -mtime +${CLEAN_DATE} -type f -exec rm -f {} \;	
 	@echo "After cleaning	" `du -sk public_html/tmp`
-	@echo "Cleaned temporary directory" | mail -s 'cleaning tmp' jvanheld@scmbb.ulb.ac.be
+	@echo "Cleaned temporary directory" | mail -s 'cleaning tmp' jvanheld@bigre.ulb.ac.be
 
