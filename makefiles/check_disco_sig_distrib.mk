@@ -190,7 +190,7 @@ rm_disco_files:
 ## Synchronize result files from merlin
 ## Exclude sequence and dyad files, only synchronize the distributions
 from_merlin:
-	rsync --exclude '*fasta*' --exclude '*.tab.gz' -ruptvl -e ssh merlin.scmbb.ulb.ac.be:research/dyad_sig_distrib/results .
+	rsync --exclude '*fasta*' --exclude '*.tab.gz' -ruptvl -e ssh merlin.bigre.ulb.ac.be:research/dyad_sig_distrib/results .
 
 ################################################################
 ## Soem example of typical tests

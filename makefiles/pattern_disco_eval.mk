@@ -88,8 +88,8 @@ rand_multi:
 
 ################################################################
 ## synchronize on mamaze
-to_scmbb:
-	rsync -ruptvl -e ssh . jvanheld@mamaze.scmbb.ulb.ac.be:pattern_disco_eval
+to_bigre:
+	rsync -ruptvl -e ssh . jvanheld@mamaze.bigre.ulb.ac.be:pattern_disco_eval
 
 ## ##############################################################
 ## Score distributions

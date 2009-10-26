@@ -119,11 +119,11 @@ regulondb_graph:
 
 
 ################################################################
-## Synchronize results from SCMBB to my machine
-from_scmbb:
+## Synchronize results from BIGRE to my machine
+from_bigre:
 	(cd ..; rsync -ruptvlz -e ssh --exclude jobs --exclude *.fasta ${OPT} \
-	jvanheld@merlin.scmbb.ulb.ac.be:research/ortho_disco/regulondb_validation .)
+	jvanheld@merlin.bigre.ulb.ac.be:research/ortho_disco/regulondb_validation .)
 
-to_scmbb:
-	(cd ..; rsync -ruptvlz -e ssh ${OPT} regulondb_validation jvanheld@merlin.scmbb.ulb.ac.be:research/ortho_disco/)
+to_bigre:
+	(cd ..; rsync -ruptvlz -e ssh ${OPT} regulondb_validation jvanheld@merlin.bigre.ulb.ac.be:research/ortho_disco/)
 

@@ -522,12 +522,12 @@ link_one_file:
 
 ################################################################
 ## Synchronize the results to the server
-SERVER=rsat.scmbb.ulb.ac.be
+SERVER=rsat.ulb.ac.be
 SERVER_DIR=rsa-tools/data/comparative_genomics
-SCMBB=jvanheld@${SERVER}:${SERVER_DIR}
+BIGRE=jvanheld@${SERVER}:${SERVER_DIR}
 TO_SYNC=data
 TO_SYNC_DIR=`dirname ${TO_SYNC}`
-RSYNC_CMD=${RSYNC} ${OPT} ${TO_SYNC} ${SCMBB}/${TO_SYNC_DIR}/
+RSYNC_CMD=${RSYNC} ${OPT} ${TO_SYNC} ${BIGRE}/${TO_SYNC_DIR}/
 to_scmbb:
 	@echo ${RSYNC_CMD}
 	@${RSYNC_CMD}
