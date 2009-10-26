@@ -122,6 +122,16 @@ later is recommended.
 
 Some of the NeAT tools are written in Java. Java Runtime Environment 5 or higher is recommended.
 
+\subsection{Helper applications}
+
+The standard version of the program \program{XYgraph} export figures
+in bitmapformat (png, jpeg). If you want to support vectorial drawings
+(pdf), which give a much better resolution for printing, you need to
+install the freeware software \program{gnuplot} (4.2 or later), which
+can be downloaded from \url{http://www.gnuplot.info/}.
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Installation
 \chapter{Obtaining \RSAT distribution}
@@ -327,7 +337,7 @@ start the appropriate make file.
 
 \begin{footnotesize}
 \begin{verbatim}
-cd rsa-tools
+cd $RSAT
 make -f makefiles/init_RSAT.mk init
 \end{verbatim}
 \end{footnotesize}
@@ -371,13 +381,13 @@ make -f makefiles/init_RSAT.mk compile_all
 \end{verbatim}
 \end{footnotesize}
 
-
 This will compile and install the following programs in the directory
 \file{\$RSAT/bin}. 
 
 The installation directory can be changed by redefining the BIN
-variable. For instance, you can type the following command to install
-the compiled programs in \file{/usr/local/bin}.
+variable. For instance, if you have the system adminstrator
+privileges, you could install the compiled programs in the standard
+directory for compiled packages (\file{/usr/local/bin}).
 
 \begin{footnotesize}
 \begin{verbatim}
@@ -656,13 +666,13 @@ retrieve-seq -org Saccharomyces_cerevisiae \
 This should return a set of 3 bp sequences, mostly ATG (in the case of
 \org{Saccharomyces cerevisiae} at least)
 
-\section{Further steps}
+%% \section{Further steps}
 
-The installation is now finished, you can start the user's guide.
+%% The installation is now finished, you can start the user's guide.
 
-In case you would like to install additional genomes that are not
-supported on \RSAT main server, the next chapter indicates yiou how to
-proceed.
+%% In case you would like to install additional genomes that are not
+%% supported on \RSAT main server, the next chapter indicates yiou how to
+%% proceed.
 
 
 \chapter{Installing third-party programs}
