@@ -28,6 +28,7 @@ foreach $f (@supported_formats) {
 $supported_formats = join ",", @supported_formats;
 
 ## Return fields
+$return_fields = "";
 @return_fields = ();
 @supported_return_fields = @RSAT::OrganismManager::supported_org_fields;
 %supported_return_fields = ();
@@ -95,7 +96,7 @@ if ($from_server) {
   ## Retrieve-seq parameters
   my %args = (
 	      'taxon' => $taxon,
-#	      'format'=> $out_format,
+	      'return'=> $return_fields,
 	     );
 
   ## Send the request to the server
@@ -272,8 +273,9 @@ sub ReadArguments {
 
       #### return fields
     } elsif ($ARGV[$a] eq "-return") {
-	chomp($ARGV[$a+1]);
-	my @fields_to_return = split ",", $ARGV[$a+1];
+	$return_fields = $ARGV[$a+1];
+	chomp($return_fields);
+	my @fields_to_return = split ",", $return_fields;
 	foreach $field (@fields_to_return) {
 	    if ($supported_return_fields{$field}) {
 		push @return_fields, $field;
