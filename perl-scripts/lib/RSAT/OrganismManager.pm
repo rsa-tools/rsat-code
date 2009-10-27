@@ -14,6 +14,8 @@ use RSAT::Index;
 use RSAT::stats;
 use RSAT::organism;
 use Storable qw(nstore retrieve);
+use RSAT::Tree;
+use RSAT::TreeNode;
 
 @ISA = qw( RSAT::GenericObject );
 
@@ -138,14 +140,35 @@ organism and one column per field (feature of an organism).
 
 Usage:
 
- &RSAT::OrganismManager::supported_organism_table($header, $relative_path, @fields)
+  &RSAT::OrganismManager::supported_organism_table($header, $relative_path, $taxon, @fields)
+
+Arguments:
+
+=over
+
+=item header
+
+When the argument is not null, the first row of the table is a header
+indicating the column contents.
+
+=item relative_path
+
+When non null, the data paths are given relative to the $RSAT
+directory. Otherwise, absolute paths are returned.
+
+=item taxon
+
+Restrict only return organisms belonging to a given taxon.
+
+=back
 
 =cut
 sub supported_organism_table {
-  my ($header,$relative_path,  @fields) = @_;
+  my ($header,$relative_path, $taxon, @fields) = @_;
   my $table = "";
 
-#  &RSAT::message::Debug("&RSAT::OrganismManager::supported_organism_table()", "fields", join( ";", @fields)) if ($main::verbose >= 3);
+  &RSAT::message::Debug("&RSAT::OrganismManager::supported_organism_table()", "taxon: ".$taxon, "fields", join( ";", @fields)) 
+    if ($main::verbose >= 3);
 
   ## Default fields
   if (scalar(@fields) == 0) {
@@ -172,8 +195,23 @@ sub supported_organism_table {
     $table .= "\n";
   }
 
+  ## Select the organisms
+  my @selected_organisms = ();
+  if ($taxon) {
+    my $tree = new RSAT::Tree();
+    $tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism);
+    my $node = $tree->get_node_by_id($taxon);
+    if ($node){
+      @selected_organisms = $node->get_leaves_names();
+    }else{
+      &RSAT::error::FatalError("Taxon $taxon is not supported\n");
+    }
+  } else {
+    @selected_organisms = sort keys %main::supported_organism;
+  }
+
   ## Add fields for each organism
-  foreach my $org (sort keys %main::supported_organism) {
+  foreach my $org (@selected_organisms) {
     $main::supported_organism{$org}->{'ID'} = $org;
     my @values = ();
     foreach my $field (@fields) {
