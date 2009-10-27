@@ -32,7 +32,7 @@ $query = new CGI;
 
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
-$parameters = " -format full";
+$parameters = " -return ID,source,last_update,taxonomy,up_from,up_to";
 
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 
