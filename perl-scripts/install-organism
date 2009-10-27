@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.88 2009/07/29 04:30:27 rsat Exp $
+# $Id: install-organism,v 1.89 2009/10/27 15:03:58 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -816,8 +816,9 @@ sub PrintHelp {
 NAME
 	install-organism
 
-        2001 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
-	
+AUTHOR
+        Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+
 USAGE
         install-organism -org organism_name
 
@@ -838,8 +839,8 @@ DESCRIPTION
 	- calculates oligonucleotide and dyad frequencies
 
 CATEGORY
-	adminstration
-	
+	Data management.
+
 OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options
@@ -993,6 +994,22 @@ OPTIONS
 
 	-img_format
 		image format for the graphs of sequence length distribution
+
+SEE ALSO
+
+    donwload-organisms
+
+        The program I<install-organism> performs all the formatting
+	and calibration tasks for importing genomes from the reference
+	databases (NCBI, EMBL) to RSAT.
+
+	The program I<download-organism> transfers the RSAT-formatted
+	genomes from a RSAT server. 
+
+ 	If a genome is available on the RSAT server, it is recommended
+	to use download-genomes in order to obtain it immediately in
+	the RSAT format, rather than install-genomes.
+
 
 End_of_help
     close HELP;
