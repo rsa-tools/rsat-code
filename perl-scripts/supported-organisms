@@ -1,22 +1,31 @@
 #!/usr/bin/perl
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
+    push (@INC, "$`../ws_clients/perl_clients/RSATWS/");
 }
 require "RSA.lib";
 require RSAT::Tree;
 require RSAT::TreeNode;
 require RSAT::OrganismManager;
+require MyInterfaces::RSATWebServices::RSATWSPortType;
 #use strict;
+
+## Required for the option -server (obtaining the supported organisms from a remote server)
+use SOAP::WSDL; ## Requires version 2.0 or later of SOAP::WSDL
 
 ## Initialize parameters
 
+## Main RSAT server for the option -server
+## WSDL  Web services
+$from_server = 0;
+
 ## Ouptut formats
-$out_format = "text";
-@formats = qw (html_list html_table array text keys names sizes full tree html_tree);
-foreach $f (@formats) {
+$out_format = "tab";
+@supported_formats = qw (tab tree html_tree);
+foreach $f (@supported_formats) {
     $supported_format{$f} = 1;
 }
-$formats = join ",", @formats;
+$supported_formats = join ",", @supported_formats;
 
 ## Return fields
 @return_fields = ();
@@ -25,9 +34,10 @@ $formats = join ",", @formats;
 foreach my $field (@supported_return_fields) {
     $supported_return_fields{$field} = 1;
 }
-
 $supported_return_fields = join ",", @supported_return_fields;
-#die "HELLLO\t", join(";", @supported_return_fields), "\n";
+
+## Taxon
+my $taxon = "";
 
 ## Read arguments
 &ReadArguments();
@@ -41,27 +51,23 @@ $supported_return_fields = join ",", @supported_return_fields;
 ## Perl-script-based loading to the tab-delimited text file-based
 ## loding.  In principe this piece of code should run only once per
 ## server, and then be suppressed.
-
-unless (-e $ENV{RSAT}."/data/supported_organisms.tab") {
-  &RSAT::message::Warning("supported_organisms.tab is missing, regenerating from the .pl files");
-
-  ## Load organisms from the (obsolete) Perl file supported_organisms.pl
-  my $perl_organisms = $ENV{RSAT}."/data/supported_organisms.pl";
-  if (-e $perl_organisms) { 
-    &RSAT::message::Warning("Loading organisms from file", $perl_organisms);
-   require $perl_organisms;
-  }
-
-  my $perl_organisms_ensembl = $ENV{RSAT}."/data/supported_mammals.pl";
-  if (-e $perl_organisms_ensembl) {
-    &RSAT::message::Warning("Loading organisms from file", $perl_organisms_ensembl);
-    require $perl_organisms_ensembl;
-  }
-
-  ## Export organism table in tab format for future queries
-  $verbose = $verbose || 1; ## in order to give the warning with the export.
-  &RSAT::OrganismManager::export_supported_organisms();
-}
+# unless (-e $ENV{RSAT}."/data/supported_organisms.tab") {
+#   &RSAT::message::Warning("supported_organisms.tab is missing, regenerating from the .pl files");
+#   ## Load organisms from the (obsolete) Perl file supported_organisms.pl
+#   my $perl_organisms = $ENV{RSAT}."/data/supported_organisms.pl";
+#   if (-e $perl_organisms) { 
+#     &RSAT::message::Warning("Loading organisms from file", $perl_organisms);
+#    require $perl_organisms;
+#   }
+#   my $perl_organisms_ensembl = $ENV{RSAT}."/data/supported_mammals.pl";
+#   if (-e $perl_organisms_ensembl) {
+#     &RSAT::message::Warning("Loading organisms from file", $perl_organisms_ensembl);
+#     require $perl_organisms_ensembl;
+#   }
+#   ## Export organism table in tab format for future queries
+#   $verbose = $verbose || 1; ## in order to give the warning with the export.
+#   &RSAT::OrganismManager::export_supported_organisms();
+# }
 
 ## Load the list of supported organisms
 #&RSAT::OrganismManager::load_supported_organisms();
@@ -77,31 +83,52 @@ if (scalar(@return_fields) == 0) {
 ## Open the output stream
 $out = &OpenOutputFile($outfile{output});
 
+################################################################
+## Get the list supported organisms from a remote RSAT server
+if ($from_server) {
+  ## Service call
+  my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
+
+  ## Output option
+  my $output_choice = 'client';  ## Accepted values: 'server', 'client', 'both'
+
+  ## Retrieve-seq parameters
+  my %args = (
+	      'taxon' => $taxon,
+#	      'format'=> $out_format,
+	     );
+
+  ## Send the request to the server
+  &RSAT::message::Info("Sending request to the remote server") if ($main::verbose >= 1);
+  my $som = $soap->supported_organisms({'request' => \%args});
+
+  ## Get the result
+  if ($som) {
+    my $results = $som->get_response();
+
+    ## Report the remote command
+    my $command = $results -> get_command();
+    &RSAT::message::Info("Command used on the server:\n;\t".$command) if ($main::verbose >= 1);
+
+    ## Report the result
+    my $result = $results -> get_client();
+    print $out $result;
+  } else {
+    &RSAT::error::FatalError("Web services. A fault (%s) occured : %s\n", $som->get_faultcode(), $som->get_faultstring());
+  }
+
+  exit();
+}
+
 if (($out_format eq "tree")||($out_format eq "html_tree")) {
     ## Create a tree with the taxonomy
     my $tree = new RSAT::Tree();
-    $tree->LoadSupportedTaxonomy("Organisms", \%supported_organism);
-#    print $out join("\n","--",$root_taxon,$out_format,"all",undef)."\n";
-    print $out $tree->as_indented_text("--",$root_taxon,$out_format,"all",undef);
+    $tree->LoadSupportedTaxonomy("Organisms", \%main::supported_organism);
+#    print $out join("\n","--",$taxon,$out_format,"all",undef)."\n";
+    print $out $tree->as_indented_text("--",$taxon,$out_format,"all",undef);
 
-# list only organisms names with option -taxon alone
-
-} elsif ($root_taxon){
-    my $tree = new RSAT::Tree();
-    $tree->LoadSupportedTaxonomy("Organisms", \%supported_organism);
-    if (my $node = $tree->get_node_by_id($root_taxon)){
-	my @organisms = $node->get_leaves_names();
-	if ($out_format eq "text"){
-	    print $out join("\n",@organisms)."\n";
-	}else{
-	    ## Add here use of -format full,...
-	    &RSAT::error::FatalError("Option -taxon not yet compatible with this output format\n");
-	}
-    }else{
-	&RSAT::error::FatalError("Taxon $root_taxon is not supported\n");
-    }
-} else {
-   print $out &RSAT::OrganismManager::supported_organism_table(1, 0, @return_fields); ## Export the table with header and absolute paths
+ } else {
+   print $out &RSAT::OrganismManager::supported_organism_table(1, 0, $taxon, @return_fields); ## Export the table with header and absolute paths
 }
 
 close $out if ($outfile{output});
@@ -122,21 +149,24 @@ sub PrintHelp {
 NAME
 	supported-organisms
 
-        2002 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
-
 USAGE
         supported-organisms [-i inputfile] [-o outputfile] [-v]
 
-AUTHOR
+AUTHORS
 	Jacques.van.Helden@ulb.ac.be
 
+	Management of taxonomic tree: 
+	   Rekin's Janky (rekins@bigre.ulb.ac.be).
+
 DESCRIPTION
-	Returns the list of organisms supported on this site of
-	Regulatory Sequence Analysis Tools.
+
+	Returns the list of organisms supported on the local
+	Regulatory Sequence Analysis Tools (default) or on a remote
+	server (option -server). The list can be restricted at a given
+	taxonomic level (option -taxon).
 
 CATEGORY
-	genomics
-	administration
+	Data management.
 
 OPTIONS
 	-h	(must be first argument) display full help message
@@ -144,17 +174,37 @@ OPTIONS
 	-help	(must be first argument) display options
 
 	-format	output format
-		supported: $formats
+		supported: $supported_formats
+
+		tab: tab-delimited text format, with one row per
+		organism and one column per field (see option
+		-return).
+
+		tree: a textual representation of the tree, with
+		hyphen-based indentation to indicate taxon depth.
+
+		html_tree: same as tree, but wiht HTML tags (organism
+		names in italics, taxon names in bold).
 
  	-return output fields
 		supported: $supported_return_fields
 
-        -taxon  root taxon
+        -taxon selected_taxon 
+	       Only returns organisms belonging to a selected taxon.
 
-WISH LIST
-        -taxon  return only the organisms belonging to the specified
-                taxon
+	-server Return the list of organisms supported on a remote
+		RSAT server, via the Web services interface
+		(http://rsat.ulb.ac.be/rsat/web_services).  
 
+		The option -server can be combined with the option
+		-taxon in order to obtain the list of organisms
+		supported on the main RSAT server, before downloading
+		them.
+
+		Ex: supported-organisms -taxon Fungi -server
+
+		This option requires a proper installation of the
+		SOAP::WSDL module.
 End_of_help
   close HELP;
   exit;
@@ -172,9 +222,10 @@ template options
 -i	input file
 -o	output file
 -v	verbose
--format	output format ($formats)
+-format	output format ($supported_formats)
 -return output fields ($supported_return_fields)
--taxon  root taxon
+-taxon  selected_taxon
+-server return organisms supported on the remote RSAT server.
 End_short_help
   close HELP;
   exit;
@@ -205,8 +256,19 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-format") {
       $out_format = $ARGV[$a+1];
       unless ($supported_format{$out_format}) {
+	&RSAT::error::FatalError("Invalid format", $out_format, "Supported:".$supported_formats);
+      }
+
+      ### output format
+    } elsif ($ARGV[$a] eq "-format") {
+      $out_format = $ARGV[$a+1];
+      unless ($supported_format{$out_format}) {
 	&RSAT::error::FatalError("Format $out_format is not supported\n");
       }
+
+      ### output format
+    } elsif ($ARGV[$a] eq "-server") {
+	$from_server = 1;
 
       #### return fields
     } elsif ($ARGV[$a] eq "-return") {
@@ -222,7 +284,7 @@ sub ReadArguments {
 
       ### root taxon
     } elsif ($ARGV[$a] eq "-taxon") {
-      $root_taxon = $ARGV[$a+1];
+      $taxon = $ARGV[$a+1];
 
       ### output file  
     } elsif ($ARGV[$a] eq "-o") {
