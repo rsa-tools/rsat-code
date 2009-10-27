@@ -1624,7 +1624,12 @@ Accepted values: 'server' (result is stored on a file on the server), 'client' (
 Default is 'both'.</xsd:documentation>
 	    </xsd:annotation>
 	  </xsd:element>
-          <xsd:element name="format" type="xsd:string" minOccurs="0">
+          <xsd:element name="return" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+	      <xsd:documentation>Return fields. Supported: ID,name,data,last_update,taxonomy,up_from,up_to,genome,seq_format,source.</xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="format" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>Output format. Supported: html_list, html_table, array, text, keys, names, sizes, full, tree, html_tree.</xsd:documentation>
 	    </xsd:annotation>
