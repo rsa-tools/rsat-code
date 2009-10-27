@@ -96,6 +96,7 @@ if ($from_server) {
   ## Retrieve-seq parameters
   my %args = (
 	      'taxon' => $taxon,
+	      'format'=> $out_format,
 	      'return'=> $return_fields,
 	     );
 
