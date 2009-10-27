@@ -1941,6 +1941,11 @@ sub supported_organisms {
     $args{format} =~ s/\"//g;
     $command .= " -format '".$args{format}."'";
   }
+  if ($args{return}) {
+    $args{return} =~ s/\'//g;
+    $args{return} =~ s/\"//g;
+    $command .= " -return '".$args{return}."'";
+  }
   if ($args{taxon}) {
     $args{taxon} =~ s/\'//g;
     $args{taxon} =~ s/\"//g;
