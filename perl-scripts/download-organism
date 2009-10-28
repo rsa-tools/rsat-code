@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: download-organism,v 1.1 2009/10/27 15:00:46 jvanheld Exp $
+# $Id: download-organism,v 1.2 2009/10/28 11:33:06 jvanheld Exp $
 #
 ############################################################
 
@@ -112,12 +112,14 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
-  $main::verbose = 0;
+  $verbose = 0;
+  $dry = 0; ## Print the commands without executing them
+  $die_on_error = 1;
 
   ## Remote server from which genomes should be downloaded
-  $RSAT_DISTRIB="rsat.ulb.ac.be/rsat";
+  $RSAT_SERVER="rsat.ulb.ac.be/rsat";
 
   ## List of organisms to install
   @organisms = ();
@@ -134,6 +136,15 @@ package main;
   &ReadArguments();
 
   ################################################################
+  ## Check that the web aspirator is working
+  $web_aspirator = "wget";
+  $which_aspirator = `which $web_aspirator`;
+  &RSAT::message::Debug($which_aspirator) if ($main::verbose >= 3);
+  unless ($which_aspirator) {
+    &RSAT::error::FatalError("The program ".$web_aspirator." is not found in your path. This program is required for downloading data from the server. ");
+  }
+
+  ################################################################
   ## Check argument values
   if ((scalar(@organisms) == 0) && (scalar(@taxa) == 0)) {
     &FatalError("You must specify at leastone organism (-org) or taxon (-taxon)."); 
@@ -142,7 +153,7 @@ package main;
   ## Output directory
   &RSAT::message::Info("Download directory", $output_dir) if ($main::verbose >= 1);
   &RSAT::util::CheckOutDir($output_dir);
-
+#  chdir($output_dir);
 
   ################################################################
   ## Print verbose
@@ -152,24 +163,38 @@ package main;
   ## Obtain the lists of organisms for selected taxa
   foreach my $taxon (@taxa) {
     &RSAT::message::TimeWarn("Getting list of organisms from RSAT server for taxon", $taxon);
-    my @orgs_for_taxa = `supported-organisms -server -return ID`;
+    my $orgs_for_taxa = `supported-organisms -server -return ID -taxon $taxon | grep -v '^#'`;
+    chomp ($orgs_for_taxa);
+    @orgs_for_taxa = split(/\s+/, $orgs_for_taxa);
     push @organisms, @orgs_for_taxa;
   }
+
+  &RSAT::message::Info("Downloading", scalar(@organisms), "organisms");
+  &RSAT::message::Info(join("\n\t", "Organisms: ", @organisms));
 
   ################################################################
   ## Download the genomes
   foreach my $org (@organisms) {
     ## download one genome
-    &RSAT::message::TimeWarn("Downloading genome", $org, "from the RSAT server") if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("Downloading genome", $org, "from the RSAT server", $RSAT_SERVER) if ($main::verbose >= 1);
     my $cmd = "wget --reject 'index.html*' ";
-    $cmd .= " -P ".$ENV{RSAT}."/data/genomes/";
+    $cmd .= " --passive-ftp";
+    $cmd .= " --no-parent";
+    $cmd .= " --recursive";
+    $cmd .= " --timestamping";
+    $cmd .= " --relative";
+    $cmd .= " --dont-remove-listing";
+    $cmd .= " --convert-links";
+    $cmd .= " -P ".$output_dir;
+#    $cmd .= " -P ".$ENV{RSAT}."/data/genomes/";
     $cmd .= " -nH  --cut-dirs=3";
-    $cmd .= " http://".${RSAT_DISTRIB}."/data/genomes/".$org."/";
-    &doit($cmd);
+    $cmd .= " http://".${RSAT_SERVER}."/data/genomes/".$org."/";
+    &doit($cmd, $dry, $die_on_error, $verbose, 0, 0);
 
     ## update the organism in the RSAT configuration tables
     &RSAT::message::TimeWarn("UPdating organism",$org) if ($main::verbose >= 1);
-    &doit("install-organism -v 1 -task config,phylogeny -org $org");
+    $cmd = "install-organism -v 1 -task config,phylogeny -org ".$org;
+    &doit($cmd, $dry, $die_on_error, $verbose, 0, 0);
   }
 
 
@@ -311,12 +336,24 @@ requires the writing permission in the RSAT directory).
 	} elsif ($arg eq "-dir") {
 	    $main::output_dir = shift(@arguments);
 
+
+	    ## Dry run
+=pod
+
+=item B<-dry>
+
+Dry run: print the commands but do not execute them (just for
+testing).
+
+=cut
+	} elsif ($arg eq "-dry") {
+	    $main::dry = 1;;
+
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
 	}
     }
-
 
 =pod
 
