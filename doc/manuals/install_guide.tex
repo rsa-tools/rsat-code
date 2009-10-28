@@ -503,7 +503,8 @@ bioperl=/home/rsat/rsa-tools/lib/bioperl-live
 \end{verbatim}
 \end{footnotesize}
 
-You also need to define the url of the ensembl database in that configuration file:
+You also need to define the URL of the Ensembl database in that
+configuration file:
 
 \begin{footnotesize}
 \begin{verbatim}
@@ -515,6 +516,34 @@ You also need to define the url of the ensembl database in that configuration fi
 ensembl_host=ensembldb.ensembl.org
 \end{verbatim}
 \end{footnotesize}
+
+Finally, you need to include the BioPerl and Ensembl librairies in the
+Perl module path (specified by the environment variable named
+\$PERL5LIB).
+
+If your shell is bash, add the following lines in the file
+\file{.bashrc} at the root of your account.
+
+\begin{footnotesize}
+\begin{verbatim}
+export PERL5LIB=${PERL5LIB}:${RSAT}/lib/ensembl/modules
+export PERL5LIB=${PERL5LIB}:${RSAT}/lib/ensembl-compara/modules
+export PERL5LIB=${PERL5LIB}:${RSAT}/lib/ensembl-variation/modules
+\end{verbatim}
+\end{footnotesize}
+
+If your shell is tcsh or chs, add the following lines in the file
+\file{.cshrc} at the root of your account.
+
+\begin{footnotesize}
+\begin{verbatim}
+setenv PERL5LIB ${PERL5LIB}:${RSAT}/lib/ensembl/modules
+setenv PERL5LIB ${PERL5LIB}:${RSAT}/lib/ensembl-compara/modules
+setenv PERL5LIB ${PERL5LIB}:${RSAT}/lib/ensembl-variation/modules
+\end{verbatim}
+\end{footnotesize}
+
+
 
 The EnsEMBL libraries also require the SQL client Perl module
 \file{DBD::mysql}, as well as \file{DBI}, which can be installed with
