@@ -10,8 +10,6 @@ require RSAT::OrganismManager;
 require MyInterfaces::RSATWebServices::RSATWSPortType;
 #use strict;
 
-## Required for the option -server (obtaining the supported organisms from a remote server)
-use SOAP::WSDL; ## Requires version 2.0 or later of SOAP::WSDL
 
 ## Initialize parameters
 
@@ -87,6 +85,9 @@ $out = &OpenOutputFile($outfile{output});
 ################################################################
 ## Get the list supported organisms from a remote RSAT server
 if ($from_server) {
+  ## Required for the option -server (obtaining the supported organisms from a remote server)
+  require SOAP::WSDL; ## Requires version 2.0 or later of SOAP::WSDL
+
   ## Service call
   my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
 
@@ -130,7 +131,7 @@ if (($out_format eq "tree")||($out_format eq "html_tree")) {
     print $out $tree->as_indented_text("--",$taxon,$out_format,"all",undef);
 
  } else {
-   print $out &RSAT::OrganismManager::supported_organism_table(1, 0, $taxon, @return_fields); ## Export the table with header and absolute paths
+   print $out &RSAT::OrganismManager::supported_organism_table($verbose, 0, $taxon, @return_fields); ## Export the table with header and absolute paths
 }
 
 close $out if ($outfile{output});
