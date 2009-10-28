@@ -1257,7 +1257,9 @@ hash refs. See the respective class' documentation for additional information.
 
 Returns upstream, downstream or coding DNA sequences for list of query genes.
 
- $interface->retrieve_seq( {
+Returns a L<MyElements::retrieve_seqResponse|MyElements::retrieve_seqResponse> object.
+
+ $response = $interface->retrieve_seq( {
     request =>  { # MyTypes::RetrieveSequenceRequest
       output =>  $some_value, # string
       organism =>  $some_value, # string
@@ -1283,7 +1285,9 @@ Returns upstream, downstream or coding DNA sequences for list of query genes.
 
 Returns upstream, downstream or coding DNA sequencesfor list of query genes and organisms.
 
- $interface->retrieve_seq_multigenome( {
+Returns a L<MyElements::retrieve_seq_multigenomeResponse|MyElements::retrieve_seq_multigenomeResponse> object.
+
+ $response = $interface->retrieve_seq_multigenome( {
     request =>  { # MyTypes::RetrieveSequenceMultigenomeRequest
       output =>  $some_value, # string
       input =>  $some_value, # string
@@ -1311,7 +1315,9 @@ Returns upstream, downstream or coding DNA sequencesfor list of query genes and 
 
 Returns upstream, downstream or coding DNA sequences for list of query genes (in EnsEMBL database).
 
- $interface->retrieve_ensembl_seq( {
+Returns a L<MyElements::retrieve_ensembl_seqResponse|MyElements::retrieve_ensembl_seqResponse> object.
+
+ $response = $interface->retrieve_ensembl_seq( {
     request =>  { # MyTypes::RetrieveEnsemblSequenceRequest
       output =>  $some_value, # string
       organism =>  $some_value, # string
@@ -1352,7 +1358,9 @@ Returns upstream, downstream or coding DNA sequences for list of query genes (in
 
 Mask repeated fragments of an input sequence.
 
- $interface->purge_seq( {
+Returns a L<MyElements::purge_seqResponse|MyElements::purge_seqResponse> object.
+
+ $response = $interface->purge_seq( {
     request =>  { # MyTypes::PurgeSequenceRequest
       output =>  $some_value, # string
       sequence =>  $some_value, # string
@@ -1371,7 +1379,9 @@ Mask repeated fragments of an input sequence.
 
 Analysis of the statistical significance of all the oligomers of a given size in a sequence. Commonly used to detect over-represented oligonucleotides in a set of promoter sequences.
 
- $interface->oligo_analysis( {
+Returns a L<MyElements::oligo_analysisResponse|MyElements::oligo_analysisResponse> object.
+
+ $response = $interface->oligo_analysis( {
     request =>  { # MyTypes::OligoAnalysisRequest
       output =>  $some_value, # string
       verbosity =>  $some_value, # int
@@ -1396,7 +1406,9 @@ Analysis of the statistical significance of all the oligomers of a given size in
 
 Analysis of the statistical significance of all the spaced dyads of a given size in a sequence. Commonly used to detect over-represented spaced dyads in a set of promoter sequences.
 
- $interface->dyad_analysis( {
+Returns a L<MyElements::dyad_analysisResponse|MyElements::dyad_analysisResponse> object.
+
+ $response = $interface->dyad_analysis( {
     request =>  { # MyTypes::DyadAnalysisRequest
       output =>  $some_value, # string
       verbosity =>  $some_value, # int
@@ -1425,7 +1437,9 @@ Analysis of the statistical significance of all the spaced dyads of a given size
 
 Assemble a set of oligonucleotides or dyads into groups of overlapping patterns (assemblies).
 
- $interface->pattern_assembly( {
+Returns a L<MyElements::pattern_assemblyResponse|MyElements::pattern_assemblyResponse> object.
+
+ $response = $interface->pattern_assembly( {
     request =>  { # MyTypes::PatternAssemblyRequest
       output =>  $some_value, # string
       input =>  $some_value, # string
@@ -1447,7 +1461,9 @@ Assemble a set of oligonucleotides or dyads into groups of overlapping patterns 
 
 Searches all occurrences of a pattern within DNA sequences.
 
- $interface->dna_pattern( {
+Returns a L<MyElements::dna_patternResponse|MyElements::dna_patternResponse> object.
+
+ $response = $interface->dna_pattern( {
     request =>  { # MyTypes::DnaPatternRequest
       output =>  $some_value, # string
       sequence =>  $some_value, # string
@@ -1473,7 +1489,9 @@ Searches all occurrences of a pattern within DNA sequences.
 
 Interconversions between various formats of feature description.
 
- $interface->convert_features( {
+Returns a L<MyElements::convert_featuresResponse|MyElements::convert_featuresResponse> object.
+
+ $response = $interface->convert_features( {
     request =>  { # MyTypes::ConvertFeaturesRequest
       output =>  $some_value, # string
       input =>  $some_value, # string
@@ -1488,7 +1506,9 @@ Interconversions between various formats of feature description.
 
 Draws a graphical map of features (e.g. results of pattern matching) in a set of sequences.
 
- $interface->feature_map( {
+Returns a L<MyElements::feature_mapResponse|MyElements::feature_mapResponse> object.
+
+ $response = $interface->feature_map( {
     request =>  { # MyTypes::FeatureMapRequest
       output =>  $some_value, # string
       features =>  $some_value, # string
@@ -1527,7 +1547,9 @@ Draws a graphical map of features (e.g. results of pattern matching) in a set of
 
 Detect phylogenetic footprints by applying dyad-analysis in promoters of a set of orthologous genes.
 
- $interface->footprint_discovery( {
+Returns a L<MyElements::footprint_discoveryResponse|MyElements::footprint_discoveryResponse> object.
+
+ $response = $interface->footprint_discovery( {
     request =>  { # MyTypes::FootprintDiscoveryRequest
       output =>  $some_value, # string
       verbosity =>  $some_value, # int
@@ -1557,7 +1579,9 @@ Detect phylogenetic footprints by applying dyad-analysis in promoters of a set o
 
 Get orthologuous genes.
 
- $interface->get_orthologs( {
+Returns a L<MyElements::get_orthologsResponse|MyElements::get_orthologsResponse> object.
+
+ $response = $interface->get_orthologs( {
     request =>  { # MyTypes::GetOrthologsRequest
       output =>  $some_value, # string
       organism =>  $some_value, # string
@@ -1576,7 +1600,9 @@ Get orthologuous genes.
 
 Infer operon.
 
- $interface->infer_operon( {
+Returns a L<MyElements::infer_operonResponse|MyElements::infer_operonResponse> object.
+
+ $response = $interface->infer_operon( {
     request =>  { # MyTypes::InferOperonRequest
       output =>  $some_value, # string
       organism =>  $some_value, # string
@@ -1593,7 +1619,9 @@ Infer operon.
 
 Get information about genes.
 
- $interface->gene_info( {
+Returns a L<MyElements::gene_infoResponse|MyElements::gene_infoResponse> object.
+
+ $response = $interface->gene_info( {
     request =>  { # MyTypes::GeneInfoRequest
       output =>  $some_value, # string
       organism =>  $some_value, # string
@@ -1610,9 +1638,12 @@ Get information about genes.
 
 List RSAT suppported organisms.
 
- $interface->supported_organisms( {
+Returns a L<MyElements::supported_organismsResponse|MyElements::supported_organismsResponse> object.
+
+ $response = $interface->supported_organisms( {
     request =>  { # MyTypes::SupportedOrganismsRequest
       output =>  $some_value, # string
+      return =>  $some_value, # string
       format =>  $some_value, # string
       taxon =>  $some_value, # string
     },
@@ -1623,7 +1654,9 @@ List RSAT suppported organisms.
 
 Converts a tab-delimited file into a HTML table
 
- $interface->text_to_html( {
+Returns a L<MyElements::text_to_htmlResponse|MyElements::text_to_htmlResponse> object.
+
+ $response = $interface->text_to_html( {
     request =>  { # MyTypes::TextToHtmlRequest
       output =>  $some_value, # string
       inputfile =>  $some_value, # string
@@ -1638,7 +1671,9 @@ Converts a tab-delimited file into a HTML table
 
 Converts a psi xml file in a tab delimited file
 
- $interface->parse_psi_xml( {
+Returns a L<MyElements::parse_psi_xmlResponse|MyElements::parse_psi_xmlResponse> object.
+
+ $response = $interface->parse_psi_xml( {
     request =>  { # MyTypes::parsepsixmlRequest
       output =>  $some_value, # string
       inputfile =>  $some_value, # string
@@ -1654,7 +1689,9 @@ Converts a psi xml file in a tab delimited file
 
 Computes, from a set of scored results associated with validation labels, the derived statistics (Sn, PPV, FPR), which can be further used to draw a ROC curve.
 
- $interface->roc_stats( {
+Returns a L<MyElements::roc_statsResponse|MyElements::roc_statsResponse> object.
+
+ $response = $interface->roc_stats( {
     request =>  { # MyTypes::RocStatsRequest
       output =>  $some_value, # string
       inputfile =>  $some_value, # string
@@ -1670,7 +1707,9 @@ Computes, from a set of scored results associated with validation labels, the de
 
 This script takes a group of numbers (real or integers) and outputs their distribution among classes.
 
- $interface->classfreq( {
+Returns a L<MyElements::classfreqResponse|MyElements::classfreqResponse> object.
+
+ $response = $interface->classfreq( {
     request =>  { # MyTypes::ClassFreqRequest
       output =>  $some_value, # string
       inputFile =>  $some_value, # string
@@ -1688,7 +1727,9 @@ This script takes a group of numbers (real or integers) and outputs their distri
 
 Plot a graph and export it.
 
- $interface->xygraph( {
+Returns a L<MyElements::xygraphResponse|MyElements::xygraphResponse> object.
+
+ $response = $interface->xygraph( {
     request =>  { # MyTypes::XYGraphRequest
       output =>  $some_value, # string
       inputFile =>  $some_value, # string
@@ -1718,7 +1759,9 @@ Plot a graph and export it.
 
 Converts a sequence between two formats (e.g. fasta -> raw).
 
- $interface->convert_seq( {
+Returns a L<MyElements::convert_seqResponse|MyElements::convert_seqResponse> object.
+
+ $response = $interface->convert_seq( {
     request =>  { # MyTypes::ConvertSeqRequest
       output =>  $some_value, # string
       sequence =>  $some_value, # string
@@ -1733,7 +1776,9 @@ Converts a sequence between two formats (e.g. fasta -> raw).
 
 Compare two class files(the query file and the reference file). Each class of the query file is compared to each class of the reference file. The number of common elements is reported, as well as the probability to observe at least this number of common elements by chance alone.
 
- $interface->compare_classes( {
+Returns a L<MyElements::compare_classesResponse|MyElements::compare_classesResponse> object.
+
+ $response = $interface->compare_classes( {
     request =>  { # MyTypes::CompareClassesRequest
       output =>  $some_value, # string
       ref_classes =>  $some_value, # string
@@ -1757,7 +1802,9 @@ Compare two class files(the query file and the reference file). Each class of th
 
 Interconversions between different formats of cluster files.
 
- $interface->convert_classes( {
+Returns a L<MyElements::convert_classesResponse|MyElements::convert_classesResponse> object.
+
+ $response = $interface->convert_classes( {
     request =>  { # MyTypes::ConvertClassesRequest
       output =>  $some_value, # string
       informat =>  $some_value, # string
@@ -1776,7 +1823,9 @@ Interconversions between different formats of cluster files.
 
 This programs takes as input a contingency table, and calculates various matching statistics between the rows and columns. The description of these statistics can be found in Brohee and van Helden (2006).
 
- $interface->contingency_stats( {
+Returns a L<MyElements::contingency_statsResponse|MyElements::contingency_statsResponse> object.
+
+ $response = $interface->contingency_stats( {
     request =>  { # MyTypes::ContingencyStatsRequest
       output =>  $some_value, # string
       inputfile =>  $some_value, # string
@@ -1792,7 +1841,9 @@ This programs takes as input a contingency table, and calculates various matchin
 
  Create a contingency table from a two-column file.
 
- $interface->contingency_table( {
+Returns a L<MyElements::contingency_tableResponse|MyElements::contingency_tableResponse> object.
+
+ $response = $interface->contingency_table( {
     request =>  { # MyTypes::ContingencyTableRequest
       output =>  $some_value, # string
       inputfile =>  $some_value, # string
@@ -1808,7 +1859,9 @@ This programs takes as input a contingency table, and calculates various matchin
 
 Scan sequences with one or several position-specific scoring matrices (PSSM) to identify instances of the corresponding motifs(putative sites). This program supports a variety of background models (Bernoulli, Markov chains of any order).
 
- $interface->matrix_scan( {
+Returns a L<MyElements::matrix_scanResponse|MyElements::matrix_scanResponse> object.
+
+ $response = $interface->matrix_scan( {
     request =>  { # MyTypes::MatrixScanRequest
       output =>  $some_value, # string
       sequence =>  $some_value, # string
@@ -1847,7 +1900,9 @@ Scan sequences with one or several position-specific scoring matrices (PSSM) to 
 
 Performs inter-conversions between various formats of position-specific scoring matrices (PSSM). The program also performs a statistical analysis of the original matrix to provide different position-specific scores (weight, frequencies, information contents), general statistics (E-value, total information content), and synthetic descriptions (consensus).
 
- $interface->convert_matrix( {
+Returns a L<MyElements::convert_matrixResponse|MyElements::convert_matrixResponse> object.
+
+ $response = $interface->convert_matrix( {
     request =>  { # MyTypes::ConvertMatrixRequest
       output =>  $some_value, # string
       matrix =>  $some_value, # string
@@ -1873,7 +1928,9 @@ Performs inter-conversions between various formats of position-specific scoring 
 
 Returns the theoretical distribution of matrix weight within the defined background model.
 
- $interface->matrix_distrib( {
+Returns a L<MyElements::matrix_distribResponse|MyElements::matrix_distribResponse> object.
+
+ $response = $interface->matrix_distrib( {
     request =>  { # MyTypes::MatrixDistribRequest
       output =>  $some_value, # string
       matrix_file =>  $some_value, # string
@@ -1892,7 +1949,9 @@ Returns the theoretical distribution of matrix weight within the defined backgro
 
 Generates random sequences.
 
- $interface->random_seq( {
+Returns a L<MyElements::random_seqResponse|MyElements::random_seqResponse> object.
+
+ $response = $interface->random_seq( {
     request =>  { # MyTypes::RandomSequenceRequest
       output =>  $some_value, # string
       sequence_length =>  $some_value, # int
@@ -1916,7 +1975,9 @@ Generates random sequences.
 
 Convert graphs between different formats
 
- $interface->convert_graph( {
+Returns a L<MyElements::convert_graphResponse|MyElements::convert_graphResponse> object.
+
+ $response = $interface->convert_graph( {
     request =>  { # MyTypes::ConvertGraphRequest
       output =>  $some_value, # string
       informat =>  $some_value, # string
@@ -1946,7 +2007,9 @@ Convert graphs between different formats
 
 Alter a graph either by adding or removing edges or nodes
 
- $interface->alter_graph( {
+Returns a L<MyElements::alter_graphResponse|MyElements::alter_graphResponse> object.
+
+ $response = $interface->alter_graph( {
     request =>  { # MyTypes::AlterGraphRequest
       output =>  $some_value, # string
       informat =>  $some_value, # string
@@ -1971,7 +2034,9 @@ Alter a graph either by adding or removing edges or nodes
 
 Find all cliques in a graph
 
- $interface->graph_cliques( {
+Returns a L<MyElements::graph_cliquesResponse|MyElements::graph_cliquesResponse> object.
+
+ $response = $interface->graph_cliques( {
     request =>  { # MyTypes::GraphCliquesRequest
       output =>  $some_value, # string
       informat =>  $some_value, # string
@@ -1987,7 +2052,9 @@ Find all cliques in a graph
 
 Produces the figure of a graph
 
- $interface->display_graph( {
+Returns a L<MyElements::display_graphResponse|MyElements::display_graphResponse> object.
+
+ $response = $interface->display_graph( {
     request =>  { # MyTypes::DisplayGraphRequest
       output =>  $some_value, # string
       informat =>  $some_value, # string
@@ -2009,7 +2076,9 @@ Produces the figure of a graph
 
 Produces the figure of a heatmap
 
- $interface->draw_heatmap( {
+Returns a L<MyElements::draw_heatmapResponse|MyElements::draw_heatmapResponse> object.
+
+ $response = $interface->draw_heatmap( {
     request =>  { # MyTypes::DrawHeatmapRequest
       output =>  $some_value, # string
       outformat =>  $some_value, # string
@@ -2030,7 +2099,9 @@ Produces the figure of a heatmap
 
 Computes the union / difference or intersection of two graphs
 
- $interface->compare_graphs( {
+Returns a L<MyElements::compare_graphsResponse|MyElements::compare_graphsResponse> object.
+
+ $response = $interface->compare_graphs( {
     request =>  { # MyTypes::CompareGraphsRequest
       output =>  $some_value, # string
       Qinformat =>  $some_value, # string
@@ -2056,7 +2127,9 @@ Computes the union / difference or intersection of two graphs
 
 Find the neihbours up to a certain distance of a collection of seed nodes
 
- $interface->graph_neighbours( {
+Returns a L<MyElements::graph_neighboursResponse|MyElements::graph_neighboursResponse> object.
+
+ $response = $interface->graph_neighbours( {
     request =>  { # MyTypes::GraphNeighboursRequest
       output =>  $some_value, # string
       informat =>  $some_value, # string
@@ -2078,7 +2151,9 @@ Find the neihbours up to a certain distance of a collection of seed nodes
 
 Clustering via Stijn van Dongen MCL algorithm
 
- $interface->mcl( {
+Returns a L<MyElements::mclResponse|MyElements::mclResponse> object.
+
+ $response = $interface->mcl( {
     request =>  { # MyTypes::MCLRequest
       output =>  $some_value, # string
       inputgraph =>  $some_value, # string
@@ -2091,7 +2166,9 @@ Clustering via Stijn van Dongen MCL algorithm
 
 Clustering via Andrew King RNSC algorithm
 
- $interface->rnsc( {
+Returns a L<MyElements::rnscResponse|MyElements::rnscResponse> object.
+
+ $response = $interface->rnsc( {
     request =>  { # MyTypes::RNSCRequest
       output =>  $some_value, # string
       inputgraph =>  $some_value, # string
@@ -2111,7 +2188,9 @@ Clustering via Andrew King RNSC algorithm
 
 Calculates the in / out / global degree for a selection of seed nodes
 
- $interface->graph_node_degree( {
+Returns a L<MyElements::graph_node_degreeResponse|MyElements::graph_node_degreeResponse> object.
+
+ $response = $interface->graph_node_degree( {
     request =>  { # MyTypes::GraphNodeDegreeRequest
       output =>  $some_value, # string
       informat =>  $some_value, # string
@@ -2129,7 +2208,9 @@ Calculates the in / out / global degree for a selection of seed nodes
 
 Calculate the node degree, the closeness and the betweenness of each node and specifies if this node is a seed or a target node.
 
- $interface->graph_topology( {
+Returns a L<MyElements::graph_topologyResponse|MyElements::graph_topologyResponse> object.
+
+ $response = $interface->graph_topology( {
     request =>  { # MyTypes::GraphTopologyRequest
       output =>  $some_value, # string
       informat =>  $some_value, # string
@@ -2149,7 +2230,9 @@ Calculate the node degree, the closeness and the betweenness of each node and sp
 
 Map a clustering result onto a graph, and compute the membership degree between each node and each cluster, on the basis of egdes linking this node to the cluster.
 
- $interface->graph_cluster_membership( {
+Returns a L<MyElements::graph_cluster_membershipResponse|MyElements::graph_cluster_membershipResponse> object.
+
+ $response = $interface->graph_cluster_membership( {
     request =>  { # MyTypes::GraphClusterMembershipRequest
       output =>  $some_value, # string
       informat =>  $some_value, # string
@@ -2168,7 +2251,9 @@ Map a clustering result onto a graph, and compute the membership degree between 
 
 Compares a graph with a classification/clustering file.
 
- $interface->graph_get_clusters( {
+Returns a L<MyElements::graph_get_clustersResponse|MyElements::graph_get_clustersResponse> object.
+
+ $response = $interface->graph_get_clusters( {
     request =>  { # MyTypes::GraphGetClustersRequest
       output =>  $some_value, # string
       informat =>  $some_value, # string
@@ -2189,7 +2274,9 @@ Compares a graph with a classification/clustering file.
 
 Generate random graphs either from scratch of from an existing graph using different randomization models
 
- $interface->random_graph( {
+Returns a L<MyElements::random_graphResponse|MyElements::random_graphResponse> object.
+
+ $response = $interface->random_graph( {
     request =>  { # MyTypes::RandomGraphRequest
       output =>  $some_value, # string
       informat =>  $some_value, # string
@@ -2202,6 +2289,7 @@ Generate random graphs either from scratch of from an existing graph using diffe
       edges =>  $some_value, # int
       degree =>  $some_value, # int
       nodes =>  $some_value, # int
+      self =>  $some_value, # int
       mean =>  $some_value, # float
       sd =>  $some_value, # float
       directed =>  $some_value, # int
@@ -2217,7 +2305,9 @@ Generate random graphs either from scratch of from an existing graph using diffe
 
 Monitoring the status of a job
 
- $interface->monitor( {
+Returns a L<MyElements::monitorResponse|MyElements::monitorResponse> object.
+
+ $response = $interface->monitor( {
     request =>  { # MyTypes::MonitorRequest
       ticket =>  $some_value, # string
     },
@@ -2228,7 +2318,9 @@ Monitoring the status of a job
 
 Get result of a job
 
- $interface->get_result( {
+Returns a L<MyElements::get_resultResponse|MyElements::get_resultResponse> object.
+
+ $response = $interface->get_result( {
     request =>  { # MyTypes::GetResultRequest
       ticket =>  $some_value, # string
     },
@@ -2239,6 +2331,6 @@ Get result of a job
 
 =head1 AUTHOR
 
-Generated by SOAP::WSDL on Tue Feb 24 09:35:47 2009
+Generated by SOAP::WSDL on Mon Oct 26 21:27:19 2009
 
 =cut

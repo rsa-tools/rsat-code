@@ -79,6 +79,27 @@ supported_organisms from the namespace urn:RSATWS.
 
 
 
+
+
+=head1 PROPERTIES
+
+The following properties may be accessed using get_PROPERTY / set_PROPERTY
+methods:
+
+=over
+
+=item * request
+
+ $element->set_request($data);
+ $element->get_request();
+
+
+
+
+
+=back
+
+
 =head1 METHODS
 
 =head2 new
@@ -90,6 +111,7 @@ Constructor. The following data structure may be passed to new():
  {
    request =>  { # MyTypes::SupportedOrganismsRequest
      output =>  $some_value, # string
+     return =>  $some_value, # string
      format =>  $some_value, # string
      taxon =>  $some_value, # string
    },
