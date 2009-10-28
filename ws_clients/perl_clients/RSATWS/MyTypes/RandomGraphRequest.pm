@@ -3,6 +3,10 @@ use strict;
 use warnings;
 
 
+__PACKAGE__->_set_element_form_qualified(0);
+
+sub get_xmlns { 'urn:RSATWS' };
+
 our $XML_ATTRIBUTE_CLASS;
 undef $XML_ATTRIBUTE_CLASS;
 
@@ -28,6 +32,7 @@ my %tcol_of :ATTR(:get<tcol>);
 my %edges_of :ATTR(:get<edges>);
 my %degree_of :ATTR(:get<degree>);
 my %nodes_of :ATTR(:get<nodes>);
+my %self_of :ATTR(:get<self>);
 my %mean_of :ATTR(:get<mean>);
 my %sd_of :ATTR(:get<sd>);
 my %directed_of :ATTR(:get<directed>);
@@ -48,6 +53,7 @@ __PACKAGE__->_factory(
         edges
         degree
         nodes
+        self
         mean
         sd
         directed
@@ -69,6 +75,7 @@ __PACKAGE__->_factory(
         'edges' => \%edges_of,
         'degree' => \%degree_of,
         'nodes' => \%nodes_of,
+        'self' => \%self_of,
         'mean' => \%mean_of,
         'sd' => \%sd_of,
         'directed' => \%directed_of,
@@ -89,6 +96,7 @@ __PACKAGE__->_factory(
         'edges' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'degree' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'nodes' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
+        'self' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'mean' => 'SOAP::WSDL::XSD::Typelib::Builtin::float',
         'sd' => 'SOAP::WSDL::XSD::Typelib::Builtin::float',
         'directed' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
@@ -110,6 +118,7 @@ __PACKAGE__->_factory(
         'edges' => 'edges',
         'degree' => 'degree',
         'nodes' => 'nodes',
+        'self' => 'self',
         'mean' => 'mean',
         'sd' => 'sd',
         'directed' => 'directed',
@@ -187,6 +196,9 @@ methods:
 =item * nodes
 
 
+=item * self
+
+
 =item * mean
 
 
@@ -231,6 +243,7 @@ Constructor. The following data structure may be passed to new():
    edges =>  $some_value, # int
    degree =>  $some_value, # int
    nodes =>  $some_value, # int
+   self =>  $some_value, # int
    mean =>  $some_value, # float
    sd =>  $some_value, # float
    directed =>  $some_value, # int

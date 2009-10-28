@@ -79,6 +79,27 @@ random_graph from the namespace urn:RSATWS.
 
 
 
+
+
+=head1 PROPERTIES
+
+The following properties may be accessed using get_PROPERTY / set_PROPERTY
+methods:
+
+=over
+
+=item * request
+
+ $element->set_request($data);
+ $element->get_request();
+
+
+
+
+
+=back
+
+
 =head1 METHODS
 
 =head2 new
@@ -100,6 +121,7 @@ Constructor. The following data structure may be passed to new():
      edges =>  $some_value, # int
      degree =>  $some_value, # int
      nodes =>  $some_value, # int
+     self =>  $some_value, # int
      mean =>  $some_value, # float
      sd =>  $some_value, # float
      directed =>  $some_value, # int
