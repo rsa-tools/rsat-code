@@ -7,7 +7,6 @@ require "RSA.lib";
 require RSAT::Tree;
 require RSAT::TreeNode;
 require RSAT::OrganismManager;
-require MyInterfaces::RSATWebServices::RSATWSPortType;
 #use strict;
 
 
@@ -86,6 +85,7 @@ $out = &OpenOutputFile($outfile{output});
 ## Get the list supported organisms from a remote RSAT server
 if ($from_server) {
   ## Required for the option -server (obtaining the supported organisms from a remote server)
+  require MyInterfaces::RSATWebServices::RSATWSPortType;
   require SOAP::WSDL; ## Requires version 2.0 or later of SOAP::WSDL
 
   ## Service call
