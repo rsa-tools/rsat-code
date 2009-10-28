@@ -79,6 +79,27 @@ monitorResponse from the namespace urn:RSATWS.
 
 
 
+
+
+=head1 PROPERTIES
+
+The following properties may be accessed using get_PROPERTY / set_PROPERTY
+methods:
+
+=over
+
+=item * response
+
+ $element->set_response($data);
+ $element->get_response();
+
+
+
+
+
+=back
+
+
 =head1 METHODS
 
 =head2 new

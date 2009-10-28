@@ -155,6 +155,7 @@ our $typemap_1 = {
                'retrieve_ensembl_seq/request/feattype' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
                'graph_topologyResponse/response/server' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
                'parse_psi_xml/request/channels' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+               'supported_organisms/request/return' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
                'footprint_discovery/request/infer_operons' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
                'roc_stats/request/output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
                'matrix_scan/request/lth' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -614,6 +615,7 @@ our $typemap_1 = {
                'oligo_analysis/request/str' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
                'footprint_discovery/request/output_prefix' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
                'random_seqResponse' => 'MyElements::random_seqResponse',
+               'random_graph/request/self' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
                'get_resultResponse/response/client' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
                'roc_statsResponse/response/command' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
                'compare_classes/request/lower_threshold_field' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -858,7 +860,6 @@ our $typemap_1 = {
 
 sub get_class {
   my $name = join '/', @{ $_[1] };
-  exists $typemap_1->{ $name } or die "Cannot resolve $name via " . __PACKAGE__;
   return $typemap_1->{ $name };
 }
 

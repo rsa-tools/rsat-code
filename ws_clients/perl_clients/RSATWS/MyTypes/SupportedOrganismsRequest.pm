@@ -3,6 +3,10 @@ use strict;
 use warnings;
 
 
+__PACKAGE__->_set_element_form_qualified(0);
+
+sub get_xmlns { 'urn:RSATWS' };
+
 our $XML_ATTRIBUTE_CLASS;
 undef $XML_ATTRIBUTE_CLASS;
 
@@ -18,28 +22,33 @@ Class::Std::initialize();
 { # BLOCK to scope variables
 
 my %output_of :ATTR(:get<output>);
+my %return_of :ATTR(:get<return>);
 my %format_of :ATTR(:get<format>);
 my %taxon_of :ATTR(:get<taxon>);
 
 __PACKAGE__->_factory(
     [ qw(        output
+        return
         format
         taxon
 
     ) ],
     {
         'output' => \%output_of,
+        'return' => \%return_of,
         'format' => \%format_of,
         'taxon' => \%taxon_of,
     },
     {
         'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'return' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'format' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'taxon' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
     },
     {
 
         'output' => 'output',
+        'return' => 'return',
         'format' => 'format',
         'taxon' => 'taxon',
     }
@@ -82,6 +91,9 @@ methods:
 =item * output
 
 
+=item * return
+
+
 =item * format
 
 
@@ -101,6 +113,7 @@ Constructor. The following data structure may be passed to new():
 
  { # MyTypes::SupportedOrganismsRequest
    output =>  $some_value, # string
+   return =>  $some_value, # string
    format =>  $some_value, # string
    taxon =>  $some_value, # string
  },
