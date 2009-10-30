@@ -22,8 +22,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 #### TEMPORARY
 
-
-$orm_command = "$ENV{RSAT}/contrib/ORM/orm";
+$orm_command = "$ENV{RSAT}/python-scripts/orm";
 #$orm_command = "/Users/matthieu/Workspace/ORM/orm";
 
 $convert_seq_command = "$SCRIPTS/convert-seq";
