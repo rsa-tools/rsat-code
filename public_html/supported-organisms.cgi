@@ -19,7 +19,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $tmp_file_name = sprintf "supported-organisms.%s", &AlphaDate();
 
 $font{variable} = 1;
-$command = "$SCRIPTS/supported-organisms";
+$command = "$SCRIPTS/supported-organisms -v 1";
 
 ### Read the CGI query
 $query = new CGI;
