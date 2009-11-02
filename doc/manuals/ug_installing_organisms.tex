@@ -2,7 +2,19 @@
 %%%% Parsing and installing new organisms
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\chapter{Installing genomes from  NCBI/Genbank files}
+
+\chapter{Installing additional genomes on your machine}
+
+The easiest way to install genomes on your machine is to download them
+from the main \RSAT server, as indicated in the Chapter ``Downloading
+genomes'' (Chap.~\ref{downloading_genomes} of the installation guide).
+
+In some cases, you may however wish to install a genome by yourself,
+because this genome is not supported on the main \RSAT server. For
+this, you can use the programs that we use to install new genomes on
+the main \RSAT server.
+
+\section{Installing genomes from  NCBI/Genbank files}
 
 In the section \ref{downloading_genomes}, we saw that the genomes
 installed on the main \RSAT server can easily be installed on your
@@ -21,7 +33,7 @@ not yet supported.
 
 If this is not your case, you can skip the rest of this section.
 
-\section{Organization of the genome files}
+\subsection{Organization of the genome files}
 
 In order for a genome to be supported, \RSAT needs to find at least
 the following files.
@@ -60,7 +72,7 @@ reasons:
 \item All these files can be generated automatically by \RSAT parsers.
 \end{enumerate}
 
-\subsection{Organism description} 
+\subsubsection{Organism description} 
 
 The description of the organism is given in two separate files.
 
@@ -87,7 +99,7 @@ more organism_names.tab
 \end{enumerate}
 
 
-\subsection{Genome sequence} 
+\subsubsection{Genome sequence} 
 
 A genome sequence is composed of one or more contigs. A contig is a
 contigous sequence, resulting from the assembly of short sequence
@@ -115,7 +127,7 @@ ls -l *.raw
 \end{verbatim}
 \end{footnotesize}
 
-\subsection{Feature table}
+\subsubsection{Feature table}
 
 The \file{genome} directory also contains a set of feature tables
 giving the basic information about gene locations. Several feature
@@ -156,7 +168,7 @@ head -30 cds.tab
 \end{footnotesize}
 
 
-\subsection{Feature names/synonyms}
+\subsubsection{Feature names/synonyms}
 
 Some genes can have several names (synonyms), which are specified in
 separate tables.
@@ -188,7 +200,7 @@ grep YFL021W cds_names.tab
 
 
 
-\section{Downloading genomes from NCBI/Genbank}
+\subsection{Downloading genomes from NCBI/Genbank}
 
 The normal way to install an organism in \RSAT is to download the
 complete genome files from the NCBI
@@ -266,7 +278,7 @@ make one_ncbi_dir NCBI_DIR=Fungi
 You can do the same for Bacteria, of for the whole NCBI genome
 repository, but this requires sveral Gb of free disck space.
 
-\section{Parsing a genome from NCBI/Genbank}
+\subsection{Parsing a genome from NCBI/Genbank}
 
 The program \program{parse-genbank.pl} extract genome information
 (sequence, gene location, ...) from Genbank flat files, and exports
@@ -279,7 +291,7 @@ parse-genbank.pl -v 1 \
 \end{verbatim}
 \end{footnotesize}
 
-\section{Parsing a genome from the Broad institute (MIT)}
+\subsection{Parsing a genome from the Broad institute (MIT)}
 
 The website \url{http://www.broad.mit.edu/} offers a large collection of
 genomes that are not available on the NCBI website. We wrote a specific parser 
@@ -339,7 +351,7 @@ parse-broad-mit.pl -taxid 36914 -org Lodderomyces_elongisporus \
 
 This will create the raw files, the feature files and the protein sequence file.
 
-\section{Updating the configuration file}
+\subsection{Updating the configuration file}
 
 After having parsed the genome, you need to perform one additional
 operation in order for \RSAT to be aware of the new organism: update
@@ -357,7 +369,7 @@ tail -15 $RSAT/data/supported_organisms.pl
 From now on, the genome is considered as supported on your local \RSAT
 site. You can check this with the command \program{supported-organisms}. 
 
-\section{Checking the start and stop codon composition}
+\subsection{Checking the start and stop codon composition}
 
 Once the organism is found in your configuration, you need to check
 whether sequences are retrieved properly. A good test for this is to
@@ -405,7 +417,7 @@ more Mycoplasma_genitalium_stop_codon_frequencies
 \end{verbatim}
 \end{footnotesize}
 
-\section{Calibrating oligonucleotide and dyad frequencies with \program{install-organisms}}
+\subsection{Calibrating oligonucleotide and dyad frequencies with \program{install-organisms}}
 
 The programs \program{oligo-analysis} and \program{dyad-analysis}
 require calibrated frequencies for the background models. These
@@ -443,7 +455,7 @@ install-organism -v 1 -org Debaryomyces_hansenii \
 \end{verbatim}
 \end{footnotesize}
 
-\section{Installing a genome in your own account}
+\subsection{Installing a genome in your own account}
 
 In some cases, you might want to install a genome in your own account
 rather than in the \RSAT folder, in order to be able to analyze this
@@ -469,7 +481,7 @@ One you have this information, start the program
 \program{install-organism}. You will be asked to enter the information
 needed for genome installation.
 
-\subsection{Updating your local configuration}
+\subsubsection{Updating your local configuration}
 
 
 \begin{itemize}
@@ -482,7 +494,7 @@ needed for genome installation.
 \end{itemize}
 
 
-\chapter{Installing genomes from EMBL files}
+\section{Installing genomes from EMBL files}
 
 \RSAT also includes a script \program{parse-embl.pl} to parse genomes
 from EMBL files. However, for practicaly reasons we generally parse
@@ -556,7 +568,7 @@ from NCBI.
 
 
 
-\subsection{Installing a genome in the main \RSAT directory}
+\subsubsection{Installing a genome in the main \RSAT directory}
 
 Once the genome has been parsed, the simplest way to make it available
  for all the users is to install it in the \RSAT genome directory. You
