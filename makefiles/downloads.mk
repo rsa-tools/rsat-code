@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.35 2008/02/09 17:57:31 jvanheld Exp $
+# $Id: downloads.mk,v 1.36 2009/11/02 05:36:36 rsat Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -67,7 +67,7 @@ NCBI_EXCLUDE=										\
 one_ncbi_dir_from_mirror:
 	@mkdir -p ftp.ncbi.nih.gov/genomes/${NCBI_DIR}
 	rsync ${NCBI_EXCLUDE}						\
-		-avz ${OPT} rsync://bio-mirror.net/biomirror/ncbigenomes/${NCBI_DIR}/*	\
+		-av ${OPT} rsync://bio-mirror.net/biomirror/ncbigenomes/${NCBI_DIR}/*	\
 		ftp.ncbi.nih.gov/genomes/${NCBI_DIR}/
 
 one_ncbi_dir:
