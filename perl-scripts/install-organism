@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.89 2009/10/27 15:03:58 jvanheld Exp $
+# $Id: install-organism,v 1.90 2009/11/02 05:36:00 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -14,6 +14,8 @@ require "RSA.lib";
 require RSAT::util;
 
 #### initialisation
+
+$config_table = $ENV{RSAT}."/data/supported_organisms.tab";
 @masking_modes = (""); ## by default, use no masking
 @oligo_lengths=(6,1,2,3,4,5,7,8);
 $verbose = 0;
@@ -64,6 +66,10 @@ $taxonomy = $null;
 ################################################################
 ## Initialize parameters
 $start_time = &AlphaDate();
+
+### installation date
+local $install_date = $force_date ||`date '+%Y/%m/%d %H:%M:%S'`;
+chomp $install_date;
 
 ## Store the starting directory
 $dir{main} = `pwd`; 
@@ -194,7 +200,7 @@ close $out if ($outputfile);
 ## Touch the installation dir to indicate the last modification date
 $dir{main};
 chdir($dir{main});
-&RSAT::message::Info(join("\t", "working dir",  `pwd`));
+&RSAT::message::Info(join("\t", "working dir",  `pwd`)) if ($main::verbose >= 2);
 system "touch $dir{install}";
 
 if ($verbose >= 1) {
@@ -227,17 +233,20 @@ sub Verbose {
     }
 
     print $out ";\n; Config files:", $rsa_config,"\n";
-    printf $out ";    %-25s\t%s\n", "RSA config", $config_file;
+    printf $out ";    %-25s\t%s\n", "RSAT config", $main::config_table;
     printf $out ";    %-25s\t%s\n", "\$RSA_LOCAL_CONFIG", $ENV{'RSA_LOCAL_CONFIG'} if ($ENV{'RSA_LOCAL_CONFIG'});
+
+    print $out ";\n; Organism parameters:\n";
+    printf $out ";    %-25s\t%s\n", "ID", $organism_short_name;
+    printf $out ";    %-25s\t%s\n", "Name", $organism_full_name;
+    printf $out ";    %-25s\t%s\n", "Update date", $install_date;
+    printf $out ";    %-25s\t%s\n", "data source", $source;
 
     print $out ";\n; Directories and files:\n";
     if ($task{genome}) {
-	printf $out ";    %-25s\t%s\n", "data source", $source;
 	printf $out ";    %-25s\t%s\n", "genome sequence format", $seq_format;
 	printf $out ";    %-25s\t%s\n", "genome sequence file", $infile{genome};
     }
-    printf $out ";    %-25s\t%s\n", "organism short name", $organism_short_name;
-    printf $out ";    %-25s\t%s\n", "organism full name", $organism_full_name;
     printf $out ";    %-25s\t%s\n", "feature table", $infile{features} if ($infile{features} );;
     printf $out ";    %-25s\t%s\n", "feature file", $infile{ptt} if ($infile{ptt} );
     printf $out ";    %-25s\t%s\n", "synonyms", $infile{synonyms} if ($infile{synonyms});
@@ -246,7 +255,7 @@ sub Verbose {
     printf $out ";    %-25s\t%s\n", "genome sequence file", $outfile{genome};
     printf $out ";    %-25s\t%s\n", "feature table", $outfile{features};
     printf $out ";    %-25s\t%s\n", "synonyms", $outfile{synonyms};
-    printf $out ";    %-25s\t%s\n", "file to update", $config_to_update;
+#    printf $out ";    %-25s\t%s\n", "file to update", $config_to_update;
 }
 
 
@@ -270,7 +279,7 @@ sub UpdateConfig {
 	@fields = split "\t";
 	$id = $fields[0];
 	$taxonomy = $fields[$taxonomy_field - 1];
-	&RSAT::message::Info (join("\t", "Parsed taxonomy from organism.tab", "Id",$id, "Taxonomy", $taxonomy));
+	&RSAT::message::Info (join("\t", "Parsed taxonomy from organism.tab", "Id",$id, "Taxonomy", $taxonomy)) if ($main::verbose >= 2);
       } else {
 	&Warning("Cannot read taxonomy in file $organism_table\n");
       }
@@ -278,9 +287,6 @@ sub UpdateConfig {
   }
   close $org_handle;
 
-  ### installation date
-  local $install_date = `date '+%Y/%m/%d %H:%M:%S'`;
-  chomp $install_date;
 
   #### default limits of upstream region for retrieve-seq
   unless (defined($up_from)) {
@@ -307,7 +313,7 @@ sub UpdateConfig {
       $up_to = -1;
     }
   }
-  &RSAT::message::Info(join("\t", "Upstream region limits from", $up_from, "to", $up_to));
+  &RSAT::message::Info(join("\t", "Upstream region limits from", $up_from, "to", $up_to)) if ($main::verbose >= 2);
 
   ## 2009/05/13: The old perl config file should not be used anymore,
   ## but is still exported for the sake of backward compatibility
@@ -329,8 +335,9 @@ sub UpdateConfigPerl {
 
   ## Check if the organism was already installed before
   if (defined($supported_organism{$organism_short_name}->{'genome'})) {
-    &RSAT::message::Warning(join("\t", $organism_short_name, "already defined in the config file",
-				 "the previous config will be commented"));
+      &RSAT::message::Warning(join("\t", $organism_short_name, "already defined in the config file\n",
+				   $config_to_update,
+				   "\n\tprevious config will be commented")) if ($main::verbose >= 2);
   }
 
   #### read previous config
@@ -350,7 +357,7 @@ sub UpdateConfigPerl {
   close CONFIG;
 
   #### write new config
-  warn ";\n; Updating config file\t$config_to_update\n" if ($verbose >= 1);
+  &RSAT::message::Info ("Updating supported organisms", $config_to_update) if ($verbose >= 1);
   open CONFIG, ">$config_to_update" 
     || die "Error: cannot write config file $config_to_update\n";
   print CONFIG $previous_config;
@@ -359,7 +366,7 @@ sub UpdateConfigPerl {
   $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'data'} = \"$dir{install}\";\n";
   $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'last_update'} = \"".$install_date."\";\n";
   $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'source'} = \"$source\";\n";
-  ## OLIVIER SAND SHOULD CHEXK IF THIS RESTRICTION FOR ensembl IS STILL VALID
+  ## OLIVIER SAND SHOULD CHECK IF THIS RESTRICTION FOR ensembl IS STILL VALID
   unless ($source eq 'ensembl') {
     $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'features'} = \"$outfile{features}\";\n";
     $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'genome'} = \"$outfile{genome}\";\n";
@@ -385,27 +392,29 @@ sub UpdateConfigPerl {
 ################################################################
 ## Update the tab-delimited file 
 sub UpdateConfigTab {
+  my %args = @_;
+#  &RSAT::message::Info ("Updating supported organisms", $main::config_table) if ($verbose >= 1);
+
   ## Update the hash variable for the new organism
-  $supported_organism{$organism_short_name}->{'name'} = $organism_full_name;
-  $supported_organism{$organism_short_name}->{'data'} = $dir{install};
-  $supported_organism{$organism_short_name}->{'last_update'} = $install_date;
-  $supported_organism{$organism_short_name}->{'source'} = $source;
+  $supported_organism{$organism_short_name}->{'name'} = $args{name} || $main::organism_full_name;
+  $supported_organism{$organism_short_name}->{'data'} = $args{data} || $dir{install};
+  $supported_organism{$organism_short_name}->{'last_update'} = $args{last_update} ||  $main::install_date;
+  $supported_organism{$organism_short_name}->{'source'} = $args{source} || $main::source;
   ## OLIVIER SAND SHOULD CHEXK IF THIS RESTRICTION FOR ensembl IS STILL VALID
   unless ($source eq 'ensembl') {
-    $supported_organism{$organism_short_name}->{'features'} = $outfile{features};
-    $supported_organism{$organism_short_name}->{'genome'} = $outfile{genome};
-    $supported_organism{$organism_short_name}->{'seq_format'} = "filelist";
+    $supported_organism{$organism_short_name}->{'features'} = $args{features} || $main::outfile{features};
+    $supported_organism{$organism_short_name}->{'genome'} = $args{genome} || $main::outfile{genome};
+    $supported_organism{$organism_short_name}->{'seq_format'} = $args{seq_format} || "filelist";
   }
-  $supported_organism{$organism_short_name}->{'taxonomy'} = $taxonomy;
-  if (defined($outfile{synonyms})) {
-    $supported_organism{$organism_short_name}->{'synonyms'} = $outfile{synonyms};
+  $supported_organism{$organism_short_name}->{'taxonomy'} = $args{taxonomy} || $main::taxonomy;
+  if (defined($main::outfile{synonyms})) {
+    $supported_organism{$organism_short_name}->{'synonyms'} = $args{synonyms} || $main::outfile{synonyms};
   }
-  $supported_organism{$organism_short_name}->{'up_to'} = $up_to;
-  $supported_organism{$organism_short_name}->{'up_from'} = $up_from;
+  $supported_organism{$organism_short_name}->{'up_to'} = $args{up_to} || $main::up_to;
+  $supported_organism{$organism_short_name}->{'up_from'} = $args{up_from} || $main::up_from;
 
     ## Export the updated table of supported organisms
-    &RSAT::OrganismManager::export_supported_organisms();
-
+    &RSAT::OrganismManager::export_supported_organisms($main::config_table);
 #    &RSAT::message::Debug("new_org_config", $new_org_config) if ($main::verbose >= 0);
 }
 
@@ -428,7 +437,7 @@ sub CreatePhylogeny {
 	    if (defined($taxonomy_field)) {
 		@fields = split "\t";
 		$taxonomy = $fields[$taxonomy_field - 1];
-		&Warning ("Taxonomy\t$taxonomy\n");
+		&RSAT::message::Info ("Taxonomy\t$taxonomy\n") if ($main::verbose >= 2);
 	    } else {
 		&Warning("Cannot read taxonomy in file $organism_table\n");
 	    }
@@ -444,14 +453,16 @@ sub CreatePhylogeny {
 	$taxonomy =~ s|\)|_|g; ## this character cannot be used for a directory name
 	$taxonomy =~ s|\,|.|g; ## Not fatal, but usually not found in folder names.
 	$taxonomy =~ s|\:|.|g; ## Not fatal, but usually not found in folder names.
-	my $dir = $ENV{RSAT}."/data/phylogeny/".$taxonomy;
-	$dir =~ s|//|/|g;
-	&RSAT::message::Info("Taxonomy directory", $dir) if ($main::verbose >= 1);
-	&RSAT::util::CheckOutDir($dir);
+	$dir{taxonomy} = $ENV{RSAT}."/data/phylogeny/".$taxonomy;
+	$dir{taxonomy} =~ s|//|/|g;
 	my ($org_dir) = &ShortFileName($dir{install});
-	&RSAT::message::Info("Organism directory", $org_dir) if ($main::verbose >= 1);
-	&RSAT::message::Info("Link to directory", $dir{install}) if ($main::verbose >= 1);
-	&doit("cd $dir; rm $org_dir; ln -s $dir{install} .",0,0,$verbose);
+	&RSAT::util::CheckOutDir($dir{taxonomy});
+	if ($main::verbose >= 2) {
+	    &RSAT::message::Info("Taxonomy directory", $dir{taxonomy});
+	    &RSAT::message::Info("Organism directory", $org_dir);
+	    &RSAT::message::Info("Link to directory", $dir{install});
+	}
+	&doit("cd $dir{taxonomy}; rm $org_dir; ln -s $dir{install} .",0,0,$verbose);
     } else {
 	&RSAT::error::FatalError("Cannot identify taxonomy in table ".$organism_table);
     }
@@ -537,7 +548,7 @@ sub SeqLengthDistribution {
     if ($main::verbose >= 2) {
 	my $pwd = `pwd`;
 	chomp $pwd;
-	&RSAT::message::TimeWarn(join"\t", "SeqLengthDistribution", $seq_file, $seq_type, "Working dir", $pwd);
+	&RSAT::message::TimeWarn(join"\t", "SeqLengthDistribution", $seq_file, $seq_type, "Working dir", $pwd) if ($main::verbose >= 2);
     }
 
     my $command = "sequence-lengths -i $seq_file -format ".$format;
@@ -911,7 +922,6 @@ OPTIONS
 		A directory containing a mirror of the NCBI genbank
 		genome directory:
 		       http://ftp.ncbi.nih.gov/genomes
-	
 		Normally, the genbank directory is specified by
 		defining a global variable GENBANK_DIR in the config
 		file. The option -genbank allows to overwrite this
@@ -919,6 +929,15 @@ OPTIONS
 
 	-prefid feattype idname
 	        passed to parse-genbank.pl
+
+	-date last_update
+
+	        Force the 'last_update' attribute to a given date. 
+
+		This option is used by download-organism to ensure
+		that the local genome has the same installation date
+		as the server, rather than using the date of download
+		as update date.
 
 	-ensembl
 		ENSEMBL directory. Directory containing the ENSEMBL
@@ -1043,6 +1062,7 @@ install_organism options
 -up_from       	distal limit of the upstream regions (e.g. -800 for yeast)
 -up_to		proximal limit of the upstream regions (e.g. -1)
 -prefid feattype idname     passed to parse-genbank.pl
+-date 		 force last_update to a given date (for synchro between server and local installation)
 -img_format	 image format for the graphs of sequence length distribution
 End_short_help
   close HELP;
@@ -1104,6 +1124,9 @@ sub ReadArguments {
 
 	} elsif ($ARGV[$a] eq "-prefid") {
 	    $parse_options .= join(" " , " -prefid", $ARGV[$a+1], $ARGV[$a+2]);
+
+	} elsif ($ARGV[$a] eq "-date") {
+	    $force_date = $ARGV[$a+1];
 
 	    #### installation dir
 	} elsif ($ARGV[$a] =~ /^-dir/) {
