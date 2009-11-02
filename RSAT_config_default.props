@@ -18,17 +18,17 @@ RSAT=/home/rsat/rsa-tools
 rsat_tmp=/home/rsat/rsa-tools/public_html/tmp
 
 ## URL of the web server (important for the links)
-rsat_www=http://rsat.scmbb.ulb.ac.be/rsat/
+rsat_www=http://rsat.ulb.ac.be/rsat/
 
 ## Obsolete version of the web server, for backwards compatibility
-www_rsa=http://rsat.scmbb.ulb.ac.be/rsat/
+www_rsa=http://rsat.ulb.ac.be/rsat/
 
 ## URL for the web services.
 ## Distinct from rsat_www because some web servers might delegate the web services to another server.
-rsat_ws=http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl
+rsat_ws=http://rsat.ulb.ac.be/rsat/web_services/RSATWS.wsdl
 
 ## URL used by the RSAT Web services to give Web access to temporary files
-rsat_ws_tmp=http://rsat.scmbb.ulb.ac.be/rsat/tmp
+rsat_ws_tmp=http://rsat.ulb.ac.be/rsat/tmp
 
 ## Default image format
 rsat_img_format=png
@@ -70,11 +70,11 @@ neat_supported=1
 ## specific programs for path finding and graph layout.  Before
 ## changing this URL, check that all the required tools are installed
 ## on the new neat_ws server
-neat_ws=http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl
+neat_ws=http://rsat.ulb.ac.be/rsat/web_services/RSATWS.wsdl
 
 ## URL for java-based NeAT web services. The same remark as above holds,
 ## please check the RSAT web server install guide.
-neat_java_ws=http://rsat.scmbb.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl
+neat_java_ws=http://rsat.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl
 
 ################################################################
 ## Directories for programs developed by third parties
