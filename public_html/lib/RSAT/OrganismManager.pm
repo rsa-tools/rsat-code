@@ -98,7 +98,9 @@ sub load_supported_organisms {
       #      $line =~ s|\$ENV\{RSAT\}|$tmp|g;
       #      $line =~ s|\/+|\/|g;
       @values = split /\t/, $line;
-      &RSAT::error::FatalError("Number of fields in the header does not correspond to the number of fields at line", $l, "\n") if (scalar (@values) != scalar (@fields));
+      &RSAT::error::FatalError("&RSAT::OrganismManager::load_supported_organisms()\n",
+			       "Number of fields in the header does not correspond to the number of fields\n",
+			       "file", $organism_table, "line", $l, "\n") if (scalar (@values) != scalar (@fields));
       for (my $i = 1; $i < scalar @fields; $i++) {
 	my $field = $fields[$i];
 	my $value = $values[$i];
@@ -111,6 +113,53 @@ sub load_supported_organisms {
     }
   }
 }
+
+# ################################################################
+# ## Update one organism in the tab-delimited file
+# sub UpdateConfigTab {
+#   my ($org, %args) = @_;
+
+#   ## Organism name
+#   my $name = "";
+#   if ($args{name}) {
+#     $name = $args{name};
+#   } else {
+#     $name = $org;
+#     $name =~ s/\_/ /;
+#   }
+#   $supported_organism{$organism_short_name}->{'name'} = $args{name} || $organism_full_name;
+
+#   ## Data directory
+#   $supported_organism{$organism_short_name}->{'data'} = $args{data} || $ENV{RSAT}."/data/genomes/".$org;
+
+#   ## Update date
+#   my $now = `date '+%Y/%m/%d %H:%M:%S'`;
+#   $supported_organism{$organism_short_name}->{'last_update'} = $args{last_update} ||  $install_date;
+
+#   $supported_organism{$organism_short_name}->{'source'} = $args{source} || $source;
+#   ## OLIVIER SAND SHOULD CHEXK IF THIS RESTRICTION FOR ensembl IS STILL VALID
+#   unless ($main::source eq 'ensembl') {
+#     $supported_organism{$organism_short_name}->{'features'} = $args{features} || $outfile{features};
+#     $supported_organism{$organism_short_name}->{'genome'} = $args{genome} || $outfile{genome};
+#     $supported_organism{$organism_short_name}->{'seq_format'} = $args{seq_format} || "filelist";
+#   }
+#   $supported_organism{$organism_short_name}->{'taxonomy'} = $args{taxonomy} || $taxonomy;
+#   if (defined($outfile{synonyms})) {
+#     $supported_organism{$organism_short_name}->{'synonyms'} = $args{synonyms} || $outfile{synonyms};
+#   }
+#   $supported_organism{$organism_short_name}->{'up_to'} = $args{up_to} || $up_to;
+#   $supported_organism{$organism_short_name}->{'up_from'} = $args{up_from} || $up_from;
+
+#   if ($main::verbose >= 0) {
+#     &RSAT::message::Debug("");
+#   }
+# #  &RSAT::message::Debug("new_org_config", $new_org_config) if ($main::verbose >= 0);
+
+#   ## Export the updated table of supported organisms
+#   &export_supported_organisms($config_table);
+
+# }
+
 
 ################################################################
 =pod
@@ -126,8 +175,8 @@ sub export_supported_organisms {
   $organism_table = $organism_table || $ENV{RSAT}."/data/supported_organisms.tab";
   my ($table_handle) = &RSAT::util::OpenOutputFile($organism_table);
   print $table_handle &supported_organism_table("header", 1, @fields);
-  &RSAT::message::Warning("Make sure that the file RSA.config does not load the old format file",$ENV{RSAT}."/data/supported_organisms.pl");
-  &RSAT::message::Info("Exported table with supported organisms", $organism_table) if ($main::verbose >= 1);
+  &RSAT::message::Warning("Make sure that the file RSA.config does not load the old format file",$ENV{RSAT}."/data/supported_organisms.pl") if ($main::verbose >= 3);
+  &RSAT::message::Info("Exported supported organisms", $organism_table) if ($main::verbose >= 1);
 }
 
 ################################################################
