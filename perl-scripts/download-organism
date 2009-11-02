@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: download-organism,v 1.4 2009/11/02 05:35:44 jvanheld Exp $
+# $Id: download-organism,v 1.5 2009/11/02 14:23:45 jvanheld Exp $
 #
 ############################################################
 
@@ -87,10 +87,20 @@ rather than install-genomes.
 
 =over
 
-=item B<-web_aspirator>
 
-Select the program for downloading the genome data. Default:
-wget. Supported: curl.
+=item B<-get_command>
+
+Use an alternative program for downloading the genome data. Default:
+wget. I should add support for curl (for example).
+
+=item B<anonymous rsync>
+
+Downloading with I<rsync> is currently reserved to the RSAT team
+because it requires a password on the RSAT server. We have currently
+no way to ensure an anonymous rsync, but this may be envisaged in the
+future for the convenience of external users.
+
+=back
 
 =cut
 
@@ -112,7 +122,14 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $get_command = "wget";
+  $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+
+  ## Parameters for downloading with rsync
+  $rsat_server_login = "rsat\@rsat.ulb.ac.be";
+  $rsat_server_dir = "rsa-tools";
+#  $rsat_server_login = "rsat\@merlin.bigre.ulb.ac.be";
+#  $rsat_server_dir = "/bio/rsa-tools";
 
   $verbose = 0;
   $dry = 0; ## Print the commands without executing them
@@ -137,11 +154,10 @@ package main;
 
   ################################################################
   ## Check that the web aspirator is working
-  $web_aspirator = "wget";
-  $which_aspirator = `which $web_aspirator`;
+  $which_aspirator = `which $get_command`;
   &RSAT::message::Debug($which_aspirator) if ($main::verbose >= 3);
   unless ($which_aspirator) {
-    &RSAT::error::FatalError("The program ".$web_aspirator." is not found in your path. This program is required for downloading data from the server. ");
+    &RSAT::error::FatalError("The program ".$get_command." is not found in your path. This program is required for downloading data from the server. ");
   }
 
   ################################################################
@@ -165,7 +181,7 @@ package main;
     &RSAT::message::TimeWarn("Getting list of organisms from RSAT server for taxon", $taxon);
     my $orgs_for_taxa = `supported-organisms -server -return ID -taxon $taxon | grep -v '^#'`;
     chomp ($orgs_for_taxa);
-    @orgs_for_taxa = split(/\s+/, $orgs_for_taxa);
+    @orgs_for_taxa = sort(split(/\s+/, $orgs_for_taxa));
     push @organisms, @orgs_for_taxa;
   }
 
@@ -191,23 +207,36 @@ package main;
   ## Download the genomes
   foreach my $org (@organisms) {
     ## download one genome
-    &RSAT::message::TimeWarn("Downloading genome", $org, "from the RSAT server", $RSAT_SERVER) if ($main::verbose >= 1);
-    my $cmd = "wget --reject 'index.html*' ";
-    if ($main::verbose <= 1) {
+
+
+    my $cmd = "";
+    if ($get_command eq "wget") {
+      &RSAT::message::TimeWarn("Downloading genome", $org, "from the RSAT server", $RSAT_SERVER) if ($main::verbose >= 1);
+      $cmd .= "wget --reject 'index.html*' ";
+      if ($main::verbose <= 1) {
 	$cmd .= "-q"; ## quiet mode for wget
-    } else {
+      } else {
 	$cmd .= "-nv"; ## low-verbosity mode for wget (the default mode is VERY verbosy)
+      }
+      $cmd .= " --passive-ftp";
+      $cmd .= " --no-parent";
+      $cmd .= " --recursive";
+      $cmd .= " --timestamping";
+      $cmd .= " --relative";
+      $cmd .= " --dont-remove-listing";
+      $cmd .= " --convert-links";
+      $cmd .= " -P ".$output_dir;
+      $cmd .= " -nH  --cut-dirs=3";
+      $cmd .= " http://".${RSAT_SERVER}."/data/genomes/".$org."/";
+    } elsif ($get_command eq "rsync") {
+      my $remote_genome = $rsat_server_login.":".$rsat_server_dir."/data/genomes/".$org;
+      &RSAT::message::TimeWarn("Downloading genome", $org, "from the RSAT server\n", $remote_genome) if ($main::verbose >= 1);
+      $cmd .= "rsync -e ssh -ruptvl -z ";
+      $cmd .= " --exclude jobs --exclude '*~'";
+      $cmd .= " ".$remote_genome;#rsat_server_login.":".$rsat_server_dir."/data/genomes/".$org;
+      $cmd .= " ".$output_dir."/";
+      $cmd =~ s/\/\//\//g;
     }
-    $cmd .= " --passive-ftp";
-    $cmd .= " --no-parent";
-    $cmd .= " --recursive";
-    $cmd .= " --timestamping";
-    $cmd .= " --relative";
-    $cmd .= " --dont-remove-listing";
-    $cmd .= " --convert-links";
-    $cmd .= " -P ".$output_dir;
-    $cmd .= " -nH  --cut-dirs=3";
-    $cmd .= " http://".${RSAT_SERVER}."/data/genomes/".$org."/";
     &doit($cmd, $dry, $die_on_error, $verbose, 0, 0);
 
     ## update the organism in the RSAT configuration tables
@@ -356,6 +385,25 @@ requires the writing permission in the RSAT directory).
 =cut
 	} elsif ($arg eq "-dir") {
 	    $main::output_dir = shift(@arguments);
+
+
+=pod
+
+=item B<-rsync>
+
+This option requires a ssh login on the main RSAT server, it is
+reserved for the RSAT maintenance team.
+
+When this option is activated, genomes are downloaded with the program
+I<rsync> is used instead of I<wget>. This ensures a faster transfer
+(using the powerful featres of rsync such as on-the-fly compression,
+smart updating, etc).
+
+
+=cut
+
+	  } elsif ($arg eq "-rsync") {
+	    $main::get_command = "rsync";
 
 
 	    ## Dry run
