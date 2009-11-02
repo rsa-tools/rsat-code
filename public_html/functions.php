@@ -137,6 +137,7 @@ Function load_props($props) {
   $tmp = $properties[rsat_tmp];
   $WWW_RSA = $properties[www_rsa];
   $log_name = $properties[rsat_site];
+  date_default_timezone_set("Europe/Paris");
   $neat_wsdl = $properties[neat_ws];
   $neat_java_wsdl = $properties[neat_java_ws];
   # host may include tomcat port
