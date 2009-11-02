@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: download-organism,v 1.3 2009/11/01 09:20:18 jvanheld Exp $
+# $Id: download-organism,v 1.4 2009/11/02 05:35:44 jvanheld Exp $
 #
 ############################################################
 
@@ -112,7 +112,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   $verbose = 0;
   $dry = 0; ## Print the commands without executing them
@@ -172,6 +172,21 @@ package main;
   &RSAT::message::Info("Downloading", scalar(@organisms), "organisms");
   &RSAT::message::Info(join("\n\t", "Organisms: ", @organisms));
 
+
+  ################################################################
+  ## Get the update dates + source from the server (in order to restrict the
+  ## number of queries, get dates for all organisms and store them for
+  ## the selected organisms only)
+  my @all_organisms = `supported-organisms -v 0 -server -return ID,last_update,source | grep -v '^#'`;
+  my %last_update;
+  my %source;
+  foreach my $org_line (@all_organisms) {
+    chomp($org_line);
+    my ($org, $date, $source) = split /\t/, $org_line;
+    $last_update{$org} = $date;
+    $source{$org} = $source || '<NA>';
+  }
+
   ################################################################
   ## Download the genomes
   foreach my $org (@organisms) {
@@ -191,14 +206,15 @@ package main;
     $cmd .= " --dont-remove-listing";
     $cmd .= " --convert-links";
     $cmd .= " -P ".$output_dir;
-#    $cmd .= " -P ".$ENV{RSAT}."/data/genomes/";
     $cmd .= " -nH  --cut-dirs=3";
     $cmd .= " http://".${RSAT_SERVER}."/data/genomes/".$org."/";
     &doit($cmd, $dry, $die_on_error, $verbose, 0, 0);
 
     ## update the organism in the RSAT configuration tables
-    &RSAT::message::TimeWarn("UPdating organism",$org) if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("Updating organism",$org) if ($main::verbose >= 1);
     $cmd = "install-organism -v 1 -task config,phylogeny -org ".$org;
+    $cmd .= " -date '".$last_update{$org}."'";
+    $cmd .= " -source '".$source{$org}."'";
     &doit($cmd, $dry, $die_on_error, $verbose, 0, 0);
   }
 
