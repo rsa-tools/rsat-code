@@ -1379,7 +1379,6 @@ sub calcFrequencies {
 	}
 	#	    &RSAT::message::Debug("freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum) unless ($letter);
 	#	    &RSAT::message::Debug("freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum) if ($main::verbose >= 10);
-	#      die("HELLO");
       }
       for my $r (0..($nrow-1)) {
 	if ($col_sum eq 0) {
@@ -2400,7 +2399,7 @@ sub add_site() {
   my $site_id = $args{id} || $site_seq;
   my $score =  $args{score} || 1;
   if ($score <  0) {
-    &RSAT::message::Warning("RSAT::matrix::add_site()", 
+    &RSAT::message::Warning("RSAT::matrix::add_site()",
 			    "site", 
 			    $site_seq, 
 			    "negative score", $score,
@@ -3037,22 +3036,25 @@ Return the logo from the matrix
 
 =cut
 sub makeLogo{
-  my ($self,$logo_file,$logo_formats,$logo_tmp_dir, $logo_options) = @_;
+  my ($self,$logo_file,$logo_formats,$logo_dir, $logo_options) = @_;
   my (@logo_formats) = @{$logo_formats};
-  my ($seqs_file,$seq_number) =$self->seq_from_matrix($logo_tmp_dir);
+  my ($pseudo_seq_file,$seq_number) = $self->seq_from_matrix($logo_dir);
+  &RSAT::message::Debug("makeLogo", $logo_dir, $pseudo_seq_file, $seq_number, "pseudo sequences") 
+    if ($main::verbose >= 5);
   my $ncol = $self->ncol();
   my $x_axis_legend = $seq_number." sites";
   foreach my $logo_format (@logo_formats){
     my $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
+#    &RSAT::error::FatalError("seqlogo_path", $seqlogo_path) if ($main::verbose >= 0);
     $seqlogo_path = &RSAT::util::trim($seqlogo_path);
     unless (-e $seqlogo_path) {
-	&RSAT::message::Warning("Cannot generate the sequence logo because the program seqlogo is not found in the expected path", 
-				$seqlogo_path, 
-				"Please install seqlogo in the recommended location.");
-	return;
+      &RSAT::message::Warning("Cannot generate the sequence logo because the program seqlogo is not found in the expected path", 
+			      $seqlogo_path, 
+			      "Please install seqlogo in the recommended location.");
+      return;
     }
     my $logo_cmd = $seqlogo_path;
-    $logo_cmd.= " -f ".$seqs_file;
+    $logo_cmd.= " -f ".$pseudo_seq_file;
     $logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -e -k 1";
     $logo_cmd .= " -w ".$ncol unless ($logo_options =~ /\-w /);
     $logo_cmd .= " -x '$x_axis_legend'";
@@ -3061,11 +3063,11 @@ sub makeLogo{
     $logo_cmd .= " ".$logo_options;
     $logo_cmd .= " -o ". $logo_file;
     #	$logo_cmd .= " -t ".$self->get_attribute("name");
-    &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 3);
-    system "$logo_cmd";
+    &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 4);
+    &RSAT::util::doit($logo_cmd);
     &RSAT::message::Info("Seq logo exported to file", $logo_file.".".$logo_format) if ($main::verbose >= 2);
   }
-  unlink $seqs_file;
+#  unlink $pseudo_seq_file;
 }
 
 ################################################################
@@ -3073,7 +3075,8 @@ sub makeLogo{
 ## respect the residue counts of the matrix, in order to generate a
 ## logo with seqlogo
 sub seq_from_matrix {
-  my ($self,$dir) = @_;
+  my ($self,$seq_dir) = @_;
+#  &RSAT::message::Debug("SEQ DIR", $seq_dir) if ($main::verbose >= 5);
   my $nb_col = $self->ncol();
   my $nb_row = $self->nrow();
   @matrix = @{$self->{table}};
@@ -3119,17 +3122,13 @@ sub seq_from_matrix {
     }
     push @seqs, $seq;
   }
-  &RSAT::message::Debug("Fake sequences from matrix :\n;",join ("\n;\t",@seqs)) if ($main::verbose >= 4);
+  &RSAT::message::Debug("Pseudo sequences from matrix :\n;",join ("\n;\t",@seqs)) if ($main::verbose >= 4);
+
   ## create a temporary sequence file which will be deleted after logo creation 
-  #	my $tmp_seq_file = "seq.tmp";
-  #$tmp_seq_file = $dir."/".$tmp_seq_file if ($dir);
-  my $tmp_seq_file = $self->get_attribute("logo_file").".tmp";
-  open SEQ, ">".$tmp_seq_file
-    || &RSAT::error::FatalError("&RSAT::matrix::seq_from_matrix()", "Can't write file ".$tmp_seq_file."$!");
-  print SEQ join("\n",@seqs)."\n";
-  close SEQ;
-  &RSAT::message::Debug("Writing fake sequences in temporary file".$tmp_seq_file) if ($main::verbose >= 3);
-  #	return @seqs;
+  my $tmp_seq_file = &RSAT::util::make_temp_file($seq_prefix, $self->get_attribute("name"));
+  my $seq_handle = &RSAT::util::OpenOutputFile($tmp_seq_file);
+  print $seq_handle join("\n",@seqs)."\n";
+  &RSAT::message::Debug("Pseudo sequences stored in temp file\n", $tmp_seq_file) if ($main::verbose >= 3);
   return ($tmp_seq_file,$seq_number);
 }
 
