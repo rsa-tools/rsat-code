@@ -465,6 +465,18 @@ sub hex2rgb {
 
 
 ################################################################
+## Return a unique name for a temporary file in the $TMP directory
+sub make_temp_file {
+  my ($tmp_dir, $tmp_prefix) = @_;
+  $tmp_dir = $main::TMP unless ($tmp_dir);
+  $tmp_prefix = 'temp_' unless ($tmp_dir);
+  my $temp_file = `mktemp ${tmp_dir}/${tmp_prefix}.XXXXXX`;
+  chomp($temp_file);
+  system("chmod a+r $temp_file");
+  return ($temp_file);
+}
+
+################################################################
 ## echo a command and send it to the system
 ## Usage:
 ##   &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
