@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.82 2009/11/03 06:39:18 jvanheld Exp $
+# $Id: convert-matrix,v 1.83 2009/11/03 11:30:14 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -91,6 +91,7 @@ $supported_bg_formats = join ",", sort keys %supported_bg_format;
 ## logo formats
 local $logo_format = "png";
 local $logo_opt = "";
+local $logo_dir = "";
 @logo_formats=();
 %supported_logo_format =  ('png'=>1,
 			  "eps"=>1,
@@ -99,6 +100,10 @@ local $logo_opt = "";
 			 );
 $supported_logo_formats = join ",", sort keys %supported_logo_format;
 
+
+
+################################################################
+## Read command-line arguments
 &ReadArguments();
 
 ################################################################
@@ -285,23 +290,29 @@ foreach my $matrix (@matrices) {
     }
     ## Generate logo
     if (($return_fields{logo}) && ($seqlogo_path)) {
-	my $basedir ="";
-	if (($logo_dir)&&(-d $logo_dir)){
-	    $basedir = $logo_dir."/";
-    	} else {
-	    if ($outfile{output}) {
-    		$basedir = dirname($outfile{output});
-	    	$basedir .= "/";
-	    }
-    	}
-	my $logo_file=$basedir.$matrix->get_attribute("name")."_logo";
-#	$logo_file =~ s/\.\w+$//;
-	$matrix->set_attribute("logo_file" => $logo_file);
-	if ($logo_dir){
-	    $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt);
+      unless ($logo_dir) {
+	if ($outfile{output}) {
+	  $logo_dir = dirname($outfile{output});
 	} else {
-	    $matrix->makeLogo($logo_file,\@logo_formats,"",$logo_opt);
+	  $logo_dir = "logos";
 	}
+      }
+      $logo_dir .= "/";
+      $logo_dir =~ s|/+|/|g;
+#      &RSAT::message::Debug("LOGO DIR", $logo_dir) if ($main::verbose >= 0);
+
+      ## Create logo directory if required
+      &RSAT::util::CheckOutDir($logo_dir);
+
+      my $logo_file=$logo_dir.$matrix->get_attribute("name")."_logo";
+      #	$logo_file =~ s/\.\w+$//;
+      $matrix->set_attribute("logo_file" => $logo_file);
+
+#      if ($logo_dir){
+	$matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt);
+#      } else {
+#	$matrix->makeLogo($logo_file,\@logo_formats,"",$logo_opt);
+#      }
     }
 }
 
