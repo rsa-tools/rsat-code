@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.47 2009/11/03 10:06:12 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.48 2009/11/03 10:15:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -176,12 +176,22 @@ print <<EndText;
 <tr>
 
   <td align=center>
+  <a href='http://tagc.univ-mrs.fr/rsa-tools/' target='_top'>
+  <B>Marseille TAGC - France</B><BR>
+  <IMG SRC="images/calanques.jpg" HEIGHT=80 BORDER=0><BR>
+  http://tagc.univ-mrs.fr/rsa-tools/</a>
+<br><font size=-2>(photo by <a target=_blank href=http://www.lim.univ-mrs.fr/~guenoche/Walk1.html>Alain Gu&eacute;noche</a>)</font>
+  </TD>
+
+<!--
+  <td align=center>
   <A HREF="http://crfb.univ-mrs.fr/rsaTools/" target="_top">
-  <B>Marseille - France</B><BR>
+  <B>Marseille CRBF - France</B><BR>
   <IMG SRC="images/calanques.jpg" HEIGHT=80 BORDER=0><BR>
   http://crfb.univ-mrs.fr/rsaTools/</a>
 <br><font size=-2>(photo by <a target=_blank href=http://www.lim.univ-mrs.fr/~guenoche/Walk1.html>Alain Gu&eacute;noche</a>)</font>
   </TD>
+-->
 
   <td align=center>
   <A HREF="http://rsat.ccb.sickkids.ca/" target="_top">
@@ -190,6 +200,7 @@ print <<EndText;
   http://rsat.ccb.sickkids.ca/</A>
   </TD>
 
+
   <td align=center>
   <a href="http://www.bi.up.ac.za/rsa-tools/" target="_top">
   <B>Pretoria - South-Africa</b><br>
@@ -197,19 +208,18 @@ print <<EndText;
   http://www.bi.up.ac.za/rsa-tools/</a>
   </td>
 
-
 </tr><tr>
 
-  <td>
+  <td></td>
 
-  <TD ALIGN=CENTER>
+  <td align=center>
   <A HREF="http://af.boku.ac.at:4080/rsa-tools/" target="_top">
   <B>Vienna - Austria</B><BR>
   <IMG SRC="http://www.wien.gv.at/english/cityhall/images/cityhall.jpg" HEIGHT=80 BORDER=0><BR>
   http://af.boku.ac.at:4080/rsa-tools/</A>
-  </TD>
+  </td>
 
-  <td>
+  <td></td>
 
 <!--
 </tr><tr>
