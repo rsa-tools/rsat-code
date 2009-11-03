@@ -29,8 +29,8 @@ $default{inter_cov} = 0.8;
 &RSA_header("compare-features", 'form');
 print "<CENTER>";
 print "Compare two or more sets of features. This program takes as input several feature files (two or more), and calculates the intersection, union and difference between features. It also computes contingency tables and comparison statistics.<P>\n";
-#print "Program developed by <A HREF='mailto:jtran\@scmbb.ulb.ac.be (Joseph Tran)'>Joseph Tran</A>\n";
-#print "and <A HREF='mailto:jvanheld\@scmbb.ulb.ac.be (Jacques van Helden)'>Jacques van Helden</A>\n";
+#print "Program developed by <A HREF='mailto:jtran\@bigre.ulb.ac.be (Joseph Tran)'>Joseph Tran</A>\n";
+#print "and <A HREF='mailto:jvanheld\@bigre.ulb.ac.be (Jacques van Helden)'>Jacques van Helden</A>\n";
 print "</CENTER>";
 print "<HR>";
 print "<blockquote>";
@@ -275,7 +275,7 @@ print $query->end_form;
 
 print "<TD><B><A HREF='help.compare-features.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_compare-features.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";

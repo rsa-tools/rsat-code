@@ -234,7 +234,7 @@ print $query->end_form;
 #print "<TD><B><A HREF='demo.retrieve-seq.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.retrieve-seq.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='tutorials/tut_retrieve-seq.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 #print "</FONT>\n";

@@ -81,7 +81,7 @@ $checked{$default{freq_estimate}} = "CHECKED";
 print '<style><!-- textarea {height: 100px; width: 550px;}--></style>';
 print "<CENTER>";
 print "Analysis of oligonucleotide occurrences in a set of DNA sequences.\n";
-print "<br>Program developed by <a href='mailto:defrance\@scmbb.ulb.ac.be (Matthieu Defrance)'>Matthieu Defrance</A><P>";
+print "<br>Program developed by <a href='mailto:defrance\@bigre.ulb.ac.be (Matthieu Defrance)'>Matthieu Defrance</A><P>";
 print "</center>";
 
 &ListDefaultParameters() if ($ENV{rsat_echo} >= 2);
@@ -474,7 +474,7 @@ print $query->end_form;
 #print "<TD><B><A HREF='demo.ORM.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.ORM.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='tutorials/tut_ORM.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "<hr />";

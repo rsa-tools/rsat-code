@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus_form.cgi,v 1.9 2007/10/26 11:45:23 rsat Exp $
+# $Id: consensus_form.cgi,v 1.10 2009/11/03 10:06:12 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:07:43 jvanheld>
 #
@@ -47,7 +47,7 @@ print "<CENTER>\n";
 print "Matrix-based pattern discovery using CONSENSUS<BR>\n";
 print "Extract shared motifs from a set of unaligned sequences<BR>\n";
 print "Program developed by <A HREF='mailto:hertz\@colorado.edu (Jerry Hertz)'>Jerry Hertz</A>. \n";
-print "Web interface by <A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>Jacques van Helden</A>.<br>";
+print "Web interface by <A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>Jacques van Helden</A>.<br>";
 print "The stand-alone version of <i>consensus</i> is available at <a target=_blank href=http://ural.wustl.edu/software.html>http://ural.wustl.edu/software.html</a><P>";
 print "</CENTER><hr>";
 
@@ -242,7 +242,7 @@ print $query->end_form;
 #print "<TD><B><A HREF='demo.consensus.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.consensus.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='tutorials/tut_consensus.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";

@@ -375,7 +375,7 @@ print $query->end_form;
 #print "<TD><B><A HREF='demo.oligo-analysis.html'>DEMO</A></B></TD>\n";
 print "<td><b><a href='help.oligo-analysis.html'>MANUAL</A></B></TD>\n";
 print "<td><b><a href='tutorials/tut_oligo-analysis.html'>TUTORIAL</A></B></TD>\n";
-print "<td><b><a href='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</a></b></td>\n";
+print "<td><b><a href='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</a></b></td>\n";
 print "</tr></table>
 </ul></ul>\n";
 

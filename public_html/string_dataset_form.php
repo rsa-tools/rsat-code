@@ -73,7 +73,7 @@ echo("
 
   <TD><B><A target = '_blank' HREF='".checkNeatTutorial("")."'>TUTORIAL</A></B></TD>
   <TD><B><A target = '_blank' HREF='help.string_dataset.html'>HELP</A></B></TD>
-  <TD><B><A HREF='mailto:sylvain@scmbb.ulb.ac.be'>MAIL</A></B></TD>
+  <TD><B><A HREF='mailto:sylvain@bigre.ulb.ac.be'>MAIL</A></B></TD>
   </TR></TABLE></ul></ul>
  ");
 
