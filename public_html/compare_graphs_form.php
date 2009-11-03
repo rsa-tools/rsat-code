@@ -168,7 +168,7 @@ and
   <TD><B><A HREF='help.compare_graphs.html'>MANUAL</A></B></TD>
   <TD><B><A target = '_blank' HREF='".checkNeatTutorial("tutorials/neat_tutorial/Comparisons_between_network.html")."'>TUTORIAL</A></B></TD>
 
-  <TD><B><A HREF='mailto:sylvain@scmbb.ulb.ac.be' >MAIL</A></B></TD>
+  <TD><B><A HREF='mailto:sylvain@bigre.ulb.ac.be' >MAIL</A></B></TD>
   </TR></TABLE></ul></ul>");
   ?>
   </body>

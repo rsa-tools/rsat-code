@@ -124,7 +124,7 @@ $default_decimals = 2;
   <TD><B><A HREF='graph_cluster_membership_form.php?demo=1'>DEMO</A></B></TD>
   </form>
   <TD><B><A HREF='help.graph_cluster_membership.html'>MANUAL</A></B></TD>
-  <TD><B><A HREF='mailto:gipsi@scmbb.ulb.ac.be'>MAIL</A></B></TD>
+  <TD><B><A HREF='mailto:gipsi@bigre.ulb.ac.be'>MAIL</A></B></TD>
   </TR></TABLE></ul></ul>");
 
 

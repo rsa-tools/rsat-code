@@ -123,7 +123,7 @@ onclick=\"toggleMenu('107')\" id=\"heading107\">Information</div>
 
 <h3>Feedback </h3>
 <h3>
-<a href=\"mailto:sylvain-at-scmbb.ulb.ac.be\">Sylvain Broh&eacute;e</a>
+<a href=\"mailto:sylvain-at-bigre.ulb.ac.be\">Sylvain Broh&eacute;e</a>
 </h3>
 </h4>
 </div>

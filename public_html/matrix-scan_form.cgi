@@ -141,7 +141,7 @@ foreach $key (keys %default) {
 ### head
 print "<CENTER>";
 print "Scan a DNA sequence with a profile matrix<BR>\n";
-print "Program developed by <A HREF='mailto:jturatsi\@scmbb.ulb.ac.be (Jean Valery Turatsinze)'>Jean Val&eacute;ry Turatsinze</A>, <A HREF='mailto:morgane\@scmbb.ulb.ac.be (Morgane Thomas-Chollier)'>Morgane Thomas-Chollier</A> and <A HREF='mailto:jvanheld\@scmbb.ulb.ac.be (Jacques van Helden)'>Jacques van Helden</A><P>";
+print "Program developed by <A HREF='mailto:jturatsi\@bigre.ulb.ac.be (Jean Valery Turatsinze)'>Jean Val&eacute;ry Turatsinze</A>, <A HREF='mailto:morgane\@bigre.ulb.ac.be (Morgane Thomas-Chollier)'>Morgane Thomas-Chollier</A> and <A HREF='mailto:jvanheld\@bigre.ulb.ac.be (Jacques van Helden)'>Jacques van Helden</A><P>";
 
 print "</CENTER>";
 
@@ -812,7 +812,7 @@ print $query->end_form;
 
 print "<TD><B><A HREF='help.matrix-scan.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_matrix-scan.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";

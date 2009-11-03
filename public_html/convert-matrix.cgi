@@ -196,7 +196,7 @@ if ($query->param('output') eq "display") {
       next if ($_ =~ /logo file:(.*)\.pdf$/);
       if ($_ =~ /logo file:(.*)\.png$/){
 	(my $logo = $1 )=~ s|${TMP}| ${WWW_TMP}|g;
-	#	  print "<IMG SRC=\"$logo\">\n";
+#	print "<IMG SRC=\"$logo\">\n";
 	$logo =~ s/\.png//;
 	print "<a href = \"$logo.pdf\"><IMG SRC=\"$logo\.png\" ></a>\n";
 	print "<br/>";
