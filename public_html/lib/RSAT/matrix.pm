@@ -642,7 +642,7 @@ sub to_TRANSFAC {
     }
 
     ## Header
-    my $header = "P0  ";
+    my $header = "PO  "; ## fixed bug in previous version, where I used P0 instead of PO
     my @alphabet = $self->getAlphabet();
     foreach my $letter (@alphabet) {
       $header .= sprintf "%6s", uc($letter);
