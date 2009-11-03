@@ -139,7 +139,7 @@ foreach my $stat qw(counts frequencies weights info margins consensus parameters
 print $query->checkbox(-name=>'logo',
 		       -checked=>$default{logo},
 		       -label=>'');
-print "&nbsp;<A HREF='help.convert-matrix.html#logo'><B>", logo, "</B></A>\n";
+print "&nbsp;<A HREF='help.convert-matrix.html#logo'><B>", "logo", "</B></A>&nbsp;(using <a target='_blank' href='http://weblogo.berkeley.edu/'>Weblogo</a>)\n";
 print "&nbsp;&nbsp; (<b>options</b>:";
 print $query->checkbox(-name=>'error_bar',
 		       -checked=>$default{error_bar},
