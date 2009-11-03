@@ -119,7 +119,7 @@ print $query->end_form;
 
 print "<TD><B><A HREF='help.gene-info.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_gene-info.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE class='formbutton'></UL></UL>\n";
 
 print "</BLOCKQUOTE>\n";

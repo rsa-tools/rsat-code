@@ -48,7 +48,7 @@ foreach $key (keys %default) {
 print "<CENTER>";
 print "Scan a DNA sequence with a posiion-specific scoring matrix (PSSM)<BR>\n";
 print "Program developed by <A HREF='mailto:hertz\@colorado.edu (Jerry Hertz)'>Jerry Hertz</A>. \n";
-print "Web interface by <A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>Jacques van Helden</A>.<br>";
+print "Web interface by <A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>Jacques van Helden</A>.<br>";
 print "The stand-alone version of <i>patser</i> is available at <a target=_blank href=http://ural.wustl.edu/software.html>http://ural.wustl.edu/software.html</a></p>";
 print "</CENTER><hr>";
 
@@ -192,7 +192,7 @@ print $query->end_form;
 
 print "<TD><B><A HREF='help.patser.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='tutorials/tut_patser.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";

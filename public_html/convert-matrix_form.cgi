@@ -50,11 +50,7 @@ $default{bg_pseudo} = "0.01";
 $default{bg_format}="oligo-analysis";
 $default{bg_method}="from_matrix";
 $checked{$default{bg_method}} = "CHECKED";
-<<<<<<< convert-matrix_form.cgi
-$default{logo}="on";
-=======
 $default{logo}="checked";
->>>>>>> 1.23
 $default{error_bar}="";
 $default{small_correc}="";
 $default{stretch}="";
@@ -222,7 +218,7 @@ print $query->end_form;
 
 print "<TD><B><A HREF='help.convert-matrix.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='tutorials/tut_PSSM.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";

@@ -84,7 +84,7 @@
       <TD><input type='submit' name='.submit' value='GO' /></TD>
       </form>
 
-      <TD><B><A HREF='mailto:sylvain-at-scmbb.ulb.ac.be'>MAIL</A></B></TD>
+      <TD><B><A HREF='mailto:sylvain-at-bigre.ulb.ac.be'>MAIL</A></B></TD>
       </TR></TABLE></ul></ul>
    ");
   }
