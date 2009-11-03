@@ -555,10 +555,6 @@ sub _readFromOldInfoGibbsFile {
       } elsif ((/^TY\s+/)   && ($matrix)){
 	$matrix->set_parameter("type", $'); #'
 
-	## Matrix type
-      } elsif ((/^TY\s+/)   && ($matrix)){
-	$matrix->set_parameter("type", $'); #'
-
       } elsif (/^\/\//) {
 	if ($matrix) {
 	  $matrix->set_parameter("infogibbs_consensus", $infogibbs_consensus);
