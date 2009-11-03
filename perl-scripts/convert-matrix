@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.81 2009/10/19 04:56:12 jvanheld Exp $
+# $Id: convert-matrix,v 1.82 2009/11/03 06:39:18 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -734,7 +734,7 @@ RETURN FIELDS FOR THE TAB-DELIMITED OUTPUT FORMAT
 
         Wij=ln(F\'ij/Pi)
 
-    information
+    information matrix
         The crude information content is calculated according to the formula
         from Hertz (1999).
 
@@ -803,6 +803,34 @@ RETURN FIELDS FOR THE TAB-DELIMITED OUTPUT FORMAT
 	    Theoretical distribution of weight probabilities (computed
 	    as in Bailey, Bioinformatics, 1999).
             WARNING: use matrix-distrib instead
+
+	logo 
+	    Sequence logo, a visual representation of the motif, where
+	    each column of the matrix is represented as a stack of
+	    letters whose size is proportional to the corresponding
+	    residue frequency. The total height of each column is
+	    proportional to its information content.
+
+	    Sequence logo are generated using the freeware program Weblogo
+	    (http://weblogo.berkeley.edu/).
+
+REFERENCES
+
+    Matrix theory
+        Hertz, G.Z. and G.D. Stormo (1999). Identifying DNA and
+        protein patterns with statistically significant alignments of
+        multiple sequences. Bioinformatics, 15(7-8): p. 563-77.
+
+    Sequence logos
+        Schneider, T. D. & Stephens, R. M. Sequence logos: a new way
+        to display consensus sequences. Nucleic Acids Res 18,
+        6097-6100 (1990).
+
+    Weblogo
+        Crooks, G. E., Hon, G., Chandonia, J. M. & Brenner,
+        S. E. WebLogo: a sequence logo generator. Genome Res 14,
+        1188-1190, doi:10.1101/gr.849004 14/6/1188 (2004).
+
 
 End_of_help
   close HELP;
@@ -1036,15 +1064,16 @@ sub Verbose {
       print $out ";\t$key\t$value\n";
     }
   }
+  printf $out "%-22s\t%s\n", "; Input format", $input_format;
   if (defined(%outfile)) {
     print $out "; Output files\n";
     while (($key,$value) = each %outfile) {
       print $out ";\t$key\t$value\n";
     }
   }
+  printf $out "%-22s\t%s\n", "; Output format", $output_format;
 
   printf $out "%-22s\t%d\n", "; pseudo-weight", $pseudo_weight;
-  
       ## Background model
     if ($infile{prior}) {
    	printf $main::out "; Background model\n";
