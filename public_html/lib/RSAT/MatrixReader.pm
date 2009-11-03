@@ -221,12 +221,13 @@ sub _readFromTRANSFACFile {
       $version = $';		# '
       &RSAT::message::Warning("TRANSFAC file version", $version);
 
-      ## field separator
+      ## empty field separator
     } elsif (/^XX/) {
 
       ## Start a new matrix (one TRANSFAC file contains several matrices)
     } elsif (/^AC\s+(\S+)/) {
       my $accession = $1;
+      &RSAT::message::Info("TRANSFAC accession number", $accession) if ($main::verbose >= 3);
       $current_matrix_nb++;
       $matrix = new RSAT::matrix();
       $matrix->set_parameter("program", "transfac");
@@ -235,17 +236,18 @@ sub _readFromTRANSFACFile {
       $matrix->set_parameter("accession", $accession) if ($accession);
       $matrix->set_parameter("version", $version);
       $ncol = 0;
-      next;
+#      next;
 
       ## Read prior alphabet from the matrix header (P0 line)
       ## Equiprobable alphabet
-    } elsif (/^P0\s+/) {
+    } elsif ((/^PO\s+/)  || (/^P0\s+/)) { ## 2009/11/03 JvH Fixed a bug, in previous versions I used P0 (zero) instead of PO (big "o")
       my $header = $'; #'
       $header = RSAT::util::trim($header);
 
       ## Alphabet is parsed from the TRANSFAC matrix header (P0 row)
       my @alphabet = split /\s+/, $header;
       $matrix->setAlphabet_lc(@alphabet);
+      &RSAT::message::Debug("Alphabet", join(";",@alphabet)) if ($main::verbose >= 3);
 
       ## Check that prior has been specified
       unless ($matrix->get_attribute("prior_specified")) {
@@ -271,6 +273,7 @@ sub _readFromTRANSFACFile {
 	    $matrix->push_attribute("site_ids", $site_id);
 	  }
 	}
+	&RSAT::message::Info("TRANSFAC site", $site_id, $site_sequence) if ($main::verbose >= 3);
 #      &RSAT::message::Debug("line", $l, "site", $site_sequence, $site_id, $bs) if ($main::verbose >= 10);
 
       ## Count column of the matrix file (row in TRANSFAC format)
@@ -283,7 +286,7 @@ sub _readFromTRANSFACFile {
 	  $consensus_residue = pop @fields;
 	  $transfac_consensus .= $consensus_residue;
 	}
-	#      &RSAT::message::Debug("line ".$l, "adding column", join (":", @fields)) if ($main::verbose >= 10);
+	&RSAT::message::Debug("line ".$l, "adding column", join (":", @fields)) if ($main::verbose >= 5);
 	$matrix->addColumn(@fields);
 	$ncol++;
 	$matrix->force_attribute("ncol", $ncol);
@@ -291,14 +294,25 @@ sub _readFromTRANSFACFile {
 	## Matrix identifier
       } elsif (/^ID\s+/) {
 	$matrix->set_parameter("identifier", $'); #'
+	&RSAT::message::Info("TRANSFAC identifier", $matrix->get_attribute("identifier")) if ($main::verbose >= 3);
 
 	## Bound factor
       } elsif (/^BF\s+/) {
-	$matrix->set_parameter("binding_factor", $'); #'
+	my $factor_description = $';
+	my $factor_id = "";
+	$matrix->push_attribute("binding_factor_desc", $factor_description); #'
+	if ($factor_description =~ /^(T\d+)/) {
+	  $factor_id = $1;
+	  $matrix->push_attribute("binding_factor", $factor_id); #'
+	}
+	&RSAT::message::Info("TRANSFAC binding factor", $factor_id, $factor_description) if ($main::verbose >= 3);
+	$matrix->set_parameter("binding_factors", join(";", $matrix->get_attribute("binding_factor")));
+	&RSAT::message::Info("TRANSFAC binding factors", $matrix->get_attribute("binding_factors")) if ($main::verbose >= 3);
 
 	## Short factor description
       } elsif (/^SD\s+/) {
-	$matrix->set_parameter("short_foactor_description", $'); #'
+	$matrix->push_attribute("short_foactor_description", $'); #'
+	&RSAT::message::Info("TRANSFAC short factor desc", $factor_id, $factor_description) if ($main::verbose >= 3);
 
 	## Statistical basis
       } elsif (/^BA\s+/) {
@@ -312,13 +326,14 @@ sub _readFromTRANSFACFile {
       } elsif (/^\/\//) {
 	$matrix->set_parameter("transfac_consensus", $transfac_consensus);
 
-	## Empty rowb
+	## Row containing other field
       } elsif (/^(\S\S)\s+(.*)/) {
 	my $field = $1;
 	my $value = $2;
 	&RSAT::message::Warning("Not parsed", $field, $value) if ($main::verbose >= 3);
+
       } else {
-	&RSAT::message::Warning("skipped invalid row", $_);
+	&RSAT::message::Warning("Skipped invalid row", $_);
       }
     }
   }
