@@ -25,13 +25,12 @@ var v2="6JW4BT3V6VUHNUC3AD4ZJZKSYJC5";var v7=unescape("%7C+4E71@x@7%3Bf%060/W%24
 </ul><h4>Description</h4><ul>
 
 <p> Performs inter-conversions between various formats of
-	position-specific scoring matrices (PSSM).
+position-specific scoring matrices (PSSM).</p>
 
-<p> The program also performs a statistical analysis of the
-	original matrix to provide different position-specific scores
-	(weight, frequencies, information contents), general
-	statistics (E-value, total information content), and synthetic
-	descriptions (consensus).
+<p> The program also performs a statistical analysis of the original
+matrix to provide different position-specific scores (weight,
+frequencies, information contents), general statistics (E-value, total
+information content), and synthetic descriptions (consensus).</p>
 
 <p>PSSM can be used to represent the binding specificity of a transcription
 factor or the conserved residues of a protein domain.</p>
@@ -44,27 +43,27 @@ represents the frequency of each residue at each position.</p>
 
 </ul><h4><a name="io_format"></a>INPUT/OUTPUT FORMATS</h4>
 <p>
-Some formats are supported only for input, others for
-    output. There are more formats accepted for input, because the
-    general use of this program is to convert a PSSM obtained from a
-    database (e.g. TRANSFAC) or a pattern-discovery program
-    (e.g. consensus, gibbs, meme, MotifSampler, ...) and obtain a
-    matrix either for scanning (with matrix-scan) or for computing
-    statistical parameters (see the return fields below).
+Some formats are supported only for input, others for output. There
+are more formats accepted for input, because the general use of this
+program is to convert a PSSM obtained from a database (e.g. TRANSFAC)
+or a pattern-discovery program (e.g. consensus, gibbs, meme,
+MotifSampler, ...) and obtain a matrix either for scanning (with
+matrix-scan) or for computing statistical parameters (see the return
+fields below).</p>
     
-  <p>
-  <ul>
-  <li> <strong> 
-    tab (input/output)</strong> </li>
-	tab-delimited file. One row per residue, one column per
-	position. The first column of each row indicates the residue,
-	the following columns give the frequency of that residue
-	at the corresponding position of the matrix.
 <p>
-        The tab format accepts a user-specific set of return fields
-        (option -return), proviging different statistics on the matrix
-        (counts, frequencies, weights, information, other parameters:
-        see description below).
+  <ul>
+  <li> <strong> tab (input/output)</strong> </li> tab-delimited
+    file. One row per residue, one column per position. The first
+    column of each row indicates the residue, the following columns
+    give the frequency of that residue at the corresponding position
+    of the matrix.</li>
+
+<p>
+  The tab format accepts a user-specific set of return fields (option
+  -return), proviging different statistics on the matrix (counts,
+  frequencies, weights, information, other parameters: see description
+  below).
 <pre>     
 ; MET4 matrix, from Gonze et al. (2005). Bioinformatics 21, 3490-500.
 A |   7   9   0   0  16   0   1   0   0  11   6   9   6   1   8
@@ -362,6 +361,21 @@ highest positive weight.</p>
 The total information is calculated by summing the information content
 of all the cells of the matrix. This parameters is already returned by
 the program consensus (Hertz), but not by other programs.
+</dd>
+
+<p></p>
+<dt><strong><a name='logo'>logo</a></strong><br />
+</dt>
+<dd>
+Sequence logo, a visual representation of the motif, where each column
+of the matrix is represented as a stack of letters whose size is
+proportional to the corresponding residue frequency. The total height
+of each column is proportional to its information content.
+
+<p>Sequence logo are generated using the freeware
+program <a target='_blank'
+href='http://weblogo.berkeley.edu/'>Weblogo</a>.</p>
+
 </dd>
 
 </ul>
