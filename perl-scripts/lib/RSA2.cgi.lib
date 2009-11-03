@@ -321,7 +321,7 @@ sub GetSequenceFile {
   unless ($sequence_file = $query->param('sequence_file')) { 
     ### sequence file already on the server side
     ### create a new temporary sequence file
-    $sequence_file = "$TMP/$tmp_file_name.seq";
+    $sequence_file = "$main::TMP/$tmp_file_name.seq";
 
     ### upload sequence file from the client side
     $upload_file = $query->param('uploaded_file');
