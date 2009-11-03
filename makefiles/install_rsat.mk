@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.4 2003/11/14 08:52:34 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.5 2009/11/03 10:10:02 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -249,9 +249,6 @@ install_program:
 	(cd ${PROGRAM_DIR}; make ${INSTALL_OPT})
 	(cd bin; ln -fs ${INSTALLED_PROGRAM} ./${PROGRAM})
 
-install_patser:
-	${MAKE} uncompress_program PROGRAM=patser
-	${MAKE} install_program PROGRAM=patser
 
 install_consensus:
 	${MAKE} uncompress_program PROGRAM=consensus
@@ -267,3 +264,43 @@ install_ext_apps:
 	${MAKE} install_consensus
 	${MAKE} install_patser
 	${MAKE} install_gibbs
+
+################################################################
+## Get and install patser (matrix-based pattern matching)
+#PATSER_TAR=patser-v3e.1.tar.gz
+PATSER_VERSION=patser-v3b.5
+PATSER_TAR=${PATSER_VERSION}.tar.gz
+PATSER_URL=ftp://www.genetics.wustl.edu/pub/stormo/Consensus/
+PATSER_DIR=ext/patser/${PATSER_VERSION}
+PATSER_APP=`cd ${PATSER_DIR} ; ls -1tr patser-v* | grep -v .tar | tail -1 | xargs`
+get_patser:
+	@mkdir -p ${PATSER_DIR}
+	@echo "Getting patser using wget"
+	(cd ${PATSER_DIR}; wget -nv ${PATSER_URL}/${PATSER_TAR}; tar -xpzf ${PATSER_TAR})
+	@echo "patser dir	${PATSER_DIR}"
+
+install_patser:
+	@echo "Installing patser"
+#	(cd ${PATSER_DIR}; rm *.o; make)
+	rsync -ruptvl ${PATSER_DIR}/${PATSER_APP} ${RSAT}/bin/
+	(cd ${RSAT}/bin; ln -fs ${PATSER_APP} patser)
+	@echo "ls -ltr ${RSAT}/bin/patser*"
+#	${MAKE} uncompress_program PROGRAM_DIR=${PATSER_DIR} PROGRAM=patser
+#	${MAKE} install_program PROGRAM=patser
+
+################################################################
+## Get and install the program seqlogo
+SEQLOGO_URL=http://weblogo.berkeley.edu/release
+SEQLOGO_TAR=weblogo.2.8.2.tar.gz
+SEQLOGO_DIR=${RSAT}/ext/seqlogo
+get_seqlogo:
+	@mkdir -p ${SEQLOGO_DIR}
+	@echo "Getting seqlogo using wget"
+	(cd ${SEQLOGO_DIR}; wget -nv ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
+	@echo "seqlogo dir	${SEQLOGO_DIR}"
+
+install_seqlogo:
+	@echo "Installing seqlogo"
+	@rsync -ruptl ${SEQLOGO_DIR}/weblogo/seqlogo ${RSAT}/bin/
+	@rsync -ruptl ${SEQLOGO_DIR}/weblogo/template.* ${RSAT}/bin/
+	@rsync -ruptl ${SEQLOGO_DIR}/weblogo/logo.pm ${RSAT}/bin/
