@@ -106,7 +106,7 @@
   <TD><B><A HREF='help.random_graph.html'>MANUAL</A></B></TD>
   <TD><B><A target = '_top' HREF='".checkNeatTutorial("tutorials/neat_tutorial/Influence_graph_alteration.html")."'>TUTORIAL</A></B></TD>
 
-  <TD><B><A HREF='mailto:sylvain@scmbb.ulb.ac.be'>MAIL</A></B></TD>
+  <TD><B><A HREF='mailto:sylvain@bigre.ulb.ac.be'>MAIL</A></B></TD>
   </TR></TABLE></ul></ul>
  ");
 

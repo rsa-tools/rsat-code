@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence_form.cgi,v 1.4 2007/10/26 11:45:23 rsat Exp $
+# $Id: purge-sequence_form.cgi,v 1.5 2009/11/03 10:06:12 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:17:22 jvanheld>
 #
@@ -43,7 +43,7 @@ foreach $key (keys %default) {
 print "<CENTER>\n";
 print "Discards duplicated segments from a sequence set<BR>\n";
 print "Program developed by <a target=_blank href=http://www.techfak.uni-bielefeld.de/~kurtz/>Stefan Kurtz</a> (<A HREF='mailto:kurtz\@TechFak.Uni-Bielefeld.DE (Stefan Kurtz)'>kurtz\@TechFak.Uni-Bielefeld.DE</A>)<BR>\n";
-print "Web interface by <a target=_blank href=http://www.scmbb.ulb.ac.be/~jvanheld/>Jacques van Helden</a> (<A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>jvanheld\@scmbb.ulb.ac.be</A>).\n";
+print "Web interface by <a target=_blank href=http://www.bigre.ulb.ac.be/~jvanheld/>Jacques van Helden</a> (<A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>jvanheld\@bigre.ulb.ac.be</A>).\n";
 print "</CENTER>\n";
 
 
@@ -146,7 +146,7 @@ print $query->end_form;
 
 print "<TD><B><A HREF='help.purge-sequence.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_purge-sequence.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";

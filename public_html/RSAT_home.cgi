@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.46 2009/09/11 20:52:44 rsat Exp $
+# $Id: RSAT_home.cgi,v 1.47 2009/11/03 10:06:12 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -240,8 +240,8 @@ print <<EndAddress;
 <H4 class='footer'><i>
 For suggestions or information request, please contact :
 <BR>
-<A HREF="mailto:jvanheld\@scmbb.ulb.ac.be (Jacques van Helden)">
-Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)</i>
+<A HREF="mailto:jvanheld\@bigre.ulb.ac.be (Jacques van Helden)">
+Jacques van Helden (jvanheld\@bigre.ulb.ac.be)</i>
 </A>
 </H4>
 EndAddress

@@ -245,7 +245,7 @@ print $query->end_form;
 
 print "<TD><B><A HREF='help.roc-stats.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_roc.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:rekins\@scmbb.ulb.ac.be,jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:rekins\@bigre.ulb.ac.be,jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";

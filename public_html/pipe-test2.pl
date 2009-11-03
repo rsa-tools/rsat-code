@@ -103,7 +103,7 @@ my $format = 'fasta';  ## the format of the retrieved sequence(s)
 my $label = '';  ## Choice of label for the retrieved sequence(s). Default is used.
 my $label_sep = '';  ## Choice of separator for the label(s) of the retrieved sequence(s). Default is used.
 my $nocom = 0;  ## Other possible value = 1.
-my $ensembl_host = 'xserve2.scmbb.ulb.ac.be';
+my $ensembl_host = 'xserve2.bigre.ulb.ac.be';
 
 my %args = ('output' => $output_choice,
     'organism' => $org,

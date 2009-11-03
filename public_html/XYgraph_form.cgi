@@ -380,7 +380,7 @@ print $query->end_form;
 
 
 
-print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>";
 
 
@@ -391,8 +391,8 @@ print <<EndCredits;
 <UL>
 
 <P> XYgraph has been written by Jacques van Helden (<A
-HREF="mailto:jvanheld\@scmbb.ulb.ac.be (Jacques van
-Helden)">jvanheld\@scmbb.ulb.ac.be</A>). This program can be used
+HREF="mailto:jvanheld\@bigre.ulb.ac.be (Jacques van
+Helden)">jvanheld\@bigre.ulb.ac.be</A>). This program can be used
 freely by academic users via its web interface. For commercial users,
 please read our <A HREF="disclaimer.html">disclaimer</A>.
 
