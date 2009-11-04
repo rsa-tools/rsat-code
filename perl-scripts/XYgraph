@@ -2130,14 +2130,14 @@ sub ReadArguments {
 	$hline=1;
 	$hline_color =  $ARGV[$a+1]; 
 	$hline_pos =  $ARGV[$a+2];
-	&RSAT::error::FatalError("-hline option necessitates 2 arguments") unless defined($ARGV[$a+2]);
+	&RSAT::error::FatalError("-hline option requires 2 arguments") unless defined($ARGV[$a+2]);
 	
 	### vline ###
     } elsif ($ARGV[$a] eq "-vline") {
 	$vline=1;
 	$vline_color =  $ARGV[$a+1];
 	$vline_pos =  $ARGV[$a+2];
-	&RSAT::error::FatalError("-vline option necessitates 2 arguments") unless defined($ARGV[$a+2]);
+	&RSAT::error::FatalError("-vline option requires 2 arguments") unless defined($ARGV[$a+2]);
 	
 	### label column
     } elsif (($ARGV[$a] eq "-lc") && (&IsNatural($ARGV[$a+1]))) {
