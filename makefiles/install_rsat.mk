@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.5 2009/11/03 10:10:02 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.6 2009/11/04 11:16:55 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -275,8 +275,8 @@ PATSER_DIR=ext/patser/${PATSER_VERSION}
 PATSER_APP=`cd ${PATSER_DIR} ; ls -1tr patser-v* | grep -v .tar | tail -1 | xargs`
 get_patser:
 	@mkdir -p ${PATSER_DIR}
-	@echo "Getting patser using wget"
-	(cd ${PATSER_DIR}; wget -nv ${PATSER_URL}/${PATSER_TAR}; tar -xpzf ${PATSER_TAR})
+	@echo "Getting patser using ${WGET}"
+	(cd ${PATSER_DIR}; ${WGET} -nv ${PATSER_URL}/${PATSER_TAR}; tar -xpzf ${PATSER_TAR})
 	@echo "patser dir	${PATSER_DIR}"
 
 install_patser:
@@ -295,8 +295,8 @@ SEQLOGO_TAR=weblogo.2.8.2.tar.gz
 SEQLOGO_DIR=${RSAT}/ext/seqlogo
 get_seqlogo:
 	@mkdir -p ${SEQLOGO_DIR}
-	@echo "Getting seqlogo using wget"
-	(cd ${SEQLOGO_DIR}; wget -nv ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
+	@echo "Getting seqlogo using ${WGET}"
+	(cd ${SEQLOGO_DIR}; ${WGET} -nv ${SEQLOGO_URL}/${SEQLOGO_TAR}; tar -xpzf ${SEQLOGO_TAR})
 	@echo "seqlogo dir	${SEQLOGO_DIR}"
 
 install_seqlogo:
@@ -304,3 +304,19 @@ install_seqlogo:
 	@rsync -ruptl ${SEQLOGO_DIR}/weblogo/seqlogo ${RSAT}/bin/
 	@rsync -ruptl ${SEQLOGO_DIR}/weblogo/template.* ${RSAT}/bin/
 	@rsync -ruptl ${SEQLOGO_DIR}/weblogo/logo.pm ${RSAT}/bin/
+
+################################################################
+## Get and install the program gnuplot
+GNUPLOT_URL=http://sourceforge.net/projects/gnuplot/files/gnuplot/4.2.6/
+GNUPLOT_VER=gnuplot-4.2.5
+GNUPLOT_TAR=${GNUPLOT_VER}.tar.gz
+GNUPLOT_DIR=${RSAT}/ext/gnuplot
+get_gnuplot:
+	@mkdir -p ${GNUPLOT_DIR}
+	@echo "Getting gnuplot using ${WGET}"
+	(cd ${GNUPLOT_DIR}; ${WGET} -nv ${GNUPLOT_URL}/${GNUPLOT_TAR}; tar -xpzf ${GNUPLOT_TAR})
+	@echo "gnuplot dir	${GNUPLOT_DIR}"
+
+install_gnuplot:
+	@echo "Installing gnuplot"
+	(cd ${GNUPLOT_DIR}/${GNUPLOT_VER}; ./configure && make)
