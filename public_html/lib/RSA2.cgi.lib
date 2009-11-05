@@ -587,134 +587,133 @@ print ("<INPUT TYPE='radio' NAME='pseudo_distribution' VALUE='pseudo_prior' $che
 ################################################################
 ## BACKGROUND MODEL for matrix-based programs
 sub GetBackgroundModel {
+  my ($params_ref) = shift;
+  my %params = %$params_ref;
 
-my $params_ref = shift;
-my %params = %$params_ref;
 
+  my $title = "Background model";
+  if ($params{title}) {
+    $title=$params{title};
+  }
 
-my $title = "Background model";
-if ($params{title}){
-	$title=$params{title};
-}
+  if ($params{title_choose}) {
+    print ("<br><INPUT TYPE='radio' NAME='bg_choose' VALUE='rsat' $checked{'rsat'}>");
+    print "<b>$title</b><br/>";
+  } else {
+    print "<p><B>$title</B><br>";
+  }
 
-if ($params{title_choose}){
-	print ("<br><INPUT TYPE='radio' NAME='bg_choose' VALUE='rsat' $checked{'rsat'}>");
-	print "<b>$title</b><br/>";
-} else {
-	print "<p><B>$title</B><br>";
-	}
+  if ($params{markov}) {
+    #### Markov order
+    print ("<b><a href=help.matrix-scan.html#markov_order>Markov order</a></b> &nbsp;");
+    print $query->popup_menu(-name=>'markov_order',
+			     -Values=>[0..7],
+			     -default=>$default{markov_order});
+    if ($params{markov_message}) {
+      print ("&nbsp;&nbsp;&nbsp;<font color=red>High orders can be time-comsuming.</font>");
+    }
+  }
+  print "<p>";
+  ## Method to estimate the bg model
 
-if ($params{markov}) {
-#### Markov order
-print ("<b><a href=help.matrix-scan.html#markov_order>Markov order</a></b> &nbsp;");
-print $query->popup_menu(-name=>'markov_order',
-			 -Values=>[0..7],
-			 -default=>$default{markov_order});
-if ($params{markov_message}) {
-	print ("&nbsp;&nbsp;&nbsp;<font color=red>High orders can be time-comsuming.</font>");
-	}
-}
-print "<p>";
-## Method to estimate the bg model
+  print ("<b><a href=help.matrix-scan.html#bg_method>Estimation method</a></b>");
 
-print ("<b><a href=help.matrix-scan.html#bg_method>Estimation method</a></b>");
+  if ($params{from_matrix}) {
+    print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='from_matrix' $checked{'from_matrix'}>", 
+	   "<b>Estimate from input matrix</b>");
+  }
 
-if ($params{from_matrix}){
-	print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='from_matrix' $checked{'from_matrix'}>", 
-       "<b>Estimate from input matrix</b>");
-}
+  if ($params{bg_input}) {
+    #### Input sequences
+    print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='bginput' $checked{'bginput'}>", 
+	   "<b>Estimate from input sequences</b>");
+  }
 
-if ($params{bg_input}) {
-#### Input sequences
-print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='bginput' $checked{'bginput'}>", 
-       "<b>Estimate from input sequences</b>");
-}
+  if ($params{bg_window}) {
+    ## Sliding window
+    print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='window' $checked{'window'}>",
+	   "<b>Sliding window</b> &nbsp;");
+    print $query->textfield(-name=>'window_size',
+			    -default=>$default{window_size},
+			    -size=>5);
+  }
 
-if ($params{bg_window}) {
- ## Sliding window
- print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='window' $checked{'window'}>",
-        "<b>Sliding window</b> &nbsp;");
- print $query->textfield(-name=>'window_size',
- 			-default=>$default{window_size},
- 			-size=>5);
-}
+  #### Pre-defined background frequencies
+  print "<br/>";
+  unless ($params{title_choose}) {
+    print ("<INPUT TYPE='radio' NAME='bg_method' VALUE='bgfile' $checked{bgfile}>");
+  }
+  print ("<b>Genome subset</b> &nbsp; ", 
+	 $query->popup_menu(-name=>'background',
+			    -Values=>["upstream-noorf","upstream","intergenic"],
+			    -default=>$default{background}));
+  if ($params{taxon}) {
+    print "<br/>";
+    print  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+    print "<INPUT TYPE='radio' NAME='bg_taxo' VALUE='organism' $checked{organism}>";
+    print &OrganismPopUpString();
+    print  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+    print "<INPUT TYPE='radio' NAME='bg_taxo' VALUE='taxon' $checked{taxon}>";
+    &TaxonPopUp();
+  } else {
+    print  &OrganismPopUpString();
+  }
 
-#### Pre-defined background frequencies
-print "<br/>";
-unless ($params{title_choose}) {
-	print ("<INPUT TYPE='radio' NAME='bg_method' VALUE='bgfile' $checked{bgfile}>");
-	}
-print ("<b>Genome subset</b> &nbsp; ", 
-       $query->popup_menu(-name=>'background',
-			  -Values=>["upstream-noorf","upstream","intergenic"],
-			  -default=>$default{background}));
-if ($params{taxon}){
-	print "<br/>";
-	print  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-	print "<INPUT TYPE='radio' NAME='bg_taxo' VALUE='organism' $checked{organism}>";
-	print &OrganismPopUpString();
-	print  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-	print "<INPUT TYPE='radio' NAME='bg_taxo' VALUE='taxon' $checked{taxon}>";
-	&TaxonPopUp();
-} else {
-	print  &OrganismPopUpString();
-	}
+  if ($params{strands}) {
+    print "<B><A HREF='help.convert-background-model.html#item__2d1str'>Count on</A></b>\n";
+    print $query->popup_menu(-name=>'strands',
+			     -Values=>[
+				       'single strand',
+				       'both strands',
+				      ],
+			     -default=>$default{strands});
+    print "&nbsp;&nbsp";
+  }
+  if ($params{noov}) {
+    print ($query->checkbox(-name=>'noov',
+			    -checked=>$default{noov},
+			    -label=>''));
+    print "<B><A HREF='help.convert-background-model.html#item__2dnoov'>prevent overlapping matches (noov)</A></b>\n";
+    print "<br/>";
+  }
 
-if ($params{strands}) {
-	print "<B><A HREF='help.convert-background-model.html#item__2d1str'>Count on</A></b>\n";
-	print $query->popup_menu(-name=>'strands',
-			 -Values=>[
-				   'single strand',
-				   'both strands',
-				  ],
-			 -default=>$default{strands});
-	print "&nbsp;&nbsp";
-}
-if ($params{noov}) {
-	print ($query->checkbox(-name=>'noov',
-			   -checked=>$default{noov},
-			   -label=>''));
-	print "<B><A HREF='help.convert-background-model.html#item__2dnoov'>prevent overlapping matches (noov)</A></b>\n";
-	print "<br/>";
-}
+  if ($params{title2}) {
+    if ($params{title_choose}) {
+      print "<p><b> OR <b></p>";
+      print ("<p/><INPUT TYPE='radio' NAME='bg_choose' VALUE='file_upload' $checked{'file_upload'}>");
+    }
+    print "<B>$params{title2}</B><br>";
+  }
 
-if ($params{title2}){
-	if ($params{title_choose}) {
-		print "<p><b> OR <b></p>";
-		print ("<p/><INPUT TYPE='radio' NAME='bg_choose' VALUE='file_upload' $checked{'file_upload'}>");
-	}
-	print "<B>$params{title2}</B><br>";
-}
+  #### custom background model
+  unless ($params{title_choose}) {
+    print "<INPUT TYPE='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}>";
+  }
+  print "<a href='help.matrix-scan.html#bg_file'>Upload your own file for the background model</a>", "&nbsp;"x5;
+  print "<br/><b>&nbsp;&nbsp;&nbsp;&nbsp;Format</b>&nbsp;";
+  #### bg format 
+  print $query->popup_menu(-name=>'bg_format',
+			   -Values=>[
+				     'oligo-analysis',
+				     'MotifSampler',
+				     'meme'
+				    ],
+			   -default=>$default{bg_format});
 
-#### custom background model
-unless ($params{title_choose}) {
-	print "<INPUT TYPE='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}>";
-}
-print "<a href='help.matrix-scan.html#bg_file'>Upload your own file for the background model</a>", "&nbsp;"x5;
-print "<br/><b>&nbsp;&nbsp;&nbsp;&nbsp;Format</b>&nbsp;";
-#### bg format 
-print $query->popup_menu(-name=>'bg_format',
-			 -Values=>[
-				   'oligo-analysis',
-				   'MotifSampler',
-				   'meme'
-				  ],
-			 -default=>$default{bg_format});
+  print $query->filefield(-name=>'upload_bgfile',
+			  -default=>'starting value',
+			  -size=>30,
+			  -maxlength=>200);
 
-print $query->filefield(-name=>'upload_bgfile',
-			-default=>'starting value',
-			-size=>30,
-			-maxlength=>200);
-
-if ($params{sep_bg_pseudo}){
-	print "<hr/>";
-	}		
-#### pseudo-counts
-print "<p/>\n";
-print "<B><A HREF='help.matrix-scan.html'>Pseudo-frequencies</A></b>\n";
-print $query->textfield(-name=>'bg_pseudo',
-			-default=>$default{bg_pseudo},
-			-size=>5);
+  if ($params{sep_bg_pseudo}) {
+    print "<hr/>";
+  }
+  #### pseudo-counts
+  print "<p/>\n";
+  print "<B><A HREF='help.matrix-scan.html'>Pseudo-frequencies</A></b>\n";
+  print $query->textfield(-name=>'bg_pseudo',
+			  -default=>$default{bg_pseudo},
+			  -size=>5);
 }
 
 ################################################################
