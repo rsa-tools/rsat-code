@@ -36,13 +36,14 @@ $default{bg_format}="oligo-analysis";
 $default{bg_method}="bgfile";
 #$default{bg_method}="markov";
 $checked{$default{bg_method}} = "CHECKED";
-$default{markov_order} = "0";
+$default{markov_order} = "2";
 $default{organism} = "Saccharomyces cerevisiae";
 
 ## Return fields
-@return_fields = qw(id proba_b len seq);
+@return_fields = qw(id proba_b log_proba len seq detail);
 $default{id}="checked";
 $default{proba_b}="checked";
+$default{log_proba}="checked";
 $default{len}="checked";
 $default{seq}="";
 
