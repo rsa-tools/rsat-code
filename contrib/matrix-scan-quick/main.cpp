@@ -105,6 +105,8 @@ void help()
 "\n"
 "    -decimals #           precision parameter for the -return distrib option\n"
 "\n"
+"    -pseudo #             pseudo-count for the matrix (1.0 by default)\n"
+"\n"
    );
 }
 
@@ -125,6 +127,7 @@ int main(int argc, char *argv[])
     int rc = TRUE;
     double precision = 0.1;
     double theshold = -1000.0;
+    double pseudo = 1.0;
     FILE *fout;
 
     // // construct command line string
@@ -207,6 +210,11 @@ int main(int argc, char *argv[])
             ASSERT(argc > i + 1, "-t requires a number");
             theshold = atof(argv[++i]);
         }
+        else if (strcmp(argv[i], "-pseudo") == 0) 
+        {
+            ASSERT(argc > i + 1, "-pseudo requires a number");
+            pseudo = atof(argv[++i]);
+        }
         else
         {
             WARNING("invalid option %s", argv[i]);
@@ -246,7 +254,7 @@ int main(int argc, char *argv[])
     }
     
     Array matrix;
-    read_matrix(matrix, matfile);
+    read_matrix(matrix, matfile, pseudo);
     matrix.transform2logfreq(markov);
 
     // values (distrib)
