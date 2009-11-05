@@ -58,10 +58,12 @@ foreach $key (keys %default) {
 ################################################################
 ### header
 &RSA_header("seq-proba", "form");
-print "<CENTER>";
-print "Inter-conversions between various sequence formats.<P>\n";
-print "</CENTER>";
-print "<BLOCKQUOTE>\n";
+print "<center>";
+print "Calculate the probability of a sequence, given a background model.";
+print "<br>Bernoulli or Markov models are supported.";
+print "<br>Sequences must be composed of A,C,G,T (IUPAC code for ambiguous nucleotides is not supported)<p>\n";
+print "</center>";
+print "<blockquote>\n";
 
 print $query->start_multipart_form(-action=>"seq-proba.cgi");
 
