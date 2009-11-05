@@ -45,7 +45,6 @@ foreach $key (keys %default) {
 print "<CENTER>";
 print "Returns upstream, downstream or ORF sequences for a list of genes<P>\n";
 print "</CENTER>";
-
 print "<b>Remark: If you want to retrieve sequences from an organism that is in the <a href='http://www.ensembl.org'>EnsEMBL</a> database, we recommand to use the <a href='retrieve-ensembl-seq_form.cgi'>retrieve-ensembl-seq</a> program instead</b><p>\n";
 
 print $query->start_multipart_form(-action=>"retrieve-seq.cgi");
