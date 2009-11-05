@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: split-chromosomes,v 1.5 2005/08/18 04:25:22 jvanheld Exp $
+# $Id: split-chromosomes,v 1.6 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:56:24 jvanheld>
 #
@@ -97,7 +97,7 @@ sub PrintHelp {
 NAME
 	split-chromosomes
 
-        1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 USAGE
         split-chromosomes [-i inputfile] [-prefix prefix] 

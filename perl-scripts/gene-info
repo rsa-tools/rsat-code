@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: gene-info,v 1.10 2008/06/16 09:15:30 jvanheld Exp $
+# $Id: gene-info,v 1.11 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:30:09 jvanheld>
 #
@@ -254,7 +254,7 @@ SYNONYMS
 	will provide the information about its synonym GAT1.
 
 WEB VERSION
-	http://www.scmbb.ulb.ac.be/bioinformatics/rsa-tools/
+	http://www.bigre.ulb.ac.be/bioinformatics/rsa-tools/
 EnfOfHelp
   close HELP;
   exit(0);

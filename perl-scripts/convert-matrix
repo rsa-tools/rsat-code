@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.83 2009/11/03 11:30:14 jvanheld Exp $
+# $Id: convert-matrix,v 1.84 2009/11/05 00:32:06 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -369,7 +369,7 @@ sub PrintHelp {
 NAME
 	convert-matrix
 
-        1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 
 USAGE
         convert-matrix [-i inputfile] [-o outputfile] [-v]

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.46 2009/01/26 09:10:45 rsat Exp $
+# $Id: convert-graph,v 1.47 2009/11/05 00:32:06 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -29,9 +29,9 @@ program should perform interconversions between any supported format).
 
 =head1 AUTHORS
 
-Sylvain Brohée <sylvain@scmbb.ulb.ac.be>
+Sylvain Brohée <sylvain@bigre.ulb.ac.be>
 
-Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
+Jacques van Helden <jvanheld@bigre.ulb.ac.be>
 
 =head1 CATEGORY
 

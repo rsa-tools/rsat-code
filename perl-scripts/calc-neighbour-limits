@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: calc-neighbour-limits,v 1.8 2005/03/13 10:29:33 jvanheld Exp $
+# $Id: calc-neighbour-limits,v 1.9 2009/11/05 00:32:06 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:15:37 jvanheld>
 #
@@ -108,7 +108,7 @@ sub PrintHelp {
 NAME
 	calc-neighbour-limits
 
-        1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 USAGE
         calc-neighbour-limits [-v] -org genus_species

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-classes,v 1.10 2008/07/09 23:38:52 jvanheld Exp $
+# $Id: convert-classes,v 1.11 2009/11/05 00:32:06 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -21,9 +21,9 @@ Interconversions between different formats of class/cluster files.
 
 =head1 AUTHORS
 
-Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
+Jacques van Helden <jvanheld@bigre.ulb.ac.be>
 
-Sylvain Brohée  <sylvain@scmbb.ulb.ac.be>
+Sylvain Brohée  <sylvain@bigre.ulb.ac.be>
 
 =head1 CATEGORY
 

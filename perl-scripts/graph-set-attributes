@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-set-attributes,v 1.1 2007/01/16 13:24:15 jvanheld Exp $
+# $Id: graph-set-attributes,v 1.2 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -23,7 +23,7 @@ Set attributes of selected nodes to a given value.
 
 =over
 
-=item jvanheld@scmbb.ulb.ac.be
+=item jvanheld@bigre.ulb.ac.be
 
 =head1 CATEGORY
 

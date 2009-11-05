@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-go,v 1.4 2007/02/22 15:36:36 jvanheld Exp $
+# $Id: parse-go,v 1.5 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -36,7 +36,7 @@ downloaded with a make script with the following commands.
 
 =head1 AUTHORS
 
-jvanheld@scmbb.ulb.ac.be
+jvanheld@bigre.ulb.ac.be
 
 =head1 CATEGORY
 

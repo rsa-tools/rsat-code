@@ -147,7 +147,7 @@ sub PrintHelp {
 NAME
 	gene2ec
 
-        1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 USAGE
         gene2ec -org organism [-i inputfile] [-o outputfile] [-v]

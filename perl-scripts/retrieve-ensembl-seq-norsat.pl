@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq-norsat.pl,v 1.1 2008/05/16 07:51:14 rsat Exp $
+# $Id: retrieve-ensembl-seq-norsat.pl,v 1.2 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -60,7 +60,7 @@ package main;
   local $output_file;
 
   ## Connection to the EnsEMBL MYSQL database
-  local $ensembl_host = 'ensembldb.ensembl.org';  # db at EBI (use outside SCMBB)
+  local $ensembl_host = 'ensembldb.ensembl.org';  # db at EBI (use outside BIGRE)
   local $ensembl_user = "anonymous";
   local $dbname = '';
   local $org = '';

@@ -211,7 +211,7 @@ End_short_Help
 
 
 ##### default parameters #####
-if ($config_site eq "scmbb") {
+if ($config_site eq "bigre") {
     $TF_folder = "/metsys/dsk2/jacques/Transfac/Transfac_3.4";
 } elsif ($config_site eq "cifn") {
     $TF_folder = "/theory/Transfac_3.2";

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: infer-operon,v 1.7 2008/06/02 07:37:12 jvanheld Exp $
+# $Id: infer-operon,v 1.8 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -73,7 +73,7 @@ operon.
 
 =head1 AUTHORS
 
-jvanheld@scmbb.ulb.ac.be
+jvanheld@bigre.ulb.ac.be
 
 =head1 CATEGORY
 
