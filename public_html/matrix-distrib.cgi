@@ -46,31 +46,28 @@ close MAT;
 $parameters .= " -m $matrix_file";
 
 
-  ################################################################
-  ## pseudo-counts and weights are mutually exclusive
-  if (&IsReal($query->param('pseudo_counts'))) {
-    $parameters .= " -pseudo ".$query->param('pseudo_counts');
-  } else {
-    &FatalError("Pseudo-count should be a real number");
+################################################################
+## pseudo-counts and weights are mutually exclusive
+if (&IsReal($query->param('pseudo_counts'))) {
+  $parameters .= " -pseudo ".$query->param('pseudo_counts');
+} else {
+  &FatalError("Pseudo-count should be a real number");
 }
-  
- 
-  if ($query->param('pseudo_distribution') eq "equi_pseudo") {
-    $parameters .= " -equi_pseudo ";
-  }
- 
-  ################################################################
-  ## decimals
-  if (&IsInteger($query->param('decimals'))) {
-    $parameters .= " -decimals ".$query->param('decimals');
-  } else {
-    &FatalError("Decimals should be an integer number");
+
+if ($query->param('pseudo_distribution') eq "equi_pseudo") {
+  $parameters .= " -equi_pseudo ";
+}
+################################################################
+## decimals
+if (&IsInteger($query->param('decimals'))) {
+  $parameters .= " -decimals ".$query->param('decimals');
+} else {
+  &FatalError("Decimals should be an integer number");
 }
 
 
 ################################################################
 ## Matrix input format
-
 my $input_format = lc($query->param('matrix_format'));
 ($input_format) = split (/\s+/, $input_format);
 #$input_format =~ s/cluster\-buster/cb/i;
@@ -78,53 +75,53 @@ my $input_format = lc($query->param('matrix_format'));
 $parameters .= " -matrix_format ".$input_format;
 
 
- ################################################################
-  ## Background model method
-  my $bg_method = $query->param('bg_method');
+################################################################
+## Background model method
+my $bg_method = $query->param('bg_method');
 
-  if ($bg_method eq "bgfile") {
-    ## Select pre-computed background file in RSAT genome directory
-    my $organism_name = $query->param("organism");
-    my $noov = "ovlp";
-    my $background_model = $query->param("background");
-#    my $oligo_length = 1;
-    my $markov_order = $query->param('markov_order');
-    my $oligo_length = $markov_order + 1;
-    $bg_file = &ExpectedFreqFile($organism_name,
-				 $oligo_length, $background_model,
-				 noov=>$noov, str=>"-1str");
-    $parameters .= " -bgfile ".$bg_file;
+if ($bg_method eq "bgfile") {
+  ## Select pre-computed background file in RSAT genome directory
+  my $organism_name = $query->param("organism");
+  my $noov = "ovlp";
+  my $background_model = $query->param("background");
+  #    my $oligo_length = 1;
+  my $markov_order = $query->param('markov_order');
+  my $oligo_length = $markov_order + 1;
+  $bg_file = &ExpectedFreqFile($organism_name,
+			       $oligo_length, $background_model,
+			       noov=>$noov, str=>"-1str");
+  $parameters .= " -bgfile ".$bg_file;
 
-  } elsif ($bg_method =~ /upload/i) {
-    ## Upload user-specified background file
-    my $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
-    my $upload_bgfile = $query->param('upload_bgfile');
-    if ($upload_bgfile) {
-      if ($upload_bgfile =~ /\.gz$/) {
-	$bgfile .= ".gz";
-      }
-      my $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
-      open BGFILE, ">$bgfile" ||
-	&cgiError("Cannot store background file in temp dir.");
-      while (<$upload_bgfile>) {
-	print BGFILE;
-      }
-      close BGFILE;
-      $parameters .= " -bgfile $bgfile";
-      $parameters .= " -bg_format ".$query->param('bg_format');
-    } else {
-      &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
+} elsif ($bg_method =~ /upload/i) {
+  ## Upload user-specified background file
+  my $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
+  my $upload_bgfile = $query->param('upload_bgfile');
+  if ($upload_bgfile) {
+    if ($upload_bgfile =~ /\.gz$/) {
+      $bgfile .= ".gz";
     }
-
+    my $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
+    open BGFILE, ">$bgfile" ||
+      &cgiError("Cannot store background file in temp dir.");
+    while (<$upload_bgfile>) {
+      print BGFILE;
+    }
+    close BGFILE;
+    $parameters .= " -bgfile $bgfile";
+    $parameters .= " -bg_format ".$query->param('bg_format');
   } else {
-    &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
+    &FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
   }
 
-  ################################################################
-  ## bg_pseudo
-  if (&IsReal($query->param('bg_pseudo'))) {
-    $parameters .= " -bg_pseudo ".$query->param('bg_pseudo');
-  }
+} else {
+  &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
+}
+
+################################################################
+## bg_pseudo
+if (&IsReal($query->param('bg_pseudo'))) {
+  $parameters .= " -bg_pseudo ".$query->param('bg_pseudo');
+}
 
 
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
@@ -135,57 +132,53 @@ my $error_found = 0; # catch an error if occurs, and then prevent from drawing t
 
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
-    	
-    &PipingWarning();
-    if ($query->param('output') =~ /server/i) {
-	&Info("The result will appear below ...");
-    }
-    
+  &PipingWarning();
+  if ($query->param('output') =~ /server/i) {
+    &Info("The result will appear below ...");
+  }
 
-    ### prepare data for piping
-    open RESULT, "$command $parameters |";
-    
-    ### open the sequence file on the server
-    $sequence_file = "$TMP/$tmp_file_name.res";
-    if (open MIRROR, ">$sequence_file") {
-	$mirror = 1;
-	&DelayedRemoval($sequence_file);
-    }
+  ### prepare data for piping
+  open RESULT, "$command $parameters |";
 
-    print "<PRE>";
-    while (<RESULT>) {
-	print "$_" unless ($query->param('output') =~ /server/i);
-	print MIRROR $_ if ($mirror);
-	if ($_ =~ /Error<\/h4><blockquote/ ){
-		$error_found = 1;
-	}	
-    }
-    print "</PRE>";
-    close RESULT;
-    close MIRROR if ($mirror);
-    
-  
+  ### open the sequence file on the server
+  $sequence_file = "$TMP/$tmp_file_name.res";
+  if (open MIRROR, ">$sequence_file") {
+    $mirror = 1;
+    &DelayedRemoval($sequence_file);
+  }
 
-    if ($query->param('output') =~ /server/i) {
-	$result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
-	print ("The result is available at the following URL: ", "\n<br>",
-	       "<a href=${result_URL}>${result_URL}</a>",
-	       "<p>\n");
-    }
-    print "<hr/>";
-    
-   if (($error_found)&&($query->param('output') =~ /server/i)){
-    	 &RSAT::error::FatalError("Error has occured, check output file.");
-    }
-    ## prepare figures
-    unless($error_found){
+  print "<PRE>";
+  while (<RESULT>) {
+    print "$_" unless ($query->param('output') =~ /server/i);
+    print MIRROR $_ if ($mirror);
+    if ($_ =~ /Error<\/h4><blockquote/ ) {
+      $error_found = 1;
+    }	
+  }
+  print "</PRE>";
+  close RESULT;
+  close MIRROR if ($mirror);
+
+  if ($query->param('output') =~ /server/i) {
+    $result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
+    print ("The result is available at the following URL: ", "\n<br>",
+	   "<a href=${result_URL}>${result_URL}</a>",
+	   "<p>\n");
+  }
+  print "<hr/>";
+  if (($error_found)&&($query->param('output') =~ /server/i)) {
+    &RSAT::error::FatalError("Error has occured, check output file.");
+  }
+
+  ## prepare figures
+  unless($error_found){
     my $XYgraph_command = "$SCRIPTS/XYgraph";
 
     my $graph_file1 = "$tmp_file_name"."_1.png";
     my $figure = "$TMP/$graph_file1";
     my $command2 = "$XYgraph_command -i $sequence_file -o $figure -title1 'Distribution of weights' -title2 'Score probability' -xcol 1 -ycol 2 -legend -lines -pointsize 1 -xleg1 'weight' -yleg1 'frequency' -format png";
     `$command2`;
-    print "<CENTER><a href = \"$WWW_TMP/$graph_file1\"><IMG SRC=\"$WWW_TMP/$graph_file1\" width='200'></a>";
+    print "<center><a href = \"$WWW_TMP/$graph_file1\"><IMG SRC=\"$WWW_TMP/$graph_file1\" width='200'></a>";
     &DelayedRemoval("$TMP/$graph_file1");
 
     my $graph_file2 = "$tmp_file_name"."_2.png";
@@ -198,8 +191,8 @@ if (($query->param('output') =~ /display/i) ||
     ### prepare data for piping
     &PipingForm();
     print "<HR SIZE = 3>";
-    
-    }
+
+  }
 
 } else {
     &EmailTheResult("$command $parameters", $query->param('user_email'));
