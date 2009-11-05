@@ -14,8 +14,9 @@ AUTHOR
 
 CITATION
 
-    Defrance and Helden. Info-gibbs: a motif discovery algorithm that directly
-    optimizes information content during sampling. Bioinformatics (2009). 
+    Defrance, M. and van Helden, J. info-gibbs: a motif discovery algorithm
+    that directly optimizes information content during sampling,
+    Bioinformatics. 2009;25:2715-2722.
 
 
 INSTALL
