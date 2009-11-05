@@ -931,6 +931,7 @@ sub normalize_transition_frequencies {
 #				"transitions: ".$s)) if ($main::verbose >= 3);
 }
 
+
 ################################################################
 =pod
 
@@ -1887,8 +1888,6 @@ sub average_strands {
 ## changed by Morgane
 #  $self->normalize_transition_frequencies(no_pseudo=>1);
  $self->normalize_transition_frequencies();
-
-
 }
 
 
