@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-symmetry,v 1.11 2009/11/05 22:51:05 amedina Exp $
+# $Id: matrix-symmetry,v 1.12 2009/11/05 22:52:58 amedina Exp $
 #
 ############################################################
 
@@ -155,7 +155,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     #$program_version = "0.1";
 
     ################################################################
@@ -370,7 +370,7 @@ package main;
 	&RSAT::message::Debug("matrix format", $matrix_format) if ($main::verbose >= 5);  
 	my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format,top=>1);
 
-	die ("number of matrices"." ".scalar(@matrices));
+	#die ("number of matrices"." ".scalar(@matrices));
   
 	################################################################
 	## Check that there is at least one input matrix
