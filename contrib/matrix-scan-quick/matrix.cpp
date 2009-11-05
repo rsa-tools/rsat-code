@@ -16,7 +16,7 @@ c |     0.030   0.910   0.910   0.030   0.030   0.030
 g |     0.910   0.030   0.030   0.030   0.030   0.910
 t |     0.030   0.030   0.030   0.030   0.030   0.030
 */
-int read_matrix(Array &matrix, char *filename)
+int read_matrix(Array &matrix, char *filename, double pseudo)
 {
     // open file
     FILE *fp = fopen(filename, "r");
@@ -60,6 +60,7 @@ int read_matrix(Array &matrix, char *filename)
 
     // convert to matrix
     matrix.alloc(l, c);
+    matrix.pseudo = pseudo;
 
     int i;
     for (i = 0; i < l; i++)
