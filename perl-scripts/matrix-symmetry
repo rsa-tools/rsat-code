@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-symmetry,v 1.10 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: matrix-symmetry,v 1.11 2009/11/05 22:51:05 amedina Exp $
 #
 ############################################################
 
@@ -15,7 +15,7 @@ matrix-symmetry
 
 =head1 VERSION
 
-1.7
+1.10
 
 =head1 DESCRIPTION
 
@@ -155,7 +155,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     #$program_version = "0.1";
 
     ################################################################
@@ -292,7 +292,9 @@ package main;
     
     if ($verbose >= 1){ 
 	if ($symmetry_method ne "split"){
-	    &RSAT::message::Info(join("\t","Threshold for symmetry evaluation", $th{$symmetry_method})) ;
+	    &RSAT::message::Info(join("\t","Threshold for symmetry evaluation", $th{"Ncor_DR"})) ; 
+	    &RSAT::message::Info(join("\t","Threshold for symmetry evaluation", $th{"Ncor_IR"})) ;
+ 
 	}elsif ($symmetry_method eq "split") {
 	    &RSAT::message::Info(join("\t","Threshold for IR symmetry evaluation", $th{"split_IR"})) ;
 	    &RSAT::message::Info(join("\t","Threshold for DR symmetry evaluation", $th{"split_DR"})) ;
@@ -366,8 +368,10 @@ package main;
 	## Read input matrix.
 
 	&RSAT::message::Debug("matrix format", $matrix_format) if ($main::verbose >= 5);  
-	my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
-	
+	my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format,top=>1);
+
+	die ("number of matrices"." ".scalar(@matrices));
+  
 	################################################################
 	## Check that there is at least one input matrix
 	unless (scalar(@matrix_files >= 1)) {
