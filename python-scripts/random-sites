@@ -6,7 +6,7 @@ VERSION
         %(version)s
 
 AUTHOR
-        Matthieu Defrance <defrance@scmbb.ulb.ac.be>
+        Matthieu Defrance <defrance@bigre.ulb.ac.be>
 
 DESCRIPTION
         Generates random sites according to a given motif model (PSSM)
