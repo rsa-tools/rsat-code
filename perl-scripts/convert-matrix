@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.84 2009/11/05 00:32:06 jvanheld Exp $
+# $Id: convert-matrix,v 1.85 2009/11/05 08:03:16 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -934,10 +934,10 @@ sub ReadArguments {
 	    ### prior frequency file
 	} elsif ($ARGV[$a] eq "-prior") {
 	    $infile{prior} = $ARGV[$a+1];
-	
+
 	} elsif ($ARGV[$a] eq "-bgfile") {
 	    $infile{prior} = $ARGV[$a+1];
-	    
+
 	    ## bg format
 	} elsif ($ARGV[$a] eq "-bg_format") {
 	    $main::bg_format = lc($ARGV[$a+1]);
