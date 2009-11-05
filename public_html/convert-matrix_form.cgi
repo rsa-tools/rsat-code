@@ -51,8 +51,8 @@ $default{bg_format}="oligo-analysis";
 $default{bg_method}="from_matrix";
 $checked{$default{bg_method}} = "CHECKED";
 $default{logo}="checked";
-$default{error_bar}="";
-$default{small_correc}="";
+$default{error_bar}="checked";
+$default{small_correc}="checked";
 $default{stretch}="";
 
 
@@ -122,7 +122,7 @@ print "<BR>\n";
 
 ################################################################
 #### Return fields
-print "<p><B><A HREF='help.convert-matrix.html#return'>Return fields</A> (only valid with output format 'tab')</B>&nbsp;<br>\n";
+print "<p><b><a href='help.convert-matrix.html#return'>Return fields</a></B>&nbsp;<br>\n";
 my $i = 0;
 foreach my $stat qw(counts frequencies weights info margins consensus parameters profile) {
   print $query->checkbox(-name=>$stat,
