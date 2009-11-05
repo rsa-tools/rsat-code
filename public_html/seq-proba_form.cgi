@@ -27,7 +27,7 @@ my $input_formats = join (",",@supported_input_formats);
 ################################################################
 ### default values for filling the form
 $default{output}="display";
-$default{sequence_format} = "fasta";
+$default{sequence_format} = "multi";
 $default{sequence} = "";
 
 ## BG model
