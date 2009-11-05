@@ -137,14 +137,7 @@ corresponding to each model in separate columns.</p>
 in convert-background-model.</p>
 </dd>
 </li>
-<dt><strong><a name="o_outputfile" class="item"><strong>-o outputfile</strong></a></strong>
-
-<dd>
-<p>If no output file is specified, the standard output is used.  This
-allows to use the command within a pipe.</p>
-</dd>
-</li>
-<dt><strong><a name="return_return_fields" class="item"><strong>-return return_fields</strong></a></strong>
+<dt><strong><a name="return_return_fields" class="item"><strong><a name='return'></a>-return return_fields</strong></a></strong>
 
 <dd>
 <p>List of fields to return (default: id,proba_b).</p>
@@ -153,30 +146,39 @@ allows to use the command within a pipe.</p>
 <p>Supported fields: id,proba_b,len,seq</p>
 </dd>
 <dl>
-<dt><strong><a name="id" class="item"><strong>id</strong></a></strong>
+<dt><strong><a name="id" class="item"><strong><a name='id'></a>id</strong></a></strong>
 
 <dd>
 <p>Sequence identifier.</p>
 </dd>
 </li>
-<dt><strong><a name="proba_b" class="item"><strong>proba_b</strong></a></strong>
+<dt><strong><a name="proba_b" class="item"><strong><a name='proba_b'></a>proba_b</strong></a></strong>
 
 <dd>
 <p>Probability of the sequence given the background model.</p>
 </dd>
 </li>
-<dt><strong><a name="len" class="item"><strong>len</strong></a></strong>
+<dt><strong><a name="len" class="item"><strong><a name='len'></a>len</strong></a></strong>
 
 <dd>
 <p>Sequence length.</p>
 </dd>
 </li>
-<dt><strong><a name="seq" class="item"><strong>seq</strong></a></strong>
+<dt><strong><a name="seq" class="item"><strong><a name='seq'></a>seq</strong></a></strong>
 
 <dd>
 <p>Sequence.</p>
 </dd>
 </li>
+
+<dt><strong><a name="seq" class="item"><strong><a name='detail'></a>detail</strong></a></strong>
+
+<dd>
+<p>Complete detail of the computation with transition frequencies +
+the incremental computation of the probability.  .</p>
+</dd>
+</li>
+
 </dl>
 </dl>
 <p>
