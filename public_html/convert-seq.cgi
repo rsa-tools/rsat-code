@@ -24,10 +24,10 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("convert-seq result", "results");
-#&ListParameters;
+&ListParameters() if ($ENV{rsat_echo} >=2);
 
 #### update log file ####
-&UpdateLogFile;
+&UpdateLogFile();
 
 #### read parameters ####
 $parameters = "";
