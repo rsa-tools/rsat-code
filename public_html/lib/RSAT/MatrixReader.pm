@@ -49,11 +49,31 @@ $supported_input_formats = join ",", keys %supported_input_formats;
 
 =item readFromFile($file, $format)
 
-Read a matrix from a file
+Read a matrix from a file.
+
+Supported arguments.
+
+=over
+
+=item  top=>X
+
+Only return the X top matrices of the file.
+
+Example: 
+ my @matrices =
+    &RSAT::MatrixReader::readFromFile($matrix_file, $input_format, top=>3);
+
+=item Other arguments
+
+Other arguments are passed to some format-specific readers (tab,
+cluster-buster).
+
+=back
 
 =cut
 sub readFromFile {
     my ($file, $format, %args) = @_;
+
     my @matrices = ();
 
     if ((lc($format) eq "consensus") || ($format =~ /^wc/i)) {
@@ -137,6 +157,17 @@ sub readFromFile {
 
     }
 
+    if (defined($args{top})) {
+      my $top = $args{top};
+      if ((&RSAT::util::IsNatural($top)) && ($top > 1)) {
+	my $matrix_nb = scalar(@matrices);
+	if ($matrix_nb > $top) {
+	  foreach my $m (($top+1)..$matrix_nb) {
+	    pop @matrices;
+	  }
+	}
+      }
+    }
     return @matrices;
 }
 
