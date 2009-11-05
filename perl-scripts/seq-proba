@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: seq-proba,v 1.10 2009/11/05 03:39:02 jvanheld Exp $
+# $Id: seq-proba,v 1.11 2009/11/05 03:49:11 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -192,9 +192,10 @@ package main;
       push @return_fields, $current_seq if ($return_fields{seq});
 
       print $out join ("\t", @return_fields), "\n";
+
       ## Report computation details
       if (($return_fields{detail}) && (scalar(@bg_models) == 1)) {
-	print $out $detail;
+	print $out "\n", $detail, "\n";
       }
     }
     close $main::in if ($main::infile{input});
