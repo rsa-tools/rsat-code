@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: taxon-frequencies,v 1.35 2009/08/04 21:26:04 jvanheld Exp $
+# $Id: taxon-frequencies,v 1.36 2009/11/05 00:32:07 jvanheld Exp $
 #
 ############################################################
 
@@ -37,7 +37,7 @@ taxon-frequencies -v 1 -taxon Mollicutes -type dyad -ml 3 > Mollicutes_dyads_3nt
 
 =head1 AUTHORS
 
-jvanheld@scmbb.ulb.ac.be
+jvanheld@bigre.ulb.ac.be
 
 =head1 CATEGORY
 

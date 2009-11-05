@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: check-oligo-analysis,v 1.9 2005/03/13 10:41:01 jvanheld Exp $
+# $Id: check-oligo-analysis,v 1.10 2009/11/05 00:32:06 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 23:00:11 jvanheld>
 #
@@ -216,7 +216,7 @@ sub PrintHelp {
 NAME
 	check-oligo-analysis
 
-        2002 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        2002 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 DESCRIPTION
 	Check the program oligo-analysis by generating random

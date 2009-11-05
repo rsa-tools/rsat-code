@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: roc-stats2,v 1.9 2008/07/29 19:43:15 jvanheld Exp $
+# $Id: roc-stats2,v 1.10 2009/11/05 00:32:07 jvanheld Exp $
 #
 ############################################################
 
@@ -27,7 +27,7 @@ be further used to draw a ROC curve.
 
 =head1 AUTHORS
 
-=item Rekin' Janky <rekins@scmbb.ulb.ac.be>
+=item Rekin' Janky <rekins@bigre.ulb.ac.be>
 
 =item Jacques van Helden <jvhelden@ulb.ac.be>
 

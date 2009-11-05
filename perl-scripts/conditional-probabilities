@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: conditional-probabilities,v 1.1 2004/05/21 09:27:33 jvanheld Exp $
+# $Id: conditional-probabilities,v 1.2 2009/11/05 00:32:06 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -92,7 +92,7 @@ sub PrintHelp {
 NAME
 	conditional-probabilities
 
-        2002 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        2002 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 DESCRIPTION
 

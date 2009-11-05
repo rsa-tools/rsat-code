@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-RNAfold,v 1.5 2005/08/18 04:25:22 jvanheld Exp $
+# $Id: parse-RNAfold,v 1.6 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:23:08 jvanheld>
 #
@@ -105,7 +105,7 @@ sub PrintHelp {
 NAME
 	parse-RNAfold
 
-        2001 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        2001 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 DESCRIPTION
 	Parses the result of RNAfold, and extracts the sequences of

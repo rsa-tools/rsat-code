@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-only-objects.pl,v 1.7 2007/12/07 08:35:44 jvanheld Exp $
+# $Id: get-ensembl-genome-only-objects.pl,v 1.8 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1197,8 +1197,8 @@ CREATION DATE
         March 2005
 
 AUTHORS
-	Olivier Sand (oly\@scmbb.ulb.ac.be)
-	Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+	Olivier Sand (oly\@bigre.ulb.ac.be)
+	Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 DESCRIPTION
 

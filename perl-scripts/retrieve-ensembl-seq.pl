@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.66 2009/10/06 15:39:21 rsat Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.67 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -75,8 +75,8 @@ package main;
 
   ## Connection to the EnsEMBL MYSQL database
   local $ensembl_host = $ENV{ensembl_host};
-#  local $ensembl_host = 'ensembldb.ensembl.org';  # db at EBI (use outside SCMBB)
-#  local $ensembl_host = 'xserve2.scmbb.ulb.ac.be';  # Local db (use inside SCMBB)
+#  local $ensembl_host = 'ensembldb.ensembl.org';  # db at EBI (use outside BIGRE)
+#  local $ensembl_host = 'xserve2.bigre.ulb.ac.be';  # Local db (use inside BIGRE)
   local $ensembl_user = "anonymous";
   local $dbname = '';
   local $org = '';

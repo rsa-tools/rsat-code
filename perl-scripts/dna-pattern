@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.55 2008/12/20 07:30:56 jvanheld Exp $
+# $Id: dna-pattern,v 1.56 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -1655,7 +1655,7 @@ EXAMPLES
 	will count all occurences of the strings 'GATAA' and 'GATTA' present 
 	in the file my_file.fasta
 WEB VERSION
-	http://www.scmbb.ulb.ac.be/bioinformatics/rsa-tools/
+	http://www.bigre.ulb.ac.be/bioinformatics/rsa-tools/
 EndOfHelp
     close HELP;
     exit(0);

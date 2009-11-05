@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: contingency-table,v 1.5 2008/07/09 23:38:52 jvanheld Exp $
+# $Id: contingency-table,v 1.6 2009/11/05 00:32:06 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -21,7 +21,7 @@ values of 2 columns of a tab-delimited text file.
 
 =head1 AUTHORS
 
-jvanheld@scmbb.ulb.ac.be
+jvanheld@bigre.ulb.ac.be
 
 =head1 CATEGORY
 

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.39 2009/03/11 20:47:41 jvanheld Exp $
+# $Id: get-orthologs,v 1.40 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -25,7 +25,7 @@ Return orthologs or paralogs for a set of gene of a given organism
 
 =over
 
-=item Rekin' Janky <rekins@scmbb.ulb.ac.be>
+=item Rekin' Janky <rekins@bigre.ulb.ac.be>
 
 =item Jacques van Helden <jvhelden@ulb.ac.be>
 

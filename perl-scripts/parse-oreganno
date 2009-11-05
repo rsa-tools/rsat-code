@@ -40,9 +40,9 @@ This parser makes use of the XML::LibXML, LWP and LWP::UserAgent libraries.
 
 =over
 
-=item Jean Valery Turatsinze <jturatsi@scmbb.ulb.ac.be>
+=item Jean Valery Turatsinze <jturatsi@bigre.ulb.ac.be>
 
-=item Morgane Thomas-Chollier <morgane@scmbb.ulb.ac.be>
+=item Morgane Thomas-Chollier <morgane@bigre.ulb.ac.be>
 
 =back
 

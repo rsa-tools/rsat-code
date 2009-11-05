@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-location.pl,v 1.7 2005/08/18 04:25:22 jvanheld Exp $
+# $Id: parse-location.pl,v 1.8 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 14:06:08 jvanheld>
 #
@@ -100,7 +100,7 @@ sub PrintHelp {
 NAME
 	parse-location
 
-        2001 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        2001 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 USAGE
         parse-location [-i inputfile] [-o outputfile] [-v]

@@ -17,7 +17,7 @@ if ($ARGV[0] eq "-h") {
 NAME
 	ec2gene
 
-        1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 USAGE
         ec2gene -org organism [-i inputfile] [-o outputfile] [-v]

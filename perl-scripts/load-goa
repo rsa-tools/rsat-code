@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: load-goa,v 1.13 2007/12/07 08:35:44 jvanheld Exp $
+# $Id: load-goa,v 1.14 2009/11/05 00:32:07 jvanheld Exp $
 #
 ############################################################
 
@@ -19,7 +19,7 @@ Load the EBI go association file in the RSA suite
 
 =head1 AUTHORS
 
-sylvain@scmbb.ulb.ac.be
+sylvain@bigre.ulb.ac.be
 
 =head1 CATEGORY
 

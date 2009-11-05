@@ -137,7 +137,7 @@ sub PrintHelp {
 NAME
 	pattern-matching.pl
 
-        1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 DESCRIPTION
 	Matches two pattern files against each other. This
