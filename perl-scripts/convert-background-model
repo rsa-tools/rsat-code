@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.21 2009/01/20 08:56:52 jvanheld Exp $
+# $Id: convert-background-model,v 1.22 2009/11/05 00:32:06 jvanheld Exp $
 #
 # Time-stamp: <2007-07-06 17:41:48 jturatsi>
 #
@@ -31,11 +31,11 @@ formats will be progressively added.
 
 =over
 
-=item Jacques van Helden jvanheld@scmbb.ulb.ac.be
+=item Jacques van Helden jvanheld@bigre.ulb.ac.be
 
-=item Jean Valery Turatsinze jturatsi@scmbb.ulb.ac.be
+=item Jean Valery Turatsinze jturatsi@bigre.ulb.ac.be
 
-=item Morgane Thomas-Chollier morgane@scmbb.ulb.ac.be
+=item Morgane Thomas-Chollier morgane@bigre.ulb.ac.be
 
 =back
 

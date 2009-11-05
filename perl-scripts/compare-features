@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.18 2008/01/24 02:32:48 jvanheld Exp $
+# $Id: compare-features,v 1.19 2009/11/05 00:32:06 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -37,7 +37,7 @@ also computes contingency tables and comparison statistics.
 
 =item Jean Valery Turatsinze <jturatsi@ulb.ac.be> 
 
-=item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
+=item Jacques van Helden <jvanheld@bigre.ulb.ac.be>
 
 =head1 CATEGORY
 

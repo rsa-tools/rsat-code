@@ -200,7 +200,7 @@ sub PrintHelp {
 NAME
 	get-ensembl-genome.pl
 
-        2004 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        2004 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 DESCRIPTION
 	Get-Ensembl-Genome.Pl for writing new perl scripts

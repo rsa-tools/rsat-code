@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: binomial-series,v 1.9 2007/06/17 21:45:44 jvanheld Exp $
+# $Id: binomial-series,v 1.10 2009/11/05 00:32:06 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:46:41 jvanheld>
 #
@@ -119,7 +119,7 @@ sub PrintHelp {
 NAME
 	binomial-series
 
-        2001 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        2001 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 USAGE
         binomial-series [-o outputfile] [-v]

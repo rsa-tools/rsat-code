@@ -448,7 +448,7 @@ NAME
 	compare-patterns
 
 AUTHOR
-	Jacques van Helden (jacques\@scmbb.ulb.ac.be)
+	Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 
 USAGE
 	compare-patterns seq1 seq2

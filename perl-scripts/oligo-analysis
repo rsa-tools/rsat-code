@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.136 2008/10/02 21:59:45 jvanheld Exp $
+# $Id: oligo-analysis,v 1.137 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -24,7 +24,7 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &AlphaDate();
-local $program_version = do { my @r = (q$Revision: 1.136 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.137 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
 local $taxon = 0; ## Specify it the background model is organism-specific or taxon-specific
@@ -2233,7 +2233,7 @@ VERSION
         ${program_version}
 
 AUTHOR
-        1997-2007 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        1997-2007 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 
 DESCRIPTION
 	calculates oligomer frequencies in a set of sequences,

@@ -171,7 +171,7 @@ sub PrintHelp {
 NAME
 	sub-sequence
 
-        1998 by Jacques van Helden (jacques\@scmbb.ulb.ac.be)
+        1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 USAGE
         sub-sequence [-i inputfile] -from # -to # [-o outputfile] [-v]

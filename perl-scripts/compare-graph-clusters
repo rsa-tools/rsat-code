@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graph-clusters,v 1.7 2007/04/19 10:52:27 rsat Exp $
+# $Id: compare-graph-clusters,v 1.8 2009/11/05 00:32:06 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -33,7 +33,7 @@ be associated to multiple GO classes.
 
 =over
 
-=item Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
+=item Sylvain Brohee <sylvain@bigre.ulb.ac.be>
 
 =head1 CATEGORY
 

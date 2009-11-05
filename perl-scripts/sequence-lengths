@@ -76,7 +76,7 @@ sub PrintHelp {
 NAME
 	sequence-lengths
 
-        1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 DESCRIPTION
 	Return the lengths of each sequence from an input

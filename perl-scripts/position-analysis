@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.35 2009/01/22 09:44:36 jvanheld Exp $
+# $Id: position-analysis,v 1.36 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -634,7 +634,7 @@ sub PrintHelp {
 NAME
 	position-analysis
 
-        1998 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 
 DESCRIPTION
 	Calculates the positional distribution of oligonucleotides in

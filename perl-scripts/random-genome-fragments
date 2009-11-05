@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.9 2008/04/22 20:18:42 morgane Exp $
+# $Id: random-genome-fragments,v 1.10 2009/11/05 00:32:07 jvanheld Exp $
 #
 ############################################################
 
@@ -20,7 +20,7 @@ Makes use of EnsEMBL API (www.ensembl.org) for EnsEMBL genomes.
 
 =head1 AUTHORS
 
-morgane@scmbb.ulb.ac.be
+morgane@bigre.ulb.ac.be
 
 =head1 CATEGORY
 
@@ -554,9 +554,9 @@ sub get_connect_param {
 	my $self = shift;
 	## Connection to the EnsEMBL MYSQL database
 	if ($main::local_server){
-  		$self->{ensembl_host} = $main::local_server; # ie 'xserve2.scmbb.ulb.ac.be'  # Local db (use inside SCMBB)
+  		$self->{ensembl_host} = $main::local_server; # ie 'xserve2.bigre.ulb.ac.be'  # Local db (use inside BIGRE)
 	} else {
-  		$self->{ensembl_host} = 'ensembldb.ensembl.org';  # db at EBI (use outside SCMBB) 
+  		$self->{ensembl_host} = 'ensembldb.ensembl.org';  # db at EBI (use outside BIGRE) 
 	}
 	$self->{ensembl_user} = "anonymous";
 }

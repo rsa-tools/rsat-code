@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.50 2008/07/29 19:44:01 jvanheld Exp $
+# $Id: compare-classes,v 1.51 2009/11/05 00:32:06 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -448,7 +448,7 @@ sub PrintHelp {
 NAME
         compare-classes
 
-        2002 by Joseph Tran and Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        2002 by Joseph Tran and Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 
 DESCRIPTION
 

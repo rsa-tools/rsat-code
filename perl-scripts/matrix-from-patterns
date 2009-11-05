@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.16 2008/11/27 11:34:58 rsat Exp $
+# $Id: matrix-from-patterns,v 1.17 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -55,7 +55,7 @@ detection).
 
 =head1 AUTHORS
 
-jvanheld@scmbb.ulb.ac.be
+jvanheld@bigre.ulb.ac.be
 
 =head1 CATEGORY
 

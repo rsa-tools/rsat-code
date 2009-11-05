@@ -13,7 +13,7 @@ if ($ARGV[0] eq "-h") {
 NAME
 	features-from-swissprot
 
-        v1.0, 1998 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        v1.0, 1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 USAGE
         features-from-swissprot [-i inputfile] [-o outputfile] [-v]

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: ortho-dna-pattern,v 1.3 2007/03/02 14:23:05 rsat Exp $
+# $Id: ortho-dna-pattern,v 1.4 2009/11/05 00:32:07 jvanheld Exp $
 #
 ############################################################
 
@@ -19,7 +19,7 @@ Apply dna-pattern to a list of orthologous sequences.
 
 =head1 AUTHORS
 
-sylvain@scmbb.ulb.ac.be
+sylvain@bigre.ulb.ac.be
 
 =head1 CATEGORY
 

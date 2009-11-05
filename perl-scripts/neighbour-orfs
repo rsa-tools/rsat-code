@@ -64,7 +64,7 @@ $latin{16} = 'XVI';
 $orf_pos_file = "$ENV{RSAT}/data/yeast/orfs/ORF_table.txt";
 unless (open ORF_POS, $orf_pos_file) {
     print "Error: cannot open the ORF position table\n";
-    print "please contact jvanheld\@scmbb.ulb.ac.be\n";
+    print "please contact jvanheld\@bigre.ulb.ac.be\n";
     exit;
 }
 

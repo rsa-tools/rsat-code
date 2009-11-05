@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.54 2009/09/15 12:28:19 rsat Exp $
+# $Id: parse-genbank.pl,v 1.55 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -322,7 +322,7 @@ sub PrintHelp {
 NAME
 	parse-genbank.pl
 
-        2001 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        2001 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 USAGE
         parse-genbank.pl [-dir input_dir][-i inputfile] [-o outputfile] [-v]
