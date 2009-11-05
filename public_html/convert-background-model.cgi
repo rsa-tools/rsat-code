@@ -20,7 +20,6 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/convert-background-model -v 1 ";
 $tmp_file_name = sprintf "convert-background-model.%s", &AlphaDate();
 $result_file = "$TMP/$tmp_file_name.res";
-$ENV{rsat_echo} = 1;
 
 ## Draw a heat map for the transition table
 my $draw_heatmap = 0;
