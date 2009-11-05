@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.31 2009/05/14 11:05:54 jvanheld Exp $
+# $Id: convert-seq,v 1.32 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -230,7 +230,7 @@ sub PrintHelp {
 NAME
 	convert-seq
 
-        v1.0, 1997 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        v1.0, 1997 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 
 DESCRIPTION
 	Converts sequences between different formats. Optionally, also

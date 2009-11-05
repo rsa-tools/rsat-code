@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.24 2008/09/04 11:20:56 rsat Exp $
+# $Id: graph-get-clusters,v 1.25 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -33,9 +33,9 @@ be associated to multiple GO classes.
 
 =over
 
-=item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
+=item Jacques van Helden <jvanheld@bigre.ulb.ac.be>
 
-=item Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
+=item Sylvain Brohee <sylvain@bigre.ulb.ac.be>
 
 =head1 CATEGORY
 

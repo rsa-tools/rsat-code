@@ -144,7 +144,7 @@ sub PrintHelp {
 NAME
 	seq-distances
 
-        1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 DESCRIPTION
 	Calculates the edit distance between sequences from the input

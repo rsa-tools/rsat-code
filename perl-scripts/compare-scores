@@ -231,7 +231,7 @@ sub PrintHelp {
 NAME
 	compare-scores
 
-        1998 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 USAGE
         compare-scores -i inputfile_1 -i inputfile_2 [-i inputfile_n] [-o outputfile] [-v] [-ic \#] -sc \#

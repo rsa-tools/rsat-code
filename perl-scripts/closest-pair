@@ -13,7 +13,7 @@ if ($ARGV[0] eq "-h") {
 NAME
 	closest-pair
 
-        v1.0, 1997 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        v1.0, 1997 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 USAGE
         closest-pair [-i inputfile] [-o outputfile] [-v] [-all]

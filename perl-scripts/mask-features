@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: mask-features,v 1.12 2007/08/22 16:14:34 morgane Exp $
+# $Id: mask-features,v 1.13 2009/11/05 00:32:07 jvanheld Exp $
 #
 ############################################################
 
@@ -22,7 +22,7 @@ to be masked can be specified.
 
 =head1 AUTHORS
 
-=item Morgane Thomas-Chollier <morgane@scmbb.ulb.ac.be>
+=item Morgane Thomas-Chollier <morgane@bigre.ulb.ac.be>
 
 =head1 CATEGORY
 

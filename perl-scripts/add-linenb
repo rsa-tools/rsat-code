@@ -104,7 +104,7 @@ sub PrintHelp {
 NAME
 	add-linenb
 
-        1998 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 USAGE
         add-linenb [-i inputfile] [-o outputfile] [-v]

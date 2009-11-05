@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: select-clustering,v 1.2 2008/01/30 13:43:57 gipsi Exp $
+# $Id: select-clustering,v 1.3 2009/11/05 00:32:07 jvanheld Exp $
 #
 ############################################################
 
@@ -34,7 +34,7 @@ The clustering cofficient for nodes with one or zero neighbors is set to 0. This
 
 =over
 
-=item Gipsi Lima Mendez <gipsi@scmbb.ulb.ac.be>
+=item Gipsi Lima Mendez <gipsi@bigre.ulb.ac.be>
 
 =back
 
@@ -43,9 +43,9 @@ With the help of:
 
 =over
 
-=item Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
+=item Sylvain Brohee <sylvain@bigre.ulb.ac.be>
 
-=item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
+=item Jacques van Helden <jvanheld@bigre.ulb.ac.be>
 
 =back
 
@@ -98,7 +98,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();

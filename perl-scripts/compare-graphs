@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.49 2008/07/06 12:16:34 rsat Exp $
+# $Id: compare-graphs,v 1.50 2009/11/05 00:32:06 jvanheld Exp $
 #
 ############################################################
 
@@ -22,9 +22,9 @@ In case more than one arc exist between two nodes, the program removes one of th
 
 Gilles Vanderstocken <gvdstock@ulb.ac.be>
 
-Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
+Sylvain Brohee <sylvain@bigre.ulb.ac.be>
 
-Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
+Jacques van Helden <jvanheld@bigre.ulb.ac.be>
 
 =head1 CATEGORY
 

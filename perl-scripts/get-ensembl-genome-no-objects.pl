@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-no-objects.pl,v 1.14 2008/07/22 14:20:42 rsat Exp $
+# $Id: get-ensembl-genome-no-objects.pl,v 1.15 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -86,7 +86,7 @@ package main;
     ## Connection to the EnsEMBL MYSQL database
     $ensembl_host = $ENV{ensembl_host};
 #    $ensembl_host = 'ensembldb.ensembl.org';
-#    $ensembl_host = 'xserve2.scmbb.ulb.ac.be';
+#    $ensembl_host = 'xserve2.bigre.ulb.ac.be';
     $ensembl_user = "anonymous";
     $dbname = '';
     $org = '';
@@ -812,8 +812,8 @@ CREATION DATE
         March 2005
 
 AUTHORS
-	Olivier Sand (oly\@scmbb.ulb.ac.be)
-	Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+	Olivier Sand (oly\@bigre.ulb.ac.be)
+	Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 DESCRIPTION
 

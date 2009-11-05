@@ -76,7 +76,7 @@ sub PrintHelp {
 NAME
 	edit-distance
 
-        1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 	
 USAGE
         edit-distance [-v] [-o outputflie] string1 string2

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-graph,v 1.32 2009/04/24 13:45:02 sylvain Exp $
+# $Id: random-graph,v 1.33 2009/11/05 00:32:07 jvanheld Exp $
 #
 ############################################################
 
@@ -20,7 +20,7 @@ according to different randomization procedure.
 
 =head1 AUTHORS
 
-Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
+Sylvain Brohee <sylvain@bigre.ulb.ac.be>
 Jacques van Helden <Jacques.van.Helden@ulb.ac.be>
 
 =head1 CATEGORY

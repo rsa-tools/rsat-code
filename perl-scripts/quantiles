@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: quantiles,v 1.3 2007/11/02 16:10:37 morgane Exp $
+# $Id: quantiles,v 1.4 2009/11/05 00:32:07 jvanheld Exp $
 #
 # Time-stamp: <2007-10-27 01:06:25 jvanheld>
 #
@@ -27,9 +27,9 @@ to draw a Q-Q plot.
 
 =head1 AUTHORS
 
-Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
+Jacques van Helden <jvanheld@bigre.ulb.ac.be>
 
-Morgane Thomas-Chollier <morgane@scmbb.ulb.ac.be>
+Morgane Thomas-Chollier <morgane@bigre.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -62,7 +62,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
     %main::infile = ();
     %main::outfile = ();

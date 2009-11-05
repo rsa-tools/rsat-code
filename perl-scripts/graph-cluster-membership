@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-cluster-membership,v 1.22 2009/03/09 13:45:21 rsat Exp $
+# $Id: graph-cluster-membership,v 1.23 2009/11/05 00:32:07 jvanheld Exp $
 #
 ############################################################
 
@@ -103,7 +103,7 @@ where all symbols are defined as above.
 
 =over
 
-=item Gipsi Lima Mendez <gipsi@scmbb.ulb.ac.be>
+=item Gipsi Lima Mendez <gipsi@bigre.ulb.ac.be>
 
 =back
 
@@ -111,9 +111,9 @@ With the help of
 
 =over
 
-=item Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
+=item Sylvain Brohee <sylvain@bigre.ulb.ac.be>
 
-=item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
+=item Jacques van Helden <jvanheld@bigre.ulb.ac.be>
 
 =back
 
@@ -171,7 +171,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     ################################################################

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-score-distrib,v 1.7 2007/08/05 08:02:15 jvanheld Exp $
+# $Id: compare-score-distrib,v 1.8 2009/11/05 00:32:06 jvanheld Exp $
 #
 ############################################################
 
@@ -19,7 +19,7 @@ Compare score distributions between two or more input files.
 
 =head1 AUTHORS
 
-jvanheld@scmbb.ulb.ac.be
+jvanheld@bigre.ulb.ac.be
 
 =head1 CATEGORY
 

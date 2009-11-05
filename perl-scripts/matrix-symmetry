@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-symmetry,v 1.9 2009/06/01 17:51:54 amedina Exp $
+# $Id: matrix-symmetry,v 1.10 2009/11/05 00:32:07 jvanheld Exp $
 #
 ############################################################
 
@@ -85,22 +85,48 @@ threshold on Ncor.
 =head1 2) Matrix structure based on splitting matrix by information
 content
 
-The objective is to determine the symmetry of the certain matrix (TF binding motif), whether it has a direct repeat or an invert repeat.
-In order to do so, we apply a methodology based on the actual matrix matching methodologies using some logical criteria, in our method we split the matrix into two minor matrixes then we look for matches of these matrixes in a random sequence and see if the matches overlap between each minor matrix and in which strand they overlap. If in an overlap the two matrixes match on the same strand they are supposed to be a direct repeat, if they match on different strands they are treated as invert repeat.
+The objective is to determine the symmetry of the certain matrix (TF
+binding motif), whether it has a direct repeat or an invert repeat.
 
-We compare both methodologies, to increase the confidence for each symmetry annotation, since there are some factors with sites having different inner structures due to specific protein-protein interactions on the site.
+In order to do so, we apply a methodology based on the actual matrix
+matching methodologies using some logical criteria, in our method we
+split the matrix into two minor matrixes then we look for matches of
+these matrixes in a random sequence and see if the matches overlap
+between each minor matrix and in which strand they overlap. If in an
+overlap the two matrixes match on the same strand they are supposed to
+be a direct repeat, if they match on different strands they are
+treated as invert repeat.
 
-Once we determine the symmetry of the motif we map over each reported binding site the specific coordinates of the repeats. This was done using an alignment algorithm adequated for the problem. For this we compare the binding site sequence with itself and with its reverse complement by offsets of different sizes and we took the longer alignment.
+We compare both methodologies, to increase the confidence for each
+symmetry annotation, since there are some factors with sites having
+different inner structures due to specific protein-protein
+interactions on the site.
 
-NOTES:
-Whenever the symmetry motif detection methodologies diverge in a decision we report the result from the splitting matrix method and mark the level of uncertainty.
-The symmetry of each binding site we report the longest direct repeat and the longest invert repeat and the longest of both is taken as the correct inner symmetry of the site.
+Once we determine the symmetry of the motif we map over each reported
+binding site the specific coordinates of the repeats. This was done
+using an alignment algorithm adequated for the problem. For this we
+compare the binding site sequence with itself and with its reverse
+complement by offsets of different sizes and we took the longer
+alignment.
+
+=head1 NOTES
+
+Whenever the symmetry motif detection methodologies diverge in a
+decision we report the result from the splitting matrix method and
+mark the level of uncertainty.
+
+The symmetry of each binding site we report the longest direct repeat
+and the longest invert repeat and the longest of both is taken as the
+correct inner symmetry of the site.
 
 
 =head1 SEE ALSO
 
-split-matrix
+=over
 
+=item I<split-matrix>
+
+=back
 
 =head1 WISH LIST
 
@@ -125,13 +151,13 @@ use Data::Dumper;
 ## Main package
 package main;
 {
-    
+
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     #$program_version = "0.1";
-    
+
     ################################################################
     ## Matrix parammeters
     $l= 100000; ## Default length for the random sequence
@@ -156,13 +182,12 @@ package main;
 
     ################################################################
     ## Methods to Detect Symmetry 
-    
     %supported_symmetry_method = (
 	"Ncor"=>1,
 	"split"=>1,
 	);
     $supported_symmetry_methods = join ",", sort keys %supported_symmetry_method;
-    
+
     ## Split option
     ## If "split" is the selected method, the -split option has to be specified
     %supported_split_option = (
@@ -170,11 +195,10 @@ package main;
 	"information"=>1,
 	);
     $supported_split_options = join ",", sort keys %supported_split_option;
-    
+
     ## Threshold parameters
     local %th = ();		# lower threshold values
-    
-    
+
     @supported_thresholds = qw (
 			      Ncor_IR
 			      Ncor_DR

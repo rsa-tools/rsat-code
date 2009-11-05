@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-broad-mit,v 1.2 2008/02/19 10:39:24 jvanheld Exp $
+# $Id: parse-broad-mit,v 1.3 2009/11/05 00:32:07 jvanheld Exp $
 #
 ############################################################
 
@@ -39,7 +39,7 @@ http://www.broad.mit.edu/annotation/fgi/
 
 =head1 AUTHORS
 
-Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
+Sylvain Brohee <sylvain@bigre.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -111,7 +111,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();

@@ -7,7 +7,7 @@
 # DESC : Calculate the oligo frequencies for each taxon as the average of
 # frequencies from all genomes which belong to a taxon.
 #
-# AUTH : Rekin's Janky <rekins@scmbb.ulb.ac.be>
+# AUTH : Rekin's Janky <rekins@bigre.ulb.ac.be>
 #
 ################################################################
 
