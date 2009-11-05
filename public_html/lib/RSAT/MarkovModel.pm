@@ -1902,8 +1902,8 @@ by larger than the Markov order + 1.
 =cut
 
 sub segment_proba {
-    my ($self, $segment) = @_;
-
+    my ($self, $segment, $return_detail) = @_;
+    my $detail = "";
     my $seq_len = length($segment);
     my $order = $self->get_attribute("order");
     $segment =  lc($segment);
@@ -1919,14 +1919,19 @@ sub segment_proba {
 	if (defined($self->{prefix_proba}->{$prefix})) {
 	    $segment_proba = $self->{prefix_proba}->{$prefix};
 	    push @residue_proba, $self->{prefix_proba}->{$prefix};
-	    &RSAT::message::Info(	#"MarkovModel::segment_proba()",
-				 "offset:".$c,
-				 "i=".($c+1),
-				 "P(".$prefix.")", $self->{prefix_proba}->{$prefix},
-				 "P(S)", $self->{prefix_proba}->{$prefix},
-				 $prefix.uc($suffix),
-				 $prefix.uc($suffix),
-				) if ($main::verbose >= 4);
+	    if ($return_detail) {		
+		$detail_line = join("\t",
+#				     "offset:".$c,
+				     "i=".($c+1),
+				    "P(".$prefix.")", sprintf("%5g", $self->{prefix_proba}->{$prefix}),
+				    "P(S)", sprintf("%5g",$self->{prefix_proba}->{$prefix}),
+				    $prefix.uc($suffix),
+				    $prefix.uc($suffix)
+		    );
+		$detail .= $detail_line."\n";
+		&RSAT::message::Info($detail_line) if ($main::verbose >= 4);
+	    }
+
 	    ## prefix contains n
 	} elsif ($self->get_attribute("n_treatment") eq "score") {
 	    my $prefix_proba = 1;
@@ -1975,14 +1980,16 @@ sub segment_proba {
 
 	$segment_proba *= $residue_proba;
 
-	&RSAT::message::Info(	#"MarkovModel::segment_proba()",
-			     "offset:".$c,
-			     "i=".($c+1),
-			     "P(".$suffix."|".$prefix.")", $residue_proba,
-			     "P(S)", $segment_proba,
-			     $prefix.uc($suffix),
-			     substr($segment,0,$c+1),
-			    ) if ($main::verbose >= 4);
+	$detail_line =join("\t",
+#			  "offset:".$c,
+			  "i=".($c+1),
+			  "P(".$suffix."|".$prefix.")", sprintf("%5g", $residue_proba),
+			  "P(S)", sprintf("%5g", $segment_proba),
+			  $prefix.uc($suffix),
+			  substr($segment,0,$c+1));
+	$detail .= $detail_line."\n";
+
+	&RSAT::message::Info($detail_line) if ($main::verbose >= 4);
 	#	&RSAT::message::Info("segment_proba", 
 	#			      "prefix=".$word, 
 	#			      "prefix=".$prefix, 
@@ -1996,7 +2003,7 @@ sub segment_proba {
 	&RSAT::message::Debug("Proba_residue_B",$col,sprintf("%.6f",$residue_proba[$col])) 
 	    if ($main::verbose >= 5);
     }
-    return \@residue_proba, $segment_proba;
+    return (\@residue_proba, $segment_proba, $detail);
 }
 
 
