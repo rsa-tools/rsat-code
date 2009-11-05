@@ -105,6 +105,19 @@ if ($query->param('uploaded_file')) {
 	&cgiError("You should enter at least one gene identifier in the query box..");
     }
 }
+#&RSAT::message::Debug("Gene list", $gene_list_file, "\n", `cat $gene_list_file`);
+
+
+## The temp file is on the local server, but the queries have to be passed to the RSATWS server
+## We thusxtract the queries from the temp file and send them as an array
+my @gene_queries = ();
+my ($gene_fh) = &OpenInputFile($gene_list_file);
+while (<$gene_fh>) {
+    if (/(\S+)/) {
+	push @gene_queries, $1;
+    }
+}
+#&RSAT::message::Debug("Queries", @gene_queries);
 
 ### feature type
 my $feattype = '';
@@ -218,7 +231,8 @@ my $lw = 60;
 my %args = (
             'organism' => $organism_name,
 #            'query' => \@gene_selection,
-            'tmp_infile' => $gene_list_file,
+#            'tmp_infile' => $gene_list_file,
+            'query' => \@gene_queries,
             'noorf' => $noorf,
             'nogene' => $nogene,
             'from' => $from,
@@ -244,8 +258,9 @@ if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
 
     $args{'output'} = 'ticket';
+#    $args{'output'} = 'both';
 
-    my ($ticket, $command) = &Retrieve(%args);
+    my ($ticket, $command, $results) = &Retrieve(%args);
 
     @months = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
     @weekDays = qw(Sun Mon Tue Wed Thu Fri Sat Sun);
@@ -258,6 +273,9 @@ if (($query->param('output') =~ /display/i) ||
 	$minute = "0".$minute;	
     }
     my $submit_time = "$hour:$minute:$second, $weekDays[$dayOfWeek] $months[$month] $dayOfMonth, $year";
+
+#    &RSAT::message::Debug("ticket", $ticket);
+#    &RSAT::message::Debug("command", $command);
 
     ### Print the result page
 #    my $css_body_class = "form";
@@ -326,7 +344,7 @@ sub Retrieve {
 	## Report the remote command
 	my $command = $results -> get_command();
 	my $ticket = $results -> get_server();
-	return $ticket, $command;
+	return $ticket, $command, $results;
     } else {
 	my $notification = $results -> get_client();
 	return $notification;
