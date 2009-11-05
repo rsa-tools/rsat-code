@@ -16,7 +16,7 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$command = "$SCRIPTS/seq-proba";
+$command = "$SCRIPTS/seq-proba -v 1";
 $tmp_file_name = sprintf "seq-proba.%s", &AlphaDate();
 
 ### Read the CGI query
@@ -45,15 +45,16 @@ $parameters .= " -i $in_sequence_file -seq_format $sequence_format";
 ## Background model method
 my $bg_method = $query->param('bg_method');
 if ($bg_method eq "bgfile") {
-    ## Select pre-computed background file in RSAT genome directory
-    my $organism_name = $query->param("organism");
-    my $noov = "ovlp";
-    my $background_model = $query->param("background");
-    my $oligo_length = $markov_order + 1;
-    $bg_file = &ExpectedFreqFile($organism_name,
-				 $oligo_length, $background_model,
-				 noov=>$noov, str=>"-1str");
-    $parameters .= " -bgfile ".$bg_file;
+  ## Select pre-computed background file in RSAT genome directory
+  my $organism_name = $query->param("organism");
+  my $noov = "ovlp";
+  my $background_model = $query->param("background");
+  my $markov_order = $query->param('markov_order');
+  my $oligo_length = $markov_order + 1;
+  $bg_file = &ExpectedFreqFile($organism_name,
+			       $oligo_length, $background_model,
+			       noov=>$noov, str=>"-1str");
+  $parameters .= " -bgfile ".$bg_file;
 
   } elsif ($bg_method =~ /upload/i) {
     ## Upload user-specified background file
@@ -81,7 +82,7 @@ if ($bg_method eq "bgfile") {
   }
 
 ## Return fields
-@return_fields = qw(id proba_b len seq);
+@return_fields = qw(id proba_b log_proba len seq detail);
 foreach my $field (@return_fields) {
   if ($query->param($field)) {
     $parameters .= " -return ".$field;
