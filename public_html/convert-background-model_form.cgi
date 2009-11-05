@@ -28,6 +28,7 @@ local @supported_output_formats = ("tab","transitions","tables","patser","oligo-
 ### default values for filling the form
 $default{output}="display";
 $default{output_format} = "transitions";
+$default{markov_order} = "2";
 $default{bg_pseudo} = "0";
 $default{bg_format}="oligo-analysis";
 $default{bg_choose}="rsat";
@@ -67,15 +68,15 @@ print $query->start_multipart_form(-action=>"convert-background-model.cgi");
 #### Background specification
 print "<hr>";
 
-my %bg_params =("markov" => 1,
-				"title" => "RSAT pre-calculated background models",
-				"title_choose" => 1,
-				"noov" => 1,
-				"strands"=> 1,
-				"title2"=>"Custom background model",
-				#"taxon" => 1,
-				"sep_bg_pseudo" => 1
-				);
+my %bg_params = ("markov" => 1,
+		 "title" => "RSAT pre-calculated background models",
+		 "title_choose" => 1,
+		 "noov" => 1,
+		 "strands"=> 1,
+		 "title2"=>"Custom background model",
+		 #"taxon" => 1,
+		 "sep_bg_pseudo" => 1
+		);
 
 &GetBackgroundModel(\%bg_params);
 
