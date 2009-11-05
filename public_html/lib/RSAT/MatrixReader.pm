@@ -159,7 +159,7 @@ sub readFromFile {
 
     if (defined($args{top})) {
       my $top = $args{top};
-      if ((&RSAT::util::IsNatural($top)) && ($top > 1)) {
+      if ((&RSAT::util::IsNatural($top)) && ($top >= 1)) {
 	my $matrix_nb = scalar(@matrices);
 	if ($matrix_nb > $top) {
 	  foreach my $m (($top+1)..$matrix_nb) {
