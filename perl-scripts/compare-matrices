@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.29 2009/05/20 13:19:37 amedina Exp $
+# $Id: compare-matrices,v 1.30 2009/11/05 01:05:04 amedina Exp $
 #
 ############################################################
 
@@ -24,7 +24,7 @@ return various similarity statistics.
 
 =head1 AUTHORS
 
-Jacques.van.Helden@ulb.ac.be
+Jacques van Helden <Jacques.van.Helden@ulb.ac.be>
 Gipsi Lima-Mendez <gipsi@bigre.ulb.ac.be>
 Matthieu Defrance <defrance@bigre.ulb.ac.be>
 
@@ -243,7 +243,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.29 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.30 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -412,8 +412,9 @@ package main;
       my $nsites = &RSAT::stats::max(@counts_per_col);
       $matrix->set_attribute("nsites", $nsites);
       my $matrix_name = $matrix->get_attribute("name");
-      unless (defined($matrix_name)){     
-	  $matrix_name=set_attribute("name","matrix1.".$count_m);
+      unless (defined($matrix_name)){
+	  $matrix->set_attribute("name","matrix1.".$count_m);
+	  $matrix_name=$matrix->get_attribute("name");
       } 
   }
   
