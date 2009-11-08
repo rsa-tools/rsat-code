@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: download-organism,v 1.5 2009/11/02 14:23:45 jvanheld Exp $
+# $Id: download-organism,v 1.6 2009/11/08 22:39:00 jvanheld Exp $
 #
 ############################################################
 
@@ -123,7 +123,7 @@ package main;
   ## Initialise parameters
   my $start_time = &AlphaDate();
   $get_command = "wget";
-  $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   ## Parameters for downloading with rsync
   $rsat_server_login = "rsat\@rsat.ulb.ac.be";
@@ -207,8 +207,6 @@ package main;
   ## Download the genomes
   foreach my $org (@organisms) {
     ## download one genome
-
-
     my $cmd = "";
     if ($get_command eq "wget") {
       &RSAT::message::TimeWarn("Downloading genome", $org, "from the RSAT server", $RSAT_SERVER) if ($main::verbose >= 1);
@@ -229,12 +227,12 @@ package main;
       $cmd .= " -nH  --cut-dirs=3";
       $cmd .= " http://".${RSAT_SERVER}."/data/genomes/".$org."/";
     } elsif ($get_command eq "rsync") {
-      my $remote_genome = $rsat_server_login.":".$rsat_server_dir."/data/genomes/".$org;
+      my $remote_genome = $rsat_server_login.":".$rsat_server_dir."/data/genomes/".$org."/'*'";
       &RSAT::message::TimeWarn("Downloading genome", $org, "from the RSAT server\n", $remote_genome) if ($main::verbose >= 1);
       $cmd .= "rsync -e ssh -ruptvl -z ";
       $cmd .= " --exclude jobs --exclude '*~'";
-      $cmd .= " ".$remote_genome;#rsat_server_login.":".$rsat_server_dir."/data/genomes/".$org;
-      $cmd .= " ".$output_dir."/";
+      $cmd .= " ".$remote_genome;
+      $cmd .= " ".$output_dir."/".$org."/";
       $cmd =~ s/\/\//\//g;
     }
     &doit($cmd, $dry, $die_on_error, $verbose, 0, 0);
