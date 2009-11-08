@@ -271,6 +271,7 @@ sub _readFromTRANSFACFile {
 
       ## Read prior alphabet from the matrix header (P0 line)
       ## Equiprobable alphabet
+
     } elsif ((/^PO\s+/)  || (/^P0\s+/)) { ## 2009/11/03 JvH fixed a bug, in previous versions I used P0 (zero) instead of PO (big "o")
       my $header = $'; #'
       $header = RSAT::util::trim($header);
