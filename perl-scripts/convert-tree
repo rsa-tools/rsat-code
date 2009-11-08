@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-tree,v 1.2 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: convert-tree,v 1.3 2009/11/08 22:43:23 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -87,7 +87,7 @@ NAME
 	convert-tree
 
         2004 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
-	
+
 DESCRIPTION
 	Convert-Tree for writing new perl scripts
 
