@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.6 2009/11/04 11:16:55 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.7 2009/11/08 23:50:25 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -264,6 +264,35 @@ install_ext_apps:
 	${MAKE} install_consensus
 	${MAKE} install_patser
 	${MAKE} install_gibbs
+
+################################################################
+## Install the BioPerl library
+## For this example, we install Bioperl and EnsEMBL libraries 
+## in $RSAT/lib, but you can install it in some other place
+### (password is 'cvs')
+bioperl:
+	@mkdir -p ${RSAT}/lib
+	@cd ${RSAT}/lib
+	@echo "Password is 'cvs'"
+	@cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login
+	@cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout bioperl-live
+
+
+################################################################
+## Install the EnsEMBL Perl API
+ENSEMBL_BRANCH=56
+ensembl_api:	
+	@echo  "Password is 'CVSUSER'"
+	@cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
+	@cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
+		checkout -r branch-ensembl-${ENSEMBL_BRANCH} ensembl
+	@cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
+		  checkout -r branch-ensembl-${ENSEMBL_BRANCH} ensembl-compara
+	@echo "Don't forget to adapt the following lines in the file ${RSAT}/RSAT_config.props"
+	@echo "ensembl=${RSAT}/lib/ensembl/modules"
+	@echo "compara=${RSAT}/lib/ensembl-compara/modules"
+	@echo "bioperl=${RSAT}/lib/bioperl-live"
+
 
 ################################################################
 ## Get and install patser (matrix-based pattern matching)
