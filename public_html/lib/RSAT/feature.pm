@@ -30,14 +30,14 @@ $comment_char{ft} = "; ";
 
 # RSAT dna-pattern format (dnapat)
 @{$columns{dnapat}} = qw (
-                       feature_name
-		       strand
-                       pattern_sequence
-		       seq_name
-		       start
-		       end
-		       description
-                       score
+			  feature_name
+			  strand
+			  pattern_sequence
+			  seq_name
+			  start
+			  end
+			  description
+			  score
 		       );
 @{$strands{dnapat}} = ("D", "R", "DR");
 $comment_char{dnapat} = "; ";
@@ -460,39 +460,61 @@ sub parse_from_row {
   my $description = "";
   if (($format eq "gff") || ($format eq "gff3")) {
     $description = $self->get_attribute("attribute");
-  } elsif ($format eq "ft") {
+    ## Convert single-note attribute into description (suppress "Note=" from the beginning)
+    if ($description =~ /^Note=([^;]+)$/) {
+      $self->force_attribute("description",  $1);
+#      die "HELLO";
+    }
+
+  } else {
     $description = $self->get_attribute("description");
   }
+
+  ## Parse attributes from the description field
   if ($description) {
+
+    ## Parse attributes from gff/gff3 format
     my @attributes = split /; */, $description;
-    foreach my $a (0..$#attributes) {
-      my $attribute = $attributes[$a];
-      if (($attribute =~ /(\S+) +(\S.+)/) ||
-	  ($attribute =~ /(\S+)\s*=\s*(\S+)/)) {
-	my $attr = $1;
-	my $value = $2;
-	$value =~ s/^\"//; 
-	$value =~ s/\"$//;
-	$self->force_attribute($attr, $value);
-	if (lc($attr) eq "id") {
-	  $self->force_attribute("ft_id", $value);
-	  ## Use ID as name unless name has already been defined
-	  #		      die "HELLO";
-	  $self->force_attribute("feature_name", $value);
-	  ##			$self->force_attribute("id", $value);
+	&RSAT::message::Debug( $description, join(";", @attributes)) if ($main::verbose >= 3);
+    if (scalar(@attributes) > 0) {
+      my $gff_attributes_found = 1;
+      foreach my $a (0..$#attributes) {
+	my $attribute = $attributes[$a];
+	if (($attribute =~ /(\S+) +(\S.+)/) ||
+	    ($attribute =~ /(\S+)\s*=\s*(\S+)/)) {
+	  $gff_attributes_found = 1;
+	  my $attr = $1;
+	  my $value = $2;
+	  $value =~ s/^\"//; 
+	  $value =~ s/\"$//;
+	  $self->force_attribute($attr, $value);
+	  if (lc($attr) eq "id") {
+	    $self->force_attribute("ft_id", $value);
+	    ## Use ID as name unless name has already been defined
+	    #		      die "HELLO";
+	    $self->force_attribute("feature_name", $value);
+	    ##			$self->force_attribute("id", $value);
+	  }
+	  if (lc($attr) eq "name") {
+	    $self->force_attribute("feature_name", $value);
+	    ##			$self->force_attribute("name", $value);
+	  }
+	  if (lc($attr) eq "site") {
+	    $self->force_attribute("pattern_sequence", $value);
+	  }
+	  &RSAT::message::Debug("Feature",$self->get_attribute("ID"), 
+				"Parsed attribute", $a."/".$#attributes, $attr, $value) 
+	    if ($main::verbose >= 5);
 	}
-	if (lc($attr) eq "name") {
-	  $self->force_attribute("feature_name", $value);
-	  ##			$self->force_attribute("name", $value);
-	}
-	if (lc($attr) eq "site") {
-	  $self->force_attribute("pattern_sequence", $value);
-	}
-	&RSAT::message::Debug("Feature",$self->get_attribute("ID"), 
-			      "Parsed attribute", $a."/".$#attributes, $attr, $value) 
-	  if ($main::verbose >= 5);
       }
+
+       ## convert description into gff note
+#       unless ($gff_attribute_found) {
+# 	$self->force_attribute("Note", $description);
+#       }
+      #    } else {
     }
+
   }
 
   ## dna-pattern
@@ -568,25 +590,26 @@ sub to_text {
     ## Select the fields
     my @fields = ();
     foreach my $c (0..$#cols) {
-	$attr = $cols[$c];
-	$field_value = $self->get_attribute($attr);
-	unless ($field_value) {
-	    if (defined($default{$attr})) {
-		$field_value = $default{$attr};
-	    } elsif ($attr eq "source") {
-		$field_value = $main::input_format;
-	    } else {   
-		$field_value = $null;
-	    }
+      $attr = $cols[$c];
+      $field_value = $self->get_attribute($attr);
+      unless ($field_value) {
+	if (defined($default{$attr})) {
+	  $field_value = $default{$attr};
+	} elsif ($attr eq "source") {
+	  $field_value = $main::input_format;
+	} else {   
+	  $field_value = $null;
 	}
-	$fields[$c] =  $field_value;
-	warn join ( "\t", "field", $c, $fields[$c]), "\n" if ($main::verbose >= 10);
+      }
+      $fields[$c] =  $field_value;
+      &RSAT::message::Debug("field", $c, $fields[$c])if ($main::verbose >= 10);
     }
 
-    ## Format-specific features
+    ################################################################
+    ## Format-specific attributes
 
     ## Collect attributes for gff and gff3 formats
-    if (($format eq "gff") || ($format eq "gff3")){
+    if ($format =~ /gff/) {
 #       unless ($self->get_attribute("gene")) {
 # 	if ($self->get_attribute("feature_name")) {
 # 	  $self->set_attribute("gene", $self->get_attribute("feature_name"));
@@ -595,19 +618,23 @@ sub to_text {
 
       my @attributes = ();
       foreach $attr (@gff3_attributes) {
-	my $value;
+	my $value = "";
 	if (defined($self->get_attribute($attr))) {
 	  $value = $self->get_attribute($attr);
 	  push @attributes, $attr."=".$value;
+	  &RSAT::message::Debug("export attribute", $attr, $value) if ($main::verbose >= 3);
+	} else {
+	  &RSAT::message::Debug("feature", $self->get_attribute("ID"), "undefined gff3 attribute", $attr) if ($main::verbose >= 3);
 	}
-	&RSAT::message::Warning("export attribute", $attr, $value);
       }
 
       ## If no info has been found, use the description field as note
       if (scalar(@attributes) == 0) {
 	my $description = $self->get_attribute("description");
 	if ($description) {
-	  push @attributes, "note=".$description;
+	  if ($format =~ /gff/) {
+	    push @attributes, "Note=".$description;
+	  }
 	}
       }
 
@@ -623,7 +650,6 @@ sub to_text {
     if ($strand) {
 	$s = $strand_index{$strand};
     }
-
     $fields[$f] = $strands[$s];
 #    &RSAT::message::Debug( "strand", $strand, "f=$f", 
 #			   "index:".join(";", %strand_index),
@@ -637,7 +663,7 @@ sub to_text {
 
 #    &RSAT::message::Debig ("printing in format ", $format, $row) if ($main::verbose >= 10);
 
-    return $row;
+    return($row);
 }
 
 ################################################################
