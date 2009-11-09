@@ -939,51 +939,49 @@ Output matrix format
 
 =cut
 sub to_cb {
-	
-	my ($self, %args) = @_;
-    my $to_print = "";
-   
-    my $output_format = $args{format};
-    $output_format = lc($output_format);
+  my ($self, %args) = @_;
+  my $to_print = "";
 
-    ## name
-    my $name = $self->get_attribute("name") ||  $self->get_attribute("AC") || $self->get_attribute("accession")
+  my $output_format = $args{format};
+  $output_format = lc($output_format);
+
+  ## name
+  my $name = $self->get_attribute("name") ||  $self->get_attribute("AC") || $self->get_attribute("accession")
     || $self->get_attribute("identifier") || $self->get_attribute("id");
-    
-     $to_print .= ">".$name." ";
-     	
-    ## other information in the header:
-    #name
-    $to_print .= "/name=".$name." ";
-    #information content
-    my @information = $self->getInformation();
-    $to_print .= "/info=".sprintf("%.3f",$self->get_attribute("total.information"))." ";   
-    #gc content
-    $self->calcGCcontent();
-    $to_print .= "/gc_content=".sprintf("%.3f",$self->get_attribute("G+C.content.crude.freq"))." "; 
-    #consensus
-    $self->calcConsensus();
-    $to_print .= "/consensus=".uc($self->get_attribute("consensus.IUPAC"))." "; 
-    #size
-    $to_print .= "/size=".$self->get_attribute("ncol")." ";
+  $to_print .= ">".$name." ";
 
-	$to_print .= "\n";
-	
-    ## count matrix
-    my @matrix = $self->getMatrix();
-    my $ncol = $self->ncol();
-    my $nrow = $self->nrow();
-    for my $c (1..$ncol) {
-      for my $r (1..$nrow) {
-	my $occ = $matrix[$c-1][$r-1];
-	$to_print .= $occ;
-	$to_print .= "\t";
-      }
-      $to_print .= "\n";
+  ## other information in the header:
+  #name
+  $to_print .= "/name=".$name." ";
+  #information content
+  my @information = $self->getInformation();
+  $to_print .= "/info=".sprintf("%.3f",$self->get_attribute("total.information"))." ";   
+  #gc content
+  $self->calcGCcontent();
+  $to_print .= "/gc_content=".sprintf("%.3f",$self->get_attribute("G+C.content.crude.freq"))." "; 
+  #consensus
+  $self->calcConsensus();
+  $to_print .= "/consensus=".uc($self->get_attribute("consensus.IUPAC"))." "; 
+  #size
+  $to_print .= "/size=".$self->get_attribute("ncol")." ";
+
+  $to_print .= "\n";
+
+  ## count matrix
+  my @matrix = $self->getMatrix();
+  my $ncol = $self->ncol();
+  my $nrow = $self->nrow();
+  for my $c (1..$ncol) {
+    for my $r (1..$nrow) {
+      my $occ = $matrix[$c-1][$r-1];
+      $to_print .= $occ;
+      $to_print .= "\t";
     }
+    $to_print .= "\n";
+  }
 
-    ## End of record
-   return $to_print;
+  ## End of record
+  return $to_print;
 }
 
 ################################################################
