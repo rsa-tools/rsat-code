@@ -7,10 +7,9 @@
  *                                                                         *
  ***************************************************************************/
 
-// info-gibbs: a motif discovery algorithm that directly optimizes information content during sampling
-// Matthieu Defrance and Jacques Van Helden
-// Bioinformatics 2009
-
+//  Defrance, M. and van Helden, J. info-gibbs: a motif discovery algorithm
+//  that directly optimizes information content during sampling,
+//  Bioinformatics. 2009;25:2715-2722.
 
 using namespace std;
 
