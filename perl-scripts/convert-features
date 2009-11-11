@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.12 2009/11/08 22:36:47 jvanheld Exp $
+# $Id: convert-features,v 1.13 2009/11/11 05:32:02 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -75,7 +75,7 @@ while (<$in>) {
   next unless (/\S/);
   chomp();
   my $feature = new RSAT::feature();
-  $feature->parse_from_row($_, $input_format);
+  $feature->parse_from_row($_, $input_format, $output_format);
   print $out $feature->to_text($output_format, $null);
 }
 

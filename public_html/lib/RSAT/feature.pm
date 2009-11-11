@@ -416,19 +416,19 @@ sub new {
 ################################################################
 =pod
 
-=item parse_one_row($row, $format)
+=item parse_one_row($row, $in_format)
 
 Parse the feature from a text row.
 
 =cut
 sub parse_from_row {
-  my ($self, $row, $format) = @_;
+  my ($self, $row, $in_format, $out_format) = @_;
   chomp($row);
   $row =~ s/\r//g;
   my @fields = split("\t", $row);
-  warn join( "\t", "parsing from ", $format, @fields), "\n" if ($main::verbose >= 10);
+  warn join( "\t", "parsing from ", $in_format, @fields), "\n" if ($main::verbose >= 10);
 
-  my @cols = @{$columns{$format}};
+  my @cols = @{$columns{$in_format}};
   foreach my $c (0..$#cols) {
     my $attr = $cols[$c];
     if (defined($fields[$c])) {
@@ -451,14 +451,26 @@ sub parse_from_row {
   $self->force_attribute("strand", $strand);
 
   ## Format-specific conversions
-  if (($format eq "gff") || ($format eq "gff3")) {
+  if (($in_format eq "gff") || ($in_format eq "gff3")) {
     $self->set_attribute("feature_name", $self->get_attribute("source"));
     $self->set_attribute("description", $self->get_attribute("attribute"));
   }
 
+  ## Convert name
+  if ($out_format =~ /gff/) {
+    if (($self->get_attribute('feature_name')) && (!$self->get_attribute("Name"))) {
+      $self->force_attribute("Name", $self->get_attribute("feature_name"));
+    }
+    if (($self->get_attribute("description")) &&
+	($self->get_attribute("description") !~ /=/) &&
+	(!$self->get_attribute("Note"))) {
+      $self->force_attribute("Note", $self->get_attribute("description"));
+    }
+  }
+
   ## parse attributes from the attribute/description field
   my $description = "";
-  if (($format eq "gff") || ($format eq "gff3")) {
+  if (($in_format eq "gff") || ($in_format eq "gff3")) {
     $description = $self->get_attribute("attribute");
     ## Convert single-note attribute into description (suppress "Note=" from the beginning)
     if ($description =~ /^Note=([^;]+)$/) {
@@ -518,7 +530,7 @@ sub parse_from_row {
   }
 
   ## dna-pattern
-  if ($format eq "dnapat") {
+  if ($in_format eq "dnapat") {
     $self->force_attribute("type", "dnapat");
   }
   &RSAT::message::Info(join("\t",
@@ -538,7 +550,7 @@ sub parse_from_row {
 ################################################################
 =pod
 
-=item to_text($format)
+=item to_text($out_format)
 
 Converts the feature in a single-row string for exporting it in the
 specified format.
@@ -563,22 +575,22 @@ sub to_fasta {
 ################################################################
 =pod
 
-=item to_text($format)
+=item to_text($out_format)
 
 Converts the feature in a single-row string for exporting it in the
 specified format.
 
 =cut
 sub to_text {
-    my ($self, $format, $null) = @_;
+    my ($self, $out_format, $null) = @_;
     $null = "" unless (defined($null));
 
 
-    if ($format eq "fasta") {
+    if ($out_format eq "fasta") {
       return $self->to_fasta();
     }
 
-    my @cols = @{$columns{$format}};
+    my @cols = @{$columns{$out_format}};
 
 
     ## Index column number by contents
@@ -609,7 +621,7 @@ sub to_text {
     ## Format-specific attributes
 
     ## Collect attributes for gff and gff3 formats
-    if ($format =~ /gff/) {
+    if ($out_format =~ /gff/) {
 #       unless ($self->get_attribute("gene")) {
 # 	if ($self->get_attribute("feature_name")) {
 # 	  $self->set_attribute("gene", $self->get_attribute("feature_name"));
@@ -617,8 +629,10 @@ sub to_text {
 #       }
 
       my @attributes = ();
+      my %attributes = (); ## Index for further tests
       foreach $attr (@gff3_attributes) {
 	my $value = "";
+	$attributes{$attr} =  $value; ## index for further tests
 	if (defined($self->get_attribute($attr))) {
 	  $value = $self->get_attribute($attr);
 	  push @attributes, $attr."=".$value;
@@ -632,7 +646,7 @@ sub to_text {
       if (scalar(@attributes) == 0) {
 	my $description = $self->get_attribute("description");
 	if ($description) {
-	  if ($format =~ /gff/) {
+	  if ($out_format =~ /gff/) {
 	    push @attributes, "Note=".$description;
 	  }
 	}
@@ -644,7 +658,7 @@ sub to_text {
     }
 
     ## Format-specific treatment for the strand
-    my @strands = @{$strands{$format}};
+    my @strands = @{$strands{$out_format}};
     my $strand = $self->get_attribute("strand") || $default{strand};
     my $f = $col_index{"strand"};
     if ($strand) {
@@ -661,7 +675,7 @@ sub to_text {
     my $row = join ("\t", @fields);
     $row .= "\n";
 
-#    &RSAT::message::Debig ("printing in format ", $format, $row) if ($main::verbose >= 10);
+#    &RSAT::message::Debig ("printing in format ", $out_format, $row) if ($main::verbose >= 10);
 
     return($row);
 }
@@ -669,30 +683,30 @@ sub to_text {
 ################################################################
 =pod
 
-=item header($format)
+=item header($out_format)
 
 Print the header in the specified format.
 
 =cut
 
 sub header {
-    my ($format) = @_;
-    if ($format eq "fasta") {
+    my ($out_format) = @_;
+    if ($out_format eq "fasta") {
       return();
     }
 
     ## Print format
-    my $header = $comment_char{$format};
-    if ($format eq "gff3") {
+    my $header = $comment_char{$out_format};
+    if ($out_format eq "gff3") {
       $header .= "gff-version\t3";
     } else {
-      $header .= $format;
+      $header .= $out_format;
     }
     $header .= "\n";
 
     ## Print column content
-    my @cols = @{$columns{$format}};
-    $header .= $comment_char{$format};
+    my @cols = @{$columns{$out_format}};
+    $header .= $comment_char{$out_format};
     $header .= join ("\t", @cols);
     $header .= "\n";
     return $header;
