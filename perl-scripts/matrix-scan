@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.139 2009/10/20 15:08:34 morgane Exp $
+# $Id: matrix-scan,v 1.140 2009/11/11 05:32:58 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -334,7 +334,10 @@ package main;
 #  $base=exp(1);		## Base for the logarithms
   local $both_strands = 1;
   local $sum_seq_len = 0;
-  local $origin = 0;
+  local $origin = "start";
+  local %supported_origin = ('start'=>1, 'end'=>1, 'genomic'=>1);
+  local $supported_origins = join (",", keys (%supported_origin));
+  local $offset = 0;
   local $pseudo_counts = 1;
   local $equi_pseudo = 0;
   local $bg_pseudo_user_specified = 0; #Morgane : put 0 as default for the moment
@@ -1048,7 +1051,7 @@ package main;
 
   my ($in, $input_dir) = &OpenInputFile($main::infile{input});
   local($current_seq, $seq_id);
-  while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
+  while ((($current_seq, $seq_id, @seq_comments) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
 	 (($current_seq ne "") || ($seq_id ne ""))) {
 
     ## If the rank is required, it is calculated for each input sequence independently
@@ -1072,13 +1075,24 @@ package main;
     my $seq_len = length($current_seq);
     $sum_seq_len += $seq_len;
 
-    ## Calculate the origin
-    $orig_pos = 0;
-    if (($main::origin <  0) || ($main::origin eq "-0")) {
-      $orig_pos = $seq_len + $main::origin + 1; 
-    } else {
-      $orig_pos = $main::origin;
+    ## Calculate the offset
+    my $orig_pos = 0;
+    if ($origin eq "end") {
+      $orig_pos = $seq_len + $main::offset + 1;
+    } elsif ($origin eq "start") {
+      $orig_pos = $main::offset;
+    } elsif ($origin eq "genomic") {
+      my ($seq_org, $seq_chrom, $seq_left, $seq_right, $seq_strand) = &parse_genomic_coordinates($seq_id, @seq_comments);
+      $orig_pos = -$seq_left +1 + $main::offset;
+      $seq_id = $seq_chrom;
     }
+
+#     $orig_pos = 0;
+#     if (($main::origin <  0) || ($main::origin eq "-0")) {
+#       $orig_pos = $seq_len + $main::origin + 1; 
+#     } else {
+#       $orig_pos = $main::origin;
+#     }
 
     ################################################################
     ## Report sequence limits
@@ -1247,18 +1261,18 @@ package main;
 	  if ($bg_method eq "window") {
 	      $matrix->setMarkovModel($bg_model);
 	  }
-	  &score_segment($segment, $matrix, $seq_id, $pos, $bg_model,"D");
+	  &score_segment($segment, $matrix, $seq_id, $pos, $orig_pos, $bg_model,"D");
 	  if ($main::both_strands) {
-	      if ($bg_method eq "window") {
-		  ### If bg_method is "window"  the bg is calculated on the reverse complement 
-		  my $bg_reverse = $bg_model->reverse_bg();
-		  $matrix->setMarkovModel($bg_reverse);
-		  &score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos,$bg_reverse,"R");
-	      }else {
-		  
-		  &score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, $bg_model, "R");				    
-	      }
-		  
+	    if ($bg_method eq "window") {
+	      ### If bg_method is "window"  the bg is calculated on the reverse complement 
+	      my $bg_reverse = $bg_model->reverse_bg();
+	      $matrix->setMarkovModel($bg_reverse);
+	      &score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, $orig_pos, $bg_reverse,"R");
+	    }else {
+	      
+	      &score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, $orig_pos, $bg_model, "R");				    
+	    }
+	    
 	  }
 	}
 
@@ -1788,18 +1802,16 @@ package main;
 		 }
 		 printf $main::out "; \t%-15s\t%s\n", "TOTAL",$sum_binom_tests;
 	}
-	
+
     my $done_time = &AlphaDate();
     print $main::out "; Job started $start_time\n";
     print $main::out "; Job done    $done_time\n";
   }
-    
 
   ################################################################
   ###### close output stream
   close $main::out if ($main::outfile{output});
-    
-    
+
   exit(0);
 }
 
@@ -1831,7 +1843,8 @@ matrix-scan options
 		skip:  sites that contain N characters are skipped
 		score: sites that contain N characters are scored
 -mask [upper|lower] Mask lower or uppercases, respectively, i.e replace selected case by N characters.
--origin pos	Define pos as the origin for the calculatin of positions
+-origin [start|end|chrom]	Define pos as the origin for the calculatin of positions
+-offset #	add a given number to site positions (change the reference point).
 -o		outputfile
 -m		matrix file
 -mlist		list of matrices
@@ -1887,12 +1900,13 @@ End_short_help
 ################################################################
 #### Read arguments 
 sub ReadArguments {
-    my $arg = "";
-    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  my $arg = "";
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
 
-    while ($arg = shift (@arguments)) {
+  while ($arg = shift (@arguments)) {
 
 	## Verbosity
+
 =pod
 
 =head1 OPTIONS
@@ -1904,36 +1918,39 @@ sub ReadArguments {
 Level of verbosity (detail in the warning messages during execution)
 
 =cut
-	if ($arg eq "-v") {
-	    if (&IsNatural($arguments[0])) {
-		$main::verbose = shift(@arguments);
-	    } else {
-		$main::verbose = 1;
-	    }
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
 
 	    ## Help message
+
 =pod
 
 =item B<-h>
 
-Display full help message
+Display full help message.
 
 =cut
-	} elsif ($arg eq "-h") {
-	    &PrintHelp();
-	    
-	    ## List of options
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+      ## List of options
+
 =pod
 
 =item B<-help>
 
-Display only program options
+Display only program options.
 
 =cut
-	} elsif ($arg eq "-help") {
-	    &PrintOptions();
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
 
-	    ## Background model file
+      ## Background model file
+
 =pod
 
 =item B<-bgfile background_file>
@@ -1941,14 +1958,15 @@ Display only program options
 Background model file.
 
 =cut
-	} elsif ($arg eq "-bgfile") {
-	  &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if ($main::bg_method);
-	  $main::bg_method = "file";
-	  $main::infile{bg} = shift(@arguments);
-	  &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
-	    if ($main::markov >= 0);
-	  
-	    ## Background model format
+    } elsif ($arg eq "-bgfile") {
+      &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if ($main::bg_method);
+      $main::bg_method = "file";
+      $main::infile{bg} = shift(@arguments);
+      &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
+	if ($main::markov >= 0);
+
+      ## Background model format
+
 =pod
 
 =item B<-bg_format format>
@@ -1959,16 +1977,17 @@ Supported formats: all the input formats supported by
 convert-background-model.
 
 =cut
-	} elsif ($arg eq "-bg_format") {
-	    $main::bg_in_format = lc(shift(@arguments));
+    } elsif ($arg eq "-bg_format") {
+      $main::bg_in_format = lc(shift(@arguments));
 
-	    ## Check background input format
-	    &RSAT::error::FatalError($main::bg_in_format,
-				     "Invalid input format.",
-				     "Supported: ", $RSAT::MarkovModel::supported_input_formats)
-	      unless ($RSAT::MarkovModel::supported_input_formats{$main::bg_in_format});
+      ## Check background input format
+      &RSAT::error::FatalError($main::bg_in_format,
+			       "Invalid input format.",
+			       "Supported: ", $RSAT::MarkovModel::supported_input_formats)
+	unless ($RSAT::MarkovModel::supported_input_formats{$main::bg_in_format});
 
-	  ## Background calculated from the input sequence set
+      ## Background calculated from the input sequence set
+
 =pod
 
 =item B<-bginput>
@@ -1976,15 +1995,16 @@ convert-background-model.
 Calculate background model from the input sequence set.
 
 =cut
-	} elsif ($arg eq "-bginput") {
-	  &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if ($main::bg_method);
-	  $main::bg_method = "input";
-	  &RSAT::error::FatalError("The options -bginput and -window are mutually exclusive.") 
-	    if ($main::window >= 0);
-	  &RSAT::error::FatalError("The options -bginput and -bgfile are mutually exclusive.") 
-		if defined($main::infile{bg});
-	  
-	  ## Calculate background model from the input sequence
+    } elsif ($arg eq "-bginput") {
+      &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if ($main::bg_method);
+      $main::bg_method = "input";
+      &RSAT::error::FatalError("The options -bginput and -window are mutually exclusive.") 
+	if ($main::window >= 0);
+      &RSAT::error::FatalError("The options -bginput and -bgfile are mutually exclusive.") 
+	if defined($main::infile{bg});
+
+      ## Calculate background model from the input sequence
+
 =pod
 
 =item B<-markov>
@@ -1994,12 +2014,12 @@ Order of the markov chain for the background model.
 This option is incompatible with the option -bgfile. 
 
 =cut
-	} elsif ($arg eq "-markov") {
-	    $main::markov = shift(@arguments);
-	    &RSAT::error::FatalError("Markov order must be a natural number.") 
-		unless &RSAT::util::IsNatural($main::markov);
-	    &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
-		if defined($main::infile{bg});
+    } elsif ($arg eq "-markov") {
+      $main::markov = shift(@arguments);
+      &RSAT::error::FatalError("Markov order must be a natural number.") 
+	unless &RSAT::util::IsNatural($main::markov);
+      &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
+	if defined($main::infile{bg});
 
 
 =pod
@@ -2010,18 +2030,17 @@ Size of the sliding window for the background model calculation.
 When this option is specified, the matrix pseudo-count is equally distributed.
 
 =cut
+    } elsif ($arg eq "-window") {
+      &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if ($main::bg_method);
+      $main::bg_method = "window";
+      $main::window = shift(@arguments);
+      &RSAT::error::FatalError("Window size must be a natural number.") 
+	unless &RSAT::util::IsNatural($main::window);
+      &RSAT::error::FatalError("The options -window and -bgfile are mutually exclusive.") 
+	if defined($main::infile{bg});
 
-	} elsif ($arg eq "-window") {
-	  &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if ($main::bg_method);
-	  $main::bg_method = "window";
-	  $main::window = shift(@arguments);
-	  &RSAT::error::FatalError("Window size must be a natural number.") 
-	    unless &RSAT::util::IsNatural($main::window);
-	  &RSAT::error::FatalError("The options -window and -bgfile are mutually exclusive.") 
-	    if defined($main::infile{bg});
-	  
-	  
-	    ## Matrix file
+      ## Matrix file
+
 =pod
 
 =item B<-m matrixfile>
@@ -2032,12 +2051,12 @@ This argument can be used iteratively to scan the sequence with
 multiple matrices.
 
 =cut
-	} elsif ($arg eq "-m") {
-	    push @matrix_files, shift(@arguments);
-#	    $main::infile{matrix} = shift(@arguments);
+    } elsif ($arg eq "-m") {
+      push @matrix_files, shift(@arguments);
+      #	    $main::infile{matrix} = shift(@arguments);
 
-	  
-	    ## Only scan with the top matrices
+      ## Only scan with the top matrices
+
 =pod
 
 =item B<-top_matrices #>
@@ -2051,15 +2070,14 @@ If several matrix files are specified, the # top matrices of each file
 are used for scanning the sequences.
 
 =cut
-	} elsif ($arg eq "-top_matrices") {
-	    $main::top_matrices = shift(@arguments);
-	    &RSAT::error::FatalError("$main::top_matrices. Invalid top_matrices, should be an Integer number.")
-		unless (&RSAT::util::IsInteger($main::top_matrices));
-#	    $main::infile{matrix} = shift(@arguments);
+    } elsif ($arg eq "-top_matrices") {
+      $main::top_matrices = shift(@arguments);
+      &RSAT::error::FatalError("$main::top_matrices. Invalid top_matrices, should be an Integer number.")
+	unless (&RSAT::util::IsInteger($main::top_matrices));
+      #	    $main::infile{matrix} = shift(@arguments);
 
+      ## Use consensus as matrix name
 
-
-	    ## Use consensus as matrix name
 =pod
 
 =item B<-consensus_name>
@@ -2067,15 +2085,16 @@ are used for scanning the sequences.
 Use the motif (degenerate) consensus as matrix name.
 
 =cut
-	} elsif ($arg eq "-consensus_name") {
-	  $main::consensus_name = 1;
+    } elsif ($arg eq "-consensus_name") {
+      $main::consensus_name = 1;
 
-	    ## Matrix file
+      ## Matrix file
+
 =pod
 
 =item B<-mlist matrix_list>
 
-Matrix list. 
+Matrix list.
 
 Indicate a file containing a list of matrices to be used for scanning
 the region. This facilitates the scanning of a sequence with a library
@@ -2086,11 +2105,13 @@ row is suppose to indicate a file name. Any further information on the
 same row is ignored.
 
 =cut
-	} elsif ($arg eq "-mlist") {
-	    $main::infile{matrix_list} = shift(@arguments);
+
+    } elsif ($arg eq "-mlist") {
+      $main::infile{matrix_list} = shift(@arguments);
 
 
-	    ## Matrix format
+      ## Matrix format
+
 =pod
 
 =item B<-matrix_format matrix_format>
@@ -2098,10 +2119,11 @@ same row is ignored.
 Matrix format. 
 
 =cut
-	} elsif ($arg eq "-matrix_format") {
-	    $matrix_format = shift(@arguments);
+    } elsif ($arg eq "-matrix_format") {
+      $matrix_format = shift(@arguments);
 
-	    ## Input file
+      ## Input file
+
 =pod
 
 =item B<-i inputfile>
@@ -2112,10 +2134,11 @@ If no input file is specified, the standard input is used.  This
 allows to use the command within a pipe.
 
 =cut
-	} elsif ($arg eq "-i") {
-	    $main::infile{input} = shift(@arguments);
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
 
-	    ## Sequence format
+      ## Sequence format
+
 =pod
 
 =item B<-seq_format sequence_format>
@@ -2123,10 +2146,11 @@ allows to use the command within a pipe.
 Sequence format.
 
 =cut
-	} elsif ($arg eq "-seq_format") {
-	    $seq_format = shift(@arguments);
-	    
-	    ## mask
+    } elsif ($arg eq "-seq_format") {
+      $seq_format = shift(@arguments);
+
+      ## mask
+
 =pod
 
 =item B<-mask upper|lower>
@@ -2136,11 +2160,11 @@ characters.
 
 =cut
 
-	} elsif ($arg eq "-mask") {
-	    $main::mask = shift(@arguments);
-	    &CheckMask($main::mask);	    
+    } elsif ($arg eq "-mask") {
+      $main::mask = shift(@arguments);
+      &CheckMask($main::mask);
 
-=pod 
+=pod
 
 =item B<-n [skip|score]>
 
@@ -2165,14 +2189,14 @@ isolated N in the sequences.
 =back
 
 =cut
-	} elsif ($arg eq "-n") {
-	    $main::n_treatment = shift(@arguments);
-	    &RSAT::error::FatalError("Invalid value for the -n option. supported: ".$supported_n_treatment)
-	      unless ($supported_n_treatment{$main::n_treatment});
 
+    } elsif ($arg eq "-n") {
+      $main::n_treatment = shift(@arguments);
+      &RSAT::error::FatalError("Invalid value for the -n option. supported: ".$supported_n_treatment)
+	unless ($supported_n_treatment{$main::n_treatment});
 
+      ## Output file
 
-	    ## Output file
 =pod
 
 =item	B<-o outputfile>
@@ -2181,10 +2205,12 @@ If no output file is specified, the standard output is used.  This
 allows to use the command within a pipe.
 
 =cut
-	} elsif ($arg eq "-o") {
-	    $main::outfile{output} = shift(@arguments);
 
-	    ## Pseudo weight
+    } elsif ($arg eq "-o") {
+      $main::outfile{output} = shift(@arguments);
+
+      ## Pseudo weight
+
 =pod
 
 =item B<-pseudo pseudo_counts>
@@ -2198,15 +2224,15 @@ observations. The pseudo-count is used to compute the corrected
 residue frequencies.
 
 =cut
-	} elsif ($arg eq "-pseudo") {
-	    $main::pseudo_counts = shift(@arguments);
-	    &RSAT::error::FatalError(join("\t", $main::pseudo_counts, 
-					  "Invalid value for a pseudo-weight. Must be a positive real number."))
-		unless ((&RSAT::util::IsReal($main::pseudo_counts) )
-			&& ($main::pseudo_counts >= 0));
+    } elsif ($arg eq "-pseudo") {
+      $main::pseudo_counts = shift(@arguments);
+      &RSAT::error::FatalError(join("\t", $main::pseudo_counts, 
+				    "Invalid value for a pseudo-weight. Must be a positive real number."))
+	unless ((&RSAT::util::IsReal($main::pseudo_counts) )
+		&& ($main::pseudo_counts >= 0));
 
+      ## Equiprobable distribution of the pseudo-weight
 
-	    ## Equiprobable distribution of the pseudo-weight
 =pod
 
 =item B<-equi_pseudo>
@@ -2219,10 +2245,10 @@ priors, except for the -window option where equipseudo is default.
 
 =cut
 
-	} elsif ($arg eq "-equi_pseudo") {
-	    $main::equi_pseudo = 1;
+    } elsif ($arg eq "-equi_pseudo") {
+      $main::equi_pseudo = 1;
 
-	## Pseudo-frequency for the bacground model
+      ## Pseudo-frequency for the bacground model
 
 =pod
 
@@ -2252,49 +2278,102 @@ following value:
 
 
 =cut
-	} elsif ($arg eq "-bg_pseudo") {
-	    $main::bg_pseudo = shift(@arguments);
-	    &RSAT::error::FatalError(join("\t", $main::bg_pseudo,
-					  "Invalid format for bg_pseudo, should be a Real number between 0 and 1."))
-		unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
-		$main::bg_pseudo_user_specified = 1;
+    } elsif ($arg eq "-bg_pseudo") {
+      $main::bg_pseudo = shift(@arguments);
+      &RSAT::error::FatalError(join("\t", $main::bg_pseudo,
+				    "Invalid format for bg_pseudo, should be a Real number between 0 and 1."))
+	unless ((&IsReal($main::bg_pseudo)) && (0 <= $main::bg_pseudo) && ($main::bg_pseudo <= 1));
+      $main::bg_pseudo_user_specified = 1;
 
 =pod
 
-=item B<-origin pos>
+=item B<-origin [start|end|chrom]>
 
-Define pos as the origin for the calculation of positions.
+Specify the origin for the calculation of positions.
 
--origin -0 defines the end of each sequence as the origin. The matching
-positions are then negative values, providing the distance between the match
-and the end of the sequence.
+Supported values:
+
+=over
+
+=item B<start>
+
+Site coordinates indicate their distance from the start of the input
+sequence. The first residue of each sequence has posiiton
+1.
+
+=item B<end>
+
+Site coordinates are negative and indicate the distance from the site
+to the end of the sequence. The last residue of the input sequence has
+posiiton -1.
+
+=item B<chrom>
+
+Site coordinates indicate their distance from the start of the
+chromosome. The program automatically adds an offset corresponding to
+the chromosomal position of the input sequence. This requires a
+properly formatted fasta sequence, where the chromosomal coordinates
+of the input sequences are included in their header line (lines
+starting with '>')..
+
+=back
+
+Note: in previous versions, -origin was used to specify both the
+reference point and the offset. Since 11/2009, the offset is specified
+with the option -offset.
 
 =cut
 
-	} elsif ($arg eq "-origin") {
-	    $main::origin = shift(@arguments);
-	    &RSAT::error::FatalError("$main::origin. Invalid origin, should be an Integer number.")
-		unless (($main::origin eq "-0") || (&RSAT::util::IsInteger($main::origin)));
+    } elsif ($arg eq "-origin") {
+      $main::origin = shift(@arguments);
+      &RSAT::error::FatalError(${main::origin}." is not a valid origin. Supported values: $supported_origins.")
+	unless ($supported_origin{$main::origin});
+
+=pod
+
+=item B<-offset offset_value>
+
+add an offset to site positions. The offset value must be an Integer
+number (positive, null or negative). This option allows to select an
+arbitrary position as origin. 
+
+Example: the option I<-offset -100> can be used to specify the
+transcription start site (TSS) as origin, in a collection of promoter
+sequences including 100 residues downstream of the TSS.
+
+Note: in previous versions, -origin was used to specify both the
+reference point and the offset. Since 11/2009, the offset is specified
+with the option -offset.
+
+=cut
+
+    } elsif ($arg eq "-offset") {
+      $main::offset = shift(@arguments);
+      &RSAT::error::FatalError("$main::offset. Invalid offset, should be an Integer number.")
+	unless (($main::offset eq "-0") || (&RSAT::util::IsInteger($main::offset)));
 
 
-	    ## base for the logarihtms in the weight
+      ## base for the logarihtms in the weight
+
 =pod
 
 =item	B<-base #>
 
 Base for the logarithms used in the scores involving a log-likelihood
-(weight and information content). Default: exp(1) (natural logarithms). 
+(weight and information content). Default: exp(1) (natural
+logarithms).
 
 A common alternative to natural logarithms is to use logarithms in
 base 2, in which case the information content is computed in bits.
 
 =cut
-	} elsif ($arg eq "-base") {
-	    $base = shift @arguments;
-	    &RSAT::error::FatalError("base should be a real number") unless (&IsReal($base));
-	    &RSAT::error::FatalError("base should be larger than 1") if ($base <= 1);
+    } elsif ($arg eq "-base") {
+      $base = shift @arguments;
+      &RSAT::error::FatalError("base should be a real number") unless (&IsReal($base));
+      &RSAT::error::FatalError("base should be larger than 1") if ($base <= 1);
 
-	    ## Number of decimals for the score
+      ## Number of decimals for the score
+
 =pod
 
 =item B<-decimals #>
@@ -2308,11 +2387,13 @@ decimals).
 
 =cut
 
-	} elsif ($arg eq "-decimals") {
-	    $decimals = shift @arguments;
-	    &RSAT::error::FatalError("decimals should be a positive integer") unless ((&IsNatural($decimals)) && ($decimals >= 0));
+    } elsif ($arg eq "-decimals") {
+      $decimals = shift @arguments;
+      &RSAT::error::FatalError("decimals should be a positive integer") 
+	unless ((&IsNatural($decimals)) && ($decimals >= 0));
 
-	    ## Thresholds
+      ## Thresholds
+
 =pod
 
 =item	B<-lth param lower_threshold>
@@ -2327,29 +2408,30 @@ Supported threshold fields for score distributions: occ occ_sum inv_cum exp_occ 
 
 =cut
 
-	    ### Lower threshold
-	} elsif ($arg eq "-lth") {
-	    my $thr_field = lc(shift(@arguments));
-	    my $thr_value =  lc(shift(@arguments));
-	    unless ($supported_threshold{$thr_field}) {
-		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
-	    }
-	    &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ") 
-	      unless (&RSAT::util::IsReal($thr_value));
-	    $lth{$thr_field} = $thr_value;
+      ### Lower threshold
+    } elsif ($arg eq "-lth") {
+      my $thr_field = lc(shift(@arguments));
+      my $thr_value =  lc(shift(@arguments));
+      unless ($supported_threshold{$thr_field}) {
+	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+      }
+      &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ") 
+	unless (&RSAT::util::IsReal($thr_value));
+      $lth{$thr_field} = $thr_value;
 
-	    ### Upper threshold
-	} elsif ($arg eq "-uth") {
-	    my $thr_field = lc(shift(@arguments));
-	    my $thr_value = lc(shift(@arguments));
-	    unless ($supported_threshold{$thr_field}) {
-		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
-	    }
-	    &RSAT::error::FatalError($thr_value, "Invalid value for an upper threshold. Should be a real number. ") 
-	      unless (&RSAT::util::IsReal($thr_value));
-	    $uth{$thr_field} = $thr_value;
+      ### Upper threshold
+    } elsif ($arg eq "-uth") {
+      my $thr_field = lc(shift(@arguments));
+      my $thr_value = lc(shift(@arguments));
+      unless ($supported_threshold{$thr_field}) {
+	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+      }
+      &RSAT::error::FatalError($thr_value, "Invalid value for an upper threshold. Should be a real number. ") 
+	unless (&RSAT::util::IsReal($thr_value));
+      $uth{$thr_field} = $thr_value;
 
-	    ## Matrix_thresholds file
+      ## Matrix_thresholds file
+
 =pod
 
 =item B<-mth matrix_threshold_file>
@@ -2384,11 +2466,12 @@ Example:
 =back
 
 =cut
-	} elsif ($arg eq "-mth") {
-	    $main::infile{matrix_thresholds} = shift(@arguments);
+    } elsif ($arg eq "-mth") {
+      $main::infile{matrix_thresholds} = shift(@arguments);
 
 
-	    ## Scan both strands
+      ## Scan both strands
+
 =pod
 
 =item B<-2str>
@@ -2396,10 +2479,11 @@ Example:
 Scan both strands for DNA sequences.
 
 =cut
-	} elsif ($arg eq "-2str") {
-	    $main::both_strands = 1;
+    } elsif ($arg eq "-2str") {
+      $main::both_strands = 1;
 
-	    ## Scan direct strand only
+      ## Scan direct strand only
+
 =pod
 
 =item B<-1str>
@@ -2407,11 +2491,12 @@ Scan both strands for DNA sequences.
 single-strand search for DNA sequences.
 
 =cut
-	} elsif ($arg eq "-1str") {
-	    $main::both_strands = 0;
+    } elsif ($arg eq "-1str") {
+      $main::both_strands = 0;
 
 
-	    ## Return fields
+      ## Return fields
+
 =pod
 
 =item B<-return return_fields>
@@ -2419,7 +2504,8 @@ single-strand search for DNA sequences.
 List of fields to return. 
 
 Supported fields:
-sites,pval,seq_scores,p_score,rank,normw,limits,weight_limits,disrib,occ_proba,bg_model,bg_residues,matrix,freq_matrix,weight_matrix,crer
+ sites,pval,seq_scores,p_score,rank,normw,limits,weight_limits,
+ distrib,occ_proba,bg_model,bg_residues,matrix,freq_matrix,weight_matrix,crer
 
 =over
 
@@ -2449,12 +2535,11 @@ of significances.
 
 This score is given by -log(Pval(w)/Pval_tresh). Where Pval(w) is the P-value of the 
 wheight and Pval_tresh the threshold on P-value given by the user.
- 
 
 =item B<rank:> Rank.
 
 Sort the sites per decreasing values of score (weight), and return the
-rank value. 
+rank value.
 
 The rank is calculated independently for each sequence.  In addition,
 a matrix-specidic rank is calculated for each sequence (rank_pm). This
@@ -2566,35 +2651,34 @@ for scanning.
 =back
 
 =cut
-        } elsif ($arg eq "-return") {
-	  $arg = shift (@arguments);
-	  chomp($arg);
-	  my @fields_to_return = split ",", $arg;
-	  foreach my $field (@fields_to_return) {
-	    $field = lc($field);
-	    if ($supported_return_fields{$field}) {
-	      $return_fields{$field} = 1;
-	    } else {
-	      &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
-	    }
-	  }
+    } elsif ($arg eq "-return") {
+      $arg = shift (@arguments);
+      chomp($arg);
+      my @fields_to_return = split ",", $arg;
+      foreach my $field (@fields_to_return) {
+	$field = lc($field);
+	if ($supported_return_fields{$field}) {
+	  $return_fields{$field} = 1;
+	} else {
+	  &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+	}
+      }
+
+      #	    ## crer_max
+      #=pod
+      #
+      #=item B<-crer_max #>
+      #
+      #Maximal size for a CRER. Default is 100. To be used with -return crer.
+      #
+      #=cut
+      #	} elsif ($arg eq "-crer_max") {
+      #	    $main::crer_seed_init = shift (@arguments);;
+      #	    &RSAT::error::FatalError("CRER max size should be a positive integer") unless (&IsNatural($main::crer_seed_init));
 
 
-	  
-#	    ## crer_max
-#=pod
-#
-#=item B<-crer_max #>
-#
-#Maximal size for a CRER. Default is 100. To be used with -return crer.
-#
-#=cut
-#	} elsif ($arg eq "-crer_max") {
-#	    $main::crer_seed_init = shift (@arguments);;
-#	    &RSAT::error::FatalError("CRER max size should be a positive integer") unless (&IsNatural($main::crer_seed_init));
+      ## Sort score distribution by decreasing sig value
 
-
-	    ## Sort score distribution by decreasing sig value
 =pod
 
 =item B<-sort_distrib>
@@ -2603,10 +2687,11 @@ Sort score distribution by decreasing value of significance. By
 default, the score distributions are sorted by score (weight).
 
 =cut
-	} elsif ($arg eq "-sort_distrib") {
-	    $main::sort_distrib = 1;
+    } elsif ($arg eq "-sort_distrib") {
+      $main::sort_distrib = 1;
 
-	    ## Background score distribution
+      ## Background score distribution
+
 =pod
 
 =item B<-bg_distrib bg_distrib_file>
@@ -2634,10 +2719,10 @@ according to the biological question.
 
 
 =cut
-	} elsif ($arg eq "-bg_distrib") {
-	  $main::infile{bg_distrib} = shift(@arguments);
-	  
-	  ## Batch method
+    } elsif ($arg eq "-bg_distrib") {
+      $main::infile{bg_distrib} = shift(@arguments);
+
+      ## Batch method
 
 =pod
 
@@ -2647,9 +2732,8 @@ Assign one separate feature ID per CRER
 This option is convenient to distinguish separate CRERs, but it can be heavy for feature-map legends, especially when many CRERs are detected.
 
 =cut
-	} elsif ($arg eq "-crer_ids") {
-	    $main::crer_ids = 1;
-	    
+    } elsif ($arg eq "-crer_ids") {
+      $main::crer_ids = 1;
 
 =pod
 
@@ -2658,9 +2742,9 @@ This option is convenient to distinguish separate CRERs, but it can be heavy for
 Run matrix-scan separately for each sequence.
 
 =cut
-	} elsif ($arg eq "-recursive") {
-	    $batch = 1;
-	    
+    } elsif ($arg eq "-recursive") {
+      $batch = 1;
+
 =pod
 
 =item B<-batch #>
@@ -2669,126 +2753,121 @@ Dispatch matrix-scan jobs on a cluster.
 Number of sequences to be analyzed by job (= on each node of the cluster)
 
 =cut
-	} elsif ($arg eq "-batch") {
-	    $cluster = shift(@arguments);
-	   	# set minimum sequences to be analyzed to 1
-	    $cluster =1 if ($cluster eq "");
-	    &RSAT::error::FatalError("# sequences for the cluster must be a natural number.") 
-	    unless &RSAT::util::IsNatural($cluster)&&($cluster > 0);
+    } elsif ($arg eq "-batch") {
+      $cluster = shift(@arguments);
+      # set minimum sequences to be analyzed to 1
+      $cluster =1 if ($cluster eq "");
+      &RSAT::error::FatalError("# sequences for the cluster must be a natural number.") 
+	unless &RSAT::util::IsNatural($cluster)&&($cluster > 0);
 
-	    
-
-	} else {
-	    &FatalError(join("\t", "Invalid option", $arg));
-
-	}
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+    }
   }
-
-
 }
 
 ################################################################
 #### verbose message
 sub Verbose {
 
-    ## Report the command line
-    print $main::out "; matrix-scan ";
-    &PrintArguments($main::out);
+  ## Report the command line
+  print $main::out "; matrix-scan ";
+  &PrintArguments($main::out);
 
-    ## Input files
-    if (defined(%main::infile)) {
-	print $main::out "; Input files\n";
-	while (my ($key,$value) = each %main::infile) {
-	    print $main::out ";\t$key\t$value\n";
-	}
-	print $main::out "; Matrix files\n";
-	for my $m (0..$#matrix_files) {
-	    printf $out ";\tmatrix %d\t%s\n", $m+1, $matrix_files[$m];
-	}
-
+  ## Input files
+  if (defined(%main::infile)) {
+    print $main::out "; Input files\n";
+    while (my ($key,$value) = each %main::infile) {
+      print $main::out ";\t$key\t$value\n";
     }
-    printf $main::out "; %-21s\t%s\n", "Sequence format", $seq_format;
-
-    ## Output files
-    if (defined(%main::outfile)) {
-	print $main::out "; Output files\n";
-	while (my ($key,$value) = each %main::outfile) {
-	    print $main::out ";\t$key\t$value\n";
-	}
+    print $main::out "; Matrix files\n";
+    for my $m (0..$#matrix_files) {
+      printf $out ";\tmatrix %d\t%s\n", $m+1, $matrix_files[$m];
     }
 
-    ## Pseudo counts
-    printf $main::out "; %-21s\t%s\n", "Pseudo counts", $pseudo_counts;
+  }
+  printf $main::out "; %-21s\t%s\n", "Sequence format", $seq_format;
 
-    ## Background model
-    if (defined($bg_model)) {
-   	printf $main::out "; Background model\n";
-	my $order = $bg_model->get_attribute("order");
-   	printf $main::out ";\t%-14s\t%s\n", "Method", $bg_method;
+  ## Output files
+  if (defined(%main::outfile)) {
+    print $main::out "; Output files\n";
+    while (my ($key,$value) = each %main::outfile) {
+      print $main::out ";\t$key\t$value\n";
+    }
+  }
+
+  ## Pseudo counts
+  printf $main::out "; %-21s\t%s\n", "Pseudo counts", $pseudo_counts;
+
+  ## Background model
+  if (defined($bg_model)) {
+    printf $main::out "; Background model\n";
+    my $order = $bg_model->get_attribute("order");
+    printf $main::out ";\t%-14s\t%s\n", "Method", $bg_method;
     if ($order == 0) {
-	printf $main::out ";\t%-14s\n", "Bernoulli model (order=0)";
+      printf $main::out ";\t%-14s\n", "Bernoulli model (order=0)";
     } else {
-	printf $main::out ";\t%-14s\t%d\n", "Markov order", $order;
+      printf $main::out ";\t%-14s\t%d\n", "Markov order", $order;
     }
     printf $main::out ";\t%-14s\t%s\n", "Strand", $bg_model->get_attribute("strand");
     printf $main::out ";\t%-14s\t%s\n", "Background pseudo-frequency", $bg_model->get_attribute("bg_pseudo");
     if ($window > 0) {
-	printf $main::out ";\t%-14s\t%d\n", "Background window", $window;
+      printf $main::out ";\t%-14s\t%d\n", "Background window", $window;
     }
     my %bg_prior = $bg_model->get_attribute("suffix_proba");
     print $main::out ";\tResidue probabilities\n";
     foreach my $residue (sort keys %bg_prior) {
-	printf $main::out ";\t\t%s\t%.5f\n", $residue, $bg_prior{$residue};
+      printf $main::out ";\t\t%s\t%.5f\n", $residue, $bg_prior{$residue};
     }
 
     my $missing_transitions = $bg_model->get_attribute("missing_transitions");
     if (($missing_transitions) && ($missing_transitions > 0)) {
       printf $main::out ";\t%-14s\t%d %s\n", "WARNING", , $missing_transitions, "missing transitions. You should reduce the Markov order";
     }
+  }
+
+
+  ## Generic thresholds
+  my %th_keys = (%lth, %uth);
+  if (scalar(keys(%th_keys)) > 0) {
+    print $main::out "; Thresholds\tlower\tupper\n";
+    foreach $key (sort keys %th_keys) {
+      printf $main::out ";\t%-6s", $key;
+      if (defined($lth{$key})) {
+	printf $main::out "\t%-5g", $lth{$key};
+      } else {
+	print $main::out "\t", $null;
+      }
+      if (defined($uth{$key})) {
+	printf $main::out "\t%-5g", $uth{$key};
+      } else {
+	print $main::out "\t", $null;
+      }
+      print $main::out "\n";
     }
+  }
 
-
-    ## Generic thresholds
-    my %th_keys = (%lth, %uth);
-    if (scalar(keys(%th_keys)) > 0) {
-      print $main::out "; Thresholds\tlower\tupper\n";
-      foreach $key (sort keys %th_keys) {
-	printf $main::out ";\t%-6s", $key;
-	if (defined($lth{$key})) {
-	  printf $main::out "\t%-5g", $lth{$key};
+  ## Matrix-specific thresholds
+  if ($infile{matrix_thresholds}) {
+    print $main::out "; Matrix\tThresholds\tlower\tupper\n";
+    foreach my $m (sort keys %matrix_thr) {
+      foreach my $f (sort keys %{$matrix_thr_val->{$m}}) {
+	printf $main::out ";\t%-5s", $m;
+	printf $main::out "\t%-5s", $f;
+	if (defined($matrix_thr_val->{$m}->{$f}->{'lth'})) {
+	  printf $main::out "\t%-5g", $matrix_thr_val->{$m}->{$f}->{'lth'};
 	} else {
 	  print $main::out "\t", $null;
 	}
-	if (defined($uth{$key})) {
-	  printf $main::out "\t%-5g", $uth{$key};
+	if (defined($matrix_thr_val->{$m}->{$f}->{'uth'})) {
+	  printf $main::out "\t%-5g", $matrix_thr_val->{$m}->{$f}->{'uth'};
 	} else {
 	  print $main::out "\t", $null;
 	}
 	print $main::out "\n";
       }
     }
-
-    ## Matrix-specific thresholds
-    if ($infile{matrix_thresholds}) {
-      print $main::out "; Matrix\tThresholds\tlower\tupper\n";
-      foreach my $m (sort keys %matrix_thr) {
-	foreach my $f (sort keys %{$matrix_thr_val->{$m}}) {
-	  printf $main::out ";\t%-5s", $m;
-	  printf $main::out "\t%-5s", $f;
-	  if (defined($matrix_thr_val->{$m}->{$f}->{'lth'})) {
-	    printf $main::out "\t%-5g", $matrix_thr_val->{$m}->{$f}->{'lth'};
-	  } else {
-	    print $main::out "\t", $null;
-	  }
-	  if (defined($matrix_thr_val->{$m}->{$f}->{'uth'})) {
-	    printf $main::out "\t%-5g", $matrix_thr_val->{$m}->{$f}->{'uth'};
-	  } else {
-	    print $main::out "\t", $null;
-	  }
-	  print $main::out "\n";
-	}
-      }
-    }
+  }
 }
 
 
@@ -2817,15 +2896,15 @@ thresholds. Return value is 1 if the segment passed the thresholds.
 
 =cut
 sub score_segment {
-  my ($segment, $matrix, $seq_id, $pos,$bg_model, $strand) = @_;
+  my ($segment, $matrix, $seq_id, $pos, $orig_pos, $bg_model, $strand) = @_;
   my $ncol = $matrix->{ncol};
   my $matrix_name = $matrix->get_attribute("name");
 
   $matrix->{scored}++;
   $sequence_scores->{$seq_id}->{scored}++;
 
-#  $proba_M = $matrix->segment_proba($segment);
-#  $proba_B = $bg_model->segment_proba($segment);
+  #  $proba_M = $matrix->segment_proba($segment);
+  #  $proba_B = $bg_model->segment_proba($segment);
 
   ## Calculate segment weight and  normalized weight
   my $score;
@@ -2845,122 +2924,136 @@ sub score_segment {
   &RSAT::error::FatalError(join("\t", "matrix-scan::score_segment",
 				"Error in residue proba calculation ", $segment,
 				"\nsize of background array:", scalar(@residue_proba_B),
-			       "\nsize of matrix array:", scalar(@residue_proba_M)))  
-      if (scalar(@residue_proba_M) != scalar(@residue_proba_B)); 
+				"\nsize of matrix array:", scalar(@residue_proba_M)))  
+    if (scalar(@residue_proba_M) != scalar(@residue_proba_B)); 
 
-	my $segment_weight = log($proba_M/$proba_B)/$log_base;
-	$score = sprintf("%.${decimals}f", $segment_weight);
-	$score =~ s/^-(0\.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
+  my $segment_weight = log($proba_M/$proba_B)/$log_base;
+  $score = sprintf("%.${decimals}f", $segment_weight);
+  $score =~ s/^-(0\.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
 
-## algo to return exact same scores as for p-values calculation
-#  for my $i (0..$#residue_proba_M) {
-#      $proba_R_M = $residue_proba_M[$i]; ## residue proba under the matrix
-#      $proba_R_B = $residue_proba_B[$i]; ##residue proba under background
-#
-#      my $residue_weight = log($proba_R_M/$proba_R_B)/$log_base;
-#      $residue_weight = sprintf("%.${decimals}f", $residue_weight);
-#      
-#      $score += $residue_weight;
-#      $score =~ s/^-(0\.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
-#      $score = sprintf("%.${decimals}f",$score);
-#
-#  }
+  ## algo to return exact same scores as for p-values calculation
+  #  for my $i (0..$#residue_proba_M) {
+  #      $proba_R_M = $residue_proba_M[$i]; ## residue proba under the matrix
+  #      $proba_R_B = $residue_proba_B[$i]; ##residue proba under background
+  #
+  #      my $residue_weight = log($proba_R_M/$proba_R_B)/$log_base;
+  #      $residue_weight = sprintf("%.${decimals}f", $residue_weight);
+  #      
+  #      $score += $residue_weight;
+  #      $score =~ s/^-(0\.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
+  #      $score = sprintf("%.${decimals}f",$score);
+  #
+  #  }
   
   my %prior = $bg_model->get_attribute("suffix_proba");
   
   if (($proba_M > 0) && ($proba_B > 0)) {
-      if ($calc_fields{normw}) {
-	if ($bg_method eq "window") {
-	  $normw = "NA";
+    if ($calc_fields{normw}) {
+      if ($bg_method eq "window") {
+	$normw = "NA";
+      } else {
+	$normw = sprintf("%6.4f", ($score - $matrix->{Wmin})/($matrix->{Wrange}));
+      }
+    }
+    if (($return_fields{weight_limits})&&($bg_method ne "window")) {
+      $Wmin = $matrix->{Wmin};
+      $Wmax= $matrix->{Wmax};
+    }
+    if ($calc_fields{pval}) {
+      if (defined(${$main::pval{$matrix}}{$score})) {
+	$pval_value = ${$main::pval{$matrix}}{$score};
+	$pval = sprintf("%.1e", $pval_value);
+	#	      $uth{pval} = 0.1;#,"\n";
+	      
+	####computing p_scores
+	# 	      if (defined($uth{pval})){
+	if ($calc_fields{p_score}) {
+	  $p_score = &p_score($uth{pval},$pval_value);
+	  $p_score = sprintf("%.${decimals}f",$p_score);
+	}
+	      
+	if ($pval_value > 0) {
+	  $ln_pval = sprintf("%.3f", log($pval_value));
+	  $sig = sprintf("%.3f", -log($pval_value)/$sig_base);
 	} else {
-	  $normw = sprintf("%6.4f", ($score - $matrix->{Wmin})/($matrix->{Wrange}));
+	  $ln_pval = "-Inf";
+	  $sig = "Inf";
 	}
       }
-      if (($return_fields{weight_limits})&&($bg_method ne "window")){
-	  $Wmin = $matrix->{Wmin};
-	  $Wmax= $matrix->{Wmax};
-      }
-      if ($calc_fields{pval}) {
-	  if (defined(${$main::pval{$matrix}}{$score})) {
-	      $pval_value = ${$main::pval{$matrix}}{$score};
-	      $pval = sprintf("%.1e", $pval_value);
-#	      $uth{pval} = 0.1;#,"\n";
-	      
-	      ####computing p_scores
-# 	      if (defined($uth{pval})){
- 	      if ($calc_fields{p_score}){
-		  $p_score = &p_score($uth{pval},$pval_value);
-		  $p_score = sprintf("%.${decimals}f",$p_score);
-	      }
-	      
-	      if ($pval_value > 0) {
-		  $ln_pval = sprintf("%.3f", log($pval_value));
-		  $sig = sprintf("%.3f", -log($pval_value)/$sig_base);
-	      } else {
-		  $ln_pval = "-Inf";
-		  $sig = "Inf";
-	      }
-	  }
-      }
+    }
   } elsif ($proba_M == 0) {
-      if ($proba_B > 0) {
-	  $score = "-Inf";
-	  $normw = 0 if ($calc_fields{normw});
-	  if ($calc_fields{pval}) {
-	      $pval = 0;
-	      $ln_pval = "-Inf";
-	      $sig = "Inf";
-	  }
+    if ($proba_B > 0) {
+      $score = "-Inf";
+      $normw = 0 if ($calc_fields{normw});
+      if ($calc_fields{pval}) {
+	$pval = 0;
+	$ln_pval = "-Inf";
+	$sig = "Inf";
       }
+    }
   }
-  
-  
-  
+
   if ($return_fields{distrib}) {
-      #      my $score = sprintf("%.${decimals}f", $score);
-      $score_distrib->{$matrix_name}->{$score}->{occ}++;
+    #      my $score = sprintf("%.${decimals}f", $score);
+    $score_distrib->{$matrix_name}->{$score}->{occ}++;
   }
   #    &RSAT::message::Debug("scoring segment", $segment, $seq_id, $pos, $strand, 
   #			  $proba_M , $proba_B, $score) if ($main::verbose >= 10);
-  
 
-  
   ## For CRER search
   my $is_hit = 1; 
   if ($return_fields{crer}) {
-  	#push(@{$crer_seed_pval{$matrix_name}->{$strand}},$pval);
-  	#push(@{$crer_seed_weights{$matrix_name}->{$strand}},$score);
-  	#push(@{$crer_seed_weights{$matrix_name}->{'normw'}->{$strand}},$normw) if ($calc_fields{normw});
-  	unless (&check_thresholds("pval", $pval,$matrix_name)) {$is_hit = 0;}
-   	if ($is_hit) {
-  		push(@{$crer_seed_hits{$matrix_name}->{$strand}},1);
-  		push(@{$crer_seed_pval{$matrix_name}->{$strand}},$pval);
-  		push(@{$crer_seed_weights{$matrix_name}->{$strand}},$score);
-  		push(@{$crer_seed_weights{$matrix_name}->{'normw'}->{$strand}},$normw) if ($calc_fields{normw});
-  	} else {
-  		push(@{$crer_seed_hits{$matrix_name}->{$strand}},0);
-  		push(@{$crer_seed_pval{$matrix_name}->{$strand}},1);
-  		push(@{$crer_seed_weights{$matrix_name}->{$strand}},0);
-  		push(@{$crer_seed_weights{$matrix_name}->{'normw'}->{$strand}},0) if ($calc_fields{normw});
-  	}
+    #push(@{$crer_seed_pval{$matrix_name}->{$strand}},$pval);
+    #push(@{$crer_seed_weights{$matrix_name}->{$strand}},$score);
+    #push(@{$crer_seed_weights{$matrix_name}->{'normw'}->{$strand}},$normw) if ($calc_fields{normw});
+    unless (&check_thresholds("pval", $pval,$matrix_name)) {
+      $is_hit = 0;
+    }
+    if ($is_hit) {
+      push(@{$crer_seed_hits{$matrix_name}->{$strand}},1);
+      push(@{$crer_seed_pval{$matrix_name}->{$strand}},$pval);
+      push(@{$crer_seed_weights{$matrix_name}->{$strand}},$score);
+      push(@{$crer_seed_weights{$matrix_name}->{'normw'}->{$strand}},$normw) if ($calc_fields{normw});
+    } else {
+      push(@{$crer_seed_hits{$matrix_name}->{$strand}},0);
+      push(@{$crer_seed_pval{$matrix_name}->{$strand}},1);
+      push(@{$crer_seed_weights{$matrix_name}->{$strand}},0);
+      push(@{$crer_seed_weights{$matrix_name}->{'normw'}->{$strand}},0) if ($calc_fields{normw});
+    }
   }
   
   ## switch to allow the calculation of pval for window bg model. Requires a lot of computing time !!!
   my $calc_window_pval = 1;
   
   ## Perform the threshold filtering only after having added the score to the disribution
-  unless (&check_thresholds("proba_m", $proba_M,$matrix_name)) {return(0) ; $calc_window_pval = 0; }
-  unless (&check_thresholds("proba_b", $proba_B,$matrix_name)) {return(0) ; $calc_window_pval = 0; }
-  unless (&check_thresholds("pval_value", $pval_value,$matrix_name)) {return(0) ; $calc_window_pval = 0; }
-  unless (&check_thresholds("pval", $pval,$matrix_name)) {return(0) ; $calc_window_pval = 0;  }
-  unless (&check_thresholds("ln_pval", $ln_pval,$matrix_name)) {return(0) ; $calc_window_pval = 0; }
-  unless (&check_thresholds("sig", $sig,$matrix_name)) {return(0) ; $calc_window_pval = 0; $is_hit = 0;}
-  unless (&check_thresholds("score", $score,$matrix_name)) {return(0) ; $calc_window_pval = 0; }
-  unless (&check_thresholds("normw", $normw,$matrix_name)) {return(0) ; $calc_window_pval = 0; }
+  unless (&check_thresholds("proba_m", $proba_M,$matrix_name)) {
+    return(0) ; $calc_window_pval = 0;
+  }
+  unless (&check_thresholds("proba_b", $proba_B,$matrix_name)) {
+    return(0) ; $calc_window_pval = 0;
+  }
+  unless (&check_thresholds("pval_value", $pval_value,$matrix_name)) {
+    return(0) ; $calc_window_pval = 0;
+  }
+  unless (&check_thresholds("pval", $pval,$matrix_name)) {
+    return(0) ; $calc_window_pval = 0;
+  }
+  unless (&check_thresholds("ln_pval", $ln_pval,$matrix_name)) {
+    return(0) ; $calc_window_pval = 0;
+  }
+  unless (&check_thresholds("sig", $sig,$matrix_name)) {
+    return(0) ; $calc_window_pval = 0; $is_hit = 0;
+  }
+  unless (&check_thresholds("score", $score,$matrix_name)) {
+    return(0) ; $calc_window_pval = 0;
+  }
+  unless (&check_thresholds("normw", $normw,$matrix_name)) {
+    return(0) ; $calc_window_pval = 0;
+  }
 
   
 
-   # &RSAT::message::Debug("match", $seq_id, $score, $pval, $ln_pval, $sig_base, $sig) if ($main::verbose >= 10);
+  # &RSAT::message::Debug("match", $seq_id, $score, $pval, $ln_pval, $sig_base, $sig) if ($main::verbose >= 10);
 
   ## Calculate information
   #    my $info = $score * $proba_B;
@@ -3738,6 +3831,7 @@ sub runInBatch {
 
   		$matrix_scan_cmd .= " -n ".$main::n_treatment;
   		$matrix_scan_cmd .= " -origin ".$main::origin;
+  		$matrix_scan_cmd .= " -offset ".$main::offset;
 
   		## scoring
   		if ($base != exp(1)){

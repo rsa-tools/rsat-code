@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.25 2009/08/04 21:19:45 rsat Exp $
+# $Id: matrix-scan.cgi,v 1.26 2009/11/11 05:32:58 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -200,9 +200,15 @@ sub ReadMatrixScanParameters {
 
   ################################################################
   #### origin
-  if ($query->param('origin') =~ /end/i) {
-    $parameters .= " -origin -0";
+  $parameters .= " -origin ".$query->param('origin');
+
+  ################################################################
+  #### Offset
+  my $offset = $query->param('offset');
+  if ((&IsInteger($offset)) && ($offset != 0)) {
+    $parameters .= " -offset ".$offset;
   }
+
 
   ################################################################
   ## Markov order
