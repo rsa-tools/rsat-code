@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.13 2009/11/11 05:32:02 jvanheld Exp $
+# $Id: convert-features,v 1.14 2009/11/11 07:00:41 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -193,15 +193,50 @@ FORMAT DESCRIPTIONS
 
        gff: Sanger general feature file (extension .gff)
            Information: http://www.sanger.ac.uk/Software/formats/GFF/GFF_Spec.shtml
-		col 1	seqname (contig or sequence ID)
-		col 2	source
-		col 3	feature (feature type)
-		col 4	start
-		col 5	end
-		col 6	score
-		col 7	strand (+, - or .)
-		col 8	frame (0, 1, 2 or .)
-		col 9	attribute (from version gff2 onward)
+
+	   Synthetic description (from UCSC)
+	       http://genome.ucsc.edu/goldenPath/help/customTrack.html#GFF
+
+		col  1: seqname (contig or sequence ID)
+        	     The name of the sequence. Must be a chromosome or scaffold.
+
+		col  2: source
+        	     The program that generated this feature.
+
+		col  3: feature
+        	     The name of this type of feature. Some examples
+        	     of standard feature types are "CDS",
+        	     "start_codon", "stop_codon", and "exon".
+
+		col  4: start
+        	     The starting position of the feature in the
+        	     sequence. The first base is numbered 1.
+
+		col  5: end
+        	     The ending position of the feature (inclusive).
+
+		col  6: score
+        	     A score between 0 and 1000. If the track line
+        	     useScore attribute is set to 1 for this
+        	     annotation data set, the score value will
+        	     determine the level of gray in which this feature
+        	     is displayed (higher numbers = darker gray). If
+        	     there is no score value, enter ".".
+
+		col  7: strand (+, - or .)
+        	     Valid entries include '+', '-', or 
+		     '.' (for don't know/don't care).
+
+		col  8: frame (0, 1, 2 or .)
+        	     If the feature is a coding exon, frame should be
+        	     a number between 0-2 that represents the reading
+        	     frame of the first base. If the feature is not a
+        	     coding exon, the value should be '.'.
+
+		col  9: attribute (from version gff2 onward)
+        	     Note: in UCSC genome browser, all lines with the
+        	     same group are linked together into a single
+        	     item.
 
 	    Example of gff1:
 		SEQ1	EMBL	atg	103	105	.	+	0
@@ -263,6 +298,7 @@ FORMAT DESCRIPTIONS
 		ctg123	.	CDS	3391	3902	.	+	0	ID=cds00004;Parent=mRNA00003;Name=edenprotein.4	
 		ctg123	.	CDS	5000	5500	.	+	2	ID=cds00004;Parent=mRNA00003;Name=edenprotein.4	
 		ctg123	.	CDS	7000	7600	.	+	2 	ID=cds00004;Parent=mRNA00003;Name=edenprotein.4
+
 
 	bed
 	   Genomic features in the UCSC format
