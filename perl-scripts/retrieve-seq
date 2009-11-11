@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.73 2009/09/29 08:23:51 jvanheld Exp $
+# $Id: retrieve-seq,v 1.74 2009/11/11 05:45:55 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -407,7 +407,7 @@ foreach my  $query (@queries) {
 	@comments = ($ctg, $sequence_type, $orf_strand, $reg_left, $reg_right, $organism_name);
 
     } elsif ($no_comments == 0) {
-	my $location = join (" ", $ctg, $reg_left, $reg_right, $orf_strand);
+	my $location = join (":", $organism_name, $ctg, $reg_left."-".$reg_right, $orf_strand);
 	if ($sequence_type eq "random fragments") {
 	    @comments = (join("; ","random fragment", 
 			      "size: ".$reg_size,
