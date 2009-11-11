@@ -72,7 +72,6 @@ double *compute_priori(Sequences &sequences)
     return priori;
 }
 
-
 /***************************************************************************
  *                                                                         *
  *  CONVERT & PARSE SEQUENCES
@@ -98,7 +97,6 @@ string reverse_complement(string s)
     }
     return rc;
 }
-
 
 int read_fasta(vector<string> &sequences, string filename, bool rc=false)
 {

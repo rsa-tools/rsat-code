@@ -94,9 +94,6 @@ struct Parameters
     SITES starting_sites;
 };
 
-// // remove neighbours
-// SITES remove_neighbours(SITES &allsites, SITES &motif, int dmin, int r);
-
 // run the sampler & print the results on stdout
 void run_sampler(vector<string> &raw_sequences, Sequences &sequences, Markov &markov, Parameters &params);
 
