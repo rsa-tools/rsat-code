@@ -21,6 +21,9 @@ $default{sequence_file} = ""; ### [-f <Name of sequence file---default: standard
 $default{sequence} = ""; ### [-f <Name of sequence file---default: standard input>]
 $default{sequence_format} = "fasta"; ### automatic conversion from any format to wc
 
+$default{origin}="end";
+$default{offset}="0";
+
 $default{bg_method}="bginput";
 $checked{$default{bg_method}} = "CHECKED";
 $default{markov_order} = "0";
@@ -168,10 +171,10 @@ print "<hr>";
 print "<hr>";
 
 my %bg_params =("markov" => 1,
-				"bg_input" => 1,
-				"bg_window" => 1,
-				"markov_message" => 1
-				);
+		"bg_input" => 1,
+		"bg_window" => 1,
+		"markov_message" => 1
+	       );
 &GetBackgroundModel(\%bg_params);
 
 print "<hr>";
@@ -182,7 +185,6 @@ print "<hr>";
 #### strands
 
 print "<p><B>Scanning options</B><br>\n";
-
 print "<BR>\n";
 print "<A HREF='help.patser.html#strands'><B>Search strands</B></A>&nbsp;\n";
 print $query->popup_menu(-name=>'strands',
@@ -191,16 +193,24 @@ print $query->popup_menu(-name=>'strands',
 			 -default=>$default{strands});
 
 ################################################################
-#### origin for calculating position
-print "&nbsp;"x4,  "<A HREF='help.dna-pattern.html#origin'><B>Origin</B></A>\n";
+#### origin for calculating positions
+print "&nbsp;"x4,  "<A HREF='help.matrix-scan.html#origin'><B>Origin</B></A>\n";
 print $query->popup_menu(-name=>'origin',
 			 -Values=>['start',
-				   'end'],
+				   'end',
+				   'genomic'],
 			 -default=>$default{origin});
 
 ################################################################
+#### Offset for calculating positions
+print "&nbsp;"x4,  "<A HREF='help.matrix-scan.html#offset'><B>Offset</B></A>\n";
+print $query->textfield(-name=>'offset',
+			-default=>$default{offset},
+			-size=>8);
+
+################################################################
 #### decimals
-print "&nbsp;"x4,  "<A HREF='help.matrix-scan.html'><B>score decimals</B></A>\n";
+print "&nbsp;"x2,  "<A HREF='help.matrix-scan.html'><B>score decimals</B></A>\n";
 print $query->popup_menu(-name=>'decimals',
 			 -Values=>['0',
 				   '1','2'],
