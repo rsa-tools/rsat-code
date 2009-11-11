@@ -1030,379 +1030,430 @@ sub CheckFormat {
 ##         $seq_type
 ##         $mask (accepted values: "upper" or "lower"). Mask upper or lowercases by replacing them by N
 sub ReadNextSequence {
-    my ($SEQ, $sequence_format, $input_dir, $seq_type, $mask, %args) = @_;
-    $sequence_format = lc($sequence_format);
+  my ($SEQ, $sequence_format, $input_dir, $seq_type, $mask, %args) = @_;
+  $sequence_format = lc($sequence_format);
 
-    ## Columns for the tab-delimited format
-    my $id_column = $args{'id_column'} || 1;
-    my $seq_column = $args{'seq_column'} || 2;
-    my $comment_column = $args{'comment_column'} || 0;
+  ## Columns for the tab-delimited format
+  my $id_column = $args{'id_column'} || 1;
+  my $seq_column = $args{'seq_column'} || 2;
+  my $comment_column = $args{'comment_column'} || 0;
 
-    local $sequence = "";
-    local $seq_id = "";
-    local @comments = ();
+  local $sequence = "";
+  local $seq_id = "";
+  local @comments = ();
 
-    ### single raw file ###
-    if ($sequence_format eq "raw") {
-      if (defined($inputfile)) {
-	if ($inputfile =~ /([\S]*\/)*([\S^\/]+)$/) {
-	  $seq_id = $2;
-	} else {
-	  $seq_id = $inputfile;
-	}
+  ### single raw file ###
+  if ($sequence_format eq "raw") {
+    if (defined($inputfile)) {
+      if ($inputfile =~ /([\S]*\/)*([\S^\/]+)$/) {
+	$seq_id = $2;
       } else {
-	$seq_id = "seq";
-      };
+	$seq_id = $inputfile;
+      }
+    } else {
+      $seq_id = "seq";
+    }
+    ;
 
+    $sequence = "";
+    while (<$SEQ>) {
+      next if ((/^;/) || (/^\#/) || (/^--/));
+      $sequence .= $_;
+    }
+    if ($sequence) {
+      #	    $sequence = &FoldSequence($sequence, 0);
+      #	    &CheckFormat($sequence, $sequence_format, $seq_type);
+      #	    return ($sequence, $seq_id, @comments);
+      return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+    } else {
+      return ("","");
+    }
+
+    #### multi: several raw sequences in the same file, separated by a newline
+  } elsif ($sequence_format eq "multi") {
+    $seq_counter++;
+    if ((defined($inputfile)) && ($inputfile =~ /([\S]*\/)*([\S^\/]+)$/ )) {
+      $seq_id = $2;
+    } else {
+      $seq_id = $Sequence_File;
+    }
+    $seq_id .= "_$seq_counter";
+    $sequence = "";
+    my $gotit = 0;
+    while ((defined($SEQ)) && ($sequence = <$SEQ>) && !($gotit)) {
+      next if ($sequence =~ /^;/);
+      $gotit = 1;
+      #	    $sequence = &FoldSequence($sequence, 0);
+      #	    &CheckFormat($sequence, $sequence_format, $seq_type);
+      return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+    } 
+    return ("","") unless $gotit;
+	
+	
+    ### file list ###
+  } elsif ($sequence_format eq "filelist") {
+    $found = 0;
+    while (!($found)) {
+      $next_line = <$SEQ> || return ("","");
+      next if ($next_line =~ /^;/);	     ### skip comment lines
+      if ($next_line =~ /^\s*(\S+)/) { ### make sure to take a non-empty line
+	$next_file = $1;   ### file name is the first word of the line
+	$found = 1;
+      }
+    } 
+    &RSAT::message::Debug("ReadNextSequence", $next_file, "input directory", $input_dir) 
+      if ($main::verbose >= 4);
+
+    unless (-e $next_file) {
+      if (-e ${input_dir}."/".${next_file}) {
+	$next_file = "$input_dir/$next_file";
+      }
+    }
+    if ((-e $next_file) && (open NEXT_SEQ, $next_file)) {
+      warn "; Reading file $next_file\n" if ($verbose >= 2);
+      #### extract the sequence file name without path ####
+      if ($next_file =~ /([\S]*\/)*([\S^\/]+)$/ ) {
+	$seq_id = $2;
+      } else {
+	$seq_id = $next_file;
+      }
       $sequence = "";
-      while (<$SEQ>) {
-	next if ((/^;/) || (/^\#/) || (/^--/));
+      while (<NEXT_SEQ>) {
 	$sequence .= $_;
       }
-      if ($sequence) {
-	#	    $sequence = &FoldSequence($sequence, 0);
-	#	    &CheckFormat($sequence, $sequence_format, $seq_type);
-	#	    return ($sequence, $seq_id, @comments);
+      close NEXT_SEQ;
+      #	    $sequence = &FoldSequence($sequence, 0);
+      #	    &CheckFormat($sequence, $sequence_format, $seq_type);
+      return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+    } else {
+      die "\tError: cannot open sequence file $next_file\n";
+    }
+	
+    ### IntelliGenetics format ###
+  } elsif ($sequence_format eq "ig") {
+    while (<$SEQ>) {
+      if (/^;(.*)/) {		
+	## comment line
+	@comments = (@comments, $1);
+      } elsif (($seq_id eq "") && (/(\S+)\s/)) { 
+	## identifier for the next sequence
+	$seq_id = $1;
+      } elsif (/(.*)[12]/) {	
+	## end of the current sequence
+	$sequence .= $1;
+	#		$sequence = &FoldSequence($sequence, 0);
+	#		&CheckFormat($sequence, "raw", $seq_type);
 	return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
       } else {
-	return ("","");
+	$sequence .= $_;
       }
-
-	#### multi: several raw sequences in the same file, separated by a newline
-    } elsif ($sequence_format eq "multi") {
-	$seq_counter++;
-	if ((defined($inputfile)) && ($inputfile =~ /([\S]*\/)*([\S^\/]+)$/ )) {
-	    $seq_id = $2;
-	} else {
-	    $seq_id = $Sequence_File;
-	}
-	$seq_id .= "_$seq_counter";
-	$sequence = "";
-	my $gotit = 0;
-	while ((defined($SEQ)) && ($sequence = <$SEQ>) && !($gotit)) {
-	    next if ($sequence =~ /^;/);
-	    $gotit = 1;
-#	    $sequence = &FoldSequence($sequence, 0);
-#	    &CheckFormat($sequence, $sequence_format, $seq_type);
-	    return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-	} 
-	return ("","") unless $gotit;
-	
-	
-	### file list ###
-    } elsif ($sequence_format eq "filelist") {
-	$found = 0;
-	while (!($found)) {
-	    $next_line = <$SEQ> || return ("","");
-	    next if ($next_line =~ /^;/); ### skip comment lines
-	    if ($next_line =~ /^\s*(\S+)/) { ### make sure to take a non-empty line
-		$next_file = $1;	### file name is the first word of the line
-		$found = 1;
-					   }
-	} 
-	&RSAT::message::Debug("ReadNextSequence", $next_file, "input directory", $input_dir) 
-	    if ($main::verbose >= 4);
-
-	unless (-e $next_file) {
-	    if (-e ${input_dir}."/".${next_file}) {
-		$next_file = "$input_dir/$next_file";
-	    }
-	}
-	if ((-e $next_file) && (open NEXT_SEQ, $next_file)) {
-	    warn "; Reading file $next_file\n" if ($verbose >= 2);
-	    #### extract the sequence file name without path ####
-	    if ($next_file =~ /([\S]*\/)*([\S^\/]+)$/ ) {
-		$seq_id = $2;
-	    } else {
-		$seq_id = $next_file;
-	    }
-	    $sequence = "";
-	    while (<NEXT_SEQ>) {
-		$sequence .= $_;
-	    }
-	    close NEXT_SEQ;
-#	    $sequence = &FoldSequence($sequence, 0);
-#	    &CheckFormat($sequence, $sequence_format, $seq_type);
-	    return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-	} else {
-	    die "\tError: cannot open sequence file $next_file\n";
-	}
-	
-	### IntelliGenetics format ###
-    } elsif ($sequence_format eq "ig") {
-	while (<$SEQ>) {
-	    if (/^;(.*)/) {		
-		## comment line
-		@comments = (@comments, $1);
-	    } elsif (($seq_id eq "") && (/(\S+)\s/)) { 
-		## identifier for the next sequence
-		$seq_id = $1;
-	    } elsif (/(.*)[12]/) {	
-		## end of the current sequence
-		$sequence .= $1;
-#		$sequence = &FoldSequence($sequence, 0);
-#		&CheckFormat($sequence, "raw", $seq_type);
-		return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-	    } else {
-		$sequence .= $_;
-	    }
-	}
-	return ("","");		### when input file has been totally read
-
-	### tab-delimited text file
-    } elsif ($sequence_format eq "tab") {
-	while (<$SEQ>) {
-	    next if (/^--/);
-	    next if (/^;/);
-	    next if (/^\#/);
-	    next unless (/\S/);
-	    chomp();
-	    my @fields = split "\t";
-	    my $seq_id = $fields[$id_column-1];
-	    my $sequence = $fields[$seq_column -1];
-	    my @comments =  ();
-	    if ($comment_column) {
-		push @comments, $fields[$comment_column -1];
-	    }
-	    return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-	}
-	return ("","");		### when input file has been totally read
-
-	### Wconsensus format ###
-    } elsif (($sequence_format eq "wc") || ($sequence_format eq "wconsensus")) {
-	while (<$SEQ>) {
-	    if (/^;(.*)/) {		
-		## comment line
-		@comments = (@comments, $1);
-	    } elsif (($seq_id eq "") && (/(\S+)\s+\\(.*)/)) { 
-		$seq_id = $1;
-		$the_rest = $2;
-		if ($the_rest =~ /(.*)\\/) {
-		    $sequence = $1;
-		} else {
-		    $end_of_seq = 0;
-		    $sequence = $the_rest;
-		    do { 
-			if ($next_line = <$SEQ>) {
-			    if ($next_line=~ /(.*)\\/) {
-				$end_of_seq = 1;
-				$sequence .= $1;
-			    } else {
-				$sequence .= $next_line;
-			    }
-			} else {
-			    return ("","");	### when input file has been totally read
-			}
-		    } until ($end_of_seq);
-		}
-#		$sequence = &FoldSequence($sequence, 0);
-#		return ($sequence, $seq_id, @comments);
-		return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-	    }
-	}
-	return ("","");		### when input file has been totally read
-
-	### FastA format ###
-    } elsif ($sequence_format eq "fasta") {
-	while (<$SEQ>) {
-	    next if ((/^;/) || (/^\#/));
-	    if (/^\s*>\s*(\S*)\s*(.*)/) { 
-	      ## new sequence identifier
-	      my $next_id = $1;
-	      unless ($next_id) {
-		## Check that sequence ID is not empty
-		&RSAT::message::Warning("Invalid format for a fasta file: empty sequence identifier.");
-		$empty_seq_counter++;
-		$next_id = "unidentifier_seq_".$empty_seq_counter;
-	      }
-#	      &RSAT::message::Debug("New sequence ID", $next_id) if ($main::verbose >= 5);
-
-	      ## Comments
-	      @comment = ($2);
-
-	      if ((defined($current_seq_id)) && ($current_seq_id ne "")) {
-		## New ID after a previous sequence.  Action: return the
-		## previous sequence and take the new ID for the next
-		## sequence
-		my $seq_id = $current_seq_id;
-		$current_seq_id = $next_id;
-		# &CheckFormat($sequence, "raw", $seq_type);
-		return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-	      } else {
-		##  first id from the seq file
-		$current_seq_id = $next_id;
-	      }
-	    } else {
-		## continuation of the previous sequence: concatenate it
-		$sequence .= $_;
-	    }
-	}
-
-	## Return the last sequence after having completely read the file
-	if ($current_seq_id) {
-#	    $sequence = &FoldSequence($sequence, 0);
-	    $seq_id = $current_seq_id;
-	    $current_seq_id = "";
-	    return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-	} else {
-	    return ("","");
-	}
-
-        ## ##############################################################
-	## maf format (multiple alignment file)
-    } elsif ($sequence_format eq "maf") {
-	while (<$SEQ>) {
-	    if (/^a\s/) {
-		## Start a new alignment
-	    } elsif (/^s\s/) {
-		&RSAT::message::Debug("New sequence", $_) if ($main::verbose >= 10);
-		## Start a new sequence
-		if (/^s\s+(\S+)\s+(\d+)\s+(\d+)\s+([\+\-])\s+(\d+)\s+(.+)/) {
-		    my $contig = $1;
-		    my $start_pos = $2;
-		    my $length = $3;
-		    my $strand = $4;
-		    if ($strand eq "+") {
-			$strand = "D";
-		    } elsif ($strand eq "-") {
-			$strand = "R";
-		    } else {
-			&RSAT::message::Warning(join ("\t", "Invalid strand specification", $strand, $_));
-		    }
-		    my $contig_len = $5;
-		    ## Aligned sequence (may contain gaps)
-		    my $aligned_seq = $6;
-		    ## "Desalign" the sequence, i.e. suppress gap symbols
-		    my $desaligned_seq = $aligned_seq;
-		    $desaligned_seq =~ s/\-//g;
-		    $desaligned_seq =~ s/\.//g;
-
-		    ## Generate sequence ID
-		    my $seq_id = join ("_", $contig, $start_pos, $length, $strand, $contig_len);
-		    my @comments = ();
-		    push @comments, "Desaligned sequence (converted from maf file)";
-		    push @comments, "contig: ".$contig;
-		    push @comments, "fragment length: ".$length;
-		    push @comments, "start position: ".$start_pos;
-		    push @comments, "strand: ".$strand;
-		    push @comments, "contig length: ".$contig_len;
-		    
-		    &RSAT::message::Debug($seq_id, @comments) if ($main::verbose >= 3);
-
-		    return(&ReturnSequence($desaligned_seq, $seq_id, $mask, @comments));
-		} else {
-		    &RSAT::message::Warning(join ("\t", "Invalid sequence header for maf format", $_));
-		}
-
-	    }
-	}
-
-	### GCG format ###
-    } elsif ($sequence_format eq "gcg") {
-	$seq_id = "";
-	$sequence = "";
-	@comments = ();
-	$in_sequence = 0;
-	
-	while (<$SEQ>) {
-	    if (/^\/\/$/) {		
-		## end of record
-		$sequence = &FoldSequence($sequence, 0);
-		return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-	    } elsif (/^\s*(\S+).+\.\.\s*$/) {	
-		## dividing line
-		$seq_id = $1;
-		$sequence = "";
-		chomp;
-		push @comments, $_;
-		$in_sequence = 1;
-	    } elsif (($in_sequence) && (/(\d+)\s+(.+)$/)) { ### sequence
-		$position = $1;
-		$sequence .= $2;
-	    } elsif (($in_sequence == 0) && (/\S/)) {	### comment
-		chomp;
-		push @comments, $_;
-	    }
-	}
-	
-#	$sequence = &FoldSequence($sequence, 0);
-	return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-	
-	### NCBI/GENBANK format ###
-    } elsif (($sequence_format eq "ncbi") ||
-	     ($sequence_format eq "genbank")) {
-	$seq_id = "";
-	$sequence = "";
-	@comments = ();
-	$in_sequence = 0;
-	
-	while (<$SEQ>) {
-#  	    $l++;
-#  	    if (($verbose >= 5) && ($l%100000 == 0)){
-#  		warn "reading line $l\n";
-#  	    }
-	    chomp;
-	    if (/^\/\/$/) {		### end of record
-		warn "Folding sequence $seq_id\n" if ($verbose >=3);
-#		$sequence = &FoldSequence($sequence, 0);
-		warn "Read sequence $seq_id\n" if ($verbose >=3);
-		return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-	    } elsif ((/^ACCESSION\s+(\S+)/) ||
-		     (/^LOCUS\s+(\S+)/)) {
-		$seq_id = $1;
-		warn "Sequence ID\t$seq_id\n" if ($verbose >= 2);
-		$sequence = "";
-		chomp;
-		push @comments, $seq_id;
-	    } elsif (/^DEFINITION\s+/) {	### definition
-		push @comments, "$'";
-	    } elsif (/^ORIGIN/) {
-		warn "Reading sequence\t$seq_id\n" if ($verbose >= 2);
-		$in_sequence = 1;
-	    } elsif (($in_sequence) && (/(\d+)\s+(.+)$/)) { ### sequence
-		$position = $1;
-		$sequence .= $2;
-	    } 
-	}
-	
-#	$sequence = &FoldSequence($sequence, 0);
-	return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-	
-	### EMBL format ###
-    } elsif ($sequence_format eq "embl") {
-	$seq_id = "";
-	$sequence = "";
-	@comments = ();
-	$in_sequence = 0;
-	
-	while (<$SEQ>) {
-	    chomp;
-	    if (/^\/\/$/) {		### end of record
-#		$sequence = &FoldSequence($sequence, 0);
-		return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-	    } elsif (/^AC\s+(\S+);/) {	### accession number
-		$seq_id = $1;
-		$sequence = "";
-		chomp;
-		push @comments, $seq_id;
-	    } elsif (/^DE\s+/) {	### definition
-		push @comments, "$'";
-	    } elsif (/^SQ\s+/) {
-		$in_sequence = 1;
-	    } elsif (($in_sequence) && (/^(.+)\s+(\d+)\s*$/)) { ### sequence
-		$position = $2;
-		$sequence .= $1;
-	    } 
-	}
-	
-#	$sequence = &FoldSequence($sequence, 0);
-	return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-	
-	### end of sequence file ###
-    } else {
-	return ("","");
     }
+    return ("","");	     ### when input file has been totally read
+
+    ### tab-delimited text file
+  } elsif ($sequence_format eq "tab") {
+    while (<$SEQ>) {
+      next if (/^--/);
+      next if (/^;/);
+      next if (/^\#/);
+      next unless (/\S/);
+      chomp();
+      my @fields = split "\t";
+      my $seq_id = $fields[$id_column-1];
+      my $sequence = $fields[$seq_column -1];
+      my @comments =  ();
+      if ($comment_column) {
+	push @comments, $fields[$comment_column -1];
+      }
+      return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+    }
+    return ("","");	     ### when input file has been totally read
+
+    ### Wconsensus format ###
+  } elsif (($sequence_format eq "wc") || ($sequence_format eq "wconsensus")) {
+    while (<$SEQ>) {
+      if (/^;(.*)/) {
+	## comment line
+	@comments = (@comments, $1);
+      } elsif (($seq_id eq "") && (/(\S+)\s+\\(.*)/)) { 
+	$seq_id = $1;
+	$the_rest = $2;
+	if ($the_rest =~ /(.*)\\/) {
+	  $sequence = $1;
+	} else {
+	  $end_of_seq = 0;
+	  $sequence = $the_rest;
+	  do { 
+	    if ($next_line = <$SEQ>) {
+	      if ($next_line=~ /(.*)\\/) {
+		$end_of_seq = 1;
+		$sequence .= $1;
+	      } else {
+		$sequence .= $next_line;
+	      }
+	    } else {
+	      return ("",""); ### when input file has been totally read
+	    }
+	  } until ($end_of_seq);
+	}
+	#		$sequence = &FoldSequence($sequence, 0);
+	#		return ($sequence, $seq_id, @comments);
+	return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+      }
+    }
+    return ("","");	     ### when input file has been totally read
+
+    ### FastA format ###
+  } elsif ($sequence_format eq "fasta") {
+    while (<$SEQ>) {
+      next if ((/^;/) || (/^\#/));
+      if (/^\s*>\s*(\S*)\s*(.*)/) { 
+	## new sequence identifier
+	my $next_id = $1;
+	unless ($next_id) {
+	  ## Check that sequence ID is not empty
+	  &RSAT::message::Warning("Invalid format for a fasta file: empty sequence identifier.");
+	  $empty_seq_counter++;
+	  $next_id = "unidentified_seq_".$empty_seq_counter;
+	}
+	&RSAT::message::Debug("ReadNextSequence()","ID", $next_id) if ($main::verbose >= 3);
+
+	## Comments
+	@comments = ($2);
+
+	if ((defined($current_seq_id)) && ($current_seq_id ne "")) {
+	  ## New ID after a previous sequence.  Action: return the
+	  ## previous sequence and take the new ID for the next
+	  ## sequence
+	  my $seq_id = $current_seq_id;
+	  $current_seq_id = $next_id;
+	  # &CheckFormat($sequence, "raw", $seq_type);
+	  return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+	} else {
+	  ##  first id from the seq file
+	  $current_seq_id = $next_id;
+	}
+      } else {
+	## continuation of the previous sequence: concatenate it
+	$sequence .= $_;
+      }
+    }
+
+    ## Return the last sequence after having completely read the file
+    if ($current_seq_id) {
+      #	    $sequence = &FoldSequence($sequence, 0);
+      $seq_id = $current_seq_id;
+      $current_seq_id = "";
+      return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+    } else {
+      return ("","");
+    }
+
+    ## ##############################################################
+    ## maf format (multiple alignment file)
+  } elsif ($sequence_format eq "maf") {
+    while (<$SEQ>) {
+      if (/^a\s/) {
+	## Start a new alignment
+      } elsif (/^s\s/) {
+	&RSAT::message::Debug("New sequence", $_) if ($main::verbose >= 10);
+	## Start a new sequence
+	if (/^s\s+(\S+)\s+(\d+)\s+(\d+)\s+([\+\-])\s+(\d+)\s+(.+)/) {
+	  my $contig = $1;
+	  my $start_pos = $2;
+	  my $length = $3;
+	  my $strand = $4;
+	  if ($strand eq "+") {
+	    $strand = "D";
+	  } elsif ($strand eq "-") {
+	    $strand = "R";
+	  } else {
+	    &RSAT::message::Warning(join ("\t", "Invalid strand specification", $strand, $_));
+	  }
+	  my $contig_len = $5;
+	  ## Aligned sequence (may contain gaps)
+	  my $aligned_seq = $6;
+	  ## "Desalign" the sequence, i.e. suppress gap symbols
+	  my $desaligned_seq = $aligned_seq;
+	  $desaligned_seq =~ s/\-//g;
+	  $desaligned_seq =~ s/\.//g;
+
+	  ## Generate sequence ID
+	  my $seq_id = join ("_", $contig, $start_pos, $length, $strand, $contig_len);
+	  my @comments = ();
+	  push @comments, "Desaligned sequence (converted from maf file)";
+	  push @comments, "contig: ".$contig;
+	  push @comments, "fragment length: ".$length;
+	  push @comments, "start position: ".$start_pos;
+	  push @comments, "strand: ".$strand;
+	  push @comments, "contig length: ".$contig_len;
+	  &RSAT::message::Debug($seq_id, @comments) if ($main::verbose >= 3);
+
+	  return(&ReturnSequence($desaligned_seq, $seq_id, $mask, @comments));
+	} else {
+	  &RSAT::message::Warning(join ("\t", "Invalid sequence header for maf format", $_));
+	}
+
+      }
+    }
+
+    ### GCG format ###
+  } elsif ($sequence_format eq "gcg") {
+    $seq_id = "";
+    $sequence = "";
+    @comments = ();
+    $in_sequence = 0;
+    while (<$SEQ>) {
+      if (/^\/\/$/) {		
+	## end of record
+	$sequence = &FoldSequence($sequence, 0);
+	return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+      } elsif (/^\s*(\S+).+\.\.\s*$/) {	
+	## dividing line
+	$seq_id = $1;
+	$sequence = "";
+	chomp;
+	push @comments, $_;
+	$in_sequence = 1;
+      } elsif (($in_sequence) && (/(\d+)\s+(.+)$/)) { ### sequence
+	$position = $1;
+	$sequence .= $2;
+      } elsif (($in_sequence == 0) && (/\S/)) {	### comment
+	chomp;
+	push @comments, $_;
+      }
+    }
+	
+    #	$sequence = &FoldSequence($sequence, 0);
+    return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+	
+    ### NCBI/GENBANK format ###
+  } elsif (($sequence_format eq "ncbi") ||
+	   ($sequence_format eq "genbank")) {
+    $seq_id = "";
+    $sequence = "";
+    @comments = ();
+    $in_sequence = 0;
+	
+    while (<$SEQ>) {
+      #  	    $l++;
+      #  	    if (($verbose >= 5) && ($l%100000 == 0)){
+      #  		warn "reading line $l\n";
+      #  	    }
+      chomp;
+      if (/^\/\/$/) {		### end of record
+	warn "Folding sequence $seq_id\n" if ($verbose >=3);
+	#		$sequence = &FoldSequence($sequence, 0);
+	warn "Read sequence $seq_id\n" if ($verbose >=3);
+	return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+      } elsif ((/^ACCESSION\s+(\S+)/) ||
+	       (/^LOCUS\s+(\S+)/)) {
+	$seq_id = $1;
+	warn "Sequence ID\t$seq_id\n" if ($verbose >= 2);
+	$sequence = "";
+	chomp;
+	push @comments, $seq_id;
+      } elsif (/^DEFINITION\s+/) { ### definition
+	push @comments, "$'";
+      } elsif (/^ORIGIN/) {
+	warn "Reading sequence\t$seq_id\n" if ($verbose >= 2);
+	$in_sequence = 1;
+      } elsif (($in_sequence) && (/(\d+)\s+(.+)$/)) { ### sequence
+	$position = $1;
+	$sequence .= $2;
+      } 
+    }
+	
+    #	$sequence = &FoldSequence($sequence, 0);
+    return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+	
+    ### EMBL format ###
+  } elsif ($sequence_format eq "embl") {
+    $seq_id = "";
+    $sequence = "";
+    @comments = ();
+    $in_sequence = 0;
+	
+    while (<$SEQ>) {
+      chomp;
+      if (/^\/\/$/) {		### end of record
+	#		$sequence = &FoldSequence($sequence, 0);
+	return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+      } elsif (/^AC\s+(\S+);/) { ### accession number
+	$seq_id = $1;
+	$sequence = "";
+	chomp;
+	push @comments, $seq_id;
+      } elsif (/^DE\s+/) {	### definition
+	push @comments, "$'";
+      } elsif (/^SQ\s+/) {
+	$in_sequence = 1;
+      } elsif (($in_sequence) && (/^(.+)\s+(\d+)\s*$/)) { ### sequence
+	$position = $2;
+	$sequence .= $1;
+      } 
+    }
+
+    #	$sequence = &FoldSequence($sequence, 0);
+    return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+
+    ### end of sequence file ###
+  } else {
+    return ("","");
+  }
 }
+
+
+################################################################
+=pod
+
+=item parse_genomic_coordinates
+
+Parse genomic coordinates of a sequence from its ID or description.
+This can be used by pattern matching programs (matrix-scan,
+dna-pattern) in order to return genomic positions (i.e. relative to
+chromosome start) rather than relative positions.
+
+Usage:
+ my ($seq_org, $seq_chrom, $seq_start, $seq_end, $seq_strand) = &parse_genomic_coordinates($seq_id, @seq_comments);
+
+=cut
+sub parse_genomic_coordinates {
+  my ($seq_id, @seq_comments) = @_;
+  my $comments = join("\t", $seq_id, @seq_comments);
+  my $seq_org = "Undef_organism";
+  my $seq_chrom  ="Undef_chrom";
+  my $seq_start = 1;
+  my $seq_end = 0;
+  my $seq_strand = "DR";
+  my $found_format = "none";
+
+#  &RSAT::message::Debug("Parsing sequence coordinates from sequence ID and comments", $comments)
+#    if ($main::verbose >= 5);
+
+  if ($comments =~ /location: (\S+):(\S+):(\d+)\-(\d+):([DR])/) {
+#  if ($comments =~ /location:/) {
+    ## Parse genomic coordinates in the retrieve-seq format
+    ($seq_org, $seq_chrom, $seq_start, $seq_end, $seq_strand) = ($1, $2, $3, $4, $5);
+
+  } elsif ($comments =~ /(\S+):(\S+):(\d+)\-(\d+)/) {
+    ## Parse genomic coordinates in the UCSC format
+    ($seq_org, $seq_chrom, $seq_start, $seq_end) = ($1, $2, $3, $4);
+
+  } else {
+    &RSAT::message::Warning("Could not parse genomic coordinates for sequence", $seq_id, join("; ", @seq_comments));
+  }
+  &RSAT::message::Debug("&parse_genomic_coordinates",
+			"format:".$found_format,
+			"org:".$seq_org,
+			"chrom:".$seq_chrom,
+			"start:".$seq_start,
+			"end:".$seq_end,
+			"strand:".$seq_strand) if ($main::verbose >= 4);
+
+  return ($seq_org, $seq_chrom, $seq_start, $seq_end, $seq_strand);
+}
+
 
 ################################################################
 ## Check a sequence, mask cases if required, and return it
