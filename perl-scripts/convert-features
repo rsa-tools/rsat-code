@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.14 2009/11/11 07:00:41 jvanheld Exp $
+# $Id: convert-features,v 1.15 2009/11/11 22:40:50 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -27,27 +27,13 @@ local $in = STDIN;
 local $out = STDOUT;
 local $null = "";
 
-%supported_input_format =(
-    ft=>1,
-    gft=>1,
-    gff=>1,
-    gff3=>1,
-    dnapat=>1,
-);
-$supported_input_formats = join (",", keys %supported_input_format);
+local $input_format = "ft";
+local $output_format = "gff3";
 
-local $output_format = "ft";
-%supported_output_format =(
-			   ft=>1,
-			   fasta=>1,
-			   gft=>1,
-			   gff=>1,
-			   gff3=>1,
-			   dnapat=>1,
-			   bed=>1,
-			  );
-$supported_output_formats = join (",", keys %supported_output_format);
-
+local $supported_input_formats = 
+  join (",", keys %RSAT::feature::supported_input_format);
+local $supported_output_formats = 
+  join (",", keys %RSAT::feature::supported_output_format);
 
 &ReadArguments();
 
@@ -429,13 +415,13 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-from") {
 	    $input_format = $ARGV[$a+1];
 	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supoprted: $supported_input_formats")
-		unless ($supported_input_format{$input_format});
+		unless ($RSAT::feature::supported_input_format{$input_format});
 
 	    ### output format  
 	} elsif ($ARGV[$a] eq "-to") {
 	    $output_format = $ARGV[$a+1];
 	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supoprted: $supported_output_formats")
-		unless ($supported_output_format{$output_format});
+		unless ($RSAT::feature::supported_output_format{$output_format});
 	}
     }
 }

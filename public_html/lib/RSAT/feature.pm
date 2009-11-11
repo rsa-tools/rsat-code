@@ -4,6 +4,23 @@
 #
 package RSAT::feature;
 
+%supported_input_format =(ft=>1,
+			  gft=>1,
+			  gff=>1,
+			  gff3=>1,
+			  dnapat=>1,
+			  bed=>1,
+			 );
+
+%supported_output_format =(ft=>1,
+			   fasta=>1,
+			   gft=>1,
+			   gff=>1,
+			   gff3=>1,
+			   dnapat=>1,
+			   bed=>1,
+			  );
+
 %strand_index = (D=>0,
 		 R=>1,
 		 DR=>2
