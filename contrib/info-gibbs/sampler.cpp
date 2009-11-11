@@ -302,7 +302,6 @@ double llr_Bernoulli(SITES &motif, Sequences &sequences, Array &matrix, Markov &
         }
     }
     return s;
-    //return s / n;
 }
 
 double llr(SITES &motif, Sequences &sequences, Array &matrix, Markov &markov, double pseudo=PSEUDO)
@@ -324,7 +323,6 @@ double llr(SITES &motif, Sequences &sequences, Array &matrix, Markov &markov, do
         s += logP_m - markov.logP(&sequences[motif[k].s][motif[k].p], matrix.I);
     }
     return s;
-    //return s / n;
 }
 
 /***************************************************************************
@@ -358,7 +356,6 @@ SITES mask_motif(SITES &sites, SITES &motif)
     }
     return masked_sites;
 }
-
 
 SITES all_sites(Sequences &sequences, int l, int m1, int m2)
 {
@@ -405,7 +402,6 @@ SITES all_sites(Sequences &sequences, int l, int m1, int m2)
     return sites;
 }
 
-
 #define INVALID -1
 SITES remove_neighbours(SITES &allsites, SITES &motif, int dmin=0, int r=-1)
 {
@@ -439,7 +435,6 @@ SITES remove_neighbours(SITES &allsites, SITES &motif, int dmin=0, int r=-1)
     }
     return new_sites;
 }
-
 
 /***************************************************************************
  *                                                                         *
@@ -496,7 +491,6 @@ void print_motif(SITES &motif, vector<string> &raw_sequences, Sequences &sequenc
     printf("//\n");
 }
 
-
 bool inline is_in_sites(Site &site, SITES &sites)
 {
     for (unsigned int i = 0; i < sites.size(); i++)
@@ -508,7 +502,6 @@ bool inline is_in_sites(Site &site, SITES &sites)
     }
     return false;
 }
-
 
 SITES random_motif(SITES &allsites, int n, int dmin=0)
 {
@@ -527,7 +520,6 @@ SITES random_motif(SITES &allsites, int n, int dmin=0)
     }
     return motif;
 }
-
 
 /***************************************************************************
  *                                                                         *
@@ -576,7 +568,6 @@ struct Is_a_site
     }
 };
  
-
 struct SamplingData 
 {
     int l;
@@ -610,7 +601,6 @@ struct SamplingData
     }
 };
 
-
 /***************************************************************************
  *                                                                         *
  *  SHIFTING
@@ -635,7 +625,6 @@ SITES shifted(SITES &motif, SITES &sites, int delta, Is_a_site &cache)
     return shifted_motif;
 }
 
-
 SITES shift(SITES &motif, Sequences &sequences, SITES &sites, Array &matrix, Markov &markov, Is_a_site &cache)
 {
     SITES best_motif;
@@ -655,7 +644,6 @@ SITES shift(SITES &motif, Sequences &sequences, SITES &sites, Array &matrix, Mar
     }
     return best_motif;
 }
-
 
 /***************************************************************************
  *                                                                         *
@@ -744,7 +732,6 @@ void sample_update(SITES &allsites, Sequences &sequences, SITES &motif, Array &m
 
         // update motif
         Site new_site = sampled_sites[i];
-        //printf("%d %d\n", new_site.m1, sampled_sites[i].m1);
         if (!is_in_sites(new_site, motif))
         {
             motif[r] = new_site;
@@ -752,7 +739,6 @@ void sample_update(SITES &allsites, Sequences &sequences, SITES &motif, Array &m
         r = (int) (RAND * n);
     }
 }
-
 
 /***************************************************************************
  *                                                                         *
@@ -799,7 +785,6 @@ Result find_one_motif(vector<string> &raw_sequences, Sequences & sequences, SITE
     Is_a_site sites_cache = Is_a_site(sequences, sites);
     FILE *trace = NULL;
 
-    // 
     if ((int) sites.size() < n)
     {
         ERROR("too few allowed sites");
@@ -881,7 +866,6 @@ Result find_one_motif(vector<string> &raw_sequences, Sequences & sequences, SITE
     return result;
 }
 
-
 /***************************************************************************
  *                                                                         *
  *  FINAL CYCLE
@@ -943,7 +927,6 @@ Result final_cycle(Result result, SITES &sites, Sequences &sequences, Markov &ma
 
     return result;
 }
-
 
 /***************************************************************************
  *                                                                         *
