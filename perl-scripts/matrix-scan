@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.140 2009/11/11 05:32:58 jvanheld Exp $
+# $Id: matrix-scan,v 1.141 2009/11/11 18:08:02 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -327,9 +327,19 @@ package main;
   $bg_out_format = "tables";
 #  $bg_out_format = "transitions";
   local $sequence_number = 0;
-  $sum_seq_len = 0;
+  local $sum_seq_len = 0;
   #    $n_containing_regions = 0;
-  $n_residues = 0;
+  local $n_residues = 0;
+
+  ## Sequence properties found dring the parsing of genomic
+  ## coordinates (for multi-sequence file, only the last sequence is
+  ## retained)
+  local $seq_org = "Undef_organism";
+  local $seq_chrom  ="Undef_chrom";
+  local $seq_start = 1;
+  local $seq_end = 0;
+  local $seq_strand = "DR";
+  local $genome_format = "Unknown";
 
 #  $base=exp(1);		## Base for the logarithms
   local $both_strands = 1;
@@ -1082,8 +1092,8 @@ package main;
     } elsif ($origin eq "start") {
       $orig_pos = $main::offset;
     } elsif ($origin eq "genomic") {
-      my ($seq_org, $seq_chrom, $seq_left, $seq_right, $seq_strand) = &parse_genomic_coordinates($seq_id, @seq_comments);
-      $orig_pos = -$seq_left +1 + $main::offset;
+      ($seq_org, $seq_chrom, $seq_start, $seq_end, $seq_strand, $genome_format) = &parse_genomic_coordinates($seq_id, @seq_comments);
+      $orig_pos = -$seq_start +1 + $main::offset;
       $seq_id = $seq_chrom;
     }
 
@@ -1760,6 +1770,12 @@ package main;
 	 
     ## Sequence statistics
     printf $main::out "; %-21s\t%s\n", "Number of sequences scanned", $sequence_number;
+    if ($origin eq "genomic") {
+      printf $main::out "; %-21s\t%s\n", "Genomic coordinate format", $genome_format;
+      if ($sequence_number == 1) {
+	printf $main::out "; %-21s\t%s\n", "Organism", $seq_org;
+      }
+    }
     printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
     #	printf $main::out "; %-21s\t%s\n", "N-containing regions", $n_containing_regions if ($n_containing_regions >= 0);
     printf $main::out "; %-21s\t%s\n", "N residues", $n_residues if ($n_residues >= 0);
