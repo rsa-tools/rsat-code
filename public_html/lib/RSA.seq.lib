@@ -1428,12 +1428,16 @@ sub parse_genomic_coordinates {
   my $seq_strand = "DR";
   my $found_format = "none";
 
-#  &RSAT::message::Debug("Parsing sequence coordinates from sequence ID and comments", $comments)
-#    if ($main::verbose >= 5);
+#  &RSAT::message::Debug("Parsing sequence coordinates from sequence ID and comments", $comments) if ($main::verbose >= 5);
 
   if ($comments =~ /location: (\S+):(\S+):(\d+)\-(\d+):([DR])/) {
 #  if ($comments =~ /location:/) {
     ## Parse genomic coordinates in the retrieve-seq format
+    ($seq_org, $seq_chrom, $seq_start, $seq_end, $seq_strand) = ($1, $2, $3, $4, $5);
+
+  } elsif ($comments =~ /(\S+_\S+)-\S+.+location: chromosome:(\S+) (\d+) (\d+) ([DR])/) {
+#  } elsif ($comments =~ /(\w+_\w+).*chromosome:(\S+)/) {
+
     ($seq_org, $seq_chrom, $seq_start, $seq_end, $seq_strand) = ($1, $2, $3, $4, $5);
 
   } elsif ($comments =~ /(\S+):(\S+):(\d+)\-(\d+)/) {
@@ -1450,7 +1454,7 @@ sub parse_genomic_coordinates {
 			"start:".$seq_start,
 			"end:".$seq_end,
 			"strand:".$seq_strand) if ($main::verbose >= 4);
-
+#  die "HELLO\n";
   return ($seq_org, $seq_chrom, $seq_start, $seq_end, $seq_strand);
 }
 
