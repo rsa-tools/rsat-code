@@ -19,17 +19,21 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ### Read the CGI query
 $query = new CGI;
 
-local @supported_input_formats = ("ft","gft","gff","gff3","dnapat");
-local @supported_output_formats = ("ft","fasta","gff","gff3","dnapat");
+#local @supported_input_formats = sort(keys(%RSAT::feature::supported_input_format));
+local @supported_input_formats = qw(ft gft gff gff3 dnapat bed);
 
-my $input_formats = join (",",@supported_input_formats);
+#local @supported_output_formats = sort(keys(%RSAT::feature::supported_output_format));
+local @supported_output_formats = qw(ft fasta gft gff gff3 dnapat bed);
+
+##my $input_formats = join (",",@supported_input_formats);
 
 ################################################################
 ### default values for filling the form
 $default{output}="display";
 $default{feature_format} = "dnapat";
 $default{feature} = "";
-$default{output_format}="ft";
+$default{input_format}="ft";
+$default{output_format}="gff3";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
