@@ -32,6 +32,7 @@ extern char* COMMAND_LINE;
 #ifndef FALSE
 #define FALSE 0
 #endif
+
 // ===========================================================================
 // =                            MIN, MAX, ...
 // ===========================================================================
@@ -46,8 +47,6 @@ extern char* COMMAND_LINE;
 #ifndef ABS
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 #endif
-
-
 
 #define RAND (rand() / (double) RAND_MAX)
 
