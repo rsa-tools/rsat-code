@@ -28,7 +28,7 @@ using namespace std;
 #include "sampler.h"
 #include "scan.h"
 
-int VERSION = 200909;
+int VERSION = 200911;
 char *COMMAND_LINE;
 
 /*
