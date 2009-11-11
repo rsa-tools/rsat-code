@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.74 2009/11/11 05:45:55 jvanheld Exp $
+# $Id: retrieve-seq,v 1.75 2009/11/11 06:32:25 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -394,58 +394,60 @@ foreach my  $query (@queries) {
 	$query = "rand_".$q;
 	push @current_id, $query;
     }
-    
+
     ## Generate the sequence IDs as a function of the selected labels
     foreach my $field (@label_fields) {
 	push @current_id, $$field;
     }
     my $current_id = join $label_sep, @current_id;
-    
+
     ## Comments to be added to the sequence
     ## Specific treatment of comments for the ft format
+    my $location = join (":", $organism_name, $ctg, $reg_left."-".$reg_right, $orf_strand);
+    my $feature_types = join(",", $organism->get_attribute("feature_types"));
     if ($out_format eq "ft") {
-	@comments = ($ctg, $sequence_type, $orf_strand, $reg_left, $reg_right, $organism_name);
+	@comments = ($ctg, $sequence_type, $orf_strand, $reg_left, $reg_right, $organism_name, $location);
 
-    } elsif ($no_comments == 0) {
-	my $location = join (":", $organism_name, $ctg, $reg_left."-".$reg_right, $orf_strand);
+      } elsif (!$no_comments) {
 	if ($sequence_type eq "random fragments") {
-	    @comments = (join("; ","random fragment", 
-			      "size: ".$reg_size,
-			      "location: ".$location)) unless ($no_comments);
+	  @comments = (join("; ","random fragment", 
+			    "size: ".$reg_size,
+			    "location: ".$location)) unless ($no_comments);
 	} else {
-	    ## in fasta format, only the first comment line is printed 
-	    $first_comment_line = join("; ", $query, 
-				       $sequence_type." from ".$current_from." to ".$current_to,
-				       "size: ".$reg_size,
-				       "location: ".$location);
-	    if ($noorf) {
-		if ($sequence_type eq "upstream") {
-		    my $upstr_neighbour = $current_feature->get_attribute("upstr_neighbour");
-		    $upstr_neighbour_id = "<NULL>";
-		    if (($upstr_neighbour) && ($upstr_neighbour ne "<NULL>")) {
-		      $upstr_neighbour_id = $upstr_neighbour->get_attribute("id");
-		    }
-		    $first_comment_line .= "; upstream neighbour: ".$upstr_neighbour_id;
-		    $first_comment_line .= " (distance: ".$current_feature->get_attribute("upstr_size").")";
-		} elsif ($sequence_type eq "downstream") {
-		    my $downstr_neighbour = $current_feature->get_attribute("downstr_neighbour");
-		    $downstr_neighbour_id = "<NULL>";
-		    if (($downstr_neighbour) && ($downstr_neighbour ne "<NULL>")) { 
-			$downstr_neighbour_id = $downstr_neighbour->get_attribute("id");
-		    }
-		    $first_comment_line .= "; downstream neighbour: ".$downstr_neighbour_id;
-#		    $first_comment_line .= "; downstream neighbour: ".$current_feature->get_attribute("downstr_neighbour")->get_attribute("id");
-		    $first_comment_line .= " (distance: ".$current_feature->get_attribute("downstr_size").")";
-		}
+	  ## in fasta format, only the first comment line is printed 
+	  $first_comment_line = join("; ", $query,
+				     $sequence_type." from ".$current_from." to ".$current_to,
+				     "size: ".$reg_size,
+				     "feature type:".$feature_types,
+				     "location: ".$location);
+	  if ($noorf) {
+	    if ($sequence_type eq "upstream") {
+	      my $upstr_neighbour = $current_feature->get_attribute("upstr_neighbour");
+	      $upstr_neighbour_id = "<NULL>";
+	      if (($upstr_neighbour) && ($upstr_neighbour ne "<NULL>")) {
+		$upstr_neighbour_id = $upstr_neighbour->get_attribute("id");
+	      }
+	      $first_comment_line .= "; upstream neighbour: ".$upstr_neighbour_id;
+	      $first_comment_line .= " (distance: ".$current_feature->get_attribute("upstr_size").")";
+	    } elsif ($sequence_type eq "downstream") {
+	      my $downstr_neighbour = $current_feature->get_attribute("downstr_neighbour");
+	      $downstr_neighbour_id = "<NULL>";
+	      if (($downstr_neighbour) && ($downstr_neighbour ne "<NULL>")) { 
+		$downstr_neighbour_id = $downstr_neighbour->get_attribute("id");
+	      }
+	      $first_comment_line .= "; downstream neighbour: ".$downstr_neighbour_id;
+	      #		    $first_comment_line .= "; downstream neighbour: ".$current_feature->get_attribute("downstr_neighbour")->get_attribute("id");
+	      $first_comment_line .= " (distance: ".$current_feature->get_attribute("downstr_size").")";
 	    }
+	  }
 
-	    @comments = ($first_comment_line);
-	    push @comments, join ("; ","Gene: ".$name,
-				  "ID".$id,
-				  "gene location: ".$orf_left." ".$orf_right." ".$orf_strand);
+	  @comments = ($first_comment_line);
+	  push @comments, join ("; ","Gene: ".$name,
+				"ID".$id,
+				"gene location: ".$orf_left." ".$orf_right." ".$orf_strand);
 
 	}
-    }
+      }
 
 
     ## Export the feature if requested
