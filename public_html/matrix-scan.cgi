@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.26 2009/11/11 05:32:58 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.27 2009/11/12 08:43:19 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -25,8 +25,9 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$command = "$SCRIPTS/matrix-scan -v 1 ";
+$command = $SCRIPTS."/matrix-scan -v 1 ";
 $tmp_file_name = sprintf "matrix-scan.%s", &AlphaDate();
+$result_file =  $TMP."/".$tmp_file_name.".ft";
 
 ### Read the CGI query
 $query = new CGI;
@@ -60,6 +61,7 @@ if ($query->param('vertically_print')) {
 $parameters .= ' -n score';
 
 $command .= " $parameters";
+#$command .= " -o ".$result_file;
 
 ################################################################
 #### echo the command (for debugging)
@@ -72,25 +74,83 @@ if ($query->param('output') eq "display") {
   unless ($query->param('table')) {
     &PipingWarning() unless ($query->param("analysis_type") eq "analysis_occ");
   }
-  
- 
-  ### Print the result on Web page
-  $result_file =  "$TMP/$tmp_file_name.ft";
-  
-  open RESULT, "$command |";
 
+
+
+  ### Print the result on Web page
+  open RESULT, "$command |";
   print "<PRE>";
   &PrintHtmlTable(RESULT, $result_file, true);
   print "</PRE>";
-  
   print "<HR SIZE = 3>";
-  
-   $result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.ft";
-	print ("The raw result file is available at the following URL: ",
-	       "<a href=${result_URL}>${result_URL}</a>",
-	       "<p><hr/>\n");
-	$genes = `grep -v '^;' $result_file | grep -v '^#' | cut -f 1 | sort -u `;
 
+#  system("$command");
+
+
+  ################################################################
+  ## Convert features to GFF3 format
+  $gff3_file =  $TMP."/".$tmp_file_name.".gff3";
+  $command = "${SCRIPTS}/convert-features -from ft -to gff3 ";
+  $command .= " -i ".$result_file;
+  $command .= " -o ".$gff3_file;
+  &RSAT::message::Info("Converting features to GFF3 format", $command) if ($ENV{rsat_echo} >=2);
+  system($command);
+
+  ################################################################
+  ## Convert features for loading as genome tracks
+  if ($origin eq "genomic") {
+    $bed_file =  $TMP."/".$tmp_file_name.".bed";
+    $command = "${SCRIPTS}/convert-features -from ft -to bed ";
+    $command .= " -i ".$result_file;
+    $command .= " -o ".$bed_file;
+    &RSAT::message::Info("Converting features to BED format", $command) if ($ENV{rsat_echo} >=2);;
+    system($command);
+  }
+
+
+  ################################################################
+  ## Table with links to the raw result files in various formats
+  $result_URL = $ENV{rsat_www}."/tmp/".$tmp_file_name;
+  print "<center><TABLE class=\"nextstep\">\n";
+  print "<tr><td colspan='3'><h3>Raw result files</h3> </td></tr>";
+#  print ("<tr>",
+#	 "<th>Format</th>",
+#	 "<th>URL</th>",
+#	 "<th>Usage</th>",
+#	 "</tr>");
+  print ("<tr>",
+	 "<td>FT</td>",
+	 "<td>","<a href='".$result_URL.".ft'>".$result_URL.".ft</a>","</td>",
+	 "<td>RSAT feature-map</td>",
+	 "</tr>");
+  print ("<tr>",
+	 "<td>GFF3</td>",
+	 "<td>","<a href='".$result_URL.".gff3'>".$result_URL.".gff3</a>","</td>",
+	 "<td>General feature format</td>",
+	 "</tr>");
+  if ($origin eq "genomic") {
+    ################################################################
+    ## Identify the source of the features
+    my $genomic_format = `grep 'Genomic coordinate format' $result_file`;
+    chomp($genomic_format);
+    if ($genomic_format =~ /Genomic coordinate format\s+(\S+)/) {
+      $genomic_format = lc($1);
+      &RSAT::message::Warning("Genomic format: $genomic_format") if ($ENV{rsat_echo} >=2);;
+    }
+    if ($genomic_format eq "ucsc") {
+      $browser_url = "<td><a target='_blank' href='http://genome.ucsc.edu/cgi-bin/hgCustom'>UCSC genome browser</a></td>",
+    }
+
+    print ("<tr>",
+	   "<td>BED</td>",
+	   "<td>","<a href='".$result_URL.".bed'>".$result_URL.".bed</a>","</td>",
+	   $browser_url,
+	   "</tr>");
+  }
+  print "</table></center>";
+
+  ## Collect genes for piping the results to gene-info
+  $genes = `grep -v '^;' $result_file | grep -v '^#' | cut -f 1 | sort -u `;
   &PipingForm() unless ($query->param("analysis_type") eq "analysis_occ");
 
   print "<HR SIZE = 3>";
@@ -200,7 +260,8 @@ sub ReadMatrixScanParameters {
 
   ################################################################
   #### origin
-  $parameters .= " -origin ".$query->param('origin');
+  $origin = $query->param('origin');
+  $parameters .= " -origin ".$origin;
 
   ################################################################
   #### Offset
