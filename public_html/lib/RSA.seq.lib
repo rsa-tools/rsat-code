@@ -1452,14 +1452,15 @@ sub parse_genomic_coordinates {
     $browser_url = "http://www.ensembl.org/${seq_org}/Location/View?r=${seq_chrom}:${seq_start}-${seq_end}";
 #    $browser_url .= "contigviewbottom=url:http://rsat.bigre.ulb.ac.be/rsat/tmp/BED_FILE_NAME.bed=normal";
 
-  } elsif ($comments =~ /(\S+):(\S+):(\d+)\-(\d+)/) {
+  } elsif ($comments =~ /(\w+):(\S+):(\d+)\-(\d+)/) {
     ## Parse genomic coordinates in the UCSC format
     ($seq_org, $seq_chrom, $seq_start, $seq_end) = ($1, $2, $3, $4);
     $genome_format = "UCSC";
 
-  } elsif ($comments =~ /range=(\S+):(\d+)\-(\d+).*strand=(\S+)/) {
-    ($seq_chrom, $seq_start, $seq_end, $seq_strand) = ($1, $2, $3, $4);
+  } elsif ($comments =~ /(\w+)\s+range=(\S+):(\d+)\-(\d+).*strand=(\S+)/) {
+    ($seq_org,$seq_chrom, $seq_start, $seq_end, $seq_strand) = ($1, $2, $3, $4);
     $genome_format = "UCSC";
+    $browser_url = "http://genome.ucsc.edu/cgi-bin/hgCustom";
 
   } else {
     &RSAT::message::Warning("Could not parse genomic coordinates for sequence", $seq_id, join("; ", @seq_comments));
@@ -1472,6 +1473,14 @@ sub parse_genomic_coordinates {
 			"end:".$seq_end,
 			"strand:".$seq_strand) if ($main::verbose >= 4);
 #  die "HELLO\n";
+
+  if ($genome_format eq "UCSC") {
+    $browser_url = "http://genome.ucsc.edu/cgi-bin/hgTracks?";
+    $browser_url .= "db=".${seq_org};
+    $browser_url .= "&position=${seq_chrom}:${seq_start}-${seq_end}";
+    #    $browser_url .= "&hgt.customText=http://redfly.ccr.buffalo.edu/ucsc/ucsc_BR0Bmd";
+  }
+
   return ($seq_org, $seq_chrom, $seq_start, $seq_end, $seq_strand, $genome_format, $browser_url);
 }
 
