@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.141 2009/11/11 18:08:02 jvanheld Exp $
+# $Id: matrix-scan,v 1.142 2009/11/12 09:33:18 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -340,6 +340,7 @@ package main;
   local $seq_end = 0;
   local $seq_strand = "DR";
   local $genome_format = "Unknown";
+  local $browser_url = "";
 
 #  $base=exp(1);		## Base for the logarithms
   local $both_strands = 1;
@@ -1092,7 +1093,7 @@ package main;
     } elsif ($origin eq "start") {
       $orig_pos = $main::offset;
     } elsif ($origin eq "genomic") {
-      ($seq_org, $seq_chrom, $seq_start, $seq_end, $seq_strand, $genome_format) = &parse_genomic_coordinates($seq_id, @seq_comments);
+      ($seq_org, $seq_chrom, $seq_start, $seq_end, $seq_strand, $genome_format, $browser_url) = &parse_genomic_coordinates($seq_id, @seq_comments);
       $orig_pos = -$seq_start +1 + $main::offset;
       $seq_id = $seq_chrom;
     }
@@ -1772,9 +1773,10 @@ package main;
     printf $main::out "; %-21s\t%s\n", "Number of sequences scanned", $sequence_number;
     if ($origin eq "genomic") {
       printf $main::out "; %-21s\t%s\n", "Genomic coordinate format", $genome_format;
-      if ($sequence_number == 1) {
-	printf $main::out "; %-21s\t%s\n", "Organism", $seq_org;
-      }
+#      if ($sequence_number == 1) {
+      printf $main::out "; %-21s\t%s\n", "Organism", $seq_org;
+      printf $main::out "; %-21s\t%s\n", "Browser URL", $browser_url;
+#      }
     }
     printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
     #	printf $main::out "; %-21s\t%s\n", "N-containing regions", $n_containing_regions if ($n_containing_regions >= 0);
