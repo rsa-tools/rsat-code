@@ -877,8 +877,6 @@ sub PrintHtmlTable {
     }
 }
 
-
-
 ################################################################
 ## Save the command string in a temporary file for debugging
 sub SaveCommand {
