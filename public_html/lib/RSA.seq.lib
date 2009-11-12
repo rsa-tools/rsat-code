@@ -1436,7 +1436,7 @@ sub parse_genomic_coordinates {
     ($seq_org, $seq_chrom, $seq_start, $seq_end, $seq_strand) = ($1, $2, $3, $4, $5);
     $genome_format = "retrieve-seq";
 
-  } elsif ($comments =~ /(\S+_\S+)-\S+.+location: chromosome:(\S+) (\d+) (\d+) ([DR])/) {
+  } elsif ($comments =~ /(\w+_\w+)-\S+.+location: chromosome:(\S+) (\d+) (\d+) ([DR])/) {
 #  } elsif ($comments =~ /(\w+_\w+).*chromosome:(\S+)/) {
     my $chromosome;
     ($seq_org, $chromosome, $seq_start, $seq_end, $seq_strand) = ($1, $2, $3, $4, $5);
