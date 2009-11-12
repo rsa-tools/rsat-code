@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.28 2009/11/12 09:03:08 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.29 2009/11/12 09:33:18 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -140,10 +140,13 @@ if ($query->param('output') eq "display") {
     if ($genomic_format eq "ucsc") {
       $browser_url = "<a target='_blank' href='http://genome.ucsc.edu/cgi-bin/hgCustom'>UCSC genome browser</a>",
     } elsif ($genomic_format =~ /ensembl/i) {
-      $browser_url = "<a target='_blank' href='http://www.ensembl.org/";
-      $browser_url .= $organism;
-      $browser_url .= "/Location/View?r=1:98796-99282;";
-      $browser_url .= "contigviewbottom=url:".$result_URL.".bed";
+      my $browser = `grep -i 'browser url' $result_file`;
+      chomp($browser);
+      $browser =~ s/.*browser url\s+(\S+)/$1/i;
+      &RSAT::message::Warning($browser);
+      $browser_url = "<a target='_blank' href='";
+      $browser_url .= $browser;
+      $browser_url .= ";contigviewbottom=url:".$result_URL.".bed";
       $browser_url .= "=normal'>EnsEMBL genome browser</a>";
     }
 

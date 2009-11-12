@@ -1427,6 +1427,7 @@ sub parse_genomic_coordinates {
   my $seq_end = 0;
   my $seq_strand = "DR";
   my $genome_format = "Unknown";
+  my $browser_url = "";
 
 #  &RSAT::message::Debug("Parsing sequence coordinates from sequence ID and comments", $comments) if ($main::verbose >= 5);
 
@@ -1448,6 +1449,9 @@ sub parse_genomic_coordinates {
     }
     $genome_format = "retrieve-ensembl-seq";
 
+    $browser_url = "http://www.ensembl.org/${seq_org}/Location/View?r=${seq_chrom}:${seq_start}-${seq_end}";
+#    $browser_url .= "contigviewbottom=url:http://rsat.bigre.ulb.ac.be/rsat/tmp/BED_FILE_NAME.bed=normal";
+
   } elsif ($comments =~ /(\S+):(\S+):(\d+)\-(\d+)/) {
     ## Parse genomic coordinates in the UCSC format
     ($seq_org, $seq_chrom, $seq_start, $seq_end) = ($1, $2, $3, $4);
@@ -1468,7 +1472,7 @@ sub parse_genomic_coordinates {
 			"end:".$seq_end,
 			"strand:".$seq_strand) if ($main::verbose >= 4);
 #  die "HELLO\n";
-  return ($seq_org, $seq_chrom, $seq_start, $seq_end, $seq_strand, $genome_format);
+  return ($seq_org, $seq_chrom, $seq_start, $seq_end, $seq_strand, $genome_format, $browser_url);
 }
 
 
