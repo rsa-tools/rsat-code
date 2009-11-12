@@ -182,7 +182,7 @@ RSAT feature format for the program feature-map.
 
 RSAT Genome features (file Feature.tab in the directory data/genomes).q
 
-=over 
+=over
 
 =item column 1: id
 
@@ -699,7 +699,7 @@ sub parse_from_row {
   &RSAT::message::Info(join("\t",
 			    "Parsed new feature",
 			    $self->get_attribute("seq_name"),
-			    $self->get_attribute("feature_type"),
+			    $self->get_attribute("ft_type"),
 			    $self->get_attribute("feature_name"),
 			    $self->get_attribute("id"),
 			    $self->get_attribute("start"),
@@ -747,6 +747,17 @@ specified format.
 sub to_text {
     my ($self, $out_format, $null) = @_;
     $null = "" unless (defined($null));
+
+    ## For the BED format, suppress SEQ_START et SEQ_END (temporary fix for UCSC genome browser)
+    if ($out_format eq "bed") {
+      my $ft_type = $self->get_attribute("ft_type");
+      if ($self->get_attribute("ft_type") eq "limit") {
+	&RSAT::message::Warning("Skipping feature", $self->get_attribute("feature_name"), 
+				"for BED compatibility") if ($main::verbose >= 2);
+	return();
+      }
+    }
+
 
 
     if ($out_format eq "fasta") {
