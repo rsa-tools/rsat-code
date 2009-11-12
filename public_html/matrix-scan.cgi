@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.29 2009/11/12 09:33:18 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.30 2009/11/12 14:47:18 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -129,21 +129,28 @@ if ($query->param('output') eq "display") {
 	 "<td>General feature format</td>",
 	 "</tr>");
   if ($origin eq "genomic") {
+
     ################################################################
-    ## Identify the source of the features
+    ## Build the URL to view the features on a Genome Browser
     my $genomic_format = `grep 'Genomic coordinate format' $result_file`;
     chomp($genomic_format);
+
+    my $browser = `grep -i 'browser url' $result_file`;
+    chomp($browser);
+    $browser =~ s/.*browser url\s+(\S+)/$1/i;
+
     if ($genomic_format =~ /Genomic coordinate format\s+(\S+)/) {
       $genomic_format = lc($1);
       &RSAT::message::Warning("Genomic format: $genomic_format") if ($ENV{rsat_echo} >=2);;
     }
     if ($genomic_format eq "ucsc") {
-      $browser_url = "<a target='_blank' href='http://genome.ucsc.edu/cgi-bin/hgCustom'>UCSC genome browser</a>",
+#      $browser_url = "<a target='_blank' href='http://genome.ucsc.edu/cgi-bin/hgCustom'>UCSC genome browser</a>",
+      $browser_url = "<a target='_blank' href='";
+      $browser_url .= $browser;
+      $browser_url .= "&hgt.customText=".$result_URL.".bed";
+      $browser_url .= "'>UCSC genome browser</a>";
     } elsif ($genomic_format =~ /ensembl/i) {
-      my $browser = `grep -i 'browser url' $result_file`;
-      chomp($browser);
-      $browser =~ s/.*browser url\s+(\S+)/$1/i;
-      &RSAT::message::Warning($browser);
+#      &RSAT::message::Warning($browser);
       $browser_url = "<a target='_blank' href='";
       $browser_url .= $browser;
       $browser_url .= ";contigviewbottom=url:".$result_URL.".bed";
