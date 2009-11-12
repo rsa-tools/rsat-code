@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.27 2009/11/12 08:43:19 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.28 2009/11/12 09:03:08 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -138,13 +138,19 @@ if ($query->param('output') eq "display") {
       &RSAT::message::Warning("Genomic format: $genomic_format") if ($ENV{rsat_echo} >=2);;
     }
     if ($genomic_format eq "ucsc") {
-      $browser_url = "<td><a target='_blank' href='http://genome.ucsc.edu/cgi-bin/hgCustom'>UCSC genome browser</a></td>",
+      $browser_url = "<a target='_blank' href='http://genome.ucsc.edu/cgi-bin/hgCustom'>UCSC genome browser</a>",
+    } elsif ($genomic_format =~ /ensembl/i) {
+      $browser_url = "<a target='_blank' href='http://www.ensembl.org/";
+      $browser_url .= $organism;
+      $browser_url .= "/Location/View?r=1:98796-99282;";
+      $browser_url .= "contigviewbottom=url:".$result_URL.".bed";
+      $browser_url .= "=normal'>EnsEMBL genome browser</a>";
     }
 
     print ("<tr>",
 	   "<td>BED</td>",
 	   "<td>","<a href='".$result_URL.".bed'>".$result_URL.".bed</a>","</td>",
-	   $browser_url,
+	   "<td>".$browser_url."</td>",
 	   "</tr>");
   }
   print "</table></center>";
