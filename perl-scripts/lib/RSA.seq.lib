@@ -1438,7 +1438,14 @@ sub parse_genomic_coordinates {
 
   } elsif ($comments =~ /(\S+_\S+)-\S+.+location: chromosome:(\S+) (\d+) (\d+) ([DR])/) {
 #  } elsif ($comments =~ /(\w+_\w+).*chromosome:(\S+)/) {
-    ($seq_org, $seq_chrom, $seq_start, $seq_end, $seq_strand) = ($1, $2, $3, $4, $5);
+    my $chromosome;
+    ($seq_org, $chromosome, $seq_start, $seq_end, $seq_strand) = ($1, $2, $3, $4, $5);
+    ## Parse the fields of the EnsEMBL chromosome "name" (which contains genome ID + name + chromosome limits + strand
+    if ($chromosome =~ /(\S+):(\S+):(\d+):(\d+):(\d+)/) {
+      $seq_chrom = $2;
+    } else {
+      $seq_chrom = $chromosome;
+    }
     $genome_format = "retrieve-ensembl-seq";
 
   } elsif ($comments =~ /(\S+):(\S+):(\d+)\-(\d+)/) {
