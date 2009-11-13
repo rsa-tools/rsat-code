@@ -39,7 +39,7 @@ onclick=\"toggleMenu('101')\" id=\"heading101\">Path finding and pathway inferen
         <a class=\"menu_item\" href=\"pathfinder_form.php\" target=\"tools\">k-shortest path
 finding </a>
 <a class=\"menu_item\" target=\"tools\" href=\"$neat_java_host/metabolicpathfinding/metabolicPathfinder_form.jsp\">Metabolic path finding</a>
-<a class=\"menu_item\" target=\"tools\" href=\"$neat_java_host/metabolicpathfinding/pathwayinference_form.jsp\">Pathwayinference</a>
+<a class=\"menu_item\" target=\"tools\" href=\"$neat_java_host/metabolicpathfinding/pathwayinference_form.jsp\">Pathway extraction</a>
 </div>
 
 </div>
