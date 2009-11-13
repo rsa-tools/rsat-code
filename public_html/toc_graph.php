@@ -34,7 +34,7 @@ onclick=\"toggleMenu('100')\" id=\"heading100\">Networks</div>
 </div>
 <div class=\"menu\">
 <div class=\"menu_heading_open\"
-onclick=\"toggleMenu('101')\" id=\"heading101\">Path finding and pathway inference</div>
+onclick=\"toggleMenu('101')\" id=\"heading101\">Pathway extraction</div>
 <div id=\"menu101\">
         <a class=\"menu_item\" href=\"pathfinder_form.php\" target=\"tools\">k-shortest path
 finding </a>
