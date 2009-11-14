@@ -1216,7 +1216,7 @@ sub RectInLimits {
 ################################################################
 ## Define the standard color palette
 sub StandardPalette {
-    warn "; Defining standard palette\n" if ($main::verbose >= 2);
+    &RSAT::message::Info("Defining standard palette") if ($main::verbose >= 2);
 
     $white = $image->colorAllocate(255,255,255);
     $black = $image->colorAllocate(0,0,0);
