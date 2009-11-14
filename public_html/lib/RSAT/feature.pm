@@ -122,7 +122,7 @@ $comment_char{gff3} = "## ";
 		       strand
 		       thickStart
 		       thickEnd
-		       itemRGB
+		       itemRgb
 		       blockCount
 		       blockSizes
 		       blckStarts
@@ -131,7 +131,6 @@ $comment_char{gff3} = "## ";
 $comment_char{bed} = "## ";
 
 require "RSA.seq.lib";
-
 use RSAT::GenericObject;
 @ISA = qw( RSAT::GenericObject );
 
@@ -510,7 +509,6 @@ example, the start codon in gene displays).
 The ending position at which the feature is drawn thickly (for
 example, the stop codon in gene displays).
 
-   
 =item 9. itemRgb
 
 An RGB value of the form R,G,B (e.g. 255,0,0). If the track line
@@ -560,6 +558,7 @@ items in this list should correspond to blockCount.
 
 
 ################################################################
+
 =pod
 
 =over
@@ -577,6 +576,7 @@ sub new {
 }
 
 ################################################################
+
 =pod
 
 =item parse_one_row($row, $in_format)
@@ -605,7 +605,7 @@ sub parse_from_row {
 
   ## Convert strand format
   my $strand = $self->get_attribute("strand");
-#  &RSAT::message::Debug("strand", $strand) if ($main::verbose >= 0);
+#  &RSAT::message::Debug("strand", $strand) if ($main::verbose >= 10);
   if ($strand) {
     $strand =~ s/\+/D/;
     $strand =~ s/\-/R/;
@@ -711,6 +711,7 @@ sub parse_from_row {
 }
 
 ################################################################
+
 =pod
 
 =item to_text($out_format)
@@ -736,6 +737,7 @@ sub to_fasta {
 }
 
 ################################################################
+
 =pod
 
 =item to_text($out_format)
@@ -748,16 +750,34 @@ sub to_text {
     my ($self, $out_format, $null) = @_;
     $null = "" unless (defined($null));
 
-    ## For the BED format, suppress SEQ_START et SEQ_END (temporary fix for UCSC genome browser)
+    ## For the BED format
     if ($out_format eq "bed") {
+
+      ## suppress SEQ_START et SEQ_END (temporary fix for UCSC genome browser)
       my $ft_type = $self->get_attribute("ft_type");
       if ($self->get_attribute("ft_type") eq "limit") {
-	&RSAT::message::Warning("Skipping feature", $self->get_attribute("feature_name"), 
-				"for BED compatibility") if ($main::verbose >= 2);
-	return();
+	if ($self->get_attribute("feature_name") eq "START_END") {
+	  my $seq_name = $self->get_attribute("seq_name");
+	  my $seq_start = $self->get_attribute("start");
+	  my $seq_end = $self->get_attribute("end");
+	  my $string = "browser position ".${seq_name}.":".${seq_start}."-".${seq_end}."\n";
+#	  $string .= "browser hide all\n";
+#	  $string .= "track name='RSAT_features' description='RSAT features' visibility=2 itemRgb='Off'\n";
+	  return($string);
+	} else {
+	  &RSAT::message::Warning("Skipping feature", $self->get_attribute("feature_name"), "for BED compatibility") if ($main::verbose >= 2);
+	  return();
+	}
+      }
+
+      ## Treat the thickStart and thickEnd attributes
+      unless (defined($self->get_attribute("thickStart"))) {
+	$self->set_attribute("thickStart",$self->get_attribute("start"));
+      }
+      unless (defined($self->get_attribute("thickEnd"))) {
+	$self->set_attribute("thickEnd",$self->get_attribute("end"));
       }
     }
-
 
 
     if ($out_format eq "fasta") {
@@ -783,12 +803,12 @@ sub to_text {
 	  $field_value = $default{$attr};
 	} elsif ($attr eq "source") {
 	  $field_value = $main::input_format;
-	} else {   
+	} else {
 	  $field_value = $null;
 	}
       }
       $fields[$c] =  $field_value;
-      &RSAT::message::Debug("field", $c, $fields[$c])if ($main::verbose >= 10);
+#      &RSAT::message::Debug("field", $c, sprintf("%-15s", $attr), $fields[$c])if ($main::verbose >= 10);
     }
 
     ################################################################
@@ -855,6 +875,7 @@ sub to_text {
 }
 
 ################################################################
+
 =pod
 
 =item header($out_format)
@@ -870,13 +891,19 @@ sub header {
     }
 
     ## Print format
-    my $header = $comment_char{$out_format};
+    my $header = "";
     if ($out_format eq "gff3") {
+      $header .= $comment_char{$out_format};
       $header .= "gff-version\t3";
+      $header .= "\n";
+    } elsif ($out_format eq "bed") {
+      $header .= "track name='RSAT_features' description='RSAT features' visibility=2 itemRgb='On'\n";
+      $header .= "browser hide all\n";
     } else {
+      $header .= $comment_char{$out_format};
       $header .= $out_format;
+      $header .= "\n";
     }
-    $header .= "\n";
 
     ## Print column content
     my @cols = @{$columns{$out_format}};
@@ -888,6 +915,7 @@ sub header {
 
 
 ################################################################
+
 =pod
 
 =item full_id
@@ -905,6 +933,7 @@ sub full_id {
 		 ));
 
 }
+
 
 
 return 1;
