@@ -761,8 +761,6 @@ sub to_text {
 	  my $seq_start = $self->get_attribute("start");
 	  my $seq_end = $self->get_attribute("end");
 	  my $string = "browser position ".${seq_name}.":".${seq_start}."-".${seq_end}."\n";
-#	  $string .= "browser hide all\n";
-#	  $string .= "track name='RSAT_features' description='RSAT features' visibility=2 itemRgb='Off'\n";
 	  return($string);
 	} else {
 	  &RSAT::message::Warning("Skipping feature", $self->get_attribute("feature_name"), "for BED compatibility") if ($main::verbose >= 2);
@@ -897,8 +895,13 @@ sub header {
       $header .= "gff-version\t3";
       $header .= "\n";
     } elsif ($out_format eq "bed") {
-      $header .= "track name='RSAT_features' description='RSAT features' visibility=2 itemRgb='On'\n";
-      $header .= "browser hide all\n";
+      my $track_name =  "RSAT_features";
+      if (defined()) {
+	$track_name = $main::infile{input};
+      }
+      $header .= "track name='".$track_name."' description='".$track_name."' visibility=3 itemRgb='On' use_score=1\n";
+      $header .= "browser dense ORegAnno\n";
+      $header .= "browser dense \n";
     } else {
       $header .= $comment_char{$out_format};
       $header .= $out_format;
