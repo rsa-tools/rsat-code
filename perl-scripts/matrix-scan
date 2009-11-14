@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.142 2009/11/12 09:33:18 jvanheld Exp $
+# $Id: matrix-scan,v 1.143 2009/11/14 07:53:16 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -3624,21 +3624,34 @@ sub PrintSequenceLimits {
     print $main::out join ("\t", 
 			   $seq_id,
 			   "limit",
-			   "SEQ_START",
+			   "START_END",
 			   "DR",
 			   1-$orig_pos,
-			   1-$orig_pos,
-			   ".",
-			  ), "\n";
-    print $main::out join ("\t", 
-			   $seq_id,
-			   "limit",
-			   "SEQ_END",
-			   "DR",
-			   $seq_len-$orig_pos,
 			   $seq_len-$orig_pos,
 			   ".",
+			   0,
 			  ), "\n";
+
+#     print $main::out join ("\t", 
+# 			   $seq_id,
+# 			   "limit",
+# 			   "SEQ_START",
+# 			   "DR",
+# 			   1-$orig_pos,
+# 			   1-$orig_pos,
+# 			   ".",
+# 			   0,
+# 			  ), "\n";
+#     print $main::out join ("\t", 
+# 			   $seq_id,
+# 			   "limit",
+# 			   "SEQ_END",
+# 			   "DR",
+# 			   $seq_len-$orig_pos,
+# 			   $seq_len-$orig_pos,
+# 			   ".",
+# 			   0,
+# 			  ), "\n";
 }
 
 

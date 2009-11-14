@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.56 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: dna-pattern,v 1.57 2009/11/14 07:53:16 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -200,25 +200,25 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
 
     #### remove tabs and blank spaces ####    
     $current_seq = &FoldSequence($current_seq, 0);
-    
+
     $sequence_length = length($current_seq);
 
 
     #### verbose
     $s++;
     &RSAT::message::Info(join ("\t", "; Scanning sequence", $s, $sequence_id, $sequence_length)) if ($verbose >= 2);
-    
+
 #    &RSAT::message::Debug($sequence_id, $current_seq) if ($main::verbose >= 10);
-    
+
     if (($origin <  0) || ($origin eq "-0")) {
 	$orig_pos = $sequence_length + $origin + 1; 
     } else {
 	$orig_pos = $origin;
     }
-    
+
     ## Print sequence limits
     &PrintSequenceLimits($sequence_id, $sequence_length, $orig_pos) if ($return_fields{limits});
-    
+
     ## Search for characters that do not correspond to ATGC
    if ($return_fields{notacgt}){
    		$pattern = new RSAT::pattern(id=>"notACGT",
@@ -242,7 +242,6 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
 
     if ($search_method eq "sliding window") {
 	&SlidingWindowSearch();
-	
     } else {
 	foreach $pattern (@patterns) {
 	    $expression = $pattern->get_attribute("sequence");
@@ -1665,31 +1664,42 @@ EndOfHelp
 ################################################################
 ## Print the start and end positions of the sequence
 sub PrintSequenceLimits {
-    my ($sequence_id, $sequence_length, $orig_pos) = @_;
+  my ($seq_id, $seq_len, $orig_pos) = @_;
+  my $start_end = new RSAT::pattern(
+				    sequence_id => $seq_id,
+				    pattern_id=>"START_END",
+				    strand => "DR",
+				    start_pos => 1-$orig_pos,
+				    end_pos => $seq_len - $orig_pos,
+				    pattern_seq => "-",
+				    matching_seq => "-",
+				    score=>0,
+				   );
+  &PrintMatchLocation($start_end);
 
-    my $seq_start = new RSAT::pattern(
-	sequence_id => $sequence_id,
-	pattern_id=>"SEQ_START",
-	strand => "DR",
-	start_pos => 1-$orig_pos,
-	end_pos => 1-$orig_pos,
-	pattern_seq => "-",
-	matching_seq => "-",
-	score=>0,
-    );
-    &PrintMatchLocation($seq_start);
-    
-    my $seq_end = new RSAT::pattern(
-	sequence_id => $sequence_id,
-	pattern_id=>"SEQ_END",
-	strand => "DR",
-	start_pos => $sequence_length - $orig_pos,
-	end_pos => $sequence_length - $orig_pos,
-	pattern_seq => "-",
-	matching_seq => "-",
-	score=>0,
-    );
-    &PrintMatchLocation($seq_end);
+#   my $seq_start = new RSAT::pattern(
+# 				    sequence_id => $seq_id,
+# 				    pattern_id=>"SEQ_START",
+# 				    strand => "DR",
+# 				    start_pos => 1-$orig_pos,
+# 				    end_pos => 1-$orig_pos,
+# 				    pattern_seq => "-",
+# 				    matching_seq => "-",
+# 				    score=>0,
+# 				   );
+#   &PrintMatchLocation($seq_start);
+
+#     my $seq_end = new RSAT::pattern(
+# 				    sequence_id => $seq_id,
+# 				    pattern_id=>"SEQ_END",
+# 				    strand => "DR",
+# 				    start_pos => $seq_len - $orig_pos,
+# 				    end_pos => $seq_len - $orig_pos,
+# 				    pattern_seq => "-",
+# 				    matching_seq => "-",
+# 				    score=>0,
+# 				   );
+#   &PrintMatchLocation($seq_end);
 }
 
 

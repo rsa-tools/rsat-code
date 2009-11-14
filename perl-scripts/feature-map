@@ -662,13 +662,18 @@ sub ReadMapData {
 	}
 
 	#### feature type ####
-	if (lc($temp_features{id}) eq "seq_end") {   ### map end position
+	if (lc($temp_features{id}) eq "start_end") {   ### map end position
+	    $map_start{$current_map} = $temp_features{start_pos};
+	    $map_end{$current_map} = $temp_features{end_pos};
+	} elsif (lc($temp_features{id}) eq "seq_end") {   ### map end position
 	    $map_end{$current_map} = $temp_features{start_pos};
 	} elsif (lc($temp_features{id}) eq "seq_start") {   ### map start position
 	    $map_start{$current_map} = $temp_features{start_pos};
 	} elsif (lc($temp_features{feature_type}) eq "seq_origin") {   ### map origin position
 	    $map_origin{$current_map} = $temp_features{start_pos};
-	} else 	{ ### new feature for the map
+
+	## Add the new feature to the map
+	} else 	{ 
 	    #### feature identifier ####
 	    if ($id_number{$temp_features{id}} eq "") {
 		push (@id_list, $temp_features{id});
@@ -1720,8 +1725,10 @@ OPTIONS
 
 SUPPORTED FEATURE TYPES
 	A few special types are defined
-	- SEQ_START     starting position for the curent map
-	- SEQ_END	ending position for the current map
+	- START_END     start and en position of the sequence
+ 	  		(represented by a thin bar on the map)
+	- SEQ_START     start position (obsolete, please use START_END instead)
+	- SEQ_END	end position (obsolete, please use START_END instead)
 	- ORIGIN	map-specific origin (all coordinates of the map
 			are recalculated relative to this value)
 
@@ -1963,8 +1970,8 @@ sub DrawFeature {
     
     ### Check that the score is sufficient
     next if ($score < $min_score);
-    
-	### check that the features falls within the limits
+    	 
+    ### check that the features falls within the limits
     next unless ((($start <= $view_to) && ($start >= $view_from)) ||
 		 (($end <= $view_to) && ($end >= $view_from))  ||
 		 (($end >= $view_to) && ($start <= $view_from)));
