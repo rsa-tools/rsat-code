@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.15 2009/11/11 22:40:50 jvanheld Exp $
+# $Id: convert-features,v 1.16 2009/11/14 07:00:28 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -14,6 +14,7 @@ BEGIN {
     require "RSA.lib";
 }
 use RSAT::feature;
+use RSAT::Color;
 
 ################################################################
 #### initialise parameters
@@ -35,12 +36,22 @@ local $supported_input_formats =
 local $supported_output_formats = 
   join (",", keys %RSAT::feature::supported_output_format);
 
+# Feature colors for BED format
+local @palette = ();
+local %feature_color = ();
+local $col_nb = 0;
+
 &ReadArguments();
 
 ################################################################
 #### check argument values
 unless ($input_format) {
     &RSAT::error::FatalError("You should define the input format");
+}
+
+## Initialize color palette
+if ($output_format eq "bed") {
+  @palette = &RSAT::Color::RGBColorPalette();
 }
 
 
@@ -62,10 +73,30 @@ while (<$in>) {
   chomp();
   my $feature = new RSAT::feature();
   $feature->parse_from_row($_, $input_format, $output_format);
+
+  if ($output_format eq "bed") {
+    &set_color($feature);
+#    &RSAT::message::Debug("assigned color to feature", $feature->get_attribute("feature_name"),$feature->get_attribute("itemRgb")) if ($main::verbose >= 5);
+  }
+
   print $out $feature->to_text($output_format, $null);
 }
 
 close $in if ($infile{input});
+
+################################################################
+## Set a color to the feature according to the feature_name attribute
+sub set_color {
+  my ($feature) = @_;
+  my $feature_name = $feature->get_attribute("feature_name") || "no name";
+  unless (defined($feature_color{$feature_name})) {
+    $col_nb++; $col_nb = 0 if ($col_nb > $#palette);
+    my ($R, $G, $B, $name) = @{$palette[$col_nb]};
+    $feature_color{$feature_name} = join(",", $R, $G, $B);
+    &RSAT::message::Warning("Feature color", $feature_name, $feature_color{$feature_name}, $name) if ($main::verbose >= 3);
+  }
+  $feature->set_attribute("itemRgb", $feature_color{$feature_name});
+}
 
 ################################################################
 #### print verbose
