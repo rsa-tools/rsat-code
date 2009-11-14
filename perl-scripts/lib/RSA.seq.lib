@@ -1457,10 +1457,9 @@ sub parse_genomic_coordinates {
     ($seq_org, $seq_chrom, $seq_start, $seq_end) = ($1, $2, $3, $4);
     $genome_format = "UCSC";
 
-  } elsif ($comments =~ /(\w+)\s+range=(\S+):(\d+)\-(\d+).*strand=(\S+)/) {
+  } elsif ($comments =~ /(\w+).+range=(\S+):(\d+)\-(\d+).*strand=(\S+)/) {
     ($seq_org,$seq_chrom, $seq_start, $seq_end, $seq_strand) = ($1, $2, $3, $4);
     $genome_format = "UCSC";
-    $browser_url = "http://genome.ucsc.edu/cgi-bin/hgCustom";
 
   } else {
     &RSAT::message::Warning("Could not parse genomic coordinates for sequence", $seq_id, join("; ", @seq_comments));
@@ -1475,6 +1474,7 @@ sub parse_genomic_coordinates {
 #  die "HELLO\n";
 
   if ($genome_format eq "UCSC") {
+    $seq_org =~ s/\_.*//;
     $browser_url = "http://genome.ucsc.edu/cgi-bin/hgTracks?";
     $browser_url .= "db=".${seq_org};
     $browser_url .= "&position=${seq_chrom}:${seq_start}-${seq_end}";
