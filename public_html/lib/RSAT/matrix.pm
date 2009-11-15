@@ -244,6 +244,7 @@ $info_log_base = exp(1);
 $info_log_denominator = log($info_log_base);
 
 ################################################################
+
 =pod
 
 =item B<new()>
@@ -263,6 +264,7 @@ sub new {
 
 
 ################################################################
+
 =pod
 
 =item B<init>
@@ -286,6 +288,7 @@ sub init {
 }
 
 ################################################################
+
 =pod 
 
 =item B<set_parameter()>
@@ -300,6 +303,7 @@ sub set_parameter {
 }
 
 ################################################################
+
 =pod
 
 =item B<reset()>
@@ -318,6 +322,7 @@ sub reset {
 
 
 ################################################################
+
 =pod
 
 =item B<index_alphabet>
@@ -340,6 +345,7 @@ sub index_alphabet {
 
 
 ################################################################
+
 =pod
 
 =item getPrior()
@@ -374,6 +380,7 @@ sub getPrior() {
 }
 
 ################################################################
+
 =pod
 
 =item setPrior(%prior)
@@ -409,6 +416,7 @@ sub setPrior {
 
 
 ################################################################
+
 =pod
 
 =item setInfoLogBase($base)
@@ -486,6 +494,7 @@ sub setInfoLogBase {
 
 ################################################################
 ## PROBLEM ###
+
 =pod
 
 =item addRow(@new_row)
@@ -515,6 +524,7 @@ sub addRow {
 }
 
 ################################################################
+
 =pod
 
 =item getParameters()
@@ -528,6 +538,7 @@ sub getParameters {
 }
 
 ################################################################
+
 =pod
 
 =item getMatrix()
@@ -541,6 +552,7 @@ sub getMatrix {
 }
 
 ################################################################
+
 =pod
 
 =item setMatrix($nrow, $ncol, @matrix)
@@ -558,6 +570,7 @@ sub setMatrix {
 
 
 ################################################################
+
 =pod
 
 =item toString(%args)
@@ -607,6 +620,7 @@ sub toString {
 }
 
 ################################################################
+
 =pod
 
 =item to_TRANSFAC();
@@ -671,6 +685,7 @@ sub to_TRANSFAC {
 
 
 ################################################################
+
 =pod
 
 =item to_consensus(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_string)
@@ -747,6 +762,7 @@ sub to_consensus {
 
 
 ################################################################
+
 =pod
 
 =item to_patser(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_string)
@@ -915,6 +931,7 @@ sub to_patser {
 }
 
 ################################################################
+
 =pod
 
 =item to_cb(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_string)
@@ -985,6 +1002,7 @@ sub to_cb {
 }
 
 ################################################################
+
 =pod
 
 =item getWeights()
@@ -1001,6 +1019,7 @@ sub getWeights {
 }
 
 ################################################################
+
 =pod
 
 =item setWeights($nrow, $ncol, @weights)
@@ -1017,6 +1036,7 @@ sub setWeights {
 }
 
 ################################################################
+
 =pod 
 
 =item calcWeights()
@@ -1074,6 +1094,7 @@ sub calcWeights {
 }
 
 ################################################################
+
 =pod
 
 =item getInformation()
@@ -1088,6 +1109,7 @@ sub getInformation {
 }
 
 ################################################################
+
 =pod
 
 =item setInformation($nrow, $ncol, @information)
@@ -1105,6 +1127,7 @@ sub setInformation {
 
 
 ################################################################
+
 =pod 
 
 =item calcInformation()
@@ -1196,6 +1219,7 @@ sub calcInformation {
 
 
 ################################################################
+
 =pod
 
 =item getFrequencies()
@@ -1213,6 +1237,7 @@ sub getFrequencies {
 }
 
 ################################################################
+
 =pod
 
 =item setFrequencies($nrow, $ncol, @frequencies)
@@ -1230,6 +1255,7 @@ sub setFrequencies {
 }
 
 ################################################################
+
 =pod
 
 =item getMarkovModel()
@@ -1244,6 +1270,7 @@ sub getMarkovModel {
 
 
 ################################################################
+
 =pod
 
 =item getCrudeFrequencies()
@@ -1261,6 +1288,7 @@ sub getCrudeFrequencies {
 }
 
 ################################################################
+
 =pod
 
 =item setMarkovModel($bg_model)
@@ -1289,6 +1317,7 @@ sub setMarkovModel {
 
 
 ################################################################
+
 =pod
 
 =item setCrudeFrequencies($nrow, $ncol, @crudeFrequencies)
@@ -1306,6 +1335,7 @@ sub setCrudeFrequencies {
 }
 
 ################################################################
+
 =pod 
 
 =item calcFrequencies()
@@ -1402,6 +1432,7 @@ sub calcFrequencies {
 }
 
 ################################################################
+
 =pod 
 
 =item calcProbabilities()
@@ -1483,6 +1514,7 @@ sub calcProbabilities {
 
 
 ################################################################
+
 =pod
 
 =item &calcConsensus($force)
@@ -1570,6 +1602,7 @@ sub calcConsensus {
 }
 
 ################################################################
+
 =pod
 
 =item &calcConsensus($force)
@@ -1627,6 +1660,7 @@ sub calcGCcontent {
 }
 
 ################################################################
+
 =pod
 
 =item _printProfile()
@@ -1758,6 +1792,7 @@ sub _printProfile {
 }
 
 ################################################################
+
 =pod
 
 =item _printParameters()
@@ -1812,6 +1847,7 @@ sub _printParameters {
 
 
 ################################################################
+
 =pod
 
 =item _printMatrixRow($row_name, @values)
@@ -1876,6 +1912,7 @@ sub _printMatrixRow {
 }
 
 ################################################################
+
 =pod
 
 =item get_row($row_nb, $ncol, @table)
@@ -1893,6 +1930,7 @@ sub get_row {
 }
 
 ################################################################
+
 =pod
 
 =item get_column($col_nb, $nrow, @table)
@@ -1911,6 +1949,7 @@ sub get_column {
 }
 
 ################################################################
+
 =pod
 
 =item permute_columns()
@@ -1919,34 +1958,47 @@ Permute the columns of the matrix
 
 =cut
 sub permute_columns {
-    my ($self) = @_;
-    
-    my @matrix = @{$self->{table}};
-    my @perm_matrix = ();
-    
-    ## Permute entire columns
-    #my $perm_col_values;
-    my @perm_col_values = ();;
-    my $ncol = $self->ncol();
-    my $nrow = $self->nrow();
-    my @cols = 0..($ncol-1);
-    my @perm_col = &RSAT::stats::permute(@cols);
-    foreach my $c (@cols) {
-    	my @perm_values =  &RSAT::matrix::get_column($perm_col[$c], $nrow, @matrix);
-      	push @{$perm_col_values[$c]}, @perm_values;
+
+  my ($self) = @_;
+
+  my @matrix = @{$self->{table}};
+  my @perm_matrix = ();
+
+  ## Permute entire columns
+  #my $perm_col_values;
+  my @perm_col_values = ();;
+  my $ncol = $self->ncol();
+  my $nrow = $self->nrow();
+  my @cols = 0..($ncol-1);
+  my @perm_col = &RSAT::stats::permute(@cols);
+  &RSAT::message::Debug("RSAT::matrix::permute_columns", "permutation", join(",", @perm_col)) if ($main::verbose >= 5);
+
+  foreach my $c (@cols) {
+    my @perm_values =  &RSAT::matrix::get_column($perm_col[$c], $nrow, @matrix);
+    push @{$perm_col_values[$c]}, @perm_values;
+  }
+
+  for my $r (0..($nrow-1)) {
+    for my $c (0..($ncol-1)) {
+      $perm_matrix[$c][$r] = $perm_col_values[$c][$r];
     }
-    
-   	for my $r (0..($nrow-1)) {
-		for my $c (0..($ncol-1)) {
-	    $perm_matrix[$c][$r] = $perm_col_values[$c][$r];
-	}
-    }
-     @{$self->{perm_columns}} = @perm_matrix;
+  }
+#  @{$self->{perm_columns}} = @perm_matrix;
+  @{$self->{table}} = @perm_matrix;
+  foreach my $attr qw(frequencies_specified
+		      crudeFrequencies_specified
+		      weight_specified
+		      information_specified
+		      consensus_specified
+		     ) {
+    $self->force_attribute($attr, 0);
+  }
 }
 
 
 
 ################################################################
+
 =pod 
 
 =item col_sum($nrow, $ncol, @table)
@@ -1977,6 +2029,7 @@ sub col_sum {
 
 
 ################################################################
+
 =pod 
 
 =item col_max($nrow, $ncol, @table)
@@ -2006,6 +2059,7 @@ sub col_max {
 }
 
 ################################################################
+
 =pod 
 
 =item col_min($nrow, $ncol, @table)
@@ -2035,6 +2089,7 @@ sub col_min {
 }
 
 ################################################################
+
 =pod
 
 =item B<seq_proba($sequence)>
@@ -2084,6 +2139,7 @@ sub seq_proba {
 
 
 ################################################################
+
 =pod 
 
 =item B<segment_proba($segment)>
@@ -2179,6 +2235,7 @@ sub segment_proba {
 
 
 ################################################################
+
 =pod 
 
 =item B<segment_weight_Bernoulli($segment)>
@@ -2220,6 +2277,7 @@ sub segment_weight_Bernoulli {
 }
 
 ################################################################
+
 =pod
 
 =item B<proba_range()>
@@ -2269,6 +2327,7 @@ sub proba_range {
 
 
 ################################################################
+
 =pod
 
 =item B<weight_range()>
@@ -2355,6 +2414,7 @@ sub weight_range {
 
 
 ################################################################
+
 =pod
 
 =item B<treat_null_values>
@@ -2384,6 +2444,7 @@ sub treat_null_values {
 
 
 ################################################################
+
 =pod
 
 =item B<add_site>
@@ -2447,6 +2508,7 @@ sub add_site() {
 }
 
 ################################################################
+
 =pod
 
 =item B<calcTheorScoreDistrib>
@@ -2488,6 +2550,7 @@ sub calcTheorScoreDistrib {
 }
 
 ################################################################
+
 =pod
 
 =item B<calcTheorScoreDistribBernoulli>
@@ -2706,6 +2769,7 @@ for my $score (keys %score_proba) {
 }
 
 ################################################################
+
 =pod
 
 =item B<calcTheorScoreDistribMarkov>
@@ -2981,6 +3045,7 @@ for my $score (keys %score_proba) {
 
 
 ################################################################
+
 =pod
 
 =item getTheorScoreDistrib()
@@ -3026,6 +3091,7 @@ sub getTheorScoreDistrib {
 }
 
 ################################################################
+
 =pod
 
 =item makeLogo()

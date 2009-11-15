@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.86 2009/11/09 09:43:17 jvanheld Exp $
+# $Id: convert-matrix,v 1.87 2009/11/15 21:49:32 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -324,31 +324,77 @@ if ($sort_key) {
 #### export the matrices
 my $m = 0;
 foreach my $matrix (@matrices) {
-    $m++;
-    if ((defined($top_matrices)) && ($m > $top_matrices)) {
-	last;
-    }
-    &RSAT::message::Info("Exporting matrix", $m."/".scalar(@matrices))
-      if ($main::verbose >= 3);
+  $m++;
+  if ((defined($top_matrices)) && ($m > $top_matrices)) {
+    last;
+  }
+  &RSAT::message::Info("Exporting matrix", $m."/".scalar(@matrices))
+    if ($main::verbose >= 3);
 
-    if ($m > 1) {
-      my $fields = join ('', keys (%return_fields));
-     # unless ($fields eq "logo") {
-	#print $out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
+  if ($m > 1) {
+    my $fields = join ('', keys (%return_fields));
+    # unless ($fields eq "logo") {
+    #print $out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
+    #}
+  }
+  if ($main::verbose >= 1) {
+    print $out  ";\n; MATRIX ", $m."/".scalar(@matrices), " : " , $matrix->get_attribute("name"), "\n;\n";
+  }
+
+
+  ## Matrix permutations
+  if ($perm) {
+    my $ID = $matrix->get_attribute("identifier")
+      || $matrix->get_attribute("name")
+	|| $matrix->get_attribute("ID")
+	  || "matrix_".$m;
+    my $AC = $matrix->get_attribute("accession") || $ID;
+    &RSAT::message::Debug("ExportMatrix", "ID", $ID, "AC", $AC) if ($main::verbose >= 4);
+    &RSAT::message::Info("Permutating matrix", $matrix->get_attribute("name"))
+      if ($main::verbose >= 2);
+    for my $i (1..$perm) {
+
+      # if ($i > 1) {
+      #print $out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
       #}
+
+      ## Permute the matrix
+      $matrix->permute_columns();
+      my $ID_perm = join("_", $ID, "perm".$i);
+      my $AC_perm = join("_", $AC, "perm".$i);
+      $matrix->force_attribute("name", $ID_perm);
+      $matrix->force_attribute("ID", $ID_perm);
+      $matrix->force_attribute("identifier", $ID_perm);
+      $matrix->force_attribute("accession", $AC_perm);
+      &RSAT::message::Debug("Permutation", $i, "ID_perm", $ID_perm, "AC_perm", $AC_perm) if ($main::verbose >= 5);
+
+
+      ## print result
+      if ($main::verbose >= 1) {
+	print $out "; ID\t$ID_perm\n" if ($verbose >=1);
+	print $out "; AC\t$AC_perm\n" if ($verbose >=1);
+	print $out "; permutation $i/$perm\n";
+      }
+
+#       print $out $matrix->toString(sep=>"\t",
+# 				   type=>"counts",
+# 				   format=>$output_format,
+# 				   #				   format=>"tab",
+# 				   pipe=>"" ## We suppress the pipe for permute-table
+# 				  );
+      &ExportMatrix($matrix, $m);
     }
-    if ($main::verbose >= 1) {
-	print $out  ";\n; MATRIX ", $m."/".scalar(@matrices), " : " , $matrix->get_attribute("name"), "\n;\n";
-    }
+  } else {
     &ExportMatrix($matrix, $m);
+  }
 }
 
 
 ## closing verbose
 if ($verbose) {
-    my $done_time = &AlphaDate();
-    print $out "; Job started $start_time\n";
-    print $out "; Job done    $done_time\n";
+  my $done_time = &AlphaDate();
+  print $out "; Job started $start_time\n";
+  print $out "; Job done    $done_time\n";
 }
 
 ##### close output file
@@ -1028,7 +1074,7 @@ sub ReadArguments {
 	    unless (&IsNatural($decimals)) {
 		&RSAT::error::FatalError("Invalid decimals $decimals. Must be a natural value");
 	    }
-	    
+
 	    ### decimals
 	} elsif ($ARGV[$a] eq "-perm") {
 	    $perm = $ARGV[$a+1];
@@ -1151,45 +1197,45 @@ sub ExportMatrix {
   my $AC = $matrix->get_attribute("accession") || $ID;
   &RSAT::message::Debug("ExportMatrix", "ID", $ID, "AC", $AC) if ($main::verbose >= 4);
 
-  ## Return parameters
-  if ($perm) {
-    &RSAT::message::Info("permutating matrix")
-      if ($main::verbose >= 3);
+#   ## Matrix permutations
+#   if ($perm) {
+#     &RSAT::message::Info("Permutating matrix", $matrix->get_attribute("name"))
+#       if ($main::verbose >= 0);
 
 
-    ## permute matrix
-    for my $i (1..$perm) {
+#     ## permute matrix
+#     for my $i (1..$perm) {
 
-     # if ($i > 1) {
-	#print $out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
-      #}
+#      # if ($i > 1) {
+# 	#print $out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
+#       #}
 
-      ##permute the matrix
-      $matrix->permute_columns();
-      my $ID_perm = join("_", $ID, "perm".$i);
-      my $AC_perm = join("_", $AC, "perm".$i);
-      $matrix->force_attribute("name", $ID_perm);
-      $matrix->force_attribute("ID", $ID_perm);
-      $matrix->force_attribute("identifier", $ID_perm);
-      $matrix->force_attribute("accession", $AC_perm);
-      &RSAT::message::Debug("permutation", $i, "ID_perm", $ID_perm, "AC_perm", $AC_perm) if ($main::verbose >= 5);
+#       ## Permute the matrix
+#       $matrix->permute_columns();
+#       my $ID_perm = join("_", $ID, "perm".$i);
+#       my $AC_perm = join("_", $AC, "perm".$i);
+#       $matrix->force_attribute("name", $ID_perm);
+#       $matrix->force_attribute("ID", $ID_perm);
+#       $matrix->force_attribute("identifier", $ID_perm);
+#       $matrix->force_attribute("accession", $AC_perm);
+#       &RSAT::message::Debug("Permutation", $i, "ID_perm", $ID_perm, "AC_perm", $AC_perm) if ($main::verbose >= 5);
 
 
-      ## print result
-      if ($main::verbose >= 1) {
-	print $out "; ID\t$ID_perm\n" if ($verbose >=1);
-	print $out "; AC\t$AC_perm\n" if ($verbose >=1);
-	print $out "; permutation $i/$perm\n";
-      }
+#       ## print result
+#       if ($main::verbose >= 1) {
+# 	print $out "; ID\t$ID_perm\n" if ($verbose >=1);
+# 	print $out "; AC\t$AC_perm\n" if ($verbose >=1);
+# 	print $out "; permutation $i/$perm\n";
+#       }
 
-      print $out $matrix->toString(sep=>"\t",
-				   type=>"perm_columns",
-				   format=>$output_format,
-#				   format=>"tab",
-				   pipe=>"" ## We suppress the pipe for permute-table
-				  );
-    }
-  } else {
+#       print $out $matrix->toString(sep=>"\t",
+# 				   type=>"counts",
+# 				   format=>$output_format,
+# #				   format=>"tab",
+# 				   pipe=>"" ## We suppress the pipe for permute-table
+# 				  );
+#     }
+#  } else {
 
     ## Print the counts matrix
     if ($return_fields{counts}) {
@@ -1338,7 +1384,7 @@ sub ExportMatrix {
 		      $sig,
 		     ), "\n";
     }
-  }
+#  }
 
 }
 
