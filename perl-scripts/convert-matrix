@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.87 2009/11/15 21:49:32 jvanheld Exp $
+# $Id: convert-matrix,v 1.88 2009/11/16 21:21:55 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -33,6 +33,7 @@ $max_profile = 24;
 $sep="\t";
 $null = "NA";
 $perm = 0;
+$prefix = ""; ## Prefix to be added before motif names
 
 local %infile = ();
 local %outfile = ();
@@ -580,6 +581,12 @@ OPTIONS
 		precision to 2 decimals for the weight, this is
 		generally more than sufficient.
 
+	-prefix
+		Prefix to be added before identifier(s) of the input
+		matrix/matrices. This can be convenient for converting
+		formats where matrices have no associated name
+		(e.g. tab) to formats with ames (e.g. transfac).
+
 	-perm #
 		Number of permuted matrices to return. Matrix columns are permuted
 		so that the total information content remains identical to the original
@@ -920,6 +927,7 @@ convert-matrix options
 -equi_pseudo	equiprobable distribution of pseudo-weights between residues
 -base		base for the logarithms used to compute the weight and info content
 -decimals	number of decimals digits to print for real matrices
+-prefix		prefix to add before matrix identifiers
 -perm		number of permuted matrices to return.
 -max_profile	Maximal width of the profile histogram 
 -rc		Convert the matrix to its reverse complement.
@@ -1075,7 +1083,12 @@ sub ReadArguments {
 		&RSAT::error::FatalError("Invalid decimals $decimals. Must be a natural value");
 	    }
 
-	    ### decimals
+	    ### prefix
+	} elsif ($ARGV[$a] eq "-prefix") {
+	    $main::prefix = $ARGV[$a+1];
+	    $main::prefix =~s/\s/_/g;
+
+	    ### permutations
 	} elsif ($ARGV[$a] eq "-perm") {
 	    $perm = $ARGV[$a+1];
 	    unless (&IsNatural($perm)) {
@@ -1191,25 +1204,27 @@ sub ExportMatrix {
   }
 
   my $ID = $matrix->get_attribute("identifier")
-    || $matrix->get_attribute("name")
-      || $matrix->get_attribute("ID")
-	|| "matrix_".$m;
+      || $matrix->get_attribute("name")
+      || $matrix->get_attribute("id")
+      || $matrix->get_attribute("AC")
+      || "matrix_".$m;
   my $AC = $matrix->get_attribute("accession") || $ID;
   &RSAT::message::Debug("ExportMatrix", "ID", $ID, "AC", $AC) if ($main::verbose >= 4);
-
+  
+  if ($prefix) {
+      $matrix->force_attribute("name", $prefix.$matrix->get_attribute("name"));
+      $matrix->force_attribute("id", $prefix.$matrix->get_attribute("id"));
+      $matrix->force_attribute("AC", $prefix.$matrix->get_attribute("AC"));
+  }
 #   ## Matrix permutations
 #   if ($perm) {
 #     &RSAT::message::Info("Permutating matrix", $matrix->get_attribute("name"))
 #       if ($main::verbose >= 0);
-
-
 #     ## permute matrix
 #     for my $i (1..$perm) {
-
 #      # if ($i > 1) {
 # 	#print $out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
 #       #}
-
 #       ## Permute the matrix
 #       $matrix->permute_columns();
 #       my $ID_perm = join("_", $ID, "perm".$i);
@@ -1219,15 +1234,12 @@ sub ExportMatrix {
 #       $matrix->force_attribute("identifier", $ID_perm);
 #       $matrix->force_attribute("accession", $AC_perm);
 #       &RSAT::message::Debug("Permutation", $i, "ID_perm", $ID_perm, "AC_perm", $AC_perm) if ($main::verbose >= 5);
-
-
 #       ## print result
 #       if ($main::verbose >= 1) {
 # 	print $out "; ID\t$ID_perm\n" if ($verbose >=1);
 # 	print $out "; AC\t$AC_perm\n" if ($verbose >=1);
 # 	print $out "; permutation $i/$perm\n";
 #       }
-
 #       print $out $matrix->toString(sep=>"\t",
 # 				   type=>"counts",
 # 				   format=>$output_format,
