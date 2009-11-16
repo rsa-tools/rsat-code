@@ -358,7 +358,7 @@ $demo_matrix = "
 ;
 AC  Kr
 XX
-P0       A     C     G     T
+PO       A     C     G     T
 1       30     4     4     6
 2       37     0     2     5
 3        0    35     3     6
@@ -374,7 +374,7 @@ XX
 ;
 AC  Med
 XX
-P0       A     C     G     T
+PO       A     C     G     T
 1        0     6     1     3
 2        0     0    10     0
 3        0     0     2     8
@@ -388,7 +388,7 @@ XX
 ;
 AC  Stat92E
 XX
-P0       A     C     G     T
+PO       A     C     G     T
 1        0     0     0     3
 2        0     0     0     3
 3        0     3     0     0
@@ -405,7 +405,7 @@ XX
 ;
 AC  bcd
 XX
-P0       A     C     G     T
+PO       A     C     G     T
 1        8     3     1    36
 2       45     1     1     1
 3       46     0     2     0
@@ -419,7 +419,7 @@ XX
 ;
 AC  eve
 XX
-P0       A     C     G     T
+PO       A     C     G     T
 1        0     8     1     0
 2        5     0     4     0
 3        3     4     2     0
@@ -442,7 +442,7 @@ XX
 ;
 AC  gt
 XX
-P0       A     C     G     T
+PO       A     C     G     T
 1        3     0     0     5
 2        0     0     1     7
 3        5     0     2     1
@@ -460,7 +460,7 @@ XX
 ;
 AC  hb
 XX
-P0       A     C     G     T
+PO       A     C     G     T
 1        1     0     3    99
 2        4     4     4    91
 3        0     2     0   101
@@ -476,7 +476,7 @@ XX
 ;
 AC  kni
 XX
-P0       A     C     G     T
+PO       A     C     G     T
 1        6     2    22     3
 2       18     7     0     8
 3        7     6     2    18
@@ -492,7 +492,7 @@ XX
 ;
 AC  pan
 XX
-P0       A     C     G     T
+PO       A     C     G     T
 1       15     1     3     6
 2        7     2     0    16
 3        1    23     0     1
@@ -508,7 +508,7 @@ XX
 ;
 AC  prd
 XX
-P0       A     C     G     T
+PO       A     C     G     T
 1        0     6     0     3
 2        5     0     4     0
 3        0     8     1     0
@@ -524,7 +524,7 @@ XX
 ;
 AC  tin
 XX
-P0       A     C     G     T
+PO       A     C     G     T
 1       10     1     0     0
 2        0    11     0     0
 3        0     0     0    11
@@ -538,7 +538,7 @@ XX
 ;
 AC  ttk
 XX
-P0       A     C     G     T
+PO       A     C     G     T
 1        3     5     0     0
 2        7     0     1     0
 3        0     0     8     0
