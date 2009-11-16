@@ -1,0 +1,175 @@
+#!/usr/bin/perl
+############################################################
+#
+# random-motif
+#
+############################################################
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+
+use CGI;
+use CGI::Carp qw/fatalsToBrowser/;
+#### redirect error log to a file
+BEGIN {
+    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
+}
+require "RSA.lib";
+require "RSA2.cgi.lib";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+
+$command = "$ENV{RSAT}/python-scripts/random-motif";
+$convert_matrix_command = "$SCRIPTS/convert-matrix -from gibbs -return counts";
+$tmp_file_name = sprintf "random-motif.%s", &AlphaDate();
+
+### Read the CGI query
+$query = new CGI;
+
+### print the result page
+&RSA_header("random-motif result", "results");
+&ListParameters() if ($ENV{rsat_echo} >=2);
+
+#### update log file ####
+&UpdateLogFile();
+
+################################################################
+#
+# read parameters
+#
+$parameters = '';
+
+## Motif width
+my $width = $query->param('width');
+if (&RSAT::util::IsNatural($width)) {
+  $parameters .= " -l ".$width;
+} else {
+  &RSAT::error::FatalError($width, "Is not a valid value for motif width. Should be a Natural number.");
+}
+
+
+## Conservation
+my $conservation = $query->param('conservation');
+if ((&RSAT::util::IsReal($conservation))
+    && ($conservation >= 0) 
+    && ($conservation <= 1)) {
+  $parameters .= " -c ".$conservation;
+} else {
+  &RSAT::error::FatalError($conservation, "Is not a valid value for motif conservation. Should be a Real number between 0 and 1.");
+}
+
+
+## Multiplier
+my $multiplier = $query->param('multiplier');
+if ((&RSAT::util::IsNatural($multiplier)) 
+    && ($multiplier >= 1)) {
+  $parameters .= " -N ".$multiplier;
+} else {
+  &RSAT::error::FatalError($multiplier, "Is not a valid value for motif multiplier. Should be a Natural number >= 1.");
+}
+
+## Round numbers
+if (lc($query->param("round")) eq "on") {
+  $parameters .= " --round";
+}
+
+## Concatenate parameters to the command
+$command .= " ".$parameters;
+
+## Convert the matrices
+my $output_format = $query->param('output_format');
+if ($output_format ne "tab") {
+  $command .= "| ".$convert_matrix_command;
+  $command .= " -prefix rand_";
+  $command .= " -from tab -to ".$output_format;
+  $command  .= " -o ".$result_file;
+}
+
+print "<pre>$command $parameters\n</pre>" if ($ENV{rsat_echo} >=1);
+
+if ($query->param('output') eq "display") {
+    &PipingWarning();
+
+    ### execute the command ###
+    $result_file = "$TMP/$tmp_file_name.res";
+    system "$command > $result_file";
+
+
+    ### Print result on the web page
+    print '<h4>Result</h4>';
+    print "<pre>";
+    print `cat $result_file`;
+    print "</pre>";
+
+    &PipingForm();
+
+    &DelayedRemoval($result_file);
+    &DelayedRemoval($matrix_file);
+
+    print "<hr size=\"3\">";
+} elsif ($query->param('output') =~ /server/i) {
+    &ServerOutput("$command $parameters", $query->param('user_email'));
+} else {
+    &EmailTheResult("$command $parameters", $query->param('user_email'));
+}
+
+print $query->end_html;
+exit(0);
+
+
+
+### prepare data for piping
+sub PipingForm {
+  $title = $query->param('title');
+  $title =~ s/\"/\'/g;
+    print <<End_of_form;
+<hr size="3">
+<table class="Nextstep">
+<tr>
+<td colspan="3">
+<h3>next step</h3>
+</td>
+</tr><tr>
+<!--
+<td valign="bottom" align="center">
+<form method="post" action="patser_form.cgi">
+<input type="hidden" name="title" value="$title">
+<input type="hidden" name="matrix_file" value="$result_file">
+<input type="hidden" name="matrix_format" value="tab">
+<input type="hidden" name="sequence_file" value="$sequence_file">
+<input type="hidden" name="sequence_format" value="$sequence_format">
+<input type="submit" value="pattern matching (patser)">
+</form>
+</td>
+-->
+<td valign="bottom" align="center">
+<b><font color=red>new</a></b>
+<form method="POST" action="matrix-scan_form.cgi">
+<input type="hidden" name="title" value="$title">
+<input type="hidden" name="matrix_file" value="$result_file">
+<input type="hidden" name="matrix_format" value="tab">
+<input type="hidden" name="sequence_file" value="$sequence_file">
+<input type="hidden" name="sequence_format" value="fasta">
+<input type="submit" value="pattern matching (matrix-scan)">
+</form>
+</td>
+
+<td valign=bottom align=center>
+<form method="post" action="convert-matrix_form.cgi">
+<input type="hidden" name="title" value="$title">
+<input type="hidden" name="matrix_file" value="$result_file">
+<input type="hidden" name="matrix_format" value="tab">
+<input type="hidden" name="logo" value="on" checked="checked">
+<input type="submit" value="convert-matrix">
+</form>
+</td>
+
+</tr>
+</table>
+End_of_form
+  
+}
