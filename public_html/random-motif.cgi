@@ -44,7 +44,7 @@ $query = new CGI;
 $parameters = '';
 
 ## Motif width
-my $width = $query->param('width');
+local $width = $query->param('width');
 if (&RSAT::util::IsNatural($width)) {
   $parameters .= " -l ".$width;
 } else {
@@ -53,7 +53,7 @@ if (&RSAT::util::IsNatural($width)) {
 
 
 ## Conservation
-my $conservation = $query->param('conservation');
+local $conservation = $query->param('conservation');
 if ((&RSAT::util::IsReal($conservation))
     && ($conservation >= 0) 
     && ($conservation <= 1)) {
@@ -64,7 +64,7 @@ if ((&RSAT::util::IsReal($conservation))
 
 
 ## Multiplier
-my $multiplier = $query->param('multiplier');
+local $multiplier = $query->param('multiplier');
 if ((&RSAT::util::IsNatural($multiplier)) 
     && ($multiplier >= 1)) {
   $parameters .= " -N ".$multiplier;
@@ -79,25 +79,27 @@ if (lc($query->param("round")) eq "on") {
 
 ## Concatenate parameters to the command
 $command .= " ".$parameters;
+local $tab_result_file = $TMP."/".$tmp_file_name.".tab";
+$command  .= " -o ".$tab_result_file;
 
 ## Convert the matrices
-my $output_format = $query->param('output_format');
+local $output_format = $query->param('output_format');
+local $result_file = $TMP."/".$tmp_file_name.".".$output_format;
 if ($output_format ne "tab") {
-  $command .= "| ".$convert_matrix_command;
+  $command .= "; ".$convert_matrix_command;
+  $command  .= " -i ".$tab_result_file;
   $command .= " -prefix rand_";
   $command .= " -from tab -to ".$output_format;
   $command  .= " -o ".$result_file;
 }
 
-print "<pre>$command $parameters\n</pre>" if ($ENV{rsat_echo} >=1);
+print "<pre>$command\n</pre>" if ($ENV{rsat_echo} >=1);
 
 if ($query->param('output') eq "display") {
     &PipingWarning();
 
     ### execute the command ###
-    $result_file = "$TMP/$tmp_file_name.res";
-    system "$command > $result_file";
-
+    system "$command";
 
     ### Print result on the web page
     print '<h4>Result</h4>';
@@ -105,10 +107,29 @@ if ($query->param('output') eq "display") {
     print `cat $result_file`;
     print "</pre>";
 
+    ################################################################
+    ## Table with links to the raw result files in various formats
+    $tab_result_URL = $ENV{rsat_www}."/tmp/".$tmp_file_name.".tab";
+    print "<center><table class=\"nextstep\">\n";
+    print "<tr><td colspan='3'><h3>Result file(s)</h3> </td></tr>";
+    print ("<tr>",
+	   "<td>tab</td>",
+	   "<td>","<a href='".$tab_result_URL."'>".$tab_result_URL."</a>","</td>",
+	   "</tr>");
+    if ($output_format ne "tab") {
+      $result_URL = $ENV{rsat_www}."/tmp/".$tmp_file_name.".".$output_format;
+      print ("<tr>",
+	     "<td>".$output_format."</td>",
+	     "<td>","<a href='".$result_URL."'>".$result_URL."</a>","</td>",
+	     "</tr>");
+    }
+    print "</table></center>";
+
+    ## Form for sending results to other programs
     &PipingForm();
 
+    &DelayedRemoval($tab_result_file);
     &DelayedRemoval($result_file);
-    &DelayedRemoval($matrix_file);
 
     print "<hr size=\"3\">";
 } elsif ($query->param('output') =~ /server/i) {
@@ -133,27 +154,26 @@ sub PipingForm {
 <td colspan="3">
 <h3>next step</h3>
 </td>
-</tr><tr>
+</tr>
+
+<tr>
 <!--
 <td valign="bottom" align="center">
 <form method="post" action="patser_form.cgi">
 <input type="hidden" name="title" value="$title">
-<input type="hidden" name="matrix_file" value="$result_file">
+<input type="hidden" name="matrix_file" value="$tab_result_file">
 <input type="hidden" name="matrix_format" value="tab">
-<input type="hidden" name="sequence_file" value="$sequence_file">
-<input type="hidden" name="sequence_format" value="$sequence_format">
 <input type="submit" value="pattern matching (patser)">
 </form>
 </td>
 -->
+
 <td valign="bottom" align="center">
 <b><font color=red>new</a></b>
 <form method="POST" action="matrix-scan_form.cgi">
 <input type="hidden" name="title" value="$title">
 <input type="hidden" name="matrix_file" value="$result_file">
-<input type="hidden" name="matrix_format" value="tab">
-<input type="hidden" name="sequence_file" value="$sequence_file">
-<input type="hidden" name="sequence_format" value="fasta">
+<input type="hidden" name="matrix_format" value="$output_format">
 <input type="submit" value="pattern matching (matrix-scan)">
 </form>
 </td>
@@ -162,7 +182,7 @@ sub PipingForm {
 <form method="post" action="convert-matrix_form.cgi">
 <input type="hidden" name="title" value="$title">
 <input type="hidden" name="matrix_file" value="$result_file">
-<input type="hidden" name="matrix_format" value="tab">
+<input type="hidden" name="matrix_format" value="$output_format">
 <input type="hidden" name="logo" value="on" checked="checked">
 <input type="submit" value="convert-matrix">
 </form>
