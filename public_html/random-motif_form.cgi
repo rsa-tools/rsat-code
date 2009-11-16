@@ -25,7 +25,9 @@ $query = new CGI;
 ### default values for filling the form
 $default{motif_nb} = 1;
 $default{width} = 12;
-$default{conservation} = 0.9;
+$default{conservation} = 0.80;
+$default{multiplier} = 15;
+$default{round} = "checked";
 $default{output_format} = "tab";
 
 
@@ -40,9 +42,10 @@ foreach $key (keys %default) {
 &RSA_header("Random motif", "form");
 
 ### head
-print "<CENTER>";
-print "Generate random motifs with a given level of conservation in each column.<P>\n";
-print "</CENTER>";
+print "<center>";
+print "Generate random motifs with a given level of conservation in each column.\n";
+print "<br>Reference: <a target='_blank' href=\"http://www.ncbi.nlm.nih.gov/pubmed/19689955\">Defrance & van Helden, Bioinformatics 2009</a>.</a>";
+print "</center>";
 
 
 print $query->start_multipart_form(-action=>"random-motif.cgi");
@@ -63,7 +66,23 @@ print $query->textfield(-name=>'conservation',
 			-size=>3);
 
 
+
+#### Multiplier
+print "<br>";
+print " <a href='help.random-motif.html#multiplier'>Multiplier</A> ";
+print $query->textfield(-name=>'multiplier',
+			-default=>$default{multiplier},
+			-size=>3);
+
+### Round the values
+print $query->checkbox(-name=>'round',
+		       -checked=>$default{round},
+		       -label=>'');
+print "<a href='help.random-motif.html#round'>round frequencies</a>\n";
+
+
 #### Number of motifs
+print "<br>";
 print " <a href='help.random-motif.html#motif_nb'>Number of motifs</A> ";
 print $query->textfield(-name=>'motif_nb',
 			-default=>$default{motif_nb},
