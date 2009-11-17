@@ -53,7 +53,10 @@ def words2countmatrix(words, priori):
     N = len(words)
     for i in range(w):
         for s in range(N):
-            letter = words[s][i]
+            try:
+                letter = words[s][i]
+            except IndexError:
+                letter = 'N'
             if letter == 'A':
                 m[i][0] = m[i][0] + 1.0
             elif letter == 'C':
@@ -116,7 +119,11 @@ def matrix2txt(matrix, title=''):
 def matrix2tab(matrix, title='', count=False):
     w = len(matrix)
 
-    str = [ '; %s' % (title) ]
+    if title != '':
+        str = [ '; %s' % (title) ]
+    else:
+        str = []
+
     for b in range(len(ALPHABET)):
         if b == 0:
             line = [ 'a |' ]
