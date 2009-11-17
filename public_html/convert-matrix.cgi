@@ -34,7 +34,7 @@ $query = new CGI;
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #### read parameters ####
-my $parameters;
+local $parameters;
 
 ################################################################
 #### Matrix specification
@@ -85,7 +85,7 @@ if (&IsInteger($query->param('perm'))) {
 ################################################################
 ## Matrix input format
 
-my $input_format = lc($query->param('matrix_format'));
+local $input_format = lc($query->param('matrix_format'));
 ($input_format) = split (/\s+/, $input_format);
 #$input_format =~ s/cluster\-buster/cb/i;
 #$input_format =~ s/(\S+)/$1/; ## Only retain the first word
@@ -94,15 +94,15 @@ $parameters .= " -from ".$input_format;
 
 ################################################################
 ## Background model method
-my $bg_method = $query->param('bg_method');
+local $bg_method = $query->param('bg_method');
 if ($bg_method eq "from_matrix") {
 
 } elsif ($bg_method eq "bgfile") {
   ## Select pre-computed background file in RSAT genome directory
-  my $organism_name = $query->param("organism");
-  my $noov = "ovlp";
-  my $background_model = $query->param("background");
-  my $oligo_length = 1;
+  local $organism_name = $query->param("organism");
+  local $noov = "ovlp";
+  local $background_model = $query->param("background");
+  local $oligo_length = 1;
   $bg_file = &ExpectedFreqFile($organism_name,
 			       $oligo_length, $background_model,
 			       noov=>$noov, str=>"-1str");
@@ -110,13 +110,13 @@ if ($bg_method eq "from_matrix") {
 
 } elsif ($bg_method =~ /upload/i) {
   ## Upload user-specified background file
-  my $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
-  my $upload_bgfile = $query->param('upload_bgfile');
+  local $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
+  local $upload_bgfile = $query->param('upload_bgfile');
   if ($upload_bgfile) {
     if ($upload_bgfile =~ /\.gz$/) {
       $bgfile .= ".gz";
     }
-    my $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
+    local $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
     open BGFILE, ">$bgfile" ||
       &cgiError("Cannot store background file in temp dir.");
     while (<$upload_bgfile>) {
@@ -141,11 +141,11 @@ if (&IsReal($query->param('bg_pseudo'))) {
 
 ################################################################
 ## Matrix output format
-my $output_format = lc($query->param('output_format'));
+local $output_format = lc($query->param('output_format'));
 $parameters .= " -to ".$output_format;
 
 ## Return fields
-my @return_fields = ();
+local @return_fields = ();
 foreach my $stat qw (counts frequencies weights info consensus parameters profile margins logo) {
   if ($query->param($stat)) {
     push @return_fields, $stat;
@@ -195,7 +195,7 @@ if ($query->param('output') eq "display") {
       #	s|${BIN}/||g;
       next if ($_ =~ /logo file:(.*)\.pdf$/);
       if ($_ =~ /logo file:(.*)\.png$/){
-	(my $logo = $1 )=~ s|${TMP}| ${WWW_TMP}|g;
+	(local $logo = $1 )=~ s|${TMP}| ${WWW_TMP}|g;
 #	print "<IMG SRC=\"$logo\">\n";
 	$logo =~ s/\.png//;
 	print "<a href = \"$logo.pdf\"><IMG SRC=\"$logo\.png\" ></a>\n";
@@ -210,10 +210,9 @@ if ($query->param('output') eq "display") {
     print '</PRE>';
     close(RESULT);
 
-#    &PipingForm();
+  &PipingForm();
 
     print "<HR SIZE = 3>";
-    
 } elsif ($query->param('output') =~ /server/i) {
     &ServerOutput("$command $parameters", $query->param('user_email',$result_file));
 } else {
@@ -223,3 +222,70 @@ print $query->end_html;
 
 exit(0);
 
+
+### prepare data for piping
+sub PipingForm {
+  local $command = "$ENV{RSAT}/perl-scripts/convert-matrix -i $result_file -from tab -to tab -top 1 -return counts";
+  local $matrix_content = `$command`;
+  $matrix_content =~ s|//\n||gm;
+  $matrix_content =~ s|;.*\n||gm;
+#  print "<pre>".$command."</pre>";
+#  print "<pre>".$matrix_content."</pre>";
+
+  $title = $query->param('title');
+  $title =~ s/\"/\'/g;
+    print <<End_of_form;
+<hr size="3">
+<table class="Nextstep">
+<tr>
+<td colspan="3">
+<h3>Next step</h3>
+</td>
+</tr>
+
+<tr>
+<!--
+<td valign="bottom" align="center">
+<form method="post" action="patser_form.cgi">
+<input type="hidden" name="title" value="$title">
+<input type="hidden" name="matrix_file" value="$tab_result_file">
+<input type="hidden" name="matrix_format" value="tab">
+<input type="submit" value="pattern matching (patser)">
+</form>
+</td>
+-->
+
+<td valign="bottom" align="center">
+<b><font color=red>new</a></b>
+<form method="POST" action="matrix-scan_form.cgi">
+<input type="hidden" name="title" value="$title">
+<input type="hidden" name="matrix_file" value="$result_file">
+<input type="hidden" name="matrix_format" value="$output_format">
+<input type="submit" value="pattern matching (matrix-scan)">
+</form>
+</td>
+
+<td valign=bottom align=center>
+<form method="post" action="convert-matrix_form.cgi">
+<input type="hidden" name="title" value="$title">
+<input type="hidden" name="matrix_file" value="$result_file">
+<input type="hidden" name="matrix_format" value="$output_format">
+<input type="hidden" name="logo" value="on" checked="checked">
+<input type="submit" value="convert-matrix">
+</form>
+</td>
+
+<td valign=bottom align=center>
+<form method="post" target='_blank' action="http://meme.nbcr.net/meme4/cgi-bin/tomtom.cgi">
+<input type="hidden" name="query" value="$matrix_content">
+<input type="hidden" name="DIST" value="sandelin">
+<input type="submit" value="TOMTOM">
+</form>
+Compare a single matrix to a motif database.
+</td>
+</tr>
+
+</table>
+End_of_form
+
+}
