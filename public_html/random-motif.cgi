@@ -67,7 +67,7 @@ if ((&RSAT::util::IsReal($conservation))
 local $multiplier = $query->param('multiplier');
 if ((&RSAT::util::IsNatural($multiplier)) 
     && ($multiplier >= 1)) {
-  $parameters .= " -N ".$multiplier;
+  $parameters .= " -m ".$multiplier;
 } else {
   &RSAT::error::FatalError($multiplier, "Is not a valid value for motif multiplier. Should be a Natural number >= 1.");
 }
@@ -75,6 +75,15 @@ if ((&RSAT::util::IsNatural($multiplier))
 ## Round numbers
 if (lc($query->param("round")) eq "on") {
   $parameters .= " --round";
+}
+
+
+## Motif number
+local $motif_nb = $query->param('motif_nb');
+if (&RSAT::util::IsNatural($motif_nb)) {
+  $parameters .= " -n ".$motif_nb;
+} else {
+  &RSAT::error::FatalError($motif_nb, "Is not a valid value for motif motif_nb. Should be a Natural number.");
 }
 
 ## Concatenate parameters to the command

@@ -32,7 +32,7 @@ frequencies are equaly distributed between the three remaining
 residues (<i>f<sub>i</sub>=(1-c)/3</i>).
 
 <p>All cell values can be multiplied by a user-specific value
-(<i>N</i>) and rounded in order to obtain count matrices (with
+(<i>m</i>) and rounded in order to obtain count matrices (with
 occurrences rather than relative frequencies).
 
 <h4>Options</h4>
@@ -49,13 +49,18 @@ conserved residue of each column.
 </p></li>
 
 <li><p><a name="multiplier"></a>
-<b>Multiplier (<i>N</i>)</b>. A number by which each cell value is
+<b>Multiplier (<i>m</i>)</b>. A number by which each cell value is
 multiplied.
 </p></li>
 
 <li><p><a name="round"></a>
 <b>Round (Boolean)</b>. If true, absolute frequencies are rounded to
 return integer values.
+</p></li>
+
+<li><p><a name="motif_nb"></a>
+<b>Motif number (<i>m</i>)</b>. Number of motifs (matrices) to be
+generated. 
 </p></li>
 
 </ul>
