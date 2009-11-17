@@ -157,10 +157,10 @@ if ($query->param('output') eq "display") {
     &PipingWarning();
 
     ### execute the command ###
-    $result_file = "$TMP/$tmp_file_name.res";
+    local $result_file = "$TMP/$tmp_file_name.tab";
     #$matrix_file = "$TMP/$tmp_file_name.matrix";
     #print("$command $parameters\n");
-    
+
     system "$command $parameters > $result_file";
     #print "<pre>$command $parameters > $result_file</pre>";
     #print $result_file;
@@ -196,6 +196,13 @@ exit(0);
 
 ### prepare data for piping
 sub PipingForm {
+  my $command = "$ENV{RSAT}/perl-scripts/convert-matrix -i $result_file -from tab -to tab -top 1 -return counts";
+  my $matrix_content = `$command`;
+  $matrix_content =~ s|//\n||gm;
+  $matrix_content =~ s|;.*\n||gm;
+#  print "<pre>".$command."</pre>";
+#  print "<pre>".$matrix_content."</pre>";
+
   $title = $query->param('title');
   $title =~ s/\"/\'/g;
     print <<End_of_form;
@@ -239,6 +246,18 @@ sub PipingForm {
 <input type="submit" value="convert-matrix">
 </form>
 </td>
+
+
+<td valign=bottom align=center>
+<form method="post" target='_blank' action="http://meme.nbcr.net/meme4/cgi-bin/tomtom.cgi">
+<input type="hidden" name="query" value="$matrix_content">
+<input type="hidden" name="DIST" value="sandelin">
+<input type="submit" value="TOMTOM">
+</form>
+(compare to motif databases)
+</td>
+</tr>
+
 
 </tr>
 </table>
