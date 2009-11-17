@@ -201,7 +201,7 @@ sub PipingForm {
 <input type="hidden" name="DIST" value="sandelin">
 <input type="submit" value="TOMTOM">
 </form>
-(compare to motif databases)
+Compare a single matrix to a motif database.
 </td>
 </tr>
 
