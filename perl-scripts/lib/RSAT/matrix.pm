@@ -2651,6 +2651,7 @@ sub calcTheorScoreDistribBernoulli {
 my %score_proba_decimals;
 for my $score (keys %score_proba) {
 	my $score_decimals = sprintf($score_format,$score);
+	$score_decimals =~ s/^-(0\.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
 	$score_proba_decimals{$score_decimals} += $score_proba{$score};
 	}
 %score_proba = %score_proba_decimals;
@@ -2715,12 +2716,26 @@ for my $score (keys %score_proba) {
 	  }
   } else {
 	  @sorted_scores = sort {$a <=> $b} (keys (%score_proba));
-	  @sorted_scores_inv = sort {$b <=> $a} (keys (%score_proba));
   }
-  
+
+  ## Fill in intermediate score values, for which no score was calculated
+  ## This prevents from having missing values due to roundings
+  my $distrib_min = $sorted_scores[0];
+  my $distrib_max = $sorted_scores[$#sorted_scores];
+  my @sorted_all_scores = ();
+  for (my $score = $distrib_min; $score <= $distrib_max; $score+=1/(10**$decimals)) {
+		$score = sprintf($score_format, $score);
+		push(@sorted_all_scores,$score) ;
+		if (!defined($score_proba{$score})) {
+		  $score_proba{$score}="NA";
+	  }
+	}
+	@sorted_scores =  @sorted_all_scores;
+	@sorted_scores_inv = sort {$b <=> $a} (keys (%score_proba));
+
   ## Compute the cumulative distribution
   foreach my $score (@sorted_scores) {
-	  if (defined($score_proba{$score})) {
+	  if (&RSAT::util::IsReal($score_proba{$score})) {
 		  $score_proba_cum += $score_proba{$score};
 	  }
 	  $score_proba_cum{$score} = $score_proba_cum;
@@ -2730,7 +2745,7 @@ for my $score (keys %score_proba) {
   my $score_inv_cum_proba = 0;
   my %score_inv_cum_proba = ();
   foreach my $score (@sorted_scores_inv) {
-    if (defined($score_proba{$score})) {
+    if (&RSAT::util::IsReal($score_proba{$score})) {
       $score_inv_cum_proba += $score_proba{$score};
     }
     $score_inv_cum_proba{$score} = $score_inv_cum_proba;
@@ -2952,6 +2967,7 @@ foreach my $score (keys (%distrib_proba)) {
 my %score_proba_decimals;
 for my $score (keys %score_proba) {
 	my $score_decimals = sprintf($score_format,$score);
+	$score_decimals =~ s/^-(0\.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
 	$score_proba_decimals{$score_decimals} += $score_proba{$score};
 	}
 %score_proba = %score_proba_decimals;
@@ -2988,12 +3004,27 @@ for my $score (keys %score_proba) {
     }
   } else {
     @sorted_scores = sort {$a <=> $b} (keys (%score_proba));
-    @sorted_scores_inv = sort {$b <=> $a} (keys (%score_proba));
   }
+  
+  ## Fill in intermediate score values, for which no score was calculated
+  ## This prevents from having missing values due to roundings
+  my $distrib_min = $sorted_scores[0];
+  my $distrib_max = $sorted_scores[$#sorted_scores];
+  my @sorted_all_scores = ();
+  for (my $score = $distrib_min; $score <= $distrib_max; $score+=1/(10**$decimals)) {
+		$score = sprintf($score_format, $score);
+		push(@sorted_all_scores,$score) ;
+		if (!defined($score_proba{$score})) {
+		  $score_proba{$score}="NA";
+	  }
+	}
+	@sorted_scores =  @sorted_all_scores;
+	@sorted_scores_inv = sort {$b <=> $a} (keys (%score_proba));
+  
 
   ## Compute the cumulative distribution
   foreach my $score (@sorted_scores) {
-    if (defined($score_proba{$score})) {
+    if (&RSAT::util::IsReal($score_proba{$score})) {
       $score_proba_cum += $score_proba{$score};
     }
     $score_proba_cum{$score} = $score_proba_cum;
@@ -3003,7 +3034,7 @@ for my $score (keys %score_proba) {
   my $score_inv_cum_proba = 0;
   my %score_inv_cum_proba = ();
   foreach my $score (@sorted_scores_inv) {
-    if (defined($score_proba{$score})) {
+    if (&RSAT::util::IsReal($score_proba{$score})) {
       $score_inv_cum_proba += $score_proba{$score};
     }
     $score_inv_cum_proba{$score} = $score_inv_cum_proba;
