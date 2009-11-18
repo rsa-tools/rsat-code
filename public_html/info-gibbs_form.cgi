@@ -25,7 +25,7 @@ $default{sequence_format} = "fasta";
 $default{sequence_file} = "";
 $default{upload_file} = "";
 $default{length} = 12;
-$default{expected} = 1.0;
+$default{expected} = 2.0;
 $default{motifs} = 1;
 $default{nrun} = 5;
 $default{iter} = 1000;
@@ -76,7 +76,7 @@ print $query->textfield(-name=>'length',
 		  -size=>5);
 print "<br />\n";
 
-### expected number of matches
+### expected number of sites per sequence
 print "<a href=\"help.info-gibbs.html#expected\">Expected number of sites per sequence</a>\n";
 print $query->textfield(-name=>'expected',
 		  -default=>$default{expected},
@@ -86,9 +86,12 @@ print "<br />\n";
 
 ### motifs
 print "<a href=\"help.info-gibbs.html#motifs\">Number of motifs to extract</a>\n";
-print $query->textfield(-name=>'motifs',
-		  -default=>$default{motifs},
-		  -size=>5);
+print $query->popup_menu(-name=>'motifs',
+			 -Values=>[1,2,3,4,5],
+			 -default=>$default{motifs});
+#print $query->textfield(-name=>'motifs',
+#			-default=>$default{motifs},
+#			-size=>5);
 print "<br />\n";
 
 
@@ -103,9 +106,12 @@ print "<br />\n";
 
 ### nrun
 print "<a href=\"help.info-gibbs.html#runs\">Number of runs</a>\n";
-print $query->textfield(-name=>'nrun',
-		  -default=>$default{nrun},
-		  -size=>5);
+print $query->popup_menu(-name=>'nrun',
+			 -Values=>[1..10],
+			 -default=>$default{nrun});
+#print $query->textfield(-name=>'nrun',
+#		  -default=>$default{nrun},
+#		  -size=>5);
 print "<br />\n";
 
 
