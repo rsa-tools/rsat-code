@@ -50,9 +50,10 @@ print "</center>";
 
 print $query->start_multipart_form(-action=>"random-motif.cgi");
 
-print "<font face='Helvetica'>";
+#print "<font face='Helvetica'>";
 
 
+print "<b>Parameters<b/><br />";
 #### Motif width
 print " <a href='help.random-motif.html#width'>Motif width</a> ";
 print $query->textfield(-name=>'width',
@@ -65,7 +66,8 @@ print $query->textfield(-name=>'conservation',
 			-default=>$default{conservation},
 			-size=>3);
 
-
+print "<hr />";
+print "<b>Options<b/><br />";
 
 #### Multiplier
 print "<br>";
@@ -96,6 +98,7 @@ print $query->popup_menu(-name=>'output_format',
 			 -default=>$default{output_format});
 print "<BR>\n";
 
+print "<hr />";
 
 ### send results by email or display on the browser
 print "<P>\n";

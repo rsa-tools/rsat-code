@@ -167,22 +167,22 @@ sub PipingForm {
 <hr size="3">
 <table class="Nextstep">
 <tr>
-<td colspan="3">
+<td colspan="4">
 <h3>Next step</h3>
 </td>
 </tr>
 
 <tr>
-<!--
+
+
 <td valign="bottom" align="center">
-<form method="post" action="patser_form.cgi">
+<form method="POST" action="random-sites_form.cgi">
 <input type="hidden" name="title" value="$title">
-<input type="hidden" name="matrix_file" value="$tab_result_file">
-<input type="hidden" name="matrix_format" value="tab">
-<input type="submit" value="pattern matching (patser)">
+<input type="hidden" name="matrix_file" value="$result_file">
+<input type="hidden" name="matrix_format" value="$output_format">
+<input type="submit" value="random sites">
 </form>
 </td>
--->
 
 <td valign="bottom" align="center">
 <b><font color=red>new</a></b>
@@ -195,7 +195,7 @@ sub PipingForm {
 </td>
 
 <td valign=bottom align=center>
-<form method="post" action="convert-matrix_form.cgi">
+<form method="POST" action="convert-matrix_form.cgi">
 <input type="hidden" name="title" value="$title">
 <input type="hidden" name="matrix_file" value="$result_file">
 <input type="hidden" name="matrix_format" value="$output_format">
