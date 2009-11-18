@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.143 2009/11/14 07:53:16 jvanheld Exp $
+# $Id: matrix-scan,v 1.144 2009/11/18 09:54:48 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -613,6 +613,7 @@ package main;
  	  (defined($uth_file{normw})) || (defined($lth_file{normw}))) {
     $return_fields{normw} = 1;
   }
+
   if ((defined($uth{pval})) || (defined($lth{pval})) || 
   	  (defined($uth_file{pval})) || (defined($lth_file{pval}))) {
     $return_fields{pval} = 1;
@@ -659,11 +660,19 @@ package main;
   }
 
   ## Fields to calculate
-  if (($return_fields{sites}) 
-      || ($return_fields{distrib}),
-     ) {
+  if (($return_fields{sites})) {
     $calc_fields{sites} = 1;
   }
+  
+  if ($return_fields{distrib}) {
+  		## The C command matrix-scan-quick is MUCH faster than
+  		## matrix-scan. If it is supported on this machine, use it !
+  		$quick_cmd = `which matrix-scan-quick`;
+  		unless ($quick_cmd) {
+  			$calc_fields{sites} = 1; # if not supported, calculate sites (slower)
+  		}
+	}
+  
   if ($return_fields{seq_scores}) {
     $calc_fields{sites} = 1;
     $calc_fields{pval} = 1;
@@ -675,14 +684,11 @@ package main;
       $calc_fields{p_score} = 1;
   }
 
-  if ($return_fields{distrib}) {
-        $calc_fields{pval} = 1;
-  }
+ 
   if ($return_fields{crer}){
       $calc_fields{sites} = 1;
       $calc_fields{pval} = 1;
   }
-
 
   ## Ensure that all the fields to return are calculated
   foreach my $field (keys(%return_fields)) {
@@ -723,6 +729,8 @@ package main;
     close $mlist;
     &RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
   }
+  
+ 
 
   ################################################################
   ## Check that there is at least one input matrix file
@@ -771,15 +779,14 @@ package main;
 				    ") must be larger than Markov order + 1 (",
 				    $main::markov."+1)."));
     }
-
-    ## bg window : calculate bg pseudo frequency
-    if ($bg_method ne "input") {
-      unless ($bg_pseudo_user_specified) {
-	$main::bg_pseudo = sqrt($main::window)/(sqrt($main::window) + $main::window);
-	&RSAT::message::Debug("window length: ", $main::window,"bg pseudo-frequency calculated:",$main::bg_pseudo) 
-	  if ($main::verbose >= 3);
-      }
-    }
+    
+    	## bg window : calculate bg pseudo frequency
+    	if ($bg_method ne "input") {
+    		unless ($bg_pseudo_user_specified) {
+     			$main::bg_pseudo = sqrt($main::window)/(sqrt($main::window) + $main::window);
+     			&RSAT::message::Debug("window length: ", $main::window,"bg pseudo-frequency calculated:",$main::bg_pseudo) if ($main::verbose >= 3);
+      		}
+    	}
 
     ## TO DO: read the sequences once to determine prior frequencies, in
     ## order to set the pseudo-weight distribution
@@ -838,7 +845,7 @@ package main;
 	$matrix->set_attribute("file", $matrix_file);
 	$matrix->set_attribute("n_treatment", $n_treatment);
 	$matrix->index_alphabet();
-
+	
 	## Use the matrix consensus as name
 	if ($consensus_name) {
 	  $matrix->calcConsensus();
@@ -899,7 +906,7 @@ package main;
 		&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"), 
 					      %prior, join(" ", $matrix->getPrior()))) if ($main::verbose >= 3);
 		## Calculate min and max weight values
-		my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
+		my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range() if ($return_fields{weight_limits} || $calc_fields{normw});
 		&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
 					      $matrix->get_attribute("name"), 
 					      $Wmin, $Wmax, $Wrange,
@@ -1582,8 +1589,54 @@ package main;
   ################################################################
   ## Report score distribution
   if ($return_fields{distrib}) {
-
-
+   %cum_sum =();
+	
+	if ($quick_cmd){
+	## use quick scan to calculate the observed distrib:
+	## pbs to solve : bg in Inclusive format + matrix in tab
+	## will need to write to tmp dir
+	foreach my $matrix (@matrices) {
+		my $matrix_name = $matrix->get_attribute("name");
+		
+		##prepare matrix-scan-quick cmd
+		my $quick_cmd = "";
+		$quick_cmd = "matrix-scan-quick";
+		$quick_cmd .= " -i ".$main::infile{input};
+    	$quick_cmd .= " -decimals ".$decimals;
+    	$quick_cmd .= " -m ".$matrix->get_attribute("file");
+    	$quick_cmd .= " -bgfile ".$main::infile{bg};
+    	$quick_cmd .= " -return distrib";
+    	if ($main::both_strands) {
+    		$quick_cmd .= " -2str";
+    		} else {
+    		$quick_cmd .= " -1str";
+    		}
+    	##run matrix-scan-quick cmd
+    	&RSAT::message::Info("Using matrix-scan-quick: $quick_cmd\n") if ($main::verbose >= 2);
+    	my $quick_distrib = `$quick_cmd`;
+		##parse matrix-scan-quick result
+		## columns are:
+		## score	occ	co	cco	ccdf
+    	my $line ="";
+    	$quick_distrib =~ s/^#.*\n//;
+    	while ($quick_distrib =~ /(.*\n)/){
+    		$line = $1;
+    		chomp($line);
+    		my @field = split(/\t/,$line);
+    		my $score = sprintf ("%.${decimals}f",$field[0]);
+    		&RSAT::message::Info("$score:$field[1]:$field[2]:$field[3]:$field[4]:") if ($main::verbose >= 5);
+    		$score_distrib->{$matrix_name}->{$score}->{occ}=$field[1];
+    		$score_distrib->{$matrix_name}->{$score}->{occ_cum}=$field[2];
+    		$score_distrib->{$matrix_name}->{$score}->{inv_cum} = $field[3];
+			$score_distrib->{$matrix_name}->{$score}->{score} = $score; ## This is just a trick to filter the distrib on score thresholds
+    		$quick_distrib =~ s/$line\n//;
+    	}
+    	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
+    	$cum_sum{$matrix_name}=$score_distrib->{$matrix_name}->{$sorted_scores[0]}->{inv_cum};
+    	$matrix->{matches} = $cum_sum{$matrix_name};
+    	$matrix->{scored} = $matrix->{matches};
+	  }
+	} else {
     ################################################################
     ##  Calculate cumulative frequencies
     &RSAT::message::TimeWarn("Calculating cumulative frequencies") if ($main::verbose >= 2);
@@ -1621,6 +1674,7 @@ package main;
       }
     }
 
+	}
     ################################################################
     ## Check distribution thresholds on score. This can only be done
     ## after having computed the cumulative and inverse umulative
@@ -1666,6 +1720,7 @@ package main;
 	  }
 	  $score_distrib->{$matrix_name}->{$score}->{occ_prior} = $prior;
 	  if ($prior eq $null) {
+	  	
 	    $score_distrib->{$matrix_name}->{$score}->{exp_occ} = $null;
 	  } else {
 	    $score_distrib->{$matrix_name}->{$score}->{exp_occ} = $prior * $n;
@@ -3377,7 +3432,7 @@ sub score_crer {
 			$n += $length;
 		}
      	$n *= 2 if ($main::both_strands);
-
+  	
      	my $crer_pval = &sum_of_binomials($hit_p, ## prior probabilty
 				$n,	## Number of trials
 				$hit_sum,	## Min number of successes
@@ -3385,14 +3440,14 @@ sub score_crer {
 			       );
 		$nb_of_binom_tests{$seq_id}++;
 		$sum_binom_tests++;
-
-	my $crer_sig = "Inf";
-	if ($crer_pval > 0) {
-	  $crer_sig = sprintf("%.3f", -log($crer_pval)/$sig_base);
-	}
-
-	unless (&check_thresholds("crer_pval", $crer_pval,$first_matrix_name)) {next; }
-	unless (&check_thresholds("crer_sig", $crer_sig,$first_matrix_name)) {next; }
+	    
+	    my $crer_sig = "Inf";
+	    if ($crer_pval > 0) {
+		  $crer_sig = sprintf("%.3f", -log($crer_pval)/$sig_base);
+	      }
+	    
+	    unless (&check_thresholds("crer_pval", $crer_pval,$first_matrix_name)) {next; }
+	    unless (&check_thresholds("crer_sig", $crer_sig,$first_matrix_name)) {next; }
  
      	##prepare output (ft format)
      	my $strand_binon = "D";
