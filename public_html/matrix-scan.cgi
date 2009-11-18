@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.30 2009/11/12 14:47:18 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.31 2009/11/18 00:52:41 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -111,7 +111,7 @@ if ($query->param('output') eq "display") {
   ################################################################
   ## Table with links to the raw result files in various formats
   $result_URL = $ENV{rsat_www}."/tmp/".$tmp_file_name;
-  print "<center><TABLE class=\"nextstep\">\n";
+  print "<center><table class=\"nextstep\">\n";
   print "<tr><td colspan='3'><h3>Raw result files</h3> </td></tr>";
 #  print ("<tr>",
 #	 "<th>Format</th>",
@@ -148,13 +148,13 @@ if ($query->param('output') eq "display") {
       $browser_url = "<a target='_blank' href='";
       $browser_url .= $browser;
       $browser_url .= "&hgt.customText=".$result_URL.".bed";
-      $browser_url .= "'>UCSC genome browser</a>";
+      $browser_url .= "'><img border=0 height='20' src='images/UCSC_icon.jpg' alt='UCSC'></a>";
     } elsif ($genomic_format =~ /ensembl/i) {
 #      &RSAT::message::Warning($browser);
       $browser_url = "<a target='_blank' href='";
       $browser_url .= $browser;
       $browser_url .= ";contigviewbottom=url:".$result_URL.".bed";
-      $browser_url .= "=normal'>EnsEMBL genome browser</a>";
+      $browser_url .= "=normal'><img border=0 height='20' src='images/e-ensembl_icon.png' alt='EnsEMBL'> genome browser</a>";
     }
 
     print ("<tr>",
