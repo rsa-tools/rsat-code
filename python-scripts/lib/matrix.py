@@ -156,14 +156,19 @@ def tab2matrix(f):
             break
 
         elements = line.split('\t')
-
         letter = elements[0].strip()[0].upper()
+        
+        if (elements[1] == '|'):
+            elements = elements[2:]
+        else:
+            elements = elements[1:]
+
         if m is None:
-            l = len(elements[1:])
+            l = len(elements)
             m = [ [0.0] * len(ALPHABET) for i in range(l) ]
         J = LETTER2J[letter]
-        for i in range(len(elements[1:])):
-            m[i][J] = float(elements[i+1])
+        for i in range(len(elements)):
+            m[i][J] = float(elements[i])
 
     return m
 
