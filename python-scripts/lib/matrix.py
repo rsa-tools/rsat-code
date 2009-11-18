@@ -12,6 +12,8 @@ Dimension 1 defines letter in alphabet.
 
 import os
 import tempfile
+import bisect
+import random
 from math import log
 from copy import copy
 
@@ -144,9 +146,7 @@ def matrix2tab(matrix, title='', count=False):
     return '\n'.join(str)
 
 
-def tab2matrix(filename):
-    f = open(filename)
-
+def tab2matrix(f):
     m = None
     for line in f:
         line = line.strip()
