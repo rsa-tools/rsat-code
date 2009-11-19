@@ -405,6 +405,10 @@ table.serverlist {
 	white-space: nowrap;
 	display: inline;
 
+	
+	
+}
+
 table.serverlist td, table.serverlist tr, table.serverlist th {
 	padding: 0px;
 	font-size: 90%;
