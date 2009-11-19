@@ -1516,8 +1516,8 @@ sub PrintDyadReturnFields {
 ## &PrintResultURL(tab=>result_file.tab,html=>result_file.html, ...);
 sub PrintURLTable {
   my (@files) = @_;
-  print "<center><table class=\"resultlink\">\n";
-  print "<tr><td colspan='3'><h3>Result file(s)</h3> </td></tr>";
+  print "<table class=\"resultlink\">\n";
+  print "<tr><td colspan='3'><h2>Result file(s)</h2> </td></tr>";
   while (my $type = shift @files) {
     my $file = shift @files;
     my $result_URL = $ENV{rsat_www}."/tmp/".$file;
@@ -1526,7 +1526,7 @@ sub PrintURLTable {
 	   "<td>","<a href='".$result_URL."'>".$result_URL."</a>","</td>",
 	   "</tr>");
   }
-  print "</table></center>";
+  print "</table>";
 }
 
 1; # return true
