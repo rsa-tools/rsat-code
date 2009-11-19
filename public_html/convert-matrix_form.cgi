@@ -113,8 +113,8 @@ print "<hr>";
 #print "<BR>\n";
 
 ### Output matrix format
-print "<BR>";
-print "<B><A HREF='help.convert-matrix.html#output_format'>Output format</A></B>&nbsp;";
+print "<br>";
+print "<b><a href='help.convert-matrix.html#output_format'>Output format</A></B>&nbsp;";
 print $query->popup_menu(-name=>'output_format',
 			 -Values=>[@supported_output_formats],
 			 -default=>$default{output_format});
