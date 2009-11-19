@@ -26,7 +26,7 @@ ARGUMENTS
                               1 max verbosity
     -o #, --output=#      output results to #
                           if not specified, the standard output is used
-    -m #, --motif=#       read motif from #
+    -m #, --motif=#       read motif(s) from #
                           if not specified, the standard input is used
     -n #                  number of sites to generate
 
@@ -35,6 +35,10 @@ SEE ALSO
         random-motif
 
 '''
+
+# ===========================================================================
+# =                            imports
+# ===========================================================================
 import sys
 import os
 import bisect
@@ -45,42 +49,53 @@ from random import choice, randint, shuffle
 sys.path.insert(1, os.path.join(sys.path[0], 'lib'))
 import matrix
 
+# ===========================================================================
+# =                            constatns
+# ===========================================================================
 LETTER2J = {'A' : 0, 'C' : 1, 'G' : 2, 'T' : 3, 'N' : 4}
 BASES = ['A', 'C', 'G', 'T']
 
+# ===========================================================================
+# =                            functions
+# ===========================================================================
 def main(options, args):
     if options.verbosity >= 1:
         options.output.write('; %s\n'   % (' '.join(sys.argv)))
+
     try:
         if type(options.motif) is str:
             f = open(options.motif)
         else:
             f = options.motif
-        mymatrix = matrix.tab2matrix(f)
+        motifs = matrix.tab2matrices(f)
     except:
         raise
-        sys.stderr.write('Error: Can not read motif\n')
-        sys.exit(2)
+        sys.stderr.write('Error: Can not read motif(s)\n')
+        sys.exit(0)
 
-    generator = matrix.random_site_generator(mymatrix)
-    data = []
-    if (options.verbosity >= 1):
-        data += ['; motif.file                   %s\t'   % options.motif]
-        data += ['; motif.length                 %d\t'   % len(mymatrix)]
-        data += ['; number.of.sites              %d\t'   % options.sites]
-    for n in range(options.sites):
-        data += [ generator.next() ]
-    data += [ '' ]
-    
     if type(options.output) is str:
         options.output = open(options.output, 'w')
 
-    options.output.write('\n'.join(data))
+    for i in range(len(motifs)):
+        generator = matrix.random_site_generator(motifs[i])
+        data = []
+        if (options.verbosity >= 1):
+            data += ['; motif.file                   %s\t'   % options.motif]
+            data += ['; motif.id                     %d\t'   % (i+1)]
+            data += ['; motif.length                 %d\t'   % len(motifs[i])]
+            data += ['; number.of.sites              %d\t'   % options.sites]
+        for n in range(options.sites):
+            data += ["> motif%d_site%d" % (i + 1, n + 1)]
+            data += [ generator.next() ]
+        data += [ '' ]
+        options.output.write('\n'.join(data))
 
-
+# ===========================================================================
+# =                            main
+# ===========================================================================
 if __name__ == '__main__':
     USAGE = '''%s -m motif -n numberofsites [-h]'''
-    VERSION = '1.0'
+    VERSION = '2009.11'
     PROG_NAME = os.path.basename(sys.argv[0])
     parser = optparse.OptionParser(usage=USAGE % PROG_NAME, add_help_option=0, version=VERSION)
     parser.add_option("-v", "--verbosity", action="store", dest="verbosity", default=0)
@@ -108,11 +123,4 @@ if __name__ == '__main__':
             raise
         else:
             sys.stderr.write('Error while running\n')
-
-
-
-
-
-
-
 

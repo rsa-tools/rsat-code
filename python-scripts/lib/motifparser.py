@@ -51,7 +51,7 @@ def words(data):
 
 
 def GAME(data):
-    predicted_motif = re.findall(r'>([\w\d]+)\s+([+-])(\d+)\n([ACGTacgt]+)', data)
+    predicted_motif = re.findall(r'>([\w\d]+)\s+([+-])(\d+)\n([ACGTNacgtn]+)', data)
     return [(p[0], p[1], int(p[2])-1, p[3]) for p in predicted_motif]
 
 
