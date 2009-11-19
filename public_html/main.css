@@ -354,27 +354,20 @@ table.nextstep th {
 
 /* LINK TABLE ON RESULTS PAGES */
 table.resultlink {
-	margin-left:2px;
+	margin-left:5px;
 	width : 90%;
 	color: #2D282E;
-/*	border-spacing: px;*/
-	background-color: #FF0000;
-/*	background-color: #D6EEFA;*/
+	background-color: #D6EEFA;
 }
 
 
 table.resultlink td, table.resultlink th {
 	font-size: 70%;
-	padding-left:3px;
+	padding-left:5px;
 	padding-right:3px;
 	text-align :left;
 }
 
-table.resultlink th {
-	background-color: #0D73A7;
-	font-size:12px;
-	border:1px solid #2D282E;
-}
 
 
 /* TABLE ON TITLE PAGE */
