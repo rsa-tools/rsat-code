@@ -118,21 +118,13 @@ if ($query->param('output') eq "display") {
 
     ################################################################
     ## Table with links to the raw result files in various formats
-    $tab_result_URL = $ENV{rsat_www}."/tmp/".$tmp_file_name.".tab";
-    print "<center><table class=\"nextstep\">\n";
-    print "<tr><td colspan='3'><h3>Result file(s)</h3> </td></tr>";
-    print ("<tr>",
-	   "<td>tab</td>",
-	   "<td>","<a href='".$tab_result_URL."'>".$tab_result_URL."</a>","</td>",
-	   "</tr>");
+
+    @result_files = ('tab', $tmp_file_name.".tab");
     if ($output_format ne "tab") {
-      $result_URL = $ENV{rsat_www}."/tmp/".$tmp_file_name.".".$output_format;
-      print ("<tr>",
-	     "<td>".$output_format."</td>",
-	     "<td>","<a href='".$result_URL."'>".$result_URL."</a>","</td>",
-	     "</tr>");
+     push @result_files, "$output_format", $tmp_file_name.".".$output_format;
     }
-    print "</table></center>";
+    &PrintURLTable(@result_files);
+
 
     ## Form for sending results to other programs
     &PipingForm();
