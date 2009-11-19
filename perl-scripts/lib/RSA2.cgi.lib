@@ -990,15 +990,16 @@ sub SelectFormat {
 #
 sub PipingFormForSequence {
 
+  $oligo_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"background\">";
+  $dyad_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"background\">";
+
     ## Choose organism-specific or alternative background
     if ($query->param('single_multi_org') eq 'multi') {
 
 #	$oligo_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"Residue frequencies from input sequence\">";
 #	$dyad_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"monads\">";
-      $oligo_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"background\">";
       $oligo_background_model .= "<INPUT type=\"hidden\" NAME=\"bg_level\" VALUE=\"taxon\">";
       $oligo_background_model .= "<INPUT type=\"hidden\" NAME=\"taxon\" VALUE=".$query->param('taxon').">";
-      $dyad_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"background\">";
       $dyad_background_model .= "<INPUT type=\"hidden\" NAME=\"bg_level\" VALUE=\"taxon\">";
       $dyad_background_model .= "<INPUT type=\"hidden\" NAME=\"taxon\" VALUE=".$query->param('taxon').">";
     } else {
@@ -1015,8 +1016,8 @@ sub PipingFormForSequence {
       } else {
 	$background = "upstream-noorf";
       }
-      $oligo_background_model = "\n<INPUT type=\"hidden\" NAME=\"background\" VALUE=\"$background\">";
-      $dyad_background_model = $oligo_background_model;
+      $oligo_background_model .= "\n<INPUT type=\"hidden\" NAME=\"background\" VALUE=\"$background\">";
+      $dyad_background_model .= "\n<INPUT type=\"hidden\" NAME=\"background\" VALUE=\"$background\">";
     }
 
 
