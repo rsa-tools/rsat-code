@@ -42,7 +42,8 @@ $query = new CGI;
 #
 # Read sequences
 #
-($sequence_file, $sequence_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>0);
+($sequence_file, $in_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>0);
+
 
 ################################################################
 #
@@ -82,6 +83,7 @@ if (&RSAT::util::IsReal($query->param('sites_espp'))) {
 ## Concatenate parameters to the command
 $command .= " ".$parameters;
 $result_file = $TMP."/".$tmp_file_name.".fasta";
+$out_format = "fasta"; ## implant-site always exports fasta, but this variable is required for the piping form
 $command  .= " -o ".$result_file;
 
 print "<pre>$command\n</pre>" if ($ENV{rsat_echo} >=1);
@@ -115,7 +117,8 @@ if ($query->param('output') eq "display") {
     print "</table></center>";
 
     ## Form for sending results to other programs
-    &PipingForm();
+    &PipingFormForSequence();
+#    &PipingForm();
 
     #&DelayedRemoval($tab_result_file);
     &DelayedRemoval($result_file);
@@ -131,36 +134,3 @@ print $query->end_html;
 exit(0);
 
 
-
-### prepare data for piping
-sub PipingForm {
-  $title = $query->param('title');
-  $title =~ s/\"/\'/g;
-    print <<End_of_form;
-<hr size="3">
-<table class="Nextstep">
-<tr>
-<td colspan="3">
-<h3>Next step</h3>
-</td>
-</tr>
-
-<tr>
-
-<!--
-<td valign="bottom" align="center">
-<b><font color=red>new</a></b>
-<form method="POST" action="matrix-scan_form.cgi">
-<input type="hidden" name="title" value="$title">
-<input type="hidden" name="matrix_file" value="$result_file">
-<input type="hidden" name="matrix_format" value="$output_format">
-<input type="submit" value="pattern matching (matrix-scan)">
-</form>
-</td>
-
--->
-</tr>
-</table>
-End_of_form
-
-}
