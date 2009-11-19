@@ -7,7 +7,7 @@ Utilities for dna sequences manipulation
 
 :HELP:
 A sequence is stored as a simple string 'ACTGGGT'
-A set of sequences is stored as a list of sequence ['ATGGAT', 'TGGTTGGT']
+A set of sequences is stored as a list of sequences ['ATGGAT', 'TGGTTGGT']
 
 reverse_complement(sequence)
 read_fasta(input, strand='+-')
@@ -63,7 +63,7 @@ def reverse_complement(sequence):
 #                       FASTA READER/WRITER
 #                                                                            #
 ##############################################################################
-def read_fasta(input, strand='+'):
+def read_fasta_full(input, strand='+'):
     opened = False
     if type(input) is str:
         input = open(input, mode='rU')
@@ -81,8 +81,10 @@ def read_fasta(input, strand='+'):
             names += [ name + ' rc' ]
     if opened:
         input.close()
-    return sequences
+    return (names, sequences)
 
+def read_fasta(input, strand='+'):
+    return read_fasta_full(input, strand)[1]
 
 def write_fasta(f, sequences, labels=None):
     opened = False
@@ -99,7 +101,6 @@ def write_fasta(f, sequences, labels=None):
     if opened:
         f.close()
 
-
 class Writer(object):
     """
     Generic writer class
@@ -115,7 +116,6 @@ class Writer(object):
         """
         pass
 
-         
 class FastaWriter(Writer):
     """
     Fasta class to write in FASTA format
@@ -139,7 +139,6 @@ class FastaWriter(Writer):
         for i in range(0, len(dna), self.__class__.LINE_WIDTH):
             self.out.write('%s\n' % dna[i:i+self.__class__.LINE_WIDTH])
         self.out.flush()
-
 
 class Reader(object):
     """Generic class to read FASTA with builtin iterator
@@ -172,7 +171,6 @@ class Reader(object):
         @return (title, sequence) 
         """
         raise NotImplementedError
-
 
 class FastaReader(Reader):
     """Fasta Reader
@@ -218,11 +216,9 @@ class FastaReader(Reader):
         if self.eof:
             raise StopIteration
 
-
-
 ########################################
 #                                      #
-#           OLD CODE
+#           DEPRECATED CODE
 #                                      #
 ########################################
 class Sequences(list):
@@ -251,7 +247,6 @@ class Sequences(list):
         assert(len(self)==len(new_origins))
         for i in range(len(self)):
             self[i].location  = (self[i].location[0] - new_origins[i], self[i].location[1] - new_origins[i])
-
 
 class Sequence:
     """Simple sequence object
@@ -289,7 +284,6 @@ class Sequence:
             b = self.location[1] - location[1]
             return self.sequence[a:-b]
 
-
 def is_valid_location(start, end, min, max):
     if start >= end:
         return False
@@ -298,7 +292,6 @@ def is_valid_location(start, end, min, max):
     if end < min or end > max:
         return False
     return True
-
 
 def find_location(sequences):
     if len(sequences) > 0:
@@ -333,8 +326,3 @@ def fasta2sequences(uf, location=None, rightPosition=None, leftPosition=None):
     except:
         sys.stderr.write('Error while reading input sequence')
         raise
-
-
-
-
-

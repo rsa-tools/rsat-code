@@ -35,6 +35,10 @@ SEE ALSO
         implant-sites
         
 '''
+
+# ===========================================================================
+# =                            imports
+# ===========================================================================
 import sys
 import os
 import optparse
@@ -44,6 +48,9 @@ from random import choice, randint, shuffle
 sys.path.insert(1, os.path.join(sys.path[0], 'lib'))
 import matrix
 
+# ===========================================================================
+# =                            functions
+# ===========================================================================
 def motif_generator(length, conservation, N, rounded):
     high = [0.91, 0.03, 0.03, 0.03]
     low =  [0.55, 0.15, 0.15, 0.15]
@@ -60,7 +67,7 @@ def motif_generator(length, conservation, N, rounded):
                 probs = low
         else:
             conservation = float(conservation)
-            probs = [conservation] + [(1-conservation)/3.0] * 3
+            probs = [conservation] + [(1-conservation) / 3.0] * 3
             shuffle(probs)
 
         if (rounded):
@@ -69,11 +76,9 @@ def motif_generator(length, conservation, N, rounded):
             m += [[i * N for i in probs]]
     return m    
 
-
 def main(options, args):
     if options.verbosity >= 1:
         options.output.write('; %s\n'   % (' '.join(sys.argv)))
-        #options.output.write(';\n')
 
     for i in range(options.n):
         mymatrix = motif_generator(options.length, options.conservation, options.m, options.rounded)
@@ -91,9 +96,13 @@ def main(options, args):
         if type(options.output) is str:
             options.output = open(options.output, 'w')
         options.output.write('\n'.join(data))
+        
         if i != options.n - 1:
                 options.output.write("//\n")
 
+# ===========================================================================
+# =                            main
+# ===========================================================================
 if __name__ == '__main__':
     USAGE = '''%s -l motiflength [-c conservation] [-h]'''
     VERSION = '2009.11'

@@ -6,7 +6,7 @@ VERSION
         %(version)s
 
 AUTHOR
-        Matthieu Defrance <defrance@scmbb.ulb.ac.be>
+        Matthieu Defrance <defrance@bigre.ulb.ac.be>
 
 DESCRIPTION
         compute oligomer frequencies in a set of sequences,
@@ -117,10 +117,11 @@ STATISTICS
 
     E-VALUE
         E-VALUE = number_of_tests * P-VALUE
+
 '''        
 
 VERSION = '2008.02.20'
-USAGE = '''orm.py -l OLIGOMER_LENGTH [-i inputfile]
+USAGE = '''orm -l OLIGOMER_LENGTH [-i inputfile]
                 [-o outputfile] 
                 [--max parameter #][--min parameter #]
                 [-h | --help]
@@ -296,7 +297,6 @@ def main(args, options):
         options.bgwindow = s.location[1] - s.location[0] + 1
 
     if options.bgfile:
-        
         bg = pickle.load(open(options.bgfile))
         bgfile = options.bgfile
     else:
@@ -354,7 +354,6 @@ def main(args, options):
               }
     params.update(thresholds)
 
-
     ##
     #
     # Run ORM
@@ -372,7 +371,6 @@ def main(args, options):
     r = ormlib.rank(r, COLUMN_HEADER)
     thresholds = ormlib.convert_thresholds({'rank' : (None, None)}, options.min, options.max, COLUMN_HEADER, COLUMN_TYPE)
     r = ormlib.select(r, thresholds, COLUMN_HEADER)
-
 
     if options.window != None:
         windowWidth = '%d' % options.window

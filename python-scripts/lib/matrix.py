@@ -172,6 +172,15 @@ def tab2matrix(f):
 
     return m
 
+def tab2matrices(f):
+    l = []
+    while True:
+        m = tab2matrix(f)
+        if m == None:
+            return l
+        else:
+            l.append(m)
+
 ########################################
 #                                      #
 # RANDOM SITES
