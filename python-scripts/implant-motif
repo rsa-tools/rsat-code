@@ -9,7 +9,7 @@ AUTHOR
         Matthieu Defrance <defrance@bigre.ulb.ac.be>
 
 DESCRIPTION
-        implants sites in DNA sequences
+        implants motifs occurrences (sites) in DNA sequences
 
 CATEGORY
         motifs
@@ -28,12 +28,16 @@ ARGUMENTS
                           if not specified, the standard input is used
     -o #, --output=#      output results to #
                           if not specified, the standard output is used
-    -s #, --sites=#       read sites from # (must be in FASTA format)
+    -m #, --motif=#       read motif from # (must be in tab format)
+    --esps=#              set the expected number of sites per sequence to #
+    --espp=#              set the expected number of sites per position to #
     
 SEE ALSO
         random-motif
         random-sites
+        implant-sites
 '''
+
 # ===========================================================================
 # =                            imports
 # ===========================================================================
@@ -42,6 +46,7 @@ import os
 from math import *
 import random
 import optparse
+import matrix
 from pydoc import pager
 from random import choice, randint, shuffle
 
@@ -51,84 +56,81 @@ from lib import dna
 # ===========================================================================
 # =                            functions
 # ===========================================================================
-def read_sites(options):
+def read_matrices(options):
     try:
-        if type(options.sites) is str:
-            f = open(options.sites)
-        else:
-            f = options.motif
-        (names, sites) = dna.read_fasta_full(f)
-        return zip(names, sites)
+        return matrix.tab2matrices(open(options.motif))
     except:
-        sys.stderr.write('Error: Can not read sites\n')
+        sys.stderr.write('Error: Can not read motif\n')
         sys.exit(2)
 
-def find_allowed(sequences, site, forbidden):
-    allowed = []
-    for s in range(len(sequences)):
-        for i in range(len(sequences[s]) - len(site)):
-            confict = False
-            for j in range(len(site)):
-                if (s,i+j) in forbidden:
-                    confict = True
+def random_site_generator(matrices):
+    choose = []
+    mymatrix = random.choice(matrices)
+    length = len(mymatrix)
+    for i in range(length):
+        choose += [ matrix.wchoice(dna.BASES, mymatrix[i]) ]
+    name = 0
+    while True:
+        name += 1
+        site = ['N'] * length
+        for i in range(length):
+            site[i] = choose[i]()
+        yield (str(name), ''.join(site))
+
+def implant(sequences, matrices, esps, espp):
+    sitegenerator = random_site_generator(matrices)
+
+    # fixme: setup l
+    l = 1
+    labels = []
+    for i in range(len(sequences)):
+        sequence = list(sequences[i])
+        if esps:
+            sitep = esps / (len(sequence)-l+1) # fixme
+        else:
+            sitep = espp
+
+        label = ''
+        p = 0
+        while p < len(sequence):
+            if random.random() < sitep:
+                try:
+                    (name, word) = sitegenerator.next()
+                except StopIteration:
                     break
-            if not confict:
-                allowed.append((s,i))
-    return allowed
+                if (p+len(word) < len(sequence)):
+                    label += '[%s:%d:%s]' % (name.strip(), p+1, word)
+                    sequence[p:p+len(word)] = word
+                    p = p + len(word) - 1
+            p = p + 1
 
-def add_forbidden(forbidden, site, pos):
-    (s,i) = pos
-    for j in range(len(site)):
-            forbidden[(s,i+j)] = True
-    return forbidden
-
-def implant_all_sites(sequences, sites):
-    # find where to implant
-    forbidden = {}
-    positions = []
-    for (name, site) in sites:
-        allowed = find_allowed(sequences, site, forbidden)
-        if len(allowed) == 0:
-            sys.stderr.write('Warning: not all sites implanted\n')
-            break
-        pos = random.choice(allowed)
-        positions.append(pos)
-        forbidden = add_forbidden(forbidden, site, pos)
-
-    # do the implatation
-    labels = [str(i+1) for i in range(len(sequences))]
-    for i in range(len(positions)):
-        (name, site) = sites[i]
-        print site
-        (s, p) = positions[i]
-        labels[s] += '[%s:%d:%s]' % (name.strip(), p + 1, site)
-        sequence = sequences[s]
-        sequence = list(sequence)
-        sequence[p:p + len(site)] = site
-        sequences[s] = ''.join(sequence)
-    return (labels, sequences)
+        labels += [ '%d %s' %(i+1, label) ]        
+        sequences[i] = ''.join(sequence)
+    return labels, sequences
 
 def main(options, args):
     sequences = dna.read_fasta(options.input)
     sequences = [s.lower() for s in sequences]
-    sites = read_sites(options)
+    matrices = read_matrices(options)
 
-    (labels, sequences) = implant_all_sites(sequences, sites)
+    (labels, sequences) = implant(sequences, matrices, options.esps, options.espp)
     dna.write_fasta(options.output, sequences, labels)
 
 # ===========================================================================
 # =                            main
 # ===========================================================================
 if __name__ == '__main__':
-    USAGE = '''%s -i sequences -s sites [-h]'''
+    USAGE = '''%s -i sequences -m motifs [-h]'''
     VERSION = '2009.11'
     PROG_NAME = os.path.basename(sys.argv[0])
     
     parser = optparse.OptionParser(usage=USAGE % PROG_NAME, add_help_option=0, version=VERSION)
     parser.add_option("-o", "--output", action="store", dest="output", default=sys.stdout)
     parser.add_option("-v", "--verbosity", action="store", dest="verbosity", default=0)
-    parser.add_option("-i", "--input", action="store", dest="input", metavar="#", help="sequences")
-    parser.add_option("-s", "--sites", action="store", dest="sites", metavar="#", help="sites")
+    parser.add_option("-i", "--input", action="store", dest="input", metavar="#")
+    parser.add_option("-m", "--motif", action="store", dest="motif", metavar="#")
+    parser.add_option("--espp", action="store", dest="espp", metavar="#", type="float", default=None)
+    parser.add_option("--esps", action="store", dest="esps", metavar="#", type="float", default=1.0)
     parser.add_option("-h", "--help", action="store_true", dest="help")
     parser.add_option("--debug", action="store_true", dest="debug") 
 

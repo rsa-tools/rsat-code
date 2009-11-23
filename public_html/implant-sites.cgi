@@ -72,13 +72,13 @@ $parameters .= " -i " . $sequence_file;
 ## sites
 $parameters .= " -s " . $sites_file;
 
-## expected number of sites
-local $sites_nb = $query->param('sites_nb');
-if (&RSAT::util::IsReal($query->param('sites_espp'))) {
-  $parameters .= " --espp=". $query->param('sites_espp');
-} else {
-  &RSAT::error::FatalError($query->param('sites_espp'), "Is not a valid value for sites_espp. Should be a Real number.");
-}
+# ## expected number of sites
+# local $sites_nb = $query->param('sites_nb');
+# if (&RSAT::util::IsReal($query->param('sites_espp'))) {
+#   $parameters .= " --espp=". $query->param('sites_espp');
+# } else {
+#   &RSAT::error::FatalError($query->param('sites_espp'), "Is not a valid value for sites_espp. Should be a Real number.");
+# }
 
 ## Concatenate parameters to the command
 $command .= " ".$parameters;
