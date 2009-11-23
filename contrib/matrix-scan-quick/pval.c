@@ -62,7 +62,8 @@ pvalues_t *read_distrib(char *filename)
         //printf("w=%G pval=%G\n", weight, Pval);
     }
 
-    ASSERT(table->size > 0, "invalid distrib file");
+    if (table->size == 0)
+        ERROR("invalid distrib file '%s", filename);
 
     // close stream
     fclose(fp);
