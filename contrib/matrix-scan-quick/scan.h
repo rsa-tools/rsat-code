@@ -21,6 +21,7 @@ using namespace std;
 #include "matrix.h"
 #include "seq.h"
 #include "dist.h"
+#include "pval.h"
 
 typedef struct
 {
@@ -29,6 +30,6 @@ typedef struct
 } options_t;
 
 // scan seq with matrix
-int scan_seq(FILE *fout, seq_t *seq, int s, Array &matrix, Markov &bg, values_t *values, double threshold, int rc);
+int scan_seq(FILE *fout, seq_t *seq, int s, Array &matrix, Markov &bg, values_t *values, double threshold, int rc, pvalues_t *pvalues);
 
 #endif
