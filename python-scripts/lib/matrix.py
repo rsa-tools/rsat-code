@@ -38,14 +38,12 @@ def words2weblogo(words, outdir='.', bin=SEQLOGO, type='PNG', title='', filename
     print '%s -F %s -Y -c  -n -t "%s" -f %s > %s/%s.%s' % (bin, type, title, seqfilename, outdir, filename, type)
     os.system('%s -F %s -Y -c  -n -t "%s" -f %s > %s/%s.%s' % (bin, type, title, seqfilename, outdir, filename, type.lower()))
     os.remove(seqfilename)
-    
 
 ########################################
 #                                      #
 # MATRIX
 #                                      #
 ########################################
-
 def words2countmatrix(words, priori):
     """
     Convert a list of words to a simple count matrix
@@ -74,7 +72,6 @@ def words2countmatrix(words, priori):
                 m[i][3] = m[i][3] + priori[3]
     return m
 
-
 def words2matrix(words, priori, pseudo=None):
     """
     Convert a list of words to a frequency matrix using priori probabilities p
@@ -90,7 +87,6 @@ def words2matrix(words, priori, pseudo=None):
         for b in range(B):
             f[i][b] = (c[i][b] + priori[b] * pseudo) / (N + pseudo)
     return f
-
 
 ########################################
 #                                      #
@@ -116,7 +112,6 @@ def matrix2txt(matrix, title=''):
         str += [ '   '.join(line) ]
 
     return '\n'.join(str)
-
 
 def matrix2tab(matrix, title='', count=False):
     w = len(matrix)
@@ -144,7 +139,6 @@ def matrix2tab(matrix, title='', count=False):
         str += [ '\t'.join(line) ]
 
     return '\n'.join(str)
-
 
 def tab2matrix(f):
     m = None
@@ -201,7 +195,6 @@ def wchoice(l, frequencies):
         cdf += [ S ]
     return lambda : l[bisect.bisect(cdf, random.random() * S)]
 
-
 def random_site_generator(matrix):
     choose = []
     length = len(matrix)
@@ -237,7 +230,6 @@ def consensus_05(matrix, fmin=0.5):
             str += [ 'n' ]
 
     return ''.join(str)
-
 
 '''
 A                       (Adenine) 
@@ -285,7 +277,6 @@ def explain_consensus(w):
         str.append(letter)
     return ''.join(str)
 
-
 def consensus(matrix, priori, mask=False):
     w = len(matrix)
 
@@ -305,7 +296,6 @@ def consensus(matrix, priori, mask=False):
 
         str.append(letter)
     return ''.join(str)
-
 
 ########################################
 #                                      #
@@ -327,14 +317,12 @@ def logo_IC(matrix):
         S += (2.0 - s)
     return  S
 
-
 def Q(word, matrix):
     w = len(matrix)
     P = 1.0
     for i in range(w):
         P *= matrix[i][LETTER2J[word[i]]]
     return P
-
 
 def Iseq(matrix, priori):
     """
@@ -353,7 +341,6 @@ def Iseq(matrix, priori):
 
     return I
 
-
 def llr(words, matrix, priori):
     S = 0.0
     for w in words:
@@ -361,7 +348,6 @@ def llr(words, matrix, priori):
             j = LETTER2J[w[i]]
             S += log ( matrix[i][j] / priori[j] )
     return S
-
 
 def llr_markov(words, matrix, mm):
     S = 0.0
@@ -373,7 +359,6 @@ def llr_markov(words, matrix, mm):
 
         S += -log(mm.P(w))
     return S
-
 
 def Iseq_markov(words, matrix, mm):
     return llr_markov(words, matrix, mm) / len(words) / len(words[0])
@@ -508,7 +493,5 @@ def test_matrix():
 
 if __name__ == '__main__':
     test_matrix()
-
-
 
 

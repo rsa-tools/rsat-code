@@ -69,6 +69,9 @@ int read_matrix(Array &matrix, char *filename, double pseudo)
         for (j = 0; j < c; j++)
             matrix[i][j] = p[i][j];
     }
+
+    // close stream
+    fclose(fp);
     
     return 1;
 }
