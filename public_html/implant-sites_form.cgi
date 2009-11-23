@@ -56,23 +56,23 @@ print $query->start_multipart_form(-action=>"implant-sites.cgi");
 print "<hr>";
 
 #### Input sites
-print "<B>Sites</B><br />";
+print "<B>Sites to implant</B> (in fasta format)<br />";
 print $query->textarea(-name=>'sites',
                      -default=>$default{sites},
                      -rows=>10,
                      -columns=>40);
 print "<hr>";
 
-#### Options
-print "<B>Options</B>";
-print "<br />";
-
-#### Expected number of sites per positions
-print " <a href='help.implant-sites.html#sites_espp'>Excpected number of sites per position</a> ";
-print $query->textfield(-name=>'sites_espp',
-			-default=>$default{sites_espp},
-			-size=>3);
-print "<hr>";
+# #### Options
+# print "<B>Options</B>";
+# print "<br />";
+# 
+# #### Expected number of sites per positions
+# print " <a href='help.implant-sites.html#sites_espp'>Excpected number of sites per position</a> ";
+# print $query->textfield(-name=>'sites_espp',
+#           -default=>$default{sites_espp},
+#           -size=>3);
+# print "<hr>";
 
 ### send results by email or display on the browser
 print "<P>\n";
