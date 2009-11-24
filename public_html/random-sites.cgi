@@ -92,7 +92,8 @@ if (&RSAT::util::IsNatural($sites_nb)) {
 
 ## Concatenate parameters to the command
 $command .= " ".$parameters;
-$result_file = $TMP."/".$tmp_file_name.".sites";
+$short_result_file = $tmp_file_name."_sites.fasta";
+$result_file = $TMP."/".$short_result_file;
 #$result_file = $tab_result_file;
 $command  .= " -o ".$result_file;
 #$command  .= " -m ".$tmp_file_name_matrix;
@@ -119,8 +120,7 @@ if ($query->param('output') eq "display") {
     print "</pre>";
 
     ## Add link to the result file
-    $result_file = $tmp_file_name.".". "sites";
-    &PrintURLTable(multi=>$result_file);
+    &PrintURLTable(fasta=>$short_result_file);
 
     ## Form for sending results to other programs
     &PipingForm();
@@ -142,10 +142,9 @@ exit(0);
 
 ### prepare data for piping
 sub PipingForm {
-    
-  $sites_data = `cat $result_file`;
-  $title = $query->param('title');
-  $title =~ s/\"/\'/g;
+  my $sites_data = `cat $result_file`;
+#  $title = $query->param('title');
+#  $title =~ s/\"/\'/g;
     print <<End_of_form;
 <hr size="3">
 <table class="Nextstep">
@@ -159,10 +158,9 @@ sub PipingForm {
 
 <td valign="bottom" align="center">
 <form method="POST" action="implant-sites_form.cgi">
-<input type="hidden" name="title" value="$title">
-<input type="hidden" name="sites_filename" value="$result_file">
+<input type="hidden" name="test" value="boum">
+<input type="hidden" name="sites_file" value="$result_file">
 <input type="hidden" name="sites" value="$sites_data">
-
 <input type="submit" value="implant sites">
 </form>
 </td>
