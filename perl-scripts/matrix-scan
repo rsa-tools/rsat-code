@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.144 2009/11/18 09:54:48 morgane Exp $
+# $Id: matrix-scan,v 1.145 2009/11/24 06:49:29 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -663,16 +663,17 @@ package main;
   if (($return_fields{sites})) {
     $calc_fields{sites} = 1;
   }
-  
+
   if ($return_fields{distrib}) {
-  		## The C command matrix-scan-quick is MUCH faster than
-  		## matrix-scan. If it is supported on this machine, use it !
-  		$quick_cmd = `which matrix-scan-quick`;
-  		unless ($quick_cmd) {
-  			$calc_fields{sites} = 1; # if not supported, calculate sites (slower)
-  		}
-	}
-  
+    ## The C command matrix-scan-quick is MUCH faster than
+    ## matrix-scan. If it is supported on this machine, use it !
+    $quick_cmd = `which matrix-scan-quick`;
+#    $quick_cmd = 0; ## For debugging and time comparison
+    unless ($quick_cmd) {
+      $calc_fields{sites} = 1; # if matrix-scan-quick is not supported, calculate sites (slower)
+    }
+  }
+
   if ($return_fields{seq_scores}) {
     $calc_fields{sites} = 1;
     $calc_fields{pval} = 1;
@@ -1589,92 +1590,92 @@ package main;
   ################################################################
   ## Report score distribution
   if ($return_fields{distrib}) {
-   %cum_sum =();
-	
-	if ($quick_cmd){
-	## use quick scan to calculate the observed distrib:
-	## pbs to solve : bg in Inclusive format + matrix in tab
-	## will need to write to tmp dir
-	foreach my $matrix (@matrices) {
-		my $matrix_name = $matrix->get_attribute("name");
-		
-		##prepare matrix-scan-quick cmd
-		my $quick_cmd = "";
-		$quick_cmd = "matrix-scan-quick";
-		$quick_cmd .= " -i ".$main::infile{input};
+    %cum_sum =();
+
+    ## use matrix-scan-quick to calculate the observed distrib:
+    ## pbs to solve : bg in Inclusive format + matrix in tab
+    ## will need to write to tmp dir
+    if ($quick_cmd) {
+      foreach my $matrix (@matrices) {
+	my $matrix_name = $matrix->get_attribute("name");
+
+	##prepare matrix-scan-quick cmd
+	my $quick_cmd = "";
+	$quick_cmd = "matrix-scan-quick";
+	$quick_cmd .= " -i ".$main::infile{input};
     	$quick_cmd .= " -decimals ".$decimals;
     	$quick_cmd .= " -m ".$matrix->get_attribute("file");
-    	$quick_cmd .= " -bgfile ".$main::infile{bg};
+    	$quick_cmd .= " -bgfile ".$main::infile{bg} if (defined($main::infile{bg}));
     	$quick_cmd .= " -return distrib";
     	if ($main::both_strands) {
-    		$quick_cmd .= " -2str";
-    		} else {
-    		$quick_cmd .= " -1str";
-    		}
+	  $quick_cmd .= " -2str";
+	} else {
+	  $quick_cmd .= " -1str";
+	}
     	##run matrix-scan-quick cmd
     	&RSAT::message::Info("Using matrix-scan-quick: $quick_cmd\n") if ($main::verbose >= 2);
     	my $quick_distrib = `$quick_cmd`;
-		##parse matrix-scan-quick result
-		## columns are:
-		## score	occ	co	cco	ccdf
+	##parse matrix-scan-quick result
+	## columns are:
+	## score	occ	co	cco	ccdf
     	my $line ="";
     	$quick_distrib =~ s/^#.*\n//;
-    	while ($quick_distrib =~ /(.*\n)/){
-    		$line = $1;
-    		chomp($line);
-    		my @field = split(/\t/,$line);
-    		my $score = sprintf ("%.${decimals}f",$field[0]);
-    		&RSAT::message::Info("$score:$field[1]:$field[2]:$field[3]:$field[4]:") if ($main::verbose >= 5);
-    		$score_distrib->{$matrix_name}->{$score}->{occ}=$field[1];
-    		$score_distrib->{$matrix_name}->{$score}->{occ_cum}=$field[2];
-    		$score_distrib->{$matrix_name}->{$score}->{inv_cum} = $field[3];
-			$score_distrib->{$matrix_name}->{$score}->{score} = $score; ## This is just a trick to filter the distrib on score thresholds
-    		$quick_distrib =~ s/$line\n//;
+    	while ($quick_distrib =~ /(.*\n)/) {
+	  $line = $1;
+	  chomp($line);
+	  my @field = split(/\t/,$line);
+	  my $score = sprintf ("%.${decimals}f",$field[0]);
+	  &RSAT::message::Info("$score:$field[1]:$field[2]:$field[3]:$field[4]:") if ($main::verbose >= 5);
+	  $score_distrib->{$matrix_name}->{$score}->{occ}=$field[1];
+	  $score_distrib->{$matrix_name}->{$score}->{occ_cum}=$field[2];
+	  $score_distrib->{$matrix_name}->{$score}->{inv_cum} = $field[3];
+	  $score_distrib->{$matrix_name}->{$score}->{score} = $score; ## This is just a trick to filter the distrib on score thresholds
+	  $quick_distrib =~ s/$line\n//;
     	}
     	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
     	$cum_sum{$matrix_name}=$score_distrib->{$matrix_name}->{$sorted_scores[0]}->{inv_cum};
     	$matrix->{matches} = $cum_sum{$matrix_name};
     	$matrix->{scored} = $matrix->{matches};
+      }
+    } else {
+      ################################################################
+      ##  Calculate cumulative frequencies
+      &RSAT::message::TimeWarn("Calculating cumulative frequencies") if ($main::verbose >= 2);
+      foreach my $matrix (@matrices) {
+	my $matrix_name = $matrix->get_attribute("name");
+	$cum_sum{$matrix_name} = 0;
+
+	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
+	&RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
+
+	foreach my $score (@sorted_scores) {
+	  unless (defined($score_distrib->{$matrix_name}->{$score}->{occ})) {
+	    $score_distrib->{$matrix_name}->{$score}->{occ} = 0;
 	  }
-	} else {
-    ################################################################
-    ##  Calculate cumulative frequencies
-    &RSAT::message::TimeWarn("Calculating cumulative frequencies") if ($main::verbose >= 2);
-    foreach my $matrix (@matrices) {
-      my $matrix_name = $matrix->get_attribute("name");
-      $cum_sum{$matrix_name} = 0;
-
-      my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
-      &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
-
-      foreach my $score (@sorted_scores) {
-	unless (defined($score_distrib->{$matrix_name}->{$score}->{occ})) {
-	  $score_distrib->{$matrix_name}->{$score}->{occ} = 0;
+	  $cum_sum{$matrix_name} += $score_distrib->{$matrix_name}->{$score}->{occ};
+	  $score_distrib->{$matrix_name}->{$score}->{occ_cum} = $cum_sum{$matrix_name};
+	  #	&RSAT::message::Debug("cum freq", $matrix_name, "score", $score, "cum_sum", $cum_sum{$matrix_name}) if ($main::verbose >= 10);
 	}
-	$cum_sum{$matrix_name} += $score_distrib->{$matrix_name}->{$score}->{occ};
-	$score_distrib->{$matrix_name}->{$score}->{occ_cum} = $cum_sum{$matrix_name};
-#	&RSAT::message::Debug("cum freq", $matrix_name, "score", $score, "cum_sum", $cum_sum{$matrix_name}) if ($main::verbose >= 10);
       }
-    }
 
 
 
-    ################################################################
-    ## Calculate inverse cumulative frequencies
-    &RSAT::message::TimeWarn("Calculating inverse cumulative frequencies") if ($main::verbose >= 2);
-    foreach my $matrix (@matrices) {
-      my $matrix_name = $matrix->get_attribute("name");
-      my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
-      &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
-      foreach my $score (@sorted_scores) {
-	my $occ = $score_distrib->{$matrix_name}->{$score}->{occ};
-	my $occ_cum = $score_distrib->{$matrix_name}->{$score}->{occ_cum};
-	$score_distrib->{$matrix_name}->{$score}->{inv_cum} = $cum_sum{$matrix_name} - $occ_cum + $occ;
-	$score_distrib->{$matrix_name}->{$score}->{score} = $score; ## This is just a trick to filter the distrib on score thresholds
-      }
-    }
-
+      ################################################################
+      ## Calculate inverse cumulative frequencies
+      &RSAT::message::TimeWarn("Calculating inverse cumulative frequencies") if ($main::verbose >= 2);
+      foreach my $matrix (@matrices) {
+	my $matrix_name = $matrix->get_attribute("name");
+	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
+	&RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
+	foreach my $score (@sorted_scores) {
+	  my $occ = $score_distrib->{$matrix_name}->{$score}->{occ};
+	  my $occ_cum = $score_distrib->{$matrix_name}->{$score}->{occ_cum};
+	  $score_distrib->{$matrix_name}->{$score}->{inv_cum} = $cum_sum{$matrix_name} - $occ_cum + $occ;
+	  $score_distrib->{$matrix_name}->{$score}->{score} = $score; ## This is just a trick to filter the distrib on score thresholds
 	}
+      }
+
+    }
     ################################################################
     ## Check distribution thresholds on score. This can only be done
     ## after having computed the cumulative and inverse umulative
@@ -1713,7 +1714,7 @@ package main;
 				    $matrix_name, $score, $prior) if ($main::verbose >= 5);
 	    } else {
 	      &RSAT::message::Warning("The  bg distrib file does not contain prior probability for matrix",
-				    $matrix_name, "with score", $score) if ($main::verbose >= 1);
+				      $matrix_name, "with score", $score) if ($main::verbose >= 1);
 	    }
 	  } else {
 	    $prior = ${$main::pval{$matrix}}{$score};
@@ -1773,12 +1774,12 @@ package main;
 	    $nb_of_tests++;
 	  }
 	  if ($main::verbose >= 3) {
-	      if (($s % 50) == 0) {
-		  &RSAT::message::psWarn("Calculated significance for matrix", , $matrix_name, "score", $s) ;
-	      } else {
-		  &RSAT::message::Debug("Calculated significance", $matrix_name, $score, 
-					$x, $hit_p, $score_distrib->{$matrix_name}->{$score}->{occ_pval})
-	      }
+	    if (($s % 50) == 0) {
+	      &RSAT::message::psWarn("Calculated significance for matrix", , $matrix_name, "score", $s) ;
+	    } else {
+	      &RSAT::message::Debug("Calculated significance", $matrix_name, $score, 
+				    $x, $hit_p, $score_distrib->{$matrix_name}->{$score}->{occ_pval})
+	    }
 	  }
 	}
       }
@@ -1828,10 +1829,10 @@ package main;
     printf $main::out "; %-21s\t%s\n", "Number of sequences scanned", $sequence_number;
     if ($origin eq "genomic") {
       printf $main::out "; %-21s\t%s\n", "Genomic coordinate format", $genome_format;
-#      if ($sequence_number == 1) {
+      #      if ($sequence_number == 1) {
       printf $main::out "; %-21s\t%s\n", "Organism", $seq_org;
       printf $main::out "; %-21s\t%s\n", "Browser URL", $browser_url;
-#      }
+      #      }
     }
     printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
     #	printf $main::out "; %-21s\t%s\n", "N-containing regions", $n_containing_regions if ($n_containing_regions >= 0);
@@ -1866,15 +1867,15 @@ package main;
 			   $total_matches,
 			   $total_scored,
 			  ), "\n";
-	if ($return_fields{crer}){
-		print $main::out $main::warnings;
-		printf $main::out "; %-21s\n","Number of Binomial tests per sequence (can be used for multi-testing correction)";
-		printf $main::out "; \t%-15s\t%s\n", "sequence","number of tests";
-		 foreach my $seq (sort(keys(%nb_of_binom_tests))) {
-		   printf $main::out "; \t%-15s\t%s\n", $seq,$nb_of_binom_tests{$seq};
-		 }
-		 printf $main::out "; \t%-15s\t%s\n", "TOTAL",$sum_binom_tests;
-	}
+    if ($return_fields{crer}) {
+      print $main::out $main::warnings;
+      printf $main::out "; %-21s\n","Number of Binomial tests per sequence (can be used for multi-testing correction)";
+      printf $main::out "; \t%-15s\t%s\n", "sequence","number of tests";
+      foreach my $seq (sort(keys(%nb_of_binom_tests))) {
+	printf $main::out "; \t%-15s\t%s\n", $seq,$nb_of_binom_tests{$seq};
+      }
+      printf $main::out "; \t%-15s\t%s\n", "TOTAL",$sum_binom_tests;
+    }
 
     my $done_time = &AlphaDate();
     print $main::out "; Job started $start_time\n";
@@ -3353,154 +3354,163 @@ sub print_match {
 Calculate the score of the crer 
 
 =cut
-sub score_crer {
-  my ($last_hit, $seq_id, $sub_window_end,$pos,$crer_seed) = @_;
-  	my $hit_p = $uth{pval} || $lth{pval};
+  sub score_crer {
+    my ($last_hit, $seq_id, $sub_window_end,$pos,$crer_seed) = @_;
+    my $hit_p = $uth{pval} || $lth{pval};
      
-     my @strands = ();
-     push @strands,"D";
-     push @strands,"R" if ($main::both_strands);
+    my @strands = ();
+    push @strands,"D";
+    push @strands,"R" if ($main::both_strands);
      
      
-     ## initiate sum of hits with hit of last position
-     my $hit_sum = $crer_sum_hits[$last_hit];
-     return(0) if ($hit_sum == 0) ; ## do not proceed to calculations if the last position is 0
+    ## initiate sum of hits with hit of last position
+    my $hit_sum = $crer_sum_hits[$last_hit];
+    return(0) if ($hit_sum == 0) ; ## do not proceed to calculations if the last position is 0
      
-     &RSAT::message::Debug("CRER: last position",$pos,"relative to seed window", $last_hit) if ($main::verbose >= 10);
-     my $first_matrix_name;
+    &RSAT::message::Debug("CRER: last position",$pos,"relative to seed window", $last_hit) if ($main::verbose >= 10);
+    my $first_matrix_name;
      
-     ## initiate other sums with hit of last position
-     my $weight_sum = 0;
-     my $pval_prod = 1;
-     my $normw_sum = 0 if ($calc_fields{normw}); 
-     foreach my $matrix (keys(%crer_seed_hits)){
-     	$first_matrix_name = $matrix;
-     	foreach my $strand (@strands){
-     		##weight sum
-     		$weight_sum += $crer_seed_weights{$matrix}->{$strand}->[$last_hit] if (defined($crer_seed_weights{$matrix}->{$strand}->[$last_hit]));
-     		##pval sum
-     		$pval_prod *= $crer_seed_pval{$matrix}->{$strand}->[$last_hit] if (defined($crer_seed_pval{$matrix}->{$strand}->[$last_hit]));
-     		##normw sum
-			$normw_sum += $crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$last_hit] if (($calc_fields{normw}) &&(defined($crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$last_hit])));
-     		}
-      	}
+    ## initiate other sums with hit of last position
+    my $weight_sum = 0;
+    my $pval_prod = 1;
+    my $normw_sum = 0 if ($calc_fields{normw}); 
+    foreach my $matrix (keys(%crer_seed_hits)) {
+      $first_matrix_name = $matrix;
+      foreach my $strand (@strands) {
+	##weight sum
+	$weight_sum += $crer_seed_weights{$matrix}->{$strand}->[$last_hit] if (defined($crer_seed_weights{$matrix}->{$strand}->[$last_hit]));
+	##pval sum
+	$pval_prod *= $crer_seed_pval{$matrix}->{$strand}->[$last_hit] if (defined($crer_seed_pval{$matrix}->{$strand}->[$last_hit]));
+	##normw sum
+	$normw_sum += $crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$last_hit] if (($calc_fields{normw}) &&(defined($crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$last_hit])));
+      }
+    }
 	
-	 ## Define sub-windows inside the seed CRER : each window is bordered by the last hit (position from right) and each left limit
-     ## is a previous hit.
-	 ## process each sub-window 
-     for (my $k=($last_hit-1) ;  $k >= 0 ;  $k--){
-     	next if ($crer_sum_hits[$k] == 0);
+    ## Define sub-windows inside the seed CRER : each window is bordered by the last hit (position from right) and each left limit
+    ## is a previous hit.
+    ## process each sub-window 
+    for (my $k=($last_hit-1) ;  $k >= 0 ;  $k--) {
+      next if ($crer_sum_hits[$k] == 0);
      	
-     	my $sub_window_length = $last_hit - $k + 1;   
-     	#&RSAT::message::Debug("subwindow length",$sub_window_length) if ($main::verbose >= 10);
+      my $sub_window_length = $last_hit - $k + 1;   
+      #&RSAT::message::Debug("subwindow length",$sub_window_length) if ($main::verbose >= 10);
      	
-     	## update sums
-     	$hit_sum += $crer_sum_hits[$k];
+      ## update sums
+      $hit_sum += $crer_sum_hits[$k];
  
-     	unless (&check_thresholds("crer_size", $sub_window_length,$first_matrix_name)) {next; }	
+      unless (&check_thresholds("crer_size", $sub_window_length,$first_matrix_name)) {
+	next;
+      }	
 
-     	foreach my $matrix (keys(%crer_seed_hits)){
-     		foreach my $strand (@strands){
-     		##weight sum
-     		$weight_sum += $crer_seed_weights{$matrix}->{$strand}->[$k] if (defined($crer_seed_weights{$matrix}->{$strand}->[$k]));;
-     		##pval sum
-     		$pval_prod *= $crer_seed_pval{$matrix}->{$strand}->[$k] if (defined($crer_seed_pval{$matrix}->{$strand}->[$k]));
-     		##normw sum
-			$normw_sum += $crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$k] if (($calc_fields{normw}) &&(defined($crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$k])));
-     		}
-      	}
-      	
-      	#########################################################
-		## calculate over-represantation sig with Binomiale
-		
-		unless (&check_thresholds("crer_sites", $hit_sum,$first_matrix_name)) {next; }
-		
-		## nb of trials (takes into account the end of sequence where some positions are not scored with all matrices if they do not have the same width)
-		my $n = 0;
-		foreach my $matrix (keys(%crer_seed_weights)){
-			my @seed_positions = @{$crer_seed_weights{$matrix}->{"D"}};
-			my $length;
-			if ($pos == $crer_seed){ ## first seed
-				$length = $last_hit - $k + 1;   	
-			}
-			if ($#seed_positions < $k){ ## last position is before $k
-				next;
-			}
-			if ($#seed_positions <= $last_hit){
-				$length = $#seed_positions - $k + 1;				
-			}
-			$n += $length;
-		}
-     	$n *= 2 if ($main::both_strands);
-  	
-     	my $crer_pval = &sum_of_binomials($hit_p, ## prior probabilty
-				$n,	## Number of trials
-				$hit_sum,	## Min number of successes
-				$n,	## Max number of successes
-			       );
-		$nb_of_binom_tests{$seq_id}++;
-		$sum_binom_tests++;
-	    
-	    my $crer_sig = "Inf";
-	    if ($crer_pval > 0) {
-		  $crer_sig = sprintf("%.3f", -log($crer_pval)/$sig_base);
-	      }
-	    
-	    unless (&check_thresholds("crer_pval", $crer_pval,$first_matrix_name)) {next; }
-	    unless (&check_thresholds("crer_sig", $crer_sig,$first_matrix_name)) {next; }
- 
-     	##prepare output (ft format)
-     	my $strand_binon = "D";
-     	$strand_binon = "DR" if ($main::both_strands);
-
-     	## calculate start and end positions  	
-     	my $start_pos = ($sub_window_end - ($last_hit - $k)) - $orig_pos;
-    	my $end_pos = $sub_window_end + $longest_matrix_size -1 - $orig_pos;
-
-
-    	if ($create_sites) {
-      		$crer = new RSAT::feature();
-    	}
-
-     	$crer->force_attribute('seq_name', $seq_id);
-     	$crer->force_attribute('ft_type', 'CRER');
-	if ($crer_ids) {
-	    $crer->force_attribute('feature_name', "crer_".$sum_binom_tests);
-	}else {
-	    $crer->force_attribute('feature_name', "crer");
+      foreach my $matrix (keys(%crer_seed_hits)) {
+	foreach my $strand (@strands) {
+	  ##weight sum
+	  $weight_sum += $crer_seed_weights{$matrix}->{$strand}->[$k] if (defined($crer_seed_weights{$matrix}->{$strand}->[$k]));;
+	  ##pval sum
+	  $pval_prod *= $crer_seed_pval{$matrix}->{$strand}->[$k] if (defined($crer_seed_pval{$matrix}->{$strand}->[$k]));
+	  ##normw sum
+	  $normw_sum += $crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$k] if (($calc_fields{normw}) &&(defined($crer_seed_weights{$matrix}->{'normw'}->{$strand}->[$k])));
 	}
-	$crer->force_attribute('strand',$strand_binon);
-    	$crer->force_attribute('start',$start_pos);
-    	$crer->force_attribute('end',$end_pos);
-    	$crer->force_attribute('hit_sum', $hit_sum);
-    	$crer->force_attribute('crer_sig', $crer_sig);
-    	$crer->force_attribute('crer_pval', $crer_pval);
-    	$crer->force_attribute('pval_prod',$pval_prod);
-    	$crer->force_attribute('weight_sum',$weight_sum);
-    	$crer->force_attribute('crer_length',$end_pos - $start_pos + 1);
-	$crer->force_attribute('normw_sum',$normw_sum) if ($calc_fields{normw});
+      }
 
-	# If the hits have to be ranked, store them rather than printing them immediately
-	if ($create_sites) {
-	    push @{$crer_per_seq{$seq_id}} , $crer;
-    	} else {
-	    &print_crer($crer);
-    	}
+      #########################################################
+      ## calculate over-represantation sig with binomial distribution
+      unless (&check_thresholds("crer_sites", $hit_sum,$first_matrix_name)) {
+	next;
+      }
+
+      ## nb of trials (takes into account the end of sequence where
+      ## some positions are not scored with all matrices if they do
+      ## not have the same width)
+      my $n = 0;
+      foreach my $matrix (keys(%crer_seed_weights)) {
+	my @seed_positions = @{$crer_seed_weights{$matrix}->{"D"}};
+	my $length;
+	if ($pos == $crer_seed) { ## first seed
+	  $length = $last_hit - $k + 1;   	
+	}
+	if ($#seed_positions < $k) { ## last position is before $k
+	  next;
+	}
+	if ($#seed_positions <= $last_hit) {
+	  $length = $#seed_positions - $k + 1;				
+	}
+	$n += $length;
+      }
+      $n *= 2 if ($main::both_strands);
+  	
+      my $crer_pval = &sum_of_binomials($hit_p, ## prior probabilty
+					$n,	## Number of trials
+					$hit_sum, ## Min number of successes
+					$n, ## Max number of successes
+				       );
+      $nb_of_binom_tests{$seq_id}++;
+      $sum_binom_tests++;
+	    
+      my $crer_sig = "Inf";
+      if ($crer_pval > 0) {
+	$crer_sig = sprintf("%.3f", -log($crer_pval)/$sig_base);
+      }
+	    
+      unless (&check_thresholds("crer_pval", $crer_pval,$first_matrix_name)) {
+	next;
+      }
+      unless (&check_thresholds("crer_sig", $crer_sig,$first_matrix_name)) {
+	next;
+      }
+ 
+      ##prepare output (ft format)
+      my $strand_binon = "D";
+      $strand_binon = "DR" if ($main::both_strands);
+
+      ## calculate start and end positions  	
+      my $start_pos = ($sub_window_end - ($last_hit - $k)) - $orig_pos;
+      my $end_pos = $sub_window_end + $longest_matrix_size -1 - $orig_pos;
+
+
+      if ($create_sites) {
+	$crer = new RSAT::feature();
+      }
+
+      $crer->force_attribute('seq_name', $seq_id);
+      $crer->force_attribute('ft_type', 'CRER');
+      if ($crer_ids) {
+	$crer->force_attribute('feature_name', "crer_".$sum_binom_tests);
+      } else {
+	$crer->force_attribute('feature_name', "crer");
+      }
+      $crer->force_attribute('strand',$strand_binon);
+      $crer->force_attribute('start',$start_pos);
+      $crer->force_attribute('end',$end_pos);
+      $crer->force_attribute('hit_sum', $hit_sum);
+      $crer->force_attribute('crer_sig', $crer_sig);
+      $crer->force_attribute('crer_pval', $crer_pval);
+      $crer->force_attribute('pval_prod',$pval_prod);
+      $crer->force_attribute('weight_sum',$weight_sum);
+      $crer->force_attribute('crer_length',$end_pos - $start_pos + 1);
+      $crer->force_attribute('normw_sum',$normw_sum) if ($calc_fields{normw});
+
+      # If the hits have to be ranked, store them rather than printing them immediately
+      if ($create_sites) {
+	push @{$crer_per_seq{$seq_id}} , $crer;
+      } else {
+	&print_crer($crer);
+      }
 
     }
 
-  ## DEBUG
-  if ($main::verbose >= 10){
-      foreach my $i (0..$#crer_sum_hits){
-	  foreach my $matrix (keys(%crer_seed_hits)){
-	      foreach my $strand (@strands){
-		  &RSAT::message::Debug($i, " matrix", $matrix,"hits",Dumper($crer_seed_hits{$matrix}->{$strand}->[$i])) ;
-	      }
+    ## DEBUG
+    if ($main::verbose >= 10) {
+      foreach my $i (0..$#crer_sum_hits) {
+	foreach my $matrix (keys(%crer_seed_hits)) {
+	  foreach my $strand (@strands) {
+	    &RSAT::message::Debug($i, " matrix", $matrix,"hits",Dumper($crer_seed_hits{$matrix}->{$strand}->[$i])) ;
 	  }
-	  &RSAT::message::Debug($i, " hit sum: ",$crer_sum_hits[$i]) ;
+	}
+	&RSAT::message::Debug($i, " hit sum: ",$crer_sum_hits[$i]) ;
       }
+    }
   }
-}
 
 ################################################################
 
@@ -3836,260 +3846,257 @@ sub PrintScoreDistrib {
 ################################################################
 ## Run matrix-scan in batch mode
 sub runInBatch {
-	
-	&RSAT::message::Info("Batch: running matrix-scan for each sequence separately") 
- 	if ($main::verbose >= 1);
- 	local($current_seq, $seq_id);
- 	my $seq_total;
- 	my $wd = `pwd`;
-    chomp $wd;
-    local $ENV{'CLUSTER_QUEUE'} = "default";
- 	
- 	## calculate total number of sequences if cluster
- 	if ($cluster != 0) {
- 		my ($in, $input_dir) = &OpenInputFile($main::infile{input});
- 		while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
-			(($current_seq ne "") || ($seq_id ne ""))) {
-			$seq_total++;
-			}
-		close $in;
-		&RSAT::message::Info("Total number of sequences to analyse: $seq_total ") 
- 		if ($main::verbose >= 2);
- 	}
-    
-    ## get each sequence
+  &RSAT::message::Info("Batch: running matrix-scan for each sequence separately") 
+    if ($main::verbose >= 1);
+  local($current_seq, $seq_id);
+  my $seq_total;
+  my $wd = `pwd`;
+  chomp $wd;
+  local $ENV{'CLUSTER_QUEUE'} = "default";
+
+  ## Compute total number of sequences if cluster
+  if ($cluster != 0) {
     my ($in, $input_dir) = &OpenInputFile($main::infile{input});
-  	while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
-	(($current_seq ne "") || ($seq_id ne ""))) {
-		
-		$sequence_number++;
-		my $seq_len = length($current_seq);
-    	$sum_seq_len += $seq_len;
-		
-		$main::outfile{"seq".$sequence_number."tab"} = "seq".$sequence_number."_".$seq_id.".matrix_scan.tab";
-		push (@temp_output_files, $main::outfile{"seq".$sequence_number."tab"});
-		
-		##copy the sequence in a file (fasta format)
-		$main::outfile{"seq".$sequence_number} = "seq".$sequence_number."_".$seq_id.".".$seq_format;
-		push (@temp_fasta_files, $main::outfile{"seq".$sequence_number});		
-		$seq_handle = &OpenOutputFile($main::outfile{"seq".$sequence_number});
-    	&PrintNextSequence($seq_handle, $seq_format,60,$current_seq,$seq_id);
-    	close $seq_handle;
-    	    	   	
-		##matrix-scan command with absolute path in case of use with the cluster
-  		my $matrix_scan_cmd = "matrix-scan ";
-  		$matrix_scan_cmd .= " -v ".$main::verbose;
-  		## bg model
-  		if ($bg_method eq "file") {
-  			$matrix_scan_cmd .= " -bgfile ".File::Spec->rel2abs($main::infile{bg},$wd);
-  		} elsif ($bg_method eq "input") {
-  			$matrix_scan_cmd .= " -bginput ";
-  			$matrix_scan_cmd .= " -markov ".$main::markov;
-  		} elsif ($bg_method eq "window") {
-  			$matrix_scan_cmd .= " -markov ".$main::markov;
-  			$matrix_scan_cmd .= " -window ".$main::window;
-  		}
-  		## matrix
-  		if (scalar(@matrix_files >= 1)) {
-  			$matrix_scan_cmd .= " -m ";
-  			my @matrix_files_absolute =();
-  			foreach my $mpath (@matrix_files){
-  				push (@matrix_files_absolute,File::Spec->rel2abs($mpath,$wd));
-  			}
-  			$matrix_scan_cmd .= join(" ", @matrix_files_absolute);
-  		} elsif ($main::infile{matrix_list}){
-  			$matrix_scan_cmd .= " -mlist ".File::Spec->rel2abs($main::infile{matrix_list},$wd);
-  		}
-  		$matrix_scan_cmd .= " -matrix_format ".$matrix_format;
-  		$matrix_scan_cmd .= " -pseudo ".$main::pseudo_counts;
-  		if ($main::equi_pseudo == 1) {
-  			$matrix_scan_cmd .= " -equi_pseudo ";
-  		}
-  		if ($consensus_name eq 1) {
-  			$matrix_scan_cmd .= " -consensus_name ";
-  		}
-  		## sequence
-  		$matrix_scan_cmd .= " -seq_format ".$seq_format;
-  		$matrix_scan_cmd .= " -i ".File::Spec->rel2abs($main::outfile{"seq".$sequence_number}, $wd);
-  		if ($main::mask){
-  			$matrix_scan_cmd .= " -mask ".$main::mask;
-  		}
+    while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
+	   (($current_seq ne "") || ($seq_id ne ""))) {
+      $seq_total++;
+    }
+    close $in;
+    &RSAT::message::Info("Total number of sequences to analyse: $seq_total ") 
+      if ($main::verbose >= 2);
+  }
 
-  		$matrix_scan_cmd .= " -n ".$main::n_treatment;
-  		$matrix_scan_cmd .= " -origin ".$main::origin;
-  		$matrix_scan_cmd .= " -offset ".$main::offset;
+  ## Get each sequence
+  my ($in, $input_dir) = &OpenInputFile($main::infile{input});
+  while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
+	 (($current_seq ne "") || ($seq_id ne ""))) {
+    $sequence_number++;
+    my $seq_len = length($current_seq);
+    $sum_seq_len += $seq_len;
 
-  		## scoring
-  		if ($base != exp(1)){
-  			$matrix_scan_cmd .= " -base ".$base;
-  		}
-  		$matrix_scan_cmd .= " -decimals ".$decimals;
-  		if ($main::both_strands == 1) {
-  			$matrix_scan_cmd .= " -2str ";
-  		} else {
-  			$matrix_scan_cmd .= " -1str ";
-  		}
-  		## thresholds
-  		if (scalar(keys(%lth)) > 0) {
-  			$matrix_scan_cmd .= " -lth ";
-  			foreach my $field (keys(%lth)) {
-    		$matrix_scan_cmd .= " $field $lth{$field} ";
-  			}
-  		}
-  		if (scalar(keys(%uth)) > 0) {
-  			$matrix_scan_cmd .= " -uth ";
-  			foreach my $field (keys(%uth)) {
-    		$matrix_scan_cmd .= " $field $uth{$field} ";
-  			}
-  		}
+    $main::outfile{"seq".$sequence_number."tab"} = "seq".$sequence_number."_".$seq_id.".matrix_scan.tab";
+    push (@temp_output_files, $main::outfile{"seq".$sequence_number."tab"});
 
-  		## output
-  		$matrix_scan_cmd .= " -o ".File::Spec->rel2abs($main::outfile{"seq".$sequence_number."tab"},$wd);
-		&RSAT::message::Warning("The batch option is intended to report the sites.") unless ($return_fields{sites});
-		$matrix_scan_cmd .=  " -return sites";
-  		if ($return_fields{pval}) {
-  			$matrix_scan_cmd .=  ",pval";
-  		}
-  		if ($return_fields{rank}) {
-  			$matrix_scan_cmd .=  ",rank";
-  		}
-  		if ($return_fields{limits}) {
-  			$matrix_scan_cmd .=  ",limits";
-  		}
-  		if ($return_fields{normw}) {
-  			$matrix_scan_cmd .=  ",normw";
-  		}
-  		if (($return_fields{distrib})||($return_fields{occ_proba})||($return_fields{matrix})||
-  		($return_fields{freq_matrix})||($return_fields{weight_matrix})||($return_fields{bg_model})||
-  		($return_fields{seq_scores})){
-  		&RSAT::error::FatalError("The batch option is incompatible with -return distrib,occ_proba,matrix,freq_matrix,weight_matrix,bg_model,seq_scores");
-  		}
-  		
-  		## send jobs to cluster queue
-  		if ($cluster != 0) {
-  			$cluster_cmd .= "\n".$matrix_scan_cmd;
-  			if (&RSAT::util::IsNatural($sequence_number/$cluster)||($sequence_number == $seq_total)){
-  				&RSAT::message::TimeWarn("Sending $job_prefix job for seq".($sequence_number-$cluster+1)."-".$sequence_number)
- 				if ($main::verbose >= 2);
+    ## Store the sequence in a temporary file (fasta format)
+    $main::outfile{"seq".$sequence_number} = "seq".$sequence_number."_".$seq_id.".".$seq_format;
+    push (@temp_fasta_files, $main::outfile{"seq".$sequence_number});		
+    $seq_handle = &OpenOutputFile($main::outfile{"seq".$sequence_number});
+    &PrintNextSequence($seq_handle, $seq_format,60,$current_seq,$seq_id);
+    close $seq_handle;
+
+    ## Matrix-scan command with absolute path in case of use with the cluster
+    my $matrix_scan_cmd = "matrix-scan ";
+    $matrix_scan_cmd .= " -v ".$main::verbose;
+    ## bg model
+    if ($bg_method eq "file") {
+      $matrix_scan_cmd .= " -bgfile ".File::Spec->rel2abs($main::infile{bg},$wd);
+    } elsif ($bg_method eq "input") {
+      $matrix_scan_cmd .= " -bginput ";
+      $matrix_scan_cmd .= " -markov ".$main::markov;
+    } elsif ($bg_method eq "window") {
+      $matrix_scan_cmd .= " -markov ".$main::markov;
+      $matrix_scan_cmd .= " -window ".$main::window;
+    }
+
+    ## matrix
+    if (scalar(@matrix_files >= 1)) {
+      $matrix_scan_cmd .= " -m ";
+      my @matrix_files_absolute =();
+      foreach my $mpath (@matrix_files) {
+	push (@matrix_files_absolute,File::Spec->rel2abs($mpath,$wd));
+      }
+      $matrix_scan_cmd .= join(" ", @matrix_files_absolute);
+    } elsif ($main::infile{matrix_list}) {
+      $matrix_scan_cmd .= " -mlist ".File::Spec->rel2abs($main::infile{matrix_list},$wd);
+    }
+    $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
+    $matrix_scan_cmd .= " -pseudo ".$main::pseudo_counts;
+    if ($main::equi_pseudo == 1) {
+      $matrix_scan_cmd .= " -equi_pseudo ";
+    }
+    if ($consensus_name eq 1) {
+      $matrix_scan_cmd .= " -consensus_name ";
+    }
+    ## sequence
+    $matrix_scan_cmd .= " -seq_format ".$seq_format;
+    $matrix_scan_cmd .= " -i ".File::Spec->rel2abs($main::outfile{"seq".$sequence_number}, $wd);
+    if ($main::mask) {
+      $matrix_scan_cmd .= " -mask ".$main::mask;
+    }
+
+    $matrix_scan_cmd .= " -n ".$main::n_treatment;
+    $matrix_scan_cmd .= " -origin ".$main::origin;
+    $matrix_scan_cmd .= " -offset ".$main::offset;
+
+    ## scoring
+    if ($base != exp(1)) {
+      $matrix_scan_cmd .= " -base ".$base;
+    }
+    $matrix_scan_cmd .= " -decimals ".$decimals;
+    if ($main::both_strands == 1) {
+      $matrix_scan_cmd .= " -2str ";
+    } else {
+      $matrix_scan_cmd .= " -1str ";
+    }
+    ## thresholds
+    if (scalar(keys(%lth)) > 0) {
+      $matrix_scan_cmd .= " -lth ";
+      foreach my $field (keys(%lth)) {
+	$matrix_scan_cmd .= " $field $lth{$field} ";
+      }
+    }
+    if (scalar(keys(%uth)) > 0) {
+      $matrix_scan_cmd .= " -uth ";
+      foreach my $field (keys(%uth)) {
+	$matrix_scan_cmd .= " $field $uth{$field} ";
+      }
+    }
+
+    ## output
+    $matrix_scan_cmd .= " -o ".File::Spec->rel2abs($main::outfile{"seq".$sequence_number."tab"},$wd);
+    &RSAT::message::Warning("The batch option is intended to report the sites.") unless ($return_fields{sites});
+    $matrix_scan_cmd .=  " -return sites";
+    if ($return_fields{pval}) {
+      $matrix_scan_cmd .=  ",pval";
+    }
+    if ($return_fields{rank}) {
+      $matrix_scan_cmd .=  ",rank";
+    }
+    if ($return_fields{limits}) {
+      $matrix_scan_cmd .=  ",limits";
+    }
+    if ($return_fields{normw}) {
+      $matrix_scan_cmd .=  ",normw";
+    }
+    if (($return_fields{distrib}) || ($return_fields{occ_proba}) || ($return_fields{matrix}) ||
+	($return_fields{freq_matrix}) || ($return_fields{weight_matrix}) || ($return_fields{bg_model}) ||
+	($return_fields{seq_scores})) {
+      &RSAT::error::FatalError("The batch option is incompatible with -return distrib,occ_proba,matrix,freq_matrix,weight_matrix,bg_model,seq_scores");
+    }
+
+    ## Send jobs to cluster queue
+    if ($cluster != 0) {
+      $cluster_cmd .= "\n".$matrix_scan_cmd;
+      if (&RSAT::util::IsNatural($sequence_number/$cluster)||($sequence_number == $seq_total)) {
+	&RSAT::message::TimeWarn("Sending $job_prefix job for seq".($sequence_number-$cluster+1)."-".$sequence_number)
+	  if ($main::verbose >= 2);
  				## Execute the command
-  				&doit($cluster_cmd, $dry, $die_on_error, $verbose,1, $job_prefix);
-  				$cluster_cmd="";
-  			}
-  		}
-  		else {
-			&RSAT::message::TimeWarn("Executing $job_prefix for seq #$sequence_number $seq_id ") 
- 			if ($main::verbose >= 2);
-  			## Execute the command
-  			&doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);	
-  			}
-	 	}
+	&doit($cluster_cmd, $dry, $die_on_error, $verbose,1, $job_prefix);
+	$cluster_cmd="";
+      }
+    } else {
+      &RSAT::message::TimeWarn("Executing $job_prefix for seq #$sequence_number $seq_id ") 
+	if ($main::verbose >= 2);
+      ## Execute the command
+      &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);	
+    }
+  }
 
-	 	close $in;
+  close $in;
 
-	 	## check that all jobs are finished on the cluster
-	 	if ($cluster != 0) {
-	 		&areJobsDone($wd);
-	 	}
+  ## check that all jobs are finished on the cluster
+  if ($cluster != 0) {
+    &areJobsDone($wd);
+  }
 
-	 	## Merge results
-	 	&RSAT::message::TimeWarn("Merge matrix-scan results of each separate sequence") 
- 		if ($main::verbose >= 2);
+  ## Merge results
+  &RSAT::message::TimeWarn("Merge matrix-scan results of each separate sequence") 
+    if ($main::verbose >= 2);
 
-	 	## Put all individual results in one file 
-	 	$main::outfile{output_raw} = $main::outfile{output}.".raw";
-    	if (scalar(@temp_output_files) > 0) {
-    		my $merge_cmd = "cat ";
-    		$merge_cmd .= join (" ", @temp_output_files);
-    		$merge_cmd .= " > $main::outfile{output_raw}";
-    		&doit($merge_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);
-    	}
+  ## Put all individual results in one file 
+  $main::outfile{output_raw} = $main::outfile{output}.".raw";
+  if (scalar(@temp_output_files) > 0) {
+    my $merge_cmd = "cat ";
+    $merge_cmd .= join (" ", @temp_output_files);
+    $merge_cmd .= " > $main::outfile{output_raw}";
+    &doit($merge_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);
+  }
 
-    	## Extract the names of the fields returned
-    	open (SYSTEM, "grep -m 1 '^#' $main::outfile{output_raw} |");	
- 		my $header = <SYSTEM>;
-		close (SYSTEM);
-		print $main::out $header;
+  ## Extract the names of the fields returned
+  open (SYSTEM, "grep -m 1 '^#' $main::outfile{output_raw} |");	
+  my $header = <SYSTEM>;
+  close (SYSTEM);
+  print $main::out $header;
 
-    	## Extract the sites from the merged file    
-    	## could add a sort in the command 
-		open (SYSTEM, "grep -v '^;' $main::outfile{output_raw} | grep -v '^#' | ");
-		while (<SYSTEM>) {
-			print $main::out $_;
-			}
-		close (SYSTEM);
+  ## Extract the sites from the merged file    
+  ## could add a sort in the command 
+  open (SYSTEM, "grep -v '^;' $main::outfile{output_raw} | grep -v '^#' | ");
+  while (<SYSTEM>) {
+    print $main::out $_;
+  }
+  close (SYSTEM);
 
-	 	## Keep the verbosity lines in a log file    
-		$main::outfile{output_log} = $main::outfile{output}.".log";
-		my $log_cmd = "grep '^;' $main::outfile{output_raw} > $main::outfile{output_log} ";
-		&doit($log_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);
+  ## Keep the verbosity lines in a log file    
+  $main::outfile{output_log} = $main::outfile{output}.".log";
+  my $log_cmd = "grep '^;' $main::outfile{output_raw} > $main::outfile{output_log} ";
+  &doit($log_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);
 
-	 	## Sequence statistics
-    	printf $main::out "; %-21s\t%s\n", "Number of sequences scanned", $sequence_number;
-    	printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
+  ## Sequence statistics
+  printf $main::out "; %-21s\t%s\n", "Number of sequences scanned", $sequence_number;
+  printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
 
-	 	my $done_time = &AlphaDate();
- 	    print $main::out "; Job started $start_time\n";
- 	    print $main::out "; Job done    $done_time\n";
+  my $done_time = &AlphaDate();
+  print $main::out "; Job started $start_time\n";
+  print $main::out "; Job done    $done_time\n";
 }
 
 ################################################################
 ## Run matrix-scan in batch mode
 sub areJobsDone {
-	my $wd = shift;
-	sleep 15;
-	
-## temporary method using qstat
-#   local $user =  `whoami`;
-#   chomp($user);
-#	 		my $finished = 0;
-#	 		while ($finished == 0){
-#	 			sleep 30;
-#	 			open (SYSTEM, "qstat | grep $user|grep $job_prefix | wc -l|");	
-# 				my $job_running = <SYSTEM>;
-#				close (SYSTEM);
-#				chomp($job_running);
-#				&RSAT::message::TimeWarn("Still $job_running jobs running... ") 
-# 				if ($main::verbose >= 4);
-#				$finished=1 if ($job_running == 0);
-#			}
-##
-	 ## method using the .start and .done files
-	 my %jobs_status = ();	 		
-	 my $job_dir = $wd."/jobs/".`date +%Y%m%d`;
-	 chomp($job_dir);
-	 		
-	 ## get all jobs file
-	 opendir(JOBDIR, $job_dir) || die "can't opendir $job_dir: $!";
-	 my @job_dir_content = grep { !/^\./ } readdir(JOBDIR);
-	 closedir JOBDIR;
-     foreach my $file (@job_dir_content){
-    	unless (($file !~ /^$job_prefix/)||($file =~ /$job_prefix\.\w+\.\w+/)) { #only consider matrix-scan job, not .start or .done files
-    		$jobs_status{$file}= "unknown";
-    	}			
-    }
-    		
-    ## check the .start and .done files
-	my $finished = keys(%jobs_status);
-	my $current_status = 0;
+  my $wd = shift;
+  sleep 15;
 
-	until ($current_status == $finished) {
-		sleep 30;
-		$current_status = 0;
-    	if (scalar(keys(%jobs_status)) > 0) {
-  			foreach my $job (keys(%jobs_status)) {
-  				if (-e $job_dir."/".$job.".done") {
-  					$jobs_status{$job} = "done";
-  					$current_status += 1;
-  				}
-  				elsif (-e $job_dir."/".$job.".started") {
-  					$jobs_status{$job} = "started";
-  				}
-  			}
-    	}
-    	&RSAT::message::TimeWarn("Still ".($finished-$current_status)."jobs running...") 
- 		if ($main::verbose >= 2);
+  ## temporary method using qstat
+  #   local $user =  `whoami`;
+  #   chomp($user);
+  #	 		my $finished = 0;
+  #	 		while ($finished == 0){
+  #	 			sleep 30;
+  #	 			open (SYSTEM, "qstat | grep $user|grep $job_prefix | wc -l|");	
+  # 				my $job_running = <SYSTEM>;
+  #				close (SYSTEM);
+  #				chomp($job_running);
+  #				&RSAT::message::TimeWarn("Still $job_running jobs running... ") 
+  # 				if ($main::verbose >= 4);
+  #				$finished=1 if ($job_running == 0);
+  #			}
+  ##
+  ## method using the .start and .done files
+  my %jobs_status = ();
+  my $job_dir = $wd."/jobs/".`date +%Y%m%d`;
+  chomp($job_dir);
+
+  ## get all jobs file
+  opendir(JOBDIR, $job_dir) || die "can't opendir $job_dir: $!";
+  my @job_dir_content = grep { !/^\./ } readdir(JOBDIR);
+  closedir JOBDIR;
+  foreach my $file (@job_dir_content) {
+    unless (($file !~ /^$job_prefix/)||($file =~ /$job_prefix\.\w+\.\w+/)) { #only consider matrix-scan job, not .start or .done files
+      $jobs_status{$file}= "unknown";
+    }
+  }
+
+  ## check the .start and .done files
+  my $finished = keys(%jobs_status);
+  my $current_status = 0;
+
+  until ($current_status == $finished) {
+    sleep 30;
+    $current_status = 0;
+    if (scalar(keys(%jobs_status)) > 0) {
+      foreach my $job (keys(%jobs_status)) {
+	if (-e $job_dir."/".$job.".done") {
+	  $jobs_status{$job} = "done";
+	  $current_status += 1;
+	} elsif (-e $job_dir."/".$job.".started") {
+	  $jobs_status{$job} = "started";
 	}
-	return (1);
+      }
+    }
+    &RSAT::message::TimeWarn("Still ".($finished-$current_status)."jobs running...") 
+      if ($main::verbose >= 2);
+  }
+  return (1);
 }
 
 
