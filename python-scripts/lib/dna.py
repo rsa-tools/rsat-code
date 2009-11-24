@@ -310,8 +310,10 @@ def fasta2sequences(uf, location=None, rightPosition=None, leftPosition=None):
                 f = gzip.open(uf)
             else:
                 f = open(uf)
+        else:
+            f = uf
+
         l = []
-        #f = open(uf, 'U')
         for title, dna in FastaReader(f):
             dna = dna.upper()
             loc = location
