@@ -21,6 +21,10 @@ local @supported_output_formats = sort(keys( %RSAT::matrix::supported_output_for
 $query = new CGI;
 
 
+### print the form ###
+&RSA_header("Implant sites", "form");
+&ListParameters() if ($ENV{rsat_echo} >=2);
+
 ### default values for filling the form
 $default{sites_espp} = 0.001;
 $default{sites} = "";
@@ -37,9 +41,6 @@ foreach $key (keys %default) {
 #     $filename = $query->param("sites_filename");
 #     $default{sites} = `cat $filename`;
 # }
-
-### print the form ###
-&RSA_header("Implant sites", "form");
 
 ### head
 print "<center>";
