@@ -141,7 +141,7 @@ Function load_props($props) {
   $neat_wsdl = $properties[neat_ws];
   $neat_java_wsdl = $properties[neat_java_ws];
   # host may include tomcat port
-  $neat_java_host = str_replace("/rsat","",$WWW_RSA);
+  $neat_java_host = str_replace("/rsat/","",$WWW_RSA);
   $tomcat_port = $properties[tomcat_port];
   if(strcmp($tomcat_port,"") != 0){
   	  $neat_java_host = $neat_java_host . ":" . $tomcat_port;
