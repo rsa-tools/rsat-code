@@ -141,8 +141,12 @@ Function load_props($props) {
   $neat_wsdl = $properties[neat_ws];
   $neat_java_wsdl = $properties[neat_java_ws];
   # host may include tomcat port
-  $neat_java_host = str_replace("be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl","",$neat_java_wsdl);
-  $neat_java_remote_wsdl = $neat_java_host . "be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithmsNeAT.wsdl";
+  $neat_java_host = str_replace("/rsat","",$WWW_RSA);
+  $tomcat_port = $properties[tomcat_port];
+  if(strcmp($tomcat_port,"") != 0){
+  	  $neat_java_host = $neat_java_host . ":" . $tomcat_port;
+  }
+  $neat_java_remote_wsdl = $neat_java_host . "/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithmsNeAT.wsdl";
   # LOG
   $year = date("Y");
   $month = date("m");
