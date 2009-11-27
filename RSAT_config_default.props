@@ -76,6 +76,9 @@ neat_ws=http://rsat.ulb.ac.be/rsat/web_services/RSATWS.wsdl
 ## please check the RSAT web server install guide.
 neat_java_ws=http://rsat.ulb.ac.be/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl
 
+# if forwarding to apache is not activated, indicate the tomcat port
+tomcat_port=
+
 ################################################################
 ## Directories for programs developed by third parties
 
