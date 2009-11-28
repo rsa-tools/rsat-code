@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: infer-operon,v 1.8 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: infer-operon,v 1.9 2009/11/28 12:06:02 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -179,6 +179,7 @@ package main;
 				  q_info
 				  up_info
 				  down_info
+				  gene_nb
 				 );
     %supported_return_fields = ();
     foreach my $field (@supported_return_fields) {
@@ -204,7 +205,7 @@ package main;
 				 up_rule
 				 first
 				);
-    
+
     @{$sub_fields{down_info}} = qw(downstr_neighb_id
 				   downstr_neighb_name
 				   downstr_neighb_str
@@ -246,6 +247,8 @@ package main;
     $field_descr{dn_dir} = "Relative direction of the downstream gene (tandem, divergent or convergent).";
     $field_descr{dn_rule} = "Rule used to predict operon membership of the downstream gene (opposite strand, distance).";
     $field_descr{last} = "1 if the gene is the operon trailer; 0 otherwise";
+
+    $field_descr{gene_nb} = "number of genes in the predicted operon";
 
     ## ##############################################################
     ## Read argument values
@@ -368,13 +371,11 @@ package main;
 	print $main::out "; Job started $start_time\n";
 	print $main::out "; Job done    $done_time\n";
     }
-    
-     
+
     ################################################################
     ###### close output stream
     close $main::out if ($main::outfile{output});
-    
-    
+
     exit(0);
 }
 
@@ -412,6 +413,8 @@ sub PrintResults {
 	} else {
 	  push @info, $null;
 	}
+      } elsif ($field eq "gene_nb") {
+	push @info, $operon->gene_nb();
       } elsif ($field eq "leader") {
 	push @info, $operon->get_attribute("leader_name") || $null;
       } elsif ($field eq "trailer") {
@@ -606,6 +609,9 @@ Detailed info on the upstream gene.
 
 Detailed info on the downstream gene.
 
+=item B<gene_nb>
+
+Number of genes in the predicted operon.
 
 =back
 
