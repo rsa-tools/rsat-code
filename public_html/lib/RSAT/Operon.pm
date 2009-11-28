@@ -156,7 +156,7 @@ $self->sort_genes().
 
 sub get_sorted_genes {
   my ($self) = @_;
-  unless (defined($seld->{sorted_genes})) {
+  unless (defined($self->{sorted_genes})) {
     $self->sort_genes();
   }
   return $self->get_attribute("sorted_genes");
@@ -245,6 +245,22 @@ sub set_trailer {
   $self->force_attribute("trailer", $feature);
   $self->force_attribute("trailer_id", $feature->get_attribute("id"));
   $self->force_attribute("trailer_name", $feature->get_attribute("name"));
+}
+
+################################################################
+
+=pod
+
+=item <get_gene_nb>
+
+Return the number of genes in the operon.
+
+=cut
+
+sub gene_nb {
+  my ($self) = @_;
+  my @genes = $self->get_attribute("genes");
+  return (scalar(@genes));
 }
 
 return 1;
