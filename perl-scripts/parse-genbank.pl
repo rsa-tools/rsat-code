@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.56 2009/11/29 11:18:27 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.57 2009/11/29 16:46:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -66,6 +66,8 @@ package main;
 	transcript_id=>1,
 	protein_id=>1,
 	locus_tag=>1,
+	gene=>1, ## Obsolete
+	GI=>1, ## Obsolete
 	);
     $supported_prefid_values = join(",", keys(%supported_prefid_value));
 
