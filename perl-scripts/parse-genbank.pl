@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.55 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.56 2009/11/29 11:18:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -50,6 +50,26 @@ package main;
     $test_files = 2; ## Maximal number of genbank files to parse for a given organism (there is generally one contig per chromosome)
     $test_lines = 10000; ## macimal number of lines to parse per file
 
+    %supported_prefid_key = (cds=>1,
+			     mrna=>1,
+			     gene=>1,
+			     trna=>1,
+			     srna=>1,
+			     rrna=>1,
+			     misc_rna=>1,
+			     scrna=>1,
+	);
+    $supported_prefid_keys = join(",", keys(%supported_prefid_key));
+
+    %supported_prefid_value = (
+	GeneID=>1,
+	transcript_id=>1,
+	protein_id=>1,
+	locus_tag=>1,
+	);
+    $supported_prefid_values = join(",", keys(%supported_prefid_value));
+
+    ## Default IDs for different feature types
     %preferred_id = (
 		     cds=>protein_id,
 		     mrna=>transcript_id,
@@ -423,18 +443,26 @@ OPTIONS
 		be useful to impose one or another ID for a given
 		feature type.
 
+		A typical use of this option is for genome communities
+		having a strong usage of the locus_tag, for historical
+		reasons (yeast, Arabidopsis). For the yeast
+		Saccharomyces cerevisiae, we use the following option:
+
+		  parse-genbank -i [...] -prefid cds locus_tag
+
+
 		Note that GeneID and locus_tag are attributes of CDS
 		and mRNA, but they are merely cross-references to
 		their gene. It is not a good idea to use gene IDS to
-		specify CDSs or mRNA, car this raises a confusion for
-		genes associated with multiple transcripts and CDS
+		specify CDSs or mRNA, because this raises a confusion
+		for genes associated with multiple transcripts and CDS
 		(e.g. alternative splicing).
 
 		Examples of utilization
 			 -prefid cds protein_id
 			 -prefid cds transcript_id
 			 -prefid cds locus_tag
-		     
+
    Options for the automaticaly generated SQL scripts
 	-schema database schema (default: $schema)
 	-host	database host (efault: $host)
@@ -539,7 +567,13 @@ sub ReadArguments {
 
 	    ### Preferred ID
 	} elsif ($ARGV[$a] eq "-prefid") {
-	    $preferred_id{$ARGV[$a+1]} = $ARGV[$a+2];
+	    my $key = lc($ARGV[$a+1]);
+	    &RSAT::error::FatalError($key, " is not a valid key for preferred ID. Supported: $supported_prefid_keys")
+		unless ($supported_prefid_key{$key});
+	    my $value = $ARGV[$a+2];
+	    &RSAT::error::FatalError($value, " is not a valid value for preferred ID. Supported: $supported_prefid_values")
+		unless ($supported_prefid_value{$value});
+	    $preferred_id{$key} = $value;
 
 	    ### quick test
 	} elsif ($ARGV[$a] eq "-test") {
