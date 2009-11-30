@@ -54,11 +54,13 @@ You can do so by specifying the -Xmx option.
 Example:
 java -Xmx800m graphtools.algorithms.Pathfinder -h
 
-2.5. Update files in misc directory
--------------------------------------
-All files in the $RSAT/java/misc directory can be updated using the graphtools.
+2.5. Update data files
+----------------------
 
-************* Kegg_organisms_list.txt *************
+The java web applications depend on four
+data files. All these files can be updated using the graphtools.
+
+1) Kegg_organisms_list.txt
 Usage:
 This file is displayed in the KEGG network provider web interface.
 Location:
@@ -68,7 +70,7 @@ A list of organisms supported by the current KEGG PATHWAY version
 can be obtained using the -O option of the MetabolicGraphProvider,
 which queries KEGG via its API.
 
-************* rpairs.tab *************
+2) rpairs.tab
 Usage:
 This file is used by the MetabolicGraphProvider and its client, the
 KEGG network provider, to generate RPAIR networks.
@@ -78,17 +80,19 @@ Update:
 The recent version of the KEGG LIGAND reaction file can be downloaded
 and the list of rpairs can be generated from it using the -p option of the KeggLigandDataManager.
 
-************* metabolicdb_dump_day_month_year.backup *************
+3) metabolicdb_dump_day_month_year.backup
 Usage:
 This file contains the metabolic database, which is used by the MetabolicGraphProvider and
 the metabolic Pathfinder web application.
 Location:
-The file should be loaded into a postgres database. See the NeAT web server install guide for details.
+The file can be downloaded from the data section of the official NeAT website:
+http://rsat.bigre.ulb.ac.be/neat/
+It should be loaded into a local postgres database. See the NeAT web server install guide for details.
 Update:
 Current KEGG LIGAND data can be parsed into a postgres metabolic database using
 the KeggLigandDataManager options -A, -l and -z.
 
-************* preloadedNetworks.tgz *************
+4) preloadedNetworks.tgz
 Usage:
 This file contains the networks that are used by the metabolic Pathfinder web application.
 Location:
