@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.35 2009/07/29 04:30:27 rsat Exp $
+# $Id: install_genomes.mk,v 1.36 2009/11/30 01:37:50 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -65,7 +65,8 @@ PRO=Mycoplasma_genitalium
 ### All the prokaryote in NCBI genome directory
 PROKARYOTES = `ls -1 ${NCBI_DIR}/Bacteria | grep _ | sort -u | xargs `
 list_prokaryotes:
-	@echo "Prokaryote to install	${PROKARYOTES}"
+	@echo "Prokaryotes"
+	@echo "${PROKARYOTES}"
 
 
 ### Install all prokaryotes genomes on RSAT
@@ -102,7 +103,8 @@ install_one_phage:
 ### All the phage in NCBI genome directory
 PHAGES = `ls -1 ${PHAGE_DIR} | grep _ | sort -u | xargs `
 list_phages:
-	@echo "Phage to install	${PHAGES}"
+	@echo "Phages"
+	@echo "${PHAGES}"
 
 ### Install all phages genomes on RSAT
 install_all_phages:
@@ -113,37 +115,42 @@ install_all_phages:
 ### All the fungi in NCBI genome directory
 NCBI_FUNGI = `ls -1 ${NCBI_DIR}/Fungi | grep _ | grep -v Candida_albicans | sort -u | xargs `
 OTHER_FUNGI=					\
-	Aspergillus_nidulans			\
-	Aspergillus_oryzae			\
-	Aspergillus_terreus			\
-	Candida_dubliniensis			\
-	Candida_guilliermondii			\
-	Candida_lusitaniae			\
-	Candida_tropicalis			\
-	Chaetomium_globosum			\
-	Coccidioides_immitis			\
-	Kluyveromyces_waltii			\
-	Magnaporthe_grisea			\
-	Neurospora_crassa			\
-	Phanerochaete_chrysosporium		\
-	Rhizopus_oryzae				\
-	Saccharomyces_bayanus			\
-	Saccharomyces_castellii			\
-	Saccharomyces_kluyveri			\
-	Saccharomyces_kudriavzevii		\
-	Saccharomyces_mikatae			\
-	Saccharomyces_paradoxus			\
-	Sclerotinia_sclerotiorum		\
-	Staganospora_nodorum			\
-	Trichoderma_reesei			\
-	Uncinocarpus_reesii			\
-	Ustilago_maydis
+	Aspergillus_nidulans \
+	Aspergillus_oryzae \
+	Aspergillus_terreus \
+	Candida_dubliniensis \
+	Candida_guilliermondii \
+	Candida_lusitaniae \
+	Candida_tropicalis \
+	Chaetomium_globosum \
+	Coccidioides_immitis \
+	Fusarium_graminearum \
+	Fusarium_oxysporum \
+	Fusarium_verticillioides \
+	Histoplasma_capsulatum \
+	Kluyveromyces_waltii \
+	Lodderomyces_elongisporus \
+	Magnaporthe_grisea \
+	Phanerochaete_chrysosporium \
+	Puccinia_graminis \
+	Rhizopus_oryzae \
+	Saccharomyces_bayanus \
+	Saccharomyces_castellii \
+	Saccharomyces_kluyveri \
+	Saccharomyces_kudriavzevii \
+	Saccharomyces_mikatae \
+	Saccharomyces_paradoxus \
+	Schizosaccharomyces_japonicus_yFS275 \
+	Sclerotinia_sclerotiorum \
+	Stagonospora_nodorum \
+	Trichoderma_reesei \
+	Uncinocarpus_reesii
 
 ### List the Fungi in the NCBI directory
 FUNGI= ${NCBI_FUNGI} ${OTHER_FUNGI}
 list_fungi:
-	@echo "Fungi to install	${FUNGI}"
-
+	@echo "Fungi"
+	@echo "${FUNGI}"
 
 ### Install all fungi genomes on RSAT
 install_all_fungi:
@@ -163,7 +170,8 @@ install_one_fungus:
 NCBI_PROTOZOA = `ls -1 ${NCBI_DIR}/Protozoa | grep _ | sort -u | xargs `
 PROTOZOA=${NCBI_PROTOZOA}
 list_protozoa:
-	@echo "Protozoa to install	${PROTOZOA}"
+	@echo "Protozoa"
+	@echo "${PROTOZOA}"
 
 
 ### Install all protozoa genomes on RSAT
