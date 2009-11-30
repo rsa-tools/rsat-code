@@ -250,7 +250,7 @@
     	# Text-to-html web service (for table of paths only)
     	if(strcmp($outputType,'pathsTable') == 0){
     	 $rsat_client = new SoapClient(
-                       "$WWW_RSA"."/web_services/RSATWS.wsdl",
+                          "web_services/RSATWS.wsdl",
                            array(
                                  'trace' => 1,
                                  'soap_version' => SOAP_1_1,
