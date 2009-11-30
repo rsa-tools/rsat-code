@@ -138,7 +138,7 @@ Make sure that tomcat-users.xml cannot be read by anyone else than tomcat or roo
 
 By default, Tomcat takes a lot of memory. You can reduce this amount by
 modifying the file tomcat.conf in \$CATALINA\_HOME/conf.
-Outcomment and adjust the variable JAVA\_OPTS as follows:\\
+Adjust the variable JAVA\_OPTS as follows:\\
 JAVA\_OPTS="-Xmx800m"\\
 
 You can start Tomcat on SUSE with\\
@@ -230,16 +230,22 @@ The graphtools server is stored as a war file in \file{\$RSAT/java/web}.
 
 \item Open the RSAT configuration file
 \file{RSAT\_config.props} located in \file{\$RSAT}.
-Update the value of the parameter \textit{neat\_java\_ws}, e.g.\\
-neat\_java\_ws=\file{http://\$HOSTNAME/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl}\\
-where \$HOSTNAME is the domain name of your host. Note that \$HOSTNAME has to
-include the Tomcat port if mod\_jk has not been installed, e.g.\\
-neat\_java\_ws=\file{http://myrsat.com:8080/be.ac.ulb.bigre.graphtools.server/wsdl/GraphAlgorithms.wsdl}
+Set the value of the parameter \textit{neat\_java\_ws}
+to \file{web\_services/GraphAlgorithms.wsdl}
 
-\item Either place the war file \textit{be.ac.ulb.bigre.graphtools.server.war} in
-\$CATALINA\_HOME/webapps and then start Tomcat or use the Tomcat manager\\
- (\file{http://localhost:8080/manager/html})
- to deploy the war file.
+\item If mod\_jk or equivalent has not been installed,
+open the RSAT configuration file and set the parameter
+\textit{tomcat\_port} to the port on which Tomcat runs (by default 8080).
+
+\item There are two ways to deploy a war file.
+ If you do not use the Tomcat manager, make sure
+ Tomcat can open the war file with the command:\\
+ \textit{chown tomcat:tomcat be.ac.ulb.bigre.graphtools.server.war}
+ Then place the war file \textit{be.ac.ulb.bigre.graphtools.server.war} in
+ \$CATALINA\_HOME/webapps and start Tomcat.
+ If you use the Tomcat manager, open
+ (\file{http://localhost:8080/manager/html} and go to option \textit{Select WAR file to upload}.
+ After having selected the war file to upload, click \textit{Deploy}.
 
 \item Go to \file{\$CATALINA\_HOME/webapps/be.ac.ulb.bigre.graphtools.server/WEB-INF}
 
@@ -252,13 +258,13 @@ neat\_java\_ws=\file{http://myrsat.com:8080/be.ac.ulb.bigre.graphtools.server/ws
 \end{enumerate}
 
 You are done. You may read the section "Configuration remarks" for additional information.
-If you want to install the metabolic pathfinder, continue with section "Metabolic Pathfinder and Pathwayinference".
+If you want to install the metabolic pathfinder, continue with section "Metabolic Pathfinder and Pathway extraction".
 
 \subsubsection{Configuration remarks}
 
 The directory \file{\$RSAT/public\_html/data/Stored\_networks}
 allows to store graph files for longer time
-(remember that \file{\$RSAT/public\_html/tmp} should be cleaned regularly).\\
+(since \file{\$RSAT/public\_html/tmp} is cleaned regularly).\\
 
 Note that the Kegg network provider accesses the metabolic database to add attributes
 such as compound name or EC number to networks.
@@ -291,13 +297,13 @@ organism list for the recent KEGG version, use the MetabolicGraphProvider comman
 tool. For details on this tool, type: \textit{java graphtools.util.MetabolicGraphProvider -h}
 Place the updated list in the folder \file{\$RSAT/data/KEGG} to replace the old list.
 
-\subsection{Metabolic Pathfinder and Pathwayinference}
+\subsection{Metabolic Pathfinder and Pathway extraction}
 After successful installation of the Java web services, you may install metabolic pathfinder
-and Pathwayinference, which are clients of the pathfinder and pathwayinference web services respectively.
+and Pathway extraction, which are clients of the pathfinder and pathwayinference web services respectively.
 
-\subsubsection{Requirements of metabolic pathfinder and pathwayinference}
+\subsubsection{Requirements of metabolic pathfinder and pathway extraction}
 
-Metabolic pathfinder and pathwayinference have a number of additional requirements.
+Metabolic pathfinder and pathway extraction have a number of additional requirements.
 
 \begin{enumerate}
 
@@ -337,10 +343,12 @@ On SUSE, you may start the postgres server with
 using a command similar to\\
 \textit{pg\_ctl -D /usr/local/pgsql/data/ -l logfile start}.\\
 
+\item Obtain the data file\\
+Download the postgres backup file \file{metabolicdb\_dump\_day\_month\_year.backup}
+from the data section of the official NeAT web site.
+
 \item Load data into postgres\\
-The KEGG data is packaged as a postgres backup file located in\\
-\file{\$RSAT/java/misc/metabolicdb\_dump\_day\_month\_year.backup},
-which can be loaded into postgres as follows:
+Load the \file{metabolicdb\_dump\_day\_month\_year.backup} file into postgres as follows:
 \begin{enumerate}
 \item Start postgres by typing the following on command line:\\
 \textit{psql -U postgres}
@@ -348,36 +356,36 @@ which can be loaded into postgres as follows:
 \textit{create user metabolic with password 'metabolic';}\\
 \textit{create database "metabolicdb" with owner "metabolic" encoding='UTF8';}
 \item Quit postgres and type the following command in one line:\\
-\textit{pg\_restore -d metabolicdb \$RSAT/java/misc/metabolicdb\_dump\_day\_month\_year.backup -U postgres}
+\textit{pg\_restore -d metabolicdb metabolicdb\_dump\_day\_month\_year.backup -U postgres}
 \end{enumerate}
 
 \end{enumerate}
 
 \end{enumerate}
 
-\subsubsection{Installation of metabolic pathfinder and pathwayinference}
+\subsubsection{Installation of metabolic pathfinder and pathway extraction}
 Either place the war file \textit{metabolicpathfinding.war} located
 in \file{\$RSAT/java/web} in\\
 \$CATALINA\_HOME/webapps and then start
 Tomcat or use the Tomcat manager to deploy the war file.
 
-\subsubsection{Configuration of metabolic pathfinder and pathwayinference}
+\subsubsection{Configuration of metabolic pathfinder and pathway extraction}
 
 \begin{enumerate}
 \item Go to the folder \file{\$CATALINA\_HOME/webapps/metabolicpathfinding/WEB-INF}.
 
-\item Run the configuration script with the following commands:\\
-      \textit{chmod 755 configureWebxml.pl}\\
-      \textit{./configureWebxml.pl}\\
-       If you are not the rsat user, set the RSAT environment variable first, e.g.:\\
+\item If you are not the rsat user, set the RSAT environment variable, e.g.:\\
       \textit{export RSAT=/home/rsat/rsa-tools}
+      Run the configuration script with the following commands:\\
+      \textit{chmod 755 configureWebxml.pl}\\
+      \textit{./configureWebxml.pl}
 
 \item Reload the metabolic pathfinding web application using the Tomcat manager or
       on command line, restart Tomcat.
 \end{enumerate}
 
 \subsubsection{Update of metabolic pathfinder}
-The metabolic pathfinder contains by default data from KEGG version 41.0.
+The metabolic pathfinder contains by default data from KEGG version 49.0.
 In order to update it, you can follow the steps below:
 
 \begin{enumerate}
@@ -397,6 +405,33 @@ In order to update it, you can follow the steps below:
       \file{\$CATALINA\_HOME/webapps/metabolicpathfinding/networks}, replacing the old ones.
 
 \item Set the parameter \textit{keggVersion} in the web.xml file to the updated KEGG version.
+
+\item Reload the metabolicpathfinding web application in tomcat.
+
+\end{enumerate}
+
+\subsubsection{Update of pathway extraction}
+
+This section only describes how to update MetaCyc data.
+See the section on the update of metabolic pathfinder for the KEGG data.
+
+\begin{enumerate}
+
+\item Load the MetaCyc OWL file into the metabolic database.
+      The command line tool \textit{MetabolicXMLFilesParser} can be used for this.
+      If present, delete previous MetaCyc data in the database. You may change the name,
+      the location, owner and password of the metabolic database. In this case, change the
+      default values in the web.xml file located at\\
+      \file{\$CATALINA\_HOME/webapps/metabolicpathfinding/WEB-INF}.
+
+\item Generate the preloaded networks with the \textit{MetabolicGraphProvider} command line tool.
+      Place those networks in \file{\$RSAT/data/Stored\_networks} replacing the old ones.
+
+\item In point 2, an example network has been generated as well.\\
+      Copy it to
+      \file{\$CATALINA\_HOME/webapps/metabolicpathfinding/networks}, replacing the old one.
+
+\item Set the parameter \textit{metacycVersion} in the web.xml file to the updated MetaCyc version.
 
 \item Reload the metabolicpathfinding web application in tomcat.
 
