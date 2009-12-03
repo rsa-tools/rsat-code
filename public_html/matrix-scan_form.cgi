@@ -27,7 +27,6 @@ $default{offset}="0";
 $default{bg_method}="bginput";
 $checked{$default{bg_method}} = "CHECKED";
 $default{markov_order} = "0";
-$default{window_size} = "200";
 $default{organism} = "Saccharomyces cerevisiae";
 $default{matrix_format} = "tab";
 $default{pseudo_counts} = 1;
@@ -59,7 +58,7 @@ $default{sort_distrib} ="occ_sig";
 
 $default{return_crer} = "CHECKED";
 $default{return_crer_limits} = "CHECKED";
-$default{return_crer_sites} = "";
+$default{return_crer_sites} = "CHECKED";
 
 $default{analysis_type} = "analysis_sites";
 $checked{$default{analysis_type}} = "CHECKED";
@@ -85,7 +84,7 @@ $default{uth_pval} = "1e-4";
 $default{lth_site_pval} = "none";
 $default{uth_site_pval} = "1e-3";
 $default{lth_crer_size} = "30";
-$default{uth_crer_size} = "200";
+$default{uth_crer_size} = "500";
 $default{lth_crer_sites} = "none";
 $default{uth_crer_sites} = "none";
 $default{lth_crer_pval} = "none";
