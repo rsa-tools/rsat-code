@@ -620,7 +620,7 @@ sub parse_from_row {
   }
 
   ## Convert name
-  if ($out_format =~ /gff/) {
+  if (defined($out_format) && ($out_format =~ /gff/)) {
     if (($self->get_attribute('feature_name')) && (!$self->get_attribute("Name"))) {
       $self->force_attribute("Name", $self->get_attribute("feature_name"));
     }
@@ -638,7 +638,6 @@ sub parse_from_row {
     ## Convert single-note attribute into description (suppress "Note=" from the beginning)
     if ($description =~ /^Note=([^;]+)$/) {
       $self->force_attribute("description",  $1);
-#      die "HELLO";
     }
 
   } else {
