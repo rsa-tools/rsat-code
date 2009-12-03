@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.75 2009/11/11 06:32:25 jvanheld Exp $
+# $Id: retrieve-seq,v 1.76 2009/12/03 11:32:06 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -862,7 +862,7 @@ sub ReadArguments {
 	    ### Query is a list of IDs (no necessity to load gene names and synonyms)
 	} elsif ($ARGV[$a] eq "-ids_only") {
 	    $ids_only = 1;
-	    
+
 	    #### organism
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name =$ARGV[$a+1];

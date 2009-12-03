@@ -95,11 +95,11 @@ if ($background_model eq "equi") {
 
 } elsif ($background_model) {
   
-    ### Localize frequency file in the RSAT data directory for the specified organism
-    $method = "Frequency file";
-    $exp_freq_file = &ExpectedFreqFile($organism_name, $oligo_length, $background_model, 
+  ### Localize frequency file in the RSAT data directory for the specified organism
+  $method = "Frequency file";
+  $exp_freq_file = &ExpectedFreqFile($organism_name, $oligo_length, $background_model, 
 				       $noov=>"-ovlp", str=>"-1str");
-} 
+}
 
 
 ################################################################
