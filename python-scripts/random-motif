@@ -27,8 +27,8 @@ ARGUMENTS
                           if not specified, the standard output is used
     -l #, --length=#      motif length
     -c #, --conserv=#     motif conservation (0.91 or low)
-    -n #, --mutiplier=#   mutliply each cell by #
-    -m #, --motifs=#      generate # motifs (one by default)
+    -m #, --mutiplier=#   mutliply each cell by #
+    -n #, --motifs=#      generate # motifs (one by default)
     --round               use integer values
 SEE ALSO
         random-sites
