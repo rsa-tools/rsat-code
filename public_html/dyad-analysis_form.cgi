@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.24 2009/11/19 08:40:49 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.25 2009/12/03 11:25:42 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -41,7 +41,7 @@ $default{dyad_type} = "any dyad";
 $default{exp_freq} = "background";
 $default{upload_freq_file} = "";
 #$default{lth_occ_sig} = "0";
-$default{to_matrix} = 0;
+$default{to_matrix} = '1';
 
 ## Return values and thresholds
 $default{zscore} = '';
@@ -433,7 +433,6 @@ sub ReturnTable {
 								  -default=>$default{uth_rank},
 								  -size=>5)
 					       ]),
-				    
 				   ]
 				  )
 		       );
@@ -442,7 +441,7 @@ sub ReturnTable {
 print $query->checkbox(-name=>'to_matrix',
 		       -checked=>$default{to_matrix},
 		       -label=>'');
-print "&nbsp;Convert assembled patterns to Position-Specific Scoring Matrices (<font color=red>Can be time-consuming</font>)";
+print "&nbsp;Convert assembled patterns to Position-Specific Scoring Matrices (<font color=red>Can be time-consuming for large sequence files</font>).";
 print "<BR>";
 
 
