@@ -41,7 +41,7 @@ ARGUMENTS
         --window=#            count oligomers in fixed window of length #
                               EXAMPLE: --window=20 (window of length 20)
         --windowgroup=#       count oligomers in fixed window of length #, 2#, ...
-                              EXAMPLE: --window=20 (use a window of length 20, 40, 60, ...)
+                              EXAMPLE: --windowgroup=20 (use a window of length 20, 40, 60, ...)
         --all                 do not use windows
         --heuristic=#         count oligomers in variable size windows
                               set the heutistic for extracting windows. 
@@ -120,7 +120,7 @@ STATISTICS
 
 '''        
 
-VERSION = '2008.02.20'
+VERSION = '2009.12'
 USAGE = '''orm -l OLIGOMER_LENGTH [-i inputfile]
                 [-o outputfile] 
                 [--max parameter #][--min parameter #]
