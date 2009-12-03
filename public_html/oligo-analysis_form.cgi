@@ -33,7 +33,7 @@ $default{noov} = 'checked';
 $default{grouprc} = 'checked';
 $default{purge} = 'checked';
 $default{side} = 'over-represented';
-$default{to_matrix} = 0;
+$default{to_matrix} = '1';
 
 
 $default{zscore} = '';
@@ -520,7 +520,7 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 print $query->checkbox(-name=>'to_matrix',
 		       -checked=>$default{to_matrix},
 		       -label=>'');
-print "&nbsp;Convert assembled patterns to Position-Specific Scoring Matrices (<font color=red>Can be time-consuming</font>)";
+print "&nbsp;Convert assembled patterns to Position-Specific Scoring Matrices (<font color=red>Can be time-consuming for large sequence files</font>).";
 print "<BR>";
 
 
