@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.18 2009/11/19 08:43:22 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.19 2009/12/03 11:24:15 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -19,21 +19,23 @@ matrix-from-patterns
 
 Extract one or several position-specific scoring matrices (PSSM) from
 a set of sequences, using a seeds a set of patterns (the output of
-oligo-analysis or dyad-analysis).
+I<oligo-analysis> or I<dyad-analysis>) of an assembly made of such
+patterns (output of I<pattern-assembly>).
 
 The program proceeds in two steps:
 
 1) A B<significance matrix> is built by assembling the patterns (with
-I<pattern assembly>), and converting each assembly to a
-position-specific scoring matrix (the conversion is performed with
-I<convert-matrix>).  This significance matrix contains one row per
-residue, one column per position of the pattern assembly, and each
-cell indicates the maximal significance value observed for that
-residue at that position in the assembly.
+   I<pattern assembly>), and converting each assembly to a
+   position-specific scoring matrix (the conversion is performed with
+   I<convert-matrix>).  This significance matrix contains one row per
+   residue, one column per position of the pattern assembly, and each
+   cell indicates the maximal significance value observed for that
+   residue at that position in the assembly.
 
-2) The significance matrix is then used to scan the input sequences
-(with I<matrix-scan>), and collect all sites above a given threshold
-of P-value. A I<count matrix> is built from these sites.
+2) The significance matrix is then used as seed for collecting a PSSSM
+   from the input sequences. The matrix is collected either with
+   I<info-gibbs> (since Nov 2009) or with I<matrix-scan> (slow and
+   obsolete).
 
 Advantage of this two-step process: classically, position-specific
 scoring matrices are build from an alignemnt of sites (e.g. binding
@@ -42,15 +44,17 @@ gives a good indication of the motif, but it does not always reflect
 the real sites present in the sequence, because it is built by
 assembling overlapping oligonucleotides (or dyads), irrespective of
 the fact that these patterns are found together or not in the input
-sequence. The program matrix-from-pattern solves this problem by using
-the assembled patterns as seeds to perform a matrix-based scanning of
-the input sequences, and collect the most likely instances of the
-motif (putative sites). These sites are then used to build an count
-matrix, reflecting the absolute residue frequencies at each position
-of the collected sites.
+sequence. 
 
-Weakness of this approach: the scanning stepc an be time-consuming
-when the input sequences are large (e.g. for whole-genome moti
+The program I<matrix-from-pattern> solves this problem by using the
+assembled patterns as seeds to perform a matrix-based scanning of the
+input sequences, and collect the most likely instances of the motif
+(putative sites). These sites are then used to build an count matrix,
+reflecting the absolute residue frequencies at each position of the
+collected sites.
+
+Weakness of this approach: the scanning step can be time-consuming
+when the input sequences are large (e.g. for whole-genome motif
 detection).
 
 =head1 AUTHORS
@@ -65,7 +69,8 @@ jvanheld@bigre.ulb.ac.be
 
 =head1 USAGE
 
-matrix-from-patterns -seq sequence_filfe [-pl pattern_file | -asmb assembly_file] \
+matrix-from-patterns -seq sequence_filfe \
+   [-pl pattern_file|-asmb assembly_file] \
    [-o output_prefix] [-v #]
 
 =head1 INPUT FORMAT
@@ -83,7 +88,7 @@ pattern-assembly.
 
 =head1 OUTPUT FORMAT
 
-The output file contains the matrix or matrices extrated from the
+The output file contains one or several PSSM extracted from the
 sequences. The supported output formats are the same as for
 convert-matrix.
 
@@ -121,6 +126,16 @@ package main;
     local $max_asmb_size = 50;
     local $max_asmb_nb = 5;
     local $asmb_maxpat = 100;
+
+    ## Collect method
+    local $collect_method = "info-gibbs";
+    local %supported_collect_method = ("info-gibbs"=>1,
+				       "matrix-scan"=>1);
+    local $supported_collect_methods = join(",", keys(%supported_collect_method));
+
+    ## Parameters for info-gibbs
+    local $gibbs_iter = 1; ## Number of iterations
+    local $gibbs_final = 0; ## Run the final cycle. For some reason, the final cycle takes too much time with large sequence files, I temporarily inactivate it.
 
     ## Parameters for convert-matrix
 
@@ -171,6 +186,7 @@ package main;
     }
     $outfile{sig_matrices} = $outfile{output}."_sig_matrices.txt";
     $outfile{sig_sites} = $outfile{output}."_sig_sites.ft";
+    $outfile{gibbs_matrices} = $outfile{output}."_gibbs_matrices.txt";
     $outfile{count_matrices} = $outfile{output}."_count_matrices.txt";
 
     ################################################################
@@ -209,49 +225,11 @@ package main;
     print $log "; assemblies -> significance matrices\n", $convert_cmd, "\n";
     &doit($convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
-    ################################################################
-    ## Scan sequences to collect sites
-    &RSAT::message::TimeWarn("Collecting sites with significance matrices") if ($main::verbose >= 2);
-    my $scan_cmd = "${SCRIPTS}/matrix-scan -v 1";
-    $scan_cmd .= " -i ".$infile{sequence};
-    $scan_cmd .= " -seq_format ".$seq_format;
-    $scan_cmd .= " -m ".$outfile{sig_matrices};
-    $scan_cmd .= " -n skip";
-    $scan_cmd .= " -matrix_format tab";
-    $scan_cmd .= " ".$strands;
-    $scan_cmd .= " -return sites,pval";
-    $scan_cmd .= " ".$scan_parameters;
-    $scan_cmd .= " -o ".$outfile{sig_sites};
-    print $log "; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
-
-    ################################################################
-    ## Convert the collected sites to count matrices
-    &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 2);
-    my $convert2_cmd = "; ${SCRIPTS}/convert-matrix -v 1";
-    $convert2_cmd .= " -i ".$outfile{sig_sites};
-    $convert2_cmd .= " -from feature -to tab";
-    $convert2_cmd .= " -return counts,parameters";
-#    $convert2_cmd .= " -sort desc information.per.column";
-    $convert2_cmd .= " -return sites" if ($return_fields{sites});
-    $convert2_cmd .= " -return logo" if ($return_fields{logo});
-    $convert2_cmd .= " -o ".$outfile{count_matrices};
-    print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
-    &doit($scan_cmd.$convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-
-#     ################################################################
-#     ## convert sites to fasta format
-#     ## THIS DOES NOT WORK BECAUSE ALL THE SITES FOR ALL MATRICES ARE IN THE SAME FILE
-#     my $site_cmd = "";
-#     if ($return_fields{sites}) {
-#       &RSAT::message::TimeWarn("Converting sites to fasta") if ($main::verbose >= 2);
-#       $site_cmd = "convert-features -i ".$outfile{sig_sites};
-#       $site_cmd .= " -from ft -to fasta";
-#       $site_cmd .= " -o ".$outfile{sig_sites}.".fasta";
-#     } else {
-#       &RSAT::message::TimeWarn("Deleting site file") if ($main::verbose >= 2);
-#       $site_cmd = "rm -f ".$outfile{sig_sites};
-#     }
-#     &doit($site_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    if ($collect_method eq "matrix-scan") {
+      &ScanForSites();
+    } else {
+      &InfoGibbs();
+    }
 
     ################################################################
     ## Finish verbose
@@ -294,15 +272,13 @@ sub PrintOptions {
 sub ReadArguments {
 #    foreach my $a (0..$#ARGV) {
     my $arg;
-    
     my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
-    
 
     while (scalar(@arguments) >= 1) {
       $arg = shift (@arguments);
+
 	## Verbosity
 =pod
-	    
 
 =head1 OPTIONS
 
@@ -319,7 +295,7 @@ Level of verbosity (detail in the warning messages during execution)
 	    } else {
 		$main::verbose = 1;
 	    }
-	    
+
 	    ## Help message
 =pod
 
@@ -330,7 +306,7 @@ Display full help message
 =cut
 	} elsif ($arg eq "-h") {
 	    &PrintHelp();
-	    
+
 	    ## List of options
 =pod
 
@@ -341,7 +317,6 @@ Same as -h
 =cut
 	} elsif ($arg eq "-help") {
 	    &PrintOptions();
-	    
 
 	    ## Input file
 =pod
@@ -399,10 +374,9 @@ Note that when matrix-from-patterns is fed with pre-assembled patterns
 
 =cut
 	} elsif ($arg eq "-max_asmb_nb") {
-#	  &RSAT::error::FatalError("Options -asmb and -max_asmb_nb are mutually exclusive")
-#	    if (defined($infile{assembly}));
 	  $max_asmb_nb = shift(@arguments);
-
+	  &RSAT::error::FatalError($max_asmb_nb, "is not a valid value for option -max_asmb_nb (should be Natural number).")
+	    unless (&IsNatural($max_asmb_nb));
 
 	    ## Assembly file
 =pod
@@ -464,6 +438,40 @@ The sites are exported in fasta format, after each count matrix.
 =cut
 	} elsif ($arg eq "-sites") {
 	    $return_fields{sites} = 1;
+
+	    ## Method for converting sig matrices into count matrices
+
+=pod
+
+=item B<-collect_method>
+
+Method for converting sig matrices into count matrices. 
+
+Supported methods:
+
+=over
+
+=item I<info-gibbs> (Default)
+
+The significance matrices (obtained from I<pattern-assembly> are used
+as seeds by I<info-gibbs>, which runs a few iterations of gibbs
+sampling (default: 3).
+
+=item I<matrix-scan> (slow, obsolete)
+
+The significance matrices are used to collect from the input sequences
+all the sites passing a given P-value threshold. Those sites are then
+aligned to buil count matrices. This was the original conversion
+method, but presents some drawbacks. Firstly, the original
+implementation of matrix-scan is quite low (2009 version). Secondly,
+some matrices may fail to return any site below the P-value
+threshold. We therefore recommend to use the info-gibbs option.
+
+=cut
+	} elsif ($arg eq "-collect_method") {
+	    $collect_method = shift(@arguments);
+	    &RSAT::error::FatalError($collect_method, "is not a valid collect method. Supported: $supported_collect_methods")
+	      unless ($supported_collect_method{$collect_method});
 
 	    ## Return logos
 =pod
@@ -529,6 +537,80 @@ sub Verbose {
 	    print $log ";\t$key\t$value\n";
 	}
     }
+}
+
+################################################################
+## Scan sequences to collect sites
+sub ScanForSites {
+    &RSAT::message::TimeWarn("Collecting sites with significance matrices") if ($main::verbose >= 2);
+    my $scan_cmd = "${SCRIPTS}/matrix-scan -v 1";
+    $scan_cmd .= " -i ".$infile{sequence};
+    $scan_cmd .= " -seq_format ".$seq_format;
+    $scan_cmd .= " -m ".$outfile{sig_matrices};
+    $scan_cmd .= " -n skip";
+    $scan_cmd .= " -matrix_format tab";
+    $scan_cmd .= " ".$strands;
+    $scan_cmd .= " -return sites,pval";
+    $scan_cmd .= " ".$scan_parameters;
+    $scan_cmd .= " -o ".$outfile{sig_sites};
+    print $log "; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
+
+    ################################################################
+    ## Convert the collected sites to count matrices
+    &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 2);
+    my $convert2_cmd = "; ${SCRIPTS}/convert-matrix -v 1";
+    $convert2_cmd .= " -i ".$outfile{sig_sites};
+    $convert2_cmd .= " -from feature -to tab";
+    $convert2_cmd .= " -return counts,parameters";
+#    $convert2_cmd .= " -sort desc information.per.column";
+    $convert2_cmd .= " -return sites" if ($return_fields{sites});
+    $convert2_cmd .= " -return logo" if ($return_fields{logo});
+    $convert2_cmd .= " -o ".$outfile{count_matrices};
+    print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
+    &doit($scan_cmd.$convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+}
+
+################################################################
+## Run infogibbs to convert the significance matrices into count matrices
+sub InfoGibbs {
+    &RSAT::message::TimeWarn("Running info-gibbs with significance matrices as seeds") if ($main::verbose >= 2);
+    my $gibbs_cmd = $ENV{RSAT}."/bin/info-gibbs";
+    unless (-e $gibbs_cmd) {
+      $gibbs_cmd = `which info-gibbs`;
+      chomp($gibbs_cmd);
+    }
+    &RSAT::error::FatalError("info-gibbs command is not in your path")
+      unless ($gibbs_cmd);
+
+    $gibbs_cmd .= " -v 1";
+    $gibbs_cmd .= " -i ".$infile{sequence};
+    $gibbs_cmd .= " --sigmatrix ".$outfile{sig_matrices};
+#    $gibbs_cmd .= " -w ".$gibbs_width;
+    if ($strands eq "-2str") {
+      $gibbs_cmd .= " -s +-";
+    } else {
+      $gibbs_cmd .= " -s +";
+    }
+    $gibbs_cmd .= " -n ".$gibbs_iter;
+    $gibbs_cmd .= " --nrun ".1;
+    $gibbs_cmd .= " --finalcycle" if ($gibbs_final);
+    $gibbs_cmd .= " > ".$outfile{gibbs_matrices};
+    print $log "; significance matrices + sequences -> count matrices\n", $gibbs_cmd, "\n";
+    &doit($gibbs_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+    ################################################################
+    ## Convert matrix from info-gibbs and generate logos if required
+    &RSAT::message::TimeWarn("Converting info- matrices") if ($main::verbose >= 2);
+    my $convert2_cmd = "${SCRIPTS}/convert-matrix -v 1";
+    $convert2_cmd .= " -i ".$outfile{gibbs_matrices};
+    $convert2_cmd .= " -from tab -to tab";
+#    $convert2_cmd .= " -from info-gibbs -to tab";
+    $convert2_cmd .= " -return counts,parameters";
+    $convert2_cmd .= " -return sites" if ($return_fields{sites});
+    $convert2_cmd .= " -return logo" if ($return_fields{logo});
+    $convert2_cmd .= " -o ".$outfile{count_matrices};
+    print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
+    &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 }
 
 
