@@ -327,7 +327,7 @@ site. If not, die.
 sub check_name {
   my ($organism_name) = @_;
   unless ($organism_name) {
-    &RSAT::error::FatalError("you should specify an organism name");
+    &RSAT::error::FatalError("You should specify an organism name");
   }
   my $supported = &is_supported($organism_name);
   unless ($supported) {
