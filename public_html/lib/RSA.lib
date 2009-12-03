@@ -636,10 +636,11 @@ $supported_feature_types = join ",", @supported_feature_types;
 ## Check if the specified organism name is supported on this server
 sub CheckOrganismName {
     my ($organism_name) = @_;
-     unless ($supported_organism{$organism_name}) {
-	&RSAT::error::FatalError("Organism $organism_name is not supported.",
-		    "Supported on this site : \n".&ListSupportedOrganisms());
-    }
+    &RSAT::OrganismManager::check_name($organism_name);
+#     unless ($supported_organism{$organism_name}) {
+#	&RSAT::error::FatalError("Organism $organism_name is not supported.",
+#		    "Supported on this site : \n".&ListSupportedOrganisms());
+#    }
 }
 
 ################################################################
