@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.32 2009/04/02 23:49:27 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.33 2009/12/03 11:25:22 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -196,6 +196,7 @@ if ($query->param('output') eq "display") {
     print '<H4>Result</H4>';
     &PrintHtmlTable(RESULT, $result_file, true);
     close(RESULT);
+    @result_files = ('oligos', "$tmp_file_name.res");
 
     #### pattern assembly ####
     if ((&IsReal($query->param('lth_occ_sig'))) && ($query->param('lth_occ_sig')>= -1)) {
@@ -222,40 +223,12 @@ if ($query->param('output') eq "display") {
 	}
 	print "</PRE>\n";
 	close(ASSEMBLY);
+	push @result_files, ('assembly', "$tmp_file_name.asmb");
 
-
-# 	## Convert pattern-assembly result into matrix profiles to be displayed on the screen
-# 	$profile_file = "$TMP/$tmp_file_name.profile";
-# 	$profile_command = "$SCRIPTS/convert-matrix -v 1 ";
-# 	$profile_command .= " -in_format assembly -out_format patser";
-# 	$profile_command .= " -return profile,counts,parameters";
-# 	$profile_command .= " -i $assembly_file";
-# 	$profile_command .= " -o $profile_file";
-# 	print "<PRE>command to generate profiles: $profile_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
-# 	system "$profile_command";
-# 	print "<H2>Position-specific scoring matrices (PSSM)</H2>\n";
-# 	open PROFILE, $profile_file;
-# 	print "<PRE>\n";
-# 	while (<PROFILE>) {
-# 	  s|$ENV{RSAT}/||g;
-# 	  print;
-# 	}
-# 	print "</PRE>\n";
-# 	close(PROFILE);
-
-# 	## Convert pattern-assembly result into PSSM for piping to other tools
-# 	$pssm_file = "$TMP/$tmp_file_name.pssm";
-# 	$pssm_command = "$SCRIPTS/convert-matrix -v 0 ";
-# 	$pssm_command .= " -in_format assembly -out_format patser";
-# 	$pssm_command .= " -return counts";
-# 	$pssm_command .= " -i $assembly_file";
-# 	$pssm_command .= " -o $pssm_file";
-# 	print "<PRE>command to generate matrices: $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
-# 	system "$pssm_command";
 
 	## Convert pattern-assembly result into PSSM 
 	if ($query->param('to_matrix')) {
-	  $pssm_prefix = $TMP."/".$tmp_file_name."_pssm";
+	  $pssm_prefix = $tmp_file_name."_pssm";
 	  $sig_matrix_file = $pssm_prefix."_sig_matrices.txt";
 	  $pssm_file = $pssm_prefix."_count_matrices.txt";
 	  $pssm_command = "$SCRIPTS/matrix-from-patterns -v 1 ".$str;
@@ -264,22 +237,25 @@ if ($query->param('output') eq "display") {
 	  $pssm_command .= " -asmb ".$assembly_file;
 	  $pssm_command .= " -uth Pval 0.00025";
 	  $pssm_command .= " -bginput -markov 0";
-	  $pssm_command .= " -o ".$pssm_prefix;
+	  $pssm_command .= " -o ".$TMP."/".$pssm_prefix;
 	  print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 	  system "$pssm_command";
+	  push @result_files, ('significance matrices', $sig_matrix_file);
+	  push @result_files, ("gibbs matrices", $pssm_prefix."_gibbs_matrices.txt");
+	  push @result_files, ('count matrices', $pssm_file);
 
-	  print "<H2>Significance matrices</H2>\n";
-	  open SIG, $sig_matrix_file;
-	  print "<PRE>\n";
-	  while (<SIG>) {
-	    s|$ENV{RSAT}/||g;
-	    print;
-	  }
-	  print "</PRE>\n";
-	  close(SIG);
+#	  print "<H2>Significance matrices</H2>\n";
+#	  open SIG, $TMP."/".$sig_matrix_file;
+#	  print "<PRE>\n";
+#	  while (<SIG>) {
+#	    s|$ENV{RSAT}/||g;
+#	    print;
+#	  }
+#	  print "</PRE>\n";
+#	  close(SIG);
 
-	  print "<H2>Count matrices</H2>\n";
-	  open PSSM, $pssm_file;
+	  print "<H2>Matrices</H2>\n";
+	  open PSSM, $TMP."/".$pssm_file;
 	  print "<PRE>\n";
 	  while (<PSSM>) {
 	    s|$ENV{RSAT}/||g;
@@ -290,8 +266,9 @@ if ($query->param('output') eq "display") {
 	}
     }
 
+    &PrintURLTable(@result_files);
     &PipingForm();
-    
+
 } elsif ($query->param('output') =~ /server/i) {
     &ServerOutput("$command", $query->param('user_email'));
 } else {
@@ -326,7 +303,7 @@ sub PipingForm {
       $to_matrix_scan .= "<b><font color='red'>New !</font></b>";
       $to_matrix_scan .= "<FORM METHOD='POST' ACTION='matrix-scan_form.cgi'>";
       $to_matrix_scan .= "<INPUT type='hidden' NAME='title' VALUE='$title'>";
-      $to_matrix_scan .= "<INPUT type='hidden' NAME='matrix_file' VALUE='$pssm_file'>";
+      $to_matrix_scan .= "<INPUT type='hidden' NAME='matrix_file' VALUE='".${TMP}."/".$pssm_file."'>";
       $to_matrix_scan .= "<INPUT type='hidden' NAME='matrix_format' VALUE='tab'>";
       $to_matrix_scan .= "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>";
       $to_matrix_scan .= "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>";
