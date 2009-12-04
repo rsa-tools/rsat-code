@@ -99,7 +99,7 @@ void help()
 "                          be found (incompatible with -e)\n"
 "\n"
 "    -e #, --mean_sps=#    mean number of motif occurrences (sites) expected per sequence\n"
-"                          that are expected to be found (incompatible with -w)\n"
+"                          that are expected to be found (incompatible with --sites)\n"
 "                          DEFAULT: 1\n"
 "\n"
 "    --zoops               try to find 0 or 1 site per sequence\n"
