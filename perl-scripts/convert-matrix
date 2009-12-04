@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.88 2009/11/16 21:21:55 jvanheld Exp $
+# $Id: convert-matrix,v 1.89 2009/12/04 07:54:32 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -716,30 +716,32 @@ INPUT/OUTPUT FORMATS
         the sampled segments). InfoGibbs is currently under
         development in the RSAT team (Grégory Gathy, unpublished).
 
-    cb /trap (input/output)
-	Cluster-Buster output file (usual extention .cb). The header
-	line starts with a > (like in fasta format). The matrix is
-	then printed "vertically" on the following lines: each column
-	corresponds to one residue, and each row to a position in the
-	alignment.
-	For TRAP (Roider et al, Bioinformatics, 2007), the "/name=" is necessary for the program to work.
-	
+    cluster-buster (input/output)
+	cluster-buster output file (usual extention .cb), which can be
+	used as input by various other programs (clover, trap). The
+	header line starts with a > (like in fasta format). The matrix
+	is then printed "vertically" on the following lines: each
+	column corresponds to one residue, and each row to a position
+	in the alignment.  For TRAP (Roider et al, Bioinformatics,
+	2007), the "/name=" is necessary for the program to work.
+
 	>element1 /name=element1
 	0  4 2 14
 	12 0 0 8
 	8  0 1 11
 	20 0 0 0
 	....
-	
 
     feature (input)
-        Output file from convert-features. 
+
+        Feature file, in the default output format from
+        convert-features (extension .ft).
 
         This format allows to obtain a PSSM from a list of (supposedly
         pre-aligned) sites. These sites can themselves have been
         collected by scanning sequences with a matrix (matrix-scan) or
         by searching string-based patterns in a sequence
-        (dna-pattern). 
+        (dna-pattern).
 
         Converting features to matrices can for example be useful for
         iterative refinment of a matrix (colecting sites from a
