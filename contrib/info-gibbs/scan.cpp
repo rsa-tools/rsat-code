@@ -56,20 +56,19 @@ int word_is_valid(int *seq, int start, int l)
     return 1;
 }
 
-SITES scan(vector<string> raw_sequences, Sequences &sequences, Array &matrix, Markov &bg, int n)
+SITES matrix_scan(vector<string> raw_sequences, Sequences &sequences, Array &matrix, Markov &bg, Parameters &params)
 {
     int l = matrix.J;
-    SITES sites = empty_sites(n, l);
-    
+    SITES sites = empty_sites(params.n, l + params.flanks * 2);
     for (int s = 0; s < sequences.size(); s++)
     {
-        int maxpos = sequences[s].size() - l;        
-        for (int i = 0; i <= maxpos; i++)
+        int maxpos = sequences[s].size() - (l + params.flanks);        
+        for (int i = params.flanks; i <= maxpos; i++)
         {
-            if (!word_is_valid(sequences[s].data, i, l))
+            if (!word_is_valid(sequences[s].data, i - params.flanks, l + params.flanks * 2))
                 continue;            
             double W = matrix.sum(&sequences[s].data[i]);
-            try_add_sites(sites, s, i, W);
+            try_add_sites(sites, s, i - params.flanks, W);
         }
     }
     

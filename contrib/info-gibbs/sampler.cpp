@@ -115,7 +115,6 @@ struct LLR
     }
 };
 
-
 void count_matrix(Array &matrix, SITES &motif, Sequences &sequences)
 {
     int i,j,k;
@@ -231,7 +230,6 @@ double P_M(Array &matrix, int w, int l, int start)
     Markov
     See Paper
     IC = A - (X + Y)
-
 */
 double IC_Markov(SITES &motif, Sequences &sequences, Array &matrix, Markov &markov, double pseudo=PSEUDO)
 {
@@ -277,7 +275,6 @@ double IC_Markov(SITES &motif, Sequences &sequences, Array &matrix, Markov &mark
     }
     return A - (X + Y);
 }
-
 
 /*
   Log likelihood ratio
@@ -334,7 +331,7 @@ void print_sites(SITES &sites)
 {
     for (unsigned int i = 0; i < sites.size(); i++)
     {
-        printf("%d %d\n", sites[i].s, sites[i].p);
+        printf("%d %d\n", sites[i].s + 1, sites[i].p + 1);
     }
 }
 
@@ -369,7 +366,7 @@ SITES all_sites(Sequences &sequences, int l, int m1, int m2)
             
             // remove AAAAAAAA, .....
             int max_base_occ = 8;
-            for (int base = 0; base < 4; base++)
+            for (int base = 0; base < ALPHABET_SIZE; base++)
             {
                 int c = 0;
                 for (int y = 0; y < l; y++){
@@ -402,11 +399,11 @@ SITES all_sites(Sequences &sequences, int l, int m1, int m2)
     return sites;
 }
 
-#define INVALID -1
-SITES remove_neighbours(SITES &allsites, SITES &motif, int dmin=0, int r=-1)
+SITES remove_neighbours(SITES &allsites, SITES &motif, int nseq, int dmin=0, int r=-1)
 {
     if (dmin == 0)
         return allsites;
+    
     SITES sites = allsites;
     for (int k = 0; k < (int) motif.size(); k++)
     {
@@ -414,28 +411,74 @@ SITES remove_neighbours(SITES &allsites, SITES &motif, int dmin=0, int r=-1)
             continue;
         for (int i = 0; i < (int) sites.size(); i++)
         {
-             if (sites[i].s > motif[k].s)
-                break;
-             else if (sites[i].s < motif[k].s)
+            if (ABS(sites[i].s - motif[k].s) != 0 && ABS(sites[i].s - motif[k].s) != nseq)
                 continue;
-             // motif[k].s == allsites[k].s
-             if (sites[i].p >= motif[k].p + dmin)
-                break;
-             if ( (sites[i].p > motif[k].p - dmin) && (sites[i].p < motif[k].p + dmin) )
-                sites[i].s = INVALID; //invalidate site
+            if (ABS(sites[i].p - motif[k].p) <= dmin)
+                sites[i].p = -1; //invalidate site
         }
     }
     SITES new_sites;
     for (int i = 0; i < (int) sites.size(); i++)
     {
-        if (sites[i].s != INVALID)
+        if (sites[i].p != -1) // invalid site ?
         {
             new_sites.push_back(sites[i]);
         }
     }
+
+    // DEBUG("allsites");
+    // print_sites(allsites);
+    // 
+    // DEBUG("motif");
+    // print_sites(motif);
+    // 
+    // DEBUG("new");
+    // print_sites(new_sites);
+    
     return new_sites;
 }
 
+// #define INVALID -1
+// SITES remove_neighbours(SITES &allsites, SITES &motif, int nseq, int dmin=0, int r=-1)
+// {
+//     if (dmin == 0)
+//         return allsites;
+// 
+//     DEBUG("allsites");
+//     print_sites(allsites);
+//     
+//     DEBUG("motif");
+//     print_sites(motif);
+//     SITES sites = allsites;
+//     for (int k = 0; k < (int) motif.size(); k++)
+//     {
+//         if (k == r)
+//             continue;
+//         for (int i = 0; i < (int) sites.size(); i++)
+//         {
+//              if (sites[i].s > motif[k].s)
+//                 break;
+//              else if (sites[i].s < motif[k].s)
+//                 continue;
+//              // motif[k].s == allsites[k].s
+//              if (sites[i].p >= motif[k].p + dmin)
+//                 break;
+//              if ( (sites[i].p > motif[k].p - dmin) && (sites[i].p < motif[k].p + dmin) )
+//                 sites[i].s = INVALID; //invalidate site
+//         }
+//     }
+//     SITES new_sites;
+//     for (int i = 0; i < (int) sites.size(); i++)
+//     {
+//         if (sites[i].s != INVALID)
+//         {
+//             new_sites.push_back(sites[i]);
+//         }
+//     }
+//     DEBUG("new");
+//     print_sites(new_sites);
+//     return new_sites;
+// }
 /***************************************************************************
  *                                                                         *
  *  MOTIF
@@ -453,18 +496,19 @@ void print_motif(SITES &motif, vector<string> &raw_sequences, Sequences &sequenc
     printf("; seq\tstrand\tpos\tsite\n");
 
     //sites
-    int nseq = raw_sequences.size();
+    int seqsize = raw_sequences.size();
     int seq;
     char strand_label;
-    
+
     for (int i = 0; i < n; i++)
     {
         int s = motif[i].s;
         int p = motif[i].p;
-        if (rc && s > nseq / 2)
+
+        if (rc == true && s >= seqsize / 2)
         {
             strand_label = '-';
-            seq = s - nseq / 2 + 1;
+            seq = s - seqsize / 2 + 1;
         }
         else
         {
@@ -503,21 +547,23 @@ bool inline is_in_sites(Site &site, SITES &sites)
     return false;
 }
 
-SITES random_motif(SITES &allsites, int n, int dmin=0)
+SITES random_motif(SITES &allsites, int n, int nseq, int dmin=0)
 {
     SITES motif;
     int j = 0;
     SITES sites = allsites;
     VERBOSE2("generating random motif\n");
-    while ((int) motif.size() < n && j++ < n*2)
+    while ((int) motif.size() < n && j++ < n*2 && (int) sites.size() > 0)
     {
         int i = (int) (RAND * sites.size());
         if (!is_in_sites(sites[i], motif))
         {
             motif.push_back(sites[i]);
-            sites = remove_neighbours(sites, motif, dmin);
+            sites = remove_neighbours(sites, motif, nseq, dmin);
         }
     }
+    if ((int) motif.size() != n)
+        WARNING("number of sites is smaller than required");
     return motif;
 }
 
@@ -650,9 +696,9 @@ SITES shift(SITES &motif, Sequences &sequences, SITES &sites, Array &matrix, Mar
  *  SAMPLING
  *                                                                         *
  ***************************************************************************/
-int UPDATE = -1;
+int UPDATE = 0;
 void sample_update(SITES &allsites, Sequences &sequences, SITES &motif, Array &matrix, Markov &markov,\
-                    int l, double temperature, SamplingData &data, int dmin=0, int score_type=LLR_SCORE)
+                    int l, double temperature, SamplingData &data, int nseq, int dmin=0, int score_type=LLR_SCORE)
 {
     int n = motif.size();
     int r = 0;
@@ -672,13 +718,18 @@ void sample_update(SITES &allsites, Sequences &sequences, SITES &motif, Array &m
     Site *sampled_sites = data.sampled_sites;
     LLR llr_table = LLR(motif, r, matrix, l, markov, sequences, data.logp, PSEUDO);
 
-    // set update
-    if (UPDATE == -1)
-        UPDATE = n;
-
-    SITES sites = remove_neighbours(allsites, motif, dmin, r);
+    // // set update
+    // if (UPDATE == -1)
+    //     UPDATE = n;
+    
+    SITES sites = remove_neighbours(allsites, motif, nseq, dmin, r);
     //SITES &sites = allsites;
-    //DEBUG("sites=%d motif=%d\n", (int) sites.size(), (int) motif.size());
+    // DEBUG("allsites=%d sites=%d motif=%d\n", (int) allsites.size(), (int) sites.size(), (int) motif.size());
+    // DEBUG("motif r=%d", r);
+    // print_sites(motif);
+    //DEBUG("sites");
+    //print_sites(sites);
+
     int nsites = sites.size();
     double s = 0.0;
 
@@ -719,24 +770,20 @@ void sample_update(SITES &allsites, Sequences &sequences, SITES &motif, Array &m
         return;
     }
 
-    // choose new sites
-    for (int j = 0; j < UPDATE; j++)
+    // choose new site
+    // random choose
+    val = RAND * S;
+    for (i = 0; i < nsites; i++)
     {
-        // random choose
-        val = RAND * S;
-        for (i = 0; i < nsites; i++)
-        {
-            if (cdf[i] > val)
-                break;
-        }
+        if (cdf[i] > val)
+            break;
+    }
 
-        // update motif
-        Site new_site = sampled_sites[i];
-        if (!is_in_sites(new_site, motif))
-        {
-            motif[r] = new_site;
-        }
-        r = (int) (RAND * n);
+    // update motif
+    Site new_site = sampled_sites[i];
+    if (!is_in_sites(new_site, motif))
+    {
+        motif[r] = new_site;
     }
 }
 
@@ -763,7 +810,7 @@ Result find_one_motif(vector<string> &raw_sequences, Sequences & sequences, SITE
     double temperature = params.temperature;
     int n_run = params.nrun;
     //bool rc = params.rc;
-    int dmin = params.dmin;
+    //int dmin = params.dmin;
     
     double current_llr     = 0.0;
     double current_ic      = 0.0;
@@ -798,7 +845,7 @@ Result find_one_motif(vector<string> &raw_sequences, Sequences & sequences, SITE
         if (params.start_from_sites)
             motif = params.starting_sites;
         else
-            motif = random_motif(sites, n, dmin);
+            motif = random_motif(sites, n, params.nseq, params.dmin);
 
         current_ic = IC_Markov(motif, sequences, matrix, markov);
         if (max_iter == 0)
@@ -821,7 +868,7 @@ Result find_one_motif(vector<string> &raw_sequences, Sequences & sequences, SITE
         TRACE(trace, "iter\tic\tic_max\tllr\tbest_llr\n");
         while (++iter < max_iter)
         {
-            sample_update(sites, sequences, motif, matrix, markov, l, temperature, data, dmin, params.score_type);
+            sample_update(sites, sequences, motif, matrix, markov, l, temperature, data, params.nseq, params.dmin, params.score_type);
             motif = shift(motif, sequences, sites, matrix, markov, sites_cache);
             current_llr = llr(motif, sequences, matrix, markov);
             current_ic = IC_Markov(motif, sequences, matrix, markov);
@@ -933,10 +980,10 @@ Result final_cycle(Result result, SITES &sites, Sequences &sequences, Markov &ma
  *  MAIN GIBBS
  *                                                                         *
  ***************************************************************************/
-void run_sampler(vector<string> &raw_sequences, Sequences & sequences, Markov &markov, Parameters &params)
+void run_sampler(vector<string> &raw_sequences, Sequences &sequences, Markov &markov, Parameters &params)
 {
     
-    clock_t start_clock = clock();
+    //clock_t start_clock = clock();
     time_t rawtime;
     struct tm * timeinfo;
     time(&rawtime);
@@ -991,28 +1038,31 @@ void run_sampler(vector<string> &raw_sequences, Sequences & sequences, Markov &m
         all_results.push_back(best_result);
     }
 
-    clock_t end_clock = clock();
+    //clock_t end_clock = clock();
 
-    printf("; info-gibbs %d\n", VERSION);
-    printf("; %s\n", COMMAND_LINE);
-    printf("; title                         %s\n", params.title);
-    printf("; started at                    %s", asctime (timeinfo));
-    printf("; elapsed time (in seconds)     %.3f\n", (end_clock - start_clock) / (double) CLOCKS_PER_SEC);
-    printf("; random seed                   %d\n", SEED);
-    printf("; number of runs                %d\n", params.nrun);
-    printf("; number of iterations          %d\n", params.iter);
-    printf("; sequences (including rc)      %d\n", (int) sequences.size());
-    printf("; total size in bp              %d\n", (int) sequences.total_size());
-    printf("; expected motif occurrences    %d\n", params.n);
-    printf("; prior                         a:%.3f|c:%.3f|g:%.3f|t:%.3f\n", markov.priori[0], markov.priori[1], 
-                                                                    markov.priori[2], markov.priori[3]);
-    printf("; number of motifs              %d\n", params.motifs);
-
-    printf(";\n");
+    if (params.id == 1)
+    {
+        printf("; info-gibbs %d\n", VERSION);
+        printf("; %s\n", COMMAND_LINE);
+        printf("; title                         %s\n", params.title);
+        printf("; started at                    %s", asctime (timeinfo));
+        printf("; random seed                   %d\n", SEED);
+        printf("; number of runs                %d\n", params.nrun);
+        printf("; number of iterations          %d\n", params.iter);
+        printf("; sequences                     %d\n", (int) params.nseq);
+        printf("; total size in bp              %d\n", (int) sequences.total_size());
+        printf("; expected motif occurrences    %d\n", params.n);
+        printf("; prior                         a:%.3f|c:%.3f|g:%.3f|t:%.3f\n", markov.priori[0], markov.priori[1], 
+                                                                        markov.priori[2], markov.priori[3]);
+        printf("; motifs fo find                %d\n", params.motifs);
+        printf(";\n");
+    }
+    
+    //printf("; elapsed time (in seconds)     %.3f\n", (end_clock - start_clock) / (double) CLOCKS_PER_SEC);
 
     for (int m = 0 ; m < (int) all_results.size(); m++)
     {
-        printf("; motif                         %d\n", m + 1);
+        printf("; motif                         %d.%d\n", params.id, m + 1);
         printf("; avg.llr                       %.3f\n", all_results[m].avg_llr);
         printf("; avg.ic                        %.3f\n", all_results[m].avg_ic);
         print_motif(all_results[m].motif, raw_sequences, sequences, all_results[m].l, all_results[m].ic, all_results[m].llr, params.rc);
