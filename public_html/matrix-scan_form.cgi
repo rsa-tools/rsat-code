@@ -121,6 +121,7 @@ $default{uth_occ_sig_rank} = "3";
 
 ### print the form ###
 &RSA_header("matrix-scan");
+&ListParameters() if ($ENV{rsat_echo} >=2);
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
