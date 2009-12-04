@@ -204,7 +204,6 @@ print "<PRE>command: $command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 &SaveCommand("$command", "$TMP/$tmp_file_name");
 
 if ($query->param('output') =~ /display/i) {
-
     &PipingWarning();
 
     ### execute the command ###
@@ -253,20 +252,24 @@ if ($query->param('output') =~ /display/i) {
 
 	## Convert pattern-assembly result into PSSM
 	if ($query->param('to_matrix')) {
-	  $pssm_prefix = $tmp_file_name."_pssm";
-	  $sig_matrix_file = $pssm_prefix."_sig_matrices.txt";
-	  $pssm_file = $pssm_prefix."_count_matrices.txt";
+	  my $pssm_prefix = $tmp_file_name."_pssm";
+	  my $sig_matrix_file = $pssm_prefix."_sig_matrices.txt";
+	  $gibbs_matrix_file = $pssm_prefix."_gibbs_matrices.txt";
+	  $pssm_file = $pssm_prefix."_count_matrices.txt"; ## has to be global for the piping form
 	  $pssm_command = "$SCRIPTS/matrix-from-patterns -v 1 ".$str;
 	  $pssm_command .= " -seq ".$sequence_file;
 	  $pssm_command .= " -format $sequence_format";
 	  $pssm_command .= " -asmb ".$assembly_file;
+	  $pssm_command .= " -gibbs_msps ".$query->param('gibbs_msps');
+	  $pssm_command .= " -gibbs_iter ".$query->param('gibbs_iter');
+	  $pssm_command .= " -gibbs_final" if ($query->param('gibbs_final'));
 	  $pssm_command .= " -uth Pval 0.00025";
 	  $pssm_command .= " -bginput -markov 0";
 	  $pssm_command .= " -o ".$TMP."/".$pssm_prefix;
 	  print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 	  system "$pssm_command";
 	  push @result_files, ('significance matrices', $sig_matrix_file);
-	  push @result_files, ("gibbs matrices", $pssm_prefix."_gibbs_matrices.txt");
+	  push @result_files, ('info-gibbs matrices', $gibbs_matrix_file);
 	  push @result_files, ('count matrices', $pssm_file);
 
 #	  print "<H2>Significance matrices</H2>\n";
@@ -279,15 +282,25 @@ if ($query->param('output') =~ /display/i) {
 #	  print "</PRE>\n";
 #	  close(SIG);
 
-	  print "<H2>Matrices</H2>\n";
-	  open PSSM, $TMP."/".$pssm_file;
+	  print "<H2>Matrices (info-gibbs result)</H2>\n";
+	  open GIBBS, $TMP."/".$gibbs_matrix_file;
 	  print "<PRE>\n";
-	  while (<PSSM>) {
+	  while (<GIBBS>) {
 	    s|$ENV{RSAT}/||g;
 	    print;
 	  }
 	  print "</PRE>\n";
-	  close(PSSM);
+	  close(GIBBS);
+
+# 	  print "<H2>Matrices</H2>\n";
+# 	  open PSSM, $TMP."/".$pssm_file;
+# 	  print "<PRE>\n";
+# 	  while (<PSSM>) {
+# 	    s|$ENV{RSAT}/||g;
+# 	    print;
+# 	  }
+# 	  print "</PRE>\n";
+# 	  close(PSSM);
 	}
       }
     }
@@ -321,19 +334,27 @@ sub PipingForm {
 	$strand_opt .= " insensitive";
     }
 
-    ## matrix scanning
+    ## matrix scanning and conversion
     if ($query->param('to_matrix')) {
+      ## Prepare form for sending matrices to convert-matrix
       $to_matrix_scan = "<td valign=bottom align=center>";
-      $to_matrix_scan .= "<b><font color='red'>New !</font></b>";
       $to_matrix_scan .= "<FORM METHOD='POST' ACTION='matrix-scan_form.cgi'>";
-      $to_matrix_scan .= "<INPUT type='hidden' NAME='title' VALUE='$title'>";
-      $to_matrix_scan .= "<INPUT type='hidden' NAME='matrix_file' VALUE='$pssm_file'>";
+      $to_matrix_scan .= "<INPUT type='hidden' NAME='matrix_file' VALUE='$TMP/$pssm_file'>";
       $to_matrix_scan .= "<INPUT type='hidden' NAME='matrix_format' VALUE='tab'>";
       $to_matrix_scan .= "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>";
       $to_matrix_scan .= "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>";
       $to_matrix_scan .= "<INPUT type='submit' value='matrix-based pattern matching (matrix-scan)'>";
       $to_matrix_scan .= "</FORM>";
       $to_matrix_scan .= "</TD>";
+
+      ## Prepare form for sending matrices to convert-matrix
+      $to_convert_matrix = "<td valign=bottom align=center>";
+      $to_convert_matrix .= "<FORM METHOD='POST' ACTION='convert-matrix_form.cgi'>";
+      $to_convert_matrix .= "<INPUT type='hidden' NAME='matrix_file' VALUE='$TMP/$gibbs_matrix_file'>";
+      $to_convert_matrix .= "<INPUT type='hidden' NAME='matrix_format' VALUE='tab'>";
+      $to_convert_matrix .= "<INPUT type='submit' value='matrix conversion'>";
+      $to_convert_matrix .= "</FORM>";
+      $to_convert_matrix .= "</TD>";
     }
 
   print <<End_of_form;
@@ -359,6 +380,8 @@ sub PipingForm {
 </TD>
 
 $to_matrix_scan
+
+$to_convert_matrix
 
 <td valign=bottom align=center>
 <FORM METHOD="POST" ACTION="pattern-assembly_form.cgi">
