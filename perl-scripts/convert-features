@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.16 2009/11/14 07:00:28 jvanheld Exp $
+# $Id: convert-features,v 1.17 2009/12/04 15:02:34 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -388,6 +388,10 @@ FORMAT DESCRIPTIONS
 	      chr7	127478198  127479365  Neg3  0  -  127478198  127479365  0,0,255
 	      chr7	127479365  127480532  Pos5  0  +  127479365  127480532  255,0,0
 	      chr7	127480532  127481699  Neg4  0  -  127480532  127481699  0,0,255
+WISH LIST
+
+   Add support for importing cluster-buster and clover files.
+
 
 End_of_help
   close HELP;
