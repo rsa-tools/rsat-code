@@ -170,6 +170,6 @@ struct Array
 
 };
 
-int read_matrix(Array &matrix, char *filename);
+Array read_matrix(FILE *fp);
 
 #endif

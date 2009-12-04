@@ -29,12 +29,9 @@ using namespace std;
 
 #define ALPHABET_SIZE 4
 #define ALPHABET "ACGT"
-//#define PSEUDO 1.0
 
 extern double PSEUDO;
-extern int UPDATE;
 extern int SEED;
-
 
 struct Site 
 {
@@ -92,6 +89,9 @@ struct Parameters
     bool finalcycle;
     bool start_from_sites;
     SITES starting_sites;
+    int id;
+    int flanks;
+    int nseq; // number of sequences (!= sequences.size() that containts rc)
 };
 
 // run the sampler & print the results on stdout

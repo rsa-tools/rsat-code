@@ -102,6 +102,8 @@ void help()
 "                          that are expected to be found (incompatible with -w)\n"
 "                          DEFAULT: 1\n"
 "\n"
+"    --zoops               try to find 0 or 1 site per sequence\n"
+"\n"
 "    -m #, --motifs=#      number of motifs to extract (one by default)\n"
 "\n"
 "    -b #, --bgfile=#      use # predefined INCLUSive background model\n"
@@ -115,9 +117,11 @@ void help()
 "\n"
 "    -r #  --nrun=#        try to run the Gibbs sampling seach # times\n"
 "\n"
-"    --finalcycle          try to collect the N best sites using their weight scores \n"
-"\n"
+// "    --finalcycle          try to collect the N best sites using their weight scores \n"
+// "\n"
 "    --sigmatrix=#         start sampling form sites collected by scanning the sequences with sig matrix # \n"
+"\n"
+"    --flanks=#            when using --sigmatrix add extra # positions arround the matrix\n"
 "\n"
 "    --rseed=#             set random seed to #\n"
 "\n"
@@ -135,10 +139,8 @@ void help()
  */
 int main(int argc, char *argv[])
 {
-
     VERBOSITY = 0;
     Parameters params;
-
     params.iter     = 2000;    // iterations
     params.n        = 0;       // a motif is composed of w sites (or words)
     params.e        = 1.0;     // expected number of motif occurrences per sequence
@@ -156,9 +158,13 @@ int main(int argc, char *argv[])
     params.score_type = LLR_IC_SCORE;
     params.title = (char *) "";
     params.finalcycle = false;
+    params.id = 1;
+    params.flanks = 0;
+    params.nseq = 0;
 
     int optchar;
     int l;
+    int w_is_set = FALSE;
     char *strand;    // "+-" "+"
     char *seqfile = NULL;
     char *bgfile  = NULL;
@@ -194,13 +200,13 @@ int main(int argc, char *argv[])
         { "temperature", required_argument, NULL, 't' },
         { "bgfile",      required_argument, NULL, 'b' },
         { "verbose",     required_argument, NULL, 'v' },
-        { "update",      required_argument, NULL, 'u' },
         { "dmin",        required_argument, NULL, 'd' },
         { "motifs",      required_argument, NULL, 'm' },
         { "rseed",       required_argument, NULL, 'z' },
         { "pseudo",      required_argument, NULL, 'p' },
         { "title",       required_argument, NULL, 'T' },
-        { "sigmatrix",      required_argument, NULL, 'M' },
+        { "sigmatrix",   required_argument, NULL, 'M' },
+        { "flanks",      required_argument, NULL, 'K' },
 
         { "llr",         no_argument,       NULL, 'L' },
         { "pqllr",       no_argument,       NULL, 'X' },
@@ -208,12 +214,14 @@ int main(int argc, char *argv[])
         { "ic",          no_argument,       NULL, 'I' },
         { "pq",          no_argument,       NULL, 'Q' },
         { "help",        no_argument,       NULL, 'h' },
-        { "finalcycle",  no_argument,       NULL, 'F' },
+//        { "finalcycle",  no_argument,       NULL, 'F' },
+        { "zoops",       no_argument,       NULL, 'Z' },
+
         { "version",     no_argument,       NULL, 'V' },
         { NULL,          no_argument,       NULL, 0   }
     };
     int longIndex;
-    
+
     while ((optchar = getopt_long(argc, argv, optString, longOpts, &longIndex )) != -1)
     {   
         switch (optchar) 
@@ -228,7 +236,9 @@ int main(int argc, char *argv[])
             return 0;
             break;
             
-            case 'w': 
+            case 'w':
+            if (matfile != NULL)
+                ERROR("-w option is incompatible with the --sigmatrix option");
             l = atoi(optarg);
             CHECK_VALUE(l, 1, 100, "invalid value for length (should be between 0 and 100)")
             if (params.maxspacing != 0)
@@ -241,6 +251,7 @@ int main(int argc, char *argv[])
                 params.m1 = l;
                 params.m2 = 0;
             }
+            w_is_set = TRUE;
             break; 
 
             case 'G': 
@@ -268,14 +279,15 @@ int main(int argc, char *argv[])
             CHECK_VALUE(params.e, 0.001, 1000, "invalid value for e (should be between 0.001 and 1000)")
             break; 
 
+            case 'Z': 
+            params.e = 1.0;
+            params.dmin = 10000000;
+            CHECK_VALUE(params.e, 0.001, 1000, "invalid value for e (should be between 0.001 and 1000)")
+            break; 
+
             case 'r': 
             params.nrun = atoi(optarg);
             CHECK_VALUE(params.nrun, 1, 10000, "invalid number of run (should be between 1 and 10000)")
-            break; 
-
-            case 'u': 
-            UPDATE = atoi(optarg);
-            params.update = atoi(optarg);
             break; 
 
             case 't': 
@@ -293,8 +305,16 @@ int main(int argc, char *argv[])
             break;
 
             case 'M':
+            if (w_is_set)
+                ERROR("-w option is incompatible with the --sigmatrix option");
+
             matfile = (char *) strdup(optarg);
             break;
+
+            case 'K': 
+            params.flanks = atoi(optarg);
+            CHECK_VALUE(params.flanks, 0, 100, "invalid number of run (should be between 0 and 100)")
+            break; 
 
             case 'T':
             params.title = (char *) strdup(optarg);
@@ -323,9 +343,9 @@ int main(int argc, char *argv[])
             CHECK_VALUE(params.dmin, 0, 10000000, "invalid distance")
             break;
 
-            case 'F':
-            params.finalcycle = true;
-            break;
+            // case 'F':
+            // params.finalcycle = true;
+            // break;
 
             case 'L':
             params.score_type = LLR_SCORE;
@@ -371,6 +391,7 @@ int main(int argc, char *argv[])
         ERROR("must provide at least a fasta file");
     }
     
+    // read sequences
     vector<string> raw_sequences;
     if (read_fasta(raw_sequences, seqfile, params.rc) == 0)
     {
@@ -378,15 +399,14 @@ int main(int argc, char *argv[])
     }
     
     Sequences sequences = convert_sequences(raw_sequences);
+    if (params.rc == true)
+        params.nseq = sequences.size() / 2;
+    else
+        params.nseq = sequences.size();
 
     // set expected number of sites
     if (params.n == 0)
-    {
-        if (params.rc == true)
-            params.n = (int) (0.5 * sequences.len * params.e);
-        else
-            params.n = (int) (sequences.len * params.e);
-    }
+        params.n = (int) (sequences.len * params.e);
 
     // set bg model
     Markov markov;
@@ -406,19 +426,32 @@ int main(int argc, char *argv[])
     // read optional input sig matrix
     if (matfile != NULL)
     {
-        Array matrix;
-        read_matrix(matrix, matfile);
-        params.start_from_sites = true;
-        params.m1 = matrix.J;
-        params.m2 = 0;
-        params.minspacing   = 0;
-        params.maxspacing   = 0;        
-        SITES sites = scan(raw_sequences, sequences, matrix, markov, params.n);        
-        params.starting_sites = sites;
+        // open file
+        FILE *fp = fopen(matfile, "r");
+        if (fp == NULL)
+            ERROR("unable to open '%s'", matfile);
+        
+        while (1)
+        {
+            Array matrix = read_matrix(fp);
+            if (matrix.J == 0)
+                break;
+            params.start_from_sites = true;
+            params.m1 = matrix.J + params.flanks * 2;
+            params.m2 = 0;
+            params.minspacing   = 0;
+            params.maxspacing   = 0;
+            SITES sites = matrix_scan(raw_sequences, sequences, matrix, markov, params);
+            params.starting_sites = sites;
+            run_sampler(raw_sequences, sequences, markov, params);
+            params.id           += 1;
+        }
     }
-
-    // run gibbs sampler
-    run_sampler(raw_sequences, sequences, markov, params);
+    else
+    {
+        // run gibbs sampler
+        run_sampler(raw_sequences, sequences, markov, params);
+    }
 
     return 0;
 }
