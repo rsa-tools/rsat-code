@@ -16,21 +16,32 @@ c |     0.030   0.910   0.910   0.030   0.030   0.030
 g |     0.910   0.030   0.030   0.030   0.030   0.910
 t |     0.030   0.030   0.030   0.030   0.030   0.030
 */
-int read_matrix(Array &matrix, char *filename)
+Array read_matrix(FILE *fp)
 {
-    // open file
-    FILE *fp = fopen(filename, "r");
-
-    if (fp == NULL)
-        ERROR("unable to open '%s'", filename);
-
+    // end of stream ?
+    if (feof(fp))
+        return Array(0,0);
+        
     // read data
     float p[4][256];
     char base[4];
     int l = 0;
     int c = -1;
-    while (l < 4 && !feof(fp))
+
+    while (!feof(fp))
     {
+        c = getc(fp);
+        ungetc(c, fp);
+        if (c == '/')
+        {
+            while (!feof(fp) && c != '\n')
+            {
+                c = getc(fp);
+            }
+            
+            break;
+        }
+        
         fscanf(fp, "%c", &base[l]);
 
         if (base[l] == ';') // skip comments
@@ -58,8 +69,10 @@ int read_matrix(Array &matrix, char *filename)
     ASSERT(base[2] == 'g' || base[2] == 'G', "invalid matrix format");
     ASSERT(base[3] == 't' || base[3] == 'T', "invalid matrix format");
 
+    // FIXME: memory leak (matrix be already be allocated)
     // convert to matrix
-    matrix.alloc(l, c);
+    Array matrix = Array(l, c);
+    //matrix.alloc(l, c);
 
     int i;
     for (i = 0; i < l; i++)
@@ -69,5 +82,5 @@ int read_matrix(Array &matrix, char *filename)
             matrix[i][j] = p[i][j];
     }
     
-    return 1;
+    return matrix;
 }
