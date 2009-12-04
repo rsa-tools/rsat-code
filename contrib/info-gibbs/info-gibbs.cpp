@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
 
             case 'Z': 
             if (params.e >= 1.0)
-                params.e = 0.8;
+                params.e = 1.0;
             params.dmin = 10000000;
             CHECK_VALUE(params.e, 0.001, 1000, "invalid value for e (should be between 0.001 and 1000)")
             break; 
