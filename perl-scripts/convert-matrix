@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.89 2009/12/04 07:54:32 jvanheld Exp $
+# $Id: convert-matrix,v 1.90 2009/12/04 15:01:40 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -896,6 +896,14 @@ REFERENCES
         Crooks, G. E., Hon, G., Chandonia, J. M. & Brenner,
         S. E. WebLogo: a sequence logo generator. Genome Res 14,
         1188-1190, doi:10.1101/gr.849004 14/6/1188 (2004).
+
+WISH LIST
+
+  info-gibbs format
+  	info-gibbs results can currently be read in tab format, but
+  	the site sequences are not parsed. It would be useful to add
+  	an option -from info-gibbs that would parse the sites + all
+  	parameters from the info-gibbs header.
 
 
 End_of_help
