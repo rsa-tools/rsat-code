@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.19 2009/12/03 11:24:15 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.20 2009/12/04 15:03:34 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -136,6 +136,7 @@ package main;
     ## Parameters for info-gibbs
     local $gibbs_iter = 1; ## Number of iterations
     local $gibbs_final = 0; ## Run the final cycle. For some reason, the final cycle takes too much time with large sequence files, I temporarily inactivate it.
+    local $gibbs_msps = 1; ## Mean number of sites per sequence
 
     ## Parameters for convert-matrix
 
@@ -473,6 +474,58 @@ threshold. We therefore recommend to use the info-gibbs option.
 	    &RSAT::error::FatalError($collect_method, "is not a valid collect method. Supported: $supported_collect_methods")
 	      unless ($supported_collect_method{$collect_method});
 
+
+	    ## Gibbs mean sites per sequence
+
+=pod
+
+=item B<-gibbs_msps>
+
+Mean number of sites per sequences passed to info-gibbs for converting
+significance matrices into count matrices. This parameter is
+particularly important and has to be adapted to the sequence sets. For
+example, for yeast promoters, one typically expects 2 sites per
+sequence on average. For sequence fragments obtained from ChIP-chip or
+ChIP-seq datasets (typically sveral hundreds fo fragments, ~200bp per
+fragment), it might be safer to test values lower than 1, since
+sequences are expected to generally contain 1 site, and sometimes
+contain none.
+
+=cut
+
+	  } elsif ($arg eq "-gibbs_msps") {
+	    $gibbs_msps = shift(@arguments);
+	    &RSAT::error::FatalError($gibbs_msps, "is not a valid msps value. Should be a strictly positive Real number.")
+	      unless ((&IsReal($gibbs_msps)) && ($gibbs_msps > 0));
+
+	    ## Gibbs mean sites per sequence
+
+=pod
+
+=item B<-gibbs_iter>
+
+Number of iterations for info-gibbs.
+
+=cut
+
+	  } elsif ($arg eq "-gibbs_iter") {
+	    $gibbs_iter = shift(@arguments);
+	    &RSAT::error::FatalError($gibbs_iter, "is not a valid value for iterations. Should be a Natural number.")
+	      unless (&IsNatural($gibbs_iter));
+
+	    ## Gibbs mean sites per sequence
+
+=pod
+
+=item B<-gibbs_final>
+
+Run the final cycle with info-gibbs to collect the best sites.
+
+=cut
+
+	  } elsif ($arg eq "-gibbs_final") {
+	    $gibbs_final = 1;
+
 	    ## Return logos
 =pod
 
@@ -483,6 +536,7 @@ Export the sequence logos representing the count matrix.
 =cut
 	} elsif ($arg eq "-logo") {
 	    $return_fields{logo} = 1;
+
 
 =pod
 
@@ -585,13 +639,13 @@ sub InfoGibbs {
     $gibbs_cmd .= " -v 1";
     $gibbs_cmd .= " -i ".$infile{sequence};
     $gibbs_cmd .= " --sigmatrix ".$outfile{sig_matrices};
-#    $gibbs_cmd .= " -w ".$gibbs_width;
+    $gibbs_cmd .= " --mean_sps ".$gibbs_msps;
     if ($strands eq "-2str") {
-      $gibbs_cmd .= " -s +-";
+      $gibbs_cmd .= " --strand +-";
     } else {
-      $gibbs_cmd .= " -s +";
+      $gibbs_cmd .= " --strand +";
     }
-    $gibbs_cmd .= " -n ".$gibbs_iter;
+    $gibbs_cmd .= " --iter ".$gibbs_iter;
     $gibbs_cmd .= " --nrun ".1;
     $gibbs_cmd .= " --finalcycle" if ($gibbs_final);
     $gibbs_cmd .= " > ".$outfile{gibbs_matrices};
