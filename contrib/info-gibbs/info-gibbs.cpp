@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
         { "ic",          no_argument,       NULL, 'I' },
         { "pq",          no_argument,       NULL, 'Q' },
         { "help",        no_argument,       NULL, 'h' },
-//        { "finalcycle",  no_argument,       NULL, 'F' },
+        { "finalcycle",  no_argument,       NULL, 'F' },
         { "zoops",       no_argument,       NULL, 'Z' },
 
         { "version",     no_argument,       NULL, 'V' },
@@ -280,7 +280,8 @@ int main(int argc, char *argv[])
             break; 
 
             case 'Z': 
-            params.e = 1.0;
+            if (params.e >= 1.0)
+                params.e = 0.8;
             params.dmin = 10000000;
             CHECK_VALUE(params.e, 0.001, 1000, "invalid value for e (should be between 0.001 and 1000)")
             break; 
@@ -343,9 +344,10 @@ int main(int argc, char *argv[])
             CHECK_VALUE(params.dmin, 0, 10000000, "invalid distance")
             break;
 
-            // case 'F':
-            // params.finalcycle = true;
-            // break;
+            case 'F':
+            WARNING("option --finalcycle not supported");
+            //params.finalcycle = true;
+            break;
 
             case 'L':
             params.score_type = LLR_SCORE;
@@ -426,6 +428,8 @@ int main(int argc, char *argv[])
     // read optional input sig matrix
     if (matfile != NULL)
     {
+        if (params.dmin != 0)
+            ERROR("option --sigmatrix is incompatible with --zoops or --dmin=#")
         // open file
         FILE *fp = fopen(matfile, "r");
         if (fp == NULL)
