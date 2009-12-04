@@ -34,7 +34,9 @@ $default{grouprc} = 'checked';
 $default{purge} = 'checked';
 $default{side} = 'over-represented';
 $default{to_matrix} = '1';
-
+$default{gibbs_msps} = '1';
+$default{gibbs_iter} = '10';
+$default{gibbs_final} = '';
 
 $default{zscore} = '';
 $default{lth_zscore} = 'none';
@@ -520,7 +522,19 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 print $query->checkbox(-name=>'to_matrix',
 		       -checked=>$default{to_matrix},
 		       -label=>'');
-print "&nbsp;Convert assembled patterns to Position-Specific Scoring Matrices (<font color=red>Can be time-consuming for large sequence files</font>).";
+print "&nbsp;Convert assembled patterns to matrices.";
+print "&nbsp;"x4, "Mean sites per sequence";
+print $query->textfield(-name=>'gibbs_msps',
+			-default=>$default{gibbs_msps},
+			-size=>3);
+print "&nbsp;"x4, "Iterations";
+print $query->textfield(-name=>'gibbs_iter',
+			-default=>$default{gibbs_iter},
+			-size=>3);
+print  "&nbsp;"x4, $query->checkbox(-name=>'gibbs_final',
+		       -checked=>$default{to_matrix},
+		       -label=>'');
+print "&nbsp;Run final cycle.";
 print "<BR>";
 
 
