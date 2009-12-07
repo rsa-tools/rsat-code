@@ -523,11 +523,17 @@ sub OpenIndex {
   $index_list{$query_prefix} = $outfile{index};
   $index = &OpenOutputFile($outfile{index});
   print $index "<html>\n";
-  print $index "<head><title>", join (" ", $query_prefix, $taxon, $organism_name, $bg_model), "</title></head>\n";
+  $html_title =$query_prefix." " ;
+  $html_title .= $taxon." " if $taxon;
+  $html_title .=join (" ", $organism_name, $bg_model);
+  print $index "<head><title>", $html_title , "</title></head>\n" ;
   print $index "<body>\n";
   print $index "<hr size=4 color='#000088'>";
   print $index "<h1 align=center>Footprint discovery result</h1>";
-  print $index "<h2 align=center>", join (" ", $query_prefix, $taxon, "<i>".$organism_name."</i>", $bg_model), "</h2>\n";
+  $html_title2 =$query_prefix." " ;
+  $html_title2 .= $taxon." " if $taxon;
+  $html_title2 .=join (" ", "<i>".$organism_name."</i>", $bg_model);
+  print $index "<h2 align=center>",$html_title2 , "</h2>\n";
   print $index "<hr size=2 color='#000088'>";
   print $index "<blockquote>";
   print $index "<table cellspacing=0 cellpadding=3 border=0>\n";
@@ -653,7 +659,7 @@ sub PurgeOrthoSeq {
   &RSAT::message::TimeWarn("Purging promoter sequences of orthologs", $outfile{purged}) if ($main::verbose >= 2);
   &CheckDependency("purge", "seq");
   my $cmd = "$SCRIPTS/purge-sequence";
-  $cmd .= " -nodie" if ($die_on_error == 0);
+  $cmd .= " -nodie" if ($main::die_on_error == 0);
   $cmd .= " -i ".$outfile{seq};
   $cmd .= " -ml 30 -mis 0 -mask_short 30";
   $cmd .= " ".$strands;
