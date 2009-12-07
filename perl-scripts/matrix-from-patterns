@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.21 2009/12/07 07:40:28 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.22 2009/12/07 07:41:26 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -137,7 +137,7 @@ package main;
     local $gibbs_iter = 1; ## Number of iterations
     local $gibbs_final = 0; ## Run the final cycle. For some reason, the final cycle takes too much time with large sequence files, I temporarily inactivate it.
     local $gibbs_msps = 1; ## Mean number of sites per sequence
-    local $gibbs_flanks = 1;
+    local $gibbs_flanks = 0;
 
     ## Parameters for convert-matrix
 
