@@ -19,7 +19,7 @@ t |     0.030   0.030   0.030   0.030   0.030   0.030
 Array read_matrix(FILE *fp)
 {
     // end of stream ?
-    if (feof(fp))
+    if (feof(fp) != 0)
         return Array(0,0);
         
     // read data
