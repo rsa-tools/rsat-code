@@ -596,7 +596,11 @@ sub GetOrthologs {
   my $cmd = "$SCRIPTS/get-orthologs";
   $cmd .= " -i ".$outfile{genes};
   $cmd .= " -org ".$organism_name;
-  $cmd .= " -taxon ".$taxon;
+  if ( $main::tf_ortho_file){
+      $cmd .= " -org_list ". $main::tf_ortho_file ;
+  }else{   
+      $cmd .= " -taxon ".$taxon ;
+  }
   $cmd .= " -return query_name,query_organism -return ident";
   $cmd .= " -uth rank 1";	## BBH criterion
   $cmd .= " -lth ali_len 50";
