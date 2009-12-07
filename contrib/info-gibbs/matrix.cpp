@@ -30,13 +30,13 @@ Array read_matrix(FILE *fp)
 
     while (!feof(fp))
     {
-        c = getc(fp);
-        ungetc(c, fp);
-        if (c == '/')
+        int junk = getc(fp);
+        ungetc(junk, fp);
+        if (junk == '/')
         {
-            while (!feof(fp) && c != '\n')
+            while (!feof(fp) && junk != '\n')
             {
-                c = getc(fp);
+                junk = getc(fp);
             }
             
             break;
@@ -73,8 +73,8 @@ Array read_matrix(FILE *fp)
     ASSERT(base[3] == 't' || base[3] == 'T', "invalid matrix format");
 
     // convert to matrix
+    ASSERT(c >= 1, "invalid matrix format");
     Array matrix = Array(l, c);
-
     int i;
     for (i = 0; i < l; i++)
     {

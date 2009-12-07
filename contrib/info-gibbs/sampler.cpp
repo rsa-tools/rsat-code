@@ -1038,7 +1038,6 @@ void run_sampler(vector<string> &raw_sequences, Sequences &sequences, Markov &ma
         all_results.push_back(best_result);
     }
 
-    //clock_t end_clock = clock();
 
     if (params.id == 1)
     {
@@ -1058,6 +1057,7 @@ void run_sampler(vector<string> &raw_sequences, Sequences &sequences, Markov &ma
         printf(";\n");
     }
     
+    //clock_t end_clock = clock();
     //printf("; elapsed time (in seconds)     %.3f\n", (end_clock - start_clock) / (double) CLOCKS_PER_SEC);
 
     for (int m = 0 ; m < (int) all_results.size(); m++)
