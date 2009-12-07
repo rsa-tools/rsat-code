@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.28 2009/12/07 18:47:27 amedina Exp $
+# $Id: footprint-scan,v 1.29 2009/12/07 22:01:31 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.28 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.29 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -278,6 +278,8 @@ package main;
   $main::out = STDOUT;
 
   local $no_die = 1; ## Don't die when a problem occurs
+  $main::die_on_error=1;
+
   local $skip = 0;
   local $last = 0;
   $main::window_size=200; #default length of window size based on nature protocol
