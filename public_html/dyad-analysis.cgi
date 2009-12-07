@@ -1,25 +1,25 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.33 2009/12/03 11:25:22 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.34 2009/12/07 22:19:33 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
+  push (@INC, "$`lib/");
 }
 
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 BEGIN {
-    $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
-    use CGI::Carp qw(carpout);
-    open (LOG, ">> $ERR_LOG")
-	|| die "Unable to redirect log\n";
-    carpout(*LOG);
+  $ERR_LOG = "/dev/null";
+  #    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+  use CGI::Carp qw(carpout);
+  open (LOG, ">> $ERR_LOG")
+    || die "Unable to redirect log\n";
+  carpout(*LOG);
 }
 require "RSA.lib";
 require "RSA2.cgi.lib";
@@ -53,13 +53,13 @@ $parameters .= " -timeout 3600 ";
 ($sequence_file,$sequence_format) = &GetSequenceFile();
 $purge = $query->param('purge');
 if ($purge) {
-    #### purge sequence option
-#    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format | $dyad_analysis_command ";
-    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format -o $sequence_file.purged ";
-    $command .= " -dna" if (lc($query->param('sequence_type')) eq "dna");
-    $command .= "; $dyad_analysis_command -i $sequence_file.purged ";
+  #### purge sequence option
+  #    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format | $dyad_analysis_command ";
+  $command= "$purge_sequence_command -i $sequence_file -format $sequence_format -o $sequence_file.purged ";
+  $command .= " -dna" if (lc($query->param('sequence_type')) eq "dna");
+  $command .= "; $dyad_analysis_command -i $sequence_file.purged ";
 } else {
-    $command= "$dyad_analysis_command -i $sequence_file  ";
+  $command= "$dyad_analysis_command -i $sequence_file  ";
 }
 
 
@@ -153,28 +153,28 @@ if ($query->param('freq_estimate') eq 'background') {
   #}
   #    $parameters .= " -bg ".$query->param('background');
 } elsif ($query->param('freq_estimate') =~ /upload/i) {
-    $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
-    $upload_freq_file = $query->param('upload_freq_file');
-    if ($upload_freq_file) {
-	if ($upload_file =~ /\.gz$/) {
-	    $exp_freq_file .= ".gz";
-	}
-	$type = $query->uploadInfo($upload_freq_file)->{'Content-Type'};
-	open FREQ, ">$exp_freq_file" ||
-	    &cgiError("Cannot store expected frequency file in temp dir.");
-	while (<$upload_freq_file>) {
-	    print FREQ;
-	}
-	close FREQ;
-	$parameters .= " -expfreq $exp_freq_file";
-    } else {
-	&FatalError ("If you want to upload an expected frequency file, you should specify the location of this file on your hard drive with the Browse button");
+  $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
+  $upload_freq_file = $query->param('upload_freq_file');
+  if ($upload_freq_file) {
+    if ($upload_file =~ /\.gz$/) {
+      $exp_freq_file .= ".gz";
     }
+    $type = $query->uploadInfo($upload_freq_file)->{'Content-Type'};
+    open FREQ, ">$exp_freq_file" ||
+      &cgiError("Cannot store expected frequency file in temp dir.");
+    while (<$upload_freq_file>) {
+      print FREQ;
+    }
+    close FREQ;
+    $parameters .= " -expfreq $exp_freq_file";
+  } else {
+    &FatalError ("If you want to upload an expected frequency file, you should specify the location of this file on your hard drive with the Browse button");
+  }
 
 } else {
-    unless ($query->param('freq_estimate') eq 'monads') {
-	&FatalError("Invalid expected frequency calibration");
-    }
+  unless ($query->param('freq_estimate') eq 'monads') {
+    &FatalError("Invalid expected frequency calibration");
+  }
 }
 
 $command .= $parameters;
@@ -185,94 +185,97 @@ print "<PRE><B>Command:</B> $command </PRE>" if ($ENV{rsat_echo});
 
 if ($query->param('output') eq "display") {  
 
-    &PipingWarning();
+  &PipingWarning();
 
-    ### execute the command ###
-    $result_file = "$TMP/$tmp_file_name.res";
-    open RESULT, "$command | ";
-
-
-    ### Print result on the web page
-    print '<H4>Result</H4>';
-    &PrintHtmlTable(RESULT, $result_file, true);
-    close(RESULT);
-    @result_files = ('oligos', "$tmp_file_name.res");
-
-    #### pattern assembly ####
-    if ((&IsReal($query->param('lth_occ_sig'))) && ($query->param('lth_occ_sig')>= -1)) {
-
-	## Assemble the significant patterns with pattern-assembly
-	$assembly_file = "$TMP/$tmp_file_name.asmb";
-	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 0 -top 50";
-	if ($query->param('strand') =~ /single/) {
-	  $pattern_assembly_command .= " -1str";
-	} else {
-	  $pattern_assembly_command .= " -2str";
-	}
-	$pattern_assembly_command .= "  -i $result_file";
-	$pattern_assembly_command .= "  -o $assembly_file";
-
-	print "<H2>Pattern assembly</H2>\n";
-	print "<PRE>pattern-assembly command: $pattern_assembly_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
-	system "$pattern_assembly_command";
-	open ASSEMBLY, $assembly_file;
-	print "<PRE>\n";
-	while (<ASSEMBLY>) {
-	  s|$ENV{RSAT}/||g;
-	  print;
-	}
-	print "</PRE>\n";
-	close(ASSEMBLY);
-	push @result_files, ('assembly', "$tmp_file_name.asmb");
+  ### execute the command ###
+  $result_file = "$TMP/$tmp_file_name.res";
+  open RESULT, "$command | ";
 
 
-	## Convert pattern-assembly result into PSSM 
-	if ($query->param('to_matrix')) {
-	  $pssm_prefix = $tmp_file_name."_pssm";
-	  $sig_matrix_file = $pssm_prefix."_sig_matrices.txt";
-	  $pssm_file = $pssm_prefix."_count_matrices.txt";
-	  $pssm_command = "$SCRIPTS/matrix-from-patterns -v 1 ".$str;
-	  $pssm_command .= " -seq ".$sequence_file;
-	  $pssm_command .= " -format $sequence_format";
-	  $pssm_command .= " -asmb ".$assembly_file;
-	  $pssm_command .= " -uth Pval 0.00025";
-	  $pssm_command .= " -bginput -markov 0";
-	  $pssm_command .= " -o ".$TMP."/".$pssm_prefix;
-	  print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
-	  system "$pssm_command";
-	  push @result_files, ('significance matrices', $sig_matrix_file);
-	  push @result_files, ("gibbs matrices", $pssm_prefix."_gibbs_matrices.txt");
-	  push @result_files, ('count matrices', $pssm_file);
+  ### Print result on the web page
+  print '<H4>Result</H4>';
+  &PrintHtmlTable(RESULT, $result_file, true);
+  close(RESULT);
+  @result_files = ('oligos', "$tmp_file_name.res");
 
-#	  print "<H2>Significance matrices</H2>\n";
-#	  open SIG, $TMP."/".$sig_matrix_file;
-#	  print "<PRE>\n";
-#	  while (<SIG>) {
-#	    s|$ENV{RSAT}/||g;
-#	    print;
-#	  }
-#	  print "</PRE>\n";
-#	  close(SIG);
+  #### pattern assembly ####
+  if ((&IsReal($query->param('lth_occ_sig'))) && ($query->param('lth_occ_sig')>= -1)) {
 
-	  print "<H2>Matrices</H2>\n";
-	  open PSSM, $TMP."/".$pssm_file;
-	  print "<PRE>\n";
-	  while (<PSSM>) {
-	    s|$ENV{RSAT}/||g;
-	    print;
-	  }
-	  print "</PRE>\n";
-	  close(PSSM);
-	}
+    ## Assemble the significant patterns with pattern-assembly
+    $assembly_file = "$TMP/$tmp_file_name.asmb";
+    $pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 0 -top 50";
+    if ($query->param('strand') =~ /single/) {
+      $pattern_assembly_command .= " -1str";
+    } else {
+      $pattern_assembly_command .= " -2str";
+    }
+    $pattern_assembly_command .= "  -i $result_file";
+    $pattern_assembly_command .= "  -o $assembly_file";
+
+    print "<H2>Pattern assembly</H2>\n";
+    print "<PRE>pattern-assembly command: $pattern_assembly_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+    system "$pattern_assembly_command";
+    open ASSEMBLY, $assembly_file;
+    print "<PRE>\n";
+    while (<ASSEMBLY>) {
+      s|$ENV{RSAT}/||g;
+      print;
+    }
+    print "</PRE>\n";
+    close(ASSEMBLY);
+    push @result_files, ('assembly', "$tmp_file_name.asmb");
+
+
+    ## Convert pattern-assembly result into PSSM
+    if ($query->param('to_matrix')) {
+      &MatrixFromPatterns_run();
     }
 
-    &PrintURLTable(@result_files);
-    &PipingForm();
+    # 	## Convert pattern-assembly result into PSSM 
+    # 	if ($query->param('to_matrix')) {
+    # 	  $pssm_prefix = $tmp_file_name."_pssm";
+    # 	  $sig_matrix_file = $pssm_prefix."_sig_matrices.txt";
+    # 	  $pssm_file = $pssm_prefix."_count_matrices.txt";
+    # 	  $pssm_command = "$SCRIPTS/matrix-from-patterns -v 1 ".$str;
+    # 	  $pssm_command .= " -seq ".$sequence_file;
+    # 	  $pssm_command .= " -format $sequence_format";
+    # 	  $pssm_command .= " -asmb ".$assembly_file;
+    # 	  $pssm_command .= " -uth Pval 0.00025";
+    # 	  $pssm_command .= " -bginput -markov 0";
+    # 	  $pssm_command .= " -o ".$TMP."/".$pssm_prefix;
+    # 	  print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+    # 	  system "$pssm_command";
+    # 	  push @result_files, ('significance matrices', $sig_matrix_file);
+    # 	  push @result_files, ("gibbs matrices", $pssm_prefix."_gibbs_matrices.txt");
+    # 	  push @result_files, ('count matrices', $pssm_file);
+    # #	  print "<H2>Significance matrices</H2>\n";
+    # #	  open SIG, $TMP."/".$sig_matrix_file;
+    # #	  print "<PRE>\n";
+    # #	  while (<SIG>) {
+    # #	    s|$ENV{RSAT}/||g;
+    # #	    print;
+    # #	  }
+    # #	  print "</PRE>\n";
+    # #	  close(SIG);
+    # 	  print "<H2>Matrices</H2>\n";
+    # 	  open PSSM, $TMP."/".$pssm_file;
+    # 	  print "<PRE>\n";
+    # 	  while (<PSSM>) {
+    # 	    s|$ENV{RSAT}/||g;
+    # 	    print;
+    # 	  }
+    # 	  print "</PRE>\n";
+    # 	  close(PSSM);
+    # 	}
+  }
+
+  &PrintURLTable(@result_files);
+  &OligoDyadPipingForm();
 
 } elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command", $query->param('user_email'));
+  &ServerOutput("$command", $query->param('user_email'));
 } else {
-    &EmailTheResult("$command", $query->param('user_email'));
+  &EmailTheResult("$command", $query->param('user_email'));
 }
 
 
@@ -281,71 +284,3 @@ print $query->end_html;
 
 
 exit(0);
-
-sub PipingForm {
-    ### prepare data for piping
-
-    #### title
-    $title = $query->param('title');
-    $title =~ s/\"/\'/g;
-
-    #### strand for pattern-assembly
-    if ($query->param('strand') =~ /single/) {
-	$strand_opt .= " sensitive";
-    } else {
-	$strand_opt .= " insensitive";
-    }
-
-
-    ## matrix scanning
-    if ($query->param('to_matrix')) {
-      $to_matrix_scan = "<td valign=bottom align=center>";
-      $to_matrix_scan .= "<b><font color='red'>New !</font></b>";
-      $to_matrix_scan .= "<FORM METHOD='POST' ACTION='matrix-scan_form.cgi'>";
-      $to_matrix_scan .= "<INPUT type='hidden' NAME='title' VALUE='$title'>";
-      $to_matrix_scan .= "<INPUT type='hidden' NAME='matrix_file' VALUE='".${TMP}."/".$pssm_file."'>";
-      $to_matrix_scan .= "<INPUT type='hidden' NAME='matrix_format' VALUE='tab'>";
-      $to_matrix_scan .= "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>";
-      $to_matrix_scan .= "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>";
-      $to_matrix_scan .= "<INPUT type='submit' value='matrix-based pattern matching (matrix-scan)'>";
-      $to_matrix_scan .= "</FORM>";
-      $to_matrix_scan .= "</TD>";
-    }
-
-    print <<End_of_form;
-<TABLE class='nextstep'>
-<Tr>
-
-<TD colspan = 3>
-<H3>Next step</H3>
-</Tr>
-<tr>
-<TD VALIGN=BOTTOM ALIGN=CENTER>
-<FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
-<INPUT type="hidden" NAME="title" VALUE="$title">
-<INPUT type="hidden" NAME="pattern_file" VALUE="$result_file">
-<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
-<INPUT type="submit" value="string-based pattern matching (dna-pattern)">
-</FORM>
-</TD>
-
-$to_matrix_scan
-
-<TD VALIGN=BOTTOM ALIGN=CENTER>
-<FORM METHOD="POST" ACTION="pattern-assembly_form.cgi">
-<INPUT type="hidden" NAME="local_pattern_file" VALUE="$result_file">
-<INPUT type="hidden" NAME="subst" VALUE=0>
-<INPUT type="hidden" NAME="maxfl" VALUE=1>
-<INPUT type="hidden" NAME="sc" VALUE="auto">
-<INPUT type="hidden" NAME="strand" VALUE=$strand_opt>
-<INPUT type="submit" value="pattern assembly">
-</FORM>
-</TD>
-
-
-</TR>
-</TABLE>
-End_of_form
-}
-
