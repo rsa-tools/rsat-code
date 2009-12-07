@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.20 2009/12/04 15:03:34 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.21 2009/12/07 07:40:28 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -137,6 +137,7 @@ package main;
     local $gibbs_iter = 1; ## Number of iterations
     local $gibbs_final = 0; ## Run the final cycle. For some reason, the final cycle takes too much time with large sequence files, I temporarily inactivate it.
     local $gibbs_msps = 1; ## Mean number of sites per sequence
+    local $gibbs_flanks = 1;
 
     ## Parameters for convert-matrix
 
@@ -159,11 +160,6 @@ package main;
     ################################################################
     ## Check argument values
 
-    ## matrix-scan parameters
-    ## The upstream threshold on Pval MUST be defined (if not, all sites can be taken, resulting in a meaningless matrix)
-    unless ($scan_parameters =~ /-uth Pval/) {
-      $scan_parameters = " -uth Pval ".$uth{Pval}." ".$scan_parameters;
-    }
 
     ## The output prefix is mandatory
     &RSAT::error::FatalError("You must specify the output prefix (option -o)")
@@ -517,6 +513,22 @@ Number of iterations for info-gibbs.
 
 =pod
 
+=item B<-gibbs_flanks>
+
+Number of flanking residues to be added on each side of the
+significance matrix for I<info-gibbs>.
+
+=cut
+
+	  } elsif ($arg eq "-gibbs_flanks") {
+	    $gibbs_flanks = shift(@arguments);
+	    &RSAT::error::FatalError($gibbs_flanks, "is not a valid value for flanks. Should be a Natural number.")
+	      unless (&IsNatural($gibbs_flanks));
+
+	    ## Gibbs mean sites per sequence
+
+=pod
+
 =item B<-gibbs_final>
 
 Run the final cycle with info-gibbs to collect the best sites.
@@ -597,15 +609,38 @@ sub Verbose {
 ## Scan sequences to collect sites
 sub ScanForSites {
     &RSAT::message::TimeWarn("Collecting sites with significance matrices") if ($main::verbose >= 2);
-    my $scan_cmd = "${SCRIPTS}/matrix-scan -v 1";
+    my $matrix_scan_cmd;
+    my $quick = 0;
+    if ($quick) {
+      ## NOT YET FUNCTIONAL BECAUSE MATRIX-SCAN-QUICK DOES NOT READ MULTI-MATRIX FILES
+      $matrix_scan_cmd = `which matrix-scan-quick`;
+      chomp($matrix_scan_cmd);
+
+    } else {
+      $matrix_scan_cmd = ${SCRIPTS}."/matrix-scan";
+      ## matrix-scan parameters
+      ## The upper threshold on Pval MUST be defined (if not, all
+      ## sites can be taken, resulting in a meaningless matrix)
+      unless ($scan_parameters =~ /-uth Pval/) {
+	$scan_parameters = " -uth Pval ".$uth{Pval}." ".$scan_parameters;
+      }
+    }
+
+
+    my $scan_cmd = $matrix_scan_cmd." -v 1";
     $scan_cmd .= " -i ".$infile{sequence};
-    $scan_cmd .= " -seq_format ".$seq_format;
     $scan_cmd .= " -m ".$outfile{sig_matrices};
-    $scan_cmd .= " -n skip";
-    $scan_cmd .= " -matrix_format tab";
     $scan_cmd .= " ".$strands;
-    $scan_cmd .= " -return sites,pval";
-    $scan_cmd .= " ".$scan_parameters;
+    if ($quick) {
+      $scan_cmd .= " -return sites";
+      $scan_cmd .= " -t 7";
+    } else {
+      $scan_cmd .= " -seq_format ".$seq_format;
+      $scan_cmd .= " -n skip";
+      $scan_cmd .= " -matrix_format tab";
+      $scan_cmd .= " -return sites,pval";
+      $scan_cmd .= " ".$scan_parameters;
+    }
     $scan_cmd .= " -o ".$outfile{sig_sites};
     print $log "; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
 
@@ -646,11 +681,12 @@ sub InfoGibbs {
       $gibbs_cmd .= " --strand +";
     }
     $gibbs_cmd .= " --iter ".$gibbs_iter;
+    $gibbs_cmd .= " --flanks ".$gibbs_flanks;
     $gibbs_cmd .= " --nrun ".1;
     $gibbs_cmd .= " --finalcycle" if ($gibbs_final);
     $gibbs_cmd .= " > ".$outfile{gibbs_matrices};
     print $log "; significance matrices + sequences -> count matrices\n", $gibbs_cmd, "\n";
-    &doit($gibbs_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    &doit($gibbs_cmd, $dry, 0, $verbose, $batch, $job_prefix);
 
     ################################################################
     ## Convert matrix from info-gibbs and generate logos if required
