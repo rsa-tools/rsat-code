@@ -58,6 +58,7 @@ ensembl_host=ensembldb.ensembl.org
 ## EnsEMBL APIs (used by the EnsEMBL-accessing tools (retrieve-ensembl-seq, get-ensembl-genome))
 ensembl=/home/rsat/rsa-tools/lib/ensembl/modules
 compara=/home/rsat/rsa-tools/lib/ensembl-compara/modules
+variation=/home/rsat/rsa-tools/lib/ensembl-variation/modules
 
 ## BioPerl (used by the EnsEMBL-accessing tools (retrieve-ensembl-seq, get-ensembl-genome))
 bioperl=/home/rsat/rsa-tools/lib/bioperl-live
@@ -81,6 +82,9 @@ tomcat_port=
 
 ################################################################
 ## Directories for programs developed by third parties
+
+## seqlogo, program to draw sequence logos
+seqlogo=/home/rsat/rsa-tools/bin/seqlogo
 
 ## MEME, motif discovery program developed by Tim Bailey
 # meme_dir=/rsat/applications/meme.3.0.5/
