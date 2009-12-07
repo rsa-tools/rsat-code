@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.24 2009/10/12 19:42:40 amedina Exp $
+# $Id: footprint-scan,v 1.25 2009/12/07 17:49:07 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -507,6 +507,25 @@ crer_pval
   $ms_parameters .= " -bg_pseudo ".$bg_pseudo;
 
   ################################################################
+  ## If -tf is used analyze this gene independently
+
+  if($tf){
+      &RSAT::message::TimeWarn("Analyzing gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 1);
+      eval {
+	  &RunFootprintScan($tf);
+      };  
+      if ($@) {
+	  if ($no_die) {
+	      ## Catch error and report in in log file
+	      print $out join("\t", "ERROR", $current_gene, $@);
+	      &RSAT::message::Warning("ERROR", $current_gene, $@);
+	  } else {
+	      &RSAT::error::FatalError($@);
+	  }
+      }
+  }
+
+  ################################################################
   ## Analyze query genes separately or altogether
   if ($sep_genes) {
       
@@ -733,7 +752,17 @@ second scanning.
 =cut
 	} elsif ($arg eq "-matrix_suffix") {
 	    $main::matrix_suffix = shift(@arguments);
+=pod
 
+=item B<-tf transcription_factor>
+
+Most matrices are derived from specific TFBS, so they represent the preferential sequence where a TF binds. 
+This option will search for all the genomes in the given taxon where there is an ortholog for the specified tf.
+Orthologs for the query genes will only be retrived if the organism has an ortholog for the TF. 
+
+=cut
+	} elsif ($arg eq "-tf") {
+	    $main::tf = shift(@arguments);
 =pod
 
 =item B<-pseudo #>
@@ -1059,6 +1088,15 @@ sub RunFootprintScan {
 ################################################################
 ## Identify ortholog genes
     &GetOrthologs();
+
+    ## only for the $tf option
+    if ($main::tf && !($main::tf_ortho_file){
+	$main::tf_ortho_file=$outfile{prefix}."_ortho_bbh_tf.tab";	   
+	$org_column =qq@grep -v "#" $outfile{orthologs} | cut -f2 >$main::tf_ortho_file @
+	system ($org_column);
+	&RSAT::message::Info("List of organisms with an ortholog for the corresponding TF ", "$main::tf_ortho_file ") 
+	    if ($main::verbose>=1);
+    }
 
 ################################################################
 ## Predict operon leader genes for the orthologous genes
