@@ -176,6 +176,8 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    //DEBUG("START info-gibbs");
+
     // construct command line string
     string cmdline = "";
     for (int i = 0; i < argc; i++)
@@ -456,6 +458,8 @@ int main(int argc, char *argv[])
         // run gibbs sampler
         run_sampler(raw_sequences, sequences, markov, params);
     }
+
+    //DEBUG("END info-gibbs");
 
     return 0;
 }

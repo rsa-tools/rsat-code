@@ -60,7 +60,8 @@ void values_print(FILE *fout, values_t *values)
     int cum = 0;
     for (i = a; i <= b; i++)
     {
-        fprintf(fout, "%G\t%d\t%d\t%d\t%G\n", values->min + i * values->e, values->data[i], cum, total - cum, (total - cum) / (double) total);
+        fprintf(fout, "%G\t%d\t%d\t%d\t%G\n", 
+            values->min + i * values->e, values->data[i], cum, total - cum, (total - cum) / (double) total);
         cum += values->data[i];
     }
 }
