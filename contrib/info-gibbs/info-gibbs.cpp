@@ -409,7 +409,9 @@ int main(int argc, char *argv[])
         params.nseq = sequences.size();
 
     // set expected number of sites
-    if (params.n == 0)
+    if (params.n == 0 && params.rc == true)
+        params.n = (int) (sequences.len * params.e / 2.0);
+    else if (params.n == 0)
         params.n = (int) (sequences.len * params.e);
 
     // set bg model
