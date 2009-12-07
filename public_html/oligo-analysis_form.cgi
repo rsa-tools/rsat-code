@@ -36,6 +36,7 @@ $default{side} = 'over-represented';
 $default{to_matrix} = '1';
 $default{gibbs_msps} = '1';
 $default{gibbs_iter} = '10';
+$default{gibbs_flanks} = '0';
 $default{gibbs_final} = '';
 
 $default{zscore} = '';
@@ -531,11 +532,15 @@ print "&nbsp;"x4, "Iterations";
 print $query->textfield(-name=>'gibbs_iter',
 			-default=>$default{gibbs_iter},
 			-size=>3);
-print  "&nbsp;"x4, $query->checkbox(-name=>'gibbs_final',
-		       -checked=>$default{to_matrix},
-		       -label=>'');
-print "&nbsp;Run final cycle.";
-print "<BR>";
+print "&nbsp;"x4, "Flanking residues";
+print $query->textfield(-name=>'gibbs_flanks',
+			-default=>$default{gibbs_flanks},
+			-size=>2);
+# print  "&nbsp;"x4, $query->checkbox(-name=>'gibbs_final',
+# 		       -checked=>$default{to_matrix},
+# 		       -label=>'');
+# print "&nbsp;Run final cycle.";
+# print "<BR>";
 
 
 print "</BLOCKQUOTE>\n";
