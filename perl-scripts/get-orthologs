@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.43 2009/12/07 08:59:31 rsat Exp $
+# $Id: get-orthologs,v 1.44 2009/12/07 09:00:19 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -583,7 +583,7 @@ package main;
     }
     if (scalar(@genome_no_hits) > 0) {
 	print $out "; No hits found in the following genomes :\n";
-	my $i = 1;
+	my $i = 0;
 	foreach my $org (sort {$a cmp $b} @genome_no_hits) {
 	    $i++;
 	    print $out join("\t", ";", $i, $org), "\n";
