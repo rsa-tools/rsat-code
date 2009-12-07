@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.42 2009/12/07 08:50:05 rsat Exp $
+# $Id: get-orthologs,v 1.43 2009/12/07 08:59:31 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -121,6 +121,7 @@ package main;
     %main::outfile = ();
 
     $main::verbose = 0;
+    $warn_missing_blast_files = 1;
     $main::return_all = 0;
     $main::in = STDIN;
     $main::out = STDOUT;
@@ -286,7 +287,7 @@ package main;
 			       "Use the command supported-organisms -format full to obtain the supported taxonomy."
 			      ) if ($main::orglist_file) ;
     }
-    if ($only_blast){
+    if ($warn_missing_blast_files){
       my (@filtered_ref_org) = &FilterOrganismsHavingBlast();
 #      print "; List of filtered reference organisms\n\t".join("\n\t",@filtered_ref_org)."\n";
       @main::ref_organisms = (@filtered_ref_org);
@@ -565,7 +566,7 @@ package main;
 
 
     ## Report missing BLAST files (useful for RSAT Admin)
-    if (! $only_blast){
+    if ($warn_missing_blast_files){
       if (scalar(@main::missing_blast_files) > 0) {
 	print $out "; Missing BLAST files\n";
 	foreach my $file (@main::missing_blast_files) {
@@ -576,13 +577,17 @@ package main;
 
     ## Report genomes having BLAST files but no hit found 
     foreach my $org (@ref_organisms) {
-      unless ($genome_hits{$org}){
-	push @genome_no_hits, $org;
+	unless ($genome_hits{$org}){
+	    push @genome_no_hits, $org;
       }
     }
     if (scalar(@genome_no_hits) > 0) {
-      print $out "; No hits found in the following genomes :\n";
-      print $out ";\t".join("\n;\t",sort {$a cmp $b} @genome_no_hits). "\n";
+	print $out "; No hits found in the following genomes :\n";
+	my $i = 1;
+	foreach my $org (sort {$a cmp $b} @genome_no_hits) {
+	    $i++;
+	    print $out join("\t", ";", $i, $org), "\n";
+	}
     }
     
     ## Report unknown query genes
@@ -1106,10 +1111,12 @@ The file format is one organisms per line, the comment char is ";"
 Do not issue warning about organisms for which there is no BLAST file
 in the data repository.
 
+(previous option: -only_blast)
+
 =cut
 
-	} elsif ($arg eq "-only_blast") {
-	    $main::only_blast = 1;
+	} elsif (($arg eq "-nowarn") || ($arg eq "-only_blast")){
+	    $main::warn_missing_blast_files = 0;
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
