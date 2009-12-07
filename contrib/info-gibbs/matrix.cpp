@@ -48,7 +48,10 @@ Array read_matrix(FILE *fp)
         {
             char buffer[1024];
             fgets(buffer, 1024, fp);
-            continue;
+            if (feof(fp))
+                return NULL;
+            else
+                continue;
         }
 
         fscanf(fp, " | ");
@@ -69,10 +72,8 @@ Array read_matrix(FILE *fp)
     ASSERT(base[2] == 'g' || base[2] == 'G', "invalid matrix format");
     ASSERT(base[3] == 't' || base[3] == 'T', "invalid matrix format");
 
-    // FIXME: memory leak (matrix be already be allocated)
     // convert to matrix
     Array matrix = Array(l, c);
-    //matrix.alloc(l, c);
 
     int i;
     for (i = 0; i < l; i++)
