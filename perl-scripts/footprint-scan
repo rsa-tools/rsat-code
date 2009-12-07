@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.25 2009/12/07 17:49:07 amedina Exp $
+# $Id: footprint-scan,v 1.26 2009/12/07 17:52:14 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -1090,9 +1090,9 @@ sub RunFootprintScan {
     &GetOrthologs();
 
     ## only for the $tf option
-    if ($main::tf && !($main::tf_ortho_file){
+    if ($main::tf && !($main::tf_ortho_file) ){
 	$main::tf_ortho_file=$outfile{prefix}."_ortho_bbh_tf.tab";	   
-	$org_column =qq@grep -v "#" $outfile{orthologs} | cut -f2 >$main::tf_ortho_file @
+	$org_column =qq@grep -v "#" $outfile{orthologs} | cut -f2 >$main::tf_ortho_file @;
 	system ($org_column);
 	&RSAT::message::Info("List of organisms with an ortholog for the corresponding TF ", "$main::tf_ortho_file ") 
 	    if ($main::verbose>=1);
