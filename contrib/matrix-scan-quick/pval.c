@@ -23,7 +23,7 @@ double score2pvalue(pvalues_t *pvalues, double score)
 {
     if (pvalues == NULL)
         return 0.0;
-    int index  = ((score - pvalues->w_min) / (pvalues->w_max - pvalues->w_min)) * pvalues->size;
+    int index  = (int) ((score - (double) pvalues->w_min) / (double) (pvalues->w_max - pvalues->w_min)) * (double) pvalues->size;
     index = MIN(MAX(index, 0), pvalues->size - 1);
     return pvalues->data[index];
 }
