@@ -14,7 +14,7 @@ $query = new CGI;
 
 ### default values for filling the form
 $default{organism} = "Saccharomyces cerevisiae";
-$default{taxon} = "Fungi";
+$default{taxon} = "Saccharomycetales";
 $default{title} = "";
 $default{sequence} = "";
 $default{sequence_format} = "fasta";
@@ -33,11 +33,6 @@ $default{noov} = 'checked';
 $default{grouprc} = 'checked';
 $default{purge} = 'checked';
 $default{side} = 'over-represented';
-$default{to_matrix} = '1';
-$default{gibbs_msps} = '1';
-$default{gibbs_iter} = '10';
-$default{gibbs_flanks} = '0';
-$default{gibbs_final} = '';
 
 $default{zscore} = '';
 $default{lth_zscore} = 'none';
@@ -75,6 +70,8 @@ $default{lth_observed_freq} = "none";
 $default{uth_observed_freq} = "none";
 
 $default{return}="fields";
+
+&MatrixFromPatterns_defaults();
 
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -520,28 +517,7 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 		    );
 
 #### Convert patterns to matrix
-print $query->checkbox(-name=>'to_matrix',
-		       -checked=>$default{to_matrix},
-		       -label=>'');
-print "&nbsp;Convert assembled patterns to matrices.";
-print "&nbsp;"x4, "Mean sites per sequence";
-print $query->textfield(-name=>'gibbs_msps',
-			-default=>$default{gibbs_msps},
-			-size=>3);
-print "&nbsp;"x4, "Iterations";
-print $query->textfield(-name=>'gibbs_iter',
-			-default=>$default{gibbs_iter},
-			-size=>3);
-print "&nbsp;"x4, "Flanking residues";
-print $query->textfield(-name=>'gibbs_flanks',
-			-default=>$default{gibbs_flanks},
-			-size=>2);
-# print  "&nbsp;"x4, $query->checkbox(-name=>'gibbs_final',
-# 		       -checked=>$default{to_matrix},
-# 		       -label=>'');
-# print "&nbsp;Run final cycle.";
-# print "<BR>";
-
+&MatrixFromPatterns_print_form();
 
 print "</BLOCKQUOTE>\n";
 print ("<INPUT TYPE='radio' NAME='return' VALUE='table'>", 

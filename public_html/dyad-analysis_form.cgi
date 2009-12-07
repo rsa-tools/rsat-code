@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.25 2009/12/03 11:25:42 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.26 2009/12/07 22:19:33 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -22,6 +22,7 @@ $query = new CGI;
 
 ### default values for filling the form
 $default{organism} = "Saccharomyces cerevisiae";
+$default{taxon} = "Saccharomycetales";
 $default{freq_estimate} = "monads";
 #$default{freq_estimate} = "background";
 $default{background} = "upstream-noorf";
@@ -74,6 +75,8 @@ $default{uth_occ_sig} = "none";
 $default{freq} = '';
 $default{lth_observed_freq} = "none";
 $default{uth_observed_freq} = "none";
+
+&MatrixFromPatterns_defaults();
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -438,11 +441,12 @@ sub ReturnTable {
 		       );
 
 #### Convert patterns to matrix
-print $query->checkbox(-name=>'to_matrix',
-		       -checked=>$default{to_matrix},
-		       -label=>'');
-print "&nbsp;Convert assembled patterns to Position-Specific Scoring Matrices (<font color=red>Can be time-consuming for large sequence files</font>).";
-print "<BR>";
+&MatrixFromPatterns_print_form();
+# print $query->checkbox(-name=>'to_matrix',
+# 		       -checked=>$default{to_matrix},
+# 		       -label=>'');
+# print "&nbsp;Convert assembled patterns to Position-Specific Scoring Matrices (<font color=red>Can be time-consuming for large sequence files</font>).";
+# print "<BR>";
 
 
     print "</blockquote>";
