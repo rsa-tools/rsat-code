@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-scan,v 1.26 2009/12/07 17:52:14 amedina Exp $
+# $Id: footprint-scan,v 1.27 2009/12/07 18:39:39 amedina Exp $
 #
 ############################################################
 
@@ -267,7 +267,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.27 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -510,7 +510,7 @@ crer_pval
   ## If -tf is used analyze this gene independently
 
   if($tf){
-      &RSAT::message::TimeWarn("Analyzing gene", $g."/".$gene_nb, $current_gene) if ($main::verbose >= 1);
+      &RSAT::message::TimeWarn("Analyzing TF", $tf) if ($main::verbose >= 1);
       eval {
 	  &RunFootprintScan($tf);
       };  
