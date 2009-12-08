@@ -602,9 +602,9 @@ sub GetOrthologs {
   my $cmd = "$SCRIPTS/get-orthologs";
   $cmd .= " -i ".$outfile{genes};
   $cmd .= " -org ".$organism_name;
-  if ( $main::tf_ortho_file){
+  if ($main::tf_ortho_file){
       $cmd .= " -org_list ". $main::tf_ortho_file ;
-      &RSAT::message::Info ("Getting orthologs", $outfile{orthologs}) if ($main::verbose >= 2);
+      &RSAT::message::Info ("Getting orthologs using option -org_list ", $main::tf_ortho_file) if ($main::verbose >= 2);
   }else{   
       $cmd .= " -taxon ".$taxon ;
   }
