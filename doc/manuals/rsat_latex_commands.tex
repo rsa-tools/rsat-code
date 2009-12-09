@@ -1,9 +1,30 @@
-%\usepackage{color}
+%%%%%% Libraries %%%%%%%%%%%
+% fonts, layout
 \usepackage[usenames]{color}
 \usepackage{times}
 \usepackage{graphics}
 \usepackage{latexsym}
 \usepackage{makeidx}
+\usepackage{syntonly}
+\usepackage[T1]{fontenc}
+\usepackage{mathptm}
+\usepackage{epsf}
+\usepackage{latexsym}
+\usepackage{makeidx}
+\usepackage{fancyheadings}
+\usepackage{pdfpages}
+\usepackage{setspace} % controllable line spacing (default: 1,5)
+% urls
+\usepackage{url}
+%\usepackage[hypertex]{hyperref}
+ % tables
+\usepackage{ltxtable}
+\usepackage{longtable, lscape}
+% graphics
+\usepackage[bf,small,center]{subfigure}
+\usepackage[bf,small]{caption}
+% hyperref package should be loaded last
+\usepackage[a4paper=true,pagebackref=true]{hyperref}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -24,8 +45,8 @@
 \newcommand{\gene}[1]{\textit{#1}}
 \newcommand{\seq}[1]{\texttt{#1}}
 
-\newcommand{\url}[1]{\textit{#1}}
-\newcommand{\urlref}[1]{\footnote{\textit{#1}}}
+%\newcommand{\url}[1]{\textit{#1}}
+\newcommand{\urlref}[1]{\footnote{\url{#1}}}
 
 \newcommand{\bigre}{
   Laboratoire de Bioinformatique des G\'enomes et des R\'eseaux (BiGRe) \\
