@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: makefile,v 1.15 2009/12/09 20:31:13 jvanheld Exp $
+# $Id: makefile,v 1.17 2009/12/09 22:32:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 15:13:34 jvanheld>
 #
@@ -15,7 +15,8 @@ TEX_FILES = \
 	install_guide.tex \
 	tutorial_shell_rsat.tex \
 	rsat_web_server.tex \
-	neat_tutorial.tex 
+	neat_tutorial.tex \
+	neat_web_server.tex 
 
 INCLUDE_TEX_FILES = \
 	rsat_latex_commands.tex
@@ -29,6 +30,7 @@ ILG_FILES=${TEX_FILES:.tex=.ilg}
 IND_FILES=${TEX_FILES:.tex=.ind}
 LOG_FILES=${TEX_FILES:.tex=.log}
 TOC_FILES=${TEX_FILES:.tex=.toc}
+OUT_FILES=${TEX_FILES:.tex=.out}
 
 PDF_FILES=${TEX_FILES:.tex=.pdf}
 PS_FILES=${TEX_FILES:.tex=.ps}
@@ -91,7 +93,7 @@ all_view: ${VIEW_FILES}
 #
 
 tex_clean:
-	${RM} ${AUX_FILES} ${BBL_FILES} ${BLG_FILES} ${DVI_FILES} ${IDX_FILES} ${ILG_FILES} ${IND_FILES} ${LOG_FILES} ${TOC_FILES}
+	${RM} ${AUX_FILES} ${BBL_FILES} ${BLG_FILES} ${DVI_FILES} ${IDX_FILES} ${ILG_FILES} ${IND_FILES} ${LOG_FILES} ${TOC_FILES} ${OUT_FILES}
 
 pdf_clean:
 	${RM} ${PDF_FILES}
