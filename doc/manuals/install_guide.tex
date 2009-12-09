@@ -4,7 +4,8 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\documentclass{book}
+%\documentclass{book}
+\documentclass[12pt,a4paper, oneside]{scrreprt} % KOMA-class Neukam and Kohm, scrbook alternatively
 %\documentstyle[makeidx]{book}
 \makeindex
 \include{rsat_latex_commands}
@@ -17,7 +18,6 @@ Installation guide}
 \author{
 	Jacques van Helden \\
 	\email{jvhelden@ulb.ac.be} \\
-	\url{http://www.bigre.ulb.ac.be/Users/jvanheld/} \\
 	\bigre
 }
 
@@ -651,9 +651,9 @@ Download the source code archive and uncompress it. Copy the following
 \program{seqlogo, logo.pm, template.pm} and \program{template.eps}.
 
 \program{seqlogo} requires a recent version of \program{gs}
-(ghostscript) (\url{http://svn.ghostscript.com/}) to
-create PNG and PDF output, and \program{ImageMagic's convert}
-$<$http://www.imagemagick.org$>$ to create GIFs.
+(ghostscript\urlref{http://www.ghostscript.com/}) to create PNG and
+PDF output, and \program{ImageMagic's
+  convert}\urlref{http://www.imagemagick.org/} to create GIFs.
 
 \item[\program{patser}]: developed by Jerry Hertz, is used for
   matrix-based pattern matching.
@@ -673,17 +673,17 @@ $<$http://www.imagemagick.org$>$ to create GIFs.
 \begin{table}
 \begin{center}
 \begin{tabular}{lll}
-\hline
-Program & author  & URL \\
-\hline
-vmatch & Stefan Kurtz & http://www.vmatch.de/ \\
-seqlogo & Thomas Sneider & http://weblogo.berkeley.edu/ \\
-patser & Jerry Hertz & ftp://ftp.genetics.wustl.edu/pub/stormo/Consensus/ \\
-consensus & Jerry Hertz &  ftp://ftp.genetics.wustl.edu/pub/stormo/Consensus/ \\
-meme & Tim Bailey & http://meme.sdsc.edu/meme/website/meme-download.html \\
-MotifSampler & Gert Thijs & http://www.esat.kuleuven.ac.be/$\tilde{\hspace{0.4em}}$thijs/download.html \\
-gibbs & Andrew Neuwald & ftp://ftp.ncbi.nih.gov/pub/neuwald/gibbs9\_95/ \\
-\hline
+  \hline
+  Program & author  & URL \\
+  \hline
+  vmatch & Stefan Kurtz & \footnotesize{\url{http://www.vmatch.de/}} \\
+  seqlogo & Thomas Sneider & \footnotesize{\url{http://weblogo.berkeley.edu/}} \\
+  patser & Jerry Hertz & \footnotesize{\url{ftp://ftp.genetics.wustl.edu/pub/stormo/Consensus/}} \\
+  consensus & Jerry Hertz &  \footnotesize{\url{ftp://ftp.genetics.wustl.edu/pub/stormo/Consensus/}} \\
+  meme & Tim Bailey & \footnotesize{\url{http://meme.sdsc.edu/}} \\
+  MotifSampler & Gert Thijs & \footnotesize{\url{http://www.esat.kuleuven.ac.be/~thijs/download.html}} \\
+%%  gibbs & Andrew Neuwald & \footnotesize{\url{ftp://ftp.ncbi.nih.gov/pub/neuwald/gibbs9\_95/}} \\
+  \hline
 \end{tabular}
 \end{center}
 \caption{\label{table:other_programs} Programs from other developers
