@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.22 2009/12/07 07:41:26 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.23 2009/12/09 09:01:27 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -26,11 +26,11 @@ The program proceeds in two steps:
 
 1) A B<significance matrix> is built by assembling the patterns (with
    I<pattern assembly>), and converting each assembly to a
-   position-specific scoring matrix (the conversion is performed with
+   position-specific scoring matrix (the conversion is ensured by
    I<convert-matrix>).  This significance matrix contains one row per
    residue, one column per position of the pattern assembly, and each
-   cell indicates the maximal significance value observed for that
-   residue at that position in the assembly.
+   cell indicates the maximal significance value observed for a given
+   residue at a given position in the assembly.
 
 2) The significance matrix is then used as seed for collecting a PSSSM
    from the input sequences. The matrix is collected either with
@@ -44,7 +44,7 @@ gives a good indication of the motif, but it does not always reflect
 the real sites present in the sequence, because it is built by
 assembling overlapping oligonucleotides (or dyads), irrespective of
 the fact that these patterns are found together or not in the input
-sequence. 
+sequence.
 
 The program I<matrix-from-pattern> solves this problem by using the
 assembled patterns as seeds to perform a matrix-based scanning of the
@@ -59,7 +59,7 @@ detection).
 
 =head1 AUTHORS
 
-jvanheld@bigre.ulb.ac.be
+jvhelden@ulb.ac.be
 
 =head1 CATEGORY
 
@@ -81,8 +81,7 @@ matrix-from-patterns -seq sequence_filfe \
 
 =item B<Pattern file>
 
-The pattern file must be in the same format as the output from
-pattern-assembly.
+The pattern file must be in the output format of I<pattern-assembly>.
 
 =back
 
@@ -90,7 +89,7 @@ pattern-assembly.
 
 The output file contains one or several PSSM extracted from the
 sequences. The supported output formats are the same as for
-convert-matrix.
+I<convert-matrix>.
 
 =cut
 
