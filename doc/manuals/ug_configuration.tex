@@ -1,1 +1,120 @@
+\section{Configuring \RSAT}
+
+
+In order to use the command-line version of \RSAT, you first need an
+account on a Unix machine where \RSAT has been installed, and you
+should know the directory where the tools have been installed (if you
+don't know, ask assistance to your system administrator).
+
+In the following instruction, we will assume that \RSAT is installed
+in the directory \texttt{/home/rsat/rsa-tools}. This path has to be
+replaced by the actual path where \RSAT has been installed on your
+computer.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Accessing the programs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Adding \RSAT  to your path}
+
+Before starting to use the tools, you need to define an environment
+variable (\texttt{RSAT}), and to add some directories to your path.
+
+\begin{enumerate}
+
+\item Create an environment variable named \textit{RSAT} and
+  containing the path of rsa-tools.
+
+  The way to create an environment variable depends on your shell. To
+  know you shell, you can type
+
+\begin{footnotesize}
+\begin{verbatim}
+echo $SHELL
+\end{verbatim}
+\end{footnotesize}
+
+The answer should be something like \result{/sbin/bash} or
+\result{/bin/tcsh}.
+
+Now, if we assume that \RSAT have been installed in the following
+directory.
+
+\begin{footnotesize}
+\begin{verbatim}
+/home/rsat/rsa-tools
+\end{verbatim}
+\end{footnotesize}
+
+
+We will declare the \RSAT path to your shell by defining an
+environment variable named \texttt{RSAT}.  We will then add the path
+of the \RSAT \ perl scripts, python scripts and binaries to your
+path. In addition, add java jar files to your classpath.
+
+\item If your default shell is \textbf{tcsh} or \textbf{csh}, type the
+  following commands (you probably need to update the first command to
+  specify the RSAT path of your machine.
+
+\begin{footnotesize}
+\begin{verbatim}
+setenv RSAT /home/rsat/rsa-tools
+set path=($path $RSAT/bin)
+set path=($path $RSAT/perl-scripts)
+set path=($path $RSAT/python-scripts)
+set classpath=($classpath $RSAT/java/lib/NeAT_javatools.jar)
+rehash
+\end{verbatim}
+\end{footnotesize}
+
+
+
+If your shell is bash, you should type the following command:
+
+\begin{footnotesize}
+\begin{verbatim}
+export RSAT=/home/rsat/rsa-tools
+export PATH=${PATH}:${RSAT}/bin
+export PATH=${PATH}:${RSAT}/perl-scripts
+export PATH=${PATH}:${RSAT}/python-scripts
+export CLASSPATH=${CLASSPATH}:${RSAT}/java/lib/NeAT_javatools.jar
+\end{verbatim}
+\end{footnotesize}
+
+
+
+(the \texttt{rehash} command updates the list of executable programs)
+
+\end{enumerate}
+
+If you are using a different shell than bash, csh or tcsh, the
+specification of environment variables might differ from the syntax
+above.  In case of doubt, ask your system administrator how to
+configure your environment variables and your path.
+
+The specification of the environment variables and paths are required
+each time you want to use \RSAT. You can add these specification to
+your personal profile.  This file is normally found at the root of
+your personal account, in the file \file{.bashrc} if your shell is
+bash, or \file{.cshrc} if your shell is csh or tcsh. If you don't know
+how to proceed, ask your system administrator.
+
+
+
+\subsection{Checking the RSAT path}
+
+ The previous step should have included all the \RSAT programs in
+your path.  To check if it worked, just type:
+
+\command{random-seq -l 350}
+
+If your configuration is correct, this command should return a random
+sequence of 350 nucleotides.
+
+You are now able to use any program from the \RSAT package, untill you
+quit your session. It is however not very convenient to set the path
+manually each time you open a new connection. You can modify your
+default configuration by including the above commands in the file
+\file{.cshrc} (in tcsh) or \file{.bashrc} (in bash) which should be
+found at the root of your home directory. If you don't know how to
+modify this file, see the system administrator.
 
