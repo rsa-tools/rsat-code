@@ -384,7 +384,11 @@ sub LoadSupportedTaxonomy_rj {
   foreach my $org (sort {$supported_organism{$a}->{"taxonomy"} cmp $supported_organism{$b}->{"taxonomy"}}
 		   keys (%supported_organism)) {
     $c++;
-    my @taxa = split /\s*;\s*/, $supported_organism{$org}->{"taxonomy"};
+    my $taxonomy = $supported_organism{$org}->{"taxonomy"};
+    $taxonomy = &RSAT::util::trim($taxonomy);
+    $taxonomy =~ s/\s+/ /g;
+    $taxonomy =~ s/\.$//g;
+    my @taxa = split /\s*;\s*/, $taxonomy;
     @taxa = map {$_ =~ s/\s+/\_/g;$_} @taxa; # removing spaces in the top and bottom taxa names
     @taxa = map {$_ =~ s/(\(|\))/\_/g;$_} @taxa; # removing spaces in the top and bottom taxa names
     &RSAT::message::Warning(join ("\t", $c, $org,scalar(@taxa),"taxa"), "\n")  if ($main::verbose >= 5);
