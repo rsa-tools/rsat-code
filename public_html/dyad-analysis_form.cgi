@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.26 2009/12/07 22:19:33 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.27 2009/12/09 09:02:02 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -51,7 +51,7 @@ $default{uth_zscore} = 'none';
 
 $default{rank} = 'checked';
 $default{lth_rank} = "none";
-$default{uth_rank} = "none";
+$default{uth_rank} = "50";
 
 $default{ratio} = '';
 $default{lth_ratio} = "none";
