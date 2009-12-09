@@ -30,12 +30,20 @@ dependency modules for \program{SOAP::WSDL}. For all this you need
 root privileges. If this is not your case, please ask your system
 administrator to install them for you.
 
-The other thing you need is the RSATWS library that you can download from the
-following website:
+The other thing you need is the RSATWS library that you can download
+from the following website:
 
-\url{http://rsat.ulb.ac.be/rsat/web\_services/WSDL\_2}
+\small{\url{http://rsat.ulb.ac.be/rsat/web\_services/RSATWS.tar.gz}}
 
-Unzip and place it in the same directory as your clients.
+Place it in the same directory as your clients, then uncompress if
+with the following command.
+
+\begin{footnotesize}
+\begin{verbatim}
+tar -xpzf RSATWS.tar.gz
+\end{verbatim}
+\end{footnotesize}
+
 
 \subsection{Retrieving sequences from RSATWS}
 
@@ -73,7 +81,7 @@ warn ``\nThis demo script retrieves the start codons for a set of query
 genes\n\n'';
 
 ## WSDL location
-my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
 
 ## Service call
 my $soap=MyInterfaces::RSATWebServices::RSATWSPortType->new();
@@ -157,18 +165,24 @@ unless ($som) {
 
 \section{Examples of WS clients in Perl with SOAP::WSDL 1.27 (or below)}
 
-Some of you are maybe already using perl WS clients with an older version
-of \program{SOAP::WSDL} and would like to stick to it. We show hereafter some simple examples of clients written in
-perl and using such version of the module. The presented code
-as well as other can be downloaded from \url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services.html}
+Some of you are maybe already using perl WS clients with an older
+version of \program{SOAP::WSDL} and would like to stick to it. We show
+hereafter some simple examples of clients written in perl and using
+such version of the module. The presented code as well as other can be
+downloaded from
+
+\small{\url{http://rsat.ulb.ac.be/rsat/web\_services.html}}
 
 \subsection{Requirements}
 
-- \program{SOAP::Lite}
-- \program{SOAP::WSDL}, version 1.27 or below.
-These Perl modules can be installed with the program \program{cpan}, but for this you need root
-privileges. If this is not your case, please ask your system
-administrator to install them for you.
+\begin{itemize}
+\item \program{SOAP::Lite}
+\item \program{SOAP::WSDL}, version 1.27 or below.
+\end{itemize}
+
+These Perl modules can be installed with the program \program{cpan},
+but for this you need root privileges. If this is not your case,
+please ask your system administrator to install them for you.
 
 \subsection{Getting gene-info from RSATWS}
 
@@ -195,7 +209,7 @@ use strict;
 use SOAP::WSDL;
 
 ## Service location
-my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
 
@@ -287,7 +301,7 @@ We saw above that the command \command{gene-info} can be called with
 various options. The description of the available options can be found
 in the documentation of the RSATWS web services at the following URL.
 
-\url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services/RSATWS\_documentation.xml}
+\small{\url{http://rsat.ulb.ac.be/rsat/web\_services/RSATWS\_documentation.xml}}
 
 \subsection{Retrieving sequences from RSATWS}
 
@@ -321,7 +335,7 @@ use SOAP::WSDL;
 warn "\nThis demo script retrieves the start codons for a set of query genes\n\n";
 
 ## WSDL location
-my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
 
@@ -418,7 +432,7 @@ warn "\nThis demo script illustrates a work flow combining three requests to the
 
 
 ## Service location
-my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
 
@@ -587,7 +601,7 @@ use SOAP::WSDL;
 warn "\nINFO: This demo script sends a set of sequences to the RSAT web service, and runs oligo-analysis to detect over-represented oligonuclotides\n\n";
 
 ## WSDL location
-my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
 
@@ -688,7 +702,7 @@ use SOAP::WSDL;
 use Util::Properties;
 
 ## WSDL location
-my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $server = 'http://rsat.ulb.ac.be/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
 my $property_file = shift @ARGV;
@@ -774,16 +788,22 @@ property file. Examples of property files are in the sub-directory
 sure you edit it according to your system.
 
 \subsection{Other tools in RSATWS}
-Following the examples above or using the code that is available for download
-from \url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services.html},
-you can easily access the other RSA Tools for which Web Services have been
-implemented. You will find all you need to know about the tools (parameters,
-etc.) in the documentation
-(\url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services/RSATWS\_documentation.xml}).
+
+Following the examples above or using the code that is available for
+download\urlref{http://rsat.ulb.ac.be/rsat/web\_services.html}, you
+can easily access the other RSA Tools for which Web Services have been
+implemented. You will find all you need to know about the tools
+(parameters, etc.) in the
+documentation\urlref{http://rsat.ulb.ac.be/rsat/web\_services/RSATWS\_documentation.xml}.
 
 \section{Examples of WS client in java}
-First, you need to generate the libraries. There are tools, like Axis, which do it from the WSDL document. These usually take the URL of that document as one of their parameters. In our case, it is there:
-\url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services/RSATWS.wsdl}
+
+First, you need to generate the libraries. There are tools, like Axis,
+which do it from the WSDL document. These usually take the URL of that
+document as one of their parameters. In our case, it is there:
+
+\small{\url{http://rsat.ulb.ac.be/rsat/web\_services/RSATWS.wsdl}}
+
 Then you write a simple client like the one in the following example.
 
 \subsection{Same workflow as above with RSATWS}
@@ -946,7 +966,7 @@ if __name__ == '__main__':
     descr = 0
     feattype = "CDS"
 
-    url = "http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl"
+    url = "http://rsat.ulb.ac.be/rsat/web_services/RSATWS.wsdl"
     server = SOAPpy.WSDL.Proxy(url, http_proxy = my_http_proxy)
     server.soapproxy.config.dumpSoapOutput = 1
     server.soapproxy.config.dumpSoapInput = 1
@@ -969,7 +989,7 @@ if __name__ == '__main__':
 
 The full documentation can be found there:
 
-\url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services/RSATWS\_documentation.pdf}
+\small{\url{http://rsat.ulb.ac.be/rsat/web\_services/RSATWS\_documentation.pdf}}
 
 Please refer to the documentation of each RSAT application for further
 detail on each program.
