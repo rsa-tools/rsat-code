@@ -25,6 +25,7 @@
 \usepackage[bf,small]{caption}
 % hyperref package should be loaded last
 \usepackage[a4paper=true,pagebackref=true]{hyperref}
+\usepackage{multirow}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -48,7 +49,6 @@
 %\newcommand{\url}[1]{\textit{#1}}
 \newcommand{\urlref}[1]{\footnote{\url{#1}}}
 
-
 % tune hyperref
 \hypersetup{
   colorlinks = true,
@@ -60,6 +60,17 @@
   urlcolor = blue
 }
 
+
+\newcommand{\bigreheader}{
+  \begin{tabular}{cl}
+    \multirow{3}{*}{\includegraphics[width=30mm]{images/bigre_logo2.ps}} 
+    & \small{\noindent Universit\'e Libre de Bruxelles}\\
+    & \small{Service de Bioinformatique des G\'enomes et Res\'eaux (BiGRe)}\\
+    & \small{Laboratory of Genome and Network Biology} \\
+    & \small{\url{http://www.bigre.ulb.ac.be/}}
+  \end{tabular}
+}
+
 \newcommand{\bigre}{
   Laboratoire de Bioinformatique des G\'enomes et des R\'eseaux (BiGRe) \\
   Laboratory of Genome and Network Biology \\
@@ -67,6 +78,30 @@
   http://www.bigre.ulb.ac.be/ \\
 }
 
+\newcommand{\RSATtitlePage}[1]{
+  \begin{titlepage}
+    \begin{center}
+      % Upper part of the page
+      \bigreheader \\[3cm]
+
+      % Title
+      \rule{\linewidth}{0.5mm} \\[0.4cm]
+      { \LARGE \bfseries Regulatory Sequence Analysis Tools (\RSAT) \\[0.5cm]
+        {#1}}\\[0.4cm]
+ 
+      \rule{\linewidth}{0.5mm} \\[1.5cm]
+ 
+      % Author
+      \large \bfseries Jacques \textsc{van Helden} \& the \RSAT team\\
+ 
+      \vfill
+ 
+      % Bottom of the page
+      {\large \today}
+ 
+    \end{center}
+  \end{titlepage}
+}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%% environments %%%%%%%%%%%%%%%%%%%%%%%%%
