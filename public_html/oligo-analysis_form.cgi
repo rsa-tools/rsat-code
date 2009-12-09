@@ -40,7 +40,7 @@ $default{uth_zscore} = 'none';
 
 $default{rank} = 'checked';
 $default{lth_rank} = "none";
-$default{uth_rank} = "none";
+$default{uth_rank} = "50";
 
 $default{ratio} = '';
 $default{lth_ratio} = "none";
