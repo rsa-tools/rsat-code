@@ -7,10 +7,10 @@
  *                                                                         *
  ***************************************************************************/
 
+using namespace std;
+
 #ifndef __GIBBS__
 #define __GIBBS__
-
-using namespace std;
 
 #include <iostream> 
 #include <vector>
@@ -22,7 +22,6 @@ using namespace std;
 #include "utils.h"
 #include "fasta.h"
 #include "matrix.h"
-
 #include "markov.h"
 
 //#include "mtrand.h"
@@ -86,7 +85,7 @@ struct Parameters
     int update;
     int score_type; // LLR_SCORE or IC_SCORE
     char *title;
-    bool finalcycle;
+    bool collect;
     bool start_from_sites;
     SITES starting_sites;
     int id;
