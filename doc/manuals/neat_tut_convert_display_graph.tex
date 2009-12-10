@@ -103,6 +103,7 @@ must of course install them on your computer.
 \item In this first step, we will convert the tab delimited String network that we just downloaded into a GML file by using this command. We compute the layout of the nodes. Moreover, we compute an edge width and an color proportional to the weight on the edge.
 
 \end{enumerate}
+
 \lstset{language=csh}
 \begin{lstlisting}
 convert-graph 	-from tab -to gml -wcol 3 -i string_coex_simple.tab 
@@ -112,8 +113,8 @@ convert-graph 	-from tab -to gml -wcol 3 -i string_coex_simple.tab
 \subsubsection{Visualization using NeAT}
 Use the following command to create a graph using the NeAT \program{display-graph} program.
 \begin{lstlisting}
-	display-graph 	-in_format gml -out_format png -i string_coex_simple.gml
-			-o string_coex_simple.png -ewidth
+display-graph 	-in_format gml -out_format png -i string_coex_simple.gml
+	-o string_coex_simple.png -ewidth
 \end{lstlisting}
 
 
