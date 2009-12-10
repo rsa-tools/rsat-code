@@ -896,7 +896,7 @@ Result collect_sites(Result &result, SITES &sites, Sequences &sequences, Markov 
     params.flanks = 0;
 
     Result new_result;
-    new_result.l = matrix.J;
+    new_result.l = params.m1 + params.m2;
     new_result.motif = matrix_scan(sequences, matrix, markov, params);
     new_result.llr = llr(result.motif, sequences, matrix, markov);
     new_result.ic  = IC_Markov(result.motif, sequences, matrix, markov);
@@ -942,7 +942,7 @@ void run_sampler(vector<string> &raw_sequences, Sequences &sequences, Markov &ma
             result = find_one_motif(raw_sequences, sequences, sites, markov, params);
             result.l = l;
             
-            print_motif(result.motif, raw_sequences, sequences, result.l, result.ic, result.llr, params.rc);
+            // print_motif(result.motif, raw_sequences, sequences, result.l, result.ic, result.llr, params.rc);
             if (params.collect)
             {
                 // final cycle
