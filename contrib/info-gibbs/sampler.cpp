@@ -1,4 +1,5 @@
 #include "sampler.h"
+#include "scan.h"
 
 int SEED = time(NULL);
 double PSEUDO = 1.0;
@@ -425,60 +426,9 @@ SITES remove_neighbours(SITES &allsites, SITES &motif, int nseq, int dmin=0, int
             new_sites.push_back(sites[i]);
         }
     }
-
-    // DEBUG("allsites");
-    // print_sites(allsites);
-    // 
-    // DEBUG("motif");
-    // print_sites(motif);
-    // 
-    // DEBUG("new");
-    // print_sites(new_sites);
-    
     return new_sites;
 }
 
-// #define INVALID -1
-// SITES remove_neighbours(SITES &allsites, SITES &motif, int nseq, int dmin=0, int r=-1)
-// {
-//     if (dmin == 0)
-//         return allsites;
-// 
-//     DEBUG("allsites");
-//     print_sites(allsites);
-//     
-//     DEBUG("motif");
-//     print_sites(motif);
-//     SITES sites = allsites;
-//     for (int k = 0; k < (int) motif.size(); k++)
-//     {
-//         if (k == r)
-//             continue;
-//         for (int i = 0; i < (int) sites.size(); i++)
-//         {
-//              if (sites[i].s > motif[k].s)
-//                 break;
-//              else if (sites[i].s < motif[k].s)
-//                 continue;
-//              // motif[k].s == allsites[k].s
-//              if (sites[i].p >= motif[k].p + dmin)
-//                 break;
-//              if ( (sites[i].p > motif[k].p - dmin) && (sites[i].p < motif[k].p + dmin) )
-//                 sites[i].s = INVALID; //invalidate site
-//         }
-//     }
-//     SITES new_sites;
-//     for (int i = 0; i < (int) sites.size(); i++)
-//     {
-//         if (sites[i].s != INVALID)
-//         {
-//             new_sites.push_back(sites[i]);
-//         }
-//     }
-//     DEBUG("new");
-//     print_sites(new_sites);
-//     return new_sites;
-// }
 /***************************************************************************
  *                                                                         *
  *  MOTIF
@@ -834,7 +784,7 @@ Result find_one_motif(vector<string> &raw_sequences, Sequences & sequences, SITE
 
     if ((int) sites.size() < n)
     {
-        ERROR("too few allowed sites");
+        ERROR("parameters do not allow to find a motif");
     }
 
     for (int run = 0; run < n_run; run++)
@@ -936,42 +886,21 @@ double Score(Site &site, SITES &motif, Sequences &sequences, Array &matrix, Mark
     return s;
 }
 
-// global var used by compare_site_func to sort
-SITES g_motif;
-Sequences g_sequences;
-Markov g_markov;
-Array g_matrix;
-
-bool compare_site_func (Site i,Site j)
-{ 
-    double a = Score(i, g_motif, g_sequences, g_matrix, g_markov);
-    double b = Score(j, g_motif, g_sequences, g_matrix, g_markov);
-    return a < b;
-}
-
-Result final_cycle(Result result, SITES &sites, Sequences &sequences, Markov &markov, Parameters &params)
+Result collect_sites(Result &result, SITES &sites, Sequences &sequences, Markov &markov, Parameters &params)
 {
-    int n = result.motif.size();
-    SITES sorted_sites = sites;
+    Array matrix = Array(params.m1 + params.m2, markov.alphabet_size);
+    count_matrix(matrix, result.motif, sequences);
+    matrix.transform2logfreq(markov);
+    params.minspacing   = 0;
+    params.maxspacing   = 0;
+    params.flanks = 0;
 
-    g_motif = result.motif;
-    g_sequences = sequences;
-    g_markov = markov;
-    
-    Array matrix = Array(params.m1 + params.m2, g_markov.alphabet_size);
-    g_matrix = matrix;
-
-    sort(sorted_sites.begin(), sorted_sites.end(), compare_site_func);
-    
-    int i;
-    for (i = 0; i < n; i++)
-    {
-        result.motif[i] = sorted_sites[sorted_sites.size() - 1 - i];
-    }
-
-    result.llr = llr(result.motif, sequences, matrix, markov);
-    result.ic  = IC_Markov(result.motif, sequences, matrix, markov);
-
+    Result new_result;
+    new_result.l = matrix.J;
+    new_result.motif = matrix_scan(sequences, matrix, markov, params);
+    new_result.llr = llr(result.motif, sequences, matrix, markov);
+    new_result.ic  = IC_Markov(result.motif, sequences, matrix, markov);
+    //print_sites(result.motif);
     return result;
 }
 
@@ -1012,11 +941,13 @@ void run_sampler(vector<string> &raw_sequences, Sequences &sequences, Markov &ma
 
             result = find_one_motif(raw_sequences, sequences, sites, markov, params);
             result.l = l;
-            if (params.finalcycle)
+            
+            print_motif(result.motif, raw_sequences, sequences, result.l, result.ic, result.llr, params.rc);
+            if (params.collect)
             {
                 // final cycle
                 VERBOSE1("ic before final cycle=%.3f\n", result.ic);
-                result = final_cycle(result, sites, sequences, markov, params);
+                result = collect_sites(result, sites, sequences, markov, params);
                 VERBOSE1("ic after final cycle=%.3f\n", result.ic);
             }
 
