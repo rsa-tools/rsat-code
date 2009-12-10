@@ -16,12 +16,11 @@ regions, at least in microbial organisms.
 First trial: we will extract the upstream sequence for a single
 gene. Try:
 
-{\color{Blue} \begin{footnotesize} 
-\begin{verbatim}
+\begin{lstlisting}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
     -q metA -from -200 -to -1
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
+
 
 This command retrieves a 200 bp upstream sequence for the gene
 \gene{metA} of the bacteria \org{Escherichia coli K12}. 
@@ -59,12 +58,10 @@ With the default parameters,
 To better understand the system of coordinates, try to locate the
 start codon in the sequence obtained with the following commands.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
     -q metA -from -5 -to 6
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 
 \section{Combining upstream and coding sequence}
@@ -75,24 +72,20 @@ effect by preventing RNA-polymerase from binding DNA. The command
 \program{retrieve-seq} allows you to extract a sequence that overlaps
 the start codon, to combine an upstream and a coding segment.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
     -q metA -from -200 -to 49
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 \section{Retrieving a few upstream sequences}
 
 The option \option{-q} (query gene) can be used iteratively in a
 command to retrieve sequences for several genes.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 retrieve-seq -org Escherichia_coli_K12 \
     -from -200 -to 49 -q metA -q metB -q metC
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 \section{Retrieving a larger list of upstream sequences}
 
@@ -101,84 +94,45 @@ cumbersome to type each gene name on the command-line. A list of gene
 names can be provided in a text file, each gene name coming as the
 first word of a new line.
 
-To create a test file, you can execute the following steps:
-\begin{enumerate}
-\item to create a new file, call the standard unix command 
+As an example, we willuse the command \command{gene-info} to collect
+all genes whose matches the prefix \texttt{PHO} followed by one or
+several numbers (this will return a list of genes involved in
+phosphate metabolism).
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
-cat > PHO_genes.txt
-\end{verbatim} \end{footnotesize}
-} 
+\begin{lstlisting}
+gene-info -org Saccharomyces_cerevisiae -q 'PHO\d+' -o PHO_genes.txt
+\end{lstlisting}
 
-\begin{samepage}
-\item You can now type a list of gene names, for example:
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
-PHO11
-PHO3
-PHO5
-PHO88
-PHO89
-PHO87
-PHO13
-PHO2
-PHO8
-PHO4
-PHO81
-PHO12
-PHO90
-PHO86
-PHO84
-PHO23
-PHO91
-PHO80
-PHO85
-\end{verbatim} \end{footnotesize}
-} 
-\end{samepage}
+We can check the content of your file by typing
 
-\item Once you have finished typing gene names, press \texttt{Ctrl-D}
-
-\item Check the content of your file by typing 
-
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 cat PHO_genes.txt
-\end{verbatim} \end{footnotesize}
-} 
+\end{lstlisting}
 
-\end{enumerate}
+This file can now be used as input to indicate the list of query genes
+for \command{retrieve-seq}, with the option \option{-i}.
 
-This file can now be used as input to indicate the list of genes. The option \option{-i} 
-
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 retrieve-seq -type upstream -i PHO_genes.txt \
     -org Saccharomyces_cerevisiae \
     -from -800 -to -1  
-\end{verbatim} \end{footnotesize}
-} 
+\end{lstlisting}
 
 The option \option{-o} allows you to indicate the name of a file where
 the sequence will be stored.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 retrieve-seq -type upstream -i PHO_genes.txt \
     -org Saccharomyces_cerevisiae \
     -from -800 -to -1   -label name \
     -o PHO_up800.fasta
-\end{verbatim} \end{footnotesize}
-} 
+\end{lstlisting}
 
 Check the sequence file:
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 more PHO_up800.fasta
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 
 \section{Preventing the inclusion of upstream ORFs}
@@ -203,7 +157,7 @@ compare the results obtained with and without the option
 Create a text file named \file{his\_genes.txt} with the following
 genes.
 
-{\color{Blue} \begin{footnotesize}
+\begin{footnotesize}
 \begin{verbatim}
 hisL
 hisG
@@ -218,39 +172,33 @@ hisM
 hisQ
 hisJ
 hisS
-\end{verbatim} \end{footnotesize}
-}
+\end{verbatim}
+\end{footnotesize}
 
 The default behaviour will return 200bp for each gene. 
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
     -i his_genes.txt -from -200 -to -1
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 With the option \option{-noorf}, sequences are clipped depending on
 the position of the closest upstream neighbour.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
     -i his_genes.txt -from -200 -to -1 -noorf \
     -o his_up200_noorf.fasta
 
 more his_up200_noorf.fasta
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 You can measure the length of the resulting sequences with the program
 \program{sequence-lengths}.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 sequence-lengths -i his_up200_noorf.fasta
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 Notice that some genes have very short upstream sequences (no more
 than a few bp, or even 0bp). These are the internal genes of the
@@ -261,34 +209,28 @@ We will now apply the same option to the list of PHO genes entered
 above, in order to obtaine the corresponding non-coding upstream
 sequences, with a size up to 800bp.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 retrieve-seq -type upstream -i PHO_genes.txt \
     -org Saccharomyces_cerevisiae \
     -from -800 -to -1 -noorf  -label name \
     -o PHO_up800-noorf.fasta
-\end{verbatim} \end{footnotesize}
-} 
+\end{lstlisting}
 
 Check the sequence file:
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 more PHO_up800-noorf.fasta
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 We can now use the command \command{sequence-lengths} to compare the
 sequence sizes of the files \file{PHO\_up800.fasta}, and
 \file{PHO\_up800-noorf.fasta}, respectively.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 sequence-lengths -i PHO_up800.fasta
 
 sequence-lengths -i PHO_up800-noorf.fasta
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 \section{Getting information about genes}
 
@@ -303,11 +245,9 @@ set of genes related to phosphate metabolism. The command
 of genes. By default, the first word of each row of the input file is
 considered as a query.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 gene-info -i PHO_genes.txt -org Saccharomyces_cerevisiae
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 
 \subsection{Selecting gene by name or description}
@@ -326,21 +266,17 @@ their names.
 In this example, we will enter the query string with the option
 \option{-q} on the command line, rather than in a file.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 gene-info -q 'MET' -org Saccharomyces_cerevisiae
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 We could also refine the query by taking advantage of our knowledge of
 the yeast gene nomenclature, and selecting the genes whose name starts
 with the prefix ``MET'', followed by one or several numbers.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 gene-info -q '^MET\d+' -org Saccharomyces_cerevisiae
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 The query is formulatd as a \concept{regular expression}, where
 \texttt{$\backslash$d} indicates a number, and the symbol $+$ is a
@@ -353,16 +289,14 @@ We can now store this list of genes in a separate file, and retrieve
 the coresponding upstream sequences.
 
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 gene-info -q '^MET\d+' -org Saccharomyces_cerevisiae -o MET_genes.txt
 
 retrieve-seq -type upstream -i MET_genes.txt \
     -org Saccharomyces_cerevisiae \
     -from -800 -to -1 -noorf  -label name \
     -o MET_up800-noorf.fasta
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 
 \subsection{Selecting genes by their description}
@@ -373,11 +307,9 @@ against the list of gene names for the selected organism. The option
 instance, we could search all the genes having the word ``methionine''
 in their description. 
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 gene-info -descr -q methionine -org Saccharomyces_cerevisiae
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 \subsection{Adding selected fields to a list of gene}
 
@@ -402,12 +334,10 @@ file, with user-selected fields of information about the genes. For
 example, the options below will add the gene identifier and the list
 of synonym to each row of our PHO gene list. 
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 add-gene-info -i PHO_genes.txt -org Saccharomyces_cerevisiae \
   -info id,names
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 If the input file contains additional columns (e.g. expression
 profiles), these will be preserved in the output, and the requested
@@ -416,11 +346,9 @@ information columns will be added at the end of each row.
 You can check the list of fields supported by \program{add-gene-info}
 by consulting the help message.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 add-gene-info -help
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 
 \section{Retrieving sequences of a random selection of genes}
@@ -432,16 +360,14 @@ random selection of 20 yeast genes, and retrieve their upstream
 sequences. This selection will also be used in the next chapters.
 
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 random-genes -org Saccharomyces_cerevisiae -n 20 -o RAND_genes.txt
 
 retrieve-seq -type upstream -i RAND_genes.txt \
     -org Saccharomyces_cerevisiae \
     -from -800 -to -1 -noorf  -label name \
     -o RAND_up800-noorf.fasta
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 \section{Retrieving all upstream sequences}
 
@@ -456,22 +382,18 @@ negative coordinates specify upstream positions, 0 being the first
 base of the coding sequence. Thus, by specifying positions 0 to 2, we
 will extract the three first coding bases, i.e. the start codon. 
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
     -from 0 -to 2 \
     -all -format wc -nocomments -label id,name \
     -o Escherichia_coli_K12_start_codons.wc
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 Check the result:
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 more Escherichia_coli_K12_start_codons.wc
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 
 \section{Retrieving downstream sequences}
@@ -486,26 +408,22 @@ For example, the following command will retrieve 200pb downstream
 sequences for a few yeast genes. The first nucleotides of the
 retrieved sequences are those immediately after the stop codon.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 retrieve-seq -type downstream -org Saccharomyces_cerevisiae \
     -from 1 -to 200 -label id,name -q PHO5 -q MET4
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 Since with the option \option{-type downstream}, the coordinates
 smaller than 1 indicate positions upstream of the stop codon, we can
 use \program{retrieve-seq} to extract the stop codons for all the
 genes of \org{Escherichia coli}.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 retrieve-seq -type downstream -org Escherichia_coli_K12 \
     -from -2 -to 0 \
     -all -format wc -nocomments -label id,name \
     -o Escherichia_coli_K12_stop_codons.wc
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 \section{Inferring operons}
 
@@ -562,12 +480,10 @@ examples.
 With the following command, we infer the operon for a set of input
 genes.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q mhpR \
   -q mhpA -q mhpD
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 Note that the prediction is incorrect for the gene \gene{hisD}: the
 program predict \gene{hisG} as operon leader, whereas the well known
@@ -578,12 +494,10 @@ is 145bp, which exceeds the default distance threshold (55bp).
 One option would be to increase the distance threshold to 150bp. 
 
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q mhpR \
   -q mhpA -q mhpD -dist 150
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 However, we should be very careful with this option, since it has a
 strong consequence on all the other operon inferenes in the same
@@ -595,12 +509,10 @@ we will undully consider these promoters as WO.
 
 The option \option{-return} allows to specify custom return fields.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q lacI -q lacZ \
   -return q_info,up_info,leader,trailer,operon
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 Note that the famous \gene{lac} operon contains three genes:
 \gene{lacZ}, \gene{lacY} and \gene{lacA}, but the inferred operon only
@@ -608,12 +520,10 @@ returns the two first genes because the distance between \gene{lacY}
 and \gene{lacA} is 65bp. This can be checked with the return field
 \option{down\_info}.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 infer-operon -v 1 -org Escherichia_coli_K12 -q lacZ -q lacY \
   -return q_info,up_info,down_info,operon
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 \subsection{Operons with non-CDS genes}
 
@@ -621,24 +531,20 @@ Note that operons can contain non-coding genes. For example, the
 metT operon contains a series of tRNA genes for methionine, leucine
 and glutamina, respectively.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 infer-operon -org Escherichia_coli_K12 -q glnV -q metU -q ileV \
 -return q_info,up_info,operon
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 \subsection{Inferring all operons for a given organism}
 
 The option \option{-all} allows to infer operons for all the genes of
 an organism.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 infer-operon -v 1 -org Escherichia_coli_K12 -all \
   -return q_info,up_info,leader,operon
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 \subsection{Retrieving operon leader genes and inferred
   operon promoters}
@@ -649,12 +555,10 @@ the corresponding promoter sequences. For this, we will use the option
 \option{-return} to obtain the leader gene in the first column of the
 result table. 
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 infer-operon -org Escherichia_coli_K12 -return leader,q_info,up_info,operon \
    -q lacI -q lacZ -q lacY -q mhpD -q mhpF
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 The first column now indicates the inferred leader genes rather than
 tne query genes, and that this column contains some redundancy: the
@@ -666,27 +570,23 @@ To avoid including twice their leader, we use the unix command sort -u
 (unique).
 
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 infer-operon -org Escherichia_coli_K12 -return leader,q_info,up_info,operon \
    -q lacI -q lacZ -q lacY -q mhpD -q mhpF \
    | cut -f 1 \
    | sort -u 
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 We can now use the resulting non-redundant list of operon leaders as
 input for retrieve-seq.
 
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 infer-operon -org Escherichia_coli_K12 -return leader,q_info,up_info,operon \
    -q lacI -q lacZ -q lacY -q mhpD -q mhpF \
    | cut -f 1 \
    | sort -u \
    | retrieve-seq -org Escherichia_coli_K12 -noorf
-\end{verbatim} \end{footnotesize}
-}
+\end{lstlisting}
 
 
 \subsection{Collecting all upstream regions from the query gene up to
