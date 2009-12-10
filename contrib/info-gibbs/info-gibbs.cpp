@@ -27,7 +27,7 @@ using namespace std;
 #include "sampler.h"
 #include "scan.h"
 
-int VERSION = 200911;
+int VERSION = 200912;
 char *COMMAND_LINE;
 
 /*
@@ -117,8 +117,9 @@ void help()
 "\n"
 "    -r #  --nrun=#        try to run the Gibbs sampling seach # times\n"
 "\n"
-// "    --finalcycle          try to collect the N best sites using their weight scores \n"
-// "\n"
+"    --collect             try to collect the N best sites using their weight scores \n"
+"                          (during the collection --dmin and --zoops are not taken into account)\n"
+"\n"
 "    --sigmatrix=#         start sampling form sites collected by scanning the sequences with sig matrix # \n"
 "\n"
 "    --flanks=#            when using --sigmatrix add extra # positions arround the matrix\n"
@@ -157,7 +158,7 @@ int main(int argc, char *argv[])
     params.temperature  = 1.0;
     params.score_type = LLR_IC_SCORE;
     params.title = (char *) "";
-    params.finalcycle = false;
+    params.collect = false;
     params.id = 1;
     params.flanks = 0;
     params.nseq = 0;
@@ -216,7 +217,7 @@ int main(int argc, char *argv[])
         { "ic",          no_argument,       NULL, 'I' },
         { "pq",          no_argument,       NULL, 'Q' },
         { "help",        no_argument,       NULL, 'h' },
-        { "finalcycle",  no_argument,       NULL, 'F' },
+        { "collect",     no_argument,       NULL, 'F' },
         { "zoops",       no_argument,       NULL, 'Z' },
 
         { "version",     no_argument,       NULL, 'V' },
@@ -347,8 +348,7 @@ int main(int argc, char *argv[])
             break;
 
             case 'F':
-            WARNING("option --finalcycle not supported");
-            //params.finalcycle = true;
+            params.collect = true;
             break;
 
             case 'L':
@@ -425,8 +425,9 @@ int main(int argc, char *argv[])
     }
     else
     {
-        //double priori[4] = {0.25, 0.25, 0.25, 0.25};
-        bernoulli(markov, compute_priori(sequences));
+        double priori[4] = {0.25, 0.25, 0.25, 0.25};
+        bernoulli(markov, priori);
+        //bernoulli(markov, compute_priori(sequences));
     }
 
     // read optional input sig matrix
@@ -444,12 +445,14 @@ int main(int argc, char *argv[])
             Array matrix = read_matrix(fp);
             if (matrix.J == 0)
                 break;
+            matrix.transform2logfreq(markov);
             params.start_from_sites = true;
             params.m1 = matrix.J + params.flanks * 2;
             params.m2 = 0;
             params.minspacing   = 0;
             params.maxspacing   = 0;
-            SITES sites = matrix_scan(raw_sequences, sequences, matrix, markov, params);
+            params.flanks = 0;
+            SITES sites = matrix_scan(sequences, matrix, markov, params);
             params.starting_sites = sites;
             run_sampler(raw_sequences, sequences, markov, params);
             params.id           += 1;

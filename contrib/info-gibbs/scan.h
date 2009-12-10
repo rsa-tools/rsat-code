@@ -18,6 +18,6 @@ using namespace std;
 
 #include "sampler.h"
 
-SITES matrix_scan(vector<string> raw_sequences, Sequences &sequences, Array &matrix, Markov &bg, Parameters &params);
+SITES matrix_scan(Sequences &sequences, Array &matrix, Markov &bg, Parameters &params);
 
 #endif

@@ -5,7 +5,11 @@ SITES empty_sites(int n, int l)
 {
     SITES motif;
     for (int i = 0; i < n; i++)
-        motif.push_back(Site(-1,-1,l));
+    {
+        Site s = Site(-1,-1,l);
+        s.score = -1E300;
+        motif.push_back(s);
+    }
     return motif;
 }
 
@@ -28,9 +32,11 @@ void try_add_sites(SITES &sites, int s, int p, double score)
     // update site if needed
     if (score > sites[minpos].score)
     {
+        //DEBUG("ADD s=%d p=%d score=%G %G", s, p, score, sites[minpos].score);
         sites[minpos].s = s;
         sites[minpos].p = p;
         sites[minpos].score = score;
+        
     }
 }
 
@@ -56,7 +62,7 @@ int word_is_valid(int *seq, int start, int l)
     return 1;
 }
 
-SITES matrix_scan(vector<string> raw_sequences, Sequences &sequences, Array &matrix, Markov &bg, Parameters &params)
+SITES matrix_scan(Sequences &sequences, Array &matrix, Markov &bg, Parameters &params)
 {
     int l = matrix.J;
     SITES sites = empty_sites(params.n, l + params.flanks * 2);
@@ -69,6 +75,7 @@ SITES matrix_scan(vector<string> raw_sequences, Sequences &sequences, Array &mat
                 continue;            
             double W = matrix.sum(&sequences[s].data[i]);
             try_add_sites(sites, s, i - params.flanks, W);
+            //DEBUG("i=%d, w=%f", i, W);
         }
     }
     
