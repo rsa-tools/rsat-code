@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.76 2009/12/03 11:32:06 jvanheld Exp $
+# $Id: retrieve-seq,v 1.77 2009/12/10 11:51:19 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -59,7 +59,6 @@ if (scalar(@label_fields) <= 0) {
     @label_fields = "name";
 }
 
-
 ################################################################
 ## Instantiate organism
 $organism = new RSAT::organism();
@@ -74,6 +73,7 @@ if ($organism_name) {
 }
 $organism->set_attribute("name", $organism_name);
 
+
 #### accepted feature types
 $organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
 
@@ -81,6 +81,7 @@ $organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
 if ($annotation_table) {
   $organism->set_attribute("annotation_table", $annotation_table);
 }
+
 
 ################################################################
 #### Specify the input sequence file
@@ -115,6 +116,7 @@ if ($sequence_type eq "upstream") {
     $default{from} = 1;
     $default{to} = 200;
 }
+
 
 #### check output format ####
 &CheckOutputSeqFormat($out_format);
