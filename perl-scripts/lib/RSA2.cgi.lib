@@ -1553,7 +1553,8 @@ sub MatrixFromPatterns_run {
   my $sig_matrix_file = $pssm_prefix."_sig_matrices.txt";
   $gibbs_matrix_file = $pssm_prefix."_gibbs_matrices.txt";
   $pssm_file = $pssm_prefix."_count_matrices.txt"; ## has to be global for the piping form
-  $pssm_command = "$SCRIPTS/matrix-from-patterns -v 1 ".$str;
+  $pssm_command = "$SCRIPTS/matrix-from-patterns -v 1 -links ";
+#  $pssm_command .= " ".$str;
   $pssm_command .= " -seq ".$sequence_file;
   $pssm_command .= " -format $sequence_format";
   $pssm_command .= " -asmb ".$assembly_file;
@@ -1570,35 +1571,35 @@ sub MatrixFromPatterns_run {
   push @result_files, ('info-gibbs matrices', $gibbs_matrix_file);
   push @result_files, ('count matrices', $pssm_file);
 
-  #	  print "<H2>Significance matrices</H2>\n";
-  #	  open SIG, $TMP."/".$sig_matrix_file;
-  #	  print "<PRE>\n";
-  #	  while (<SIG>) {
-  #	    s|$ENV{RSAT}/||g;
-  #	    print;
-  #	  }
-  #	  print "</PRE>\n";
-  #	  close(SIG);
+#   print "<H2>Significance matrices (intermediate result)</H2>\n";
+#   open SIG, $TMP."/".$sig_matrix_file;
+#   print "<PRE>\n";
+#   while (<SIG>) {
+#     s|$ENV{RSAT}/||g;
+#     print;
+#   }
+#   print "</PRE>\n";
+#   close(SIG);
 
-  print "<H2>Matrices (info-gibbs result)</H2>\n";
-  open GIBBS, $TMP."/".$gibbs_matrix_file;
+#   print "<H2>Matrices (info-gibbs result)</H2>\n";
+#   open GIBBS, $TMP."/".$gibbs_matrix_file;
+#   print "<PRE>\n";
+#   while (<GIBBS>) {
+#     s|$ENV{RSAT}/||g;
+#     print;
+#   }
+#   print "</PRE>\n";
+#   close(GIBBS);
+
+  print "<H2>Final matrices</H2>\n";
+  open PSSM, $TMP."/".$pssm_file;
   print "<PRE>\n";
-  while (<GIBBS>) {
+  while (<PSSM>) {
     s|$ENV{RSAT}/||g;
     print;
   }
   print "</PRE>\n";
-  close(GIBBS);
-
-  # 	  print "<H2>Matrices</H2>\n";
-  # 	  open PSSM, $TMP."/".$pssm_file;
-  # 	  print "<PRE>\n";
-  # 	  while (<PSSM>) {
-  # 	    s|$ENV{RSAT}/||g;
-  # 	    print;
-  # 	  }
-  # 	  print "</PRE>\n";
-  # 	  close(PSSM);
+  close(PSSM);
 }
 
 sub OligoDyadPipingForm {
