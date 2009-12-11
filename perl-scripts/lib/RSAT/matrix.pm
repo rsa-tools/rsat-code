@@ -788,90 +788,89 @@ Output matrix format
 
 =cut
 sub to_patser {
-    my ($self, %args) = @_;
-    my $to_print = "";
+  my ($self, %args) = @_;
+  my $to_print = "";
 
+  my $output_format = $args{format} || 'tab';
+  $output_format = lc($output_format);
 
-    my $output_format = $args{format} || 'tab';
-    $output_format = lc($output_format);
+  ## Separator between row names (residues) and matrix content
+  my $pipe =  "|";
+  if (defined($args{pipe})) {
+    $pipe = $args{pipe};
+  }
+  $self->force_attribute("pipe", $pipe);
 
-    ## Separator between row names (residues) and matrix content
-    my $pipe =  "|";
-    if (defined($args{pipe})) {
-      $pipe = $args{pipe};
+  ## Matrix type
+  $type = $args{type} || "counts";
+
+  %supported_types = (profile=>1,
+		      counts=>1,
+		      perm_columns => 1,
+		      frequencies=>1,
+		      weights=>1,
+		      information=>1,
+		      parameters=>1,
+		      consensus=>1
+		     );
+  &main::FatalError("Invalid matrix type $type") unless $supported_types{$type};
+
+  ## Set formatting parameters provided in arguments as matrix attribute
+  foreach my $key ("sep", "col_width", "decimals") {
+    if (defined($args{$key})) {
+      $self->force_attribute($key, $args{$key});
     }
-    $self->force_attribute("pipe", $pipe);
+  }
 
-    ## Matrix type
-    $type = $args{type} || "counts";
+  ## Format for the matrix entries
+  my $sep = $self->get_attribute("sep") || "\t";
+  my $col_width = $self->get_attribute("col_width");
+  my $decimals = $self->get_attribute("decimals");
 
-    %supported_types = (profile=>1,
-			counts=>1,
-			perm_columns => 1,
-			frequencies=>1,
-			weights=>1,
-			information=>1,
-			parameters=>1,
-			consensus=>1
-			);
-    &main::FatalError("Invalid matrix type $type") unless $supported_types{$type};
-
-    ## Set formatting parameters provided in arguments as matrix attribute
-    foreach my $key ("sep", "col_width", "decimals") {
-	if (defined($args{$key})) {
-	    $self->force_attribute($key, $args{$key});
-	}
+  ## Calculate number width
+  my $number_width = 0;
+  if ($col_width) {
+    $number_width = $col_width - 1;
+  }
+  if ($type eq "counts") {
+    $decimals = 0;
+  } else {
+    unless ($decimals) {
+      $decimals = $number_width - 2;
     }
+  }
 
-    ## Format for the matrix entries
-    my $sep = $self->get_attribute("sep") || "\t";
-    my $col_width = $self->get_attribute("col_width");
-    my $decimals = $self->get_attribute("decimals");
+  ################################################################
+  ## Print parameters
+  if ($type eq "parameters") {
+    my @information = $self->getInformation();
+    $to_print .= $self->_printParameters($to_print);
 
-    ## Calculate number width
-    my $number_width = 0;
-    if ($col_width) {
-      $number_width = $col_width - 1;
-    }
-    if ($type eq "counts") {
-      $decimals = 0;
-    } else {
-      unless ($decimals) {
-	$decimals = $number_width - 2;
-      }
-    }
+  } elsif ($type eq "consensus") {
+    $to_print .= "; consensus\t".$self->get_attribute("consensus.IUPAC")."\n";
+    $to_print .= "; consensus.rc\t".$self->get_attribute("consensus.IUPAC.rc")."\n";
 
     ################################################################
-    ## Print parameters
-    if ($type eq "parameters") {
-      my @information = $self->getInformation();
-      $to_print .= $self->_printParameters($to_print);
+    ## Print a profile (vertical matrix with consensus on the right side)
+  } elsif ($type eq "profile") {
+    $to_print .= $self->_printProfile($to_print);
 
-    } elsif ($type eq "consensus") {
-      $to_print .= "; consensus\t".$self->get_attribute("consensus.IUPAC")."\n";
-      $to_print .= "; consensus.rc\t".$self->get_attribute("consensus.IUPAC.rc")."\n";
+  } else {
 
-      ################################################################
-      ## Print a profile (vertical matrix with consensus on the right side)
-    } elsif ($type eq "profile") {
-      $to_print .= $self->_printProfile($to_print);
-
+    ################################################################
+    ## Print a matrix
+    my @matrix = ();
+    if ($type eq "counts") {
+      @matrix = @{$self->{table}};
     } else {
-
-      ################################################################
-      ## Print a matrix
-      my @matrix = ();
-      if ($type eq "counts") {
-	@matrix = @{$self->{table}};
-      } else {
-	@matrix = @{$self->{$type}};
-      }
-      my @alphabet = $self->getAlphabet();
-      my $ncol = $self->ncol();
-      my $nrow = $self->nrow();
+      @matrix = @{$self->{$type}};
+    }
+    my @alphabet = $self->getAlphabet();
+    my $ncol = $self->ncol();
+    my $nrow = $self->nrow();
 
       ## Header of the matrix
-      if ($main::verbose >= 1) {
+      if ($self->get_attribute("header")) {
 	$to_print .= ";\n";
 	$to_print .= "; Matrix type: $type\n";
 	if (($col_width) && ($col_width < 6)) {
@@ -925,8 +924,6 @@ sub to_patser {
       }
       $to_print .=  $matrix_terminator{$output_format}."\n";
     }
-    
-
     return $to_print;
 }
 
@@ -3277,6 +3274,28 @@ sub reverse_complement {
   $self->calcWeights() if ($self->get_attribute("weights_specified"));
   $self->calcInformation() if ($self->get_attribute("information_specified"));
   $self->calcConsensus() if ($self->get_attribute("consensus_specified"));
+}
+
+=pod
+
+=item I<link_button_TOMTOM>
+
+Return a HTML form for sending the matrix to TOMTOM.
+
+=cut
+sub link_button_TOMTOM {
+    my ($self) = @_;
+#    $self->force_attribute("margins", 0);
+    my $matrix_content = $self->toString(sep=>"\t",
+					 type=>"counts",
+					 format=>'patser',
+					);
+    my $button = "<form method='post' target='_blank' action='http://meme.nbcr.net/meme4/cgi-bin/tomtom.cgi'>";
+    $button .= "<input type='hidden' name='query' value='${matrix_content}'>";
+    $button .= "<input type='hidden' name='DIST' value='pearson'>";
+    $button .= "<input type='submit' value='TOMTOM'>";
+    $button .= "\n";
+    return $button;
 }
 
 

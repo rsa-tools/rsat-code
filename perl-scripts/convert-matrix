@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.90 2009/12/04 15:01:40 jvanheld Exp $
+# $Id: convert-matrix,v 1.91 2009/12/11 23:10:26 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -61,9 +61,11 @@ local $sort_order = "";
 			  "information"=>1,
 			  "parameters"=>1,
 			  "consensus"=>1,
+			  "header"=>1,
 			  "margins"=>1,
 			  "sites"=>1,
 			  "wdistrib"=>1,
+			  "links"=>1,
 			  "logo"=>1,
 			 );
 $supported_return_fields = join ",", sort keys %supported_return_type;
@@ -154,6 +156,7 @@ unless (scalar(@return_fields)) {
   }
 }
 
+
 ## Permutations are only compatible with -return counts
 if ($perm) {
   foreach my $field (@return_fields) {
@@ -163,13 +166,18 @@ if ($perm) {
   }
 }
 
-
+## Check return fields
 foreach my $field (@return_fields) {
     if ($supported_return_type{$field}) {
 	$return_fields{$field}++;
     } else {
 	&RSAT::error::FatalError("Invalid return type $field. Supported: ".$supported_return_fields);
     }
+}
+
+## Deprecated option -return wdistrib
+if ($return_fields{wdistrib}) {
+    &RSAT::message::Warning( "Option -eturn wdistrib is deprecated. Use matrix-dsitrib instead.");
 }
 
 ## Information
@@ -192,7 +200,7 @@ if ($infile{prior}) {
     }
 }
 
-## logo format
+## logo format(s)
 if ($return_fields{logo}) {
   if (scalar(@logo_formats)>=1){
     foreach my $logo_format (@logo_formats){
@@ -229,7 +237,6 @@ $out = &OpenOutputFile($outfile{output});
 ##### print output ######
 &Verbose if ($verbose);
 
-
 ## Read the input matrices and collect all matrices
 if (scalar(@matrix_files >= 1)) {
   $m = 0;
@@ -238,17 +245,6 @@ if (scalar(@matrix_files >= 1)) {
     foreach my $matrix (@matrices_from_file) {
       $m++;
       &SetMatrixName($matrix, $m, $matrix_file, $input_format);
-      #       my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
-#       #	    $matrix_name = basename($matrix_file);
-#       #	    $matrix_name =~ s/\.\w+$//; ## suppress the extension from the file name
-#       $matrix_name =~ s/\.${input_format}$//; ## suppress the extension from the file name if it corresponds to the matrix format
-#       unless (defined($matrix->get_attribute("name"))){
-# 	$matrix->set_attribute("name", $matrix_name);
-#       }
-#       ## if we have more than one matrix in the same file a number is added to the attribute "name"
-#       if (scalar(@matrices_from_file) > 1) {
-# 	$matrix->force_attribute("name" => $matrix_name."_".$matrix->get_attribute("matrix.nb"));
-#       }
       push @matrices, $matrix;
     }
   }
@@ -270,17 +266,17 @@ foreach my $matrix (@matrices) {
 
     $matrix->set_parameter("pseudo", $pseudo_weight);
     $matrix->set_attribute("equi_pseudo", $equi_pseudo);
-    #  $matrix->push_attribute("parameters", "pseudo");
     $matrix->force_attribute("decimals", $decimals);
     $matrix->force_attribute("max_profile", $max_profile);
     $matrix->force_attribute("sep", $sep);
-    # $matrix->force_attribute("col_width", $col_width);
+    $matrix->force_attribute("header", $return_fields{header});
     $matrix->force_attribute("margins", $return_fields{margins});
     $matrix->setInfoLogBase($info_log_base);
-    $matrix->set_parameter("bg_markov_order", 0);	
+    $matrix->set_parameter("bg_markov_order", 0);
     if ($infile{prior}) {
 	$matrix->setPrior(%prior);
     }
+
     ## Calculate parameters before sorting because sorting can be done on
     ## a computed parameter rather than defined in the input file.
     if ($return_fields{parameters}) {
@@ -289,6 +285,7 @@ foreach my $matrix (@matrices) {
 	$matrix->calcConsensus();
 	$matrix->calcGCcontent();
     }
+
     ## Generate logo
     if (($return_fields{logo}) && ($seqlogo_path)) {
       unless ($logo_dir) {
@@ -308,18 +305,13 @@ foreach my $matrix (@matrices) {
       my $logo_file=$logo_dir.$matrix->get_attribute("name")."_logo";
       #	$logo_file =~ s/\.\w+$//;
       $matrix->set_attribute("logo_file" => $logo_file);
-
-#      if ($logo_dir){
-	$matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt);
-#      } else {
-#	$matrix->makeLogo($logo_file,\@logo_formats,"",$logo_opt);
-#      }
+      $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt);
     }
 }
 
 ## Sort the matrices if requested
 if ($sort_key) {
-    @matrices = &RSAT::MatrixReader::SortMatrices($sort_key, $sort_order, @matrices);
+  @matrices = &RSAT::MatrixReader::SortMatrices($sort_key, $sort_order, @matrices);
 }
 
 #### export the matrices
@@ -338,7 +330,9 @@ foreach my $matrix (@matrices) {
     #print $out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
     #}
   }
-  if ($main::verbose >= 1) {
+  if ($return_fields{header}) {
+#  if ($main::verbose >= 1) {
+#  if ($self-get_attribute("header")) {
     print $out  ";\n; MATRIX ", $m."/".scalar(@matrices), " : " , $matrix->get_attribute("name"), "\n;\n";
   }
 
@@ -368,7 +362,6 @@ foreach my $matrix (@matrices) {
       $matrix->force_attribute("identifier", $ID_perm);
       $matrix->force_attribute("accession", $AC_perm);
       &RSAT::message::Debug("Permutation", $i, "ID_perm", $ID_perm, "AC_perm", $AC_perm) if ($main::verbose >= 5);
-
 
       ## print result
       if ($main::verbose >= 1) {
@@ -814,6 +807,10 @@ RETURN FIELDS FOR THE TAB-DELIMITED OUTPUT FORMAT
 	One advantage of the corrected information content is that it
 	assigns finite values when Fij=0.
 
+    header
+	Print a header befoer each matrix (useful for multi-matrix
+	files).
+
     margins
 	Calculate marginal values (column and row sum, min, max) for each 
         matrix.
@@ -869,6 +866,21 @@ RETURN FIELDS FOR THE TAB-DELIMITED OUTPUT FORMAT
 	    Theoretical distribution of weight probabilities (computed
 	    as in Bailey, Bioinformatics, 1999).
             WARNING: use matrix-distrib instead
+
+
+	links
+
+  	    HTML buttons with links to external tools for comparing
+  	    the input matrices to a collection of annotated motifs.
+
+	    Supportd links: TOMTOM.
+
+	    The reason for inserting the Web buttons in the script
+  	    rather than in the Web interface is that the matrix
+  	    matching tool TOMTOM takes as input a single matrix ->
+  	    when convert-matrix is used to convert multiple matrices,
+  	    a separate HTML button has to be dispplayed aftr each
+  	    matrix.
 
 	logo 
 	    Sequence logo, a visual representation of the motif, where
@@ -1204,143 +1216,121 @@ sub SetMatrixName {
 		      ) if ($main::verbose >= 5);
 }
 
+
 ################################################################
 ## Export one matrix
 sub ExportMatrix {
-  my ($matrix, $m) = @_;
-  #  $matrix->readFromFile($infile{input}, $input_format);
-  if ($infile{prior}) {
-    $matrix->setPrior(%prior);
-  }
+    my ($matrix, $m) = @_;
+    #  $matrix->readFromFile($infile{input}, $input_format);
+    if ($infile{prior}) {
+	$matrix->setPrior(%prior);
+    }
 
-  my $ID = $matrix->get_attribute("identifier")
-      || $matrix->get_attribute("name")
-      || $matrix->get_attribute("id")
-      || $matrix->get_attribute("AC")
-      || "matrix_".$m;
-  my $AC = $matrix->get_attribute("accession") || $ID;
-  &RSAT::message::Debug("ExportMatrix", "ID", $ID, "AC", $AC) if ($main::verbose >= 4);
-  
-  if ($prefix) {
-      $matrix->force_attribute("name", $prefix.$matrix->get_attribute("name"));
-      $matrix->force_attribute("id", $prefix.$matrix->get_attribute("id"));
-      $matrix->force_attribute("AC", $prefix.$matrix->get_attribute("AC"));
-  }
-#   ## Matrix permutations
-#   if ($perm) {
-#     &RSAT::message::Info("Permutating matrix", $matrix->get_attribute("name"))
-#       if ($main::verbose >= 0);
-#     ## permute matrix
-#     for my $i (1..$perm) {
-#      # if ($i > 1) {
-# 	#print $out $RSAT::matrix::matrix_terminator{$output_format}, "\n";
-#       #}
-#       ## Permute the matrix
-#       $matrix->permute_columns();
-#       my $ID_perm = join("_", $ID, "perm".$i);
-#       my $AC_perm = join("_", $AC, "perm".$i);
-#       $matrix->force_attribute("name", $ID_perm);
-#       $matrix->force_attribute("ID", $ID_perm);
-#       $matrix->force_attribute("identifier", $ID_perm);
-#       $matrix->force_attribute("accession", $AC_perm);
-#       &RSAT::message::Debug("Permutation", $i, "ID_perm", $ID_perm, "AC_perm", $AC_perm) if ($main::verbose >= 5);
-#       ## print result
-#       if ($main::verbose >= 1) {
-# 	print $out "; ID\t$ID_perm\n" if ($verbose >=1);
-# 	print $out "; AC\t$AC_perm\n" if ($verbose >=1);
-# 	print $out "; permutation $i/$perm\n";
-#       }
-#       print $out $matrix->toString(sep=>"\t",
-# 				   type=>"counts",
-# 				   format=>$output_format,
-# #				   format=>"tab",
-# 				   pipe=>"" ## We suppress the pipe for permute-table
-# 				  );
-#     }
-#  } else {
+    ## Define an Identifier (ID) and an Accession number (AC)
+    my $ID = $matrix->get_attribute("identifier")
+	|| $matrix->get_attribute("name")
+	|| $matrix->get_attribute("id")
+	|| $matrix->get_attribute("AC")
+	|| "matrix_".$m;
+    my $AC = $matrix->get_attribute("accession") || $ID;
+    &RSAT::message::Debug("ExportMatrix", "ID", $ID, "AC", $AC) if ($main::verbose >= 4);
+    if ($prefix) {
+	$matrix->force_attribute("name", $prefix.$matrix->get_attribute("name"));
+	$matrix->force_attribute("id", $prefix.$matrix->get_attribute("id"));
+	$matrix->force_attribute("AC", $prefix.$matrix->get_attribute("AC"));
+    }
 
     ## Print the counts matrix
     if ($return_fields{counts}) {
-      print $out $matrix->toString(sep=>"\t",
-				   type=>"counts",
-				   format=>$output_format,
-				  );
+	print $out $matrix->toString(sep=>"\t",
+				     type=>"counts",
+				     format=>$output_format,
+				);
+  } 
+
+  ## Calculate frequency matrix
+  if ($return_fields{frequencies}) {
+    $matrix->calcFrequencies();
+    print $out $matrix->toString(col_width=>($decimals+4), 
+				 decimals=>$decimals, 
+				 type=>"frequencies",
+				 format=>$output_format);
+  }
+
+  ## Calculate weight matrix
+  if ($return_fields{weights}) {
+    $matrix->calcWeights();
+    print $out $matrix->toString(col_width=>($decimals+4), 
+				 decimals=>$decimals, 
+				 type=>"weights",
+				 format=>$output_format);
+  }
+
+  ## Print the profile matrix
+  if ($return_fields{profile}) {
+    print $out $matrix->toString(sep=>"\t",
+				 type=>"profile",
+				 format=>$output_format,
+				);
+  }
+
+  ## Calculate information content matrix
+  if ($return_fields{info}) {
+    $matrix->calcInformation();
+    print $out $matrix->toString(col_width=>($decimals+4), 
+				 decimals=>$decimals, 
+				 type=>"information",
+				 format=>$output_format);
+  }
+
+
+  ## Return sites
+  if ($return_fields{sites}) {
+    print $out "; Sites\t",$matrix->get_attribute("sites"),"\n" if ($main::verbose >= 1);
+    my $s = 0;
+    my @site_ids = $matrix->get_attribute("site_ids");
+    foreach my $site_seq ($matrix->get_attribute("sequences")) {
+      $s++;
+      my $site_id =  $site_ids[$s-1] || $s;
+      &PrintNextSequence($out, $site_format, 0, $site_seq, $site_id);
+      #      print $out $s, "\t\\", $site_seq, "\\\n";
     }
+  }
 
-    ## Calculate frequency matrix
-    if ($return_fields{frequencies}) {
-      $matrix->calcFrequencies();
-      print $out $matrix->toString(col_width=>($decimals+4), 
-				   decimals=>$decimals, 
-				   type=>"frequencies",
-				   format=>$output_format);
-    }
+  ## Calculate consensus
+  if ($return_fields{consensus}) {
+    $matrix->calcConsensus();
+    print $out $matrix->toString(type=>'consensus');
+  }
 
-    ## Calculate weight matrix
-    if ($return_fields{weights}) {
-      $matrix->calcWeights();
-      print $out $matrix->toString(col_width=>($decimals+4), 
-				   decimals=>$decimals, 
-				   type=>"weights",
-				   format=>$output_format);
-    }
+  ## Return parameters
+  if ($return_fields{parameters}) {
+    $matrix->calcConsensus();
+    print $out $matrix->toString(type=>"parameters");
+  }
 
-    ## Print the profile matrix
-    if ($return_fields{profile}) {
-      print $out $matrix->toString(sep=>"\t",
-				   type=>"profile",
-				   format=>$output_format,
-				  );
-    }
-
-    ## Calculate information content matrix
-    if ($return_fields{info}) {
-      $matrix->calcInformation();
-      print $out $matrix->toString(col_width=>($decimals+4), 
-				   decimals=>$decimals, 
-				   type=>"information",
-				   format=>$output_format);
-    }
-
-
-    ## Return sites
-    if ($return_fields{sites}) {
-      print $out "; Sites\t",$matrix->get_attribute("sites"),"\n" if ($main::verbose >= 1);
-      my $s = 0;
-      my @site_ids = $matrix->get_attribute("site_ids");
-      foreach my $site_seq ($matrix->get_attribute("sequences")) {
-	$s++;
-	my $site_id =  $site_ids[$s-1] || $s;
-	&PrintNextSequence($out, $site_format, 0, $site_seq, $site_id);
-	#      print $out $s, "\t\\", $site_seq, "\\\n";
-      }
-    }
-
-    ## Calculate consensus
-    if ($return_fields{consensus}) {
-      $matrix->calcConsensus();
-      print $out $matrix->toString(type=>'consensus');
-    }
-
-    ## Return parameters
-    if ($return_fields{parameters}) {
-      $matrix->calcConsensus();
-      print $out $matrix->toString(type=>"parameters");
-    }
-
-    ## Return parameters
-    if ($return_fields{logo}) {
-      if ($main::verbose >= 1) {
-	foreach my $logo_format (@logo_formats) {
-	  print $out  "; logo file:" , $matrix->get_attribute("logo_file").".".$logo_format, "\n";
-	}
+  ## Return parameters
+  if ($return_fields{logo}) {
+    if ($main::verbose >= 1) {
+      foreach my $logo_format (@logo_formats) {
+	print $out  "; logo file:" , $matrix->get_attribute("logo_file").".".$logo_format, "\n";
       }
     }
   }
 
+  ## links to external tools for HTML forms The reason for inserting
+  ## this in the script dather than in the Web interface is that the
+  ## matrix matching tool TOMTOM takes as input a single matrix ->
+  ## when convert-matrix is used to convert multiple matrices, a
+  ## separate HTML button has to be dispplayed aftr each matrix
+  if ($return_fields{links}) {
+    print $out $matrix->link_button_TOMTOM();
+  }
+
+
   ## Return weight distribution
   if ($return_fields{wdistrib}) {
-    print ";WARNING: return wdistrib is deprecated in convert-matrix! Use matrix-dsitrib instead\n";
+#    print ";WARNING: return wdistrib is deprecated in convert-matrix! Use matrix-dsitrib instead\n";
     $matrix->calcTheorScoreDistrib("weights", decimals=>$decimals);
     my %weight_proba = $matrix->getTheorScoreDistrib("weights");
     my %weight_proba_cum = $matrix->getTheorScoreDistrib("weights", "cum");
@@ -1379,7 +1369,11 @@ sub ExportMatrix {
       my $log_P = $null;
       my $sig = $null;
       if (defined($weight_proba{$weight})) {
-	$weight_proba = sprintf("%.1e", $weight_proba{$weight});
+	if (&IsReal($weight_proba{$weight})) {
+	  $weight_proba = sprintf("%.1e", $weight_proba{$weight});
+	} else {
+	  $weight_proba = $weight_proba{$weight};
+	}
       }
       if (defined($weight_proba_cum{$weight})) {
 	$weight_proba_cum = sprintf("%.1e", $weight_proba_cum{$weight});
@@ -1406,7 +1400,10 @@ sub ExportMatrix {
 		      $sig,
 		     ), "\n";
     }
-#  }
+
+
+  }
 
 }
+
 
