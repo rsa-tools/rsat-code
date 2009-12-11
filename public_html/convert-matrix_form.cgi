@@ -39,7 +39,9 @@ $default{parameters}="";
 $default{profile}="";
 $default{weights}="";
 $default{pseudo_weight}=1;
+$default{header}="checked";
 $default{margins}="checked";
+$default{links}="checked";
 $default{max_profile}=10;
 $default{decimals}=1;
 $default{rc} = "";
@@ -124,7 +126,7 @@ print "<BR>\n";
 #### Return fields
 print "<p><b><a href='help.convert-matrix.html#return'>Return fields</a></B>&nbsp;<br>\n";
 my $i = 0;
-foreach my $stat qw(counts frequencies weights info margins consensus parameters profile) {
+foreach my $stat qw(counts frequencies weights info header margins consensus parameters profile links) {
   print $query->checkbox(-name=>$stat,
 			 -checked=>$default{$stat},
 			 -label=>'');

@@ -34,7 +34,7 @@ $query = new CGI;
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #### read parameters ####
-local $parameters;
+local $parameters = " -v 1";
 
 ################################################################
 #### Matrix specification
@@ -146,11 +146,10 @@ $parameters .= " -to ".$output_format;
 
 ## Return fields
 local @return_fields = ();
-foreach my $stat qw (counts frequencies weights info consensus parameters profile margins logo) {
+foreach my $stat qw (counts frequencies weights info consensus parameters profile header margins logo links) {
   if ($query->param($stat)) {
     push @return_fields, $stat;
     if ($stat eq "logo"){
-      $parameters .= " -v 1 -logo_dir $ENV{RSAT}/public_html/tmp ";
       $parameters .= " -logo_format png,pdf ";
       # seqlogo options
       if ($query->param("error_bar")){
@@ -162,6 +161,7 @@ foreach my $stat qw (counts frequencies weights info consensus parameters profil
       if ($query->param("stretch")){
 	$parameters .= " -logo_opt '-S' ";
       }
+      $parameters .= " -logo_dir $ENV{RSAT}/public_html/tmp ";
     }
   }
 }
