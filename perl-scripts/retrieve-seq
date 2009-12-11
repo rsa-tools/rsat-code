@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.77 2009/12/10 11:51:19 jvanheld Exp $
+# $Id: retrieve-seq,v 1.78 2009/12/11 23:13:13 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -38,7 +38,17 @@ $default{from} = -800;
 $default{to} = -1;
 $input_sequence_format = "filelist";
 $prefix = "";
-@supported_label_fields = qw (id name organism_name sequence_type current_from current_to ctg orf_strand reg_left reg_right);
+@supported_label_fields = qw (id
+			      name
+			      query
+			      organism_name
+			      sequence_type
+			      current_from
+			      current_to
+			      ctg
+			      orf_strand
+			      reg_left
+			      reg_right);
 foreach my $field (@supported_label_fields) {
     $supported_label_fields{$field}++;
 }
@@ -270,15 +280,15 @@ $feature_index = $organism->get_attribute("name_index");
 #### retrieve the sequences ####
 my $q = 0;
 &RSAT::message::TimeWarn("Retrieving sequences") if ($verbose >= 1);
-foreach my  $query (@queries) {
-    $q++;
-    if (($main::verbose >= 2) && ($q % 1000 == 1)) {
-	&RSAT::message::psWarn("Retrieved sequences", $q);
-    }
+foreach our $query (@queries) {
+  $q++;
+  if (($main::verbose >= 2) && ($q % 1000 == 1)) {
+    &RSAT::message::psWarn("Retrieved sequences", $q);
+  }
 
-    $query = &trim($query); ### make sure there are no leading or trailing spaces
+  $query = &trim($query); ### make sure there are no leading or trailing spaces
 
-     &RSAT::message::Info("Searching query", $q, $query) if ($main::verbose >= 3);
+  &RSAT::message::Info("Searching query", $q, $query) if ($main::verbose >= 3);
 
     #### check the validity of the query
     my $current_feature;
@@ -384,9 +394,8 @@ foreach my  $query (@queries) {
 	&RSAT::message::Debug($ctg, $reg_left, $reg_right, $orf_strand, $seq_length, $ctg_length, $position, $max_pos) if ($verbose >= 10);
 
     }
-    
     $reg_size =  $reg_right - $reg_left + 1;
-    
+
     ###  sequence label
     my @current_id = ();
     if ($prefix) {
@@ -400,6 +409,7 @@ foreach my  $query (@queries) {
     ## Generate the sequence IDs as a function of the selected labels
     foreach my $field (@label_fields) {
 	push @current_id, $$field;
+#	&RSAT::message::Debug($query, "label", $field, $$field) if ($main::verbose >= 10);
     }
     my $current_id = join $label_sep, @current_id;
 
