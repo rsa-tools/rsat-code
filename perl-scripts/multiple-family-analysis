@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.258 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.259 2009/12/11 23:12:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.258 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.259 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -77,6 +77,7 @@ package main;
 			 upstream_ensembl
 			 purge
 
+			 compute_bg
 			 calibrate
 			 calibN
 			 oligos
@@ -171,7 +172,8 @@ package main;
   $draw_maps=1;
   $scalestep = 100; 
   $img_format = $ENV{rsat_img_format} || "png";
-  $origin = "-0";
+  $map_origin = "-0";
+  $scan_origin = "end";
 
   ## retrieve-seq options
   $noorf = "-noorf"; 
@@ -1176,17 +1178,19 @@ sub SetFileNames {
 ## Store the sequences for one family if sequences have been proided
 ## with the option -all_seq
 sub StoreSequences  {
-    my @members = @{$family{$family_name}->{members}};
-    $out = &OpenOutputFile($family{$family_name}->{seq_file});
-    foreach my $member (@members) {
-	if (defined($all_sequences{lc($member)})) {
-	    &PrintNextSequence($out, $seq_format, 0, $current_seq, $current_id);
-	} else {
-	    &RSAT::message::Warning("No sequence with ID", $member,"in  file", $all_sequences_file);
-	}
+  my @members = @{$family{$family_name}->{members}};
+  $out = &OpenOutputFile($family{$family_name}->{seq_file});
+  foreach my $member (@members) {
+    if (defined($all_sequences{lc($member)})) {
+      my $current_seq = $all_sequences{lc($member)};
+      my $current_id = $member;
+      &PrintNextSequence($out, $seq_format, 0, $current_seq, $current_id);
+    } else {
+      &RSAT::message::Warning("No sequence with ID", $member,"in  file", $all_sequences_file);
     }
-    close $out;
-    &RSAT::message::Warning($family_name, "Stored sequence in file", $family{$family_name}->{seq_file}) if ($main::verbose >= 0);
+  }
+  close $out;
+  &RSAT::message::Warning($family_name, "Stored sequence in file", $family{$family_name}->{seq_file}) if ($main::verbose >= 0);
 }
 
 ################################################################
@@ -1477,8 +1481,8 @@ sub AssembleOligos {
   #    $pssm_command .= " -bginput -markov 0 ";
   #    $pssm_command .= " -o ".$family{$family_name}->{oligo_pssm_file};
   if ($task{pssm}) {
-    $pssm_command = &MatrixFromPatterns($family{$family_name}->{oligo_assembly_file},
-				   $family{$family_name}->{oligo_pssm_file}, "oligos");
+      $pssm_command = &MatrixFromPatterns($family{$family_name}->{oligo_assembly_file},
+					  $family{$family_name}->{oligo_pssm_file}, "oligos");
   }
   push @assemble_commands, $pssm_command if ($task{pssm});
 
@@ -1515,7 +1519,7 @@ sub MatchPatterns {
    my $command = "dna-pattern -i ".$family{$family_name}->{seq_file};
    $command .= " -format ".$seq_format;
    $command .= " -pl ".$oligo_file;
-   $command .= " -origin ".$origin;
+   $command .= " -origin ".$map_origin;
    $command .= " ".$strands;
    $command .= " -return sites,limits ";
    $command .= $options;
@@ -1558,7 +1562,7 @@ sub ScanSequences {
    $command .= " ".$strands;
    $command .= " -m ".$matrix_file;
    $command .= " -consensus_name";
-   $command .= " -origin ".$origin;
+   $command .= " -origin ".$scan_origin;
    $command .= " -return limits,sites,pval,normw ";
    $command .= " -o ".$feature_file;
    $command .= $options;
@@ -1686,6 +1690,7 @@ sub MatrixFromPatterns {
   $command .= " -asmb ".$assembly_file;
   $command .= " -bginput -markov 0 ";
   $command .= " -max_asmb_nb ".$nmotifs;
+  $command .= " -gibbs_flanks 2";
   $command .= " -o ".$pssm_file;
 
   my $pssm_dir = `dirname $pssm_file`;
@@ -1742,7 +1747,7 @@ sub DrawMergedFeatureMap {
   $command .= " -i ".$family{$family_name}->{seq_file};
   $command .= " -format ".$seq_format;
   $command .= " -pl ".$family{$family_name}->{merged_file};
-  $command .= " -origin ".$origin;
+  $command .= " -origin ".$map_origin;
   $command .= " -N 4";
   $command .= " -return sites,limits ";
   $command .= " ".$strands;
@@ -2740,7 +2745,7 @@ sub DrawDyadFeatureMap {
    $command .= " -pl $family{$family_name}->{dyad_file}";
    $command .= " -format $seq_format";
    $command .= " -i $family{$family_name}->{seq_file}";
-   $command .= " -origin $origin";
+   $command .= " -origin $map_origin";
    $command .= " -N 4";
    $command .= " -return sites,limits ";
    $command .= " ".$strands;
@@ -3156,8 +3161,8 @@ VERSION
        $program_version
 
 AUTHOR
-       1999-2007 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
-       2004-2007 Olivier Sand (oly\@bigre.ulb.ac.be)
+       Since 1999 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
+       Since 2004 Olivier Sand (oly\@bigre.ulb.ac.be)
 
 USAGE
        multiple-family-analysis [-i inputfile] [-v]
@@ -3211,6 +3216,12 @@ OPTIONS
 	-all_seq_format
 		Input sequence format. This option is useful only in
 		combination with the option -all_seq.
+
+	-bg_seq 
+	        Sequences used to compute background models (the
+	        background models are only computed if the option
+	        -task compute_bg is called). Background sequences must
+	        be formatted in fasta.
 
 	-skip # skip the first # data sets when performing the
 		analyses (this si useful when the program has been
@@ -3515,7 +3526,7 @@ OPTIONS
 		    -task upstream -task oligos -task synthesis
 		For a full analysis, simply type 
 		    -task all
-		
+
 		See details below (TASK DESCRIPTION)
 
 	-known	known_site_file
@@ -3524,13 +3535,13 @@ OPTIONS
 		used during the pattern discovery. They are simply
 		displayed besides the discovered patterns, for the
 		sake of comparison.
-		
+
 		Format: the known site file is a tab-delimited text
 		files, with the collofing column content :
 		       1) site/motif sequence
 		       2) family
 		       3) source (optional)
-    		
+
 		Example
 		=======
 		; sequence	family	source
@@ -3575,7 +3586,7 @@ QUICK START
 
    2) witin this directory, create a text file contaning the
       description of family composition, as described above
-   
+
    3) run the command. For example, with a bacterial genome :
 
       multiple-family-analysis -org organism -i family_file \
@@ -3646,6 +3657,14 @@ TASK DESCRIPTION
    db_match     Compare discovered patterns to a list of known sites
                 (for instance a whole database). This requires to specify
                 the list of known sites with the option -db.
+
+WISH LIST
+
+  -bg_seq background_sequence_file
+	Specify a file containing background sequences, which will be
+	used to estimate the background models for the different
+	pattern discovery algorithms.
+
 
 End_of_help
  close HELP;
@@ -3783,7 +3802,7 @@ sub ReadArguments {
 
       ## feature-map parameters
     } elsif ($ARGV[$a] eq "-origin") {
-      $origin = $ARGV[$a+1];;
+      $map_origin = $ARGV[$a+1];;
     } elsif ($ARGV[$a] eq "-scalestep") {
       $scalestep = $ARGV[$a+1];;
 
@@ -4325,16 +4344,17 @@ sub ExportSQL {
 ## ##############################################################
 ## Read all sequences (option -all_seq)
 sub ReadAllSequences {
-    &RSAT::message::TimeWarn("Reading ALL sequences from file", $all_sequences_file, "format", $all_seq_format);
-    my %all_sequences = ();
-    ($in, $input_dir) = &OpenInputFile($all_sequences_file);
-    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $all_seq_format, $input_dir, "",$mask, %args)) &&
-	   (($current_seq ne "") || ($current_id ne ""))) {
-	$seq_nb++;
-	&RSAT::message::TimeWarn("Read sequence", $seq_nb) if (($main::verbose >= 0) && ($seq_nb%1000 ==0));
-	$all_sequences{lc($current_id)} = $current_seq;
-    }
-    close $in;
+  &RSAT::message::TimeWarn("Reading ALL sequences from file", $all_sequences_file, "format", $all_seq_format);
+  our %all_sequences = ();
+  ($in, $input_dir) = &OpenInputFile($all_sequences_file);
+  while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $all_seq_format, $input_dir, "",$mask, %args)) &&
+	 (($current_seq ne "") || ($current_id ne ""))) {
+    $seq_nb++;
+    &RSAT::message::TimeWarn("Read sequence", $seq_nb) if (($main::verbose >= 0) && ($seq_nb%1000==0));
+    #	&RSAT::message::Debug("", "read sequence", $seq_nb, $current_id) if ($main::verbose >= 10);
+    $all_sequences{lc($current_id)} = $current_seq;
+  }
+  close $in;
 }
 
 ## ##############################################################
