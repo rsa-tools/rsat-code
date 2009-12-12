@@ -232,6 +232,7 @@ sub PipingForm {
 #  print "<pre>".$command."</pre>";
 #  print "<pre>".$matrix_content."</pre>";
 
+
   $title = $query->param('title');
   $title =~ s/\"/\'/g;
     print <<End_of_form;
@@ -276,9 +277,9 @@ sub PipingForm {
 </td>
 
 <td valign=bottom align=center>
-<form method="post" target='_blank' action="http://meme.nbcr.net/meme4_3_0/cgi-bin/tomtom.cgi">
+<form method="post" target='_blank' action="http://meme.nbcr.net/meme4/cgi-bin/tomtom.cgi">
 <input type="hidden" name="query" value="$matrix_content">
-<input type="hidden" name="DIST" value="sandelin">
+<input type="hidden" name="DIST" value="pearson">
 <input type="submit" value="TOMTOM">
 </form>
 Compare a single matrix to a motif database.
@@ -287,5 +288,8 @@ Compare a single matrix to a motif database.
 
 </table>
 End_of_form
+
+  print "<pre>", $matrix_content, "</pre>";
+  $title = $query->param('title');
 
 }
