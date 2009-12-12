@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.23 2009/12/09 09:01:27 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.24 2009/12/12 08:33:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -538,6 +538,7 @@ Run the final cycle with info-gibbs to collect the best sites.
 	    $gibbs_final = 1;
 
 	    ## Return logos
+
 =pod
 
 =item	B<-logo>
@@ -547,6 +548,19 @@ Export the sequence logos representing the count matrix.
 =cut
 	} elsif ($arg eq "-logo") {
 	    $return_fields{logo} = 1;
+
+	    ## Return links in the convert-matrix result
+
+=pod
+
+=item	B<-links>
+
+Return HTML links in the convert-matrix result, to send the matrices
+to external tools (TOMTOM) for comparigon with motif collections.
+
+=cut
+	} elsif ($arg eq "-links") {
+	    $return_fields{links} = 1;
 
 
 =pod
@@ -653,6 +667,7 @@ sub ScanForSites {
 #    $convert2_cmd .= " -sort desc information.per.column";
     $convert2_cmd .= " -return sites" if ($return_fields{sites});
     $convert2_cmd .= " -return logo" if ($return_fields{logo});
+    $convert2_cmd .= " -return links" if ($return_fields{links});
     $convert2_cmd .= " -o ".$outfile{count_matrices};
     print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
     &doit($scan_cmd.$convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -697,6 +712,7 @@ sub InfoGibbs {
     $convert2_cmd .= " -return counts,parameters";
     $convert2_cmd .= " -return sites" if ($return_fields{sites});
     $convert2_cmd .= " -return logo" if ($return_fields{logo});
+    $convert2_cmd .= " -return links" if ($return_fields{links});
     $convert2_cmd .= " -o ".$outfile{count_matrices};
     print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
     &doit($convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
