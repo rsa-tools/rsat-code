@@ -886,7 +886,7 @@ double Score(Site &site, SITES &motif, Sequences &sequences, Array &matrix, Mark
     return s;
 }
 
-Result collect_sites(Result &result, SITES &sites, Sequences &sequences, Markov &markov, Parameters &params)
+Result collect_sites(Result result, SITES &sites, Sequences &sequences, Markov &markov, Parameters &params)
 {
     Array matrix = Array(params.m1 + params.m2, markov.alphabet_size);
     count_matrix(matrix, result.motif, sequences);

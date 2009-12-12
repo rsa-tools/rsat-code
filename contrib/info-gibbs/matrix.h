@@ -60,6 +60,7 @@ struct Array
     {
         I = a.I;
         J = a.J;
+        pseudo = a.pseudo;
         alloc(I, J);
         for (int i = 0; i < I; i++)
         {
@@ -82,6 +83,7 @@ struct Array
     {
         I = a.I;
         J = a.J;
+        pseudo = a.pseudo;
         alloc(I, J);
         for (int i = 0; i < I; i++)
         {
@@ -160,7 +162,7 @@ struct Array
     }
 
     // need to call transform2logfreq before
-    double logP(char *word)
+    double logP(int *word)
     {
         p = 0.0;
         for (int i = 0; i < J; i++)
