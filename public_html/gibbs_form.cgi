@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs_form.cgi,v 1.8 2009/11/03 10:06:12 jvanheld Exp $
+# $Id: gibbs_form.cgi,v 1.9 2009/12/13 18:54:57 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:18 jvanheld>
 #
@@ -45,6 +45,10 @@ print "Extract shared motifs from a set of unaligned sequences<BR>\n";
 print "Program developed by <A HREF='mailto:neuwald\@cshl.org (Andrew Neuwald)'>Andrew Neuwald</A><BR>\n";
 print "Web interface by <A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>Jacques van Helden</A>.\n";
 print "</CENTER>\n";
+
+print "<CENTER><font color='red' size=2>\n";
+print "<font>We recommend to use the new program <a href='info-gibbs_form.cgi'>info-gibbs</a> rather than this version.";
+print "</font></CENTER>\n";
 
 
 print $query->start_multipart_form(-action=>"gibbs.cgi");
