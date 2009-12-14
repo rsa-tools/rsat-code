@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.34 2009/12/07 22:19:33 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.35 2009/12/14 09:58:43 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -25,6 +25,7 @@ require "RSA.lib";
 require "RSA2.cgi.lib";
 require "RSA.disco.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+@result_files = ();
 
 $dyad_analysis_command = "$SCRIPTS/dyad-analysis";
 $convert_seq_command = "$SCRIPTS/convert-seq";
@@ -51,6 +52,8 @@ $parameters .= " -timeout 3600 ";
 
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
+push @result_files, ("input sequence",$sequence_file);
+
 $purge = $query->param('purge');
 if ($purge) {
   #### purge sequence option
@@ -196,7 +199,7 @@ if ($query->param('output') eq "display") {
   print '<H4>Result</H4>';
   &PrintHtmlTable(RESULT, $result_file, true);
   close(RESULT);
-  @result_files = ('oligos', "$tmp_file_name.res");
+  push @result_files, ('oligos', "$tmp_file_name.res");
 
   #### pattern assembly ####
   if ((&IsReal($query->param('lth_occ_sig'))) && ($query->param('lth_occ_sig')>= -1)) {
