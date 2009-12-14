@@ -1695,6 +1695,39 @@ End_of_form
 
 }
 
+
+################################################################
+## Display one or several PSSM on a Web page
+##
+## Usage:
+##  my ($out_matrix_file) = display_matrices_web ($in_matrix_file, $in_format);
+sub display_matrices_web {
+  my ($in_matrix_file, $in_format) = @_;
+  &RSAT::error::FatalError("missing input matrix file for display_matices_web()") unless ($in_matrix_file);
+  &RSAT::error::FatalError("missing input matrix format for display_matices_web()") unless ($in_format);
+  my $matrix_prefix = &ShortFileName($in_matrix_file);
+  $matrix_prefix .= s/\.${in_format}$//;
+  my $out_matrix_file = ${TMP}."/".$matrix_prefix."_converted.tab";
+  my $cmd = "$ENV{RSAT}/perl-scripts/convert-matrix -v 1 ";
+  $cmd .= " -i ".$in_matrix_file;
+  $cmd .= " -from ".$in_format;
+  $cmd .= " -to tab ";
+  $cmd .= " -return counts,parameters,links";
+  $cmd .= " -o ".$out_matrix_file;
+  print "<pre>Matrix conversion command: $cmd\n</pre>" if ($ENV{rsat_echo} >=1);
+  system "$cmd";
+
+  &DelayedRemoval($out_matrix_file);
+
+  ### Print result on the web page
+  print '<h4>Final matrices</h4>';
+  print "<pre>";
+  print `cat $out_matrix_file`;
+  print "</pre>";
+
+  return ($out_matrix_file);
+}
+
 ################################################################
 ## Print a HTML table with links to one or several result files
 ##
@@ -1706,6 +1739,7 @@ sub PrintURLTable {
   print "<tr><td colspan='3'><h2>Result file(s)</h2> </td></tr>";
   while (my $type = shift @files) {
     my $file = shift @files;
+    $file = &ShortFileName($file);
     my $result_URL = $ENV{rsat_www}."/tmp/".$file;
     print ("<tr>",
 	   "<td>".$type."</td>",
