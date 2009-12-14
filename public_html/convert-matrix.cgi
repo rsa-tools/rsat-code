@@ -191,24 +191,19 @@ if ($query->param('output') eq "display") {
   print '<H4>Result</H4>';
   print '<PRE>';
   while (<RESULT>) {
-    #	s|${TMP}/||g;
-      #	s|${BIN}/||g;
-      next if ($_ =~ /logo file:(.*)\.pdf$/);
-      if ($_ =~ /logo file:(.*)\.png$/){
-	(local $logo = $1 )=~ s|${TMP}| ${WWW_TMP}|g;
-#	print "<IMG SRC=\"$logo\">\n";
-	$logo =~ s/\.png//;
-	print "<a href = \"$logo.pdf\"><IMG SRC=\"$logo\.png\" ></a>\n";
-	print "<br/>";
-	&DelayedRemoval("$TMP/$1");
-      }
-	else {
-		print $_;
-	}
-#	$genes .= $_;
+    next if ($_ =~ /logo file:(.*)\.pdf$/);
+    if ($_ =~ /logo file:(.*)\.png$/){
+      (local $logo = $1 )=~ s|${TMP}| ${WWW_TMP}|g;
+      $logo =~ s/\.png//;
+      print "<a href = \"$logo.pdf\"><IMG SRC=\"$logo\.png\" ></a>\n";
+      print "<br/>";
+      &DelayedRemoval("$TMP/$1");
+    } else {
+      print $_;
     }
-    print '</PRE>';
-    close(RESULT);
+  }
+  print '</PRE>';
+  close(RESULT);
 
   &PipingForm();
 
