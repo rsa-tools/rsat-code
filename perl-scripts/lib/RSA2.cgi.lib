@@ -1736,7 +1736,6 @@ sub display_matrices_web {
 #  print `cat $out_matrix_file`; 
   my ($res) = &OpenInputFile($out_matrix_file);
   while (<$res>) {
-    s|$ENV{RSAT}/||g;
     next if ($_ =~ /logo file:(.*)\.pdf$/);
     if ($_ =~ /logo file:(.*)\.png$/){
       (local $logo = $1 )=~ s|${TMP}| ${WWW_TMP}|g;
@@ -1745,6 +1744,7 @@ sub display_matrices_web {
       print "<br/>";
       &DelayedRemoval("$TMP/$1");
     } else {
+      s|$ENV{RSAT}/||g;
       print $_;
     }
   }
