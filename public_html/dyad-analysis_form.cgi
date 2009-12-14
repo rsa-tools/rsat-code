@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.27 2009/12/09 09:02:02 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.28 2009/12/14 16:05:47 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -310,6 +310,8 @@ print $query->hidden(-name=>'sequence_format',-default=>"fasta");
 print $query->hidden(-name=>'background',-default=>"upstream-noorf");
 print $query->hidden(-name=>'bg_level',-default=>"organism");
 print $query->hidden(-name=>'organism',-default=>'Saccharomyces cerevisiae');
+print $query->hidden(-name=>'gibbs_msps',-default=>"2");
+print $query->hidden(-name=>'gibbs_flanks',-default=>"2");
 #print $query->hidden(-name=>'title',-default=>'upstream sequences from the yeast GAL genes');
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
