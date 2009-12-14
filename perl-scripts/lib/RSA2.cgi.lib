@@ -1712,7 +1712,16 @@ sub display_matrices_web {
   $cmd .= " -i ".$in_matrix_file;
   $cmd .= " -from ".$in_format;
   $cmd .= " -to tab ";
-  $cmd .= " -return counts,parameters,links";
+  $cmd .= " -return counts,links";
+  $cmd .= " -return consensus";
+#  $cmd .= " -return parameters";
+
+  ## Logo parameters
+  $cmd .= " -return logo -logo_format png,pdf ";
+  $cmd .= " -logo_opt '-e' "; ## Error bar
+  $cmd .= " -logo_opt '-M' "; ## Small sample correction
+  $cmd .= " -logo_dir $ENV{RSAT}/public_html/tmp ";
+
   $cmd .= " -o ".$out_matrix_file;
   print "<pre>Matrix conversion command: $cmd\n</pre>" if ($ENV{rsat_echo} >=1);
   system "$cmd";
@@ -1720,9 +1729,25 @@ sub display_matrices_web {
   &DelayedRemoval($out_matrix_file);
 
   ### Print result on the web page
+
+  close ($res);
   print '<h4>Final matrices</h4>';
   print "<pre>";
-  print `cat $out_matrix_file`;
+#  print `cat $out_matrix_file`; 
+  my ($res) = &OpenInputFile($out_matrix_file);
+  while (<$res>) {
+    s|$ENV{RSAT}/||g;
+    next if ($_ =~ /logo file:(.*)\.pdf$/);
+    if ($_ =~ /logo file:(.*)\.png$/){
+      (local $logo = $1 )=~ s|${TMP}| ${WWW_TMP}|g;
+      $logo =~ s/\.png//;
+      print "<a href = \"$logo.pdf\"><IMG SRC=\"$logo\.png\" ></a>\n";
+      print "<br/>";
+      &DelayedRemoval("$TMP/$1");
+    } else {
+      print $_;
+    }
+  }
   print "</pre>";
 
   return ($out_matrix_file);
