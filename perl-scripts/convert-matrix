@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.91 2009/12/11 23:10:26 jvanheld Exp $
+# $Id: convert-matrix,v 1.92 2009/12/14 09:39:44 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -214,17 +214,17 @@ if ($return_fields{logo}) {
 
   ## Check that seqlogo is installed at the expected location
   if (-e $seqlogo_path) {
-      if(-x $seqlogo_path) {
-	&RSAT::message::Debug("seqlogo path", $seqlogo_path) if ($main::verbose >= 4);
-      } else {
-	  &RSAT::message::Warning("Cannot execute the program seqlogo", 
-				  $seqlogo_path);
-	  $seqlogo_path="";
-      }
-  } else {
-      &RSAT::message::Warning("Cannot generate logos because the program seqlogo is not found in the expected path", 
+    if(-x $seqlogo_path) {
+      &RSAT::message::Debug("seqlogo path", $seqlogo_path) if ($main::verbose >= 4);
+    } else {
+      &RSAT::message::Warning("Cannot execute the program seqlogo", 
 			      $seqlogo_path);
-	  $seqlogo_path="";
+      $seqlogo_path="";
+    }
+  } else {
+    &RSAT::message::Warning("Cannot generate logos because the program seqlogo is not found in the expected path", 
+			    $seqlogo_path);
+    $seqlogo_path="";
   }
 }
 
@@ -1312,8 +1312,9 @@ sub ExportMatrix {
   ## Return parameters
   if ($return_fields{logo}) {
     if ($main::verbose >= 1) {
+      my $logo_file = $matrix->get_attribute("logo_file");
       foreach my $logo_format (@logo_formats) {
-	print $out  "; logo file:" , $matrix->get_attribute("logo_file").".".$logo_format, "\n";
+	print $out  "; logo file:" , $logo_file.".".$logo_format, "\n";
       }
     }
   }
