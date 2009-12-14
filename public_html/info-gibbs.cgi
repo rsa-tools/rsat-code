@@ -22,13 +22,15 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+@result_files = ();
 
 $command = "$ENV{RSAT}/contrib/info-gibbs/info-gibbs";
 #$command = "$ENV{RSAT}/python-scripts/info-gibbs-python";
 
+
 #$convert_matrix_command = "$SCRIPTS/convert-matrix -from gibbs -return counts";
 $convert_seq_command = "$SCRIPTS/convert-seq";
-$tmp_file_name = sprintf "info-gibbs.%s", &AlphaDate;
+$tmp_file_name = sprintf "info-gibbs.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
@@ -49,6 +51,8 @@ $parameters = '';
 ### sequence file ####
 ($sequence_file,$sequence_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>1);
 $parameters .= "-i $sequence_file";
+push @result_files, ("input sequence",$sequence_file);
+
 
 #### add reverse complement
 if (lc($query->param("add_rc")) eq "on") {
@@ -162,27 +166,22 @@ if ($query->param('output') eq "display") {
     local $result_file = "$TMP/$tmp_file_name.tab";
     #$matrix_file = "$TMP/$tmp_file_name.matrix";
     #print("$command $parameters\n");
-
+    push @result_files, ('info-gibbs result', $result_file);
     system "$command $parameters > $result_file";
-    #print "<pre>$command $parameters > $result_file</pre>";
-    #print $result_file;
-    #$convert_matrix_command .= " -i ".$result_file." -o ".$matrix_file;
-    #system "$convert_matrix_command";
-    #if ($ENV{rsat_echo} >= 1) {
-	#print "<PRE><B>Command:</B> $command $parameters </PRE>";
-	#print "<PRE><B>Conversion:</B> $convert_matrix_command </PRE>";
-    #}
-    
+    &DelayedRemoval($result_file);
+
     ### Print result on the web page
-    print '<h4>Result</h4>';
+    print '<h4>info-gibbs result</h4>';
     print "<pre>";
     print `cat $result_file`;
     print "</pre>";
-    
+
+    ## Display matrices with logos and links
+    my ($out_matrix_file) = &display_matrices_web($result_file, "infogibbs");
+    push @result_files, ('converted matrices', $out_matrix_file);
+
+    &PrintURLTable(@result_files);
     &PipingForm();
-  
-    &DelayedRemoval($result_file);
-    #&DelayedRemoval($matrix_file);
 
     print "<hr size=\"3\">";
 } elsif ($query->param('output') =~ /server/i) {
