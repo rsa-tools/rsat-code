@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.24 2009/12/12 08:33:32 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.25 2009/12/14 10:24:24 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -666,7 +666,12 @@ sub ScanForSites {
     $convert2_cmd .= " -return counts,parameters";
 #    $convert2_cmd .= " -sort desc information.per.column";
     $convert2_cmd .= " -return sites" if ($return_fields{sites});
-    $convert2_cmd .= " -return logo" if ($return_fields{logo});
+    if ($return_fields{logo}) {
+      $cmd .= " -return logo -logo_format png,pdf ";
+      $cmd .= " -logo_opt '-e' "; ## Error bar
+      $cmd .= " -logo_opt '-M' "; ## Small sample correction
+#      $cmd .= " -logo_dir $ENV{RSAT}/public_html/tmp ";
+    }
     $convert2_cmd .= " -return links" if ($return_fields{links});
     $convert2_cmd .= " -o ".$outfile{count_matrices};
     print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
