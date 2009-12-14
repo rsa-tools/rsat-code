@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.25 2009/12/14 10:24:24 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.26 2009/12/14 16:06:26 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -692,16 +692,16 @@ sub InfoGibbs {
 
     $gibbs_cmd .= " -v 1";
     $gibbs_cmd .= " -i ".$infile{sequence};
-    $gibbs_cmd .= " --sigmatrix ".$outfile{sig_matrices};
-    $gibbs_cmd .= " --mean_sps ".$gibbs_msps;
+    $gibbs_cmd .= " --sigmatrix=".$outfile{sig_matrices};
+    $gibbs_cmd .= " --mean_sps=".$gibbs_msps;
     if ($strands eq "-2str") {
-      $gibbs_cmd .= " --strand +-";
+      $gibbs_cmd .= " --strand=+-";
     } else {
-      $gibbs_cmd .= " --strand +";
+      $gibbs_cmd .= " --strand=+";
     }
-    $gibbs_cmd .= " --iter ".$gibbs_iter;
-    $gibbs_cmd .= " --flanks ".$gibbs_flanks;
-    $gibbs_cmd .= " --nrun ".1;
+    $gibbs_cmd .= " --iter=".$gibbs_iter;
+    $gibbs_cmd .= " --flanks=".$gibbs_flanks;
+    $gibbs_cmd .= " --nrun=".1;
     $gibbs_cmd .= " --finalcycle" if ($gibbs_final);
     $gibbs_cmd .= " > ".$outfile{gibbs_matrices};
     print $log "; significance matrices + sequences -> count matrices\n", $gibbs_cmd, "\n";
