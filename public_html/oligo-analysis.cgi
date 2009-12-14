@@ -19,9 +19,9 @@ require "RSA.lib";
 require "RSA.disco.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+@result_files = ();
 
 #### TEMPORARY
-
 $oligo_analysis_command = "$SCRIPTS/oligo-analysis";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $purge_sequence_command = "$SCRIPTS/purge-sequence";
@@ -43,6 +43,7 @@ $parameters .= " -sort";
 
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
+push @result_files, ("input sequence",$sequence_file);
 
 $purge = $query->param('purge');
 if ($purge) {
@@ -214,7 +215,7 @@ if ($query->param('output') =~ /display/i) {
     print '<H2>Result</H2>';
     &PrintHtmlTable(RESULT, $result_file, true);
     close(RESULT);
-    @result_files = ('oligos', "$tmp_file_name.res");
+    push @result_files, ('oligos', $result_file);
 
     #### oligonucleotide assembly ####
     if (($query->param('return') ne "table") &&
@@ -247,7 +248,7 @@ if ($query->param('output') =~ /display/i) {
 	}
 	print "</PRE>\n";
 	close(ASSEMBLY);
-	push @result_files, ('assembly', "$tmp_file_name.asmb");
+	push @result_files, ('assembly', $assembly_file);
 
 
 	## Convert pattern-assembly result into PSSM

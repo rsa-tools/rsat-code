@@ -1553,7 +1553,7 @@ sub MatrixFromPatterns_run {
   my $sig_matrix_file = $pssm_prefix."_sig_matrices.txt";
   $gibbs_matrix_file = $pssm_prefix."_gibbs_matrices.txt";
   $pssm_file = $pssm_prefix."_count_matrices.txt"; ## has to be global for the piping form
-  $pssm_command = "$SCRIPTS/matrix-from-patterns -v 1 -links ";
+  $pssm_command = "$SCRIPTS/matrix-from-patterns -v 1 -links -logo ";
 #  $pssm_command .= " ".$str;
   $pssm_command .= " -seq ".$sequence_file;
   $pssm_command .= " -format $sequence_format";
@@ -1591,15 +1591,18 @@ sub MatrixFromPatterns_run {
 #   print "</PRE>\n";
 #   close(GIBBS);
 
-  print "<H2>Final matrices</H2>\n";
-  open PSSM, $TMP."/".$pssm_file;
-  print "<PRE>\n";
-  while (<PSSM>) {
-    s|$ENV{RSAT}/||g;
-    print;
-  }
-  print "</PRE>\n";
-  close(PSSM);
+  my ($out_matrix_file) = &display_matrices_web($TMP."/".$pssm_file, "tab", 1);
+
+#   print "<H2>Final matrices</H2>\n";
+#   open PSSM, $TMP."/".$pssm_file;
+#   print "<PRE>\n";
+#   while (<PSSM>) {
+#     s|$ENV{RSAT}/||g;
+#     print;
+#   }
+#   print "</PRE>\n";
+#   close(PSSM);
+
 }
 
 sub OligoDyadPipingForm {
@@ -1700,37 +1703,38 @@ End_of_form
 ## Display one or several PSSM on a Web page
 ##
 ## Usage:
-##  my ($out_matrix_file) = display_matrices_web ($in_matrix_file, $in_format);
+##  my ($out_matrix_file) = &display_matrices_web($in_matrix_file, $in_format, $no_convert);
 sub display_matrices_web {
-  my ($in_matrix_file, $in_format) = @_;
+  my ($in_matrix_file, $in_format, $no_convert) = @_;
   &RSAT::error::FatalError("missing input matrix file for display_matices_web()") unless ($in_matrix_file);
   &RSAT::error::FatalError("missing input matrix format for display_matices_web()") unless ($in_format);
+
   my $matrix_prefix = &ShortFileName($in_matrix_file);
   $matrix_prefix .= s/\.${in_format}$//;
-  my $out_matrix_file = ${TMP}."/".$matrix_prefix."_converted.tab";
-  my $cmd = "$ENV{RSAT}/perl-scripts/convert-matrix -v 1 ";
-  $cmd .= " -i ".$in_matrix_file;
-  $cmd .= " -from ".$in_format;
-  $cmd .= " -to tab ";
-  $cmd .= " -return counts,links";
-  $cmd .= " -return consensus";
-#  $cmd .= " -return parameters";
-
-  ## Logo parameters
-  $cmd .= " -return logo -logo_format png,pdf ";
-  $cmd .= " -logo_opt '-e' "; ## Error bar
-  $cmd .= " -logo_opt '-M' "; ## Small sample correction
-  $cmd .= " -logo_dir $ENV{RSAT}/public_html/tmp ";
-
-  $cmd .= " -o ".$out_matrix_file;
-  print "<pre>Matrix conversion command: $cmd\n</pre>" if ($ENV{rsat_echo} >=1);
-  system "$cmd";
-
-  &DelayedRemoval($out_matrix_file);
+  my $out_matrix_file;
+  if ($no_convert) {
+    $out_matrix_file = $in_matrix_file;
+  } else {
+    $out_matrix_file = ${TMP}."/".$matrix_prefix."_converted.tab";
+    my $cmd = "$ENV{RSAT}/perl-scripts/convert-matrix -v 1 ";
+    $cmd .= " -i ".$in_matrix_file;
+    $cmd .= " -from ".$in_format;
+    $cmd .= " -to tab ";
+    $cmd .= " -return counts,links";
+    $cmd .= " -return consensus";
+    #  $cmd .= " -return parameters";
+    ## Logo parameters
+    $cmd .= " -return logo -logo_format png,pdf ";
+    $cmd .= " -logo_opt '-e' "; ## Error bar
+    $cmd .= " -logo_opt '-M' "; ## Small sample correction
+    $cmd .= " -logo_dir $ENV{RSAT}/public_html/tmp ";
+    $cmd .= " -o ".$out_matrix_file;
+    print "<pre>Matrix conversion command: $cmd\n</pre>" if ($ENV{rsat_echo} >=1);
+    system "$cmd";
+    &DelayedRemoval($out_matrix_file);
+  }
 
   ### Print result on the web page
-
-  close ($res);
   print '<h4>Final matrices</h4>';
   print "<pre>";
 #  print `cat $out_matrix_file`; 
@@ -1748,6 +1752,7 @@ sub display_matrices_web {
       print $_;
     }
   }
+  close ($res);
   print "</pre>";
 
   return ($out_matrix_file);
