@@ -366,6 +366,8 @@ print "<TD><B>";
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'background',-default=>"upstream-noorf");
 print $query->hidden(-name=>'bg_level',-default=>"organism");
+print $query->hidden(-name=>'gibbs_msps',-default=>"2");
+print $query->hidden(-name=>'gibbs_flanks',-default=>"2");
 print $query->hidden(-name=>'organism',-default=>'Saccharomyces cerevisiae');
 print $query->hidden(-name=>'title',-default=>'upstream sequences from the yeast PHO genes');
 print $query->submit(-label=>"DEMO");
