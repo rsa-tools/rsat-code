@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.35 2009/12/14 09:58:43 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.36 2009/12/14 09:59:56 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -199,7 +199,7 @@ if ($query->param('output') eq "display") {
   print '<H4>Result</H4>';
   &PrintHtmlTable(RESULT, $result_file, true);
   close(RESULT);
-  push @result_files, ('oligos', "$tmp_file_name.res");
+  push @result_files, ('dyads', $result_file);
 
   #### pattern assembly ####
   if ((&IsReal($query->param('lth_occ_sig'))) && ($query->param('lth_occ_sig')>= -1)) {
@@ -226,50 +226,13 @@ if ($query->param('output') eq "display") {
     }
     print "</PRE>\n";
     close(ASSEMBLY);
-    push @result_files, ('assembly', "$tmp_file_name.asmb");
+    push @result_files, ('assembly', $assembly_file);
 
 
     ## Convert pattern-assembly result into PSSM
     if ($query->param('to_matrix')) {
       &MatrixFromPatterns_run();
     }
-
-    # 	## Convert pattern-assembly result into PSSM 
-    # 	if ($query->param('to_matrix')) {
-    # 	  $pssm_prefix = $tmp_file_name."_pssm";
-    # 	  $sig_matrix_file = $pssm_prefix."_sig_matrices.txt";
-    # 	  $pssm_file = $pssm_prefix."_count_matrices.txt";
-    # 	  $pssm_command = "$SCRIPTS/matrix-from-patterns -v 1 ".$str;
-    # 	  $pssm_command .= " -seq ".$sequence_file;
-    # 	  $pssm_command .= " -format $sequence_format";
-    # 	  $pssm_command .= " -asmb ".$assembly_file;
-    # 	  $pssm_command .= " -uth Pval 0.00025";
-    # 	  $pssm_command .= " -bginput -markov 0";
-    # 	  $pssm_command .= " -o ".$TMP."/".$pssm_prefix;
-    # 	  print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
-    # 	  system "$pssm_command";
-    # 	  push @result_files, ('significance matrices', $sig_matrix_file);
-    # 	  push @result_files, ("gibbs matrices", $pssm_prefix."_gibbs_matrices.txt");
-    # 	  push @result_files, ('count matrices', $pssm_file);
-    # #	  print "<H2>Significance matrices</H2>\n";
-    # #	  open SIG, $TMP."/".$sig_matrix_file;
-    # #	  print "<PRE>\n";
-    # #	  while (<SIG>) {
-    # #	    s|$ENV{RSAT}/||g;
-    # #	    print;
-    # #	  }
-    # #	  print "</PRE>\n";
-    # #	  close(SIG);
-    # 	  print "<H2>Matrices</H2>\n";
-    # 	  open PSSM, $TMP."/".$pssm_file;
-    # 	  print "<PRE>\n";
-    # 	  while (<PSSM>) {
-    # 	    s|$ENV{RSAT}/||g;
-    # 	    print;
-    # 	  }
-    # 	  print "</PRE>\n";
-    # 	  close(PSSM);
-    # 	}
   }
 
   &PrintURLTable(@result_files);
