@@ -173,14 +173,12 @@ if ($query->param('output') eq "display") {
     ### Print result on the web page
     print '<h4>info-gibbs result</h4>';
     print "<pre>";
-    my ($res) = &OpenInputFile($out_matrix_file);
+    my ($res) = &OpenInputFile($result_file);
     while (<$res>) {
       s|$ENV{RSAT}/||g;
       print $_;
     }
-#     print "</pre>";
-#     print `cat $result_file`;
-#     print "</pre>";
+    print "</pre>";
 
     ## Display matrices with logos and links
     my ($out_matrix_file) = &display_matrices_web($result_file, "infogibbs");
