@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.17 2007/12/07 08:14:53 jvanheld Exp $
+# $Id: consensus.cgi,v 1.18 2009/12/14 08:42:57 jvanheld Exp $
 #
 # Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
@@ -24,6 +24,7 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+@result_files = ();
 
 $command = "$BIN/consensus";
 #$convert_matrix_command = "$SCRIPTS/matrix-from-consensus -v 1";
@@ -49,6 +50,7 @@ $query = new CGI;
 ### sequence file ####
 ($sequence_file,$sequence_format) = &GetSequenceFile("wconsensus", no_format=>1, add_rc=>0);
 $parameters .= " -f $sequence_file ";
+push @result_files, ("input sequence",$sequence_file);
 
 ## Number of matrices to save
 if (&IsNatural($query->param('matrices_to_save'))) {
@@ -119,12 +121,14 @@ if ($query->param('output') eq "display") {
 	print "<PRE><b>Conversion:</b> $convert_matrix_command</PRE>";
     }
 
-    open RESULT, "$command $parameters | ";
-    open RES_FILE, ">$result_file";
-    
     ### prepare data for piping
     &PipingWarning();
-    
+
+    open RESULT, "$command $parameters | ";
+    open RES_FILE, ">$result_file";
+  #    system "$command $parameters >$result_file ";
+    push @result_files, ('info-gibbs result', $result_file);
+
     ### Print result on the web page
     print '<H4>Result</H4>';
     print "<PRE>";
@@ -135,9 +139,14 @@ if ($query->param('output') eq "display") {
     print "</PRE>";
     close(RESULT);
     close(RES_FILE);
-    
+
+
+    ## Display matrices with logos and links
+    my ($out_matrix_file) = &display_matrices_web($result_file, "consensus");
+    push @result_files, ('converted matrices', $out_matrix_file);
+
     &PipingForm();
-    
+
     system "$convert_matrix_command -i $result_file -o $matrix_file";
 
     
