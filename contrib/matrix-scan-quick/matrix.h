@@ -57,6 +57,8 @@ struct Array
     {
         I = a.I;
         J = a.J;
+        pseudo = a.pseudo;
+        p = a.p;
         alloc(I, J);
         for (int i = 0; i < I; i++)
         {
@@ -79,6 +81,8 @@ struct Array
     {
         I = a.I;
         J = a.J;
+        pseudo = a.pseudo;
+        p = a.p;
         alloc(I, J);
         for (int i = 0; i < I; i++)
         {
