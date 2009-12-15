@@ -171,7 +171,6 @@ void count_occ(long *count_table, long *last_position, long *overlapping_occ, ch
     int string_size = (int) strlen(string);
     for (i = 0; i < string_size - oligo_length + 1; i++) 
     {
-
             // compute index
             index = index_f = oligo2int(string, i, oligo_length);
             if (add_rc) 
@@ -201,8 +200,9 @@ void count_occ(long *count_table, long *last_position, long *overlapping_occ, ch
             count_table[index]++;
             total_count++;
 
-             // count on other strand when occurrences are not grouped
-            if (add_rc && !grouprc)
+            // count on other strand when occurrences are not grouped
+            // (discard palindromes)
+            if (add_rc && !grouprc && index_r != index_f)
                 count_table[MAX(index_r, index_f)]++;
             
     }
@@ -247,11 +247,19 @@ void print_count_array(FILE *output_fp, long *count_array, long *overlapping_occ
     int size = 1;
     for (i = 0; i < oligo_length; i++)
         size *= ALPHABET_SIZE;    
-    
+
+    // id buffer
     char oligo_buffer[oligo_length + 1];
     oligo_buffer[oligo_length] = '\0';
     for (i = 0; i < oligo_length; i++)
         oligo_buffer[i] = letter[0];
+
+    // rc id buffer
+    char oligo_buffer_rc[oligo_length + 1];
+    oligo_buffer_rc[oligo_length] = '\0';
+    for (i = 0; i < oligo_length; i++)
+        oligo_buffer_rc[i] = letter[0];
+
     // header
     if (overlapping_occ)
         fprintf(output_fp, "#seq\tidentifier\tobserved_freq\tocc\tovl_occ\n");
@@ -261,20 +269,59 @@ void print_count_array(FILE *output_fp, long *count_array, long *overlapping_occ
     k = 0;
     for (i = 0; i < size; i++) 
     {
+        // compute reverse id
+        for (k = 0; k < oligo_length; k++) 
+        {
+            if (oligo_buffer[k] == 't') 
+            {
+                oligo_buffer_rc[oligo_length - k - 1] = 'a';
+            } 
+            else if (oligo_buffer[k] == 'a') 
+            {
+                oligo_buffer_rc[oligo_length - k - 1] = 't';
+            } 
+            else if (oligo_buffer[k] == 'c') 
+            {
+                oligo_buffer_rc[oligo_length - k - 1] = 'g';
+            } 
+            else if (oligo_buffer[k] == 'g') 
+            {
+                oligo_buffer_rc[oligo_length - k - 1] = 'c';
+            }
+        }        
+        
         if (count_array[i] != 0) 
         {
             // special case for overlapping_occ
             if (overlapping_occ) 
             {
-                fprintf(output_fp, "%s\t%s\t%.13f\t%d\t%d\n", \
-                oligo_buffer, oligo_buffer, count_array[i] / (double) position_count, (int) count_array[i], (int) overlapping_occ[i]);
+                if (add_rc)
+                {
+                    fprintf(output_fp, "%s\t%s|%s\t%.13f\t%d\t%d\n", \
+                    oligo_buffer, oligo_buffer, oligo_buffer_rc, count_array[i] / (double) position_count, (int) count_array[i], (int) overlapping_occ[i]);
+                }
+                else
+                {
+                    fprintf(output_fp, "%s\t%s\t%.13f\t%d\t%d\n", \
+                    oligo_buffer, oligo_buffer, count_array[i] / (double) position_count, (int) count_array[i], (int) overlapping_occ[i]);
+                }
             } 
             else 
             {
-                fprintf(output_fp, "%s\t%s\t%.13f\t%d\n", \
-                oligo_buffer, oligo_buffer, count_array[i] / (double) position_count, (int) count_array[i]);
+                if (add_rc)
+                {
+                    fprintf(output_fp, "%s\t%s|%s\t%.13f\t%d\n", \
+                    oligo_buffer, oligo_buffer, oligo_buffer_rc, count_array[i] / (double) position_count, (int) count_array[i]);
+                }
+                else
+                {
+                    fprintf(output_fp, "%s\t%s\t%.13f\t%d\n", \
+                    oligo_buffer, oligo_buffer, count_array[i] / (double) position_count, (int) count_array[i]);
+                }
             }
         }
+        
+        // update id
         for (k = oligo_length - 1; k >= 0; k--) 
         {
             if (oligo_buffer[k] == 't') 
