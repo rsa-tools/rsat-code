@@ -929,7 +929,7 @@ void run_sampler(vector<string> &raw_sequences, Sequences &sequences, Markov &ma
         Result best_result;
         Result result;
         int l = 0;
-        VERBOSE1("starting to sample motif %d.%d/%d\n", params.id, i+1, params.motifs);
+        VERBOSE1("starting to sample motif %d.(%d/%d)\n", params.id, i+1, params.motifs);
         // all spacing
         for (int spacing = params.minspacing; spacing <= params.maxspacing; spacing++)
         {
