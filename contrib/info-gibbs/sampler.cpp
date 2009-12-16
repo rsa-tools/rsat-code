@@ -789,7 +789,7 @@ Result find_one_motif(vector<string> &raw_sequences, Sequences & sequences, SITE
 
     for (int run = 0; run < n_run; run++)
     {
-        VERBOSE1("run %d\n", run+1);
+        VERBOSE1("processing run %d/%d\n", run+1, n_run);
         NEW_TRACE(trace, run+1);
         //DEBUG("sites=%d n=%d", (int) allsites.size(), n)
         if (params.start_from_sites)
@@ -814,7 +814,7 @@ Result find_one_motif(vector<string> &raw_sequences, Sequences & sequences, SITE
             }
         }
         int iter=-1;
-        VERBOSE2("sampling\n");
+        //VERBOSE2("sampling\n");
         TRACE(trace, "iter\tic\tic_max\tllr\tbest_llr\n");
         while (++iter < max_iter)
         {
@@ -929,11 +929,11 @@ void run_sampler(vector<string> &raw_sequences, Sequences &sequences, Markov &ma
         Result best_result;
         Result result;
         int l = 0;
-        VERBOSE1("motif %d\n", i+1);
+        VERBOSE1("starting to sample motif %d.%d/%d\n", params.id, i+1, params.motifs);
         // all spacing
         for (int spacing = params.minspacing; spacing <= params.maxspacing; spacing++)
         {
-            VERBOSE1("spacing is set to %d\n", spacing);
+            //VERBOSE1("spacing is set to %d\n", spacing);
             l = params.m1 + spacing + params.m2;
             SITES sites = all_sites(sequences, l, params.m1, params.m2);            
             for (int m = 0; m < (int) all_results.size(); m++)
