@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-qualities,v 1.1 2009/12/14 22:12:09 amedina Exp $
+# $Id: compare-qualities,v 1.2 2009/12/23 19:16:24 amedina Exp $
 #
 ############################################################
 
@@ -124,7 +124,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
     
     %main::infile = ();
@@ -143,7 +143,7 @@ package main;
     ################
     #Parameters reported from convert-matrix 
     
-    @main::params = qw@information.per.column Rows Wrange info.log.base Wmax max.possible.info.per.col cons.adjusted.information sites max.bits cons.ln.Pval cons.Pval cons.exp cons.ln.exp pseudo cons.exp Wmin Columns Prior cons.unadjusted.information consensus.IUPAC total.information Alphabet@;
+    @main::params = qw@Columns Prior Rows sites consensus.IUPAC  Alphabet pseudo information.per.column max.possible.info.per.col total.information info.log.base max.bits Wrange Wmax Wmin cons.adjusted.information cons.ln.Pval cons.Pval cons.Eval cons.ln.Eval meme.E-value meme.llr cons.unadjusted.information @;
     
     @main::FPR_for_Sens	= (0.0001,0.001,0.01,0.05,0.10); ## points of sensitivity
     @main::Sens_for_FPR	= (0.50,0.75,0.80,0.90,0.95,1.0); ## false positive rate at x percetage of true positives
@@ -153,7 +153,7 @@ package main;
 ## Have to correct this cause if the file changes this does not work
     
     @main::distribs = qw(theor matrix_sites_loo);
-    push (@main::distribs, qw(allup-noorf allup-noorf_perm_col_1-10 matrix_sites));
+    push (@main::distribs, qw(allup-noorf matrix_sites));
 
     ###############
     ## Extra headers for report table
@@ -249,10 +249,10 @@ package main;
     $main::outfile{comparison_dir}= join ("/",$main::outfile{outdir},"comparison");
    
     &RSAT::util::CheckOutDir( $main::outfile{matrix_info_dir});
-    &RSAT::error::FatalError("Impossible to creat output directory $main::outfile{outdir} ") unless (-d "$main::outfile{matrix_info_dir}") ;
+    &RSAT::error::FatalError("Impossible to creat output directory $main::outfile{matrix_info_dir} ") unless (-d "$main::outfile{matrix_info_dir}") ;
     
     &RSAT::util::CheckOutDir( $main::outfile{comparison_dir});
-    &RSAT::error::FatalError("Impossible to creat output directory $main::outfile{outdir} ")  unless (-d "$main::outfile{comparison_dir}") ;
+    &RSAT::error::FatalError("Impossible to creat output directory $main::outfile{comparison_dir} ")  unless (-d "$main::outfile{comparison_dir}") ;
     
     $comparison_table_name= $main::outfile{comparison_dir}."/matrix_quality_comparison.tab";
     &OpenComparisonReport( $comparison_table_name);
@@ -268,17 +268,13 @@ package main;
 	my $mtx_file= $main::mq_files{$mtx}{"mtx"};
 	my $quality_file= $main::mq_files{$mtx}{"mq"};
 	my %all_params= &GetInfoForTable($mtx_file, $quality_file);	
-	
-	<STDIN>;
+	print  $main::out_file_comparison_table "$mtx";
 	foreach my $param (@main::params) {
-	    my $value = "NA";
-	    $value = $all_params{$param} if defined $all_params{$param};
+	    my $value = $all_params{$param} || "NA";
 	    
-	    ## Remove the ';' from the prior description, because they are the same as the comment char for R scripts
-	    if ($param eq "Prior") { ## printing parameters  from matrix_quality
-		$value =~ s/\;/ /g;
-	    }
-	    
+	    $value =~ s/\;/ /g;  ## Remove the ';' from description, because they are the same as the comment char for R scripts
+	   ## printing parameters  from matrix_quality
+	  	    
 	    print  $main::out_file_comparison_table "\t$value";
 	}
 	
@@ -301,12 +297,12 @@ package main;
 		    push @fpr_results, "NA";## get fprs  values
 		}
 	    }
-	    my $sensitivity = join "\t", @sens;
-	    my $fprs = join "\t", @fpr_results;
-	    print $main::out_file_comparison_table join ("\t",$auc,$sensitivity,$fprs); # print AUC coverage and fprs values
+	    my $sensitivity = join ("\t", @sens);
+	    my $fprs = join ("\t", @fpr_results);
+	    print $main::out_file_comparison_table join ("\t","\t".$auc,$sensitivity,$fprs); # print AUC coverage and fprs values
 	}
-	print $main::out_file_comparison_table "\t".$mtx."\n";
-	<STDIN>;
+	print $main::out_file_comparison_table "\t".$mtx_file."\n";
+	#<STDIN>;
     }
     
     close ( $main::out_file_comparison_table );
@@ -608,12 +604,12 @@ sub OpenComparisonReport {
     $main::out_file_comparison_table = &OpenOutputFile($report);
     #die "$report";
     my $col = 0;
-    foreach ("TF","program","Regulated_genes","Num_Regulated_Genes", @main::params,  @extra_headers, "matrix.file") {
+    foreach ("matrix.name", @main::params,  @extra_headers, "matrix.file") {
 	$col++;
 	print $_."\t";
 	print  $main::out_file_comparison_table  "; $col\t$_\n"; # print parameters calculated one by one
     }
-    print  $main::out_file_comparison_table join ("\t", "#TF","program","Regulated Genes","Num_Regulated_Genes",@main::params, @extra_headers,"matrix.file"), "\n"; #print header of parameters table
+    print  $main::out_file_comparison_table join ("\t", "#matrix.name",@main::params, @extra_headers,"matrix.file"), "\n"; #print header of parameters table
 }
 	
 
@@ -627,7 +623,7 @@ sub  GetInfoForTable{
     
     my %matrix_params=();
 
-    my $out_file_params_name= $main::outfile{matrix_info_dir}.$mtx.".params";
+    my $out_file_params_name= $main::outfile{matrix_info_dir}."/".$mtx.".params";
     
     my $out_file_params =  &OpenOutputFile($out_file_params_name)  ||
 	&RSAT::error::FatalError(" Can't open outputfile ",$out_file_params) ;
@@ -639,7 +635,7 @@ sub  GetInfoForTable{
     print $out_file_params $params;
     
     my (%counts,%used,@infos,$alt_sites);
-    <STDIN>;
+   
     foreach my $line (split /\n/,$params) { ## reads the convert-matrix output
 	if ($line !~ /^;/) { ## if line is not a comment
 	    next unless $line =~ /^[acgt]/i; ## select lines with counts of nucleotides
@@ -819,8 +815,7 @@ sub auc_calc {
 
 	my ($input_file,$x_ref, $fprs_for_sensitivities, $sens_for_fprs,) = @_;# recives matrix_quality file,
                                                        # (X) column, and pointers to sensitivities used to calcule FPRs  and FPRs used to calcule 
-	   
-	print ($input_file) ; <STDIN>;# sensitivities						}
+	   # sensitivities						}
 	($input_q)= &OpenInputFile($input_file)  ; ### Open matrix_quality file  
 
 ################################################################
@@ -862,8 +857,7 @@ sub auc_calc {
 	
 	
 	my $x_lab= $x_ref; ## defien X reference, the key column is not counted, this number is difined when calling the module
-
-	#print "X reference in ROC = $header[$x_lab]\n";
+	&RSAT::message::Debug("X reference in ROC = " , $header[$x_lab]) if ($main::verbose >=3);
 	my @curve = ();
 	#print @{$distributions{$x_lab}};
 	my $X_col = \@{$distributions{$x_lab}}; ## pointer to the column containing de X reference 
@@ -882,19 +876,23 @@ sub auc_calc {
 		my $i = $headers{$dist}; ## Number of the column of the analyzed distribution
 		$used{$dist} = 1; ## mark as used 
 
+		&RSAT::message::Debug("Analysing ditribution " , $dist) if ($main::verbose >=3);
 		my $curve = \@{$distributions{$i}} ; ## Pointer to the used distribution
 
 		$AUCS{"geometric"}{$dist} = &CALC_AUC_GEOMETRIC($dist, $curve, $X_col); ## calculate the AUC with 
-                                  		
+		&RSAT::message::Debug("AUC " , $dist, "=", $AUCS{"geometric"}{$dist}) if ($main::verbose >=3);
+             		
 		if (defined $fprs_for_sensitivities) {
 			foreach my $per (@{$fprs_for_sensitivities}) {
 				my $sensitivity =  calc_sensitivity($curve,$X_col,$per);
+				&RSAT::message::Debug("Sansitivity at FPR " , $per, "=", $sensitivity) if ($main::verbose >=3);
 				push @{$sens{$dist}}, $sensitivity;
 			}
 		}
 		if (defined $sens_for_fprs) {
 			foreach my $per (@{$sens_for_fprs}) {
 				my $fpr = calc_fpr($curve,$X_col,$per);
+				&RSAT::message::Debug("FPR at Sensititivity" , $per, "=", $fpr) if ($main::verbose >=3);
 				push @{$fpr_h{$dist}}, $fpr;
 			}
 		}
