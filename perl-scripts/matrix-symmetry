@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-symmetry,v 1.12 2009/11/05 22:52:58 amedina Exp $
+# $Id: matrix-symmetry,v 1.13 2010/01/06 19:26:35 amedina Exp $
 #
 ############################################################
 
@@ -19,7 +19,7 @@ matrix-symmetry
 
 =head1 DESCRIPTION
 
-Program to symmetry in motifs described as position-speciic scoring
+Detect symmetry in binding motifs represented as position-speciic scoring
 matirces (PSSMs).
 
 =head1 AUTHORS
@@ -155,7 +155,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     #$program_version = "0.1";
 
     ################################################################
@@ -171,6 +171,7 @@ package main;
     $symmetry_method="Ncor"; 
     $mv_dir="";
     $scanopt = ();
+    $html=0;
 
     local %infile = ();
     local %outfile = ();
@@ -179,6 +180,7 @@ package main;
     local $verbose = 0;
     local $out = STDOUT;
     local $info_log_base = exp(1);
+
 
     ################################################################
     ## Methods to Detect Symmetry 
@@ -339,7 +341,7 @@ package main;
    
     if (scalar (@out_dir) >1){
 	pop (@out_dir);
-	$mv_dir=join("/",@out_dir);
+	$mv_dir=join("/",@out_dir,"splited_matrices".$matrix_format);
 	system ("mkdir -p $mv_dir ") unless (-s $mv_dir); 
     }
     else {
@@ -351,18 +353,46 @@ package main;
     
     $main::out = &OpenOutputFile($main::outfile{output});
    
+    if ($main::html){
+	$main::outfile{html}=$main::outfile{output};
+	$main::outfile{html}=~s/\.tab// ;
+	$main::outfile{html}=~s/\.txt// ;
+	$main::outfile{html}.=".html";
+	$main::html_out=&OpenOutputFile($main::outfile{html});
+	print $main::html_out "<html>\n";
+	print $main::html_out "<head>\n";
+	print $main::html_out "<title>matrix-symmetry results </title>\n";
+	print $main::html_out "</head>\n\n";
+	print $main::html_out "<body>\n\n";
+	print $main::html_out "<p><table border=1 cellpadding=3 cellpsacing=3>";
+    }
     	
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
-     
+
+
+    #####################
+    ## Prin header for flat table, and inititate html table if necesary
     my $out_header= "#".join("\t","matrix_name","symmetry","symmetry_measure","length","repeat1","repeat2")."\n";
-    print $main::out "$out_header";
+    print  $main::out  $out_header ;
     
+
+   if ($main::html){
+       print $main::html_out join("\n" ,"<tr> ",
+				   "<th> matrix_name </th>",
+				   "<th> symmetry </th>",
+				   "<th> symmetry_measure </th>",
+				   "<th> length </th>",
+				   "<th> repeat1 </th>", 
+				   "<th> repeat2 </th>",
+				   "</tr>")
+
+   }
     ################################################################
     ## Process all matrices 
     
-    foreach my $matrix_file ( @matrix_files) {
+    foreach my $matrix_file (@matrix_files) {
 
 	################################################################
 	## Read input matrix.
@@ -438,8 +468,19 @@ package main;
 
     ################################################################
     ## Close output stream
-    close $main::out if ($main::outfile{output});
+    if ($main::outfile{html}){ 
+	print $main::html_out join ("\n",
+				    "</table>",
+				    "</body>",
+				    "</html>");
+	close $main::html_out;
+    }
+    
+    system ("rm -fr $temp_dir") if ($main::temp_dir);
 
+    close $main::out if ($main::outfile{output});
+   
+    
     exit(0);
 }
 
@@ -757,6 +798,19 @@ comparisons
 	    my $return_fields = shift(@arguments); 
 	    push @return_fields, split(",", $return_fields);
 
+   ## html
+=pod
+
+=item B<-html>
+
+Returns an html page to visualize results, logos are shown in this page.
+
+=cut
+
+
+	} elsif ($arg eq "-html") {
+	    $main::html = 1; 
+	   
 
 
 	    ## Output file
@@ -856,30 +910,94 @@ sub ComputeNormalizedCorrelation {
 	    &RSAT::message::Info($matrix_name." Found Internal motif structure:  Direct_repeat") if ($main::verbose >= 2) ;
 	    &RSAT::message::Info(join ("\t",$matrix_name,"Direct_repeat",$DR_dist,$length_DR, $DR_rep1,$DR_rep2)."\n") if($main::verbose >= 2) ;
 
+
 	    print $out join ("\t",$matrix_name,"Direct_repeat*",$DR_dist,$length_DR,$DR_rep1,$DR_rep2)."\n";   
+
+	    if ($main::html){
+		print $main::html_out join ("\n", "<tr>",
+					    "<td>$matrix_name</td>",
+					    "<td>Direct_repeat*</td>",
+					    "<td>$DR_dist</td>",
+					    "<td>$length_DR</td>",
+					    "<td>$DR_rep1</td>",
+					    "<td>$DR_rep2</td>",
+					    "</tr>"					    
+		    );
+	    }
+
 	}
 	else {
 	    &RSAT::message::Info( $matrix_name." Found Internal motif structure: Invert_repeat") if ($main::verbose >= 2);
 	    &RSAT::message::Info(join ("\t",$matrix_name,"Invert_repeat",$IR_dist,$length_IR,$IR_rep1,$IR_rep2)."\n") if ($main::verbose>=2);
 
-	    print $out join("\t", $matrix_name, "Invert_repeat*",$IR_dist,$length_DR,$IR_rep1,$IR_rep2)."\n"; 
+	    print $out join("\t", $matrix_name, "Invert_repeat*",$IR_dist,$length_IR,$IR_rep1,$IR_rep2)."\n"; 
+	    if ($main::html){
+		print $main::html_out join ("\n", "<tr>",
+					    "<td>$matrix_name</td>",
+					    "<td>Invert_repeat*</td>",
+					    "<td>$IR_dist</td>",
+					    "<td>$length_IR</td>",
+					    "<td>$IR_rep1</td>",
+					    "<td>$IR_rep2</td>",
+					    "</tr>"					    
+		    );
+	    }
+
 	}
     }elsif ($DirectRepeat){
 	&RSAT::message::Info($matrix_name." Found Internal motif structure:  Direct_repeat") if ($main::verbose >= 2);
 	&RSAT::message::Info(join ("\t",$matrix_name,"Direct_repeat",$DR_dist,$length_DR,$DR_rep1,$DR_rep2)."\n") if($main::verbose >= 2) ;
 
 	print $out join ("\t",$matrix_name,"Direct_repeat",$DR_dist,$length_DR,$DR_rep1,$DR_rep2)."\n"; 
+	
+	if ($main::html){
+		print $main::html_out join ("\n", "<tr>",
+					    "<td>$matrix_name</td>",
+					    "<td>Direct_repeat</td>",
+					    "<td>$DR_dist</td>",
+					    "<td>$length_DR</td>",
+					    "<td>$DR_rep1</td>",
+					    "<td>$DR_rep2</td>",
+					    "</tr>"					    
+		    );
+	    }
+
+
 
     }elsif ($InvertRepeat){
 	&RSAT::message::Info( $matrix_name." Found Internal motif structure: Invert_repeat") if ($main::verbose >= 2);
 	&RSAT::message::Info(join ("\t",$matrix_name,"Invert_repeat",$IR_dist,$length_IR,$IR_rep1,$IR_rep2)."\n") if ($main::verbose>=2);
 
-	print $out join ("\t",$matrix_name,"Invert_repeat",$IR_dist,$length_IR,$IR_rep1,$IR_rep2)."\n";
+	print $out join ("\t",$matrix_name,"Invert_repeat",$IR_dist,$length_IR,$IR_rep1,$IR_rep2)."\n"; 
+	
+	if ($main::html){
+	    print $main::html_out join ("\n", "<tr>",
+					"<td>$matrix_name</td>",
+					"<td>Invert_repeat</td>",
+					"<td>$IR_dist</td>",
+					"<td>$length_IR</td>",
+					"<td>$IR_rep1</td>",
+					"<td>$IR_rep2</td>",
+					"</tr>"					    
+		);
+	}
     }else{
 	&RSAT::message::Info($matrix_name." None Internal motif structure found");
 	&RSAT::message::Info( join("\t",$matrix_name,"Not detected","NA","NA","NA","NA")."\n");
 
 	print $out join ("\t",$matrix_name,"Not detected","NA","NA","NA","NA")."\n"; 
+	
+	if ($main::html){
+	    print $main::html_out join ("\n", "<tr>",
+					"<td>$matrix_name</td>",
+					"<td>Not detected</td>",
+					"<td>NA</td>",
+					"<td>NA</td>",
+					"<td>NA</td>",
+					"<td>NA</td>",
+					"</tr>"					    
+		);
+	}
     }
     
   
@@ -1174,12 +1292,16 @@ sub SplitMethod {
     my ($matrix) = @_;
     my $matrix_file= $matrix -> get_attribute("file") ;
     my $matrix_name = $matrix -> get_attribute("name");
+    $matrix_name =~ s/_\d$//;
     my $V=max(1,$main::verbose-1);
     ## Generate the split-matrix command with all parameters and stores it in a variable
-    my $temp_dir="./temp_split";
+    my $main::temp_dir="./temp_split"; ## split-matrix creates this directory
     my $split_command = "split-matrix ";
     $split_command .= " -v $V -i $matrix_file -matrix_format $matrix_format -split $split -return counts -o $temp_dir ";
     my $splited=`($split_command)`;
+
+    &RSAT::message::Info("Split matrix command ", $split_command) if ($verbose >= 2);
+    
    
     ## Read split-matrix output 
     my (@Fragments, @Original_pos)=();
@@ -1198,6 +1320,18 @@ sub SplitMethod {
 
 	print $matrix_name." None Internal motif structure found \n\n";
 	print $out join ("\t",$matrix_name,"Not detected","NA","NA","NA","NA")."\n"; 
+	if ($main::html){
+	    print $main::html_out join ("\n", "<tr>",
+					"<td>$matrix_name</td>",
+					"<td>Not detected</td>",
+					"<td>NA</td>",
+					"<td>NA</td>",
+					"<td>NA</td>",
+					"<td>NA</td>",
+					"</tr>"					    
+		);
+	}
+	
 	return ();
 	
     }
@@ -1299,19 +1433,43 @@ sub SplitMethod {
     if ($sym =~ /Direct_repeat/ ){
 	    print $matrix_name." Found Internal motif structure:  Direct_repeat \n";
 	    print $main::out join ("\t",$matrix_name,$sym,$ratio, $length,@Original_pos)."\n";   
-	}
+	    if ($main::html){
+		print $main::html_out join ("\n", "<tr>",
+					    "<td>$matrix_name</td>",
+					    "<td>$sym</td>",
+					    "<td>".$ratio."</td>",
+					    "<td>".$length."</td>",
+					    "<td>$Original_pos[0]</td>",
+					    "<td>$Original_pos[1]</td>",
+					    "</tr>"	
+		    );
+	    }
+	    
+    }
     elsif ($sym =~ /Invert_repeat/) {
 	print $matrix_name." Found Internal motif structure: Invert_repeat \n";
 	print $main::out join ("\t",$matrix_name,$sym,$ratio,$length,@Original_pos)."\n"; 
+
+	if ($main::html){
+	    print $main::html_out join ("\n", "<tr>",
+					"<td>$matrix_name</td>",
+					"<td>$sym</td>",
+					"<td>$ratio</td>",
+					"<td>$length</td>",
+					"<td>$Original_pos[0]</td>",
+					"<td>$Original_pos[1]</td>",
+					"</tr>"	
+		);
+	}
     }
     
 
     if ($return_fields{"splited_matrices"}){
 	system ("cp -rf  $temp_dir/$matrix_name $main::mv_dir ");
-	
+	&RSAT::message::Info(" Splited matrix was originally stored at ", $temp_dir."/".$matrix_name) if ($verbose >= 4);
 	&RSAT::message::Info(" Splited matrix is stored at ", $main::mv_dir."/".$matrix_name) if ($verbose >= 1);
     }
-    system ("rm -fr $temp_dir") ;
+   
   
 }
 
