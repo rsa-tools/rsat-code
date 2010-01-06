@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: split-matrix,v 1.3 2009/05/19 22:05:22 rsat Exp $
+# $Id: split-matrix,v 1.4 2010/01/06 19:27:12 amedina Exp $
 #
 ############################################################
 
@@ -91,7 +91,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     $decimals = 1;
@@ -604,9 +604,9 @@ sub Split_Matrix{
     my @information = $matrix->getInformation();
     my @info_sum = &RSAT::matrix::col_sum($nrow, $ncol, @information);
     my $information_per_column = $matrix -> get_attribute("information.per.column");
-    &RSAT::message::Info("Information per column", $information_per_column);
+    &RSAT::message::Info("Information per column", $information_per_column) if ($main::verbose >=2) ;
     #&RSAT::message::Info("Information content per column possition", "\n" ,  @information, "\n");
-    &RSAT::message::Info("Information content per column possition", "\n" ,  @info_sum, "\n");
+    &RSAT::message::Info("Information content per column possition", "\n" ,  @info_sum, "\n")if ($main::verbose >=2);
    
     my $ncol_n1=0;
     my $ncol_n2=0;
