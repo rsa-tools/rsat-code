@@ -162,6 +162,7 @@ int main(int argc, char *argv[])
     params.id = 1;
     params.flanks = 0;
     params.nseq = 0;
+    params.shift = true;
 
     int optchar;
     int l;
@@ -433,6 +434,7 @@ int main(int argc, char *argv[])
     // read optional input sig matrix
     if (matfile != NULL)
     {
+        params.shift = false;
         if (params.dmin != 0)
             ERROR("option --sigmatrix is incompatible with --zoops or --dmin=#")
         // open file
