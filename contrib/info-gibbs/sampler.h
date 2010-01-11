@@ -91,6 +91,7 @@ struct Parameters
     int id;
     int flanks;
     int nseq; // number of sequences (!= sequences.size() that containts rc)
+    bool shift; // try to shift motif during sampling
 };
 
 // run the sampler & print the results on stdout
