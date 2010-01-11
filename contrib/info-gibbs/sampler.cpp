@@ -819,7 +819,8 @@ Result find_one_motif(vector<string> &raw_sequences, Sequences & sequences, SITE
         while (++iter < max_iter)
         {
             sample_update(sites, sequences, motif, matrix, markov, l, temperature, data, params.nseq, params.dmin, params.score_type);
-            motif = shift(motif, sequences, sites, matrix, markov, sites_cache);
+            if (params.shift)
+                motif = shift(motif, sequences, sites, matrix, markov, sites_cache);
             current_llr = llr(motif, sequences, matrix, markov);
             current_ic = IC_Markov(motif, sequences, matrix, markov);
             best_ic_in_run = max(current_ic, best_ic_in_run);
