@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.77 2009/11/24 06:49:50 jvanheld Exp $
+# $Id: matrix-quality,v 1.78 2010/01/11 23:23:09 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1162,6 +1162,9 @@ another type of background model is specified for matrix-scan
 background model to be used for the calculation of the matrix
 theorical distribution.
 
+If I<matrix-scan-quick> is available in the machine this programe will be instead of matrix-scan.
+For I<matrix-scan-quick> the -bgfile most be in MotifSampler format.
+
 =cut
 
 	} else {
@@ -2024,6 +2027,8 @@ option -perm_sep (default), but does not reflect the variability
 between the different permutations.
 
 =item B<-th_prior>
+
+File in oligo-analysis format.
 
 This option should better be removed, so the user has to specify the
 bg file with the option -bgfile. To check.
