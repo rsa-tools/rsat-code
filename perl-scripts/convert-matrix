@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.92 2009/12/14 09:39:44 jvanheld Exp $
+# $Id: convert-matrix,v 1.93 2010/01/12 22:02:28 amedina Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -701,8 +701,15 @@ INPUT/OUTPUT FORMATS
         Format used in the TRANSFAC database;
         (http://www.gene-regulation.com/pub/databases.html)
 
+    infogibbs (input)
+        Output file from infogibbs.
+
+        infogibbs is a gibbs sampler based on the optimization of the
+        information content of the matrix (rather than the weight of
+        the sampled segments). infogibbs was developed by Matthieu De France.
+
     InfoGibbs (input)
-        Output file from InfoGiibbs.
+        Output file from InfoGibs.
 
         InfoGibbs is a gibbs sampler based on the optimization of the
         information content of the matrix (rather than the weight of
