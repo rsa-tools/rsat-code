@@ -388,9 +388,152 @@ C<readFromFile($file, "InfoGibbs")>.
 
 =cut
 sub _readFromInfoGibbsFile {
-  my ($file) = @_;
-  &RSAT::message::Info ("Reading matrices from info-gibbs file", $file) if ($main::verbose >= 3);
-  return _readFromTabFile($file);
+    my ($file, %args) = @_;
+    &RSAT::message::Info ("Reading matrices from info-gibbs file", $file) if ($main::verbose >= 3);
+
+#  return _readFromTabFile($file);
+
+ 
+    ## open input stream
+    my ($in, $dir) = &main::OpenInputFile($file);
+    if ($file) {
+	open INPUT, $file;
+	$in = INPUT;
+    }
+
+
+    ## read header
+    if ($args{header}) {
+	$header = <$in>;
+	$header =~ s/\r//;
+	chomp ($header);
+	$header =~ s/\s+/\t/g;
+	@header = split "\t", $header;
+	$matrix->push_attribute("header", @header);
+    }
+
+    ################################################################
+    ## Initialize the matrix list
+    my @matrices = ();
+    my $matrix = new RSAT::matrix();
+    $matrix->set_parameter("program", "infogibbs");
+    $matrix->set_parameter("matrix.nb", $current_matrix_nb);
+    push @matrices, $matrix;
+    my $current_matrix_nb = 1;
+    #    my $id = $file."_".$current_matrix_nb;
+    my $id_prefix = $file || "matrix";
+    my $id = $id_prefix."_".$current_matrix_nb;
+    $matrix->set_attribute("AC", $id);
+    $matrix->set_attribute("id", $id);
+    my $l = 0;
+    my $matrix_found = 0;
+    my $new_matrix = 0;
+    my $no_motif = 1;
+    my $read_seqs=0;
+    while ($line = <$in>) {
+      $l++;
+      next unless ($line =~ /\S/); ## Skip empty lines
+      chomp($line); ## Suppress newline
+      $line =~ s/\r//; ## Suppress carriage return
+      $line =~ s/(^.)\|/$1\t\|/; ## Add missing tab after residue 
+       if ($line =~ /^; seq/ ) {
+      	  $no_motif = 0;
+         }
+
+      
+      if ($line =~ /^; seq	strand	pos	site/ ){
+	  &RSAT::message::Info("Reading sequences from infogibbs ") if ($main::verbose >= 5);
+	  $read_seqs=1; 
+	 # $no_motif = 0;0
+	#  <STDIN>;
+	  next;
+      }
+      
+      next if ( ($line =~ /^;/) && ($no_motif)) ; # skip comment lines
+      
+      if ($read_seqs && ($line =~ /^; \d/) ){
+	  $line =~ s/\s+/\t/g; ## Replace spaces by tabulation
+	  #print $line."\n";
+	  local @fields2 = split /\t/, $line;
+	  local $site_sequence= $fields2[4];	  
+	  $matrix->push_attribute("sequences", $site_sequence);
+	  &RSAT::message::Debug("site", $site_sequence) if ($main::verbose >= 5);
+	 # <STDIN>;
+	  next;
+      }
+      else {
+	  $no_motif=1;
+      }
+      
+     
+      $line =~ s/\s+/\t/g; ## Replace spaces by tabulation
+      $line =~ s/\[//g; ## Suppress [ and ] (present in the tab format of Jaspar and Pazar databases)
+      $line =~ s/\]//g; ## Suppress [ and ] (present in the tab format of Jaspar and Pazar databases)
+      $line =~ s/://g; ## Suppress : (present in the tab format of Uniprobe databases)
+      #die $line;
+      ## Create a new matrix if required
+      if  ($line =~ /^\/\//) {
+      	$new_matrix = 0; # tgis is to track the end of file...
+	$no_motif=1;
+	$read_seqs=0;
+	$matrix = new RSAT::matrix();
+	$matrix->set_parameter("program", "tab");
+	push @matrices, $matrix;
+	$current_matrix_nb++;
+	$id = $id_prefix."_".$current_matrix_nb;
+	$matrix->set_attribute("AC", $id);
+	$matrix->set_attribute("id", $id);
+	&RSAT::message::Info("line", $l, "new matrix", $current_matrix_nb) if ($main::verbose >= 0);
+	next;
+      }
+     
+      if ($line =~ /^\s*(\S+)\s+/) {
+	  next if ($line =~ /^;/);
+	  $new_matrix = 1;
+	  $matrix_found = 1; ## There is at least one matrix row in the file
+	  my @fields = split /\t/, $line;
+
+
+	## residue associated to the row
+	my $residue = lc(shift @fields);
+
+	## skip the | between residue and numbers
+	shift @fields unless &main::IsReal($fields[0]);
+	$matrix->addIndexedRow($residue, @fields);
+      }
+    }
+    close $in if ($file);
+
+    ## Initialize prior as equiprobable alphabet
+    if ($matrix_found) {
+    	if ($new_matrix == 0) {
+	    # eliminate empty matrix at the end
+	    pop(@matrices);
+	    $current_matrix_nb--;
+	}
+      foreach my $matrix (@matrices) {
+	my @alphabet = $matrix->getAlphabet();
+	my %tmp_prior = ();
+	my $prior = 1/scalar(@alphabet);
+	foreach my $residue (@alphabet) {
+	  $tmp_prior{$residue} = $prior;
+	  #	&RSAT::message::Debug("initial prior", $residue, $prior) if ($main::verbose >= 10);
+	}
+	$matrix->setPrior(%tmp_prior);
+	if ($main::verbose >= 3) {
+	  &RSAT::message::Debug("Read matrix with alphabet", join(":", $matrix->getAlphabet()));
+	  &RSAT::message::Debug("Initialized prior as equiprobable", join(":", $matrix->getPrior()));
+	  &RSAT::message::Debug("Matrix size", $matrix->nrow()." rows",  $matrix->ncol()." columns");
+	}
+      }
+    } else {
+      @matrices = ();
+    }
+
+    return (@matrices);
+
+
+
 }
 
 ################################################################
