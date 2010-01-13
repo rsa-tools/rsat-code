@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-qualities,v 1.2 2009/12/23 19:16:24 amedina Exp $
+# $Id: compare-qualities,v 1.3 2010/01/13 23:48:00 amedina Exp $
 #
 ############################################################
 
@@ -124,7 +124,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
     
     %main::infile = ();
@@ -157,7 +157,7 @@ package main;
 
     ###############
     ## Extra headers for report table
-    @main::extra_headers;
+    
     
     foreach my $d (@main::distribs) {
 	push @main::extra_headers, $d . "_auc";
@@ -218,15 +218,18 @@ package main;
 	next unless ($_ =~ /\S/);	# skip empty lines	
 	chomp;
 	my $line=$_;
+	#print "-----=".$line;
+	$line =~ s/\t+/\t/g;
+	$line =~ s/\s+/\t/g;
 	my @fields = split ('\t+',$line);
 	my $matrix_file_path=shift (@fields);
 	my $mq_file_path= shift(@fields) ;	
-	print " $matrix_file_path  $mq_file_path   ";
+	print " $matrix_file_path %% $mq_file_path   ";
 	my $matrix_name=` basename $matrix_file_path `;
 	chomp ($matrix_name);   
 	print $matrix_name ."\n";
 	unless (-s $matrix_file_path){
-	    &RSAT::message::Warning ("Missing matrix file ", $matrix_file_path) unless (-s $matrix_file_path);
+	    &RSAT::message::Warning ("Missing matrix file ", $matrix_file_path);
 	    next;
 	}
 	
@@ -603,10 +606,11 @@ sub OpenComparisonReport {
     my $report = shift;
     $main::out_file_comparison_table = &OpenOutputFile($report);
     #die "$report";
+    &PrintArguments($main::out_file_comparison_table);
     my $col = 0;
     foreach ("matrix.name", @main::params,  @extra_headers, "matrix.file") {
 	$col++;
-	print $_."\t";
+	#print $_."\t";
 	print  $main::out_file_comparison_table  "; $col\t$_\n"; # print parameters calculated one by one
     }
     print  $main::out_file_comparison_table join ("\t", "#matrix.name",@main::params, @extra_headers,"matrix.file"), "\n"; #print header of parameters table
@@ -626,11 +630,16 @@ sub  GetInfoForTable{
     my $out_file_params_name= $main::outfile{matrix_info_dir}."/".$mtx.".params";
     
     my $out_file_params =  &OpenOutputFile($out_file_params_name)  ||
-	&RSAT::error::FatalError(" Can't open outputfile ",$out_file_params) ;
+	&RSAT::error::FatalError(" Can't open outputfile ",$out_file_params_name) ;
     
     &RSAT::message::Info ("Analyzing matrix file ", $mtx_file, "\n\t output in ", $out_file_params_name)  if ($main::verbose >= 2);   
+    my $convert_matrix_command="convert-matrix -i $mtx_file -from $matrix_format -to patser -return parameters,counts,info,margins";
 
-    my $params = `convert-matrix -i $mtx_file -from $matrix_format -to patser -return parameters,counts,info,margins`; #run convert matrix to know which are the matrix parameters
+    &RSAT::message::Debug("convert-matrix command:", $convert_matrix_command ) if ($main::verbose >= 0);
+
+    my $params = `$convert_matrix_command`; #run convert matrix to know which are the matrix parameters
+
+    &RSAT::message::Debug("convert-matrix command has been run ", "\n", $params ) if ($main::verbose >= 0);
     
     print $out_file_params $params;
     
@@ -694,7 +703,7 @@ sub Calculate_NWD {
     my $dists;
     &RSAT::message::Info ("Open file", $matrix_name, $mq_file )  if ($main::verbose >= 2);    
     #($dists)=&OpenInputFile( $mq_file ) || &RSAT::error::FatalError(" Can't open inputfile ", $mq_file) ;
-    $file=  &OpenInputFile($mqfile) || &RSAT::error::FatalError(" Can't open inputfile ", $mq_file) ;
+    $file=  &OpenInputFile($mq_file) || &RSAT::error::FatalError(" Can't open inputfile ", $mq_file) ;
     local $head=1;
     my $case_col;
     my $base_col;
@@ -734,7 +743,7 @@ sub Calculate_NWD {
 	my $score = $line[0];
 	my $case_pval= $line[$case_col] ;
 	my $base_pval= $line [$base_col] ;
-	my @scores=($case_score,$base_score);
+	#my @scores=($case_score,$base_score);
 
      
 	if (($case_pval =~ /NUL/) 
@@ -766,7 +775,7 @@ sub Calculate_NWD {
        	my $NWD="";
 	my $case_max_score= &RSAT::stats::max(@{$p_val_score_case{$pval}});
 	my $base_max_score= &RSAT::stats::max(@{$p_val_score_base{$pval}});
-	my  $NWD = ($case_max_score - $base_max_score) / $width ;
+	$NWD = ($case_max_score - $base_max_score) / $width ;
 
 	$main::key_diferences_results{$pval}{$matrix_name}=$NWD if ($NWD);
 
@@ -982,11 +991,12 @@ sub CALC_AUC_GEOMETRIC {
 
 sub calc_fpr {
     my ($curve, $X_col, $cut_off  ) = @_;
+    my $fpr="NULL";
     for my $i (0..$#{$curve}-1) {
 	next if ( ( ($curve->[$i]) =~ /NULL/ )||  ( ($curve->[$i]) =~ /NA/) );
 	if (($curve->[$i])>=$cut_off){
 	    next if ( (($X_col->[$i]) =~ /NULL/) || (($X_col->[$i]) =~ /NA/) );
-	    my $fpr=$X_col->[$i];
+	    $fpr=$X_col->[$i];
 	    #print "leo fpr  $cut_off  $fpr\n";
 	    
 	    return ($fpr);
