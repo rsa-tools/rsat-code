@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-symmetry,v 1.13 2010/01/06 19:26:35 amedina Exp $
+# $Id: matrix-symmetry,v 1.14 2010/01/13 17:38:26 amedina Exp $
 #
 ############################################################
 
@@ -155,8 +155,10 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
     #$program_version = "0.1";
+    local $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
+    $seqlogo_path = &trim($seqlogo_path);
 
     ################################################################
     ## Matrix parammeters
@@ -180,6 +182,19 @@ package main;
     local $verbose = 0;
     local $out = STDOUT;
     local $info_log_base = exp(1);
+
+    ## logo formats
+    local $logo_format = "png";
+    local $logo_opt = "";
+    local $logo_dir = "";
+    @logo_formats=();
+    %supported_logo_format =  ('png'=>1,
+			       "eps"=>1,
+#			  "gif"=>1, # log from seqlogo : check logo.conf
+			       "pdf"=>1,
+	);
+    $supported_logo_formats = join ",", sort keys %supported_logo_format;
+
 
 
     ################################################################
@@ -222,7 +237,8 @@ package main;
     @return_fields = ();
     %supported_return_type = (
 	"splited_matrices"=>1,
-	"comparisons"=>1,
+	"comparisons"=>1, 
+	"logo"=>1,
 	);
     
     $supported_return_fields = join ",", sort keys %supported_return_type;
@@ -333,7 +349,35 @@ package main;
     unless (scalar(@matrix_files >= 1)) {
 	&RSAT::error::FatalError("You must specify at least one matrix file.(option -i or -mlist)");
     }
-   
+    
+    ## logo format(s)
+    if ($return_fields{logo}) {
+	if (scalar(@logo_formats)>=1){
+	    foreach my $logo_format (@logo_formats){
+		unless ($supported_logo_format{$logo_format}) {
+		    &RSAT::error::FatalError("$logo_format\tInvalid format for logo\tSupported: $supported_logo_formats");
+		}
+	    }
+	}else{
+	    @logo_formats = ($logo_format);
+	}
+	
+	## Check that seqlogo is installed at the expected location
+	if (-e $seqlogo_path) {
+	    if(-x $seqlogo_path) {
+		&RSAT::message::Debug("seqlogo path", $seqlogo_path) if ($main::verbose >= 4);
+	    } else {
+		&RSAT::message::Warning("Cannot execute the program seqlogo", 
+					$seqlogo_path);
+		$seqlogo_path="";
+	    }
+	} else {
+	    &RSAT::message::Warning("Cannot generate logos because the program seqlogo is not found in the expected path", 
+				    $seqlogo_path);
+	    $seqlogo_path="";
+	}
+    }
+    
     ################################################################
     ## Open output stream
     my $out_aux=  $main::outfile{output};
@@ -374,26 +418,41 @@ package main;
 
     #####################
     ## Prin header for flat table, and inititate html table if necesary
-    my $out_header= "#".join("\t","matrix_name","symmetry","symmetry_measure","length","repeat1","repeat2")."\n";
+    
+    
+    $out_header= "#".join("\t","matrix_name","symmetry","symmetry_measure","length","repeat1","repeat2")."\n";
+    
     print  $main::out  $out_header ;
     
-
-   if ($main::html){
-       print $main::html_out join("\n" ,"<tr> ",
-				   "<th> matrix_name </th>",
-				   "<th> symmetry </th>",
-				   "<th> symmetry_measure </th>",
-				   "<th> length </th>",
-				   "<th> repeat1 </th>", 
-				   "<th> repeat2 </th>",
-				   "</tr>")
-
-   }
+    
+    if ($main::html){
+	if (($return_fields{logo}) && ($seqlogo_path) ) {
+	    print $main::html_out join("\n" ,"<tr> ",
+				       "<th> matrix_name </th>",
+				       "<th> symmetry </th>",
+				       "<th> symmetry_measure </th>",
+				       "<th> length </th>",
+				       "<th> repeat1 </th>", 
+				       "<th> repeat2 </th>",  
+				       "<th> logo </th>",
+				       "</tr>")
+	}
+	else {
+	    print $main::html_out join("\n" ,"<tr> ",
+				       "<th> matrix_name </th>",
+				       "<th> symmetry </th>",
+				       "<th> symmetry_measure </th>",
+				       "<th> length </th>",
+				       "<th> repeat1 </th>", 
+				       "<th> repeat2 </th>",
+				       "</tr>")
+	}
+    }
     ################################################################
     ## Process all matrices 
     
     foreach my $matrix_file (@matrix_files) {
-
+	
 	################################################################
 	## Read input matrix.
 
@@ -418,46 +477,84 @@ package main;
 #	local $matrix =shift @matrices;
 
 	local $m = 0;
+
+	################################################################
+	## Check requierement for creating logos and creat directory for output
+
+	if (($return_fields{logo}) && ($seqlogo_path)) {
+	    unless ($logo_dir) {
+		if ($outfile{output}) {
+		    $logo_dir = dirname($outfile{output});
+		    $logo_dir.="/logos";
+		} else {
+		    $logo_dir = "logos";
+		}
+	    }
+	    $logo_dir .= "/";
+	    $logo_dir =~ s|/+|/|g;
+	    &RSAT::message::Debug("LOGO DIR", $logo_dir) if ($main::verbose >= 5);
+	    
+	    ## Create logo directory if required
+	    &RSAT::util::CheckOutDir($logo_dir);
+	}
+	
 	foreach my $matrix (@matrices) {
-	  $m++;
-
-	  $matrix->set_attribute("pseudo", $pseudo_counts);
-	  $matrix->set_attribute("equi_pseudo", $equi_pseudo);
-	  $matrix->set_attribute("decimals", $decimals);
-	  $matrix->set_attribute("file", $matrix_file);
-	  $matrix->force_attribute("sep", $sep);
-	  # $matrix->force_attribute("col_width", $col_width);
-	  $matrix->force_attribute("margins", $return_fields{margins});
-	  $matrix->setInfoLogBase($info_log_base);
-	  $matrix->set_parameter("bg_markov_order", 0);
-	  local $matrix_name = $matrix->get_attribute("accession");
+	    $m++;
+	    
+	    $matrix->set_attribute("pseudo", $pseudo_counts);
+	    $matrix->set_attribute("equi_pseudo", $equi_pseudo);
+	    $matrix->set_attribute("decimals", $decimals);
+	    $matrix->set_attribute("file", $matrix_file);
+	    $matrix->force_attribute("sep", $sep);
+	    # $matrix->force_attribute("col_width", $col_width);
+	    $matrix->force_attribute("margins", $return_fields{margins});
+	    $matrix->setInfoLogBase($info_log_base);
+	    $matrix->set_parameter("bg_markov_order", 0);
+	    local $matrix_name = $matrix->get_attribute("accession");
 #	  die $matrix_name, "\n";
-	  #if ($matrix_name eq "") {
-	  unless ($matrix_name){
-	      ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
-	      $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
-	      $matrix_name .= "_".$m;
-	  }
-	  $matrix->set_attribute("name", $matrix_name);
-	  local ($Wmin, $Wmax)  = $matrix->weight_range();
+	    #if ($matrix_name eq "") {
+	    unless ($matrix_name){
+		($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+		$matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
+		$matrix_name .= "_".$m;
+	    }
+	    $matrix->set_attribute("name", $matrix_name);
+	    local ($Wmin, $Wmax)  = $matrix->weight_range();
+	    
+
+	    &RSAT::message::Info("Processing matrix", $m, $matrix_name) if ($main::verbose >= 2);
+	    &RSAT::message::Info("Matrix weight range", $Wmin, $Wmax) if ($main::verbose >= 2);
+	    
+	    #$local $matrix_name=$matrix->get_attribute("name",)
+	    ###############################################################
+	    ## Creat logo
+	    ## Generate logo
+	    
+	    if (($return_fields{logo}) && ($seqlogo_path) && ($logo_dir)) {
+		
+		my $logo_file=$logo_dir.$matrix->get_attribute("name")."_logo";
+		#	$logo_file =~ s/\.\w+$//;
+		$matrix->set_attribute("logo_file" => $logo_file);
+		$matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt);
+		
+		print STDOUT "\n";
+	    }
+	    
 
 
-	  &RSAT::message::Info("Processing matrix", $m, $matrix_name) if ($main::verbose >= 2);
-	  &RSAT::message::Info("Matrix weight range", $Wmin, $Wmax) if ($main::verbose >= 2);
-
-	  #$local $matrix_name=$matrix->get_attribute("name",)
-	  ################################################################
-	  ## Detect Symmetry methods
-
-	  ##  Comparisons
-	  &ComputeNormalizedCorrelation($matrix)  if ($symmetry_method eq "Ncor");
-
-	  ## Split Matrix, detected sites similarities
-	  &SplitMethod($matrix)  if ($symmetry_method eq "split");
-
-	  print STDOUT "\n";
+	    ################################################################
+	    ## Detect Symmetry methods
+	    
+	    ##  Comparisons
+	    &ComputeNormalizedCorrelation($matrix)  if ($symmetry_method eq "Ncor");
+	    
+	    ## Split Matrix, detected sites similarities
+	    &SplitMethod($matrix)  if ($symmetry_method eq "split");
+	    
+	    
 	}
     }
+    
     ################################################################
     ## Finish verbose
     if ($main::verbose >= 1) {
@@ -477,9 +574,9 @@ package main;
     }
     
     system ("rm -fr $temp_dir") if ($main::temp_dir);
-
+    
     close $main::out if ($main::outfile{output});
-   
+    
     
     exit(0);
 }
@@ -798,6 +895,66 @@ comparisons
 	    my $return_fields = shift(@arguments); 
 	    push @return_fields, split(",", $return_fields);
 
+  ## logo format 
+=pod
+
+=item B<-logo_format logo_format>
+
+Format for logo image file. supported : $supported_logo_formats (default:png).
+Beware: the logo file will be created in current directory by default, unless
+the -logo_dir option is specified or the -o option. In the last case the logo
+will be in the same directory than the output file (-o ).
+Several formats can be sepcified at the same time by using comma as separator
+(eg. -logo_format png,pdf)
+
+=cut
+
+
+	} elsif ($arg eq "-logo_format") {
+	    my $logo_formats = shift(@arguments); 
+            push @logo_formats, split(",", $logo_formats);
+
+  ## logo dir 
+=pod
+
+=item B<-logo_dir logo_dir>
+
+Specifies a directory for the output of the logo
+file. By default, the logos are exported in the
+directory from which is called the convert-matrix
+command
+
+=cut
+
+
+	} elsif ($arg eq "-logo_dir") {
+	    my $logo_dir = shift(@arguments);	    
+
+  ## logo dir 
+
+=pod
+
+=item B<-logo_opt logo_opt>
+
+Any other option to be passed to seqlogo for
+generating the logo. This option can be used
+iteratively to specify multiple options.
+
+For instance
+-logo_opt '-w 12' -logo_opt '-t "CRP matrix" -a'
+will add the following options to the commande seqlogo:
+-w 12 -t "CRP matrix" -a
+
+To obtain the list of options supported by seqlogo, type
+        seqlogo
+
+=cut
+
+
+	} elsif ($arg eq "-logo_opt") {
+	    my $logo_opt = shift(@arguments); 
+
+
    ## html
 =pod
 
@@ -876,6 +1033,7 @@ sub ComputeNormalizedCorrelation {
     my $matrix_file= $matrix -> get_attribute("file") ;
     my $matrix_name = $matrix -> get_attribute("name");
     my $matrix_width=$matrix -> get_attribute("ncol");
+    my $matrix_logo_file= $matrix -> get_attribute("logo_file");
 
     #die "Matrix info   $matrix_format   $matrix_name   $matrix_file   $matrix_width \n";
     ################################################################
@@ -909,48 +1067,77 @@ sub ComputeNormalizedCorrelation {
 	if ($DR_dist > ($IR_dist - 0.06)){
 	    &RSAT::message::Info($matrix_name." Found Internal motif structure:  Direct_repeat") if ($main::verbose >= 2) ;
 	    &RSAT::message::Info(join ("\t",$matrix_name,"Direct_repeat",$DR_dist,$length_DR, $DR_rep1,$DR_rep2)."\n") if($main::verbose >= 2) ;
-
-
+	    
+	    
 	    print $out join ("\t",$matrix_name,"Direct_repeat*",$DR_dist,$length_DR,$DR_rep1,$DR_rep2)."\n";   
-
-	    if ($main::html){
-		print $main::html_out join ("\n", "<tr>",
-					    "<td>$matrix_name</td>",
-					    "<td>Direct_repeat*</td>",
-					    "<td>$DR_dist</td>",
-					    "<td>$length_DR</td>",
-					    "<td>$DR_rep1</td>",
-					    "<td>$DR_rep2</td>",
-					    "</tr>"					    
-		    );
+	    
+	    if ($main::html){	
+		if (($return_fields{logo}) && ($seqlogo_path) && ($logo_dir) && ($matrix_logo_file) ) {
+		    print $main::html_out join ("\n", "<tr>",
+						"<td>$matrix_name</td>",
+						"<td>Direct_repeat*</td>",
+						"<td>$DR_dist</td>",
+						"<td>$length_DR</td>",
+						"<td>$DR_rep1</td>",
+						"<td>$DR_rep2</td>",
+						"<td><a href=../../$matrix_logo_file.$logo_format><img src=../../$matrix_logo_file.$logo_format height=120></a></td>",
+						"</tr>"					    
+			);
+		}
+		else{
+		    print $main::html_out join ("\n", "<tr>",
+						"<td>$matrix_name</td>",
+						"<td>Direct_repeat*</td>",
+						"<td>$DR_dist</td>",
+						"<td>$length_DR</td>",
+						"<td>$DR_rep1</td>",
+						"<td>$DR_rep2</td>",
+						"</tr>"					    
+			);
+		}
 	    }
-
+	    
 	}
 	else {
 	    &RSAT::message::Info( $matrix_name." Found Internal motif structure: Invert_repeat") if ($main::verbose >= 2);
 	    &RSAT::message::Info(join ("\t",$matrix_name,"Invert_repeat",$IR_dist,$length_IR,$IR_rep1,$IR_rep2)."\n") if ($main::verbose>=2);
-
+	    
 	    print $out join("\t", $matrix_name, "Invert_repeat*",$IR_dist,$length_IR,$IR_rep1,$IR_rep2)."\n"; 
 	    if ($main::html){
-		print $main::html_out join ("\n", "<tr>",
-					    "<td>$matrix_name</td>",
-					    "<td>Invert_repeat*</td>",
-					    "<td>$IR_dist</td>",
-					    "<td>$length_IR</td>",
-					    "<td>$IR_rep1</td>",
-					    "<td>$IR_rep2</td>",
-					    "</tr>"					    
-		    );
+		if (($return_fields{logo}) && ($seqlogo_path) && ($logo_dir) && ($matrix_logo_file) ) {
+		    print $main::html_out join ("\n", "<tr>",
+						"<td>$matrix_name</td>",
+						"<td>Invert_repeat*</td>",
+						"<td>$IR_dist</td>",
+						"<td>$length_IR</td>",
+						"<td>$IR_rep1</td>",
+						"<td>$IR_rep2</td>",
+						"<td><a href=../../$matrix_logo_file.$logo_format><img src=../../$matrix_logo_file.$logo_format height=120></a></td>",
+						"</tr>"					    
+			);
+		}
+		else{
+		    print $main::html_out join ("\n", "<tr>",
+						"<td>$matrix_name</td>",
+						"<td>Invert_repeat*</td>",
+						"<td>$IR_dist</td>",
+						"<td>$length_IR</td>",
+						"<td>$IR_rep1</td>",
+						"<td>$IR_rep2</td>",
+						"</tr>"					    
+			); 
+		}
 	    }
-
+	    
 	}
     }elsif ($DirectRepeat){
 	&RSAT::message::Info($matrix_name." Found Internal motif structure:  Direct_repeat") if ($main::verbose >= 2);
 	&RSAT::message::Info(join ("\t",$matrix_name,"Direct_repeat",$DR_dist,$length_DR,$DR_rep1,$DR_rep2)."\n") if($main::verbose >= 2) ;
-
+	
 	print $out join ("\t",$matrix_name,"Direct_repeat",$DR_dist,$length_DR,$DR_rep1,$DR_rep2)."\n"; 
 	
 	if ($main::html){
+	    if (($return_fields{logo}) && ($seqlogo_path) && ($logo_dir) && ($matrix_logo_file) ) {
 		print $main::html_out join ("\n", "<tr>",
 					    "<td>$matrix_name</td>",
 					    "<td>Direct_repeat</td>",
@@ -958,28 +1145,55 @@ sub ComputeNormalizedCorrelation {
 					    "<td>$length_DR</td>",
 					    "<td>$DR_rep1</td>",
 					    "<td>$DR_rep2</td>",
+					    "<td><a href=../../$matrix_logo_file.$logo_format><img src=../../$matrix_logo_file.$logo_format height=120></a></td>",
 					    "</tr>"					    
 		    );
 	    }
-
-
-
+	    else{
+		print $main::html_out join ("\n", "<tr>",
+					    "<td>$matrix_name</td>",
+					    "<td>Direct_repeat</td>",
+					    "<td>$DR_dist</td>",
+					    "<td>$length_DR</td>",
+					    "<td>$DR_rep1</td>",
+					    "<td>$DR_rep2</td>",
+					    "</tr>"
+		    );
+	    }
+	}
+	
+	
+	
     }elsif ($InvertRepeat){
 	&RSAT::message::Info( $matrix_name." Found Internal motif structure: Invert_repeat") if ($main::verbose >= 2);
 	&RSAT::message::Info(join ("\t",$matrix_name,"Invert_repeat",$IR_dist,$length_IR,$IR_rep1,$IR_rep2)."\n") if ($main::verbose>=2);
 
 	print $out join ("\t",$matrix_name,"Invert_repeat",$IR_dist,$length_IR,$IR_rep1,$IR_rep2)."\n"; 
 	
-	if ($main::html){
+	if ($main::html){ 
+	    if (($return_fields{logo}) && ($seqlogo_path) && ($logo_dir) && ($matrix_logo_file) ) {
 	    print $main::html_out join ("\n", "<tr>",
 					"<td>$matrix_name</td>",
 					"<td>Invert_repeat</td>",
 					"<td>$IR_dist</td>",
 					"<td>$length_IR</td>",
 					"<td>$IR_rep1</td>",
-					"<td>$IR_rep2</td>",
+					"<td>$IR_rep2</td>", 
+					"<td><a href=../../$matrix_logo_file.$logo_format><img src=../../$matrix_logo_file.$logo_format height=120></a></td>",
 					"</tr>"					    
 		);
+	    }
+	    else{
+		print $main::html_out join ("\n", "<tr>",
+					    "<td>$matrix_name</td>",
+					    "<td>Invert_repeat</td>",
+					    "<td>$IR_dist</td>",
+					    "<td>$length_IR</td>",
+					    "<td>$IR_rep1</td>",
+					    "<td>$IR_rep2</td>",
+					    "</tr>"					    
+		    );
+	    }
 	}
     }else{
 	&RSAT::message::Info($matrix_name." None Internal motif structure found");
@@ -988,6 +1202,7 @@ sub ComputeNormalizedCorrelation {
 	print $out join ("\t",$matrix_name,"Not detected","NA","NA","NA","NA")."\n"; 
 	
 	if ($main::html){
+	    if (($return_fields{logo}) && ($seqlogo_path) && ($logo_dir) && ($matrix_logo_file) ) {
 	    print $main::html_out join ("\n", "<tr>",
 					"<td>$matrix_name</td>",
 					"<td>Not detected</td>",
@@ -995,8 +1210,21 @@ sub ComputeNormalizedCorrelation {
 					"<td>NA</td>",
 					"<td>NA</td>",
 					"<td>NA</td>",
+					"<td><a href=../../$matrix_logo_file.$logo_format><img src=../../$matrix_logo_file.$logo_format height=120></a></td>",
 					"</tr>"					    
 		);
+	    }
+	    else{
+		print $main::html_out join ("\n", "<tr>",
+					    "<td>$matrix_name</td>",
+					    "<td>Not detected</td>",
+					    "<td>NA</td>",
+					    "<td>NA</td>",
+					    "<td>NA</td>",
+					    "<td>NA</td>",
+					    "</tr>"					    
+		    );	
+	    }
 	}
     }
     
@@ -1008,7 +1236,7 @@ sub SelfCompare {
     ###########
     ### Recives TF name path to the matrix, and format of it.
     my ($matrix_name, $matrix_file, $matrix_format,$matrix_width) = @_;
-    
+  
     ################
     ### Compare matrices parameters
     
@@ -1293,9 +1521,10 @@ sub SplitMethod {
     my $matrix_file= $matrix -> get_attribute("file") ;
     my $matrix_name = $matrix -> get_attribute("name");
     $matrix_name =~ s/_\d$//;
+    my $matrix_logo_file= $matrix -> get_attribute("logo_file");
     my $V=max(1,$main::verbose-1);
     ## Generate the split-matrix command with all parameters and stores it in a variable
-    my $main::temp_dir="./temp_split"; ## split-matrix creates this directory
+    $main::temp_dir="./temp_split"; ## split-matrix creates this directory
     my $split_command = "split-matrix ";
     $split_command .= " -v $V -i $matrix_file -matrix_format $matrix_format -split $split -return counts -o $temp_dir ";
     my $splited=`($split_command)`;
@@ -1321,7 +1550,20 @@ sub SplitMethod {
 	print $matrix_name." None Internal motif structure found \n\n";
 	print $out join ("\t",$matrix_name,"Not detected","NA","NA","NA","NA")."\n"; 
 	if ($main::html){
+	    if  (($return_fields{logo}) && ($seqlogo_path) && ($logo_dir) && ($matrix_logo_file) ) {
 	    print $main::html_out join ("\n", "<tr>",
+					"<td>$matrix_name</td>",
+					"<td>Not detected</td>",
+					"<td>NA</td>",
+					"<td>NA</td>",
+					"<td>NA</td>",
+					"<td>NA</td>",
+					"<td><a href=../../$matrix_logo_file.$logo_format><img src=../../$matrix_logo_file.$logo_format height=120></a></td>",
+					"</tr>"					    
+		);
+	    }
+	    else{
+ print $main::html_out join ("\n", "<tr>",
 					"<td>$matrix_name</td>",
 					"<td>Not detected</td>",
 					"<td>NA</td>",
@@ -1330,6 +1572,7 @@ sub SplitMethod {
 					"<td>NA</td>",
 					"</tr>"					    
 		);
+	    }
 	}
 	
 	return ();
@@ -1433,16 +1676,30 @@ sub SplitMethod {
     if ($sym =~ /Direct_repeat/ ){
 	    print $matrix_name." Found Internal motif structure:  Direct_repeat \n";
 	    print $main::out join ("\t",$matrix_name,$sym,$ratio, $length,@Original_pos)."\n";   
-	    if ($main::html){
-		print $main::html_out join ("\n", "<tr>",
-					    "<td>$matrix_name</td>",
-					    "<td>$sym</td>",
-					    "<td>".$ratio."</td>",
-					    "<td>".$length."</td>",
-					    "<td>$Original_pos[0]</td>",
-					    "<td>$Original_pos[1]</td>",
-					    "</tr>"	
-		    );
+	    if ($main::html){ 
+		if (($return_fields{logo}) && ($seqlogo_path) && ($logo_dir) && ($matrix_logo_file) ) {
+		    print $main::html_out join ("\n", "<tr>",
+						"<td>$matrix_name</td>",
+						"<td>$sym</td>",
+						"<td>".$ratio."</td>",
+						"<td>".$length."</td>",
+						"<td>$Original_pos[0]</td>",
+						"<td>$Original_pos[1]</td>",
+						"<td><a href=../../$matrix_logo_file.$logo_format><img src=../../$matrix_logo_file.$logo_format height=120></a></td>",
+						"</tr>"	
+			);
+		}
+		else{
+		    print $main::html_out join ("\n", "<tr>",
+						"<td>$matrix_name</td>",
+						"<td>$sym</td>",
+						"<td>".$ratio."</td>",
+						"<td>".$length."</td>",
+						"<td>$Original_pos[0]</td>",
+						"<td>$Original_pos[1]</td>",
+						"</tr>"	
+			);
+		}
 	    }
 	    
     }
@@ -1451,15 +1708,29 @@ sub SplitMethod {
 	print $main::out join ("\t",$matrix_name,$sym,$ratio,$length,@Original_pos)."\n"; 
 
 	if ($main::html){
-	    print $main::html_out join ("\n", "<tr>",
-					"<td>$matrix_name</td>",
-					"<td>$sym</td>",
-					"<td>$ratio</td>",
-					"<td>$length</td>",
-					"<td>$Original_pos[0]</td>",
-					"<td>$Original_pos[1]</td>",
-					"</tr>"	
-		);
+	    if (($return_fields{logo}) && ($seqlogo_path) && ($logo_dir) && ($matrix_logo_file) ) {
+		print $main::html_out join ("\n", "<tr>",
+					    "<td>$matrix_name</td>",
+					    "<td>$sym</td>",
+					    "<td>$ratio</td>",
+					    "<td>$length</td>",
+					    "<td>$Original_pos[0]</td>",
+					    "<td>$Original_pos[1]</td>",
+					    "<td><a href=../../$matrix_logo_file.$logo_format><img src=../../$matrix_logo_file.$logo_format height=120></a></td>",
+					    "</tr>"	
+		    );
+	    }
+	    else{
+	    	print $main::html_out join ("\n", "<tr>",
+					    "<td>$matrix_name</td>",
+					    "<td>$sym</td>",
+					    "<td>$ratio</td>",
+					    "<td>$length</td>",
+					    "<td>$Original_pos[0]</td>",
+					    "<td>$Original_pos[1]</td>",
+					    "</tr>"	
+		    );
+	    }
 	}
     }
     
