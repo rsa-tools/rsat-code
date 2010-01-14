@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.78 2010/01/11 23:23:09 amedina Exp $
+# $Id: matrix-quality,v 1.79 2010/01/14 00:02:15 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -50,8 +50,8 @@ included in the matrix used to score the left out sequence.
 
 This option is only valid when the matrix is specified in a format
 that includes both the matrix and the sites (sequences) that were used
-to build this matrix. This is the case for matrices in MEME or
-consensus formats.
+to build this matrix. This is the case for matrices in MEME,
+consensus and MotifSampler formats.
 
 =head2 Negative set
 
@@ -709,13 +709,18 @@ as positive sequence set, and labelled as "matrix_sites" in the
 distribution tables and graphs.
 
 The option -ms is only valid with the file formats which contain both
-the matrix and its sites (e.g. consensus, MotifSampler, meme). The
+the matrix and its sites (e.g. consensus, MotifSampler, meme, infogibbs). The
 format of the matrix+site file can be specified with the option
 '-matrix_format'.
 
 If the matrix and its sites are only available in separate files, an
 equivalent effect can be obtained by combining the options "-m
-my_matrix.tab" and "-seq matrix_sites site_sequences.fasta".
+my_matrix.tab" and "-seq matrix_sites site_sequences.fasta". Althougth
+when this option is used the LOO test is not performed.
+
+If I<matrix-scan-quick> is available in the machine this programe will
+be used instead of matrix-scan.  For I<matrix-scan-quick> the -matrix
+most be in infogibbs format.
 
 =cut
 	} elsif ($arg eq "-ms") {
@@ -1162,7 +1167,7 @@ another type of background model is specified for matrix-scan
 background model to be used for the calculation of the matrix
 theorical distribution.
 
-If I<matrix-scan-quick> is available in the machine this programe will be instead of matrix-scan.
+If I<matrix-scan-quick> is available in the machine this programe will be used instead of matrix-scan.
 For I<matrix-scan-quick> the -bgfile most be in MotifSampler format.
 
 =cut
