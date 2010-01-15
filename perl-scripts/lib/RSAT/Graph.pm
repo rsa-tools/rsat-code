@@ -44,7 +44,7 @@ Create a node and add it to the graph.
 
 =cut
 sub create_node {
-    my ($self, %args) = @_;    
+    my ($self, %args) = @_;
     my $node = new RSAT::GraphNode(%args);
     &RSAT::message::Info(join ("\t", "Created node", 
 			       $node->get_attribute("id"), 
@@ -361,9 +361,8 @@ Return the graph in gml format.
 
 =cut
 sub to_gml {
-    my ($self) = @_;    
+    my ($self) = @_;
     my $gml = "";
-    
 
     ## Graph description
     my $graph_label = $self->get_attribute("label") || "graph";
