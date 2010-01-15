@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.259 2009/12/11 23:12:51 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.260 2010/01/15 23:51:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.259 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.260 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -3217,11 +3217,14 @@ OPTIONS
 		Input sequence format. This option is useful only in
 		combination with the option -all_seq.
 
-	-bg_seq 
-	        Sequences used to compute background models (the
-	        background models are only computed if the option
-	        -task compute_bg is called). Background sequences must
+	-bg_seq
+
+	        Specify a file containing a set of sequences used to
+	        compute background models.  Background sequences must
 	        be formatted in fasta.
+
+	        Background models are only computed if the option
+	        -task compute_bg is called.
 
 	-skip # skip the first # data sets when performing the
 		analyses (this si useful when the program has been
@@ -3582,10 +3585,10 @@ FILE FORMAT
    $HELP_FAMILY_FILE
 
 QUICK START
-   1) create a directory for the set of families
+   1) create a directory for the set of families.
 
    2) witin this directory, create a text file contaning the
-      description of family composition, as described above
+      description of family composition, as described above.
 
    3) run the command. For example, with a bacterial genome :
 
@@ -3607,6 +3610,10 @@ TASK DESCRIPTION
 
    purge	Purge upstream sequences for the family.
 		(purge-sequences)
+
+   compute_bg 	Compute background models from a set of background
+      		sequences. Background sequences must be specified with
+      		the option -bg_seq.
 
    calibrate
    		Perform a word-specific calibration of expected
@@ -3734,6 +3741,10 @@ sub ReadArguments {
       ### input sequence format
     } elsif ($ARGV[$a] eq "-all_seq_format") {
       $all_seq_format = $ARGV[$a+1];
+
+      ### File containing sequences used to estimate the background model
+    } elsif ($ARGV[$a] eq "-bg_seq") {
+      $bg_sequences_file = $ARGV[$a+1];
 
       ### stop after some data sets
     } elsif ($ARGV[$a] eq "-last") {
@@ -4356,6 +4367,7 @@ sub ReadAllSequences {
   }
   close $in;
 }
+
 
 ## ##############################################################
 ## If the input is a list of sequence files instead of a family file,
@@ -5494,6 +5506,7 @@ multiple-family-analysis options
 -seq_list	sequence file list (incompatible with -i)
 -all_seq	single file containing all the sequences
 -all_seq_format	input sequence format.
+-bg_seq		file containing sequences used to estimate background models 
 -maindir	main directory (by default, the working directory is used
 -outdir		output directory
 -skip #		skip the # first data sets
