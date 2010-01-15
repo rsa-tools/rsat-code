@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.51 2009/11/05 00:32:06 jvanheld Exp $
+# $Id: compare-classes,v 1.52 2010/01/15 23:48:41 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -1725,113 +1725,111 @@ sub PrintOneComparison {
 ################################################################
 #### Create a graph with the result
 sub CreateGraph {
-    my ($type) = @_;
+  my ($type) = @_;
 
-    my %color = ();
+  my %color = ();
 
-    ## Specify node and arc colors
-    if ($type eq "dot") {
-	$color{'ref_node'} = "darkgreen";
-	if ($infile{ref_classes} eq $infile{query_classes}) {
-	    $color{'query_node'} = $color{'ref_node'};
-	} else {
-	    $color{'query_node'} = "blue";
-	}
-	$color{'arc'} = "black";
+  ## Specify node and arc colors
+  if ($type eq "dot") {
+    $color{'ref_node'} = "darkgreen";
+    if ($infile{ref_classes} eq $infile{query_classes}) {
+      $color{'query_node'} = $color{'ref_node'};
     } else {
-	$color{'ref_node'} = "#00BB00";
-	if ($infile{ref_classes} eq $infile{query_classes}) {
-	    $color{'query_node'} = $color{'ref_node'};
-	} else {
-	    $color{'query_node'} = "#0000BB";
-	}
-	$color{'arc'} = "#000000";
+      $color{'query_node'} = "blue";
     }
-    
-#    warn join ("\t", $type, values(%color)), "\n";
-
-    my %shape = ();
-    $shape{'ref_node'} = "box";
-    $shape{'query_node'} = "ellipse";
-
-    my $graph = new RSAT::Graph();
-    $graph->set_attribute("label", "compare-classes result");
-
-    #### class combinations
-    my %node_obj = (); ## Index of node objects
-    foreach my $compa_key (keys %compa) {
-	my ($r, $q) = split "__VERSUS__", $compa_key;
-	my $ref_id;
-	my $query_id;
-
-	## Target node for the association
-	if ($infile{ref_classes} eq $infile{query_classes}) {
-	    #### ref and query set are identical
-	    $ref_id = $r;
-	    $query_id = $q;
-	} else {
-	    #### distinct ID prefixes for references and queries
-	    $ref_id = "r_".$r;
-	    $query_id = "q_".$q;
-	}
-
-
-	## Source node for the association
-	my $source_node;
-	if (defined($node_obj{$query_id})) {
-	    $source_node = $node_obj{$query_id};
-	} else {
-	    my @members = $query_classes{$q}->get_members();
-	    my $node_label = $query_id." (".scalar(@members).")";
-	    $source_node = $graph->create_node(id=>$query_id, 
-					       color=>$color{query_node},
-					       fontsize=>14,
-					       fontcolor=>$color{query_node},
-					       shape=>$shape{'query_node'},
-					       label=>$node_label);
-	    $node_obj{$query_id} = $source_node;
-	    &RSAT::message::Info(join("\t", "Created source node", 
-				      $q,
-				      $query_id,
-				      "id=".$source_node->get_attribute("id"), 
-				      "label=".$source_node->get_attribute("label"),
-				      "color=".$source_node->get_attribute("color"),
-				     )) if ($main::verbose >= 3);
-	}
-
-	## Target node for the association
-	my $target_node;
-	if (defined($node_obj{$ref_id})) {
-	    $target_node = $node_obj{$ref_id};
-	} else {
-	    my @members = $ref_classes{$r}->get_members();
-	    my $node_label = $ref_id." (".scalar(@members).")";
-	    $target_node = $graph->create_node(id=>$ref_id,
-					       color=>$color{ref_node},
-					       fontsize=>14,
-					       fontcolor=>$color{ref_node},
-					       shape=>$shape{'ref_node'},
-					       label=>$node_label);
-	    $node_obj{$ref_id} = $target_node;
-	    &RSAT::message::Info(join("\t", "Created target node", 
-				      $r,
-				      "id=".$target_node->get_attribute("id"), 
-				      "label=".$target_node->get_attribute("label"),
-				      "color=".$source_node->get_attribute("color"),
-				     )) if ($main::verbose >= 3);
-	}
-
-	my $arc_label = ();
-	$arc_label .= $current_compa{'QR'};
-	if ($return_fields{proba}) {
-	    $arc_label .= " (";
-	    $arc_label .= sprintf("%.1f", $current_compa{sig});
-	    $arc_label .= ")";
-	}
-	$graph->create_arc($source_node, $target_node, label=>$arc_label);
+    $color{'arc'} = "black";
+  } else {
+    $color{'ref_node'} = "#00BB00";
+    if ($infile{ref_classes} eq $infile{query_classes}) {
+      $color{'query_node'} = $color{'ref_node'};
+    } else {
+      $color{'query_node'} = "#0000BB";
     }
-    
-    return $graph;
+    $color{'arc'} = "#000000";
+  }
+  #    warn join ("\t", $type, values(%color)), "\n";
+
+  my %shape = ();
+  $shape{'ref_node'} = "box";
+  $shape{'query_node'} = "ellipse";
+
+  my $graph = new RSAT::Graph();
+  $graph->set_attribute("label", "compare-classes result");
+
+  #### class combinations
+  my %node_obj = ();		## Index of node objects
+  foreach my $compa_key (keys %compa) {
+    my ($r, $q) = split "__VERSUS__", $compa_key;
+    my $ref_id;
+    my $query_id;
+
+    ## Target node for the association
+    if ($infile{ref_classes} eq $infile{query_classes}) {
+      #### ref and query set are identical
+      $ref_id = $r;
+      $query_id = $q;
+    } else {
+      #### distinct ID prefixes for references and queries
+      $ref_id = "r_".$r;
+      $query_id = "q_".$q;
+    }
+
+
+    ## Source node for the association
+    my $source_node;
+    if (defined($node_obj{$query_id})) {
+      $source_node = $node_obj{$query_id};
+    } else {
+      my @members = $query_classes{$q}->get_members();
+      my $node_label = $query_id." (".scalar(@members).")";
+      $source_node = $graph->create_node(id=>$query_id, 
+					 color=>$color{query_node},
+					 fontsize=>14,
+					 fontcolor=>$color{query_node},
+					 shape=>$shape{'query_node'},
+					 label=>$node_label);
+      $node_obj{$query_id} = $source_node;
+      &RSAT::message::Info(join("\t", "Created source node", 
+				$q,
+				$query_id,
+				"id=".$source_node->get_attribute("id"), 
+				"label=".$source_node->get_attribute("label"),
+				"color=".$source_node->get_attribute("color"),
+			       )) if ($main::verbose >= 3);
+    }
+
+    ## Target node for the association
+    my $target_node;
+    if (defined($node_obj{$ref_id})) {
+      $target_node = $node_obj{$ref_id};
+    } else {
+      my @members = $ref_classes{$r}->get_members();
+      my $node_label = $ref_id." (".scalar(@members).")";
+      $target_node = $graph->create_node(id=>$ref_id,
+					 color=>$color{ref_node},
+					 fontsize=>14,
+					 fontcolor=>$color{ref_node},
+					 shape=>$shape{'ref_node'},
+					 label=>$node_label);
+      $node_obj{$ref_id} = $target_node;
+      &RSAT::message::Info(join("\t", "Created target node", 
+				$r,
+				"id=".$target_node->get_attribute("id"), 
+				"label=".$target_node->get_attribute("label"),
+				"color=".$source_node->get_attribute("color"),
+			       )) if ($main::verbose >= 3);
+    }
+
+    my $arc_label = ();
+    $arc_label .= $current_compa{'QR'};
+    if ($return_fields{proba}) {
+      $arc_label .= " (";
+      $arc_label .= sprintf("%.1f", $current_compa{sig});
+      $arc_label .= ")";
+    }
+    $graph->create_arc($source_node, $target_node, label=>$arc_label);
+  }
+  return $graph;
 }
 
 

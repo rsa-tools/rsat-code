@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.47 2009/11/05 00:32:06 jvanheld Exp $
+# $Id: convert-graph,v 1.48 2010/01/15 23:49:05 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -582,8 +582,8 @@ will be taken into account.
 
 Column containing the Y position of the target node (no default)
 
-A node can only have y position. If in the file, the position of the node changes, only the first defined
-will be taken into account.
+A node can only have y position. If in the file, the position of the
+node changes, only the first defined will be taken into account.
 
 =cut
 	} elsif ($arg eq "-target_ypos_col") {
@@ -596,8 +596,9 @@ will be taken into account.
 
 =item B<-pathcol>
 
-Pathway column. Column containing the pathways (default = 1). 
-By default, the pathway column is seven as it is the case for the output of the PathFinder program.
+Pathway column. Column containing the pathways (default = 1).  By
+default, the pathway column is seven as it is the case for the output
+of the PathFinder program.
 
 =cut
 	} elsif ($arg eq "-pathcol") {
@@ -608,8 +609,10 @@ By default, the pathway column is seven as it is the case for the output of the 
 
 =item B<-undirected>
 
-Specifies whether the edges must be considered as undirected, i.e., an edge 
-from node A to node B corresponds to an edge from B to A (by default, edges are directed). Useful for the output as an adjacency table.
+Specifies whether the edges must be considered as undirected, i.e., an
+edge from node A to node B corresponds to an edge from B to A (by
+default, edges are directed). Useful for the output as an adjacency
+table.
 
 =cut
 	 	    	    
@@ -618,9 +621,10 @@ from node A to node B corresponds to an edge from B to A (by default, edges are 
 
 =item B<-layout>
 
-Calculates the layout (provided you have the fr_layout progrom in $RSAT/bin) according to the Fruchterman and Reingold algorithm.
-This option is only useful for the gml output as the other formats do not specify the node 
-position.
+Calculates the layout (provided you have the fr_layout progrom in
+$RSAT/bin) according to the Fruchterman and Reingold algorithm.  This
+option is only useful for the gml output as the other formats do not
+specify the node position.
 
 =cut
 	} elsif ($arg eq "-layout") {
@@ -640,9 +644,10 @@ Add a unique ID for each arc when using the tab-delimited output.
 
 =item B<-ewidth>
 
-Calculate the edge width for the GML output. The width is proportional to the 
-weight of the edge. This value can only be computed for the GML output. 
-All weights in the column indicated by the -wcol argument or in the label fiel of the GML file must thus be real values.
+Calculate the edge width for the GML output. The width is proportional
+to the weight of the edge. This value can only be computed for the GML
+output.  All weights in the column indicated by the -wcol argument or
+in the label field of the GML file must thus be real values.
 
 =cut
 	} elsif ($arg eq "-ewidth") {
@@ -667,7 +672,10 @@ Supported : green, blue, red, fire, grey.
 
 =item B<-min #>
 
-Minimal value for computing the color gradient and the edge width. By default, this value is the minimal value of the input file. If the specified value is larger than the minimal value of the graph, then the minimal value of the heatmap will be used as minimal value.
+Minimal value for computing the color gradient and the edge width. By
+default, this value is the minimal value of the input file. If the
+specified value is larger than the minimal value of the graph, then
+the minimal value of the heatmap will be used as minimal value.
 
 =cut
 	} elsif ($arg eq "-min") {
