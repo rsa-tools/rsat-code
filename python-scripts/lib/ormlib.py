@@ -21,7 +21,7 @@ import sys
 from math import log10
 import bisect
 import gzip
-import sets
+#import sets
 
 import cli
 import dna
@@ -30,6 +30,12 @@ import ST
 from dna import reverse_complement, find_location
 from dist import pbinom, ppois, pbinom_right_left
 from tab import load_oligo_file
+
+def list_unique(seq):
+    keys = {}
+    for e in seq:
+        keys[e] = 1
+    return keys.keys()
 
 ##
 #
@@ -360,7 +366,8 @@ class Extractor:
             if len(l) == 1:
                 return []
                 
-            L = list(sets.Set(l))
+            #L = list(sets.Set(l))
+            L = list_unique(l)
             L.sort()
 
             for i in range(len(L)-1):
