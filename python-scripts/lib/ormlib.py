@@ -377,7 +377,7 @@ class Extractor:
             r[7] = r[6] * len(H) * len(R) #ev
             try:
                 r[8] = -log10(r[7]) #sig
-            except OverflowError:
+            except:
                 r[8] = 10000
 
             r[12] = len(R)
