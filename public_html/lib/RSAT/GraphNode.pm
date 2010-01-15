@@ -24,7 +24,7 @@ GraphNode class.
 =cut
 
 ################################################################
-=pod 
+=pod
 
 =item B<get_neighbours>
 
