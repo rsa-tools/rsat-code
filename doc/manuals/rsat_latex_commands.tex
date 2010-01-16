@@ -18,23 +18,22 @@
 \usepackage{setspace} % controllable line spacing (default: 1,5)
 % urls
 \usepackage{url}
-%\usepackage[hypertex]{hyperref}
  % tables
 \usepackage{ltxtable}
 \usepackage{longtable, lscape}
 % graphics
 \usepackage[bf,small,center]{subfigure}
 \usepackage[bf,small]{caption}
-% hyperref package should be loaded last
-\usepackage[a4paper=true,pagebackref=true]{hyperref}
 \usepackage{multirow}
+\usepackage{color}
 
 %listing package
 \usepackage{listings}
-\usepackage{color}
-%specification for the code
-\definecolor{grey090}{gray}{0.90}
-\definecolor{bluepale}{rgb}{0.9,0.9,1}
+
+%specification for listings (code)
+\definecolor{Blue}{rgb}{0,0,0.5} %dark blue
+\definecolor{grey090}{gray}{0.90} % light gray
+\definecolor{bluepale}{rgb}{0.9,0.9,1} % light blue
 \lstset{ %
   basicstyle=\ttfamily\footnotesize,% the size of the fonts that are used for the code
   numbers=none,                   % where to put the line-numbers
@@ -55,7 +54,19 @@
 
 
 
-
+% hyperref package should be loaded last
+%\usepackage[hypertex]{hyperref}
+\usepackage[a4paper=true,pagebackref=true]{hyperref}
+% tune hyperref
+\hypersetup{
+  colorlinks = true,
+  linkcolor = blue,
+  anchorcolor = red,
+  citecolor = blue,
+  filecolor = red,
+  pagecolor = red,
+  urlcolor = blue
+}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -79,16 +90,6 @@
 %\newcommand{\url}[1]{\textit{#1}}
 \newcommand{\urlref}[1]{\footnote{\url{#1}}}
 
-% tune hyperref
-\hypersetup{
-  colorlinks = true,
-  linkcolor = blue,
-  anchorcolor = red,
-  citecolor = blue,
-  filecolor = red,
-  pagecolor = red,
-  urlcolor = blue
-}
 
 
 \newcommand{\bigreheader}{
