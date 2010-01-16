@@ -83,7 +83,6 @@ int word_is_valid(int *seq, int start, int l)
 
 SITES matrix_scan(Sequences &sequences, Array &matrix, Markov &bg, Parameters &params)
 {
-    DEBUG("flanks=%d", params.flanks);
     int l = matrix.J;
     SITES sites = empty_sites(params.n, l + params.flanks * 2);
     for (int s = 0; s < sequences.size(); s++)
