@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.260 2010/01/15 23:51:32 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.261 2010/01/16 09:34:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.260 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.261 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -161,11 +161,16 @@ package main;
 			  );
   $supported_background  = join ",", sort keys %supported_background;
 
+  ## Background models
+  local %exp_freq_file = (); ## specified with the options -oligo_exp_freq and -dyad_exp_freq
+  local %bg_model_file = ();
+
   ## input files
   $family_file = "";
   $sequence_file_list = "";
-  $all_sequences_file = "";
+  $all_seq_file = "";
   $all_seq_format = "fasta"; ## Sequence format for the input sequences (onlyt useful in combination with the option -seq)
+  $bg_seq_file = "";
 
   ## feature-map options
   $htmaps=0;
@@ -429,9 +434,9 @@ package main;
   if ($sequence_file_list) {
     $task{upstream} = 0; 
     &ReadSequenceList();
-    
+
   } else {
-  ## Read families
+    ## Read families
 
     #### Check organism name
     if ($organism_name) {
@@ -444,10 +449,10 @@ package main;
       $organism->set_attribute("name", $organism_name);
 
       ## Load the features of the organism in order to identify the genes
-      unless ($all_sequences_file) {
-	  $organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
-	  $organism->LoadFeatures($annotation_table);
-	  $organism->LoadSynonyms();
+      unless ($all_seq_file) {
+	$organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
+	$organism->LoadFeatures($annotation_table);
+	$organism->LoadSynonyms();
       }
 
     } elsif ($org_fam) {
@@ -458,14 +463,13 @@ package main;
 
     ### Read family file
     &RSAT::message::TimeWarn("Reading gene families") if ($main::verbose >= 1);
-    if (($org_fam) || ($all_sequences_file)) {
+    if (($org_fam) || ($all_seq_file)) {
       %family = &ReadClasses($family_file, 0);
     } else {
       %family = &ReadClasses($family_file, 1, $organism);
     }
     &RSAT::message::Info("Gene families read", scalar(keys(%family))) if ($main::verbose >= 1);
   }
-
 
 
   ################################################################
@@ -561,7 +565,7 @@ package main;
   &SetFileNames();
 
   ## Create output directories
-  &RSAT::util::CheckOutDir($dir{output}); 
+  &RSAT::util::CheckOutDir($dir{output});
   chdir($dir{output});
   &MakeDirectories();
 
@@ -570,6 +574,7 @@ package main;
 
   ################################################################
   ### perform analysis
+  &ComputeBG() if ($task{compute_bg});
   &AnalyzeFamilies();
   &MDCreport() if ($task{report});
   &Validate() if ($task{validate});
@@ -711,13 +716,13 @@ sub SetFileNames {
 	    $family{$family_name}->{input_seq_file} = $family{$family_name}->{seq_file};
 	}
 	$family{$family_name}->{seq_len_file} = $family_name."/".$family{$family_name}->{file_prefix}."_seq_len.tab";
-	
+
 	## Known sites for this family
 	if ($task{validate}) {
 #	    $family{$family_name}->{known_sites} = $family_name."/".$family{$family_name}->{file_prefix}."_known_sites.tab";
 	    $family{$family_name}->{known_sites} = $family_name."/".$family_name."_known_sites.tab";
 	}
-	
+
 	################################################################
 	## oligo-analysis results
 	$family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix; 
@@ -1175,7 +1180,7 @@ sub SetFileNames {
 
 
 ## ##############################################################
-## Store the sequences for one family if sequences have been proided
+## Store the sequences for one family if sequences have been provided
 ## with the option -all_seq
 sub StoreSequences  {
   my @members = @{$family{$family_name}->{members}};
@@ -1186,7 +1191,7 @@ sub StoreSequences  {
       my $current_id = $member;
       &PrintNextSequence($out, $seq_format, 0, $current_seq, $current_id);
     } else {
-      &RSAT::message::Warning("No sequence with ID", $member,"in  file", $all_sequences_file);
+      &RSAT::message::Warning("No sequence with ID", $member,"in  file", $all_seq_file);
     }
   }
   close $out;
@@ -2789,332 +2794,362 @@ sub DrawDyadFeatureMap {
 ################################################################
 #### check parameters
 sub CheckParameters {
+
+  ## Output directory
+  &RSAT::error::FatalError("You must specify the output directory (option -outdir)") 
+    unless $dir{output};
+
+  #### accepted feature types
+  unless (defined %accepted_feature_types) {
+    ## By default, accept all feature types
+    $accepted_feature_types{cds} = 1;
+  }
+  $feature_types = join ",", keys (%accepted_feature_types);
+
+  #### check selected tasks
+  unless (defined(%task)) {
+    &RSAT::error::FatalError("You should select at least one task.");
+  }
+  if ($task{all}) {
+    foreach my $t (@supported_tasks) {
+      $task{$t} = 1;
+    }
+    unless ($draw_maps) {
+      $task{maps} = 0;
+      $task{oligo_maps} = 0;
+      $task{dyad_maps} = 0;
+      $task{orm_maps} = 0;
+    }
+  }
+  if ($task{maps}) {
+    $task{oligo_maps} = 1;
+    $task{dyad_maps} = 1;
+    $task{orm_maps} = 1;
+  }
+
+  ## Validation
+  if (($task{validate_oligos}) ||
+      ($task{validate_dyads}) ||
+      ($task{validate_orm})) {
+    $task{validate} = 1;
+    &RSAT::error::FatalError("For the task 'validate', you must specify a list of known sites with the option -known")
+      unless ($known_site_file);
+  }
+
+  ## Db match
+  if (($task{db_match_oligos}) ||
+      ($task{db_match_dyads})) {
+    $task{db_match} = 1;
+    &RSAT::error::FatalError("For the task 'db_match', you must specify a list of known sites with the option -db")
+      unless ($db_site_file);
+  }
+  ### family file ###
+  unless (($family_file) || ($sequence_file_list)) {
+    &RSAT::error::FatalError("You must specify either a family file or a sequence file list");
+  }
+
+  ### organism ###
+  if ($organism_name) {
+    unless ($supported_organism{$organism_name}) {
+      &RSAT::error::FatalError ("organism $organism_name is not supported");
+    }
+  } elsif ($org_fam) {
+  } else {
+    &RSAT::error::FatalError ("You must specify an organism (option -org) or indicate the organism in the second column of the family file (-org_fam)."); 
+  }
     
-    ################################################################
-    &RSAT::error::FatalError("You must specify the output directory (option -outdir)") unless $dir{output};
+  ## Upstream region limits
+  $from = $supported_organism{$organism_name}->{'up_from'}  unless defined($from);
+  $to = $supported_organism{$organism_name}->{'up_to'}  unless defined($to);
+  $seq_length = abs($to - $from) + 1;
 
-    #### accepted feature types
-    unless (defined %accepted_feature_types) {
-	## By default, accept all feature types
-	$accepted_feature_types{cds} = 1;
-    }
-    $feature_types = join ",", keys (%accepted_feature_types);
-    
-    #### check selected tasks
-    unless (defined(%task)) {
-	&RSAT::error::FatalError("You should select at least one task.");
-    }
-    if ($task{all}) {
-	foreach my $t (@supported_tasks) {
-	    $task{$t} = 1;
-	}
-	unless ($draw_maps) {
-	    $task{maps} = 0;
-	    $task{oligo_maps} = 0;
-	    $task{dyad_maps} = 0;
-	    $task{orm_maps} = 0;
-	}
-    }
-    if ($task{maps}) {
-	$task{oligo_maps} = 1;
-	$task{dyad_maps} = 1;
-	$task{orm_maps} = 1;
-    }
+  ## Dyad type
+  $dyad_type = "any" unless ($dyad_type);
 
-    ## Validation
-    if (($task{validate_oligos}) ||
-	($task{validate_dyads}) ||
-	($task{validate_orm})) {
-	$task{validate} = 1;
-	&RSAT::error::FatalError("For the task 'validate', you must specify a list of known sites with the option -known")
-	    unless ($known_site_file);
-    }
+  ## Strands
+  if (defined($force{strands})) {
+    $strands = $force{strands}; ### force
+  } else {
+    $strands = "-2str";
+  }
 
-    ## Db match
-    if (($task{db_match_oligos}) ||
-	($task{db_match_dyads})) {
-	$task{db_match} = 1;
-	&RSAT::error::FatalError("For the task 'db_match', you must specify a list of known sites with the option -db")
-	    unless ($db_site_file);
-    }
-    ### family file ###
-    unless (($family_file) || ($sequence_file_list)) {
-	&RSAT::error::FatalError("You must specify either a family file or a sequence file list");
-    }
+  ## Threshold on occurrence significance
+  unless ((defined($lth{occ_sig})) || ($lth{occ_sig} eq $null)) {
+    $lth{occ_sig} = 0;
+    &RSAT::message::Info("Lower threshold on occ_sig automatically set to 0 for oligo-analysis and dyad-analysis.") 
+      if ($verbose >= 1);
+  }
 
-    ### organism ###
-    if ($organism_name)  {
-	unless ($supported_organism{$organism_name}) {
-	    &RSAT::error::FatalError ("organism $organism_name is not supported");
-	}
-    } elsif ($org_fam) {
+}
+
+################################################################
+## Compute background models from a set of background sequences
+## specified with the option -bg_seq
+sub ComputeBG {
+  chdir($dir{main});
+  &RSAT::message::TimeWarn("Computing background model from background sequence file") if ($main::verbose >= 1);
+#  $dir{bg_models} = $dir{output}."/bg_models/";
+  $dir{bg_models} = "bg_models";
+  &RSAT::util::CheckOutDir($dir{bg_models});
+  &RSAT::message::TimeWarn("Background model directory", $dir{bg_models}) if ($main::verbose >= 1);
+  &ComputeOligoBG();
+  chdir($dir{output});
+}
+
+## Compute background models for oligo-analysis
+sub ComputeOligoBG {
+  for my $oligo_len ($min_oligo_len..$max_oligo_len) {
+    &RSAT::message::TimeWarn("\tComputing background model for oligos", $oligo_len."nt") if ($main::verbose >= 1);
+    my $cmd = "";
+    $bg_model_file{"oligos_".$oligo_len."nt"} = $dir{bg_models}."/bg_oligos_".$oligo_len."nt".${strands}.${noov}.".tab";
+    if ($bg_seq_file =~ /.gz$/) {
+      $cmd .= "gunzip -c ".$bg_seq_file;
     } else {
-	&RSAT::error::FatalError ("You must specify an organism (option -org) or indicate the organism in the second column of the family file (-org_fam)."); 
+      $cmd .= "cat ".$bg_seq_file;
     }
-    
-    ## Upstream region limits
-    $from = $supported_organism{$organism_name}->{'up_from'}  unless defined($from);
-    $to = $supported_organism{$organism_name}->{'up_to'}  unless defined($to);
-    $seq_length = abs($to - $from) + 1;
-
-    ## Dyad type
-    $dyad_type = "any" unless ($dyad_type);
-
-    ## Strands
-    if (defined($force{strands})) {
-	$strands = $force{strands}; ### force
-    } else {
-	$strands = "-2str";
-    }
-
-    ## Threshold on occurrence significance
-    unless ((defined($lth{occ_sig})) || ($lth{occ_sig} eq $null)){
-	$lth{occ_sig} = 0;
-	&RSAT::message::Info("Lower threshold on occ_sig automatically set to 0 for oligo-analysis and dyad-analysis.") 
-	    if ($verbose >= 1);
-    } 
-
+    $cmd .= " | count-words -v 1 -nogrouprc $strands $noov ";
+    $cmd .= " -l ".$oligo_len;
+    $cmd .= " -o ".$bg_model_file{"oligos_".$oligo_len."nt"};
+    &doit($cmd, $dry_run, $die_on_error, $verbose);
+  }
 }
 
 
 ################################################################
-## Analyze all the families    
+## Analyze all the families
 sub AnalyzeFamilies {
-   my $fam_count=0;
-   my $fam_nb = $#families+1;
+  my $fam_count=0;
+  my $fam_nb = $#families+1;
 
-   ### Calibrate oligonucleotides for each sequence length
-   if (($task{calibrate}) || 
-       ($task{calibN}) || 
-	($sequence_file_list) ||
-	($background eq "calib1") ||
-	($background eq "calibN")
-	) {
-       my @calib_lengths = &CalcCalibrationLengths();
-       &CalibrateOligos(@calib_lengths) if ($task{calibrate});
-       &CalibrateOligosN() if ($task{calibN});
-#    } else {
-#	foreach $family_name (@families) {
-#	    $family{$family_name}->{seq_length} = $seq_length*scalar(@{$family{$family_name}->{members}});
-#	}
-	$seq_length_calculated = 1;
-   }
+  ### Calibrate oligonucleotides for each sequence length
+  if (($task{calibrate}) || 
+      ($task{calibN}) || 
+      ($sequence_file_list) ||
+      ($background eq "calib1") ||
+      ($background eq "calibN")
+     ) {
+    my @calib_lengths = &CalcCalibrationLengths();
+    &CalibrateOligos(@calib_lengths) if ($task{calibrate});
+    &CalibrateOligosN() if ($task{calibN});
+    #    } else {
+    #	foreach $family_name (@families) {
+    #	    $family{$family_name}->{seq_length} = $seq_length*scalar(@{$family{$family_name}->{members}});
+    #	}
+    $seq_length_calculated = 1;
+  }
 
-   
-   ## Read all sequences from an input file and create the family-specific sequence files
-   if (($task{upstream}) && ($all_sequences_file)) {
-       &ReadAllSequences();
-   }
+  ## Read all sequences from an input file and create the family-specific sequence files
+  if (($task{upstream}) && ($all_seq_file)) {
+    &ReadAllSequences();
+  }
 
-   foreach $family_name (@families) {
-#       @main::batch_commands = ();
+  foreach $family_name (@families) {
+    #       @main::batch_commands = ();
 
-	$fam_count++;
-	my @members = @{$family{$family_name}->{members}};
-	$gene_nb = scalar(@members);
+    $fam_count++;
+    my @members = @{$family{$family_name}->{members}};
+    $gene_nb = scalar(@members);
 
-#	&CheckSkip($fam_count,$family_name);
-#	&CheckLast($fam_count);
+    #	&CheckSkip($fam_count,$family_name);
+    #	&CheckLast($fam_count);
 
-	## Check minimum number of genes
-	if ($gene_nb < $min_genes) {
-	  &RSAT::message::Warning ("Skipping family", 
-				   $fam_count, $family_name,
-				   $gene_nb." genes",
-				   "< min = ".$min_genes) if ($verbose >= 2);
-	    next;
-	}
+    ## Check minimum number of genes
+    if ($gene_nb < $min_genes) {
+      &RSAT::message::Warning ("Skipping family", 
+			       $fam_count, $family_name,
+			       $gene_nb." genes",
+			       "< min = ".$min_genes) if ($verbose >= 2);
+      next;
+    }
 
-       if ($org_fam) {
-	   $organism_name = $family_name;
-	   &RSAT::message::TimeWarn("Organism name", $organism_name);
-       }
+    if ($org_fam) {
+      $organism_name = $family_name;
+      &RSAT::message::TimeWarn("Organism name", $organism_name);
+    }
 
-	&RSAT::message::TimeWarn("Treating family ", $family_name," (".$fam_count."/".$fam_nb.")", 
-				 $gene_nb." genes", $organism_name)
-	  if ($verbose >= 1);
+    &RSAT::message::TimeWarn("Treating family ", $family_name," (".$fam_count."/".$fam_nb.")", 
+			     $gene_nb." genes", $organism_name)
+      if ($verbose >= 1);
 
-	### retrieve upstream sequences of the family
-	if ($task{upstream}) {
-	    if ($all_sequences_file) {
-		&StoreSequences();	
-	    } else {
-		&RetrieveUpstreamSequences();
-	    }
-	}
+    ### retrieve upstream sequences of the family
+    if ($task{upstream}) {
+      if ($all_seq_file) {
+	&StoreSequences();	
+      } else {
+	&RetrieveUpstreamSequences();
+      }
+    }
 
-	### retrieve upstream sequences of the family
-	&RetrieveUpstreamSequencesEnsEMBL() if ($task{upstream_ensembl});
+    ### retrieve upstream sequences of the family
+    &RetrieveUpstreamSequencesEnsEMBL() if ($task{upstream_ensembl});
 
-	### purge upstream sequences of the family
-	&PurgeSequences() if ($task{purge});
+    ### purge upstream sequences of the family
+    &PurgeSequences() if ($task{purge});
 
-	### oligo-analysis
-	if ($task{oligos}) {
-	  ## This method runs oligo-analysis + merges patterns of different length + runs pattern-assembly
-	  &OligoAnalysis();
+    ### oligo-analysis
+    if ($task{oligos}) {
+      ## This method runs oligo-analysis + merges patterns of different length + runs pattern-assembly
+      &OligoAnalysis();
 
+    } else {
+      ## oligo merging can be done a posteriori with the option -task merge_oligos
+      &MergeOligoLengths() if ($task{merge_oligos});
+
+      ## pattern assembly can be done a posteriori with the option -task assemble_oligos
+      &AssembleOligos() if ($task{assemble_oligos});
+    }
+
+    ## Convert oligos to PSSM
+    if ($task{oligos_pssm}) {
+      my $pssm_command = &MatrixFromPatterns($family{$family_name}->{oligo_assembly_file},
+					     $family{$family_name}->{oligo_pssm_file}, "oligos");
+      if ($main::batch) {
+	push @main::batch_commands, $pssm_command;
+      } else {
+	&doit($pssm_command, $dry_run, $die_on_error, $verbose);
+      }
+    }
+
+    if ($task{oligo_maps}) {
+      ### feature-maps of oligonucleotide occurrences
+      &MatchPatterns($family{$family_name}->{oligo_file},
+		     $family{$family_name}->{oligo_file},
+		     " -N 4");
+      &DrawFeatureMap($family{$family_name}->{oligo_file});
+
+      ## scan sequences with the PSSM built from significant oligos
+      if (-e $family{$family_name}->{oligo_pssm_file}."_count_matrices.txt","tab") {
+	&ScanSequences($family{$family_name}->{oligo_pssm_file}."_count_matrices.txt","tab",
+		       $family{$family_name}->{oligo_pssm_file}," -uth Pval 0.00025");
+	&DrawFeatureMap($family{$family_name}->{oligo_pssm_file});
+      }
+    }
+
+    ### dyad analysis
+    &DyadAnalysis() if ($task{dyads});
+
+    ## Convert dyads to PSSM
+    if ($task{dyads_pssm}) {
+      my $pssm_command = &MatrixFromPatterns($family{$family_name}->{dyad_assembly_file},
+					     $family{$family_name}->{dyad_pssm_file}, "dyads");
+      if ($main::batch) {
+	push @main::batch_commands, $pssm_command;
+      } else {
+	&doit($pssm_command, $dry_run, $die_on_error, $verbose);
+      }
+    }
+
+    ### dyad feature-maps
+    if ($task{dyad_maps}) {
+      &DrawDyadFeatureMap();
+
+      ## scan sequences with the PSSM built from significant dyads
+      if (-e $family{$family_name}->{dyad_pssm_file}."_count_matrices.txt","tab") {
+	&ScanSequences($family{$family_name}->{dyad_pssm_file}."_count_matrices.txt","tab",
+		       $family{$family_name}->{dyad_pssm_file}," -uth Pval 0.00025");
+	&DrawFeatureMap($family{$family_name}->{dyad_pssm_file});
+      }
+    }
+
+    ### Jerry Hertz' consensus
+    if ($task{consensus}) {
+      &Consensus();
+    }
+    if ($task{consensus_maps}) {
+      &ScanSequences($family{$family_name}->{consensus_file}."_count_matrices.txt","consensus",
+		     $family{$family_name}->{consensus_file}," -uth Pval 0.00025");
+      &DrawFeatureMap($family{$family_name}->{consensus_file});
+    }
+
+    ### Andrew Neuwald's gibbs
+    &Gibbs() if ($task{gibbs});
+    if ($task{gibbs_maps}) {
+      &ScanSequences($family{$family_name}->{gibbs_file}."_count_matrices.txt","gibbs",
+		     $family{$family_name}->{gibbs_file}," -uth Pval 0.00025");
+      &DrawFeatureMap($family{$family_name}->{gibbs_file});
+    }
+
+    ### Roth's AlignACE
+    &AlignACE() if ($task{AlignACE});
+    if ($task{AlignACE_maps}) {
+      &ScanSequences($family{$family_name}->{AlignACE_file}."_count_matrices.txt","AlignACE",
+		     $family{$family_name}->{AlignACE_file}," -uth Pval 0.00025");
+      &DrawFeatureMap($family{$family_name}->{AlignACE_file});
+    }
+
+    ### infogibbs
+    &infogibbs() if ($task{infogibbs});
+    if ($task{infogibbs_maps}) {
+      &ScanSequences($family{$family_name}->{infogibbs_file}."_count_matrices.txt","infogibbs",
+		     $family{$family_name}->{infogibbs_file}," -uth Pval 0.00025");
+      &DrawFeatureMap($family{$family_name}->{infogibbs_file});
+    }
+
+    ### Gert Thijs' MotifSampler
+    &MotifSampler() if ($task{MotifSampler});
+
+    ### MEME
+    &MEME() if ($task{meme});
+    if ($task{meme_maps}) {
+      &ScanSequences($family{$family_name}->{meme_file}."_count_matrices.txt","meme",
+		     $family{$family_name}->{meme_file}," -uth Pval 0.00025");
+      &DrawFeatureMap($family{$family_name}->{meme_file});
+    }
+
+    ### orm
+    &orm() if ($task{orm});
+
+    ## Convert orm assembly to PSSM
+    if ($task{orm_pssm}) {
+      my $pssm_command = &MatrixFromPatterns($family{$family_name}->{orm_assembly_file},
+					     $family{$family_name}->{orm_pssm_file}, "orm");
+      if ($main::batch) {
+	push @main::batch_commands, $pssm_command;
+      } else {
+	&doit($pssm_command, $dry_run, $die_on_error, $verbose);
+      }
+    }
+
+
+    ### orm feature-maps
+    if ($task{orm_maps}) {
+      &MatchPatterns($family{$family_name}->{orm_file},
+		     $family{$family_name}->{orm_file},
+		     " -N 4");
+      &DrawFeatureMap($family{$family_name}->{orm_file});
+    }
+
+    #	### merge oligo-analysis and dyad-analysis results
+    #	&MergePatterns() if ($task{merge_patterns});
+
+    #	### Match all patterns together with a sliding window
+    #	&SlidingWindow() if ($task{slide});
+    ### delete upstream sequence file
+    if ($task{clean}) {
+      &RSAT::message::TimeWarn("Cleaning files from the hard drive for family $family_name") if ($verbose >= 2);
+      foreach my $file ($family{$family_name}->{seq_file},
+			$family{$family_name}->{seq_file_purged},
+			$family{$family_name}->{merged_ft_file},
+			$family{$family_name}->{orm_ft_file},
+			$family{$family_name}->{dyad_ft_file}
+		       ) {
+	&RSAT::message::Info("\t$file") if ($verbose >=2);
+	$command = "rm -f $file";
+	if ($main::batch) {
+	  push @main::batch_commands, $command;
 	} else {
-	  ## oligo merging can be done a posteriori with the option -task merge_oligos
-	  &MergeOligoLengths() if ($task{merge_oligos});
-
-	  ## pattern assembly can be done a posteriori with the option -task assemble_oligos
-	  &AssembleOligos() if ($task{assemble_oligos});
+	  &doit($command, $dry_run, $die_on_error, $verbose);
 	}
+      }
+    }
 
-	## Convert oligos to PSSM
-	if ($task{oligos_pssm}) {
-	  my $pssm_command = &MatrixFromPatterns($family{$family_name}->{oligo_assembly_file},
-						 $family{$family_name}->{oligo_pssm_file}, "oligos");
-	  if ($main::batch) {
-	    push @main::batch_commands, $pssm_command;
-	  } else {
-	    &doit($pssm_command, $dry_run, $die_on_error, $verbose);
-	  }
-	}
-
-	if ($task{oligo_maps}) {
-	  ### feature-maps of oligonucleotide occurrences
-	  &MatchPatterns($family{$family_name}->{oligo_file},
-			   $family{$family_name}->{oligo_file},
-			   " -N 4");
-	    &DrawFeatureMap($family{$family_name}->{oligo_file});
-
-	  ## scan sequences with the PSSM built from significant oligos
-	  if (-e $family{$family_name}->{oligo_pssm_file}."_count_matrices.txt","tab") {
-	    &ScanSequences($family{$family_name}->{oligo_pssm_file}."_count_matrices.txt","tab",
-			   $family{$family_name}->{oligo_pssm_file}," -uth Pval 0.00025");
-	    &DrawFeatureMap($family{$family_name}->{oligo_pssm_file});
-	  }
-	}
-
-	### dyad analysis
-	&DyadAnalysis() if ($task{dyads});
-
-	## Convert dyads to PSSM
-	if ($task{dyads_pssm}) {
-	  my $pssm_command = &MatrixFromPatterns($family{$family_name}->{dyad_assembly_file},
-						 $family{$family_name}->{dyad_pssm_file}, "dyads");
-	  if ($main::batch) {
-	    push @main::batch_commands, $pssm_command;
-	  } else {
-	    &doit($pssm_command, $dry_run, $die_on_error, $verbose);
-	  }
-	}
-
-	### dyad feature-maps
-	if ($task{dyad_maps}) {
-	  &DrawDyadFeatureMap();
-
-	  ## scan sequences with the PSSM built from significant dyads
-	  if (-e $family{$family_name}->{dyad_pssm_file}."_count_matrices.txt","tab") {
-	    &ScanSequences($family{$family_name}->{dyad_pssm_file}."_count_matrices.txt","tab",
-			   $family{$family_name}->{dyad_pssm_file}," -uth Pval 0.00025");
-	    &DrawFeatureMap($family{$family_name}->{dyad_pssm_file});
-	  }
-	}
-
-	### Jerry Hertz' consensus
-	if ($task{consensus}) {
-	  &Consensus();
-	}
-	if ($task{consensus_maps}) {
-	  &ScanSequences($family{$family_name}->{consensus_file}."_count_matrices.txt","consensus",
-		       $family{$family_name}->{consensus_file}," -uth Pval 0.00025");
-	  &DrawFeatureMap($family{$family_name}->{consensus_file});
-	}
-
-	### Andrew Neuwald's gibbs
-	&Gibbs() if ($task{gibbs});
-	if ($task{gibbs_maps}) {
-	  &ScanSequences($family{$family_name}->{gibbs_file}."_count_matrices.txt","gibbs",
-		       $family{$family_name}->{gibbs_file}," -uth Pval 0.00025");
-	  &DrawFeatureMap($family{$family_name}->{gibbs_file});
-	}
-
-	### Roth's AlignACE
-	&AlignACE() if ($task{AlignACE});
-	if ($task{AlignACE_maps}) {
-	  &ScanSequences($family{$family_name}->{AlignACE_file}."_count_matrices.txt","AlignACE",
-		       $family{$family_name}->{AlignACE_file}," -uth Pval 0.00025");
-	  &DrawFeatureMap($family{$family_name}->{AlignACE_file});
-	}
-
-	### infogibbs
-	&infogibbs() if ($task{infogibbs});
-	if ($task{infogibbs_maps}) {
-	  &ScanSequences($family{$family_name}->{infogibbs_file}."_count_matrices.txt","infogibbs",
-		       $family{$family_name}->{infogibbs_file}," -uth Pval 0.00025");
-	  &DrawFeatureMap($family{$family_name}->{infogibbs_file});
-	}
-
-	### Gert Thijs' MotifSampler
-	&MotifSampler() if ($task{MotifSampler});
-
-	### MEME
-	&MEME() if ($task{meme});
-	if ($task{meme_maps}) {
-	  &ScanSequences($family{$family_name}->{meme_file}."_count_matrices.txt","meme",
-		       $family{$family_name}->{meme_file}," -uth Pval 0.00025");
-	  &DrawFeatureMap($family{$family_name}->{meme_file});
-	}
-
-	### orm
-	&orm() if ($task{orm});
-
-	## Convert orm assembly to PSSM
-	if ($task{orm_pssm}) {
-	  my $pssm_command = &MatrixFromPatterns($family{$family_name}->{orm_assembly_file},
-						 $family{$family_name}->{orm_pssm_file}, "orm");
-	  if ($main::batch) {
-	    push @main::batch_commands, $pssm_command;
-	  } else {
-	    &doit($pssm_command, $dry_run, $die_on_error, $verbose);
-	  }
-	}
-
-
-	### orm feature-maps
-	if ($task{orm_maps}) {
-	    &MatchPatterns($family{$family_name}->{orm_file},
-			   $family{$family_name}->{orm_file},
-			   " -N 4");
-	    &DrawFeatureMap($family{$family_name}->{orm_file});
-	}
-
-#	### merge oligo-analysis and dyad-analysis results
-#	&MergePatterns() if ($task{merge_patterns});
-
-#	### Match all patterns together with a sliding window
-#	&SlidingWindow() if ($task{slide});
-		
-	### delete upstream sequence file
-       if ($task{clean}) {
-	   &RSAT::message::TimeWarn("Cleaning files from the hard drive for family $family_name") if ($verbose >= 2);
-	   foreach my $file ($family{$family_name}->{seq_file},
-			     $family{$family_name}->{seq_file_purged},
-			     $family{$family_name}->{merged_ft_file},
-			     $family{$family_name}->{orm_ft_file},
-			     $family{$family_name}->{dyad_ft_file}
-			    ) {
-	       &RSAT::message::Info("\t$file") if ($verbose >=2);
-	       $command = "rm -f $file";
-	       if ($main::batch) {
-		   push @main::batch_commands, $command;
-	       } else {
-		   &doit($command, $dry_run, $die_on_error, $verbose);
-	       }
-	   }
-	}
-       
-
-       ## Send the batch script to the queue
-	if (($batch) && (scalar(@batch_commands) > 0)) {
-	   my $batch_script = join ";", @main::batch_commands;
-	   &doit($batch_script, $dry_run, $die_on_error, $verbose, $batch, $family_name);
-	   @main::batch_commands = ();
-       }
-   }
+    ## Send the batch script to the queue
+    if (($batch) && (scalar(@batch_commands) > 0)) {
+      my $batch_script = join ";", @main::batch_commands;
+      &doit($batch_script, $dry_run, $die_on_error, $verbose, $batch, $family_name);
+      @main::batch_commands = ();
+    }
+  }
 }
 
 ################################################################
@@ -3736,7 +3771,7 @@ sub ReadArguments {
 
       ### Single file with all sequences
     } elsif ($ARGV[$a] eq "-all_seq") {
-      $all_sequences_file = $ARGV[$a+1];
+      $all_seq_file = $ARGV[$a+1];
 
       ### input sequence format
     } elsif ($ARGV[$a] eq "-all_seq_format") {
@@ -3744,7 +3779,7 @@ sub ReadArguments {
 
       ### File containing sequences used to estimate the background model
     } elsif ($ARGV[$a] eq "-bg_seq") {
-      $bg_sequences_file = $ARGV[$a+1];
+      $bg_seq_file = $ARGV[$a+1];
 
       ### stop after some data sets
     } elsif ($ARGV[$a] eq "-last") {
@@ -4114,57 +4149,65 @@ sub ReadArguments {
 # Verbosity
 #
 sub Verbose {
-   my $verbose_message = "";
-   $verbose_message .= "; multiple-family-analysis ";
-   $verbose_message .= &PrintArguments()."\n";
-   printf "; %-22s\t%s\n", "Program version", $program_version;
-   printf "; families     \t%d\n", $#families + 1;
-   my $f = 0;
-   foreach my $family_name (@families) {
-     $f++;
-     printf ";\tfamily\t%d\t%s\t%d elements\n", $f, $family_name, $family{$family_name}->get_size();
-   }
-   if ($family_file) {
-	$verbose_message .= sprintf "; Family file\t%s\n", $family_file ;
-	$verbose_message .= sprintf "; Upstream regions\n";
-	$verbose_message .= sprintf ";\t%-22s\t%d\n", "Strands", $strands;
-	$verbose_message .= sprintf ";\t%-22s\t%d\n", "From", $from;
-	$verbose_message .= sprintf ";\t%-22s\t%d\n", "To", $to;
-   } elsif ($sequence_file_list) {
-	$verbose_message .= sprintf "; Sequence file list\t%s\n", $sequence_file_list;
-   }
-   $verbose_message .= sprintf "; %-13s\t%s\n", "Organism", $organism_name;
+  my $verbose_message = "";
+  $verbose_message .= "; multiple-family-analysis ";
+  $verbose_message .= &PrintArguments()."\n";
+  printf "; %-22s\t%s\n", "Program version", $program_version;
+  printf "; families     \t%d\n", $#families + 1;
+  my $f = 0;
+  foreach my $family_name (@families) {
+    $f++;
+    printf ";\tfamily\t%d\t%s\t%d elements\n", $f, $family_name, $family{$family_name}->get_size();
+  }
 
-   if ($task{oligos}) {
-	$verbose_message .= sprintf "; oligo-analysis\n";
-	$verbose_message .= sprintf ";\t%-22s\t%d\n", "max oligo length", $max_oligo_len;
-	$verbose_message .= sprintf ";\t%-22s\t%d\n", "min oligo length", $min_oligo_len;
-   }
-   
-   if ($task{dyads}) {
-	$verbose_message .= sprintf "; dyad-analysis\n";
-	$verbose_message .= sprintf ";\t%-22s\t%d\n", "monad length", $monad_length;
-	$verbose_message .= sprintf ";\t%-22s\t%d\n", "min spacing", $min_sp;
-	$verbose_message .= sprintf ";\t%-22s\t%d\n", "max spacing", $max_sp;
-	$verbose_message .= sprintf ";\t%-22s\t%s\n", "dyad type", $dyad_type;
-	$verbose_message .= &PrintThresholdValues();
-#	$verbose_message .= sprintf ";\t%-22s\t%g\n", "sig threshold", $lth{occ_sig};
-   }
+  if ($family_file) {
+    $verbose_message .= sprintf "; Family file\t%s\n", $family_file ;
+    $verbose_message .= sprintf "; Upstream regions\n";
+    $verbose_message .= sprintf ";\t%-22s\t%d\n", "Strands", $strands;
+    $verbose_message .= sprintf ";\t%-22s\t%d\n", "From", $from;
+    $verbose_message .= sprintf ";\t%-22s\t%d\n", "To", $to;
+  } elsif ($sequence_file_list) {
+    $verbose_message .= sprintf "; Sequence file list\t%s\n", $sequence_file_list;
+  }
+  $verbose_message .= sprintf "; %-13s\t%s\n", "Organism", $organism_name;
 
-   if ($markov) {
-	$verbose_message .= sprintf "; %-13s\t%s\n", "Markov chains, order", $markov_order;
-   } elsif ($background) {
-	$verbose_message .= sprintf "; %-13s\t%s\n", "background model", $background;
-   }
+  if ($task{oligos}) {
+    $verbose_message .= sprintf "; oligo-analysis\n";
+    $verbose_message .= sprintf ";\t%-22s\t%d\n", "max oligo length", $max_oligo_len;
+    $verbose_message .= sprintf ";\t%-22s\t%d\n", "min oligo length", $min_oligo_len;
+  }
 
-   $verbose_message .= "; No overlap with upstream ORFs\n" if ($noorf);
-   if ($noov eq "-noov") {
-	$verbose_message .= "; Overlapping matches are discarded for self-overlapping patterns\n" ;
-   } else {
-	$verbose_message .= "; Overlapping matches are allowed for self-overlapping patterns\n" ;
-   }
-   warn $verbose_message;
-   return($verbose_message);
+  if ($task{dyads}) {
+    $verbose_message .= sprintf "; dyad-analysis\n";
+    $verbose_message .= sprintf ";\t%-22s\t%d\n", "monad length", $monad_length;
+    $verbose_message .= sprintf ";\t%-22s\t%d\n", "min spacing", $min_sp;
+    $verbose_message .= sprintf ";\t%-22s\t%d\n", "max spacing", $max_sp;
+    $verbose_message .= sprintf ";\t%-22s\t%s\n", "dyad type", $dyad_type;
+    $verbose_message .= &PrintThresholdValues();
+    #	$verbose_message .= sprintf ";\t%-22s\t%g\n", "sig threshold", $lth{occ_sig};
+  }
+
+  if ($markov) {
+    $verbose_message .= sprintf "; %-13s\t%s\n", "Markov chains, order", $markov_order;
+  } elsif ($background) {
+    $verbose_message .= sprintf "; %-13s\t%s\n", "background model", $background;
+  }
+  if ($bg_seq_file) {
+    $verbose_message .= sprintf "; Family file\t%s\n", $bg_seq_file ;
+    foreach my $model (sort keys %bg_model_file) {
+      $verbose_message .= sprintf ";\t%-12s\t%s\n", $model, $bg_model_file{model};
+    }
+  }
+
+
+  $verbose_message .= "; No overlap with upstream ORFs\n" if ($noorf);
+  if ($noov eq "-noov") {
+    $verbose_message .= "; Overlapping matches are discarded for self-overlapping patterns\n" ;
+  } else {
+    $verbose_message .= "; Overlapping matches are allowed for self-overlapping patterns\n" ;
+  }
+  warn $verbose_message;
+  return($verbose_message);
 }
 
 
@@ -4355,9 +4398,10 @@ sub ExportSQL {
 ## ##############################################################
 ## Read all sequences (option -all_seq)
 sub ReadAllSequences {
-  &RSAT::message::TimeWarn("Reading ALL sequences from file", $all_sequences_file, "format", $all_seq_format);
+  &RSAT::message::TimeWarn("Reading ALL sequences from file", $all_seq_file, "format", $all_seq_format);
+  chdir($dir{main});  
   our %all_sequences = ();
-  ($in, $input_dir) = &OpenInputFile($all_sequences_file);
+  ($in, $input_dir) = &OpenInputFile($all_seq_file);
   while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $all_seq_format, $input_dir, "",$mask, %args)) &&
 	 (($current_seq ne "") || ($current_id ne ""))) {
     $seq_nb++;
@@ -4366,6 +4410,7 @@ sub ReadAllSequences {
     $all_sequences{lc($current_id)} = $current_seq;
   }
   close $in;
+  chdir($dir{output});
 }
 
 
