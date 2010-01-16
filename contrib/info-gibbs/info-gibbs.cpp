@@ -27,7 +27,7 @@ using namespace std;
 #include "sampler.h"
 #include "scan.h"
 
-int VERSION = 201001;
+int VERSION = 201001.2;
 char *COMMAND_LINE;
 
 /*
@@ -453,7 +453,6 @@ int main(int argc, char *argv[])
             params.m2 = 0;
             params.minspacing   = 0;
             params.maxspacing   = 0;
-            params.flanks = 0;
             SITES sites = matrix_scan(sequences, matrix, markov, params);
             params.starting_sites = sites;
             run_sampler(raw_sequences, sequences, markov, params);
