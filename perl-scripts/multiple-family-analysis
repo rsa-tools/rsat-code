@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.264 2010/01/17 14:20:22 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.265 2010/01/17 14:43:01 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.264 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.265 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -2927,10 +2927,8 @@ sub CheckParameters {
 ## Define background model files
 sub define_bg_model_files {
   ## Directory for BG models has to be defined relative to the output directory
-  #  $dir{bg_models} = $dir{output}."/bg_models";
   $dir{bg_models} = "bg_models";
-  chdir($dir{output});
-  &RSAT::util::CheckOutDir($dir{bg_models});
+  chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($dir{bg_models});
   &RSAT::message::TimeWarn("Background model directory", $dir{bg_models}) if ($main::verbose >= 1);
 
   ## Name of model files for oligo-analysis
@@ -2986,7 +2984,6 @@ sub compute_bg_meme {
   ## output directory.
   chdir($dir{main}); 
   my $bg_model_file =  $bg_model_file{"meme"};
-  &RSAT::message::TimeWarn("\tComputing background model for oligos", $oligo_len."nt", $bg_model_file) if ($main::verbose >= 1);
   &RSAT::message::TimeWarn("\tComputing background model for MEME", "markov".$markov_order, $bg_model_file) if ($main::verbose >= 1);
   my $cmd = "";
   if ($bg_seq_file =~ /.gz$/) {
