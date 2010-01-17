@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.263 2010/01/17 07:42:05 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.264 2010/01/17 14:20:22 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.263 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.264 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -63,11 +63,13 @@ package main;
   $lth{occ} = 1;
   %uth = ();
   $dir{main} = `pwd`;
-  #$dir{main} = "BOUM";
   chomp($dir{main});
   %family = ();			## Index of families per name
   @families = ();		## Families
   @selected = ();	  ## Families selected with the option -select
+
+  $markov = 0; ## Default method for oligos/dyads background model is not Markov. Set to 1 with the option -markov
+  $markov_order = 2;
 
   $dir{calib1} = "calibrations_1gene"; 
   %max_score = ();
@@ -564,6 +566,11 @@ package main;
   &SetFileNames();
 
   ## Create output directories
+  ##
+  ## Note: the main directory is defined as
+  ## absolute path. Output directotry is generally relative to the
+  ## main directory.
+  chdir($dir{main});
   &RSAT::util::CheckOutDir($dir{output});
   chdir($dir{output});
   &MakeDirectories();
@@ -651,9 +658,7 @@ sub SetFileNames {
     $dyad_suffix .= $noov;
 
     #### expected frequency model
-    if ($markov) {
-	## do nothing. Expected dyad frequencies will be calculated on the basis of monad frequencies
-    } elsif ($exp_freq_file{dyads}) {
+    if ($exp_freq_file{dyads}) {
        ## Convert relative path in absolute path
        unless ($exp_freq_file{dyads} =~ /^\//) {
 	   $exp_freq_file{dyads} = $dir{main}."/".$exp_freq_file{dyads};
@@ -674,10 +679,12 @@ sub SetFileNames {
     #### suffix for the oligo-analysis file
     $noorf_string = "_noorf" if ($noorf);
     $oligo_suffix = "_oligos";
-    if ($markov) {
-	$oligo_suffix .= "_mkv".$markov_order;
+    if ($bg_seq_file) {
+      $oligo_suffix .= "_bgseq";
     } elsif ($background) {
 	$oligo_suffix .= "_bg_".$background;
+    } elsif ($markov) {
+	$oligo_suffix .= "_mkv".$markov_order;
     }
     $oligo_suffix .= "_".$min_oligo_len."-".$max_oligo_len."nt";
     $oligo_suffix .= $strands;
@@ -972,6 +979,7 @@ sub SetFileNames {
 
 	################################################################
 	## MEME
+#	$meme_dir = $ENV{MEME_DIR} || $ENV{RSAT}."/bin/meme/";
 	my $meme_options = "";
 	my $meme_suffix = "";
 
@@ -985,9 +993,16 @@ sub SetFileNames {
 	    $meme_options .= " -revcomp";
 	}
 
-	## Background frequencies
-	$meme_dir = $ENV{MEME_DIR} || $ENV{RSAT}."/bin/meme/";
-	if ($MEME_bfile) { 
+	## If bacgrkound sequences have been specified, check that
+	## background model file exists.
+	if ($bg_seq_file) {
+	  &define_bg_model_files() unless (defined( $bg_model_file{"meme"}));
+	  &compute_bg_meme() unless (-e $bg_model_file{meme});
+	  $meme_options .= " -bfile ".$bg_model_file{meme};
+	}
+
+	## Background frequency file specified with the option -MEME_bfile
+	if ($MEME_bfile) {
 	    $meme_options .= " -bfile ".$MEME_bfile;
 	}
 
@@ -1148,10 +1163,12 @@ sub SetFileNames {
     } else {
 	$table_suffix = $organism_name;
     }
-    if ($markov) {
-	$table_suffix .= "_mkv${markov_order}";
+    if ($bg_seq_file) {
+	$table_suffix .= "_bgseq";
     } elsif ($background) {
 	$table_suffix .= "_bg_${background}";
+    } else {
+	$table_suffix .= "_mkv${markov_order}";
     }
 
     if ($family_file) {
@@ -1303,16 +1320,14 @@ sub CalcOligoOptions {
   }
 
   if ($bg_seq_file) {
-    ## Background model estimated from user-specified background sequences
+    ## Background model estimated from user-specified background
+    ## sequences. If the background model file does not exist, compute
+    ## it from background sequences.
     my $bg_model_file = $bg_model_file{"oligos_".$oligo_len."nt"};
     unless (-e $bg_model_file) {
       &compute_bg_oligo();
     }
     $oligo_options .= " -expfreq ".$bg_model_file;
-
-  } elsif ($markov) {
-    ### Markov chain model
-    $oligo_options .= " -markov ".$markov_order;
 
   } elsif ($exp_freq_file{oligos}) {
     ### Manually specified expected frequencies
@@ -1361,19 +1376,28 @@ sub CalcOligoOptions {
     $oligo_options .= " -calibN ".$calib_file;
     &RSAT::message::Info("Oligonucleotide calibration", $calib_length, $calib_file) if ($verbose >= 3);
 
-  } else {
+  } elsif (($organism_name) && ($background)) {
     ### Pre-calculated expected frequency files
     $oligo_options .= " -bg ".$background;
-    $oligo_options .= " -org ".$organism_name if ($organism_name);
+    $oligo_options .= " -org ".$organism_name;
+
+  } elsif ($markov) {
+    ### Markov chain model
+    $oligo_options .= " -markov ".$markov_order;
+
+  } else {
+    &RSAT::error::FatalError("You must specify a method for estimating the background model.");
   }
   $oligo_options .= " -return occ,mseq,freq,proba,rank,zscore,ratio";
   $oligo_options .= " ".$noov;
 
   my $oligo_suffix = "_oligos";
-  if ($markov) {
-    $oligo_suffix .= "_mkv".$markov_order;
+  if ($bg_seq_file) {
+    $oligo_suffix .= "_bgseq";
   } elsif ($background) {
     $oligo_suffix .= "_bg_".$background;
+  } elsif ($markov) {
+    $oligo_suffix .= "_mkv".$markov_order;
   }
   $oligo_suffix .= "_${oligo_len}nt";
   $oligo_suffix .= $strands;
@@ -1397,10 +1421,11 @@ sub OligoAnalysis {
 			   "min len: $min_oligo_len",
 			   "max len: $max_oligo_len") if ($verbose >= 2);
   my $dir = "${family_name}/oligos_${family_name}";
-   
-   chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
-   &RSAT::error::FatalError( "Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch)  || ($dry_run) || ($dry_run) || (-r $family{$family_name}->{input_seq_file}));
-  
+
+  chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
+  &RSAT::error::FatalError( "Cannot read file $family{$family_name}->{input_seq_file}") 
+    unless (($batch)  || ($dry_run) || ($dry_run) || (-r $family{$family_name}->{input_seq_file}));
+
    ## initialize the oligo file
 #    system "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >= 2);
 
@@ -1438,7 +1463,7 @@ sub MergeOligoLengths {
 			   $family{$family_name}->{oligo_file}) if ($verbose >= 2);
   my $dir = "${family_name}/oligos_${family_name}";
 
-   chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
+   chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
    &RSAT::error::FatalError("Cannot read file ".$family{$family_name}->{input_seq_file}) unless (($batch) || ($dry_run) ||(-r $family{$family_name}->{input_seq_file}));
 
   ## initialize the oligo file
@@ -1471,7 +1496,7 @@ sub AssembleOligos {
 			   $family{$family_name}->{oligo_file}) if ($verbose >= 2);
   my $dir = "${family_name}/oligos_${family_name}";
 
-  chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
+  chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
   &RSAT::error::FatalError("Cannot read file ".$family{$family_name}->{input_seq_file}) unless (($batch) || ($dry_run) ||(-r $family{$family_name}->{input_seq_file}));
 
   #    ## initialize the oligo file
@@ -1658,7 +1683,7 @@ sub DyadAnalysis {
 			   "max_sp: $max_sp",
 			  ) if ($verbose >= 2);
   $dir = "${family_name}/dyads_${family_name}";
-  chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
+  chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{input_seq_file}));
   $command = "dyad-analysis";
   $command .= " -return occ,proba,rank,zscore,ratio";
@@ -1731,7 +1756,7 @@ sub MergePatterns {
 			   $family{$family_name}->{merged_file}
 			  ) if ($verbose >= 2);
    my $dir = "${family_name}/merged_${family_name}";
-   chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
+   chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
    my $command = "cat $family{$family_name}->{oligo_file}";
 #    $command .= " | grep -v '^;'";
    $command .= " > $family{$family_name}->{merged_file};";
@@ -1817,7 +1842,7 @@ sub MotifSampler {
   &RSAT::message::TimeWarn ("Running MotifSampler for family $family_name") if ($verbose >= 2);
   ## Check output directory
   my $dir = $family{$family_name}->{MotifSampler_dir};
-  chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
+  chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
 
   ## run the command
   my $MS_command = "MotifSampler ".$family{$family_name}->{MotifSampler_options};
@@ -1841,7 +1866,7 @@ sub MotifSampler {
 ################################################################
 ## Run Andrew Neuwald's gibbs program 
 sub Gibbs {
-  chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{gibbs_dir});
+  chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{gibbs_dir});
 
 
   if ($strands eq "-2str") {
@@ -1874,7 +1899,7 @@ sub Gibbs {
 ################################################################
 ## Run Roth's AlignACE program
 sub AlignACE {
-  chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{AlignACE_dir});
+  chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{AlignACE_dir});
 
   if ($strands eq "-2str") {
     $addrc = " -addrc";
@@ -1902,7 +1927,7 @@ sub AlignACE {
 ################################################################
 ## infogibbs (developed by Matthieu Defrance)
 sub infogibbs {
-  chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{infogibbs_dir});
+  chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{infogibbs_dir});
 
   ## This can be useful in case the file is compressed, and to covert
   ## n characters (masked nucleotide) into dots
@@ -1924,7 +1949,7 @@ sub infogibbs {
 ################################################################
 ## Run MEME program
 sub MEME {
-  chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{meme_dir});
+  chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{meme_dir});
 
   ## Run the command
   $meme_command = "convert-seq ";
@@ -1940,6 +1965,7 @@ sub MEME {
   $meme_command .= &ConvertMatrixCommand($family{$family_name}->{meme_file}, "meme");
 #  $meme_command = &ConvertMatrixCommand($family{$family_name}->{meme_file}, "meme");
 
+
   if ($batch) {
     push @main::batch_commands, $meme_command;
   } else {
@@ -1951,7 +1977,7 @@ sub MEME {
 ################################################################
 ## Run orm program 
 sub orm {
-  chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{orm_dir});
+  chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{orm_dir});
 
   ## run the command
   my $orm_command = ""; 
@@ -1993,7 +2019,7 @@ sub orm {
 ################################################################
 ## Run Jerry Hertz' consensus program 
 sub Consensus {
-  chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{consensus_dir});
+  chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{consensus_dir});
 
   ## input file has to be converted to consensus format
   $consensus_command = "convert-seq -dna -from fasta -to wc -i ".$family{$family_name}->{input_seq_file};
@@ -2907,10 +2933,13 @@ sub define_bg_model_files {
   &RSAT::util::CheckOutDir($dir{bg_models});
   &RSAT::message::TimeWarn("Background model directory", $dir{bg_models}) if ($main::verbose >= 1);
 
-  ## Define model files for oligo-analysis
+  ## Name of model files for oligo-analysis
   for my $oligo_len ($min_oligo_len..$max_oligo_len) {
     $bg_model_file{"oligos_".$oligo_len."nt"} = $dir{bg_models}."/bg_oligos_".$oligo_len."nt".${strands}.${noov}.".tab";
   }
+
+  ## Name of model file for MEME
+  $bg_model_file{"meme"} = $dir{bg_models}."/bg_meme_mkv".$markov_order.".txt";
 }
 
 ################################################################
@@ -2920,7 +2949,7 @@ sub ComputeBG {
   chdir($dir{main});
   &RSAT::message::TimeWarn("Computing background model from background sequence file") if ($main::verbose >= 1);
   &compute_bg_oligo();
-#  &compute_bg_meme();
+  &compute_bg_meme();
   chdir($dir{output});
 }
 
@@ -2933,7 +2962,8 @@ sub compute_bg_oligo {
   ## output directory.
   chdir($dir{main}); 
   for my $oligo_len ($min_oligo_len..$max_oligo_len) {
-    &RSAT::message::TimeWarn("\tComputing background model for oligos", $oligo_len."nt") if ($main::verbose >= 1);
+    my $bg_model_file =  $bg_model_file{"oligos_".$oligo_len."nt"};
+    &RSAT::message::TimeWarn("\tComputing background model for oligos", $oligo_len."nt", $bg_model_file) if ($main::verbose >= 1);
     my $cmd = "";
     if ($bg_seq_file =~ /.gz$/) {
       $cmd .= "gunzip -c ".$bg_seq_file;
@@ -2942,7 +2972,7 @@ sub compute_bg_oligo {
     }
     $cmd .= " | count-words -v 1 -nogrouprc $strands $noov ";
     $cmd .= " -l ".$oligo_len;
-    $cmd .= " -o ".$dir{output}."/".$bg_model_file{"oligos_".$oligo_len."nt"};
+    $cmd .= " -o ".$dir{output}."/".$bg_model_file;
     &doit($cmd, $dry_run, $die_on_error, $verbose);
   }
   chdir($dir{output});
@@ -2955,16 +2985,17 @@ sub compute_bg_meme {
   ## directory, but the bg model files must be defined relative to the
   ## output directory.
   chdir($dir{main}); 
-  &RSAT::message::TimeWarn("\tComputing background model for MEME, Markov order", $markov) if ($main::verbose >= 1);
+  my $bg_model_file =  $bg_model_file{"meme"};
+  &RSAT::message::TimeWarn("\tComputing background model for oligos", $oligo_len."nt", $bg_model_file) if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("\tComputing background model for MEME", "markov".$markov_order, $bg_model_file) if ($main::verbose >= 1);
   my $cmd = "";
   if ($bg_seq_file =~ /.gz$/) {
     $cmd .= "gunzip -c ".$bg_seq_file;
   } else {
     $cmd .= "cat ".$bg_seq_file;
   }
-  $cmd .= " | count-words -v 1 -nogrouprc $strands $noov ";
-  $cmd .= " -l ".$oligo_len;
-  $cmd .= " -o ".$dir{output}."/".$bg_model_file{"oligos_".$oligo_len."nt"};
+  $cmd .= " | fasta-get-markov -m ".$markov_order;
+  $cmd .= " > ".$dir{output}."/".$bg_model_file;
   &doit($cmd, $dry_run, $die_on_error, $verbose);
   chdir($dir{output});
 }
@@ -3562,8 +3593,8 @@ OPTIONS
 	Note	-MS_w is replaced by -width
 
    MEME options (Bailey)
-	Any option starting with -MEME_ will be passed to MEME. 
-	In particular, the following options are passed by default. 
+	Any option starting with -MEME_ will be passed to MEME.
+	In particular, the following options are passed by default.
    	-MEME_minw	minimum motif width (default $MEME_minw)
    	-MEME_maxw	maximum motif widht (default $MEME_maxw)
 	-MEME_bfile     name of background Markov model file
@@ -4243,10 +4274,12 @@ sub Verbose {
     #	$verbose_message .= sprintf ";\t%-22s\t%g\n", "sig threshold", $lth{occ_sig};
   }
 
-  if ($markov) {
-    $verbose_message .= sprintf "; %-13s\t%s\n", "Markov chains, order", $markov_order;
+  if ($bg_seq_file) {
+    $verbose_message .= sprintf "; %-13s\t%s\n", "background sequence file", $bg_seq_file;
   } elsif ($background) {
     $verbose_message .= sprintf "; %-13s\t%s\n", "background model", $background;
+  } elsif ($markov) {
+    $verbose_message .= sprintf "; %-13s\t%s\n", "background Markov order", $markov_order;
   }
   if ($bg_seq_file) {
     $verbose_message .= sprintf "; Family file\t%s\n", $bg_seq_file ;
@@ -4429,7 +4462,7 @@ sub ExportSQL {
 
   ## Export directory
   $dir{sql} = "sql_export";
-  chdir($dir{output}); &RSAT::util::CheckOutDir($dir{sql});
+  chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($dir{sql});
 
   ## Temporarily motify  output directory
   ## for table dumping
@@ -4997,7 +5030,7 @@ sub SigDistrib {
 
    ## Significance distribution file
     $dir{distrib} = "sig_distrib";
-    chdir($dir{output}); &RSAT::util::CheckOutDir($dir{distrib});
+    chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($dir{distrib});
     $outfile{sig_distrib_file} = join ("", $dir{distrib},"/","sig_distrib", $pattern_suffix,$from,$noorf_status,"_",$feature_types);
     if ($min_genes > 1) {
 	$outfile{sig_distrib_file} .= "_mingenes".$min_genes;
@@ -5259,7 +5292,7 @@ sub CalibrationPrefix {
 ################################################################
 ## Generate report fiels for the motif disovery competition 2004
 sub MDCreport {
-   chdir($dir{output}); &RSAT::util::CheckOutDir($dir{mdc_report});
+   chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($dir{mdc_report});
    &RSAT::message::TimeWarn("Generating MCD report\t".$outfile{results}) if ($verbose >= 1);
 
    ################################################################
@@ -5467,7 +5500,7 @@ sub CalibrateOligos {
    &RSAT::message::TimeWarn("Calibrating oligonucleotide occurrences") if ($verbose >= 1);
 
    ### Analyse upstream occurrence distributions for each sequence length
-   chdir($dir{output}); &RSAT::util::CheckOutDir($dir{calib1});
+   chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($dir{calib1});
    &RSAT::message::TimeWarn("Calculating oligonucleotide distributions in all upstream sequences") 
      if ($verbose >= 1);
    foreach my $calib_length (sort {$a <=> $b} @calib_lengths) {
