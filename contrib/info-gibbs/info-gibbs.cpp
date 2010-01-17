@@ -178,8 +178,6 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    //DEBUG("START info-gibbs");
-
     // construct command line string
     string cmdline = "";
     for (int i = 0; i < argc; i++)
@@ -389,6 +387,8 @@ int main(int argc, char *argv[])
             return 0;
         }
     }
+
+    VERBOSE1("running version %d\n", VERSION);
 
     // read the sequences
     if (seqfile == NULL)
