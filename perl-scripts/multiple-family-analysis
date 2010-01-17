@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.262 2010/01/17 07:24:41 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.263 2010/01/17 07:42:05 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.262 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.263 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -2920,7 +2920,7 @@ sub ComputeBG {
   chdir($dir{main});
   &RSAT::message::TimeWarn("Computing background model from background sequence file") if ($main::verbose >= 1);
   &compute_bg_oligo();
-  &compute_bg_meme();
+#  &compute_bg_meme();
   chdir($dir{output});
 }
 
