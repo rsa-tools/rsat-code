@@ -55,6 +55,7 @@ command_queue_torque:
 	done
 
 ## Send a jobs to a cluster using the SGE queue management system
+QSUB_OPTIONS=
 command_queue_sge:
 	@mkdir -p ${JOB_DIR}
 	@echo "job dir	${JOB_DIR}"
@@ -67,7 +68,7 @@ command_queue_sge:
 		echo "echo Job done `date`" >> ${JOB_DIR}/$${job}; 		\
 		echo "date" >> ${JOB_DIR}/$${job}; 		\
 		chmod u+x ${JOB_DIR}/$${job} ;				\
-		qsub -m a -q ${QUEUE} -N $${job} -j y -o ${JOB_DIR}/$${job}.log ${JOB_DIR}/$${job} ;	\
+		qsub -m a -q ${QUEUE} -N $${job} -j y -o ${JOB_DIR}/$${job}.log ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ;	\
 		rm $${job} ;\
 	done
 
