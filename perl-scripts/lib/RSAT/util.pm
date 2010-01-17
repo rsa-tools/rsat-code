@@ -521,6 +521,8 @@ sub doit {
       &RSAT::message::Warning("Cluster queue manager not defined, using the  default value 'sge'.") if ($main::verbose >= 1);
     }
     my $qsub_manager=$ENV{QSUB_MANAGER};
+    my $qsub_options=$ENV{QSUB_OPTIONS};
+
 
     ## Cluster queue
     unless ($ENV{CLUSTER_QUEUE}) {
@@ -532,6 +534,7 @@ sub doit {
     my $batch_mail=$ENV{BATCH_MAIL} || "a";
 
     ## optional: restrict the jobs to selected nodes
+    ## Example: -l nodes=1:k2.6 
     my $selected_nodes =$ENV{NODES};
 #    my $selected_nodes =$ENV{NODES} || " -l nodes=1:k2.6 "; ##
 
@@ -546,12 +549,14 @@ sub doit {
 
     } else {
       ## qsub command functionning using Sun Grid Engine (BiGRe)
-      $qsub_cmd = join(" ", "qsub", 
-		       "-m",$batch_mail,
-		       "-q ", $cluster_queue, 
-		       " -j y ",
-		       "-N ", $job_name,
-		       "-o ".$job_log, $job);
+	$qsub_cmd = join(" ", "qsub", 
+			 "-m",$batch_mail,
+			 "-q ", $cluster_queue, 
+			 " -j y ",
+			 "-N ", $job_name,
+			 "-o ".$job_log, 
+			 $qsub_options,
+			 $job);
     }
     &doit($qsub_cmd, $dry, $die_on_error,$verbose,0);
 
