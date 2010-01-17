@@ -4,13 +4,13 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.261 2010/01/16 09:34:51 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.262 2010/01/17 07:24:41 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
 ############################################################
 BEGIN {
-    if ($0 =~ /([^(\/)]+)$/) {
+  if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
     }
     require "RSA.lib";
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.261 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.262 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -322,7 +322,6 @@ package main;
   ## Create class factories
 
   ## Unique prefix for each analysis, to allow merging them in a database
-
   local $run_date = &AlphaDate();
   local $run_prefix = `mktemp XXXXX`;
   chomp($run_prefix);
@@ -573,6 +572,12 @@ package main;
   $verbose_message = &Verbose() if ($verbose >= 1);
 
   ################################################################
+  ## Define the names of the background model files
+  if ($bg_seq_file) {
+    &define_bg_model_files();
+  }
+
+  ################################################################
   ### perform analysis
   &ComputeBG() if ($task{compute_bg});
   &AnalyzeFamilies();
@@ -627,13 +632,15 @@ sub SetFileNames {
     $dyad_options .= " -sp ".$sp;
 
     $dyad_suffix = "_dyads";
-    if ($markov) {
-	$dyad_suffix .= "_monad"; ### TEMP
+    if ($bg_seq_file) {
+      $dyad_suffix .= "_bgseq";
     } elsif ($background) {
 #	if ($repeat_masked) {        ### Should be here?
 #	    $background .= "-rm";    ### Should be here?
 #	}                            ### Should be here?
 	$dyad_suffix .= "_bg_".$background; ### TEMP
+    } else {
+      	$dyad_suffix .= "_monad"; ### TEMP
     }
     $dyad_suffix .= "_l".$monad_length;
     $dyad_suffix .= "_sp".$sp;
@@ -1195,7 +1202,7 @@ sub StoreSequences  {
     }
   }
   close $out;
-  &RSAT::message::Warning($family_name, "Stored sequence in file", $family{$family_name}->{seq_file}) if ($main::verbose >= 0);
+  &RSAT::message::Warning($family_name, "Stored sequence in file", $family{$family_name}->{seq_file}) if ($main::verbose >= 2);
 }
 
 ################################################################
@@ -1279,100 +1286,107 @@ sub PurgeSequences {
 ### Calculate options and file names according to the selected
 ### parameters
 sub CalcOligoOptions {
-   my ($oligo_len) = @_;
-   $oligo_options = "-v";
-#   $oligo_options .= " -lth occ 1 "; ## This is to avoid calculating P-value for patterns not rpesent in the dataset, and for having a correct correction for multi-testing. 
-   $oligo_options .= " -pseudo ".$oligo_pseudo if ($oligo_pseudo);
-   $oligo_options .= " -sort ";
-   $oligo_options .= " ".$strands;
-   $oligo_options .= " -l ".$oligo_len;
-   $oligo_options .= &ThresholdOptions();
-#   $oligo_options .= " -lth occ_sig ".$lth{occ_sig};
-#   if (&IsReal($lth{ms_freq})) {$oligo_options .= " -thmsf ".$lth{ms_freq} ; }
-#   if (&IsReal($lth{ms_sig})) {$oligo_options .= " -thmssig ".$lth{ms_sig} ; }
+  my ($oligo_len) = @_;
+  $oligo_options = "-v";
+  #   $oligo_options .= " -lth occ 1 "; ## This is to avoid calculating P-value for patterns not rpesent in the dataset, and for having a correct correction for multi-testing. 
+  $oligo_options .= " -pseudo ".$oligo_pseudo if ($oligo_pseudo);
+  $oligo_options .= " -sort ";
+  $oligo_options .= " ".$strands;
+  $oligo_options .= " -l ".$oligo_len;
+  $oligo_options .= &ThresholdOptions();
+  #   $oligo_options .= " -lth occ_sig ".$lth{occ_sig};
+  #   if (&IsReal($lth{ms_freq})) {$oligo_options .= " -thmsf ".$lth{ms_freq} ; }
+  #   if (&IsReal($lth{ms_sig})) {$oligo_options .= " -thmssig ".$lth{ms_sig} ; }
 
-   if ($mask) {
-       $oligo_options .= " -mask ".$mask;
-   }
-   
-   if ($markov) {
-	### Markov chain model
-	$oligo_options .= " -markov ".$markov_order;
-	
-   } elsif ($exp_freq_file{oligos}) {
-       ## Convert relative path in absolute path
-       unless ($exp_freq_file{oligos} =~ /^\//) {
-	   $exp_freq_file{oligos} = $dir{main}."/".$exp_freq_file{oligos};
-       }
-	### Manually specified expected frequencies
-	$oligo_options .= " -expfreq ".$exp_freq_file{oligos};
-	
-   } elsif ($background eq "calib1") {
-	### Single-sequence based calibrated occurrences (mean and var per sequence)
-	my $calib_length = $family{$family_name}->{calib_length};
-	my $calib_file = &CalibrationPrefix($calib_length, $oligo_len);
-	$calib_file .= "_negbin.tab";
-	### Check whether the calibration file exists
-	unless ((-e $calib_file) || (-e $calib_file.".gz")) {
-	    &RSAT::error::FatalError ("Calibration file not found\t".$calib.file);
+  if ($mask) {
+    $oligo_options .= " -mask ".$mask;
+  }
+
+  if ($bg_seq_file) {
+    ## Background model estimated from user-specified background sequences
+    my $bg_model_file = $bg_model_file{"oligos_".$oligo_len."nt"};
+    unless (-e $bg_model_file) {
+      &compute_bg_oligo();
+    }
+    $oligo_options .= " -expfreq ".$bg_model_file;
+
+  } elsif ($markov) {
+    ### Markov chain model
+    $oligo_options .= " -markov ".$markov_order;
+
+  } elsif ($exp_freq_file{oligos}) {
+    ### Manually specified expected frequencies
+
+    ## Convert relative path in absolute path
+    unless ($exp_freq_file{oligos} =~ /^\//) {
+      $exp_freq_file{oligos} = $dir{main}."/".$exp_freq_file{oligos};
+    }
+    $oligo_options .= " -expfreq ".$exp_freq_file{oligos};
+
+  } elsif ($background eq "calib1") {
+    ### Single-sequence based calibrated occurrences (mean and var per sequence)
+    my $calib_length = $family{$family_name}->{calib_length};
+    my $calib_file = &CalibrationPrefix($calib_length, $oligo_len);
+    $calib_file .= "_negbin.tab";
+    ### Check whether the calibration file exists
+    unless ((-e $calib_file) || (-e $calib_file.".gz")) {
+      &RSAT::error::FatalError ("Calibration file not found\t".$calib.file);
+    }
+    $oligo_options .= " -calib1 ".$calib_file;
+    &RSAT::message::Info("Oligonucleotide calibration", $calib_length, $calib_file) if ($verbose >= 3);
+
+  } elsif ($background eq "calibN") {
+    ### Set-based calibrated occurrences (mean and var per set of N sequences)
+    my $calib_length = $family{$family_name}->{calib_length};
+    my $N = scalar(@{$family{$family_name}->{members}});
+    my $calib_file = &CalibrationPrefix($calib_length, $oligo_len, $N);
+    $calib_file .= "_negbin.tab";
+
+    ### Check whether the calibration file exists
+    unless ((-e $calib_file) || (-e $calib_file.".gz")) {
+      ### temporary: if there is no R10000 file, try R1000
+      $calib_file =~ s/10000/1000/g;
+      if ((-e $calib_file) || (-e $calib_file.".gz")) {
+	&RSAT::message::Warning("Using calibration with 1000 repetitions\t".$calib_file);
+      } else {
+	### temporary: if there is no R1000 file, try R100
+	$calib_file =~ s/1000/100/g;
+	if ((-e $calib_file) || (-e $calib_file.".gz")) {
+	  &RSAT::message::Warning("Using calibration with 100 repetitions\t".$calib_file);
+	} else {
+	  &RSAT::error::FatalError ("Calibration file not found\t".$calib_file);
 	}
-	$oligo_options .= " -calib1 ".$calib_file;
-	&RSAT::message::Info("Oligonucleotide calibration", $calib_length, $calib_file) if ($verbose >= 3);
-	
-   } elsif ($background eq "calibN") {
-	### Set-based calibrated occurrences (mean and var per set of N sequences)
-	my $calib_length = $family{$family_name}->{calib_length};
-	my $N = scalar(@{$family{$family_name}->{members}});
-	my $calib_file = &CalibrationPrefix($calib_length, $oligo_len, $N);
-	$calib_file .= "_negbin.tab";
+      }
+    }
+    $oligo_options .= " -calibN ".$calib_file;
+    &RSAT::message::Info("Oligonucleotide calibration", $calib_length, $calib_file) if ($verbose >= 3);
 
-	### Check whether the calibration file exists
-	unless ((-e $calib_file) || (-e $calib_file.".gz")) {
-	    ### temporary: if there is no R10000 file, try R1000
-	    $calib_file =~ s/10000/1000/g;
-	    if ((-e $calib_file) || (-e $calib_file.".gz")) {
-		&RSAT::message::Warning("Using calibration with 1000 repetitions\t".$calib_file);
-	    } else {
-		### temporary: if there is no R1000 file, try R100
-		$calib_file =~ s/1000/100/g;
-		if ((-e $calib_file) || (-e $calib_file.".gz")) {
-		    &RSAT::message::Warning("Using calibration with 100 repetitions\t".$calib_file);
-		    
-		} else {
-		    &RSAT::error::FatalError ("Calibration file not found\t".$calib_file);
-		}
-	    }
-	}
-	
-	$oligo_options .= " -calibN ".$calib_file;
-	&RSAT::message::Info("Oligonucleotide calibration", $calib_length, $calib_file) if ($verbose >= 3);
-	
-   } else {
-	### Pre-calculated expected frequency files
-	$oligo_options .= " -bg ".$background;
-	$oligo_options .= " -org ".$organism_name if ($organism_name);
-   }
-   $oligo_options .= " -return occ,mseq,freq,proba,rank,zscore,ratio";
-   $oligo_options .= " ".$noov;
-   
-   my $oligo_suffix = "_oligos";
-   if ($markov) {
-       $oligo_suffix .= "_mkv".$markov_order;
-   } elsif ($background) {
-       $oligo_suffix .= "_bg_".$background;
-   }
-   $oligo_suffix .= "_${oligo_len}nt";
-   $oligo_suffix .= $strands;
-   $oligo_suffix .= &ThresholdSuffix();
-#   $oligo_suffix .= "_sig".$lth{occ_sig};
-#   $oligo_suffix .= "_thmsf".$lth{ms_freq} if (&IsReal($lth{ms_freq}));
-#   $oligo_suffix .= "_thmssig".$lth{ms_sig} if (&IsReal($lth{ms_sig}));
-   $oligo_suffix .= $noov;
-   
-   $oligo_file = "$family_name/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix;    
-   $command = "oligo-analysis -i $family{$family_name}->{input_seq_file} -format $seq_format -o $oligo_file $oligo_options";
+  } else {
+    ### Pre-calculated expected frequency files
+    $oligo_options .= " -bg ".$background;
+    $oligo_options .= " -org ".$organism_name if ($organism_name);
+  }
+  $oligo_options .= " -return occ,mseq,freq,proba,rank,zscore,ratio";
+  $oligo_options .= " ".$noov;
 
-   return ($command, $oligo_file, $oligo_suffix, $oligo_options);
+  my $oligo_suffix = "_oligos";
+  if ($markov) {
+    $oligo_suffix .= "_mkv".$markov_order;
+  } elsif ($background) {
+    $oligo_suffix .= "_bg_".$background;
+  }
+  $oligo_suffix .= "_${oligo_len}nt";
+  $oligo_suffix .= $strands;
+  $oligo_suffix .= &ThresholdSuffix();
+  #   $oligo_suffix .= "_sig".$lth{occ_sig};
+  #   $oligo_suffix .= "_thmsf".$lth{ms_freq} if (&IsReal($lth{ms_freq}));
+  #   $oligo_suffix .= "_thmssig".$lth{ms_sig} if (&IsReal($lth{ms_sig}));
+  $oligo_suffix .= $noov;
+
+  $oligo_file = "$family_name/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix;    
+  $command = "oligo-analysis -i $family{$family_name}->{input_seq_file} -format $seq_format -o $oligo_file $oligo_options";
+
+  return ($command, $oligo_file, $oligo_suffix, $oligo_options);
 }
 
 
@@ -1421,7 +1435,7 @@ sub MergeOligoLengths {
   &RSAT::message::TimeWarn("Merging oligonucleotides for family ".$family_name,
 			   "min len: ".$min_oligo_len,
 			   "max len:".$max_oligo_len,
-			   $family{$family_name}->{oligo_file}) if ($verbose >= 0);
+			   $family{$family_name}->{oligo_file}) if ($verbose >= 2);
   my $dir = "${family_name}/oligos_${family_name}";
 
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
@@ -2471,7 +2485,7 @@ sub ReadMatrices {
 	$matrix->calcInformation();
 	#	  if ($@) {
 	#	    &RSAT::message::Warning("Matrix file does no contain a valid matrix. Skipped.", $program, $matrix_file) if ($verbose >= 2);
-	#	    &RSAT::message::Debug(join "\n", $@) if ($verbose >= 0);
+	#	    &RSAT::message::Debug(join "\n", $@) if ($verbose >= 10);
 	#	    return(undef);
 	#	  } else {
 	#	    return($matrix);
@@ -2621,9 +2635,9 @@ sub IndexPatterns {
 	@sorted_patterns = sort { $score{$b} <=> $score{$a} } @patterns;
 	$table[$row][$col] .= &LinkToFile($family_dir, $family_name, $base);
 #	$table[$row][$col] .= "<a href=".$base.$family_dir.">".$family_name."</a>\n";
-	$table[$row][$col] .= &LinkToFile($pattern_dir, $type, $base);
+	$table[$row][$col] .= &LinkToFile($pattern_dir, "dir", $base);
 #	$table[$row][$col] .= "<a href=".$base.$pattern_dir.">[dir]</a>\n";
-	$table[$row][$col] .= &LinkToFile($pattern_file, "tab", $base);
+	$table[$row][$col] .= &LinkToFile($pattern_file, $type, $base);
 #	$table[$row][$col] .= "<a href=".$base.$pattern_file.">[".$type."]</a>\n";
 #	$table[$row][$col] .= "<a href=".$base.$pattern_file.">[patt]</a>\n";
 	$table[$row][$col] .= &LinkToFile($assembly_file, "asmb", $base);
@@ -2882,26 +2896,45 @@ sub CheckParameters {
 
 }
 
+
+################################################################
+## Define background model files
+sub define_bg_model_files {
+  ## Directory for BG models has to be defined relative to the output directory
+  #  $dir{bg_models} = $dir{output}."/bg_models";
+  $dir{bg_models} = "bg_models";
+  chdir($dir{output});
+  &RSAT::util::CheckOutDir($dir{bg_models});
+  &RSAT::message::TimeWarn("Background model directory", $dir{bg_models}) if ($main::verbose >= 1);
+
+  ## Define model files for oligo-analysis
+  for my $oligo_len ($min_oligo_len..$max_oligo_len) {
+    $bg_model_file{"oligos_".$oligo_len."nt"} = $dir{bg_models}."/bg_oligos_".$oligo_len."nt".${strands}.${noov}.".tab";
+  }
+}
+
 ################################################################
 ## Compute background models from a set of background sequences
 ## specified with the option -bg_seq
 sub ComputeBG {
   chdir($dir{main});
   &RSAT::message::TimeWarn("Computing background model from background sequence file") if ($main::verbose >= 1);
-#  $dir{bg_models} = $dir{output}."/bg_models/";
-  $dir{bg_models} = "bg_models";
-  &RSAT::util::CheckOutDir($dir{bg_models});
-  &RSAT::message::TimeWarn("Background model directory", $dir{bg_models}) if ($main::verbose >= 1);
-  &ComputeOligoBG();
+  &compute_bg_oligo();
+  &compute_bg_meme();
   chdir($dir{output});
 }
 
+
+################################################################
 ## Compute background models for oligo-analysis
-sub ComputeOligoBG {
+sub compute_bg_oligo {
+  ## Tip: the bg sequence file is defined relative to the main
+  ## directory, but the bg model files must be defined relative to the
+  ## output directory.
+  chdir($dir{main}); 
   for my $oligo_len ($min_oligo_len..$max_oligo_len) {
     &RSAT::message::TimeWarn("\tComputing background model for oligos", $oligo_len."nt") if ($main::verbose >= 1);
     my $cmd = "";
-    $bg_model_file{"oligos_".$oligo_len."nt"} = $dir{bg_models}."/bg_oligos_".$oligo_len."nt".${strands}.${noov}.".tab";
     if ($bg_seq_file =~ /.gz$/) {
       $cmd .= "gunzip -c ".$bg_seq_file;
     } else {
@@ -2909,9 +2942,31 @@ sub ComputeOligoBG {
     }
     $cmd .= " | count-words -v 1 -nogrouprc $strands $noov ";
     $cmd .= " -l ".$oligo_len;
-    $cmd .= " -o ".$bg_model_file{"oligos_".$oligo_len."nt"};
+    $cmd .= " -o ".$dir{output}."/".$bg_model_file{"oligos_".$oligo_len."nt"};
     &doit($cmd, $dry_run, $die_on_error, $verbose);
   }
+  chdir($dir{output});
+}
+
+################################################################
+## Compute background model for MEME
+sub compute_bg_meme {
+  ## Tip: the bg sequence file is defined relative to the main
+  ## directory, but the bg model files must be defined relative to the
+  ## output directory.
+  chdir($dir{main}); 
+  &RSAT::message::TimeWarn("\tComputing background model for MEME, Markov order", $markov) if ($main::verbose >= 1);
+  my $cmd = "";
+  if ($bg_seq_file =~ /.gz$/) {
+    $cmd .= "gunzip -c ".$bg_seq_file;
+  } else {
+    $cmd .= "cat ".$bg_seq_file;
+  }
+  $cmd .= " | count-words -v 1 -nogrouprc $strands $noov ";
+  $cmd .= " -l ".$oligo_len;
+  $cmd .= " -o ".$dir{output}."/".$bg_model_file{"oligos_".$oligo_len."nt"};
+  &doit($cmd, $dry_run, $die_on_error, $verbose);
+  chdir($dir{output});
 }
 
 
@@ -3780,6 +3835,7 @@ sub ReadArguments {
       ### File containing sequences used to estimate the background model
     } elsif ($ARGV[$a] eq "-bg_seq") {
       $bg_seq_file = $ARGV[$a+1];
+      &RSAT::error::FatalError("Background model file does not exists", $bg_model_file) unless (-e $bg_seq_file);
 
       ### stop after some data sets
     } elsif ($ARGV[$a] eq "-last") {
@@ -5036,7 +5092,8 @@ sub SigDistrib {
 	$fps_icum += $fps{$score}; $fps_icum{$score} = $fps_icum;
 	$E_ppf{$score} = 10**(-$score);
 
-	&RSAT::message::Debug("distrib", $score, $pps{$score}, $pps_icum, $fps{$score}, $fps_icum, $E_ppf{$score}) if ($main::verbose >= 0);
+	&RSAT::message::Debug("distrib", $score, $pps{$score}, $pps_icum, $fps{$score}, $fps_icum, $E_ppf{$score}) 
+	  if ($main::verbose >= 5);
 	$E_ffs{$score} = 1- &poisson(0, $E_ppf{$score});
       }
 
