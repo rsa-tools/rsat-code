@@ -38,6 +38,7 @@ rsat_img_format=png
 CLUSTER_QUEUE=
 BATCH_MAIL=
 QSUB_MANAGER=
+QSUB_OPTIONS=
 NODES=
 
 ################################################################
