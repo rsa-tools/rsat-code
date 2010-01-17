@@ -940,9 +940,11 @@ void run_sampler(vector<string> &raw_sequences, Sequences &sequences, Markov &ma
             for (int m = 0; m < (int) all_results.size(); m++)
                 sites = mask_motif(sites, all_results[m].motif);
 
+            VERBOSE2("starting [find_one_motif]");
             result = find_one_motif(raw_sequences, sequences, sites, markov, params);
             result.l = l;
-            
+            VERBOSE2("end [find_one_motif]");
+
             // print_motif(result.motif, raw_sequences, sequences, result.l, result.ic, result.llr, params.rc);
             if (params.collect)
             {
