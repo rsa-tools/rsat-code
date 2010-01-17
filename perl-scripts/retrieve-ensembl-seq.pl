@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.67 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.68 2010/01/17 16:24:51 oly Exp $
 #
 # Time-stamp
 #
@@ -798,7 +798,7 @@ sub Main {
 	    &RSAT::message::Info ("Coding region start: $coding_region_start") if ($main::verbose >= 2);
 	    &RSAT::message::Info ("Coding region end: $coding_region_end") if ($main::verbose >= 2);
 	} else {
-	    &RSAT::message::Warning ("Gene $gene_id - transcript $transcript_id has no coding region");
+	    &RSAT::message::Warning ("Gene $gene_id - transcript $transcript_id has no coding region") unless ($feattype eq "mrna");
 	}
 
 	# Exons
@@ -1690,8 +1690,11 @@ OPTIONS
 		repeated regions are annotated for some genomes only.
 
         -alltranscripts
-                Get sequences for all transcript of genes.
-                Use purge-sequence if you do pattern discovery afterwards
+                Get sequences for all transcripts of genes.
+                Use -uniqseqs if you do pattern discovery afterwards
+
+        -uniqseqs
+                With -alltranscripts, returns only non-redondant sequences
 
         -firstintron
                 With feattype intron, get only first intron sequence
@@ -1752,6 +1755,7 @@ retrieve-seq options
 -maskcoding     all coding sequence is replaced by Ns in the retrieved sequence
 -rm		Use the repeat masked version of the genome.
 -alltranscripts get sequences for all transcript of genes
+-uniqseqs       with -alltranscripts, returns only non-redondant sequences
 -firstintron    with feattype intron, get only first intron sequence
 -noncoding      with feattype exon, get only non-coding (part of) exons
 -chrom          chromosome name or number (to use with -left and -right)
