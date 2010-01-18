@@ -63,7 +63,7 @@ print $query->start_multipart_form(-action=>"info-gibbs.cgi");
 print $query->checkbox(-name=>'add_rc',
 		       -checked=>$default{add_rc},
 		       -label=>'');
-print "<a href=\"help.gibbs.html#add_rc\">add reverse complement</a>\n";
+print "<a href=\"help.info-gibbs.html#strand\">search both strands</a>\n";
 
 
 print "<hr width=\"550\" align=\"left\"></hr>\n";
@@ -234,7 +234,6 @@ print "</B></TD>\n";
 print $query->end_form;
 
 
-#print "<TD><B><A HREF='demo.gibbs.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.info-gibbs.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='tutorials/tut_info-gibbs.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:defrance\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";

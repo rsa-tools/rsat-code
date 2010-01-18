@@ -20,7 +20,7 @@
         info-gibbs
     </p>
     <p>
-        2008 by Matthieu Defrance
+        2009 by Matthieu Defrance
     </p>
 </blockquote>
 
@@ -28,6 +28,12 @@
 <blockquote>
     info-gibbs is a pattern discovery software based on a Gibbs sampling strategy.
     Given a set of sequences, a motif length and a background model it searches for motifs (PSSMs) that have the best relative entropy (information content).
+</blockquote>
+
+
+<h4>Reference <a target='_blank' href=\"http://www.ncbi.nlm.nih.gov/pubmed/19689955\">Defrance & van Helden, Bioinformatics 2009</a></h4>
+<blockquote>
+Defrance M. and van Helden J. info-gibbs: a motif discovery algorithm that directly optimizes information content during sampling, Bioinformatics. 2009;25:2715-2722.
 </blockquote>
 
 <h4>Options</h4>
@@ -49,8 +55,8 @@ Only A, C, G, and T residues are accepted. oligomers that contain undefined (N) 
 When checked, large duplicated regions (&gt;= 40 bp alignment with less than 3 mismatches) are filtered out before analysis. Purging is essential for any pattern discovery process, to avoid a bias due to non-independence of sequences. Purging is performed with the programs <tt>mkvtree</tt> and <tt>vmatch</tt> developed by <a href="http://www.zbh.uni-hamburg.de/kurtz">Stefan Kurtz</a> (<a href="mailto:kurtz@zbh.uni-hamburg.de">kurtz@zbh.uni-hamburg.de</a>).
 </p>
 <p>
-<a name="add_rc" id="add_rc"></a> <b>add reverse complement:</b> (single or both strands)<br />
-By selecting "add reverse complement", the occurrences of the motif are searched on both strands. This allows to detect elements which act in an orientation-insensitive way (as is generally the case for yeast upstream elements).
+<a name="strand" id="add_rc"></a> <b>Search both strands:</b> (single or both strands)<br />
+By selecting "search both strands", the occurrences of the motif are searched on both strands. This allows to detect elements which act in an orientation-insensitive way (as is generally the case for yeast upstream elements).
 </p>
 
 <p>
