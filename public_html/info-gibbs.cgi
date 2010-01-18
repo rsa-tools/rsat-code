@@ -49,15 +49,13 @@ $query = new CGI;
 $parameters = '';
 
 ### sequence file ####
-($sequence_file,$sequence_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>1);
+($sequence_file,$sequence_format) = &GetSequenceFile("fasta", no_format=>1, add_rc=>0);
 $parameters .= "-i $sequence_file";
 push @result_files, ("input sequence",$sequence_file);
 
-
-#### add reverse complement
+#### strand
 if (lc($query->param("add_rc")) eq "on") {
     $add_rc = 1;
-    $convert_seq_options .= "-addrc ";
     $parameters .= ' --strand=+-';
 } else {
     $add_rc = 0;
