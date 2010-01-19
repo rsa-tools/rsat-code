@@ -435,11 +435,58 @@ sub _readFromInfoGibbsFile {
       next unless ($line =~ /\S/); ## Skip empty lines
       chomp($line); ## Suppress newline
       $line =~ s/\r//; ## Suppress carriage return
-      $line =~ s/(^.)\|/$1\t\|/; ## Add missing tab after residue 
-       if ($line =~ /^; seq/ ) {
-      	  $no_motif = 0;
-         }
+      $line =~ s/(^.)\|/$1\t\|/; ## Add missing tab after residue
+      
+      $line_aux=$line;
+      @aux_line=split (/ +/,$line_aux);
 
+      if ($line =~ /^; random see/ ) {
+	  $matrix->force_attribute("random_seed", pop (@aux_line) );
+	  next;
+      }
+      elsif ($line =~ /^; number of runs/ ){
+	  $matrix->set_attribute("num_runs", pop (@aux_line) );
+	  next;
+      }          
+      elsif ($line =~ /^; number of iterations/){
+	  $matrix->set_attribute("num_iterations", pop (@aux_line) ) ;
+	  next;
+      }
+      elsif ($line =~ /^; sequences/){
+	  $matrix->set_attribute("nb_seq" , pop (@aux_line) );  
+	  next;
+      }
+      elsif ($line =~ /^; total size in bp/){
+	  $matrix->set_attribute("total_size_bp",  pop (@aux_line) ) ;
+	  next;
+      }
+      elsif ($line =~ /^; expected motif occurrences/){
+	  $matrix->set_attribute("exp_motif_occ",  pop (@aux_line) ) ;  
+	  next;
+      }elsif ($line =~ /^; avg.llr/){
+	  $matrix->set_attribute("avg_llr", pop (@aux_line) ) ;  
+	  next;
+      }elsif ($line =~ /^; avg.ic/){
+	  $matrix->set_attribute("avg_ic",  pop (@aux_line) ) ;  
+	  next;
+      } 
+      elsif ($line =~ /^; log likelihood ratio/){
+	  $matrix->set_attribute("llr",  pop (@aux_line) ) ;  
+	  next;
+      } 
+      elsif ($line =~ /^; information content/){
+	  $matrix->set_attribute("ic",  pop (@aux_line) ) ;  
+	  next;
+      }
+      elsif ($line =~ /^; seq/ ) {
+      	  $no_motif = 0;
+      }
+      elsif( ($line =~ /^;.+-i/) ){
+	  $line =~ s/; //;
+	  $matrix->set_attribute("command", $line );
+	  next;
+      }
+      
       
       if ($line =~ /^; seq	strand	pos	site/ ){
 	  &RSAT::message::Info("Reading sequences from infogibbs ") if ($main::verbose >= 5);
