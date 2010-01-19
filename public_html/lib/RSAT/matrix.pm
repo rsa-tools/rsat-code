@@ -3427,11 +3427,15 @@ sub to_infogibbs{
     $to_print .="; (seq and pos start at 1) "."\n";
     $to_print .=join ("\t","; ", "seq", "strand","pos","site","\n");
 
-    foreach my $s (0..$#site_sequences) {
-	my $sequence = $site_sequences[$s];
-	$to_print .= sprintf "; %4d\t%5s\t%-6d\t%s\n", $s, "+", $col_width , $sequence;
+    if (@site_sequences){
+	foreach my $s (0..$#site_sequences) {
+	    my $sequence = $site_sequences[$s];
+	    $to_print .= sprintf "; %4d\t%5s\t%-6d\t%s\n", $s, "+", $col_width , $sequence;
+	}
     }
-
+    else {
+	$to_print.=";\n";
+    }
 
     ################################################################
     ## Print the matrix
