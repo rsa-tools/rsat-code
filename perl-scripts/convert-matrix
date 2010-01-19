@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.93 2010/01/12 22:02:28 amedina Exp $
+# $Id: convert-matrix,v 1.94 2010/01/19 02:12:40 amedina Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -149,7 +149,8 @@ unless (scalar(@matrix_files >= 1)) {
 local %return_fields = ();
 unless (scalar(@return_fields)) {
     if ((lc($output_format ) eq "transfac") ||
-	(lc($output_format ) eq "consensus")) {
+	(lc($output_format ) eq "consensus") ||
+	(lc($output_format ) eq "infogibbs")) {
 	push @return_fields, "counts";
     } else {
 	&RSAT::error::FatalError("You should define at least one return type");
@@ -701,7 +702,7 @@ INPUT/OUTPUT FORMATS
         Format used in the TRANSFAC database;
         (http://www.gene-regulation.com/pub/databases.html)
 
-    infogibbs (input)
+    infogibbs (input/output)
         Output file from infogibbs.
 
         infogibbs is a gibbs sampler based on the optimization of the
