@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.147 2010/01/20 13:24:36 morgane Exp $
+# $Id: matrix-scan,v 1.148 2010/01/20 14:50:30 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -669,6 +669,15 @@ package main;
     ## matrix-scan. If it is supported on this machine, use it !
     $quick_cmd = `which matrix-scan-quick`;
 #    $quick_cmd = 0; ## For debugging and time comparison
+	if ($quick_cmd) {
+		## In addition, we want to check if the command actually works
+		`matrix-scan-quick -h`;
+		if ($?) {
+    		&RSAT::message::Warning("matrix-scan-quick is installed but not working. Will use the slower version instead.");
+    		$quick_cmd = 0;
+		}
+	}
+	
     unless ($quick_cmd) {
       $calc_fields{sites} = 1; # if matrix-scan-quick is not supported, calculate sites (slower)
     }
@@ -1593,19 +1602,41 @@ package main;
     %cum_sum =();
 
     ## use matrix-scan-quick to calculate the observed distrib:
-    ## pbs to solve : bg in Inclusive format + matrix in tab
-    ## will need to write to tmp dir
     if ($quick_cmd) {
       foreach my $matrix (@matrices) {
 	my $matrix_name = $matrix->get_attribute("name");
+	my $matrix_format = $matrix->get_attribute("program");
+	my $matrix_quick_file = $matrix->get_attribute("file");
+	
+	## matrix format should be tab
+	if ($matrix_format ne "tab") {
+		my $tmp_file_name = sprintf "convert-matrix.%s", &AlphaDate();
+		$matrix_quick_file =  $TMP."/".$tmp_file_name.".tab";
+		my $convert_matrix_cmd = 
+		"convert-matrix -from ".$matrix_format." -to tab -i ".$matrix->get_attribute("file")." -o ".$matrix_quick_file; 
+		&RSAT::message::Info("Converting matrix to tab format: $convert_matrix_cmd\n") if ($main::verbose >= 5);
+		`$convert_matrix_cmd`;
+	}
+	
+	## background format should be Inclusive (=motifsampler)
+	if (defined($main::infile{bg})) {
+		if ($bg_in_format ne "motifsampler"){
+			my $tmp_file_name = sprintf "convert-background-model.%s", &AlphaDate();
+			$bg_quick_file =  $TMP."/".$tmp_file_name.".ms";
+			my $convert_bg_cmd = 
+			"convert-background-model -from ".$bg_in_format." -to motifsampler -i ".$main::infile{bg}." -o ".$bg_quick_file; 
+			&RSAT::message::Info("Converting background to motifsampler format: $convert_bg_cmd\n") if ($main::verbose >= 5);
+			`$convert_bg_cmd`;
+		}
+	}
 
 	##prepare matrix-scan-quick cmd
 	my $quick_cmd = "";
 	$quick_cmd = "matrix-scan-quick";
 	$quick_cmd .= " -i ".$main::infile{input};
     	$quick_cmd .= " -decimals ".$decimals;
-    	$quick_cmd .= " -m ".$matrix->get_attribute("file");
-    	$quick_cmd .= " -bgfile ".$main::infile{bg} if (defined($main::infile{bg}));
+    	$quick_cmd .= " -m ".$matrix_quick_file;
+    	$quick_cmd .= " -bgfile ".$bg_quick_file if (defined($main::infile{bg})) ;
     	$quick_cmd .= " -return distrib";
     	if ($main::both_strands) {
 	  $quick_cmd .= " -2str";
