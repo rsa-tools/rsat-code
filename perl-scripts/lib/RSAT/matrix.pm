@@ -3344,7 +3344,7 @@ sub to_infogibbs{
     
     my @site_sequences = $self->get_attribute("sequences");
 
-    my $command =  $self->get_attribute("command") || "NA";
+    my $command =  $self->get_attribute("command") || "no original command available";
     my $date =$main::start_time;
     my $motif_ID =  $self->get_attribute("accession") ||  $self->get_attribute("AC") || $self->get_attribute("name");
     my $random_seed= $self->get_attribute("random_seed") || "NA";
