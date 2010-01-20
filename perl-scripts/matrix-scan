@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.146 2009/12/03 15:35:20 jvanheld Exp $
+# $Id: matrix-scan,v 1.147 2010/01/20 13:24:36 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1612,6 +1612,7 @@ package main;
 	} else {
 	  $quick_cmd .= " -1str";
 	}
+
     	##run matrix-scan-quick cmd
     	&RSAT::message::Info("Using matrix-scan-quick: $quick_cmd\n") if ($main::verbose >= 2);
     	my $quick_distrib = `$quick_cmd`;
@@ -1624,6 +1625,10 @@ package main;
 	  $line = $1;
 	  chomp($line);
 	  my @field = split(/\t/,$line);
+	  ## matrix-scan-quick returns all possible score values
+	  ## filter out the scores for which occ == 0	  
+	  next if ($field[1] == 0);
+	  
 	  my $score = sprintf ("%.${decimals}f",$field[0]);
 	  &RSAT::message::Info("$score:$field[1]:$field[2]:$field[3]:$field[4]:") if ($main::verbose >= 5);
 	  $score_distrib->{$matrix_name}->{$score}->{occ}=$field[1];
