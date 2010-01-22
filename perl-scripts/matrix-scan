@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.148 2010/01/20 14:50:30 morgane Exp $
+# $Id: matrix-scan,v 1.149 2010/01/22 09:19:42 morgane Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1609,22 +1609,25 @@ package main;
 	my $matrix_quick_file = $matrix->get_attribute("file");
 	
 	## matrix format should be tab
-	if ($matrix_format ne "tab") {
+	if (($matrix_format ne "tab")||($matrix_format ne "infogibbs")) {
 		my $tmp_file_name = sprintf "convert-matrix.%s", &AlphaDate();
 		$matrix_quick_file =  $TMP."/".$tmp_file_name.".tab";
 		my $convert_matrix_cmd = 
-		"convert-matrix -from ".$matrix_format." -to tab -i ".$matrix->get_attribute("file")." -o ".$matrix_quick_file; 
+		"convert-matrix -from ".$matrix_format." -to tab ".
+		" -i ".$matrix->get_attribute("file")." -o ".$matrix_quick_file.
+		" -p ".$pseudo_counts." -bg_pseudo ".$bg_pseudo." -decimals ".$decimals; 
 		&RSAT::message::Info("Converting matrix to tab format: $convert_matrix_cmd\n") if ($main::verbose >= 5);
 		`$convert_matrix_cmd`;
 	}
 	
+	## MORGANE: should save the bg-input into a file, otherwise matrix-scan-quick takes an equiprobable bg by default !!!
 	## background format should be Inclusive (=motifsampler)
 	if (defined($main::infile{bg})) {
 		if ($bg_in_format ne "motifsampler"){
 			my $tmp_file_name = sprintf "convert-background-model.%s", &AlphaDate();
 			$bg_quick_file =  $TMP."/".$tmp_file_name.".ms";
 			my $convert_bg_cmd = 
-			"convert-background-model -from ".$bg_in_format." -to motifsampler -i ".$main::infile{bg}." -o ".$bg_quick_file; 
+			"convert-background-model -from ".$bg_in_format." -to motifsampler -i ".$main::infile{bg}." -o ".$bg_quick_file." -bg_pseudo ".$bg_pseudo; 
 			&RSAT::message::Info("Converting background to motifsampler format: $convert_bg_cmd\n") if ($main::verbose >= 5);
 			`$convert_bg_cmd`;
 		}
@@ -1658,14 +1661,14 @@ package main;
 	  my @field = split(/\t/,$line);
 	  ## matrix-scan-quick returns all possible score values
 	  ## filter out the scores for which occ == 0	  
-	  next if ($field[1] == 0);
-	  
-	  my $score = sprintf ("%.${decimals}f",$field[0]);
-	  &RSAT::message::Info("$score:$field[1]:$field[2]:$field[3]:$field[4]:") if ($main::verbose >= 5);
-	  $score_distrib->{$matrix_name}->{$score}->{occ}=$field[1];
-	  $score_distrib->{$matrix_name}->{$score}->{occ_cum}=$field[2];
-	  $score_distrib->{$matrix_name}->{$score}->{inv_cum} = $field[3];
-	  $score_distrib->{$matrix_name}->{$score}->{score} = $score; ## This is just a trick to filter the distrib on score thresholds
+	  unless ($field[1] == 0) {
+	  	my $score = sprintf ("%.${decimals}f",$field[0]);
+	  	&RSAT::message::Info("$score:$field[1]:$field[2]:$field[3]:$field[4]:") if ($main::verbose >= 5);
+	  	$score_distrib->{$matrix_name}->{$score}->{occ}=$field[1];
+	  	$score_distrib->{$matrix_name}->{$score}->{occ_cum}=$field[2];
+	  	$score_distrib->{$matrix_name}->{$score}->{inv_cum} = $field[3];
+	  	$score_distrib->{$matrix_name}->{$score}->{score} = $score; ## This is just a trick to filter the distrib on score thresholds
+	  }
 	  $quick_distrib =~ s/$line\n//;
     	}
     	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
