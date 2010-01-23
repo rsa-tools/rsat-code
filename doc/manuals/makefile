@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: makefile,v 1.17 2009/12/09 22:32:27 jvanheld Exp $
+# $Id: makefile,v 1.18 2010/01/23 08:10:21 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 15:13:34 jvanheld>
 #
@@ -43,25 +43,34 @@ usage:
 
 DOC=tutorial_shell_rsat
 it:
-	${MAKE} fullclean
-	${MAKE} ${DOC}.xdvi
-	${MAKE} tex_clean
+	@${MAKE} fullclean
+	@${MAKE} ${DOC}.xdvi
+	@${MAKE} tex_clean
 
 rsat_tutorial:
-	${MAKE} tutorial_shell_rsat.pdf
-	${MAKE} tex_clean
-
-neat_tutorial:
-	${MAKE} neat_tutorial.pdf
-	${MAKE} tex_clean
+	@${MAKE} tutorial_shell_rsat.pdf
+	@${MAKE} tex_clean
+	@echo tutorial_shell_rsat.pdf
 
 install_guide:
-	${MAKE} install_guide.pdf
-	${MAKE} tex_clean
+	@${MAKE} install_guide.pdf
+	@${MAKE} tex_clean
+	@echo install_guide.pdf
 
-web_server_guide:
-	${MAKE} rsat_web_server.pdf
-	${MAKE} tex_clean
+rsat_web_server:
+	@${MAKE} rsat_web_server.pdf
+	@${MAKE} tex_clean
+	@echo rsat_web_server.pdf
+
+neat_tutorial:
+	@${MAKE} neat_tutorial.pdf
+	@${MAKE} tex_clean
+	@echo neat_tutorial.pdf
+
+neat_web_server:
+	@${MAKE} neat_web_server.pdf
+	@${MAKE} tex_clean
+	@echo neat_web_server.pdf
 
 _publish:
 	@echo "${PUBLISH_TARGET}"
@@ -75,14 +84,14 @@ _publish:
 all_pdf: ${PDF_FILES}
 
 force_pdf: 
-	${MAKE} pdf_clean
-	${MAKE} all_pdf
+	@${MAKE} pdf_clean
+	@${MAKE} all_pdf
 
 all_ps: ${PS_FILES}
 
 force_ps: 
-	${MAKE} ps_clean
-	${MAKE} all_ps
+	@${MAKE} ps_clean
+	@${MAKE} all_ps
 
 all_view: ${VIEW_FILES}
 

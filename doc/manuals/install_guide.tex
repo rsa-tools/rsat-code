@@ -169,21 +169,17 @@ variable.
 if your shell is tcsh, add the following line to the \file{.cshrc}
 file in your home directory.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 setenv CVS_RSH ssh
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 
 If your shell is bash, add the following line to the \file{.bashrc}
 file in your home directory.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 export CVS_RSH=ssh
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 
 
@@ -193,11 +189,9 @@ The following command should be used the first time you retrieve the
 tools from the server (you need to replace \texttt{[mylogin]} by the
 login name you received when signing the \RSAT license).
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 cvs -d [mylogin]@cvs.bigre.ulb.ac.be:/cvs/rsat co rsa-tools
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 
 This will create a directory \file{rsa-tools} on your computer, and
@@ -211,12 +205,10 @@ Once the tools have been retrieved, you can obtain updates very
 easily. For this, you need to change your directory to the rsa-tools
 directory, and use the \texttt{cvs} command in the following way.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 cd rsa-tools
 cvs update -d
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 
 
@@ -228,11 +220,9 @@ distributed \texttt{tar} format.
 The \texttt{.tar.gz} file can be uncompressed with the command
 \program{tar}, which are part of the default unix installation.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 tar -xpzf rsa-tools_yyyymmdd.tar.gz
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 \chapter{Initializing \RSAT}
 
@@ -251,12 +241,10 @@ The distribution includes a series of make scripts which will
 facilitate this step. You just need go to the rsa-tools directory, and
 start the appropriate make file.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 cd $RSAT
 make -f makefiles/init_RSAT.mk init
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 
 
@@ -270,11 +258,9 @@ directory.
 
 Copy this file to create your own config file \file{RSAT\_config.props}.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 cp RSAT_config_default.props RSAT_config.props
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 
 You need to edit this file and specify the parameters of your local
@@ -290,12 +276,10 @@ count-words) are written in the C. The distribution only contains
 the sources of these tools, because the binaries are operating
 system-dependent. The programs can be compiled in a very easy way.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 cd ${RSAT}
 make -f makefiles/init_RSAT.mk compile_all
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 This will compile and install the following programs in the directory
 \file{\$RSAT/bin}. 
@@ -305,12 +289,10 @@ variable. For instance, if you have the system adminstrator
 privileges, you could install the compiled programs in the standard
 directory for compiled packages (\file{/usr/local/bin}).
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 cd ${RSAT}
 make -f makefiles/init_RSAT.mk compile_all BIN=/usr/local/bin
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 
 \begin{itemize}
@@ -364,8 +346,7 @@ MySQL client on your machine.
 
 To obtain BioPerl:
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 ## For this example, we install Bioperl and EnsEMBL libraries 
 ## in $RSAT/lib, but you can install it in some other place
 mkdir -p $RSAT/lib
@@ -379,15 +360,13 @@ cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl login
 cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl \
   checkout bioperl-live
 
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 %% (or cvs -d :pserver:cvs@code.open-bio.org:/home/repository/bioperl checkout -d bioperl-branch-1.4 -r branch-1-4 bioperl-live for older branch)
 
 To obtain EnsEMBL:
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 ## Login on the EnsEMBL CVS server
 cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl login
 ## (password is 'CVSUSER')
@@ -401,34 +380,29 @@ cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
 cvs -d :pserver:cvsuser@cvs.sanger.ac.uk:/cvsroot/ensembl \
   checkout -r branch-ensembl-56 ensembl-compara
 ## (you need to adapt the branch number, e.g. 56, as it updates).
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 Adapt the 3 following lines in the RSAT configuration file
 \file{RSAT\_config.props} to specify the actual path of the bioperl
 and ensembl libraries on your computer.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 ensembl=/home/rsat/rsa-tools/lib/ensembl/modules
 compara=/home/rsat/rsa-tools/lib/ensembl-compara/modules
 bioperl=/home/rsat/rsa-tools/lib/bioperl-live
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 You also need to define the URL of the Ensembl database in that
 configuration file:
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 ## EnsEMBL host
 ## Used by the EnsEMBL-accessing tools (retrieve-ensembl-seq,
 ## get-ensembl-genome).
 ## URL of the server for the EnsEMBL DB. By default, the
 ## main ensembl server is called, but a local server can be specified.
 ensembl_host=ensembldb.ensembl.org
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 Finally, you need to include the BioPerl and Ensembl librairies in the
 Perl module path (specified by the environment variable named
@@ -437,24 +411,20 @@ Perl module path (specified by the environment variable named
 If your shell is bash, add the following lines in the file
 \file{.bashrc} at the root of your account.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 export PERL5LIB=${PERL5LIB}:${RSAT}/lib/ensembl/modules
 export PERL5LIB=${PERL5LIB}:${RSAT}/lib/ensembl-compara/modules
 export PERL5LIB=${PERL5LIB}:${RSAT}/lib/ensembl-variation/modules
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 If your shell is tcsh or chs, add the following lines in the file
 \file{.cshrc} at the root of your account.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 setenv PERL5LIB ${PERL5LIB}:${RSAT}/lib/ensembl/modules
 setenv PERL5LIB ${PERL5LIB}:${RSAT}/lib/ensembl-compara/modules
 setenv PERL5LIB ${PERL5LIB}:${RSAT}/lib/ensembl-variation/modules
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 
 
@@ -494,21 +464,17 @@ the EnsEMBL web site
 From now on, you should be able to use the perl scripts from the
 command line. To test this, run:
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 random-seq -help
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 
 This should display the on-line help for the random sequence
 generator.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 random-seq -l 200 -r 4 -a a:t 0.3 c:g 0.2
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 Should generate a random sequence of 200 nucleotides, with approximate
 proportions of 60\% A/T and 40\% G/C.
@@ -527,11 +493,9 @@ modules.
 
 To test if these modules are available on your machine, type.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 feature-map -help
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 If the modules are available, you should see the help message of the
 program feature-map. If not, you will see an error message complaining
@@ -543,11 +507,9 @@ administrator to install the missing modules.
 From 2009 releases, the \RSAT distribution includes some Python
 scripts. To test that they are running correctly, you can try.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 random-motif  -l 10 -c 0.85 -N 20
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 This command will generate a 20-columns position-specific scoring
 matrix (PSSM) with 85\% conservation of one residue in each column.
@@ -557,11 +519,9 @@ matrix (PSSM) with 85\% conservation of one residue in each column.
 You can test the correct installation of the C programs with the
 following command.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 random-seq -l 1000 -a a:t 0.4 c:g 0.1 | count-words -l 2 -v 1 -2str
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 The first program (\program{random-seq}) is a Perl script, which
 generates a random sequence. The output is directly piped to the C
@@ -573,11 +533,9 @@ occurrences of each dinucleotide.
 We will now test if the genomes are correctly installed. You can
 obtain the list of supported organisms with the command:
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 supported-organisms
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 
 If this command returns no result, it means that genomes were either
@@ -589,23 +547,19 @@ Once you can obtain the list of installed organisms, try to retrieve
 some upstream sequences. You can first read the list of options for the
 \program{retrieve-seq} program.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 retrieve-seq -help
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 
 Select an organism (say \org{Saccharomyces cerevisiae}), and
 retrieve all the start codons with the following options :
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 retrieve-seq -org Saccharomyces_cerevisiae \
         -type upstream -from 0 -to +2 -all \
         -format wc -nocomment
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 
 This should return a set of 3 bp sequences, mostly ATG (in the case of
@@ -713,42 +667,57 @@ distribution site.
 To compile the program \program{floydwarshall} located in the
 \file{contrib/floydwarshall} directory of \RSAT, use this command :
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 gcc $RSAT/contrib/floydwarshall/floydwarshall.c -o $RSAT/bin/floydwarshall
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 
 In addition, the contributed programs REA and kWalks need to be installed.
 
 To install kWalks, type:
 
-\begin{footnotesize}
-\begin{verbatim}
-cd $RSAT/contrib/kwalks
-tar xzvf kwalks.tgz
-cd src
-make
-\end{verbatim}
-\end{footnotesize}
 
+\begin{lstlisting}
+cd $RSAT/contrib/kwalks; 
+tar xzvf kwalks.tgz; 
+cd src; 
+make clean; make
+\end{lstlisting}
 
-The KWALKS\_ROOT variable in the RSAT config file should point to
-\$RSAT/contrib/kwalks/bin
+You can test taht the compilation worked by running the following
+command.
+
+\begin{lstlisting}
+$RSAT/contrib/kwalks/bin/lkwalk
+\end{lstlisting}
+
+This should display the help message of \program{lkwalk}.
+
+Check that the KWALKS\_ROOT variable in the RSAT config file
+(\file{\$RSAT/RSAT\_config.props}) points to the correct path (it
+should be the absolute path of \file{\$RSAT/contrib/kwalks/bin/}).
 
 To install REA, type:
 
-\begin{footnotesize}
-\begin{verbatim}
-cd $RSAT/contrib/REA
-tar xzvf REA.tgz
+\begin{lstlisting}
+cd $RSAT/contrib/REA; 
+tar xzvf REA.tgz; 
+rm -f *.o; 
 make
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
-The REA\_ROOT variable in the RSAT config file should point to
-\$RSAT/contrib/REA
+You can test taht the compilation worked by running the following
+command.
+
+\begin{lstlisting}
+$RSAT/contrib/REA/REA
+\end{lstlisting}
+
+This should display the help message of \program{REA}.
+
+Check that the REA\_ROOT variable in the RSAT config file
+(\file{\$RSAT/RSAT\_config.props}) points to the correct path (it
+should be the absolute path of \file{\$RSAT/contrib/REA}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Parsing and installing additional genomes

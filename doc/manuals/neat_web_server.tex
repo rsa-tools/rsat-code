@@ -76,8 +76,7 @@ PHP5 can also be installed manually from the PHP website (\url{http://www.php.ne
 \subsubsection{Modification of php.ini}
 In order for the server to work with \neat, you have to edit the file \file{php.ini} which is the main configuration file of PHP. Depending on your PHP installation, this file might be in different directory. In computers running Suse 10.3, this file is in the \url{/etc/php5/apache2/} directory. In this file, you must modify the following fields accordingly.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 soap.wsdl_cache_enabled=0
 max_execution_time = 2400
 max_input_time = 6000	;
@@ -87,24 +86,20 @@ post_max_size = 300M
 upload_max_filesize = 200M
 default_socket_timeout = 3000
 upload_tmp_dir = "/tmp/php/"
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 Pay attention to the location of php5 extension libraries. Indicate the correct directory, e.g.
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 extension_dir=/usr/lib/php5/extensions
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
-You must change permissions so that the directory \url{/tmp/php/} for temporary upload is writable by eveverybody. To this please type
+You must change permissions so that the directory \url{/tmp/php/} for
+temporary upload is writable by eveverybody. To do this, type:
 
-\begin{footnotesize}
-\begin{verbatim}
-mkdir /tmp/php
-chmod 777 php
-\end{verbatim}
-\end{footnotesize}
+\begin{lstlisting}
+mkdir -p /tmp/php; 
+chmod 777 /tmp/php
+\end{lstlisting}
 
 
 \subsection{Tomcat}
@@ -113,26 +108,28 @@ A part of \neat is using axis web services, JSP and Java servlet pages and needs
 or an equivalent servlet engine to run.
 Tomcat can be easily installed on SUSE with yast and is
 usually located in \file{/usr/share/tomcat} after installation.
-On MacOS, it is already installed by default.
-Make sure to install at least Tomcat version 5.
-We noticed however that Tomcat version 6 is more stable.
-We will refer from now on to the Tomcat root directory as \$CATALINA\_HOME.
+
+%% On MacOS, it is already installed by default.
+On MaxOS, you need to install TomCat
+(\url{http://tomcat.apache.org/}).
+
+Make sure to install at least Tomcat version 5.  We noticed however
+that Tomcat version 6 is more stable.  We will refer from now on to
+the Tomcat root directory as \$CATALINA\_HOME.
 
 \subsubsection{Configuration of Tomcat}
 If you would like to use the Tomcat manager, make sure to configure the file
 tomcat-users.xml located in \$CATALINA\_HOME/conf.
 
 Add a manager role with a special login and password, e.g.
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 <tomcat-users>
   <role rolename="tomcat"/>
   <role rolename="manager"/>
   <user username="tomcat" password="tomcat" roles="tomcat"/>
   <user username="metheadmin" password="mypassword" roles="manager"/>
 </tomcat-users>
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 Make sure that tomcat-users.xml cannot be read by anyone else than tomcat or root.\\
 
@@ -166,8 +163,7 @@ To install and configure mod\_jk, you can follow the steps below:
 \item In the Apache configuration folder
 (e.g. \file{/etc/apache2/conf.d}), add two configuration files: workers.properties and tomcat.conf
 \item Content of workers.properties
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
   # Define 1 real worker using ajp13
     # this coud be al list in the format
     # worker.list=worker1, worker2, worker3, worker4
@@ -176,11 +172,9 @@ To install and configure mod\_jk, you can follow the steps below:
     worker.worker1.type=ajp13
     worker.worker1.host=localhost
     worker.worker1.port=8009
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 \item Content of tomcat.conf
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
     # Update this path to match your modules location
     LoadModule jk_module /usr/lib/apache2/mod_jk.so
     # Where to find workers.properties
@@ -197,8 +191,7 @@ To install and configure mod\_jk, you can follow the steps below:
     # Send everything for context to worker named worker1 (ajp13)
     JKMount /be.ac.ulb.bigre.graphtools.server/* worker1
     JKMount /metabolicpathfinding/* worker1
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 \item Reload Apache (on SUSE \file{/etc/init.d/apache2} reload).
 \end{enumerate}
 
@@ -326,14 +319,12 @@ allow all users on your machine (but not from outside) to access
 all postgres databases.
 This can be achieved by modifying the pg\_hba.conf file
 located in the postgres home directory. Paste the following in this file:
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 host    all         all         127.0.0.1/32          trust
 # IPv6 local connections:
 host    all         all         ::1/128               trust
 host    all         all         127.0.0.1             trust
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 For more details on postgres configuration, check the postgres manual
 on the pg\_hba.conf and pg\_ident.conf files.
 
@@ -446,19 +437,15 @@ First, edit the file \file{RSATWS.wsdl} located in the
 \file{\$RSAT/public\_html/web\_services/} directory.
 At the very end of the file, the line
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
  <soap:address location="http://rsat.bigre.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 must be replaced by
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
  <soap:address location="url_of_the_cgi_file_on_your_server"/>
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 The URL can be \file{http://127.0.0.1/rsa-tools/web\_services/RSATWS.cgi}.
 
@@ -466,23 +453,19 @@ The URL can be \file{http://127.0.0.1/rsa-tools/web\_services/RSATWS.cgi}.
 
 Edit the \file{RSAT\_config.props} present in the main RSAT directory and edit the following fields so that they correspond to your local configuration.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 neat_supported=1
 neat_ws=web link to the WSDL file on your computer
 (e.g. http://127.0.0.1/rsa-tools/web_services/RSATWS.wsdl)
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 \subsubsection{Change permissions of the temporary files and log files directories}
 
 The directories \file{\$RSAT/public\_html/logs/} and \file{\$RSAT/public\_html/tmp/} must be writable. So, change the permissions
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 chmod 777 \$RSAT/public\_html/logs/
 chmod 777 \$RSAT/public\_html/tmp/
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 \end{document}
