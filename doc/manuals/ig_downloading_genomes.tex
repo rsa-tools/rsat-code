@@ -46,11 +46,9 @@ which is part of linux distribution. \program{wget} is a ``web
 aspirator'', which allows to download whole directories from ftp and
 http sites. You can check if the program is installed on your machine.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 wget -help
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 
 This command should return the help pages for \program{wget}.  If you
@@ -77,29 +75,23 @@ however use the option \option{-server} to obtain the list of
 organisms supported on a remote server.
 
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 supported-organisms -server
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 The command can be refined by restricting the list to a given taxon of
 interest.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 supported-organisms -server -taxon Fungi
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 You can also ask additional information, for example the date of the
 last update and the source of each genome.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 supported-organisms -server -taxon Fungi -return last_update,source,ID
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 
 \subsection{Importing a single organism}
@@ -117,11 +109,9 @@ As a first step, we recommend to download the genome of the yeast
 in our tutorials.
 
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 download-organism -v 1 -org Saccharomyces_cerevisiae
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 In principle, the download should start immediately, and last for a
 few minutes.
@@ -129,11 +119,9 @@ few minutes.
 After the task is completed, you can check if the configuration file
 has been correctly updated by typing the command.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 supported-organisms
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 In principle, the following information should be displayed on your
 terminal.
@@ -143,11 +131,9 @@ terminal.
 You can also add parameters to get specific information on the
 supported organisms.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 supported-organisms -return ID,last_update
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 
 \subsection{Importing a few selected organisms}
@@ -156,11 +142,9 @@ The program \program{download-organism} can be launched with a list of
 organisms by using iteratively the option \option{-org}.
 
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 download-organism -v 1 -org Escherichia_coli_K12 -org Salmonella_typhi
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 \subsection{Importing all the organisms from a given taxon}
 
@@ -171,15 +155,13 @@ option \option{-taxon} of \program{download-organism}.
 Before doing this, it is wise to check the number of genomes that
 belong to this taxon on the server.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 ## Get the list of organisms belonging to the order "Enterobacteriales" on the server
 supported-organisms -taxon Enterobacteriales -server
 
 ## Count the number of organisms
 supported-organisms -taxon Enterobacteriales -server | wc -l
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
 
 In Oct 2009, there are 94 Enterobacteriales supported on the \RSAT
 server. Before starting the download, you should check two things:
@@ -192,8 +174,6 @@ server. Before starting the download, you should check two things:
 If the answer to both questions is ``yes'', you can start the
 download.
 
-\begin{footnotesize}
-\begin{verbatim}
+\begin{lstlisting}
 download-organism -v 1 -taxon Enterobacteriales 
-\end{verbatim}
-\end{footnotesize}
+\end{lstlisting}
