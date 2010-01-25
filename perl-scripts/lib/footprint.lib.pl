@@ -525,7 +525,9 @@ sub OpenIndex {
   print $index "<html>\n";
   $html_title =$query_prefix." " ;
   $html_title .= $taxon." " if $taxon;
-  $html_title .=join (" ", $organism_name, $bg_model);
+  $html_title .= $organism_name." " if $organism_name;
+  $html_title .= $bg_model if $bg_model ;
+  $html_title .= "Adaptive BG model, window size ".$window_size if $window_size;
   print $index "<head><title>", $html_title , "</title></head>\n" ;
   print $index "<body>\n";
   print $index "<hr size=4 color='#000088'>";
