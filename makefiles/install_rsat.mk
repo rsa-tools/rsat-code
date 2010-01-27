@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.14 2010/01/27 15:37:40 rsat Exp $
+# $Id: install_rsat.mk,v 1.15 2010/01/27 15:53:19 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -383,4 +383,7 @@ install_meme:
 	@echo
 	@echo "You can also add the MEME bin directory in your path."
 	@echo "If your shell is bash"
-	@echo "	export \$$PATH=${MEME_BIN_DIR}:\$$PATH"
+	@echo "	export PATH=${MEME_BIN_DIR}:\$$PATH"
+	@echo "If your shell is csh or tcsh"
+	@echo "	setenv PATH ${MEME_BIN_DIR}:\$$PATH"
+
