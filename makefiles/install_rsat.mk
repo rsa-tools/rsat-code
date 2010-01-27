@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.8 2009/11/08 23:58:06 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.9 2010/01/27 14:54:06 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -233,7 +233,9 @@ install_gd:
 	make install ;						\
 	)
 
-
+################################################################
+## Generic call for installin a program. This tag is called with
+## specific parameters for each program (consensus, patser, ...)
 APP_DIR=${RSAT}/applications
 PROGRAM=consensus
 PROGRAM_DIR=${APP_DIR}/${PROGRAM}
@@ -244,6 +246,8 @@ uncompress_program:
 	@(cd ${PROGRAM_DIR} ;				\
 	gunzip -c ${PROGRAM_ARCHIVE} | tar -xf - )
 
+################################################################
+## Install consensus (J.Hertz)
 INSTALLED_PROGRAM=`ls -1t ${APP_DIR}/${PROGRAM}/${PROGRAM}*`
 install_program:
 	(cd ${PROGRAM_DIR}; make ${INSTALL_OPT})
@@ -254,6 +258,8 @@ install_consensus:
 	${MAKE} uncompress_program PROGRAM=consensus
 	${MAKE} install_program PROGRAM=consensus INSTALL_OPT='CPPFLAGS=""'
 
+################################################################
+## Install Andrew Neuwald's gibbs sampler (1995 version)
 GIBBS_DIR=${APP_DIR}/gibbs/gibbs9_95
 install_gibbs:
 	${MAKE} uncompress_program PROGRAM=gibbs
@@ -349,3 +355,22 @@ get_gnuplot:
 install_gnuplot:
 	@echo "Installing gnuplot"
 	(cd ${GNUPLOT_DIR}/${GNUPLOT_VER}; ./configure && make)
+
+################################################################
+## Install MEME (Tim Bailey)
+MEME_BASE_DIR=${RSAT}/app_sources/MEME
+MEME_VERSION=4.3.0
+MEME_ARCHIVE=meme_${MEME_VERSION}.tar.gz
+MEME_URL=http://meme.nbcr.net/downloads/${MEME_ARCHIVE}
+download_meme:
+	@mkdir -p ${MEME_BASE_DIR}
+	wget --no-directories  --directory-prefix ${MEME_BASE_DIR} -rNL ${MEME_URL}
+	(cd ${MEME_BASE_DIR}; tar -xpzf ${MEME_ARCHIVE})
+
+MEME_DISTRIB_DIR=${MEME_BASE_DIR}/meme_${MEME_VERSION}/
+MEME_INSTALL_DIR=${MEME_DISTRIB_DIR}
+install_meme:
+	(cd ${MEME_DISTRIB_DIR}; ./configure --prefix=${MEME_INSTALL_DIR}; \
+		make ; make test; cd ${MEME_DISTRIB_DIR}; make install)
+	@echo "Please edit the RSAT configuration file	${RSAT}/RSAT_config.props"
+	@echo "and specify meme_dir=${MEME_INSTALL_DIR}/bin"
