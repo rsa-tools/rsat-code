@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.267 2010/01/27 16:13:51 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.268 2010/01/27 16:14:26 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.267 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.268 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -3004,7 +3004,8 @@ sub compute_bg_meme {
   } else {
     $cmd .= "cat ".$bg_seq_file;
   }
-  $cmd .= " | $fasta_get_markov -m ".$markov_order;
+  $cmd .= " | ".$fasta_get_markov;
+  $cmd .= " -m ".$markov_order;
   $cmd .= " > ".$dir{output}."/".$bg_model_file;
   &doit($cmd, $dry_run, $die_on_error, $verbose);
   chdir($dir{output});
