@@ -635,7 +635,7 @@ Converts the matrix into a string in TRANSFAC format.
 sub to_TRANSFAC {
     my ($self, %args) = @_;
     my $to_print = "";
-   
+
     my $output_format = $args{format};
     $output_format = lc($output_format);
 
@@ -658,6 +658,17 @@ sub to_TRANSFAC {
       $to_print .= "ID  ".$id."\n";
       $to_print .= "XX\n";
     }
+
+    ## Description
+    ## If the description field is empty, use matrix consensus.
+    ## Note: the DE field is necessary for the matrix-comparison
+    ## program STAMP.
+    my $desc = $self->get_attribute("description");
+    unless ($desc) {
+      $self->calcConsensus();
+      $desc = $self->get_attribute("consensus.IUPAC");
+    }
+    $to_print .= "DE  ".$desc."\n";
 
     ## Header
     my $header = "PO  "; ## fixed bug in previous version, where I used P0 instead of PO
@@ -695,7 +706,8 @@ sub to_TRANSFAC {
 =item to_consensus(sep=>$sep, col_width=>$col_width, type=>$type, comment_char=>$comment_string)
 
 Return a string description of the matrix in the same format as Jerry
-Hertz program consensus. This includes the matrix (as the one used as input by in patser) plus the sites (if present). 
+Hertz program consensus. This includes the matrix (as the one used as
+input by in patser) plus the sites (if present).
 
 =cut
 sub to_consensus {
