@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.13 2010/01/27 15:18:20 rsat Exp $
+# $Id: install_rsat.mk,v 1.14 2010/01/27 15:37:40 rsat Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -369,11 +369,12 @@ download_meme:
 	(cd ${MEME_BASE_DIR}; tar -xpzf ${MEME_ARCHIVE})
 	@echo ${MEME_DISTRIB_DIR}
 
-MEME_INSTALL_DIR=${MEME_DISTRIB_DIR}
+MEME_INSTALL_DIR=${MEME_DISTRIB_DIR}_installed
 MEME_BIN_DIR=${MEME_INSTALL_DIR}/bin
 install_meme:
-	(cd ${MEME_DISTRIB_DIR}; ./configure --prefix=${MEME_INSTALL_DIR})
-	(cd ${MEME_DISTRIB_DIR}; make clean; make ; make test; cd ${MEME_DISTRIB_DIR})
+	@mkdir -p ${MEME_INSTALL_DIR}
+	(cd ${MEME_DISTRIB_DIR}; ./configure --prefix=${MEME_INSTALL_DIR} --with-url="http://localhost/meme")
+	(cd ${MEME_DISTRIB_DIR}; make clean; make ; make test; make install)
 	@echo "Please edit the RSAT configuration file"
 	@echo "	${RSAT}/RSAT_config.props"
 	@echo "and copy-paste the following line to specify the MEME bin pathway"
