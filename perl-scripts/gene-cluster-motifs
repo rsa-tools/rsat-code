@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.266 2010/01/27 16:09:03 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.267 2010/01/27 16:13:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.266 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.267 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -979,7 +979,6 @@ sub SetFileNames {
 
 	################################################################
 	## MEME
-#	$meme_dir = $ENV{MEME_DIR} || $ENV{RSAT}."/bin/meme/";
 	my $meme_options = "";
 	my $meme_suffix = "";
 
@@ -1951,13 +1950,6 @@ sub infogibbs {
 sub MEME {
   chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{meme_dir});
 
-  my $meme_cmd = "meme";
-  my $meme_dir = $ENV{meme_dir};
-  if ($meme_dir) {
-    $meme_cmd = $meme_dir.'/'.$meme_cmd;
-  } else {
-    &RSAT::message::Warning("The variable meme_dir is not defined. Please check the RSAT config file ${RSAT}/RSAT/config.props");
-  }
 
   ## Run the command
   $meme_command = "convert-seq ";
@@ -2928,6 +2920,18 @@ sub CheckParameters {
       if ($verbose >= 1);
   }
 
+
+  ################################################################
+  ## MEME directory
+  if ($task{meme}) {
+    $meme_dir = $ENV{meme_dir};
+    unless ($meme_dir) {
+      &RSAT::error::FatalError("The variable meme_dir is not defined. Please check the RSAT config file ${RSAT}/RSAT/config.props");
+    }
+    $fasta_get_markov = $meme_dir."/fasta-get-markov";
+    $meme_cmd = $meme_dir."/meme";
+  }
+
 }
 
 
@@ -2990,6 +2994,7 @@ sub compute_bg_meme {
   ## Tip: the bg sequence file is defined relative to the main
   ## directory, but the bg model files must be defined relative to the
   ## output directory.
+
   chdir($dir{main}); 
   my $bg_model_file =  $bg_model_file{"meme"};
   &RSAT::message::TimeWarn("\tComputing background model for MEME", "markov".$markov_order, $bg_model_file) if ($main::verbose >= 1);
@@ -2999,7 +3004,7 @@ sub compute_bg_meme {
   } else {
     $cmd .= "cat ".$bg_seq_file;
   }
-  $cmd .= " | fasta-get-markov -m ".$markov_order;
+  $cmd .= " | $fasta_get_markov -m ".$markov_order;
   $cmd .= " > ".$dir{output}."/".$bg_model_file;
   &doit($cmd, $dry_run, $die_on_error, $verbose);
   chdir($dir{output});
