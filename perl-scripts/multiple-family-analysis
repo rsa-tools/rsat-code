@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.265 2010/01/17 14:43:01 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.266 2010/01/27 16:09:03 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.265 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.266 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -1951,12 +1951,20 @@ sub infogibbs {
 sub MEME {
   chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{meme_dir});
 
+  my $meme_cmd = "meme";
+  my $meme_dir = $ENV{meme_dir};
+  if ($meme_dir) {
+    $meme_cmd = $meme_dir.'/'.$meme_cmd;
+  } else {
+    &RSAT::message::Warning("The variable meme_dir is not defined. Please check the RSAT config file ${RSAT}/RSAT/config.props");
+  }
+
   ## Run the command
   $meme_command = "convert-seq ";
   $meme_command .= " -from fasta -to fasta -skip_short ".$MEME_options{minw};
   $meme_command .= " -i ".$family{$family_name}->{input_seq_file};
   $meme_command .= " -o ".$family{$family_name}->{meme_input_seq_file}." ; ";
-  $meme_command .= "meme ".$family{$family_name}->{meme_options};
+  $meme_command .= $meme_cmd." ".$family{$family_name}->{meme_options};
   unless (($batch) || ($verbose >= 3)) {
     ## Redirect verbosity to a log file
     $meme_command = "(".$meme_command.") >& meme_log.txt";
@@ -3050,7 +3058,9 @@ sub AnalyzeFamilies {
       &RSAT::message::TimeWarn("Organism name", $organism_name);
     }
 
-    &RSAT::message::TimeWarn("Treating family ", $family_name," (".$fam_count."/".$fam_nb.")", 
+
+    warn "" if ($verbose >= 2);
+    &RSAT::message::TimeWarn("Treating family ", $family_name," (".$fam_count."/".$fam_nb.")",
 			     $gene_nb." genes", $organism_name)
       if ($verbose >= 1);
 
