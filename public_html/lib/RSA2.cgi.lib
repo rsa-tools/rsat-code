@@ -1515,7 +1515,7 @@ sub MatrixFromPatterns_defaults {
   $default{to_matrix} = '1';
   $default{gibbs_msps} = '1';
   $default{gibbs_iter} = '3';
-  $default{gibbs_flanks} = '0';
+  $default{gibbs_flanks} = '2';
   $default{gibbs_final} = '';
 }
 
