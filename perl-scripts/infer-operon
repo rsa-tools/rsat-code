@@ -1,13 +1,14 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: infer-operon,v 1.9 2009/11/28 12:06:02 jvanheld Exp $
+# $Id: infer-operon,v 1.10 2010/01/28 12:59:34 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
 
 ## use strict;
+
 
 =pod
 
@@ -162,6 +163,8 @@ package main;
     local $null = "<NULL>";
     local @matched_features = ();
     local $infer_all = 0;
+    local $sep = ";";
+    local $min_gene_nb = 1;
 
     %main::infile = ();
     %main::outfile = ();
@@ -268,8 +271,8 @@ package main;
 	push @return_subfields, $field;
       }
     }
-    &RSAT::message::Info("Returning fields", join ";", @return_fields) if ($main::verbose >= 2);
-    &RSAT::message::Info("Returning subfields", join ";", @return_subfields) if ($main::verbose >= 2);
+    &RSAT::message::Info("Returning fields", join $sep, @return_fields) if ($main::verbose >= 2);
+    &RSAT::message::Info("Returning subfields", join $sep, @return_subfields) if ($main::verbose >= 2);
 
     ################################################################
     #### check argument values
@@ -390,8 +393,8 @@ sub BuildOperons {
   foreach my $operon (@operons) {
     $operon->sort_genes();
     &RSAT::message::Debug("Built operon", $operon->get_attribute("id"),
-			  join (";", $operon->get_attribute("sorted_gene_names")),
-			  join (";", $operon->get_attribute("sorted_gene_ids")),
+			  join ($main::sep, $operon->get_attribute("sorted_gene_names")),
+			  join ($main::sep, $operon->get_attribute("sorted_gene_ids")),
 			  $operon->get_attribute("name"),
 			 ) if ($main::verbose >= 3);
   }
@@ -406,10 +409,12 @@ sub PrintResults {
   foreach my $feature (@matched_features) {
     my @info = ();
     my $operon = $feature->get_attribute("operon");
+    next if ($operon->gene_nb() < $main::min_gene_nb);
+
     foreach my $field (@return_subfields) {
       if ($field eq "operon") {
 	if (($operon) && ($operon ne $null)) {
-	  push @info, join ";", $operon->get_attribute("sorted_gene_names");
+	  push @info, join $main::sep, $operon->get_attribute("sorted_gene_names");
 	} else {
 	  push @info, $null;
 	}
@@ -460,6 +465,7 @@ sub ReadArguments {
     while ($arg = shift (@arguments)) {
 
 	## Verbosity
+
 =pod
 	    
 
@@ -480,6 +486,7 @@ Level of verbosity (detail in the warning messages during execution)
 	    }
 	    
 	    ## Help message
+
 =pod
 
 =item B<-h>
@@ -491,6 +498,7 @@ Display full help message
 	    &PrintHelp();
 	    
 	    ## List of options
+
 =pod
 
 =item B<-help>
@@ -503,6 +511,7 @@ Same as -h
 	    
 
 	    ## Input file
+
 =pod
 
 =item B<-i inputfile>
@@ -515,6 +524,7 @@ allows to use the command within a pipe.
 	    $main::infile{input} = shift(@arguments);
 	    
 	    ## Queries on the command line
+
 =pod
 
 =item B<-org organism>
@@ -526,6 +536,7 @@ Organism name.
 	    $main::organism_name = shift(@arguments);
 
 	    ## Queries on the command line
+
 =pod
 
 =item B<-all>
@@ -537,6 +548,7 @@ Infer operons for all the genes of the query organism.
 	    $main::infer_all = 1;
 
 	    ## Queries on the command line
+
 =pod
 
 =item B<-q query_gene>
@@ -551,6 +563,7 @@ infer-operon -org Escherischia_coli_K12 -q LACZ -q hisA
 	    push @queries, shift(@arguments);
 	    
 	    ## Output file
+
 =pod
 
 =item	B<-o outputfile>
@@ -563,6 +576,7 @@ allows to use the command within a pipe.
 	    $main::outfile{output} = shift(@arguments);
 	    
 	    ## Distance threshold
+
 =pod
 
 =item	B<-dist #>
@@ -572,8 +586,41 @@ Distance threshold.
 =cut
 	} elsif ($arg eq "-dist") {
 	    $main::dist_threshold = shift(@arguments);
-	    
+
+	    ## Separator for multi-value fields in the output table
+
+=pod
+
+=item	B<-sep >
+
+Specify the separator for multi-value fields (e.g.: genes) in the
+output table. By default, multi-value fields are exported in a single
+column with a semicolon (";") as separator.
+
+=cut
+	} elsif ($arg eq "-sep") {
+	    $main::sep = shift(@arguments);
+
+	    ## Separator for multi-value fields in the output table
+
+=pod
+
+=item	B<-min_gene_nb #>
+
+Specify a threshold on the number of genes in the operon. This option
+is generally used when predicting all operons (option -all), in order
+to only return predicted polycistronic transcription units
+(-min_gene_nb 2) or restrict the output to operons containingpredicted
+to contain at least a given number of genes (e.g. -min_gene_nb 4).
+
+=cut
+	} elsif ($arg eq "-min_gene_nb") {
+	    $main::min_gene_nb = shift(@arguments);
+	    &RSAT::error::FatalError($main::min_gene_nb, "is not a valid value for min_gene_nb. Should be a Natural number.") 
+	      unless (&IsNatural($main::min_gene_nb));
+
 	    ## Return fields
+
 =pod
 
 =item B<-return return_fields>
@@ -595,7 +642,8 @@ Predicted operon trailer.
 =item B<operon>
 
 Full composition of the operon. The names of member genes are
-separated by a semi-column ";".
+separated by a semi-column ";" (note that the gene separator can be
+changed using the option -sep).
 
 =item B<q_info>
 
@@ -635,6 +683,7 @@ Number of genes in the predicted operon.
 
 	}
     }
+
 
 
 =pod
@@ -825,6 +874,7 @@ sub ExtendOperon {
 }
 
 __END__
+
 
 =pod
 
