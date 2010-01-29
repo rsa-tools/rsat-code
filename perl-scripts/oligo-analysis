@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.137 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: oligo-analysis,v 1.138 2010/01/29 15:04:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -24,7 +24,7 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &AlphaDate();
-local $program_version = do { my @r = (q$Revision: 1.137 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.138 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
 local $taxon = 0; ## Specify it the background model is organism-specific or taxon-specific
@@ -1105,8 +1105,14 @@ sub CalcExpected {
     if ($return{'mseq'}) {
       ### expected number of matching sequences ###
       $avg_seq_length = $sum_seq_length/$sequence_number;
-      $pos_per_seq = $avg_seq_length - $oligo_length + 1;
       $exp_freq_est = $patterns{$pattern_seq}->{exp_freq};
+
+      ## Compute the average number of positions per sequence 2010
+      ## correction: instead of using avg_seq_length, I use
+      ## nb_possible_pos. This makes a difference if the sequences
+      ## contain "N" characters.
+      $pos_per_seq = $nb_possible_pos / $sequence_number;
+#      $pos_per_seq = $avg_seq_length - $oligo_length + 1;
 
       $one_seq_match_proba =  1 - (1-$exp_freq_est)**$pos_per_seq;
       #	    $one_seq_match_proba =  &sum_of_binomials($exp_freq_est, $pos_per_seq, 1, $pos_per_seq);
@@ -1362,10 +1368,10 @@ sub PrintHeaderLine {
     $col_description{"ms_P"} = "matching sequence probability (binomial)";
     $col_description{"ms_sig"} = "matching sequenc significance (binomial)";
     $col_description{"ms_E"} = "E-value for matching sequences (binomial)";
-    $col_description{"ms_freq"} = "observed matching sequence frequency";
-    $col_description{"exp_msf"} = "expected matching sequence frequency";
-    $col_description{"ms_rati"} = "observed/expected matching seqyences";
-    $col_description{"ms_likelihood"} = "matching sequence likelihood";
+    $col_description{"ms_freq"} = "proportion of matching sequences (sequences with at least one occurrence)";
+    $col_description{"exp_msf"} = "expected proportion matching sequences";
+    $col_description{"ms_rati"} = "observed/expected numbers of matching sequences";
+    $col_description{"ms_likelihood"} = "matching sequence log-likelihood";
     $col_description{"rank"} = "rank";
     $col_description{"positions"} = "matching positions";
     $col_description{"ovlp"} = "overlap coefficient";
