@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.268 2010/01/27 16:14:26 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.269 2010/01/29 10:23:18 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.268 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.269 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -1950,10 +1950,12 @@ sub infogibbs {
 sub MEME {
   chdir($dir{main}); chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{meme_dir});
 
+  ## MEME does not accept sequences shorter than 8
+  my $min_seq_len = &max(8, $MEME_options{minw});
 
   ## Run the command
   $meme_command = "convert-seq ";
-  $meme_command .= " -from fasta -to fasta -skip_short ".$MEME_options{minw};
+  $meme_command .= " -from fasta -to fasta -skip_short ".$min_seq_len;
   $meme_command .= " -i ".$family{$family_name}->{input_seq_file};
   $meme_command .= " -o ".$family{$family_name}->{meme_input_seq_file}." ; ";
   $meme_command .= $meme_cmd." ".$family{$family_name}->{meme_options};
