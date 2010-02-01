@@ -1,0 +1,574 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: oligo-diff,v 1.1 2010/02/01 20:02:04 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+oligo-diff
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Compare frequencies of oligonucleotides between two input sequence
+files, and return oligos that are significantly enriched in one of the
+files respective to the other one.
+
+=head1 AUTHORS
+
+Jacques.van.Helden@ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+
+oligo-diff [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+The program takes as input a pair of sequence files in fasta format.
+
+=head1 OUTPUT FORMAT
+
+The output is a tab-delimted file with one row per oligonucleotide,
+and one column per statistics. The column content is detailed in the
+header of the output (for this, the verbosity needs to be at least 1).
+
+=head1 STATISTICAL MODEL
+
+
+
+=head1 SEE ALSO
+
+=head2 oligo-analysis
+
+The programs I<oligo-diff>and I<oligo-analysis> serve related
+purposes: discovering exceptional oligonucleotides. The difference is
+that I<oligo-analysis> considers a single sequence file, and compares
+pobserved oligo-frequencies with those expected from a background
+model (Bernoulli or Markov). This background model is generally
+estimated from a set of background sequences. 
+
+In the situation where one wants to compare a small sequence file
+(e.g. 50 promoters of co-expressed genes) to a large one (e.g. the
+6000 other promoters of the considered organism), I<oligo-diff> should
+return more or less the same results as I<oligo-analysis> with a
+background model based on the large file. Slight differences come from
+the use of the hypergeometric (I<oligo-diff>) vesus binomial
+(I<oligo-analysis>) statistics.
+
+
+=head2 count-words
+
+I<oligo-diff> calls the program I<count-words> to count
+oligonucleotide occurrences in the two input sequence files. The
+program I<count-words> is part of the RSAT suite (it is written in C,
+and has to be compiled as explained in the RSAT installation guide).
+
+=head1 WISH LIST
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    my $start_time = &AlphaDate();
+    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    $count_words_cmd = $ENV{RSAT}."/bin/count-words";
+
+    %infile = ();
+    %outfile = ();
+
+    $verbose = 0;
+#    $in = STDIN;
+    $out = STDOUT;
+
+    ## Threshold values
+    @supported_thresholds = qw(occ sig);
+    $supported_thresholds = join ",", @supported_thresholds;
+    %supported_threshold = ();
+    foreach my $thr (@supported_thresholds) {
+      $supported_threshold{$thr} = 1;
+    }
+    %lth = ();
+    %uth = ();
+
+
+    ## Counting mode
+    %oligos = ();
+    $oligo_len = 0;
+    $strand = "-1str";
+    $overlap_mode = "-noov";
+    $sum1 = 0;
+    $sum2 = 0;
+    $sum = 0;
+    $distinct_oligos = 0;
+    $log_base = log(10);
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+
+    ## Two input files are required
+    unless (($infile{file1}) && ($infile{file2})) {
+      &RSAT::error::FatalError("You must define two input sequence files , using the options -file1 and -file2.");
+    }
+
+    ## oligonucleotide length
+    unless ($oligo_len) {
+      &RSAT::error::FatalError("You must define the oligonucleotide length (option -l)");
+    }
+
+    ## check that the command count-words is in the path
+    unless (-e $count_words_cmd) {
+      &RSAT::error::FatalError("The command count-words is not found", $count_words_cmd);
+    }
+
+    ################################################################
+    ## Open output stream
+    $out = &OpenOutputFile($outfile{output});
+
+    ################################################################
+    ## Count oligo occurrences and frequencies in the first sequence
+    ## file
+
+    &CountWords($infile{file1}, 1);
+    &CountWords($infile{file2}, 2);
+
+    ## Compute word sums
+    foreach my $oligo (keys %oligos) {
+
+      ## Set zero values to absent words
+      unless (defined($oligos{$oligo}->{occ1})) {
+	$oligos{$oligo}->{occ1} = 0;
+	$oligos{$oligo}->{freq1} = 0;
+      }
+      unless (defined($oligos{$oligo}->{occ2})) {
+	$oligos{$oligo}->{occ2} = 0;
+	$oligos{$oligo}->{freq2} = 0;
+      }
+
+      ## Count distinct oligos
+      $distinct_oligos++;
+
+      ## Compute sums
+      $sum1 += $oligos{$oligo}->{occ1};
+      $sum2 += $oligos{$oligo}->{occ2};
+
+      ## Thresholds on occurrences
+      ## Can be applied after the sum
+       if (defined($lth{occ})) {
+ 	if (($oligos{$oligo}->{occ1} < $lth{occ})
+ 	    && ($oligos{$oligo}->{occ2} < $lth{occ})) {
+ 	  delete($oligos{$oligo});
+ 	}
+      }
+    }
+    $sum = $sum1 + $sum2;
+
+    ## Compute hypergeometric significance
+    my $test_nb = $distinct_oligos;
+    foreach my $oligo (keys %oligos) {
+      my $occ1 = $oligos{$oligo}->{occ1};
+      my $occ2 = $oligos{$oligo}->{occ2};
+      my $m = $occ1 + $occ2;
+      my $n = $sum;
+      my $k = $sum1;
+      my $from = $occ1;
+      my $to = $m;
+      $oligos{$oligo}->{Pval} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
+      $oligos{$oligo}->{Eval} = $test_nb * $oligos{$oligo}->{Pval};
+      $oligos{$oligo}->{sig} = -log($oligos{$oligo}->{Eval})/$log_base;
+    }
+
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($verbose);
+
+    %descr = ();
+    $descr{"seq"} = "oligonucleotide sequence";
+    $descr{"id"} = "oligonucleotide identifier";
+    $descr{"occ1"} = "occurrences in file ".$infile{file1};
+    $descr{"occ2"} = "occurrences in file ".$infile{file2};
+    $descr{"freq1"} = "frequency in file ".$infile{file1};
+    $descr{"freq2"} = "frequency in file ".$infile{file2};
+    $descr{"Pval"} = "Hypergeometric P-value.";
+    $descr{"Eval"} = "Hypergeometric E-value. Eval = nb_test * Pval";
+    $descr{"sig"} = "Hypergeometric significance. sig = -log10(Eval)";
+
+    ## Output fields
+    my @output_fields = qw(seq id occ1 occ2 freq1 freq2 Pval Eval sig);
+
+    ## Field descriptions
+    if ($main::verbose >= 1) {
+      my $f = 0;
+      print $out "; Column contents\n";
+      foreach my $field (@output_fields) {
+	$f++;
+	printf $out ";\t%d\t%s\t%s\n", $f, $field, $descr{$field};
+      }
+    }
+
+    ## Header
+    print $out "#", join ("\t", @output_fields), "\n";
+
+
+
+    ## Print result table
+
+    %out_format = ();
+    $out_format{seq} = "%s";
+    $out_format{id} = "%s";
+    $out_format{occ1} = "%d";
+    $out_format{occ2} = "%d";
+    $out_format{freq1} = "%s";
+    $out_format{freq2} = "%s";
+    $out_format{Pval} = "%.1e";
+    $out_format{Eval} = "%.1e";
+    $out_format{sig} = "%.2f";
+    my @sorted_oligos = sort (keys %oligos);
+    foreach my $oligo (@sorted_oligos) {
+      my @values =  ();
+      foreach my $field (@output_fields) {
+	push @values, sprintf( $out_format{$field}, $oligos{$oligo}->{$field});
+#	&RSAT::message::Debug($oligo, $field, $out_format{$field}, $oligos{$oligo}->{$field}) if ($main::verbose >= 0);
+      }
+      print $out join ("\t", @values), "\n";
+    }
+
+
+    ################################################################
+    ## Finish verbose
+    if ($verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $out "; Job started $start_time\n";
+	print $out "; Job done    $done_time\n";
+    }
+
+
+    ################################################################
+    ## Close output stream
+    close $out if ($outfile{output});
+
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments
+sub ReadArguments {
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+      ## Help message
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+      ## List of options
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+      ## Input files
+
+=pod
+
+=item B<-file1 first_seq_file>
+
+First sequence file.
+
+=cut
+    } elsif ($arg eq "-file1") {
+      $main::infile{file1} = shift(@arguments);
+
+=pod
+
+=item B<-file2 second_seq_file>
+
+Second sequence file.
+
+=cut
+    } elsif ($arg eq "-file2") {
+      $main::infile{file2} = shift(@arguments);
+
+
+      ## Oligonucleotide lengths
+
+=pod
+
+
+=item B<-l oligo_len>
+
+Oligonucleotide length.
+
+=cut
+    } elsif ($arg eq "-l") {
+      $main::oligo_len = shift(@arguments);
+      &RSAT::error::FatalError($main::oligo_len, "Invalid value for oligonucleotide length. Must be a strictly positive Natural number. ")
+	unless ((&IsNatural($main::oligo_len)) && ($oligo_len > 0));
+
+
+=pod
+
+=item B<-1str>
+
+Count oligonucleotides on a single strand only.
+
+Alternative option: -2str
+
+=cut
+    } elsif ($arg eq "-1str") {
+      $main::strand = "-1str";
+
+=pod
+
+=item B<-2str>
+
+Sum oligonucleotides on both strands.
+
+More precisely, each pair of reverse complementary palindromes is
+counted as a single motif (the count is performed on a single strand,
+but pairs of reverse complementary palindromes are merged).
+
+Alternative option: -1str
+
+=cut
+    } elsif ($arg eq "-2str") {
+      $main::strand = "-2str";
+
+
+=pod
+
+=item B<-noov>
+
+Do not accept overlap between successive occurrences of the same
+word. Only renewing occurrences are counted.
+
+E.g.: TATATATATATA is counted as 2 occurrences of TATATA
+
+Alternative option: -ovlp
+
+=cut
+    } elsif ($arg eq "-noov") {
+      $main::overlap_mode = "-noov";
+
+=pod
+
+=item B<-ovlp>
+
+Count all occurrences of self-overlapping words.
+
+E.g.: TATATATATATA is counted as 4 occurrences of TATATA
+
+Alternative option: -noov
+
+=cut
+    } elsif ($arg eq "-ovlp") {
+      $main::overlap_mode = "-ovlp";
+
+
+	    ## Output file
+
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+=pod
+
+=item B<-lth key value>
+
+Lower threshold on some output field.
+
+Supported fields for threshold: occ,sig
+
+=item B<-uth key value>
+
+Upper threshold on some output field.
+
+=cut
+
+	    ### Lower threshold
+	} elsif ($arg eq "-lth") {
+	    my $thr_field = shift(@arguments);
+	    my $thr_value =  shift(@arguments);
+	    unless ($supported_threshold{$thr_field}) {
+		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+	    }
+	    $main::lth{$thr_field} = $thr_value;
+
+	    ### Upper threshold
+	} elsif ($arg eq "-uth") {
+	    my $thr_field = shift(@arguments);
+	    my $thr_value =  shift(@arguments);
+	    unless ($supported_threshold{$thr_field}) {
+		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+	    }
+	    $main::uth{$thr_field} = $thr_value;
+
+
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; oligo-diff ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    print $out "; Total oligonucleotide sums\n";
+    printf $out ";\tFile 1 sum\t%d\n", $main::sum1;
+    printf $out ";\tFile 2 sum\t%d\n", $main::sum2;
+    printf $out ";\tTotal sum\t%d\n", $main::sum;
+}
+
+
+################################################################
+## Count word occurrences in an input file
+sub CountWords {
+  my ($file, $file_nb) = @_;
+  my $cmd = "";
+
+  if ($file =~ /.gz$/) {
+    $cmd = "gunzip -d ".$file;
+  } else {
+    $cmd = "cat ".$file;
+  }
+  $cmd .= " | ".$main::count_words_cmd;
+  $cmd .= " -l ".$oligo_len;
+  $cmd .= " ".$strand;
+  $cmd .= " ".$overlap_mode;
+
+  &RSAT::message::TimeWarn("Counting words", $cmd) if ($main::verbose >= 2);
+
+  ## Read the counts and update the main oligo count hash table
+  open OLIGOS, "$cmd |";
+  #    open OLIGOS, system("$cmd |");
+  while (<OLIGOS>) {
+    next if (/^;/);
+    next if (/^#/);
+    next unless (/\S/);
+    my ($oligo, $id, $freq, $occ, $ovlp) = split("\t", $_);
+    $oligos{$oligo}->{seq} = $oligo;
+    $oligos{$oligo}->{id} = $id;
+    $oligos{$oligo}->{"occ".$file_nb} = $occ;
+    $oligos{$oligo}->{"freq".$file_nb} = $freq;
+  }
+  close OLIGOS;
+}
+
+__END__
