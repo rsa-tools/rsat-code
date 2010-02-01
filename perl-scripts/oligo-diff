@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: oligo-diff,v 1.1 2010/02/01 20:02:04 jvanheld Exp $
+# $Id: oligo-diff,v 1.2 2010/02/01 21:41:41 jvanheld Exp $
 #
 ############################################################
 
@@ -87,7 +87,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
-
+require "RSA.disco.lib";
 
 ################################################################
 ## Main package
@@ -97,7 +97,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     $count_words_cmd = $ENV{RSAT}."/bin/count-words";
@@ -121,7 +121,7 @@ package main;
 
 
     ## Counting mode
-    %oligos = ();
+    %patterns = ();
     $oligo_len = 0;
     $strand = "-1str";
     $overlap_mode = "-noov";
@@ -165,50 +165,80 @@ package main;
     &CountWords($infile{file2}, 2);
 
     ## Compute word sums
-    foreach my $oligo (keys %oligos) {
+    foreach my $oligo (keys %patterns) {
 
       ## Set zero values to absent words
-      unless (defined($oligos{$oligo}->{occ1})) {
-	$oligos{$oligo}->{occ1} = 0;
-	$oligos{$oligo}->{freq1} = 0;
+      unless (defined($patterns{$oligo}->{occ1})) {
+	$patterns{$oligo}->{occ1} = 0;
+#	$patterns{$oligo}->{freq1} = 0;
       }
-      unless (defined($oligos{$oligo}->{occ2})) {
-	$oligos{$oligo}->{occ2} = 0;
-	$oligos{$oligo}->{freq2} = 0;
+      unless (defined($patterns{$oligo}->{occ2})) {
+	$patterns{$oligo}->{occ2} = 0;
+#	$patterns{$oligo}->{freq2} = 0;
       }
+
+      $patterns{$oligo}->{min_occ} = &RSAT::stats::min($patterns{$oligo}->{occ1}, $patterns{$oligo}->{occ2});
+      $patterns{$oligo}->{max_occ} = &RSAT::stats::max($patterns{$oligo}->{occ1}, $patterns{$oligo}->{occ2});
+      $patterns{$oligo}->{occ_sum} = $patterns{$oligo}->{occ1}+$patterns{$oligo}->{occ2};
 
       ## Count distinct oligos
       $distinct_oligos++;
 
       ## Compute sums
-      $sum1 += $oligos{$oligo}->{occ1};
-      $sum2 += $oligos{$oligo}->{occ2};
+      $sum1 += $patterns{$oligo}->{occ1};
+      $sum2 += $patterns{$oligo}->{occ2};
 
-      ## Thresholds on occurrences
-      ## Can be applied after the sum
-       if (defined($lth{occ})) {
- 	if (($oligos{$oligo}->{occ1} < $lth{occ})
- 	    && ($oligos{$oligo}->{occ2} < $lth{occ})) {
- 	  delete($oligos{$oligo});
- 	}
-      }
     }
     $sum = $sum1 + $sum2;
 
+    ## Thresholds on occurrences
+    if (defined($lth{occ})) {
+      ## Occurrence lower threshold actually applies to max_occ, since
+      ## it means that we want for at least on of the file to contain
+      ## that number of occurrences
+      $lth{"max_occ"} = $lth{occ};
+      &CheckLowerThresholds("max_occ");
+      delete($lth{max_occ});
+    }
+    if (defined($uth{occ})) {
+      $uth{"max_occ"} = $uth{occ};
+      &CheckUpperThresholds("max_occ");
+      delete($uth{max_occ});
+    }
+
     ## Compute hypergeometric significance
     my $test_nb = $distinct_oligos;
-    foreach my $oligo (keys %oligos) {
-      my $occ1 = $oligos{$oligo}->{occ1};
-      my $occ2 = $oligos{$oligo}->{occ2};
-      my $m = $occ1 + $occ2;
+    foreach my $oligo (keys %patterns) {
+      my $occ1 = $patterns{$oligo}->{occ1};
+      my $occ2 = $patterns{$oligo}->{occ2};
+      $patterns{$oligo}->{freq1} = sprintf("%.13f", $occ1/$sum1);
+      $patterns{$oligo}->{freq2} = sprintf("%.13f", $occ2/$sum2);
+      my $m = $patterns{$oligo}->{occ_sum};
       my $n = $sum;
       my $k = $sum1;
-      my $from = $occ1;
-      my $to = $m;
-      $oligos{$oligo}->{Pval} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
-      $oligos{$oligo}->{Eval} = $test_nb * $oligos{$oligo}->{Pval};
-      $oligos{$oligo}->{sig} = -log($oligos{$oligo}->{Eval})/$log_base;
+
+      ## Random expectation
+      $patterns{$oligo}->{exp1} = $m * $sum1/$sum;
+      $patterns{$oligo}->{exp2} = $m * $sum2/$sum;
+
+      if ($occ1 >= $patterns{$oligo}->{exp1}) {
+#      if ($patterns{$oligo}->{freq1} > $patterns{$oligo}->{freq2}) {
+	## Right-tailed test (test significance of over-representation in file1)
+	my $from = $occ1;
+	my $to = $m;
+	$patterns{$oligo}->{over} = "file1";
+	$patterns{$oligo}->{Pval} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
+      } else {
+	## Left-tailed test (test significance of over-representation in file1)
+	$patterns{$oligo}->{over} = "file2";
+	my $from = 0;
+	my $to = $occ1;
+	$patterns{$oligo}->{Pval} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
+      }
+      $patterns{$oligo}->{Eval} = $test_nb * $patterns{$oligo}->{Pval};
+      $patterns{$oligo}->{sig} = -log($patterns{$oligo}->{Eval})/$log_base;
     }
+    &CheckThresholds("sig");
 
 
     ################################################################
@@ -216,18 +246,22 @@ package main;
     &Verbose() if ($verbose);
 
     %descr = ();
-    $descr{"seq"} = "oligonucleotide sequence";
-    $descr{"id"} = "oligonucleotide identifier";
-    $descr{"occ1"} = "occurrences in file ".$infile{file1};
-    $descr{"occ2"} = "occurrences in file ".$infile{file2};
-    $descr{"freq1"} = "frequency in file ".$infile{file1};
-    $descr{"freq2"} = "frequency in file ".$infile{file2};
-    $descr{"Pval"} = "Hypergeometric P-value.";
-    $descr{"Eval"} = "Hypergeometric E-value. Eval = nb_test * Pval";
-    $descr{"sig"} = "Hypergeometric significance. sig = -log10(Eval)";
+    $descr{seq} = "oligonucleotide sequence";
+    $descr{id} = "oligonucleotide identifier";
+    $descr{occ1} = "occurrences in file ".$infile{file1};
+    $descr{occ2} = "occurrences in file ".$infile{file2};
+    $descr{occ_sum} = "sum of occurrences in both files";
+    $descr{exp1} = "random expectation for occ1";
+    $descr{exp2} = "random expectation for occ2";
+    $descr{freq1} = "frequency in file ".$infile{file1};
+    $descr{freq2} = "frequency in file ".$infile{file2};
+    $descr{over} = "file with the higher representation";
+    $descr{Pval} = "Hypergeometric P-value. P(X >= occ)";
+    $descr{Eval} = "Hypergeometric E-value. Eval = nb_test * Pval";
+    $descr{sig} = "Hypergeometric significance. sig = -log10(Eval)";
 
     ## Output fields
-    my @output_fields = qw(seq id occ1 occ2 freq1 freq2 Pval Eval sig);
+    my @output_fields = qw(seq id occ1 occ2 occ_sum exp1 exp2 freq1 freq2 over Pval Eval sig);
 
     ## Field descriptions
     if ($main::verbose >= 1) {
@@ -251,17 +285,23 @@ package main;
     $out_format{id} = "%s";
     $out_format{occ1} = "%d";
     $out_format{occ2} = "%d";
+    $out_format{occ_sum} = "%d";
+    $out_format{occ_sum} = "%d";
+    $out_format{exp1} = "%.2f";
+    $out_format{exp2} = "%.2f";
     $out_format{freq1} = "%s";
     $out_format{freq2} = "%s";
+    $out_format{over} = "%s";
     $out_format{Pval} = "%.1e";
     $out_format{Eval} = "%.1e";
     $out_format{sig} = "%.2f";
-    my @sorted_oligos = sort (keys %oligos);
+
+    my @sorted_oligos = sort {$patterns{$b}->{sig} <=> $patterns{$a}->{sig}}  (keys %patterns);
     foreach my $oligo (@sorted_oligos) {
       my @values =  ();
       foreach my $field (@output_fields) {
-	push @values, sprintf( $out_format{$field}, $oligos{$oligo}->{$field});
-#	&RSAT::message::Debug($oligo, $field, $out_format{$field}, $oligos{$oligo}->{$field}) if ($main::verbose >= 0);
+	push @values, sprintf( $out_format{$field}, $patterns{$oligo}->{$field});
+#	&RSAT::message::Debug($oligo, $field, $out_format{$field}, $patterns{$oligo}->{$field}) if ($main::verbose >= 0);
       }
       print $out join ("\t", @values), "\n";
     }
@@ -410,9 +450,9 @@ Alternative option: -2str
 
 Sum oligonucleotides on both strands.
 
-More precisely, each pair of reverse complementary palindromes is
-counted as a single motif (the count is performed on a single strand,
-but pairs of reverse complementary palindromes are merged).
+More precisely, each pair of reverse complements is counted as a
+single motif (the count is performed on a single strand, but pairs of
+reverse complements are merged).
 
 Alternative option: -1str
 
@@ -520,8 +560,9 @@ sub Verbose {
     printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
     if (defined(%main::infile)) {
 	print $main::out "; Input files\n";
-	while (my ($key,$value) = each %main::infile) {
-	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	foreach my $key (sort keys %main::infile) {
+#	while (my ($key,$value) = each ) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $main::infile{$key};
 	}
     }
     if (defined(%main::outfile)) {
@@ -530,6 +571,23 @@ sub Verbose {
 	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
 	}
     }
+    print $out "; Counting options\n";
+    if ($overlap_mode eq "-noov") {
+      print $out ";\tRenewing occurrences only\n";
+    } else {
+      print $out ";\tAdmit overlapping occurrences\n";
+    }
+    if ($strand eq "-2str") {
+      print $out ";\tBoth strands (sum pairs of reverse complements)\n";
+    } else {
+      print $out ";\tSingle strand\n";
+    }
+
+    printf $out ";\tOligo length\t%d\n", $oligo_len;
+    printf $out ";\tDistinct oligos\t%d\n", $distinct_oligos;
+
+    print $out &PrintThresholdValues();
+
     print $out "; Total oligonucleotide sums\n";
     printf $out ";\tFile 1 sum\t%d\n", $main::sum1;
     printf $out ";\tFile 2 sum\t%d\n", $main::sum2;
@@ -551,7 +609,7 @@ sub CountWords {
   $cmd .= " | ".$main::count_words_cmd;
   $cmd .= " -l ".$oligo_len;
   $cmd .= " ".$strand;
-  $cmd .= " ".$overlap_mode;
+  $cmd .= " ".$overlap_mode if ($overlap_mode eq "-noov");
 
   &RSAT::message::TimeWarn("Counting words", $cmd) if ($main::verbose >= 2);
 
@@ -563,10 +621,16 @@ sub CountWords {
     next if (/^#/);
     next unless (/\S/);
     my ($oligo, $id, $freq, $occ, $ovlp) = split("\t", $_);
-    $oligos{$oligo}->{seq} = $oligo;
-    $oligos{$oligo}->{id} = $id;
-    $oligos{$oligo}->{"occ".$file_nb} = $occ;
-    $oligos{$oligo}->{"freq".$file_nb} = $freq;
+    $patterns{$oligo}->{seq} = $oligo;
+    $patterns{$oligo}->{id} = $id;
+    $patterns{$oligo}->{"occ".$file_nb} = $occ;
+
+    ## With the option -noov, the sum of frequencies returned by
+    ## count-words is smaller than 1. For this analysis, we only take
+    ## into account the frequencies among counted words -> we
+    ## recompute them.
+    ##
+    ## $patterns{$oligo}->{"freq".$file_nb} = $freq;
   }
   close OLIGOS;
 }
