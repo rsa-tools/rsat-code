@@ -52,10 +52,12 @@ $field_description{rank} = "Rank";
 ## Default parameters for get-orthologs
 &LoadGetOrthoDefault(\%default);
 
+## Other default parameters
 $default{dyads_filter} = 'checked';
 $default{bg_model} = 'taxfreq';
 $default{leaders} = '';
 $default{uth_rank} = 50;
+$default{to_matrix} = 1;
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -130,7 +132,7 @@ print $query->popup_menu(-name=>'bg_model',
 print $query->checkbox(-name=>'to_matrix',
 		       -checked=>$default{to_matrix},
 		       -label=>'');
-print "&nbsp;Convert assembled patterns to Position-Specific Scoring Matrices (<font color=red>Can be time-consuming</font>)";
+print "&nbsp;Convert assembled patterns to Position-Specific Scoring Matrices";
 print "<BR>";
 
 print "</ul>";
