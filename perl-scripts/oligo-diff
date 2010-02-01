@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: oligo-diff,v 1.2 2010/02/01 21:41:41 jvanheld Exp $
+# $Id: oligo-diff,v 1.3 2010/02/01 22:14:39 jvanheld Exp $
 #
 ############################################################
 
@@ -97,7 +97,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     $count_words_cmd = $ENV{RSAT}."/bin/count-words";
@@ -226,11 +226,11 @@ package main;
 	## Right-tailed test (test significance of over-representation in file1)
 	my $from = $occ1;
 	my $to = $m;
-	$patterns{$oligo}->{over} = "file1";
+	$patterns{$oligo}->{side} = "file1";
 	$patterns{$oligo}->{Pval} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
       } else {
 	## Left-tailed test (test significance of over-representation in file1)
-	$patterns{$oligo}->{over} = "file2";
+	$patterns{$oligo}->{side} = "file2";
 	my $from = 0;
 	my $to = $occ1;
 	$patterns{$oligo}->{Pval} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
@@ -255,13 +255,14 @@ package main;
     $descr{exp2} = "random expectation for occ2";
     $descr{freq1} = "frequency in file ".$infile{file1};
     $descr{freq2} = "frequency in file ".$infile{file2};
-    $descr{over} = "file with the higher representation";
     $descr{Pval} = "Hypergeometric P-value. P(X >= occ)";
     $descr{Eval} = "Hypergeometric E-value. Eval = nb_test * Pval";
     $descr{sig} = "Hypergeometric significance. sig = -log10(Eval)";
+    $descr{rank} = "Rank of the patterns sorted by decreasing significance.";
+    $descr{side} = "side of the higher representation (file1 or file2)";
 
     ## Output fields
-    my @output_fields = qw(seq id occ1 occ2 occ_sum exp1 exp2 freq1 freq2 over Pval Eval sig);
+    my @output_fields = qw(seq id occ1 occ2 exp1 exp2 freq1 freq2 Pval Eval sig rank side);
 
     ## Field descriptions
     if ($main::verbose >= 1) {
@@ -271,6 +272,7 @@ package main;
 	$f++;
 	printf $out ";\t%d\t%s\t%s\n", $f, $field, $descr{$field};
       }
+      print $out ";\n";
     }
 
     ## Header
@@ -291,13 +293,17 @@ package main;
     $out_format{exp2} = "%.2f";
     $out_format{freq1} = "%s";
     $out_format{freq2} = "%s";
-    $out_format{over} = "%s";
+    $out_format{side} = "%s";
     $out_format{Pval} = "%.1e";
     $out_format{Eval} = "%.1e";
     $out_format{sig} = "%.2f";
+    $out_format{rank} = "%d";
 
     my @sorted_oligos = sort {$patterns{$b}->{sig} <=> $patterns{$a}->{sig}}  (keys %patterns);
+    my $rank = 0;
     foreach my $oligo (@sorted_oligos) {
+      $rank++;
+      $patterns{$oligo}->{rank} = $rank;
       my @values =  ();
       foreach my $field (@output_fields) {
 	push @values, sprintf( $out_format{$field}, $patterns{$oligo}->{$field});
