@@ -29,11 +29,10 @@ $default{inter_cov} = 0.8;
 &RSA_header("compare-features", 'form');
 print "<CENTER>";
 print "Compare two or more sets of features. This program takes as input several feature files (two or more), and calculates the intersection, union and difference between features. It also computes contingency tables and comparison statistics.<P>\n";
-#print "Program developed by <A HREF='mailto:jtran\@bigre.ulb.ac.be (Joseph Tran)'>Joseph Tran</A>\n";
-#print "and <A HREF='mailto:jvanheld\@bigre.ulb.ac.be (Jacques van Helden)'>Jacques van Helden</A>\n";
+print "Program developed by <A HREF='mailto:jvhelden\@ulb.ac.be (Jacques van Helden)'>Jacques van Helden</A>\n";
+print "and <A HREF='mailto:jturatsi\@ulb.ac.be (Jean-Valéry Turatsinze)'>Jean-Valéry Turatsinze</A>\n";
 print "</CENTER>";
-print "<HR>";
-print "<blockquote>";
+print "<hr>";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -102,7 +101,6 @@ print ("<tr align = 'center'><td>\n");
 
 print "<h4>Return</h4>\n";
 
-print "<BLOCKQUOTE>\n";
 print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 		    $query->Tr({-align=>left,-valign=>TOP},
 			       [
@@ -129,10 +127,8 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 			 ]
 			)
 		);
-print "</BLOCKQUOTE>\n";
 print ("</td><td>");
 print "<h4>Thresholds</h4>\n";
-print "<BLOCKQUOTE>\n";
 print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 		    $query->Tr({-align=>left,-valign=>TOP},
 			       [
@@ -163,7 +159,6 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 			 ]
 			)
 		);
-print "</BLOCKQUOTE>\n";
 print ("</td></tr>");
 print ("</table>");
 print "<p>";
@@ -278,9 +273,8 @@ print "<TD><B><A HREF='help.compare-features.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
-print "</FONT>\n";
-print "</blockquote>";
-print "<HR>";
+print "</font>\n";
+print "<hr>";
 
 print $query->end_html;
 
