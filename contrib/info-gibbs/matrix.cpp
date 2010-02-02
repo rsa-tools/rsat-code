@@ -49,7 +49,7 @@ Array read_matrix(FILE *fp)
             char buffer[1024];
             fgets(buffer, 1024, fp);
             if (feof(fp))
-                return NULL;
+                return Array(0, 0);
             else
                 continue;
         }
