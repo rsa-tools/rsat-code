@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.271 2010/02/02 07:38:07 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.272 2010/02/02 07:54:52 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.271 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.272 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -629,6 +629,9 @@ package main;
 
 #### set the file names as a function of parameters
 sub SetFileNames {
+
+
+  ## Options for dyad-analysis
     $sp = "$min_sp-$max_sp";
     $dyad_options = "-v";
 #    $dyad_options .= " -lth occ 1"; ## This is to avoid calculating P-value for patterns not rpesent in the dataset, and for having a correct correction for multi-testing. 
@@ -665,12 +668,10 @@ sub SetFileNames {
 	## Background model estimated from user-specified background
 	## sequences. If the background model file does not exist, compute
 	## it from background sequences.
-	my $bg_model_file = $bg_model_file{"dyads"};
-	unless (-e $bg_model_file) {
-	    &compute_bg_dyads();
-	}
-	$dyad_options .= " -expfreq ".$bg_model_file;
-	
+      &define_bg_model_files() unless (defined( $bg_model_file{"dyads"}));
+      &compute_bg_dyads() unless (-e $bg_model_file{dyads});
+      $dyad_options .= " -expfreq ".$bg_model_file;
+
     } elsif ($exp_freq_file{dyads}) {
 	## Convert relative path in absolute path
 	unless ($exp_freq_file{dyads} =~ /^\//) {
@@ -1337,9 +1338,8 @@ sub CalcOligoOptions {
     ## sequences. If the background model file does not exist, compute
     ## it from background sequences.
     my $bg_model_file = $bg_model_file{"oligos_".$oligo_len."nt"};
-    unless (-e $bg_model_file) {
-      &compute_bg_oligo();
-    }
+    &define_bg_model_files() unless (defined($bg_model_file));
+    &compute_bg_oligos() unless (-e $bg_model_file);
     $oligo_options .= " -expfreq ".$bg_model_file;
 
   } elsif ($exp_freq_file{oligos}) {
@@ -2976,7 +2976,7 @@ sub define_bg_model_files {
 sub ComputeBG {
   chdir($dir{main});
   &RSAT::message::TimeWarn("Computing background model from background sequence file") if ($main::verbose >= 1);
-  &compute_bg_oligo();
+  &compute_bg_oligos();
   &compute_bg_meme();
   chdir($dir{output});
 }
@@ -2984,7 +2984,7 @@ sub ComputeBG {
 
 ################################################################
 ## Compute background models for oligo-analysis
-sub compute_bg_oligo {
+sub compute_bg_oligos {
   ## Tip: the bg sequence file is defined relative to the main
   ## directory, but the bg model files must be defined relative to the
   ## output directory.
@@ -3923,7 +3923,7 @@ sub ReadArguments {
       ### File containing sequences used to estimate the background model
     } elsif ($ARGV[$a] eq "-bg_seq") {
       $bg_seq_file = $ARGV[$a+1];
-      &RSAT::error::FatalError("Background model file does not exists", $bg_model_file) unless (-e $bg_seq_file);
+      &RSAT::error::FatalError("Background sequence file does not exists", $bg_seq_file) unless (-e $bg_seq_file);
 
       ### stop after some data sets
     } elsif ($ARGV[$a] eq "-last") {
