@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: oligo-diff,v 1.5 2010/02/02 21:29:08 jvanheld Exp $
+# $Id: oligo-diff,v 1.6 2010/02/02 21:31:16 jvanheld Exp $
 #
 ############################################################
 
@@ -79,36 +79,6 @@ oligonucleotide occurrences in the two input sequence files. The
 program I<count-words> is part of the RSAT suite (it is written in C,
 and has to be compiled as explained in the RSAT installation guide).
 
-=head1 WISH LIST
-
-=over
-
-=item B<-return assembly>
-
-Assemble the significant patterns with I<pattern-assembly>. The
-oligonucleotides significantly enriched in file1 are assembled
-separately from those significant in file2.
-
-The option -return assembly requires to specify an output file. The
-assembly files have the suffix _file1.asmb and _file2.asmb,
-respectively.
-
-=item B<-return maps>
-
-Generate feature maps of the over-represented patterns, using the
-program I<feature-map>.
-
-=item B<-return pssm>
-
-Convert the assembled oligonucleotides in position-speicific scoring
-matrices (PSSM), using the program I<matrix-from-patterns>.
-
-=item B<-return index>
-
-Return a HTML file indexing the result files (oligos, assembly, PSSM,
-maps).
-
-=back
 
 
 
@@ -131,7 +101,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     $count_words_cmd = $ENV{RSAT}."/bin/count-words";
@@ -712,5 +682,39 @@ sub CountWords {
   }
   close OLIGOS;
 }
+=head1 WISH LIST
+
+=pod
+
+=over
+
+=item B<-return assembly>
+
+Assemble the significant patterns with I<pattern-assembly>. The
+oligonucleotides significantly enriched in file1 are assembled
+separately from those significant in file2.
+
+The option -return assembly requires to specify an output file. The
+assembly files have the suffix _file1.asmb and _file2.asmb,
+respectively.
+
+=item B<-return maps>
+
+Generate feature maps of the over-represented patterns, using the
+program I<feature-map>.
+
+=item B<-return pssm>
+
+Convert the assembled oligonucleotides in position-speicific scoring
+matrices (PSSM), using the program I<matrix-from-patterns>.
+
+=item B<-return index>
+
+Return a HTML file indexing the result files (oligos, assembly, PSSM,
+maps).
+
+=back
+
+=cut
 
 __END__
