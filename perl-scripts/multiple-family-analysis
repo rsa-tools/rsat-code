@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.270 2010/01/30 08:21:39 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.271 2010/02/02 07:38:07 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.270 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.271 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -198,9 +198,12 @@ package main;
   $background = "upstream-noorf";
   $noov = "-noov";
   $sort_key = "score";
+  $two_tails = 0; ## two-tails test for oligo-analysis and dyad-analysis
+
   ## oligo-analysis options
   $min_oligo_len = 6;
   $max_oligo_len = 6;
+
   ## dyad-analysis options
   $monad_length = 3;
   $min_sp = 0;
@@ -1315,6 +1318,7 @@ sub CalcOligoOptions {
   my ($oligo_len) = @_;
   $oligo_options = "-v";
   #   $oligo_options .= " -lth occ 1 "; ## This is to avoid calculating P-value for patterns not rpesent in the dataset, and for having a correct correction for multi-testing. 
+  $oligo_options .= " -two_tails" if ($two_tails);
   $oligo_options .= " -pseudo ".$oligo_pseudo if ($oligo_pseudo);
   $oligo_options .= " -sort ";
   $oligo_options .= " ".$strands;
@@ -1435,16 +1439,15 @@ sub OligoAnalysis {
   &RSAT::error::FatalError( "Cannot read file $family{$family_name}->{input_seq_file}") 
     unless (($batch)  || ($dry_run) || ($dry_run) || (-r $family{$family_name}->{input_seq_file}));
 
-   ## initialize the oligo file
 #    system "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >= 2);
 
    ## Analyze all oligo lengths
-   my @oligo_commands = ();
-   for $oligo_len ($min_oligo_len..$max_oligo_len) {
-	my ($one_oligo_command, $one_oligo_file) = &CalcOligoOptions($oligo_len);
-	push @oligo_commands, $one_oligo_command;
-#	&doit($command, $dry_run, $die_on_error, $verbose);
-#	system "cat $oligo_file >> $family{$family_name}->{oligo_file}";
+  my @oligo_commands = ();
+  for $oligo_len ($min_oligo_len..$max_oligo_len) {
+    my ($one_oligo_command, $one_oligo_file) = &CalcOligoOptions($oligo_len);
+    push @oligo_commands, $one_oligo_command;
+    #	&doit($command, $dry_run, $die_on_error, $verbose);
+    #	system "cat $oligo_file >> $family{$family_name}->{oligo_file}";
    }
 
    ## Merge the results obtained with different oligo lengths
@@ -2961,7 +2964,7 @@ sub define_bg_model_files {
   }
 
   ## Name of model files for dyad-analysis
-  $bg_model_file{"dyads"} = $dir{bg_models}."/bg_dyads_".$monad_length."nt".${strands}.${noov}".tab";
+  $bg_model_file{"dyads"} = $dir{bg_models}."/bg_dyads_".$monad_length."nt".$strands.$noov.".tab";
 
   ## Name of model file for MEME
   $bg_model_file{"meme"} = $dir{bg_models}."/bg_meme_mkv".$markov_order.".txt";
@@ -3505,6 +3508,11 @@ OPTIONS
 		segments as repats to be masked.
 
    oligo-analysis and dyad-analysis options
+
+   	-two_tails
+		Perform a two-tails test for oligo-analysis and
+		dyad-analysis. The two-tails test detects both
+		under-represented and over-represented motifs.
 
 	-1str   strand-sensitive analysis
 
@@ -4227,6 +4235,10 @@ sub ReadArguments {
       #### prevent self-overlap
     } elsif ($ARGV[$a] eq "-noov") {
       $noov = "-noov";
+
+      #### two-tail test for oligo-analysis and dyad-analysis
+    } elsif ($ARGV[$a] eq "-two_tails") {
+      $two_tails = 1;
 
       #### allow self-overlap
     } elsif ($ARGV[$a] eq "-ovlp") {
@@ -5724,6 +5736,7 @@ multiple-family-analysis options
 ## Parameters for oligo-analysis and dyad-analysis
 -1str   	strand-sensitive analysis
 -2str   	strand-insensitive analysis
+-two_tails	perform a two-tails test (detect under- and over-represented motifs)
 -noov		prevent overlapping matches for self-overlapping patterms
 -ovlp		allow overlapping matches for self-overlapping patterms
 -pseudo		pseudo-weight (see oligo-analysis manual)
