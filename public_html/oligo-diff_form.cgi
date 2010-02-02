@@ -1,0 +1,229 @@
+#!/usr/bin/perl
+#### this cgi script fills the HTML form for the program oligo-diffi
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+use CGI;
+use CGI::Carp qw/fatalsToBrowser/;
+require "RSA.lib";
+require "RSA2.cgi.lib";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+
+### Read the CGI query
+$query = new CGI;
+
+### default values for filling the form
+$default{seq1} = "";
+$default{upload_seq1} = "";
+$default{seq2} = "";
+$default{upload_seq2} = "";
+$default{lth_occ} = "3";
+$default{uth_occ} = "none";
+$default{lth_sig} = "0";
+$default{uth_sig} = "none";
+$default{lth_Pval} = "none";
+$default{uth_Pval} = "none";
+$default{lth_Eval} = "none";
+$default{uth_Eval} = "none";
+$default{oligo_length} = "6";
+$default{noov} = "checked";
+$default{strand} = "both strands";
+
+### print the form ###
+&RSA_header("oligo-diff", 'form');
+print "<CENTER>";
+print "Compare oligonucleotide occurrences between two input sequence files, and return oligos that are significantly enriched in one of the files respective to the other one.<P>\n";
+print "Program developed by <A HREF='mailto:jvhelden\@ulb.ac.be (Jacques van Helden)'>Jacques van Helden</A>\n";
+print "</CENTER>";
+print "<HR>";
+
+### replace defaults by parameters from the cgi call, if defined
+foreach $key (keys %default) {
+  if ($query->param($key)) {
+    $default{$key} = $query->param($key);
+  }
+}
+
+print $query->start_multipart_form(-action=>"oligo-diff.cgi");
+
+#### features text areas
+
+
+################################################################
+## First sequence set
+print "<h2>Input sequences</h2>\n";
+
+## Textarea for the first sequence set
+print "<p><b><a href='help.oligo-diff.html#upload_seq1'>First sequence set</a></b><br>";
+print $query->textarea(-name=>'seq1',
+		       -default=>$default{seq1},
+		       -rows=>8,
+		       -columns=>80);
+
+#### Upload first sequence file
+print  "<br>Upload file","&nbsp;"x3;
+print $query->filefield(-name=>'upload_seq1',
+			-default=>$default{upload_seq1},
+			-size=>60,
+			-maxlength=>200);
+print "</p>\n";
+
+################################################################
+## Second sequence set
+print "<p><b><a href='help.oligo-diff.html#upload_seq2'>Second sequence set</a></b><br>";
+
+## Textarea for the second sequence set
+print $query->textarea(-name=>'seq2',
+		       -default=>$default{seq2},
+		       -rows=>8,
+		       -columns=>80);
+
+#### Upload secnd sequence file
+print  "<br>Upload file","&nbsp;"x3;
+print $query->filefield(-name=>'upload_seq2',
+			-default=>$default{upload_seq2},
+			-size=>60,
+			-maxlength=>200);
+print "</p>";
+print "<hr>\n";
+
+################################################################
+## IOligonucleotide counting options
+
+print "<h2>Oligonucleotide countint options</h2>\n";
+
+## oligo size
+print "<B><A HREF='help.oligo-analysis.html#oligo_length'>Oligomer length</A>&nbsp;</B>\n";
+print $query->popup_menu(-name=>'oligo_length',
+			 -Values=>[1,2,3,4,5,6,7,8],
+			 -default=>$default{oligo_length});
+
+## prevent overlapping matches of the same pattern
+#print "<br>\n";
+print "&nbsp;"x5;
+print $query->checkbox(-name=>'noov',
+		       -checked=>$default{noov},
+		       -label=>'');
+print "&nbsp;<A HREF='help.oligo-analysis.html#noov'><B>prevent overlapping matches</B></A>";
+
+## strand
+print "<br>\n";
+#print "&nbsp;"x5;
+print "<B><A HREF='help.oligo-analysis.html#count_strands'>Count on</A>&nbsp;</B>\n";
+print $query->popup_menu(-name=>'strand',
+			 -Values=>['single strand',
+				  'both strands'],
+			 -default=>$default{strand});
+print "<hr>\n";
+
+
+
+################################################################
+## table with all the thresholds
+print "<h2>Thresholds</h2>\n";
+print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
+		    $query->Tr({-align=>left,-valign=>TOP},
+			       [
+				$query->th([" <A HREF='help.oligo-diff.html#return_fields'>Fields</A> ",
+					    " <A HREF='help.oligo-diff.html#thresholds'>Lower<BR>Threshold</A> ",
+					    " <A HREF='help.oligo-diff.html#thresholds'>Upper<BR>Threshold</A> ",
+					    ]),
+
+				### Query class size
+				$query->td([' Occurrences ',
+					    $query->textfield(-name=>'lth_occ',
+							      -default=>$default{lth_occ},
+							      -size=>5),
+					    $query->textfield(-name=>'uth_occ',
+							      -default=>$default{uth_occ},
+							      -size=>5),
+					    ]),
+
+				### Significance 
+				$query->td([' Significance ',
+					    $query->textfield(-name=>'lth_sig',
+							      -default=>$default{lth_sig},
+							      -size=>5),
+					    $query->textfield(-name=>'uth_sig',
+							      -default=>$default{uth_sig},
+							      -size=>5),
+					    ]),
+
+				### P-value 
+				$query->td([' P-value ',
+					    $query->textfield(-name=>'lth_Pval',
+							      -default=>$default{lth_Pval},
+							      -size=>5),
+					    $query->textfield(-name=>'uth_Pval',
+							      -default=>$default{uth_Pval},
+							      -size=>5),
+					    ]),
+
+				### E-value 
+				$query->td([' E-value ',
+					    $query->textfield(-name=>'lth_Eval',
+							      -default=>$default{lth_Eval},
+							      -size=>5),
+					    $query->textfield(-name=>'uth_Eval',
+							      -default=>$default{uth_Eval},
+							      -size=>5),
+					    ]),
+# 				### Jaccard index
+# 				$query->td([' Jaccard index ',
+# 					    $query->textfield(-name=>'lth_jac',
+# 							      -default=>$default{lth_jac},
+# 							      -size=>5),
+# 					    $query->textfield(-name=>'uth_jac',
+# 							      -default=>$default{uth_jac},
+# 							      -size=>5),
+# 					    ]),
+
+			 ]
+			)
+		);
+
+### send results by email or display on the browser
+print "<HR width=550 align=left>\n";
+&SelectOutput();
+
+### action buttons
+print "<ul><ul><table class='formbutton'>\n";
+print "<tr valign=middle>\n";
+#print "<td>", $query->submit(-label=>"DEMO"), "</td>\n";
+print "<td>", $query->submit(-label=>"GO"), "</td>\n";
+print "<td>", $query->reset, "</td>\n";
+print $query->end_form;
+
+
+################################################################
+### data for the demo
+print $query->start_multipart_form(-action=>"oligo-diff_form.cgi");
+
+$demo_file1 = $ENV{RSAT}."/public_html/demo_files/MET_up800-noorf.fasta";
+$demo_file2 = $ENV{RSAT}."/public_html/demo_files/PHO_up800-noorf.fasta";
+$demo_seq1=`cat $demo_file1`;
+$demo_seq2=`cat $demo_file2`;
+
+print "<TD><B>";
+print $query->hidden(-name=>'seq1',-default=>$demo_seq2);
+print $query->hidden(-name=>'seq2',-default=>$demo_seq1);
+print $query->submit(-label=>"DEMO");
+print "</B></TD>\n";
+print $query->end_form;
+
+
+print "<TD><B><A HREF='help.oligo-diff.html'>MANUAL</A></B></TD>\n";
+#print "<TD><B><A HREF='tutorials/tut_oligo-diff.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "</TR></TABLE></UL></UL>\n";
+
+print "</FONT>\n";
+print "</blockquote>";
+print "<HR>";
+
+print $query->end_html;
+
+exit(0);
+
+
+
