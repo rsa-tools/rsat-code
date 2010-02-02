@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.36 2008/06/16 09:35:50 jvanheld Exp $
+# $Id: template,v 1.37 2010/02/02 10:57:09 jvanheld Exp $
 #
 ############################################################
 
@@ -61,7 +61,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.36 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.37 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::infile = ();
@@ -144,6 +144,7 @@ sub ReadArguments {
     while (scalar(@arguments) >= 1) {
       $arg = shift (@arguments);
 	## Verbosity
+
 =pod
 
 =head1 OPTIONS
@@ -163,6 +164,7 @@ Level of verbosity (detail in the warning messages during execution)
 	    }
 
 	    ## Help message
+
 =pod
 
 =item B<-h>
@@ -174,6 +176,7 @@ Display full help message
 	    &PrintHelp();
 
 	    ## List of options
+
 =pod
 
 =item B<-help>
@@ -185,6 +188,7 @@ Same as -h
 	    &PrintOptions();
 
 	    ## Input file
+
 =pod
 
 =item B<-i inputfile>
@@ -197,6 +201,7 @@ allows to use the command within a pipe.
 	    $main::infile{input} = shift(@arguments);
 
 	    ## Output file
+
 =pod
 
 =item	B<-o outputfile>
@@ -213,7 +218,6 @@ allows to use the command within a pipe.
 
 	}
     }
-
 
 =pod
 
