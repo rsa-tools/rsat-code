@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: oligo-diff,v 1.4 2010/02/02 10:56:55 jvanheld Exp $
+# $Id: oligo-diff,v 1.5 2010/02/02 21:29:08 jvanheld Exp $
 #
 ############################################################
 
@@ -56,19 +56,19 @@ header of the output (for this, the verbosity needs to be at least 1).
 
 =head2 oligo-analysis
 
-The programs I<oligo-diff>and I<oligo-analysis> serve related
+The programs I<oligo-diff> and I<oligo-analysis> serve for related
 purposes: discovering exceptional oligonucleotides. The difference is
 that I<oligo-analysis> considers a single sequence file, and compares
 pobserved oligo-frequencies with those expected from a background
 model (Bernoulli or Markov). This background model is generally
-estimated from a set of background sequences. 
+estimated from a set of background sequences.
 
 In the situation where one wants to compare a small sequence file
 (e.g. 50 promoters of co-expressed genes) to a large one (e.g. the
 6000 other promoters of the considered organism), I<oligo-diff> should
 return more or less the same results as I<oligo-analysis> with a
 background model based on the large file. Slight differences come from
-the use of the hypergeometric (I<oligo-diff>) vesus binomial
+the use of the hypergeometric (I<oligo-diff>) versus binomial
 (I<oligo-analysis>) statistics.
 
 
@@ -80,6 +80,37 @@ program I<count-words> is part of the RSAT suite (it is written in C,
 and has to be compiled as explained in the RSAT installation guide).
 
 =head1 WISH LIST
+
+=over
+
+=item B<-return assembly>
+
+Assemble the significant patterns with I<pattern-assembly>. The
+oligonucleotides significantly enriched in file1 are assembled
+separately from those significant in file2.
+
+The option -return assembly requires to specify an output file. The
+assembly files have the suffix _file1.asmb and _file2.asmb,
+respectively.
+
+=item B<-return maps>
+
+Generate feature maps of the over-represented patterns, using the
+program I<feature-map>.
+
+=item B<-return pssm>
+
+Convert the assembled oligonucleotides in position-speicific scoring
+matrices (PSSM), using the program I<matrix-from-patterns>.
+
+=item B<-return index>
+
+Return a HTML file indexing the result files (oligos, assembly, PSSM,
+maps).
+
+=back
+
+
 
 =cut
 
@@ -100,7 +131,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     $count_words_cmd = $ENV{RSAT}."/bin/count-words";
@@ -112,16 +143,8 @@ package main;
 #    $in = STDIN;
     $out = STDOUT;
 
-    ## Threshold values
-    @supported_thresholds = qw(occ sig Pval Eval);
-    $supported_thresholds = join ",", @supported_thresholds;
-    %supported_threshold = ();
-    foreach my $thr (@supported_thresholds) {
-      $supported_threshold{$thr} = 1;
-    }
-    %lth = ();
-    %uth = ();
-
+    ## Sequence treatment
+    $purge = 1;
 
     ## Counting mode
     %patterns = ();
@@ -133,6 +156,16 @@ package main;
     $sum = 0;
     $distinct_oligos = 0;
     $log_base = log(10);
+
+    ## Threshold values
+    @supported_thresholds = qw(occ occ_sig occ_Pval occ_Eval);
+    $supported_thresholds = join ",", @supported_thresholds;
+    %supported_threshold = ();
+    foreach my $thr (@supported_thresholds) {
+      $supported_threshold{$thr} = 1;
+    }
+    %lth = ();
+    %uth = ();
 
     ################################################################
     ## Read argument values
@@ -230,20 +263,20 @@ package main;
 	my $from = $occ1;
 	my $to = $m;
 	$patterns{$oligo}->{side} = "file1";
-	$patterns{$oligo}->{Pval} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
+	$patterns{$oligo}->{occ_Pval} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
       } else {
 	## Left-tailed test (test significance of over-representation in file1)
 	$patterns{$oligo}->{side} = "file2";
 	my $from = 0;
 	my $to = $occ1;
-	$patterns{$oligo}->{Pval} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
+	$patterns{$oligo}->{occ_Pval} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
       }
-      $patterns{$oligo}->{Eval} = $test_nb * $patterns{$oligo}->{Pval};
-      $patterns{$oligo}->{sig} = -log($patterns{$oligo}->{Eval})/$log_base;
+      $patterns{$oligo}->{occ_Eval} = $test_nb * $patterns{$oligo}->{occ_Pval};
+      $patterns{$oligo}->{occ_sig} = -log($patterns{$oligo}->{occ_Eval})/$log_base;
     }
-    &CheckThresholds("sig");
-    &CheckThresholds("Pval");
-    &CheckThresholds("Eval");
+    &CheckThresholds("occ_sig");
+    &CheckThresholds("occ_Pval");
+    &CheckThresholds("occ_Eval");
 
     ################################################################
     ## Print verbose
@@ -259,14 +292,14 @@ package main;
     $descr{exp2} = "random expectation for occ2";
     $descr{freq1} = "frequency in file ".$infile{file1};
     $descr{freq2} = "frequency in file ".$infile{file2};
-    $descr{Pval} = "Hypergeometric P-value. P(X >= occ)";
-    $descr{Eval} = "Hypergeometric E-value. Eval = nb_test * Pval";
-    $descr{sig} = "Hypergeometric significance. sig = -log10(Eval)";
+    $descr{occ_Pval} = "Hypergeometric P-value. P(X >= occ)";
+    $descr{occ_Eval} = "Hypergeometric E-value. occ_Eval = nb_test * occ_Pval";
+    $descr{occ_sig} = "Hypergeometric significance. occ_sig = -log10(occ_Eval)";
     $descr{rank} = "Rank of the patterns sorted by decreasing significance.";
     $descr{side} = "side of the higher representation (file1 or file2)";
 
     ## Output fields
-    my @output_fields = qw(seq id occ1 occ2 exp1 exp2 freq1 freq2 Pval Eval sig rank side);
+    my @output_fields = qw(seq id occ1 occ2 exp1 exp2 freq1 freq2 occ_Pval occ_Eval occ_sig rank side);
 
     ## Field descriptions
     if ($main::verbose >= 1) {
@@ -298,12 +331,12 @@ package main;
     $out_format{freq1} = "%s";
     $out_format{freq2} = "%s";
     $out_format{side} = "%s";
-    $out_format{Pval} = "%.1e";
-    $out_format{Eval} = "%.1e";
-    $out_format{sig} = "%.2f";
+    $out_format{occ_Pval} = "%.1e";
+    $out_format{occ_Eval} = "%.1e";
+    $out_format{occ_sig} = "%.2f";
     $out_format{rank} = "%d";
 
-    my @sorted_oligos = sort {$patterns{$b}->{sig} <=> $patterns{$a}->{sig}}  (keys %patterns);
+    my @sorted_oligos = sort {$patterns{$b}->{occ_sig} <=> $patterns{$a}->{occ_sig}}  (keys %patterns);
     my $rank = 0;
     foreach my $oligo (@sorted_oligos) {
       $rank++;
@@ -425,6 +458,36 @@ Second sequence file.
     } elsif ($arg eq "-file2") {
       $main::infile{file2} = shift(@arguments);
 
+=pod
+
+=item B<-purge>
+
+Purge input sequences before counting oligonucleotide
+occurrences.
+
+This is highly recommended because redundant sequence fragment bias
+the over-representation statistics and create false positives.
+
+The option -purge is active by default, and can be canceled with the
+option -nopurge.
+
+=cut
+
+    } elsif ($arg eq "-purge") {
+      $main::purge = 1;
+
+
+=pod
+
+=item B<-nopurge>
+
+Do not purge input sequences before counting oligonucleotide
+occurrences.
+
+=cut
+
+    } elsif ($arg eq "-nopurge") {
+      $main::purge = 0;
 
       ## Oligonucleotide lengths
 
@@ -520,7 +583,7 @@ allows to use the command within a pipe.
 
 Lower threshold on some output field.
 
-Supported fields for threshold: occ,sig
+Supported fields for threshold: occ,occ_sig,occ_Pval,occ_Eval
 
 =item B<-uth key value>
 
@@ -616,10 +679,15 @@ sub CountWords {
   } else {
     $cmd = "cat ".$file;
   }
+
+  if ($purge) {
+    $cmd .= " | purge-sequence -mis 0 -ml 20 ".$main::strand;
+  }
+
   $cmd .= " | ".$main::count_words_cmd;
-  $cmd .= " -l ".$oligo_len;
-  $cmd .= " ".$strand;
-  $cmd .= " ".$overlap_mode if ($overlap_mode eq "-noov");
+  $cmd .= " -l ".$main::oligo_len;
+  $cmd .= " ".$main::strand;
+  $cmd .= " ".$main::overlap_mode if ($overlap_mode eq "-noov");
 
   &RSAT::message::TimeWarn("Counting words", $cmd) if ($main::verbose >= 2);
 
