@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: oligo-diff,v 1.3 2010/02/01 22:14:39 jvanheld Exp $
+# $Id: oligo-diff,v 1.4 2010/02/02 10:56:55 jvanheld Exp $
 #
 ############################################################
 
@@ -19,9 +19,12 @@ $program_version
 
 =head1 DESCRIPTION
 
-Compare frequencies of oligonucleotides between two input sequence
-files, and return oligos that are significantly enriched in one of the
-files respective to the other one.
+Compare oligonucleotide occurrences between two input sequence files,
+and return oligos that are significantly enriched in one of the files
+respective to the other one.
+
+The statistical significance of the enrichment is computed using the
+hypergeometric distribution.
 
 =head1 AUTHORS
 
@@ -97,7 +100,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     $count_words_cmd = $ENV{RSAT}."/bin/count-words";
@@ -110,7 +113,7 @@ package main;
     $out = STDOUT;
 
     ## Threshold values
-    @supported_thresholds = qw(occ sig);
+    @supported_thresholds = qw(occ sig Pval Eval);
     $supported_thresholds = join ",", @supported_thresholds;
     %supported_threshold = ();
     foreach my $thr (@supported_thresholds) {
@@ -239,7 +242,8 @@ package main;
       $patterns{$oligo}->{sig} = -log($patterns{$oligo}->{Eval})/$log_base;
     }
     &CheckThresholds("sig");
-
+    &CheckThresholds("Pval");
+    &CheckThresholds("Eval");
 
     ################################################################
     ## Print verbose
