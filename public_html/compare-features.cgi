@@ -21,7 +21,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 #### TEMPORARY
 
 $command = "$SCRIPTS/compare-features";
-$tmp_file_name = sprintf "compare-features.%s", &AlphaDate;
+$tmp_file_name = sprintf "compare-features.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
@@ -31,7 +31,7 @@ $query = new CGI;
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
 #### update log file ####
-&UpdateLogFile;
+&UpdateLogFile();
 
 #### read parameters ####
 $parameters = " -v 1";
