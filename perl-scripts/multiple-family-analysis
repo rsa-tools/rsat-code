@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.272 2010/02/02 07:54:52 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.273 2010/02/02 10:56:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.272 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.273 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -239,8 +239,8 @@ package main;
   $MEME_options{text} = ""; push @MEME_options, "text";	## Ouptut format = text
   $MEME_optiont{dna} = ""; push @MEME_options, "dna"; ## Sequence type == dna
   $MEME_options{mod} = "anr"; push @MEME_options, "mod"; ## Accept any number of occurrences per sequence
-  $MEME_options{minw} = 6; push @MEME_options, "minw"; ## Minimal motif width
-  $MEME_options{maxw}=25; push @MEME_options, "maxw"; ## Maximal motif width
+  $MEME_options{minw} = 8; push @MEME_options, "minw"; ## Minimal motif width
+  $MEME_options{maxw}=20; push @MEME_options, "maxw"; ## Maximal motif width
   $MEME_options{nmotifs}=$nmotifs; push @MEME_options, "nmotifs"; ## Number of motifs
   $MEME_options{evt}=1; push @MEME_options, "evt"; ## upper threshold on E-value
   $pssm_sort_key{meme} = 'meme.E-value';
@@ -2939,12 +2939,7 @@ sub CheckParameters {
   ################################################################
   ## MEME directory
   if ($task{meme}) {
-    $meme_dir = $ENV{meme_dir};
-    unless ($meme_dir) {
-      &RSAT::error::FatalError("The variable meme_dir is not defined. Please check the RSAT config file ${RSAT}/RSAT/config.props");
-    }
-    $fasta_get_markov = $meme_dir."/fasta-get-markov";
-    $meme_cmd = $meme_dir."/meme";
+    &check_meme_path();
   }
 
 }
@@ -2977,6 +2972,7 @@ sub ComputeBG {
   chdir($dir{main});
   &RSAT::message::TimeWarn("Computing background model from background sequence file") if ($main::verbose >= 1);
   &compute_bg_oligos();
+  &compute_bg_dyads();
   &compute_bg_meme();
   chdir($dir{output});
 }
@@ -3029,13 +3025,24 @@ sub compute_bg_dyads {
 }
 
 ################################################################
+## Check MEME path
+sub check_meme_path {
+  $meme_dir = $ENV{meme_dir};
+  unless ($meme_dir) {
+    &RSAT::error::FatalError("The variable meme_dir is not defined. Please check the RSAT config file ".$ENV{RSAT}."/RSAT_config.props");
+  }
+  $fasta_get_markov = $meme_dir."/fasta-get-markov";
+  $meme_cmd = $meme_dir."/meme";
+}
+
+################################################################
 ## Compute background model for MEME
 sub compute_bg_meme {
   ## Tip: the bg sequence file is defined relative to the main
   ## directory, but the bg model files must be defined relative to the
   ## output directory.
-
-  chdir($dir{main}); 
+  &check_meme_path();
+  chdir($dir{main});
   my $bg_model_file =  $bg_model_file{"meme"};
   &RSAT::message::TimeWarn("\tComputing background model for MEME", "markov".$markov_order, $bg_model_file) if ($main::verbose >= 1);
   my $cmd = "";
@@ -4336,19 +4343,15 @@ sub Verbose {
   }
 
   if ($bg_seq_file) {
-    $verbose_message .= sprintf "; %-13s\t%s\n", "background sequence file", $bg_seq_file;
-  } elsif ($background) {
-    $verbose_message .= sprintf "; %-13s\t%s\n", "background model", $background;
-  } elsif ($markov) {
-    $verbose_message .= sprintf "; %-13s\t%s\n", "background Markov order", $markov_order;
-  }
-  if ($bg_seq_file) {
-    $verbose_message .= sprintf "; Family file\t%s\n", $bg_seq_file ;
+    $verbose_message .= sprintf "; %-13s\t%s\n", "Background sequence file", $bg_seq_file;
     foreach my $model (sort keys %bg_model_file) {
       $verbose_message .= sprintf ";\t%-12s\t%s\n", $model, $bg_model_file{model};
     }
+  } elsif ($background) {
+    $verbose_message .= sprintf "; %-13s\t%s\n", "Background model", $background;
+  } elsif ($markov) {
+    $verbose_message .= sprintf "; %-13s\t%s\n", "Background Markov order", $markov_order;
   }
-
 
   $verbose_message .= "; No overlap with upstream ORFs\n" if ($noorf);
   if ($noov eq "-noov") {
