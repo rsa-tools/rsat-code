@@ -260,6 +260,7 @@ sub _readFromTRANSFACFile {
       my $accession = $1;
       &RSAT::message::Info("TRANSFAC accession number", $accession) if ($main::verbose >= 3);
       $current_matrix_nb++;
+      $transfac_consensus = "";
       $matrix = new RSAT::matrix();
       $matrix->set_parameter("program", "transfac");
       $matrix->set_parameter("matrix.nb", $current_matrix_nb);
