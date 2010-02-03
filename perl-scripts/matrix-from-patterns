@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.26 2009/12/14 16:06:26 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.27 2010/02/03 06:48:29 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -63,9 +63,13 @@ jvhelden@ulb.ac.be
 
 =head1 CATEGORY
 
+=over
+
 =item sequences
 
 =item pattern discovery
+
+=back
 
 =head1 USAGE
 
@@ -728,6 +732,8 @@ __END__
 
 =pod
 
+=back
+
 =head1 SEE ALSO
 
 =head2 I<pattern-assembly>
@@ -735,6 +741,5 @@ __END__
 =head2 I<convert-matrix>
 
 =head2 I<matrix-scan>
-
 
 =cut
