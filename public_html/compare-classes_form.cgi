@@ -44,7 +44,6 @@ print "Program developed by <A HREF='mailto:jtran\@bigre.ulb.ac.be (Joseph Tran)
 print "and <A HREF='mailto:jvanheld\@bigre.ulb.ac.be (Jacques van Helden)'>Jacques van Helden</A>\n";
 print "</CENTER>";
 print "<HR>";
-print "<blockquote>";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -75,12 +74,11 @@ print "<p>";
 #### table with all the statistics and thresholds
 print "<h4>Return</h4>\n";
 
-print "<BLOCKQUOTE>\n";
 print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 		    $query->Tr({-align=>left,-valign=>TOP},
 			       [
 				$query->th([" <A HREF='help.compare-classes.html#return_fields'>Fields</A> "]),
-				
+
 				### occurrences
 				$query->td([$query->checkbox(-name=>'occ',
 							     -checked=>$default{occ},
@@ -120,10 +118,8 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 			 ]
 			)
 		);
-print "</BLOCKQUOTE>\n";
 
 print "<h4>Thresholds</h4>\n";
-print "<BLOCKQUOTE>\n";
 print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 		    $query->Tr({-align=>left,-valign=>TOP},
 			       [
@@ -209,10 +205,6 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 			 ]
 			)
 		);
-print "</BLOCKQUOTE>\n";
-
-
-
 
 
 
@@ -262,7 +254,6 @@ print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";
-print "</blockquote>";
 print "<HR>";
 
 print $query->end_html;
