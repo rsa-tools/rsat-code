@@ -19,15 +19,16 @@ $default{seq2} = "";
 $default{upload_seq2} = "";
 $default{lth_occ} = "3";
 $default{uth_occ} = "none";
-$default{lth_sig} = "0";
-$default{uth_sig} = "none";
-$default{lth_Pval} = "none";
-$default{uth_Pval} = "none";
-$default{lth_Eval} = "none";
-$default{uth_Eval} = "none";
+$default{lth_occ_sig} = "0";
+$default{uth_occ_sig} = "none";
+$default{lth_occ_Pval} = "none";
+$default{uth_occ_Pval} = "none";
+$default{lth_occ_Eval} = "none";
+$default{uth_occ_Eval} = "none";
 $default{oligo_length} = "6";
 $default{noov} = "checked";
 $default{strand} = "both strands";
+$default{purge} = 'checked';
 
 ### print the form ###
 &RSA_header("oligo-diff", 'form');
@@ -85,15 +86,23 @@ print $query->filefield(-name=>'upload_seq2',
 			-size=>60,
 			-maxlength=>200);
 print "</p>";
-print "<hr>\n";
+
+
+#### purge sequences
+print $query->checkbox(-name=>'purge',
+		       -checked=>$default{purge},
+		       -label=>'');
+print "&nbsp;<A HREF='help.oligo-diff.html#purge'><B>purge sequences (highly recommended)</B></A>";
+print "<BR>";
+
 
 ################################################################
-## IOligonucleotide counting options
-
+## Oligonucleotide counting options
+print "<hr>\n";
 print "<h2>Oligonucleotide countint options</h2>\n";
 
 ## oligo size
-print "<B><A HREF='help.oligo-analysis.html#oligo_length'>Oligomer length</A>&nbsp;</B>\n";
+print "<B><A HREF='help.oligo-diff.html#oligo_length'>Oligomer length</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'oligo_length',
 			 -Values=>[1,2,3,4,5,6,7,8],
 			 -default=>$default{oligo_length});
@@ -104,12 +113,12 @@ print "&nbsp;"x5;
 print $query->checkbox(-name=>'noov',
 		       -checked=>$default{noov},
 		       -label=>'');
-print "&nbsp;<A HREF='help.oligo-analysis.html#noov'><B>prevent overlapping matches</B></A>";
+print "&nbsp;<A HREF='help.oligo-diff.html#noov'><B>prevent overlapping matches</B></A>";
 
 ## strand
 print "<br>\n";
 #print "&nbsp;"x5;
-print "<B><A HREF='help.oligo-analysis.html#count_strands'>Count on</A>&nbsp;</B>\n";
+print "<B><A HREF='help.oligo-diff.html#count_strands'>Count on</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'strand',
 			 -Values=>['single strand',
 				  'both strands'],
@@ -141,31 +150,31 @@ print $query->table({-border=>0,-cellpadding=>0,-cellspacing=>0},
 
 				### Significance 
 				$query->td([' Significance ',
-					    $query->textfield(-name=>'lth_sig',
-							      -default=>$default{lth_sig},
+					    $query->textfield(-name=>'lth_occ_sig',
+							      -default=>$default{lth_occ_sig},
 							      -size=>5),
-					    $query->textfield(-name=>'uth_sig',
-							      -default=>$default{uth_sig},
+					    $query->textfield(-name=>'uth_occ_sig',
+							      -default=>$default{uth_occ_sig},
 							      -size=>5),
 					    ]),
 
 				### P-value 
 				$query->td([' P-value ',
-					    $query->textfield(-name=>'lth_Pval',
-							      -default=>$default{lth_Pval},
+					    $query->textfield(-name=>'lth_occ_Pval',
+							      -default=>$default{lth_occ_Pval},
 							      -size=>5),
-					    $query->textfield(-name=>'uth_Pval',
-							      -default=>$default{uth_Pval},
+					    $query->textfield(-name=>'uth_occ_Pval',
+							      -default=>$default{uth_occ_Pval},
 							      -size=>5),
 					    ]),
 
 				### E-value 
 				$query->td([' E-value ',
-					    $query->textfield(-name=>'lth_Eval',
-							      -default=>$default{lth_Eval},
+					    $query->textfield(-name=>'lth_occ_Eval',
+							      -default=>$default{lth_occ_Eval},
 							      -size=>5),
-					    $query->textfield(-name=>'uth_Eval',
-							      -default=>$default{uth_Eval},
+					    $query->textfield(-name=>'uth_occ_Eval',
+							      -default=>$default{uth_occ_Eval},
 							      -size=>5),
 					    ]),
 # 				### Jaccard index

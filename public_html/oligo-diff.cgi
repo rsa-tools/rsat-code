@@ -94,6 +94,13 @@ if ($upload_seq2) {
 }
 $parameters .= " -file2 $tmp_seq2";
 
+### purge or not
+if ($query->param('purge')) {
+  $parameters .= " -purge";
+} else {
+  $parameters .= " -nopurge";
+}
+
 ## oligo size
 $oligo_length = $query->param('oligo_length') ;
 &FatalError("$oligo_length Invalid oligonucleotide length") unless &IsNatural($oligo_length);
@@ -101,12 +108,9 @@ $parameters .= " -l $oligo_length";
 
 
 ### single or both strands
-$str = "";
 if ($query->param('strand') =~ /single/) {
-  $str = " -1str";
   $parameters .= " -1str";
 } else {
-  $str = " -2str";
   $parameters .= " -2str";
 }
 
@@ -116,7 +120,7 @@ if ($query->param('noov')) {
 }
 
 ### Thresholds
-foreach my $field qw(occ sig Pval Eval) {
+foreach my $field qw(occ occ_sig occ_Pval occ_Eval) {
   if (&IsReal($query->param('lth_'.$field))) {
     $parameters .= " -lth ".$field;
     $parameters .= " ".$query->param('lth_'.$field);
