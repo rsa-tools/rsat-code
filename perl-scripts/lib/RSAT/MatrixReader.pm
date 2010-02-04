@@ -327,7 +327,15 @@ sub _readFromTRANSFACFile {
 	## Matrix identifier
       } elsif (/^ID\s+/) {
 	$matrix->set_parameter("identifier", $'); #'
-	&RSAT::message::Info("TRANSFAC identifier", $matrix->get_attribute("identifier")) if ($main::verbose >= 3);
+	$matrix->force_attribute("name", join("_", 
+					      $matrix->get_attribute("accession"),
+					      $matrix->get_attribute("identifier"),
+					     ));
+	&RSAT::message::Info("TRANSFAC identifier", 
+			     $matrix->get_attribute("accession"),
+			     $matrix->get_attribute("identifier"),
+			     $matrix->get_attribute("name")
+			    ) if ($main::verbose >= 3);
 
 	## Bound factor
       } elsif (/^BF\s+/) {
