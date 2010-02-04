@@ -2599,7 +2599,7 @@ sub calcTheorScoreDistribBernoulli {
  #   @scores = $self->getFrequencies();
  # }
 
-  &RSAT::message::TimeWarn("Calculating theoretical distribution of ", $score_type,
+  &RSAT::message::TimeWarn("Calculating theoretical distribution of ".$score_type,
 			   "Bernoulli model",
 			   "matrix", $self->get_attribute("name"),
 			   "Precision: ".$decimals." decimals",

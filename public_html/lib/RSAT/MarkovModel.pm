@@ -810,7 +810,6 @@ sub normalize_transition_frequencies {
     $self->add_pseudo_freq();	### adding the pseudo-freq
   }
   $self->calc_prefix_suffix_sums();
-  
 
   ## Store prefixes and suffixes in arrays for quick access
 #  $self->set_array_attribute("prefixes", sort(keys(%prefix_sum)));
@@ -863,8 +862,8 @@ sub normalize_transition_frequencies {
     }
   }
   $self->force_attribute("missing_transitions", $missing_transitions);
-  
-   ## Calculate relative frequencies
+
+  ## Calculate relative frequencies
   foreach my $prefix ($self->get_prefixes()) {
     foreach my $suffix ($self->get_suffixes()) {
       my $oligo_freq = $self->{oligo_freq}->{$prefix}->{$suffix} || 0;
