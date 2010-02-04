@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.149 2010/01/22 09:19:42 morgane Exp $
+# $Id: matrix-scan,v 1.150 2010/02/04 18:14:27 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -316,7 +316,9 @@ package main;
   @main::matrix_files = ();
   @matrices = ();
 
-  $consensus_name = "";		# Use consensus as matrix name
+  $consensus_name = 0;		# Use consensus as matrix name
+  $id_as_name = 0;		# Use identifier as matrix name
+  $ac_as_name = 0;		# Use accession number as matrix name
   $markov = -1;	## To make the distinction with 0, which is a valid value for the markov order
   $window = -1; 
   $bg_method = "";
@@ -465,6 +467,8 @@ package main;
   #### check argument values
   &RSAT::error::FatalError("You must specify the method for background estimation (an option among -bgfile, -bginput, -window)") unless ($bg_method);
 
+  &RSAT::error::FatalError("Options -consensus_name, -id_as_name aned -ac_as_name are mutually exclusive")
+	if ($consensus_name + $id_as_name + $ac_as_name > 1);
 
   #################################################################
   ## Batch option
@@ -855,7 +859,7 @@ package main;
 	$matrix->set_attribute("file", $matrix_file);
 	$matrix->set_attribute("n_treatment", $n_treatment);
 	$matrix->index_alphabet();
-	
+
 	## Use the matrix consensus as name
 	if ($consensus_name) {
 	  $matrix->calcConsensus();
@@ -865,9 +869,17 @@ package main;
 	      if ($main::verbose >= 3);
 	    $matrix->force_attribute("name", $consensus);
 	  }
-	} elsif ($matrix->get_attribute("accession")) {
-		$matrix->force_attribute("name", $matrix->get_attribute("accession"));
-     } else {
+	} elsif ($id_as_name) {
+	  my $id = $matrix->get_attribute("identifier");
+	  if ($id) {
+	    $matrix->force_attribute("name", $id);
+	  } else {
+	    &RSAT::message::Warning("Matrix",$matrix->get_attribute("accession"), "has no identifier");
+	    $matrix->force_attribute("name", $matrix->get_attribute("accession"));
+	  }
+	} elsif (($ac_as_name) && ($matrix->get_attribute("accession"))) {
+	  $matrix->force_attribute("name", $matrix->get_attribute("accession"));
+	} elsif (!$matrix->get_attribute("name")) {
 	  my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
 	  $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
 	  if (scalar(@new_matrices) > 1) {
@@ -1648,7 +1660,7 @@ package main;
 	}
 
     	##run matrix-scan-quick cmd
-    	&RSAT::message::Info("Using matrix-scan-quick: $quick_cmd\n") if ($main::verbose >= 2);
+    	&RSAT::message::Info("Using matrix-scan-quick: $quick_cmd\n") if ($main::verbose >= 0);
     	my $quick_distrib = `$quick_cmd`;
 	##parse matrix-scan-quick result
 	## columns are:
@@ -1955,7 +1967,7 @@ matrix-scan options
 -n [skip|score]	Treatment of N characters.
 		skip:  sites that contain N characters are skipped
 		score: sites that contain N characters are scored
--mask [upper|lower] Mask lower or uppercases, respectively, i.e replace selected case by N characters.
+-mask [upper|lower|non-dna] Mask specific types of characters (lower, uppercases or non-dna), i.e replace them  by N characters.
 -origin [start|end|chrom]	Define pos as the origin for the calculatin of positions
 -offset #	add a given number to site positions (change the reference point).
 -o		outputfile
@@ -1964,6 +1976,8 @@ matrix-scan options
 -matrix_format  format of the matrix (supported: tab(default), meme, consensus,MotifSampler)
 -top_matrices #	only scan with the top # matrices per matrix file
 -consensus_name use the motif (degenerate) consensus as matrix name.
+-id_as_name     use the matrix identifier as matrix name (for TRANSFAC format).
+-ac_as_name     use the matrix accession number as matrix name (for TRANSFAC format).
 -decimals #	Number of decimals displayed for the weight score
 -pseudo	#	pseudo-count for the matrix (default value: 1). By default the pseudo is
                 distributed proportinally to residue prior
@@ -2201,6 +2215,35 @@ Use the motif (degenerate) consensus as matrix name.
     } elsif ($arg eq "-consensus_name") {
       $main::consensus_name = 1;
 
+      ## Use ID as matrix name
+
+=pod
+
+=item B<-id_as_name>
+
+Use the motif identifier as matrix name. This is useful for TRANSFAC
+matrices, which have a distinct accession number (AC) and identifier
+(ID). The identifier generally indicates the name of the transcription
+factor.
+
+=cut
+    } elsif ($arg eq "-id_as_name") {
+      $main::id_as_name = 1;
+
+      ## Use AC as matrix name
+
+=pod
+
+=item B<-ac_as_name>
+
+Use the motif accession number as matrix name. This is useful for
+TRANSFAC matrices, which have a distinct accession number (AC) and
+identifier (ID).
+
+=cut
+    } elsif ($arg eq "-ac_as_name") {
+      $main::ac_as_name = 1;
+
       ## Matrix file
 
 =pod
@@ -2266,10 +2309,10 @@ Sequence format.
 
 =pod
 
-=item B<-mask upper|lower>
+=item B<-mask upper|lower|non-dna>
 
-Mask lower or uppercases, respecively, i.e. replace selected case by N
-characters.
+Mask specific types of characters (lowercases, uppercases, non-dna),
+i.e. replace them by N characters.
 
 =cut
 
@@ -3953,8 +3996,10 @@ sub runInBatch {
     if ($main::equi_pseudo == 1) {
       $matrix_scan_cmd .= " -equi_pseudo ";
     }
-    if ($consensus_name eq 1) {
+    if ($consensus_name) {
       $matrix_scan_cmd .= " -consensus_name ";
+    } elsif ($id_as_name) {
+      $matrix_scan_cmd .= " -id_as_name ";
     }
     ## sequence
     $matrix_scan_cmd .= " -seq_format ".$seq_format;
