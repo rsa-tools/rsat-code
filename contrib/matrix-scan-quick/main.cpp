@@ -254,6 +254,7 @@ int main(int argc, char *argv[])
     }
     else
     {
+        WARNING("using default bernoulli model (computed using input)");
         double priori[4] = {0.25, 0.25, 0.25, 0.25};
         bernoulli(markov, priori);
     }
