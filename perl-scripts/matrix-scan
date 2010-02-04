@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.150 2010/02/04 18:14:27 jvanheld Exp $
+# $Id: matrix-scan,v 1.151 2010/02/04 18:22:07 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -672,16 +672,17 @@ package main;
     ## The C command matrix-scan-quick is MUCH faster than
     ## matrix-scan. If it is supported on this machine, use it !
     $quick_cmd = `which matrix-scan-quick`;
-#    $quick_cmd = 0; ## For debugging and time comparison
-	if ($quick_cmd) {
-		## In addition, we want to check if the command actually works
-		`matrix-scan-quick -h`;
-		if ($?) {
-    		&RSAT::message::Warning("matrix-scan-quick is installed but not working. Will use the slower version instead.");
-    		$quick_cmd = 0;
-		}
-	}
-	
+    chomp($quick_cmd);
+ ##    $quick_cmd = 0; ## Uncomment this for debugging and time comparison
+    if ($quick_cmd) {
+      ## In addition, we want to check if the command actually works
+      `matrix-scan-quick -h`;
+      if ($?) {
+	&RSAT::message::Warning("matrix-scan-quick is installed but not working. Will use the slower version instead.");
+	$quick_cmd = 0;
+      }
+    }
+
     unless ($quick_cmd) {
       $calc_fields{sites} = 1; # if matrix-scan-quick is not supported, calculate sites (slower)
     }
@@ -1619,39 +1620,49 @@ package main;
 	my $matrix_name = $matrix->get_attribute("name");
 	my $matrix_format = $matrix->get_attribute("program");
 	my $matrix_quick_file = $matrix->get_attribute("file");
-	
+
 	## matrix format should be tab
 	if (($matrix_format ne "tab")||($matrix_format ne "infogibbs")) {
-		my $tmp_file_name = sprintf "convert-matrix.%s", &AlphaDate();
-		$matrix_quick_file =  $TMP."/".$tmp_file_name.".tab";
-		my $convert_matrix_cmd = 
-		"convert-matrix -from ".$matrix_format." -to tab ".
-		" -i ".$matrix->get_attribute("file")." -o ".$matrix_quick_file.
+	  my $tmp_file_name = sprintf "convert-matrix.%s", &AlphaDate();
+	  $matrix_quick_file =  $TMP."/".$tmp_file_name.".tab";
+	  my $convert_matrix_cmd = 
+	    "convert-matrix -from ".$matrix_format." -to tab ".
+	      " -i ".$matrix->get_attribute("file")." -o ".$matrix_quick_file.
 		" -p ".$pseudo_counts." -bg_pseudo ".$bg_pseudo." -decimals ".$decimals; 
-		&RSAT::message::Info("Converting matrix to tab format: $convert_matrix_cmd\n") if ($main::verbose >= 5);
-		`$convert_matrix_cmd`;
+	  &RSAT::message::Info("Converting matrix to tab format: $convert_matrix_cmd\n") if ($main::verbose >= 5);
+	  `$convert_matrix_cmd`;
 	}
-	
+
 	## MORGANE: should save the bg-input into a file, otherwise matrix-scan-quick takes an equiprobable bg by default !!!
 	## background format should be Inclusive (=motifsampler)
 	if (defined($main::infile{bg})) {
-		if ($bg_in_format ne "motifsampler"){
-			my $tmp_file_name = sprintf "convert-background-model.%s", &AlphaDate();
-			$bg_quick_file =  $TMP."/".$tmp_file_name.".ms";
-			my $convert_bg_cmd = 
-			"convert-background-model -from ".$bg_in_format." -to motifsampler -i ".$main::infile{bg}." -o ".$bg_quick_file." -bg_pseudo ".$bg_pseudo; 
-			&RSAT::message::Info("Converting background to motifsampler format: $convert_bg_cmd\n") if ($main::verbose >= 5);
-			`$convert_bg_cmd`;
-		}
+	  if ($bg_in_format ne "motifsampler"){
+	    my $tmp_file_name = sprintf "convert-background-model.%s", &AlphaDate();
+	    $bg_quick_file =  $TMP."/".$tmp_file_name.".ms";
+	    my $convert_bg_cmd = 
+	      "convert-background-model -from ".$bg_in_format." -to motifsampler -i ".$main::infile{bg}." -o ".$bg_quick_file." -bg_pseudo ".$bg_pseudo; 
+	    &RSAT::message::Info("Converting background to motifsampler format: $convert_bg_cmd\n") if ($main::verbose >= 5);
+	    `$convert_bg_cmd`;
+	  }
 	}
 
+	################################################################
 	##prepare matrix-scan-quick cmd
-	my $quick_cmd = "";
-	$quick_cmd = "matrix-scan-quick";
+
+	## TEMPORARY COMMENT: JACQUES MODIFIED THE FOLLOWING LINES
+	## - fix a problem with markov order, which was not transmitted to matrix-scan-quick
+	## - we should use the location of matrix-scan-quick has been obtained from the command `which`
+
+#	my $quick_cmd = "";
+#	$quick_cmd = "matrix-scan-quick";
 	$quick_cmd .= " -i ".$main::infile{input};
     	$quick_cmd .= " -decimals ".$decimals;
     	$quick_cmd .= " -m ".$matrix_quick_file;
-    	$quick_cmd .= " -bgfile ".$bg_quick_file if (defined($main::infile{bg})) ;
+	if (defined($main::infile{bg})) {
+	  $quick_cmd .= " -bgfile ".$bg_quick_file;
+	} elsif ($main::markov > -1) {
+	  $quick_cmd .= " -markov ".$main::markov;
+	}
     	$quick_cmd .= " -return distrib";
     	if ($main::both_strands) {
 	  $quick_cmd .= " -2str";
