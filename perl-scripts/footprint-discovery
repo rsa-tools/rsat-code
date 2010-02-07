@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.33 2009/08/04 23:51:15 jvanheld Exp $
+# $Id: footprint-discovery,v 1.34 2010/02/07 05:27:05 rsat Exp $
 #
 ############################################################
 
@@ -184,7 +184,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.33 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.34 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -471,6 +471,7 @@ sub RunFootprintDisco {
     $cmd .= " -uth Pval 0.00025";
     $cmd .= " -bginput -markov 0";
     $cmd .= " ".$strands;
+    $cmd .= " -logo";
     $cmd .= " -o ".$outfile{pssm_prefix};
     &one_command($cmd);
     #  print $out "\n; ", &AlphaDate(), "\n", $cmd, "\n\n"; &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
