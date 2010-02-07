@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-transfac.pl,v 1.10 2007/12/07 08:35:44 jvanheld Exp $
+# $Id: parse-transfac.pl,v 1.11 2010/02/07 06:35:46 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:52:52 jvanheld>
 #
@@ -92,11 +92,11 @@ package TRANSFAC::Factor;
 			     transfac_id=>"SCALAR",     ## transfac factor ID
 			     organism=>"ARRAY",        ## OS field
 			     name=>"SCALAR",            ## FA field
-			     gene_name => "SCALAR",     ## GE field
+			     gene_name => "ARRAY",     ## GE field became an array from version 11.2
 			     factor_class => "SCALAR",  ## CL field
 
-			     names=>"ARRAY", 
-			     );     
+			     names=>"ARRAY",
+			     );
 }
 
 ################################################################
@@ -142,7 +142,7 @@ package TRANSFAC::TransPro;
 			     descr=>"SCALAR",
 			     organism=>"SCALAR",
 			     chromosomal_location=>"SCALAR",
-			     );     
+			     );
 }
 
 
@@ -197,18 +197,18 @@ package main;
     } else {	
 	$site_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::Site");
 	$site_holder->set_attribute_header("modifications", join("\t", "date", "author"));
-	
+
 	$factor_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::Factor");
 	$factor_holder->set_attribute_header("modifications", join("\t", "date", "author"));
-	
+
 	$gene_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::Gene");
 	$gene_holder->set_attribute_header("modifications", join("\t", "date", "author"));
 	$gene_holder->set_attribute_header("xrefs", join("\t", "xdb", "xid"));
-	
+
 	$matrix_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::Matrix");
 	$matrix_holder->set_attribute_header("pssm", join("\t", "pos", "A", "C", "G", "T", "consensus"));
 
-	push @data_types, qw (site factor gene matrix);
+	push @data_types, qw (matrix site factor gene);
 	push @classes, qw( TRANSFAC::Site TRANSFAC::Factor TRANSFAC::Gene TRANSFAC::Matrix );
 	push @class_factories, ($site_holder, $factor_holder, $gene_holder, $matrix_holder);
     }
@@ -461,39 +461,60 @@ sub ParseTransfacFile {
 
     open DATA, $input_file || 
 	die "Error: cannot open data file ", $input_file, "\n";
-    
+
     #### Read an entire record at a time
     $/ = "\/\/\n";
 
+
+    ## Parse the entry
     my $entries = 0;
     while ($text_entry = <DATA>) {
-	$entries++;
-	warn "; $input_file\t$entries entries\n" if ($main::verbose >=2);
+      $entries++;
+      warn "; $input_file\t$entries entries\n" if ($main::verbose >=2);
 
-	if ($entries==1) {
-	    #### check if there is a header
-    	    if (($text_entry =~ /TRANSFAC \S+ TABLE/i) ||
-		($text_entry =~ /TRANSPro/i))
-		{
-		if ($' =~ /Release (\S+)/) { 
-		    $transfac_version = $1;
-		   }
-		if ($' =~ /(\d+\-\d+\-\d+)/) { 
-		    $release_date = $1;
-		}
-		if ($main::verbose >= 1) {
-		    warn "; Transfac version $transfac_version\n";
-		    warn "; Release date     $release_date\n";
-		}
-		next;
-	    } else {
-		warn "Warning: file $input_file does not contain the header of a TRANSFAC file\n";
+      if ($entries==1) {
+	#### check if there is a header
+	if (($text_entry =~ /TRANSFAC \S+ TABLE/i) ||
+	    ($text_entry =~ /TRANSPro/i))
+	  {
+	    if ($' =~ /Release (\S+)/) { 
+	      $transfac_version = $1;
 	    }
-	}
+	    if ($' =~ /(\d+\-\d+\-\d+)/) { 
+	      $release_date = $1;
+	    }
+	    if ($main::verbose >= 1) {
+	      warn "; Transfac version $transfac_version\n";
+	      warn "; Release date     $release_date\n";
+	    }
+	    next;
+	  } else {
+	    warn "Warning: file $input_file does not contain the header of a TRANSFAC file\n";
+	  }
+      }
 
-	unless ($source) {
-	    $source = "Transfac";
-	    $source .= " $transfac_version" if ($transfac_version);
+      unless ($source) {
+	$source = "Transfac";
+	$source .= " $transfac_version" if ($transfac_version);
+      }
+
+
+	## If entry is a matrix, save it in a separate file in TRANSFAC format
+	if ($class_holder->get_object_type() eq "TRANSFAC::Matrix") {
+	  chdir ($dir{output});
+	  unless (-d "matrices_tf_format") {
+	    system "mkdir -p matrices_tf_format";
+	  }
+	  if ($text_entry =~ /AC +(M\d+)\s*\n/) {
+	    my $ac = $1;
+	    my $matrix_file = "matrices_tf_format/".$ac.".tf";
+	    my $out = &OpenOutputFile($matrix_file);
+	    print $out $text_entry;
+	    close  $out;
+	    &RSAT::message::Info("Exported matrix in TRANSFAC format", $dir{output}."/".$matrix_file) if ($main::verbose >= 3);
+	  } else {
+	    &RSAT::error::FatalError("Matrix entry without AC field", "\n".$text_entry);
+	  }
 	}
 
 	#### parse the entry
@@ -504,8 +525,6 @@ sub ParseTransfacFile {
 	    next if ($line =~ /^XX$/); # skip separator lines
 	    next if ($line =~ /^\/\/$/); # skip record separator
 
-	    
-	    
 	    if ($line =~ /^(\S{2})  /) {
 		my $key = $1; ## Attribute name
 		my $value = $'; #'; ## Attribute value
@@ -639,22 +658,21 @@ sub treat_generic_attributes {
 ## one column for the external database and one column ffor the
 ## external ID
 sub parse_database_references {
-    my ($class) = @_;
-    
-    foreach my $object ($class->get_objects()) {
-	foreach my $db_ref ($object->get_attribute("database_references")) {
-	    my @fields = split ":", $db_ref;
-	    my $xdb = &RSAT::util::trim(shift @fields);
-	    my $xids = &RSAT::util::trim(shift @fields);
-	    $xids =~ s/\.$//; 
-	    my @xids = split ";", $xids;
-	    foreach my $xid (@xids) {
-		$current_obj->push_expanded_attribute("xrefs", $xdb, &RSAT::util::trim($xid));
-	    }
-	}
+  my ($class) = @_;
+  foreach my $object ($class->get_objects()) {
+    foreach my $db_ref ($object->get_attribute("database_references")) {
+      my @fields = split ":", $db_ref;
+      my $xdb = &RSAT::util::trim(shift @fields);
+      my $xids = &RSAT::util::trim(shift @fields);
+      $xids =~ s/\.$//; 
+      my @xids = split ";", $xids;
+      foreach my $xid (@xids) {
+	$current_obj->push_expanded_attribute("xrefs", $xdb, &RSAT::util::trim($xid));
+      }
     }
+  }
 }
-    
+
 ################################################################
 # Specific treatment for promoters (TRANSPRO)
 #
@@ -804,7 +822,7 @@ sub TreatSites {
 	    if (defined($transfac_index{$gene_ac})) {
 		my $gene_obj = $transfac_index{$gene_ac};
 		my $gene_name = join ("", $gene_obj->get_attribute($key_alias{SD}));
-		$site->set_attribute("gene_name", $gene_name);
+		$site->force_attribute("gene_name", $gene_name);
 		warn join ("\t", "; Site",  
 			   $site->get_attribute("id"),
 			   "Gene AC", $gene_ac,
@@ -846,46 +864,44 @@ sub TreatSites {
 ################################################################
 ## post-parsing for genes (assign explicit field names)
 sub TreatGenes {
-    foreach my $gene ($gene_holder->get_objects()) {
-	
-	#### organism classification
-	my $taxonomy = &join_attribute($current_obj, "organism_classification", " ", "taxonomy");
+  foreach my $gene ($gene_holder->get_objects()) {
+    #### organism classification
+    my $taxonomy = &join_attribute($current_obj, "organism_classification", " ", "taxonomy");
 
-	#### Use short description as primary name
-	$gene->set_attribute("name", $gene->get_attribute("short_description"));
-	$gene->push_attribute("names", $gene->get_attribute("short_description"));
+    #### Use short description as primary name
+    $gene->set_attribute("name", $gene->get_attribute("short_description"));
+    $gene->push_attribute("names", $gene->get_attribute("short_description"));
 
-	#### Use description as name
-	my $description = &join_attribute($gene, $key_alias{DE}, "", "description");
-	$gene->push_attribute("names", $description);
+    #### Use description as name
+    my $description = &join_attribute($gene, $key_alias{DE}, "", "description");
+    $gene->push_attribute("names", $description);
 
-	warn join ("\t", $gene, $gene->get_attribute('id'), 
-		  $description,
-		  join (";", $gene->get_attribute("names")),
-		 ),"\n" if ($main::verbose >= 10);
+    warn join ("\t", $gene, $gene->get_attribute('id'), 
+	       $description,
+	       join (";", $gene->get_attribute("names")),
+	      ),"\n" if ($main::verbose >= 10);
 
-    }
+  }
 
-    &parse_database_references($gene_holder);
+  &parse_database_references($gene_holder);
 }
 
 ################################################################
 ## post-parsing for factors (assign explicit field names)
 sub TreatFactors {
-    foreach my $factor ($factor_holder->get_objects()) {
-	#### organism classification
-	my $taxonomy = &join_attribute($current_obj, "organism_classification", " ", "taxonomy");
+  foreach my $factor ($factor_holder->get_objects()) {
+    #### organism classification
+    my $taxonomy = &join_attribute($current_obj, "organism_classification", " ", "taxonomy");
 
-	## Factor name(s)
-	my @names = $factor->get_attribute($key_alias{FA});
-	my $primary_name = $names[0];
-	unless ($primary_name) {
-	    $primary_name = $factor->get_attribute("transfac_id");
-	};
-	$factor->set_attribute("name", $primary_name);
-	$factor->push_attribute("names", $primary_name);
-    }
-
+    ## Factor name(s)
+    my @names = $factor->get_attribute($key_alias{FA});
+    my $primary_name = $names[0];
+    unless ($primary_name) {
+      $primary_name = $factor->get_attribute("transfac_id");
+    };
+    $factor->set_attribute("name", $primary_name);
+    $factor->push_attribute("names", $primary_name);
+  }
 }
 
 
@@ -893,13 +909,13 @@ sub TreatFactors {
 ## post-parsing for matrices (assign explicit field names)
 sub TreatMatrices {
     warn "; Treating matrices\n" if ($main::verbose >= 1);
-    
+
     ## Description
     foreach my $matrix ($matrix_holder->get_objects()) {
 	$matrix->set_attribute("description", $matrix->get_attribute("descr"));
     }
 
-    ## Export the matrix in patser format and extract consensus
+    ## Export the matrix in tab-delimited format and extract consensus
     chdir ($dir{output});
     unless (-d "matrices") {
 	system "mkdir -p matrices";
@@ -921,7 +937,7 @@ sub TreatMatrices {
 	    $consensus .= shift @fields;
 #	    warn join ("\t", $matrix->get_attribute("id"), $column_ref, $pos, $consensus), "\n" if ($main::verbose >= 10)
 	}
-	
+
 	## Export the matrix in a separate file
 	my $file_name = $matrix->get_attribute("id");
 	my $pssm = "";
@@ -942,7 +958,6 @@ sub TreatMatrices {
 	## Set the consensus attribute
 	$matrix->set_attribute("consensus", $consensus); 
     }
-    
 }
 
 
