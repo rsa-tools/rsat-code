@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.52 2010/01/15 23:48:41 jvanheld Exp $
+# $Id: compare-classes,v 1.53 2010/02/07 03:20:40 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -601,7 +601,8 @@ ${field_description_text}
     	null string (default $null) displayed for undefined values.
 
     -base
-    	logarithm base (Default: $base)
+    	logarithm base (Default: $base) used for entropy-based
+    	metrics.
 
     -dot dot_file
         Export a graph with the associations in a dot
@@ -825,7 +826,7 @@ compare-classes options
 -org            organism
 -matrix [key]   return a similarity/dissimilarity matrix with the specified statistics
 -margins	Print marginal values (total, sum, average).
--base		logarithm base (Default: $base)
+-base		logarithm base (Default: $base) used for entropy-based metrics.
 -null    	null string (default $null) displayed for undefined values.
 -dot            dot file
 -gml            gml file
