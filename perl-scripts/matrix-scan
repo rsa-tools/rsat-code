@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.151 2010/02/04 18:22:07 jvanheld Exp $
+# $Id: matrix-scan,v 1.152 2010/02/07 05:15:51 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -1661,7 +1661,26 @@ package main;
 	if (defined($main::infile{bg})) {
 	  $quick_cmd .= " -bgfile ".$bg_quick_file;
 	} elsif ($main::markov > -1) {
-	  $quick_cmd .= " -markov ".$main::markov;
+	  ## matrix-scan-quick does not compute Markov models from the
+	  ## input set -> we have to create a Markov model in a
+	  ## temporary file
+	  my $tmp_bg_model = &RSAT::util::make_temp_file("", "bg_model_");
+	  $tmp_bg_model .= "_MotifSampler.txt";
+	  my $oligo_len = $main::markov+1;
+	  my $count_words_cmd = $ENV{RSAT}."/bin/count-words";
+	  &RSAT::error::FatalError("Cannot execute command ".$count_words_cmd, "required for computing Markov model")
+	    unless (-x $count_words_cmd);
+	  my $bg_cmd = $count_words_cmd;
+	  $bg_cmd .= " -i ".$main::infile{input};
+	  $bg_cmd .= " -1str -l ".$oligo_len;
+	  $bg_cmd .= " | convert-background-model -from oligos -to MotifSampler";
+	  $bg_cmd .= " -o ".$tmp_bg_model;
+	  &RSAT::message::Debug("Creating temporary background model file", $tmp_bg_model) if ($main::verbose >= 3);
+	  &doit($bg_cmd, $dry, $die_on_error, $verbose,0, $job_prefix);
+	  &RSAT::server::DelayedRemoval($tmp_bg_model);
+
+	  ## Use temporary background model file
+	  $quick_cmd .= " -bgfile ".$tmp_bg_model;
 	}
     	$quick_cmd .= " -return distrib";
     	if ($main::both_strands) {
