@@ -466,6 +466,8 @@ sub hex2rgb {
 
 ################################################################
 ## Return a unique name for a temporary file in the $TMP directory
+## Usage:
+##  my $temp_file_name = &RSAT::util::make_temp_file();
 sub make_temp_file {
   my ($tmp_dir, $tmp_prefix) = @_;
   $tmp_dir = $main::TMP unless ($tmp_dir);
