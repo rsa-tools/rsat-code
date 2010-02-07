@@ -18,7 +18,7 @@ $supported_output_formats = join (",", (sort keys %supported_output_format));
 
 $font{variable} = 1;
 $autolink = 0;
-$chunk = 1000;
+$chunk = 10000;
 $sorttable = 1;
 
 ################################################################
