@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.273 2010/02/02 10:56:27 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.274 2010/02/07 03:22:14 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -38,7 +38,7 @@ package main;
 
   ################################################################
   ## initialize global variables
-  $program_version = do { my @r = (q$Revision: 1.273 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.274 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   $toppat = 50;
   $organism = "";
   $org_fam = 0;
@@ -669,7 +669,7 @@ sub SetFileNames {
 	## sequences. If the background model file does not exist, compute
 	## it from background sequences.
       &define_bg_model_files() unless (defined( $bg_model_file{"dyads"}));
-      &compute_bg_dyads() unless (-e $bg_model_file{dyads});
+#      &compute_bg_dyads() unless (-e $bg_model_file{dyads});
       $dyad_options .= " -expfreq ".$bg_model_file;
 
     } elsif ($exp_freq_file{dyads}) {
@@ -1010,7 +1010,7 @@ sub SetFileNames {
 	## background model file exists.
 	if ($bg_seq_file) {
 	  &define_bg_model_files() unless (defined( $bg_model_file{"meme"}));
-	  &compute_bg_meme() unless (-e $bg_model_file{meme});
+#	  &compute_bg_meme() unless (-e $bg_model_file{meme});
 	  $meme_options .= " -bfile ".$bg_model_file{meme};
 	}
 
@@ -1339,7 +1339,7 @@ sub CalcOligoOptions {
     ## it from background sequences.
     my $bg_model_file = $bg_model_file{"oligos_".$oligo_len."nt"};
     &define_bg_model_files() unless (defined($bg_model_file));
-    &compute_bg_oligos() unless (-e $bg_model_file);
+#    &compute_bg_oligos() unless (-e $bg_model_file);
     $oligo_options .= " -expfreq ".$bg_model_file;
 
   } elsif ($exp_freq_file{oligos}) {
