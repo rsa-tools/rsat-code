@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.95 2010/01/20 20:03:19 amedina Exp $
+# $Id: convert-matrix,v 1.96 2010/02/13 05:28:07 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -34,6 +34,7 @@ $sep="\t";
 $null = "NA";
 $perm = 0;
 $prefix = ""; ## Prefix to be added before motif names
+%force_attribute = ();
 
 local %infile = ();
 local %outfile = ();
@@ -466,19 +467,19 @@ OPTIONS
 		This allows to place the command within a pipe.
 
 	-prior [deprecated, use -bgfile] prior frequency file
-	
+
 	-bgfile [deprecated] prior frequency file
 		File indicating prior residue frequencies
 		If no prior frequency file is specified, prior
 		frequencies are read from the input file. In case this
 		file does not contain any indication of prior
 		frequencies, equal priors are assumed.
-		
+
 	-bg_format bg_format
 		Format for the background model (prior) files.
 		Supported formats: all the input formats supported by 
 		convert-background-model.
-        
+
 	-bg_pseudo #
 		Pseudo frequency for the background models. Value must be a real
 		between 0 and 1 (default: $bg_model->{bg_pseudo})
@@ -539,15 +540,16 @@ OPTIONS
 		information content:
 			-sort desc MS.ic
 
-	-top 
-	        Maximal number of matrices to return. 
+	-top
+	        Maximal number of matrices to return.
+
 		Some of the input formats can contain several matrices
 		in a single file (e.g. consensus, meme,
 		MotifSampler). By default, all the matrices are parsed
 		and exported. The option -top allows to restrict the
 		number of matrices to be exported.
 
-	-pseudo	
+	-pseudo
 		pseudo-weight used for the calculation of the weight
 		matrix (default: $pseudo_weight)
 
@@ -582,6 +584,20 @@ OPTIONS
 		matrix/matrices. This can be convenient for converting
 		formats where matrices have no associated name
 		(e.g. tab) to formats with ames (e.g. transfac).
+
+	-attr key value
+
+	        Force an attribute of the matrix (matrices) to have a
+	        given value. This can be convenient for converting
+	        poorly documented formats (e.g. tab-delimited) into
+	        formats with specific requirements for attributes
+	        (e.g. TRANSFAC).
+
+		Example: 
+		    convert-matrix -from tab -to transfac \
+		        -i my_matrix.ta -o my_matrix.tf \
+			-attr AC MC0027 \
+			-attr id KNkB_278
 
 	-perm #
 		Number of permuted matrices to return. Matrix columns are permuted
@@ -960,6 +976,7 @@ convert-matrix options
 -base		base for the logarithms used to compute the weight and info content
 -decimals	number of decimals digits to print for real matrices
 -prefix		prefix to add before matrix identifiers
+-attr key value	force attribute to have a given value		
 -perm		number of permuted matrices to return.
 -max_profile	Maximal width of the profile histogram 
 -rc		Convert the matrix to its reverse complement.
@@ -1120,6 +1137,12 @@ sub ReadArguments {
 	    $main::prefix = $ARGV[$a+1];
 	    $main::prefix =~s/\s/_/g;
 
+	    ### attribute
+	} elsif ($ARGV[$a] eq "-attr") {
+	    my $key = $ARGV[$a+1];
+	    my $value = $ARGV[$a+2];
+	    $main::force_attribute{$key} = ${value};
+
 	    ### permutations
 	} elsif ($ARGV[$a] eq "-perm") {
 	    $perm = $ARGV[$a+1];
@@ -1244,10 +1267,17 @@ sub ExportMatrix {
 	|| "matrix_".$m;
     my $AC = $matrix->get_attribute("accession") || $ID;
     &RSAT::message::Debug("ExportMatrix", "ID", $ID, "AC", $AC) if ($main::verbose >= 4);
+
+    ## If a prefix is specified, use it as name, ID and accession number
     if ($prefix) {
 	$matrix->force_attribute("name", $prefix.$matrix->get_attribute("name"));
 	$matrix->force_attribute("id", $prefix.$matrix->get_attribute("id"));
 	$matrix->force_attribute("AC", $prefix.$matrix->get_attribute("AC"));
+    }
+
+    foreach my $key (keys(%force_attribute)) {
+	my $value = $force_attribute{$key};
+	$matrix->force_attribute($key, $value);	
     }
 
     ## Print the counts matrix
