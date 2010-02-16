@@ -415,8 +415,9 @@ sub PipingWarning {
 }
 
 
-### display a pop-up menu with a selection of organism
-### on the basis of the configuration found in RSA.config
+### display a pop-up menu with a selection of organism on the basis of
+### the server-specific list of supported organisms
+
 sub OrganismPopUp {
     print &OrganismPopUpString(@_);
 }
@@ -446,8 +447,9 @@ sub OrganismPopUpString {
 
 
 ################################################################
-### display a pop-up menu with the supported taxonomy
-### on the basis of the configuration found in RSA.config
+## Display a pop-up menu with the supported taxonomy on the basis of
+## the server-specific table of supported organisms
+
 sub TaxonPopUp {
     print &TaxonPopUpString(@_);
 }
