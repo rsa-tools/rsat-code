@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.152 2010/02/07 05:15:51 jvanheld Exp $
+# $Id: matrix-scan,v 1.153 2010/02/16 16:53:27 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -22,6 +22,7 @@ use RSAT::feature;
 use RSAT::matrix;
 use RSAT::MatrixReader;
 use RSAT::MarkovModel;
+use RSAT::stats;
 use File::Spec;
 use POSIX qw(ceil floor);
 use Data::Dumper;
@@ -1847,11 +1848,11 @@ package main;
 	    &RSAT::message::Debug("Calculating pval", $matrix_name, $score, $x, $n, $hit_p)
 	      if ($main::verbose >= 5);
 	    $score_distrib->{$matrix_name}->{$score}->{occ_pval} =
-	      &sum_of_binomials($hit_p, ## prior probabilty
-				$n,	## Number of trials
-				$x,	## Min number of successes
-				$n,	## Max number of successes
-			       );
+	      &RSAT::stats::sum_of_binomials($hit_p, ## prior probabilty
+					     $n,	## Number of trials
+					     $x,	## Min number of successes
+					     $n,	## Max number of successes
+					    );
 	    $nb_of_tests++;
 	  }
 	  if ($main::verbose >= 3) {
