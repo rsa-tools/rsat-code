@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.90 2009/11/02 05:36:00 jvanheld Exp $
+# $Id: install-organism,v 1.91 2010/02/16 14:44:45 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -896,8 +896,8 @@ OPTIONS
 
 		In addition to the organisms installed by the RSAT
 		system administrator (found in
-		$ENV{RSAT}/RSA.config), users can install some
-		organisms locally.
+		$ENV{RSAT}/data/supported_organisms.tab), users can
+		install some organisms locally.
 
 		For this, the user must first define an environment
 		variable called RSA_LOCAL_CONFIG, and indicating the
