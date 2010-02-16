@@ -288,24 +288,39 @@ sub LogToEng {
 ###
 sub sum_of_binomials {
     my ($proba, $trials, $from, $to) = @_;
-
-    if ($main::verbose >= 6) {
-	print join ("\t", "sum_of_binomials", "p=$proba", "t=$trials", "from=$from", "to=$to"), "\n";
+    if ($main::verbose >= 5) {
+      &RSAT::message::Debug("sum_of_binomials", "p=$proba", "t=$trials", "from=$from", "to=$to");
     }
 
-#    my $precision_limit = 1.0e-06;
     my $expected = $trials*$proba;
-    
+
+    ## Precision limits: Perl sometimes returns a very smalml negative value (-1e-15) instead of 0
+    my $precision_limit = 1.0e-14;
+    if (($proba < 0) && (abs($proba) < $precision_limit)) {
+      &RSAT::message::Warning("RSA.stat.lib", "sum_of_binomials", "p", $proba, "Rounding proba to 0") if ($main::verbose >= 3);
+      $proba = 0;
+    }
+    if (($proba > 1) && ($proba -1 < $precision_limit)) {
+      &RSAT::message::Warning("RSA.stat.lib", "sum_of_binomials", "p", $proba, "p-1", $proba-1, "Rounding proba to 1") if ($main::verbose >= 3);
+      $proba = 1;
+    }
+
+    ## Impossible probability values
     if ($proba <0) {
 	&RSAT::error::FatalError("Error: invalid probability $proba (must be a positive value)\n");
     }
+    if ($proba > 1) {
+      &RSAT::error::FatalError("RSA.stat.lib", "sum_of_binomials",  $proba, "Invalid value for p, should be <= 1");
+    }
+
     ($from,$to) = sort {$a <=> $b} ($from, $to);
     if ($to > $trials) {
 	&RSAT::error::FatalError( "Error: successes ($to) cannot be higher than trials ($trials)\n");
     }
 
 
-    #### limit cases
+    #### Limit cases : the result is trivial, so there is no need to
+    #### compute sum for obtaining the result
     if ($proba == 0) {
 	if ($from == 0) {
 	    return 1;
@@ -324,10 +339,8 @@ sub sum_of_binomials {
 
     #### initialize
     my $q = 1 - $proba;
-
     my $logproba = log($proba);
     my $logq = log($q);
-
     my $sum_of_bin = 0;
     my $x = 0;
     my $logbin;
