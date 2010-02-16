@@ -90,6 +90,9 @@ PUB_LOGIN=jvanheld
 PUB_SERVER=rsat.bigre.ulb.ac.be
 PUB_DIR=/home/jvanheld/public_html/rsat_distrib/
 PUB_FORMAT=tar.gz
+clean_distrib_site:
+	ssh ${PUB_LOGIN}@${PUB_SERVER} "mv -f ${PUB_DIR}/rsa-tools_*.tar.gz ${PUB_DIR}/previous_versions/"
+
 publish:
 	rsync -ruptvl -e ssh ${ARCHIVE_PREFIX}.${PUB_FORMAT} ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}
 
@@ -102,5 +105,5 @@ tar_wsclients:
 	@echo ${TAR_WSCLIENTS}
 
 publish_tar_wsclients:
-	 rsync -ruptvl -e ssh ${TAR_WSCLIENTS} rsat@rsat.bigre.ulb.ac.be:rsa-tools/public_html/web_services/
+	rsync -ruptvl -e ssh ${TAR_WSCLIENTS} rsat@rsat.bigre.ulb.ac.be:rsa-tools/public_html/web_services/
 
