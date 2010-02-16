@@ -118,7 +118,7 @@ sub ReadProperties {
     unless (-e $property_file) {
       $property_file = $`."../RSAT_config_default.props"; #`
       &RSAT::message::Warning("This RSAT site is not properly configured.",
-			      "Missing file: $RSAT/RSAT_config.props",
+			      "Missing file: $ENV{RSAT}/RSAT_config.props",
 			      "Please contact the system administrator.");
     }
     if (-e $property_file) {
@@ -150,10 +150,12 @@ sub ReadConfig {
       $config_file = "$`../RSA.config";
     } elsif (-e "$`../../RSA.config") {
       $config_file = "$`../../RSA.config";
-    } else {
-      &RSAT::error::FatalError("Cannot find the config file", "RSA.config", "from dir", $`);
     }
-    require $config_file;
+    if ($config_file) {
+	require $config_file;
+    } else {
+      &RSAT::error::FatalError("Cannot find the old-format config file", "RSA.config", "from dir", $`);
+    }
 
     ## Read user-defined local configuration if defined
     if ($ENV{'RSA_LOCAL_CONFIG'}) {
