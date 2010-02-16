@@ -59,7 +59,7 @@ setenv RSAT /home/rsat/rsa-tools
 set path=($path $RSAT/bin)
 set path=($path $RSAT/perl-scripts)
 set path=($path $RSAT/python-scripts)
-set classpath=($classpath $RSAT/java/lib/NeAT_javatools.jar)
+set CLASSPATH=($RSAT/java/lib/NeAT_javatools.jar)
 rehash
 \end{lstlisting}
 
@@ -94,35 +94,3 @@ bash, or \file{.cshrc} if your shell is csh or tcsh. If you don't know
 how to proceed, ask your system administrator.
 
 
-
-\subsection{Checking the RSAT path}
-
- The previous step should have included all the \RSAT programs in
-your path.  To check if it worked, just type:
-
-\begin{lstlisting}
-random-seq -l 350
-\end{lstlisting}
-
-If your configuration is correct, this command should return a random
-sequence of 350 nucleotides.
-
-You are now able to use any program from the \RSAT package, untill you
-quit your session. It is however not very convenient to set the path
-manually each time you open a new connection. You can modify your
-default configuration by including the above commands in the file
-\file{.cshrc} (in tcsh) or \file{.bashrc} (in bash) which should be
-found at the root of your home directory. If you don't know how to
-modify this file, see the system administrator.
-
-\subsection{Checking the java path (required for pathway tools only)}
-
-To check the correct setting for the java-based pathway tools, you can
-type the following command.
-
-\begin{lstlisting}
-java graphtools.util.ListTools
-\end{lstlisting}
-
-This should display the list of available pathway analysis tools,
-which are part of the NeAT package.
