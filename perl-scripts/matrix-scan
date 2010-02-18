@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.153 2010/02/16 16:53:27 jvanheld Exp $
+# $Id: matrix-scan,v 1.154 2010/02/18 09:14:44 rsat Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -26,6 +26,7 @@ use RSAT::stats;
 use File::Spec;
 use POSIX qw(ceil floor);
 use Data::Dumper;
+use RSAT::server;
 
 =pod
 
