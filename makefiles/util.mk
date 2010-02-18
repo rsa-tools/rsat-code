@@ -40,6 +40,8 @@ QUEUE_MANAGER=sge
 QUEUE=medium
 MASTER=cluster
 CLUSTER_ADDRESS=${QUEUE}@${MASTER}
+QSUB_OPTIONS=-l proc=xeon
+#QSUB_OPTIONS=
 command_queue:
 	${MAKE} command_queue_${QUEUE_MANAGER}
 
@@ -51,11 +53,10 @@ command_queue_torque:
 		echo "echo running on node "'$$HOST' > ${JOB_DIR}/$${job}; 		\
 		echo "${MY_COMMAND}" >> ${JOB_DIR}/$${job} ;				\
 		chmod u+x ${JOB_DIR}/$${job} ;				\
-		qsub -m a -q ${CLUSTER_ADDRESS} -N $${job} -j oe -o ${JOB_DIR}/$${job}.log ${JOB_DIR}/$${job} ;	\
+		qsub -m a -q ${CLUSTER_ADDRESS} -N $${job} -j oe -o ${JOB_DIR}/$${job}.log ${QSUB_OPTIONS} ${JOB_DIR}/$${job} ;	\
 	done
 
 ## Send a jobs to a cluster using the SGE queue management system
-QSUB_OPTIONS=
 command_queue_sge:
 	@mkdir -p ${JOB_DIR}
 	@echo "job dir	${JOB_DIR}"
