@@ -88,7 +88,7 @@ sub DelayedRemoval {
 	return();
     }
 
-    &RSAT::message::MessageToAdmin("DelayedRemoval: file $file_to_remove will be removed in $delay") if ($ECHO >= 2);
+    &RSAT::message::MessageToAdmin("DelayedRemoval: file $file_to_remove will be removed in $delay") if ($ENV{rsat_echo} >= 2);
 
     #### TEMPORARILY INACTIVATED BECAUSE IT MOBILIZES A LOT OF MEMORY
     return();
