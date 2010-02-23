@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.69 2010/02/18 14:34:23 oly Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.70 2010/02/23 08:37:23 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -39,6 +39,14 @@ package main;
 
   local $verbose = 0;
   local $feattype = "mrna";    # other values: gene, intron, exon, cds and utr
+  local %supported_feattype = ("gene"=>1,
+			       "mrna"=>1,
+			       "cds"=>1,
+			       "intron"=>1,
+			       "exon"=>1,
+			       "utr"=>1);
+  local $supported_feattypes = join (",", sort(keys %supported_feattype));
+
   local $type = "upstream";
   local $from = -800;
   local $to = -1;
@@ -208,7 +216,7 @@ package main;
 
   ## Left and right limits
   if ($left_limit && $right_limit && $chrom) {
-    local $chromosome = $slice_adaptor -> fetch_by_region('chromosome', $chrom);
+    local $chromosome = $slice_adaptor->fetch_by_region('chromosome', $chrom);
     ## Get sequence (repeat masked or not)
     $sequence = &GetSequence($left_limit, $right_limit);
     my $size = $right_limit - $left_limit + 1;
@@ -257,7 +265,7 @@ package main;
       $strand =~ s/>/1/;
       $strand =~ s/</-1/;
 
-      local $chromosome = $slice_adaptor -> fetch_by_region('chromosome', $chrom);
+      local $chromosome = $slice_adaptor->fetch_by_region('chromosome', $chrom);
       ## Get sequence (repeat masked or not)
       $sequence = &GetSequence($left_limit, $right_limit);
       my $size = $right_limit - $left_limit + 1;
@@ -288,7 +296,7 @@ package main;
   } elsif ($all) {
       ## from one chromosome
       if ($chrom) {
-	  my $slice = $slice_adaptor -> fetch_by_region('chromosome', $chrom);
+	  my $slice = $slice_adaptor->fetch_by_region('chromosome', $chrom);
 	  my @genes = @{$slice->get_all_Genes()};
 	  foreach my $gene (@genes) {
 	      &Main($gene, $org);
@@ -331,17 +339,17 @@ package main;
 # 	$line =~s/\t.*//;
 # 	chomp($line);
 # 	if (($line =~ /ENST\d/) || ($line =~ /ENS...T/)) {
-# 	  push(@genes, $gene_adaptor -> fetch_by_transcript_stable_id($line));
+# 	  push(@genes, $gene_adaptor->fetch_by_transcript_stable_id($line));
 # 	} elsif (($line =~ /ENSP\d/) || ($line =~ /ENS...P/)) {
-# 	  push(@genes, $gene_adaptor -> fetch_by_translation_stable_id($line));
+# 	  push(@genes, $gene_adaptor->fetch_by_translation_stable_id($line));
 # 	} elsif (($line =~ /ENSG\d/) || ($line =~ /ENS...G/)) {
 # 	  #		my $gene_id = $line;
-# 	  push(@genes,$gene_adaptor -> fetch_by_stable_id($line));
+# 	  push(@genes,$gene_adaptor->fetch_by_stable_id($line));
 # 	} else {
-# 	  if ($gene_adaptor -> fetch_by_stable_id($line)) {
-# 	    push(@genes,$gene_adaptor -> fetch_by_stable_id($line));
+# 	  if ($gene_adaptor->fetch_by_stable_id($line)) {
+# 	    push(@genes,$gene_adaptor->fetch_by_stable_id($line));
 # 	  } else {
-# 	    @genes = @{$gene_adaptor -> fetch_all_by_external_name($line)};
+# 	    @genes = @{$gene_adaptor->fetch_all_by_external_name($line)};
 # 	  }
 # 	}
 # 	if (@genes) {
@@ -365,26 +373,34 @@ package main;
 #      close $in;
 
     ## Treat the list of queries
+    my $q=0;
+    my $query_nb = scalar(@queries);
     foreach my $id (@queries) {
+      $q++;
+      &RSAT::message::Info("Treating query", $q."/".$query_nb, $id) if ($main::verbose >= 2);
       my @genes = ();
       if (($id =~ /ENST\d/) || ($id =~ /ENS...T/)) {
-	push (@genes, $gene_adaptor -> fetch_by_transcript_stable_id($id));
+	push (@genes, $gene_adaptor->fetch_by_transcript_stable_id($id));
       } elsif (($id =~ /ENSP\d/) || ($id =~ /ENS...P/)) {
-	push (@genes, $gene_adaptor -> fetch_by_translation_stable_id($id));
+	push (@genes, $gene_adaptor->fetch_by_translation_stable_id($id));
       } elsif (($id =~ /ENSG\d/) || ($id =~ /ENS...G/)) {
-	push (@genes, $gene_adaptor -> fetch_by_stable_id($id));
+	push (@genes, $gene_adaptor->fetch_by_stable_id($id));
       } else {
-	if ($gene_adaptor -> fetch_by_stable_id($id)) {
-	  push(@genes,$gene_adaptor -> fetch_by_stable_id($id));
-#	} elsif ($gene_adaptor -> fetch_by_dbID($id)) {
-#	  push(@genes,$gene_adaptor -> fetch_by_dbID($id));
+	if ($gene_adaptor->fetch_by_stable_id($id)) {
+	  push(@genes,$gene_adaptor->fetch_by_stable_id($id));
+#	} elsif ($gene_adaptor->fetch_by_dbID($id)) {
+#	  push(@genes,$gene_adaptor->fetch_by_dbID($id));
 	} else {
-	  @genes = @{$gene_adaptor -> fetch_all_by_external_name($id)};
+	  @genes = @{$gene_adaptor->fetch_all_by_external_name($id)};
 	}
       }
 
-      if (@genes) {
+      my $gene_nb = scalar(@genes);
+      my $g = 0;
+      if ($gene_nb > 0) {
 	foreach my $gene (@genes) {
+	  $g++;
+	  &RSAT::message::Info("Treating gene", $g."/".$gene_nb, $gene) if ($main::verbose >= 3);
 	  if ($gene) {
 	    ## get-orthologs if wanted
 	    if ($ortho) {
@@ -500,6 +516,8 @@ sub ReadArguments {
       ### Feature type
     } elsif ($ARGV[$a] eq "-feattype") {
       $feattype = lc($ARGV[$a+1]);
+      &RSAT::error::FatalError($feattype, "is not a valid feature type. Supported: ", $supported_feattypes) 
+	unless ($supported_feattype{$feattype});
 
       ### Noorf
     } elsif ($ARGV[$a] eq "-noorf") {
@@ -597,7 +615,8 @@ sub Main {
 #  my $gene_adaptor = Bio::EnsEMBL::Registry->get_adaptor($org, "core", "Gene");
 #  my $gene = $gene_adaptor->fetch_by_stable_id($gene_id);
 
-  my $gene_name = $gene -> external_name();
+  my $gene_name = $gene->external_name();
+  &RSAT::message::TimeWarn("Getting sequence", $type, $gene_name, $feattype) if ($main::verbose >= 2);
   unless ($gene_name) {
     $gene_name = "";
   }
@@ -614,15 +633,15 @@ sub Main {
       $header_org = '';
   }
 
-  local $chromosome = $gene -> slice;
+  local $chromosome = $gene->slice;
   local $coord_sys  = $chromosome->coord_system()->name();
-  my $chromosome_name = $chromosome -> name();
+  my $chromosome_name = $chromosome->name();
 
-  my $gene_start = $gene -> start();
-  my $gene_end = $gene -> end();
-  $strand = $gene -> strand();
+  my $gene_start = $gene->start();
+  my $gene_end = $gene->end();
+  $strand = $gene->strand();
 
-  my $description = $gene -> description();
+  my $description = $gene->description();
   unless ($description) {
       $description = "no description";
   }
@@ -634,9 +653,11 @@ sub Main {
     $rsat_strand = "R";
   }
 
-  &RSAT::message::Info ("Gene:") if ($main::verbose >= 2);
-  &RSAT::message::Info (join("\t", "# ID", "Name", "Contig", "Start", "End", "Strand", "Description")) if ($main::verbose >= 2);
-  &RSAT::message::Info (join("\t", $gene_id, $gene_name, $chromosome_name, $gene_start, $gene_end, $rsat_strand, $description)) if ($main::verbose >= 2);
+  if ($main::verbose >= 3) {
+    &RSAT::message::Info ("Gene:");
+    &RSAT::message::Info (join("\t", "# ID", "Name", "Contig", "Start", "End", "Strand", "Description"));
+    &RSAT::message::Info (join("\t", $gene_id, $gene_name, $chromosome_name, $gene_start, $gene_end, $rsat_strand, $description));
+  }
 
   if ($feattype eq "gene") {
       my $sequence;
@@ -670,28 +691,30 @@ sub Main {
     @transcripts = @{$gene->get_all_Transcripts};
 
     # Initialize transcripts limits
-    my $three_primest_id = $transcripts[0] -> display_id();
-    my $five_primest_id = $transcripts[0] -> display_id();
+    my $three_primest_id = $transcripts[0]->display_id();
+    my $five_primest_id = $transcripts[0]->display_id();
     my $three_primest_start;
     my $five_primest_end;
     if ($strand == 1) {
-      $three_primest_start = $transcripts[0] -> start();
-      $five_primest_end = $transcripts[0] -> end();
+      $three_primest_start = $transcripts[0]->start();
+      $five_primest_end = $transcripts[0]->end();
     } else {
-      $three_primest_start = $transcripts[0] -> end();
-      $five_primest_end = $transcripts[0] -> start();
+      $three_primest_start = $transcripts[0]->end();
+      $five_primest_end = $transcripts[0]->start();
     }
 
     %seq_limits = ();
 
     foreach my $transcript(@transcripts) {
-	my $transcript_id = $transcript -> display_id();
-	my $transcript_start = $transcript -> start();
-	my $transcript_end = $transcript -> end();
+	my $transcript_id = $transcript->display_id();
+	my $transcript_start = $transcript->start();
+	my $transcript_end = $transcript->end();
 
-	&RSAT::message::Info ("Transcript:") if ($main::verbose >= 2);
-	&RSAT::message::Info (join("\t", "# ID", "Start", "End")) if ($main::verbose >= 2);
-	&RSAT::message::Info (join("\t", $transcript_id, $transcript_start, $transcript_end)) if ($main::verbose >= 2);
+	if ($main::verbose >= 3) {
+	  &RSAT::message::Info ("Transcript:");
+	  &RSAT::message::Info (join("\t", "# ID", "Start", "End"));
+	  &RSAT::message::Info (join("\t", $transcript_id, $transcript_start, $transcript_end));
+	}
 
 	# Find all transcripts minimal limits
 	if ($strand == 1 && $transcript_start > $three_primest_start) {
@@ -710,9 +733,9 @@ sub Main {
 	}
 
 	if ($feattype eq 'mrna' && $all_transcripts) {
-	    my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $transcript_start, $transcript_end);
+	  my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $transcript_start, $transcript_end);
 
-	    $seq_limits{$transcript_id} = [$left, $right];
+	  $seq_limits{$transcript_id} = [$left, $right];
 
 	    unless ($uniq_seqs) {
 		# Output sequence
@@ -742,30 +765,32 @@ sub Main {
 		$end1 = $transcript_start;
 	    }
 
-	    foreach my $intron (@{$transcript -> get_all_Introns()}) {
+	    foreach my $intron (@{$transcript->get_all_Introns()}) {
 		$i++;
-		my $intron_start = $intron -> start();
-		my $intron_end = $intron -> end();
+		my $intron_start = $intron->start();
+		my $intron_end = $intron->end();
 		my $intron_id = $transcript_id."-".$i;
 
-		&RSAT::message::Info ("Intron:") if ($main::verbose >= 2);
-		&RSAT::message::Info (join("\t", "# ID", "Start", "End")) if ($main::verbose >= 2);
-		&RSAT::message::Info (join("\t", $intron_id, $intron_start, $intron_end)) if ($main::verbose >= 2);
+		if ($main::verbose >= 3) {
+		  &RSAT::message::Info ("Intron:");
+		  &RSAT::message::Info (join("\t", "# ID", "Start", "End"));
+		  &RSAT::message::Info (join("\t", $intron_id, $intron_start, $intron_end));
+		}
 
 		if ($first_intron) {
 		    if ($strand == 1) {
-			if ($intron -> start() < $start1) {
+			if ($intron->start() < $start1) {
 			    $intron1 = $intron;
 			    $intron1_id = $transcript_id."-".$i;
-			    $start1 = $intron -> start();
-			    $end1 = $intron -> end();
+			    $start1 = $intron->start();
+			    $end1 = $intron->end();
 			}
 		    } else {
-			if ($intron -> end() > $end1) {
+			if ($intron->end() > $end1) {
 			    $intron1 = $intron;
 			    $intron1_id = $transcript_id."-".$i;
-			    $start1 = $intron -> start();
-			    $end1 = $intron -> end();
+			    $start1 = $intron->start();
+			    $end1 = $intron->end();
 			}
 		    }
 		}
@@ -775,8 +800,8 @@ sub Main {
 		    $seq_limits{$intron_id} = [$intron_start, $intron_end];
 
 		    unless ($uniq_seqs) {
-			$sequence = &GetSequence($intron -> start(), $intron -> end());
-			my $size = ($intron -> end() - $intron -> start()) + 1;
+			$sequence = &GetSequence($intron->start(), $intron->end());
+			my $size = ($intron->end() - $intron->start()) + 1;
 
 			my $fasta_header;
 			if ($label eq 'query') {
@@ -791,10 +816,11 @@ sub Main {
 	    }
 
 	    if ($first_intron && $i != 0) {
-
-		&RSAT::message::Info ("First intron:") if ($main::verbose >= 2);
-		&RSAT::message::Info (join("\t", "# ID", "Start", "End")) if ($main::verbose >= 2);
-		&RSAT::message::Info (join("\t", $intron1_id, $start1, $end1)) if ($main::verbose >= 2);
+	      if ($main::verbose >= 3) {
+		&RSAT::message::Info ("First intron:");
+		&RSAT::message::Info (join("\t", "# ID", "Start", "End"));
+		&RSAT::message::Info (join("\t", $intron1_id, $start1, $end1));
+	      }
 
 		$seq_limits{$intron1_id} = [$start1, $end1];
 
@@ -822,32 +848,35 @@ sub Main {
 	my $coding_region_end = $transcript->coding_region_end();
 
 	if (($coding_region_start) && ($coding_region_end)) {
-	    &RSAT::message::Info ("Coding region start: $coding_region_start") if ($main::verbose >= 2);
-	    &RSAT::message::Info ("Coding region end: $coding_region_end") if ($main::verbose >= 2);
+	  if ($main::verbose >= 3) {
+	    &RSAT::message::Info ("Coding region start: $coding_region_start") ;
+	    &RSAT::message::Info ("Coding region end: $coding_region_end");
+	  }
 	} else {
 	    &RSAT::message::Warning ("Gene $gene_id - transcript $transcript_id has no coding region") unless ($feattype eq "mrna");
 	}
 
 	# Exons
 	if ($feattype eq "exon") {
-	    foreach my $exon (@{$transcript -> get_all_Exons()}) {
-		my $exon_id = $exon -> stable_id();
-		my $exon_start = $exon -> start();
-		my $exon_end = $exon -> end();
+	    foreach my $exon (@{$transcript->get_all_Exons()}) {
+		my $exon_id = $exon->stable_id();
+		my $exon_start = $exon->start();
+		my $exon_end = $exon->end();
 
-		&RSAT::message::Info ("Exon") if ($main::verbose >= 2);
-		&RSAT::message::Info (join("\t", "# ID", "Start", "End")) if ($main::verbose >= 2);
-		&RSAT::message::Info (join("\t", $exon_id, $exon_start, $exon_end)) if ($main::verbose >= 2);
-
+		if ($main::verbose >= 3) {
+		  &RSAT::message::Info ("Exon");
+		  &RSAT::message::Info (join("\t", "# ID", "Start", "End"));
+		  &RSAT::message::Info (join("\t", $exon_id, $exon_start, $exon_end));
+		}
 		if (($non_coding) && ($coding_region_start) && ($coding_region_end) ) {
 		    if ($coding_region_start > $exon_start && $coding_region_start < $exon_end) {
 
 			$seq_limits{$exon_id} = [$exon_start, $coding_region_start - 1];
 
 			unless ($uniq_seqs) {
-			    $sequence = &GetSequence($exon -> start(), $coding_region_start - 1);
+			    $sequence = &GetSequence($exon->start(), $coding_region_start - 1);
 			    my $non_coding_exon_right = $coding_region_start - 1;
-			    my $size = $coding_region_start - $exon -> start();
+			    my $size = $coding_region_start - $exon->start();
 
 			    my $fasta_header;
 			    if ($label eq 'query') {
@@ -865,7 +894,7 @@ sub Main {
 			unless ($uniq_seqs) {
 			    $sequence = &GetSequence($coding_region_end + 1, $exon_end);
 			    my $non_coding_exon_left = $coding_region_end + 1;
-			    my $size = $exon -> end() - $coding_region_end;
+			    my $size = $exon->end() - $coding_region_end;
 
 			    my $fasta_header;
 			    if ($label eq 'query') {
@@ -882,8 +911,8 @@ sub Main {
 			$seq_limits{$exon_id} = [$exon_start, $exon_end];
 
 			unless ($uniq_seqs) {
-			    $sequence = &GetSequence($exon -> start(), $exon -> end());
-			    my $size = ($exon -> end() - $exon -> start()) + 1;
+			    $sequence = &GetSequence($exon->start(), $exon->end());
+			    my $size = ($exon->end() - $exon->start()) + 1;
 
 			    my $fasta_header;
 			    if ($label eq 'query') {
@@ -900,8 +929,8 @@ sub Main {
 			$seq_limits{$exon_id} = [$exon_start, $exon_end];
 
 			unless ($uniq_seqs) {
-			    $sequence = &GetSequence($exon -> start(), $exon -> end());
-			    my $size = ($exon -> end() - $exon -> start()) + 1;
+			    $sequence = &GetSequence($exon->start(), $exon->end());
+			    my $size = ($exon->end() - $exon->start()) + 1;
 
 			    my $fasta_header;
 			    if ($label eq 'query') {
@@ -918,8 +947,8 @@ sub Main {
 		    $seq_limits{$exon_id} = [$exon_start, $exon_end];
 
 		    unless ($uniq_seqs) {
-			$sequence = &GetSequence($exon -> start(), $exon -> end());
-			my $size = ($exon -> end() - $exon -> start()) + 1;
+			$sequence = &GetSequence($exon->start(), $exon->end());
+			my $size = ($exon->end() - $exon->start()) + 1;
 
 			my $fasta_header;
 			if ($label eq 'query') {
@@ -1009,7 +1038,7 @@ sub Main {
 	# CDS
 	if (($feattype eq 'cds') && ($coding_region_start) && ($coding_region_end)) {
 	    my ($left, $right, $new_from, $new_to) = &GetLimits($gene_id, $coding_region_start, $coding_region_end);
-	    my $cds_id = $transcript -> translation() -> stable_id();
+	    my $cds_id = $transcript->translation()->stable_id();
 
 	    $seq_limits{$cds_id} = [$left, $right];
 
@@ -1032,8 +1061,10 @@ sub Main {
 
     if ($feattype eq 'mrna' && !$all_transcripts) {
 
-	&RSAT::message::Info ("Three_primest transcript start: $three_primest_start") if ($main::verbose >= 2);
-	&RSAT::message::Info ("Five_primest transcript end: $five_primest_end") if ($main::verbose >= 2);
+      if ($main::verbose >= 3) {
+	&RSAT::message::Info ("Three_primest transcript start: $three_primest_start");
+	&RSAT::message::Info ("Five_primest transcript end: $five_primest_end");
+      }
 
 	my $ref_transcript;
 
@@ -1129,10 +1160,10 @@ sub GetLimits {
   if ($type eq "upstream" && $strand == 1) {
     if ($nogene || $noorf) {
       # Get expanded slice and identify closest neighbour
-      $expanded_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome -> seq_region_name(), $start + $from, $end);
+      $expanded_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome->seq_region_name(), $start + $from, $end);
       $closest_neighbour_limit = &GetNeighbours($gene_id, $start, $end, $expanded_slice);
 
-      &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 2);
+      &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 3);
 
     }
 #    if (($nogene || $noorf) && $closest_neighbour_limit > $start + $from) {
@@ -1162,11 +1193,9 @@ sub GetLimits {
     $left = $end - $to;
     if ($nogene || $noorf) {
       # Get expanded slice and identify closest neighbour
-      $expanded_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome -> seq_region_name(), $start, $end - $from);
+      $expanded_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome->seq_region_name(), $start, $end - $from);
       $closest_neighbour_limit = &GetNeighbours($gene_id, $start, $end, $expanded_slice);
-
-      &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 2);
-
+      &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 3);
     }
 #    if (($nogene || $noorf) && $closest_neighbour_limit < $end - $from) {
     if (($nogene || $noorf) && $closest_neighbour_limit < $end - $from && $closest_neighbour_limit > $end) {
@@ -1194,10 +1223,10 @@ sub GetLimits {
     $left = $end + $from;
     if ($nogene || $noorf) {
       # Get expanded slice and identify closest neighbour
-      $expanded_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome -> seq_region_name(), $start, $end + $to);
+      $expanded_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome->seq_region_name(), $start, $end + $to);
       $closest_neighbour_limit = &GetNeighbours($gene_id, $start, $end, $expanded_slice);
 
-      &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 2);
+      &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 3);
 
     }
 #    if (($nogene || $noorf) && $closest_neighbour_limit < $end + $to) {
@@ -1225,10 +1254,10 @@ sub GetLimits {
   } elsif ($type eq "downstream" && $strand == -1) {
     if ($nogene || $noorf) {
       # Get expanded slice and identify closest neighbour
-      $expanded_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome -> seq_region_name(), $start - $to, $end);
+      $expanded_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome->seq_region_name(), $start - $to, $end);
       $closest_neighbour_limit = &GetNeighbours($gene_id, $start, $end, $expanded_slice);
 
-      &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 2);
+      &RSAT::message::Info ("Closest neighbour limit: $closest_neighbour_limit") if ($main::verbose >= 3);
 
     }
 #    if (($nogene || $noorf) && $closest_neighbour_limit > $start - $to) {
@@ -1277,8 +1306,8 @@ sub GetNeighbours {
   # Get neighbour genes
   my @neighbour_genes = @{$expanded_slice->get_all_Genes()};
 
-  &RSAT::message::Info ("Neighbour gene(s):") if ($main::verbose >= 2);
-  &RSAT::message::Info (join("\t", "# ID", "Name", "Contig", "Start", "End", "Strand", "Description")) if ($main::verbose >= 2);
+  &RSAT::message::Info ("Neighbour gene(s):") if ($main::verbose >= 3);
+  &RSAT::message::Info (join("\t", "# ID", "Name", "Contig", "Start", "End", "Strand", "Description")) if ($main::verbose >= 3);
 
   foreach my $neighbour_gene(@neighbour_genes) {
     if ($neighbour_gene->stable_id() eq $gene_id) {    # the query gene itself is in the expanded slice
@@ -1300,10 +1329,10 @@ sub GetNeighbours {
     } else {
       $neighbour_strand = "R";
     }
-    my $neighbour_start = $neighbour_gene -> seq_region_start();
-    my $neighbour_end = $neighbour_gene -> seq_region_end();
+    my $neighbour_start = $neighbour_gene->seq_region_start();
+    my $neighbour_end = $neighbour_gene->seq_region_end();
 
-    &RSAT::message::Info (join("\t", $neighbour_gene->stable_id(), $neighbour_name, $chromosome -> name(), $neighbour_start, $neighbour_end, $neighbour_strand, $neighbour_description)) if ($main::verbose >= 2);
+    &RSAT::message::Info (join("\t", $neighbour_gene->stable_id(), $neighbour_name, $chromosome->name(), $neighbour_start, $neighbour_end, $neighbour_strand, $neighbour_description)) if ($main::verbose >= 3);
 
     #Find closest neighbour limit
     if ($nogene) {    # neighbour limits are closest gene limits
@@ -1384,69 +1413,73 @@ sub GetSequence {
     $sequence = $chromosome->subseq($left, $right);
   }
   if ($rm) {
-#    my @repeat_features = @{$chromosome->get_all_RepeatFeatures()};
-#    foreach my $repeat_feature(@repeat_features) {
-#      my $repeat_consensus = $repeat_feature->repeat_consensus;
-#      my $repeat_type = $repeat_consensus->repeat_type();
-#      my $repeat_class = $repeat_consensus->repeat_class();
-#      print $repeat_type, "\t", $repeat_class, "\n";
-#    }
+    #    my @repeat_features = @{$chromosome->get_all_RepeatFeatures()};
+    #    foreach my $repeat_feature(@repeat_features) {
+    #      my $repeat_consensus = $repeat_feature->repeat_consensus;
+    #      my $repeat_type = $repeat_consensus->repeat_type();
+    #      my $repeat_class = $repeat_consensus->repeat_class();
+    #      print $repeat_type, "\t", $repeat_class, "\n";
+    #    }
 
-    my $mini_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome -> seq_region_name(), $left, $right);
+    my $mini_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome->seq_region_name(), $left, $right);
 
     eval {
 	my $masked_slice = $mini_slice->get_repeatmasked_seq();
-    };
+      };
     if ($@) {
-	&RSAT::message::Warning("Masking of repeats not available for this homolog");
+      &RSAT::message::Warning("Masking of repeats not available for this homolog");
     } else {
-	my $masked_slice = $mini_slice->get_repeatmasked_seq();
+      my $masked_slice = $mini_slice->get_repeatmasked_seq();
 
 #    my $masked_slice = $mini_slice->get_repeatmasked_seq([],0,{"repeat_class_Dust" => 0});
 #    my $masked_slice = $mini_slice->get_repeatmasked_seq(['TRF']);
-	$sequence = $masked_slice->seq();
+      $sequence = $masked_slice->seq();
     }
 #    my $unmasked_seq = $slice->seq();
 #    my $hardmasked_seq = $slice->get_repeatmasked_seq();
 #    my $softmasked_seq = $slice->get_repeatmasked_seq(undef, 1);
   }
   if ($mask_coding) {
-      my $retrieved_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome -> seq_region_name(), $left, $right);
-      my $transcript_adaptor = $db->get_TranscriptAdaptor();
-      my @retrieved_transcripts = @{$transcript_adaptor->fetch_all_by_Slice($retrieved_slice)};
-      foreach $retrieved_transcript (@retrieved_transcripts) {
-	  my @retrieved_exons = @{$retrieved_transcript->get_all_translateable_Exons};
-	  foreach my $retrieved_exon (@retrieved_exons) {
-	      &RSAT::message::Info ("Translateable exon start: ".$retrieved_exon->start()."\tTranslateable exon end: ".$retrieved_exon->end()."\tTranslateable exon strand: ".$retrieved_exon->strand()) if ($main::verbose >= 5);
-	      &RSAT::message::Info ("Translateable exon start: ".$retrieved_exon->seq_region_start()."\tTranslateable exon end: ".$retrieved_exon->seq_region_end()) if ($main::verbose >= 5);
-	      my $coding_length = $retrieved_exon->end() - $retrieved_exon->start() + 1;
-	      my $masking;
-	      if ($retrieved_exon->seq_region_start() >= $left && $retrieved_exon->seq_region_end() <= $right) {
-		  foreach (1..$coding_length) {
-		      $masking .= "N";
-		  }
-		  substr($sequence, $retrieved_exon->start() - 1, $coding_length) = $masking;
-	      } elsif ($retrieved_exon->seq_region_start() < $left && $retrieved_exon->seq_region_end() >= $left && $retrieved_exon->seq_region_end() <= $right) {
-		  $coding_length = $retrieved_exon->end();
-		  foreach (1..$coding_length) {
-		      $masking .= "N";
-		  }
-		  substr($sequence, 0, $coding_length) = $masking;
-	      } elsif ($retrieved_exon->seq_region_start() >= $left && $retrieved_exon->seq_region_start() <= $right && $retrieved_exon->seq_region_end() > $right) {
-		  $coding_length = $right - $retrieved_exon->seq_region_start() + 1;
-		  foreach (1..$coding_length) {
-		      $masking .= "N";
-		  }
-		  substr($sequence, $retrieved_exon->start() - 1, $coding_length) = $masking;
-	      } elsif ($retrieved_exon->seq_region_start() < $left && $retrieved_exon->seq_region_end() > $right) {
-		  $coding_length = $right - $left + 1;
-		  foreach (1..$coding_length) {
-		      $masking .= "N";
-		  }
-		  substr($sequence, 0, $coding_length) = $masking;
-	      }
+    my $retrieved_slice = $slice_adaptor->fetch_by_region($coord_sys, $chromosome->seq_region_name(), $left, $right);
+    my $transcript_adaptor = $db->get_TranscriptAdaptor();
+    my @retrieved_transcripts = @{$transcript_adaptor->fetch_all_by_Slice($retrieved_slice)};
+    foreach $retrieved_transcript (@retrieved_transcripts) {
+      my @retrieved_exons = @{$retrieved_transcript->get_all_translateable_Exons};
+      foreach my $retrieved_exon (@retrieved_exons) {
+	&RSAT::message::Info ("Translateable exon start: ".$retrieved_exon->start()."\tTranslateable exon end: ".$retrieved_exon->end()."\tTranslateable exon strand: ".$retrieved_exon->strand()) if ($main::verbose >= 5);
+	&RSAT::message::Info ("Translateable exon start: ".$retrieved_exon->seq_region_start()."\tTranslateable exon end: ".$retrieved_exon->seq_region_end()) if ($main::verbose >= 5);
+	my $coding_length = $retrieved_exon->end() - $retrieved_exon->start() + 1;
+	my $masking;
+	if ($retrieved_exon->seq_region_start() >= $left && $retrieved_exon->seq_region_end() <= $right) {
+	  foreach (1..$coding_length) {
+	    $masking .= "N";
 	  }
+	  substr($sequence, $retrieved_exon->start() - 1, $coding_length) = $masking;
+	} elsif ($retrieved_exon->seq_region_start() < $left && $retrieved_exon->seq_region_end() >= $left && $retrieved_exon->seq_region_end() <= $right) {
+	  $coding_length = $retrieved_exon->end();
+	  foreach (1..$coding_length) {
+	    $masking .= "N";
+	  }
+	  substr($sequence, 0, $coding_length) = $masking;
+	} elsif ($retrieved_exon->seq_region_start() >= $left && $retrieved_exon->seq_region_start() <= $right && $retrieved_exon->seq_region_end() > $right) {
+	  $coding_length = $right - $retrieved_exon->seq_region_start() + 1;
+	  foreach (1..$coding_length) {
+	    $masking .= "N";
+	  }
+	  substr($sequence, $retrieved_exon->start() - 1, $coding_length) = $masking;
+	} elsif ($retrieved_exon->seq_region_start() < $left && $retrieved_exon->seq_region_end() > $right) {
+	  $coding_length = $right - $left + 1;
+	  if ($coding_length > 0) {
+	    $masking = "N" x $coding_length;
+	    #	  foreach (1..$coding_length) {
+	    #	    $masking .= "N";
+	    #	  }
+##	    &RSAT::message::Debug($retrieved_exon, "seq", $sequence,  "coding_length", $coding_length, "masking", $masking) if ($main::verbose >= 0);
+	    substr($sequence, 0, $coding_length) = $masking;
+	  }
+	}
       }
+    }
   }
   if (($strand == -1) && ($sequence)) {
     $sequence = &ReverseComplement($sequence);
@@ -1472,8 +1505,8 @@ sub GetSequence {
 # 	my $gene_adaptor_M  = $registry->get_adaptor( 'Mouse', 'Core', 'Gene' );
 # 	#my $gene_id = "OTTMUSG00000018868" ;
 # 	my $gene_id_M = "ENSMUSG00000038253";
-# 	my $gene_M = $gene_adaptor_M -> fetch_by_stable_id($gene_id_M);
-# 	my $chromosome_M = $gene_M -> slice;
+# 	my $gene_M = $gene_adaptor_M->fetch_by_stable_id($gene_id_M);
+# 	my $chromosome_M = $gene_M->slice;
 
 # 	my $gdb = $genome_db_adaptor->fetch_by_Slice($chromosome_M);
 # 	print $gdb->name;
@@ -1514,7 +1547,7 @@ sub GetSequence {
       &Main($gene, $org);
 #      &Main($ortho_id, $org);
 
-#      my @taxons = split (/ /, $compara_taxon -> classification);
+#      my @taxons = split (/ /, $compara_taxon->classification);
 #      my @limited_taxons;
 
 #      if ($taxon) {
@@ -1729,7 +1762,8 @@ OPTIONS
 
 	-feattype
 		Feature type.
-		Supported: gene, mrna (default), CDS, intron, exon, utr
+		Supported: $supported_feattypes
+		Defaut: $feattype
 
 	-type	sequence type
 		Currently supported sequence types
@@ -1828,7 +1862,7 @@ retrieve-seq options
 -org		organism
 -ensemblhost    address of ensembl database server (default is EBI server)
 -dbname         name of ensembl db
--feattype	accepted feature types. Supported: gene, mrna, cds, intron, exon, utr
+-feattype	accepted feature types. Supported: $supported_feattypes
 -type		upstream | downstream | orf | random
 -q		query
 -i              query file
