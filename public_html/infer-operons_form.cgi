@@ -16,6 +16,7 @@ $query = new CGI;
 $default{genes} = "selection";
 $default{organism} = "Escherichia coli K12";
 $default{dist_thr} = 55;
+$default{min_gene_nb} = 2;
 $default{return_leader} = "checked";
 $default{return_trailer} = "";
 $default{return_operon} = "checked";
@@ -23,6 +24,7 @@ $default{return_query} = "checked";
 $default{return_q_info} = "";
 $default{return_up_info} = "";
 $default{return_down_info} = "";
+$default{return_gene_nb} = "checked";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -39,6 +41,7 @@ my @output_fields = qw(leader
 		       q_info
 		       up_info
 		       down_info
+		       gene_nb
 		       );
 my %field_description = ();
 $field_description{leader} = "Predicted operon leader gene";
@@ -48,6 +51,7 @@ $field_description{query} = "Query gene";
 $field_description{q_info} = "Detailed info on the query gene";
 $field_description{up_info} = "Detailed info on the upstream leader gene";
 $field_description{down_info} = "Detailed info on the upstream trailer gene";
+$field_description{gene_nb} = "Number of genes in the predicted operon";
 
 ### print the form ###
 &RSA_header("infer operon", 'form');
@@ -116,6 +120,13 @@ print "<B><A HREF='help.infer-operons.html#dist_thr'>Distance threshold (bp)</A>
 print $query->textfield(-name=>'dist_thr',
 			-default=>$default{dist_thr},
 			-size=>5);
+
+print "&nbsp;"x5;
+
+print "<B><A HREF='help.infer-operons.html#min_gene_nb'>Minimum number of genes</A></B>&nbsp;\n";
+print $query->textfield(-name=>'min_gene_nb',
+			-default=>$default{min_gene_nb},
+			-size=>5);
 print "<BR><HR>\n";
 
 ################################################################
@@ -136,7 +147,7 @@ print "<BR><HR>\n";
 &SelectOutput();
 
 ### data for the demo 
-@demo_genes = qw (bioD bioA trpB trpE);
+@demo_genes = qw (bioD bioA trpB trpE hisB metB);
 $demo_genes = join "\n", @demo_genes;
 
 
