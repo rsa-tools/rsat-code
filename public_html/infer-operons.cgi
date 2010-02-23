@@ -62,9 +62,17 @@ if (defined($supported_organism{$organism})) {
 
 
 #### distance threshold
-if (&IsInteger($query->param('dist_thr'))) {
-    $parameters .= " -dist ".$query->param('dist_thr');
-}
+my $dist_thr = $query->param('dist_thr');
+&RSAT::error::FatalError($dist_thr, "Invalid value for distance threshold. Should be an Integer value.") 
+  unless (&IsInteger($dist_thr));
+$parameters .= " -dist ".$dist_thr;
+
+#### Min gene number
+my $min_gene_nb = $query->param('min_gene_nb');
+&RSAT::error::FatalError($min_gene_nb, "Invalid value for min gene number. Should be a strictly positive Natural number.") 
+  unless ((&IsNatural($min_gene_nb)) && ($min_gene_nb > 0));
+$parameters .= " -min_gene_nb ".$min_gene_nb;
+
 
 
 ### return fields
