@@ -134,12 +134,12 @@ print "<BR><HR>\n";
 print "<p><B><A HREF='help.infer-operons.html#return'>Return fields</A></B>&nbsp;<br>\n";
 my $i = 0;
 foreach my $field (@output_fields) {
-    my $return_field = "return_".$field;
-    print $query->checkbox(-name=>$return_field,
-			   -checked=>$default{$return_field},
-			   -label=>' ');
-    print join "", "<a href='help.infer-operons.html#",$field,"'>", $field_description{$field}, "</a>\n";
-    print "<br>\n";
+  my $return_field = "return_".$field;
+  print $query->checkbox(-name=>$return_field,
+			 -checked=>$default{$return_field},
+			 -label=>' ');
+  print join "", "<a href='help.infer-operons.html#",$field,"'>", $field_description{$field}, "</a>\n";
+  print "<br>\n";
 }
 
 ### send results by email or display on the browser
