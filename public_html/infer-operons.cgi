@@ -77,7 +77,7 @@ $parameters .= " -min_gene_nb ".$min_gene_nb;
 
 ### return fields
 my $i=0;
-foreach my $field ("leader","trailer","operon","query","q_info","up_info","down_info") {
+foreach my $field ("leader","trailer","operon","query","q_info","up_info","down_info", "gene_nb") {
     my $return_field = "return_".$field;
 #    my $return_field = $field;
     if ($query->param($return_field) eq "on"){
