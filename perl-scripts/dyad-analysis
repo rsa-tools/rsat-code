@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.63 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: dyad-analysis,v 1.64 2010/02/25 12:27:54 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -40,7 +40,8 @@ local $taxon = 0; ## Specify it the background model is organism-specific or tax
 $oligo_length = 3;
 %dyad_occ_sum = ();
 %dyad_ovl_sum = ();
-$min_spacing = $max_spacing = 0;
+$min_spacing = 0;
+$max_spacing = 20;
 $accepted_dyad_type{rep} = 1;  #direct or inverted repeats
 $accepted_dyad_type{dr} = 1;  #direct repeats
 $accepted_dyad_type{ir} = 1;  #inverted repeats
@@ -48,7 +49,7 @@ $accepted_dyad_type{any} = 1; #any dyad, repeat or not
 $dyad_type = "any";
 
 ## File containing a restricted list of accepted patterns
-$infile{accepted_patterns} = ""; 
+$infile{accepted_patterns} = "";
 %accepted_patterns = ();
 
 ## Count dyads on single or boths strand
@@ -61,7 +62,7 @@ $seq_type = "DNA";
 $input_format = "fasta";
 
 ### Maximum number of sequences to report in the verbose message
-$max_seq_verbose = 50; 
+$max_seq_verbose = 50;
 
 ## Expected frequency file
 $infile{exp_freq} = "";
@@ -73,10 +74,10 @@ $nb_possible_pos = 0;
 $sum_seq_length = 0;
 
 ## The number of possible positions depends on the dyad spacing
-%nb_possible_pos = (); 
+%nb_possible_pos = ();
 
 ## Discard dyad that contains non-ACGT characters, if the sequence type is DNA.
-%discarded_dyad_positions = (); 
+%discarded_dyad_positions = ();
 %valid_dyad_positions = ();
 
 $discarded_monad_positions = 0;
@@ -91,7 +92,7 @@ $discarded_monad_positions = 0;
 ## Define the list of allowed monads (oligos)
 if ($seq_type eq "DNA") {
   foreach my $oligo (&all_oligos($oligo_length, @alphabet)) {
-    $allowed_monads{$oligo} = 1; 
+    $allowed_monads{$oligo} = 1;
   }
 }
 
@@ -106,7 +107,7 @@ eval {
     alarm($timeout);
 
     ################################################################
-    ## Check argument values 
+    ## Check argument values
 
     ## Special cases where we need to ccount patterns with zero occurrences
     if (($tail eq "left") ||
@@ -127,7 +128,7 @@ eval {
       ## Suffix for the -noov/-ovlp option
       if ($noov) {
 	$noov_suffix = "-noov";
-      } else { 
+      } else {
 	$noov_suffix = "-ovlp";
       }
 
@@ -177,7 +178,7 @@ eval {
     ################################################################
     ## Start the analysis
     &CalcPossibleDyads(); ### Calculate all possible dyads
-    &CountDyads(); ### Read sequence and count dyads 
+    &CountDyads(); ### Read sequence and count dyads
     &CountZeroOcc() if ($zeroocc); ## Count patterns with zero occurrences
     &CalcOccSum(); ## Calculate the sum of occurrences
     if ($sum_rc) {
@@ -188,12 +189,12 @@ eval {
     &CalcDyadFrequencies() if ($calc_fields{freq}); ### Calculate observed dyad frequencies
 
     ## Open output stream
-    $out = &OpenOutputFile($outputfile); 
+    $out = &OpenOutputFile($outputfile);
 
     &CalcExpectedMonadFreq(); ## Calculate expected monad frequencies
     &CalcExpectedDyadFreq() if ($calc_fields{exp_freq}); ### Calculate expected dyad frequencies
     &CalcExpectedOcc() if ($calc_fields{exp_occ}); ### Calculate expected dyad occurrences
-    
+   
     ################################################################
     ## Check some thresholds to filter out undue dyads before starting
     ## the time-consuming computation of probabilities
@@ -216,7 +217,7 @@ eval {
     }
 
     ## Print the parameters of the analysis
-    &PrintVerbose() if ($verbose); 
+    &PrintVerbose() if ($verbose);
 
     ## Print the result
     &PrintResult();
@@ -231,12 +232,12 @@ eval {
 
     ###### close input stream
     close $in if ($infile{input});
-    
+   
     ###### close output stream
     close $out if ($outputfile);
 
     alarm(0);
-}; ###eval 
+}; ###eval
 
 
 
@@ -258,7 +259,7 @@ if ($@) {
     #      alarm(0);
     #	&RSAT::error::FatalError( "dyad-analysis : unknown error during the eval.");
   }
-    
+   
   die "HERE\n";
 }
 
@@ -280,7 +281,7 @@ sub CheckThresholdDependencies {
 
 ################################################################
 ## Check fields to calculate, as a function of those to return
-## There are dependencies betwen these fields. 
+## There are dependencies betwen these fields.
 sub CheckCalcFields {
     %return_fields = %default_return_fields unless (defined(%return_fields));
     %calc_fields = %return_fields;
@@ -306,8 +307,8 @@ sub CheckCalcFields {
     &CheckThresholdDependencies("ratio", "mseq");
 
     ## Check dependencies between fields
-    if (($calc_fields{proba}) || 
-	($calc_fields{ratio}) || 
+    if (($calc_fields{proba}) ||
+	($calc_fields{ratio}) ||
 	($calc_fields{zscore})) {
 	$calc_fields{exp_occ} = 1;
 	$calc_fields{exp_freq} = 1;
@@ -351,30 +352,30 @@ sub CalcExpectedMonadFreq {
     &RSAT::message::TimeWarn("Calculating expected monad frequencies") if ($main::verbose >= 2);
 
     if ($mncf) {
-	################################################################
-	## Read expected monad frequencies from a file
-	($exp) = &OpenInputFile($infile{exp_freq});
-	while (<$exp>) {
-	    next if (/^;/);
-	    chomp;
-	    my ($oligo_seq, $freq) = split;
-	    $oligo_seq = lc($oligo_seq);
+      ################################################################
+      ## Read expected monad frequencies from a file
+      ($exp) = &OpenInputFile($infile{exp_freq});
+      while (<$exp>) {
+	next if (/^;/);
+	chomp;
+	my ($oligo_seq, $freq) = split;
+	$oligo_seq = lc($oligo_seq);
 #	    @fields = split;
-#	    $oligo_seq = lc($fields[0]);
-#	    $freq = $fields[1];
-	    if ((&IsReal($freq)) && (defined($oligo{$oligo_seq}))) {
-		$oligo{$oligo_seq}->{exp_freq} = $freq;
+	#	    $oligo_seq = lc($fields[0]);
+	#	    $freq = $fields[1];
+	if ((&IsReal($freq)) && (defined($oligo{$oligo_seq}))) {
+	  $oligo{$oligo_seq}->{exp_freq} = $freq;
 	    }
-	}
-	close $exp;
+      }
+      close $exp;
 	
-	################################################################
-	## Use monad frequencies observed in the input file to
-	## estimated expected monad frequencies
+      ################################################################
+      ## Use monad frequencies observed in the input file to
+      ## estimated expected monad frequencies
     } else {
-	foreach $oligo (keys %oligo) {
-	    $oligo{$oligo}->{exp_freq} = $oligo{$oligo}->{freq};
-	}
+      foreach $oligo (keys %oligo) {
+	$oligo{$oligo}->{exp_freq} = $oligo{$oligo}->{freq};
+      }
     }
 }
 
@@ -382,32 +383,30 @@ sub CalcExpectedMonadFreq {
 ## Calculate expected frequencies
 ## Different models can be used
 sub CalcExpectedDyadFreq {
-    &RSAT::message::TimeWarn("Calculating expected dyad frequencies") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Calculating expected dyad frequencies") if ($main::verbose >= 2);
 
 
-    if ($infile{exp_freq}) {
-	################################################################
-	# Read expected dyad frequencies from a user-specified file
-	&ReadExpectedFrequencies($infile{exp_freq}, $sum_rc);
+  if ($infile{exp_freq}) {
+    ################################################################
+    # Read expected dyad frequencies from a user-specified file
+    &ReadExpectedFrequencies($infile{exp_freq}, $sum_rc);
 
-	################################################################
-	## Calculate expected dyad freq on basis of monad frequencies 
-	## observed in the input sequence.
-    } else {
-
-	foreach my $oligo1 (keys %oligo) {
-	    foreach my $spacing (@spacing_list) {
-		foreach my $oligo2 (&SecondElement($oligo1)) {
-		    ### build the dyad
-		    my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
-		    next unless (defined($patterns{$pattern_seq}->{occ}));
-		    $patterns{$pattern_seq}->{exp_freq} = &CalcExpFreqFromMonads($oligo1, $oligo2);
-#		    &RSAT::message::Debug("Expected dyad frequency", $pattern_seq, $patterns{$pattern_seq}->{exp_freq}) if ($main::verbose >= 0);
-		}
-	    }	
+    ################################################################
+    ## Calculate expected dyad freq on basis of monad frequencies
+    ## observed in the input sequence.
+  } else {
+    foreach my $oligo1 (keys %oligo) {
+      foreach my $spacing (@spacing_list) {
+	foreach my $oligo2 (&SecondElement($oligo1)) {
+	  ### build the dyad
+	  my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
+	  next unless (defined($patterns{$pattern_seq}->{occ}));
+	  $patterns{$pattern_seq}->{exp_freq} = &CalcExpFreqFromMonads($oligo1, $oligo2);
+	  #		    &RSAT::message::Debug("Expected dyad frequency", $pattern_seq, $patterns{$pattern_seq}->{exp_freq}) if ($main::verbose >= 0);
 	}
+      }
+    }
 
-	
 # 	################################################################
 # 	## Normalize expected frequencies to make sure that the sum is
 # 	## 1.  In some cases, the sum is not 1, for example with very
@@ -442,7 +441,6 @@ sub CalcExpectedDyadFreq {
 # 	    undef(%patterns_2str);
 # 	    &GroupRC();
 # 	}
-    
     }
 
 
@@ -480,17 +478,17 @@ sub CalcExpFreqFromMonads {
 	}
 	$exp_freq += $freq1_rc*$freq2_rc;
     }
-    
+
     if ($group_sp) {
 	$exp_freq *= ($max_spacing-$min_spacing + 1);
     }
 
 #     &RSAT::message::Debug (
-# 	"Expected dyad frequency calculated from monads", 
-# 	$oligo1.":".$freq1, 
-# 	$oligo2.":".$freq2, 
-# 	"rc", 
-# 	$oligo1_rc.":".$freq1_rc, 
+# 	"Expected dyad frequency calculated from monads",
+# 	$oligo1.":".$freq1,
+# 	$oligo2.":".$freq2,
+# 	"rc",
+# 	$oligo1_rc.":".$freq1_rc,
 # 	$oligo2_rc.":".$freq2_rc, 	
 # 	$exp_freq,
 #     ) if ($main::verbose >= 10);
@@ -517,9 +515,9 @@ sub SumReverseComplements {
 #	    $overlaps_2str{$rc_pattern} = $patterns{$pattern_seq}->{overlaps} ;
 #	} else {
 	} elsif ($rc_pattern gt $pattern_seq) {
-	    $patterns{$rc_pattern}->{occ_2str} = $patterns{$pattern_seq}->{occ_2str} =  
+	    $patterns{$rc_pattern}->{occ_2str} = $patterns{$pattern_seq}->{occ_2str} = 
 		$patterns{$pattern_seq}->{occ} + $patterns{$rc_pattern}->{occ};
-	    $patterns{$rc_pattern}->{overlaps_2str} = $patterns{$pattern_seq}->{overlaps_2str} =  
+	    $patterns{$rc_pattern}->{overlaps_2str} = $patterns{$pattern_seq}->{overlaps_2str} = 
 		$patterns{$pattern_seq}->{overlaps} + $patterns{$rc_pattern}->{overlaps};
 #	    $dyad_occ_2str{$rc_pattern} = $dyad_occ_2str{$pattern_seq} =  $patterns{$pattern_seq}->{occ} + $patterns{$rc_pattern}->{occ};
 #	    $overlaps_2str{$rc_pattern} = $overlaps_2str{$pattern_seq} =  $patterns{$pattern_seq}->{overlaps} + $patterns{$rc_pattern}->{overlaps};
@@ -533,8 +531,8 @@ sub SumReverseComplements {
     }
 #    undef %patterns_occ_2str;
 #    undef %overlaps_2str;
-    
-    
+   
+   
     ################################################################
     ## Sum monad (oligo) occurrences
     foreach my $oligo_seq (sort keys %oligo) {
@@ -558,7 +556,7 @@ sub SumReverseComplements {
 #     ## occurrences by 2, but if I don't do it, all the expected
 #     ## frequencies are 4 times too high ! I guess I knew the reason
 #     ## the first time I implemented it.
-#     $sum_oligo_count *= 2; 
+#     $sum_oligo_count *= 2;
 
 
     &GroupRC();
@@ -634,17 +632,17 @@ sub CalcExpectedOcc {
 	    foreach my $oligo2 (&SecondElement($oligo1)) {
 		### build the dyad
 		my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
-		next unless (defined($patterns{$pattern_seq}->{occ})); 
+		next unless (defined($patterns{$pattern_seq}->{occ}));
   		### calculate expected occurrences
 #  		if ($noov) {
-#  		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq} * 
+#  		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq} *
 #  			($dyad_occ_sum{$spacing} - ($min_overlap_dist{$spacing} - 1) * $patterns{$pattern_seq}->{occ});
 #  		} else {
   		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq}*$dyad_occ_sum{$spacing};
 #  		}
 
-# 		&RSAT::message::Debug("Expected occ", 
-# 				      $pattern_seq, 
+# 		&RSAT::message::Debug("Expected occ",
+# 				      $pattern_seq,
 # 				      "exp_freq:". $patterns{$pattern_seq}->{exp_freq},
 # 				      "occ sum for spacing:", $dyad_occ_sum{$spacing},
 # 				      "exp_occ:". $patterns{$pattern_seq}->{exp_occ},
@@ -661,7 +659,7 @@ sub CalcProba {
 
 #    foreach my $pattern_seq (keys %patterns) {
 
-    
+   
     ## Note: we need to build the pattern for each spacing separately,
     ## rather than taking the keys of %patterns because the number of
     ## valid dyads depends on the spacing.
@@ -670,7 +668,7 @@ sub CalcProba {
 	    foreach my $oligo2 (&SecondElement($oligo1)) {
 		### build the dyad
 		my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
-		next unless (defined($patterns{$pattern_seq}->{occ})); 
+		next unless (defined($patterns{$pattern_seq}->{occ}));
 		
 		### Detect repeats
 		if (($sum_rc) && (&Palindromic($pattern_seq))) {
@@ -682,11 +680,11 @@ sub CalcProba {
 		
 		## Check expected frequency
 		if (!defined($patterns{$pattern_seq}->{exp_freq})) {
-		    
-		    &RSAT::message::Warning (join("\t", "Undefined expected frequency for dyad", 
+		   
+		    &RSAT::message::Warning (join("\t", "Undefined expected frequency for dyad",
 						  $pattern_seq));
 		} if ($patterns{$pattern_seq}->{exp_freq} <= 0) {
-		    
+		   
 		    #### Expected frequency might not be defined if
 		    #### max_spacing is > than the max spacing of the
 		    #### expected frequency file
@@ -696,7 +694,7 @@ sub CalcProba {
 			$patterns{$pattern_seq}->{remark} = "monad exp freq ".$patterns{$pattern_seq}->{remark};
 			
 		    } else {
-			&RSAT::message::Warning (join("\t", "Expected frequency must be > 0 for dyad", 
+			&RSAT::message::Warning (join("\t", "Expected frequency must be > 0 for dyad",
 						      $pattern_seq,
 						      $patterns{$pattern_seq}->{exp_freq}));
 			next;
@@ -733,7 +731,7 @@ sub CalcProba {
 		}
 	    }
 	}
-    }  
+    } 
 
     ## Corrections or multi-testing
     &MultiTestCorrections($nb_tested_patterns, %patterns);
@@ -751,7 +749,7 @@ sub CalcProba {
 # 	    $patterns{$pattern_seq}->{occ_E} = "NA";
 # 	    $patterns{$pattern_seq}->{occ_sig} = "NA";
 # 	}
-# 	&RSAT::message::Debug("Calculating E-value",  
+# 	&RSAT::message::Debug("Calculating E-value", 
 # 			      $pattern_seq,
 # 			      $patterns{$pattern_seq}->{occ},
 # 			      $patterns{$pattern_seq}->{occ_P},
@@ -763,15 +761,15 @@ sub CalcProba {
 
     #### threshold filtering ####
     &CheckThresholds("zscore");
-    &CheckThresholds("occ_P");		      
+    &CheckThresholds("occ_P");		     
     &CheckThresholds("occ_E");
     &CheckThresholds("occ_sig");
-		      
+		     
 
 } ### CalcProba
 
 ################################################################
-## Read arguments 
+## Read arguments
 sub ReadArguments {
     foreach $a (0..$#ARGV) {
 	### verbose ###
@@ -838,7 +836,7 @@ sub ReadArguments {
 	    $sort_results = 1;
 
 	    ################################################################
-	    #### Left-tail or two-tail significance test  
+	    #### Left-tail or two-tail significance test 
 	} elsif ($ARGV[$a] eq "-under") {
 	    $tail = "left";
 
@@ -851,9 +849,10 @@ sub ReadArguments {
 	    $zeroocc = 1;
 
 	    ### expected frequency table ###
-	} elsif ($ARGV[$a] =~ /^-exp/i) {
+        } elsif ($ARGV[$a] eq "-expfreq") {
 	    $infile{exp_freq} = $ARGV[$a+1];
 	    $background_model = "exp_freq_file";
+	    &RSAT::error::FatalError("The option -expfreq requires an additional argument to specify the expected frequency file.") unless ($infile{exp_freq});
 
 	    ### timeout setting
 	} elsif ($ARGV[$a] =~ /^-timeout/i) {
@@ -1024,11 +1023,11 @@ sub CalcPossibleDyads {
 
     $nb_possible_dr = $nb_possible_oligo;
     $nb_possible_ir = $nb_possible_oligo;
-    $nb_possible_dr /= 2 if ($sum_rc); 
+    $nb_possible_dr /= 2 if ($sum_rc);
     ### beware : grouping with the reverse complement reduces the number of distintc patterns
-    ### but this is only tru for direct repeats, 
+    ### but this is only tru for direct repeats,
     ### since inverted repeats are by definition identical to their reverse complement
-    
+   
     if ($dyad_type eq "dr") {
 	$main::nb_possible_dyads = $nb_possible_dr;
     } elsif ($dyad_type eq "ir") {
@@ -1063,7 +1062,7 @@ sub SecondElement {
     } elsif ($dyad_type eq "rep") {
 	return $oligo1, lc(&ReverseComplement($oligo1));
     } else {
-	return keys %oligo; 
+	return keys %oligo;
     }
 }
 
@@ -1081,7 +1080,7 @@ sub CountDyads {
     $current_seq = &CleanDNA($current_seq) if ($seq_type eq "DNA");
 
     ### Index sequence lengths
-    $sequence_number++;  
+    $sequence_number++; 
     $id_list[$sequence_number] = $current_id;
     $seq_length[$sequence_number] = length($current_seq);
     my $prev_sum_seq_len = $sum_seq_length;
@@ -1093,8 +1092,8 @@ sub CountDyads {
     ## dyad spacing (the number of forbidden positions at the end
     ## of the sequecne depends on the spacing)
     foreach my $spacing (@spacing_list) {
-      my $new_pos_nb =  max(0,$seq_length[$sequence_number] - 2*$oligo_length - $spacing + 1); 
-      $nb_possible_pos{$spacing} += $new_pos_nb if ($new_pos_nb > 0); 
+      my $new_pos_nb =  max(0,$seq_length[$sequence_number] - 2*$oligo_length - $spacing + 1);
+      $nb_possible_pos{$spacing} += $new_pos_nb if ($new_pos_nb > 0);
     }
 
     ## Calculate las position
@@ -1147,7 +1146,7 @@ sub CountDyads {
 	  ## residues
 	  foreach my $spacing ($min_spacing..$max_spacing) {
 	    if ($pos1 + $oligo_length + $spacing <= $last_pos) {
-	      $discarded_dyad_positions{$spacing}++; 
+	      $discarded_dyad_positions{$spacing}++;
 	      #			    &RSAT::message::Debug("Discarded because of monad 1", ++$discarded_monad1, $pos1, $oligo1, $spacing, $last_pos, $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 10);
 	    } else {
 	      #			    &RSAT::message::Debug("Not discarded because end of sequence reached", ++$not_discarded_too_late, $pos1, $oligo1, $spacing, $last_pos, , $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 10);
@@ -1165,8 +1164,8 @@ sub CountDyads {
       }
 
       ################################################################
-      ## Count monad occurrences. 
-      ## These will be used to estimate expected dyad frequencies. 
+      ## Count monad occurrences.
+      ## These will be used to estimate expected dyad frequencies.
       $oligo{$oligo1}->{occ}++;
       $sum_oligo_count++;
 
@@ -1200,8 +1199,8 @@ sub CountDyads {
 	      ## position cannot be discarded as first
 	      ## monad (avoid discarding twice the same
 	      ## position)
-	      $discarded_monad_positions++ 
-		if ($last_pos - $pos2 < $spacing); 
+	      $discarded_monad_positions++
+		if ($last_pos - $pos2 < $spacing);
 	      # 			    &RSAT::message::Debug(
 	      # 				    "Invalid second monad",
 	      # 				    "p1=".$pos1,
@@ -1218,13 +1217,13 @@ sub CountDyads {
 	  ## Check for specific dyad types
 
 	  ## count only direct repeats
-	  next if (($dyad_type eq "dr") && ($oligo1 ne $oligo2)); 
+	  next if (($dyad_type eq "dr") && ($oligo1 ne $oligo2));
 
 	  ## count only inverted repeats
-	  next if (($dyad_type eq "ir") && ($oligo2 ne &SmartRC($oligo1))); 
+	  next if (($dyad_type eq "ir") && ($oligo2 ne &SmartRC($oligo1)));
 
 	  ## count only repeats
-	  next if (($dyad_type eq "rep") && ($oligo1 ne $oligo2) &&($oligo2 ne &SmartRC($oligo1))); 
+	  next if (($dyad_type eq "rep") && ($oligo1 ne $oligo2) &&($oligo2 ne &SmartRC($oligo1)));
 
 	  ################################################################
 	  ## Generate the dyad name (grouping all spacings or not)
@@ -1278,7 +1277,7 @@ sub CountDyads {
     ## Make sure the nb of possible positions per spacing is
     ## defined (it can be false if all sequences are smaller than
     ## the max dyad length)
-    $nb_possible_pos{$spacing} = 0 
+    $nb_possible_pos{$spacing} = 0
       unless (defined($nb_possible_pos{$spacing})) ;
 
     ## Calculate the number of valid positions per spacing
@@ -1339,8 +1338,8 @@ sub PrintVerbose {
     print $out "; Citation: van Helden et al. (2000). Nucleic Acids Res. 28(8):1808-18.\n";
     printf $out "; %-29s\t%s\n", "Input file", $infile{input} if ($infile{input});
     if ($infile{accepted_patterns}) {
-	printf $out "; %-29s\t%s\n", "Accepted dyad file", $infile{accepted_patterns}; 
-	printf $out "; %-29s\t%s\n", "Accepted dyads", scalar(keys(%accepted_patterns)); 
+	printf $out "; %-29s\t%s\n", "Accepted dyad file", $infile{accepted_patterns};
+	printf $out "; %-29s\t%s\n", "Accepted dyads", scalar(keys(%accepted_patterns));
     }
     printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
     printf $out "; %-29s\t%s\n", "Nb of sequences", $sequence_number;
@@ -1394,8 +1393,8 @@ sub PrintVerbose {
 	foreach my $oligo (sort keys %oligo) {
 	    $monad_occ_sum += $oligo{$oligo}->{occ};
 	    $monad_freq_sum += $oligo{$oligo}->{freq};
-	    print $out join("\t", ";\t", "mon_f", 
-			    $oligo, 
+	    print $out join("\t", ";\t", "mon_f",
+			    $oligo,
 			    $oligo{$oligo}->{occ},
 			    $monad_occ_sum,
 			    sprintf("%7.3f", $oligo{$oligo}->{freq}),
@@ -1403,9 +1402,9 @@ sub PrintVerbose {
 			   );
 
 	    if ($sum_rc) {
-		print $out ("\t", 
-			    join ("\t", 
-				  $oligo."|".&SmartRC($oligo), 
+		print $out ("\t",
+			    join ("\t",
+				  $oligo."|".&SmartRC($oligo),
 				  $oligo{$oligo}->{occ_2str},
 				  sprintf "%7.3f", $oligo{$oligo}->{freq_2str}));
 	    }
@@ -1417,9 +1416,9 @@ sub PrintVerbose {
     ################################################################
     #### dyads
     printf $out "; %-29s\n", "Dyad parameters";
-    my %extended_type = (dr=>"direct repeats", 
-			 ir=>"inverted repeats", 
-			 rep=>"direct or inverted repeats", 
+    my %extended_type = (dr=>"direct repeats",
+			 ir=>"inverted repeats",
+			 rep=>"direct or inverted repeats",
 			 any=>"any dyad");
     printf $out "; \t%-29s%s\n", "dyad type", $extended_type{$dyad_type};
     printf $out "; \t%-29s%d\n", "minimal spacing", $min_spacing;
@@ -1445,14 +1444,14 @@ sub PrintVerbose {
 	print $out "\t", "ovl+occ";
     }
     if ($seq_type eq "DNA") {
-	print $out "\t", join("\t", 
-			      "ACGT", 
+	print $out "\t", join("\t",
+			      "ACGT",
 			      "nonACGT",
 			     );
     }
     print $out "\n";
     foreach my $spacing (@spacing_list) {
-	print $out join("\t", ";\t", "sp ".$spacing, 
+	print $out join("\t", ";\t", "sp ".$spacing,
 			$nb_possible_pos{$spacing},
 			$dyad_occ_sum{$spacing});
 	if ($noov) {
@@ -1460,8 +1459,8 @@ sub PrintVerbose {
 	    print $out "\t", $dyad_ovl_sum{$spacing} + $dyad_occ_sum{$spacing};
 	}
     	if ($seq_type eq "DNA") {
-	    print $out "\t", join ("\t", 
-				   $valid_dyad_positions{$spacing}, 
+	    print $out "\t", join ("\t",
+				   $valid_dyad_positions{$spacing},
 				   $discarded_dyad_positions{$spacing},
 				  );
 	}
@@ -1487,7 +1486,7 @@ sub PrintVerbose {
     } else {
 	print $out ";\tMonad calibration from input sequences\n";
     }
-    
+   
     unless ($#id_list > $max_seq_verbose) {
 	print $out "; Sequences:\n";
 	foreach $s (1..$#id_list) {
@@ -1504,21 +1503,21 @@ sub PrintHeaderLine {
     $col_description{"sequence"} = "dyad sequence";
     $col_description{"dyad_seque"} = "dyad sequence";
     $col_description{"dyad_ident"} = "dyad identifier";
-    $col_description{"observed_freq"} = "observed frequency"; 
-    $col_description{"expected_frq"} = "expected frequency"; 
+    $col_description{"observed_freq"} = "observed frequency";
+    $col_description{"expected_frq"} = "expected frequency";
     $col_description{"occ"} = "observed occurrences";
-    $col_description{"exp_occ"} = "expected occurrences"; 
+    $col_description{"exp_occ"} = "expected occurrences";
     $col_description{"occ_P"} = "occurrence probability (binomial)";
     $col_description{"occ_E"} = "E-value for occurrences (binomial)";
     $col_description{"occ_sig"} = "occurrence significance (binomial)";
-    $col_description{"zscore"} = "z-score (normal)"; 
-#    $col_description{"occ_lkh"} = "occurrence likelihood"; 
-    $col_description{"all_occ"} = "number of non-overlapping + overlapping occurrences"; 
-    $col_description{"ovl_occ"} = "number of overlapping occurrences"; 
-    $col_description{"ratio"} = "observed/expected ratio"; 
-    $col_description{"rank"} = "rank"; 
-    $col_description{"ov_coef"} = "overlap coefficient"; 
-    $col_description{"remark"} = "remark"; 
+    $col_description{"zscore"} = "z-score (normal)";
+#    $col_description{"occ_lkh"} = "occurrence likelihood";
+    $col_description{"all_occ"} = "number of non-overlapping + overlapping occurrences";
+    $col_description{"ovl_occ"} = "number of overlapping occurrences";
+    $col_description{"ratio"} = "observed/expected ratio";
+    $col_description{"rank"} = "rank";
+    $col_description{"ov_coef"} = "overlap coefficient";
+    $col_description{"remark"} = "remark";
 
     @out_col = ();
 
@@ -1528,7 +1527,7 @@ sub PrintHeaderLine {
     my $dyad_id_len = $dyad_len;
     if ($sum_rc) {
 	$dyad_id_len = 2*$dyad_len + 1;
-    } 
+    }
     if ($sum_rc) {
 	if ($dyad_len < 8) {
 	    push @out_col, sprintf("%-".(${dyad_len}-1)."s", "seq");
@@ -1538,7 +1537,7 @@ sub PrintHeaderLine {
 	push @out_col, sprintf("%-${dyad_id_len}s", "identifier");
     } else {
 	push @out_col, "dyad_seque";
-	push @out_col, "dyad_ident";    
+	push @out_col, "dyad_ident";   
     }
 
     ## Frequencies
@@ -1558,7 +1557,7 @@ sub PrintHeaderLine {
 
     ## Rank
     push @out_col, "rank"  if ($return_fields{rank});
-    
+   
     ## Overlapping occurrences
     if ($noov) {
 	push @out_col, "ovl_occ";
@@ -1580,7 +1579,7 @@ sub PrintHeaderLine {
 	push @out_col, "ov_coef" ;
 	push @out_col, "remark";
     }
-    
+   
     if ($verbose) {
 	print $out "; column headers\n";
 	foreach $c (0..$#out_col) {
@@ -1598,10 +1597,10 @@ sub PrintHeaderLine {
 ## Print the result
 sub PrintResult {
     &RSAT::message::TimeWarn("Printing the result") if ($main::verbose >= 2);
-  
+ 
     #### print header line
     &PrintHeaderLine();
-    
+   
     #### sort dyads according to significance ####
     if ($sort_results) {
 	if ($return_fields{proba}) { ### sort by decreasing order of significance
@@ -1615,7 +1614,7 @@ sub PrintResult {
     unless (defined(@sorted_patterns)) {
 	@sorted_patterns = sort keys %patterns;
     }
-    
+   
 
     ################################################################
     ## Calculate rank and check thresholds
@@ -1695,12 +1694,12 @@ sub PrintResult {
 ################################################################
 ## Print detailed help message
 sub PrintHelp {
-  open HELP, "| more"; 
-  print HELP <<End_of_help; 
+  open HELP, "| more";
+  print HELP <<End_of_help;
 
 NAME dyad-analysis
 
-	1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be) 
+	1998 by Jacques van Helden (jvanheld\@bigre.ulb.ac.be)
 
 DESCRIPTION
 	Detects overrepresented dyads (spaced pairs) in a set of DNA
@@ -1709,12 +1708,12 @@ DESCRIPTION
 	of bases.
 
 	This algorithm is able to detect binding sites that escape detection by
-	oligo-analysis, because of the sequence degeneracy within the spacer 
-	region. A typical example of patterns that are efficiently detected by 
-	the dyad analysis is the binding site for the yeast Gal4p 
+	oligo-analysis, because of the sequence degeneracy within the spacer
+	region. A typical example of patterns that are efficiently detected by
+	the dyad analysis is the binding site for the yeast Gal4p
 	transcription factor, which has the consensus CGGNNNNNWNNNNNCCG.
 
-	The dyad-analysis is generally efficient to detect binding sites 
+	The dyad-analysis is generally efficient to detect binding sites
 	for HTH factors from E.coli, and for C6 Zinc cluster proteins in yeast.
 
 CATEGORY
@@ -1730,7 +1729,7 @@ OPTIONS
 	-o output_file
 
 	-i input_file
-		The sequence to be analyzed. Multiple sequences can 
+		The sequence to be analyzed. Multiple sequences can
 		be entered at once with most sequence formats (see below).
 
 	-mask upper|lower
@@ -1738,44 +1737,44 @@ OPTIONS
 		selected case by N characters.
 
 	-format format
-		Input sequence format. Various standards are 
+		Input sequence format. Various standards are
 		supported.
 		   raw: the raw sequence without any identifier or comment.
-		   multi: several raw sequences concatenated. 
-		   IG: IntelliGenetics format. 
+		   multi: several raw sequences concatenated.
+		   IG: IntelliGenetics format.
 		   FastA: the sequence format used by FastA, BLAST, Gibbs
-			  sampler and a lot of other bioinformatic programs. 
-		   Wconsensus: the format defined by Jerry Hertz for 
-			       his programs (patser, consensus, wconsensus). 
+			  sampler and a lot of other bioinformatic programs.
+		   Wconsensus: the format defined by Jerry Hertz for
+			       his programs (patser, consensus, wconsensus).
 	-l #	oligo_length
 		Oligonucleotide size (default 3)
-		This is the size of a single element (a half dyad). 
-	-sp #-#	spacing (default 0)
-		Spacing between the elements of the dyad. 
-		The spacing is the number of bases between the end of 
-		the first element and the start of the second one. 
+		This is the size of a single element (a half dyad).
+	-sp #-#	spacing (default ${min_spacing}-${max_spacing})
+		Spacing between the elements of the dyad.
+		The spacing is the number of bases between the end of
+		the first element and the start of the second one.
 		Spacing formats
 		---------------
-		A single integer value means that the spacing is fixed. 
-		Variable spacing can be introdued by entering the min and 
-		max values separated by a hyphen. 
-		For example 8-12 means that all occurrences of the dyad 
-		with a spacing between 8 and 12 qill be counted together 
-		and their significance estimated globally. 
+		A single integer value means that the spacing is fixed.
+		Variable spacing can be introdued by entering the min and
+		max values separated by a hyphen.
+		For example 8-12 means that all occurrences of the dyad
+		with a spacing between 8 and 12 qill be counted together
+		and their significance estimated globally.
 		Warning, this is different from scanning one by one the
-		 spacing values 8 to 12. 
+		 spacing values 8 to 12.
 	-type dyad_type (dr|ir|any)
-		In order to fasten execution, the program can be asked 
-		to restrict its analysis to symmetric dyads. 
+		In order to fasten execution, the program can be asked
+		to restrict its analysis to symmetric dyads.
 		Three types are accepted
-		   dr	direct repeats: the second element is the same as the 
-			first one 
+		   dr	direct repeats: the second element is the same as the
+			first one
 		   ir	inverted repeats: the second element is the reverse
-			complement of the first one. 
+			complement of the first one.
 		   rep  repeats: direct and inverted repeats are evaluated
 		   any	(default)
-			When selecting the option any, the analysis is 
-			performed on all non-symmetric dyads as well. 
+			When selecting the option any, the analysis is
+			performed on all non-symmetric dyads as well.
 
 	-accept accepted_dyad_file
 		Specify a file containing a list of accepted
@@ -1794,35 +1793,35 @@ OPTIONS
 		different spacings.
 
 	-2str	count on oth strands
-		The occurrences of each oligonucleotide are summed on both 
+		The occurrences of each oligonucleotide are summed on both
 		strands. This allows to detect elements which act in an
-		orientation-insensitive way (as is generally the case for 
-		yeast upstream elements). 
+		orientation-insensitive way (as is generally the case for
+		yeast upstream elements).
 
 	-1str	single strand count
-		only the direct strand is considered for oligonucleotide and 
+		only the direct strand is considered for oligonucleotide and
 		dyad occurrence counting.
 
 	-prot	input sequence is proteic. In this case, the analysis
 		concerns pairs of oligopeptides instead of oligonucleotides
 
 	-expfreq	file with an expected frequency table
-		By default, the frequency expected for each dyad is the 
-		product of the frequency expected for each element 
-		(oligonucleotide): 
+		By default, the frequency expected for each dyad is the
+		product of the frequency expected for each element
+		(oligonucleotide):
 
 		  exp(dyad) = exp(oligo1)*exp(oligo2)
 
-		By default, the oligonucleotide frequencies observed in the 
-		input sequences are used to estimate the expected oligo 
+		By default, the oligonucleotide frequencies observed in the
+		input sequences are used to estimate the expected oligo
 		frequencies.
-		Alternatively, predefined frequency tables can be used. 
+		Alternatively, predefined frequency tables can be used.
 		These tables can for instance be calculated on basis of
-		- the whole yeast genome 
-		- all yeast intergenic regions 
-		- all yeast gene regions 
+		- the whole yeast genome
+		- all yeast intergenic regions
+		- all yeast gene regions
 		This allows to correct the bias due to the highly variable
-		distribution of oligonucleotides observed in the yeast genome. 
+		distribution of oligonucleotides observed in the yeast genome.
 
 	-ncf	(deprecated, use "-bg intergenic" instead)
 		use intergenic frequencies as background frequencies
@@ -1833,8 +1832,8 @@ OPTIONS
 
 		Either -org or -taxon is required with the option -bg.
 
-		Supported models: 
-		-bg upstream 
+		Supported models:
+		-bg upstream
 			 all upstream sequences, allowing overlap with
 		         upstream ORFs
 
@@ -1843,7 +1842,7 @@ OPTIONS
 			  with upstream ORFs
 
 		-bg intergenic
-		         intergenic frequencies 
+		         intergenic frequencies
 			 Whole set of intergenic regions, including
 			 upstream and downstream sequences
 
@@ -1890,7 +1889,7 @@ OPTIONS
 	-sort	sort results by decreasing order of significance
 
 	-return	output_fields
-		output fields may contain one or several of the following 
+		output fields may contain one or several of the following
 		words:
 			freq
 			occ
@@ -1956,23 +1955,23 @@ OUTPUT COLUMNS
 
 	Expected frequency (exp_frq): the probability to observe the dyad at
 		each position. This value is calculated on basis of the
-		expected frequency table (see above), or of the 
-		oligonucleotide frequencies observed in the input sequences. 
+		expected frequency table (see above), or of the
+		oligonucleotide frequencies observed in the input sequences.
 
 	Observed occurrences (occ): the number of ocurrences
-		observed for each dyad. 
-		Overlapping matches are detected and summed in the counting. 
+		observed for each dyad.
+		Overlapping matches are detected and summed in the counting.
 
-	Expected number of occurrences (exp_occ): the number of	ocurrences 
+	Expected number of occurrences (exp_occ): the number of	ocurrences
 		expected for each dyad. This value is calculated on basis of
-		the oligonucleotide frequency table selected. 
+		the oligonucleotide frequency table selected.
 
 	Occurrence P-value (occ_P): the probability to have N or more
-		occurrences, given the expected number of occurrences 
-		(where N is the observed number of occurrences). 
+		occurrences, given the expected number of occurrences
+		(where N is the observed number of occurrences).
 
 	Occurrence E-value (occ_E): the expected number of false
-		positives, given the number of false 
+		positives, given the number of false
 			E-value = P-value * nb_tested_patterns
 		This is a correction for multi-testing, taking into
 		account the number of patterns for which a test of
@@ -1980,11 +1979,11 @@ OUTPUT COLUMNS
 		size of the monad, and with the number of spacings
 		sampled)/
 
-	Occurrence Significance (occ_sig): 
-		A logarithmic transformation of the E-value. 
+	Occurrence Significance (occ_sig):
+		A logarithmic transformation of the E-value.
 		  	      occ_sig = -log10(occ_E)
 		The highest sig correspond to the most overrepresented
-		oligonucleotide.  Sig value higher than 0 
+		oligonucleotide.  Sig value higher than 0
 		indicate a significant overrepresentation (E-value < 1).
 
 PROBABILITIES
@@ -1992,33 +1991,33 @@ PROBABILITIES
 	each oligonucleotide (see above). From there, and expected number of
 	occurrences is calculated and compared to the observed number of
 	occurrences. The significance of the observed number of occurrences
-	is calculated with the binomial formulae. 
+	is calculated with the binomial formulae.
 
-              
+             
     EXPECTED DYAD FREQUENCY
         If exp(oligo1) is the expected frequency for the first element, and
            exp(oligo1) is the expected frequency for the second element
-        
+       
         Then
            exp(dyad) = exp(oligo1)*exp(oligo2)
 
     NUMBER OF POSSIBLE DYADS
-        This number depends on the dyad type selected by the user. 
-        When the analysis is restricted to inverted repeats, or to direct 
-        repeats, the first element univocally determines the second one, 
+        This number depends on the dyad type selected by the user.
+        When the analysis is restricted to inverted repeats, or to direct
+        repeats, the first element univocally determines the second one,
         thus:
                 nb_poss_dyads = nb_poss_oligo
                               = 4^w
                 where w is the oligonucleotide length.
-         When any dyad is allowed, each oligonucleotide can combine with any 
+         When any dyad is allowed, each oligonucleotide can combine with any
         other or itself, thus:
-                nb_poss_dyads = nb_poss_oligo * nb_poss_oligo 
+                nb_poss_dyads = nb_poss_oligo * nb_poss_oligo
                               = 4^2w
     EXPECTED OCCURRENCES
                               r
            Exp_occ = p * 2 * SUM (Lj + 1 - d) = p * T
                              j=1
-        
+       
         where   p  = expected dyad frequency
                 n  = number of input sequences
                 Lj = length of the jth input sequence
@@ -2026,37 +2025,37 @@ PROBABILITIES
                         d = 2w + s
                         where w is the oligonucleotide length
                               s is the spacer length
-                T  = the number of possible matching positions in the 
+                T  = the number of possible matching positions in the
                      whole set of input sequences.
                 The factor 2 stands for the fact that occurrences are summed
-                on both strands (it is omitted when the option -1str 
+                on both strands (it is omitted when the option -1str
                 is active).
 
     PROBABILITY OF THE OBSERVED NUMBER OF OCCURRENCES
         The probability to observe exactly obs occurrences in the whole set
         of sequences is calculated by the binomial
-        
+       
                                                       obs      T-obs
             P(obs) = bin(p,T,obs) =       T!         p    (1-p)
                                      ---------------
-                                     obs! * (T-obs)! 
-        
+                                     obs! * (T-obs)!
+       
         where   obs is the observed number of dyad occurrences,
                 p   is the expected dyad frequency,
                 T   is the number of possible matching positions,
-                    as defined above. 
-        
+                    as defined above.
+       
         The probability to observe obs or more occurrences in the whole set of
         of sequences is calculated by the sum of binomials:
-             
+            
                             obs-1
              P(>=obs) =  1 - SUM P(j)
                              j=0
-                                      
+                                     
     SIGNIFICANCE INDEX
-        The significance index is a conversion of the occurrence probability, 
+        The significance index is a conversion of the occurrence probability,
         calculated as follows:.
-              
+             
               Sig_occ = -log10(NPD * P(>=obs));
         where   NPD     is the number of possible dyads, calculated as above.
 
@@ -2090,9 +2089,9 @@ dyad-analysis options
 -seqtype       	sequence type (dna|prot|other)
 -v		verbose
 -l		oligonucleotide length
--sp		spacing
+-sp		spacing  (default ${min_spacing}-${max_spacing})
 -expfreq	expected frequency file
--ncf		(deprecated, use '-bg intergenic' instead) 
+-ncf		(deprecated, use '-bg intergenic' instead)
 -bg		background model (supported: $supported_bg)
 -org		organism (-org and -taxon are mutually exclusive)
 -taxon		taxon (-org and -taxon are mutually exclusive)
@@ -2100,8 +2099,8 @@ dyad-analysis options
 -accept 	accepted_dyad_file
 -groupsp	Group dyads made of the same words (monads) but with different spacings.
 -sort		sort results by decreasing significance
--under		detect under-represented instead of over-represented words 
--two_tails      detect under-represented and over-represented words 
+-under		detect under-represented instead of over-represented words
+-two_tails      detect under-represented and over-represented words
 -zeroocc	return also patterns with zero occurrences
 -thosig		threshold on occurrence significance (obsolete)
 -lth param \#	lower threshold on parameter. Supported: $supported_thresholds
