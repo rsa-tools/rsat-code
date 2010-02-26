@@ -6,6 +6,15 @@
         <link>http://rsat.bigre.ulb.ac.be/rsat/</link>
         <description>Regulatory Sequence Analysis Tools - News and Updates</description>
 
+            <item>
+            <title>RSS feed has moved</title>
+            <link>http://rsat.bigre.ulb.ac.be/rsat/</link>
+            <guid isPermaLink="false">rss8</guid>
+            <description><![CDATA[
+All news and questions are now posted to the <b>forum</b>, for which a RSS feed is available. The current RSS feed is discontinuted. To keep up to date with RSAT, please subscribe to our new RSS feed, on the forum page. The current RSS feed is discontinuted.
+           ]]></description>
+            <pubDate>Mon, 23 Nov 2009 12:30:00 GMT</pubDate>
+     </item>
 
 	    <item>
             <title>A forum for RSAT</title>
