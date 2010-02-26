@@ -522,8 +522,16 @@ sub doit {
       $ENV{QSUB_MANAGER} = "sge";
       &RSAT::message::Warning("Cluster queue manager not defined, using the  default value 'sge'.") if ($main::verbose >= 1);
     }
-    my $qsub_manager=$ENV{QSUB_MANAGER};
-    my $qsub_options=$ENV{QSUB_OPTIONS};
+
+    my $qsub_manager="";
+    if (defined($ENV{QSUB_MANAGER})) {
+      $qsub_manager=$ENV{QSUB_MANAGER};
+    }
+
+    my $qsub_options="";
+    if (defined($ENV{QSUB_OPTIONS})) {
+      $qsub_options = $ENV{QSUB_OPTIONS};
+    }
 
 
     ## Cluster queue
