@@ -3,15 +3,24 @@
 ## - footprint-discovery
 ## - footprint-scan
 
-%supported_task =  (operons=>1,
-		    query_seq=>1,
-		    orthologs=>1,
-		    ortho_seq=>1,
-		    purge=>1,
-		    all=>1,
-		    );
+@supported_tasks = qw(
+		      all
+		      operons
+		      query_seq
+		      filter_dyads
+		      orthologs
+		      ortho_seq
+		      purge
+		      dyads
+		      map
+		     );
+
+%supported_task = ();
+foreach my $task (@supported_tasks) {
+  $supported_task{$task} = 1;
+}
 %task = ();
-$supported_tasks = join (",", keys %supported_task);
+$supported_tasks = join (",", @supported_tasks);
 local $all_genes = 0;         ## Analyze all the genes of the query organism
 
 ################################################################
@@ -45,7 +54,7 @@ sub CheckFootprintParameters {
       $task{$task} = 1;
     }
   }
-  &RSAT::message::Info("Footprint analysis tasks: ", join (";", keys %task)) if ($main::verbose >= 1);
+  &RSAT::message::Info("Footprint analysis tasks: ", join (",", keys %task)) if ($main::verbose >= 1);
 
   ## Check taxon
   &RSAT::error::FatalError("You must specify a taxon (option -taxon)")
@@ -155,13 +164,17 @@ sub GetOutfilePrefix {
       || (!defined($outfile{prefix}))
       || ($outfile{prefix} eq "")) {
     if ($query_prefix) {
+      my $output_dir = join("/", "footprints", $taxon, $organism_name, $query_prefix);
+      my $output_file_prefix = join ("_", $query_prefix, $organism_name, $taxon);
       if ($bg_model) {
-	$outfile{prefix} = join( "/", "footprints", $taxon, $organism_name, $query_prefix, $bg_model,
-				 join ("_", $query_prefix, $organism_name, $taxon, $bg_model));
-      } else {
-	$outfile{prefix} = join( "/", "footprints", $taxon, $organism_name, $query_prefix,
-				 join ("_", $query_prefix, $organism_name, $taxon));
+	$output_dir .= "/".$bg_model;
+	$output_file_prefix .= "_".$bg_model;
       }
+      if ($infer_operons) {
+	$output_dir .= "_operons";
+	$output_file_prefix .= "_operons";
+      }
+      $outfile{prefix} = join("/", $output_dir, $output_file_prefix);
       &RSAT::message::Info("Automatic definition of the output prefix", $outfile{prefix}) if ($main::verbose >= 2);
     } else {
       &RSAT::error::FatalError("You must define a prefix for the output files with the option -o");
@@ -356,8 +369,7 @@ testing).
 Prefix for the output files.
 
 If the prefix is not specified, the program can guess a default
-prefix, but this is working only if there is a single query gene or
-query file.
+prefix.
 
 =cut
   } elsif ($arg eq "-o") {
@@ -457,7 +469,8 @@ Avilable Tasks:
 
 =over
 
-=item For all footprint programs: operons, quiery_seq, orthologs, ortho_seq, purge, all
+=item For all footprint programs (footprint-discovery,
+footprint-scan): operons, query_seq, orthologs, ortho_seq, purge, all
 
 =item For footprint-scan: occ_sig, occ_sig_graph, scan, map, synthesis
 
@@ -488,7 +501,7 @@ Supported: any format supported by the program feature-map.
       $main::map_format = shift(@arguments);
 
 
-    ## Create HTML Index
+    ## Create HTML Index for each gene separately
 =pod
 
 =item B<-index>
@@ -496,11 +509,33 @@ Supported: any format supported by the program feature-map.
 Generate an HTML index with links to the result files. This option is
 used for the web interface, but can also be convenient to index
 results, especially when several genes or taxa are analyzed (options
--genes, -all_genes, -all_taxa).
+-genes, -all_genes, -all_taxa). 
+
+With the option -sep_genes, one index is generated for each gene
+separately. An index summarizing the results for all genes can be
+generated using the option -synthesis.
 
 =cut
   } elsif ($arg eq "-index") {
     $main::create_index = 1;
+
+    ## Create a tab-delimited file and a HTML Index for all the results
+=pod
+
+=item B<-synthesis>
+
+This option generate synthetic tables (in tab-delimited text and html)
+for all the results. It should be combined with the option
+-sep_genes. The synthetic tables contain one row per gene, and one
+column per parameter. They summarize the results (maximal
+significance, top-ranking motifs) and give pointers to the separate
+result files.
+
+=cut
+  } elsif ($arg eq "-synthesis") {
+    $main::synthesis = 1;
+
+
   } else {
     return(0); ## No option was found
   }
