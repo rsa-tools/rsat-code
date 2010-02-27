@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.48 2009/11/03 10:15:32 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.49 2010/02/27 00:31:15 morgane Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -102,25 +102,15 @@ print <<EndText;
     programs specifically designed for the detection of regulatory
     signals in non-coding sequences.
     
-     <P> <font color='red'>New !</font> <a
-    href="http://www.bigre.ulb.ac.be/forums/"><b>RSAT Forum </b>now available</a>  (December 2008)</p>
+    <ul>
+     <li> <font color='red'>Check the latest news in </font> <a
+    href="http://www.bigre.ulb.ac.be/forums/viewforum.php?f=25&sid=a2f000bd4cc6f7f8260ae9547db9a72d"><b>our forum </b></a></li>
 
-    <p> <font color='red'>New !</font> Four articles explaining how to
-    use RSAT and NeAT published in <a
-    target=_top href='http://www.nature.com/nprot/journal/v3/n10/index.html'><b>Nature
-    Protocols</b></a> (Sept 2008) </p>
+	<li> Stay Tuned !! RSS feed to all RSAT news <a href="http://www.bigre.ulb.ac.be/forums/feed.php" target="_top"><IMG class="rss" SRC="images/feed.png" BORDER=0></a></li>
+    
 
-    <P> <font color='red'>New !</font> <a
-    href="RSSAT.xml">RSS feed available</a>: get RSAT latest news
-    directly in your favorite RSS reader !  (Sept 2008)</p>
-
-	 <P> <font color='red'>New !</font> The <b> recent
-	 developments </b> made in RSAT are presented in the <a
-	 target=_blank
-	 href=http://nar.oxfordjournals.org/cgi/content/full/gkn304><b>NAR
-	 Web server issue 2008</b></a> <a target=_blank
-	 href=http://nar.oxfordjournals.org/cgi/screenpdf/gkn304v1>[Free
-	 PDF]</a>  (July 2008)</p>
+    <li> <b><a href="citing_rsat.html"> How to cite RSAT ? </a> </b></li>
+	</ul>
 
     <P> This website is free and open to all users.
    </p> 
