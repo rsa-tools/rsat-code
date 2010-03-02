@@ -1,11 +1,12 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.10 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: random-genome-fragments,v 1.11 2010/03/02 19:58:24 morgane Exp $
 #
 ############################################################
 
 use strict;
+
 
 =pod
 
@@ -15,7 +16,7 @@ random-genome-fragments
 
 =head1 DESCRIPTION
 
-Randomly extract genomic fragments from a given organism.
+Randomly calculates genomic coordinates, for a given organism  (installed in RSAT or from Ensembl).
 Makes use of EnsEMBL API (www.ensembl.org) for EnsEMBL genomes.
 
 =head1 AUTHORS
@@ -30,12 +31,22 @@ sequences
     
 random-genome-fragments -org organism -l length -r repetitions [-o outputfile] [-v # -rm -lf length_file] [..]
 
-=head1 OUTPUT FORMAT
+=head1 OUTPUT FORMATS
 
-Sequences are exported in any format supported by RSAT. 
+The program outputs a file containing the coordinates.
 
-To have the list of supported output sequence formats, type the following
-command: I<convert-seq -h>
+The default format is ft. Use I<convert-features -h> to
+convert to another format.
+
+Sequences can also be directly exported for genomes installed in RSAT.
+
+To obtain the sequences for Ensembl organisms, use the coordinate file as input to I<retrieve-ensembl-seq.pl> with the options 
+-ftfile YourFeaturefile -ftfileformat ft
+
+For very big files, you might consider using the output format 'bed' and use the tools of sequence providers (Galaxy, UCSC, Ensembl) to efficently extract the sequences.
+
+
+
 
 =cut
 
@@ -46,7 +57,9 @@ BEGIN {
     }
 }
 require "RSA.lib";
+push (@INC, $ENV{ensembl});
 require RSAT::organism;
+use RSAT::feature;
 use Data::Dumper;
 
 
@@ -64,11 +77,14 @@ package main;
 
     $main::verbose = 0;
     #$main::out = STDOUT;
-    $main::out_format = "fasta";
+    $main::out_format = "ft";
     $main::rm = 0;
     @main::lengths =();
     @main::contig_names = ();
     @main::files2remove =();
+    $main::null = "";
+    $main::assembly_version = "";
+
 
     ################################################################
     ## Read argument values
@@ -107,6 +123,13 @@ package main;
 
     ################################################################
     ## Check argument values 
+    
+    ## fasta output is not compatible with an Ensembl organism
+    if ($main::organism_ens) {
+    	if ($main::out_format eq "fasta"){
+    		&RSAT::error::FatalError( "Returning sequences is not compatible with Ensembl genomes. Use gft output format, followed by retrieve-ensembl-seq.pl");
+    	}
+    }
 
 	#################################################################
 	## RSAT organism
@@ -149,6 +172,9 @@ package main;
 		$main::slices_ref = $slice_adaptor->fetch_all('chromosome');
 		foreach my $slice (@{$main::slices_ref}) {
 			my $slice_name = $slice->name();
+			if ($slice_name =~ /chromosome:([\w\.]*?):/){
+				$main::assembly_version = $1;
+			}
 			unless ($slice_name =~ /:MT:/) { #Do not take into account mitochondrial genome.	
 				&RSAT::message::Info(join ("\t", "Chromosome name", $slice_name) )
 				if ($main::verbose >= 2);
@@ -163,11 +189,14 @@ package main;
 	################################################################
     ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
+
     
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
-
+	my $header = &RSAT::feature::header($main::out_format);
+	print $main::out $header if ($header);
+	
 	################################################################	
 	## get random positions
 	
@@ -211,8 +240,8 @@ package main;
 		if ($main::verbose >= 2);
   
     	################################################################
-   		## Print output
-   		if ($main::organism_name) {
+   		## Print sequences
+   		if (($main::organism_name)&&(($main::out_format eq "fasta"))) {
 			my $current_seq = $main::contigs{$rand_contig_name}->get_sequence($rand_start,$rand_end,$rand_strand);
 			my @comments = join("; ",
 								"random sequence $i of $main::nb_fragment",
@@ -223,69 +252,28 @@ package main;
 		
 			&PrintNextSequence($main::out, $main::out_format,0, $current_seq, $seq_id, @comments);
 			
-   		} elsif ($main::organism_ens) {
-   			##use retrieve-ensembl-seq to get the sequence
-   			
-   			#my $tmp_out_file =`mktemp retrieve_seq_ensembl.XXXXXX`;
-   			#chomp($tmp_out_file);
-   			
-   			my $retrieve_seq_cmd = " retrieve-ensembl-seq.pl ";
-   			$retrieve_seq_cmd .= " -org ".$main::organism_ens;
-   			$retrieve_seq_cmd .= " -chrom ".$main::ens_chroms{$rand_contig_name}->seq_region_name();
-   			$retrieve_seq_cmd .= " -left ".$rand_start;
-   			$retrieve_seq_cmd .= " -right ".$rand_end;
-   			if ($rand_strand eq "D") {
-   				$retrieve_seq_cmd .= " -strand 1 ";
-   			} elsif ($rand_strand eq "R") {
-   				$retrieve_seq_cmd .= " -strand -1 ";
-   			} else {
-   				&RSAT::message::Warn("No strand specified. Fetching direct strand.") if ($main::verbose >= 0);
-   			}
-   			if ($main::rm) {
-   				$retrieve_seq_cmd .= " -rm ";
-   			}
-   			if ($main::mask_coding) {
-   				$retrieve_seq_cmd .= " -maskcoding ";
-   			}
-   			#$retrieve_seq_cmd .= " -o ".$tmp_out_file;
-   			if ($main::local_server){
-   				$retrieve_seq_cmd .= " -ensemblhost ".$main::local_server;
-   			}
-
-   			## run command
-   			open (ENSEMBLREQUEST, "$retrieve_seq_cmd |");
-			while (<ENSEMBLREQUEST>){
-				print $main::out $_;
-				}
-			close ENSEMBLREQUEST;
-   			
-   			#print ($retrieve_seq_cmd);
-   			#system("$retrieve_seq_cmd");
-   			#push @main::files2remove, $tmp_out_file;
-   			
- 
+   		} else  {
+   		################################################################	
+		## print the coordinates		
+			my $feature = new RSAT::feature(); 
+			$feature->set_attribute("ft_id", $seq_id);	 
+			$feature->set_attribute("ft_type","random_fragment");
+			$feature->set_attribute("feature_name",$seq_id);
+			if ($main::out_format eq "bed"){
+				# adapt the chromosome name for UCSC ChrXXX
+				$rand_contig_name =~ s/chromosome:[\w\.]*?://;
+      			$rand_contig_name =~ s/:.*//;
+				$rand_contig_name = "chr".$rand_contig_name ;
+			}
+			$feature->set_attribute("seq_name",$rand_contig_name);
+			$feature->set_attribute("start",$rand_start);
+			$feature->set_attribute("end",$rand_end);
+			$feature->set_attribute("strand",$rand_strand);
+			
+			print $main::out $feature->to_text($main::out_format, $main::null);
    		}
 	}
-	################################################################
-	## print ensembl sequences
-	
-#	if ($main::organism_ens) {
-#		if ($main::outfile{output}) {
-#			#my $seq_files = join (" ",@main::files2remove);
-#			#close $main::out;
-#			#system("cat $seq_files >> $main::outfile{output}");
-#			#open($main::out, ">> $main::outfile{output}"); #open for write, append
-#		} else {
-#			#foreach my $file (@main::files2remove){
-#			#	open TMP, "<$file"
-#			#		or die "Can't read $file : $!";
-#			#	while (<TMP>){
-#			#		print $main::out $_;
-#			#	}
-#			#	close TMP;
-#			}
-#		}
-#	}
+
 
     ################################################################
     ## Finish verbose
@@ -393,13 +381,35 @@ allows to use the command within a pipe.
 
 =item B<-oformat output_format>
 
-Sequence output format. Default is fasta. To convert to another supported sequence 
-format, type the following command: I<convert-seq -h>
+Output format. Default is ft. To convert to another supported feature 
+format, type the following command: I<convert-features -h>
+
+For RSAT organisms, the outpout format can also be set to 'fasta' to retrieve
+sequences. For Ensembl organisms, use the coordinate file as input to
+I<retrieve-ensembl-seq.pl> with the options 
+
+-ftfile YourFeaturefile -ftfileformat ft.
+
+For very big files, you might consider using the output format BED, which is adapted to UCSC database. 
+You can thus use the tools of sequence providers (UCSC, Galaxy, Ensembl) to efficently extract the sequences.
+
 
 =cut
 	} elsif ($arg eq "-oformat") {
 	    $main::out_format = shift(@arguments);
 
+		    ### repeat_masked
+=pod
+
+=item	B<-rm>
+
+Will use the version of genome with repeat masked
+
+
+=cut
+	} elsif ($arg eq "-rm") {
+	    $main::rm = 1;
+	    
 	
 		    ### organism
 =pod
@@ -437,30 +447,7 @@ Uses a local EnsEMBL server. (Advanced users)
 	} elsif ($arg eq "-ensemblhost") {
 	    $main::local_server = shift(@arguments);
 
-		    ### masking coding sequence
-=pod
 
-=item B<-maskcoding>
-
-All coding sequence is replaced by N in the retrieved sequence
-(only in combination of -org_ens)
-
-=cut
-	} elsif ($arg eq "-maskcoding") {
-	    $main::mask_coding = 1;
-
-		    ### repeat_masked
-=pod
-
-=item	B<-rm>
-
-Will use the version of genome with repeat masked
-
-
-=cut
-	} elsif ($arg eq "-rm") {
-	    $main::rm = 1;
-	    
 	    
 		    ### nb of fragments
 =pod
@@ -522,6 +509,9 @@ sub Verbose {
     print $main::out "; random-genome-fragments ";
     &PrintArguments($main::out);
     print $main::out "; Number of random fragments $main::nb_fragment\n";
+    if ($main::organism_ens){
+    	print $main::out "; Data from Ensembl org:$main::organism_ens assembly:$main::assembly_version \n";
+    }
     if (defined(%main::outfile)) {
 	print $main::out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
@@ -538,8 +528,7 @@ package Ensembl_genome;
 {
 	use DBI();
 	## EnsEMBL libraries
-	use Bio::EnsEMBL::DBSQL::DBAdaptor;
-	use Bio::EnsEMBL::DBSQL::SliceAdaptor;
+	use Bio::EnsEMBL::Registry;
  
  sub new {
   my $class = shift;
@@ -556,7 +545,7 @@ sub get_connect_param {
 	if ($main::local_server){
   		$self->{ensembl_host} = $main::local_server; # ie 'xserve2.bigre.ulb.ac.be'  # Local db (use inside BIGRE)
 	} else {
-  		$self->{ensembl_host} = 'ensembldb.ensembl.org';  # db at EBI (use outside BIGRE) 
+  		$self->{ensembl_host} = $ENV{ensembl_host};  
 	}
 	$self->{ensembl_user} = "anonymous";
 }
@@ -564,7 +553,8 @@ sub get_connect_param {
 sub get_db_name {
 	my $self = shift;
 	my $dbname;
-    my $dbh = DBI->connect("DBI:mysql:host=".$self->{ensembl_host}, "$self->{ensembl_user}", "", {'RaiseError' => 1});
+	my $dbh = DBI->connect("DBI:mysql:host=".$self->{ensembl_host}.":port=5306", "$self->{ensembl_user}", "", {'RaiseError' => 1});
+	
     my $sth = $dbh->prepare("SHOW DATABASES");
     $sth->execute();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -573,14 +563,30 @@ sub get_db_name {
       }
     }
     &RSAT::message::Info (join("\t", "dbname = ", $dbname)) if ($main::verbose >= 2);
-    $self->{dbname} = $dbname;
     $sth->finish();
     $dbh->disconnect();
+     if ($dbname) {
+     	$self->{dbname} = $dbname;
+	   } else {
+	   	&RSAT::error::FatalError( "there is no organism named $self->{org} in the EnsEMBL database. Use the command supported-organisms-ensembl to obtain a full list of supported organisms.");
+      }
 }
 
 sub ens_connect {
 	my $self = shift;
-	my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => $self->{ensembl_host}, -user => $self->{ensembl_user}, -dbname => $self->{dbname});
+	
+	 my $registry = "Bio::EnsEMBL::Registry";
+
+ 	 $registry->load_registry_from_db(
+				   -host => $self->{ensembl_host},
+				   -user => $self->{ensembl_user},
+                   -port => "5306",
+				   -verbose => "0" );
+	
+	my $org = $self->{dbname};
+    $org =~s/_core_.+//;
+  	my $db = Bio::EnsEMBL::Registry->get_DBAdaptor($org, "core");
+
 	return $db;
 }
 
@@ -592,7 +598,11 @@ __END__
 
 =pod
 
+=back
+
 =head1 SEE ALSO
+
+=over
 
 =item random-genes
 
