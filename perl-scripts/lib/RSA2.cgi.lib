@@ -293,6 +293,53 @@ sub SequenceChoice {
 }
 
 
+
+#################################
+#Multiple Sequence choice
+sub MultiSequenceChoice {
+
+    my $seq_num = shift(@_);
+    my $sequenceChoiceString = "";
+    $sequenceChoiceString .=  "<B>Sequence</B>";
+    #$sequenceChoiceString .=  "<UL>\n";
+    my $sequence_file = "";
+    
+    #### sequence format (pop-up menu)
+    $sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
+    $sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Format</A></B>&nbsp;";
+    $sequenceChoiceString .=  $query->popup_menu(-name=>'sequence_format'.$seq_num,
+						 -Values=>['fasta', 
+							   'ig',
+							   'wconsensus',
+							   'raw',
+							   'ncbi',
+							   "tab",
+							   'multi'],
+						 -default=>$sequence_format);
+    
+    ### text area to copy-paste the sequence
+    $sequenceChoiceString .=  "Paste your sequence in the box below<BR>\n";
+    $sequenceChoiceString .=  $query->textarea(-name=>'sequence'.$seq_num,
+					       -default=>$default{sequence},
+					       -rows=>4,
+					       -columns=>55);
+    $sequenceChoiceString .=  "<BR>\n";
+    
+    ### option to upload the sequence file from the client machine 
+    $sequenceChoiceString .=  "Or select a file to upload<BR>\n";
+    $sequenceChoiceString .=  $query->filefield(-name=>'uploaded_file'.$seq_num,
+						-default=>'',
+						-size=>45,
+						-maxlength=>200);
+    $sequenceChoiceString .=  "<BR>\n";
+    
+    
+    
+    
+    print($sequenceChoiceString);
+}
+
+
 ################################################################
 ## Treat input sequence for the RSAT web server
 ## The seqence can be specified in 3 ways :
@@ -406,6 +453,52 @@ sub GetSequenceFile {
   return($sequence_file, $sequence_format);
 }
 
+########################
+# MultiGetSequenceFile
+sub MultiGetSequenceFile {
+    my ($seq_num, $sequence_file) = @_ ;
+#	&cgiError("++".$sequence_file);
+    ### sequence file format
+    my $sequence_format = lc($query->param("sequence_format".$seq_num));
+    unless ($accepted_input_seq{$sequence_format}) {
+	&cgiError("Invalid sequence format : '$sequence_format'.");
+    }
+    
+    #unless ($sequence_file = $query->param('sequence_file'.$seq_num)) { 
+	### sequence file already on the server side
+	### create a new temporary sequence file
+#	$sequence_file = "$main::TMP/$sequence_file";
+	
+	### upload sequence file from the client side
+	$upload_file = $query->param('uploaded_file'.$seq_num);
+	if ($upload_file) {
+	    if ($upload_file =~ /\.gz$/) {
+		$sequence_file .= ".gz";
+	    }
+	    $type = $query->uploadInfo($upload_file)->{'Content-Type'};
+	    open SEQ, ">$sequence_file" ||
+		&cgiError("Cannot store sequence file in temp dir.");
+	    while (<$upload_file>) {
+		print SEQ;
+	    }
+	    close SEQ;
+	    
+	    ### read sequence from the textarea "sequence"
+	} elsif ($query->param('sequence'.$seq_num) =~ /\S/) {
+	    if (open SEQ, ">$sequence_file") {
+		print SEQ $query->param('sequence'.$seq_num);
+		close SEQ;
+	    }
+	} else {
+	    &cgiError("The sequence box should not be empty.");
+	}
+	
+	#### sequence file will be deleted
+	&DelayedRemoval($sequence_file);
+    #}
+    
+    return($sequence_file, $sequence_format);
+}
 
 #### warn the users to wait for complete result before clicking on piping buttons
 sub PipingWarning {
@@ -516,6 +609,37 @@ sub TaxonPopUpString {
 }
 
 
+
+
+
+################################################################
+#Sequence boxes for matrix-quality
+
+sub SeqBoxMQ {
+  my $seq_num= shift(@_);
+ # text area to enter the sequence
+  print "<h2>Dataset ".$seq_num."</h2>";
+  print "<table ><tr><td>";
+ &MultiSequenceChoice($seq_num);
+  print "</td>";
+  print "<td>";
+  print "<br>";
+  print "<b><a href='help.convert-matrix.html#output_format'>&nbsp;&nbsp;&nbsp;&nbsp;Number of matrix permutations</A></B>&nbsp;";
+  print $query->popup_menu(-name=>'permutation'.$seq_num,
+			   -Values=>[0,1,2],
+			   -default=>$default{output_format});
+  print "<BR>\n";
+  print"</td>";
+  print "<td>";
+  print "<BR>\n";
+  print "<B><A HREF='help.convert-matrix.html#permutations'>&nbsp;&nbsp;&nbsp;&nbsp;Tag for this data set</A></b>\n";
+  print $query->textfield(-name=>'tag'.$seq_num,
+			  -default=>$default{perm},
+			  -size=>15);
+  print"</td>";
+  print "</tr></table>";
+
+}
 
 
 ################################################################
