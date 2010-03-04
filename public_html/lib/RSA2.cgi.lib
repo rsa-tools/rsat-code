@@ -318,6 +318,7 @@ sub MultiSequenceChoice {
 						 -default=>$sequence_format);
     
     ### text area to copy-paste the sequence
+    $sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;\n";
     $sequenceChoiceString .=  "Paste your sequence in the box below<BR>\n";
     $sequenceChoiceString .=  $query->textarea(-name=>'sequence'.$seq_num,
 					       -default=>$default{sequence},
@@ -684,7 +685,7 @@ print '</div><div class="menu"><font color=#FF0000>New!</font>
 <div class="menu_heading_closed"
 onclick="toggleMenu(';
 print "'98'";
-print ')" id="heading98"> -> Where to find matrices ?</div>
+print ')" id="heading98"> Where to find matrices ?</div>
 <div id="menu98" class="menu_collapsible">
 	<a class="menu_item" href="http://www.pazar.info/" target="_blank">PAZAR</a>
 	<a class="menu_item" href="http://the_brain.bwh.harvard.edu/uniprobe/" target="_blank">UniProbe</a>
