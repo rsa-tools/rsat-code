@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.11 2010/03/02 19:58:24 morgane Exp $
+# $Id: random-genome-fragments,v 1.12 2010/03/04 14:43:20 morgane Exp $
 #
 ############################################################
 
@@ -227,6 +227,25 @@ package main;
 		
 		## 3 - get a random start position
 		my $rand_start = int(rand ($contig_last_rand_pos));
+		## check that the fragment is not in negative coord
+		my $count = 0;
+		while ($rand_start < 1) {
+			$rand_start = int(rand ($contig_last_rand_pos));
+			last if ($rand_start > 0);
+			$count ++;
+			last if ($count == 5); ##
+			&RSAT::message::Info(join ("\t", "Negative start value for contig", $rand_contig_name, "value",$rand_start) )
+				if ($main::verbose >= 2);
+		}
+		##exclude the contig from the analysis, if it is too difficult to get a fragment of the correct size.
+		if ($rand_start < 1) {
+			&RSAT::message::Info(join ("\t", "Excluding", $rand_contig_name, "from contigs due to repetitive negative starts. Contig length:",$contig_length," fragment size:",$main::length_fragment) )
+			if ($main::verbose >= 2);
+			splice(@main::contig_names, $rand_contig, 1);
+			$i--;
+			next;
+		}
+		
 		## calculate end position
 		my $rand_end = $rand_start + $rand_fragment_size -1;
 		
