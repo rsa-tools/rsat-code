@@ -27,6 +27,7 @@ $default{demo_descr2} = "";
 $default{lth_occ_sig}=0;
 $default{uth_pval} = "1e-4";
 $default{assembly} = "";
+$default{oligo_length7}="checked";
 
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -45,8 +46,8 @@ foreach $key (keys %default) {
 ### header
 &RSA_header("ChIP-seq analysis", "form");
 print "<CENTER>";
-print "Pipeline to discover motifs in ChIP-seq peak data.<P>\n";
-#print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
+print "Pipeline for discovering motifs in ChIP-seq peak sequences.<P>\n";
+print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
@@ -56,178 +57,39 @@ print $default{demo_descr2};
 
 print $query->start_multipart_form(-action=>"chip-seq-analysis.cgi");
 
-#print "<FONT FACE='Helvetica'>";
-
 ################################################################
-#### Sequence specification
-print "<hr>";
-print "<h2>Peak sequences <font style='font-size:70%'><a href=''> (I only have coordinates in a BED file, how to get sequences ?)</a></font></h2> ";
-&MultiSequenceChoice(1);
-print "<hr>";
+#### Start tab panel
 print '
-<div>
 
-<div class="menu_heading_closed" onclick="toggleMenu(\'97\')" id="heading97"><b>Analyse with control sequences</b> </div>
-<div id="menu97" class="menu_collapsible">';
-	
+<div class="tabber">
 
-	
-print "<p/><fieldset>
-<legend><b><a href='help.chip-seq-analysis.html#tasks'>Discover motifs </a></b></legend>";
+     <div class="tabbertab">
+	  <h2>Single dataset</h2>
+'; 
 
-	&MultiSequenceChoice(2);
+## here is the content of the first panel
+	  &Panel1();
 
-print $query->checkbox(-name=>'oligo-diff',
-		       -checked=>$default{oligo-diff},
-		       -label=>'');  
-print "&nbsp;<b>Discover words enriched in the peak sequences compared to the control sequences </b> <a href='help.oligo-diff.html'>[oligo-diff] </a>\n";
-print "<br/> ";
+# end of first panel
+#start of second panel
+print '</div>
 
-## oligo size
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.oligo-diff.html#oligo_length'>Oligomer length</A>&nbsp;</B>\n";
-my 	$oligoPopup = "";
-    $oligoPopup .=  "<SELECT NAME='diff_length'>\n";
-	$oligoPopup .=  "<OPTION  VALUE='6'>6</option>\n";
-	$oligoPopup .=  "<OPTION VALUE='7'>7</option>\n";
-	$oligoPopup .=  "<OPTION VALUE='8'>8</option>\n";
-	$oligoPopup .=  "<OPTION SELECTED VALUE='6-8'>6 to 8</option>\n";
-    $oligoPopup .=  "</SELECT>";
-    print $oligoPopup;
+<div class="tabbertab">
+	  <h2>Two datasets (test + control)</h2>';
+## here is the content of the second panel
+	 &Panel2();
 
-print "<br/>";
-### threshold 
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.oligo-analysis.html#thresholds'>Lower threshold on significance</A>&nbsp;</B>\n";
-print  $query->textfield(-name=>'lth_occ_sig',
-							      -default=>$default{lth_occ_sig},
-							      -size=>3);
-print "<br/>";
-
-
-print "</fieldset><p/>";
-
-print '	
+# end second panel 
+# end the tab panel
+print '</div>
 </div>
-</div>
-<p class="clear"></p>';
+';
 
-################################################################
-print '<p> OR</p>';
-print '
-<div>
-
-<div class="menu_heading_closed" onclick="toggleMenu(\'95\')" id="heading95"><b>Analyse without control sequences </b> </div>
-<div id="menu95" class="menu_collapsible">';
-	
-
-################# Motif discovery single input
-print "<p/><fieldset>
-<legend><b><a href='help.chip-seq-analysis.html#tasks'>Discover motifs </a></b></legend>";
-
-#
-### oligo analysis
-#
-print $query->checkbox(-name=>'oligo-analysis',
-		       -checked=>$default{oligo-analysis},
-		       -label=>'');  
-print "&nbsp;<b>Discover over-represented words</b> <a href='help.oligo-analysis.html'> [oligo-analysis]</a>\n";
-print "<br/>";
-
-### oligo size
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.oligo-analysis.html#oligo_length'>Oligomer length</A>&nbsp;</B>\n";
-
-	$oligoPopup = "";
-    $oligoPopup .=  "<SELECT NAME='oligo_length'>\n";
-	$oligoPopup .=  "<OPTION  VALUE='6'>6</option>\n";
-	$oligoPopup .=  "<OPTION VALUE='7'>7</option>\n";
-	$oligoPopup .=  "<OPTION VALUE='8'>8</option>\n";
-	$oligoPopup .=  "<OPTION SELECTED VALUE='6-8'>6 to 8</option>\n";
-    $oligoPopup .=  "</SELECT>";
-    print $oligoPopup;
-
-print "<br/>";		       
-		       
-#
-### dyad-analysis
-#   
-print $query->checkbox(-name=>'dyad-analysis',
-		       -checked=>$default{dyad-analysis},
-		       -label=>''); 
-print "&nbsp;<b>Discover over-represented spaced word pairs </b><a href='help.dyad-analysis.html'>[dyad-analysis] </a>\n";
-
-print "<br/>";	
-### dyad sizes and spacer
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.dyad-analysis.html#oligo_size'>Dyad length and spacer</A>&nbsp;</B>\n";
-	$oligoPopup = "";
-    $oligoPopup .=  "<SELECT NAME='dyad-option'>\n";
-	$oligoPopup .=  "<OPTION  VALUE='4'>4 {0,20} 4</option>\n";
-	$oligoPopup .=  "<OPTION  SELECTED VALUE='3'>3 {0,20} 3</option>\n";
-    $oligoPopup .=  "</SELECT>";
-    print $oligoPopup;
-print "<br/>";
-
-#
-### ORM
-#
-print $query->checkbox(-name=>'orm',
-		       -checked=>$default{orm},
-		       -label=>'');  
-print "&nbsp;<b>Discover words with positional biais</b> [ORM] [position-analysis]\n";
-print "<br/>";
-
-### orm oligo size
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.ORM.html#oligo_length'>Oligomer length</A>&nbsp;</B>\n";
-
-	$oligoPopup = "";
-    $oligoPopup .=  "<SELECT NAME='orm_length'>\n";
-	$oligoPopup .=  "<OPTION  VALUE='6'>6</option>\n";
-	$oligoPopup .=  "<OPTION VALUE='7'>7</option>\n";
-	$oligoPopup .=  "<OPTION VALUE='8'>8</option>\n";
-	$oligoPopup .=  "<OPTION SELECTED VALUE='6-8'>6 to 8</option>\n";
-    $oligoPopup .=  "</SELECT>";
-    print $oligoPopup;
-
-print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.ORM.html#window_width'>Fixed window of width</A>&nbsp;</B>\n";
-	$oligoPopup = "";
-    $oligoPopup .=  "<SELECT NAME='orm_window'>\n";
-	$oligoPopup .=  "<OPTION VALUE='50'>50</option>\n";
-	$oligoPopup .=  "<OPTION SELECTED VALUE='20'>20</option>\n";
-	$oligoPopup .=  "<OPTION VALUE='10'>10</option>\n";
-    $oligoPopup .=  "</SELECT>";
-    print $oligoPopup;
-
-print "<br/>";	
-		       
-
-### markov  order (common to all programs)
-print "<br/> <b>Common options for above programs</b> <br/>";
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.oligo-analysis.html'>Background model: Markov order</A>&nbsp;</B>\n";
- 	$oligoPopup = "";
-    $oligoPopup .=  "<SELECT NAME='markov'>\n";
-	$oligoPopup .=  "<OPTION  SELECTED VALUE='-2'>oligo length -2 </option>\n";
-	$oligoPopup .=  "<OPTION VALUE='-3'>oligo length -3</option>\n";
-    $oligoPopup .=  "</SELECT>";
-    print $oligoPopup;
-    
-print "<br/>";
-
-### threshold (common to all programs)
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.oligo-analysis.html#thresholds'>Lower threshold on significance</A>&nbsp;</B>\n";
-print  $query->textfield(-name=>'lth_occ_sig',
-							      -default=>$default{lth_occ_sig},
-							      -size=>3);
-print "<br/>";			 
-print "</fieldset><p/>";
-
-print '	
-</div>
-</div>
-<p class="clear"></p>';
-
-print "<hr>";
 ################################################################
 #### Change  parameters
 
 print '
+<br/>
 <div>
 <div class="menu_heading_closed" onclick="toggleMenu(\'96\')" id="heading96"> <b>Change default parameters</b> </div>
 <div id="menu96" class="menu_collapsible">';
@@ -356,7 +218,7 @@ The program will return ...
 </blockquote>";
 
 print $query->start_multipart_form(-action=>"chip-seq-analysis_form.cgi");
-$demo_seq=`cat chip-seq-analysis_demo.fa`;
+$demo_seq=`cat demo_files/chip-seq-analysis_demo.fa`;
 print "<TD><B>";
 print $query->hidden(-name=>'demo_descr1',-default=>$descr1);
 print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
@@ -372,7 +234,7 @@ The program will return ...
 
 ### data for the demo with control
 print $query->start_multipart_form(-action=>"chip-seq-analysis_form.cgi");
-$demo_seq=`cat chip-seq-analysis_demo.fa`;
+$demo_seq=`cat demo_files/chip-seq-analysis_demo.fa`;
 print "<TD><B>";
 print $query->hidden(-name=>'demo_descr2',-default=>$descr2);
 print $query->hidden(-name=>'sequence1',-default=>$demo_seq);
@@ -394,3 +256,192 @@ print $query->end_html;
 
 exit(0);
 
+
+
+#################### Internal functions #######################
+
+sub Panel1 {
+
+print "<b><font style='font-size:80%'><a href=''> (I only have coordinates in a BED file, how to get sequences ?)</a></font></b><p/> ";
+
+&MultiSequenceChoice("Peak sequences",1);
+
+print '
+</br>
+<div>
+
+<div class="menu_heading_closed" onclick="toggleMenu(\'95\')" id="heading95"><b>Change motif discovery parameters </b> </div>
+<div id="menu95" class="menu_collapsible">';
+	
+
+################# Motif discovery single input
+print "<p/><fieldset>
+<legend><b><a href='help.chip-seq-analysis.html#tasks'>Discover motifs </a></b></legend>";
+
+#
+### oligo analysis
+#
+print $query->checkbox(-name=>'oligo-analysis',
+		       -checked=>$default{oligo-analysis},
+		       -label=>'');  
+print "&nbsp;<b>Discover over-represented words</b> <a href='help.oligo-analysis.html'> [oligo-analysis]</a>\n";
+print "<br/>";
+
+### oligo size
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.oligo-analysis.html#oligo_length'>Oligomer length</A>&nbsp;</B>\n";
+
+print $query->checkbox(-name=>'oligo_length6',
+		       -checked=>$default{oligo_length6},
+		       -label=>'6'); 
+print "&nbsp;"x2;
+print $query->checkbox(-name=>'oligo_length7',
+		       -checked=>$default{oligo_length7},
+		       -label=>'7'); 
+print "&nbsp;"x2;
+print $query->checkbox(-name=>'oligo_length8',
+		       -checked=>$default{oligo_length8},
+		       -label=>'8'); 
+print "&nbsp;"x2;
+
+print "<br/>";		       
+		       
+#
+### dyad-analysis
+#   
+print $query->checkbox(-name=>'dyad-analysis',
+		       -checked=>$default{dyad-analysis},
+		       -label=>''); 
+print "&nbsp;<b>Discover over-represented spaced word pairs </b><a href='help.dyad-analysis.html'>[dyad-analysis] </a>\n";
+
+print "<br/>";	
+### dyad sizes and spacer
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.dyad-analysis.html#oligo_size'>Dyad length and spacer</A>&nbsp;</B>\n";
+	$oligoPopup = "";
+    $oligoPopup .=  "<SELECT NAME='dyad-option'>\n";
+	$oligoPopup .=  "<OPTION  VALUE='4'>4 {0,20} 4</option>\n";
+	$oligoPopup .=  "<OPTION  SELECTED VALUE='3'>3 {0,20} 3</option>\n";
+    $oligoPopup .=  "</SELECT>";
+    print $oligoPopup;
+print "<br/>";
+
+#
+### ORM
+#
+print $query->checkbox(-name=>'orm',
+		       -checked=>$default{orm},
+		       -label=>'');  
+print "&nbsp;<b>Discover words with positional biais</b> [ORM] [position-analysis]\n";
+print "<br/>";
+
+### orm oligo size
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.ORM.html#oligo_length'>Oligomer length</A>&nbsp;</B>\n";
+
+print $query->checkbox(-name=>'oligo_length6',
+		       -checked=>$default{oligo_length6},
+		       -label=>'6'); 
+print "&nbsp;"x2;
+print $query->checkbox(-name=>'oligo_length7',
+		       -checked=>$default{oligo_length7},
+		       -label=>'7'); 
+print "&nbsp;"x2;
+print $query->checkbox(-name=>'oligo_length8',
+		       -checked=>$default{oligo_length8},
+		       -label=>'8'); 
+print "&nbsp;"x2;
+
+print "<br/>";	
+
+print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.ORM.html#window_width'>Fixed window of width</A>&nbsp;</B>\n";
+	$oligoPopup = "";
+    $oligoPopup .=  "<SELECT NAME='orm_window'>\n";
+	$oligoPopup .=  "<OPTION VALUE='50'>50</option>\n";
+	$oligoPopup .=  "<OPTION SELECTED VALUE='20'>20</option>\n";
+	$oligoPopup .=  "<OPTION VALUE='10'>10</option>\n";
+    $oligoPopup .=  "</SELECT>";
+    print $oligoPopup;
+
+print "<br/>";	
+		       
+
+### markov  order (common to all programs)
+print "<br/> <b>Common options for above programs</b> <br/>";
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.oligo-analysis.html'>Background model: Markov order</A>&nbsp;</B>\n";
+ 	$oligoPopup = "";
+    $oligoPopup .=  "<SELECT NAME='markov'>\n";
+	$oligoPopup .=  "<OPTION  SELECTED VALUE='-2'>oligo length -2 </option>\n";
+	$oligoPopup .=  "<OPTION VALUE='-3'>oligo length -3</option>\n";
+    $oligoPopup .=  "</SELECT>";
+    print $oligoPopup;
+    
+print "<br/>";
+
+### threshold (common to all programs)
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.oligo-analysis.html#thresholds'>Lower threshold on significance</A>&nbsp;</B>\n";
+print  $query->textfield(-name=>'lth_occ_sig',
+							      -default=>$default{lth_occ_sig},
+							      -size=>3);
+print "<br/>";			 
+print "</fieldset><p/>";
+
+print '	
+</div>
+</div>
+<p class="clear"></p>';
+}
+
+##########################################
+sub Panel2 {
+	
+print '	<p/>';
+	&MultiSequenceChoice("Peak sequences",1);
+
+print '	<p/>';
+
+	&MultiSequenceChoice("Control sequences",2);
+print "<br/> ";
+print '
+<div>
+
+<div class="menu_heading_closed" onclick="toggleMenu(\'97\')" id="heading97"><b>Change motif discovery parameters</b> </div>
+<div id="menu97" class="menu_collapsible">';
+	
+
+	
+print "<p/><fieldset>
+<legend><b><a href='help.chip-seq-analysis.html#tasks'>Discover motifs </a></b></legend>";
+
+
+
+print $query->checkbox(-name=>'oligo-diff',
+		       -checked=>$default{oligo-diff},
+		       -label=>'');  
+print "&nbsp;<b>Discover words enriched in the peak sequences compared to the control sequences </b> <a href='help.oligo-diff.html'>[oligo-diff] </a>\n";
+print "<br/> ";
+
+## oligo size
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.oligo-diff.html#oligo_length'>Oligomer length</A>&nbsp;</B>\n";
+my 	$oligoPopup = "";
+    $oligoPopup .=  "<SELECT NAME='diff_length'>\n";
+	$oligoPopup .=  "<OPTION  VALUE='6'>6</option>\n";
+	$oligoPopup .=  "<OPTION VALUE='7'>7</option>\n";
+	$oligoPopup .=  "<OPTION VALUE='8'>8</option>\n";
+	$oligoPopup .=  "<OPTION SELECTED VALUE='6-8'>6 to 8</option>\n";
+    $oligoPopup .=  "</SELECT>";
+    print $oligoPopup;
+
+print "<br/>";
+### threshold 
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.oligo-analysis.html#thresholds'>Lower threshold on significance</A>&nbsp;</B>\n";
+print  $query->textfield(-name=>'lth_occ_sig',
+							      -default=>$default{lth_occ_sig},
+							      -size=>3);
+print "<br/>";
+
+
+print "</fieldset><p/>";
+
+print '	
+</div>
+</div>
+<p class="clear"></p>';
+}
