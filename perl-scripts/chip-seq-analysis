@@ -1,0 +1,374 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: chip-seq-analysis,v 1.1 2010/03/04 11:51:37 jvanheld Exp $
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+chip-seq-analysis
+
+=head1 VERSION
+
+$program_version
+
+=head1 DESCRIPTION
+
+Pipeline for discoering motifs from ChIP-seq (or ChIP-chip) peak
+sequences.
+
+=head1 AUTHORS
+
+=over
+
+=item Jacques van Helden <Jacques.van.Helden@ulb.ac.be>
+
+=item Morgane Thomas-Chollier <thomas-c@molgen.mpg.de>
+
+=item Matthieu Defrance <defrance@ccg.unam.mx>
+
+=back
+
+
+=head1 CATEGORY
+
+Pattern discovery
+
+=head1 USAGE
+
+chip-seq-analysis [-i inputfile] [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+The program takes as input either one (test) or two sequence files
+(test versus control).
+
+All input sequences formats supported by convert-sequences are
+supported.
+
+=head1 OUTPUT FORMAT
+
+
+=head1 SEE ALSO
+
+=head1 WISH LIST
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    my $start_time = &AlphaDate();
+    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+#    $program_version = "0.00";
+
+    %main::param = ();
+    @main::param_list = ();
+
+    %main::dir = ();
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+
+    ################################################################
+    ## Supported tasks
+    local @supported_tasks = qw (
+				 purge
+				 oligos
+				 dyads
+				 ORM
+				 oligo-diff
+				 matrices
+				 logos
+				 profiles
+				 scan
+				 map
+				 tomtom
+				 to_bed
+				);
+
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    &CheckArguments();
+
+    &SetParameters();
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{log});
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Execute the command
+
+    ################################################################
+    ## Print output
+
+
+    ################################################################
+    ## Finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $main::out "; Job started $start_time\n";
+	print $main::out "; Job done    $done_time\n";
+    }
+
+
+    ################################################################
+    ## Close output stream
+    close $main::out if ($main::outfile{output});
+
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+
+################################################################
+## Set parameter values for all the programs
+sub DefaultParameters {
+  &RSAT::message::TimeWarn("Setting default parameter values") if ($main::verbose >= 1);
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+  &RSAT::message::TimeWarn("Reading arguments") if ($main::verbose >= 1);
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
+    ## Verbosity
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
+
+      ## Help message
+
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
+
+      ## List of options
+
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
+
+      ## Input files
+
+=pod
+
+=item B<-i test_seq_file>
+
+Test peak sequence file (mandatory).
+
+For single-set analysis, this file contains the peak seuences of the
+unique set.  For test versus control analysis, it contains the test
+sequences.
+
+=cut
+    } elsif ($arg eq "-i") {
+      $main::infile{test_seq} = shift(@arguments);
+
+=pod
+
+=item B<-ctl control_seq_file>
+
+Control peak sequence file (optional).
+
+This option is used only for the test versus control analysis.
+
+=cut
+    } elsif ($arg eq "-ctl") {
+      $main::infile{control_seq} = shift(@arguments);
+
+      ## Output file
+
+=pod
+
+=item	B<-outdir output_directory>
+
+Output directory (mandatory).
+
+The result files and index files produced by the different programs
+will be stored in this directory.
+
+
+
+=cut
+    } elsif ($arg eq "-outdir") {
+      $main::dir{output} = shift(@arguments);
+
+      ## Strands
+
+=pod
+
+=item B<-1str | -2str>
+
+Single-strand (-1str) or double-strand (-2str) analysis.
+
+The default is double-strand analysis, since ChIP-seq results have no
+particular strand orientation.
+
+=cut
+    } elsif (-$arg eq "-1str") {
+      $main::param{strand} = "-1str";
+    } elsif (-$arg eq "-2str") {
+      $main::param{strand} = "-2str";
+
+      ## Strands
+
+=pod
+
+=item B<-noov | -ovlp>
+
+Treatment of self-overlapping words: count (-ovlp) or do not count
+(-noov) overlapping occurrences. In -noov mode, only renewing
+occurrences are counted.
+
+It is recommended to use the -noov mode (default) to avoid the effect
+of self-overlap, which violates the hypothesis of independence of
+successive occurrences underlying the binomial significance test
+(oligo-analysis, dyad-analysis).
+
+=cut
+    } elsif (-$arg eq "-noov") {
+      $main::param{noov} = "-noov";
+    } elsif (-$arg eq "-ovlp") {
+      $main::param{noov} = "-ovlp";
+
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
+
+    }
+  }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+## Check arguments
+sub CheckArguments {
+  &RSAT::message::TimeWarn("Checking arguments") if ($main::verbose >= 1);
+  if ($infile{test_seq}) {
+    unless (-e $infile{test_seq}) {
+      &FatalError("Test sequence file does not exist", $infile{test_seq});
+    }
+  } else {
+    &FatalError("You mst define the test sequence set (option -i)");
+  }
+
+  if ($infile{control_seq}) {
+    unless (-e $infile{control_seq}) {
+      &FatalError("Control sequence file does not exist", $infile{control_seq});
+    }
+  }
+
+  ## output directory
+  if ($dir{output}) {
+    &RSAT::util::ChechOutDir($dir{output});
+  } else {
+    &FatalError("You mst define the output directory (option -outdir)");
+  }
+}
+
+################################################################
+## Verbose message
+sub Verbose {
+    print $main::out "; chip-seq-analysis ";
+    &PrintArguments($main::out);
+    printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
+	}
+    }
+}
+
+
+__END__
