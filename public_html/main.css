@@ -1,3 +1,8 @@
+.clear {
+	clear: both;
+	display: block;
+}
+
 /* BODY  */
 body {
 	font-family: Verdana, Helvetica, Arial, sans-serif;
@@ -460,7 +465,7 @@ table.simpleform td.left {
    padding: 2px 10px;
 }
 
-/* BOXED MENU   */
+/* EXPANDABLE BOXES (not from the menu, for the ones in forms)   */
 .menu {
 	float:left;
 	width: 200px;
@@ -492,6 +497,7 @@ table.simpleform td.left {
 
 .menu_heading_open {
 	text-decoration: none;
+	background:url(images/arrow_box_down.gif) no-repeat 7px 7px;
 	padding: 4px 5px 4px 20px;
 	margin: 0;
 	cursor: pointer;
@@ -500,9 +506,10 @@ table.simpleform td.left {
 }
 
 .menu_heading_closed {
+	background:url(images/arrow_box.gif) no-repeat 7px 7px;
 	text-decoration: none; 
-	display: block;
 	padding: 4px 5px 4px 20px;
+	display: block;
 	margin: 0;
 	cursor: pointer;
 	font-weight: bold;
@@ -561,3 +568,5 @@ table.simpleform td.left {
 	color: #D6EEFA;
 	text-decoration: none;
 }
+
+
