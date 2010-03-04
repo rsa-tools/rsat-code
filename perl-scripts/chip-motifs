@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.1 2010/03/04 11:51:37 jvanheld Exp $
+# $Id: chip-motifs,v 1.2 2010/03/04 12:56:33 jvanheld Exp $
 #
 ############################################################
 
@@ -67,7 +67,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
-
+use RSAT::util;
 
 
 ################################################################
@@ -78,7 +78,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -88,27 +88,44 @@ package main;
     %main::infile = ();
     %main::outfile = ();
 
+    $main::prefix = "";
     $main::verbose = 0;
-    $main::in = STDIN;
     $main::out = STDOUT;
 
     ################################################################
     ## Supported tasks
-    local @supported_tasks = qw (
-				 purge
-				 oligos
-				 dyads
-				 ORM
-				 oligo-diff
-				 matrices
-				 logos
-				 profiles
-				 scan
-				 map
-				 tomtom
-				 to_bed
-				);
+    @supported_tasks = qw (
+			   all
+			   purge
+			   oligos
+			   dyads
+			   ORM
+			   oligo-diff
+			   matrices
+			   logos
+			   profiles
+			   scan
+			   map
+			   tomtom
+			   to_bed
+			   clean_seq
+			  );
+    $supported_tasks = join ",", @supported_tasks;
+    %supported_task = ();
+    foreach my $task (@supported_tasks) {
+      $supported_task{$task} = 1;
+    }
+    %task = (); ## List of tasks to be executed
 
+    ## Options for the &doit() command;
+    local $dry = 0; ## Do not run the command, just echo them as warning
+    local $batch = 0;		## Run the processes on a PC cluster
+    local $die_on_error = 1;
+    local $job_prefix = "chip-seq-analysis";
+
+    ################################################################
+    ## Set default parameters
+    &DefaultParameters();
 
     ################################################################
     ## Read argument values
@@ -116,7 +133,16 @@ package main;
 
     &CheckArguments();
 
-    &SetParameters();
+    if ($task{purge}) {
+      &PurgeOneSeq($infile{test_seq}, "test");
+      if ($infile{control_seq}) {
+	&PurgeOneSeq($infile{control_seq}, "control");
+      }
+    }
+
+    if ($task{clean_seq}) {
+      &CleanSequences();
+    }
 
     ################################################################
     ## Open output stream
@@ -145,8 +171,10 @@ package main;
     ################################################################
     ## Close output stream
     close $main::out if ($main::outfile{output});
-
-
+    if ($main::verbose >= 1) {
+      &TimeWarn("Job done");
+      &TimeWarn("Log file", $outfile{log});
+    }
     exit(0);
 }
 
@@ -173,6 +201,60 @@ sub PrintOptions {
 ## Set parameter values for all the programs
 sub DefaultParameters {
   &RSAT::message::TimeWarn("Setting default parameter values") if ($main::verbose >= 1);
+
+  ## Sequences
+  $main::param{seq_format} = "fasta"; push(@main::param_list, "seq_format");
+
+  ## Purge-seq
+  $main::param{purge_match_length} = 30; push(@main::param_list, "purge_match_length");
+  $main::param{purge_mismatches} = 0; push(@main::param_list, "purge_mismatches");
+}
+
+################################################################
+## Define one output file name by concatenating arguments
+sub OutFileName {
+  my ($extension, @name_elements) = @_;
+  my $out_file_name = $dir{output}."/".$prefix;
+  $out_file_name .= join ("_", @name_elements);
+  $out_file_name .= $extension;
+  return($out_file_name);
+}
+
+################################################################
+## Purge sequences
+sub PurgeOneSeq {
+  my ($seq_file, $seq_type) = @_;
+  &RSAT::message::TimeWarn("Purging sequences") if ($main::verbose >= 1);
+  $main::outfile{"purged_".$seq_type} = &OutFileName(".fasta", 
+						     $seq_type,
+						     "purged",
+						     "ml".$main::param{purge_match_length},
+						     "mis".$main::param{purge_mismatches});
+
+  my $cmd = "convert-seq";
+  $cmd .= " -i ".$seq_file;
+  $cmd .= " -from ".$main::param{seq_format};
+  $cmd .= " -to fasta";
+  $cmd .= " -mask non-dna";
+  $cmd .= "| purge-sequence";
+  $cmd .= " -ml ".$main::param{purge_match_length};
+  $cmd .= " -mis ".$main::param{purge_mismatches};
+  $cmd .= " -o ".$main::outfile{"purged_".$seq_type};
+  &doit($cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+}
+
+################################################################
+## Delete purged sequence files after analysis has been completed.
+sub CleanSequences {
+  &RSAT::message::TimeWarn("Cleaning sequences") if ($main::verbose >= 1);
+  if ($batch) {
+    &RSAT::message::Warning("Sequences cannot be cleaned in batch mode. Please run the clean_seq task after all jobs have completed.");
+  } else {
+    system "rm -f ".$main::outfile{"purged_test"};
+    if ($infile{control_seq}) {
+      system "rm -f ".$main::outfile{"purged_control"};
+    }
+  }
 }
 
 ################################################################
@@ -272,6 +354,59 @@ will be stored in this directory.
     } elsif ($arg eq "-outdir") {
       $main::dir{output} = shift(@arguments);
 
+      ## Tasks
+
+=pod
+
+=item B<-task>
+
+Specify a subset of tasks to be executed.
+
+By default, the program runs all necessary tasks. However, in some
+cases, it can be useful to select one or several tasks to be executed
+separately.
+
+Beware: task selection requires expertise, because most tasks depends
+on the prior execution of some other tasks in the workflow. Selecting
+tasks before their prerequisite tasks have been completed will provoke
+fatal errors.
+
+I<Avilable Tasks.>
+
+=over
+
+=item I<all> (default)
+
+Run all supported tasks.
+
+=item I<purge>
+
+Purge input sequences (test set and, if specified, control set) to
+mask redundant fragments before applying pattern discovey
+algorithms. Sequence purging is necessary because redundant fragments
+would violate the hypothesis of independence underlying the binomial
+significance test, resulting in a large number of false positive
+patterns.
+
+=item I<clean_seq>
+
+Delete the purged sequence files after the analysis, in order to save
+space.
+
+=back
+
+=cut
+    } elsif ($arg eq "-task") {
+      my @requested_tasks = split ",", shift (@arguments);
+      foreach my $task (@requested_tasks) {
+	next unless $task;
+	if ($supported_task{$task}) {
+	  $task{$task} = 1;
+	} else {
+	  &RSAT::error::FatalError("Task '$task' is not supported. \n\tSupported: $supported_tasks");
+	}
+      }
+
       ## Strands
 
 =pod
@@ -284,9 +419,9 @@ The default is double-strand analysis, since ChIP-seq results have no
 particular strand orientation.
 
 =cut
-    } elsif (-$arg eq "-1str") {
+    } elsif ($arg eq "-1str") {
       $main::param{strand} = "-1str";
-    } elsif (-$arg eq "-2str") {
+    } elsif ($arg eq "-2str") {
       $main::param{strand} = "-2str";
 
       ## Strands
@@ -305,9 +440,9 @@ successive occurrences underlying the binomial significance test
 (oligo-analysis, dyad-analysis).
 
 =cut
-    } elsif (-$arg eq "-noov") {
+    } elsif ($arg eq "-noov") {
       $main::param{noov} = "-noov";
-    } elsif (-$arg eq "-ovlp") {
+    } elsif ($arg eq "-ovlp") {
       $main::param{noov} = "-ovlp";
 
     } else {
@@ -333,7 +468,7 @@ sub CheckArguments {
       &FatalError("Test sequence file does not exist", $infile{test_seq});
     }
   } else {
-    &FatalError("You mst define the test sequence set (option -i)");
+    &FatalError("You must define the test sequence set (option -i)");
   }
 
   if ($infile{control_seq}) {
@@ -343,11 +478,26 @@ sub CheckArguments {
   }
 
   ## output directory
-  if ($dir{output}) {
-    &RSAT::util::ChechOutDir($dir{output});
+  if ($main::dir{output}) {
+    &RSAT::util::CheckOutDir($main::dir{output});
   } else {
-    &FatalError("You mst define the output directory (option -outdir)");
+    &FatalError("You must define the output directory (option -outdir)");
   }
+
+  ## Log file 
+  $main::outfile{log} = &OutFileName(".txt", "log");
+
+
+  ## If all tasks are requested or if no task is defined, execute all
+  ## tasks.
+
+  if ((scalar(keys(%task)) == 0) || ($task{all})) {
+    @tasks = @supported_tasks;
+  }
+  foreach my $task (@supported_tasks) {
+   push (@tasks, $task) if $task{$task};
+  }
+  &RSAT::message::Info("Tasks: ", join (",", @tasks)) if ($main::verbose >= 1);
 }
 
 ################################################################
@@ -367,6 +517,11 @@ sub Verbose {
 	while (my ($key,$value) = each %main::outfile) {
 	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
 	}
+    }
+
+    print $main::out "; Parameter values\n";
+    foreach my $param_name (@param_list) {
+      print $main::out sprintf ";\t%-15s\t%s\n", $param_name, $param{$param_name};
     }
 }
 
