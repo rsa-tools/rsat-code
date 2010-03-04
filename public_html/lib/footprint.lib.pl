@@ -3,6 +3,13 @@
 ## - footprint-discovery
 ## - footprint-scan
 
+## Options for the &doit() command;
+local $dry = 0; ## Do not run the command, just echo them as warning
+local $batch = 0;		## Run the processes on a PC cluster
+local $die_on_error = 1;
+local $job_prefix = "footprint_disco";
+local $cmd;
+
 @supported_tasks = qw(
 		      all
 		      operons
@@ -469,10 +476,98 @@ Avilable Tasks:
 
 =over
 
-=item For all footprint programs (footprint-discovery,
-footprint-scan): operons, query_seq, orthologs, ortho_seq, purge, all
+=item For all footprint programs (I<footprint-discovery>,
+I<footprint-scan>).
 
-=item For footprint-scan: occ_sig, occ_sig_graph, scan, map, synthesis
+=over
+
+=item all
+
+Run all supported tasks. If no task is specified, all tasks are
+performed.
+
+=item operons
+
+Infer operons (using I<infer-operons>. This option should be used only
+for Bacteria.
+
+=item query_seq
+
+Retrieve upstream sequence of the query genes (using I<retrieve-seq>).
+
+=item orthologs
+
+Identify theorthologs of the query genes in the selected taxon (using
+I<get-orthologs>).
+
+=item ortho_seq
+
+Retrieve upstream sequences of the orthologs (using
+I<retrieve-seq-multigenome>).
+
+=item purge
+
+Purge upstream sequences of the orthologs (using I<purge-seq>).
+
+=item synthesis
+
+Generate synthetic tables with links to the results.
+
+=back
+
+=item Tasks specific to I<footprint-discovery>
+
+=over
+
+=item filter_dyads
+
+Detect all dyads present with at elast one occurrence in the upstream
+sequence of the query gene (using I<dyad-analysis>). Those dyads will
+be used as filter if the option I<-filter> has been specifed.
+
+=item dyads
+
+Detect significantly over-represented in upstream sequences of
+orhtologs (using I<dyad-analysis>).
+
+=item map
+
+Draw feature maps showing the location of over-represented dyads in
+upstream sequences of promoters (using I<feature-map>).
+
+=item index
+
+Generate an index file for each gene separately. The index file is in
+the gene-specific directory, it is complementary to the general index
+file generated with the task "synthesis".
+
+=back
+
+=item Tasks specific to I<footprint-scan>
+
+=over
+
+=item occ_sig
+
+Compute the significance of number of matrix hit occurrences as a
+function of the weight score (I<using matrix-scan> and
+I<matrix-scan-quick>).
+
+=item occ_sig_graph
+
+Generate graphs showing the distributions of occurrences and their
+significances, as a function of the weight score (using >XYgraph>).
+
+=item scan
+
+Scan upstream sequences to detect hits above a given threshold (using
+I<matrix-scan>).
+
+=item map
+
+Draw the feature map of the hits (using I<feature-mp>).
+
+=back
 
 =back
 

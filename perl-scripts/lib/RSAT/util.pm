@@ -518,14 +518,13 @@ sub doit {
     ## trying to send jobs to a PC cluster
 
     ## Cluster queue manager
-    unless ($ENV{QSUB_MANAGER}) {
-      $ENV{QSUB_MANAGER} = "sge";
-      &RSAT::message::Warning("Cluster queue manager not defined, using the  default value 'sge'.") if ($main::verbose >= 1);
-    }
 
     my $qsub_manager="";
     if (defined($ENV{QSUB_MANAGER})) {
       $qsub_manager=$ENV{QSUB_MANAGER};
+    } else {
+      $ENV{QSUB_MANAGER} = "sge";
+      &RSAT::message::Warning("Cluster queue manager not defined, using the  default value 'sge'.") if ($main::verbose >= 1);
     }
 
     my $qsub_options="";
