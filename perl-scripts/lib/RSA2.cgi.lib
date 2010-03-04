@@ -182,15 +182,20 @@ sub RSA_header {
   ### print the header of the result page
   print $query->start_html(-title=>"RSA-tools : $title",
 			   -class => "$css_body_class",
-			   -author=>'jvanheld@bigre.ulb.ac.be',
-			   -script=>{-type=>'text/javascript',
-                                   -src=>'RSAT_menu.js'},
-			   -style => { 	-src => "$ENV{rsat_www}/main.css",
+			   -author=>'jvanheld@bigre.ulb.ac.be',	   
+			   -script=>[
+                                    { -type => 'text/javascript',
+                                      -src      => 'RSAT_menu.js'
+                                    },
+                                    { -type => 'text/javascript',
+                                      -src      => 'RSAT_tabs.js'
+                                    }
+                                 ],                                 
+			   -style => { 	-src => ["$ENV{rsat_www}/main.css","$ENV{rsat_www}/tabs.css"],
                              	       	-type => 'text/css',
                              		-media => 'screen' });
   print "<H3 ALIGN='center'><A HREF='$ENV{rsat_www}/RSAT_home.cgi'>RSA-tools</A> - $title</H3>";
 }
-
 
 ## ##############################################################
 ## send results by e-mail or display on the browser
@@ -298,9 +303,10 @@ sub SequenceChoice {
 #Multiple Sequence choice
 sub MultiSequenceChoice {
 
+	my $seq_title = shift(@_);
     my $seq_num = shift(@_);
     my $sequenceChoiceString = "";
-    $sequenceChoiceString .=  "<B>Sequence</B>";
+    $sequenceChoiceString .=  "<B>$seq_title</B>";
     #$sequenceChoiceString .=  "<UL>\n";
     my $sequence_file = "";
     
