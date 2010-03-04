@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.36 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: position-analysis,v 1.37 2010/03/04 15:28:42 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -354,6 +354,12 @@ sub ReadSequence {
 	$max_last_pos = &max($max_last_pos, $last_pos);
 
 	my $ref_pos = 0;
+
+	## Compute the origin as the center of each sequence
+	if ($center) {
+	  $origin = round($seq_length[$sequence_number]/2);
+	}
+
 	if (($origin eq "-0") || ($origin < 0)) {
 	    $ref_pos = $seq_length[$sequence_number] + $origin + 1;
 	} else {
@@ -371,7 +377,7 @@ sub ReadSequence {
 				      )) if (($main::verbose >= 3) || (($main::verbose >= 2) && ($sequence_number%50==0)));
 
 	#### count oligonucleotides ####
-	my $offset = 0;
+#	my $offset = 0;
 	my $current_pos = 1;
 	my %classes_in_this_seq = ();
 	while ($current_pos <= $last_pos) {
@@ -817,6 +823,12 @@ OPTIONS
 		use the option:
 			     -origin -0
 
+	-center 
+		Compute the origin at the center of each sequence.
+		This can be useful for example for ChIP-seq peaks,
+		which can have variable lengths, but are supposed to
+		be more or less centred on the TF binding qsites.
+
 	-img_format
 		Image format (this parameter is passed to XYgraph)
 
@@ -858,6 +870,7 @@ position-analysis options
 -max_graphs #	maximal number of graphs to export
 -pl		pattern list
 -origin		origin (-0 to calculate positions relative to sequence end)
+-center		compute the origin at the center of each sequence
 -img_format	image format (this parameter is passed to XYgraph)
 -sc		score column
 -minpos		minimal position for chi-square calculation
@@ -1033,14 +1046,18 @@ sub ReadArguments {
 	    unless (&IsNatural($score_column)) {
 		&RSAT::error::FatalError( "Score column must be a natural number\n");
 	    }
-	    
-	    ### score column
+
+	    ### origin for positions
 	} elsif ($ARGV[$a] =~ /^-orig/) {
 	    $origin = $ARGV[$a+1];
 	    unless (&IsInteger($origin)) {
 		&RSAT::error::FatalError( "Invalid value $origin\tOrigin must be an integer number\n");
 	    }
-	    
+
+	    ### Compute the origin at the center of each sequence
+	} elsif ($ARGV[$a] =~ /^-center/) {
+	  $center = 1;
+
 	} elsif ($ARGV[$a] eq "-img_format") {
 	    $img_format = $ARGV[$a+1];
 
