@@ -497,6 +497,11 @@ sub MultiGetSequenceFile {
 		if ($required_opt) { ## only returns return if this is a required option
 	    	&cgiError("The sequence box should not be empty.");
 	    }
+	    else
+	    {
+	        $sequence_file = '';
+            $sequence_format = '';
+	    }
 	}
 	
 	#### sequence file will be deleted
