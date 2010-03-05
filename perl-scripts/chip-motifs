@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.4 2010/03/05 12:52:30 jvanheld Exp $
+# $Id: chip-motifs,v 1.5 2010/03/05 15:02:16 jvanheld Exp $
 #
 ############################################################
 
@@ -79,7 +79,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -140,6 +140,8 @@ package main;
     &SequenceLengths if ($task{seqlen});
 
     &OligoAnalysis if ($task{oligos});
+
+    &ResidueProfiles if ($task{profiles});
 
     &CleanSequences() if ($task{clean_seq});
 
@@ -214,8 +216,12 @@ sub DefaultParameters {
   $main::param{noov} = "-noov"; push(@main::param_list, "noov");
   $main::param{oligo_len} = 7; push(@main::param_list, "oligo_len");
 
-  ## Oligo-analysis
+  ## oligo-analysis
   $main::param{oligo_markov} = -2; push(@main::param_list, "oligo_markov");
+
+  ## residue profiles (position-analysis)
+  $main::param{profiles_ci} = 1; push(@main::param_list, "profiles_ci");
+  $main::param{profiles_strand} = "-1str"; push(@main::param_list, "profiles_strand");
 
 }
 
@@ -261,10 +267,15 @@ sub SetOutFileNames {
 
     ## oligo-analysis result
     $main::outfile{oligos} = &OutFileName(".tab", "oligos".$main::param{strand}.$main::param{noov}, 
-					  $main::param{oligo_len}."nt", 
-					  "mkv".$main::param{oligo_markov},
-	);
-}
+					  $main::param{oligo_len}."nt",
+					  "mkv".$main::param{oligo_markov});
+
+    ## Residue profiles
+    for my $ol (1..3) {
+      $main::outfile{$ol."nt_profiles"} = &OutFileName("", "profiles".$main::param{profiles_strand}.$main::param{noov},$ol."nt",
+						       "ci".$main::param{profiles_ci});
+    }
+  }
 
 ################################################################
 ## Purge sequences
@@ -322,6 +333,28 @@ sub OligoAnalysis {
 }
 
 ################################################################
+## Run position-analysis on the test set
+sub ResidueProfiles {
+  &RSAT::message::TimeWarn("Running position-analysis") if ($main::verbose >= 1);
+  for my $ol (1..3) {
+    my $cmd = "position-analysis -v 1";
+    $cmd .= " -i ".$main::outfile{"purged_test"};
+    $cmd .= " -format fasta";
+    $cmd .= " -sort ";
+    $cmd .= " -return chi,sig,distrib,graphs,rank";
+    $cmd .= " ".$main::param{profiles_strand};
+    $cmd .= " ".$main::param{noov};
+    $cmd .= " -seqtype dna";
+    $cmd .= " -l ".$ol;
+    $cmd .= " -ci ".$main::param{profiles_ci};
+    $cmd .= " -img_format ".$main::param{img_format};
+    $cmd .= " -origin center ";
+    $cmd .= " -o ".$outfile{$ol."nt_profiles"};
+    &one_command($cmd);
+  }
+}
+
+################################################################
 ## Delete purged sequence files after analysis has been completed.
 sub CleanSequences {
   &RSAT::message::TimeWarn("Cleaning sequences") if ($main::verbose >= 1);
@@ -359,8 +392,6 @@ Level of verbosity (detail in the warning messages during execution)
 	$main::verbose = 1;
       }
 
-      ## Help message
-
 =pod
 
 =item B<-h>
@@ -371,8 +402,6 @@ Display full help message
     } elsif ($arg eq "-h") {
       &PrintHelp();
 
-      ## List of options
-
 =pod
 
 =item B<-help>
@@ -382,8 +411,6 @@ Same as -h
 =cut
     } elsif ($arg eq "-help") {
       &PrintOptions();
-
-      ## Input files
 
 =pod
 
@@ -411,8 +438,6 @@ This option is used only for the test versus control analysis.
     } elsif ($arg eq "-ctl") {
       $main::infile{control_seq} = shift(@arguments);
 
-      ## Output file
-
 =pod
 
 =item	B<-outdir output_directory>
@@ -429,8 +454,6 @@ will be stored in this directory.
       $main::dir{output} = shift(@arguments);
 
 
-      ## prefix for the output files
-
 =pod
 
 =item	B<-prefix output_prefix>
@@ -441,8 +464,6 @@ Prefix for the output files
     } elsif ($arg eq "-prefix") {
       $main::param{prefix} = shift(@arguments);
 
-      ## Title
-
 =pod
 
 =item	B<-title graph_title>
@@ -452,8 +473,6 @@ Title displayed on top of the graphs.
 =cut
     } elsif ($arg eq "-title") {
       $main::param{title} = shift(@arguments);
-
-      ## image format
 
 =pod
 
@@ -466,8 +485,6 @@ All the formats supported by XYgraph can be used.
 =cut
     } elsif ($arg eq "-img_format") {
       $main::param{img_format} = shift(@arguments);
-
-      ## Tasks
 
 =pod
 
@@ -518,6 +535,12 @@ specified with option -l) in the test set. Prior frequencies of
 oligonucleotides are taken from Markov model of order m (option
 -markov) estimated from the test set sequences themselves.
 
+=item I<profiles>
+
+Compute profiles of residue frequencies per position (using
+I<position-analysis>). Residue profiles may reveal composition biases
+in the neighborhood of the peak sequences.
+
 =item I<clean_seq>
 
 Delete the purged sequence files after the analysis, in order to save
@@ -537,8 +560,6 @@ space.
 	}
       }
 
-      ## Strands
-
 =pod
 
 =item B<-l oligo_len>
@@ -552,8 +573,6 @@ another parameter (-ml).
 =cut
     } elsif ($arg eq "-l") {
       $main::param{oligo_len} = shift (@arguments);
-
-      ## Strands
 
 =pod
 
@@ -569,8 +588,6 @@ particular strand orientation.
       $main::param{strand} = "-1str";
     } elsif ($arg eq "-2str") {
       $main::param{strand} = "-2str";
-
-      ## Treatment of overlapping occurrences
 
 =pod
 
@@ -591,6 +608,20 @@ successive occurrences underlying the binomial significance test
     } elsif ($arg eq "-ovlp") {
       $main::param{noov} = "-ovlp";
 
+=pod 
+
+=item B<-ci class_interval>
+
+Class interval for I<position-analysis>.
+
+=cut
+
+    } elsif ($arg eq "-ci") {
+      $main::param{profiles_ci} = shift(@arguments);
+      &RSAT::error::FatalError($main::param{profiles_ci}, "is not a valid value for class interval. Should be a strictly positive Natural number.")
+	unless ((&IsNatural($main::param{profiles_ci})) && ($main::param{profiles_ci} > 0));
+
+      ## Other parameters are not accepted
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
 
