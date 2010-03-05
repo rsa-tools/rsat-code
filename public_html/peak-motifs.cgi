@@ -17,15 +17,17 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
-require "RSA.disco.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ############################################ configuration
-$chip_seq_analysis_command = "$ENV{RSAT}/perl-scripts/chip-seq-analysis";
-#$convert_seq_command = "$SCRIPTS/convert-seq";
-#$purge_sequence_command = "$SCRIPTS/purge-sequence";
-$tmp_file_name = sprintf "chip-seq-analysis.%s", &AlphaDate();
+$command = "$ENV{RSAT}/perl-scripts/chip-seq-analysis";
+$output_directory = sprintf "chip-seq-analysis.%s", &AlphaDate();
+$output_directory =~ s|\/\/|\/|g;
+$output_prefix = "ChIP-seq_analysis_";
+
+$output_directory_path = "$TMP/$output_directory";
+`mkdir -p $output_directory_path`;
 
 ############################################ result header
 ### Read the CGI query
@@ -43,62 +45,69 @@ $query = new CGI;
 $parameters = "";
 
 ### peak sequences file
-($sequence_file, $sequence_format) = &GetSequenceFile(1);
+($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, "$TMP/$output_directory/$output_prefix" . "peak_seq", 1);
 
 ### control sequences file
-($control_sequence_file, $control_sequence_format) = &GetSequenceFile(2);
+($control_sequence_file, $control_sequence_format) = &MultiGetSequenceFile(2, "$TMP/$output_directory/$output_prefix" . "ctl_seq", 0);
+
+#print "<pre>sequence_file: [$control_sequence_file]\n</pre>" if ($ENV{rsat_echo} >=1);
 
 ### peak only or peak+control analysis ?
 if ($control_sequence_file eq '') {
     $analysis = 'peaks';
-    $input_data = "-i $sequence_file";
+    $parameters .= "-i $sequence_file";
 } else {
     $analysis = 'peaks+control';
-    $input_data = "-i $sequence_file -ctl $control_sequence_file";
+    $parameters .= "-i $sequence_file -ctl $control_sequence_file";
 }
 
 ### tasks
-@tasks = ();
-if ($query->param('oligo-analysis') =~ /yes/ ) {
-    push(@tasks, "oligos");
-    #$parameters .= '-task oligos ';
-    $oligo_length = $query->param('oligo_length');
-    &FatalError("$oligo_length Invalid oligonucleotide length") unless &IsNatural($oligo_length);
-    $parameters .= "-l $oligo_length";
-}
-if ($query->param('dyad-analysis') =~ /yes/ ) {
-    push(@tasks, "dyads");
-    #$parameters .= '-task dyads ';
-}
-if ($query->param('position-analysis') =~ /yes/ ) {
-    push(@tasks, "positions");
-    #$parameters .= 'positions ';
+@tasks = ("purge", "seqlen", "profiles");
+
+if ($analysis eq "peaks") {
+    if ($query->param('oligo-analysis') =~ /on/) {
+        push(@tasks, "oligos");
+        #$parameters .= '-task oligos ';
+        #$oligo_length = $query->param('oligo_length');
+        #$oligo_length = $query->param('oligo_length');
+        #&FatalError("$oligo_length Invalid oligonucleotide length") unless &IsNatural($oligo_length);
+        #$parameters .= "-l $oligo_length";
+    }
+    if ($query->param('dyad-analysis') =~ /on/) {
+        #push(@tasks, "dyads");
+    }
+    if ($query->param('orm') =~ /on/) {
+        #push(@tasks, "orm");
+    }
+} else {
+    push(@tasks, "oligos-diff");
 }
 
 ### add -task
-$parameters .= "-task " . join(",", @tasks);
+$parameters .= " -task " . join(",", @tasks);
 
 ### task specific parameters
 if (&IsNatural($query->param('markov_order'))) {
-  $param .= " --markov=".$query->param('markov_order');
+  $param .= " -markov ".$query->param('markov_order');
 }
+
+### output directory
+$parameters .= " -outdir $output_directory_path";
+
+### output prefix
+$parameters .= " -prefix $output_prefix";
 
 ### verbosity
-$parameters .= " -v 5";
+$parameters .= " -v 1";
 
-############################################ construct command
-$command .=  "$chip_seq_analysis_command $input_data $parameters";
-
-print "<pre>command: $command<P>\n</pre>" if ($ENV{rsat_echo} >=1);
-
-&SaveCommand("$command", "$TMP/$tmp_file_name");
+############################################ display command
+#print "<pre>command: $command $parameters<P>\n</pre>" if ($ENV{rsat_echo} >=1);
 
 ############################################ display or send result
-if ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command", $query->param('user_email'), $tmp_file_name);
-} else {
-    &EmailTheResult("$command", $query->param('user_email'), $tmp_file_name);
-}
+$index_file = $output_directory."/".$output_prefix."index.html";
+my $mail_title = join (" ", "[RSAT]", "chip-seq-analysis", &AlphaDate());
+&EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
+
 
 ############################################ result footer
 print $query->end_html;
