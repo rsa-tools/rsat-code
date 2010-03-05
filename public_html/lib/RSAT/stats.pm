@@ -11,6 +11,7 @@ package RSAT::stats;
 use RSAT::GenericObject;
 use RSAT::message;
 use RSAT::error;
+use RSAT::util;
 @ISA = qw( RSAT::GenericObject );
 
 =pod
@@ -192,7 +193,7 @@ sub checked_sum {
     my @values = @_;
     my $sum = 0;
     foreach $value (@values) {
-	$sum += $value if (&IsReal($value));
+	$sum += $value if (&RSAT::util::IsReal($value));
     } 
     return $sum;
 }
@@ -204,7 +205,7 @@ sub checked_avg {
     my $sum = 0;
     my $valid_values = 0;
     foreach $value (@values) {
-	if (&IsReal($value)) {
+	if (&RSAT::util::IsReal($value)) {
 	    $valid_values++;
 	    $sum += $value;
 	}
@@ -1037,10 +1038,10 @@ sub FisherExactTest {
     
     ## Check parameters
     if (($row_nb < 2) || ($col_nb < 2)) {
-	&RSAT::error::FatalError( ";ChiSquare: at least 2 rows and 2 columns are required for the chi2 test"); # too few rows or columns
+	&RSAT::error::FatalError( ";FisherExactTest: at least 2 rows and 2 columns are required for the Fisher exact test"); # too few rows or columns
     }
     unless ($val_nb == $row_nb * $col_nb) {
-	&RSAT::error::FatalError( ";ChiSquare: invalid number of numeric values",
+	&RSAT::error::FatalError( ";FisherExactTest: invalid number of numeric values",
 				  "\t".$row_nb." rows",
 				  "\t".$col_nb." columns",
 				  "\t".$val_nb." values");
@@ -1200,6 +1201,9 @@ sub ChiSquare {
     my @observed = ();
     my @expected = ();
 
+    &RSAT::message::Debug("RSAT::stat::ChiSquare", "test=".$test, "row_nb=".$row_nb, "col_nb=.".$col_nb, scalar(@values)." values") 
+      if ($main::verbose >= 5);
+
     ### check parameter values ###
     unless (($test =~ /^indep/i) || ($test =~ /^good/i) || ($test =~ /^homog/i)) {
 	&RSAT::error::FatalError("Unknown test (supported: 'goodness of fit', 'homogeneity' and 'independence')"); 
@@ -1218,7 +1222,7 @@ sub ChiSquare {
 
     ### all values must be real numbers
     foreach $val (@values) {
-	&RSAT::error::FatalError("Invalid values: $val is not a real number") unless &IsReal($val); # invalid values
+	&RSAT::error::FatalError("Invalid values: $val is not a real number") unless &RSAT::util::IsReal($val); # invalid values
     }
 
     ################################################################
@@ -1434,6 +1438,10 @@ sub ChiSquare {
 	      $expected[0],
 	      $expected[$#expected],
 	      ), "\n" if ($main::verbose >= 6);
+
+    &RSAT::message::Debug("chi2=",$answer, "df=".$deg_freedom, "left_group=".$left_group, "right_group=".$right_group, "obs:".scalar(@observed), "exp:".scalar(@expected))
+      if ($main::verbose >= 5);
+
     return ($answer, $deg_freedom, $left_group, $right_group, \@observed, \@expected);
 } ### end ChiSquare
 
@@ -1489,7 +1497,7 @@ sub LogLikelihood {
 	return ";Error: invalid number of numeric values"; # inappropriate number of values provided
     }
     foreach $v (@values) {
-	return ";Error: $v is not a real number" unless &IsReal($v); # invalid values
+	return ";Error: $v is not a real number" unless &RSAT::util::IsReal($v); # invalid values
     }
 
 #    foreach $v (@values) {
