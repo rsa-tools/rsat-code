@@ -463,18 +463,15 @@ sub GetSequenceFile {
 ########################
 # MultiGetSequenceFile
 sub MultiGetSequenceFile {
-    my ($seq_num, $sequence_file) = @_ ;
-#	&cgiError("++".$sequence_file);
+
+    my ($seq_num, $sequence_file,$required_opt) = shift @_ ;
+    
     ### sequence file format
     my $sequence_format = lc($query->param("sequence_format".$seq_num));
     unless ($accepted_input_seq{$sequence_format}) {
 	&cgiError("Invalid sequence format : '$sequence_format'.");
     }
     
-    #unless ($sequence_file = $query->param('sequence_file'.$seq_num)) { 
-	### sequence file already on the server side
-	### create a new temporary sequence file
-#	$sequence_file = "$main::TMP/$sequence_file";
 	
 	### upload sequence file from the client side
 	$upload_file = $query->param('uploaded_file'.$seq_num);
@@ -497,12 +494,14 @@ sub MultiGetSequenceFile {
 		close SEQ;
 	    }
 	} else {
-	    &cgiError("The sequence box should not be empty.");
+		if ($required_opt) { ## only returns return if this is a required option
+	    	&cgiError("The sequence box should not be empty.");
+	    	}
 	}
 	
 	#### sequence file will be deleted
 	&DelayedRemoval($sequence_file);
-    #}
+
     
     return($sequence_file, $sequence_format);
 }
