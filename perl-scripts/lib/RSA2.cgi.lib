@@ -464,7 +464,7 @@ sub GetSequenceFile {
 # MultiGetSequenceFile
 sub MultiGetSequenceFile {
 
-    my ($seq_num, $sequence_file,$required_opt) = shift @_ ;
+    my ($seq_num, $sequence_file, $required_opt) = @_ ;
     
     ### sequence file format
     my $sequence_format = lc($query->param("sequence_format".$seq_num));
@@ -496,7 +496,7 @@ sub MultiGetSequenceFile {
 	} else {
 		if ($required_opt) { ## only returns return if this is a required option
 	    	&cgiError("The sequence box should not be empty.");
-	    	}
+	    }
 	}
 	
 	#### sequence file will be deleted
