@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: footprint-discovery,v 1.34 2010/02/07 05:27:05 rsat Exp $
+# $Id: footprint-discovery,v 1.35 2010/03/05 15:04:48 jvanheld Exp $
 #
 ############################################################
 
@@ -124,10 +124,9 @@ Feature-map
 
 =head1 REFERENCES
 
-Janky R, van Helden J (2008). Evaluation of phylogenetic footprint
-discovery for the prediction of bacterial cis-regulatory elements. BMC
-Bioinformatics, in press.
-
+Janky, R. and van Helden, J. Evaluation of phylogenetic footprint
+discovery for the prediction of bacterial cis-regulatory elements
+(2008). BMC Bioinformatics 2008, 9:37 [Pubmed 18215291].
 
 =pod
 
@@ -184,7 +183,7 @@ package main;
   ################################################################
   ## Initialise parameters
 #  %supported_organism = ();
-  $program_version = do { my @r = (q$Revision: 1.34 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.35 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -208,9 +207,12 @@ package main;
   local %uth = (rank=>50);	    ## Upper thresholds
   local $strands = "-2str"; ## Strands for pattern discovery and pattern matching
 
+  ## Add the supported tasks specific for this program (other tasks
+  ## have been defined in the library)
   $supported_task{filter_dyads} = 1;
   $supported_task{dyads} = 1;
   $supported_task{map} = 1;
+  $supported_task{index} = 1;
 #  $supported_tasks = join (",", keys %supported_task);
 
   ## Parameters for promoter retrieval
@@ -226,12 +228,6 @@ package main;
 
 #  local $supported_organism;
 
-  ## Options for the &doit() command;
-  local $dry = 0; ## Do not run the command, just echo them as warning
-  local $batch = 0;		## Run the processes on a PC cluster
-  local $die_on_error = 1;
-  local $job_prefix = "footprint_disco";
-  local $cmd;
 
 
   local $map_format = "png";	## Image format
@@ -494,9 +490,11 @@ sub RunFootprintDisco {
   }
 
   ################################################################
-  ## Close output stream
+  ## Close output streams
   close $out if ($outfile{log});
   close $genes if ($outfile{genes});
+
+  ## Terminate the index file
   if ($create_index) {
     print $index "</table>\n";
     print $index "</blockquote>";
@@ -506,20 +504,21 @@ sub RunFootprintDisco {
     close $index;
   }
 
+}
 
-  ################################################################
-  ## Add one file to the index file
-  sub IndexOneFile {
-    my ($name, $file, %args) = @_;
-    $short_file = `basename $file`;
-    print $index "<tr valign=top>\n";
-    print $index "<td>", $name, "</td>\n<td><a href=".$short_file.">".$short_file."</a></td>\n";
-    if ($args{image}) {
-      #    print $index "<td><a href=".$short_file."><img width=100 src=".$short_file."></a></td>\n";
-      print $index "</tr><tr><td colspan=\"2\">(Click on image below)</td></tr><tr><td colspan=\"2\"><a href=".$short_file."><img width=\"100%\" src=".$short_file."></a></td>\n";
-    }
-    print $index ("</tr>\n\n");
+
+################################################################
+## Add one file to the index file
+sub IndexOneFile {
+  my ($name, $file, %args) = @_;
+  $short_file = `basename $file`;
+  print $index "<tr valign=top>\n";
+  print $index "<td>", $name, "</td>\n<td><a href=".$short_file.">".$short_file."</a></td>\n";
+  if ($args{image}) {
+    #    print $index "<td><a href=".$short_file."><img width=100 src=".$short_file."></a></td>\n";
+    print $index "</tr><tr><td colspan=\"2\">(Click on image below)</td></tr><tr><td colspan=\"2\"><a href=".$short_file."><img width=\"100%\" src=".$short_file."></a></td>\n";
   }
+  print $index ("</tr>\n\n");
 }
 
 ################################################################
