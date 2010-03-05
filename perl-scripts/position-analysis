@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.37 2010/03/04 15:28:42 jvanheld Exp $
+# $Id: position-analysis,v 1.38 2010/03/05 15:00:01 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -12,6 +12,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 require RSAT::util;
+require RSAT::stats;
 use POSIX qw(sysconf _PC_CHOWN_RESTRICTED);
 use Math::CDF;
 
@@ -25,6 +26,15 @@ $group_rc = 0;
 $img_format = $ENV{rsat_img_format} || "png";
 $XYgraph_command = "$SCRIPTS/XYgraph";
 $log_base = log(10);
+
+## Origin and offset
+$origin = "start";
+@supported_origins = qw(start center end);
+foreach my $ori (@supported_origins) {
+    $supported_origin{$ori} = 1;
+}
+$supported_origins = join ",", @supported_origins;
+$offset = 0;
 
 #### initialize other variables
 $start_time = &RSAT::util::AlphaDate();
@@ -98,29 +108,36 @@ foreach my $oligo_seq (sort keys %pattern) {
 
 &SumStrands() if ($strands eq "2str");
 
+&RSAT::message::Info("Number of patterns before filtering", scalar(keys(%pattern))) if ($main::verbose >=0);
+
 #### if a pattern file has been specified, forget info about other patterns
 if ($pattern_file) {
     foreach my $oligo_seq (sort keys %pattern) {
 	unless ($selected_pattern{$oligo_seq}) {
-	    delete $pattern{$oligo_seq}->{occ};
+	    delete $pattern{$oligo_seq};
+#	    delete $pattern{$oligo_seq}->{occ};
 	}
     }
+    &RSAT::message::Info("Pattern file filtering", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >=0);
 }
 
 
 #### check threshold on occurrences
-if (&IsNatural($low_thr{'occ'})) {
+if (&IsNatural($lth{'occ'})) {
     foreach my $oligo_seq (sort keys %pattern) {
-	if ($pattern{$oligo_seq}->{occ} < $low_thr{'occ'}) {
-	    delete $pattern{$oligo_seq}->{occ};
+	if ($pattern{$oligo_seq}->{occ} < $lth{'occ'}) {
+	    delete $pattern{$oligo_seq};
+#	    delete $pattern{$oligo_seq}->{occ};
 	}
     }
+    &RSAT::message::Info("Filtering by occurrences", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >=0);
 }
 
 
 &CalcExpected();
 
 &CalcChi() if ($return{'chi'});
+&RSAT::message::Info("Chi and sig computed", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >=0);
 
 &Verbose() if ($main::verbose >= 1);
 
@@ -163,7 +180,7 @@ if ($return{'graph'}) {
 	$index_file = "$dir{output}/graph_index_${oligo_length}nt_ci${class_interval}_$strands.html";
     }
 
-    &RSAT::message::Info(join('\t', $index_file)) if ($main::verbose >= 0);
+    &RSAT::message::Info("Index file", $index_file) if ($main::verbose >= 2);
     open INDEX, ">$index_file";
     print INDEX "<HTML><BODY>\n";
     print INDEX "<TABLE>\n";
@@ -340,7 +357,7 @@ sub ReadSequence {
 	$sequence_number++;
 
 	if (($last > 0) && ($sequence_number > $last)) {
-	    &RSAT::message::Warning("Stopeed after $last sequences (option -last was used)");
+	    &RSAT::message::Warning("Stopped after $last sequences (option -last was used)");
 	    last;
 	}
 
@@ -356,15 +373,20 @@ sub ReadSequence {
 	my $ref_pos = 0;
 
 	## Compute the origin as the center of each sequence
-	if ($center) {
-	  $origin = round($seq_length[$sequence_number]/2);
-	}
-
-	if (($origin eq "-0") || ($origin < 0)) {
-	    $ref_pos = $seq_length[$sequence_number] + $origin + 1;
+	if ($origin eq "center") {
+	    $ref_pos = &round($seq_length[$sequence_number]/2);
+	} elsif ($origin eq "end") {
+	    $ref_pos = $seq_length[$sequence_number] + 1;
 	} else {
-	    $ref_pos = $origin;
+	    $ref_pos = 0;
 	}
+	$ref_pos += $offset
+
+#	if (($origin eq "-0") || ($origin < 0)) {
+#	    $ref_pos = $seq_length[$sequence_number] + $origin + 1;
+#	} else {
+#	    $ref_pos = $origin;
+#	}
 
 	&RSAT::message::TimeWarn (join("\t",
 				       "",
@@ -576,8 +598,9 @@ sub CalcChi {
 	    push @chi_values, $exp_occ{$oligo_seq}{$class};
 	}
 	($pattern{$oligo_seq}->{chi_square}, $pattern{$oligo_seq}->{df}) = &ChiSquare("goodfit", 2, $calc_class_nb, @chi_values);
+	&RSAT::message::Debug($oligo_seq, "chi2", $pattern{$oligo_seq}->{chi_square}, $pattern{$oligo_seq}->{df}, @chi_values) if ($main::verbose >= 5);
 
-	## Calculate P-value
+	## Compute P-value
 	$pattern{$oligo_seq}->{Pval} = 1 - &Math::CDF::pchisq($pattern{$oligo_seq}->{chi_square},
 							      $pattern{$oligo_seq}->{df});
 	if ($pattern{$oligo_seq}->{Pval} <= 0) {
@@ -590,9 +613,11 @@ sub CalcChi {
 	}
 
 	#### check threshold on occurrences
-	if (defined($low_thr{'sig'})) {
-	  if ($pattern{$oligo_seq}->{sig} < $low_thr{'sig'}) {
-	    delete $pattern{$oligo_seq}->{occ};
+	if (defined($lth{'sig'})) {
+	  if ($pattern{$oligo_seq}->{sig} < $lth{'sig'}) {
+	    &RSAT::message::Debug( "Deleting pattern", $oligo_seq, "significance", $pattern{$oligo_seq}->{sig}, "sig threshold", $lth{sig}) if ($main::verbose >= 5);
+	    delete $pattern{$oligo_seq};
+#	    delete $pattern{$oligo_seq}->{occ};
 	    next;
 	  }
 	}
@@ -604,13 +629,14 @@ sub CalcChi {
 	    $pattern{$oligo_seq}->{chi_square} =~ s/\)//;
 	} else {
 	    unless (&IsReal($pattern{$oligo_seq}->{chi_square})) {
-		print $out "; WARNING: $oligo_seq $pattern{$oligo_seq}->{chi_square}  does not fit conditions for the chi-square\n" 
+		&RSAT::message::Info($oligo_seq, $pattern{$oligo_seq}->{chi_square}, "does not fit conditions for the chi-square") 
 		    if ($main::verbose >= 2);
 		unless ($no_filter) {
 		    print $out "; WARNING: $oligo_seq discarded\n" 
 			if ($main::verbose >= 3);
-		    delete $pattern{$oligo_seq}->{occ};
-		    delete $pattern{$oligo_seq}->{chi_square};
+		    delete $pattern{$oligo_seq};
+#		    delete $pattern{$oligo_seq}->{occ};
+#		    delete $pattern{$oligo_seq}->{chi_square};
 		}
 	    }
 	}
@@ -620,16 +646,16 @@ sub CalcChi {
 
 
 	#### check the threshold on chi-square
-	if ((&IsReal($low_thr{'chi'})) && 
-	    ($pattern{$oligo_seq}->{chi_square} < $low_thr{'chi'})) {
-	    print $out "; WARNING: $oligo_seq below the chi threshold $pattern{$oligo_seq}->{chi_square} < $low_thr{'chi'}\n" 
-		if ($main::verbose >= 3);
+	if ((&IsReal($lth{'chi'})) && 
+	    ($pattern{$oligo_seq}->{chi_square} < $lth{'chi'})) {
+	    &RSAT::message::Debug( "Deleted pattern", $oligo_seq, "chi2", $pattern{$oligo_seq}->{chi_square}, "below threshold", $lth{'chi'})
+		if ($main::verbose >= 5);
 
-	    delete $pattern{$oligo_seq}->{occ};
-	    delete $pattern{$oligo_seq}->{chi_square};
+	    delete $pattern{$oligo_seq};
+#	    delete $pattern{$oligo_seq}->{occ};
+#	    delete $pattern{$oligo_seq}->{chi_square};
 	}
     }
-
 }
 
 ################################################################
@@ -808,26 +834,37 @@ OPTIONS
 		of applicability. Instead, mark them by including the
 		chi2 value in curly brackets.
 
-	-origin
-		reference for calculating positions. 
+	-origin start | center | end
+		Reference for calculating positions.
 
-		If a negative value is specified, coordinates are
-		calculated with respect to the specified position
-		relative to the end rather than the start of the
-		sequences.
 
-		The default value is 0, meaning that positions are
-		calculated from sequence start (5\' side).
+		The value should be chosen according to the sequence
+		type. For instance:
 
-		To calculate the positions relative to sequence end,
-		use the option:
-			     -origin -0
+		-origin start for downstream sequences
 
-	-center 
-		Compute the origin at the center of each sequence.
-		This can be useful for example for ChIP-seq peaks,
-		which can have variable lengths, but are supposed to
-		be more or less centred on the TF binding qsites.
+		-origin end for promoter sequences
+
+		-origin center can be useful for ChIP-seq peaks, which
+			can have variable lengths, but are supposed to
+			be more or less centred on the TF binding
+			qsites.
+
+	-offset
+		Add an offset to site positions. The offset value must
+		be an Integer number (positive, null or
+		negative). This option allows to select an arbitrary
+		position as origin.
+
+		Example: the option I<-offset -100> can be used to
+		specify the transcription start site (TSS) as origin,
+		in a collection of promoter sequences including 100
+		residues downstream of the TSS.
+
+		Note: in previous versions, -origin was used to
+		specify both the reference point and the offset. Since
+		March 2010, the offset is specified with the option
+		-offset.
 
 	-img_format
 		Image format (this parameter is passed to XYgraph)
@@ -864,13 +901,13 @@ position-analysis options
 -sort		sort oligonucleotides according to the score
 -return		chi,distrib,exp,graph,rank
 -lth_chi	lower threshold on chi2
--lth_sig	lower threshold on significance
+-lth_sig	lower threshold on significance of the chi2 statistics
 -oth		lower threshold on occurrences
 -rth		lower threshold on rank
 -max_graphs #	maximal number of graphs to export
 -pl		pattern list
--origin		origin (-0 to calculate positions relative to sequence end)
--center		compute the origin at the center of each sequence
+-origin [start|center|end]	Define pos as the origin for calculating positions
+-offset #	add a given number to site positions (change the reference point).
 -img_format	image format (this parameter is passed to XYgraph)
 -sc		score column
 -minpos		minimal position for chi-square calculation
@@ -955,31 +992,31 @@ sub ReadArguments {
 	    
 	    ### lower threshold on chi square
 	} elsif ($ARGV[$a] =~ /^-lth_chi/) { 
-	    $low_thr{'chi'} = $ARGV[$a+1];
+	    $lth{'chi'} = $ARGV[$a+1];
 	    $return{'chi'} = 1;
-	    unless (($low_thr{'chi'} >= 0) && (&IsReal($low_thr{'chi'}))) {
+	    unless (($lth{'chi'} >= 0) && (&IsReal($lth{'chi'}))) {
 		&RSAT::error::FatalError("Threshold on chi2 must be a positive number") ;
 	    }
 
 	    ### lower threshold on significance
 	  } elsif ($ARGV[$a] =~ /^-lth_sig/) {
-	    $low_thr{'sig'} = $ARGV[$a+1];
+	    $lth{'sig'} = $ARGV[$a+1];
 	    $return{'sig'} = 1;
-	    unless (&IsReal($low_thr{'sig'})) {
+	    unless (&IsReal($lth{'sig'})) {
 	      &RSAT::error::FatalError("Threshold on sig must be a Real number") ;
 	    }
 
 	    ### lower threshold on occurrences
 	} elsif ($ARGV[$a] =~ /^-oth/) { 
-	    $low_thr{'occ'} = $ARGV[$a+1];
-	    unless (&IsNatural($low_thr{'occ'})) {
+	    $lth{'occ'} = $ARGV[$a+1];
+	    unless (&IsNatural($lth{'occ'})) {
 		&RSAT::error::FatalError("Threshold on occurrences must be a natural number") ;
 	    }
 	    
 	    ### Upper threshold on rank
 	} elsif ($ARGV[$a] =~ /^-rth/) { 
-	    $upper_thr{rank} = $ARGV[$a+1];
-	    unless (&IsNatural($upper_thr{rank})) {
+	    $uth{rank} = $ARGV[$a+1];
+	    unless (&IsNatural($uth{rank})) {
 		&RSAT::error::FatalError("Threshold on rank must be a natural number") ;
 	    }
 	    
@@ -1048,15 +1085,30 @@ sub ReadArguments {
 	    }
 
 	    ### origin for positions
-	} elsif ($ARGV[$a] =~ /^-orig/) {
+	} elsif ($ARGV[$a] eq "-origin") {
 	    $origin = $ARGV[$a+1];
-	    unless (&IsInteger($origin)) {
-		&RSAT::error::FatalError( "Invalid value $origin\tOrigin must be an integer number\n");
+
+	    ## For backwards compatibility
+	    if (&IsInteger($origin)) {
+		if ($origin eq "-0") {
+		    $offset = 0;
+		    $origin = "end";
+		} elsif ($origin < 0) {
+		    $offset = $origin;
+		    $origin = "end";
+		} else {
+		    $offset = $origin;
+		    $origin = "start";
+		}
+	    } elsif (!$supported_origin{$origin}) {
+		&RSAT::error::FatalError($origin, "Invalid value for origin. Supported: $supported_origins.");
 	    }
 
-	    ### Compute the origin at the center of each sequence
-	} elsif ($ARGV[$a] =~ /^-center/) {
-	  $center = 1;
+	    ### offset
+	} elsif ($ARGV[$a] eq "-offset") {
+	    $offset = $ARGV[$a+1];
+	    &RSAT::error::FatalError($offset, "is not a valid value for offset. Should be an Integer number.")
+		unless (&IsInteger($offset));
 
 	} elsif ($ARGV[$a] eq "-img_format") {
 	    $img_format = $ARGV[$a+1];
@@ -1085,8 +1137,8 @@ sub Verbose {
     printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
     printf $out "; %-29s\t%s\n", "Output file", $outputfile if ($outputfile);
     printf $out "; %-29s\t%d\n", "Oligo length", $oligo_length;
-    printf $out "; %-29s\t%f\n", "Lower threshold on chi", $low_thr{'chi'} if (&IsReal($low_thr{'chi'}));
-    printf $out "; %-29s\t%d\n", "Lower threshold on occurrences", $low_thr{'occ'} if (&IsNatural($low_thr{'occ'}));
+    printf $out "; %-29s\t%f\n", "Lower threshold on chi", $lth{'chi'} if (&IsReal($lth{'chi'}));
+    printf $out "; %-29s\t%d\n", "Lower threshold on occurrences", $lth{'occ'} if (&IsNatural($lth{'occ'}));
     if ($strands eq "2str") {
 	printf $out "; %-29s\n", "Occurrences counted  on both strands";
 	if ($group_rc) {
@@ -1155,6 +1207,7 @@ sub Verbose {
 ## Print the result file
 sub PrintResult {
 
+    &RSAT::message::TimeWarn("Printing results", scalar(keys(%pattern)), "patterns") if ($main::verbose >= 2);
 
     #### sort oligonucleotides, either according to their significance
     #### or alphabetically
@@ -1175,10 +1228,14 @@ sub PrintResult {
 	}
     } else {
 	@sorted_keys = sort keys %pattern;
+	&RSAT::message::TimeWarn("Sorted", scalar(@sorted_keys), "patterns") if ($main::verbose >= 2);
     }
 
-    if (defined($upper_thr{rank})) {
-      @sorted_keys = @sorted_keys[0..($upper_thr{rank}-1)];
+    ## Select top ranking patterns if required
+    if (defined($uth{rank})) {
+	my $max_rank = &min(scalar(@sorted_keys), $uth{rank});
+	@sorted_keys = @sorted_keys[0..($max_rank -1)];
+	&RSAT::message::TimeWarn("Retained", scalar(@sorted_keys), "top-raking patterns") if ($main::verbose >= 2);
     } 
 
 
@@ -1209,6 +1266,7 @@ sub PrintResult {
 	}
     }
     
+    ## Column content description 
     if ($main::verbose >= 1) {
 	print $out "; column headers\n";
 	foreach my $c (0..$#out_col) {
@@ -1218,7 +1276,7 @@ sub PrintResult {
     
     &RSAT::message::TimeWarn("Printing results") if ($main::verbose >= 2);
     ### Print header 
-    print $out ";", join("\t", @out_col), "\n";
+    print $out "#", join("\t", @out_col), "\n";
 
 
     ### pattern distributions
@@ -1289,7 +1347,8 @@ sub CheckDNA {
 
     foreach my $oligo_seq (sort keys %pattern) {
 	if ($oligo_seq =~ /[^atcg]/i) {
-	    delete $pattern{$oligo_seq}->{occ};
+	    delete $pattern{$oligo_seq};
+#	    delete $pattern{$oligo_seq}->{occ};
 	}
     }
 }
