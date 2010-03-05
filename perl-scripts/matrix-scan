@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.154 2010/02/18 09:14:44 rsat Exp $
+# $Id: matrix-scan,v 1.155 2010/03/05 04:48:37 jvanheld Exp $
 #
 # Time-stamp: <2008-04-14 16:45:18 jturatsi>
 #
@@ -2521,7 +2521,7 @@ with the option -offset.
 
 =item B<-offset offset_value>
 
-add an offset to site positions. The offset value must be an Integer
+Add an offset to site positions. The offset value must be an Integer
 number (positive, null or negative). This option allows to select an
 arbitrary position as origin. 
 
