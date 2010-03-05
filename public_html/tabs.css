@@ -1,4 +1,4 @@
-/* $Id: tabs.css,v 1.1 2010/03/04 19:30:36 morgane Exp $ */
+/* $Id: tabs.css,v 1.2 2010/03/05 18:37:24 morgane Exp $ */
 
 /*--------------------------------------------------
   REQUIRED to hide the non-active tab content.
@@ -53,7 +53,7 @@ ul.tabbernav li a:visited { color: #667; }
 ul.tabbernav li a:hover
 {
  color: #000;
- background: #D6EEFA;
+ background: #E7F6FD;
  border-color: #227;
 }
 
