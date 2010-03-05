@@ -28,6 +28,9 @@ $default{lth_occ_sig}=0;
 $default{uth_pval} = "1e-4";
 $default{assembly} = "";
 $default{oligo_length7}="checked";
+$default{oligo-analysis}="checked";
+$default{dyad-analysis}="checked";
+$default{orm}="checked";
 
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -193,7 +196,7 @@ print '
 </div>
 <p class="clear"></p>';
 
-print "<hr>";
+#print "<hr>";
 
 
 ################################################################
