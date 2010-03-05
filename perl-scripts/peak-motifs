@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.3 2010/03/04 15:12:11 jvanheld Exp $
+# $Id: peak-motifs,v 1.4 2010/03/05 12:52:30 jvanheld Exp $
 #
 ############################################################
 
@@ -79,7 +79,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -89,7 +89,6 @@ package main;
     %main::infile = ();
     %main::outfile = ();
 
-    $main::prefix = "";
     $main::verbose = 0;
     $main::out = STDOUT;
 
@@ -137,6 +136,8 @@ package main;
 	&PurgeOneSeq($infile{control_seq}, "control");
       }
     }
+
+    &SequenceLengths if ($task{seqlen});
 
     &OligoAnalysis if ($task{oligos});
 
@@ -200,8 +201,9 @@ sub PrintOptions {
 sub DefaultParameters {
   &RSAT::message::TimeWarn("Setting default parameter values") if ($main::verbose >= 1);
 
-  ## Sequences
+  ## Formats
   $main::param{seq_format} = "fasta"; push(@main::param_list, "seq_format");
+  $main::param{img_format} = "png"; push(@main::param_list, "img_format");
 
   ## Purge-seq
   $main::param{purge_match_length} = 30; push(@main::param_list, "purge_match_length");
@@ -222,7 +224,7 @@ sub DefaultParameters {
 ## Define one output file name by concatenating arguments
 sub OutFileName {
     my ($extension, @name_elements) = @_;
-    my $out_file_name = $dir{output}."/".$prefix;
+    my $out_file_name = $dir{output}."/".$main::param{prefix};
     $out_file_name .= join ("_", @name_elements);
     $out_file_name .= $extension;
     return($out_file_name);
@@ -245,6 +247,16 @@ sub SetOutFileNames {
 						     "purged",
 						     "ml".$main::param{purge_match_length},
 						     "mis".$main::param{purge_mismatches});
+    }
+
+    ## Sequence lengths
+    $main::outfile{"test_seqlen"} = &OutFileName(".tab", "test_seqlen");
+    $main::outfile{"test_seqlen_distrib"} = &OutFileName(".tab", "test_seqlen_distrib");
+    $main::outfile{"test_seqlen_distrib_graph"} = &OutFileName(".".$param{img_format}, "test_seqlen_distrib");
+    if ($infile{control_seq}) {
+	$main::outfile{"control_seqlen"} = &OutFileName(".tab", "control_seqlen");
+	$main::outfile{"control_seqlen_distrib"} = &OutFileName(".tab", "control_seqlen_distrib");
+	$main::outfile{"control_seqlen_distrib_graph"} = &OutFileName($param{img_format}, "control_seqlen_distrib");
     }
 
     ## oligo-analysis result
@@ -271,6 +283,25 @@ sub PurgeOneSeq {
   &one_command($cmd);
 }
 
+
+################################################################
+## Compute sequence lengths
+sub SequenceLengths {
+  &RSAT::message::TimeWarn("Computing sequence lengths") if ($main::verbose >= 1);
+  my $cmd = "sequence-lengths";
+  $cmd .= " -i ".$main::infile{test_seq};
+  $cmd .= " -o ".$main::outfile{test_seqlen};
+  $cmd .= " ; cut -f 2 ".$main::outfile{test_seqlen};
+  $cmd .= " | classfreq -v 1 -ci 10 -o ".$main::outfile{test_seqlen_distrib};
+  $cmd .= " ; XYgraph -lines -legend "; 
+  $cmd .= " -format ".$main::param{img_format};
+  $cmd .= " -title '".$main::param{title}."'" if ($main::param{title});
+  $cmd .= " -ysize 400 -ycol 4,5,6 -yleg1 'Number of peaks'";
+  $cmd .= " -xsize 600 -xcol 3 -xleg1 'Peak length'";
+  $cmd .= " -i ".$main::outfile{test_seqlen_distrib};
+  $cmd .= " -o ".$main::outfile{test_seqlen_distrib_graph};
+  &one_command($cmd);  
+}
 
 ################################################################
 ## Run oligo-analysis on the test set
@@ -397,6 +428,45 @@ will be stored in this directory.
     } elsif ($arg eq "-outdir") {
       $main::dir{output} = shift(@arguments);
 
+
+      ## prefix for the output files
+
+=pod
+
+=item	B<-prefix output_prefix>
+
+Prefix for the output files
+
+=cut
+    } elsif ($arg eq "-prefix") {
+      $main::param{prefix} = shift(@arguments);
+
+      ## Title
+
+=pod
+
+=item	B<-title graph_title>
+
+Title displayed on top of the graphs.
+
+=cut
+    } elsif ($arg eq "-title") {
+      $main::param{title} = shift(@arguments);
+
+      ## image format
+
+=pod
+
+=item	B<-img_format img_format>
+
+Image format. 
+
+All the formats supported by XYgraph can be used.
+
+=cut
+    } elsif ($arg eq "-img_format") {
+      $main::param{img_format} = shift(@arguments);
+
       ## Tasks
 
 =pod
@@ -431,10 +501,22 @@ would violate the hypothesis of independence underlying the binomial
 significance test, resulting in a large number of false positive
 patterns.
 
+=item I<seqlen>
+
+Compute sequence lengths and their distribution. 
+
+Sequence lengths are useful for the negative control (selection of
+random genome fragments).
+
+Sequence length distribution is informative to get an idea about the
+variability of peak lengths.
+
 =item I<oligos>
 
-Delete the purged sequence files after the analysis, in order to save
-space.
+Detect over-represented oligonucleotides of a given length (k,
+specified with option -l) in the test set. Prior frequencies of
+oligonucleotides are taken from Markov model of order m (option
+-markov) estimated from the test set sequences themselves.
 
 =item I<clean_seq>
 
