@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.40 2010/03/06 14:07:20 jvanheld Exp $
+# $Id: position-analysis,v 1.41 2010/03/06 16:21:00 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -389,7 +389,7 @@ sub ReadSequence {
 	} else {
 	    $ref_pos = 0;
 	}
-	$ref_pos += $offset
+	$ref_pos += $offset;
 
 #	if (($origin eq "-0") || ($origin < 0)) {
 #	    $ref_pos = $seq_length[$sequence_number] + $origin + 1;
@@ -408,7 +408,6 @@ sub ReadSequence {
 				      )) if (($main::verbose >= 3) || (($main::verbose >= 2) && ($sequence_number%50==0)));
 
 	#### count oligonucleotides ####
-#	my $offset = 0;
 	my $current_pos = 1;
 	my %classes_in_this_seq = ();
 	while ($current_pos <= $last_pos) {
@@ -1120,6 +1119,7 @@ sub ReadArguments {
 	    ### offset
 	} elsif ($ARGV[$a] eq "-offset") {
 	    $offset = $ARGV[$a+1];
+	    &RSAT::message::Warning("Offset", $offset);
 	    &RSAT::error::FatalError($offset, "is not a valid value for offset. Should be an Integer number.")
 		unless (&IsInteger($offset));
 
