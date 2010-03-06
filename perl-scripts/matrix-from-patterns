@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.27 2010/02/03 06:48:29 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.28 2010/03/06 12:41:22 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -467,6 +467,8 @@ implementation of matrix-scan is quite low (2009 version). Secondly,
 some matrices may fail to return any site below the P-value
 threshold. We therefore recommend to use the info-gibbs option.
 
+=back
+
 =cut
 	} elsif ($arg eq "-collect_method") {
 	    $collect_method = shift(@arguments);
@@ -593,14 +595,6 @@ without limit on the number of sites.
 
 	}
     }
-
-
-=pod
-
-=back
-
-=cut
-
 }
 
 ################################################################
@@ -674,7 +668,8 @@ sub ScanForSites {
       $cmd .= " -return logo -logo_format png,pdf ";
       $cmd .= " -logo_opt '-e' "; ## Error bar
       $cmd .= " -logo_opt '-M' "; ## Small sample correction
-#      $cmd .= " -logo_dir $ENV{RSAT}/public_html/tmp ";
+      #      $cmd .= " -logo_dir $ENV{RSAT}/public_html/tmp ";
+      ## Return reverse complementary logo
     }
     $convert2_cmd .= " -return links" if ($return_fields{links});
     $convert2_cmd .= " -o ".$outfile{count_matrices};
