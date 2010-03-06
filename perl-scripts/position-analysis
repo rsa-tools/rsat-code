@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.38 2010/03/05 15:00:01 jvanheld Exp $
+# $Id: position-analysis,v 1.39 2010/03/06 13:02:15 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -77,6 +77,10 @@ if ((&IsInteger($min_pos)) && (&IsInteger($max_pos))) {
     }
 }
 
+## Title
+unless ($title) {
+    $title = "position-analysis";
+}
 
 ################################################################
 #### specific treatment for output file, because if graphs are
@@ -108,7 +112,7 @@ foreach my $oligo_seq (sort keys %pattern) {
 
 &SumStrands() if ($strands eq "2str");
 
-&RSAT::message::Info("Number of patterns before filtering", scalar(keys(%pattern))) if ($main::verbose >=0);
+&RSAT::message::Info("Number of patterns before filtering", scalar(keys(%pattern))) if ($main::verbose >= 2);
 
 #### if a pattern file has been specified, forget info about other patterns
 if ($pattern_file) {
@@ -118,7 +122,7 @@ if ($pattern_file) {
 #	    delete $pattern{$oligo_seq}->{occ};
 	}
     }
-    &RSAT::message::Info("Pattern file filtering", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >=0);
+    &RSAT::message::Info("Pattern file filtering", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >= 2);
 }
 
 
@@ -130,14 +134,14 @@ if (&IsNatural($lth{'occ'})) {
 #	    delete $pattern{$oligo_seq}->{occ};
 	}
     }
-    &RSAT::message::Info("Filtering by occurrences", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >=0);
+    &RSAT::message::Info("Filtering by occurrences", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >= 2);
 }
 
 
 &CalcExpected();
 
 &CalcChi() if ($return{'chi'});
-&RSAT::message::Info("Chi and sig computed", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >=0);
+&RSAT::message::Info("Chi and sig computed", scalar(keys(%pattern)), "remaining patterns") if ($main::verbose >= 2);
 
 &Verbose() if ($main::verbose >= 1);
 
@@ -152,7 +156,7 @@ if ($return{'graph'}) {
     #### directory for storing the graphs
     $rel_dir{graphs}="graphs";
     if ($outputfile) {
-	$basename = `basename $outputfile`;
+	$basename = `basename -s '.tab' $outputfile`;
 	chomp $basename;
 	$rel_dir{graphs} = $basename."_".$rel_dir{graphs};
     }
@@ -175,23 +179,28 @@ if ($return{'graph'}) {
 
     #### index for the graphs
     if ($outputfile) {
-	$index_file = "${outputfile}_graph_index.html";
+	$index_file = $outputfile;
+	$index_file =~ s/\.tab$//; ## Suppress tab extension
+	$index_file .= "_graph_index.html";
     } else {
 	$index_file = "$dir{output}/graph_index_${oligo_length}nt_ci${class_interval}_$strands.html";
     }
 
     &RSAT::message::Info("Index file", $index_file) if ($main::verbose >= 2);
     open INDEX, ">$index_file";
-    print INDEX "<HTML><BODY>\n";
-    print INDEX "<TABLE>\n";
-    print INDEX "<TR>\n";
-    print INDEX "<TH>Sequence</TH>\n";
-    print INDEX "<TH>Occ</TH>\n";
-    print INDEX "<TH>Chi2</TH>\n";
-    print INDEX "<TH>Rank</TH>\n";
-    print INDEX "<TH>Eval</TH>\n";
-    print INDEX "<TH>Sig</TH>\n";
-    print INDEX "</TR>\n";
+    print INDEX "<html>";
+    print INDEX "<title>$title</title>";
+    print INDEX "<body>\n";
+    print INDEX "<h1>$title</h1>";
+    print INDEX "<table>\n";
+    print INDEX "<tr>\n";
+    print INDEX "<th>Sequence</th>\n";
+    print INDEX "<th>Occ</th>\n";
+    print INDEX "<th>Chi2</th>\n";
+    print INDEX "<th>Rank</th>\n";
+    print INDEX "<th>Eval</th>\n";
+    print INDEX "<th>Sig</th>\n";
+    print INDEX "</tr>\n";
     close INDEX;
 
     #### generate one graph for each oligo
@@ -227,11 +236,11 @@ if ($return{'graph'}) {
 
 	my $command = "$XYgraph_command -o $dir{graphs}/$graph_file_name";
 	$command .= " -lines -xcol 1 -ycol 2,3 -legend ";
-	$command .= " -title1 '$oligo_seq distribution profile' ";
+	$command .= " -title1 '$title ; $oligo_seq distribution profile' ";
 	$command .= " -title2 '$title2' ";
 	$command .= " -xleg1 'position' -yleg1 'class frequency' ";
 	$command .= " -ymin 0 -xmin $class_min[0] -xmax $class_max[$max_class] ";
-	$command .= " -xgstep2 $class_interval -xsize 600";
+	$command .= " -xgstep2 $class_interval -xsize 600 -ysize 200";
 	$command .= " -format ".$img_format;
 	print "; $command\n" if ($main::verbose >= 2);
  	open XY, "| $command";
@@ -752,11 +761,43 @@ OPTIONS
 	-ci	class interval (default 20 bases). 
 		The width of the position classes (in number of bases)
 
+	-origin start | center | end
+		Reference for calculating positions.
+
+
+		The value should be chosen according to the sequence
+		type. For instance:
+
+		-origin start for downstream sequences
+
+		-origin end for promoter sequences
+
+		-origin center can be useful for ChIP-seq peaks, which
+			can have variable lengths, but are supposed to
+			be more or less centred on the TF binding
+			qsites.
+
+	-offset
+		Add an offset to site positions. The offset value must
+		be an Integer number (positive, null or
+		negative). This option allows to select an arbitrary
+		position as origin.
+
+		Example: the option I<-offset -100> can be used to
+		specify the transcription start site (TSS) as origin,
+		in a collection of promoter sequences including 100
+		residues downstream of the TSS.
+
+		Note: in previous versions, -origin was used to
+		specify both the reference point and the offset. Since
+		March 2010, the offset is specified with the option
+		-offset.
+
 	-grouprc        group reverse complement pairs
 
 	-nogrouprc      do not group reverse complement pairs
 
-	-sort	
+	-sort
 		sort oligonucleotides according to the bias in
 		distribution profile
 
@@ -834,41 +875,11 @@ OPTIONS
 		of applicability. Instead, mark them by including the
 		chi2 value in curly brackets.
 
-	-origin start | center | end
-		Reference for calculating positions.
-
-
-		The value should be chosen according to the sequence
-		type. For instance:
-
-		-origin start for downstream sequences
-
-		-origin end for promoter sequences
-
-		-origin center can be useful for ChIP-seq peaks, which
-			can have variable lengths, but are supposed to
-			be more or less centred on the TF binding
-			qsites.
-
-	-offset
-		Add an offset to site positions. The offset value must
-		be an Integer number (positive, null or
-		negative). This option allows to select an arbitrary
-		position as origin.
-
-		Example: the option I<-offset -100> can be used to
-		specify the transcription start site (TSS) as origin,
-		in a collection of promoter sequences including 100
-		residues downstream of the TSS.
-
-		Note: in previous versions, -origin was used to
-		specify both the reference point and the offset. Since
-		March 2010, the offset is specified with the option
-		-offset.
-
 	-img_format
-		Image format (this parameter is passed to XYgraph)
+		Image format (this parameter is passed to XYgraph).
 
+	-title
+		Title for the index table and position profile plots.
 
 End_of_help
   close HELP;
@@ -893,6 +904,8 @@ position-analysis options
 -v \#		verbose level
 -l		oligonucleotide length
 -ci		class interval (default 20 bases). 
+-origin [start|center|end]	Define pos as the origin for calculating positions
+-offset #	add a given number to site positions (change the reference point).
 -1str		inactivate summation of occ on both strands
 -2str		sum occurences on both strands (default)
 -grouprc	group reverse complement pairs (default)
@@ -906,14 +919,14 @@ position-analysis options
 -rth		lower threshold on rank
 -max_graphs #	maximal number of graphs to export
 -pl		pattern list
--origin [start|center|end]	Define pos as the origin for calculating positions
--offset #	add a given number to site positions (change the reference point).
 -img_format	image format (this parameter is passed to XYgraph)
 -sc		score column
 -minpos		minimal position for chi-square calculation
 -maxpos		maximal position for chi-square calculation
 -nocheck	do not check applicability condition for the chi2
 -nofilter	don\'t discard oligos which do not fit applicability condition
+-title		title for the index table and position profile plots.
+
 End_of_help
     close HELP;
     exit(0);
@@ -1112,6 +1125,9 @@ sub ReadArguments {
 
 	} elsif ($ARGV[$a] eq "-img_format") {
 	    $img_format = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-title") {
+	    $title = $ARGV[$a+1];
 
 	    ### min and max positions
 	} elsif (($ARGV[$a] eq "-minpos") && (&IsInteger($ARGV[$a+1]))) {
