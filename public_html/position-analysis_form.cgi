@@ -23,7 +23,9 @@ $default{strand} = "single strand";
 $default{noov} = 'checked';
 $default{grouprc} = 'checked';
 $default{purge} = 'checked';
-$default{origin} = "-0";
+$default{origin} = "start";
+$default{offset} = "0";
+$default{center} = "";
 
 #### return values
 $default{return_chi} = 'checked';
@@ -139,11 +141,21 @@ print $query->textfield(-name=>'class_interval',
 			-default=>$default{class_interval},
 			-size=>3);
 
-#### origin
-print "<B><A HREF='help.position-analysis.html#origin'>origin</A>&nbsp;</B>\n";
-print $query->textfield(-name=>'origin',
-			-default=>$default{origin},
-			-size=>3);
+################################################################
+#### origin for calculating positions
+print "&nbsp;"x4,  "<A HREF='help.position-analysis.html#origin'><B>Origin</B></A>\n";
+print $query->popup_menu(-name=>'origin',
+			 -Values=>['start',
+				   'center',
+				   'end'],
+			 -default=>$default{origin});
+
+################################################################
+#### Offset for calculating positions
+print "&nbsp;"x4,  "<A HREF='help.position-analysis.html#offset'><B>Offset</B></A>\n";
+print $query->textfield(-name=>'offset',
+			-default=>$default{offset},
+			-size=>8);
 
 #### table with all the statistics and thresholds
 print "<BLOCKQUOTE>\n";

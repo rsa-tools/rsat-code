@@ -133,11 +133,17 @@ $class_interval = $query->param('class_interval') ;
 &FatalError("$class_interval Invalid class interval") unless &IsNatural($class_interval);
 $parameters .= " -ci $class_interval";
 
+################################################################
 #### origin
-$origin = $query->param('origin') ;
-&FatalError("$origin Invalid class interval") unless &IsInteger($origin);
-$parameters .= " -origin $origin";
+$origin = $query->param('origin');
+$parameters .= " -origin ".$origin;
 
+################################################################
+#### Offset
+my $offset = $query->param('offset');
+if ((&IsInteger($offset)) && ($offset != 0)) {
+  $parameters .= " -offset ".$offset;
+}
 
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 
