@@ -29,7 +29,7 @@ $output_prefix = "ChIP-seq_analysis_";
 $output_directory_path = "$TMP/$output_directory";
 `mkdir -p $output_directory_path`;
 
-############################################ result header
+############################################ result page header
 ### Read the CGI query
 $query = new CGI;
 
@@ -100,16 +100,12 @@ $parameters .= " -prefix $output_prefix";
 ### verbosity
 $parameters .= " -v 1";
 
-############################################ display command
-#print "<pre>command: $command $parameters<P>\n</pre>" if ($ENV{rsat_echo} >=1);
-
 ############################################ display or send result
 $index_file = $output_directory."/".$output_prefix."index.html";
 my $mail_title = join (" ", "[RSAT]", "chip-seq-analysis", &AlphaDate());
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
 
-
-############################################ result footer
+############################################ result page footer
 print $query->end_html;
 
 exit(0);
