@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-seq-analysis,v 1.6 2010/03/06 01:30:31 jvanheld Exp $
+# $Id: chip-seq-analysis,v 1.7 2010/03/06 12:42:24 jvanheld Exp $
 #
 ############################################################
 
@@ -79,7 +79,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -225,9 +225,10 @@ sub DefaultParameters {
   $main::param{matrix_nmotifs} = 5; push(@main::param_list, "matrix_nmotifs");
 
   ## residue profiles (position-analysis)
-  $main::param{profiles_ci} = 1; push(@main::param_list, "profiles_ci");
+  $main::param{profiles_ci} = 5; push(@main::param_list, "profiles_ci");
   $main::param{profiles_strand} = "-1str"; push(@main::param_list, "profiles_strand");
-  $main::param{profiles_max_oligo} = 2; push(@main::param_list, "profiles_max_oligo");
+  @main::profiles_oligo_lengths = c(1,2,6);
+  $main::param{profiles_oligo_lengths} = join(',';@profiles_oligo_lengths); push(@main::param_list, "profiles_oligo_lengths");
 
 }
 
@@ -287,7 +288,7 @@ sub SetOutFileNames {
     $main::outfile{dyads_pssm} .= "_pssm";
 
     ## Residue profiles
-    for my $ol (1..$param{profiles_max_oligo}) {
+    for my $ol (@profiles_oligo_lengths) {
       $main::outfile{$ol."nt_profiles"} = &OutFileName("", "profiles".$main::param{profiles_strand}.$main::param{noov},$ol."nt",
 						       "ci".$main::param{profiles_ci});
     }
@@ -330,6 +331,7 @@ sub SequenceLengths {
   &one_command($cmd);  
 }
 
+
 ################################################################
 ## Run oligo-analysis on the test set
 sub OligoAnalysis {
@@ -346,9 +348,9 @@ sub OligoAnalysis {
   $cmd .= " -pseudo 0.01";
   $cmd .= " -o ".$outfile{oligos};
   &one_command($cmd);
-
   &MatrixFromPatterns($outfile{oligos}, $outfile{oligos_pssm}, "oligos");
 }
+
 
 ################################################################
 ## Run dyad-analysis on the test set
@@ -366,8 +368,7 @@ sub DyadAnalysis {
   $cmd .= " -pseudo 0.01";
   $cmd .= " -o ".$outfile{dyads};
   &one_command($cmd);
-
-  &MatrixFromPatterns($outfile{dyads}, $outfile{dyad_pssm}, "dyads");
+  &MatrixFromPatterns($outfile{dyads}, $outfile{dyads_pssm}, "dyads");
 }
 
 
@@ -382,29 +383,25 @@ sub MatrixFromPatterns {
   $cmd .= " -bginput -markov 1 ";
   $cmd .= " -max_asmb_nb ".$main::param{matrix_nmotifs};
   $cmd .= " -gibbs_flanks 2";
+  $cmd .= " -gibbs_iter 2";
+  $cmd .= " -gibbs_msps 0.5";
+  $cmd .= " -logo -links";
   $cmd .= " -o ".$pssm_file;
-
-  my $pssm_dir = `dirname $pssm_file`;
-  chomp($pssm_dir);
-  $cmd .= "; convert-matrix -from tab -to tab -return logo -logo_format png";
-  $cmd .= " -logo_dir ".$pssm_dir;
-  $cmd .= " -i ".$pssm_file."_count_matrices.txt";
-
   &one_command($cmd);
 }
-
 
 
 ################################################################
 ## Run position-analysis on the test set
 sub ResidueProfiles {
   &RSAT::message::TimeWarn("Running position-analysis") if ($main::verbose >= 1);
-  for my $ol (1..$main::param{profiles_max_oligo}) {
+  for my $ol (@profiles_oligo_lengths) {
     my $cmd = "position-analysis -v 1";
     $cmd .= " -i ".$main::outfile{"purged_test"};
     $cmd .= " -format fasta";
     $cmd .= " -sort ";
     $cmd .= " -return chi,sig,distrib,graphs,rank";
+    $cmd .= " -max_graphs 50";
     $cmd .= " ".$main::param{profiles_strand};
     $cmd .= " ".$main::param{noov};
     $cmd .= " -seqtype dna";
@@ -417,6 +414,7 @@ sub ResidueProfiles {
   }
 }
 
+
 ################################################################
 ## Delete purged sequence files after analysis has been completed.
 sub CleanSequences {
@@ -426,6 +424,7 @@ sub CleanSequences {
     &one_command("rm -f ".$main::outfile{"purged_control"});
   }
 }
+
 
 ################################################################
 ## Read arguments 
