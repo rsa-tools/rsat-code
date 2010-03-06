@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.7 2010/03/06 12:42:24 jvanheld Exp $
+# $Id: chip-motifs,v 1.8 2010/03/06 12:44:33 jvanheld Exp $
 #
 ############################################################
 
@@ -79,7 +79,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -227,8 +227,8 @@ sub DefaultParameters {
   ## residue profiles (position-analysis)
   $main::param{profiles_ci} = 5; push(@main::param_list, "profiles_ci");
   $main::param{profiles_strand} = "-1str"; push(@main::param_list, "profiles_strand");
-  @main::profiles_oligo_lengths = c(1,2,6);
-  $main::param{profiles_oligo_lengths} = join(',';@profiles_oligo_lengths); push(@main::param_list, "profiles_oligo_lengths");
+  @main::profiles_oligo_lengths = (1,2,6);
+  $main::param{profiles_oligo_lengths} = join(',',@profiles_oligo_lengths); push(@main::param_list, "profiles_oligo_lengths");
 
 }
 
