@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.5 2010/03/05 15:02:16 jvanheld Exp $
+# $Id: peak-motifs,v 1.6 2010/03/06 01:30:31 jvanheld Exp $
 #
 ############################################################
 
@@ -79,7 +79,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -102,11 +102,9 @@ package main;
 			   dyads
 			   ORM
 			   oligo-diff
-			   matrices
-			   logos
-			   profiles
 			   scan
 			   map
+			   profiles
 			   tomtom
 			   to_bed
 			   clean_seq
@@ -140,6 +138,8 @@ package main;
     &SequenceLengths if ($task{seqlen});
 
     &OligoAnalysis if ($task{oligos});
+
+    &DyadAnalysis if ($task{dyads});
 
     &ResidueProfiles if ($task{profiles});
 
@@ -219,9 +219,15 @@ sub DefaultParameters {
   ## oligo-analysis
   $main::param{oligo_markov} = -2; push(@main::param_list, "oligo_markov");
 
+  ## dyad-analysis
+
+  ## matrix-from-patterns
+  $main::param{matrix_nmotifs} = 5; push(@main::param_list, "matrix_nmotifs");
+
   ## residue profiles (position-analysis)
   $main::param{profiles_ci} = 1; push(@main::param_list, "profiles_ci");
   $main::param{profiles_strand} = "-1str"; push(@main::param_list, "profiles_strand");
+  $main::param{profiles_max_oligo} = 2; push(@main::param_list, "profiles_max_oligo");
 
 }
 
@@ -269,9 +275,19 @@ sub SetOutFileNames {
     $main::outfile{oligos} = &OutFileName(".tab", "oligos".$main::param{strand}.$main::param{noov}, 
 					  $main::param{oligo_len}."nt",
 					  "mkv".$main::param{oligo_markov});
+    $main::outfile{oligos_pssm} = $main::outfile{oligos};
+    $main::outfile{oligos_pssm} =~ s/\.tab$//;
+    $main::outfile{oligos_pssm} .= "_pssm";
+
+    ## dyad-analysis result
+    $main::outfile{dyads} = &OutFileName(".tab", "dyads".$main::param{strand}.$main::param{noov}, 
+					  "3nt_sp0-20_bg_monads");
+    $main::outfile{dyads_pssm} = $main::outfile{dyads};
+    $main::outfile{dyads_pssm} =~ s/\.tab$//;
+    $main::outfile{dyads_pssm} .= "_pssm";
 
     ## Residue profiles
-    for my $ol (1..3) {
+    for my $ol (1..$param{profiles_max_oligo}) {
       $main::outfile{$ol."nt_profiles"} = &OutFileName("", "profiles".$main::param{profiles_strand}.$main::param{noov},$ol."nt",
 						       "ci".$main::param{profiles_ci});
     }
@@ -330,13 +346,60 @@ sub OligoAnalysis {
   $cmd .= " -pseudo 0.01";
   $cmd .= " -o ".$outfile{oligos};
   &one_command($cmd);
+
+  &MatrixFromPatterns($outfile{oligos}, $outfile{oligos_pssm}, "oligos");
 }
+
+################################################################
+## Run dyad-analysis on the test set
+sub DyadAnalysis {
+  &RSAT::message::TimeWarn("Running dyad-analysis") if ($main::verbose >= 1);
+  my $cmd = "dyad-analysis -v 1";
+  $cmd .= " -i ".$main::outfile{"purged_test"};
+  $cmd .= " -format fasta";
+  $cmd .= " -sort -lth occ_sig 0 -uth rank 50 -return occ,proba,rank";
+  $cmd .= " ".$main::param{strand};
+  $cmd .= " ".$main::param{noov};
+  $cmd .= " -seqtype dna";
+  $cmd .= " -l 3 -sp 0-20 ";
+  $cmd .= " -bg monads";
+  $cmd .= " -pseudo 0.01";
+  $cmd .= " -o ".$outfile{dyads};
+  &one_command($cmd);
+
+  &MatrixFromPatterns($outfile{dyads}, $outfile{dyad_pssm}, "dyads");
+}
+
+
+################################################################
+## Convert a list of patterns into PSSMs
+sub MatrixFromPatterns {
+  my ($pattern_file, $pssm_file, $type) = @_;
+  &RSAT::message::TimeWarn("\tMatrix from patterns", $type) if ($verbose >= 1);
+  my $cmd = "matrix-from-patterns -v 1 ";
+  $cmd .= " -seq ".$infile{test_seq};
+  $cmd .= " -pl ".$pattern_file;
+  $cmd .= " -bginput -markov 1 ";
+  $cmd .= " -max_asmb_nb ".$main::param{matrix_nmotifs};
+  $cmd .= " -gibbs_flanks 2";
+  $cmd .= " -o ".$pssm_file;
+
+  my $pssm_dir = `dirname $pssm_file`;
+  chomp($pssm_dir);
+  $cmd .= "; convert-matrix -from tab -to tab -return logo -logo_format png";
+  $cmd .= " -logo_dir ".$pssm_dir;
+  $cmd .= " -i ".$pssm_file."_count_matrices.txt";
+
+  &one_command($cmd);
+}
+
+
 
 ################################################################
 ## Run position-analysis on the test set
 sub ResidueProfiles {
   &RSAT::message::TimeWarn("Running position-analysis") if ($main::verbose >= 1);
-  for my $ol (1..3) {
+  for my $ol (1..$main::param{profiles_max_oligo}) {
     my $cmd = "position-analysis -v 1";
     $cmd .= " -i ".$main::outfile{"purged_test"};
     $cmd .= " -format fasta";
