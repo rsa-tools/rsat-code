@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.39 2010/03/06 13:02:15 jvanheld Exp $
+# $Id: position-analysis,v 1.40 2010/03/06 14:07:20 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -189,7 +189,7 @@ if ($return{'graph'}) {
     &RSAT::message::Info("Index file", $index_file) if ($main::verbose >= 2);
     open INDEX, ">$index_file";
     print INDEX "<html>";
-    print INDEX "<title>$title</title>";
+    print INDEX "<title>$title ; ${oligo_len}nt $strands $noov</title>";
     print INDEX "<body>\n";
     print INDEX "<h1>$title</h1>";
     print INDEX "<table>\n";
@@ -439,7 +439,7 @@ sub ReadSequence {
 		!($selected_pattern{$rc})) {
 		next;
 	    }
-	    if (($no_overlap) 
+	    if (($noov) 
 		&& ($last_pos{$oligo_seq} > 0) 
 		&& ($current_pos < ($last_pos{$oligo_seq} + $oligo_length))) {
 		$pattern{$oligo_seq}->{overlaps}++;
@@ -1001,7 +1001,7 @@ sub ReadArguments {
 	    
 	    ### no overlap between successive matches
 	} elsif ($ARGV[$a] eq "-noov") {
-	    $no_overlap = 1;
+	    $noov = 1;
 	    
 	    ### lower threshold on chi square
 	} elsif ($ARGV[$a] =~ /^-lth_chi/) { 
@@ -1188,7 +1188,7 @@ sub Verbose {
 
     print $out "; Oligonucleotide statistics:\n";
     printf $out ";\t%-21s\t%d\n", "Total occurrences", $sum_occurrences;
-    if ($no_overlap) {
+    if ($noov) {
 	printf $out ";\t%-21s\t%d\n", "Total overlaps", $sum_overlaps;
     }
 
@@ -1260,7 +1260,7 @@ sub PrintResult {
     push @out_col, 'seq'; push @col_descriptions, 'pattern sequence';
     push @out_col, 'id'; push @col_descriptions, 'pattern identifier';
     push @out_col, 'occ'; push @col_descriptions, 'pattern occurrences';
-    if ($no_overlaps) {push @out_col, "over"; push @col_descriptions, 'overlapping occurrences (discarded)';}
+    if ($noov) {push @out_col, "over"; push @col_descriptions, 'overlapping occurrences (discarded)';}
     if ($return{'chi'}) {
 	push @out_col, "chi2" ; push @col_descriptions, 'observed chi-square';
 	push @out_col, "df" ; push @col_descriptions, 'degrees of freedom';
@@ -1309,7 +1309,7 @@ sub PrintResult {
 
       ### Occurrences
       print $out "\t", $pattern{$oligo_seq}->{in_bound_occ};
-      print $out "\t", $pattern{$oligo_seq}->{overlaps} if ($no_overlaps);
+      print $out "\t", $pattern{$oligo_seq}->{overlaps} if ($noov);
 
       ### chi-square value
       if ($return{'chi'}) {
@@ -1342,7 +1342,7 @@ sub PrintResult {
 	#		print $out "|", lc(ReverseComplement($oligo_seq));
 	#	    }
 	#	    print $out "\t$pattern{$oligo_seq}->{in_bound_occ}";
-	#	    print $out "\t$pattern{$oligo_seq}->{overlaps}" if ($no_overlaps);
+	#	    print $out "\t$pattern{$oligo_seq}->{overlaps}" if ($noov);
 	#	    print $out "\texpected";
 
 	for my $class ($min_calc_class..$max_calc_class) {
