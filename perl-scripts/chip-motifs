@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.8 2010/03/06 12:44:33 jvanheld Exp $
+# $Id: chip-motifs,v 1.9 2010/03/06 14:06:36 jvanheld Exp $
 #
 ############################################################
 
@@ -32,6 +32,8 @@ sequences.
 
 =item Matthieu Defrance <defrance@ccg.unam.mx>
 
+=item Olivier Sand <oly@bigre.ulb.ac.be> for the Web services
+
 =back
 
 
@@ -53,10 +55,14 @@ supported.
 
 =head1 OUTPUT FORMAT
 
+The pipeline runs a series of programs generating each one or several
+result file. An HTML index is generated in order to synthesize the
+results and give access to the individual result files. 
 
-=head1 SEE ALSO
+The index file is formed from the output directory (option -outdir)
+and the file prefix (option -prefix).
 
-=head1 WISH LIST
+  [output_dir]/[prefix]_synthesis.html
 
 =cut
 
@@ -79,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -100,15 +106,17 @@ package main;
 			   purge
 			   oligos
 			   dyads
-			   ORM
-			   oligo-diff
-			   scan
-			   map
 			   profiles
-			   tomtom
-			   to_bed
+			   synthesis
 			   clean_seq
 			  );
+
+    my @future_tasks = qw(
+			  ORM
+			  oligo-diff
+			  tomtom
+			  to_bed
+		      );
     $supported_tasks = join ",", @supported_tasks;
     %supported_task = ();
     foreach my $task (@supported_tasks) {
@@ -141,7 +149,9 @@ package main;
 
     &DyadAnalysis if ($task{dyads});
 
-    &ResidueProfiles if ($task{profiles});
+    &PositionAnalysis if ($task{profiles});
+
+    &Synthesis if ($task{synthesis});
 
     &CleanSequences() if ($task{clean_seq});
 
@@ -289,7 +299,7 @@ sub SetOutFileNames {
 
     ## Residue profiles
     for my $ol (@profiles_oligo_lengths) {
-      $main::outfile{$ol."nt_profiles"} = &OutFileName("", "profiles".$main::param{profiles_strand}.$main::param{noov},$ol."nt",
+      $main::outfile{$ol."nt_profiles"} = &OutFileName(".tab", "profiles".$main::param{profiles_strand}.$main::param{noov},$ol."nt",
 						       "ci".$main::param{profiles_ci});
     }
   }
@@ -393,7 +403,7 @@ sub MatrixFromPatterns {
 
 ################################################################
 ## Run position-analysis on the test set
-sub ResidueProfiles {
+sub PositionAnalysis {
   &RSAT::message::TimeWarn("Running position-analysis") if ($main::verbose >= 1);
   for my $ol (@profiles_oligo_lengths) {
     my $cmd = "position-analysis -v 1";
@@ -408,6 +418,7 @@ sub ResidueProfiles {
     $cmd .= " -l ".$ol;
     $cmd .= " -ci ".$main::param{profiles_ci};
     $cmd .= " -img_format ".$main::param{img_format};
+    $cmd .= " -title '".$main::param{title}."'";
     $cmd .= " -origin center ";
     $cmd .= " -o ".$outfile{$ol."nt_profiles"};
     &one_command($cmd);
@@ -592,21 +603,47 @@ variability of peak lengths.
 
 =item I<oligos>
 
-Detect over-represented oligonucleotides of a given length (k,
-specified with option -l) in the test set. Prior frequencies of
-oligonucleotides are taken from Markov model of order m (option
--markov) estimated from the test set sequences themselves.
+Run I<oligo-analysis> to detect over-represented oligonucleotides of a
+given length (k, specified with option -l) in the test set. Prior
+frequencies of oligonucleotides are taken from Markov model of order m
+(option -markov) estimated from the test set sequences themselves.
+
+
+=item I<dyads>
+
+Run I<dyad-analysis> to detect over-represented dyads, i.e. pairs of
+short oligonucleotides (monads) spaced by a region of fixed width but
+variable content. By default, chip-seq-analysis analyzes pairs of
+trinucleotides with any spacing between 0 and 20.
+
+The expected frequency of each dyad is estimated as the product of its
+monad frequencies in the input sequences (option -bg monads of
+dyad-analysis).
 
 =item I<profiles>
 
-Compute profiles of residue frequencies per position (using
-I<position-analysis>). Residue profiles may reveal composition biases
-in the neighborhood of the peak sequences.
+Compute profiles of residue and oligonucleotide frequencies per
+position (using I<position-analysis>). 
+
+Residue profiles may reveal composition biases in the neighborhood of
+the peak sequences. Dinucleotide profiles can reveal (for example) an
+enrichment in CpG island.
+
+Positional biases for larger oligonucleotides (e.g. hexanucleotides)
+can reveal
+
+=item I<synthesis>
+
+Generate the HTML file providing a synthesis of the results and
+pointing towards the individual result files.
 
 =item I<clean_seq>
 
 Delete the purged sequence files after the analysis, in order to save
 space.
+
+This task is executed only when it is called explicitly. It is not
+part of the tasks running with the option "-task all".
 
 =back
 
@@ -764,5 +801,61 @@ sub Verbose {
     }
 }
 
+=pod
+
+=head1 REFERENCES
+
+The program I<chip-seq-analysis> combines a series of tried-and-tested
+programs which have been detailed in the following publications.
+
+=over
+
+=item I<oligo-analysis>
+
+van Helden, J., Andre, B. and Collado-Vides, J. (1998). Extracting
+regulatory sites from the upstream region of yeast genes by
+computational analysis of oligonucleotide frequencies. J Mol Biol 281,
+827-42.
+
+=item I<dyad-analysis>
+
+van Helden, J., Rios, A. F. and Collado-Vides, J. (2000). Discovering
+regulatory elements in non-coding sequences by analysis of spaced
+dyads. Nucleic Acids Res 28, 1808-18.
+
+=item I<position-analysis>
+
+van Helden, J., del Olmo, M. and Perez-Ortin,
+J. E. (2000). Statistical analysis of yeast genomic downstream
+sequences reveals putative polyadenylation signals. Nucleic Acids Res
+28, 1000-10.
+
+=item I<matrix-scan>
+
+Turatsinze, J. V., Thomas-Chollier, M., Defrance, M. and van Helden,
+J. (2008). Using RSAT to scan genome sequences for transcription
+factor binding sites and cis-regulatory modules. Nat Protoc 3,
+1578-88.
+
+=back
+
+=head1 SEE ALSO
+
+=over
+
+=item I<oligo-analysis>
+
+=item I<dyad-analysis>
+
+=item I<position-analysis>
+
+=item I<matrix-scan>
+
+
+=back
+
+=head1 WISH LIST
+
+=cut
 
 __END__
