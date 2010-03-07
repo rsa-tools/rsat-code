@@ -10,6 +10,7 @@ require "RSA.seq.lib";
 use RSAT::table;
 use RSAT::stats;
 use RSAT::MarkovModel;
+use RSAT::SeqUtil;
 use Data::Dumper;
 
 @ISA = qw( RSAT::GenericObject RSAT::table);
@@ -1599,15 +1600,15 @@ sub calcConsensus {
 
     ## Strict consensus 
     $self->set_parameter("consensus.strict", $consensus_strict);
-    $self->set_parameter("consensus.strict.rc", &main::ReverseComplement($consensus_strict));
+    $self->set_parameter("consensus.strict.rc", &RSAT::SeqUtil::ReverseComplement($consensus_strict));
 
     ## Degenerate consensus in IUPAC format
     $self->set_parameter("consensus.IUPAC", $consensus_IUPAC);
-    $self->set_parameter("consensus.IUPAC.rc", &main::ReverseComplement($consensus_IUPAC));
+    $self->set_parameter("consensus.IUPAC.rc", &RSAT::SeqUtil::ReverseComplement($consensus_IUPAC));
 
     ## Degenerate consensus in regexp format
     $self->set_parameter("consensus.regexp", $consensus);
-    $self->set_parameter("consensus.regexp.rc", &main::ReverseComplement($consensus));
+    $self->set_parameter("consensus.regexp.rc", &RSAT::SeqUtil::ReverseComplement($consensus));
 
     ## Remember that the consensus has been calculated
     $self->force_attribute("consensus_calculated", 1);
@@ -2476,7 +2477,7 @@ sub add_site() {
 			    $site_seq, 
 			    "negative score", $score,
 			    "set to 0"
-			   ) if ($main::verbose >= 0);
+			   ) if ($main::verbose >= 5);
     $score = 0;
   }
 
@@ -3142,18 +3143,21 @@ sub getTheorScoreDistrib {
 
 Return the logo from the matrix
 
+Usage:
+
+  $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt, $rev_compl);
+
 =cut
 sub makeLogo{
-  my ($self,$logo_file,$logo_formats,$logo_dir, $logo_options) = @_;
+  my ($self,$logo_file,$logo_formats,$logo_dir, $logo_options, $rev_compl) = @_;
   my (@logo_formats) = @{$logo_formats};
-  my ($pseudo_seq_file,$seq_number) = $self->seq_from_matrix($logo_dir);
-  &RSAT::message::Debug("makeLogo", $logo_dir, $pseudo_seq_file, $seq_number, "pseudo sequences") 
+  &RSAT::message::Debug("makeLogo", $logo_dir, $pseudo_seq_file, $seq_number, "pseudo sequences", $rev_compl) 
     if ($main::verbose >= 5);
+  my ($pseudo_seq_file,$seq_number) = $self->seq_from_matrix($logo_dir, $rev_compl);
   my $ncol = $self->ncol();
   my $x_axis_legend = $seq_number." sites";
   foreach my $logo_format (@logo_formats){
     my $seqlogo_path = $ENV{seqlogo} || $ENV{RSAT}."/bin/seqlogo";
-#    &RSAT::error::FatalError("seqlogo_path", $seqlogo_path) if ($main::verbose >= 0);
     $seqlogo_path = &RSAT::util::trim($seqlogo_path);
     unless (-e $seqlogo_path) {
       &RSAT::message::Warning("Cannot generate the sequence logo because the program seqlogo is not found in the expected path", 
@@ -3163,7 +3167,7 @@ sub makeLogo{
     }
     my $logo_cmd = $seqlogo_path;
     $logo_cmd.= " -f ".$pseudo_seq_file;
-    $logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -e -k 1";
+    $logo_cmd .= " -F ".$logo_format." -c -Y -n -a -b -k 1 -M -e ";
     $logo_cmd .= " -w ".$ncol unless ($logo_options =~ /\-w /);
     $logo_cmd .= " -x '$x_axis_legend'";
     $logo_cmd .= " -h 5 " unless ($logo_options =~ /\-h /);
@@ -3171,7 +3175,8 @@ sub makeLogo{
     $logo_cmd .= " ".$logo_options;
     $logo_cmd .= " -o ". $logo_file;
     #	$logo_cmd .= " -t ".$self->get_attribute("name");
-    &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 4);
+    &RSAT::message::Info("Logo options: ".$logo_options) if ($main::verbose >= 5);
+    &RSAT::message::Info("Logo cmd: ".$logo_cmd) if ($main::verbose >= 5);
     &RSAT::util::doit($logo_cmd);
     &RSAT::message::Info("Seq logo exported to file", $logo_file.".".$logo_format) if ($main::verbose >= 2);
   }
@@ -3183,8 +3188,8 @@ sub makeLogo{
 ## respect the residue counts of the matrix, in order to generate a
 ## logo with seqlogo
 sub seq_from_matrix {
-  my ($self,$seq_dir) = @_;
-#  &RSAT::message::Debug("SEQ DIR", $seq_dir) if ($main::verbose >= 5);
+  my ($self,$seq_dir, $rev_compl) = @_;
+  &RSAT::message::Debug("&RSAT::matrix::seq_from_matrix", "dir=".$seq_dir, "rev_compl=".$rev_compl) if ($main::verbose >= 5);
   my $nb_col = $self->ncol();
   my $nb_row = $self->nrow();
   @matrix = @{$self->{table}};
@@ -3218,8 +3223,10 @@ sub seq_from_matrix {
 
   ## Print sequences
   my @intermediate = ();
-  for my $false_seq (@letters_at_column) {
-    my @residues = split ("",$false_seq);
+  for my $fake_seq (@letters_at_column) {
+    $fake_seq = &RSAT::SeqUtil::ReverseComplement($fake_seq) if ($rev_compl);
+#    &RSAT::message::Debug("&RSAT::matrix::seq_from_matrix", "Fake sequence", $fake_seq) if ($main::verbose >= 10);
+    my @residues = split ("",$fake_seq);
     push @intermediate, \@residues;
   }
   my @seqs=();
