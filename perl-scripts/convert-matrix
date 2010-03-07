@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.96 2010/02/13 05:28:07 jvanheld Exp $
+# $Id: convert-matrix,v 1.97 2010/03/07 20:39:35 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -301,15 +301,17 @@ foreach my $matrix (@matrices) {
       }
       $logo_dir .= "/";
       $logo_dir =~ s|/+|/|g;
-#      &RSAT::message::Debug("LOGO DIR", $logo_dir) if ($main::verbose >= 0);
+#      &RSAT::message::Debug("LOGO DIR", $logo_dir) if ($main::verbose >= 10);
 
       ## Create logo directory if required
       &RSAT::util::CheckOutDir($logo_dir);
 
       my $logo_file=$logo_dir.$matrix->get_attribute("name")."_logo";
       #	$logo_file =~ s/\.\w+$//;
+      $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt, 0); ## Generate the logo image
       $matrix->set_attribute("logo_file" => $logo_file);
-      $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt);
+      $matrix->makeLogo($logo_file."_rc",\@logo_formats,$logo_dir, $logo_opt, 1); ## Generate logo image for the reverse complementary motif
+      $matrix->set_attribute("logo_file_rc" => $logo_file."_rc");
     }
 }
 
@@ -1229,14 +1231,16 @@ sub SetMatrixName {
   } elsif ($matrix_file) {
     $matrix_name = &RSAT::util::ShortFileName($matrix_file);
     $matrix_name =~ s/\.${input_format}$//; ## suppress the extension from the file name if it corresponds to the matrix format
-    if (scalar(@matrices) > 0) {
+    $matrix_name =~ s/\.txt$//; ## suppress .txt extension
+#    if (scalar(@matrices) > 0) {
       $matrix_name .= "_m".$m;
-    }
+#    }
+    &RSAT::message::Debug("Matrix", $m."/".scalar(@matrices), "name", $matrix_name) if ($main::verbose >= 5);
   } else {
     $matrix_name = "matrix";
-    if (scalar(@matrices) > 0) {
+#    if (scalar(@matrices) > 0) {
       $matrix_name .= "_m".$m;
-    }
+#    }
   }
   unless (defined($matrix->get_attribute("name"))){
     $matrix->set_attribute("name", $matrix_name);
@@ -1353,8 +1357,10 @@ sub ExportMatrix {
   if ($return_fields{logo}) {
     if ($main::verbose >= 1) {
       my $logo_file = $matrix->get_attribute("logo_file");
-      foreach my $logo_format (@logo_formats) {
-	print $out  "; logo file:" , $logo_file.".".$logo_format, "\n";
+      foreach my $rc_suffix ("", "_rc") {
+	foreach my $logo_format (@logo_formats) {
+	  print $out  "; logo file:" , $logo_file.$rc_suffix.".".$logo_format, "\n";
+	}
       }
     }
   }
