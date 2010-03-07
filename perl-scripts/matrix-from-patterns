@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.28 2010/03/06 12:41:22 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.29 2010/03/07 20:39:43 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -664,15 +664,12 @@ sub ScanForSites {
     $convert2_cmd .= " -return counts,parameters";
 #    $convert2_cmd .= " -sort desc information.per.column";
     $convert2_cmd .= " -return sites" if ($return_fields{sites});
-    if ($return_fields{logo}) {
-      $cmd .= " -return logo -logo_format png,pdf ";
-      $cmd .= " -logo_opt '-e' "; ## Error bar
-      $cmd .= " -logo_opt '-M' "; ## Small sample correction
-      #      $cmd .= " -logo_dir $ENV{RSAT}/public_html/tmp ";
-      ## Return reverse complementary logo
-    }
     $convert2_cmd .= " -return links" if ($return_fields{links});
     $convert2_cmd .= " -o ".$outfile{count_matrices};
+    if ($return_fields{logo}) {
+      $convert2_cmd .= " -return logo -logo_format png,pdf ";
+      ## Return reverse complementary logo
+    }
     print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
     &doit($scan_cmd.$convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 }
@@ -708,14 +705,18 @@ sub InfoGibbs {
 
     ################################################################
     ## Convert matrix from info-gibbs and generate logos if required
-    &RSAT::message::TimeWarn("Converting info- matrices") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Converting matrices") if ($main::verbose >= 2);
     my $convert2_cmd = "${SCRIPTS}/convert-matrix -v 1";
     $convert2_cmd .= " -i ".$outfile{gibbs_matrices};
     $convert2_cmd .= " -from tab -to tab";
 #    $convert2_cmd .= " -from info-gibbs -to tab";
     $convert2_cmd .= " -return counts,parameters";
     $convert2_cmd .= " -return sites" if ($return_fields{sites});
-    $convert2_cmd .= " -return logo" if ($return_fields{logo});
+    if ($return_fields{logo}) {
+      $convert2_cmd .= " -return logo";
+#      $convert2_cmd .= " -logo_opt '-e' "; ## Error bar
+#      $convert2_cmd .= " -logo_opt '-M' "; ## Small sample correction
+    }
     $convert2_cmd .= " -return links" if ($return_fields{links});
     $convert2_cmd .= " -o ".$outfile{count_matrices};
     print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
