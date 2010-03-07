@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-seq-analysis,v 1.11 2010/03/07 02:09:57 jvanheld Exp $
+# $Id: chip-seq-analysis,v 1.12 2010/03/07 20:40:20 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -124,6 +124,7 @@ package main;
     }
     %task = (); ## List of tasks to be executed
 
+
     ################################################################
     ## Set default parameters
     &DefaultParameters();
@@ -136,6 +137,14 @@ package main;
 
     &SetOutFileNames();
 
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{log});
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
     if ($task{purge}) {
       &PurgeOneSeq($infile{test_seq}, "test");
       if ($infile{control_seq}) {
@@ -145,32 +154,21 @@ package main;
 
     &SequenceLengths if ($task{seqlen});
 
-    &OligoAnalysis if ($task{oligos});
-
-    &DyadAnalysis if ($task{dyads});
-
     &PositionAnalysis if ($task{profiles});
 
     &CompositionProfiles if ($task{profiles});
+
+    &OligoAnalysis if ($task{oligos});
+
+    &DyadAnalysis if ($task{dyads});
 
     &Synthesis if ($task{synthesis});
 
     &CleanSequences() if ($task{clean_seq});
 
-    ################################################################
-    ## Open output stream
-    $main::out = &OpenOutputFile($main::outfile{log});
-
-    ################################################################
-    ## Print verbose
-    &Verbose() if ($main::verbose);
-
-    ################################################################
-    ## Execute the command
-
-    ################################################################
-    ## Print output
-
+    if ($main::verbose >= 1) {
+      &TimeWarn("Log file", $outfile{log});
+    }
 
     ################################################################
     ## Finish verbose
@@ -184,10 +182,6 @@ package main;
     ################################################################
     ## Close output stream
     close $main::out if ($main::outfile{output});
-    if ($main::verbose >= 1) {
-      &TimeWarn("Job done");
-      &TimeWarn("Log file", $outfile{log});
-    }
     exit(0);
 }
 
@@ -226,7 +220,8 @@ sub DefaultParameters {
   ## Pattern discovery options
   $main::param{strand} = "-2str"; push(@main::param_list, "strand");
   $main::param{noov} = "-noov"; push(@main::param_list, "noov");
-  $main::param{oligo_len} = 7; push(@main::param_list, "oligo_len");
+  $main::param{oligo_len} = 6; push(@main::param_list, "oligo_len");
+  $main::param{patterns_max_rank} = 25; push(@main::param_list, "patterns_max_rank");
 
   ## oligo-analysis
   $main::param{oligo_markov} = -2; push(@main::param_list, "oligo_markov");
@@ -234,10 +229,11 @@ sub DefaultParameters {
   ## dyad-analysis
 
   ## matrix-from-patterns
-  $main::param{matrix_nmotifs} = 5; push(@main::param_list, "matrix_nmotifs");
+  $main::param{matrix_nmotifs} = 3; push(@main::param_list, "matrix_nmotifs");
 
   ## residue profiles (position-analysis)
   $main::param{profiles_ci} = 5; push(@main::param_list, "profiles_ci");
+  $main::param{profiles_max_graphs} = 20; push(@main::param_list, "profiles_ci");
   $main::param{profiles_strand} = "-1str"; push(@main::param_list, "profiles_strand");
   @main::profiles_oligo_lengths = (1,2,6);
   $main::param{profiles_oligo_lengths} = join(',',@profiles_oligo_lengths); push(@main::param_list, "profiles_oligo_lengths");
@@ -284,25 +280,49 @@ sub SetOutFileNames {
 	$main::outfile{"control_seqlen_distrib_graph"} = &OutFileName($param{img_format}, "control_seqlen_distrib");
     }
 
-    ## oligo-analysis result
-    $main::outfile{oligos} = &OutFileName(".tab", "oligos".$main::param{strand}.$main::param{noov}, 
-					  $main::param{oligo_len}."nt",
-					  "mkv".$main::param{oligo_markov});
-    $main::outfile{oligos_pssm} = $main::outfile{oligos};
-    $main::outfile{oligos_pssm} =~ s/\.tab$//;
-    $main::outfile{oligos_pssm} .= "_pssm";
+    ################################################################
+    ## Pattern discovery result
 
-    ## dyad-analysis result
-    $main::outfile{dyads} = &OutFileName(".tab", "dyads".$main::param{strand}.$main::param{noov}, 
-					  "3nt_sp0-20_bg_monads");
-    $main::outfile{dyads_pssm} = $main::outfile{dyads};
-    $main::outfile{dyads_pssm} =~ s/\.tab$//;
-    $main::outfile{dyads_pssm} .= "_pssm";
+    ## oligo-analysis
+    $main::outfile{oligos} = &OutFileName(".tab", "oligos".$main::param{strand}.$main::param{noov}, 
+					    $main::param{oligo_len}."nt",
+					    "mkv".$main::param{oligo_markov});
+    ## dyad-analysis
+     $main::outfile{dyads} = &OutFileName(".tab", "dyads".$main::param{strand}.$main::param{noov}, 
+ 					  "3nt_sp0-20_bg_monads");
+
+
+    ## Converstion from patterns to matrices + logos
+    foreach my $pattern_type qw(oligos dyads) {
+      $main::outfile{$pattern_type.'_pssm'} = $main::outfile{$pattern_type};
+      $main::outfile{$pattern_type.'_pssm'} =~ s/\.tab$//;
+      $main::outfile{$pattern_type.'_pssm'} .= "_pssm";
+      $main::outfile{$pattern_type.'_asmb'} = $main::outfile{$pattern_type.'_pssm'}.".asmb";
+      $main::outfile{$pattern_type.'_pssm_sig'} = $main::outfile{$pattern_type.'_pssm'}."_sig_matrices.txt";
+      $main::outfile{$pattern_type.'_pssm_gibbs'} = $main::outfile{$pattern_type.'_pssm'}."_gibbs_matrices.txt";
+      $main::outfile{$pattern_type.'_pssm_counts'} = $main::outfile{$pattern_type.'_pssm'}."_count_matrices.txt";
+      foreach my $logo_nb (1..$main::param{matrix_nmotifs}) {
+	$main::outfile{$pattern_type.'_pssm_logo'.$logo_nb} = $main::outfile{$pattern_type.'_pssm'}."_gibbs_matrices_m".$logo_nb."_logo.".$main::param{img_format};
+	$main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb} = $main::outfile{$pattern_type.'_pssm'}."_gibbs_matrices_m".$logo_nb."_logo_rc.".$main::param{img_format};
+      }
+    }
+
+#     ## dyad-analysis result
+#     $main::outfile{dyads} = &OutFileName(".tab", "dyads".$main::param{strand}.$main::param{noov}, 
+# 					  "3nt_sp0-20_bg_monads");
+#     $main::outfile{dyads_pssm} = $main::outfile{dyads};
+#     $main::outfile{dyads_pssm} =~ s/\.tab$//;
+#     $main::outfile{dyads_pssm} .= "_pssm";
 
     ## Position-analysis
     for my $ol (@profiles_oligo_lengths) {
       $main::outfile{$ol."nt_profiles"} = &OutFileName(".tab", "profiles".$main::param{profiles_strand}.$main::param{noov},$ol."nt",
 						       "ci".$main::param{profiles_ci});
+
+      ## HTML index to the individual oligonucleotide profiles
+      $main::outfile{$ol."nt_profiles_index"} = $main::outfile{$ol."nt_profiles"};
+      $main::outfile{$ol."nt_profiles_index"} =~ s/\.tab$//;
+      $main::outfile{$ol."nt_profiles_index"} .= "_graph_index.html";
     }
 
     ## Compositional profiles
@@ -358,7 +378,7 @@ sub OligoAnalysis {
   my $cmd = "oligo-analysis -v 1";
   $cmd .= " -i ".$main::outfile{"purged_test"};
   $cmd .= " -format fasta";
-  $cmd .= " -sort -lth occ_sig 0 -uth rank 50 -return occ,proba,rank";
+  $cmd .= " -sort -lth occ_sig 0 -uth rank ".$main::param{patterns_max_rank}." -return occ,proba,rank";
   $cmd .= " ".$main::param{strand};
   $cmd .= " ".$main::param{noov};
   $cmd .= " -seqtype dna";
@@ -378,7 +398,7 @@ sub DyadAnalysis {
   my $cmd = "dyad-analysis -v 1";
   $cmd .= " -i ".$main::outfile{"purged_test"};
   $cmd .= " -format fasta";
-  $cmd .= " -sort -lth occ_sig 0 -uth rank 50 -return occ,proba,rank";
+  $cmd .= " -sort -lth occ_sig 0 -uth rank ".$main::param{patterns_max_rank}." -return occ,proba,rank";
   $cmd .= " ".$main::param{strand};
   $cmd .= " ".$main::param{noov};
   $cmd .= " -seqtype dna";
@@ -404,7 +424,8 @@ sub MatrixFromPatterns {
   $cmd .= " -gibbs_flanks 2";
   $cmd .= " -gibbs_iter 2";
   $cmd .= " -gibbs_msps 0.5";
-  $cmd .= " -logo -links";
+  $cmd .= " -logo";
+#  $cmd .= " -links";
   $cmd .= " -o ".$pssm_file;
   &one_command($cmd);
 }
@@ -420,7 +441,7 @@ sub PositionAnalysis {
     $cmd .= " -format fasta";
     $cmd .= " -sort ";
     $cmd .= " -return chi,sig,distrib,graphs,rank";
-    $cmd .= " -max_graphs 50";
+    $cmd .= " -max_graphs ".$main::param{profiles_max_graphs};
     $cmd .= " ".$main::param{profiles_strand};
     $cmd .= " ".$main::param{noov};
     $cmd .= " -seqtype dna";
@@ -445,7 +466,7 @@ sub CompositionProfiles {
     $cmd .= " -lines -legend -header ";
     $cmd .= " -title 'Peak composition profiles : ".$ol."nt'";
     $cmd .= " -xleg1 'Position' -xsize 800";
-    $cmd .= " -yleg1 'Occurrences' -ysize 400";
+    $cmd .= " -yleg1 'Occurrences' -ysize 300";
     $cmd .= " -o ".$outfile{$ol."nt_profiles_graph"};
     &one_command($cmd);
   }
@@ -456,7 +477,6 @@ sub CompositionProfiles {
 ## Generate a synthetic table summarizing the main results with links
 ## to the iriginal result files.
 sub Synthesis {
-  &RSAT::message::TimeWarn("Generating synthesis", $main::outfile{synthesis}) if ($main::verbose >= 1);
   local $syn = &OpenOutputFile($main::outfile{synthesis});
   local $synthesis_path = `dirname $main::outfile{synthesis}`;
   chomp($synthesis_path);
@@ -483,6 +503,14 @@ sub Synthesis {
 
   &SynthesisSequenceComposition();
 
+
+  ## Header line
+  &SyntheticTableAddHeaderRow("Pattern discovery");
+
+  &SynthesisPatternDisco("oligos");
+
+  &SynthesisPatternDisco("dyads");
+
   ## Log file
   &SyntheticTableAddRow("Log file",
 			"",
@@ -503,6 +531,7 @@ sub Synthesis {
   print $syn "</body>\n";
   print $syn "</html>\n";
   close $syn;
+  &RSAT::message::TimeWarn("Synthetic report", $main::outfile{synthesis}) if ($main::verbose >= 1);
 }
 
 ################################################################
@@ -576,11 +605,58 @@ sub SynthesisSequenceComposition {
 
   ## Residue composition
   $img = &RelativePath($outfile{"1nt_profiles_graph"});
-  &SyntheticTableAddRow("Nb of peaks: ".$peak_nb."<br>\nTotal seq. size: ".$seq_size." kb",
+  &SyntheticTableAddRow("Residue composition",
 			"<a  href='".$img."'><img height=150 src='".$img."'></a>",
-			"table",$outfile{"1nt_profiles_graph"},
-			"individual graphs",$main::outfile{"test_seqlen_distrib"},
-			"plot",$main::outfile{"test_seqlen_distrib_graph"},
+			"table",$outfile{"1nt_profiles"},
+			"individual profiles",$main::outfile{"1nt_profiles_index"},
+		       );
+
+  ## Dinucleotide composition
+  $img = &RelativePath($outfile{"2nt_profiles_graph"});
+  &SyntheticTableAddRow("Dinucleotide composition",
+			"<a  href='".$img."'><img height=150 src='".$img."'></a>",
+			"table",$outfile{"2nt_profiles"},
+			"individual profiles",$main::outfile{"2nt_profiles_index"},
+		       );
+}
+
+################################################################
+## Synthesis for one pattern discovery algorithm
+## Usage: 
+##   &SynthesisPatternDisco($pattern_type);
+## Where pattern type can be oligos, dyads, ORM, oligo-diff
+sub SynthesisPatternDisco {
+  my ($pattern_type) = @_;
+
+  ## Dinucleotide composition
+  my $logo_table = "<table cellpadding=0 cellspacing=0 align=center border=0>";
+  foreach my $logo_nb (1..$main::param{matrix_nmotifs}) {
+    $logo_table .= "<tr>\n";
+    my $logo_file = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
+    my $logo_file_rc = $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb};
+    &RSAT::message::Debug("Logo", $logo_nb, $logo_file) if ($main::verbose >= 5);
+    if (-e $logo_file) {
+      my $img = &RelativePath($logo_file);
+      $logo_table .= "<td align='right'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+    } elsif ($main::verbose >= 0) {
+      &RSAT::message::Warning("Cannot find logo", $logo_file);
+    }
+    if (-e $logo_file_rc) {
+      my $img = &RelativePath($logo_file_rc);
+      $logo_table .= "<td align='left'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+    } elsif ($main::verbose >= 0) {
+      &RSAT::message::Warning("Cannot find reverse complementary logo", $logo_file_rc);
+    }
+    $logo_table .= "</tr>\n";
+  }
+  $logo_table .= "</table>\n";
+  &SyntheticTableAddRow($pattern_type,
+			$logo_table,
+			$pattern_type,$main::outfile{$pattern_type},
+			"assembly",$main::outfile{$pattern_type.'_asmb'},
+			"sig matrix",$main::outfile{$pattern_type.'_pssm_sig'},
+			"info-gibbs",$main::outfile{$pattern_type.'_pssm_gibbs'},
+			"count matrix",$main::outfile{$pattern_type.'_pssm_counts'},
 		       );
 }
 
@@ -819,6 +895,21 @@ part of the tasks running with the option "-task all".
 
 =pod
 
+=item B<-nmotifs max_motif_number>
+
+Maximal number of motifs (matrices) to return for pattern discovery
+algorithms. Note the distinction between the maximal number of motifs
+(matrices) and the maximum number of patterns (words, dyads): a motif
+generally corresponds to mutually overlapping several patterns (dyads,
+words).
+
+=cut
+
+    } elsif ($arg eq "-nmotifs") {
+      $main::param{matrix_nmotifs} = shift (@arguments);
+
+=pod
+
 =item B<-l oligo_len>
 
 Oligonucleotide lengths for word-counting approaches
@@ -865,7 +956,7 @@ successive occurrences underlying the binomial significance test
     } elsif ($arg eq "-ovlp") {
       $main::param{noov} = "-ovlp";
 
-=pod 
+=pod
 
 =item B<-ci class_interval>
 
@@ -943,22 +1034,28 @@ sub Verbose {
     print $main::out "; chip-seq-analysis ";
     &PrintArguments($main::out);
     printf $main::out "; %-22s\t%s\n", "Program version", $program_version;
-    if (defined(%main::infile)) {
-	print $main::out "; Input files\n";
-	while (my ($key,$value) = each %main::infile) {
-	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
-	}
-    }
-    if (defined(%main::outfile)) {
-	print $main::out "; Output files\n";
-	while (my ($key,$value) = each %main::outfile) {
-	  printf $main::out ";\t%-13s\t%s\n", $key, $value;
-	}
-    }
 
+    ## Parameter values
     print $main::out "; Parameter values\n";
     foreach my $param_name (@param_list) {
 	print $main::out sprintf ";\t%-22s\t%s\n", $param_name, $param{$param_name};
+    }
+
+    ## Input file(s)
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	  printf $main::out ";\t%-22s\t%s\n", $key, $value;
+	}
+    }
+
+    ## Output files
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	foreach my $key (sort keys  %main::outfile) {
+	  $value = $main::outfile{$key};
+	  printf $main::out ";\t%-22s\t%s\n", $key, $value;
+	}
     }
 }
 
