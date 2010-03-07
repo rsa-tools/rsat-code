@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.9 2010/03/06 14:06:36 jvanheld Exp $
+# $Id: chip-motifs,v 1.10 2010/03/07 02:03:07 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -150,6 +150,8 @@ package main;
     &DyadAnalysis if ($task{dyads});
 
     &PositionAnalysis if ($task{profiles});
+
+    &CompositionProfiles if ($task{profiles});
 
     &Synthesis if ($task{synthesis});
 
@@ -297,10 +299,17 @@ sub SetOutFileNames {
     $main::outfile{dyads_pssm} =~ s/\.tab$//;
     $main::outfile{dyads_pssm} .= "_pssm";
 
-    ## Residue profiles
+    ## Position-analysis
     for my $ol (@profiles_oligo_lengths) {
       $main::outfile{$ol."nt_profiles"} = &OutFileName(".tab", "profiles".$main::param{profiles_strand}.$main::param{noov},$ol."nt",
 						       "ci".$main::param{profiles_ci});
+    }
+
+    ## Compositional profiles
+    for my $ol (1,2) {
+      $outfile{$ol."nt_profiles_graph"} = $main::outfile{$ol."nt_profiles"};
+      $outfile{$ol."nt_profiles_graph"} =~ s/\.tab$//;
+      $outfile{$ol."nt_profiles_graph"} .= ".".$main::param{img_format};
     }
   }
 
@@ -333,12 +342,12 @@ sub SequenceLengths {
   $cmd .= " | classfreq -v 1 -ci 10 -o ".$main::outfile{test_seqlen_distrib};
   $cmd .= " ; XYgraph -lines -legend "; 
   $cmd .= " -format ".$main::param{img_format};
-  $cmd .= " -title '".$main::param{title}."'" if ($main::param{title});
-  $cmd .= " -ysize 400 -ycol 4,5,6 -yleg1 'Number of peaks'";
-  $cmd .= " -xsize 600 -xcol 3 -xleg1 'Peak length'";
+  $cmd .= " -title '".$main::param{title}." Sequence lengths'" if ($main::param{title});
+  $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of peaks'";
+  $cmd .= " -xsize 800 -xcol 3 -xleg1 'Peak length'";
   $cmd .= " -i ".$main::outfile{test_seqlen_distrib};
   $cmd .= " -o ".$main::outfile{test_seqlen_distrib_graph};
-  &one_command($cmd);  
+  &one_command($cmd);
 }
 
 
@@ -425,6 +434,154 @@ sub PositionAnalysis {
   }
 }
 
+
+################################################################
+## CompositionProfiles
+sub CompositionProfiles {
+  for my $ol (1,2) {
+    my $col_nb = 4**$ol + 1;
+    my $cmd = 'grep -v ";" '.$outfile{$ol."nt_profiles"}.' | transpose-table | grep -P \'(^id)|(^\-?\d+)\'';
+    $cmd .= " | XYgraph -xcol 1 -ycol 2-".$col_nb;
+    $cmd .= " -lines -legend -header ";
+    $cmd .= " -title 'Peak composition profiles : ".$ol."nt'";
+    $cmd .= " -xleg1 'Position' -xsize 800";
+    $cmd .= " -yleg1 'Occurrences' -ysize 400";
+    $cmd .= " -o ".$outfile{$ol."nt_profiles_graph"};
+    &one_command($cmd);
+  }
+}
+
+
+################################################################
+## Generate a synthetic table summarizing the main results with links
+## to the iriginal result files.
+sub Synthesis {
+  &RSAT::message::TimeWarn("Generating synthesis", $main::outfile{synthesis}) if ($main::verbose >= 1);
+  local $syn = &OpenOutputFile($main::outfile{synthesis});
+  local $synthesis_path = `dirname $main::outfile{synthesis}`;
+  chomp($synthesis_path);
+
+  ## HTML Header and title
+  print $syn "<html>\n";
+  print $syn "<head>\n";
+  print $syn "<title>chip-seq-analysis ".$main::param{title}."</title>\n";
+
+  ## Page styles
+  print $syn "<style type='text/css'>\n";
+  print $syn `cat $ENV{RSAT}/perl-scripts/lib/results.css`;
+  print $syn "</style>\n";
+#  print $syn "<link rel='stylesheet' type='text/css' href='".$ENV{RSAT}."/public_html/main.css'/>\n";
+
+  print $syn "</head>\n";
+  print $syn "<body>\n";
+  print $syn "<h1>Result: chip-seq-analysis ".$main::param{title}."</h1>\n";
+
+
+  ## Header of the synthetic table
+  print $syn "<h2>Synthetic report</h2>";
+  print $syn "<p><table class='sortable'>\n";
+
+  &SynthesisSequenceComposition();
+
+  ## Log file
+  &SyntheticTableAddRow("Log file",
+			"",
+ 			"txt"=>$main::outfile{"log"},
+ 		       );
+
+
+  ## Close the synthetic table
+  print $syn "</table></p>\n";
+
+  ## Log file
+  print $syn "<h2>Log</h2>";
+  print $syn "<pre>";
+  print $syn `cat $main::outfile{log}`;
+  print $syn "</pre>";
+
+  ## End of the HTML file
+  print $syn "</body>\n";
+  print $syn "</html>\n";
+  close $syn;
+}
+
+################################################################
+## Compute a file path relative to the synthesis file
+sub RelativePath {
+  my ($file) = @_;
+  $file =~ s|${synthesis_path}/||;
+  return ($file);
+}
+
+################################################################
+## Add a row to the syhnthetic table
+sub SyntheticTableAddRow {
+  my ($type, $summary, @files) = @_;
+  print $syn "<tr>\n";
+  print $syn "<td>$type</td>\n";
+  print $syn "<td>$summary</td>\n";
+  print $syn "<td>\n";
+  my $key;
+  my $file;
+  while ($key = shift (@files)){
+    last unless $key;
+    $file = shift(@files);
+    &RSAT::message::Debug($key, $file) if ($main::verbose >= 5);
+    $file = &RelativePath($file);
+    print $syn "<a href='".$file."'>[".$key."]</a><br>\n";
+  } 
+  print $syn "</td>\n";
+  print $syn "</tr>\n";
+}
+
+
+################################################################
+## Add a header row to the synthetic table
+sub SyntheticTableAddHeaderRow {
+  my ($header) = @_;
+  print $syn "<tr>\n";
+  print $syn "<th colspan=3>\n";
+  print $syn $header;
+  print $syn "</th>\n";
+  print $syn "</tr>\n";
+}
+
+################################################################
+## Add sequence composition on the synthetic report
+sub SynthesisSequenceComposition {
+
+  ## Header line
+  &SyntheticTableAddHeaderRow("Sequence composition");
+
+  ## Get number of peaks from sequence length distribution
+  my $peak_nb = `grep ';count:' $main::outfile{"test_seqlen_distrib"}`;
+  chomp($peak_nb);
+  $peak_nb =~ s/.*count:\s*//;
+
+  ## Get total sequence size from sequence length distribution
+  my $seq_size = `grep ';sum:' $main::outfile{"test_seqlen_distrib"}`;
+  chomp($seq_size);
+  $seq_size =~ s/.*sum:\s*//;
+  $seq_size = round($seq_size/1000);
+
+  ## Sequence lengths
+  my $img = &RelativePath($main::outfile{"test_seqlen_distrib_graph"});
+  &SyntheticTableAddRow("Nb of peaks: ".$peak_nb."<br>\nTotal seq. size: ".$seq_size." kb",
+			"<a  href='".$img."'><img height=150 src='".$img."'></a>",
+			"lengths",$main::outfile{"test_seqlen"},
+			"distrib",$main::outfile{"test_seqlen_distrib"},
+			"plot",$main::outfile{"test_seqlen_distrib_graph"},
+		       );
+
+
+  ## Residue composition
+  my $img = &RelativePath($outfile{"1nt_profiles_graph"});
+  &SyntheticTableAddRow("Nb of peaks: ".$peak_nb."<br>\nTotal seq. size: ".$seq_size." kb",
+			"<a  href='".$img."'><img height=150 src='".$img."'></a>",
+			"table",$outfile{"1nt_profiles_graph"},
+			"individual graphs",$main::outfile{"test_seqlen_distrib"},
+			"plot",$main::outfile{"test_seqlen_distrib_graph"},
+		       );
 
 ################################################################
 ## Delete purged sequence files after analysis has been completed.
@@ -762,6 +919,9 @@ sub CheckArguments {
 
   ## Log file 
   $main::outfile{log} = &OutFileName(".txt", "log");
+
+  ## Synthesis file 
+  $main::outfile{synthesis} = &OutFileName(".html", "synthesis");
 
   ## If all tasks are requested or if no task is defined, execute all
   ## tasks.
