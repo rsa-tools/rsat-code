@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.10 2010/03/07 02:03:07 jvanheld Exp $
+# $Id: peak-motifs,v 1.11 2010/03/07 02:09:57 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -575,13 +575,14 @@ sub SynthesisSequenceComposition {
 
 
   ## Residue composition
-  my $img = &RelativePath($outfile{"1nt_profiles_graph"});
+  $img = &RelativePath($outfile{"1nt_profiles_graph"});
   &SyntheticTableAddRow("Nb of peaks: ".$peak_nb."<br>\nTotal seq. size: ".$seq_size." kb",
 			"<a  href='".$img."'><img height=150 src='".$img."'></a>",
 			"table",$outfile{"1nt_profiles_graph"},
 			"individual graphs",$main::outfile{"test_seqlen_distrib"},
 			"plot",$main::outfile{"test_seqlen_distrib_graph"},
 		       );
+}
 
 ################################################################
 ## Delete purged sequence files after analysis has been completed.
