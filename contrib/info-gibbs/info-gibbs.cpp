@@ -16,11 +16,12 @@ using namespace std;
 #include <iostream> 
 #include <vector>
 #include <string>
-#include <getopt.h>
 #include <cstring>
 
+#include <unistd.h>
+#include <stdlib.h>
+#include <getopt.h>
 #include <string.h>
-
 #include "utils.h"
 #include "fasta.h"
 #include "markov.h"
@@ -388,7 +389,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    VERBOSE1("running version %d\n", VERSION);
+    VERBOSE1("running info-gibbs version %d\n", VERSION);
 
     // read the sequences
     if (seqfile == NULL)
