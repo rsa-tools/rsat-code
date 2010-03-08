@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.79 2010/01/14 00:02:15 amedina Exp $
+# $Id: matrix-quality,v 1.80 2010/03/08 18:27:22 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -224,7 +224,7 @@ package main;
     @alphabet = ("a","c","g","t");
     $seq_format = "fasta";
     $matrix_format = "consensus";
-    $decimals = 2;
+    $decimals = 1;
     $class_interval = 1/(10**$decimals);
     %perm_nb = (); ## Number of permutations per sequence set
     $perm_separate_distrib = 1; ## Calculate the distribution for each permuted matrix separately
@@ -276,7 +276,7 @@ package main;
 
     ## The C command matrix-scan-quick is MUCH faster than
     ## matrix-scan. If it is supported on this machine, use it !
-    $quick_cmd = `which matrix-scan-quick`;
+    #$quick_cmd = `which matrix-scan-quick`;
 
     ################################################################
     ## Read argument values
@@ -689,6 +689,7 @@ Same as -h
 =item B<-m matrix_file>
 
 Matrix file.
+If the file includes several matrices, it will only take the first one.
 
 =cut
 	} elsif ($arg eq "-m") {
@@ -721,6 +722,8 @@ when this option is used the LOO test is not performed.
 If I<matrix-scan-quick> is available in the machine this programe will
 be used instead of matrix-scan.  For I<matrix-scan-quick> the -matrix
 most be in infogibbs format.
+
+If the file includes several matrices, it will only take the first one.
 
 =cut
 	} elsif ($arg eq "-ms") {
@@ -936,6 +939,18 @@ details).
 	} elsif ($arg eq "-th_prior") {
 		$main::infile{bg_file} = shift(@arguments);
 
+	    ## Format of Background model for theorical score distribution
+=pod
+
+=item B<-bg_format background_file>
+
+If the option -th_prior and -bg_file are used at the same time
+the background format must be the same in both cases.
+
+
+=cut
+	} elsif ($arg eq "-bg_format") {
+		$main::bg_format = shift(@arguments);
 
 		## Number of decimals for computing scores
 =pod
@@ -1299,15 +1314,15 @@ sub LOO_scores {
 
     ## Score the left out site with the partial matrix
     my $matrix_scan_cmd = "";
-    if ($quick_cmd) {
-      $matrix_scan_cmd .= "matrix-scan-quick";
-    } else {
-      $matrix_scan_cmd .= "matrix-scan";
+   #  if ($quick_cmd) {
+#       $matrix_scan_cmd .= "matrix-scan-quick";
+#     } else {
+      $matrix_scan_cmd .= "$SCRIPTS/matrix-scan";
       $matrix_scan_cmd .= " -seq_format fasta";
       $matrix_scan_cmd .= " -top_matrices 1";
       $matrix_scan_cmd .= " -matrix_format tab";
       $matrix_scan_cmd .= " -uth rank 1";
-    }
+#    }
 #    $matrix_scan_cmd .= " -v ".$main::verbose; ## no verbose needed here
     $matrix_scan_cmd .= " -i ".$lo_site_file;
     $matrix_scan_cmd .= " -decimals ".$decimals;
@@ -1322,10 +1337,10 @@ sub LOO_scores {
       $matrix_scan_cmd .= " | grep -v '^;'";
       $matrix_scan_cmd .= " | grep -v '^#'";
     }
-    if ($quick_cmd) {
-      ## Select the top ranking score
-      $matrix_scan_cmd .= " | sort -rn -k 8 | head -1";
-    }
+    # if ($quick_cmd) {
+#       ## Select the top ranking score
+#       $matrix_scan_cmd .= " | sort -rn -k 8 | head -1";
+#     }
     &RSAT::message::TimeWarn("LOO command",  ($i+1)."/".scalar(@sites), $matrix_scan_cmd) if ($main::verbose >= 9);
     my $score_result = `$matrix_scan_cmd`;
     print $loo_scores_handle $score_result;
@@ -1346,7 +1361,7 @@ sub LOO_scores {
   my $classfreq_min = sprintf("%.${decimals}f", $main::Wmin);
   my $classfreq_cmd = "grep -v '^;' ".$main::outfile{matrix_sites_loo}." | grep -v '^#'";
   $classfreq_cmd .= " | cut -f 8";
-  $classfreq_cmd .= " | classfreq -v 1 -ci ".$class_interval;
+  $classfreq_cmd .= " | $SCRIPTS/classfreq -v 1 -ci ".$class_interval;
   $classfreq_cmd .= " -min ".$classfreq_min;
   $classfreq_cmd .= " | cut -f 1,4,5,6,9"; ## This ensures compatibility with the columns of matrix-scan-quick -distrib
   $classfreq_cmd .= " > ".$outfile{matrix_sites_loo_distrib};
@@ -1370,40 +1385,40 @@ sub CalcSequenceDistrib {
 
 
   my $matrix_scan_cmd = "";
-  if (($quick_cmd) && ## Check that the matrix-scan-quick command is supported on this computer
-      (!defined($main::scanopt{$seq_type})) ## matrix-scan-quick does not support all matrix-scan options -> if specific options are require, use matrix-scan instead
-     ) {
+#   if (($quick_cmd) && ## Check that the matrix-scan-quick command is supported on this computer
+#       (!defined($main::scanopt{$seq_type})) ## matrix-scan-quick does not support all matrix-scan options -> if specific options are require, use matrix-scan instead
+#      ) {
+
+#     ## Specify the column of the distribution file which will contain
+#     ## the complementary cumluative distribution function
+# #TMP    $ccdf_column{seq_type} = 4;
+
+#     ## Convert the matrix in tab format (the only format supported by matrix-scan-quick)
+#     my $matrix_file_tab = $matrix_file.".tab";
+#     my $convert_cmd = "convert-matrix";
+#     $convert_cmd .= " -i ".$matrix_file;
+#     $convert_cmd .= " -from ".$matrix_format." -to tab -return counts";
+#     $convert_cmd .= " -top 1";
+#     $convert_cmd .= " -o ".$matrix_file_tab;
+#     &doit($convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix) if  ($tasks{scan});
+
+#     ## Prepare the matrix-scan command
+#     $matrix_scan_cmd = "matrix-scan-quick -v 1";
+#     $matrix_scan_cmd .= " -e ".$class_interval;
+#     $matrix_scan_cmd .= " -i ".$sequence_file;
+#     $matrix_scan_cmd .= " -m ".$matrix_file_tab;
+#     $matrix_scan_cmd .= join(" ", "", @args);
+#     $matrix_scan_cmd .= " -return distrib";
+#     $matrix_scan_cmd .= " > ".$outfile{$seq_type};
+
+#   } else {
 
     ## Specify the column of the distribution file which will contain
     ## the complementary cumluative distribution function
 #TMP    $ccdf_column{seq_type} = 4;
 
-    ## Convert the matrix in tab format (the only format supported by matrix-scan-quick)
-    my $matrix_file_tab = $matrix_file.".tab";
-    my $convert_cmd = "convert-matrix";
-    $convert_cmd .= " -i ".$matrix_file;
-    $convert_cmd .= " -from ".$matrix_format." -to tab -return counts";
-    $convert_cmd .= " -top 1";
-    $convert_cmd .= " -o ".$matrix_file_tab;
-    &doit($convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix) if  ($tasks{scan});
-
     ## Prepare the matrix-scan command
-    $matrix_scan_cmd = "matrix-scan-quick -v 1";
-    $matrix_scan_cmd .= " -e ".$class_interval;
-    $matrix_scan_cmd .= " -i ".$sequence_file;
-    $matrix_scan_cmd .= " -m ".$matrix_file_tab;
-    $matrix_scan_cmd .= join(" ", "", @args);
-    $matrix_scan_cmd .= " -return distrib";
-    $matrix_scan_cmd .= " > ".$outfile{$seq_type};
-
-  } else {
-
-    ## Specify the column of the distribution file which will contain
-    ## the complementary cumluative distribution function
-#TMP    $ccdf_column{seq_type} = 4;
-
-    ## Prepare the matrix-scan command
-    $matrix_scan_cmd = "matrix-scan -v ".$main::verbose;
+    $matrix_scan_cmd = "$SCRIPTS/matrix-scan -v ".$main::verbose;
     #  $matrix_scan_cmd .= " -top_matrices 1"; ## We cannot restrict to the top matrix, because the permutation test involves several matrices (one per permutation)
     $matrix_scan_cmd .= " -i ".$sequence_file;
     $matrix_scan_cmd .= " -m ".$matrix_file;
@@ -1413,7 +1428,7 @@ sub CalcSequenceDistrib {
     $matrix_scan_cmd .= join(" ", "", @args);
     if (defined($main::scanopt{$seq_type})) {
       $matrix_scan_cmd .= " ".$main::scanopt{$seq_type};
-    }
+   # }
 
     ## Prepare the classfreq command (to extract the distribution from the scores)
     my $classfreq_min = sprintf("%.${decimals}f", $main::Wmin);
@@ -1429,7 +1444,7 @@ sub CalcSequenceDistrib {
       $matrix_scan_cmd .= " | grep -v '^;' | grep -v '^#'";
     }
     $matrix_scan_cmd .= " | cut -f 8";
-    $matrix_scan_cmd .= " | classfreq -v 1 -ci ".$class_interval;
+    $matrix_scan_cmd .= " | $SCRIPTS/classfreq -v 1 -ci ".$class_interval;
     $matrix_scan_cmd .= " -min ".$classfreq_min;
     $matrix_scan_cmd .= " | cut -f 1,4,5,6,9"; ## This ensures compatibility with the columns of matrix-scan-quick -distrib
     $matrix_scan_cmd .= " > ".$outfile{$seq_type};
@@ -1471,7 +1486,7 @@ sub ScanSequences {
     if ($main::verbose >= 1);
 
   ## Scan the sequences with matrix-scan
-  my $matrix_scan_cmd = "matrix-scan -v ".$main::verbose;
+  my $matrix_scan_cmd = "$SCRIPTS/matrix-scan -v ".$main::verbose;
   $matrix_scan_cmd .= " -decimals ".$decimals;
   $matrix_scan_cmd .= " -top_matrices 1";
   $matrix_scan_cmd .= " -i ".$sequence_file;
@@ -1562,7 +1577,7 @@ sub ScoreDistrib {
   ## prepare the complete distribution output
   $main::outfile{$seq_type."_distrib"} = $outfile{prefix}."_scan_".$seq_type."_distrib.tab";	
 
-  my $classfreq_cmd = "classfreq -v 1 ";
+  my $classfreq_cmd = "$SCRIPTS/classfreq -v 1 ";
   $classfreq_cmd .= " -i ".$main::outfile{$seq_type."_distrib_score_tmp"};
   $classfreq_cmd .= " -min ".$classfreq_min;
   $classfreq_cmd .= " -ci  ".$class_interval;
@@ -1610,7 +1625,7 @@ sub ExportMatrixInfo {
 
   &RSAT::message::TimeWarn("Exporting matrix information",  $outfile{matrix_info})
     if ($main::verbose >= 1);
-  my $cmd = "convert-matrix -v 1";
+  my $cmd = "$SCRIPTS/convert-matrix -v 1";
   $cmd .= " -i ".$matrix_file;
   $cmd .= " -from ".$matrix_format;
   $cmd .= " -to tab -o ".$outfile{matrix_info};
@@ -1622,7 +1637,7 @@ sub ExportMatrixInfo {
   &doit($cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
 
   ## Generate reverse complement
-  $cmd = "convert-matrix";
+  $cmd = "$SCRIPTS/convert-matrix";
   $cmd .= " -i ".$matrix_file;
   $cmd .= " -from ".$matrix_format;
   $cmd .= " -to tab -o ".$outfile{matrix_rc};
@@ -1632,7 +1647,7 @@ sub ExportMatrixInfo {
   &doit($cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
 
   ## Generate logo for the reverse complement
-  $cmd = "convert-matrix -rc";
+  $cmd = "$SCRIPTS/convert-matrix -rc";
   $cmd .= " -i ".$outfile{matrix_rc};
   $cmd .= " -from tab";
   $cmd .= " -to tab -o ".$outfile{matrix_rc}.".tab";
@@ -1661,7 +1676,7 @@ sub PermuteMatrixColumns {
 
   for my $i (1..$perm_nb_max) {
     $outfile{'matrix_perm_col_'.$i} = $outfile{prefix}."_matrix_perm_col_".$i.".tab";
-    my $permute_matrix_cmd = "permute-table -rownames -entire_col";
+    my $permute_matrix_cmd = "$SCRIPTS/permute-table -rownames -entire_col";
     $permute_matrix_cmd .= " -i ".$outfile{matrix_tab};
     $permute_matrix_cmd .= " -o ".$outfile{'matrix_perm_col_'.$i};
 
@@ -1695,7 +1710,7 @@ sub CompareDistrib {
 
     ################################################################
     ## Compare the distributions
-    my $distrib_compa_cmd = "compare-scores ";
+    my $distrib_compa_cmd = "$SCRIPTS/compare-scores ";
     $distrib_compa_cmd .= " -numeric";
     $distrib_compa_cmd .= " -sc1 4"; # score column for the theoretical distribution
     $distrib_compa_cmd .= " -sc ".$score_column; # score column for the observed distributions
@@ -1735,7 +1750,7 @@ sub CompareDistrib {
 
       ################################################################
       ## Draw a graph with all the inverse cumulative distributions
-      my $XYgraph_cmd = "XYgraph ".$all_graph_options;
+      my $XYgraph_cmd = "$SCRIPTS/XYgraph ".$all_graph_options;
       my $ycols = join ",", 2..(scalar(@distrib_files)+2);
       $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
       $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
@@ -1755,7 +1770,7 @@ sub CompareDistrib {
       ################################################################
       ## Draw a graph with all the inverse cumulative distributions
       ## and a logarithmic Y axis
-      $XYgraph_cmd = "XYgraph ".$all_graph_options;
+      $XYgraph_cmd = "$SCRIPTS/XYgraph ".$all_graph_options;
       $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
       $XYgraph_cmd .= " -xgstep1 5 -xgstep2 1";
       $XYgraph_cmd .= " -ymax 1 -ylog 10";
@@ -1790,7 +1805,7 @@ sub CompareDistrib {
 
       $ycols = join ",", 2..(scalar(@distrib_files)+2);
       $large_graph_options =~ s/-xsize 800/-xsize 400/;
-      $XYgraph_cmd = "XYgraph ".$all_graph_options;
+      $XYgraph_cmd = "$SCRIPTS/XYgraph ".$all_graph_options;
       $XYgraph_cmd .= " -xcol ".$ref_column;
       $XYgraph_cmd .= " -ycol ".$ycols;
       $XYgraph_cmd .= " -ygstep1 0.1 -ygstep2 0.02";
@@ -1863,7 +1878,7 @@ sub CompareDistrib {
 
 	  ################################################################
 	  ## Compare the theorical distributions
-	  my $distrib_compa_cmd = "compare-scores ";
+	  my $distrib_compa_cmd = "$SCRIPTS/compare-scores ";
 	  $distrib_compa_cmd .= " -numeric";
 	  $distrib_compa_cmd .= " -sc 4";	# score column for the theoretical distribution
 	  $distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_";
@@ -1880,7 +1895,7 @@ sub CompareDistrib {
 
 	  ################################################################
 	  ## Draw a graph with all the inverse cumulative distributions
-	  my $XYgraph_cmd = "XYgraph ".$all_graph_options;
+	  my $XYgraph_cmd = "$SCRIPTS/XYgraph ".$all_graph_options;
 	  my $ycols = join ",", 2..(scalar(@th_distrib_files)+2);
 	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
 	  $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
@@ -1892,7 +1907,7 @@ sub CompareDistrib {
 	  ################################################################
 	  ## Draw a graph with all the inverse cumulative distributions
 	  ## and a logarithmic Y axis
-	  $XYgraph_cmd = "XYgraph ".$all_graph_options;
+	  $XYgraph_cmd = "$SCRIPTS/XYgraph ".$all_graph_options;
 	  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
 	  $XYgraph_cmd .= " -ymax 1 -ylog 10";
 	  $XYgraph_cmd .= " -gp 'set size ratio 0.5' ";
@@ -1915,7 +1930,7 @@ sub PrintTheorScoreDistribution {
   &RSAT::message::TimeWarn("Calculating theorical distribution for matrix", $matrix_tab_file)
     if ($main::verbose >= 1);
 
-  my $matrix_distrib_cmd = "matrix-distrib -v 1 ";
+  my $matrix_distrib_cmd = "$SCRIPTS/matrix-distrib -v 1 ";
   $matrix_distrib_cmd .= " -m ".$matrix_tab_file;
   $matrix_distrib_cmd .= " -matrix_format tab";
   $matrix_distrib_cmd .= " -pseudo ".$main::pseudo_counts;
