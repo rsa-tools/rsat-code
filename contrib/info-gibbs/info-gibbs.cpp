@@ -28,7 +28,7 @@ using namespace std;
 #include "sampler.h"
 #include "scan.h"
 
-int VERSION = 20100117;
+int VERSION = 20100308;
 char *COMMAND_LINE;
 
 /*
@@ -123,6 +123,8 @@ void help()
 "\n"
 "    --sigmatrix=#         start sampling form sites collected by scanning the sequences with sig matrix # \n"
 "\n"
+"    --sigmatrix_sites=#   when using sigmatrix specify the number of sites for each matrix (n1,n2,n3) \n"
+"\n"
 "    --flanks=#            when using --sigmatrix add extra # positions arround the matrix\n"
 "\n"
 "    --rseed=#             set random seed to #\n"
@@ -132,6 +134,29 @@ void help()
 "    -V, --version         print version\n"
 "\n"
    );
+}
+
+/*
+ *
+ * parse sigmatrix_sites option
+ *
+ */
+int parse_sigmatrix_sites(char *arg, int *values)
+{
+    int count = 0;
+    char *tk = NULL;
+    do
+    {
+        ASSERT(count < 16, "too much matrices");
+        tk = strtok (arg, ",");
+        if (tk != NULL)
+        {
+            DEBUG(tk);
+            values[count++] = atoi(tk);
+        }
+        arg = NULL;
+    } while (tk != NULL);
+    return count;
 }
 
 /*
@@ -172,6 +197,13 @@ int main(int argc, char *argv[])
     char *seqfile = NULL;
     char *bgfile  = NULL;
     char *matfile = NULL;
+    int   sigmatrix_sites[16];
+    int sigmatrix_sites_count = 0;
+
+    for (int i = 0; i < 16; i++)
+    {
+        sigmatrix_sites[i] = -1;
+    }
 
     if (argc <= 1)
     {
@@ -189,7 +221,7 @@ int main(int argc, char *argv[])
     }
 
     // options
-    static const char *optString =  "l:g:G:w:i:n:t:r:hs:v:b:u:d:m:e:VLIQp:FM:";
+    static const char *optString =  "l:g:G:w:i:n:t:r:hs:v:b:u:d:m:e:VLIQp:FM:Y:";
     static const struct option longOpts[] = {
         { "input",       required_argument, NULL, 'i' },
         { "strand",      required_argument, NULL, 's' },
@@ -209,8 +241,8 @@ int main(int argc, char *argv[])
         { "pseudo",      required_argument, NULL, 'p' },
         { "title",       required_argument, NULL, 'T' },
         { "sigmatrix",   required_argument, NULL, 'M' },
+        { "sigmatrix_sites",  required_argument, NULL, 'Y' },
         { "flanks",      required_argument, NULL, 'K' },
-
         { "llr",         no_argument,       NULL, 'L' },
         { "pqllr",       no_argument,       NULL, 'X' },
         { "llric",       no_argument,       NULL, 'C' },
@@ -275,6 +307,10 @@ int main(int argc, char *argv[])
 
             case 'S': 
             params.n = atoi(optarg);
+            break; 
+
+            case 'Y': 
+                sigmatrix_sites_count = parse_sigmatrix_sites(optarg, sigmatrix_sites);
             break; 
 
             case 'e': 
@@ -427,12 +463,12 @@ int main(int argc, char *argv[])
     }
     else
     {
-        double priori[4] = {0.25, 0.25, 0.25, 0.25};
-        bernoulli(markov, priori);
-        //bernoulli(markov, compute_priori(sequences));
+        //double priori[4] = {0.25, 0.25, 0.25, 0.25};
+        //bernoulli(markov, priori);
+        bernoulli(markov, compute_priori(sequences));
     }
 
-    // read optional input sig matrix
+    // read optional input sig matrices
     if (matfile != NULL)
     {
         params.shift = false;
@@ -450,6 +486,13 @@ int main(int argc, char *argv[])
                 break;
             matrix.transform2logfreq(markov);
             params.start_from_sites = true;
+            if (sigmatrix_sites_count > 0)
+            {
+                if (params.id - 1 < 16 && sigmatrix_sites[params.id - 1] != -1)
+                    params.n = sigmatrix_sites[params.id - 1];
+                else
+                    ERROR("invalid sigmatrix_sites provided value");
+            }
             params.m1 = matrix.J + params.flanks * 2;
             params.m2 = 0;
             params.minspacing   = 0;
