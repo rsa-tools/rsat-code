@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.64 2010/02/25 12:27:54 jvanheld Exp $
+# $Id: dyad-analysis,v 1.65 2010/03/09 07:22:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -508,7 +508,7 @@ sub SumReverseComplements {
 	my $rc_pattern = &SmartRC($pattern_seq);
 	if ($rc_pattern eq $pattern_seq) {
 	    #### don't count twice the reverse palindroms !!!!!!!
-	    $patterns{$pattern_seq}->{'remark'} = "inv_rep";
+	    $patterns{$pattern_seq}->{'remark'} = "rc_pal";
 	    $patterns{$pattern_seq}->{occ_2str} = $patterns{$pattern_seq}->{occ};;
 	    $patterns{$pattern_seq}->{overlaps_2str} = $patterns{$pattern_seq}->{overlaps};;
 #	    $dyad_occ_2str{$rc_pattern} = $patterns{$pattern_seq}->{occ};
@@ -531,25 +531,20 @@ sub SumReverseComplements {
     }
 #    undef %patterns_occ_2str;
 #    undef %overlaps_2str;
-   
-   
+
     ################################################################
     ## Sum monad (oligo) occurrences
     foreach my $oligo_seq (sort keys %oligo) {
-	my $rc_oligo = &SmartRC($oligo_seq);
-	if ($rc_oligo eq $pattern_seq) {
-	    $patterns{$pattern_seq}->{'remark'} = "palindrom";
-	    $oligo{$oligo_seq}->{occ_2str} = $oligo{$oligo_seq}->{occ};
-#	    $oligo_occ_2str{$rc_oligo} = $oligo{$oligo_seq}->{occ};
-	} else {
-	    $oligo{$oligo_seq}->{occ_2str} = $oligo{$oligo_seq}->{occ} + $oligo{$rc_oligo}->{occ};
-#	    $oligo_occ_2str{$rc_oligo} = $oligo_occ_2str{$oligo_seq} =  $oligo{$oligo_seq}->{occ} + $oligo{$rc_oligo}->{occ};
-	}
+      my $rc_oligo = &SmartRC($oligo_seq);
+      if ($rc_oligo eq $pattern_seq) {
+	$patterns{$pattern_seq}->{'remark'} = "rc_pal";
+	$oligo{$oligo_seq}->{occ_2str} = $oligo{$oligo_seq}->{occ};
+	#	    $oligo_occ_2str{$rc_oligo} = $oligo{$oligo_seq}->{occ};
+      } else {
+	$oligo{$oligo_seq}->{occ_2str} = $oligo{$oligo_seq}->{occ} + $oligo{$rc_oligo}->{occ};
+	#	    $oligo_occ_2str{$rc_oligo} = $oligo_occ_2str{$oligo_seq} =  $oligo{$oligo_seq}->{occ} + $oligo{$rc_oligo}->{occ};
+      }
     }
-#     foreach $oligo_seq (sort keys %oligo) {
-# 	$oligo{$oligo_seq}->{occ} = $oligo_occ_2str{$oligo_seq};
-#     }
-#     undef %oligo_occ_2str;
 
 #     ################################################################
 #     ## I don't understand why I have to multiply the sum of monad
@@ -557,7 +552,6 @@ sub SumReverseComplements {
 #     ## frequencies are 4 times too high ! I guess I knew the reason
 #     ## the first time I implemented it.
 #     $sum_oligo_count *= 2;
-
 
     &GroupRC();
 }
@@ -655,357 +649,326 @@ sub CalcExpectedOcc {
 ## ##############################################################
 ## Calculate dyad probabilities
 sub CalcProba {
-    &RSAT::message::TimeWarn("Calculating probabilities") if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn("Calculating probabilities") if ($main::verbose >= 2);
 
-#    foreach my $pattern_seq (keys %patterns) {
+  ## Note: we need to build the pattern for each spacing separately,
+  ## rather than taking the keys of %patterns because the number of
+  ## valid dyads depends on the spacing.
+  foreach my $spacing (@spacing_list) {
+    foreach my $oligo1 (sort keys %oligo) {
+      foreach my $oligo2 (&SecondElement($oligo1)) {
+	### build the dyad
+	my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
+	next unless (defined($patterns{$pattern_seq}->{occ}));
 
-   
-    ## Note: we need to build the pattern for each spacing separately,
-    ## rather than taking the keys of %patterns because the number of
-    ## valid dyads depends on the spacing.
-    foreach my $spacing (@spacing_list) {
-	foreach my $oligo1 (sort keys %oligo) {
-	    foreach my $oligo2 (&SecondElement($oligo1)) {
-		### build the dyad
-		my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
-		next unless (defined($patterns{$pattern_seq}->{occ}));
-		
-		### Detect repeats
-		if (($sum_rc) && (&Palindromic($pattern_seq))) {
-		    $patterns{$pattern_seq}->{remark} = "inv_rep";
-		}
-		if ($oligo1 eq $oligo2) {
-		    $patterns{$pattern_seq}->{remark} .= "dir_rep";
-		}
-		
-		## Check expected frequency
-		if (!defined($patterns{$pattern_seq}->{exp_freq})) {
-		   
-		    &RSAT::message::Warning (join("\t", "Undefined expected frequency for dyad",
-						  $pattern_seq));
-		} if ($patterns{$pattern_seq}->{exp_freq} <= 0) {
-		   
-		    #### Expected frequency might not be defined if
-		    #### max_spacing is > than the max spacing of the
-		    #### expected frequency file
-		    if ($max_spacing > 20) {
-			#### calculate expected frequency oin the basis of monad frequencies
-			$patterns{$pattern_seq}->{exp_freq} = &CalcExpFreqFromMonads($oligo1, $oligo2);
-			$patterns{$pattern_seq}->{remark} = "monad exp freq ".$patterns{$pattern_seq}->{remark};
-			
-		    } else {
-			&RSAT::message::Warning (join("\t", "Expected frequency must be > 0 for dyad",
-						      $pattern_seq,
-						      $patterns{$pattern_seq}->{exp_freq}));
-			next;
-#			delete $patterns{$pattern_seq};
-		    }
-		}
-
-		### self-overlap coefficient
-		if (($calc_fields{proba}) || ($calc_fields{zscore})) {
-		    $oligo_pair = $oligo1.$oligo2;
-		    $overlap_coeff{$pattern_seq} = &OverlapCoeff($oligo_pair);
-		}
-		
-		### calculate Z-scores ###
-		if ($calc_fields{zscore}) {
-		    $patterns{$pattern_seq}->{var_est} = $valid_dyad_positions{$spacing}*$patterns{$pattern_seq}->{exp_freq}*(2*$overlap_coeff{$pattern_seq} - 1 - (4*$oligo_length+1)*$patterns{$pattern_seq}->{exp_freq});
-		    if ($patterns{$pattern_seq}->{var_est} <= 0) {
-			$patterns{$pattern_seq}->{zscore} = "NA";
-		    } else {
-			$patterns{$pattern_seq}->{zscore} = sprintf "%7.2f", ($patterns{$pattern_seq}->{occ} - $patterns{$pattern_seq}->{exp_occ})/sqrt($patterns{$pattern_seq}->{var_est});
-		    }
-		}
-		
-		
-		### calculate occurrence probability ####
-		if ($calc_fields{proba}) {
-		    $patterns{$pattern_seq}->{occ_P} =  &binomial_boe($patterns{$pattern_seq}->{exp_freq},$valid_dyad_positions{$spacing},$patterns{$pattern_seq}->{occ});
-		    $main::nb_tested_patterns++;
-#		    &RSAT::message::Debug("binomial test",
-#					  "p= ".$patterns{$pattern_seq}->{exp_freq},
-#					  "T= ".$valid_dyad_positions{$spacing},
-#					  "x= ".$patterns{$pattern_seq}->{occ},
-#					 ) if ($main::verbose >= 10);
-		}
-	    }
+	### Detect repeats
+	if (($sum_rc) && (&Palindromic($pattern_seq))) {
+	  $patterns{$pattern_seq}->{remark} = "rc_pal";
 	}
-    } 
+	if ($oligo1 eq $oligo2) {
+	  $patterns{$pattern_seq}->{remark} .= "dir_rep";
+	}
 
-    ## Corrections or multi-testing
-    &MultiTestCorrections($nb_tested_patterns, %patterns);
-#     ### Calculate occurrence significance
-#     &RSAT::message::Info(join ("\t", "Correcting for multiple testing", $main::nb_tested_patterns)) if ($main::verbose >= 2);
-#     foreach my $pattern_seq (keys %patterns) {
-# 	if (&IsReal ($patterns{$pattern_seq}->{occ_P})) {
-# 	    $patterns{$pattern_seq}->{occ_E} =  $patterns{$pattern_seq}->{occ_P}*$main::nb_tested_patterns;
-# 	    if ($patterns{$pattern_seq}->{occ_E} > 0) {
-# 		$patterns{$pattern_seq}->{occ_sig} =  -log($patterns{$pattern_seq}->{occ_E})/log(10);
-# 	    } else {
-# 		$patterns{$pattern_seq}->{occ_sig} =  999;
-# 	    }
-# 	} else {
-# 	    $patterns{$pattern_seq}->{occ_E} = "NA";
-# 	    $patterns{$pattern_seq}->{occ_sig} = "NA";
-# 	}
-# 	&RSAT::message::Debug("Calculating E-value", 
-# 			      $pattern_seq,
-# 			      $patterns{$pattern_seq}->{occ},
-# 			      $patterns{$pattern_seq}->{occ_P},
-# 			      $main::nb_tested_patterns,
-# 			      $patterns{$pattern_seq}->{occ_E},
-# 			      $patterns{$pattern_seq}->{occ_sig},
-# 			     ) if ($main::verbose >= 0);
-#     }
+	## Check expected frequency
+	if (!defined($patterns{$pattern_seq}->{exp_freq})) {
+	  &RSAT::message::Warning (join("\t", "Undefined expected frequency for dyad",
+					$pattern_seq));
+	}
+	if ($patterns{$pattern_seq}->{exp_freq} <= 0) {
+	  #### Expected frequency might not be defined if
+	  #### max_spacing is > than the max spacing of the
+	  #### expected frequency file
+	  if ($max_spacing > 20) {
+	    #### calculate expected frequency oin the basis of monad frequencies
+	    $patterns{$pattern_seq}->{exp_freq} = &CalcExpFreqFromMonads($oligo1, $oligo2);
+	    $patterns{$pattern_seq}->{remark} = "monad exp freq ".$patterns{$pattern_seq}->{remark};
+	  } else {
+	    &RSAT::message::Warning (join("\t", "Expected frequency must be > 0 for dyad",
+					  $pattern_seq,
+					  $patterns{$pattern_seq}->{exp_freq}));
+	    next;
+	    #			delete $patterns{$pattern_seq};
+	  }
+	}
 
-    #### threshold filtering ####
-    &CheckThresholds("zscore");
-    &CheckThresholds("occ_P");		     
-    &CheckThresholds("occ_E");
-    &CheckThresholds("occ_sig");
-		     
+	### self-overlap coefficient
+	if (($calc_fields{proba}) || ($calc_fields{zscore})) {
+	  $oligo_pair = $oligo1.$oligo2;
+	  $overlap_coeff{$pattern_seq} = &OverlapCoeff($oligo_pair);
+	}
 
-} ### CalcProba
+	### calculate Z-scores ###
+	if ($calc_fields{zscore}) {
+	  $patterns{$pattern_seq}->{var_est} = $valid_dyad_positions{$spacing}*$patterns{$pattern_seq}->{exp_freq}*(2*$overlap_coeff{$pattern_seq} - 1 - (4*$oligo_length+1)*$patterns{$pattern_seq}->{exp_freq});
+	  if ($patterns{$pattern_seq}->{var_est} <= 0) {
+	    $patterns{$pattern_seq}->{zscore} = "NA";
+	  } else {
+	    $patterns{$pattern_seq}->{zscore} = sprintf "%7.2f", ($patterns{$pattern_seq}->{occ} - $patterns{$pattern_seq}->{exp_occ})/sqrt($patterns{$pattern_seq}->{var_est});
+	  }
+	}
+
+	### calculate occurrence probability ####
+	if ($calc_fields{proba}) {
+	  $patterns{$pattern_seq}->{occ_P} =  &binomial_boe($patterns{$pattern_seq}->{exp_freq},$valid_dyad_positions{$spacing},$patterns{$pattern_seq}->{occ});
+	  $main::nb_tested_patterns++;
+	  #		    &RSAT::message::Debug("binomial test",
+	  #					  "p= ".$patterns{$pattern_seq}->{exp_freq},
+	  #					  "T= ".$valid_dyad_positions{$spacing},
+	  #					  "x= ".$patterns{$pattern_seq}->{occ},
+	  #					 ) if ($main::verbose >= 10);
+	}
+      }
+    }
+  }
+
+  ## Corrections or multi-testing
+  &MultiTestCorrections($nb_tested_patterns, %patterns);
+
+  #### threshold filtering ####
+  &CheckThresholds("zscore");
+  &CheckThresholds("occ_P");
+  &CheckThresholds("occ_E");
+  &CheckThresholds("occ_sig");
+}				### CalcProba
 
 ################################################################
 ## Read arguments
 sub ReadArguments {
-    foreach $a (0..$#ARGV) {
-	### verbose ###
-	if ($ARGV[$a] eq "-v") {
-	    if (&IsNatural($ARGV[$a+1])) {
-		$verbose = $ARGV[$a+1];
-	    } else {
-		$verbose = 1;
-	    }
+  foreach $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
 
-	    ### detailed help
-	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp();
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp();
 
-	    ### list of options
-	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions;
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions;
 
-	    ### input file ###
-	} elsif ($ARGV[$a] eq "-i") {
-	    $infile{input} = $ARGV[$a+1];
+      ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+      $infile{input} = $ARGV[$a+1];
 
-	    ### input format ###
-	} elsif ($ARGV[$a] eq "-format") {
-	    $input_format = lc($ARGV[$a+1]);
+      ### input format ###
+    } elsif ($ARGV[$a] eq "-format") {
+      $input_format = lc($ARGV[$a+1]);
 
-	    ## mask
-	} elsif ($ARGV[$a] eq "-mask") {
-	    $mask = $ARGV[$a+1];
-	    &CheckMask($mask);
+      ## mask
+    } elsif ($ARGV[$a] eq "-mask") {
+      $mask = $ARGV[$a+1];
+      &CheckMask($mask);
 
-	    ### output file ###
-	} elsif ($ARGV[$a] eq "-o") {
-	    $outputfile = $ARGV[$a+1];
+      ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+      $outputfile = $ARGV[$a+1];
 
-	    ### oligo length ###
-	} elsif (($ARGV[$a] eq "-l") && (&IsNatural($ARGV[$a+1]))) {
-	    $oligo_length = $ARGV[$a+1];
+      ### oligo length ###
+    } elsif (($ARGV[$a] eq "-l") && (&IsNatural($ARGV[$a+1]))) {
+      $oligo_length = $ARGV[$a+1];
 
-	    ### spacing ###
-	} elsif ($ARGV[$a] =~ /^-sp/i) {
-	    if (&IsNatural($ARGV[$a+1])) {
-		$min_spacing = $max_spacing = $ARGV[$a+1];
-	    } elsif ($ARGV[$a+1] =~ /^(\d+)\-(\d+)$/) {
-		$min_spacing = &min($1,$2);
-		$max_spacing = &max($1,$2);
-	    } else {
-		print "Error: invalid spacing specification\n";
-		print "Type dyad-analysis -help for more info\n";
-		exit;
-	    }
+      ### spacing ###
+    } elsif ($ARGV[$a] =~ /^-sp/i) {
+      if (&IsNatural($ARGV[$a+1])) {
+	$min_spacing = $max_spacing = $ARGV[$a+1];
+      } elsif ($ARGV[$a+1] =~ /^(\d+)\-(\d+)$/) {
+	$min_spacing = &min($1,$2);
+	$max_spacing = &max($1,$2);
+      } else {
+	print "Error: invalid spacing specification\n";
+	print "Type dyad-analysis -help for more info\n";
+	exit;
+      }
 
-	    ### dyad type ###
-	} elsif ($ARGV[$a] =~ /^-type/i) {
-	    $dyad_type = lc($ARGV[$a+1]);
-	    die "Error : '$dyad_type' is not a valid dyad type" unless $accepted_dyad_type{$dyad_type};
+      ### dyad type ###
+    } elsif ($ARGV[$a] =~ /^-type/i) {
+      $dyad_type = lc($ARGV[$a+1]);
+      die "Error : '$dyad_type' is not a valid dyad type" unless $accepted_dyad_type{$dyad_type};
 
-	    ### analyze only selected dyads
-	} elsif ($ARGV[$a] =~ /^-accept/i) {
-	    $infile{accepted_patterns} = $ARGV[$a+1];
+      ### analyze only selected dyads
+    } elsif ($ARGV[$a] =~ /^-accept/i) {
+      $infile{accepted_patterns} = $ARGV[$a+1];
 
-	    ### sort results ###
-	} elsif ($ARGV[$a] =~ /^-sort/i) {
-	    $sort_results = 1;
+      ### sort results ###
+    } elsif ($ARGV[$a] =~ /^-sort/i) {
+      $sort_results = 1;
 
-	    ################################################################
-	    #### Left-tail or two-tail significance test 
-	} elsif ($ARGV[$a] eq "-under") {
-	    $tail = "left";
+      ################################################################
+      #### Left-tail or two-tail significance test 
+    } elsif ($ARGV[$a] eq "-under") {
+      $tail = "left";
 
-	} elsif ($ARGV[$a] =~ /^\-two_tail/) {
-	    $tail = "two";
+    } elsif ($ARGV[$a] =~ /^\-two_tail/) {
+      $tail = "two";
 
-	    ################################################################
-	    ## Also count patterns not observed
-	} elsif ($ARGV[$a] eq "-zeroocc") {
-	    $zeroocc = 1;
+      ################################################################
+      ## Also count patterns not observed
+    } elsif ($ARGV[$a] eq "-zeroocc") {
+      $zeroocc = 1;
 
-	    ### expected frequency table ###
-        } elsif ($ARGV[$a] eq "-expfreq") {
-	    $infile{exp_freq} = $ARGV[$a+1];
-	    $background_model = "exp_freq_file";
-	    &RSAT::error::FatalError("The option -expfreq requires an additional argument to specify the expected frequency file.") unless ($infile{exp_freq});
+      ### expected frequency table ###
+    } elsif ($ARGV[$a] eq "-expfreq") {
+      $infile{exp_freq} = $ARGV[$a+1];
+      $background_model = "exp_freq_file";
+      &RSAT::error::FatalError("The option -expfreq requires an additional argument to specify the expected frequency file.") unless ($infile{exp_freq});
 
-	    ### timeout setting
-	} elsif ($ARGV[$a] =~ /^-timeout/i) {
-	    $timeout = $ARGV[$a+1];
-	    die "Error: timeout value should be integer\n"
-		unless &IsNatural($timeout);
+      ### timeout setting
+    } elsif ($ARGV[$a] =~ /^-timeout/i) {
+      $timeout = $ARGV[$a+1];
+      die "Error: timeout value should be integer\n"
+	unless &IsNatural($timeout);
 
-	    ### use oligo non-coding frequencies as expected frequencies
-	} elsif ($ARGV[$a] =~ /^-ncf/i) {
-	    &RSAT::message::Warning ("option -ncf is deprecated, use '-bg intergenic' instead");
-	    $background_model = "intergenic";
-#	    $rescale_freq = 1;
+      ### use oligo non-coding frequencies as expected frequencies
+    } elsif ($ARGV[$a] =~ /^-ncf/i) {
+      &RSAT::message::Warning ("option -ncf is deprecated, use '-bg intergenic' instead");
+      $background_model = "intergenic";
+      #	    $rescale_freq = 1;
 
-	    ### specify a background model for estimating expected frequencies
-	} elsif ($ARGV[$a] =~ /^-bg/i) {
-	    $background_model = $ARGV[$a+1];
-	    $background_model =~ s/ncf/intergenic/;
-	    $background_model =~ s/input/monads/;
-	    unless ($supported_bg{$background_model}) {
-		&RSAT::error::FatalError("Invalid background model\t$background_model\tsupported: $supported_bg");
-	    }
+      ### specify a background model for estimating expected frequencies
+    } elsif ($ARGV[$a] =~ /^-bg/i) {
+      $background_model = $ARGV[$a+1];
+      $background_model =~ s/ncf/intergenic/;
+      $background_model =~ s/input/monads/;
+      unless ($supported_bg{$background_model}) {
+	&RSAT::error::FatalError("Invalid background model\t$background_model\tsupported: $supported_bg");
+      }
 
-	    ### organism (for selecting an organism-specific background model)
-	} elsif ($ARGV[$a] =~ /^-org/i) {
-	    if ($taxon) {
-		&RSAT::message::FatalError("Options -org and -taxon are mutually exclusive");
-	    }
-	    $org_or_taxon = $ARGV[$a+1];
-	    &CheckOrganismName($org_or_taxon);
+      ### organism (for selecting an organism-specific background model)
+    } elsif ($ARGV[$a] =~ /^-org/i) {
+      if ($taxon) {
+	&RSAT::message::FatalError("Options -org and -taxon are mutually exclusive");
+      }
+      $org_or_taxon = $ARGV[$a+1];
+      &CheckOrganismName($org_or_taxon);
 
-	    ### taxon (for selecting a taxon-specific background model)
-	  } elsif ($ARGV[$a] =~ /^-taxon/i) {
-	    $taxon = 1;
-	    $org_or_taxon = $ARGV[$a+1];
-	    &CheckTaxon($org_or_taxon);
+      ### taxon (for selecting a taxon-specific background model)
+    } elsif ($ARGV[$a] =~ /^-taxon/i) {
+      $taxon = 1;
+      $org_or_taxon = $ARGV[$a+1];
+      &CheckTaxon($org_or_taxon);
 
-	    ### use monad intergenic frequencies as expected frequencies
-	} elsif ($ARGV[$a] =~ /^-mncf/i) {
-	    $mncf = 1;
+      ### use monad intergenic frequencies as expected frequencies
+    } elsif ($ARGV[$a] =~ /^-mncf/i) {
+      $mncf = 1;
 
-	    ### single strand count ###
-	} elsif ($ARGV[$a] =~ /^-1str/i) {
-	    $strands = "-1str";
-	    $sum_rc = 0;
-	    $group_rc = 0;
+      ### single strand count ###
+    } elsif ($ARGV[$a] =~ /^-1str/i) {
+      $strands = "-1str";
+      $sum_rc = 0;
+      $group_rc = 0;
 
-	    ### sum count on both strands ###
-	} elsif ($ARGV[$a] =~ /^-2str/i) {
-	    $strands = "-2str";
-	    $sum_rc = 1;
+      ### sum count on both strands ###
+    } elsif ($ARGV[$a] =~ /^-2str/i) {
+      $strands = "-2str";
+      $sum_rc = 1;
 
-	    ### group pairs of reverse complements
-	} elsif ($ARGV[$a] =~ /^-grouprc/i) {
-	    $group_rc = 1;
+      ### group pairs of reverse complements
+    } elsif ($ARGV[$a] =~ /^-grouprc/i) {
+      $group_rc = 1;
 
-	    ### group pairs of reverse complements
-	} elsif ($ARGV[$a] =~ /^-nogrouprc/i) {
-	    $group_rc = 0;
+      ### group pairs of reverse complements
+    } elsif ($ARGV[$a] =~ /^-nogrouprc/i) {
+      $group_rc = 0;
 
-	    ### proteic sequence ###
-	} elsif ($ARGV[$a] =~ /^-prot/i) {
-	    $sum_rc = 0;
-	    $proteic = 1;
+      ### proteic sequence ###
+    } elsif ($ARGV[$a] =~ /^-prot/i) {
+      $sum_rc = 0;
+      $proteic = 1;
 
-	    ### group spacings ###
-	} elsif ($ARGV[$a] =~ /^-groupsp/i) {
-	    $group_sp = 1;
+      ### group spacings ###
+    } elsif ($ARGV[$a] =~ /^-groupsp/i) {
+      $group_sp = 1;
 
-	    ################################################################
-	    ### Thresholds
+      ################################################################
+      ### Thresholds
 
-	    ### Lower threshold
-	} elsif ($ARGV[$a] eq "-lth") {
-	    my $thr_field = $ARGV[$a+1];
-	    my $thr_value =  $ARGV[$a+2];
-	    unless ($supported_threshold{$thr_field}) {
-		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
-	    }
-	    $lth{$thr_field} = $thr_value;
+      ### Lower threshold
+    } elsif ($ARGV[$a] eq "-lth") {
+      my $thr_field = $ARGV[$a+1];
+      my $thr_value =  $ARGV[$a+2];
+      unless ($supported_threshold{$thr_field}) {
+	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+      }
+      $lth{$thr_field} = $thr_value;
 
-	    ### Upper threshold
-	} elsif ($ARGV[$a] eq "-uth") {
-	    my $thr_field = $ARGV[$a+1];
-	    my $thr_value =  $ARGV[$a+2];
-	    unless ($supported_threshold{$thr_field}) {
-		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
-	    }
-	    $uth{$thr_field} = $thr_value;
-
-
-	    ### threshold on significance ###
-	} elsif ($ARGV[$a] =~ /^-thosig/i) {
-	    &RSAT::message::Warning("Option -thosig is obsolete. Use option -lth occ_sig instead");
-	    $lth{occ_sig} = $ARGV[$a+1];
-	    &FatalError ("Threshold on occurrence significance must be a real number") unless (&IsReal($lth{occ_sig}));
-
-	    ### output fields ###
-	} elsif ($ARGV[$a] =~ /^-return/i) {
-	    @return_fields = split ",", $ARGV[$a+1];
-	    foreach $field (@return_fields) {
-		if ($field eq "proba") {
-		    $return_fields{proba} = 1;
-		} elsif  ($field =~ /^zsc/i) {
-		    $return_fields{zscore} = 1;
-		} elsif  ($field eq "freq") {
-		    $return_fields{freq} = 1;
-		} elsif  ($field eq "exp_freq") {
-		    $return_fields{exp_freq} = 1;
-		} elsif  ($field =~ /^observed_freq/i) {
-		    $return_fields{freq} = 1;
-		} elsif  ($field eq "occ") {
-		    $return_fields{occ} = 1;
-		} elsif  ($field eq "exp_occ") {
-		    $return_fields{exp_occ} = 1;
-		} elsif  ($field eq "ratio") {
-		    $return_fields{ratio} = 1;
-		} elsif  ($field eq "rank") {
-		    $return_fields{rank} = 1;
-		} elsif  ($field eq "monad_freq") {
-		    $return_fields{monad_freq} = 1;
-		} else {
-		    &RSAT::error::FatalError("Invalid return field $field.");
-		}
-	    }
-
-	    ### prevent overlapping matches
-	} elsif ($ARGV[$a] =~ /^-noov/) {
-	    $noov = 1;
-
-	    #### sequence type
-	} elsif ($ARGV[$a] =~ /^-seqtype/i) {
-	    $a++;
-	    if ($ARGV[$a] =~ /^prot/i) {
-		$sum_rc = 0;
-		$group_rc = 0;
-		$seq_type = "protein";
-		
-		#### DNA sequences
-	    } elsif ($ARGV[$a] =~ /^dna/i) {
-		$seq_type = "DNA";
-		
-		#### any other sequence type
-	    } elsif ($ARGV[$a] =~ /^other/i) {
-		$sum_rc = 0;
-		$group_rc = 0;
-		$seq_type = "other";
+      ### Upper threshold
+    } elsif ($ARGV[$a] eq "-uth") {
+      my $thr_field = $ARGV[$a+1];
+      my $thr_value =  $ARGV[$a+2];
+      unless ($supported_threshold{$thr_field}) {
+	&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+      }
+      $uth{$thr_field} = $thr_value;
 
 
-	    } else {
-		die "\tError: sequence type '$ARGV[$a]' is not supported\n";
-	    }
+      ### threshold on significance ###
+    } elsif ($ARGV[$a] =~ /^-thosig/i) {
+      &RSAT::message::Warning("Option -thosig is obsolete. Use option -lth occ_sig instead");
+      $lth{occ_sig} = $ARGV[$a+1];
+      &FatalError ("Threshold on occurrence significance must be a real number") unless (&IsReal($lth{occ_sig}));
+
+      ### output fields ###
+    } elsif ($ARGV[$a] =~ /^-return/i) {
+      @return_fields = split ",", $ARGV[$a+1];
+      foreach $field (@return_fields) {
+	if ($field eq "proba") {
+	  $return_fields{proba} = 1;
+	} elsif ($field =~ /^zsc/i) {
+	  $return_fields{zscore} = 1;
+	} elsif ($field eq "freq") {
+	  $return_fields{freq} = 1;
+	} elsif ($field eq "exp_freq") {
+	  $return_fields{exp_freq} = 1;
+	} elsif ($field =~ /^observed_freq/i) {
+	  $return_fields{freq} = 1;
+	} elsif ($field eq "occ") {
+	  $return_fields{occ} = 1;
+	} elsif ($field eq "exp_occ") {
+	  $return_fields{exp_occ} = 1;
+	} elsif ($field eq "ratio") {
+	  $return_fields{ratio} = 1;
+	} elsif ($field eq "rank") {
+	  $return_fields{rank} = 1;
+	} elsif ($field eq "monad_freq") {
+	  $return_fields{monad_freq} = 1;
+	} else {
+	  &RSAT::error::FatalError("Invalid return field $field.");
 	}
+      }
+
+      ### prevent overlapping matches
+    } elsif ($ARGV[$a] =~ /^-noov/) {
+      $noov = 1;
+
+      #### sequence type
+    } elsif ($ARGV[$a] =~ /^-seqtype/i) {
+      $a++;
+      if ($ARGV[$a] =~ /^prot/i) {
+	$sum_rc = 0;
+	$group_rc = 0;
+	$seq_type = "protein";
+
+	#### DNA sequences
+      } elsif ($ARGV[$a] =~ /^dna/i) {
+	$seq_type = "DNA";
+
+	#### any other sequence type
+      } elsif ($ARGV[$a] =~ /^other/i) {
+	$sum_rc = 0;
+	$group_rc = 0;
+	$seq_type = "other";
+
+
+      } else {
+	die "\tError: sequence type '$ARGV[$a]' is not supported\n";
+      }
     }
+  }
 }
 
 
@@ -1517,7 +1480,7 @@ sub PrintHeaderLine {
     $col_description{"ratio"} = "observed/expected ratio";
     $col_description{"rank"} = "rank";
     $col_description{"ov_coef"} = "overlap coefficient";
-    $col_description{"remark"} = "remark";
+    $col_description{"remark"} = "remark (dir_rep=direct repeat; rc_pal=reverse complementary palindrom)";
 
     @out_col = ();
 
@@ -1900,14 +1863,13 @@ OPTIONS
 		the fields have to be separated by commas
 		By default, only occurrences are returned.
 
-
-	-under  detect under-represented instead of over-represented
-         	dyads (left tail significance test).
-
+	-under
+                detect under-represented instead of over-represented
+         	dyads (left-tail significance test).
 
 	-two_tails
 		detect under-represented and over-represented dyads
-		(two-fail significance test).
+		(two-tail significance test).
 
 	-zeroocc
 		Report also dyads with zero occurrences (provided they
@@ -1993,11 +1955,10 @@ PROBABILITIES
 	occurrences. The significance of the observed number of occurrences
 	is calculated with the binomial formulae.
 
-             
     EXPECTED DYAD FREQUENCY
         If exp(oligo1) is the expected frequency for the first element, and
            exp(oligo1) is the expected frequency for the second element
-       
+
         Then
            exp(dyad) = exp(oligo1)*exp(oligo2)
 
@@ -2017,7 +1978,7 @@ PROBABILITIES
                               r
            Exp_occ = p * 2 * SUM (Lj + 1 - d) = p * T
                              j=1
-       
+
         where   p  = expected dyad frequency
                 n  = number of input sequences
                 Lj = length of the jth input sequence
@@ -2034,30 +1995,106 @@ PROBABILITIES
     PROBABILITY OF THE OBSERVED NUMBER OF OCCURRENCES
         The probability to observe exactly obs occurrences in the whole set
         of sequences is calculated by the binomial
-       
-                                                      obs      T-obs
-            P(obs) = bin(p,T,obs) =       T!         p    (1-p)
-                                     ---------------
-                                     obs! * (T-obs)!
-       
-        where   obs is the observed number of dyad occurrences,
+
+                                                    x     T-x
+            P(X=x) = bin(p,T,x) =       T!         p (1-p)
+                                   -------------
+                                     x! (T-x)!
+
+        where   x is the observed number of dyad occurrences,
                 p   is the expected dyad frequency,
                 T   is the number of possible matching positions,
                     as defined above.
-       
-        The probability to observe obs or more occurrences in the whole set of
-        of sequences is calculated by the sum of binomials:
-            
-                            obs-1
-             P(>=obs) =  1 - SUM P(j)
-                             j=0
-                                     
+
+        The probability to observe obs or more occurrences in the
+        whole set of of sequences is calculated by the sum of
+        binomials:
+
+                            x-1
+             P(X>=x) =  1 - SUM P(j)
+                            j=0
+
+
+        Note that the the P-value (Pval) is not computed by directly
+        applying this formula, but by using an efficient algorithm
+        (based on recursion), which increases both computing speed and
+        accuracy.
+
+        Interpretation: the P-value (Pval) represents the nominal risk
+        of false positive, i.e. the risk to consider a given dyad as
+        over-represented whereas it is not.
+
+    OVER/UNDER-REPRESENTATION
+
+        By default, the program calculates the P-value on the right
+	tail of the probability distribution, which represents the
+	probability to observe at least x occurrences by chance:
+
+			               T
+			    P(X>=x) = SUM P(X=i)
+			              i=x
+
+	With the option -under, the P-value is calculated on the left
+	tail of the distribution, which represents the probability of
+	having at most x occurrences:
+
+			               x-1
+			    P(X<=x) =  SUM P(X=i)
+			               i=0
+
+	The option -under does not affect the other statistics
+	(zscore, loglikelihood). For z-score, the negative values
+	indicate under-representation.
+
+	With the option -two_tails, the P-value is calculated on
+	either the left or the right-tail of the distribution,
+	depending on the observed/expected comparison:
+	 if k >= exp_occ, right tail (over-representation)
+	 if k < exp_occ, left tail (under-representation)
+
+
+    E-VALUE
+
+	The probability of occurrence by itself is not fully
+	informative, because the threshold must be adapted depending
+	on the number of patterns considered. Indeed, a simple
+	hexanucleotide analysis amounts to consider 4096
+	hypotheses.
+
+	The E-value (Eval) represents the expected number of patterns
+	which would be returned at random for a given threshold of
+	nominal P-value.
+
+	      Eval = NPO * P(X>=x)
+
+	where NPO is the number of possible oligomers of the chosen
+	          length (eg 4096 for hexanucleotides).
+
+        Note that when searches are performed on both strands, NPO is
+        corrected for the fact that non-palindromic patterns are
+        grouped by pairs (for example, there are 4096 possible
+        hexanucleotides when the count is performed on a single
+        strand, but only 2080 when the count is performed on both
+        strands).
+
+	Interpretation: the E-value (Eval) represents the expected
+	number of false positives, for a given threshold of P-value
+	(Pval). 
+
     SIGNIFICANCE INDEX
-        The significance index is a conversion of the occurrence probability,
-        calculated as follows:.
-             
-              Sig_occ = -log10(NPD * P(>=obs));
-        where   NPD     is the number of possible dyads, calculated as above.
+
+        The significance index is simply a negative logarithm
+        conversion of the E-value (in base 10).
+
+	The significance index is calculated as follows:
+
+	      sig = -log10(E-value);
+
+	This index is very convenient to interpret : higher values
+	correspond to exceptional patterns. A significance of 0
+	corresponds to an E-value of 1. A significance of 2 to an
+	E-value of 1e-2 (i.e. one expects no more than 0.01 false
+	positives in the whole collection of patterns).
 
 AVAILABILITY
       The program can be used through its web interface at:
