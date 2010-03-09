@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.80 2010/03/08 18:27:22 amedina Exp $
+# $Id: matrix-quality,v 1.81 2010/03/09 04:20:42 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -345,6 +345,23 @@ package main;
     $main::out = &OpenOutputFile($outfile{log});
     &PreVerbose() if ($main::verbose);
 
+    if ($tasks{index}) {
+	local $index = &OpenOutputFile($outfile{index});
+	print $index "<html>\n";
+	print $index "<head>\n";
+	print $index "<title>matrix-quality result: ",$matrix_name,"</title>\n";
+	print $index "</head>\n\n";
+	print $index "<body>\n\n";
+	
+	## Print the command
+	print $index "<h1>matrix-quality result: ",$matrix_name,"</h1>\n\n";
+	print $index "<b>Command:</b>\n";
+	print $index "<pre>matrix-quality ";
+	&PrintArguments($index);
+	print $index "</pre>";
+
+    }
+
     ################################################################
     ### Read background model to use for theorical distribution
     if ($main::infile{bg_file}){
@@ -488,19 +505,21 @@ package main;
       }
       &RSAT::message::Info("Index file", $outfile{index});
 
-      local $index = &OpenOutputFile($outfile{index});
-      print $index "<html>\n";
-      print $index "<head>\n";
-      print $index "<title>matrix-quality result: ",$matrix_name,"</title>\n";
-      print $index "</head>\n\n";
-      print $index "<body>\n\n";
+      #this part has been moved up, so the html is open before
 
-      ## Print the command
-      print $index "<h1>matrix-quality result: ",$matrix_name,"</h1>\n\n";
-      print $index "<b>Command:</b>\n";
-      print $index "<pre>matrix-quality ";
-      &PrintArguments($index);
-      print $index "</pre>";
+     #  local $index = &OpenOutputFile($outfile{index});
+#       print $index "<html>\n";
+#       print $index "<head>\n";
+#       print $index "<title>matrix-quality result: ",$matrix_name,"</title>\n";
+#       print $index "</head>\n\n";
+#       print $index "<body>\n\n";
+
+#       ## Print the command
+#       print $index "<h1>matrix-quality result: ",$matrix_name,"</h1>\n\n";
+#       print $index "<b>Command:</b>\n";
+#       print $index "<pre>matrix-quality ";
+#       &PrintArguments($index);
+#       print $index "</pre>";
 
       ## Display the distributions
       print $index "\n<h3>Figures</h3>\n";
