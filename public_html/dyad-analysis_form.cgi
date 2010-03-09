@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.29 2010/01/28 12:56:16 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.30 2010/03/09 07:23:00 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -43,6 +43,7 @@ $default{exp_freq} = "background";
 $default{upload_freq_file} = "";
 #$default{lth_occ_sig} = "0";
 $default{to_matrix} = '1';
+$default{side} = 'over-represented';
 
 ## Return values and thresholds
 $default{zscore} = '';
@@ -365,7 +366,13 @@ sub ReturnTable {
 								  -size=>5),
 						$query->textfield(-name=>'uth_occ_P',
 								  -default=>$default{uth_occ_P},
-								  -size=>5)]),
+								  -size=>5),
+						$query->popup_menu(-name=>'side',
+								   -Values=>['over-represented','under-represented','both'],
+								   -default=>$default{side})
+					       ])
+,
+
 				    ### binomial E-value
 				    $query->td([$query->checkbox(-name=>'eval',
 								 -checked=>$default{eval},
