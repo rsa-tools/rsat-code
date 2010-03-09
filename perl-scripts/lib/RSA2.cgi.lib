@@ -629,9 +629,9 @@ sub TaxonPopUpString {
 sub SeqBoxMQ {
   my $seq_num= shift(@_);
  # text area to enter the sequence
-  print "<h2>Dataset ".$seq_num."</h2>";
+ # print "<h2>Dataset ".$seq_num."</h2>";
   print "<table ><tr><td>";
- &MultiSequenceChoice($seq_num);
+ &MultiSequenceChoice("Dataset ".$seq_num, $seq_num);
   print "</td>";
   print "<td>";
   print "<br>";
@@ -701,6 +701,8 @@ print ')" id="heading98"> Where to find matrices ?</div>
 	<a class="menu_item" href="http://the_brain.bwh.harvard.edu/uniprobe/" target="_blank">UniProbe</a>
 	<a class="menu_item" href="http://www.gene-regulation.com/pub/databases.html" target="_blank">Transfac</a>
 	<a class="menu_item" href="http://jaspar.cgb.ki.se/" target="_blank">Jaspar</a>
+	<a class="menu_item" href="http://regulondb.ccg.unam.mx/html/Data_Sets.jsp" target="_blank">RegulonDB</a>
+
 </div>
 </div>
 </div>
