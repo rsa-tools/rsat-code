@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.81 2010/03/09 04:20:42 amedina Exp $
+# $Id: matrix-quality,v 1.82 2010/03/09 17:56:33 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -346,20 +346,19 @@ package main;
     &PreVerbose() if ($main::verbose);
 
     if ($tasks{index}) {
-	local $index = &OpenOutputFile($outfile{index});
-	print $index "<html>\n";
-	print $index "<head>\n";
-	print $index "<title>matrix-quality result: ",$matrix_name,"</title>\n";
-	print $index "</head>\n\n";
-	print $index "<body>\n\n";
+	$main::index = &OpenOutputFile($outfile{index});
+	print $main::index "<html>\n";
+	print $main::index "<head>\n";
+	print $main::index "<title>matrix-quality result: ",$matrix_name,"</title>\n";
+	print $main::index "</head>\n\n";
+	print $main::index "<body>\n\n";
 	
 	## Print the command
-	print $index "<h1>matrix-quality result: ",$matrix_name,"</h1>\n\n";
-	print $index "<b>Command:</b>\n";
-	print $index "<pre>matrix-quality ";
-	&PrintArguments($index);
-	print $index "</pre>";
-
+	print $main::index "<h1>matrix-quality result: ",$matrix_name,"</h1>\n\n";
+	print $main::index "<b>Command:</b>\n";
+	print $main::index "<pre>matrix-quality ";
+	&PrintArguments($main::index);
+	print $main::index "</pre>";
     }
 
     ################################################################
@@ -490,58 +489,58 @@ package main;
 	my ($image) = @_;
 	my $short_image = &RSAT::util::ShortFileName($image);
 	my $image_format = "png";
-	print $index "<a href='",$short_image.".".$image_format,"'><img border=1 src='",$short_image.".".$image_format, "'></a>\n\n";
+	print $main::index "<a href='",$short_image.".".$image_format,"'><img border=1 src='",$short_image.".".$image_format, "'></a>\n\n";
       }
 
       sub list_one_file {
 	my ($description, @files) = @_;
-	print $index "<tr>";
-	print $index "<td>", $description,"</td>\n";
+	print $main::index "<tr>";
+	print $main::index "<td>", $description,"</td>\n";
 	foreach my $file (@files) {
 	  my $short_file = &RSAT::util::ShortFileName($file);
-	  print $index "<td><a href='",$short_file,"'>", $short_file,"</a></td>\n";
+	  print $main::index "<td><a href='",$short_file,"'>", $short_file,"</a></td>\n";
 	}
-	print $index "</tr>\n\n";
+	print $main::index "</tr>\n\n";
       }
       &RSAT::message::Info("Index file", $outfile{index});
 
       #this part has been moved up, so the html is open before
 
-     #  local $index = &OpenOutputFile($outfile{index});
-#       print $index "<html>\n";
-#       print $index "<head>\n";
-#       print $index "<title>matrix-quality result: ",$matrix_name,"</title>\n";
-#       print $index "</head>\n\n";
-#       print $index "<body>\n\n";
+     #  local $main::index = &OpenOutputFile($outfile{main::index});
+#       print $main::index "<html>\n";
+#       print $main::index "<head>\n";
+#       print $main::index "<title>matrix-quality result: ",$matrix_name,"</title>\n";
+#       print $main::index "</head>\n\n";
+#       print $main::index "<body>\n\n";
 
 #       ## Print the command
-#       print $index "<h1>matrix-quality result: ",$matrix_name,"</h1>\n\n";
-#       print $index "<b>Command:</b>\n";
-#       print $index "<pre>matrix-quality ";
-#       &PrintArguments($index);
+#       print $main::index "<h1>matrix-quality result: ",$matrix_name,"</h1>\n\n";
+#       print $main::index "<b>Command:</b>\n";
+#       print $main::index "<pre>matrix-quality ";
+#       &PrintArguments($main::index);
 #       print $index "</pre>";
 
       ## Display the distributions
-      print $index "\n<h3>Figures</h3>\n";
-      print $index "\n<h4>Matrix logo</h4>\n";
+      print $main::index "\n<h3>Figures</h3>\n";
+      print $main::index "\n<h4>Matrix logo</h4>\n";
       &index_one_image($outfile{prefix}."_logo");
       &index_one_image($outfile{prefix}."_rc_logo");
-      print $index "\n<h4>Complementary cumulative distributions</h4>\n";
+      print $main::index "\n<h4>Complementary cumulative distributions</h4>\n";
       &index_one_image($outfile{distrib_compa});
-      print $index "\n<h4>Complementary cumulative distributions (logarithmic Y axis)</h4>\n";
+      print $main::index "\n<h4>Complementary cumulative distributions (logarithmic Y axis)</h4>\n";
       &index_one_image($outfile{distrib_compa}."_logy");
-      print $index "\n<h4>ROC curve (logarithmic X axis)</h4>\n";
+      print $main::index "\n<h4>ROC curve (logarithmic X axis)</h4>\n";
       &index_one_image($outfile{distrib_compa}."_roc_xlog");
 
       ## Type the matrix information
-      print $index "\n<h3>Matrix information</h3>\n";
-      print $index "<pre>\n";
-      print $index `cat $outfile{matrix_info}`;
-      print $index "</pre>\n";
+      print $main::index "\n<h3>Matrix information</h3>\n";
+      print $main::index "<pre>\n";
+      print $main::index `cat $outfile{matrix_info}`;
+      print $main::index "</pre>\n";
 
       ## List the output files
-      print $index "\n<h3>Result files</h3>\n";
-      print $index "<p><table border=1 cellpadding=3 cellpsacing=3>";
+      print $main::index "\n<h3>Result files</h3>\n";
+      print $main::index "<p><table border=1 cellpadding=3 cellpsacing=3>";
       &list_one_file("Output directory", ".");
       &list_one_file("Matrix info", $outfile{matrix_info});
       &list_one_file("Matrix in tab format", $outfile{matrix_tab});
@@ -553,10 +552,10 @@ package main;
 	&list_one_file($seq_type, $outfile{$seq_type});
       }
       &list_one_file("Log file", $outfile{log});
-      print $index "</table>";
+      print $main::index "</table>";
 
       ## Close the file
-      print $index "</body></html>\n";
+      print $main::index "</body></html>\n";
       close $main::index;
     }
 
