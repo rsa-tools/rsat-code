@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.138 2010/01/29 15:04:32 jvanheld Exp $
+# $Id: oligo-analysis,v 1.139 2010/03/09 07:22:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -24,7 +24,7 @@ require RSAT::Tree;
 ################################################################
 ###### initialize parameters ##########
 local $start_time = &AlphaDate();
-local $program_version = do { my @r = (q$Revision: 1.138 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+local $program_version = do { my @r = (q$Revision: 1.139 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 local $org_or_taxon; ## Name of the organism or taxon for the background model
 local $taxon = 0; ## Specify it the background model is organism-specific or taxon-specific
@@ -2509,12 +2509,13 @@ ARGUMENTS
 		- binomial significance
 		- occurrence number
 
-	-under	detect under-represented instead of over-represented words
-		(see below for details).
+	-under
+	        detect under-represented instead of over-represented words
+		(left-tail significance test, see below for details).
 
 	-two_tails
 		detect under-represented and over-represented words
-		(see below for details).
+		(two-tails significance test, see below for details).
 
 	-zeroocc
 		Report also patterns with zero occurrences (provided
@@ -2641,56 +2642,63 @@ PROBABILITIES
 
     PROBABILITY OF THE OBSERVED NUMBER OF OCCURRENCES (BINOMIAL)
 
-	The probability to observe exactly k occurrences in the whole family
-  	of sequences is calculated by the binomial
+        The probability to observe exactly k occurrences in the whole
+  	family of sequences is calculated by the binomial
 
-	                                          k      T-k
-	    P(X=k) = bin(p,T,k) =       T!      p  (1-p)
+	                                          x      T-x
+	    P(X=x) = bin(p,T,x) =       T!      p  (1-p)
                                    -----------
-                                   k! * (T-k)!
+                                   x! * (T-x)!
 
-	where   k   is the observed number of occurrences,
+	where   x   is the observed number of occurrences,
                 p   is the expected frequency for the pattern,
                 T   is the number of possible matching positions,
                     as defined above.
 
-	The probability to observe obs or more occurrences in the whole family
-  	of sequences is calculated by the sum of binomials:
+	The probability to observe x or more occurrences in the
+  	sequence set is calculated by the sum of binomials:
 
-	                T               k-1
-	    P(X>=k) =  SUM P(i) =  1 -  SUM  P(i)
-	               i=k              i=0
+	                       T                 k-1
+	    Pval = P(X>=x) =  SUM P(X=i) =  1 -  SUM  P(i)
+	                      i=x                i=0
+
+        Note that the the P-value (Pval) is not computed by directly
+        applying this formula, but by using an efficient algorithm
+        (based on recursion), which increases both computing speed and
+        accuracy.
+
+        Interpretation: the P-value (Pval) represents the nominal risk
+        of false positive, i.e. the risk to consider a given word as
+        over-represented whereas it is not.
+
 
     OVER/UNDER-REPRESENTATION
 
-		By default, the program calculates the P-value on the
-		right tail of the probability distribution, which
-		represents the probability to have at least k
-		occurrences:
+        By default, the program calculates the P-value on the right
+	tail of the probability distribution, which represents the
+	probability to observe at least x occurrences by chance:
 
-			                T
-			    P(X>=k) =  SUM P(i)
-			              i=occ
+			               T
+			    P(X>=x) = SUM P(X=i)
+			              i=x
 
-		With the option -under, the P-value is calcluated on
-		the left tail of the distribution, which represents the
-		probability of having less than k occurrences :
+	With the option -under, the P-value is calculated on the left
+	tail of the distribution, which represents the probability of
+	having at most x occurrences:
 
-			                 occ-1
-			    P(X<=occ) =  SUM P(i)
-			                 i=0
+			               x-1
+			    P(X<=x) =  SUM P(X=i)
+			               i=0
 
-		The option -under does not affect the other statistics
-		(zscore, loglikelihood). For z-score, the negative
-		values can be used to asses word under-representation.
+	The option -under does not affect the other statistics
+	(zscore, loglikelihood). For z-score, the negative values
+	indicate under-representation.
 
-		With the option -two_tail, the P-value is calculated
-		on either the left or the right-tail of the
-		distribution, depending on the observed/expected
-		comparison:
-		- if k >= exp_occ, right tail (over-representation)
-		- if k < exp_occ, left tail (under-representation)
-
+	With the option -two_tails, the P-value is calculated on
+	either the left or the right-tail of the distribution,
+	depending on the observed/expected comparison:
+	 if k >= exp_occ, right tail (over-representation)
+	 if k < exp_occ, left tail (under-representation)
 
     SPECIFIC TREATMENT FOR DOUBLE STRAND COUNTS
 
@@ -2730,33 +2738,40 @@ PROBABILITIES
 	hexanucleotide analysis amounts to consider 4096
 	hypotheses.
 
-	The E-value represented the expected number of patterns which
-	would be returned at random for a given P-value (probability).
+	The E-value (Eval) represents the expected number of patterns
+	which would be returned at random for a given threshold of
+	nominal P-value.
 
-	      E-value = NPO * P(X>=k)
+	      Eval = NPO * P(X>=x)
 
-	where	NPO	 is the number of possible oligomers of the
-	                 chosen length (eg 4096 for hexanucleotides).
+	where NPO is the number of possible oligomers of the chosen
+	          length (eg 4096 for hexanucleotides).
 
         Note that when searches are performed on both strands, NPO is
         corrected for the fact that non-palindromic patterns are
-        grouped by pairs (for example, there are 2080 patterns when
-        hexanucleotides are counted on both strands).
+        grouped by pairs (for example, there are 4096 possible
+        hexanucleotides when the count is performed on a single
+        strand, but only 2080 when the count is performed on both
+        strands).
 
+	Interpretation: the E-value (Eval) represents the expected
+	number of false positives, for a given threshold of P-value
+	(Pval). 
 
-    SIGNIFICANCE INDEXES
+    SIGNIFICANCE INDEX
 
         The significance index is simply a negative logarithm
         conversion of the E-value (in base 10).
 
+	The significance index is calculated as follows:
 
-	The significance indexes are calculated as follows:
+	      sig = -log10(E-value);
 
-	      sig_occ = -log10(E-value);
-
-	This index is very convenient to interpret : highest values
-	correspond to the most exceptional patterns.
-
+	This index is very convenient to interpret : higher values
+	correspond to exceptional patterns. A significance of 0
+	corresponds to an E-value of 1. A significance of 2 to an
+	E-value of 1e-2 (i.e. one expects no more than 0.01 false
+	positives in the whole collection of patterns).
 
     OVERLAP COEFFICIENT
         overlap coefficient is calculated as follows
@@ -2880,9 +2895,23 @@ EXAMPLES OF UTILISATION
 	2) to read the user manual for the command line utilization of
  	   the tools.
 
+SEE ALSO
+
+  dyad-analysis 
+  	Detect over- and under-represented dyads (i.e. a pair of short
+	oligonucleotides separated by a spacing of fixed width but
+	variable content).
+
+  count-words
+	Program written in C (developed by Matthieu Defrance) to
+	ensure an efficient counting of oligonucleotides. This program
+	runs about 100 times faster than oligo-analysis but has
+	restricted functionality (only return word occurrences and
+	frequencies).
+
 WEB VERSION
-	oligo-analysis can be used via internet at the following site:
-	http://rsat.ulb.ac.be/rsat/
+	oligo-analysis can be used via internet at the RSAT Web site:
+ 	    http://rsat.ulb.ac.be/rsat/
 End_of_help
   close HELP;
   exit(0);
