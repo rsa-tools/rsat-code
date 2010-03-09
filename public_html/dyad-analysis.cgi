@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.36 2009/12/14 09:59:56 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.37 2010/03/09 07:23:00 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -86,6 +86,13 @@ if ($query->param('strand') =~ /single/) {
   $parameters .= " -1str";
 } else {
   $parameters .= " -2str";
+}
+
+### group patterns by pairs of reverse complements
+if ($query->param('side') eq 'under-represented') {
+  $parameters .= " -under";
+} elsif ($query->param('side') eq 'both') {
+  $parameters .= " -two_tail";
 }
 
 ### overlapping matches
