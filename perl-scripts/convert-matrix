@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.97 2010/03/07 20:39:35 jvanheld Exp $
+# $Id: convert-matrix,v 1.98 2010/03/10 08:38:51 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -1357,11 +1357,12 @@ sub ExportMatrix {
   if ($return_fields{logo}) {
     if ($main::verbose >= 1) {
       my $logo_file = $matrix->get_attribute("logo_file");
-      foreach my $rc_suffix ("", "_rc") {
+### TEMPORARILY INACTIVATED BECAUSE THERE IS A BUG WITH RC LOGOS
+#      foreach my $rc_suffix ("", "_rc") {
 	foreach my $logo_format (@logo_formats) {
 	  print $out  "; logo file:" , $logo_file.$rc_suffix.".".$logo_format, "\n";
 	}
-      }
+#      }
     }
   }
 
