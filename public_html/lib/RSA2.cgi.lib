@@ -1061,7 +1061,7 @@ sub EmailTheResult {
     my $result_URL = "$ENV{rsat_www}/tmp/$tmp_file_name";
 
     #### debugging: report the command
-    print "<pre>$command > $TMP/$tmp_file_name</pre>" if ($ENV{rsat_echo} >= 1);
+    print "<pre>$command >> $TMP/$tmp_file_name</pre>" if ($ENV{rsat_echo} >= 1);
 
     #### Indicate the URL of the future result file
     my $message = "The server is now processing your request.\n"; 
@@ -1077,7 +1077,7 @@ sub EmailTheResult {
     #### concatenate the command with the email notification
     my $email_message = "Your result is available at the following URL:\n\t${result_URL}";
     $email_message .= "\nThe result file will remain there for $delay.";
-    $email_command =  "$command | perl -pe 's|$ENV{RSAT}/(public_html/)*||g' > $TMP/$tmp_file_name; ";
+    $email_command =  "$command | perl -pe 's|$ENV{RSAT}/(public_html/)*||g' >> $TMP/$tmp_file_name; ";
     $email_command .= "echo \"$email_message\" | $mail_command $email_address &"; 
     print "<PRE>$email_command</PRE>" if ($ENV{rsat_echo} >= 1);
     system $email_command;
