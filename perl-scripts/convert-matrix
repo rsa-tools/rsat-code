@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.98 2010/03/10 08:38:51 jvanheld Exp $
+# $Id: convert-matrix,v 1.99 2010/03/10 10:14:17 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -35,6 +35,7 @@ $null = "NA";
 $perm = 0;
 $prefix = ""; ## Prefix to be added before motif names
 %force_attribute = ();
+$top_matrices = "none";
 
 local %infile = ();
 local %outfile = ();
@@ -245,9 +246,11 @@ $out = &OpenOutputFile($outfile{output});
 if (scalar(@matrix_files >= 1)) {
   $m = 0;
   foreach my $matrix_file (@matrix_files) {
+    last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop reading files if we already collected the specified number of matrices
     my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format);
     foreach my $matrix (@matrices_from_file) {
       $m++;
+      last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
       &SetMatrixName($matrix, $m, $matrix_file, $input_format);
       push @matrices, $matrix;
     }
@@ -257,6 +260,7 @@ if (scalar(@matrix_files >= 1)) {
   my $m = 0;
   foreach my $matrix (@matrices_from_file) {
     $m++;
+    last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
     &SetMatrixName($matrix, $m, "", $input_format);
     push @matrices, $matrix;
   }
@@ -324,9 +328,7 @@ if ($sort_key) {
 my $m = 0;
 foreach my $matrix (@matrices) {
   $m++;
-  if ((defined($top_matrices)) && ($m > $top_matrices)) {
-    last;
-  }
+  last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop treating matrices if we already collected the specified number of matrices
   &RSAT::message::Info("Exporting matrix", $m."/".scalar(@matrices))
     if ($main::verbose >= 3);
 
@@ -1357,12 +1359,11 @@ sub ExportMatrix {
   if ($return_fields{logo}) {
     if ($main::verbose >= 1) {
       my $logo_file = $matrix->get_attribute("logo_file");
-### TEMPORARILY INACTIVATED BECAUSE THERE IS A BUG WITH RC LOGOS
-#      foreach my $rc_suffix ("", "_rc") {
+      foreach my $rc_suffix ("", "_rc") {
 	foreach my $logo_format (@logo_formats) {
 	  print $out  "; logo file:" , $logo_file.$rc_suffix.".".$logo_format, "\n";
 	}
-#      }
+      }
     }
   }
 
