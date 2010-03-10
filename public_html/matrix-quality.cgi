@@ -48,7 +48,7 @@ $file_prefix = $result_dir."/";
 ################################################################
 #### Matrix specification
 
-$matrix_file = $file_prefix."matrix.input";
+$matrix_file = $file_prefix."matrix_input";
 local $input_format = lc($query->param('matrix_format'));
 
 if ($query->param('matrix')) {
