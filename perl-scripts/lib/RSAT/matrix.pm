@@ -3153,7 +3153,7 @@ sub makeLogo{
   my (@logo_formats) = @{$logo_formats};
   &RSAT::message::Debug("makeLogo", $logo_dir, $pseudo_seq_file, $seq_number, "pseudo sequences", $rev_compl) 
     if ($main::verbose >= 5);
-  my ($pseudo_seq_file,$seq_number) = $self->seq_from_matrix($logo_dir, $rev_compl);
+  my ($pseudo_seq_file,$seq_number) = $self->fake_seq_from_matrix($logo_dir, $rev_compl);
   my $ncol = $self->ncol();
   my $x_axis_legend = $seq_number." sites";
   foreach my $logo_format (@logo_formats){
@@ -3186,10 +3186,16 @@ sub makeLogo{
 ################################################################
 ## This method is somewat artificial: it prints fake sequences that
 ## respect the residue counts of the matrix, in order to generate a
-## logo with seqlogo
-sub seq_from_matrix {
+## logo with seqlogo.
+#
+## The problem is that seqlogo takes as input a sequence set, instead
+## of a matrix. In the near future we should use another
+## logo-generating program (for example enologos, which is more
+## flexible, see http://biodev.hgen.pitt.edu/enologos/).
+##
+sub fake_seq_from_matrix {
   my ($self,$seq_dir, $rev_compl) = @_;
-  &RSAT::message::Debug("&RSAT::matrix::seq_from_matrix", "dir=".$seq_dir, "rev_compl=".$rev_compl) if ($main::verbose >= 5);
+  &RSAT::message::Debug("&RSAT::matrix::fake_seq_from_matrix", "dir=".$seq_dir, "rev_compl=".$rev_compl) if ($main::verbose >= 5);
   my $nb_col = $self->ncol();
   my $nb_row = $self->nrow();
   @matrix = @{$self->{table}};
@@ -3218,24 +3224,25 @@ sub seq_from_matrix {
       $i++;
     }
     $letters_at_column[$c] .= $null_residue x $null_residues[$c];
-#    &RSAT::message::Debug("&seq_from_matrix()", "Column-letters", $letters_at_column[$c]) if ($main::verbose >= 4);
+#    &RSAT::message::Debug("&fake_seq_from_matrix()", "Column-letters", $letters_at_column[$c]) if ($main::verbose >= 4);
   }
+
 
   ## Print sequences
   my @intermediate = ();
-  for my $fake_seq (@letters_at_column) {
-    $fake_seq = &RSAT::SeqUtil::ReverseComplement($fake_seq) if ($rev_compl);
-#    &RSAT::message::Debug("&RSAT::matrix::seq_from_matrix", "Fake sequence", $fake_seq) if ($main::verbose >= 10);
-    my @residues = split ("",$fake_seq);
+  for my $col_seq (@letters_at_column) {
+    my @residues = split ("",$col_seq);
     push @intermediate, \@residues;
   }
   my @seqs=();
   for my $residue (0..$seq_number-1) {
-    my $seq;
+    my $fake_seq;
     for my $array (@intermediate) {
-      $seq .=$array->[$residue];
+      $fake_seq .=$array->[$residue];
     }
-    push @seqs, $seq;
+    $fake_seq = &RSAT::SeqUtil::ReverseComplement($fake_seq) if ($rev_compl);
+    &RSAT::message::Debug("&RSAT::matrix::fake_seq_from_matrix", "Fake sequence", $col_seq) if ($main::verbose >= 6);
+    push @seqs, $fake_seq;
   }
   &RSAT::message::Debug("Pseudo sequences from matrix :\n;",join ("\n;\t",@seqs)) if ($main::verbose >= 4);
 
@@ -3243,7 +3250,7 @@ sub seq_from_matrix {
   my $tmp_seq_file = &RSAT::util::make_temp_file($seq_prefix, $self->get_attribute("name"));
   my $seq_handle = &RSAT::util::OpenOutputFile($tmp_seq_file);
   print $seq_handle join("\n",@seqs)."\n";
-  &RSAT::message::Debug("Pseudo sequences stored in temp file\n", $tmp_seq_file) if ($main::verbose >= 3);
+  &RSAT::message::Debug("Pseudo sequences stored in temp file\n", $tmp_seq_file) if ($main::verbose >= 5);
   return ($tmp_seq_file,$seq_number);
 }
 
