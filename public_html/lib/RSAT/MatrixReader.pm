@@ -77,27 +77,27 @@ sub readFromFile {
     my @matrices = ();
 
     if ((lc($format) eq "consensus") || ($format =~ /^wc/i)) {
-	@matrices = _readFromConsensusFile($file);
+	@matrices = _readFromConsensusFile($file,%args);
     } elsif (lc($format) eq "transfac") {
-	@matrices = _readFromTRANSFACFile($file);
+	@matrices = _readFromTRANSFACFile($file,%args);
     } elsif (lc($format) eq "infogibbs") {
-	@matrices = _readFromInfoGibbsFile($file);
+	@matrices = _readFromInfoGibbsFile($file,%args);
     } elsif (lc($format) eq "assembly") {
-	@matrices = _readFromAssemblyFile($file);
+	@matrices = _readFromAssemblyFile($file,%args);
     } elsif (lc($format) eq "gibbs") {
-	@matrices = _readFromGibbsFile($file);
+	@matrices = _readFromGibbsFile($file,%args);
     } elsif (lc($format) eq "alignace") {
-	@matrices = _readFromAlignACEFile($file);
+	@matrices = _readFromAlignACEFile($file,%args);
     } elsif (lc($format) eq "tab") {
 	@matrices = _readFromTabFile($file, %args);
     } elsif (lc($format) eq "cluster-buster") {
 	@matrices = _readFromClusterBusterFile($file, %args);
     } elsif (lc($format) eq "motifsampler") {
-	@matrices = _readFromMotifSamplerFile($file);
+	@matrices = _readFromMotifSamplerFile($file,%args);
     } elsif (lc($format) eq "meme") {
-	@matrices = _readFromMEMEFile($file);
+	@matrices = _readFromMEMEFile($file,%args);
     } elsif (lc($format) eq "feature") {
-	@matrices = _readFromFeatureFile($file);
+	@matrices = _readFromFeatureFile($file,%args);
     } else {
 	&main::FatalError("&RSAT::matrix::readFromFile", "Invalid format for reading matrix\t$format");
     }
