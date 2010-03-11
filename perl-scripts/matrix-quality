@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.83 2010/03/10 01:00:18 amedina Exp $
+# $Id: matrix-quality,v 1.84 2010/03/11 23:11:09 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1611,7 +1611,7 @@ sub ExportMatrixInfo {
   $cmd .= " -to tab -o ".$outfile{matrix_info};
   $cmd .= " -bgfile ".$infile{bg_file};
   $cmd .= " -bg_format ".$bg_format;
-  $cmd .= " -return counts,frequencies,weights,info,parameters,profile,sites,logo";
+  $cmd .= " -return counts,frequencies,weights,info,parameters,sites,logo";
   $cmd .= " -logo_format ".$image_formats;
   $cmd .= " -logo_opt '-e -M -t ".$matrix_name." '";
   &doit($cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
