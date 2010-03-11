@@ -33,7 +33,7 @@ $query = new CGI;
 &ListParameters() if ($ENV{rsat_echo} >= 2);
 
 #### read parameters ####
-local $parameters = " -v 1";
+local $parameters = " -v 0";
 ################################################################
 ## File prefix
 $tmp_file_name = join( "_", "matrix-quality", &AlphaDate());
