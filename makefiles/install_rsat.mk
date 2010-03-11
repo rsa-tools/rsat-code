@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.15 2010/01/27 15:53:19 rsat Exp $
+# $Id: install_rsat.mk,v 1.16 2010/03/11 12:11:51 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -339,6 +339,24 @@ install_seqlogo:
 	@rsync -ruptl ${SEQLOGO_DIR}/weblogo/seqlogo ${RSAT}/bin/
 	@rsync -ruptl ${SEQLOGO_DIR}/weblogo/template.* ${RSAT}/bin/
 	@rsync -ruptl ${SEQLOGO_DIR}/weblogo/logo.pm ${RSAT}/bin/
+
+################################################################
+## Get and install the program ghostscript
+## Note: for Mac users, please go to the ghostscript Web site
+GS_URL=http://ghostscript.com/releases/
+GS_TAR=ghostscript-8.64.tar.gz
+GS_DIR=${RSAT}/ext/ghostscript
+get_gs:
+	@mkdir -p ${GS_DIR}
+	@echo "Getting gs using ${WGET}"
+	(cd ${GS_DIR}; ${WGET} -nv ${GS_URL}/${GS_TAR}; tar -xpzf ${GS_TAR})
+	@echo "gs dir	${GS_DIR}"
+
+install_gs:
+	@echo "Installing gs"
+	@rsync -ruptl ${GS_DIR}/weblogo/gs ${RSAT}/bin/
+	@rsync -ruptl ${GS_DIR}/weblogo/template.* ${RSAT}/bin/
+	@rsync -ruptl ${GS_DIR}/weblogo/logo.pm ${RSAT}/bin/
 
 ################################################################
 ## Get and install the program gnuplot
