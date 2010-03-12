@@ -2548,11 +2548,12 @@ sub compare_classes {
   my $upper_threshold_value_list = $args{"upper_threshold_value"};
   my $lower_threshold_field_list = $args{"lower_threshold_field"};
   my $lower_threshold_value_list = $args{"lower_threshold_value"};
-
+  my $population = $args{"population"};
   my $sort = $args{"sort"};
   my $distinct = $args{"distinct"};
   my $triangle = $args{"triangle"};
   my $matrix = $args{"matrix"};
+  my $multi_correction = $args{"multi_correction"};
 
   my $command = "$SCRIPTS/compare-classes -v 1";
 
@@ -2623,6 +2624,12 @@ sub compare_classes {
     }
   }
 
+  if ($population =~ /\d/) {
+    $population =~ s/\'//g;
+    $population =~ s/\"//g;
+    $command .= " -pop '".$population."'";
+  }
+
   if ($sort) {
     $sort =~ s/\'//g;
     $sort =~ s/\"//g;
@@ -2641,6 +2648,12 @@ sub compare_classes {
     $matrix =~ s/\'//g;
     $matrix =~ s/\"//g;
     $command .= " -matrix '".$matrix."'";
+  }
+
+  if ($multi_correction) {
+    $multi_correction =~ s/\'//g;
+    $multi_correction =~ s/\"//g;
+    $command .= " -multi_cor '".$multi_correction."'";
   }
 
  &run_WS_command($command, $output_choice, "compare-classes", ".tab");
