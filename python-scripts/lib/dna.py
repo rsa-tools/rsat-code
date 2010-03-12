@@ -299,11 +299,14 @@ def find_location(sequences):
     else:
         return 0,0
 
-def fasta2sequences(uf, location=None, rightPosition=None, leftPosition=None):
+def fasta2sequences(uf, location=None, rightPosition=None, leftPosition=None, centerPosition=None):
     """
-    rightPosition -- right bound
-    leftPosition  -- left bound    
+    rightPosition    -- right bound
+    leftPosition     -- left bound    
+    centertPosition  -- center  
+
     """
+    print centerPosition
     try:
         if type(uf) is str:
             if uf.endswith('.gz'):
@@ -320,7 +323,9 @@ def fasta2sequences(uf, location=None, rightPosition=None, leftPosition=None):
             if not loc and rightPosition != None:
                 loc = (rightPosition - len(dna) + 1, rightPosition)
             if not loc and leftPosition != None:
-                loc = (leftPosition, leftPosition + len(dna) -1)
+                loc = (leftPosition, leftPosition + len(dna) - 1)
+            if not loc and centerPosition != None:
+                loc = (1 + centerPosition - int(round(len(dna) / 2.0, 0)), centerPosition + len(dna) / 2) 
 
             l.append( Sequence(id, loc, dna) )
         r = Sequences(l)
