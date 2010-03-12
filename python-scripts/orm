@@ -51,16 +51,20 @@ ARGUMENTS
                               the slices heuristic: use # slices (10 by default)
                               This option is relevant only when heuristic is set
                               to slices
-        --right=#             use sequence right bound position as reference
+        --right=#             use right bound position as reference
                               position #. This should be used when dealing with 
                               upstream sequences.
                               EXAMPLE: --right=-1 (use right bound of input
                               sequence as position -1)
-        --left=#              use sequence left bound position as reference
+        --left=#              use left bound position as reference
                               position #. This should be used when dealing with
                               downstream sequences.
                               EXAMPLE: --left=0 (use left bound of input
-                              sequence as position 0)
+                              sequences as position 0)
+        --center=#            use center position as reference
+                              position #.
+                              EXAMPLE: --center=0 (use center of input
+                              sequences as position 0)
                               
     BACKGROUND MODEL OPTIONS                              
         -m #, --markov=#      use a Markov model of order # calibrated from
@@ -230,6 +234,8 @@ parser.add_option("--bgwindow",       action="store",      dest="bgwindow",     
 parser.add_option("--slices",         action="store",      dest="slices",        type="int", default=10)
 parser.add_option("--right",          action="store",      dest="right",         type="int", default=None)
 parser.add_option( "--left",          action="store",      dest="left",          type="int", default=None)
+parser.add_option( "--center",        action="store",      dest="center",        type="int", default=None)
+
 parser.add_option("--location",       action="store",      dest="location",      type="string", default=None)
 parser.add_option("-r", "--ratio",    action="store",      dest="ratio",         type="float", default=2.0)
 parser.add_option("--heuristic",                           dest="heuristic", choices=['all', 'slices', 'score'], default='slices')
@@ -270,10 +276,10 @@ def main(args, options):
     # input sequence
     #
     ##
-    if options.left == None and options.right == None:
+    if options.left == None and options.right == None and options.center == None:
         options.right = -1
 
-    s = dna.fasta2sequences(options.input, rightPosition=options.right, leftPosition=options.left)
+    s = dna.fasta2sequences(options.input, rightPosition=options.right, leftPosition=options.left, centerPosition=options.center)
 
     # location
     if options.location:
