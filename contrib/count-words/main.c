@@ -2,14 +2,14 @@
 //  main.c
 //  count-words
 //  
-//  Created by Matthieu on 2008-11-04.
+//
 //  
 // 
 
 #include "utils.h"
 #include "count.h"
 
-int VERSION = 200912;
+int VERSION = 20100312;
 
 // ===========================================================================
 // =                            usage & help
@@ -43,6 +43,7 @@ void help(char *progname)
 "        --version        print version\n"
 "        -v #             change verbosity level (0, 1, 2)\n"
 "        -l #             set oligomer length to #\n"
+"        -sp #-#          spacing between the monads (dyads) #\n"
 "        -2str            add reverse complement\n"
 "        -1str            do not add reverse complement\n"
 "        -noov            do not allow overlapping occurrences\n"
@@ -57,6 +58,23 @@ void help(char *progname)
 // ===========================================================================
 // =                            main
 // ===========================================================================
+int parse_spacing(char *arg, int *values)
+{
+    int count = 0;
+    char *tk = NULL;
+    do
+    {
+        tk = strtok (arg, "-");
+        if (tk != NULL)
+        {
+            DEBUG(tk);
+            values[count++] = atoi(tk);
+        }
+        arg = NULL;
+    } while (count != 2 && tk != NULL);
+    return count;
+}
+
 int main(int argc, char *argv[])
 {
     char *input_filename = NULL;
@@ -64,6 +82,8 @@ int main(int argc, char *argv[])
     int add_rc = TRUE;
     int noov = FALSE;
     int oligo_length = 1;
+    int spacing = -1;
+    int spacing_tab[2] = {0, 0};
     int grouprc = TRUE;
     
     // options
@@ -117,10 +137,17 @@ int main(int argc, char *argv[])
         {
             grouprc = FALSE;
         } 
-        else if (strcmp(argv[i], "-l") == 0) 
+        else if (strcmp(argv[i], "-l") == 0)
         {
             ASSERT(argc > i + 1, "-l requires a nummber");
             oligo_length = atoi(argv[++i]);
+        } 
+        else if (strcmp(argv[i], "-sp") == 0)
+        {
+            ASSERT(argc > i + 1, "-sp requires an argument");
+            parse_spacing(argv[++i], spacing_tab);
+            spacing = spacing_tab[0];
+            //printf("spacing =%d %d", spacing_tab[0], spacing_tab[1]);
         } 
         else if (strcmp(argv[i], "-i") == 0) 
         {
@@ -157,7 +184,13 @@ int main(int argc, char *argv[])
        }
     }
 
-    count_in_file(input_fp, output_fp, oligo_length, add_rc, noov, grouprc, argc, argv);
+    count_in_file(input_fp, output_fp, oligo_length, spacing, add_rc, noov, grouprc, argc, argv, 1);
+    for (spacing = spacing_tab[0] + 1; spacing <= spacing_tab[1]; spacing++)
+    {
+        fseek(input_fp, SEEK_SET, 0);
+        count_in_file(input_fp, output_fp, oligo_length, spacing, add_rc, noov, grouprc, argc, argv, 0);
+    }
+
     fflush(output_fp);
     if (input_filename)
         fclose(input_fp);
