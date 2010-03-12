@@ -1740,6 +1740,11 @@ Separate with semicolumn (":") as there are fields containing commas.</xsd:docum
               <xsd:documentation>Lower threshold value for a given field.</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
+	  <xsd:element name="population" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Population size. If not specified, the population size is estimated as the number of distinct elemenst in the whole set of reference classes.</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
           <xsd:element name="sort" type="xsd:string" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>Sort on the basis of the specified key.</xsd:documentation>
@@ -1761,6 +1766,16 @@ Separate with semicolumn (":") as there are fields containing commas.</xsd:docum
 The next argument indicates which statistics has to be return in the matrix (default = sig) 
 Supported: E(QR), E_val, F(!Q!R), F(Q!R), F(Q), F(QR), F(R!Q), F(R), H(Q), H(Q,R), H(Q|R), H(R), H(R|Q), I(Q,R), IC, P(QR), P(Q|R), P(R|Q),
 P_val, Q, QR, QvR, R, U(Q|R), U(R|Q), dH(Q,R), dotprod, jac_sim, rank, sig</xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="multi_correction" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>Factor used for the multi-testing correction.
+Supported values:
+  nt  number of significance tests (default)
+  nq  number of query classes
+  nr  number of reference classes
+  nc  number of comparisons (nc = nq * nr)</xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	</xsd:sequence>
