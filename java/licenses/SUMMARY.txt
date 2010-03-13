@@ -17,6 +17,7 @@ be_ac_ulb_bigre_pathwayinference_core.jar
 be_ac_ulb_bigre_metabolicdatabase.jar
 be_ac_ulb_bigre_keggclient.jar
 graphtools.jar
+RSATWS.jar
 
 
 DEPENDENCIES
@@ -54,6 +55,11 @@ xerces-2.7.1.jar
 xml-apis.jar
 xmlsec-1.4.1.jar
 
+JSP and Java servlet dependencies:
+jasper.jar
+jsp-api.jar
+servlet-api.jar
+
 Other dependencies (task):
 colt-1.2.0.jar	(matrix support)
 cos.jar	(data upload with JSP)
@@ -69,6 +75,7 @@ protege-3.2beta-build241.jar	(Biopax parsing)
 protege-owl-2006-01-24.jar	(Biopax parsing)
 sax2.jar	(KGML file parsing)
 be_ac_ucl_info_bioedge_graphutilities.jar	(graph analysis)
+RSATWS.jar (access to RSAT web services)
 
 
 LICENSES
@@ -82,8 +89,11 @@ commons-collections-2.1.1.jar
 commons-discovery-0.2.jar
 commons-logging-1.0.4.jar
 log4j-1.2.14.jar
+jasper.jar
 jaxrpc.jar
+jsp-api.jar
 saaj.jar
+servlet-api.jar
 xml-apis.jar
 xmlrpc-2.0.jar
 xmlsec-1.4.1.jar
