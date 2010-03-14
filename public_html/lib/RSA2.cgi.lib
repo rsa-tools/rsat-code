@@ -548,6 +548,33 @@ sub OrganismPopUpString {
     return $organismPopup;
 }
 
+sub OrganismPopUpEnsembl {
+    my (@selected_organisms) = @_;
+    if (scalar(@selected_organisms) <= 0) {
+    my $org_list = `$SCRIPTS/supported-organisms-ensembl `;
+		@selected_organisms = split(/\n/,$org_list);
+    }
+    my $organismPopup = "";
+    $organismPopup .=  "<B>Organism</B>&nbsp;";
+    $organismPopup .=  "<SELECT NAME='organism_ens'>\n";
+    foreach my $org (@selected_organisms) {
+    $name = $org;
+    $name =~ s/_/ /;
+	if (lc($org) eq lc($default{organism_ens})) {
+		$org = lc($org);
+	    $organismPopup .=  "<OPTION SELECTED VALUE='$org'>$name\n";
+	}elsif (lc($org) =~ /^;/) {
+	    $info_ensembl =  $org;
+	    $info_ensembl =~ s/;//;
+	} else {
+	    $organismPopup .=  "<OPTION VALUE='$org'>$name\n";
+	}
+    }
+    $organismPopup .=  "</SELECT>";
+    $organismPopup .=  $info_ensembl;
+    $organismPopup .=  "<BR>\n";
+    print $organismPopup;
+}
 
 
 ################################################################
