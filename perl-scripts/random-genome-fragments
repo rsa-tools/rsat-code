@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.13 2010/03/14 22:14:34 morgane Exp $
+# $Id: random-genome-fragments,v 1.14 2010/03/15 08:54:22 morgane Exp $
 #
 ############################################################
 
@@ -57,9 +57,16 @@ BEGIN {
     }
 }
 require "RSA.lib";
+push (@INC, $ENV{bioperl});
 push (@INC, $ENV{ensembl});
+
+
+## EnsEMBL libraries
+use DBI();
+require Bio::EnsEMBL::Registry;
+
 require RSAT::organism;
-use RSAT::feature;
+require RSAT::feature;
 use Data::Dumper;
 
 
@@ -545,9 +552,6 @@ sub Verbose {
 
 package Ensembl_genome;
 {
-	use DBI();
-	## EnsEMBL libraries
-	require Bio::EnsEMBL::Registry;
  
  sub new {
   my $class = shift;
