@@ -67,7 +67,7 @@ int parse_spacing(char *arg, int *values)
         tk = strtok (arg, "-");
         if (tk != NULL)
         {
-            DEBUG(tk);
+            //DEBUG("tk: ", tk);
             values[count++] = atoi(tk);
         }
         arg = NULL;

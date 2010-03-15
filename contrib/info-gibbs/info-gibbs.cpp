@@ -151,7 +151,7 @@ int parse_sigmatrix_sites(char *arg, int *values)
         tk = strtok (arg, ",");
         if (tk != NULL)
         {
-            DEBUG(tk);
+            //DEBUG("tk: %s", tk);
             values[count++] = atoi(tk);
         }
         arg = NULL;
