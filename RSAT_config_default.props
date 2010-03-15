@@ -1,6 +1,10 @@
 ################################################################
 ## This file specifies the configuration  of this server for the
-## Regulatory Sequence Analysis Tools
+## Regulatory Sequence Analysis Tools (RSAT).
+##
+## In particular, you MUST replace all instances of
+## [your_path_to_rsat] by the FULL path of the directry containing the
+## folder rsa-tools.
 
 ## Echo level of the web server (default 0, set to 1 or 2 for debugging)
 rsat_echo=0
@@ -12,19 +16,31 @@ rsat_server_admin=your.mail@your.mail.server
 rsat_site=your_site_name
 
 ## Main RSAT directory
-RSAT=/home/rsat/rsa-tools
+RSAT=[your_path_to_rsat]/rsa-tools
 
 ## Directory for storing temporary file (for stand-alone scripts + web server + web services)
-rsat_tmp=/home/rsat/rsa-tools/public_html/tmp
+rsat_tmp=[your_path_to_rsat]/rsa-tools/public_html/tmp
 
-## URL of the web server (important for the links)
+################################################################
+## URL of the web server (important for the links).
+## This is necessary only if you want to install a local Web server
 rsat_www=http://rsat.ulb.ac.be/rsat/
 
 ## Obsolete version of the web server, for backwards compatibility
+## This is necessary only if you want to install a local Web server
 www_rsa=http://rsat.ulb.ac.be/rsat/
 
+
+################################################################
 ## URL for the web services.
-## Distinct from rsat_www because some web servers might delegate the web services to another server.
+##
+## This is necessary only if you want to install a local Web services
+## (beware of the distinction between Web server and Web
+## services. If you ignore the difference, you probably don't need
+## to configure the Web services)
+##
+## This URL may be distinct from rsat_www because some web servers
+## might delegate the web services to another server.
 rsat_ws=http://rsat.ulb.ac.be/rsat/web_services/RSATWS.wsdl
 
 ## URL used by the RSAT Web services to give Web access to temporary files
@@ -57,12 +73,12 @@ GENKBANK_DIR=
 ensembl_host=ensembldb.ensembl.org
 
 ## EnsEMBL APIs (used by the EnsEMBL-accessing tools (retrieve-ensembl-seq, get-ensembl-genome))
-ensembl=/home/rsat/rsa-tools/lib/ensembl/modules
-compara=/home/rsat/rsa-tools/lib/ensembl-compara/modules
-variation=/home/rsat/rsa-tools/lib/ensembl-variation/modules
+ensembl=[your_path_to_rsat]/rsa-tools/lib/ensembl/modules
+compara=[your_path_to_rsat]/rsa-tools/lib/ensembl-compara/modules
+variation=[your_path_to_rsat]/rsa-tools/lib/ensembl-variation/modules
 
 ## BioPerl (used by the EnsEMBL-accessing tools (retrieve-ensembl-seq, get-ensembl-genome))
-bioperl=/home/rsat/rsa-tools/lib/bioperl-live
+bioperl=[your_path_to_rsat]/rsa-tools/lib/bioperl-live
 
 ################################################################
 ## Parameters for Network Analysis Tools (NeAT)
@@ -87,18 +103,24 @@ tomcat_port=
 
 ################################################################
 ## Directories for programs developed by third parties
+##
+## Those programs are not necessary for running RSAT commands, but
+## provide useful complements.
 
 ## seqlogo, program to draw sequence logos
-seqlogo=/home/rsat/rsa-tools/bin/seqlogo
+seqlogo=[your_path_to_rsat]/rsa-tools/bin/seqlogo
 
 ## MEME, motif discovery program developed by Tim Bailey
 # meme_dir=/rsat/applications/meme.3.0.5/
 
 ## MCL , graph-based clustering algorithm developed by Stijn Van Dongen
+## Integrated on the NeAT suite.
 mcl_dir=/usr/local/bin/mcl
 
-## REA, k-shortest path finding program by Jimenez and Marzal
-REA_ROOT=/home/rsat/rsa-tools/contrib/REA
+## REA, k-shortest path finding program by Jimenez and Marzal. 
+## Used for the path finding algorithms in the NeAT suite.
+REA_ROOT=[your_path_to_rsat]/rsa-tools/contrib/REA
 
 ## kWalks, subgraph extraction program by Pierre Dupont and Jerome Callut
-KWALKS_ROOT=/home/rsat/rsa-tools/rsa-tools/contrib/kwalks/bin
+## Used for the pathway extraction hybrid algorithm in the NeAT suite.
+KWALKS_ROOT=[your_path_to_rsat]/rsa-tools/rsa-tools/contrib/kwalks/bin
