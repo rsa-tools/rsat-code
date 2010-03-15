@@ -251,6 +251,27 @@ make -f makefiles/init_RSAT.mk init
 \end{lstlisting}
 % $
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Config file
+\section{Adapting \RSAT \  local configuration}
+
+The \RSAT distribution comes with a template configuration file named
+\file{RSAT\_config\_default.props} and located in the \file{rsa-tools}
+directory.
+
+Copy this file to create your own config file \file{RSAT\_config.props}.
+
+\begin{lstlisting}
+cp RSAT_config_default.props RSAT_config.props
+\end{lstlisting}
+
+
+\subsection{Editing the \RSAT\ local configuration file}
+
+You need to edit the file \file{RSAT\_config.props} and specify the
+parameters of your local configuration. In particular, \emph{it is
+  crucial to specify the full path of the variable RSAT}, which
+specifies the RSAT main directory.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Check the RSAT paths
@@ -285,27 +306,6 @@ java graphtools.util.ListTools
 
 This should display the list of available pathway analysis tools,
 which are part of the NeAT package.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Config file
-\section{Adapting \RSAT \  local configuration}
-
-The \RSAT distribution comes with a template configuration file named
-\file{RSAT\_config\_default.props} and located in the \file{rsa-tools}
-directory.
-
-Copy this file to create your own config file \file{RSAT\_config.props}.
-
-\begin{lstlisting}
-cp RSAT_config_default.props RSAT_config.props
-\end{lstlisting}
-
-
-You need to edit this file and specify the parameters of your local
-configuration. In particular, it is essential to specify the variable
-RSAT, which specifies the RSAT main directory.
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
