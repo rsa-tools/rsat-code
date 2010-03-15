@@ -189,6 +189,8 @@ exit(0);
 ############################################
 sub PipingForm {
 
+	my $assembly = `grep Ensembl $TMP/$tmp_file_name.res `;
+	$assembly =~ s/.*assembly:(.*)$/$1/;
     ### prepare data for piping
     print <<End_of_form;
 
@@ -211,10 +213,10 @@ Here are some <b>instructions to easily retrieve these sequences: </b>
 <li><a href="http://main.g2.bx.psu.edu/root?tool_id=upload1" target="_blank">Open The Galaxy website in a new window </a></li>
 
 <li>The selected tool is "Upload file". Fill the form as follow: <br/>
-File Format: BED<br/>
-URL/Text: Paste the URL of your result file: <b>${result_URL}</b><br/>
-Genome: Type the name of the organism assembly (You can find this at the top of the BED file, in the comment lines)<br/>
-Click on the "execute" button. This job is queued (right menu). Wait until it is finished.
+<b>File Format: BED</b> <br/>
+<b>URL/Text:</b>  Paste the URL of your result file: <b>${result_URL}</b><br/>
+<b>Genome:</b>  Type the name of the organism assembly: <b>$assembly</b><br/>
+Click on the "execute" button. This job is queued (right menu). Wait until it is finished (time varies depending on the server load).
 </li>
 <li>In the left menu, click on "Fetch Sequences" and on "Extract Genomic DNA"</li>
 <li>The form is automatically filled, click on the "execute" button</li>
