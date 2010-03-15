@@ -136,7 +136,7 @@ if ($query->param('rm') =~ /on/) {
 print "<PRE>command: $command $parameters <P>\n</PRE>"  if ($ENV{rsat_echo} >= 1);
 
 ### execute the command ###
-open RESULT, "$command $parameters |";
+# open RESULT, "$command $parameters |";
 
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
@@ -191,29 +191,30 @@ sub PipingForm {
 
     ### prepare data for piping
     print <<End_of_form;
-<CENTER>
 
-<TABLE class='nextstep'>
+
+<TABLE class='nextstep' style='text-align:left'>
 <TR>
   <TD>
     <H3>Next step</H3>
   </TD>
   </tr>
-  <tr>
-  <TD>
+  <tr  style='text-align:left'>
+  <TD  style='text-align:left'>
 
-<b>Extract sequences in batch with Galaxy</a></b>.
+<b>Extract sequences in batch with Galaxy</b>.
 <br/>
 For the moment, we cannot directly connect this BED file to Galaxy, and retrieve the sequences automatically.
-<br/>
-Here are some <b>instructions to easilty retrieve these sequences: <b/>
+<p/>
+Here are some <b>instructions to easily retrieve these sequences: </b>
 <ol>
-<li>Open The Galaxy website in a new window <a href="http://main.g2.bx.psu.edu/root?tool_id=upload1" target='_top'></li>
+<li><a href="http://main.g2.bx.psu.edu/root?tool_id=upload1" target="_blank">Open The Galaxy website in a new window </a></li>
+
 <li>The selected tool is "Upload file". Fill the form as follow: <br/>
 File Format: BED<br/>
-URL/Text: Paste the URL of your result file (see above)<br/>
+URL/Text: Paste the URL of your result file: <b>${result_URL}</b><br/>
 Genome: Type the name of the organism assembly (You can find this at the top of the BED file, in the comment lines)<br/>
-Click on the "execute" button
+Click on the "execute" button. This job is queued (right menu). Wait until it is finished.
 </li>
 <li>In the left menu, click on "Fetch Sequences" and on "Extract Genomic DNA"</li>
 <li>The form is automatically filled, click on the "execute" button</li>
@@ -222,7 +223,6 @@ Click on the "execute" button
 </TD>
 </TR>
 </TABLE>
-</CENTER>
 End_of_form
 }
 
