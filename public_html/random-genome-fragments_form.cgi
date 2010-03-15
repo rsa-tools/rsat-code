@@ -164,7 +164,7 @@ print $query->end_form;
 ################################################################
 ### data for the demo ensembl
 my $descr2="<H4>Comment on the demonstration example for Ensembl organism : </H4><blockquote class ='demo'>
-In this demonstration, we calculate the coordinates of randomly-chosen fragments in the genome sequence of Homo sapiens. We would like 10 fragments of 1kb. <p/>
+In this demonstration, we calculate the coordinates of randomly-chosen fragments in the genome sequence of Homo sapiens. We would like 10 fragments of 100bp. <p/>
 The program will return the coordinates of these fragments, in BED format, that can be then used to extract the sequences with tools of
 sequence providers (UCSC, Galaxy, Ensembl).
 </blockquote>";
