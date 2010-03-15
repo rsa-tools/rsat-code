@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.16 2010/03/15 12:22:58 morgane Exp $
+# $Id: random-genome-fragments,v 1.17 2010/03/15 14:50:49 morgane Exp $
 #
 ############################################################
 
@@ -292,7 +292,7 @@ package main;
 				$rand_contig_name = "chr".$rand_contig_name ;
 				## in UCSC BED files are zero-based
 				$feature->set_attribute("start",$rand_start-1);
-				$feature->set_attribute("end",$rand_end-1);
+				$feature->set_attribute("end",$rand_end); ## not -1, otherwise the tools Galaxy or UCSC do not work properly
 			} else {
 				$feature->set_attribute("start",$rand_start);
 				$feature->set_attribute("end",$rand_end);
