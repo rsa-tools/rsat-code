@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.15 2010/03/15 11:53:49 morgane Exp $
+# $Id: random-genome-fragments,v 1.16 2010/03/15 12:22:58 morgane Exp $
 #
 ############################################################
 
@@ -422,7 +422,8 @@ I<retrieve-ensembl-seq.pl> with the options
 
 For very big files, you might consider using the output format BED, which is adapted to UCSC database. 
 You can thus use the tools of sequence providers (UCSC, Galaxy, Ensembl) to efficently extract the sequences.
-
+The genomic intervals in this BED file are 0-based, to be compliant with UCSC, and related programs to retrieve sequences (Galaxy). 
+Chromosome thus start at position 0 (not 1).
 
 =cut
 	} elsif ($arg eq "-oformat") {
