@@ -44,7 +44,7 @@ $checked{$default{outputformat}}="CHECKED";
 
 ### head
 print "<CENTER>";
-print "Select random fragments in genomic sequences of a given organism<P>
+print "Select a set of fragments with random positions in a given genome, and return their coordinates and/or sequences.<P>
 Program developed by <a href='http://www.bigre.ulb.ac.be/Users/morgane/'>Morgane Thomas-Chollier</a>\n";
 print "</CENTER>";
 
