@@ -558,9 +558,10 @@ sub OrganismPopUpEnsembl {
     $organismPopup .=  "<B>Organism</B>&nbsp;";
     $organismPopup .=  "<SELECT NAME='organism_ens'>\n";
     foreach my $org (@selected_organisms) {
-    $name = $org;
+    $name = ucfirst($org);
     $name =~ s/_/ /;
-	if (lc($org) eq lc($default{organism_ens})) {
+	if ((lc($org) eq lc($default{organism_ens})) ||
+        (lc($name) eq lc($default{organism_ens}))) { 
 		$org = lc($org);
 	    $organismPopup .=  "<OPTION SELECTED VALUE='$org'>$name\n";
 	}elsif (lc($org) =~ /^;/) {
