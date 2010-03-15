@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.14 2010/03/15 08:54:22 morgane Exp $
+# $Id: random-genome-fragments,v 1.15 2010/03/15 11:53:49 morgane Exp $
 #
 ############################################################
 
@@ -290,10 +290,14 @@ package main;
 				$rand_contig_name =~ s/chromosome:[\w\.]*?://;
       			$rand_contig_name =~ s/:.*//;
 				$rand_contig_name = "chr".$rand_contig_name ;
+				## in UCSC BED files are zero-based
+				$feature->set_attribute("start",$rand_start-1);
+				$feature->set_attribute("end",$rand_end-1);
+			} else {
+				$feature->set_attribute("start",$rand_start);
+				$feature->set_attribute("end",$rand_end);
 			}
-			$feature->set_attribute("seq_name",$rand_contig_name);
-			$feature->set_attribute("start",$rand_start);
-			$feature->set_attribute("end",$rand_end);
+			$feature->set_attribute("seq_name",$rand_contig_name);	
 			$feature->set_attribute("strand",$rand_strand);
 			
 			print $main::out $feature->to_text($main::out_format, $main::null);
@@ -537,6 +541,9 @@ sub Verbose {
     print $main::out "; Number of random fragments $main::nb_fragment\n";
     if ($main::organism_ens){
     	print $main::out "; Data from Ensembl org:$main::organism_ens assembly:$main::assembly_version \n";
+    }
+    if ($main::out_format eq "bed"){
+    	print $main::out "; Warning: the genomic intervals in this BED file are 0-based, to be compliant with UCSC, and related programs to retrieve sequences (Galaxy). Chromosome thus start at position 0 (not 1).\n";
     }
     if (defined(%main::outfile)) {
 	print $main::out "; Output files\n";
