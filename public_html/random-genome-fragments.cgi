@@ -136,7 +136,7 @@ if ($query->param('rm') =~ /on/) {
 print "<PRE>command: $command $parameters <P>\n</PRE>"  if ($ENV{rsat_echo} >= 1);
 
 ### execute the command ###
-# open RESULT, "$command $parameters |";
+open RESULT, "$command $parameters |";
 
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
