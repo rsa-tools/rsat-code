@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.34 2010/03/11 12:12:19 jvanheld Exp $
+# $Id: purge-sequence,v 1.35 2010/03/15 08:04:15 rsat Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -13,11 +13,15 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 
 
-## TEMPORARY: TO FIX A BUG: the server does not load the environment variables from the config file
-$ENV{RSAT} = "/Users//jvanheld//rsa-tools";
+## TEMPORARY: TO FIX A BUG on liv server (but not on other servers): the
+## server does not load the environment variables from the config file
+##
+#$ENV{RSAT} = "/Users//jvanheld//rsa-tools";
 my $skdir = "$ENV{RSAT}/bin";
 #print("skdir", " <tt>", $skdir, "</tt>");
-## I DON'T UNDERSTAND: /Users/jvanheld/rsa-tools is automatically suppressed from the variable before printing. When I use // the string is not removed
+## I DON'T UNDERSTAND: /Users/jvanheld/rsa-tools is automatically suppressed
+## from the variable before printing. When I use // the string is not removed
+
 
 my $delete_repeats=0;
 
