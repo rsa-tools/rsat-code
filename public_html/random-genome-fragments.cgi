@@ -19,7 +19,7 @@ require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/random-genome-fragments";
 $tmp_file_name = sprintf "random-genome-fragments.%s", &AlphaDate;
-$result_file = "$TMP/$tmp_file_name.res";
+
 
 ### Read the CGI query
 $query = new CGI;
@@ -120,6 +120,7 @@ if ($template_sequence_file ne '') {
  	} elsif ($query->param('outputformat') eq "outputcoord") {
  		if ($query->param('coord_format')) {
  			$parameters .= " -oformat ".$query->param('coord_format');
+ 			$parameters .= " -v 1 ";
  		}
  	}
  }
@@ -135,32 +136,95 @@ if ($query->param('rm') =~ /on/) {
 print "<PRE>command: $command $parameters <P>\n</PRE>"  if ($ENV{rsat_echo} >= 1);
 
 ### execute the command ###
-if ($query->param('output') eq "display") {
-    #&PipingWarning();
+open RESULT, "$command $parameters |";
 
-    ### prepare data for piping
-    open RESULT, "$command $parameters |";
+if (($query->param('output') =~ /display/i) ||
+    ($query->param('output') =~ /server/i)) {
+  &PipingWarning();
 
-    print '<H2>Result</H2>';
-    print '<PRE>';
-    while (<RESULT>) {
-	print $_;
-	$genes .= $_;
+   ### print the result ### 
+
+    print '<H4>Result</H4>';
+
+    ### open the sequence file on the server
+    $sequence_file = "$TMP/$tmp_file_name.res";
+    if (open MIRROR, ">$sequence_file") {
+	$mirror = 1;
+	&DelayedRemoval($sequence_file);
     }
-    print '</PRE>';
-    close(RESULT);
 
+    print "<PRE>";
+    while (<RESULT>) {
+	print "$_" unless ($query->param('output') =~ /server/i);
+	print MIRROR $_ if ($mirror);
+    }
+    print "</PRE>";
+    close RESULT;
+    close MIRROR if ($mirror);
+
+	$result_URL = "$ENV{rsat_www}/tmp/${tmp_file_name}.res";
+	print ("The result is available at the following URL: ", "\n<br>",
+	       "<a href=${result_URL}>${result_URL}</a>",
+	       "<p>\n");
+
+
+ ### prepare data for piping
+if ($query->param('outputformat') eq "outputseq"){
+   
+    &PipingFormForSequence();
+} elsif ($query->param('coord_format') eq "bed") {
+	&PipingForm();
+}
 
     print "<HR SIZE = 3>";
 
-} elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
     &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
+
 print $query->end_html;
 
 exit(0);
+
+############################################
+sub PipingForm {
+
+    ### prepare data for piping
+    print <<End_of_form;
+<CENTER>
+
+<TABLE class='nextstep'>
+<TR>
+  <TD>
+    <H3>Next step</H3>
+  </TD>
+  </tr>
+  <tr>
+  <TD>
+
+<b>Extract sequences in batch with Galaxy</a></b>.
+<br/>
+For the moment, we cannot directly connect this BED file to Galaxy, and retrieve the sequences automatically.
+<br/>
+Here are some <b>instructions to easilty retrieve these sequences: <b/>
+<ol>
+<li>Open The Galaxy website in a new window <a href="http://main.g2.bx.psu.edu/root?tool_id=upload1" target='_top'></li>
+<li>The selected tool is "Upload file". Fill the form as follow: <br/>
+File Format: BED<br/>
+URL/Text: Paste the URL of your result file (see above)<br/>
+Genome: Type the name of the organism assembly (You can find this at the top of the BED file, in the comment lines)<br/>
+Click on the "execute" button
+</li>
+<li>In the left menu, click on "Fetch Sequences" and on "Extract Genomic DNA"</li>
+<li>The form is automatically filled, click on the "execute" button</li>
+<li>Your sequences are downloadable from the right menu.</li>
+</ol>
+</TD>
+</TR>
+</TABLE>
+</CENTER>
+End_of_form
+}
 
 
 

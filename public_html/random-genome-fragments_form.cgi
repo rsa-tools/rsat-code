@@ -60,13 +60,13 @@ print "<fieldset>
 <legend><b><a href='help.random-genome-fragments.html#fragments'>Random fragments </a></b></legend>";
 
 # number of fragments
-print "<B><A HREF='help.random-genome-fragments.html#frag_nb'>Number of fragments</A>&nbsp;</B>\n";
+print "<B><A HREF='help.random-genome-fragments.html#r_repetitions'>Number of fragments</A>&nbsp;</B>\n";
 print $query->textfield(-name=>'frag_nb',
 			-default=>$default{frag_nb},
 			-size=>5);
 
 # Length of fragments
-print "<b> <A HREF='help.random-genome-fragments.html#frag_length'>Fragments length</A>&nbsp;</B>\n ";
+print "<b> <A HREF='help.random-genome-fragments.html#l_sequence_length'>Fragments length</A>&nbsp;</B>\n ";
 print $query->textfield(-name=>'frag_length',
 			-default=>$default{frag_length},
 			-size=>5);
@@ -74,7 +74,7 @@ print "bases\n ";
 
 # File lengths
 print "<p/><b> OR </b> <p/>";
-print "<b><A HREF='help.random-genome-fragments.html#file'>Use a set of sequences as template (same nb of fragments, same lengths): </a></b><br/> \n";
+print "<b><A HREF='help.random-genome-fragments.html#lf_length_file'>Use a set of sequences as template (same nb of fragments, same lengths): </a></b><br/> \n";
 print "<div style='padding-left:30px'>";
 &MultiSequenceChoice("Template sequences",1);
 print "</div>";
@@ -91,10 +91,10 @@ print "<P/>\n";
 print "<INPUT TYPE='radio' NAME='org_select' VALUE='rsat_org' $checked{'rsat_org'}/>";
 print "<b>Local RSAT </b>"; &OrganismPopUp();
 
-### THIS WORKS but commented in case this is the problem
-#print "<INPUT TYPE='radio' NAME='org_select' VALUE='ensembl_org' $checked{'ensembl_org'}/>";
-#print "<b>Ensembl </b>"; &OrganismPopUpEnsembl();
-#print "<P/>\n";
+
+print "<INPUT TYPE='radio' NAME='org_select' VALUE='ensembl_org' $checked{'ensembl_org'}/>";
+print "<b>Ensembl </b>"; &OrganismPopUpEnsembl();
+print "<P/>\n";
 
 print "</fieldset><p/>";
 
@@ -130,7 +130,7 @@ print "</fieldset><p/>";
 
 ### send results by email or display on the browser
 print "<P>\n";
-&SelectOutput();
+&SelectOutput("server");
 
 ### action buttons
 print "<UL><UL><TABLE class = 'formbutton'>\n";
@@ -172,7 +172,7 @@ print $query->start_multipart_form(-action=>"random-genome-fragments_form.cgi");
 print "<TD><B>";
 $query->delete_all();
 print $query->hidden(-name=>'demo_descr2',-default=>$descr2);
-print $query->hidden(-name=>'frag_length',-default=>'1000');
+print $query->hidden(-name=>'frag_length',-default=>'100');
 print $query->hidden(-name=>'frag_nb',-default=>'10');
 print $query->hidden(-name=>'org_select',-default=>'ensembl_org');
 print $query->hidden(-name=>'outputformat',-default=>'outputcoord');
