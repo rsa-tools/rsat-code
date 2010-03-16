@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.42 2010/03/16 01:38:50 jvanheld Exp $
+# $Id: position-analysis,v 1.43 2010/03/16 20:26:54 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -15,6 +15,7 @@ require RSAT::util;
 require RSAT::stats;
 use POSIX qw(sysconf _PC_CHOWN_RESTRICTED);
 use Math::CDF;
+#use Statistics::Distributions;
 
 
 ################################################################
@@ -156,7 +157,8 @@ if ($return{'graph'}) {
     #### directory for storing the graphs
     $rel_dir{graphs}="graphs";
     if ($outputfile) {
-	$basename = `basename -s '.tab' $outputfile`;
+	$basename = `basename $outputfile`;
+	$basename =~ s/\.tab$//;
 	chomp $basename;
 	$rel_dir{graphs} = $basename."_".$rel_dir{graphs};
     }
@@ -611,14 +613,17 @@ sub CalcChi {
 	## Compute P-value
 	$pattern{$oligo_seq}->{Pval} = 1 - &Math::CDF::pchisq($pattern{$oligo_seq}->{chi_square},
 							      $pattern{$oligo_seq}->{df});
+#	$pattern{$oligo_seq}->{Pval} = 1 - &Statistics::Distributions::chisqrprob($pattern{$oligo_seq}->{df},
+#										  $pattern{$oligo_seq}->{chi_square});
+
+
 	if ($pattern{$oligo_seq}->{Pval} <= 0) {
-	  $pattern{$oligo_seq}->{Pval} = 0;
-	  $pattern{$oligo_seq}->{Eval} = 0;
-	  $pattern{$oligo_seq}->{sig} = 20;
+	  $pattern{$oligo_seq}->{Pval} = 1e-16; ## Lower boundary for the computation of P-values with the CDF library
+	  $pattern{$oligo_seq}->{Eval} = 1e-16;
 	} else {
 	  $pattern{$oligo_seq}->{Eval} = $pattern{$oligo_seq}->{Pval}*$nb_tests;
-	  $pattern{$oligo_seq}->{sig} = -log($pattern{$oligo_seq}->{Eval})/$log_base;
 	}
+	$pattern{$oligo_seq}->{sig} = -log($pattern{$oligo_seq}->{Eval})/$log_base;
 
 	#### check threshold on occurrences
 	if (defined($lth{'sig'})) {
