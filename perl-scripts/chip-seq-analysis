@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-seq-analysis,v 1.14 2010/03/16 01:50:56 jvanheld Exp $
+# $Id: chip-seq-analysis,v 1.15 2010/03/16 08:52:20 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -228,6 +228,7 @@ sub DefaultParameters {
   $main::param{profiles_oligo_lengths} = join(',',@profiles_oligo_lengths); push(@main::param_list, "profiles_oligo_lengths");
 
   ## Pattern discovery options
+  $main::param{min_sig} = 0; push(@main::param_list, "strand");
   $main::param{strand} = "-2str"; push(@main::param_list, "strand");
   $main::param{noov} = "-noov"; push(@main::param_list, "noov");
   $main::param{oligo_len} = 6; push(@main::param_list, "oligo_len");
@@ -381,7 +382,9 @@ sub SequenceLengths {
   $cmd .= " | classfreq -v 1 -ci 10 -o ".$main::outfile{test_seqlen_distrib};
   $cmd .= " ; XYgraph -lines -legend";
   $cmd .= " -format ".$main::param{img_format};
-  $cmd .= " -title '".$main::param{title}." Sequence lengths'" if ($main::param{title});
+  my $title = "Sequence lengths";
+  $title .= "; ".$main::param{title} if ($main::param{title});
+  $cmd .= " -title '".$title."'";
   $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of peaks'";
   $cmd .= " -xsize 800 -xcol 3 -xleg1 'Peak length'";
   $cmd .= " -i ".$main::outfile{test_seqlen_distrib};
@@ -418,7 +421,9 @@ sub CompositionProfiles {
     $cmd .= " | XYgraph -xcol 1 -ycol 2-".$col_nb;
     $cmd .= " -lines -legend -header";
 #    $cmd .= " -symbols "; ## THIS OPTION IS NOT WORKING ANYMORE : THE LEGEND DISPLAYS SYMBOLS BUT NOT THE GRAPH. THIS HAS TO BE FIXED
-    $cmd .= " -title 'Peak composition profiles : ".$ol."nt'";
+    my $title = "Peak composition profiles : ".$ol."nt";
+    $title .= "; ".$main::param{title} if ($main::param{title});
+    $cmd .= " -title '".$title."'";
     $cmd .= " -xleg1 'Position' -xsize 800";
     $cmd .= " -yleg1 'Occurrences' -ysize 300";
     $cmd .= " -o ".$outfile{$ol."nt_profiles_graph"};
@@ -434,7 +439,8 @@ sub OligoAnalysis {
   my $cmd = "oligo-analysis -v 1";
   $cmd .= " -i ".$main::outfile{"purged_test"};
   $cmd .= " -format fasta";
-  $cmd .= " -sort -lth occ_sig 0 -uth rank ".$main::param{patterns_max_rank}." -return occ,proba,rank";
+  $cmd .= " -sort -lth occ_sig ".$main::param{min_sig};
+  $cmd .= " -uth rank ".$main::param{patterns_max_rank}." -return occ,proba,rank";
   $cmd .= " ".$main::param{strand};
   $cmd .= " ".$main::param{noov};
   $cmd .= " -seqtype dna";
@@ -454,7 +460,8 @@ sub DyadAnalysis {
   my $cmd = "dyad-analysis -v 1";
   $cmd .= " -i ".$main::outfile{"purged_test"};
   $cmd .= " -format fasta";
-  $cmd .= " -sort -lth occ_sig 0 -uth rank ".$main::param{patterns_max_rank}." -return occ,proba,rank";
+  $cmd .= " -sort -lth occ_sig ".$main::param{min_sig};
+  $cmd .= " -uth rank ".$main::param{patterns_max_rank}." -return occ,proba,rank";
   $cmd .= " ".$main::param{strand};
   $cmd .= " ".$main::param{noov};
   $cmd .= " -seqtype dna";
@@ -468,6 +475,34 @@ sub DyadAnalysis {
 
 
 ################################################################
+## Run position-analysis to discover oligonucleotides with positional
+## biases
+sub PositionAnalysis {
+  &RSAT::message::TimeWarn("Running position-analysis") if ($main::verbose >= 1);
+  my $cmd = "position-analysis -v 1";
+  $cmd .= " -i ".$main::outfile{"purged_test"};
+  $cmd .= " -format fasta";
+  $cmd .= " -sort ";
+  $cmd .= " -return chi,sig,distrib,graphs,rank";
+  $cmd .= " -rth ".$main::param{patterns_max_rank};
+  $cmd .= " -lth_sig ".$main::param{min_sig};
+  $cmd .= " -max_graphs ".$main::param{patterns_max_rank};
+  $cmd .= " ".$main::param{strand};
+  $cmd .= " ".$main::param{noov};
+  $cmd .= " -seqtype dna";
+  $cmd .= " -l ".$main::param{oligo_len};
+  $cmd .= " -ci ".$main::param{profiles_ci};
+  $cmd .= " -img_format ".$main::param{img_format};
+  $cmd .= " -title '".$main::param{title}."'";
+  $cmd .= " -origin center ";
+  $cmd .= " -o ".$outfile{positions};
+  &one_command($cmd);
+
+  &MatrixFromPatterns($outfile{positions}, $outfile{positions_pssm}, "positions");
+}
+
+
+################################################################
 ## Run orm on the test set
 sub ORM {
   &RSAT::message::TimeWarn("Running orm") if ($main::verbose >= 1);
@@ -475,7 +510,7 @@ sub ORM {
   $cmd .= " -i ".$main::outfile{"purged_test"};
 #  $cmd .= " -format fasta";
   $cmd .= " --center=0";
-  $cmd .= " --min=occ_sig 0";
+  $cmd .= " --min=occ_sig ".$main::param{min_sig};
   $cmd .= " --sort=-occ_sig";
   $cmd .= " --max=rank ".$main::param{patterns_max_rank};
   # " -return occ,proba,rank";
@@ -518,33 +553,6 @@ sub MatrixFromPatterns {
 
 
 ################################################################
-## Run position-analysis to discover oligonucleotides with positional
-## biases
-sub PositionAnalysis {
-  &RSAT::message::TimeWarn("Running position-analysis") if ($main::verbose >= 1);
-  my $cmd = "position-analysis -v 1";
-  $cmd .= " -i ".$main::outfile{"purged_test"};
-  $cmd .= " -format fasta";
-  $cmd .= " -sort ";
-  $cmd .= " -return chi,sig,distrib,graphs,rank";
-  $cmd .= " -rth ".$main::param{patterns_max_rank};
-  $cmd .= " -max_graphs ".$main::param{patterns_max_rank};
-  $cmd .= " ".$main::param{strand};
-  $cmd .= " ".$main::param{noov};
-  $cmd .= " -seqtype dna";
-  $cmd .= " -l ".$main::param{oligo_len};
-  $cmd .= " -ci ".$main::param{profiles_ci};
-  $cmd .= " -img_format ".$main::param{img_format};
-  $cmd .= " -title '".$main::param{title}."'";
-  $cmd .= " -origin center ";
-  $cmd .= " -o ".$outfile{positions};
-  &one_command($cmd);
-
-  &MatrixFromPatterns($outfile{positions}, $outfile{positions_pssm}, "positions");
-}
-
-
-################################################################
 ## Generate a synthetic table summarizing the main results with links
 ## to the iriginal result files.
 sub Synthesis {
@@ -583,6 +591,8 @@ sub Synthesis {
   &SynthesisPatternDisco("dyads");
 
   &SynthesisPatternDisco("positions");
+
+  &SynthesisPatternDisco("orm");
 
   ## Log file
   &SyntheticTableAddRow("Log file",
@@ -908,36 +918,58 @@ random genome fragments).
 Sequence length distribution is informative to get an idea about the
 variability of peak lengths.
 
-=item I<oligos>
-
-Run I<oligo-analysis> to detect over-represented oligonucleotides of a
-given length (k, specified with option -l) in the test set. Prior
-frequencies of oligonucleotides are taken from Markov model of order m
-(option -markov) estimated from the test set sequences themselves.
-
-
-=item I<dyads>
-
-Run I<dyad-analysis> to detect over-represented dyads, i.e. pairs of
-short oligonucleotides (monads) spaced by a region of fixed width but
-variable content. By default, chip-seq-analysis analyzes pairs of
-trinucleotides with any spacing between 0 and 20.
-
-The expected frequency of each dyad is estimated as the product of its
-monad frequencies in the input sequences (option -bg monads of
-dyad-analysis).
-
 =item I<profiles>
 
-Compute profiles of residue and oligonucleotide frequencies per
-position (using I<position-analysis>). 
+Compute compositional profiles, i.e. distributions of residues and
+dinucleotide frequencies per position (using I<position-analysis>).
 
 Residue profiles may reveal composition biases in the neighborhood of
 the peak sequences. Dinucleotide profiles can reveal (for example) an
 enrichment in CpG island.
 
-Positional biases for larger oligonucleotides (e.g. hexanucleotides)
-can reveal
+Note that I<chip-seq-analysis> also runs I<position-analysis> with
+larger oligonucleotide length (see option -l) to detect motifs on the
+basis of positionally biased oligonucleotides (see task B<positions>).
+
+=item I<oligos>
+
+Run I<oligo-analysis> to detect over-represented oligonucleotides of a
+given length (k, specified with option -l) in the test set (van Helden
+et al., 1998). Prior frequencies of oligonucleotides are taken from
+Markov model of order m (see option -markov) estimated from the test
+set sequences themselves.
+
+=item I<dyads>
+
+Run I<dyad-analysis> to detect over-represented dyads, i.e. pairs of
+short oligonucleotides (monads) spaced by a region of fixed width but
+variable content (van Helden et al., 2000). Spaced motifs are typical
+of certain classes of transcription factors forming homo- or
+heterodimers.
+
+By default, chip-seq-analysis analyzes pairs of trinucleotides with
+any spacing between 0 and 20.
+
+The expected frequency of each dyad is estimated as the product of its
+monad frequencies in the input sequences (option -bg monads of
+dyad-analysis).
+
+=item I<positions>
+
+Run I<position-analysis> to detect oligonucleotides showing a
+positional bias, i.e. have a non-homogeneous distribution in the peak
+sequence set.
+
+This method was initially developed to analyze termination and
+poly-adenylation signals in downstream sequences (van Helden et al.,
+2001), and it turns out to be very efficient for detecting motifs
+centred on the ChIP-seq peaks. For ChIP-seq analysis, the reference
+position is the center of each sequence.
+
+Note that I<chip-seq-analysis> also uses I<position-analysis> for the
+task B<profiles>, in order to detect compositional biases (residues,
+dinucleotides) in the test sequence set.
+
 
 =item I<synthesis>
 
@@ -985,8 +1017,11 @@ words).
 
 =item B<-l oligo_len>
 
-Oligonucleotide lengths for word-counting approaches
-(oligo-analysis, position-analysis, ORM, oligo-diff).
+Oligonucleotide lengths for word-counting approaches (oligo-analysis,
+position-analysis, ORM, oligo-diff).
+
+In our experience, optimal results are obtained with hexanucleotides
+and heptanucleotides.
 
 Note: the monad length used for dyad-analysis is specified with
 another parameter (-ml).
@@ -994,6 +1029,33 @@ another parameter (-ml).
 =cut
     } elsif ($arg eq "-l") {
       $main::param{oligo_len} = shift (@arguments);
+
+=pod
+
+=item B<-markov markov_order>
+
+Order of the Markov model used to estimatd expected oligonucleotide
+frequencies for I<oligo-analysis> and I<orm>.
+
+Higher order Markov models are more stringent, lower order are more
+sensitive, but tend to return a large number of false positives. 
+
+The markov model can be specified with either a positive or a negative
+value. Positive value indicate the length of the prefix in the
+transition matrix. Negative value indicate the order of the Markov
+model relative to the oligonucleotide length. For example, the option
+-markov -2 gives a model of order m=k-2 (thus, an order 5 for
+heptanucleotides, an order 4 for hexanucleotides).
+
+The optimal Markov order depends on the number of sequences in the
+test set. Since ChIP-seq data typically contain hundreds to thoursands
+of peaks, high Markov orders are generally good, because they are
+stringent and still sensitive enough.  In our experience, motifs are
+well detected with the most stringent Markov order (-markov -2).
+
+=cut
+    } elsif ($arg eq "-markov") {
+      $main::param{oligo_markov} = shift (@arguments);
 
 =pod
 
@@ -1093,6 +1155,7 @@ sub CheckArguments {
   if ((scalar(keys(%task)) == 0) || ($task{all})) {
     %task = %supported_task;
     delete($task{all});
+    delete($task{orm}); ## TEMPORARILY, ORM HAS TO BE CALLED MANUALLY BECAUSE IT TAKES TOO MUCH TIME
     delete($task{clean_seq});
   }
   foreach my $task (@supported_tasks) {
