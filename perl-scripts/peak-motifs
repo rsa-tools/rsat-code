@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.16 2010/03/16 20:20:44 jvanheld Exp $
+# $Id: peak-motifs,v 1.17 2010/03/16 23:05:58 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -601,13 +601,19 @@ sub Synthesis {
   ## Header line
   &SyntheticTableAddHeaderRow("Pattern discovery");
 
-  &SynthesisPatternDisco("oligos");
+  for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
+    &SynthesisPatternDisco('oligos_'.$len.'nt');
+  }
 
   &SynthesisPatternDisco("dyads");
 
-  &SynthesisPatternDisco("positions");
+  for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
+    &SynthesisPatternDisco('positions_'.$len.'nt');
+  }
 
-  &SynthesisPatternDisco("orm");
+  for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
+    &SynthesisPatternDisco('orm_'.$len.'nt');
+  }
 
   ## Log file
   &SyntheticTableAddRow("Log file",
@@ -656,7 +662,7 @@ sub SyntheticTableAddRow {
     &RSAT::message::Debug($key, $file) if ($main::verbose >= 5);
     $file = &RelativePath($file);
     print $syn "<a href='".$file."'>[".$key."]</a><br>\n";
-  } 
+  }
   print $syn "</td>\n";
   print $syn "</tr>\n";
 }
@@ -720,7 +726,7 @@ sub SynthesisSequenceComposition {
 
 ################################################################
 ## Synthesis for one pattern discovery algorithm
-## Usage: 
+## Usage:
 ##   &SynthesisPatternDisco($pattern_type);
 ## Where pattern type can be oligos, dyads, ORM, oligo-diff
 sub SynthesisPatternDisco {
