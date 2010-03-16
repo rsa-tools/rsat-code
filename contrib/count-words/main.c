@@ -9,7 +9,7 @@
 #include "utils.h"
 #include "count.h"
 
-int VERSION = 20100312;
+int VERSION = 20100316;
 
 // ===========================================================================
 // =                            usage & help
@@ -42,8 +42,8 @@ void help(char *progname)
 "    INPUT OPTIONS\n"
 "        --version        print version\n"
 "        -v #             change verbosity level (0, 1, 2)\n"
-"        -l #             set oligomer length to #\n"
-"        -sp #-#          spacing between the monads (dyads) #\n"
+"        -l #             set oligomer length to # (monad size when using dyads)\n"
+"        -sp #-#          spacing between the two parts of the dyads from # to # \n"
 "        -2str            add reverse complement\n"
 "        -1str            do not add reverse complement\n"
 "        -noov            do not allow overlapping occurrences\n"
@@ -185,10 +185,13 @@ int main(int argc, char *argv[])
     }
 
     count_in_file(input_fp, output_fp, oligo_length, spacing, add_rc, noov, grouprc, argc, argv, 1);
-    for (spacing = spacing_tab[0] + 1; spacing <= spacing_tab[1]; spacing++)
+    if (spacing != -1)
     {
-        fseek(input_fp, SEEK_SET, 0);
-        count_in_file(input_fp, output_fp, oligo_length, spacing, add_rc, noov, grouprc, argc, argv, 0);
+        for (spacing = spacing_tab[0] + 1; spacing <= spacing_tab[1]; spacing++)
+        {
+            fseek(input_fp, SEEK_SET, 0);
+            count_in_file(input_fp, output_fp, oligo_length, spacing, add_rc, noov, grouprc, argc, argv, 0);
+        }
     }
 
     fflush(output_fp);
