@@ -78,14 +78,14 @@ if ($query->param('strand') =~ /single/) {
 ### group patterns by pairs of reverse complements
 unless ($query->param('grouprc')) {
   $parameters .= " -nogrouprc";
-} 
+}
 
 ### group patterns by pairs of reverse complements
 if ($query->param('side') eq 'under-represented') {
   $parameters .= " -under";
 } elsif ($query->param('side') eq 'both') {
   $parameters .= " -two_tail";
-} 
+}
 
 ### prevent overlapping matches of the same pattern
 if ($query->param('noov')) {
