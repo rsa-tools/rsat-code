@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-seq-analysis,v 1.15 2010/03/16 08:52:20 jvanheld Exp $
+# $Id: chip-seq-analysis,v 1.16 2010/03/16 20:20:44 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -221,7 +221,7 @@ sub DefaultParameters {
   $main::param{purge_mismatches} = 0; push(@main::param_list, "purge_mismatches");
 
   ## residue profiles (position-analysis)
-  $main::param{profiles_ci} = 5; push(@main::param_list, "profiles_ci");
+  $main::param{profiles_ci} = 10; push(@main::param_list, "profiles_ci");
   $main::param{profiles_max_graphs} = 20; push(@main::param_list, "profiles_ci");
   $main::param{profiles_strand} = "-2str"; push(@main::param_list, "profiles_strand");
   @main::profiles_oligo_lengths = (1,2);
@@ -231,7 +231,8 @@ sub DefaultParameters {
   $main::param{min_sig} = 0; push(@main::param_list, "strand");
   $main::param{strand} = "-2str"; push(@main::param_list, "strand");
   $main::param{noov} = "-noov"; push(@main::param_list, "noov");
-  $main::param{oligo_len} = 6; push(@main::param_list, "oligo_len");
+  $main::param{oligo_min_len} = 6; push(@main::param_list, "oligo_min_len");
+  $main::param{oligo_max_len} = 7; push(@main::param_list, "oligo_max_len");
   $main::param{patterns_max_rank} = 25; push(@main::param_list, "patterns_max_rank");
 
   ## oligo-analysis
@@ -294,26 +295,34 @@ sub SetOutFileNames {
     ################################################################
     ## Pattern discovery result
 
-    ## oligo-analysis
-    $main::outfile{oligos} = &OutFileName(".tab", "oligos".$main::param{strand}.$main::param{noov},
-					    $main::param{oligo_len}."nt",
-					    "mkv".$main::param{oligo_markov});
+    @pattern_types = ();
+
+    for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
+      ## oligo-analysis
+      $main::outfile{'oligos_'.$len.'nt'} = &OutFileName(".tab", "oligos".$main::param{strand}.$main::param{noov},
+							 $len."nt",
+							 "mkv".$main::param{oligo_markov});
+      push @pattern_types, 'oligos_'.$len.'nt';
+
+      ## orm
+      $main::outfile{'orm_'.$len.'nt'} = &OutFileName(".tab", "orm".$main::param{strand}.$main::param{noov},
+						      $len."nt", "ci".$main::param{orm_ci},
+						      "mkv".$main::param{oligo_markov});
+      push @pattern_types, 'orm_'.$len.'nt';
+
+      ## position-analysis
+      $main::outfile{'positions_'.$len.'nt'} = &OutFileName(".tab", "positions".$main::param{strand}.$main::param{noov},
+							    $len."nt", "ci".$main::param{positions_ci});
+      push @pattern_types, 'positions_'.$len.'nt';
+    }
 
     ## dyad-analysis
-     $main::outfile{dyads} = &OutFileName(".tab", "dyads".$main::param{strand}.$main::param{noov},
- 					  "3nt_sp0-20_bg_monads");
-
-    ## orm
-    $main::outfile{orm} = &OutFileName(".tab", "orm".$main::param{strand}.$main::param{noov},
-				       $main::param{oligo_len}."nt", "ci".$main::param{orm_ci},
-				       "mkv".$main::param{oligo_markov});
-
-    ## position-analysis
-    $main::outfile{positions} = &OutFileName(".tab", "positions".$main::param{strand}.$main::param{noov},
-					     $main::param{oligo_len}."nt", "ci".$main::param{positions_ci});
+    $main::outfile{dyads} = &OutFileName(".tab", "dyads".$main::param{strand}.$main::param{noov},
+					 "3nt_sp0-20_bg_monads");
+    push @pattern_types, "dyads";
 
     ## Converstion from patterns to matrices + logos
-    foreach my $pattern_type qw(oligos dyads orm positions) {
+    foreach my $pattern_type (@pattern_types) {
       $main::outfile{$pattern_type.'_pssm'} = $main::outfile{$pattern_type};
       $main::outfile{$pattern_type.'_pssm'} =~ s/\.tab$//;
       $main::outfile{$pattern_type.'_pssm'} .= "_pssm";
@@ -396,8 +405,8 @@ sub SequenceLengths {
 ## Run position-analysis to compute composition profiles (residues,
 ## dinucleotides)
 sub CompositionProfiles {
-  &RSAT::message::TimeWarn("Computing composition profiles") if ($main::verbose >= 1);
   for my $ol (@profiles_oligo_lengths) {
+    &RSAT::message::TimeWarn("Computing composition profiles", $ol."nt") if ($main::verbose >= 1);
     my $cmd = "position-analysis -v 1";
     $cmd .= " -i ".$main::outfile{"purged_test"};
     $cmd .= " -format fasta";
@@ -435,21 +444,25 @@ sub CompositionProfiles {
 ################################################################
 ## Run oligo-analysis on the test set
 sub OligoAnalysis {
-  &RSAT::message::TimeWarn("Running oligo-analysis") if ($main::verbose >= 1);
-  my $cmd = "oligo-analysis -v 1";
-  $cmd .= " -i ".$main::outfile{"purged_test"};
-  $cmd .= " -format fasta";
-  $cmd .= " -sort -lth occ_sig ".$main::param{min_sig};
-  $cmd .= " -uth rank ".$main::param{patterns_max_rank}." -return occ,proba,rank";
-  $cmd .= " ".$main::param{strand};
-  $cmd .= " ".$main::param{noov};
-  $cmd .= " -seqtype dna";
-  $cmd .= " -l ".$main::param{oligo_len};
-  $cmd .= " -markov ".$main::param{oligo_markov};
-  $cmd .= " -pseudo 0.01";
-  $cmd .= " -o ".$outfile{oligos};
-  &one_command($cmd);
-  &MatrixFromPatterns($outfile{oligos}, $outfile{oligos_pssm}, "oligos");
+  for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
+    my $pattern_type = 'oligos_'.$len.'nt';
+    &RSAT::message::TimeWarn("Running oligo-analysis", $len."nt") if ($main::verbose >= 1);
+    my $cmd = "oligo-analysis -v 1";
+    $cmd .= " -i ".$main::outfile{"purged_test"};
+    $cmd .= " -format fasta";
+    $cmd .= " -sort -lth occ_sig ".$main::param{min_sig};
+    $cmd .= " -uth rank ".$main::param{patterns_max_rank};
+    $cmd .= " -return occ,proba,rank";
+    $cmd .= " ".$main::param{strand};
+    $cmd .= " ".$main::param{noov};
+    $cmd .= " -seqtype dna";
+    $cmd .= " -l ".$len;
+    $cmd .= " -markov ".$main::param{oligo_markov};
+    $cmd .= " -pseudo 0.01";
+    $cmd .= " -o ".$outfile{$pattern_type};
+    &one_command($cmd);
+    &MatrixFromPatterns($outfile{$pattern_type}, $outfile{$pattern_type.'_pssm'}, $pattern_type);
+  }
 }
 
 
@@ -478,27 +491,29 @@ sub DyadAnalysis {
 ## Run position-analysis to discover oligonucleotides with positional
 ## biases
 sub PositionAnalysis {
-  &RSAT::message::TimeWarn("Running position-analysis") if ($main::verbose >= 1);
-  my $cmd = "position-analysis -v 1";
-  $cmd .= " -i ".$main::outfile{"purged_test"};
-  $cmd .= " -format fasta";
-  $cmd .= " -sort ";
-  $cmd .= " -return chi,sig,distrib,graphs,rank";
-  $cmd .= " -rth ".$main::param{patterns_max_rank};
-  $cmd .= " -lth_sig ".$main::param{min_sig};
-  $cmd .= " -max_graphs ".$main::param{patterns_max_rank};
-  $cmd .= " ".$main::param{strand};
-  $cmd .= " ".$main::param{noov};
-  $cmd .= " -seqtype dna";
-  $cmd .= " -l ".$main::param{oligo_len};
-  $cmd .= " -ci ".$main::param{profiles_ci};
-  $cmd .= " -img_format ".$main::param{img_format};
-  $cmd .= " -title '".$main::param{title}."'";
-  $cmd .= " -origin center ";
-  $cmd .= " -o ".$outfile{positions};
-  &one_command($cmd);
-
-  &MatrixFromPatterns($outfile{positions}, $outfile{positions_pssm}, "positions");
+  for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
+    my $pattern_type = 'positions_'.$len.'nt';
+    &RSAT::message::TimeWarn("Running position-analysis", $len."nt") if ($main::verbose >= 1);
+    my $cmd = "position-analysis -v 1";
+    $cmd .= " -i ".$main::outfile{"purged_test"};
+    $cmd .= " -format fasta";
+    $cmd .= " -sort ";
+    $cmd .= " -return chi,sig,distrib,graphs,rank";
+    $cmd .= " -rth ".$main::param{patterns_max_rank};
+    $cmd .= " -lth_sig ".$main::param{min_sig};
+    $cmd .= " -max_graphs ".$main::param{patterns_max_rank};
+    $cmd .= " ".$main::param{strand};
+    $cmd .= " ".$main::param{noov};
+    $cmd .= " -seqtype dna";
+    $cmd .= " -l ".$len;
+    $cmd .= " -ci ".$main::param{profiles_ci};
+    $cmd .= " -img_format ".$main::param{img_format};
+    $cmd .= " -title '".$main::param{title}."'";
+    $cmd .= " -origin center ";
+    $cmd .= " -o ".$outfile{$pattern_type};
+    &one_command($cmd);
+    &MatrixFromPatterns($outfile{$pattern_type}, $outfile{$pattern_type."_pssm"}, $pattern_type);
+  }
 }
 
 
@@ -520,7 +535,7 @@ sub ORM {
     $cmd .= " +-";
   }
   $cmd .= " --overlap" if ($main::param{noov} eq "ovlp");
-  $cmd .= " --windowgroup=".$main::param{orm_ci};
+  $cmd .= " --window=".$main::param{orm_ci};
 #  $cmd .= " -seqtype dna";
   $cmd .= " -l ".$main::param{oligo_len};
   $cmd .= " -m ".$main::param{oligo_markov};
@@ -1015,20 +1030,27 @@ words).
 
 =pod
 
-=item B<-l oligo_len>
+=item B<-minol oligo_min_len>
 
-Oligonucleotide lengths for word-counting approaches (oligo-analysis,
-position-analysis, ORM, oligo-diff).
+=item B<-maxol oligo_max_len>
+
+Minimal (-minol) and maximal (-maxol) oligonucleotide lengths for
+word-counting approaches (oligo-analysis, position-analysis, ORM,
+oligo-diff).
 
 In our experience, optimal results are obtained with hexanucleotides
 and heptanucleotides.
 
-Note: the monad length used for dyad-analysis is specified with
-another parameter (-ml).
+Note: the monad length used for dyad-analysis is not affected by those
+options. Instead it is fixed to to 3. Indeed, dyad-analysis can detect
+larger motifs by sampling various spacings between the two
+trinucleotide monads.
 
 =cut
-    } elsif ($arg eq "-l") {
-      $main::param{oligo_len} = shift (@arguments);
+    } elsif ($arg eq "-minol") {
+      $main::param{oligo__min_len} = shift (@arguments);
+    } elsif ($arg eq "-maxol") {
+      $main::param{oligo__max_len} = shift (@arguments);
 
 =pod
 
