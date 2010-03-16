@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-seq-analysis,v 1.12 2010/03/07 20:40:20 jvanheld Exp $
+# $Id: chip-seq-analysis,v 1.13 2010/03/16 01:39:01 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -106,13 +106,14 @@ package main;
 			   purge
 			   oligos
 			   dyads
+			   positions
+			   orm
 			   profiles
 			   synthesis
 			   clean_seq
 			  );
 
     my @future_tasks = qw(
-			  ORM
 			  oligo-diff
 			  tomtom
 			  to_bed
@@ -154,13 +155,15 @@ package main;
 
     &SequenceLengths if ($task{seqlen});
 
-    &PositionAnalysis if ($task{profiles});
-
     &CompositionProfiles if ($task{profiles});
 
     &OligoAnalysis if ($task{oligos});
 
     &DyadAnalysis if ($task{dyads});
+
+    &PositionAnalysis if ($task{positions});
+
+    &ORM if ($task{orm});
 
     &Synthesis if ($task{synthesis});
 
@@ -217,6 +220,13 @@ sub DefaultParameters {
   $main::param{purge_match_length} = 30; push(@main::param_list, "purge_match_length");
   $main::param{purge_mismatches} = 0; push(@main::param_list, "purge_mismatches");
 
+  ## residue profiles (position-analysis)
+  $main::param{profiles_ci} = 5; push(@main::param_list, "profiles_ci");
+  $main::param{profiles_max_graphs} = 20; push(@main::param_list, "profiles_ci");
+  $main::param{profiles_strand} = "-2str"; push(@main::param_list, "profiles_strand");
+  @main::profiles_oligo_lengths = (1,2);
+  $main::param{profiles_oligo_lengths} = join(',',@profiles_oligo_lengths); push(@main::param_list, "profiles_oligo_lengths");
+
   ## Pattern discovery options
   $main::param{strand} = "-2str"; push(@main::param_list, "strand");
   $main::param{noov} = "-noov"; push(@main::param_list, "noov");
@@ -228,15 +238,15 @@ sub DefaultParameters {
 
   ## dyad-analysis
 
+  ## position-analysis
+  $main::param{positions_ci} = 20; ## Class interval for position-analysis
+
+  ## orm
+  $main::param{orm_ci} = 20; ## Class interval for ORM
+
   ## matrix-from-patterns
   $main::param{matrix_nmotifs} = 3; push(@main::param_list, "matrix_nmotifs");
 
-  ## residue profiles (position-analysis)
-  $main::param{profiles_ci} = 5; push(@main::param_list, "profiles_ci");
-  $main::param{profiles_max_graphs} = 20; push(@main::param_list, "profiles_ci");
-  $main::param{profiles_strand} = "-1str"; push(@main::param_list, "profiles_strand");
-  @main::profiles_oligo_lengths = (1,2,6);
-  $main::param{profiles_oligo_lengths} = join(',',@profiles_oligo_lengths); push(@main::param_list, "profiles_oligo_lengths");
 
 }
 
@@ -284,16 +294,25 @@ sub SetOutFileNames {
     ## Pattern discovery result
 
     ## oligo-analysis
-    $main::outfile{oligos} = &OutFileName(".tab", "oligos".$main::param{strand}.$main::param{noov}, 
+    $main::outfile{oligos} = &OutFileName(".tab", "oligos".$main::param{strand}.$main::param{noov},
 					    $main::param{oligo_len}."nt",
 					    "mkv".$main::param{oligo_markov});
+
     ## dyad-analysis
-     $main::outfile{dyads} = &OutFileName(".tab", "dyads".$main::param{strand}.$main::param{noov}, 
+     $main::outfile{dyads} = &OutFileName(".tab", "dyads".$main::param{strand}.$main::param{noov},
  					  "3nt_sp0-20_bg_monads");
 
+    ## orm
+    $main::outfile{orm} = &OutFileName(".tab", "orm".$main::param{strand}.$main::param{noov},
+				       $main::param{oligo_len}."nt", "ci".$main::param{orm_ci},
+				       "mkv".$main::param{oligo_markov});
+
+    ## position-analysis
+    $main::outfile{positions} = &OutFileName(".tab", "positions".$main::param{strand}.$main::param{noov},
+					     $main::param{oligo_len}."nt", "ci".$main::param{positions_ci});
 
     ## Converstion from patterns to matrices + logos
-    foreach my $pattern_type qw(oligos dyads) {
+    foreach my $pattern_type qw(oligos dyads orm positions) {
       $main::outfile{$pattern_type.'_pssm'} = $main::outfile{$pattern_type};
       $main::outfile{$pattern_type.'_pssm'} =~ s/\.tab$//;
       $main::outfile{$pattern_type.'_pssm'} .= "_pssm";
@@ -360,7 +379,7 @@ sub SequenceLengths {
   $cmd .= " -o ".$main::outfile{test_seqlen};
   $cmd .= " ; cut -f 2 ".$main::outfile{test_seqlen};
   $cmd .= " | classfreq -v 1 -ci 10 -o ".$main::outfile{test_seqlen_distrib};
-  $cmd .= " ; XYgraph -lines -legend "; 
+  $cmd .= " ; XYgraph -lines -legend";
   $cmd .= " -format ".$main::param{img_format};
   $cmd .= " -title '".$main::param{title}." Sequence lengths'" if ($main::param{title});
   $cmd .= " -ysize 200 -ycol 4 -yleg1 'Number of peaks'";
@@ -368,6 +387,42 @@ sub SequenceLengths {
   $cmd .= " -i ".$main::outfile{test_seqlen_distrib};
   $cmd .= " -o ".$main::outfile{test_seqlen_distrib_graph};
   &one_command($cmd);
+}
+
+################################################################
+## Run position-analysis to compute composition profiles (residues,
+## dinucleotides)
+sub CompositionProfiles {
+  &RSAT::message::TimeWarn("Computing composition profiles") if ($main::verbose >= 1);
+  for my $ol (@profiles_oligo_lengths) {
+    my $cmd = "position-analysis -v 1";
+    $cmd .= " -i ".$main::outfile{"purged_test"};
+    $cmd .= " -format fasta";
+    $cmd .= " -sort ";
+    $cmd .= " -return chi,sig,distrib,graphs,rank";
+#    $cmd .= " -max_graphs ".$main::param{profiles_max_graphs};
+    $cmd .= " ".$main::param{profiles_strand};
+    $cmd .= " ".$main::param{noov};
+    $cmd .= " -seqtype dna";
+    $cmd .= " -l ".$ol;
+    $cmd .= " -ci ".$main::param{profiles_ci};
+    $cmd .= " -img_format ".$main::param{img_format};
+    $cmd .= " -title '".$main::param{title}."'";
+    $cmd .= " -origin center ";
+    $cmd .= " -o ".$outfile{$ol."nt_profiles"};
+    &one_command($cmd);
+
+    ## Draw the XY graph with composition profiles
+    my $col_nb = 4**$ol + 1;
+    $cmd = 'grep -v ";" '.$outfile{$ol."nt_profiles"}.' | transpose-table | grep -P \'(^id)|(^\-?\d+)\'';
+    $cmd .= " | XYgraph -xcol 1 -ycol 2-".$col_nb;
+    $cmd .= " -lines -legend -header -symbols ";
+    $cmd .= " -title 'Peak composition profiles : ".$ol."nt'";
+    $cmd .= " -xleg1 'Position' -xsize 800";
+    $cmd .= " -yleg1 'Occurrences' -ysize 300";
+    $cmd .= " -o ".$outfile{$ol."nt_profiles_graph"};
+    &one_command($cmd);
+  }
 }
 
 
@@ -412,6 +467,35 @@ sub DyadAnalysis {
 
 
 ################################################################
+## Run orm on the test set
+sub ORM {
+  &RSAT::message::TimeWarn("Running orm") if ($main::verbose >= 1);
+  my $cmd = "orm -v 3";
+  $cmd .= " -i ".$main::outfile{"purged_test"};
+#  $cmd .= " -format fasta";
+  $cmd .= " --center=0";
+  $cmd .= " --min=occ_sig 0";
+  $cmd .= " --sort=-occ_sig";
+  $cmd .= " --max=rank ".$main::param{patterns_max_rank};
+  # " -return occ,proba,rank";
+  if ($main::param{strand} eq "-1str") {
+    $cmd .= " +";
+  } else {
+    $cmd .= " +-";
+  }
+  $cmd .= " --overlap" if ($main::param{noov} eq "ovlp");
+  $cmd .= " --windowgroup=".$main::param{orm_ci};
+#  $cmd .= " -seqtype dna";
+  $cmd .= " -l ".$main::param{oligo_len};
+  $cmd .= " -m ".$main::param{oligo_markov};
+#  $cmd .= " -pseudo 0.01";
+  $cmd .= " -o ".$outfile{orm};
+  &one_command($cmd);
+  &MatrixFromPatterns($outfile{orm}, $outfile{orm_pssm}, "orm");
+}
+
+
+################################################################
 ## Convert a list of patterns into PSSMs
 sub MatrixFromPatterns {
   my ($pattern_file, $pssm_file, $type) = @_;
@@ -431,45 +515,31 @@ sub MatrixFromPatterns {
 }
 
 
+
 ################################################################
-## Run position-analysis on the test set
+## Run position-analysis to discover oligonucleotides with positional
+## biases
 sub PositionAnalysis {
   &RSAT::message::TimeWarn("Running position-analysis") if ($main::verbose >= 1);
-  for my $ol (@profiles_oligo_lengths) {
-    my $cmd = "position-analysis -v 1";
-    $cmd .= " -i ".$main::outfile{"purged_test"};
-    $cmd .= " -format fasta";
-    $cmd .= " -sort ";
-    $cmd .= " -return chi,sig,distrib,graphs,rank";
-    $cmd .= " -max_graphs ".$main::param{profiles_max_graphs};
-    $cmd .= " ".$main::param{profiles_strand};
-    $cmd .= " ".$main::param{noov};
-    $cmd .= " -seqtype dna";
-    $cmd .= " -l ".$ol;
-    $cmd .= " -ci ".$main::param{profiles_ci};
-    $cmd .= " -img_format ".$main::param{img_format};
-    $cmd .= " -title '".$main::param{title}."'";
-    $cmd .= " -origin center ";
-    $cmd .= " -o ".$outfile{$ol."nt_profiles"};
-    &one_command($cmd);
-  }
-}
+  my $cmd = "position-analysis -v 1";
+  $cmd .= " -i ".$main::outfile{"purged_test"};
+  $cmd .= " -format fasta";
+  $cmd .= " -sort ";
+  $cmd .= " -return chi,sig,distrib,graphs,rank";
+  $cmd .= " -uth rank ".$main::param{patterns_max_rank};
+  $cmd .= " -max_graphs ".$main::param{patterns_max_rank};
+  $cmd .= " ".$main::param{strand};
+  $cmd .= " ".$main::param{noov};
+  $cmd .= " -seqtype dna";
+  $cmd .= " -l ".$main::param{oligo_len};
+  $cmd .= " -ci ".$main::param{profiles_ci};
+  $cmd .= " -img_format ".$main::param{img_format};
+  $cmd .= " -title '".$main::param{title}."'";
+  $cmd .= " -origin center ";
+  $cmd .= " -o ".$outfile{positions};
+  &one_command($cmd);
 
-
-################################################################
-## CompositionProfiles
-sub CompositionProfiles {
-  for my $ol (1,2) {
-    my $col_nb = 4**$ol + 1;
-    my $cmd = 'grep -v ";" '.$outfile{$ol."nt_profiles"}.' | transpose-table | grep -P \'(^id)|(^\-?\d+)\'';
-    $cmd .= " | XYgraph -xcol 1 -ycol 2-".$col_nb;
-    $cmd .= " -lines -legend -header ";
-    $cmd .= " -title 'Peak composition profiles : ".$ol."nt'";
-    $cmd .= " -xleg1 'Position' -xsize 800";
-    $cmd .= " -yleg1 'Occurrences' -ysize 300";
-    $cmd .= " -o ".$outfile{$ol."nt_profiles_graph"};
-    &one_command($cmd);
-  }
+  &MatrixFromPatterns($outfile{positions}, $outfile{positions_pssm}, "positions");
 }
 
 
@@ -510,6 +580,8 @@ sub Synthesis {
   &SynthesisPatternDisco("oligos");
 
   &SynthesisPatternDisco("dyads");
+
+  &SynthesisPatternDisco("positions");
 
   ## Log file
   &SyntheticTableAddRow("Log file",
