@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-seq-analysis,v 1.13 2010/03/16 01:39:01 jvanheld Exp $
+# $Id: chip-seq-analysis,v 1.14 2010/03/16 01:50:56 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -416,7 +416,8 @@ sub CompositionProfiles {
     my $col_nb = 4**$ol + 1;
     $cmd = 'grep -v ";" '.$outfile{$ol."nt_profiles"}.' | transpose-table | grep -P \'(^id)|(^\-?\d+)\'';
     $cmd .= " | XYgraph -xcol 1 -ycol 2-".$col_nb;
-    $cmd .= " -lines -legend -header -symbols ";
+    $cmd .= " -lines -legend -header";
+#    $cmd .= " -symbols "; ## THIS OPTION IS NOT WORKING ANYMORE : THE LEGEND DISPLAYS SYMBOLS BUT NOT THE GRAPH. THIS HAS TO BE FIXED
     $cmd .= " -title 'Peak composition profiles : ".$ol."nt'";
     $cmd .= " -xleg1 'Position' -xsize 800";
     $cmd .= " -yleg1 'Occurrences' -ysize 300";
@@ -526,7 +527,7 @@ sub PositionAnalysis {
   $cmd .= " -format fasta";
   $cmd .= " -sort ";
   $cmd .= " -return chi,sig,distrib,graphs,rank";
-  $cmd .= " -uth rank ".$main::param{patterns_max_rank};
+  $cmd .= " -rth ".$main::param{patterns_max_rank};
   $cmd .= " -max_graphs ".$main::param{patterns_max_rank};
   $cmd .= " ".$main::param{strand};
   $cmd .= " ".$main::param{noov};
