@@ -1633,7 +1633,7 @@ sub _readFromJasparFile {
 	## residue associated to the row
 	my $residue = lc(shift @fields);
 	$matrix->addIndexedRow($residue, @fields);
-	&RSAT::message::Debug($line, join(";", @fields)) if ($main::verbose >= 0);
+#	&RSAT::message::Debug($line, join(";", @fields)) if ($main::verbose >= 10);
       }
     }
     close $in if ($file);
