@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: download-organism,v 1.8 2010/03/15 16:22:54 jvanheld Exp $
+# $Id: download-organism,v 1.9 2010/03/16 08:54:34 jvanheld Exp $
 #
 ############################################################
 
@@ -123,7 +123,7 @@ package main;
   ## Initialise parameters
   my $start_time = &AlphaDate();
   $get_command = "wget";
-  $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
   ## Parameters for downloading with rsync
   $rsat_server_login = "rsat\@rsat.ulb.ac.be";
@@ -195,13 +195,14 @@ package main;
   ## Get the update dates + source from the server (in order to restrict the
   ## number of queries, get dates for all organisms and store them for
   ## the selected organisms only)
+  &RSAT::message::TimeWarn("Getting supported organisms from server") if ($main::verbose >= 1);
   my @all_organisms = `supported-organisms -v 0 -server -return ID,last_update,source | grep -v '^#'`;
   foreach my $org_line (@all_organisms) {
     chomp($org_line);
     my ($org, $date, $source) = split /\t/, $org_line;
     $last_update{$org} = $date || '<NA>';
     $source{$org} = $source || '<NA>';
-    &RSAT::message::Debug("Server supported", $org_line, $org, $last_update{$org}, $source{$org}) if ($main::verbose >= 5);
+    &RSAT::message::Debug("Server supported", $org_line, $org, $last_update{$org}, $source{$org}) if ($main::verbose >= 3);
   }
 
   ################################################################
@@ -212,10 +213,13 @@ package main;
     if ($get_command eq "wget") {
       &RSAT::message::TimeWarn("Downloading genome", $org, "from the RSAT server", $RSAT_SERVER) if ($main::verbose >= 1);
       $cmd .= "wget --reject 'index.html*' ";
-      if ($main::verbose <= 1) {
-	$cmd .= "-q"; ## quiet mode for wget
+      if ($main::verbose <= 2) {
+	## quiet mode for wget
+	$cmd .= "-q"; 
       } else {
-	$cmd .= "-nv"; ## low-verbosity mode for wget (the default mode is VERY verbosy)
+	## "low-verbosity" mode for wget (the default mode is VERY
+	## verbosy, the "low-verbosity" mode is still quite verbosy)
+      	$cmd .= "-nv"; 
       }
       $cmd .= " --passive-ftp";
       $cmd .= " --no-parent";
@@ -245,8 +249,9 @@ package main;
     $cmd = "install-organism -v 1 -task config,phylogeny -org ".$org;
     $cmd .= " -date '".$date."'";
     $cmd .= " -source '".$source."'";
+    $cmd .= " >>& install-organisms_log.txt";
     &doit($cmd, $dry, $die_on_error, $verbose, 0, 0);
-    &RSAT::message::Debug("Updating config and phylogeny\n", $cmd) if ($main::verbose >= 3);
+    &RSAT::message::Debug("Updating config and phylogeny\n", $cmd) if ($main::verbose >= 2);
   }
 
 
