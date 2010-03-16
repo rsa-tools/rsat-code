@@ -21,7 +21,6 @@ use RSAT::MatrixReader;
 ### Read the CGI query
 $query = new CGI;
 
-local @supported_input_formats = sort(keys( %RSAT::MatrixReader::supported_input_format));
 local @supported_output_formats = sort(keys( %RSAT::matrix::supported_output_format));
 
 ################################################################
@@ -88,31 +87,17 @@ print $query->start_multipart_form(-action=>"convert-matrix.cgi");
 ################################################################
 #### Matrix specification
 print "<hr>";
+
+## Input matrix
 &GetMatrix();
 print "<hr>";
 
-my %bg_params =(
-				"from_matrix" => 1,
-				);
+## Background model
+my %bg_params =("from_matrix" => 1);
 &GetBackgroundModel(\%bg_params);
 
-print "<br/>Note: Only Bernoulli models are supported. Higher-order Markov models are converted into Markov 0 (Bernoulli).";
+print "<br/><b>Note:</b> Only Bernoulli models are supported. Higher-order Markov models are converted into Markov 0 (Bernoulli).";
 print "<hr>";
-################################################################
-### Input matrix
-#print "<B><A HREF='help.convert-matrix.html#matrix'>Input matrix</A></B><br>";
-#print $query->textarea(-name=>'matrix',
-#		       -default=>$default{matrix},
-#		       -rows=>10,
-#		       -columns=>60);
-#print "<BR>";                   
-#
-#### Input matrix format
-#print "<B><A HREF='help.convert-matrix.html#input_format'>Input format</A></B>&nbsp;";
-#print $query->popup_menu(-name=>'input_format',
-#			 -Values=>[@supported_input_formats],
-#			 -default=>$default{input_format});
-#print "<BR>\n";
 
 ### Output matrix format
 print "<br>";
