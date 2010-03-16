@@ -306,7 +306,6 @@ def fasta2sequences(uf, location=None, rightPosition=None, leftPosition=None, ce
     centertPosition  -- center  
 
     """
-    print centerPosition
     try:
         if type(uf) is str:
             if uf.endswith('.gz'):
