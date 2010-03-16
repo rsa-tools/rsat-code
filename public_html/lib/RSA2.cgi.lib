@@ -689,21 +689,12 @@ print "<B>Matrix (or matrices)</B>\n";
 print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
 print "<A HREF='help.convert-matrix.html#io_format'><B>Format</B></a>&nbsp;";
 
+my @supported_input_formats = sort(keys( %RSAT::MatrixReader::supported_input_format));
+my @supported_output_formats = sort(keys( %RSAT::matrix::supported_output_format));
+
 #### matrix format 
 print $query->popup_menu(-name=>'matrix_format',
-			 -Values=>[
-				   'tab',
-				   'meme',
-				   'MotifSampler',
-				   'consensus',
-				   'gibbs',
-				   'transfac',
-				   'alignace',
-				   'clustal',
-				   'assembly',
-				   'cluster-buster',
-				   'feature'
-				  ],
+			 -Values=>[@supported_input_formats],
 			 -default=>$default{matrix_format});
 
 if ($consensus) {
