@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.41 2010/03/06 16:21:00 jvanheld Exp $
+# $Id: position-analysis,v 1.42 2010/03/16 01:38:50 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -915,7 +915,7 @@ position-analysis options
 -lth_chi	lower threshold on chi2
 -lth_sig	lower threshold on significance of the chi2 statistics
 -oth		lower threshold on occurrences
--rth		lower threshold on rank
+-rth		upper threshold on rank
 -max_graphs #	maximal number of graphs to export
 -pl		pattern list
 -img_format	image format (this parameter is passed to XYgraph)
