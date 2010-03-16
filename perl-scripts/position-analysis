@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.43 2010/03/16 20:26:54 jvanheld Exp $
+# $Id: position-analysis,v 1.44 2010/03/16 21:22:30 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -15,7 +15,7 @@ require RSAT::util;
 require RSAT::stats;
 use POSIX qw(sysconf _PC_CHOWN_RESTRICTED);
 use Math::CDF;
-#use Statistics::Distributions;
+use Statistics::Distributions;
 
 
 ################################################################
@@ -218,7 +218,7 @@ if ($return{'graph'}) {
 
 	my $score = "NA";
 	my $Eval = sprintf "%.1g", $pattern{$oligo_seq}->{Eval};
-	my $sig = sprintf "%.2f", $pattern{$oligo_seq}->{sig};
+	my $sig = $pattern{$oligo_seq}->{sig};
 	my $graph_file_name = join("", $oligo_seq, "_ci", $class_interval, "_", $strands, "_pos_distrib.",$img_format);
 	my $xmax = ($max_class+1) * $class_interval;
 	my $title2 = $pattern{$oligo_seq}->{in_bound_occ}." occurrences";
@@ -611,19 +611,31 @@ sub CalcChi {
 	&RSAT::message::Debug($oligo_seq, "chi2", $pattern{$oligo_seq}->{chi_square}, $pattern{$oligo_seq}->{df}, @chi_values) if ($main::verbose >= 5);
 
 	## Compute P-value
-	$pattern{$oligo_seq}->{Pval} = 1 - &Math::CDF::pchisq($pattern{$oligo_seq}->{chi_square},
-							      $pattern{$oligo_seq}->{df});
-#	$pattern{$oligo_seq}->{Pval} = 1 - &Statistics::Distributions::chisqrprob($pattern{$oligo_seq}->{df},
-#										  $pattern{$oligo_seq}->{chi_square});
+#	$pattern{$oligo_seq}->{Pval} = sprintf("%.2e", 1 - &Math::CDF::pchisq($pattern{$oligo_seq}->{chi_square},
+#									      $pattern{$oligo_seq}->{df}));
+	$pattern{$oligo_seq}->{Pval} = sprintf("%.2e", &Statistics::Distributions::chisqrprob($pattern{$oligo_seq}->{df},
+										   $pattern{$oligo_seq}->{chi_square}));
+
 
 
 	if ($pattern{$oligo_seq}->{Pval} <= 0) {
-	  $pattern{$oligo_seq}->{Pval} = 1e-16; ## Lower boundary for the computation of P-values with the CDF library
-	  $pattern{$oligo_seq}->{Eval} = 1e-16;
+	  $pattern{$oligo_seq}->{Pval} = 0; ## Lower boundary for the computation of P-values with the CDF library
+	  $pattern{$oligo_seq}->{Eval} = 0;
+	  $pattern{$oligo_seq}->{sig} = "Inf";
 	} else {
 	  $pattern{$oligo_seq}->{Eval} = $pattern{$oligo_seq}->{Pval}*$nb_tests;
+	  $pattern{$oligo_seq}->{sig} = sprintf ("%.2f", -log($pattern{$oligo_seq}->{Eval})/$log_base);
 	}
-	$pattern{$oligo_seq}->{sig} = -log($pattern{$oligo_seq}->{Eval})/$log_base;
+
+	&RSAT::message::Debug("chisquare P-value", 
+			      "df=".$pattern{$oligo_seq}->{df},
+			      "chi2=".$pattern{$oligo_seq}->{chi_square},
+#			      "Math::CDF=".$pattern{$oligo_seq}->{Pval}, 
+#			      "Statistics::Distribution=".$pattern{$oligo_seq}->{Pval2},
+			      "Pval=".$pattern{$oligo_seq}->{Pval}, 
+			      "Eval=".$pattern{$oligo_seq}->{Eval}, 
+			      "sig=".$pattern{$oligo_seq}->{sig}, 
+	    ) if ($main::verbose >= 0);
 
 	#### check threshold on occurrences
 	if (defined($lth{'sig'})) {
@@ -1314,15 +1326,20 @@ sub PrintResult {
 
       ### Occurrences
       print $out "\t", $pattern{$oligo_seq}->{in_bound_occ};
-      print $out "\t", $pattern{$oligo_seq}->{overlaps} if ($noov);
+      if ($noov) {
+	  unless (defined($pattern{$oligo_seq}->{overlaps})) {
+	      $pattern{$oligo_seq}->{overlaps} = 0;
+	  }
+	  print $out "\t", $pattern{$oligo_seq}->{overlaps};
+      }
 
       ### chi-square value
       if ($return{'chi'}) {
 	printf $out "\t%.1f", $pattern{$oligo_seq}->{chi_square};
 	printf $out "\t%d", $pattern{$oligo_seq}->{df};
-	printf $out "\t%.1g", $pattern{$oligo_seq}->{Pval};
-	printf $out "\t%.1g", $pattern{$oligo_seq}->{Eval};
-	printf $out "\t%.2f", $pattern{$oligo_seq}->{sig};
+	printf $out "\t%.2e", $pattern{$oligo_seq}->{Pval};
+	printf $out "\t%.2g", $pattern{$oligo_seq}->{Eval};
+	print $out "\t", $pattern{$oligo_seq}->{sig};
       }
 
       #### Rank
