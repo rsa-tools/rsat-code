@@ -121,11 +121,11 @@ void help()
 "    --collect             try to collect the N best sites using their weight scores \n"
 "                          (during the collection --dmin and --zoops are not taken into account)\n"
 "\n"
-"    --sigmatrix=#         start sampling form sites collected by scanning the sequences with sig matrix # \n"
+"    --seedmatrix=#        start sampling form sites collected by scanning the sequences with matrix #\n"
 "\n"
-"    --sigmatrix_sites=#   when using sigmatrix specify the number of sites for each matrix (n1,n2,n3) \n"
+"    --seedmatrix_sites=#  when using seed matrix specify the number of sites for each matrix (n1,n2,n3) \n"
 "\n"
-"    --flanks=#            when using --sigmatrix add extra # positions arround the matrix\n"
+"    --flanks=#            when using --seedmatrix add extra # positions arround the matrix\n"
 "\n"
 "    --rseed=#             set random seed to #\n"
 "\n"
@@ -138,10 +138,10 @@ void help()
 
 /*
  *
- * parse sigmatrix_sites option
+ * parse seedmatrix_sites option (seed)
  *
  */
-int parse_sigmatrix_sites(char *arg, int *values)
+int parse_seedmatrix_sites(char *arg, int *values)
 {
     int count = 0;
     char *tk = NULL;
@@ -197,12 +197,12 @@ int main(int argc, char *argv[])
     char *seqfile = NULL;
     char *bgfile  = NULL;
     char *matfile = NULL;
-    int   sigmatrix_sites[16];
-    int sigmatrix_sites_count = 0;
+    int   seedmatrix_sites[16];
+    int seedmatrix_sites_count = 0;
 
     for (int i = 0; i < 16; i++)
     {
-        sigmatrix_sites[i] = -1;
+        seedmatrix_sites[i] = -1;
     }
 
     if (argc <= 1)
@@ -240,8 +240,8 @@ int main(int argc, char *argv[])
         { "rseed",       required_argument, NULL, 'z' },
         { "pseudo",      required_argument, NULL, 'p' },
         { "title",       required_argument, NULL, 'T' },
-        { "sigmatrix",   required_argument, NULL, 'M' },
-        { "sigmatrix_sites",  required_argument, NULL, 'Y' },
+        { "seedmatrix",   required_argument, NULL, 'M' },
+        { "seedmatrix_sites",  required_argument, NULL, 'Y' },
         { "flanks",      required_argument, NULL, 'K' },
         { "llr",         no_argument,       NULL, 'L' },
         { "pqllr",       no_argument,       NULL, 'X' },
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
             
             case 'w':
             if (matfile != NULL)
-                ERROR("-w option is incompatible with the --sigmatrix option");
+                ERROR("-w option is incompatible with the --seedmatrix option");
             l = atoi(optarg);
             CHECK_VALUE(l, 1, 100, "invalid value for length (should be between 0 and 100)")
             if (params.maxspacing != 0)
@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
             break; 
 
             case 'Y': 
-                sigmatrix_sites_count = parse_sigmatrix_sites(optarg, sigmatrix_sites);
+                seedmatrix_sites_count = parse_seedmatrix_sites(optarg, seedmatrix_sites);
             break; 
 
             case 'e': 
@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
 
             case 'M':
             if (w_is_set)
-                ERROR("-w option is incompatible with the --sigmatrix option");
+                ERROR("-w option is incompatible with the --seedmatrix option");
 
             matfile = (char *) strdup(optarg);
             break;
@@ -473,7 +473,7 @@ int main(int argc, char *argv[])
     {
         params.shift = false;
         if (params.dmin != 0)
-            ERROR("option --sigmatrix is incompatible with --zoops or --dmin=#")
+            ERROR("option --seedmatrix is incompatible with --zoops or --dmin=#")
         // open file
         FILE *fp = fopen(matfile, "r");
         if (fp == NULL)
@@ -486,12 +486,12 @@ int main(int argc, char *argv[])
                 break;
             matrix.transform2logfreq(markov);
             params.start_from_sites = true;
-            if (sigmatrix_sites_count > 0)
+            if (seedmatrix_sites_count > 0)
             {
-                if (params.id - 1 < 16 && sigmatrix_sites[params.id - 1] != -1)
-                    params.n = sigmatrix_sites[params.id - 1];
+                if (params.id - 1 < 16 && seedmatrix_sites[params.id - 1] != -1)
+                    params.n = seedmatrix_sites[params.id - 1];
                 else
-                    ERROR("invalid sigmatrix_sites provided value");
+                    ERROR("invalid seedmatrix_sites provided value");
             }
             params.m1 = matrix.J + params.flanks * 2;
             params.m2 = 0;
