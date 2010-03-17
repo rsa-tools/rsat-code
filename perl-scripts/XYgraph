@@ -1690,8 +1690,8 @@ XYgraph options
 -symbols	represent points by symbols
 -htmap		HTML map
 -lc		label column
--colors	colorfile (eps and pdf only)
--export_colors export a color file
+-colors		colorfile
+-export_colors	export a color file
 -gp		gnuplot additional commands
 -vline          vertical line       
 -hline          horozontal line
@@ -1850,7 +1850,6 @@ OPTIONS
 		(this info is used when the -htmap option is active).
 
 	-colors colorfile
-		Only working with eps and pdf formats (Gnuplot program)
 		Provide a file containing curve-specific colors.
                 The file contains 2 columns
                 1) column identifier (header of the column of the input file)
