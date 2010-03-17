@@ -83,14 +83,22 @@ can be installed with the command \program{cpan}.
 \item[PostScript::Simple] Produce PostScript files from Perl. Used by
   \program{feature-map}.
 
-\item[Math::CDF] is used to calculate some probability distribution
-  functions. In particular, it is used by the program
+\item[Statistics::Distributions] is used to calculate some probability
+  distribution functions. In particular, it is used by the program
   \program{position-analysis} to calculate the P-value of the
-  chi2. Note that this librairy is currently restricted to a precision
-  of 1e-16. For the discrete functions (binomial , Poisson,
-  hypergeometric) \RSAT relies on a custom library (
-  \$RSAT/perl-scripts/lib/RSAT/stats.pm) which reaches a precision of
-  1e-300.
+  chi2. 
+
+  \textbf{Notes} 
+  \begin{itemize}
+  \item In previous releases, the chi2 P-value was computed using
+    \program{Math::CDF}, but the precision was limited to
+    1e-15. \program{Statistics::Distributions} can compute P-values
+    down to 1e-65.
+  \item For the discrete functions (binomial , Poisson,
+    hypergeometric) \RSAT relies on a custom library (
+    \$RSAT/perl-scripts/lib/RSAT/stats.pm) which reaches a precision
+    of 1e-300.
+  \end{itemize}
 
 \item[File::Spec, POSIX and Data::Dumper] re required for some
   functions of \program{matrix-scan}.
