@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.19 2010/03/17 01:33:18 jvanheld Exp $
+# $Id: chip-motifs,v 1.20 2010/03/17 14:55:07 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -113,6 +113,7 @@ package main;
 			   positions
 			   orm
 			   profiles
+			   ref_motif
 			   synthesis
 			   clean_seq
 			  );
@@ -292,7 +293,10 @@ sub SetOutFileNames {
 
     ## Reference motif
     if (defined($main::infile{ref_motif})) {
-      $main::outfile{"ref_motif_info"} = &OutFileName(".tab", "ref_motif");
+      $main::outfile{"ref_motif_tab"} = &OutFileName(".tab", "ref_motif");
+      $main::outfile{"ref_motif_info"} = &OutFileName(".tab", "ref_motif_info");
+      $main::outfile{"ref_motif_logo"} = &OutFileName("", "ref_motif_logo");
+      $main::outfile{"ref_motif_enriched"} = &OutFileName("tab", "ref_motif_enriched");
     }
 
     ## Sequence lengths
@@ -354,10 +358,15 @@ sub SetOutFileNames {
 #     $main::outfile{dyads_pssm} =~ s/\.tab$//;
 #     $main::outfile{dyads_pssm} .= "_pssm";
 
-    ## Position-analysis
+    ## Compositional Profiles
     for my $ol (@profiles_oligo_lengths) {
+      ## Profiles of oligo frequencies as a function of the position
       $main::outfile{$ol."nt_profiles"} = &OutFileName(".tab", "profiles".$main::param{profiles_strand}.$main::param{noov},$ol."nt",
 						       "ci".$main::param{profiles_ci});
+
+      ## oligo frequencies in the test sequences
+      $main::outfile{$ol."nt_test_freq"} = &OutFileName(".tab", "test_freq"."-1str".$main::param{noov},$ol."nt");
+      $main::outfile{$ol."nt_test_heatmap"} = &OutFileName(".".$main::param{img_format}, "test_heatmap"."-1str".$main::param{noov},$ol."nt");
 
       ## HTML index to the individual oligonucleotide profiles
       $main::outfile{$ol."nt_profiles_index"} = $main::outfile{$ol."nt_profiles"};
@@ -436,10 +445,16 @@ sub CompositionProfiles {
     &one_command($cmd);
 
     ## Draw the XY graph with composition profiles
+    my $color_file = $ENV{RSAT}."/perl-scripts/lib/color_palettes/".$ol."nt".$main::param{profiles_strand}."_colors.tab";
     my $col_nb = 4**$ol + 1;
-    $cmd = 'grep -v ";" '.$main::outfile{$ol."nt_profiles"}.' | transpose-table | grep -P \'(^id)|(^\-?\d+)\'';
+    $cmd = 'grep -v ";" '.$main::outfile{$ol."nt_profiles"}.' | sort | transpose-table | grep -P \'(^id)|(^\-?\d+)\'';
     $cmd .= " | XYgraph -xcol 1 -ycol 2-".$col_nb;
     $cmd .= " -lines -legend -header";
+    if (-e $color_file) {
+      $cmd .= " -colors ".$color_file;
+    } else {
+      &RSAT::message::Warning("Cannot find residue color specification file", $color_file);
+    }
 #    $cmd .= " -symbols "; ## THIS OPTION IS NOT WORKING ANYMORE : THE LEGEND DISPLAYS SYMBOLS BUT NOT THE GRAPH. THIS HAS TO BE FIXED
     my $title = "Peak composition profiles : ".$ol."nt";
     $title .= "; ".$main::param{title} if ($main::param{title});
@@ -447,6 +462,21 @@ sub CompositionProfiles {
     $cmd .= " -xleg1 'Position' -xsize 800";
     $cmd .= " -yleg1 'Occurrences' -ysize 300";
     $cmd .= " -o ".$main::outfile{$ol."nt_profiles_graph"};
+    &one_command($cmd);
+
+    ## Compute background models of order 0 (Bernoulli) and 1 (Markov)
+    ## from the input sequence
+    $cmd = "count-words -v 1";
+    $cmd .= " -i ".$main::outfile{purged_test};
+    $cmd .= " -l ".$ol;
+    $cmd .= " -1str";
+    $cmd .= " ".$main::param{noov};
+    $cmd .= " -o ".$main::outfile{$ol.'nt_test_freq'};
+    $cmd .= "; convert-background-model -from oligos -to transitions ";
+    $cmd .= " -i ".$main::outfile{$ol.'nt_test_freq'};
+    $cmd .= " | cut -f 1-5,7";
+    $cmd .= " | draw-heatmap -min 0 -max 1  -out_format png -col_width 50";
+    $cmd .= " -o ".$main::outfile{$ol.'nt_test_heatmap'};
     &one_command($cmd);
   }
 }
@@ -619,41 +649,35 @@ sub Synthesis {
       my $cmd = "convert-matrix -v 1 -from ".$main::param{ref_motif_format};
       $cmd .= " -to tab";
       $cmd .= " -return counts,parameters,logo";
-      $cmd .= " -logo_dir ".$main::dir{output};
-      $cmd .= " -prefix ".$main::param{prefix};
+      $cmd .= " -logo_file ".$main::outfile{ref_motif_logo};
       $cmd .= " -i ".$main::infile{ref_motif};
       $cmd .= " -o ".$main::outfile{ref_motif_info};
       &one_command($cmd);
 #    }
-#     my $logo_table = "<table cellpadding=0 cellspacing=0 align=center border=0>";
-#     $logo_table .= "<tr>\n";
-#     my $logo_file = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
-#     my $logo_file_rc = $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb};
-#     &RSAT::message::Debug("Logo", $logo_nb, $logo_file) if ($main::verbose >= 5);
-#     if (-e $logo_file) {
-#       my $img = &RelativePath($logo_file);
-#       $logo_table .= "<td align='right'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
-#     } elsif ($main::verbose >= 0) {
-#       &RSAT::message::Warning("Cannot find logo", $logo_file);
-#     }
-#     if (-e $logo_file_rc) {
-#       my $img = &RelativePath($logo_file_rc);
-#       $logo_table .= "<td align='left'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
-#     } elsif ($main::verbose >= 0) {
-#       &RSAT::message::Warning("Cannot find reverse complementary logo", $logo_file_rc);
-#     }
-#     $logo_table .= "</tr>\n";
-#   }
-#   $logo_table .= "</table>\n";
-#   &SyntheticTableAddRow($pattern_type,
-# 			$logo_table,
-# 			$pattern_type,$main::outfile{$pattern_type},
-# 			"assembly",$main::outfile{$pattern_type.'_asmb'},
-# 			"sig matrix",$main::outfile{$pattern_type.'_pssm_sig'},
-# 			"info-gibbs",$main::outfile{$pattern_type.'_pssm_gibbs'},
-# 			"count matrix",$main::outfile{$pattern_type.'_pssm_counts'},
-# 		       );
-#     }
+    my $logo_table = "<table cellpadding=0 cellspacing=0 align=center border=0>";
+    $logo_table .= "<tr>\n";
+    my $logo_file = $main::outfile{ref_motif_logo}."_m1.".$main::param{img_format};
+    my $logo_file_rc = $main::outfile{ref_motif_logo}."_m1_rc.".$main::param{img_format};
+    if (-e $logo_file) {
+      my $img = &RelativePath($logo_file);
+      $logo_table .= "<td align='right'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+    } elsif ($main::verbose >= 0) {
+      &RSAT::message::Warning("Cannot find reference logo", $logo_file);
+    }
+    if (-e $logo_file_rc) {
+      my $img = &RelativePath($logo_file_rc);
+      $logo_table .= "<td align='left'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+    } elsif ($main::verbose >= 0) {
+      &RSAT::message::Warning("Cannot find reverse complementary logo for the reference motif", $logo_file_rc);
+    }
+    $logo_table .= "</tr>\n";
+    $logo_table .= "</table>\n";
+    &SyntheticTableAddRow("Reference motif",
+			  $logo_table,
+			  $main::param{ref_motif_format},$main::outfile{ref_motif},
+			  "tab",$main::outfile{ref_motif_tab},
+			  "info",$main::outfile{ref_motif_info},
+			 );
   }
 
   ## Header line
@@ -766,20 +790,29 @@ sub SynthesisSequenceComposition {
 
 
   ## Residue composition
-  $img = &RelativePath($main::outfile{"1nt_profiles_graph"});
-  &SyntheticTableAddRow("Residue composition",
-			"<a  href='".$img."'><img height=150 src='".$img."'></a>",
-			"table",$main::outfile{"1nt_profiles"},
-			"individual profiles",$main::outfile{"1nt_profiles_index"},
-		       );
+  for my $ol (@profiles_oligo_lengths) {
+    my $table = "<table><tr>";
+    my $img = &RelativePath($main::outfile{$ol."nt_test_heatmap"});
+    $table .= "<td><a  href='".$img."'><img width=200 src='".$img."'></a></td>";
+    $img = &RelativePath($main::outfile{$ol."nt_profiles_graph"});
+    $table .= "<td><a  href='".$img."'><img height=150 src='".$img."'></a></td>";
+    $table .= "</tr></table>";
+    &SyntheticTableAddRow($ol."nt composition",
+			  $table,
+			  $ol."nt freq",$main::outfile{$ol."nt_test_freq"},
+			  $ol."nt heatmap",$main::outfile{$ol."nt_test_heatmap"},
+			  "profile table",$main::outfile{$ol."nt_profiles"},
+			  "individual profiles",$main::outfile{$ol."nt_profiles_index"},
+			 );
+  }
 
-  ## Dinucleotide composition
-  $img = &RelativePath($main::outfile{"2nt_profiles_graph"});
-  &SyntheticTableAddRow("Dinucleotide composition",
-			"<a  href='".$img."'><img height=150 src='".$img."'></a>",
-			"table",$main::outfile{"2nt_profiles"},
-			"individual profiles",$main::outfile{"2nt_profiles_index"},
-		       );
+#  ## Dinucleotide composition
+#  $img = &RelativePath($main::outfile{"2nt_profiles_graph"});
+#  &SyntheticTableAddRow("Dinucleotide composition",
+#			"<a  href='".$img."'><img height=150 src='".$img."'></a>",
+#			"table",$main::outfile{"2nt_profiles"},
+#			"individual profiles",$main::outfile{"2nt_profiles_index"},
+#		       );
 }
 
 ################################################################
@@ -917,9 +950,27 @@ the motif annotated in some transcription factor database
 (e.g. RegulonDB, Jaspar, TRANSFAC) for the transcription factor of
 interest. These annotations may come from low-throughput experiments,
 and rely on a poor number of sites, but the reference motif may
-nevertheless be informative, because it will allow to evaluate if the
-motifs discovered in the ChIP-seq peaks correspond to the prior
-knowledge about the transcrition factor.
+nevertheless be informative, because it is based on several
+independent studies.
+
+The reference motif is used for two purposes in I<chip-seq-analysis>.
+
+=over
+
+=item Comparison with discovered motifs
+
+Each discovered motif can be compared to the reference motif, in order
+to evaluate its likelihood to correspond to the factor of interest.
+
+=item Seed for supervised motif improvement
+
+The reference motif can serve as seed for collecting all the sites in
+the peak sequence set, and building a more robust motif based on
+several hundreds or thousands of sites. The supervised motif
+improvement is performed with I<info-gibbs> (using the option
+B<--sig_matrix>).
+
+=back
 
 =cut
     } elsif ($arg eq "-ref_motif") {
@@ -1027,6 +1078,28 @@ enrichment in CpG island.
 Note that I<chip-seq-analysis> also runs I<position-analysis> with
 larger oligonucleotide length (see option -l) to detect motifs on the
 basis of positionally biased oligonucleotides (see task B<positions>).
+
+=item I<ref_motif>
+
+This task combines various operations.
+
+=over
+
+=item Formating of the reference motif
+
+Perform various format conversion for the reference motif (compute
+parameters, consensus, logo).
+
+=item Motif enrichment
+
+Generate an enriched motif by scanning the peak sequence set with the
+reference motif.
+
+=item Motif comparison
+
+Compare all discovered motifs with the reference motif.
+
+=back
 
 =item I<oligos>
 
