@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-seq-analysis,v 1.20 2010/03/17 14:55:07 jvanheld Exp $
+# $Id: chip-seq-analysis,v 1.21 2010/03/17 15:04:59 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.20 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -366,6 +366,7 @@ sub SetOutFileNames {
 
       ## oligo frequencies in the test sequences
       $main::outfile{$ol."nt_test_freq"} = &OutFileName(".tab", "test_freq"."-1str".$main::param{noov},$ol."nt");
+      $main::outfile{$ol."nt_test_transit"} = &OutFileName(".tab", "test_transitions"."-1str".$main::param{noov},$ol."nt");
       $main::outfile{$ol."nt_test_heatmap"} = &OutFileName(".".$main::param{img_format}, "test_heatmap"."-1str".$main::param{noov},$ol."nt");
 
       ## HTML index to the individual oligonucleotide profiles
@@ -474,7 +475,8 @@ sub CompositionProfiles {
     $cmd .= " -o ".$main::outfile{$ol.'nt_test_freq'};
     $cmd .= "; convert-background-model -from oligos -to transitions ";
     $cmd .= " -i ".$main::outfile{$ol.'nt_test_freq'};
-    $cmd .= " | cut -f 1-5,7";
+    $cmd .= " -o ".$main::outfile{$ol.'nt_test_transit'};
+    $cmd .= " ; cut -f 1-5,7 ".$main::outfile{$ol.'nt_test_transit'};;
     $cmd .= " | draw-heatmap -min 0 -max 1  -out_format png -col_width 50";
     $cmd .= " -o ".$main::outfile{$ol.'nt_test_heatmap'};
     &one_command($cmd);
@@ -800,7 +802,7 @@ sub SynthesisSequenceComposition {
     &SyntheticTableAddRow($ol."nt composition",
 			  $table,
 			  $ol."nt freq",$main::outfile{$ol."nt_test_freq"},
-			  $ol."nt heatmap",$main::outfile{$ol."nt_test_heatmap"},
+			  $ol."nt transitions",$main::outfile{$ol."nt_test_transit"},
 			  "profile table",$main::outfile{$ol."nt_profiles"},
 			  "individual profiles",$main::outfile{$ol."nt_profiles_index"},
 			 );
