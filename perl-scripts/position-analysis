@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.44 2010/03/16 21:22:30 rsat Exp $
+# $Id: position-analysis,v 1.45 2010/03/17 01:32:44 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -15,8 +15,7 @@ require RSAT::util;
 require RSAT::stats;
 use POSIX qw(sysconf _PC_CHOWN_RESTRICTED);
 use Math::CDF;
-use Statistics::Distributions;
-
+##use Statistics::Distributions;
 
 ################################################################
 ###### default values for parameters
@@ -611,10 +610,10 @@ sub CalcChi {
 	&RSAT::message::Debug($oligo_seq, "chi2", $pattern{$oligo_seq}->{chi_square}, $pattern{$oligo_seq}->{df}, @chi_values) if ($main::verbose >= 5);
 
 	## Compute P-value
-#	$pattern{$oligo_seq}->{Pval} = sprintf("%.2e", 1 - &Math::CDF::pchisq($pattern{$oligo_seq}->{chi_square},
-#									      $pattern{$oligo_seq}->{df}));
-	$pattern{$oligo_seq}->{Pval} = sprintf("%.2e", &Statistics::Distributions::chisqrprob($pattern{$oligo_seq}->{df},
-										   $pattern{$oligo_seq}->{chi_square}));
+	$pattern{$oligo_seq}->{Pval} = sprintf("%.2e", 1 - &Math::CDF::pchisq($pattern{$oligo_seq}->{chi_square},
+									      $pattern{$oligo_seq}->{df}));
+#	$pattern{$oligo_seq}->{Pval} = &Statistics::Distributions::chisqrprob($pattern{$oligo_seq}->{df},
+#									      $pattern{$oligo_seq}->{chi_square});
 
 
 
@@ -627,15 +626,13 @@ sub CalcChi {
 	  $pattern{$oligo_seq}->{sig} = sprintf ("%.2f", -log($pattern{$oligo_seq}->{Eval})/$log_base);
 	}
 
-	&RSAT::message::Debug("chisquare P-value", 
-			      "df=".$pattern{$oligo_seq}->{df},
-			      "chi2=".$pattern{$oligo_seq}->{chi_square},
-#			      "Math::CDF=".$pattern{$oligo_seq}->{Pval}, 
-#			      "Statistics::Distribution=".$pattern{$oligo_seq}->{Pval2},
-			      "Pval=".$pattern{$oligo_seq}->{Pval}, 
-			      "Eval=".$pattern{$oligo_seq}->{Eval}, 
-			      "sig=".$pattern{$oligo_seq}->{sig}, 
-	    ) if ($main::verbose >= 0);
+# 	&RSAT::message::Debug("chisquare P-value",
+# 			      "df=".$pattern{$oligo_seq}->{df},
+# 			      "chi2=".$pattern{$oligo_seq}->{chi_square},
+# 			      "Pval=".$pattern{$oligo_seq}->{Pval},
+# 			      "Eval=".$pattern{$oligo_seq}->{Eval},
+# 			      "sig=".$pattern{$oligo_seq}->{sig},
+# 	    ) if ($main::verbose >= 5);
 
 	#### check threshold on occurrences
 	if (defined($lth{'sig'})) {
@@ -1337,7 +1334,7 @@ sub PrintResult {
       if ($return{'chi'}) {
 	printf $out "\t%.1f", $pattern{$oligo_seq}->{chi_square};
 	printf $out "\t%d", $pattern{$oligo_seq}->{df};
-	printf $out "\t%.2e", $pattern{$oligo_seq}->{Pval};
+	printf $out "\t%.1e", $pattern{$oligo_seq}->{Pval};
 	printf $out "\t%.2g", $pattern{$oligo_seq}->{Eval};
 	print $out "\t", $pattern{$oligo_seq}->{sig};
       }
