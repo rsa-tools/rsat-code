@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.30 2009/11/05 01:05:04 amedina Exp $
+# $Id: compare-matrices,v 1.31 2010/03/17 01:31:43 jvanheld Exp $
 #
 ############################################################
 
@@ -243,7 +243,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.30 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.31 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -797,7 +797,6 @@ sub ReadArguments {
   while (scalar(@arguments) >= 1) {
     $arg = shift (@arguments);
 
-    ## Verbosity
 =pod
 
 =head1 OPTIONS
@@ -816,7 +815,6 @@ Level of verbosity (detail in the warning messages during execution)
 	  $main::verbose = 1;
 	}
 
-	## Help message
 =pod
 
 =item B<-h>
@@ -827,7 +825,6 @@ Display full help message
       } elsif ($arg eq "-h") {
 	&PrintHelp();
 
-	## List of options
 =pod
 
 =item B<-help>
@@ -838,7 +835,6 @@ Same as -h
       } elsif ($arg eq "-help") {
 	&PrintOptions();
 
-	## Input files
 =pod
 
 =item B<-file1 matrix_file1>
@@ -880,7 +876,6 @@ The reverse complement is computed for this set of matrices.
 	$main::infile{mlist2} = shift(@arguments);
 
 
-	### Input format 
 =pod
 
 =item B<-format matrix_format>
@@ -898,7 +893,6 @@ options -format1 and -format2).
 	  &RSAT::error::FatalError("$input_format1\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
 	}
 
-	### Input format for file1 only
 =pod
 
 =item B<-format1 matrix_format1>
@@ -913,7 +907,6 @@ Specify the matrix format for the first input file only (requires
 	  &RSAT::error::FatalError("$input_format1\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
 	}
 
-	### Input format for file2 only
 =pod
 
 =item B<-format2 matrix_format2>
@@ -928,7 +921,6 @@ Specify the matrix format for the second input file only (requires
 	  &RSAT::error::FatalError("$input_format2\tInvalid format for input matrices\tSupported: ".$supported_input_formats);
 	}
 
-	## Output file
 =pod
 
 =item	B<-o outputfile>
@@ -1003,21 +995,21 @@ palindromes, tandem repeats) or asymmetrical.
 =cut
 	} elsif ($arg eq "-R") {
 	    $main::strands = "R";
-       
 
-        ## Matrix ID
 =pod
 
 =item B<-matrix_id #>
-By default (0) an authomatic matrix ID is generated and printed in the out field. 
-To use the file name as matrix ID set this option to 1.
-   -matrix_id 1
-=cut
-      } elsif ($arg eq "-matrix_id") {
-	$main::show_matrix_name = shift(@arguments);
+
+By default (0) an authomatic matrix ID is generated and printed in the
+out field.  To use the file name as matrix ID set this option to 1.
+-matrix_id 1 
+
+=cut 
+
+	  } elsif ($arg eq "-matrix_id") {
+	    $main::show_matrix_name = shift(@arguments);
 
 
-	## Sort field
 =pod
 
 =item	B<-sort sort_field>
@@ -1030,7 +1022,6 @@ Supported: dEucl, rsEucl, dKL, cov, cor, Ncor.
       } elsif ($arg eq "-sort") {
 	$main::sort_field = shift(@arguments);
 
-	## Thresholds
 =pod
 
 =item	B<-lth param lower_threshold>
