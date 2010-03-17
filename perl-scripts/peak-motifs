@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.18 2010/03/17 00:34:11 jvanheld Exp $
+# $Id: peak-motifs,v 1.19 2010/03/17 01:33:18 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -97,6 +97,10 @@ package main;
 
     $main::verbose = 0;
     $main::out = STDOUT;
+
+    ## Pattern types (oligos, positions, orm,... with the oligo length suffix)
+    @pattern_types = ();
+
 
     ################################################################
     ## Supported tasks
@@ -170,7 +174,7 @@ package main;
     &CleanSequences() if ($task{clean_seq});
 
     if ($main::verbose >= 1) {
-      &TimeWarn("Log file", $outfile{log});
+      &TimeWarn("Log file", $main::outfile{log});
     }
 
     ################################################################
@@ -215,6 +219,10 @@ sub DefaultParameters {
   ## Formats
   $main::param{seq_format} = "fasta"; push(@main::param_list, "seq_format");
   $main::param{img_format} = "png"; push(@main::param_list, "img_format");
+
+  ## Motif formats
+  $main::param{ref_motif_format} = "jaspar"; push(@main::param_list, "ref_motif_format");
+  $main::param{db_motif_format} = "jaspar"; push(@main::param_list, "db_motif_format");
 
   ## Purge-seq
   $main::param{purge_match_length} = 30; push(@main::param_list, "purge_match_length");
@@ -282,6 +290,11 @@ sub SetOutFileNames {
 						     "mis".$main::param{purge_mismatches});
     }
 
+    ## Reference motif
+    if (defined($main::infile{ref_motif})) {
+      $main::outfile{"ref_motif_info"} = &OutFileName(".tab", "ref_motif");
+    }
+
     ## Sequence lengths
     $main::outfile{"test_seqlen"} = &OutFileName(".tab", "test_seqlen");
     $main::outfile{"test_seqlen_distrib"} = &OutFileName(".tab", "test_seqlen_distrib");
@@ -294,8 +307,6 @@ sub SetOutFileNames {
 
     ################################################################
     ## Pattern discovery result
-
-    @pattern_types = ();
 
     for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
       ## oligo-analysis
@@ -356,9 +367,9 @@ sub SetOutFileNames {
 
     ## Compositional profiles
     for my $ol (1,2) {
-      $outfile{$ol."nt_profiles_graph"} = $main::outfile{$ol."nt_profiles"};
-      $outfile{$ol."nt_profiles_graph"} =~ s/\.tab$//;
-      $outfile{$ol."nt_profiles_graph"} .= ".".$main::param{img_format};
+      $main::outfile{$ol."nt_profiles_graph"} = $main::outfile{$ol."nt_profiles"};
+      $main::outfile{$ol."nt_profiles_graph"} =~ s/\.tab$//;
+      $main::outfile{$ol."nt_profiles_graph"} .= ".".$main::param{img_format};
     }
   }
 
@@ -421,12 +432,12 @@ sub CompositionProfiles {
     $cmd .= " -img_format ".$main::param{img_format};
     $cmd .= " -title '".$main::param{title}."'";
     $cmd .= " -origin center ";
-    $cmd .= " -o ".$outfile{$ol."nt_profiles"};
+    $cmd .= " -o ".$main::outfile{$ol."nt_profiles"};
     &one_command($cmd);
 
     ## Draw the XY graph with composition profiles
     my $col_nb = 4**$ol + 1;
-    $cmd = 'grep -v ";" '.$outfile{$ol."nt_profiles"}.' | transpose-table | grep -P \'(^id)|(^\-?\d+)\'';
+    $cmd = 'grep -v ";" '.$main::outfile{$ol."nt_profiles"}.' | transpose-table | grep -P \'(^id)|(^\-?\d+)\'';
     $cmd .= " | XYgraph -xcol 1 -ycol 2-".$col_nb;
     $cmd .= " -lines -legend -header";
 #    $cmd .= " -symbols "; ## THIS OPTION IS NOT WORKING ANYMORE : THE LEGEND DISPLAYS SYMBOLS BUT NOT THE GRAPH. THIS HAS TO BE FIXED
@@ -435,7 +446,7 @@ sub CompositionProfiles {
     $cmd .= " -title '".$title."'";
     $cmd .= " -xleg1 'Position' -xsize 800";
     $cmd .= " -yleg1 'Occurrences' -ysize 300";
-    $cmd .= " -o ".$outfile{$ol."nt_profiles_graph"};
+    $cmd .= " -o ".$main::outfile{$ol."nt_profiles_graph"};
     &one_command($cmd);
   }
 }
@@ -459,9 +470,9 @@ sub OligoAnalysis {
     $cmd .= " -l ".$len;
     $cmd .= " -markov ".$main::param{oligo_markov};
     $cmd .= " -pseudo 0.01";
-    $cmd .= " -o ".$outfile{$pattern_type};
+    $cmd .= " -o ".$main::outfile{$pattern_type};
     &one_command($cmd);
-    &MatrixFromPatterns($outfile{$pattern_type}, $outfile{$pattern_type.'_pssm'}, $pattern_type);
+    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
   }
 }
 
@@ -481,9 +492,9 @@ sub DyadAnalysis {
   $cmd .= " -l 3 -sp 0-20 ";
   $cmd .= " -bg monads";
   $cmd .= " -pseudo 0.01";
-  $cmd .= " -o ".$outfile{dyads};
+  $cmd .= " -o ".$main::outfile{dyads};
   &one_command($cmd);
-  &MatrixFromPatterns($outfile{dyads}, $outfile{dyads_pssm}, "dyads");
+  &MatrixFromPatterns($main::outfile{dyads}, $main::outfile{dyads_pssm}, "dyads");
 }
 
 
@@ -510,9 +521,9 @@ sub PositionAnalysis {
     $cmd .= " -img_format ".$main::param{img_format};
     $cmd .= " -title '".$main::param{title}."'";
     $cmd .= " -origin center ";
-    $cmd .= " -o ".$outfile{$pattern_type};
+    $cmd .= " -o ".$main::outfile{$pattern_type};
     &one_command($cmd);
-    &MatrixFromPatterns($outfile{$pattern_type}, $outfile{$pattern_type."_pssm"}, $pattern_type);
+    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type."_pssm"}, $pattern_type);
   }
 }
 
@@ -543,9 +554,9 @@ sub ORM {
     $cmd .= " -l ".$len;
     $cmd .= " -m ".$main::param{oligo_markov};
     #  $cmd .= " -pseudo 0.01";
-    $cmd .= " -o ".$outfile{$pattern_type};
+    $cmd .= " -o ".$main::outfile{$pattern_type};
     &one_command($cmd);
-    &MatrixFromPatterns($outfile{$pattern_type}, $outfile{$pattern_type.'_pssm'}, $pattern_type);
+    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
   }
 }
 
@@ -601,6 +612,49 @@ sub Synthesis {
 
   &SynthesisSequenceComposition();
 
+  ## Known motif
+  if (defined($main::infile{ref_motif})) {
+    &SyntheticTableAddHeaderRow("Reference motif");
+#    unless (-e $main::outfile{ref_motif_info}) {
+      my $cmd = "convert-matrix -v 1 -from ".$main::param{ref_motif_format};
+      $cmd .= " -to tab";
+      $cmd .= " -return counts,parameters,logo";
+      $cmd .= " -logo_dir ".$main::dir{output};
+      $cmd .= " -prefix ".$main::param{prefix};
+      $cmd .= " -i ".$main::infile{ref_motif};
+      $cmd .= " -o ".$main::outfile{ref_motif_info};
+      &one_command($cmd);
+#    }
+#     my $logo_table = "<table cellpadding=0 cellspacing=0 align=center border=0>";
+#     $logo_table .= "<tr>\n";
+#     my $logo_file = $main::outfile{$pattern_type.'_pssm_logo'.$logo_nb};
+#     my $logo_file_rc = $main::outfile{$pattern_type.'_pssm_logo_rc'.$logo_nb};
+#     &RSAT::message::Debug("Logo", $logo_nb, $logo_file) if ($main::verbose >= 5);
+#     if (-e $logo_file) {
+#       my $img = &RelativePath($logo_file);
+#       $logo_table .= "<td align='right'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+#     } elsif ($main::verbose >= 0) {
+#       &RSAT::message::Warning("Cannot find logo", $logo_file);
+#     }
+#     if (-e $logo_file_rc) {
+#       my $img = &RelativePath($logo_file_rc);
+#       $logo_table .= "<td align='left'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+#     } elsif ($main::verbose >= 0) {
+#       &RSAT::message::Warning("Cannot find reverse complementary logo", $logo_file_rc);
+#     }
+#     $logo_table .= "</tr>\n";
+#   }
+#   $logo_table .= "</table>\n";
+#   &SyntheticTableAddRow($pattern_type,
+# 			$logo_table,
+# 			$pattern_type,$main::outfile{$pattern_type},
+# 			"assembly",$main::outfile{$pattern_type.'_asmb'},
+# 			"sig matrix",$main::outfile{$pattern_type.'_pssm_sig'},
+# 			"info-gibbs",$main::outfile{$pattern_type.'_pssm_gibbs'},
+# 			"count matrix",$main::outfile{$pattern_type.'_pssm_counts'},
+# 		       );
+#     }
+  }
 
   ## Header line
   &SyntheticTableAddHeaderRow("Pattern discovery");
@@ -630,10 +684,10 @@ sub Synthesis {
   print $syn "</table></p>\n";
 
   ## Log file
-  print $syn "<h2>Log</h2>";
-  print $syn "<pre>";
-  print $syn `cat $main::outfile{log}`;
-  print $syn "</pre>";
+#  print $syn "<h2>Log</h2>";
+#  print $syn "<pre>";
+#  print $syn `cat $main::outfile{log}`;
+#  print $syn "</pre>";
 
   ## End of the HTML file
   print $syn "</body>\n";
@@ -712,18 +766,18 @@ sub SynthesisSequenceComposition {
 
 
   ## Residue composition
-  $img = &RelativePath($outfile{"1nt_profiles_graph"});
+  $img = &RelativePath($main::outfile{"1nt_profiles_graph"});
   &SyntheticTableAddRow("Residue composition",
 			"<a  href='".$img."'><img height=150 src='".$img."'></a>",
-			"table",$outfile{"1nt_profiles"},
+			"table",$main::outfile{"1nt_profiles"},
 			"individual profiles",$main::outfile{"1nt_profiles_index"},
 		       );
 
   ## Dinucleotide composition
-  $img = &RelativePath($outfile{"2nt_profiles_graph"});
+  $img = &RelativePath($main::outfile{"2nt_profiles_graph"});
   &SyntheticTableAddRow("Dinucleotide composition",
 			"<a  href='".$img."'><img height=150 src='".$img."'></a>",
-			"table",$outfile{"2nt_profiles"},
+			"table",$main::outfile{"2nt_profiles"},
 			"individual profiles",$main::outfile{"2nt_profiles_index"},
 		       );
 }
@@ -735,8 +789,6 @@ sub SynthesisSequenceComposition {
 ## Where pattern type can be oligos, dyads, ORM, oligo-diff
 sub SynthesisPatternDisco {
   my ($pattern_type) = @_;
-
-  ## Dinucleotide composition
   my $logo_table = "<table cellpadding=0 cellspacing=0 align=center border=0>";
   foreach my $logo_nb (1..$main::param{matrix_nmotifs}) {
     $logo_table .= "<tr>\n";
@@ -853,6 +905,28 @@ This option is used only for the test versus control analysis.
     } elsif ($arg eq "-ctl") {
       $main::infile{control_seq} = shift(@arguments);
 
+
+=pod
+
+=item B<-ref_motif reference_motif>
+
+Reference motif (optional).
+
+In some cases, we already dispose of a reference motif, for example
+the motif annotated in some transcription factor database
+(e.g. RegulonDB, Jaspar, TRANSFAC) for the transcription factor of
+interest. These annotations may come from low-throughput experiments,
+and rely on a poor number of sites, but the reference motif may
+nevertheless be informative, because it will allow to evaluate if the
+motifs discovered in the ChIP-seq peaks correspond to the prior
+knowledge about the transcrition factor.
+
+=cut
+    } elsif ($arg eq "-ref_motif") {
+      $main::infile{ref_motif} = shift(@arguments);
+
+
+
 =pod
 
 =item	B<-outdir output_directory>
@@ -861,8 +935,6 @@ Output directory (mandatory).
 
 The result files and index files produced by the different programs
 will be stored in this directory.
-
-
 
 =cut
     } elsif ($arg eq "-outdir") {
@@ -1206,7 +1278,7 @@ sub Verbose {
     ## Parameter values
     print $main::out "; Parameter values\n";
     foreach my $param_name (@param_list) {
-	print $main::out sprintf ";\t%-22s\t%s\n", $param_name, $param{$param_name};
+      print $main::out sprintf ";\t%-22s\t%s\n", $param_name, $param{$param_name};
     }
 
     ## Input file(s)
@@ -1222,7 +1294,7 @@ sub Verbose {
 	print $main::out "; Output files\n";
 	foreach my $key (sort keys  %main::outfile) {
 	  $value = $main::outfile{$key};
-	  printf $main::out ";\t%-22s\t%s\n", $key, $value;
+	  printf $main::out ";\t%-30s\t%s\n", $key, $value;
 	}
     }
 }
