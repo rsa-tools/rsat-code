@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.45 2010/03/17 01:32:44 jvanheld Exp $
+# $Id: position-analysis,v 1.46 2010/03/17 15:25:38 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -15,7 +15,7 @@ require RSAT::util;
 require RSAT::stats;
 use POSIX qw(sysconf _PC_CHOWN_RESTRICTED);
 use Math::CDF;
-##use Statistics::Distributions;
+use Statistics::Distributions;
 
 ################################################################
 ###### default values for parameters
@@ -610,10 +610,10 @@ sub CalcChi {
 	&RSAT::message::Debug($oligo_seq, "chi2", $pattern{$oligo_seq}->{chi_square}, $pattern{$oligo_seq}->{df}, @chi_values) if ($main::verbose >= 5);
 
 	## Compute P-value
-	$pattern{$oligo_seq}->{Pval} = sprintf("%.2e", 1 - &Math::CDF::pchisq($pattern{$oligo_seq}->{chi_square},
-									      $pattern{$oligo_seq}->{df}));
-#	$pattern{$oligo_seq}->{Pval} = &Statistics::Distributions::chisqrprob($pattern{$oligo_seq}->{df},
-#									      $pattern{$oligo_seq}->{chi_square});
+#	$pattern{$oligo_seq}->{Pval} = sprintf("%.2e", 1 - &Math::CDF::pchisq($pattern{$oligo_seq}->{chi_square},
+#									      $pattern{$oligo_seq}->{df}));
+	$pattern{$oligo_seq}->{Pval} = &Statistics::Distributions::chisqrprob($pattern{$oligo_seq}->{df},
+									      $pattern{$oligo_seq}->{chi_square});
 
 
 
