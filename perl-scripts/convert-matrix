@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.99 2010/03/10 10:14:17 jvanheld Exp $
+# $Id: convert-matrix,v 1.100 2010/03/17 01:30:13 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -310,7 +310,9 @@ foreach my $matrix (@matrices) {
       ## Create logo directory if required
       &RSAT::util::CheckOutDir($logo_dir);
 
-      my $logo_file=$logo_dir.$matrix->get_attribute("name")."_logo";
+      my $logo_file = $logo_dir.$matrix->get_attribute("name");
+#      $logo_file .= "_".$matrix->get_attribute("name");
+      $logo_file .= "_logo";
       #	$logo_file =~ s/\.\w+$//;
       $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt, 0); ## Generate the logo image
       $matrix->set_attribute("logo_file" => $logo_file);
@@ -1274,7 +1276,7 @@ sub ExportMatrix {
     my $AC = $matrix->get_attribute("accession") || $ID;
     &RSAT::message::Debug("ExportMatrix", "ID", $ID, "AC", $AC) if ($main::verbose >= 4);
 
-    ## If a prefix is specified, use it as name, ID and accession number
+    ## If a prefix is specified, use it in the name, ID and accession number
     if ($prefix) {
 	$matrix->force_attribute("name", $prefix.$matrix->get_attribute("name"));
 	$matrix->force_attribute("id", $prefix.$matrix->get_attribute("id"));
