@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.100 2010/03/17 01:30:13 jvanheld Exp $
+# $Id: convert-matrix,v 1.101 2010/03/17 12:12:46 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -97,6 +97,7 @@ $supported_bg_formats = join ",", sort keys %supported_bg_format;
 local $logo_format = "png";
 local $logo_opt = "";
 local $logo_dir = "";
+local $logo_file_base = "";
 @logo_formats=();
 %supported_logo_format =  ('png'=>1,
 			  "eps"=>1,
@@ -268,8 +269,9 @@ if (scalar(@matrix_files >= 1)) {
 
 ################################################################
 ## Process each matrix
+my $m = 0;
 foreach my $matrix (@matrices) {
-
+    $m++;
     $matrix->reverse_complement() if ($rc);
 
     $matrix->set_parameter("pseudo", $pseudo_weight);
@@ -310,9 +312,13 @@ foreach my $matrix (@matrices) {
       ## Create logo directory if required
       &RSAT::util::CheckOutDir($logo_dir);
 
-      my $logo_file = $logo_dir.$matrix->get_attribute("name");
-#      $logo_file .= "_".$matrix->get_attribute("name");
-      $logo_file .= "_logo";
+      my $logo_file;
+      if ($logo_file_base) {
+	  $logo_file = $logo_file_base."_m".$m;
+      } else {
+	  $logo_file = $logo_dir.$matrix->get_attribute("name");
+	  $logo_file .= "_logo";
+      }
       #	$logo_file =~ s/\.\w+$//;
       $matrix->makeLogo($logo_file,\@logo_formats,$logo_dir, $logo_opt, 0); ## Generate the logo image
       $matrix->set_attribute("logo_file" => $logo_file);
@@ -327,7 +333,7 @@ if ($sort_key) {
 }
 
 #### export the matrices
-my $m = 0;
+$m = 0;
 foreach my $matrix (@matrices) {
   $m++;
   last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop treating matrices if we already collected the specified number of matrices
@@ -630,6 +636,12 @@ OPTIONS
 		file. By default, the logos are exported in the
 		directory from which is called the convert-matrix
 		command.
+
+	-logo_file
+		Specifies the name of the logo file. The extension is
+		appended automatically, depending on the image file
+		format. If the matix file contains several matrices,
+		the matrix number is appended to the file name.
 
 	-logo_opt 
 
@@ -987,7 +999,8 @@ convert-matrix options
 -max_profile	Maximal width of the profile histogram 
 -rc		Convert the matrix to its reverse complement.
 -logo_format	logo image format. Supported $supported_logo_formats 
--logo_dir	specifies a directory to output the logo files
+-logo_dir	directory to output the logo files
+-logo_file	base name for the logo file(s)
 -logo_opt	options to be passed to seqlogo
 End_short_help
   close HELP;
@@ -1176,6 +1189,9 @@ sub ReadArguments {
 
 	} elsif ($ARGV[$a] eq "-logo_dir") {
 	    $logo_dir = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-logo_file") {
+	    $logo_file_base = $ARGV[$a+1];
 
 	} elsif ($ARGV[$a] eq "-logo_opt") {
 	    $logo_opt .= " ".$ARGV[$a+1];
