@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-seq-analysis,v 1.17 2010/03/16 23:05:58 jvanheld Exp $
+# $Id: chip-seq-analysis,v 1.18 2010/03/17 00:34:11 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -520,29 +520,33 @@ sub PositionAnalysis {
 ################################################################
 ## Run orm on the test set
 sub ORM {
-  &RSAT::message::TimeWarn("Running orm") if ($main::verbose >= 1);
-  my $cmd = "orm -v 3";
-  $cmd .= " -i ".$main::outfile{"purged_test"};
-#  $cmd .= " -format fasta";
-  $cmd .= " --center=0";
-  $cmd .= " --min=occ_sig ".$main::param{min_sig};
-  $cmd .= " --sort=-occ_sig";
-  $cmd .= " --max=rank ".$main::param{patterns_max_rank};
-  # " -return occ,proba,rank";
-  if ($main::param{strand} eq "-1str") {
-    $cmd .= " +";
-  } else {
-    $cmd .= " +-";
+  for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
+    my $pattern_type = 'orm_'.$len.'nt';
+    &RSAT::message::TimeWarn("Running orm", $len."nt") if ($main::verbose >= 1);
+    my $cmd = "orm -v 3";
+    $cmd .= " -i ".$main::outfile{"purged_test"};
+    #  $cmd .= " -format fasta";
+    $cmd .= " --center=0";
+    $cmd .= " --min=occ_sig ".$main::param{min_sig};
+    $cmd .= " --sort=-occ_sig";
+    $cmd .= " --max=rank ".$main::param{patterns_max_rank};
+    $cmd .= " --max=w_rank ".1; ## Only return the most significant window for each word
+    # " -return occ,proba,rank";
+    if ($main::param{strand} eq "-1str") {
+      $cmd .= " +";
+    } else {
+      $cmd .= " +-";
+    }
+    $cmd .= " --overlap" if ($main::param{noov} eq "ovlp");
+    $cmd .= " --window=".$main::param{orm_ci};
+    #  $cmd .= " -seqtype dna";
+    $cmd .= " -l ".$len;
+    $cmd .= " -m ".$main::param{oligo_markov};
+    #  $cmd .= " -pseudo 0.01";
+    $cmd .= " -o ".$outfile{$pattern_type};
+    &one_command($cmd);
+    &MatrixFromPatterns($outfile{$pattern_type}, $outfile{$pattern_type.'_pssm'}, $pattern_type);
   }
-  $cmd .= " --overlap" if ($main::param{noov} eq "ovlp");
-  $cmd .= " --window=".$main::param{orm_ci};
-#  $cmd .= " -seqtype dna";
-  $cmd .= " -l ".$main::param{oligo_len};
-  $cmd .= " -m ".$main::param{oligo_markov};
-#  $cmd .= " -pseudo 0.01";
-  $cmd .= " -o ".$outfile{orm};
-  &one_command($cmd);
-  &MatrixFromPatterns($outfile{orm}, $outfile{orm_pssm}, "orm");
 }
 
 
