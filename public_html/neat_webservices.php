@@ -35,7 +35,7 @@ tasks</b>.
     The <b>WSDL</b> description of the services, which is the primary
     programmatic interface for the web clients, can be accessed at<br>
     <a
-    href=\"$host/rsat/web_services/RSATWS.wsdl\">http://$host/rsat/web_services/RSATWS.wsdl</a>
+    href=\"http://$host/rsat/web_services/RSATWS.wsdl\">http://$host/rsat/web_services/RSATWS.wsdl</a>
 	<br>
 	For java-based NeAT tools (Pathfinder, Metabolic pathfinder, KEGG network provider), the WSDL is located at<br>
     <a href=\"$neat_java_remote_wsdl\">$neat_java_remote_wsdl</a>
