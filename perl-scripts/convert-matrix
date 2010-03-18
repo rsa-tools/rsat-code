@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.101 2010/03/17 12:12:46 jvanheld Exp $
+# $Id: convert-matrix,v 1.102 2010/03/18 23:04:18 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -1370,7 +1370,7 @@ sub ExportMatrix {
   ## Return parameters
   if ($return_fields{parameters}) {
     $matrix->calcConsensus();
-    print $out $matrix->toString(type=>"parameters");
+    print $out $matrix->toString(type=>"parameters") if (($output_format eq "tab") || ($output_format eq "infogibbs"));
   }
 
   ## Return parameters
