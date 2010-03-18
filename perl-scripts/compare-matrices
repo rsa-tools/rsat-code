@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.33 2010/03/18 21:25:33 jvanheld Exp $
+# $Id: compare-matrices,v 1.34 2010/03/18 21:31:20 jvanheld Exp $
 #
 ############################################################
 
@@ -246,7 +246,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.33 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.34 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -281,8 +281,6 @@ package main;
 
   ## Sort field
   local $sort_field = "offset";
-
-  $main::show_matrix_name=0;
 
   ## Threshold parameters
   local %lth = ();		# lower threshold values
@@ -1024,12 +1022,14 @@ palindromes, tandem repeats) or asymmetrical.
 
 =item B<-matrix_id #>
 
-By default (0) an automatic matrix ID is generated and printed in the
-out field.  To use the file name as matrix ID set this option to 1.
+Obsolete option for returning matrix names, Replaced by -return
+matrix_name. Maintained for backward compatibility.
 
 =cut
     } elsif ($arg eq "-matrix_id") {
-      $main::show_matrix_name = shift(@arguments);
+      &RSAT::message::Warning("Option -matrix_id is obsolete. Please use the new option: -return matrix_name");
+      my $value = shift(@arguments);
+      $return_field{matrix_name} = shift(@arguments);
 
 =pod
 
