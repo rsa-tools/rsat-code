@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.34 2010/03/18 21:31:20 jvanheld Exp $
+# $Id: compare-matrices,v 1.35 2010/03/18 21:51:26 jvanheld Exp $
 #
 ############################################################
 
@@ -246,7 +246,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.34 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.35 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -263,6 +263,7 @@ package main;
 				    "matrix_id", ## Identifiers of the matrices
 				    "matrix_name", ## Names of the matrices
 				    "matrix_ac", ## Accession number of the matrices
+				    "width", ## Width of the matrices and the alignment
 				    "pos", ## relative positions the aligned matrices (start, end, strand, width)
 				    "dEucl", ## Euclidian distance
 				    #				 "rsEucl", ## Euclidian distance
@@ -272,12 +273,13 @@ package main;
 				    "consensus",
 				    "rank",
 				);
-  %supported_return_field = ();
+  @default_return_fields_matches = qw(matrix_name cor);
+  local %supported_return_field = ();
   foreach my $field (@supported_return_fields) {
     $supported_return_field{$field} = 1;
   }
-  my $supported_return_fields = (join ",", @supported_return_fields);
-  %return_field = %supported_return_fields; ## Temporary
+  local $supported_return_fields = (join ",", @supported_return_fields);
+  local %return_field = ();
 
   ## Sort field
   local $sort_field = "offset";
@@ -303,7 +305,6 @@ package main;
     $supported_threshold{lc($thr)} = 1;
   }
 
-
   ## Matrices
   local @matrices1 = ();
   local @matrices2 = ();
@@ -321,6 +322,14 @@ package main;
 
   ################################################################
   ## Check argument values
+
+  if (scalar(keys(%return_field)) == 0) {
+    foreach my $field (@default_return_fields_matches) {
+      $return_field{$field}=1;
+    }
+  }
+
+
 #  unless ((($infile{file1}) && ($infile{file2})) ||
 #	  (($infile{file1}) && ($infile{mlist2})) ||
 #	  (($infile{mlist1}) && ($infile{file2})) ||
@@ -444,7 +453,7 @@ package main;
   push (@header, "id1", "id2") if ($return_field{matrix_id});
   push (@header, "ac1", "ac2") if ($return_field{matrix_ac});
   push (@header, "name1", "name2") if ($return_field{matrix_name});
-  push (@header, "w", "W", "Wr");
+  push (@header, "w1", "w2", "w", "W", "Wr") if ($return_field{width});
   push (@header, "offset", "direct", "start1", "end1", "start2", "end2") if ($return_field{pos});
   push (@header, "dEucl") if ($return_field{dEucl});
   push (@header, "rsEucl") if ($return_field{rsEucl});
@@ -460,8 +469,16 @@ package main;
     $description{compa} = "number of comparison";
     $description{m1} = "matrix number in file 1";
     $description{m2} = "matrix number in file 2";
+    $description{id1} = "Identifier of the first matrix";
+    $description{id2} = "Identifier of the second matrix";
+    $description{ac1} = "Accession number of the first matrix (can differ from ID e.g. in TRANSFAC)";
+    $description{ac2} = "Accession number of the second matrix";
+    $description{name1} = "Name of the first matrix";
+    $description{name2} = "Name of the second matrix";
     $description{offset} = "shift of the second matrix relative to the first matrix (negative:left; positive: right)";
     $description{direct} = "direction of matrix 2 relative to matrix 1 (D=direct;  R=reverse)";
+    $description{w1} = "Width of the first matrix";
+    $description{w2} = "Width of the second matrix";
     $description{w} = "Alignment length (number of overlapping columns between matrix 1 and matrix 2, as a function of the offset)";
     $description{W} = "Total alignment length (overlapping + non-overlapping columns). W = w1 + w2 - w";
     $description{Wr} = "Relative alignment length (overlap divided by the toal alignemnt length). Wr = w/W";
@@ -690,8 +707,12 @@ package main;
 	## Generate the output line
 	my @out_fields = ();
 	push @out_fields, $compa if ($return_field{pos});
-	push (@out_fields, $m1, $m2) if ($return_field{matrix_id});
-	push (@out_fields,$matrix1->get_attribute("id"), $matrix2->get_attribute("id")) if ($return_field{matrix_id});
+	push (@out_fields, $m1, $m2) if ($return_field{matrix_number});
+	if ($return_field{matrix_id}) {
+	  my $id1 = $matrix1->get_attribute("id") || $matrix1->get_attribute("identifier") || "<NA>";
+	  my $id2 = $matrix2->get_attribute("id") || $matrix2->get_attribute("identifier") || "<NA>";
+	  push (@out_fields, $id1, $id2);
+	}
 	if ($return_field{matrix_ac}) {
 	  my $ac1 = $matrix1->get_attribute("accession") || "<NA>";
 	  my $ac2 = $matrix2->get_attribute("accession") || "<NA>";
@@ -702,7 +723,7 @@ package main;
 	  my $name2 = $matrix2->get_attribute("name") || "<NA>";
 	  push (@out_fields, $name1, $name2);
 	}
-	push (@out_fields, $w, $total_len, sprintf("%.4f", $Wr));
+	push (@out_fields, $matrix1->ncol(), $matrix2->ncol(), $w, $total_len, sprintf("%.4f", $Wr))if ($return_field{width});
 	push (@out_fields, $offset, $direction, $start1, $end1, $start2, $end2) if ($return_field{pos});
 	push (@out_fields, sprintf("%.5f", $dEucl)) if ($return_field{dEucl});
 	push (@out_fields, sprintf("%.5f", $rsEucl)) if ($return_field{rsEucl});
