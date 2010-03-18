@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.31 2010/03/17 01:31:43 jvanheld Exp $
+# $Id: compare-matrices,v 1.32 2010/03/18 20:02:14 jvanheld Exp $
 #
 ############################################################
 
@@ -70,6 +70,9 @@ between the two matrices.
 
 =head1 (DIS)SIMLARITY METRICS
 
+
+=head2 Symbols used for the metrics
+
 In the formula below, symbols are defined as follows
 
 =over
@@ -102,7 +105,7 @@ Total length of the alignent between matrices m1 and m2.
  W = w1 + w2 - w
 
 
-=item Relative length
+=item Relative length I<Wr>
 
 A measure of the mutual overlap between the aligned matrices.
 
@@ -243,7 +246,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.31 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.32 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -465,7 +468,7 @@ package main;
       $description{Ncor} = "Aligned fraction corrected correlation. Ncor = cor * Wr";
       $description{consensus1} = "IUPAC consensus of matrix 1";
       $description{consensus2} = "IUPAC consensus of matrix 2";
-      $description{rank} = "Rank fo the alignment for the current pair of matrices";
+      $description{rank} = "Rank of the alignment for the current pair of matrices";
       print $out "; Column content\n";
       my $c = 0;
       foreach my $field (@header) {
@@ -934,45 +937,34 @@ allows to use the command within a pipe.
 
 =pod
 
-=item B<-DR>
+=item B<-strands D | R | DR>
 
-Perform comparisons on both direct (D) and reverse complementary (R)
-matrices.
+Perform matrix comparisons in direct (D) reverse complementary (R) or both
+orientations (DR, default option).
 
-This is the default option for matrix orientations.
-
-=cut
-	} elsif ($arg eq "-DR") {
-	    $main::strands = "DR";
-
-
-=pod
-
-=item B<-D>
-
-Perform comparisons on the direct (D) orientation only (the reverse
-complementary matrices are not taken into consideration).
-
-By default, comparisons are performed in both orientations.
-
-=cut
-	} elsif ($arg eq "-D") {
-	    $main::strands = "D";
-
-=pod
-
-=item B<-R>
-
-Perform comparisons on the reverse complementary (R) orientation only
-(all matrices of the second matrix file are converted to the reverse
-complementary matrix, and their original orientation is NOT taken into
-consideration).
+When the R or DR options are activated, all matrices of the second
+matrix file are converted to the reverse complementary matrix.
 
 This option is useful to answer very particular questions, for example
-to detect reverse complementary palindromic motifs (e.g., a motif with
-consensus tCAGswwsGTGa is reverse complementary palindromic). When a
-motif is reverse complementary palindromic, the matrix is correlated
-to its own reverse complement.
+
+=over
+
+=item Comparing motifs in a strand-insensitive way (-strands DR)
+
+DNA-binding motifs are usually strand-insensitive. A motif may be
+detected in one given orientation by a motif-discovery algorithm, but
+annotated in the reverse complementary orientation in a motif
+database. For DNA binding motifs, we thus recomment the DR option.
+
+On the contrary, RNA-related signals (termination, poly-adenylation,
+miRNA) are strand-sensitive, and should be compared in a single
+orientation (-strands D).
+
+=item Detecting reverse complementary palindromic motifs
+
+An example of reverse complementary palindromic motif is
+tCAGswwsGTGa. When a motif is reverse complementary palindromic, the
+matrix is correlated to its own reverse complement.
 
 I<Remark about a frequent misconception of biological palindromes>
 
@@ -982,17 +974,31 @@ because they correspond to a rotational symmetry in the 3D
 structure. Such symmetrical motifs are often characteristic of sites
 recognized by homodimeric complexes.
 
-By contrast, simple string-based palindromes (e.g. CAGTTGAC) no
+By contrast, simple string-based palindromes (e.g. CAGTTGAC) do
 absolutely not correspond to any symmetry on the biochemical point of
 view, because the 3D structure of the corresponding double helix is
-not symmetrical. The apparent symetry is an artifact of the string
-representation, but the corresponding molecule has neither rotational
-nor translational symmetry.
+not symmetrical. The apparent symmetry is an artifact of the
+string-based representation, but the corresponding molecule has
+neither rotational nor translational symmetry.
 
 DNA signals can either be symmetrical (reverse complementary
 palindromes, tandem repeats) or asymmetrical.
 
+=back
+
 =cut
+	} elsif ($arg eq "-strands") {
+	    $main::strands = shift(@arguments);
+	    if (($main::strands eq "R")
+		|| ($main::strands eq "D")
+		|| ($main::strands eq "DR")) {
+	    } else {
+	      &RSAT::message::FatalError("Invalid strand option. Should be R, D or DR.");
+	    }
+	} elsif ($arg eq "-DR") {
+	    $main::strands = "DR";
+	} elsif ($arg eq "-D") {
+	    $main::strands = "D";
 	} elsif ($arg eq "-R") {
 	    $main::strands = "R";
 
@@ -1000,11 +1006,11 @@ palindromes, tandem repeats) or asymmetrical.
 
 =item B<-matrix_id #>
 
-By default (0) an authomatic matrix ID is generated and printed in the
+By default (0) an automatic matrix ID is generated and printed in the
 out field.  To use the file name as matrix ID set this option to 1.
--matrix_id 1 
+-matrix_id 1
 
-=cut 
+=cut
 
 	  } elsif ($arg eq "-matrix_id") {
 	    $main::show_matrix_name = shift(@arguments);
@@ -1174,7 +1180,11 @@ __END__
 We should check if this fixes the problems of 0 values that we have
 with the KL distance.
 
-=item The "natural covariance", as proposed by Pape et al. (2008).
+=item The "natural covariance"
+
+Pape, U. J., Rahmann, S. and Vingron, M. (2008). Natural similarity
+measures between position frequency matrices with an application to
+clustering. Bioinformatics 24, 350-7.
 
 This metrics measures the covariance between hits of two matrices
 above a given threshold for each of them.
@@ -1186,12 +1196,28 @@ expected value should be >= 5 for each cell of the matrix. This
 condition is usually not fulfilled for the PSSM we use for motif
 scanning.
 
+=item Average Log Likelihood Ratio (ALLR)
+
+ Source: Wang T & Stormo GD (2003) Bioinformatics 19:2369-2380
+ Also implemented in STAMP. 
+
+=item Sum of Squared Distances
+         w
+    S = SUM ( 2 -  SUM   (Mb - Nb)^2  )
+        i=1       a,c,g,t
+
+ Source: Sandelin A & Wasserman WW (2004) J Mol Biol 338:207-215. 
+ Also implemented in STAMP and TOMTOM
+
 =back
 
-=item B<-strand D|R|DS>
+=item B<-return fields>
 
-Perform comparison with the direct (D), reverse complementary (R) or
-both orientations of the second matrix, relative to the first one.
+Select the fields to be returned. 
+
+=item B<-pseudo>
+
+Pseudo-counts to be added to all matrices.
 
 =item B<-table field>
 
