@@ -693,6 +693,14 @@ sub to_TRANSFAC {
     }
     $to_print .= "XX\n";
 
+    ## Parameters
+    my @params = $self->get_attribute("parameters");
+    for my $param (@params) {
+      $to_print .= sprintf("CC  %s: ",$param);
+      $to_print .= $self->get_attribute($param);
+      $to_print .= "\n";
+    }
+
     ## End of record
     $to_print .=  $matrix_terminator{$output_format}."\n";
 
@@ -1816,47 +1824,47 @@ Return a string with the parameter values
 =cut 
 
 sub _printParameters {
-    my ($self, $to_print) = @_;
-    $to_print .= ";\n";
-    $to_print .= "; Matrix parameters\n";
+  my ($self, $to_print) = @_;
+  $to_print .= ";\n";
+  $to_print .= "; Matrix parameters\n";
 
-    ## Matrix size
-    $to_print .= sprintf ";\t%-29s\t%g\n", "Columns", $self->ncol();
-    $to_print .= sprintf ";\t%-29s\t%g\n", "Rows", $self->nrow();
+  ## Matrix size
+  $to_print .= sprintf ";\t%-29s\t%g\n", "Columns", $self->ncol();
+  $to_print .= sprintf ";\t%-29s\t%g\n", "Rows", $self->nrow();
 
-    ## Alphabet
-    $to_print .= sprintf ";\t%-29s\t%s\n", "Alphabet", join("|", $self->getAlphabet());
+  ## Alphabet
+  $to_print .= sprintf ";\t%-29s\t%s\n", "Alphabet", join("|", $self->getAlphabet());
 
-    ## Prior probabilities
-    my @prior_tmp = ();
-    my %prior = $self->getPrior();
-    foreach my $letter (sort keys %prior) {
-      push @prior_tmp, $letter.":".$prior{$letter};
-    }
-    $to_print .= sprintf ";\t%-29s\t%s\n", "Prior", join("|", @prior_tmp);
+  ## Prior probabilities
+  my @prior_tmp = ();
+  my %prior = $self->getPrior();
+  foreach my $letter (sort keys %prior) {
+    push @prior_tmp, $letter.":".$prior{$letter};
+  }
+  $to_print .= sprintf ";\t%-29s\t%s\n", "Prior", join("|", @prior_tmp);
 
-    ## Matrix attributes
-    my ($proba_min, $proba_max) = $self->proba_range();
-    my ($Wmin, $Wmax) = $self->weight_range();
+  ## Matrix attributes
+  my ($proba_min, $proba_max) = $self->proba_range();
+  my ($Wmin, $Wmax) = $self->weight_range();
 
-    my @params = $self->get_attribute("parameters");
-    my %printed = ();
-    for my $param (@params) {
-      ## Print only once if the param was entered several times
-      next if $printed{$param};
-      $printed{$param}++;
+  my @params = $self->get_attribute("parameters");
+  my %printed = ();
+  for my $param (@params) {
+    ## Print only once if the param was entered several times
+    next if $printed{$param};
+    $printed{$param}++;
 
-      if ($self->get_attribute($param)) {
-	if (&main::IsInteger($self->get_attribute($param))) {
-	  $to_print .= sprintf ";\t%-29s\t%d\n", $param, $self->get_attribute($param);
-	} elsif (&main::IsReal($self->get_attribute($param))) {
-	  $to_print .= sprintf ";\t%-29s\t%g\n", $param, $self->get_attribute($param);
-	} else {
-	  $to_print .= sprintf ";\t%-29s\t%s\n", $param, $self->get_attribute($param);
-	}
+    if ($self->get_attribute($param)) {
+      if (&main::IsInteger($self->get_attribute($param))) {
+	$to_print .= sprintf ";\t%-29s\t%d\n", $param, $self->get_attribute($param);
+      } elsif (&main::IsReal($self->get_attribute($param))) {
+	$to_print .= sprintf ";\t%-29s\t%g\n", $param, $self->get_attribute($param);
+      } else {
+	$to_print .= sprintf ";\t%-29s\t%s\n", $param, $self->get_attribute($param);
       }
     }
-    return ($to_print);
+  }
+  return ($to_print);
 }
 
 
