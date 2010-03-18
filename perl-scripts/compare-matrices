@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.35 2010/03/18 21:51:26 jvanheld Exp $
+# $Id: compare-matrices,v 1.36 2010/03/18 22:50:51 jvanheld Exp $
 #
 ############################################################
 
@@ -246,7 +246,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.35 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.36 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -269,11 +269,12 @@ package main;
 				    #				 "rsEucl", ## Euclidian distance
 				    "dKL", ## Kullback-Leibler distance
 				    "cor", ## Coefficient of correlation
+				    "Ncor", ## Normalized coefficient of correlation
 				    "cov", ## Covariance
 				    "consensus",
 				    "rank",
 				);
-  @default_return_fields_matches = qw(matrix_name cor);
+  @default_return_fields_matches = qw(matrix_name Ncor);
   local %supported_return_field = ();
   foreach my $field (@supported_return_fields) {
     $supported_return_field{$field} = 1;
@@ -361,6 +362,7 @@ package main;
   $calc_field{$sort_field} = 1;
 
   ## Some fields must be computed as intermediate results for other fields
+  $calc_field{cor} = 1 if ($calc_field{Ncor});
   $calc_field{cov} = 1 if ($calc_field{cor});
   $calc_field{dEucl} = 1 if ($calc_field{rsEucl});
 
@@ -459,7 +461,8 @@ package main;
   push (@header, "rsEucl") if ($return_field{rsEucl});
   push (@header, "dKL") if ($return_field{dKL});
   push (@header, "cov") if ($return_field{cov});
-  push (@header, "cor", "Ncor") if ($return_field{cor});
+  push (@header, "cor") if ($return_field{cor});
+  push (@header, "Ncor") if ($return_field{Ncor});
   push (@header, "consensus1", "consensus2") if ($return_field{consensus});
   push (@header, "rank") if ($return_field{rank});
 
@@ -569,7 +572,7 @@ package main;
 	my $end2 = &RSAT::stats::min($start2+$w-1, $ncol2);
 
 	## Highlight alignment in consensus
-	if ($return_field{"consensus"}) {
+	if ($return_field{consensus}) {
 	  $consensus1 = join ("",
 			      "."x($start1-1),
 			      substr($matrix1->get_attribute("consensus.IUPAC"), $start1-1, $w),
@@ -729,16 +732,16 @@ package main;
 	push (@out_fields, sprintf("%.5f", $rsEucl)) if ($return_field{rsEucl});
 	push (@out_fields, $dKL) if ($return_field{dKL});
 	push (@out_fields, sprintf("%.4f", $cov)) if ($return_field{cov});
-	if ($return_field{cor}) {
-	  push (@out_fields, sprintf("%.4f", $cor));
-	  push (@out_fields, sprintf("%.4f", $Ncor));
-	}
+	push (@out_fields, sprintf("%.4f", $cor)) if ($return_field{cor});
+	push (@out_fields, sprintf("%.4f", $Ncor)) if ($return_field{Ncor});
 	push (@out_fields,
 	      $consensus1,
 	      $consensus2) if ($return_field{consensus});
 	push @output_offset, $offset;
 	$out_line{$offset} =  join("\t", @out_fields);
       }
+
+      next if (scalar(@output_offset) == 0);
 
       ## Sort the results
       my @sorted_offset;
@@ -1273,7 +1276,7 @@ Select the fields to be returned.
 
 Pseudo-counts to be added to all matrices.
 
-=item B<-format matches | profiles | table>
+=item B<-out_format matches | profiles | table>
 
 =over
 
