@@ -131,6 +131,18 @@ sub readFromFile {
       $matrix_nb++;
       $matrix->set_parameter("matrix.nb", $matrix_nb);
 
+      ## If a prefix is specified, use it in the name, ID and accession number
+      if ($args{prefix}) {
+	my $prefix = $args{prefix};
+	if (scalar(@matrices) > 1) {
+	  $m++;
+	  $prefix .= "_m".$matrix_nb;
+	}
+	$matrix->force_attribute("name", $prefix);
+	$matrix->force_attribute("id", $prefix);
+	$matrix->force_attribute("AC", $prefix);
+      }
+
       ## Check that each matrix contains at least one row and one col
       if (($matrix->nrow() > 0) && ($matrix->ncol() > 0)) {
 	&RSAT::message::Info("Matrix read", 
@@ -156,11 +168,6 @@ sub readFromFile {
       if ((my $map = $matrix->get_attribute("MAP")) && (my $sites = $matrix->get_attribute("sites"))) {
 	$matrix->set_parameter("MAP.per.site", $map/$sites);
       }
-
-#      &RSAT::message::Debug("Checking matrix parameters", $matrix->get_attribute("matrix.nb"),
-#			    join(":", $matrix->getAlphabet()),
-#			   ) if ($main::verbose >= 0);
-
     }
 
     if (defined($args{top})) {
@@ -228,7 +235,7 @@ sub readMatrixFileList {
     close $mlist;
     &RSAT::message::Info("Read matrix list from file", $main::infile{mlist2}, scalar(@matrix_files), "matrices") 
       if ($main::verbose >= 2);
-    
+
     if (scalar(@matrix_files >= 1)) {
       foreach my $matrix_file (@matrix_files) {
 	my @matrices_from_file = &readFromFile($matrix_file, $input_format);
@@ -302,7 +309,10 @@ sub _readFromTRANSFACFile {
       $matrix->set_parameter("program", "transfac");
       $matrix->set_parameter("matrix.nb", $current_matrix_nb);
       push @matrices, $matrix;
-      $matrix->set_parameter("accession", $accession) if ($accession);
+      if ($accession) {
+	$matrix->set_parameter("accession", $accession);
+	$matrix->set_parameter("AC", $accession);
+      }
       $matrix->set_parameter("version", $version);
       $ncol = 0;
 #      next;
@@ -364,10 +374,16 @@ sub _readFromTRANSFACFile {
 	## Matrix identifier
       } elsif (/^ID\s+/) {
 	$matrix->set_parameter("identifier", $'); #'
-	$matrix->force_attribute("name", join("_", 
-					      $matrix->get_attribute("accession"),
-					      $matrix->get_attribute("identifier"),
-					     ));
+
+	## Automatically set matrix name
+	if ($matrix->get_attribute("accession") eq $matrix->get_attribute("identifier")) {
+	  $matrix->force_attribute("name", $matrix->get_attribute("accession"));
+	}  else {
+	  $matrix->force_attribute("name", join("_",
+						$matrix->get_attribute("accession"),
+						$matrix->get_attribute("identifier"),
+					       ));
+	}
 	&RSAT::message::Info("TRANSFAC identifier", 
 			     $matrix->get_attribute("accession"),
 			     $matrix->get_attribute("identifier"),
@@ -1554,6 +1570,7 @@ sub _readFromClusterBusterFile {
 	$ncol = 0;
 	if ($name) {
 	  $matrix->set_attribute("name", $name);
+	  $matrix->set_attribute("AC", $name);
 	  $matrix->set_attribute("accession", $name);
 	}
 	push @matrices, $matrix;
