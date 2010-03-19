@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''NAME
-        local-motif-analysis
+        local-word-analysis
 
 VERSION
         %(version)s
@@ -71,7 +71,7 @@ ARGUMENTS
                               input sequences
                               order 0 corresponds to single nucleotide frequencies
                               EXAMPLE: --markov=2 (Markov chain of order 2)
-        --bgfile=#            use a predefined local-motif-analysis background model.
+        --bgfile=#            use a predefined local-word-analysis background model.
                               EXAMPLE --bgfile=mybgfile
         --bgoligo=#           use a predefined oligo-analysis background model
                               EXAMPLE: --bgolio=myfile.gz
@@ -124,7 +124,7 @@ STATISTICS
 '''        
 
 VERSION = '20100317'
-USAGE = '''local-motif-analysis -l OLIGOMER_LENGTH [-i inputfile]
+USAGE = '''local-word-analysis -l OLIGOMER_LENGTH [-i inputfile]
                 [-o outputfile] 
                 [--max parameter #][--min parameter #]
                 [-h | --help]
@@ -139,7 +139,7 @@ USAGE = '''local-motif-analysis -l OLIGOMER_LENGTH [-i inputfile]
 ########################################
 
 HEADER = ''';
-; local-motif-analysis
+; local-word-analysis
 ; Detection of locally overrepresented motifs
 ; %(command)s
 ; version                          %(version)s
