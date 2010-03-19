@@ -43,8 +43,11 @@
 </p>
 <hr />
 <h1><a name="description">DESCRIPTION</a></h1>
-<p>Randomly calculates genomic coordinates, for a given organism  (installed in RSAT or from Ensembl).
-Makes use of EnsEMBL API (www.ensembl.org) for EnsEMBL genomes.</p>
+<p>Select a set of fragments with random positions in a given genome, and
+    return their coordinates and/or sequences. The supported organisms are
+    etiher installed in RSAT or from Ensembl. Makes use of EnsEMBL API
+    (www.ensembl.org) for EnsEMBL genomes. </p>
+
 <p>
 </p>
 <hr />
@@ -66,15 +69,8 @@ random-genome-fragments -org organism -l length -r repetitions [-o outputfile] [
 </p>
 <hr />
 <h1><a name="output_formats">OUTPUT FORMATS</a></h1>
-<p>The program outputs a file containing the coordinates.</p>
-<p>The default format is ft. Use <em>convert-features -h</em> to
-convert to another format.</p>
-<p>Sequences can also be directly exported for genomes installed in RSAT.</p>
-<p>To obtain the sequences for Ensembl organisms, use the coordinate file as input to <em>retrieve-ensembl-seq.pl</em> with the options 
--ftfile YourFeaturefile -ftfileformat ft</p>
-<p>For very big files, you might consider using the output format 'bed' and use the tools of sequence providers (Galaxy, UCSC, Ensembl) to efficently extract the sequences.</p>
-<p>
-</p>
+<p> The program outputs a file containing the genomic coordinates or the
+    sequences.</p>
 <hr />
 <h1><a name="options">OPTIONS</a></h1>
 <dl>
@@ -104,25 +100,36 @@ convert to another format.</p>
 allows to use the command within a pipe.</p>
 </dd>
 </li>
-<dt><strong><a name="oformat_output_format" class="item"><strong>-oformat output_format</strong></a></strong>
+<dt><strong><a name="oformat_output_format" class="item"><strong>-return returned_type</strong></a></strong>
 
 <dd>
-<p>Output format. Default is ft. To convert to another supported feature 
-format, type the following command: <em>convert-features -h</em></p>
+<p>Type of data to return. Supported values: seq | coord <br/>
+
+        By default, coordinates (coord) are returned. For RSAT organisms,
+        the return type can be 'seq' to retrieve sequences. The sequence
+        format is fasta. For Ensembl organisms, use the coordinate file (in
+        ft format) as input to retrieve-ensembl-seq.pl with the options
+        -ftfile YourCoordFile -ftfileformat ft. You can also use the tools
+        of sequence providers (UCSC, Galaxy, Ensembl) to efficently extract
+        the sequences from the coordinates.
+</p>
 </dd>
+<dt><strong><a name="oformat_output_format" class="item"><strong>-coord_format coordinates_format</strong></a></strong>
 <dd>
-<p>For RSAT organisms, the outpout format can also be set to 'fasta' to retrieve
-sequences. For Ensembl organisms, use the coordinate file as input to
-<em>retrieve-ensembl-seq.pl</em> with the options</p>
-</dd>
-<dd>
-<p>-ftfile YourFeaturefile -ftfileformat ft.</p>
-</dd>
-<dd>
-<p>For very big files, you might consider using the output format BED, which is adapted to UCSC database. 
-You can thus use the tools of sequence providers (UCSC, Galaxy, Ensembl) to efficently extract the sequences.
-The genomic intervals in this BED file are 0-based, to be compliant with UCSC, and related programs to retrieve sequences (Galaxy). 
-Chromosome thus start at position 0 (not 1).</p>
+<p>Supported values: ft | bed <br/>
+
+        Default is ft. To convert to another supported feature format, type
+        the following command: convert-features -h
+
+        For very big files, you might consider using the output format BED,
+        which is adapted to UCSC database. You can thus use the tools of
+        sequence providers (UCSC, Galaxy, Ensembl) to efficently extract the
+        sequences. The genomic intervals in this BED file are 0-based, as
+        specified in UCSC. Chromosome thus start at position 0 (not 1). This
+        BED file is compatible with UCSC, Galaxy and Ensembl (On the Ensembl
+        website, the bed file is automatically converted from 0-based into
+        1-based)
+</p>
 </dd>
 </li>
 <dt><strong><a name="rm" class="item"><strong>-rm</strong></a></strong>
@@ -169,6 +176,15 @@ No caps, underscore between words (eg 'homo_sapiens')</p>
 <p>Sequence length of random genomic fragments.</p>
 </dd>
 </li>
+
+<dt><strong><a name="lf_length_file" class="item"><strong>-iseq reference_sequences</strong></a></strong>
+<dd>
+<p>Allows to generate random sequences with the same lengths as a set
+        of reference sequences. The difference with the -lf option is that
+        the sequence lengths are automatically calculated.
+</p>
+</dd>
+
 <dt><strong><a name="lf_length_file" class="item"><strong>-lf length file</strong></a></strong>
 
 <dd>
