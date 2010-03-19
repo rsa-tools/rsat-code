@@ -1500,7 +1500,7 @@ sub to_prefix_suffix_table {
 # 	} elsif($type eq "oligo_freq_pseudo") {
 # 	  $string .= "\t".$self->{prefix_sum_pseudo}->{$prefix};
 # 	} elsif($type eq "oligo_freq_rel") {
-	$string .= "\t".$self->{prefix_proba}->{$prefix};
+	$string .= sprintf("\t%.3g", $self->{prefix_proba}->{$prefix});
 # 	}
 
 	$string .= "\n";
