@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.21 2010/03/17 15:04:59 jvanheld Exp $
+# $Id: chip-motifs,v 1.22 2010/03/19 08:06:05 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -114,11 +114,13 @@ package main;
 			   orm
 			   profiles
 			   ref_motif
+			   motif_compa
 			   synthesis
 			   clean_seq
 			  );
 
     my @future_tasks = qw(
+			  motif_cluster
 			  oligo-diff
 			  tomtom
 			  to_bed
@@ -158,19 +160,25 @@ package main;
       }
     }
 
-    &SequenceLengths if ($task{seqlen});
+    &SequenceLengths() if ($task{seqlen});
 
-    &CompositionProfiles if ($task{profiles});
+    &CompositionProfiles() if ($task{profiles});
 
-    &OligoAnalysis if ($task{oligos});
+    &OligoAnalysis() if ($task{oligos});
 
-    &DyadAnalysis if ($task{dyads});
+    &DyadAnalysis() if ($task{dyads});
 
-    &PositionAnalysis if ($task{positions});
+    &PositionAnalysis() if ($task{positions});
 
-    &ORM if ($task{orm});
+    &ORM() if ($task{orm});
 
-    &Synthesis if ($task{synthesis});
+    if (defined($main::infile{ref_motif})) {
+      &RefMotif() if ($task{ref_motif});
+    }
+
+    &MotifCompa() if ($task{motif_compa});
+
+    &Synthesis() if ($task{synthesis});
 
     &CleanSequences() if ($task{clean_seq});
 
@@ -293,7 +301,8 @@ sub SetOutFileNames {
 
     ## Reference motif
     if (defined($main::infile{ref_motif})) {
-      $main::outfile{"ref_motif_tab"} = &OutFileName(".tab", "ref_motif");
+      $main::outfile{"ref_motif"} = &OutFileName($main::param{ref_motif_format}, "ref_motif");
+      $main::outfile{"ref_motif_transfac"} = &OutFileName(".tf", "ref_motif");
       $main::outfile{"ref_motif_info"} = &OutFileName(".tab", "ref_motif_info");
       $main::outfile{"ref_motif_logo"} = &OutFileName("", "ref_motif_logo");
       $main::outfile{"ref_motif_enriched"} = &OutFileName("tab", "ref_motif_enriched");
@@ -311,12 +320,10 @@ sub SetOutFileNames {
 
     ################################################################
     ## Pattern discovery result
-
     for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
       ## oligo-analysis
       $main::outfile{'oligos_'.$len.'nt'} = &OutFileName(".tab", "oligos".$main::param{strand}.$main::param{noov},
-							 $len."nt",
-							 "mkv".$main::param{oligo_markov});
+							 $len."nt", "mkv".$main::param{oligo_markov});
       push @pattern_types, 'oligos_'.$len.'nt';
 
       ## orm
@@ -357,6 +364,14 @@ sub SetOutFileNames {
 #     $main::outfile{dyads_pssm} = $main::outfile{dyads};
 #     $main::outfile{dyads_pssm} =~ s/\.tab$//;
 #     $main::outfile{dyads_pssm} .= "_pssm";
+
+
+    ## Synthesis of the discovered motifs + comparison with reference motif and annotated motifs
+    $main::outfile{motifs_discovered} = &OutFileName(".tf", "motifs_discovered");
+    $main::outfile{motifs_disco_compa} = &OutFileName(".tab", "motifs_disco_compa");
+#    $main::outfile{motifs_disco_vs_db} = &OutFileName(".tab", "motifs_disco_vs_db");
+#    $main::outfile{motifs_disco_ref} = &OutFileName(".tf", "motifs_disco_ref");
+
 
     ## Compositional Profiles
     for my $ol (@profiles_oligo_lengths) {
@@ -592,6 +607,78 @@ sub ORM {
   }
 }
 
+################################################################
+## Convert reference motif and generate logos
+sub RefMotif {
+
+  ## Copy the reference motif in the output directory
+  my $cmd = "rsync -ruptvl ";
+  $cmd .= " ".$main::infile{ref_motif};
+  $cmd .= " ".$main::outfile{ref_motif};
+  &one_command($cmd);
+
+  ## Generate the logos and compute parameters (information content,
+  ## consensus, ...) for the reference motif
+  $cmd = "convert-matrix -v 1 -from ".$main::param{ref_motif_format};
+  $cmd .= " -to tab";
+  $cmd .= " -return counts,parameters,logo";
+  $cmd .= " -logo_file ".$main::outfile{ref_motif_logo};
+  $cmd .= " -i ".$main::infile{ref_motif};
+  $cmd .= " -o ".$main::outfile{ref_motif_info};
+  &one_command($cmd);
+
+  ## Convert the reference motif to TRANSFAC format, because this
+  ## format holds information about the motif name, ID etc
+  $cmd = "convert-matrix -v 1 -from ".$main::param{ref_motif_format};
+  $cmd .= " -to transfac";
+  $cmd .= " -return counts,parameters";
+  $cmd .= " -logo_file ".$main::outfile{ref_motif_logo};
+  $cmd .= " -i ".$main::infile{ref_motif};
+  $cmd .= " -o ".$main::outfile{ref_motif_transfac};
+  &one_command($cmd);
+}
+
+
+################################################################
+## Compare each discovered motif to each other one + to ref motif (if
+## defined).
+sub MotifCompa {
+
+  ## Initialize the motif file with the reference motif if provided,
+  ## otherwise as an empty file
+  my $cmd = "";
+  if (defined($main::infile{ref_motif})) {
+    $cmd = "cp -f";
+    $cmd .= " ".$main::outfile{ref_motif_transfac};
+    $cmd .= " ".$main::outfile{motifs_discovered};
+  } else {
+    $cmd = "rm -f ".$main::outfile{motifs_discovered};
+  }
+  ## Concatenate all discovered motifs (matrices) in a single file.
+  ## Use TRANSFAC format because if allows to associate a name to each
+  ## matrix.
+  foreach my $pattern_type (@pattern_types) {
+    $cmd .= " ; convert-matrix -from tab -to transfac -return counts,parameters";
+    $cmd .= " -prefix $pattern_type";
+    $cmd .= " -i ".$main::outfile{$pattern_type.'_pssm_counts'};
+    $cmd .= " >> ".$main::outfile{motifs_discovered};
+  }
+  &one_command($cmd);
+
+  $cmd = "compare-matrices -v 1";
+  $cmd .= " -format1 transfac -file1 ".$main::outfile{motifs_discovered};;
+  $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};;
+#  $cmd .= " -format2 transfac -file2 ".$main::outfile{ref_motif_transfac};
+  $cmd .= " -DR";
+  $cmd .= " -sort Ncor";
+  $cmd .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
+  $cmd .= " -lth w 4"; ## Min number of aligned columns
+  $cmd .= " -lth Ncor 0.5"; ## Min number of aligned columns
+  $cmd .= " -return matrix_name,Ncor,consensus";
+  $cmd .= " -o ".$main::outfile{motifs_disco_compa};
+  &one_command($cmd);
+
+}
 
 ################################################################
 ## Convert a list of patterns into PSSMs
@@ -644,43 +731,8 @@ sub Synthesis {
 
   &SynthesisSequenceComposition();
 
-  ## Known motif
-  if (defined($main::infile{ref_motif})) {
-    &SyntheticTableAddHeaderRow("Reference motif");
-#    unless (-e $main::outfile{ref_motif_info}) {
-      my $cmd = "convert-matrix -v 1 -from ".$main::param{ref_motif_format};
-      $cmd .= " -to tab";
-      $cmd .= " -return counts,parameters,logo";
-      $cmd .= " -logo_file ".$main::outfile{ref_motif_logo};
-      $cmd .= " -i ".$main::infile{ref_motif};
-      $cmd .= " -o ".$main::outfile{ref_motif_info};
-      &one_command($cmd);
-#    }
-    my $logo_table = "<table cellpadding=0 cellspacing=0 align=center border=0>";
-    $logo_table .= "<tr>\n";
-    my $logo_file = $main::outfile{ref_motif_logo}."_m1.".$main::param{img_format};
-    my $logo_file_rc = $main::outfile{ref_motif_logo}."_m1_rc.".$main::param{img_format};
-    if (-e $logo_file) {
-      my $img = &RelativePath($logo_file);
-      $logo_table .= "<td align='right'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
-    } elsif ($main::verbose >= 0) {
-      &RSAT::message::Warning("Cannot find reference logo", $logo_file);
-    }
-    if (-e $logo_file_rc) {
-      my $img = &RelativePath($logo_file_rc);
-      $logo_table .= "<td align='left'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
-    } elsif ($main::verbose >= 0) {
-      &RSAT::message::Warning("Cannot find reverse complementary logo for the reference motif", $logo_file_rc);
-    }
-    $logo_table .= "</tr>\n";
-    $logo_table .= "</table>\n";
-    &SyntheticTableAddRow("Reference motif",
-			  $logo_table,
-			  $main::param{ref_motif_format},$main::outfile{ref_motif},
-			  "tab",$main::outfile{ref_motif_tab},
-			  "info",$main::outfile{ref_motif_info},
-			 );
-  }
+  ## Reference motif
+  &SynthesisRefMotif();
 
   ## Header line
   &SyntheticTableAddHeaderRow("Pattern discovery");
@@ -726,8 +778,10 @@ sub Synthesis {
 ## Compute a file path relative to the synthesis file
 sub RelativePath {
   my ($file) = @_;
-  $file =~ s|${synthesis_path}/||;
-  return ($file);
+#  &RSAT::message::Debug("RelativePath", $file) if ($main::verbose >= 10);
+  my $rel_file = $file;
+  $rel_file =~ s|${synthesis_path}/||;
+  return ($rel_file);
 }
 
 ################################################################
@@ -795,9 +849,9 @@ sub SynthesisSequenceComposition {
   for my $ol (@profiles_oligo_lengths) {
     my $table = "<table><tr>";
     my $img = &RelativePath($main::outfile{$ol."nt_test_heatmap"});
-    $table .= "<td><a  href='".$img."'><img width=200 src='".$img."'></a></td>";
+    $table .= "<td>Transition frequencies<br><a  href='".$img."'><img width=200 src='".$img."'></a></td>";
     $img = &RelativePath($main::outfile{$ol."nt_profiles_graph"});
-    $table .= "<td><a  href='".$img."'><img height=150 src='".$img."'></a></td>";
+    $table .= "<td>Position profile<br><a  href='".$img."'><img height=150 src='".$img."'></a></td>";
     $table .= "</tr></table>";
     &SyntheticTableAddRow($ol."nt composition",
 			  $table,
@@ -817,6 +871,40 @@ sub SynthesisSequenceComposition {
 #		       );
 }
 
+
+################################################################
+## Add the reference motif to the report
+sub SynthesisRefMotif {
+  if (defined($main::infile{ref_motif})) {
+    &SyntheticTableAddHeaderRow("Reference motif");
+
+    my $logo_table = "<table cellpadding=0 cellspacing=0 align=center border=0>";
+    $logo_table .= "<tr>\n";
+    my $logo_file = $main::outfile{ref_motif_logo}."_m1.".$main::param{img_format};
+    my $logo_file_rc = $main::outfile{ref_motif_logo}."_m1_rc.".$main::param{img_format};
+    if (-e $logo_file) {
+      my $img = &RelativePath($logo_file);
+      $logo_table .= "<td align='right'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+    } elsif ($main::verbose >= 1) {
+      &RSAT::message::Warning("Cannot find reference logo", $logo_file);
+    }
+    if (-e $logo_file_rc) {
+      my $img = &RelativePath($logo_file_rc);
+      $logo_table .= "<td align='left'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
+    } elsif ($main::verbose >= 1) {
+      &RSAT::message::Warning("Cannot find reverse complementary logo for the reference motif", $logo_file_rc);
+    }
+    $logo_table .= "</tr>\n";
+    $logo_table .= "</table>\n";
+    &SyntheticTableAddRow("Reference motif",
+			  $logo_table,
+			  $main::param{ref_motif_format},$main::infile{ref_motif},
+			  "tf",$main::outfile{ref_motif_transfac},
+			  "info",$main::outfile{ref_motif_info},
+			 );
+  }
+}
+
 ################################################################
 ## Synthesis for one pattern discovery algorithm
 ## Usage:
@@ -833,13 +921,13 @@ sub SynthesisPatternDisco {
     if (-e $logo_file) {
       my $img = &RelativePath($logo_file);
       $logo_table .= "<td align='right'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
-    } elsif ($main::verbose >= 0) {
+    } elsif ($main::verbose >= 1) {
       &RSAT::message::Warning("Cannot find logo", $logo_file);
     }
     if (-e $logo_file_rc) {
       my $img = &RelativePath($logo_file_rc);
       $logo_table .= "<td align='left'><a  href='".$img."'><img height=70 src='".$img."'></a></td>\n";
-    } elsif ($main::verbose >= 0) {
+    } elsif ($main::verbose >= 1) {
       &RSAT::message::Warning("Cannot find reverse complementary logo", $logo_file_rc);
     }
     $logo_table .= "</tr>\n";
@@ -1205,9 +1293,9 @@ trinucleotide monads.
 
 =cut
     } elsif ($arg eq "-minol") {
-      $main::param{oligo__min_len} = shift (@arguments);
+      $main::param{oligo_min_len} = shift (@arguments);
     } elsif ($arg eq "-maxol") {
-      $main::param{oligo__max_len} = shift (@arguments);
+      $main::param{oligo_max_len} = shift (@arguments);
 
 =pod
 
@@ -1428,6 +1516,23 @@ factor binding sites and cis-regulatory modules. Nat Protoc 3,
 =back
 
 =head1 WISH LIST
+
+=over
+
+=item I<-max_markov>
+
+=item I<-min_markov>
+
+Maximal and minimal values for the Markov order of the background
+model used by I<oligo-analysis> and I<orm>.
+
+=item B<motif_cluster>
+
+Compare all discovered motifs (plus reference motif if specified) and
+cluster them in order to extract a consensus motif.
+
+=back
+
 
 =cut
 
