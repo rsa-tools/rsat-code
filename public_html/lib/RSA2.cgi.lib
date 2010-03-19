@@ -568,6 +568,7 @@ sub OrganismPopUpEnsembl {
 	    $info_ensembl =  $org;
 	    $info_ensembl =~ s/;//;
 	} else {
+		$org = lc($org);
 	    $organismPopup .=  "<OPTION VALUE='$org'>$name\n";
 	}
     }
