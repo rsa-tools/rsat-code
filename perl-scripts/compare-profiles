@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.20 2010/02/02 10:57:24 jvanheld Exp $
+# $Id: compare-profiles,v 1.21 2010/03/19 08:07:57 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -12,8 +12,6 @@
 ## - Add columns for join probability P{A|B} and P{B|A}
 ## In verbosity : average probability over columns and rows
 ## - add the possibility to put a threshold on either 
-
-## CVS: added a conversion from any table to binary profiles; added the option -return; added option -return dotprod
 
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
@@ -1172,8 +1170,8 @@ allows to use the command within a pipe.
 =cut
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
-	    
-	    ## Return fields
+
+
 =pod
 
 =item B<-return return_fields>
