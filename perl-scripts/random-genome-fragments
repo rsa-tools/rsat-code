@@ -1,11 +1,11 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.17 2010/03/15 14:50:49 morgane Exp $
+# $Id: random-genome-fragments,v 1.18 2010/03/19 15:31:09 morgane Exp $
 #
 ############################################################
 
-use strict;
+#use strict;
 
 
 =pod
@@ -16,7 +16,8 @@ random-genome-fragments
 
 =head1 DESCRIPTION
 
-Randomly calculates genomic coordinates, for a given organism  (installed in RSAT or from Ensembl).
+Select a set of fragments with random positions in a given genome, and return their coordinates and/or sequences.
+The supported organisms are etiher installed in RSAT or from Ensembl.
 Makes use of EnsEMBL API (www.ensembl.org) for EnsEMBL genomes.
 
 =head1 AUTHORS
@@ -33,20 +34,7 @@ random-genome-fragments -org organism -l length -r repetitions [-o outputfile] [
 
 =head1 OUTPUT FORMATS
 
-The program outputs a file containing the coordinates.
-
-The default format is ft. Use I<convert-features -h> to
-convert to another format.
-
-Sequences can also be directly exported for genomes installed in RSAT.
-
-To obtain the sequences for Ensembl organisms, use the coordinate file as input to I<retrieve-ensembl-seq.pl> with the options 
--ftfile YourFeaturefile -ftfileformat ft
-
-For very big files, you might consider using the output format 'bed' and use the tools of sequence providers (Galaxy, UCSC, Ensembl) to efficently extract the sequences.
-
-
-
+The program outputs a file containing the genomic coordinates or the sequences.
 
 =cut
 
@@ -67,6 +55,7 @@ require Bio::EnsEMBL::Registry;
 
 require RSAT::organism;
 require RSAT::feature;
+use RSAT::server;
 use Data::Dumper;
 
 
@@ -84,6 +73,11 @@ package main;
 
     $main::verbose = 0;
     #$main::out = STDOUT;
+    
+	$main::dry = 0;
+	$main::die_on_error = 1;
+	$main::batchmode = 0;
+    
     $main::out_format = "ft";
     $main::rm = 0;
     @main::lengths =();
@@ -91,11 +85,30 @@ package main;
     @main::files2remove =();
     $main::null = "";
     $main::assembly_version = "";
-
+    
+    ## Return fields
+  	local %supported_return_fields = (
+			      coord=>1,	## coordinates
+			      seq=>1,	## sequence
+			     );
+  	$supported_return_fields = join (",", sort(keys( %supported_return_fields)));
+  	local %return_fields = ();		## Fields to return
 
     ################################################################
     ## Read argument values
     &ReadArguments();
+    
+    ################################################################
+	## File with template sequences
+	if ($main::infile{reference_file}) {
+		## run sequence-lengths
+		my $job_prefix = "random-genome-fragments";
+		my $tmp_file_name = sprintf "random-genome-fragments.%s", &AlphaDate;
+		$main::infile{length_file} = "$TMP/$tmp_file_name".".lengths";
+		my $seqlength_cmd = "sequence-lengths -v 1 -i ".$main::infile{reference_file}." -o ".$main::infile{length_file};
+		&doit($seqlength_cmd, $main::dry, $main::die_on_error, $main::verbose, $main::batchmode, $job_prefix);
+	}
+	
     
     ################################################################
 	## File with the specification of sequence lengths
@@ -133,8 +146,8 @@ package main;
     
     ## fasta output is not compatible with an Ensembl organism
     if ($main::organism_ens) {
-    	if ($main::out_format eq "fasta"){
-    		&RSAT::error::FatalError( "Returning sequences is not compatible with Ensembl genomes. Use gft output format, followed by retrieve-ensembl-seq.pl");
+    	if ($return_fields{seq}){
+    		&RSAT::error::FatalError( "Returning sequences is not compatible with Ensembl genomes. Change the option -return");
     	}
     }
 
@@ -201,8 +214,12 @@ package main;
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
-	my $header = &RSAT::feature::header($main::out_format);
-	print $main::out $header if ($header);
+    ## file header
+    unless ($return_fields{seq}){
+    	my $header = &RSAT::feature::header($main::out_format);
+		print $main::out $header if ($header);
+    }
+	
 	
 	################################################################	
 	## get random positions
@@ -267,7 +284,7 @@ package main;
   
     	################################################################
    		## Print sequences
-   		if (($main::organism_name)&&(($main::out_format eq "fasta"))) {
+   		if (($main::organism_name)&&($return_fields{seq})) {
 			my $current_seq = $main::contigs{$rand_contig_name}->get_sequence($rand_start,$rand_end,$rand_strand);
 			my @comments = join("; ",
 								"random sequence $i of $main::nb_fragment",
@@ -276,7 +293,7 @@ package main;
 								"$rand_start:$rand_end:$rand_strand"
 								);
 		
-			&PrintNextSequence($main::out, $main::out_format,0, $current_seq, $seq_id, @comments);
+			&PrintNextSequence($main::out, "fasta",0, $current_seq, $seq_id, @comments);
 			
    		} else  {
    		################################################################	
@@ -309,6 +326,9 @@ package main;
     ## Finish verbose
     if ($main::verbose >= 1) {
 	my $done_time = &AlphaDate();
+	if ($main::organism_ens){
+    	print $main::out "; Data from Ensembl org:$main::organism_ens assembly:$main::assembly_version \n";
+    }
 	print $main::out "; Job started $start_time\n";
 	print $main::out "; Job done    $done_time\n";
     }
@@ -407,26 +427,51 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-o") {
 	    $main::outfile{output} = shift(@arguments);
 	    
+	    ## return types
 =pod
 
-=item B<-oformat output_format>
+=item B<-return returned_type>
 
-Output format. Default is ft. To convert to another supported feature 
+Type of data to return. Supported values: seq | coord
+
+By default, coordinates (coord) are returned.
+For RSAT organisms, the return type can be 'seq' to retrieve
+sequences. The sequence format is fasta.
+For Ensembl organisms, use the coordinate file (in ft format) as input to
+I<retrieve-ensembl-seq.pl> with the options -ftfile YourCoordFile -ftfileformat ft.
+You can also use the tools of sequence providers (UCSC, Galaxy, Ensembl) to efficently extract the sequences from the coordinates.
+
+=cut
+	} elsif ($arg eq "-return") {
+	   $arg = shift(@arguments);
+	    chomp($arg);
+      	my @fields_to_return = split ",", $arg;
+      	foreach my $field (@fields_to_return) {
+			$field = lc($field);
+			if ($supported_return_fields{$field}) {
+	  			$return_fields{$field} = 1;
+			} else {
+	  			&RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+			}
+      }
+	    
+=pod
+
+=item B<-out_format coordinates_format>
+
+Supported values: ft | bed
+
+Default is ft. To convert to another supported feature 
 format, type the following command: I<convert-features -h>
-
-For RSAT organisms, the outpout format can also be set to 'fasta' to retrieve
-sequences. For Ensembl organisms, use the coordinate file as input to
-I<retrieve-ensembl-seq.pl> with the options 
-
--ftfile YourFeaturefile -ftfileformat ft.
 
 For very big files, you might consider using the output format BED, which is adapted to UCSC database. 
 You can thus use the tools of sequence providers (UCSC, Galaxy, Ensembl) to efficently extract the sequences.
-The genomic intervals in this BED file are 0-based, to be compliant with UCSC, and related programs to retrieve sequences (Galaxy). 
-Chromosome thus start at position 0 (not 1).
+The genomic intervals in this BED file are 0-based, as specified in UCSC. Chromosome thus start at position 0 (not 1).
+This BED file is compatible with UCSC, Galaxy and Ensembl (On the Ensembl website, the bed file is automatically converted 
+from 0-based into 1-based)
 
 =cut
-	} elsif ($arg eq "-oformat") {
+	} elsif ($arg eq "-coord_format") {
 	    $main::out_format = shift(@arguments);
 
 		    ### repeat_masked
@@ -503,6 +548,20 @@ Sequence length of random genomic fragments.
 	} elsif ($arg eq "-l") {
 	    $main::length_fragment = shift(@arguments);
 
+
+
+=pod
+
+=item	B<-iseq reference_sequences>
+
+Allows to generate random sequences with the same
+lengths as a set of reference sequences. The difference with the -lf option is that 
+the sequence lengths are automatically calculated.
+
+=cut
+	} elsif ($arg eq "-iseq") {
+	    $main::infile{reference_file} = shift(@arguments);
+
 =pod
 
 =item	B<-lf length file>
@@ -540,9 +599,6 @@ sub Verbose {
     print $main::out "; random-genome-fragments ";
     &PrintArguments($main::out);
     print $main::out "; Number of random fragments $main::nb_fragment\n";
-    if ($main::organism_ens){
-    	print $main::out "; Data from Ensembl org:$main::organism_ens assembly:$main::assembly_version \n";
-    }
     if ($main::out_format eq "bed"){
     	print $main::out "; Warning: the genomic intervals in this BED file are 0-based, to be compliant with UCSC, and related programs to retrieve sequences (Galaxy). Chromosome thus start at position 0 (not 1).\n";
     }

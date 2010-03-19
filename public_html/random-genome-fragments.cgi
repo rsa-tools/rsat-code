@@ -113,13 +113,13 @@ if ($template_sequence_file ne '') {
  		if ($query->param('org_select') ne "rsat_org") {
     		&FatalError("Sequence output is only compatible with RSAT organisms. Select a RSAT organism or choose as output format 'genomic coordinates' ");
 		} else {
-			$parameters .= " -oformat fasta ";
+			$parameters .= " -return seq ";
 			}	
 			
 	## return coordinates
  	} elsif ($query->param('outputformat') eq "outputcoord") {
  		if ($query->param('coord_format')) {
- 			$parameters .= " -oformat ".$query->param('coord_format');
+ 			$parameters .= " -return coord -coord_format ".$query->param('coord_format');
  			$parameters .= " -v 1 ";
  		}
  	}
