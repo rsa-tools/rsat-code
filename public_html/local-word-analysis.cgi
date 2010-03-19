@@ -22,17 +22,17 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 #### TEMPORARY
 
-$motif_command = "$ENV{RSAT}/python-scripts/local-motif-analysis";
+$motif_command = "$ENV{RSAT}/python-scripts/local-word-analysis";
 
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $purge_sequence_command = "$SCRIPTS/purge-sequence";
-$tmp_file_name = sprintf "local-motif-analysis.%s", &AlphaDate();
+$tmp_file_name = sprintf "local-word-analysis.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
 
 ### print the result page
-&RSA_header("local-motif-analysis result", "results");
+&RSA_header("local-word-analysis result", "results");
 &ListParameters() if ($ENV{rsat_echo} >=2);
 
 #### update log file ####
