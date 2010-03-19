@@ -1,11 +1,12 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.13 2008/04/30 10:59:08 rsat Exp $
+# $Id: display-graph,v 1.14 2010/03/19 08:05:00 jvanheld Exp $
 #
 ############################################################
 
 ## use strict;
+
 
 =pod
 
@@ -90,11 +91,12 @@ package main;
     				png=>1,
     				jpg=>1,
     				jpeg=>1
-    			      );			      
-			       
+    			      );
     $supported_output_formats = join (",", keys %supported_output_format);
+
     ## layout
     $layout = 0;
+
     ################################################################
     ## Read argument values
     &ReadArguments();
@@ -123,27 +125,28 @@ package main;
     ## Calculates the layout 
     if ($layout) {
       $graph->get_position();
-      
     }
+
     ## Calculate the minimum and maximum values of the weight on the edges
     my ($edge_mean, $edge_sd, $edge_min, $edge_max);
     if ($edge_width) {
       my $real = $graph->get_attribute("real");
       if ($real eq "null") {
-         ($edge_mean, $edge_sd, $edge_min, $edge_max) = $graph->weight_properties();
-         $real = $graph->get_attribute("real");
-         ## If one weight at least is not a real number, the weights cannot be computed
+	($edge_mean, $edge_sd, $edge_min, $edge_max) = $graph->weight_properties();
+	$real = $graph->get_attribute("real");
+	## If one weight at least is not a real number, the weights cannot be computed
       }
-      
+
       if ($real == 0) {
         (&RSAT::message::Warning("Cannot compute the mean and standard deviation of the edges : edge weights contain\n\tat least one non real value"."\n")) if ($main::verbose >= 5);
         $edge_width = 0;
       }
-      
     }
+
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
+
     ################################################################
     ## Execute the command
     ## get nodes id
@@ -159,8 +162,8 @@ package main;
     my %nodes_id_ypos = $graph->get_attribute("nodes_id_ypos");
     ## get the labels
     my @out_labels = $graph->get_attribute("out_label");
-    
-    ## get the total size of the picture
+
+    ## Compute the total size of the picture
     my $max = 0;
     while (my ($node, $pos) = each (%nodes_id_xpos)) {
       if ($pos > $max) {
@@ -171,7 +174,7 @@ package main;
       if ($pos > $max) {
         $max = $pos;
       }
-    } 
+    }
     $max += 600;
     ## for postscript figures : use of postscript simple library
     if ($output_format eq "ps" || $output_format eq "eps") {
@@ -209,8 +212,7 @@ package main;
         }
       }
 
-      
-      # display the nodes
+      ## Display nodes
       $p->setfont("Arial", 12);
       my $not_connected_nodes = 30;
       while (my ($id, $name) = each (%nodes_id_name)) {
@@ -241,6 +243,7 @@ package main;
         $p->text($xpos-($length_name/2)+3,$ypos-3, $name);
       }
       $p->output($main::outfile{output});
+
       ## for jpg / png output : use of gd library
     } elsif ($output_format eq "jpg" || $output_format eq "jpeg" || $output_format eq "png") {
       # create the picture
@@ -250,7 +253,7 @@ package main;
       my %colors = ();
       $colors{"255255255"} = $white;
       $colors{"000000000"} = $black;
-      
+
       # make the background transparent and interlaced
       $p->transparent($white);
       $p->interlaced('false');
@@ -262,7 +265,7 @@ package main;
           my $source_xpos = $nodes_id_xpos{$i}+150;
           my $source_ypos = $nodes_id_ypos{$i}+150;
           my @weights = @{$out_labels[$i]};
-          
+
           for (my $j = 0; $j < scalar(@neighbours); $j++) {
             if (defined $neighbours[$j]) {
               my $target_xpos = $nodes_id_xpos{$neighbours[$j]}+150;
@@ -278,15 +281,15 @@ package main;
               if (!defined($current_col)) {
                 $current_col = $p->colorAllocate($r, $g, $b);
                 $colors{"$idcol"} = $current_col;
-              } 
-              
-#               print "$r, $g, $b\n";
+              }
+
+	      #               print "$r, $g, $b\n";
               $p->setThickness(1);
               if ($edge_width) {
                 $width = ((($weight-$edge_min)/($edge_max-$edge_min))*6.5)+0.5;
                 $p->setThickness($width);
               }
-#               print "$current_col\n";
+	      #               print "$current_col\n";
               $p->line($source_xpos, $source_ypos, $target_xpos, $target_ypos, $current_col);
             }
           }
@@ -307,7 +310,7 @@ package main;
           $xpos = $nodes_id_xpos{$id}+150;
           $ypos = $nodes_id_ypos{$id}+150;
         }
-        
+
         # get the color of the node
         my $node_color = $nodes_color{$id};
         my $r = hex(substr($node_color, 1, 2));
@@ -317,9 +320,8 @@ package main;
         $p->filledRectangle($xpos-($length_name/2), $ypos-5, $xpos-($length_name/2) +length($name)*10, $ypos+12, $white);
         $p->rectangle($xpos-($length_name/2), $ypos-5, $xpos-($length_name/2) + length($name)*10, $ypos+12, $current_col);
         $p->string(gdSmallFont, $xpos-($length_name/2)+3,$ypos-3, $name, $black);
-        
-        
-      }      
+      }
+
       binmode STDOUT;
       my $output_fhandle = &OpenOutputFile($main::outfile{output});
       if ($output_format eq "jpg" || $output_format eq "jpeg") {
@@ -329,16 +331,14 @@ package main;
       } 
       close $output_fhandle;
     }
-    
+
     ################################################################
     ## Finish verbose
     if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print STDOUT "; Job started $start_time\n";
-	print STDOUT "; Job done    $done_time\n";
+      my $done_time = &AlphaDate();
+      print STDOUT "; Job started $start_time\n";
+      print STDOUT "; Job done    $done_time\n";
     }
-
-
 
     exit(0);
 }
@@ -368,7 +368,7 @@ sub ReadArguments {
     my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
     while (scalar(@arguments) >= 1) {
       $arg = shift (@arguments);
-	## Verbosity
+
 =pod
 
 =head1 OPTIONS
@@ -387,7 +387,6 @@ Level of verbosity (detail in the warning messages during execution)
 		$main::verbose = 1;
 	    }
 
-	    ## Help message
 =pod
 
 =item B<-h>
@@ -398,7 +397,6 @@ Display full help message
 	} elsif ($arg eq "-h") {
 	    &PrintHelp();
 
-	    ## List of options
 =pod
 
 =item B<-help>
@@ -409,7 +407,6 @@ Same as -h
 	} elsif ($arg eq "-help") {
 	    &PrintOptions();
 
-	    ## Input file
 =pod
 
 =item B<-i inputfile>
@@ -419,6 +416,8 @@ Specification of the input graph file
 =cut
 	} elsif ($arg eq "-i") {
 	    $main::infile{input} = shift(@arguments);
+
+
 =pod
 
 =item B<-in_format input_format>
@@ -430,22 +429,26 @@ Input format. Supported: tab, gml, adj_matrix
 	    $input_format = shift(@arguments);
 	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
 		unless ($supported_input_format{$input_format});
+
+
+=pod
+
 =item B<-layout>
 
-Calculates the layout (provided you have the fr_layout program in $RSAT/bin) according to the Fruchterman and Reingold algorithm.
-This option must be provided if the input graph is not GML.
+Calculates the layout (provided you have the fr_layout program in
+$RSAT/bin) according to the Fruchterman and Reingold algorithm.  This
+option must be provided if the input graph is not GML.
 
 =cut
 	} elsif ($arg eq "-layout") {
 	    $layout = 1;
-	    
-	    
-	    ## Source column
+
 =pod
 
 =item B<-scol>
 
-Source column. Column containing the source nodes for the tab-delimited format. (default 1)
+Source column. Column containing the source nodes for the
+tab-delimited format. (default 1)
 
 =cut
 	} elsif ($arg eq "-scol") {
@@ -454,12 +457,12 @@ Source column. Column containing the source nodes for the tab-delimited format. 
 		&RSAT::error::FatalError(join("\t", $source_col, "Invalid value for the source column. Must be a strictly positive natural number"));
 	    }
 
-	    ## Target column
 =pod
 
 =item B<-tcol>
 
-Target column. Column containing the target nodes for the tab-delimited format.(default 2)
+Target column. Column containing the target nodes for the
+tab-delimited format.(default 2)
 
 =cut
 	} elsif ($arg eq "-tcol") {
@@ -467,7 +470,10 @@ Target column. Column containing the target nodes for the tab-delimited format.(
 	    unless (&IsNatural($target_col) && ($target_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $target_col, "Invalid value for the target column. Must be a strictly positive natural number"));
 	    }
-	    
+
+
+=pod
+
 =item B<-wcol>
 
 Weight column. Column containing the weight nodes. (no default)
@@ -478,11 +484,13 @@ Weight column. Column containing the weight nodes. (no default)
 	    unless (&IsNatural($weight_col) && ($weight_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $weight_col, "Invalid value for the weight column. Must be a strictly positive natural number"));
 	    }
+
 =pod
 
 =item B<-eccol>
 
-Edge color column. Column containing the color of the edges (RGB) for the tab-delimited format. (no default)
+Edge color column. Column containing the color of the edges (RGB) for
+the tab-delimited format. (no default)
 
 =cut
 	} elsif ($arg eq "-eccol") {
@@ -490,34 +498,36 @@ Edge color column. Column containing the color of the edges (RGB) for the tab-de
 	    unless (&IsNatural($color_col) && ($color_col > 0)) {
 		&RSAT::error::FatalError(join("\t", $color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
 	    }
+
 =pod
 
 =item B<-sccol>
 
-Source node color colum. Column containing the color of the node (RGB) for the tab-delimited format. (no default)
+Source node color colum. Column containing the color of the node (RGB)
+for the tab-delimited format. (no default)
 
-A node can only have one color. If in the file, the color of the node changes, only the first defined color 
-will be taken into account.
+A node can only have one color. If in the file, the color of the node
+changes, only the first defined color will be taken into account.
 
 =cut
 	} elsif ($arg eq "-sccol") {
-	    $source_color_col = shift (@arguments);
-	    unless (&IsNatural($source_color_col) && ($source_color_col > 0)) {
-		&RSAT::error::FatalError(join("\t", $source_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
-	    }
+	  $source_color_col = shift (@arguments);
+	  unless (&IsNatural($source_color_col) && ($source_color_col > 0)) {
+	    &RSAT::error::FatalError(join("\t", $source_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
+	  }
+
 =pod
 
 =item B<-ewidth>
 
-Calculate the edge width for the GML output. The width is proportional to the 
-weight of the edge.
-All weights in the column indicated by the -wcol argument (or in the label field of the GML file) must thus be real values.
+Calculate the edge width for the GML output. The width is proportional
+to the weight of the edge.  All weights in the column indicated by the
+-wcol argument (or in the label field of the GML file) must thus be
+real values.
 
 =cut
 	} elsif ($arg eq "-ewidth") {
 	    $edge_width = 1;
-	    	    
-	    ### Output format  
 
 =item B<-out_format output_format>
 
@@ -529,11 +539,12 @@ Output format. Supported: ps, png, jpeg
 	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
 		unless ($supported_output_format{$output_format});
 	    ## Output file
+
 =pod
 
 =item	B<-o outputfile>
 
-Specification of the graphic output file
+Name of the output file.
 
 =cut
 	} elsif ($arg eq "-o") {
@@ -544,6 +555,7 @@ Specification of the graphic output file
 
 	}
     }
+
 
 
 =pod
@@ -575,6 +587,7 @@ sub Verbose {
 
 
 __END__
+
 
 =pod
 
