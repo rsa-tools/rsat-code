@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.22 2010/03/19 08:06:05 jvanheld Exp $
+# $Id: peak-motifs,v 1.23 2010/03/19 08:23:33 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -369,6 +369,7 @@ sub SetOutFileNames {
     ## Synthesis of the discovered motifs + comparison with reference motif and annotated motifs
     $main::outfile{motifs_discovered} = &OutFileName(".tf", "motifs_discovered");
     $main::outfile{motifs_disco_compa} = &OutFileName(".tab", "motifs_disco_compa");
+    $main::outfile{motifs_disco_compa_gml} = &OutFileName(".gml", "motifs_disco_compa");
 #    $main::outfile{motifs_disco_vs_db} = &OutFileName(".tab", "motifs_disco_vs_db");
 #    $main::outfile{motifs_disco_ref} = &OutFileName(".tf", "motifs_disco_ref");
 
@@ -665,6 +666,7 @@ sub MotifCompa {
   }
   &one_command($cmd);
 
+  ## Compare all matrices
   $cmd = "compare-matrices -v 1";
   $cmd .= " -format1 transfac -file1 ".$main::outfile{motifs_discovered};;
   $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};;
@@ -678,6 +680,11 @@ sub MotifCompa {
   $cmd .= " -o ".$main::outfile{motifs_disco_compa};
   &one_command($cmd);
 
+  ## Generate a graph with the matrix comparison result
+  $cmd = "convert-graph -i ".$main::outfile{motifs_disco_compa};
+  $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol 3";
+  $cmd .= " -o ".$main::outfile{motifs_disco_compa_gml};
+  &one_command($cmd);
 }
 
 ################################################################
@@ -1422,7 +1429,6 @@ sub CheckArguments {
   if ((scalar(keys(%task)) == 0) || ($task{all})) {
     %task = %supported_task;
     delete($task{all});
-    delete($task{orm}); ## TEMPORARILY, ORM HAS TO BE CALLED MANUALLY BECAUSE IT TAKES TOO MUCH TIME
     delete($task{clean_seq});
   }
   foreach my $task (@supported_tasks) {
