@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genome-fragments,v 1.18 2010/03/19 15:31:09 morgane Exp $
+# $Id: random-genome-fragments,v 1.19 2010/03/19 15:39:29 morgane Exp $
 #
 ############################################################
 
@@ -457,7 +457,7 @@ You can also use the tools of sequence providers (UCSC, Galaxy, Ensembl) to effi
 	    
 =pod
 
-=item B<-out_format coordinates_format>
+=item B<-coord_format coordinates_format>
 
 Supported values: ft | bed
 
