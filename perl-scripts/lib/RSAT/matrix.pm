@@ -700,6 +700,7 @@ sub to_TRANSFAC {
       $to_print .= $self->get_attribute($param);
       $to_print .= "\n";
     }
+    $to_print .= "XX\n";
 
     ## End of record
     $to_print .=  $matrix_terminator{$output_format}."\n";

@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.102 2010/03/18 23:04:18 jvanheld Exp $
+# $Id: convert-matrix,v 1.103 2010/03/19 07:07:44 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -33,7 +33,7 @@ $max_profile = 24;
 $sep="\t";
 $null = "NA";
 $perm = 0;
-$prefix = ""; ## Prefix to be added before motif names
+%args = (); ## Arguments for matrix reading
 %force_attribute = ();
 $top_matrices = "none";
 
@@ -248,7 +248,7 @@ if (scalar(@matrix_files >= 1)) {
   $m = 0;
   foreach my $matrix_file (@matrix_files) {
     last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop reading files if we already collected the specified number of matrices
-    my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format);
+    my @matrices_from_file = &RSAT::MatrixReader::readFromFile($matrix_file, $input_format, %args);
     foreach my $matrix (@matrices_from_file) {
       $m++;
       last if ((&IsNatural($top_matrices)) && ($m > $top_matrices)); ## Stop holding matrices if we already collected the specified number of matrices
@@ -257,7 +257,7 @@ if (scalar(@matrix_files >= 1)) {
     }
   }
 } else {
-  my @matrices_from_file = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format);
+  my @matrices_from_file = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format, %args);
   my $m = 0;
   foreach my $matrix (@matrices_from_file) {
     $m++;
@@ -592,10 +592,10 @@ OPTIONS
 		generally more than sufficient.
 
 	-prefix
-		Prefix to be added before identifier(s) of the input
-		matrix/matrices. This can be convenient for converting
-		formats where matrices have no associated name
-		(e.g. tab) to formats with ames (e.g. transfac).
+		Prefix to be added before identifier(s) and name(s) of
+		the input matrix/matrices. This can be convenient for
+		converting formats where matrices have no associated
+		name (e.g. tab) to formats with names (e.g. transfac).
 
 	-attr key value
 
@@ -605,16 +605,17 @@ OPTIONS
 	        formats with specific requirements for attributes
 	        (e.g. TRANSFAC).
 
-		Example: 
+		Example:
 		    convert-matrix -from tab -to transfac \
 		        -i my_matrix.ta -o my_matrix.tf \
 			-attr AC MC0027 \
 			-attr id KNkB_278
 
 	-perm #
-		Number of permuted matrices to return. Matrix columns are permuted
-		so that the total information content remains identical to the original
-		matrix. Note that the output format for permuted matrix is tab.
+		Number of permuted matrices to return. Matrix columns
+		are permuted so that the total information content
+		remains identical to the original matrix. Note that
+		the output format for permuted matrix is tab.
 
 	-max_profile
 		Maximal width of the profile histogram (units = number
@@ -994,7 +995,7 @@ convert-matrix options
 -base		base for the logarithms used to compute the weight and info content
 -decimals	number of decimals digits to print for real matrices
 -prefix		prefix to add before matrix identifiers
--attr key value	force attribute to have a given value		
+-attr key value	force attribute to have a given value
 -perm		number of permuted matrices to return.
 -max_profile	Maximal width of the profile histogram 
 -rc		Convert the matrix to its reverse complement.
@@ -1153,8 +1154,8 @@ sub ReadArguments {
 
 	    ### prefix
 	} elsif ($ARGV[$a] eq "-prefix") {
-	    $main::prefix = $ARGV[$a+1];
-	    $main::prefix =~s/\s/_/g;
+	    $main::args{prefix} = $ARGV[$a+1];
+	    $main::args{prefix} =~s/\s/_/g;
 
 	    ### attribute
 	} elsif ($ARGV[$a] eq "-attr") {
@@ -1291,13 +1292,6 @@ sub ExportMatrix {
 	|| "matrix_".$m;
     my $AC = $matrix->get_attribute("accession") || $ID;
     &RSAT::message::Debug("ExportMatrix", "ID", $ID, "AC", $AC) if ($main::verbose >= 4);
-
-    ## If a prefix is specified, use it in the name, ID and accession number
-    if ($prefix) {
-	$matrix->force_attribute("name", $prefix.$matrix->get_attribute("name"));
-	$matrix->force_attribute("id", $prefix.$matrix->get_attribute("id"));
-	$matrix->force_attribute("AC", $prefix.$matrix->get_attribute("AC"));
-    }
 
     foreach my $key (keys(%force_attribute)) {
 	my $value = $force_attribute{$key};
