@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.37 2010/03/19 08:05:47 jvanheld Exp $
+# $Id: compare-matrices,v 1.38 2010/03/19 21:13:44 jvanheld Exp $
 #
 ############################################################
 
@@ -149,24 +149,43 @@ Mean frequency computed over all cells of matrices m1 and m2, respectively.
 
 =back
 
+=head2 Sum of Squared Distances (SSD)
+
+BEWARE: this metrics is the real SSD, i.e. the simple sum of squared
+distance.
+
+ SSD = SUM{i=1->r} SUM{j=1->w} [(f1{i,j} - f2{i,j})^2)]
+
+=head2 Sandelin-Wasserman simliarity (SW)
+
+Also implemented in STAMP (under the name SSD) and TOMTOM (under the
+name Sandelin-Wasserman).
+
+ SW = SUM{i=1->r} SUM{j=1->w} [2 - (f1{i,j} - f2{i,j})^2) ]
+
+Source: Sandelin A & Wasserman WW (2004) J Mol Biol 338:207-215.
+
 =head2 Euclidian distance (dEucl)
 
- dEucl = 1/w * sqrt( SUM{i=1->r} SUM{j=1->w} (f1{i,j} - f2{i,j})^2)
+ dEucl = sqrt( SUM{i=1->r} SUM{j=1->w} (f1{i,j} - f2{i,j})^2)
 
-Note that our Euclidian distance is relativized by the number of
-aligned columns (I<w>). This differs from the definition provided in
-Pape et al. (2008).
+=head2 Normalized Euclidian distance (NdEucl)
 
-=head2 Relative Euclidian similarity (rsEucl)
+ NdEucl = 1/w * dEucl
 
-A similarity metrics derived from the Euclidian distance.
+Euclidian distance normalized by the number of aligned columns
+(I<w>). Note that this differs from the definition provided in Pape et
+al. (2008).
 
- rsEucl = (Max(dEucl) - dEucl) / dEucl
+=head2 Normalized Euclidian similarity (NsEucl)
 
-where I<Max(dEucl)> is the maximal possible Euclidian distance for the
-current pair of matrices.
+A similarity metrics derived from the normalized Euclidian distance.
 
- Max(dEucl) = sqrt(2)
+ NsEucl = (Max(NdEucl) - NdEucl) / Max(NdEucl)
+
+where I<Max(NdEucl)>=sqrt(2) is the maximal possible Euclidian
+distance for the current pair of matrices. This metrics can vary from
+0 to 1.
 
 =head2 Kullback-Leibler distance (dKL)
 
@@ -246,7 +265,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.37 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.38 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -263,18 +282,21 @@ package main;
 				    "matrix_id", ## Identifiers of the matrices
 				    "matrix_name", ## Names of the matrices
 				    "matrix_ac", ## Accession number of the matrices
-				    "width", ## Width of the matrices and the alignment
-				    "pos", ## relative positions the aligned matrices (start, end, strand, width)
-				    "dEucl", ## Euclidian distance
-				    #				 "rsEucl", ## Euclidian distance
-				    "dKL", ## Kullback-Leibler distance
-				    "cor", ## Coefficient of correlation
 				    "Ncor", ## Normalized coefficient of correlation
+				    "cor", ## Coefficient of correlation
+				    "SSD", ## Euclidian distance
+				    "SW", ## Sandelin-Wasserman similarity
+				    "dEucl", ## Euclidian distance
+				    "NdEucl", ## Normalized Euclidian distance
+				    # "NsEucl", ## Euclidian similarity
+				    "dKL", ## Kullback-Leibler distance
 				    "cov", ## Covariance
+				    "width", ## Width of the matrices and the alignment
+				    "direction", ## Direct (D) or Reverse complementary (R) comparison
+				    "pos", ## relative positions the aligned matrices (start, end, strand, width)
 				    "consensus",
 				    "rank",
 				);
-  @default_return_fields_matches = qw(matrix_name Ncor);
   local %supported_return_field = ();
   foreach my $field (@supported_return_fields) {
     $supported_return_field{$field} = 1;
@@ -289,15 +311,18 @@ package main;
   local %lth = ();		# lower threshold values
   local %uth = ();		# upper threshold values
   @supported_thresholds = qw (
+			      Ncor
+			      cor
+			      cov
+			      SSD
+			      SW
+			      dEucl
+			      NdEucl
+			      NsEucl
+			      dKL
 			      offset
 			      w
 			      Wr
-			      dEucl
-			      rsEucl
-			      dKL
-			      cov
-			      cor
-			      Ncor
 			      rank
 			     );
   $supported_thresholds = join ",", @supported_thresholds;
@@ -305,6 +330,15 @@ package main;
   foreach my $thr (@supported_thresholds) {
     $supported_threshold{lc($thr)} = 1;
   }
+
+  ## Output formats
+  local $out_format = "matches";
+  local @supported_out_formats = qw(matches profiles);
+  local %supported_out_format = ();
+  foreach my $format (@supported_out_formats) {
+    $supported_out_format{$format} = 1;
+  }
+  local $supported_out_formats = join (",", @supported_out_formats);
 
   ## Matrices
   local @matrices1 = ();
@@ -316,6 +350,8 @@ package main;
   local $input_format1 = "";
   local $input_format2 = "";
   local $strands = "DR";
+  local $distinct = 0;
+  local $triangle = 0;
 
   ################################################################
   ## Read argument values
@@ -323,11 +359,22 @@ package main;
 
   ################################################################
   ## Check argument values
-
-  if (scalar(keys(%return_field)) == 0) {
-    foreach my $field (@default_return_fields_matches) {
-      $return_field{$field}=1;
+  if ($out_format eq "profiles") {
+    if (scalar(%return_field) ==0) {
+      &RSAT::error::FatalError("With the profiles format, you must define at least one return field (option -return).",
+			       "\n\tSupported: $supported_return_fields");
     }
+  } if ($out_format eq "matches") {
+    $sort_field = "Ncor";
+    $uth{rank}=1;
+#    $lth{w}=4;
+    ## THIS DOES NOT WORK
+#    $lth{cor}=0.75;
+#    $lth{Ncor}=0.55;
+    $return_field{matrix_name} = 1;
+    $return_field{direction} = 1;
+    $return_field{Ncor} = 1;
+    $return_field{consensus} = 1;
   }
 
 
@@ -361,10 +408,14 @@ package main;
   ## The sorting field must be computed
   $calc_field{$sort_field} = 1;
 
+
   ## Some fields must be computed as intermediate results for other fields
   $calc_field{cor} = 1 if ($calc_field{Ncor});
   $calc_field{cov} = 1 if ($calc_field{cor});
-  $calc_field{dEucl} = 1 if ($calc_field{rsEucl});
+  $calc_field{NdEucl} = 1 if ($calc_field{NsEucl});
+  $calc_field{dEucl} = 1 if ($calc_field{NdEucl});
+  $calc_field{SSD} = 1 if ($calc_field{dEucl});
+  $calc_field{SSD} = 1 if ($calc_field{SW});
 
   ################################################################
   ## Open output stream
@@ -450,19 +501,22 @@ package main;
   ################################################################
   ## Print the header
   my @header = ();
-  push (@header, "compa") if ($return_field{pos});
   push (@header, "m1", "m2") if ($return_field{matrix_number});
   push (@header, "id1", "id2") if ($return_field{matrix_id});
   push (@header, "ac1", "ac2") if ($return_field{matrix_ac});
   push (@header, "name1", "name2") if ($return_field{matrix_name});
-  push (@header, "w1", "w2", "w", "W", "Wr") if ($return_field{width});
-  push (@header, "offset", "direct", "start1", "end1", "start2", "end2") if ($return_field{pos});
+  push (@header, "Ncor") if ($return_field{Ncor});
+  push (@header, "cor") if ($return_field{cor});
+  push (@header, "SW") if ($return_field{SW});
+  push (@header, "SSD") if ($return_field{SSD});
+  push (@header, "NdEucl") if ($return_field{NdEucl});
   push (@header, "dEucl") if ($return_field{dEucl});
-  push (@header, "rsEucl") if ($return_field{rsEucl});
+  push (@header, "NsEucl") if ($return_field{NsEucl});
   push (@header, "dKL") if ($return_field{dKL});
   push (@header, "cov") if ($return_field{cov});
-  push (@header, "cor") if ($return_field{cor});
-  push (@header, "Ncor") if ($return_field{Ncor});
+  push (@header, "w1", "w2", "w", "W", "Wr") if ($return_field{width});
+  push (@header, "direct") if ($return_field{direction});
+  push (@header, "compa", "offset", "start1", "end1", "start2", "end2") if ($return_field{pos});
   push (@header, "consensus1", "consensus2") if ($return_field{consensus});
   push (@header, "rank") if ($return_field{rank});
 
@@ -489,8 +543,11 @@ package main;
     $description{end1} = "End position of the alignment in matrix 1";
     $description{start2} = "Start position of the alignment in matrix 2";
     $description{end2} = "End position of the alignment in matrix 2";
+    $description{SW} = "Sandelin-Wasserman similarity.";
+    $description{SSD} = "sum of squared distance.";
+    $description{NdEucl} = "Normalized Euclidian distance (NdEucl = dEucl/w) ";
     $description{dEucl} = "Euclidian distance";
-    $description{rsEucl} = "relative Euclidian similarity. rsEucl = (max(dEucl) - dEucl)/max(dEucl)";
+    $description{NsEucl} = "relative Euclidian similarity. NsEucl = (max(dEucl) - dEucl)/max(dEucl)";
     $description{dKL} = "Kullback-Leibler distance";
     $description{cov} = "Covariance";
     $description{cor} = "Coefficient of correlation";
@@ -519,6 +576,7 @@ package main;
     my $nrow1 = $matrix1->get_attribute("nrow");
     my @crude_freq1 = $matrix1->getCrudeFrequencies();
     my @corrected_freq1 = $matrix1->getFrequencies();
+    my $matrix1_id = $matrix1 ->get_attribute("id");
     my $matrix1_name = $matrix1 ->get_attribute("name");
     my $m2 = 0;
 
@@ -529,7 +587,13 @@ package main;
 			       "file2", $m2."/".scalar(@matrices2),
 			      )
 	if ($main::verbose >= 4);
+      my $matrix2_id = $matrix2-> get_attribute("id");
       my $matrix2_name = $matrix2-> get_attribute("name");
+
+      ## Skip identical matrices if the option -distinct is active
+      next if (($main::distinct) && ($matrix1_name eq $matrix2_name));
+      next if (($main::triangle) && ($matrix1_name gt $matrix2_name));
+
       my $ncol2 = $matrix2->get_attribute("ncol");
       my $nrow2 = $matrix2->get_attribute("nrow");
 
@@ -549,8 +613,11 @@ package main;
       my %cov = ();	    ## Covariances as a function of the offset
       my %cor = ();		## Correlations
       my %Ncor = ();		## Correlations
+      my %SW = ();		## Euclidian distances
+      my %SSD = ();		## Euclidian distances
+      my %NdEucl = ();		## Euclidian distances
       my %dEucl = ();		## Euclidian distances
-      my %rsEucl = ();		## Euclidian distances
+      my %NsEucl = ();		## Euclidian distances
       my %dKL = ();		## Kullback-Leibler distances
       my %out_line = ();	## Output line for each offset value
       my @output_offset = ();	## Offsets passing the thresholds
@@ -592,8 +659,11 @@ package main;
 	}
 
 	## Compute the Euclidian distance between the matrices
+	my $SSD = 0;
+	my $SW = 0;
+	my $NdEucl = 0;
 	my $dEucl = 0;
-	my $rsEucl = 0;
+	my $NsEucl = 0;
 	my $dKL = 0;
 	my $cov = 0;
 	my $cor = 0;
@@ -620,8 +690,8 @@ package main;
 	    }
 
 	    ## Update sum for Euclidian distance
-	    if ($calc_field{dEucl}) {
-	      $dEucl +=  ($f1 - $f2)**2;
+	    if ($calc_field{SSD}) {
+	      $SSD += ($f1 - $f2)**2;
 	    }
 
 	    ## Update sum for Kullback-Leibler distance
@@ -650,15 +720,19 @@ package main;
 
 	## Compute Euclidian distance
 	if ($calc_field{dEucl}) {
-	  $dEucl = sqrt($dEucl);
-	  $dEucl /= $w if ($w > 0); ## Relativize Euclidian distance with respect to the number of aligned columns
+	  $dEucl = sqrt($SSD);
 	  next unless (&CheckThresholds("dEucl", $dEucl)); $dEucl{$offset} = $dEucl;
+	  $NdEucl = $dEucl/$w if ($w > 0); ## Relativize Euclidian distance with respect to the number of aligned columns
+	  next unless (&CheckThresholds("NdEucl", $NdEucl)); $NdEucl{$offset} = $NdEucl;
 	}
 
+	## Compute Sandelin-Wasserman similarity
+	$SW = 2*$w - $SSD;
+
 	## Compute Euclidian similarity
-	if ($calc_field{rsEucl}) {
+	if ($calc_field{NsEucl}) {
 	  my $maxEucl = sqrt(2);
-	  $rsEucl = ($maxEucl - $dEucl) / $maxEucl;
+	  $NsEucl = ($maxEucl - $dEucl) / $maxEucl;
 	}
 
 	## Compute Kullback-Leibler distance
@@ -709,7 +783,6 @@ package main;
 
 	## Generate the output line
 	my @out_fields = ();
-	push @out_fields, $compa if ($return_field{pos});
 	push (@out_fields, $m1, $m2) if ($return_field{matrix_number});
 	if ($return_field{matrix_id}) {
 	  my $id1 = $matrix1->get_attribute("id") || $matrix1->get_attribute("identifier") || "<NA>";
@@ -726,14 +799,18 @@ package main;
 	  my $name2 = $matrix2->get_attribute("name") || "<NA>";
 	  push (@out_fields, $name1, $name2);
 	}
-	push (@out_fields, $matrix1->ncol(), $matrix2->ncol(), $w, $total_len, sprintf("%.4f", $Wr))if ($return_field{width});
-	push (@out_fields, $offset, $direction, $start1, $end1, $start2, $end2) if ($return_field{pos});
+	push (@out_fields, sprintf("%.4f", $Ncor)) if ($return_field{Ncor});
+	push (@out_fields, sprintf("%.4f", $cor)) if ($return_field{cor});
+	push (@out_fields, sprintf("%.2f", $SW)) if ($return_field{SW});
+	push (@out_fields, sprintf("%.4f", $SSD)) if ($return_field{SSD});
+	push (@out_fields, sprintf("%.5f", $NdEucl)) if ($return_field{NdEucl});
 	push (@out_fields, sprintf("%.5f", $dEucl)) if ($return_field{dEucl});
-	push (@out_fields, sprintf("%.5f", $rsEucl)) if ($return_field{rsEucl});
+	push (@out_fields, sprintf("%.5f", $NsEucl)) if ($return_field{NsEucl});
 	push (@out_fields, $dKL) if ($return_field{dKL});
 	push (@out_fields, sprintf("%.4f", $cov)) if ($return_field{cov});
-	push (@out_fields, sprintf("%.4f", $cor)) if ($return_field{cor});
-	push (@out_fields, sprintf("%.4f", $Ncor)) if ($return_field{Ncor});
+	push (@out_fields, $matrix1->ncol(), $matrix2->ncol(), $w, $total_len, sprintf("%.4f", $Wr))if ($return_field{width});
+	push @out_fields, $direction if ($return_field{direction});
+	push (@out_fields, $offset, $compa, $start1, $end1, $start2, $end2) if ($return_field{pos});
 	push (@out_fields,$consensus1,$consensus2) if ($return_field{consensus});
 	push @output_offset, $offset;
 	$out_line{$offset} =  join("\t", @out_fields);
@@ -748,7 +825,7 @@ package main;
       if ($sort_field eq "dEucl") {
 	@sorted_offset = sort {$dEucl{$a} <=> $dEucl{$b}} @output_offset;
 
-      } elsif ($sort_field eq "rsEucl") {
+      } elsif ($sort_field eq "NsEucl") {
 	@sorted_offset = sort {$dEucl{$b} <=> $dEucl{$a}} @output_offset;
 
 	## Kullback-Leibler distance is sorted in ascending order
@@ -975,6 +1052,39 @@ allows to use the command within a pipe.
 
 =pod
 
+=item	B<-distinct>
+
+Skip comparison between a matrix and itself.
+
+This option is useful when the program is sused to compare all
+matrices of a given file to all matrices of the same file, to avoid
+comparing each matrix to itself.
+
+Beware: the criterion for considering two matrices identical is that
+they have the same identifier. If two matrices have exactly the same
+content (in terms of occurrences per position) but different
+identifiers, they will be compared.
+
+=cut
+    } elsif ($arg eq "-distinct") {
+      $main::distinct = 1;
+
+=pod
+
+=item	B<-triangle>
+
+Only perform once the comparison between the same pair of matrix.
+
+This option is useful when the program is sused to compare all
+matrices of a given file to all matrices of the same file, to avoid
+comparing matrix A to matrix B and then matrix B to matrix A.
+
+=cut
+    } elsif ($arg eq "-triangle") {
+      $main::triangle = 1;
+
+=pod
+
 =item B<-strands D | R | DR>
 
 Perform matrix comparisons in direct (D) reverse complementary (R) or both
@@ -1053,6 +1163,7 @@ matrix_name. Maintained for backward compatibility.
       my $value = shift(@arguments);
       $return_field{matrix_name} = shift(@arguments);
 
+
 =pod
 
 =item B<-return return_fields>
@@ -1080,7 +1191,7 @@ Supported fields:
 
 Field to sort the results.
 
-Supported: dEucl, rsEucl, dKL, cov, cor, Ncor.
+Supported: dEucl, NsEucl, dKL, cov, cor, Ncor.
 
 =cut
     } elsif ($arg eq "-sort") {
@@ -1119,6 +1230,53 @@ Supported threshold fields : rank, dEucl, cor, cov, ali_len, offset
       &RSAT::error::FatalError($thr_value, "Invalid value for an upper threshold. Should be a real number. ")
 	unless (&RSAT::util::IsReal($thr_value));
       $uth{$thr_field} = $thr_value;
+
+
+=item B<-out_format matches | profiles>
+
+=over
+
+=item I<-format matches> (default)
+
+Return matches between any matrix of the file1 and any matrix of
+file2.
+
+This is the typical use of I<compare-matrices>: comparing one or
+several query motifs (e.g. obtained from pattern discovery) with a
+collection of reference motifs (e.f. a database of experimentally
+characterized transcription factor binding motifs, such as JASPAR,
+TRANSFAC, RegulonDB, ...).
+
+For a given pair of matrices (one from file1 and one from file2), the
+program tests all possible offsets, and measures one or several
+matching scores (see section "(Dis)similarity metrics" above). The
+program only returns the sore of the best alignemnt between the two
+matrices. The "best" alignement is the combination of offset and
+strand (with the option -strands DR) that maximizes the default score
+(Ncor). Alternative scores can be used as optimality criteria with the
+option -sort.
+
+=item I<-format profiles>
+
+Return a table with one row for each possible alignment offset between
+two matrices, and various columns indicating the matching parameters
+(offset, strands, aligned width,...), the matching scores, and the
+consensus of the aligned columns of the matrices.
+
+Matching profiles are convenient for drawing the similarity profiles,
+or for analyzing the correlations between various similarity metrics,
+but they are too verbosy for the typical use of I<compare-matrices>
+(detect matches between a query matrix and a database of reference
+matrices). The formats "matches" and "table" are more convenient for
+basic use.
+
+=back
+
+=cut
+    } elsif ($arg eq "-out_format") {
+      $main::out_format = shift(@arguments);
+      &RSAT::error::FatalError($main::out_format, "is not a valid output format. Supported: ".$supported_out_formats) 
+	unless ($supported_out_format{$main::out_format});
 
     } else {
       &FatalError(join("\t", "Invalid option", $arg));
@@ -1256,14 +1414,6 @@ scanning.
  Source: Wang T & Stormo GD (2003) Bioinformatics 19:2369-2380
  Also implemented in STAMP.
 
-=item Sum of Squared Distances
-         w
-    S = SUM ( 2 -  SUM   (Mb - Nb)^2  )
-        i=1       a,c,g,t
-
- Source: Sandelin A & Wasserman WW (2004) J Mol Biol 338:207-215.
- Also implemented in STAMP and TOMTOM
-
 =back
 
 =item B<-return fields>
@@ -1274,34 +1424,23 @@ Select the fields to be returned.
 
 Pseudo-counts to be added to all matrices.
 
-=item B<-out_format matches | profiles | table>
 
-=over
 
-=item I<-format matches> (default)
+=item B<-out_format table | consensus | alignments>
 
-Return matches between any matrix of the file1 and any matrix of
-file2.
+=format
 
-This is the typical use of I<compare-matrices>: comparing one or
-several query motifs (e.g. obtained from pattern discovery) with a
-collection of reference motifs (e.f. a database of experimentally
-characterized transcription factor binding motifs, such as JASPAR,
-TRANSFAC, RegulonDB, ...).
-
-For a given pair of matrices (one from file1 and one from file2), the
-program tests all possible offsets, and measures one or several
-matching scores (see section "(Dis)similarity metrics" above). The
-program only returns the sore of the best alignemnt between the two
-matrices. The "best" alignement is the combination of offset and
-strand (with the option -strands DR) that maximizes the default score
-(Ncor). Alternative scores can be used as optimality criteria with the
-option -sort.
 
 =item I<-format alignment>
 
 Same selection of best matching alignments as I<-format matches>, but
 also exports a textual representation of the aligned matrices.
+
+=item I<-format consensus>
+
+Cluster similar matrices and return one representative matrix for each
+cluster. This option is very convenient for generating non-redundant
+collections of motifs.
 
 =item I<-format table>
 
@@ -1309,28 +1448,14 @@ Export a table with one row per matrix of the file 1, one column per
 matrix of file 2, and where each cell indicates the value of the
 selected field.
 
-=item I<-format profiles>
+=back
 
-Return a table with one row for each possible alignment offset between
-two matrices, and various columns indicating the matching parameters
-(offset, strands, aligned width,...), the matching scores, and the
-consensus of the aligned columns of the matrices.
+=item I<Threshold list>
 
-Matching profiles are convenient for drawing the similarity profiles,
-or for analyzing the correlations between various similarity metrics,
-but they are too verbosy for the typical use of I<compare-matrices>
-(detect matches between a query matrix and a database of reference
-matrices). The formats "matches" and "table" are more convenient for
-basic use.
-
+Add list of thresholds in the initial verbosity.
 
 =back
 
-=item B<-cluster>
-
-Cluster similar matrices and return one representative matrix for each
-cluster. This option is very convenient for generating non-redundant
-collections of motifs.
 
 =back
 
