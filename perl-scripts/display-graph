@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.14 2010/03/19 08:05:00 jvanheld Exp $
+# $Id: display-graph,v 1.15 2010/03/19 09:50:10 rsat Exp $
 #
 ############################################################
 
@@ -131,8 +131,8 @@ package main;
     my ($edge_mean, $edge_sd, $edge_min, $edge_max);
     if ($edge_width) {
       my $real = $graph->get_attribute("real");
+      ($edge_mean, $edge_sd, $edge_min, $edge_max) = $graph->weight_properties();
       if ($real eq "null") {
-	($edge_mean, $edge_sd, $edge_min, $edge_max) = $graph->weight_properties();
 	$real = $graph->get_attribute("real");
 	## If one weight at least is not a real number, the weights cannot be computed
       }

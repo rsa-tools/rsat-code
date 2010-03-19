@@ -2067,7 +2067,6 @@ sub load_from_array {
       $main::edge_colors = 0;
       $main::edge_width = 0;
       &RSAT::message::Warning("The graph has less than 2 edges. -ewidth and -ecolors options will be ignored");
-#       print "merde";
     }
     
     
@@ -2078,7 +2077,7 @@ sub load_from_array {
         my @weights = map $_->[ 2 ], @array;
         ($mean, $sd, $min, $max) = $self->weight_properties(@weights);
       }
-      # if $main:$min_value a,d $main:max_value are defined in convert-graph
+      # if $main:$min_value a,d $main:max_value are defined in convert-graph (or display-graph)
       # then use these value as minimum or maximum to compute the edge color gradient
       $min = $main::min_value if (defined $main::min_value && $main::min_value <= $min);
       $max = $main::max_value if (defined $main::max_value && $main::max_value >= $max);      
