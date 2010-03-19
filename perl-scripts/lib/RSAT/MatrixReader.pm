@@ -1658,6 +1658,7 @@ sub _readFromJasparFile {
 	my $name = $id;
 	if ($postmatch =~ /\S+/) {
 	  $name = &RSAT::util::trim($postmatch);
+	  $name =~ s/\s+/_/g;
 	}
 #	&RSAT::message::Debug("_readFromJasparFile", $id, $name) if ($main::verbose >= 3);
 	$matrix = new RSAT::matrix();
