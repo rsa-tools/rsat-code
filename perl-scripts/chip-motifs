@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.23 2010/03/19 08:23:33 jvanheld Exp $
+# $Id: chip-motifs,v 1.24 2010/03/19 08:59:53 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -664,19 +664,20 @@ sub MotifCompa {
     $cmd .= " -i ".$main::outfile{$pattern_type.'_pssm_counts'};
     $cmd .= " >> ".$main::outfile{motifs_discovered};
   }
-  &one_command($cmd);
+#  &one_command($cmd);
 
   ## Compare all matrices
   $cmd = "compare-matrices -v 1";
   $cmd .= " -format1 transfac -file1 ".$main::outfile{motifs_discovered};;
   $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};;
 #  $cmd .= " -format2 transfac -file2 ".$main::outfile{ref_motif_transfac};
-  $cmd .= " -DR";
+  $cmd .= " -DR -distinct -triangle";
   $cmd .= " -sort Ncor";
   $cmd .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
   $cmd .= " -lth w 4"; ## Min number of aligned columns
-  $cmd .= " -lth Ncor 0.5"; ## Min number of aligned columns
-  $cmd .= " -return matrix_name,Ncor,consensus";
+  $cmd .= " -lth cor 0.7"; ## Min normalized correlation
+  $cmd .= " -lth Ncor 0.5"; ## Min normalized correlation
+  $cmd .= " -return matrix_name,direction,Ncor,consensus";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa};
   &one_command($cmd);
 
