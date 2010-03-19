@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.36 2010/03/18 22:50:51 jvanheld Exp $
+# $Id: compare-matrices,v 1.37 2010/03/19 08:05:47 jvanheld Exp $
 #
 ############################################################
 
@@ -246,7 +246,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.36 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.37 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -495,8 +495,8 @@ package main;
     $description{cov} = "Covariance";
     $description{cor} = "Coefficient of correlation";
     $description{Ncor} = "Aligned fraction corrected correlation. Ncor = cor * Wr";
-    $description{consensus1} = "IUPAC consensus of matrix 1";
-    $description{consensus2} = "IUPAC consensus of matrix 2";
+    $description{consensus1} = "IUPAC consensus of matrix 1 (dots represent non-aligned columns)";
+    $description{consensus2} = "IUPAC consensus of matrix 2 (dots represent non-aligned columns)";
     $description{rank} = "Rank of the alignment for the current pair of matrices";
     print $out "; Column content\n";
     my $c = 0;
@@ -734,9 +734,7 @@ package main;
 	push (@out_fields, sprintf("%.4f", $cov)) if ($return_field{cov});
 	push (@out_fields, sprintf("%.4f", $cor)) if ($return_field{cor});
 	push (@out_fields, sprintf("%.4f", $Ncor)) if ($return_field{Ncor});
-	push (@out_fields,
-	      $consensus1,
-	      $consensus2) if ($return_field{consensus});
+	push (@out_fields,$consensus1,$consensus2) if ($return_field{consensus});
 	push @output_offset, $offset;
 	$out_line{$offset} =  join("\t", @out_fields);
       }
