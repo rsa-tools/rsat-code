@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.46 2010/03/17 15:25:38 jvanheld Exp $
+# $Id: position-analysis,v 1.47 2010/03/21 10:48:56 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -14,7 +14,7 @@ require "RSA.lib";
 require RSAT::util;
 require RSAT::stats;
 use POSIX qw(sysconf _PC_CHOWN_RESTRICTED);
-use Math::CDF;
+#use Math::CDF;
 use Statistics::Distributions;
 
 ################################################################
@@ -607,15 +607,17 @@ sub CalcChi {
 	    push @chi_values, $exp_occ{$oligo_seq}{$class};
 	}
 	($pattern{$oligo_seq}->{chi_square}, $pattern{$oligo_seq}->{df}) = &ChiSquare("goodfit", 2, $calc_class_nb, @chi_values);
-	&RSAT::message::Debug($oligo_seq, "chi2", $pattern{$oligo_seq}->{chi_square}, $pattern{$oligo_seq}->{df}, @chi_values) if ($main::verbose >= 5);
+#	&RSAT::message::Debug($oligo_seq, "chi2=".$pattern{$oligo_seq}->{chi_square}, "df=".$pattern{$oligo_seq}->{df}, @chi_values) if ($main::verbose >= 5);
 
 	## Compute P-value
 #	$pattern{$oligo_seq}->{Pval} = sprintf("%.2e", 1 - &Math::CDF::pchisq($pattern{$oligo_seq}->{chi_square},
 #									      $pattern{$oligo_seq}->{df}));
-	$pattern{$oligo_seq}->{Pval} = &Statistics::Distributions::chisqrprob($pattern{$oligo_seq}->{df},
-									      $pattern{$oligo_seq}->{chi_square});
-
-
+	if ($pattern{$oligo_seq}->{chi_square} > 0) {
+	  $pattern{$oligo_seq}->{Pval} = &Statistics::Distributions::chisqrprob($pattern{$oligo_seq}->{df},
+										$pattern{$oligo_seq}->{chi_square});
+	} else {
+	  $pattern{$oligo_seq}->{Pval} = 1;
+	}
 
 	if ($pattern{$oligo_seq}->{Pval} <= 0) {
 	  $pattern{$oligo_seq}->{Pval} = 0; ## Lower boundary for the computation of P-values with the CDF library
