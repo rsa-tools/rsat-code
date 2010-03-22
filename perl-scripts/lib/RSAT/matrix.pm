@@ -3460,7 +3460,7 @@ sub to_infogibbs{
     $to_print .="; motifs width                      ".  $col_width   ."\n";
     $to_print .="; sites                             ".  $nb_seq ."\n";
     $to_print .="; (seq and pos start at 1) "."\n";
-    $to_print .=join ("\t","; ", "seq", "strand","pos","site","\n");
+    $to_print .=join ("\t","; seq", "strand","pos","site","\n");
 
     if (@site_sequences){
 	foreach my $s (0..$#site_sequences) {
