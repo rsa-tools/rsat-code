@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.25 2010/03/19 21:14:22 jvanheld Exp $
+# $Id: chip-motifs,v 1.26 2010/03/22 16:14:27 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -98,7 +98,7 @@ package main;
     $main::verbose = 0;
     $main::out = STDOUT;
 
-    ## Pattern types (oligos, positions, orm,... with the oligo length suffix)
+    ## Pattern types (oligos, positions, local-word-analysis,... with the oligo length suffix)
     @pattern_types = ();
 
 
@@ -111,9 +111,10 @@ package main;
 			   oligos
 			   dyads
 			   positions
-			   orm
+			   local_words
 			   profiles
 			   ref_motif
+			   pattern_compa
 			   motif_compa
 			   synthesis
 			   clean_seq
@@ -170,11 +171,13 @@ package main;
 
     &PositionAnalysis() if ($task{positions});
 
-    &ORM() if ($task{orm});
+    &LocalWords() if ($task{local_words});
 
     if (defined($main::infile{ref_motif})) {
       &RefMotif() if ($task{ref_motif});
     }
+
+    &PatternsVersusPatterns() if ($task{pattern_compa});
 
     &MotifCompa() if ($task{motif_compa});
 
@@ -253,15 +256,16 @@ sub DefaultParameters {
   $main::param{patterns_max_rank} = 25; push(@main::param_list, "patterns_max_rank");
 
   ## oligo-analysis
-  $main::param{oligo_markov} = -2; push(@main::param_list, "oligo_markov");
+  $main::param{oligo_min_mkv} = -3; push(@main::param_list, "oligo_min_mkv");
+  $main::param{oligo_max_mkv} = -3; push(@main::param_list, "oligo_max_mkv");
 
   ## dyad-analysis
 
   ## position-analysis
   $main::param{positions_ci} = 20; ## Class interval for position-analysis
 
-  ## orm
-  $main::param{orm_ci} = 20; ## Class interval for ORM
+  ## local-word-analysis
+  $main::param{local_words_ci} = 20; ## Class interval for local-word-analysis
 
   ## matrix-from-patterns
   $main::param{matrix_nmotifs} = 3; push(@main::param_list, "matrix_nmotifs");
@@ -320,22 +324,30 @@ sub SetOutFileNames {
 
     ################################################################
     ## Pattern discovery result
+    my $pattern_type = "";
     for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
-      ## oligo-analysis
-      $main::outfile{'oligos_'.$len.'nt'} = &OutFileName(".tab", "oligos".$main::param{strand}.$main::param{noov},
-							 $len."nt", "mkv".$main::param{oligo_markov});
-      push @pattern_types, 'oligos_'.$len.'nt';
+      for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
+	## Convert negative markov orders relative to the oligo length
+	$markov += $len if ($markov < 0);
 
-      ## orm
-      $main::outfile{'orm_'.$len.'nt'} = &OutFileName(".tab", "orm".$main::param{strand}.$main::param{noov},
-						      $len."nt", "ci".$main::param{orm_ci},
-						      "mkv".$main::param{oligo_markov});
-      push @pattern_types, 'orm_'.$len.'nt';
+	## oligo-analysis
+	$pattern_type = 'oligos_'.$len.'nt_mkv'.$markov;
+	$main::outfile{$pattern_type} = &OutFileName(".tab", "oligos".$main::param{strand}.$main::param{noov},
+								       $len."nt", "mkv".$markov);
+	push @pattern_types, $pattern_type;
 
+	## local-word-analysis
+	$pattern_type = 'local_words_'.$len.'nt_mkv'.$markov;
+	$main::outfile{$pattern_type} = &OutFileName(".tab", "local_words".$main::param{strand}.$main::param{noov},
+								$len."nt", "ci".$main::param{local_words_ci},
+								"mkv".$markov);
+	push @pattern_types, $pattern_type;
+      }
       ## position-analysis
-      $main::outfile{'positions_'.$len.'nt'} = &OutFileName(".tab", "positions".$main::param{strand}.$main::param{noov},
+      $pattern_type = 'positions_'.$len.'nt';
+      $main::outfile{$pattern_type} = &OutFileName(".tab", "positions".$main::param{strand}.$main::param{noov},
 							    $len."nt", "ci".$main::param{positions_ci});
-      push @pattern_types, 'positions_'.$len.'nt';
+      push @pattern_types, $pattern_type;
     }
 
     ## dyad-analysis
@@ -505,23 +517,27 @@ sub CompositionProfiles {
 ## Run oligo-analysis on the test set
 sub OligoAnalysis {
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
-    my $pattern_type = 'oligos_'.$len.'nt';
-    &RSAT::message::TimeWarn("Running oligo-analysis", $len."nt") if ($main::verbose >= 1);
-    my $cmd = "oligo-analysis -v 1";
-    $cmd .= " -i ".$main::outfile{"purged_test"};
-    $cmd .= " -format fasta";
-    $cmd .= " -sort -lth occ_sig ".$main::param{min_sig};
-    $cmd .= " -uth rank ".$main::param{patterns_max_rank};
-    $cmd .= " -return occ,proba,rank";
-    $cmd .= " ".$main::param{strand};
-    $cmd .= " ".$main::param{noov};
-    $cmd .= " -seqtype dna";
-    $cmd .= " -l ".$len;
-    $cmd .= " -markov ".$main::param{oligo_markov};
-    $cmd .= " -pseudo 0.01";
-    $cmd .= " -o ".$main::outfile{$pattern_type};
-    &one_command($cmd);
-    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
+    for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
+      ## Convert negative markov orders relative to the oligo length
+      $markov += $len if ($markov < 0);
+      my $pattern_type = 'oligos_'.$len.'nt'.'_mkv'.$markov;
+      &RSAT::message::TimeWarn("Running oligo-analysis", $len."nt", "markov=".$markov) if ($main::verbose >= 1);
+      my $cmd = "oligo-analysis -v 1";
+      $cmd .= " -i ".$main::outfile{"purged_test"};
+      $cmd .= " -format fasta";
+      $cmd .= " -sort -lth occ_sig ".$main::param{min_sig};
+      $cmd .= " -uth rank ".$main::param{patterns_max_rank};
+      $cmd .= " -return occ,proba,rank";
+      $cmd .= " ".$main::param{strand};
+      $cmd .= " ".$main::param{noov};
+      $cmd .= " -seqtype dna";
+      $cmd .= " -l ".$len;
+      $cmd .= " -markov ".$markov;
+      $cmd .= " -pseudo 0.01";
+      $cmd .= " -o ".$main::outfile{$pattern_type};
+      &one_command($cmd);
+      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
+    }
   }
 }
 
@@ -578,34 +594,38 @@ sub PositionAnalysis {
 
 
 ################################################################
-## Run orm on the test set
-sub ORM {
+## Run local-word-analysis on the test set
+sub LocalWords {
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
-    my $pattern_type = 'orm_'.$len.'nt';
-    &RSAT::message::TimeWarn("Running orm", $len."nt") if ($main::verbose >= 1);
-    my $cmd = "orm -v 3";
-    $cmd .= " -i ".$main::outfile{"purged_test"};
-    #  $cmd .= " -format fasta";
-    $cmd .= " --center=0";
-    $cmd .= " --min=occ_sig ".$main::param{min_sig};
-    $cmd .= " --sort=-occ_sig";
-    $cmd .= " --max=rank ".$main::param{patterns_max_rank};
-    $cmd .= " --max=w_rank ".1; ## Only return the most significant window for each word
-    # " -return occ,proba,rank";
-    if ($main::param{strand} eq "-1str") {
-      $cmd .= " +";
-    } else {
-      $cmd .= " +-";
+    for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
+      ## Convert negative markov orders relative to the oligo length
+      $markov += $len if ($markov < 0);
+      my $pattern_type = 'local_words_'.$len.'nt'.'_mkv'.$markov;
+      &RSAT::message::TimeWarn("Running local-word-analysis", $len."nt") if ($main::verbose >= 1);
+      my $cmd = "local-word-analysis -v 3";
+      $cmd .= " -i ".$main::outfile{"purged_test"};
+      #  $cmd .= " -format fasta";
+      $cmd .= " --center=0";
+      $cmd .= " --min=occ_sig ".$main::param{min_sig};
+      $cmd .= " --sort=-occ_sig";
+      $cmd .= " --max=rank ".$main::param{patterns_max_rank};
+      $cmd .= " --max=w_rank ".1; ## Only return the most significant window for each word
+      # " -return occ,proba,rank";
+      if ($main::param{strand} eq "-1str") {
+	$cmd .= " +";
+      } else {
+	$cmd .= " +-";
+      }
+      $cmd .= " --overlap" if ($main::param{noov} eq "ovlp");
+      $cmd .= " --window=".$main::param{local_words_ci};
+      #  $cmd .= " -seqtype dna";
+      $cmd .= " -l ".$len;
+      $cmd .= " --markov ".$markov;
+      #  $cmd .= " -pseudo 0.01";
+      $cmd .= " -o ".$main::outfile{$pattern_type};
+      &one_command($cmd);
+      &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
     }
-    $cmd .= " --overlap" if ($main::param{noov} eq "ovlp");
-    $cmd .= " --window=".$main::param{orm_ci};
-    #  $cmd .= " -seqtype dna";
-    $cmd .= " -l ".$len;
-    $cmd .= " -m ".$main::param{oligo_markov};
-    #  $cmd .= " -pseudo 0.01";
-    $cmd .= " -o ".$main::outfile{$pattern_type};
-    &one_command($cmd);
-    &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
   }
 }
 
@@ -643,8 +663,47 @@ sub RefMotif {
 
 ################################################################
 ## Compare each discovered motif to each other one + to ref motif (if
-## defined).
+## defined) + to motif database (if defined).
 sub MotifCompa {
+  &PatternsVersusPatterns();
+  &MotifVersusMotifs();
+}
+
+################################################################
+## Compare the significance of patterns (oligos, dyads) discovered by
+## the different approaches
+sub PatternsVersusPatterns {
+  my $cmd = "compare-scores -v 1 ";
+  my $file_nb = 0;
+  foreach my $pattern_type (@pattern_types) {
+    my $pattern_file = $main::outfile{$pattern_type};
+    my $sig_col;
+    $file_nb++;
+    $cmd .= " -i ".$pattern_file;
+    if ($pattern_type =~ /oligos_/) {
+      $sig_col = 8;
+    } elsif ($pattern_type =~ /dyads/) {
+      $sig_col = 8;
+    } elsif ($pattern_type =~ /local_words/) {
+      $sig_col = 9;
+    } elsif ($pattern_type =~ /positions/) {
+      $sig_col = 9;
+    } else {
+      &RSAT::message::Warning("Unknown score column for pattern type", $pattern_type);
+      next;
+    }
+    $cmd .= " -sc".$file_nb." ".$sig_col;
+    &RSAT::message::Debug($file_nb, $pattern_type, $sig_col, "\n", $pattern_file);
+  }
+  $cmd .= " -o ".$main::outfile{pattern_compa};
+
+#  &one_command($cmd);
+}
+
+################################################################
+## Compare each discovered motifs to each other, and with the
+## reference motif
+sub MotifVersusMotifs {
 
   ## Initialize the motif file with the reference motif if provided,
   ## otherwise as an empty file
@@ -677,13 +736,15 @@ sub MotifCompa {
   $cmd .= " -uth rank 1"; ## Only report the best matching shift between a pair of matrices
   $cmd .= " -lth w 4"; ## Min number of aligned columns
   $cmd .= " -lth cor 0.75"; ## Min normalized correlation
-  $cmd .= " -lth Ncor 0.55"; ## Min normalized correlation
-  $cmd .= " -return matrix_name,direction,Ncor,consensus";
+  $cmd .= " -lth Ncor 0.6"; ## Min normalized correlation
+  $cmd .= " -return matrix_name,direction,Ncor,SW,cor,width,consensus";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa};
-  &one_command($cmd);
+#  &one_command($cmd);
 
   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
   $cmd = "convert-graph -i ".$main::outfile{motifs_disco_compa};
+  $cmd .= " -ewidth -ecolors fire";
+  $cmd .= " -layout spring";
   $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol 3";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa_gml};
   &one_command($cmd);
@@ -739,6 +800,11 @@ sub Synthesis {
   print $syn "<body>\n";
   print $syn "<h1>Result: chip-seq-analysis ".$main::param{title}."</h1>\n";
 
+  ## Print the command line
+  print $syn "<pre>";
+  print $syn "<b>Command:</b>  chip-seq-analysis ";
+  &PrintArguments($syn);
+  print $syn "</pre>";
 
   ## Header of the synthetic table
   print $syn "<h2>Synthetic report</h2>";
@@ -753,7 +819,13 @@ sub Synthesis {
   &SyntheticTableAddHeaderRow("Pattern discovery");
 
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
-    &SynthesisPatternDisco('oligos_'.$len.'nt');
+    for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
+      ## Convert negative markov orders relative to the oligo length
+      $markov += $len if ($markov < 0);
+	## oligo-analysis
+      my $pattern_type = 'oligos_'.$len.'nt_mkv'.$markov;
+      &SynthesisPatternDisco($pattern_type);
+    }
   }
 
   &SynthesisPatternDisco("dyads");
@@ -763,7 +835,13 @@ sub Synthesis {
   }
 
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
-    &SynthesisPatternDisco('orm_'.$len.'nt');
+    for my $markov ($main::param{oligo_min_mkv}..$main::param{oligo_max_mkv}) {
+      ## Convert negative markov orders relative to the oligo length
+      $markov += $len if ($markov < 0);
+      ## oligo-analysis
+      my $pattern_type = 'local_words_'.$len.'nt_mkv'.$markov;
+      &SynthesisPatternDisco($pattern_type);
+    }
   }
 
   ## Log file
@@ -924,7 +1002,7 @@ sub SynthesisRefMotif {
 ## Synthesis for one pattern discovery algorithm
 ## Usage:
 ##   &SynthesisPatternDisco($pattern_type);
-## Where pattern type can be oligos, dyads, ORM, oligo-diff
+## Where pattern type can be oligos, dyads, local_words, oligo-diff
 sub SynthesisPatternDisco {
   my ($pattern_type) = @_;
   my $logo_table = "<table cellpadding=0 cellspacing=0 align=center border=0>";
@@ -1290,13 +1368,11 @@ words).
 
 =pod
 
-=item B<-minol oligo_min_len>
+=item B<-l oligo_len>
 
-=item B<-maxol oligo_max_len>
 
-Minimal (-minol) and maximal (-maxol) oligonucleotide lengths for
-word-counting approaches (oligo-analysis, position-analysis, ORM,
-oligo-diff).
+Oligonucleotide length for word-counting approaches (oligo-analysis,
+position-analysis, local-word-analysis, oligo-diff).
 
 In our experience, optimal results are obtained with hexanucleotides
 and heptanucleotides.
@@ -1306,7 +1382,19 @@ options. Instead it is fixed to to 3. Indeed, dyad-analysis can detect
 larger motifs by sampling various spacings between the two
 trinucleotide monads.
 
+=item B<-minol oligo_min_len>
+
+=item B<-maxol oligo_max_len>
+
+Minimal (-minol) and maximal (-maxol) oligonucleotide lengths. If
+those options are used, the program iterated over the specified range
+of oligonucleotide lengths.
+
 =cut
+    } elsif ($arg eq "-l") {
+      my $oligo_len = shift (@arguments);
+      $main::param{oligo_min_len} = $oligo_len;
+      $main::param{oligo_max_len} = $oligo_len;
     } elsif ($arg eq "-minol") {
       $main::param{oligo_min_len} = shift (@arguments);
     } elsif ($arg eq "-maxol") {
@@ -1314,15 +1402,16 @@ trinucleotide monads.
 
 =pod
 
-=item B<-markov markov_order>
+=item B<-markov>
 
-Order of the Markov model used to estimatd expected oligonucleotide
-frequencies for I<oligo-analysis> and I<orm>.
+Order of the Markov model used to estimatd
+expected oligonucleotide frequencies for I<oligo-analysis> and
+I<local-word-analysis>.
 
 Higher order Markov models are more stringent, lower order are more
-sensitive, but tend to return a large number of false positives. 
+sensitive, but tend to return a large number of false positives.
 
-The markov model can be specified with either a positive or a negative
+Markov models can be specified with either a positive or a negative
 value. Positive value indicate the length of the prefix in the
 transition matrix. Negative value indicate the order of the Markov
 model relative to the oligonucleotide length. For example, the option
@@ -1335,9 +1424,22 @@ of peaks, high Markov orders are generally good, because they are
 stringent and still sensitive enough.  In our experience, motifs are
 well detected with the most stringent Markov order (-markov -2).
 
+=item B<-min_markov min_markov_order>
+
+=item B<-max_markov max_markov_order>
+
+A miminal and a maximal value can be specified for the Markov
+order. The program then iterates over all markov values between
+min_markov_order and max_markov_order.
+
+
 =cut
     } elsif ($arg eq "-markov") {
-      $main::param{oligo_markov} = shift (@arguments);
+      $main::param{oligo_min_mkv} = $main::param{oligo_max_mkv} = shift (@arguments);
+    } elsif ($arg eq "-min_markov") {
+      $main::param{oligo_min_mkv} = shift (@arguments);
+    } elsif ($arg eq "-max_markov") {
+      $main::param{oligo_max_mkv} = shift (@arguments);
 
 =pod
 
@@ -1538,7 +1640,7 @@ factor binding sites and cis-regulatory modules. Nat Protoc 3,
 =item I<-min_markov>
 
 Maximal and minimal values for the Markov order of the background
-model used by I<oligo-analysis> and I<orm>.
+model used by I<oligo-analysis> and I<local-word-analysis>.
 
 =item B<motif_cluster>
 
