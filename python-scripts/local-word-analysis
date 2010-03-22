@@ -220,7 +220,7 @@ parser.add_option("-p", "--overlap",  action="store_true", dest="overlap",      
 parser.add_option("--dyad",           action="store_true", dest="dyad",              default=False)
 parser.add_option("--all",            action="store_true", dest="all",               default=False)
 parser.add_option("--spacing",        action="store",      dest="spacing",       type="string", default='1:1')
-parser.add_option("-m", "--markov",   action="store",      dest="markov",        type="int", metavar="ORDER", default=-1)
+parser.add_option("-m", "--markov",   action="store",      dest="markov",        type="int", metavar="ORDER", default=None)
 parser.add_option("--bgfile",         action="store",      dest="bgfile",        type="string", default=None)
 parser.add_option("--bgoligo",        action="store",      dest="bgoligo",       type="string", default=None)
 parser.add_option("--bgoligomarkov",  action="store",      dest="bgoligomarkov", type="string", default=None)
@@ -307,9 +307,15 @@ def main(args, options):
     else:
         bgparams = dict(spacing=spacing, count=options.count, error=options.error, dyad=options.dyad)
         bg = ormlib.Bg(location=location, W=options.bgwindow, l=options.l, strand=options.strand, overlap=options.overlap, params=bgparams)
-        if options.markov >= 0:
+        if options.markov != None and options.markov >= 0:
             bg.build_markov(s, order=options.markov)
             bgfile = 'Markov order %d from input' % options.markov
+        elif options.markov != None and options.markov < 0:
+            order = options.l + options.markov
+            if order < 0:
+                cli.error('invalid markov order')
+            bg.build_markov(s, order=order)
+            bgfile = 'Markov order %d from input' % order
         elif options.bgoligo:
             bg.build_from_oligo_file(options.bgoligo, location)
             bgfile = options.bgoligo
