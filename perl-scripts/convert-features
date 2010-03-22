@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.17 2009/12/04 15:02:34 jvanheld Exp $
+# $Id: convert-features,v 1.18 2010/03/22 15:28:09 morgane Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -70,6 +70,11 @@ while (<$in>) {
   next if (/^--/);
   next if (/^#/);
   next unless (/\S/);
+  ## other lines to discard
+  if ($input_format eq "bed") {
+  	next if (/track name=/);
+  	next if (/^browser/);
+  }
   chomp();
   my $feature = new RSAT::feature();
   $feature->parse_from_row($_, $input_format, $output_format);
@@ -170,11 +175,15 @@ INPUT FORMATS
        gff3: Generic feature format version 3
        	     An adaptation of GFF by Lincoln Stein
        	     http://flybase.net/annot/gff3.html
+       	     
+       bed:	Genomic features in the UCSC format.
+       		http://genome.ucsc.edu/goldenPath/help/hgTracksHelp.html#BED
 
 OUTPUT FORMATS
        ft
        gff
        gff3
+       bed
 
 FORMAT DESCRIPTIONS
 
@@ -320,7 +329,14 @@ FORMAT DESCRIPTIONS
 	bed
 	   Genomic features in the UCSC format
 	   Ref: http://genome.ucsc.edu/goldenPath/help/hgTracksHelp.html#BED
-
+	   
+	   Warning: this format assumes that features are described with chromosomal positions, 
+	   and should be zero-based (meaning that the first position is 0, not 1).
+	   
+	   To ensure compatibility with other formats, convert-features internally transforms 
+	   coordinates from BED into 1-based system (when BED as input). convert-features transforms coordinates so
+	   that output BED files are correctly zero-based (when BED as output).
+	   
 	   1. chrom - The name of the chromosome (e.g. chr3, chrY,
 	      chr2_random) or scaffold (e.g. scaffold10671).
 
