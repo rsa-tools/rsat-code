@@ -23,11 +23,10 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 ############################################ configuration
 $command = "$ENV{RSAT}/perl-scripts/chip-seq-analysis";
 $output_directory = sprintf "chip-seq-analysis.%s", &AlphaDate();
-$output_directory =~ s|\/\/|\/|g;
 $output_prefix = "ChIP-seq_analysis_";
-
-$output_directory_path = "$TMP/$output_directory";
-`mkdir -p $output_directory_path`;
+$output_path = "$TMP/$output_directory";
+$output_path =~ s|\/\/|\/|g;
+`mkdir -p $output_path`;
 
 ############################################ result page header
 ### Read the CGI query
@@ -45,10 +44,10 @@ $query = new CGI;
 $parameters = "";
 
 ### peak sequences file
-($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, "$TMP/$output_directory/$output_prefix" . "peak_seq", 1);
+($sequence_file, $sequence_format) = &MultiGetSequenceFile(1, "$output_path/$output_prefix" . "peak_seq", 1);
 
 ### control sequences file
-($control_sequence_file, $control_sequence_format) = &MultiGetSequenceFile(2, "$TMP/$output_directory/$output_prefix" . "ctl_seq", 0);
+($control_sequence_file, $control_sequence_format) = &MultiGetSequenceFile(2, "$output_path/$output_prefix" . "ctl_seq", 0);
 
 #print "<pre>sequence_file: [$control_sequence_file]\n</pre>" if ($ENV{rsat_echo} >=1);
 
@@ -92,16 +91,17 @@ if (&IsNatural($query->param('markov_order'))) {
 }
 
 ### output directory
-$parameters .= " -outdir $output_directory_path";
+$parameters .= " -outdir $output_path";
 
 ### output prefix
 $parameters .= " -prefix $output_prefix";
 
 ### verbosity
-$parameters .= " -v 1";
+$parameters .= " -v 5";
 
 ############################################ display or send result
 $index_file = $output_directory."/".$output_prefix."index.html";
+#`touch $TMP/$index_file`;
 my $mail_title = join (" ", "[RSAT]", "chip-seq-analysis", &AlphaDate());
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
 
