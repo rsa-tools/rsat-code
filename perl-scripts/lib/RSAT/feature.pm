@@ -114,6 +114,7 @@ $comment_char{gff3} = "## ";
 
 ## UCSC BED
 ## http://genome.ucsc.edu/goldenPath/help/customTrack.html#BED
+## warning: UCSC BED files should be zero-based
 @{$columns{bed}} = qw (seq_name
 		       start
 		       end
@@ -461,8 +462,9 @@ Information: http://flybase.net/annot/gff3.html
 
 =head2 bed
 
-Genomic features in the UCSC format.  Beware, this format assumes that
-features are described with chromosomal positions.
+Genomic features in the UCSC format.  Warning: this format assumes that
+features are described with chromosomal positions, and should be zero-based (meaning that
+the first position is 0, not 1).
 
 Information: http://genome.ucsc.edu/goldenPath/help/hgTracksHelp.html#BED
 
@@ -695,6 +697,14 @@ sub parse_from_row {
   if ($in_format eq "dnapat") {
     $self->force_attribute("type", "dnapat");
   }
+  
+  ## bed format: convert to 1-based coordinates
+  if ($in_format eq "bed") {
+     $start_0_based = $self->get_attribute("start");
+     $self->force_attribute("start",$start_0_based+1); ## only the fist base is shifted
+  }
+  
+  ## parsed row
   &RSAT::message::Info(join("\t",
 			    "Parsed new feature",
 			    $self->get_attribute("seq_name"),
@@ -774,6 +784,10 @@ sub to_text {
       unless (defined($self->get_attribute("thickEnd"))) {
 	$self->set_attribute("thickEnd",$self->get_attribute("end"));
       }
+    
+     ## Transform the coordinates into zero-based
+     my $start_1_based = $self->get_attribute("start");
+     $self->force_attribute("start",$start_1_based-1); ## only the fist base is shifted
     }
 
 
@@ -895,7 +909,7 @@ sub header {
       $header .= "\n";
     } elsif ($out_format eq "bed") {
       my $track_name =  "RSAT_features";
-      if (defined()) {
+      if (defined($main::infile{input})) {
 	$track_name = $main::infile{input};
       }
       $header .= "track name='".$track_name."' description='".$track_name."' visibility=3 itemRgb='On' use_score=1\n";
