@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-matrices,v 1.38 2010/03/19 21:13:44 jvanheld Exp $
+# $Id: compare-matrices,v 1.39 2010/03/22 16:15:29 jvanheld Exp $
 #
 ############################################################
 
@@ -265,7 +265,7 @@ package main;
   ################################################################
   ## Initialise parameters
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.38 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.39 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::infile = ();
@@ -360,7 +360,7 @@ package main;
   ################################################################
   ## Check argument values
   if ($out_format eq "profiles") {
-    if (scalar(%return_field) ==0) {
+    if (scalar(keys(%return_field)) ==0) {
       &RSAT::error::FatalError("With the profiles format, you must define at least one return field (option -return).",
 			       "\n\tSupported: $supported_return_fields");
     }
@@ -799,8 +799,8 @@ package main;
 	  my $name2 = $matrix2->get_attribute("name") || "<NA>";
 	  push (@out_fields, $name1, $name2);
 	}
-	push (@out_fields, sprintf("%.4f", $Ncor)) if ($return_field{Ncor});
-	push (@out_fields, sprintf("%.4f", $cor)) if ($return_field{cor});
+	push (@out_fields, sprintf("%.2f", $Ncor)) if ($return_field{Ncor});
+	push (@out_fields, sprintf("%.2f", $cor)) if ($return_field{cor});
 	push (@out_fields, sprintf("%.2f", $SW)) if ($return_field{SW});
 	push (@out_fields, sprintf("%.4f", $SSD)) if ($return_field{SSD});
 	push (@out_fields, sprintf("%.5f", $NdEucl)) if ($return_field{NdEucl});
