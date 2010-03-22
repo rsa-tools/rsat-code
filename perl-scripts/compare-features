@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.19 2009/11/05 00:32:06 jvanheld Exp $
+# $Id: compare-features,v 1.20 2010/03/22 17:14:40 morgane Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -35,9 +35,9 @@ also computes contingency tables and comparison statistics.
 
 =head1 AUTHORS
 
-=item Jean Valery Turatsinze <jturatsi@ulb.ac.be> 
+Jean Valery Turatsinze <jturatsi@ulb.ac.be> 
 
-=item Jacques van Helden <jvanheld@bigre.ulb.ac.be>
+Jacques van Helden <jvanheld@bigre.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -60,6 +60,8 @@ should provide the following information:
 
 Input file columns:
 
+=over
+
 =item 1. map label (eg gene name)
 
 =item 2. feature type
@@ -75,6 +77,8 @@ Input file columns:
 =item 7. (optional) description 
 
 =item 8. (optional) score
+
+=back
 
 The standard input format assumes that these topics 
 are provided in this order, separated by tabs. 
@@ -162,6 +166,7 @@ perl -pe 's/^;//' outfile
 			      gft=>1,
 			      gff=>1,
 			      dnapat=>1,
+			      bed=>1
 			     );
     $supported_input_formats = join (",", keys %supported_input_format);
     
@@ -258,7 +263,13 @@ perl -pe 's/^;//' outfile
 	    if ((/^;\s+(.*)/) || (/^--\s+(.*)/)) {
 		next;
 	    }
+	    next if (/^#/);
 	    next unless (/\S/);
+	     ## other lines to discard
+  		if ($input_format eq "bed") {
+  			next if (/track name=/);
+  			next if (/^browser/);
+  		}
 	    chomp;
 	    my $feature = new RSAT::feature();
 	    $feat_nb++;
@@ -1240,9 +1251,9 @@ __END__
 
 =head1 SEE ALSO
 
-=item feature-map
+feature-map
 
-=item convert-features
+convert-features
 
 
 =cut
