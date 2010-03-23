@@ -2572,6 +2572,7 @@ sub layout_fr {
 
 # Fill the hashes %node_id_xpos and %node_id_ypos using a spring
 # embedding method.
+# (developed by Sylvain Brohee <sbrohee@bigre.ulb.ac.be>)
 
 # =cut
 
@@ -2693,6 +2694,8 @@ Usage: $graph->layout_embedding(%args);
 
 For weighted graphs, the attraction between nodes is inversely
 proportional to edge weights.
+
+(developed by Jacques.van.Helden@ulb.ac.be)
 
 Supported-arguments:
 
