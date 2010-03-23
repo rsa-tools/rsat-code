@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.27 2010/03/23 02:37:33 jvanheld Exp $
+# $Id: chip-motifs,v 1.28 2010/03/23 12:46:54 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.27 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.28 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -114,7 +114,7 @@ package main;
 			   local_words
 			   profiles
 			   ref_motif
-			   pattern_compa
+			   word_compa
 			   motif_compa
 			   synthesis
 			   clean_seq
@@ -177,9 +177,9 @@ package main;
       &RefMotif() if ($task{ref_motif});
     }
 
-    &PatternsVersusPatterns() if ($task{pattern_compa});
+    &WordsVersusWords() if ($task{word_compa});
 
-    &MotifCompa() if ($task{motif_compa});
+    &MotifVersusMotifs() if ($task{motif_compa});
 
     &Synthesis() if ($task{synthesis});
 
@@ -378,8 +378,8 @@ sub SetOutFileNames {
 #     $main::outfile{dyads_pssm} .= "_pssm";
 
     ## Comparison between significance of the discovered patterns
-    $main::outfile{pattern_compa} = &OutFileName(".tab", "pattern_comparison");
-    $main::outfile{pattern_compa_heatmap} = &OutFileName(".png", "pattern_comparison_heatmap");
+    $main::outfile{word_compa} = &OutFileName(".tab", "word_comparison");
+    $main::outfile{word_compa_heatmap} = &OutFileName(".png", "word_comparison_heatmap");
 
     ## Synthesis of the discovered motifs + comparison with reference motif and annotated motifs
     $main::outfile{motifs_discovered} = &OutFileName(".tf", "motifs_discovered");
@@ -666,17 +666,9 @@ sub RefMotif {
 
 
 ################################################################
-## Compare each discovered motif to each other one + to ref motif (if
-## defined) + to motif database (if defined).
-sub MotifCompa {
-  &PatternsVersusPatterns();
-  &MotifVersusMotifs();
-}
-
-################################################################
-## Compare the significance of patterns (oligos, dyads) discovered by
+## Compare the significance of words (oligos, dyads) discovered by
 ## the different approaches
-sub PatternsVersusPatterns {
+sub WordsVersusWords {
   my $cmd = "compare-scores -v 1 ";
   my $file_nb = 0;
   foreach my $pattern_type (@pattern_types) {
@@ -704,12 +696,12 @@ sub PatternsVersusPatterns {
   $cmd .= " -suppress ".$main::dir{output}."/";
   $cmd .= " -suppress ".$main::param{prefix};
   $cmd .= " -suppress '\.tab'";
-  $cmd .= " -o ".$main::outfile{pattern_compa};
+  $cmd .= " -o ".$main::outfile{word_compa};
   $cmd .= " ; draw-heatmap -min 0 -max 10  -out_format png";
   $cmd .= " -col_width 40 -rownames -gradient fire";
   $cmd .= " -row_height 16";
-  $cmd .= " -i ".$main::outfile{pattern_compa};
-  $cmd .= " -o ".$main::outfile{pattern_compa_heatmap};
+  $cmd .= " -i ".$main::outfile{word_compa};
+  $cmd .= " -o ".$main::outfile{word_compa_heatmap};
 
   &one_command($cmd);
 }
@@ -859,6 +851,13 @@ sub Synthesis {
       &SynthesisPatternDisco($pattern_type);
     }
   }
+
+
+  ## Word comparison
+  &SynthesisWordCompa();
+
+  ## Motif comparison
+  &SynthesisMotifCompa();
 
   ## Log file
   &SyntheticTableAddRow("Log file",
@@ -1049,6 +1048,30 @@ sub SynthesisPatternDisco {
 			"sig matrix",$main::outfile{$pattern_type.'_pssm_sig'},
 			"info-gibbs",$main::outfile{$pattern_type.'_pssm_gibbs'},
 			"count matrix",$main::outfile{$pattern_type.'_pssm_counts'},
+		       );
+}
+
+################################################################
+## Synthesis of word comparisons
+sub SynthesisWordCompa {
+  my $img = &RelativePath($main::outfile{word_compa_heatmap});
+  &SyntheticTableAddRow("Word comparisons",
+			"<a  href='".$img."'><img height=150 src='".$img."'></a>",
+			"tab",$main::outfile{word_compa},
+			"heatmap",$main::outfile{word_compa_heatmap},
+		       );
+}
+
+################################################################
+## Synthesis of motif comparisons
+sub SynthesisMotifCompa {
+  my $img = &RelativePath($main::outfile{motifs_disco_compa_png});
+  &SyntheticTableAddRow("Motif comparisons",
+			"<a  href='".$img."'><img height=300 src='".$img."'></a>",
+			"motifs", $main::outfile{motifs_discovered},
+			"tab",$main::outfile{motifs_disco_compa},
+			"gml",$main::outfile{motifs_disco_compa_gml},
+			"png",$main::outfile{motifs_disco_compa_png},
 		       );
 }
 
@@ -1339,6 +1362,55 @@ Note that I<chip-seq-analysis> also uses I<position-analysis> for the
 task B<profiles>, in order to detect compositional biases (residues,
 dinucleotides) in the test sequence set.
 
+=item I<local_words>
+
+Run I<local-word-analysis> to detect locally over-represented
+oligonucleotides and dyads. 
+
+The program I<local-word-analysis> (Matthieu Defrance,unpublished)
+tests the over-representation of each possible word (oligo, dyad)
+in positional windows in the input sequence set.
+
+Two types of background models are supported: (i) Markov model of
+order m estimated locally (within the window under consideration; (ii)
+the frequency observed for a word in the whole sequence set is used as
+estimator of the prior probability of this word in the window.
+
+After our first trials, this program gives excellent results in
+ChIP-seq datasets, because its senstivitity increases with large
+number of sequences (several hundreds/thousands), and its background
+model is more stringent than for programs computing the globl
+over-representation (oligo-analysis, dyad-analysis).
+
+=item I<word_compa>
+
+Compare the words (oligos-dyads) discovered by the different
+algorithms in order to assess their consistency. Draw a heatmap
+showing the significance estiamted for each word (row) by each
+algorthm (column).
+
+=item I<motif_compa>
+
+Motifs are compared in three ways.
+
+
+=over
+
+=item I<Discovered versus discovered>
+
+Perform pairwise comparisons between all motifs (matrices) discovered
+by the different algorithms, to assess their consistency.
+
+=item I<Discovered versus reference>
+
+Compare each discovered motif to the reference motif.
+
+=item I<Discovered versus database>
+
+Compare each discovered motif to a database of known motifs
+(e.g. Jaspar, TRANSFAC, RegulonDB, UniProbe, ...)
+
+=back
 
 =item I<synthesis>
 
