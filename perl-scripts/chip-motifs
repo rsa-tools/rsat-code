@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-motifs,v 1.26 2010/03/22 16:14:27 jvanheld Exp $
+# $Id: chip-motifs,v 1.27 2010/03/23 02:37:33 jvanheld Exp $
 #
 ############################################################
 
@@ -85,7 +85,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.27 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     %main::param = ();
@@ -377,12 +377,16 @@ sub SetOutFileNames {
 #     $main::outfile{dyads_pssm} =~ s/\.tab$//;
 #     $main::outfile{dyads_pssm} .= "_pssm";
 
+    ## Comparison between significance of the discovered patterns
+    $main::outfile{pattern_compa} = &OutFileName(".tab", "pattern_comparison");
+    $main::outfile{pattern_compa_heatmap} = &OutFileName(".png", "pattern_comparison_heatmap");
 
     ## Synthesis of the discovered motifs + comparison with reference motif and annotated motifs
     $main::outfile{motifs_discovered} = &OutFileName(".tf", "motifs_discovered");
     $main::outfile{motifs_disco_compa} = &OutFileName(".tab", "motifs_disco_compa");
     $main::outfile{motifs_disco_compa_gml} = &OutFileName(".gml", "motifs_disco_compa");
-    $main::outfile{motifs_disco_compa_dot} = &OutFileName(".dot", "motifs_disco_compa");
+#    $main::outfile{motifs_disco_compa_dot} = &OutFileName(".dot", "motifs_disco_compa");
+    $main::outfile{motifs_disco_compa_png} = &OutFileName(".png", "motifs_disco_compa");
 #    $main::outfile{motifs_disco_vs_db} = &OutFileName(".tab", "motifs_disco_vs_db");
 #    $main::outfile{motifs_disco_ref} = &OutFileName(".tf", "motifs_disco_ref");
 
@@ -693,11 +697,21 @@ sub PatternsVersusPatterns {
       next;
     }
     $cmd .= " -sc".$file_nb." ".$sig_col;
-    &RSAT::message::Debug($file_nb, $pattern_type, $sig_col, "\n", $pattern_file);
+#    &RSAT::message::Debug($file_nb, $pattern_type, $sig_col, "\n", $pattern_file) if ($main::verbose >= 5);
   }
+  $cmd .= " -ic 2 -lc";
+  $cmd .= " -null .";
+  $cmd .= " -suppress ".$main::dir{output}."/";
+  $cmd .= " -suppress ".$main::param{prefix};
+  $cmd .= " -suppress '\.tab'";
   $cmd .= " -o ".$main::outfile{pattern_compa};
+  $cmd .= " ; draw-heatmap -min 0 -max 10  -out_format png";
+  $cmd .= " -col_width 40 -rownames -gradient fire";
+  $cmd .= " -row_height 16";
+  $cmd .= " -i ".$main::outfile{pattern_compa};
+  $cmd .= " -o ".$main::outfile{pattern_compa_heatmap};
 
-#  &one_command($cmd);
+  &one_command($cmd);
 }
 
 ################################################################
@@ -724,7 +738,7 @@ sub MotifVersusMotifs {
     $cmd .= " -i ".$main::outfile{$pattern_type.'_pssm_counts'};
     $cmd .= " >> ".$main::outfile{motifs_discovered};
   }
-#  &one_command($cmd);
+  &one_command($cmd);
 
   ## Compare all matrices
   $cmd = "compare-matrices -v 1";
@@ -739,7 +753,7 @@ sub MotifVersusMotifs {
   $cmd .= " -lth Ncor 0.6"; ## Min normalized correlation
   $cmd .= " -return matrix_name,direction,Ncor,SW,cor,width,consensus";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa};
-#  &one_command($cmd);
+  &one_command($cmd);
 
   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
   $cmd = "convert-graph -i ".$main::outfile{motifs_disco_compa};
@@ -747,13 +761,15 @@ sub MotifVersusMotifs {
   $cmd .= " -layout spring";
   $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol 3";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa_gml};
+  $cmd .= " ; display-graph -in_format gml -i ".$main::outfile{motifs_disco_compa_gml};
+  $cmd .= " -out_format png -o ".$main::outfile{motifs_disco_compa_png};
   &one_command($cmd);
 
-  ## Generate a DOT graph with the matrix comparison result (can be opened with graphviz)
-  $cmd = "convert-graph -i ".$main::outfile{motifs_disco_compa};
-  $cmd .= " -from tab -to dot -scol 1 -tcol 2 -wcol 3";
-  $cmd .= " -o ".$main::outfile{motifs_disco_compa_dot};
-  &one_command($cmd);
+#   ## Generate a DOT graph with the matrix comparison result (can be opened with graphviz)
+#   $cmd = "convert-graph -i ".$main::outfile{motifs_disco_compa};
+#   $cmd .= " -from tab -to dot -scol 1 -tcol 2 -wcol 3";
+#   $cmd .= " -o ".$main::outfile{motifs_disco_compa_dot};
+#   &one_command($cmd);
 }
 
 ################################################################
