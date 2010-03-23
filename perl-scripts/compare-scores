@@ -56,24 +56,32 @@ foreach $f (0..$#input_files) {
     ($in, $input_dir) = &OpenInputFile($inputfile);
     $max_fields{$f} = 0;
     while (<$in>) {
-	next unless (/\S/); ## Skip empty lines
-	next if (/^\#/); ## Skip header or comment lines
-	next if (/^;/); ## Skip comment lines
-	chomp;
-	@fields = split "\t";
-	if (defined($sc[$f])) {
-	    $max_fields{$f}= 1;
-	} else {
-	    $max_fields{$f} = &max($max_fields{$f},$#fields);
-	}
+      next unless (/\S/); ## Skip empty lines
+      next if (/^\#/); ## Skip header or comment lines
+      next if (/^;/); ## Skip comment lines
+      chomp;
+      @fields = split "\t";
+      if (defined($sc[$f])) {
+	$max_fields{$f}= 1;
+      } else {
+	$max_fields{$f} = &max($max_fields{$f},$#fields);
+      }
 
-	### comparison is case-insensitive, but the ID case is maintained in the output
-	$id =  &trim($fields[$ii]);
+      $id =  &trim($fields[$ii]);
+      ### By default, the comparison is case-insensitive, but the ID
+      ### case is maintained in the output. This can however b
+      ### modified with the options '-lc' (IDs converted to
+      ### lowercases) and '-uc' (IDs converted to uppercases).
+      if ($to_lower) {
+	$id = lc($id);
+      } elsif ($to_lower) {
+	$id = uc($id);
+      }
 
-	## reformat numeric IDs to avoid problems if they have different numbers of digits in the different files
-	if ($numeric_IDs) {
-	  $id = sprintf("%g", $id);
-	}
+      ## reformat numeric IDs to avoid problems if they have different numbers of digits in the different files
+      if ($numeric_IDs) {
+	$id = sprintf("%g", $id);
+      }
 
 	$key = lc($id);
 	$id{$key} = $id;
@@ -219,7 +227,6 @@ close $out unless ($outputfile eq "");
 
 exit(0);
 
-
 ########################## subroutine definition ############################
 
 
@@ -290,6 +297,13 @@ OPTIONS
 
 	-ic#	identifier column for the #th file
 
+	-lc, -uc
+	        By default, the comparison is case-insensitive, but
+      	        the ID case is maintained in the output. This can
+      	        however b modified with the options '-lc' (IDs
+      	        converted to lowercases) and '-uc' (IDs converted to
+      	        uppercases).
+
 	-null   null string (default $default_null) displayed when one
 		file contains no value for a given key)
 
@@ -359,6 +373,8 @@ compare-scores options
 -sc#		score column for the #th file
 -ic		identifier column
 -ic#		identifier column for the #th file
+-lc		convert identifiers to lowercases
+-uc		convert identifiers to uppercases
 -null		null string (default $default_null)
 -numeric	sort IDs numerically rather than alphabetically
 -decreasing	sort IDs numerically in a decreasing order
@@ -446,6 +462,12 @@ sub ReadArguments {
       unless ((&IsNatural($ic[$1-1])) && ($ic[$1-1] >= 1)) {
 	&Fatalerror("Identifier column must be an integer >= 1");
       }
+
+      ## convert identifiers to lower- or upper-cases
+    } elsif ($ARGV[$a] eq "-lc") {
+      $to_lower = 1;
+    } elsif ($ARGV[$a] eq "-uc") {
+      $to_upper = 1;
 
       ## Specify that the scores are numbers
     } elsif ($ARGV[$a] eq "-numbers") {
