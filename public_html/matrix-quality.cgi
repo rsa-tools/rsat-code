@@ -157,7 +157,7 @@ if (&IsReal($query->param('bg_pseudo'))) {
 ###############
 #output folder
 
-$parameters .= " -o ".$file_prefix ."matrix_quality ";
+$parameters .= " -web  -o ".$file_prefix ."matrix_quality ";
 
 ###########################
 #Command
