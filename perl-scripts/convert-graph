@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.48 2010/01/15 23:49:05 jvanheld Exp $
+# $Id: convert-graph,v 1.49 2010/03/23 01:39:47 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -141,7 +141,7 @@ package main;
     $directed = 1;
     
     ## layout
-    $layout = 0;
+    $layout = "";
     
     ## arc_id_option
     $arc_id_option = 0;
@@ -235,11 +235,9 @@ package main;
     ################################################################
     ##### read input
     $graph->graph_from_text($input_format, $main::infile{input}, $source_col, $target_col, $weight_col, $source_color_col, $target_color_col,$color_col, $source_xpos_col, $source_ypos_col, $target_xpos_col, $target_ypos_col, $distinct_path, $directed, $path_col);
-    ## Calculates the layout 
-    if ($layout) {
-      $graph->get_position();
-    }
 
+    ## Calculates the layout
+    $graph->layout($layout) if ($layout);
 
     ## Check that there is more than one edge if the -ecolor and -ewidth options are used
     ## If not, the option(s) is (are) inactivated
@@ -615,9 +613,8 @@ default, edges are directed). Useful for the output as an adjacency
 table.
 
 =cut
-	 	    	    
 	} elsif ($arg eq "-undirected") {
-	    $directed = 0;   	    
+	    $directed = 0;
 
 =item B<-layout>
 
@@ -628,7 +625,7 @@ specify the node position.
 
 =cut
 	} elsif ($arg eq "-layout") {
-	    $layout = 1;
+	    $layout = shift(@arguments);
 
 =pod
 

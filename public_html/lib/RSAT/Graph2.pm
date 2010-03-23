@@ -19,6 +19,9 @@ require "RSA.lib";
 #$node_color="#000088";
 #$arc_color="#000044";
 
+@supported_layouts= qw(fr spring random);
+$supported_layouts = join(",",@supported_layouts);
+
 =pod
 
 =head1 NAME
@@ -139,8 +142,6 @@ sub empty_graph {
     my @arc_out_color = $self->get_attribute("out_color");
     my @arcs = $self->get_attribute("arcs");
     my %arcs_name_id = $self->get_attribute("arcs_name_id");
- 
-    
     my %nodes_name_id = $self->get_attribute("nodes_name_id");
     my %nodes_id_name = $self->get_attribute("nodes_id_name");
     my %nodes_color = $self->get_attribute("nodes_color");
@@ -1120,12 +1121,14 @@ sub create_node {
     $self->set_hash_attribute("nodes_label", %nodes_label);
 }
 
-################################################################
 =pod
 
 =item B<create_arc()>
 
-Create an arc between to nodes
+Create an arc between to nodes.
+
+Usage:
+    $graph->create_arc($source_node_name, $target_node_name, $label, $color);
 
 =cut
 sub create_arc {
@@ -1139,7 +1142,7 @@ sub create_arc {
     my @arcs = $self->get_attribute("arcs");
     my %arcs_name_id = $self->get_attribute("arcs_name_id");
     my $max_arc_nb = $self->get_attribute("nb_arc_bw_node");
-    
+
     my $numId = scalar (@arcs); 
     if (!defined($label) || $label eq "") {
       $label = $source_node_name."_".$target_node_name;
@@ -1154,6 +1157,11 @@ sub create_arc {
       my $exist = 0;
       my $arc_id = "";
       my $i;
+
+      ## Sylvain, je ne comprends pas ceci.  La boucle est curieuse:
+      ## tu ne refiens en définitive que le dernier, donc la boucle
+      ## est inutile, tu obtiendrais le même résultat en tapant
+      ## directement: 	$exist = exists($arcs_name_id{$max_arc_nb});
       for ($i = 1; $i <= $max_arc_nb; $i++) {
         $arc_id = $source_node_name."_".$target_node_name."_".$i;
 	$exist = exists($arcs_name_id{$arc_id});
@@ -1184,7 +1192,7 @@ sub create_arc {
       $self->set_array_attribute("arcs", @arcs);
       $self->set_hash_attribute("arcs_name_id", %arcs_name_id);
       $self->force_attribute("nb_arc_bw_node", $max_arc_nb);  
-    } 
+    }
     if (!defined($source_node_index)) {
       $error .= "\t$target_node_name not found in the graph\n";
     }
@@ -2431,21 +2439,52 @@ sub to_adj_matrix {
     return $adj_matrix;
 }
 
+
 ################################################################
+
 =pod
 
-=item B<get_position()>
+=item B<layout>
 
-Fill the hashes %node_id_xpos and %node_id_ypos using the program
-$RSAT/bin/fr_layout. This program based on the boost graph library, computes
-the node position using the Fruchterman and Reingold algorithm.
-If the program is not available, no changes are brought to the hashes
+Assign a position to each node of the graph using a specified layout
+algorithm.
 
-
+Usage:
+  $graph->layout($algorithm, %args);
 
 =cut
 
-sub get_position {
+sub layout {
+  my ($self, $algorithm, %args) = @_;
+  if ($algorithm eq "fr") {
+    $self->layout_fr(%args);
+  } elsif ($algorithm eq "random") {
+    $self->layout_random(%args);
+  } elsif ($algorithm eq "spring") {
+    $self->layout_spring_embedding(%args);
+  } else {
+    &RSAT::error::FatalError($algorithm, "Invalid value for layout algorithm. Supported: ".$supported_layouts);
+  }
+
+}
+
+################################################################
+=pod
+
+=item B<layout_fr()>
+
+Assign a position to each node using the graph layout algorithm by
+Fruchterman-Reingold (FR).
+
+Fill the hashes %node_id_xpos and %node_id_ypos using the program
+$RSAT/bin/fr_layout. This program based on the boost graph library,
+computes the node position using the Fruchterman and Reingold
+algorithm.  If the program is not available, no changes are brought to
+the hashes.
+
+=cut
+
+sub layout_fr {
   my ($self) = @_;
   my %nodes_id_xpos = $self->get_attribute("nodes_id_xpos");
   my %nodes_id_ypos = $self->get_attribute("nodes_id_ypos");
@@ -2455,6 +2494,11 @@ sub get_position {
   my $nodes_nb = scalar keys %nodes_name_id;
   my $layout_size = 1000;
   my $outfile = $main::outfile{output};
+
+
+  &RSAT::message::TimeWarn("Graph layout: Fruchterman-Reingold (FR)",
+			   "nodes: ".scalar(keys(%nodes_name_id)),
+			   "arcs: ".scalar(@arcs), );
 
   my $dir = ".";
   if ($outfile) {
@@ -2470,7 +2514,7 @@ sub get_position {
   } else {
     $layout_size = int(1000+($nodes_nb/(2)))
   }
-  if (!-e $fr_layout) {
+  unless (-e $fr_layout) {
     &RSAT::message::Warning("Layout calculator program $fr_layout missing\nLayout will not be computed");
   } else {
     ## The string $arcs_list will be submitted to fr_layout
@@ -2522,18 +2566,16 @@ sub get_position {
 
 }
 
-# ################################################################
 # =pod
-# 
-# =item B<get_position()>
-# 
-# Fill the hashes %node_id_xpos and %node_id_ypos using a spring embedding method.
-# 
-# 
-# 
+
+# =item B<layout_spring_embedding_prev()>
+
+# Fill the hashes %node_id_xpos and %node_id_ypos using a spring
+# embedding method.
+
 # =cut
-# 
-# sub get_position {
+
+# sub layout_spring_embedding_prev {
 #   my ($self) = @_;
 #   my %nodes_id_xpos = $self->get_attribute("nodes_id_xpos");
 #   my %nodes_id_ypos = $self->get_attribute("nodes_id_ypos");
@@ -2599,7 +2641,7 @@ sub get_position {
 #           } else {
 #             $y_dir = -1;
 #           }          
-# 
+
 #           print $iteration." ".$nodes_names[$i]." ".$nodes_names[$j]." P".join(" ", @nodeA_pos)." ".join(" ", @nodeB_pos)." D $dist_x $dist_y";
 #           if (defined($arc_name_id{$arc_id}) || defined($arc_name_id{$arc_id_rev})) {
 #             # Both nodes are neighbours
@@ -2618,13 +2660,13 @@ sub get_position {
 #           }
 # #           $already_calculated{$arc_id}++;
 # #           $already_calculated{$arc_id_rev}++;
-#             
-#         
+            
+        
 #         }
 #       }
 #       $nodes_force_x{$nodes_names[$i]} = $force_x;
 #       $nodes_force_y{$nodes_names[$i]} = $force_y;
-# 
+
 #     }
 #     for (my $k = 0; $k < scalar(@nodes_names); $k++ ) {
 #       $nodes_id_xpos{$nodes_name_id{$nodes_names[$k]}} += $node_mobility*$nodes_force_x{$nodes_names[$k]};
@@ -2638,7 +2680,490 @@ sub get_position {
 #   $self->set_hash_attribute("nodes_id_xpos", %nodes_id_xpos);
 #   $self->set_hash_attribute("nodes_id_ypos", %nodes_id_ypos);
 # }
-# 
+
+
+=pod
+
+=item B<layout_spring_embedding()>
+
+Apply a spring embedding algorithm to assign positions to all nodes of
+the graph.
+
+Usage: $graph->layout_embedding(%args);
+
+For weighted graphs, the attraction between nodes is inversely
+proportional to edge weights.
+
+Supported-arguments:
+
+=over
+
+=item rep_radius I<r>
+
+Repulsion radius, i.e. the radius within which a node exerts a
+sensible repulsion (rep force >= 1).
+
+This repulsion radius is converted into a repulsion constant I<k>
+
+ k = r^2
+
+which is used to compute the repulsion force.
+
+ Fr = k / d^2
+
+where I<d> is the distance (in pixels) between two nodes.
+
+
+=item spring_len
+
+Default spring length, i.e. the length for which an arc will exert
+neither attraction nor repulsion.
+
+=item attr_k
+
+Attraction constant. The attractive force I<Fa> is computed according to
+Hooke's law.
+
+ Fa = -k*x
+
+where I<x> is the displacement of the spring respective to its
+equilibrium position.
+
+The displacement I<x> is defined as follows.
+
+ x = spring_len - d
+
+where I<d> is the distance between the source and target nodes of the
+arc. Thus, when the spring is shorter than its default length, it
+exerts a repulsion (Fa < 0).
+
+=item max_iter #
+
+Maximum number of iterations (default=200).
+
+=item max_time #
+
+Maximum processing time in seconds (default=300).
+
+=back
+
+=cut
+
+sub layout_spring_embedding {
+  my ($self, %args) = @_;
+
+  ## Assign values for parameter specified in the arguments or use
+  ## their default values
+
+  ## Preferred edge length
+  my $default_arc_len = $args{default_arc_len} || 250;
+
+  ## maximal number of iterations
+  my $max_iter = $args{max_iter} || 200;
+  my $max_time = $args{max_time} || 120;
+
+  ## Maximal move of a node per step in each direction (X,Y)
+  my $max_move_per_step = 30; 
+
+  ## Reduction of max move at each iteration
+  my $cooling = 0.99; 
+
+  ## Attraction constant
+  my $attr_k = $args{attr_k} || 1; 
+
+  ## Noise added at each iteration to avoid staying blocked in trivial
+  ## solutions.
+  my $rand_k = 2; 
+
+  ## Initiate the layout by assigning random posiitions
+  $self->layout_random(%args);
+  my ($x_size, $y_size) = $self->get_diagram_size(%args);
+  
+  ## Repulsion radius, i.e. the radius around which repulsion force is
+  ## >= 1.  In principle, this parameter should affect the distance
+  ## between components + distance betwen nodes.
+  my $rep_radius = $args{rep_radius} || $x_size/3; 
+  my $rep_k = $rep_radius**2;
+
+  ## Get required info from the graph
+  my %nodes_id_xpos = $self->get_attribute("nodes_id_xpos");
+  my %nodes_id_ypos = $self->get_attribute("nodes_id_ypos");
+  my %nodes_name_id = $self->get_attribute("nodes_name_id");
+#  my %arcs_name_id = $self->get_attribute("arcs_name_id");
+  my %arc_index = ();
+  my @arcs = $self->get_attribute("arcs");
+  my @node_names = sort(keys(%nodes_name_id));
+  my @node_ids = sort(values(%nodes_name_id));
+  my $nb_nodes = scalar(@node_names);
+  my $nb_arcs = scalar(@arcs);
+
+  &RSAT::message::TimeWarn("Starting spring embedding",
+			    sprintf("\n\t%-22s%d", "nodes",$nb_nodes),
+			    sprintf("\n\t%-22s%d", "arcs",$nb_arcs),
+			    sprintf("\n\t%-22s%d", "max iter",$max_iter),
+			    sprintf("\n\t%-22s%d", "Max time (seconds)",$max_time),
+			    sprintf("\n\t%-22s%d", "X size",$x_size),
+			    sprintf("\n\t%-22s%d", "Y size",$y_size),
+			    sprintf("\n\t%-22s%d", "Repulsion radius",$rep_radius),
+			    sprintf("\n\t%-22s%d", "Attraction constant",$attr_k),
+			    sprintf("\n\t%-22s%d", "Preferred edge length",$default_arc_len),
+		       )
+    if ($main::verbose >= 1);
+#  &RSAT::message::Debug(join("\n",sort(keys(%arcs_name_id)))) if ($main::verbose >= 10);
+
+
+  ## Sylvain : je ré-indexe les arcs par source et cible, il faudrait
+  ## vérifier si ce n'est pas redondant.
+
+  ## Index all arc sources and targets
+  my $max_weight = $arcs[0][2];
+  $max_weight = 0 unless (&RSAT::util::IsReal($max_weight));
+  my $min_weight = $arcs[0][2];
+  $min_weight = 999999999 unless (&RSAT::util::IsReal($min_weight));
+  my @arc_weight = ();
+  for my $i (0..$#arcs) {
+      my $source = $arcs[$i][0];
+      my $target = $arcs[$i][1];
+      my $label  = $arcs[$i][2];
+      if (&RSAT::util::IsReal($label)) {
+	  $max_weight = &RSAT::stats::max($label, $max_weight);
+	  $min_weight = &RSAT::stats::min($label, $min_weight);
+      }
+      $weight{$source}{$target} = $label;
+
+#    &RSAT::message::Debug("", "arc", $i, $source, $target, $label) if ($main::verbose >= 10);
+  }
+
+  ## Edge length inversely proportional to weight. Range from
+  ## 1/2*default_arc_len to 3/2*default_arc_len.
+  my @arc_len = ();
+  if ($max_weight > $min_weight) {
+      ## The graph is apparently weighted
+      my $weight_exp = 1;
+       &RSAT::message::Info("Weighted spring embedding", 
+ 			   "max_w=".$max_weight, 
+ 			   "min_w=".$min_weight, 
+ 	  ) if ($main::verbose >= 1);
+      for my $i (0..$#arcs) {
+	  my $source = $arcs[$i][0];
+	  my $target = $arcs[$i][1];
+	  my $weight = $weight{$source}{$target};
+#	  if ($source eq $target) {
+#	      $weight = 0;
+#	  }
+	  my $weight_factor = ($weight - $min_weight)/($max_weight - $min_weight);
+	  $arc_index{$source}{$target} = sprintf("%d",($default_arc_len * $weight_factor) + $default_arc_len/2);
+# 	  &RSAT::message::Info("Arc", $i, $source, $target, 
+# 			       "factor=".$weight_factor, 
+# 			       "weight=".$weight, 
+# 			       "len=".$arc_index{$source}{$target}) if ($main::verbose >= 10);
+      }
+  } else {
+      for my $i (0..$#arcs) {
+	  my $source = $arcs[$i][0];
+	  my $target = $arcs[$i][1];
+	  $arc_index{$source}{$target} = $default_arc_len;
+      }
+  }
+
+  ################################################################
+  ## Iterations of spring embedding
+  my $iter = 0;
+  for $iter (1..$max_iter) {
+    my @x_force = ();
+    my @y_force = ();
+    $max_move_per_step *= $cooling if ($max_move_per_step*$cooling > 3);
+
+    ## Check elapsed time
+    my $elapsed = times;
+    &RSAT::message::Debug("Spring embedding iteration", "iter:".$iter, "seconds:".$elapsed, 'max move:'.sprintf("%.1f",$max_move_per_step)) if ($main::verbose >= 2);
+    last if ($elapsed > $max_time);
+
+
+    ################################################################
+    ## Iterate over all node pairs to compute repulsion and attraction
+    ## (if they are linked)
+    for my $n1 (0..$#node_names) {
+      my $name1 = $node_names[$n1];
+      my $id1 = $nodes_name_id{$name1};
+      my $x1 = $nodes_id_xpos{$id1};
+      my $y1 = $nodes_id_ypos{$id1};
+#      &RSAT::message::Debug("Node 1", $name1, $id1, "(".$x1.",".$y1.")") if ($main::verbose >= 10);
+
+      ## Attractive and repulsive forces are symmetrical -> we assign them to both members of each pair
+      for my $n2 (($n1+1)..$#node_names) {
+#      for my $n2 (0..$#node_names) {
+#	next if ($n1 = $n2);
+
+	## Distance
+	my $name2 = $node_names[$n2];
+	my $id2 = $nodes_name_id{$name2};
+	my $x2 = $nodes_id_xpos{$id2};
+	my $y2 = $nodes_id_ypos{$id2};
+	my $x_diff= $x2-$x1;
+	my $y_diff = $y2-$y1;
+	my $dist_squared = $x_diff**2 + $y_diff**2;
+	my $dist = sqrt($dist_squared);
+	my $sin = 0;
+	my $cos = 0;
+	if ($dist > 0) {
+	  $cos = $x_diff/$dist;
+	  $sin = $y_diff/$dist;
+	}
+	&RSAT::message::Debug("", "Node 2", $name2, $id2, "(".$x2.",".$y2.")") if ($main::verbose >= 10);
+	&RSAT::message::Debug("Dist", $iter, $n1, $n2,
+			      sprintf("dist=%d",$dist),
+			      sprintf("diff=%.1f,%.1f",$x_diff,$y_diff),
+			      sprintf("cos,sin=%.2f,%.2f",$cos,$sin),
+			     ) if ($main::verbose >= 10);
+
+	## Repulsive force exists between all node pairs
+	my $rep = $max_rep;
+	if ($dist_squared > 0) {
+	  $rep = $rep_k/$dist_squared;
+	}
+
+	################################################################
+	## Attractive force only between node pairs linked by an arc
+	##
+	## SYLVAIN: we could add some constraint here to avoid overlap
+	## of labels. More generally, we could add a minimal
+	## inter-node distance along the Y axis and along the X
+	## axis. The Y min distance should be ~20 pixels. The X min
+	## woudl depend on the size of node labels.
+	my $attr = 0;
+	if ($arc_index{$name1}{$name2}) {
+	    my $arc_len = $arc_index{$name1}{$name2};
+	    $attr = $attr_k * ($dist - $arc_len);
+#	    &RSAT::message::Debug("Arc attraction", $name1, $name2, "len=".$arc_len, 
+#				  "w=".$weight{$name1}{$name2}, "attr=".$attr) if ($main::verbose >= 10);
+	}
+
+
+	## Reciprocal force between the two nodes (positive is
+	## repulsive, negative is attractive)
+	my $force = $rep - $attr;
+# 	&RSAT::message::Debug("", "Forces", $iter, $id1, $id2,
+# 			      "dist=".(sprintf("%.2f",$dist)),
+# 			      "rep=".(sprintf("%.2f",$rep)),
+# 			      "attr=".(sprintf("%.2f",$attr)),
+# 			      "move=".(sprintf("%.2f",$force)))
+# 	  if ($main::verbose >= 10);
+
+
+	################################################################
+	## Project the force element along the two axes.
+	##
+	## The sign of the force reflects the repulsion (+) or attraction (-).
+	##
+	## The sin and cos will determine the repartition of this
+	## force along the X and Y axes, and indicate the respective
+	## directions for nodes n1 and n2.
+	##
+	## Note that in this loop we only take into account the forces
+	## between 2 nodes, but the moves of all nodes will be done
+	## only ater all node pairs have been visited.
+	##
+	## Force on the X axis.
+	my $x_force = $force * $cos;
+	$x_force[$n1] -= $x_force;
+	$x_force[$n2] += $x_force;
+
+	## Force on the Y ayis.
+	my $y_force = $force * $sin;
+	$y_force[$n1] -= $y_force;
+	$y_force[$n2] += $y_force;
+
+# 	&RSAT::message::Debug("F_pair", "iter=".$iter,
+# 			      sprintf("n".$n1."=%d,%d",$x1, $y1),
+# 			      sprintf("n".$n2."=%d,%d",$x2, $y2),
+# 			      "dist=".sprintf("%.d", $dist),
+# 			      sprintf("Force=%.1f", $force),
+# 			      sprintf("cos,sin=%.2f,%.2f",$cos, $sin),
+# 			      sprintf("F=%.1f,%.1f",$x_force, $y_force),
+# 			      sprintf("F".$n1."=%.1f,%.1f",$x_force[$n1], $y_force[$n1]),
+# 			      sprintf("F".$n2."=%.1f,%.1f",$x_force[$n2], $y_force[$n2]),
+# 			     ) if ($main::verbose >= 10);
+
+      }
+
+    }
+
+    ## Apply moves to all nodes
+    for my $n (0..$#node_names) {
+      my $name = $node_names[$n];
+      my $id = $nodes_name_id{$name};
+      my $x_move = $x_force[$n];
+      my $y_move = $y_force[$n];
+
+      ## Add a bit of random movement to avoid staying blocked in
+      ## trivial solutions (e.g. all nodes on a diagonal)
+      $x_move += rand()*$rand_k;
+      $y_move += rand()*$rand_k;
+
+      ## Check that movements do not exceed the limit per step
+      if (abs($x_move) > $max_move_per_step) {
+	$reduction = $max_move_per_step/abs($x_move);
+	$x_move *= $reduction;
+	$y_move *= $reduction;
+      }
+      if (abs($y_move) > $max_move_per_step) {
+	$reduction = $max_move_per_step/abs($y_move);
+	$x_move *= $reduction;
+	$y_move *= $reduction;
+      }
+
+      ## Ensure that the node does not exceed frame limits
+      my $new_x = $nodes_id_xpos{$id} + $x_move;
+      my $new_y = $nodes_id_ypos{$id} + $y_move;
+
+#       &RSAT::message::Debug("Move", $iter, $n,
+# 			    sprintf("F=%.1f,%.1f",$x_force[$n], $y_force[$n]),
+# 			    sprintf("move=%d,%d", $x_move, $y_move),
+# 			    sprintf("prev_pos=%d,%d", $nodes_id_xpos{$id}, $nodes_id_ypos{$id}),
+# 			    sprintf("new_pos=%d,%d", $new_x, $new_y),
+# 			   ) if ($main::verbose >= 10);
+      $nodes_id_xpos{$id} = $new_x;
+      $nodes_id_ypos{$id} = $new_y;
+    }
+
+    ## Center and scale
+    my $x_min = $nodes_id_xpos{$node_ids[0]};
+    my $y_min = $nodes_id_ypos{$node_ids[0]};
+    my $x_max = $nodes_id_xpos{$node_ids[0]};
+    my $y_max = $nodes_id_ypos{$node_ids[0]};
+    foreach my $id (@node_ids) {
+      my $x = $nodes_id_xpos{$id};
+      $x_max = &RSAT::stats::max($x, $x_max);
+      $x_min = &RSAT::stats::min($x, $x_min);
+      my $y = $nodes_id_ypos{$id};
+      $y_max = &RSAT::stats::max($y, $y_max);
+      $y_min = &RSAT::stats::min($y, $y_min);
+    }
+    foreach my $id (@node_ids) {
+      $nodes_id_xpos{$id} = $x_size*($nodes_id_xpos{$id} - $x_min)/($x_max - $x_min);
+      $nodes_id_ypos{$id} = $y_size*($nodes_id_ypos{$id} - $y_min)/($y_max - $y_min);
+    }
+  }
+
+  $self->set_hash_attribute("nodes_id_xpos", %nodes_id_xpos);
+  $self->set_hash_attribute("nodes_id_ypos", %nodes_id_ypos);
+
+  ## Check elapsed time
+  my $elapsed = times;
+  &RSAT::message::TimeWarn("Spring embedding iteration", "iter:".$iter, "seconds:".$elapsed) if ($main::verbose >= 1);
+  last if ($elapsed > $max_time);
+  return();
+}
+
+
+
+=pod
+
+=item I<get_diagram_size(%args)>
+
+Return diagram size (if required, compute it).
+
+Usage :
+  my ($x_size, $y_size) = $self->get_diagram_size(%args);
+
+Diagram size can be speficied either as attribute
+ $graph->set_attribute("x_size", $x_size);
+ $graph->set_attribute("y_size", $y_size);
+
+or as argument passed to the function
+ $graph->get_diagram_size(%args);
+with arguments
+ $args{x_size}
+ $args{y_size}
+
+or computed automatically on the basis of the number of nodes.
+
+=cut
+sub get_diagram_size {
+  my ($self, %args) = @_;
+  my $x_size =  1000;
+  my $y_size =  700;
+  my %nodes_name_id;
+  my $nb_nodes = -1;
+
+  ## If not specified, graph size increases with the squared root of
+  ## the node number (thus, area increase proportional to node number)
+
+  ## X size
+  if ($self->get_attribute("x_size")) {
+      $x_size = $self->get_attribute("x_size");
+  } elsif (defined($args{x_size})) {
+    $x_size = $args{x_size};
+  } else {
+    %nodes_name_id = $self->get_attribute("nodes_name_id");
+    $nb_nodes = scalar(keys(%nodes_name_id));
+    $x_size = sprintf("%d", 400+200*sqrt($nb_nodes));
+  }
+
+  ## Y size
+  if ($self->get_attribute("y_size")) {
+      $y_size = $self->get_attribute("y_size");
+  } elsif (defined($args{y_size})) {
+    $y_size = $args{y_size};
+  } else {
+    if ($nb_nodes == -1) {
+      %nodes_name_id = $self->get_attribute("nodes_name_id");
+      $nb_nodes = scalar(keys(%nodes_name_id));
+    }
+    $y_size = sprintf("%d", 280+140*sqrt($nb_nodes));
+  }
+  $self->force_attribute("x_size", $x_size);
+  $self->force_attribute("y_size", $y_size);
+  return($x_size, $y_size);
+}
+
+
+=pod
+
+=item B<layout_random()>
+
+Fill the hashes %node_id_xpos and %node_id_ypos using random positions
+for each node.
+
+Usage:
+  $graph->layout_random(%args);
+
+The seed can be specified manually, for debugging
+  $graph->layout_random(seed=>6);
+
+=cut
+
+sub layout_random {
+  my ($self, %args) = @_;
+  my %nodes_id_xpos = $self->get_attribute("nodes_id_xpos");
+  my %nodes_id_ypos = $self->get_attribute("nodes_id_ypos");
+  my %nodes_name_id = $self->get_attribute("nodes_name_id");
+  my $nb_nodes = scalar(keys(%nodes_name_id));
+  my %nodes_id_force = ();
+
+  my ($x_size, $y_size) = $self->get_diagram_size(%args);
+
+  &RSAT::message::TimeWarn("Graph layout: random",
+			   "nodes: ".$nb_nodes,
+			   "X size: ".$x_size,
+			   "Y size: ".$y_size)
+    if ($main::verbose >= 1);
+
+  ## Seed the random number generator
+  srand (time);
+
+  my $i = 0;
+  # randomize node positions
+  while (($node_name, $id) = each %nodes_name_id) {
+    $i++;
+    $nodes_id_xpos{$id} = rand()*$x_size;
+    $nodes_id_ypos{$id} = rand()*$y_size;
+  }
+  $self->set_hash_attribute("nodes_id_xpos", %nodes_id_xpos);
+  $self->set_hash_attribute("nodes_id_ypos", %nodes_id_ypos);
+}
+
 
 
 
@@ -2739,12 +3264,9 @@ sub to_gml {
       $gml .= "\t\t\t"."type\t\"line\"\n";
       $gml .= "\t\t\t"."fill\t\"".$edge_color."\"\n";
       $gml .= "\t\t]\n";
-      $gml .= "\t]\n";      
+      $gml .= "\t]\n";
     }
-    
-    
-    
-    
+
     ## Close the graph
     $gml .= "]\n";
 
@@ -3156,9 +3678,7 @@ return 1;
 # It first runs a C program ($RSAT/bin/floydwarshall) to calculate 
 # the shortest path between all nodes in a network
 
-
-=cut 
-
+=cut
 sub c_topology {
   my ($self, $directed) = (shift, shift);
   my $floydwarshall = $ENV{RSAT}."/bin/floydwarshall";
