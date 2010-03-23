@@ -94,7 +94,7 @@ $parameters .= " -seq_format ". $sequence_format1 ;
 if ($query->param('tag2') ){
     $tag2 =$query->param('tag2') ;
 }
-$parameters .= " -seq ". $tag2 ." ".$sequence_file2 || if $sequence_file2 ;
+$parameters .= " -seq ". $tag2 ." ".$sequence_file2  if $sequence_file2 ;
 
 
 
@@ -106,7 +106,7 @@ if (&IsInteger($query->param('permutation1'))) {
 }
 
 if (&IsInteger($query->param('permutation2'))) {
-    $parameters .= " -perm ".$tag2." ".$query->param('permutation2') || if  $sequence_file2 ;
+    $parameters .= " -perm ".$tag2." ".$query->param('permutation2')  if  $sequence_file2 ;
 }
 
 ################################################################
