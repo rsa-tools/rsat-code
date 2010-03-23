@@ -26,6 +26,7 @@ local @supported_output_formats = sort(keys( %RSAT::matrix::supported_output_for
 
 ################################################################
 ### default values for filling the form
+$default{demo_descr}="";
 $default{output}="display";
 $default{matrix}="";
 $default{matrix_file}="";
@@ -65,6 +66,9 @@ print "description position-specific scoring matrices (PSSM), and calculate stat
 print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
+
+## demo description
+print $default{demo_descr};
 
 print $query->start_multipart_form(-action=>"matrix-quality.cgi");
 
@@ -511,8 +515,14 @@ tgaaagtgaaTTATTTGAACCAGATCGCATTAcagtgatgca
 agatttccttAATTGTGATGTGTATCGAAGTGtgttgcggag
 ";
 
+$demo_descr="<H4>Comment on the demonstration example : </H4><blockquote class ='demo'>In this demonstration, we will analyse the PSSM of the Transcription Factor LexA available in RegulonDB. </p>
+As a positive set we will use the obtained sequences from the ChIP-chip experiment (Wade et al. Genes Dev. 2005) of transcription factor LexA in the Escherichia coli K12 genome.</p>
+As a negative sequence set we will use the reported binding sites of CRP in the Escherichia coli K12 Genome annotated at RegulonDB. </p>";
+
 
 print "<TD><B>";
+print $query->hidden(-name=>'demo_descr',-default=>$demo_descr."The program will return individual matches, i.e. sequence segments scoring above the predefined threshold. In this example, threshold is set on the P-value.
+</blockquote>");
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'matrix_format',-default=>'consensus');
 
@@ -528,8 +538,8 @@ print "</B></TD>\n";
 print $query->end_form;
 
 
-print "<TD><B><A HREF='help.convert-matrix.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_PSSM.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A HREF='help.matrix-quality.html'>MANUAL</A></B></TD>\n";
+#print "<TD><B><A HREF='tutorials/tut_PSSM.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@bigre.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
