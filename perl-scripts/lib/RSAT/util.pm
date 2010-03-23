@@ -93,7 +93,7 @@ sub IsReal {
 
 Returns the closest integer value from a real number.
 
-Usage : my $i = &RSAT::util::rount($r);
+Usage : my $i = &RSAT::util::round($r);
 
 =cut
 sub round {
