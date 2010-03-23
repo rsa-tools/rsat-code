@@ -521,8 +521,7 @@ As a negative sequence set we will use the reported binding sites of CRP in the 
 
 
 print "<TD><B>";
-print $query->hidden(-name=>'demo_descr',-default=>$demo_descr."The program will return individual matches, i.e. sequence segments scoring above the predefined threshold. In this example, threshold is set on the P-value.
-</blockquote>");
+print $query->hidden(-name=>'demo_descr',-default=>$demo_descr."</blockquote>");
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'matrix_format',-default=>'consensus');
 
