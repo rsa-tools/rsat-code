@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.84 2010/03/11 23:11:09 amedina Exp $
+# $Id: matrix-quality,v 1.85 2010/03/23 16:34:42 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -251,7 +251,7 @@ package main;
     $die_on_error = 1;
     $job_prefix = "matrix-quality";
     $batch = 0;
-
+    $main::web=0;
     ## User-specified options added to XYgraph for the graphs (ROC and distribution curves)
     $graph_options = " ";
     $roc_options = " ";
@@ -345,6 +345,7 @@ package main;
     $main::out = &OpenOutputFile($outfile{log});
     &PreVerbose() if ($main::verbose);
 
+    
     ################################################################
     ### Read background model to use for theorical distribution
     if ($main::infile{bg_file}){
@@ -532,7 +533,16 @@ package main;
       ## List the output files
       print $main::index "\n<h3>Result files</h3>\n";
       print $main::index "<p><table border=1 cellpadding=3 cellpsacing=3>";
-      &list_one_file("Output directory", ".");
+      
+      if ($main::web){
+	  $outfile{zip_dir} =$main::outfile{prefix}."_dir.zip";
+	  $zip_command=" zip ".$outfile{zip_dir}."  ".$main::outfile{prefix}."* ";
+	   &doit($zip_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	  &list_one_file("Output directory",$outfile{zip_dir} );
+      }
+      else{
+	  &list_one_file("Output directory", ".");
+      }
       &list_one_file("Matrix info", $outfile{matrix_info});
       &list_one_file("Matrix in tab format", $outfile{matrix_tab});
       &list_one_file("Theoretical distribution", $outfile{theoretical_distrib});
@@ -1099,6 +1109,17 @@ Example:
 	    	push (@main::image_formats, $image_format);
 	    }
 
+ ## Image format
+=pod
+
+=item	B<-web>
+
+When the program is run on the web servers th output directory is zipped and a link is added on the html webpage
+
+=cut
+	} elsif ($arg eq "-web") {
+	    $main::web = 1;
+	    
 	    ## Tasks
 =pod
 
