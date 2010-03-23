@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.15 2010/03/19 09:50:10 rsat Exp $
+# $Id: display-graph,v 1.16 2010/03/23 01:39:47 jvanheld Exp $
 #
 ############################################################
 
@@ -95,7 +95,7 @@ package main;
     $supported_output_formats = join (",", keys %supported_output_format);
 
     ## layout
-    $layout = 0;
+    $layout = "";
 
     ################################################################
     ## Read argument values
@@ -118,14 +118,14 @@ package main;
     ## Initialize the graph
     my $graph = new RSAT::Graph2();
     $graph->set_attribute("label", "graph");
-    
+
     ################################################################
     ##### read input
     $graph->graph_from_text($input_format, $main::infile{input}, $source_col, $target_col, $weight_col, $source_color_col, $target_color_col,$color_col, 1);
-    ## Calculates the layout 
-    if ($layout) {
-      $graph->get_position();
-    }
+
+    ## Calculates the layout
+    $graph->layout($layout) if ($layout);
+
 
     ## Calculate the minimum and maximum values of the weight on the edges
     my ($edge_mean, $edge_sd, $edge_min, $edge_max);
@@ -224,6 +224,16 @@ package main;
           ## For orphan nodes, fr_layout does not return the location!
           ## We place the orphan nodes side by side at the extremity of 
           ## the graphic.
+
+	  ## From JvH to Sylvain: I don't understand why you do this
+	  ## control AFTER having defined the diagram size. Would it
+	  ## not be more logical to do it before ?
+	  ##
+	  ## besides, would it not be more logical to place them below
+	  ## each other rather than side by site ? If you have 100
+	  ## nodes, you would get a more compact picture by aligning
+	  ## them vertically than horizontally.
+
           $xpos = ($not_connected_nodes+$length_name*10) + 150;
           $not_connected_nodes += $length_name+10;
         } else {
@@ -364,10 +374,10 @@ sub PrintOptions {
 ################################################################
 ## Read arguments 
 sub ReadArguments {
-    my $arg;
-    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
-    while (scalar(@arguments) >= 1) {
-      $arg = shift (@arguments);
+  my $arg;
+  my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+  while (scalar(@arguments) >= 1) {
+    $arg = shift (@arguments);
 
 =pod
 
@@ -380,12 +390,12 @@ sub ReadArguments {
 Level of verbosity (detail in the warning messages during execution)
 
 =cut
-	if ($arg eq "-v") {
-	    if (&IsNatural($arguments[0])) {
-		$main::verbose = shift(@arguments);
-	    } else {
-		$main::verbose = 1;
-	    }
+    if ($arg eq "-v") {
+      if (&IsNatural($arguments[0])) {
+	$main::verbose = shift(@arguments);
+      } else {
+	$main::verbose = 1;
+      }
 
 =pod
 
@@ -394,8 +404,8 @@ Level of verbosity (detail in the warning messages during execution)
 Display full help message
 
 =cut
-	} elsif ($arg eq "-h") {
-	    &PrintHelp();
+    } elsif ($arg eq "-h") {
+      &PrintHelp();
 
 =pod
 
@@ -404,8 +414,8 @@ Display full help message
 Same as -h
 
 =cut
-	} elsif ($arg eq "-help") {
-	    &PrintOptions();
+    } elsif ($arg eq "-help") {
+      &PrintOptions();
 
 =pod
 
@@ -414,8 +424,8 @@ Same as -h
 Specification of the input graph file
 
 =cut
-	} elsif ($arg eq "-i") {
-	    $main::infile{input} = shift(@arguments);
+    } elsif ($arg eq "-i") {
+      $main::infile{input} = shift(@arguments);
 
 
 =pod
@@ -425,23 +435,41 @@ Specification of the input graph file
 Input format. Supported: tab, gml, adj_matrix
 
 =cut
-	} elsif ($arg eq "-in_format") {
-	    $input_format = shift(@arguments);
-	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
-		unless ($supported_input_format{$input_format});
+    } elsif ($arg eq "-in_format") {
+      $input_format = shift(@arguments);
+      &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+	unless ($supported_input_format{$input_format});
 
 
 =pod
 
-=item B<-layout>
+=item B<-layout layout_algorithm>
+
+Supported algorithms
+
+Calculates the layout, i.e. assign positions to each node of the
+graph.
+
+This option requires GML as input format.
+
+Supported layout algorithms:
+
+=over I<-layout fr>
 
 Calculates the layout (provided you have the fr_layout program in
-$RSAT/bin) according to the Fruchterman and Reingold algorithm.  This
-option must be provided if the input graph is not GML.
+$RSAT/bin) according to the Fruchterman-Reingold (FR) algorithm.
+
+=over I<-layout random>
+
+Assign random positions to all nodes.
+
+=over I<-layout spring>
+
+Apply aspring embedding algorithm to compute node positions.
 
 =cut
-	} elsif ($arg eq "-layout") {
-	    $layout = 1;
+    } elsif ($arg eq "-layout") {
+      $layout = shift(@arguments);
 
 =pod
 
@@ -451,11 +479,11 @@ Source column. Column containing the source nodes for the
 tab-delimited format. (default 1)
 
 =cut
-	} elsif ($arg eq "-scol") {
-	    $source_col = shift (@arguments);
-	    unless (&IsNatural($source_col) && ($source_col > 0)) {
-		&RSAT::error::FatalError(join("\t", $source_col, "Invalid value for the source column. Must be a strictly positive natural number"));
-	    }
+    } elsif ($arg eq "-scol") {
+      $source_col = shift (@arguments);
+      unless (&IsNatural($source_col) && ($source_col > 0)) {
+	&RSAT::error::FatalError(join("\t", $source_col, "Invalid value for the source column. Must be a strictly positive natural number"));
+      }
 
 =pod
 
@@ -465,11 +493,11 @@ Target column. Column containing the target nodes for the
 tab-delimited format.(default 2)
 
 =cut
-	} elsif ($arg eq "-tcol") {
-	    $target_col = shift (@arguments);
-	    unless (&IsNatural($target_col) && ($target_col > 0)) {
-		&RSAT::error::FatalError(join("\t", $target_col, "Invalid value for the target column. Must be a strictly positive natural number"));
-	    }
+    } elsif ($arg eq "-tcol") {
+      $target_col = shift (@arguments);
+      unless (&IsNatural($target_col) && ($target_col > 0)) {
+	&RSAT::error::FatalError(join("\t", $target_col, "Invalid value for the target column. Must be a strictly positive natural number"));
+      }
 
 
 =pod
@@ -479,11 +507,11 @@ tab-delimited format.(default 2)
 Weight column. Column containing the weight nodes. (no default)
 
 =cut
-	} elsif ($arg eq "-wcol") {
-	    $weight_col = shift (@arguments);
-	    unless (&IsNatural($weight_col) && ($weight_col > 0)) {
-		&RSAT::error::FatalError(join("\t", $weight_col, "Invalid value for the weight column. Must be a strictly positive natural number"));
-	    }
+    } elsif ($arg eq "-wcol") {
+      $weight_col = shift (@arguments);
+      unless (&IsNatural($weight_col) && ($weight_col > 0)) {
+	&RSAT::error::FatalError(join("\t", $weight_col, "Invalid value for the weight column. Must be a strictly positive natural number"));
+      }
 
 =pod
 
@@ -493,11 +521,11 @@ Edge color column. Column containing the color of the edges (RGB) for
 the tab-delimited format. (no default)
 
 =cut
-	} elsif ($arg eq "-eccol") {
-	    $color_col = shift (@arguments);
-	    unless (&IsNatural($color_col) && ($color_col > 0)) {
-		&RSAT::error::FatalError(join("\t", $color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
-	    }
+    } elsif ($arg eq "-eccol") {
+      $color_col = shift (@arguments);
+      unless (&IsNatural($color_col) && ($color_col > 0)) {
+	&RSAT::error::FatalError(join("\t", $color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
+      }
 
 =pod
 
@@ -510,11 +538,11 @@ A node can only have one color. If in the file, the color of the node
 changes, only the first defined color will be taken into account.
 
 =cut
-	} elsif ($arg eq "-sccol") {
-	  $source_color_col = shift (@arguments);
-	  unless (&IsNatural($source_color_col) && ($source_color_col > 0)) {
-	    &RSAT::error::FatalError(join("\t", $source_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
-	  }
+    } elsif ($arg eq "-sccol") {
+      $source_color_col = shift (@arguments);
+      unless (&IsNatural($source_color_col) && ($source_color_col > 0)) {
+	&RSAT::error::FatalError(join("\t", $source_color_col, "Invalid value for the color column. Must be a strictly positive natural number"));
+      }
 
 =pod
 
@@ -526,19 +554,19 @@ to the weight of the edge.  All weights in the column indicated by the
 real values.
 
 =cut
-	} elsif ($arg eq "-ewidth") {
-	    $edge_width = 1;
+    } elsif ($arg eq "-ewidth") {
+      $edge_width = 1;
 
 =item B<-out_format output_format>
 
 Output format. Supported: ps, png, jpeg
 
 =cut 
-	} elsif ($arg eq "-out_format") {
-	    $output_format = shift(@arguments);
-	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
-		unless ($supported_output_format{$output_format});
-	    ## Output file
+    } elsif ($arg eq "-out_format") {
+      $output_format = shift(@arguments);
+      &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
+	unless ($supported_output_format{$output_format});
+      ## Output file
 
 =pod
 
@@ -547,14 +575,14 @@ Output format. Supported: ps, png, jpeg
 Name of the output file.
 
 =cut
-	} elsif ($arg eq "-o") {
-	    $main::outfile{output} = shift(@arguments);
+    } elsif ($arg eq "-o") {
+      $main::outfile{output} = shift(@arguments);
 
-	} else {
-	    &FatalError(join("\t", "Invalid option", $arg));
+    } else {
+      &FatalError(join("\t", "Invalid option", $arg));
 
-	}
     }
+  }
 
 
 
