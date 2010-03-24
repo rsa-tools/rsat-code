@@ -1811,11 +1811,10 @@ sub load_from_gml {
     my %nodes_id_ypos = $self->get_attribute("nodes_id_ypos");
     my %gml_id = ();
     my $max_arc_nb = $self->get_attribute("nb_arc_bw_node");
-    my $nodecpt = 0;
+    my $node_nb = 0;
     my $arccpt = 0;
     &RSAT::message::TimeWarn("Loading graph from gml file", $inputfile) if ($main::verbose >= 2);
     ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
-    
     my $fichier;
 
     while (my $line = <$main::in>) {
@@ -1824,15 +1823,13 @@ sub load_from_gml {
       $line .= " ";
       $line =~ s/\t/ /g;
       $fichier .= $line;
-      
     }
-    
-    
+
     my @fichier_node = split /node( |\t|)/, $fichier;
     my @fichier_edge = split /edge( |\t|)/, $fichier;
 
     my %discarded_nodes = (); # if $self->{seed_nodes} is defined, this hash will be filled with the gml_id of the nodes that must no be taken into account when parsing the edges
-  
+
     foreach my $node (@fichier_node) {
       if ($node ne " ") {
         $node =~ s/edge.*\[.*//;
@@ -1841,14 +1838,19 @@ sub load_from_gml {
         my $node_color  = "#66CCFF";
         my $node_xpos = "NA#";
         my $node_ypos = "NA#";
-# NODE ID
-        if ($node =~ /id/) {
+
+	## JvH: Ceci m'a l'air particulièrement alambiqué pour faire
+	## le parsing. On peut faire cela beaucoup plus simplement
+	## avec un simple match, non ?
+
+	## NODE ID
+        if ($node =~ /id\s+/) {
           my @node_cp = split /.*id /, $node;
           $node_id = $node_cp[1];
           $node_id = substr($node_id, 0, index($node_id, " "));
-        }
+	}
 
-# NODE LABEL
+	# NODE LABEL
         if ($node =~ /label/) {
           my @label_cp = split /.*label /, $node;
           $node_label = $label_cp[1];
@@ -1859,50 +1861,52 @@ sub load_from_gml {
           $discarded_nodes{$node_id}++;
 	  next;
         }
-# NODE COLOR
+	# NODE COLOR
         if ($node =~ /outline/) {
           my @color_cp = split /.*outline /, $node;
           $node_color = $color_cp[1];
           $node_color = substr($node_color,1, index($node_color, "\" "));
           $node_color =~ s/\"//;
         }
-# NODE X POSITION
+	# NODE X POSITION
         if ($node =~ /x /) {
           my @xpos_cp = split /.*x /, $node;
           $node_xpos = $xpos_cp[1];
           $node_xpos = substr($node_xpos,0, index($node_xpos, " "));
           $node_xpos =~ s/\"//;
          }
-# NODE Y POSITION
+	# NODE Y POSITION
         if ($node =~ /y /) {
           my @ypos_cp = split /.*y /, $node;
           $node_ypos = $ypos_cp[1];
           $node_ypos = substr($node_ypos,0, index($node_ypos, " "));
           $node_ypos =~ s/\"//;
          }
-	
         if ($node_id ne "NA#") {
           if ($node_label eq "NA#") {
             $node_label = $node_id;
           }
           my $node_index = $nodes_name_id{$node_label};
           if (!defined($node_index)) {
-	    $node_index = $nodecpt;
+	    $node_index = $node_id; ## Sylvain, pourquoi utilises-tu ton propre compteur pour l'index des noeuds, et pas celui du fichier GML ?
+#	    $node_index = $node_nb; ## Sylvain, pourquoi utilises-tu ton propre compteur pour l'index des noeuds, et pas celui du fichier GML ?
 	    $gml_id{$node_id} = $node_index;
 	    $nodes_color{$node_index} = $node_color;
 	    $nodes_label{$node_index} = $node_label;
-	    $nodes_name_id{$node_label} = $nodecpt;
-	    $nodes_id_name{$nodecpt} = $node_label;
+	    $nodes_name_id{$node_label} = $node_index; ## MODIFIED 2010/03/24
+##	    $nodes_name_id{$node_label} = $node_nb; ## Je pense que ceci est erroné: quand les noeuds ne sont pas fournis dans le bon ordre, les arcs sont mal interprétés
+	    $nodes_id_name{$node_nb} = $node_label;
 	    if ($node_xpos ne "NA#") {
 	      $nodes_id_xpos{$node_id} = $node_xpos;
 	    }
 	    if ($node_ypos ne "NA#") {
 	      $nodes_id_ypos{$node_id} = $node_ypos;
-	    }	    
-	    $nodecpt++;
+	    }
+	    $node_nb++;
 	    &RSAT::message::Info(join("\t", "Created node", 
+	     $node_id,
 	     $node_label,
-	     $node_index, 
+	     $node_index,
 	     $node_label)
 	     ) if ($main::verbose >= 3);
 	  }
@@ -1910,44 +1914,43 @@ sub load_from_gml {
       }
     }
 
-    
-    
-
     foreach my $edge (@fichier_edge) {
       if ($edge ne " ") {
         my $source_edge =  "NA#";
         my $target_edge = "NA#";
         my $label_edge  = "NA#";
         my $color_edge = "#66FFFF";
-    
-# SOURCE EDGE
+
+	# SOURCE EDGE
         if ($edge =~ /source/) {
           my @source_cp = split /.*source /, $edge;
           $source_edge = $source_cp[1];
           $source_edge = substr($source_edge,0, index($source_edge, " "));
         }
-# TARGET EDGE
+
+	# TARGET EDGE
         if ($edge =~ /target/) {
           my @target_cp = split /.*target /, $edge;
           $target_edge = $target_cp[1];
           $target_edge = substr($target_edge,0, index($target_edge, " "));
         }
-# LABEL EDGE
+
+	# EDGE LABEL
         if ($edge =~ /label/) {
           my @label_cp = split /.*label /, $edge;
           $label_edge = $label_cp[1];
           $label_edge = substr($label_edge,1, index($label_edge, "\" "));
           $label_edge =~ s/\"$//;
         }
-# COLOR EDGE
+
+	# EDGE COLOR
         if ($edge =~ /fill/) {
           my @color_cp = split /.*fill /, $edge;
           $color_edge = $color_cp[1];
           $color_edge = substr($color_edge,1, index($color_edge, "\" "));
           $color_edge =~ s/\"//;
         }
-	
-	
+
         if ($source_edge ne "NA#" || $target_edge ne "NA#") {
           next if $discarded_nodes{$source_edge};
           next if $discarded_nodes{$target_edge};
@@ -1962,7 +1965,7 @@ sub load_from_gml {
 	  }
 	  $nodes_label = $label_edge;
 	  $nodes_color = $color_edge;
-	    
+
 	  push @{$out_neighbours[$source_node_id]}, $target_node_id;
 	  push @{$in_neighbours[$target_node_id]}, $source_node_id;
 	  push @{$arc_out_label[$source_node_id]}, $label_edge;
@@ -1972,7 +1975,6 @@ sub load_from_gml {
           my $exist = 0;
           my $arc_id = "";
           my $i;
-	  
 	  for ($i = 1; $i <= $max_arc_nb; $i++) {
 	    $arc_id = $source_node."_".$target_node."_".$i;
 	    $exist = exists($arcs_name_id{$arc_id});
@@ -1989,10 +1991,12 @@ sub load_from_gml {
 	  $arcs[$arccpt][2] = $label_edge;
 	  $arcs[$arccpt][3] = $color_edge;
 	  $arccpt++;
-	  
-	  &RSAT::message::Info(join("\t", "Created arc", 
-	  				$label_edge,
-	  				$arccpt)
+
+	  &RSAT::message::Info(join("\t", "Created arc",
+				    "source=".$source_edge,
+				    "target=".$target_edge,
+				    "label=".$label_edge,
+				    "arccpt:".$arccpt)
 	  		      ) if ($main::verbose >= 3);
         }
       }
@@ -2257,8 +2261,6 @@ sub graph_from_text {
         my $sycol = $args[8] || 0;
         my $txcol = $args[9] || 0;
         my $tycol = $args[10] || 0;
-        
-        
 	return $self->read_from_table($inputfile, $scol, $tcol, $wcol, $sccol, $tccol, $ecol, $sxcol, $sycol, $txcol, $tycol);
     } elsif ($in_format eq "adj_matrix") {
 	return $self->read_from_adj_matrix($args[0], $args[11]);
