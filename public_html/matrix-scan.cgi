@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.31 2009/11/18 00:52:41 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.32 2010/03/24 17:19:32 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -222,7 +222,7 @@ End_of_form
 
 ################################################################
 #
-# read patser parameters
+# read matrix scanning parameters
 #
 sub ReadMatrixScanParameters {
 
