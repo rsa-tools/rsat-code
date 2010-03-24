@@ -1888,13 +1888,13 @@ sub load_from_gml {
           }
           my $node_index = $nodes_name_id{$node_label};
           if (!defined($node_index)) {
-	    $node_index = $node_id; ## Sylvain, pourquoi utilises-tu ton propre compteur pour l'index des noeuds, et pas celui du fichier GML ?
 #	    $node_index = $node_nb; ## Sylvain, pourquoi utilises-tu ton propre compteur pour l'index des noeuds, et pas celui du fichier GML ?
+	    $node_index = $node_id; ## Corrected
 	    $gml_id{$node_id} = $node_index;
 	    $nodes_color{$node_index} = $node_color;
 	    $nodes_label{$node_index} = $node_label;
-	    $nodes_name_id{$node_label} = $node_index; ## MODIFIED 2010/03/24
 ##	    $nodes_name_id{$node_label} = $node_nb; ## Je pense que ceci est erroné: quand les noeuds ne sont pas fournis dans le bon ordre, les arcs sont mal interprétés
+	    $nodes_name_id{$node_label} = $node_index; ## Corrected 2010/03/24
 	    $nodes_id_name{$node_nb} = $node_label;
 	    if ($node_xpos ne "NA#") {
 	      $nodes_id_xpos{$node_id} = $node_xpos;
