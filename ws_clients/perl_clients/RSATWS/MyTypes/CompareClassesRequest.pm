@@ -27,10 +27,12 @@ my %upper_threshold_field_of :ATTR(:get<upper_threshold_field>);
 my %upper_threshold_value_of :ATTR(:get<upper_threshold_value>);
 my %lower_threshold_field_of :ATTR(:get<lower_threshold_field>);
 my %lower_threshold_value_of :ATTR(:get<lower_threshold_value>);
+my %population_of :ATTR(:get<population>);
 my %sort_of :ATTR(:get<sort>);
 my %distinct_of :ATTR(:get<distinct>);
 my %triangle_of :ATTR(:get<triangle>);
 my %matrix_of :ATTR(:get<matrix>);
+my %multi_correction_of :ATTR(:get<multi_correction>);
 
 __PACKAGE__->_factory(
     [ qw(        output
@@ -43,10 +45,12 @@ __PACKAGE__->_factory(
         upper_threshold_value
         lower_threshold_field
         lower_threshold_value
+        population
         sort
         distinct
         triangle
         matrix
+        multi_correction
 
     ) ],
     {
@@ -60,10 +64,12 @@ __PACKAGE__->_factory(
         'upper_threshold_value' => \%upper_threshold_value_of,
         'lower_threshold_field' => \%lower_threshold_field_of,
         'lower_threshold_value' => \%lower_threshold_value_of,
+        'population' => \%population_of,
         'sort' => \%sort_of,
         'distinct' => \%distinct_of,
         'triangle' => \%triangle_of,
         'matrix' => \%matrix_of,
+        'multi_correction' => \%multi_correction_of,
     },
     {
         'output' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
@@ -76,10 +82,12 @@ __PACKAGE__->_factory(
         'upper_threshold_value' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'lower_threshold_field' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'lower_threshold_value' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'population' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'sort' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
         'distinct' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'triangle' => 'SOAP::WSDL::XSD::Typelib::Builtin::int',
         'matrix' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
+        'multi_correction' => 'SOAP::WSDL::XSD::Typelib::Builtin::string',
     },
     {
 
@@ -93,10 +101,12 @@ __PACKAGE__->_factory(
         'upper_threshold_value' => 'upper_threshold_value',
         'lower_threshold_field' => 'lower_threshold_field',
         'lower_threshold_value' => 'lower_threshold_value',
+        'population' => 'population',
         'sort' => 'sort',
         'distinct' => 'distinct',
         'triangle' => 'triangle',
         'matrix' => 'matrix',
+        'multi_correction' => 'multi_correction',
     }
 );
 
@@ -164,6 +174,9 @@ methods:
 =item * lower_threshold_value
 
 
+=item * population
+
+
 =item * sort
 
 
@@ -174,6 +187,9 @@ methods:
 
 
 =item * matrix
+
+
+=item * multi_correction
 
 
 
@@ -198,10 +214,12 @@ Constructor. The following data structure may be passed to new():
    upper_threshold_value =>  $some_value, # string
    lower_threshold_field =>  $some_value, # string
    lower_threshold_value =>  $some_value, # string
+   population =>  $some_value, # int
    sort =>  $some_value, # string
    distinct =>  $some_value, # int
    triangle =>  $some_value, # int
    matrix =>  $some_value, # string
+   multi_correction =>  $some_value, # string
  },
 
 
