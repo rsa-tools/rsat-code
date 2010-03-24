@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.71 2010/03/24 13:25:22 jvanheld Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.72 2010/03/24 18:27:09 rsat Exp $
 #
 # Time-stamp
 #
@@ -596,7 +596,7 @@ sub ReadArguments {
       ### Header label
   }  elsif ($ARGV[$a] eq "-label") {
       $label  = $ARGV[$a+1];
-      &RSAT::message::FatalError($label, "is not a valid value for the option -label. Supported: ".$supported_labels) 
+      &RSAT::error::FatalError($label, "is not a valid value for the option -label. Supported: ".$supported_labels) 
 	  unless $supported_label{$label};
   }
 }
