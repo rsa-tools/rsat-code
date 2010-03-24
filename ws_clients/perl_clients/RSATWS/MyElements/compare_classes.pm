@@ -99,10 +99,12 @@ Constructor. The following data structure may be passed to new():
      upper_threshold_value =>  $some_value, # string
      lower_threshold_field =>  $some_value, # string
      lower_threshold_value =>  $some_value, # string
+     population =>  $some_value, # int
      sort =>  $some_value, # string
      distinct =>  $some_value, # int
      triangle =>  $some_value, # int
      matrix =>  $some_value, # string
+     multi_correction =>  $some_value, # string
    },
  },
 
