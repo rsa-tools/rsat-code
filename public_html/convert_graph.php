@@ -29,11 +29,11 @@
   $now = date("Ymd_His");
   $graph = $_REQUEST['graph'];
   $layout = $_REQUEST['layout'];
-  if ($layout == 'on') {
-    $layout = 1;
-  } else {
-    $layout = 0;
-  }
+#  if ($layout == 'on') {
+#    $layout = 1;
+#  } else {
+#    $layout = 0;
+#  }
   $ewidth = $_REQUEST['ewidth'];
   $ecolors = $_REQUEST['ecolors'];
   $distinct_path = $_REQUEST['distinct_path'];
