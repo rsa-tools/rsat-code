@@ -29,11 +29,6 @@
   $now = date("Ymd_His");
   $graph = $_REQUEST['graph'];
   $layout = $_REQUEST['layout'];
-#  if ($layout == 'on') {
-#    $layout = 1;
-#  } else {
-#    $layout = 0;
-#  }
   $ewidth = $_REQUEST['ewidth'];
   $ecolors = $_REQUEST['ecolors'];
   $distinct_path = $_REQUEST['distinct_path'];
@@ -87,17 +82,19 @@
     $error = 1;
     error("You must submit an input graph");
   }
-  ## If tab out format et layout = 1 -> error 
-  if ($out_format != "gml" && $layout == "1") {
+
+  ## If layout has been selected, check that the output format is GML
+  if ($out_format != "gml" && $layout != "none") {
     $layout = 0;
-    warning("Computing the nodes layout whith output format $out_format is useless");
-    
+    warning("Layout is not compatible with outpuf tormat $out_format (requires GML).");    
   }
+
   ## If distinct path option is used but the input format is not path -> error
   if ($distinct_path == "1" && $in_format != "path") {
     $error = 1;
     error("Distinct path option is only valid for input format <i>path</i>");
   }
+
   ## If the column of the path is not specified -> warning default column is 1
   if ($path_col == "" && $in_format == "path") {
     $path_col = 1;
