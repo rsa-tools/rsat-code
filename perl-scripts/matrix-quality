@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.85 2010/03/23 16:34:42 amedina Exp $
+# $Id: matrix-quality,v 1.86 2010/03/24 17:18:07 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -251,7 +251,7 @@ package main;
     $die_on_error = 1;
     $job_prefix = "matrix-quality";
     $batch = 0;
-    $main::web=0;
+    $main::archive=0;
     ## User-specified options added to XYgraph for the graphs (ROC and distribution curves)
     $graph_options = " ";
     $roc_options = " ";
@@ -533,12 +533,12 @@ package main;
       ## List the output files
       print $main::index "\n<h3>Result files</h3>\n";
       print $main::index "<p><table border=1 cellpadding=3 cellpsacing=3>";
-      
-      if ($main::web){
-	  $outfile{zip_dir} =$main::outfile{prefix}."_dir.zip";
-	  $zip_command=" zip ".$outfile{zip_dir}."  ".$main::outfile{prefix}."* ";
-	   &doit($zip_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-	  &list_one_file("Output directory",$outfile{zip_dir} );
+
+      if ($main::archive){
+	$outfile{zip_dir} =$main::outfile{prefix}."_dir.zip";
+	$zip_command=" zip ".$outfile{zip_dir}."  ".$main::outfile{prefix}."* ";
+	&doit($zip_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	&list_one_file("Output directory",$outfile{zip_dir} );
       }
       else{
 	  &list_one_file("Output directory", ".");
@@ -1112,14 +1112,15 @@ Example:
  ## Image format
 =pod
 
-=item	B<-web>
+=item	B<-archive>
 
-When the program is run on the web servers th output directory is zipped and a link is added on the html webpage
+Compress the result directory into a zip archive of the same name
+(with suffix .zip).
 
 =cut
-	} elsif ($arg eq "-web") {
-	    $main::web = 1;
-	    
+	} elsif ($arg eq "-archive") {
+	    $main::archive = 1;
+
 	    ## Tasks
 =pod
 
