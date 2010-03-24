@@ -12,7 +12,7 @@
   $default_tcol = 2;
   $default_wcol = "";
   $default_pathcol = "";
-  $default_layout = "checked";
+  $default_layout = "spring";
   $default_ecolors = "";
   $default_ewidth = "";
   
@@ -41,22 +41,29 @@
   }
 
   title('convert-graph');
-   echo ("<center>Convert graphs between different formats. <br>Optionally, apply a spring-embedding layout algorithm to position the nodes of the graph.\n");
-   echo ("<br>This program was developed by 
-	  <a target=_blank href='http://www.bigre.ulb.ac.be/people/Members/sylvain'>Sylvain Broh&eacute;e</a> and
-          <a target=_blank href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van Helden</a>.
+
+   echo ("<center>Convert graphs between different formats. <br>Optionally,
+	  apply a layout algorithm to position the nodes of the graph.\n");
+
+   echo ("<br>This program was developed by
+	  <a target=_blank
+          href='http://www.bigre.ulb.ac.be/people/Members/sylvain'>Sylvain
+          Broh&eacute;e</a> and <a target=_blank
+          href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van
+          Helden</a>.
           </center>\n");
    
-   echo ("<form method='post' action='convert_graph.php' enctype='multipart/form-data'>
-   &nbsp;&nbsp;&nbsp;<a href = 'help.convert_graph.html#formats'><B>Input format</B></a>");
+   echo ("<form method='post' action='convert_graph.php'
+	 enctype='multipart/form-data'> &nbsp;&nbsp;&nbsp;<a href =
+	 'help.convert_graph.html#formats'><B>Input format</B></a>");
 
   if (!$pipe) {
     echo("&nbsp;<select name='in_format'>
-    <option selected value = 'tab'> tab-delimited format
-    <option value = 'adj_matrix'> Adjacency matrix
-    <option value = 'gml'> GML format
-    <option value = 'path'> path format
-    </select><br>");
+         <option selected value = 'tab'> tab-delimited format
+	 <option value = 'adj_matrix'> Adjacency matrix
+	 <option value = 'gml'> GML format
+	 <option value = 'path'> path format
+   </select><br>");
   } else {
     echo ": $graph_format<br>";
     echo "<input type='hidden' NAME='in_format' VALUE='$graph_format'>";
@@ -88,8 +95,7 @@
     <tr><td><B><a href = 'help.convert_graph.html#eccol'>Edge color</a></B></td><td><input type = 'text' name='ec_col' size = 1></input></td></tr>
     <tr><td><B><a href = 'help.convert_graph.html#sccol'>Source node color</a></B></td><td><input type = 'text' name='sc_col' size = 1></input></td></tr>
     <tr><td><B><a href = 'help.convert_graph.html#sccol'>Target node color</a></B></td><td><input type = 'text' name='tc_col' size = 1></input></td></tr>
-    <tr><td><B><a href = 'help.convert_graph.html#sccol'>Path/a></B></td><td><input type = 'text' name='path_col' value = '$pathcol' size = 1></input> (only for path input format) </td></tr>
-    
+    <tr><td><B><a href = 'help.convert_graph.html#sccol'>Path</a></B></td><td><input type = 'text' name='path_col' value = '$pathcol' size = 1></input> (only for path input format) </td></tr>    
     </table>");
   } else {
     info_link("Graph uploaded from the previous treatment", rsat_path_to_url($graph_file));
@@ -107,8 +113,13 @@
     echo "<input type='hidden' NAME='path_col' VALUE='$pathcol'/>\n";
     echo "<input type='hidden' NAME='distinct_path' VALUE='$distinct_path'/>\n";
   }
-  echo("
-  <input type='checkbox' name='layout' value='on' $default_layout/>&nbsp;<B><a href = 'help.convert_graph.html#layout'>Calculate the layout of the nodes (only relevant for GML output)</a></B><br>
+
+
+//  <select name='layout'>
+//  <option selected value = 'spring'>Spring embedding
+//  <option value = 'random'> Random
+//  </select><br>
+  echo(" <input type='checkbox' name='layout' value='spring' $default_layout/>&nbsp;<B><a href = 'help.convert_graph.html#layout'>Calculate the layout of the nodes (only relevant for GML output)</a></B><br>
   <input type='checkbox' name='undirected' value='on' />&nbsp;<B><a href = 'help.convert_graph.html#undirected'>Undirected graph (only relevant for adjacency matrix input and output)</a></B><br>
   ");
   if (!$pipe) {
