@@ -12,7 +12,7 @@
   $default_tcol = 2;
   $default_wcol = "";
   $default_pathcol = "";
-  $default_layout = "spring";
+  $default_layout = "none";
   $default_ecolors = "";
   $default_ewidth = "";
   
@@ -114,16 +114,27 @@
     echo "<input type='hidden' NAME='distinct_path' VALUE='$distinct_path'/>\n";
   }
 
+  echo ("<B><a href = 'help.convert_graph.html#layout'>Layout</a></B>
+    <select name='layout'>
+      <option selected value='none'> No layout
+      <option value='spring'>Spring embedding
+      <option value='hello'>HELLO
+      <option value='random'> Random
+    </select> (only valid for GML output) <br> "
+  );
 
-//  <select name='layout'>
-//  <option selected value = 'spring'>Spring embedding
-//  <option value = 'random'> Random
-//  </select><br>
-  echo(" <input type='checkbox' name='layout' value='spring' $default_layout/>&nbsp;<B><a href = 'help.convert_graph.html#layout'>Calculate the layout of the nodes (only relevant for GML output)</a></B><br>
-  <input type='checkbox' name='undirected' value='on' />&nbsp;<B><a href = 'help.convert_graph.html#undirected'>Undirected graph (only relevant for adjacency matrix input and output)</a></B><br>
-  ");
+/*  echo(" <input type='checkbox' name='layout' value='spring'
+       $default_layout/>&nbsp;<B><a href =
+       'help.convert_graph.html#layout'>Calculate the layout of the
+       nodes (only relevant for GML output)</a></B><br>");*/
+
+    echo (" <input type='checkbox' name='undirected' value='on'>&nbsp;<B><a href =
+       'help.convert_graph.html#undirected'>Undirected graph</a></B>  (only
+       relevant for adjacency matrix input and output)<br> ");
+
+
   if (!$pipe) {
-    echo "<input type='checkbox' name='distinct_path' value='on' />&nbsp;<B><a href = 'help.convert_graph.html#distinctpath'>Distinct paths</a></B>(only for path input format)<br>";
+    echo "<input type='checkbox' name='distinct_path' value='on' />&nbsp;<B><a href = 'help.convert_graph.html#distinctpath'>Distinct paths</a></B> (only for path input format)<br>";
   }
   echo ("
   <B><a href = 'help.convert_graph.html#ecolors'>Edge color intensity proportional to the weight</a></B>
