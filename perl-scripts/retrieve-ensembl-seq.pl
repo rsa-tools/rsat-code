@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-ensembl-seq.pl,v 1.70 2010/02/23 08:37:23 jvanheld Exp $
+# $Id: retrieve-ensembl-seq.pl,v 1.71 2010/03/24 13:25:22 jvanheld Exp $
 #
 # Time-stamp
 #
@@ -81,6 +81,8 @@ package main;
   local $header = 'scientific';
   local $header_org = '';
   local $label = '';
+  local %supported_label = ("query"=>1);
+  local $supported_labels = join (",", sort(keys(%supported_label)));
 
   ## Connection to the EnsEMBL MYSQL database
   local $ensembl_host = $ENV{ensembl_host};
@@ -594,6 +596,8 @@ sub ReadArguments {
       ### Header label
   }  elsif ($ARGV[$a] eq "-label") {
       $label  = $ARGV[$a+1];
+      &RSAT::message::FatalError($label, "is not a valid value for the option -label. Supported: ".$supported_labels) 
+	  unless $supported_label{$label};
   }
 }
 }
@@ -1845,7 +1849,13 @@ OPTIONS
 	-header_org   Type of organism name to use in the fasta header (scientific, common or none).
 		      Default is scientific. Common name is only accessible with -ortho.
 
-        -label        first word in fasta header is query when set to query
+        -label label_type
+	       Information used as sequence label in the fasta header. 
+	       
+	       Supported label types: 
+
+	       -label query 
+	       	      use as sequence label the identifier or name used as query. 
 
 End_help
     close HELP;
@@ -1857,8 +1867,8 @@ End_help
 sub PrintShortHelp {
   open(HELP, "| less");
   print HELP<<End_short_help;
-retrieve-seq options
---------------------
+retrieve-ensembl-seq options
+----------------------------
 -org		organism
 -ensemblhost    address of ensembl database server (default is EBI server)
 -dbname         name of ensembl db
@@ -1888,7 +1898,7 @@ retrieve-seq options
 -homologs_table file on which to print homology info
 -taxon          taxonomic level to filter on
 -header_org     type of organism name to use in the fasta header (common, scientific or none)
--label          first word in fasta header is query when set to query
+-label          information used to label sequence in the fasta header (supported: -label query)
 
 End_short_help
   close HELP;
