@@ -14,6 +14,7 @@ use CGI::Carp qw/fatalsToBrowser/;
 #	|| die "Unable to redirect log\n";
 #    carpout(*LOG);
 #}
+require RSAT::util;
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
@@ -36,19 +37,30 @@ $query = new CGI;
 local $parameters = " -v 0";
 ################################################################
 ## File prefix
-$tmp_file_name = join( "_", "matrix-quality", &AlphaDate());
-$result_subdir = $tmp_file_name;
-$result_dir = $TMP."/".$result_subdir;
-$result_dir =~ s|\/\/|\/|g;
-`mkdir -p $result_dir`;
 
-$file_prefix = $result_dir."/";
+my $date = &AlphaDate();
+my $tmp_file_name = &RSAT::util::make_temp_file("","matrix-quality_".$date);
+#$tmp_file_name = join( "_", "matrix-quality", &AlphaDate());
+$file_prefix = `basename $tmp_file_name`;
+$result_dir = $tmp_file_name;
+#$result_subdir = $tmp_file_name;
+#$result_dir = $TMP."/".$result_subdir;
+#$result_dir =~ s|\/\/|\/|g;
+#$file_prefix = $result_dir."/";
+
+## We remove the file created by mktemp and create a directory instead
+`rm -f $result_dir; mkdir -p $result_dir; chmod 777 $result_dir`;
+
+&RSAT::message::Info("Temporary file</br>", $tmp_file_name, 
+			 "<p>\nResult dir<br>", $result_dir, 
+			 "<p>\nResult subdir<br>", $result_subdir, 
+			 "<p>File prefix<br>", $file_prefix);
+
 
 
 ################################################################
 #### Matrix specification
-
-$matrix_file = $file_prefix."matrix_input";
+$matrix_file = $result_dir."/input_matrix";
 local $input_format = lc($query->param('matrix_format'));
 
 if ($query->param('matrix')) {
@@ -82,7 +94,7 @@ if ($query->param('pseudo_distribution') eq "equi_pseudo") {
 
 ################################################################
 ## sequence file
-($sequence_file1,$sequence_format1) = &MultiGetSequenceFile(1,$file_prefix."sequence1.input", 1);
+($sequence_file1,$sequence_format1) = &MultiGetSequenceFile(1,$result_dir."sequence1.input", 1);
 
 if ($query->param('tag1') ){
     $tag1 =$query->param('tag1') ;
@@ -90,7 +102,7 @@ if ($query->param('tag1') ){
 $parameters .= " -seq ". $tag1 ." ".$sequence_file1 ;
 $parameters .= " -seq_format ". $sequence_format1 ;
 
-($sequence_file2) = &MultiGetSequenceFile(2,$file_prefix."sequence2.input", 0);
+($sequence_file2) = &MultiGetSequenceFile(2,$result_dir."sequence2.input", 0);
 if ($query->param('tag2') ){
     $tag2 =$query->param('tag2') ;
 }
@@ -157,13 +169,16 @@ if (&IsReal($query->param('bg_pseudo'))) {
 ###############
 #output folder
 
-$parameters .= " -web  -o ".$file_prefix ."matrix_quality ";
+$parameters .= " -archive  -o ".$result_dir."/".$file_prefix;
 
 ###########################
 #Command
 
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 
+## Convert the absolute path of the directory into a path relative to the tmp directory for the Web link
+$result_subdir = $tmp_file_name;
+$result_subdir =~ s/${TMP}//;
 $index_file = $result_subdir."/matrix_quality_index.html";
 my $mail_title = join (" ", "[RSAT]", "matrix-quality",  &AlphaDate());
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
