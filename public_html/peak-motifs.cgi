@@ -19,7 +19,6 @@ BEGIN {
 require "RSA.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-
 ############################################ configuration
 $command = "$ENV{RSAT}/perl-scripts/chip-seq-analysis";
 $output_directory = sprintf "chip-seq-analysis.%s", &AlphaDate();
@@ -27,6 +26,8 @@ $output_prefix = "ChIP-seq_analysis_";
 $output_path = "$TMP/$output_directory";
 $output_path =~ s|\/\/|\/|g;
 `mkdir -p $output_path`;
+$ENV{'PATH'} = $ENV{'PATH'} . ":$ENV{RSAT}/perl-scripts" . ":$ENV{RSAT}/python-scripts";
+$ENV{'PATH'} = $ENV{'PATH'} . ":$ENV{RSAT}/bin";
 
 ############################################ result page header
 ### Read the CGI query
@@ -104,6 +105,9 @@ $index_file = $output_directory."/".$output_prefix."index.html";
 #`touch $TMP/$index_file`;
 my $mail_title = join (" ", "[RSAT]", "chip-seq-analysis", &AlphaDate());
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
+#&ServerOutput("$command $parameters", $query->param('user_email'), $tmp_file_name);
+# $debug = "$command $parameters >> $TMP/$index_file 2> $TMP/log.txt";
+# `$debug`;
 
 ############################################ result page footer
 print $query->end_html;
