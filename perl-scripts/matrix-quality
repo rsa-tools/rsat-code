@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.86 2010/03/24 17:18:07 jvanheld Exp $
+# $Id: matrix-quality,v 1.87 2010/03/25 00:05:14 amedina Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -243,9 +243,12 @@ package main;
     %seqfile = ();
     %outfile = ();
 
+    
+
     $main::verbose = 0;
     $main::out = STDOUT;
-
+    $main::html_title=0;
+    
     ## Parameters for the &doit() command
     $dry = 0;
     $die_on_error = 1;
@@ -378,7 +381,7 @@ package main;
     local ($Wmin, $Wmax)  = $matrix->weight_range();
     &RSAT::message::Info("Matrix weight range", $Wmin, $Wmax) if ($main::verbose >= 2);
 
-    
+    $main::html_title=" $matrix_name " unless $main::html_title;
     #####################
     #Open HTML outstream
     if ($tasks{index}) {
@@ -390,7 +393,7 @@ package main;
 	print $main::index "<body>\n\n";
 	
 	## Print the command
-	print $main::index "<h1>matrix-quality result: ",$matrix_name,"</h1>\n\n";
+	print $main::index "<h1>matrix-quality result: ", $main::html_title,"</h1>\n\n";
 	print $main::index "<b>Command:</b>\n";
 	print $main::index "<pre>matrix-quality ";
 	&PrintArguments($main::index);
@@ -515,8 +518,8 @@ package main;
       ## Display the distributions
       print $main::index "\n<h3>Figures</h3>\n";
       print $main::index "\n<h4>Matrix logo</h4>\n";
-      &index_one_image($outfile{matrix_logo});
-      &index_one_image($outfile{matrix_rc_logo});
+      &index_one_image($outfile{matrix_logo}."_m1");
+      &index_one_image($outfile{matrix_rc_logo}."_m1");
       print $main::index "\n<h4>Complementary cumulative distributions</h4>\n";
       &index_one_image($outfile{distrib_compa});
       print $main::index "\n<h4>Complementary cumulative distributions (logarithmic Y axis)</h4>\n";
@@ -1109,7 +1112,7 @@ Example:
 	    	push (@main::image_formats, $image_format);
 	    }
 
- ## Image format
+ ## Archive
 =pod
 
 =item	B<-archive>
@@ -1120,6 +1123,20 @@ Compress the result directory into a zip archive of the same name
 =cut
 	} elsif ($arg eq "-archive") {
 	    $main::archive = 1;
+
+	    ## Tasks
+=pod
+
+ ## Title for html
+=pod
+
+=item	B<-html_title>
+
+Get a title for the html page.
+
+=cut
+	} elsif ($arg eq "-html_title") {
+	    $main::html_title =shift(@arguments);
 
 	    ## Tasks
 =pod
@@ -1620,10 +1637,10 @@ sub ExportMatrixInfo {
   my ($matrix) = @_;
 
   $outfile{matrix_info} = $outfile{prefix}."_matrix_info.txt";
-  $outfile{matrix_rc} = $outfile{prefix}."_rc";
+  $outfile{matrix_rc} = $outfile{prefix}."_matrix_rc";
 
-  $outfile{matrix_logo}= $matrix_name."_m1_logo" ;
-  $outfile{matrix_rc_logo}=$matrix_name."_m1_logo_rc";
+  $outfile{matrix_logo}= $outfile{prefix}."_".$matrix_name."_logo" ;
+  $outfile{matrix_rc_logo}=$outfile{prefix}."_".$matrix_name."_logo_rc";
 
   &RSAT::message::TimeWarn("Exporting matrix information",  $outfile{matrix_info})
     if ($main::verbose >= 1);
@@ -1635,29 +1652,31 @@ sub ExportMatrixInfo {
   $cmd .= " -bg_format ".$bg_format;
   $cmd .= " -return counts,frequencies,weights,info,parameters,sites,logo";
   $cmd .= " -logo_format ".$image_formats;
-  $cmd .= " -logo_opt '-e -M -t ".$matrix_name." '";
+  $cmd .= " -logo_opt '-e -M -t ".$matrix_name." ' ";
+  $cmd .= " -logo_file ". $outfile{matrix_logo};
   &doit($cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
 
-  ## Generate reverse complement
-  $cmd = "$SCRIPTS/convert-matrix";
+ # Generate reverse complement
+  $cmd = "$SCRIPTS/convert-matrix -rc ";
   $cmd .= " -i ".$matrix_file;
   $cmd .= " -from ".$matrix_format;
-  $cmd .= " -to tab -o ".$outfile{matrix_rc};
+  $cmd .= " -to tab -o ".$outfile{matrix_rc}.".tab";
   $cmd .= " -bgfile ".$infile{bg_file};
   $cmd .= " -bg_format ".$bg_format;
   $cmd .= " -return counts";
   &doit($cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
 
   ## Generate logo for the reverse complement
-  $cmd = "$SCRIPTS/convert-matrix -rc";
-  $cmd .= " -i ".$outfile{matrix_rc};
+  $cmd = "$SCRIPTS/convert-matrix ";
+  $cmd .= " -i ". $outfile{matrix_rc}.".tab";
   $cmd .= " -from tab";
-  $cmd .= " -to tab -o ".$outfile{matrix_rc}.".tab";
+  $cmd .= " -to tab -o ".$outfile{matrix_rc}."_info.tab";
   $cmd .= " -bgfile ".$infile{bg_file};
   $cmd .= " -bg_format ".$bg_format;
   $cmd .= " -return counts,logo";
   $cmd .= " -logo_format ".$image_formats;
   $cmd .= " -logo_opt '-e -M -t ".$matrix_name."_rc ' ";
+  $cmd .= " -logo_file ". $outfile{matrix_rc_logo};
   &doit($cmd, $dry, $die_on_error, $verbose, 0, $job_prefix);
 }
 
