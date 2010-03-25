@@ -3337,8 +3337,11 @@ sub convert_graph_cmd {
   if ($args{ewidth}) {
    $command .= " -ewidth";
   }
+
+  ## TEMPORARY: the php page only passes a boolean argument layou=1 or 1. 
+  ## This should be replaced by a value (spring|random|none)
   if ($args{layout}) {
-   $command .= " -layout";
+   $command .= " -layout spring";
   }
   if ($args{outformat}) {
    my $out_format = $args{outformat};
@@ -3617,8 +3620,10 @@ sub display_graph_cmd {
    $in_format =~ s/\'//g;
    $command .= " -in_format $in_format";
   }
+  ## TEMPORARY: the php page only passes a boolean argument layou=1 or 1. 
+  ## This should be replaced by a value (spring|random|none)
   if ($args{layout}) {
-   $command .= " -layout";
+   $command .= " -layout spring";
   }
   if ($args{ewidth}) {
    $command .= " -ewidth";
