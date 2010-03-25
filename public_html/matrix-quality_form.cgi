@@ -30,7 +30,7 @@ $default{demo_descr}="";
 $default{output}="display";
 $default{matrix}="";
 $default{matrix_file}="";
-$default{matrix_format} = "consensus";
+$default{matrix_format} = "meme";
 $default{permutation1} = "1";
 $default{permutation2} = "1";
 $default{tag1} = "sequence_set1";
@@ -43,6 +43,7 @@ $default{bg_format}="oligo-analysis";
 $default{bg_method}="bgfile";
 $checked{$default{bg_method}} = "CHECKED";
 $default{organism}="Escherichia_coli_K12";
+#$default{html_title}="";
 
 &ReadMatrixFromFile();
 
@@ -62,7 +63,13 @@ foreach $key (keys %default) {
 ### header
 &RSA_header("matrix-quality", "form");
 print "<CENTER>";
-print "description position-specific scoring matrices (PSSM), and calculate statistical parameters.<P>\n";
+print "Evaluate the quality of a Position-Specific Scoring Matrix (PSSM), by
+    comparing score distributions obtained with this matrix in various
+    sequence sets.</p>
+    The most classical use of the program is to compare score distributions
+    between <em>positive</em> sequences (e.g. true binding sites for the considered
+    transcription factor) and <em>negative</em> sequences (e.g. intergenic
+    sequences between convergently transcribed genes).<P>\n";
 print "<p><font color=red><b>Warning, this is still a prototype version</b></font>\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
@@ -77,6 +84,13 @@ print $query->start_multipart_form(-action=>"matrix-quality.cgi");
 ################################################################
 #### Matrix specification
 print "<hr>";
+print "<h2> Title ";
+print $query->textarea(-name=>'html_title',
+			 -default=>$default{html_title},
+			 -rows=>1,
+			 -columns=>30) . "<\h2>" ;
+
+#print "<hr>";
 &GetMatrix();
 print "<p><font color=red>Only the first matrix will be taken in acount</font></p>";
 print "<hr>";
@@ -125,48 +139,307 @@ print $query->end_form;
 ################################################################
 ### data for the demo 
 print $query->start_multipart_form(-action=>"matrix-quality_form.cgi");
-$demo_matrix="PRIOR FREQUENCIES DETERMINED BY OBSERVED FREQUENCIES.
-letter   1: A  prior frequency = 0.296739
-letter   2: T  prior frequency = 0.327174
-letter   3: C  prior frequency = 0.202174
-letter   4: G  prior frequency = 0.173913
+$demo_html_title=" LexA matrix from RegulonDB";
+$demo_matrix="********************************************************************************
+MEME - Motif discovery tool
+********************************************************************************
+MEME version 3.5.4 (Release date: 3.5.4)
 
-THE LIST OF MATRICES FROM FINAL CYCLE
+For further information on how to interpret these results or to get
+a copy of the MEME software please access http://meme.nbcr.net.
 
-MATRIX 1
-number of sequences = 23
-unadjusted information = 11.7434
-sample size adjusted information = 10.3038
-ln(p-value) = -177.341   p-value = 9.58579E-78
-ln(expected frequency) = -108.44   expected frequency = 8.04114E-48
-A	|  12   0   0   0   1  12   1  12   6  10   7  13   4  12   0  23   0   1  12   6  11
-T	|   3   1  23   0  14   5  15   5  15   6  11   5  12   2   0   0   0  13   6  13   8
-C	|   3  22   0   0   2   3   5   2   2   5   5   2   4   7  23   0   0   8   2   2   3
-G	|   5   0   0  23   6   3   2   4   0   2   0   3   3   2   0   0  23   1   3   2   1
-   1|1   :    1/1     ACTGTATAAAACCACAGCCAA
-   2|2   :    2/1     GCTGCGCTTATCGACAGTTAT
-   3|3   :    3/1     CCTGGCTTTCAGGGCAGCGTT
-   4|4   :    4/1     ACTGTTTTTTTATCCAGTATA
-   5|5   :    5/1     ATTGGCTGTTTATACAGTATT
-   6|6   :    6/1     CCTGTTAATCCATACAGCAAC
-   7|7   :    7/1     ACTGTACATCCATACAGTAAC
-   8|8   :    8/1     TCTGCTGGCAAGAACAGACTA
-   9|9   :    9/1     ACTGTATATAAAAACAGTATA
-  10|10  :   10/1     GCTGGATATCTATCCAGCATT
-  11|11  :   11/1     GCTGGATATCTATCCAGCATT
-  12|12  :   12/1     ACTGTGCCATTTTTCAGTTCA
-  13|13  :   13/1     ACTGTGCCATTTTTCAGTTCA
-  14|14  :   14/1     ACTGTATATAAAACCAGTTTA
-  15|15  :   15/1     ACTGTACACAATAACAGTAAT
-  16|16  :   16/1     ACTGTATGAGCATACAGTATA
-  17|17  :   17/1     GCTGGCGTTGATGCCAGCGGC
-  18|18  :   18/1     ACTGTTTATTTATACAGTAAA
-  19|19  :   19/1     TCTGTATATATACCCAGCTTT
-  20|20  :   20/1     TCTGGTTTATTGTGCAGTTTA
-  21|21  :   21/1     GCTGTATATACTCACAGCATA
-  22|22  :   22/1     ACTGTATATACACCCAGGGGG
-  23|23  :   23/1     CCTGAATGAATATACAGTATT
- ";
+This file may be used as input to the MAST algorithm for searching
+sequence databases for matches to groups of motifs.  MAST is available
+for interactive use and downloading at http://meme.nbcr.net.
+********************************************************************************
+
+
+********************************************************************************
+REFERENCE
+********************************************************************************
+If you use this program in your research, please cite:
+
+Timothy L. Bailey and Charles Elkan,
+\"Fitting a mixture model by expectation maximization to discover
+motifs in biopolymers\", Proceedings of the Second International
+Conference on Intelligent Systems for Molecular Biology, pp. 28-36,
+AAAI Press, Menlo Park, California, 1994.
+********************************************************************************
+
+
+********************************************************************************
+TRAINING SET
+********************************************************************************
+DATAFILE= /bio/jvanheld2/matrix_eval/data/Sites_FNA_NR/LexA.fna
+ALPHABET= ACGT
+Sequence name            Weight Length  Sequence name            Weight Length  
+-------------            ------ ------  -------------            ------ ------  
+LexA|65834-65853         1.0000     40  LexA|738568-738587       1.0000     40  
+LexA|738659-738678       1.0000     40  LexA|812655-812674       1.0000     40  
+LexA|832259-832278       1.0000     40  LexA|932351-932370       1.0000     40  
+LexA|1020162-1020181     1.0000     40  LexA|1229931-1229950     1.0000     40  
+LexA|1229951-1229970     1.0000     40  LexA|1944050-1944069     1.0000     40  
+LexA|1944102-1944121     1.0000     40  LexA|2749749-2749768     1.0000     40  
+LexA|2749771-2749790     1.0000     40  LexA|2821851-2821870     1.0000     40  
+LexA|3208751-3208770     1.0000     40  LexA|3851322-3851341     1.0000     40  
+LexA|3995930-3995949     1.0000     40  LexA|4255050-4255069     1.0000     40  
+LexA|4255091-4255110     1.0000     40  LexA|4255112-4255131     1.0000     40  
+LexA|4271978-4271997     1.0000     40  
+********************************************************************************
+
+********************************************************************************
+COMMAND LINE SUMMARY
+********************************************************************************
+This information can also be useful in the event you wish to report a
+problem with the MEME software.
+
+command: meme /bio/jvanheld2/matrix_eval/data/Sites_FNA_NR/LexA.fna -dna -mod oops -revcomp -nostatus -minw 22 -maxw 22 -bfile /bio/jvanheld2/matrix_eval/data/bg_freqs/2nt_upstream-noorf_Escherichia_coli_K12-ovlp-2str.meme_bg -dir /home/scmbb/installations 
+
+model:  mod=          oops    nmotifs=         1    evt=           inf
+object function=  E-value of product of p-values
+width:  minw=           22    maxw=           22    minic=        0.00
+width:  wg=             11    ws=              1    endgaps=       yes
+nsites: minsites=       21    maxsites=       21    wnsites=       0.8
+theta:  prob=            1    spmap=         uni    spfuzz=        0.5
+em:     prior=   dirichlet    b=            0.01    maxiter=        50
+        distance=    1e-05
+data:   n=             840    N=              21
+strands: + -
+sample: seed=            0    seqfrac=         1
+Letter frequencies in dataset:
+A 0.310 C 0.190 G 0.190 T 0.310 
+Background letter frequencies (from /bio/jvanheld2/matrix_eval/data/bg_freqs/2nt_upstream-noorf_Escherichia_coli_K12-ovlp-2str.meme_bg):
+A 0.294 C 0.206 G 0.206 T 0.294 
+********************************************************************************
+
+
+********************************************************************************
+MOTIF  1	width =   22   sites =  21   llr = 280   E-value = 2.6e-046
+********************************************************************************
+--------------------------------------------------------------------------------
+	Motif 1 Description
+--------------------------------------------------------------------------------
+Simplified        A  4627::::8:7374644:a:14
+pos.-specific     C  ::::a::113:1:3124a::31
+probability       G  ::12::a1:1111::11::a22
+matrix            T  5361:a:8:61522221:::43
+
+         bits    2.3     * *          *    
+                 2.0     * *          * *  
+                 1.8     ***          ***  
+                 1.6     ***          ***  
+Information      1.4     ***          ***  
+content          1.1     ***          ***  
+(19.2 bits)      0.9     ****         ***  
+                 0.7 *  *******       ***  
+                 0.5 *********** ***  ***  
+                 0.2 *************** ***** 
+                 0.0 ----------------------
+
+Multilevel           TATACTGTATATAAAAACAGTA
+consensus            ATAG     C A CTCC   CT
+sequence                          T T      
+                                           
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+	Motif 1 sites sorted by position p-value
+--------------------------------------------------------------------------------
+Sequence name            Strand  Start   P-value                     Site       
+-------------            ------  ----- ---------            ----------------------
+LexA|2749749-2749768         +      9  5.40e-11   CCAGCCTC TTTACTGTATATAAAACCAGTT TATACTGTAC
+LexA|3851322-3851341         -     11  8.07e-10   TATAGAAG TTTACTGTATAAATAAACAGTA ATATTTGGAC
+LexA|812655-812674           -     11  2.09e-09   CAACAAAT TATACTGGATAAAAAAACAGTT CATCACCATA
+LexA|4255112-4255131         +      9  3.54e-09   CTCACAGC ATAACTGTATATACACCCAGGG GGCGGAATGA
+LexA|1229951-1229970         +      9  3.54e-09   AAGAACAG ACTACTGTATATAAAAACAGTA TAACTTCAGG
+LexA|4255091-4255110         +      9  4.19e-09   AATCGCCT TTTGCTGTATATACTCACAGCA TAACTGTATA
+LexA|2749771-2749790         +      9  5.80e-09   AACCAGTT TATACTGTACACAATAACAGTA ATGGTTTTTC
+LexA|3995930-3995949         +      9  4.18e-08   TAATCAGC AAATCTGTATATATACCCAGCT TTTTGGCGGA
+LexA|4271978-4271997         -     11  5.35e-08   TGCATTCC AATACTGTATATTCATTCAGGT CAATTTGTGT
+LexA|1944050-1944069         +      9  6.79e-08   GATAAAAA AATGCTGGATAGATATCCAGCG AAGGATGAAG
+LexA|832259-832278           -     11  6.79e-08   AAACCTGA AATACTGTATAAACAGCCAATA TTGTGGCATT
+LexA|2821851-2821870         +      9  9.59e-08   GAAGCAAT TATACTGTATGCTCATACAGTA TCAAGTGTTT
+LexA|65834-65853             -     11  1.83e-07   GGGCAGTA ATGACTGTATAAAACCACAGCC AATCAAACGA
+LexA|1020162-1020181         -     14  2.24e-07      CTGGA TGTACTGTACATCCATACAGTA ACTCACAGGG
+LexA|4255050-4255069         -     11  6.76e-07   TGGAACCA TAAACTGCACAATAAACCAGAG ATTTATCGAA
+LexA|932351-932370           -     11  2.13e-06   CCAGTACT GTTGCTGTATGGATTAACAGGA GTGTAATCAA
+LexA|738568-738587           -     11  4.05e-06   CCACGGCG ATAACTGTCGATAAGCGCAGCC AGCTGCTGGC
+LexA|738659-738678           -     11  1.16e-05   TTCGAAAT AACGCTGCCCTGAAAGCCAGGC GTCAGGATAA
+LexA|3208751-3208770         +     10  1.26e-05  ATTTTGAAA TAAGCTGGCGTTGATGCCAGCG GCAAACCGA 
+LexA|1944102-1944121         -     12  1.26e-05    AATAAAT TATACTGTGCCATTTTTCAGTT CATCGAGACA
+LexA|1229931-1229950         -     11  4.68e-05   ATATACAG TAGTCTGTTCTTGCCAGCAGAT CAATACTGAT
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+	Motif 1 block diagrams
+--------------------------------------------------------------------------------
+SEQUENCE NAME            POSITION P-VALUE  MOTIF DIAGRAM
+-------------            ----------------  -------------
+LexA|2749749-2749768              5.4e-11  8_[+1]_10
+LexA|3851322-3851341              8.1e-10  10_[-1]_8
+LexA|812655-812674                2.1e-09  10_[-1]_8
+LexA|4255112-4255131              3.5e-09  8_[+1]_10
+LexA|1229951-1229970              3.5e-09  8_[+1]_10
+LexA|4255091-4255110              4.2e-09  8_[+1]_10
+LexA|2749771-2749790              5.8e-09  8_[+1]_10
+LexA|3995930-3995949              4.2e-08  8_[+1]_10
+LexA|4271978-4271997              5.3e-08  10_[-1]_8
+LexA|1944050-1944069              6.8e-08  8_[+1]_10
+LexA|832259-832278                6.8e-08  10_[-1]_8
+LexA|2821851-2821870              9.6e-08  8_[+1]_10
+LexA|65834-65853                  1.8e-07  10_[-1]_8
+LexA|1020162-1020181              2.2e-07  13_[-1]_5
+LexA|4255050-4255069              6.8e-07  10_[-1]_8
+LexA|932351-932370                2.1e-06  10_[-1]_8
+LexA|738568-738587                4.1e-06  10_[-1]_8
+LexA|738659-738678                1.2e-05  10_[-1]_8
+LexA|3208751-3208770              1.3e-05  9_[+1]_9
+LexA|1944102-1944121              1.3e-05  11_[-1]_7
+LexA|1229931-1229950              4.7e-05  10_[-1]_8
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+	Motif 1 in BLOCKS format
+--------------------------------------------------------------------------------
+BL   MOTIF 1 width=22 seqs=21
+LexA|2749749-2749768     (    9) TTTACTGTATATAAAACCAGTT  1 
+LexA|3851322-3851341     (   11) TTTACTGTATAAATAAACAGTA  1 
+LexA|812655-812674       (   11) TATACTGGATAAAAAAACAGTT  1 
+LexA|4255112-4255131     (    9) ATAACTGTATATACACCCAGGG  1 
+LexA|1229951-1229970     (    9) ACTACTGTATATAAAAACAGTA  1 
+LexA|4255091-4255110     (    9) TTTGCTGTATATACTCACAGCA  1 
+LexA|2749771-2749790     (    9) TATACTGTACACAATAACAGTA  1 
+LexA|3995930-3995949     (    9) AAATCTGTATATATACCCAGCT  1 
+LexA|4271978-4271997     (   11) AATACTGTATATTCATTCAGGT  1 
+LexA|1944050-1944069     (    9) AATGCTGGATAGATATCCAGCG  1 
+LexA|832259-832278       (   11) AATACTGTATAAACAGCCAATA  1 
+LexA|2821851-2821870     (    9) TATACTGTATGCTCATACAGTA  1 
+LexA|65834-65853         (   11) ATGACTGTATAAAACCACAGCC  1 
+LexA|1020162-1020181     (   14) TGTACTGTACATCCATACAGTA  1 
+LexA|4255050-4255069     (   11) TAAACTGCACAATAAACCAGAG  1 
+LexA|932351-932370       (   11) GTTGCTGTATGGATTAACAGGA  1 
+LexA|738568-738587       (   11) ATAACTGTCGATAAGCGCAGCC  1 
+LexA|738659-738678       (   11) AACGCTGCCCTGAAAGCCAGGC  1 
+LexA|3208751-3208770     (   10) TAAGCTGGCGTTGATGCCAGCG  1 
+LexA|1944102-1944121     (   12) TATACTGTGCCATTTTTCAGTT  1 
+LexA|1229931-1229950     (   11) TAGTCTGTTCTTGCCAGCAGAT  1 
+//
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+	Motif 1 position-specific scoring matrix
+--------------------------------------------------------------------------------
+log-odds matrix: alength= 4 w= 22 n= 399 bayes= 4.16993 E= 2.6e-046 
+    55  -1104   -211     83 
+    96   -211   -211     18 
+   -30   -211   -111    108 
+   118  -1104     21   -162 
+ -1104    228  -1104  -1104 
+ -1104  -1104  -1104    177 
+ -1104  -1104    228  -1104 
+ -1104   -111    -53    137 
+   137    -53   -211   -262 
+ -1104     47   -111    108 
+   128   -211   -111   -104 
+    -4   -111    -53     70 
+   118   -211   -111    -62 
+    55     69  -1104    -30 
+   108   -111   -211    -30 
+    38     21    -53    -30 
+    55     88   -111   -162 
+ -1104    228  -1104  -1104 
+   177  -1104  -1104  -1104 
+  -262  -1104    221  -1104 
+  -162     47    -12     55 
+    38    -53    -12     -4 
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+	Motif 1 position-specific probability matrix
+--------------------------------------------------------------------------------
+letter-probability matrix: alength= 4 w= 22 nsites= 21 E= 2.6e-046 
+ 0.428571  0.000000  0.047619  0.523810 
+ 0.571429  0.047619  0.047619  0.333333 
+ 0.238095  0.047619  0.095238  0.619048 
+ 0.666667  0.000000  0.238095  0.095238 
+ 0.000000  1.000000  0.000000  0.000000 
+ 0.000000  0.000000  0.000000  1.000000 
+ 0.000000  0.000000  1.000000  0.000000 
+ 0.000000  0.095238  0.142857  0.761905 
+ 0.761905  0.142857  0.047619  0.047619 
+ 0.000000  0.285714  0.095238  0.619048 
+ 0.714286  0.047619  0.095238  0.142857 
+ 0.285714  0.095238  0.142857  0.476190 
+ 0.666667  0.047619  0.095238  0.190476 
+ 0.428571  0.333333  0.000000  0.238095 
+ 0.619048  0.095238  0.047619  0.238095 
+ 0.380952  0.238095  0.142857  0.238095 
+ 0.428571  0.380952  0.095238  0.095238 
+ 0.000000  1.000000  0.000000  0.000000 
+ 1.000000  0.000000  0.000000  0.000000 
+ 0.047619  0.000000  0.952381  0.000000 
+ 0.095238  0.285714  0.190476  0.428571 
+ 0.380952  0.142857  0.190476  0.285714 
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+	Motif 1 regular expression
+--------------------------------------------------------------------------------
+[TA][AT][TA][AG]CTGTA[TC]A[TA]A[ACT][AT][ACT][AC]CAG[TC][AT]
+--------------------------------------------------------------------------------
+
+
+
+
+Time  0.06 secs.
+
+********************************************************************************
+
+
+********************************************************************************
+SUMMARY OF MOTIFS
+********************************************************************************
+
+--------------------------------------------------------------------------------
+	Combined block diagrams: non-overlapping sites with p-value < 0.0001
+--------------------------------------------------------------------------------
+SEQUENCE NAME            COMBINED P-VALUE  MOTIF DIAGRAM
+-------------            ----------------  -------------
+LexA|65834-65853                 6.95e-06  10_[-1(1.83e-07)]_8
+LexA|738568-738587               1.54e-04  10_[-1(4.05e-06)]_8
+LexA|738659-738678               4.39e-04  10_[-1(1.16e-05)]_8
+LexA|812655-812674               7.96e-08  10_[-1(2.09e-09)]_8
+LexA|832259-832278               2.58e-06  10_[-1(6.79e-08)]_8
+LexA|932351-932370               8.09e-05  10_[-1(2.13e-06)]_8
+LexA|1020162-1020181             8.51e-06  13_[-1(2.24e-07)]_5
+LexA|1229931-1229950             1.78e-03  10_[-1(4.68e-05)]_8
+LexA|1229951-1229970             1.35e-07  8_[+1(3.54e-09)]_10
+LexA|1944050-1944069             2.58e-06  8_[+1(6.79e-08)]_10
+LexA|1944102-1944121             4.80e-04  11_[-1(1.26e-05)]_7
+LexA|2749749-2749768             2.05e-09  8_[+1(5.40e-11)]_10
+LexA|2749771-2749790             2.21e-07  8_[+1(5.80e-09)]_10
+LexA|2821851-2821870             3.64e-06  8_[+1(9.59e-08)]_10
+LexA|3208751-3208770             4.80e-04  9_[+1(1.26e-05)]_9
+LexA|3851322-3851341             3.07e-08  10_[-1(8.07e-10)]_8
+LexA|3995930-3995949             1.59e-06  8_[+1(4.18e-08)]_10
+LexA|4255050-4255069             2.57e-05  10_[-1(6.76e-07)]_8
+LexA|4255091-4255110             1.59e-07  8_[+1(4.19e-09)]_10
+LexA|4255112-4255131             1.35e-07  8_[+1(3.54e-09)]_10
+LexA|4271978-4271997             2.03e-06  10_[-1(5.35e-08)]_8
+--------------------------------------------------------------------------------
+
+********************************************************************************
+
+
+********************************************************************************
+Stopped because nmotifs = 1 reached.
+********************************************************************************
+
+CPU: genomix
+
+********************************************************************************
+";
 
 $demo_seq1=">sulA|2.75|1020250|I|-74|17.3
 ccggctgtagtgttttccgtagagacacgcgcaattttacttgctgcggatgagaacgacgaagaacgatgtgcatagcctgaagtgtacataatcaatccagcccctgtgagttactgtatggatgtacagtacatccagtgacaacaaagatcaaccctattttcggaaagagcctcgcaaattttgtcgttggtgacgggaaaacataaattaatcttgccccttaagaataagttgcctattttcgtagttaacggatccgttaatgtgaatcattcttttatgttatgattttaaaaggaattttatgaaaagcctctcctataagcggatctataaatcacaagaatacctggcaacgttgggcacaattgaataccgatcattgtttggcagt
@@ -518,12 +791,13 @@ agatttccttAATTGTGATGTGTATCGAAGTGtgttgcggag
 $demo_descr="<H4>Comment on the demonstration example : </H4><blockquote class ='demo'>In this demonstration, we will analyse the PSSM of the Transcription Factor LexA available in RegulonDB. </p>
 As a positive set we will use the obtained sequences from the ChIP-chip experiment (Wade et al. Genes Dev. 2005) of transcription factor LexA in the Escherichia coli K12 genome.</p>
 As a negative sequence set we will use the reported binding sites of CRP in the Escherichia coli K12 Genome annotated at RegulonDB. </p>";
-
+$demo_markov=1;
 
 print "<TD><B>";
 print $query->hidden(-name=>'demo_descr',-default=>$demo_descr."</blockquote>");
+print $query->hidden(-name=>'html_title',-default=>$demo_html_title);
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
-print $query->hidden(-name=>'matrix_format',-default=>'consensus');
+print $query->hidden(-name=>'matrix_format',-default=>'meme');
 
 print $query->hidden(-name=>'tag1',-default=>'positive_set');
 print $query->hidden(-name=>'sequence1',-default=>$demo_seq1);
@@ -531,7 +805,7 @@ print $query->hidden(-name=>'permutation1',-default=>1);
 
 print $query->hidden(-name=>'tag2',-default=>'negative_set');
 print $query->hidden(-name=>'sequence2',-default=>$demo_seq2);
-
+print $query->hidden(-name=>'markov_order',-default=>$demo_markov);
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
