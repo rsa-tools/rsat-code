@@ -42,6 +42,7 @@ my $date = &AlphaDate();
 my $tmp_file_name = &RSAT::util::make_temp_file("","matrix-quality_".$date);
 #$tmp_file_name = join( "_", "matrix-quality", &AlphaDate());
 $file_prefix = `basename $tmp_file_name`;
+chomp($file_prefix);
 $result_dir = $tmp_file_name;
 #$result_subdir = $tmp_file_name;
 #$result_dir = $TMP."/".$result_subdir;
@@ -56,7 +57,12 @@ $result_dir = $tmp_file_name;
 			 "<p>\nResult subdir<br>", $result_subdir, 
 			 "<p>File prefix<br>", $file_prefix);
 
-
+#####################
+#Title specification
+if ($query->param('html_title')) {
+    $html_title=$query->param('html_title');
+    $parameters .= " -html_title ' ".$html_title." ' ";
+}
 
 ################################################################
 #### Matrix specification
@@ -179,7 +185,7 @@ print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >= 1);
 ## Convert the absolute path of the directory into a path relative to the tmp directory for the Web link
 $result_subdir = $tmp_file_name;
 $result_subdir =~ s/${TMP}//;
-$index_file = $result_subdir."/matrix_quality_index.html";
+$index_file = $result_subdir."/".$file_prefix."_index.html";
 my $mail_title = join (" ", "[RSAT]", "matrix-quality",  &AlphaDate());
 &EmailTheResult("$command $parameters", $query->param('user_email'), $index_file, title=>$mail_title);
 
