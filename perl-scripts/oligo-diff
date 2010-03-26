@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: oligo-diff,v 1.6 2010/02/02 21:31:16 jvanheld Exp $
+# $Id: oligo-diff,v 1.7 2010/03/26 20:43:55 jvanheld Exp $
 #
 ############################################################
 
@@ -19,12 +19,16 @@ $program_version
 
 =head1 DESCRIPTION
 
-Compare oligonucleotide occurrences between two input sequence files,
-and return oligos that are significantly enriched in one of the files
-respective to the other one.
+Compare oligonucleotide occurrences between two input sequence files
+("test" and "control"), and return oligos that are significantly
+enriched in one of the files respective to the other one.
 
 The statistical significance of the enrichment is computed using the
 hypergeometric distribution.
+
+Note that the files are named "test" and "control" by convention, but
+the hypergeometric test is symmetrical. Swapping the two input
+sequence file should thus return exactly the same results.
 
 =head1 AUTHORS
 
@@ -101,7 +105,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     $count_words_cmd = $ENV{RSAT}."/bin/count-words";
@@ -113,6 +117,8 @@ package main;
 #    $in = STDIN;
     $out = STDOUT;
 
+    $side = "test";
+
     ## Sequence treatment
     $purge = 1;
 
@@ -121,14 +127,14 @@ package main;
     $oligo_len = 0;
     $strand = "-1str";
     $overlap_mode = "-noov";
-    $sum1 = 0;
-    $sum2 = 0;
-    $sum = 0;
+    $occ_sum_test = 0;
+    $occ_sum_ctrl = 0;
+    $occ_sum = 0;
     $distinct_oligos = 0;
     $log_base = log(10);
 
     ## Threshold values
-    @supported_thresholds = qw(occ occ_sig occ_Pval occ_Eval);
+    @supported_thresholds = qw(occ occ_P occ_E occ_sig ratio rank);
     $supported_thresholds = join ",", @supported_thresholds;
     %supported_threshold = ();
     foreach my $thr (@supported_thresholds) {
@@ -145,8 +151,8 @@ package main;
     ## Check argument values
 
     ## Two input files are required
-    unless (($infile{file1}) && ($infile{file2})) {
-      &RSAT::error::FatalError("You must define two input sequence files , using the options -file1 and -file2.");
+    unless (($infile{test}) && ($infile{ctrl})) {
+      &RSAT::error::FatalError("You must define two input sequence files, using the options -test and -ctrl.");
     }
 
     ## oligonucleotide length
@@ -164,43 +170,46 @@ package main;
     $out = &OpenOutputFile($outfile{output});
 
     ################################################################
-    ## Count oligo occurrences and frequencies in the first sequence
+    ## Count oligo occurrences and frequencies in the test sequence
     ## file
 
-    &CountWords($infile{file1}, 1);
-    &CountWords($infile{file2}, 2);
+    &CountWords($infile{test}, "tst");
+    &CountWords($infile{ctrl}, "ctl");
 
     ## Compute word sums
+    &RSAT::message::TimeWarn("Computing occurrence significance") if ();
     foreach my $oligo (keys %patterns) {
 
       ## Set zero values to absent words
-      unless (defined($patterns{$oligo}->{occ1})) {
-	$patterns{$oligo}->{occ1} = 0;
-#	$patterns{$oligo}->{freq1} = 0;
+      unless (defined($patterns{$oligo}->{occ_tst})) {
+	$patterns{$oligo}->{occ_tst} = 0;
       }
-      unless (defined($patterns{$oligo}->{occ2})) {
-	$patterns{$oligo}->{occ2} = 0;
-#	$patterns{$oligo}->{freq2} = 0;
+      unless (defined($patterns{$oligo}->{occ_ctl})) {
+	$patterns{$oligo}->{occ_ctl} = 0;
       }
 
-      $patterns{$oligo}->{min_occ} = &RSAT::stats::min($patterns{$oligo}->{occ1}, $patterns{$oligo}->{occ2});
-      $patterns{$oligo}->{max_occ} = &RSAT::stats::max($patterns{$oligo}->{occ1}, $patterns{$oligo}->{occ2});
-      $patterns{$oligo}->{occ_sum} = $patterns{$oligo}->{occ1}+$patterns{$oligo}->{occ2};
+      $patterns{$oligo}->{min_occ} = &RSAT::stats::min($patterns{$oligo}->{occ_tst}, $patterns{$oligo}->{occ_ctl});
+      $patterns{$oligo}->{max_occ} = &RSAT::stats::max($patterns{$oligo}->{occ_tst}, $patterns{$oligo}->{occ_ctl});
+      $patterns{$oligo}->{occ_sum} = $patterns{$oligo}->{occ_tst}+$patterns{$oligo}->{occ_ctl};
 
       ## Count distinct oligos
       $distinct_oligos++;
 
-      ## Compute sums
-      $sum1 += $patterns{$oligo}->{occ1};
-      $sum2 += $patterns{$oligo}->{occ2};
+      ## Update sums of occurrences per file
+      $occ_sum_test += $patterns{$oligo}->{occ_tst};
+      $occ_sum_ctrl += $patterns{$oligo}->{occ_ctl};
 
+#       &RSAT::message::Debug($oligo, $patterns{$oligo}->{occ_tst},
+# 			    $patterns{$oligo}->{occ_ctl},
+# 			    $patterns{$oligo}->{occ_sum},
+# 			    "cumul", "test=".$occ_sum_test, "ctrl=".$occ_sum_ctrl) if ($main::verbose >= 10);
     }
-    $sum = $sum1 + $sum2;
+    $occ_sum = $occ_sum_test + $occ_sum_ctrl;
 
     ## Thresholds on occurrences
     if (defined($lth{occ})) {
       ## Occurrence lower threshold actually applies to max_occ, since
-      ## it means that we want for at least on of the file to contain
+      ## it means that we want for at least one of the file to contain
       ## that number of occurrences
       $lth{"max_occ"} = $lth{occ};
       &CheckLowerThresholds("max_occ");
@@ -214,62 +223,129 @@ package main;
 
     ## Compute hypergeometric significance
     my $test_nb = $distinct_oligos;
-    foreach my $oligo (keys %patterns) {
-      my $occ1 = $patterns{$oligo}->{occ1};
-      my $occ2 = $patterns{$oligo}->{occ2};
-      $patterns{$oligo}->{freq1} = sprintf("%.13f", $occ1/$sum1);
-      $patterns{$oligo}->{freq2} = sprintf("%.13f", $occ2/$sum2);
-      my $m = $patterns{$oligo}->{occ_sum};
-      my $n = $sum;
-      my $k = $sum1;
+    my $ol = 0;
+    foreach my $oligo (sort(keys %patterns)) {
+      $ol++;
+      &RSAT::message::TimeWarn("Pattern", 
+			       $ol."/".$distinct_oligos, $oligo,
+			       "occ_tst=".$patterns{$oligo}->{occ_tst},
+			       "occ_ctl=".$patterns{$oligo}->{occ_ctl},
+			       "occ_sum=".$patterns{$oligo}->{occ_sum},
+			      ) if (($main::verbose >= 2) && ($ol % 100 == 1));
+      my $occ_tst = $patterns{$oligo}->{occ_tst};
+      my $occ_ctl = $patterns{$oligo}->{occ_ctl};
 
-      ## Random expectation
-      $patterns{$oligo}->{exp1} = $m * $sum1/$sum;
-      $patterns{$oligo}->{exp2} = $m * $sum2/$sum;
-
-      if ($occ1 >= $patterns{$oligo}->{exp1}) {
-#      if ($patterns{$oligo}->{freq1} > $patterns{$oligo}->{freq2}) {
-	## Right-tailed test (test significance of over-representation in file1)
-	my $from = $occ1;
-	my $to = $m;
-	$patterns{$oligo}->{side} = "file1";
-	$patterns{$oligo}->{occ_Pval} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
+      ## Observed/expected ratio
+      my $ratio = "NA";
+      if ($occ_tst > 0) {
+	if ($occ_ctl > 0) {
+	  $ratio = sprintf("%.3f", $occ_tst/$occ_ctl);
+	} else {
+	  $ratio = "inf";
+	}
       } else {
-	## Left-tailed test (test significance of over-representation in file1)
-	$patterns{$oligo}->{side} = "file2";
-	my $from = 0;
-	my $to = $occ1;
-	$patterns{$oligo}->{occ_Pval} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
+	if ($occ_ctl > 0) {
+	  $ratio = 0;
+	} else {
+	  $ratio = "NA";
+	}
       }
-      $patterns{$oligo}->{occ_Eval} = $test_nb * $patterns{$oligo}->{occ_Pval};
-      $patterns{$oligo}->{occ_sig} = -log($patterns{$oligo}->{occ_Eval})/$log_base;
+      $patterns{$oligo}->{ratio} = $ratio;
+      next unless &CheckPatternThresholds("ratio", $oligo);
+
+      ## Frequencies per position
+      $patterns{$oligo}->{freq_test} = sprintf("%.13f", $occ_tst/$occ_sum_test);
+      $patterns{$oligo}->{freq_ctrl} = sprintf("%.13f", $occ_ctl/$occ_sum_ctrl);
+
+      ## Expected occurrences
+      my $m = $patterns{$oligo}->{occ_sum};
+      my $n = $occ_sum;
+      my $k = $occ_sum_test;
+#      &RSAT::message::Debug($oligo, "m=".$m) if ($main::verbose >= 0);
+      $patterns{$oligo}->{exp_tst} = $m * $occ_sum_test/$occ_sum;
+      $patterns{$oligo}->{exp_ctl} = $m * $occ_sum_ctrl/$occ_sum;
+      my $from;
+      my $to;
+
+
+      ## Occurrence significance (P-value, E-value, sig)
+      if ($occ_tst >= $patterns{$oligo}->{exp_tst}) {
+	## Right-tailed test (test significance of over-representation in test)
+	$patterns{$oligo}->{side} = "test";
+	if ($main::side eq "ctrl") {
+	  $patterns{$oligo}->{occ_P} = "NA";
+	} else {
+	  $from = $occ_tst;
+	  $to = $m;
+	  $patterns{$oligo}->{occ_P} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
+	}
+      } else {
+	## Left-tailed test (test significance of over-representation in test)
+	$patterns{$oligo}->{side} = "ctrl";
+	if ($main::side eq "test") {
+	  $patterns{$oligo}->{occ_P} = "NA";
+	} else {
+	  $from = 0;
+	  $to = $occ_tst;
+	  $patterns{$oligo}->{occ_P} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
+	}
+      }
+      if ($patterns{$oligo}->{occ_P} eq "NA") {
+	$patterns{$oligo}->{occ_E} = "NA";
+      } else {
+	$patterns{$oligo}->{occ_E} = $test_nb * $patterns{$oligo}->{occ_P};
+      }
+      if ($patterns{$oligo}->{occ_E} eq "NA") {
+	$patterns{$oligo}->{occ_sig} = "NA";
+      } elsif ($patterns{$oligo}->{occ_E} <= 0) {
+	$patterns{$oligo}->{occ_sig} = "inf";
+      } else {
+	$patterns{$oligo}->{occ_sig} = -log($patterns{$oligo}->{occ_E})/$log_base;
+      }
+
+      &RSAT::message::TimeWarn("Pattern", $oligo,
+			       $ol."/".$distinct_oligos,
+			       "occ_tst=".$occ_tst,
+			       "occ_ctl=".$occ_ctl,
+			       "m=".$m,
+			       "occ_sum=".$patterns{$oligo}->{occ_sum},
+			       "freq_test=".$patterns{$oligo}->{freq_test},
+			       "freq_ctrl=".$patterns{$oligo}->{freq_ctrl},
+			       "exp_tst=".$patterns{$oligo}->{exp_tst},
+			       "exp_ctl=".$patterns{$oligo}->{exp_ctl},
+			       "occ_P=".$patterns{$oligo}->{occ_P},
+			       "occ_E=".$patterns{$oligo}->{occ_E},
+			       "occ_sig=".$patterns{$oligo}->{occ_sig},
+			       "ratio=".$ratio,
+			      ) if ($main::verbose >= 4);
     }
     &CheckThresholds("occ_sig");
-    &CheckThresholds("occ_Pval");
-    &CheckThresholds("occ_Eval");
+    &CheckThresholds("occ_P");
+    &CheckThresholds("occ_E");
 
     ################################################################
     ## Print verbose
     &Verbose() if ($verbose);
-
     %descr = ();
     $descr{seq} = "oligonucleotide sequence";
     $descr{id} = "oligonucleotide identifier";
-    $descr{occ1} = "occurrences in file ".$infile{file1};
-    $descr{occ2} = "occurrences in file ".$infile{file2};
+    $descr{identifier} = "oligonucleotide identifier";
+    $descr{occ_tst} = "occurrences in file ".$infile{test};
+    $descr{occ_ctl} = "occurrences in file ".$infile{ctrl};
     $descr{occ_sum} = "sum of occurrences in both files";
-    $descr{exp1} = "random expectation for occ1";
-    $descr{exp2} = "random expectation for occ2";
-    $descr{freq1} = "frequency in file ".$infile{file1};
-    $descr{freq2} = "frequency in file ".$infile{file2};
-    $descr{occ_Pval} = "Hypergeometric P-value. P(X >= occ)";
-    $descr{occ_Eval} = "Hypergeometric E-value. occ_Eval = nb_test * occ_Pval";
-    $descr{occ_sig} = "Hypergeometric significance. occ_sig = -log10(occ_Eval)";
+    $descr{exp_tst} = "random expectation for occ_tst";
+    $descr{exp_ctl} = "random expectation for occ_ctl";
+    $descr{freq_test} = "frequency in file ".$infile{test};
+    $descr{freq_ctrl} = "frequency in file ".$infile{ctrl};
+    $descr{occ_P} = "Hypergeometric P-value. P(X >= occ)";
+    $descr{occ_E} = "Hypergeometric E-value. occ_E = nb_test * occ_P";
+    $descr{occ_sig} = "Hypergeometric significance. occ_sig = -log10(occ_E)";
+    $descr{ratio} = "Ratio. R = occ_tst / occ_ctl";
     $descr{rank} = "Rank of the patterns sorted by decreasing significance.";
-    $descr{side} = "side of the higher representation (file1 or file2)";
+    $descr{side} = "side of the higher representation (test or ctrl)";
 
     ## Output fields
-    my @output_fields = qw(seq id occ1 occ2 exp1 exp2 freq1 freq2 occ_Pval occ_Eval occ_sig rank side);
+    my @output_fields = qw(seq id occ_tst occ_ctl exp_tst exp_ctl freq_test freq_ctrl occ_P occ_E occ_sig ratio rank side);
 
     ## Field descriptions
     if ($main::verbose >= 1) {
@@ -283,38 +359,49 @@ package main;
     }
 
     ## Header
-    print $out "#", join ("\t", @output_fields), "\n";
-
-
+    my $header = join ("\t", @output_fields);
+    if ($oligo_len > 3) {
+      $header =~s/\tid\t/\tidentifier\t/;
+    }
+    print $out "#", $header, "\n";
 
     ## Print result table
-
     %out_format = ();
     $out_format{seq} = "%s";
     $out_format{id} = "%s";
-    $out_format{occ1} = "%d";
-    $out_format{occ2} = "%d";
+    $out_format{identifier} = "%s";
+    $out_format{occ_tst} = "%d";
+    $out_format{occ_ctl} = "%d";
     $out_format{occ_sum} = "%d";
     $out_format{occ_sum} = "%d";
-    $out_format{exp1} = "%.2f";
-    $out_format{exp2} = "%.2f";
-    $out_format{freq1} = "%s";
-    $out_format{freq2} = "%s";
+    $out_format{exp_tst} = "%.1f";
+    $out_format{exp_ctl} = "%.1f";
+    $out_format{freq_test} = "%s";
+    $out_format{freq_ctrl} = "%s";
     $out_format{side} = "%s";
-    $out_format{occ_Pval} = "%.1e";
-    $out_format{occ_Eval} = "%.1e";
+    $out_format{occ_P} = "%.1e";
+    $out_format{occ_E} = "%.1e";
     $out_format{occ_sig} = "%.2f";
+    $out_format{ratio} = "%.3f";
     $out_format{rank} = "%d";
 
-    my @sorted_oligos = sort {$patterns{$b}->{occ_sig} <=> $patterns{$a}->{occ_sig}}  (keys %patterns);
+    #### two-criteria sorting, sig is prioritary, but
+    #### zscore is useful when the proba reaches
+    #### calculation limits
+    my @sorted_oligos = sort {(($patterns{$b}->{occ_sig} <=>  $patterns{$a}->{occ_sig}) ||
+			       (abs($patterns{$b}->{ratio}) <=>  abs($patterns{$a}->{ratio})))
+			    } keys %patterns;
+#    my @sorted_oligos = sort {$patterns{$b}->{occ_sig} <=> $patterns{$a}->{occ_sig}}  (keys %patterns);
     my $rank = 0;
     foreach my $oligo (@sorted_oligos) {
       $rank++;
+      next if ((defined($lth{rank})) && ($rank < $lth{rank}));
+      next if ((defined($uth{rank})) && ($rank > $uth{rank}));
       $patterns{$oligo}->{rank} = $rank;
       my @values =  ();
       foreach my $field (@output_fields) {
+	&RSAT::message::Debug($oligo, $field, $out_format{$field}, $patterns{$oligo}->{$field}) if ($main::verbose >= 10);
 	push @values, sprintf( $out_format{$field}, $patterns{$oligo}->{$field});
-#	&RSAT::message::Debug($oligo, $field, $out_format{$field}, $patterns{$oligo}->{$field}) if ($main::verbose >= 0);
       }
       print $out join ("\t", @values), "\n";
     }
@@ -410,23 +497,55 @@ Same as -h
 
 =pod
 
-=item B<-file1 first_seq_file>
+=item B<-test test_seq_file>
 
-First sequence file.
+Test sequence file.
+
+Both the test and control sequences must be provided in fasta format.
 
 =cut
-    } elsif ($arg eq "-file1") {
-      $main::infile{file1} = shift(@arguments);
+    } elsif ($arg eq "-test") {
+      $main::infile{test} = shift(@arguments);
 
 =pod
 
-=item B<-file2 second_seq_file>
+=item B<-ctrl control_seq_file>
 
-Second sequence file.
+Control sequence file.
 
 =cut
-    } elsif ($arg eq "-file2") {
-      $main::infile{file2} = shift(@arguments);
+    } elsif ($arg eq "-ctrl") {
+      $main::infile{ctrl} = shift(@arguments);
+
+
+=pod
+
+=item B<-side test | ctrl | both>
+
+Side of the significance test. 
+
+=over
+
+=item I<-side test>
+
+Only tests over-representation in the test sequences. This is the
+default option.
+
+=item I<-side both>
+
+Test over-representation in either the test or the control set.
+
+=item I<-side ctrl>
+
+Only tests over-representation in the control sequences.
+
+=back
+
+=cut
+    } elsif ($arg eq "-side") {
+      $main::side = shift(@arguments);
+      &RSAT::error::FatalError($main::side." is not a valid value for option -side. Supported: test | ctrl | both")
+	unless (($side eq "test") || ($side eq "ctrl") || ($side eq "both"));
 
 =pod
 
@@ -471,7 +590,7 @@ Oligonucleotide length.
 =cut
     } elsif ($arg eq "-l") {
       $main::oligo_len = shift(@arguments);
-      &RSAT::error::FatalError($main::oligo_len, "Invalid value for oligonucleotide length. Must be a strictly positive Natural number. ")
+      &RSAT::error::FatalError($main::oligo_len, "Invalid value for oligonucleotide length. Must be a strictrly positive Natural number. ")
 	unless ((&IsNatural($main::oligo_len)) && ($oligo_len > 0));
 
 
@@ -553,7 +672,7 @@ allows to use the command within a pipe.
 
 Lower threshold on some output field.
 
-Supported fields for threshold: occ,occ_sig,occ_Pval,occ_Eval
+Supported fields for threshold: occ,occ_sig,occ_P,occ_E
 
 =item B<-uth key value>
 
@@ -632,18 +751,17 @@ sub Verbose {
     print $out &PrintThresholdValues();
 
     print $out "; Total oligonucleotide sums\n";
-    printf $out ";\tFile 1 sum\t%d\n", $main::sum1;
-    printf $out ";\tFile 2 sum\t%d\n", $main::sum2;
-    printf $out ";\tTotal sum\t%d\n", $main::sum;
+    printf $out ";\tTest file\t%d\n", $main::occ_sum_test;
+    printf $out ";\tControl file\t%d\n", $main::occ_sum_ctrl;
+    printf $out ";\tTotal\t%d\n", $main::occ_sum;
 }
 
 
 ################################################################
 ## Count word occurrences in an input file
 sub CountWords {
-  my ($file, $file_nb) = @_;
+  my ($file, $file_type) = @_;
   my $cmd = "";
-
   if ($file =~ /.gz$/) {
     $cmd = "gunzip -d ".$file;
   } else {
@@ -653,7 +771,6 @@ sub CountWords {
   if ($purge) {
     $cmd .= " | purge-sequence -mis 0 -ml 20 ".$main::strand;
   }
-
   $cmd .= " | ".$main::count_words_cmd;
   $cmd .= " -l ".$main::oligo_len;
   $cmd .= " ".$main::strand;
@@ -671,17 +788,20 @@ sub CountWords {
     my ($oligo, $id, $freq, $occ, $ovlp) = split("\t", $_);
     $patterns{$oligo}->{seq} = $oligo;
     $patterns{$oligo}->{id} = $id;
-    $patterns{$oligo}->{"occ".$file_nb} = $occ;
+    $patterns{$oligo}->{"occ_".$file_type} = $occ;
 
     ## With the option -noov, the sum of frequencies returned by
     ## count-words is smaller than 1. For this analysis, we only take
     ## into account the frequencies among counted words -> we
     ## recompute them.
     ##
-    ## $patterns{$oligo}->{"freq".$file_nb} = $freq;
+    ## $patterns{$oligo}->{"freq_".$file_type} = $freq;
+#    &RSAT::message::Debug("count-words", $oligo, $id, $occ, $freq) if ($main::verbose >= 10);
   }
   close OLIGOS;
 }
+
+
 =head1 WISH LIST
 
 =pod
@@ -691,11 +811,11 @@ sub CountWords {
 =item B<-return assembly>
 
 Assemble the significant patterns with I<pattern-assembly>. The
-oligonucleotides significantly enriched in file1 are assembled
-separately from those significant in file2.
+oligonucleotides significantly enriched in test are assembled
+separately from those significant in ctrl.
 
 The option -return assembly requires to specify an output file. The
-assembly files have the suffix _file1.asmb and _file2.asmb,
+assembly files have the suffix _test.asmb and _ctrl.asmb,
 respectively.
 
 =item B<-return maps>
