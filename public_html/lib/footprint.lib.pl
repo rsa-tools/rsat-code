@@ -33,8 +33,15 @@ local $all_genes = 0;         ## Analyze all the genes of the query organism
 ################################################################
 ## Treat one command, by either executing it, or concatenating it for
 ## further batch processing
+##
+## Usage: 
+##   &one_command($cmd, $print_out);
+##
+## If the variable $print_out is set to 1, the command is printed to
+## the output file $main::out.
+##
 sub one_command {
-  my ($cmd) = @_;
+  my ($cmd, $print_out) = @_;
   if ($main::batch) {
     if ($main::batch_cmd =~/\S/) {
       $main::batch_cmd .= " ; $cmd";
@@ -42,7 +49,7 @@ sub one_command {
       $main::batch_cmd = "$cmd";
     }
   } else {
-    print $out ("; ", &AlphaDate(), "\n", $cmd, "\n\n") if ($main::verbose >= 3);
+    print $main::out ("\n", "; ", &AlphaDate(), "\n", $cmd, "\n\n") if (($print_out) || ($main::verbose >= 3));
     &doit($cmd, $dry, $die_on_error, $main::verbose, $batch, $job_prefix);
   }
 }
