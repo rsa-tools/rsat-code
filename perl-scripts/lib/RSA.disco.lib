@@ -31,6 +31,7 @@ foreach my $thr (@supported_thresholds) {
     $supported_threshold{$thr} = 1;
 }
 
+################################################################
 ## Print threshold values for verbosity
 sub PrintThresholdValues {
     my %th = (%lth, %uth);
@@ -96,7 +97,12 @@ sub CheckLowerThresholds {
   if (defined($main::lth{$key})) {
     &RSAT::message::TimeWarn("Lower threshold on $key\t$main::lth{$key}") if ($main::verbose >= 3);
     foreach $pattern_seq (keys %main::patterns) {
-      if ($main::patterns{$pattern_seq}->{$key} < $main::lth{$key}) {
+      ## NA values are deleted
+      if ($main::patterns{$pattern_seq}->{$key} eq "NA") {
+	delete $main::patterns{$pattern_seq};
+      }
+      ## Check threshold
+      elsif ($main::patterns{$pattern_seq}->{$key} < $main::lth{$key}) {
 	#	      &RSAT::message::Debug("Lower threshold", "deleting pattern", $pattern_seq, $key, $main::patterns{$pattern_seq}->{$key}, $main::lth{$key}) if ($main::verbose >= 0);
 	delete $main::patterns{$pattern_seq};
       }
@@ -111,7 +117,12 @@ sub CheckUpperThresholds {
   if (defined($main::uth{$key})) {
     &RSAT::message::TimeWarn("Upper threshold on $key\t$main::uth{$key}") if ($main::verbose >= 3);
     foreach $pattern_seq (keys %main::patterns) {
-      if ($main::patterns{$pattern_seq}->{$key} > $main::uth{$key}) {
+      ## NA values are deleted
+      if ($main::patterns{$pattern_seq}->{$key} eq "NA") {
+	delete $main::patterns{$pattern_seq};
+      }
+      ## Check threshold
+      elsif ($main::patterns{$pattern_seq}->{$key} > $main::uth{$key}) {
 	#	      &RSAT::message::Debug("Upper threshold", "deleting pattern", $pattern_seq, $key, $main::patterns{$pattern_seq}->{$key}, $main::lth{$key}) if ($main::verbose >= 0);
 	delete $main::patterns{$pattern_seq};
       }
@@ -125,12 +136,18 @@ sub CheckUpperThresholds {
 sub CheckPatternThresholds {
   my ($key, $pattern_seq) = @_;
 
+  ## NA values are deleted
+  if ($main::patterns{$pattern_seq}->{$key} eq "NA") {
+      delete $main::patterns{$pattern_seq};
+      return(0);
+  }
+
   ## Lower threshold
   if (defined($main::lth{$key})) {
     &RSAT::message::TimeWarn("Lower threshold on $key\t$main::lth{$key}") if ($main::verbose >= 4);
     if ($main::patterns{$pattern_seq}->{$key} < $main::lth{$key}) {
       delete $main::patterns{$pattern_seq};
-      return();
+      return(0);
     }
   }
 
@@ -139,8 +156,10 @@ sub CheckPatternThresholds {
     &RSAT::message::TimeWarn("Upper threshold on $key\t$main::uth{$key}") if ($main::verbose >= 4);
     if ($main::patterns{$pattern_seq}->{$key} > $main::uth{$key}) {
       delete $main::patterns{$pattern_seq};
-    }  
+      return(0)
+    }
   }
+  return(1);
 }
 
 
@@ -204,33 +223,32 @@ sub UngroupRC {
 ################################################################
 #### Calculate observed/expected ratio
 sub CalcRatio {
-    if ($return{'freq'}) {
-	foreach $pattern_seq (sort keys %patterns) {
-	    if ($patterns{$pattern_seq}->{exp_freq} == 0) {
-		$patterns{$pattern_seq}->{ratio} = 0;
-	    } else {
-		$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{observed_freq}/$patterns{$pattern_seq}->{exp_freq};
-	    }
-	    #### check threshold on occurrence probability ####
-	    if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
-		delete $patterns{$pattern_seq};
-	    }
-	}
-    } elsif ($return{'occ'}) {
-	foreach $pattern_seq (sort keys %patterns) {
-	    if ($patterns{$pattern_seq}->{exp_occ} == 0) {
-		$patterns{$pattern_seq}->{ratio} = 0;
-	    } else {
-		$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{occ}/$patterns{$pattern_seq}->{exp_occ};
-	    }
-	    
-	    #### check threshold on occurrence probability ####
-	    if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
-		delete $patterns{$pattern_seq};
-	    }
-	}
+  if ($return{'freq'}) {
+    foreach $pattern_seq (sort keys %patterns) {
+      if ($patterns{$pattern_seq}->{exp_freq} == 0) {
+	$patterns{$pattern_seq}->{ratio} = 0;
+      } else {
+	$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{observed_freq}/$patterns{$pattern_seq}->{exp_freq};
+      }
+      #### check threshold on occurrence probability ####
+      if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
+	delete $patterns{$pattern_seq};
+      }
     }
-    &CheckThresholds("ratio");
+  } elsif ($return{'occ'}) {
+    foreach $pattern_seq (sort keys %patterns) {
+      if ($patterns{$pattern_seq}->{exp_occ} == 0) {
+	$patterns{$pattern_seq}->{ratio} = 0;
+      } else {
+	$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{occ}/$patterns{$pattern_seq}->{exp_occ};
+      }
+      #### check threshold on occurrence probability ####
+      if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
+	delete $patterns{$pattern_seq};
+      }
+    }
+  }
+  &CheckThresholds("ratio");
 } ### CalcRatio
 
 
