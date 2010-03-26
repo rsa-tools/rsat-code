@@ -3260,8 +3260,9 @@ sub random_seq {
  &run_WS_command($command, $output_choice, ".random-seq")
 }
 
-# RSAT GRAPH TOOLS
-##########
+################################################################
+## RSAT GRAPH TOOLS
+################################################################
 
 sub convert_graph {
     my ($self, $args_ref) = @_;
@@ -3278,9 +3279,6 @@ sub convert_graph {
     system("rm $tmp_outfile");
     $tmp_outfile .= ".$out_format";
 
-    
-    
-    
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
 #     print TMP_OUT $result;
 #     print TMP_OUT "KEYS ".keys(%args);
@@ -3297,7 +3295,7 @@ sub convert_graph {
     }
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"convert-graph",output_choice=>$output_choice);
-    
+
     if ($output_choice eq 'server') {
 	return SOAP::Data->name('response' => {'command' => $command, 
 					       'server' => $tmp_outfile});
