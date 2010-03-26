@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.16 2010/03/23 01:39:47 jvanheld Exp $
+# $Id: display-graph,v 1.17 2010/03/26 02:21:52 jvanheld Exp $
 #
 ############################################################
 
@@ -34,7 +34,8 @@ display-graph -i graph_input_file -o picture_output_file [-v #] [-layout] [-in_f
 
 =head1 INPUT FORMAT
 
-See convert-graph for a description of the allowed input graph formats. 
+See convert-graph for a description of the allowed input graph
+formats.
 
 =head1 OUTPUT FORMAT
 
@@ -70,7 +71,7 @@ package main;
     $main::verbose = 0;
 
     ## Input formats
-    local $input_format = "tab";
+    local $input_format = "";
     %supported_input_format =(
 	tab=>1,
 	gml=>1,
@@ -87,10 +88,10 @@ package main;
     ## Output formats
     local $output_format = "png";
     %supported_output_format =(
-    				ps=>1,
-    				png=>1,
-    				jpg=>1,
-    				jpeg=>1
+			       ps=>1,
+			       png=>1,
+			       jpg=>1,
+			       jpeg=>1
     			      );
     $supported_output_formats = join (",", keys %supported_output_format);
 
@@ -103,8 +104,13 @@ package main;
 
     ################################################################
     ## Check argument values
+
+    unless ($input_format) {
+      &RSAT::error::FatalError("You must speecify the input  format (option -in_format)");
+    }
+
     if (!$layout && $input_format ne 'gml') {
-      &RSAT::error::FatalError("You must specify use the -layout option with this format", $input_format);
+      &RSAT::error::FatalError("You must use the  option -layout with format", $input_format);
     }
     if (!$main::outfile{output}) {
       &RSAT::error::FatalError("You must specify an output file with the -o option");
@@ -121,11 +127,19 @@ package main;
 
     ################################################################
     ##### read input
-    $graph->graph_from_text($input_format, $main::infile{input}, $source_col, $target_col, $weight_col, $source_color_col, $target_color_col,$color_col, 1);
+
+    $graph->graph_from_text($input_format,
+			    $main::infile{input},
+			    $source_col,
+			    $target_col,
+			    $weight_col,
+			    $source_color_col,
+			    $target_color_col,
+			    $color_col,
+			    1);
 
     ## Calculates the layout
     $graph->layout($layout) if ($layout);
-
 
     ## Calculate the minimum and maximum values of the weight on the edges
     my ($edge_mean, $edge_sd, $edge_min, $edge_max);
