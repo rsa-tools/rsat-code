@@ -146,31 +146,34 @@ sub ReadProperties {
 sub ReadConfig {
   if ($0 =~ /([^(\/)]+)$/) {
     my $config_file;
-    if (-e "$`../RSA.config") {
-      $config_file = "$`../RSA.config";
-    } elsif (-e "$`../../RSA.config") {
-      $config_file = "$`../../RSA.config";
+    if (-e $`."../RSA.config") {
+      $config_file = $`."../RSA.config";
+    } elsif (-e $`."../../RSA.config") {
+      $config_file = $`."../../RSA.config";
     }
+    &RSAT::message::Info("RSAT config file", $config_file) if ($main::verbose >= 3);
     if ($config_file) {
-	require $config_file;
+      require $config_file;
     } else {
+      return();
       &RSAT::error::FatalError("Cannot find the old-format config file", "RSA.config", "from dir", $`);
     }
 
     ## Read user-defined local configuration if defined
     if ($ENV{'RSA_LOCAL_CONFIG'}) {
       if (-e $ENV{'RSA_LOCAL_CONFIG'}) {
+	&RSAT::message::Info("Reading local configuration file", $ENV{'RSA_LOCAL_CONFIG'}) if ($main::verbose >= 1);
 	if (-r $ENV{'RSA_LOCAL_CONFIG'}) {
 	  require $ENV{'RSA_LOCAL_CONFIG'};
 	} else {
-	  warn (";WARNING: cannot read local config file ", 
-		$ENV{'RSA_LOCAL_CONFIG'}, 
-		"\n"), 
+	  warn (";WARNING: cannot read local config file ",
+		$ENV{'RSA_LOCAL_CONFIG'},
+		"\n"),
 	      }
       } else {
-	warn (";WARNING: local config file ", 
-	      $ENV{'RSA_LOCAL_CONFIG'}, 
-	      " does not exist\n"), 
+	warn (";WARNING: local config file ",
+	      $ENV{'RSA_LOCAL_CONFIG'},
+	      " does not exist\n"),
 	    }
     }
   } else {
@@ -215,6 +218,7 @@ sub InitRSAT {
   $main::LIB = "$ENV{RSAT}/lib";
   $main::TMP = "$ENV{RSAT}/public_html/tmp";
   $main::SCRIPTS = "$ENV{RSAT}/perl-scripts";
+  $main::PYTHON = "$ENV{RSAT}/python-scripts";
 
   ################################################################
   ## Redirect queries to a remote server 
