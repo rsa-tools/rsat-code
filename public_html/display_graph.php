@@ -29,7 +29,7 @@
   $now = date("Ymd_His");
   $graph = $_REQUEST['graph'];
   $layout = $_REQUEST['layout'];
-  if ($layout == 'on') {
+  if ($layout == 'spring') {
     $layout = 1;
   }
   $s_col = $_REQUEST['s_col'];
@@ -66,7 +66,9 @@
   ## If display is not selected and the format is not GML -> error
   if ($in_format != "gml" && $layout != "1") {
     $error = 1;
-    error("You must calculate the layout for graphs in format $in_format");
+    error("Layout is only compatible with the GML format. To obtain a layout,
+          please first convert your graph in GML using the tool convert-graph,
+  an then send the result to display-graph.");
   }
   
   if (!$error) { 

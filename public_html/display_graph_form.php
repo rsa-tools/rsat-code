@@ -13,7 +13,7 @@
   $default_scol = 1;
   $default_tcol = 2;
   $default_wcol = "";
-  $default_layout = "checked";
+  $default_layout = "spring";
   $default_ewidth = "";
   # PIPE VALUES
   $pipe = $_REQUEST['pipe'];
@@ -104,9 +104,20 @@
     echo "<input type='hidden' NAME='sc_col' VALUE='$sccol'/>\n";
     echo "<input type='hidden' NAME='tc_col' VALUE='$tccol'/>\n";
   }
-  echo ("
-  <input type='checkbox' name='layout' value='on' $default_layout/>&nbsp;<B><a href = 'help.display_graph.html#layout'>Calculate the layout of the nodes (mandatory for all input formats except GML)</a></B><br>
-  <input type='checkbox' $demo_ewidth name='ewidth' value='on' />&nbsp;<B><a href = 'help.display_graph.html#ewidth'>Edge width proportional to the weight of the edges</a></B><br>
+
+
+  echo ("<B><a href = 'help.convert_graph.html#layout'>Layout</a></B>
+    <select name='layout'>
+      <option selected value='none'> No layout
+      <option value='spring'>Spring embedding
+      <option value='random'> Random
+    </select> (only valid for GML output) <br> "
+  );
+
+/*  echo ("
+  <input type='checkbox' name='layout' value='on' $default_layout/>&nbsp;<B><a href = 'help.display_graph.html#layout'>Calculate the layout of the nodes (mandatory for all input formats except GML)</a></B><br>");*/
+
+  echo ("<input type='checkbox' $demo_ewidth name='ewidth' value='on' />&nbsp;<B><a href = 'help.display_graph.html#ewidth'>Edge width proportional to the weight of the edges</a></B><br>
 
   <ul><ul><table class='formbutton'>
   <TD><input type='submit' name='.submit' value='GO' /></TD>
