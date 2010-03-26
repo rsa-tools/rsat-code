@@ -89,6 +89,13 @@
     warning("Layout is not compatible with outpuf tormat $out_format (requires GML).");    
   }
 
+  ## TEMPORARY: since the layout option requires a 0 or 1 value on the Web
+  ## services, I only give support for the Spring embedding
+  if ($layout == "spring" && $out_format == "gml") {
+    echo ("<pre>Layout: $layout</pre>");
+    $layout = 1;
+  }
+
   ## If distinct path option is used but the input format is not path -> error
   if ($distinct_path == "1" && $in_format != "path") {
     $error = 1;

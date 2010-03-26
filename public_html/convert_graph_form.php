@@ -118,7 +118,6 @@
     <select name='layout'>
       <option selected value='none'> No layout
       <option value='spring'>Spring embedding
-      <option value='hello'>HELLO
       <option value='random'> Random
     </select> (only valid for GML output) <br> "
   );
