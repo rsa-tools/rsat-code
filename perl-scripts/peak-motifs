@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: peak-motifs,v 1.28 2010/03/23 12:46:54 jvanheld Exp $
+# $Id: peak-motifs,v 1.29 2010/03/26 02:20:37 jvanheld Exp $
 #
 ############################################################
 
@@ -82,126 +82,132 @@ use RSAT::util;
 package main;
 {
 
-    ################################################################
-    ## Initialise parameters
-    my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.28 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-#    $program_version = "0.00";
+  ################################################################
+  ## Initialise parameters
 
-    %main::param = ();
-    @main::param_list = ();
+  ## Check that the RSAT paths of the programs required for the script are specified
+  $PYTHON =  $ENV{RSAT}."/python_scripts" unless ($PYTHON);
+  $SCRIPTS = $ENV{RSAT}."/perl-scripts" unless ($SCRIPTS);
+  $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
-    %main::dir = ();
-    %main::infile = ();
-    %main::outfile = ();
+  my $start_time = &AlphaDate();
+  $program_version = do { my @r = (q$Revision: 1.29 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  #    $program_version = "0.00";
 
-    $main::verbose = 0;
-    $main::out = STDOUT;
+  %main::param = ();
+  @main::param_list = ();
 
-    ## Pattern types (oligos, positions, local-word-analysis,... with the oligo length suffix)
-    @pattern_types = ();
+  %main::dir = ();
+  %main::infile = ();
+  %main::outfile = ();
+
+  $main::verbose = 0;
+  $main::out = STDOUT;
+
+  ## Pattern types (oligos, positions, local-word-analysis,... with the oligo length suffix)
+  @pattern_types = ();
 
 
-    ################################################################
-    ## Supported tasks
-    @supported_tasks = qw (
-			   all
-			   seqlen
-			   purge
-			   oligos
-			   dyads
-			   positions
-			   local_words
-			   profiles
-			   ref_motif
-			   word_compa
-			   motif_compa
-			   synthesis
-			   clean_seq
-			  );
+  ################################################################
+  ## Supported tasks
+  @supported_tasks = qw (
+			 all
+			 seqlen
+			 purge
+			 oligos
+			 dyads
+			 positions
+			 local_words
+			 profiles
+			 ref_motif
+			 word_compa
+			 motif_compa
+			 synthesis
+			 clean_seq
+			);
 
-    my @future_tasks = qw(
-			  motif_cluster
-			  oligo-diff
-			  tomtom
-			  to_bed
-		      );
-    $supported_tasks = join ",", @supported_tasks;
-    %supported_task = ();
-    foreach my $task (@supported_tasks) {
-      $supported_task{$task} = 1;
+  my @future_tasks = qw(
+			motif_cluster
+			oligo-diff
+			tomtom
+			to_bed
+		       );
+  $supported_tasks = join ",", @supported_tasks;
+  %supported_task = ();
+  foreach my $task (@supported_tasks) {
+    $supported_task{$task} = 1;
+  }
+  %task = ();			## List of tasks to be executed
+
+
+  ################################################################
+  ## Set default parameters
+  &DefaultParameters();
+
+  ################################################################
+  ## Read argument values
+  &ReadArguments();
+
+  &CheckArguments();
+
+  &SetOutFileNames();
+
+  ################################################################
+  ## Open output stream
+  $main::out = &OpenOutputFile($main::outfile{log});
+
+  ################################################################
+  ## Print verbose
+  &Verbose() if ($main::verbose);
+
+  if ($task{purge}) {
+    &PurgeOneSeq($infile{test_seq}, "test");
+    if ($infile{control_seq}) {
+      &PurgeOneSeq($infile{control_seq}, "control");
     }
-    %task = (); ## List of tasks to be executed
+  }
+
+  &SequenceLengths() if ($task{seqlen});
+
+  &CompositionProfiles() if ($task{profiles});
+
+  &OligoAnalysis() if ($task{oligos});
+
+  &DyadAnalysis() if ($task{dyads});
+
+  &PositionAnalysis() if ($task{positions});
+
+  &LocalWords() if ($task{local_words});
+
+  if (defined($main::infile{ref_motif})) {
+    &RefMotif() if ($task{ref_motif});
+  }
+
+  &WordsVersusWords() if ($task{word_compa});
+
+  &MotifVersusMotifs() if ($task{motif_compa});
+
+  &Synthesis() if ($task{synthesis});
+
+  &CleanSequences() if ($task{clean_seq});
+
+  if ($main::verbose >= 1) {
+    &TimeWarn("Log file", $main::outfile{log});
+  }
+
+  ################################################################
+  ## Finish verbose
+  if ($main::verbose >= 1) {
+    my $done_time = &AlphaDate();
+    print $main::out "; Job started $start_time\n";
+    print $main::out "; Job done    $done_time\n";
+  }
 
 
-    ################################################################
-    ## Set default parameters
-    &DefaultParameters();
-
-    ################################################################
-    ## Read argument values
-    &ReadArguments();
-
-    &CheckArguments();
-
-    &SetOutFileNames();
-
-    ################################################################
-    ## Open output stream
-    $main::out = &OpenOutputFile($main::outfile{log});
-
-    ################################################################
-    ## Print verbose
-    &Verbose() if ($main::verbose);
-
-    if ($task{purge}) {
-      &PurgeOneSeq($infile{test_seq}, "test");
-      if ($infile{control_seq}) {
-	&PurgeOneSeq($infile{control_seq}, "control");
-      }
-    }
-
-    &SequenceLengths() if ($task{seqlen});
-
-    &CompositionProfiles() if ($task{profiles});
-
-    &OligoAnalysis() if ($task{oligos});
-
-    &DyadAnalysis() if ($task{dyads});
-
-    &PositionAnalysis() if ($task{positions});
-
-    &LocalWords() if ($task{local_words});
-
-    if (defined($main::infile{ref_motif})) {
-      &RefMotif() if ($task{ref_motif});
-    }
-
-    &WordsVersusWords() if ($task{word_compa});
-
-    &MotifVersusMotifs() if ($task{motif_compa});
-
-    &Synthesis() if ($task{synthesis});
-
-    &CleanSequences() if ($task{clean_seq});
-
-    if ($main::verbose >= 1) {
-      &TimeWarn("Log file", $main::outfile{log});
-    }
-
-    ################################################################
-    ## Finish verbose
-    if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $main::out "; Job started $start_time\n";
-	print $main::out "; Job done    $done_time\n";
-    }
-
-
-    ################################################################
-    ## Close output stream
-    close $main::out if ($main::outfile{output});
-    exit(0);
+  ################################################################
+  ## Close output stream
+  close $main::out if ($main::outfile{output});
+  exit(0);
 }
 
 ################################################################
@@ -421,7 +427,7 @@ sub SetOutFileNames {
 sub PurgeOneSeq {
   my ($seq_file, $seq_type) = @_;
   &RSAT::message::TimeWarn("Purging sequences") if ($main::verbose >= 1);
-  my $cmd = "convert-seq";
+  my $cmd = $SCRIPTS."/convert-seq";
   $cmd .= " -i ".$seq_file;
   $cmd .= " -from ".$main::param{seq_format};
   $cmd .= " -to fasta";
@@ -430,7 +436,7 @@ sub PurgeOneSeq {
   $cmd .= " -ml ".$main::param{purge_match_length};
   $cmd .= " -mis ".$main::param{purge_mismatches};
   $cmd .= " -o ".$main::outfile{"purged_".$seq_type};
-  &one_command($cmd);
+  &one_command($cmd, 1);
 }
 
 
@@ -438,12 +444,12 @@ sub PurgeOneSeq {
 ## Compute sequence lengths
 sub SequenceLengths {
   &RSAT::message::TimeWarn("Computing sequence lengths") if ($main::verbose >= 1);
-  my $cmd = "sequence-lengths";
+  my $cmd = $SCRIPTS."/sequence-lengths";
   $cmd .= " -i ".$main::infile{test_seq};
   $cmd .= " -o ".$main::outfile{test_seqlen};
   $cmd .= " ; cut -f 2 ".$main::outfile{test_seqlen};
-  $cmd .= " | classfreq -v 1 -ci 10 -o ".$main::outfile{test_seqlen_distrib};
-  $cmd .= " ; XYgraph -lines -legend";
+  $cmd .= " | ".$SCRIPTS."/classfreq -v 1 -ci 10 -o ".$main::outfile{test_seqlen_distrib};
+  $cmd .= " ; ".$SCRIPTS."/XYgraph -lines -legend";
   $cmd .= " -format ".$main::param{img_format};
   my $title = "Sequence lengths";
   $title .= "; ".$main::param{title} if ($main::param{title});
@@ -452,7 +458,7 @@ sub SequenceLengths {
   $cmd .= " -xsize 800 -xcol 3 -xleg1 'Peak length'";
   $cmd .= " -i ".$main::outfile{test_seqlen_distrib};
   $cmd .= " -o ".$main::outfile{test_seqlen_distrib_graph};
-  &one_command($cmd);
+  &one_command($cmd, 1);
 }
 
 ################################################################
@@ -461,7 +467,7 @@ sub SequenceLengths {
 sub CompositionProfiles {
   for my $ol (@profiles_oligo_lengths) {
     &RSAT::message::TimeWarn("Computing composition profiles", $ol."nt") if ($main::verbose >= 1);
-    my $cmd = "position-analysis -v 1";
+    my $cmd =$SCRIPTS."/position-analysis -v 1";
     $cmd .= " -i ".$main::outfile{"purged_test"};
     $cmd .= " -format fasta";
     $cmd .= " -sort ";
@@ -476,13 +482,13 @@ sub CompositionProfiles {
     $cmd .= " -title '".$main::param{title}."'";
     $cmd .= " -origin center ";
     $cmd .= " -o ".$main::outfile{$ol."nt_profiles"};
-    &one_command($cmd);
+    &one_command($cmd, 1);
 
     ## Draw the XY graph with composition profiles
     my $color_file = $ENV{RSAT}."/perl-scripts/lib/color_palettes/".$ol."nt".$main::param{profiles_strand}."_colors.tab";
     my $col_nb = 4**$ol + 1;
-    $cmd = 'grep -v ";" '.$main::outfile{$ol."nt_profiles"}.' | sort | transpose-table | grep -P \'(^id)|(^\-?\d+)\'';
-    $cmd .= " | XYgraph -xcol 1 -ycol 2-".$col_nb;
+    $cmd = 'grep -v ";" '.$main::outfile{$ol."nt_profiles"}.' | sort | '.$SCRIPTS.'/transpose-table | grep -P \'(^id)|(^\-?\d+)\'';
+    $cmd .= " | ".$SCRIPTS."/XYgraph -xcol 1 -ycol 2-".$col_nb;
     $cmd .= " -lines -legend -header";
     if (-e $color_file) {
       $cmd .= " -colors ".$color_file;
@@ -496,23 +502,23 @@ sub CompositionProfiles {
     $cmd .= " -xleg1 'Position' -xsize 800";
     $cmd .= " -yleg1 'Occurrences' -ysize 300";
     $cmd .= " -o ".$main::outfile{$ol."nt_profiles_graph"};
-    &one_command($cmd);
+    &one_command($cmd, 1);
 
     ## Compute background models of order 0 (Bernoulli) and 1 (Markov)
     ## from the input sequence
-    $cmd = "count-words -v 1";
+    $cmd = $BIN."/count-words -v 1";
     $cmd .= " -i ".$main::outfile{purged_test};
     $cmd .= " -l ".$ol;
     $cmd .= " -1str";
     $cmd .= " ".$main::param{noov};
     $cmd .= " -o ".$main::outfile{$ol.'nt_test_freq'};
-    $cmd .= "; convert-background-model -from oligos -to transitions ";
+    $cmd .= "; ".$SCRIPTS."/convert-background-model -from oligos -to transitions ";
     $cmd .= " -i ".$main::outfile{$ol.'nt_test_freq'};
     $cmd .= " -o ".$main::outfile{$ol.'nt_test_transit'};
     $cmd .= " ; cut -f 1-5,7 ".$main::outfile{$ol.'nt_test_transit'};;
-    $cmd .= " | draw-heatmap -min 0 -max 1  -out_format png -col_width 50";
+    $cmd .= " | ".$SCRIPTS."/draw-heatmap -min 0 -max 1  -out_format png -col_width 50";
     $cmd .= " -o ".$main::outfile{$ol.'nt_test_heatmap'};
-    &one_command($cmd);
+    &one_command($cmd, 1);
   }
 }
 
@@ -526,7 +532,7 @@ sub OligoAnalysis {
       $markov += $len if ($markov < 0);
       my $pattern_type = 'oligos_'.$len.'nt'.'_mkv'.$markov;
       &RSAT::message::TimeWarn("Running oligo-analysis", $len."nt", "markov=".$markov) if ($main::verbose >= 1);
-      my $cmd = "oligo-analysis -v 1";
+      my $cmd = $SCRIPTS."/oligo-analysis -v 1";
       $cmd .= " -i ".$main::outfile{"purged_test"};
       $cmd .= " -format fasta";
       $cmd .= " -sort -lth occ_sig ".$main::param{min_sig};
@@ -539,7 +545,7 @@ sub OligoAnalysis {
       $cmd .= " -markov ".$markov;
       $cmd .= " -pseudo 0.01";
       $cmd .= " -o ".$main::outfile{$pattern_type};
-      &one_command($cmd);
+      &one_command($cmd, 1);
       &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
     }
   }
@@ -550,7 +556,7 @@ sub OligoAnalysis {
 ## Run dyad-analysis on the test set
 sub DyadAnalysis {
   &RSAT::message::TimeWarn("Running dyad-analysis") if ($main::verbose >= 1);
-  my $cmd = "dyad-analysis -v 1";
+  my $cmd = $SCRIPTS."/dyad-analysis -v 1";
   $cmd .= " -i ".$main::outfile{"purged_test"};
   $cmd .= " -format fasta";
   $cmd .= " -sort -lth occ_sig ".$main::param{min_sig};
@@ -562,7 +568,7 @@ sub DyadAnalysis {
   $cmd .= " -bg monads";
   $cmd .= " -pseudo 0.01";
   $cmd .= " -o ".$main::outfile{dyads};
-  &one_command($cmd);
+  &one_command($cmd, 1);
   &MatrixFromPatterns($main::outfile{dyads}, $main::outfile{dyads_pssm}, "dyads");
 }
 
@@ -574,7 +580,7 @@ sub PositionAnalysis {
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
     my $pattern_type = 'positions_'.$len.'nt';
     &RSAT::message::TimeWarn("Running position-analysis", $len."nt") if ($main::verbose >= 1);
-    my $cmd = "position-analysis -v 1";
+    my $cmd = $SCRIPTS."/position-analysis -v 1";
     $cmd .= " -i ".$main::outfile{"purged_test"};
     $cmd .= " -format fasta";
     $cmd .= " -sort ";
@@ -591,7 +597,7 @@ sub PositionAnalysis {
     $cmd .= " -title '".$main::param{title}."'";
     $cmd .= " -origin center ";
     $cmd .= " -o ".$main::outfile{$pattern_type};
-    &one_command($cmd);
+    &one_command($cmd, 1);
     &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type."_pssm"}, $pattern_type);
   }
 }
@@ -606,7 +612,7 @@ sub LocalWords {
       $markov += $len if ($markov < 0);
       my $pattern_type = 'local_words_'.$len.'nt'.'_mkv'.$markov;
       &RSAT::message::TimeWarn("Running local-word-analysis", $len."nt") if ($main::verbose >= 1);
-      my $cmd = "local-word-analysis -v 3";
+      my $cmd = $PYTHON."/local-word-analysis -v 3";
       $cmd .= " -i ".$main::outfile{"purged_test"};
       #  $cmd .= " -format fasta";
       $cmd .= " --center=0";
@@ -627,7 +633,7 @@ sub LocalWords {
       $cmd .= " --markov ".$markov;
       #  $cmd .= " -pseudo 0.01";
       $cmd .= " -o ".$main::outfile{$pattern_type};
-      &one_command($cmd);
+      &one_command($cmd, 1);
       &MatrixFromPatterns($main::outfile{$pattern_type}, $main::outfile{$pattern_type.'_pssm'}, $pattern_type);
     }
   }
@@ -641,27 +647,27 @@ sub RefMotif {
   my $cmd = "rsync -ruptvl ";
   $cmd .= " ".$main::infile{ref_motif};
   $cmd .= " ".$main::outfile{ref_motif};
-  &one_command($cmd);
+  &one_command($cmd, 1);
 
   ## Generate the logos and compute parameters (information content,
   ## consensus, ...) for the reference motif
-  $cmd = "convert-matrix -v 1 -from ".$main::param{ref_motif_format};
+  $cmd = $SCRIPTS."/convert-matrix -v 1 -from ".$main::param{ref_motif_format};
   $cmd .= " -to tab";
   $cmd .= " -return counts,parameters,logo";
   $cmd .= " -logo_file ".$main::outfile{ref_motif_logo};
   $cmd .= " -i ".$main::infile{ref_motif};
   $cmd .= " -o ".$main::outfile{ref_motif_info};
-  &one_command($cmd);
+  &one_command($cmd, 1);
 
   ## Convert the reference motif to TRANSFAC format, because this
   ## format holds information about the motif name, ID etc
-  $cmd = "convert-matrix -v 1 -from ".$main::param{ref_motif_format};
+  $cmd = $SCRIPTS."/convert-matrix -v 1 -from ".$main::param{ref_motif_format};
   $cmd .= " -to transfac";
   $cmd .= " -return counts,parameters";
   $cmd .= " -logo_file ".$main::outfile{ref_motif_logo};
   $cmd .= " -i ".$main::infile{ref_motif};
   $cmd .= " -o ".$main::outfile{ref_motif_transfac};
-  &one_command($cmd);
+  &one_command($cmd, 1);
 }
 
 
@@ -669,7 +675,7 @@ sub RefMotif {
 ## Compare the significance of words (oligos, dyads) discovered by
 ## the different approaches
 sub WordsVersusWords {
-  my $cmd = "compare-scores -v 1 ";
+  my $cmd = $SCRIPTS."/compare-scores -v 1 ";
   my $file_nb = 0;
   foreach my $pattern_type (@pattern_types) {
     my $pattern_file = $main::outfile{$pattern_type};
@@ -697,13 +703,13 @@ sub WordsVersusWords {
   $cmd .= " -suppress ".$main::param{prefix};
   $cmd .= " -suppress '\.tab'";
   $cmd .= " -o ".$main::outfile{word_compa};
-  $cmd .= " ; draw-heatmap -min 0 -max 10  -out_format png";
+  $cmd .= " ; ".$SCRIPTS."/draw-heatmap -min 0 -max 10  -out_format png";
   $cmd .= " -col_width 40 -rownames -gradient fire";
   $cmd .= " -row_height 16";
   $cmd .= " -i ".$main::outfile{word_compa};
   $cmd .= " -o ".$main::outfile{word_compa_heatmap};
 
-  &one_command($cmd);
+  &one_command($cmd, 1);
 }
 
 ################################################################
@@ -721,19 +727,20 @@ sub MotifVersusMotifs {
   } else {
     $cmd = "rm -f ".$main::outfile{motifs_discovered};
   }
+
   ## Concatenate all discovered motifs (matrices) in a single file.
   ## Use TRANSFAC format because if allows to associate a name to each
   ## matrix.
   foreach my $pattern_type (@pattern_types) {
-    $cmd .= " ; convert-matrix -from tab -to transfac -return counts,parameters";
+    $cmd .= " ; ".$SCRIPTS."/convert-matrix -from tab -to transfac -return counts,parameters";
     $cmd .= " -prefix $pattern_type";
     $cmd .= " -i ".$main::outfile{$pattern_type.'_pssm_counts'};
     $cmd .= " >> ".$main::outfile{motifs_discovered};
   }
-  &one_command($cmd);
+#  &one_command($cmd, 1);
 
-  ## Compare all matrices
-  $cmd = "compare-matrices -v 1";
+  ## Comparison between discovered matrices, and with the reference motif
+  $cmd = $SCRIPTS."/compare-matrices -v 1";
   $cmd .= " -format1 transfac -file1 ".$main::outfile{motifs_discovered};;
   $cmd .= " -format2 transfac -file2 ".$main::outfile{motifs_discovered};;
 #  $cmd .= " -format2 transfac -file2 ".$main::outfile{ref_motif_transfac};
@@ -745,23 +752,26 @@ sub MotifVersusMotifs {
   $cmd .= " -lth Ncor 0.6"; ## Min normalized correlation
   $cmd .= " -return matrix_name,direction,Ncor,SW,cor,width,consensus";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa};
-  &one_command($cmd);
+  &one_command($cmd, 1);
 
   ## Generate a GML graph with the matrix comparison result (can be opened with CytoScape or Yed)
-  $cmd = "convert-graph -i ".$main::outfile{motifs_disco_compa};
+  $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{motifs_disco_compa};
   $cmd .= " -ewidth -ecolors fire";
   $cmd .= " -layout spring";
   $cmd .= " -from tab -to gml -scol 1 -tcol 2 -wcol 3";
   $cmd .= " -o ".$main::outfile{motifs_disco_compa_gml};
-  $cmd .= " ; display-graph -in_format gml -i ".$main::outfile{motifs_disco_compa_gml};
+  &one_command($cmd, 1);
+
+  ## Generate a figure of the motif comparison graph
+  $cmd = $SCRIPTS."/display-graph -in_format gml -i ".$main::outfile{motifs_disco_compa_gml};
   $cmd .= " -out_format png -o ".$main::outfile{motifs_disco_compa_png};
-  &one_command($cmd);
+  &one_command($cmd, 1);
 
 #   ## Generate a DOT graph with the matrix comparison result (can be opened with graphviz)
-#   $cmd = "convert-graph -i ".$main::outfile{motifs_disco_compa};
+#   $cmd = $SCRIPTS."/convert-graph -i ".$main::outfile{motifs_disco_compa};
 #   $cmd .= " -from tab -to dot -scol 1 -tcol 2 -wcol 3";
 #   $cmd .= " -o ".$main::outfile{motifs_disco_compa_dot};
-#   &one_command($cmd);
+#   &one_command($cmd, 1);
 }
 
 ################################################################
@@ -769,7 +779,7 @@ sub MotifVersusMotifs {
 sub MatrixFromPatterns {
   my ($pattern_file, $pssm_file, $type) = @_;
   &RSAT::message::TimeWarn("\tMatrix from patterns", $type) if ($verbose >= 1);
-  my $cmd = "matrix-from-patterns -v 1 ";
+  my $cmd = $SCRIPTS."/matrix-from-patterns -v 1 ";
   $cmd .= " -seq ".$infile{test_seq};
   $cmd .= " -pl ".$pattern_file;
   $cmd .= " -bginput -markov 1 ";
@@ -780,7 +790,7 @@ sub MatrixFromPatterns {
   $cmd .= " -logo";
 #  $cmd .= " -links";
   $cmd .= " -o ".$pssm_file;
-  &one_command($cmd);
+  &one_command($cmd, 1);
 }
 
 
@@ -1079,9 +1089,9 @@ sub SynthesisMotifCompa {
 ## Delete purged sequence files after analysis has been completed.
 sub CleanSequences {
   &RSAT::message::TimeWarn("Cleaning sequences") if ($main::verbose >= 1);
-  &one_command("rm -f ".$main::outfile{"purged_test"});
+  &one_command("rm -f ".$main::outfile{"purged_test"}, 1);
   if ($infile{control_seq}) {
-    &one_command("rm -f ".$main::outfile{"purged_control"});
+    &one_command("rm -f ".$main::outfile{"purged_control"}, 1);
   }
 }
 
