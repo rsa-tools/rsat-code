@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.49 2010/03/23 01:39:47 jvanheld Exp $
+# $Id: convert-graph,v 1.50 2010/03/26 02:20:59 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -234,7 +234,22 @@ package main;
 
     ################################################################
     ##### read input
-    $graph->graph_from_text($input_format, $main::infile{input}, $source_col, $target_col, $weight_col, $source_color_col, $target_color_col,$color_col, $source_xpos_col, $source_ypos_col, $target_xpos_col, $target_ypos_col, $distinct_path, $directed, $path_col);
+
+    $graph->graph_from_text($input_format,
+			    $main::infile{input},
+			    $source_col,
+			    $target_col,
+			    $weight_col,
+			    $source_color_col,
+			    $target_color_col,
+			    $color_col,
+			    $source_xpos_col,
+			    $source_ypos_col,
+			    $target_xpos_col,
+			    $target_ypos_col,
+			    $distinct_path,
+			    $directed,
+			    $path_col);
 
     ## Calculates the layout
     $graph->layout($layout) if ($layout);
