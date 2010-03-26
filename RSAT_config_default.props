@@ -123,4 +123,4 @@ REA_ROOT=[your_path_to_rsat]/rsa-tools/contrib/REA
 
 ## kWalks, subgraph extraction program by Pierre Dupont and Jerome Callut
 ## Used for the pathway extraction hybrid algorithm in the NeAT suite.
-KWALKS_ROOT=[your_path_to_rsat]/rsa-tools/rsa-tools/contrib/kwalks/bin
+KWALKS_ROOT=[your_path_to_rsat]/rsa-tools/contrib/kwalks/bin
