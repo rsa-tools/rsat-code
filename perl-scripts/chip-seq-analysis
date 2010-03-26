@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-seq-analysis,v 1.29 2010/03/26 02:20:37 jvanheld Exp $
+# $Id: chip-seq-analysis,v 1.30 2010/03/26 03:50:33 jvanheld Exp $
 #
 ############################################################
 
@@ -91,7 +91,7 @@ package main;
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.29 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.30 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -1200,7 +1200,7 @@ The reference motif can serve as seed for collecting all the sites in
 the peak sequence set, and building a more robust motif based on
 several hundreds or thousands of sites. The supervised motif
 improvement is performed with I<info-gibbs> (using the option
-B<--sig_matrix>).
+B<--seedmatrix>).
 
 =back
 
