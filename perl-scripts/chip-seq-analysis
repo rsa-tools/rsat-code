@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-seq-analysis,v 1.31 2010/03/26 20:44:28 jvanheld Exp $
+# $Id: chip-seq-analysis,v 1.32 2010/03/27 13:03:00 jvanheld Exp $
 #
 ############################################################
 
@@ -73,6 +73,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
+require "RSA.disco.lib";
 require "footprint.lib.pl";
 use RSAT::util;
 
@@ -91,7 +92,7 @@ package main;
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.31 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.32 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -565,7 +566,7 @@ sub OligoDiff {
   for my $len ($main::param{oligo_min_len}..$main::param{oligo_max_len}) {
     my $pattern_type = 'oligo_diff_'.$len.'nt';
     &RSAT::message::TimeWarn("Running oligo-diff", $len."nt") if ($main::verbose >= 1);
-    my $cmd = $SCRIPTS."/oligo-diff -v 3";
+    my $cmd = $SCRIPTS."/oligo-diff -v 2";
     $cmd .= " -test ".$main::outfile{"purged_test"};
     $cmd .= " -ctrl ".$main::outfile{"purged_ctrl"};
     $cmd .= " -nopurge"; ## The input sequences have already been purged
@@ -720,6 +721,8 @@ sub WordsVersusWords {
     $cmd .= " -i ".$pattern_file;
     if ($pattern_type =~ /oligos_/) {
       $sig_col = 8;
+    } elsif ($pattern_type =~ /oligo_diff/) {
+      $sig_col = 11;
     } elsif ($pattern_type =~ /dyads/) {
       $sig_col = 8;
     } elsif ($pattern_type =~ /local_words/) {
@@ -773,7 +776,7 @@ sub MotifVersusMotifs {
     $cmd .= " -i ".$main::outfile{$pattern_type.'_pssm_counts'};
     $cmd .= " >> ".$main::outfile{motifs_discovered};
   }
-#  &one_command($cmd, 1);
+  &one_command($cmd, 1);
 
   ## Comparison between discovered matrices, and with the reference motif
   $cmd = $SCRIPTS."/compare-matrices -v 1";
@@ -799,7 +802,10 @@ sub MotifVersusMotifs {
   &one_command($cmd, 1);
 
   ## Generate a figure of the motif comparison graph
-  $cmd = $SCRIPTS."/display-graph -in_format gml -i ".$main::outfile{motifs_disco_compa_gml};
+  $cmd = $SCRIPTS."/display-graph -v 2";
+  $cmd .= " -in_format gml -i ".$main::outfile{motifs_disco_compa_gml};
+  $cmd .= " -ewidth";
+  $cmd .= " -layout none";
   $cmd .= " -out_format png -o ".$main::outfile{motifs_disco_compa_png};
   &one_command($cmd, 1);
 
@@ -1697,6 +1703,8 @@ sub Verbose {
 	  printf $main::out ";\t%-22s\t%s\n", $key, $value;
 	}
     }
+
+    print $out &PrintThresholdValues();
 
     ## Output files
     if (defined(%main::outfile)) {
