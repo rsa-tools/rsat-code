@@ -1,7 +1,7 @@
 <html>
 <head>
    <title>NeA-tools - convert-graph</title>
-   <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
+   <link rel="stylesheet" type="text/css" href = "main.css" media="screen">
       <style type="text/css">
     <!--
     div.hourglass{position: absolute; top: 80px; left: 400px }
@@ -12,12 +12,15 @@
 <body class="results">
 <?php 
   require ('functions.php');
-  # log file update
+
+  ## log file update
   UpdateLogFile("neat","","");  
   title('compare-classes - results');
-  # Error status
+
+  ## Error status
   $error = 0;
-  # Get parameters
+
+  ## Get parameters
   if ($_FILES['Qclass_file']['name'] != "") {
     $Qclass_file = uploadFile('Qclass_file');
   } else if ($_REQUEST['pipe_Q_class_file'] != "") {
@@ -31,6 +34,7 @@
   $classesR = $_REQUEST['classesR'];
   $score_col = $_REQUEST['score_col'];
   $sort = "";
+
   ## self comparaison
   $self_compa = 0;
   $distinct = 0;
@@ -44,6 +48,7 @@
   if ($_REQUEST['triangle'] == 'on') {
     $triangle = 1;
   }
+
   ## RETURN FIELDS
   $return =  array("rank");
   if ($_REQUEST['occ'] == 'on') {
@@ -71,15 +76,13 @@
     array_push($return, "dotprod");
   }
   $return = join(",", $return);
+
   # THRESHOLDS FIELDS
   $l_thr_val = array();
   $l_thr_field = array();
   $u_thr_val = array();
-  $u_thr_field = array();
-  
-  
-  
-  
+  $u_thr_field = array();  
+
   if ($_REQUEST['lth_q'] != "") {
     $thr = $_REQUEST['lth_q'];
     if (preg_match("/\d/", $thr)) {
@@ -334,9 +337,11 @@
     $cc_temp_file = explode('/',$cc_server);
     $cc_temp_file = end($cc_temp_file);
     $cc_resultURL = $WWW_RSA."/tmp/".$cc_temp_file;
-    # Text-to-html
+
+
+    ## Text-to-html
     $cc_file = storeFile($cc_server);
-     echo "</pre>"; 
+    echo "</pre>\n"; ## SYLVAIN : peux-tu vérifier pourquoi il y a deux fois </pre> alors qu'il n'y a qu'un <pre>
     $tth_parameters = array( 
       "request" => array(
         "inputfile"=>$cc_file,
@@ -350,19 +355,21 @@
     $tth_command = $tth_response->command;
     $tth_server = $tth_response->server;
     $tth_client = $tth_response->client;
-    echo "</pre>";
+    echo "</pre>\n"; ## SYLVAIN : peux-tu vérifier pourquoi il y a deux fois </pre> alors qu'il n'y a qu'un <pre>
     $tth_server = rtrim ($tth_server);
     $tth_temp_file = explode('/',$tth_server);
     $tth_temp_file = end($tth_temp_file);
     $tth_resultURL = $WWW_RSA."/tmp/".$tth_temp_file;
     
     hourglass("off");
-    # Display the results
-    echo "The results are available as text file at the following URL ";
-    echo "<a href = '$cc_resultURL'>$cc_resultURL</a><br>"; 
-    echo "The results are available as HTML page at the following URL ";
-    echo "<a href = '$tth_resultURL'>$tth_resultURL</a><br>"; 
-    echo "<hr>\n";
+
+    ## DISPLAY THE RESULT
+    echo "<table class=\"resultlink\">\n";
+    echo "<tr><th colspan='3'><h2>Result file(s)</h2> </th></tr>\n";
+    echo "<tr><th>HTML</th><td><a href = '$tth_resultURL'>$tth_resultURL</a></td></tr>\n"; 
+    echo "<tr><th>Text</th><td><a href = '$cc_resultURL'>$cc_resultURL</a></td></tr>\n"; 
+    echo "</table>\n";
+    echo"<hr>\n";
     if ($output_format == 'matrix') {
       echo "
       <TABLE CLASS = 'nextstep'>
