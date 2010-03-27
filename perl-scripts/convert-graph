@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.50 2010/03/26 02:20:59 jvanheld Exp $
+# $Id: convert-graph,v 1.51 2010/03/27 13:01:11 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -251,7 +251,7 @@ package main;
 			    $directed,
 			    $path_col);
 
-    ## Calculates the layout
+    ## Calculate the layout
     $graph->layout($layout) if ($layout);
 
     ## Check that there is more than one edge if the -ecolor and -ewidth options are used
@@ -631,16 +631,45 @@ table.
 	} elsif ($arg eq "-undirected") {
 	    $directed = 0;
 
-=item B<-layout>
 
-Calculates the layout (provided you have the fr_layout progrom in
-$RSAT/bin) according to the Fruchterman and Reingold algorithm.  This
-option is only useful for the gml output as the other formats do not
-specify the node position.
+=pod
+
+=item B<-layout layout_algorithm>
+
+Calculate the layout, i.e. assign positions to each node of the
+graph.
+
+This option requires GML as input format.
+
+Supported layout algorithms:
+
+=over
+
+=item I<-layout none>
+
+Do not apply any layout
+
+=item I<-layout spring>
+
+Apply spring embedding algorithm to compute node positions.
+
+=item I<-layout random>
+
+Assign random positions to all nodes.
+
+=item I<-layout fr>
+
+Calculate the layout (provided you have the fr_layout program in
+$RSAT/bin) according to the Fruchterman-Reingold (FR) algorithm.
+
+=back
 
 =cut
-	} elsif ($arg eq "-layout") {
-	    $layout = shift(@arguments);
+    } elsif ($arg eq "-layout") {
+      $layout = shift(@arguments);
+#       unless ($RSAT::Graph2::supported_layout{$layout}) {
+# 	&RSAT::error::FatalError($layout, "Invalid value for option -layout. Supported: ".$RSAT::Graph2::supported_layouts);
+#       }
 
 =pod
 
