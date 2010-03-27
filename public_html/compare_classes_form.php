@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>NeA-tools - compare_classes</title>
+<title>NeAT - compare_classes</title>
 <link rel="stylesheet" type="text/css" href = "main_grat.css" media="screen">
    </head>
    <body class="form">
@@ -17,12 +17,13 @@ $pipe_Q_class_file = $_REQUEST['class_file'];
   
 # demo graph
 $demo = $_REQUEST['demo'];
-  
+
 if ($demo == 1) {
   $demo_classesQ = storeFile("demo_files/gavin_mcl_clusters_inf2.1.tab") ;
   $demo_classesR = storeFile("demo_files/mips_complexes.tab") ;
+
   $demo_remark = "This demonstration consists in the comparaison between clusters obtained after application of the <a href = 'http://micans.org/mcl/' target = 'top'>MCL</a> clustering algorithm to the <a target = '_blank' href = 'http://www.ncbi.nlm.nih.gov/sites/entrez?Db=pubmed&Cmd=ShowDetailView&TermToSearch=16429126&ordinalpos=1&itool=EntrezSystem2.PEntrez.Pubmed.Pubmed_ResultsPanel.Pubmed_RVDocSum'>Gavin et al (2006)</a> interaction network and the complexes annotated in the <a target = '_blank' href = 'http://mips.gsf.de/'>MIPS database</a>.";
- }
+}
 title('compare-classes');
 
 echo("<center>Compare two classifications (clustering results, functional
@@ -33,12 +34,15 @@ echo ("<br>This program was
   developed <A HREF='mailto:jacques.van.helden@ulb.ac.be (Jacques van
   Helden)'>Jacques van Helden</a>, with a contribution of Joseph Tran
   for a first prototype.</center>");
+echo ("<hr>");
   
 echo ("<form method='post' action='compare_classes.php' enctype='multipart/form-data'>");
 if($demo) {
   demo($demo_remark);
  }
-echo ("<table border=0 cellspacing=0 cellpadding=4 align=center>\n");
+
+echo ("<blockquote>");
+echo ("<table border=0 cellspacing=0 cellpadding=4>\n");
 
 echo ("<tr align = 'center'><th>Query classes</th><th>Reference classes</th></tr>\n");
 
@@ -72,22 +76,24 @@ echo ("<td>Upload reference classes from file : <br>
 <input type='file' name='Rclass_file' size='40' /></td>");
 echo ("</tr>");
 echo ("</table>");
+echo ("</blockquote>");
+
 ################################################################
 ## Score column (for the dot product)
 if (!$pipe) {
-  echo ("Score column (must be valid for both query and reference classes)<input type = 'text' name='score_col' size = 1\><br>");
+  echo ("<b>Score column</b> <input type = 'text' name='score_col' size = 2\> (optional; if specified, must be valid for both query and reference classes)");
 }
 
 ################################################################
-## comparaison of query classes with themselves
+## Comparaison between query classes
 ## options for self-comparison
-echo ("<br><br><input type = 'radio' checked value='off' name='self_compa' size = 1> 
+echo ("<br><input type = 'radio' checked value='off' name='self_compa' size = 1> 
       <a href = 'help.compare_classes.html#self'>
-      <b>Specify reference classes distinct from the query classes </a></b>");
+      <b>Compare query classes to reference classes</a></b>");
 
-echo ("<br><br><input type = 'radio' value='on' name='self_compa' size = 1> 
+echo ("<br><input type = 'radio' value='on' name='self_compa' size = 1> 
       <a href = 'help.compare_classes.html#self'>
-      <b>Compare query classes with themselves (do not specify reference classes)</a></b><br>");
+      <b>Compare query classes to query classes</a></b> (do not specify reference classes)<br>");
 
 echo ("<ul><input type='checkbox' value='on' name='distinct' size = 1 checked/> 
       <a href = 'help.compare_classes.html#distinct'>
@@ -97,17 +103,20 @@ echo ("<input type = 'checkbox' value='on' name='triangle' size = 1 checked/>
       <a href = 'help.compare_classes.html#triangle'>
       <b>Prevent reciprocal comparisons.</a></b><br></ul></td>");
 
-
-  
 ## Output format
-echo("<br><table>
-  <tr><td colspan = 2 >&nbsp;&nbsp;&nbsp;<B><a href = 'help.compare_classes.html#formats'>Output format</a></B>
-  <tr><td><input type = 'radio' checked name='out_format' value = 'class'/></td><td>Classes file</td></tr>
-  <tr><td><input type = 'radio' name='out_format' value = 'matrix'/></td><td>Matrix file</td></tr>
-");
+// echo("<br><table>
+//   <tr><td colspan = 2 >&nbsp;&nbsp;&nbsp;<B><a href = 'help.compare_classes.html#formats'>Output format</a></B>
+//   <tr><td><input type = 'radio' checked name='out_format' value = 'class'/></td><td>Class pairs</td></tr>
+//   <tr><td><input type = 'radio' name='out_format' value = 'matrix'/></td><td>Matrix</td></tr>
+// ");
 
-echo ("<table border=1  cellspacing=0 cellpadding=4 align=center><tr align=center>");
-echo ("<td><b>Parameters for output type 'Classes file'</b></td><td><b>Parameters for output type 'Matrix file'</b></td></tr><tr align='center' valign='TOP'><br>");
+echo "<hr>";
+echo "<h4>Output options</h4>";
+echo "<blockquote>";
+echo ("<table border=1  cellspacing=0 cellpadding=4>");
+echo ("<tr align=center><th><input type = 'radio' checked name='out_format' value = 'class'/>Class pairs</th>");
+echo ("<th><input type = 'radio' name='out_format' value = 'matrix'/>Matrix</th></tr>");
+//echo ("<td><b>Parameters for output type 'Classes file'</b></td><td><b>Parameters for output type 'Matrix file'</b></td></tr><tr align='center' valign='TOP'><br>");
 
 # CLASS FILE OUTPUT PARAMETERS
 echo("<td><table border='0' cellspacing='0' cellpadding='0'>
@@ -120,34 +129,64 @@ echo("<td><table border='0' cellspacing='0' cellpadding='0'>
   <tr><td><label><input type='checkbox' name='entropy' value='on' />Entropy</label></td></tr> 
   <tr><td><label><input type='checkbox' name='members' value='on' /> Members <i> (Beware, this might generate large result files)</i></label></td></tr>
   <tr><td><label><input type='checkbox' name='dotprod' value='on' /> Dotproduct <i> (Only relevant if a score column is specified)</i></label></td></tr>");
-echo("</table><br><br>");
-     
-echo("<table border='0' cellspacing='0' cellpadding='0'>
-        <tr><th> <A HREF='help.compare_classes.html#return_fields'>Thresholds on return fields</A> </th> <th> <A HREF='help.compare_classes.html#thresholds'>Lower<BR>Threshold</A> </th> <th> <A HREF='help.compare_classes.html#thresholds'>Upper<BR>Threshold</A> </th></tr> 
-        <tr align='left' valign='TOP'><td> Query size </td> <td><input type='text' name='lth_q' value='1' size='5' /></td> <td><input type='text' name='uth_q'  size='5'  value='none'/></td></tr> 
-        <tr align='left' valign='TOP'><td> Reference size </td> <td><input type='text' name='lth_r' value='1'  size='5' /></td> <td><input type='text' name='uth_r'  size='5' value='none' /></td></tr> 
-        <tr align='left' valign='TOP'><td> Intersection size </td> <td><input type='text' name='lth_qr' value='1'  size='5' /></td> <td><input type='text' name='uth_qr'  size='5' value='none' /></td></tr> 
-        <tr align='left' valign='TOP'><td> Significance </td> <td><input type='text' name='lth_sig' value='$default_min_sig' size='5' /></td> <td><input type='text' name='uth_sig' value='none' size='5' value='none' /></td></tr> 
-        <tr align='left' valign='TOP'><td> P-value </td> <td><input type='text' name='lth_pval' value='none' size='5' /></td> <td><input type='text' name='uth_pval'  size='5' value='none' /></td></tr> 
-        <tr align='left' valign='TOP'><td> E-value </td> <td><input type='text' name='lth_eval' value='none' size='5' /></td> <td><input type='text' name='uth_eval'  size='5' value='none' /></td></tr> 
-        <tr align='left' valign='TOP'><td> Jaccard index </td> <td><input type='text' name='lth_jac' value='none' size='5' /></td> <td><input type='text' name='uth_jac'  size='5' value='none' /></td></tr> 
-        <tr align='left' valign='TOP'><td> Mutual information </td> <td><input type='text' name='lth_mi' value='none' size='5' /></td> <td><input type='text' name='uth_mi'  size='5' value='none' /></td></tr>
-        
-        <tr align='left' valign='TOP'><td> Dot product <i><br>(Only relevant if a score column is specified)</i></td> <td><input type='text' value='none' name='lth_dp'  size='5' /></td> <td><input type='text' name='uth_dp' value='none' size='5' /></td></tr>
-        </table><br>");
-echo ("</td>");
+
+echo("</table><br><br>\n");     
+echo("<table border='0' cellspacing='0' cellpadding='0'><tr>
+     <th><A HREF='help.compare_classes.html#return_fields'>Thresholds</A></th>
+     <th> <A HREF='help.compare_classes.html#thresholds'>Lower</A></th>
+     <th> <A HREF='help.compare_classes.html#thresholds'>Upper</A> </th></tr>\n"); 
+echo("<tr align='left' valign='TOP'>
+     <td> Query size </td> 
+     <td><input type='text' name='lth_q' value='1' size='5' /></td> 
+     <td><input type='text' name='uth_q'  size='5'  value='none'/></td></tr>\n"); 
+echo("<tr align='left' valign='TOP'>
+     <td> Reference size </td> 
+     <td><input type='text' name='lth_r' value='1'  size='5' /></td> 
+     <td><input type='text' name='uth_r'  size='5' value='none' /></td></tr>\n"); 
+echo("<tr align='left' valign='TOP'>
+     <td> Intersection size </td> 
+     <td><input type='text' name='lth_qr' value='1'  size='5' /></td> 
+     <td><input type='text' name='uth_qr'  size='5' value='none' /></td></tr>\n"); 
+echo("<tr align='left' valign='TOP'>
+     <td> Significance </td> 
+     <td><input type='text' name='lth_sig' value='$default_min_sig' size='5' /></td> 
+     <td><input type='text' name='uth_sig' value='none' size='5' value='none' /></td></tr>\n"); 
+echo("<tr align='left' valign='TOP'>
+     <td> P-value </td> 
+     <td><input type='text' name='lth_pval' value='none' size='5' /></td> 
+     <td><input type='text' name='uth_pval'  size='5' value='none' /></td></tr>\n"); 
+echo("<tr align='left' valign='TOP'>
+     <td> E-value </td> 
+     <td><input type='text' name='lth_eval' value='none' size='5' /></td> 
+     <td><input type='text' name='uth_eval'  size='5' value='none' /></td></tr>\n"); 
+echo("<tr align='left' valign='TOP'>
+     <td> Jaccard index </td> 
+     <td><input type='text' name='lth_jac' value='none' size='5' /></td> 
+     <td><input type='text' name='uth_jac'  size='5' value='none' /></td></tr>\n"); 
+echo("<tr align='left' valign='TOP'>
+     <td> Mutual information </td> 
+     <td><input type='text' name='lth_mi' value='none' size='5' /></td> 
+     <td><input type='text' name='uth_mi'  size='5' value='none' /></td></tr>\n"); 
+echo("<tr align='left' valign='TOP'>
+     <td> Dot product <i><br>(Only relevant if a score column is specified)</i></td> 
+     <td><input type='text' value='none' name='lth_dp'  size='5' /></td> 
+     <td><input type='text' name='uth_dp' value='none' size='5' /></td></tr>\n");
+echo("</table><br>\n");
+echo ("</td>\n");
+
+
 # MATRIX FILE OUTPUT PARAMETERS
 echo ("<td><table>");
-echo ("<tr><td><input type='radio' name='matrix_field' checked='checked' value='QR'/></td><td>Intersection</td></tr>
-         <tr><td><input type='radio' name='matrix_field' value='sig'/></td><td>Significance</td></tr>
-         <tr><td><input type='radio' name='matrix_field' value='jac_sim'/></td><td>Jaccard index</td></tr>
-         <tr><td><input type='radio' name='matrix_field' value='dotprod'/></td><td>Dot product</td></tr>
-         <tr><td><input type='radio' name='matrix_field' value='E_val'/></td><td>E-value</td></tr>
-         <tr><td><input type='radio' name='matrix_field' value='P_val'/></td><td>P-value</td></tr>
-         <tr><td><input type='radio' name='matrix_field' value='I(Q,R)'/></td><td>Mutual information</td></tr>
+echo ("<tr><td><input type='radio' name='matrix_field' checked='checked' value='QR'/></td><td>Intersection</td></tr>\n
+         <tr><td><input type='radio' name='matrix_field' value='sig'/></td><td>Significance</td></tr>\n
+         <tr><td><input type='radio' name='matrix_field' value='jac_sim'/></td><td>Jaccard index</td></tr>\n
+         <tr><td><input type='radio' name='matrix_field' value='dotprod'/></td><td>Dot product</td></tr>\n
+         <tr><td><input type='radio' name='matrix_field' value='E_val'/></td><td>E-value</td></tr>\n
+         <tr><td><input type='radio' name='matrix_field' value='P_val'/></td><td>P-value</td></tr>\n
+         <tr><td><input type='radio' name='matrix_field' value='I(Q,R)'/></td><td>Mutual information</td></tr>\n
          </table>");
-echo ("</td></tr></table>");       
-
+echo ("</td></tr>\n</table>");       
+echo "</blockquote>";
 
 ## Buttons
 echo ("<ul><ul><table class='formbutton'>
@@ -158,6 +197,7 @@ echo ("<ul><ul><table class='formbutton'>
   <TD><B><A HREF='help.compare_classes.html'>MANUAL</A></B></TD>
   <TD><B><A HREF='mailto:sylvain@bigre.ulb.ac.be'>MAIL</A></B></TD>
   </TR></TABLE></ul></ul>");
+echo "<hr>";
 ?>
   
 
