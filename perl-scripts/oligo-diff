@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: oligo-diff,v 1.7 2010/03/26 20:43:55 jvanheld Exp $
+# $Id: oligo-diff,v 1.8 2010/03/27 07:00:04 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     $count_words_cmd = $ENV{RSAT}."/bin/count-words";
@@ -117,7 +117,7 @@ package main;
 #    $in = STDIN;
     $out = STDOUT;
 
-    $side = "test";
+    $side = "both";
 
     ## Sequence treatment
     $purge = 1;
@@ -163,6 +163,21 @@ package main;
     ## check that the command count-words is in the path
     unless (-e $count_words_cmd) {
       &RSAT::error::FatalError("The command count-words is not found", $count_words_cmd);
+    }
+
+    ## Side is converted to a threshold on the ratio
+    if ($side eq "test") {
+      if (defined($lth{ratio})) {
+	$lth{ratio} = &RSAT::stats::max(1, $lth{ratio});
+      } else {
+	$lth{ratio} = 1;
+      }
+    } elsif ($side eq "ctrl") {
+      if (defined($uth{ratio})) {
+	$uth{ratio} = &RSAT::stats::min(1, $uth{ratio});
+      } else {
+	$uth{ratio} = 1;
+      }
     }
 
     ################################################################
@@ -248,6 +263,7 @@ package main;
 	  $ratio = 0;
 	} else {
 	  $ratio = "NA";
+	  die "HELLO";
 	}
       }
       $patterns{$oligo}->{ratio} = $ratio;
@@ -272,32 +288,37 @@ package main;
       if ($occ_tst >= $patterns{$oligo}->{exp_tst}) {
 	## Right-tailed test (test significance of over-representation in test)
 	$patterns{$oligo}->{side} = "test";
-	if ($main::side eq "ctrl") {
-	  $patterns{$oligo}->{occ_P} = "NA";
-	} else {
+#	if ($side eq "ctrl") {
+#	  delete($patterns->{$oligo});
+#	  next;
+#	  $patterns{$oligo}->{occ_P} = "NA";
+#	} else {
 	  $from = $occ_tst;
 	  $to = $m;
 	  $patterns{$oligo}->{occ_P} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
-	}
+#	}
       } else {
 	## Left-tailed test (test significance of over-representation in test)
 	$patterns{$oligo}->{side} = "ctrl";
-	if ($main::side eq "test") {
-	  $patterns{$oligo}->{occ_P} = "NA";
-	} else {
+#	if ($side eq "test") {
+#	  delete($patterns->{$oligo});
+#	  next;
+#	  $patterns{$oligo}->{occ_P} = "NA";
+#	} else {
 	  $from = 0;
 	  $to = $occ_tst;
 	  $patterns{$oligo}->{occ_P} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
-	}
+#	}
       }
-      if ($patterns{$oligo}->{occ_P} eq "NA") {
-	$patterns{$oligo}->{occ_E} = "NA";
-      } else {
+#      if ($patterns{$oligo}->{occ_P} eq "NA") {
+#	$patterns{$oligo}->{occ_E} = "NA";
+#      } else {
 	$patterns{$oligo}->{occ_E} = $test_nb * $patterns{$oligo}->{occ_P};
-      }
-      if ($patterns{$oligo}->{occ_E} eq "NA") {
-	$patterns{$oligo}->{occ_sig} = "NA";
-      } elsif ($patterns{$oligo}->{occ_E} <= 0) {
+#      }
+#      if ($patterns{$oligo}->{occ_E} eq "NA") {
+#	$patterns{$oligo}->{occ_sig} = "NA";
+#      } else 
+      if ($patterns{$oligo}->{occ_E} <= 0) {
 	$patterns{$oligo}->{occ_sig} = "inf";
       } else {
 	$patterns{$oligo}->{occ_sig} = -log($patterns{$oligo}->{occ_E})/$log_base;
@@ -400,7 +421,9 @@ package main;
       $patterns{$oligo}->{rank} = $rank;
       my @values =  ();
       foreach my $field (@output_fields) {
-	&RSAT::message::Debug($oligo, $field, $out_format{$field}, $patterns{$oligo}->{$field}) if ($main::verbose >= 10);
+#	&RSAT::message::Debug($oligo, $field, $out_format{$field}, $patterns{$oligo}->{$field}) if ($main::verbose >= 10);
+
+#	print(join("\t", $oligo, $field,  $patterns{$oligo}->{$field}), "\n");
 	push @values, sprintf( $out_format{$field}, $patterns{$oligo}->{$field});
       }
       print $out join ("\t", @values), "\n";
@@ -522,14 +545,18 @@ Control sequence file.
 
 =item B<-side test | ctrl | both>
 
-Side of the significance test. 
+Side of the significance test.  In practice, the side is converted
+into a threshold on the ratio test/control occurrences.
 
 =over
 
 =item I<-side test>
 
-Only tests over-representation in the test sequences. This is the
-default option.
+Only tests over-representation in the test sequences. This is
+converted into a lower threshold of 1 for the test/control ratio. More
+stringent thresholds can also be specified with the option -lth. For
+example, -lth ratio 2 will only report patterns at least 2 times more
+frequent in test than in control sequences.
 
 =item I<-side both>
 
@@ -537,7 +564,12 @@ Test over-representation in either the test or the control set.
 
 =item I<-side ctrl>
 
-Only tests over-representation in the control sequences.
+Only tests over-representation in the control sequences. This is
+converted into an upper threshold of 1 for the test/control
+ratio. More stringent thresholds can also be specified with the option
+-uth. For example, -uth ratio 0.5 will only report patterns at least 2
+times more frequent in control than in test sequences.
+
 
 =back
 
