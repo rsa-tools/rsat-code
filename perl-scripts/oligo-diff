@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: oligo-diff,v 1.8 2010/03/27 07:00:04 jvanheld Exp $
+# $Id: oligo-diff,v 1.9 2010/03/27 07:21:08 jvanheld Exp $
 #
 ############################################################
 
@@ -105,7 +105,7 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 #    $program_version = "0.00";
 
     $count_words_cmd = $ENV{RSAT}."/bin/count-words";
@@ -801,7 +801,7 @@ sub CountWords {
   }
 
   if ($purge) {
-    $cmd .= " | purge-sequence -mis 0 -ml 20 ".$main::strand;
+    $cmd .= " | ".$SCRIPTS."/purge-sequence -mis 0 -ml 20 ".$main::strand;
   }
   $cmd .= " | ".$main::count_words_cmd;
   $cmd .= " -l ".$main::oligo_len;
