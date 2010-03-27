@@ -20,6 +20,10 @@ require "RSA.lib";
 #$arc_color="#000044";
 
 @supported_layouts= qw(fr spring random none);
+# %supported_layout = ();
+# foreach my $layout (@supported_layouts) {
+#   $supported_layout{$layout} = 1;
+# }
 $supported_layouts = join(",",@supported_layouts);
 
 =pod
