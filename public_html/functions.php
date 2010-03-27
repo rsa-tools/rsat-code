@@ -8,14 +8,14 @@
 <?php
   // NeAT ERROR
   Function error($error) {
-    echo "<H4>Error : </H4><blockquote class='error'>$error</blockquote></h4><br>";
+    echo "<H4>Error: </H4><blockquote class='error'>$error</blockquote></h4><br>";
   }
 ?>
 
 <?php
   // NeAT WARNING
   Function warning($warning) {
-    echo "<H4>Warning : </H4><blockquote class ='warning'>$warning</blockquote><br>";
+    echo "<H4>Warning: </H4><blockquote class ='warning'>$warning</blockquote><br>";
   }
 ?>
 
@@ -23,14 +23,14 @@
 <?php
   // NeAT WARNING
   Function demo($demo) {
-    echo "<H4>Comment on the demonstration example : </H4><blockquote class ='demo'>$demo</blockquote><br>";
+    echo "<H4>Comment on the demonstration example: </H4><blockquote class ='demo'>$demo</blockquote><br>";
   }
 ?>
 
 <?php
   // NeAT INFO
   Function info($info) {
-    echo "<H4>Info : </H4><blockquote class = 'info'>$info </blockquote><br>";
+    echo "<h4>Info: </h4><blockquote class='information'>$info </blockquote><br>";
   }
 ?>
 
@@ -38,7 +38,7 @@
   // NeAT INFO
   // This function add an hypertext link
   Function info_link($info, $link_url) {
-    echo "<H4>Info : </H4><blockquote class = 'info'><a href = '$link_url'>$info </a></blockquote></a><br>";
+    echo "<H4>Info: </H4><blockquote class = 'info'><a href = '$link_url'>$info </a></blockquote></a><br>";
   }
 ?>
 
@@ -212,7 +212,7 @@ Function spaces_to_tab($string, $num) {
 <?php
 # This function converts a file name from its complete path
 # its URL on the RSAT webserver
-# For example : /home/rsat/rsa-tool/public_html/tmp/brol.truc
+# For example: /home/rsat/rsa-tool/public_html/tmp/brol.truc
 # will be converted to
 # http://rsat.ulb.ac.be/rsat/tmp/brol.truc
 Function rsat_path_to_url ($file_name) {
