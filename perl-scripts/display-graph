@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.17 2010/03/26 02:21:52 jvanheld Exp $
+# $Id: display-graph,v 1.18 2010/03/27 13:01:11 jvanheld Exp $
 #
 ############################################################
 
@@ -138,7 +138,7 @@ package main;
 			    $color_col,
 			    1);
 
-    ## Calculates the layout
+    ## Calculate the layout
     $graph->layout($layout) if ($layout);
 
     ## Calculate the minimum and maximum values of the weight on the edges
@@ -459,31 +459,40 @@ Input format. Supported: tab, gml, adj_matrix
 
 =item B<-layout layout_algorithm>
 
-Supported algorithms
-
-Calculates the layout, i.e. assign positions to each node of the
+Calculate the layout, i.e. assign positions to each node of the
 graph.
 
 This option requires GML as input format.
 
 Supported layout algorithms:
 
-=over I<-layout fr>
+=over
 
-Calculates the layout (provided you have the fr_layout program in
-$RSAT/bin) according to the Fruchterman-Reingold (FR) algorithm.
+=item I<-layout none>
 
-=over I<-layout random>
+Do not apply any layout
+
+=item I<-layout spring>
+
+Apply spring embedding algorithm to compute node positions.
+
+=item I<-layout random>
 
 Assign random positions to all nodes.
 
-=over I<-layout spring>
+=item I<-layout fr>
 
-Apply aspring embedding algorithm to compute node positions.
+Calculate the layout (provided you have the fr_layout program in
+$RSAT/bin) according to the Fruchterman-Reingold (FR) algorithm.
+
+=back
 
 =cut
     } elsif ($arg eq "-layout") {
       $layout = shift(@arguments);
+#       unless ($RSAT::Graph2::supported_layout{$layout}) {
+# 	&RSAT::error::FatalError($layout, "Invalid value for option -layout. Supported: ".$RSAT::Graph2::supported_layouts);
+#       }
 
 =pod
 
