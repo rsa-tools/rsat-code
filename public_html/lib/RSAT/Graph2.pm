@@ -19,7 +19,7 @@ require "RSA.lib";
 #$node_color="#000088";
 #$arc_color="#000044";
 
-@supported_layouts= qw(fr spring random);
+@supported_layouts= qw(fr spring random none);
 $supported_layouts = join(",",@supported_layouts);
 
 =pod
@@ -2464,6 +2464,8 @@ sub layout {
     $self->layout_random(%args);
   } elsif ($algorithm eq "spring") {
     $self->layout_spring_embedding(%args);
+  } elsif ($algorithm eq "none") {
+    &RSAT::message::Info("No layout") if ($main::verbose >= 0);
   } else {
     &RSAT::error::FatalError($algorithm, "Invalid value for layout algorithm. Supported: ".$supported_layouts);
   }
