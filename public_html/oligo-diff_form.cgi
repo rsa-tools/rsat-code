@@ -13,10 +13,10 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### default values for filling the form
-$default{seq1} = "";
-$default{upload_seq1} = "";
-$default{seq2} = "";
-$default{upload_seq2} = "";
+$default{test_seq} = "";
+$default{upload_test_seq} = "";
+$default{ctrl_seq} = "";
+$default{upload_ctrl_seq} = "";
 $default{lth_occ} = "3";
 $default{uth_occ} = "none";
 $default{lth_occ_sig} = "0";
@@ -25,7 +25,9 @@ $default{lth_occ_Pval} = "none";
 $default{uth_occ_Pval} = "none";
 $default{lth_occ_Eval} = "none";
 $default{uth_occ_Eval} = "none";
-$default{oligo_length} = "6";
+$default{lth_ratio} = "none";
+$default{uth_ratio} = "none";
+$default{oligo_len} = "6";
 $default{noov} = "checked";
 $default{strand} = "both strands";
 $default{purge} = 'checked';
@@ -47,42 +49,42 @@ foreach $key (keys %default) {
 
 print $query->start_multipart_form(-action=>"oligo-diff.cgi");
 
-#### features text areas
-
-
 ################################################################
-## First sequence set
+## Sequence sets
 print "<h2>Input sequences</h2>\n";
 
-## Textarea for the first sequence set
-print "<p><b><a href='help.oligo-diff.html#upload_seq1'>First sequence set</a></b><br>";
-print $query->textarea(-name=>'seq1',
-		       -default=>$default{seq1},
+################################################################
+## Test sequence set
+
+## Textarea for the test sequence set
+print "<p><b><a href='help.oligo-diff.html#upload_test_seq'>Test sequence set</a></b><br>";
+print $query->textarea(-name=>'test_seq',
+		       -default=>$default{test_seq},
 		       -rows=>8,
 		       -columns=>80);
 
-#### Upload first sequence file
+#### Upload test sequence file
 print  "<br>Upload file","&nbsp;"x3;
-print $query->filefield(-name=>'upload_seq1',
-			-default=>$default{upload_seq1},
+print $query->filefield(-name=>'upload_test_seq',
+			-default=>$default{upload_test_seq},
 			-size=>60,
 			-maxlength=>200);
 print "</p>\n";
 
 ################################################################
-## Second sequence set
-print "<p><b><a href='help.oligo-diff.html#upload_seq2'>Second sequence set</a></b><br>";
+## Control sequence set
+print "<p><b><a href='help.oligo-diff.html#upload_ctrl_seq'>Control sequence set</a></b><br>";
 
-## Textarea for the second sequence set
-print $query->textarea(-name=>'seq2',
-		       -default=>$default{seq2},
+## Textarea for the control sequence set
+print $query->textarea(-name=>'ctrl_seq',
+		       -default=>$default{ctrl_seq},
 		       -rows=>8,
 		       -columns=>80);
 
 #### Upload secnd sequence file
 print  "<br>Upload file","&nbsp;"x3;
-print $query->filefield(-name=>'upload_seq2',
-			-default=>$default{upload_seq2},
+print $query->filefield(-name=>'upload_ctrl_seq',
+			-default=>$default{upload_ctrl_seq},
 			-size=>60,
 			-maxlength=>200);
 print "</p>";
@@ -102,10 +104,10 @@ print "<hr>\n";
 print "<h2>Oligonucleotide countint options</h2>\n";
 
 ## oligo size
-print "<B><A HREF='help.oligo-diff.html#oligo_length'>Oligomer length</A>&nbsp;</B>\n";
-print $query->popup_menu(-name=>'oligo_length',
+print "<B><A HREF='help.oligo-diff.html#oligo_len'>Oligomer length</A>&nbsp;</B>\n";
+print $query->popup_menu(-name=>'oligo_len',
 			 -Values=>[1,2,3,4,5,6,7,8],
-			 -default=>$default{oligo_length});
+			 -default=>$default{oligo_len});
 
 ## prevent overlapping matches of the same pattern
 #print "<br>\n";
@@ -208,14 +210,17 @@ print $query->end_form;
 ### data for the demo
 print $query->start_multipart_form(-action=>"oligo-diff_form.cgi");
 
-$demo_file1 = $ENV{RSAT}."/public_html/demo_files/MET_up800-noorf.fasta";
-$demo_file2 = $ENV{RSAT}."/public_html/demo_files/PHO_up800-noorf.fasta";
-$demo_seq1=`cat $demo_file1`;
-$demo_seq2=`cat $demo_file2`;
+$demo_test = $ENV{RSAT}."/public_html/demo_files/MET_up800-noorf.fasta";
+$demo_ctrl = $ENV{RSAT}."/public_html/demo_files/PHO_up800-noorf.fasta";
+$demo_test_seq=`cat $demo_test`;
+$demo_ctrl_seq=`cat $demo_ctrl`;
 
 print "<TD><B>";
-print $query->hidden(-name=>'seq1',-default=>$demo_seq2);
-print $query->hidden(-name=>'seq2',-default=>$demo_seq1);
+print $query->hidden(-name=>'test_seq',-default=>$demo_ctrl_seq);
+print $query->hidden(-name=>'ctrl_seq',-default=>$demo_test_seq);
+print $query->hidden(-name=>'side',-default=>'both');
+print $query->hidden(-name=>'ratio',-default=>'none');
+print $query->hidden(-name=>'oligo_len',-default=>'5');
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
