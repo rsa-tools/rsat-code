@@ -1,7 +1,7 @@
 <?php
   // NeAT TITLE
   Function title($title) {
-    echo "<H3><a href='NeAT_home.html'>NeA-tools</a> - $title</H3>\n";
+    echo "<H3><a href='NeAT_home.html'>NeAT</a> - $title</H3>\n";
   }
 ?>
 
@@ -23,7 +23,7 @@
 <?php
   // NeAT WARNING
   Function demo($demo) {
-    echo "<H4>Comment on the demonstration example: </H4><blockquote class ='demo'>$demo</blockquote><br>";
+    echo "<H4>Comment on the demonstration example: </H4><blockquote class ='demo'>$demo</blockquote><hr>";
   }
 ?>
 
