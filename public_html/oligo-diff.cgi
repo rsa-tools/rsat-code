@@ -15,11 +15,12 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
+require "RSA.disco.lib";
 require "RSA2.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+@result_files = ();
 
 #### TEMPORARY
-
 $command = "$SCRIPTS/oligo-diff";
 $tmp_file_name = sprintf "oligo-diff.%s", &AlphaDate();
 
@@ -36,63 +37,63 @@ $query = new CGI;
 #### read parameters ####
 $parameters = " -v 1";
 
-#### First sequence set
-$upload_seq1 = $query->param('upload_seq1');
-if ($upload_seq1) {
-    $tmp_seq1 = "${TMP}/${tmp_file_name}_upload_seq1.tab";
-    $upload_seq1 = $query->param('upload_seq1');
-    if ($upload_seq1) {
+#### Test sequence set
+$upload_test_seq = $query->param('upload_test_seq');
+if ($upload_test_seq) {
+    $tmp_test_seq = "${TMP}/${tmp_file_name}_upload_test_seq.fasta";
+    $upload_test_seq = $query->param('upload_test_seq');
+    if ($upload_test_seq) {
 	if ($upload_file =~ /\.gz$/) {
-	    $tmp_seq1 .= ".gz";
+	    $tmp_test_seq .= ".gz";
 	}
-	$type = $query->uploadInfo($upload_seq1)->{'Content-Type'};
-	open SEQ1, ">$tmp_seq1" ||
+	$type = $query->uploadInfo($upload_test_seq)->{'Content-Type'};
+	open TEST_SEQ, ">$tmp_test_seq" ||
 	  &cgiError("Cannot store query feature file in temp dir.");
-	while (<$upload_seq1>) {
-	    print SEQ1;
+	while (<$upload_test_seq>) {
+	    print TEST_SEQ;
 	}
-	close SEQ1;
+	close TEST_SEQ;
     }
-}elsif ($query->param('seq1') =~/\S/) {
-    $tmp_seq1 = "${TMP}/${tmp_file_name}_pasted_seq1.tab";
-    open SEQ1, "> $tmp_seq1";
-    print SEQ1 $query->param('seq1');
-    close SEQ1;
-    &DelayedRemoval($tmp_seq1);
+}elsif ($query->param('test_seq') =~/\S/) {
+    $tmp_test_seq = "${TMP}/${tmp_file_name}_pasted_test_seq.fasta";
+    open TEST_SEQ, "> $tmp_test_seq";
+    print TEST_SEQ $query->param('test_seq');
+    close TEST_SEQ;
+    &DelayedRemoval($tmp_test_seq);
 }else {
-    &FatalError ("Please select the first sequence file on your hard drive with the Browse button or paste sequences in the text area");
+    &FatalError ("Please select the test sequence file on your hard drive with the Browse button or paste sequences in the text area");
 }
-$parameters .= " -file1 $tmp_seq1";
+$parameters .= " -test $tmp_test_seq";
 
 ################################################################
 #### Second sequence set
 
-$upload_seq2 = $query->param('upload_seq2');
-if ($upload_seq2) {
-    $tmp_seq2 = "${TMP}/${tmp_file_name}_upload_seq2.tab";
-    $upload_seq2 = $query->param('upload_seq2');
-    if ($upload_seq2) {
+$upload_ctrl_seq = $query->param('upload_ctrl_seq');
+if ($upload_ctrl_seq) {
+    $tmp_ctrl_seq = "${TMP}/${tmp_file_name}_upload_ctrl_seq.fasta";
+    $upload_ctrl_seq = $query->param('upload_ctrl_seq');
+    if ($upload_ctrl_seq) {
 	if ($upload_file =~ /\.gz$/) {
-	    $tmp_seq2 .= ".gz";
+	    $tmp_ctrl_seq .= ".gz";
 	}
-	$type = $query->uploadInfo($upload_seq2)->{'Content-Type'};
-	open SEQ2, ">$tmp_seq2" ||
+	$type = $query->uploadInfo($upload_ctrl_seq)->{'Content-Type'};
+	open CTRL_SEQ, ">$tmp_ctrl_seq" ||
 	  &cgiError("Cannot store expected frequency file in temp dir.");
-	while (<$upload_seq2>) {
-	    print SEQ2;
+	while (<$upload_ctrl_seq>) {
+	    print CTRL_SEQ;
 	}
-	close SEQ2;
+	close CTRL_SEQ;
     }
-} elsif ($query->param('seq2') =~/\S/) {
-    $tmp_seq2 = "${TMP}/${tmp_file_name}_pasted_seq2.tab";
-    open SEQ2, "> $tmp_seq2";
-    print SEQ2 $query->param('seq2');
-    close SEQ2;
-    &DelayedRemoval($tmp_seq2);
+} elsif ($query->param('ctrl_seq') =~/\S/) {
+    $tmp_ctrl_seq = "${TMP}/${tmp_file_name}_pasted_ctrl_seq.fasta";
+    open CTRL_SEQ, "> $tmp_ctrl_seq";
+    print CTRL_SEQ $query->param('ctrl_seq');
+    close CTRL_SEQ;
+    &DelayedRemoval($tmp_ctrl_seq);
 } else {
     &FatalError ("Please select the second sequence file on your hard drive with the Browse button or paste sequences in the text area");
 }
-$parameters .= " -file2 $tmp_seq2";
+$parameters .= " -ctrl $tmp_ctrl_seq";
 
 ### purge or not
 if ($query->param('purge')) {
@@ -102,9 +103,9 @@ if ($query->param('purge')) {
 }
 
 ## oligo size
-$oligo_length = $query->param('oligo_length') ;
-&FatalError("$oligo_length Invalid oligonucleotide length") unless &IsNatural($oligo_length);
-$parameters .= " -l $oligo_length";
+$oligo_len = $query->param('oligo_len') ;
+&FatalError("$oligo_len Invalid oligonucleotide length") unless &IsNatural($oligo_len);
+$parameters .= " -l $oligo_len";
 
 
 ### single or both strands
@@ -131,31 +132,71 @@ foreach my $field qw(occ occ_sig occ_Pval occ_Eval) {
   }
 }
 
+$command .= $parameters;
 
-
-
-print "<PRE>command: $command $return_fields $parameters<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+print "<PRE>command: $command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
 
 if ($query->param('output') =~ /display/i) {
-
-#    &PipingWarning();
+    &PipingWarning();
 
     ### execute the command ###
     $result_file = "$TMP/${tmp_file_name}.res";
-    open RESULT, "$command $parameters $return_fields |";
+    open RESULT, "$command |";
 
     ### Print result on the web page
     print '<H2>Result</H2>';
-    &PrintHtmlTable(RESULT, $result_file, true);
+    &PrintHtmlTable(RESULT, $result_file, 1);
     close(RESULT);
 
-#    &PipingForm();
+     #### oligonucleotide assembly ####
+    if (($query->param('return') ne "table") &&
+	($query->param('return') ne "distrib") &&
+	(&IsReal($query->param('lth_occ_sig')))) {
+
+      ## Pattern-assembly
+      $assembly_file = "$TMP/$tmp_file_name.asmb";
+      $top_patterns = 50;
+      $pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1 -top ".$top_patterns;
+      if ($query->param('strand') =~ /single/) {
+	$pattern_assembly_command .= " -1str";
+      } else {
+	$pattern_assembly_command .= " -2str";
+      }
+      $pattern_assembly_command .= "  -i $result_file";
+      $pattern_assembly_command .= "  -o $assembly_file";
+
+      unless ($ENV{RSA_ERROR}) {
+
+	## Assemble the significant patterns
+	print "<H2>Pattern assembly</H2>\n";
+	print "<PRE>pattern-assembly command: $pattern_assembly_command<P>\n</PRE>" if ($ENV{rsat_echo} >=1);
+	system "$pattern_assembly_command";
+	open ASSEMBLY, $assembly_file;
+	print "<PRE>\n";
+	while (<ASSEMBLY>) {
+	  s|$ENV{RSAT}/||g;
+	  print;
+	}
+	print "</PRE>\n";
+	close(ASSEMBLY);
+	push @result_files, ('assembly', $assembly_file);
+
+
+	## Convert pattern-assembly result into PSSM
+	if ($query->param('to_matrix')) {
+	  &MatrixFromPatterns_run();
+	}
+      }
+    }
+
+    &PrintURLTable(@result_files);
+    &OligoDyadPipingForm();
     print '<HR SIZE=3>';
 
 } elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters $return_fields", $query->param('user_email'), $tmp_file_name);
+    &ServerOutput("$command", $query->param('user_email'), $tmp_file_name);
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_name);
+    &EmailTheResult("$command", $query->param('user_email'), $tmp_file_name);
 }
 
 print $query->end_html;
