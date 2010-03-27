@@ -54,7 +54,10 @@
   }
   if ($_REQUEST['proba'] == 'on') {
     array_push($return, "proba");
-  }  
+    if ($_REQUEST['sort'] == 'on') {
+      $sort = "sig"; 
+    }
+  }
   if ($_REQUEST['jac'] == 'on') {
     array_push($return, "jac");
   }  
@@ -110,7 +113,7 @@
     if (preg_match("/\d/", $thr)) {
       array_push($l_thr_field, "sig");
       array_push($l_thr_val, $thr);
-      $sort = "sig";
+      ##      $sort = "sig"; ## JvH: I move this, because values can be sorted or not irrespective of the fact that a threshold was selected
     } else if ($thr != 'none'){
       warning("$thr is not a valid significance lower threshold");
     }
