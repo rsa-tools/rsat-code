@@ -81,10 +81,21 @@ if (!$pipe) {
 ################################################################
 ## comparaison of query classes with themselves
 ## options for self-comparison
-echo ("<br><br><input type = 'radio' checked value='off' name='self_compa' size = 1> <a href = 'help.compare_classes.html#self'><b>Specify reference classes distinct from the query classes </a></b>
-    <br><br><input type = 'radio' value='on' name='self_compa' size = 1> <a href = 'help.compare_classes.html#self'><b>Compare query classes with themselves (do not specify reference classes)</a></b><br>
-    <ul><input type = 'checkbox' value='on' name='distinct' size = 1> <a href = 'help.compare_classes.html#distinct'><b>Prevent self-comparison.</a></b><br>
-    <input type = 'checkbox' value='on' name='triangle' size = 1> <a href = 'help.compare_classes.html#triangle'><b>Prevent reciprocal comparisons.</a></b><br></ul></td>");
+echo ("<br><br><input type = 'radio' checked value='off' name='self_compa' size = 1> 
+      <a href = 'help.compare_classes.html#self'>
+      <b>Specify reference classes distinct from the query classes </a></b>");
+
+echo ("<br><br><input type = 'radio' value='on' name='self_compa' size = 1> 
+      <a href = 'help.compare_classes.html#self'>
+      <b>Compare query classes with themselves (do not specify reference classes)</a></b><br>");
+
+echo ("<ul><input type='checkbox' value='on' name='distinct' size = 1 checked/> 
+      <a href = 'help.compare_classes.html#distinct'>
+      <b>Prevent self-comparison.</a></b><br>");
+
+echo ("<input type = 'checkbox' value='on' name='triangle' size = 1 checked/>
+      <a href = 'help.compare_classes.html#triangle'>
+      <b>Prevent reciprocal comparisons.</a></b><br></ul></td>");
 
 
   
@@ -103,7 +114,8 @@ echo("<td><table border='0' cellspacing='0' cellpadding='0'>
   <tr>  <th> <A HREF='help.compare_classes.html#return_fields'>Return fields</A> </th></tr> 
   <tr><td><label><input type='checkbox' name='occ' value='on' checked='checked' />Occurrences</label></td></tr> 
   <tr><td><label><input type='checkbox' name='freq' value='on' />Frequencies</label></td></tr> 
-  <tr><td><label><input type='checkbox' name='proba' value='on' checked='checked' />Hypergeometric probability</label></td></tr> 
+  <tr><td><label><input type='checkbox' name='proba' value='on' checked='checked' />Hypergeometric probability</label>
+  &nbsp;&nbsp;<label><input type='checkbox' name='sort' value='on' checked='checked' />Sorting criterion</label></td></tr> 
   <tr><td><label><input type='checkbox' name='jac_sim' value='on' checked='checked' />Jaccard index</label></td></tr> 
   <tr><td><label><input type='checkbox' name='entropy' value='on' />Entropy</label></td></tr> 
   <tr><td><label><input type='checkbox' name='members' value='on' /> Members <i> (Beware, this might generate large result files)</i></label></td></tr>
