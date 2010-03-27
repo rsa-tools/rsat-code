@@ -111,7 +111,7 @@ echo ("<input type = 'checkbox' value='on' name='triangle' size = 1 checked/>
 // ");
 
 echo "<hr>";
-echo "<h4>Output options</h4>";
+echo "<b>Output options</b><br>";
 echo "<blockquote>";
 echo ("<table border=1  cellspacing=0 cellpadding=4>");
 echo ("<tr align=center><th><input type = 'radio' checked name='out_format' value = 'class'/>Class pairs</th>");
