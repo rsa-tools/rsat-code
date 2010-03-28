@@ -10,7 +10,7 @@
 </h2>
 </center>
 
-<h4>Description</h4>
+<h2>Description</h2>
 <ul>
 
         Compare two class files (the query file and the reference
@@ -20,7 +20,7 @@
         number of common elements by chance alone.
 </ul>
 
-<h4>Authors</h4>
+<h2>Authors</h2>
 <ul>
 <li><a target=_blank
 href=http://www.bigre.ulb.ac.be/Users/jvanheld/>Jacques van
@@ -29,39 +29,51 @@ prototype.</li>
 </ul>
 
 
-<h4>Options</h4><ul>
+<h2>Options</h2>
 
 <A NAME="formats"></A>
-<h4>Input formats</h4>
-  <b>Classification format</b><br>
-    The class file specifies the composition of several gene
-        families.  It is a text file containing 2 columns separated by
-        a tab character. If a score column is specified, the file must contain a column with scores.
+<h3>Input formats</h3>
+
+<b>Classification format</b><br>
+
+<p>The class file specifies the composition of several gene families.
+It is a text file containing 2 columns separated by a tab
+character. If a score column is specified, the file must contain a
+column with scores.
+
         <pre>
           member1	family_1
           member2	family_1
           member3	family_2
         </pre>
 
-<h4>Output formats</h4>
-  <b>Class - class comparaison format</b><br>
-The program returns a tabdelimited file with one row per combination of reference-query class, and one
-column per return field.<br>
-  <b>Matrix format</b><br>
-Return a pairwise matrix, where each row corresponds to a reference class, each column to a query class,
-and each cell contains a comparison between the two classes.
-</ul></ul>
-<h4><A NAME="output"></a>Threshold values</h4>
-  <ul><b>List of fields to return.</b><br>
-Return fields are grouped, so that each request will return
-several fields. For example, the group "proba" returns the
-P-value, the E-value and the significance. 
+<h3>Output formats</h3>
 
-<br>In case no threshold shoud be applied for a field, y
-ou can leave the field empty or write <i>none</i>.
+The result of the comparison can be reported in two formats: a
+pairwise class comparison table, and a matrix.
 
-  <table border = 1>
-<tr><td>Group</td><td>Field</td><td>Description</td></tr>  
+<h4>Class pairs</h4>
+
+<p>The program returns a tab-delimited file with one row per pair of
+reference-query class, and one column per statistics.<p>
+
+<h4>Reference/query matrix</h4>
+
+<p>Return a reference/query matrix, where each row corresponds to a
+reference class, each column to a query class, and each cell contains
+a comparison between the two classes.</p>
+
+
+<h3>List of fields to return.</h3>
+
+
+<p>Return fields are grouped by categories, so that each request will
+return several columns. For example, the group "proba" returns the
+P-value, the E-value and the significance. </p>
+
+
+<table border='1'>
+<tr><th>Group</th><th>Field</th><th>Description</th></tr>  
 <tr><td>occ</td><td>Q</td><td>Number of elements in class Q</td></tr>
 <tr><td>occ</td><td>QR</td><td>Number of elements found in the intersecion between classes R and Q</td></tr>
 <tr><td>occ</td><td>QvR</td><td>Number of elements found in the union of classes R and Q. This is R or Q.</td></tr>
@@ -97,9 +109,11 @@ ou can leave the field empty or write <i>none</i>.
 <tr><td>entropy</td><td>dH(Q,R)</td><td>Entropy distance between classes Q and R. dH(Q,R) = H(Q,R) - H(Q)/2 - H(R)/2</td></tr>
 </table></ul>
 
-<h4><A NAME="thresolds"></a>Thresolds</h4>
+<h3><A NAME="thresolds"></a>Thresolds</h3>
 
-Upper and lower threshold values for a given field.<br></ul>
+<p>A lower and an upper threshold can be imposed on various fields in
+order to restrict the result. To avoid applying a threshold, leave the
+box empty or write <i>none</i>.</p>
 
 <h4><A NAME="self"></a>Self comparaison</h4>
   <ul><b>The query classes are compared to themselves.</b><br></ul>
