@@ -18,6 +18,10 @@ require "RSA.lib";
 @ISA = qw( RSAT::GenericObject );
 #$node_color="#000088";
 #$arc_color="#000044";
+#$default_node_color = "#66CCFF";
+#$default_edge_color = "#66FFFF";
+my $default_node_color = "#0088FF";
+my $default_edge_color = "#BBBBDD";
 
 @supported_layouts= qw(fr spring random none);
 # %supported_layout = ();
@@ -216,7 +220,6 @@ returns a randomized graph having the same number of edges, each node having the
 
 =cut
 sub randomize {
-
     my ($self, $self_loop, $duplicated, $directed, $iter) = @_;
     # get arcs and nodes of $graph
     my @arcs = $self->get_attribute("arcs");
@@ -1379,8 +1382,8 @@ sub read_from_table {
     my $weight = 0;
     my $default_weight = 1;
     my @array = ();
-    my $default_node_color = "#66CCFF";
-    my $default_edge_color = "#66FFFF";
+#    my $default_node_color = "#66CCFF";
+#    my $default_edge_color = "#66FFFF";
 
     ## Check input parameters
     unless (&RSAT::util::IsNatural($source_col) && ($source_col > 0)) {
@@ -1545,8 +1548,8 @@ sub read_from_paths {
     my $weight = 0;
     my $default_weight = 1;
     my @array = ();
-    my $default_node_color = "#66CCFF";
-    my $default_edge_color = "#66FFFF";
+#    my $default_node_color = "#66CCFF";
+#    my $default_edge_color = "#66FFFF";
 
     ## Check input parameters
     unless (&RSAT::util::IsNatural($path_col) && ($path_col > 0)) {
@@ -1605,8 +1608,8 @@ sub read_from_adj_matrix {
     my $weight = 0;
     my $default_weight = 1;
     my @array = ();
-    my $default_node_color = "#66CCFF";
-    my $default_edge_color = "#66FFFF";
+#    my $default_node_color = "#66CCFF";
+#    my $default_edge_color = "#66FFFF";
     my %edge_list = ();
     my %nodes_id_name = ();
     my %nodes_name_id = ();
@@ -1793,8 +1796,13 @@ sub reload_graph {
 
 ################################################################
 
+=pod
 
+=item load_from_gml($inputfile)
 
+Load a graph from a GML file.
+
+=cut
 sub load_from_gml {
     ################################
     # Define variables
@@ -1848,30 +1856,36 @@ sub load_from_gml {
 	## avec un simple match, non ?
 
 	## NODE ID
-        if ($node =~ /id\s+/) {
-          my @node_cp = split /.*id /, $node;
-          $node_id = $node_cp[1];
-          $node_id = substr($node_id, 0, index($node_id, " "));
+        if ($node =~ /id\s+(\S+)/) {
+	  $node_id = $1;
+#          my @node_cp = split /.*id /, $node;
+#          $node_id = $node_cp[1];
+#          $node_id = substr($node_id, 0, index($node_id, " "));
 	}
 
 	# NODE LABEL
-        if ($node =~ /label/) {
-          my @label_cp = split /.*label /, $node;
-          $node_label = $label_cp[1];
-          $node_label = substr($node_label, 1, index($node_label, "\" "));
-          $node_label =~ s/\"$//;
+        if ($node =~ /label\s+\"([^\"]*)\"/) {
+	  $node_label = $1;
+#          my @label_cp = split /.*label /, $node;
+#          $node_label = $label_cp[1];
+#          $node_label = substr($node_label, 1, index($node_label, "\" "));
+#          $node_label =~ s/\"$//;
         }
         if ($self->{seed_nodes} && !$self->{seed_index}->{$node_label}) {
           $discarded_nodes{$node_id}++;
 	  next;
         }
+
 	# NODE COLOR
-        if ($node =~ /outline/) {
-          my @color_cp = split /.*outline /, $node;
-          $node_color = $color_cp[1];
-          $node_color = substr($node_color,1, index($node_color, "\" "));
+        if ($node =~ /outline\s+\"([^\"]*)\"/) {
+	  $node_color = $1;
+#        if ($node =~ /outline/) {
+#          my @color_cp = split /.*outline /, $node;
+#          $node_color = $color_cp[1];
+#          $node_color = substr($node_color,1, index($node_color, "\" "));
           $node_color =~ s/\"//;
         }
+
 	# NODE X POSITION
         if ($node =~ /x /) {
           my @xpos_cp = split /.*x /, $node;
@@ -1879,6 +1893,7 @@ sub load_from_gml {
           $node_xpos = substr($node_xpos,0, index($node_xpos, " "));
           $node_xpos =~ s/\"//;
          }
+
 	# NODE Y POSITION
         if ($node =~ /y /) {
           my @ypos_cp = split /.*y /, $node;
@@ -1886,6 +1901,7 @@ sub load_from_gml {
           $node_ypos = substr($node_ypos,0, index($node_ypos, " "));
           $node_ypos =~ s/\"//;
          }
+
         if ($node_id ne "NA#") {
           if ($node_label eq "NA#") {
             $node_label = $node_id;
@@ -1899,7 +1915,7 @@ sub load_from_gml {
 	    $nodes_label{$node_index} = $node_label;
 ##	    $nodes_name_id{$node_label} = $node_nb; ## Je pense que ceci est erroné: quand les noeuds ne sont pas fournis dans le bon ordre, les arcs sont mal interprétés
 	    $nodes_name_id{$node_label} = $node_index; ## Corrected 2010/03/24
-	    $nodes_id_name{$node_nb} = $node_label;
+	    $nodes_id_name{$node_id} = $node_label; ## Corrected 2010/03/28
 	    if ($node_xpos ne "NA#") {
 	      $nodes_id_xpos{$node_id} = $node_xpos;
 	    }
@@ -2469,7 +2485,7 @@ sub layout {
   } elsif ($algorithm eq "spring") {
     $self->layout_spring_embedding(%args);
   } elsif ($algorithm eq "none") {
-    &RSAT::message::Info("No layout") if ($main::verbose >= 0);
+    &RSAT::message::Info("No layout") if ($main::verbose >= 2);
   } else {
     &RSAT::error::FatalError($algorithm, "Invalid value for layout algorithm. Supported: ".$supported_layouts);
   }
@@ -2574,121 +2590,6 @@ sub layout_fr {
 
 }
 
-# =pod
-
-# =item B<layout_spring_embedding_prev()>
-
-# Fill the hashes %node_id_xpos and %node_id_ypos using a spring
-# embedding method.
-# (developed by Sylvain Brohee <sbrohee@bigre.ulb.ac.be>)
-
-# =cut
-
-# sub layout_spring_embedding_prev {
-#   my ($self) = @_;
-#   my %nodes_id_xpos = $self->get_attribute("nodes_id_xpos");
-#   my %nodes_id_ypos = $self->get_attribute("nodes_id_ypos");
-#   my %nodes_name_id = $self->get_attribute("nodes_name_id");
-#   my %arc_name_id = $self->get_attribute("arcs_name_id");
-#   my %nodes_id_force = ();
-#   my @arcs = $self->get_attribute("arcs");
-#   my $nodes_nb = scalar keys %nodes_name_id;
-#   my $layout_size = 1000;
-#   my $attraction_1 = 2;
-#   my $attraction_2 = 1;
-#   my $repulsion = 2;
-#   my $node_mobility = 0.1;
-#   my $max_it = 100;
-#   if ($nodes_nb > 6000) {
-#     $layout_size = 3000;
-#   } elsif ($nodes_nb < 30) {
-#     $layout_size = 1000;
-#   } else {
-#     $layout_size = int(1000+($nodes_nb/(2)))
-#   }
-#   my @random_position = 0..$layout_size;
-#   @random_position = shuffle(@random_position);
-#   my $i = 0;
-#   # randomize node positions
-#   while (($node_name, $id) = each %nodes_name_id) {
-#     $nodes_id_xpos{$id} = $random_position[$i];
-#     $nodes_id_ypos{$id} = $random_position[($layout_size-$i)];
-#     $i++;
-#   }
-#   my @nodes_names = keys %nodes_name_id;
-#   my $mean_mov = 30;
-#   for (my $iteration = 0; $iteration < $max_it; $iteration++) {
-# #     if ($mean_mov < 17) {
-# #       last;
-# #     }
-#     $mean_mov = 0;
-#     my %nodes_force_x = ();
-#     my %nodes_force_y = ();
-#     for (my $i = 0; $i < scalar(@nodes_names); $i++) {
-#       @nodeA_pos = ($nodes_id_xpos{$nodes_name_id{$nodes_names[$i]}}, $nodes_id_ypos{$nodes_name_id{$nodes_names[$i]}});
-#       my %already_calculated;
-#       my $force_x = 0;
-#       my $force_y = 0;
-#       for (my $j = 0; $j < scalar(@nodes_names); $j++) {
-#         my $arc_id = join("_", $nodes_names[$i], $nodes_names[$j], "1");
-#         my $arc_id_rev = join("_", $nodes_names[$j], $nodes_names[$i], "1");
-#         if ($i != $j) {
-#           @nodeB_pos = ($nodes_id_xpos{$nodes_name_id{$nodes_names[$j]}}, $nodes_id_ypos{$nodes_name_id{$nodes_names[$j]}});
-#           # distance calculation between nodeA and nodeB
-#           $x_dir = $nodeA_pos[0] - $nodeB_pos[0];
-#           print "XDIR $x_dir ";
-#           $y_dir = $nodeA_pos[1] - $nodeB_pos[1];
-#           $dist_x = abs($x_dir);
-#           $dist_y = abs($y_dir);
-#           if ($x_dir < 0) {
-#             $x_dir = +1;
-#           } else {
-#             $x_dir = -1;
-#           }
-#           if ($y_dir < 0) {
-#             $y_dir = +1;
-#           } else {
-#             $y_dir = -1;
-#           }          
-
-#           print $iteration." ".$nodes_names[$i]." ".$nodes_names[$j]." P".join(" ", @nodeA_pos)." ".join(" ", @nodeB_pos)." D $dist_x $dist_y";
-#           if (defined($arc_name_id{$arc_id}) || defined($arc_name_id{$arc_id_rev})) {
-#             # Both nodes are neighbours
-#             print " CONNECTED ";
-#             $force_x += $x_dir*($attraction_1*log10($dist_x/$attraction_2));
-#             $force_y += $y_dir*($attraction_1*log10($dist_y/$attraction_2));
-#             print " F ".$x_dir*($attraction_1*log10($dist_x/$attraction_2))." ".$y_dir*($attraction_1*log10($dist_y/$attraction_2))."\n";
-#           } else {
-#             print " NOT CONNECTED ";
-#             # Both nodes are not connected
-# #             print "DISTX ".$dist_x."\n";
-#             $force_x += -1*($x_dir*($repulsion/sqrt($dist_x)));
-# #             print "DISTY ".$dist_y."\n";
-#             $force_y += -1*($y_dir*($repulsion/sqrt($dist_y)));
-#             print " F".-1*($x_dir*($repulsion/sqrt($dist_x)))." ".-1*($y_dir*($repulsion/sqrt($dist_y)))."\n";
-#           }
-# #           $already_calculated{$arc_id}++;
-# #           $already_calculated{$arc_id_rev}++;
-            
-        
-#         }
-#       }
-#       $nodes_force_x{$nodes_names[$i]} = $force_x;
-#       $nodes_force_y{$nodes_names[$i]} = $force_y;
-
-#     }
-#     for (my $k = 0; $k < scalar(@nodes_names); $k++ ) {
-#       $nodes_id_xpos{$nodes_name_id{$nodes_names[$k]}} += $node_mobility*$nodes_force_x{$nodes_names[$k]};
-#       $nodes_id_ypos{$nodes_name_id{$nodes_names[$k]}} += $node_mobility*$nodes_force_y{$nodes_names[$k]};
-#       $mean_mov += ($node_mobility*$nodes_force_y{$nodes_names[$k]})/scalar(@nodes_names)^2;
-# #       print $c4*$nodes_force_y{$nodes_names[$k]}."\n";
-#     }
-# #     print "MEAN MOV $mean_mov\n";
-# #     print "ITER $iteration\n";
-#   }
-#   $self->set_hash_attribute("nodes_id_xpos", %nodes_id_xpos);
-#   $self->set_hash_attribute("nodes_id_ypos", %nodes_id_ypos);
-# }
 
 
 =pod
@@ -2732,8 +2633,9 @@ neither attraction nor repulsion.
 
 =item attr_k
 
-Attraction constant. The attractive force I<Fa> is computed according to
-Hooke's law.
+Attraction constant. The spring force I<Fa> is computed according to
+Hooke's law. Note that this force can be positive (attraction) or
+negative (repulsion), depending on the spring elongation.
 
  Fa = -k*x
 
@@ -2770,30 +2672,31 @@ sub layout_spring_embedding {
   my $default_arc_len = $args{default_arc_len} || 250;
 
   ## maximal number of iterations
-  my $max_iter = $args{max_iter} || 200;
-  my $max_time = $args{max_time} || 120;
+  my $max_iter = $args{max_iter} || 1000;
+  my $coulomb_delay = $args{coulomb_delay} || 20;
+  my $max_time = $args{max_time} || 30;
 
   ## Maximal move of a node per step in each direction (X,Y)
-  my $max_move_per_step = 30; 
+  my $max_move_per_step = 100;
 
   ## Reduction of max move at each iteration
-  my $cooling = 0.99; 
+  my $cooling = 0.999;
 
   ## Attraction constant
-  my $attr_k = $args{attr_k} || 1; 
+  my $attr_k = $args{attr_k} || 1;
 
   ## Noise added at each iteration to avoid staying blocked in trivial
   ## solutions.
-  my $rand_k = 2; 
+  my $rand_k = 5;
 
   ## Initiate the layout by assigning random posiitions
   $self->layout_random(%args);
   my ($x_size, $y_size) = $self->get_diagram_size(%args);
-  
+
   ## Repulsion radius, i.e. the radius around which repulsion force is
   ## >= 1.  In principle, this parameter should affect the distance
   ## between components + distance betwen nodes.
-  my $rep_radius = $args{rep_radius} || $x_size/3; 
+  my $rep_radius = $args{rep_radius} || $x_size/3;
   my $rep_k = $rep_radius**2;
 
   ## Get required info from the graph
@@ -2813,6 +2716,8 @@ sub layout_spring_embedding {
 			    sprintf("\n\t%-22s%d", "arcs",$nb_arcs),
 			    sprintf("\n\t%-22s%d", "max iter",$max_iter),
 			    sprintf("\n\t%-22s%d", "Max time (seconds)",$max_time),
+			    sprintf("\n\t%-22s%d", "Max move (pixels)",$max_move_per_step),
+			    sprintf("\n\t%-22s%f", "Cooling",$cooling),
 			    sprintf("\n\t%-22s%d", "X size",$x_size),
 			    sprintf("\n\t%-22s%d", "Y size",$y_size),
 			    sprintf("\n\t%-22s%d", "Repulsion radius",$rep_radius),
@@ -2881,131 +2786,239 @@ sub layout_spring_embedding {
   ## Iterations of spring embedding
   my $iter = 0;
   for $iter (1..$max_iter) {
-    my @x_force = ();
-    my @y_force = ();
+    my %x_force = ();
+    my %y_force = ();
     $max_move_per_step *= $cooling if ($max_move_per_step*$cooling > 3);
 
     ## Check elapsed time
     my $elapsed = times;
-    &RSAT::message::Debug("Spring embedding iteration", "iter:".$iter, "seconds:".$elapsed, 'max move:'.sprintf("%.1f",$max_move_per_step)) if ($main::verbose >= 2);
-    last if ($elapsed > $max_time);
-
+    my $remaining = $max_time - $elapsed;
+    my $needed = $elapsed*($max_iter/$iter -1);
+    &RSAT::message::TimeWarn("Spring embedding iteration", "iter:".$iter."/".$max_iter,
+			  sprintf("elapsed:%ds",$elapsed),
+			  sprintf("needed:%ds",$needed),
+			  sprintf("remain:%ds",$remaining),
+			  "max allowed move:".sprintf("%d",$max_move_per_step))
+      if (($main::verbose >= 2) && ($iter % 10 == 1));
+    if ($elapsed > $max_time) {
+      &RSAT::message::Warning("Max time reached (".$max_time."s). Iterations performed:", $iter."/".$max_iter) if ($main::verbose >= 1);
+      last;
+    }
 
     ################################################################
-    ## Iterate over all node pairs to compute repulsion and attraction
-    ## (if they are linked)
-    for my $n1 (0..$#node_names) {
-      my $name1 = $node_names[$n1];
+    ## Iterate over all arcs to compute spring forces (attraction and
+    ## repulsion) according to Hooke's law
+    &RSAT::message::TimeWarn("Hooke's forces (spring)", "iter=".$iter."/".$max_iter) if ($main::verbose >= 3);
+    for my $i (0..$#arcs) {
+
+      ## Source node
+      my $name1 = $arcs[$i][0];
       my $id1 = $nodes_name_id{$name1};
       my $x1 = $nodes_id_xpos{$id1};
       my $y1 = $nodes_id_ypos{$id1};
 #      &RSAT::message::Debug("Node 1", $name1, $id1, "(".$x1.",".$y1.")") if ($main::verbose >= 10);
 
-      ## Attractive and repulsive forces are symmetrical -> we assign them to both members of each pair
-      for my $n2 (($n1+1)..$#node_names) {
-#      for my $n2 (0..$#node_names) {
-#	next if ($n1 = $n2);
+      ## Target node
+      my $name2 = $arcs[$i][1];
+      my $id2 = $nodes_name_id{$name2};
+      my $x2 = $nodes_id_xpos{$id2};
+      my $y2 = $nodes_id_ypos{$id2};
+#      &RSAT::message::Debug("", "Node 2", $name2, $id2, "(".$x2.",".$y2.")") if ($main::verbose >= 10);
 
-	## Distance
-	my $name2 = $node_names[$n2];
-	my $id2 = $nodes_name_id{$name2};
-	my $x2 = $nodes_id_xpos{$id2};
-	my $y2 = $nodes_id_ypos{$id2};
-	my $x_diff= $x2-$x1;
-	my $y_diff = $y2-$y1;
-	my $dist_squared = $x_diff**2 + $y_diff**2;
-	my $dist = sqrt($dist_squared);
-	my $sin = 0;
-	my $cos = 0;
-	if ($dist > 0) {
-	  $cos = $x_diff/$dist;
-	  $sin = $y_diff/$dist;
+      ## Compute distance between source and target nodes
+      my $x_diff= $x2-$x1;
+      my $y_diff = $y2-$y1;
+      my $dist_squared = $x_diff**2 + $y_diff**2;
+      my $dist = sqrt($dist_squared);
+      my $sin = 0;
+      my $cos = 0;
+      if ($dist > 0) {
+	$cos = $x_diff/$dist;
+	$sin = $y_diff/$dist;
+      }
+#      &RSAT::message::Debug("Dist", $iter, $n1, $n2,
+#			    sprintf("dist=%d",$dist),
+#			    sprintf("diff=%.1f,%.1f",$x_diff,$y_diff),
+#			    sprintf("cos,sin=%.2f,%.2f",$cos,$sin),
+#			   ) if ($main::verbose >= 10);
+
+      ################################################################
+      ## Hooke's force
+      ##
+      ## SYLVAIN: we could add some constraint here to avoid overlap
+      ## of labels. More generally, we could add a minimal
+      ## inter-node distance along the Y axis and along the X
+      ## axis. The Y min distance should be ~20 pixels. The X min
+      ## would depend on the size of node labels.
+      my $attr = 0;
+      my $arc_len = $arc_index{$name1}{$name2};
+      $attr = $attr_k * ($dist - $arc_len);
+      #	    &RSAT::message::Debug("Arc attraction", $name1, $name2, "len=".$arc_len, 
+      #				  "w=".$weight{$name1}{$name2}, "attr=".$attr) if ($main::verbose >= 10);
+
+
+      ################################################################
+      ## Project the force element along the two axes.
+      ##
+      ## The sign of the force reflects the repulsion (+) or
+      ## attraction (-).
+      ##
+      ## The sin and cos will determine the repartition of this
+      ## force along the X and Y axes, and indicate the respective
+      ## directions for nodes n1 and n2.
+      ##
+      ## Note that in this loop we only take into account the forces
+      ## between 2 nodes, but the moves of all nodes will be done
+      ## only after all node pairs have been visited.
+
+      my $force = -$attr;
+
+      ## Force on the X axis.
+      my $x_force = $force * $cos;
+      $x_force{$id1} -= $x_force;
+      $x_force{$id2} += $x_force;
+
+      ## Force on the Y ayis.
+      my $y_force = $force * $sin;
+      $y_force{$id1} -= $y_force;
+      $y_force{$id2} += $y_force;
+
+    	&RSAT::message::Debug("F_pair", "iter=".$iter,
+    			      sprintf("n".$id1."=%d,%d",$x1, $y1),
+    			      sprintf("n".$id2."=%d,%d",$x2, $y2),
+    			      "dist=".sprintf("%.d", $dist),
+    			      sprintf("Force=%.1f", $force),
+    			      sprintf("cos,sin=%.2f,%.2f",$cos, $sin),
+    			      sprintf("F=%.1f,%.1f",$x_force, $y_force),
+    			      sprintf("F".$id1."=%.1f,%.1f",$x_force{$id1}, $y_force{$id1}),
+    			      sprintf("F".$id2."=%.1f,%.1f",$x_force{$id2}, $y_force{$id2}),
+    			     ) if ($main::verbose >= 10);
+
+    }
+#    die "HELLO\n";
+
+
+    ################################################################
+    ## Iterate over all node pairs to compute repulsion according to
+    ## Coulomb's law.  This is particularly costly (N^2 for a graph with
+    ## N nodes) so we apply the repulsive forces only once every X
+    ## iterations.
+    if ($iter % $coulomb_delay == 0) {
+      &RSAT::message::TimeWarn("Coulomb's forces (electromagnetic repulsion)", "iter=".$iter."/".$max_iter) if ($main::verbose >= 3);
+      for my $n1 (0..$#node_names) {
+	my $name1 = $node_names[$n1];
+	my $id1 = $nodes_name_id{$name1};
+	my $x1 = $nodes_id_xpos{$id1};
+	my $y1 = $nodes_id_ypos{$id1};
+	#      &RSAT::message::Debug("Node 1", $name1, $id1, "(".$x1.",".$y1.")") if ($main::verbose >= 10);
+
+	## Attractive and repulsive forces are symmetrical -> we assign them to both members of each pair
+	for my $n2 (($n1+1)..$#node_names) {
+
+	  ## Distance
+	  my $name2 = $node_names[$n2];
+	  my $id2 = $nodes_name_id{$name2};
+	  my $x2 = $nodes_id_xpos{$id2};
+	  my $y2 = $nodes_id_ypos{$id2};
+	  my $x_diff= $x2-$x1;
+	  my $y_diff = $y2-$y1;
+	  my $dist_squared = $x_diff**2 + $y_diff**2;
+	  my $dist = sqrt($dist_squared);
+	  my $sin = 0;
+	  my $cos = 0;
+	  if ($dist > 0) {
+	    $cos = $x_diff/$dist;
+	    $sin = $y_diff/$dist;
+	  }
+	  &RSAT::message::Debug("", "Node 2", $name2, $id2, "(".$x2.",".$y2.")") if ($main::verbose >= 10);
+	  &RSAT::message::Debug("Dist", $iter, $n1, $n2,
+				sprintf("dist=%d",$dist),
+				sprintf("diff=%.1f,%.1f",$x_diff,$y_diff),
+				sprintf("cos,sin=%.2f,%.2f",$cos,$sin),
+			       ) if ($main::verbose >= 10);
+
+	  ## Repulsive force exists between all node pairs
+	  my $rep = $max_rep;
+	  if ($dist_squared > 0) {
+	    $rep = $rep_k/$dist_squared;
+	  }
+
+	  # 	################################################################
+	  # 	## Attractive force only between node pairs linked by an arc
+	  # 	##
+	  # 	## SYLVAIN: we could add some constraint here to avoid overlap
+	  # 	## of labels. More generally, we could add a minimal
+	  # 	## inter-node distance along the Y axis and along the X
+	  # 	## axis. The Y min distance should be ~20 pixels. The X min
+	  # 	## woudl depend on the size of node labels.
+	  # 	my $attr = 0;
+	  # 	if ($arc_index{$name1}{$name2}) {
+	  # 	    my $arc_len = $arc_index{$name1}{$name2};
+	  # 	    $attr = $attr_k * ($dist - $arc_len);
+	  # #	    &RSAT::message::Debug("Arc attraction", $name1, $name2, "len=".$arc_len, 
+	  # #				  "w=".$weight{$name1}{$name2}, "attr=".$attr) if ($main::verbose >= 10);
+	  # 	}
+
+
+	  ## Reciprocal force between the two nodes (positive is
+	  ## repulsive, negative is attractive)
+	  #	my $force = $rep - $attr;
+	  # 	&RSAT::message::Debug("", "Forces", $iter, $id1, $id2,
+	  # 			      "dist=".(sprintf("%.2f",$dist)),
+	  # 			      "rep=".(sprintf("%.2f",$rep)),
+	  # 			      "attr=".(sprintf("%.2f",$attr)),
+	  # 			      "move=".(sprintf("%.2f",$force)))
+	  # 	  if ($main::verbose >= 10);
+
+
+	  ################################################################
+	  ## Project the force element along the two axes.
+	  ##
+	  ## The sign of the force reflects the repulsion (+) or attraction (-).
+	  ##
+	  ## The sin and cos will determine the repartition of this
+	  ## force along the X and Y axes, and indicate the respective
+	  ## directions for nodes n1 and n2.
+	  ##
+	  ## Note that in this loop we only take into account the forces
+	  ## between 2 nodes, but the moves of all nodes will be done
+	  ## only after all node pairs have been visited.
+	  ##
+
+	  my $force = $rep;
+
+	  ## Force on the X axis.
+	  my $x_force = $force * $cos;
+	  $x_force{$id1} -= $x_force;
+	  $x_force{$id2} += $x_force;
+
+	  ## Force on the Y ayis.
+	  my $y_force = $force * $sin;
+	  $y_force{$id1} -= $y_force;
+	  $y_force{$id2} += $y_force;
+
+	  # 	&RSAT::message::Debug("F_pair", "iter=".$iter,
+	  # 			      sprintf("n".$n1."=%d,%d",$x1, $y1),
+	  # 			      sprintf("n".$n2."=%d,%d",$x2, $y2),
+	  # 			      "dist=".sprintf("%.d", $dist),
+	  # 			      sprintf("Force=%.1f", $force),
+	  # 			      sprintf("cos,sin=%.2f,%.2f",$cos, $sin),
+	  # 			      sprintf("F=%.1f,%.1f",$x_force, $y_force),
+	  # 			      sprintf("F".$n1."=%.1f,%.1f",$x_force{$id1}, $y_force{$id1}),
+	  # 			      sprintf("F".$n2."=%.1f,%.1f",$x_force{$id2}, $y_force{$id2}),
+	  # 			     ) if ($main::verbose >= 10);
+
 	}
-	&RSAT::message::Debug("", "Node 2", $name2, $id2, "(".$x2.",".$y2.")") if ($main::verbose >= 10);
-	&RSAT::message::Debug("Dist", $iter, $n1, $n2,
-			      sprintf("dist=%d",$dist),
-			      sprintf("diff=%.1f,%.1f",$x_diff,$y_diff),
-			      sprintf("cos,sin=%.2f,%.2f",$cos,$sin),
-			     ) if ($main::verbose >= 10);
-
-	## Repulsive force exists between all node pairs
-	my $rep = $max_rep;
-	if ($dist_squared > 0) {
-	  $rep = $rep_k/$dist_squared;
-	}
-
-	################################################################
-	## Attractive force only between node pairs linked by an arc
-	##
-	## SYLVAIN: we could add some constraint here to avoid overlap
-	## of labels. More generally, we could add a minimal
-	## inter-node distance along the Y axis and along the X
-	## axis. The Y min distance should be ~20 pixels. The X min
-	## woudl depend on the size of node labels.
-	my $attr = 0;
-	if ($arc_index{$name1}{$name2}) {
-	    my $arc_len = $arc_index{$name1}{$name2};
-	    $attr = $attr_k * ($dist - $arc_len);
-#	    &RSAT::message::Debug("Arc attraction", $name1, $name2, "len=".$arc_len, 
-#				  "w=".$weight{$name1}{$name2}, "attr=".$attr) if ($main::verbose >= 10);
-	}
-
-
-	## Reciprocal force between the two nodes (positive is
-	## repulsive, negative is attractive)
-	my $force = $rep - $attr;
-# 	&RSAT::message::Debug("", "Forces", $iter, $id1, $id2,
-# 			      "dist=".(sprintf("%.2f",$dist)),
-# 			      "rep=".(sprintf("%.2f",$rep)),
-# 			      "attr=".(sprintf("%.2f",$attr)),
-# 			      "move=".(sprintf("%.2f",$force)))
-# 	  if ($main::verbose >= 10);
-
-
-	################################################################
-	## Project the force element along the two axes.
-	##
-	## The sign of the force reflects the repulsion (+) or attraction (-).
-	##
-	## The sin and cos will determine the repartition of this
-	## force along the X and Y axes, and indicate the respective
-	## directions for nodes n1 and n2.
-	##
-	## Note that in this loop we only take into account the forces
-	## between 2 nodes, but the moves of all nodes will be done
-	## only ater all node pairs have been visited.
-	##
-	## Force on the X axis.
-	my $x_force = $force * $cos;
-	$x_force[$n1] -= $x_force;
-	$x_force[$n2] += $x_force;
-
-	## Force on the Y ayis.
-	my $y_force = $force * $sin;
-	$y_force[$n1] -= $y_force;
-	$y_force[$n2] += $y_force;
-
-# 	&RSAT::message::Debug("F_pair", "iter=".$iter,
-# 			      sprintf("n".$n1."=%d,%d",$x1, $y1),
-# 			      sprintf("n".$n2."=%d,%d",$x2, $y2),
-# 			      "dist=".sprintf("%.d", $dist),
-# 			      sprintf("Force=%.1f", $force),
-# 			      sprintf("cos,sin=%.2f,%.2f",$cos, $sin),
-# 			      sprintf("F=%.1f,%.1f",$x_force, $y_force),
-# 			      sprintf("F".$n1."=%.1f,%.1f",$x_force[$n1], $y_force[$n1]),
-# 			      sprintf("F".$n2."=%.1f,%.1f",$x_force[$n2], $y_force[$n2]),
-# 			     ) if ($main::verbose >= 10);
 
       }
-
     }
 
     ## Apply moves to all nodes
     for my $n (0..$#node_names) {
       my $name = $node_names[$n];
       my $id = $nodes_name_id{$name};
-      my $x_move = $x_force[$n];
-      my $y_move = $y_force[$n];
+      my $x_move = $x_force{$id};
+      my $y_move = $y_force{$id};
 
       ## Add a bit of random movement to avoid staying blocked in
       ## trivial solutions (e.g. all nodes on a diagonal)
@@ -3029,7 +3042,7 @@ sub layout_spring_embedding {
       my $new_y = $nodes_id_ypos{$id} + $y_move;
 
 #       &RSAT::message::Debug("Move", $iter, $n,
-# 			    sprintf("F=%.1f,%.1f",$x_force[$n], $y_force[$n]),
+# 			    sprintf("F=%.1f,%.1f",$x_force{$id}, $y_force{$id}),
 # 			    sprintf("move=%d,%d", $x_move, $y_move),
 # 			    sprintf("prev_pos=%d,%d", $nodes_id_xpos{$id}, $nodes_id_ypos{$id}),
 # 			    sprintf("new_pos=%d,%d", $new_x, $new_y),
@@ -3063,7 +3076,6 @@ sub layout_spring_embedding {
   ## Check elapsed time
   my $elapsed = times;
   &RSAT::message::TimeWarn("Spring embedding iteration", "iter:".$iter, "seconds:".$elapsed) if ($main::verbose >= 1);
-  last if ($elapsed > $max_time);
   return();
 }
 
