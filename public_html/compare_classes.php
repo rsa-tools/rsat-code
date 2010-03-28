@@ -51,17 +51,25 @@
 
   ## RETURN FIELDS
   $return =  array("rank");
+
+  ## Identify the column containing the sig score.
+  ## This is required for the arc weight of the class-class graph.
+  $sig_column = 6;
   if ($_REQUEST['occ'] == 'on') {
     array_push($return, "occ");
+    $sig_column += 7;
   }
   if ($_REQUEST['freq'] == 'on') {
     array_push($return, "freq");
+    $sig_column += 9;
   }
   if ($_REQUEST['proba'] == 'on') {
     array_push($return, "proba");
     if ($_REQUEST['sort'] == 'on') {
       $sort = "sig"; 
     }
+  } else {
+    $sig_column = 0; ## If proba is not computed, the graph will have no weight column
   }
   if ($_REQUEST['jac'] == 'on') {
     array_push($return, "jac");
@@ -370,24 +378,186 @@
     echo "<tr><th>Text</th><td><a href = '$cc_resultURL'>$cc_resultURL</a></td></tr>\n"; 
     echo "</table>\n";
     echo"<hr>\n";
+
+    ## PRESENT BUTTONS TO SEND RESULT TO OTHER TOOLS
     if ($output_format == 'matrix') {
       echo "
-      <TABLE CLASS = 'nextstep'>
-        <TR>
-          <Th colspan = 3>
+      <table class = 'nextstep'>
+        <tr>
+          <th colspan = 3>
             Next step
-          </Th>
-        </TR>
-        <TR>
-          <TD>
-            <FORM METHOD='POST' ACTION='contingency_stats_form.php'>
-              <input type='hidden' NAME='pipe' VALUE='1'>
-              <input type='hidden' NAME='matrix_file' VALUE='$cc_server'>
+          </th>
+        </tr>
+        <tr>
+          <td>
+            <form method='post' action='contingency_stats_form.php'>
+              <input type='hidden' name='pipe' value='1'>
+              <input type='hidden' name='matrix_file' value='$cc_server'>
               <INPUT type='submit' value='Contingency-table statistics'>
             </form>
           </td>
         </tr>
       </table>";
+
+    } else {
+
+      $server = $cc_server; ## Use the tab-delimited file as input for the next steps
+
+      ## Open a table for the "next step" buttons
+      echo("<table class = 'nextstep'>
+    <tr>
+      <th colspan = 3>
+        Next step
+      </th>
+    </tr>
+    <tr>");
+
+      ## Send to display-graph
+	echo ("
+      <td>
+        <form method='post' action='display_graph_form.php'>
+          <input type='hidden' name='pipe' value='1'>
+          <input type='hidden' name='graph_file' value='$server'>
+          <input type='hidden' name='graph_format' value='tab'>
+          <input type='hidden' name='scol' value='2'>
+          <input type='hidden' name='tcol' value='3'>
+          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='submit' value='Display the graph'>
+        </form>
+      </td>");
+
+      ## Send to compare-graphs
+      echo ("<td>
+        <form method='post' action='compare_graphs_form.php'>
+          <input type='hidden' name='pipe' value='1'>
+          <input type='hidden' name='graph_file' value='$server'>
+          <input type='hidden' name='graph_format' value='tab'>
+          <input type='hidden' name='scol' value='2'>
+          <input type='hidden' name='tcol' value='3'>
+          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='submit' value='Compare this graph to another one'>
+        </form>
+      </td>");
+
+      ## Send to convert-graph
+      echo ("<td>
+        <form method='post' action='convert_graph_form.php'>
+          <input type='hidden' name='pipe' value='1'>
+          <input type='hidden' name='graph_file' value='$server'>
+          <input type='hidden' name='graph_format' value='tab'>
+          <input type='hidden' name='scol' value='2'>
+          <input type='hidden' name='tcol' value='3'>
+          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='submit' value='Convert tab to another format'>
+        </form>
+      </td>");
+
+      ## New row
+      echo("</tr><tr>");
+
+      ## Send to graph-get-clusters
+      echo ("<td>
+        <form method='post' action='graph_get_clusters_form.php'>
+          <input type='hidden' name='pipe' value='1'>
+          <input type='hidden' name='graph_file' value='$server'>
+          <input type='hidden' name='graph_format' value='tab'>
+          <input type='hidden' name='scol' value='2'>
+          <input type='hidden' name='tcol' value='3'>
+          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='submit' value='Map clusters or extract a subnetwork'>
+        </form>
+      </td>");
+
+      ## Send to graph-topology
+      echo ("
+      <td>
+        <form method='post' action='graph_topology_form.php'>
+          <input type='hidden' name='pipe' value='1'>
+          <input type='hidden' name='graph_file' value='$server'>
+          <input type='hidden' name='graph_format' value='tab'>
+          <input type='hidden' name='scol' value='2'>
+          <input type='hidden' name='tcol' value='3'>
+          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='submit' value='Nodes topology statistics'>
+        </form>
+      </td>");
+
+      ## Send to graph-neighbours
+      echo ("
+      <td>
+        <form method='post' action='graph_neighbours_form.php'>
+          <input type='hidden' name='pipe' value='1'>
+          <input type='hidden' name='graph_file' value='$server'>
+          <input type='hidden' name='graph_format' value='tab'>
+          <input type='hidden' name='scol' value='2'>
+          <input type='hidden' name='tcol' value='3'>
+          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='submit' value='Neighbourhood analysis'>
+        </form>
+      </td> ");
+
+      ## New row
+      echo("</tr><tr>");
+
+      ## Send to MCL
+      echo ("<td>
+        <form method='post' action='mcl_form.php'>
+          <input type='hidden' name='pipe' value='1'>
+          <input type='hidden' name='graph_file' value='$server'>
+          <input type='hidden' name='graph_format' value='tab'>
+          <input type='hidden' name='scol' value='2'>
+          <input type='hidden' name='tcol' value='3'>
+          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='submit' value='MCL Graph clustering'>
+        </form>
+      </td>");
+
+      ## Send to alter-graph
+      echo ("
+      <td>
+        <form method='post' action='alter_graph_form.php'>
+          <input type='hidden' name='pipe' value='1'>
+          <input type='hidden' name='graph_file' value='$server'>
+          <input type='hidden' name='graph_format' value='tab'>
+          <input type='hidden' name='scol' value='2'>
+          <input type='hidden' name='tcol' value='3'>
+          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='submit' value='Graph alteration'>
+        </form>
+      </td>");
+
+      ## Send to path finder
+      echo ("
+      <td>
+        <form method='post' action='pathfinder_form.php'>
+          <input type='hidden' name='pipe' value='1'>
+          <input type='hidden' name='graph_file' value='$server'>
+          <input type='hidden' name='graph_format' value='tab'>
+          <input type='hidden' name='scol' value='2'>
+          <input type='hidden' name='tcol' value='3'>
+          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='submit' value='Path Finding'>
+        </form>
+      </td>");
+
+      ## Send to visant
+      echo ("
+      </tr>
+      <tr>
+        <td>
+          <form method='post' action='visant.php'>
+          <input type='hidden' name='pipe' value='1'>
+          <input type='hidden' name='visant_graph_file' value='$server'>
+          <input type='hidden' name='graph_format' value='tab'>
+          <input type='hidden' name='scol' value='2'>
+          <input type='hidden' name='tcol' value='3'>
+          <input type='hidden' name='wcol' value='$sig_column'>
+          <input type='submit' value='Load in VisANT'>
+          </form>
+        </td>");
+
+      ## Close the table
+      echo ("</tr></table>");
     }
          
   }
