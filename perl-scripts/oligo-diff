@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: oligo-diff,v 1.9 2010/03/27 07:21:08 jvanheld Exp $
+# $Id: oligo-diff,v 1.10 2010/03/28 01:29:58 jvanheld Exp $
 #
 ############################################################
 
@@ -105,10 +105,11 @@ package main;
     ################################################################
     ## Initialise parameters
     my $start_time = &AlphaDate();
-    $program_version = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $program_version = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+    $SCRIPTS=$ENV{RSAT}."/perl-scripts";
+    $BIN=$ENV{RSAT}."/bin";
 #    $program_version = "0.00";
-
-    $count_words_cmd = $ENV{RSAT}."/bin/count-words";
+    $count_words_cmd = $BIN."/count-words";
 
     %infile = ();
     %outfile = ();
