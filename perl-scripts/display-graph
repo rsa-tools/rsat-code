@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: display-graph,v 1.18 2010/03/27 13:01:11 jvanheld Exp $
+# $Id: display-graph,v 1.19 2010/03/28 01:29:37 jvanheld Exp $
 #
 ############################################################
 
@@ -127,7 +127,21 @@ package main;
 
     ################################################################
     ##### read input
-
+#     $graph->graph_from_text($input_format,
+# 			    $main::infile{input},
+# 			    $source_col,
+# 			    $target_col,
+# 			    $weight_col,
+# 			    $source_color_col,
+# 			    $target_color_col,
+# 			    $color_col,
+# 			    $source_xpos_col,
+# 			    $source_ypos_col,
+# 			    $target_xpos_col,
+# 			    $target_ypos_col,
+# 			    $distinct_path,
+# 			    $directed,
+# 			    $path_col);
     $graph->graph_from_text($input_format,
 			    $main::infile{input},
 			    $source_col,
@@ -135,8 +149,7 @@ package main;
 			    $weight_col,
 			    $source_color_col,
 			    $target_color_col,
-			    $color_col,
-			    1);
+			    $color_col);
 
     ## Calculate the layout
     $graph->layout($layout) if ($layout);
@@ -165,36 +178,38 @@ package main;
     ## Execute the command
     ## get nodes id
     my %nodes_id_name = $graph->get_attribute("nodes_id_name");
+
     ## get nodes color
     my %nodes_color = $graph->get_attribute("nodes_color");
+
     ## get edges color
     my @out_colors = $graph->get_attribute("out_color");
+
     ## get nodes neighbours
     my @out_neighbours = $graph->get_attribute("out_neighbours");
+
     ## get the nodes position
     my %nodes_id_xpos = $graph->get_attribute("nodes_id_xpos");
     my %nodes_id_ypos = $graph->get_attribute("nodes_id_ypos");
+
     ## get the labels
     my @out_labels = $graph->get_attribute("out_label");
 
+
+
     ## Compute the total size of the picture
-    my $max = 0;
-    while (my ($node, $pos) = each (%nodes_id_xpos)) {
-      if ($pos > $max) {
-        $max = $pos;
-      }
-    }
-    while (my ($node, $pos) = each (%nodes_id_ypos)) {
-      if ($pos > $max) {
-        $max = $pos;
-      }
-    }
-    $max += 600;
-    ## for postscript figures : use of postscript simple library
+    my $margin_x = 50;
+    my $margin_y = 50;
+    my $max_x = &RSAT::stats::max(values(%nodes_id_xpos)) + 2*$margin_x;
+    my $max_y = &RSAT::stats::max(values(%nodes_id_ypos)) + 2*$margin_y;
+    &RSAT::message::Info("Graph size", "X: ".$max_x, "Y: ".$max_y) if ($main::verbose >= 2);
+
+    ################################################################
+    ## For postscript figures : use library Postscript::Simple
     if ($output_format eq "ps" || $output_format eq "eps") {
       # computes the maximal coordinates of x and y
       # create the picture
-      $p = new PostScript::Simple(xsize=>$max, ysize=>$max, colour => 1, eps => 0, units => "pt");
+      $p = new PostScript::Simple(xsize=>$max_x, ysize=>$max_y, colour => 1, eps => 0, units => "pt");
       # create a new page
       $p->newpage;
       # display the edges
@@ -203,12 +218,12 @@ package main;
           my @neighbours = @{$out_neighbours[$i]};
           my @colors = @{$out_colors[$i]};
           my @weights = @{$out_labels[$i]};
-          my $source_xpos = $nodes_id_xpos{$i}+150;
-          my $source_ypos = $nodes_id_ypos{$i}+150;
+          my $source_xpos = $nodes_id_xpos{$i}+$margin_x;
+          my $source_ypos = $nodes_id_ypos{$i}+$margin_y;
           for (my $j = 0; $j < scalar(@neighbours); $j++) {
             if (defined $neighbours[$j]) {
-              my $target_xpos = $nodes_id_xpos{$neighbours[$j]}+150;
-              my $target_ypos = $nodes_id_ypos{$neighbours[$j]}+150;
+              my $target_xpos = $nodes_id_xpos{$neighbours[$j]}+$margin_x;
+              my $target_ypos = $nodes_id_ypos{$neighbours[$j]}+$margin_y;
               my $edge_color = $colors[$j];
               my $weight = $weights[$j];
               # get the color of the edge
@@ -232,7 +247,7 @@ package main;
       while (my ($id, $name) = each (%nodes_id_name)) {
         my $length_name = length($name)*10;
         my $xpos = $nodes_id_xpos{$id};
-        my $ypos = $nodes_id_ypos{$id} || 155;
+        my $ypos = $nodes_id_ypos{$id} || $margin_y + 5;
         if (!defined($xpos)) {
           ## In case there is no location found for this node (orphan)
           ## For orphan nodes, fr_layout does not return the location!
@@ -248,30 +263,32 @@ package main;
 	  ## nodes, you would get a more compact picture by aligning
 	  ## them vertically than horizontally.
 
-          $xpos = ($not_connected_nodes+$length_name*10) + 150;
+          $xpos = ($not_connected_nodes+$length_name*10) + $margin_x;
           $not_connected_nodes += $length_name+10;
         } else {
-          $xpos = $nodes_id_xpos{$id} + 150;
-          $ypos = $nodes_id_ypos{$id} + 150;
+          $xpos = $nodes_id_xpos{$id} + $margin_x;
+          $ypos = $nodes_id_ypos{$id} + $margin_y;
         }
+
         # get the color of the node
         my $node_color = $nodes_color{$id};
         my $r = hex(substr($node_color, 1, 2));
         my $g = hex(substr($node_color, 3, 2));
         my $b = hex(substr($node_color, 5, 2));
         $p->setcolour($r,$g,$b);
-        $p->box({filled=>1},$xpos-($length_name/2), $ypos-5, $xpos-($length_name/2) +length($name)*10, $ypos+12);
+        $p->box({filled=>1},$xpos-$length_name/2, $ypos-5, $xpos+ $length_name/2, $ypos+12);
         $p->setcolour("white");
-        $p->box({filled=>1},($xpos-($length_name/2)+2), $ypos-5+1, $xpos-($length_name/2)-1 +length($name)*10-1, $ypos+12-1);
+        $p->box({filled=>1},$xpos - $length_name/2+1, $ypos-4, $xpos+$length_name/2-1, $ypos+11);
         $p->setcolour("black");
-        $p->text($xpos-($length_name/2)+3,$ypos-3, $name);
+        $p->text($xpos-($length_name/2)+6,$ypos-1, $name);
       }
       $p->output($main::outfile{output});
 
-      ## for jpg / png output : use of gd library
+      ################################################################
+      ## For jpg / png output : use GD library
     } elsif ($output_format eq "jpg" || $output_format eq "jpeg" || $output_format eq "png") {
       # create the picture
-      my $p  = new GD::Image ( $max , $max ) ;
+      my $p  = new GD::Image ( $max_x , $max_y ) ;
       my $white = $p->colorAllocate(255,255,255);
       my $black = $p->colorAllocate(0,0,0);
       my %colors = ();
@@ -286,14 +303,14 @@ package main;
         if (defined $out_neighbours[$i]) {
           my @neighbours = @{$out_neighbours[$i]};
           my @colors = @{$out_colors[$i]};
-          my $source_xpos = $nodes_id_xpos{$i}+150;
-          my $source_ypos = $nodes_id_ypos{$i}+150;
+          my $source_xpos = $nodes_id_xpos{$i}+$margin_x;
+          my $source_ypos = $nodes_id_ypos{$i}+$margin_y;
           my @weights = @{$out_labels[$i]};
 
           for (my $j = 0; $j < scalar(@neighbours); $j++) {
             if (defined $neighbours[$j]) {
-              my $target_xpos = $nodes_id_xpos{$neighbours[$j]}+150;
-              my $target_ypos = $nodes_id_ypos{$neighbours[$j]}+150;
+              my $target_xpos = $nodes_id_xpos{$neighbours[$j]}+$margin_x;
+              my $target_ypos = $nodes_id_ypos{$neighbours[$j]}+$margin_y;
               my $edge_color = $colors[$j];
               my $weight = $weights[$j];
               # get the color of the edge
@@ -325,14 +342,14 @@ package main;
       while (my ($id, $name) = each (%nodes_id_name)) {
         my $length_name = length($name)*10;
         my $xpos = $nodes_id_xpos{$id};
-        my $ypos = $nodes_id_ypos{$id} || 155;
+        my $ypos = $nodes_id_ypos{$id} || $margin_y + 5;
         if (!defined($xpos)) {
           ## In case there is no location found for this node (orphan)
-          $xpos = $not_connected_nodes+length($name)*10+150;
+          $xpos = $not_connected_nodes+length($name)*10+$margin_x;
           $not_connected_nodes+=(length($name)*10)+10;
         } else {
-          $xpos = $nodes_id_xpos{$id}+150;
-          $ypos = $nodes_id_ypos{$id}+150;
+          $xpos = $nodes_id_xpos{$id}+$margin_x;
+          $ypos = $nodes_id_ypos{$id}+$margin_y;
         }
 
         # get the color of the node
@@ -341,9 +358,15 @@ package main;
         my $g = hex(substr($node_color, 3, 2));
         my $b = hex(substr($node_color, 5, 2));
         my $current_col = $p->colorAllocate($r, $g, $b);
-        $p->filledRectangle($xpos-($length_name/2), $ypos-5, $xpos-($length_name/2) +length($name)*10, $ypos+12, $white);
-        $p->rectangle($xpos-($length_name/2), $ypos-5, $xpos-($length_name/2) + length($name)*10, $ypos+12, $current_col);
-        $p->string(gdSmallFont, $xpos-($length_name/2)+3,$ypos-3, $name, $black);
+        $p->filledRectangle($xpos-$length_name/2, $ypos-5, $xpos+$length_name/2, $ypos+12, $white);
+        $p->rectangle($xpos-$length_name/2, $ypos-5, $xpos+$length_name/2, $ypos+12, $current_col);
+        $p->string(gdSmallFont, $xpos-$length_name/2+6,$ypos-4, $name, $black);
+#        $p->setcolour($r,$g,$b);
+#        $p->box({filled=>1},$xpos-$length_name/2, $ypos-5, $xpos+ $length_name/2, $ypos+12);
+#        $p->setcolour("white");
+#        $p->box({filled=>1},$xpos - $length_name/2+1, $ypos-4, $xpos+$length_name/2-1, $ypos+11);
+#        $p->setcolour("black");
+#        $p->text($xpos-($length_name/2)+6,$ypos-1, $name);
       }
 
       binmode STDOUT;
