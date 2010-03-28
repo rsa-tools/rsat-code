@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.53 2010/02/07 03:20:40 jvanheld Exp $
+# $Id: compare-classes,v 1.54 2010/03/28 01:29:05 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -1076,7 +1076,7 @@ sub Verbose {
 sub CompareClasses {
   my $reference_classes = scalar(keys(%ref_classes));
   my $rn = 0;
-    
+
   &RSAT::message::TimeWarn("Comparing classes") if ($main::verbose >= 2);
 
   foreach my $r (keys %ref_classes) {
@@ -1084,7 +1084,7 @@ sub CompareClasses {
     my %ref_member = ();
     my %not_query = ();
 
-    if ($main::verbose >= 3) {
+    if ($main::verbose >= 2) {
       if ($rn % 10== 1) {
 	&RSAT::message::TimeWarn("Treating reference class" ,$rn, "of", $reference_classes , $r);
 	if ($rn % 100== 1) {
