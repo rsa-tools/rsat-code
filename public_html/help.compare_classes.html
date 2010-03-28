@@ -34,18 +34,58 @@ prototype.</li>
 <A NAME="formats"></A>
 <h3>Input formats</h3>
 
-<b>Classification format</b><br>
+<p>The class file specifies the relationships between a set of
+elements and a set of classes. 
 
-<p>The class file specifies the composition of several gene families.
-It is a text file containing 2 columns separated by a tab
-character. If a score column is specified, the file must contain a
-column with scores.
+<p>Class memberships must be formatted as text containing at least 2
+columns separated by a tab character. The first column indicates the
+element names, the second the class names. </p>
 
         <pre>
-          member1	family_1
-          member2	family_1
-          member3	family_2
+          member1	class_1
+          member2	class_1
+          member3	class_2
         </pre>
+
+<p>Optionally, the file may contain additional columns, which will be
+ignored. The option <i><a name='score_col'>score column</a></i></p>
+
+        <pre>
+          member1	class_1	score_1
+          member2	class_1	score_2
+          member3	class_2	score_3
+        </pre>
+
+
+<h3>Comparison schema</h3>
+
+<h4><A NAME="query_vs_ref"></a>Compare query classes to reference classes</h4>
+
+<p>Each query class is compared to each reference class, to compute
+the number of shared elements (intersection) and various statistical
+scores related to this number. </p>
+
+<h4><A NAME="query_vs_query"></a>Compare query classes to query classes</h4>
+
+Each query class is compared to each other class.
+
+<ul>
+<h4><a name="distinct"></a>Prevent self-comparison</h4>
+
+<p>Prevent to compare each class with itself.</p>
+
+<h4><A NAME="triangle"></a>Prevent reciprocal comparison</h4>
+
+(ony valid for comparisons between query classes and query classes)
+
+<p>Skip the reciprocal comparisons: if reference A has already been
+compared to query B, then reference B does not need to be compared to
+query A, since the comparison statistics are symmetrical.</p>
+
+<p>With matrix output, this returns only the lower triangle fo the
+matrix.</p>
+
+</ul>
 
 <h3>Output formats</h3>
 
@@ -64,14 +104,15 @@ reference class, each column to a query class, and each cell contains
 a comparison between the two classes.</p>
 
 
-<h3>List of fields to return.</h3>
+<a name='return_fields'></a>
+<h3>Return fields</h3>
 
 
 <p>Return fields are grouped by categories, so that each request will
 return several columns. For example, the group "proba" returns the
 P-value, the E-value and the significance. </p>
 
-
+<blockquote>
 <table border='1'>
 <tr><th>Group</th><th>Field</th><th>Description</th></tr>  
 <tr><td>occ</td><td>Q</td><td>Number of elements in class Q</td></tr>
@@ -107,69 +148,67 @@ P-value, the E-value and the significance. </p>
 <tr><td>entropy</td><td>U(Q|R)</td><td></td></tr>
 <tr><td>entropy</td><td>U(R|Q)</td><td></td></tr>
 <tr><td>entropy</td><td>dH(Q,R)</td><td>Entropy distance between classes Q and R. dH(Q,R) = H(Q,R) - H(Q)/2 - H(R)/2</td></tr>
-</table></ul>
+</table>
+</blockquote>
 
-<h3><A NAME="thresolds"></a>Thresolds</h3>
+<h3><A NAME="thresholds"></a>Thresholds</h3>
 
 <p>A lower and an upper threshold can be imposed on various fields in
 order to restrict the result. To avoid applying a threshold, leave the
 box empty or write <i>none</i>.</p>
 
-<h4><A NAME="self"></a>Self comparaison</h4>
-  <ul><b>The query classes are compared to themselves.</b><br></ul>
-
-<h4><A NAME="distinct"></a>Distinct</h4>
-  <ul>Prevent to compare each class with itself (when the
-        reference and query files contain the same classes).<br></ul>
-
-<h4><A NAME="triangle"></a>Triangle (ony valid if query file and reference file are the same)</h4>
-  <ul> Do not perform the reciprocal comparisons: if
-        reference A has already been compared to query B, then
-        reference B does not need to be compared to query A. .
-        With matrix output, this returns only the lower
-        triangle fo the matrix.
-<br></ul>
 
 
-<h4>Statistics description</h4>
-  <ul><b>P-VALUE.</b><br>
-        The P-value is the probability for one comparison to return a
-        false positive. In other words, it is the probability to
-        observe at least c common elements between a given query class
-        and a given reference class. It can be calculated with
-        different formulae, depending on the underlying random model.<br>
+<h3>Comparison statistics</h3>
 
-        Let us assume that we have :<ul>
-               <li>q&nbsp;&nbsp;size of the query class</li>
-               <li>r&nbsp;&nbsp;size of the reference class</li>
-               <li>c&nbsp;&nbsp;number of common elements</li>
-               <li>n&nbsp;&nbsp;population size</li></ul>
+<h4>P-value (P_val)</h4>
+
+<p>The P-value is the probability to observe at least <i>c</i> common
+elements between a given query class and a given reference class. It
+is computed using the hypergeometric distribution.<p>
+
+<p>Let us assume that we have :<ul>
+<li>q&nbsp;&nbsp;size of the query class</li>
+<li>r&nbsp;&nbsp;size of the reference class</li>
+<li>c&nbsp;&nbsp;number of common elements</li>
+<li>n&nbsp;&nbsp;population size</li></ul>
 
 
 <img src="images/hypergeometric.png"  width = 35%><br></ul>
 
+<p>The P-value can be interpreted as an estimation of the false
+prediction risk (FPR), i.e. the fact to consider the intersection
+between two given classes as significant whereas it is not. </p>
 
-<ul><b>E-VALUE</b><br>
-Assuming that there are x query classes and y
-reference classes, each analysis consists in x*y
-comparisons. Thus, the P-value can be misleading,
-because even low P-values are expected to emerge by
-chance alone when the number of query and/or reference
-classes is very high. The E-value reflects better the
-degree of exceptionality.</ul><br>
+<p>Note that the P-value only concerns one comparison between a
+precise query class and a precise reference class. This is called
+a <i>nominal P-value</i> because it is attached to one particular test
+among a series of multiple tests (since we compare each query class to
+each reference class). The multi-testing correction is done by
+computing the E-value, as explained in the next section.</p>
 
-<ul><b>Significance</b><br>
-The significance index is the minus log of the
-E-value. It is calculated in base 10. <br><br>
+<h4>E-value</h4>
 
-sig = -log10(E_val) <br><br>
+<p>Assuming that there are <i>x</i> query classes and <i>y</i>
+reference classes, each analysis consists in <i>x*y</i>
+comparisons. Thus, the P-value can be misleading, because even low
+P-values are expected to emerge by chance alone when the number of
+query and/or reference classes is very high. The E-value
+(<i>E_val</i>) reflects better the degree of exceptionality.</p>
 
-This index gives an intuitive perception of the
-exceptionality of the common elements : a negative sig
-indicates that the common matches are likely to come by
-chance alone, a ositive value that they are
-significant. Higher sig values indicate a higher
-significance.
+<ul><i>E_val = P_val * nb.comparisons</i></ul>
+
+<h4>Significance</h4>
+
+<p>The significance index is the minus log of the E-value. It is
+calculated in base 10. </p>
+
+<ul><i>sig = -log10(E_val)</i></ul>
+
+<p>This index gives an intuitive perception of the exceptionality of
+the common elements : a negative sig indicates that the common matches
+are likely to come by chance alone, a ositive value that they are
+significant. Higher sig values indicate a higher significance.</p>
 
 
 </ul>
