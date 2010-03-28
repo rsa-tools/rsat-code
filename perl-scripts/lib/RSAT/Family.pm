@@ -86,22 +86,22 @@ A hash table with the scores can be otbained with the command
 
 =cut
 sub new_member {
-    my ($self, $new_member, $allow_dup, %args) = @_;
-    if ($allow_duplicates) {
-	$self->push_attribute("members", $new_member);
+  my ($self, $new_member, $allow_dup, %args) = @_;
+  if ($allow_duplicates) {
+    $self->push_attribute("members", $new_member);
+  } else {
+    if ($self->is_member($new_member)) {
+      &RSAT::message::Warning(join("\t", "Family", $self->get_attribute("name"), "skipped duplicate member", $new_member)) if ($main::verbose >= 3);
     } else {
-	if ($self->is_member($new_member)) {
-	    &RSAT::message::Warning(join("\t", "Family", $self->get_attribute("name"), "skipped duplicate member", $new_member)) if ($main::verbose >= 1);
-	} else {
-	    &RSAT::message::Info(join("\t", "Family", $self->get_attribute("name"), "Adding member", $new_member)) if ($main::verbose >= 4);
-	    $self->add_hash_attribute("member_index", $new_member, 1);
-	    $self->push_attribute("members", $new_member);
-	}
+      &RSAT::message::Info(join("\t", "Family", $self->get_attribute("name"), "Adding member", $new_member)) if ($main::verbose >= 4);
+      $self->add_hash_attribute("member_index", $new_member, 1);
+      $self->push_attribute("members", $new_member);
     }
-    if(defined($args{score})) {
-	$self->add_hash_attribute("scores", $new_member, $args{score});
-#	&RSAT::message::Debug("Family", $self->get_attribute("name"), "member", $new_member, "score", $args{score}) if ($main::verbose >= 0);
-    }
+  }
+  if (defined($args{score})) {
+    $self->add_hash_attribute("scores", $new_member, $args{score});
+    #	&RSAT::message::Debug("Family", $self->get_attribute("name"), "member", $new_member, "score", $args{score}) if ($main::verbose >= 0);
+  }
 }
 
 
