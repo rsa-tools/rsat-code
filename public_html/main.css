@@ -50,13 +50,23 @@ A:hover {
 
 h1 {
 	font-size:18px;
-
 }
 
 h2 {
 /* 	text-align: center; */
 	font-size: 13px;
 	color: #002266;
+}
+
+h3 {
+	font-size: 12px;
+	color: #002266;
+     }
+
+h4 {
+     font-size: 11px;
+     color: #002266;
+     font-style: italic;
 }
 
 hr {
@@ -88,19 +98,19 @@ body.info center a:link, body.info center a:visited {
 
 body.info center a:hover {
 	color: #0D73A7;
+}
 
+body.info h3 {
+	font-size:12px;
+	font-weight: bold;
 }
 
 body.info h4.footer {
 	text-align: center;
 	font-size: 10px;
-	font-weight: normal;
+	font-weight: italic,bold;
 }
 
-body.info h3, body.info h4 {
-	font-size:12px;
-
-}
 
  /* Center of table containing the list of servers  */ 
 
