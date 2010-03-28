@@ -107,7 +107,7 @@ echo ("<input type = 'checkbox' value='on' name='triangle' size = 1 checked/>
 // echo("<br><table>
 //   <tr><td colspan = 2 >&nbsp;&nbsp;&nbsp;<B><a href = 'help.compare_classes.html#formats'>Output format</a></B>
 //   <tr><td><input type = 'radio' checked name='out_format' value = 'class'/></td><td>Class pairs</td></tr>
-//   <tr><td><input type = 'radio' name='out_format' value = 'matrix'/></td><td>Matrix</td></tr>
+//   <tr><td><input type = 'radio' name='out_format' value = 'matrix'/></td><td>Reference/query matrix</td></tr>
 // ");
 
 echo "<hr>";
@@ -115,7 +115,7 @@ echo "<b>Output options</b><br>";
 echo "<blockquote>";
 echo ("<table border=1  cellspacing=0 cellpadding=4>");
 echo ("<tr align=center><th><input type = 'radio' checked name='out_format' value = 'class'/>Class pairs</th>");
-echo ("<th><input type = 'radio' name='out_format' value = 'matrix'/>Matrix</th></tr>");
+echo ("<th><input type = 'radio' name='out_format' value = 'matrix'/>Reference/query matrix</th></tr>");
 //echo ("<td><b>Parameters for output type 'Classes file'</b></td><td><b>Parameters for output type 'Matrix file'</b></td></tr><tr align='center' valign='TOP'><br>");
 
 # CLASS FILE OUTPUT PARAMETERS
@@ -126,9 +126,10 @@ echo("<td><table border='0' cellspacing='0' cellpadding='0'>
   <tr><td><label><input type='checkbox' name='proba' value='on' checked='checked' />Hypergeometric probability</label>
   &nbsp;&nbsp;<label><input type='checkbox' name='sort' value='on' checked='checked' />Sorting criterion</label></td></tr> 
   <tr><td><label><input type='checkbox' name='jac_sim' value='on' checked='checked' />Jaccard index</label></td></tr> 
+  <tr><td><label><input type='checkbox' name='dotprod' value='on' />Dotproduct <i>(Only relevant if a score column is specified)</i></label></td></tr>
   <tr><td><label><input type='checkbox' name='entropy' value='on' />Entropy</label></td></tr> 
   <tr><td><label><input type='checkbox' name='members' value='on' /> Members <i> (Beware, this might generate large result files)</i></label></td></tr>
-  <tr><td><label><input type='checkbox' name='dotprod' value='on' /> Dotproduct <i> (Only relevant if a score column is specified)</i></label></td></tr>");
+");
 
 echo("</table><br><br>\n");     
 echo("<table border='0' cellspacing='0' cellpadding='0'><tr>

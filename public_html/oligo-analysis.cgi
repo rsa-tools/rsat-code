@@ -261,7 +261,7 @@ if ($query->param('output') =~ /display/i) {
     &PrintURLTable(@result_files);
     &OligoDyadPipingForm();
     print '<HR SIZE=3>';
-  
+
 } elsif ($query->param('output') =~ /server/i) {
     &ServerOutput("$command", $query->param('user_email'), $tmp_file_name);
 } else {
