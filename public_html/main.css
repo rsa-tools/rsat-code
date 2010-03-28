@@ -383,8 +383,16 @@ table.resultlink {
 }
 
 
-table.resultlink td, table.resultlink th {
+table.resultlink td {
 	font-size: 70%;
+	padding-left:5px;
+	padding-right:3px;
+	text-align :left;
+}
+
+table.resultlink th {
+	font-size: 70%;
+	font-weight: bold;
 	padding-left:5px;
 	padding-right:3px;
 	text-align :left;
