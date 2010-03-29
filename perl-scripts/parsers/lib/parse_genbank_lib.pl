@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.39 2009/05/14 11:03:22 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.40 2010/03/29 20:53:53 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -178,8 +178,16 @@ sub ParseAllGenbankFiles {
 
     &InheritGeneNames($CDSs, $mRNAs);
 
-    ## Find a description for the different classes
-    &SetDescriptions($CDSs, "product", "locus_tag", "gene", "name");
+    ## Find a description for the different classes 
+
+    ## VERY TRICKY: for the yeast Saccharomyces cerevisiae, the fields
+    ## "note" and "product" are intermingled (28 March 2010 and
+    ## before). In the same file (chromosome), some genes have the
+    ## product name in the field "description" and the descriptin
+    ## inthe field "product", and some other genes the opposite. I
+    ## TEMPORARILY merge note and product to ensure the full
+    ## description.
+    &SetDescriptions($CDSs, "note+product","product", "locus_tag", "gene", "name");
     &SetDescriptions($mRNAs, "locus_tag", "gene", "name");
     &SetDescriptions($scRNAs, "product", "locus_tag", "note");
     &SetDescriptions($tRNAs, "product", "locus_tag", "note");
@@ -1306,12 +1314,12 @@ sub SetDescriptions {
   &RSAT::message::TimeWarn("Setting descriptions for class",
 			   $holder->get_object_type()) if ($main::verbose >= 2);
   foreach my $object ($holder->get_objects()) {
-#    &RSAT::message::Debug("Searching description  for object",
-#			  $holder->get_object_type(),
-#			  "id=".$object->get_attribute("id"),
-#			  "name=".$object->get_attribute("name"),
-#			 ) if ($main::verbose >= 10);
-  
+    #    &RSAT::message::Debug("Searching description  for object",
+    #			  $holder->get_object_type(),
+    #			  "id=".$object->get_attribute("id"),
+    #			  "name=".$object->get_attribute("name"),
+    #			 ) if ($main::verbose >= 10);
+
     ## Make sure that the object has no null name
     my $description_given = 0;
     my $description = $object->get_attribute("description");
@@ -1320,18 +1328,23 @@ sub SetDescriptions {
     }
 
     ## Test different attributes which can be used as description
-    for my $attribute (@fields) {
-      my @values = $object->get_attribute($attribute);
-      foreach my $value (@values) {
-	if (($value) && ($value ne $main::null)) {
-	  #### add gene name to the list of synonyms
-	  unless ($description_given) {
-	    #### define this name as description name
-	    $object->force_attribute("description",  $value);
-#	    &RSAT::message::Debug("Assigned description", $object->get_attribute("id"), "field", $attribute, "value", $value,
-#				 ) if ($main::verbose >= 0);
-	    $description_given = 1;
-	  }
+    my $id = $object->get_attribute("id");
+#    &RSAT::message::Debug("SetDescriptions", $id) if ($main::verbose >= 10);
+    for my $field (@fields) {
+      my @fields_to_merge = split /\+/, $field;
+#      &RSAT::message::Debug("", "Field", $field, join (" +++ ", @fields_to_merge)) if ($main::verbose >= 10);
+      my @values = ();
+      foreach my $to_merge (@fields_to_merge) {
+	push @values, $object->get_attribute($to_merge);
+      }
+      my $value = join("; ", @values); ## Merge multi-value fields into a single string
+      #      &RSAT::message::Debug("", "attribute=".$field, $value) if ($main::verbose >= 10);
+      if (($value) && ($value ne $main::null)) {
+	unless ($description_given) {
+	  #### define this field as description
+	  $object->force_attribute("description",  $value);
+#	  &RSAT::message::Debug("Assigned description", $object->get_attribute("id"), "field", $field, "value", $value) if ($main::verbose >= 10);
+	  $description_given = 1;
 	}
       }
     }
