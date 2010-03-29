@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.54 2010/03/28 01:29:05 jvanheld Exp $
+# $Id: compare-classes,v 1.55 2010/03/29 20:59:36 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -1824,9 +1824,9 @@ sub CreateGraph {
     my $arc_label = ();
     $arc_label .= $current_compa{'QR'};
     if ($return_fields{proba}) {
-      $arc_label .= " (";
+#      $arc_label .= " (";
       $arc_label .= sprintf("%.1f", $current_compa{sig});
-      $arc_label .= ")";
+#      $arc_label .= ")";
     }
     $graph->create_arc($source_node, $target_node, label=>$arc_label);
   }
