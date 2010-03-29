@@ -105,8 +105,18 @@
         "inflation"=>$inflation
       )
     );
+
     # Execute the command
-    $mcl_echoed = $client->mcl($mcl_parameters);
+    try {
+      $mcl_echoed = $client->mcl($mcl_parameters);
+      $soap_error = 0;
+    } catch (Exception $soap_exception) {
+      echo ("<pre>");
+      echo "Error : \n\t",  $soap_exception->getMessage(), "\n";
+      echo ("</pre>");
+      $soap_error = 1;
+      exit(1);
+    }  
 
     $mcl_response = $mcl_echoed->response;
     $mcl_command = $mcl_response->command;
@@ -141,7 +151,7 @@
     $cc_resultURL = $WWW_RSA."/tmp/".$cc_temp_file;    
     
     
-    # contingency-table
+    ## contingency-table
     ## Load the parameters of the program into an array
     $cc_input_file = storeFile($cc_server);
     $ct_parameters = array(
@@ -181,20 +191,22 @@
     $cf_temp_file = explode('/',$cf_server);
     $cf_temp_file = end($cf_temp_file);
     $cf_resultURL = $WWW_RSA."/tmp/".$cf_temp_file;    
-    # XYgraph
+
+
+    ## Cluser size distribution
     $xy_inputfile =  storeFile($cf_server);
     $xy_parameters = array( 
        "request" => array(
-         "inputFile"=>$xy_inputfile,
-         "xcol"=>"2",
-         "ycol"=>"4",
-         "format"=>"png",
-         "lines"=>1,
-         "xmin"=>0,
-         "title1"=>"Cluster size distribution",
-         "xleg1"=>"Cluster size",
-         "yleg1"=>"Number of clusters",
-       )
+        "inputFile"=>$xy_inputfile,
+        "xcol"=>"2",
+        "ycol"=>"4",
+        "format"=>"png",
+        "lines"=>1,
+        "xmin"=>0,
+        "title1"=>"Cluster size distribution",
+        "xleg1"=>"Cluster size",
+        "yleg1"=>"Number of clusters",
+      )
      );
     $xy_echoed = $client->xygraph($xy_parameters);
     $xy_response = $xy_echoed->response;
@@ -205,17 +217,17 @@
     $xy_temp_file = explode('/',$xy_server);
     $xy_temp_file = end($xy_temp_file);
     $xy_resultURL = $WWW_RSA."/tmp/".$xy_temp_file;
-    
-
     hourglass("off");
-    echo ("<a href = '$xy_resultURL'><img align = 'center' src='$xy_resultURL' width ='50%'></a><br>");
+    echo ("<a href = '$xy_resultURL'><img align = 'center' src='$xy_resultURL''></a><br>");
     echo "<br><hr>\n";
-    
-    
-    # Display the results
-    echo "The results is available at the following URL ";
-    echo "<a href = '$cc_resultURL'>$cc_resultURL</a>"; 
-    echo "<hr>\n";
+
+    ## DISPLAY THE RESULT
+    echo "<table class=\"resultlink\">\n";
+    echo "<tr><th colspan='3'><h2>Result file(s)</h2> </th></tr>\n";
+    echo "<tr><th>Clusters (tab)</th><td><a href = '$cc_resultURL'>$cc_resultURL</a></td></tr>\n"; 
+    echo "<tr><th>Cluster size distribution (png)</th><td><a href='$xy_resultURL'>$xy_resultURL</a></td></tr>\n"; 
+    echo "</table>\n";
+    echo"<hr>\n";
      
     echo "
   <TABLE CLASS = 'nextstep'>
