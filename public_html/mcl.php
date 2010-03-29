@@ -96,7 +96,7 @@
     $cg_temp_file = end($cg_temp_file);
     $cg_resultURL = $WWW_RSA."/tmp/".$cg_temp_file;    
     
-    ## MCL                           
+    ## MCL
     ## Load the parameters of the program in to an array
     $cg_graph = storeFile($cg_server);
     $mcl_parameters = array( 
@@ -106,7 +106,7 @@
       )
     );
 
-    # Execute the command
+    # Execute the command and catch the errors
     try {
       $mcl_echoed = $client->mcl($mcl_parameters);
       $soap_error = 0;
@@ -117,7 +117,6 @@
       $soap_error = 1;
       exit(1);
     }  
-
     $mcl_response = $mcl_echoed->response;
     $mcl_command = $mcl_response->command;
 //     echo ("$mcl_command");
@@ -127,10 +126,12 @@
     $mcl_temp_file = explode('/',$mcl_server);
     $mcl_temp_file = end($mcl_temp_file);
     $mcl_resultURL = $WWW_RSA."/tmp/".$mcl_temp_file;
+
+    echo ("<p><b>MCL command:</b> $mcl_command</p>");
+
     # Convert-classes 
     ## Load the parameters of the program in to an array
-    $input_classes = storeFile($mcl_server);
-    
+    $input_classes = storeFile($mcl_server);    
     $cc_parameters = array( 
       "request" => array(
         "inputclasses"=>$input_classes,
