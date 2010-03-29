@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-topology,v 1.6 2008/06/16 09:15:53 jvanheld Exp $
+# $Id: graph-topology,v 1.7 2010/03/29 17:39:04 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -274,7 +274,7 @@ package main;
       }
 
       # Exporting the results
-      &RSAT::message::TimeWarn("Exporting the results") if ($main::verbose >= 2);
+#      &RSAT::message::TimeWarn("Exporting the results") if ($main::verbose >= 2);
       my @values = ($node);
       if ($return_fields{'degree'} && $directed) {
         push @values, $in_deg;
@@ -390,6 +390,26 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-i") {
 	    $main::infile{graph} = shift(@arguments);
 
+=item B<-in_format input_format>
+
+Input format. Supported: tab, gml
+
+=cut
+	} elsif ($arg eq "-in_format") {
+	    $input_format = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
 	    ## Source column
 =pod
 
@@ -500,26 +520,6 @@ several nodes.
 =cut
 	} elsif ($arg eq "-node") {
 	    push @seed_names, shift(@arguments);
-
-=item B<-in_format input_format>
-
-Input format. Supported: tab, gml
-
-=cut
-	} elsif ($arg eq "-in_format") {
-	    $input_format = shift(@arguments);
-	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
-		unless ($supported_input_format{$input_format});
-=pod
-
-=item	B<-o outputfile>
-
-If no output file is specified, the standard output is used.  This
-allows to use the command within a pipe.
-
-=cut
-	} elsif ($arg eq "-o") {
-	    $main::outfile{output} = shift(@arguments);
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
