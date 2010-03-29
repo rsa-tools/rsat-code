@@ -81,27 +81,30 @@ echo ("</blockquote>");
 ################################################################
 ## Score column (for the dot product)
 if (!$pipe) {
-  echo ("<b>Score column</b> <input type = 'text' name='score_col' size = 2\> (optional; if specified, must be valid for both query and reference classes)");
+
+  echo ("<b><a href='help.compare_classes.html#score_col'>Score column</a></b>
+        <input type = 'text' name='score_col' size = 2\> 
+        (optional; if specified, must be valid for both query and reference classes)");
 }
 
 ################################################################
 ## Comparaison between query classes
 ## options for self-comparison
 echo ("<br><input type = 'radio' checked value='off' name='self_compa' size = 1> 
-      <a href = 'help.compare_classes.html#self'>
+      <a href = 'help.compare_classes.html#query_vs_ref'>
       <b>Compare query classes to reference classes</a></b>");
 
 echo ("<br><input type = 'radio' value='on' name='self_compa' size = 1> 
-      <a href = 'help.compare_classes.html#self'>
+      <a href = 'help.compare_classes.html#query_vs_query'>
       <b>Compare query classes to query classes</a></b> (do not specify reference classes)<br>");
 
 echo ("<ul><input type='checkbox' value='on' name='distinct' size = 1 checked/> 
       <a href = 'help.compare_classes.html#distinct'>
-      <b>Prevent self-comparison.</a></b><br>");
+      <b>Prevent self-comparison</a></b><br>");
 
 echo ("<input type = 'checkbox' value='on' name='triangle' size = 1 checked/>
       <a href = 'help.compare_classes.html#triangle'>
-      <b>Prevent reciprocal comparisons.</a></b><br></ul></td>");
+      <b>Prevent reciprocal comparisons</a></b><br></ul></td>");
 
 ## Output format
 // echo("<br><table>
@@ -133,9 +136,9 @@ echo("<td><table border='0' cellspacing='0' cellpadding='0'>
 
 echo("</table><br><br>\n");     
 echo("<table border='0' cellspacing='0' cellpadding='0'><tr>
-     <th><A HREF='help.compare_classes.html#return_fields'>Thresholds</A></th>
-     <th> <A HREF='help.compare_classes.html#thresholds'>Lower</A></th>
-     <th> <A HREF='help.compare_classes.html#thresholds'>Upper</A> </th></tr>\n"); 
+     <th><A HREF='help.compare_classes.html#thresholds'>Thresholds</A></th>
+     <th>Lower</th>
+     <th>Upper</th></tr>\n"); 
 echo("<tr align='left' valign='TOP'>
      <td> Query size </td> 
      <td><input type='text' name='lth_q' value='1' size='5' /></td> 
