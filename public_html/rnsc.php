@@ -158,6 +158,9 @@
     $rnsc_temp_file = explode('/',$rnsc_server);
     $rnsc_temp_file = end($rnsc_temp_file);
     $rnsc_resultURL = $WWW_RSA."/tmp/".$rnsc_temp_file;
+
+    echo ("<b>RNSC command:</b> $rnsc_command");
+
     # Convert-classes 
     ## Load the parameters of the program in to an array
     $input_classes = storeFile($rnsc_server);
