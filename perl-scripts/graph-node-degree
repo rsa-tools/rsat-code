@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-node-degree,v 1.11 2009/11/05 00:32:07 jvanheld Exp $
+# $Id: graph-node-degree,v 1.12 2010/03/29 17:39:47 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -89,14 +89,15 @@ package main;
 	gml=>1
     );
     $supported_input_formats = join (",", keys %supported_input_format);    
-    
-    
+
     %main::infile = ();
     %main::outfile = ();
 
     $main::verbose = 0;
 #    $main::in = STDIN;
     $main::out = STDOUT;
+
+    $sort = 0; ## Sort nodes by decreasing degree
 
     ################################################################
     ## Read argument values
@@ -178,6 +179,14 @@ package main;
     $field_descr{out_deg} = "outgoing degree (number of outgoing arcs)";
     $field_descr{degree} = "total degree (number of incoming + outgoing arcs)";
     $field_descr{ktype} = "connectivity type. Orphan (degree=0), source (in_deg=0), target (out_deg=0) or intermediate.";
+    $field_descr{rank} = "node rank (sorted by decreasing degree)";
+    $field_descr{nb} =  "node number (alphabetical node list)";
+
+    if ($sort) {
+      push @out_fields, "rank";
+    } else {
+      push @out_fields, "nb";
+    }
 
     if ($main::verbose >= 1) {
       print $out "; Field descriptions\n";
@@ -185,15 +194,17 @@ package main;
 	printf $out ";\t%-15s\t%s\n", $field, $field_descr{$field};
       }
     }
-    print $out join("\t", "#id", "in_deg", "out_deg", "degree", "ktype")."\n";
+    print $out "#", join("\t", @out_fields)."\n";
 
     ################################################################
-    ## Calculate the degree
+    ## Compute the degree
     &RSAT::message::TimeWarn("Computing node degres") if ($main::verbose >= 2);
     my @out_neighbours = $graph->get_attribute("out_neighbours");
     my @in_neighbours = $graph->get_attribute("in_neighbours");
     my %nodes_name_id = $graph->get_attribute("nodes_name_id");
-    foreach my $node (keys %seed_names_list) {
+    my $node_nb = 0;
+    foreach my $node (sort (keys (%seed_names_list))) {
+      $node_nb++;
       my $id = $nodes_name_id{$node};
       my $in_deg = 0;
       my $out_deg = 0;
@@ -214,8 +225,28 @@ package main;
       } elsif ($out_deg == 0) {
 	$ktype = "target";
       }
-      print $out join("\t", $node, $in_deg, $out_deg, $degree, $ktype)."\n";
+
+      ## Index only if sorting option has been called
+      if ($sort) {
+	$in_deg{$node} = $in_deg;
+	$out_deg{$node} = $out_deg;
+	$degree{$node} = $degree;
+	$ktype{$node} = $ktype;
+      } else {
+	print $out join("\t", $node, $in_deg, $out_deg, $degree, $ktype, $node_nb)."\n";
+      }
     }
+
+    if ($sort) {
+      my @sorted_nodes = sort {$degree{$b} <=> $degree{$a} } keys(%seed_names_list);
+      my $rank = 0;
+      foreach my $node (@sorted_nodes) {
+	$rank++;
+	print $out join("\t", $node, $in_deg{$node}, $out_deg{$node}, $degree{$node}, $ktype{$node}, $rank)."\n";
+      }
+    }
+
+
     ################################################################
     ## Finish verbose
     if ($main::verbose >= 1) {
@@ -309,6 +340,26 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-i") {
 	    $main::infile{graph} = shift(@arguments);
 
+=item B<-in_format input_format>
+
+Input format. Supported: tab, gml
+
+=cut
+	} elsif ($arg eq "-in_format") {
+	    $input_format = shift(@arguments);
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
 	    ## Source column
 =pod
 
@@ -371,7 +422,7 @@ Node file format: the first word of each row specifies one node. The rest of the
 
 =item B<-all>
 
-Look for the degree of all nodes. 
+Look for the degree of all nodes.
 
 =cut
 	} elsif ($arg eq "-all") {
@@ -388,25 +439,16 @@ several nodes.
 	} elsif ($arg eq "-node") {
 	    push @seed_names, shift(@arguments);
 
-=item B<-in_format input_format>
 
-Input format. Supported: tab, gml
-
-=cut
-	} elsif ($arg eq "-in_format") {
-	    $input_format = shift(@arguments);
-	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
-		unless ($supported_input_format{$input_format});
 =pod
 
-=item	B<-o outputfile>
+=item B<-sort>
 
-If no output file is specified, the standard output is used.  This
-allows to use the command within a pipe.
+Sort nodes by decreasing value of degree.
 
 =cut
-	} elsif ($arg eq "-o") {
-	    $main::outfile{output} = shift(@arguments);
+	} elsif ($arg eq "-sort") {
+	  $main::sort = 1;
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
