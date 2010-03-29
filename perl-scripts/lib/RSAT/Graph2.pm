@@ -20,8 +20,8 @@ require "RSA.lib";
 #$arc_color="#000044";
 #$default_node_color = "#66CCFF";
 #$default_edge_color = "#66FFFF";
-my $default_node_color = "#0088FF";
-my $default_edge_color = "#BBBBDD";
+my $default_node_color = "#000088";
+my $default_edge_color = "#2266BB";
 
 @supported_layouts= qw(fr spring random none);
 # %supported_layout = ();
@@ -621,7 +621,8 @@ sub create_random_graph {
     my $node_id = scalar(keys(%rdm_nodes_name_id));
     foreach my $node (@nodes) {
       if (!exists($graph_node{$node})) {
-	my $node_color = "#000088";
+	my $node_color = $self::default_node_color;
+#	my $node_color = "#000088";
 	my $node_label = $node;
 	$rdm_nodes_name_id{$node} = $node_id;
 	$rdm_nodes_id_name{$node_id} = $node;
@@ -1113,7 +1114,7 @@ sub create_node {
     my %nodes_label = $self->get_attribute("nodes_label");
     my $numId = scalar (keys (%nodes_name_id)); 
     if (!defined($label) || $label eq "") {
-      $label = $node_name;
+      $label = &RSAT::util::trim($node);
     }
     if (!defined($color) || $color eq "") {
       $color = "#66CCFF";
@@ -1416,24 +1417,26 @@ sub read_from_table {
     unless (&RSAT::util::IsNatural($target_ypos_col) && ($target_ypos_col > 0)) {
       undef $target_ypos_col;
     }
-    
+
     ## Load the graph
     $cpt = 0;
-    $line_cpt = 0;
+    my $line_nb = 0;
     while (my $line = <$main::in>) {
-      $linecpt++;
+      $line_nb++;
+      $line =~ s/\r//; ## Replace Windows-specific carriage return
       next if ($line =~ /^--/); # Skip mysql-like comments
       next if ($line =~ /^;/); # Skip RSAT comments
       next if ($line =~ /^#/); # Skip comments and header
       next unless ($line =~ /\S/); # Skip empty rows
       chomp ($line);
       my @linecp = split "\t", $line;
+
       ## Filter on node names (for induced graphs and graph-get-clusters)
-      my $source_id = $linecp[$source_col-1];
-      chomp $source_id;
+      my $source_id = &RSAT::util::trim($linecp[$source_col-1]);
+#      chomp $source_id;
       if ($linecp[$target_col-1]) {
-        my $target_id = $linecp[$target_col-1];
-        chomp $target_id;
+        my $target_id = &RSAT::util::trim($linecp[$target_col-1]);
+#        chomp $target_id;
       }
       if ($self->{seed_nodes}) {
 	next unless $self->{seed_index}->{$source_id};
@@ -1447,6 +1450,7 @@ sub read_from_table {
       if ((!defined ($array[$cpt][1]) || $array[$cpt][1] eq "")  && $array[$cpt][0] ne "") {
         $array[$cpt][1] = "###NANODE###";
       }
+
       # Edge weight
       $array[$cpt][2] = join("_",$array[$cpt][0],$array[$cpt][1]);
       if ($weight && $array[$cpt][1] ne "###NANODE###") {
@@ -1454,91 +1458,95 @@ sub read_from_table {
           $array[$cpt][2] = $linecp[$weight_col-1];
           $array[$cpt][2] =~ s/^\s*//; # remove ending space
          } else {
-           &RSAT::message::Warning("No label or weight in column $weight_col on line $linecpt");# if ($main::verbose >= 1);
+           &RSAT::message::Warning("No label or weight in column $weight_col on line $line_nb");# if ($main::verbose >= 1);
          }
       }
+
       # Source Node color
       $array[$cpt][3] = $default_node_color;
       if (defined($source_color_col)) {
         if (defined ($linecp[$source_color_col-1]) && $array[$cpt][1] ne "###NANODE###") { 
         $array[$cpt][3] = $linecp[$source_color_col-1] || $default_node_color;
         } else {
-          &RSAT::message::Warning("No source node color in column $source_color_col on line $linecpt");# if ($main::verbose >= 1);
+          &RSAT::message::Warning("No source node color in column $source_color_col on line $line_nb");# if ($main::verbose >= 1);
         }
       }
+
       # Target Node color
       $array[$cpt][4] = $default_node_color;
       if (defined($target_color_col) && $array[$cpt][1] ne "###NANODE###") {
         if (defined ($linecp[$target_color_col-1])) { 
         $array[$cpt][4] = $linecp[$target_color_col-1] || $default_node_color;
         } else {
-          &RSAT::message::Warning("No target node color in column $target_color_col on line $linecpt");# if ($main::verbose >= 1);
+          &RSAT::message::Warning("No target node color in column $target_color_col on line $line_nb");# if ($main::verbose >= 1);
         }
       }
+
       # Edge color
       $array[$cpt][5] = $default_edge_color;
       if (defined($edge_color_col) && $array[$cpt][1] ne "###NANODE###") {
         if (defined($linecp[$edge_color_col-1])) {
           $array[$cpt][5] = $linecp[$edge_color_col-1] || $default_edge_color;
         } else {
-          &RSAT::message::Warning("No edge color in column $default_edge_color on line $linecpt");# if ($main::verbose >= 1);
+          &RSAT::message::Warning("No edge color in column $default_edge_color on line $line_nb");# if ($main::verbose >= 1);
         }
       }
+
       # Source node X position 
       $array[$cpt][6] = undef;
-      
       if (defined($source_xpos_col)) {
         if (defined($linecp[$source_xpos_col-1])) {
           $array[$cpt][6] = $linecp[$source_xpos_col-1];
         } else {
-          &RSAT::message::Warning("No valid X position for source node in column $source_xpos_col on line $linecpt");# if ($main::verbose >= 1);
+          &RSAT::message::Warning("No valid X position for source node in column $source_xpos_col on line $line_nb");# if ($main::verbose >= 1);
         }
       }
+
       # Source node Y position 
       $array[$cpt][7] = undef;
       if (defined($source_ypos_col)) {
         if (defined($linecp[$source_ypos_col-1])) {
           $array[$cpt][7] = $linecp[$source_ypos_col-1];
         } else {
-          &RSAT::message::Warning("No valid Y position for source node in column $source_ypos_col on line $linecpt");# if ($main::verbose >= 1);
+          &RSAT::message::Warning("No valid Y position for source node in column $source_ypos_col on line $line_nb");# if ($main::verbose >= 1);
         }
       }
+
       # target node X position 
       $array[$cpt][8] = undef;
       if (defined($target_xpos_col)) {
         if (defined($linecp[$target_xpos_col-1])) {
           $array[$cpt][8] = $linecp[$target_xpos_col-1];
         } else {
-          &RSAT::message::Warning("No valid X position for target node in column $target_xpos_col on line $linecpt");# if ($main::verbose >= 1);
+          &RSAT::message::Warning("No valid X position for target node in column $target_xpos_col on line $line_nb");# if ($main::verbose >= 1);
         }
       }
+
       # target node Y position 
       $array[$cpt][9] = undef;
       if (defined($target_ypos_col)) {
         if (defined($linecp[$target_ypos_col-1])) {
           $array[$cpt][9] = $linecp[$target_ypos_col-1];
         } else {
-          &RSAT::message::Warning("No valid Y position for target node in column $target_ypos_col on line $linecpt");# if ($main::verbose >= 1);
+          &RSAT::message::Warning("No valid Y position for target node in column $target_ypos_col on line $line_nb");# if ($main::verbose >= 1);
         }
       }
       $cpt++;
     }
-    
+
 #     for (my $i = 0; $i < scalar @array; $i++) {
 #       for (my $j = 0; $j <= 9; $j++) {
 #         print $array[$i][$j]." ";
 #       }
 #       print "\n";
 #     }
-    
-    
-    
+
     $self->load_from_array(@array);
     return $self;
 }
+
 ######################################################################################
 ## Load a graph from a tab-delimited path file (returned by NeAT PathFinder algorithm)
-
 sub read_from_paths {
 
     my ($self,$inputfile, $path_col, $distinct_path) = @_;
@@ -1561,6 +1569,7 @@ sub read_from_paths {
     $path_cpt = 1;
     my %seen_nodes = ();
     while (my $line = <$main::in>) {
+      $line =~ s/\r//; ## Replace Windows-specific carriage return
       next if ($line =~ /^--/); # Skip mysql-like comments
       next if ($line =~ /^;/); # Skip RSAT comments
       next if ($line =~ /^#/); # Skip comments and header
@@ -1621,7 +1630,6 @@ sub read_from_adj_matrix {
     while ($line = <$main::in> ) {
 #       next if ($line !~ /^\t/);
       last if $line =~ /^\t/;
-      
     }
     ## if no header -> ERROR
     chomp $line;
@@ -1636,6 +1644,7 @@ sub read_from_adj_matrix {
     my $cptarray = 0;
     my $cpt = 0;
     while ($line = <$main::in>) {
+      $line =~ s/\r//; ## Replace Windows-specific carriage return
       next if ($line =~ /^--/); # Skip mysql-like comments
       next if ($line =~ /^;/); # Skip RSAT comments
       next if ($line =~ /^#/); # Skip comments and header
@@ -1826,7 +1835,7 @@ sub load_from_gml {
     my $node_nb = 0;
     my $arccpt = 0;
     &RSAT::message::TimeWarn("Loading graph from gml file", $inputfile) if ($main::verbose >= 2);
-    ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
+    ($main::in) = &RSAT::util::OpenInputFile($inputfile);
     my $fichier;
 
     while (my $line = <$main::in>) {
@@ -1836,6 +1845,7 @@ sub load_from_gml {
       $line =~ s/\t/ /g;
       $fichier .= $line;
     }
+    $fichier =~ s/\r//gm; ## Suppress Windows-type carriage return
 
     my @fichier_node = split /node( |\t|)/, $fichier;
     my @fichier_edge = split /edge( |\t|)/, $fichier;
@@ -1847,7 +1857,8 @@ sub load_from_gml {
         $node =~ s/edge.*\[.*//;
         my $node_id =  "NA#";
         my $node_label = "NA#";
-        my $node_color  = "#66CCFF";
+	my $node_color = $self::default_node_color;
+#        my $node_color  = "#66CCFF";
         my $node_xpos = "NA#";
         my $node_ypos = "NA#";
 
@@ -2680,7 +2691,7 @@ sub layout_spring_embedding {
   my $max_move_per_step = 100;
 
   ## Reduction of max move at each iteration
-  my $cooling = 0.999;
+  my $cooling = 0.995;
 
   ## Attraction constant
   my $attr_k = $args{attr_k} || 1;
@@ -3221,8 +3232,6 @@ sub to_gml {
       $max = $max_value if (defined $max_value && $max_value >= $max);
 #       print "MIN $min_value $min\n";
     } 
-    
-    
 
     ## Graph description
     my $graph_label = $self->get_attribute("label") || "graph";
@@ -3232,18 +3241,16 @@ sub to_gml {
     $gml .= "[\n";
     $gml .= "	label	\"".$graph_label."\"\n";
     $gml .= "	directed	1\n";
-    
+
     ## Export nodes
     &RSAT::message::Info("Exporting nodes") if $main::verbose >= 3;
     while (($id, $node_name) = each %nodes_id_name) {
         my $label = $nodes_label{$id};
-	my $w = length($label)*10; ## label width
+	my $w = 1 + length($label)*10; ## label width
 	my $h = 16; ## label height
 	my $x = $nodes_id_xpos{$id} || $id*10;
 	my $y = $nodes_id_ypos{$id} || $id*10;
 	my $box_color = $nodes_color{$id} || "#0000EE"; ## color for the box around the node
-	
-	
 	$gml .= "\t"."node\n";
 	$gml .= "\t"."[\n";
 	$gml .= "\t\t"."id	".$id."\n";
