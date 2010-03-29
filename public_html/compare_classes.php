@@ -335,8 +335,18 @@
                            );
    
     # Execute the command
-    echo "<pre>";
-    $cc_echoed = $client->compare_classes($cc_parameters);
+#    echo "<pre>";
+    # Execute the command and catch the errors
+    try {
+      $cc_echoed = $client->compare_classes($cc_parameters);
+      $soap_error = 0;
+    } catch (Exception $soap_exception) {
+      echo ("<pre>");
+      echo "Error : \n\t",  $soap_exception->getMessage(), "\n";
+      echo ("</pre>");
+      $soap_error = 1;
+      exit(1);
+    }  
     $cc_response =  $cc_echoed->response;
     $cc_command = $cc_response->command;
     $cc_server = $cc_response->server;
@@ -346,10 +356,11 @@
     $cc_temp_file = end($cc_temp_file);
     $cc_resultURL = $WWW_RSA."/tmp/".$cc_temp_file;
 
+    echo ("<p><b>Command:</b> $cc_command</p>");
 
     ## Text-to-html
     $cc_file = storeFile($cc_server);
-    echo "</pre>\n"; ## SYLVAIN : peux-tu vérifier pourquoi il y a deux fois </pre> alors qu'il n'y a qu'un <pre>
+#    echo "</pre>\n"; ## SYLVAIN : peux-tu vérifier pourquoi il y a deux fois </pre> alors qu'il n'y a qu'un <pre>
     $tth_parameters = array( 
       "request" => array(
         "inputfile"=>$cc_file,
@@ -363,7 +374,7 @@
     $tth_command = $tth_response->command;
     $tth_server = $tth_response->server;
     $tth_client = $tth_response->client;
-    echo "</pre>\n"; ## SYLVAIN : peux-tu vérifier pourquoi il y a deux fois </pre> alors qu'il n'y a qu'un <pre>
+#    echo "</pre>\n"; ## SYLVAIN : peux-tu vérifier pourquoi il y a deux fois </pre> alors qu'il n'y a qu'un <pre>
     $tth_server = rtrim ($tth_server);
     $tth_temp_file = explode('/',$tth_server);
     $tth_temp_file = end($tth_temp_file);
