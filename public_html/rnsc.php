@@ -95,9 +95,18 @@
       )
     );
 //     print_r ($cg_parameters);
-    # Execute the command 
-    
-    $cg_echoed = $client->convert_graph($cg_parameters);
+
+    # Execute the command and catch the errors
+    try {
+      $cg_echoed = $client->convert_graph($cg_parameters);
+      $soap_error = 0;
+    } catch (Exception $soap_exception) {
+      echo ("<pre>");
+      echo "Error : \n\t",  $soap_exception->getMessage(), "\n";
+      echo ("</pre>");
+      $soap_error = 1;
+      exit(1);
+    }  
 
     $cg_response = $cg_echoed->response;
     $cg_command = $cg_response->command;
@@ -129,9 +138,18 @@
         "exp_nb"=>$exp_nb
       )
     );
-    # Execute the command
-    $rnsc_echoed = $client->rnsc($rnsc_parameters);
 
+    # Execute the command and catch the errors
+    try {
+      $rnsc_echoed = $client->rnsc($rnsc_parameters);
+      $soap_error = 0;
+    } catch (Exception $soap_exception) {
+      echo ("<pre>");
+      echo "Error : \n\t",  $soap_exception->getMessage(), "\n";
+      echo ("</pre>");
+      $soap_error = 1;
+      exit(1);
+    }  
     $rnsc_response = $rnsc_echoed->response;
     $rnsc_command = $rnsc_response->command;
     $rnsc_server = $rnsc_response->server;
@@ -236,10 +254,19 @@
     # Input file
     $input_graph_file = writeTempFile("rnsc_input", $graph);
     hourglass("off");
-    # Display the results
-    echo "The results is available at the following URL ";
-    echo "<a href = '$cc_resultURL'>$cc_resultURL</a>"; 
-    echo "<hr>\n";
+
+    ## DISPLAY THE RESULT
+    echo "<table class=\"resultlink\">\n";
+    echo "<tr><th colspan='3'><h2>Result file(s)</h2> </th></tr>\n";
+    echo "<tr><th>Clusters (tab)</th><td><a href = '$cc_resultURL'>$cc_resultURL</a></td></tr>\n"; 
+    echo "<tr><th>Cluster size distribution (png)</th><td><a href='$xy_resultURL'>$xy_resultURL</a></td></tr>\n"; 
+    echo "</table>\n";
+    echo"<hr>\n";
+
+//     # Display the results
+//     echo "The results is available at the following URL ";
+//     echo "<a href = '$cc_resultURL'>$cc_resultURL</a>"; 
+//     echo "<hr>\n";
      
     echo "
   <TABLE CLASS = 'nextstep'>
