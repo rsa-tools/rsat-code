@@ -21,7 +21,6 @@ require RSAT::TaskManager;
 
 &main::InitRSAT();
 
-
 #my $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||;
 my $RSAT = $ENV{RSAT};
 unless ($RSAT) {
@@ -43,7 +42,7 @@ my $TMP = $RSAT.'/public_html/tmp';
 =head1 DESCRIPTION
 
 Documentation for this module is at
-  http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS_documentation.xml
+  http://rsat.bigre.ulb.ac.be/rsat/web_services/RSATWS_documentation.xml
 
 =cut
 
@@ -1219,7 +1218,7 @@ sub feature_map {
         $suffix = ".jpg";
     }
 
-#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.scmbb\.ulb\.ac\.be\/rsat/g;
+#    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
 #    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
 
     if ($args{"features"}) {
@@ -1603,7 +1602,7 @@ sub footprint_discovery {
     my ($TMP_OUT, $tmp_outfile) = &File::Temp::tempfile(footprint_discovery.XXXXXXXXXX, DIR => $TMP);
     print $TMP_OUT $result;
     close $TMP_OUT;
-    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.scmbb\.ulb\.ac\.be\/rsat/g;
+    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/http\:\/\/rsat\.bigre\.ulb\.ac\.be\/rsat/g;
 #    $tmp_outfile =~ s/\/home\/rsat\/rsa-tools\/public_html/$ENV{rsat_www}/g;
 
     &UpdateLogFileWS(command=>$command, tmp_outfile=>$tmp_outfile, method_name=>"footprint-discovery",output_choice=>$output_choice);
@@ -4503,11 +4502,35 @@ sub rnsc {
     }
 }
 
+
+=pod
+
+=item B<rnsc_cmd>
+
+
+Generate the command for the network-based clustering algorithm RNSC
+(developed by Igor Jurisica's group).
+
+=cut
+
 sub rnsc_cmd {
   my ($self, %args) =@_;
-  
-  my $command = "/home/rsat/rsa-tools/bin/rnsc";
-  
+
+  my $command = "rnsc";
+  if (-e $ENV{RSAT}."/bin/rnsc") {
+    $command = $ENV{RSAT}."/bin/rnsc";
+  }
+
+  ## Check that the rnsc command file exists
+  unless (-e $command) {
+    die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("rnsc command file does not exist ".$command);
+  }
+
+  ## Check that the rnsc command file can be executed
+  unless (-x $command) {
+    die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("rnsc command file exists but cannot be executed ".$command);
+  }
+
   if ($args{inputgraph}) {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
@@ -4580,7 +4603,14 @@ sub rnsc_cmd {
 
 
 
-##########
+=pod
+
+=item B<mcl>
+
+Run the network-based clustering program mcl, developed by Stijn van
+Dongen, Web interface on NeAT by Sylvain Brohée.
+
+=cut
 sub mcl {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -4588,7 +4618,6 @@ sub mcl {
     unless ($output_choice) {
 	$output_choice = 'both';
     }
-    
     my $command = $self->mcl_cmd(%args);
     my $tmp_outfile = `mktemp $TMP/mcl-out.XXXXXXXXXX`;
     chomp $tmp_outfile;
@@ -4624,11 +4653,35 @@ sub mcl {
     }
 }
 
+=pod
+
+Generate the MCL command.
+
+=cut
 sub mcl_cmd {
   my ($self, %args) =@_;
-  
-  my $command = "/usr/local/bin/mcl";
-  
+
+  ## In principle, the mcl directory must have been defined in the
+  ## file ${RSAT}/RSAT_config.props
+  my $command = "mcl";
+  if (defined($ENV{mcl_dir})) {
+    $command = $ENV{mcl_dir}.'/mcl',
+  } elsif (-e $ENV{RSAT}.'/bin/mcl') {
+    $command = $ENV{RSAT}.'/bin/mcl'
+  } elsif (-e '/usr/local/bin/mcl') {
+    $command = '/usr/local/bin/mcl';
+  }
+
+  ## Check that the mcl command file exists
+  unless (-e $command) {
+    die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("mcl command file does not exist ".$command);
+  }
+
+  ## Check that the mcl command file can be executed
+  unless (-x $command) {
+    die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("mcl command file exists but cannot be executed ".$command);
+  }
+
   if ($args{inputgraph}) {
    my $input_graph = $args{inputgraph};
    chomp $input_graph;
