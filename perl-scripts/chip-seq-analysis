@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: chip-seq-analysis,v 1.32 2010/03/27 13:03:00 jvanheld Exp $
+# $Id: chip-seq-analysis,v 1.33 2010/03/29 17:41:43 jvanheld Exp $
 #
 ############################################################
 
@@ -92,7 +92,7 @@ package main;
   $BIN = $ENV{RSAT}."/bin" unless ($BIN);
 
   my $start_time = &AlphaDate();
-  $program_version = do { my @r = (q$Revision: 1.32 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+  $program_version = do { my @r = (q$Revision: 1.33 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
   #    $program_version = "0.00";
 
   %main::param = ();
@@ -313,11 +313,11 @@ sub SetOutFileNames {
     $main::outfile{$seq_type."_seqlen"} = &OutFileName(".tab", $seq_type."_seqlen");
     $main::outfile{$seq_type."_seqlen_distrib"} = &OutFileName(".tab", $seq_type."_seqlen_distrib");
     $main::outfile{$seq_type."_seqlen_distrib_graph"} = &OutFileName(".".$param{img_format}, $seq_type."_seqlen_distrib");
-    if ($infile{ctrl_seq}) {
-	$main::outfile{"ctrl_seqlen"} = &OutFileName(".tab", "ctrl_seqlen");
-	$main::outfile{"ctrl_seqlen_distrib"} = &OutFileName(".tab", "ctrl_seqlen_distrib");
-	$main::outfile{"ctrl_seqlen_distrib_graph"} = &OutFileName($param{img_format}, "ctrl_seqlen_distrib");
-    }
+#    if ($infile{ctrl_seq}) {
+#	$main::outfile{"ctrl_seqlen"} = &OutFileName(".tab", "ctrl_seqlen");
+#	$main::outfile{"ctrl_seqlen_distrib"} = &OutFileName(".tab", "ctrl_seqlen_distrib");
+#	$main::outfile{"ctrl_seqlen_distrib_graph"} = &OutFileName($param{img_format}, "ctrl_seqlen_distrib");
+#    }
 
     ## Compositional Profiles
     for my $ol (@profiles_oligo_lengths) {
@@ -395,6 +395,7 @@ sub SetOutFileNames {
   }
 
   &RSAT::message::Info("Pattern types", join (",", @pattern_types)) if ($main::verbose >= 1);
+  &RSAT::message::Info("Sequence types", join (",", @seq_types)) if ($main::verbose >= 1);
 
   ## Conversion from patterns to matrices + logos
   foreach my $pattern_type (@pattern_types) {
@@ -983,7 +984,7 @@ sub SyntheticTableAddHeaderRow {
 sub SynthesisSequenceComposition {
   foreach my $seq_type (@seq_types) {
 
-  ## Header line
+    ## Header line
     &SyntheticTableAddHeaderRow("Sequence composition (".$seq_type." sequences)");
 
     ## Get number of peaks from sequence length distribution
