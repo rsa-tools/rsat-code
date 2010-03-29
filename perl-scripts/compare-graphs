@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-graphs,v 1.50 2009/11/05 00:32:06 jvanheld Exp $
+# $Id: compare-graphs,v 1.51 2010/03/29 17:40:15 jvanheld Exp $
 #
 ############################################################
 
@@ -558,7 +558,9 @@ wether it belongs to the intersection or to the query graph only.
 
 Label or weight of the arc
 
-supported : Q, R, sum, mean, mean.g, min, max, Q::R 
+Supported : Q, R, sum, mean, mean.g, min, max, Q::R 
+
+=over
 
 =item I<Q> : weights of the query graph
 
@@ -576,7 +578,7 @@ supported : Q, R, sum, mean, mean.g, min, max, Q::R
 
 =item I<Q::R> : weight of the two graphs
 
-
+=back
 
 =cut
 	} elsif ($arg eq "-outweight") {
