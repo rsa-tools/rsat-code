@@ -30,7 +30,7 @@ $default{assembly} = "";
 $default{oligo_length7}="checked";
 $default{oligo-analysis}="checked";
 $default{dyad-analysis}="checked";
-$default{orm}="checked";
+$default{'local-word-analysis'}="checked";
 
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -328,16 +328,16 @@ print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.dyad-analysis.html#oligo_size'>D
 print "<br/>";
 
 #
-### ORM
+### local-word-analysis
 #
-print $query->checkbox(-name=>'orm',
-		       -checked=>$default{orm},
+print $query->checkbox(-name=>'local-word-analysis',
+		       -checked=>$default{'local-word-analysis'},
 		       -label=>'');  
-print "&nbsp;<b>Discover words with positional biais</b> [ORM] [position-analysis]\n";
+print "&nbsp;<b>Discover words with positional biais</b> <a href='help.local-word-analysis.html'>[local-word-analysis]</a>\n";
 print "<br/>";
 
-### orm oligo size
-print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.ORM.html#oligo_length'>Oligomer length</A>&nbsp;</B>\n";
+### local-word-analysis oligo size
+print "&nbsp;&nbsp;&nbsp;&nbsp;<B><A HREF='help.local-word-analysis.html#oligo_length'>Oligomer length</A>&nbsp;</B>\n";
 
 print $query->checkbox(-name=>'oligo_length6',
 		       -checked=>$default{oligo_length6},
@@ -354,7 +354,7 @@ print "&nbsp;"x2;
 
 print "<br/>";	
 
-print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.ORM.html#window_width'>Fixed window of width</A>&nbsp;</B>\n";
+print "&nbsp;&nbsp;&nbsp;&nbsp;<b><a href='help.local-word-analysis.html#window_width'>Fixed window of width</A>&nbsp;</B>\n";
 	$oligoPopup = "";
     $oligoPopup .=  "<SELECT NAME='orm_window'>\n";
 	$oligoPopup .=  "<OPTION VALUE='50'>50</option>\n";
